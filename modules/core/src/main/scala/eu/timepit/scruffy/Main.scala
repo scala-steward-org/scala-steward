@@ -31,14 +31,22 @@ object Main {
     println(repoDir)
     /*val p = io.deleteRecursively(repoDir) >> io.mkdirs(repoDir)
     p.unsafeRunSync()
-    cmd.!!
-     */
+    cmd.!!*/
+
     // can we set up sbt plugins in workspace ?
     //sbt.dependencyUpdates(repoDir).map(println).unsafeRunSync()
     val update =
       DependencyUpdate("com.github.pureconfig", "pureconfig", "0.9.1", NonEmptyList.of("0.9.2"))
-    val repo = Repository(repoDir)
-    git.checkoutBranch(repo, update)
+    val repo1 = Repository(repoDir)
+
+    val p2 = for {
+      _ <- git.exec(repo1, List("checkout", "-f"))
+      //branch <- git.currentBranch(repo1)
+      //_ <- git.createBranch(repo1, git.branchName(update))
+      _ <- git.checkoutBranch(repo1, git.branchName(update))
+      _ <- io.updateDependency(repo1, update)
+    } yield ()
+    p2.unsafeRunSync()
   }
 
   //def gitClone(url: String, repoDir: Path) =
