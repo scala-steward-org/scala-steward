@@ -2,11 +2,11 @@ package eu.timepit.scruffy
 
 import java.nio.file.{Path, Paths}
 
+import better.files.File
 import cats.data.NonEmptyList
+import cats.implicits._
 
-//import cats.implicits._
-
-//import scala.sys.process._
+import scala.sys.process._
 
 object Main {
   def main(args: Array[String]): Unit = {
@@ -29,20 +29,20 @@ object Main {
     println(cmd)
     println(url)
     println(repoDir)
-    /*val p = io.deleteRecursively(repoDir) >> io.mkdirs(repoDir)
+    val p = io.delete(repoDir) >> io.mkdirs(repoDir)
     p.unsafeRunSync()
-    cmd.!!*/
+    cmd.!!
 
     // can we set up sbt plugins in workspace ?
     //sbt.dependencyUpdates(repoDir).map(println).unsafeRunSync()
     val update =
       DependencyUpdate("com.github.pureconfig", "pureconfig", "0.9.1", NonEmptyList.of("0.9.2"))
-    val repo1 = Repository(repoDir)
+    val repo1 = Repository(File(repoDir))
 
     val p2 = for {
       _ <- git.exec(repo1, List("checkout", "-f"))
-      //branch <- git.currentBranch(repo1)
-      //_ <- git.createBranch(repo1, git.branchName(update))
+      branch <- git.currentBranch(repo1)
+      _ <- git.createBranch(repo1, git.branchName(update))
       _ <- git.checkoutBranch(repo1, git.branchName(update))
       _ <- io.updateDependency(repo1, update)
     } yield ()

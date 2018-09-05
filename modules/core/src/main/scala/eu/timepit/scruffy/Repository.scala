@@ -1,5 +1,5 @@
 package eu.timepit.scruffy
 
-import java.nio.file.Path
+import better.files.File
 
-final case class Repository(dir: Path)
+final case class Repository(root: File)

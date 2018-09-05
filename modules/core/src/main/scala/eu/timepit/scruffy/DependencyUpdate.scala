@@ -8,15 +8,19 @@ final case class DependencyUpdate(
     artifactId: String,
     currentVersion: String,
     newerVersions: NonEmptyList[String]
-)
+) {
+  def nextVersion: String =
+    newerVersions.head
+}
 
 object DependencyUpdate {
   def fromString(str: String): Either[Throwable, DependencyUpdate] =
     Either.catchNonFatal {
-      val regex = """([^\s]+):([^\s]+)\s+:\s+([^\s]+)\s+->(.+)""".r
+      val delim = "->"
+      val regex = s"""([^\s]+):([^\s]+)\s+:\s+([^\s]+)\s+$delim(.+)""".r
       str match {
         case regex(groupId, artifactId, version, updates) =>
-          val newerVersions = NonEmptyList.fromListUnsafe(updates.split("->").map(_.trim).toList)
+          val newerVersions = NonEmptyList.fromListUnsafe(updates.split(delim).map(_.trim).toList)
           DependencyUpdate(groupId, artifactId, version, newerVersions)
       }
     }
