@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 scruffy contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package eu.timepit.scruffy
 
 import cats.data.NonEmptyList
@@ -16,11 +32,10 @@ final case class DependencyUpdate(
 object DependencyUpdate {
   def fromString(str: String): Either[Throwable, DependencyUpdate] =
     Either.catchNonFatal {
-      val delim = "->"
-      val regex = s"""([^\s]+):([^\s]+)\s+:\s+([^\s]+)\s+$delim(.+)""".r
+      val regex = """([^\s]+):([^\s]+)\s+:\s+([^\s]+)\s+->(.+)""".r
       str match {
         case regex(groupId, artifactId, version, updates) =>
-          val newerVersions = NonEmptyList.fromListUnsafe(updates.split(delim).map(_.trim).toList)
+          val newerVersions = NonEmptyList.fromListUnsafe(updates.split("->").map(_.trim).toList)
           DependencyUpdate(groupId, artifactId, version, newerVersions)
       }
     }
