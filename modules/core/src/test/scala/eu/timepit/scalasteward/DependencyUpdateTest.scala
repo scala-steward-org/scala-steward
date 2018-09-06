@@ -1,4 +1,4 @@
-package eu.timepit.scruffy
+package eu.timepit.scalasteward
 
 import cats.data.{NonEmptyList => Nel}
 import org.scalatest.{FunSuite, Matchers}

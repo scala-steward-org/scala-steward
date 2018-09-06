@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package eu.timepit.scruffy
+package eu.timepit.scalasteward
 
 import cats.data.NonEmptyList
 import cats.implicits._

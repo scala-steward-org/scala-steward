@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package eu.timepit.scruffy
+package eu.timepit.scalasteward
 
 import better.files.File
 import cats.effect.IO

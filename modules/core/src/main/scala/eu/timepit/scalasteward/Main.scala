@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package eu.timepit.scruffy
+package eu.timepit.scalasteward
 
 import better.files.File
 import cats.data.NonEmptyList
@@ -23,7 +23,7 @@ import cats.implicits._
 
 object Main {
   def main(args: Array[String]): Unit = {
-    val workspace = File.home / "code/scruffy/workspace"
+    val workspace = File.home / "code/scala-steward/workspace"
     val repos = List("fthomas/datapackage")
 
     val p = for {
