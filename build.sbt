@@ -5,7 +5,7 @@ import sbtcrossproject.Platform
 /// variables
 
 val groupId = "eu.timepit"
-val projectName = "scruffy"
+val projectName = "scala-steward"
 val gitHubOwner = "fthomas"
 
 val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
