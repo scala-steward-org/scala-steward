@@ -27,6 +27,16 @@ final case class DependencyUpdate(
 ) {
   def nextVersion: String =
     newerVersions.head
+
+  def replaceAllIn(str: String): Option[String] = {
+    val regex = s"($artifactId.*?)$currentVersion".r
+    var updated = false
+    val result = regex.replaceAllIn(str, m => {
+      updated = true
+      m.group(1) + nextVersion
+    })
+    Some(result).filter(_ => updated)
+  }
 }
 
 object DependencyUpdate {

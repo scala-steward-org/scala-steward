@@ -51,18 +51,8 @@ object io {
   def updateDir(dir: File, update: DependencyUpdate): IO[Unit] =
     walk(dir).filter(isSourceFile).evalMap(updateFile(_, update)).compile.drain
 
-  def updateFile(file: File, update: DependencyUpdate): IO[Unit] =
-    IO {
-      val regex = s"(${update.artifactId}.*?)${update.currentVersion}".r
-      var updated = false
-      val oldContent = file.contentAsString
-      val newContent = regex.replaceAllIn(oldContent, m => {
-        updated = true
-        m.group(1) + update.nextVersion
-      })
-      if (updated) file.write(newContent)
-      ()
-    }
+  def updateFile(file: File, update: DependencyUpdate): IO[File] =
+    IO(update.replaceAllIn(file.contentAsString).fold(file)(file.write(_)))
 
   def walk(dir: File): Stream[IO, File] =
     Stream.eval(IO(dir.walk())).flatMap(Stream.fromIterator[IO, File])

@@ -39,7 +39,6 @@ object Main {
     }
 
   def cloneRepo(repo: String, repoDir: Path): Unit = {
-
     val url = "https://github.com/" + repo
     val cmd = s"git clone $url $repoDir"
     println(cmd)
