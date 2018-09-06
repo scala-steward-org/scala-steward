@@ -20,26 +20,34 @@ import better.files.File
 import cats.data.NonEmptyList
 import cats.effect.IO
 import cats.implicits._
-import java.nio.file.Paths
 
 object Main {
   def main(args: Array[String]): Unit = {
-    val repos = List("fthomas/refined")
-    val workspace = File(Paths.get("/home/frank/code/scruffy/workspace"))
+    val workspace = File.home / "code/scruffy/workspace"
+    val repos = List("fthomas/datapackage")
 
-    prepareEnv(workspace).unsafeRunSync()
-    cloneRepos(repos, workspace)
-    ()
+    val p = for {
+      _ <- prepareEnv(workspace)
+      _ <- repos.traverse_(repo => updateRepo(workspace, repo))
+    } yield ()
+    p.unsafeRunSync()
   }
 
   def prepareEnv(workspace: File): IO[Unit] =
     for {
-      _ <- io.printLnInfo("Add global sbt plugins.")
+      _ <- io.printInfo("Adding global sbt plugins.")
       _ <- sbt.addGlobalPlugins
-      _ <- io.printLnInfo(s"Clean workspace $workspace.")
-      _ <- io.delete(workspace)
+      _ <- io.printInfo(s"Cleaning workspace $workspace.")
+      _ <- io.deleteForce(workspace)
       _ <- io.mkdirs(workspace)
     } yield ()
+
+  def updateRepo(workspace: File, repo: String): IO[Unit] = {
+    // fork if fork not exists
+    println(workspace)
+    println(repo)
+    IO.unit
+  }
 
   def cloneRepos(repos: List[String], workspace: File): Unit =
     repos.foreach { repo =>
@@ -51,7 +59,7 @@ object Main {
     val url = "https://github.com/" + repo
     git.clone(workspace, url, repoDir).unsafeRunSync()
 
-    val p = io.delete(repoDir) >> io.mkdirs(repoDir)
+    val p = io.mkdirs(repoDir)
     p.unsafeRunSync()
 
     // can we set up sbt plugins in workspace ?
@@ -61,7 +69,7 @@ object Main {
     val repo1 = repoDir
 
     val p2 = for {
-      _ <- git.exec(repo1, List("checkout", "-f"))
+
       branch <- git.currentBranch(repo1)
       _ <- git.createBranch(repo1, git.branchName(update))
       _ <- git.checkoutBranch(repo1, git.branchName(update))

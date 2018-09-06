@@ -25,8 +25,8 @@ import scala.collection.mutable.ListBuffer
 import scala.sys.process.{Process, ProcessLogger}
 
 object io {
-  def delete(dir: File): IO[Unit] =
-    IO(dir.delete())
+  def deleteForce(dir: File): IO[Unit] =
+    IO(if (dir.exists) dir.delete() else ())
 
   def exec(command: List[String], cwd: File): IO[List[String]] =
     IO {
@@ -48,7 +48,7 @@ object io {
   def mkdirs(dir: File): IO[Unit] =
     IO(dir.createDirectories()).void
 
-  def printLnInfo(msg: String): IO[Unit] =
+  def printInfo(msg: String): IO[Unit] =
     IO(println(s"I: $msg"))
 
   def updateDir(dir: File, update: DependencyUpdate): IO[Unit] =
