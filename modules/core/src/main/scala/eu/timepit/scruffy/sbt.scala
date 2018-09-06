@@ -16,17 +16,26 @@
 
 package eu.timepit.scruffy
 
+import better.files.File
 import cats.effect.IO
-import java.nio.file.Path // TODO: use File or Repository
 
 object sbt {
-  def dependencyUpdates(repoDir: Path): IO[List[DependencyUpdate]] =
-    io.exec(List("sbt", "-no-colors", "dependencyUpdates"), repoDir)
-      .map(toDependencyUpdates)
+  def addGlobalPlugins: IO[Unit] =
+    IO {
+      val plugin = """addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.4")"""
+      (File.home / ".sbt/0.13/plugins/sbt-updates.sbt").writeText(plugin)
+      (File.home / ".sbt/1.0/plugins/sbt-updates.sbt").writeText(plugin)
+      ()
+    }
 
-  def pluginsUpdates(repoDir: Path): IO[List[DependencyUpdate]] =
-    io.exec(List("sbt", "-no-colors", ";reload plugins; dependencyUpdates"), repoDir)
-      .map(toDependencyUpdates)
+  def dependencyUpdates(dir: File): IO[List[DependencyUpdate]] =
+    io.exec(sbtCmd :+ "dependencyUpdates", dir).map(toDependencyUpdates)
+
+  def pluginsUpdates(dir: File): IO[List[DependencyUpdate]] =
+    io.exec(sbtCmd :+ ";reload plugins; dependencyUpdates", dir).map(toDependencyUpdates)
+
+  val sbtCmd: List[String] =
+    List("sbt", "-no-colors")
 
   def toDependencyUpdates(lines: List[String]): List[DependencyUpdate] =
     lines.flatMap { line =>

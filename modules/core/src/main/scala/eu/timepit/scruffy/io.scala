@@ -25,8 +25,8 @@ import scala.collection.mutable.ListBuffer
 import scala.sys.process.{Process, ProcessLogger}
 
 object io {
-  def delete(root: File): IO[Unit] =
-    IO(root.delete())
+  def delete(dir: File): IO[Unit] =
+    IO(dir.delete())
 
   def exec(command: List[String], cwd: File): IO[List[String]] =
     IO {
@@ -48,22 +48,22 @@ object io {
   def mkdirs(dir: File): IO[Unit] =
     IO(dir.createDirectories()).void
 
-  def updateDependency(repo: Repository, update: DependencyUpdate): IO[Unit] =
-    walk(repo.root).filter(isSourceFile).evalMap(updateDependency(_, update)).compile.drain
+  def updateDir(dir: File, update: DependencyUpdate): IO[Unit] =
+    walk(dir).filter(isSourceFile).evalMap(updateFile(_, update)).compile.drain
 
-  def updateDependency(file: File, update: DependencyUpdate): IO[Unit] =
+  def updateFile(file: File, update: DependencyUpdate): IO[Unit] =
     IO {
-      val regex = s"${update.artifactId}.*?${update.currentVersion}".r
+      val regex = s"(${update.artifactId}.*?)${update.currentVersion}".r
       var updated = false
       val oldContent = file.contentAsString
       val newContent = regex.replaceAllIn(oldContent, m => {
         updated = true
-        m.matched.replace(update.currentVersion, update.nextVersion)
+        m.group(1) + update.nextVersion
       })
       if (updated) file.write(newContent)
       ()
     }
 
-  def walk(root: File): Stream[IO, File] =
-    Stream.eval(IO(root.walk())).flatMap(Stream.fromIterator[IO, File])
+  def walk(dir: File): Stream[IO, File] =
+    Stream.eval(IO(dir.walk())).flatMap(Stream.fromIterator[IO, File])
 }

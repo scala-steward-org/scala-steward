@@ -16,24 +16,28 @@
 
 package eu.timepit.scruffy
 
+import better.files.File
 import cats.effect.IO
 
 object git {
   def branchName(update: DependencyUpdate): String =
-    "update/" + update.artifactId + "-" + update.nextVersion
+    s"update/${update.artifactId}-${update.nextVersion}"
 
-  def checkoutBranch(repo: Repository, branch: String): IO[List[String]] =
-    exec(repo, List("checkout", branch))
+  def checkoutBranch(dir: File, branch: String): IO[List[String]] =
+    exec(dir, List("checkout", branch))
+
+  def commitAll(dir: File, message: String): IO[List[String]] =
+    exec(dir, List("commit", "--all", "-m", message))
 
   def commitMsg(update: DependencyUpdate): String =
-    s"Update ${update.groupId}:${update.artifactId} to ${update.nextVersion}"
+    s"Update ${update.artifactId} to ${update.nextVersion}"
 
-  def createBranch(repo: Repository, branch: String): IO[List[String]] =
-    exec(repo, List("checkout", "-b", branch))
+  def createBranch(dir: File, branch: String): IO[List[String]] =
+    exec(dir, List("checkout", "-b", branch))
 
-  def currentBranch(repo: Repository): IO[String] =
-    exec(repo, List("rev-parse", "--abbrev-ref", "HEAD")).map(_.mkString.trim)
+  def currentBranch(dir: File): IO[String] =
+    exec(dir, List("rev-parse", "--abbrev-ref", "HEAD")).map(_.mkString.trim)
 
-  def exec(repo: Repository, cmd: List[String]): IO[List[String]] =
-    io.exec("git" :: cmd, repo.root)
+  def exec(dir: File, cmd: List[String]): IO[List[String]] =
+    io.exec("git" :: cmd, dir)
 }

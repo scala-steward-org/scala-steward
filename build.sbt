@@ -27,6 +27,7 @@ lazy val core = myCrossProject("core")
       Dependencies.betterFiles,
       Dependencies.catsEffect,
       Dependencies.fs2Core,
+      Dependencies.github4s,
       Dependencies.scalaTest % Test
     )
   )
