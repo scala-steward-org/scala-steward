@@ -18,41 +18,47 @@ package eu.timepit.scruffy
 
 import better.files.File
 import cats.data.NonEmptyList
+import cats.effect.IO
 import cats.implicits._
-import java.nio.file.{Path, Paths}
-import scala.sys.process._
+import java.nio.file.Paths
 
 object Main {
   def main(args: Array[String]): Unit = {
-    sbt.addGlobalPlugins.unsafeRunSync()
     val repos = List("fthomas/refined")
-    val workspace = Paths.get("/home/frank/code/scruffy/workspace")
-    workspace.toFile.mkdirs()
+    val workspace = File(Paths.get("/home/frank/code/scruffy/workspace"))
+
+    prepareEnv(workspace).unsafeRunSync()
     cloneRepos(repos, workspace)
     ()
   }
 
-  def cloneRepos(repos: List[String], workspace: Path): Unit =
+  def prepareEnv(workspace: File): IO[Unit] =
+    for {
+      _ <- io.printLnInfo("Add global sbt plugins.")
+      _ <- sbt.addGlobalPlugins
+      _ <- io.printLnInfo(s"Clean workspace $workspace.")
+      _ <- io.delete(workspace)
+      _ <- io.mkdirs(workspace)
+    } yield ()
+
+  def cloneRepos(repos: List[String], workspace: File): Unit =
     repos.foreach { repo =>
-      val repoDir = workspace.resolve(repo)
-      cloneRepo(repo, repoDir)
+      val repoDir = workspace / repo
+      cloneRepo(repo, repoDir, workspace)
     }
 
-  def cloneRepo(repo: String, repoDir: Path): Unit = {
+  def cloneRepo(repo: String, repoDir: File, workspace: File): Unit = {
     val url = "https://github.com/" + repo
-    val cmd = s"git clone $url $repoDir"
-    println(cmd)
-    println(url)
-    println(repoDir)
+    git.clone(workspace, url, repoDir).unsafeRunSync()
+
     val p = io.delete(repoDir) >> io.mkdirs(repoDir)
     p.unsafeRunSync()
-    cmd.!!
 
     // can we set up sbt plugins in workspace ?
     //sbt.dependencyUpdates(repoDir).map(println).unsafeRunSync()
     val update =
       DependencyUpdate("com.github.pureconfig", "pureconfig", "0.9.1", NonEmptyList.of("0.9.2"))
-    val repo1 = File(repoDir)
+    val repo1 = repoDir
 
     val p2 = for {
       _ <- git.exec(repo1, List("checkout", "-f"))
@@ -64,8 +70,5 @@ object Main {
     } yield ()
     p2.unsafeRunSync()
   }
-
-  //def gitClone(url: String, repoDir: Path) =
-  //  io.execLines(List("git", "clone", url, repoDir.toString), repoDir)
 
 }

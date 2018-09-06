@@ -48,6 +48,9 @@ object io {
   def mkdirs(dir: File): IO[Unit] =
     IO(dir.createDirectories()).void
 
+  def printLnInfo(msg: String): IO[Unit] =
+    IO(println(s"I: $msg"))
+
   def updateDir(dir: File, update: DependencyUpdate): IO[Unit] =
     walk(dir).filter(isSourceFile).evalMap(updateFile(_, update)).compile.drain
 

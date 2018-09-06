@@ -26,6 +26,9 @@ object git {
   def checkoutBranch(dir: File, branch: String): IO[List[String]] =
     exec(dir, List("checkout", branch))
 
+  def clone(workspace: File, url: String, dir: File): IO[List[String]] =
+    exec(workspace, List("clone", url, dir.pathAsString))
+
   def commitAll(dir: File, message: String): IO[List[String]] =
     exec(dir, List("commit", "--all", "-m", message))
 
