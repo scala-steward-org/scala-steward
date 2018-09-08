@@ -31,6 +31,12 @@ class DependencyUpdateTest extends FunSuite with Matchers {
     )
   }
 
+  test("fromString: test dependency") {
+    val str = "org.scalacheck:scalacheck:test   : 1.12.5 -> 1.12.6  -> 1.14.0"
+    DependencyUpdate.fromString(str) shouldBe Right(
+      DependencyUpdate("org.scalacheck", "scalacheck", "1.12.5", Nel.of("1.12.6", "1.14.0")))
+  }
+
   test("fromString: no groupId") {
     val str = ":sbt-scalajs : 0.6.24 -> 0.6.25"
     DependencyUpdate.fromString(str).isLeft
