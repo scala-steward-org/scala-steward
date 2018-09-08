@@ -23,24 +23,27 @@ object git {
   def branchName(update: DependencyUpdate): String =
     s"update/${update.artifactId}-${update.nextVersion}"
 
-  def checkoutBranch(dir: File, branch: String): IO[List[String]] =
-    exec(dir, List("checkout", branch))
+  def checkoutBranch(branch: String, dir: File): IO[List[String]] =
+    exec(List("checkout", branch), dir)
 
-  def clone(workspace: File, url: String, dir: File): IO[List[String]] =
-    exec(workspace, List("clone", url, dir.pathAsString))
+  def clone(url: String, dir: File, workspace: File): IO[List[String]] =
+    exec(List("clone", url, dir.pathAsString), workspace)
 
-  def commitAll(dir: File, message: String): IO[List[String]] =
-    exec(dir, List("commit", "--all", "-m", message))
+  def commitAll(message: String, dir: File): IO[List[String]] =
+    exec(List("commit", "--all", "-m", message), dir)
 
   def commitMsg(update: DependencyUpdate): String =
     s"Update ${update.artifactId} to ${update.nextVersion}"
 
-  def createBranch(dir: File, branch: String): IO[List[String]] =
-    exec(dir, List("checkout", "-b", branch))
+  def containsChanges(dir: File): IO[Boolean] =
+    exec(List("status", "--porcelain"), dir).map(_.nonEmpty)
+
+  def createBranch(branch: String, dir: File): IO[List[String]] =
+    exec(List("checkout", "-b", branch), dir)
 
   def currentBranch(dir: File): IO[String] =
-    exec(dir, List("rev-parse", "--abbrev-ref", "HEAD")).map(_.mkString.trim)
+    exec(List("rev-parse", "--abbrev-ref", "HEAD"), dir).map(_.mkString.trim)
 
-  def exec(dir: File, cmd: List[String]): IO[List[String]] =
+  def exec(cmd: List[String], dir: File): IO[List[String]] =
     io.exec("git" :: cmd, dir)
 }

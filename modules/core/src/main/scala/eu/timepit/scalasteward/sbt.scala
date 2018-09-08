@@ -28,6 +28,10 @@ object sbt {
       ()
     }
 
+  def allUpdates(dir: File): IO[List[DependencyUpdate]] =
+    io.exec(sbtCmd :+ ";dependencyUpdates ;reload plugins; dependencyUpdates", dir)
+      .map(toDependencyUpdates)
+
   def dependencyUpdates(dir: File): IO[List[DependencyUpdate]] =
     io.exec(sbtCmd :+ "dependencyUpdates", dir).map(toDependencyUpdates)
 
