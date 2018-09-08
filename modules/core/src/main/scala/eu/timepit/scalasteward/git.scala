@@ -46,4 +46,7 @@ object git {
 
   def exec(cmd: List[String], dir: File): IO[List[String]] =
     io.exec("git" :: cmd, dir)
+
+  def remoteBranchExists(branch: String, dir: File): IO[Boolean] =
+    git.exec(List("branch", "-r"), dir).map(_.exists(_.contains(branch)))
 }
