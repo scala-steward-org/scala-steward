@@ -18,6 +18,7 @@ package eu.timepit.scalasteward
 
 import better.files.File
 import cats.effect.IO
+import cats.implicits._
 
 object git {
   def branchName(update: DependencyUpdate): String =
@@ -49,4 +50,7 @@ object git {
 
   def remoteBranchExists(branch: String, dir: File): IO[Boolean] =
     git.exec(List("branch", "-r"), dir).map(_.exists(_.contains(branch)))
+
+  def returnToCurrentBranch[B](dir: File)(use: String => IO[B]): IO[B] =
+    currentBranch(dir).bracket(use)(checkoutBranch(_, dir).void)
 }

@@ -72,13 +72,12 @@ object steward extends IOApp {
           io.updateDir(repoDir, update) >> git.containsChanges(repoDir).flatMap {
             case false => io.printInfo(s"I don't know how to update ${update.artifactId}")
             case true =>
-              for {
-                origBranch <- git.currentBranch(repoDir)
-                _ <- git.createBranch(updateBranch, repoDir)
-                _ <- git.commitAll(git.commitMsg(update), repoDir)
-                // TODO: use bracket for changing branches
-                _ <- git.checkoutBranch(origBranch, repoDir)
-              } yield ()
+              git.returnToCurrentBranch(repoDir) { _ =>
+                for {
+                  _ <- git.createBranch(updateBranch, repoDir)
+                  _ <- git.commitAll(git.commitMsg(update), repoDir)
+                } yield ()
+              }
           }
       }
   }
