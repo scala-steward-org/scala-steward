@@ -33,7 +33,8 @@ object git {
   def commitAll(message: String, dir: File): IO[List[String]] =
     exec(
       List("commit", "--all", "-m", message, "--author=Scala steward <scala-steward@timepit.eu>"),
-      dir)
+      dir
+    )
 
   def commitMsg(update: DependencyUpdate): String =
     s"Update ${update.artifactId} to ${update.nextVersion}"

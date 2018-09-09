@@ -57,7 +57,8 @@ object steward extends IOApp {
       _ <- io.printInfo(s"Check dependency updates for $repo")
       //updates <- sbt.allUpdates(repoDir)
       updates = List(
-        DependencyUpdate("org.scala-js", "sbt-scalajs", "0.6.11", NonEmptyList.of("0.6.25")))
+        DependencyUpdate("org.scala-js", "sbt-scalajs", "0.6.11", NonEmptyList.of("0.6.25"))
+      )
       _ <- io.printInfo(
         s"Found ${updates.size} update(s):\n" + updates.map(u => s"   $u\n").mkString
       )
