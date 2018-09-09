@@ -19,4 +19,7 @@ package eu.timepit.scalasteward
 final case class GithubRepo(owner: String, repo: String) {
   def url: String =
     s"https://github.com/$owner/$repo"
+
+  def gitUrl: String =
+    s"git@github.com:$owner/$repo.git"
 }

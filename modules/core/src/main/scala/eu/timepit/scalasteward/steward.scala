@@ -17,6 +17,7 @@
 package eu.timepit.scalasteward
 
 import better.files.File
+import cats.data.NonEmptyList
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
 
@@ -47,16 +48,16 @@ object steward extends IOApp {
       repoDir = workspace / repo.owner / repo.repo
       _ <- io.mkdirs(repoDir)
       forkedRepo = GithubRepo(github.myLogin, repo.repo)
-      _ <- git.clone(forkedRepo.url, repoDir, workspace)
+      _ <- git.clone(forkedRepo.gitUrl, repoDir, workspace)
       _ <- updateDependencies(repoDir, repo)
     } yield ()
 
   def updateDependencies(repoDir: File, repo: GithubRepo): IO[Unit] =
     for {
       _ <- io.printInfo(s"Check dependency updates for $repo")
-      updates <- sbt.allUpdates(repoDir)
-      //updates = List(
-      //  DependencyUpdate("org.scala-js", "sbt-scalajs", "0.6.11", NonEmptyList.of("0.6.25")))
+      //updates <- sbt.allUpdates(repoDir)
+      updates = List(
+        DependencyUpdate("org.scala-js", "sbt-scalajs", "0.6.11", NonEmptyList.of("0.6.25")))
       _ <- io.printInfo(
         s"Found ${updates.size} update(s):\n" + updates.map(u => s"   $u\n").mkString
       )
@@ -76,6 +77,7 @@ object steward extends IOApp {
                 for {
                   _ <- git.createBranch(updateBranch, repoDir)
                   _ <- git.commitAll(git.commitMsg(update), repoDir)
+                  _ <- git.exec(List("push"), repoDir)
                 } yield ()
               }
           }
