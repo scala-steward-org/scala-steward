@@ -16,4 +16,6 @@
 
 package eu.timepit.scalasteward
 
-final case class GithubRepo(owner: String, repo: String)
+final case class GithubRepo(owner: String, repo: String) {
+  def show: String = s"$owner:$repo"
+}

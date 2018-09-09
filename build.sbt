@@ -23,6 +23,7 @@ lazy val root = project
 
 lazy val core = myCrossProject("core")
   .settings(
+    fork := true,
     libraryDependencies ++= Seq(
       Dependencies.betterFiles,
       Dependencies.catsEffect,

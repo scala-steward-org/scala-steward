@@ -71,6 +71,9 @@ object github {
       )
     }
 
-  def httpsUrl(repo: GithubRepo): IO[String] =
+  def httpsUrl(repo: GithubRepo): String =
+    s"https://github.com/${repo.owner}/${repo.repo}.git"
+
+  def httpsUrlWithCredentials(repo: GithubRepo): IO[String] =
     accessToken.map(token => s"https://$myLogin:$token@github.com/${repo.owner}/${repo.repo}.git")
 }
