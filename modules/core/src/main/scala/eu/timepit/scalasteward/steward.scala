@@ -27,6 +27,7 @@ object steward extends IOApp {
       GithubRepo("fthomas", "datapackage"),
       GithubRepo("fthomas", "fs2-cron"),
       GithubRepo("fthomas", "kartograffel"),
+      GithubRepo("fthomas", "scala-steward"),
       GithubRepo("fthomas", "status-page")
     )
 
@@ -79,7 +80,8 @@ object steward extends IOApp {
         DependencyUpdate("org.scala-js", "sbt-scalajs", "0.6.11", NonEmptyList.of("0.6.25"))
       )*/
       _ <- io.printInfo(
-        s"Found ${updates.size} update(s):\n" + updates.map(u => s"   $u\n").mkString)
+        s"Found ${updates.size} update(s):\n" + updates.map(u => s"   $u\n").mkString
+      )
       _ <- updates.traverse_(updateDependency(_, repoDir, repo))
     } yield ()
 
