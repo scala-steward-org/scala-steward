@@ -26,6 +26,36 @@ object github {
   val accessToken: IO[String] =
     IO((File.home / s".github/tokens/$myLogin").contentAsString.trim)
 
+  def createPullRequest(
+      repo: GithubRepo,
+      update: DependencyUpdate,
+      updateBranch: String,
+      baseBranch: String
+  ): IO[List[String]] =
+    accessToken.flatMap { token =>
+      io.exec(
+        List(
+          "curl",
+          "-X",
+          "POST",
+          "--header",
+          "Content-Type: application/json",
+          "-u",
+          s"$myLogin:$token",
+          "--data",
+          s"""{
+             |  "title": "${git.commitMsg(update)}",
+             |  "body": "This tries to update ${update.groupId}:${update.artifactId} to ${update.nextVersion}.",
+             |  "head": "$myLogin:$updateBranch",
+             |  "base": "$baseBranch"
+             |}
+           """.stripMargin.trim,
+          s"https://api.github.com/repos/${repo.owner}/${repo.repo}/pulls"
+        ),
+        File.currentWorkingDirectory
+      )
+    }
+
   def fork(repo: GithubRepo): IO[List[String]] =
     accessToken.flatMap { token =>
       io.exec(
@@ -40,4 +70,7 @@ object github {
         File.currentWorkingDirectory
       )
     }
+
+  def httpsUrl(repo: GithubRepo): IO[String] =
+    accessToken.map(token => s"https://$myLogin:$token@github.com/${repo.owner}/${repo.repo}.git")
 }

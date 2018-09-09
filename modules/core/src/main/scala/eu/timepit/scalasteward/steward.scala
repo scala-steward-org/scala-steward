@@ -47,8 +47,10 @@ object steward extends IOApp {
       _ <- github.fork(repo)
       repoDir = workspace / repo.owner / repo.repo
       _ <- io.mkdirs(repoDir)
-      forkedRepo = GithubRepo(github.myLogin, repo.repo)
-      _ <- git.clone(forkedRepo.gitUrl, repoDir, workspace)
+      forkRepo = GithubRepo(github.myLogin, repo.repo)
+      forkUrl <- github.httpsUrl(forkRepo)
+      _ <- git.clone(forkUrl, repoDir, workspace)
+      _ <- git.setUserSteward(repoDir)
       _ <- updateDependencies(repoDir, repo)
     } yield ()
 
@@ -60,12 +62,11 @@ object steward extends IOApp {
         DependencyUpdate("org.scala-js", "sbt-scalajs", "0.6.11", NonEmptyList.of("0.6.25"))
       )
       _ <- io.printInfo(
-        s"Found ${updates.size} update(s):\n" + updates.map(u => s"   $u\n").mkString
-      )
-      _ <- updates.traverse_(updateDependency(_, repoDir))
+        s"Found ${updates.size} update(s):\n" + updates.map(u => s"   $u\n").mkString)
+      _ <- updates.traverse_(updateDependency(_, repoDir, repo))
     } yield ()
 
-  def updateDependency(update: DependencyUpdate, repoDir: File): IO[Unit] = {
+  def updateDependency(update: DependencyUpdate, repoDir: File, repo: GithubRepo): IO[Unit] = {
     val updateBranch = git.branchName(update)
     io.printInfo(s"Appying $update") >>
       git.remoteBranchExists(updateBranch, repoDir).flatMap {
@@ -74,11 +75,12 @@ object steward extends IOApp {
           io.updateDir(repoDir, update) >> git.containsChanges(repoDir).flatMap {
             case false => io.printInfo(s"I don't know how to update ${update.artifactId}")
             case true =>
-              git.returnToCurrentBranch(repoDir) { _ =>
+              git.returnToCurrentBranch(repoDir) { baseBranch =>
                 for {
                   _ <- git.createBranch(updateBranch, repoDir)
                   _ <- git.commitAll(git.commitMsg(update), repoDir)
-                  _ <- git.exec(List("push"), repoDir)
+                  _ <- git.push(repoDir)
+                  _ <- github.createPullRequest(repo, update, updateBranch, baseBranch)
                 } yield ()
               }
           }

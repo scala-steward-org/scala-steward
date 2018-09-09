@@ -31,10 +31,7 @@ object git {
     exec(List("clone", url, dir.pathAsString), workspace)
 
   def commitAll(message: String, dir: File): IO[List[String]] =
-    exec(
-      List("commit", "--all", "-m", message, "--author=Scala steward <scala-steward@timepit.eu>"),
-      dir
-    )
+    exec(List("commit", "--all", "-m", message), dir)
 
   def commitMsg(update: DependencyUpdate): String =
     s"Update ${update.artifactId} to ${update.nextVersion}"
@@ -51,9 +48,24 @@ object git {
   def exec(cmd: List[String], dir: File): IO[List[String]] =
     io.exec("git" :: cmd, dir)
 
+  def push(dir: File): IO[List[String]] =
+    exec(List("push"), dir)
+
   def remoteBranchExists(branch: String, dir: File): IO[Boolean] =
     git.exec(List("branch", "-r"), dir).map(_.exists(_.contains(branch)))
 
   def returnToCurrentBranch[B](dir: File)(use: String => IO[B]): IO[B] =
     currentBranch(dir).bracket(use)(checkoutBranch(_, dir).void)
+
+  def setUser(name: String, email: String, dir: File): IO[Unit] =
+    (setUserName(name, dir) *> setUserEmail(email, dir)).void
+
+  def setUserEmail(email: String, dir: File): IO[List[String]] =
+    exec(List("config", "user.email", email), dir)
+
+  def setUserName(name: String, dir: File): IO[List[String]] =
+    exec(List("config", "user.name", name), dir)
+
+  def setUserSteward(dir: File): IO[Unit] =
+    setUser("Scala steward", "scala-steward@timepit.eu", dir)
 }
