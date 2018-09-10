@@ -1,4 +1,5 @@
 addSbtPlugin("com.dwijnand" % "sbt-travisci" % "1.1.1")
+addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.7")
 addSbtPlugin("com.geirsson" % "sbt-scalafmt" % "1.6.0-RC4")
 addSbtPlugin("de.heikoseeberger" % "sbt-header" % "5.0.0")
 addSbtPlugin("io.github.davidgregory084" % "sbt-tpolecat" % "0.1.4")

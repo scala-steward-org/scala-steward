@@ -54,7 +54,7 @@ object steward extends IOApp {
   def stewardRepo(repo: GithubRepo, workspace: File): IO[Unit] =
     for {
       localRepo <- cloneAndUpdate(repo, workspace)
-      _ <- updateDependencies(localRepo.dir, repo)
+      _ <- updateDependencies(localRepo)
       _ <- io.deleteForce(localRepo.dir)
     } yield ()
 
@@ -78,21 +78,22 @@ object steward extends IOApp {
       _ <- git.push(repoDir)
     } yield LocalRepo(repo, repoDir)
 
-  def updateDependencies(repoDir: File, repo: GithubRepo): IO[Unit] =
+  def updateDependencies(localRepo: LocalRepo): IO[Unit] =
     for {
-      _ <- io.printInfo(s"Check updates for ${repo.show}")
-      updates <- sbt.allUpdates(repoDir)
+      _ <- io.printInfo(s"Check updates for ${localRepo.upstream.show}")
+      updates <- sbt.allUpdates(localRepo.dir)
       /*updates = List(
         DependencyUpdate("org.scala-js", "sbt-scalajs", "0.6.11", NonEmptyList.of("0.6.25"))
       )*/
       _ <- io.printInfo(
         s"Found ${updates.size} update(s):\n" + updates.map(u => s"   $u\n").mkString
       )
-      _ <- updates.traverse_(updateDependency(_, repoDir, repo))
+      _ <- updates.traverse_(updateDependency(_, localRepo))
     } yield ()
 
-  def updateDependency(update: DependencyUpdate, repoDir: File, repo: GithubRepo): IO[Unit] = {
-    val updateBranch = git.branchName(update)
+  def updateDependency(update: DependencyUpdate, localRepo: LocalRepo): IO[Unit] = {
+    val repoDir = localRepo.dir
+    val updateBranch = git.branchOf(update)
     io.printInfo(s"Appying $update") >>
       git.remoteBranchExists(updateBranch, repoDir).flatMap {
         case true =>
@@ -104,12 +105,13 @@ object steward extends IOApp {
             case true =>
               git.returnToCurrentBranch(repoDir) { baseBranch =>
                 for {
-                  _ <- io.printInfo(s"Creating branch $updateBranch.")
+                  _ <- io.printInfo(s"Create branch ${updateBranch.name}")
                   _ <- git.createBranch(updateBranch, repoDir)
                   _ <- git.commitAll(git.commitMsg(update), repoDir)
                   _ <- git.push(repoDir)
-                  _ <- io.printInfo(s"Creating pull request at $repo.")
-                  _ <- github.createPullRequest(repo, update, updateBranch, baseBranch)
+                  _ <- io.printInfo(s"Create pull request at ${localRepo.upstream.show}")
+                  _ <- github
+                    .createPullRequest(localRepo.upstream, update, updateBranch, baseBranch)
                 } yield ()
               }
           }

@@ -29,8 +29,8 @@ object github {
   def createPullRequest(
       repo: GithubRepo,
       update: DependencyUpdate,
-      updateBranch: String,
-      baseBranch: String
+      updateBranch: Branch,
+      baseBranch: Branch
   ): IO[List[String]] =
     accessToken.flatMap { token =>
       io.exec(
@@ -46,8 +46,8 @@ object github {
           s"""{
              |  "title": "${git.commitMsg(update)}",
              |  "body": "This tries to update ${update.groupId}:${update.artifactId} to ${update.nextVersion}.",
-             |  "head": "$myLogin:$updateBranch",
-             |  "base": "$baseBranch"
+             |  "head": "$myLogin:${updateBranch.name}",
+             |  "base": "${baseBranch.name}"
              |}
            """.stripMargin.trim,
           s"https://api.github.com/repos/${repo.owner}/${repo.repo}/pulls"
@@ -55,6 +55,16 @@ object github {
         File.currentWorkingDirectory
       )
     }
+
+  // ???
+  def fetchUpstream(localRepo: LocalRepo): IO[Unit] = {
+    val name = "upstream"
+    val url = httpsUrl(localRepo.upstream)
+    for {
+      _ <- git.exec(List("remote", "add", name, url), localRepo.dir)
+      _ <- git.exec(List("fetch", name), localRepo.dir)
+    } yield ()
+  }
 
   def fork(repo: GithubRepo): IO[List[String]] =
     accessToken.flatMap { token =>
