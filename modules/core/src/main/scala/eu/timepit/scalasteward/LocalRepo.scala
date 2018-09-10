@@ -15,7 +15,9 @@
  */
 
 package eu.timepit.scalasteward
+import better.files.File
 
-final case class GithubRepo(owner: String, repo: String) {
-  def show: String = s"$owner:$repo"
-}
+final case class LocalRepo(
+    upstream: GithubRepo,
+    dir: File
+)

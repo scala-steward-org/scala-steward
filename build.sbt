@@ -6,6 +6,7 @@ import sbtcrossproject.Platform
 
 val groupId = "eu.timepit"
 val projectName = "scala-steward"
+val rootPkg = s"$groupId.${projectName.replace("-", "")}"
 val gitHubOwner = "fthomas"
 
 val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
@@ -106,6 +107,7 @@ addCommandsAlias(
     "doc",
     "readme/tut",
     "package",
-    "packageSrc"
+    "packageSrc",
+    "core/assembly"
   )
 )

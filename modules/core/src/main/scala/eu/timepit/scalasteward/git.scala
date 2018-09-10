@@ -21,11 +21,11 @@ import cats.effect.IO
 import cats.implicits._
 
 object git {
-  def branchName(update: DependencyUpdate): String =
-    s"update/${update.artifactId}-${update.nextVersion}"
+  def branchOf(update: DependencyUpdate): Branch =
+    Branch(s"update/${update.artifactId}-${update.nextVersion}")
 
-  def checkoutBranch(branch: String, dir: File): IO[List[String]] =
-    exec(List("checkout", branch), dir)
+  def checkoutBranch(branch: Branch, dir: File): IO[List[String]] =
+    exec(List("checkout", branch.name), dir)
 
   def clone(url: String, dir: File, workspace: File): IO[List[String]] =
     exec(List("clone", url, dir.pathAsString), workspace)
@@ -39,11 +39,11 @@ object git {
   def containsChanges(dir: File): IO[Boolean] =
     exec(List("status", "--porcelain"), dir).map(_.nonEmpty)
 
-  def createBranch(branch: String, dir: File): IO[List[String]] =
-    exec(List("checkout", "-b", branch), dir)
+  def createBranch(branch: Branch, dir: File): IO[List[String]] =
+    exec(List("checkout", "-b", branch.name), dir)
 
-  def currentBranch(dir: File): IO[String] =
-    exec(List("rev-parse", "--abbrev-ref", "HEAD"), dir).map(_.mkString.trim)
+  def currentBranch(dir: File): IO[Branch] =
+    exec(List("rev-parse", "--abbrev-ref", "HEAD"), dir).map(lines => Branch(lines.mkString.trim))
 
   def exec(cmd: List[String], dir: File): IO[List[String]] =
     io.exec("git" :: cmd, dir)
@@ -51,14 +51,17 @@ object git {
   def push(dir: File): IO[List[String]] =
     exec(List("push"), dir)
 
-  def remoteBranchExists(branch: String, dir: File): IO[Boolean] =
-    git.exec(List("branch", "-r"), dir).map(_.exists(_.contains(branch)))
+  def remoteBranchExists(branch: Branch, dir: File): IO[Boolean] =
+    git.exec(List("branch", "-r"), dir).map(_.exists(_.contains(branch.name)))
 
-  def returnToCurrentBranch[B](dir: File)(use: String => IO[B]): IO[B] =
+  def returnToCurrentBranch[B](dir: File)(use: Branch => IO[B]): IO[B] =
     currentBranch(dir).bracket(use)(checkoutBranch(_, dir).void)
 
-  def setUser(name: String, email: String, dir: File): IO[Unit] =
-    (setUserName(name, dir) *> setUserEmail(email, dir)).void
+  def setUser(name: String, email: String, dir: File): IO[List[String]] =
+    for {
+      out1 <- setUserName(name, dir)
+      out2 <- setUserEmail(email, dir)
+    } yield out1 ++ out2
 
   def setUserEmail(email: String, dir: File): IO[List[String]] =
     exec(List("config", "user.email", email), dir)
@@ -66,6 +69,6 @@ object git {
   def setUserName(name: String, dir: File): IO[List[String]] =
     exec(List("config", "user.name", name), dir)
 
-  def setUserSteward(dir: File): IO[Unit] =
+  def setUserSteward(dir: File): IO[List[String]] =
     setUser("Scala steward", "scala-steward@timepit.eu", dir)
 }

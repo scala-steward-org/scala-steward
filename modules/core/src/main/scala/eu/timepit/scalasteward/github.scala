@@ -29,8 +29,8 @@ object github {
   def createPullRequest(
       repo: GithubRepo,
       update: DependencyUpdate,
-      updateBranch: String,
-      baseBranch: String
+      updateBranch: Branch,
+      baseBranch: Branch
   ): IO[List[String]] =
     accessToken.flatMap { token =>
       io.exec(
@@ -45,9 +45,9 @@ object github {
           "--data",
           s"""{
              |  "title": "${git.commitMsg(update)}",
-             |  "body": "This tries to update ${update.groupId}:${update.artifactId} to ${update.nextVersion}.",
-             |  "head": "$myLogin:$updateBranch",
-             |  "base": "$baseBranch"
+             |  "body": "This tries to update ${update.groupId}:${update.artifactId} from ${update.currentVersion} to ${update.nextVersion}.",
+             |  "head": "$myLogin:${updateBranch.name}",
+             |  "base": "${baseBranch.name}"
              |}
            """.stripMargin.trim,
           s"https://api.github.com/repos/${repo.owner}/${repo.repo}/pulls"
@@ -55,6 +55,14 @@ object github {
         File.currentWorkingDirectory
       )
     }
+
+  def fetchUpstream(repo: GithubRepo, dir: File): IO[Unit] = {
+    val name = "upstream"
+    for {
+      _ <- git.exec(List("remote", "add", name, httpsUrl(repo)), dir)
+      _ <- git.exec(List("fetch", name), dir)
+    } yield ()
+  }
 
   def fork(repo: GithubRepo): IO[List[String]] =
     accessToken.flatMap { token =>
@@ -71,6 +79,9 @@ object github {
       )
     }
 
-  def httpsUrl(repo: GithubRepo): IO[String] =
+  def httpsUrl(repo: GithubRepo): String =
+    s"https://github.com/${repo.owner}/${repo.repo}.git"
+
+  def httpsUrlWithCredentials(repo: GithubRepo): IO[String] =
     accessToken.map(token => s"https://$myLogin:$token@github.com/${repo.owner}/${repo.repo}.git")
 }

@@ -29,14 +29,17 @@ final case class DependencyUpdate(
     newerVersions.head
 
   def replaceAllIn(str: String): Option[String] = {
-    val regex = s"($artifactId.*?)$currentVersion".r
+    val regex = s"(?i)(${artifactId.replace("-", ".?")}.*?)$currentVersion".r
     var updated = false
     val result = regex.replaceAllIn(str, m => {
       updated = true
       m.group(1) + nextVersion
     })
-    Some(result).filter(_ => updated)
+    if (updated) Some(result) else None
   }
+
+  def show: String =
+    s"$groupId:$artifactId : ${(currentVersion :: newerVersions).mkString_("", " -> ", "")}"
 }
 
 object DependencyUpdate {
