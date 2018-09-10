@@ -1,5 +1,6 @@
 #!/bin/sh
 
+export PATH="/opt/jre/current/bin:$PATH"
 SCRIPT=$(readlink -f "$0")
 STEWARD_DIR=$(dirname "$SCRIPT")/..
 cd "$STEWARD_DIR"
