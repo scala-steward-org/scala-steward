@@ -55,6 +55,7 @@ object steward extends IOApp {
     for {
       localRepo <- cloneAndUpdate(repo, workspace)
       _ <- updateDependencies(localRepo.dir, repo)
+      _ <- io.deleteForce(localRepo.dir)
     } yield ()
 
   def cloneAndUpdate(repo: GithubRepo, workspace: File): IO[LocalRepo] =
