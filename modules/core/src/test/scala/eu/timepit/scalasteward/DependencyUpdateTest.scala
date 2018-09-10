@@ -8,7 +8,7 @@ class DependencyUpdateTest extends FunSuite with Matchers {
   test("fromString: 1 update") {
     val str = "org.scala-js:sbt-scalajs : 0.6.24 -> 0.6.25"
     DependencyUpdate.fromString(str) shouldBe Right(
-      DependencyUpdate("org.scala-js", "sbt-scalajs", "0.6.24", Nel.one("0.6.25"))
+      DependencyUpdate("org.scala-js", "sbt-scalajs", "0.6.24", Nel.of("0.6.25"))
     )
   }
 
@@ -64,7 +64,7 @@ class DependencyUpdateTest extends FunSuite with Matchers {
         |addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.25")
         |addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.4.0")
       """.stripMargin.trim
-    DependencyUpdate("org.scala-js", "sbt-scalajs", "0.6.24", Nel.one("0.6.25"))
+    DependencyUpdate("org.scala-js", "sbt-scalajs", "0.6.24", Nel.of("0.6.25"))
       .replaceAllIn(orig) shouldBe Some(expected)
   }
 
@@ -74,7 +74,14 @@ class DependencyUpdateTest extends FunSuite with Matchers {
         |addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.23")
         |addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.4.0")
       """.stripMargin.trim
-    DependencyUpdate("org.scala-js", "sbt-scalajs", "0.6.24", Nel.one("0.6.25"))
+    DependencyUpdate("org.scala-js", "sbt-scalajs", "0.6.24", Nel.of("0.6.25"))
       .replaceAllIn(orig) shouldBe None
+  }
+
+  test("replaceAllIn: ignore hyphen") {
+    val orig = """val scalajsJqueryVersion = "0.9.3""""
+    val expected = """val scalajsJqueryVersion = "0.9.4""""
+    DependencyUpdate("be.doeraene", "scalajs-jquery", "0.9.3", Nel.of("0.9.4"))
+      .replaceAllIn(orig) shouldBe Some(expected)
   }
 }
