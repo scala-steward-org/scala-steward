@@ -45,7 +45,7 @@ object github {
           "--data",
           s"""{
              |  "title": "${git.commitMsg(update)}",
-             |  "body": "This tries to update ${update.groupId}:${update.artifactId} to ${update.nextVersion}.",
+             |  "body": "This tries to update ${update.groupId}:${update.artifactId} from ${update.currentVersion} to ${update.nextVersion}.",
              |  "head": "$myLogin:${updateBranch.name}",
              |  "base": "${baseBranch.name}"
              |}

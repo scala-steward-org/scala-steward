@@ -94,10 +94,10 @@ object steward extends IOApp {
   def updateDependency(update: DependencyUpdate, localRepo: LocalRepo): IO[Unit] = {
     val repoDir = localRepo.dir
     val updateBranch = git.branchOf(update)
-    io.printInfo(s"Appying $update") >>
+    io.printInfo(s"Applying $update") >>
       git.remoteBranchExists(updateBranch, repoDir).flatMap {
         case true =>
-          io.printInfo(s"Branch $updateBranch already exists")
+          io.printInfo(s"Branch ${updateBranch.name} already exists")
         // TODO: Update branch with latest changes
         case false =>
           io.updateDir(repoDir, update) >> git.containsChanges(repoDir).flatMap {
