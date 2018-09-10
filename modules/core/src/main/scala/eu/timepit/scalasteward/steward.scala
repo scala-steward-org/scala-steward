@@ -23,21 +23,9 @@ import cats.implicits._
 object steward extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
     val workspace = File.home / "code/scala-steward/workspace"
-    // https://pixabay.com/en/robot-flower-technology-future-1214536/
-    // https://raw.githubusercontent.com/wiki/fthomas/scala-steward/repos.md
-    val repos = List(
-      GithubRepo("fthomas", "crjdt"),
-      GithubRepo("fthomas", "datapackage"),
-      GithubRepo("fthomas", "fs2-cron"),
-      GithubRepo("fthomas", "kartograffel"),
-      GithubRepo("fthomas", "properly"),
-      GithubRepo("fthomas", "refined-sjs-example"),
-      GithubRepo("fthomas", "scala-steward"),
-      GithubRepo("fthomas", "status-page")
-    )
-
     for {
       _ <- prepareEnv(workspace)
+      repos <- getRepos(workspace)
       _ <- repos.traverse_(stewardRepo(_, workspace))
     } yield ExitCode.Success
   }
@@ -50,6 +38,17 @@ object steward extends IOApp {
       _ <- io.deleteForce(workspace)
       _ <- io.mkdirs(workspace)
     } yield ()
+
+  def getRepos(workspace: File): IO[List[GithubRepo]] = {
+    val url = "https://raw.githubusercontent.com/fthomas/scala-steward/master/repos.md"
+    val repo = """-\s+(.+)/(.+)""".r
+
+    io.exec(List("curl", url), workspace).map {
+      _.collect {
+        case repo(owner, name) => GithubRepo(owner, name)
+      }
+    }
+  }
 
   def stewardRepo(repo: GithubRepo, workspace: File): IO[Unit] =
     for {
@@ -72,8 +71,8 @@ object steward extends IOApp {
       _ <- git.setUserSteward(repoDir)
       _ <- github.fetchUpstream(repo, repoDir)
       // TODO: Determine the current default branch
-      defaultBranch = "master"
-      _ <- git.exec(List("merge", s"upstream/$defaultBranch"), repoDir)
+      defaultBranch <- git.currentBranch(repoDir)
+      _ <- git.exec(List("merge", s"upstream/${defaultBranch.name}"), repoDir)
       _ <- git.push(repoDir)
     } yield LocalRepo(repo, repoDir)
 
@@ -81,11 +80,8 @@ object steward extends IOApp {
     for {
       _ <- io.printInfo(s"Check updates for ${localRepo.upstream.show}")
       updates <- sbt.allUpdates(localRepo.dir)
-      /*updates = List(
-        DependencyUpdate("org.scala-js", "sbt-scalajs", "0.6.11", NonEmptyList.of("0.6.25"))
-      )*/
       _ <- io.printInfo(
-        s"Found ${updates.size} update(s):\n" + updates.map(u => s"   $u\n").mkString
+        s"Found ${updates.size} update(s):\n" + updates.map(u => s"   ${u.show}\n").mkString
       )
       _ <- updates.traverse_(updateDependency(_, localRepo))
     } yield ()
@@ -93,7 +89,7 @@ object steward extends IOApp {
   def updateDependency(update: DependencyUpdate, localRepo: LocalRepo): IO[Unit] = {
     val repoDir = localRepo.dir
     val updateBranch = git.branchOf(update)
-    io.printInfo(s"Applying $update") >>
+    io.printInfo(s"Applying ${update.show}") >>
       git.remoteBranchExists(updateBranch, repoDir).flatMap {
         case true =>
           io.printInfo(s"Branch ${updateBranch.name} already exists")

@@ -37,6 +37,9 @@ final case class DependencyUpdate(
     })
     if (updated) Some(result) else None
   }
+
+  def show: String =
+    s"$groupId:$artifactId : ${(currentVersion :: newerVersions).mkString_("", " -> ", "")}"
 }
 
 object DependencyUpdate {
