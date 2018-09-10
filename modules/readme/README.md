@@ -3,10 +3,27 @@
 [![codecov](https://codecov.io/gh/fthomas/scala-steward/branch/master/graph/badge.svg)](https://codecov.io/gh/fthomas/scala-steward)
 [![Join the chat at https://gitter.im/fthomas/scala-steward](https://badges.gitter.im/fthomas/scala-steward.svg)](https://gitter.im/fthomas/scala-steward?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-https://pixabay.com/en/robot-flower-technology-future-1214536/
+**scala-steward** is a simple robot that helps you keeping library and plugin
+dependencies up-to-date.
+
+## Quick start guide
+
+Open a pull request that adds the repo of your Scala project to
+[repos.md](https://github.com/fthomas/scala-steward/edit/master/repos.md).
+Once the PR is merged, [@scala-steward][@scala-steward] will check every
+three hours for updates of libraries and plugins in your project and will open
+a PR against your repo if it can figure out where the version number can be
+updated.
 
 ## License
 
 **scala-steward** is licensed under the Apache License, Version 2.0, available at
 http://www.apache.org/licenses/LICENSE-2.0 and also in the
 [LICENSE](https://github.com/fthomas/status-page/blob/master/LICENSE) file.
+
+## Credit
+
+The profile picture of [@scala-steward][@scala-steward] was taken from
+https://pixabay.com/en/robot-flower-technology-future-1214536/
+
+@scala-steward: https://github.com/scala-steward
