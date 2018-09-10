@@ -23,10 +23,15 @@ import cats.implicits._
 object steward extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
     val workspace = File.home / "code/scala-steward/workspace"
+    // https://pixabay.com/en/robot-flower-technology-future-1214536/
+    // https://raw.githubusercontent.com/wiki/fthomas/scala-steward/repos.md
     val repos = List(
+      GithubRepo("fthomas", "crjdt"),
       GithubRepo("fthomas", "datapackage"),
       GithubRepo("fthomas", "fs2-cron"),
       GithubRepo("fthomas", "kartograffel"),
+      GithubRepo("fthomas", "properly"),
+      GithubRepo("fthomas", "refined-sjs-example"),
       GithubRepo("fthomas", "scala-steward"),
       GithubRepo("fthomas", "status-page")
     )
@@ -89,7 +94,9 @@ object steward extends IOApp {
     val updateBranch = git.branchName(update)
     io.printInfo(s"Appying $update") >>
       git.remoteBranchExists(updateBranch, repoDir).flatMap {
-        case true => io.printInfo(s"Branch $updateBranch already exists")
+        case true =>
+          io.printInfo(s"Branch $updateBranch already exists")
+        // TODO: Update branch with latest changes
         case false =>
           io.updateDir(repoDir, update) >> git.containsChanges(repoDir).flatMap {
             case false => io.printInfo(s"I don't know how to update ${update.artifactId}")
