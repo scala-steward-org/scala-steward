@@ -56,13 +56,11 @@ object github {
       )
     }
 
-  // ???
-  def fetchUpstream(localRepo: LocalRepo): IO[Unit] = {
+  def fetchUpstream(repo: GithubRepo, dir: File): IO[Unit] = {
     val name = "upstream"
-    val url = httpsUrl(localRepo.upstream)
     for {
-      _ <- git.exec(List("remote", "add", name, url), localRepo.dir)
-      _ <- git.exec(List("fetch", name), localRepo.dir)
+      _ <- git.exec(List("remote", "add", name, httpsUrl(repo)), dir)
+      _ <- git.exec(List("fetch", name), dir)
     } yield ()
   }
 

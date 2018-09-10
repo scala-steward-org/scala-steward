@@ -57,8 +57,11 @@ object git {
   def returnToCurrentBranch[B](dir: File)(use: Branch => IO[B]): IO[B] =
     currentBranch(dir).bracket(use)(checkoutBranch(_, dir).void)
 
-  def setUser(name: String, email: String, dir: File): IO[Unit] =
-    (setUserName(name, dir) >> setUserEmail(email, dir)).void
+  def setUser(name: String, email: String, dir: File): IO[List[String]] =
+    for {
+      out1 <- setUserName(name, dir)
+      out2 <- setUserEmail(email, dir)
+    } yield out1 ++ out2
 
   def setUserEmail(email: String, dir: File): IO[List[String]] =
     exec(List("config", "user.email", email), dir)
@@ -66,6 +69,6 @@ object git {
   def setUserName(name: String, dir: File): IO[List[String]] =
     exec(List("config", "user.name", name), dir)
 
-  def setUserSteward(dir: File): IO[Unit] =
+  def setUserSteward(dir: File): IO[List[String]] =
     setUser("Scala steward", "scala-steward@timepit.eu", dir)
 }

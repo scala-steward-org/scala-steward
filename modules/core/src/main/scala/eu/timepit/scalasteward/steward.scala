@@ -70,8 +70,7 @@ object steward extends IOApp {
       forkUrl <- github.httpsUrlWithCredentials(forkRepo)
       _ <- git.clone(forkUrl, repoDir, workspace)
       _ <- git.setUserSteward(repoDir)
-      _ <- git.exec(List("remote", "add", "upstream", github.httpsUrl(repo)), repoDir)
-      _ <- git.exec(List("fetch", "upstream"), repoDir)
+      _ <- github.fetchUpstream(repo, repoDir)
       // TODO: Determine the current default branch
       defaultBranch = "master"
       _ <- git.exec(List("merge", s"upstream/$defaultBranch"), repoDir)
