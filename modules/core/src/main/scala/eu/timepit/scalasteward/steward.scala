@@ -51,6 +51,7 @@ object steward extends IOApp {
   }
 
   def stewardRepo(repo: GithubRepo, workspace: File): IO[Unit] =
+    // TODO: Make this fail-safe.
     for {
       localRepo <- cloneAndUpdate(repo, workspace)
       _ <- updateDependencies(localRepo)
@@ -79,6 +80,7 @@ object steward extends IOApp {
   def updateDependencies(localRepo: LocalRepo): IO[Unit] =
     for {
       _ <- io.printInfo(s"Check updates for ${localRepo.upstream.show}")
+      // TODO: Run this in a sandbox
       updates <- sbt.allUpdates(localRepo.dir)
       _ <- io.printInfo(
         s"Found ${updates.size} update(s):\n" + updates.map(u => s"   ${u.show}\n").mkString
