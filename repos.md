@@ -1,0 +1,9 @@
+- fthomas/crjdt
+- fthomas/datapackage
+- fthomas/fs2-cron
+- fthomas/kartograffel
+- fthomas/kmeans
+- fthomas/properly
+- fthomas/refined-sjs-example
+- fthomas/scala-steward
+- fthomas/status-page
