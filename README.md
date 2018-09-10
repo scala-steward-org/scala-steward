@@ -26,4 +26,4 @@ http://www.apache.org/licenses/LICENSE-2.0 and also in the
 The profile picture of [@scala-steward][@scala-steward] was taken from
 https://pixabay.com/en/robot-flower-technology-future-1214536/
 
-@scala-steward: https://github.com/scala-steward
+[@scala-steward]: https://github.com/scala-steward
