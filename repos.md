@@ -9,3 +9,4 @@
 - fthomas/singleton-ops
 - fthomas/status-page
 - vectos/formulation
+- pdalpra/gh4s
