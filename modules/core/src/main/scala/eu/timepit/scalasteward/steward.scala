@@ -72,10 +72,10 @@ object steward extends IOApp {
       _ <- git.setUserSteward(repoDir)
       _ <- github.fetchUpstream(repo, repoDir)
       // TODO: Determine the current default branch
-      defaultBranch <- git.currentBranch(repoDir)
-      _ <- git.exec(List("merge", s"upstream/${defaultBranch.name}"), repoDir)
-      _ <- git.push(defaultBranch, repoDir)
-    } yield LocalRepo(repo, repoDir)
+      baseBranch <- git.currentBranch(repoDir)
+      _ <- git.exec(List("merge", s"upstream/${baseBranch.name}"), repoDir)
+      _ <- git.push(baseBranch, repoDir)
+    } yield LocalRepo(repo, repoDir, baseBranch)
 
   def updateDependencies(localRepo: LocalRepo): IO[Unit] =
     for {
@@ -91,9 +91,7 @@ object steward extends IOApp {
     val updateBranch = git.branchOf(update)
     log.printInfo(s"Applying ${update.show}") >>
       git.remoteBranchExists(updateBranch, repoDir).flatMap {
-        case true =>
-          log.printInfo(s"Branch ${updateBranch.name} already exists")
-        // TODO: Update branch with latest changes
+        case true => resetAndUpdate(update, updateBranch, localRepo)
         case false =>
           io.updateDir(repoDir, update) >> git.containsChanges(repoDir).flatMap {
             case false => log.printInfo(s"I don't know how to update ${update.artifactId}")
@@ -112,4 +110,24 @@ object steward extends IOApp {
           }
       }
   }
+
+  def resetAndUpdate(
+      update: DependencyUpdate,
+      updateBranch: Branch,
+      localRepo: LocalRepo
+  ): IO[Unit] =
+    for {
+      _ <- git.checkoutBranch(updateBranch, localRepo.dir)
+      isMerged <- git.isMerged(updateBranch, localRepo.dir)
+      isBehind <- git.isBehind(updateBranch, localRepo.baseBranch, localRepo.dir)
+      _ <- if (!isMerged && isBehind)
+        for {
+          _ <- log.printInfo(s"Reset and update branch ${updateBranch.name}")
+          _ <- git.exec(List("reset", "--hard", localRepo.baseBranch.name), localRepo.dir)
+          _ <- io.updateDir(localRepo.dir, update)
+          _ <- git.commitAll(git.commitMsg(update), localRepo.dir)
+          _ <- git.push(updateBranch, localRepo.dir)
+        } yield ()
+      else IO.unit
+    } yield ()
 }

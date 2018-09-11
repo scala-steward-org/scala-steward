@@ -48,8 +48,15 @@ object git {
   def exec(cmd: List[String], dir: File): IO[List[String]] =
     io.exec("git" :: cmd, dir)
 
+  def isBehind(branch: Branch, compare: Branch, dir: File): IO[Boolean] =
+    exec(List("log", "--pretty=format:'%h'", s"${branch.name}..${compare.name}"), dir)
+      .map(_.nonEmpty)
+
+  def isMerged(branch: Branch, dir: File): IO[Boolean] =
+    exec(List("branch", "--contains", branch.name), dir).map(_.size >= 2)
+
   def push(branch: Branch, dir: File): IO[List[String]] =
-    exec(List("push", "--set-upstream", "origin", branch.name), dir)
+    exec(List("push", "--force", "--set-upstream", "origin", branch.name), dir)
 
   def remoteBranchExists(branch: Branch, dir: File): IO[Boolean] =
     git.exec(List("branch", "-r"), dir).map(_.exists(_.contains(branch.name)))
