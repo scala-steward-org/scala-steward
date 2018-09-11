@@ -69,13 +69,12 @@ object steward extends IOApp {
       forkRepo = GithubRepo(github.myLogin, forkName)
       forkUrl <- github.httpsUrlWithCredentials(forkRepo)
       _ <- git.clone(forkUrl, repoDir, workspace)
-      _ <- git.exec(List("config", "push.default", "matching"), repoDir)
       _ <- git.setUserSteward(repoDir)
       _ <- github.fetchUpstream(repo, repoDir)
       // TODO: Determine the current default branch
       defaultBranch <- git.currentBranch(repoDir)
       _ <- git.exec(List("merge", s"upstream/${defaultBranch.name}"), repoDir)
-      _ <- git.push(repoDir)
+      _ <- git.push(defaultBranch, repoDir)
     } yield LocalRepo(repo, repoDir)
 
   def updateDependencies(localRepo: LocalRepo): IO[Unit] =
@@ -104,7 +103,7 @@ object steward extends IOApp {
                   _ <- log.printInfo(s"Create branch ${updateBranch.name}")
                   _ <- git.createBranch(updateBranch, repoDir)
                   _ <- git.commitAll(git.commitMsg(update), repoDir)
-                  _ <- git.push(repoDir)
+                  _ <- git.push(updateBranch, repoDir)
                   _ <- log.printInfo(s"Create pull request at ${localRepo.upstream.show}")
                   _ <- github
                     .createPullRequest(localRepo.upstream, update, updateBranch, baseBranch)
