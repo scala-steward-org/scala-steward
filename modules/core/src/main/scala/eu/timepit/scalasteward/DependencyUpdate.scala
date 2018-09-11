@@ -29,11 +29,18 @@ final case class DependencyUpdate(
     newerVersions.head
 
   def replaceAllIn(str: String): Option[String] = {
-    val keyword0 = artifactId
-      .replaceAll("-core$", "")
-      .replace("-", ".?")
-    val keyword1 = if (keyword0.nonEmpty) keyword0 else artifactId
-    val regex = s"(?i)($keyword1.*?)$currentVersion".r
+    def normalize(searchTerm: String): String =
+      searchTerm
+        .replaceAll("-core$", "")
+        .replace("-", ".?")
+
+    // TODO: Use this for commit messages and branch names
+    val searchTerm = normalize(artifactId match {
+      case "core" => groupId.split('.').lastOption.getOrElse(groupId)
+      case str    => str
+    })
+
+    val regex = s"(?i)($searchTerm.*?)$currentVersion".r
     var updated = false
     val result = regex.replaceAllIn(str, m => {
       updated = true
