@@ -7,3 +7,4 @@
 - fthomas/scala-steward
 - fthomas/singleton-ops
 - fthomas/status-page
+- vectos/formulation
