@@ -29,7 +29,11 @@ final case class DependencyUpdate(
     newerVersions.head
 
   def replaceAllIn(str: String): Option[String] = {
-    val regex = s"(?i)(${artifactId.replace("-", ".?")}.*?)$currentVersion".r
+    val keyword0 = artifactId
+      .replaceAll("-core$", "")
+      .replace("-", ".?")
+    val keyword1 = if (keyword0.nonEmpty) keyword0 else artifactId
+    val regex = s"(?i)($keyword1.*?)$currentVersion".r
     var updated = false
     val result = regex.replaceAllIn(str, m => {
       updated = true

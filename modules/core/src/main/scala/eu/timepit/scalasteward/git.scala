@@ -48,6 +48,7 @@ object git {
   def exec(cmd: List[String], dir: File): IO[List[String]] =
     io.exec("git" :: cmd, dir)
 
+  // git push --set-upstream origin update/sbt-travisci-1.1.3
   def push(dir: File): IO[List[String]] =
     exec(List("push"), dir)
 

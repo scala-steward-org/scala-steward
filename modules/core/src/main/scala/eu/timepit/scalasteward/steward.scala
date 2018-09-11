@@ -39,24 +39,24 @@ object steward extends IOApp {
       _ <- io.mkdirs(workspace)
     } yield ()
 
-  def getRepos(workspace: File): IO[List[GithubRepo]] = {
-    val url = "https://raw.githubusercontent.com/fthomas/scala-steward/master/repos.md"
-    val repo = """-\s+(.+)/(.+)""".r
-
-    io.exec(List("curl", url), workspace).map {
-      _.collect {
-        case repo(owner, name) => GithubRepo(owner, name)
-      }
+  def getRepos(workspace: File): IO[List[GithubRepo]] =
+    IO {
+      val repo = """-\s+(.+)/(.+)""".r
+      val file = workspace / ".." / "repos.md"
+      file.lines.collect { case repo(owner, name) => GithubRepo(owner, name) }.toList
     }
-  }
 
-  def stewardRepo(repo: GithubRepo, workspace: File): IO[Unit] =
-    // TODO: Make this fail-safe.
-    for {
+  def stewardRepo(repo: GithubRepo, workspace: File): IO[Unit] = {
+    val p = for {
       localRepo <- cloneAndUpdate(repo, workspace)
       _ <- updateDependencies(localRepo)
       _ <- io.deleteForce(localRepo.dir)
     } yield ()
+    p.attempt.flatMap {
+      case Right(_) => IO.unit
+      case Left(t)  => IO(println(t))
+    }
+  }
 
   def cloneAndUpdate(repo: GithubRepo, workspace: File): IO[LocalRepo] =
     for {
@@ -82,11 +82,19 @@ object steward extends IOApp {
       _ <- io.printInfo(s"Check updates for ${localRepo.upstream.show}")
       // TODO: Run this in a sandbox
       updates <- sbt.allUpdates(localRepo.dir)
-      _ <- io.printInfo(
-        s"Found ${updates.size} update(s):\n" + updates.map(u => s"   ${u.show}\n").mkString
-      )
+      _ <- printUpdates(updates)
       _ <- updates.traverse_(updateDependency(_, localRepo))
     } yield ()
+
+  def printUpdates(updates: List[DependencyUpdate]): IO[Unit] = {
+    val list = updates.map(u => "  " + u.show).mkString("\n")
+    val msg = updates.size match {
+      case 0 => "Found 0 updates"
+      case 1 => s"Found 1 update:\n$list"
+      case n => s"Found $n updates:\n$list"
+    }
+    io.printInfo(msg)
+  }
 
   def updateDependency(update: DependencyUpdate, localRepo: LocalRepo): IO[Unit] = {
     val repoDir = localRepo.dir

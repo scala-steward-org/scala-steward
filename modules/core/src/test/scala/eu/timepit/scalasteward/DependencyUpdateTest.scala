@@ -84,4 +84,11 @@ class DependencyUpdateTest extends FunSuite with Matchers {
     DependencyUpdate("be.doeraene", "scalajs-jquery", "0.9.3", Nel.of("0.9.4"))
       .replaceAllIn(orig) shouldBe Some(expected)
   }
+
+  test("replaceAllInt: ignore '-core' suffix") {
+    val orig = """val specs2Version = "4.2.0""""
+    val expected = """val specs2Version = "4.3.4""""
+    DependencyUpdate("org.specs2", "specs2-core", "4.2.0", Nel.of("4.3.4"))
+      .replaceAllIn(orig) shouldBe Some(expected)
+  }
 }

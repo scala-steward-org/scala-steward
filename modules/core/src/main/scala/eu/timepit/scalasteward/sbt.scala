@@ -47,7 +47,10 @@ object sbt {
     List("sbt", "-no-colors")
 
   def toDependencyUpdates(lines: List[String]): List[DependencyUpdate] =
-    lines.flatMap { line =>
-      DependencyUpdate.fromString(line.replace("[info]", "").trim).toSeq
-    }
+    lines
+      .flatMap { line =>
+        DependencyUpdate.fromString(line.replace("[info]", "").trim).toSeq
+      }
+      .distinct
+      .sortBy(udate => (udate.groupId, udate.artifactId))
 }
