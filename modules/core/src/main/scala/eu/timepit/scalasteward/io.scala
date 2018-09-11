@@ -16,13 +16,12 @@
 
 package eu.timepit.scalasteward
 
+import java.io.IOException
+
 import better.files.File
 import cats.effect.IO
 import cats.implicits._
 import fs2.Stream
-import java.io.IOException
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 import scala.collection.mutable.ListBuffer
 import scala.sys.process.{Process, ProcessLogger}
@@ -50,12 +49,6 @@ object io {
 
   def mkdirs(dir: File): IO[Unit] =
     IO(dir.createDirectories()).void
-
-  val now: IO[String] =
-    IO(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
-
-  def printInfo(msg: String): IO[Unit] =
-    now.flatMap(dt => IO(println(s"[$dt] I: $msg")))
 
   def updateDir(dir: File, update: DependencyUpdate): IO[Unit] =
     walk(dir).filter(isSourceFile).evalMap(updateFile(_, update)).compile.drain

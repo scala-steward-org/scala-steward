@@ -32,9 +32,9 @@ object steward extends IOApp {
 
   def prepareEnv(workspace: File): IO[Unit] =
     for {
-      _ <- io.printInfo("Update global sbt plugins")
+      _ <- log.printInfo("Update global sbt plugins")
       _ <- sbt.addGlobalPlugins
-      _ <- io.printInfo(s"Clean workspace $workspace")
+      _ <- log.printInfo(s"Clean workspace $workspace")
       _ <- io.deleteForce(workspace)
       _ <- io.mkdirs(workspace)
     } yield ()
@@ -60,7 +60,7 @@ object steward extends IOApp {
 
   def cloneAndUpdate(repo: GithubRepo, workspace: File): IO[LocalRepo] =
     for {
-      _ <- io.printInfo(s"Clone and update ${repo.show}")
+      _ <- log.printInfo(s"Clone and update ${repo.show}")
       _ <- github.fork(repo) // This is a NOP if the fork already exists.
       repoDir = workspace / repo.owner / repo.repo
       _ <- io.mkdirs(repoDir)
@@ -69,6 +69,7 @@ object steward extends IOApp {
       forkRepo = GithubRepo(github.myLogin, forkName)
       forkUrl <- github.httpsUrlWithCredentials(forkRepo)
       _ <- git.clone(forkUrl, repoDir, workspace)
+      _ <- git.exec(List("config", "push.default", "matching"), repoDir)
       _ <- git.setUserSteward(repoDir)
       _ <- github.fetchUpstream(repo, repoDir)
       // TODO: Determine the current default branch
@@ -79,42 +80,32 @@ object steward extends IOApp {
 
   def updateDependencies(localRepo: LocalRepo): IO[Unit] =
     for {
-      _ <- io.printInfo(s"Check updates for ${localRepo.upstream.show}")
+      _ <- log.printInfo(s"Check updates for ${localRepo.upstream.show}")
       // TODO: Run this in a sandbox
       updates <- sbt.allUpdates(localRepo.dir)
-      _ <- printUpdates(updates)
+      _ <- log.printUpdates(updates)
       _ <- updates.traverse_(updateDependency(_, localRepo))
     } yield ()
-
-  def printUpdates(updates: List[DependencyUpdate]): IO[Unit] = {
-    val list = updates.map(u => "  " + u.show).mkString("\n")
-    val msg = updates.size match {
-      case 0 => "Found 0 updates"
-      case 1 => s"Found 1 update:\n$list"
-      case n => s"Found $n updates:\n$list"
-    }
-    io.printInfo(msg)
-  }
 
   def updateDependency(update: DependencyUpdate, localRepo: LocalRepo): IO[Unit] = {
     val repoDir = localRepo.dir
     val updateBranch = git.branchOf(update)
-    io.printInfo(s"Applying ${update.show}") >>
+    log.printInfo(s"Applying ${update.show}") >>
       git.remoteBranchExists(updateBranch, repoDir).flatMap {
         case true =>
-          io.printInfo(s"Branch ${updateBranch.name} already exists")
+          log.printInfo(s"Branch ${updateBranch.name} already exists")
         // TODO: Update branch with latest changes
         case false =>
           io.updateDir(repoDir, update) >> git.containsChanges(repoDir).flatMap {
-            case false => io.printInfo(s"I don't know how to update ${update.artifactId}")
+            case false => log.printInfo(s"I don't know how to update ${update.artifactId}")
             case true =>
               git.returnToCurrentBranch(repoDir) { baseBranch =>
                 for {
-                  _ <- io.printInfo(s"Create branch ${updateBranch.name}")
+                  _ <- log.printInfo(s"Create branch ${updateBranch.name}")
                   _ <- git.createBranch(updateBranch, repoDir)
                   _ <- git.commitAll(git.commitMsg(update), repoDir)
                   _ <- git.push(repoDir)
-                  _ <- io.printInfo(s"Create pull request at ${localRepo.upstream.show}")
+                  _ <- log.printInfo(s"Create pull request at ${localRepo.upstream.show}")
                   _ <- github
                     .createPullRequest(localRepo.upstream, update, updateBranch, baseBranch)
                 } yield ()
