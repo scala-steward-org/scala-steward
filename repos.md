@@ -18,3 +18,5 @@
 - schrepfler/sportsml-scala
 - vectos/formulation
 - sphereio/sphere-scala-libs
+- arturgajowy/rchain
+
