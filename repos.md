@@ -24,3 +24,4 @@
 - ReactivePlatform/Pragmatic-Scala
 - mfirry/scala-http-clients
 - ilya-murzinov/finch-todo-backend
+- getquill/quill
