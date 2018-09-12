@@ -8,11 +8,11 @@
 - fthomas/scala-steward
 - fthomas/singleton-ops
 - fthomas/status-page
-- vectos/formulation
 - pdalpra/gh4s
-- schrepfler/crdt-kit
 - schrepfler/artemis
-- schrepfler/scala-uri
 - schrepfler/cas-tools
+- schrepfler/crdt-kit
 - schrepfler/scala-native-cli
+- schrepfler/scala-uri
 - schrepfler/sportsml-scala
+- vectos/formulation
