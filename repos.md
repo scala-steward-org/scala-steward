@@ -8,6 +8,7 @@
 - fthomas/scala-steward
 - fthomas/singleton-ops
 - fthomas/status-page
+- larsrh/sbt-libisabelle
 - pdalpra/gh4s
 - schrepfler/artemis
 - schrepfler/cas-tools
