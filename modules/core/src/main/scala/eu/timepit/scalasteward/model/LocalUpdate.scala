@@ -14,6 +14,14 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward
+package eu.timepit.scalasteward.model
 
-final case class Branch(name: String)
+import eu.timepit.scalasteward.git
+
+final case class LocalUpdate(
+    localRepo: LocalRepo,
+    update: Update
+) {
+  def updateBranch: Branch =
+    git.branchOf(update)
+}

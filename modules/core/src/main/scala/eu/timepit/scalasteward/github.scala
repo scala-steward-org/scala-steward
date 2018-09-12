@@ -18,6 +18,7 @@ package eu.timepit.scalasteward
 
 import better.files.File
 import cats.effect.IO
+import eu.timepit.scalasteward.model.{Branch, GithubRepo, Update}
 
 object github {
   val myLogin: String =
@@ -28,7 +29,7 @@ object github {
 
   def createPullRequest(
       repo: GithubRepo,
-      update: DependencyUpdate,
+      update: Update,
       updateBranch: Branch,
       baseBranch: Branch
   ): IO[List[String]] =

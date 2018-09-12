@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit
 import better.files.File
 import cats.effect.IO
 import cats.implicits._
+import eu.timepit.scalasteward.model.Update
 import fs2.Stream
 
 import scala.collection.mutable.ListBuffer
@@ -63,10 +64,10 @@ object io {
       duration = FiniteDuration(end - start, TimeUnit.MILLISECONDS)
     } yield (a, duration)
 
-  def updateDir(dir: File, update: DependencyUpdate): IO[Unit] =
+  def updateDir(dir: File, update: Update): IO[Unit] =
     walk(dir).filter(isSourceFile).evalMap(updateFile(_, update)).compile.drain
 
-  def updateFile(file: File, update: DependencyUpdate): IO[File] =
+  def updateFile(file: File, update: Update): IO[File] =
     IO(update.replaceAllIn(file.contentAsString).fold(file)(file.write(_)))
 
   def walk(dir: File): Stream[IO, File] =

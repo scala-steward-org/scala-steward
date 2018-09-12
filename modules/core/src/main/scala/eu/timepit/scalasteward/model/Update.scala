@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward
+package eu.timepit.scalasteward.model
 
 import cats.data.NonEmptyList
 import cats.implicits._
 
-final case class DependencyUpdate(
+final case class Update(
     groupId: String,
     artifactId: String,
     currentVersion: String,
@@ -53,14 +53,14 @@ final case class DependencyUpdate(
     s"$groupId:$artifactId : ${(currentVersion :: newerVersions).mkString_("", " -> ", "")}"
 }
 
-object DependencyUpdate {
-  def fromString(str: String): Either[Throwable, DependencyUpdate] =
+object Update {
+  def fromString(str: String): Either[Throwable, Update] =
     Either.catchNonFatal {
       val regex = """([^\s:]+):([^\s:]+)[^\s]*\s+:\s+([^\s]+)\s+->(.+)""".r
       str match {
         case regex(groupId, artifactId, version, updates) =>
           val newerVersions = NonEmptyList.fromListUnsafe(updates.split("->").map(_.trim).toList)
-          DependencyUpdate(groupId, artifactId, version, newerVersions)
+          Update(groupId, artifactId, version, newerVersions)
       }
     }
 }

@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward
+package eu.timepit.scalasteward.model
 
-final case class GithubRepo(owner: String, repo: String) {
-  def show: String = s"$owner:$repo"
-}
+final case class Branch(name: String)

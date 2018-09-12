@@ -18,6 +18,7 @@ package eu.timepit.scalasteward
 
 import better.files.File
 import cats.effect.IO
+import eu.timepit.scalasteward.model.Update
 
 object sbt {
   def addGlobalPlugins: IO[Unit] =
@@ -33,23 +34,17 @@ object sbt {
       ()
     }
 
-  def allUpdates(dir: File): IO[List[DependencyUpdate]] =
+  def allUpdates(dir: File): IO[List[Update]] =
     io.exec(sbtCmd :+ ";dependencyUpdates ;reload plugins; dependencyUpdates", dir)
       .map(toDependencyUpdates)
-
-  def dependencyUpdates(dir: File): IO[List[DependencyUpdate]] =
-    io.exec(sbtCmd :+ "dependencyUpdates", dir).map(toDependencyUpdates)
-
-  def pluginsUpdates(dir: File): IO[List[DependencyUpdate]] =
-    io.exec(sbtCmd :+ ";reload plugins; dependencyUpdates", dir).map(toDependencyUpdates)
 
   val sbtCmd: List[String] =
     List("sbt", "-no-colors")
 
-  def toDependencyUpdates(lines: List[String]): List[DependencyUpdate] =
+  def toDependencyUpdates(lines: List[String]): List[Update] =
     lines
       .flatMap { line =>
-        DependencyUpdate.fromString(line.replace("[info]", "").trim).toSeq
+        Update.fromString(line.replace("[info]", "").trim).toSeq
       }
       .distinct
       .sortBy(udate => (udate.groupId, udate.artifactId))

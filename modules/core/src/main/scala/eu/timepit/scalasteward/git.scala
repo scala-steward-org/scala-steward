@@ -19,9 +19,10 @@ package eu.timepit.scalasteward
 import better.files.File
 import cats.effect.IO
 import cats.implicits._
+import eu.timepit.scalasteward.model.{Branch, Update}
 
 object git {
-  def branchOf(update: DependencyUpdate): Branch =
+  def branchOf(update: Update): Branch =
     Branch(s"update/${update.name}-${update.nextVersion}")
 
   def checkoutBranch(branch: Branch, dir: File): IO[List[String]] =
@@ -33,7 +34,7 @@ object git {
   def commitAll(message: String, dir: File): IO[List[String]] =
     exec(List("commit", "--all", "-m", message), dir)
 
-  def commitMsg(update: DependencyUpdate): String =
+  def commitMsg(update: Update): String =
     s"Update ${update.name} to ${update.nextVersion}"
 
   def containsChanges(dir: File): IO[Boolean] =

@@ -20,6 +20,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 import cats.effect.IO
+import eu.timepit.scalasteward.model.Update
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -41,7 +42,7 @@ object log {
   def printImpl(level: String, msg: String): IO[Unit] =
     now.flatMap(dt => IO(println(s"[$dt] $level: $msg")))
 
-  def printUpdates(updates: List[DependencyUpdate]): IO[Unit] = {
+  def printUpdates(updates: List[Update]): IO[Unit] = {
     val list = updates.map(u => "  " + u.show).mkString("\n")
     val msg = updates.size match {
       case 0 => "Found 0 updates"

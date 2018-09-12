@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward
+package eu.timepit.scalasteward.model
 
 import better.files.File
 

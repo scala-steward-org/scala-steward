@@ -19,6 +19,7 @@ package eu.timepit.scalasteward
 import better.files.File
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
+import eu.timepit.scalasteward.model.{Branch, GithubRepo, LocalRepo, Update}
 
 object steward extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
@@ -90,7 +91,7 @@ object steward extends IOApp {
       _ <- updates.traverse_(updateDependency(_, localRepo))
     } yield ()
 
-  def updateDependency(update: DependencyUpdate, localRepo: LocalRepo): IO[Unit] = {
+  def updateDependency(update: Update, localRepo: LocalRepo): IO[Unit] = {
     val repoDir = localRepo.dir
     val updateBranch = git.branchOf(update)
     log.printInfo(s"Applying ${update.show}") >>
@@ -116,7 +117,7 @@ object steward extends IOApp {
   }
 
   def resetAndUpdate(
-      update: DependencyUpdate,
+      update: Update,
       updateBranch: Branch,
       localRepo: LocalRepo
   ): IO[Unit] =
