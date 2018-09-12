@@ -17,3 +17,4 @@
 - schrepfler/scala-uri
 - schrepfler/sportsml-scala
 - vectos/formulation
+- sphereio/sphere-scala-libs
