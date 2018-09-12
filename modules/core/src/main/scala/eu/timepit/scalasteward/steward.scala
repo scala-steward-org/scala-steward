@@ -28,7 +28,8 @@ object steward extends IOApp {
       repos <- getRepos(workspace)
       _ <- repos.traverse_ { repo =>
         log.printTimed(duration => s"Updating ${repo.show} took $duration\n")(
-          stewardRepo(repo, workspace))
+          stewardRepo(repo, workspace)
+        )
       }
     } yield ExitCode.Success
   }
