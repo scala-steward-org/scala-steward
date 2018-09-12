@@ -21,6 +21,8 @@ import java.time.format.DateTimeFormatter
 
 import cats.effect.IO
 
+import scala.concurrent.duration.FiniteDuration
+
 object log {
   val now: IO[String] =
     IO(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
@@ -30,6 +32,11 @@ object log {
 
   def printWarning(msg: String): IO[Unit] =
     printImpl("W", msg)
+
+  def printTimed[A](msg: FiniteDuration => String)(fa: IO[A]): IO[Unit] =
+    io.timed(fa).flatMap {
+      case (_, duration) => printInfo(msg(duration))
+    }
 
   def printImpl(level: String, msg: String): IO[Unit] =
     now.flatMap(dt => IO(println(s"[$dt] $level: $msg")))

@@ -17,6 +17,7 @@
 package eu.timepit.scalasteward
 
 import java.io.IOException
+import java.util.concurrent.TimeUnit
 
 import better.files.File
 import cats.effect.IO
@@ -24,9 +25,13 @@ import cats.implicits._
 import fs2.Stream
 
 import scala.collection.mutable.ListBuffer
+import scala.concurrent.duration.FiniteDuration
 import scala.sys.process.{Process, ProcessLogger}
 
 object io {
+  val currentTimeMillis: IO[Long] =
+    IO(System.currentTimeMillis())
+
   def deleteForce(dir: File): IO[Unit] =
     IO(if (dir.exists) dir.delete() else ())
 
@@ -49,6 +54,14 @@ object io {
 
   def mkdirs(dir: File): IO[Unit] =
     IO(dir.createDirectories()).void
+
+  def timed[A](fa: IO[A]): IO[(A, FiniteDuration)] =
+    for {
+      start <- currentTimeMillis
+      a <- fa
+      end <- currentTimeMillis
+      duration = FiniteDuration(end - start, TimeUnit.MILLISECONDS)
+    } yield (a, duration)
 
   def updateDir(dir: File, update: DependencyUpdate): IO[Unit] =
     walk(dir).filter(isSourceFile).evalMap(updateFile(_, update)).compile.drain
