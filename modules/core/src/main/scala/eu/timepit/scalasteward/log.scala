@@ -26,7 +26,13 @@ object log {
     IO(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
 
   def printInfo(msg: String): IO[Unit] =
-    now.flatMap(dt => IO(println(s"[$dt] I: $msg")))
+    printImpl("I", msg)
+
+  def printWarning(msg: String): IO[Unit] =
+    printImpl("W", msg)
+
+  def printImpl(level: String, msg: String): IO[Unit] =
+    now.flatMap(dt => IO(println(s"[$dt] $level: $msg")))
 
   def printUpdates(updates: List[DependencyUpdate]): IO[Unit] = {
     val list = updates.map(u => "  " + u.show).mkString("\n")
