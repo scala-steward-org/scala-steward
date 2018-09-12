@@ -20,3 +20,5 @@
 - sphereio/sphere-scala-libs
 - vlovgr/ciris
 - arturgajowy/rchain
+- ReactivePlatform/Reactive-Design-Patterns
+- ReactivePlatform/Pragmatic-Scala
