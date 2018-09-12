@@ -23,3 +23,4 @@
 - ReactivePlatform/Reactive-Design-Patterns
 - ReactivePlatform/Pragmatic-Scala
 - mfirry/scala-http-clients
+- ilya-murzinov/finch-todo-backend
