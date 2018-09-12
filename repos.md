@@ -9,6 +9,7 @@
 - fthomas/singleton-ops
 - fthomas/status-page
 - larsrh/sbt-libisabelle
+- milessabin/shapeless
 - pdalpra/gh4s
 - schrepfler/artemis
 - schrepfler/cas-tools
