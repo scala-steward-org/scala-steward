@@ -18,3 +18,4 @@
 - schrepfler/sportsml-scala
 - vectos/formulation
 - sphereio/sphere-scala-libs
+- vlovgr/ciris
