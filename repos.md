@@ -10,3 +10,9 @@
 - fthomas/status-page
 - vectos/formulation
 - pdalpra/gh4s
+- schrepfler/crdt-kit
+- schrepfler/artemis
+- schrepfler/scala-uri
+- schrepfler/cas-tools
+- schrepfler/scala-native-cli
+- schrepfler/sportsml-scala
