@@ -25,6 +25,12 @@ final case class DependencyUpdate(
     currentVersion: String,
     newerVersions: NonEmptyList[String]
 ) {
+  def name: String =
+    artifactId match {
+      case "core" => groupId.split('.').lastOption.getOrElse(groupId)
+      case _      => artifactId
+    }
+
   def nextVersion: String =
     newerVersions.head
 
@@ -34,13 +40,7 @@ final case class DependencyUpdate(
         .replaceAll("-core$", "")
         .replace("-", ".?")
 
-    // TODO: Use this for commit messages and branch names
-    val searchTerm = normalize(artifactId match {
-      case "core" => groupId.split('.').lastOption.getOrElse(groupId)
-      case str    => str
-    })
-
-    val regex = s"(?i)($searchTerm.*?)$currentVersion".r
+    val regex = s"(?i)(${normalize(name)}.*?)$currentVersion".r
     var updated = false
     val result = regex.replaceAllIn(str, m => {
       updated = true

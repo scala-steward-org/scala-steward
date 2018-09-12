@@ -22,7 +22,7 @@ import cats.implicits._
 
 object git {
   def branchOf(update: DependencyUpdate): Branch =
-    Branch(s"update/${update.artifactId}-${update.nextVersion}")
+    Branch(s"update/${update.name}-${update.nextVersion}")
 
   def checkoutBranch(branch: Branch, dir: File): IO[List[String]] =
     exec(List("checkout", branch.name), dir)
@@ -34,7 +34,7 @@ object git {
     exec(List("commit", "--all", "-m", message), dir)
 
   def commitMsg(update: DependencyUpdate): String =
-    s"Update ${update.artifactId} to ${update.nextVersion}"
+    s"Update ${update.name} to ${update.nextVersion}"
 
   def containsChanges(dir: File): IO[Boolean] =
     exec(List("status", "--porcelain"), dir).map(_.nonEmpty)

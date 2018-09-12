@@ -94,7 +94,7 @@ object steward extends IOApp {
         case true => resetAndUpdate(update, updateBranch, localRepo)
         case false =>
           io.updateDir(repoDir, update) >> git.containsChanges(repoDir).flatMap {
-            case false => log.printInfo(s"I don't know how to update ${update.artifactId}")
+            case false => log.printInfo(s"I don't know how to update ${update.name}")
             case true =>
               git.returnToCurrentBranch(repoDir) { baseBranch =>
                 for {
