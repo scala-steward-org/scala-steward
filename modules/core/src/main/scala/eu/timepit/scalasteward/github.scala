@@ -18,7 +18,7 @@ package eu.timepit.scalasteward
 
 import better.files.File
 import cats.effect.IO
-import eu.timepit.scalasteward.model.{Branch, GithubRepo, Update}
+import eu.timepit.scalasteward.model._
 
 object github {
   val myLogin: String =
@@ -27,12 +27,7 @@ object github {
   val accessToken: IO[String] =
     IO((File.home / s".github/tokens/$myLogin").contentAsString.trim)
 
-  def createPullRequest(
-      repo: GithubRepo,
-      update: Update,
-      updateBranch: Branch,
-      baseBranch: Branch
-  ): IO[List[String]] =
+  def createPullRequest(localUpdate: LocalUpdate): IO[List[String]] =
     accessToken.flatMap { token =>
       io.exec(
         List(
@@ -45,13 +40,13 @@ object github {
           s"$myLogin:$token",
           "--data",
           s"""{
-             |  "title": "${git.commitMsg(update)}",
-             |  "body": "This tries to update ${update.groupId}:${update.artifactId} from ${update.currentVersion} to ${update.nextVersion}.",
-             |  "head": "$myLogin:${updateBranch.name}",
-             |  "base": "${baseBranch.name}"
+             |  "title": "${localUpdate.commitMsg}",
+             |  "body": "Update ${localUpdate.update.groupId}:${localUpdate.update.artifactId} from ${localUpdate.update.currentVersion} to ${localUpdate.update.nextVersion}.",
+             |  "head": "$myLogin:${localUpdate.updateBranch.name}",
+             |  "base": "${localUpdate.localRepo.base.name}"
              |}
            """.stripMargin.trim,
-          s"https://api.github.com/repos/${repo.owner}/${repo.repo}/pulls"
+          s"https://api.github.com/repos/${localUpdate.localRepo.upstream.owner}/${localUpdate.localRepo.upstream.repo}/pulls"
         ),
         File.currentWorkingDirectory
       )

@@ -22,6 +22,9 @@ final case class LocalUpdate(
     localRepo: LocalRepo,
     update: Update
 ) {
+  def commitMsg: String =
+    git.commitMsg(update)
+
   def updateBranch: Branch =
     git.branchOf(update)
 }

@@ -19,7 +19,7 @@ package eu.timepit.scalasteward
 import better.files.File
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
-import eu.timepit.scalasteward.model.{Branch, GithubRepo, LocalRepo, Update}
+import eu.timepit.scalasteward.model._
 
 object steward extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
@@ -46,9 +46,9 @@ object steward extends IOApp {
 
   def getRepos(workspace: File): IO[List[GithubRepo]] =
     IO {
-      val repo = """-\s+(.+)/(.+)""".r
       val file = workspace / ".." / "repos.md"
-      file.lines.collect { case repo(owner, name) => GithubRepo(owner, name) }.toList
+      val regex = """-\s+(.+)/(.+)""".r
+      file.lines.collect { case regex(owner, repo) => GithubRepo(owner, repo) }.toList
     }
 
   def stewardRepo(repo: GithubRepo, workspace: File): IO[Unit] = {
@@ -88,12 +88,15 @@ object steward extends IOApp {
       // TODO: Run this in a sandbox
       updates <- sbt.allUpdates(localRepo.dir)
       _ <- log.printUpdates(updates)
-      _ <- updates.traverse_(updateDependency(_, localRepo))
+      _ <- updates.traverse_(update => updateDependency(LocalUpdate(localRepo, update)))
     } yield ()
 
-  def updateDependency(update: Update, localRepo: LocalRepo): IO[Unit] = {
-    val repoDir = localRepo.dir
-    val updateBranch = git.branchOf(update)
+  def updateDependency(localUpdate: LocalUpdate): IO[Unit] = {
+    val repoDir = localUpdate.localRepo.dir
+    val update = localUpdate.update
+    val updateBranch = localUpdate.updateBranch
+    val localRepo = localUpdate.localRepo
+
     log.printInfo(s"Applying ${update.show}") >>
       git.remoteBranchExists(updateBranch, repoDir).flatMap {
         case true => resetAndUpdate(update, updateBranch, localRepo)
@@ -108,8 +111,7 @@ object steward extends IOApp {
                   _ <- git.commitAll(git.commitMsg(update), repoDir)
                   _ <- git.push(updateBranch, repoDir)
                   _ <- log.printInfo(s"Create pull request at ${localRepo.upstream.show}")
-                  _ <- github
-                    .createPullRequest(localRepo.upstream, update, updateBranch, baseBranch)
+                  _ <- github.createPullRequest(localUpdate)
                 } yield ()
               }
           }
@@ -124,15 +126,16 @@ object steward extends IOApp {
     for {
       _ <- git.checkoutBranch(updateBranch, localRepo.dir)
       isMerged <- git.isMerged(updateBranch, localRepo.dir)
-      isBehind <- git.isBehind(updateBranch, localRepo.baseBranch, localRepo.dir)
+      isBehind <- git.isBehind(updateBranch, localRepo.base, localRepo.dir)
       _ <- if (!isMerged && isBehind)
         for {
           _ <- log.printInfo(s"Reset and update branch ${updateBranch.name}")
-          _ <- git.exec(List("reset", "--hard", localRepo.baseBranch.name), localRepo.dir)
+          _ <- git.exec(List("reset", "--hard", localRepo.base.name), localRepo.dir)
           _ <- io.updateDir(localRepo.dir, update)
           _ <- git.commitAll(git.commitMsg(update), localRepo.dir)
           _ <- git.push(updateBranch, localRepo.dir)
         } yield ()
       else IO.unit
+      // TODO: Create PR if it not exists
     } yield ()
 }

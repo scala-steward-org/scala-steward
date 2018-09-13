@@ -21,5 +21,5 @@ import better.files.File
 final case class LocalRepo(
     upstream: GithubRepo,
     dir: File,
-    baseBranch: Branch
+    base: Branch
 )
