@@ -27,3 +27,7 @@
 - vectos/formulation
 - vlovgr/ciris
 - ppurang/asynch
+- LREN-CHUV/woken-messages
+- LREN-CHUV/woken
+- LREN-CHUV/woken-validation
+
