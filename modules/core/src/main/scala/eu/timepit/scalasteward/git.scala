@@ -58,8 +58,7 @@ object git {
     io.exec("git" :: cmd, dir)
 
   def isBehind(branch: Branch, compare: Branch, dir: File): IO[Boolean] =
-    exec(List("log", "--pretty=format:'%h'", dotdot(branch, compare)), dir)
-      .map(_.nonEmpty)
+    exec(List("log", "--pretty=format:'%h'", dotdot(branch, compare)), dir).map(_.nonEmpty)
 
   def isMerged(branch: Branch, dir: File): IO[Boolean] =
     exec(List("branch", "--contains", branch.name), dir).map(_.size >= 2)
