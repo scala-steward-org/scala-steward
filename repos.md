@@ -12,10 +12,14 @@
 - getquill/quill
 - ilya-murzinov/finch-todo-backend
 - larsrh/sbt-libisabelle
+- LREN-CHUV/woken
+- LREN-CHUV/woken-messages
+- LREN-CHUV/woken-validation
 - mfirry/scala-http-clients
 - milessabin/shapeless
-- pdalpra/gh4s
 - pathikrit/better-files
+- pdalpra/gh4s
+- ppurang/asynch
 - ReactivePlatform/Pragmatic-Scala
 - ReactivePlatform/Reactive-Design-Patterns
 - schrepfler/artemis
@@ -27,8 +31,3 @@
 - sphereio/sphere-scala-libs
 - vectos/formulation
 - vlovgr/ciris
-- ppurang/asynch
-- LREN-CHUV/woken-messages
-- LREN-CHUV/woken
-- LREN-CHUV/woken-validation
-
