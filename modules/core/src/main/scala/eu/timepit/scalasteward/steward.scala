@@ -99,7 +99,8 @@ object steward extends IOApp {
 
     log.printInfo(s"Applying ${update.show}") >>
       git.remoteBranchExists(updateBranch, repoDir).flatMap {
-        case true => resetAndUpdate(update, updateBranch, localRepo)
+        case true =>
+          git.returnToCurrentBranch(repoDir)(_ => resetAndUpdate(update, updateBranch, localRepo))
         case false =>
           io.updateDir(repoDir, update) >> git.containsChanges(repoDir).flatMap {
             case false => log.printWarning(s"I don't know how to update ${update.name}")
