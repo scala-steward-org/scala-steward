@@ -107,13 +107,20 @@ object steward extends IOApp {
                 for {
                   _ <- log.printInfo(s"Create branch ${updateBranch.name}")
                   _ <- git.createBranch(updateBranch, repoDir)
-                  _ <- git.commitAll(git.commitMsg(update), repoDir)
-                  _ <- git.push(updateBranch, repoDir)
-                  _ <- github.createPullRequestIfNotExists(localUpdate)
+                  _ <- commitPushAndCreatePullRequest(localUpdate)
                 } yield ()
               }
           }
       }
+  }
+
+  def commitPushAndCreatePullRequest(localUpdate: LocalUpdate): IO[Unit] = {
+    val dir = localUpdate.localRepo.dir
+    for {
+      _ <- git.commitAll(localUpdate.commitMsg, dir)
+      _ <- git.push(localUpdate.updateBranch, dir)
+      _ <- github.createPullRequestIfNotExists(localUpdate)
+    } yield ()
   }
 
   def resetAndUpdate(localUpdate: LocalUpdate): IO[Unit] = {
@@ -126,9 +133,7 @@ object steward extends IOApp {
           _ <- log.printInfo(s"Reset and update branch ${updateBranch.name}")
           _ <- git.exec(List("reset", "--hard", localUpdate.localRepo.base.name), dir)
           _ <- io.updateDir(dir, localUpdate.update)
-          _ <- git.commitAll(localUpdate.commitMsg, dir)
-          _ <- git.push(updateBranch, dir)
-          _ <- github.createPullRequestIfNotExists(localUpdate)
+          _ <- commitPushAndCreatePullRequest(localUpdate)
         } yield (),
         IO.unit
       )
@@ -139,7 +144,6 @@ object steward extends IOApp {
     val dir = localUpdate.localRepo.dir
     val baseBranch = localUpdate.localRepo.base
     val updateBranch = localUpdate.updateBranch
-
     for {
       isMerged <- git.isMerged(updateBranch, baseBranch, dir)
       isBehind <- git.isBehind(updateBranch, baseBranch, dir)
