@@ -22,6 +22,9 @@ import cats.implicits._
 import eu.timepit.scalasteward.model.{Branch, Update}
 
 object git {
+  def branchAuthors(branch: Branch, base: Branch, dir: File): IO[List[String]] =
+    exec(List("log", "--pretty=format:'%an'", dotdot(base, branch)), dir)
+
   def branchOf(update: Update): Branch =
     Branch(s"update/${update.name}-${update.nextVersion}")
 
@@ -60,8 +63,8 @@ object git {
   def isBehind(branch: Branch, compare: Branch, dir: File): IO[Boolean] =
     exec(List("log", "--pretty=format:'%h'", dotdot(branch, compare)), dir).map(_.nonEmpty)
 
-  def isMerged(branch: Branch, dir: File): IO[Boolean] =
-    exec(List("branch", "--contains", branch.name), dir).map(_.size >= 2)
+  def isMerged(branch: Branch, base: Branch, dir: File): IO[Boolean] =
+    exec(List("log", "--pretty=format:'%h'", dotdot(base, branch)), dir).map(_.isEmpty)
 
   def push(branch: Branch, dir: File): IO[List[String]] =
     exec(List("push", "--force", "--set-upstream", "origin", branch.name), dir)

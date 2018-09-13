@@ -95,12 +95,10 @@ object steward extends IOApp {
     val repoDir = localUpdate.localRepo.dir
     val update = localUpdate.update
     val updateBranch = localUpdate.updateBranch
-    val localRepo = localUpdate.localRepo
 
     log.printInfo(s"Applying ${update.show}") >>
       git.remoteBranchExists(updateBranch, repoDir).flatMap {
-        case true =>
-          git.returnToCurrentBranch(repoDir)(_ => resetAndUpdate(update, updateBranch, localRepo))
+        case true => resetAndUpdate(localUpdate)
         case false =>
           io.updateDir(repoDir, update) >> git.containsChanges(repoDir).flatMap {
             case false => log.printWarning(s"I don't know how to update ${update.name}")
@@ -111,32 +109,56 @@ object steward extends IOApp {
                   _ <- git.createBranch(updateBranch, repoDir)
                   _ <- git.commitAll(git.commitMsg(update), repoDir)
                   _ <- git.push(updateBranch, repoDir)
-                  _ <- log.printInfo(s"Create pull request at ${localRepo.upstream.show}")
-                  _ <- github.createPullRequest(localUpdate)
+                  _ <- github.createPullRequestIfNotExists(localUpdate)
                 } yield ()
               }
           }
       }
   }
 
-  def resetAndUpdate(
-      update: Update,
-      updateBranch: Branch,
-      localRepo: LocalRepo
-  ): IO[Unit] =
-    for {
-      _ <- git.checkoutBranch(updateBranch, localRepo.dir)
-      isMerged <- git.isMerged(updateBranch, localRepo.dir)
-      isBehind <- git.isBehind(updateBranch, localRepo.base, localRepo.dir)
-      _ <- if (!isMerged && isBehind)
+  def resetAndUpdate(localUpdate: LocalUpdate): IO[Unit] = {
+    val dir = localUpdate.localRepo.dir
+    val updateBranch = localUpdate.updateBranch
+
+    git.returnToCurrentBranch(dir) { _ =>
+      git.checkoutBranch(updateBranch, dir) >> shouldBeReset(localUpdate).ifM(
         for {
           _ <- log.printInfo(s"Reset and update branch ${updateBranch.name}")
-          _ <- git.exec(List("reset", "--hard", localRepo.base.name), localRepo.dir)
-          _ <- io.updateDir(localRepo.dir, update)
-          _ <- git.commitAll(git.commitMsg(update), localRepo.dir)
-          _ <- git.push(updateBranch, localRepo.dir)
-        } yield ()
-      else IO.unit
-      // TODO: Create PR if it not exists
-    } yield ()
+          _ <- git.exec(List("reset", "--hard", localUpdate.localRepo.base.name), dir)
+          _ <- io.updateDir(dir, localUpdate.update)
+          _ <- git.commitAll(localUpdate.commitMsg, dir)
+          _ <- git.push(updateBranch, dir)
+          _ <- github.createPullRequestIfNotExists(localUpdate)
+        } yield (),
+        IO.unit
+      )
+    }
+  }
+
+  def shouldBeReset(localUpdate: LocalUpdate): IO[Boolean] = {
+    val dir = localUpdate.localRepo.dir
+    val baseBranch = localUpdate.localRepo.base
+    val updateBranch = localUpdate.updateBranch
+
+    for {
+      isMerged <- git.isMerged(updateBranch, baseBranch, dir)
+      isBehind <- git.isBehind(updateBranch, baseBranch, dir)
+      authors <- git.branchAuthors(updateBranch, baseBranch, dir)
+      (result, msg) = {
+        val pr = s"PR ${updateBranch.name}"
+        if (isMerged) {
+          (false, s"$pr is already merged")
+        } else if (authors.distinct.length >= 2) {
+          (false, s"$pr has commits by ${authors.mkString(", ")}")
+        } else if (authors.length >= 2) {
+          (true, s"$pr has multiple commits")
+        } else {
+          if (isBehind) (true, s"$pr is behind ${baseBranch.name}")
+          else (false, s"$pr is up-to-date with ${baseBranch.name}")
+        }
+      }
+      _ <- log.printInfo(msg)
+    } yield result
+  }
+
 }
