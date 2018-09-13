@@ -75,7 +75,8 @@ object github {
       val url = s"https://api.github.com/repos/${repo.owner}/${repo.repo}/forks"
       io.exec(
         List("curl", "-X", "POST", "-u", s"$myLogin:$token", url),
-        File.currentWorkingDirectory)
+        File.currentWorkingDirectory
+      )
     }
 
   def headOf(localUpdate: LocalUpdate): String =
