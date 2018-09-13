@@ -46,11 +46,19 @@ object git {
   def currentBranch(dir: File): IO[Branch] =
     exec(List("rev-parse", "--abbrev-ref", "HEAD"), dir).map(lines => Branch(lines.mkString.trim))
 
+  // man 7 gitrevisions:
+  // When you have two commits r1 and r2 you can ask for commits that are
+  // reachable from r2 excluding those that are reachable from r1 by ^r1 r2
+  // and it can be written as
+  //   r1..r2.
+  def dotdot(r1: Branch, r2: Branch): String =
+    s"${r1.name}..${r2.name}"
+
   def exec(cmd: List[String], dir: File): IO[List[String]] =
     io.exec("git" :: cmd, dir)
 
   def isBehind(branch: Branch, compare: Branch, dir: File): IO[Boolean] =
-    exec(List("log", "--pretty=format:'%h'", s"${branch.name}..${compare.name}"), dir)
+    exec(List("log", "--pretty=format:'%h'", dotdot(branch, compare)), dir)
       .map(_.nonEmpty)
 
   def isMerged(branch: Branch, dir: File): IO[Boolean] =
