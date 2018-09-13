@@ -15,6 +15,7 @@
 - mfirry/scala-http-clients
 - milessabin/shapeless
 - pdalpra/gh4s
+- pathikrit/better-files
 - ReactivePlatform/Pragmatic-Scala
 - ReactivePlatform/Reactive-Design-Patterns
 - schrepfler/artemis
