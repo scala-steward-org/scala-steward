@@ -17,6 +17,7 @@
 package eu.timepit.scalasteward
 
 import better.files.File
+import cats.Monad
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
 import eu.timepit.scalasteward.model._
@@ -128,15 +129,14 @@ object steward extends IOApp {
     val updateBranch = localUpdate.updateBranch
 
     git.returnToCurrentBranch(dir) { _ =>
-      git.checkoutBranch(updateBranch, dir) >> shouldBeReset(localUpdate).ifM(
+      git.checkoutBranch(updateBranch, dir) >> ifTrue(shouldBeReset(localUpdate)) {
         for {
           _ <- log.printInfo(s"Reset and update branch ${updateBranch.name}")
           _ <- git.exec(List("reset", "--hard", localUpdate.localRepo.base.name), dir)
           _ <- io.updateDir(dir, localUpdate.update)
           _ <- commitPushAndCreatePullRequest(localUpdate)
-        } yield (),
-        IO.unit
-      )
+        } yield ()
+      }
     }
   }
 
@@ -165,4 +165,6 @@ object steward extends IOApp {
     } yield result
   }
 
+  def ifTrue[F[_]: Monad](fb: F[Boolean])(f: F[Unit]): F[Unit] =
+    fb.ifM(f, ().pure[F])
 }
