@@ -23,15 +23,15 @@ import eu.timepit.scalasteward.model.Update
 object sbt {
   def addGlobalPlugins: IO[Unit] =
     IO {
-      val pluginsDir0_13 = File.home / ".sbt/0.13/plugins"
-      val pluginsDir1_0 = File.home / ".sbt/1.0/plugins"
-      pluginsDir0_13.createDirectories()
-      pluginsDir1_0.createDirectories()
-
       val plugin = """addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.4")"""
-      (pluginsDir0_13 / "sbt-updates.sbt").writeText(plugin)
-      (pluginsDir1_0 / "sbt-updates.sbt").writeText(plugin)
-      ()
+      List(
+        ".sbt/0.13/plugins",
+        ".sbt/1.0/plugins"
+      ).foreach { path =>
+        val dir = File.home / path
+        dir.createDirectories()
+        (dir / "sbt-updates.sbt").writeText(plugin)
+      }
     }
 
   def allUpdates(dir: File): IO[List[Update]] =

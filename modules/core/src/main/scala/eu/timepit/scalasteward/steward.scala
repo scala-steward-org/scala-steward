@@ -17,10 +17,10 @@
 package eu.timepit.scalasteward
 
 import better.files.File
-import cats.Monad
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
 import eu.timepit.scalasteward.model._
+import eu.timepit.scalasteward.util._
 
 object steward extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
@@ -36,7 +36,7 @@ object steward extends IOApp {
 
   def prepareEnv(workspace: File): IO[Unit] =
     for {
-      _ <- log.printInfo("Update global sbt plugins")
+      _ <- log.printInfo("Add global sbt plugins")
       _ <- sbt.addGlobalPlugins
       _ <- log.printInfo(s"Clean workspace $workspace")
       _ <- io.deleteForce(workspace)
@@ -91,10 +91,12 @@ object steward extends IOApp {
     } yield ()
 
   def applyUpdate(localUpdate: LocalUpdate): IO[Unit] =
-    log.printInfo(s"Apply update ${localUpdate.update.show}") >>
-      git
+    for {
+      _ <- log.printInfo(s"Apply update ${localUpdate.update.show}")
+      _ <- git
         .remoteBranchExists(localUpdate.updateBranch, localUpdate.localRepo.dir)
         .ifM(resetAndUpdate(localUpdate), applyNewUpdate(localUpdate))
+    } yield ()
 
   def applyNewUpdate(localUpdate: LocalUpdate): IO[Unit] = {
     val dir = localUpdate.localRepo.dir
@@ -162,7 +164,4 @@ object steward extends IOApp {
       _ <- log.printInfo(msg)
     } yield result
   }
-
-  def ifTrue[F[_]: Monad](fb: F[Boolean])(f: F[Unit]): F[Unit] =
-    fb.ifM(f, ().pure[F])
 }
