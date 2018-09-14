@@ -21,3 +21,10 @@ jobs:
     script: sbt ++$TRAVIS_SCALA_VERSION validate
     after_success:
     - codecov
+notifications:
+  webhooks:
+    urls:
+    - https://webhooks.gitter.im/e/0c488817d5dc313a8cc7
+    on_success: change
+    on_failure: always
+    on_start: never
