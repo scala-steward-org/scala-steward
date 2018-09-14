@@ -72,8 +72,8 @@ object git {
   def remoteBranchExists(branch: Branch, dir: File): IO[Boolean] =
     git.exec(List("branch", "-r"), dir).map(_.exists(_.contains(branch.name)))
 
-  def returnToCurrentBranch[B](dir: File)(use: Branch => IO[B]): IO[B] =
-    currentBranch(dir).bracket(use)(checkoutBranch(_, dir).void)
+  def returnToCurrentBranch[B](dir: File)(use: IO[B]): IO[B] =
+    currentBranch(dir).bracket(_ => use)(checkoutBranch(_, dir).void)
 
   def setUser(name: String, email: String, dir: File): IO[List[String]] =
     for {

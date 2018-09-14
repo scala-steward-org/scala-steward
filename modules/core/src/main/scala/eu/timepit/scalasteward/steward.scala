@@ -29,9 +29,7 @@ object steward extends IOApp {
       _ <- prepareEnv(workspace)
       repos <- getRepos(workspace)
       _ <- repos.traverse_ { repo =>
-        log.printTimed(duration => s"Updating ${repo.show} took $duration\n")(
-          stewardRepo(repo, workspace)
-        )
+        log.printTimed(duration => s"Total time: $duration\n")(stewardRepo(repo, workspace))
       }
     } yield ExitCode.Success
   }
@@ -89,30 +87,46 @@ object steward extends IOApp {
       // TODO: Run this in a sandbox
       updates <- sbt.allUpdates(localRepo.dir)
       _ <- log.printUpdates(updates)
-      _ <- updates.traverse_(update => updateDependency(LocalUpdate(localRepo, update)))
+      _ <- updates.traverse_(update => applyUpdate(LocalUpdate(localRepo, update)))
     } yield ()
 
-  def updateDependency(localUpdate: LocalUpdate): IO[Unit] = {
-    val repoDir = localUpdate.localRepo.dir
+  def applyUpdate(localUpdate: LocalUpdate): IO[Unit] =
+    log.printInfo(s"Apply update ${localUpdate.update.show}") >>
+      git
+        .remoteBranchExists(localUpdate.updateBranch, localUpdate.localRepo.dir)
+        .ifM(resetAndUpdate(localUpdate), applyNewUpdate(localUpdate))
+
+  def applyNewUpdate(localUpdate: LocalUpdate): IO[Unit] = {
+    val dir = localUpdate.localRepo.dir
     val update = localUpdate.update
     val updateBranch = localUpdate.updateBranch
 
-    log.printInfo(s"Applying ${update.show}") >>
-      git.remoteBranchExists(updateBranch, repoDir).flatMap {
-        case true => resetAndUpdate(localUpdate)
-        case false =>
-          io.updateDir(repoDir, update) >> git.containsChanges(repoDir).flatMap {
-            case false => log.printWarning(s"I don't know how to update ${update.name}")
-            case true =>
-              git.returnToCurrentBranch(repoDir) { baseBranch =>
-                for {
-                  _ <- log.printInfo(s"Create branch ${updateBranch.name}")
-                  _ <- git.createBranch(updateBranch, repoDir)
-                  _ <- commitPushAndCreatePullRequest(localUpdate)
-                } yield ()
-              }
-          }
+    (io.updateDir(dir, update) >> git.containsChanges(dir)).ifM(
+      git.returnToCurrentBranch(dir) {
+        for {
+          _ <- log.printInfo(s"Create branch ${updateBranch.name}")
+          _ <- git.createBranch(updateBranch, dir)
+          _ <- commitPushAndCreatePullRequest(localUpdate)
+        } yield ()
+      },
+      log.printWarning(s"Applying update changed no files")
+    )
+  }
+
+  def resetAndUpdate(localUpdate: LocalUpdate): IO[Unit] = {
+    val dir = localUpdate.localRepo.dir
+    val updateBranch = localUpdate.updateBranch
+
+    git.returnToCurrentBranch(dir) {
+      git.checkoutBranch(updateBranch, dir) >> ifTrue(shouldBeReset(localUpdate)) {
+        for {
+          _ <- log.printInfo(s"Reset and update branch ${updateBranch.name}")
+          _ <- git.exec(List("reset", "--hard", localUpdate.localRepo.base.name), dir)
+          _ <- io.updateDir(dir, localUpdate.update)
+          _ <- ifTrue(git.containsChanges(dir))(commitPushAndCreatePullRequest(localUpdate))
+        } yield ()
       }
+    }
   }
 
   def commitPushAndCreatePullRequest(localUpdate: LocalUpdate): IO[Unit] = {
@@ -122,22 +136,6 @@ object steward extends IOApp {
       _ <- git.push(localUpdate.updateBranch, dir)
       _ <- github.createPullRequestIfNotExists(localUpdate)
     } yield ()
-  }
-
-  def resetAndUpdate(localUpdate: LocalUpdate): IO[Unit] = {
-    val dir = localUpdate.localRepo.dir
-    val updateBranch = localUpdate.updateBranch
-
-    git.returnToCurrentBranch(dir) { _ =>
-      git.checkoutBranch(updateBranch, dir) >> ifTrue(shouldBeReset(localUpdate)) {
-        for {
-          _ <- log.printInfo(s"Reset and update branch ${updateBranch.name}")
-          _ <- git.exec(List("reset", "--hard", localUpdate.localRepo.base.name), dir)
-          _ <- io.updateDir(dir, localUpdate.update)
-          _ <- commitPushAndCreatePullRequest(localUpdate)
-        } yield ()
-      }
-    }
   }
 
   def shouldBeReset(localUpdate: LocalUpdate): IO[Boolean] = {
@@ -150,16 +148,16 @@ object steward extends IOApp {
       authors <- git.branchAuthors(updateBranch, baseBranch, dir)
       (result, msg) = {
         val pr = s"PR ${updateBranch.name}"
-        if (isMerged) {
+        if (isMerged)
           (false, s"$pr is already merged")
-        } else if (authors.distinct.length >= 2) {
+        else if (authors.distinct.length >= 2)
           (false, s"$pr has commits by ${authors.mkString(", ")}")
-        } else if (authors.length >= 2) {
+        else if (authors.length >= 2)
           (true, s"$pr has multiple commits")
-        } else {
-          if (isBehind) (true, s"$pr is behind ${baseBranch.name}")
-          else (false, s"$pr is up-to-date with ${baseBranch.name}")
-        }
+        else if (isBehind)
+          (true, s"$pr is behind ${baseBranch.name}")
+        else
+          (false, s"$pr is up-to-date with ${baseBranch.name}")
       }
       _ <- log.printInfo(msg)
     } yield result
