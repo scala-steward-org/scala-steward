@@ -111,7 +111,7 @@ object steward extends IOApp {
           _ <- commitPushAndCreatePullRequest(localUpdate)
         } yield ()
       },
-      log.printWarning(s"Applying update changed no files")
+      log.printWarning(s"No files were changed")
     )
   }
 
