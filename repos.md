@@ -31,3 +31,6 @@
 - sphereio/sphere-scala-libs
 - vectos/formulation
 - vlovgr/ciris
+- maximn/scala-workshop
+- maximn/coding-interview-questions-scala
+- maximn/TaxCalculator
