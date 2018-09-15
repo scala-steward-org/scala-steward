@@ -25,6 +25,13 @@ final case class Update(
     currentVersion: String,
     newerVersions: NonEmptyList[String]
 ) {
+  def isImpliedBy(update: Update): Boolean =
+    groupId === update.groupId &&
+      artifactId =!= update.artifactId &&
+      artifactId.startsWith(Update.removeIgnorableSuffix(update.artifactId)) &&
+      currentVersion === update.currentVersion &&
+      newerVersions === update.newerVersions
+
   def name: String =
     artifactId match {
       case "core" => groupId.split('.').lastOption.getOrElse(groupId)
@@ -36,8 +43,8 @@ final case class Update(
 
   def replaceAllIn(str: String): Option[String] = {
     def normalize(searchTerm: String): String =
-      searchTerm
-        .replaceAll("-core$", "")
+      Update
+        .removeIgnorableSuffix(searchTerm)
         .replace("-", ".?")
 
     val regex = s"(?i)(${normalize(name)}.*?)$currentVersion".r
@@ -63,4 +70,9 @@ object Update {
           Update(groupId, artifactId, version, newerVersions)
       }
     }
+
+  def removeIgnorableSuffix(str: String): String =
+    List("-core")
+      .find(suffix => str.endsWith(suffix))
+      .fold(str)(suffix => str.substring(0, str.length - suffix.length))
 }

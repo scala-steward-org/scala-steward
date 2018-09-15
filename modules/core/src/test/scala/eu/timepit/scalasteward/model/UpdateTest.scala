@@ -1,7 +1,6 @@
-package eu.timepit.scalasteward
+package eu.timepit.scalasteward.model
 
 import cats.data.{NonEmptyList => Nel}
-import eu.timepit.scalasteward.model.Update
 import org.scalatest.{FunSuite, Matchers}
 
 class UpdateTest extends FunSuite with Matchers {
@@ -98,5 +97,14 @@ class UpdateTest extends FunSuite with Matchers {
     val expected = """lazy val sttpVersion = "1.3.3""""
     Update("com.softwaremill.sttp", "core", "1.3.2", Nel.of("1.3.3"))
       .replaceAllIn(original) shouldBe Some(expected)
+  }
+
+  test("isProperSubsetOf") {
+    val update0 = Update("org.specs2", "specs2-core", "3.9.4", Nel.of("3.9.5"))
+    val update1 = update0.copy(artifactId = "specs2-scalacheck")
+    update0.isImpliedBy(update0) shouldBe false
+    update0.isImpliedBy(update1) shouldBe false
+    update1.isImpliedBy(update0) shouldBe true
+    update1.isImpliedBy(update1) shouldBe false
   }
 }

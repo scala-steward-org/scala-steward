@@ -36,16 +36,21 @@ object sbt {
 
   def allUpdates(dir: File): IO[List[Update]] =
     io.exec(sbtCmd :+ ";dependencyUpdates ;reload plugins; dependencyUpdates", dir)
-      .map(toDependencyUpdates)
+      .map(lines => sanitizeUpdates(toUpdates(lines)))
+
+  def sanitizeUpdates(updates: List[Update]): List[Update] = {
+    val distinctUpdates = updates.distinct
+    distinctUpdates
+      .filterNot(update => distinctUpdates.exists(other => update.isImpliedBy(other)))
+      .sortBy(update => (update.groupId, update.artifactId))
+  }
 
   val sbtCmd: List[String] =
     List("sbt", "-no-colors")
 
-  def toDependencyUpdates(lines: List[String]): List[Update] =
-    lines
-      .flatMap { line =>
-        Update.fromString(line.replace("[info]", "").trim).toSeq
-      }
-      .distinct
-      .sortBy(udate => (udate.groupId, udate.artifactId))
+  def toUpdates(lines: List[String]): List[Update] =
+    lines.flatMap { line =>
+      val trimmed = line.replace("[info]", "").trim
+      Update.fromString(trimmed).toSeq
+    }
 }
