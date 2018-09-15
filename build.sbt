@@ -30,7 +30,8 @@ lazy val core = myCrossProject("core")
       Dependencies.circeParser,
       Dependencies.fs2Core,
       Dependencies.scalaTest % Test
-    )
+    ),
+    assembly / test := {}
   )
 
 lazy val coreJVM = core.jvm
