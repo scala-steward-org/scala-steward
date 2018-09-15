@@ -15,6 +15,9 @@
 - LREN-CHUV/woken
 - LREN-CHUV/woken-messages
 - LREN-CHUV/woken-validation
+- maximn/coding-interview-questions-scala
+- maximn/scala-workshop
+- maximn/TaxCalculator
 - mfirry/scala-http-clients
 - milessabin/shapeless
 - pathikrit/better-files
@@ -31,6 +34,3 @@
 - sphereio/sphere-scala-libs
 - vectos/formulation
 - vlovgr/ciris
-- maximn/scala-workshop
-- maximn/coding-interview-questions-scala
-- maximn/TaxCalculator
