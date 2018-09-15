@@ -25,12 +25,16 @@ final case class Update(
     currentVersion: String,
     newerVersions: NonEmptyList[String]
 ) {
-  def isImpliedBy(update: Update): Boolean =
-    groupId === update.groupId &&
-      artifactId =!= update.artifactId &&
-      artifactId.startsWith(Update.removeIgnorableSuffix(update.artifactId)) &&
-      currentVersion === update.currentVersion &&
-      newerVersions === update.newerVersions
+
+  /** Returns true if the changes of applying `other` would include the changes
+    * of applying `this`.
+    */
+  def isImpliedBy(other: Update): Boolean =
+    groupId === other.groupId &&
+      artifactId =!= other.artifactId &&
+      artifactId.startsWith(Update.removeIgnorableSuffix(other.artifactId)) &&
+      currentVersion === other.currentVersion &&
+      newerVersions === other.newerVersions
 
   def name: String =
     artifactId match {

@@ -99,7 +99,7 @@ class UpdateTest extends FunSuite with Matchers {
       .replaceAllIn(original) shouldBe Some(expected)
   }
 
-  test("isProperSubsetOf") {
+  test("isImpliedBy") {
     val update0 = Update("org.specs2", "specs2-core", "3.9.4", Nel.of("3.9.5"))
     val update1 = update0.copy(artifactId = "specs2-scalacheck")
     update0.isImpliedBy(update0) shouldBe false

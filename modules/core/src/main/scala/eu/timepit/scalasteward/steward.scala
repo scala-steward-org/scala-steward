@@ -37,7 +37,7 @@ object steward extends IOApp {
   def prepareEnv(workspace: File): IO[Unit] =
     for {
       _ <- log.printInfo("Add global sbt plugins")
-      _ <- sbt.addGlobalPlugins
+      _ <- sbt.addGlobalPlugins(File.home)
       _ <- log.printInfo(s"Clean workspace $workspace")
       _ <- io.deleteForce(workspace)
       _ <- io.mkdirs(workspace)
