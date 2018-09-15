@@ -25,13 +25,13 @@ import eu.timepit.scalasteward.util._
 object steward extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
     val workspace = File.home / "code/scala-steward/workspace"
-    for {
-      _ <- prepareEnv(workspace)
-      repos <- getRepos(workspace)
-      _ <- repos.traverse_ { repo =>
-        log.printTimed(duration => s"Total time: $duration\n")(stewardRepo(repo, workspace))
-      }
-    } yield ExitCode.Success
+    log.printTotalTime {
+      for {
+        _ <- prepareEnv(workspace)
+        repos <- getRepos(workspace)
+        _ <- repos.traverse_(stewardRepo(_, workspace))
+      } yield ExitCode.Success
+    }
   }
 
   def prepareEnv(workspace: File): IO[Unit] =
@@ -56,9 +56,11 @@ object steward extends IOApp {
       _ <- updateDependencies(localRepo)
       _ <- io.deleteForce(localRepo.dir)
     } yield ()
-    p.attempt.flatMap {
-      case Right(_) => IO.unit
-      case Left(t)  => IO(println(t))
+    log.printTotalTime {
+      p.attempt.flatMap {
+        case Right(_) => IO.unit
+        case Left(t)  => IO(println(t))
+      }
     }
   }
 

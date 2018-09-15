@@ -23,6 +23,7 @@ import cats.effect.IO
 import eu.timepit.scalasteward.model.Update
 
 import scala.concurrent.duration.FiniteDuration
+import cats.implicits._
 
 object log {
   val now: IO[String] =
@@ -34,10 +35,13 @@ object log {
   def printWarning(msg: String): IO[Unit] =
     printImpl("W", msg)
 
-  def printTimed[A](msg: FiniteDuration => String)(fa: IO[A]): IO[Unit] =
+  def printTimed[A](msg: FiniteDuration => String)(fa: IO[A]): IO[A] =
     io.timed(fa).flatMap {
-      case (_, duration) => printInfo(msg(duration))
+      case (a, duration) => printInfo(msg(duration)) >> IO.pure(a)
     }
+
+  def printTotalTime[A](fa: IO[A]): IO[A] =
+    printTimed(duration => s"Total time: $duration")(fa)
 
   def printImpl(level: String, msg: String): IO[Unit] =
     now.flatMap(dt => IO(println(s"[$dt] $level: $msg")))
