@@ -76,7 +76,7 @@ object Update {
     }
 
   def removeIgnorableSuffix(str: String): String =
-    List("-core")
+    List("-core", "-server")
       .find(suffix => str.endsWith(suffix))
       .fold(str)(suffix => str.substring(0, str.length - suffix.length))
 }
