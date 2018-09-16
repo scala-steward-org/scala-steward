@@ -32,5 +32,6 @@
 - schrepfler/scala-uri
 - schrepfler/sportsml-scala
 - sphereio/sphere-scala-libs
+- typelevel/cats
 - vectos/formulation
 - vlovgr/ciris
