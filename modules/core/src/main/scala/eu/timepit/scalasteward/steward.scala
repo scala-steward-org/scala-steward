@@ -86,7 +86,6 @@ object steward extends IOApp {
   def updateDependencies(localRepo: LocalRepo): IO[Unit] =
     for {
       _ <- log.printInfo(s"Check updates for ${localRepo.upstream.show}")
-      // TODO: Run this in a sandbox
       updates <- sbt.allUpdates(localRepo.dir)
       _ <- log.printUpdates(updates)
       _ <- updates.traverse_(update => applyUpdate(LocalUpdate(localRepo, update)))

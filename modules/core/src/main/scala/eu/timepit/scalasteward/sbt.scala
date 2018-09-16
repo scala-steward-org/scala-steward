@@ -35,7 +35,7 @@ object sbt {
     }
 
   def allUpdates(dir: File): IO[List[Update]] =
-    io.exec(sbtCmd :+ ";dependencyUpdates ;reload plugins; dependencyUpdates", dir)
+    io.firejail(sbtCmd :+ ";dependencyUpdates ;reload plugins; dependencyUpdates", dir)
       .map(lines => sanitizeUpdates(toUpdates(lines)))
 
   def sanitizeUpdates(updates: List[Update]): List[Update] = {
