@@ -95,8 +95,10 @@ object github {
     val url = s"$path?$query"
 
     for {
-      lines <- io.exec(List("curl", "-s", url), localUpdate.localRepo.dir)
+      token <- accessToken
+      lines <- io.exec(List("curl", "-s", "-u", s"$myLogin:$token", url), localUpdate.localRepo.dir)
       json <- IO.fromEither(parser.parse(lines.mkString("\n")))
+      // TODO: Option.get, are you seriously?
       array <- IO(json.asArray.get)
     } yield array.nonEmpty
   }
