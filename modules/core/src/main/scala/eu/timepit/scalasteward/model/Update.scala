@@ -19,6 +19,8 @@ package eu.timepit.scalasteward.model
 import cats.data.NonEmptyList
 import cats.implicits._
 
+import scala.util.matching.Regex
+
 final case class Update(
     groupId: String,
     artifactId: String,
@@ -47,11 +49,12 @@ final case class Update(
 
   def replaceAllIn(str: String): Option[String] = {
     def normalize(searchTerm: String): String =
-      Update
-        .removeIgnorableSuffix(searchTerm)
+      Regex
+        .quoteReplacement(Update.removeIgnorableSuffix(searchTerm))
         .replace("-", ".?")
 
-    val regex = s"(?i)(${normalize(name)}.*?)$currentVersion".r
+    val regex =
+      s"(?i)(${normalize(name)}.*?)${Regex.quote(currentVersion)}".r
     var updated = false
     val result = regex.replaceAllIn(str, m => {
       updated = true
