@@ -38,3 +38,4 @@
 - typelevel/cats
 - vectos/formulation
 - vlovgr/ciris
+- WellFactored/resourcepool
