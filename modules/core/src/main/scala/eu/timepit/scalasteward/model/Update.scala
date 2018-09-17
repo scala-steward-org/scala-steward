@@ -21,65 +21,119 @@ import cats.implicits._
 
 import scala.util.matching.Regex
 
-final case class Update(
-    groupId: String,
-    artifactId: String,
-    currentVersion: String,
-    newerVersions: NonEmptyList[String]
-) {
-
-  /** Returns true if the changes of applying `other` would include the changes
-    * of applying `this`.
-    */
-  def isImpliedBy(other: Update): Boolean =
-    groupId === other.groupId &&
-      artifactId =!= other.artifactId &&
-      artifactId.startsWith(Update.removeIgnorableSuffix(other.artifactId)) &&
-      currentVersion === other.currentVersion &&
-      newerVersions === other.newerVersions
-
-  def name: String =
-    artifactId match {
-      case "core" => groupId.split('.').lastOption.getOrElse(groupId)
-      case _      => artifactId
-    }
-
-  def nextVersion: String =
-    newerVersions.head
-
-  def replaceAllIn(str: String): Option[String] = {
-    def normalize(searchTerm: String): String =
-      Regex
-        .quoteReplacement(Update.removeIgnorableSuffix(searchTerm))
-        .replace("-", ".?")
-
-    val regex =
-      s"(?i)(${normalize(name)}.*?)${Regex.quote(currentVersion)}".r
-    var updated = false
-    val result = regex.replaceAllIn(str, m => {
-      updated = true
-      m.group(1) + nextVersion
-    })
-    if (updated) Some(result) else None
-  }
-
-  def show: String =
-    s"$groupId:$artifactId : ${(currentVersion :: newerVersions).mkString_("", " -> ", "")}"
+sealed trait Update {
+  def artifactId: String
+  def currentVersion: String
+  def groupId: String
+  def name: String
+  def nextVersion: String
+  def replaceAllIn(str: String): Option[String]
+  def show: String
 }
 
 object Update {
-  def fromString(str: String): Either[Throwable, Update] =
+  final case class Single(
+      groupId: String,
+      artifactId: String,
+      currentVersion: String,
+      newerVersions: NonEmptyList[String]
+  ) extends Update {
+    override def name: String =
+      if (meaninglessSuffixes.contains(artifactId))
+        groupId.split('.').lastOption.getOrElse(groupId)
+      else
+        artifactId
+
+    override def nextVersion: String =
+      newerVersions.head
+
+    override def replaceAllIn(str: String): Option[String] = {
+      def normalize(searchTerm: String): String =
+        Regex
+          .quoteReplacement(removeMeaninglessSuffixes(searchTerm))
+          .replace("-", ".?")
+
+      val regex = s"(?i)(${normalize(name)}.*?)${Regex.quote(currentVersion)}".r
+      var updated = false
+      val result = regex.replaceAllIn(str, m => {
+        updated = true
+        m.group(1) + nextVersion
+      })
+      if (updated) Some(result) else None
+    }
+
+    override def show: String =
+      s"$groupId:$artifactId : ${(currentVersion :: newerVersions).mkString_("", " -> ", "")}"
+  }
+
+  final case class Group(
+      updates: NonEmptyList[Single]
+  ) extends Update {
+    override def artifactId: String =
+      updates.head.artifactId
+
+    override def currentVersion: String =
+      updates.head.currentVersion
+
+    override def groupId: String =
+      updates.head.groupId
+
+    override def name: String =
+      updates.head.name
+
+    override def nextVersion: String =
+      updates.head.nextVersion
+
+    override def replaceAllIn(str: String): Option[String] =
+      (updates.map(_.replaceAllIn(str)) :+ replaceAllIn2(str)).find(_.isDefined).flatten
+
+    override def show: String =
+      updates.map(_.show).mkString_("", ", ", "")
+
+    def commonArtifactPrefix: Option[String] = {
+      val list = updates.map(_.artifactId).toList
+      val prefix = list.foldLeft("") { (_, _) =>
+        (list.min.view, list.max.view).zipped.takeWhile(v => v._1 == v._2).unzip._1.mkString
+      }
+      if (prefix.isEmpty) None else Some(prefix)
+    }
+
+    def replaceAllIn2(str: String): Option[String] = {
+      def normalize(searchTerm: String): String =
+        Regex
+          .quoteReplacement(removeMeaninglessSuffixes(searchTerm))
+          .replace("-", ".?")
+
+      val regex =
+        s"(?i)(${normalize(commonArtifactPrefix.getOrElse(updates.head.artifactId))}.*?)${Regex
+          .quote(currentVersion)}".r
+      var updated = false
+      val result = regex.replaceAllIn(str, m => {
+        updated = true
+        m.group(1) + nextVersion
+      })
+      if (updated) Some(result) else None
+    }
+  }
+
+  ///
+
+  def fromString(str: String): Either[Throwable, Single] =
     Either.catchNonFatal {
       val regex = """([^\s:]+):([^\s:]+)[^\s]*\s+:\s+([^\s]+)\s+->(.+)""".r
       str match {
         case regex(groupId, artifactId, version, updates) =>
           val newerVersions = NonEmptyList.fromListUnsafe(updates.split("->").map(_.trim).toList)
-          Update(groupId, artifactId, version, newerVersions)
+          Single(groupId, artifactId, version, newerVersions)
       }
     }
 
-  def removeIgnorableSuffix(str: String): String =
-    List("-core", "-server")
+  val meaninglessSuffixes: List[String] =
+    List("core", "server")
+
+  def removeMeaninglessSuffixes(str: String): String =
+    meaninglessSuffixes
+      .map("-" + _)
       .find(suffix => str.endsWith(suffix))
       .fold(str)(suffix => str.substring(0, str.length - suffix.length))
 }
