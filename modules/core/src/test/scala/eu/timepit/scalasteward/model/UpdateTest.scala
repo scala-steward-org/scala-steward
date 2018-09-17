@@ -99,6 +99,13 @@ class UpdateTest extends FunSuite with Matchers {
       .replaceAllIn(original) shouldBe Some(expected)
   }
 
+  test("replaceAllIn: version range") {
+    val original = """Seq("org.specs2" %% "specs2-core" % "3.+" % "test")"""
+    val expected = """Seq("org.specs2" %% "specs2-core" % "4.3.4" % "test")"""
+    Update("org.specs2", "specs2-core", "3.+", Nel.of("4.3.4"))
+      .replaceAllIn(original) shouldBe Some(expected)
+  }
+
   test("isImpliedBy") {
     val update0 = Update("org.specs2", "specs2-core", "3.9.4", Nel.of("3.9.5"))
     val update1 = update0.copy(artifactId = "specs2-scalacheck")

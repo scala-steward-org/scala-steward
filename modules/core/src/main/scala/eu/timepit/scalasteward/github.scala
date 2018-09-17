@@ -44,7 +44,7 @@ object github {
           "--data",
           s"""{
              |  "title": "${localUpdate.commitMsg}",
-             |  "body": "Update ${localUpdate.update.groupId}:${localUpdate.update.artifactId} from ${localUpdate.update.currentVersion} to ${localUpdate.update.nextVersion}.",
+             |  "body": "Updates ${localUpdate.update.groupId}:${localUpdate.update.artifactId} from ${localUpdate.update.currentVersion} to ${localUpdate.update.nextVersion}.",
              |  "head": "$myLogin:${localUpdate.updateBranch.name}",
              |  "base": "${localUpdate.localRepo.base.name}"
              |}

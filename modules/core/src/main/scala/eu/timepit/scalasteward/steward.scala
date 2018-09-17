@@ -161,6 +161,7 @@ object steward extends IOApp {
           (true, s"$pr is behind ${baseBranch.name}")
         else
           (false, s"$pr is up-to-date with ${baseBranch.name}")
+        // TODO: Only reset PRs that are still open.
       }
       _ <- log.printInfo(msg)
     } yield result
