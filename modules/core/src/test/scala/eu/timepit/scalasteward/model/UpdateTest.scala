@@ -116,12 +116,14 @@ class UpdateTest extends FunSuite with Matchers {
     val original = """ val circe = "0.10.0-M1" """
     val expected = """ val circe = "0.10.0-M2" """
     Update
-      .Group(Nel.of(
-        Update.Single("io.circe", "circe-generic", "0.10.0-M1", Nel.of("0.10.0-M2")),
-        Update.Single("io.circe", "circe-literal", "0.10.0-M1", Nel.of("0.10.0-M2")),
-        Update.Single("io.circe", "circe-parser", "0.10.0-M1", Nel.of("0.10.0-M2")),
-        Update.Single(" io.circe", "circe-testing", "0.10.0-M1", Nel.of("0.10.0-M2"))
-      ))
+      .Group(
+        Nel.of(
+          Update.Single("io.circe", "circe-generic", "0.10.0-M1", Nel.of("0.10.0-M2")),
+          Update.Single("io.circe", "circe-literal", "0.10.0-M1", Nel.of("0.10.0-M2")),
+          Update.Single("io.circe", "circe-parser", "0.10.0-M1", Nel.of("0.10.0-M2")),
+          Update.Single(" io.circe", "circe-testing", "0.10.0-M1", Nel.of("0.10.0-M2"))
+        )
+      )
       .replaceAllIn(original) shouldBe Some(expected)
   }
 }
