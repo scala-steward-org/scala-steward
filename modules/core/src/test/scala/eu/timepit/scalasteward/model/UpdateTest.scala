@@ -132,4 +132,10 @@ class UpdateTest extends FunSuite with Matchers {
       .Group("com.pepegar", Nel.of("hammock-core", "hammock-circe"), "0.8.1", Nel.of("0.8.5"))
       .replaceAllIn(original) shouldBe Some(expected)
   }
+
+  test("ignore: check all artifactIds in group") {
+    Update.ignore(
+      Update.Group("org.scala-lang", Nel.of("abc", "scala-compiler"), "1.0.0", Nel.of("2.0.0"))
+    )
+  }
 }

@@ -27,6 +27,7 @@ import scala.util.matching.Regex
 sealed trait Update extends Product with Serializable {
   def groupId: String
   def artifactId: String
+  def artifactIds: NonEmptyList[String]
   def currentVersion: String
   def newerVersions: NonEmptyList[String]
 
@@ -57,7 +58,7 @@ sealed trait Update extends Product with Serializable {
 
   def searchTerms: NonEmptyList[String] =
     this match {
-      case s: Single => NonEmptyList.one(s.artifactId)
+      case s: Single => s.artifactIds
       case g: Group  => g.artifactIds.concat(g.artifactIdsPrefix.map(_.value).toList)
     }
 
@@ -77,7 +78,10 @@ object Update {
       artifactId: String,
       currentVersion: String,
       newerVersions: NonEmptyList[String]
-  ) extends Update
+  ) extends Update {
+    override def artifactIds: NonEmptyList[String] =
+      NonEmptyList.one(artifactId)
+  }
 
   final case class Group(
       groupId: String,
@@ -121,7 +125,7 @@ object Update {
   def ignore(update: Update): Boolean =
     update.groupId match {
       case "org.scala-lang" =>
-        update.artifactId match {
+        update.artifactIds.exists {
           case "scala-compiler" => true
           case "scala-library"  => true
           case _                => false
