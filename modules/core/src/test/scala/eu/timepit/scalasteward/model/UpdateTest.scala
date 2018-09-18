@@ -114,20 +114,19 @@ class UpdateTest extends FunSuite with Matchers {
         "io.circe",
         Nel.of("circe-generic", "circe-literal", "circe-parser", "circe-testing"),
         "0.10.0-M1",
-        Nel.of("0.10.0-M2"))
+        Nel.of("0.10.0-M2")
+      )
       .replaceAllIn(original) shouldBe Some(expected)
   }
 
   test("replaceAllIn: group with repeated version") {
     val original =
-      """
-        |"com.pepegar" %% "hammock-core" % "0.8.1",
-        |"com.pepegar" %% "hammock-circe" % "0.8.1"
+      """ "com.pepegar" %% "hammock-core"  % "0.8.1",
+        | "com.pepegar" %% "hammock-circe" % "0.8.1"
       """.stripMargin.trim
     val expected =
-      """
-        |"com.pepegar" %% "hammock-core" % "0.8.5",
-        |"com.pepegar" %% "hammock-circe" % "0.8.5"
+      """ "com.pepegar" %% "hammock-core"  % "0.8.5",
+        | "com.pepegar" %% "hammock-circe" % "0.8.5"
       """.stripMargin.trim
     Update
       .Group("com.pepegar", Nel.of("hammock-core", "hammock-circe"), "0.8.1", Nel.of("0.8.5"))
