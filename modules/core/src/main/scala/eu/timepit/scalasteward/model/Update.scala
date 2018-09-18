@@ -18,7 +18,10 @@ package eu.timepit.scalasteward.model
 
 import cats.data.NonEmptyList
 import cats.implicits._
+import eu.timepit.refined.types.string.NonEmptyString
+import eu.timepit.scalasteward.model.Update.{Group, Single}
 import eu.timepit.scalasteward.util
+
 import scala.util.matching.Regex
 
 sealed trait Update {
@@ -27,8 +30,29 @@ sealed trait Update {
   def groupId: String
   def name: String
   def nextVersion: String
-  def replaceAllIn(str: String): Option[String]
   def show: String
+
+  def replaceAllIn(target: String): Option[String] = {
+    val quoted = searchTerms.map { term =>
+      Regex
+        .quoteReplacement(Update.removeCommonSuffix(term))
+        .replace("-", ".?")
+    }
+    val keyword = if (quoted.tail.isEmpty) quoted.head else quoted.mkString_("(", "|", ")")
+    val regex = s"(?i)($keyword.*?)${Regex.quote(currentVersion)}".r
+    var updated = false
+    val result = regex.replaceAllIn(target, m => {
+      updated = true
+      m.group(1) + nextVersion
+    })
+    if (updated) Some(result) else None
+  }
+
+  def searchTerms: NonEmptyList[String] =
+    this match {
+      case s: Single => NonEmptyList.one(s.artifactId)
+      case g: Group  => g.artifactIds.concat(g.artifactIdsPrefix.map(_.value).toList)
+    }
 }
 
 object Update {
@@ -39,28 +63,13 @@ object Update {
       newerVersions: NonEmptyList[String]
   ) extends Update {
     override def name: String =
-      if (meaninglessSuffixes.contains(artifactId))
+      if (commonSuffixes.contains(artifactId))
         groupId.split('.').lastOption.getOrElse(groupId)
       else
         artifactId
 
     override def nextVersion: String =
       newerVersions.head
-
-    override def replaceAllIn(str: String): Option[String] = {
-      def normalize(searchTerm: String): String =
-        Regex
-          .quoteReplacement(removeMeaninglessSuffixes(searchTerm))
-          .replace("-", ".?")
-
-      val regex = s"(?i)(${normalize(name)}.*?)${Regex.quote(currentVersion)}".r
-      var updated = false
-      val result = regex.replaceAllIn(str, m => {
-        updated = true
-        m.group(1) + nextVersion
-      })
-      if (updated) Some(result) else None
-    }
 
     override def show: String =
       s"$groupId:$artifactId : ${(currentVersion :: newerVersions).mkString_("", " -> ", "")}"
@@ -69,6 +78,9 @@ object Update {
   final case class Group(
       updates: NonEmptyList[Single]
   ) extends Update {
+    def artifactIds: NonEmptyList[String] =
+      updates.map(_.artifactId)
+
     override def artifactId: String =
       updates.head.artifactId
 
@@ -84,31 +96,11 @@ object Update {
     override def nextVersion: String =
       updates.head.nextVersion
 
-    override def replaceAllIn(str: String): Option[String] =
-      (updates.map(_.replaceAllIn(str)) :+ replaceAllIn2(str)).find(_.isDefined).flatten
-
     override def show: String =
       updates.map(_.show).mkString_("", ", ", "")
 
-    def commonArtifactPrefix: Option[String] =
-      util.longestCommonNonEmptyPrefix(updates.map(_.artifactId)).map(_.value)
-
-    def replaceAllIn2(str: String): Option[String] = {
-      def normalize(searchTerm: String): String =
-        Regex
-          .quoteReplacement(removeMeaninglessSuffixes(searchTerm))
-          .replace("-", ".?")
-
-      val regex =
-        s"(?i)(${normalize(commonArtifactPrefix.getOrElse(updates.head.artifactId))}.*?)${Regex
-          .quote(currentVersion)}".r
-      var updated = false
-      val result = regex.replaceAllIn(str, m => {
-        updated = true
-        m.group(1) + nextVersion
-      })
-      if (updated) Some(result) else None
-    }
+    def artifactIdsPrefix: Option[NonEmptyString] =
+      util.longestCommonNonEmptyPrefix(artifactIds)
   }
 
   ///
@@ -123,9 +115,9 @@ object Update {
       }
     }
 
-  val meaninglessSuffixes: List[String] =
+  val commonSuffixes: List[String] =
     List("core", "server")
 
-  def removeMeaninglessSuffixes(str: String): String =
-    util.removeSuffix(str, meaninglessSuffixes)
+  def removeCommonSuffix(str: String): String =
+    util.removeSuffix(str, commonSuffixes)
 }
