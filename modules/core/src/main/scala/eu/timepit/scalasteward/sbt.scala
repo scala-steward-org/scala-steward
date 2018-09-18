@@ -37,26 +37,31 @@ object sbt {
 
   def allUpdates(dir: File): IO[List[Update]] =
     io.firejail(sbtCmd :+ ";dependencyUpdates ;reload plugins; dependencyUpdates", dir)
-      .map(lines => sanitizeUpdates(toSingleUpdates(lines)))
+      .map(lines => sanitizeUpdates(toUpdates(lines)))
 
-  def sanitizeUpdates(updates: List[Update.Single]): List[Update] = {
-    val distinctUpdates = updates.distinct
-    distinctUpdates
+  def sanitizeUpdates(updates: List[Update.Single]): List[Update] =
+    updates.distinct
       .groupByNel(update => (update.groupId, update.currentVersion, update.newerVersions))
       .values
       .map { nel =>
         val head = nel.head
-        if (nel.length > 1) Update.Group(head.groupId, head.currentVersion, head.newerVersions, nel)
-        else head
+        if (nel.tail.nonEmpty)
+          Update.Group(
+            head.groupId,
+            nel.map(_.artifactId).sorted,
+            head.currentVersion,
+            head.newerVersions
+          )
+        else
+          head
       }
       .toList
       .sortBy(update => (update.groupId, update.artifactId))
-  }
 
   val sbtCmd: List[String] =
     List("sbt", "-no-colors")
 
-  def toSingleUpdates(lines: List[String]): List[Update.Single] =
+  def toUpdates(lines: List[String]): List[Update.Single] =
     lines.flatMap { line =>
       val trimmed = line.replace("[info]", "").trim
       Update.fromString(trimmed).toSeq

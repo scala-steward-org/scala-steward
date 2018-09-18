@@ -30,21 +30,22 @@ sealed trait Update extends Product with Serializable {
   def currentVersion: String
   def newerVersions: NonEmptyList[String]
 
-  def name: String
-  def show: String
+  def name: String =
+    if (Update.commonSuffixes.contains(artifactId))
+      groupId.split('.').lastOption.getOrElse(groupId)
+    else
+      artifactId
 
   def nextVersion: String =
     newerVersions.head
 
   def replaceAllIn(target: String): Option[String] = {
-    val searchTerm = searchTerms
-      .map { term =>
-        Regex
-          .quoteReplacement(Update.removeCommonSuffix(term))
-          .replace("-", ".?")
-      }
-      .mkString_("(", "|", ")")
-
+    val quotedSearchTerms = searchTerms.map { term =>
+      Regex
+        .quoteReplacement(Update.removeCommonSuffix(term))
+        .replace("-", ".?")
+    }
+    val searchTerm = quotedSearchTerms.mkString_("(", "|", ")")
     val regex = s"(?i)($searchTerm.*?)${Regex.quote(currentVersion)}".r
     var updated = false
     val result = regex.replaceAllIn(target, m => {
@@ -59,6 +60,15 @@ sealed trait Update extends Product with Serializable {
       case s: Single => NonEmptyList.one(s.artifactId)
       case g: Group  => g.artifactIds.concat(g.artifactIdsPrefix.map(_.value).toList)
     }
+
+  def show: String = {
+    val artifacts = this match {
+      case s: Single => s.artifactId
+      case g: Group  => g.artifactIds.mkString_("{", ", ", "}")
+    }
+    val versions = (currentVersion :: newerVersions).mkString_("", " -> ", "")
+    s"$groupId:$artifacts : $versions"
+  }
 }
 
 object Update {
@@ -67,34 +77,16 @@ object Update {
       artifactId: String,
       currentVersion: String,
       newerVersions: NonEmptyList[String]
-  ) extends Update {
-    override def name: String =
-      if (commonSuffixes.contains(artifactId))
-        groupId.split('.').lastOption.getOrElse(groupId)
-      else
-        artifactId
-
-    override def show: String =
-      s"$groupId:$artifactId : ${(currentVersion :: newerVersions).mkString_("", " -> ", "")}"
-  }
+  ) extends Update
 
   final case class Group(
       groupId: String,
+      artifactIds: NonEmptyList[String],
       currentVersion: String,
-      newerVersions: NonEmptyList[String],
-      updates: NonEmptyList[Single]
+      newerVersions: NonEmptyList[String]
   ) extends Update {
-    def artifactIds: NonEmptyList[String] =
-      updates.map(_.artifactId)
-
     override def artifactId: String =
-      updates.head.artifactId
-
-    override def name: String =
-      updates.head.name
-
-    override def show: String =
-      updates.map(_.show).mkString_("", ", ", "")
+      artifactIds.head
 
     def artifactIdsPrefix: Option[NonEmptyString] =
       util.longestCommonNonEmptyPrefix(artifactIds)

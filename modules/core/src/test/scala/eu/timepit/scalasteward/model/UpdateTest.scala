@@ -106,25 +106,19 @@ class UpdateTest extends FunSuite with Matchers {
       .replaceAllIn(original) shouldBe Some(expected)
   }
 
-  test("lockstep") {
+  test("replaceAllIn: group with prefix val") {
     val original = """ val circe = "0.10.0-M1" """
     val expected = """ val circe = "0.10.0-M2" """
     Update
       .Group(
         "io.circe",
+        Nel.of("circe-generic", "circe-literal", "circe-parser", "circe-testing"),
         "0.10.0-M1",
-        Nel.of("0.10.0-M2"),
-        Nel.of(
-          Update("io.circe", "circe-generic", "0.10.0-M1", Nel.of("0.10.0-M2")),
-          Update("io.circe", "circe-literal", "0.10.0-M1", Nel.of("0.10.0-M2")),
-          Update("io.circe", "circe-parser", "0.10.0-M1", Nel.of("0.10.0-M2")),
-          Update(" io.circe", "circe-testing", "0.10.0-M1", Nel.of("0.10.0-M2"))
-        )
-      )
+        Nel.of("0.10.0-M2"))
       .replaceAllIn(original) shouldBe Some(expected)
   }
 
-  test("lockstep 2") {
+  test("replaceAllIn: group with repeated version") {
     val original =
       """
         |"com.pepegar" %% "hammock-core" % "0.8.1",
@@ -136,15 +130,7 @@ class UpdateTest extends FunSuite with Matchers {
         |"com.pepegar" %% "hammock-circe" % "0.8.5"
       """.stripMargin.trim
     Update
-      .Group(
-        "com.pepegar",
-        "0.8.1",
-        Nel.of("0.8.5"),
-        Nel.of(
-          Update("com.pepegar", "hammock-core", "0.8.1", Nel.of("0.8.5")),
-          Update("com.pepegar", "hammock-circe", "0.8.1", Nel.of("0.8.5"))
-        )
-      )
+      .Group("com.pepegar", Nel.of("hammock-core", "hammock-circe"), "0.8.1", Nel.of("0.8.5"))
       .replaceAllIn(original) shouldBe Some(expected)
   }
 }

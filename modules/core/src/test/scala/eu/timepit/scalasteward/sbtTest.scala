@@ -9,7 +9,12 @@ class sbtTest extends FunSuite with Matchers {
     val update0 = Update("org.specs2", "specs2-core", "3.9.4", Nel.of("3.9.5"))
     val update1 = update0.copy(artifactId = "specs2-scalacheck")
     sbt.sanitizeUpdates(List(update0, update1)) shouldBe List(
-      Update.Group("org.specs2", "3.9.4", Nel.of("3.9.5"), Nel.of(update0, update1))
+      Update.Group(
+        "org.specs2",
+        Nel.of("specs2-core", "specs2-scalacheck"),
+        "3.9.4",
+        Nel.of("3.9.5")
+      )
     )
   }
 
@@ -24,7 +29,7 @@ class sbtTest extends FunSuite with Matchers {
       "[info]   com.github.pureconfig:pureconfig : 0.8.0            -> 0.9.2",
       "[info]   org.scala-lang:scala-library     : 2.12.3 -> 2.12.6"
     )
-    sbt.toSingleUpdates(input) shouldBe List(
+    sbt.toUpdates(input) shouldBe List(
       Update("org.scala-lang", "scala-library", "2.12.3", Nel.of("2.12.6")),
       Update("org.scala-lang", "scala-library", "2.12.3", Nel.of("2.12.6")),
       Update("org.scalacheck", "scalacheck", "1.13.5", Nel.of("1.14.0")),
