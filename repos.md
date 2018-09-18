@@ -1,14 +1,14 @@
 - arturgajowy/rchain
 - ChristopherDavenport/base.g8
 - ChristopherDavenport/cats-par
-- ChristopherDavenport/cats-time
 - ChristopherDavenport/cats-scalacheck
+- ChristopherDavenport/cats-time
 - ChristopherDavenport/cormorant
 - ChristopherDavenport/Data.Maybe
 - ChristopherDavenport/ember
 - ChristopherDavenport/fuuid
-- ChristopherDavenport/log4cats
 - ChristopherDavenport/linebacker
+- ChristopherDavenport/log4cats
 - ChristopherDavenport/mules
 - ChristopherDavenport/read
 - ChristopherDavenport/scalaz-task-effect
@@ -30,6 +30,7 @@
 - http4s/rho
 - ilya-murzinov/finch-todo-backend
 - larsrh/sbt-libisabelle
+- laserdisc-io/log-effect
 - LREN-CHUV/woken
 - LREN-CHUV/woken-messages
 - LREN-CHUV/woken-validation
@@ -54,4 +55,3 @@
 - vectos/formulation
 - vlovgr/ciris
 - WellFactored/resourcepool
-- laserdisc-io/log-effect
