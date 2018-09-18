@@ -24,11 +24,12 @@ import eu.timepit.scalasteward.util
 
 import scala.util.matching.Regex
 
-sealed trait Update {
+sealed trait Update extends Product with Serializable {
+  def groupId: String
   def artifactId: String
   def currentVersion: String
   def newerVersions: NonEmptyList[String]
-  def groupId: String
+
   def name: String
   def show: String
 
@@ -36,13 +37,15 @@ sealed trait Update {
     newerVersions.head
 
   def replaceAllIn(target: String): Option[String] = {
-    val quoted = searchTerms.map { term =>
-      Regex
-        .quoteReplacement(Update.removeCommonSuffix(term))
-        .replace("-", ".?")
-    }
-    val keyword = if (quoted.tail.isEmpty) quoted.head else quoted.mkString_("(", "|", ")")
-    val regex = s"(?i)($keyword.*?)${Regex.quote(currentVersion)}".r
+    val searchTerm = searchTerms
+      .map { term =>
+        Regex
+          .quoteReplacement(Update.removeCommonSuffix(term))
+          .replace("-", ".?")
+      }
+      .mkString_("(", "|", ")")
+
+    val regex = s"(?i)($searchTerm.*?)${Regex.quote(currentVersion)}".r
     var updated = false
     val result = regex.replaceAllIn(target, m => {
       updated = true
@@ -76,6 +79,9 @@ object Update {
   }
 
   final case class Group(
+      groupId: String,
+      currentVersion: String,
+      newerVersions: NonEmptyList[String],
       updates: NonEmptyList[Single]
   ) extends Update {
     def artifactIds: NonEmptyList[String] =
@@ -84,17 +90,8 @@ object Update {
     override def artifactId: String =
       updates.head.artifactId
 
-    override def currentVersion: String =
-      updates.head.currentVersion
-
-    override def groupId: String =
-      updates.head.groupId
-
     override def name: String =
       updates.head.name
-
-    override def newerVersions: NonEmptyList[String] =
-      updates.head.newerVersions
 
     override def show: String =
       updates.map(_.show).mkString_("", ", ", "")

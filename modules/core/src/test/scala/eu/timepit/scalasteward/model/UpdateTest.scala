@@ -111,11 +111,38 @@ class UpdateTest extends FunSuite with Matchers {
     val expected = """ val circe = "0.10.0-M2" """
     Update
       .Group(
+        "io.circe",
+        "0.10.0-M1",
+        Nel.of("0.10.0-M2"),
         Nel.of(
           Update("io.circe", "circe-generic", "0.10.0-M1", Nel.of("0.10.0-M2")),
           Update("io.circe", "circe-literal", "0.10.0-M1", Nel.of("0.10.0-M2")),
           Update("io.circe", "circe-parser", "0.10.0-M1", Nel.of("0.10.0-M2")),
           Update(" io.circe", "circe-testing", "0.10.0-M1", Nel.of("0.10.0-M2"))
+        )
+      )
+      .replaceAllIn(original) shouldBe Some(expected)
+  }
+
+  test("lockstep 2") {
+    val original =
+      """
+        |"com.pepegar" %% "hammock-core" % "0.8.1",
+        |"com.pepegar" %% "hammock-circe" % "0.8.1"
+      """.stripMargin.trim
+    val expected =
+      """
+        |"com.pepegar" %% "hammock-core" % "0.8.5",
+        |"com.pepegar" %% "hammock-circe" % "0.8.5"
+      """.stripMargin.trim
+    Update
+      .Group(
+        "com.pepegar",
+        "0.8.1",
+        Nel.of("0.8.5"),
+        Nel.of(
+          Update("com.pepegar", "hammock-core", "0.8.1", Nel.of("0.8.5")),
+          Update("com.pepegar", "hammock-circe", "0.8.1", Nel.of("0.8.5"))
         )
       )
       .replaceAllIn(original) shouldBe Some(expected)

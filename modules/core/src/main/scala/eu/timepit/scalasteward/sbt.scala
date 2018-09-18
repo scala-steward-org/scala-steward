@@ -42,9 +42,13 @@ object sbt {
   def sanitizeUpdates(updates: List[Update.Single]): List[Update] = {
     val distinctUpdates = updates.distinct
     distinctUpdates
-      .groupByNel(single => (single.groupId, single.currentVersion, single.newerVersions))
-      .mapValues(nel => if (nel.length > 1) Update.Group(nel) else nel.head)
+      .groupByNel(update => (update.groupId, update.currentVersion, update.newerVersions))
       .values
+      .map { nel =>
+        val head = nel.head
+        if (nel.length > 1) Update.Group(head.groupId, head.currentVersion, head.newerVersions, nel)
+        else head
+      }
       .toList
       .sortBy(update => (update.groupId, update.artifactId))
   }
