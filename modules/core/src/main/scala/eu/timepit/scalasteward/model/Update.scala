@@ -27,10 +27,13 @@ import scala.util.matching.Regex
 sealed trait Update {
   def artifactId: String
   def currentVersion: String
+  def newerVersions: NonEmptyList[String]
   def groupId: String
   def name: String
-  def nextVersion: String
   def show: String
+
+  def nextVersion: String =
+    newerVersions.head
 
   def replaceAllIn(target: String): Option[String] = {
     val quoted = searchTerms.map { term =>
@@ -68,9 +71,6 @@ object Update {
       else
         artifactId
 
-    override def nextVersion: String =
-      newerVersions.head
-
     override def show: String =
       s"$groupId:$artifactId : ${(currentVersion :: newerVersions).mkString_("", " -> ", "")}"
   }
@@ -93,8 +93,8 @@ object Update {
     override def name: String =
       updates.head.name
 
-    override def nextVersion: String =
-      updates.head.nextVersion
+    override def newerVersions: NonEmptyList[String] =
+      updates.head.newerVersions
 
     override def show: String =
       updates.map(_.show).mkString_("", ", ", "")
