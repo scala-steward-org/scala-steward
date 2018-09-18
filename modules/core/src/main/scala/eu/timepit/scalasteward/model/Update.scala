@@ -105,13 +105,21 @@ object Update {
 
   ///
 
+  def apply(
+      groupId: String,
+      artifactId: String,
+      currentVersion: String,
+      newerVersions: NonEmptyList[String]
+  ): Single =
+    Single(groupId, artifactId, currentVersion, newerVersions)
+
   def fromString(str: String): Either[Throwable, Single] =
     Either.catchNonFatal {
       val regex = """([^\s:]+):([^\s:]+)[^\s]*\s+:\s+([^\s]+)\s+->(.+)""".r
       str match {
         case regex(groupId, artifactId, version, updates) =>
           val newerVersions = NonEmptyList.fromListUnsafe(updates.split("->").map(_.trim).toList)
-          Single(groupId, artifactId, version, newerVersions)
+          Update(groupId, artifactId, version, newerVersions)
       }
     }
 
