@@ -1,4 +1,6 @@
 - arturgajowy/rchain
+- barambani/http4s-poc-api
+- barambani/laws
 - ChristopherDavenport/base.g8
 - ChristopherDavenport/cats-par
 - ChristopherDavenport/cats-scalacheck
@@ -56,5 +58,3 @@
 - vectos/formulation
 - vlovgr/ciris
 - WellFactored/resourcepool
-- barambani/http4s-poc-api
-- barambani/laws
