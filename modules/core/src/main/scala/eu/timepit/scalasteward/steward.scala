@@ -88,7 +88,8 @@ object steward extends IOApp {
       _ <- log.printInfo(s"Check updates for ${localRepo.upstream.show}")
       updates <- sbt.allUpdates(localRepo.dir)
       _ <- log.printUpdates(updates)
-      _ <- updates.traverse_(update => applyUpdate(LocalUpdate(localRepo, update)))
+      filteredUpdates = updates.filterNot(Update.ignore)
+      _ <- filteredUpdates.traverse_(update => applyUpdate(LocalUpdate(localRepo, update)))
     } yield ()
 
   def applyUpdate(localUpdate: LocalUpdate): IO[Unit] =

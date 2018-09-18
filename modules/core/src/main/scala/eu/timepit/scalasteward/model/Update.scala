@@ -117,4 +117,15 @@ object Update {
 
   def removeCommonSuffix(str: String): String =
     util.removeSuffix(str, commonSuffixes)
+
+  def ignore(update: Update): Boolean =
+    update.groupId match {
+      case "org.scala-lang" =>
+        update.artifactId match {
+          case "scala-compiler" => true
+          case "scala-library"  => true
+          case _                => false
+        }
+      case _ => false
+    }
 }
