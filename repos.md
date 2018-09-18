@@ -54,3 +54,4 @@
 - vectos/formulation
 - vlovgr/ciris
 - WellFactored/resourcepool
+- laserdisc-io/log-effect
