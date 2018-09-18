@@ -106,12 +106,30 @@ class UpdateTest extends FunSuite with Matchers {
       .replaceAllIn(original) shouldBe Some(expected)
   }
 
-  test("isImpliedBy") {
-    val update0 = Update("org.specs2", "specs2-core", "3.9.4", Nel.of("3.9.5"))
-    val update1 = update0.copy(artifactId = "specs2-scalacheck")
-    update0.isImpliedBy(update0) shouldBe false
-    update0.isImpliedBy(update1) shouldBe false
-    update1.isImpliedBy(update0) shouldBe true
-    update1.isImpliedBy(update1) shouldBe false
+  test("replaceAllIn: group with prefix val") {
+    val original = """ val circe = "0.10.0-M1" """
+    val expected = """ val circe = "0.10.0-M2" """
+    Update
+      .Group(
+        "io.circe",
+        Nel.of("circe-generic", "circe-literal", "circe-parser", "circe-testing"),
+        "0.10.0-M1",
+        Nel.of("0.10.0-M2")
+      )
+      .replaceAllIn(original) shouldBe Some(expected)
+  }
+
+  test("replaceAllIn: group with repeated version") {
+    val original =
+      """ "com.pepegar" %% "hammock-core"  % "0.8.1",
+        | "com.pepegar" %% "hammock-circe" % "0.8.1"
+      """.stripMargin.trim
+    val expected =
+      """ "com.pepegar" %% "hammock-core"  % "0.8.5",
+        | "com.pepegar" %% "hammock-circe" % "0.8.5"
+      """.stripMargin.trim
+    Update
+      .Group("com.pepegar", Nel.of("hammock-core", "hammock-circe"), "0.8.1", Nel.of("0.8.5"))
+      .replaceAllIn(original) shouldBe Some(expected)
   }
 }

@@ -8,7 +8,14 @@ class sbtTest extends FunSuite with Matchers {
   test("sanitizeUpdates") {
     val update0 = Update("org.specs2", "specs2-core", "3.9.4", Nel.of("3.9.5"))
     val update1 = update0.copy(artifactId = "specs2-scalacheck")
-    sbt.sanitizeUpdates(List(update0, update1)) shouldBe List(update0)
+    sbt.sanitizeUpdates(List(update0, update1)) shouldBe List(
+      Update.Group(
+        "org.specs2",
+        Nel.of("specs2-core", "specs2-scalacheck"),
+        "3.9.4",
+        Nel.of("3.9.5")
+      )
+    )
   }
 
   test("toUpdates") {

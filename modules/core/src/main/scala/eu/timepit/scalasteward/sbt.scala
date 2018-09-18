@@ -19,6 +19,7 @@ package eu.timepit.scalasteward
 import better.files.File
 import cats.effect.IO
 import eu.timepit.scalasteward.model.Update
+import cats.implicits._
 
 object sbt {
   def addGlobalPlugins(home: File): IO[Unit] =
@@ -38,17 +39,29 @@ object sbt {
     io.firejail(sbtCmd :+ ";dependencyUpdates ;reload plugins; dependencyUpdates", dir)
       .map(lines => sanitizeUpdates(toUpdates(lines)))
 
-  def sanitizeUpdates(updates: List[Update]): List[Update] = {
-    val distinctUpdates = updates.distinct
-    distinctUpdates
-      .filterNot(update => distinctUpdates.exists(other => update.isImpliedBy(other)))
+  def sanitizeUpdates(updates: List[Update.Single]): List[Update] =
+    updates.distinct
+      .groupByNel(update => (update.groupId, update.currentVersion, update.newerVersions))
+      .values
+      .map { nel =>
+        val head = nel.head
+        if (nel.tail.nonEmpty)
+          Update.Group(
+            head.groupId,
+            nel.map(_.artifactId).sorted,
+            head.currentVersion,
+            head.newerVersions
+          )
+        else
+          head
+      }
+      .toList
       .sortBy(update => (update.groupId, update.artifactId))
-  }
 
   val sbtCmd: List[String] =
     List("sbt", "-no-colors")
 
-  def toUpdates(lines: List[String]): List[Update] =
+  def toUpdates(lines: List[String]): List[Update.Single] =
     lines.flatMap { line =>
       val trimmed = line.replace("[info]", "").trim
       Update.fromString(trimmed).toSeq
