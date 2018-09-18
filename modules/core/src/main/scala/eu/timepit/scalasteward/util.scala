@@ -17,9 +17,29 @@
 package eu.timepit.scalasteward
 
 import cats.Monad
+import cats.data.NonEmptyList
 import cats.implicits._
+import eu.timepit.refined.types.string.NonEmptyString
 
 object util {
   def ifTrue[F[_]: Monad](fb: F[Boolean])(f: F[Unit]): F[Unit] =
     fb.ifM(f, Monad[F].unit)
+
+  def longestCommonPrefix(s1: String, s2: String): String = {
+    var i = 0
+    val min = math.min(s1.length, s2.length)
+    while (i < min && s1(i) == s2(i)) i = i + 1
+    s1.substring(0, i)
+  }
+
+  def longestCommonPrefix(xs: NonEmptyList[String]): String =
+    xs.reduceLeft(longestCommonPrefix)
+
+  def longestCommonNonEmptyPrefix(xs: NonEmptyList[String]): Option[NonEmptyString] =
+    NonEmptyString.unapply(longestCommonPrefix(xs))
+
+  def removeSuffix(target: String, suffixes: List[String]): String =
+    suffixes
+      .find(suffix => target.endsWith(suffix))
+      .fold(target)(suffix => target.substring(0, target.length - suffix.length))
 }
