@@ -27,6 +27,7 @@
 - getquill/quill
 - http4s/blaze
 - http4s/http4s
+- http4s/http4s.g8
 - http4s/rho
 - ilya-murzinov/finch-todo-backend
 - larsrh/sbt-libisabelle
