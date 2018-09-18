@@ -18,57 +18,91 @@ package eu.timepit.scalasteward.model
 
 import cats.data.NonEmptyList
 import cats.implicits._
+import eu.timepit.refined.types.string.NonEmptyString
+import eu.timepit.scalasteward.model.Update.{Group, Single}
+import eu.timepit.scalasteward.util
 
 import scala.util.matching.Regex
 
-final case class Update(
-    groupId: String,
-    artifactId: String,
-    currentVersion: String,
-    newerVersions: NonEmptyList[String]
-) {
-
-  /** Returns true if the changes of applying `other` would include the changes
-    * of applying `this`.
-    */
-  def isImpliedBy(other: Update): Boolean =
-    groupId === other.groupId &&
-      artifactId =!= other.artifactId &&
-      artifactId.startsWith(Update.removeIgnorableSuffix(other.artifactId)) &&
-      currentVersion === other.currentVersion &&
-      newerVersions === other.newerVersions
+sealed trait Update extends Product with Serializable {
+  def groupId: String
+  def artifactId: String
+  def currentVersion: String
+  def newerVersions: NonEmptyList[String]
 
   def name: String =
-    artifactId match {
-      case "core" => groupId.split('.').lastOption.getOrElse(groupId)
-      case _      => artifactId
-    }
+    if (Update.commonSuffixes.contains(artifactId))
+      groupId.split('.').lastOption.getOrElse(groupId)
+    else
+      artifactId
 
   def nextVersion: String =
     newerVersions.head
 
-  def replaceAllIn(str: String): Option[String] = {
-    def normalize(searchTerm: String): String =
+  def replaceAllIn(target: String): Option[String] = {
+    val quotedSearchTerms = searchTerms.map { term =>
       Regex
-        .quoteReplacement(Update.removeIgnorableSuffix(searchTerm))
+        .quoteReplacement(Update.removeCommonSuffix(term))
         .replace("-", ".?")
-
-    val regex =
-      s"(?i)(${normalize(name)}.*?)${Regex.quote(currentVersion)}".r
+    }
+    val searchTerm = quotedSearchTerms.mkString_("(", "|", ")")
+    val regex = s"(?i)($searchTerm.*?)${Regex.quote(currentVersion)}".r
     var updated = false
-    val result = regex.replaceAllIn(str, m => {
+    val result = regex.replaceAllIn(target, m => {
       updated = true
       m.group(1) + nextVersion
     })
     if (updated) Some(result) else None
   }
 
-  def show: String =
-    s"$groupId:$artifactId : ${(currentVersion :: newerVersions).mkString_("", " -> ", "")}"
+  def searchTerms: NonEmptyList[String] =
+    this match {
+      case s: Single => NonEmptyList.one(s.artifactId)
+      case g: Group  => g.artifactIds.concat(g.artifactIdsPrefix.map(_.value).toList)
+    }
+
+  def show: String = {
+    val artifacts = this match {
+      case s: Single => s.artifactId
+      case g: Group  => g.artifactIds.mkString_("{", ", ", "}")
+    }
+    val versions = (currentVersion :: newerVersions).mkString_("", " -> ", "")
+    s"$groupId:$artifacts : $versions"
+  }
 }
 
 object Update {
-  def fromString(str: String): Either[Throwable, Update] =
+  final case class Single(
+      groupId: String,
+      artifactId: String,
+      currentVersion: String,
+      newerVersions: NonEmptyList[String]
+  ) extends Update
+
+  final case class Group(
+      groupId: String,
+      artifactIds: NonEmptyList[String],
+      currentVersion: String,
+      newerVersions: NonEmptyList[String]
+  ) extends Update {
+    override def artifactId: String =
+      artifactIds.head
+
+    def artifactIdsPrefix: Option[NonEmptyString] =
+      util.longestCommonNonEmptyPrefix(artifactIds)
+  }
+
+  ///
+
+  def apply(
+      groupId: String,
+      artifactId: String,
+      currentVersion: String,
+      newerVersions: NonEmptyList[String]
+  ): Single =
+    Single(groupId, artifactId, currentVersion, newerVersions)
+
+  def fromString(str: String): Either[Throwable, Single] =
     Either.catchNonFatal {
       val regex = """([^\s:]+):([^\s:]+)[^\s]*\s+:\s+([^\s]+)\s+->(.+)""".r
       str match {
@@ -78,8 +112,9 @@ object Update {
       }
     }
 
-  def removeIgnorableSuffix(str: String): String =
-    List("-core", "-server")
-      .find(suffix => str.endsWith(suffix))
-      .fold(str)(suffix => str.substring(0, str.length - suffix.length))
+  val commonSuffixes: List[String] =
+    List("core", "server")
+
+  def removeCommonSuffix(str: String): String =
+    util.removeSuffix(str, commonSuffixes)
 }
