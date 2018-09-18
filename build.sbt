@@ -29,6 +29,7 @@ lazy val core = myCrossProject("core")
       Dependencies.catsEffect,
       Dependencies.circeParser,
       Dependencies.fs2Core,
+      Dependencies.refined,
       Dependencies.scalaTest % Test
     ),
     assembly / test := {}

@@ -18,7 +18,7 @@ package eu.timepit.scalasteward.model
 
 import cats.data.NonEmptyList
 import cats.implicits._
-
+import eu.timepit.scalasteward.util
 import scala.util.matching.Regex
 
 sealed trait Update {
@@ -90,13 +90,8 @@ object Update {
     override def show: String =
       updates.map(_.show).mkString_("", ", ", "")
 
-    def commonArtifactPrefix: Option[String] = {
-      val list = updates.map(_.artifactId).toList
-      val prefix = list.foldLeft("") { (_, _) =>
-        (list.min.view, list.max.view).zipped.takeWhile(v => v._1 == v._2).unzip._1.mkString
-      }
-      if (prefix.isEmpty) None else Some(prefix)
-    }
+    def commonArtifactPrefix: Option[String] =
+      util.longestCommonNonEmptyPrefix(updates.map(_.artifactId)).map(_.value)
 
     def replaceAllIn2(str: String): Option[String] = {
       def normalize(searchTerm: String): String =
@@ -132,8 +127,5 @@ object Update {
     List("core", "server")
 
   def removeMeaninglessSuffixes(str: String): String =
-    meaninglessSuffixes
-      .map("-" + _)
-      .find(suffix => str.endsWith(suffix))
-      .fold(str)(suffix => str.substring(0, str.length - suffix.length))
+    util.removeSuffix(str, meaninglessSuffixes)
 }
