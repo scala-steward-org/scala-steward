@@ -40,23 +40,7 @@ object sbt {
       .map(lines => sanitizeUpdates(toUpdates(lines)))
 
   def sanitizeUpdates(updates: List[Update.Single]): List[Update] =
-    updates.distinct
-      .groupByNel(update => (update.groupId, update.currentVersion, update.newerVersions))
-      .values
-      .map { nel =>
-        val head = nel.head
-        if (nel.tail.nonEmpty)
-          Update.Group(
-            head.groupId,
-            nel.map(_.artifactId).sorted,
-            head.currentVersion,
-            head.newerVersions
-          )
-        else
-          head
-      }
-      .toList
-      .sortBy(update => (update.groupId, update.artifactId))
+    Update.group(updates.distinct).sortBy(update => (update.groupId, update.artifactId))
 
   val sbtCmd: List[String] =
     List("sbt", "-no-colors")

@@ -89,8 +89,16 @@ object Update {
       currentVersion: String,
       newerVersions: NonEmptyList[String]
   ) extends Update {
-    override def artifactId: String =
-      artifactIds.head
+    override def artifactId: String = {
+      val possibleMainArtifactIds = for {
+        prefix <- artifactIdsPrefix.toList
+        suffix <- commonSuffixes
+      } yield prefix + suffix
+
+      artifactIds
+        .find(artifactId => possibleMainArtifactIds.contains(artifactId))
+        .getOrElse(artifactIds.head)
+    }
 
     def artifactIdsPrefix: Option[NonEmptyString] =
       util.longestCommonNonEmptyPrefix(artifactIds)
@@ -98,13 +106,18 @@ object Update {
 
   ///
 
-  def apply(
-      groupId: String,
-      artifactId: String,
-      currentVersion: String,
-      newerVersions: NonEmptyList[String]
-  ): Single =
-    Single(groupId, artifactId, currentVersion, newerVersions)
+  def group(updates: List[Single]): List[Update] =
+    updates
+      .groupByNel(update => (update.groupId, update.currentVersion, update.newerVersions))
+      .values
+      .map { nel =>
+        val head = nel.head
+        if (nel.tail.nonEmpty)
+          Group(head.groupId, nel.map(_.artifactId), head.currentVersion, head.newerVersions)
+        else
+          head
+      }
+      .toList
 
   def fromString(str: String): Either[Throwable, Single] =
     Either.catchNonFatal {
@@ -112,7 +125,7 @@ object Update {
       str match {
         case regex(groupId, artifactId, version, updates) =>
           val newerVersions = NonEmptyList.fromListUnsafe(updates.split("->").map(_.trim).toList)
-          Update(groupId, artifactId, version, newerVersions)
+          Single(groupId, artifactId, version, newerVersions)
       }
     }
 

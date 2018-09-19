@@ -18,7 +18,7 @@ updated.
 Here are the pull requests [**@scala-steward**][@scala-steward] has created so far:
 
 * [Created pull requests](https://github.com/pulls?q=author%3Ascala-steward+is%3Apr)
-* [Merged pull requests]( https://github.com/pulls?q=author%3Ascala-steward+is%3Amerged)
+* [Merged pull requests]( https://github.com/pulls?q=author%3Ascala-steward+is%3Amerged+sort%3Aupdated-desc)
 
 ## Credit
 

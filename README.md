@@ -10,20 +10,21 @@ dependencies up-to-date.
 
 Open a pull request that adds the repo of your Scala project to
 [repos.md](https://github.com/fthomas/scala-steward/edit/master/repos.md).
-Once that PR is merged, [@scala-steward][@scala-steward] will check every
+Once that PR is merged, [**@scala-steward**][@scala-steward] will check every
 few hours for updates of libraries and plugins in your project and will open
 PRs against your repo if it can figure out where version numbers need to be
 updated.
 
-Here are the pull requests [@scala-steward][@scala-steward] has created so far:
+Here are the pull requests [**@scala-steward**][@scala-steward] has created so far:
 
-https://github.com/pulls?q=is%3Apr+author%3Ascala-steward
+* [Created pull requests](https://github.com/pulls?q=author%3Ascala-steward+is%3Apr)
+* [Merged pull requests]( https://github.com/pulls?q=author%3Ascala-steward+is%3Amerged+sort%3Aupdated-desc)
 
 ## Credit
 
-The awesome [sbt-updates][sbt-updates] is used to determine dependency updates.
+The awesome [sbt-updates][sbt-updates] plugin is used to determine dependency updates.
 
-The profile picture of [@scala-steward][@scala-steward] was taken from
+The profile picture of [**@scala-steward**][@scala-steward] was taken from
 https://pixabay.com/en/robot-flower-technology-future-1214536/
 
 [@scala-steward]: https://github.com/scala-steward
