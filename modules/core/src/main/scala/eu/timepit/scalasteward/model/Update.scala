@@ -113,7 +113,7 @@ object Update {
       .map { nel =>
         val head = nel.head
         if (nel.tail.nonEmpty)
-          Group(head.groupId, nel.map(_.artifactId), head.currentVersion, head.newerVersions)
+          Group(head.groupId, nel.map(_.artifactId).sorted, head.currentVersion, head.newerVersions)
         else
           head
       }
