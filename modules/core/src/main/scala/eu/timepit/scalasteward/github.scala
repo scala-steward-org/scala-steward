@@ -35,6 +35,7 @@ object github {
       io.exec(
         List(
           "curl",
+          "-s",
           "-X",
           "POST",
           "--header",
@@ -60,9 +61,9 @@ object github {
       case s: Update.Single =>
         s" ${s.groupId}:${s.artifactId} "
       case g: Update.Group =>
-        "\n" + g.artifactIds
-          .map(artifactId => s"  ${g.groupId}:$artifactId\n")
-          .mkString_("", "", "")
+        g.artifactIds
+          .map(artifactId => s"* ${g.groupId}:$artifactId\n")
+          .mkString_("\n", "", "\n")
     }
     s"""Updates${artifacts}from ${update.currentVersion} to ${update.nextVersion}.
        |
@@ -71,7 +72,7 @@ object github {
        |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention @scala-steward in the comments below.
        |
        |Have a nice day!
-     """.stripMargin.trim
+     """.stripMargin.trim.replace("\n", "\\n")
   }
 
   def createPullRequestIfNotExists(localUpdate: LocalUpdate): IO[Unit] =
