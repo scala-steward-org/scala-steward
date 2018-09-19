@@ -44,7 +44,7 @@ object github {
           "--data",
           s"""{
              |  "title": "${localUpdate.commitMsg}",
-             |  "body": "Updates ${localUpdate.update.groupId}:${localUpdate.update.artifactId} from ${localUpdate.update.currentVersion} to ${localUpdate.update.nextVersion}.",
+             |  "body": "${pullRequestBody(localUpdate.update)}",
              |  "head": "$myLogin:${localUpdate.updateBranch.name}",
              |  "base": "${localUpdate.localRepo.base.name}"
              |}
@@ -54,6 +54,25 @@ object github {
         File.currentWorkingDirectory
       )
     }
+
+  def pullRequestBody(update: Update): String = {
+    val artifacts = update match {
+      case s: Update.Single =>
+        s" ${s.groupId}:${s.artifactId} "
+      case g: Update.Group =>
+        "\n" + g.artifactIds
+          .map(artifactId => s"  ${g.groupId}:$artifactId\n")
+          .mkString_("", "", "")
+    }
+    s"""Updates${artifacts}from ${update.currentVersion} to ${update.nextVersion}.
+       |
+       |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
+       |
+       |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention @scala-steward in the comments below.
+       |
+       |Have a nice day!
+     """.stripMargin.trim
+  }
 
   def createPullRequestIfNotExists(localUpdate: LocalUpdate): IO[Unit] =
     pullRequestExists(localUpdate).ifM(
