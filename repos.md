@@ -55,6 +55,7 @@
 - schrepfler/sportsml-scala
 - sphereio/sphere-scala-libs
 - typelevel/cats
+- typelevel/cats-collections
 - vectos/formulation
 - vlovgr/ciris
 - WellFactored/resourcepool
