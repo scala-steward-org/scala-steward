@@ -19,6 +19,7 @@ package eu.timepit.scalasteward
 import better.files.File
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
+import eu.timepit.scalasteward.gh.{GitHubRepo, GitHubService}
 import eu.timepit.scalasteward.model._
 import eu.timepit.scalasteward.util._
 
@@ -43,14 +44,14 @@ object steward extends IOApp {
       _ <- io.mkdirs(workspace)
     } yield ()
 
-  def getRepos(workspace: File): IO[List[GithubRepo]] =
+  def getRepos(workspace: File): IO[List[GitHubRepo]] =
     IO {
       val file = workspace / ".." / "repos.md"
       val regex = """-\s+(.+)/(.+)""".r
-      file.lines.collect { case regex(owner, repo) => GithubRepo(owner, repo) }.toList
+      file.lines.collect { case regex(owner, repo) => GitHubRepo(owner, repo) }.toList
     }
 
-  def stewardRepo(repo: GithubRepo, workspace: File): IO[Unit] = {
+  def stewardRepo(repo: GitHubRepo, workspace: File): IO[Unit] = {
     val p = for {
       localRepo <- cloneAndUpdate(repo, workspace)
       _ <- updateDependencies(localRepo)
@@ -64,15 +65,14 @@ object steward extends IOApp {
     }
   }
 
-  def cloneAndUpdate(repo: GithubRepo, workspace: File): IO[LocalRepo] =
+  def cloneAndUpdate(repo: GitHubRepo, workspace: File): IO[LocalRepo] =
     for {
       _ <- log.printInfo(s"Clone and update ${repo.show}")
-      _ <- github.fork(repo) // This is a NOP if the fork already exists.
+      user <- github.authenticatedUser
+      repoResponse <- GitHubService.curl.fork(user, repo)
       repoDir = workspace / repo.owner / repo.repo
       _ <- io.mkdirs(repoDir)
-      // TODO: Which of my repos is the fork of $repo? $repo.repo is not reliable.
-      forkName = repo.repo
-      forkRepo = GithubRepo(github.myLogin, forkName)
+      forkRepo = GitHubRepo(github.myLogin, repoResponse.name)
       forkUrl <- github.httpsUrlWithCredentials(forkRepo)
       _ <- git.clone(forkUrl, repoDir, workspace)
       _ <- git.setUserSteward(repoDir)

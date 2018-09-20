@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.model
+package eu.timepit.scalasteward.gh
 
-final case class GithubRepo(
+final case class GitHubRepo(
     owner: String,
     repo: String
 ) {

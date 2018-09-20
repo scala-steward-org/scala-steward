@@ -14,13 +14,9 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.model
+package eu.timepit.scalasteward.gh
 
-import better.files.File
-import eu.timepit.scalasteward.gh.GitHubRepo
-
-final case class LocalRepo(
-    upstream: GitHubRepo,
-    dir: File,
-    base: Branch
+final case class AuthenticatedUser(
+    login: String,
+    accessToken: String
 )

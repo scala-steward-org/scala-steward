@@ -14,13 +14,23 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.model
+package eu.timepit.scalasteward.gh
 
-import better.files.File
-import eu.timepit.scalasteward.gh.GitHubRepo
+import io.circe.Decoder
 
-final case class LocalRepo(
-    upstream: GitHubRepo,
-    dir: File,
-    base: Branch
+final case class GitHubRepoResponse(
+    name: String,
+    parent: Option[GitHubRepoResponse],
+    defaultBranch: String
 )
+
+object GitHubRepoResponse {
+  implicit val gitHubRepoResponseDecoder: Decoder[GitHubRepoResponse] =
+    Decoder.instance { c =>
+      for {
+        name <- c.downField("name").as[String]
+        parent <- c.downField("parent").as[Option[GitHubRepoResponse]]
+        defaultBranch <- c.downField("default_branch").as[String]
+      } yield GitHubRepoResponse(name, parent, defaultBranch)
+    }
+}

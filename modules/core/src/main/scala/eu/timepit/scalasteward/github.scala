@@ -20,6 +20,7 @@ import _root_.io.circe.parser
 import better.files.File
 import cats.effect.IO
 import cats.implicits._
+import eu.timepit.scalasteward.gh.{AuthenticatedUser, GitHubRepo}
 import eu.timepit.scalasteward.model._
 
 object github {
@@ -29,6 +30,9 @@ object github {
 
   val accessToken: IO[String] =
     IO((File.home / s".github/tokens/$myLogin").contentAsString.trim)
+
+  val authenticatedUser: IO[AuthenticatedUser] =
+    accessToken.map(token => AuthenticatedUser(myLogin, token))
 
   def createPullRequest(localUpdate: LocalUpdate): IO[List[String]] =
     accessToken.flatMap { token =>
@@ -82,7 +86,7 @@ object github {
         createPullRequest(localUpdate).void
     )
 
-  def fetchUpstream(repo: GithubRepo, dir: File): IO[Unit] = {
+  def fetchUpstream(repo: GitHubRepo, dir: File): IO[Unit] = {
     val name = "upstream"
     for {
       _ <- git.exec(List("remote", "add", name, httpsUrl(repo)), dir)
@@ -90,22 +94,13 @@ object github {
     } yield ()
   }
 
-  def fork(repo: GithubRepo): IO[List[String]] =
-    accessToken.flatMap { token =>
-      val url = s"https://api.github.com/repos/${repo.owner}/${repo.repo}/forks"
-      io.exec(
-        List("curl", "-X", "POST", "-u", s"$myLogin:$token", url),
-        File.currentWorkingDirectory
-      )
-    }
-
   def headOf(localUpdate: LocalUpdate): String =
     s"$myLogin:${localUpdate.updateBranch.name}"
 
-  def httpsUrl(repo: GithubRepo): String =
+  def httpsUrl(repo: GitHubRepo): String =
     s"https://github.com/${repo.owner}/${repo.repo}.git"
 
-  def httpsUrlWithCredentials(repo: GithubRepo): IO[String] =
+  def httpsUrlWithCredentials(repo: GitHubRepo): IO[String] =
     accessToken.map(token => s"https://$myLogin:$token@github.com/${repo.owner}/${repo.repo}.git")
 
   def pullRequestExists(localUpdate: LocalUpdate): IO[Boolean] = {
