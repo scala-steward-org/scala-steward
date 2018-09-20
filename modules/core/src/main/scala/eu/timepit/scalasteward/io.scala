@@ -16,15 +16,13 @@
 
 package eu.timepit.scalasteward
 
-import java.io.IOException
-import java.util.concurrent.TimeUnit
-
 import better.files.File
 import cats.effect.IO
 import cats.implicits._
 import eu.timepit.scalasteward.model.Update
 import fs2.Stream
-
+import java.io.IOException
+import java.util.concurrent.TimeUnit
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.FiniteDuration
 import scala.sys.process.{Process, ProcessLogger}

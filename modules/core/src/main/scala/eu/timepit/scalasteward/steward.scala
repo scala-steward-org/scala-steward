@@ -72,6 +72,7 @@ object steward extends IOApp {
       repoResponse <- GitHubService.curl.fork(user, repo)
       repoDir = workspace / repo.owner / repo.repo
       _ <- io.mkdirs(repoDir)
+      // TODO: use repoResponse.gitHubRepo
       forkRepo = GitHubRepo(github.myLogin, repoResponse.name)
       forkUrl <- github.httpsUrlWithCredentials(forkRepo)
       _ <- git.clone(forkUrl, repoDir, workspace)

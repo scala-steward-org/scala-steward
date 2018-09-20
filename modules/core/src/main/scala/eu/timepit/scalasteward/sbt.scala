@@ -18,8 +18,8 @@ package eu.timepit.scalasteward
 
 import better.files.File
 import cats.effect.IO
-import eu.timepit.scalasteward.model.Update
 import cats.implicits._
+import eu.timepit.scalasteward.model.Update
 
 object sbt {
   def addGlobalPlugins(home: File): IO[Unit] =

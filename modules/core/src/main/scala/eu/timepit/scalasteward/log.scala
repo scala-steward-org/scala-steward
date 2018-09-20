@@ -16,14 +16,12 @@
 
 package eu.timepit.scalasteward
 
+import cats.effect.IO
+import cats.implicits._
+import eu.timepit.scalasteward.model.Update
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-
-import cats.effect.IO
-import eu.timepit.scalasteward.model.Update
-
 import scala.concurrent.duration.FiniteDuration
-import cats.implicits._
 
 object log {
   val now: IO[String] =

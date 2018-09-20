@@ -20,7 +20,6 @@ import cats.Monad
 import cats.data.NonEmptyList
 import cats.implicits._
 import eu.timepit.refined.types.string.NonEmptyString
-
 import scala.concurrent.duration._
 
 object util {

@@ -1,8 +1,7 @@
 package eu.timepit.scalasteward.gh
 
-import org.scalatest.{FunSuite, Matchers}
 import io.circe.parser
-
+import org.scalatest.{FunSuite, Matchers}
 import scala.io.Source
 
 class GitHubRepoResponseTest extends FunSuite with Matchers {

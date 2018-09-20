@@ -21,7 +21,6 @@ import cats.implicits._
 import eu.timepit.refined.types.string.NonEmptyString
 import eu.timepit.scalasteward.model.Update.{Group, Single}
 import eu.timepit.scalasteward.util
-
 import scala.util.matching.Regex
 
 sealed trait Update extends Product with Serializable {
