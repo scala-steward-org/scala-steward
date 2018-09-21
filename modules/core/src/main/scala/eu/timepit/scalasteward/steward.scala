@@ -19,9 +19,12 @@ package eu.timepit.scalasteward
 import better.files.File
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
-import eu.timepit.scalasteward.gh.{GitHubRepo, GitHubService}
+import eu.timepit.scalasteward.gh.GitHubRepo
+import eu.timepit.scalasteward.gh.http4s.Http4sGitHubService
 import eu.timepit.scalasteward.model._
 import eu.timepit.scalasteward.util._
+import org.http4s.client.blaze.BlazeClientBuilder
+import scala.concurrent.ExecutionContext
 
 object steward extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
@@ -69,7 +72,8 @@ object steward extends IOApp {
     for {
       _ <- log.printInfo(s"Clone and update ${repo.show}")
       user <- github.authenticatedUser
-      repoResponse <- GitHubService.curl.fork(user, repo)
+      client = BlazeClientBuilder[IO](ExecutionContext.global).resource
+      repoResponse <- new Http4sGitHubService(client).fork(user, repo)
       repoDir = workspace / repo.owner / repo.repo
       _ <- io.mkdirs(repoDir)
       // TODO: use repoResponse.gitHubRepo

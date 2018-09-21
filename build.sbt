@@ -29,6 +29,8 @@ lazy val core = myCrossProject("core")
       Dependencies.catsEffect,
       Dependencies.circeParser,
       Dependencies.fs2Core,
+      Dependencies.http4sBlazeClient,
+      Dependencies.http4sCirce,
       Dependencies.refined,
       Dependencies.scalaTest % Test
     ),

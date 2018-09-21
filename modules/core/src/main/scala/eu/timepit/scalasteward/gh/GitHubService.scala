@@ -16,35 +16,8 @@
 
 package eu.timepit.scalasteward.gh
 
-import better.files.File
-import cats.effect.IO
-import eu.timepit.scalasteward
-import io.circe.parser
-
 trait GitHubService[F[_]] {
 
   /** https://developer.github.com/v3/repos/forks/#create-a-fork */
   def fork(user: AuthenticatedUser, repo: GitHubRepo): F[GitHubRepoResponse]
-}
-
-object GitHubService {
-  val curl: GitHubService[IO] =
-    new GitHubService[IO] {
-      override def fork(user: AuthenticatedUser, repo: GitHubRepo): IO[GitHubRepoResponse] = {
-        val url = s"https://api.github.com/repos/${repo.owner}/${repo.repo}/forks"
-        val cmd =
-          List(
-            "curl",
-            "--silent",
-            "--request",
-            "POST",
-            "--user",
-            s"${user.login}:${user.accessToken}",
-            url
-          )
-        scalasteward.io.exec(cmd, File.currentWorkingDirectory).flatMap { lines =>
-          IO.fromEither(parser.decode[GitHubRepoResponse](lines.mkString))
-        }
-      }
-    }
 }
