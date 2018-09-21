@@ -14,9 +14,24 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.gh
+package eu.timepit.scalasteward.github
 
-final case class AuthenticatedUser(
-    login: String,
-    accessToken: String
-)
+import cats.MonadError
+import org.http4s.Uri
+
+object Url {
+  def forks[F[_]](repo: GitHubRepo)(implicit F: MonadError[F, Throwable]): F[Uri] =
+    fromString(repos(repo) + "/forks")
+
+  def pulls[F[_]](repo: GitHubRepo)(implicit F: MonadError[F, Throwable]): F[Uri] =
+    fromString(repos(repo) + "/pulls")
+
+  def fromString[F[_]](s: String)(implicit F: MonadError[F, Throwable]): F[Uri] =
+    F.fromEither(Uri.fromString(s))
+
+  val host: String =
+    "https://api.github.com"
+
+  def repos(repo: GitHubRepo): String =
+    s"$host/repos/${repo.owner}/${repo.repo}"
+}

@@ -20,10 +20,10 @@ import _root_.io.circe.parser
 import better.files.File
 import cats.effect.IO
 import cats.implicits._
-import eu.timepit.scalasteward.gh.{AuthenticatedUser, GitHubRepo}
+import eu.timepit.scalasteward.github.{AuthenticatedUser, GitHubRepo}
 import eu.timepit.scalasteward.model._
 
-object github {
+object githubLegacy {
 
   val myLogin: String =
     "scala-steward"

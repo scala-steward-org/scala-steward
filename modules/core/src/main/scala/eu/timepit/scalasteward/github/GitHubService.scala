@@ -14,23 +14,10 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.gh
+package eu.timepit.scalasteward.github
 
-import io.circe.Decoder
+trait GitHubService[F[_]] {
 
-final case class GitHubRepoResponse(
-    name: String,
-    parent: Option[GitHubRepoResponse],
-    defaultBranch: String
-)
-
-object GitHubRepoResponse {
-  implicit val gitHubRepoResponseDecoder: Decoder[GitHubRepoResponse] =
-    Decoder.instance { c =>
-      for {
-        name <- c.downField("name").as[String]
-        parent <- c.downField("parent").as[Option[GitHubRepoResponse]]
-        defaultBranch <- c.downField("default_branch").as[String]
-      } yield GitHubRepoResponse(name, parent, defaultBranch)
-    }
+  /** https://developer.github.com/v3/repos/forks/#create-a-fork */
+  def fork(user: AuthenticatedUser, repo: GitHubRepo): F[GitHubRepoResponse]
 }

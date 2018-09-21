@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.gh
+package eu.timepit.scalasteward.github
 
-trait GitHubService[F[_]] {
-
-  /** https://developer.github.com/v3/repos/forks/#create-a-fork */
-  def fork(user: AuthenticatedUser, repo: GitHubRepo): F[GitHubRepoResponse]
+final case class GitHubRepo(
+    owner: String,
+    repo: String
+) {
+  def show: String = s"$owner:$repo"
 }

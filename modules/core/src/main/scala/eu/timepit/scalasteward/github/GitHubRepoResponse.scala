@@ -14,18 +14,23 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.gh
+package eu.timepit.scalasteward.github
 
-import cats.MonadError
-import org.http4s.Uri
+import io.circe.Decoder
 
-object ApiUrls {
-  def forks[F[_]](repo: GitHubRepo)(implicit F: MonadError[F, Throwable]): F[Uri] =
-    fromString(s"$host/repos/${repo.owner}/${repo.repo}/forks")
+final case class GitHubRepoResponse(
+    name: String,
+    parent: Option[GitHubRepoResponse],
+    defaultBranch: String
+)
 
-  def fromString[F[_]](s: String)(implicit F: MonadError[F, Throwable]): F[Uri] =
-    F.fromEither(Uri.fromString(s))
-
-  val host: String =
-    "https://api.github.com"
+object GitHubRepoResponse {
+  implicit val gitHubRepoResponseDecoder: Decoder[GitHubRepoResponse] =
+    Decoder.instance { c =>
+      for {
+        name <- c.downField("name").as[String]
+        parent <- c.downField("parent").as[Option[GitHubRepoResponse]]
+        defaultBranch <- c.downField("default_branch").as[String]
+      } yield GitHubRepoResponse(name, parent, defaultBranch)
+    }
 }

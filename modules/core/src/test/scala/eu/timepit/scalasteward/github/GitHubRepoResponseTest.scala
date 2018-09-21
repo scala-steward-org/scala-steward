@@ -1,4 +1,4 @@
-package eu.timepit.scalasteward.gh
+package eu.timepit.scalasteward.github
 
 import io.circe.parser
 import org.scalatest.{FunSuite, Matchers}

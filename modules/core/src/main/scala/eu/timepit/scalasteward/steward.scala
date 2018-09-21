@@ -19,8 +19,8 @@ package eu.timepit.scalasteward
 import better.files.File
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
-import eu.timepit.scalasteward.gh.GitHubRepo
-import eu.timepit.scalasteward.gh.http4s.Http4sGitHubService
+import eu.timepit.scalasteward.github.GitHubRepo
+import eu.timepit.scalasteward.github.http4s.Http4sGitHubService
 import eu.timepit.scalasteward.model._
 import eu.timepit.scalasteward.util._
 import org.http4s.client.blaze.BlazeClientBuilder
@@ -71,17 +71,17 @@ object steward extends IOApp {
   def cloneAndUpdate(repo: GitHubRepo, workspace: File): IO[LocalRepo] =
     for {
       _ <- log.printInfo(s"Clone and update ${repo.show}")
-      user <- github.authenticatedUser
+      user <- githubLegacy.authenticatedUser
       client = BlazeClientBuilder[IO](ExecutionContext.global).resource
       repoResponse <- new Http4sGitHubService(client).fork(user, repo)
       repoDir = workspace / repo.owner / repo.repo
       _ <- io.mkdirs(repoDir)
       // TODO: use repoResponse.gitHubRepo
-      forkRepo = GitHubRepo(github.myLogin, repoResponse.name)
-      forkUrl <- github.httpsUrlWithCredentials(forkRepo)
+      forkRepo = GitHubRepo(githubLegacy.myLogin, repoResponse.name)
+      forkUrl <- githubLegacy.httpsUrlWithCredentials(forkRepo)
       _ <- git.clone(forkUrl, repoDir, workspace)
       _ <- git.setUserSteward(repoDir)
-      _ <- github.fetchUpstream(repo, repoDir)
+      _ <- githubLegacy.fetchUpstream(repo, repoDir)
       // TODO: Determine the current default branch
       baseBranch <- git.currentBranch(repoDir)
       _ <- git.exec(List("merge", s"upstream/${baseBranch.name}"), repoDir)
@@ -143,7 +143,7 @@ object steward extends IOApp {
     for {
       _ <- git.commitAll(localUpdate.commitMsg, dir)
       _ <- git.push(localUpdate.updateBranch, dir)
-      _ <- github.createPullRequestIfNotExists(localUpdate)
+      _ <- githubLegacy.createPullRequestIfNotExists(localUpdate)
     } yield ()
   }
 

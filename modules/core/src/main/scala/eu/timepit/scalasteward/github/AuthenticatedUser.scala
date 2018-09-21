@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.gh
+package eu.timepit.scalasteward.github
 
-final case class GitHubRepo(
-    owner: String,
-    repo: String
-) {
-  def show: String = s"$owner:$repo"
-}
+final case class AuthenticatedUser(
+    login: String,
+    accessToken: String
+)
