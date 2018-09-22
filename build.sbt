@@ -66,7 +66,10 @@ def myCrossProject(name: String): CrossProject =
 lazy val commonSettings = Def.settings(
   compileSettings,
   metadataSettings,
-  scaladocSettings
+  scaladocSettings,
+  initialCommands += s"""
+    import $rootPkg._
+  """
 )
 
 lazy val compileSettings = Def.settings()
