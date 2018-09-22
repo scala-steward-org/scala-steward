@@ -20,7 +20,7 @@ import _root_.io.circe.parser
 import better.files.File
 import cats.effect.IO
 import cats.implicits._
-import eu.timepit.scalasteward.github.{AuthenticatedUser, GitHubRepo}
+import eu.timepit.scalasteward.github.{ApiUrl, AuthenticatedUser, GitHubRepo}
 import eu.timepit.scalasteward.model._
 
 object githubLegacy {
@@ -54,7 +54,7 @@ object githubLegacy {
              |  "base": "${localUpdate.localRepo.base.name}"
              |}
            """.stripMargin.trim,
-          s"https://api.github.com/repos/${localUpdate.localRepo.upstream.owner}/${localUpdate.localRepo.upstream.repo}/pulls"
+          ApiUrl.pulls(localUpdate.localRepo.upstream)
         ),
         File.currentWorkingDirectory
       )

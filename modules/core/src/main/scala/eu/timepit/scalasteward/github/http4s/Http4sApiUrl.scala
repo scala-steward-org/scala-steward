@@ -14,24 +14,19 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.github
+package eu.timepit.scalasteward.github.http4s
 
 import cats.MonadError
+import eu.timepit.scalasteward.github.{ApiUrl, GitHubRepo}
 import org.http4s.Uri
 
-object Url {
+object Http4sApiUrl {
   def forks[F[_]](repo: GitHubRepo)(implicit F: MonadError[F, Throwable]): F[Uri] =
-    fromString(repos(repo) + "/forks")
+    fromString(ApiUrl.forks(repo))
 
   def pulls[F[_]](repo: GitHubRepo)(implicit F: MonadError[F, Throwable]): F[Uri] =
-    fromString(repos(repo) + "/pulls")
+    fromString(ApiUrl.pulls(repo))
 
   def fromString[F[_]](s: String)(implicit F: MonadError[F, Throwable]): F[Uri] =
     F.fromEither(Uri.fromString(s))
-
-  val host: String =
-    "https://api.github.com"
-
-  def repos(repo: GitHubRepo): String =
-    s"$host/repos/${repo.owner}/${repo.repo}"
 }
