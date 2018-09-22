@@ -12,4 +12,9 @@ class Http4sApiUrlTest extends FunSuite with Matchers {
     Http4sApiUrl.forks[Result](repo).map(_.toString) shouldBe
       Right("https://api.github.com/repos/fthomas/refined/forks")
   }
+
+  test("pulls") {
+    Http4sApiUrl.pulls[Result](repo).map(_.toString) shouldBe
+      Right("https://api.github.com/repos/fthomas/refined/pulls")
+  }
 }
