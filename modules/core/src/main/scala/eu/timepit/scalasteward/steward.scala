@@ -75,12 +75,10 @@ object steward extends IOApp {
     for {
       _ <- log.printInfo(s"Clone and update ${repo.show}")
       user <- githubLegacy.authenticatedUser
-      repoResponse <- new Http4sGitHubService(client).fork(user, repo)
+      repoOut <- new Http4sGitHubService(client).fork(user, repo)
       repoDir = workspace / repo.owner / repo.repo
       _ <- io.mkdirs(repoDir)
-      // TODO: use repoResponse.gitHubRepo
-      forkRepo = GitHubRepo(githubLegacy.myLogin, repoResponse.name)
-      forkUrl <- githubLegacy.httpsUrlWithCredentials(forkRepo)
+      forkUrl <- githubLegacy.httpsUrlWithCredentials(repoOut.repo)
       _ <- git.clone(forkUrl, repoDir, workspace)
       _ <- git.setUserSteward(repoDir)
       _ <- githubLegacy.fetchUpstream(repo, repoDir)

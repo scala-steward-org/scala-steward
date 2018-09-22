@@ -4,14 +4,15 @@ import io.circe.parser
 import org.scalatest.{FunSuite, Matchers}
 import scala.io.Source
 
-class GitHubRepoResponseTest extends FunSuite with Matchers {
+class GitHubRepoOutTest extends FunSuite with Matchers {
   test("decode[GitHubResponse]") {
     val input = Source.fromResource("fork_response.json").mkString
-    parser.decode[GitHubRepoResponse](input) shouldBe
+    parser.decode[GitHubRepoOut](input) shouldBe
       Right(
-        GitHubRepoResponse(
+        GitHubRepoOut(
           "base.g8-1",
-          Some(GitHubRepoResponse("base.g8", None, "master")),
+          GitHubUserOut("scala-steward"),
+          Some(GitHubRepoOut("base.g8", GitHubUserOut("ChristopherDavenport"), None, "master")),
           "master"
         )
       )

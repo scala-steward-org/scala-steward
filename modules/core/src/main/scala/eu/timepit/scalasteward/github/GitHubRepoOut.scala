@@ -17,20 +17,19 @@
 package eu.timepit.scalasteward.github
 
 import io.circe.Decoder
+import io.circe.generic.semiauto._
 
-final case class GitHubRepoResponse(
+final case class GitHubRepoOut(
     name: String,
-    parent: Option[GitHubRepoResponse],
-    defaultBranch: String
-)
+    owner: GitHubUserOut,
+    parent: Option[GitHubRepoOut],
+    default_branch: String
+) {
+  def repo: GitHubRepo =
+    GitHubRepo(owner.login, name)
+}
 
-object GitHubRepoResponse {
-  implicit val gitHubRepoResponseDecoder: Decoder[GitHubRepoResponse] =
-    Decoder.instance { c =>
-      for {
-        name <- c.downField("name").as[String]
-        parent <- c.downField("parent").as[Option[GitHubRepoResponse]]
-        defaultBranch <- c.downField("default_branch").as[String]
-      } yield GitHubRepoResponse(name, parent, defaultBranch)
-    }
+object GitHubRepoOut {
+  implicit val gitHubRepoOutDecoder: Decoder[GitHubRepoOut] =
+    deriveDecoder
 }

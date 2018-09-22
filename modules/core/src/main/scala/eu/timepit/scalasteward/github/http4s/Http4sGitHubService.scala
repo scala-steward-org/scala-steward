@@ -27,10 +27,10 @@ import org.http4s.headers.Authorization
 import org.http4s.{BasicCredentials, Headers, Request}
 
 class Http4sGitHubService[F[_]: Sync](client: Client[F]) extends GitHubService[F] {
-  override def fork(user: AuthenticatedUser, repo: GitHubRepo): F[GitHubRepoResponse] =
+  override def fork(user: AuthenticatedUser, repo: GitHubRepo): F[GitHubRepoOut] =
     Http4sApiUrl.forks[F](repo).flatMap { uri =>
       val req = Request[F](POST, uri, headers = Headers(toBasicAuth(user)))
-      client.expect[GitHubRepoResponse](req)(jsonOf)
+      client.expect[GitHubRepoOut](req)(jsonOf)
     }
 }
 

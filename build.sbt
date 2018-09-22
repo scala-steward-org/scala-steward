@@ -27,6 +27,7 @@ lazy val core = myCrossProject("core")
     libraryDependencies ++= Seq(
       Dependencies.betterFiles,
       Dependencies.catsEffect,
+      Dependencies.circeGeneric,
       Dependencies.circeParser,
       Dependencies.fs2Core,
       Dependencies.http4sBlazeClient,

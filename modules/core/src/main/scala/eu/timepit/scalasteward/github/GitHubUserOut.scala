@@ -16,8 +16,14 @@
 
 package eu.timepit.scalasteward.github
 
-trait GitHubService[F[_]] {
+import io.circe.Decoder
+import io.circe.generic.semiauto._
 
-  /** https://developer.github.com/v3/repos/forks/#create-a-fork */
-  def fork(user: AuthenticatedUser, repo: GitHubRepo): F[GitHubRepoOut]
+final case class GitHubUserOut(
+    login: String
+)
+
+object GitHubUserOut {
+  implicit val gitHubUserOutDecoder: Decoder[GitHubUserOut] =
+    deriveDecoder
 }
