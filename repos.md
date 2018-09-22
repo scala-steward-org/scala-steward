@@ -16,6 +16,7 @@
 - ChristopherDavenport/scalaz-task-effect
 - ChristopherDavenport/system-effect
 - ChristopherDavenport/testcontainers-specs2
+- erikvanoosten/metrics-scala
 - fthomas/crjdt
 - fthomas/datapackage
 - fthomas/fs2-cron
