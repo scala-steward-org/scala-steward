@@ -16,7 +16,7 @@
 
 package eu.timepit.scalasteward.github.http4s
 
-import cats.effect.{Resource, Sync}
+import cats.effect.Sync
 import cats.implicits._
 import eu.timepit.scalasteward.github._
 import eu.timepit.scalasteward.github.http4s.Http4sGitHubService._
@@ -26,11 +26,11 @@ import org.http4s.client.Client
 import org.http4s.headers.Authorization
 import org.http4s.{BasicCredentials, Headers, Request}
 
-class Http4sGitHubService[F[_]: Sync](client: Resource[F, Client[F]]) extends GitHubService[F] {
+class Http4sGitHubService[F[_]: Sync](client: Client[F]) extends GitHubService[F] {
   override def fork(user: AuthenticatedUser, repo: GitHubRepo): F[GitHubRepoResponse] =
     Http4sApiUrl.forks[F](repo).flatMap { uri =>
       val req = Request[F](POST, uri, headers = Headers(toBasicAuth(user)))
-      client.use(_.expect[GitHubRepoResponse](req)(jsonOf))
+      client.expect[GitHubRepoResponse](req)(jsonOf)
     }
 }
 

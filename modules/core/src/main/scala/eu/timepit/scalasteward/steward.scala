@@ -23,6 +23,7 @@ import eu.timepit.scalasteward.github.GitHubRepo
 import eu.timepit.scalasteward.github.http4s.Http4sGitHubService
 import eu.timepit.scalasteward.model._
 import eu.timepit.scalasteward.util._
+import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
 import scala.concurrent.ExecutionContext
 
@@ -33,7 +34,9 @@ object steward extends IOApp {
       for {
         _ <- prepareEnv(workspace)
         repos <- getRepos(workspace)
-        _ <- repos.traverse_(stewardRepo(_, workspace))
+        _ <- BlazeClientBuilder[IO](ExecutionContext.global).resource.use { client =>
+          repos.traverse_(stewardRepo(_, workspace, client))
+        }
       } yield ExitCode.Success
     }
   }
@@ -54,9 +57,9 @@ object steward extends IOApp {
       file.lines.collect { case regex(owner, repo) => GitHubRepo(owner, repo) }.toList
     }
 
-  def stewardRepo(repo: GitHubRepo, workspace: File): IO[Unit] = {
+  def stewardRepo(repo: GitHubRepo, workspace: File, client: Client[IO]): IO[Unit] = {
     val p = for {
-      localRepo <- cloneAndUpdate(repo, workspace)
+      localRepo <- cloneAndUpdate(repo, workspace, client)
       _ <- updateDependencies(localRepo)
       _ <- io.deleteForce(localRepo.dir)
     } yield ()
@@ -68,11 +71,10 @@ object steward extends IOApp {
     }
   }
 
-  def cloneAndUpdate(repo: GitHubRepo, workspace: File): IO[LocalRepo] =
+  def cloneAndUpdate(repo: GitHubRepo, workspace: File, client: Client[IO]): IO[LocalRepo] =
     for {
       _ <- log.printInfo(s"Clone and update ${repo.show}")
       user <- githubLegacy.authenticatedUser
-      client = BlazeClientBuilder[IO](ExecutionContext.global).resource
       repoResponse <- new Http4sGitHubService(client).fork(user, repo)
       repoDir = workspace / repo.owner / repo.repo
       _ <- io.mkdirs(repoDir)
