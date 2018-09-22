@@ -16,11 +16,12 @@
 
 package eu.timepit.scalasteward
 
+import _root_.io.circe.syntax._
 import _root_.io.circe.parser
 import better.files.File
 import cats.effect.IO
 import cats.implicits._
-import eu.timepit.scalasteward.github.{ApiUrl, AuthenticatedUser, GitHubRepo}
+import eu.timepit.scalasteward.github.{ApiUrl, AuthenticatedUser, CreatePullRequestIn, GitHubRepo}
 import eu.timepit.scalasteward.model._
 
 object githubLegacy {
@@ -47,13 +48,12 @@ object githubLegacy {
           "-u",
           s"$myLogin:$token",
           "--data",
-          s"""{
-             |  "title": "${localUpdate.commitMsg}",
-             |  "body": "${pullRequestBody(localUpdate.update)}",
-             |  "head": "$myLogin:${localUpdate.updateBranch.name}",
-             |  "base": "${localUpdate.localRepo.base.name}"
-             |}
-           """.stripMargin.trim,
+          CreatePullRequestIn(
+            title = localUpdate.commitMsg,
+            body = pullRequestBody(localUpdate.update),
+            head = s"$myLogin:${localUpdate.updateBranch.name}",
+            base = localUpdate.localRepo.base.name
+          ).asJson.spaces2,
           ApiUrl.pulls(localUpdate.localRepo.upstream)
         ),
         File.currentWorkingDirectory
