@@ -16,7 +16,8 @@
 
 package eu.timepit.scalasteward.github
 
-import eu.timepit.scalasteward.model.Branch
+import cats.implicits._
+import eu.timepit.scalasteward.model.{Branch, Update}
 import io.circe.Encoder
 import io.circe.generic.semiauto._
 
@@ -30,4 +31,23 @@ final case class CreatePullRequestIn(
 object CreatePullRequestIn {
   implicit val createPullRequestInEncoder: Encoder[CreatePullRequestIn] =
     deriveEncoder
+
+  def bodyOf(update: Update): String = {
+    val artifacts = update match {
+      case s: Update.Single =>
+        s" ${s.groupId}:${s.artifactId} "
+      case g: Update.Group =>
+        g.artifactIds
+          .map(artifactId => s"* ${g.groupId}:$artifactId\n")
+          .mkString_("\n", "", "\n")
+    }
+    s"""|Updates${artifacts}from ${update.currentVersion} to ${update.nextVersion}.
+        |
+        |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
+        |
+        |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention @scala-steward in the comments below.
+        |
+        |Have a nice day!
+        |""".stripMargin.trim
+  }
 }
