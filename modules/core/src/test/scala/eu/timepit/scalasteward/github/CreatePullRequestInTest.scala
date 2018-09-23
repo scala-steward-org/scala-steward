@@ -1,5 +1,6 @@
 package eu.timepit.scalasteward.github
 
+import eu.timepit.scalasteward.model.Branch
 import io.circe.syntax._
 import org.scalatest.{FunSuite, Matchers}
 
@@ -12,7 +13,7 @@ class CreatePullRequestInTest extends FunSuite with Matchers {
          |Have a nice day!
          |""".stripMargin.trim,
       "scala-steward:update/logback-classic-1.2.3",
-      "master"
+      Branch("master")
     ).asJson.spaces2 shouldBe
       """|{
          |  "title" : "Update logback-classic to 1.2.3",

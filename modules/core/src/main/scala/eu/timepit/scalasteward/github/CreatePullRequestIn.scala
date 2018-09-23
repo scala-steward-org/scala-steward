@@ -16,6 +16,7 @@
 
 package eu.timepit.scalasteward.github
 
+import eu.timepit.scalasteward.model.Branch
 import io.circe.Encoder
 import io.circe.generic.semiauto._
 
@@ -23,7 +24,7 @@ final case class CreatePullRequestIn(
     title: String,
     body: String,
     head: String,
-    base: String
+    base: Branch
 )
 
 object CreatePullRequestIn {

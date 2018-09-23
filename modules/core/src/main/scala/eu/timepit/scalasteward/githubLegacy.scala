@@ -52,7 +52,7 @@ object githubLegacy {
             title = localUpdate.commitMsg,
             body = pullRequestBody(localUpdate.update),
             head = s"$myLogin:${localUpdate.updateBranch.name}",
-            base = localUpdate.localRepo.base.name
+            base = localUpdate.localRepo.base
           ).asJson.spaces2,
           ApiUrl.pulls(localUpdate.localRepo.upstream)
         ),
@@ -76,7 +76,7 @@ object githubLegacy {
        |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention @scala-steward in the comments below.
        |
        |Have a nice day!
-     """.stripMargin.trim.replace("\n", "\\n")
+     """.stripMargin.trim
   }
 
   def createPullRequestIfNotExists(localUpdate: LocalUpdate): IO[Unit] =
