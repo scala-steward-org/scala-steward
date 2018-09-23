@@ -16,12 +16,11 @@
 
 package eu.timepit.scalasteward
 
-import _root_.io.circe.syntax._
 import _root_.io.circe.parser
 import better.files.File
 import cats.effect.IO
 import cats.implicits._
-import eu.timepit.scalasteward.github.{ApiUrl, AuthenticatedUser, CreatePullRequestIn, GitHubRepo}
+import eu.timepit.scalasteward.github._
 import eu.timepit.scalasteward.model._
 
 object githubLegacy {
@@ -35,36 +34,28 @@ object githubLegacy {
   val authenticatedUser: IO[AuthenticatedUser] =
     accessToken.map(token => AuthenticatedUser(myLogin, token))
 
-  def createPullRequest(localUpdate: LocalUpdate): IO[List[String]] =
-    accessToken.flatMap { token =>
-      io.exec(
-        List(
-          "curl",
-          "-s",
-          "-X",
-          "POST",
-          "--header",
-          "Content-Type: application/json",
-          "-u",
-          s"$myLogin:$token",
-          "--data",
-          CreatePullRequestIn(
-            title = localUpdate.commitMsg,
-            body = CreatePullRequestIn.bodyOf(localUpdate.update),
-            head = s"$myLogin:${localUpdate.updateBranch.name}",
-            base = localUpdate.localRepo.base
-          ).asJson.spaces2,
-          ApiUrl.pulls(localUpdate.localRepo.upstream)
-        ),
-        File.currentWorkingDirectory
+  def createPullRequest(
+      localUpdate: LocalUpdate,
+      gitHubService: GitHubService[IO]
+  ): IO[PullRequestOut] =
+    authenticatedUser.flatMap { user =>
+      val in = CreatePullRequestIn(
+        title = localUpdate.commitMsg,
+        body = CreatePullRequestIn.bodyOf(localUpdate.update),
+        head = s"$myLogin:${localUpdate.updateBranch.name}",
+        base = localUpdate.localRepo.base
       )
+      gitHubService.createPullRequest(user, localUpdate.localRepo.upstream, in)
     }
 
-  def createPullRequestIfNotExists(localUpdate: LocalUpdate): IO[Unit] =
+  def createPullRequestIfNotExists(
+      localUpdate: LocalUpdate,
+      gitHubService: GitHubService[IO]
+  ): IO[Unit] =
     pullRequestExists(localUpdate).ifM(
       log.printInfo(s"PR ${localUpdate.updateBranch.name} already exists"),
       log.printInfo(s"Create PR ${localUpdate.updateBranch.name}") >>
-        createPullRequest(localUpdate).void
+        createPullRequest(localUpdate, gitHubService).void
     )
 
   def fetchUpstream(repo: GitHubRepo, dir: File): IO[Unit] = {

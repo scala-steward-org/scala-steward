@@ -19,7 +19,7 @@ package eu.timepit.scalasteward
 import better.files.File
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
-import eu.timepit.scalasteward.github.GitHubRepo
+import eu.timepit.scalasteward.github.{GitHubRepo, GitHubService}
 import eu.timepit.scalasteward.github.http4s.Http4sGitHubService
 import eu.timepit.scalasteward.model._
 import eu.timepit.scalasteward.util._
@@ -58,9 +58,10 @@ object steward extends IOApp {
     }
 
   def stewardRepo(repo: GitHubRepo, workspace: File, client: Client[IO]): IO[Unit] = {
+    val githubService = new Http4sGitHubService(client)
     val p = for {
-      localRepo <- cloneAndUpdate(repo, workspace, client)
-      _ <- updateDependencies(localRepo)
+      localRepo <- cloneAndUpdate(repo, workspace, githubService)
+      _ <- updateDependencies(localRepo, githubService)
       _ <- io.deleteForce(localRepo.dir)
     } yield ()
     log.printTotalTime {
@@ -71,11 +72,15 @@ object steward extends IOApp {
     }
   }
 
-  def cloneAndUpdate(repo: GitHubRepo, workspace: File, client: Client[IO]): IO[LocalRepo] =
+  def cloneAndUpdate(
+      repo: GitHubRepo,
+      workspace: File,
+      gitHubService: GitHubService[IO]
+  ): IO[LocalRepo] =
     for {
       _ <- log.printInfo(s"Clone and update ${repo.show}")
       user <- githubLegacy.authenticatedUser
-      repoOut <- new Http4sGitHubService(client).fork(user, repo)
+      repoOut <- gitHubService.createFork(user, repo)
       repoDir = workspace / repo.owner / repo.repo
       _ <- io.mkdirs(repoDir)
       forkUrl <- githubLegacy.httpsUrlWithCredentials(repoOut.repo)
@@ -88,24 +93,26 @@ object steward extends IOApp {
       _ <- git.push(baseBranch, repoDir)
     } yield LocalRepo(repo, repoDir, baseBranch)
 
-  def updateDependencies(localRepo: LocalRepo): IO[Unit] =
+  def updateDependencies(localRepo: LocalRepo, gitHubService: GitHubService[IO]): IO[Unit] =
     for {
       _ <- log.printInfo(s"Check updates for ${localRepo.upstream.show}")
       updates <- sbt.allUpdates(localRepo.dir)
       _ <- log.printUpdates(updates)
       filteredUpdates = updates.filterNot(Update.ignore)
-      _ <- filteredUpdates.traverse_(update => applyUpdate(LocalUpdate(localRepo, update)))
+      _ <- filteredUpdates.traverse_(
+        update => applyUpdate(LocalUpdate(localRepo, update), gitHubService)
+      )
     } yield ()
 
-  def applyUpdate(localUpdate: LocalUpdate): IO[Unit] =
+  def applyUpdate(localUpdate: LocalUpdate, gitHubService: GitHubService[IO]): IO[Unit] =
     for {
       _ <- log.printInfo(s"Apply update ${localUpdate.update.show}")
       _ <- git
         .remoteBranchExists(localUpdate.updateBranch, localUpdate.localRepo.dir)
-        .ifM(resetAndUpdate(localUpdate), applyNewUpdate(localUpdate))
+        .ifM(resetAndUpdate(localUpdate, gitHubService), applyNewUpdate(localUpdate, gitHubService))
     } yield ()
 
-  def applyNewUpdate(localUpdate: LocalUpdate): IO[Unit] = {
+  def applyNewUpdate(localUpdate: LocalUpdate, gitHubService: GitHubService[IO]): IO[Unit] = {
     val dir = localUpdate.localRepo.dir
     val update = localUpdate.update
     val updateBranch = localUpdate.updateBranch
@@ -115,14 +122,14 @@ object steward extends IOApp {
         for {
           _ <- log.printInfo(s"Create branch ${updateBranch.name}")
           _ <- git.createBranch(updateBranch, dir)
-          _ <- commitPushAndCreatePullRequest(localUpdate)
+          _ <- commitPushAndCreatePullRequest(localUpdate, gitHubService)
         } yield ()
       },
       log.printWarning(s"No files were changed")
     )
   }
 
-  def resetAndUpdate(localUpdate: LocalUpdate): IO[Unit] = {
+  def resetAndUpdate(localUpdate: LocalUpdate, gitHubService: GitHubService[IO]): IO[Unit] = {
     val dir = localUpdate.localRepo.dir
     val updateBranch = localUpdate.updateBranch
 
@@ -132,18 +139,23 @@ object steward extends IOApp {
           _ <- log.printInfo(s"Reset and update branch ${updateBranch.name}")
           _ <- git.exec(List("reset", "--hard", localUpdate.localRepo.base.name), dir)
           _ <- io.updateDir(dir, localUpdate.update)
-          _ <- ifTrue(git.containsChanges(dir))(commitPushAndCreatePullRequest(localUpdate))
+          _ <- ifTrue(git.containsChanges(dir))(
+            commitPushAndCreatePullRequest(localUpdate, gitHubService)
+          )
         } yield ()
       }
     }
   }
 
-  def commitPushAndCreatePullRequest(localUpdate: LocalUpdate): IO[Unit] = {
+  def commitPushAndCreatePullRequest(
+      localUpdate: LocalUpdate,
+      gitHubService: GitHubService[IO]
+  ): IO[Unit] = {
     val dir = localUpdate.localRepo.dir
     for {
       _ <- git.commitAll(localUpdate.commitMsg, dir)
       _ <- git.push(localUpdate.updateBranch, dir)
-      _ <- githubLegacy.createPullRequestIfNotExists(localUpdate)
+      _ <- githubLegacy.createPullRequestIfNotExists(localUpdate, gitHubService)
     } yield ()
   }
 

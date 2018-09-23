@@ -78,6 +78,8 @@ lazy val commonSettings = Def.settings(
   scaladocSettings,
   initialCommands += s"""
     import $rootPkg._
+    import cats.effect.IO
+    import scala.concurrent.ExecutionContext
   """
 )
 

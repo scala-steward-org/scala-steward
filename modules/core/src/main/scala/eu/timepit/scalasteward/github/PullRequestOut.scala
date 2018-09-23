@@ -16,15 +16,12 @@
 
 package eu.timepit.scalasteward.github
 
-trait GitHubService[F[_]] {
+import io.circe.Decoder
+import io.circe.generic.semiauto._
 
-  /** https://developer.github.com/v3/repos/forks/#create-a-fork */
-  def createFork(user: AuthenticatedUser, repo: GitHubRepo): F[GitHubRepoOut]
+final case class PullRequestOut()
 
-  /** https://developer.github.com/v3/pulls/#create-a-pull-request */
-  def createPullRequest(
-      user: AuthenticatedUser,
-      repo: GitHubRepo,
-      data: CreatePullRequestIn
-  ): F[PullRequestOut]
+object PullRequestOut {
+  implicit val pullRequestOutDecoder: Decoder[PullRequestOut] =
+    deriveDecoder
 }
