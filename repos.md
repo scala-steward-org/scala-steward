@@ -1,6 +1,10 @@
 - arturgajowy/rchain
 - barambani/http4s-poc-api
 - barambani/laws
+- BenFradet/dashing
+- BenFradet/spark-kafka-writer
+- BenFradet/struct-type-encoder
+- BenFradet/ghseets4s
 - ChristopherDavenport/base.g8
 - ChristopherDavenport/cats-par
 - ChristopherDavenport/cats-scalacheck
