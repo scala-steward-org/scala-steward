@@ -20,18 +20,31 @@ import better.files.File
 import cats.effect.IO
 import cats.implicits._
 import eu.timepit.scalasteward.model.Update
+import scala.io.Source
 
 object sbt {
+  val globalPluginsDirectories: List[String] = List(
+    ".sbt/0.13/plugins",
+    ".sbt/1.0/plugins"
+  )
+
   def addGlobalPlugins(home: File): IO[Unit] =
     IO {
       val plugin = """addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.4")"""
-      List(
-        ".sbt/0.13/plugins",
-        ".sbt/1.0/plugins"
-      ).foreach { path =>
+      globalPluginsDirectories.foreach { path =>
         val dir = home / path
         dir.createDirectories()
         (dir / "sbt-updates.sbt").writeText(plugin)
+      }
+    }
+
+  def addStewardPlugins(home: File): IO[Unit] =
+    IO {
+      globalPluginsDirectories.foreach { path =>
+        val dir = home / path
+        dir.createDirectories()
+        val filename = "StewardPlugin.scala"
+        (dir / filename).writeText(Source.fromResource(filename).mkString)
       }
     }
 
