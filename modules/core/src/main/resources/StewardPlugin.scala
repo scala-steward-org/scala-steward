@@ -15,20 +15,21 @@ object StewardPlugin extends AutoPlugin {
     libraryDependenciesAsJson := {
       val deps = libraryDependencies.value.map {
         moduleId =>
-          val scalaVersion0 = moduleId.extraAttributes
-            .getOrElse("e:scalaVersion", scalaVersion.value)
-          val sbtVersion0 = moduleId.extraAttributes
-            .get("e:sbtVersion")
-            .fold("")(sbtVersion => s""", "sbtVersion" : "$sbtVersion"""" + "\n")
+          val entries: List[(String, String)] = List(
+            "groupId" -> moduleId.organization,
+            "artifactId" -> moduleId.name,
+            "version" -> moduleId.revision,
+            "scalaVersion" -> moduleId.extraAttributes
+              .getOrElse("e:scalaVersion", scalaVersion.value)
+          ) ++
+            moduleId.extraAttributes
+              .get("e:sbtVersion")
+              .map(sbtVersion => "sbtVersion" -> sbtVersion)
+              .toList
 
-          s"""|{ "groupId"      : "${moduleId.organization}"
-              |, "artifactId"   : "${moduleId.name}"
-              |, "version"      : "${moduleId.revision}"
-              |, "scalaVersion" : "${scalaVersion0}"
-              |${sbtVersion0}}
-              |""".stripMargin.trim
+          entries.map { case (k, v) => s""""$k": "$v"""" }.mkString("{ ", ", ", " }")
       }
-      deps.mkString("[\n", ",\n", "\n]")
+      deps.mkString("[ ", ", ", " ]")
     }
   )
 }
