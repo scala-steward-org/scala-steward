@@ -80,6 +80,8 @@ lazy val commonSettings = Def.settings(
     import $rootPkg._
     import cats.effect.IO
     import scala.concurrent.ExecutionContext
+
+    implicit val ctxShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
   """
 )
 
