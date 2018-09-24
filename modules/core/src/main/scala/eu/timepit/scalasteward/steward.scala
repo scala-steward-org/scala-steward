@@ -29,6 +29,24 @@ import scala.concurrent.ExecutionContext
 
 object steward extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
+    /*
+    Do less
+    =======
+
+    - determine dependencies of all projects and keep this list up-to-date
+      - initial set of dependencies can be extracted from sbt
+      - git can be used to check if we need to use sbt to refresh the list of dependencies
+
+    - find updates for all recorded dependencies
+
+    - create PRs for each of these updates if they don't already exists
+
+    Advantages:
+    - fewer sbt calls. sbt need to be called when upstream has changed and not when
+      scala-steward runs
+    - each dependency need to be checked only once
+     */
+
     val workspace = File.home / "code/scala-steward/workspace"
     log.printTotalTime {
       for {
