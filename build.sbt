@@ -36,7 +36,14 @@ lazy val core = myCrossProject("core")
       Dependencies.refined,
       Dependencies.scalaTest % Test
     ),
-    assembly / test := {}
+    assembly / test := {},
+    initialCommands += s"""
+      import $rootPkg._
+      import better.files.File
+      import cats.effect.IO
+      import scala.concurrent.ExecutionContext
+      implicit val ctxShift: cats.effect.ContextShift[IO] = IO.contextShift(ExecutionContext.global)
+    """
   )
 
 lazy val coreJVM = core.jvm
@@ -75,14 +82,7 @@ def myCrossProject(name: String): CrossProject =
 lazy val commonSettings = Def.settings(
   compileSettings,
   metadataSettings,
-  scaladocSettings,
-  initialCommands += s"""
-    import $rootPkg._
-    import cats.effect.IO
-    import scala.concurrent.ExecutionContext
-
-    implicit val ctxShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-  """
+  scaladocSettings
 )
 
 lazy val compileSettings = Def.settings()
