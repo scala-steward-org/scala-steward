@@ -17,10 +17,10 @@
 package eu.timepit.scalasteward.model
 
 import better.files.File
-import eu.timepit.scalasteward.github.GitHubRepo
+import eu.timepit.scalasteward.github.Repo
 
 final case class LocalRepo(
-    upstream: GitHubRepo,
+    upstream: Repo,
     dir: File,
     base: Branch
 )

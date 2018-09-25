@@ -17,15 +17,15 @@
 package eu.timepit.scalasteward.github
 
 object ApiUrl {
-  def forks(repo: GitHubRepo): String =
+  def forks(repo: Repo): String =
     reposPart(repo) + "/forks"
 
-  def pulls(repo: GitHubRepo): String =
+  def pulls(repo: Repo): String =
     reposPart(repo) + "/pulls"
 
   val hostPart: String =
     "https://api.github.com"
 
-  def reposPart(repo: GitHubRepo): String =
+  def reposPart(repo: Repo): String =
     s"$hostPart/repos/${repo.owner}/${repo.repo}"
 }

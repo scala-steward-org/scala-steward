@@ -16,7 +16,7 @@
 
 package eu.timepit.scalasteward.github
 
-final case class GitHubRepo(
+final case class Repo(
     owner: String,
     repo: String
 ) {

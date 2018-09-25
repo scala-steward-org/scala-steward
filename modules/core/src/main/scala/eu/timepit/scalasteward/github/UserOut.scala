@@ -19,11 +19,11 @@ package eu.timepit.scalasteward.github
 import io.circe.Decoder
 import io.circe.generic.semiauto._
 
-final case class GitHubUserOut(
+final case class UserOut(
     login: String
 )
 
-object GitHubUserOut {
-  implicit val gitHubUserOutDecoder: Decoder[GitHubUserOut] =
+object UserOut {
+  implicit val userOutDecoder: Decoder[UserOut] =
     deriveDecoder
 }

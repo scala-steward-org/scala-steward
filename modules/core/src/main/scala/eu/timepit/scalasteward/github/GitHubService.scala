@@ -19,12 +19,12 @@ package eu.timepit.scalasteward.github
 trait GitHubService[F[_]] {
 
   /** https://developer.github.com/v3/repos/forks/#create-a-fork */
-  def createFork(user: AuthenticatedUser, repo: GitHubRepo): F[GitHubRepoOut]
+  def createFork(user: AuthenticatedUser, repo: Repo): F[RepoOut]
 
   /** https://developer.github.com/v3/pulls/#create-a-pull-request */
   def createPullRequest(
       user: AuthenticatedUser,
-      repo: GitHubRepo,
+      repo: Repo,
       data: CreatePullRequestIn
   ): F[PullRequestOut]
 }

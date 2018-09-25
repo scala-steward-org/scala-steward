@@ -58,7 +58,7 @@ object githubLegacy {
         createPullRequest(localUpdate, gitHubService).void
     )
 
-  def fetchUpstream(repo: GitHubRepo, dir: File): IO[Unit] = {
+  def fetchUpstream(repo: Repo, dir: File): IO[Unit] = {
     val name = "upstream"
     for {
       _ <- git.exec(List("remote", "add", name, httpsUrl(repo)), dir)
@@ -69,10 +69,10 @@ object githubLegacy {
   def headOf(localUpdate: LocalUpdate): String =
     s"$myLogin:${localUpdate.updateBranch.name}"
 
-  def httpsUrl(repo: GitHubRepo): String =
+  def httpsUrl(repo: Repo): String =
     s"https://github.com/${repo.owner}/${repo.repo}.git"
 
-  def httpsUrlWithCredentials(repo: GitHubRepo): IO[String] =
+  def httpsUrlWithCredentials(repo: Repo): IO[String] =
     accessToken.map(token => s"https://$myLogin:$token@github.com/${repo.owner}/${repo.repo}.git")
 
   def pullRequestExists(localUpdate: LocalUpdate): IO[Boolean] = {

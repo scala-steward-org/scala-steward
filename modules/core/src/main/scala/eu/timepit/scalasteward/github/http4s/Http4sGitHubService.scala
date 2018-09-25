@@ -28,15 +28,15 @@ import org.http4s.headers.Authorization
 import org.http4s.{BasicCredentials, Headers, Request}
 
 class Http4sGitHubService[F[_]: Sync](client: Client[F]) extends GitHubService[F] {
-  override def createFork(user: AuthenticatedUser, repo: GitHubRepo): F[GitHubRepoOut] =
+  override def createFork(user: AuthenticatedUser, repo: Repo): F[RepoOut] =
     Http4sApiUrl.forks[F](repo).flatMap { uri =>
       val req = authenticated(user)(Request[F](POST, uri))
-      client.expect[GitHubRepoOut](req)(jsonOf)
+      client.expect[RepoOut](req)(jsonOf)
     }
 
   override def createPullRequest(
       user: AuthenticatedUser,
-      repo: GitHubRepo,
+      repo: Repo,
       data: CreatePullRequestIn
   ): F[PullRequestOut] =
     Http4sApiUrl.pulls[F](repo).flatMap { uri =>

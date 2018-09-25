@@ -19,7 +19,7 @@ package eu.timepit.scalasteward
 import better.files.File
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
-import eu.timepit.scalasteward.github.{GitHubRepo, GitHubService}
+import eu.timepit.scalasteward.github.{GitHubService, Repo}
 import eu.timepit.scalasteward.github.http4s.Http4sGitHubService
 import eu.timepit.scalasteward.model._
 import eu.timepit.scalasteward.util._
@@ -68,14 +68,14 @@ object steward extends IOApp {
       _ <- io.mkdirs(workspace)
     } yield ()
 
-  def getRepos(workspace: File): IO[List[GitHubRepo]] =
+  def getRepos(workspace: File): IO[List[Repo]] =
     IO {
       val file = workspace / ".." / "repos.md"
       val regex = """-\s+(.+)/(.+)""".r
-      file.lines.collect { case regex(owner, repo) => GitHubRepo(owner, repo) }.toList
+      file.lines.collect { case regex(owner, repo) => Repo(owner, repo) }.toList
     }
 
-  def stewardRepo(repo: GitHubRepo, workspace: File, client: Client[IO]): IO[Unit] = {
+  def stewardRepo(repo: Repo, workspace: File, client: Client[IO]): IO[Unit] = {
     val githubService = new Http4sGitHubService(client)
     val p = for {
       localRepo <- cloneAndUpdate(repo, workspace, githubService)
@@ -91,7 +91,7 @@ object steward extends IOApp {
   }
 
   def cloneAndUpdate(
-      repo: GitHubRepo,
+      repo: Repo,
       workspace: File,
       gitHubService: GitHubService[IO]
   ): IO[LocalRepo] =
