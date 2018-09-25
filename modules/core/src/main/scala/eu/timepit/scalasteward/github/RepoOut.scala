@@ -16,6 +16,7 @@
 
 package eu.timepit.scalasteward.github
 
+import eu.timepit.scalasteward.model.Branch
 import io.circe.Decoder
 import io.circe.generic.semiauto._
 
@@ -23,7 +24,7 @@ final case class RepoOut(
     name: String,
     owner: UserOut,
     parent: Option[RepoOut],
-    default_branch: String
+    default_branch: Branch
 ) {
   def repo: Repo =
     Repo(owner.login, name)

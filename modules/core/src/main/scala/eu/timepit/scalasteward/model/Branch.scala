@@ -16,11 +16,14 @@
 
 package eu.timepit.scalasteward.model
 
-import io.circe.Encoder
+import io.circe.{Decoder, Encoder}
 
 final case class Branch(name: String)
 
 object Branch {
+  implicit val branchDecoder: Decoder[Branch] =
+    Decoder[String].map(Branch.apply)
+
   implicit val branchEncoder: Encoder[Branch] =
     Encoder[String].contramap(_.name)
 }
