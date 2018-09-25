@@ -37,6 +37,9 @@
 - http4s/http4s.g8
 - http4s/rho
 - ilya-murzinov/finch-todo-backend
+- IronCoreLabs/recrypt
+- IronCoreLabs/argonaut-jwt-scala
+- IronCoreLabs/cats-scalatest
 - larsrh/sbt-libisabelle
 - laserdisc-io/log-effect
 - LREN-CHUV/woken
