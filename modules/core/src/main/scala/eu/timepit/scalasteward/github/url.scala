@@ -20,18 +20,18 @@ import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.model.Branch
 
 object url {
-  def branches(repo: Repo, branch: Branch): String =
-    reposPart(repo) + s"/branches/${branch.name}"
-
-  def forks(repo: Repo): String =
-    reposPart(repo) + "/forks"
-
-  def pulls(repo: Repo): String =
-    reposPart(repo) + "/pulls"
-
-  val hostPart: String =
+  val apiHost: String =
     "https://api.github.com"
 
-  def reposPart(repo: Repo): String =
-    s"$hostPart/repos/${repo.owner}/${repo.repo}"
+  def branches(repo: Repo, branch: Branch): String =
+    s"${repos(repo)}/branches/${branch.name}"
+
+  def forks(repo: Repo): String =
+    s"${repos(repo)}/forks"
+
+  def pulls(repo: Repo): String =
+    s"${repos(repo)}/pulls"
+
+  def repos(repo: Repo): String =
+    s"$apiHost/repos/${repo.owner}/${repo.repo}"
 }
