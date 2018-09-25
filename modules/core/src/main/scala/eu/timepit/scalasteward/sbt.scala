@@ -23,10 +23,8 @@ import eu.timepit.scalasteward.model.Update
 import scala.io.Source
 
 object sbt {
-  val globalPluginsDirectories: List[String] = List(
-    ".sbt/0.13/plugins",
-    ".sbt/1.0/plugins"
-  )
+  val globalPluginsDirectories: List[String] =
+    List(".sbt/0.13/plugins", ".sbt/1.0/plugins")
 
   def addGlobalPlugins(home: File): IO[Unit] =
     IO {
