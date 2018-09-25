@@ -17,20 +17,20 @@
 package eu.timepit.scalasteward.github.http4s
 
 import cats.MonadError
-import eu.timepit.scalasteward.github.ApiUrl
 import eu.timepit.scalasteward.github.data.Repo
+import eu.timepit.scalasteward.github.url
 import eu.timepit.scalasteward.model.Branch
 import org.http4s.Uri
 
-object Http4sApiUrl {
+object http4sUrl {
   def branches[F[_]](repo: Repo, branch: Branch)(implicit F: MonadError[F, Throwable]): F[Uri] =
-    fromString(ApiUrl.branches(repo, branch))
+    fromString(url.branches(repo, branch))
 
   def forks[F[_]](repo: Repo)(implicit F: MonadError[F, Throwable]): F[Uri] =
-    fromString(ApiUrl.forks(repo))
+    fromString(url.forks(repo))
 
   def pulls[F[_]](repo: Repo)(implicit F: MonadError[F, Throwable]): F[Uri] =
-    fromString(ApiUrl.pulls(repo))
+    fromString(url.pulls(repo))
 
   def fromString[F[_]](s: String)(implicit F: MonadError[F, Throwable]): F[Uri] =
     F.fromEither(Uri.fromString(s))

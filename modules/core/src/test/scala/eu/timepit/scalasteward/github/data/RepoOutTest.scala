@@ -13,7 +13,16 @@ class RepoOutTest extends FunSuite with Matchers {
         RepoOut(
           "base.g8-1",
           UserOut("scala-steward"),
-          Some(RepoOut("base.g8", UserOut("ChristopherDavenport"), None, Branch("master"))),
+          Some(
+            RepoOut(
+              "base.g8",
+              UserOut("ChristopherDavenport"),
+              None,
+              "https://github.com/ChristopherDavenport/base.g8.git",
+              Branch("master")
+            )
+          ),
+          "https://github.com/scala-steward/base.g8-1.git",
           Branch("master")
         )
       )

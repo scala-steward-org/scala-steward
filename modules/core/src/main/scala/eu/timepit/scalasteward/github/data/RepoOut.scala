@@ -24,6 +24,7 @@ final case class RepoOut(
     name: String,
     owner: UserOut,
     parent: Option[RepoOut],
+    clone_url: String,
     default_branch: Branch
 ) {
   def repo: Repo =

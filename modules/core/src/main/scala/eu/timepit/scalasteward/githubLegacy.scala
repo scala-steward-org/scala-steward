@@ -83,7 +83,7 @@ object githubLegacy {
 
   def pullRequestExists(localUpdate: LocalUpdate): IO[Boolean] = {
     val repo = localUpdate.localRepo.upstream
-    val path = ApiUrl.pulls(repo)
+    val path = github.url.pulls(repo)
     val query = s"head=${headOf(localUpdate)}&state=all"
     val url = s"$path?$query"
 

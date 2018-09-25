@@ -19,7 +19,7 @@ package eu.timepit.scalasteward.github
 import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.model.Branch
 
-object ApiUrl {
+object url {
   def branches(repo: Repo, branch: Branch): String =
     reposPart(repo) + s"/branches/${branch.name}"
 
