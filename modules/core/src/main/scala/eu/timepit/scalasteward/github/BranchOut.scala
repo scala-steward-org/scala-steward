@@ -16,11 +16,12 @@
 
 package eu.timepit.scalasteward.github
 
+import eu.timepit.scalasteward.model.Branch
 import io.circe.Decoder
 import io.circe.generic.semiauto._
 
 final case class BranchOut(
-    name: String,
+    name: Branch,
     commit: CommitOut
 )
 

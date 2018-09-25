@@ -6,8 +6,8 @@ import org.scalatest.{FunSuite, Matchers}
 import scala.io.Source
 
 class RepoOutTest extends FunSuite with Matchers {
-  test("decode[GitHubRepoOut]") {
-    val input = Source.fromResource("fork_response.json").mkString
+  test("decode[RepoOut]") {
+    val input = Source.fromResource("create-fork.json").mkString
     parser.decode[RepoOut](input) shouldBe
       Right(
         RepoOut(
