@@ -16,6 +16,8 @@
 
 package eu.timepit.scalasteward.github
 
+import eu.timepit.scalasteward.model.Branch
+
 trait GitHubService[F[_]] {
 
   /** https://developer.github.com/v3/repos/forks/#create-a-fork */
@@ -27,4 +29,7 @@ trait GitHubService[F[_]] {
       repo: Repo,
       data: CreatePullRequestIn
   ): F[PullRequestOut]
+
+  /** https://developer.github.com/v3/repos/branches/#get-branch */
+  def getBranch(user: AuthenticatedUser, repo: Repo, branch: Branch): F[BranchOut]
 }

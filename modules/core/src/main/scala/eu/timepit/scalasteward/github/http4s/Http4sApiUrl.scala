@@ -18,9 +18,13 @@ package eu.timepit.scalasteward.github.http4s
 
 import cats.MonadError
 import eu.timepit.scalasteward.github.{ApiUrl, Repo}
+import eu.timepit.scalasteward.model.Branch
 import org.http4s.Uri
 
 object Http4sApiUrl {
+  def branches[F[_]](repo: Repo, branch: Branch)(implicit F: MonadError[F, Throwable]): F[Uri] =
+    fromString(ApiUrl.branches(repo, branch))
+
   def forks[F[_]](repo: Repo)(implicit F: MonadError[F, Throwable]): F[Uri] =
     fromString(ApiUrl.forks(repo))
 

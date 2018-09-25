@@ -20,7 +20,8 @@ import cats.effect.Sync
 import cats.implicits._
 import eu.timepit.scalasteward.github._
 import eu.timepit.scalasteward.github.http4s.Http4sGitHubService._
-import org.http4s.Method.POST
+import eu.timepit.scalasteward.model.Branch
+import org.http4s.Method.{GET, POST}
 import org.http4s.circe.CirceEntityEncoder._
 import org.http4s.circe.jsonOf
 import org.http4s.client.Client
@@ -30,7 +31,7 @@ import org.http4s.{BasicCredentials, Headers, Request}
 class Http4sGitHubService[F[_]: Sync](client: Client[F]) extends GitHubService[F] {
   override def createFork(user: AuthenticatedUser, repo: Repo): F[RepoOut] =
     Http4sApiUrl.forks[F](repo).flatMap { uri =>
-      val req = authenticated(user)(Request[F](POST, uri))
+      val req = authenticate(user)(Request[F](POST, uri))
       client.expect[RepoOut](req)(jsonOf)
     }
 
@@ -40,13 +41,19 @@ class Http4sGitHubService[F[_]: Sync](client: Client[F]) extends GitHubService[F
       data: CreatePullRequestIn
   ): F[PullRequestOut] =
     Http4sApiUrl.pulls[F](repo).flatMap { uri =>
-      val req = authenticated(user)(Request[F](POST, uri)).withEntity(data)
+      val req = authenticate(user)(Request[F](POST, uri)).withEntity(data)
       client.expect[PullRequestOut](req)(jsonOf)
+    }
+
+  override def getBranch(user: AuthenticatedUser, repo: Repo, branch: Branch): F[BranchOut] =
+    Http4sApiUrl.branches[F](repo, branch).flatMap { uri =>
+      val req = authenticate(user)(Request[F](GET, uri))
+      client.expect[BranchOut](req)(jsonOf)
     }
 }
 
 object Http4sGitHubService {
-  def authenticated[F[_]](user: AuthenticatedUser)(req: Request[F]): Request[F] =
+  def authenticate[F[_]](user: AuthenticatedUser)(req: Request[F]): Request[F] =
     req.withHeaders(req.headers ++ Headers(toBasicAuth(user)))
 
   def toBasicAuth(user: AuthenticatedUser): Authorization =

@@ -16,21 +16,15 @@
 
 package eu.timepit.scalasteward.github
 
-import eu.timepit.scalasteward.model.Branch
+import io.circe.Decoder
+import io.circe.generic.semiauto._
 
-object ApiUrl {
-  def branches(repo: Repo, branch: Branch): String =
-    reposPart(repo) + s"/branches/${branch.name}"
+final case class BranchOut(
+    name: String,
+    commit: CommitOut
+)
 
-  def forks(repo: Repo): String =
-    reposPart(repo) + "/forks"
-
-  def pulls(repo: Repo): String =
-    reposPart(repo) + "/pulls"
-
-  val hostPart: String =
-    "https://api.github.com"
-
-  def reposPart(repo: Repo): String =
-    s"$hostPart/repos/${repo.owner}/${repo.repo}"
+object BranchOut {
+  implicit val branchOutDecoder: Decoder[BranchOut] =
+    deriveDecoder
 }
