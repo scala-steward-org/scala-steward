@@ -17,7 +17,7 @@
 package eu.timepit.scalasteward.model
 
 import better.files.File
-import eu.timepit.scalasteward.github.Repo
+import eu.timepit.scalasteward.github.data.Repo
 
 final case class LocalRepo(
     upstream: Repo,

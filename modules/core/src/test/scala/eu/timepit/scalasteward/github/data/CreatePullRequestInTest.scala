@@ -1,13 +1,13 @@
-package eu.timepit.scalasteward.github
+package eu.timepit.scalasteward.github.data
 
 import cats.data.NonEmptyList
-import eu.timepit.scalasteward.github.CreatePullRequestIn.bodyOf
+import eu.timepit.scalasteward.github.data.CreatePullRequestIn.bodyOf
 import eu.timepit.scalasteward.model.{Branch, Update}
 import io.circe.syntax._
 import org.scalatest.{FunSuite, Matchers}
 
 class CreatePullRequestInTest extends FunSuite with Matchers {
-  test("asJson") {
+  test("encode") {
     CreatePullRequestIn(
       "Update logback-classic to 1.2.3",
       bodyOf(Update.Single("ch.qos.logback", "logback-classic", "1.2.0", NonEmptyList.of("1.2.3"))),

@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.github
+package eu.timepit.scalasteward.github.data
 
 import io.circe.Decoder
 import io.circe.generic.semiauto._
 
-final case class UserOut(
-    login: String
-)
+final case class PullRequestOut()
 
-object UserOut {
-  implicit val userOutDecoder: Decoder[UserOut] =
+object PullRequestOut {
+  implicit val pullRequestOutDecoder: Decoder[PullRequestOut] =
     deriveDecoder
 }

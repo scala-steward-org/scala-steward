@@ -14,18 +14,11 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.github
+package eu.timepit.scalasteward.github.data
 
-import eu.timepit.scalasteward.model.Branch
-import io.circe.Decoder
-import io.circe.generic.semiauto._
-
-final case class BranchOut(
-    name: Branch,
-    commit: CommitOut
-)
-
-object BranchOut {
-  implicit val branchOutDecoder: Decoder[BranchOut] =
-    deriveDecoder
+final case class Repo(
+    owner: String,
+    repo: String
+) {
+  def show: String = s"$owner:$repo"
 }

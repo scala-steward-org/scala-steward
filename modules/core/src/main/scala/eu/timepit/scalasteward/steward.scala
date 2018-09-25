@@ -19,7 +19,8 @@ package eu.timepit.scalasteward
 import better.files.File
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
-import eu.timepit.scalasteward.github.{GitHubService, Repo}
+import eu.timepit.scalasteward.github.GitHubService
+import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.github.http4s.Http4sGitHubService
 import eu.timepit.scalasteward.model._
 import eu.timepit.scalasteward.util._

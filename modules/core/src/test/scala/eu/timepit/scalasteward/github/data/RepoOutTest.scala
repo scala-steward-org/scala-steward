@@ -1,4 +1,4 @@
-package eu.timepit.scalasteward.github
+package eu.timepit.scalasteward.github.data
 
 import eu.timepit.scalasteward.model.Branch
 import io.circe.parser
@@ -6,7 +6,7 @@ import org.scalatest.{FunSuite, Matchers}
 import scala.io.Source
 
 class RepoOutTest extends FunSuite with Matchers {
-  test("decode[RepoOut]") {
+  test("decode") {
     val input = Source.fromResource("create-fork.json").mkString
     parser.decode[RepoOut](input) shouldBe
       Right(

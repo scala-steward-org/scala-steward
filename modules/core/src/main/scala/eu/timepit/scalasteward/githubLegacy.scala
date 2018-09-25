@@ -21,6 +21,12 @@ import better.files.File
 import cats.effect.IO
 import cats.implicits._
 import eu.timepit.scalasteward.github._
+import eu.timepit.scalasteward.github.data.{
+  AuthenticatedUser,
+  CreatePullRequestIn,
+  PullRequestOut,
+  Repo
+}
 import eu.timepit.scalasteward.model._
 
 object githubLegacy {

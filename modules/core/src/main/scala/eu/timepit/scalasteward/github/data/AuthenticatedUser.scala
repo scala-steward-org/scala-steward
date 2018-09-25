@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.github
+package eu.timepit.scalasteward.github.data
 
 final case class AuthenticatedUser(
     login: String,

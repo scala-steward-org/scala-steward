@@ -17,7 +17,8 @@
 package eu.timepit.scalasteward.github.http4s
 
 import cats.MonadError
-import eu.timepit.scalasteward.github.{ApiUrl, Repo}
+import eu.timepit.scalasteward.github.ApiUrl
+import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.model.Branch
 import org.http4s.Uri
 

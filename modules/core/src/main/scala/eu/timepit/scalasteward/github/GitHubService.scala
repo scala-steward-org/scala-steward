@@ -16,6 +16,7 @@
 
 package eu.timepit.scalasteward.github
 
+import eu.timepit.scalasteward.github.data._
 import eu.timepit.scalasteward.model.Branch
 
 trait GitHubService[F[_]] {
