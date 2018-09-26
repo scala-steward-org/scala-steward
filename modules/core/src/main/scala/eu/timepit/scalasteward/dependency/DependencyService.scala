@@ -25,7 +25,7 @@ class DependencyService[F[_]](
     dependencyRepository: DependencyRepository[F],
     gitHubService: GitHubService[F]
 ) {
-  def updateDependenciesIfNecessary(
+  def refreshDependenciesIfNecessary(
       user: AuthenticatedUser,
       repo: Repo
   )(implicit F: MonadError[F, Throwable]): F[Unit] =
@@ -33,11 +33,11 @@ class DependencyService[F[_]](
       res <- gitHubService.createForkAndGetDefaultBranch(user, repo)
       (_, branchOut) = res
       foundSha1 <- dependencyRepository.findSha1(repo)
-      updateRequired = foundSha1.fold(true)(_ =!= branchOut.commit.sha)
-      _ <- if (updateRequired) updateDependencies() else F.unit
+      refreshRequired = foundSha1.fold(true)(_ =!= branchOut.commit.sha)
+      _ <- if (refreshRequired) refreshDependencies() else F.unit
     } yield ()
 
-  def updateDependencies(): F[Unit] = {
+  def refreshDependencies(): F[Unit] = {
     // git clone repo
     // sync own fork with upstream
     // parse sbt libraryDependenciesAsJson
