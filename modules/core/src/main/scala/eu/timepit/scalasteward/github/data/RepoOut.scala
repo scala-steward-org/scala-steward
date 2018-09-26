@@ -16,6 +16,7 @@
 
 package eu.timepit.scalasteward.github.data
 
+import cats.ApplicativeError
 import eu.timepit.scalasteward.model.Branch
 import io.circe.Decoder
 import io.circe.generic.semiauto._
@@ -27,6 +28,9 @@ final case class RepoOut(
     clone_url: String,
     default_branch: Branch
 ) {
+  def parentOrRaise[F[_]](implicit F: ApplicativeError[F, Throwable]): F[RepoOut] =
+    parent.fold(F.raiseError[RepoOut](new Throwable(s"repo $name has no parent")))(F.pure)
+
   def repo: Repo =
     Repo(owner.login, name)
 }

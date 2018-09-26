@@ -105,7 +105,8 @@ object steward extends IOApp {
       forkUrl <- githubLegacy.httpsUrlWithCredentials(repoOut.repo)
       _ <- git.clone(forkUrl, repoDir, workspace)
       _ <- git.setUserSteward(repoDir)
-      _ <- githubLegacy.fetchUpstream(repo, repoDir)
+      parent <- repoOut.parentOrRaise[IO]
+      _ <- githubLegacy.fetchUpstream(parent.clone_url, repoDir)
       // TODO: Determine the current default branch
       baseBranch <- git.currentBranch(repoDir)
       _ <- git.exec(List("merge", s"upstream/${baseBranch.name}"), repoDir)
