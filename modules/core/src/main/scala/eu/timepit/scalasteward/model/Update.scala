@@ -31,20 +31,19 @@ sealed trait Update extends Product with Serializable {
   def newerVersions: NonEmptyList[String]
 
   def name: String =
-    if (Update.commonSuffixes.contains(artifactId))
-      groupId.split('.').lastOption.getOrElse(groupId)
-    else
-      artifactId
+    Update.nameOf(groupId, artifactId)
 
   def nextVersion: String =
     newerVersions.head
 
   def replaceAllIn(target: String): Option[String] = {
-    val quotedSearchTerms = searchTerms.map { term =>
-      Regex
-        .quoteReplacement(Update.removeCommonSuffix(term))
-        .replace("-", ".?")
-    }
+    val quotedSearchTerms = searchTerms
+      .map { term =>
+        Regex
+          .quoteReplacement(Update.removeCommonSuffix(term))
+          .replace("-", ".?")
+      }
+      .filter(_.nonEmpty)
     val searchTerm = quotedSearchTerms.mkString_("(", "|", ")")
     val regex = s"(?i)($searchTerm.*?)${Regex.quote(currentVersion)}".r
     var updated = false
@@ -55,11 +54,13 @@ sealed trait Update extends Product with Serializable {
     if (updated) Some(result) else None
   }
 
-  def searchTerms: NonEmptyList[String] =
-    this match {
+  def searchTerms: NonEmptyList[String] = {
+    val terms = this match {
       case s: Single => s.artifactIds
       case g: Group  => g.artifactIds.concat(g.artifactIdsPrefix.map(_.value).toList)
     }
+    terms.map(Update.nameOf(groupId, _))
+  }
 
   def show: String = {
     val artifacts = this match {
@@ -129,7 +130,7 @@ object Update {
     }
 
   val commonSuffixes: List[String] =
-    List("core", "server")
+    List("core", "extra", "server")
 
   def removeCommonSuffix(str: String): String =
     util.removeSuffix(str, commonSuffixes)
@@ -144,4 +145,10 @@ object Update {
         }
       case _ => false
     }
+
+  def nameOf(groupId: String, artifactId: String): String =
+    if (commonSuffixes.contains(artifactId))
+      groupId.split('.').lastOption.getOrElse(groupId)
+    else
+      artifactId
 }

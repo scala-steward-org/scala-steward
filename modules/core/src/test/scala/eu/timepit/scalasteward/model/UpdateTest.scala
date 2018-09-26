@@ -122,6 +122,19 @@ class UpdateTest extends FunSuite with Matchers {
       .replaceAllIn(original) shouldBe Some(expected)
   }
 
+  test("replaceAllIn: artifactIds are common suffixes") {
+    val original =
+      """lazy val scalajsReactVersion = "1.2.3"
+        |lazy val logbackVersion = "1.2.3"
+      """.stripMargin
+    val expected =
+      """lazy val scalajsReactVersion = "1.3.1"
+        |lazy val logbackVersion = "1.2.3"
+      """.stripMargin
+    Group("com.github.japgolly.scalajs-react", Nel.of("core", "extra"), "1.2.3", Nel.of("1.3.1"))
+      .replaceAllIn(original) shouldBe Some(expected)
+  }
+
   test("ignore: check all artifactIds in group") {
     Update.ignore(
       Group("org.scala-lang", Nel.of("abc", "scala-compiler"), "1.0.0", Nel.of("2.0.0"))
