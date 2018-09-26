@@ -133,3 +133,13 @@ addCommandsAlias(
     "core/assembly"
   )
 )
+
+addCommandsAlias(
+  "formatAll",
+  Seq(
+    "headerCreate",
+    "scalafmt",
+    "test:scalafmt",
+    "scalafmtSbt"
+  )
+)
