@@ -46,12 +46,12 @@ trait GitHubService[F[_]] {
   def createForkAndGetDefaultBranch(
       user: AuthenticatedUser,
       repo: Repo
-  )(implicit F: MonadError[F, Throwable]): F[BranchOut] =
+  )(implicit F: MonadError[F, Throwable]): F[(RepoOut, BranchOut)] =
     for {
       fork <- createFork(user, repo)
       parent <- fork.parentOrRaise[F]
       branchOut <- getDefaultBranch(user, parent)
-    } yield branchOut
+    } yield (fork, branchOut)
 
   def getDefaultBranch(
       user: AuthenticatedUser,

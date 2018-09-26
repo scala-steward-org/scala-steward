@@ -14,18 +14,11 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.git
+package eu.timepit.scalasteward.dependency
 
-import cats.Eq
-import cats.implicits._
-import io.circe.Decoder
+import eu.timepit.scalasteward.git.Sha1
+import eu.timepit.scalasteward.github.data.Repo
 
-final case class Sha1(value: String)
-
-object Sha1 {
-  implicit val sha1Eq: Eq[Sha1] =
-    Eq.by(_.value)
-
-  implicit val sha1Decoder: Decoder[Sha1] =
-    Decoder[String].map(Sha1.apply)
+trait DependencyRepository[F[_]] {
+  def findSha1(repo: Repo): F[Option[Sha1]]
 }
