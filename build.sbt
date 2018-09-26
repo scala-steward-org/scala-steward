@@ -39,10 +39,16 @@ lazy val core = myCrossProject("core")
     assembly / test := {},
     initialCommands += s"""
       import $rootPkg._
+      import $rootPkg.github.data._
       import better.files.File
+      import cats.effect.ContextShift
       import cats.effect.IO
+      import org.http4s.client.blaze.BlazeClientBuilder
       import scala.concurrent.ExecutionContext
-      implicit val ctxShift: cats.effect.ContextShift[IO] = IO.contextShift(ExecutionContext.global)
+
+      implicit val ctxShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
+      val clientBuilder = BlazeClientBuilder[IO](ExecutionContext.global)
+      val gitHubService = clientBuilder.stream.map(new github.http4s.Http4sGitHubService(_))
     """
   )
 

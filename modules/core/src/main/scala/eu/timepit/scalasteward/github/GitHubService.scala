@@ -16,8 +16,11 @@
 
 package eu.timepit.scalasteward.github
 
+import cats.MonadError
+import cats.implicits._
 import eu.timepit.scalasteward.git.Branch
 import eu.timepit.scalasteward.github.data._
+
 trait GitHubService[F[_]] {
 
   /** https://developer.github.com/v3/repos/forks/#create-a-fork */
@@ -39,4 +42,21 @@ trait GitHubService[F[_]] {
       repo: Repo,
       branch: Branch
   ): F[BranchOut]
+
+  def createForkAndGetDefaultBranch(
+      user: AuthenticatedUser,
+      repo: Repo
+  )(implicit F: MonadError[F, Throwable]): F[BranchOut] =
+    for {
+      fork <- createFork(user, repo)
+      parent <- fork.parentOrRaise[F]
+      branchOut <- getDefaultBranch(user, parent)
+    } yield branchOut
+
+  def getDefaultBranch(
+      user: AuthenticatedUser,
+      repoOut: RepoOut
+  ): F[BranchOut] =
+    getBranch(user, repoOut.repo, repoOut.default_branch)
+
 }
