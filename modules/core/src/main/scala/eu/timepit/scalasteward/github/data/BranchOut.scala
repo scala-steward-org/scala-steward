@@ -15,8 +15,7 @@
  */
 
 package eu.timepit.scalasteward.github.data
-
-import eu.timepit.scalasteward.model.Branch
+import eu.timepit.scalasteward.git.Branch
 import io.circe.Decoder
 import io.circe.generic.semiauto._
 

@@ -14,28 +14,13 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.github.data
+package eu.timepit.scalasteward.git
 
-import cats.ApplicativeError
-import eu.timepit.scalasteward.git.Branch
 import io.circe.Decoder
-import io.circe.generic.semiauto._
 
-final case class RepoOut(
-    name: String,
-    owner: UserOut,
-    parent: Option[RepoOut],
-    clone_url: String,
-    default_branch: Branch
-) {
-  def parentOrRaise[F[_]](implicit F: ApplicativeError[F, Throwable]): F[RepoOut] =
-    parent.fold(F.raiseError[RepoOut](new Throwable(s"repo $name has no parent")))(F.pure)
+final case class Sha1(value: String)
 
-  def repo: Repo =
-    Repo(owner.login, name)
-}
-
-object RepoOut {
-  implicit val repoOutDecoder: Decoder[RepoOut] =
-    deriveDecoder
+object Sha1 {
+  implicit val sha1Decoder: Decoder[Sha1] =
+    Decoder[String].map(Sha1.apply)
 }

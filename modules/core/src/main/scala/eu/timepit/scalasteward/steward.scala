@@ -103,14 +103,14 @@ object steward extends IOApp {
       repoDir = workspace / repo.owner / repo.repo
       _ <- io.mkdirs(repoDir)
       forkUrl <- githubLegacy.httpsUrlWithCredentials(repoOut.repo)
-      _ <- git.clone(forkUrl, repoDir, workspace)
-      _ <- git.setUserSteward(repoDir)
+      _ <- gitLegacy.clone(forkUrl, repoDir, workspace)
+      _ <- gitLegacy.setUserSteward(repoDir)
       parent <- repoOut.parentOrRaise[IO]
       _ <- githubLegacy.fetchUpstream(parent.clone_url, repoDir)
       // TODO: Determine the current default branch
-      baseBranch <- git.currentBranch(repoDir)
-      _ <- git.exec(List("merge", s"upstream/${baseBranch.name}"), repoDir)
-      _ <- git.push(baseBranch, repoDir)
+      baseBranch <- gitLegacy.currentBranch(repoDir)
+      _ <- gitLegacy.exec(List("merge", s"upstream/${baseBranch.name}"), repoDir)
+      _ <- gitLegacy.push(baseBranch, repoDir)
     } yield LocalRepo(repo, repoDir, baseBranch)
 
   def updateDependencies(localRepo: LocalRepo, gitHubService: GitHubService[IO]): IO[Unit] =
@@ -127,7 +127,7 @@ object steward extends IOApp {
   def applyUpdate(localUpdate: LocalUpdate, gitHubService: GitHubService[IO]): IO[Unit] =
     for {
       _ <- log.printInfo(s"Apply update ${localUpdate.update.show}")
-      _ <- git
+      _ <- gitLegacy
         .remoteBranchExists(localUpdate.updateBranch, localUpdate.localRepo.dir)
         .ifM(resetAndUpdate(localUpdate, gitHubService), applyNewUpdate(localUpdate, gitHubService))
     } yield ()
@@ -137,11 +137,11 @@ object steward extends IOApp {
     val update = localUpdate.update
     val updateBranch = localUpdate.updateBranch
 
-    (io.updateDir(dir, update) >> git.containsChanges(dir)).ifM(
-      git.returnToCurrentBranch(dir) {
+    (io.updateDir(dir, update) >> gitLegacy.containsChanges(dir)).ifM(
+      gitLegacy.returnToCurrentBranch(dir) {
         for {
           _ <- log.printInfo(s"Create branch ${updateBranch.name}")
-          _ <- git.createBranch(updateBranch, dir)
+          _ <- gitLegacy.createBranch(updateBranch, dir)
           _ <- commitPushAndCreatePullRequest(localUpdate, gitHubService)
         } yield ()
       },
@@ -153,13 +153,13 @@ object steward extends IOApp {
     val dir = localUpdate.localRepo.dir
     val updateBranch = localUpdate.updateBranch
 
-    git.returnToCurrentBranch(dir) {
-      git.checkoutBranch(updateBranch, dir) >> ifTrue(shouldBeReset(localUpdate)) {
+    gitLegacy.returnToCurrentBranch(dir) {
+      gitLegacy.checkoutBranch(updateBranch, dir) >> ifTrue(shouldBeReset(localUpdate)) {
         for {
           _ <- log.printInfo(s"Reset and update branch ${updateBranch.name}")
-          _ <- git.exec(List("reset", "--hard", localUpdate.localRepo.base.name), dir)
+          _ <- gitLegacy.exec(List("reset", "--hard", localUpdate.localRepo.base.name), dir)
           _ <- io.updateDir(dir, localUpdate.update)
-          _ <- ifTrue(git.containsChanges(dir))(
+          _ <- ifTrue(gitLegacy.containsChanges(dir))(
             commitPushAndCreatePullRequest(localUpdate, gitHubService)
           )
         } yield ()
@@ -173,8 +173,8 @@ object steward extends IOApp {
   ): IO[Unit] = {
     val dir = localUpdate.localRepo.dir
     for {
-      _ <- git.commitAll(localUpdate.commitMsg, dir)
-      _ <- git.push(localUpdate.updateBranch, dir)
+      _ <- gitLegacy.commitAll(localUpdate.commitMsg, dir)
+      _ <- gitLegacy.push(localUpdate.updateBranch, dir)
       _ <- githubLegacy.createPullRequestIfNotExists(localUpdate, gitHubService)
     } yield ()
   }
@@ -184,9 +184,9 @@ object steward extends IOApp {
     val baseBranch = localUpdate.localRepo.base
     val updateBranch = localUpdate.updateBranch
     for {
-      isMerged <- git.isMerged(updateBranch, baseBranch, dir)
-      isBehind <- git.isBehind(updateBranch, baseBranch, dir)
-      authors <- git.branchAuthors(updateBranch, baseBranch, dir)
+      isMerged <- gitLegacy.isMerged(updateBranch, baseBranch, dir)
+      isBehind <- gitLegacy.isBehind(updateBranch, baseBranch, dir)
+      authors <- gitLegacy.branchAuthors(updateBranch, baseBranch, dir)
       (result, msg) = {
         val pr = s"PR ${updateBranch.name}"
         if (isMerged)

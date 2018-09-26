@@ -67,8 +67,8 @@ object githubLegacy {
   def fetchUpstream(cloneUrl: String, dir: File): IO[Unit] = {
     val name = "upstream"
     for {
-      _ <- git.exec(List("remote", "add", name, cloneUrl), dir)
-      _ <- git.exec(List("fetch", name), dir)
+      _ <- gitLegacy.exec(List("remote", "add", name, cloneUrl), dir)
+      _ <- gitLegacy.exec(List("fetch", name), dir)
     } yield ()
   }
 

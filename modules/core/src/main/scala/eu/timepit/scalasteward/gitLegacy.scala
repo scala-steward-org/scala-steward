@@ -19,9 +19,10 @@ package eu.timepit.scalasteward
 import better.files.File
 import cats.effect.IO
 import cats.implicits._
-import eu.timepit.scalasteward.model.{Branch, Update}
+import eu.timepit.scalasteward.git.Branch
+import eu.timepit.scalasteward.model.Update
 
-object git {
+object gitLegacy {
   def branchAuthors(branch: Branch, base: Branch, dir: File): IO[List[String]] =
     exec(List("log", "--pretty=format:'%an'", dotdot(base, branch)), dir)
 
@@ -70,7 +71,7 @@ object git {
     exec(List("push", "--force", "--set-upstream", "origin", branch.name), dir)
 
   def remoteBranchExists(branch: Branch, dir: File): IO[Boolean] =
-    git.exec(List("branch", "-r"), dir).map(_.exists(_.contains(branch.name)))
+    gitLegacy.exec(List("branch", "-r"), dir).map(_.exists(_.contains(branch.name)))
 
   def returnToCurrentBranch[B](dir: File)(use: IO[B]): IO[B] =
     currentBranch(dir).bracket(_ => use)(checkoutBranch(_, dir).void)

@@ -16,9 +16,8 @@
 
 package eu.timepit.scalasteward.github
 
+import eu.timepit.scalasteward.git.Branch
 import eu.timepit.scalasteward.github.data._
-import eu.timepit.scalasteward.model.Branch
-
 trait GitHubService[F[_]] {
 
   /** https://developer.github.com/v3/repos/forks/#create-a-fork */

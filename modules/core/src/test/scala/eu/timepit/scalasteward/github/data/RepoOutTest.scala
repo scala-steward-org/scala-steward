@@ -1,7 +1,7 @@
 package eu.timepit.scalasteward.github.data
 
 import cats.effect.IO
-import eu.timepit.scalasteward.model.Branch
+import eu.timepit.scalasteward.git.Branch
 import io.circe.parser
 import org.scalatest.{FunSuite, Matchers}
 import scala.io.Source

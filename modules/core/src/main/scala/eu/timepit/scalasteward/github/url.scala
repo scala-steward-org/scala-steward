@@ -16,9 +16,8 @@
 
 package eu.timepit.scalasteward.github
 
+import eu.timepit.scalasteward.git.Branch
 import eu.timepit.scalasteward.github.data.Repo
-import eu.timepit.scalasteward.model.Branch
-
 object url {
   val apiHost: String =
     "https://api.github.com"

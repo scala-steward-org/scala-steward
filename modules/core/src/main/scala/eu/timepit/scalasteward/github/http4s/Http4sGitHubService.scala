@@ -18,10 +18,10 @@ package eu.timepit.scalasteward.github.http4s
 
 import cats.effect.Sync
 import cats.implicits._
+import eu.timepit.scalasteward.git.Branch
 import eu.timepit.scalasteward.github._
 import eu.timepit.scalasteward.github.data._
 import eu.timepit.scalasteward.github.http4s.Http4sGitHubService._
-import eu.timepit.scalasteward.model.Branch
 import org.http4s.Method.{GET, POST}
 import org.http4s.circe.CirceEntityEncoder._
 import org.http4s.circe.jsonOf

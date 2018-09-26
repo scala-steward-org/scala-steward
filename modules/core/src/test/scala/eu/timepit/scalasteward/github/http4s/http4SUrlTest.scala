@@ -1,8 +1,8 @@
 package eu.timepit.scalasteward.github.http4s
 
 import cats.implicits._
+import eu.timepit.scalasteward.git.Branch
 import eu.timepit.scalasteward.github.data.Repo
-import eu.timepit.scalasteward.model.Branch
 import org.scalatest.{FunSuite, Matchers}
 
 class http4SUrlTest extends FunSuite with Matchers {

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.model
+package eu.timepit.scalasteward.git
 
 import io.circe.{Decoder, Encoder}
 

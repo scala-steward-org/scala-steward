@@ -17,7 +17,8 @@
 package eu.timepit.scalasteward.github.data
 
 import cats.implicits._
-import eu.timepit.scalasteward.model.{Branch, Update}
+import eu.timepit.scalasteward.git.Branch
+import eu.timepit.scalasteward.model.Update
 import io.circe.Encoder
 import io.circe.generic.semiauto._
 

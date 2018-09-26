@@ -1,8 +1,9 @@
 package eu.timepit.scalasteward.github.data
 
 import cats.data.NonEmptyList
+import eu.timepit.scalasteward.git.Branch
 import eu.timepit.scalasteward.github.data.CreatePullRequestIn.bodyOf
-import eu.timepit.scalasteward.model.{Branch, Update}
+import eu.timepit.scalasteward.model.Update
 import io.circe.syntax._
 import org.scalatest.{FunSuite, Matchers}
 

@@ -16,11 +16,12 @@
 
 package eu.timepit.scalasteward.github.data
 
+import eu.timepit.scalasteward.git.Sha1
 import io.circe.Decoder
 import io.circe.generic.semiauto._
 
 final case class CommitOut(
-    sha: String
+    sha: Sha1
 )
 
 object CommitOut {
