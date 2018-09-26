@@ -30,7 +30,10 @@ import org.http4s.headers.Authorization
 import org.http4s.{BasicCredentials, Headers, Request}
 
 class Http4sGitHubService[F[_]: Sync](client: Client[F]) extends GitHubService[F] {
-  override def createFork(user: AuthenticatedUser, repo: Repo): F[RepoOut] =
+  override def createFork(
+      user: AuthenticatedUser,
+      repo: Repo
+  ): F[RepoOut] =
     http4sUrl.forks[F](repo).flatMap { uri =>
       val req = authenticate(user)(Request[F](POST, uri))
       client.expect[RepoOut](req)(jsonOf)
@@ -46,7 +49,11 @@ class Http4sGitHubService[F[_]: Sync](client: Client[F]) extends GitHubService[F
       client.expect[PullRequestOut](req)(jsonOf)
     }
 
-  override def getBranch(user: AuthenticatedUser, repo: Repo, branch: Branch): F[BranchOut] =
+  override def getBranch(
+      user: AuthenticatedUser,
+      repo: Repo,
+      branch: Branch
+  ): F[BranchOut] =
     http4sUrl.branches[F](repo, branch).flatMap { uri =>
       val req = authenticate(user)(Request[F](GET, uri))
       client.expect[BranchOut](req)(jsonOf)

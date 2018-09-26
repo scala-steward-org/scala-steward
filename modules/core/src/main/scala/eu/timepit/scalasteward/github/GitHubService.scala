@@ -22,7 +22,10 @@ import eu.timepit.scalasteward.model.Branch
 trait GitHubService[F[_]] {
 
   /** https://developer.github.com/v3/repos/forks/#create-a-fork */
-  def createFork(user: AuthenticatedUser, repo: Repo): F[RepoOut]
+  def createFork(
+      user: AuthenticatedUser,
+      repo: Repo
+  ): F[RepoOut]
 
   /** https://developer.github.com/v3/pulls/#create-a-pull-request */
   def createPullRequest(
@@ -32,5 +35,9 @@ trait GitHubService[F[_]] {
   ): F[PullRequestOut]
 
   /** https://developer.github.com/v3/repos/branches/#get-branch */
-  def getBranch(user: AuthenticatedUser, repo: Repo, branch: Branch): F[BranchOut]
+  def getBranch(
+      user: AuthenticatedUser,
+      repo: Repo,
+      branch: Branch
+  ): F[BranchOut]
 }
