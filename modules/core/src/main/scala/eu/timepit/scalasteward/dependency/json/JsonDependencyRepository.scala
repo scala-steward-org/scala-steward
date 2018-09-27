@@ -16,22 +16,44 @@
 
 package eu.timepit.scalasteward.dependency.json
 
+import better.files.File
+import cats.MonadError
+import cats.implicits._
 import eu.timepit.scalasteward.application.WorkspaceService
 import eu.timepit.scalasteward.dependency.{Dependency, DependencyRepository}
 import eu.timepit.scalasteward.git.Sha1
 import eu.timepit.scalasteward.github.data.Repo
+import eu.timepit.scalasteward.io.FileService
+import io.circe.parser.decode
+import io.circe.syntax._
 
 class JsonDependencyRepository[F[_]](
+    fileService: FileService[F],
     workspaceService: WorkspaceService[F]
-) extends DependencyRepository[F] {
-
-  workspaceService.root
-
-  // file operations
+)(implicit F: MonadError[F, Throwable])
+    extends DependencyRepository[F] {
 
   override def findSha1(repo: Repo): F[Option[Sha1]] =
-    ???
+    readJson.map(_.store.get(repo).map(_.sha1))
 
   override def setDependencies(repo: Repo, sha1: Sha1, dependencies: List[Dependency]): F[Unit] =
-    ???
+    readJson.flatMap { store =>
+      val updated = store.store.updated(repo, RepoValues(sha1, dependencies))
+      writeJson(Store(updated))
+    }
+
+  def jsonFile: F[File] =
+    workspaceService.root.map(_ / "repos.json")
+
+  def readJson: F[Store] =
+    jsonFile.flatMap { file =>
+      fileService.readFile(file).flatMap { content =>
+        F.fromEither(decode[Store](content))
+      }
+    }
+
+  def writeJson(store: Store): F[Unit] =
+    jsonFile.flatMap { file =>
+      fileService.writeFile(file, store.asJson.toString)
+    }
 }

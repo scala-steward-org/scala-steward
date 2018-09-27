@@ -14,23 +14,12 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.dependency
+package eu.timepit.scalasteward.io
 
-import io.circe.generic.semiauto._
-import io.circe.{Decoder, Encoder}
+import better.files.File
 
-final case class Dependency(
-    groupId: String,
-    artifactId: String,
-    version: String,
-    scalaVersion: String,
-    sbtVersion: Option[String] = None
-)
+trait FileService[F[_]] {
+  def readFile(file: File): F[String]
 
-object Dependency {
-  implicit val dependencyDecoder: Decoder[Dependency] =
-    deriveDecoder
-
-  implicit val dependencyEncoder: Encoder[Dependency] =
-    deriveEncoder
+  def writeFile(file: File, content: String): F[Unit]
 }

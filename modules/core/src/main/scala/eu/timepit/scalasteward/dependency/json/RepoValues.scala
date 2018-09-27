@@ -18,5 +18,15 @@ package eu.timepit.scalasteward.dependency.json
 
 import eu.timepit.scalasteward.dependency.Dependency
 import eu.timepit.scalasteward.git.Sha1
+import io.circe.generic.semiauto._
+import io.circe.{Decoder, Encoder}
 
 final case class RepoValues(sha1: Sha1, dependencies: List[Dependency])
+
+object RepoValues {
+  implicit val repoValuesDecoder: Decoder[RepoValues] =
+    deriveDecoder
+
+  implicit val repoValuesEncoder: Encoder[RepoValues] =
+    deriveEncoder
+}

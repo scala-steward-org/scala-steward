@@ -16,9 +16,24 @@
 
 package eu.timepit.scalasteward.github.data
 
+import io.circe.{KeyDecoder, KeyEncoder}
+
 final case class Repo(
     owner: String,
     repo: String
 ) {
   def show: String = s"$owner:$repo"
+}
+
+object Repo {
+  implicit val repoKeyDecoder: KeyDecoder[Repo] =
+    KeyDecoder.instance { key =>
+      val parts = key.split('/')
+      if (parts.length == 2 && parts.forall(_.nonEmpty))
+        Some(Repo(parts(0), parts(1)))
+      else None
+    }
+
+  implicit val repoKeyEncoder: KeyEncoder[Repo] =
+    KeyEncoder.instance(repo => s"${repo.owner}/${repo.repo}")
 }

@@ -18,7 +18,7 @@ package eu.timepit.scalasteward.git
 
 import cats.Eq
 import cats.implicits._
-import io.circe.Decoder
+import io.circe.{Decoder, Encoder}
 
 final case class Sha1(value: String)
 
@@ -28,4 +28,7 @@ object Sha1 {
 
   implicit val sha1Decoder: Decoder[Sha1] =
     Decoder[String].map(Sha1.apply)
+
+  implicit val sha1Encoder: Encoder[Sha1] =
+    Encoder[String].contramap(_.value)
 }

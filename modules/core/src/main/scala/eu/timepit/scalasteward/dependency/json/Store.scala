@@ -17,5 +17,15 @@
 package eu.timepit.scalasteward.dependency.json
 
 import eu.timepit.scalasteward.github.data.Repo
+import io.circe.generic.semiauto._
+import io.circe.{Decoder, Encoder}
 
 final case class Store(store: Map[Repo, RepoValues])
+
+object Store {
+  implicit val storeDecoder: Decoder[Store] =
+    deriveDecoder
+
+  implicit val storeEncoder: Encoder[Store] =
+    deriveEncoder
+}
