@@ -34,7 +34,7 @@ object log {
     printImpl("W", msg)
 
   def printTimed[A](msg: FiniteDuration => String)(fa: IO[A]): IO[A] =
-    io.timed(fa).flatMap {
+    ioLegacy.timed(fa).flatMap {
       case (a, duration) => printInfo(msg(duration)) >> IO.pure(a)
     }
 

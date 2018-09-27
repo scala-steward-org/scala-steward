@@ -60,7 +60,7 @@ object gitLegacy {
     s"${r1.name}..${r2.name}"
 
   def exec(cmd: List[String], dir: File): IO[List[String]] =
-    io.exec("git" :: cmd, dir)
+    ioLegacy.exec("git" :: cmd, dir)
 
   def isBehind(branch: Branch, compare: Branch, dir: File): IO[Boolean] =
     exec(List("log", "--pretty=format:'%h'", dotdot(branch, compare)), dir).map(_.nonEmpty)

@@ -27,7 +27,7 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.FiniteDuration
 import scala.sys.process.{Process, ProcessLogger}
 
-object io {
+object ioLegacy {
   val currentTimeMillis: IO[Long] =
     IO(System.currentTimeMillis())
 

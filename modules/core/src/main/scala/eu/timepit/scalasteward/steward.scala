@@ -66,8 +66,8 @@ object steward extends IOApp {
       _ <- log.printInfo("Add global sbt plugins")
       _ <- sbtLegacy.addGlobalPlugins(File.home)
       _ <- log.printInfo(s"Clean workspace $workspace")
-      _ <- io.deleteForce(workspace)
-      _ <- io.mkdirs(workspace)
+      _ <- ioLegacy.deleteForce(workspace)
+      _ <- ioLegacy.mkdirs(workspace)
     } yield ()
 
   def getRepos(workspace: File): IO[List[Repo]] =
@@ -82,7 +82,7 @@ object steward extends IOApp {
     val p = for {
       localRepo <- cloneAndUpdate(repo, workspace, githubService)
       _ <- updateDependencies(localRepo, githubService)
-      _ <- io.deleteForce(localRepo.dir)
+      _ <- ioLegacy.deleteForce(localRepo.dir)
     } yield ()
     log.printTotalTime {
       p.attempt.flatMap {
@@ -102,7 +102,7 @@ object steward extends IOApp {
       user <- githubLegacy.authenticatedUser
       repoOut <- gitHubService.createFork(user, repo)
       repoDir = workspace / repo.owner / repo.repo
-      _ <- io.mkdirs(repoDir)
+      _ <- ioLegacy.mkdirs(repoDir)
       forkUrl <- uriUtil.fromStringWithUser[IO](repoOut.clone_url, user)
       _ <- gitLegacy.clone(forkUrl, repoDir, workspace)
       _ <- gitLegacy.setUserSteward(repoDir)
@@ -138,7 +138,7 @@ object steward extends IOApp {
     val update = localUpdate.update
     val updateBranch = localUpdate.updateBranch
 
-    (io.updateDir(dir, update) >> gitLegacy.containsChanges(dir)).ifM(
+    (ioLegacy.updateDir(dir, update) >> gitLegacy.containsChanges(dir)).ifM(
       gitLegacy.returnToCurrentBranch(dir) {
         for {
           _ <- log.printInfo(s"Create branch ${updateBranch.name}")
@@ -159,7 +159,7 @@ object steward extends IOApp {
         for {
           _ <- log.printInfo(s"Reset and update branch ${updateBranch.name}")
           _ <- gitLegacy.exec(List("reset", "--hard", localUpdate.localRepo.base.name), dir)
-          _ <- io.updateDir(dir, localUpdate.update)
+          _ <- ioLegacy.updateDir(dir, localUpdate.update)
           _ <- ifTrue(gitLegacy.containsChanges(dir))(
             commitPushAndCreatePullRequest(localUpdate, gitHubService)
           )
