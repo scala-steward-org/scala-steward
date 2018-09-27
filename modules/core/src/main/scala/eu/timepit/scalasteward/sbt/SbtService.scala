@@ -14,15 +14,11 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.git
+package eu.timepit.scalasteward.sbt
 
+import eu.timepit.scalasteward.dependency.Dependency
 import eu.timepit.scalasteward.github.data.Repo
-import org.http4s.Uri
 
-trait GitService[F[_]] {
-  def clone(repo: Repo, url: Uri): F[Unit]
-
-  def removeClone(repo: Repo): F[Unit]
-
-  def syncFork(repo: Repo, upstreamUrl: Uri): F[Unit]
+trait SbtService[F[_]] {
+  def getDependencies(repo: Repo): F[List[Dependency]]
 }

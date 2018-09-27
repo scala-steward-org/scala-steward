@@ -39,7 +39,7 @@ object log {
     }
 
   def printTotalTime[A](fa: IO[A]): IO[A] =
-    printTimed(duration => s"Total time: ${util.show(duration)}")(fa)
+    printTimed(duration => s"Total time: ${utilLegacy.show(duration)}")(fa)
 
   def printImpl(level: String, msg: String): IO[Unit] =
     now.flatMap(dt => IO(println(s"[$dt] $level: $msg")))

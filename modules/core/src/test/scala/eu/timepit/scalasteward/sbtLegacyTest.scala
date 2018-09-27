@@ -4,11 +4,11 @@ import cats.data.{NonEmptyList => Nel}
 import eu.timepit.scalasteward.model.Update.{Group, Single}
 import org.scalatest.{FunSuite, Matchers}
 
-class sbtTest extends FunSuite with Matchers {
+class sbtLegacyTest extends FunSuite with Matchers {
   test("sanitizeUpdates") {
     val update0 = Single("org.specs2", "specs2-core", "3.9.4", Nel.of("3.9.5"))
     val update1 = update0.copy(artifactId = "specs2-scalacheck")
-    sbt.sanitizeUpdates(List(update0, update1)) shouldBe
+    sbtLegacy.sanitizeUpdates(List(update0, update1)) shouldBe
       List(
         Group("org.specs2", Nel.of("specs2-core", "specs2-scalacheck"), "3.9.4", Nel.of("3.9.5"))
       )
@@ -25,7 +25,7 @@ class sbtTest extends FunSuite with Matchers {
       "[info]   com.github.pureconfig:pureconfig : 0.8.0            -> 0.9.2",
       "[info]   org.scala-lang:scala-library     : 2.12.3 -> 2.12.6"
     )
-    sbt.toUpdates(input) shouldBe
+    sbtLegacy.toUpdates(input) shouldBe
       List(
         Single("org.scala-lang", "scala-library", "2.12.3", Nel.of("2.12.6")),
         Single("org.scala-lang", "scala-library", "2.12.3", Nel.of("2.12.6")),

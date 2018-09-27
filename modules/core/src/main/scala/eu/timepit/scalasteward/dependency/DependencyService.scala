@@ -18,15 +18,17 @@ package eu.timepit.scalasteward.dependency
 
 import cats.MonadError
 import cats.implicits._
-import eu.timepit.scalasteward.git.GitService
+import eu.timepit.scalasteward.git.{GitService, Sha1}
 import eu.timepit.scalasteward.github.GitHubService
-import eu.timepit.scalasteward.github.data.{AuthenticatedUser, Repo}
-import eu.timepit.scalasteward.github.http4s.http4sUrl
+import eu.timepit.scalasteward.github.data.{AuthenticatedUser, Repo, RepoOut}
+import eu.timepit.scalasteward.sbt.SbtService
+import eu.timepit.scalasteward.util.uriUtil
 
 class DependencyService[F[_]](
     dependencyRepository: DependencyRepository[F],
     gitHubService: GitHubService[F],
-    gitService: GitService[F]
+    gitService: GitService[F],
+    sbtService: SbtService[F]
 ) {
   def refreshDependenciesIfNecessary(
       user: AuthenticatedUser,
@@ -36,23 +38,29 @@ class DependencyService[F[_]](
       res <- gitHubService.createForkAndGetDefaultBranch(user, repo)
       (repoOut, branchOut) = res
       foundSha1 <- dependencyRepository.findSha1(repo)
-      refreshRequired = foundSha1.fold(true)(_ =!= branchOut.commit.sha)
-      _ <- if (refreshRequired) refreshDependencies(user, repoOut.clone_url) else F.unit
+      latestSha1 = branchOut.commit.sha
+      refreshRequired = foundSha1.fold(true)(_ =!= latestSha1)
+      _ <- {
+        if (refreshRequired) refreshDependencies(user, repoOut, latestSha1)
+        else F.unit
+      }
     } yield ()
 
-  def refreshDependencies(user: AuthenticatedUser, cloneUrl: String)(
-      implicit F: MonadError[F, Throwable]
-  ): F[Unit] = {
+  def refreshDependencies(
+      user: AuthenticatedUser,
+      repoOut: RepoOut,
+      latestSha1: Sha1
+  )(implicit F: MonadError[F, Throwable]): F[Unit] = {
+    val repo = repoOut.repo
     for {
-      _ <- http4sUrl.fromString[F](cloneUrl).map(http4sUrl.withUserInfo(_, user))
-      _ <- gitService.clone(cloneUrl, null)
+      cloneUrlWithUser <- uriUtil.fromStringWithUser[F](repoOut.clone_url, user)
+      _ <- gitService.clone(repo, cloneUrlWithUser)
+      parent <- repoOut.parentOrRaise[F]
+      upstreamUrl <- uriUtil.fromString[F](parent.clone_url)
+      _ <- gitService.syncFork(repo, upstreamUrl)
+      dependencies <- sbtService.getDependencies(repo)
+      _ <- dependencyRepository.setDependencies(repo, latestSha1, dependencies)
+      _ <- gitService.removeClone(repo)
     } yield ()
-    // git clone repo
-    // sync own fork with upstream
-    // parse sbt libraryDependenciesAsJson
-    // dependencyRepository.setDependencies
-    // remove clone
-    locally(())
-    ???
   }
 }

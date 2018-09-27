@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.git
+package eu.timepit.scalasteward.application
 
-import eu.timepit.scalasteward.github.data.Repo
-import org.http4s.Uri
+import better.files.File
+import eu.timepit.scalasteward.git.Author
 
-trait GitService[F[_]] {
-  def clone(repo: Repo, url: Uri): F[Unit]
-
-  def removeClone(repo: Repo): F[Unit]
-
-  def syncFork(repo: Repo, upstreamUrl: Uri): F[Unit]
-}
+final case class Config(
+    workspace: File,
+    gitAuthor: Author = Author("Scala steward", "scala-steward@timepit.eu"),
+    gitHubLogin: String = "scala-steward"
+)

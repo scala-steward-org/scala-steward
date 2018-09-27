@@ -2,7 +2,7 @@ package eu.timepit.scalasteward.github.http4s
 
 import cats.implicits._
 import eu.timepit.scalasteward.git.Branch
-import eu.timepit.scalasteward.github.data.{AuthenticatedUser, Repo}
+import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.github.http4s.http4sUrl._
 import org.scalatest.{FunSuite, Matchers}
 
@@ -24,11 +24,5 @@ class http4SUrlTest extends FunSuite with Matchers {
   test("pulls") {
     pulls[Result](repo).map(_.toString) shouldBe
       Right("https://api.github.com/repos/fthomas/refined/pulls")
-  }
-
-  test("withUserInfo") {
-    val user = AuthenticatedUser("user", "pass")
-    pulls[Result](repo).map(withUserInfo(_, user)).map(_.toString) shouldBe
-      Right("https://user:pass@api.github.com/repos/fthomas/refined/pulls")
   }
 }

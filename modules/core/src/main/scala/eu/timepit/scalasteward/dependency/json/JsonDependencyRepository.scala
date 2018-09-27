@@ -14,15 +14,24 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.git
+package eu.timepit.scalasteward.dependency.json
 
+import eu.timepit.scalasteward.application.WorkspaceService
+import eu.timepit.scalasteward.dependency.{Dependency, DependencyRepository}
+import eu.timepit.scalasteward.git.Sha1
 import eu.timepit.scalasteward.github.data.Repo
-import org.http4s.Uri
 
-trait GitService[F[_]] {
-  def clone(repo: Repo, url: Uri): F[Unit]
+class JsonDependencyRepository[F[_]](
+    workspaceService: WorkspaceService[F]
+) extends DependencyRepository[F] {
 
-  def removeClone(repo: Repo): F[Unit]
+  workspaceService.root
 
-  def syncFork(repo: Repo, upstreamUrl: Uri): F[Unit]
+  // file operations
+
+  override def findSha1(repo: Repo): F[Option[Sha1]] =
+    ???
+
+  override def setDependencies(repo: Repo, sha1: Sha1, dependencies: List[Dependency]): F[Unit] =
+    ???
 }

@@ -20,7 +20,7 @@ import cats.data.NonEmptyList
 import cats.implicits._
 import eu.timepit.refined.types.string.NonEmptyString
 import eu.timepit.scalasteward.model.Update.{Group, Single}
-import eu.timepit.scalasteward.util
+import eu.timepit.scalasteward.utilLegacy
 import scala.util.matching.Regex
 
 sealed trait Update extends Product with Serializable {
@@ -101,7 +101,7 @@ object Update {
     }
 
     def artifactIdsPrefix: Option[NonEmptyString] =
-      util.longestCommonNonEmptyPrefix(artifactIds)
+      utilLegacy.longestCommonNonEmptyPrefix(artifactIds)
   }
 
   ///
@@ -133,7 +133,7 @@ object Update {
     List("core", "extra", "server")
 
   def removeCommonSuffix(str: String): String =
-    util.removeSuffix(str, commonSuffixes)
+    utilLegacy.removeSuffix(str, commonSuffixes)
 
   def ignore(update: Update): Boolean =
     update.groupId match {

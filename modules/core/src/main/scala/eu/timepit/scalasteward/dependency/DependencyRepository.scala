@@ -21,4 +21,6 @@ import eu.timepit.scalasteward.github.data.Repo
 
 trait DependencyRepository[F[_]] {
   def findSha1(repo: Repo): F[Option[Sha1]]
+
+  def setDependencies(repo: Repo, sha1: Sha1, dependencies: List[Dependency]): F[Unit]
 }

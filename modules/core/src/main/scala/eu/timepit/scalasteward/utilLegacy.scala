@@ -22,7 +22,7 @@ import cats.implicits._
 import eu.timepit.refined.types.string.NonEmptyString
 import scala.concurrent.duration._
 
-object util {
+object utilLegacy {
   def ifTrue[F[_]: Monad](fb: F[Boolean])(f: F[Unit]): F[Unit] =
     fb.ifM(f, Monad[F].unit)
 

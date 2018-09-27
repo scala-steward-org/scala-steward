@@ -22,7 +22,7 @@ import cats.implicits._
 import eu.timepit.scalasteward.model.Update
 import scala.io.Source
 
-object sbt {
+object sbtLegacy {
   val globalPluginsDirectories: List[String] =
     List(".sbt/0.13/plugins", ".sbt/1.0/plugins")
 

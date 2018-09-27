@@ -14,24 +14,24 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.github.http4s
+package eu.timepit.scalasteward.util
 
 import cats.ApplicativeError
-import eu.timepit.scalasteward.git.Branch
-import eu.timepit.scalasteward.github.data.Repo
-import eu.timepit.scalasteward.github.url
-import eu.timepit.scalasteward.util.uriUtil._
+import cats.implicits._
+import eu.timepit.scalasteward.github.data.AuthenticatedUser
 import org.http4s.Uri
 
-object http4sUrl {
-  def branches[F[_]](repo: Repo, branch: Branch)(
+object uriUtil {
+  def fromString[F[_]](s: String)(implicit F: ApplicativeError[F, Throwable]): F[Uri] =
+    F.fromEither(Uri.fromString(s))
+
+  def fromStringWithUser[F[_]](s: String, user: AuthenticatedUser)(
       implicit F: ApplicativeError[F, Throwable]
   ): F[Uri] =
-    fromString(url.branches(repo, branch))
+    fromString[F](s).map(withUserInfo(_, user))
 
-  def forks[F[_]](repo: Repo)(implicit F: ApplicativeError[F, Throwable]): F[Uri] =
-    fromString(url.forks(repo))
-
-  def pulls[F[_]](repo: Repo)(implicit F: ApplicativeError[F, Throwable]): F[Uri] =
-    fromString(url.pulls(repo))
+  def withUserInfo(uri: Uri, user: AuthenticatedUser): Uri =
+    uri.authority.fold(uri) { auth =>
+      uri.copy(authority = Some(auth.copy(userInfo = Some(user.login + ":" + user.accessToken))))
+    }
 }

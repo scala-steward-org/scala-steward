@@ -21,9 +21,10 @@ import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
 import eu.timepit.scalasteward.github.GitHubService
 import eu.timepit.scalasteward.github.data.Repo
-import eu.timepit.scalasteward.github.http4s.{http4sUrl, Http4sGitHubService}
+import eu.timepit.scalasteward.github.http4s.Http4sGitHubService
 import eu.timepit.scalasteward.model._
-import eu.timepit.scalasteward.util._
+import eu.timepit.scalasteward.util.uriUtil
+import eu.timepit.scalasteward.utilLegacy._
 import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
 import scala.concurrent.ExecutionContext
@@ -63,7 +64,7 @@ object steward extends IOApp {
   def prepareEnv(workspace: File): IO[Unit] =
     for {
       _ <- log.printInfo("Add global sbt plugins")
-      _ <- sbt.addGlobalPlugins(File.home)
+      _ <- sbtLegacy.addGlobalPlugins(File.home)
       _ <- log.printInfo(s"Clean workspace $workspace")
       _ <- io.deleteForce(workspace)
       _ <- io.mkdirs(workspace)
@@ -102,9 +103,7 @@ object steward extends IOApp {
       repoOut <- gitHubService.createFork(user, repo)
       repoDir = workspace / repo.owner / repo.repo
       _ <- io.mkdirs(repoDir)
-      forkUrl <- http4sUrl
-        .fromString[IO](repoOut.clone_url)
-        .map(http4sUrl.withUserInfo(_, user).toString)
+      forkUrl <- uriUtil.fromStringWithUser[IO](repoOut.clone_url, user)
       _ <- gitLegacy.clone(forkUrl, repoDir, workspace)
       _ <- gitLegacy.setUserSteward(repoDir)
       parent <- repoOut.parentOrRaise[IO]
@@ -118,7 +117,7 @@ object steward extends IOApp {
   def updateDependencies(localRepo: LocalRepo, gitHubService: GitHubService[IO]): IO[Unit] =
     for {
       _ <- log.printInfo(s"Check updates for ${localRepo.upstream.show}")
-      updates <- sbt.allUpdates(localRepo.dir)
+      updates <- sbtLegacy.allUpdates(localRepo.dir)
       _ <- log.printUpdates(updates)
       filteredUpdates = updates.filterNot(Update.ignore)
       _ <- filteredUpdates.traverse_(
