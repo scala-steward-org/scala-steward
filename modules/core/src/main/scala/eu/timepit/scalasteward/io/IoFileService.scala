@@ -14,27 +14,16 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.application
+package eu.timepit.scalasteward.io
 
-import cats.implicits._
 import better.files.File
 import cats.effect.IO
-import eu.timepit.scalasteward.github.data.Repo
+import cats.implicits._
 
-trait WorkspaceService[F[_]] {
-  def root: F[File]
+object IoFileService extends FileService[IO] {
+  override def readFile(file: File): IO[String] =
+    IO(file.contentAsString)
 
-  def repoDir(repo: Repo): F[File]
-}
-
-class IoWorkspaceService(workspace: File) extends WorkspaceService[IO] {
-  override def root: IO[File] = IO(workspace)
-  override def repoDir(repo: Repo): IO[File] =
-    root.flatMap { r =>
-      val dir = r / "repos" / repo.owner / repo.repo
-      if (dir.exists)
-        IO.pure(dir)
-      else
-        IO(dir.createDirectories()) >> IO.pure(dir)
-    }
+  override def writeFile(file: File, content: String): IO[Unit] =
+    IO(file.writeText(content)).void
 }

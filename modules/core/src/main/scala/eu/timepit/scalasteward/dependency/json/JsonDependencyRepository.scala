@@ -47,9 +47,11 @@ class JsonDependencyRepository[F[_]](
 
   def readJson: F[Store] =
     jsonFile.flatMap { file =>
-      fileService.readFile(file).flatMap { content =>
-        F.fromEither(decode[Store](content))
-      }
+      if (file.exists) {
+        fileService.readFile(file).flatMap { content =>
+          F.fromEither(decode[Store](content))
+        }
+      } else F.pure(Store(Map.empty))
     }
 
   def writeJson(store: Store): F[Unit] =

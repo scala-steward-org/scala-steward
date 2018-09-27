@@ -41,17 +41,18 @@ class DependencyService[F[_]](
       latestSha1 = branchOut.commit.sha
       refreshRequired = foundSha1.fold(true)(_ =!= latestSha1)
       _ <- {
-        if (refreshRequired) refreshDependencies(user, repoOut, latestSha1)
-        else F.unit
+        if (refreshRequired) {
+          refreshDependencies(user, repo, repoOut, latestSha1)
+        } else F.unit
       }
     } yield ()
 
   def refreshDependencies(
       user: AuthenticatedUser,
+      repo: Repo,
       repoOut: RepoOut,
       latestSha1: Sha1
-  )(implicit F: MonadError[F, Throwable]): F[Unit] = {
-    val repo = repoOut.repo
+  )(implicit F: MonadError[F, Throwable]): F[Unit] =
     for {
       cloneUrlWithUser <- uriUtil.fromStringWithUser[F](repoOut.clone_url, user)
       _ <- gitService.clone(repo, cloneUrlWithUser)
@@ -62,5 +63,4 @@ class DependencyService[F[_]](
       _ <- dependencyRepository.setDependencies(repo, latestSha1, dependencies)
       _ <- gitService.removeClone(repo)
     } yield ()
-  }
 }

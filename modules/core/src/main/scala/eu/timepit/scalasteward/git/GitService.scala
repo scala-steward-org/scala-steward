@@ -16,8 +16,12 @@
 
 package eu.timepit.scalasteward.git
 
+import cats.effect.IO
+import eu.timepit.scalasteward.application.WorkspaceService
+import eu.timepit.scalasteward.gitLegacy
 import eu.timepit.scalasteward.github.data.Repo
 import org.http4s.Uri
+import cats.implicits._
 
 trait GitService[F[_]] {
   def clone(repo: Repo, url: Uri): F[Unit]
@@ -25,4 +29,17 @@ trait GitService[F[_]] {
   def removeClone(repo: Repo): F[Unit]
 
   def syncFork(repo: Repo, upstreamUrl: Uri): F[Unit]
+}
+
+class IoGitService(workspaceService: WorkspaceService[IO]) extends GitService[IO] {
+  override def clone(repo: Repo, url: Uri): IO[Unit] =
+    workspaceService.root.flatMap { root =>
+      workspaceService.repoDir(repo).flatMap { dir =>
+        gitLegacy.clone(url, dir, root).void
+      }
+    }
+
+  override def removeClone(repo: Repo): IO[Unit] = IO.unit
+
+  override def syncFork(repo: Repo, upstreamUrl: Uri): IO[Unit] = IO.unit
 }
