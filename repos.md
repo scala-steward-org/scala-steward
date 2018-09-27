@@ -64,6 +64,7 @@
 - sphereio/sphere-scala-libs
 - typelevel/cats
 - typelevel/cats-collections
+- typelevel/discipline
 - vectos/formulation
 - vlovgr/ciris
 - WellFactored/resourcepool
