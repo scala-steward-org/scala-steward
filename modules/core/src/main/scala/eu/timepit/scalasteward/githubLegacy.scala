@@ -21,12 +21,7 @@ import better.files.File
 import cats.effect.IO
 import cats.implicits._
 import eu.timepit.scalasteward.github._
-import eu.timepit.scalasteward.github.data.{
-  AuthenticatedUser,
-  CreatePullRequestIn,
-  PullRequestOut,
-  Repo
-}
+import eu.timepit.scalasteward.github.data.{AuthenticatedUser, CreatePullRequestIn, PullRequestOut}
 import eu.timepit.scalasteward.model._
 
 object githubLegacy {
@@ -74,9 +69,6 @@ object githubLegacy {
 
   def headOf(localUpdate: LocalUpdate): String =
     s"$myLogin:${localUpdate.updateBranch.name}"
-
-  def httpsUrlWithCredentials(repo: Repo): IO[String] =
-    accessToken.map(token => s"https://$myLogin:$token@github.com/${repo.owner}/${repo.repo}.git")
 
   def pullRequestExists(localUpdate: LocalUpdate): IO[Boolean] = {
     val repo = localUpdate.localRepo.upstream

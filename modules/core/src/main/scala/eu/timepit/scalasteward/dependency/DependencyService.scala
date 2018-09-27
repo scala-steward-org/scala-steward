@@ -18,12 +18,15 @@ package eu.timepit.scalasteward.dependency
 
 import cats.MonadError
 import cats.implicits._
+import eu.timepit.scalasteward.git.GitService
 import eu.timepit.scalasteward.github.GitHubService
 import eu.timepit.scalasteward.github.data.{AuthenticatedUser, Repo}
+import eu.timepit.scalasteward.github.http4s.http4sUrl
 
 class DependencyService[F[_]](
     dependencyRepository: DependencyRepository[F],
-    gitHubService: GitHubService[F]
+    gitHubService: GitHubService[F],
+    gitService: GitService[F]
 ) {
   def refreshDependenciesIfNecessary(
       user: AuthenticatedUser,
@@ -31,13 +34,19 @@ class DependencyService[F[_]](
   )(implicit F: MonadError[F, Throwable]): F[Unit] =
     for {
       res <- gitHubService.createForkAndGetDefaultBranch(user, repo)
-      (_, branchOut) = res
+      (repoOut, branchOut) = res
       foundSha1 <- dependencyRepository.findSha1(repo)
       refreshRequired = foundSha1.fold(true)(_ =!= branchOut.commit.sha)
-      _ <- if (refreshRequired) refreshDependencies() else F.unit
+      _ <- if (refreshRequired) refreshDependencies(user, repoOut.clone_url) else F.unit
     } yield ()
 
-  def refreshDependencies(): F[Unit] = {
+  def refreshDependencies(user: AuthenticatedUser, cloneUrl: String)(
+      implicit F: MonadError[F, Throwable]
+  ): F[Unit] = {
+    for {
+      _ <- http4sUrl.fromString[F](cloneUrl).map(http4sUrl.withUserInfo(_, user))
+      _ <- gitService.clone(cloneUrl, null)
+    } yield ()
     // git clone repo
     // sync own fork with upstream
     // parse sbt libraryDependenciesAsJson

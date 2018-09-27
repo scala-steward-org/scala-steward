@@ -21,7 +21,7 @@ import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
 import eu.timepit.scalasteward.github.GitHubService
 import eu.timepit.scalasteward.github.data.Repo
-import eu.timepit.scalasteward.github.http4s.Http4sGitHubService
+import eu.timepit.scalasteward.github.http4s.{http4sUrl, Http4sGitHubService}
 import eu.timepit.scalasteward.model._
 import eu.timepit.scalasteward.util._
 import org.http4s.client.Client
@@ -102,7 +102,9 @@ object steward extends IOApp {
       repoOut <- gitHubService.createFork(user, repo)
       repoDir = workspace / repo.owner / repo.repo
       _ <- io.mkdirs(repoDir)
-      forkUrl <- githubLegacy.httpsUrlWithCredentials(repoOut.repo)
+      forkUrl <- http4sUrl
+        .fromString[IO](repoOut.clone_url)
+        .map(http4sUrl.withUserInfo(_, user).toString)
       _ <- gitLegacy.clone(forkUrl, repoDir, workspace)
       _ <- gitLegacy.setUserSteward(repoDir)
       parent <- repoOut.parentOrRaise[IO]

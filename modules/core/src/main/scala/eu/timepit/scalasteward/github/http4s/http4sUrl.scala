@@ -16,22 +16,29 @@
 
 package eu.timepit.scalasteward.github.http4s
 
-import cats.MonadError
+import cats.ApplicativeError
 import eu.timepit.scalasteward.git.Branch
-import eu.timepit.scalasteward.github.data.Repo
+import eu.timepit.scalasteward.github.data.{AuthenticatedUser, Repo}
 import eu.timepit.scalasteward.github.url
 import org.http4s.Uri
 
 object http4sUrl {
-  def branches[F[_]](repo: Repo, branch: Branch)(implicit F: MonadError[F, Throwable]): F[Uri] =
+  def branches[F[_]](repo: Repo, branch: Branch)(
+      implicit F: ApplicativeError[F, Throwable]
+  ): F[Uri] =
     fromString(url.branches(repo, branch))
 
-  def forks[F[_]](repo: Repo)(implicit F: MonadError[F, Throwable]): F[Uri] =
+  def forks[F[_]](repo: Repo)(implicit F: ApplicativeError[F, Throwable]): F[Uri] =
     fromString(url.forks(repo))
 
-  def pulls[F[_]](repo: Repo)(implicit F: MonadError[F, Throwable]): F[Uri] =
+  def pulls[F[_]](repo: Repo)(implicit F: ApplicativeError[F, Throwable]): F[Uri] =
     fromString(url.pulls(repo))
 
-  def fromString[F[_]](s: String)(implicit F: MonadError[F, Throwable]): F[Uri] =
+  def fromString[F[_]](s: String)(implicit F: ApplicativeError[F, Throwable]): F[Uri] =
     F.fromEither(Uri.fromString(s))
+
+  def withUserInfo(uri: Uri, user: AuthenticatedUser): Uri =
+    uri.authority.fold(uri) { auth =>
+      uri.copy(authority = Some(auth.copy(userInfo = Some(user.login + ":" + user.accessToken))))
+    }
 }
