@@ -1,3 +1,4 @@
+- alonsodomin/cron4s
 - arturgajowy/rchain
 - barambani/http4s-poc-api
 - barambani/laws
