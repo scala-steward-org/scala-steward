@@ -22,7 +22,7 @@ import cats.implicits._
 import eu.timepit.scalasteward.application.WorkspaceAlg
 import eu.timepit.scalasteward.dependency.DependencyService
 import eu.timepit.scalasteward.dependency.json.JsonDependencyRepository
-import eu.timepit.scalasteward.git.IoGitService
+import eu.timepit.scalasteward.git.IoGitAlg
 import eu.timepit.scalasteward.github.GitHubService
 import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.github.http4s.Http4sGitHubService
@@ -70,7 +70,7 @@ object steward extends IOApp {
               workspaceAlg
             ),
             new Http4sGitHubService(client),
-            new IoGitService(workspaceAlg),
+            new IoGitAlg(workspaceAlg),
             new IoSbtService(workspaceAlg)
           )
           repos.traverse_ { repo =>

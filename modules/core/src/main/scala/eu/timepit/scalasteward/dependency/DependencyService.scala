@@ -18,7 +18,7 @@ package eu.timepit.scalasteward.dependency
 
 import cats.MonadError
 import cats.implicits._
-import eu.timepit.scalasteward.git.{GitService, Sha1}
+import eu.timepit.scalasteward.git.{GitAlg, Sha1}
 import eu.timepit.scalasteward.github.GitHubService
 import eu.timepit.scalasteward.github.data.{AuthenticatedUser, Repo, RepoOut}
 import eu.timepit.scalasteward.sbt.SbtService
@@ -27,7 +27,7 @@ import eu.timepit.scalasteward.util.uriUtil
 class DependencyService[F[_]](
     dependencyRepository: DependencyRepository[F],
     gitHubService: GitHubService[F],
-    gitService: GitService[F],
+    gitAlg: GitAlg[F],
     sbtService: SbtService[F]
 ) {
   def refreshDependenciesIfNecessary(
@@ -55,12 +55,12 @@ class DependencyService[F[_]](
   )(implicit F: MonadError[F, Throwable]): F[Unit] =
     for {
       cloneUrlWithUser <- uriUtil.fromStringWithUser[F](repoOut.clone_url, user)
-      _ <- gitService.clone(repo, cloneUrlWithUser)
+      _ <- gitAlg.clone(repo, cloneUrlWithUser)
       parent <- repoOut.parentOrRaise[F]
       upstreamUrl <- uriUtil.fromString[F](parent.clone_url)
-      _ <- gitService.syncFork(repo, upstreamUrl)
+      _ <- gitAlg.syncFork(repo, upstreamUrl)
       dependencies <- sbtService.getDependencies(repo)
       _ <- dependencyRepository.setDependencies(repo, latestSha1, dependencies)
-      _ <- gitService.removeClone(repo)
+      _ <- gitAlg.removeClone(repo)
     } yield ()
 }
