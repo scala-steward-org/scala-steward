@@ -18,20 +18,24 @@ package eu.timepit.scalasteward.sbt
 
 import cats.effect.IO
 import eu.timepit.scalasteward.application.WorkspaceAlg
+import eu.timepit.scalasteward.dependency
 import eu.timepit.scalasteward.dependency.Dependency
 import eu.timepit.scalasteward.github.data.Repo
-import eu.timepit.scalasteward.{dependency, ioLegacy}
+import eu.timepit.scalasteward.io.ProcessAlg
 import eu.timepit.scalasteward.sbtLegacy.sbtCmd
 
 trait SbtService[F[_]] {
   def getDependencies(repo: Repo): F[List[Dependency]]
 }
 
-class IoSbtService(workspaceAlg: WorkspaceAlg[IO]) extends SbtService[IO] {
+class IoSbtService(
+    processAlg: ProcessAlg[IO],
+    workspaceAlg: WorkspaceAlg[IO]
+) extends SbtService[IO] {
   override def getDependencies(repo: Repo): IO[List[Dependency]] =
     workspaceAlg.repoDir(repo).flatMap { dir =>
-      ioLegacy
-        .firejail(
+      processAlg
+        .execSandboxed(
           sbtCmd :+ ";libraryDependenciesAsJson ;reload plugins; libraryDependenciesAsJson",
           dir
         )

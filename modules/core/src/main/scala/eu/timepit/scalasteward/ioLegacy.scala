@@ -47,19 +47,6 @@ object ioLegacy {
       lb.result()
     }
 
-  def firejail(command: List[String], cwd: File): IO[List[String]] = {
-    val home = File.home.pathAsString
-    exec(
-      List(
-        "firejail",
-        s"--whitelist=$home/.sbt",
-        s"--whitelist=$home/.ivy2",
-        s"--whitelist=${cwd.pathAsString}"
-      ) ++ command,
-      cwd
-    )
-  }
-
   def isSourceFile(file: File): Boolean =
     !file.pathAsString.contains(".git/") &&
       file.extension.exists(Set(".scala", ".sbt"))

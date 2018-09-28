@@ -19,6 +19,7 @@ package eu.timepit.scalasteward
 import better.files.File
 import cats.effect.IO
 import cats.implicits._
+import eu.timepit.scalasteward.io.ProcessAlg
 import eu.timepit.scalasteward.model.Update
 import scala.io.Source
 
@@ -47,8 +48,9 @@ object sbtLegacy {
     }
 
   def allUpdates(dir: File): IO[List[Update]] =
-    ioLegacy
-      .firejail(sbtCmd :+ ";dependencyUpdates ;reload plugins; dependencyUpdates", dir)
+    ProcessAlg
+      .sync[IO]
+      .execSandboxed(sbtCmd :+ ";dependencyUpdates ;reload plugins; dependencyUpdates", dir)
       .map(lines => sanitizeUpdates(toUpdates(lines)))
 
   def sanitizeUpdates(updates: List[Update.Single]): List[Update] =
