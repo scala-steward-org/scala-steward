@@ -18,7 +18,6 @@ package eu.timepit.scalasteward.application
 
 import better.files.File
 import cats.effect.Sync
-import cats.implicits._
 import eu.timepit.scalasteward.github.data.Repo
 
 trait WorkspaceAlg[F[_]] {
@@ -37,9 +36,9 @@ object WorkspaceAlg {
         ensureExists(workspace / "repos" / repo.owner / repo.repo)
 
       def ensureExists(dir: File): F[File] =
-        if (!dir.exists)
-          F.delay(dir.createDirectories()) *> F.pure(dir)
-        else
-          F.pure(dir)
+        F.delay {
+          if (!dir.exists) dir.createDirectories()
+          dir
+        }
     }
 }

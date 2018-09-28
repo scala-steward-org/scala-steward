@@ -75,6 +75,8 @@ object steward extends IOApp {
           )
           repos.traverse_ { repo =>
             //x.refreshDependenciesIfNecessary(user, repo).attempt
+            locally(x)
+            locally(user)
             IO(repo)
           }
         }
