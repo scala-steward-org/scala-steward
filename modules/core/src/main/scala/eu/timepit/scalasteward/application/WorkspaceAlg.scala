@@ -16,25 +16,30 @@
 
 package eu.timepit.scalasteward.application
 
-import cats.implicits._
 import better.files.File
-import cats.effect.IO
+import cats.effect.Sync
+import cats.implicits._
 import eu.timepit.scalasteward.github.data.Repo
 
-trait WorkspaceService[F[_]] {
-  def root: F[File]
+trait WorkspaceAlg[F[_]] {
+  def rootDir: F[File]
 
   def repoDir(repo: Repo): F[File]
 }
 
-class IoWorkspaceService(workspace: File) extends WorkspaceService[IO] {
-  override def root: IO[File] = IO(workspace)
-  override def repoDir(repo: Repo): IO[File] =
-    root.flatMap { r =>
-      val dir = r / "repos" / repo.owner / repo.repo
-      if (dir.exists)
-        IO.pure(dir)
-      else
-        IO(dir.createDirectories()) >> IO.pure(dir)
+object WorkspaceAlg {
+  def sync[F[_]](workspace: File)(implicit F: Sync[F]): WorkspaceAlg[F] =
+    new WorkspaceAlg[F] {
+      override def rootDir: F[File] =
+        ensureExists(workspace)
+
+      override def repoDir(repo: Repo): F[File] =
+        ensureExists(workspace / "repos" / repo.owner / repo.repo)
+
+      def ensureExists(dir: File): F[File] =
+        if (!dir.exists)
+          F.delay(dir.createDirectories()) *> F.pure(dir)
+        else
+          F.pure(dir)
     }
 }

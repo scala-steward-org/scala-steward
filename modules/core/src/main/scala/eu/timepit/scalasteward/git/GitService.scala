@@ -17,7 +17,7 @@
 package eu.timepit.scalasteward.git
 
 import cats.effect.IO
-import eu.timepit.scalasteward.application.WorkspaceService
+import eu.timepit.scalasteward.application.WorkspaceAlg
 import eu.timepit.scalasteward.gitLegacy
 import eu.timepit.scalasteward.github.data.Repo
 import org.http4s.Uri
@@ -31,10 +31,10 @@ trait GitService[F[_]] {
   def syncFork(repo: Repo, upstreamUrl: Uri): F[Unit]
 }
 
-class IoGitService(workspaceService: WorkspaceService[IO]) extends GitService[IO] {
+class IoGitService(workspaceAlg: WorkspaceAlg[IO]) extends GitService[IO] {
   override def clone(repo: Repo, url: Uri): IO[Unit] =
-    workspaceService.root.flatMap { root =>
-      workspaceService.repoDir(repo).flatMap { dir =>
+    workspaceAlg.rootDir.flatMap { root =>
+      workspaceAlg.repoDir(repo).flatMap { dir =>
         gitLegacy.clone(url, dir, root).void
       }
     }

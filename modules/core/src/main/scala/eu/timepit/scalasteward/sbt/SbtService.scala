@@ -17,7 +17,7 @@
 package eu.timepit.scalasteward.sbt
 
 import cats.effect.IO
-import eu.timepit.scalasteward.application.WorkspaceService
+import eu.timepit.scalasteward.application.WorkspaceAlg
 import eu.timepit.scalasteward.dependency.Dependency
 import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.{dependency, ioLegacy}
@@ -27,9 +27,9 @@ trait SbtService[F[_]] {
   def getDependencies(repo: Repo): F[List[Dependency]]
 }
 
-class IoSbtService(workspaceService: WorkspaceService[IO]) extends SbtService[IO] {
+class IoSbtService(workspaceAlg: WorkspaceAlg[IO]) extends SbtService[IO] {
   override def getDependencies(repo: Repo): IO[List[Dependency]] =
-    workspaceService.repoDir(repo).flatMap { dir =>
+    workspaceAlg.repoDir(repo).flatMap { dir =>
       ioLegacy
         .firejail(
           sbtCmd :+ ";libraryDependenciesAsJson ;reload plugins; libraryDependenciesAsJson",

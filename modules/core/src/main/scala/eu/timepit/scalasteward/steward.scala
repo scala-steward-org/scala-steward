@@ -19,10 +19,16 @@ package eu.timepit.scalasteward
 import better.files.File
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
+import eu.timepit.scalasteward.application.WorkspaceAlg
+import eu.timepit.scalasteward.dependency.DependencyService
+import eu.timepit.scalasteward.dependency.json.JsonDependencyRepository
+import eu.timepit.scalasteward.git.IoGitService
 import eu.timepit.scalasteward.github.GitHubService
 import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.github.http4s.Http4sGitHubService
+import eu.timepit.scalasteward.io.IoFileService
 import eu.timepit.scalasteward.model._
+import eu.timepit.scalasteward.sbt.IoSbtService
 import eu.timepit.scalasteward.util.uriUtil
 import eu.timepit.scalasteward.utilLegacy._
 import org.http4s.client.Client
@@ -54,6 +60,25 @@ object steward extends IOApp {
       for {
         _ <- prepareEnv(workspace)
         repos <- getRepos(workspace)
+        user <- githubLegacy.authenticatedUser
+        _ <- BlazeClientBuilder[IO](ExecutionContext.global).resource.use { client =>
+          // FIXME, obviously!
+          val workspaceAlg = WorkspaceAlg.sync[IO](workspace)
+          val x = new DependencyService[IO](
+            new JsonDependencyRepository(
+              IoFileService,
+              workspaceAlg
+            ),
+            new Http4sGitHubService(client),
+            new IoGitService(workspaceAlg),
+            new IoSbtService(workspaceAlg)
+          )
+          repos.traverse_ { repo =>
+            //x.refreshDependenciesIfNecessary(user, repo).attempt
+            IO(repo)
+          }
+        }
+        _ <- ioLegacy.deleteForce(workspace / "repos")
         _ <- BlazeClientBuilder[IO](ExecutionContext.global).resource.use { client =>
           repos.traverse_(stewardRepo(_, workspace, client))
         }
@@ -66,7 +91,7 @@ object steward extends IOApp {
       _ <- log.printInfo("Add global sbt plugins")
       _ <- sbtLegacy.addGlobalPlugins(File.home)
       _ <- log.printInfo(s"Clean workspace $workspace")
-      _ <- ioLegacy.deleteForce(workspace)
+      _ <- ioLegacy.deleteForce(workspace / "repos")
       _ <- ioLegacy.mkdirs(workspace)
     } yield ()
 
@@ -101,7 +126,7 @@ object steward extends IOApp {
       _ <- log.printInfo(s"Clone and update ${repo.show}")
       user <- githubLegacy.authenticatedUser
       repoOut <- gitHubService.createFork(user, repo)
-      repoDir = workspace / repo.owner / repo.repo
+      repoDir = workspace / "repos" / repo.owner / repo.repo
       _ <- ioLegacy.mkdirs(repoDir)
       forkUrl <- uriUtil.fromStringWithUser[IO](repoOut.clone_url, user)
       _ <- gitLegacy.clone(forkUrl, repoDir, workspace)
