@@ -58,7 +58,7 @@ class DependencyService[F[_]](
       _ <- gitAlg.clone(repo, cloneUrlWithUser)
       parent <- repoOut.parentOrRaise[F]
       upstreamUrl <- uriUtil.fromString[F](parent.clone_url)
-      _ <- gitAlg.syncFork(repo, upstreamUrl)
+      _ <- gitAlg.syncFork(repo, upstreamUrl, parent.default_branch)
       dependencies <- sbtService.getDependencies(repo)
       _ <- dependencyRepository.setDependencies(repo, latestSha1, dependencies)
       _ <- gitAlg.removeClone(repo)
