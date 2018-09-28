@@ -73,10 +73,10 @@ object steward extends IOApp {
             SbtAlg.sync[IO](processAlg, workspaceAlg)
           )
           repos.traverse_ { repo =>
-            x.refreshDependenciesIfNecessary(user, repo).attempt
-          /*locally(x)
+            // x.refreshDependenciesIfNecessary(user, repo).attempt
+            locally(x)
             locally(user)
-            IO(repo)*/
+            IO(repo)
           }
         }
         _ <- ioLegacy.deleteForce(workspace / "repos")
