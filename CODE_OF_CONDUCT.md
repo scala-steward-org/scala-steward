@@ -1,4 +1,4 @@
-## Code of Conduct
+# Code of Conduct
 
 We are committed to providing a friendly, safe and welcoming environment for
 all, regardless of level of experience, gender, gender identity and expression,
