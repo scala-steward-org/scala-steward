@@ -23,12 +23,12 @@ import eu.timepit.scalasteward.application.WorkspaceAlg
 import eu.timepit.scalasteward.dependency.{Dependency, DependencyRepository}
 import eu.timepit.scalasteward.git.Sha1
 import eu.timepit.scalasteward.github.data.Repo
-import eu.timepit.scalasteward.io.FileService
+import eu.timepit.scalasteward.io.FileAlg
 import io.circe.parser.decode
 import io.circe.syntax._
 
 class JsonDependencyRepository[F[_]](
-    fileService: FileService[F],
+    fileAlg: FileAlg[F],
     workspaceAlg: WorkspaceAlg[F]
 )(implicit F: MonadError[F, Throwable])
     extends DependencyRepository[F] {
@@ -47,15 +47,14 @@ class JsonDependencyRepository[F[_]](
 
   def readJson: F[Store] =
     jsonFile.flatMap { file =>
-      if (file.exists) {
-        fileService.readFile(file).flatMap { content =>
-          F.fromEither(decode[Store](content))
-        }
-      } else F.pure(Store(Map.empty))
+      fileAlg.readFile(file).flatMap {
+        case Some(content) => F.fromEither(decode[Store](content))
+        case None          => F.pure(Store(Map.empty))
+      }
     }
 
   def writeJson(store: Store): F[Unit] =
     jsonFile.flatMap { file =>
-      fileService.writeFile(file, store.asJson.toString)
+      fileAlg.writeFile(file, store.asJson.toString)
     }
 }

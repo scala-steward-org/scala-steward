@@ -26,7 +26,7 @@ import eu.timepit.scalasteward.git.IoGitAlg
 import eu.timepit.scalasteward.github.GitHubService
 import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.github.http4s.Http4sGitHubService
-import eu.timepit.scalasteward.io.IoFileService
+import eu.timepit.scalasteward.io.FileAlg
 import eu.timepit.scalasteward.model._
 import eu.timepit.scalasteward.sbt.IoSbtService
 import eu.timepit.scalasteward.util.uriUtil
@@ -66,7 +66,7 @@ object steward extends IOApp {
           val workspaceAlg = WorkspaceAlg.sync[IO](workspace)
           val x = new DependencyService[IO](
             new JsonDependencyRepository(
-              IoFileService,
+              FileAlg.sync[IO],
               workspaceAlg
             ),
             new Http4sGitHubService(client),

@@ -17,9 +17,22 @@
 package eu.timepit.scalasteward.io
 
 import better.files.File
+import cats.effect.Sync
+import cats.implicits._
 
-trait FileService[F[_]] {
-  def readFile(file: File): F[String]
+trait FileAlg[F[_]] {
+  def readFile(file: File): F[Option[String]]
 
   def writeFile(file: File, content: String): F[Unit]
+}
+
+object FileAlg {
+  def sync[F[_]](implicit F: Sync[F]): FileAlg[F] =
+    new FileAlg[F] {
+      override def readFile(file: File): F[Option[String]] =
+        F.delay(if (file.exists) Some(file.contentAsString) else None)
+
+      override def writeFile(file: File, content: String): F[Unit] =
+        F.delay(file.write(content)).void
+    }
 }
