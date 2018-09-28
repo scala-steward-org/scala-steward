@@ -33,6 +33,8 @@
 - fthomas/singleton-ops
 - fthomas/status-page
 - getquill/quill
+- gvolpe/console4cats
+- gvolpe/fs2-redis
 - http4s/blaze
 - http4s/http4s
 - http4s/http4s.g8
