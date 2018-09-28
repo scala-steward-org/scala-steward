@@ -28,7 +28,7 @@ import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.github.http4s.Http4sGitHubService
 import eu.timepit.scalasteward.io.{FileAlg, ProcessAlg}
 import eu.timepit.scalasteward.model._
-import eu.timepit.scalasteward.sbt.IoSbtService
+import eu.timepit.scalasteward.sbt.SbtAlg
 import eu.timepit.scalasteward.util.uriUtil
 import eu.timepit.scalasteward.utilLegacy._
 import org.http4s.client.Client
@@ -71,7 +71,7 @@ object steward extends IOApp {
             ),
             new Http4sGitHubService(client),
             new IoGitAlg(workspaceAlg),
-            new IoSbtService(ProcessAlg.sync[IO], workspaceAlg)
+            SbtAlg.sync[IO](ProcessAlg.sync[IO], workspaceAlg)
           )
           repos.traverse_ { repo =>
             //x.refreshDependenciesIfNecessary(user, repo).attempt

@@ -21,14 +21,14 @@ import cats.implicits._
 import eu.timepit.scalasteward.git.{GitAlg, Sha1}
 import eu.timepit.scalasteward.github.GitHubService
 import eu.timepit.scalasteward.github.data.{AuthenticatedUser, Repo, RepoOut}
-import eu.timepit.scalasteward.sbt.SbtService
+import eu.timepit.scalasteward.sbt.SbtAlg
 import eu.timepit.scalasteward.util.uriUtil
 
 class DependencyService[F[_]](
     dependencyRepository: DependencyRepository[F],
     gitHubService: GitHubService[F],
     gitAlg: GitAlg[F],
-    sbtService: SbtService[F]
+    sbtService: SbtAlg[F]
 ) {
   def refreshDependenciesIfNecessary(
       user: AuthenticatedUser,

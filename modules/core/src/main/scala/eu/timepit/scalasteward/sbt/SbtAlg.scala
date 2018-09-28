@@ -16,29 +16,32 @@
 
 package eu.timepit.scalasteward.sbt
 
-import cats.effect.IO
+import cats.effect.Sync
+import cats.implicits._
 import eu.timepit.scalasteward.application.WorkspaceAlg
-import eu.timepit.scalasteward.dependency
 import eu.timepit.scalasteward.dependency.Dependency
+import eu.timepit.scalasteward.dependency.parser.parseDependencies
 import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.io.ProcessAlg
-import eu.timepit.scalasteward.sbtLegacy.sbtCmd
 
-trait SbtService[F[_]] {
+trait SbtAlg[F[_]] {
   def getDependencies(repo: Repo): F[List[Dependency]]
 }
 
-class IoSbtService(
-    processAlg: ProcessAlg[IO],
-    workspaceAlg: WorkspaceAlg[IO]
-) extends SbtService[IO] {
-  override def getDependencies(repo: Repo): IO[List[Dependency]] =
-    workspaceAlg.repoDir(repo).flatMap { dir =>
-      processAlg
-        .execSandboxed(
-          sbtCmd :+ ";libraryDependenciesAsJson ;reload plugins; libraryDependenciesAsJson",
-          dir
-        )
-        .map(lines => lines.flatMap(dependency.parser.parseDependencies))
+object SbtAlg {
+  val sbtCmd: List[String] =
+    List("sbt", "-no-colors")
+
+  def sync[F[_]](
+      processAlg: ProcessAlg[F],
+      workspaceAlg: WorkspaceAlg[F]
+  )(implicit F: Sync[F]): SbtAlg[F] =
+    new SbtAlg[F] {
+      override def getDependencies(repo: Repo): F[List[Dependency]] =
+        for {
+          repoDir <- workspaceAlg.repoDir(repo)
+          cmd = ";libraryDependenciesAsJson ;reload plugins; libraryDependenciesAsJson"
+          lines <- processAlg.execSandboxed(sbtCmd :+ cmd, repoDir)
+        } yield lines.flatMap(parseDependencies)
     }
 }
