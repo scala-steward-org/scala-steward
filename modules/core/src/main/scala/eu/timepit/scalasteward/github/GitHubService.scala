@@ -58,5 +58,4 @@ trait GitHubService[F[_]] {
       repoOut: RepoOut
   ): F[BranchOut] =
     getBranch(user, repoOut.repo, repoOut.default_branch)
-
 }

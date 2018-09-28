@@ -16,11 +16,11 @@
 
 package eu.timepit.scalasteward.git
 
-import cats.effect.IO
+import cats.effect.Sync
 import cats.implicits._
 import eu.timepit.scalasteward.application.WorkspaceAlg
-import eu.timepit.scalasteward.gitLegacy
 import eu.timepit.scalasteward.github.data.Repo
+import eu.timepit.scalasteward.io.{FileAlg, ProcessAlg}
 import org.http4s.Uri
 
 trait GitAlg[F[_]] {
@@ -31,15 +31,26 @@ trait GitAlg[F[_]] {
   def syncFork(repo: Repo, upstreamUrl: Uri): F[Unit]
 }
 
-class IoGitAlg(workspaceAlg: WorkspaceAlg[IO]) extends GitAlg[IO] {
-  override def clone(repo: Repo, url: Uri): IO[Unit] =
-    workspaceAlg.rootDir.flatMap { root =>
-      workspaceAlg.repoDir(repo).flatMap { dir =>
-        gitLegacy.clone(url, dir, root).void
-      }
+object GitAlg {
+  val gitCmd: String = "git"
+
+  def sync[F[_]](
+      fileAlg: FileAlg[F],
+      processAlg: ProcessAlg[F],
+      workspaceAlg: WorkspaceAlg[F]
+  )(implicit F: Sync[F]): GitAlg[F] =
+    new GitAlg[F] {
+      override def clone(repo: Repo, url: Uri): F[Unit] =
+        for {
+          rootDir <- workspaceAlg.rootDir
+          repoDir <- workspaceAlg.repoDir(repo)
+          _ <- processAlg.exec(List(gitCmd, "clone", url.toString, repoDir.pathAsString), rootDir)
+        } yield ()
+
+      override def removeClone(repo: Repo): F[Unit] =
+        workspaceAlg.repoDir(repo).flatMap(fileAlg.deleteForce)
+
+      override def syncFork(repo: Repo, upstreamUrl: Uri): F[Unit] =
+        F.unit
     }
-
-  override def removeClone(repo: Repo): IO[Unit] = IO.unit
-
-  override def syncFork(repo: Repo, upstreamUrl: Uri): IO[Unit] = IO.unit
 }

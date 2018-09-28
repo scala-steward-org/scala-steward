@@ -21,6 +21,8 @@ import cats.effect.Sync
 import cats.implicits._
 
 trait FileAlg[F[_]] {
+  def deleteForce(file: File): F[Unit]
+
   def readFile(file: File): F[Option[String]]
 
   def writeFile(file: File, content: String): F[Unit]
@@ -29,6 +31,9 @@ trait FileAlg[F[_]] {
 object FileAlg {
   def sync[F[_]](implicit F: Sync[F]): FileAlg[F] =
     new FileAlg[F] {
+      override def deleteForce(file: File): F[Unit] =
+        F.delay(if (file.exists) file.delete())
+
       override def readFile(file: File): F[Option[String]] =
         F.delay(if (file.exists) Some(file.contentAsString) else None)
 

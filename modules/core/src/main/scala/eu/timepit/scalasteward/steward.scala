@@ -22,7 +22,7 @@ import cats.implicits._
 import eu.timepit.scalasteward.application.WorkspaceAlg
 import eu.timepit.scalasteward.dependency.DependencyService
 import eu.timepit.scalasteward.dependency.json.JsonDependencyRepository
-import eu.timepit.scalasteward.git.IoGitAlg
+import eu.timepit.scalasteward.git.GitAlg
 import eu.timepit.scalasteward.github.GitHubService
 import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.github.http4s.Http4sGitHubService
@@ -63,15 +63,14 @@ object steward extends IOApp {
         user <- githubLegacy.authenticatedUser
         _ <- BlazeClientBuilder[IO](ExecutionContext.global).resource.use { client =>
           // FIXME, obviously!
+          val fileAlg = FileAlg.sync[IO]
+          val processAlg = ProcessAlg.sync[IO]
           val workspaceAlg = WorkspaceAlg.sync[IO](workspace)
           val x = new DependencyService[IO](
-            new JsonDependencyRepository(
-              FileAlg.sync[IO],
-              workspaceAlg
-            ),
+            new JsonDependencyRepository(fileAlg, workspaceAlg),
             new Http4sGitHubService(client),
-            new IoGitAlg(workspaceAlg),
-            SbtAlg.sync[IO](ProcessAlg.sync[IO], workspaceAlg)
+            GitAlg.sync[IO](fileAlg, processAlg, workspaceAlg),
+            SbtAlg.sync[IO](processAlg, workspaceAlg)
           )
           repos.traverse_ { repo =>
             //x.refreshDependenciesIfNecessary(user, repo).attempt

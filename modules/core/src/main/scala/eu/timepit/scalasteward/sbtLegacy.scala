@@ -21,6 +21,7 @@ import cats.effect.IO
 import cats.implicits._
 import eu.timepit.scalasteward.io.ProcessAlg
 import eu.timepit.scalasteward.model.Update
+import eu.timepit.scalasteward.sbt.SbtAlg
 import scala.io.Source
 
 object sbtLegacy {
@@ -50,14 +51,11 @@ object sbtLegacy {
   def allUpdates(dir: File): IO[List[Update]] =
     ProcessAlg
       .sync[IO]
-      .execSandboxed(sbtCmd :+ ";dependencyUpdates ;reload plugins; dependencyUpdates", dir)
+      .execSandboxed(SbtAlg.sbtCmd :+ ";dependencyUpdates ;reload plugins; dependencyUpdates", dir)
       .map(lines => sanitizeUpdates(toUpdates(lines)))
 
   def sanitizeUpdates(updates: List[Update.Single]): List[Update] =
     Update.group(updates.distinct).sortBy(update => (update.groupId, update.artifactId))
-
-  val sbtCmd: List[String] =
-    List("sbt", "-no-colors")
 
   def toUpdates(lines: List[String]): List[Update.Single] =
     lines.flatMap { line =>
