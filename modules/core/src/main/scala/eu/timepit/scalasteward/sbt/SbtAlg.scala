@@ -22,7 +22,7 @@ import eu.timepit.scalasteward.application.WorkspaceAlg
 import eu.timepit.scalasteward.dependency.Dependency
 import eu.timepit.scalasteward.dependency.parser.parseDependencies
 import eu.timepit.scalasteward.github.data.Repo
-import eu.timepit.scalasteward.io.ProcessAlg
+import eu.timepit.scalasteward.io.{FileAlg, ProcessAlg}
 
 trait SbtAlg[F[_]] {
   def getDependencies(repo: Repo): F[List[Dependency]]
@@ -33,6 +33,7 @@ object SbtAlg {
     List("sbt", "-no-colors")
 
   def sync[F[_]](
+      fileAlg: FileAlg[F],
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F]
   )(implicit F: Sync[F]): SbtAlg[F] =
@@ -40,8 +41,11 @@ object SbtAlg {
       override def getDependencies(repo: Repo): F[List[Dependency]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
+          jvmopts = repoDir / ".jvmopts"
           cmd = ";libraryDependenciesAsJson ;reload plugins; libraryDependenciesAsJson"
-          lines <- processAlg.execSandboxed(sbtCmd :+ cmd, repoDir)
+          lines <- fileAlg.removeTemporarily(jvmopts) {
+            processAlg.execSandboxed(sbtCmd :+ cmd, repoDir)
+          }
         } yield lines.flatMap(parseDependencies)
     }
 }

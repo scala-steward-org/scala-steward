@@ -50,7 +50,7 @@ object sbtLegacy {
 
   def allUpdates(dir: File): IO[List[Update]] = {
     val jvmopts = ".jvmopts"
-    FileAlg.sync[IO].deleteForce(dir / jvmopts) >>
+    FileAlg.sync[IO].removeTemporarily(dir / jvmopts) {
       ProcessAlg
         .sync[IO]
         .execSandboxed(
@@ -58,7 +58,7 @@ object sbtLegacy {
           dir
         )
         .map(lines => sanitizeUpdates(toUpdates(lines)))
-        .flatTap(_ => ProcessAlg.sync[IO].exec(List("git", "checkout", jvmopts), dir).attempt)
+    }
   }
 
   def sanitizeUpdates(updates: List[Update.Single]): List[Update] =

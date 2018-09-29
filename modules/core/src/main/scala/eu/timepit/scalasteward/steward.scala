@@ -70,10 +70,10 @@ object steward extends IOApp {
             new JsonDependencyRepository(fileAlg, workspaceAlg),
             new Http4sGitHubService(client),
             GitAlg.sync[IO](fileAlg, processAlg, workspaceAlg),
-            SbtAlg.sync[IO](processAlg, workspaceAlg)
+            SbtAlg.sync[IO](fileAlg, processAlg, workspaceAlg)
           )
           repos.traverse_ { repo =>
-            // x.refreshDependenciesIfNecessary(user, repo).attempt
+            //x.refreshDependenciesIfNecessary(user, repo).attempt
             locally(x)
             locally(user)
             IO(repo)
