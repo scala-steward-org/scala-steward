@@ -35,6 +35,7 @@
 - fthomas/status-page
 - getquill/quill
 - gvolpe/console4cats
+- gvolpe/fs2-rabbit
 - gvolpe/fs2-redis
 - http4s/blaze
 - http4s/http4s
