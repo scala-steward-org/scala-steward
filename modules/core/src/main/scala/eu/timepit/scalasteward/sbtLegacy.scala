@@ -19,7 +19,7 @@ package eu.timepit.scalasteward
 import better.files.File
 import cats.effect.IO
 import cats.implicits._
-import eu.timepit.scalasteward.io.ProcessAlg
+import eu.timepit.scalasteward.io.{FileAlg, ProcessAlg}
 import eu.timepit.scalasteward.model.Update
 import eu.timepit.scalasteward.sbt.SbtAlg
 import scala.io.Source
@@ -48,11 +48,18 @@ object sbtLegacy {
       }
     }
 
-  def allUpdates(dir: File): IO[List[Update]] =
-    ProcessAlg
-      .sync[IO]
-      .execSandboxed(SbtAlg.sbtCmd :+ ";dependencyUpdates ;reload plugins; dependencyUpdates", dir)
-      .map(lines => sanitizeUpdates(toUpdates(lines)))
+  def allUpdates(dir: File): IO[List[Update]] = {
+    val jvmopts = ".jvmopts"
+    FileAlg.sync[IO].deleteForce(dir / jvmopts) >>
+      ProcessAlg
+        .sync[IO]
+        .execSandboxed(
+          SbtAlg.sbtCmd :+ ";dependencyUpdates ;reload plugins; dependencyUpdates",
+          dir
+        )
+        .map(lines => sanitizeUpdates(toUpdates(lines)))
+        .flatTap(_ => ProcessAlg.sync[IO].exec(List("git", "checkout", jvmopts), dir).attempt)
+  }
 
   def sanitizeUpdates(updates: List[Update.Single]): List[Update] =
     Update.group(updates.distinct).sortBy(update => (update.groupId, update.artifactId))
