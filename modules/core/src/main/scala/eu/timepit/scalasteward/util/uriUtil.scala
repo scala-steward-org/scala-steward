@@ -23,10 +23,8 @@ import io.circe.Decoder
 import org.http4s.Uri
 
 object uriUtil {
-  implicit val uriDecoder: Decoder[Uri] = {
-    type Result[A] = Either[Throwable, A]
-    Decoder[String].emap(s => fromString[Result](s).leftMap(_.getMessage))
-  }
+  implicit val uriDecoder: Decoder[Uri] =
+    Decoder[String].emap(s => fromString[Either[Throwable, ?]](s).leftMap(_.getMessage))
 
   def fromString[F[_]](s: String)(implicit F: ApplicativeError[F, Throwable]): F[Uri] =
     F.fromEither(Uri.fromString(s))
