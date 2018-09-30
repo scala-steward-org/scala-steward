@@ -43,7 +43,7 @@ class JsonDependencyRepository[F[_]](
     }
 
   def jsonFile: F[File] =
-    workspaceAlg.rootDir.map(_ / "repos.json")
+    workspaceAlg.rootDir.map(_ / "repos_v1.json")
 
   def readJson: F[Store] =
     jsonFile.flatMap { file =>

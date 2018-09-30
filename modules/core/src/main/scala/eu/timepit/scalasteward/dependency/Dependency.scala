@@ -22,10 +22,14 @@ import io.circe.{Decoder, Encoder}
 final case class Dependency(
     groupId: String,
     artifactId: String,
+    artifactIdCross: String,
     version: String,
     scalaVersion: String,
     sbtVersion: Option[String] = None
-)
+) {
+  def formatAsModuleId: String =
+    s""""$groupId" % "$artifactIdCross" % "$version""""
+}
 
 object Dependency {
   implicit val dependencyDecoder: Decoder[Dependency] =

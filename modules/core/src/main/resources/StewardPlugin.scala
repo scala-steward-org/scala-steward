@@ -35,12 +35,13 @@ object StewardPlugin extends AutoPlugin {
         moduleId =>
           val cross =
             CrossVersion(moduleId.crossVersion, scalaVersion.value, scalaBinaryVersion.value)
-          val crossName = CrossVersion.applyCross(moduleId.name, cross)
+          val artifactIdCross =
+            CrossVersion.applyCross(moduleId.name, cross)
 
           val entries: List[(String, String)] = List(
             "groupId" -> moduleId.organization,
             "artifactId" -> moduleId.name,
-            //"crossArtifactId" -> crossName,
+            "artifactIdCross" -> artifactIdCross,
             "version" -> moduleId.revision,
             "scalaVersion" -> moduleId.extraAttributes
               .getOrElse("e:scalaVersion", scalaVersion.value)
