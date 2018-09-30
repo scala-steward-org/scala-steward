@@ -61,15 +61,16 @@ object steward extends IOApp {
         _ <- prepareEnv(workspace)
         repos <- getRepos(workspace)
         user <- githubLegacy.authenticatedUser
+        // FIXME, obviously!
+        fileAlg = FileAlg.sync[IO]
+        processAlg = ProcessAlg.sync[IO]
+        workspaceAlg = WorkspaceAlg.sync[IO](workspace)
+        gitAlg = GitAlg.sync[IO](fileAlg, processAlg, workspaceAlg)
         _ <- BlazeClientBuilder[IO](ExecutionContext.global).resource.use { client =>
-          // FIXME, obviously!
-          val fileAlg = FileAlg.sync[IO]
-          val processAlg = ProcessAlg.sync[IO]
-          val workspaceAlg = WorkspaceAlg.sync[IO](workspace)
           val x = new DependencyService[IO](
             new JsonDependencyRepository(fileAlg, workspaceAlg),
             new Http4sGitHubService(client),
-            GitAlg.sync[IO](fileAlg, processAlg, workspaceAlg),
+            gitAlg,
             SbtAlg.sync[IO](fileAlg, processAlg, workspaceAlg)
           )
           repos.traverse_ { repo =>
@@ -81,7 +82,7 @@ object steward extends IOApp {
         }
         _ <- ioLegacy.deleteForce(workspace / "repos")
         _ <- BlazeClientBuilder[IO](ExecutionContext.global).resource.use { client =>
-          repos.traverse_(stewardRepo(_, workspace, client))
+          repos.traverse_(stewardRepo(_, workspace, client, gitAlg))
         }
       } yield ExitCode.Success
     }
@@ -104,10 +105,10 @@ object steward extends IOApp {
       file.lines.collect { case regex(owner, repo) => Repo(owner, repo) }.toList
     }
 
-  def stewardRepo(repo: Repo, workspace: File, client: Client[IO]): IO[Unit] = {
+  def stewardRepo(repo: Repo, workspace: File, client: Client[IO], gitAlg: GitAlg[IO]): IO[Unit] = {
     val githubService = new Http4sGitHubService(client)
     val p = for {
-      localRepo <- cloneAndUpdate(repo, workspace, githubService)
+      localRepo <- cloneAndUpdate(repo, workspace, githubService, gitAlg)
       _ <- updateDependencies(localRepo, githubService)
       _ <- ioLegacy.deleteForce(localRepo.dir)
     } yield ()
@@ -122,7 +123,8 @@ object steward extends IOApp {
   def cloneAndUpdate(
       repo: Repo,
       workspace: File,
-      gitHubService: GitHubService[IO]
+      gitHubService: GitHubService[IO],
+      gitAlg: GitAlg[IO]
   ): IO[LocalRepo] =
     for {
       _ <- log.printInfo(s"Clone and update ${repo.show}")
@@ -131,14 +133,11 @@ object steward extends IOApp {
       repoDir = workspace / "repos" / repo.owner / repo.repo
       _ <- ioLegacy.mkdirs(repoDir)
       forkUrl = uriUtil.withUserInfo(repoOut.clone_url, user)
-      _ <- gitLegacy.clone(forkUrl, repoDir, workspace)
+      _ <- gitAlg.clone(repo, forkUrl)
       _ <- gitLegacy.setUserSteward(repoDir)
       parent <- repoOut.parentOrRaise[IO]
-      _ <- githubLegacy.fetchUpstream(parent.clone_url.toString, repoDir)
-      // TODO: Determine the current default branch
-      baseBranch <- gitLegacy.currentBranch(repoDir)
-      _ <- gitLegacy.exec(List("merge", s"upstream/${baseBranch.name}"), repoDir)
-      _ <- gitLegacy.push(baseBranch, repoDir)
+      baseBranch = parent.default_branch
+      _ <- gitAlg.syncFork(repo, parent.clone_url, parent.default_branch)
     } yield LocalRepo(repo, repoDir, baseBranch)
 
   def updateDependencies(localRepo: LocalRepo, gitHubService: GitHubService[IO]): IO[Unit] =

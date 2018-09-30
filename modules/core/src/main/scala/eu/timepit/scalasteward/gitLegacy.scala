@@ -21,7 +21,6 @@ import cats.effect.IO
 import cats.implicits._
 import eu.timepit.scalasteward.git.Branch
 import eu.timepit.scalasteward.model.Update
-import org.http4s.Uri
 
 object gitLegacy {
   def branchAuthors(branch: Branch, base: Branch, dir: File): IO[List[String]] =
@@ -32,9 +31,6 @@ object gitLegacy {
 
   def checkoutBranch(branch: Branch, dir: File): IO[List[String]] =
     exec(List("checkout", branch.name), dir)
-
-  def clone(url: Uri, dir: File, workspace: File): IO[List[String]] =
-    exec(List("clone", url.toString, dir.pathAsString), workspace)
 
   def commitAll(message: String, dir: File): IO[List[String]] =
     exec(List("commit", "--all", "-m", message), dir)

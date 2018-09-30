@@ -59,14 +59,6 @@ object githubLegacy {
         createPullRequest(localUpdate, gitHubService).void
     )
 
-  def fetchUpstream(cloneUrl: String, dir: File): IO[Unit] = {
-    val name = "upstream"
-    for {
-      _ <- gitLegacy.exec(List("remote", "add", name, cloneUrl), dir)
-      _ <- gitLegacy.exec(List("fetch", name), dir)
-    } yield ()
-  }
-
   def headOf(localUpdate: LocalUpdate): String =
     s"$myLogin:${localUpdate.updateBranch.name}"
 

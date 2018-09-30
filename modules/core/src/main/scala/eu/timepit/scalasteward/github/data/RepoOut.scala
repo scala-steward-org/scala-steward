@@ -40,4 +40,7 @@ final case class RepoOut(
 object RepoOut {
   implicit val repoOutDecoder: Decoder[RepoOut] =
     deriveDecoder
+
+  // prevent IntelliJ from removing the import of uriDecoder
+  locally(uriDecoder)
 }
