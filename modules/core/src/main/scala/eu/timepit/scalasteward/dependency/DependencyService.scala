@@ -54,11 +54,9 @@ class DependencyService[F[_]](
       latestSha1: Sha1
   )(implicit F: MonadError[F, Throwable]): F[Unit] =
     for {
-      cloneUrlWithUser <- uriUtil.fromStringWithUser[F](repoOut.clone_url, user)
-      _ <- gitAlg.clone(repo, cloneUrlWithUser)
+      _ <- gitAlg.clone(repo, uriUtil.withUserInfo(repoOut.clone_url, user))
       parent <- repoOut.parentOrRaise[F]
-      upstreamUrl <- uriUtil.fromString[F](parent.clone_url)
-      _ <- gitAlg.syncFork(repo, upstreamUrl, parent.default_branch)
+      _ <- gitAlg.syncFork(repo, parent.clone_url, parent.default_branch)
       dependencies <- sbtService.getDependencies(repo)
       _ <- dependencyRepository.setDependencies(repo, latestSha1, dependencies)
       _ <- gitAlg.removeClone(repo)

@@ -18,14 +18,16 @@ package eu.timepit.scalasteward.github.data
 
 import cats.ApplicativeError
 import eu.timepit.scalasteward.git.Branch
+import eu.timepit.scalasteward.util.uriUtil.uriDecoder
 import io.circe.Decoder
 import io.circe.generic.semiauto._
+import org.http4s.Uri
 
 final case class RepoOut(
     name: String,
     owner: UserOut,
     parent: Option[RepoOut],
-    clone_url: String,
+    clone_url: Uri,
     default_branch: Branch
 ) {
   def parentOrRaise[F[_]](implicit F: ApplicativeError[F, Throwable]): F[RepoOut] =

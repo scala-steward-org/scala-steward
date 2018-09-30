@@ -91,6 +91,7 @@ object steward extends IOApp {
     for {
       _ <- log.printInfo("Add global sbt plugins")
       _ <- sbtLegacy.addGlobalPlugins(File.home)
+      _ <- sbtLegacy.addStewardPlugins(File.home)
       _ <- log.printInfo(s"Clean workspace $workspace")
       _ <- ioLegacy.deleteForce(workspace / "repos")
       _ <- ioLegacy.mkdirs(workspace)
@@ -129,11 +130,11 @@ object steward extends IOApp {
       repoOut <- gitHubService.createFork(user, repo)
       repoDir = workspace / "repos" / repo.owner / repo.repo
       _ <- ioLegacy.mkdirs(repoDir)
-      forkUrl <- uriUtil.fromStringWithUser[IO](repoOut.clone_url, user)
+      forkUrl = uriUtil.withUserInfo(repoOut.clone_url, user)
       _ <- gitLegacy.clone(forkUrl, repoDir, workspace)
       _ <- gitLegacy.setUserSteward(repoDir)
       parent <- repoOut.parentOrRaise[IO]
-      _ <- githubLegacy.fetchUpstream(parent.clone_url, repoDir)
+      _ <- githubLegacy.fetchUpstream(parent.clone_url.toString, repoDir)
       // TODO: Determine the current default branch
       baseBranch <- gitLegacy.currentBranch(repoDir)
       _ <- gitLegacy.exec(List("merge", s"upstream/${baseBranch.name}"), repoDir)
