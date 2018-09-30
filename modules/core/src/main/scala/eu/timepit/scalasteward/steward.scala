@@ -22,7 +22,7 @@ import cats.implicits._
 import eu.timepit.scalasteward.application.WorkspaceAlg
 import eu.timepit.scalasteward.dependency.DependencyService
 import eu.timepit.scalasteward.dependency.json.JsonDependencyRepository
-import eu.timepit.scalasteward.git.GitAlg
+import eu.timepit.scalasteward.git.{Author, GitAlg}
 import eu.timepit.scalasteward.github.GitHubService
 import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.github.http4s.Http4sGitHubService
@@ -134,7 +134,7 @@ object steward extends IOApp {
       _ <- ioLegacy.mkdirs(repoDir)
       forkUrl = uriUtil.withUserInfo(repoOut.clone_url, user)
       _ <- gitAlg.clone(repo, forkUrl)
-      _ <- gitLegacy.setUserSteward(repoDir)
+      _ <- gitAlg.setAuthor(repo, Author("Scala steward", "scala-steward@timepit.eu"))
       parent <- repoOut.parentOrRaise[IO]
       baseBranch = parent.default_branch
       _ <- gitAlg.syncFork(repo, parent.clone_url, parent.default_branch)
