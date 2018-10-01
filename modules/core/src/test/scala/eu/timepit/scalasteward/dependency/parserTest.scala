@@ -18,7 +18,8 @@ class parserTest extends FunSuite with Matchers {
         "better-files_2.12",
         "3.6.0",
         "2.12.7",
-        None),
+        None
+      ),
       Dependency("org.typelevel", "cats-effect", "cats-effect_2.12", "1.0.0", "2.12.7", None),
       Dependency("org.scala-lang", "scala-library", "scala-library", "2.12.6", "2.12.6", None),
       Dependency("com.dwijnand", "sbt-travisci", "sbt-travisci", "1.1.3", "2.12", Some("1.0")),
