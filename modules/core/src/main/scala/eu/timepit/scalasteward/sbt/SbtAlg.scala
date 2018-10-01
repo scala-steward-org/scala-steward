@@ -55,9 +55,9 @@ object SbtAlg {
         for {
           updatesDir <- workspaceAlg.rootDir.map(_ / "updates")
           projectDir = updatesDir / "project"
-          _ <- fileAlg.writeFile(updatesDir / "build.sbt", project.mkBuildSbt)
-          _ <- fileAlg.writeFile(projectDir / "build.properties", project.mkBuildProperties)
-          _ <- fileAlg.writeFile(projectDir / "plugins.sbt", project.mkPluginsSbt)
+          _ <- fileAlg.writeFileData(updatesDir, project.mkBuildSbt)
+          _ <- fileAlg.writeFileData(projectDir, project.mkBuildProperties)
+          _ <- fileAlg.writeFileData(projectDir, project.mkPluginsSbt)
           cmd = ";dependencyUpdates ;reload plugins; dependencyUpdates"
           lines <- processAlg.exec(sbtCmd :+ cmd, updatesDir)
           _ <- fileAlg.deleteForce(updatesDir)

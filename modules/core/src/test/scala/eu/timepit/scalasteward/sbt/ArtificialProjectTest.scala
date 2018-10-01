@@ -18,7 +18,7 @@ class ArtificialProjectTest extends FunSuite with Matchers {
   )
 
   test("mkBuildSbt") {
-    project.mkBuildSbt shouldBe
+    project.mkBuildSbt.content shouldBe
       """|scalaVersion := "2.12.7"
          |libraryDependencies += "org.typelevel" % "cats-effect_2.12" % "1.0.0"
          |libraryDependencies += "org.scala-lang" % "scala-library" % "2.12.6"
@@ -26,7 +26,7 @@ class ArtificialProjectTest extends FunSuite with Matchers {
   }
 
   test("mkPluginsSbt") {
-    project.mkPluginsSbt shouldBe
+    project.mkPluginsSbt.content shouldBe
       """|addSbtPlugin("com.dwijnand" % "sbt-travisci" % "1.1.3")
          |addSbtPlugin("com.geirsson" % "sbt-scalafmt" % "1.6.0-RC4")
          |""".stripMargin.trim

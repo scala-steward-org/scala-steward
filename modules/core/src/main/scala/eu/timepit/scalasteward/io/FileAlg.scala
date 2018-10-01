@@ -30,6 +30,9 @@ trait FileAlg[F[_]] {
   def readFile(file: File): F[Option[String]]
 
   def writeFile(file: File, content: String): F[Unit]
+
+  def writeFileData(dir: File, fileData: FileData): F[Unit] =
+    writeFile(dir / fileData.name, fileData.content)
 }
 
 object FileAlg {
