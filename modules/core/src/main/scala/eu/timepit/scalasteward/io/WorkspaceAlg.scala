@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.application
+package eu.timepit.scalasteward.io
 
 import better.files.File
-import cats.effect.Sync
 import eu.timepit.scalasteward.github.data.Repo
 
 trait WorkspaceAlg[F[_]] {
@@ -27,18 +26,12 @@ trait WorkspaceAlg[F[_]] {
 }
 
 object WorkspaceAlg {
-  def sync[F[_]](workspace: File)(implicit F: Sync[F]): WorkspaceAlg[F] =
+  def using[F[_]](fileAlg: FileAlg[F], workspace: File): WorkspaceAlg[F] =
     new WorkspaceAlg[F] {
       override def rootDir: F[File] =
-        ensureExists(workspace)
+        fileAlg.ensureExists(workspace)
 
       override def repoDir(repo: Repo): F[File] =
-        ensureExists(workspace / "repos" / repo.owner / repo.repo)
-
-      def ensureExists(dir: File): F[File] =
-        F.delay {
-          if (!dir.exists) dir.createDirectories()
-          dir
-        }
+        fileAlg.ensureExists(workspace / "repos" / repo.owner / repo.repo)
     }
 }

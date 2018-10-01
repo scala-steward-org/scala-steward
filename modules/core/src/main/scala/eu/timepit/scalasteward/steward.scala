@@ -19,14 +19,13 @@ package eu.timepit.scalasteward
 import better.files.File
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
-import eu.timepit.scalasteward.application.WorkspaceAlg
 import eu.timepit.scalasteward.dependency.DependencyService
 import eu.timepit.scalasteward.dependency.json.JsonDependencyRepository
 import eu.timepit.scalasteward.git.{Author, GitAlg}
 import eu.timepit.scalasteward.github.GitHubService
 import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.github.http4s.Http4sGitHubService
-import eu.timepit.scalasteward.io.{FileAlg, ProcessAlg}
+import eu.timepit.scalasteward.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import eu.timepit.scalasteward.model._
 import eu.timepit.scalasteward.sbt.SbtAlg
 import eu.timepit.scalasteward.util.uriUtil
@@ -64,14 +63,29 @@ object steward extends IOApp {
         // FIXME, obviously!
         fileAlg = FileAlg.sync[IO]
         processAlg = ProcessAlg.sync[IO]
-        workspaceAlg = WorkspaceAlg.sync[IO](workspace)
+        workspaceAlg = WorkspaceAlg.using[IO](fileAlg, workspace)
         gitAlg = GitAlg.sync[IO](fileAlg, processAlg, workspaceAlg)
+        sbtAlg = SbtAlg.sync[IO](fileAlg, processAlg, workspaceAlg)
+        /*updates <- sbtAlg.getUpdates(
+          ArtificialProject(
+            "2.12.4",
+            "1.2.1",
+            List(
+              Dependency(
+                "org.typelevel",
+                "cats-effect",
+                "cats-effect_2.12",
+                "0.10.1",
+                "2.12.7",
+                None)),
+            List()))
+        _ <- IO(println(updates))*/
         _ <- BlazeClientBuilder[IO](ExecutionContext.global).resource.use { client =>
           val x = new DependencyService[IO](
             new JsonDependencyRepository(fileAlg, workspaceAlg),
             new Http4sGitHubService(client),
             gitAlg,
-            SbtAlg.sync[IO](fileAlg, processAlg, workspaceAlg)
+            sbtAlg
           )
           repos.traverse_ { repo =>
             //x.refreshDependenciesIfNecessary(user, repo).attempt
@@ -82,7 +96,9 @@ object steward extends IOApp {
         }
         _ <- ioLegacy.deleteForce(workspace / "repos")
         _ <- BlazeClientBuilder[IO](ExecutionContext.global).resource.use { client =>
+          locally(client)
           repos.traverse_(stewardRepo(_, workspace, client, gitAlg))
+        //IO.unit
         }
       } yield ExitCode.Success
     }

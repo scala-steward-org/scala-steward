@@ -19,9 +19,8 @@ package eu.timepit.scalasteward.git
 import better.files.File
 import cats.effect.Sync
 import cats.implicits._
-import eu.timepit.scalasteward.application.WorkspaceAlg
 import eu.timepit.scalasteward.github.data.Repo
-import eu.timepit.scalasteward.io.{FileAlg, ProcessAlg}
+import eu.timepit.scalasteward.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.http4s.Uri
 
 trait GitAlg[F[_]] {

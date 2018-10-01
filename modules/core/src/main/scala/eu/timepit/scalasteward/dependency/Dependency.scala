@@ -29,6 +29,12 @@ final case class Dependency(
 ) {
   def formatAsModuleId: String =
     s""""$groupId" % "$artifactIdCross" % "$version""""
+
+  def formatAsSbtExpr: String =
+    if (sbtVersion.isDefined)
+      s"""addSbtPlugin($formatAsModuleId)"""
+    else
+      s"""libraryDependencies += $formatAsModuleId"""
 }
 
 object Dependency {

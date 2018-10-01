@@ -18,14 +18,17 @@ package eu.timepit.scalasteward.sbt
 
 import cats.effect.Sync
 import cats.implicits._
-import eu.timepit.scalasteward.application.WorkspaceAlg
 import eu.timepit.scalasteward.dependency.Dependency
 import eu.timepit.scalasteward.dependency.parser.parseDependencies
 import eu.timepit.scalasteward.github.data.Repo
-import eu.timepit.scalasteward.io.{FileAlg, ProcessAlg}
+import eu.timepit.scalasteward.io.{FileAlg, ProcessAlg, WorkspaceAlg}
+import eu.timepit.scalasteward.model.Update
+import eu.timepit.scalasteward.sbtLegacy
 
 trait SbtAlg[F[_]] {
   def getDependencies(repo: Repo): F[List[Dependency]]
+
+  def getUpdates(project: ArtificialProject): F[List[Update]]
 }
 
 object SbtAlg {
@@ -47,5 +50,17 @@ object SbtAlg {
             processAlg.execSandboxed(sbtCmd :+ cmd, repoDir)
           }
         } yield lines.flatMap(parseDependencies)
+
+      override def getUpdates(project: ArtificialProject): F[List[Update]] =
+        for {
+          updatesDir <- workspaceAlg.rootDir.map(_ / "updates")
+          projectDir = updatesDir / "project"
+          _ <- fileAlg.writeFile(updatesDir / "build.sbt", project.mkBuildSbt)
+          _ <- fileAlg.writeFile(projectDir / "build.properties", project.mkBuildProperties)
+          _ <- fileAlg.writeFile(projectDir / "plugins.sbt", project.mkPluginsSbt)
+          cmd = ";dependencyUpdates ;reload plugins; dependencyUpdates"
+          lines <- processAlg.exec(sbtCmd :+ cmd, updatesDir)
+          _ <- fileAlg.deleteForce(updatesDir)
+        } yield sbtLegacy.sanitizeUpdates(sbtLegacy.toUpdates(lines))
     }
 }

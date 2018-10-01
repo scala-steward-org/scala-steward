@@ -23,6 +23,8 @@ import cats.implicits._
 trait FileAlg[F[_]] {
   def deleteForce(file: File): F[Unit]
 
+  def ensureExists(dir: File): F[File]
+
   def removeTemporarily[A](file: File)(fa: F[A]): F[A]
 
   def readFile(file: File): F[Option[String]]
@@ -35,6 +37,12 @@ object FileAlg {
     new FileAlg[F] {
       override def deleteForce(file: File): F[Unit] =
         F.delay(if (file.exists) file.delete())
+
+      def ensureExists(dir: File): F[File] =
+        F.delay {
+          if (!dir.exists) dir.createDirectories()
+          dir
+        }
 
       override def removeTemporarily[A](file: File)(fa: F[A]): F[A] =
         F.bracket {
@@ -53,6 +61,6 @@ object FileAlg {
         F.delay(if (file.exists) Some(file.contentAsString) else None)
 
       override def writeFile(file: File, content: String): F[Unit] =
-        F.delay(file.write(content)).void
+        file.parentOption.fold(F.unit)(ensureExists(_).void) >> F.delay(file.write(content)).void
     }
 }

@@ -19,11 +19,10 @@ package eu.timepit.scalasteward.dependency.json
 import better.files.File
 import cats.MonadError
 import cats.implicits._
-import eu.timepit.scalasteward.application.WorkspaceAlg
 import eu.timepit.scalasteward.dependency.{Dependency, DependencyRepository}
 import eu.timepit.scalasteward.git.Sha1
 import eu.timepit.scalasteward.github.data.Repo
-import eu.timepit.scalasteward.io.FileAlg
+import eu.timepit.scalasteward.io.{FileAlg, WorkspaceAlg}
 import io.circe.parser.decode
 import io.circe.syntax._
 

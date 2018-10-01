@@ -14,14 +14,24 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.application
+package eu.timepit.scalasteward.sbt
 
-import better.files.File
-import eu.timepit.scalasteward.git.Author
+import eu.timepit.scalasteward.dependency.Dependency
 
-final case class Config(
-    workspace: File,
-    gitAuthor: Author = Author("Scala steward", "scala-steward@timepit.eu"),
-    gitHubLogin: String = "scala-steward",
-    gitHubTokenFile: File
-)
+final case class ArtificialProject(
+    scalaVersion: String,
+    sbtVersion: String,
+    libraries: List[Dependency],
+    plugins: List[Dependency]
+) {
+  def mkBuildSbt: String =
+    s"""|scalaVersion := "$scalaVersion"
+        |${libraries.map(_.formatAsSbtExpr).mkString("\n")}
+        |""".stripMargin.trim
+
+  def mkBuildProperties: String =
+    s"sbt.version=$sbtVersion"
+
+  def mkPluginsSbt: String =
+    plugins.map(_.formatAsSbtExpr).mkString("\n")
+}
