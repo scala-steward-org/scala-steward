@@ -21,11 +21,8 @@ import cats.effect.IO
 import cats.implicits._
 import eu.timepit.scalasteward.model.Update
 import fs2.Stream
-import java.io.IOException
 import java.util.concurrent.TimeUnit
-import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.FiniteDuration
-import scala.sys.process.{Process, ProcessLogger}
 
 object ioLegacy {
   val currentTimeMillis: IO[Long] =
@@ -33,19 +30,6 @@ object ioLegacy {
 
   def deleteForce(dir: File): IO[Unit] =
     IO(if (dir.exists) dir.delete() else ())
-
-  def exec(command: List[String], cwd: File): IO[List[String]] =
-    IO {
-      val lb = ListBuffer.empty[String]
-      val log = new ProcessLogger {
-        override def out(s: => String): Unit = lb.append(s)
-        override def err(s: => String): Unit = lb.append(s)
-        override def buffer[T](f: => T): T = f
-      }
-      val exitCode = Process(command, cwd.toJava).!(log)
-      if (exitCode != 0) throw new IOException(lb.mkString("\n"))
-      lb.result()
-    }
 
   def isSourceFile(file: File): Boolean =
     !file.pathAsString.contains(".git/") &&

@@ -20,6 +20,7 @@ import better.files.File
 import cats.effect.IO
 import cats.implicits._
 import eu.timepit.scalasteward.git.Branch
+import eu.timepit.scalasteward.io.ProcessAlg
 import eu.timepit.scalasteward.model.Update
 
 object gitLegacy {
@@ -56,7 +57,7 @@ object gitLegacy {
     s"${r1.name}..${r2.name}"
 
   def exec(cmd: List[String], dir: File): IO[List[String]] =
-    ioLegacy.exec("git" :: cmd, dir)
+    ProcessAlg.sync[IO].exec("git" :: cmd, dir)
 
   def isBehind(branch: Branch, compare: Branch, dir: File): IO[Boolean] =
     exec(List("log", "--pretty=format:'%h'", dotdot(branch, compare)), dir).map(_.nonEmpty)

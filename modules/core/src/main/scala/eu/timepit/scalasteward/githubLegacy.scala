@@ -22,6 +22,7 @@ import cats.effect.IO
 import cats.implicits._
 import eu.timepit.scalasteward.github._
 import eu.timepit.scalasteward.github.data.{AuthenticatedUser, CreatePullRequestIn, PullRequestOut}
+import eu.timepit.scalasteward.io.ProcessAlg
 import eu.timepit.scalasteward.model._
 
 object githubLegacy {
@@ -70,10 +71,12 @@ object githubLegacy {
 
     for {
       token <- accessToken
-      lines <- ioLegacy.exec(
-        List("curl", "-s", "-u", s"$myLogin:$token", url),
-        localUpdate.localRepo.dir
-      )
+      lines <- ProcessAlg
+        .sync[IO]
+        .exec(
+          List("curl", "-s", "-u", s"$myLogin:$token", url),
+          localUpdate.localRepo.dir
+        )
       json <- IO.fromEither(parser.parse(lines.mkString("\n")))
       // TODO: Option.get, are you serious?
       array <- IO(json.asArray.get)

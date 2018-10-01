@@ -94,7 +94,7 @@ object steward extends IOApp {
             IO(repo)
           }
         }
-        _ <- ioLegacy.deleteForce(workspace / "repos")
+        _ <- fileAlg.deleteForce(workspace / "repos")
         _ <- BlazeClientBuilder[IO](ExecutionContext.global).resource.use { client =>
           locally(client)
           repos.traverse_(stewardRepo(_, workspace, client, gitAlg))
