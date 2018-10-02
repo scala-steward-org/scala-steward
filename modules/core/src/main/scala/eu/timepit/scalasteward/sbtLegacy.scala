@@ -19,34 +19,21 @@ package eu.timepit.scalasteward
 import better.files.File
 import cats.effect.IO
 import cats.implicits._
-import eu.timepit.scalasteward.io.{FileAlg, ProcessAlg}
+import eu.timepit.scalasteward.io.{FileAlg, FileData, ProcessAlg}
 import eu.timepit.scalasteward.model.Update
 import eu.timepit.scalasteward.sbt.SbtAlg
 import scala.io.Source
 
 object sbtLegacy {
-  val globalPluginsDirectories: List[String] =
-    List(".sbt/0.13/plugins", ".sbt/1.0/plugins")
+  def addGlobalPlugins: IO[Unit] =
+    sbt.addGlobalPlugin[IO](
+      FileData("sbt-updates.sbt", """addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.4")""")
+    )
 
-  def addGlobalPlugins(home: File): IO[Unit] =
-    IO {
-      val plugin = """addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.4")"""
-      globalPluginsDirectories.foreach { path =>
-        val dir = home / path
-        dir.createDirectories()
-        (dir / "sbt-updates.sbt").writeText(plugin)
-      }
-    }
-
-  def addStewardPlugins(home: File): IO[Unit] =
-    IO {
-      globalPluginsDirectories.foreach { path =>
-        val dir = home / path
-        dir.createDirectories()
-        val filename = "StewardPlugin.scala"
-        (dir / filename).writeText(Source.fromResource(filename).mkString)
-      }
-    }
+  def addStewardPlugins: IO[Unit] = {
+    val name = "StewardPlugin.scala"
+    sbt.addGlobalPlugin[IO](FileData(name, Source.fromResource(name).mkString))
+  }
 
   def allUpdates(dir: File): IO[List[Update]] = {
     val jvmopts = ".jvmopts"
