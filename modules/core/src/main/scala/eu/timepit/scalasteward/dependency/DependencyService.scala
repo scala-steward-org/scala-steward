@@ -30,7 +30,7 @@ class DependencyService[F[_]](
     gitHubService: GitHubService[F],
     gitAlg: GitAlg[F],
     sbtAlg: SbtAlg[F],
-    logger: Logger[F],
+    logger: Logger[F]
 ) {
   def forkAndCheckDependencies(
       user: AuthenticatedUser,
