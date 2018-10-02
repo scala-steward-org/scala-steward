@@ -9,6 +9,7 @@ object Dependencies {
   val http4sBlazeClient = "org.http4s" %% "http4s-blaze-client" % Versions.http4s
   val http4sCirce = "org.http4s" %% "http4s-circe" % Versions.http4s
   val kindProjector = "org.spire-math" %% "kind-projector" % "0.9.8"
+  val log4catsSlf4j = "io.chrisdavenport" %% "log4cats-slf4j" % "0.2.0-M1"
   val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.2.3"
   val refined = "eu.timepit" %% "refined" % "0.9.2"
   val scalaTest = "org.scalatest" %% "scalatest" % "3.0.5"

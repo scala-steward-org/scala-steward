@@ -33,6 +33,7 @@ import eu.timepit.scalasteward.utilLegacy._
 import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
 import scala.concurrent.ExecutionContext
+import _root_.io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 
 object steward extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
@@ -80,15 +81,20 @@ object steward extends IOApp {
                 None)),
             List()))
         _ <- IO(println(updates))*/
+        logger <- Slf4jLogger.create[IO]
         _ <- BlazeClientBuilder[IO](ExecutionContext.global).resource.use { client =>
           val x = new DependencyService[IO](
             new JsonDependencyRepository(fileAlg, workspaceAlg),
             new Http4sGitHubService(client),
             gitAlg,
-            sbtAlg
+            sbtAlg,
+            logger
           )
           repos.traverse_ { repo =>
-            //x.refreshDependenciesIfNecessary(user, repo).attempt
+            /*x.forkAndCheckDependencies(user, repo).attempt.flatMap {
+              case Left(t) => logger.error(t)("")
+              case _       => IO.unit
+            }*/
             locally(x)
             locally(user)
             IO(repo)

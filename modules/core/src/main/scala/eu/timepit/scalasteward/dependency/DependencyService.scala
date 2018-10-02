@@ -23,27 +23,29 @@ import eu.timepit.scalasteward.github.GitHubService
 import eu.timepit.scalasteward.github.data.{AuthenticatedUser, Repo, RepoOut}
 import eu.timepit.scalasteward.sbt.SbtAlg
 import eu.timepit.scalasteward.util.uriUtil
+import io.chrisdavenport.log4cats.Logger
 
 class DependencyService[F[_]](
     dependencyRepository: DependencyRepository[F],
     gitHubService: GitHubService[F],
     gitAlg: GitAlg[F],
-    sbtService: SbtAlg[F]
+    sbtAlg: SbtAlg[F],
+    logger: Logger[F],
 ) {
-  def refreshDependenciesIfNecessary(
+  def forkAndCheckDependencies(
       user: AuthenticatedUser,
       repo: Repo
   )(implicit F: MonadError[F, Throwable]): F[Unit] =
     for {
+      _ <- logger.info(s"Fork and check dependencies of ${repo.show}")
       res <- gitHubService.createForkAndGetDefaultBranch(user, repo)
       (repoOut, branchOut) = res
       foundSha1 <- dependencyRepository.findSha1(repo)
       latestSha1 = branchOut.commit.sha
       refreshRequired = foundSha1.fold(true)(_ =!= latestSha1)
       _ <- {
-        if (refreshRequired) {
-          refreshDependencies(user, repo, repoOut, latestSha1)
-        } else F.unit
+        if (refreshRequired) refreshDependencies(user, repo, repoOut, latestSha1)
+        else F.unit
       }
     } yield ()
 
@@ -54,10 +56,11 @@ class DependencyService[F[_]](
       latestSha1: Sha1
   )(implicit F: MonadError[F, Throwable]): F[Unit] =
     for {
+      _ <- logger.info(s"Refresh dependencies of ${repo.show}")
       _ <- gitAlg.clone(repo, uriUtil.withUserInfo(repoOut.clone_url, user))
       parent <- repoOut.parentOrRaise[F]
       _ <- gitAlg.syncFork(repo, parent.clone_url, parent.default_branch)
-      dependencies <- sbtService.getDependencies(repo)
+      dependencies <- sbtAlg.getDependencies(repo)
       _ <- dependencyRepository.setDependencies(repo, latestSha1, dependencies)
       _ <- gitAlg.removeClone(repo)
     } yield ()

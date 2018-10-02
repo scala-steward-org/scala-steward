@@ -22,7 +22,7 @@ final case class Repo(
     owner: String,
     repo: String
 ) {
-  def show: String = s"$owner:$repo"
+  def show: String = s"$owner/$repo"
 }
 
 object Repo {

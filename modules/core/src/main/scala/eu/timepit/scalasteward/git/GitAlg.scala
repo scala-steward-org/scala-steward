@@ -24,8 +24,6 @@ import eu.timepit.scalasteward.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.http4s.Uri
 
 trait GitAlg[F[_]] {
-  def checkout(repo: Repo, branch: Branch): F[Unit]
-
   def clone(repo: Repo, url: Uri): F[Unit]
 
   def push(repo: Repo, branch: Branch): F[Unit]
@@ -46,12 +44,6 @@ object GitAlg {
       workspaceAlg: WorkspaceAlg[F]
   )(implicit F: Sync[F]): GitAlg[F] =
     new GitAlg[F] {
-      override def checkout(repo: Repo, branch: Branch): F[Unit] =
-        for {
-          repoDir <- workspaceAlg.repoDir(repo)
-          _ <- exec(List("checkout", branch.name), repoDir)
-        } yield ()
-
       override def clone(repo: Repo, url: Uri): F[Unit] =
         for {
           rootDir <- workspaceAlg.rootDir
@@ -78,11 +70,12 @@ object GitAlg {
       override def syncFork(repo: Repo, upstreamUrl: Uri, defaultBranch: Branch): F[Unit] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          remoteName = "upstream"
-          _ <- exec(List("remote", "add", remoteName, upstreamUrl.toString), repoDir)
-          _ <- exec(List("fetch", remoteName), repoDir)
-          _ <- checkout(repo, defaultBranch)
-          _ <- exec(List("merge", s"$remoteName/${defaultBranch.name}"), repoDir)
+          remote = "upstream"
+          branch = defaultBranch.name
+          _ <- exec(List("remote", "add", remote, upstreamUrl.toString), repoDir)
+          _ <- exec(List("fetch", remote), repoDir)
+          _ <- exec(List("checkout", "-B", branch, "--track", s"$remote/$branch"), repoDir)
+          _ <- exec(List("merge", s"$remote/$branch"), repoDir)
           _ <- push(repo, defaultBranch)
         } yield ()
 
