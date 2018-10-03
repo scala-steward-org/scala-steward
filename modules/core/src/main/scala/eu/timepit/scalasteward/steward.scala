@@ -34,6 +34,7 @@ import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
 import scala.concurrent.ExecutionContext
 import _root_.io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import eu.timepit.scalasteward.update.UpdateService
 
 object steward extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
@@ -67,39 +68,29 @@ object steward extends IOApp {
         workspaceAlg = WorkspaceAlg.using[IO](fileAlg, workspace)
         gitAlg = GitAlg.sync[IO](fileAlg, processAlg, workspaceAlg)
         sbtAlg = SbtAlg.sync[IO](fileAlg, processAlg, workspaceAlg)
-        /*updates <- sbtAlg.getUpdates(
-          ArtificialProject(
-            "2.12.4",
-            "1.2.1",
-            List(
-              Dependency(
-                "org.typelevel",
-                "cats-effect",
-                "cats-effect_2.12",
-                "0.10.1",
-                "2.12.7",
-                None)),
-            List()))
-        _ <- IO(println(updates))*/
+        jsonDepsRepo = new JsonDependencyRepository(fileAlg, workspaceAlg)
+        updateAlg = new UpdateService[IO](jsonDepsRepo, sbtAlg)
         logger <- Slf4jLogger.create[IO]
         _ <- BlazeClientBuilder[IO](ExecutionContext.global).resource.use { client =>
           val x = new DependencyService[IO](
-            new JsonDependencyRepository(fileAlg, workspaceAlg),
+            jsonDepsRepo,
             new Http4sGitHubService(client),
             gitAlg,
             sbtAlg,
             logger
           )
+          locally(x)
           repos.traverse_ { repo =>
             /*x.forkAndCheckDependencies(user, repo).attempt.flatMap {
               case Left(t) => logger.error(t)("")
               case _       => IO.unit
             }*/
-            locally(x)
-            locally(user)
             IO(repo)
           }
         }
+        //updates <- updateAlg.checkForUpdates
+        //_ <- log.printUpdates(updates)
+
         _ <- fileAlg.deleteForce(workspace / "repos")
         _ <- BlazeClientBuilder[IO](ExecutionContext.global).resource.use { client =>
           locally(client)
