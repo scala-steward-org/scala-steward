@@ -29,4 +29,13 @@ package object sbt {
       homeF.flatMap(home => fileAlg.writeFileData(home / path, plugin))
     }
   }
+
+  def seriesToSpecificVersion(sbtSeries: String): String = {
+    val defaultVersion = "1.2.3"
+    sbtSeries match {
+      case "0.13" => "0.13.17"
+      case "1.0"  => defaultVersion
+      case _      => defaultVersion
+    }
+  }
 }
