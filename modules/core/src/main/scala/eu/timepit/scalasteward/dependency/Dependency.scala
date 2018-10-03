@@ -16,6 +16,7 @@
 
 package eu.timepit.scalasteward.dependency
 
+import eu.timepit.scalasteward.sbt.{SbtVersion, ScalaVersion}
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 
@@ -24,8 +25,8 @@ final case class Dependency(
     artifactId: String,
     artifactIdCross: String,
     version: String,
-    scalaVersion: String,
-    sbtVersion: Option[String] = None
+    scalaVersion: ScalaVersion,
+    sbtVersion: Option[SbtVersion] = None
 ) {
   def formatAsModuleId: String =
     s""""$groupId" % "$artifactIdCross" % "$version""""

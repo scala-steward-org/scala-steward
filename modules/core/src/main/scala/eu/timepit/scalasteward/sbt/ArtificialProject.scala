@@ -20,21 +20,21 @@ import eu.timepit.scalasteward.dependency.Dependency
 import eu.timepit.scalasteward.io.FileData
 
 final case class ArtificialProject(
-    scalaVersion: String,
-    sbtVersion: String,
+    scalaVersion: ScalaVersion,
+    sbtVersion: SbtVersion,
     libraries: List[Dependency],
     plugins: List[Dependency]
 ) {
   def mkBuildSbt: FileData =
     FileData(
       "build.sbt",
-      s"""|scalaVersion := "$scalaVersion"
+      s"""|scalaVersion := "${scalaVersion.value}"
           |${libraries.map(_.formatAsSbtExpr).mkString("\n")}
           |""".stripMargin.trim
     )
 
   def mkBuildProperties: FileData =
-    FileData("build.properties", s"sbt.version=$sbtVersion")
+    FileData("build.properties", s"sbt.version=${sbtVersion.value}")
 
   def mkPluginsSbt: FileData =
     FileData("plugins.sbt", plugins.map(_.formatAsSbtExpr).mkString("\n"))

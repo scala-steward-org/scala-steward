@@ -30,12 +30,13 @@ package object sbt {
     }
   }
 
-  def seriesToSpecificVersion(sbtSeries: String): String = {
-    val defaultVersion = "1.2.3"
-    sbtSeries match {
-      case "0.13" => "0.13.17"
-      case "1.0"  => defaultVersion
-      case _      => defaultVersion
+  val defaultSbtVersion: SbtVersion =
+    SbtVersion("1.2.3")
+
+  def seriesToSpecificVersion(sbtSeries: SbtVersion): SbtVersion =
+    sbtSeries.value match {
+      case "0.13" => SbtVersion("0.13.17")
+      case "1.0"  => defaultSbtVersion
+      case _      => defaultSbtVersion
     }
-  }
 }
