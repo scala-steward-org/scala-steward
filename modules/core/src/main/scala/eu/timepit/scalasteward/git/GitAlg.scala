@@ -72,10 +72,11 @@ object GitAlg {
           repoDir <- workspaceAlg.repoDir(repo)
           remote = "upstream"
           branch = defaultBranch.name
+          remoteBranch = s"$remote/$branch"
           _ <- exec(List("remote", "add", remote, upstreamUrl.toString), repoDir)
           _ <- exec(List("fetch", remote), repoDir)
-          _ <- exec(List("checkout", "-B", branch, "--track", s"$remote/$branch"), repoDir)
-          _ <- exec(List("merge", s"$remote/$branch"), repoDir)
+          _ <- exec(List("checkout", "-B", branch, "--track", remoteBranch), repoDir)
+          _ <- exec(List("merge", remoteBranch), repoDir)
           _ <- push(repo, defaultBranch)
         } yield ()
 
