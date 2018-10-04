@@ -43,7 +43,7 @@ object githubLegacy {
     authenticatedUser.flatMap { user =>
       val in = CreatePullRequestIn(
         title = localUpdate.commitMsg,
-        body = CreatePullRequestIn.bodyOf(localUpdate.update),
+        body = CreatePullRequestIn.bodyOf(localUpdate.update, myLogin),
         head = s"$myLogin:${localUpdate.updateBranch.name}",
         base = localUpdate.localRepo.base
       )

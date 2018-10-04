@@ -9,9 +9,11 @@ import org.scalatest.{FunSuite, Matchers}
 
 class CreatePullRequestInTest extends FunSuite with Matchers {
   test("encode") {
+    val update =
+      Update.Single("ch.qos.logback", "logback-classic", "1.2.0", NonEmptyList.of("1.2.3"))
     CreatePullRequestIn(
       "Update logback-classic to 1.2.3",
-      bodyOf(Update.Single("ch.qos.logback", "logback-classic", "1.2.0", NonEmptyList.of("1.2.3"))),
+      bodyOf(update, "scala-steward"),
       "scala-steward:update/logback-classic-1.2.3",
       Branch("master")
     ).asJson.spaces2 shouldBe

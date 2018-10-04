@@ -16,6 +16,7 @@
 
 package eu.timepit.scalasteward.util
 
+import scala.annotation.tailrec
 import scala.concurrent.duration._
 
 object dateTimeUtil {
@@ -34,6 +35,7 @@ object dateTimeUtil {
   }
 
   def splitDuration(d: FiniteDuration): List[FiniteDuration] = {
+    @tailrec
     def loop(d1: FiniteDuration, acc: List[FiniteDuration]): List[FiniteDuration] =
       nextUnitAndCap(d1.unit) match {
         case Some((nextUnit, cap)) if d1.length > cap =>
