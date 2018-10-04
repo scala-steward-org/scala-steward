@@ -45,7 +45,7 @@ object SbtAlg {
         for {
           repoDir <- workspaceAlg.repoDir(repo)
           jvmopts = repoDir / ".jvmopts"
-          cmd = ";libraryDependenciesAsJson ;reload plugins; libraryDependenciesAsJson"
+          cmd = ";libraryDependenciesAsJson;reload plugins;libraryDependenciesAsJson"
           lines <- fileAlg.removeTemporarily(jvmopts) {
             processAlg.execSandboxed(sbtCmd :+ cmd, repoDir)
           }

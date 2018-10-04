@@ -19,6 +19,7 @@ package eu.timepit.scalasteward
 import cats.effect.IO
 import cats.implicits._
 import eu.timepit.scalasteward.model.Update
+import eu.timepit.scalasteward.util.dateTimeUtil
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import scala.concurrent.duration.FiniteDuration
@@ -39,7 +40,7 @@ object log {
     }
 
   def printTotalTime[A](fa: IO[A]): IO[A] =
-    printTimed(duration => s"Total time: ${utilLegacy.show(duration)}")(fa)
+    printTimed(duration => s"Total time: ${dateTimeUtil.showDuration(duration)}")(fa)
 
   def printImpl(level: String, msg: String): IO[Unit] =
     now.flatMap(dt => IO(println(s"[$dt] $level: $msg")))
