@@ -41,7 +41,7 @@ object sbtLegacy {
       ProcessAlg
         .sync[IO]
         .execSandboxed(
-          SbtAlg.sbtCmd :+ ";dependencyUpdates ;reload plugins; dependencyUpdates",
+          SbtAlg.sbtCmd :+ ";set every credentials := Nil;dependencyUpdates;reload plugins;dependencyUpdates",
           dir
         )
         .map(lines => sanitizeUpdates(toUpdates(lines)))
