@@ -59,11 +59,13 @@ object steward extends IOApp {
     val workspace = File.home / "code/scala-steward/workspace"
     log.printTotalTime {
       for {
-        _ <- prepareEnv(workspace)
+        _ <- IO.unit
+        fileAlg = FileAlg.sync[IO]
+        _ <- prepareEnv(workspace, fileAlg)
         repos <- getRepos(workspace)
         user <- githubLegacy.authenticatedUser
         // FIXME, obviously!
-        fileAlg = FileAlg.sync[IO]
+
         processAlg = ProcessAlg.sync[IO]
         workspaceAlg = WorkspaceAlg.using[IO](fileAlg, workspace)
         gitAlg = GitAlg.sync[IO](fileAlg, processAlg, workspaceAlg)
@@ -94,20 +96,20 @@ object steward extends IOApp {
         _ <- fileAlg.deleteForce(workspace / "repos")
         _ <- BlazeClientBuilder[IO](ExecutionContext.global).resource.use { client =>
           locally(client)
-          repos.traverse_(stewardRepo(_, workspace, client, gitAlg))
+          repos.traverse_(stewardRepo(_, workspace, client, gitAlg, fileAlg))
         //IO.unit
         }
       } yield ExitCode.Success
     }
   }
 
-  def prepareEnv(workspace: File): IO[Unit] =
+  def prepareEnv(workspace: File, fileAlg: FileAlg[IO]): IO[Unit] =
     for {
       _ <- log.printInfo("Add global sbt plugins")
       _ <- sbtLegacy.addGlobalPlugins
       _ <- sbtLegacy.addStewardPlugins
       _ <- log.printInfo(s"Clean workspace $workspace")
-      _ <- ioLegacy.deleteForce(workspace / "repos")
+      _ <- fileAlg.deleteForce(workspace / "repos")
       _ <- ioLegacy.mkdirs(workspace)
     } yield ()
 
@@ -118,12 +120,18 @@ object steward extends IOApp {
       file.lines.collect { case regex(owner, repo) => Repo(owner, repo) }.toList
     }
 
-  def stewardRepo(repo: Repo, workspace: File, client: Client[IO], gitAlg: GitAlg[IO]): IO[Unit] = {
+  def stewardRepo(
+      repo: Repo,
+      workspace: File,
+      client: Client[IO],
+      gitAlg: GitAlg[IO],
+      fileAlg: FileAlg[IO]
+  ): IO[Unit] = {
     val githubService = new Http4sGitHubService(client)
     val p = for {
       localRepo <- cloneAndUpdate(repo, workspace, githubService, gitAlg)
       _ <- updateDependencies(localRepo, githubService)
-      _ <- ioLegacy.deleteForce(localRepo.dir)
+      _ <- fileAlg.deleteForce(localRepo.dir)
     } yield ()
     log.printTotalTime {
       p.attempt.flatMap {

@@ -28,9 +28,6 @@ object ioLegacy {
   val currentTimeMillis: IO[Long] =
     IO(System.currentTimeMillis())
 
-  def deleteForce(dir: File): IO[Unit] =
-    IO(if (dir.exists) dir.delete() else ())
-
   def isSourceFile(file: File): Boolean =
     !file.pathAsString.contains(".git/") &&
       file.extension.exists(Set(".scala", ".sbt"))
