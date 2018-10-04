@@ -16,10 +16,14 @@
 
 package eu.timepit.scalasteward.util
 
+import cats.effect.Sync
 import scala.annotation.tailrec
 import scala.concurrent.duration._
 
 object dateTimeUtil {
+  def currentTimeMillis[F[_]](implicit F: Sync[F]): F[Long] =
+    F.delay(System.currentTimeMillis())
+
   def showDuration(d: FiniteDuration): String = {
     def symbol(unit: TimeUnit): String =
       unit match {

@@ -20,14 +20,12 @@ import better.files.File
 import cats.effect.IO
 import cats.implicits._
 import eu.timepit.scalasteward.model.Update
+import eu.timepit.scalasteward.util.dateTimeUtil
 import fs2.Stream
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 
 object ioLegacy {
-  val currentTimeMillis: IO[Long] =
-    IO(System.currentTimeMillis())
-
   def isSourceFile(file: File): Boolean =
     !file.pathAsString.contains(".git/") &&
       file.extension.exists(Set(".scala", ".sbt"))
@@ -37,9 +35,9 @@ object ioLegacy {
 
   def timed[A](fa: IO[A]): IO[(A, FiniteDuration)] =
     for {
-      start <- currentTimeMillis
+      start <- dateTimeUtil.currentTimeMillis[IO]
       a <- fa
-      end <- currentTimeMillis
+      end <- dateTimeUtil.currentTimeMillis[IO]
       duration = FiniteDuration(end - start, TimeUnit.MILLISECONDS)
     } yield (a, duration)
 
