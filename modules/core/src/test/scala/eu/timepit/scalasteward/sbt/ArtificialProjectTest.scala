@@ -57,6 +57,10 @@ class ArtificialProjectTest extends FunSuite with Matchers {
          |""".stripMargin.trim
   }
 
+  test("mkBuildProperties") {
+    project.mkBuildProperties.content shouldBe "sbt.version=1.2.3"
+  }
+
   test("mkPluginsSbt") {
     project.mkPluginsSbt.content shouldBe
       """|addSbtPlugin("com.dwijnand" % "sbt-travisci" % "1.1.3")
