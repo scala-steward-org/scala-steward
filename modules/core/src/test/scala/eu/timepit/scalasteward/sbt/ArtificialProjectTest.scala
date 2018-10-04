@@ -45,6 +45,10 @@ class ArtificialProjectTest extends FunSuite with Matchers {
     )
   )
 
+  test("dependencyUpdatesCmd") {
+    project.dependencyUpdatesCmd shouldBe ";dependencyUpdates;reload plugins;dependencyUpdates"
+  }
+
   test("mkBuildSbt") {
     project.mkBuildSbt.content shouldBe
       """|scalaVersion := "2.12.7"

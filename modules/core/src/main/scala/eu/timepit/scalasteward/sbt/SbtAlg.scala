@@ -58,8 +58,7 @@ object SbtAlg {
           _ <- fileAlg.writeFileData(updatesDir, project.mkBuildSbt)
           _ <- fileAlg.writeFileData(projectDir, project.mkBuildProperties)
           _ <- fileAlg.writeFileData(projectDir, project.mkPluginsSbt)
-          cmd = ";dependencyUpdates ;reload plugins; dependencyUpdates"
-          lines <- processAlg.exec(sbtCmd :+ cmd, updatesDir)
+          lines <- processAlg.exec(sbtCmd :+ project.dependencyUpdatesCmd, updatesDir)
           _ <- fileAlg.deleteForce(updatesDir)
         } yield sbtLegacy.sanitizeUpdates(sbtLegacy.toUpdates(lines))
     }

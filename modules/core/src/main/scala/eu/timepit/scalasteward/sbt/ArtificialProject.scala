@@ -25,6 +25,18 @@ final case class ArtificialProject(
     libraries: List[Dependency],
     plugins: List[Dependency]
 ) {
+  def dependencyUpdatesCmd: String = {
+    val sb = new StringBuilder
+    val dependencyUpdates = ";dependencyUpdates"
+    if (libraries.nonEmpty)
+      sb.append(dependencyUpdates)
+    if (plugins.nonEmpty) {
+      sb.append(";reload plugins")
+      sb.append(dependencyUpdates)
+    }
+    sb.result()
+  }
+
   def mkBuildSbt: FileData =
     FileData(
       "build.sbt",
