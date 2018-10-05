@@ -45,6 +45,8 @@
 - IronCoreLabs/recrypt
 - IronCoreLabs/argonaut-jwt-scala
 - IronCoreLabs/cats-scalatest
+- julien-truffaut/Monocle
+- julien-truffaut/newts
 - larsrh/sbt-libisabelle
 - laserdisc-io/log-effect
 - LREN-CHUV/woken
