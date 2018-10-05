@@ -42,9 +42,9 @@
 - http4s/http4s.g8
 - http4s/rho
 - ilya-murzinov/finch-todo-backend
-- IronCoreLabs/recrypt
 - IronCoreLabs/argonaut-jwt-scala
 - IronCoreLabs/cats-scalatest
+- IronCoreLabs/recrypt
 - julien-truffaut/Monocle
 - julien-truffaut/newts
 - larsrh/sbt-libisabelle
@@ -69,10 +69,6 @@
 - schrepfler/scala-uri
 - schrepfler/sportsml-scala
 - sphereio/sphere-scala-libs
-- typelevel/cats
-- typelevel/cats-collections
-- typelevel/cats-mtl
-- typelevel/discipline
 - ThoughtWorksInc/Dsl.scala
 - ThoughtWorksInc/Extractor.scala
 - ThoughtWorksInc/feature.scala
@@ -80,6 +76,10 @@
 - ThoughtWorksInc/RAII.scala
 - ThoughtWorksInc/sbt-example
 - ThoughtWorksInc/tryt.scala
+- typelevel/cats
+- typelevel/cats-collections
+- typelevel/cats-mtl
+- typelevel/discipline
 - vectos/formulation
 - vlovgr/ciris
 - WellFactored/resourcepool
