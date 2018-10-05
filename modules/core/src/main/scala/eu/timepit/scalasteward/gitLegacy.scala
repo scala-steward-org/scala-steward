@@ -69,7 +69,7 @@ object gitLegacy {
     exec(List("push", "--force", "--set-upstream", "origin", branch.name), dir)
 
   def remoteBranchExists(branch: Branch, dir: File): IO[Boolean] =
-    gitLegacy.exec(List("branch", "-r"), dir).map(_.exists(_.contains(branch.name)))
+    gitLegacy.exec(List("branch", "-r"), dir).map(_.exists(_.endsWith(branch.name)))
 
   def returnToCurrentBranch[B](dir: File)(use: IO[B]): IO[B] =
     currentBranch(dir).bracket(_ => use)(checkoutBranch(_, dir).void)
