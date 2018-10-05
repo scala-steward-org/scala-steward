@@ -73,6 +73,13 @@
 - typelevel/cats-collections
 - typelevel/cats-mtl
 - typelevel/discipline
+- ThoughtWorksInc/Dsl.scala
+- ThoughtWorksInc/Extractor.scala
+- ThoughtWorksInc/feature.scala
+- ThoughtWorksInc/future.scala
+- ThoughtWorksInc/RAII.scala
+- ThoughtWorksInc/sbt-example
+- ThoughtWorksInc/tryt.scala
 - vectos/formulation
 - vlovgr/ciris
 - WellFactored/resourcepool
