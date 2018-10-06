@@ -59,6 +59,7 @@
 - milessabin/shapeless
 - pathikrit/better-files
 - pdalpra/gh4s
+- plokhotnyuk/jsoniter-scala
 - ppurang/asynch
 - ReactivePlatform/Pragmatic-Scala
 - ReactivePlatform/Reactive-Design-Patterns
@@ -68,6 +69,8 @@
 - schrepfler/scala-native-cli
 - schrepfler/scala-uri
 - schrepfler/sportsml-scala
+- Sizmek/fast-string-interpolator
+- Sizmek/rtree2d
 - sphereio/sphere-scala-libs
 - ThoughtWorksInc/Dsl.scala
 - ThoughtWorksInc/Extractor.scala
