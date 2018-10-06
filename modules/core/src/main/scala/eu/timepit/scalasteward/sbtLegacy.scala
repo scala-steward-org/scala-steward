@@ -19,21 +19,16 @@ package eu.timepit.scalasteward
 import better.files.File
 import cats.effect.IO
 import cats.implicits._
-import eu.timepit.scalasteward.io.{FileAlg, FileData, ProcessAlg}
+import eu.timepit.scalasteward.io.{FileAlg, ProcessAlg}
 import eu.timepit.scalasteward.model.Update
 import eu.timepit.scalasteward.sbt.SbtAlg
-import scala.io.Source
 
 object sbtLegacy {
   def addGlobalPlugins: IO[Unit] =
-    sbt.addGlobalPlugin[IO](
-      FileData("sbt-updates.sbt", """addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.4")""")
-    )
+    sbt.addGlobalPlugin[IO](sbt.sbtUpdatesPlugin)
 
-  def addStewardPlugins: IO[Unit] = {
-    val name = "StewardPlugin.scala"
-    sbt.addGlobalPlugin[IO](FileData(name, Source.fromResource(name).mkString))
-  }
+  def addStewardPlugins: IO[Unit] =
+    sbt.stewardPlugin[IO].flatMap(sbt.addGlobalPlugin[IO])
 
   def allUpdates(dir: File): IO[List[Update]] = {
     val jvmopts = ".jvmopts"

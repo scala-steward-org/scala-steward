@@ -20,6 +20,7 @@ import better.files.File
 import cats.effect.Sync
 import cats.implicits._
 import eu.timepit.scalasteward.io.{FileAlg, FileData}
+import scala.io.Source
 
 package object sbt {
   def addGlobalPlugin[F[_]](plugin: FileData)(implicit F: Sync[F]): F[Unit] = {
@@ -38,5 +39,14 @@ package object sbt {
       case "0.13" => SbtVersion("0.13.17")
       case "1.0"  => defaultSbtVersion
       case _      => defaultSbtVersion
+    }
+
+  val sbtUpdatesPlugin: FileData =
+    FileData("sbt-updates.sbt", """addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.4")""")
+
+  def stewardPlugin[F[_]](implicit F: Sync[F]): F[FileData] =
+    F.delay {
+      val name = "StewardPlugin.scala"
+      FileData(name, Source.fromResource(name).mkString)
     }
 }
