@@ -130,7 +130,7 @@ object Update {
     }
 
   val commonSuffixes: List[String] =
-    List("core", "extra", "server")
+    List("contrib", "core", "extra", "server")
 
   def removeCommonSuffix(str: String): String =
     utilLegacy.removeSuffix(str, commonSuffixes)
