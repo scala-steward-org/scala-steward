@@ -18,6 +18,7 @@ package eu.timepit.scalasteward.sbt
 
 import eu.timepit.scalasteward.dependency.Dependency
 import eu.timepit.scalasteward.io.FileData
+import scala.collection.mutable.ListBuffer
 
 final case class ArtificialProject(
     scalaVersion: ScalaVersion,
@@ -25,16 +26,14 @@ final case class ArtificialProject(
     libraries: List[Dependency],
     plugins: List[Dependency]
 ) {
-  def dependencyUpdatesCmd: String = {
-    val sb = new StringBuilder
-    val dependencyUpdates = ";dependencyUpdates"
+  def dependencyUpdatesCmd: List[String] = {
+    val lb = new ListBuffer[String]
+    val dependencyUpdates = "dependencyUpdates"
     if (libraries.nonEmpty)
-      sb.append(dependencyUpdates)
-    if (plugins.nonEmpty) {
-      sb.append(";reload plugins")
-      sb.append(dependencyUpdates)
-    }
-    sb.result()
+      lb.append(dependencyUpdates)
+    if (plugins.nonEmpty)
+      lb.append("reload plugins", dependencyUpdates)
+    lb.toList
   }
 
   def mkBuildSbt: FileData =

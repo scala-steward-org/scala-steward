@@ -46,7 +46,11 @@ class ArtificialProjectTest extends FunSuite with Matchers {
   )
 
   test("dependencyUpdatesCmd") {
-    project.dependencyUpdatesCmd shouldBe ";dependencyUpdates;reload plugins;dependencyUpdates"
+    project.dependencyUpdatesCmd shouldBe List(
+      "dependencyUpdates",
+      "reload plugins",
+      "dependencyUpdates"
+    )
   }
 
   test("mkBuildSbt") {

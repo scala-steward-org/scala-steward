@@ -16,33 +16,10 @@
 
 package eu.timepit.scalasteward
 
-import better.files.File
-import cats.effect.IO
 import cats.implicits._
-import eu.timepit.scalasteward.io.{FileAlg, ProcessAlg}
 import eu.timepit.scalasteward.model.Update
-import eu.timepit.scalasteward.sbt.SbtAlg
 
 object sbtLegacy {
-  def addGlobalPlugins: IO[Unit] =
-    sbt.addGlobalPlugin[IO](sbt.sbtUpdatesPlugin)
-
-  def addStewardPlugins: IO[Unit] =
-    sbt.stewardPlugin[IO].flatMap(sbt.addGlobalPlugin[IO])
-
-  def allUpdates(dir: File): IO[List[Update]] = {
-    val jvmopts = ".jvmopts"
-    FileAlg.sync[IO].removeTemporarily(dir / jvmopts) {
-      ProcessAlg
-        .sync[IO]
-        .execSandboxed(
-          SbtAlg.sbtCmd :+ ";set every credentials := Nil;dependencyUpdates;reload plugins;dependencyUpdates",
-          dir
-        )
-        .map(lines => sanitizeUpdates(toUpdates(lines)))
-    }
-  }
-
   def sanitizeUpdates(updates: List[Update.Single]): List[Update] =
     Update.group(updates.distinct).sortBy(update => (update.groupId, update.artifactId))
 

@@ -60,19 +60,18 @@ object steward extends IOApp {
     log.printTotalTime {
       for {
         _ <- IO.unit
+        logger <- Slf4jLogger.create[IO]
         fileAlg = FileAlg.sync[IO]
-        _ <- prepareEnv(workspace, fileAlg)
         repos <- getRepos(workspace)
         user <- githubLegacy.authenticatedUser
         // FIXME, obviously!
-
         processAlg = ProcessAlg.sync[IO]
         workspaceAlg = WorkspaceAlg.using[IO](fileAlg, workspace)
         gitAlg = GitAlg.sync[IO](fileAlg, processAlg, workspaceAlg)
-        sbtAlg = SbtAlg.sync[IO](fileAlg, processAlg, workspaceAlg)
+        sbtAlg = SbtAlg.sync[IO](fileAlg, processAlg, workspaceAlg, logger)
+        _ <- prepareEnv(workspace, fileAlg, sbtAlg)
         jsonDepsRepo = new JsonDependencyRepository(fileAlg, workspaceAlg)
         updateAlg = new UpdateService[IO](jsonDepsRepo, sbtAlg)
-        logger <- Slf4jLogger.create[IO]
         _ <- BlazeClientBuilder[IO](ExecutionContext.global).resource.use { client =>
           val x = new DependencyService[IO](
             jsonDepsRepo,
@@ -96,18 +95,16 @@ object steward extends IOApp {
         _ <- fileAlg.deleteForce(workspace / "repos")
         _ <- BlazeClientBuilder[IO](ExecutionContext.global).resource.use { client =>
           locally(client)
-          repos.traverse_(stewardRepo(_, workspace, client, gitAlg, fileAlg))
+          repos.traverse_(stewardRepo(_, workspace, client, gitAlg, fileAlg, sbtAlg))
         //IO.unit
         }
       } yield ExitCode.Success
     }
   }
 
-  def prepareEnv(workspace: File, fileAlg: FileAlg[IO]): IO[Unit] =
+  def prepareEnv(workspace: File, fileAlg: FileAlg[IO], sbtAlg: SbtAlg[IO]): IO[Unit] =
     for {
-      _ <- log.printInfo("Add global sbt plugins")
-      _ <- sbtLegacy.addGlobalPlugins
-      _ <- sbtLegacy.addStewardPlugins
+      _ <- sbtAlg.addGlobalPlugins
       _ <- log.printInfo(s"Clean workspace $workspace")
       _ <- fileAlg.deleteForce(workspace / "repos")
       _ <- ioLegacy.mkdirs(workspace)
@@ -125,12 +122,13 @@ object steward extends IOApp {
       workspace: File,
       client: Client[IO],
       gitAlg: GitAlg[IO],
-      fileAlg: FileAlg[IO]
+      fileAlg: FileAlg[IO],
+      sbtAlg: SbtAlg[IO]
   ): IO[Unit] = {
     val githubService = new Http4sGitHubService(client)
     val p = for {
       localRepo <- cloneAndUpdate(repo, workspace, githubService, gitAlg)
-      _ <- updateDependencies(localRepo, githubService)
+      _ <- updateDependencies(localRepo, githubService, sbtAlg)
       _ <- fileAlg.deleteForce(localRepo.dir)
     } yield ()
     log.printTotalTime {
@@ -161,10 +159,14 @@ object steward extends IOApp {
       _ <- gitAlg.syncFork(repo, parent.clone_url, parent.default_branch)
     } yield LocalRepo(repo, repoDir, baseBranch)
 
-  def updateDependencies(localRepo: LocalRepo, gitHubService: GitHubService[IO]): IO[Unit] =
+  def updateDependencies(
+      localRepo: LocalRepo,
+      gitHubService: GitHubService[IO],
+      sbtAlg: SbtAlg[IO]
+  ): IO[Unit] =
     for {
       _ <- log.printInfo(s"Check updates for ${localRepo.upstream.show}")
-      updates <- sbtLegacy.allUpdates(localRepo.dir)
+      updates <- sbtAlg.getUpdatesForRepo(localRepo.upstream)
       _ <- log.printUpdates(updates)
       filteredUpdates = updates.filterNot(Update.ignore)
       _ <- filteredUpdates.traverse_(

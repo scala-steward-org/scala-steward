@@ -16,21 +16,11 @@
 
 package eu.timepit.scalasteward
 
-import better.files.File
 import cats.effect.Sync
-import cats.implicits._
-import eu.timepit.scalasteward.io.{FileAlg, FileData}
+import eu.timepit.scalasteward.io.FileData
 import scala.io.Source
 
 package object sbt {
-  def addGlobalPlugin[F[_]](plugin: FileData)(implicit F: Sync[F]): F[Unit] = {
-    val fileAlg = FileAlg.sync[F]
-    val homeF = F.delay(File.home)
-    List(".sbt/0.13/plugins", ".sbt/1.0/plugins").traverse_ { path =>
-      homeF.flatMap(home => fileAlg.writeFileData(home / path, plugin))
-    }
-  }
-
   val defaultSbtVersion: SbtVersion =
     SbtVersion("1.2.3")
 

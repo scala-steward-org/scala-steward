@@ -16,39 +16,54 @@
 
 package eu.timepit.scalasteward.sbt
 
+import better.files.File
 import cats.effect.Sync
 import cats.implicits._
 import eu.timepit.scalasteward.dependency.Dependency
 import eu.timepit.scalasteward.dependency.parser.parseDependencies
 import eu.timepit.scalasteward.github.data.Repo
-import eu.timepit.scalasteward.io.{FileAlg, ProcessAlg, WorkspaceAlg}
+import eu.timepit.scalasteward.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import eu.timepit.scalasteward.model.Update
 import eu.timepit.scalasteward.sbtLegacy
+import io.chrisdavenport.log4cats.Logger
 
 trait SbtAlg[F[_]] {
+  def addGlobalPlugin(plugin: FileData): F[Unit]
+
+  def addGlobalPlugins: F[Unit]
+
   def getDependencies(repo: Repo): F[List[Dependency]]
 
   def getUpdates(project: ArtificialProject): F[List[Update]]
+
+  def getUpdatesForRepo(repo: Repo): F[List[Update]]
 }
 
 object SbtAlg {
-  val sbtCmd: List[String] =
-    List("sbt", "-no-colors")
-
   def sync[F[_]](
       fileAlg: FileAlg[F],
       processAlg: ProcessAlg[F],
-      workspaceAlg: WorkspaceAlg[F]
+      workspaceAlg: WorkspaceAlg[F],
+      logger: Logger[F]
   )(implicit F: Sync[F]): SbtAlg[F] =
     new SbtAlg[F] {
+      override def addGlobalPlugin(plugin: FileData): F[Unit] =
+        List("0.13", "1.0").traverse_ { series =>
+          sbtDir.flatMap(dir => fileAlg.writeFileData(dir / series / "plugins", plugin))
+        }
+
+      override def addGlobalPlugins: F[Unit] =
+        for {
+          _ <- logger.info("Add global sbt plugins")
+          _ <- addGlobalPlugin(sbtUpdatesPlugin)
+          _ <- stewardPlugin[F].flatMap(addGlobalPlugin)
+        } yield ()
+
       override def getDependencies(repo: Repo): F[List[Dependency]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          jvmopts = repoDir / ".jvmopts"
-          cmd = ";libraryDependenciesAsJson;reload plugins;libraryDependenciesAsJson"
-          lines <- fileAlg.removeTemporarily(jvmopts) {
-            processAlg.execSandboxed(sbtCmd :+ cmd, repoDir)
-          }
+          cmd = sbtCmd("libraryDependenciesAsJson", "reload plugins", "libraryDependenciesAsJson")
+          lines <- ignoreJvmOpts(repoDir)(processAlg.execSandboxed(cmd, repoDir))
         } yield lines.flatMap(parseDependencies)
 
       override def getUpdates(project: ArtificialProject): F[List[Update]] =
@@ -58,8 +73,30 @@ object SbtAlg {
           _ <- fileAlg.writeFileData(updatesDir, project.mkBuildSbt)
           _ <- fileAlg.writeFileData(projectDir, project.mkBuildProperties)
           _ <- fileAlg.writeFileData(projectDir, project.mkPluginsSbt)
-          lines <- processAlg.exec(sbtCmd :+ project.dependencyUpdatesCmd, updatesDir)
+          cmd = sbtCmd(project.dependencyUpdatesCmd: _*)
+          lines <- processAlg.exec(cmd, updatesDir)
           _ <- fileAlg.deleteForce(updatesDir)
         } yield sbtLegacy.sanitizeUpdates(sbtLegacy.toUpdates(lines))
+
+      override def getUpdatesForRepo(repo: Repo): F[List[Update]] =
+        for {
+          repoDir <- workspaceAlg.repoDir(repo)
+          cmd = sbtCmd(
+            "set every credentials := Nil",
+            "dependencyUpdates",
+            "reload plugins",
+            "dependencyUpdates"
+          )
+          lines <- ignoreJvmOpts(repoDir)(processAlg.execSandboxed(cmd, repoDir))
+        } yield sbtLegacy.sanitizeUpdates(sbtLegacy.toUpdates(lines))
+
+      val sbtDir: F[File] =
+        F.delay(File.home).map(_ / ".sbt")
+
+      def sbtCmd(command: String*): List[String] =
+        List("sbt", "-no-colors", command.mkString(";", ";", ""))
+
+      def ignoreJvmOpts[A](dir: File)(fa: F[A]): F[A] =
+        fileAlg.removeTemporarily(dir / ".jvmopts")(fa)
     }
 }
