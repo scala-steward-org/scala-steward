@@ -28,5 +28,5 @@ final case class Config(
     gitHubTokenFile: File
 ) {
   def gitHubUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] =
-    F.delay(AuthenticatedUser(gitHubLogin, gitHubTokenFile.contentAsString))
+    F.delay(AuthenticatedUser(gitHubLogin, gitHubTokenFile.contentAsString.trim))
 }

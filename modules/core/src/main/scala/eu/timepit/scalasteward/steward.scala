@@ -20,8 +20,6 @@ import better.files.File
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
 import eu.timepit.scalasteward.application.{Config, Context}
-import eu.timepit.scalasteward.git.{Author, GitAlg}
-import eu.timepit.scalasteward.github.GitHubService
 import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.io.FileAlg
 import eu.timepit.scalasteward.model._
@@ -31,9 +29,11 @@ import eu.timepit.scalasteward.utilLegacy._
 
 object steward extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
+    val login = "scala-steward"
     val config = Config(
       workspace = File.home / "code/scala-steward/workspace",
-      gitHubTokenFile = File.home / s".github/tokens/${githubLegacy.myLogin}"
+      gitHubLogin = login,
+      gitHubTokenFile = File.home / s".github/tokens/$login"
     )
     log.printTotalTime {
       Context.create[IO](config).use { ctx =>
@@ -63,8 +63,8 @@ object steward extends IOApp {
 
   def stewardRepo(repo: Repo, ctx: Context[IO]): IO[Unit] = {
     val p = for {
-      localRepo <- cloneAndUpdate(repo, ctx.config.workspace, ctx.gitHubService, ctx.gitAlg)
-      _ <- updateDependencies(localRepo, ctx.gitHubService, ctx.sbtAlg)
+      localRepo <- cloneAndUpdate(repo, ctx)
+      _ <- updateDependencies(localRepo, ctx)
       _ <- ctx.fileAlg.deleteForce(localRepo.dir)
     } yield ()
     log.printTotalTime {
@@ -75,50 +75,40 @@ object steward extends IOApp {
     }
   }
 
-  def cloneAndUpdate(
-      repo: Repo,
-      workspace: File,
-      gitHubService: GitHubService[IO],
-      gitAlg: GitAlg[IO]
-  ): IO[LocalRepo] =
+  def cloneAndUpdate(repo: Repo, ctx: Context[IO]): IO[LocalRepo] =
     for {
       _ <- log.printInfo(s"Clone and update ${repo.show}")
-      user <- githubLegacy.authenticatedUser
-      repoOut <- gitHubService.createFork(user, repo)
-      repoDir = workspace / "repos" / repo.owner / repo.repo
-      _ <- ioLegacy.mkdirs(repoDir)
+      user <- ctx.config.gitHubUser[IO]
+      repoOut <- ctx.gitHubService.createFork(user, repo)
+      repoDir <- ctx.workspaceAlg.repoDir(repo)
       forkUrl = uriUtil.withUserInfo(repoOut.clone_url, user)
-      _ <- gitAlg.clone(repo, forkUrl)
-      _ <- gitAlg.setAuthor(repo, Author("Scala steward", "scala-steward@timepit.eu"))
+      _ <- ctx.gitAlg.clone(repo, forkUrl)
+      _ <- ctx.gitAlg.setAuthor(repo, ctx.config.gitAuthor)
       parent <- repoOut.parentOrRaise[IO]
       baseBranch = parent.default_branch
-      _ <- gitAlg.syncFork(repo, parent.clone_url, parent.default_branch)
+      _ <- ctx.gitAlg.syncFork(repo, parent.clone_url, parent.default_branch)
     } yield LocalRepo(repo, repoDir, baseBranch)
 
-  def updateDependencies(
-      localRepo: LocalRepo,
-      gitHubService: GitHubService[IO],
-      sbtAlg: SbtAlg[IO]
-  ): IO[Unit] =
+  def updateDependencies(localRepo: LocalRepo, ctx: Context[IO]): IO[Unit] =
     for {
       _ <- log.printInfo(s"Check updates for ${localRepo.upstream.show}")
-      updates <- sbtAlg.getUpdatesForRepo(localRepo.upstream)
+      updates <- ctx.sbtAlg.getUpdatesForRepo(localRepo.upstream)
       _ <- log.printUpdates(updates)
       filteredUpdates = updates.filterNot(Update.ignore)
       _ <- filteredUpdates.traverse_(
-        update => applyUpdate(LocalUpdate(localRepo, update), gitHubService)
+        update => applyUpdate(LocalUpdate(localRepo, update), ctx)
       )
     } yield ()
 
-  def applyUpdate(localUpdate: LocalUpdate, gitHubService: GitHubService[IO]): IO[Unit] =
+  def applyUpdate(localUpdate: LocalUpdate, ctx: Context[IO]): IO[Unit] =
     for {
       _ <- log.printInfo(s"Apply update ${localUpdate.update.show}")
       _ <- gitLegacy
         .remoteBranchExists(localUpdate.updateBranch, localUpdate.localRepo.dir)
-        .ifM(resetAndUpdate(localUpdate, gitHubService), applyNewUpdate(localUpdate, gitHubService))
+        .ifM(resetAndUpdate(localUpdate, ctx), applyNewUpdate(localUpdate, ctx))
     } yield ()
 
-  def applyNewUpdate(localUpdate: LocalUpdate, gitHubService: GitHubService[IO]): IO[Unit] = {
+  def applyNewUpdate(localUpdate: LocalUpdate, ctx: Context[IO]): IO[Unit] = {
     val dir = localUpdate.localRepo.dir
     val update = localUpdate.update
     val updateBranch = localUpdate.updateBranch
@@ -128,14 +118,14 @@ object steward extends IOApp {
         for {
           _ <- log.printInfo(s"Create branch ${updateBranch.name}")
           _ <- gitLegacy.createBranch(updateBranch, dir)
-          _ <- commitPushAndCreatePullRequest(localUpdate, gitHubService)
+          _ <- commitPushAndCreatePullRequest(localUpdate, ctx)
         } yield ()
       },
       log.printWarning(s"No files were changed")
     )
   }
 
-  def resetAndUpdate(localUpdate: LocalUpdate, gitHubService: GitHubService[IO]): IO[Unit] = {
+  def resetAndUpdate(localUpdate: LocalUpdate, ctx: Context[IO]): IO[Unit] = {
     val dir = localUpdate.localRepo.dir
     val updateBranch = localUpdate.updateBranch
 
@@ -146,22 +136,19 @@ object steward extends IOApp {
           _ <- gitLegacy.exec(List("reset", "--hard", localUpdate.localRepo.base.name), dir)
           _ <- ioLegacy.updateDir(dir, localUpdate.update)
           _ <- ifTrue(gitLegacy.containsChanges(dir))(
-            commitPushAndCreatePullRequest(localUpdate, gitHubService)
+            commitPushAndCreatePullRequest(localUpdate, ctx)
           )
         } yield ()
       }
     }
   }
 
-  def commitPushAndCreatePullRequest(
-      localUpdate: LocalUpdate,
-      gitHubService: GitHubService[IO]
-  ): IO[Unit] = {
+  def commitPushAndCreatePullRequest(localUpdate: LocalUpdate, ctx: Context[IO]): IO[Unit] = {
     val dir = localUpdate.localRepo.dir
     for {
       _ <- gitLegacy.commitAll(localUpdate.commitMsg, dir)
       _ <- gitLegacy.push(localUpdate.updateBranch, dir)
-      _ <- githubLegacy.createPullRequestIfNotExists(localUpdate, gitHubService)
+      _ <- githubLegacy.createPullRequestIfNotExists(localUpdate, ctx.gitHubService, ctx.config)
     } yield ()
   }
 

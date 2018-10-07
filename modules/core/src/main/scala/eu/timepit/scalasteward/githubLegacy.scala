@@ -17,34 +17,26 @@
 package eu.timepit.scalasteward
 
 import _root_.io.circe.parser
-import better.files.File
 import cats.effect.IO
 import cats.implicits._
+import eu.timepit.scalasteward.application.Config
 import eu.timepit.scalasteward.github._
-import eu.timepit.scalasteward.github.data.{AuthenticatedUser, CreatePullRequestIn, PullRequestOut}
+import eu.timepit.scalasteward.github.data.{CreatePullRequestIn, PullRequestOut}
 import eu.timepit.scalasteward.io.ProcessAlg
 import eu.timepit.scalasteward.model._
 
 object githubLegacy {
 
-  val myLogin: String =
-    "scala-steward"
-
-  val accessToken: IO[String] =
-    IO((File.home / s".github/tokens/$myLogin").contentAsString.trim)
-
-  val authenticatedUser: IO[AuthenticatedUser] =
-    accessToken.map(token => AuthenticatedUser(myLogin, token))
-
   def createPullRequest(
       localUpdate: LocalUpdate,
-      gitHubService: GitHubService[IO]
+      gitHubService: GitHubService[IO],
+      config: Config
   ): IO[PullRequestOut] =
-    authenticatedUser.flatMap { user =>
+    config.gitHubUser[IO].flatMap { user =>
       val in = CreatePullRequestIn(
         title = localUpdate.commitMsg,
-        body = CreatePullRequestIn.bodyOf(localUpdate.update, myLogin),
-        head = s"$myLogin:${localUpdate.updateBranch.name}",
+        body = CreatePullRequestIn.bodyOf(localUpdate.update, config.gitHubLogin),
+        head = s"${config.gitHubLogin}:${localUpdate.updateBranch.name}",
         base = localUpdate.localRepo.base
       )
       gitHubService.createPullRequest(user, localUpdate.localRepo.upstream, in)
@@ -52,29 +44,30 @@ object githubLegacy {
 
   def createPullRequestIfNotExists(
       localUpdate: LocalUpdate,
-      gitHubService: GitHubService[IO]
+      gitHubService: GitHubService[IO],
+      config: Config
   ): IO[Unit] =
-    pullRequestExists(localUpdate).ifM(
+    pullRequestExists(localUpdate, config).ifM(
       log.printInfo(s"PR ${localUpdate.updateBranch.name} already exists"),
       log.printInfo(s"Create PR ${localUpdate.updateBranch.name}") >>
-        createPullRequest(localUpdate, gitHubService).void
+        createPullRequest(localUpdate, gitHubService, config).void
     )
 
-  def headOf(localUpdate: LocalUpdate): String =
-    s"$myLogin:${localUpdate.updateBranch.name}"
+  def headOf(localUpdate: LocalUpdate, config: Config): String =
+    s"${config.gitHubLogin}:${localUpdate.updateBranch.name}"
 
-  def pullRequestExists(localUpdate: LocalUpdate): IO[Boolean] = {
+  def pullRequestExists(localUpdate: LocalUpdate, config: Config): IO[Boolean] = {
     val repo = localUpdate.localRepo.upstream
     val path = github.url.pulls(repo)
-    val query = s"head=${headOf(localUpdate)}&state=all"
+    val query = s"head=${headOf(localUpdate, config)}&state=all"
     val url = s"$path?$query"
 
     for {
-      token <- accessToken
+      token <- config.gitHubUser[IO].map(_.accessToken)
       lines <- ProcessAlg
         .create[IO]
         .exec(
-          List("curl", "-s", "-u", s"$myLogin:$token", url),
+          List("curl", "-s", "-u", s"${config.gitHubLogin}:$token", url),
           localUpdate.localRepo.dir
         )
       json <- IO.fromEither(parser.parse(lines.mkString("\n")))
