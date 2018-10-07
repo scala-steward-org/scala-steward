@@ -19,86 +19,30 @@ package eu.timepit.scalasteward
 import better.files.File
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
-import eu.timepit.scalasteward.dependency.DependencyService
-import eu.timepit.scalasteward.dependency.json.JsonDependencyRepository
+import eu.timepit.scalasteward.application.{Config, Context}
 import eu.timepit.scalasteward.git.{Author, GitAlg}
 import eu.timepit.scalasteward.github.GitHubService
 import eu.timepit.scalasteward.github.data.Repo
-import eu.timepit.scalasteward.github.http4s.Http4sGitHubService
-import eu.timepit.scalasteward.io.{FileAlg, ProcessAlg, WorkspaceAlg}
+import eu.timepit.scalasteward.io.FileAlg
 import eu.timepit.scalasteward.model._
 import eu.timepit.scalasteward.sbt.SbtAlg
 import eu.timepit.scalasteward.util.uriUtil
 import eu.timepit.scalasteward.utilLegacy._
-import org.http4s.client.Client
-import org.http4s.client.blaze.BlazeClientBuilder
-import scala.concurrent.ExecutionContext
-import _root_.io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-import eu.timepit.scalasteward.update.UpdateService
 
 object steward extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
-    /*
-    Do less
-    =======
-
-    - determine dependencies of all projects and keep this list up-to-date
-      - initial set of dependencies can be extracted from sbt
-      - git can be used to check if we need to use sbt to refresh the list of dependencies
-
-    - find updates for all recorded dependencies
-
-    - create PRs for each of these updates if they don't already exists
-
-    Advantages:
-    - fewer sbt calls. sbt need to be called when upstream has changed and not when
-      scala-steward runs
-    - each dependency need to be checked only once
-     */
-
-    val workspace = File.home / "code/scala-steward/workspace"
+    val config = Config(
+      workspace = File.home / "code/scala-steward/workspace",
+      gitHubTokenFile = File.home / s".github/tokens/${githubLegacy.myLogin}"
+    )
     log.printTotalTime {
-      for {
-        _ <- IO.unit
-        logger <- Slf4jLogger.create[IO]
-        fileAlg = FileAlg.sync[IO]
-        repos <- getRepos(workspace)
-        user <- githubLegacy.authenticatedUser
-        // FIXME, obviously!
-        processAlg = ProcessAlg.sync[IO]
-        workspaceAlg = WorkspaceAlg.using[IO](fileAlg, workspace)
-        gitAlg = GitAlg.sync[IO](fileAlg, processAlg, workspaceAlg)
-        sbtAlg = SbtAlg.sync[IO](fileAlg, processAlg, workspaceAlg, logger)
-        _ <- prepareEnv(workspace, fileAlg, sbtAlg)
-        jsonDepsRepo = new JsonDependencyRepository(fileAlg, workspaceAlg)
-        updateAlg = new UpdateService[IO](jsonDepsRepo, sbtAlg)
-        _ <- BlazeClientBuilder[IO](ExecutionContext.global).resource.use { client =>
-          val x = new DependencyService[IO](
-            jsonDepsRepo,
-            new Http4sGitHubService(client),
-            gitAlg,
-            sbtAlg,
-            logger
-          )
-          locally(x)
-          repos.traverse_ { repo =>
-            /*x.forkAndCheckDependencies(user, repo).attempt.flatMap {
-              case Left(t) => logger.error(t)("")
-              case _       => IO.unit
-            }*/
-            IO(repo)
-          }
-        }
-        //updates <- updateAlg.checkForUpdates
-        //_ <- log.printUpdates(updates)
-
-        _ <- fileAlg.deleteForce(workspace / "repos")
-        _ <- BlazeClientBuilder[IO](ExecutionContext.global).resource.use { client =>
-          locally(client)
-          repos.traverse_(stewardRepo(_, workspace, client, gitAlg, fileAlg, sbtAlg))
-        //IO.unit
-        }
-      } yield ExitCode.Success
+      Context.create[IO](config).use { ctx =>
+        for {
+          repos <- getRepos(ctx.config.workspace)
+          _ <- prepareEnv(ctx.config.workspace, ctx.fileAlg, ctx.sbtAlg)
+          _ <- repos.traverse_(stewardRepo(_, ctx))
+        } yield ExitCode.Success
+      }
     }
   }
 
@@ -117,19 +61,11 @@ object steward extends IOApp {
       file.lines.collect { case regex(owner, repo) => Repo(owner, repo) }.toList
     }
 
-  def stewardRepo(
-      repo: Repo,
-      workspace: File,
-      client: Client[IO],
-      gitAlg: GitAlg[IO],
-      fileAlg: FileAlg[IO],
-      sbtAlg: SbtAlg[IO]
-  ): IO[Unit] = {
-    val githubService = new Http4sGitHubService(client)
+  def stewardRepo(repo: Repo, ctx: Context[IO]): IO[Unit] = {
     val p = for {
-      localRepo <- cloneAndUpdate(repo, workspace, githubService, gitAlg)
-      _ <- updateDependencies(localRepo, githubService, sbtAlg)
-      _ <- fileAlg.deleteForce(localRepo.dir)
+      localRepo <- cloneAndUpdate(repo, ctx.config.workspace, ctx.gitHubService, ctx.gitAlg)
+      _ <- updateDependencies(localRepo, ctx.gitHubService, ctx.sbtAlg)
+      _ <- ctx.fileAlg.deleteForce(localRepo.dir)
     } yield ()
     log.printTotalTime {
       p.attempt.flatMap {

@@ -36,7 +36,7 @@ trait FileAlg[F[_]] {
 }
 
 object FileAlg {
-  def sync[F[_]](implicit F: Sync[F]): FileAlg[F] =
+  def create[F[_]](implicit F: Sync[F]): FileAlg[F] =
     new FileAlg[F] {
       override def deleteForce(file: File): F[Unit] =
         F.delay(if (file.exists) file.delete())

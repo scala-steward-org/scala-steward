@@ -26,7 +26,7 @@ trait WorkspaceAlg[F[_]] {
 }
 
 object WorkspaceAlg {
-  def using[F[_]](fileAlg: FileAlg[F], workspace: File): WorkspaceAlg[F] =
+  def create[F[_]](fileAlg: FileAlg[F], workspace: File): WorkspaceAlg[F] =
     new WorkspaceAlg[F] {
       override def rootDir: F[File] =
         fileAlg.ensureExists(workspace)

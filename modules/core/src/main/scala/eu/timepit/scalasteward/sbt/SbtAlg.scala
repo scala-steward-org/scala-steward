@@ -40,11 +40,11 @@ trait SbtAlg[F[_]] {
 }
 
 object SbtAlg {
-  def sync[F[_]](
+  def create[F[_]](
       fileAlg: FileAlg[F],
+      logger: Logger[F],
       processAlg: ProcessAlg[F],
-      workspaceAlg: WorkspaceAlg[F],
-      logger: Logger[F]
+      workspaceAlg: WorkspaceAlg[F]
   )(implicit F: Sync[F]): SbtAlg[F] =
     new SbtAlg[F] {
       override def addGlobalPlugin(plugin: FileData): F[Unit] =

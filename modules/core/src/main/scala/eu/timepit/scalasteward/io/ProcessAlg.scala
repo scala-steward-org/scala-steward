@@ -30,7 +30,7 @@ trait ProcessAlg[F[_]] {
 }
 
 object ProcessAlg {
-  def sync[F[_]](implicit F: Sync[F]): ProcessAlg[F] =
+  def create[F[_]](implicit F: Sync[F]): ProcessAlg[F] =
     new ProcessAlg[F] {
       override def exec(command: List[String], cwd: File): F[List[String]] =
         F.delay {

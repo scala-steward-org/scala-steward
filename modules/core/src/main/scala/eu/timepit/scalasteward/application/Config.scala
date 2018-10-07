@@ -17,11 +17,16 @@
 package eu.timepit.scalasteward.application
 
 import better.files.File
+import cats.effect.Sync
 import eu.timepit.scalasteward.git.Author
+import eu.timepit.scalasteward.github.data.AuthenticatedUser
 
 final case class Config(
     workspace: File,
     gitAuthor: Author = Author("Scala steward", "scala-steward@timepit.eu"),
     gitHubLogin: String = "scala-steward",
     gitHubTokenFile: File
-)
+) {
+  def gitHubUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] =
+    F.delay(AuthenticatedUser(gitHubLogin, gitHubTokenFile.contentAsString))
+}

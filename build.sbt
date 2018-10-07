@@ -47,11 +47,8 @@ lazy val core = myCrossProject("core")
       import cats.effect.IO
       import org.http4s.client.blaze.BlazeClientBuilder
       import scala.concurrent.ExecutionContext
-
-      implicit val ctxShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-      val clientBuilder = BlazeClientBuilder[IO](ExecutionContext.global)
-      val gitHubService = clientBuilder.stream.map(new github.http4s.Http4sGitHubService(_))
-    """
+    """,
+    fork in run := true
   )
 
 lazy val coreJVM = core.jvm

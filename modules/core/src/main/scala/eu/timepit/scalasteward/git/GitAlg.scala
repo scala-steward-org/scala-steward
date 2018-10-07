@@ -38,7 +38,7 @@ trait GitAlg[F[_]] {
 object GitAlg {
   val gitCmd: String = "git"
 
-  def sync[F[_]](
+  def create[F[_]](
       fileAlg: FileAlg[F],
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F]

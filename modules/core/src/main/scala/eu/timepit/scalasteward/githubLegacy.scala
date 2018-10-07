@@ -72,7 +72,7 @@ object githubLegacy {
     for {
       token <- accessToken
       lines <- ProcessAlg
-        .sync[IO]
+        .create[IO]
         .exec(
           List("curl", "-s", "-u", s"$myLogin:$token", url),
           localUpdate.localRepo.dir
