@@ -37,7 +37,7 @@ object gitLegacy {
     exec(List("commit", "--all", "-m", message), dir)
 
   def commitMsg(update: Update): String =
-    s"Update ${update.name} to ${update.nextVersion}"
+    s"Update ${NameResolver.resolve(update)} to ${update.nextVersion}"
 
   def containsChanges(dir: File): IO[Boolean] =
     exec(List("status", "--porcelain"), dir).map(_.nonEmpty)

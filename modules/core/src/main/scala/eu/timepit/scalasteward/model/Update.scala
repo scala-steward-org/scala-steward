@@ -20,7 +20,7 @@ import cats.data.NonEmptyList
 import cats.implicits._
 import eu.timepit.refined.types.string.NonEmptyString
 import eu.timepit.scalasteward.model.Update.{Group, Single}
-import eu.timepit.scalasteward.{utilLegacy, NameResolver}
+import eu.timepit.scalasteward.utilLegacy
 import scala.util.matching.Regex
 
 sealed trait Update extends Product with Serializable {
@@ -31,7 +31,7 @@ sealed trait Update extends Product with Serializable {
   def newerVersions: NonEmptyList[String]
 
   def name: String =
-    NameResolver.resolve(this)
+    Update.nameOf(groupId, artifactId)
 
   def nextVersion: String =
     newerVersions.head
