@@ -19,7 +19,7 @@ package eu.timepit.scalasteward
 import better.files.File
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
-import eu.timepit.scalasteward.application.{Config, Context}
+import eu.timepit.scalasteward.application.Context
 import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.io.FileAlg
 import eu.timepit.scalasteward.model._
@@ -28,15 +28,9 @@ import eu.timepit.scalasteward.util.uriUtil
 import eu.timepit.scalasteward.utilLegacy._
 
 object steward extends IOApp {
-  override def run(args: List[String]): IO[ExitCode] = {
-    val login = "scala-steward"
-    val config = Config(
-      workspace = File.home / "code/scala-steward/workspace",
-      gitHubLogin = login,
-      gitHubTokenFile = File.home / s".github/tokens/$login"
-    )
+  override def run(args: List[String]): IO[ExitCode] =
     log.printTotalTime {
-      Context.create[IO](config).use { ctx =>
+      Context.create[IO].use { ctx =>
         for {
           repos <- getRepos(ctx.config.workspace)
           _ <- prepareEnv(ctx.config.workspace, ctx.fileAlg, ctx.sbtAlg)
@@ -44,7 +38,6 @@ object steward extends IOApp {
         } yield ExitCode.Success
       }
     }
-  }
 
   def prepareEnv(workspace: File, fileAlg: FileAlg[IO], sbtAlg: SbtAlg[IO]): IO[Unit] =
     for {
