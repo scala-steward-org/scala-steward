@@ -22,19 +22,19 @@ import eu.timepit.scalasteward.model.Update
 object NameResolver {
 
   def resolve(update: Update): String =
-    update match {
-      case u: Update.Single => single(u.groupId, u.artifactId)
-      case u: Update.Group  => group(u.groupId, u.artifactIds)
-    }
+    group(update.groupId, update.artifactIds)
 
-  private def group(groupId: String, artifactIds: NonEmptyList[String]): String =
-    if (artifactIds.size > 3)
-      artifactIds.toList.take(3).map(single(groupId, _)).mkString(", ") + "..."
-    else artifactIds.toList.map(single(groupId, _)).mkString(", ")
+  private def group(groupId: String, artifactIds: NonEmptyList[String]): String = {
+    val includeGroupId = artifactIds.exists(Update.commonSuffixes.contains)
+    val artifactNames = artifactIds.map(single(groupId, _, includeGroupId))
+    val maxArtifacts = 3
+    val end = if (artifactNames.size > maxArtifacts) "..." else ""
+    artifactNames.toList.take(maxArtifacts).mkString("", ", ", end)
+  }
 
-  private def single(groupId: String, artifactId: String): String = {
-    val groupName = groupId.split("\\.").lastOption.getOrElse(groupId)
-    if (artifactId.contains(groupName)) artifactId
+  private def single(groupId: String, artifactId: String, includeGroupId: Boolean): String = {
+    val groupName = groupId.split('.').lastOption.getOrElse(groupId)
+    if (!includeGroupId || artifactId.contains(groupName)) artifactId
     else groupName + ":" + artifactId
   }
 }

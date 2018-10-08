@@ -11,9 +11,9 @@ class NameResolverTest extends FunSuite with Matchers {
     NameResolver.resolve(update) shouldBe "sttp:core"
   }
 
-  test("resolve single update name: typelevel:cats-core") {
+  test("resolve single update name: cats-core") {
     val update = Single("org.typelevel", "cats-core", "0.9.0", NonEmptyList.one("1.0.0"))
-    NameResolver.resolve(update) shouldBe "typelevel:cats-core"
+    NameResolver.resolve(update) shouldBe "cats-core"
   }
 
   test("resolve single update name: monix") {
@@ -33,7 +33,7 @@ class NameResolverTest extends FunSuite with Matchers {
       "0.9.0",
       NonEmptyList.one("1.0.0")
     )
-    val expected = "typelevel:cats-core, typelevel:cats-free"
+    val expected = "cats-core, cats-free"
     NameResolver.resolve(update) shouldBe expected
   }
 
@@ -44,7 +44,18 @@ class NameResolverTest extends FunSuite with Matchers {
       "0.9.0",
       NonEmptyList.one("1.0.0")
     )
-    val expected = "typelevel:cats-core, typelevel:cats-free, typelevel:cats-laws..."
+    val expected = "cats-core, cats-free, cats-laws..."
+    NameResolver.resolve(update) shouldBe expected
+  }
+
+  test("resolve group update name when one artifact is a common suffix") {
+    val update = Group(
+      "com.softwaremill.sttp",
+      NonEmptyList.of("circe", "core", "okhttp-backend-monix"),
+      "1.3.3",
+      NonEmptyList.one("1.3.5")
+    )
+    val expected = "sttp:circe, sttp:core, sttp:okhttp-backend-monix"
     NameResolver.resolve(update) shouldBe expected
   }
 }
