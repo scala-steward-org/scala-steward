@@ -21,6 +21,13 @@ Here are the pull requests [**@scala-steward**][@scala-steward] has created so f
 * [Created pull requests](https://github.com/pulls?q=author%3Ascala-steward+is%3Apr)
 * [Merged pull requests]( https://github.com/pulls?q=author%3Ascala-steward+is%3Amerged+sort%3Aupdated-desc)
 
+## Contributors
+
+The following people have helped making **Scala steward** great:
+
+* [Frank S. Thomas](https://github.com/fthomas)
+* [Piotr Gabara](https://github.com/bhop)
+
 ## Credit
 
 The awesome [sbt-updates][sbt-updates] plugin is used to determine dependency updates.
@@ -33,6 +40,5 @@ https://pixabay.com/en/robot-flower-technology-future-1214536/
 
 ## License
 
-**scala-steward** is licensed under the Apache License, Version 2.0, available at
-http://www.apache.org/licenses/LICENSE-2.0 and also in the
-[LICENSE](https://github.com/fthomas/status-page/blob/master/LICENSE) file.
+**Scala steward** is licensed under the
+[Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0).
