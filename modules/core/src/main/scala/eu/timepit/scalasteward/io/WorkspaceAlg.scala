@@ -17,21 +17,40 @@
 package eu.timepit.scalasteward.io
 
 import better.files.File
+import cats.FlatMap
+import cats.implicits._
 import eu.timepit.scalasteward.github.data.Repo
+import io.chrisdavenport.log4cats.Logger
 
 trait WorkspaceAlg[F[_]] {
+  def cleanWorkspace: F[Unit]
+
   def rootDir: F[File]
 
   def repoDir(repo: Repo): F[File]
 }
 
 object WorkspaceAlg {
-  def create[F[_]](fileAlg: FileAlg[F], workspace: File): WorkspaceAlg[F] =
+  def create[F[_]: FlatMap](
+      fileAlg: FileAlg[F],
+      logger: Logger[F],
+      workspace: File
+  ): WorkspaceAlg[F] =
     new WorkspaceAlg[F] {
+      val reposDir: File =
+        workspace / "repos"
+
+      override def cleanWorkspace: F[Unit] =
+        for {
+          _ <- logger.info(s"Clean workspace $workspace")
+          _ <- fileAlg.deleteForce(reposDir)
+          _ <- rootDir
+        } yield ()
+
       override def rootDir: F[File] =
         fileAlg.ensureExists(workspace)
 
       override def repoDir(repo: Repo): F[File] =
-        fileAlg.ensureExists(workspace / "repos" / repo.owner / repo.repo)
+        fileAlg.ensureExists(reposDir / repo.owner / repo.repo)
     }
 }

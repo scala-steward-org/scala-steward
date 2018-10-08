@@ -21,9 +21,7 @@ import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
 import eu.timepit.scalasteward.application.Context
 import eu.timepit.scalasteward.github.data.Repo
-import eu.timepit.scalasteward.io.FileAlg
 import eu.timepit.scalasteward.model._
-import eu.timepit.scalasteward.sbt.SbtAlg
 import eu.timepit.scalasteward.util.uriUtil
 import eu.timepit.scalasteward.utilLegacy._
 
@@ -33,18 +31,16 @@ object steward extends IOApp {
       Context.create[IO].use { ctx =>
         for {
           repos <- getRepos(ctx.config.workspace)
-          _ <- prepareEnv(ctx.config.workspace, ctx.fileAlg, ctx.sbtAlg)
+          _ <- prepareEnv(ctx)
           _ <- repos.traverse_(stewardRepo(_, ctx))
         } yield ExitCode.Success
       }
     }
 
-  def prepareEnv(workspace: File, fileAlg: FileAlg[IO], sbtAlg: SbtAlg[IO]): IO[Unit] =
+  def prepareEnv(ctx: Context[IO]): IO[Unit] =
     for {
-      _ <- sbtAlg.addGlobalPlugins
-      _ <- log.printInfo(s"Clean workspace $workspace")
-      _ <- fileAlg.deleteForce(workspace / "repos")
-      _ <- ioLegacy.mkdirs(workspace)
+      _ <- ctx.sbtAlg.addGlobalPlugins
+      _ <- ctx.workspaceAlg.cleanWorkspace
     } yield ()
 
   def getRepos(workspace: File): IO[List[Repo]] =

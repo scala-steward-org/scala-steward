@@ -54,7 +54,7 @@ object Context {
           gitHubService = new Http4sGitHubService(client)
           logger <- Slf4jLogger.create[F]
           processAlg = ProcessAlg.create[F]
-          workspaceAlg = WorkspaceAlg.create(fileAlg, config.workspace)
+          workspaceAlg = WorkspaceAlg.create(fileAlg, logger, config.workspace)
           gitAlg = GitAlg.create[F](fileAlg, processAlg, workspaceAlg)
           sbtAlg = SbtAlg.create[F](fileAlg, logger, processAlg, workspaceAlg)
           dependencyRepository = new JsonDependencyRepository[F](fileAlg, workspaceAlg)
