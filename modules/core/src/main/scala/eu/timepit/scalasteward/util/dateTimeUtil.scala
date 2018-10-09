@@ -17,12 +17,22 @@
 package eu.timepit.scalasteward.util
 
 import cats.effect.Sync
+import cats.implicits._
+import java.util.concurrent.TimeUnit
 import scala.annotation.tailrec
 import scala.concurrent.duration._
 
 object dateTimeUtil {
   def currentTimeMillis[F[_]](implicit F: Sync[F]): F[Long] =
     F.delay(System.currentTimeMillis())
+
+  def timed[F[_]: Sync, A](fa: F[A]): F[(A, FiniteDuration)] =
+    for {
+      start <- dateTimeUtil.currentTimeMillis[F]
+      a <- fa
+      end <- dateTimeUtil.currentTimeMillis[F]
+      duration = FiniteDuration(end - start, TimeUnit.MILLISECONDS)
+    } yield (a, duration)
 
   def showDuration(d: FiniteDuration): String = {
     def symbol(unit: TimeUnit): String =

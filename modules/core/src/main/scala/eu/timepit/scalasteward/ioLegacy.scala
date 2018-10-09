@@ -20,10 +20,7 @@ import better.files.File
 import cats.effect.IO
 import cats.implicits._
 import eu.timepit.scalasteward.model.Update
-import eu.timepit.scalasteward.util.dateTimeUtil
 import fs2.Stream
-import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.FiniteDuration
 
 object ioLegacy {
   def isSourceFile(file: File): Boolean =
@@ -32,14 +29,6 @@ object ioLegacy {
 
   def mkdirs(dir: File): IO[Unit] =
     IO(dir.createDirectories()).void
-
-  def timed[A](fa: IO[A]): IO[(A, FiniteDuration)] =
-    for {
-      start <- dateTimeUtil.currentTimeMillis[IO]
-      a <- fa
-      end <- dateTimeUtil.currentTimeMillis[IO]
-      duration = FiniteDuration(end - start, TimeUnit.MILLISECONDS)
-    } yield (a, duration)
 
   def updateDir(dir: File, update: Update): IO[Unit] =
     walk(dir).filter(isSourceFile).evalMap(updateFile(_, update)).compile.drain
