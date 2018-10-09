@@ -1,5 +1,10 @@
 import sbt._
 
+object Versions {
+  val circe = "0.10.0"
+  val http4s = "0.19.0"
+}
+
 object Dependencies {
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.6.0"
   val catsEffect = "org.typelevel" %% "cats-effect" % "1.0.0"
