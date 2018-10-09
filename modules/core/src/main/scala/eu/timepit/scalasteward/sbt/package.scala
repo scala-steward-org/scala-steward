@@ -22,7 +22,7 @@ import scala.io.Source
 
 package object sbt {
   val defaultSbtVersion: SbtVersion =
-    SbtVersion("1.2.3")
+    SbtVersion("1.2.4")
 
   def seriesToSpecificVersion(sbtSeries: SbtVersion): SbtVersion =
     sbtSeries.value match {
