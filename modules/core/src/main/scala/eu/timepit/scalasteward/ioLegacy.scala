@@ -18,7 +18,6 @@ package eu.timepit.scalasteward
 
 import better.files.File
 import cats.effect.IO
-import cats.implicits._
 import eu.timepit.scalasteward.model.Update
 import fs2.Stream
 
@@ -26,9 +25,6 @@ object ioLegacy {
   def isSourceFile(file: File): Boolean =
     !file.pathAsString.contains(".git/") &&
       file.extension.exists(Set(".scala", ".sbt"))
-
-  def mkdirs(dir: File): IO[Unit] =
-    IO(dir.createDirectories()).void
 
   def updateDir(dir: File, update: Update): IO[Unit] =
     walk(dir).filter(isSourceFile).evalMap(updateFile(_, update)).compile.drain
