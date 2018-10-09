@@ -47,38 +47,37 @@ final case class Context[F[_]](
 object Context {
   def create[F[_]: ConcurrentEffect]: Resource[F, Context[F]] =
     BlazeClientBuilder[F](ExecutionContext.global).resource.flatMap { client =>
-      Resource.liftF(
-        for {
-          config <- Config.default[F]
-          fileAlg = FileAlg.create[F]
-          gitHubService = new Http4sGitHubService(client)
-          logger <- Slf4jLogger.create[F]
-          processAlg = ProcessAlg.create[F]
-          workspaceAlg = WorkspaceAlg.create(fileAlg, logger, config.workspace)
-          gitAlg = GitAlg.create[F](fileAlg, processAlg, workspaceAlg)
-          sbtAlg = SbtAlg.create[F](fileAlg, logger, processAlg, workspaceAlg)
-          dependencyRepository = new JsonDependencyRepository[F](fileAlg, workspaceAlg)
-          dependencyService = new DependencyService[F](
-            dependencyRepository,
-            gitHubService,
-            gitAlg,
-            logger,
-            sbtAlg
-          )
-          updateService = new UpdateService[F](dependencyRepository, sbtAlg)
-        } yield
-          Context(
-            config,
-            dependencyService,
-            fileAlg,
-            gitAlg,
-            gitHubService,
-            logger,
-            processAlg,
-            sbtAlg,
-            updateService,
-            workspaceAlg
-          )
-      )
+      val ctx = for {
+        config <- Config.default[F]
+        fileAlg = FileAlg.create[F]
+        gitHubService = new Http4sGitHubService(client)
+        logger <- Slf4jLogger.create[F]
+        processAlg = ProcessAlg.create[F]
+        workspaceAlg = WorkspaceAlg.create(fileAlg, logger, config.workspace)
+        gitAlg = GitAlg.create(fileAlg, processAlg, workspaceAlg)
+        sbtAlg = SbtAlg.create(fileAlg, logger, processAlg, workspaceAlg)
+        dependencyRepository = new JsonDependencyRepository(fileAlg, workspaceAlg)
+        dependencyService = new DependencyService(
+          dependencyRepository,
+          gitHubService,
+          gitAlg,
+          logger,
+          sbtAlg
+        )
+        updateService = new UpdateService(dependencyRepository, sbtAlg)
+      } yield
+        Context(
+          config,
+          dependencyService,
+          fileAlg,
+          gitAlg,
+          gitHubService,
+          logger,
+          processAlg,
+          sbtAlg,
+          updateService,
+          workspaceAlg
+        )
+      Resource.liftF(ctx)
     }
 }
