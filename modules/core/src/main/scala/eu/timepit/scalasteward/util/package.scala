@@ -19,7 +19,7 @@ package eu.timepit.scalasteward
 import cats.Monad
 import cats.implicits._
 
-object utilLegacy {
-  def ifTrue[F[_]: Monad](fb: F[Boolean])(f: F[Unit]): F[Unit] =
-    fb.ifM(f, Monad[F].unit)
+package object util {
+  def ifTrue[F[_]](fb: F[Boolean])(f: F[Unit])(implicit F: Monad[F]): F[Unit] =
+    fb.ifM(f, F.unit)
 }

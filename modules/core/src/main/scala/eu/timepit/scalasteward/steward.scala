@@ -22,8 +22,7 @@ import cats.implicits._
 import eu.timepit.scalasteward.application.Context
 import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.model._
-import eu.timepit.scalasteward.util.uriUtil
-import eu.timepit.scalasteward.utilLegacy._
+import eu.timepit.scalasteward.util.{uriUtil, _}
 
 object steward extends IOApp {
   override def run(args: List[String]): IO[ExitCode] =
