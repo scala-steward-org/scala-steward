@@ -77,6 +77,9 @@
 - ThoughtWorksInc/feature.scala
 - ThoughtWorksInc/future.scala
 - ThoughtWorksInc/RAII.scala
+- ThoughtWorksInc/sbt-ammonite-classpath
+- ThoughtWorksInc/sbt-api-mappings
+- ThoughtWorksInc/sbt-best-practice
 - ThoughtWorksInc/sbt-example
 - ThoughtWorksInc/tryt.scala
 - typelevel/cats
