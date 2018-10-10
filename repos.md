@@ -72,6 +72,7 @@
 - Sizmek/fast-string-interpolator
 - Sizmek/rtree2d
 - sphereio/sphere-scala-libs
+- ThoughtWorksInc/Binding.scala
 - ThoughtWorksInc/Dsl.scala
 - ThoughtWorksInc/Extractor.scala
 - ThoughtWorksInc/feature.scala
