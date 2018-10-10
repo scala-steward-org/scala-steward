@@ -16,22 +16,20 @@
 
 package eu.timepit.scalasteward.github.http4s
 
-import cats.ApplicativeError
 import eu.timepit.scalasteward.git.Branch
 import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.github.url
-import eu.timepit.scalasteward.util.uriUtil._
+import eu.timepit.scalasteward.util.ApplicativeThrowable
+import eu.timepit.scalasteward.util.uri._
 import org.http4s.Uri
 
 object http4sUrl {
-  def branches[F[_]](repo: Repo, branch: Branch)(
-      implicit F: ApplicativeError[F, Throwable]
-  ): F[Uri] =
+  def branches[F[_]: ApplicativeThrowable](repo: Repo, branch: Branch): F[Uri] =
     fromString(url.branches(repo, branch))
 
-  def forks[F[_]](repo: Repo)(implicit F: ApplicativeError[F, Throwable]): F[Uri] =
+  def forks[F[_]: ApplicativeThrowable](repo: Repo): F[Uri] =
     fromString(url.forks(repo))
 
-  def pulls[F[_]](repo: Repo)(implicit F: ApplicativeError[F, Throwable]): F[Uri] =
+  def pulls[F[_]: ApplicativeThrowable](repo: Repo): F[Uri] =
     fromString(url.pulls(repo))
 }

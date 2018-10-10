@@ -1,11 +1,11 @@
 package eu.timepit.scalasteward.util
 
 import cats.effect.IO
-import eu.timepit.scalasteward.util.dateTimeUtil._
+import eu.timepit.scalasteward.util.dateTime._
 import org.scalatest.{FunSuite, Matchers}
 import scala.concurrent.duration._
 
-class dateTimeUtilTest extends FunSuite with Matchers {
+class dateTimeTest extends FunSuite with Matchers {
   test("timed") {
     timed(IO.pure(42)).map(_._2.length >= 0).unsafeRunSync()
   }

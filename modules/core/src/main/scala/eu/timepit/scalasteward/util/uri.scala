@@ -16,17 +16,16 @@
 
 package eu.timepit.scalasteward.util
 
-import cats.ApplicativeError
 import cats.implicits._
 import eu.timepit.scalasteward.github.data.AuthenticatedUser
 import io.circe.Decoder
 import org.http4s.Uri
 
-object uriUtil {
+object uri {
   implicit val uriDecoder: Decoder[Uri] =
     Decoder[String].emap(s => fromString[Either[Throwable, ?]](s).leftMap(_.getMessage))
 
-  def fromString[F[_]](s: String)(implicit F: ApplicativeError[F, Throwable]): F[Uri] =
+  def fromString[F[_]](s: String)(implicit F: ApplicativeThrowable[F]): F[Uri] =
     F.fromEither(Uri.fromString(s))
 
   def withUserInfo(uri: Uri, user: AuthenticatedUser): Uri =

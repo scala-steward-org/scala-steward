@@ -22,7 +22,7 @@ import cats.implicits._
 import eu.timepit.scalasteward.application.Context
 import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.model._
-import eu.timepit.scalasteward.util.{uriUtil, _}
+import eu.timepit.scalasteward.util._
 
 object steward extends IOApp {
   override def run(args: List[String]): IO[ExitCode] =
@@ -69,7 +69,7 @@ object steward extends IOApp {
       user <- ctx.config.gitHubUser[IO]
       repoOut <- ctx.gitHubService.createFork(user, repo)
       repoDir <- ctx.workspaceAlg.repoDir(repo)
-      forkUrl = uriUtil.withUserInfo(repoOut.clone_url, user)
+      forkUrl = util.uri.withUserInfo(repoOut.clone_url, user)
       _ <- ctx.gitAlg.clone(repo, forkUrl)
       _ <- ctx.gitAlg.setAuthor(repo, ctx.config.gitAuthor)
       parent <- repoOut.parentOrRaise[IO]

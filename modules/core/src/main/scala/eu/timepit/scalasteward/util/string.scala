@@ -19,7 +19,7 @@ package eu.timepit.scalasteward.util
 import cats.data.NonEmptyList
 import eu.timepit.refined.types.string.NonEmptyString
 
-object stringUtil {
+object string {
   def longestCommonPrefix(s1: String, s2: String): String = {
     var i = 0
     val min = math.min(s1.length, s2.length)

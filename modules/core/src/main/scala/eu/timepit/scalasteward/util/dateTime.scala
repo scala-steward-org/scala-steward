@@ -22,15 +22,15 @@ import java.util.concurrent.TimeUnit
 import scala.annotation.tailrec
 import scala.concurrent.duration._
 
-object dateTimeUtil {
+object dateTime {
   def currentTimeMillis[F[_]](implicit F: Sync[F]): F[Long] =
     F.delay(System.currentTimeMillis())
 
   def timed[F[_]: Sync, A](fa: F[A]): F[(A, FiniteDuration)] =
     for {
-      start <- dateTimeUtil.currentTimeMillis[F]
+      start <- currentTimeMillis[F]
       a <- fa
-      end <- dateTimeUtil.currentTimeMillis[F]
+      end <- currentTimeMillis[F]
       duration = FiniteDuration(end - start, TimeUnit.MILLISECONDS)
     } yield (a, duration)
 

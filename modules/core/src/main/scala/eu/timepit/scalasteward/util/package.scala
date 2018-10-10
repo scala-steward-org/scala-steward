@@ -16,10 +16,14 @@
 
 package eu.timepit.scalasteward
 
-import cats.Monad
 import cats.implicits._
+import cats.{ApplicativeError, Monad, MonadError}
 
 package object util {
+  type ApplicativeThrowable[F[_]] = ApplicativeError[F, Throwable]
+
+  type MonadThrowable[F[_]] = MonadError[F, Throwable]
+
   def ifTrue[F[_]](fb: F[Boolean])(f: F[Unit])(implicit F: Monad[F]): F[Unit] =
     fb.ifM(f, F.unit)
 }

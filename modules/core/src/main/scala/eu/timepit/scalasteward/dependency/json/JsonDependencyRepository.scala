@@ -17,19 +17,19 @@
 package eu.timepit.scalasteward.dependency.json
 
 import better.files.File
-import cats.MonadError
 import cats.implicits._
 import eu.timepit.scalasteward.dependency.{Dependency, DependencyRepository}
 import eu.timepit.scalasteward.git.Sha1
 import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.io.{FileAlg, WorkspaceAlg}
+import eu.timepit.scalasteward.util.MonadThrowable
 import io.circe.parser.decode
 import io.circe.syntax._
 
 class JsonDependencyRepository[F[_]](
     fileAlg: FileAlg[F],
     workspaceAlg: WorkspaceAlg[F]
-)(implicit F: MonadError[F, Throwable])
+)(implicit F: MonadThrowable[F])
     extends DependencyRepository[F] {
 
   override def findSha1(repo: Repo): F[Option[Sha1]] =

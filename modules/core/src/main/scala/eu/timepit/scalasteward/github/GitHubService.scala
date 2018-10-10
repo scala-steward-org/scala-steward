@@ -16,10 +16,10 @@
 
 package eu.timepit.scalasteward.github
 
-import cats.MonadError
 import cats.implicits._
 import eu.timepit.scalasteward.git.Branch
 import eu.timepit.scalasteward.github.data._
+import eu.timepit.scalasteward.util.MonadThrowable
 
 trait GitHubService[F[_]] {
 
@@ -46,7 +46,7 @@ trait GitHubService[F[_]] {
   def createForkAndGetDefaultBranch(
       user: AuthenticatedUser,
       repo: Repo
-  )(implicit F: MonadError[F, Throwable]): F[(RepoOut, BranchOut)] =
+  )(implicit F: MonadThrowable[F]): F[(RepoOut, BranchOut)] =
     for {
       fork <- createFork(user, repo)
       parent <- fork.parentOrRaise[F]

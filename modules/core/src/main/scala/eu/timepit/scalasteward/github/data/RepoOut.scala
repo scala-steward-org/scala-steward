@@ -16,9 +16,9 @@
 
 package eu.timepit.scalasteward.github.data
 
-import cats.ApplicativeError
 import eu.timepit.scalasteward.git.Branch
-import eu.timepit.scalasteward.util.uriUtil.uriDecoder
+import eu.timepit.scalasteward.util.ApplicativeThrowable
+import eu.timepit.scalasteward.util.uri.uriDecoder
 import io.circe.Decoder
 import io.circe.generic.semiauto._
 import org.http4s.Uri
@@ -30,7 +30,7 @@ final case class RepoOut(
     clone_url: Uri,
     default_branch: Branch
 ) {
-  def parentOrRaise[F[_]](implicit F: ApplicativeError[F, Throwable]): F[RepoOut] =
+  def parentOrRaise[F[_]](implicit F: ApplicativeThrowable[F]): F[RepoOut] =
     parent.fold(F.raiseError[RepoOut](new Throwable(s"repo $name has no parent")))(F.pure)
 
   def repo: Repo =
