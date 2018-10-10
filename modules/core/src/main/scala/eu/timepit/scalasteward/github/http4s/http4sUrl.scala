@@ -16,6 +16,7 @@
 
 package eu.timepit.scalasteward.github.http4s
 
+import cats.implicits._
 import eu.timepit.scalasteward.git.Branch
 import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.github.url
@@ -25,11 +26,14 @@ import org.http4s.Uri
 
 object http4sUrl {
   def branches[F[_]: ApplicativeThrowable](repo: Repo, branch: Branch): F[Uri] =
-    fromString(url.branches(repo, branch))
+    fromString[F](url.branches(repo, branch))
 
   def forks[F[_]: ApplicativeThrowable](repo: Repo): F[Uri] =
-    fromString(url.forks(repo))
+    fromString[F](url.forks(repo))
+
+  def listPullRequests[F[_]: ApplicativeThrowable](repo: Repo, head: String): F[Uri] =
+    pulls[F](repo).map(_.withQueryParam("head", head).withQueryParam("state", "all"))
 
   def pulls[F[_]: ApplicativeThrowable](repo: Repo): F[Uri] =
-    fromString(url.pulls(repo))
+    fromString[F](url.pulls(repo))
 }

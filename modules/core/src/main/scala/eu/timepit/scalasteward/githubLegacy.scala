@@ -58,16 +58,13 @@ object githubLegacy {
 
   def pullRequestExists(localUpdate: LocalUpdate, config: Config): IO[Boolean] = {
     val repo = localUpdate.localRepo.upstream
-    val path = github.url.pulls(repo)
-    val query = s"head=${headOf(localUpdate, config)}&state=all"
-    val url = s"$path?$query"
-
     for {
       token <- config.gitHubUser[IO].map(_.accessToken)
+      url <- github.http4s.http4sUrl.listPullRequests[IO](repo, headOf(localUpdate, config))
       lines <- ProcessAlg
         .create[IO]
         .exec(
-          List("curl", "-s", "-u", s"${config.gitHubLogin}:$token", url),
+          List("curl", "-s", "-u", s"${config.gitHubLogin}:$token", url.toString),
           localUpdate.localRepo.dir
         )
       json <- IO.fromEither(parser.parse(lines.mkString("\n")))
