@@ -113,6 +113,7 @@
 - ThoughtWorksInc/sbt-api-mappings
 - ThoughtWorksInc/sbt-best-practice
 - ThoughtWorksInc/sbt-example
+- ThoughtWorksInc/sbt-scala-js-map
 - ThoughtWorksInc/todo
 - ThoughtWorksInc/tryt.scala
 - typelevel/cats
