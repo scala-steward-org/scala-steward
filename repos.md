@@ -1,5 +1,6 @@
 - alonsodomin/cron4s
 - arturgajowy/rchain
+- Atry/fastring
 - barambani/http4s-extend
 - barambani/http4s-poc-api
 - barambani/laws
