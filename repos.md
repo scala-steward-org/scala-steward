@@ -74,6 +74,7 @@
 - sphereio/sphere-scala-libs
 - ThoughtWorksInc/Binding.scala
 - ThoughtWorksInc/Dsl.scala
+- ThoughtWorksInc/enableIf.scala
 - ThoughtWorksInc/Extractor.scala
 - ThoughtWorksInc/feature.scala
 - ThoughtWorksInc/future.scala
@@ -82,6 +83,7 @@
 - ThoughtWorksInc/sbt-api-mappings
 - ThoughtWorksInc/sbt-best-practice
 - ThoughtWorksInc/sbt-example
+- ThoughtWorksInc/sbt-scala-js-map
 - ThoughtWorksInc/tryt.scala
 - typelevel/cats
 - typelevel/cats-collections
