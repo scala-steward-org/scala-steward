@@ -70,6 +70,7 @@
 - pdalpra/gh4s
 - plokhotnyuk/jsoniter-scala
 - ppurang/asynch
+- raboof/sbt-reproducible-builds
 - ReactivePlatform/Pragmatic-Scala
 - ReactivePlatform/Reactive-Design-Patterns
 - scala/hello-world.g8
