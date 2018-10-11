@@ -111,6 +111,7 @@
 - ThoughtWorksInc/sbt-api-mappings
 - ThoughtWorksInc/sbt-best-practice
 - ThoughtWorksInc/sbt-example
+- ThoughtWorksInc/todo
 - ThoughtWorksInc/tryt.scala
 - typelevel/cats
 - typelevel/cats-collections
