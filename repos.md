@@ -88,9 +88,8 @@
 - scala/scala-parser-combinators
 - scala/scala-seed.g8
 - scala/scala-swing
-- scala/scala-swing
-- scala/scala-xml
 - scala/scalatest-example.g8
+- scala/scala-xml
 - schrepfler/artemis
 - schrepfler/cas-tools
 - schrepfler/crdt-kit
