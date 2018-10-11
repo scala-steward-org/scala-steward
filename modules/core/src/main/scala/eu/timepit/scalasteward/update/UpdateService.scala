@@ -32,7 +32,7 @@ class UpdateService[F[_]](
       val project =
         ArtificialProject(
           ScalaVersion("2.12.7"),
-          SbtVersion("1.2.3"),
+          SbtVersion("1.2.4"),
           libraries.sortBy(_.formatAsModuleId),
           plugins.sortBy(_.formatAsModuleId)
         )
