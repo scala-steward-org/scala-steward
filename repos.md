@@ -1,3 +1,11 @@
+- akka/alpakka-samples/alpakka-sample-mqtt-http-to-s3-java
+- akka/alpakka-samples/alpakka-sample-sqs-java
+- akka/akka-grpc-sample-kubernetes-scala
+- akka/akka-minion
+- akka/akka-paradox
+- akka/akka-sample-cluster-docker-compose-scala
+- akka/akka-sample-cluster-docker-compose-java
+- akka/akka-cluster-kubernetes-quickstart-scala
 - alonsodomin/cron4s
 - arturgajowy/rchain
 - Atry/fastring
