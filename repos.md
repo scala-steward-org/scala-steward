@@ -74,6 +74,7 @@
 - sphereio/sphere-scala-libs
 - ThoughtWorksInc/Binding.scala
 - ThoughtWorksInc/Dsl.scala
+- ThoughtWorksInc/each
 - ThoughtWorksInc/Extractor.scala
 - ThoughtWorksInc/feature.scala
 - ThoughtWorksInc/future.scala
