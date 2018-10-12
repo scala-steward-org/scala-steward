@@ -29,16 +29,15 @@ object githubLegacy {
       localUpdate: LocalUpdate,
       gitHubService: GitHubService[IO],
       config: Config
-  ): IO[PullRequestOut] =
-    config.gitHubUser[IO].flatMap { user =>
-      val in = CreatePullRequestIn(
-        title = localUpdate.commitMsg,
-        body = CreatePullRequestIn.bodyOf(localUpdate.update, config.gitHubLogin),
-        head = s"${config.gitHubLogin}:${localUpdate.updateBranch.name}",
-        base = localUpdate.localRepo.base
-      )
-      gitHubService.createPullRequest(user, localUpdate.localRepo.upstream, in)
-    }
+  ): IO[PullRequestOut] = {
+    val in = CreatePullRequestIn(
+      title = localUpdate.commitMsg,
+      body = CreatePullRequestIn.bodyOf(localUpdate.update, config.gitHubLogin),
+      head = s"${config.gitHubLogin}:${localUpdate.updateBranch.name}",
+      base = localUpdate.localRepo.base
+    )
+    gitHubService.createPullRequest(localUpdate.localRepo.upstream, in)
+  }
 
   def createPullRequestIfNotExists(
       localUpdate: LocalUpdate,
@@ -60,9 +59,6 @@ object githubLegacy {
       config: Config
   ): IO[Boolean] = {
     val repo = localUpdate.localRepo.upstream
-    for {
-      user <- config.gitHubUser[IO]
-      pullRequests <- gitHubService.listPullRequests(user, repo, headOf(localUpdate, config))
-    } yield pullRequests.nonEmpty
+    gitHubService.listPullRequests(repo, headOf(localUpdate, config)).map(_.nonEmpty)
   }
 }

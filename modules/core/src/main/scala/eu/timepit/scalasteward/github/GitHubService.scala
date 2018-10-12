@@ -25,44 +25,38 @@ trait GitHubService[F[_]] {
 
   /** https://developer.github.com/v3/repos/forks/#create-a-fork */
   def createFork(
-      user: AuthenticatedUser,
       repo: Repo
   ): F[RepoOut]
 
   /** https://developer.github.com/v3/pulls/#create-a-pull-request */
   def createPullRequest(
-      user: AuthenticatedUser,
       repo: Repo,
       data: CreatePullRequestIn
   ): F[PullRequestOut]
 
   /** https://developer.github.com/v3/repos/branches/#get-branch */
   def getBranch(
-      user: AuthenticatedUser,
       repo: Repo,
       branch: Branch
   ): F[BranchOut]
 
   /** https://developer.github.com/v3/pulls/#list-pull-requests */
   def listPullRequests(
-      user: AuthenticatedUser,
       repo: Repo,
       head: String
   ): F[List[PullRequestOut]]
 
   def createForkAndGetDefaultBranch(
-      user: AuthenticatedUser,
       repo: Repo
   )(implicit F: MonadThrowable[F]): F[(RepoOut, BranchOut)] =
     for {
-      fork <- createFork(user, repo)
+      fork <- createFork(repo)
       parent <- fork.parentOrRaise[F]
-      branchOut <- getDefaultBranch(user, parent)
+      branchOut <- getDefaultBranch(parent)
     } yield (fork, branchOut)
 
   def getDefaultBranch(
-      user: AuthenticatedUser,
       repoOut: RepoOut
   ): F[BranchOut] =
-    getBranch(user, repoOut.repo, repoOut.default_branch)
+    getBranch(repoOut.repo, repoOut.default_branch)
 }

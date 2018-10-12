@@ -50,11 +50,12 @@ object Context {
       val ctx = for {
         config <- Config.default[F]
         fileAlg = FileAlg.create[F]
-        gitHubService = new Http4sGitHubService(client)
         logger <- Slf4jLogger.create[F]
         processAlg = ProcessAlg.create[F]
+        user <- config.gitHubUser[F]
         workspaceAlg = WorkspaceAlg.create(fileAlg, logger, config.workspace)
         gitAlg = GitAlg.create(fileAlg, processAlg, workspaceAlg)
+        gitHubService = new Http4sGitHubService(client, user)
         sbtAlg = SbtAlg.create(fileAlg, logger, processAlg, workspaceAlg)
         dependencyRepository = new JsonDependencyRepository(fileAlg, workspaceAlg)
         dependencyService = new DependencyService(

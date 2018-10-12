@@ -38,7 +38,7 @@ class DependencyService[F[_]](
   )(implicit F: MonadThrowable[F]): F[Unit] =
     for {
       _ <- logger.info(s"Fork and check dependencies of ${repo.show}")
-      res <- gitHubService.createForkAndGetDefaultBranch(user, repo)
+      res <- gitHubService.createForkAndGetDefaultBranch(repo)
       (repoOut, branchOut) = res
       foundSha1 <- dependencyRepository.findSha1(repo)
       latestSha1 = branchOut.commit.sha

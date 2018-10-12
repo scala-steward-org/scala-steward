@@ -22,6 +22,7 @@ import eu.timepit.scalasteward.git.Branch
 import eu.timepit.scalasteward.github._
 import eu.timepit.scalasteward.github.data._
 import eu.timepit.scalasteward.github.http4s.Http4sGitHubService._
+import io.circe.Decoder
 import org.http4s.Method.{GET, POST}
 import org.http4s.circe.CirceEntityEncoder._
 import org.http4s.circe.jsonOf
@@ -29,45 +30,47 @@ import org.http4s.client.Client
 import org.http4s.headers.Authorization
 import org.http4s.{BasicCredentials, Headers, Request}
 
-class Http4sGitHubService[F[_]: Sync](client: Client[F]) extends GitHubService[F] {
+class Http4sGitHubService[F[_]: Sync](
+    client: Client[F],
+    user: AuthenticatedUser
+) extends GitHubService[F] {
   override def createFork(
-      user: AuthenticatedUser,
       repo: Repo
   ): F[RepoOut] =
     http4sUrl.forks[F](repo).flatMap { uri =>
-      val req = authenticate(user)(Request[F](POST, uri))
-      client.expect[RepoOut](req)(jsonOf)
+      val req = Request[F](POST, uri)
+      expectJsonOf[RepoOut](req)
     }
 
   override def createPullRequest(
-      user: AuthenticatedUser,
       repo: Repo,
       data: CreatePullRequestIn
   ): F[PullRequestOut] =
     http4sUrl.pulls[F](repo).flatMap { uri =>
-      val req = authenticate(user)(Request[F](POST, uri)).withEntity(data)
-      client.expect[PullRequestOut](req)(jsonOf)
+      val req = Request[F](POST, uri).withEntity(data)
+      expectJsonOf[PullRequestOut](req)
     }
 
   override def getBranch(
-      user: AuthenticatedUser,
       repo: Repo,
       branch: Branch
   ): F[BranchOut] =
     http4sUrl.branches[F](repo, branch).flatMap { uri =>
-      val req = authenticate(user)(Request[F](GET, uri))
-      client.expect[BranchOut](req)(jsonOf)
+      val req = Request[F](GET, uri)
+      expectJsonOf[BranchOut](req)
     }
 
   override def listPullRequests(
-      user: AuthenticatedUser,
       repo: Repo,
       head: String
   ): F[List[PullRequestOut]] =
     http4sUrl.listPullRequests[F](repo, head).flatMap { uri =>
-      val req = authenticate(user)(Request[F](GET, uri))
-      client.expect[List[PullRequestOut]](req)(jsonOf)
+      val req = Request[F](GET, uri)
+      expectJsonOf[List[PullRequestOut]](req)
     }
+
+  def expectJsonOf[A: Decoder](req: Request[F]): F[A] =
+    client.expect[A](authenticate(user)(req))(jsonOf)
 }
 
 object Http4sGitHubService {

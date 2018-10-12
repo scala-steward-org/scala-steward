@@ -67,7 +67,7 @@ object steward extends IOApp {
     for {
       _ <- log.printInfo(s"Clone and update ${repo.show}")
       user <- ctx.config.gitHubUser[IO]
-      repoOut <- ctx.gitHubService.createFork(user, repo)
+      repoOut <- ctx.gitHubService.createFork(repo)
       repoDir <- ctx.workspaceAlg.repoDir(repo)
       forkUrl = util.uri.withUserInfo(repoOut.clone_url, user)
       _ <- ctx.gitAlg.clone(repo, forkUrl)
