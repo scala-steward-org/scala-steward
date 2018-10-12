@@ -21,7 +21,7 @@ import eu.timepit.scalasteward.git.Branch
 import eu.timepit.scalasteward.github.data._
 import eu.timepit.scalasteward.util.MonadThrowable
 
-trait GitHubService[F[_]] {
+trait GitHubApiAlg[F[_]] {
 
   /** https://developer.github.com/v3/repos/forks/#create-a-fork */
   def createFork(

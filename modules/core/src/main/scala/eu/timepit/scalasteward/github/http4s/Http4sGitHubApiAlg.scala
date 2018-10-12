@@ -21,7 +21,7 @@ import cats.implicits._
 import eu.timepit.scalasteward.git.Branch
 import eu.timepit.scalasteward.github._
 import eu.timepit.scalasteward.github.data._
-import eu.timepit.scalasteward.github.http4s.Http4sGitHubService._
+import eu.timepit.scalasteward.github.http4s.Http4sGitHubApiAlg._
 import io.circe.Decoder
 import org.http4s.Method.{GET, POST}
 import org.http4s.circe.CirceEntityEncoder._
@@ -30,10 +30,10 @@ import org.http4s.client.Client
 import org.http4s.headers.Authorization
 import org.http4s.{BasicCredentials, Headers, Request}
 
-class Http4sGitHubService[F[_]: Sync](
+class Http4sGitHubApiAlg[F[_]: Sync](
     client: Client[F],
     user: AuthenticatedUser
-) extends GitHubService[F] {
+) extends GitHubApiAlg[F] {
   override def createFork(
       repo: Repo
   ): F[RepoOut] =
@@ -73,7 +73,7 @@ class Http4sGitHubService[F[_]: Sync](
     client.expect[A](authenticate(user)(req))(jsonOf)
 }
 
-object Http4sGitHubService {
+object Http4sGitHubApiAlg {
   def authenticate[F[_]](user: AuthenticatedUser)(req: Request[F]): Request[F] =
     req.withHeaders(req.headers ++ Headers(toBasicAuth(user)))
 

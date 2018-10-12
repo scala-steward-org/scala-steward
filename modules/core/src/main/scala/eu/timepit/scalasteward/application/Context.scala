@@ -21,8 +21,8 @@ import cats.implicits._
 import eu.timepit.scalasteward.dependency.DependencyService
 import eu.timepit.scalasteward.dependency.json.JsonDependencyRepository
 import eu.timepit.scalasteward.git.GitAlg
-import eu.timepit.scalasteward.github.GitHubService
-import eu.timepit.scalasteward.github.http4s.Http4sGitHubService
+import eu.timepit.scalasteward.github.GitHubApiAlg
+import eu.timepit.scalasteward.github.http4s.Http4sGitHubApiAlg
 import eu.timepit.scalasteward.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import eu.timepit.scalasteward.sbt.SbtAlg
 import eu.timepit.scalasteward.update.UpdateService
@@ -36,7 +36,7 @@ final case class Context[F[_]](
     dependencyService: DependencyService[F],
     fileAlg: FileAlg[F],
     gitAlg: GitAlg[F],
-    gitHubService: GitHubService[F],
+    gitHubApiAlg: GitHubApiAlg[F],
     logger: Logger[F],
     processAlg: ProcessAlg[F],
     sbtAlg: SbtAlg[F],
@@ -55,12 +55,12 @@ object Context {
         user <- config.gitHubUser[F]
         workspaceAlg = WorkspaceAlg.create(fileAlg, logger, config.workspace)
         gitAlg = GitAlg.create(fileAlg, processAlg, workspaceAlg)
-        gitHubService = new Http4sGitHubService(client, user)
+        gitHubApiAlg = new Http4sGitHubApiAlg(client, user)
         sbtAlg = SbtAlg.create(fileAlg, logger, processAlg, workspaceAlg)
         dependencyRepository = new JsonDependencyRepository(fileAlg, workspaceAlg)
         dependencyService = new DependencyService(
           dependencyRepository,
-          gitHubService,
+          gitHubApiAlg,
           gitAlg,
           logger,
           sbtAlg
@@ -72,7 +72,7 @@ object Context {
           dependencyService,
           fileAlg,
           gitAlg,
-          gitHubService,
+          gitHubApiAlg,
           logger,
           processAlg,
           sbtAlg,

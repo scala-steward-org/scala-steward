@@ -27,7 +27,7 @@ object githubLegacy {
 
   def createPullRequest(
       localUpdate: LocalUpdate,
-      gitHubService: GitHubService[IO],
+      gitHubApiAlg: GitHubApiAlg[IO],
       config: Config
   ): IO[PullRequestOut] = {
     val in = CreatePullRequestIn(
@@ -36,18 +36,18 @@ object githubLegacy {
       head = s"${config.gitHubLogin}:${localUpdate.updateBranch.name}",
       base = localUpdate.localRepo.base
     )
-    gitHubService.createPullRequest(localUpdate.localRepo.upstream, in)
+    gitHubApiAlg.createPullRequest(localUpdate.localRepo.upstream, in)
   }
 
   def createPullRequestIfNotExists(
       localUpdate: LocalUpdate,
-      gitHubService: GitHubService[IO],
+      gitHubApiAlg: GitHubApiAlg[IO],
       config: Config
   ): IO[Unit] =
-    pullRequestExists(localUpdate, gitHubService, config).ifM(
+    pullRequestExists(localUpdate, gitHubApiAlg, config).ifM(
       log.printInfo(s"PR ${localUpdate.updateBranch.name} already exists"),
       log.printInfo(s"Create PR ${localUpdate.updateBranch.name}") >>
-        createPullRequest(localUpdate, gitHubService, config).void
+        createPullRequest(localUpdate, gitHubApiAlg, config).void
     )
 
   def headOf(localUpdate: LocalUpdate, config: Config): String =
@@ -55,10 +55,10 @@ object githubLegacy {
 
   def pullRequestExists(
       localUpdate: LocalUpdate,
-      gitHubService: GitHubService[IO],
+      gitHubApiAlg: GitHubApiAlg[IO],
       config: Config
   ): IO[Boolean] = {
     val repo = localUpdate.localRepo.upstream
-    gitHubService.listPullRequests(repo, headOf(localUpdate, config)).map(_.nonEmpty)
+    gitHubApiAlg.listPullRequests(repo, headOf(localUpdate, config)).map(_.nonEmpty)
   }
 }

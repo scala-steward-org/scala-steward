@@ -67,7 +67,7 @@ object steward extends IOApp {
     for {
       _ <- log.printInfo(s"Clone and update ${repo.show}")
       user <- ctx.config.gitHubUser[IO]
-      repoOut <- ctx.gitHubService.createFork(repo)
+      repoOut <- ctx.gitHubApiAlg.createFork(repo)
       repoDir <- ctx.workspaceAlg.repoDir(repo)
       forkUrl = util.uri.withUserInfo(repoOut.clone_url, user)
       _ <- ctx.gitAlg.clone(repo, forkUrl)
@@ -136,7 +136,7 @@ object steward extends IOApp {
     for {
       _ <- gitLegacy.commitAll(localUpdate.commitMsg, dir)
       _ <- gitLegacy.push(localUpdate.updateBranch, dir)
-      _ <- githubLegacy.createPullRequestIfNotExists(localUpdate, ctx.gitHubService, ctx.config)
+      _ <- githubLegacy.createPullRequestIfNotExists(localUpdate, ctx.gitHubApiAlg, ctx.config)
     } yield ()
   }
 

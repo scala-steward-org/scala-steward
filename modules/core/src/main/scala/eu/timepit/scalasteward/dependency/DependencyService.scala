@@ -18,7 +18,7 @@ package eu.timepit.scalasteward.dependency
 
 import cats.implicits._
 import eu.timepit.scalasteward.git.{GitAlg, Sha1}
-import eu.timepit.scalasteward.github.GitHubService
+import eu.timepit.scalasteward.github.GitHubApiAlg
 import eu.timepit.scalasteward.github.data.{AuthenticatedUser, Repo, RepoOut}
 import eu.timepit.scalasteward.sbt.SbtAlg
 import eu.timepit.scalasteward.util
@@ -27,7 +27,7 @@ import io.chrisdavenport.log4cats.Logger
 
 class DependencyService[F[_]](
     dependencyRepository: DependencyRepository[F],
-    gitHubService: GitHubService[F],
+    gitHubApiAlg: GitHubApiAlg[F],
     gitAlg: GitAlg[F],
     logger: Logger[F],
     sbtAlg: SbtAlg[F]
@@ -38,7 +38,7 @@ class DependencyService[F[_]](
   )(implicit F: MonadThrowable[F]): F[Unit] =
     for {
       _ <- logger.info(s"Fork and check dependencies of ${repo.show}")
-      res <- gitHubService.createForkAndGetDefaultBranch(repo)
+      res <- gitHubApiAlg.createForkAndGetDefaultBranch(repo)
       (repoOut, branchOut) = res
       foundSha1 <- dependencyRepository.findSha1(repo)
       latestSha1 = branchOut.commit.sha
