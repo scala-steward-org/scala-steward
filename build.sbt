@@ -47,6 +47,8 @@ lazy val core = myCrossProject("core")
       import cats.effect.IO
       import org.http4s.client.blaze.BlazeClientBuilder
       import scala.concurrent.ExecutionContext
+
+      implicit val ctxShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
     """,
     fork in run := true
   )

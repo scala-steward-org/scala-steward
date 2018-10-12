@@ -43,6 +43,13 @@ trait GitHubService[F[_]] {
       branch: Branch
   ): F[BranchOut]
 
+  /** https://developer.github.com/v3/pulls/#list-pull-requests */
+  def listPullRequests(
+      user: AuthenticatedUser,
+      repo: Repo,
+      head: String
+  ): F[List[PullRequestOut]]
+
   def createForkAndGetDefaultBranch(
       user: AuthenticatedUser,
       repo: Repo

@@ -58,6 +58,16 @@ class Http4sGitHubService[F[_]: Sync](client: Client[F]) extends GitHubService[F
       val req = authenticate(user)(Request[F](GET, uri))
       client.expect[BranchOut](req)(jsonOf)
     }
+
+  override def listPullRequests(
+      user: AuthenticatedUser,
+      repo: Repo,
+      head: String
+  ): F[List[PullRequestOut]] =
+    http4sUrl.listPullRequests[F](repo, head).flatMap { uri =>
+      val req = authenticate(user)(Request[F](GET, uri))
+      client.expect[List[PullRequestOut]](req)(jsonOf)
+    }
 }
 
 object Http4sGitHubService {

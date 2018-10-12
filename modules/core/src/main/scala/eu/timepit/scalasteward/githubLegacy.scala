@@ -16,13 +16,11 @@
 
 package eu.timepit.scalasteward
 
-import _root_.io.circe.parser
 import cats.effect.IO
 import cats.implicits._
 import eu.timepit.scalasteward.application.Config
 import eu.timepit.scalasteward.github._
 import eu.timepit.scalasteward.github.data.{CreatePullRequestIn, PullRequestOut}
-import eu.timepit.scalasteward.io.ProcessAlg
 import eu.timepit.scalasteward.model._
 
 object githubLegacy {
@@ -47,7 +45,7 @@ object githubLegacy {
       gitHubService: GitHubService[IO],
       config: Config
   ): IO[Unit] =
-    pullRequestExists(localUpdate, config).ifM(
+    pullRequestExists(localUpdate, gitHubService, config).ifM(
       log.printInfo(s"PR ${localUpdate.updateBranch.name} already exists"),
       log.printInfo(s"Create PR ${localUpdate.updateBranch.name}") >>
         createPullRequest(localUpdate, gitHubService, config).void
@@ -56,20 +54,15 @@ object githubLegacy {
   def headOf(localUpdate: LocalUpdate, config: Config): String =
     s"${config.gitHubLogin}:${localUpdate.updateBranch.name}"
 
-  def pullRequestExists(localUpdate: LocalUpdate, config: Config): IO[Boolean] = {
+  def pullRequestExists(
+      localUpdate: LocalUpdate,
+      gitHubService: GitHubService[IO],
+      config: Config
+  ): IO[Boolean] = {
     val repo = localUpdate.localRepo.upstream
     for {
-      token <- config.gitHubUser[IO].map(_.accessToken)
-      url <- github.http4s.http4sUrl.listPullRequests[IO](repo, headOf(localUpdate, config))
-      lines <- ProcessAlg
-        .create[IO]
-        .exec(
-          List("curl", "-s", "-u", s"${config.gitHubLogin}:$token", url.toString),
-          localUpdate.localRepo.dir
-        )
-      json <- IO.fromEither(parser.parse(lines.mkString("\n")))
-      // TODO: Option.get, are you serious?
-      array <- IO(json.asArray.get)
-    } yield array.nonEmpty
+      user <- config.gitHubUser[IO]
+      pullRequests <- gitHubService.listPullRequests(user, repo, headOf(localUpdate, config))
+    } yield pullRequests.nonEmpty
   }
 }

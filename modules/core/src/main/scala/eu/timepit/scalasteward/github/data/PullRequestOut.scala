@@ -19,7 +19,9 @@ package eu.timepit.scalasteward.github.data
 import io.circe.Decoder
 import io.circe.generic.semiauto._
 
-final case class PullRequestOut()
+final case class PullRequestOut(
+    title: String
+)
 
 object PullRequestOut {
   implicit val pullRequestOutDecoder: Decoder[PullRequestOut] =
