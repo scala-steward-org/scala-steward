@@ -31,6 +31,7 @@ object steward extends IOApp {
         for {
           repos <- getRepos(ctx.config.workspace)
           _ <- prepareEnv(ctx)
+          //_ <- ctx.updateService.checkForUpdates
           _ <- repos.traverse_(stewardRepo(_, ctx))
         } yield ExitCode.Success
       }
