@@ -76,6 +76,12 @@
 - milessabin/shapeless
 - pathikrit/better-files
 - pdalpra/gh4s
+- Philippus/baggage-jwt
+- Philippus/between
+- Philippus/bump
+- Philippus/emoji-clock
+- Philippus/julius
+- Philippus/scala-for-all
 - plokhotnyuk/jsoniter-scala
 - ppurang/asynch
 - raboof/sbt-reproducible-builds
