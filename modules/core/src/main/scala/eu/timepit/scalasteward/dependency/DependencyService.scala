@@ -23,6 +23,7 @@ import eu.timepit.scalasteward.github.data.{AuthenticatedUser, Repo, RepoOut}
 import eu.timepit.scalasteward.sbt.SbtAlg
 import eu.timepit.scalasteward.util
 import eu.timepit.scalasteward.util.MonadThrowable
+import eu.timepit.scalasteward.util.logger.LoggerOps
 import io.chrisdavenport.log4cats.Logger
 
 class DependencyService[F[_]](
@@ -36,18 +37,19 @@ class DependencyService[F[_]](
       user: AuthenticatedUser,
       repo: Repo
   )(implicit F: MonadThrowable[F]): F[Unit] =
-    for {
-      _ <- logger.info(s"Fork and check dependencies of ${repo.show}")
-      res <- gitHubApiAlg.createForkAndGetDefaultBranch(repo)
-      (repoOut, branchOut) = res
-      foundSha1 <- dependencyRepository.findSha1(repo)
-      latestSha1 = branchOut.commit.sha
-      refreshRequired = foundSha1.fold(true)(_ =!= latestSha1)
-      _ <- {
-        if (refreshRequired) refreshDependencies(user, repo, repoOut, latestSha1)
-        else F.unit
-      }
-    } yield ()
+    logger.attemptLog_(s"Fork and check dependencies of ${repo.show}") {
+      for {
+        res <- gitHubApiAlg.createForkAndGetDefaultBranch(repo)
+        (repoOut, branchOut) = res
+        foundSha1 <- dependencyRepository.findSha1(repo)
+        latestSha1 = branchOut.commit.sha
+        refreshRequired = foundSha1.fold(true)(_ =!= latestSha1)
+        _ <- {
+          if (refreshRequired) refreshDependencies(user, repo, repoOut, latestSha1)
+          else F.unit
+        }
+      } yield ()
+    }
 
   def refreshDependencies(
       user: AuthenticatedUser,
