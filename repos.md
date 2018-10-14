@@ -72,6 +72,7 @@
 - maximn/coding-interview-questions-scala
 - maximn/scala-workshop
 - maximn/TaxCalculator
+- mefellows/sbt-dotenv
 - mfirry/scala-http-clients
 - milessabin/shapeless
 - pathikrit/better-files
