@@ -13,7 +13,6 @@ class ArtificialProjectTest extends FunSuite with Matchers {
         "cats-effect",
         "cats-effect_2.12",
         "1.0.0",
-        ScalaVersion("2.12.7"),
         None
       ),
       Dependency(
@@ -21,7 +20,6 @@ class ArtificialProjectTest extends FunSuite with Matchers {
         "scala-library",
         "scala-library",
         "2.12.6",
-        ScalaVersion("2.12.6"),
         None
       )
     ),
@@ -31,7 +29,6 @@ class ArtificialProjectTest extends FunSuite with Matchers {
         "sbt-travisci",
         "sbt-travisci",
         "1.1.3",
-        ScalaVersion("2.12"),
         Some(SbtVersion("1.0"))
       ),
       Dependency(
@@ -39,7 +36,6 @@ class ArtificialProjectTest extends FunSuite with Matchers {
         "sbt-scalafmt",
         "sbt-scalafmt",
         "1.6.0-RC4",
-        ScalaVersion("2.12"),
         Some(SbtVersion("1.0"))
       )
     )

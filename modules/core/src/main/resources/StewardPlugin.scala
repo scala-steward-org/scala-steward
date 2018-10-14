@@ -42,9 +42,7 @@ object StewardPlugin extends AutoPlugin {
             "groupId" -> moduleId.organization,
             "artifactId" -> moduleId.name,
             "artifactIdCross" -> artifactIdCross,
-            "version" -> moduleId.revision,
-            "scalaVersion" -> moduleId.extraAttributes
-              .getOrElse("e:scalaVersion", scalaVersion.value)
+            "version" -> moduleId.revision
           ) ++
             moduleId.extraAttributes
               .get("e:sbtVersion")

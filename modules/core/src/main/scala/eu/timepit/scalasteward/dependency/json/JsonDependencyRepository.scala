@@ -36,26 +36,26 @@ class JsonDependencyRepository[F[_]](
     readJson.map(_.store.get(repo).map(_.sha1))
 
   override def getDependencies: F[List[Dependency]] =
-    readJson.map(_.store.values.toList.flatMap(_.dependencies).distinct)
+    readJson.map(_.store.values.flatMap(_.dependencies).toList.distinct)
 
   override def setDependencies(repo: Repo, sha1: Sha1, dependencies: List[Dependency]): F[Unit] =
     readJson.flatMap { store =>
-      val updated = store.store.updated(repo, RepoValues(sha1, dependencies))
-      writeJson(Store(updated))
+      val updated = store.store.updated(repo, RepoData(sha1, dependencies))
+      writeJson(RepoStore(updated))
     }
 
   def jsonFile: F[File] =
-    workspaceAlg.rootDir.map(_ / "repos_v1.json")
+    workspaceAlg.rootDir.map(_ / "repos_v04.json")
 
-  def readJson: F[Store] =
+  def readJson: F[RepoStore] =
     jsonFile.flatMap { file =>
       fileAlg.readFile(file).flatMap {
-        case Some(content) => F.fromEither(decode[Store](content))
-        case None          => F.pure(Store(Map.empty))
+        case Some(content) => F.fromEither(decode[RepoStore](content))
+        case None          => F.pure(RepoStore(Map.empty))
       }
     }
 
-  def writeJson(store: Store): F[Unit] =
+  def writeJson(store: RepoStore): F[Unit] =
     jsonFile.flatMap { file =>
       fileAlg.writeFile(file, store.asJson.toString)
     }

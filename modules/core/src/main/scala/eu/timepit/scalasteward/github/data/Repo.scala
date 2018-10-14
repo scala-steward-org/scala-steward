@@ -26,14 +26,15 @@ final case class Repo(
 }
 
 object Repo {
-  implicit val repoKeyDecoder: KeyDecoder[Repo] =
-    KeyDecoder.instance { key =>
-      val parts = key.split('/')
-      if (parts.length == 2 && parts.forall(_.nonEmpty))
-        Some(Repo(parts(0), parts(1)))
-      else None
+  implicit val repoKeyDecoder: KeyDecoder[Repo] = {
+    val string = "([^/]+)"
+    val / = s"$string/$string".r
+    KeyDecoder.instance {
+      case owner / repo => Some(Repo(owner, repo))
+      case _            => None
     }
+  }
 
   implicit val repoKeyEncoder: KeyEncoder[Repo] =
-    KeyEncoder.instance(repo => s"${repo.owner}/${repo.repo}")
+    KeyEncoder.instance(repo => repo.owner + "/" + repo.repo)
 }
