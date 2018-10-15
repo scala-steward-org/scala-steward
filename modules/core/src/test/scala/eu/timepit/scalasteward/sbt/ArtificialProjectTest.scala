@@ -52,8 +52,10 @@ class ArtificialProjectTest extends FunSuite with Matchers {
   test("mkBuildSbt") {
     project.mkBuildSbt.content shouldBe
       """|scalaVersion := "2.12.7"
-         |libraryDependencies += "org.typelevel" % "cats-effect_2.12" % "1.0.0"
-         |libraryDependencies += "org.scala-lang" % "scala-library" % "2.12.6"
+         |libraryDependencies ++= Seq(
+         |"org.typelevel" % "cats-effect_2.12" % "1.0.0",
+         |"org.scala-lang" % "scala-library" % "2.12.6"
+         |)
          |""".stripMargin.trim
   }
 

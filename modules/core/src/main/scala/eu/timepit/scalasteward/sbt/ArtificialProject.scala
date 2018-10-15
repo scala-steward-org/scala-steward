@@ -40,13 +40,21 @@ final case class ArtificialProject(
     FileData(
       "build.sbt",
       s"""|scalaVersion := "${scalaVersion.value}"
-          |${libraries.map(_.formatAsSbtExpr).mkString("\n")}
+          |libraryDependencies ++= Seq(
+          |${libraries.map(_.formatAsModuleId).mkString(",\n")}
+          |)
           |""".stripMargin.trim
     )
 
   def mkBuildProperties: FileData =
-    FileData("build.properties", s"sbt.version=${sbtVersion.value}")
+    FileData(
+      "build.properties",
+      s"sbt.version=${sbtVersion.value}"
+    )
 
   def mkPluginsSbt: FileData =
-    FileData("plugins.sbt", plugins.map(_.formatAsSbtExpr).mkString("\n"))
+    FileData(
+      "plugins.sbt",
+      plugins.map(p => s"addSbtPlugin(${p.formatAsModuleId})").mkString("\n")
+    )
 }
