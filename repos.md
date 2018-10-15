@@ -58,6 +58,7 @@
 - julien-truffaut/newts
 - larsrh/sbt-libisabelle
 - laserdisc-io/log-effect
+- laserdisc-io/laserdisc
 - lightbend/genjavadoc
 - lightbend/lightbend-emoji
 - lightbend/migration-manager
