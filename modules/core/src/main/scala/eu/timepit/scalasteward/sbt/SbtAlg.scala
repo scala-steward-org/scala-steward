@@ -94,7 +94,7 @@ object SbtAlg {
         F.delay(File.home).map(_ / ".sbt")
 
       def sbtCmd(command: String*): List[String] =
-        List("sbt", "-no-colors", command.mkString(";", ";", ""))
+        List("sbt", "-batch", "-no-colors", command.mkString(";", ";", ""))
 
       def ignoreJvmOpts[A](dir: File)(fa: F[A]): F[A] =
         fileAlg.removeTemporarily(dir / ".jvmopts")(fa)
