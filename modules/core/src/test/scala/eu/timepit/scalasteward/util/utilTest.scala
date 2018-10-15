@@ -16,4 +16,10 @@ class utilTest extends FunSuite with Matchers {
       i => if (i <= 1) i.asRight[Unit] else ().asLeft[Int]
     )(5) shouldBe Right(5)
   }
+
+  test("ifTrue") {
+    val f = 42.asLeft[Unit]
+    ifTrue(true.asRight[Int])(f) shouldBe f
+    ifTrue(false.asRight[Int])(f) shouldBe Right(())
+  }
 }
