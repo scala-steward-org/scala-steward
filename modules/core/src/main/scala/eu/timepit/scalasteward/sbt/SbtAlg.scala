@@ -24,6 +24,7 @@ import eu.timepit.scalasteward.dependency.parser.parseDependencies
 import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import eu.timepit.scalasteward.model.Update
+import eu.timepit.scalasteward.sbt.command._
 import eu.timepit.scalasteward.sbtLegacy
 import io.chrisdavenport.log4cats.Logger
 
@@ -62,7 +63,7 @@ object SbtAlg {
       override def getDependencies(repo: Repo): F[List[Dependency]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          cmd = sbtCmd("libraryDependenciesAsJson", "reload plugins", "libraryDependenciesAsJson")
+          cmd = sbtCmd(libraryDependenciesAsJson, reloadPlugins, libraryDependenciesAsJson)
           lines <- ignoreJvmOpts(repoDir)(processAlg.execSandboxed(cmd, repoDir))
         } yield lines.flatMap(parseDependencies)
 
@@ -81,12 +82,7 @@ object SbtAlg {
       override def getUpdatesForRepo(repo: Repo): F[List[Update]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          cmd = sbtCmd(
-            "set every credentials := Nil",
-            "dependencyUpdates",
-            "reload plugins",
-            "dependencyUpdates"
-          )
+          cmd = sbtCmd(setCredentialsToNil, dependencyUpdates, reloadPlugins, dependencyUpdates)
           lines <- ignoreJvmOpts(repoDir)(processAlg.execSandboxed(cmd, repoDir))
         } yield sbtLegacy.sanitizeUpdates(sbtLegacy.toUpdates(lines))
 

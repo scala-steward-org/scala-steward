@@ -47,7 +47,8 @@ class UpdateService[F[_]](
           d =>
             d.groupId != "org.scala-lang" && d.artifactId != "scala-library"
               && d.groupId != "org.eclipse.jetty" && d.artifactId != "jetty-server" &&
-              d.artifactId != "jetty-websocket")
+              d.artifactId != "jetty-websocket"
+        )
         .partition(_.sbtVersion.isEmpty)
       val libProjects = splitter
         .xxx(libraries)
@@ -105,9 +106,14 @@ class UpdateService[F[_]](
   def foo(updates: List[Update]): F[List[Repo]] =
     dependencyRepository.getStore.map { store =>
       store
-        .filter(_._2.dependencies.exists(d =>
-          updates.exists(u =>
-            u.groupId == d.groupId && d.artifactIdCross == u.artifactId && d.version == u.currentVersion)))
+        .filter(
+          _._2.dependencies.exists(
+            d =>
+              updates.exists(
+                u => u.groupId == d.groupId && d.artifactIdCross == u.artifactId && d.version == u.currentVersion
+              )
+          )
+        )
         .keys
         .toList
     }

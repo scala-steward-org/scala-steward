@@ -18,6 +18,7 @@ package eu.timepit.scalasteward.sbt
 
 import eu.timepit.scalasteward.dependency.Dependency
 import eu.timepit.scalasteward.io.FileData
+import eu.timepit.scalasteward.sbt.command._
 import scala.collection.mutable.ListBuffer
 
 final case class ArtificialProject(
@@ -28,11 +29,10 @@ final case class ArtificialProject(
 ) {
   def dependencyUpdatesCmd: List[String] = {
     val lb = new ListBuffer[String]
-    val dependencyUpdates = "dependencyUpdates"
     if (libraries.nonEmpty)
       lb.append(dependencyUpdates)
     if (plugins.nonEmpty)
-      lb.append("reload plugins", dependencyUpdates)
+      lb.append(reloadPlugins, dependencyUpdates)
     lb.toList
   }
 
