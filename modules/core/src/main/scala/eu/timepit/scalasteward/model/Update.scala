@@ -136,17 +136,6 @@ object Update {
   def removeCommonSuffix(str: String): String =
     util.string.removeSuffix(str, commonSuffixes)
 
-  def ignore(update: Update): Boolean =
-    update.groupId match {
-      case "org.scala-lang" =>
-        update.artifactIds.exists {
-          case "scala-compiler" => true
-          case "scala-library"  => true
-          case _                => false
-        }
-      case _ => false
-    }
-
   def nameOf(groupId: String, artifactId: String): String =
     if (commonSuffixes.contains(artifactId))
       groupId.split('.').lastOption.getOrElse(groupId)

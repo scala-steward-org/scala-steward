@@ -22,6 +22,7 @@ import cats.implicits._
 import eu.timepit.scalasteward.application.Context
 import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.model._
+import eu.timepit.scalasteward.update.FilterAlg
 import eu.timepit.scalasteward.util._
 
 object steward extends IOApp {
@@ -85,7 +86,8 @@ object steward extends IOApp {
       _ <- log.printInfo(s"Check updates for ${localRepo.upstream.show}")
       updates <- ctx.sbtAlg.getUpdatesForRepo(localRepo.upstream)
       _ <- ctx.logger.info(util.logger.showUpdates(updates))
-      filteredUpdates = updates.filterNot(Update.ignore)
+      filterAlg = FilterAlg.create(ctx.logger)
+      filteredUpdates <- filterAlg.filterMany(localRepo.upstream, updates)
       _ <- filteredUpdates.traverse_(
         update => applyUpdate(LocalUpdate(localRepo, update), ctx)
       )

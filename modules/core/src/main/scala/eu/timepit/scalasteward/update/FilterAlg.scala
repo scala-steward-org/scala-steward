@@ -20,6 +20,7 @@ import cats.implicits._
 import cats.{Applicative, TraverseFilter}
 import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.model.Update
+import io.chrisdavenport.log4cats.Logger
 
 trait FilterAlg[F[_]] {
   def filter(repo: Repo, update: Update): F[Option[Update]]
@@ -28,4 +29,21 @@ trait FilterAlg[F[_]] {
       implicit F: Applicative[F]
   ): F[G[Update]] =
     updates.traverseFilter(update => filter(repo, update))
+}
+
+object FilterAlg {
+  def create[F[_]](logger: Logger[F])(implicit F: Applicative[F]): FilterAlg[F] =
+    new FilterAlg[F] {
+      override def filter(repo: Repo, update: Update): F[Option[Update]] = {
+        val keep = (update.groupId, update.artifactId) match {
+          case ("org.scala-lang", "scala-compiler")     => false
+          case ("org.scala-lang", "scala-library")      => false
+          case ("org.eclipse.jetty", "jetty-server")    => false
+          case ("org.eclipse.jetty", "jetty-websocket") => false
+          case _                                        => true
+        }
+        if (keep) F.pure(Some(update))
+        else logger.info(s"Ignore update ${update.show}") *> F.pure(None)
+      }
+    }
 }

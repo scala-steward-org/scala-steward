@@ -135,12 +135,6 @@ class UpdateTest extends FunSuite with Matchers {
       .replaceAllIn(original) shouldBe Some(expected)
   }
 
-  test("ignore: check all artifactIds in group") {
-    Update.ignore(
-      Group("org.scala-lang", Nel.of("abc", "scala-compiler"), "1.0.0", Nel.of("2.0.0"))
-    )
-  }
-
   test("Group.artifactId") {
     Group(
       "org.http4s",
