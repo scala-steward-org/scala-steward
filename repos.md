@@ -5,6 +5,7 @@
 - akka/akka-paradox
 - akka/akka-sample-cluster-docker-compose-scala
 - akka/akka-sample-cluster-docker-compose-java
+- akka/akka-samples
 - akka/akka-cluster-kubernetes-quickstart-scala
 - alonsodomin/cron4s
 - arturgajowy/rchain
