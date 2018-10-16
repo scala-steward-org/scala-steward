@@ -76,7 +76,7 @@ object SbtAlg {
           cmd = sbtCmd(project.dependencyUpdatesCmd: _*)
           lines <- processAlg.exec(cmd, updatesDir)
           _ <- fileAlg.deleteForce(updatesDir)
-        } yield sbtLegacy.sanitizeUpdates(sbtLegacy.toUpdates(lines))
+        } yield sbtLegacy.toUpdates(lines)
 
       override def getUpdatesForRepo(repo: Repo): F[List[Update]] =
         for {

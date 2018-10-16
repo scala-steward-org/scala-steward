@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.dependency
+package eu.timepit.scalasteward.update.json
 
-import eu.timepit.scalasteward.dependency.json.RepoData
-import eu.timepit.scalasteward.git.Sha1
-import eu.timepit.scalasteward.github.data.Repo
+import eu.timepit.scalasteward.model.Update
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.semiauto._
 
-trait DependencyRepository[F[_]] {
-  def findSha1(repo: Repo): F[Option[Sha1]]
+final case class UpdateStore(store: List[Update])
 
-  def getDependencies: F[List[Dependency]]
+object UpdateStore {
+  implicit val updateStoreDecoder: Decoder[UpdateStore] =
+    deriveDecoder
 
-  def getStore: F[Map[Repo, RepoData]]
-
-  def setDependencies(repo: Repo, sha1: Sha1, dependencies: List[Dependency]): F[Unit]
+  implicit val updateStoreEncoder: Encoder[UpdateStore] =
+    deriveEncoder
 }

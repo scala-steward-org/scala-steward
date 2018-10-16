@@ -26,6 +26,7 @@ import eu.timepit.scalasteward.github.http4s.Http4sGitHubApiAlg
 import eu.timepit.scalasteward.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import eu.timepit.scalasteward.sbt.SbtAlg
 import eu.timepit.scalasteward.update.UpdateService
+import eu.timepit.scalasteward.update.json.JsonUpdateRepository
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.client.blaze.BlazeClientBuilder
@@ -65,7 +66,8 @@ object Context {
           logger,
           sbtAlg
         )
-        updateService = new UpdateService(dependencyRepository, sbtAlg)
+        updateRepository = new JsonUpdateRepository(fileAlg, workspaceAlg)
+        updateService = new UpdateService(dependencyRepository, sbtAlg, updateRepository)
       } yield
         Context(
           config,

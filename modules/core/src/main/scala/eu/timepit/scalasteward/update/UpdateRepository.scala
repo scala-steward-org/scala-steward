@@ -14,18 +14,13 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.dependency
+package eu.timepit.scalasteward.update
 
-import eu.timepit.scalasteward.dependency.json.RepoData
-import eu.timepit.scalasteward.git.Sha1
-import eu.timepit.scalasteward.github.data.Repo
+import eu.timepit.scalasteward.dependency.Dependency
+import eu.timepit.scalasteward.model.Update
 
-trait DependencyRepository[F[_]] {
-  def findSha1(repo: Repo): F[Option[Sha1]]
+trait UpdateRepository[F[_]] {
+  def save(update: Update): F[Unit]
 
-  def getDependencies: F[List[Dependency]]
-
-  def getStore: F[Map[Repo, RepoData]]
-
-  def setDependencies(repo: Repo, sha1: Sha1, dependencies: List[Dependency]): F[Unit]
+  def find(dependency: Dependency): F[Option[Update]]
 }

@@ -16,22 +16,41 @@
 
 package eu.timepit.scalasteward.update
 
+import cats.Monad
 import cats.implicits._
 import eu.timepit.scalasteward.dependency.DependencyRepository
+import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.log
 import eu.timepit.scalasteward.model.Update
-import eu.timepit.scalasteward.sbt.{ArtificialProject, SbtAlg, SbtVersion, ScalaVersion}
+import eu.timepit.scalasteward.sbt.{
+  seriesToSpecificVersion,
+  ArtificialProject,
+  SbtAlg,
+  SbtVersion,
+  ScalaVersion
+}
 import eu.timepit.scalasteward.util.MonadThrowable
 
 class UpdateService[F[_]](
     dependencyRepository: DependencyRepository[F],
-    sbtAlg: SbtAlg[F]
-) {
+    sbtAlg: SbtAlg[F],
+    updateRepository: UpdateRepository[F]
+)(implicit F: Monad[F]) {
+
+  // Add configuration "phantom-js-jetty" to Update
+
+  // WIP
   def checkForUpdates(implicit F: MonadThrowable[F]): F[List[Update]] =
     dependencyRepository.getDependencies.flatMap { dependencies =>
-      val (libraries, plugins) = dependencies.partition(_.sbtVersion.isEmpty)
-      val libProjects = libraries
-        .grouped(20)
+      val (libraries, plugins) = dependencies
+        .filter(
+          d =>
+            d.groupId != "org.scala-lang" && d.artifactId != "scala-library"
+              && d.groupId != "org.eclipse.jetty" && d.artifactId != "jetty-server" &&
+              d.artifactId != "jetty-websocket")
+        .partition(_.sbtVersion.isEmpty)
+      val libProjects = splitter
+        .xxx(libraries)
         .map { libs =>
           ArtificialProject(
             ScalaVersion("2.12.7"),
@@ -40,9 +59,25 @@ class UpdateService[F[_]](
             List.empty
           )
         }
-        .toList
+
       val pluginProjects = plugins
-        .grouped(20)
+        .groupBy(_.sbtVersion)
+        .flatMap {
+          case (maybeSbtVersion, plugins) =>
+            splitter.xxx(plugins).map { ps =>
+              ArtificialProject(
+                ScalaVersion("2.12.7"),
+                seriesToSpecificVersion(maybeSbtVersion.get),
+                List.empty,
+                ps.sortBy(_.formatAsModuleId)
+              )
+            }
+        }
+        .toList
+
+      /*
+      val pluginProjects = splitter
+        .xxx(plugins)
         .map { ps =>
           ArtificialProject(
             ScalaVersion("2.12.7"),
@@ -50,15 +85,31 @@ class UpdateService[F[_]](
             List.empty,
             ps.sortBy(_.formatAsModuleId)
           )
-        }
-        .toList
-      (libProjects ++ pluginProjects).flatTraverse { prj =>
+        }*/
+      val x = (libProjects ++ pluginProjects).flatTraverse { prj =>
         sbtAlg.getUpdates(prj).attempt.flatMap {
           case Right(updates) =>
             log.printUpdates(updates).unsafeRunSync()
-            F.pure(updates)
-          case Left(_) => F.pure(List.empty[Update])
+            updates.traverse_(updateRepository.save) >> F.pure(updates)
+          case Left(t) =>
+            println(t)
+            F.pure(List.empty[Update])
         }
       }
+
+      x.flatTap { updates =>
+        foo(updates).map(rs => { rs.foreach(println); rs })
+      }
     }
+
+  def foo(updates: List[Update]): F[List[Repo]] =
+    dependencyRepository.getStore.map { store =>
+      store
+        .filter(_._2.dependencies.exists(d =>
+          updates.exists(u =>
+            u.groupId == d.groupId && d.artifactIdCross == u.artifactId && d.version == u.currentVersion)))
+        .keys
+        .toList
+    }
+
 }
