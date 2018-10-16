@@ -20,19 +20,15 @@ import cats.Monad
 import cats.implicits._
 import eu.timepit.scalasteward.dependency.DependencyRepository
 import eu.timepit.scalasteward.github.data.Repo
-import eu.timepit.scalasteward.log
+import eu.timepit.scalasteward.util
 import eu.timepit.scalasteward.model.Update
-import eu.timepit.scalasteward.sbt.{
-  seriesToSpecificVersion,
-  ArtificialProject,
-  SbtAlg,
-  SbtVersion,
-  ScalaVersion
-}
+import eu.timepit.scalasteward.sbt._
 import eu.timepit.scalasteward.util.MonadThrowable
+import io.chrisdavenport.log4cats.Logger
 
 class UpdateService[F[_]](
     dependencyRepository: DependencyRepository[F],
+    logger: Logger[F],
     sbtAlg: SbtAlg[F],
     updateRepository: UpdateRepository[F]
 )(implicit F: Monad[F]) {
@@ -90,8 +86,8 @@ class UpdateService[F[_]](
       val x = (libProjects ++ pluginProjects).flatTraverse { prj =>
         sbtAlg.getUpdates(prj).attempt.flatMap {
           case Right(updates) =>
-            log.printUpdates(updates).unsafeRunSync()
-            updates.traverse_(updateRepository.save) >> F.pure(updates)
+            logger.info(util.logger.showUpdates(updates)) >>
+              updates.traverse_(updateRepository.save) >> F.pure(updates)
           case Left(t) =>
             println(t)
             F.pure(List.empty[Update])

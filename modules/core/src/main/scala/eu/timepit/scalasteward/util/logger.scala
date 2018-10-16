@@ -17,6 +17,8 @@
 package eu.timepit.scalasteward.util
 
 import cats.implicits._
+import cats.{Foldable, Functor}
+import eu.timepit.scalasteward.model.Update
 import io.chrisdavenport.log4cats.Logger
 
 object logger {
@@ -31,5 +33,14 @@ object logger {
 
     def attemptLog_[A](message: String)(fa: F[A])(implicit F: MonadThrowable[F]): F[Unit] =
       attemptLog(message)(fa).void
+  }
+
+  def showUpdates[F[_]: Foldable: Functor](updates: F[Update]): String = {
+    val list = updates.map(u => "  " + u.show).foldSmash("", "\n", "")
+    updates.size match {
+      case 0 => s"Found 0 updates"
+      case 1 => s"Found 1 update:\n$list"
+      case n => s"Found $n updates:\n$list"
+    }
   }
 }

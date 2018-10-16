@@ -18,7 +18,6 @@ package eu.timepit.scalasteward
 
 import cats.effect.IO
 import cats.implicits._
-import eu.timepit.scalasteward.model.Update
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import scala.concurrent.duration.FiniteDuration
@@ -43,14 +42,4 @@ object log {
 
   def printImpl(level: String, msg: String): IO[Unit] =
     now.flatMap(dt => IO(println(s"[$dt] $level: $msg")))
-
-  def printUpdates(updates: List[Update]): IO[Unit] = {
-    val list = updates.map(u => "  " + u.show).mkString("\n")
-    val msg = updates.size match {
-      case 0 => "Found 0 updates"
-      case 1 => s"Found 1 update:\n$list"
-      case n => s"Found $n updates:\n$list"
-    }
-    log.printInfo(msg)
-  }
 }

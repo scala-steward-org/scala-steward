@@ -84,7 +84,7 @@ object steward extends IOApp {
     for {
       _ <- log.printInfo(s"Check updates for ${localRepo.upstream.show}")
       updates <- ctx.sbtAlg.getUpdatesForRepo(localRepo.upstream)
-      _ <- log.printUpdates(updates)
+      _ <- ctx.logger.info(util.logger.showUpdates(updates))
       filteredUpdates = updates.filterNot(Update.ignore)
       _ <- filteredUpdates.traverse_(
         update => applyUpdate(LocalUpdate(localRepo, update), ctx)

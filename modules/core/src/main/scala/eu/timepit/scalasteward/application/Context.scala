@@ -67,7 +67,7 @@ object Context {
           sbtAlg
         )
         updateRepository = new JsonUpdateRepository(fileAlg, workspaceAlg)
-        updateService = new UpdateService(dependencyRepository, sbtAlg, updateRepository)
+        updateService = new UpdateService(dependencyRepository, logger, sbtAlg, updateRepository)
       } yield
         Context(
           config,
