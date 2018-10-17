@@ -35,14 +35,19 @@ object FilterAlg {
   def create[F[_]](logger: Logger[F])(implicit F: Applicative[F]): FilterAlg[F] =
     new FilterAlg[F] {
       override def filter(repo: Repo, update: Update): F[Option[Update]] = {
-        val keep = (update.groupId, update.artifactId) match {
+        val globalKeep = (update.groupId, update.artifactId) match {
           case ("org.scala-lang", "scala-compiler")     => false
           case ("org.scala-lang", "scala-library")      => false
           case ("org.eclipse.jetty", "jetty-server")    => false
           case ("org.eclipse.jetty", "jetty-websocket") => false
           case _                                        => true
         }
-        if (keep) F.pure(Some(update))
+        val localKeep = (repo.show, update.groupId, update.artifactId) match {
+          case ("scala/scala-dist", "com.amazonaws", "aws-java-sdk-s3") => false
+          case _                                                        => true
+        }
+
+        if (globalKeep && localKeep) F.pure(Some(update))
         else logger.info(s"Ignore update ${update.show}") *> F.pure(None)
       }
     }
