@@ -50,15 +50,14 @@ object githubLegacy {
         createPullRequest(localUpdate, gitHubApiAlg, config).void
     )
 
-  def headOf(localUpdate: LocalUpdate, config: Config): String =
-    s"${config.gitHubLogin}:${localUpdate.updateBranch.name}"
-
   def pullRequestExists(
       localUpdate: LocalUpdate,
       gitHubApiAlg: GitHubApiAlg[IO],
       config: Config
   ): IO[Boolean] = {
     val repo = localUpdate.localRepo.upstream
-    gitHubApiAlg.listPullRequests(repo, headOf(localUpdate, config)).map(_.nonEmpty)
+    gitHubApiAlg
+      .listPullRequests(repo, github.headOf(config.gitHubLogin, localUpdate.update))
+      .map(_.nonEmpty)
   }
 }

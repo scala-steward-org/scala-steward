@@ -14,17 +14,11 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.github.data
+package eu.timepit.scalasteward
 
-import io.circe.Decoder
-import io.circe.generic.semiauto._
+import eu.timepit.scalasteward.model.Update
 
-final case class PullRequestOut(
-    state: String,
-    title: String
-)
-
-object PullRequestOut {
-  implicit val pullRequestOutDecoder: Decoder[PullRequestOut] =
-    deriveDecoder
+package object git {
+  def branchOf(update: Update): Branch =
+    Branch(s"update/${update.name}-${update.nextVersion}")
 }

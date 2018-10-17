@@ -27,9 +27,6 @@ object gitLegacy {
   def branchAuthors(branch: Branch, base: Branch, dir: File): IO[List[String]] =
     exec(List("log", "--pretty=format:'%an'", dotdot(base, branch)), dir)
 
-  def branchOf(update: Update): Branch =
-    Branch(s"update/${update.name}-${update.nextVersion}")
-
   def checkoutBranch(branch: Branch, dir: File): IO[List[String]] =
     exec(List("checkout", branch.name), dir)
 

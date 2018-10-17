@@ -16,17 +16,17 @@
 
 package eu.timepit.scalasteward.nurture
 
-import cats.Monad
 import cats.effect.Sync
 import cats.implicits._
+import cats.{FlatMap, Monad}
 import eu.timepit.scalasteward.application.Config
 import eu.timepit.scalasteward.git.GitAlg
 import eu.timepit.scalasteward.github.GitHubApiAlg
-import eu.timepit.scalasteward.github.data.Repo
+import eu.timepit.scalasteward.github.data.{PullRequestOut, Repo}
 import eu.timepit.scalasteward.model.Update
 import eu.timepit.scalasteward.sbt.SbtAlg
 import eu.timepit.scalasteward.update.FilterAlg
-import eu.timepit.scalasteward.util
+import eu.timepit.scalasteward.{github, util}
 import io.chrisdavenport.log4cats.Logger
 
 class NurtureAlg[F[_]](
@@ -55,8 +55,25 @@ class NurtureAlg[F[_]](
       updates <- sbtAlg.getUpdatesForRepo(repo)
       filtered <- filterAlg.filterMany(repo, updates)
       _ <- logger.info(util.logger.showUpdates(filtered))
-      _ <- filtered.traverse_(applyUpdate(repo, _))
+      _ <- filtered.traverse_(processUpdate(repo, _))
+    } yield ()
+
+  def processUpdate(repo: Repo, update: Update)(implicit F: FlatMap[F]): F[Unit] =
+    for {
+      _ <- logger.info(s"Process update ${update.show}")
+      pullRequests <- gitHubApiAlg.listPullRequests(repo, github.headOf(config.gitHubLogin, update))
+      maybePullRequest = pullRequests.headOption
+      _ <- maybePullRequest match {
+        case Some(pullRequest) if pullRequest.state === "closed" =>
+          logger.info("PR has been closed")
+        case Some(pullRequest) =>
+          updatePullRequest(repo, update, pullRequest)
+        case None =>
+          applyUpdate(repo, update)
+      }
     } yield ()
 
   def applyUpdate(repo: Repo, update: Update): F[Unit] = ???
+
+  def updatePullRequest(repo: Repo, update: Update, pullRequest: PullRequestOut): F[Unit] = ???
 }
