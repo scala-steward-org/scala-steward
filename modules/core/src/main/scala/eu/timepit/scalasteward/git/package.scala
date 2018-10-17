@@ -21,4 +21,12 @@ import eu.timepit.scalasteward.model.Update
 package object git {
   def branchOf(update: Update): Branch =
     Branch(s"update/${update.name}-${update.nextVersion}")
+
+  // man 7 gitrevisions:
+  // When you have two commits r1 and r2 you can ask for commits that are
+  // reachable from r2 excluding those that are reachable from r1 by ^r1 r2
+  // and it can be written as
+  //   r1..r2.
+  def dotdot(r1: Branch, r2: Branch): String =
+    s"${r1.name}..${r2.name}"
 }

@@ -61,7 +61,8 @@ class NurtureAlg[F[_]](
   def processUpdate(repo: Repo, update: Update)(implicit F: FlatMap[F]): F[Unit] =
     for {
       _ <- logger.info(s"Process update ${update.show}")
-      pullRequests <- gitHubApiAlg.listPullRequests(repo, github.headOf(config.gitHubLogin, update))
+      head = github.headOf(config.gitHubLogin, update)
+      pullRequests <- gitHubApiAlg.listPullRequests(repo, head)
       maybePullRequest = pullRequests.headOption
       _ <- maybePullRequest match {
         case Some(pullRequest) if pullRequest.state === "closed" =>

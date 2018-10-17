@@ -123,7 +123,7 @@ object steward extends IOApp {
     val updateBranch = localUpdate.updateBranch
 
     gitLegacy.returnToCurrentBranch(dir) {
-      gitLegacy.checkoutBranch(updateBranch, dir) >> ifTrue(shouldBeReset(localUpdate)) {
+      gitLegacy.checkoutBranch(updateBranch, dir) >> ifTrue(shouldBeReset(localUpdate, ctx)) {
         for {
           _ <- log.printInfo(s"Reset and update branch ${updateBranch.name}")
           _ <- gitLegacy.exec(List("reset", "--hard", localUpdate.localRepo.base.name), dir)
@@ -140,19 +140,19 @@ object steward extends IOApp {
     val dir = localUpdate.localRepo.dir
     for {
       _ <- gitLegacy.commitAll(localUpdate.commitMsg, dir)
-      _ <- gitLegacy.push(localUpdate.updateBranch, dir)
+      _ <- ctx.gitAlg.push(localUpdate.localRepo.upstream, localUpdate.updateBranch)
       _ <- githubLegacy.createPullRequestIfNotExists(localUpdate, ctx.gitHubApiAlg, ctx.config)
     } yield ()
   }
 
-  def shouldBeReset(localUpdate: LocalUpdate): IO[Boolean] = {
+  def shouldBeReset(localUpdate: LocalUpdate, ctx: Context[IO]): IO[Boolean] = {
     val dir = localUpdate.localRepo.dir
     val baseBranch = localUpdate.localRepo.base
     val updateBranch = localUpdate.updateBranch
     for {
       isMerged <- gitLegacy.isMerged(updateBranch, baseBranch, dir)
-      isBehind <- gitLegacy.isBehind(updateBranch, baseBranch, dir)
-      authors <- gitLegacy.branchAuthors(updateBranch, baseBranch, dir)
+      isBehind <- ctx.gitAlg.isBehind(localUpdate.localRepo.upstream, updateBranch, baseBranch)
+      authors <- ctx.gitAlg.branchAuthors(localUpdate.localRepo.upstream, updateBranch, baseBranch)
       (result, msg) = {
         val pr = s"PR ${updateBranch.name}"
         if (isMerged)

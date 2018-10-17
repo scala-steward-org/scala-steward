@@ -24,7 +24,11 @@ import eu.timepit.scalasteward.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.http4s.Uri
 
 trait GitAlg[F[_]] {
+  def branchAuthors(repo: Repo, branch: Branch, base: Branch): F[List[String]]
+
   def clone(repo: Repo, url: Uri): F[Unit]
+
+  def isBehind(repo: Repo, branch: Branch, base: Branch): F[Boolean]
 
   def push(repo: Repo, branch: Branch): F[Unit]
 
@@ -44,12 +48,22 @@ object GitAlg {
       workspaceAlg: WorkspaceAlg[F]
   )(implicit F: Sync[F]): GitAlg[F] =
     new GitAlg[F] {
+      override def branchAuthors(repo: Repo, branch: Branch, base: Branch): F[List[String]] =
+        workspaceAlg.repoDir(repo).flatMap { repoDir =>
+          exec(List("log", "--pretty=format:'%an'", dotdot(base, branch)), repoDir)
+        }
+
       override def clone(repo: Repo, url: Uri): F[Unit] =
         for {
           rootDir <- workspaceAlg.rootDir
           repoDir <- workspaceAlg.repoDir(repo)
           _ <- exec(List("clone", url.toString, repoDir.pathAsString), rootDir)
         } yield ()
+
+      override def isBehind(repo: Repo, branch: Branch, base: Branch): F[Boolean] =
+        workspaceAlg.repoDir(repo).flatMap { repoDir =>
+          exec(List("log", "--pretty=format:'%h'", dotdot(branch, base)), repoDir).map(_.nonEmpty)
+        }
 
       override def push(repo: Repo, branch: Branch): F[Unit] =
         for {
