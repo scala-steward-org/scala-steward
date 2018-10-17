@@ -135,6 +135,16 @@ class UpdateTest extends FunSuite with Matchers {
       .replaceAllIn(original) shouldBe Some(expected)
   }
 
+  test("replaceAllIn: longest common prefix with length 1") {
+    val original = """ "com.geirsson" % "sbt-ci-release" % "1.2.1" """
+    Group(
+      "org.scala-sbt",
+      Nel.of("sbt-launch", "scripted-plugin", "scripted-sbt"),
+      "1.2.1",
+      Nel.of("1.2.4")
+    ).replaceAllIn(original) shouldBe None
+  }
+
   test("Group.artifactId") {
     Group(
       "org.http4s",

@@ -102,7 +102,7 @@ object Update {
     }
 
     def artifactIdsPrefix: Option[NonEmptyString] =
-      util.string.longestCommonNonEmptyPrefix(artifactIds)
+      util.string.longestCommonNonEmptyPrefix(artifactIds).filter(_.value.length > 2)
   }
 
   ///
