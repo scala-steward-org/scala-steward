@@ -108,6 +108,7 @@
 - scala/scala-swing
 - scala/scalatest-example.g8
 - scala/scala-xml
+- scalaz/scalaz-nio
 - schrepfler/artemis
 - schrepfler/cas-tools
 - schrepfler/crdt-kit
