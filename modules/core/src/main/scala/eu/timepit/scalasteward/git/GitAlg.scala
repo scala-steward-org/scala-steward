@@ -17,7 +17,7 @@
 package eu.timepit.scalasteward.git
 
 import better.files.File
-import cats.effect.Sync
+import cats.effect.{Bracket, Sync}
 import cats.implicits._
 import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.io.{FileAlg, ProcessAlg, WorkspaceAlg}
@@ -26,13 +26,25 @@ import org.http4s.Uri
 trait GitAlg[F[_]] {
   def branchAuthors(repo: Repo, branch: Branch, base: Branch): F[List[String]]
 
+  def checkoutBranch(repo: Repo, branch: Branch): F[Unit]
+
   def clone(repo: Repo, url: Uri): F[Unit]
+
+  def commitAll(repo: Repo, message: String): F[Unit]
+
+  def containsChanges(repo: Repo): F[Boolean]
+
+  def createBranch(repo: Repo, branch: Branch): F[Unit]
+
+  def currentBranch(repo: Repo): F[Branch]
 
   def isBehind(repo: Repo, branch: Branch, base: Branch): F[Boolean]
 
   def isMerged(repo: Repo, branch: Branch, base: Branch): F[Boolean]
 
   def push(repo: Repo, branch: Branch): F[Unit]
+
+  def remoteBranchExists(repo: Repo, branch: Branch): F[Boolean]
 
   def removeClone(repo: Repo): F[Unit]
 
@@ -41,6 +53,9 @@ trait GitAlg[F[_]] {
   def setAuthor(repo: Repo, author: Author): F[Unit]
 
   def syncFork(repo: Repo, upstreamUrl: Uri, defaultBranch: Branch): F[Unit]
+
+  def returnToCurrentBranch[A, E](repo: Repo)(fa: F[A])(implicit F: Bracket[F, E]): F[A] =
+    F.bracket(currentBranch(repo))(_ => fa)(checkoutBranch(repo, _))
 }
 
 object GitAlg {
@@ -57,12 +72,41 @@ object GitAlg {
           exec(List("log", "--pretty=format:'%an'", dotdot(base, branch)), repoDir)
         }
 
+      override def checkoutBranch(repo: Repo, branch: Branch): F[Unit] =
+        for {
+          repoDir <- workspaceAlg.repoDir(repo)
+          _ <- exec(List("checkout", branch.name), repoDir)
+        } yield ()
+
       override def clone(repo: Repo, url: Uri): F[Unit] =
         for {
           rootDir <- workspaceAlg.rootDir
           repoDir <- workspaceAlg.repoDir(repo)
           _ <- exec(List("clone", url.toString, repoDir.pathAsString), rootDir)
         } yield ()
+
+      override def commitAll(repo: Repo, message: String): F[Unit] =
+        for {
+          repoDir <- workspaceAlg.repoDir(repo)
+          _ <- exec(List("commit", "--all", "-m", message), repoDir)
+        } yield ()
+
+      override def containsChanges(repo: Repo): F[Boolean] =
+        workspaceAlg.repoDir(repo).flatMap { repoDir =>
+          exec(List("status", "--porcelain"), repoDir).map(_.nonEmpty)
+        }
+
+      override def createBranch(repo: Repo, branch: Branch): F[Unit] =
+        for {
+          repoDir <- workspaceAlg.repoDir(repo)
+          _ <- exec(List("checkout", "-b", branch.name), repoDir)
+        } yield ()
+
+      override def currentBranch(repo: Repo): F[Branch] =
+        for {
+          repoDir <- workspaceAlg.repoDir(repo)
+          lines <- exec(List("rev-parse", "--abbrev-ref", "HEAD"), repoDir)
+        } yield Branch(lines.mkString.trim)
 
       override def isBehind(repo: Repo, branch: Branch, base: Branch): F[Boolean] =
         workspaceAlg.repoDir(repo).flatMap { repoDir =>
@@ -79,6 +123,12 @@ object GitAlg {
           repoDir <- workspaceAlg.repoDir(repo)
           _ <- exec(List("push", "--force", "--set-upstream", "origin", branch.name), repoDir)
         } yield ()
+
+      override def remoteBranchExists(repo: Repo, branch: Branch): F[Boolean] =
+        for {
+          repoDir <- workspaceAlg.repoDir(repo)
+          branches <- exec(List("branch", "-r"), repoDir)
+        } yield branches.exists(_.endsWith(branch.name))
 
       override def removeClone(repo: Repo): F[Unit] =
         workspaceAlg.repoDir(repo).flatMap(fileAlg.deleteForce)

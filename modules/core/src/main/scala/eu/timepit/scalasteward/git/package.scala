@@ -19,8 +19,11 @@ package eu.timepit.scalasteward
 import eu.timepit.scalasteward.model.Update
 
 package object git {
-  def branchOf(update: Update): Branch =
+  def branchFor(update: Update): Branch =
     Branch(s"update/${update.name}-${update.nextVersion}")
+
+  def commitMsgFor(update: Update): String =
+    s"Update ${NameResolver.resolve(update)} to ${update.nextVersion}"
 
   // man 7 gitrevisions:
   // When you have two commits r1 and r2 you can ask for commits that are

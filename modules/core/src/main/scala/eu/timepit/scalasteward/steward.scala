@@ -86,7 +86,7 @@ object steward extends IOApp {
       updates <- ctx.sbtAlg.getUpdatesForRepo(localRepo.upstream)
       _ <- ctx.logger.info(util.logger.showUpdates(updates))
       filteredUpdates <- ctx.filterAlg.filterMany(localRepo.upstream, updates)
-      _ <- filteredUpdates.traverse_(
+      _ <- filteredUpdates.traverse_[IO, Unit](
         update => applyUpdate(LocalUpdate(localRepo, update), ctx)
       )
     } yield ()
@@ -94,8 +94,8 @@ object steward extends IOApp {
   def applyUpdate(localUpdate: LocalUpdate, ctx: Context[IO]): IO[Unit] =
     for {
       _ <- log.printInfo(s"Apply update ${localUpdate.update.show}")
-      _ <- gitLegacy
-        .remoteBranchExists(localUpdate.updateBranch, localUpdate.localRepo.dir)
+      _ <- ctx.gitAlg
+        .remoteBranchExists(localUpdate.localRepo.upstream, localUpdate.updateBranch)
         .ifM(resetAndUpdate(localUpdate, ctx), applyNewUpdate(localUpdate, ctx))
     } yield ()
 
@@ -103,12 +103,13 @@ object steward extends IOApp {
     val dir = localUpdate.localRepo.dir
     val update = localUpdate.update
     val updateBranch = localUpdate.updateBranch
+    val repo = localUpdate.localRepo.upstream
 
-    (ioLegacy.updateDir(dir, update) >> gitLegacy.containsChanges(dir)).ifM(
-      gitLegacy.returnToCurrentBranch(dir) {
+    (ioLegacy.updateDir(dir, update) >> ctx.gitAlg.containsChanges(repo)).ifM(
+      ctx.gitAlg.returnToCurrentBranch(repo) {
         for {
           _ <- log.printInfo(s"Create branch ${updateBranch.name}")
-          _ <- gitLegacy.createBranch(updateBranch, dir)
+          _ <- ctx.gitAlg.createBranch(repo, updateBranch)
           _ <- commitPushAndCreatePullRequest(localUpdate, ctx)
         } yield ()
       },
@@ -119,17 +120,17 @@ object steward extends IOApp {
   def resetAndUpdate(localUpdate: LocalUpdate, ctx: Context[IO]): IO[Unit] = {
     val dir = localUpdate.localRepo.dir
     val updateBranch = localUpdate.updateBranch
+    val repo = localUpdate.localRepo.upstream
 
-    gitLegacy.returnToCurrentBranch(dir) {
-      gitLegacy.checkoutBranch(updateBranch, dir) >> ifTrue(
-        ctx.nurtureAlg
-          .shouldBeReset(localUpdate.localRepo.upstream, updateBranch, localUpdate.localRepo.base)
+    ctx.gitAlg.returnToCurrentBranch(repo) {
+      ctx.gitAlg.checkoutBranch(repo, updateBranch) >> ifTrue(
+        ctx.nurtureAlg.shouldBeReset(repo, updateBranch, localUpdate.localRepo.base)
       ) {
         for {
           _ <- log.printInfo(s"Reset and update branch ${updateBranch.name}")
-          _ <- ctx.gitAlg.resetHard(localUpdate.localRepo.upstream, localUpdate.localRepo.base)
+          _ <- ctx.gitAlg.resetHard(repo, localUpdate.localRepo.base)
           _ <- ioLegacy.updateDir(dir, localUpdate.update)
-          _ <- ifTrue(gitLegacy.containsChanges(dir))(
+          _ <- ifTrue(ctx.gitAlg.containsChanges(repo))(
             commitPushAndCreatePullRequest(localUpdate, ctx)
           )
         } yield ()
@@ -138,10 +139,10 @@ object steward extends IOApp {
   }
 
   def commitPushAndCreatePullRequest(localUpdate: LocalUpdate, ctx: Context[IO]): IO[Unit] = {
-    val dir = localUpdate.localRepo.dir
+    val repo = localUpdate.localRepo.upstream
     for {
-      _ <- gitLegacy.commitAll(localUpdate.commitMsg, dir)
-      _ <- ctx.gitAlg.push(localUpdate.localRepo.upstream, localUpdate.updateBranch)
+      _ <- ctx.gitAlg.commitAll(repo, localUpdate.commitMsg)
+      _ <- ctx.gitAlg.push(repo, localUpdate.updateBranch)
       _ <- githubLegacy.createPullRequestIfNotExists(localUpdate, ctx.gitHubApiAlg, ctx.config)
     } yield ()
   }

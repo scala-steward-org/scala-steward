@@ -16,16 +16,16 @@
 
 package eu.timepit.scalasteward.model
 
+import eu.timepit.scalasteward.git
 import eu.timepit.scalasteward.git.Branch
-import eu.timepit.scalasteward.{git, gitLegacy}
 
 final case class LocalUpdate(
     localRepo: LocalRepo,
     update: Update
 ) {
   def commitMsg: String =
-    gitLegacy.commitMsg(update)
+    git.commitMsgFor(update)
 
   def updateBranch: Branch =
-    git.branchOf(update)
+    git.branchFor(update)
 }
