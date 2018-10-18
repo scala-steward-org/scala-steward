@@ -64,7 +64,7 @@ object SbtAlg {
         for {
           repoDir <- workspaceAlg.repoDir(repo)
           cmd = sbtCmd(libraryDependenciesAsJson, reloadPlugins, libraryDependenciesAsJson)
-          lines <- ignoreJvmOpts(repoDir)(processAlg.execSandboxed(cmd, repoDir))
+          lines <- ignoreOptsFiles(repoDir)(processAlg.execSandboxed(cmd, repoDir))
         } yield lines.flatMap(parseDependencies)
 
       override def getUpdates(project: ArtificialProject): F[List[Update]] =
@@ -83,7 +83,7 @@ object SbtAlg {
         for {
           repoDir <- workspaceAlg.repoDir(repo)
           cmd = sbtCmd(setCredentialsToNil, dependencyUpdates, reloadPlugins, dependencyUpdates)
-          lines <- ignoreJvmOpts(repoDir)(processAlg.execSandboxed(cmd, repoDir))
+          lines <- ignoreOptsFiles(repoDir)(processAlg.execSandboxed(cmd, repoDir))
         } yield sbtLegacy.sanitizeUpdates(sbtLegacy.toUpdates(lines))
 
       val sbtDir: F[File] =
@@ -92,7 +92,11 @@ object SbtAlg {
       def sbtCmd(command: String*): List[String] =
         List("sbt", "-batch", "-no-colors", command.mkString(";", ";", ""))
 
-      def ignoreJvmOpts[A](dir: File)(fa: F[A]): F[A] =
-        fileAlg.removeTemporarily(dir / ".jvmopts")(fa)
+      def ignoreOptsFiles[A](dir: File)(fa: F[A]): F[A] =
+        fileAlg.removeTemporarily(dir / ".jvmopts") {
+          fileAlg.removeTemporarily(dir / ".sbtopts") {
+            fa
+          }
+        }
     }
 }
