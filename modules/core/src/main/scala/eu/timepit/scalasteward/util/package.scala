@@ -17,13 +17,16 @@
 package eu.timepit.scalasteward
 
 import cats.data.NonEmptyList
+import cats.effect.Bracket
 import cats.implicits._
-import cats.{ApplicativeError, Foldable, Monad, MonadError, Semigroup}
+import cats.{ApplicativeError, Foldable, MonadError, Semigroup}
 
 package object util {
   type ApplicativeThrowable[F[_]] = ApplicativeError[F, Throwable]
 
   type MonadThrowable[F[_]] = MonadError[F, Throwable]
+
+  type BracketThrowable[F[_]] = Bracket[F, Throwable]
 
   def divideOnError[F[_], G[_], A, B, E](divide: A => G[A])(f: A => F[B])(a: A)(
       implicit
@@ -37,7 +40,4 @@ package object util {
         case Some(nel) => nel.traverse(divideOnError(divide)(f)(_)).map(_.reduce)
       }
     }
-
-  def ifTrue[F[_]](fb: F[Boolean])(f: F[Unit])(implicit F: Monad[F]): F[Unit] =
-    fb.ifM(f, F.unit)
 }

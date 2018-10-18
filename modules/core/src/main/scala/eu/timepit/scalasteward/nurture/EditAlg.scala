@@ -14,14 +14,26 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.model
+package eu.timepit.scalasteward.nurture
 
-import better.files.File
-import eu.timepit.scalasteward.git.Branch
+import cats.effect.Sync
+import cats.implicits._
 import eu.timepit.scalasteward.github.data.Repo
+import eu.timepit.scalasteward.io.WorkspaceAlg
+import eu.timepit.scalasteward.ioLegacy
+import eu.timepit.scalasteward.model.Update
 
-final case class LocalRepo(
-    upstream: Repo,
-    dir: File,
-    base: Branch
-)
+trait EditAlg[F[_]] {
+  def applyUpdate(repo: Repo, update: Update): F[Unit]
+}
+
+object EditAlg {
+  def create[F[_]](workspaceAlg: WorkspaceAlg[F])(implicit F: Sync[F]): EditAlg[F] =
+    new EditAlg[F] {
+      override def applyUpdate(repo: Repo, update: Update): F[Unit] =
+        workspaceAlg.repoDir(repo).flatMap { repoDir =>
+          // FIXME
+          F.delay(ioLegacy.updateDir(repoDir, update).unsafeRunSync())
+        }
+    }
+}

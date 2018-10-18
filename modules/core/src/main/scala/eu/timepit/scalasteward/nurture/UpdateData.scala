@@ -14,18 +14,15 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.model
+package eu.timepit.scalasteward.nurture
 
-import eu.timepit.scalasteward.git
 import eu.timepit.scalasteward.git.Branch
+import eu.timepit.scalasteward.github.data.Repo
+import eu.timepit.scalasteward.model.Update
 
-final case class LocalUpdate(
-    localRepo: LocalRepo,
-    update: Update
-) {
-  def commitMsg: String =
-    git.commitMsgFor(update)
-
-  def updateBranch: Branch =
-    git.branchFor(update)
-}
+final case class UpdateData(
+    repo: Repo,
+    update: Update,
+    baseBranch: Branch,
+    updateBranch: Branch
+)

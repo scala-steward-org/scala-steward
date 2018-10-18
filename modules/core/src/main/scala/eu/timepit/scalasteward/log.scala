@@ -29,9 +29,6 @@ object log {
   def printInfo(msg: String): IO[Unit] =
     printImpl("I", msg)
 
-  def printWarning(msg: String): IO[Unit] =
-    printImpl("W", msg)
-
   def printTimed[A](msg: FiniteDuration => String)(fa: IO[A]): IO[A] =
     util.dateTime.timed(fa).flatMap {
       case (a, duration) => printInfo(msg(duration)) >> IO.pure(a)

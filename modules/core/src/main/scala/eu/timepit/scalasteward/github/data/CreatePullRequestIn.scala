@@ -33,7 +33,7 @@ object CreatePullRequestIn {
   implicit val createPullRequestInEncoder: Encoder[CreatePullRequestIn] =
     deriveEncoder
 
-  def bodyOf(update: Update, user: String): String = {
+  def bodyFor(update: Update, login: String): String = {
     val artifacts = update match {
       case s: Update.Single =>
         s" ${s.groupId}:${s.artifactId} "
@@ -46,7 +46,7 @@ object CreatePullRequestIn {
         |
         |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
         |
-        |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention @$user in the comments below.
+        |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention @$login in the comments below.
         |
         |Have a nice day!
         |""".stripMargin.trim

@@ -22,22 +22,33 @@ import cats.{FlatMap, Monad}
 import eu.timepit.scalasteward.application.Config
 import eu.timepit.scalasteward.git.{Branch, GitAlg}
 import eu.timepit.scalasteward.github.GitHubApiAlg
-import eu.timepit.scalasteward.github.data.{PullRequestOut, Repo}
-import eu.timepit.scalasteward.model.Update
+import eu.timepit.scalasteward.github.data.{CreatePullRequestIn, Repo}
 import eu.timepit.scalasteward.sbt.SbtAlg
 import eu.timepit.scalasteward.update.FilterAlg
-import eu.timepit.scalasteward.{github, util}
+import eu.timepit.scalasteward.util.BracketThrowable
+import eu.timepit.scalasteward.util.logger.LoggerOps
+import eu.timepit.scalasteward.{git, github, util}
 import io.chrisdavenport.log4cats.Logger
 
 class NurtureAlg[F[_]](
     config: Config,
+    editAlg: EditAlg[F],
     filterAlg: FilterAlg[F],
     gitAlg: GitAlg[F],
     gitHubApiAlg: GitHubApiAlg[F],
     logger: Logger[F],
     sbtAlg: SbtAlg[F]
 ) {
-  def cloneAndSync(repo: Repo)(implicit F: Sync[F]): F[Unit] =
+  def nurture(repo: Repo)(implicit F: Sync[F]): F[Unit] =
+    logger.attemptLog_(s"Nurture ${repo.show}") {
+      for {
+        baseBranch <- cloneAndSync(repo)
+        _ <- updateDependencies(repo, baseBranch)
+        _ <- gitAlg.removeClone(repo)
+      } yield ()
+    }
+
+  def cloneAndSync(repo: Repo)(implicit F: Sync[F]): F[Branch] =
     for {
       _ <- logger.info(s"Clone and synchronize ${repo.show}")
       user <- config.gitHubUser
@@ -47,45 +58,79 @@ class NurtureAlg[F[_]](
       _ <- gitAlg.clone(repo, cloneUrl)
       _ <- gitAlg.setAuthor(repo, config.gitAuthor)
       _ <- gitAlg.syncFork(repo, parent.clone_url, parent.default_branch)
-    } yield ()
+    } yield parent.default_branch
 
-  def updateDependencies(repo: Repo)(implicit F: Monad[F]): F[Unit] =
+  def updateDependencies(repo: Repo, baseBranch: Branch)(implicit F: BracketThrowable[F]): F[Unit] =
     for {
       _ <- logger.info(s"Check updates for ${repo.show}")
       updates <- sbtAlg.getUpdatesForRepo(repo)
       _ <- logger.info(util.logger.showUpdates(updates))
       filtered <- filterAlg.filterMany(repo, updates)
-      _ <- filtered.traverse_(processUpdate(repo, _))
-    } yield ()
-
-  def processUpdate(repo: Repo, update: Update)(implicit F: FlatMap[F]): F[Unit] =
-    for {
-      _ <- logger.info(s"Process update ${update.show}")
-      head = github.headOf(config.gitHubLogin, update)
-      pullRequests <- gitHubApiAlg.listPullRequests(repo, head)
-      maybePullRequest = pullRequests.headOption
-      _ <- maybePullRequest match {
-        case Some(pullRequest) if pullRequest.state === "closed" =>
-          logger.info("PR has been closed")
-        case Some(pullRequest) =>
-          updatePullRequest(repo, update, pullRequest)
-        case None =>
-          applyUpdate(repo, update)
+      _ <- filtered.traverse_ { update =>
+        val data = UpdateData(repo, update, baseBranch, git.branchFor(update))
+        processUpdate(data)
       }
     } yield ()
 
-  def applyUpdate(repo: Repo, update: Update): F[Unit] = ???
-
-  def updatePullRequest(repo: Repo, update: Update, pullRequest: PullRequestOut): F[Unit] = ???
-
-  def shouldBeReset(repo: Repo, updateBranch: Branch, baseBranch: Branch)(
-      implicit F: FlatMap[F]
-  ): F[Boolean] =
+  def processUpdate(data: UpdateData)(implicit F: BracketThrowable[F]): F[Unit] =
     for {
-      authors <- gitAlg.branchAuthors(repo, updateBranch, baseBranch)
+      _ <- logger.info(s"Process update ${data.update.show}")
+      head = github.headFor(config.gitHubLogin, data.update)
+      pullRequests <- gitHubApiAlg.listPullRequests(data.repo, head)
+      maybePullRequest = pullRequests.headOption
+      _ <- maybePullRequest match {
+        case Some(pr) if pr.isClosed => logger.info("PR has been closed")
+        case Some(_)                 => updatePullRequest(data)
+        case None                    => applyNewUpdate(data)
+      }
+    } yield ()
+
+  def applyNewUpdate(data: UpdateData)(implicit F: BracketThrowable[F]): F[Unit] =
+    (editAlg.applyUpdate(data.repo, data.update) >> gitAlg.containsChanges(data.repo)).ifM(
+      gitAlg.returnToCurrentBranch(data.repo) {
+        for {
+          _ <- logger.info(s"Create branch ${data.updateBranch.name}")
+          _ <- gitAlg.createBranch(data.repo, data.updateBranch)
+          _ <- commitAndPush(data)
+          _ <- createPullRequest(data)
+        } yield ()
+      },
+      logger.warn("No files were changed")
+    )
+
+  def commitAndPush(data: UpdateData)(implicit F: FlatMap[F]): F[Unit] =
+    for {
+      _ <- gitAlg.commitAll(data.repo, git.commitMsgFor(data.update))
+      _ <- gitAlg.push(data.repo, data.updateBranch)
+    } yield ()
+
+  def createPullRequest(data: UpdateData)(implicit F: FlatMap[F]): F[Unit] =
+    for {
+      _ <- logger.info("Create PR")
+      requestData = CreatePullRequestIn(
+        git.commitMsgFor(data.update),
+        CreatePullRequestIn.bodyFor(data.update, config.gitHubLogin),
+        github.headFor(config.gitHubLogin, data.update),
+        data.baseBranch
+      )
+      _ <- gitHubApiAlg.createPullRequest(data.repo, requestData)
+    } yield ()
+
+  def updatePullRequest(data: UpdateData)(implicit F: BracketThrowable[F]): F[Unit] =
+    gitAlg.returnToCurrentBranch(data.repo) {
+      for {
+        _ <- gitAlg.checkoutBranch(data.repo, data.updateBranch)
+        reset <- shouldBeReset(data)
+        _ <- if (reset) resetAndUpdate(data) else F.unit
+      } yield ()
+    }
+
+  def shouldBeReset(data: UpdateData)(implicit F: FlatMap[F]): F[Boolean] =
+    for {
+      authors <- gitAlg.branchAuthors(data.repo, data.updateBranch, data.baseBranch)
       distinctAuthors = authors.distinct
-      isBehind <- gitAlg.isBehind(repo, updateBranch, baseBranch)
-      isMerged <- gitAlg.isMerged(repo, updateBranch, baseBranch)
+      isBehind <- gitAlg.isBehind(data.repo, data.updateBranch, data.baseBranch)
+      isMerged <- gitAlg.isMerged(data.repo, data.updateBranch, data.baseBranch)
       (result, msg) = {
         if (isMerged)
           (false, "PR has been merged")
@@ -94,10 +139,19 @@ class NurtureAlg[F[_]](
         else if (authors.length >= 2)
           (true, "PR has multiple commits")
         else if (isBehind)
-          (true, s"PR is behind ${baseBranch.name}")
+          (true, s"PR is behind ${data.baseBranch.name}")
         else
-          (false, s"PR is up-to-date with ${baseBranch.name}")
+          (false, s"PR is up-to-date with ${data.baseBranch.name}")
       }
       _ <- logger.info(msg)
     } yield result
+
+  def resetAndUpdate(data: UpdateData)(implicit F: Monad[F]): F[Unit] =
+    for {
+      _ <- logger.info(s"Reset and update ${data.updateBranch.name}")
+      _ <- gitAlg.resetHard(data.repo, data.baseBranch)
+      _ <- editAlg.applyUpdate(data.repo, data.update)
+      containsChanges <- gitAlg.containsChanges(data.repo)
+      _ <- if (containsChanges) commitAndPush(data) else F.unit
+    } yield ()
 }

@@ -19,6 +19,6 @@ package eu.timepit.scalasteward
 import eu.timepit.scalasteward.model.Update
 
 package object github {
-  def headOf(login: String, update: Update): String =
-    s"$login:${git.branchFor(update)}"
+  def headFor(login: String, update: Update): String =
+    s"$login:${git.branchFor(update).name}"
 }

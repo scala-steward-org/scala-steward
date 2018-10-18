@@ -2,7 +2,7 @@ package eu.timepit.scalasteward.github.data
 
 import cats.data.NonEmptyList
 import eu.timepit.scalasteward.git.Branch
-import eu.timepit.scalasteward.github.data.CreatePullRequestIn.bodyOf
+import eu.timepit.scalasteward.github.data.CreatePullRequestIn.bodyFor
 import eu.timepit.scalasteward.model.Update
 import io.circe.syntax._
 import org.scalatest.{FunSuite, Matchers}
@@ -13,7 +13,7 @@ class CreatePullRequestInTest extends FunSuite with Matchers {
       Update.Single("ch.qos.logback", "logback-classic", "1.2.0", NonEmptyList.of("1.2.3"))
     CreatePullRequestIn(
       "Update logback-classic to 1.2.3",
-      bodyOf(update, "scala-steward"),
+      bodyFor(update, "scala-steward"),
       "scala-steward:update/logback-classic-1.2.3",
       Branch("master")
     ).asJson.spaces2 shouldBe

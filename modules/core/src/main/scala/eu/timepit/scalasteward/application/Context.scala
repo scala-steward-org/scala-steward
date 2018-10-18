@@ -24,7 +24,7 @@ import eu.timepit.scalasteward.git.GitAlg
 import eu.timepit.scalasteward.github.GitHubApiAlg
 import eu.timepit.scalasteward.github.http4s.Http4sGitHubApiAlg
 import eu.timepit.scalasteward.io.{FileAlg, ProcessAlg, WorkspaceAlg}
-import eu.timepit.scalasteward.nurture.NurtureAlg
+import eu.timepit.scalasteward.nurture.{EditAlg, NurtureAlg}
 import eu.timepit.scalasteward.sbt.SbtAlg
 import eu.timepit.scalasteward.update.json.JsonUpdateRepository
 import eu.timepit.scalasteward.update.{FilterAlg, UpdateService}
@@ -70,7 +70,16 @@ object Context {
           logger,
           sbtAlg
         )
-        nurtureAlg = new NurtureAlg(config, filterAlg, gitAlg, gitHubApiAlg, logger, sbtAlg)
+        editAlg = EditAlg.create(workspaceAlg)
+        nurtureAlg = new NurtureAlg(
+          config,
+          editAlg,
+          filterAlg,
+          gitAlg,
+          gitHubApiAlg,
+          logger,
+          sbtAlg
+        )
         updateRepository = new JsonUpdateRepository(fileAlg, workspaceAlg)
         updateService = new UpdateService(dependencyRepository, logger, sbtAlg, updateRepository)
       } yield

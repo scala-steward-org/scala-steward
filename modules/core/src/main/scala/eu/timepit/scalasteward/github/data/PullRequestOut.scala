@@ -16,13 +16,17 @@
 
 package eu.timepit.scalasteward.github.data
 
+import cats.implicits._
 import io.circe.Decoder
 import io.circe.generic.semiauto._
 
 final case class PullRequestOut(
     state: String,
     title: String
-)
+) {
+  def isClosed: Boolean =
+    state === "closed"
+}
 
 object PullRequestOut {
   implicit val pullRequestOutDecoder: Decoder[PullRequestOut] =
