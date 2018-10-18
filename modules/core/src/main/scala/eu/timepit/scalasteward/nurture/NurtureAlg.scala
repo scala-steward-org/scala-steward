@@ -40,12 +40,14 @@ class NurtureAlg[F[_]](
     sbtAlg: SbtAlg[F]
 ) {
   def nurture(repo: Repo)(implicit F: Sync[F]): F[Unit] =
-    logger.attemptLog_(s"Nurture ${repo.show}") {
-      for {
-        baseBranch <- cloneAndSync(repo)
-        _ <- updateDependencies(repo, baseBranch)
-        _ <- gitAlg.removeClone(repo)
-      } yield ()
+    logger.infoTotalTime {
+      logger.attemptLog_(s"Nurture ${repo.show}") {
+        for {
+          baseBranch <- cloneAndSync(repo)
+          _ <- updateDependencies(repo, baseBranch)
+          _ <- gitAlg.removeClone(repo)
+        } yield ()
+      }
     }
 
   def cloneAndSync(repo: Repo)(implicit F: Sync[F]): F[Branch] =
@@ -109,14 +111,15 @@ class NurtureAlg[F[_]](
 
   def createPullRequest(data: UpdateData)(implicit F: FlatMap[F]): F[Unit] =
     for {
-      _ <- logger.info("Create PR")
+      _ <- logger.info(s"Create PR ${data.updateBranch.name}")
       requestData = CreatePullRequestIn(
         git.commitMsgFor(data.update),
         CreatePullRequestIn.bodyFor(data.update, config.gitHubLogin),
         github.headFor(config.gitHubLogin, data.update),
         data.baseBranch
       )
-      _ <- gitHubApiAlg.createPullRequest(data.repo, requestData)
+      pullRequest <- gitHubApiAlg.createPullRequest(data.repo, requestData)
+      _ <- logger.info(s"Created PR ${pullRequest.html_url}")
     } yield ()
 
   def updatePullRequest(data: UpdateData)(implicit F: BracketThrowable[F]): F[Unit] =

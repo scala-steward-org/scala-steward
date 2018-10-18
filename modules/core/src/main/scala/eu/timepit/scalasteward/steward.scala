@@ -21,11 +21,12 @@ import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
 import eu.timepit.scalasteward.application.Context
 import eu.timepit.scalasteward.github.data.Repo
+import eu.timepit.scalasteward.util.logger.LoggerOps
 
 object steward extends IOApp {
   override def run(args: List[String]): IO[ExitCode] =
-    log.printTotalTime {
-      Context.create[IO].use { ctx =>
+    Context.create[IO].use { ctx =>
+      ctx.logger.infoTotalTime {
         for {
           repos <- getRepos(ctx.config.workspace)
           _ <- prepareEnv(ctx)

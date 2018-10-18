@@ -16,10 +16,12 @@
 
 package eu.timepit.scalasteward.util
 
+import cats.effect.Sync
 import cats.implicits._
 import cats.{Foldable, Functor}
 import eu.timepit.scalasteward.model.Update
 import io.chrisdavenport.log4cats.Logger
+import scala.concurrent.duration.FiniteDuration
 
 object logger {
   implicit final class LoggerOps[F[_]](val self: Logger[F]) {
@@ -33,6 +35,14 @@ object logger {
 
     def attemptLog_[A](message: String)(fa: F[A])(implicit F: MonadThrowable[F]): F[Unit] =
       attemptLog(message)(fa).void
+
+    def infoTimed[A](msg: FiniteDuration => String)(fa: F[A])(implicit F: Sync[F]): F[A] =
+      dateTime.timed(fa).flatMap {
+        case (a, duration) => self.info(msg(duration)) >> F.pure(a)
+      }
+
+    def infoTotalTime[A](fa: F[A])(implicit F: Sync[F]): F[A] =
+      infoTimed(duration => s" --- Total time: ${dateTime.showDuration(duration)} ---")(fa)
   }
 
   def showUpdates[F[_]: Foldable: Functor](updates: F[Update]): String = {
