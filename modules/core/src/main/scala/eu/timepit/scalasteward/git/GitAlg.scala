@@ -36,6 +36,8 @@ trait GitAlg[F[_]] {
 
   def removeClone(repo: Repo): F[Unit]
 
+  def resetHard(repo: Repo, base: Branch): F[Unit]
+
   def setAuthor(repo: Repo, author: Author): F[Unit]
 
   def syncFork(repo: Repo, upstreamUrl: Uri, defaultBranch: Branch): F[Unit]
@@ -80,6 +82,12 @@ object GitAlg {
 
       override def removeClone(repo: Repo): F[Unit] =
         workspaceAlg.repoDir(repo).flatMap(fileAlg.deleteForce)
+
+      override def resetHard(repo: Repo, base: Branch): F[Unit] =
+        for {
+          repoDir <- workspaceAlg.repoDir(repo)
+          _ <- exec(List("reset", "--hard", base.name), repoDir)
+        } yield ()
 
       override def setAuthor(repo: Repo, author: Author): F[Unit] =
         for {

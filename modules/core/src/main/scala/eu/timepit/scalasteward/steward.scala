@@ -127,7 +127,7 @@ object steward extends IOApp {
       ) {
         for {
           _ <- log.printInfo(s"Reset and update branch ${updateBranch.name}")
-          _ <- gitLegacy.exec(List("reset", "--hard", localUpdate.localRepo.base.name), dir)
+          _ <- ctx.gitAlg.resetHard(localUpdate.localRepo.upstream, localUpdate.localRepo.base)
           _ <- ioLegacy.updateDir(dir, localUpdate.update)
           _ <- ifTrue(gitLegacy.containsChanges(dir))(
             commitPushAndCreatePullRequest(localUpdate, ctx)
