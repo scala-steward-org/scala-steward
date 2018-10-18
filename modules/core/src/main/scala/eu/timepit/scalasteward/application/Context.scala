@@ -24,9 +24,10 @@ import eu.timepit.scalasteward.git.GitAlg
 import eu.timepit.scalasteward.github.GitHubApiAlg
 import eu.timepit.scalasteward.github.http4s.Http4sGitHubApiAlg
 import eu.timepit.scalasteward.io.{FileAlg, ProcessAlg, WorkspaceAlg}
+import eu.timepit.scalasteward.nurture.NurtureAlg
 import eu.timepit.scalasteward.sbt.SbtAlg
-import eu.timepit.scalasteward.update.UpdateService
 import eu.timepit.scalasteward.update.json.JsonUpdateRepository
+import eu.timepit.scalasteward.update.{FilterAlg, UpdateService}
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.client.blaze.BlazeClientBuilder
@@ -36,9 +37,11 @@ final case class Context[F[_]](
     config: Config,
     dependencyService: DependencyService[F],
     fileAlg: FileAlg[F],
+    filterAlg: FilterAlg[F],
     gitAlg: GitAlg[F],
     gitHubApiAlg: GitHubApiAlg[F],
     logger: Logger[F],
+    nurtureAlg: NurtureAlg[F],
     processAlg: ProcessAlg[F],
     sbtAlg: SbtAlg[F],
     updateService: UpdateService[F],
@@ -55,6 +58,7 @@ object Context {
         processAlg = ProcessAlg.create[F]
         user <- config.gitHubUser[F]
         workspaceAlg = WorkspaceAlg.create(fileAlg, logger, config.workspace)
+        filterAlg = FilterAlg.create(logger)
         gitAlg = GitAlg.create(fileAlg, processAlg, workspaceAlg)
         gitHubApiAlg = new Http4sGitHubApiAlg(client, user)
         sbtAlg = SbtAlg.create(fileAlg, logger, processAlg, workspaceAlg)
@@ -66,6 +70,7 @@ object Context {
           logger,
           sbtAlg
         )
+        nurtureAlg = new NurtureAlg(config, filterAlg, gitAlg, gitHubApiAlg, logger, sbtAlg)
         updateRepository = new JsonUpdateRepository(fileAlg, workspaceAlg)
         updateService = new UpdateService(dependencyRepository, logger, sbtAlg, updateRepository)
       } yield
@@ -73,9 +78,11 @@ object Context {
           config,
           dependencyService,
           fileAlg,
+          filterAlg,
           gitAlg,
           gitHubApiAlg,
           logger,
+          nurtureAlg,
           processAlg,
           sbtAlg,
           updateService,

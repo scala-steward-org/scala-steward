@@ -45,9 +45,6 @@ object gitLegacy {
   def exec(cmd: List[String], dir: File): IO[List[String]] =
     ProcessAlg.create[IO].exec("git" :: cmd, dir)
 
-  def isMerged(branch: Branch, base: Branch, dir: File): IO[Boolean] =
-    exec(List("log", "--pretty=format:'%h'", git.dotdot(base, branch)), dir).map(_.isEmpty)
-
   def remoteBranchExists(branch: Branch, dir: File): IO[Boolean] =
     gitLegacy.exec(List("branch", "-r"), dir).map(_.exists(_.endsWith(branch.name)))
 

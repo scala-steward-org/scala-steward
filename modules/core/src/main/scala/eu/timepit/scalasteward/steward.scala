@@ -22,7 +22,6 @@ import cats.implicits._
 import eu.timepit.scalasteward.application.Context
 import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.model._
-import eu.timepit.scalasteward.update.FilterAlg
 import eu.timepit.scalasteward.util._
 
 object steward extends IOApp {
@@ -86,8 +85,7 @@ object steward extends IOApp {
       _ <- log.printInfo(s"Check updates for ${localRepo.upstream.show}")
       updates <- ctx.sbtAlg.getUpdatesForRepo(localRepo.upstream)
       _ <- ctx.logger.info(util.logger.showUpdates(updates))
-      filterAlg = FilterAlg.create(ctx.logger)
-      filteredUpdates <- filterAlg.filterMany(localRepo.upstream, updates)
+      filteredUpdates <- ctx.filterAlg.filterMany(localRepo.upstream, updates)
       _ <- filteredUpdates.traverse_(
         update => applyUpdate(LocalUpdate(localRepo, update), ctx)
       )
@@ -123,7 +121,10 @@ object steward extends IOApp {
     val updateBranch = localUpdate.updateBranch
 
     gitLegacy.returnToCurrentBranch(dir) {
-      gitLegacy.checkoutBranch(updateBranch, dir) >> ifTrue(shouldBeReset(localUpdate, ctx)) {
+      gitLegacy.checkoutBranch(updateBranch, dir) >> ifTrue(
+        ctx.nurtureAlg
+          .shouldBeReset(localUpdate.localRepo.upstream, updateBranch, localUpdate.localRepo.base)
+      ) {
         for {
           _ <- log.printInfo(s"Reset and update branch ${updateBranch.name}")
           _ <- gitLegacy.exec(List("reset", "--hard", localUpdate.localRepo.base.name), dir)
@@ -143,31 +144,5 @@ object steward extends IOApp {
       _ <- ctx.gitAlg.push(localUpdate.localRepo.upstream, localUpdate.updateBranch)
       _ <- githubLegacy.createPullRequestIfNotExists(localUpdate, ctx.gitHubApiAlg, ctx.config)
     } yield ()
-  }
-
-  def shouldBeReset(localUpdate: LocalUpdate, ctx: Context[IO]): IO[Boolean] = {
-    val dir = localUpdate.localRepo.dir
-    val baseBranch = localUpdate.localRepo.base
-    val updateBranch = localUpdate.updateBranch
-    for {
-      isMerged <- gitLegacy.isMerged(updateBranch, baseBranch, dir)
-      isBehind <- ctx.gitAlg.isBehind(localUpdate.localRepo.upstream, updateBranch, baseBranch)
-      authors <- ctx.gitAlg.branchAuthors(localUpdate.localRepo.upstream, updateBranch, baseBranch)
-      (result, msg) = {
-        val pr = s"PR ${updateBranch.name}"
-        if (isMerged)
-          (false, s"$pr is already merged")
-        else if (authors.distinct.length >= 2)
-          (false, s"$pr has commits by ${authors.mkString(", ")}")
-        else if (authors.length >= 2)
-          (true, s"$pr has multiple commits")
-        else if (isBehind)
-          (true, s"$pr is behind ${baseBranch.name}")
-        else
-          (false, s"$pr is up-to-date with ${baseBranch.name}")
-        // TODO: Only reset PRs that are still open.
-      }
-      _ <- log.printInfo(msg)
-    } yield result
   }
 }

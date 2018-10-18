@@ -30,6 +30,8 @@ trait GitAlg[F[_]] {
 
   def isBehind(repo: Repo, branch: Branch, base: Branch): F[Boolean]
 
+  def isMerged(repo: Repo, branch: Branch, base: Branch): F[Boolean]
+
   def push(repo: Repo, branch: Branch): F[Unit]
 
   def removeClone(repo: Repo): F[Unit]
@@ -63,6 +65,11 @@ object GitAlg {
       override def isBehind(repo: Repo, branch: Branch, base: Branch): F[Boolean] =
         workspaceAlg.repoDir(repo).flatMap { repoDir =>
           exec(List("log", "--pretty=format:'%h'", dotdot(branch, base)), repoDir).map(_.nonEmpty)
+        }
+
+      override def isMerged(repo: Repo, branch: Branch, base: Branch): F[Boolean] =
+        workspaceAlg.repoDir(repo).flatMap { repoDir =>
+          exec(List("log", "--pretty=format:'%h'", dotdot(base, branch)), repoDir).map(_.isEmpty)
         }
 
       override def push(repo: Repo, branch: Branch): F[Unit] =

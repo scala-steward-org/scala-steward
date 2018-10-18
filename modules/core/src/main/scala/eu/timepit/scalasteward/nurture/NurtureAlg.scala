@@ -20,7 +20,7 @@ import cats.effect.Sync
 import cats.implicits._
 import cats.{FlatMap, Monad}
 import eu.timepit.scalasteward.application.Config
-import eu.timepit.scalasteward.git.GitAlg
+import eu.timepit.scalasteward.git.{Branch, GitAlg}
 import eu.timepit.scalasteward.github.GitHubApiAlg
 import eu.timepit.scalasteward.github.data.{PullRequestOut, Repo}
 import eu.timepit.scalasteward.model.Update
@@ -53,8 +53,8 @@ class NurtureAlg[F[_]](
     for {
       _ <- logger.info(s"Check updates for ${repo.show}")
       updates <- sbtAlg.getUpdatesForRepo(repo)
+      _ <- logger.info(util.logger.showUpdates(updates))
       filtered <- filterAlg.filterMany(repo, updates)
-      _ <- logger.info(util.logger.showUpdates(filtered))
       _ <- filtered.traverse_(processUpdate(repo, _))
     } yield ()
 
@@ -77,4 +77,27 @@ class NurtureAlg[F[_]](
   def applyUpdate(repo: Repo, update: Update): F[Unit] = ???
 
   def updatePullRequest(repo: Repo, update: Update, pullRequest: PullRequestOut): F[Unit] = ???
+
+  def shouldBeReset(repo: Repo, updateBranch: Branch, baseBranch: Branch)(
+      implicit F: FlatMap[F]
+  ): F[Boolean] =
+    for {
+      authors <- gitAlg.branchAuthors(repo, updateBranch, baseBranch)
+      distinctAuthors = authors.distinct
+      isBehind <- gitAlg.isBehind(repo, updateBranch, baseBranch)
+      isMerged <- gitAlg.isMerged(repo, updateBranch, baseBranch)
+      (result, msg) = {
+        if (isMerged)
+          (false, "PR has been merged")
+        else if (distinctAuthors.length >= 2)
+          (false, s"PR has commits by ${distinctAuthors.mkString(", ")}")
+        else if (authors.length >= 2)
+          (true, "PR has multiple commits")
+        else if (isBehind)
+          (true, s"PR is behind ${baseBranch.name}")
+        else
+          (false, s"PR is up-to-date with ${baseBranch.name}")
+      }
+      _ <- logger.info(msg)
+    } yield result
 }
