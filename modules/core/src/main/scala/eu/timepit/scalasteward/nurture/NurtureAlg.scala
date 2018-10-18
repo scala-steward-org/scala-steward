@@ -79,9 +79,12 @@ class NurtureAlg[F[_]](
       pullRequests <- gitHubApiAlg.listPullRequests(data.repo, head)
       maybePullRequest = pullRequests.headOption
       _ <- maybePullRequest match {
-        case Some(pr) if pr.isClosed => logger.info("PR has been closed")
-        case Some(_)                 => updatePullRequest(data)
-        case None                    => applyNewUpdate(data)
+        case Some(pr) if pr.isClosed =>
+          logger.info(s"PR ${pr.html_url} is closed")
+        case Some(pr) =>
+          logger.info(s"Found PR ${pr.html_url}") >> updatePullRequest(data)
+        case None =>
+          applyNewUpdate(data)
       }
     } yield ()
 

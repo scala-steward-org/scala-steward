@@ -17,10 +17,13 @@
 package eu.timepit.scalasteward.github.data
 
 import cats.implicits._
+import eu.timepit.scalasteward.util.uri.uriDecoder
 import io.circe.Decoder
 import io.circe.generic.semiauto._
+import org.http4s.Uri
 
 final case class PullRequestOut(
+    html_url: Uri,
     state: String,
     title: String
 ) {
@@ -31,4 +34,7 @@ final case class PullRequestOut(
 object PullRequestOut {
   implicit val pullRequestOutDecoder: Decoder[PullRequestOut] =
     deriveDecoder
+
+  // prevent IntelliJ from removing the import of uriDecoder
+  locally(uriDecoder)
 }
