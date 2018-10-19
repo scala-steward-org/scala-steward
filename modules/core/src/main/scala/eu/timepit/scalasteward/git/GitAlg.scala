@@ -64,10 +64,12 @@ object GitAlg {
   val gitCmd: String = "git"
 
   def create[F[_]](
+      implicit
       fileAlg: FileAlg[F],
       processAlg: ProcessAlg[F],
-      workspaceAlg: WorkspaceAlg[F]
-  )(implicit F: Sync[F]): GitAlg[F] =
+      workspaceAlg: WorkspaceAlg[F],
+      F: Sync[F]
+  ): GitAlg[F] =
     new GitAlg[F] {
       override def branchAuthors(repo: Repo, branch: Branch, base: Branch): F[List[String]] =
         workspaceAlg.repoDir(repo).flatMap { repoDir =>

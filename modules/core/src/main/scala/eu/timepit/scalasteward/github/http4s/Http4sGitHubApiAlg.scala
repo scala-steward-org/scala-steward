@@ -30,9 +30,11 @@ import org.http4s.client.Client
 import org.http4s.headers.Authorization
 import org.http4s.{BasicCredentials, Headers, Request}
 
-class Http4sGitHubApiAlg[F[_]: Sync](
+class Http4sGitHubApiAlg[F[_]](
+    implicit
     client: Client[F],
-    user: AuthenticatedUser
+    user: AuthenticatedUser,
+    F: Sync[F]
 ) extends GitHubApiAlg[F] {
   override def createFork(
       repo: Repo

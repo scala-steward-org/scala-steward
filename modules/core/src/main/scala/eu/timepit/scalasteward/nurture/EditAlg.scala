@@ -28,7 +28,11 @@ trait EditAlg[F[_]] {
 }
 
 object EditAlg {
-  def create[F[_]](workspaceAlg: WorkspaceAlg[F])(implicit F: Sync[F]): EditAlg[F] =
+  def create[F[_]](
+      implicit
+      workspaceAlg: WorkspaceAlg[F],
+      F: Sync[F]
+  ): EditAlg[F] =
     new EditAlg[F] {
       override def applyUpdate(repo: Repo, update: Update): F[Unit] =
         workspaceAlg.repoDir(repo).flatMap { repoDir =>

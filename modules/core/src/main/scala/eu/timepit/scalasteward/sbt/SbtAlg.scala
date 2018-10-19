@@ -42,11 +42,13 @@ trait SbtAlg[F[_]] {
 
 object SbtAlg {
   def create[F[_]](
+      implicit
       fileAlg: FileAlg[F],
       logger: Logger[F],
       processAlg: ProcessAlg[F],
-      workspaceAlg: WorkspaceAlg[F]
-  )(implicit F: Sync[F]): SbtAlg[F] =
+      workspaceAlg: WorkspaceAlg[F],
+      F: Sync[F]
+  ): SbtAlg[F] =
     new SbtAlg[F] {
       override def addGlobalPlugin(plugin: FileData): F[Unit] =
         List("0.13", "1.0").traverse_ { series =>

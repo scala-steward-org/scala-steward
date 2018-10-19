@@ -27,6 +27,7 @@ import eu.timepit.scalasteward.util.logger.LoggerOps
 import io.chrisdavenport.log4cats.Logger
 
 class DependencyService[F[_]](
+    implicit
     dependencyRepository: DependencyRepository[F],
     gitHubApiAlg: GitHubApiAlg[F],
     gitAlg: GitAlg[F],

@@ -31,6 +31,7 @@ import eu.timepit.scalasteward.{git, github, util}
 import io.chrisdavenport.log4cats.Logger
 
 class NurtureAlg[F[_]](
+    implicit
     config: Config,
     editAlg: EditAlg[F],
     filterAlg: FilterAlg[F],

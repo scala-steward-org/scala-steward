@@ -31,10 +31,12 @@ trait WorkspaceAlg[F[_]] {
 }
 
 object WorkspaceAlg {
-  def create[F[_]: FlatMap](
+  def create[F[_]](
+      implicit
       fileAlg: FileAlg[F],
       logger: Logger[F],
-      workspace: File
+      workspace: File,
+      F: FlatMap[F]
   ): WorkspaceAlg[F] =
     new WorkspaceAlg[F] {
       val reposDir: File =

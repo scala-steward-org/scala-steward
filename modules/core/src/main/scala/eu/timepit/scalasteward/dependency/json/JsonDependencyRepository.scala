@@ -27,10 +27,11 @@ import io.circe.parser.decode
 import io.circe.syntax._
 
 class JsonDependencyRepository[F[_]](
+    implicit
     fileAlg: FileAlg[F],
-    workspaceAlg: WorkspaceAlg[F]
-)(implicit F: MonadThrowable[F])
-    extends DependencyRepository[F] {
+    workspaceAlg: WorkspaceAlg[F],
+    F: MonadThrowable[F]
+) extends DependencyRepository[F] {
 
   override def findSha1(repo: Repo): F[Option[Sha1]] =
     readJson.map(_.store.get(repo).map(_.sha1))

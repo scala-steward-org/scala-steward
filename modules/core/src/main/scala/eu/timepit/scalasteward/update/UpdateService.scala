@@ -27,11 +27,13 @@ import eu.timepit.scalasteward.util.MonadThrowable
 import io.chrisdavenport.log4cats.Logger
 
 class UpdateService[F[_]](
+    implicit
     dependencyRepository: DependencyRepository[F],
     logger: Logger[F],
     sbtAlg: SbtAlg[F],
-    updateRepository: UpdateRepository[F]
-)(implicit F: Monad[F]) {
+    updateRepository: UpdateRepository[F],
+    F: Monad[F]
+) {
 
   // Add configuration "phantom-js-jetty" to Update
 

@@ -28,10 +28,11 @@ import io.circe.syntax._
 
 // WIP
 class JsonUpdateRepository[F[_]](
+    implicit
     fileAlg: FileAlg[F],
-    workspaceAlg: WorkspaceAlg[F]
-)(implicit F: MonadThrowable[F])
-    extends UpdateRepository[F] {
+    workspaceAlg: WorkspaceAlg[F],
+    F: MonadThrowable[F]
+) extends UpdateRepository[F] {
 
   override def save(update: Update): F[Unit] =
     readJson.map(s => UpdateStore((update :: s.store).distinct)).flatMap(writeJson)

@@ -32,7 +32,7 @@ trait FilterAlg[F[_]] {
 }
 
 object FilterAlg {
-  def create[F[_]](logger: Logger[F])(implicit F: Applicative[F]): FilterAlg[F] =
+  def create[F[_]](implicit logger: Logger[F], F: Applicative[F]): FilterAlg[F] =
     new FilterAlg[F] {
       override def filter(repo: Repo, update: Update): F[Option[Update]] = {
         val globalKeep = (update.groupId, update.artifactId) match {
