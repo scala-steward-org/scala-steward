@@ -17,6 +17,7 @@
 - BenFradet/gsheets4s
 - BenFradet/spark-kafka-writer
 - BenFradet/struct-type-encoder
+- cb372/scalacache
 - ChristopherDavenport/base.g8
 - ChristopherDavenport/cats-par
 - ChristopherDavenport/cats-scalacheck
