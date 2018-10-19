@@ -3,10 +3,12 @@ package eu.timepit.scalasteward.github.http4s
 import cats.implicits._
 import eu.timepit.scalasteward.git.Branch
 import eu.timepit.scalasteward.github.data.Repo
-import eu.timepit.scalasteward.github.http4s.http4sUrl._
 import org.scalatest.{FunSuite, Matchers}
 
 class http4sUrlTest extends FunSuite with Matchers {
+  val http4sUrl = new Http4sUrl("https://api.github.com")
+  import http4sUrl._
+
   type Result[A] = Either[Throwable, A]
   val repo = Repo("fthomas", "refined")
   val branch = Branch("master")
