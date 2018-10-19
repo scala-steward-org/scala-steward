@@ -18,6 +18,7 @@ package eu.timepit.scalasteward.github.http4s
 
 import cats.effect.Sync
 import cats.implicits._
+import eu.timepit.scalasteward.application.Config
 import eu.timepit.scalasteward.git.Branch
 import eu.timepit.scalasteward.github._
 import eu.timepit.scalasteward.github.data._
@@ -33,9 +34,12 @@ import org.http4s.{BasicCredentials, Headers, Request}
 class Http4sGitHubApiAlg[F[_]](
     implicit
     client: Client[F],
+    config: Config,
     user: AuthenticatedUser,
     F: Sync[F]
 ) extends GitHubApiAlg[F] {
+  val http4sUrl = new Http4sUrl(config.gitHubApiHost)
+
   override def createFork(
       repo: Repo
   ): F[RepoOut] =

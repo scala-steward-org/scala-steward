@@ -25,6 +25,7 @@ import eu.timepit.scalasteward.github.data.AuthenticatedUser
 final case class Config(
     workspace: File,
     gitAuthor: Author,
+    gitHubApiHost: String,
     gitHubLogin: String,
     gitHubTokenFile: File
 ) {
@@ -39,6 +40,7 @@ object Config {
       Config(
         workspace = home / "code/scala-steward/workspace",
         gitAuthor = Author("Scala steward", "scala-steward@timepit.eu"),
+        gitHubApiHost = "https://api.github.com",
         gitHubLogin = login,
         gitHubTokenFile = home / s".github/tokens/$login"
       )

@@ -19,12 +19,14 @@ package eu.timepit.scalasteward.github.http4s
 import cats.implicits._
 import eu.timepit.scalasteward.git.Branch
 import eu.timepit.scalasteward.github.data.Repo
-import eu.timepit.scalasteward.github.url
+import eu.timepit.scalasteward.github.Url
 import eu.timepit.scalasteward.util.ApplicativeThrowable
 import eu.timepit.scalasteward.util.uri._
 import org.http4s.Uri
 
-object http4sUrl {
+class Http4sUrl(apiHost: String) {
+  val url = new Url(apiHost)
+
   def branches[F[_]: ApplicativeThrowable](repo: Repo, branch: Branch): F[Uri] =
     fromString[F](url.branches(repo, branch))
 
