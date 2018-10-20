@@ -17,8 +17,8 @@
 package eu.timepit.scalasteward.git
 
 import better.files.File
+import cats.Monad
 import cats.data.{NonEmptyList => Nel}
-import cats.effect.Sync
 import cats.implicits._
 import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.io.{FileAlg, ProcessAlg, WorkspaceAlg}
@@ -68,7 +68,7 @@ object GitAlg {
       fileAlg: FileAlg[F],
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F],
-      F: Sync[F]
+      F: Monad[F]
   ): GitAlg[F] =
     new GitAlg[F] {
       override def branchAuthors(repo: Repo, branch: Branch, base: Branch): F[List[String]] =
