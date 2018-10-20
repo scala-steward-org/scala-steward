@@ -59,7 +59,7 @@ object SbtAlg {
         for {
           _ <- logger.info("Add global sbt plugins")
           _ <- addGlobalPlugin(sbtUpdatesPlugin)
-          _ <- stewardPlugin[F].flatMap(addGlobalPlugin)
+          _ <- addGlobalPlugin(stewardPlugin)
         } yield ()
 
       override def getDependencies(repo: Repo): F[List[Dependency]] =

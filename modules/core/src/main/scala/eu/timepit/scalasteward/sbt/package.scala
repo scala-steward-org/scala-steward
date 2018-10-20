@@ -16,7 +16,6 @@
 
 package eu.timepit.scalasteward
 
-import cats.effect.Sync
 import eu.timepit.scalasteward.io.FileData
 import scala.io.Source
 
@@ -34,9 +33,10 @@ package object sbt {
   val sbtUpdatesPlugin: FileData =
     FileData("sbt-updates.sbt", """addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.4")""")
 
-  def stewardPlugin[F[_]](implicit F: Sync[F]): F[FileData] =
-    F.delay {
-      val name = "StewardPlugin.scala"
-      FileData(name, Source.fromResource(name).mkString)
-    }
+  val stewardPlugin: FileData = {
+    val name = "StewardPlugin.scala"
+    // I don't consider reading a resource as side-effect,
+    // so this is not wrapped in a `F[_]: Sync`.
+    FileData(name, Source.fromResource(name).mkString)
+  }
 }
