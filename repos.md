@@ -34,6 +34,7 @@
 - ChristopherDavenport/system-effect
 - ChristopherDavenport/testcontainers-specs2
 - erikvanoosten/metrics-scala
+- esamson/remder
 - fthomas/crjdt
 - fthomas/datapackage
 - fthomas/fs2-cron
