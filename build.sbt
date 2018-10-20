@@ -23,6 +23,7 @@ lazy val root = project
   .settings(noPublishSettings)
 
 lazy val core = myCrossProject("core")
+  .enablePlugins(BuildInfoPlugin)
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin(Dependencies.kindProjector),
@@ -39,6 +40,8 @@ lazy val core = myCrossProject("core")
       Dependencies.scalaTest % Test
     ),
     assembly / test := {},
+    buildInfoKeys := Seq[BuildInfoKey](scalaVersion, sbtVersion),
+    buildInfoPackage := rootPkg,
     initialCommands += s"""
       import $rootPkg._
       import $rootPkg.github.data._
