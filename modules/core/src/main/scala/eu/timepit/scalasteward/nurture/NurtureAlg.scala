@@ -22,10 +22,10 @@ import cats.{FlatMap, Monad}
 import eu.timepit.scalasteward.application.Config
 import eu.timepit.scalasteward.git.{Branch, GitAlg}
 import eu.timepit.scalasteward.github.GitHubApiAlg
-import eu.timepit.scalasteward.github.data.{CreatePullRequestIn, Repo}
+import eu.timepit.scalasteward.github.data.{AuthenticatedUser, CreatePullRequestIn, Repo}
 import eu.timepit.scalasteward.sbt.SbtAlg
 import eu.timepit.scalasteward.update.FilterAlg
-import eu.timepit.scalasteward.util.BracketThrowable
+import eu.timepit.scalasteward.util.{BracketThrowable, MonadThrowable}
 import eu.timepit.scalasteward.util.logger.LoggerOps
 import eu.timepit.scalasteward.{git, github, util}
 import io.chrisdavenport.log4cats.Logger
@@ -38,7 +38,8 @@ class NurtureAlg[F[_]](
     gitAlg: GitAlg[F],
     gitHubApiAlg: GitHubApiAlg[F],
     logger: Logger[F],
-    sbtAlg: SbtAlg[F]
+    sbtAlg: SbtAlg[F],
+    user: AuthenticatedUser
 ) {
   def nurture(repo: Repo)(implicit F: Sync[F]): F[Unit] =
     logger.infoTotalTime {
@@ -51,10 +52,9 @@ class NurtureAlg[F[_]](
       }
     }
 
-  def cloneAndSync(repo: Repo)(implicit F: Sync[F]): F[Branch] =
+  def cloneAndSync(repo: Repo)(implicit F: MonadThrowable[F]): F[Branch] =
     for {
       _ <- logger.info(s"Clone and synchronize ${repo.show}")
-      user <- config.gitHubUser
       repoOut <- gitHubApiAlg.createFork(repo)
       parent <- repoOut.parentOrRaise[F]
       cloneUrl = util.uri.withUserInfo(repoOut.clone_url, user)
