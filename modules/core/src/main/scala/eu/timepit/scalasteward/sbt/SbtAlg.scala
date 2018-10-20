@@ -17,7 +17,7 @@
 package eu.timepit.scalasteward.sbt
 
 import better.files.File
-import cats.effect.Sync
+import cats.Monad
 import cats.implicits._
 import eu.timepit.scalasteward.dependency.Dependency
 import eu.timepit.scalasteward.dependency.parser.parseDependencies
@@ -47,7 +47,7 @@ object SbtAlg {
       logger: Logger[F],
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F],
-      F: Sync[F]
+      F: Monad[F]
   ): SbtAlg[F] =
     new SbtAlg[F] {
       override def addGlobalPlugin(plugin: FileData): F[Unit] =
@@ -89,7 +89,7 @@ object SbtAlg {
         } yield sbtLegacy.sanitizeUpdates(sbtLegacy.toUpdates(lines))
 
       val sbtDir: F[File] =
-        F.delay(File.home).map(_ / ".sbt")
+        fileAlg.home.map(_ / ".sbt")
 
       def sbtCmd(command: String*): List[String] =
         List("sbt", "-batch", "-no-colors", command.mkString(";", ";", ""))

@@ -25,6 +25,8 @@ trait FileAlg[F[_]] {
 
   def ensureExists(dir: File): F[File]
 
+  def home: F[File]
+
   def removeTemporarily[A](file: File)(fa: F[A]): F[A]
 
   def readFile(file: File): F[Option[String]]
@@ -47,10 +49,13 @@ object FileAlg {
           dir
         }
 
+      override def home: F[File] =
+        F.delay(File.home)
+
       override def removeTemporarily[A](file: File)(fa: F[A]): F[A] =
         F.bracket {
           F.delay {
-            if (file.exists) Some(file.moveTo(File.newTemporaryFile(), true))
+            if (file.exists) Some(file.moveTo(File.newTemporaryFile(), overwrite = true))
             else None
           }
         } { _ =>
