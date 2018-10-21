@@ -12,9 +12,22 @@ class GitAlgTest extends FunSuite with Matchers {
   implicit val processAlg: MockProcessAlg = new MockProcessAlg
   implicit val workspaceAlg: MockWorkspaceAlg = new MockWorkspaceAlg
   val gitAlg: GitAlg[MockEnv] = GitAlg.create
+  val repo = Repo("fthomas", "datapackage")
+
+  test("branchAuthors") {
+    val state = gitAlg
+      .branchAuthors(repo, Branch("update/cats-1.0.0"), Branch("master"))
+      .runS(MockState.empty)
+      .value
+
+    state shouldBe MockState.empty.copy(
+      commands = Vector(
+        List("git", "log", "--pretty=format:'%an'", "master..update/cats-1.0.0")
+      )
+    )
+  }
 
   test("syncFork") {
-    val repo = Repo("fthomas", "datapackage")
     val url = Uri.uri("http://github.com/fthomas/datapackage")
     val defaultBranch = Branch("master")
 
