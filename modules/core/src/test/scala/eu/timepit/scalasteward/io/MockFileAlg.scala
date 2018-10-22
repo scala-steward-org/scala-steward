@@ -3,6 +3,7 @@ package eu.timepit.scalasteward.io
 import better.files.File
 import cats.data.State
 import eu.timepit.scalasteward.MockState.MockEnv
+import fs2.Stream
 
 class MockFileAlg extends FileAlg[MockEnv] {
   override def deleteForce(file: File): MockEnv[Unit] =
@@ -19,6 +20,9 @@ class MockFileAlg extends FileAlg[MockEnv] {
 
   override def readFile(file: File): MockEnv[Option[String]] =
     State(s => (s.exec(List("read", file.pathAsString)), None))
+
+  override def walk(dir: File): Stream[MockEnv, File] =
+    Stream.eval(State.pure(dir))
 
   override def writeFile(file: File, content: String): MockEnv[Unit] =
     State.modify(_.exec(List("write", file.pathAsString)))

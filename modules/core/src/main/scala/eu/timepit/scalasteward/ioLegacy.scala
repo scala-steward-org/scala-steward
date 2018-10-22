@@ -17,21 +17,18 @@
 package eu.timepit.scalasteward
 
 import better.files.File
-import cats.effect.IO
+import cats.effect.Sync
+import eu.timepit.scalasteward.io.FileAlg
 import eu.timepit.scalasteward.model.Update
-import fs2.Stream
 
 object ioLegacy {
   def isSourceFile(file: File): Boolean =
     !file.pathAsString.contains(".git/") &&
       file.extension.exists(Set(".scala", ".sbt"))
 
-  def updateDir(dir: File, update: Update): IO[Unit] =
-    walk(dir).filter(isSourceFile).evalMap(updateFile(_, update)).compile.drain
+  def updateDir[F[_]: Sync](dir: File, update: Update): F[Unit] =
+    FileAlg.create[F].walk(dir).filter(isSourceFile).evalMap(updateFile(_, update)).compile.drain
 
-  def updateFile(file: File, update: Update): IO[File] =
-    IO(update.replaceAllIn(file.contentAsString).fold(file)(file.write(_)))
-
-  def walk(dir: File): Stream[IO, File] =
-    Stream.eval(IO(dir.walk())).flatMap(Stream.fromIterator[IO, File])
+  def updateFile[F[_]](file: File, update: Update)(implicit F: Sync[F]): F[File] =
+    F.delay(update.replaceAllIn(file.contentAsString).fold(file)(file.write(_)))
 }

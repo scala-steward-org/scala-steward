@@ -36,8 +36,7 @@ object EditAlg {
     new EditAlg[F] {
       override def applyUpdate(repo: Repo, update: Update): F[Unit] =
         workspaceAlg.repoDir(repo).flatMap { repoDir =>
-          // FIXME
-          F.delay(ioLegacy.updateDir(repoDir, update).unsafeRunSync())
+          ioLegacy.updateDir(repoDir, update)
         }
     }
 }

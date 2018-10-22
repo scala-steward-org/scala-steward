@@ -19,6 +19,7 @@ package eu.timepit.scalasteward.io
 import better.files.File
 import cats.effect.Sync
 import cats.implicits._
+import fs2.Stream
 
 trait FileAlg[F[_]] {
   def deleteForce(file: File): F[Unit]
@@ -30,6 +31,8 @@ trait FileAlg[F[_]] {
   def removeTemporarily[A](file: File)(fa: F[A]): F[A]
 
   def readFile(file: File): F[Option[String]]
+
+  def walk(dir: File): Stream[F, File]
 
   def writeFile(file: File, content: String): F[Unit]
 
@@ -67,6 +70,9 @@ object FileAlg {
 
       override def readFile(file: File): F[Option[String]] =
         F.delay(if (file.exists) Some(file.contentAsString) else None)
+
+      override def walk(dir: File): Stream[F, File] =
+        Stream.eval(F.delay(dir.walk())).flatMap(Stream.fromIterator(_))
 
       override def writeFile(file: File, content: String): F[Unit] =
         file.parentOption.fold(F.unit)(ensureExists(_).void) >> F.delay(file.write(content)).void
