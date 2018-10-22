@@ -35,6 +35,7 @@
 - ChristopherDavenport/testcontainers-specs2
 - erikvanoosten/metrics-scala
 - esamson/remder
+- esamson/sbt-groovy
 - fthomas/crjdt
 - fthomas/datapackage
 - fthomas/fs2-cron
