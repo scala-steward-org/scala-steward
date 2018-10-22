@@ -19,6 +19,8 @@ package eu.timepit.scalasteward.github.data
 import cats.implicits._
 import eu.timepit.scalasteward.git.Branch
 import eu.timepit.scalasteward.model.Update
+import eu.timepit.scalasteward.nurture.UpdateData
+import eu.timepit.scalasteward.{git, github}
 import io.circe.Encoder
 import io.circe.generic.semiauto._
 
@@ -51,4 +53,12 @@ object CreatePullRequestIn {
         |Have a nice day!
         |""".stripMargin.trim
   }
+
+  def from(data: UpdateData, login: String): CreatePullRequestIn =
+    CreatePullRequestIn(
+      title = git.commitMsgFor(data.update),
+      body = bodyFor(data.update, login),
+      head = github.headFor(login, data.update),
+      base = data.baseBranch
+    )
 }

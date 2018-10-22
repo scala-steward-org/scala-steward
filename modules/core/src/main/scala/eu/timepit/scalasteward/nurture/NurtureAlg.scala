@@ -25,8 +25,8 @@ import eu.timepit.scalasteward.github.GitHubApiAlg
 import eu.timepit.scalasteward.github.data.{AuthenticatedUser, CreatePullRequestIn, Repo}
 import eu.timepit.scalasteward.sbt.SbtAlg
 import eu.timepit.scalasteward.update.FilterAlg
-import eu.timepit.scalasteward.util.{BracketThrowable, MonadThrowable}
 import eu.timepit.scalasteward.util.logger.LoggerOps
+import eu.timepit.scalasteward.util.{BracketThrowable, MonadThrowable}
 import eu.timepit.scalasteward.{git, github, util}
 import io.chrisdavenport.log4cats.Logger
 
@@ -113,12 +113,7 @@ class NurtureAlg[F[_]](
   def createPullRequest(data: UpdateData)(implicit F: FlatMap[F]): F[Unit] =
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
-      requestData = CreatePullRequestIn(
-        git.commitMsgFor(data.update),
-        CreatePullRequestIn.bodyFor(data.update, config.gitHubLogin),
-        github.headFor(config.gitHubLogin, data.update),
-        data.baseBranch
-      )
+      requestData = CreatePullRequestIn.from(data, config.gitHubLogin)
       pullRequest <- gitHubApiAlg.createPullRequest(data.repo, requestData)
       _ <- logger.info(s"Created PR ${pullRequest.html_url}")
     } yield ()
