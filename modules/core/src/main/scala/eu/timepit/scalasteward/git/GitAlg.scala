@@ -164,6 +164,6 @@ object GitAlg {
         } yield ()
 
       def exec(command: Nel[String], cwd: File): F[List[String]] =
-        processAlg.exec(gitCmd :: command.toList, cwd)
+        processAlg.exec(gitCmd :: command, cwd)
     }
 }

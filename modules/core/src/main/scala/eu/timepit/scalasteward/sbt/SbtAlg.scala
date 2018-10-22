@@ -19,6 +19,7 @@ package eu.timepit.scalasteward.sbt
 import better.files.File
 import cats.Monad
 import cats.implicits._
+import cats.data.{NonEmptyList => Nel}
 import eu.timepit.scalasteward.dependency.Dependency
 import eu.timepit.scalasteward.dependency.parser.parseDependencies
 import eu.timepit.scalasteward.github.data.Repo
@@ -91,8 +92,8 @@ object SbtAlg {
       val sbtDir: F[File] =
         fileAlg.home.map(_ / ".sbt")
 
-      def sbtCmd(command: String*): List[String] =
-        List("sbt", "-batch", "-no-colors", command.mkString(";", ";", ""))
+      def sbtCmd(command: String*): Nel[String] =
+        Nel.of("sbt", "-batch", "-no-colors", command.mkString(";", ";", ""))
 
       def ignoreOptsFiles[A](dir: File)(fa: F[A]): F[A] =
         fileAlg.removeTemporarily(dir / ".jvmopts") {
