@@ -22,7 +22,7 @@ import cats.{FlatMap, Monad}
 import eu.timepit.scalasteward.application.Config
 import eu.timepit.scalasteward.git.{Branch, GitAlg}
 import eu.timepit.scalasteward.github.GitHubApiAlg
-import eu.timepit.scalasteward.github.data.{AuthenticatedUser, CreatePullRequestIn, Repo}
+import eu.timepit.scalasteward.github.data.{AuthenticatedUser, NewPullRequestData, Repo}
 import eu.timepit.scalasteward.sbt.SbtAlg
 import eu.timepit.scalasteward.update.FilterAlg
 import eu.timepit.scalasteward.util.logger.LoggerOps
@@ -113,7 +113,7 @@ class NurtureAlg[F[_]](
   def createPullRequest(data: UpdateData)(implicit F: FlatMap[F]): F[Unit] =
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
-      requestData = CreatePullRequestIn.from(data, config.gitHubLogin)
+      requestData = NewPullRequestData.from(data, config.gitHubLogin)
       pullRequest <- gitHubApiAlg.createPullRequest(data.repo, requestData)
       _ <- logger.info(s"Created PR ${pullRequest.html_url}")
     } yield ()

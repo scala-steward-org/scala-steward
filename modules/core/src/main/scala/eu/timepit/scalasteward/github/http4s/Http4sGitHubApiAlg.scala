@@ -50,7 +50,7 @@ class Http4sGitHubApiAlg[F[_]](
 
   override def createPullRequest(
       repo: Repo,
-      data: CreatePullRequestIn
+      data: NewPullRequestData
   ): F[PullRequestOut] =
     http4sUrl.pulls[F](repo).flatMap { uri =>
       val req = Request[F](POST, uri).withEntity(data)

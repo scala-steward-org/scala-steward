@@ -24,15 +24,15 @@ import eu.timepit.scalasteward.{git, github}
 import io.circe.Encoder
 import io.circe.generic.semiauto._
 
-final case class CreatePullRequestIn(
+final case class NewPullRequestData(
     title: String,
     body: String,
     head: String,
     base: Branch
 )
 
-object CreatePullRequestIn {
-  implicit val createPullRequestInEncoder: Encoder[CreatePullRequestIn] =
+object NewPullRequestData {
+  implicit val newPullRequestDataEncoder: Encoder[NewPullRequestData] =
     deriveEncoder
 
   def bodyFor(update: Update, login: String): String = {
@@ -54,8 +54,8 @@ object CreatePullRequestIn {
         |""".stripMargin.trim
   }
 
-  def from(data: UpdateData, login: String): CreatePullRequestIn =
-    CreatePullRequestIn(
+  def from(data: UpdateData, login: String): NewPullRequestData =
+    NewPullRequestData(
       title = git.commitMsgFor(data.update),
       body = bodyFor(data.update, login),
       head = github.headFor(login, data.update),

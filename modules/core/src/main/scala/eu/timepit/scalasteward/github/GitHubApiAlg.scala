@@ -31,7 +31,7 @@ trait GitHubApiAlg[F[_]] {
   /** https://developer.github.com/v3/pulls/#create-a-pull-request */
   def createPullRequest(
       repo: Repo,
-      data: CreatePullRequestIn
+      data: NewPullRequestData
   ): F[PullRequestOut]
 
   /** https://developer.github.com/v3/repos/branches/#get-branch */
