@@ -16,6 +16,10 @@ class ProcessAlgTest extends FunSuite with Matchers {
   }
 
   test("exec false") {
-    processAlg.exec(Nel.of("false"), File.currentWorkingDirectory).attempt.unsafeRunSync().isLeft
+    processAlg
+      .exec(Nel.of("ls", "--foo"), File.currentWorkingDirectory)
+      .attempt
+      .map(_.isLeft)
+      .unsafeRunSync()
   }
 }
