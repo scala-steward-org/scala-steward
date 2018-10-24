@@ -18,17 +18,30 @@ package eu.timepit.scalasteward.git
 
 import cats.Eq
 import cats.implicits._
+import eu.timepit.refined.W
+import eu.timepit.refined.api.{Refined, RefinedTypeOps}
+import eu.timepit.refined.boolean.{And, Or}
+import eu.timepit.refined.char.Digit
+import eu.timepit.refined.collection.{Forall, Size}
+import eu.timepit.refined.generic.Equal
+import eu.timepit.refined.numeric.Interval
+import eu.timepit.scalasteward.git.Sha1.HexString
+import io.circe.refined._
 import io.circe.{Decoder, Encoder}
 
-final case class Sha1(value: String)
+final case class Sha1(value: HexString)
 
 object Sha1 {
+  type HexDigit = Digit Or Interval.Closed[W.`'a'`.T, W.`'f'`.T]
+  type HexString = String Refined (Forall[HexDigit] And Size[Equal[W.`40`.T]])
+  object HexString extends RefinedTypeOps[HexString, String]
+
   implicit val sha1Eq: Eq[Sha1] =
-    Eq.by(_.value)
+    Eq.by(_.value.value)
 
   implicit val sha1Decoder: Decoder[Sha1] =
-    Decoder[String].map(Sha1.apply)
+    Decoder[HexString].map(Sha1.apply)
 
   implicit val sha1Encoder: Encoder[Sha1] =
-    Encoder[String].contramap(_.value)
+    Encoder[HexString].contramap(_.value)
 }
