@@ -2,6 +2,7 @@ package eu.timepit.scalasteward.io
 
 import better.files.File
 import cats.data.State
+import eu.timepit.scalasteward.MockState
 import eu.timepit.scalasteward.MockState.MockEnv
 import fs2.Stream
 
@@ -16,7 +17,11 @@ class MockFileAlg extends FileAlg[MockEnv] {
     State.pure(File.root / "tmp" / "steward")
 
   override def removeTemporarily[A](file: File)(fa: MockEnv[A]): MockEnv[A] =
-    fa
+    for {
+      _ <- State.modify((_: MockState).exec(List("rm", file.pathAsString)))
+      a <- fa
+      _ <- State.modify((_: MockState).exec(List("restore", file.pathAsString)))
+    } yield a
 
   override def readFile(file: File): MockEnv[Option[String]] =
     State(s => (s.exec(List("read", file.pathAsString)), None))
