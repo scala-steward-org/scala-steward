@@ -16,6 +16,7 @@
 
 package eu.timepit.scalasteward
 
+import cats.effect.{IO, Resource}
 import eu.timepit.scalasteward.io.FileData
 import scala.io.Source
 
@@ -36,7 +37,10 @@ package object sbt {
   val stewardPlugin: FileData = {
     val name = "StewardPlugin.scala"
     // I don't consider reading a resource as side-effect,
-    // so this is not wrapped in a `F[_]: Sync`.
-    FileData(name, Source.fromResource(name).mkString)
+    // so it is OK to call `unsafeRunSync` here.
+    Resource
+      .fromAutoCloseable(IO(Source.fromResource(name)))
+      .use(src => IO(FileData(name, src.mkString)))
+      .unsafeRunSync()
   }
 }

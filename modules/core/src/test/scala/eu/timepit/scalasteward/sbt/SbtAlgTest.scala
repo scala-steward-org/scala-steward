@@ -14,6 +14,18 @@ class SbtAlgTest extends FunSuite with Matchers {
   implicit val workspaceAlg: MockWorkspaceAlg = new MockWorkspaceAlg
   val sbtAlg: SbtAlg[MockEnv] = SbtAlg.create
 
+  test("addGlobalPlugins") {
+    sbtAlg.addGlobalPlugins.runS(MockState.empty).value shouldBe MockState.empty.copy(
+      commands = Vector(
+        List("write", "/tmp/steward/.sbt/0.13/plugins/sbt-updates.sbt"),
+        List("write", "/tmp/steward/.sbt/1.0/plugins/sbt-updates.sbt"),
+        List("write", "/tmp/steward/.sbt/0.13/plugins/StewardPlugin.scala"),
+        List("write", "/tmp/steward/.sbt/1.0/plugins/StewardPlugin.scala")
+      ),
+      logs = Vector((None, "Add global sbt plugins"))
+    )
+  }
+
   test("getUpdatesForRepo") {
     val repo = Repo("fthomas", "refined")
     val state = sbtAlg.getUpdatesForRepo(repo).runS(MockState.empty).value
