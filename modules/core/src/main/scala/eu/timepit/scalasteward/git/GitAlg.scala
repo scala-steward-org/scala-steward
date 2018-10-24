@@ -22,7 +22,7 @@ import cats.data.{NonEmptyList => Nel}
 import cats.implicits._
 import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.io.{FileAlg, ProcessAlg, WorkspaceAlg}
-import eu.timepit.scalasteward.util.BracketThrowable
+import eu.timepit.scalasteward.util.{BracketThrowable, MonadThrowable}
 import org.http4s.Uri
 
 trait GitAlg[F[_]] {
@@ -43,6 +43,8 @@ trait GitAlg[F[_]] {
   def isBehind(repo: Repo, branch: Branch, base: Branch): F[Boolean]
 
   def isMerged(repo: Repo, branch: Branch, base: Branch): F[Boolean]
+
+  def latestSha1(repo: Repo, branch: Branch)(implicit F: MonadThrowable[F]): F[Sha1]
 
   def push(repo: Repo, branch: Branch): F[Unit]
 
@@ -121,6 +123,13 @@ object GitAlg {
         workspaceAlg.repoDir(repo).flatMap { repoDir =>
           exec(Nel.of("log", "--pretty=format:'%h'", dotdot(base, branch)), repoDir).map(_.isEmpty)
         }
+
+      override def latestSha1(repo: Repo, branch: Branch)(implicit F: MonadThrowable[F]): F[Sha1] =
+        for {
+          repoDir <- workspaceAlg.repoDir(repo)
+          lines <- exec(Nel.of("rev-parse", "--verify", branch.name), repoDir)
+          sha1 <- F.fromEither(Sha1.from(lines.mkString("").trim))
+        } yield sha1
 
       override def push(repo: Repo, branch: Branch): F[Unit] =
         for {

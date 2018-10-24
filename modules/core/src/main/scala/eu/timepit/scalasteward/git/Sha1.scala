@@ -36,6 +36,9 @@ object Sha1 {
   type HexString = String Refined (Forall[HexDigit] And Size[Equal[W.`40`.T]])
   object HexString extends RefinedTypeOps[HexString, String]
 
+  def from(s: String): Either[Throwable, Sha1] =
+    HexString.from(s).bimap(new Throwable(_), Sha1.apply)
+
   implicit val sha1Eq: Eq[Sha1] =
     Eq.by(_.value.value)
 
