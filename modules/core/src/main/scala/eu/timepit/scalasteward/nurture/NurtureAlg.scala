@@ -68,7 +68,7 @@ class NurtureAlg[F[_]](
       _ <- logger.info(s"Check updates for ${repo.show}")
       updates <- sbtAlg.getUpdatesForRepo(repo)
       _ <- logger.info(util.logger.showUpdates(updates))
-      filtered <- filterAlg.filterMany(repo, updates)
+      filtered <- filterAlg.localFilterMany(repo, updates)
       _ <- filtered.traverse_ { update =>
         val data = UpdateData(repo, update, baseBranch, git.branchFor(update))
         processUpdate(data)
