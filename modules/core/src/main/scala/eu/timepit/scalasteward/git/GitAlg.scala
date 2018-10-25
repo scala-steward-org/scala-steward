@@ -19,10 +19,11 @@ package eu.timepit.scalasteward.git
 import better.files.File
 import cats.Monad
 import cats.data.{NonEmptyList => Nel}
+import cats.effect.Bracket
 import cats.implicits._
 import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.io.{FileAlg, ProcessAlg, WorkspaceAlg}
-import eu.timepit.scalasteward.util.{BracketThrowable, MonadThrowable}
+import eu.timepit.scalasteward.util.MonadThrowable
 import org.http4s.Uri
 
 trait GitAlg[F[_]] {
@@ -58,7 +59,7 @@ trait GitAlg[F[_]] {
 
   def syncFork(repo: Repo, upstreamUrl: Uri, defaultBranch: Branch): F[Unit]
 
-  def returnToCurrentBranch[A](repo: Repo)(fa: F[A])(implicit F: BracketThrowable[F]): F[A] =
+  def returnToCurrentBranch[A, E](repo: Repo)(fa: F[A])(implicit F: Bracket[F, E]): F[A] =
     F.bracket(currentBranch(repo))(_ => fa)(checkoutBranch(repo, _))
 }
 
