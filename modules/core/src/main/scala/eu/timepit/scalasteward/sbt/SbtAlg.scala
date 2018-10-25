@@ -68,7 +68,7 @@ object SbtAlg {
           repoDir <- workspaceAlg.repoDir(repo)
           cmd = sbtCmd(libraryDependenciesAsJson, reloadPlugins, libraryDependenciesAsJson)
           lines <- ignoreOptsFiles(repoDir)(processAlg.execSandboxed(cmd, repoDir))
-        } yield lines.flatMap(parseDependencies)
+        } yield lines.flatMap(parseDependencies).distinct
 
       override def getUpdates(project: ArtificialProject): F[List[Update]] =
         for {
