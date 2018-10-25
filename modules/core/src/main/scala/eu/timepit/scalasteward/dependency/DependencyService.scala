@@ -32,12 +32,10 @@ class DependencyService[F[_]](
     gitHubApiAlg: GitHubApiAlg[F],
     gitAlg: GitAlg[F],
     logger: Logger[F],
-    sbtAlg: SbtAlg[F]
+    sbtAlg: SbtAlg[F],
+    user: AuthenticatedUser
 ) {
-  def forkAndCheckDependencies(
-      user: AuthenticatedUser,
-      repo: Repo
-  )(implicit F: MonadThrowable[F]): F[Unit] =
+  def forkAndCheckDependencies(repo: Repo)(implicit F: MonadThrowable[F]): F[Unit] =
     logger.attemptLog_(s"Fork and check dependencies of ${repo.show}") {
       for {
         res <- gitHubApiAlg.createForkAndGetDefaultBranch(repo)
@@ -46,18 +44,15 @@ class DependencyService[F[_]](
         latestSha1 = branchOut.commit.sha
         refreshRequired = foundSha1.fold(true)(_ =!= latestSha1)
         _ <- {
-          if (refreshRequired) refreshDependencies(user, repo, repoOut, latestSha1)
+          if (refreshRequired) refreshDependencies(repo, repoOut, latestSha1)
           else F.unit
         }
       } yield ()
     }
 
-  def refreshDependencies(
-      user: AuthenticatedUser,
-      repo: Repo,
-      repoOut: RepoOut,
-      latestSha1: Sha1
-  )(implicit F: MonadThrowable[F]): F[Unit] =
+  def refreshDependencies(repo: Repo, repoOut: RepoOut, latestSha1: Sha1)(
+      implicit F: MonadThrowable[F]
+  ): F[Unit] =
     for {
       _ <- logger.info(s"Refresh dependencies of ${repo.show}")
       _ <- gitAlg.clone(repo, util.uri.withUserInfo(repoOut.clone_url, user))
