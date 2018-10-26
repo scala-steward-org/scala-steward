@@ -142,6 +142,7 @@
 - typelevel/cats-collections
 - typelevel/cats-mtl
 - typelevel/discipline
+- typelevel/machinist
 - vectos/formulation
 - vlovgr/ciris
 - WellFactored/resourcepool
