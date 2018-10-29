@@ -34,6 +34,7 @@
 - ChristopherDavenport/scalaz-task-effect
 - ChristopherDavenport/system-effect
 - ChristopherDavenport/testcontainers-specs2
+- dhpiggott/liquidity
 - erikvanoosten/metrics-scala
 - esamson/remder
 - esamson/sbt-groovy
