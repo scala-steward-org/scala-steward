@@ -9,6 +9,7 @@
 - akka/akka-cluster-kubernetes-quickstart-scala
 - alonsodomin/cron4s
 - arturgajowy/rchain
+- azhur/kafka-serde-scala
 - Atry/fastring
 - barambani/http4s-extend
 - barambani/http4s-poc-api
