@@ -89,7 +89,7 @@ object GitAlg {
         for {
           rootDir <- workspaceAlg.rootDir
           repoDir <- workspaceAlg.repoDir(repo)
-          _ <- exec(Nel.of("clone", url.toString, repoDir.pathAsString), rootDir)
+          _ <- exec(Nel.of("clone", "--recursive", url.toString, repoDir.pathAsString), rootDir)
         } yield ()
 
       override def commitAll(repo: Repo, message: String): F[Unit] =
