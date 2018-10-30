@@ -1,5 +1,5 @@
 addSbtPlugin("com.dwijnand" % "sbt-travisci" % "1.1.3")
-addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.8")
+addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.9")
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.9.0")
 addSbtPlugin("com.geirsson" % "sbt-scalafmt" % "1.6.0-RC4")
 addSbtPlugin("de.heikoseeberger" % "sbt-header" % "5.0.0")
