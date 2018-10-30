@@ -81,6 +81,7 @@
 - maximn/TaxCalculator
 - mefellows/sbt-dotenv
 - mfirry/scala-http-clients
+- mfirry/web-frameworks-templates
 - milessabin/shapeless
 - pathikrit/better-files
 - pdalpra/gh4s
