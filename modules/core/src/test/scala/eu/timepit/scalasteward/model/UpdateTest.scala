@@ -99,8 +99,8 @@ class UpdateTest extends FunSuite with Matchers {
   }
 
   test("replaceAllIn: group with prefix val") {
-    val original = """ val circe = "0.10.0-M1" """
-    val expected = """ val circe = "0.10.0-M2" """
+    val original = """ val circe = "0.10.1-M1" """
+    val expected = """ val circe = "0.10.1-M2" """
     Group(
       "io.circe",
       Nel.of("circe-generic", "circe-literal", "circe-parser", "circe-testing"),
