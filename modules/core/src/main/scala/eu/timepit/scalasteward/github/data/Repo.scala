@@ -16,6 +16,8 @@
 
 package eu.timepit.scalasteward.github.data
 
+import cats.Order
+import cats.implicits._
 import io.circe.{KeyDecoder, KeyEncoder}
 
 final case class Repo(
@@ -37,4 +39,7 @@ object Repo {
 
   implicit val repoKeyEncoder: KeyEncoder[Repo] =
     KeyEncoder.instance(repo => repo.owner + "/" + repo.repo)
+
+  implicit val repoOrder: Order[Repo] =
+    Order.by((repo: Repo) => (repo.owner, repo.repo))
 }

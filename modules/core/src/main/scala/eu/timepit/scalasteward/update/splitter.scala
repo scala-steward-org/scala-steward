@@ -25,7 +25,7 @@ object splitter {
     val (duplicated, distinct) =
       dependencies.groupBy(d => (d.groupId, d.artifactIdCross)).values.partition(_.size > 1)
 
-    val buckets = distinct.grouped(20).map(_.flatten.toList).toList
+    val buckets = distinct.grouped(25).map(_.flatten.toList).toList
 
     val x = transpose(duplicated.toList).zipAll(buckets, List.empty, List.empty)
     x.map(t => t._1 ++ t._2)

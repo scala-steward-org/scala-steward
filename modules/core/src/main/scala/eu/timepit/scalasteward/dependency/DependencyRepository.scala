@@ -23,7 +23,7 @@ import eu.timepit.scalasteward.github.data.Repo
 trait DependencyRepository[F[_]] {
   def findSha1(repo: Repo): F[Option[Sha1]]
 
-  def getDependencies: F[List[Dependency]]
+  def getDependencies(repos: List[Repo]): F[List[Dependency]]
 
   def getStore: F[Map[Repo, RepoData]]
 

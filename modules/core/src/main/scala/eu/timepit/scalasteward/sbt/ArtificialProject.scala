@@ -20,6 +20,7 @@ import eu.timepit.scalasteward.dependency.Dependency
 import eu.timepit.scalasteward.io.FileData
 import eu.timepit.scalasteward.sbt.command._
 import scala.collection.mutable.ListBuffer
+import eu.timepit.scalasteward.util
 
 final case class ArtificialProject(
     scalaVersion: ScalaVersion,
@@ -57,4 +58,15 @@ final case class ArtificialProject(
       "plugins.sbt",
       plugins.map(p => s"addSbtPlugin(${p.formatAsModuleId})").mkString("\n")
     )
+
+  def halve: List[ArtificialProject] =
+    if (libraries.size <= 1 || plugins.size <= 1) Nil
+    else {
+      val halvedLibraries = util.halve(libraries)
+      val halvedPlugins = util.halve(plugins)
+      val zipped = halvedLibraries.zipAll(halvedPlugins, Nil, Nil)
+      zipped.map {
+        case (libraries1, plugins1) => copy(libraries = libraries1, plugins = plugins1)
+      }
+    }
 }

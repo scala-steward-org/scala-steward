@@ -40,4 +40,28 @@ package object util {
         case Some(nel) => nel.traverse(divideOnError(divide)(f)(_)).map(_.reduce)
       }
     }
+
+  def divideOnError2[F[_], G[_], A, B, E](a: A)(f: A => F[B])(divide: A => G[A])(
+      handleError: E => F[B])(
+      implicit
+      F: ApplicativeError[F, E],
+      G: Foldable[G],
+      B: Semigroup[B]
+  ): F[B] = {
+    def loop(a: A): F[B] =
+      f(a).handleErrorWith { e =>
+        NonEmptyList.fromFoldable(divide(a)) match {
+          case None      => handleError(e)
+          case Some(nel) => nel.traverse(loop).map(_.reduce)
+        }
+      }
+    loop(a)
+  }
+
+  def halve[A](list: List[A]): List[List[A]] =
+    if (list.isEmpty) Nil
+    else {
+      val (fst, snd) = list.splitAt((list.size + 1) / 2)
+      List(fst, snd)
+    }
 }
