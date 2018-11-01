@@ -1,3 +1,5 @@
+- agourlay/cornichon
+- agourlay/json-2-csv
 - akka/alpakka-samples/alpakka-sample-mqtt-http-to-s3-java
 - akka/alpakka-samples/alpakka-sample-sqs-java
 - akka/akka-grpc-sample-kubernetes-scala
