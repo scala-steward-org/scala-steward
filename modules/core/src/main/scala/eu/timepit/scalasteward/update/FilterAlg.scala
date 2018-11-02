@@ -55,6 +55,9 @@ object FilterAlg {
           // https://github.com/esamson/remder/pull/5
           case ("net.sourceforge.plantuml", "plantuml", "8059") => false
 
+          // https://github.com/lightbend/migration-manager/pull/260
+          case ("org.scalatest", "scalatest", "3.2.0-SNAP10") => false
+
           case _ => true
         }
 
