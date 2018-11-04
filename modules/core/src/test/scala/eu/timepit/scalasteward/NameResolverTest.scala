@@ -26,6 +26,11 @@ class NameResolverTest extends FunSuite with Matchers {
     NameResolver.resolve(update) shouldBe "fs2-core"
   }
 
+  test("resolve single update name: typesafe:config") {
+    val update = Single("com.typesafe", "config", "1.3.0", NonEmptyList.one(" 1.3.3"))
+    NameResolver.resolve(update) shouldBe "typesafe:config"
+  }
+
   test("resolve group update name when the number of artifacts is less than 3") {
     val update = Group(
       "org.typelevel",

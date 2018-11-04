@@ -131,7 +131,7 @@ object Update {
     }
 
   val commonSuffixes: List[String] =
-    List("contrib", "core", "extra", "server")
+    List("config", "contrib", "core", "extra", "server")
 
   def removeCommonSuffix(str: String): String =
     util.string.removeSuffix(str, commonSuffixes)
