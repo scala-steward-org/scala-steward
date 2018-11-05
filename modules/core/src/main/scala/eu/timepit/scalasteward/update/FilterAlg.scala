@@ -50,10 +50,13 @@ object FilterAlg {
           case ("org.eclipse.jetty", "jetty-websocket", _) => false
 
           // https://github.com/fthomas/scala-steward/issues/105
-          case ("io.monix", "monix", "3.0.0-fbcb270") => false
+          case ("io.monix", _, "3.0.0-fbcb270") => false
 
           // https://github.com/esamson/remder/pull/5
           case ("net.sourceforge.plantuml", "plantuml", "8059") => false
+
+          // https://github.com/lightbend/migration-manager/pull/260
+          case ("org.scalatest", "scalatest", "3.2.0-SNAP10") => false
 
           case _ => true
         }

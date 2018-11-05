@@ -18,9 +18,10 @@ package eu.timepit.scalasteward.model
 
 import cats.data.NonEmptyList
 import cats.implicits._
-import eu.timepit.refined.types.string.NonEmptyString
+import eu.timepit.refined.W
 import eu.timepit.scalasteward.model.Update.{Group, Single}
 import eu.timepit.scalasteward.util
+import eu.timepit.scalasteward.util.string.MinLengthString
 import io.circe.{Decoder, Encoder}
 import scala.util.matching.Regex
 
@@ -94,15 +95,15 @@ object Update {
       val possibleMainArtifactIds = for {
         prefix <- artifactIdsPrefix.toList
         suffix <- commonSuffixes
-      } yield prefix + suffix
+      } yield prefix.value + suffix
 
       artifactIds
         .find(artifactId => possibleMainArtifactIds.contains(artifactId))
         .getOrElse(artifactIds.head)
     }
 
-    def artifactIdsPrefix: Option[NonEmptyString] =
-      util.string.longestCommonNonEmptyPrefix(artifactIds).filter(_.value.length > 2)
+    def artifactIdsPrefix: Option[MinLengthString[W.`3`.T]] =
+      util.string.longestCommonPrefixGreater[W.`3`.T](artifactIds)
   }
 
   ///
@@ -131,7 +132,7 @@ object Update {
     }
 
   val commonSuffixes: List[String] =
-    List("contrib", "core", "extra", "server")
+    List("config", "contrib", "core", "extra", "server")
 
   def removeCommonSuffix(str: String): String =
     util.string.removeSuffix(str, commonSuffixes)

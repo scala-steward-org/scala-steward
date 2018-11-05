@@ -17,9 +17,14 @@
 package eu.timepit.scalasteward.util
 
 import cats.data.NonEmptyList
-import eu.timepit.refined.types.string.NonEmptyString
+import eu.timepit.refined.api.Refined
+import eu.timepit.refined.collection.MinSize
+import eu.timepit.refined.refineV
+import shapeless.Witness
 
 object string {
+  type MinLengthString[N] = String Refined MinSize[N]
+
   def longestCommonPrefix(s1: String, s2: String): String = {
     var i = 0
     val min = math.min(s1.length, s2.length)
@@ -27,8 +32,10 @@ object string {
     s1.substring(0, i)
   }
 
-  def longestCommonNonEmptyPrefix(xs: NonEmptyList[String]): Option[NonEmptyString] =
-    NonEmptyString.unapply(xs.reduceLeft(longestCommonPrefix))
+  def longestCommonPrefixGreater[N <: Int: Witness.Aux](
+      xs: NonEmptyList[String]
+  ): Option[MinLengthString[N]] =
+    refineV[MinSize[N]](xs.reduceLeft(longestCommonPrefix)).toOption
 
   def removeSuffix(target: String, suffixes: List[String]): String =
     suffixes
