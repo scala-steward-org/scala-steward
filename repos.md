@@ -163,6 +163,7 @@
 - typelevel/cats-mtl
 - typelevel/discipline
 - typelevel/machinist
+- ua-parser/uap-scala
 - vectos/formulation
 - vlovgr/ciris
 - WellFactored/resourcepool
