@@ -167,3 +167,10 @@
 - vectos/formulation
 - vlovgr/ciris
 - WellFactored/resourcepool
+- spotify/scio
+- spotify/scio-contrib
+- spotify/scio-idea-plugin
+- spotify/scio.g8
+- spotify/featran
+- spotify/noether
+- spotify/big-data-rosetta-code
