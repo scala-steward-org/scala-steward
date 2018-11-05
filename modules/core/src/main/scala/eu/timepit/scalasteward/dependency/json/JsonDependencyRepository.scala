@@ -36,8 +36,8 @@ class JsonDependencyRepository[F[_]](
   override def findSha1(repo: Repo): F[Option[Sha1]] =
     readJson.map(_.store.get(repo).map(_.sha1))
 
-  override def getDependencies: F[List[Dependency]] =
-    readJson.map(_.store.values.flatMap(_.dependencies).toList.distinct)
+  override def getDependencies(repos: List[Repo]): F[List[Dependency]] =
+    readJson.map(_.store.filterKeys(repos.contains).values.flatMap(_.dependencies).toList.distinct)
 
   override def getStore: F[Map[Repo, RepoData]] =
     readJson.map(_.store)

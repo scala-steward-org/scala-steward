@@ -29,6 +29,7 @@ import io.chrisdavenport.log4cats.Logger
 class UpdateService[F[_]](
     implicit
     dependencyRepository: DependencyRepository[F],
+    filterAlg: FilterAlg[F],
     logger: Logger[F],
     sbtAlg: SbtAlg[F],
     updateRepository: UpdateRepository[F],
@@ -38,8 +39,8 @@ class UpdateService[F[_]](
   // Add configuration "phantom-js-jetty" to Update
 
   // WIP
-  def checkForUpdates(implicit F: MonadThrowable[F]): F[List[Update]] =
-    dependencyRepository.getDependencies.flatMap { dependencies =>
+  def checkForUpdates(repos: List[Repo])(implicit F: MonadThrowable[F]): F[List[Update]] =
+    dependencyRepository.getDependencies(repos).flatMap { dependencies =>
       val (libraries, plugins) = dependencies
         .filter(
           d =>
@@ -53,7 +54,7 @@ class UpdateService[F[_]](
         .map { libs =>
           ArtificialProject(
             ScalaVersion("2.12.7"),
-            SbtVersion("1.2.4"),
+            defaultSbtVersion,
             libs.sortBy(_.formatAsModuleId),
             List.empty
           )
@@ -86,7 +87,10 @@ class UpdateService[F[_]](
           )
         }*/
       val x = (libProjects ++ pluginProjects).flatTraverse { prj =>
-        sbtAlg.getUpdates(prj).attempt.flatMap {
+        val fa = util.divideOnError((_: ArtificialProject).halve)(sbtAlg.getUpdates)(prj)
+        //val fa = sbtAlg.getUpdates(prj)
+
+        fa.attempt.flatMap {
           case Right(updates) =>
             logger.info(util.logger.showUpdates(updates)) >>
               updates.traverse_(updateRepository.save) >> F.pure(updates)
@@ -96,9 +100,7 @@ class UpdateService[F[_]](
         }
       }
 
-      x.flatTap { updates =>
-        foo(updates).map(rs => { rs.foreach(println); rs })
-      }
+      x.flatMap(updates => filterAlg.globalFilterMany(updates))
     }
 
   def foo(updates: List[Update]): F[List[Repo]] =
@@ -114,6 +116,7 @@ class UpdateService[F[_]](
         )
         .keys
         .toList
+        .sorted
     }
 
 }

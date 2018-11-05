@@ -30,10 +30,13 @@ object steward extends IOApp {
         for {
           repos <- getRepos(ctx.config.workspace)
           _ <- prepareEnv(ctx)
-          //user <- ctx.config.gitHubUser[IO]
-          //_ <- repos.traverse(ctx.dependencyService.forkAndCheckDependencies(user, _))
-          //_ <- ctx.updateService.checkForUpdates
-          _ <- repos.traverse_(ctx.nurtureAlg.nurture)
+          _ <- repos.traverse(ctx.dependencyService.forkAndCheckDependencies)
+          allUpdates <- ctx.updateService.checkForUpdates(repos)
+          reposToNurture <- ctx.updateService.foo(allUpdates)
+          _ <- IO(reposToNurture.map(_.show).foreach(println))
+          _ <- IO(println(reposToNurture.size))
+          _ <- reposToNurture.filter(repos.contains).traverse_(ctx.nurtureAlg.nurture)
+          //_ <- repos.traverse_(ctx.nurtureAlg.nurture)
         } yield ExitCode.Success
       }
     }
