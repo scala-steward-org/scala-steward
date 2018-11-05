@@ -156,6 +156,8 @@
 - ThoughtWorksInc/sbt-scala-js-map
 - ThoughtWorksInc/todo
 - ThoughtWorksInc/tryt.scala
+- travisbrown/catbird
+- travisbrown/iteratee
 - typelevel/cats
 - typelevel/cats-collections
 - typelevel/cats-mtl
