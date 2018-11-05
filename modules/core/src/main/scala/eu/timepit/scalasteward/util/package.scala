@@ -42,7 +42,8 @@ package object util {
     }
 
   def divideOnError2[F[_], G[_], A, B, E](a: A)(f: A => F[B])(divide: A => G[A])(
-      handleError: E => F[B])(
+      handleError: E => F[B]
+  )(
       implicit
       F: ApplicativeError[F, E],
       G: Foldable[G],

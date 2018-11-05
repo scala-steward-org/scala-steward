@@ -111,7 +111,7 @@ class UpdateService[F[_]](
             d =>
               updates.exists(
                 u => u.groupId == d.groupId && d.artifactIdCross == u.artifactId && d.version == u.currentVersion
-            )
+              )
           )
         )
         .keys
