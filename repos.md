@@ -52,6 +52,7 @@
 - erikvanoosten/metrics-scala
 - esamson/remder
 - esamson/sbt-groovy
+- finagle/finch
 - fthomas/crjdt
 - fthomas/datapackage
 - fthomas/fs2-cron
