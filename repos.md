@@ -6,8 +6,6 @@
 - akka/akka-sample-cluster-docker-compose-java
 - akka/akka-sample-cluster-docker-compose-scala
 - akka/akka-samples
-- akka/alpakka-samples/alpakka-sample-mqtt-http-to-s3-java
-- akka/alpakka-samples/alpakka-sample-sqs-java
 - alonsodomin/cron4s
 - arturgajowy/rchain
 - Atry/fastring
