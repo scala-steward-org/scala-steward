@@ -1,6 +1,5 @@
 - agourlay/cornichon
 - agourlay/json-2-csv
-- akka/akka-cluster-kubernetes-quickstart-scala
 - akka/akka-grpc-sample-kubernetes-scala
 - akka/akka-minion
 - akka/akka-paradox
