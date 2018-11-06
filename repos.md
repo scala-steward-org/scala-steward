@@ -67,15 +67,16 @@
 - gvolpe/console4cats
 - gvolpe/fs2-rabbit
 - gvolpe/fs2-redis
+- hipjim/scala-retry 
 - http4s/blaze
 - http4s/http4s
 - http4s/http4s.g8
 - http4s/rho
-- hipjim/scala-retry 
 - ilya-murzinov/finch-todo-backend
 - IronCoreLabs/argonaut-jwt-scala
 - IronCoreLabs/cats-scalatest
 - IronCoreLabs/recrypt
+- julienrf/endpoints
 - julien-truffaut/Monocle
 - julien-truffaut/newts
 - larsrh/sbt-libisabelle
@@ -176,7 +177,6 @@
 - ua-parser/uap-scala
 - vectos/formulation
 - vlovgr/ciris
-- WellFactored/resourcepool
-- WellFactored/property-info
 - WellFactored/clovis
-- julienrf/endpoints
+- WellFactored/property-info
+- WellFactored/resourcepool
