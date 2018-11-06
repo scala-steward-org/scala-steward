@@ -75,6 +75,8 @@
 - julienrf/endpoints
 - julien-truffaut/Monocle
 - julien-truffaut/newts
+- kwark/play-refined
+- kwark/slick-refined
 - larsrh/sbt-libisabelle
 - laserdisc-io/laserdisc
 - laserdisc-io/log-effect
