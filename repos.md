@@ -7,7 +7,6 @@
 - akka/akka-sample-cluster-docker-compose-scala
 - akka/akka-samples
 - alonsodomin/cron4s
-- arturgajowy/rchain
 - Atry/fastring
 - azhur/kafka-serde-scala
 - barambani/http4s-extend
