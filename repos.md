@@ -176,4 +176,6 @@
 - vectos/formulation
 - vlovgr/ciris
 - WellFactored/resourcepool
+- WellFactored/property-info
+- WellFactored/clovis
 - julienrf/endpoints
