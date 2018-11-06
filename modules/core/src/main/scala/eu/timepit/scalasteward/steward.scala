@@ -51,6 +51,6 @@ object steward extends IOApp {
     IO {
       val file = workspace / ".." / "repos.md"
       val regex = """-\s+(.+)/(.+)""".r
-      file.lines.collect { case regex(owner, repo) => Repo(owner, repo) }.toList
+      file.lines.collect { case regex(owner, repo) => Repo(owner.trim, repo.trim) }.toList
     }
 }

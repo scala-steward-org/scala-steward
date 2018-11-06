@@ -64,7 +64,7 @@
 - gvolpe/console4cats
 - gvolpe/fs2-rabbit
 - gvolpe/fs2-redis
-- hipjim/scala-retry 
+- hipjim/scala-retry
 - http4s/blaze
 - http4s/http4s
 - http4s/http4s.g8
