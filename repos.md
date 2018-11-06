@@ -71,6 +71,7 @@
 - http4s/http4s
 - http4s/http4s.g8
 - http4s/rho
+- hipjim/scala-retry 
 - ilya-murzinov/finch-todo-backend
 - IronCoreLabs/argonaut-jwt-scala
 - IronCoreLabs/cats-scalatest
