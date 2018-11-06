@@ -139,6 +139,7 @@
 - schrepfler/sportsml-scala
 - SethTisue/cloc-plugin
 - SethTisue/Project-Euler
+- shankarshastri/ScalaFPCode
 - Sizmek/fast-string-interpolator
 - Sizmek/rtree2d
 - sphereio/sphere-scala-libs
