@@ -97,6 +97,7 @@
 - mfirry/scala-http-clients
 - mfirry/web-frameworks-templates
 - milessabin/shapeless
+- monix/monix
 - pathikrit/better-files
 - pdalpra/gh4s
 - Philippus/baggage-jwt
