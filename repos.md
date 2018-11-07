@@ -100,6 +100,9 @@
 - mfirry/web-frameworks-templates
 - milessabin/shapeless
 - monix/monix
+- NeQuissimus/circe-kafka
+- NeQuissimus/nequi-kafka
+- NeQuissimus/zio-slf4j
 - pathikrit/better-files
 - pdalpra/gh4s
 - Philippus/baggage-jwt
