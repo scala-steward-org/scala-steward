@@ -59,6 +59,7 @@
 - fthomas/scala-steward
 - fthomas/singleton-ops
 - fthomas/status-page
+- gearpump/gearpump
 - getquill/quill
 - gvolpe/console4cats
 - gvolpe/fs2-rabbit
