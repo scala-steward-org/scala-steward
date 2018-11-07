@@ -41,9 +41,11 @@ object logger {
         case (a, duration) => self.info(msg(duration)) >> F.pure(a)
       }
 
-    def infoTotalTime[A](fa: F[A])(implicit F: Sync[F]): F[A] = {
-      val line = "─" * 10
-      infoTimed(duration => s"$line Total time: ${dateTime.showDuration(duration)} $line")(fa)
+    def infoTotalTime[A](label: String)(fa: F[A])(implicit F: Sync[F]): F[A] = {
+      val label1 = if (label.nonEmpty) s" $label:" else ""
+      infoTimed { duration =>
+        string.lineLeftRight(s"Total time:$label1 ${dateTime.showDuration(duration)}")
+      }(fa)
     }
   }
 

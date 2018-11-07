@@ -26,7 +26,7 @@ import eu.timepit.scalasteward.util.logger.LoggerOps
 object steward extends IOApp {
   override def run(args: List[String]): IO[ExitCode] =
     Context.create[IO].use { ctx =>
-      ctx.logger.infoTotalTime {
+      ctx.logger.infoTotalTime("run") {
         for {
           repos <- getRepos(ctx.config.workspace)
           _ <- prepareEnv(ctx)

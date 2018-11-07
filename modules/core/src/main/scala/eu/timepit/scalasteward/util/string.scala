@@ -41,4 +41,9 @@ object string {
     suffixes
       .find(suffix => target.endsWith(suffix))
       .fold(target)(suffix => target.substring(0, target.length - suffix.length))
+
+  def lineLeftRight(s: String): String = {
+    val line = "─" * 12
+    s"$line $s $line"
+  }
 }
