@@ -58,9 +58,10 @@ class NurtureAlg[F[_]](
       repoOut <- gitHubApiAlg.createFork(repo)
       parent <- repoOut.parentOrRaise[F]
       cloneUrl = util.uri.withUserInfo(repoOut.clone_url, user)
+      parentCloneUrl = util.uri.withUserInfo(parent.clone_url, user)
       _ <- gitAlg.clone(repo, cloneUrl)
       _ <- gitAlg.setAuthor(repo, config.gitAuthor)
-      _ <- gitAlg.syncFork(repo, parent.clone_url, parent.default_branch)
+      _ <- gitAlg.syncFork(repo, parentCloneUrl, parent.default_branch)
     } yield parent.default_branch
 
   def updateDependencies(repo: Repo, baseBranch: Branch)(implicit F: BracketThrowable[F]): F[Unit] =
