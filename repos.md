@@ -114,6 +114,7 @@
 - rchain/rchain
 - ReactivePlatform/Pragmatic-Scala
 - ReactivePlatform/Reactive-Design-Patterns
+- sake92/hepek
 - scala/hello-world.g8
 - scala/make-release-notes
 - scala/sbt-scala-module
