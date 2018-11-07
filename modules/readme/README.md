@@ -25,6 +25,7 @@ Here are the pull requests [**@scala-steward**][@scala-steward] has created so f
 
 The following people have helped making **Scala steward** great:
 
+* [Filipe Regadas](https://github.com/regadas)
 * [Frank S. Thomas](https://github.com/fthomas)
 * [kenji yoshida](https://github.com/xuwei-k)
 * [Piotr Gabara](https://github.com/bhop)
