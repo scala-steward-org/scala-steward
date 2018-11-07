@@ -18,11 +18,11 @@ package eu.timepit.scalasteward.update
 
 import cats.Monad
 import cats.implicits._
-import eu.timepit.scalasteward.dependency.DependencyRepository
+import eu.timepit.scalasteward.dependency.{Dependency, DependencyRepository}
 import eu.timepit.scalasteward.github.data.Repo
-import eu.timepit.scalasteward.util
 import eu.timepit.scalasteward.model.Update
 import eu.timepit.scalasteward.sbt._
+import eu.timepit.scalasteward.util
 import eu.timepit.scalasteward.util.MonadThrowable
 import io.chrisdavenport.log4cats.Logger
 
@@ -106,17 +106,16 @@ class UpdateService[F[_]](
   def foo(updates: List[Update]): F[List[Repo]] =
     dependencyRepository.getStore.map { store =>
       store
-        .filter(
-          _._2.dependencies.exists(
-            d =>
-              updates.exists(
-                u => u.groupId == d.groupId && d.artifactIdCross == u.artifactId && d.version == u.currentVersion
-              )
-          )
-        )
+        .filter(_._2.dependencies.exists(d => updates.exists(u => UpdateService.isUpdateFor(u, d))))
         .keys
         .toList
         .sorted
     }
+}
 
+object UpdateService {
+  def isUpdateFor(update: Update, dependency: Dependency): Boolean =
+    update.groupId === dependency.groupId &&
+      update.artifactId === dependency.artifactIdCross &&
+      update.currentVersion === dependency.version
 }
