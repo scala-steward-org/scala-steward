@@ -17,6 +17,7 @@
 - BenFradet/spark-kafka-writer
 - BenFradet/struct-type-encoder
 - cb372/scalacache
+- ChristopherDavenport/bank
 - ChristopherDavenport/base.g8
 - ChristopherDavenport/cats-par
 - ChristopherDavenport/cats-scalacheck
@@ -25,13 +26,17 @@
 - ChristopherDavenport/Data.Maybe
 - ChristopherDavenport/ember
 - ChristopherDavenport/fuuid
+- ChristopherDavenport/iork
 - ChristopherDavenport/linebacker
 - ChristopherDavenport/log4cats
 - ChristopherDavenport/mules
+- ChristopherDavenport/rank3
 - ChristopherDavenport/read
 - ChristopherDavenport/scalaz-task-effect
+- ChristopherDavenport/selection
 - ChristopherDavenport/system-effect
 - ChristopherDavenport/testcontainers-specs2
+- ChristopherDavenport/vault
 - circe/circe
 - circe/circe-benchmarks
 - circe/circe-bson
