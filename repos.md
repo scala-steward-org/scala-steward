@@ -9,6 +9,7 @@
 - alonsodomin/cron4s
 - Atry/fastring
 - azhur/kafka-serde-scala
+- balhoff/whelk
 - barambani/http4s-extend
 - barambani/http4s-poc-api
 - barambani/laws
@@ -110,6 +111,7 @@
 - NeQuissimus/zio-slf4j
 - pathikrit/better-files
 - pdalpra/gh4s
+- phenoscape/scowl
 - Philippus/baggage-jwt
 - Philippus/between
 - Philippus/bump
