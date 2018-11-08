@@ -49,6 +49,7 @@ object ProcessAlg {
       override def execSandboxed(command: Nel[String], cwd: File): F[List[String]] =
         F.delay(File.home.pathAsString).flatMap { home =>
           val whitelisted = List(
+            s"$home/.coursier",
             s"$home/.sbt",
             s"$home/.ivy2",
             cwd.pathAsString
