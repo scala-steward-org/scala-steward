@@ -182,6 +182,7 @@
 - travisbrown/iteratee
 - typelevel/cats
 - typelevel/cats-collections
+- typelevel/cats-effect
 - typelevel/cats-mtl
 - typelevel/discipline
 - typelevel/machinist
