@@ -103,13 +103,14 @@ class UpdateService[F[_]](
       x.flatMap(updates => filterAlg.globalFilterMany(updates))
     }
 
-  def foo(updates: List[Update]): F[List[Repo]] =
-    dependencyRepository.getStore.map { store =>
-      store
-        .filter(_._2.dependencies.exists(d => updates.exists(u => UpdateService.isUpdateFor(u, d))))
-        .keys
-        .toList
-        .sorted
+  def filterByApplicableUpdates(repos: List[Repo], updates: List[Update]): F[List[Repo]] =
+    repos.traverseFilter { repo =>
+      for {
+        dependencies <- dependencyRepository.getDependencies(List(repo))
+        matchingUpdates = updates.filter { update =>
+          dependencies.exists(dependency => UpdateService.isUpdateFor(update, dependency))
+        }
+      } yield matchingUpdates.headOption.as(repo)
     }
 }
 

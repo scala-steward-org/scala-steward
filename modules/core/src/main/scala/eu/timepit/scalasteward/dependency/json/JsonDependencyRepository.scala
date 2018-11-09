@@ -39,9 +39,6 @@ class JsonDependencyRepository[F[_]](
   override def getDependencies(repos: List[Repo]): F[List[Dependency]] =
     readJson.map(_.store.filterKeys(repos.contains).values.flatMap(_.dependencies).toList.distinct)
 
-  override def getStore: F[Map[Repo, RepoData]] =
-    readJson.map(_.store)
-
   override def setDependencies(repo: Repo, sha1: Sha1, dependencies: List[Dependency]): F[Unit] =
     readJson.flatMap { store =>
       val updated = store.store.updated(repo, RepoData(sha1, dependencies))
