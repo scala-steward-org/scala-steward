@@ -76,6 +76,7 @@
 - http4s/http4s.g8
 - http4s/rho
 - ilya-murzinov/finch-todo-backend
+- INCATools/dosdp-tools
 - IronCoreLabs/argonaut-jwt-scala
 - IronCoreLabs/cats-scalatest
 - IronCoreLabs/recrypt
