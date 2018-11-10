@@ -76,7 +76,7 @@ object FilterAlg {
 
       def filterImpl(keep: Boolean, update: Update): F[Option[Update]] =
         if (keep) F.pure(Some(update))
-        else logger.info(s"Ignore update ${update.show}") *> F.pure(None)
+        else logger.info(s"Ignore ${update.show}") *> F.pure(None)
 
       override def globalFilter(update: Update): F[Option[Update]] =
         filterImpl(globalKeep(update), update)
