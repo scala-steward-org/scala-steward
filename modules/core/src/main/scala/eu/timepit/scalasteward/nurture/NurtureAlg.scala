@@ -58,8 +58,8 @@ class NurtureAlg[F[_]](
       _ <- logger.info(s"Clone and synchronize ${repo.show}")
       repoOut <- gitHubApiAlg.createFork(repo)
       parent <- repoOut.parentOrRaise[F]
-      cloneUrl = util.uri.withUserInfo(repoOut.clone_url, user)
-      parentCloneUrl = util.uri.withUserInfo(parent.clone_url, user)
+      cloneUrl = util.uri.withCredentials(repoOut.clone_url, user)
+      parentCloneUrl = util.uri.withCredentials(parent.clone_url, user)
       _ <- gitAlg.clone(repo, cloneUrl)
       _ <- gitAlg.setAuthor(repo, config.gitAuthor)
       _ <- gitAlg.syncFork(repo, parentCloneUrl, parent.default_branch)

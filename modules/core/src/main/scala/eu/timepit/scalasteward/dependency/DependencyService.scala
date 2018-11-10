@@ -55,10 +55,10 @@ class DependencyService[F[_]](
   ): F[Unit] =
     for {
       _ <- logger.info(s"Refresh dependencies of ${repo.show}")
-      cloneUrl = util.uri.withUserInfo(repoOut.clone_url, user)
+      cloneUrl = util.uri.withCredentials(repoOut.clone_url, user)
       _ <- gitAlg.clone(repo, cloneUrl)
       parent <- repoOut.parentOrRaise[F]
-      parentCloneUrl = util.uri.withUserInfo(parent.clone_url, user)
+      parentCloneUrl = util.uri.withCredentials(parent.clone_url, user)
       _ <- gitAlg.syncFork(repo, parentCloneUrl, parent.default_branch)
       dependencies <- sbtAlg.getDependencies(repo)
       _ <- dependencyRepository.setDependencies(repo, latestSha1, dependencies)

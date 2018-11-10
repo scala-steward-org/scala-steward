@@ -28,8 +28,11 @@ object uri {
   def fromString[F[_]](s: String)(implicit F: ApplicativeThrowable[F]): F[Uri] =
     F.fromEither(Uri.fromString(s))
 
-  def withUserInfo(uri: Uri, user: AuthenticatedUser): Uri =
+  def withUserInfo(uri: Uri, userInfo: String): Uri =
     uri.authority.fold(uri) { auth =>
-      uri.copy(authority = Some(auth.copy(userInfo = Some(user.login + ":" + user.accessToken))))
+      uri.copy(authority = Some(auth.copy(userInfo = Some(userInfo))))
     }
+
+  def withCredentials(uri: Uri, user: AuthenticatedUser): Uri =
+    withUserInfo(uri, user.login + ":" + user.accessToken)
 }

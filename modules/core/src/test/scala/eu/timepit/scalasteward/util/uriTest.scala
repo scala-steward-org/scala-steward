@@ -14,10 +14,10 @@ class uriTest extends FunSuite with Matchers {
       Right("https://api.github.com/repos/")
   }
 
-  test("withUserInfo") {
+  test("withCredentials") {
     val url = Uri.uri("https://api.github.com/repos/")
     val user = AuthenticatedUser("user", "pass")
-    uri.withUserInfo(url, user).toString shouldBe
+    uri.withCredentials(url, user).toString shouldBe
       "https://user:pass@api.github.com/repos/"
   }
 }
