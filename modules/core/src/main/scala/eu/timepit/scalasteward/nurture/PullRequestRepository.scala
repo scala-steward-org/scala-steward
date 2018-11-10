@@ -16,14 +16,13 @@
 
 package eu.timepit.scalasteward.nurture
 
-import eu.timepit.scalasteward.git.{Branch, Sha1}
+import eu.timepit.scalasteward.git.Sha1
 import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.model.Update
+import org.http4s.Uri
 
-final case class UpdateData(
-    repo: Repo,
-    update: Update,
-    baseBranch: Branch,
-    baseSha1: Sha1,
-    updateBranch: Branch
-)
+trait PullRequestRepository[F[_]] {
+  def createOrUpdate(repo: Repo, url: Uri, baseSha1: Sha1, update: Update): F[Unit]
+
+  def findUpdates(repo: Repo, baseSha1: Sha1): F[List[Update]]
+}

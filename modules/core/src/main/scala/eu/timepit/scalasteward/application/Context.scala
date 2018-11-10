@@ -26,7 +26,8 @@ import eu.timepit.scalasteward.github.GitHubApiAlg
 import eu.timepit.scalasteward.github.data.AuthenticatedUser
 import eu.timepit.scalasteward.github.http4s.Http4sGitHubApiAlg
 import eu.timepit.scalasteward.io.{FileAlg, ProcessAlg, WorkspaceAlg}
-import eu.timepit.scalasteward.nurture.{EditAlg, NurtureAlg}
+import eu.timepit.scalasteward.nurture.json.JsonPullRequestRepo
+import eu.timepit.scalasteward.nurture.{EditAlg, NurtureAlg, PullRequestRepository}
 import eu.timepit.scalasteward.sbt.SbtAlg
 import eu.timepit.scalasteward.update.json.JsonUpdateRepository
 import eu.timepit.scalasteward.update.{FilterAlg, UpdateRepository, UpdateService}
@@ -72,6 +73,7 @@ object Context {
       implicit val editAlg: EditAlg[F] = EditAlg.create[F]
       implicit val gitAlg: GitAlg[F] = GitAlg.create[F]
       implicit val gitHubApiAlg: GitHubApiAlg[F] = new Http4sGitHubApiAlg[F]
+      implicit val pullRequestRepo: PullRequestRepository[F] = new JsonPullRequestRepo[F]
       implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F]
       implicit val updateRepository: UpdateRepository[F] = new JsonUpdateRepository[F]
       implicit val dependencyService: DependencyService[F] = new DependencyService[F]

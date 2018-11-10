@@ -38,6 +38,7 @@ class NurtureAlg[F[_]](
     gitAlg: GitAlg[F],
     gitHubApiAlg: GitHubApiAlg[F],
     logger: Logger[F],
+    pullRequestRepo: PullRequestRepository[F],
     sbtAlg: SbtAlg[F],
     user: AuthenticatedUser
 ) {
@@ -70,8 +71,9 @@ class NurtureAlg[F[_]](
       updates <- sbtAlg.getUpdatesForRepo(repo)
       _ <- logger.info(util.logger.showUpdates(updates))
       filtered <- filterAlg.localFilterMany(repo, updates)
+      baseSha1 <- gitAlg.latestSha1(repo, baseBranch)
       _ <- filtered.traverse_ { update =>
-        val data = UpdateData(repo, update, baseBranch, git.branchFor(update))
+        val data = UpdateData(repo, update, baseBranch, baseSha1, git.branchFor(update))
         processUpdate(data)
       }
     } yield ()
@@ -88,6 +90,9 @@ class NurtureAlg[F[_]](
           logger.info(s"Found PR ${pr.html_url}") >> updatePullRequest(data)
         case None =>
           applyNewUpdate(data)
+      }
+      _ <- pullRequests.headOption.fold(F.unit) { pr =>
+        pullRequestRepo.createOrUpdate(data.repo, pr.html_url, data.baseSha1, data.update)
       }
     } yield ()
 
@@ -114,8 +119,9 @@ class NurtureAlg[F[_]](
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
       requestData = NewPullRequestData.from(data, config.gitHubLogin)
-      pullRequest <- gitHubApiAlg.createPullRequest(data.repo, requestData)
-      _ <- logger.info(s"Created PR ${pullRequest.html_url}")
+      pr <- gitHubApiAlg.createPullRequest(data.repo, requestData)
+      _ <- pullRequestRepo.createOrUpdate(data.repo, pr.html_url, data.baseSha1, data.update)
+      _ <- logger.info(s"Created PR ${pr.html_url}")
     } yield ()
 
   def updatePullRequest(data: UpdateData)(implicit F: BracketThrowable[F]): F[Unit] =

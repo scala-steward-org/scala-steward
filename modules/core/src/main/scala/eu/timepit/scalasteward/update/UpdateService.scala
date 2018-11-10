@@ -21,6 +21,7 @@ import cats.implicits._
 import eu.timepit.scalasteward.dependency.{Dependency, DependencyRepository}
 import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.model.Update
+import eu.timepit.scalasteward.nurture.PullRequestRepository
 import eu.timepit.scalasteward.sbt._
 import eu.timepit.scalasteward.util
 import eu.timepit.scalasteward.util.MonadThrowable
@@ -31,6 +32,7 @@ class UpdateService[F[_]](
     dependencyRepository: DependencyRepository[F],
     filterAlg: FilterAlg[F],
     logger: Logger[F],
+    pullRequestRepo: PullRequestRepository[F],
     sbtAlg: SbtAlg[F],
     updateRepository: UpdateRepository[F],
     F: Monad[F]
@@ -110,7 +112,24 @@ class UpdateService[F[_]](
         matchingUpdates = updates.filter { update =>
           dependencies.exists(dependency => UpdateService.isUpdateFor(update, dependency))
         }
-      } yield matchingUpdates.headOption.as(repo)
+        maybeBaseSha1 <- dependencyRepository.findSha1(repo)
+        ignorableUpdates <- maybeBaseSha1 match {
+          case Some(baseSha1) => pullRequestRepo.findUpdates(repo, baseSha1)
+          case None           => F.pure(List.empty[Update])
+        }
+        updates1 = matchingUpdates.filterNot(
+          update =>
+            ignorableUpdates.exists(
+              ignUpdate =>
+                update.groupId == ignUpdate.groupId && update.nextVersion == ignUpdate.nextVersion &&
+                  ignUpdate.artifactIds.exists(id => update.artifactId.startsWith(id))
+            )
+        )
+        // 18
+        // 17
+        // 10
+        _ <- F.pure(println(repo + " " + updates1))
+      } yield updates1.headOption.as(repo)
     }
 }
 
