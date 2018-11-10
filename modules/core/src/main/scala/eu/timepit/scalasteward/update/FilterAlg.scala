@@ -49,6 +49,8 @@ object FilterAlg {
           case ("org.eclipse.jetty", "jetty-server", _)    => false
           case ("org.eclipse.jetty", "jetty-websocket", _) => false
 
+          case ("com.geirsson", "scalafmt-core_2.12", _) => false
+
           // https://github.com/fthomas/scala-steward/issues/105
           case ("io.monix", _, "3.0.0-fbcb270") => false
 

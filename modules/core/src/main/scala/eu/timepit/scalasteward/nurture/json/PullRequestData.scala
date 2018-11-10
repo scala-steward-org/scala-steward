@@ -14,16 +14,22 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.nurture
+package eu.timepit.scalasteward.nurture.json
 
-import eu.timepit.scalasteward.git.{Branch, Sha1}
-import eu.timepit.scalasteward.github.data.Repo
+import eu.timepit.scalasteward.git.Sha1
 import eu.timepit.scalasteward.model.Update
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.semiauto._
 
-final case class UpdateData(
-    repo: Repo,
-    update: Update,
-    baseBranch: Branch,
+final case class PullRequestData(
     baseSha1: Sha1,
-    updateBranch: Branch
+    update: Update
 )
+
+object PullRequestData {
+  implicit val pullRequestDataDecoder: Decoder[PullRequestData] =
+    deriveDecoder
+
+  implicit val pullRequestDataEncoder: Encoder[PullRequestData] =
+    deriveEncoder
+}
