@@ -123,7 +123,7 @@ class UpdateService[F[_]](
               ignUpdate =>
                 update.groupId == ignUpdate.groupId && update.nextVersion == ignUpdate.nextVersion &&
                   ignUpdate.artifactIds.exists(id => update.artifactId.startsWith(id))
-          )
+            )
         )
         // 18
         // 17
