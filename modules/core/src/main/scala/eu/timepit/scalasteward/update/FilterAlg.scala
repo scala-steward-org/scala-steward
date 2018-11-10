@@ -49,6 +49,8 @@ object FilterAlg {
           case ("org.eclipse.jetty", "jetty-server", _)    => false
           case ("org.eclipse.jetty", "jetty-websocket", _) => false
 
+          // transitive dependencies of e.g. com.lucidchart:sbt-scalafmt
+          case ("com.geirsson", "scalafmt-cli_2.11", _)  => false
           case ("com.geirsson", "scalafmt-core_2.12", _) => false
 
           // https://github.com/fthomas/scala-steward/issues/105
