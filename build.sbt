@@ -146,7 +146,7 @@ addCommandsAlias(
 )
 
 addCommandsAlias(
-  "formatAll",
+  "fmt",
   Seq(
     "headerCreate",
     "scalafmt",

@@ -21,16 +21,39 @@ import cats.effect.Sync
 import cats.implicits._
 import eu.timepit.scalasteward.git.Author
 import eu.timepit.scalasteward.github.data.AuthenticatedUser
+import scala.sys.process.Process
 
+/** Configuration for scala-steward.
+  *
+  * == [[gitHubApiHost]] ==
+  * REST API v3 endpoints prefix
+  *
+  * For github.com this is "https://api.github.com", see
+  * [[https://developer.github.com/v3/]].
+  *
+  * For GitHub Enterprise this is "http(s)://[hostname]/api/v3", see
+  * [[https://developer.github.com/enterprise/v3/]].
+  *
+  * == [[gitAskPass]] ==
+  * Program that is invoked by scala-steward and git (via the `GIT_ASKPASS`
+  * environment variable) to request the password for the user [[gitHubLogin]].
+  *
+  * This program could just be a simple shell script that echos the password.
+  *
+  * See also [[https://git-scm.com/docs/gitcredentials]].
+  */
 final case class Config(
     workspace: File,
     gitAuthor: Author,
     gitHubApiHost: String,
     gitHubLogin: String,
-    gitHubTokenFile: File
+    gitAskPass: File
 ) {
   def gitHubUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] =
-    F.delay(AuthenticatedUser(gitHubLogin, gitHubTokenFile.contentAsString.trim))
+    F.delay {
+      val password = Process(gitAskPass.pathAsString).!!.trim
+      AuthenticatedUser(gitHubLogin, password)
+    }
 }
 
 object Config {
@@ -38,11 +61,11 @@ object Config {
     F.delay(File.home).map { home =>
       val login = "scala-steward"
       Config(
-        workspace = home / "code/scala-steward/workspace",
-        gitAuthor = Author("Scala steward", "scala-steward@timepit.eu"),
+        workspace = home / s"code/$login/workspace",
+        gitAuthor = Author("Scala steward", s"$login@timepit.eu"),
         gitHubApiHost = "https://api.github.com",
         gitHubLogin = login,
-        gitHubTokenFile = home / s".github/tokens/$login"
+        gitAskPass = home / s".github/askpass/$login.sh"
       )
     }
 }

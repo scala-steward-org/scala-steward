@@ -1,18 +1,48 @@
 package eu.timepit.scalasteward.git
 
+import better.files.File
+import cats.effect.IO
 import eu.timepit.scalasteward.MockState
 import eu.timepit.scalasteward.MockState.MockEnv
+import eu.timepit.scalasteward.application.Config
 import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.io.{MockFileAlg, MockProcessAlg, MockWorkspaceAlg}
 import org.http4s.Uri
 import org.scalatest.{FunSuite, Matchers}
+import eu.timepit.scalasteward.util
 
 class GitAlgTest extends FunSuite with Matchers {
+  implicit val config: Config = Config(
+    workspace = File.temp,
+    gitAuthor = Author("", ""),
+    gitHubApiHost = "",
+    gitHubLogin = "",
+    gitAskPass = File.temp / "askpass.sh"
+  )
   implicit val fileAlg: MockFileAlg = new MockFileAlg
   implicit val processAlg: MockProcessAlg = new MockProcessAlg
   implicit val workspaceAlg: MockWorkspaceAlg = new MockWorkspaceAlg
   val gitAlg: GitAlg[MockEnv] = GitAlg.create
   val repo = Repo("fthomas", "datapackage")
+
+  test("clone") {
+    val url = util.uri
+      .fromString[IO]("https://scala-steward@github.com/fthomas/datapackage")
+      .unsafeRunSync()
+    val state = gitAlg.clone(repo, url).runS(MockState.empty).value
+
+    state shouldBe MockState.empty.copy(
+      commands = Vector(
+        List(
+          "git",
+          "clone",
+          "--recursive",
+          "https://scala-steward@github.com/fthomas/datapackage",
+          "/tmp/ws/fthomas/datapackage"
+        )
+      )
+    )
+  }
 
   test("branchAuthors") {
     val state = gitAlg

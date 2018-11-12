@@ -1,7 +1,6 @@
 package eu.timepit.scalasteward.util
 
 import cats.implicits._
-import eu.timepit.scalasteward.github.data.AuthenticatedUser
 import org.http4s.Uri
 import org.scalatest.{FunSuite, Matchers}
 
@@ -14,10 +13,9 @@ class uriTest extends FunSuite with Matchers {
       Right("https://api.github.com/repos/")
   }
 
-  test("withCredentials") {
+  test("withUserInfo") {
     val url = Uri.uri("https://api.github.com/repos/")
-    val user = AuthenticatedUser("user", "pass")
-    uri.withCredentials(url, user).toString shouldBe
+    uri.withUserInfo(url, "user:pass").toString shouldBe
       "https://user:pass@api.github.com/repos/"
   }
 }

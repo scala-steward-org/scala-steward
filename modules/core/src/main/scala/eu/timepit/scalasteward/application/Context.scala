@@ -67,7 +67,7 @@ object Context {
       implicit val filterAlg: FilterAlg[F] = FilterAlg.create[F]
       implicit val processAlg: ProcessAlg[F] = ProcessAlg.create[F]
       implicit val user: AuthenticatedUser = user_
-      implicit val workspace: File = config_.workspace
+      implicit val workspace: File = config.workspace
       implicit val workspaceAlg: WorkspaceAlg[F] = WorkspaceAlg.create[F]
       implicit val dependencyRepository: DependencyRepository[F] = new JsonDependencyRepository[F]
       implicit val editAlg: EditAlg[F] = EditAlg.create[F]
