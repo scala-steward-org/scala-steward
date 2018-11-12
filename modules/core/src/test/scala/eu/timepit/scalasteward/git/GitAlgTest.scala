@@ -1,13 +1,22 @@
 package eu.timepit.scalasteward.git
 
+import better.files.File
 import eu.timepit.scalasteward.MockState
 import eu.timepit.scalasteward.MockState.MockEnv
+import eu.timepit.scalasteward.application.Config
 import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.io.{MockFileAlg, MockProcessAlg, MockWorkspaceAlg}
 import org.http4s.Uri
 import org.scalatest.{FunSuite, Matchers}
 
 class GitAlgTest extends FunSuite with Matchers {
+  implicit val config: Config = Config(
+    workspace = File.temp,
+    gitAuthor = Author("", ""),
+    gitHubApiHost = "",
+    gitHubLogin = "",
+    gitAskPass = File.temp / "askpass.sh"
+  )
   implicit val fileAlg: MockFileAlg = new MockFileAlg
   implicit val processAlg: MockProcessAlg = new MockProcessAlg
   implicit val workspaceAlg: MockWorkspaceAlg = new MockWorkspaceAlg

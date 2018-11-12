@@ -21,6 +21,7 @@ import cats.Monad
 import cats.data.{NonEmptyList => Nel}
 import cats.effect.Bracket
 import cats.implicits._
+import eu.timepit.scalasteward.application.Config
 import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import eu.timepit.scalasteward.util.MonadThrowable
@@ -68,6 +69,7 @@ object GitAlg {
 
   def create[F[_]](
       implicit
+      config: Config,
       fileAlg: FileAlg[F],
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F],
@@ -174,6 +176,6 @@ object GitAlg {
         } yield ()
 
       def exec(command: Nel[String], cwd: File): F[List[String]] =
-        processAlg.exec(gitCmd :: command, cwd)
+        processAlg.exec(gitCmd :: command, cwd, "GIT_ASKPASS" -> config.gitAskPass.pathAsString)
     }
 }

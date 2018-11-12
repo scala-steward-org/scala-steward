@@ -17,7 +17,6 @@
 package eu.timepit.scalasteward.util
 
 import cats.implicits._
-import eu.timepit.scalasteward.github.data.AuthenticatedUser
 import io.circe.Decoder
 import org.http4s.Uri
 
@@ -32,7 +31,4 @@ object uri {
     uri.authority.fold(uri) { auth =>
       uri.copy(authority = Some(auth.copy(userInfo = Some(userInfo))))
     }
-
-  def withCredentials(uri: Uri, user: AuthenticatedUser): Uri =
-    withUserInfo(uri, user.login + ":" + user.accessToken)
 }
