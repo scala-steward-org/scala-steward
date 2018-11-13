@@ -23,16 +23,20 @@ import eu.timepit.scalasteward.model.Update
 import io.chrisdavenport.log4cats.Logger
 
 trait FilterAlg[F[_]] {
+  def globalKeep(update: Update): Boolean
+
   def globalFilter(update: Update): F[Option[Update]]
+
+  def localKeep(repo: Repo, update: Update): Boolean
 
   def localFilter(repo: Repo, update: Update): F[Option[Update]]
 
-  def globalFilterMany[G[_]: TraverseFilter](updates: G[Update])(
+  final def globalFilterMany[G[_]: TraverseFilter](updates: G[Update])(
       implicit F: Applicative[F]
   ): F[G[Update]] =
     updates.traverseFilter(globalFilter)
 
-  def localFilterMany[G[_]: TraverseFilter](repo: Repo, updates: G[Update])(
+  final def localFilterMany[G[_]: TraverseFilter](repo: Repo, updates: G[Update])(
       implicit F: Applicative[F]
   ): F[G[Update]] =
     updates.traverseFilter(update => localFilter(repo, update))
@@ -41,7 +45,7 @@ trait FilterAlg[F[_]] {
 object FilterAlg {
   def create[F[_]](implicit logger: Logger[F], F: Applicative[F]): FilterAlg[F] =
     new FilterAlg[F] {
-      def globalKeep(update: Update): Boolean =
+      override def globalKeep(update: Update): Boolean =
         (update.groupId, update.artifactId, update.nextVersion) match {
           case ("org.scala-lang", "scala-compiler", _) => false
           case ("org.scala-lang", "scala-library", _)  => false
@@ -68,20 +72,20 @@ object FilterAlg {
           case _ => true
         }
 
-      def localKeep(repo: Repo, update: Update): Boolean =
+      override def localKeep(repo: Repo, update: Update): Boolean =
         (repo.show, update.groupId, update.artifactId) match {
           case ("scala/scala-dist", "com.amazonaws", "aws-java-sdk-s3") => false
           case _                                                        => true
         }
-
-      def filterImpl(keep: Boolean, update: Update): F[Option[Update]] =
-        if (keep) F.pure(Some(update))
-        else logger.info(s"Ignore ${update.show}") *> F.pure(None)
 
       override def globalFilter(update: Update): F[Option[Update]] =
         filterImpl(globalKeep(update), update)
 
       override def localFilter(repo: Repo, update: Update): F[Option[Update]] =
         filterImpl(globalKeep(update) && localKeep(repo, update), update)
+
+      def filterImpl(keep: Boolean, update: Update): F[Option[Update]] =
+        if (keep) F.pure(Some(update))
+        else logger.info(s"Ignore ${update.show}") *> F.pure(None)
     }
 }

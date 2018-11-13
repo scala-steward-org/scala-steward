@@ -44,12 +44,7 @@ class UpdateService[F[_]](
   def checkForUpdates(repos: List[Repo])(implicit F: MonadThrowable[F]): F[List[Update]] =
     dependencyRepository.getDependencies(repos).flatMap { dependencies =>
       val (libraries, plugins) = dependencies
-        .filter(
-          d =>
-            d.groupId != "org.scala-lang" && d.artifactId != "scala-library"
-              && d.groupId != "org.eclipse.jetty" && d.artifactId != "jetty-server" &&
-              d.artifactId != "jetty-websocket"
-        )
+        .filter(d => filterAlg.globalKeep(d.toUpdate))
         .partition(_.sbtVersion.isEmpty)
       val libProjects = splitter
         .xxx(libraries)
@@ -65,8 +60,8 @@ class UpdateService[F[_]](
       val pluginProjects = plugins
         .groupBy(_.sbtVersion)
         .flatMap {
-          case (maybeSbtVersion, plugins) =>
-            splitter.xxx(plugins).map { ps =>
+          case (maybeSbtVersion, plugins1) =>
+            splitter.xxx(plugins1).map { ps =>
               ArtificialProject(
                 ScalaVersion("2.12.7"),
                 seriesToSpecificVersion(maybeSbtVersion.get),
@@ -77,17 +72,6 @@ class UpdateService[F[_]](
         }
         .toList
 
-      /*
-      val pluginProjects = splitter
-        .xxx(plugins)
-        .map { ps =>
-          ArtificialProject(
-            ScalaVersion("2.12.7"),
-            SbtVersion("1.2.4"),
-            List.empty,
-            ps.sortBy(_.formatAsModuleId)
-          )
-        }*/
       val x = (libProjects ++ pluginProjects).flatTraverse { prj =>
         val fa = util.divideOnError((_: ArtificialProject).halve)(sbtAlg.getUpdates)(prj)
         //val fa = sbtAlg.getUpdates(prj)
@@ -125,9 +109,6 @@ class UpdateService[F[_]](
                   ignUpdate.artifactIds.exists(id => update.artifactId.startsWith(id))
             )
         )
-        // 18
-        // 17
-        // 10
         _ <- F.pure(println(repo + " " + updates1))
       } yield updates1.headOption.as(repo)
     }
