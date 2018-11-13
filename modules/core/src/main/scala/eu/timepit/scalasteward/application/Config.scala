@@ -21,6 +21,7 @@ import cats.effect.Sync
 import cats.implicits._
 import eu.timepit.scalasteward.git.Author
 import eu.timepit.scalasteward.github.data.AuthenticatedUser
+import eu.timepit.scalasteward.util
 import scala.sys.process.Process
 
 /** Configuration for scala-steward.
@@ -50,9 +51,13 @@ final case class Config(
     gitAskPass: File
 ) {
   def gitHubUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] =
-    F.delay {
-      val password = Process(gitAskPass.pathAsString).!!.trim
-      AuthenticatedUser(gitHubLogin, password)
+    util.uri.fromString[F](gitHubApiHost).flatMap { url =>
+      val urlWithUser = util.uri.withUserInfo(url, gitHubLogin).renderString
+      val prompt = s"Password for '$urlWithUser': "
+      F.delay {
+        val password = Process(List(gitAskPass.pathAsString, prompt)).!!.trim
+        AuthenticatedUser(gitHubLogin, password)
+      }
     }
 }
 
