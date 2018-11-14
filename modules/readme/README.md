@@ -21,14 +21,10 @@ to be updated.
 If you are curious how [**@scala-steward**'s][@scala-steward] pull requests
 look like, here are the ones it has created so far:
 
-* [Created pull requests](https://github.com/search?q=author%3Ascala-steward+is%3Apr)
-* [Merged pull requests]( https://github.com/search?q=author%3Ascala-steward+is%3Amerged+sort%3Aupdated-desc)
-
-If you are logged into GitHub, these links provide an alternative and
-more compact view of the searches above:
-
-* [Created pull requests](https://github.com/pulls?q=author%3Ascala-steward+is%3Apr)
-* [Merged pull requests]( https://github.com/pulls?q=author%3Ascala-steward+is%3Amerged+sort%3Aupdated-desc)
+* [Created pull requests](            https://github.com/search?q=author%3Ascala-steward+is%3Apr)
+  ([compact view for logged in users](https://github.com/pulls?q=author%3Ascala-steward+is%3Apr))
+* [Merged pull requests](             https://github.com/search?q=author%3Ascala-steward+is%3Amerged+sort%3Aupdated-desc)
+  ([compact view for logged in users](https://github.com/pulls?q=author%3Ascala-steward+is%3Amerged+sort%3Aupdated-desc))
 
 ## Contributors
 
