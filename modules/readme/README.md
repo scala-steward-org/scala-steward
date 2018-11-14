@@ -4,7 +4,7 @@
 [![Join the chat at https://gitter.im/fthomas/scala-steward](https://badges.gitter.im/fthomas/scala-steward.svg)](https://gitter.im/fthomas/scala-steward?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/4573461025c642daa4128b659ee54fc9)](https://www.codacy.com/app/fthomas/scala-steward?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=fthomas/scala-steward&amp;utm_campaign=Badge_Grade)
 
-**scala-steward** is a robot that helps you keeping library dependencies
+scala-steward is a robot that helps you keeping library dependencies
 and sbt plugins up-to-date.
 
 ## Quick start guide
@@ -32,7 +32,7 @@ more compact view of the searches above:
 
 ## Contributors
 
-The following people have helped making **scala-steward** great:
+The following people have helped making scala-steward great:
 
 * [Filipe Regadas](https://github.com/regadas)
 * [Frank S. Thomas](https://github.com/fthomas)
@@ -42,13 +42,13 @@ The following people have helped making **scala-steward** great:
 
 ## Participation
 
-The **scala-steward** project supports the [Scala Code of Conduct][CoC]
+The scala-steward project supports the [Scala Code of Conduct][CoC]
 and wants all of its channels (GitHub, Gitter, etc.) to be welcoming
 environments for everyone.
 
 ## Credit
 
-**scala-steward** wouldn't exist without the great [sbt-updates][sbt-updates]
+scala-steward wouldn't exist without the great [sbt-updates][sbt-updates]
 plugin to determine dependency updates and a bunch of [Typelevel][Typelevel]
 and other Scala [libraries](https://github.com/fthomas/scala-steward/blob/master/project/Dependencies.scala).
 
@@ -58,7 +58,7 @@ and other Scala [libraries](https://github.com/fthomas/scala-steward/blob/master
 
 ## License
 
-**scala-steward** is licensed under the
+scala-steward is licensed under the
 [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0).
 
 [CoC]: https://github.com/fthomas/scala-steward/blob/master/CODE_OF_CONDUCT.md
