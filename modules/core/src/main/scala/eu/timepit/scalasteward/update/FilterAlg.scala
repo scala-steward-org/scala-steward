@@ -49,6 +49,7 @@ object FilterAlg {
         (update.groupId, update.artifactId, update.nextVersion) match {
           case ("org.scala-lang", "scala-compiler", _) => false
           case ("org.scala-lang", "scala-library", _)  => false
+          case ("org.scala-lang", "scala-reflect", _)  => false
 
           case ("org.eclipse.jetty", "jetty-server", _)    => false
           case ("org.eclipse.jetty", "jetty-websocket", _) => false
