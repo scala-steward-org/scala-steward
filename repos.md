@@ -37,6 +37,7 @@
 - ChristopherDavenport/selection
 - ChristopherDavenport/system-effect
 - ChristopherDavenport/testcontainers-specs2
+- ChristopherDavenport/unique
 - ChristopherDavenport/vault
 - circe/circe
 - circe/circe-benchmarks
