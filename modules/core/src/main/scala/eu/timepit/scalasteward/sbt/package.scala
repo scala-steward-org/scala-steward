@@ -31,6 +31,9 @@ package object sbt {
       case _      => defaultSbtVersion
     }
 
+  val sbtScalafixPlugin: FileData =
+    FileData("sbt-scalafix.sbt", """addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.0")""")
+
   val sbtUpdatesPlugin: FileData =
     FileData("sbt-updates.sbt", """addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.4")""")
 
