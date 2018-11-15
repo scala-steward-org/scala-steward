@@ -122,6 +122,7 @@
 - Philippus/emoji-clock
 - Philippus/julius
 - Philippus/scala-for-all
+- pjan/akka-d3
 - plokhotnyuk/jsoniter-scala
 - ppurang/asynch
 - raboof/sbt-reproducible-builds
