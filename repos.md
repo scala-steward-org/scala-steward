@@ -58,7 +58,6 @@
 - finagle/finagle-oauth2
 - finagle/finch
 - finch/finch-oauth2
-- finch/finch-oauth2
 - fthomas/crjdt
 - fthomas/datapackage
 - fthomas/fs2-cron
