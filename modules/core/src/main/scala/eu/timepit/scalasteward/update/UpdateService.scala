@@ -50,7 +50,7 @@ class UpdateService[F[_]](
         .xxx(libraries)
         .map { libs =>
           ArtificialProject(
-            ScalaVersion("2.12.7"),
+            defaultScalaVersion,
             defaultSbtVersion,
             libs.sortBy(_.formatAsModuleId),
             List.empty
@@ -63,7 +63,7 @@ class UpdateService[F[_]](
           case (maybeSbtVersion, plugins1) =>
             splitter.xxx(plugins1).map { ps =>
               ArtificialProject(
-                ScalaVersion("2.12.7"),
+                defaultScalaVersion,
                 seriesToSpecificVersion(maybeSbtVersion.get),
                 List.empty,
                 ps.sortBy(_.formatAsModuleId)
