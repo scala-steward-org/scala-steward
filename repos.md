@@ -190,6 +190,7 @@
 - typelevel/machinist
 - ua-parser/uap-scala
 - vectos/formulation
+- vectos/itinere
 - vlovgr/ciris
 - WellFactored/clovis
 - WellFactored/property-info
