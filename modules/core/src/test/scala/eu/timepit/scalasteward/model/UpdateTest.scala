@@ -115,7 +115,12 @@ class UpdateTest extends FunSuite with Matchers {
     ).artifactId shouldBe "http4s-core"
   }
 
-  test("group") {
+  test("group: 1 update") {
+    val updates = List(Single("org.specs2", "specs2-core", "3.9.4", Nel.of("3.9.5")))
+    Update.group(updates) shouldBe updates
+  }
+
+  test("group: 2 updates") {
     val update0 = Single("org.specs2", "specs2-core", "3.9.4", Nel.of("3.9.5"))
     val update1 = update0.copy(artifactId = "specs2-scalacheck")
     Update.group(List(update0, update1)) shouldBe
