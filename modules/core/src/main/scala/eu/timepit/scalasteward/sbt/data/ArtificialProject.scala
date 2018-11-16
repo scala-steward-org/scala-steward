@@ -15,6 +15,7 @@
  */
 
 package eu.timepit.scalasteward.sbt.data
+
 import eu.timepit.scalasteward.dependency.Dependency
 import eu.timepit.scalasteward.io.FileData
 import eu.timepit.scalasteward.sbt.command.{dependencyUpdates, reloadPlugins}
