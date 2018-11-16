@@ -120,16 +120,7 @@ object Update {
           head
       }
       .toList
-
-  def fromString(str: String): Either[Throwable, Single] =
-    Either.catchNonFatal {
-      val regex = """([^\s:]+):([^\s:]+)[^\s]*\s+:\s+([^\s]+)\s+->(.+)""".r
-      str match {
-        case regex(groupId, artifactId, version, updates) =>
-          val newerVersions = NonEmptyList.fromListUnsafe(updates.split("->").map(_.trim).toList)
-          Single(groupId, artifactId, version, newerVersions)
-      }
-    }
+      .sortBy(update => (update.groupId, update.artifactId))
 
   val commonSuffixes: List[String] =
     List("config", "contrib", "core", "extra", "server")
