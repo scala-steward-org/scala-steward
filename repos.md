@@ -110,6 +110,7 @@
 - mfirry/web-frameworks-templates
 - milessabin/shapeless
 - monix/monix
+- monix/monix-kafka
 - NeQuissimus/circe-kafka
 - NeQuissimus/nequi-kafka
 - NeQuissimus/zio-slf4j
