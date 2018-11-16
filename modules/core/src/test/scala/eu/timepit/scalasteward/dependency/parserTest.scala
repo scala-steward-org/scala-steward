@@ -1,4 +1,5 @@
 package eu.timepit.scalasteward.dependency
+
 import eu.timepit.scalasteward.sbt.data.SbtVersion
 import org.scalatest.{FunSuite, Matchers}
 

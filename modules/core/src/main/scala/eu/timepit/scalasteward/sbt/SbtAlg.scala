@@ -18,8 +18,8 @@ package eu.timepit.scalasteward.sbt
 
 import better.files.File
 import cats.Monad
-import cats.implicits._
 import cats.data.{NonEmptyList => Nel}
+import cats.implicits._
 import eu.timepit.scalasteward.dependency.Dependency
 import eu.timepit.scalasteward.dependency.parser.parseDependencies
 import eu.timepit.scalasteward.github.data.Repo
@@ -27,7 +27,6 @@ import eu.timepit.scalasteward.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import eu.timepit.scalasteward.model.Update
 import eu.timepit.scalasteward.sbt.command._
 import eu.timepit.scalasteward.sbt.data.ArtificialProject
-import eu.timepit.scalasteward.sbtLegacy
 import io.chrisdavenport.log4cats.Logger
 
 trait SbtAlg[F[_]] {
@@ -81,14 +80,14 @@ object SbtAlg {
           cmd = sbtCmd(project.dependencyUpdatesCmd: _*)
           lines <- processAlg.exec(cmd, updatesDir)
           _ <- fileAlg.deleteForce(updatesDir)
-        } yield sbtLegacy.toUpdates(lines)
+        } yield parser.parseSingleUpdates(lines)
 
       override def getUpdatesForRepo(repo: Repo): F[List[Update]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
           cmd = sbtCmd(setCredentialsToNil, dependencyUpdates, reloadPlugins, dependencyUpdates)
           lines <- ignoreOptsFiles(repoDir)(processAlg.execSandboxed(cmd, repoDir))
-        } yield sbtLegacy.sanitizeUpdates(sbtLegacy.toUpdates(lines))
+        } yield Update.group(parser.parseSingleUpdates(lines))
 
       val sbtDir: F[File] =
         fileAlg.home.map(_ / ".sbt")
