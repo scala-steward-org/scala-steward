@@ -1,4 +1,4 @@
-package eu.timepit.scalasteward.sbt
+package eu.timepit.scalasteward.sbt.data
 
 import eu.timepit.scalasteward.dependency.Dependency
 import org.scalatest.{FunSuite, Matchers}

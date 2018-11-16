@@ -23,6 +23,7 @@ import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.model.Update
 import eu.timepit.scalasteward.nurture.PullRequestRepository
 import eu.timepit.scalasteward.sbt._
+import eu.timepit.scalasteward.sbt.data.ArtificialProject
 import eu.timepit.scalasteward.util
 import eu.timepit.scalasteward.util.MonadThrowable
 import io.chrisdavenport.log4cats.Logger

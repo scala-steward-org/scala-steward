@@ -1,6 +1,5 @@
 package eu.timepit.scalasteward.dependency
-
-import eu.timepit.scalasteward.sbt.SbtVersion
+import eu.timepit.scalasteward.sbt.data.SbtVersion
 import org.scalatest.{FunSuite, Matchers}
 
 class parserTest extends FunSuite with Matchers {

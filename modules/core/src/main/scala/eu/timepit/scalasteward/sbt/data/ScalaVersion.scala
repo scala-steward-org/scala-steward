@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.sbt
+package eu.timepit.scalasteward.sbt.data
+
 import io.circe.{Decoder, Encoder}
 
 final case class ScalaVersion(value: String)

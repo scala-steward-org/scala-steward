@@ -26,6 +26,7 @@ import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import eu.timepit.scalasteward.model.Update
 import eu.timepit.scalasteward.sbt.command._
+import eu.timepit.scalasteward.sbt.data.ArtificialProject
 import eu.timepit.scalasteward.sbtLegacy
 import io.chrisdavenport.log4cats.Logger
 
