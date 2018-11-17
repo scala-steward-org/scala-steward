@@ -161,6 +161,7 @@
 - shankarshastri/ScalaFPCode
 - Sizmek/fast-string-interpolator
 - Sizmek/rtree2d
+- Slakah/uritemplate4s
 - sphereio/sphere-scala-libs
 - spotify/big-data-rosetta-code
 - spotify/featran
