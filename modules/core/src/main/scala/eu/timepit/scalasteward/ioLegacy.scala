@@ -30,5 +30,10 @@ object ioLegacy {
     FileAlg.create[F].walk(dir).filter(isSourceFile).evalMap(updateFile(_, update)).compile.drain
 
   def updateFile[F[_]](file: File, update: Update)(implicit F: Sync[F]): F[File] =
-    F.delay(update.replaceAllIn(file.contentAsString).fold(file)(file.write(_)))
+    F.delay {
+      val updated =
+        if (file.isSymbolicLink) None
+        else update.replaceAllIn(file.contentAsString)
+      updated.fold(file)(file.write(_))
+    }
 }
