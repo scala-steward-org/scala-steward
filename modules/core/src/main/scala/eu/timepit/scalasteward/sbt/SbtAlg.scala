@@ -36,7 +36,7 @@ trait SbtAlg[F[_]] {
 
   def getDependencies(repo: Repo): F[List[Dependency]]
 
-  def getUpdates(project: ArtificialProject): F[List[Update.Single]]
+  def getUpdatesForProject(project: ArtificialProject): F[List[Update.Single]]
 
   def getUpdatesForRepo(repo: Repo): F[List[Update.Single]]
 }
@@ -70,7 +70,7 @@ object SbtAlg {
           lines <- ignoreOptsFiles(repoDir)(processAlg.execSandboxed(cmd, repoDir))
         } yield lines.flatMap(parseDependencies).distinct
 
-      override def getUpdates(project: ArtificialProject): F[List[Update.Single]] =
+      override def getUpdatesForProject(project: ArtificialProject): F[List[Update.Single]] =
         for {
           updatesDir <- workspaceAlg.rootDir.map(_ / "updates")
           projectDir = updatesDir / "project"

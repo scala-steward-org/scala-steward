@@ -67,7 +67,7 @@ class NurtureAlg[F[_]](
 
   def updateDependencies(repo: Repo, baseBranch: Branch)(implicit F: BracketThrowable[F]): F[Unit] =
     for {
-      _ <- logger.info(s"Check updates for ${repo.show}")
+      _ <- logger.info(s"Find updates for ${repo.show}")
       updates <- sbtAlg.getUpdatesForRepo(repo)
       filtered <- filterAlg.localFilterMany(repo, updates)
       grouped = Update.group(filtered)

@@ -74,7 +74,7 @@ class UpdateService[F[_]](
         .toList
 
       val x = (libProjects ++ pluginProjects).flatTraverse { prj =>
-        val fa = util.divideOnError((_: ArtificialProject).halve)(sbtAlg.getUpdates)(prj)
+        val fa = util.divideOnError((_: ArtificialProject).halve)(sbtAlg.getUpdatesForProject)(prj)
         //val fa = sbtAlg.getUpdates(prj)
 
         fa.attempt.flatMap {
