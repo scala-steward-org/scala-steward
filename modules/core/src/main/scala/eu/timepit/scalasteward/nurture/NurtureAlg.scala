@@ -23,6 +23,7 @@ import eu.timepit.scalasteward.application.Config
 import eu.timepit.scalasteward.git.{Branch, GitAlg}
 import eu.timepit.scalasteward.github.GitHubApiAlg
 import eu.timepit.scalasteward.github.data.{NewPullRequestData, Repo}
+import eu.timepit.scalasteward.model.Update
 import eu.timepit.scalasteward.sbt.SbtAlg
 import eu.timepit.scalasteward.update.FilterAlg
 import eu.timepit.scalasteward.util.logger.LoggerOps
@@ -68,10 +69,11 @@ class NurtureAlg[F[_]](
     for {
       _ <- logger.info(s"Check updates for ${repo.show}")
       updates <- sbtAlg.getUpdatesForRepo(repo)
-      _ <- logger.info(util.logger.showUpdates(updates))
       filtered <- filterAlg.localFilterMany(repo, updates)
+      grouped = Update.group(filtered)
+      _ <- logger.info(util.logger.showUpdates(grouped))
       baseSha1 <- gitAlg.latestSha1(repo, baseBranch)
-      _ <- filtered.traverse_ { update =>
+      _ <- grouped.traverse_ { update =>
         val data = UpdateData(repo, update, baseBranch, baseSha1, git.branchFor(update))
         processUpdate(data)
       }

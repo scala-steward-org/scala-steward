@@ -42,7 +42,7 @@ class UpdateService[F[_]](
   // Add configuration "phantom-js-jetty" to Update
 
   // WIP
-  def checkForUpdates(repos: List[Repo])(implicit F: MonadThrowable[F]): F[List[Update]] =
+  def checkForUpdates(repos: List[Repo])(implicit F: MonadThrowable[F]): F[List[Update.Single]] =
     dependencyRepository.getDependencies(repos).flatMap { dependencies =>
       val (libraries, plugins) = dependencies
         .filter(d => filterAlg.globalKeep(d.toUpdate))
@@ -79,11 +79,11 @@ class UpdateService[F[_]](
 
         fa.attempt.flatMap {
           case Right(updates) =>
-            logger.info(util.logger.showUpdates(updates)) >>
+            logger.info(util.logger.showUpdates(updates.widen[Update])) >>
               updates.traverse_(updateRepository.save) >> F.pure(updates)
           case Left(t) =>
             println(t)
-            F.pure(List.empty[Update])
+            F.pure(List.empty[Update.Single])
         }
       }
 

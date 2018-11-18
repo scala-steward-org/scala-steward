@@ -36,9 +36,9 @@ trait SbtAlg[F[_]] {
 
   def getDependencies(repo: Repo): F[List[Dependency]]
 
-  def getUpdates(project: ArtificialProject): F[List[Update]]
+  def getUpdates(project: ArtificialProject): F[List[Update.Single]]
 
-  def getUpdatesForRepo(repo: Repo): F[List[Update]]
+  def getUpdatesForRepo(repo: Repo): F[List[Update.Single]]
 }
 
 object SbtAlg {
@@ -70,7 +70,7 @@ object SbtAlg {
           lines <- ignoreOptsFiles(repoDir)(processAlg.execSandboxed(cmd, repoDir))
         } yield lines.flatMap(parseDependencies).distinct
 
-      override def getUpdates(project: ArtificialProject): F[List[Update]] =
+      override def getUpdates(project: ArtificialProject): F[List[Update.Single]] =
         for {
           updatesDir <- workspaceAlg.rootDir.map(_ / "updates")
           projectDir = updatesDir / "project"
@@ -82,12 +82,12 @@ object SbtAlg {
           _ <- fileAlg.deleteForce(updatesDir)
         } yield parser.parseSingleUpdates(lines)
 
-      override def getUpdatesForRepo(repo: Repo): F[List[Update]] =
+      override def getUpdatesForRepo(repo: Repo): F[List[Update.Single]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
           cmd = sbtCmd(setCredentialsToNil, dependencyUpdates, reloadPlugins, dependencyUpdates)
           lines <- ignoreOptsFiles(repoDir)(processAlg.execSandboxed(cmd, repoDir))
-        } yield Update.group(parser.parseSingleUpdates(lines))
+        } yield parser.parseSingleUpdates(lines)
 
       val sbtDir: F[File] =
         fileAlg.home.map(_ / ".sbt")
