@@ -67,7 +67,7 @@ object Config {
       val login = "scala-steward"
       Config(
         workspace = home / s"code/$login/workspace",
-        gitAuthor = Author("Scala steward", s"$login@timepit.eu"),
+        gitAuthor = Author("Scala steward", s"me@$login.org"),
         gitHubApiHost = "https://api.github.com",
         gitHubLogin = login,
         gitAskPass = home / s".github/askpass/$login.sh"
