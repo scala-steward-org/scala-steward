@@ -127,7 +127,6 @@
 - plokhotnyuk/jsoniter-scala
 - ppurang/asynch
 - raboof/sbt-reproducible-builds
-- rchain/rchain
 - ReactivePlatform/Pragmatic-Scala
 - ReactivePlatform/Reactive-Design-Patterns
 - sake92/hepek
