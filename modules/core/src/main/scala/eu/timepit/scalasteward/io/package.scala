@@ -18,24 +18,9 @@ package eu.timepit.scalasteward
 
 import better.files.File
 import cats.effect.Sync
-import eu.timepit.scalasteward.io.FileAlg
-import eu.timepit.scalasteward.model.Update
+import fs2.Pipe
 
-object ioLegacy {
-  def isSourceFile(file: File): Boolean =
-    !file.pathAsString.contains(".git/") &&
-      file.extension.exists(Set(".scala", ".sbt"))
-
-  def updateDir[F[_]: Sync](dir: File, update: Update): F[Unit] =
-    FileAlg
-      .create[F]
-      .walk(dir)
-      .filter(isSourceFile)
-      .through(io.ignoreSymlinks)
-      .evalMap(updateFile(_, update))
-      .compile
-      .drain
-
-  def updateFile[F[_]](file: File, update: Update)(implicit F: Sync[F]): F[File] =
-    F.delay(update.replaceAllIn(file.contentAsString).fold(file)(file.write(_)))
+package object io {
+  def ignoreSymlinks[F[_]](implicit F: Sync[F]): Pipe[F, File, File] =
+    _.evalMap(f => F.delay((f, f.isSymbolicLink))).collect { case (f, false) => f }
 }
