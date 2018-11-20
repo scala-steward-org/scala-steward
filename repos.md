@@ -56,6 +56,7 @@
 - esamson/remder
 - esamson/sbt-groovy
 - finagle/finagle-oauth2
+- finagle/finagle-postgres
 - finagle/finch
 - finch/finch-oauth2
 - fthomas/crjdt
