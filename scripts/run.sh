@@ -2,8 +2,7 @@
 
 set -ex
 
-#export PATH="/opt/jre/current/bin:$PATH"
-export PATH="/opt/graalvm/current/bin:$PATH"
+export PATH="/opt/jre/current/bin:$PATH"
 SCRIPT=$(readlink -f "$0")
 STEWARD_DIR=$(dirname "$SCRIPT")/..
 cd "$STEWARD_DIR"
