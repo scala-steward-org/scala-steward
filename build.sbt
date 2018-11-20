@@ -17,7 +17,7 @@ val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
 
 lazy val root = project
   .in(file("."))
-  .aggregate(coreJVM)
+  .aggregate(core.jvm)
   .aggregate(readme)
   .settings(commonSettings)
   .settings(noPublishSettings)
@@ -56,8 +56,6 @@ lazy val core = myCrossProject("core")
     """,
     fork in run := true
   )
-
-lazy val coreJVM = core.jvm
 
 lazy val readme = project
   .in(file("modules/readme"))
