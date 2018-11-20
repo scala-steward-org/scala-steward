@@ -14,6 +14,8 @@ import eu.timepit.scalasteward.util
 class GitAlgTest extends FunSuite with Matchers {
   implicit val config: Config = Config(
     workspace = File.temp,
+    reposDir = File.temp / "repos",
+    reposFile = File.temp / ".." / "repos.md",
     gitAuthor = Author("", ""),
     gitHubApiHost = "",
     gitHubLogin = "",

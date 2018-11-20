@@ -25,10 +25,10 @@ import eu.timepit.scalasteward.util.logger.LoggerOps
 
 object steward extends IOApp {
   override def run(args: List[String]): IO[ExitCode] =
-    Context.create[IO].use { ctx =>
+    Context.create[IO](args).use { ctx =>
       ctx.logger.infoTotalTime("run") {
         for {
-          repos <- getRepos(ctx.config.workspace)
+          repos <- getRepos(ctx.config.reposFile)
           _ <- prepareEnv(ctx)
           _ <- repos.traverse(ctx.dependencyService.forkAndCheckDependencies)
           allUpdates <- ctx.updateService.checkForUpdates(repos)
@@ -47,10 +47,9 @@ object steward extends IOApp {
       _ <- ctx.workspaceAlg.cleanWorkspace
     } yield ()
 
-  def getRepos(workspace: File): IO[List[Repo]] =
+  def getRepos(repos: File): IO[List[Repo]] =
     IO {
-      val file = workspace / ".." / "repos.md"
       val regex = """-\s+(.+)/(.+)""".r
-      file.lines.collect { case regex(owner, repo) => Repo(owner.trim, repo.trim) }.toList
+      repos.lines.collect { case regex(owner, repo) => Repo(owner.trim, repo.trim) }.toList
     }
 }
