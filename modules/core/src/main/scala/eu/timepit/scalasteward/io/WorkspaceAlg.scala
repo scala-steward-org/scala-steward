@@ -33,11 +33,11 @@ trait WorkspaceAlg[F[_]] {
 
 object WorkspaceAlg {
   def create[F[_]](
-                    implicit
-                    fileAlg: FileAlg[F],
-                    logger: Logger[F],
-                    config: Config,
-                    F: FlatMap[F]
+      implicit
+      fileAlg: FileAlg[F],
+      logger: Logger[F],
+      config: Config,
+      F: FlatMap[F]
   ): WorkspaceAlg[F] =
     new WorkspaceAlg[F] {
       override def cleanWorkspace: F[Unit] =
