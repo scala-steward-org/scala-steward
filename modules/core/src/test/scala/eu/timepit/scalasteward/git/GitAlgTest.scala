@@ -14,11 +14,12 @@ import eu.timepit.scalasteward.util
 class GitAlgTest extends FunSuite with Matchers {
   implicit val config: Config = Config(
     workspace = File.temp,
-    reposFile = File.temp / ".." / "repos.md",
+    reposFile = File.temp / "repos.md",
     gitAuthor = Author("", ""),
     gitHubApiHost = "",
     gitHubLogin = "",
-    gitAskPass = File.temp / "askpass.sh"
+    gitAskPass = File.temp / "askpass.sh",
+    signCommits = true
   )
   implicit val fileAlg: MockFileAlg = new MockFileAlg
   implicit val processAlg: MockProcessAlg = new MockProcessAlg
@@ -54,6 +55,19 @@ class GitAlgTest extends FunSuite with Matchers {
     state shouldBe MockState.empty.copy(
       commands = Vector(
         List("git", "log", "--pretty=format:'%an'", "master..update/cats-1.0.0")
+      )
+    )
+  }
+
+  test("commitAll") {
+    val state = gitAlg
+      .commitAll(repo, "Initial commit")
+      .runS(MockState.empty)
+      .value
+
+    state shouldBe MockState.empty.copy(
+      commands = Vector(
+        List("git", "commit", "--all", "-m", "Initial commit", "--gpg-sign")
       )
     )
   }

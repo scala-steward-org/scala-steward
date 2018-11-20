@@ -20,4 +20,5 @@ java -jar ${JAR} \
   --git-author-email "me@$LOGIN.org" \
   --github-api-host "https://api.github.com" \
   --github-login ${LOGIN} \
-  --git-ask-pass "$HOME/.github/askpass/$LOGIN.sh"
+  --git-ask-pass "$HOME/.github/askpass/$LOGIN.sh" \
+  --sign-commits
