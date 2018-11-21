@@ -16,7 +16,7 @@
 
 package eu.timepit.scalasteward.application
 
-import better.files.File
+import better.files._
 import cats.effect.Sync
 import cats.implicits._
 import eu.timepit.scalasteward.git.Author
@@ -45,6 +45,7 @@ import scala.sys.process.Process
   */
 final case class Config(
     workspace: File,
+    reposFile: File,
     gitAuthor: Author,
     gitHubApiHost: String,
     gitHubLogin: String,
@@ -62,15 +63,15 @@ final case class Config(
 }
 
 object Config {
-  def default[F[_]](implicit F: Sync[F]): F[Config] =
-    F.delay(File.home).map { home =>
-      val login = "scala-steward"
+  def create[F[_]](args: Cli.Args)(implicit F: Sync[F]): F[Config] =
+    F.delay {
       Config(
-        workspace = home / s"code/$login/workspace",
-        gitAuthor = Author("Scala steward", s"me@$login.org"),
-        gitHubApiHost = "https://api.github.com",
-        gitHubLogin = login,
-        gitAskPass = home / s".github/askpass/$login.sh"
+        workspace = args.workspace.toFile,
+        reposFile = args.reposFile.toFile,
+        gitAuthor = Author(args.gitAuthorName, args.gitAuthorEmail),
+        gitHubApiHost = args.githubApiHost,
+        gitHubLogin = args.githubLogin,
+        gitAskPass = args.gitAskPass.toFile
       )
     }
 }

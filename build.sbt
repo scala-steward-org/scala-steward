@@ -28,6 +28,7 @@ lazy val core = myCrossProject("core")
     libraryDependencies ++= Seq(
       compilerPlugin(Dependencies.kindProjector),
       Dependencies.betterFiles,
+      Dependencies.caseApp,
       Dependencies.catsEffect,
       Dependencies.circeGeneric,
       Dependencies.circeParser,
