@@ -49,7 +49,8 @@ final case class Config(
     gitAuthor: Author,
     gitHubApiHost: String,
     gitHubLogin: String,
-    gitAskPass: File
+    gitAskPass: File,
+    signCommits: Boolean
 ) {
   def gitHubUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] =
     util.uri.fromString[F](gitHubApiHost).flatMap { url =>
@@ -71,7 +72,8 @@ object Config {
         gitAuthor = Author(args.gitAuthorName, args.gitAuthorEmail),
         gitHubApiHost = args.githubApiHost,
         gitHubLogin = args.githubLogin,
-        gitAskPass = args.gitAskPass.toFile
+        gitAskPass = args.gitAskPass.toFile,
+        signCommits = args.signCommits
       )
     }
 }
