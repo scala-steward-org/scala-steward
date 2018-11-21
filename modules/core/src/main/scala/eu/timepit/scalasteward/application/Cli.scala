@@ -17,8 +17,8 @@
 package eu.timepit.scalasteward.application
 
 import caseapp._
-import cats.effect.Sync
 import cats.implicits._
+import eu.timepit.scalasteward.util.ApplicativeThrowable
 
 trait Cli[F[_]] {
   def parseArgs(args: List[String]): F[Cli.Args]
@@ -28,7 +28,6 @@ object Cli {
 
   final case class Args(
       workspace: String,
-      reposDir: Option[String],
       reposFile: String,
       gitAuthorName: String,
       gitAuthorEmail: String,
@@ -37,7 +36,7 @@ object Cli {
       gitAskPass: String
   )
 
-  def create[F[_]](implicit F: Sync[F]): Cli[F] = new Cli[F] {
+  def create[F[_]](implicit F: ApplicativeThrowable[F]): Cli[F] = new Cli[F] {
     override def parseArgs(args: List[String]): F[Args] =
       F.fromEither[Args] {
         CaseApp.parse[Args](args).leftMap(e => new Throwable(e.message)).map(_._1)

@@ -40,10 +40,12 @@ object WorkspaceAlg {
       F: FlatMap[F]
   ): WorkspaceAlg[F] =
     new WorkspaceAlg[F] {
+      private[this] val reposDir = config.workspace / "repos"
+
       override def cleanWorkspace: F[Unit] =
         for {
           _ <- logger.info(s"Clean workspace ${config.workspace}")
-          _ <- fileAlg.deleteForce(config.reposDir)
+          _ <- fileAlg.deleteForce(reposDir)
           _ <- rootDir
         } yield ()
 
@@ -51,6 +53,6 @@ object WorkspaceAlg {
         fileAlg.ensureExists(config.workspace)
 
       override def repoDir(repo: Repo): F[File] =
-        fileAlg.ensureExists(config.reposDir / repo.owner / repo.repo)
+        fileAlg.ensureExists(reposDir / repo.owner / repo.repo)
     }
 }

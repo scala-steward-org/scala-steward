@@ -46,7 +46,6 @@ import scala.sys.process.Process
 final case class Config(
     workspace: File,
     reposFile: File,
-    reposDir: File,
     gitAuthor: Author,
     gitHubApiHost: String,
     gitHubLogin: String,
@@ -68,7 +67,6 @@ object Config {
     F.delay {
       Config(
         workspace = args.workspace.toFile,
-        reposDir = args.reposDir.map(_.toFile).getOrElse(args.workspace.toFile / "repos"),
         reposFile = args.reposFile.toFile,
         gitAuthor = Author(args.gitAuthorName, args.gitAuthorEmail),
         gitHubApiHost = args.githubApiHost,
