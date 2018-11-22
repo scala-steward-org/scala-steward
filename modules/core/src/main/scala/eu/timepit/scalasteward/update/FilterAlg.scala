@@ -78,7 +78,11 @@ object FilterAlg {
       override def localKeep(repo: Repo, update: Update.Single): Boolean =
         (repo.show, update.groupId, update.artifactId) match {
           case ("scala/scala-dist", "com.amazonaws", "aws-java-sdk-s3") => false
-          case _                                                        => true
+
+          // https://github.com/scala/scala-dist/pull/200#issuecomment-440720981
+          case ("scala/scala-dist", "com.typesafe.sbt", "sbt-native-packager") => false
+
+          case _ => true
         }
 
       override def globalFilter(update: Update.Single): F[Option[Update.Single]] =
