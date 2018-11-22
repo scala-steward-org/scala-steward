@@ -51,6 +51,8 @@ object FilterAlg {
           case ("org.scala-lang", "scala-library", _)  => false
           case ("org.scala-lang", "scala-reflect", _)  => false
 
+          case ("org.typelevel", "scala-library", _) => false
+
           case ("org.eclipse.jetty", "jetty-server", _)    => false
           case ("org.eclipse.jetty", "jetty-websocket", _) => false
 
