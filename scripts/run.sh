@@ -12,10 +12,9 @@ sbt -no-colors ";clean ;core/assembly"
 JAR=$(find -name "*assembly*.jar" | head -n1)
 
 LOGIN="scala-steward"
-WORKSPACE="$HOME/code/$LOGIN/workspace"
 java -jar ${JAR} \
-  --workspace ${WORKSPACE} \
-  --repos-file "$WORKSPACE/../repos.md" \
+  --workspace  "$STEWARD_DIR/workspace" \
+  --repos-file "$STEWARD_DIR/repos.md" \
   --git-author-name "Scala steward" \
   --git-author-email "me@$LOGIN.org" \
   --github-api-host "https://api.github.com" \
