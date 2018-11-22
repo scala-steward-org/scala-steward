@@ -75,6 +75,7 @@
 - gvolpe/fs2-rabbit
 - gvolpe/fs2-redis
 - hipjim/scala-retry
+- hseeberger/akka-http-json
 - http4s/blaze
 - http4s/http4s
 - http4s/http4s.g8
