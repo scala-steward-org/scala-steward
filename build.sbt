@@ -153,3 +153,20 @@ addCommandsAlias(
     "scalafmtSbt"
   )
 )
+
+addCommandAlias(
+  "runSteward", {
+    val home = System.getenv("HOME")
+    Seq(
+      Seq("core/run"),
+      Seq("--workspace", s"$home/code/$projectName/workspace"),
+      Seq("--repos-file", s"$home/code/$projectName/repos.md"),
+      Seq("--git-author-name", "Scala steward"),
+      Seq("--git-author-email", s"me@$projectName.org"),
+      Seq("--github-api-host", "https://api.github.com"),
+      Seq("--github-login", projectName),
+      Seq("--git-ask-pass", s"$home/.github/askpass/$projectName.sh"),
+      Seq("--sign-commits")
+    ).flatten.mkString(" ")
+  }
+)
