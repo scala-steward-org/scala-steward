@@ -17,7 +17,8 @@
 package eu.timepit.scalasteward
 
 import better.files.File
-import cats.effect.{ExitCode, IO, IOApp}
+import cats.FlatMap
+import cats.effect.{ExitCode, IO, IOApp, Sync}
 import cats.implicits._
 import eu.timepit.scalasteward.application.Context
 import eu.timepit.scalasteward.github.data.Repo
@@ -28,7 +29,7 @@ object steward extends IOApp {
     Context.create[IO](args).use { ctx =>
       ctx.logger.infoTotalTime("run") {
         for {
-          repos <- getRepos(ctx.config.reposFile)
+          repos <- readRepos[IO](ctx.config.reposFile)
           _ <- prepareEnv(ctx)
           _ <- repos.traverse(ctx.dependencyService.forkAndCheckDependencies)
           allUpdates <- ctx.updateService.checkForUpdates(repos)
@@ -41,15 +42,15 @@ object steward extends IOApp {
       }
     }
 
-  def prepareEnv(ctx: Context[IO]): IO[Unit] =
+  def prepareEnv[F[_]: FlatMap](ctx: Context[F]): F[Unit] =
     for {
       _ <- ctx.sbtAlg.addGlobalPlugins
       _ <- ctx.workspaceAlg.cleanWorkspace
     } yield ()
 
-  def getRepos(repos: File): IO[List[Repo]] =
-    IO {
+  def readRepos[F[_]](reposFile: File)(implicit F: Sync[F]): F[List[Repo]] =
+    F.delay {
       val regex = """-\s+(.+)/(.+)""".r
-      repos.lines.collect { case regex(owner, repo) => Repo(owner.trim, repo.trim) }.toList
+      reposFile.lines.collect { case regex(owner, repo) => Repo(owner.trim, repo.trim) }.toList
     }
 }
