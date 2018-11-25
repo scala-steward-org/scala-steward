@@ -17,6 +17,8 @@ class SbtAlgTest extends FunSuite with Matchers {
   test("addGlobalPlugins") {
     sbtAlg.addGlobalPlugins.runS(MockState.empty).value shouldBe MockState.empty.copy(
       commands = Vector(
+        List("write", "/tmp/steward/.sbt/0.13/plugins/sbt-scalafix.sbt"),
+        List("write", "/tmp/steward/.sbt/1.0/plugins/sbt-scalafix.sbt"),
         List("write", "/tmp/steward/.sbt/0.13/plugins/sbt-updates.sbt"),
         List("write", "/tmp/steward/.sbt/1.0/plugins/sbt-updates.sbt"),
         List("write", "/tmp/steward/.sbt/0.13/plugins/StewardPlugin.scala"),
