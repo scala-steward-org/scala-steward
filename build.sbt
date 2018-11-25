@@ -1,6 +1,5 @@
-import sbtcrossproject.CrossProject
-import sbtcrossproject.CrossType
-import sbtcrossproject.Platform
+import com.typesafe.sbt.packager.docker._
+import sbtcrossproject.{CrossProject, CrossType, Platform}
 
 /// variables
 
@@ -23,7 +22,8 @@ lazy val root = project
   .settings(noPublishSettings)
 
 lazy val core = myCrossProject("core")
-  .enablePlugins(BuildInfoPlugin)
+  .enablePlugins(BuildInfoPlugin, JavaAppPackaging, DockerPlugin)
+  .settings(dockerSettings)
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin(Dependencies.kindProjector),
@@ -111,6 +111,35 @@ lazy val metadataSettings = Def.settings(
       email = "",
       url(s"https://github.com/fthomas")
     )
+  )
+)
+
+lazy val dockerSettings = Def.settings(
+  dockerCommands := Seq(
+    Cmd("FROM", "openjdk:8"),
+    ExecCmd("RUN", "apt-get", "update"),
+    ExecCmd("RUN", "apt-get", "install", "-y", "apt-transport-https", "firejail"),
+    ExecCmd(
+      "RUN",
+      "sh",
+      "-c",
+      """echo \"deb https://dl.bintray.com/sbt/debian /\" | tee -a /etc/apt/sources.list.d/sbt.list"""
+    ),
+    ExecCmd(
+      "RUN",
+      "apt-key",
+      "adv",
+      "--keyserver",
+      "hkp://keyserver.ubuntu.com:80",
+      "--recv",
+      "2EE0EA64E40A89B84B2DF73499E82A75642AC823"
+    ),
+    ExecCmd("RUN", "apt-get", "update"),
+    ExecCmd("RUN", "apt-get", "install", "-y", "sbt"),
+    Cmd("WORKDIR", "/opt/docker"),
+    Cmd("ADD", "opt", "/opt"),
+    ExecCmd("ENTRYPOINT", "/opt/docker/bin/scala-steward"),
+    ExecCmd("CMD", "")
   )
 )
 

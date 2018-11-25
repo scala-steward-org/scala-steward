@@ -17,6 +17,38 @@ periodically for updates of libraries and plugins in your project and will open
 pull requests in your repository if it can figure out where version numbers need
 to be updated.
 
+### Running `scala-steward`
+
+```bash
+sbt stage
+
+./modules/core/.jvm/target/universal/stage/bin/scala-steward \
+  --workspace  "$STEWARD_DIR/workspace" \
+  --repos-file "$STEWARD_DIR/repos.md" \
+  --git-author-name "Scala steward" \
+  --git-author-email ${EMAIL} \
+  --github-api-host "https://api.github.com" \
+  --github-login ${LOGIN} \
+  --git-ask-pass "$STEWARD_DIR/.github/askpass/$LOGIN.sh" \
+  --sign-commits
+```
+
+Or,
+
+```bash
+sbt docker:publishLocal
+
+docker run -v $STEWARD_DIR:/opt/docker -it scala-steward:0.1.0-SNAPSHOT \
+  --workspace  "/opt/docker/workspace" \
+  --repos-file "/opt/docker/repos.md" \
+  --git-author-name "Scala steward" \
+  --git-author-email ${EMAIL} \
+  --github-api-host "https://api.github.com" \
+  --github-login ${LOGIN} \
+  --git-ask-pass "/opt/docker/.github/askpass/$LOGIN.sh" \
+  --sign-commits
+```
+
 ## Show us the pull requests!
 
 If you are curious how [**@scala-steward**'s][@scala-steward] pull requests
