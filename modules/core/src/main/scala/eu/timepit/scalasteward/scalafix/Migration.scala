@@ -21,6 +21,7 @@ import cats.data.NonEmptyList
 final case class Migration(
     groupId: String,
     artifactIds: NonEmptyList[String],
+    minVersion: String,
     newVersion: String,
     gitHubRewrite: String
 )

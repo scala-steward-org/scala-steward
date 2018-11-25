@@ -21,6 +21,12 @@ import cats.data.{NonEmptyList => Nel}
 package object scalafix {
   val migrations: List[Migration] =
     List(
-      Migration("co.fs2", Nel.one("fs2-core"), "1.0.0", "github:amarrella/fs2/v1?sha=672ea4f9")
+      Migration(
+        "co.fs2",
+        Nel.one("fs2-core"),
+        "0.10.0",
+        "1.0.0",
+        "github:amarrella/fs2/v1?sha=672ea4f9"
+      )
     )
 }
