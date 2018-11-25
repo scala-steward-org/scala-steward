@@ -68,7 +68,7 @@ object SbtAlg {
         for {
           repoDir <- workspaceAlg.repoDir(repo)
           cmd = sbtCmd(libraryDependenciesAsJson, reloadPlugins, libraryDependenciesAsJson)
-          lines <- ignoreOptsFiles(repoDir)(processAlg.execSandboxed(cmd, repoDir))
+          lines <- exec(cmd, repoDir)
         } yield lines.flatMap(parseDependencies).distinct
 
       override def getUpdatesForProject(project: ArtificialProject): F[List[Update.Single]] =
@@ -87,11 +87,14 @@ object SbtAlg {
         for {
           repoDir <- workspaceAlg.repoDir(repo)
           cmd = sbtCmd(setCredentialsToNil, dependencyUpdates, reloadPlugins, dependencyUpdates)
-          lines <- ignoreOptsFiles(repoDir)(processAlg.execSandboxed(cmd, repoDir))
+          lines <- exec(cmd, repoDir)
         } yield parser.parseSingleUpdates(lines)
 
       val sbtDir: F[File] =
         fileAlg.home.map(_ / ".sbt")
+
+      def exec(command: Nel[String], repoDir: File): F[List[String]] =
+        ignoreOptsFiles(repoDir)(processAlg.execSandboxed(command, repoDir))
 
       def sbtCmd(command: String*): Nel[String] =
         Nel.of("sbt", "-batch", "-no-colors", command.mkString(";", ";", ""))
