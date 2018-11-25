@@ -27,6 +27,7 @@ import eu.timepit.scalasteward.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import eu.timepit.scalasteward.model.Update
 import eu.timepit.scalasteward.sbt.command._
 import eu.timepit.scalasteward.sbt.data.ArtificialProject
+import eu.timepit.scalasteward.scalafix.Migration
 import io.chrisdavenport.log4cats.Logger
 
 trait SbtAlg[F[_]] {
@@ -39,6 +40,8 @@ trait SbtAlg[F[_]] {
   def getUpdatesForProject(project: ArtificialProject): F[List[Update.Single]]
 
   def getUpdatesForRepo(repo: Repo): F[List[Update.Single]]
+
+  def runScalafix(repo: Repo, migration: Migration): F[Unit]
 }
 
 object SbtAlg {
@@ -89,6 +92,12 @@ object SbtAlg {
           cmd = sbtCmd(setCredentialsToNil, dependencyUpdates, reloadPlugins, dependencyUpdates)
           lines <- exec(cmd, repoDir)
         } yield parser.parseSingleUpdates(lines)
+
+      override def runScalafix(repo: Repo, migration: Migration): F[Unit] =
+        for {
+          repoDir <- workspaceAlg.repoDir(repo)
+          _ <- exec(sbtCmd(scalafixEnable, s"$scalafix ${migration.gitHubRewrite}"), repoDir)
+        } yield ()
 
       val sbtDir: F[File] =
         fileAlg.home.map(_ / ".sbt")

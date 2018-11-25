@@ -20,5 +20,7 @@ object command {
   val dependencyUpdates = "dependencyUpdates"
   val libraryDependenciesAsJson = "libraryDependenciesAsJson"
   val reloadPlugins = "reload plugins"
+  val scalafix = "scalafix"
+  val scalafixEnable = "scalafixEnable"
   val setCredentialsToNil = "set every credentials := Nil"
 }
