@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.sbt
+package eu.timepit.scalasteward.sbt.data
 
 import eu.timepit.scalasteward.dependency.Dependency
 import eu.timepit.scalasteward.io.FileData
-import eu.timepit.scalasteward.sbt.command._
-import scala.collection.mutable.ListBuffer
+import eu.timepit.scalasteward.sbt.command.{dependencyUpdates, reloadPlugins}
 import eu.timepit.scalasteward.util
+import scala.collection.mutable.ListBuffer
 
 final case class ArtificialProject(
     scalaVersion: ScalaVersion,

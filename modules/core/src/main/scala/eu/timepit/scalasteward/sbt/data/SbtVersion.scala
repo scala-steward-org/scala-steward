@@ -14,18 +14,16 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward
+package eu.timepit.scalasteward.sbt.data
 
-import cats.implicits._
-import eu.timepit.scalasteward.model.Update
+import io.circe.{Decoder, Encoder}
 
-object sbtLegacy {
-  def sanitizeUpdates(updates: List[Update.Single]): List[Update] =
-    Update.group(updates.distinct).sortBy(update => (update.groupId, update.artifactId))
+final case class SbtVersion(value: String)
 
-  def toUpdates(lines: List[String]): List[Update.Single] =
-    lines.flatMap { line =>
-      val trimmed = line.replace("[info]", "").trim
-      Update.fromString(trimmed).toSeq
-    }
+object SbtVersion {
+  implicit val sbtVersionDecoder: Decoder[SbtVersion] =
+    Decoder[String].map(SbtVersion.apply)
+
+  implicit val sbtVersionEncoder: Encoder[SbtVersion] =
+    Encoder[String].contramap(_.value)
 }

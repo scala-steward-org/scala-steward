@@ -16,7 +16,6 @@
 
 package eu.timepit.scalasteward.application
 
-import better.files.File
 import cats.effect.{ConcurrentEffect, Resource}
 import cats.implicits._
 import eu.timepit.scalasteward.dependency.json.JsonDependencyRepository
@@ -53,10 +52,11 @@ final case class Context[F[_]](
 )
 
 object Context {
-  def create[F[_]: ConcurrentEffect]: Resource[F, Context[F]] =
+  def create[F[_]: ConcurrentEffect](args: List[String]): Resource[F, Context[F]] =
     for {
+      cliArgs_ <- Resource.liftF(Cli.create[F].parseArgs(args))
+      config_ <- Resource.liftF(Config.create[F](cliArgs_))
       client_ <- BlazeClientBuilder[F](ExecutionContext.global).resource
-      config_ <- Resource.liftF(Config.default[F])
       logger_ <- Resource.liftF(Slf4jLogger.create[F])
       user_ <- Resource.liftF(config_.gitHubUser[F])
     } yield {
@@ -67,7 +67,6 @@ object Context {
       implicit val filterAlg: FilterAlg[F] = FilterAlg.create[F]
       implicit val processAlg: ProcessAlg[F] = ProcessAlg.create[F]
       implicit val user: AuthenticatedUser = user_
-      implicit val workspace: File = config.workspace
       implicit val workspaceAlg: WorkspaceAlg[F] = WorkspaceAlg.create[F]
       implicit val dependencyRepository: DependencyRepository[F] = new JsonDependencyRepository[F]
       implicit val editAlg: EditAlg[F] = EditAlg.create[F]

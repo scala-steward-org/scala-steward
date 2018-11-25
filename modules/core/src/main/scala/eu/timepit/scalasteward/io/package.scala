@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.sbt
-import io.circe.{Decoder, Encoder}
+package eu.timepit.scalasteward
 
-final case class SbtVersion(value: String)
+import better.files.File
+import cats.effect.Sync
+import fs2.Pipe
 
-object SbtVersion {
-  implicit val sbtVersionDecoder: Decoder[SbtVersion] =
-    Decoder[String].map(SbtVersion.apply)
-
-  implicit val sbtVersionEncoder: Encoder[SbtVersion] =
-    Encoder[String].contramap(_.value)
+package object io {
+  def ignoreSymlinks[F[_]](implicit F: Sync[F]): Pipe[F, File, File] =
+    _.evalMap(f => F.delay((f, f.isSymbolicLink))).collect { case (f, false) => f }
 }

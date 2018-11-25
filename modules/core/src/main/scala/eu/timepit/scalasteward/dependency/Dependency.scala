@@ -18,7 +18,7 @@ package eu.timepit.scalasteward.dependency
 
 import cats.data.{NonEmptyList => Nel}
 import eu.timepit.scalasteward.model.Update
-import eu.timepit.scalasteward.sbt.SbtVersion
+import eu.timepit.scalasteward.sbt.data.SbtVersion
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 
@@ -32,7 +32,7 @@ final case class Dependency(
   def formatAsModuleId: String =
     s""""$groupId" % "$artifactIdCross" % "$version""""
 
-  def toUpdate: Update =
+  def toUpdate: Update.Single =
     Update.Single(groupId, artifactId, version, Nel.of(version))
 }
 

@@ -55,7 +55,10 @@
 - erikvanoosten/metrics-scala
 - esamson/remder
 - esamson/sbt-groovy
+- finagle/finagle-oauth2
+- finagle/finagle-postgres
 - finagle/finch
+- finch/finch-oauth2
 - fthomas/crjdt
 - fthomas/datapackage
 - fthomas/fs2-cron
@@ -72,6 +75,7 @@
 - gvolpe/fs2-rabbit
 - gvolpe/fs2-redis
 - hipjim/scala-retry
+- hseeberger/akka-http-json
 - http4s/blaze
 - http4s/http4s
 - http4s/http4s.g8
@@ -108,6 +112,7 @@
 - mfirry/web-frameworks-templates
 - milessabin/shapeless
 - monix/monix
+- monix/monix-kafka
 - NeQuissimus/circe-kafka
 - NeQuissimus/nequi-kafka
 - NeQuissimus/zio-slf4j
@@ -120,10 +125,10 @@
 - Philippus/emoji-clock
 - Philippus/julius
 - Philippus/scala-for-all
+- pjan/akka-d3
 - plokhotnyuk/jsoniter-scala
 - ppurang/asynch
 - raboof/sbt-reproducible-builds
-- rchain/rchain
 - ReactivePlatform/Pragmatic-Scala
 - ReactivePlatform/Reactive-Design-Patterns
 - sake92/hepek
@@ -157,6 +162,7 @@
 - shankarshastri/ScalaFPCode
 - Sizmek/fast-string-interpolator
 - Sizmek/rtree2d
+- Slakah/uritemplate4s
 - sphereio/sphere-scala-libs
 - spotify/big-data-rosetta-code
 - spotify/featran
@@ -190,6 +196,7 @@
 - typelevel/machinist
 - ua-parser/uap-scala
 - vectos/formulation
+- vectos/itinere
 - vlovgr/ciris
 - WellFactored/clovis
 - WellFactored/property-info

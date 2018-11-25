@@ -23,6 +23,7 @@ import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.model.Update
 import eu.timepit.scalasteward.nurture.PullRequestRepository
 import eu.timepit.scalasteward.sbt._
+import eu.timepit.scalasteward.sbt.data.ArtificialProject
 import eu.timepit.scalasteward.util
 import eu.timepit.scalasteward.util.MonadThrowable
 import io.chrisdavenport.log4cats.Logger
@@ -41,7 +42,7 @@ class UpdateService[F[_]](
   // Add configuration "phantom-js-jetty" to Update
 
   // WIP
-  def checkForUpdates(repos: List[Repo])(implicit F: MonadThrowable[F]): F[List[Update]] =
+  def checkForUpdates(repos: List[Repo])(implicit F: MonadThrowable[F]): F[List[Update.Single]] =
     dependencyRepository.getDependencies(repos).flatMap { dependencies =>
       val (libraries, plugins) = dependencies
         .filter(d => filterAlg.globalKeep(d.toUpdate))
@@ -50,7 +51,7 @@ class UpdateService[F[_]](
         .xxx(libraries)
         .map { libs =>
           ArtificialProject(
-            ScalaVersion("2.12.7"),
+            defaultScalaVersion,
             defaultSbtVersion,
             libs.sortBy(_.formatAsModuleId),
             List.empty
@@ -63,7 +64,7 @@ class UpdateService[F[_]](
           case (maybeSbtVersion, plugins1) =>
             splitter.xxx(plugins1).map { ps =>
               ArtificialProject(
-                ScalaVersion("2.12.7"),
+                defaultScalaVersion,
                 seriesToSpecificVersion(maybeSbtVersion.get),
                 List.empty,
                 ps.sortBy(_.formatAsModuleId)
@@ -73,16 +74,16 @@ class UpdateService[F[_]](
         .toList
 
       val x = (libProjects ++ pluginProjects).flatTraverse { prj =>
-        val fa = util.divideOnError((_: ArtificialProject).halve)(sbtAlg.getUpdates)(prj)
+        val fa = util.divideOnError((_: ArtificialProject).halve)(sbtAlg.getUpdatesForProject)(prj)
         //val fa = sbtAlg.getUpdates(prj)
 
         fa.attempt.flatMap {
           case Right(updates) =>
-            logger.info(util.logger.showUpdates(updates)) >>
+            logger.info(util.logger.showUpdates(updates.widen[Update])) >>
               updates.traverse_(updateRepository.save) >> F.pure(updates)
           case Left(t) =>
             println(t)
-            F.pure(List.empty[Update])
+            F.pure(List.empty[Update.Single])
         }
       }
 

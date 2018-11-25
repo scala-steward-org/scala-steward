@@ -18,15 +18,15 @@ package eu.timepit.scalasteward.sbt
 
 import better.files.File
 import cats.Monad
-import cats.implicits._
 import cats.data.{NonEmptyList => Nel}
+import cats.implicits._
 import eu.timepit.scalasteward.dependency.Dependency
 import eu.timepit.scalasteward.dependency.parser.parseDependencies
 import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import eu.timepit.scalasteward.model.Update
 import eu.timepit.scalasteward.sbt.command._
-import eu.timepit.scalasteward.sbtLegacy
+import eu.timepit.scalasteward.sbt.data.ArtificialProject
 import io.chrisdavenport.log4cats.Logger
 
 trait SbtAlg[F[_]] {
@@ -36,9 +36,9 @@ trait SbtAlg[F[_]] {
 
   def getDependencies(repo: Repo): F[List[Dependency]]
 
-  def getUpdates(project: ArtificialProject): F[List[Update]]
+  def getUpdatesForProject(project: ArtificialProject): F[List[Update.Single]]
 
-  def getUpdatesForRepo(repo: Repo): F[List[Update]]
+  def getUpdatesForRepo(repo: Repo): F[List[Update.Single]]
 }
 
 object SbtAlg {
@@ -70,7 +70,7 @@ object SbtAlg {
           lines <- ignoreOptsFiles(repoDir)(processAlg.execSandboxed(cmd, repoDir))
         } yield lines.flatMap(parseDependencies).distinct
 
-      override def getUpdates(project: ArtificialProject): F[List[Update]] =
+      override def getUpdatesForProject(project: ArtificialProject): F[List[Update.Single]] =
         for {
           updatesDir <- workspaceAlg.rootDir.map(_ / "updates")
           projectDir = updatesDir / "project"
@@ -80,14 +80,14 @@ object SbtAlg {
           cmd = sbtCmd(project.dependencyUpdatesCmd: _*)
           lines <- processAlg.exec(cmd, updatesDir)
           _ <- fileAlg.deleteForce(updatesDir)
-        } yield sbtLegacy.toUpdates(lines)
+        } yield parser.parseSingleUpdates(lines)
 
-      override def getUpdatesForRepo(repo: Repo): F[List[Update]] =
+      override def getUpdatesForRepo(repo: Repo): F[List[Update.Single]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
           cmd = sbtCmd(setCredentialsToNil, dependencyUpdates, reloadPlugins, dependencyUpdates)
           lines <- ignoreOptsFiles(repoDir)(processAlg.execSandboxed(cmd, repoDir))
-        } yield sbtLegacy.sanitizeUpdates(sbtLegacy.toUpdates(lines))
+        } yield parser.parseSingleUpdates(lines)
 
       val sbtDir: F[File] =
         fileAlg.home.map(_ / ".sbt")

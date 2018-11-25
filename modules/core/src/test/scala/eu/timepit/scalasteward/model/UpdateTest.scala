@@ -6,45 +6,6 @@ import org.scalatest.{FunSuite, Matchers}
 
 class UpdateTest extends FunSuite with Matchers {
 
-  test("fromString: 1 update") {
-    val str = "org.scala-js:sbt-scalajs : 0.6.24 -> 0.6.25"
-    Update.fromString(str) shouldBe
-      Right(Single("org.scala-js", "sbt-scalajs", "0.6.24", Nel.of("0.6.25")))
-  }
-
-  test("fromString: 2 updates") {
-    val str = "org.scala-lang:scala-library   : 2.9.1 -> 2.9.3 -> 2.10.3"
-    Update.fromString(str) shouldBe
-      Right(Single("org.scala-lang", "scala-library", "2.9.1", Nel.of("2.9.3", "2.10.3")))
-  }
-
-  test("fromString: 3 updates") {
-    val str = "ch.qos.logback:logback-classic : 0.8   -> 0.8.1 -> 0.9.30 -> 1.0.13"
-    Update.fromString(str) shouldBe
-      Right(Single("ch.qos.logback", "logback-classic", "0.8", Nel.of("0.8.1", "0.9.30", "1.0.13")))
-  }
-
-  test("fromString: test dependency") {
-    val str = "org.scalacheck:scalacheck:test   : 1.12.5 -> 1.12.6  -> 1.14.0"
-    Update.fromString(str) shouldBe
-      Right(Single("org.scalacheck", "scalacheck", "1.12.5", Nel.of("1.12.6", "1.14.0")))
-  }
-
-  test("fromString: no groupId") {
-    val str = ":sbt-scalajs : 0.6.24 -> 0.6.25"
-    Update.fromString(str).isLeft
-  }
-
-  test("fromString: no version") {
-    val str = "ch.qos.logback:logback-classic :  -> 0.8.1 -> 0.9.30 -> 1.0.13"
-    Update.fromString(str).isLeft
-  }
-
-  test("fromString: no updates") {
-    val str = "ch.qos.logback:logback-classic : 0.8 ->"
-    Update.fromString(str).isLeft
-  }
-
   test("replaceAllIn: updated") {
     val original =
       """addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.3.3")
@@ -152,5 +113,19 @@ class UpdateTest extends FunSuite with Matchers {
       "0.18.16",
       Nel.of("0.18.18")
     ).artifactId shouldBe "http4s-core"
+  }
+
+  test("group: 1 update") {
+    val updates = List(Single("org.specs2", "specs2-core", "3.9.4", Nel.of("3.9.5")))
+    Update.group(updates) shouldBe updates
+  }
+
+  test("group: 2 updates") {
+    val update0 = Single("org.specs2", "specs2-core", "3.9.4", Nel.of("3.9.5"))
+    val update1 = update0.copy(artifactId = "specs2-scalacheck")
+    Update.group(List(update0, update1)) shouldBe
+      List(
+        Group("org.specs2", Nel.of("specs2-core", "specs2-scalacheck"), "3.9.4", Nel.of("3.9.5"))
+      )
   }
 }

@@ -17,7 +17,7 @@ val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
 
 lazy val root = project
   .in(file("."))
-  .aggregate(coreJVM)
+  .aggregate(core.jvm)
   .aggregate(readme)
   .settings(commonSettings)
   .settings(noPublishSettings)
@@ -28,6 +28,7 @@ lazy val core = myCrossProject("core")
     libraryDependencies ++= Seq(
       compilerPlugin(Dependencies.kindProjector),
       Dependencies.betterFiles,
+      Dependencies.caseApp,
       Dependencies.catsEffect,
       Dependencies.circeGeneric,
       Dependencies.circeParser,
@@ -56,8 +57,6 @@ lazy val core = myCrossProject("core")
     """,
     fork in run := true
   )
-
-lazy val coreJVM = core.jvm
 
 lazy val readme = project
   .in(file("modules/readme"))
@@ -153,4 +152,21 @@ addCommandsAlias(
     "test:scalafmt",
     "scalafmtSbt"
   )
+)
+
+addCommandAlias(
+  "runSteward", {
+    val home = System.getenv("HOME")
+    Seq(
+      Seq("core/run"),
+      Seq("--workspace", s"$home/code/$projectName/workspace"),
+      Seq("--repos-file", s"$home/code/$projectName/repos.md"),
+      Seq("--git-author-name", "Scala steward"),
+      Seq("--git-author-email", s"me@$projectName.org"),
+      Seq("--github-api-host", "https://api.github.com"),
+      Seq("--github-login", projectName),
+      Seq("--git-ask-pass", s"$home/.github/askpass/$projectName.sh"),
+      Seq("--sign-commits")
+    ).flatten.mkString(" ")
+  }
 )
