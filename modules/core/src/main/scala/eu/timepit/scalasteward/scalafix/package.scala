@@ -16,7 +16,7 @@
 
 package eu.timepit.scalasteward
 
-import cats.data.{NonEmptyList => Nel}
+import eu.timepit.scalasteward.util.Nel
 
 package object scalafix {
   val migrations: List[Migration] =

@@ -16,11 +16,11 @@
 
 package eu.timepit.scalasteward.scalafix
 
-import cats.data.NonEmptyList
+import eu.timepit.scalasteward.util.Nel
 
 final case class Migration(
     groupId: String,
-    artifactIds: NonEmptyList[String],
+    artifactIds: Nel[String],
     minVersion: String,
     newVersion: String,
     gitHubRewrite: String
