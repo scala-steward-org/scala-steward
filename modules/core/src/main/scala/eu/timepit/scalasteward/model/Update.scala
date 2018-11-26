@@ -16,11 +16,11 @@
 
 package eu.timepit.scalasteward.model
 
-import cats.data.NonEmptyList
 import cats.implicits._
 import eu.timepit.refined.W
 import eu.timepit.scalasteward.model.Update.{Group, Single}
 import eu.timepit.scalasteward.util
+import eu.timepit.scalasteward.util.Nel
 import eu.timepit.scalasteward.util.string.MinLengthString
 import io.circe.{Decoder, Encoder}
 import scala.util.matching.Regex
@@ -28,9 +28,9 @@ import scala.util.matching.Regex
 sealed trait Update extends Product with Serializable {
   def groupId: String
   def artifactId: String
-  def artifactIds: NonEmptyList[String]
+  def artifactIds: Nel[String]
   def currentVersion: String
-  def newerVersions: NonEmptyList[String]
+  def newerVersions: Nel[String]
 
   def name: String =
     Update.nameOf(groupId, artifactId)
@@ -56,7 +56,7 @@ sealed trait Update extends Product with Serializable {
     if (updated) Some(result) else None
   }
 
-  def searchTerms: NonEmptyList[String] = {
+  def searchTerms: Nel[String] = {
     val terms = this match {
       case s: Single => s.artifactIds
       case g: Group  => g.artifactIds.concat(g.artifactIdsPrefix.map(_.value).toList)
@@ -79,17 +79,17 @@ object Update {
       groupId: String,
       artifactId: String,
       currentVersion: String,
-      newerVersions: NonEmptyList[String]
+      newerVersions: Nel[String]
   ) extends Update {
-    override def artifactIds: NonEmptyList[String] =
-      NonEmptyList.one(artifactId)
+    override def artifactIds: Nel[String] =
+      Nel.one(artifactId)
   }
 
   final case class Group(
       groupId: String,
-      artifactIds: NonEmptyList[String],
+      artifactIds: Nel[String],
       currentVersion: String,
-      newerVersions: NonEmptyList[String]
+      newerVersions: Nel[String]
   ) extends Update {
     override def artifactId: String = {
       val possibleMainArtifactIds = for {

@@ -18,13 +18,12 @@ package eu.timepit.scalasteward.git
 
 import better.files.File
 import cats.Monad
-import cats.data.{NonEmptyList => Nel}
 import cats.effect.Bracket
 import cats.implicits._
 import eu.timepit.scalasteward.application.Config
 import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.io.{FileAlg, ProcessAlg, WorkspaceAlg}
-import eu.timepit.scalasteward.util.MonadThrowable
+import eu.timepit.scalasteward.util.{MonadThrowable, Nel}
 import org.http4s.Uri
 
 trait GitAlg[F[_]] {

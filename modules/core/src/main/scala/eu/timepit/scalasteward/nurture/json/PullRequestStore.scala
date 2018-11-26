@@ -17,8 +17,8 @@
 package eu.timepit.scalasteward.nurture.json
 
 import eu.timepit.scalasteward.github.data.Repo
-import io.circe.{Decoder, Encoder}
 import io.circe.generic.semiauto._
+import io.circe.{Decoder, Encoder}
 
 final case class PullRequestStore(store: Map[Repo, Map[String, PullRequestData]])
 

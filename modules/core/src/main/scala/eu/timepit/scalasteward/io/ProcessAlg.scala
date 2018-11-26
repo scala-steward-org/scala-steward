@@ -17,9 +17,9 @@
 package eu.timepit.scalasteward.io
 
 import better.files.File
-import cats.data.{NonEmptyList => Nel}
 import cats.effect.Sync
 import cats.implicits._
+import eu.timepit.scalasteward.util.Nel
 import java.io.IOException
 import scala.collection.mutable.ListBuffer
 import scala.sys.process.{Process, ProcessLogger}
