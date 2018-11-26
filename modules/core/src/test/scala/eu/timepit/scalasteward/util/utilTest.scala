@@ -16,4 +16,9 @@ class utilTest extends FunSuite with Matchers {
       i => if (i <= 1) i.asRight[Unit] else ().asLeft[Int]
     )(5) shouldBe Right(5)
   }
+
+  test("intersects") {
+    intersects(List(1, 3, 5), List(2, 4, 6)) shouldBe false
+    intersects(List(1, 3, 5), List(2, 3, 6)) shouldBe true
+  }
 }

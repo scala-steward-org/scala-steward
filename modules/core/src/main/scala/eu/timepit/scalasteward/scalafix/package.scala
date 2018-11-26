@@ -16,6 +16,8 @@
 
 package eu.timepit.scalasteward
 
+import cats.implicits._
+import eu.timepit.scalasteward.model.Update
 import eu.timepit.scalasteward.util.Nel
 
 package object scalafix {
@@ -29,4 +31,11 @@ package object scalafix {
         "github:amarrella/fs2/v1?sha=672ea4f9"
       )
     )
+
+  def findMigrations(update: Update): List[Migration] =
+    migrations.filter { migration =>
+      update.groupId === migration.groupId &&
+      util.intersects(update.artifactIds, migration.artifactIds) &&
+      update.newerVersions.head === migration.newVersion
+    }
 }

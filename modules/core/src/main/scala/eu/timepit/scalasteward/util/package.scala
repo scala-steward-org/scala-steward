@@ -18,7 +18,7 @@ package eu.timepit.scalasteward
 
 import cats.effect.Bracket
 import cats.implicits._
-import cats.{ApplicativeError, Foldable, MonadError, Semigroup}
+import cats.{ApplicativeError, Eq, Foldable, MonadError, Semigroup}
 
 package object util {
   final type Nel[+A] = cats.data.NonEmptyList[A]
@@ -67,4 +67,7 @@ package object util {
       val (fst, snd) = list.splitAt((list.size + 1) / 2)
       List(fst, snd)
     }
+
+  def intersects[F[_]: Foldable, A: Eq](f1: F[A], f2: F[A]): Boolean =
+    f1.exists(a1 => f2.exists(a2 => a1 === a2))
 }
