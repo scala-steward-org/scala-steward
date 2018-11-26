@@ -16,7 +16,6 @@
 
 package eu.timepit.scalasteward.util
 
-import cats.data.NonEmptyList
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.collection.MinSize
 import eu.timepit.refined.refineV
@@ -33,7 +32,7 @@ object string {
   }
 
   def longestCommonPrefixGreater[N <: Int: Witness.Aux](
-      xs: NonEmptyList[String]
+      xs: Nel[String]
   ): Option[MinLengthString[N]] =
     refineV[MinSize[N]](xs.reduceLeft(longestCommonPrefix)).toOption
 

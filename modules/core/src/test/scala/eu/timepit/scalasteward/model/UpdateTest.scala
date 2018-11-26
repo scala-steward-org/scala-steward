@@ -1,6 +1,6 @@
 package eu.timepit.scalasteward.model
 
-import cats.data.{NonEmptyList => Nel}
+import eu.timepit.scalasteward.util.Nel
 import eu.timepit.scalasteward.model.Update.{Group, Single}
 import org.scalatest.{FunSuite, Matchers}
 

@@ -16,9 +16,9 @@
 
 package eu.timepit.scalasteward.dependency
 
-import cats.data.{NonEmptyList => Nel}
 import eu.timepit.scalasteward.model.Update
 import eu.timepit.scalasteward.sbt.data.SbtVersion
+import eu.timepit.scalasteward.util.Nel
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 

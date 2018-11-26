@@ -17,8 +17,8 @@
 package eu.timepit.scalasteward.update.json
 
 import eu.timepit.scalasteward.model.Update
-import io.circe.{Decoder, Encoder}
 import io.circe.generic.semiauto._
+import io.circe.{Decoder, Encoder}
 
 final case class UpdateStore(store: List[Update])
 

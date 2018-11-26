@@ -16,9 +16,9 @@
 
 package eu.timepit.scalasteward.sbt
 
-import cats.data.{NonEmptyList => Nel}
 import cats.implicits._
 import eu.timepit.scalasteward.model.Update
+import eu.timepit.scalasteward.util.Nel
 
 object parser {
   def parseSingleUpdate(str: String): Either[Throwable, Update.Single] =

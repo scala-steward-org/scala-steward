@@ -1,8 +1,8 @@
 package eu.timepit.scalasteward.io
 
 import better.files.File
-import cats.data.{NonEmptyList => Nel}
 import cats.effect.IO
+import eu.timepit.scalasteward.util.Nel
 import org.scalatest.{FunSuite, Matchers}
 
 class ProcessAlgTest extends FunSuite with Matchers {

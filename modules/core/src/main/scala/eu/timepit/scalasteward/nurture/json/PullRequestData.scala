@@ -18,8 +18,8 @@ package eu.timepit.scalasteward.nurture.json
 
 import eu.timepit.scalasteward.git.Sha1
 import eu.timepit.scalasteward.model.Update
-import io.circe.{Decoder, Encoder}
 import io.circe.generic.semiauto._
+import io.circe.{Decoder, Encoder}
 
 final case class PullRequestData(
     baseSha1: Sha1,

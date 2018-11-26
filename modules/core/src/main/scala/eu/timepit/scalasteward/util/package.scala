@@ -16,12 +16,14 @@
 
 package eu.timepit.scalasteward
 
-import cats.data.NonEmptyList
 import cats.effect.Bracket
 import cats.implicits._
 import cats.{ApplicativeError, Foldable, MonadError, Semigroup}
 
 package object util {
+  final type Nel[+A] = cats.data.NonEmptyList[A]
+  final val Nel = cats.data.NonEmptyList
+
   type ApplicativeThrowable[F[_]] = ApplicativeError[F, Throwable]
 
   type MonadThrowable[F[_]] = MonadError[F, Throwable]
@@ -35,7 +37,7 @@ package object util {
       B: Semigroup[B]
   ): F[B] =
     f(a).handleErrorWith { e =>
-      NonEmptyList.fromFoldable(divide(a)) match {
+      Nel.fromFoldable(divide(a)) match {
         case None      => F.raiseError(e)
         case Some(nel) => nel.traverse(divideOnError(divide)(f)(_)).map(_.reduce)
       }
@@ -51,7 +53,7 @@ package object util {
   ): F[B] = {
     def loop(a: A): F[B] =
       f(a).handleErrorWith { e =>
-        NonEmptyList.fromFoldable(divide(a)) match {
+        Nel.fromFoldable(divide(a)) match {
           case None      => handleError(e)
           case Some(nel) => nel.traverse(loop).map(_.reduce)
         }

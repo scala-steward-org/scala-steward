@@ -1,8 +1,8 @@
 package eu.timepit.scalasteward.sbt
 
-import cats.data.{NonEmptyList => Nel}
 import eu.timepit.scalasteward.model.Update
 import eu.timepit.scalasteward.sbt.parser._
+import eu.timepit.scalasteward.util.Nel
 import org.scalatest.{FunSuite, Matchers}
 
 class parserTest extends FunSuite with Matchers {
