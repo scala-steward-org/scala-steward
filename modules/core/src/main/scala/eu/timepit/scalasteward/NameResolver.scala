@@ -16,15 +16,15 @@
 
 package eu.timepit.scalasteward
 
-import cats.data.NonEmptyList
 import eu.timepit.scalasteward.model.Update
+import eu.timepit.scalasteward.util.Nel
 
 object NameResolver {
 
   def resolve(update: Update): String =
     group(update.groupId, update.artifactIds)
 
-  private def group(groupId: String, artifactIds: NonEmptyList[String]): String = {
+  private def group(groupId: String, artifactIds: Nel[String]): String = {
     val includeGroupId = artifactIds.exists(Update.commonSuffixes.contains)
     val artifactNames = artifactIds.map(single(groupId, _, includeGroupId))
     val maxArtifacts = 3

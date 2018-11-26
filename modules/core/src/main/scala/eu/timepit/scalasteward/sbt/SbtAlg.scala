@@ -18,7 +18,6 @@ package eu.timepit.scalasteward.sbt
 
 import better.files.File
 import cats.Monad
-import cats.data.{NonEmptyList => Nel}
 import cats.implicits._
 import eu.timepit.scalasteward.dependency.Dependency
 import eu.timepit.scalasteward.dependency.parser.parseDependencies
@@ -28,6 +27,7 @@ import eu.timepit.scalasteward.model.Update
 import eu.timepit.scalasteward.sbt.command._
 import eu.timepit.scalasteward.sbt.data.ArtificialProject
 import eu.timepit.scalasteward.scalafix.Migration
+import eu.timepit.scalasteward.util.Nel
 import io.chrisdavenport.log4cats.Logger
 
 trait SbtAlg[F[_]] {

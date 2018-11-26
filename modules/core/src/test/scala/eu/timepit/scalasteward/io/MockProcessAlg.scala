@@ -1,8 +1,9 @@
 package eu.timepit.scalasteward.io
 
 import better.files.File
-import cats.data.{State, NonEmptyList => Nel}
+import cats.data.State
 import eu.timepit.scalasteward.MockState.MockEnv
+import eu.timepit.scalasteward.util.Nel
 
 class MockProcessAlg extends ProcessAlg[MockEnv] {
   override def exec(
