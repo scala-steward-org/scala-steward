@@ -116,6 +116,7 @@
 - NeQuissimus/circe-kafka
 - NeQuissimus/nequi-kafka
 - NeQuissimus/zio-slf4j
+- nrinaudo/kantan.codecs
 - pathikrit/better-files
 - pdalpra/gh4s
 - phenoscape/scowl
