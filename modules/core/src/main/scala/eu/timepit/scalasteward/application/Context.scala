@@ -69,11 +69,11 @@ object Context {
       implicit val user: AuthenticatedUser = user_
       implicit val workspaceAlg: WorkspaceAlg[F] = WorkspaceAlg.create[F]
       implicit val dependencyRepository: DependencyRepository[F] = new JsonDependencyRepository[F]
-      implicit val editAlg: EditAlg[F] = EditAlg.create[F]
       implicit val gitAlg: GitAlg[F] = GitAlg.create[F]
       implicit val gitHubApiAlg: GitHubApiAlg[F] = new Http4sGitHubApiAlg[F]
       implicit val pullRequestRepo: PullRequestRepository[F] = new JsonPullRequestRepo[F]
       implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F]
+      implicit val editAlg: EditAlg[F] = EditAlg.create[F]
       implicit val updateRepository: UpdateRepository[F] = new JsonUpdateRepository[F]
       implicit val dependencyService: DependencyService[F] = new DependencyService[F]
       implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F]

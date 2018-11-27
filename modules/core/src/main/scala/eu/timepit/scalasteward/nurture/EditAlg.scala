@@ -20,8 +20,10 @@ import cats.effect.Sync
 import cats.implicits._
 import eu.timepit.scalasteward.github.data.Repo
 import eu.timepit.scalasteward.io.WorkspaceAlg
-import eu.timepit.scalasteward.ioLegacy
 import eu.timepit.scalasteward.model.Update
+import eu.timepit.scalasteward.sbt.SbtAlg
+import eu.timepit.scalasteward.{ioLegacy, scalafix}
+import eu.timepit.scalasteward.util.Nel
 
 trait EditAlg[F[_]] {
   def applyUpdate(repo: Repo, update: Update): F[Unit]
@@ -30,13 +32,19 @@ trait EditAlg[F[_]] {
 object EditAlg {
   def create[F[_]](
       implicit
+      sbtAlg: SbtAlg[F],
       workspaceAlg: WorkspaceAlg[F],
       F: Sync[F]
   ): EditAlg[F] =
     new EditAlg[F] {
       override def applyUpdate(repo: Repo, update: Update): F[Unit] =
-        workspaceAlg.repoDir(repo).flatMap { repoDir =>
-          ioLegacy.updateDir(repoDir, update)
-        }
+        for {
+          repoDir <- workspaceAlg.repoDir(repo)
+          _ <- ioLegacy.updateDir(repoDir, update)
+          _ <- Nel.fromList(scalafix.findMigrations(update)) match {
+            case Some(migrations) => sbtAlg.runMigrations(repo, migrations)
+            case None             => F.unit
+          }
+        } yield ()
     }
 }
