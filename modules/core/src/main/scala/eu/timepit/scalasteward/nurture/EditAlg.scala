@@ -40,11 +40,11 @@ object EditAlg {
       override def applyUpdate(repo: Repo, update: Update): F[Unit] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          _ <- ioLegacy.updateDir(repoDir, update)
           _ <- Nel.fromList(scalafix.findMigrations(update)) match {
             case Some(migrations) => sbtAlg.runMigrations(repo, migrations)
             case None             => F.unit
           }
+          _ <- ioLegacy.updateDir(repoDir, update)
         } yield ()
     }
 }
