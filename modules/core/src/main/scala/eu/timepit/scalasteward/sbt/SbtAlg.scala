@@ -41,7 +41,7 @@ trait SbtAlg[F[_]] {
 
   def getUpdatesForRepo(repo: Repo): F[List[Update.Single]]
 
-  def runScalafix(repo: Repo, migration: Migration): F[Unit]
+  def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit]
 }
 
 object SbtAlg {
@@ -93,10 +93,11 @@ object SbtAlg {
           lines <- exec(cmd, repoDir)
         } yield parser.parseSingleUpdates(lines)
 
-      override def runScalafix(repo: Repo, migration: Migration): F[Unit] =
+      override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          _ <- exec(sbtCmd(scalafixEnable, s"$scalafix ${migration.gitHubRewrite}"), repoDir)
+          scalafixCmds = migrations.map(m => s"$scalafix ${m.gitHubRewrite}").toList
+          _ <- exec(sbtCmd(scalafixEnable :: scalafixCmds: _*), repoDir)
         } yield ()
 
       val sbtDir: F[File] =
