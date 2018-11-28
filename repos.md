@@ -19,6 +19,9 @@
 - BenFradet/struct-type-encoder
 - cb372/scalacache
 - ccamel/playground-binding.scala
+- ccadllc/cedi-config
+- ccadllc/cedi-dtrace
+- ccadllc/cedi-circuitbreakers
 - ChristopherDavenport/bank
 - ChristopherDavenport/base.g8
 - ChristopherDavenport/cats-par
@@ -52,6 +55,7 @@
 - circe/circe-optics
 - circe/circe-spray
 - circe/circe-yaml
+- comcast/ip4s
 - dhpiggott/liquidity
 - erikvanoosten/metrics-scala
 - esamson/remder
@@ -70,6 +74,7 @@
 - fthomas/scala-steward
 - fthomas/singleton-ops
 - fthomas/status-page
+- functional-streams-for-scala/fs2
 - gearpump/gearpump
 - getquill/quill
 - gvolpe/console4cats
@@ -114,6 +119,7 @@
 - milessabin/shapeless
 - monix/monix
 - monix/monix-kafka
+- mpilquist/simulacrum
 - NeQuissimus/circe-kafka
 - NeQuissimus/nequi-kafka
 - NeQuissimus/zio-slf4j
@@ -159,6 +165,11 @@
 - schrepfler/scala-native-cli
 - schrepfler/scala-uri
 - schrepfler/sportsml-scala
+- scodec/scodec-build
+- scodec/scodec-bits
+- scodec/scodec
+- scodec/scodec-stream
+- scodec/scodec-protocols
 - SethTisue/cloc-plugin
 - SethTisue/Project-Euler
 - shankarshastri/ScalaFPCode
