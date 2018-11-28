@@ -195,7 +195,6 @@ addCommandAlias(
       Seq("--github-api-host", "https://api.github.com"),
       Seq("--github-login", projectName),
       Seq("--git-ask-pass", s"$home/.github/askpass/$projectName.sh"),
-      Seq("--sign-commits")
     ).flatten.mkString(" ")
   }
 )
