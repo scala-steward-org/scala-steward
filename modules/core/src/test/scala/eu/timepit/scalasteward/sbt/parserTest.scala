@@ -31,7 +31,16 @@ class parserTest extends FunSuite with Matchers {
   test("parseSingleUpdate: test dependency") {
     val str = "org.scalacheck:scalacheck:test   : 1.12.5 -> 1.12.6  -> 1.14.0"
     parseSingleUpdate(str) shouldBe
-      Right(Update.Single("org.scalacheck", "scalacheck", "1.12.5", Nel.of("1.12.6", "1.14.0")))
+      Right(
+        Update
+          .Single(
+            "org.scalacheck",
+            "scalacheck",
+            "1.12.5",
+            Nel.of("1.12.6", "1.14.0"),
+            Some("test")
+          )
+      )
   }
 
   test("parseSingleUpdate: no groupId") {
@@ -58,9 +67,15 @@ class parserTest extends FunSuite with Matchers {
       """.stripMargin.trim
     parseSingleUpdates(str.lines.toList) shouldBe
       List(
-        Update.Single("ai.x", "diff", "1.2.0", Nel.of("1.2.1")),
+        Update.Single("ai.x", "diff", "1.2.0", Nel.of("1.2.1"), Some("test")),
         Update
-          .Single("com.geirsson", "scalafmt-cli_2.11", "0.3.0", Nel.of("0.3.1", "0.6.8", "1.5.1")),
+          .Single(
+            "com.geirsson",
+            "scalafmt-cli_2.11",
+            "0.3.0",
+            Nel.of("0.3.1", "0.6.8", "1.5.1"),
+            Some("scalafmt")
+          ),
         Update.Single("eu.timepit", "refined", "0.7.0", Nel.of("0.9.3"))
       )
   }

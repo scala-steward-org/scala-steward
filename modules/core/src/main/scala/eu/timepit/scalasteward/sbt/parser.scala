@@ -25,9 +25,10 @@ object parser {
     Either.catchNonFatal {
       val regex = """([^\s:]+):([^\s:]+)(:([^\s]+))?\s+:\s+([^\s]+)\s+->(.+)""".r
       str match {
-        case regex(groupId, artifactId, _, _, current, newer) =>
+        case regex(groupId, artifactId, _, configurationsOrNull, current, newer) =>
+          val configurations = Option(configurationsOrNull)
           val newerVersions = Nel.fromListUnsafe(newer.split("->").map(_.trim).toList)
-          Update.Single(groupId, artifactId, current, newerVersions)
+          Update.Single(groupId, artifactId, current, newerVersions, configurations)
       }
     }
 
