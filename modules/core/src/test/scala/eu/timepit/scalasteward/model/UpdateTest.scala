@@ -128,4 +128,15 @@ class UpdateTest extends FunSuite with Matchers {
         Group("org.specs2", Nel.of("specs2-core", "specs2-scalacheck"), "3.9.4", Nel.of("3.9.5"))
       )
   }
+
+  test("Single.show") {
+    val update = Single("org.specs2", "specs2-core", "3.9.4", Nel.of("3.9.5"), Some("test"))
+    update.show shouldBe "org.specs2:specs2-core:test : 3.9.4 -> 3.9.5"
+  }
+
+  test("Group.show") {
+    val update =
+      Group("org.scala-sbt", Nel.of("sbt-launch", "scripted-plugin"), "1.2.1", Nel.of("1.2.4"))
+    update.show shouldBe "org.scala-sbt:{sbt-launch, scripted-plugin} : 1.2.1 -> 1.2.4"
+  }
 }
