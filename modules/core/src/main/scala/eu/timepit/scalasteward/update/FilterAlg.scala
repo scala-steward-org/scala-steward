@@ -46,24 +46,27 @@ object FilterAlg {
   def create[F[_]](implicit logger: Logger[F], F: Applicative[F]): FilterAlg[F] =
     new FilterAlg[F] {
       override def globalKeep(update: Update.Single): Boolean = {
-        (update.groupId, update.artifactId, update.nextVersion) match {
-          case ("org.scala-lang", "scala-compiler", _) => false
-          case ("org.scala-lang", "scala-library", _)  => false
-          case ("org.scala-lang", "scala-reflect", _)  => false
+        (update.groupId, update.artifactId, update.currentVersion, update.nextVersion) match {
+          case ("org.scala-lang", "scala-compiler", _, _) => false
+          case ("org.scala-lang", "scala-library", _, _)  => false
+          case ("org.scala-lang", "scala-reflect", _, _)  => false
 
-          case ("org.typelevel", "scala-library", _) => false
+          case ("org.typelevel", "scala-library", _, _) => false
+
+          // https://github.com/vlovgr/ciris/pull/182#issuecomment-420599759
+          case ("com.jsuereth", "sbt-pgp", "1.1.2-1", "1.1.2") => false
 
           // https://github.com/fthomas/scala-steward/issues/105
-          case ("io.monix", _, "3.0.0-fbcb270") => false
+          case ("io.monix", _, _, "3.0.0-fbcb270") => false
 
           // https://github.com/esamson/remder/pull/5
-          case ("net.sourceforge.plantuml", "plantuml", "8059") => false
+          case ("net.sourceforge.plantuml", "plantuml", _, "8059") => false
 
           // https://github.com/http4s/http4s/pull/2153
-          case ("org.http4s", _, "0.19.0") => false
+          case ("org.http4s", _, _, "0.19.0") => false
 
           // https://github.com/lightbend/migration-manager/pull/260
-          case ("org.scalatest", "scalatest", "3.2.0-SNAP10") => false
+          case ("org.scalatest", "scalatest", _, "3.2.0-SNAP10") => false
 
           case _ => true
         }
