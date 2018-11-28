@@ -66,7 +66,7 @@ sealed trait Update extends Product with Serializable {
 
   def show: String = {
     val artifacts = this match {
-      case s: Single => s.artifactId
+      case s: Single => s.artifactId + s.configurations.fold("")(":" + _)
       case g: Group  => g.artifactIds.mkString_("{", ", ", "}")
     }
     val versions = (currentVersion :: newerVersions).mkString_("", " -> ", "")
@@ -79,7 +79,8 @@ object Update {
       groupId: String,
       artifactId: String,
       currentVersion: String,
-      newerVersions: Nel[String]
+      newerVersions: Nel[String],
+      configurations: Option[String] = None
   ) extends Update {
     override def artifactIds: Nel[String] =
       Nel.one(artifactId)

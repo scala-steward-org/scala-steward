@@ -45,20 +45,13 @@ trait FilterAlg[F[_]] {
 object FilterAlg {
   def create[F[_]](implicit logger: Logger[F], F: Applicative[F]): FilterAlg[F] =
     new FilterAlg[F] {
-      override def globalKeep(update: Update.Single): Boolean =
+      override def globalKeep(update: Update.Single): Boolean = {
         (update.groupId, update.artifactId, update.nextVersion) match {
           case ("org.scala-lang", "scala-compiler", _) => false
           case ("org.scala-lang", "scala-library", _)  => false
           case ("org.scala-lang", "scala-reflect", _)  => false
 
           case ("org.typelevel", "scala-library", _) => false
-
-          case ("org.eclipse.jetty", "jetty-server", _)    => false
-          case ("org.eclipse.jetty", "jetty-websocket", _) => false
-
-          // transitive dependencies of e.g. com.lucidchart:sbt-scalafmt
-          case ("com.geirsson", "scalafmt-cli_2.11", _)  => false
-          case ("com.geirsson", "scalafmt-core_2.12", _) => false
 
           // https://github.com/fthomas/scala-steward/issues/105
           case ("io.monix", _, "3.0.0-fbcb270") => false
@@ -74,6 +67,14 @@ object FilterAlg {
 
           case _ => true
         }
+      } && {
+        update.configurations match {
+          case Some("phantom-js-jetty") => false
+          case Some("scalafmt")         => false
+          case Some("tut")              => false
+          case _                        => true
+        }
+      }
 
       override def localKeep(repo: Repo, update: Update.Single): Boolean =
         (repo.show, update.groupId, update.artifactId) match {
