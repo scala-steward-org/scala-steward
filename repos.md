@@ -18,6 +18,7 @@
 - BenFradet/spark-kafka-writer
 - BenFradet/struct-type-encoder
 - cb372/scalacache
+- ccamel/playground-binding.scala
 - ChristopherDavenport/bank
 - ChristopherDavenport/base.g8
 - ChristopherDavenport/cats-par
