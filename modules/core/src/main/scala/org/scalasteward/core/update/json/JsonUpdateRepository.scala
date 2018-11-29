@@ -34,6 +34,9 @@ class JsonUpdateRepository[F[_]](
     F: MonadThrowable[F]
 ) extends UpdateRepository[F] {
 
+  override def deleteAll: F[Unit] =
+    writeJson(UpdateStore(List.empty))
+
   override def save(update: Update): F[Unit] =
     readJson.map(s => UpdateStore((update :: s.store).distinct)).flatMap(writeJson)
 

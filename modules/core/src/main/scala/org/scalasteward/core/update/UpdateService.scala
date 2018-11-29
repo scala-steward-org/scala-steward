@@ -43,52 +43,54 @@ class UpdateService[F[_]](
 
   // WIP
   def checkForUpdates(repos: List[Repo])(implicit F: MonadThrowable[F]): F[List[Update.Single]] =
-    dependencyRepository.getDependencies(repos).flatMap { dependencies =>
-      val (libraries, plugins) = dependencies
-        .filter(d => filterAlg.globalKeep(d.toUpdate))
-        .partition(_.sbtVersion.isEmpty)
-      val libProjects = splitter
-        .xxx(libraries)
-        .map { libs =>
-          ArtificialProject(
-            defaultScalaVersion,
-            defaultSbtVersion,
-            libs.sortBy(_.formatAsModuleId),
-            List.empty
-          )
+    updateRepository.deleteAll >>
+      dependencyRepository.getDependencies(repos).flatMap { dependencies =>
+        val (libraries, plugins) = dependencies
+          .filter(d => filterAlg.globalKeep(d.toUpdate))
+          .partition(_.sbtVersion.isEmpty)
+        val libProjects = splitter
+          .xxx(libraries)
+          .map { libs =>
+            ArtificialProject(
+              defaultScalaVersion,
+              defaultSbtVersion,
+              libs.sortBy(_.formatAsModuleId),
+              List.empty
+            )
+          }
+
+        val pluginProjects = plugins
+          .groupBy(_.sbtVersion)
+          .flatMap {
+            case (maybeSbtVersion, plugins1) =>
+              splitter.xxx(plugins1).map { ps =>
+                ArtificialProject(
+                  defaultScalaVersion,
+                  seriesToSpecificVersion(maybeSbtVersion.get),
+                  List.empty,
+                  ps.sortBy(_.formatAsModuleId)
+                )
+              }
+          }
+          .toList
+
+        val x = (libProjects ++ pluginProjects).flatTraverse { prj =>
+          val fa =
+            util.divideOnError((_: ArtificialProject).halve)(sbtAlg.getUpdatesForProject)(prj)
+          //val fa = sbtAlg.getUpdates(prj)
+
+          fa.attempt.flatMap {
+            case Right(updates) =>
+              logger.info(util.logger.showUpdates(updates.widen[Update])) >>
+                updates.traverse_(updateRepository.save) >> F.pure(updates)
+            case Left(t) =>
+              println(t)
+              F.pure(List.empty[Update.Single])
+          }
         }
 
-      val pluginProjects = plugins
-        .groupBy(_.sbtVersion)
-        .flatMap {
-          case (maybeSbtVersion, plugins1) =>
-            splitter.xxx(plugins1).map { ps =>
-              ArtificialProject(
-                defaultScalaVersion,
-                seriesToSpecificVersion(maybeSbtVersion.get),
-                List.empty,
-                ps.sortBy(_.formatAsModuleId)
-              )
-            }
-        }
-        .toList
-
-      val x = (libProjects ++ pluginProjects).flatTraverse { prj =>
-        val fa = util.divideOnError((_: ArtificialProject).halve)(sbtAlg.getUpdatesForProject)(prj)
-        //val fa = sbtAlg.getUpdates(prj)
-
-        fa.attempt.flatMap {
-          case Right(updates) =>
-            logger.info(util.logger.showUpdates(updates.widen[Update])) >>
-              updates.traverse_(updateRepository.save) >> F.pure(updates)
-          case Left(t) =>
-            println(t)
-            F.pure(List.empty[Update.Single])
-        }
+        x.flatMap(updates => filterAlg.globalFilterMany(updates))
       }
-
-      x.flatMap(updates => filterAlg.globalFilterMany(updates))
-    }
 
   def filterByApplicableUpdates(repos: List[Repo], updates: List[Update]): F[List[Repo]] =
     repos.traverseFilter { repo =>

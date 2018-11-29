@@ -20,6 +20,8 @@ import org.scalasteward.core.dependency.Dependency
 import org.scalasteward.core.model.Update
 
 trait UpdateRepository[F[_]] {
+  def deleteAll: F[Unit]
+
   def save(update: Update): F[Unit]
 
   def find(dependency: Dependency): F[Option[Update]]
