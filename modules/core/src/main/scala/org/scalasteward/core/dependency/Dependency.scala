@@ -27,13 +27,14 @@ final case class Dependency(
     artifactId: String,
     artifactIdCross: String,
     version: String,
-    sbtVersion: Option[SbtVersion] = None
+    sbtVersion: Option[SbtVersion] = None,
+    configurations: Option[String] = None
 ) {
   def formatAsModuleId: String =
     s""""$groupId" % "$artifactIdCross" % "$version""""
 
   def toUpdate: Update.Single =
-    Update.Single(groupId, artifactId, version, Nel.of(version))
+    Update.Single(groupId, artifactId, version, Nel.of(version), configurations)
 }
 
 object Dependency {
