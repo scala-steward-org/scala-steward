@@ -3,9 +3,9 @@ import sbtcrossproject.{CrossProject, CrossType, Platform}
 
 /// variables
 
-val groupId = "eu.timepit"
+val groupId = "org.scala-steward"
 val projectName = "scala-steward"
-val rootPkg = s"$groupId.${projectName.replace("-", "")}"
+val rootPkg = groupId.replace("-", "")
 val gitHubOwner = "fthomas"
 
 val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
@@ -43,10 +43,10 @@ lazy val core = myCrossProject("core")
     ),
     assembly / test := {},
     buildInfoKeys := Seq[BuildInfoKey](scalaVersion, sbtVersion),
-    buildInfoPackage := rootPkg,
+    buildInfoPackage := moduleRootPkg.value,
     initialCommands += s"""
-      import $rootPkg._
-      import $rootPkg.github.data._
+      import ${moduleRootPkg.value}._
+      import ${moduleRootPkg.value}.github.data._
       import better.files.File
       import cats.effect.ContextShift
       import cats.effect.IO
@@ -77,7 +77,10 @@ def myCrossProject(name: String): CrossProject =
     .crossType(CrossType.Pure)
     .withoutSuffixFor(JVMPlatform)
     .in(file(s"modules/$name"))
-    .settings(moduleName := s"$projectName-$name")
+    .settings(
+      moduleName := s"$projectName-$name",
+      moduleRootPkg := s"$rootPkg.$name"
+    )
     .settings(commonSettings)
     // workaround for https://github.com/portable-scala/sbt-crossproject/issues/74
     .settings(Seq(Compile, Test).flatMap(inConfig(_) {
@@ -148,6 +151,11 @@ lazy val noPublishSettings = Def.settings(
 )
 
 lazy val scaladocSettings = Def.settings()
+
+/// setting keys
+
+lazy val moduleRootPkg = settingKey[String]("")
+moduleRootPkg := rootPkg
 
 /// commands
 
