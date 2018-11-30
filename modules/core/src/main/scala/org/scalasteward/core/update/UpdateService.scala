@@ -39,8 +39,6 @@ class UpdateService[F[_]](
     F: Monad[F]
 ) {
 
-  // Add configuration "phantom-js-jetty" to Update
-
   // WIP
   def checkForUpdates(repos: List[Repo])(implicit F: MonadThrowable[F]): F[List[Update.Single]] =
     updateRepository.deleteAll >>
