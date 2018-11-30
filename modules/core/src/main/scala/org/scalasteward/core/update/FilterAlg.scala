@@ -71,11 +71,11 @@ object FilterAlg {
           case _ => true
         }
       } && {
-        update.configurations match {
-          case Some("phantom-js-jetty") => false
-          case Some("scalafmt")         => false
-          case Some("tut")              => false
-          case _                        => true
+        update.configurations.fold("")(_.toLowerCase) match {
+          case "phantom-js-jetty" => false
+          case "scalafmt"         => false
+          case "tut"              => false
+          case _                  => true
         }
       }
 
