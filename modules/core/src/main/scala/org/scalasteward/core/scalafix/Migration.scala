@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward.scalafix
+package org.scalasteward.core.scalafix
 
-import eu.timepit.scalasteward.util.Nel
+import org.scalasteward.core.util.Nel
 
 final case class Migration(
     groupId: String,
     artifactIds: Nel[String],
     minVersion: String,
     newVersion: String,
-    gitHubRewrite: String
+    rewriteRule: String
 )

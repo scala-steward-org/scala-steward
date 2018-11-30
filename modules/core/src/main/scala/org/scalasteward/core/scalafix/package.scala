@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package eu.timepit.scalasteward
+package org.scalasteward.core
 
 import cats.implicits._
-import eu.timepit.scalasteward.model.Update
-import eu.timepit.scalasteward.util.Nel
+import org.scalasteward.core.model.Update
+import org.scalasteward.core.util.Nel
 
 package object scalafix {
   val migrations: List[Migration] =

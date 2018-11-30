@@ -96,7 +96,7 @@ object SbtAlg {
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          scalafixCmds = migrations.map(m => s"$scalafix ${m.gitHubRewrite}").toList
+          scalafixCmds = migrations.map(m => s"$scalafix ${m.rewriteRule}").toList
           _ <- exec(sbtCmd(scalafixEnable :: scalafixCmds: _*), repoDir)
         } yield ()
 
