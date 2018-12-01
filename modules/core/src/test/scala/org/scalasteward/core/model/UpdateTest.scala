@@ -123,10 +123,26 @@ class UpdateTest extends FunSuite with Matchers {
   test("group: 2 updates") {
     val update0 = Single("org.specs2", "specs2-core", "3.9.4", Nel.of("3.9.5"))
     val update1 = update0.copy(artifactId = "specs2-scalacheck")
-    Update.group(List(update0, update1)) shouldBe
-      List(
-        Group("org.specs2", Nel.of("specs2-core", "specs2-scalacheck"), "3.9.4", Nel.of("3.9.5"))
-      )
+    Update.group(List(update0, update1)) shouldBe List(
+      Group("org.specs2", Nel.of("specs2-core", "specs2-scalacheck"), "3.9.4", Nel.of("3.9.5"))
+    )
+  }
+
+  test("group: 2 updates with different configurations") {
+    val update0 = Single("org.specs2", "specs2-core", "3.9.4", Nel.of("3.9.5"))
+    val update1 = update0.copy(configurations = Some("test"))
+    Update.group(List(update0, update1)) shouldBe List(
+      Single("org.specs2", "specs2-core", "3.9.4", Nel.of("3.9.5"))
+    )
+  }
+
+  test("group: 3 updates with different configurations") {
+    val update0 = Single("org.specs2", "specs2-core", "3.9.4", Nel.of("3.9.5"))
+    val update1 = update0.copy(configurations = Some("test"))
+    val update2 = update0.copy(artifactId = "specs2-scalacheck")
+    Update.group(List(update0, update1, update2)) shouldBe List(
+      Group("org.specs2", Nel.of("specs2-core", "specs2-scalacheck"), "3.9.4", Nel.of("3.9.5"))
+    )
   }
 
   test("Single.show") {
