@@ -136,6 +136,7 @@
 - pjan/akka-d3
 - plokhotnyuk/jsoniter-scala
 - ppurang/asynch
+- pshirshov/izumi-r2
 - raboof/sbt-reproducible-builds
 - ReactivePlatform/Pragmatic-Scala
 - ReactivePlatform/Reactive-Design-Patterns
