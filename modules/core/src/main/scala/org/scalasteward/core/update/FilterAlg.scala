@@ -72,10 +72,12 @@ object FilterAlg {
         }
       } && {
         update.configurations.fold("")(_.toLowerCase) match {
-          case "phantom-js-jetty" => false
-          case "scalafmt"         => false
-          case "tut"              => false
-          case _                  => true
+          case "phantom-js-jetty"    => false
+          case "scalafmt"            => false
+          case "scripted-sbt"        => false
+          case "scripted-sbt-launch" => false
+          case "tut"                 => false
+          case _                     => true
         }
       }
 
