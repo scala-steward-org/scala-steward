@@ -24,9 +24,9 @@ class http4sUrlTest extends FunSuite with Matchers {
   }
 
   test("listPullRequests") {
-    listPullRequests[Result](repo, "scala-steward:update/fs2-core-1.0.0").map(_.toString) shouldBe
+    listPullRequests[Result](repo, "scala-steward:update/fs2-core-1.0.1").map(_.toString) shouldBe
       Right(
-        "https://api.github.com/repos/fthomas/refined/pulls?head=scala-steward%3Aupdate/fs2-core-1.0.0&state=all"
+        "https://api.github.com/repos/fthomas/refined/pulls?head=scala-steward%3Aupdate/fs2-core-1.0.1&state=all"
       )
   }
 
