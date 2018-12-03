@@ -57,6 +57,8 @@ object ProcessAlg {
             s"$home/.coursier",
             s"$home/.sbt",
             s"$home/.ivy2",
+            // spotify/scio-idea-plugin uses this directory for temporary files
+            s"$home/.scio-ideaPluginIC",
             cwd.pathAsString
           ).map(dir => s"--whitelist=$dir")
           exec(Nel("firejail", whitelisted) ::: command, cwd)

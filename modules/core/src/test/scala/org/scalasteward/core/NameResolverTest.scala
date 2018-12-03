@@ -22,7 +22,7 @@ class NameResolverTest extends FunSuite with Matchers {
   }
 
   test("resolve single update name: fs2-core") {
-    val update = Single("co.fs2", "fs2-core", "0.9.7", Nel.one("1.0.1"))
+    val update = Single("co.fs2", "fs2-core", "0.9.7", Nel.one("1.0.0"))
     NameResolver.resolve(update) shouldBe "fs2-core"
   }
 
