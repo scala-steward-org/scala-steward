@@ -22,7 +22,7 @@ import org.scalasteward.core.model.Update
 trait UpdateRepository[F[_]] {
   def deleteAll: F[Unit]
 
-  def save(update: Update): F[Unit]
+  def save(update: Update.Single): F[Unit]
 
-  def find(dependency: Dependency): F[Option[Update]]
+  def find(dependency: Dependency): F[Option[Update.Single]]
 }

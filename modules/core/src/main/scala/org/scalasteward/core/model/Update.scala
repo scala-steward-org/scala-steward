@@ -141,4 +141,10 @@ object Update {
 
   implicit val updateDecoder: Decoder[Update] =
     io.circe.generic.semiauto.deriveDecoder
+
+  implicit val updateSingleEncoder: Encoder[Update.Single] =
+    io.circe.generic.semiauto.deriveEncoder
+
+  implicit val updateSingleDecoder: Decoder[Update.Single] =
+    io.circe.generic.semiauto.deriveDecoder
 }

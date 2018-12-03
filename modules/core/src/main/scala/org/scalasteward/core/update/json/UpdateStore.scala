@@ -20,7 +20,7 @@ import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.model.Update
 
-final case class UpdateStore(store: List[Update])
+final case class UpdateStore(store: List[Update.Single])
 
 object UpdateStore {
   implicit val updateStoreDecoder: Decoder[UpdateStore] =

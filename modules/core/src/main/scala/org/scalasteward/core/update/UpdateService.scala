@@ -90,7 +90,7 @@ class UpdateService[F[_]](
         x.flatMap(updates => filterAlg.globalFilterMany(updates))
       }
 
-  def filterByApplicableUpdates(repos: List[Repo], updates: List[Update]): F[List[Repo]] =
+  def filterByApplicableUpdates(repos: List[Repo], updates: List[Update.Single]): F[List[Repo]] =
     repos.traverseFilter { repo =>
       for {
         dependencies <- dependencyRepository.getDependencies(List(repo))
@@ -116,7 +116,7 @@ class UpdateService[F[_]](
 }
 
 object UpdateService {
-  def isUpdateFor(update: Update, dependency: Dependency): Boolean =
+  def isUpdateFor(update: Update.Single, dependency: Dependency): Boolean =
     update.groupId === dependency.groupId &&
       update.artifactId === dependency.artifactIdCross &&
       update.currentVersion === dependency.version
