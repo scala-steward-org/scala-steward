@@ -80,6 +80,7 @@
 - gvolpe/console4cats
 - gvolpe/fs2-rabbit
 - gvolpe/fs2-redis
+- gvolpe/http4s-tracer
 - hipjim/scala-retry
 - hseeberger/akka-http-json
 - http4s/blaze
