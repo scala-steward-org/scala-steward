@@ -2,7 +2,7 @@ import sbt._
 
 object Versions {
   val circe = "0.10.1"
-  val http4s = "0.19.0"
+  val http4s = "0.20.0-M3"
 }
 
 object Dependencies {
