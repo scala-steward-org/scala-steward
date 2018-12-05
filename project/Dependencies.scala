@@ -12,7 +12,7 @@ object Dependencies {
   val circeGeneric = "io.circe" %% "circe-generic" % Versions.circe
   val circeParser = "io.circe" %% "circe-parser" % Versions.circe
   val circeRefined = "io.circe" %% "circe-refined" % Versions.circe
-  val fs2Core = "co.fs2" %% "fs2-core" % "1.0.1"
+  val fs2Core = "co.fs2" %% "fs2-core" % "1.0.2"
   val http4sBlazeClient = "org.http4s" %% "http4s-blaze-client" % Versions.http4s
   val http4sCirce = "org.http4s" %% "http4s-circe" % Versions.http4s
   val kindProjector = "org.spire-math" %% "kind-projector" % "0.9.9"
