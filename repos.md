@@ -69,6 +69,8 @@
 - circe/circe-spray
 - circe/circe-yaml
 - comcast/ip4s
+- daandi/nice-uuid
+- daandi/nice-url-encode-decode
 - dhpiggott/liquidity
 - erikvanoosten/metrics-scala
 - esamson/remder
