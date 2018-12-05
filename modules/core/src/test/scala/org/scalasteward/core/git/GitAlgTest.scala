@@ -1,25 +1,16 @@
 package org.scalasteward.core.git
 
-import better.files.File
 import cats.effect.IO
 import org.http4s.Uri
 import org.scalasteward.core.MockState.MockEnv
-import org.scalasteward.core.application.Config
+import org.scalasteward.core.application.{Config, ConfigTest}
 import org.scalasteward.core.github.data.Repo
 import org.scalasteward.core.io.{MockFileAlg, MockProcessAlg, MockWorkspaceAlg}
 import org.scalasteward.core.{util, MockState}
 import org.scalatest.{FunSuite, Matchers}
 
 class GitAlgTest extends FunSuite with Matchers {
-  implicit val config: Config = Config(
-    workspace = File.temp,
-    reposFile = File.temp / "repos.md",
-    gitAuthor = Author("", ""),
-    gitHubApiHost = "",
-    gitHubLogin = "",
-    gitAskPass = File.temp / "askpass.sh",
-    signCommits = true
-  )
+  implicit val config: Config = ConfigTest.dummyConfig
   implicit val fileAlg: MockFileAlg = new MockFileAlg
   implicit val processAlg: MockProcessAlg = new MockProcessAlg
   implicit val workspaceAlg: MockWorkspaceAlg = new MockWorkspaceAlg

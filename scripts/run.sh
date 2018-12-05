@@ -21,4 +21,11 @@ java -jar ${JAR} \
   --github-api-host "https://api.github.com" \
   --github-login ${LOGIN} \
   --git-ask-pass "$HOME/.github/askpass/$LOGIN.sh" \
-  --sign-commits
+  --sign-commits \
+  --whitelist $HOME/.cache/coursier \
+  --whitelist $HOME/.coursier \
+  --whitelist $HOME/.ivy2 \
+  --whitelist $HOME/.sbt \
+  --whitelist $HOME/.scio-ideaPluginIC \
+  --whitelist $JAVA_HOME \
+  --read-only $JAVA_HOME

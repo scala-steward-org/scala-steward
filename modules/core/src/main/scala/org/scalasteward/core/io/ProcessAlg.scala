@@ -18,8 +18,8 @@ package org.scalasteward.core.io
 
 import better.files.File
 import cats.effect.Sync
-import cats.implicits._
 import java.io.IOException
+import org.scalasteward.core.application.Config
 import org.scalasteward.core.util.Nel
 import scala.collection.mutable.ListBuffer
 import scala.sys.process.{Process, ProcessLogger}
@@ -31,7 +31,7 @@ trait ProcessAlg[F[_]] {
 }
 
 object ProcessAlg {
-  def create[F[_]](implicit F: Sync[F]): ProcessAlg[F] =
+  def create[F[_]](implicit config: Config, F: Sync[F]): ProcessAlg[F] =
     new ProcessAlg[F] {
       override def exec(
           command: Nel[String],
@@ -50,18 +50,12 @@ object ProcessAlg {
           lb.result()
         }
 
-      override def execSandboxed(command: Nel[String], cwd: File): F[List[String]] =
-        F.delay(File.home.pathAsString).flatMap { home =>
-          val whitelisted = List(
-            s"$home/.cache/coursier",
-            s"$home/.coursier",
-            s"$home/.sbt",
-            s"$home/.ivy2",
-            // spotify/scio-idea-plugin uses this directory for temporary files
-            s"$home/.scio-ideaPluginIC",
-            cwd.pathAsString
-          ).map(dir => s"--whitelist=$dir")
-          exec(Nel("firejail", whitelisted) ::: command, cwd)
-        }
+      override def execSandboxed(command: Nel[String], cwd: File): F[List[String]] = {
+        val whitelisted = (cwd.pathAsString :: config.whitelistedDirectories)
+          .map(dir => s"--whitelist=$dir")
+        val readOnly = config.readOnlyDirectories
+          .map(dir => s"--read-only=$dir")
+        exec(Nel("firejail", whitelisted ++ readOnly) ::: command, cwd)
+      }
     }
 }
