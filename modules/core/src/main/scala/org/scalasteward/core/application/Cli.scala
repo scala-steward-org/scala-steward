@@ -34,7 +34,9 @@ object Cli {
       githubApiHost: String,
       githubLogin: String,
       gitAskPass: String,
-      signCommits: Boolean = false
+      signCommits: Boolean = false,
+      whitelist: List[String] = Nil,
+      readOnly: List[String] = Nil
   )
 
   def create[F[_]](implicit F: ApplicativeThrowable[F]): Cli[F] = new Cli[F] {

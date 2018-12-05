@@ -35,7 +35,8 @@ class SbtAlgTest extends FunSuite with Matchers {
         List("rm", "/tmp/ws/fthomas/refined/.jvmopts"),
         List("rm", "/tmp/ws/fthomas/refined/.sbtopts"),
         List(
-          "sandbox",
+          "firejail",
+          "--whitelist=/tmp/ws/fthomas/refined",
           "sbt",
           "-batch",
           "-no-colors",
