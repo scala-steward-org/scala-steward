@@ -16,7 +16,6 @@
 
 package org.scalasteward.core.update
 
-import cats.Monad
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.dependency.{Dependency, DependencyRepository}
@@ -36,7 +35,7 @@ class UpdateService[F[_]](
     pullRequestRepo: PullRequestRepository[F],
     sbtAlg: SbtAlg[F],
     updateRepository: UpdateRepository[F],
-    F: Monad[F]
+    F: MonadThrowable[F]
 ) {
 
   // WIP
@@ -74,16 +73,16 @@ class UpdateService[F[_]](
 
         val x = (libProjects ++ pluginProjects).flatTraverse { prj =>
           val fa =
-            util.divideOnError((_: ArtificialProject).halve)(sbtAlg.getUpdatesForProject)(prj)
-          //val fa = sbtAlg.getUpdates(prj)
+            util.divideOnError(prj)(sbtAlg.getUpdatesForProject)(_.halve) {
+              (failedP: ArtificialProject, t: Throwable) =>
+                println(s"failed finding updates for $failedP")
+                println(t)
+                F.pure(List.empty[Update.Single])
+            }
 
-          fa.attempt.flatMap {
-            case Right(updates) =>
-              logger.info(util.logger.showUpdates(updates.widen[Update])) >>
-                updates.traverse_(updateRepository.save) >> F.pure(updates)
-            case Left(t) =>
-              println(t)
-              F.pure(List.empty[Update.Single])
+          fa.flatMap { updates =>
+            logger.info(util.logger.showUpdates(updates.widen[Update])) >>
+              updates.traverse_(updateRepository.save) >> F.pure(updates)
           }
         }
 

@@ -30,31 +30,18 @@ package object util {
 
   type BracketThrowable[F[_]] = Bracket[F, Throwable]
 
-  def divideOnError[F[_], G[_], A, B, E](divide: A => G[A])(f: A => F[B])(a: A)(
-      implicit
-      F: ApplicativeError[F, E],
-      G: Foldable[G],
-      B: Semigroup[B]
-  ): F[B] =
-    f(a).handleErrorWith { e =>
-      Nel.fromFoldable(divide(a)) match {
-        case None      => F.raiseError(e)
-        case Some(nel) => nel.traverse(divideOnError(divide)(f)(_)).map(_.reduce)
-      }
-    }
-
-  def divideOnError2[F[_], G[_], A, B, E](a: A)(f: A => F[B])(divide: A => G[A])(
-      handleError: E => F[B]
+  def divideOnError[F[_], G[_], A, B, E](a: A)(f: A => F[B])(divide: A => G[A])(
+      handleError: (A, E) => F[B]
   )(
       implicit
       F: ApplicativeError[F, E],
       G: Foldable[G],
       B: Semigroup[B]
   ): F[B] = {
-    def loop(a: A): F[B] =
-      f(a).handleErrorWith { e =>
-        Nel.fromFoldable(divide(a)) match {
-          case None      => handleError(e)
+    def loop(a1: A): F[B] =
+      f(a1).handleErrorWith { e =>
+        Nel.fromFoldable(divide(a1)) match {
+          case None      => handleError(a1, e)
           case Some(nel) => nel.traverse(loop).map(_.reduce)
         }
       }
