@@ -60,13 +60,24 @@ final case class ArtificialProject(
     )
 
   def halve: List[ArtificialProject] =
-    if (libraries.size <= 1 || plugins.size <= 1) Nil
-    else {
+    if (libraries.size > 1 && plugins.size > 1) {
       val halvedLibraries = util.halve(libraries)
       val halvedPlugins = util.halve(plugins)
       val zipped = halvedLibraries.zipAll(halvedPlugins, Nil, Nil)
       zipped.map {
         case (libraries1, plugins1) => copy(libraries = libraries1, plugins = plugins1)
       }
-    }
+    } else if (libraries.size > 1) {
+      val halvedLibraries = util.halve(libraries)
+      val zipped = halvedLibraries.zipAll(List(plugins), Nil, Nil)
+      zipped.map {
+        case (libraries1, plugins1) => copy(libraries = libraries1, plugins = plugins1)
+      }
+    } else if (plugins.size > 1) {
+      val halvedPlugins = util.halve(plugins)
+      val zipped = List(libraries).zipAll(halvedPlugins, Nil, Nil)
+      zipped.map {
+        case (libraries1, plugins1) => copy(libraries = libraries1, plugins = plugins1)
+      }
+    } else Nil
 }
