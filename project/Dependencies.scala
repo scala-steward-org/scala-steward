@@ -6,7 +6,7 @@ object Versions {
 }
 
 object Dependencies {
-  val betterFiles = "com.github.pathikrit" %% "better-files" % "3.6.0"
+  val betterFiles = "com.github.pathikrit" %% "better-files" % "3.7.0"
   val caseApp = "com.github.alexarchambault" %% "case-app" % "2.0.0-M5"
   val catsEffect = "org.typelevel" %% "cats-effect" % "1.1.0"
   val circeGeneric = "io.circe" %% "circe-generic" % Versions.circe
