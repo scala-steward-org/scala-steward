@@ -49,7 +49,7 @@ package object util {
     loop(a)
   }
 
-  def halve[A, C](c: C)(implicit ev: C => TraversableLike[A, C]): Either[C, (C, C)] = {
+  def halve[C](c: C)(implicit ev: C => TraversableLike[_, C]): Either[C, (C, C)] = {
     val size = c.size
     if (size < 2) Left(c) else Right(c.splitAt((size + 1) / 2))
   }
