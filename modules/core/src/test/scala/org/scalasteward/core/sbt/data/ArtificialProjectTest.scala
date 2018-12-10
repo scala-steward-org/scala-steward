@@ -4,41 +4,19 @@ import org.scalasteward.core.dependency.Dependency
 import org.scalatest.{FunSuite, Matchers}
 
 class ArtificialProjectTest extends FunSuite with Matchers {
+  val catsEffect =
+    Dependency("org.typelevel", "cats-effect", "cats-effect_2.12", "1.0.0", None)
+  val scalaLibrary =
+    Dependency("org.scala-lang", "scala-library", "scala-library", "2.12.6", None)
+  val sbtTravisci =
+    Dependency("com.dwijnand", "sbt-travisci", "sbt-travisci", "1.1.3", Some(SbtVersion("1.0")))
+  val sbtScalafmt =
+    Dependency("com.geirsson", "sbt-scalafmt", "sbt-scalafmt", "1.6.0-RC4", Some(SbtVersion("1.0")))
   val project = ArtificialProject(
     ScalaVersion("2.12.7"),
     SbtVersion("1.2.3"),
-    List(
-      Dependency(
-        "org.typelevel",
-        "cats-effect",
-        "cats-effect_2.12",
-        "1.0.0",
-        None
-      ),
-      Dependency(
-        "org.scala-lang",
-        "scala-library",
-        "scala-library",
-        "2.12.6",
-        None
-      )
-    ),
-    List(
-      Dependency(
-        "com.dwijnand",
-        "sbt-travisci",
-        "sbt-travisci",
-        "1.1.3",
-        Some(SbtVersion("1.0"))
-      ),
-      Dependency(
-        "com.geirsson",
-        "sbt-scalafmt",
-        "sbt-scalafmt",
-        "1.6.0-RC4",
-        Some(SbtVersion("1.0"))
-      )
-    )
+    List(catsEffect, scalaLibrary),
+    List(sbtTravisci, sbtScalafmt)
   )
 
   test("dependencyUpdatesCmd") {
@@ -68,5 +46,18 @@ class ArtificialProjectTest extends FunSuite with Matchers {
       """|addSbtPlugin("com.dwijnand" % "sbt-travisci" % "1.1.3")
          |addSbtPlugin("com.geirsson" % "sbt-scalafmt" % "1.6.0-RC4")
          |""".stripMargin.trim
+  }
+
+  test("halve: Some case") {
+    project.halve shouldBe Some(
+      (
+        project.copy(libraries = List(catsEffect), plugins = List(sbtTravisci)),
+        project.copy(libraries = List(scalaLibrary), plugins = List(sbtScalafmt))
+      )
+    )
+  }
+
+  test("halve: None case") {
+    project.copy(libraries = List(catsEffect), plugins = List(sbtTravisci)).halve shouldBe None
   }
 }
