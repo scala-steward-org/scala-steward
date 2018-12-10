@@ -19,6 +19,7 @@ package org.scalasteward.core
 import cats.effect.Bracket
 import cats.implicits._
 import cats.{ApplicativeError, Foldable, MonadError, Semigroup}
+import scala.collection.TraversableLike
 
 package object util {
   final type Nel[+A] = cats.data.NonEmptyList[A]
@@ -48,10 +49,8 @@ package object util {
     loop(a)
   }
 
-  def halve[A](list: List[A]): List[List[A]] =
-    if (list.isEmpty) Nil
-    else {
-      val (fst, snd) = list.splitAt((list.size + 1) / 2)
-      List(fst, snd)
-    }
+  def halve[C](c: C)(implicit ev: C => TraversableLike[_, C]): Either[C, (C, C)] = {
+    val size = c.size
+    if (size < 2) Left(c) else Right(c.splitAt((size + 1) / 2))
+  }
 }

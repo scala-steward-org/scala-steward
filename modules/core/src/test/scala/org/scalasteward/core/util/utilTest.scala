@@ -1,9 +1,10 @@
 package org.scalasteward.core.util
 
 import cats.implicits._
+import org.scalatest.prop.PropertyChecks
 import org.scalatest.{FunSuite, Matchers}
 
-class utilTest extends FunSuite with Matchers {
+class utilTest extends FunSuite with Matchers with PropertyChecks {
   test("divideOnError") {
     /*
        5
@@ -19,5 +20,18 @@ class utilTest extends FunSuite with Matchers {
     }((_, e: Unit) => Left(e))
 
     res shouldBe Right(5)
+  }
+
+  test("halve: halves concatenated yields the original sequence") {
+    forAll { l: List[Int] =>
+      halve(l).fold(identity, { case (fst, snd) => fst ++ snd }) shouldBe l
+    }
+  }
+
+  test("halve: first halve is at most one element longer than the second") {
+    forAll { l: List[Int] =>
+      val (fst, snd) = halve(l).leftMap(lst => (lst, List.empty[Int])).merge
+      (fst.size - snd.size) should equal(0).or(equal(1))
+    }
   }
 }
