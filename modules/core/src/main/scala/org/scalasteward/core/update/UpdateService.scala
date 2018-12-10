@@ -73,11 +73,12 @@ class UpdateService[F[_]](
 
         val x = (libProjects ++ pluginProjects).flatTraverse { prj =>
           val fa =
-            util.divideOnError(prj)(sbtAlg.getUpdatesForProject)(_.halve) {
-              (failedP: ArtificialProject, t: Throwable) =>
-                println(s"failed finding updates for $failedP")
-                println(t)
-                F.pure(List.empty[Update.Single])
+            util.divideOnError(prj)(sbtAlg.getUpdatesForProject)(_.halve.toList.flatMap {
+              case (p1, p2) => List(p1, p2)
+            }) { (failedP: ArtificialProject, t: Throwable) =>
+              println(s"failed finding updates for $failedP")
+              println(t)
+              F.pure(List.empty[Update.Single])
             }
 
           fa.flatMap { updates =>

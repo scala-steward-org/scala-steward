@@ -19,5 +19,6 @@ object Dependencies {
   val log4catsSlf4j = "io.chrisdavenport" %% "log4cats-slf4j" % "0.2.0"
   val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.2.3"
   val refined = "eu.timepit" %% "refined" % "0.9.3"
+  val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.14.0"
   val scalaTest = "org.scalatest" %% "scalatest" % "3.0.5"
 }
