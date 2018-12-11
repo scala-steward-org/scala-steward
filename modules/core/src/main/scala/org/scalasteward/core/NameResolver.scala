@@ -16,6 +16,7 @@
 
 package org.scalasteward.core
 
+import cats.implicits._
 import org.scalasteward.core.model.Update
 import org.scalasteward.core.util.Nel
 
@@ -25,7 +26,7 @@ object NameResolver {
     group(update.groupId, update.artifactIds)
 
   private def group(groupId: String, artifactIds: Nel[String]): String = {
-    val includeGroupId = artifactIds.exists(Update.commonSuffixes.contains)
+    val includeGroupId = util.intersects(artifactIds, Update.commonSuffixes)
     val artifactNames = artifactIds.map(single(groupId, _, includeGroupId))
     val maxArtifacts = 3
     val end = if (artifactNames.size > maxArtifacts) "..." else ""

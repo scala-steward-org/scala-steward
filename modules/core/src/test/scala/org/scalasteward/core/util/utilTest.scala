@@ -34,4 +34,9 @@ class utilTest extends FunSuite with Matchers with PropertyChecks {
       (fst.size - snd.size) should equal(0).or(equal(1))
     }
   }
+
+  test("intersects") {
+    intersects(List(1, 3, 5), Vector(2, 4, 6)) shouldBe false
+    intersects(List(1, 3, 5), Vector(2, 3, 6)) shouldBe true
+  }
 }
