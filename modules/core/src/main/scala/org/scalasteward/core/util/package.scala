@@ -18,7 +18,7 @@ package org.scalasteward.core
 
 import cats.effect.Bracket
 import cats.implicits._
-import cats.{ApplicativeError, Foldable, MonadError, Semigroup}
+import cats.{ApplicativeError, Eq, Foldable, MonadError, Semigroup, UnorderedFoldable}
 import scala.collection.TraversableLike
 
 package object util {
@@ -53,4 +53,11 @@ package object util {
     val size = c.size
     if (size < 2) Left(c) else Right(c.splitAt((size + 1) / 2))
   }
+
+  /** Returns true if there is an element that is both in `fa` and `ga`. */
+  def intersects[F[_]: UnorderedFoldable, G[_]: UnorderedFoldable, A: Eq](
+      fa: F[A],
+      ga: G[A]
+  ): Boolean =
+    fa.exists(a => ga.exists(b => a === b))
 }
