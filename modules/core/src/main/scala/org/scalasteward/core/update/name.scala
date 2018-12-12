@@ -14,26 +14,36 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core
+package org.scalasteward.core.update
 
 import cats.implicits._
 import org.scalasteward.core.model.Update
+import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 
-object NameResolver {
+object name {
+  def oneLiner(update: Update): String =
+    commaSeparated(update.groupId, update.artifactIds)
 
-  def resolve(update: Update): String =
-    group(update.groupId, update.artifactIds)
-
-  private def group(groupId: String, artifactIds: Nel[String]): String = {
-    val includeGroupId = util.intersects(artifactIds, Update.commonSuffixes)
-    val artifactNames = artifactIds.map(single(groupId, _, includeGroupId))
-    val maxArtifacts = 3
-    val end = if (artifactNames.size > maxArtifacts) "..." else ""
-    artifactNames.toList.take(maxArtifacts).mkString("", ", ", end)
+  private def commaSeparated(groupId: String, artifactIds: Nel[String]): String = {
+    val names = artifactNames(groupId, artifactIds).toList
+    val count = maxNames(names)
+    val end = if (names.size > count) "..." else ""
+    names.take(count).mkString("", ", ", end)
   }
 
-  private def single(groupId: String, artifactId: String, includeGroupId: Boolean): String = {
+  private def maxNames(names: List[String]): Int = {
+    val maxLength = 32
+    val accumulatedLengths = names.map(_.length).scanLeft(0)(_ + _).tail
+    math.max(1, accumulatedLengths.takeWhile(_ <= maxLength).size)
+  }
+
+  private def artifactNames(groupId: String, artifactIds: Nel[String]): Nel[String] = {
+    val includeGroupId = util.intersects(artifactIds, Update.commonSuffixes)
+    artifactIds.map(artifactName(groupId, _, includeGroupId))
+  }
+
+  private def artifactName(groupId: String, artifactId: String, includeGroupId: Boolean): String = {
     val groupName = groupId.split('.').lastOption.getOrElse(groupId)
     if (!includeGroupId || artifactId.contains(groupName)) artifactId
     else groupName + ":" + artifactId
