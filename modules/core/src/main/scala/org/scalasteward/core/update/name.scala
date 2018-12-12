@@ -28,7 +28,7 @@ object name {
   private def commaSeparated(groupId: String, artifactIds: Nel[String]): String = {
     val names = artifactNames(groupId, artifactIds).toList
     val count = maxNames(names)
-    val end = if (names.size > count) "..." else ""
+    val end = if (names.size > count) ", ..." else ""
     names.take(count).mkString("", ", ", end)
   }
 

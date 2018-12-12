@@ -50,7 +50,13 @@ class nameTest extends FunSuite with Matchers {
       "0.9.0",
       Nel.one("1.0.0")
     )
-    val expected = "cats-core, cats-free, cats-laws..."
+    val expected = "cats-core, cats-free, cats-laws, ..."
+    name.oneLiner(update) shouldBe expected
+  }
+
+  test("oneLiner: group update with four short artifacts") {
+    val update = Group("group", Nel.of("data", "free", "laws", "macros"), "0.9.0", Nel.one("1.0.0"))
+    val expected = "data, free, laws, macros"
     name.oneLiner(update) shouldBe expected
   }
 
@@ -61,7 +67,7 @@ class nameTest extends FunSuite with Matchers {
       "1.3.3",
       Nel.one("1.3.5")
     )
-    val expected = "sttp:circe, sttp:core..."
+    val expected = "sttp:circe, sttp:core, ..."
     name.oneLiner(update) shouldBe expected
   }
 }
