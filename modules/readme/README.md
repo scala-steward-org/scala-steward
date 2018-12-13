@@ -1,4 +1,4 @@
-<img src="https://github.com/fthomas/scala-steward/raw/master/modules/readme/images/scala-steward-logo-hex-1.png" width="173px" height="200px" align="right">
+<img src="https://github.com/fthomas/scala-steward/raw/master/modules/readme/images/scala-steward-logo-hex-1.png" width="156px" height="180px" align="right">
 
 # scala-steward
 [![Build Status](https://travis-ci.org/fthomas/scala-steward.svg?branch=master)](https://travis-ci.org/fthomas/scala-steward)
@@ -55,7 +55,7 @@ and other Scala [libraries](https://github.com/fthomas/scala-steward/blob/master
 [**@scala-steward**][@scala-steward]'s cute profile picture is by
 [@impurepics](https://twitter.com/impurepics/).
 
-### Running `scala-steward`
+## Running `scala-steward`
 
 ```bash
 sbt stage
