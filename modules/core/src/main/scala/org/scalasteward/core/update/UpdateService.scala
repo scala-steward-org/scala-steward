@@ -43,7 +43,7 @@ class UpdateService[F[_]](
     updateRepository.deleteAll >>
       dependencyRepository.getDependencies(repos).flatMap { dependencies =>
         val (libraries, plugins) = dependencies
-          .filter(d => filterAlg.globalKeep(d.toUpdate))
+          .filter(d => filterAlg.globalKeep(d.toUpdate) && UpdateService.includeInUpdateCheck(d))
           .partition(_.sbtVersion.isEmpty)
         val libProjects = splitter
           .xxx(libraries)
@@ -120,4 +120,15 @@ object UpdateService {
     update.groupId === dependency.groupId &&
       update.artifactId === dependency.artifactIdCross &&
       update.currentVersion === dependency.version
+
+  def includeInUpdateCheck(dependency: Dependency): Boolean =
+    (dependency.groupId, dependency.artifactId) match {
+      case ("com.ccadllc.cedi", "build")                     => false
+      case ("com.nrinaudo", "kantan.sbt-kantan")             => false
+      case ("org.foundweekends.giter8", "sbt-giter8")        => false
+      case ("org.scala-lang.modules", "sbt-scala-module")    => false
+      case ("org.scala-lang.modules", "scala-module-plugin") => false
+      case ("org.scodec", "scodec-build")                    => false
+      case _                                                 => true
+    }
 }
