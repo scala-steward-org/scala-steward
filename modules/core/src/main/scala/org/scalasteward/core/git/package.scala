@@ -17,14 +17,14 @@
 package org.scalasteward.core
 
 import org.scalasteward.core.model.Update
-import org.scalasteward.core.update.name
+import org.scalasteward.core.update.show
 
 package object git {
   def branchFor(update: Update): Branch =
     Branch(s"update/${update.name}-${update.nextVersion}")
 
   def commitMsgFor(update: Update): String =
-    s"Update ${name.oneLiner(update)} to ${update.nextVersion}"
+    s"Update ${show.oneLiner(update)} to ${update.nextVersion}"
 
   // man 7 gitrevisions:
   // When you have two commits r1 and r2 you can ask for commits that are

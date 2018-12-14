@@ -16,34 +16,35 @@
 
 package org.scalasteward.core.update
 
+import cats.Traverse
 import cats.implicits._
 import org.scalasteward.core.model.Update
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 
-object name {
+object show {
   def oneLiner(update: Update): String =
     commaSeparated(update.groupId, update.artifactIds)
 
   private def commaSeparated(groupId: String, artifactIds: Nel[String]): String = {
-    val names = artifactNames(groupId, artifactIds).toList
-    val count = maxNames(names)
-    val end = if (names.size > count) ", ..." else ""
-    names.take(count).mkString("", ", ", end)
+    val artifacts = showArtifacts(groupId, artifactIds).toList
+    val count = maxArtifacts(artifacts)
+    val items = if (count < artifacts.size) artifacts.take(count) :+ "..." else artifacts
+    items.mkString(", ")
   }
 
-  private def maxNames(names: List[String]): Int = {
+  private def maxArtifacts(artifacts: List[String]): Int = {
     val maxLength = 32
-    val accumulatedLengths = names.map(_.length).scanLeft(0)(_ + _).tail
+    val accumulatedLengths = artifacts.map(_.length).scanLeft(0)(_ + _).tail
     math.max(1, accumulatedLengths.takeWhile(_ <= maxLength).size)
   }
 
-  private def artifactNames(groupId: String, artifactIds: Nel[String]): Nel[String] = {
+  private def showArtifacts[F[_]: Traverse](groupId: String, artifactIds: F[String]): F[String] = {
     val includeGroupId = util.intersects(artifactIds, Update.commonSuffixes)
-    artifactIds.map(artifactName(groupId, _, includeGroupId))
+    artifactIds.map(showArtifact(groupId, _, includeGroupId))
   }
 
-  private def artifactName(groupId: String, artifactId: String, includeGroupId: Boolean): String = {
+  private def showArtifact(groupId: String, artifactId: String, includeGroupId: Boolean): String = {
     val groupName = groupId.split('.').lastOption.getOrElse(groupId)
     if (!includeGroupId || artifactId.contains(groupName)) artifactId
     else groupName + ":" + artifactId
