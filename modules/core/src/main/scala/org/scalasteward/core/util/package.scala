@@ -76,20 +76,23 @@ package object util {
     def loop(
         unseen: List[A],
         queue: ListBuffer[(A, K)],
-        popQueue: Boolean,
+        fromQueue: Boolean,
         currA: ListBuffer[A],
         currK: List[K],
         acc: ListBuffer[Nel[A]]
     ): ListBuffer[Nel[A]] =
-      (unseen, queue, popQueue) match {
+      (unseen, queue, fromQueue) match {
         case _ if currA.size >= maxSize.value =>
           loop(unseen, queue, true, ListBuffer.empty, Nil, append(currA, acc))
 
-        case (_, (a, k) +: aks, true) =>
-          if (currK.contains_(k))
-            loop(unseen, queue, false, currA, currK, acc)
-          else
-            loop(unseen, aks, true, currA :+ a, k :: currK, acc)
+        case (_, _ +: _, true) =>
+          queue.find { case (_, k) => !currK.contains_(k) } match {
+            case Some(ak @ (a, k)) =>
+              loop(unseen, queue -= ak, true, currA :+ a, k :: currK, acc)
+
+            case None =>
+              loop(unseen, queue, false, currA, currK, acc)
+          }
 
         case (a :: as, _, _) =>
           val k = f(a)
