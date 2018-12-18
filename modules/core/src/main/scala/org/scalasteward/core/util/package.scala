@@ -19,7 +19,10 @@ package org.scalasteward.core
 import cats.effect.Bracket
 import cats.implicits._
 import cats.{ApplicativeError, Eq, Foldable, MonadError, Semigroup, UnorderedFoldable}
+import eu.timepit.refined.types.numeric.PosInt
+import scala.annotation.tailrec
 import scala.collection.TraversableLike
+import scala.collection.mutable.ListBuffer
 
 package object util {
   final type Nel[+A] = cats.data.NonEmptyList[A]
@@ -60,4 +63,47 @@ package object util {
       ga: G[A]
   ): Boolean =
     fa.exists(a => ga.exists(b => a === b))
+
+  /** Splits a list into chunks with maximum size `maxSize` such that each chunk
+    * only consists of distinct elements with regards to the discriminator
+    * function `f`.
+    */
+  def separateBy[A, K: Eq](list: List[A])(maxSize: PosInt)(f: A => K): List[Nel[A]] = {
+    def append(currA: ListBuffer[A], acc: ListBuffer[Nel[A]]): ListBuffer[Nel[A]] =
+      Nel.fromList(currA.toList).fold(acc)(acc :+ _)
+
+    @tailrec
+    def loop(
+        unseen: List[A],
+        queue: ListBuffer[(A, K)],
+        popQueue: Boolean,
+        currA: ListBuffer[A],
+        currK: List[K],
+        acc: ListBuffer[Nel[A]]
+    ): ListBuffer[Nel[A]] =
+      (unseen, queue, popQueue) match {
+        case _ if currA.size >= maxSize.value =>
+          loop(unseen, queue, true, ListBuffer.empty, Nil, append(currA, acc))
+
+        case (_, (a, k) +: aks, true) =>
+          if (currK.contains_(k))
+            loop(unseen, queue, false, currA, currK, acc)
+          else
+            loop(unseen, aks, true, currA :+ a, k :: currK, acc)
+
+        case (a :: as, _, _) =>
+          val k = f(a)
+          if (currK.contains_(k))
+            loop(as, queue :+ ((a, k)), false, currA, currK, acc)
+          else
+            loop(as, queue, false, currA :+ a, k :: currK, acc)
+
+        case (Nil, (a, k) +: aks, false) =>
+          loop(Nil, aks, true, ListBuffer(a), k :: Nil, append(currA, acc))
+
+        case (Nil, ListBuffer(), _) => append(currA, acc)
+      }
+
+    loop(list, ListBuffer.empty, false, ListBuffer.empty, Nil, ListBuffer.empty).toList
+  }
 }

@@ -40,7 +40,8 @@ lazy val core = myCrossProject("core")
       Dependencies.log4catsSlf4j,
       Dependencies.logbackClassic,
       Dependencies.refined,
-      Dependencies.scalaCheck % Test,
+      Dependencies.refinedScalacheck % Test,
+      Dependencies.scalacheck % Test,
       Dependencies.scalaTest % Test
     ),
     assembly / test := {},

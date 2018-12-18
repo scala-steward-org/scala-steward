@@ -1,6 +1,8 @@
 package org.scalasteward.core.util
 
 import cats.implicits._
+import eu.timepit.refined.scalacheck.numeric._
+import eu.timepit.refined.types.numeric.PosInt
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{FunSuite, Matchers}
 
@@ -38,5 +40,22 @@ class utilTest extends FunSuite with Matchers with PropertyChecks {
   test("intersects") {
     intersects(List(1, 3, 5), Vector(2, 4, 6)) shouldBe false
     intersects(List(1, 3, 5), Vector(2, 3, 6)) shouldBe true
+  }
+
+  test("separateBy: example") {
+    separateBy(List("a", "b", "cd", "efg", "hi", "jk", "lmn"))(PosInt(3))(_.length) shouldBe
+      List(Nel.of("a", "cd", "efg"), Nel.of("b", "hi", "lmn"), Nel.of("jk"))
+  }
+
+  test("separateBy: retains elements") {
+    forAll { (l: List[String], n: PosInt) =>
+      separateBy(l)(n)(_.length).flatMap(_.toList).sorted shouldBe l.sorted
+    }
+  }
+
+  test("separateBy: no duplicates in sublists") {
+    forAll { (l: List[String], n: PosInt) =>
+      separateBy(l)(n)(_.length).forall(_.groupBy(_.length).values.forall(_.size == 1))
+    }
   }
 }

@@ -16,25 +16,13 @@
 
 package org.scalasteward.core.update
 
+import cats.implicits._
+import eu.timepit.refined.types.numeric.PosInt
 import org.scalasteward.core.dependency.Dependency
+import org.scalasteward.core.util
 
 object splitter {
   // WIP
-  def xxx(dependencies: List[Dependency]): List[List[Dependency]] = {
-
-    val (duplicated, distinct) =
-      dependencies.groupBy(d => (d.groupId, d.artifactIdCross)).values.partition(_.size > 1)
-
-    val buckets = distinct.grouped(25).map(_.flatten.toList).toList
-
-    val x = transpose(duplicated.toList).zipAll(buckets, List.empty, List.empty)
-    x.map(t => t._1 ++ t._2)
-  }
-
-  // https://stackoverflow.com/a/1684814/460387
-  def transpose[A](xs: List[List[A]]): List[List[A]] = xs.filter(_.nonEmpty) match {
-    case Nil               => Nil
-    case ys: List[List[A]] => ys.map { _.head } :: transpose(ys.map { _.tail })
-  }
-
+  def xxx(dependencies: List[Dependency]): List[List[Dependency]] =
+    util.separateBy(dependencies)(PosInt(30))(d => (d.groupId, d.artifactIdCross)).map(_.toList)
 }

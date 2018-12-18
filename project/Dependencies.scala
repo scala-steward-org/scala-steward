@@ -3,6 +3,7 @@ import sbt._
 object Versions {
   val circe = "0.10.1"
   val http4s = "0.20.0-M4"
+  val refined = "0.9.3"
 }
 
 object Dependencies {
@@ -19,7 +20,8 @@ object Dependencies {
   val kindProjector = "org.spire-math" %% "kind-projector" % "0.9.9"
   val log4catsSlf4j = "io.chrisdavenport" %% "log4cats-slf4j" % "0.2.0"
   val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.2.3"
-  val refined = "eu.timepit" %% "refined" % "0.9.3"
-  val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.14.0"
+  val refined = "eu.timepit" %% "refined" % Versions.refined
+  val refinedScalacheck = "eu.timepit" %% "refined-scalacheck" % Versions.refined
+  val scalacheck = "org.scalacheck" %% "scalacheck" % "1.14.0"
   val scalaTest = "org.scalatest" %% "scalatest" % "3.0.5"
 }
