@@ -32,13 +32,16 @@ trait ProcessAlg[F[_]] {
 
 object ProcessAlg {
   abstract class UsingFirejail[F[_]](config: Config) extends ProcessAlg[F] {
-    override def execSandboxed(command: Nel[String], cwd: File): F[List[String]] = {
-      val whitelisted = (cwd.pathAsString :: config.whitelistedDirectories)
-        .map(dir => s"--whitelist=$dir")
-      val readOnly = config.readOnlyDirectories
-        .map(dir => s"--read-only=$dir")
-      exec(Nel("firejail", whitelisted ++ readOnly) ::: command, cwd)
-    }
+    override def execSandboxed(command: Nel[String], cwd: File): F[List[String]] =
+      if (config.execSandbox) {
+        val whitelisted = (cwd.pathAsString :: config.whitelistedDirectories)
+          .map(dir => s"--whitelist=$dir")
+        val readOnly = config.readOnlyDirectories
+          .map(dir => s"--read-only=$dir")
+        exec(Nel("firejail", whitelisted ++ readOnly) ::: command, cwd)
+      } else {
+        exec(command, cwd)
+      }
   }
 
   def create[F[_]](implicit config: Config, F: Sync[F]): ProcessAlg[F] =

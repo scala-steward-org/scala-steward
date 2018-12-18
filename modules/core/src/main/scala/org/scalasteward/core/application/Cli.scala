@@ -36,7 +36,8 @@ object Cli {
       gitAskPass: String,
       signCommits: Boolean = false,
       whitelist: List[String] = Nil,
-      readOnly: List[String] = Nil
+      readOnly: List[String] = Nil,
+      execSandbox: Boolean = true
   )
 
   def create[F[_]](implicit F: ApplicativeThrowable[F]): Cli[F] = new Cli[F] {
