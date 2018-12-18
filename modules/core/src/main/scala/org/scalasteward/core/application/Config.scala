@@ -52,7 +52,8 @@ final case class Config(
     gitAskPass: File,
     signCommits: Boolean,
     whitelistedDirectories: List[String],
-    readOnlyDirectories: List[String]
+    readOnlyDirectories: List[String],
+    execSandbox: Boolean
 ) {
   def gitHubUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] =
     util.uri.fromString[F](gitHubApiHost).flatMap { url =>
@@ -77,7 +78,8 @@ object Config {
         gitAskPass = args.gitAskPass.toFile,
         signCommits = args.signCommits,
         whitelistedDirectories = args.whitelist,
-        readOnlyDirectories = args.readOnly
+        readOnlyDirectories = args.readOnly,
+        execSandbox = args.execSandbox
       )
     }
 }

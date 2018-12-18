@@ -13,6 +13,7 @@ object ConfigTest {
     gitAskPass = File.temp / "askpass.sh",
     signCommits = true,
     whitelistedDirectories = Nil,
-    readOnlyDirectories = Nil
+    readOnlyDirectories = Nil,
+    execSandbox = true
   )
 }
