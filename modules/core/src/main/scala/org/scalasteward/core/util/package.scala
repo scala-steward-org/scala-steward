@@ -89,7 +89,6 @@ package object util {
           queue.find { case (_, k) => !currK.contains_(k) } match {
             case Some(ak @ (a, k)) =>
               loop(unseen, queue -= ak, true, currA :+ a, k :: currK, acc)
-
             case None =>
               loop(unseen, queue, false, currA, currK, acc)
           }
