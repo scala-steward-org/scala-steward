@@ -225,6 +225,7 @@
 - typelevel/cats-effect
 - typelevel/cats-mtl
 - typelevel/discipline
+- typelevel/jawn
 - typelevel/machinist
 - ua-parser/uap-scala
 - vectos/formulation
