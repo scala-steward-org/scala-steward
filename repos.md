@@ -6,7 +6,11 @@
 - akka/akka-sample-cluster-docker-compose-java
 - akka/akka-sample-cluster-docker-compose-scala
 - akka/akka-samples
+- alexarchambault/ammonite-spark
+- alexarchambault/argonaut-shapeless
+- alexarchambault/case-app
 - alexarchambault/plotly-scala
+- alexarchambault/scalacheck-shapeless
 - almond-sh/almond
 - alonsodomin/cron4s
 - Atry/fastring
