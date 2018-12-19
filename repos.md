@@ -233,6 +233,7 @@
 - typelevel/jawn
 - typelevel/kittens
 - typelevel/machinist
+- typelevel/mouse
 - ua-parser/uap-scala
 - vectos/formulation
 - vectos/itinere
