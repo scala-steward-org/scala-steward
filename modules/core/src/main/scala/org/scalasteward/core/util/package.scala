@@ -64,9 +64,18 @@ package object util {
   ): Boolean =
     fa.exists(a => ga.exists(b => a === b))
 
-  /** Splits a list into chunks with maximum size `maxSize` such that each chunk
-    * only consists of distinct elements with regards to the discriminator
-    * function `f`.
+  /** Splits a list into chunks with maximum size `maxSize` such that
+    * each chunk only consists of distinct elements with regards to the
+    * discriminator function `f`.
+    *
+    * Example:
+    * {{{
+    * scala> import cats.implicits._
+    *      | import eu.timepit.refined.types.numeric.PosInt
+    *
+    * scala> separateBy(List("a", "b", "cd", "efg", "hi", "jk", "lmn"))(PosInt(3))(_.length)
+    * res1: List[Nel[String]] = List(NonEmptyList(a, cd, efg), NonEmptyList(b, hi, lmn), NonEmptyList(jk))
+    * }}}
     */
   def separateBy[A, K: Eq](list: List[A])(maxSize: PosInt)(f: A => K): List[Nel[A]] = {
     @tailrec

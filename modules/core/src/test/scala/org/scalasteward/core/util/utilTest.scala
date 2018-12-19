@@ -42,11 +42,6 @@ class utilTest extends FunSuite with Matchers with PropertyChecks {
     intersects(List(1, 3, 5), Vector(2, 3, 6)) shouldBe true
   }
 
-  test("separateBy: example") {
-    separateBy(List("a", "b", "cd", "efg", "hi", "jk", "lmn"))(PosInt(3))(_.length) shouldBe
-      List(Nel.of("a", "cd", "efg"), Nel.of("b", "hi", "lmn"), Nel.of("jk"))
-  }
-
   test("separateBy: retains elements") {
     forAll { (l: List[String], n: PosInt) =>
       separateBy(l)(n)(_.length).flatMap(_.toList).sorted shouldBe l.sorted
@@ -56,6 +51,12 @@ class utilTest extends FunSuite with Matchers with PropertyChecks {
   test("separateBy: no duplicates in sublists") {
     forAll { (l: List[String], n: PosInt) =>
       separateBy(l)(n)(_.length).forall(_.groupBy(_.length).values.forall(_.size == 1))
+    }
+  }
+
+  test("separateBy: sublists are not longer than maxSize") {
+    forAll { (l: List[String], n: PosInt) =>
+      separateBy(l)(n)(_.length).forall(_.length <= n.value)
     }
   }
 }
