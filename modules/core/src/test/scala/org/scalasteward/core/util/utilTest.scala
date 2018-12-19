@@ -59,9 +59,4 @@ class utilTest extends FunSuite with Matchers with PropertyChecks {
       separateBy(l)(n)(_.length).forall(_.length <= n.value)
     }
   }
-
-  test("intersects") {
-    intersects(List(1, 3, 5), List(2, 4, 6)) shouldBe false
-    intersects(List(1, 3, 5), List(2, 3, 6)) shouldBe true
-  }
 }
