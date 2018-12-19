@@ -229,6 +229,7 @@
 - typelevel/cats-effect
 - typelevel/cats-mtl
 - typelevel/discipline
+- typelevel/frameless
 - typelevel/jawn
 - typelevel/kittens
 - typelevel/machinist
