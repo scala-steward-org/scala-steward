@@ -24,10 +24,10 @@
 - BenFradet/spark-kafka-writer
 - BenFradet/struct-type-encoder
 - cb372/scalacache
-- ccamel/playground-binding.scala
+- ccadllc/cedi-circuitbreakers
 - ccadllc/cedi-config
 - ccadllc/cedi-dtrace
-- ccadllc/cedi-circuitbreakers
+- ccamel/playground-binding.scala
 - ChristopherDavenport/bank
 - ChristopherDavenport/base.g8
 - ChristopherDavenport/cats-par
@@ -53,8 +53,8 @@
 - ChristopherDavenport/mules
 - ChristopherDavenport/progressbar
 - ChristopherDavenport/rank3
-- ChristopherDavenport/read
 - ChristopherDavenport/reactive-potato
+- ChristopherDavenport/read
 - ChristopherDavenport/scalaz-task-effect
 - ChristopherDavenport/selection
 - ChristopherDavenport/semigroups
@@ -75,8 +75,8 @@
 - circe/circe-spray
 - circe/circe-yaml
 - comcast/ip4s
-- daandi/nice-uuid
 - daandi/nice-url-encode-decode
+- daandi/nice-uuid
 - dhpiggott/liquidity
 - erikvanoosten/metrics-scala
 - esamson/remder
@@ -189,11 +189,11 @@
 - schrepfler/scala-native-cli
 - schrepfler/scala-uri
 - schrepfler/sportsml-scala
-- scodec/scodec-build
-- scodec/scodec-bits
 - scodec/scodec
-- scodec/scodec-stream
+- scodec/scodec-bits
+- scodec/scodec-build
 - scodec/scodec-protocols
+- scodec/scodec-stream
 - SethTisue/cloc-plugin
 - SethTisue/Project-Euler
 - shankarshastri/ScalaFPCode
