@@ -100,7 +100,11 @@ package object util {
       }
 
     @tailrec
-    def outerLoop(unseen: List[A], queue: ListBuffer[(A, K)], acc: ListBuffer[Nel[A]]): ListBuffer[Nel[A]] = {
+    def outerLoop(
+        unseen: List[A],
+        queue: ListBuffer[(A, K)],
+        acc: ListBuffer[Nel[A]]
+    ): ListBuffer[Nel[A]] = {
       val (unseen1, queue1, chunk) = innerLoop(unseen, queue, queue.nonEmpty, ListBuffer.empty, Nil)
       val acc1 = Nel.fromList(chunk.toList).fold(acc)(acc :+ _)
       if (unseen1.nonEmpty || queue1.nonEmpty) outerLoop(unseen1, queue1, acc1) else acc1
