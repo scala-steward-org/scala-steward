@@ -37,13 +37,13 @@ class JsonUpdateRepository[F[_]](
   override def deleteAll: F[Unit] =
     writeJson(UpdateStore(List.empty))
 
-  override def save(update: Update): F[Unit] =
+  override def save(update: Update.Single): F[Unit] =
     readJson.map(s => UpdateStore((update :: s.store).distinct)).flatMap(writeJson)
 
-  override def find(dependency: Dependency): F[Option[Update]] = ???
+  override def find(dependency: Dependency): F[Option[Update.Single]] = ???
 
   def jsonFile: F[File] =
-    workspaceAlg.rootDir.map(_ / "updates_v01.json")
+    workspaceAlg.rootDir.map(_ / "updates_v02.json")
 
   def readJson: F[UpdateStore] =
     jsonFile.flatMap { file =>

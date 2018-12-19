@@ -2,12 +2,13 @@
 
 set -ex
 
-export PATH="/opt/jre/current/bin:$PATH"
+export JAVA_HOME="/opt/jre/current"
+export PATH="$JAVA_HOME/bin:$PATH"
+
 SCRIPT=$(readlink -f "$0")
 STEWARD_DIR=$(dirname "$SCRIPT")/..
 cd "$STEWARD_DIR"
 git pull
-export SBT_OPTS="-Xms256M -Xmx768M"
 sbt -no-colors ";clean ;core/assembly"
 JAR=$(find -name "*assembly*.jar" | head -n1)
 
@@ -20,4 +21,11 @@ java -jar ${JAR} \
   --github-api-host "https://api.github.com" \
   --github-login ${LOGIN} \
   --git-ask-pass "$HOME/.github/askpass/$LOGIN.sh" \
-  --sign-commits
+  --sign-commits \
+  --whitelist $HOME/.cache/coursier \
+  --whitelist $HOME/.coursier \
+  --whitelist $HOME/.ivy2 \
+  --whitelist $HOME/.sbt \
+  --whitelist $HOME/.scio-ideaPluginIC \
+  --whitelist $JAVA_HOME \
+  --read-only $JAVA_HOME

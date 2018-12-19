@@ -18,8 +18,8 @@ package org.scalasteward.core.io
 
 import better.files.File
 import cats.effect.Sync
-import cats.implicits._
 import java.io.IOException
+import org.scalasteward.core.application.Config
 import org.scalasteward.core.util.Nel
 import scala.collection.mutable.ListBuffer
 import scala.sys.process.{Process, ProcessLogger}
@@ -31,8 +31,21 @@ trait ProcessAlg[F[_]] {
 }
 
 object ProcessAlg {
-  def create[F[_]](implicit F: Sync[F]): ProcessAlg[F] =
-    new ProcessAlg[F] {
+  abstract class UsingFirejail[F[_]](config: Config) extends ProcessAlg[F] {
+    override def execSandboxed(command: Nel[String], cwd: File): F[List[String]] =
+      if (config.execSandbox) {
+        val whitelisted = (cwd.pathAsString :: config.whitelistedDirectories)
+          .map(dir => s"--whitelist=$dir")
+        val readOnly = config.readOnlyDirectories
+          .map(dir => s"--read-only=$dir")
+        exec(Nel("firejail", whitelisted ++ readOnly) ::: command, cwd)
+      } else {
+        exec(command, cwd)
+      }
+  }
+
+  def create[F[_]](implicit config: Config, F: Sync[F]): ProcessAlg[F] =
+    new UsingFirejail[F](config) {
       override def exec(
           command: Nel[String],
           cwd: File,
@@ -48,18 +61,6 @@ object ProcessAlg {
           val exitCode = Process(command.toList, cwd.toJava, extraEnv: _*).!(log)
           if (exitCode != 0) throw new IOException(lb.mkString("\n"))
           lb.result()
-        }
-
-      override def execSandboxed(command: Nel[String], cwd: File): F[List[String]] =
-        F.delay(File.home.pathAsString).flatMap { home =>
-          val whitelisted = List(
-            s"$home/.cache/coursier",
-            s"$home/.coursier",
-            s"$home/.sbt",
-            s"$home/.ivy2",
-            cwd.pathAsString
-          ).map(dir => s"--whitelist=$dir")
-          exec(Nel("firejail", whitelisted) ::: command, cwd)
         }
     }
 }

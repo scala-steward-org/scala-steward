@@ -115,8 +115,9 @@ object Update {
       .values
       .map { nel =>
         val head = nel.head
-        if (nel.tail.nonEmpty)
-          Group(head.groupId, nel.map(_.artifactId).sorted, head.currentVersion, head.newerVersions)
+        val artifacts = nel.map(_.artifactId).distinct.sorted
+        if (artifacts.tail.nonEmpty)
+          Group(head.groupId, artifacts, head.currentVersion, head.newerVersions)
         else
           head
       }
@@ -139,5 +140,11 @@ object Update {
     io.circe.generic.semiauto.deriveEncoder
 
   implicit val updateDecoder: Decoder[Update] =
+    io.circe.generic.semiauto.deriveDecoder
+
+  implicit val updateSingleEncoder: Encoder[Update.Single] =
+    io.circe.generic.semiauto.deriveEncoder
+
+  implicit val updateSingleDecoder: Decoder[Update.Single] =
     io.circe.generic.semiauto.deriveDecoder
 }

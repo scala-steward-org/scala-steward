@@ -8,3 +8,6 @@ project/plugins/project/
 .idea*/
 
 workspace/
+
+.bloop/
+.metals/

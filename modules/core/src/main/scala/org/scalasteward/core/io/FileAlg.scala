@@ -20,6 +20,7 @@ import better.files.File
 import cats.effect.Sync
 import cats.implicits._
 import fs2.Stream
+import org.apache.commons.io.FileUtils
 
 trait FileAlg[F[_]] {
   def deleteForce(file: File): F[Unit]
@@ -44,7 +45,7 @@ object FileAlg {
   def create[F[_]](implicit F: Sync[F]): FileAlg[F] =
     new FileAlg[F] {
       override def deleteForce(file: File): F[Unit] =
-        F.delay(if (file.exists) file.delete())
+        F.delay(if (file.exists) FileUtils.forceDelete(file.toJava))
 
       def ensureExists(dir: File): F[File] =
         F.delay {

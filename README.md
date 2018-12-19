@@ -1,3 +1,5 @@
+<img src="https://github.com/fthomas/scala-steward/raw/master/modules/readme/images/scala-steward-logo-hex-1.png" width="156px" height="180px" align="right">
+
 # scala-steward
 [![Build Status](https://travis-ci.org/fthomas/scala-steward.svg?branch=master)](https://travis-ci.org/fthomas/scala-steward)
 [![codecov](https://codecov.io/gh/fthomas/scala-steward/branch/master/graph/badge.svg)](https://codecov.io/gh/fthomas/scala-steward)
@@ -22,19 +24,21 @@ to be updated.
 If you are curious how [**@scala-steward**'s][@scala-steward] pull requests
 look like, here are the ones it has created so far:
 
-* [Created pull requests](            https://github.com/search?q=author%3Ascala-steward+is%3Apr)
-  ([compact view for logged in users](https://github.com/pulls?q=author%3Ascala-steward+is%3Apr))
-* [Merged pull requests](             https://github.com/search?q=author%3Ascala-steward+is%3Amerged+sort%3Aupdated-desc)
-  ([compact view for logged in users](https://github.com/pulls?q=author%3Ascala-steward+is%3Amerged+sort%3Aupdated-desc))
+* [Created pull requests](https://github.com/search?q=author%3Ascala-steward+is%3Apr)
+  ([compact view](        https://github.com/pulls?q=author%3Ascala-steward+is%3Apr))
+* [Merged pull requests]( https://github.com/search?q=author%3Ascala-steward+is%3Amerged+sort%3Aupdated-desc)
+  ([compact view](        https://github.com/pulls?q=author%3Ascala-steward+is%3Amerged+sort%3Aupdated-desc))
 
 ## Contributors
 
 The following people have helped making scala-steward great:
 
+* [Arulselvan Madhavan](https://github.com/ArulselvanMadhavan)
 * [Filipe Regadas](https://github.com/regadas)
 * [Frank S. Thomas](https://github.com/fthomas)
 * [kenji yoshida](https://github.com/xuwei-k)
 * [Piotr Gabara](https://github.com/bhop)
+* [Zelenya](https://github.com/Zelenya)
 * Your name here :-)
 
 ## Participation
@@ -50,8 +54,39 @@ plugin to determine dependency updates and a bunch of [Typelevel][Typelevel]
 and other Scala [libraries](https://github.com/fthomas/scala-steward/blob/master/project/Dependencies.scala).
 
 [**@scala-steward**][@scala-steward]'s cute profile picture is by
-[bamenny](https://pixabay.com/en/users/bamenny-2092731/) via
-[Pixabay](https://pixabay.com/en/robot-flower-technology-future-1214536/).
+[@impurepics](https://twitter.com/impurepics/).
+
+## Running `scala-steward`
+
+```bash
+sbt stage
+
+./modules/core/.jvm/target/universal/stage/bin/scala-steward \
+  --workspace  "$STEWARD_DIR/workspace" \
+  --repos-file "$STEWARD_DIR/repos.md" \
+  --git-author-name "Scala steward" \
+  --git-author-email ${EMAIL} \
+  --github-api-host "https://api.github.com" \
+  --github-login ${LOGIN} \
+  --git-ask-pass "$STEWARD_DIR/.github/askpass/$LOGIN.sh" \
+  --sign-commits
+```
+
+Or,
+
+```bash
+sbt docker:publishLocal
+
+docker run -v $STEWARD_DIR:/opt/docker -it scala-steward:0.1.0-SNAPSHOT \
+  --workspace  "/opt/docker/workspace" \
+  --repos-file "/opt/docker/repos.md" \
+  --git-author-name "Scala steward" \
+  --git-author-email ${EMAIL} \
+  --github-api-host "https://api.github.com" \
+  --github-login ${LOGIN} \
+  --git-ask-pass "/opt/docker/.github/askpass/$LOGIN.sh" \
+  --sign-commits
+```
 
 ## License
 

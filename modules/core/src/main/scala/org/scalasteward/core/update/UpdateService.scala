@@ -16,7 +16,6 @@
 
 package org.scalasteward.core.update
 
-import cats.Monad
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.dependency.{Dependency, DependencyRepository}
@@ -36,7 +35,7 @@ class UpdateService[F[_]](
     pullRequestRepo: PullRequestRepository[F],
     sbtAlg: SbtAlg[F],
     updateRepository: UpdateRepository[F],
-    F: Monad[F]
+    F: MonadThrowable[F]
 ) {
 
   // WIP
@@ -44,7 +43,7 @@ class UpdateService[F[_]](
     updateRepository.deleteAll >>
       dependencyRepository.getDependencies(repos).flatMap { dependencies =>
         val (libraries, plugins) = dependencies
-          .filter(d => filterAlg.globalKeep(d.toUpdate))
+          .filter(d => filterAlg.globalKeep(d.toUpdate) && UpdateService.includeInUpdateCheck(d))
           .partition(_.sbtVersion.isEmpty)
         val libProjects = splitter
           .xxx(libraries)
@@ -74,23 +73,24 @@ class UpdateService[F[_]](
 
         val x = (libProjects ++ pluginProjects).flatTraverse { prj =>
           val fa =
-            util.divideOnError((_: ArtificialProject).halve)(sbtAlg.getUpdatesForProject)(prj)
-          //val fa = sbtAlg.getUpdates(prj)
-
-          fa.attempt.flatMap {
-            case Right(updates) =>
-              logger.info(util.logger.showUpdates(updates.widen[Update])) >>
-                updates.traverse_(updateRepository.save) >> F.pure(updates)
-            case Left(t) =>
+            util.divideOnError(prj)(sbtAlg.getUpdatesForProject)(_.halve.toList.flatMap {
+              case (p1, p2) => List(p1, p2)
+            }) { (failedP: ArtificialProject, t: Throwable) =>
+              println(s"failed finding updates for $failedP")
               println(t)
               F.pure(List.empty[Update.Single])
+            }
+
+          fa.flatMap { updates =>
+            logger.info(util.logger.showUpdates(updates.widen[Update])) >>
+              updates.traverse_(updateRepository.save) >> F.pure(updates)
           }
         }
 
         x.flatMap(updates => filterAlg.globalFilterMany(updates))
       }
 
-  def filterByApplicableUpdates(repos: List[Repo], updates: List[Update]): F[List[Repo]] =
+  def filterByApplicableUpdates(repos: List[Repo], updates: List[Update.Single]): F[List[Repo]] =
     repos.traverseFilter { repo =>
       for {
         dependencies <- dependencyRepository.getDependencies(List(repo))
@@ -116,8 +116,19 @@ class UpdateService[F[_]](
 }
 
 object UpdateService {
-  def isUpdateFor(update: Update, dependency: Dependency): Boolean =
+  def isUpdateFor(update: Update.Single, dependency: Dependency): Boolean =
     update.groupId === dependency.groupId &&
       update.artifactId === dependency.artifactIdCross &&
       update.currentVersion === dependency.version
+
+  def includeInUpdateCheck(dependency: Dependency): Boolean =
+    (dependency.groupId, dependency.artifactId) match {
+      case ("com.ccadllc.cedi", "build")                     => false
+      case ("com.nrinaudo", "kantan.sbt-kantan")             => false
+      case ("org.foundweekends.giter8", "sbt-giter8")        => false
+      case ("org.scala-lang.modules", "sbt-scala-module")    => false
+      case ("org.scala-lang.modules", "scala-module-plugin") => false
+      case ("org.scodec", "scodec-build")                    => false
+      case _                                                 => true
+    }
 }

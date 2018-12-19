@@ -12,6 +12,7 @@ class SbtAlgTest extends FunSuite with Matchers {
   implicit val loggerAlg: MockLogger = new MockLogger
   implicit val processAlg: MockProcessAlg = new MockProcessAlg
   implicit val workspaceAlg: MockWorkspaceAlg = new MockWorkspaceAlg
+
   val sbtAlg: SbtAlg[MockEnv] = SbtAlg.create
 
   test("addGlobalPlugins") {
@@ -37,7 +38,8 @@ class SbtAlgTest extends FunSuite with Matchers {
         List("rm", "/tmp/ws/fthomas/refined/.jvmopts"),
         List("rm", "/tmp/ws/fthomas/refined/.sbtopts"),
         List(
-          "sandbox",
+          "firejail",
+          "--whitelist=/tmp/ws/fthomas/refined",
           "sbt",
           "-batch",
           "-no-colors",

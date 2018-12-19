@@ -33,12 +33,15 @@ lazy val core = myCrossProject("core")
       Dependencies.circeGeneric,
       Dependencies.circeParser,
       Dependencies.circeRefined,
+      Dependencies.commonsIo,
       Dependencies.fs2Core,
       Dependencies.http4sBlazeClient,
       Dependencies.http4sCirce,
       Dependencies.log4catsSlf4j,
       Dependencies.logbackClassic,
       Dependencies.refined,
+      Dependencies.refinedScalacheck % Test,
+      Dependencies.scalacheck % Test,
       Dependencies.scalaTest % Test
     ),
     assembly / test := {},
@@ -98,7 +101,9 @@ lazy val commonSettings = Def.settings(
   scaladocSettings
 )
 
-lazy val compileSettings = Def.settings()
+lazy val compileSettings = Def.settings(
+  doctestTestFramework := DoctestTestFramework.ScalaTest
+)
 
 lazy val metadataSettings = Def.settings(
   name := projectName,
@@ -202,7 +207,13 @@ addCommandAlias(
       Seq("--git-author-email", s"me@$projectName.org"),
       Seq("--github-api-host", "https://api.github.com"),
       Seq("--github-login", projectName),
-      Seq("--git-ask-pass", s"$home/.github/askpass/$projectName.sh")
+      Seq("--git-ask-pass", s"$home/.github/askpass/$projectName.sh"),
+      Seq("--sign-commits"),
+      Seq("--whitelist", s"$home/.cache/coursier"),
+      Seq("--whitelist", s"$home/.coursier"),
+      Seq("--whitelist", s"$home/.ivy2"),
+      Seq("--whitelist", s"$home/.sbt"),
+      Seq("--whitelist", s"$home/.scio-ideaPluginIC")
     ).flatten.mkString(" ")
   }
 )

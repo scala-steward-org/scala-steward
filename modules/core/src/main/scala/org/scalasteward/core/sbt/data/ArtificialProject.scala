@@ -59,14 +59,13 @@ final case class ArtificialProject(
       plugins.map(p => s"addSbtPlugin(${p.formatAsModuleId})").mkString("\n")
     )
 
-  def halve: List[ArtificialProject] =
-    if (libraries.size <= 1 || plugins.size <= 1) Nil
-    else {
-      val halvedLibraries = util.halve(libraries)
-      val halvedPlugins = util.halve(plugins)
-      val zipped = halvedLibraries.zipAll(halvedPlugins, Nil, Nil)
-      zipped.map {
-        case (libraries1, plugins1) => copy(libraries = libraries1, plugins = plugins1)
-      }
+  def halve: Option[(ArtificialProject, ArtificialProject)] = {
+    val ls = util.halve(libraries).getOrElse((Nil, Nil))
+    val ps = util.halve(plugins).getOrElse((Nil, Nil))
+    (ls, ps) match {
+      case ((Nil, Nil), (Nil, Nil)) => None
+      case ((l1, l2), (p1, p2)) =>
+        Some((copy(libraries = l1, plugins = p1), copy(libraries = l2, plugins = p2)))
     }
+  }
 }
