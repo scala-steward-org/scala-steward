@@ -101,7 +101,9 @@ lazy val commonSettings = Def.settings(
   scaladocSettings
 )
 
-lazy val compileSettings = Def.settings()
+lazy val compileSettings = Def.settings(
+  doctestTestFramework := DoctestTestFramework.ScalaTest
+)
 
 lazy val metadataSettings = Def.settings(
   name := projectName,
