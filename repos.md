@@ -107,6 +107,7 @@
 - http4s/blaze
 - http4s/http4s
 - http4s/http4s.g8
+- http4s/jawn-fs2
 - http4s/rho
 - ilya-murzinov/finch-todo-backend
 - INCATools/dosdp-tools
