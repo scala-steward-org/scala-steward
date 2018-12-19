@@ -230,6 +230,7 @@
 - typelevel/cats-mtl
 - typelevel/discipline
 - typelevel/jawn
+- typelevel/kittens
 - typelevel/machinist
 - ua-parser/uap-scala
 - vectos/formulation
