@@ -69,43 +69,47 @@ package object util {
     * function `f`.
     */
   def separateBy[A, K: Eq](list: List[A])(maxSize: PosInt)(f: A => K): List[Nel[A]] = {
-    def append(currA: ListBuffer[A], acc: ListBuffer[Nel[A]]): ListBuffer[Nel[A]] =
-      Nel.fromList(currA.toList).fold(acc)(acc :+ _)
-
     @tailrec
-    def loop(
+    def innerLoop(
         unseen: List[A],
         queue: ListBuffer[(A, K)],
         fromQueue: Boolean,
-        currA: ListBuffer[A],
-        currK: List[K],
-        acc: ListBuffer[Nel[A]]
-    ): ListBuffer[Nel[A]] =
-      (unseen, queue, fromQueue) match {
-        case _ if currA.size >= maxSize.value =>
-          loop(unseen, queue, true, ListBuffer.empty, Nil, append(currA, acc))
+        chunkA: ListBuffer[A],
+        chunkK: List[K]
+    ): (List[A], ListBuffer[(A, K)], ListBuffer[A]) =
+      unseen match {
+        case _ if chunkA.size >= maxSize.value => (unseen, queue, chunkA)
 
-        case (_, _ +: _, true) =>
-          queue.find { case (_, k) => !currK.contains_(k) } match {
+        case _ if fromQueue =>
+          queue.find { case (_, k) => !chunkK.contains_(k) } match {
             case Some(ak @ (a, k)) =>
-              loop(unseen, queue -= ak, true, currA :+ a, k :: currK, acc)
+              val queue1 = queue -= ak
+              innerLoop(unseen, queue1, queue1.nonEmpty, chunkA :+ a, k :: chunkK)
             case None =>
-              loop(unseen, queue, false, currA, currK, acc)
+              innerLoop(unseen, queue, false, chunkA, chunkK)
           }
 
-        case (a :: as, _, _) =>
+        case a :: as =>
           val k = f(a)
-          if (currK.contains_(k))
-            loop(as, queue :+ ((a, k)), false, currA, currK, acc)
+          if (chunkK.contains_(k))
+            innerLoop(as, queue :+ ((a, k)), false, chunkA, chunkK)
           else
-            loop(as, queue, false, currA :+ a, k :: currK, acc)
+            innerLoop(as, queue, false, chunkA :+ a, k :: chunkK)
 
-        case (Nil, (a, k) +: aks, false) =>
-          loop(Nil, aks, true, ListBuffer(a), k :: Nil, append(currA, acc))
-
-        case (Nil, ListBuffer(), _) => append(currA, acc)
+        case Nil => (unseen, queue, chunkA)
       }
 
-    loop(list, ListBuffer.empty, false, ListBuffer.empty, Nil, ListBuffer.empty).toList
+    @tailrec
+    def outerLoop(
+        unseen: List[A],
+        queue: ListBuffer[(A, K)],
+        acc: ListBuffer[Nel[A]]
+    ): ListBuffer[Nel[A]] = {
+      val (unseen1, queue1, chunk) = innerLoop(unseen, queue, queue.nonEmpty, ListBuffer.empty, Nil)
+      val acc1 = Nel.fromList(chunk.toList).fold(acc)(acc :+ _)
+      if (unseen1.nonEmpty || queue1.nonEmpty) outerLoop(unseen1, queue1, acc1) else acc1
+    }
+
+    outerLoop(list, ListBuffer.empty, ListBuffer.empty).toList
   }
 }
