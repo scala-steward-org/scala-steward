@@ -56,13 +56,14 @@ class NurtureAlg[F[_]](
   def cloneAndSync(repo: Repo)(implicit F: MonadThrowable[F]): F[Branch] =
     for {
       _ <- logger.info(s"Clone and synchronize ${repo.show}")
-      repoOut <- gitHubApiAlg.createFork(repo)
-      parent <- repoOut.parentOrRaise[F]
+      repoOut <- gitHubApiAlg.createOrGetRepoInfo(config, repo)
+      parent <- repoOut.parentOrRaise[F](config)
       cloneUrl = util.uri.withUserInfo(repoOut.clone_url, config.gitHubLogin)
       parentCloneUrl = util.uri.withUserInfo(parent.clone_url, config.gitHubLogin)
       _ <- gitAlg.clone(repo, cloneUrl)
       _ <- gitAlg.setAuthor(repo, config.gitAuthor)
-      _ <- gitAlg.syncFork(repo, parentCloneUrl, parent.default_branch)
+      _ <- if (config.doNotFork) F.pure(Unit)
+      else gitAlg.syncFork(repo, parentCloneUrl, parent.default_branch)
     } yield parent.default_branch
 
   def updateDependencies(repo: Repo, baseBranch: Branch)(implicit F: BracketThrowable[F]): F[Unit] =
@@ -82,7 +83,7 @@ class NurtureAlg[F[_]](
   def processUpdate(data: UpdateData)(implicit F: BracketThrowable[F]): F[Unit] =
     for {
       _ <- logger.info(s"Process update ${data.update.show}")
-      head = github.headFor(config.gitHubLogin, data.update)
+      head = github.headFor(github.getLogin(config, data.repo), data.update)
       pullRequests <- gitHubApiAlg.listPullRequests(data.repo, head)
       _ <- pullRequests.headOption match {
         case Some(pr) if pr.isClosed =>
@@ -119,7 +120,7 @@ class NurtureAlg[F[_]](
   def createPullRequest(data: UpdateData)(implicit F: FlatMap[F]): F[Unit] =
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
-      requestData = NewPullRequestData.from(data, config.gitHubLogin)
+      requestData = NewPullRequestData.from(data, github.getLogin(config, data.repo))
       pr <- gitHubApiAlg.createPullRequest(data.repo, requestData)
       _ <- pullRequestRepo.createOrUpdate(data.repo, pr.html_url, data.baseSha1, data.update)
       _ <- logger.info(s"Created PR ${pr.html_url}")

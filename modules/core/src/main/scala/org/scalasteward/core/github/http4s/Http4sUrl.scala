@@ -38,4 +38,7 @@ class Http4sUrl(apiHost: String) {
 
   def pulls[F[_]: ApplicativeThrowable](repo: Repo): F[Uri] =
     fromString[F](url.pulls(repo))
+
+  def repos[F[_]: ApplicativeThrowable](repo: Repo): F[Uri] =
+    fromString[F](url.repos(repo))
 }

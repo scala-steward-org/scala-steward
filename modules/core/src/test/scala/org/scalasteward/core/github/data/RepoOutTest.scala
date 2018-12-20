@@ -6,6 +6,7 @@ import org.http4s.Uri
 import org.scalasteward.core.git.Branch
 import org.scalatest.{FunSuite, Matchers}
 import scala.io.Source
+import org.scalasteward.core.application.ConfigTest
 
 class RepoOutTest extends FunSuite with Matchers {
   val parent =
@@ -32,7 +33,11 @@ class RepoOutTest extends FunSuite with Matchers {
   }
 
   test("parentOrRaise") {
-    fork.parentOrRaise[IO].unsafeRunSync() shouldBe parent
+    fork.parentOrRaise[IO](ConfigTest.dummyConfig).unsafeRunSync() shouldBe parent
+  }
+
+  test("parentOrRaise should not raise an error if forking is disabled") {
+    parent.parentOrRaise[IO](ConfigTest.dummyConfig.copy(doNotFork = true)).unsafeRunSync()
   }
 
   test("repo") {

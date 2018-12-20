@@ -37,7 +37,8 @@ object Cli {
       signCommits: Boolean = false,
       whitelist: List[String] = Nil,
       readOnly: List[String] = Nil,
-      disableSandbox: Boolean = false
+      disableSandbox: Boolean = false,
+      doNotFork: Boolean = false
   )
 
   def create[F[_]](implicit F: ApplicativeThrowable[F]): Cli[F] = new Cli[F] {

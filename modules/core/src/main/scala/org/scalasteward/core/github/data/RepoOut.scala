@@ -22,6 +22,7 @@ import org.http4s.Uri
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.ApplicativeThrowable
 import org.scalasteward.core.util.uri.uriDecoder
+import org.scalasteward.core.application.Config
 
 final case class RepoOut(
     name: String,
@@ -30,8 +31,9 @@ final case class RepoOut(
     clone_url: Uri,
     default_branch: Branch
 ) {
-  def parentOrRaise[F[_]](implicit F: ApplicativeThrowable[F]): F[RepoOut] =
-    parent.fold(F.raiseError[RepoOut](new Throwable(s"repo $name has no parent")))(F.pure)
+  def parentOrRaise[F[_]](config: Config)(implicit F: ApplicativeThrowable[F]): F[RepoOut] =
+    if (config.doNotFork) F.pure(this)
+    else parent.fold(F.raiseError[RepoOut](new Throwable(s"repo $name has no parent")))(F.pure)
 
   def repo: Repo =
     Repo(owner.login, name)

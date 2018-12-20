@@ -14,6 +14,7 @@ object ConfigTest {
     signCommits = true,
     whitelistedDirectories = Nil,
     readOnlyDirectories = Nil,
-    disableSandbox = false
+    disableSandbox = false,
+    doNotFork = false
   )
 }

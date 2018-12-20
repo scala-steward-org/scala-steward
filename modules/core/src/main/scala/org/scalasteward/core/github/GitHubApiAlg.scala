@@ -20,6 +20,7 @@ import cats.implicits._
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.github.data._
 import org.scalasteward.core.util.MonadThrowable
+import org.scalasteward.core.application.Config
 
 trait GitHubApiAlg[F[_]] {
 
@@ -47,13 +48,31 @@ trait GitHubApiAlg[F[_]] {
   ): F[List[PullRequestOut]]
 
   def createForkAndGetDefaultBranch(
+      config: Config,
       repo: Repo
   )(implicit F: MonadThrowable[F]): F[(RepoOut, BranchOut)] =
     for {
       fork <- createFork(repo)
-      parent <- fork.parentOrRaise[F]
+      parent <- fork.parentOrRaise[F](config)
       branchOut <- getDefaultBranch(parent)
     } yield (fork, branchOut)
+
+  def getRepoInfo(repo: Repo): F[RepoOut]
+
+  def createOrGetRepoInfo(config: Config, repo: Repo): F[RepoOut] =
+    if (config.doNotFork) getRepoInfo(repo)
+    else createFork(repo)
+
+  def createOrGetRepoInfoWithBranchInfo(
+      config: Config,
+      repo: Repo
+  )(implicit F: MonadThrowable[F]): F[(RepoOut, BranchOut)] =
+    if (config.doNotFork)
+      getRepoInfo(repo).flatMap(
+        repoOut => getDefaultBranch(repoOut).map(branchOut => repoOut -> branchOut)
+      )
+    else
+      createForkAndGetDefaultBranch(config, repo)
 
   def getDefaultBranch(
       repoOut: RepoOut
