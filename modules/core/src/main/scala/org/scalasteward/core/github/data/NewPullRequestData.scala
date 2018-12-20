@@ -38,13 +38,13 @@ object NewPullRequestData {
   def bodyFor(update: Update, login: String): String = {
     val artifacts = update match {
       case s: Update.Single =>
-        s" ${s.groupId}:${s.artifactId} "
+        s" `${s.groupId}`:`${s.artifactId}` "
       case g: Update.Group =>
         g.artifactIds
-          .map(artifactId => s"* ${g.groupId}:$artifactId\n")
+          .map(artifactId => s"* `${g.groupId}`:`$artifactId`\n")
           .mkString_("\n", "", "\n")
     }
-    s"""|Updates${artifacts}from ${update.currentVersion} to ${update.nextVersion}.
+    s"""|Updates${artifacts}from `${update.currentVersion}` to `${update.nextVersion}`.
         |
         |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
         |
