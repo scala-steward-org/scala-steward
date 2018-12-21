@@ -198,6 +198,7 @@
 - SethTisue/cloc-plugin
 - SethTisue/Project-Euler
 - shankarshastri/ScalaFPCode
+- sirocchj/sbt-api-builder
 - Sizmek/fast-string-interpolator
 - Sizmek/rtree2d
 - Slakah/uritemplate4s
