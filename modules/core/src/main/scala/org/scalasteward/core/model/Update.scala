@@ -132,7 +132,7 @@ object Update {
 
   def nameOf(groupId: String, artifactId: String): String =
     if (commonSuffixes.contains(artifactId))
-      groupId.split('.').lastOption.getOrElse(groupId)
+      util.string.rightmostLabel(groupId)
     else
       artifactId
 

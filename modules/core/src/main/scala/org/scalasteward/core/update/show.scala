@@ -45,7 +45,7 @@ object show {
   }
 
   private def showArtifact(groupId: String, artifactId: String, includeGroupId: Boolean): String = {
-    val groupName = groupId.split('.').lastOption.getOrElse(groupId)
+    val groupName = util.string.rightmostLabel(groupId)
     if (!includeGroupId || artifactId.contains(groupName)) artifactId
     else groupName + ":" + artifactId
   }

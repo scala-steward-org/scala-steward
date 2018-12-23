@@ -41,6 +41,17 @@ object string {
       .find(suffix => target.endsWith(suffix))
       .fold(target)(suffix => target.substring(0, target.length - suffix.length))
 
+  /** Returns the substring after the rightmost `.`.
+    *
+    * Example:
+    * {{{
+    * scala> string.rightmostLabel("org.scalasteward.core")
+    * res1: String = core
+    * }}}
+    */
+  def rightmostLabel(s: String): String =
+    s.split('.').lastOption.getOrElse(s)
+
   def lineLeftRight(s: String): String = {
     val line = "─" * 12
     s"$line $s $line"
