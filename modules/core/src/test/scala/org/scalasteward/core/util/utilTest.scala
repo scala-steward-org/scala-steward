@@ -43,20 +43,34 @@ class utilTest extends FunSuite with Matchers with PropertyChecks {
   }
 
   test("separateBy: retains elements") {
-    forAll { (l: List[String], n: PosInt) =>
-      separateBy(l)(n)(_.length).flatMap(_.toList).sorted shouldBe l.sorted
+    forAll { (l: List[Char], n: PosInt, f: Char => Int) =>
+      separateBy(l)(n)(f).flatMap(_.toList).sorted shouldBe l.sorted
     }
   }
 
   test("separateBy: no duplicates in sublists") {
-    forAll { (l: List[String], n: PosInt) =>
-      separateBy(l)(n)(_.length).forall(_.groupBy(_.length).values.forall(_.size == 1))
+    forAll { (l: List[Char], n: PosInt, f: Char => Int) =>
+      separateBy(l)(n)(f).forall(_.groupBy(f).values.forall(_.size == 1)) shouldBe true
     }
   }
 
   test("separateBy: sublists are not longer than maxSize") {
-    forAll { (l: List[String], n: PosInt) =>
-      separateBy(l)(n)(_.length).forall(_.length <= n.value)
+    forAll { (l: List[Char], n: PosInt, f: Char => Int) =>
+      separateBy(l)(n)(f).forall(_.length <= n.value) shouldBe true
+    }
+  }
+
+  test("separateBy: sublists decrease in length") {
+    forAll { (l: List[Char], n: PosInt, f: Char => Int) =>
+      val lengths = separateBy(l)(n)(f).map(_.length)
+      lengths.zip((lengths :+ 0).tail).forall { case (l1, l2) => l1 >= l2 } shouldBe true
+    }
+  }
+
+  test("separateBy: at least one sublist is densely packed") {
+    forAll { (l: List[Char], n: PosInt, f: Char => Int) =>
+      val maxSize = math.min(l.map(f).toSet.size, n.value)
+      (l.isEmpty || separateBy(l)(n)(f).exists(_.size == maxSize)) shouldBe true
     }
   }
 }
