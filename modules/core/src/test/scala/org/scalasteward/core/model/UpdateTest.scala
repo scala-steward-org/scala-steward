@@ -106,6 +106,23 @@ class UpdateTest extends FunSuite with Matchers {
     ).replaceAllIn(original) shouldBe None
   }
 
+  test("replaceAllIn:") {
+    val original =
+      """val circeVersion = "0.10.0"
+        |val previousCirceIterateeVersion = "0.10.0"
+      """.stripMargin
+    val expected =
+      """val circeVersion = "0.10.1"
+        |val previousCirceIterateeVersion = "0.10.0"
+      """.stripMargin
+    Group(
+      "io.circe",
+      Nel.of("circe-jawn", "circe-testing"),
+      "0.10.0",
+      Nel.of("0.10.1")
+    ).replaceAllIn(original) shouldBe Some(expected)
+  }
+
   test("Group.artifactId") {
     Group(
       "org.http4s",

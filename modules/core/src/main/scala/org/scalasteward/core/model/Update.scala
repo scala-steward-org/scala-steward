@@ -47,11 +47,16 @@ sealed trait Update extends Product with Serializable {
       }
       .filter(_.nonEmpty)
     val searchTerm = quotedSearchTerms.mkString_("(", "|", ")")
-    val regex = s"(?i)($searchTerm.*?)${Regex.quote(currentVersion)}".r
+    val regex = s"(?i)(.*)($searchTerm.*?)${Regex.quote(currentVersion)}".r
     var updated = false
     val result = regex.replaceAllIn(target, m => {
-      updated = true
-      m.group(1) + nextVersion
+      val group1 = m.group(1)
+      if (group1.contains("previous"))
+        m.matched
+      else {
+        updated = true
+        group1 + m.group(2) + nextVersion
+      }
     })
     if (updated) Some(result) else None
   }
