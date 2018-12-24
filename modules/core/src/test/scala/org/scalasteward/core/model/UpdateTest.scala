@@ -110,7 +110,7 @@ class UpdateTest extends FunSuite with Matchers {
     val original =
       """val circeVersion = "0.10.0"
         |val previousCirceIterateeVersion = "0.10.0"
-    """.stripMargin
+      """.stripMargin
     val expected =
       """val circeVersion = "0.10.1"
         |val previousCirceIterateeVersion = "0.10.0"
