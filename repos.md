@@ -118,6 +118,7 @@
 - julienrf/endpoints
 - julien-truffaut/Monocle
 - julien-truffaut/newts
+- kubukoz/sup
 - kwark/play-refined
 - kwark/slick-refined
 - larsrh/sbt-libisabelle
