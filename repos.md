@@ -118,6 +118,7 @@
 - julienrf/endpoints
 - julien-truffaut/Monocle
 - julien-truffaut/newts
+- kubukoz/brick-store
 - kubukoz/sup
 - kwark/play-refined
 - kwark/slick-refined
