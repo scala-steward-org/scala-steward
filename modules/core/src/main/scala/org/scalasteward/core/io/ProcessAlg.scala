@@ -33,14 +33,14 @@ trait ProcessAlg[F[_]] {
 object ProcessAlg {
   abstract class UsingFirejail[F[_]](config: Config) extends ProcessAlg[F] {
     override def execSandboxed(command: Nel[String], cwd: File): F[List[String]] =
-      if (config.execSandbox) {
+      if (config.disableSandbox) {
+        exec(command, cwd)
+      } else {
         val whitelisted = (cwd.pathAsString :: config.whitelistedDirectories)
           .map(dir => s"--whitelist=$dir")
         val readOnly = config.readOnlyDirectories
           .map(dir => s"--read-only=$dir")
         exec(Nel("firejail", whitelisted ++ readOnly) ::: command, cwd)
-      } else {
-        exec(command, cwd)
       }
   }
 
