@@ -53,7 +53,7 @@ final case class Config(
     signCommits: Boolean,
     whitelistedDirectories: List[String],
     readOnlyDirectories: List[String],
-    execSandbox: Boolean
+    disableSandbox: Boolean
 ) {
   def gitHubUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] =
     util.uri.fromString[F](gitHubApiHost).flatMap { url =>
@@ -79,7 +79,7 @@ object Config {
         signCommits = args.signCommits,
         whitelistedDirectories = args.whitelist,
         readOnlyDirectories = args.readOnly,
-        execSandbox = args.execSandbox
+        disableSandbox = args.disableSandbox
       )
     }
 }
