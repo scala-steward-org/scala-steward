@@ -74,6 +74,7 @@
 - circe/circe-optics
 - circe/circe-spray
 - circe/circe-yaml
+- clovellytech/http4s-modules
 - comcast/ip4s
 - daandi/nice-url-encode-decode
 - daandi/nice-uuid
