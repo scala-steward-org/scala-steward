@@ -152,6 +152,7 @@
 - NeQuissimus/zio-slf4j
 - nrinaudo/kantan.codecs
 - pathikrit/better-files
+- pauljamescleary/scala-pet-store
 - pdalpra/gh4s
 - phenoscape/scowl
 - Philippus/baggage-jwt
