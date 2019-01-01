@@ -192,8 +192,8 @@
 - schrepfler/cas-tools
 - schrepfler/crdt-kit
 - schrepfler/scala-native-cli
-- schrepfler/scala-uri
 - schrepfler/sportsml-scala
+- schrepfler/uri4s
 - scodec/scodec
 - scodec/scodec-bits
 - scodec/scodec-build
