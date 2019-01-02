@@ -79,6 +79,8 @@
 - daandi/nice-url-encode-decode
 - daandi/nice-uuid
 - dhpiggott/liquidity
+- embeddedkafka/embedded-kafka
+- embeddedkafka/embedded-kafka-schema-registry
 - erikvanoosten/metrics-scala
 - esamson/remder
 - esamson/sbt-groovy
