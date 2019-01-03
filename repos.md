@@ -24,6 +24,7 @@
 - BenFradet/spark-kafka-writer
 - BenFradet/struct-type-encoder
 - cb372/scalacache
+- cb372/cats-retry
 - ccadllc/cedi-circuitbreakers
 - ccadllc/cedi-config
 - ccadllc/cedi-dtrace
