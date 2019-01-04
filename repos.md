@@ -140,6 +140,7 @@
 - LREN-CHUV/woken
 - LREN-CHUV/woken-messages
 - LREN-CHUV/woken-validation
+- lucidd/rpm4s
 - maximn/coding-interview-questions-scala
 - maximn/scala-workshop
 - maximn/TaxCalculator
