@@ -126,6 +126,7 @@
 - kubukoz/sup
 - kwark/play-refined
 - kwark/slick-refined
+- lancewalton/treelog
 - larsrh/sbt-libisabelle
 - laserdisc-io/laserdisc
 - laserdisc-io/log-effect
