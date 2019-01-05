@@ -209,6 +209,9 @@
 - sirocchj/sbt-api-builder
 - Sizmek/fast-string-interpolator
 - Sizmek/rtree2d
+- sksamuel/avro4s
+- sksamuel/elastic4s
+- sksamuel/pulsar4s
 - Slakah/uritemplate4s
 - sphereio/sphere-scala-libs
 - spotify/big-data-rosetta-code
