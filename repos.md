@@ -29,6 +29,7 @@
 - ccadllc/cedi-config
 - ccadllc/cedi-dtrace
 - ccamel/playground-binding.scala
+- channingwalton/http4sWS
 - ChristopherDavenport/bank
 - ChristopherDavenport/base.g8
 - ChristopherDavenport/cats-par
