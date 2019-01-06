@@ -239,6 +239,7 @@
 - ThoughtWorksInc/tryt.scala
 - travisbrown/catbird
 - travisbrown/iteratee
+- travisbrown/iteratee-twitter
 - typelevel/cats
 - typelevel/cats-collections
 - typelevel/cats-effect
