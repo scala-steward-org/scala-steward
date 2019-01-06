@@ -21,19 +21,23 @@ import org.scalasteward.core.model.Update
 import org.scalasteward.core.util.Nel
 
 object parser {
-  def parseSingleUpdate(str: String): Either[Throwable, Update.Single] =
-    Either.catchNonFatal {
-      val left :: right :: Nil = str.split("""\s:\s""").toList
-      val moduleId = left.split(":").map(_.trim)
-      val versions = right.split("->").map(_.trim)
+  def parseSingleUpdate(str: String): Either[String, Update.Single] =
+    str.split("""\s:\s""") match {
+      case Array(left, right, _*) =>
+        val moduleId = left.split(":").map(_.trim)
+        val versions = right.split("->").map(_.trim)
+        def msg(part: String) = s"failed to parse $part in '$str'"
 
-      Update.Single(
-        groupId = moduleId(0),
-        artifactId = moduleId(1),
-        currentVersion = versions.head,
-        newerVersions = Nel.fromListUnsafe(versions.tail.toList),
-        configurations = moduleId.lift(2)
-      )
+        for {
+          groupId <- Either.fromOption(moduleId.headOption, msg("groupId"))
+          artifactId <- Either.fromOption(moduleId.lift(1), msg("artifactId"))
+          configurations = moduleId.lift(2)
+          currentVersion <- Either.fromOption(versions.headOption, msg("currentVersion"))
+          maybeNewerVersions = Nel.fromList(versions.drop(1).toList)
+          newerVersions <- Either.fromOption(maybeNewerVersions, msg("newerVersions"))
+        } yield Update.Single(groupId, artifactId, currentVersion, newerVersions, configurations)
+
+      case _ => Left(s"could not find ' : ' in '$str'")
     }
 
   def parseSingleUpdates(lines: List[String]): List[Update.Single] =
