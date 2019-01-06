@@ -17,10 +17,12 @@
 package org.scalasteward.core.dependency
 
 import io.circe.parser.decode
+import org.scalasteward.core.sbt
 
 object parser {
   def parseDependencies(s: String): List[Dependency] =
-    s.replace("[info]", "")
+    sbt.parser
+      .removeSbtNoise(s)
       .lines
       .map(decode[List[Dependency]])
       .collect { case Right(list) => list }

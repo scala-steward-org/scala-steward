@@ -23,21 +23,25 @@ import org.scalasteward.core.util.Nel
 object parser {
   def parseSingleUpdate(str: String): Either[Throwable, Update.Single] =
     Either.catchNonFatal {
-      val regex = """([^\s:]+):([^\s:]+)(:([^\s]+))?\s+:\s+([^\s]+)\s+->(.+)""".r
-      str match {
-        case regex(groupId, artifactId, _, configurationsOrNull, current, newer) =>
-          val configurations = Option(configurationsOrNull)
-          val newerVersions = Nel.fromListUnsafe(newer.split("->").map(_.trim).toList)
-          Update.Single(groupId, artifactId, current, newerVersions, configurations)
-      }
+      val left :: right :: Nil = str.split("""\s:\s""").toList
+      val moduleId = left.split(":").map(_.trim)
+      val versions = right.split("->").map(_.trim)
+
+      Update.Single(
+        groupId = moduleId(0),
+        artifactId = moduleId(1),
+        currentVersion = versions.head,
+        newerVersions = Nel.fromListUnsafe(versions.tail.toList),
+        configurations = moduleId.lift(2)
+      )
     }
 
   def parseSingleUpdates(lines: List[String]): List[Update.Single] =
     lines
-      .flatMap { line =>
-        val trimmed = line.replace("[info]", "").trim
-        parseSingleUpdate(trimmed).toList
-      }
+      .flatMap(line => parseSingleUpdate(removeSbtNoise(line)).toList)
       .distinct
       .sortBy(update => (update.groupId, update.artifactId, update.currentVersion))
+
+  def removeSbtNoise(s: String): String =
+    s.replace("[info]", "").trim
 }
