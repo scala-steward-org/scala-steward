@@ -23,7 +23,7 @@ import org.scalasteward.core.util.Nel
 object parser {
   def parseSingleUpdate(str: String): Either[String, Update.Single] =
     str.split("""\s:\s""") match {
-      case Array(left, right, _*) =>
+      case Array(left, right) =>
         val moduleId = left.split(":").map(_.trim)
         val versions = right.split("->").map(_.trim)
         def msg(part: String) = s"failed to parse $part in '$str'"
