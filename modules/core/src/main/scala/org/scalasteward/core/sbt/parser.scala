@@ -37,7 +37,7 @@ object parser {
           newerVersions <- Either.fromOption(maybeNewerVersions, msg("newerVersions"))
         } yield Update.Single(groupId, artifactId, currentVersion, newerVersions, configurations)
 
-      case _ => Left(s"could not find ' : ' in '$str'")
+      case _ => Left(s"'$str' must contain ' : ' exactly once")
     }
 
   def parseSingleUpdates(lines: List[String]): List[Update.Single] =
