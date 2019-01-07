@@ -175,6 +175,7 @@ addCommandsAlias(
     "scalafmtCheck",
     "scalafmtSbtCheck",
     "test:scalafmtCheck",
+    "undeclaredCompileDependenciesTest",
     "coverage",
     "test",
     "coverageReport",
