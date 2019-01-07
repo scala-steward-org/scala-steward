@@ -123,6 +123,7 @@
 - julienrf/endpoints
 - julien-truffaut/Monocle
 - julien-truffaut/newts
+- kiambogo/fs2-jms
 - kubukoz/brick-store
 - kubukoz/sup
 - kwark/play-refined
