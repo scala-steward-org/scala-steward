@@ -68,9 +68,10 @@ trait GitHubApiAlg[F[_]] {
       repo: Repo
   )(implicit F: MonadThrowable[F]): F[(RepoOut, BranchOut)] =
     if (config.doNotFork)
-      getRepoInfo(repo).flatMap(
-        repoOut => getDefaultBranch(repoOut).map(branchOut => repoOut -> branchOut)
-      )
+      for {
+        repoOut <- getRepoInfo(repo)
+        branchOut <- getDefaultBranch(repoOut)
+      } yield repoOut -> branchOut
     else
       createForkAndGetDefaultBranch(config, repo)
 

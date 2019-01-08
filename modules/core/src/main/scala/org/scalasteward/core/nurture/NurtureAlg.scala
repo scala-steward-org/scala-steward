@@ -62,7 +62,7 @@ class NurtureAlg[F[_]](
       parentCloneUrl = util.uri.withUserInfo(parent.clone_url, config.gitHubLogin)
       _ <- gitAlg.clone(repo, cloneUrl)
       _ <- gitAlg.setAuthor(repo, config.gitAuthor)
-      _ <- if (config.doNotFork) F.pure(Unit)
+      _ <- if (config.doNotFork) F.unit
       else gitAlg.syncFork(repo, parentCloneUrl, parent.default_branch)
     } yield parent.default_branch
 
