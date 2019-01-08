@@ -57,13 +57,10 @@ class NurtureAlg[F[_]](
     for {
       _ <- logger.info(s"Clone and synchronize ${repo.show}")
       repoOut <- gitHubApiAlg.createOrGetRepoInfo(config, repo)
-      parent <- repoOut.parentOrRaise[F](config)
       cloneUrl = util.uri.withUserInfo(repoOut.clone_url, config.gitHubLogin)
-      parentCloneUrl = util.uri.withUserInfo(parent.clone_url, config.gitHubLogin)
       _ <- gitAlg.clone(repo, cloneUrl)
       _ <- gitAlg.setAuthor(repo, config.gitAuthor)
-      _ <- if (config.doNotFork) F.unit
-      else gitAlg.syncFork(repo, parentCloneUrl, parent.default_branch)
+      parent <- gitAlg.checkAndSyncFork(repo, repoOut)
     } yield parent.default_branch
 
   def updateDependencies(repo: Repo, baseBranch: Branch)(implicit F: BracketThrowable[F]): F[Unit] =

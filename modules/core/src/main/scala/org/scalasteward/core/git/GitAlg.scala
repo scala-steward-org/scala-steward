@@ -22,8 +22,9 @@ import cats.effect.Bracket
 import cats.implicits._
 import org.http4s.Uri
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.github.data.Repo
+import org.scalasteward.core.github.data.{Repo, RepoOut}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
+import org.scalasteward.core.util
 import org.scalasteward.core.util.{MonadThrowable, Nel}
 
 trait GitAlg[F[_]] {
@@ -61,6 +62,10 @@ trait GitAlg[F[_]] {
 
   def returnToCurrentBranch[A, E](repo: Repo)(fa: F[A])(implicit F: Bracket[F, E]): F[A] =
     F.bracket(currentBranch(repo))(_ => fa)(checkoutBranch(repo, _))
+
+  def checkAndSyncFork(repo: Repo, repoOut: RepoOut)(
+      implicit F: MonadThrowable[F]
+  ): F[RepoOut]
 }
 
 object GitAlg {
@@ -174,6 +179,18 @@ object GitAlg {
           _ <- exec(Nel.of("merge", remoteBranch), repoDir)
           _ <- push(repo, defaultBranch)
         } yield ()
+
+      override def checkAndSyncFork(repo: Repo, repoOut: RepoOut)(
+          implicit F: MonadThrowable[F]
+      ): F[RepoOut] =
+        if (config.doNotFork) F.pure(repoOut)
+        else {
+          for {
+            parent <- repoOut.parentOrRaise[F]
+            parentCloneUrl = util.uri.withUserInfo(parent.clone_url, config.gitHubLogin)
+            _ <- syncFork(repo, parentCloneUrl, parent.default_branch)
+          } yield parent
+        }
 
       def exec(command: Nel[String], cwd: File): F[List[String]] =
         processAlg.exec(gitCmd :: command, cwd, "GIT_ASKPASS" -> config.gitAskPass.pathAsString)

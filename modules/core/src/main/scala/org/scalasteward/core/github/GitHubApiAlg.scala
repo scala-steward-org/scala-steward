@@ -48,12 +48,11 @@ trait GitHubApiAlg[F[_]] {
   ): F[List[PullRequestOut]]
 
   def createForkAndGetDefaultBranch(
-      config: Config,
       repo: Repo
   )(implicit F: MonadThrowable[F]): F[(RepoOut, BranchOut)] =
     for {
       fork <- createFork(repo)
-      parent <- fork.parentOrRaise[F](config)
+      parent <- fork.parentOrRaise[F]
       branchOut <- getDefaultBranch(parent)
     } yield (fork, branchOut)
 
@@ -73,7 +72,7 @@ trait GitHubApiAlg[F[_]] {
         branchOut <- getDefaultBranch(repoOut)
       } yield repoOut -> branchOut
     else
-      createForkAndGetDefaultBranch(config, repo)
+      createForkAndGetDefaultBranch(repo)
 
   def getDefaultBranch(
       repoOut: RepoOut
