@@ -74,6 +74,7 @@
 - circe/circe-jackson
 - circe/circe-magnolia
 - circe/circe-optics
+- circe/circe-spire
 - circe/circe-spray
 - circe/circe-yaml
 - clovellytech/http4s-modules
