@@ -23,8 +23,8 @@
 - BenFradet/gsheets4s
 - BenFradet/spark-kafka-writer
 - BenFradet/struct-type-encoder
-- cb372/scalacache
 - cb372/cats-retry
+- cb372/scalacache
 - ccadllc/cedi-circuitbreakers
 - ccadllc/cedi-config
 - ccadllc/cedi-dtrace
