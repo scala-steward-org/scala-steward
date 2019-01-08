@@ -38,8 +38,8 @@ lazy val core = myCrossProject("core")
       Dependencies.http4sBlazeClient,
       Dependencies.http4sCirce,
       Dependencies.log4catsSlf4j,
-      Dependencies.logbackClassic,
       Dependencies.refined,
+      Dependencies.logbackClassic % Runtime,
       Dependencies.refinedScalacheck % Test,
       Dependencies.scalacheck % Test,
       Dependencies.scalaTest % Test
@@ -175,6 +175,7 @@ addCommandsAlias(
     "scalafmtCheck",
     "scalafmtSbtCheck",
     "test:scalafmtCheck",
+    "unusedCompileDependenciesTest",
     "coverage",
     "test",
     "coverageReport",
