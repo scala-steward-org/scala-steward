@@ -18,8 +18,9 @@ package org.scalasteward.core
 
 import cats.effect.Bracket
 import cats.implicits._
-import cats.{ApplicativeError, Eq, Foldable, MonadError, Semigroup, UnorderedFoldable}
+import cats.{ApplicativeError, Eq, Foldable, Functor, MonadError, Semigroup, UnorderedFoldable}
 import eu.timepit.refined.types.numeric.PosInt
+import fs2.Pipe
 import scala.annotation.tailrec
 import scala.collection.TraversableLike
 import scala.collection.mutable.ListBuffer
@@ -51,6 +52,9 @@ package object util {
       }
     loop(a)
   }
+
+  def evalFilter[F[_]: Functor, A](p: A => F[Boolean]): Pipe[F, A, A] =
+    _.evalMap(a => p(a).map(b => (a, b))).collect { case (a, true) => a }
 
   def halve[C](c: C)(implicit ev: C => TraversableLike[_, C]): Either[C, (C, C)] = {
     val size = c.size
