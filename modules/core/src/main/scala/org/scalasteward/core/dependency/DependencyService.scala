@@ -52,6 +52,15 @@ class DependencyService[F[_]](
       } yield ()
     }
 
+  private def checkAndSyncFork(repo: Repo, repoOut: RepoOut)(implicit F: MonadThrowable[F]): F[Unit] =
+    if (config.doNotFork) F.unit
+    else
+      for {
+        parent <- repoOut.parentOrRaise[F](config)
+        parentCloneUrl = util.uri.withUserInfo(parent.clone_url, config.gitHubLogin)
+        _ <- gitAlg.syncFork(repo, parentCloneUrl, parent.default_branch)
+      } yield ()
+
   def refreshDependencies(repo: Repo, repoOut: RepoOut, latestSha1: Sha1)(
       implicit F: MonadThrowable[F]
   ): F[Unit] =
@@ -59,9 +68,7 @@ class DependencyService[F[_]](
       _ <- logger.info(s"Refresh dependencies of ${repo.show}")
       cloneUrl = util.uri.withUserInfo(repoOut.clone_url, config.gitHubLogin)
       _ <- gitAlg.clone(repo, cloneUrl)
-      parent <- repoOut.parentOrRaise[F](config)
-      parentCloneUrl = util.uri.withUserInfo(parent.clone_url, config.gitHubLogin)
-      _ <- gitAlg.syncFork(repo, parentCloneUrl, parent.default_branch)
+      _ <- checkAndSyncFork(repo, repoOut)
       dependencies <- sbtAlg.getDependencies(repo)
       _ <- dependencyRepository.setDependencies(repo, latestSha1, dependencies)
       _ <- gitAlg.removeClone(repo)
