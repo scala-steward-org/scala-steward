@@ -72,8 +72,7 @@ package object util {
     * each chunk only consists of distinct elements with regards to the
     * discriminator function `f`.
     *
-    * Example:
-    * {{{
+    * @example {{{
     * scala> import cats.implicits._
     *      | import eu.timepit.refined.types.numeric.PosInt
     *

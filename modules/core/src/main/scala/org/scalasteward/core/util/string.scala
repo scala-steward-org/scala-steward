@@ -43,8 +43,7 @@ object string {
 
   /** Returns the substring after the rightmost `.`.
     *
-    * Example:
-    * {{{
+    * @example {{{
     * scala> string.rightmostLabel("org.scalasteward.core")
     * res1: String = core
     * }}}
