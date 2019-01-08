@@ -22,5 +22,5 @@ import fs2.Pipe
 
 package object io {
   def ignoreSymlinks[F[_]](implicit F: Sync[F]): Pipe[F, File, File] =
-    _.evalMap(f => F.delay((f, f.isSymbolicLink))).collect { case (f, false) => f }
+    util.evalFilter(file => F.delay(!file.isSymbolicLink))
 }
