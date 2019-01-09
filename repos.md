@@ -162,6 +162,8 @@
 - pathikrit/better-files
 - pauljamescleary/scala-pet-store
 - pdalpra/gh4s
+- pepegar/hammock
+- pepegar/base.g8
 - phenoscape/scowl
 - Philippus/baggage-jwt
 - Philippus/between
