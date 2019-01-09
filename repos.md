@@ -176,6 +176,7 @@
 - raboof/sbt-reproducible-builds
 - ReactivePlatform/Pragmatic-Scala
 - ReactivePlatform/Reactive-Design-Patterns
+- saksdirect/sundial
 - sake92/hepek
 - scala/hello-world.g8
 - scala/make-release-notes
