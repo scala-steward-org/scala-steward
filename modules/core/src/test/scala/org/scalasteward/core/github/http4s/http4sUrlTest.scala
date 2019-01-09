@@ -34,4 +34,9 @@ class http4sUrlTest extends FunSuite with Matchers {
     pulls[Result](repo).map(_.toString) shouldBe
       Right("https://api.github.com/repos/fthomas/refined/pulls")
   }
+
+  test("repos") {
+    repos[Result](repo).map(_.toString) shouldBe
+      Right("https://api.github.com/repos/fthomas/refined")
+  }
 }

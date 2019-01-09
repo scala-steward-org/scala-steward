@@ -75,6 +75,12 @@ class Http4sGitHubApiAlg[F[_]](
       expectJsonOf[List[PullRequestOut]](req)
     }
 
+  override def getRepoInfo(repo: Repo): F[RepoOut] =
+    http4sUrl.repos[F](repo).flatMap { uri =>
+      val req = Request[F](GET, uri)
+      expectJsonOf[RepoOut](req)
+    }
+
   def expectJsonOf[A: Decoder](req: Request[F]): F[A] =
     client.expect[A](authenticate(user)(req))(jsonOf)
 }

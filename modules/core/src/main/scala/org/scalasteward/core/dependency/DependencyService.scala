@@ -36,10 +36,11 @@ class DependencyService[F[_]](
     logger: Logger[F],
     sbtAlg: SbtAlg[F]
 ) {
-  def forkAndCheckDependencies(repo: Repo)(implicit F: MonadThrowable[F]): F[Unit] =
-    logger.attemptLog_(s"Fork and check dependencies of ${repo.show}") {
+
+  def checkDependencies(repo: Repo)(implicit F: MonadThrowable[F]): F[Unit] =
+    logger.attemptLog_(s"Check dependencies of ${repo.show}") {
       for {
-        res <- gitHubApiAlg.createForkAndGetDefaultBranch(repo)
+        res <- gitHubApiAlg.createOrGetRepoInfoWithBranchInfo(config, repo)
         (repoOut, branchOut) = res
         foundSha1 <- dependencyRepository.findSha1(repo)
         latestSha1 = branchOut.commit.sha
@@ -58,9 +59,7 @@ class DependencyService[F[_]](
       _ <- logger.info(s"Refresh dependencies of ${repo.show}")
       cloneUrl = util.uri.withUserInfo(repoOut.clone_url, config.gitHubLogin)
       _ <- gitAlg.clone(repo, cloneUrl)
-      parent <- repoOut.parentOrRaise[F]
-      parentCloneUrl = util.uri.withUserInfo(parent.clone_url, config.gitHubLogin)
-      _ <- gitAlg.syncFork(repo, parentCloneUrl, parent.default_branch)
+      _ <- gitAlg.checkAndSyncFork(repo, repoOut)
       dependencies <- sbtAlg.getDependencies(repo)
       _ <- dependencyRepository.setDependencies(repo, latestSha1, dependencies)
       _ <- gitAlg.removeClone(repo)
