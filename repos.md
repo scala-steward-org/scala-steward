@@ -6,6 +6,7 @@
 - akka/akka-sample-cluster-docker-compose-java
 - akka/akka-sample-cluster-docker-compose-scala
 - akka/akka-samples
+- albuch/sbt-dependency-check
 - alexarchambault/ammonite-spark
 - alexarchambault/argonaut-shapeless
 - alexarchambault/case-app
