@@ -228,6 +228,7 @@
 - spotify/scio-contrib
 - spotify/scio.g8
 - spotify/scio-idea-plugin
+- spray/sbt-revolver
 - sullis/jms-testkit
 - ThoughtWorksInc/Binding.scala
 - ThoughtWorksInc/Dsl.scala
