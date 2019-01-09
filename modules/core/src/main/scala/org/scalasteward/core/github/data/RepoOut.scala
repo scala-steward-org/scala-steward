@@ -30,7 +30,6 @@ final case class RepoOut(
     clone_url: Uri,
     default_branch: Branch
 ) {
-
   def parentOrRaise[F[_]](implicit F: ApplicativeThrowable[F]): F[RepoOut] =
     parent.fold(F.raiseError[RepoOut](new Throwable(s"repo $name has no parent")))(F.pure)
 
