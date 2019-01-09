@@ -209,7 +209,6 @@ addCommandAlias(
       Seq("--github-api-host", "https://api.github.com"),
       Seq("--github-login", projectName),
       Seq("--git-ask-pass", s"$home/.github/askpass/$projectName.sh"),
-      Seq("--sign-commits"),
       Seq("--whitelist", s"$home/.cache/coursier"),
       Seq("--whitelist", s"$home/.coursier"),
       Seq("--whitelist", s"$home/.ivy2"),
