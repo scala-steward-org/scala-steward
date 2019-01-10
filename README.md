@@ -41,6 +41,13 @@ The following people have helped making scala-steward great:
 * [Zelenya](https://github.com/Zelenya)
 * Your name here :-)
 
+
+## Community
+
+The following companies are using _scala-steward_ to manage their scala dependencies. Using _scala-steward_ in your company and don't see it listed here? Consider creating PR to add your name to the list and join the community.
+
+* [Chartboost](https://www.chartboost.com/)
+
 ## Participation
 
 The scala-steward project supports the [Scala Code of Conduct][CoC]
