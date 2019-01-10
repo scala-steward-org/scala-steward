@@ -79,6 +79,9 @@
 - circe/circe-yaml
 - clovellytech/http4s-modules
 - comcast/ip4s
+- coursier/coursier
+- coursier/sbt-coursier
+- coursier/sbt-launcher
 - daandi/nice-url-encode-decode
 - daandi/nice-uuid
 - dhpiggott/liquidity
