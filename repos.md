@@ -159,6 +159,7 @@
 - NeQuissimus/nequi-kafka
 - NeQuissimus/zio-slf4j
 - nrinaudo/kantan.codecs
+- olafurpg/sbt-ci-release
 - pathikrit/better-files
 - pauljamescleary/scala-pet-store
 - pdalpra/gh4s
