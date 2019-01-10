@@ -39,13 +39,8 @@ import scala.concurrent.ExecutionContext
 final case class Context[F[_]](
     config: Config,
     dependencyService: DependencyService[F],
-    fileAlg: FileAlg[F],
-    filterAlg: FilterAlg[F],
-    gitAlg: GitAlg[F],
-    gitHubApiAlg: GitHubApiAlg[F],
     logger: Logger[F],
     nurtureAlg: NurtureAlg[F],
-    processAlg: ProcessAlg[F],
     sbtAlg: SbtAlg[F],
     updateService: UpdateService[F],
     workspaceAlg: WorkspaceAlg[F]
@@ -81,13 +76,8 @@ object Context {
       Context(
         config,
         dependencyService,
-        fileAlg,
-        filterAlg,
-        gitAlg,
-        gitHubApiAlg,
         logger,
         nurtureAlg,
-        processAlg,
         sbtAlg,
         updateService,
         workspaceAlg
