@@ -17,10 +17,11 @@
 package org.scalasteward.core
 
 import better.files.File
-import cats.effect.Sync
-import fs2.Pipe
 
 package object io {
-  def ignoreSymlinks[F[_]](implicit F: Sync[F]): Pipe[F, File, File] =
-    util.evalFilter(file => F.delay(!file.isSymbolicLink))
+  def isSourceFile(file: File): Boolean = {
+    val scalaOrSbtFile = file.extension.exists(Set(".scala", ".sbt"))
+    val notInGitDir = !file.pathAsString.contains(".git/")
+    scalaOrSbtFile && notInGitDir
+  }
 }

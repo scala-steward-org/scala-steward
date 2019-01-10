@@ -17,10 +17,12 @@
 package org.scalasteward.core.io
 
 import better.files.File
+import cats.Functor
 import cats.effect.Sync
 import cats.implicits._
-import fs2.Stream
+import fs2.{Pipe, Stream}
 import org.apache.commons.io.FileUtils
+import org.scalasteward.core.util
 
 trait FileAlg[F[_]] {
   def deleteForce(file: File): F[Unit]
@@ -29,6 +31,8 @@ trait FileAlg[F[_]] {
 
   def home: F[File]
 
+  def isSymlink(file: File): F[Boolean]
+
   def removeTemporarily[A](file: File)(fa: F[A]): F[A]
 
   def readFile(file: File): F[Option[String]]
@@ -36,6 +40,12 @@ trait FileAlg[F[_]] {
   def walk(dir: File): Stream[F, File]
 
   def writeFile(file: File, content: String): F[Unit]
+
+  def ignoreSymlinks(implicit F: Functor[F]): Pipe[F, File, File] =
+    util.evalFilter(file => isSymlink(file).map(!_))
+
+  def walkSourceFiles(dir: File)(implicit F: Functor[F]): Stream[F, File] =
+    walk(dir).filter(isSourceFile).through(ignoreSymlinks)
 
   def writeFileData(dir: File, fileData: FileData): F[Unit] =
     writeFile(dir / fileData.name, fileData.content)
@@ -55,6 +65,9 @@ object FileAlg {
 
       override def home: F[File] =
         F.delay(File.home)
+
+      override def isSymlink(file: File): F[Boolean] =
+        F.delay(file.isSymbolicLink)
 
       override def removeTemporarily[A](file: File)(fa: F[A]): F[A] =
         F.bracket {

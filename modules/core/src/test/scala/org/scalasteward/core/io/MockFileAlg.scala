@@ -16,6 +16,9 @@ class MockFileAlg extends FileAlg[MockEnv] {
   override def home: MockEnv[File] =
     State.pure(File.root / "tmp" / "steward")
 
+  override def isSymlink(file: File): MockEnv[Boolean] =
+    State.pure(false)
+
   override def removeTemporarily[A](file: File)(fa: MockEnv[A]): MockEnv[A] =
     for {
       _ <- State.modify((_: MockState).exec(List("rm", file.pathAsString)))
