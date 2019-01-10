@@ -80,6 +80,8 @@
 - clovellytech/http4s-modules
 - comcast/ip4s
 - coursier/coursier
+- coursier/echo
+- coursier/http-server
 - coursier/sbt-coursier
 - coursier/sbt-launcher
 - daandi/nice-url-encode-decode
