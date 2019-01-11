@@ -1,5 +1,6 @@
 package org.scalasteward.core.sbt
 
+import cats.Monad
 import org.scalasteward.core.MockState
 import org.scalasteward.core.MockState.MockEnv
 import org.scalasteward.core.application.{Config, ConfigTest}
@@ -44,6 +45,37 @@ class SbtAlgTest extends FunSuite with Matchers {
           "-batch",
           "-no-colors",
           ";set every credentials := Nil;dependencyUpdates;reload plugins;dependencyUpdates"
+        ),
+        List("restore", "/tmp/ws/fthomas/refined/.sbtopts"),
+        List("restore", "/tmp/ws/fthomas/refined/.jvmopts")
+      )
+    )
+  }
+
+  test("getUpdatesForRepo keeping credentials") {
+    val repo = Repo("fthomas", "refined")
+    val configWithKeepCredentialsEnabled = ConfigTest.dummyConfig.copy(keepCredentials = true)
+    val sbtAlgWithKeepCredentials = SbtAlg.create(
+      configWithKeepCredentialsEnabled,
+      fileAlg,
+      loggerAlg,
+      processAlg,
+      workspaceAlg,
+      implicitly[Monad[MockEnv]]
+    )
+    val state = sbtAlgWithKeepCredentials.getUpdatesForRepo(repo).runS(MockState.empty).value
+
+    state shouldBe MockState.empty.copy(
+      commands = Vector(
+        List("rm", "/tmp/ws/fthomas/refined/.jvmopts"),
+        List("rm", "/tmp/ws/fthomas/refined/.sbtopts"),
+        List(
+          "firejail",
+          "--whitelist=/tmp/ws/fthomas/refined",
+          "sbt",
+          "-batch",
+          "-no-colors",
+          ";dependencyUpdates;reload plugins;dependencyUpdates"
         ),
         List("restore", "/tmp/ws/fthomas/refined/.sbtopts"),
         List("restore", "/tmp/ws/fthomas/refined/.jvmopts")
