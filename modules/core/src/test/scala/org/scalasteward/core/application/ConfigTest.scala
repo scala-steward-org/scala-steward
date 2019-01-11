@@ -15,6 +15,7 @@ object ConfigTest {
     whitelistedDirectories = Nil,
     readOnlyDirectories = Nil,
     disableSandbox = false,
-    doNotFork = false
+    doNotFork = false,
+    keepCredentials = false
   )
 }

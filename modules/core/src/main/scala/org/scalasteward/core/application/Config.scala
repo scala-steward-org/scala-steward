@@ -54,7 +54,8 @@ final case class Config(
     whitelistedDirectories: List[String],
     readOnlyDirectories: List[String],
     disableSandbox: Boolean,
-    doNotFork: Boolean
+    doNotFork: Boolean,
+    keepCredentials: Boolean
 ) {
   def gitHubUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] =
     util.uri.fromString[F](gitHubApiHost).flatMap { url =>
@@ -81,7 +82,8 @@ object Config {
         whitelistedDirectories = args.whitelist,
         readOnlyDirectories = args.readOnly,
         disableSandbox = args.disableSandbox,
-        doNotFork = args.doNotFork
+        doNotFork = args.doNotFork,
+        keepCredentials = args.keepCredentials
       )
     }
 }

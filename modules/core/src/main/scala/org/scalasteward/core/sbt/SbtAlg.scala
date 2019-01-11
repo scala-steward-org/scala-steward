@@ -20,6 +20,7 @@ import better.files.File
 import cats.Monad
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
+import org.scalasteward.core.application.Config
 import org.scalasteward.core.dependency.Dependency
 import org.scalasteward.core.dependency.parser.parseDependencies
 import org.scalasteward.core.github.data.Repo
@@ -44,6 +45,7 @@ trait SbtAlg[F[_]] {
 object SbtAlg {
   def create[F[_]](
       implicit
+      config: Config,
       fileAlg: FileAlg[F],
       logger: Logger[F],
       processAlg: ProcessAlg[F],
@@ -85,7 +87,12 @@ object SbtAlg {
       override def getUpdatesForRepo(repo: Repo): F[List[Update.Single]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          cmd = sbtCmd(setCredentialsToNil, dependencyUpdates, reloadPlugins, dependencyUpdates)
+          cmd = {
+            if (config.keepCredentials)
+              sbtCmd(dependencyUpdates, reloadPlugins, dependencyUpdates)
+            else
+              sbtCmd(setCredentialsToNil, dependencyUpdates, reloadPlugins, dependencyUpdates)
+          }
           lines <- exec(cmd, repoDir)
         } yield parser.parseSingleUpdates(lines)
 

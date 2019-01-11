@@ -2,12 +2,14 @@ package org.scalasteward.core.sbt
 
 import org.scalasteward.core.MockState
 import org.scalasteward.core.MockState.MockEnv
+import org.scalasteward.core.application.{Config, ConfigTest}
 import org.scalasteward.core.github.data.Repo
 import org.scalasteward.core.io.{MockFileAlg, MockProcessAlg, MockWorkspaceAlg}
 import org.scalasteward.core.util.MockLogger
 import org.scalatest.{FunSuite, Matchers}
 
 class SbtAlgTest extends FunSuite with Matchers {
+  implicit val config: Config = ConfigTest.dummyConfig
   implicit val fileAlg: MockFileAlg = new MockFileAlg
   implicit val loggerAlg: MockLogger = new MockLogger
   implicit val processAlg: MockProcessAlg = new MockProcessAlg
