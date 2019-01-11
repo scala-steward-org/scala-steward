@@ -22,19 +22,8 @@ import org.scalasteward.core.io.FileAlg
 import org.scalasteward.core.model.Update
 
 object ioLegacy {
-  def isSourceFile(file: File): Boolean =
-    !file.pathAsString.contains(".git/") &&
-      file.extension.exists(Set(".scala", ".sbt"))
-
   def updateDir[F[_]: Sync](dir: File, update: Update): F[Unit] =
-    FileAlg
-      .create[F]
-      .walk(dir)
-      .filter(isSourceFile)
-      .through(io.ignoreSymlinks)
-      .evalMap(updateFile(_, update))
-      .compile
-      .drain
+    FileAlg.create[F].walkSourceFiles(dir).evalMap(updateFile(_, update)).compile.drain
 
   def updateFile[F[_]](file: File, update: Update)(implicit F: Sync[F]): F[File] =
     F.delay(update.replaceAllIn(file.contentAsString).fold(file)(file.write(_)))
