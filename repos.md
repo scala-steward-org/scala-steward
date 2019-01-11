@@ -251,6 +251,7 @@
 - ThoughtWorksInc/sbt-scala-js-map
 - ThoughtWorksInc/todo
 - ThoughtWorksInc/tryt.scala
+- tjheslin1/DMsPredictor
 - travisbrown/catbird
 - travisbrown/iteratee
 - travisbrown/iteratee-twitter
