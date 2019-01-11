@@ -267,6 +267,7 @@
 - typelevel/machinist
 - typelevel/mouse
 - ua-parser/uap-scala
+- underscoreio/slickless
 - vectos/formulation
 - vectos/itinere
 - vlovgr/ciris
