@@ -205,6 +205,7 @@
 - scala/scalatest-example.g8
 - scala/scala-xml
 - scalaz/scalaz-nio
+- scalaz/scalaz-zio
 - schrepfler/artemis
 - schrepfler/cas-tools
 - schrepfler/crdt-kit
