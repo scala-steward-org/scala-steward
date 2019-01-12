@@ -206,6 +206,7 @@
 - scala/scala-xml
 - scalaz/scalaz-nio
 - scalaz/scalaz-zio
+- scanamo/scanamo
 - schrepfler/artemis
 - schrepfler/cas-tools
 - schrepfler/crdt-kit
