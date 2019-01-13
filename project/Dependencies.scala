@@ -2,7 +2,7 @@ import sbt._
 
 object Versions {
   val circe = "0.11.0"
-  val http4s = "0.20.0-M4"
+  val http4s = "0.20.0-M5"
   val refined = "0.9.3"
 }
 
