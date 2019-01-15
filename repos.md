@@ -132,7 +132,10 @@
 - julien-truffaut/newts
 - kiambogo/fs2-jms
 - kubukoz/brick-store
+- kubukoz/error-control
+- kubukoz/slick-effect
 - kubukoz/sup
+- kubukoz/vivalidi
 - kwark/play-refined
 - kwark/slick-refined
 - lancewalton/treelog
