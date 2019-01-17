@@ -1,4 +1,5 @@
 - 2m/authors
+- 2m/ciris-hocon
 - agourlay/cornichon
 - agourlay/json-2-csv
 - akka/akka-grpc-sample-kubernetes-scala
