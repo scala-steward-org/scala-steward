@@ -32,11 +32,13 @@
 - ccadllc/cedi-dtrace
 - ccamel/playground-binding.scala
 - channingwalton/http4sWS
+- ChristopherDavenport/agitation
 - ChristopherDavenport/bank
 - ChristopherDavenport/base.g8
 - ChristopherDavenport/cats-par
 - ChristopherDavenport/cats-scalacheck
 - ChristopherDavenport/cats-time
+- ChristopherDavenport/circuit
 - ChristopherDavenport/cls-sch-pipe
 - ChristopherDavenport/cormorant
 - ChristopherDavenport/Data.Maybe
@@ -62,6 +64,7 @@
 - ChristopherDavenport/scalaz-task-effect
 - ChristopherDavenport/selection
 - ChristopherDavenport/semigroups
+- ChristopherDavenport/synchronized
 - ChristopherDavenport/system-effect
 - ChristopherDavenport/testcontainers-specs2
 - ChristopherDavenport/unique
