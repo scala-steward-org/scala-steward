@@ -265,6 +265,7 @@
 - travisbrown/catbird
 - travisbrown/iteratee
 - travisbrown/iteratee-twitter
+- tomwadeson/barebones
 - twilio/guardrail
 - typelevel/cats
 - typelevel/cats-collections
