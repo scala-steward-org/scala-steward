@@ -62,7 +62,7 @@ class parserTest extends FunSuite with Matchers {
     val str =
       """[info] Found 3 dependency updates for datapackage
         |[info]   ai.x:diff:test                           : 1.2.0  -> 1.2.1
-        |[info]   eu.timepit:refined                       : 0.7.0             -> 0.9.3
+        |[info]   eu.timepit:refined                       : 0.7.0             -> 0.9.4
         |[info]   com.geirsson:scalafmt-cli_2.11:scalafmt  : 0.3.0  -> 0.3.1   -> 0.6.8  -> 1.5.1
       """.stripMargin.trim
     parseSingleUpdates(str.lines.toList) shouldBe
@@ -76,7 +76,7 @@ class parserTest extends FunSuite with Matchers {
             Nel.of("0.3.1", "0.6.8", "1.5.1"),
             Some("scalafmt")
           ),
-        Update.Single("eu.timepit", "refined", "0.7.0", Nel.of("0.9.3"))
+        Update.Single("eu.timepit", "refined", "0.7.0", Nel.of("0.9.4"))
       )
   }
 
