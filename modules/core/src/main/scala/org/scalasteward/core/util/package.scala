@@ -68,7 +68,7 @@ package object util {
   ): Boolean =
     fa.exists(a => ga.exists(b => a === b))
 
-  /** Removes all elements from `nel` which also exists in `as`. */
+  /** Removes all elements from `nel` which also exist in `as`. */
   def removeAll[F[_]: UnorderedFoldable, A: Eq](nel: Nel[A], as: F[A]): Option[Nel[A]] =
     Nel.fromList(nel.toList.filterNot(a => as.exists(_ === a)))
 
