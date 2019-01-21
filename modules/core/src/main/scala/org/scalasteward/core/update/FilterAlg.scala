@@ -21,6 +21,7 @@ import cats.{Applicative, TraverseFilter}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.github.data.Repo
 import org.scalasteward.core.model.Update
+import org.scalasteward.core.util
 
 trait FilterAlg[F[_]] {
   def globalKeep(update: Update.Single): Boolean
@@ -46,27 +47,12 @@ object FilterAlg {
   def create[F[_]](implicit logger: Logger[F], F: Applicative[F]): FilterAlg[F] =
     new FilterAlg[F] {
       override def globalKeep(update: Update.Single): Boolean = {
-        (update.groupId, update.artifactId, update.currentVersion, update.nextVersion) match {
-          case ("org.scala-lang", "scala-compiler", _, _) => false
-          case ("org.scala-lang", "scala-library", _, _)  => false
-          case ("org.scala-lang", "scala-reflect", _, _)  => false
+        (update.groupId, update.artifactId) match {
+          case ("org.scala-lang", "scala-compiler") => false
+          case ("org.scala-lang", "scala-library")  => false
+          case ("org.scala-lang", "scala-reflect")  => false
 
-          case ("org.typelevel", "scala-library", _, _) => false
-
-          // https://github.com/vlovgr/ciris/pull/182#issuecomment-420599759
-          case ("com.jsuereth", "sbt-pgp", "1.1.2-1", "1.1.2") => false
-
-          // https://github.com/fthomas/scala-steward/issues/105
-          case ("io.monix", _, _, "3.0.0-fbcb270") => false
-
-          // https://github.com/esamson/remder/pull/5
-          case ("net.sourceforge.plantuml", "plantuml", _, "8059") => false
-
-          // https://github.com/http4s/http4s/pull/2153
-          case ("org.http4s", _, _, "0.19.0") => false
-
-          // https://github.com/lightbend/migration-manager/pull/260
-          case ("org.scalatest", "scalatest", _, "3.2.0-SNAP10") => false
+          case ("org.typelevel", "scala-library") => false
 
           case _ => true
         }
@@ -98,7 +84,43 @@ object FilterAlg {
         filterImpl(globalKeep(update) && localKeep(repo, update), update)
 
       def filterImpl(keep: Boolean, update: Update.Single): F[Option[Update.Single]] =
-        if (keep) F.pure(Some(update))
-        else logger.info(s"Ignore ${update.show}") *> F.pure(None)
+        removeBadVersions(update).filter(_ => keep) match {
+          case none @ None    => logger.info(s"Ignore ${update.show}") *> F.pure(none)
+          case some @ Some(_) => F.pure(some)
+        }
     }
+
+  def badVersions(update: Update.Single): List[String] =
+    (update.groupId, update.artifactId, update.currentVersion, update.nextVersion) match {
+      // https://github.com/vlovgr/ciris/pull/182#issuecomment-420599759
+      case ("com.jsuereth", "sbt-pgp", "1.1.2-1", "1.1.2") => List("1.1.2")
+
+      case ("io.monix", _, _, _) =>
+        List(
+          // https://github.com/fthomas/scala-steward/issues/105
+          "3.0.0-fbcb270"
+        )
+      case ("net.sourceforge.plantuml", "plantuml", _, _) =>
+        List(
+          // https://github.com/esamson/remder/pull/5
+          "8059"
+        )
+      case ("org.http4s", _, _, _) =>
+        List(
+          // https://github.com/http4s/http4s/pull/2153
+          "0.19.0"
+        )
+      case ("org.scalatest", "scalatest", _, _) =>
+        List(
+          // https://github.com/lightbend/migration-manager/pull/260
+          "3.2.0-SNAP10"
+        )
+
+      case _ => List.empty
+    }
+
+  def removeBadVersions(update: Update.Single): Option[Update.Single] =
+    util
+      .removeAll(update.newerVersions, badVersions(update))
+      .map(versions => update.copy(newerVersions = versions))
 }
