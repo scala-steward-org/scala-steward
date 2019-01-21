@@ -68,6 +68,10 @@ package object util {
   ): Boolean =
     fa.exists(a => ga.exists(b => a === b))
 
+  /** Removes all elements from `nel` which also exists in `as`. */
+  def removeAll[F[_]: UnorderedFoldable, A: Eq](nel: Nel[A], as: F[A]): Option[Nel[A]] =
+    Nel.fromList(nel.toList.filterNot(a => as.exists(_ === a)))
+
   /** Splits a list into chunks with maximum size `maxSize` such that
     * each chunk only consists of distinct elements with regards to the
     * discriminator function `f`.
