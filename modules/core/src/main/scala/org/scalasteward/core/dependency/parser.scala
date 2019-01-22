@@ -24,7 +24,7 @@ object parser {
     sbt.parser
       .removeSbtNoise(s)
       .lines
-      .map(decode[List[Dependency]])
+      .map(line => decode[List[Dependency]](line))
       .collect { case Right(list) => list }
       .flatten
       .toList
