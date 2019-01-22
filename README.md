@@ -38,6 +38,7 @@ The following people have helped making scala-steward great:
 * [Frank S. Thomas](https://github.com/fthomas)
 * [kenji yoshida](https://github.com/xuwei-k)
 * [Piotr Gabara](https://github.com/bhop)
+* [sullis](https://github.com/sullis)
 * [Zelenya](https://github.com/Zelenya)
 * Your name here :-)
 
