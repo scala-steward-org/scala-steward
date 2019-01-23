@@ -39,6 +39,20 @@ sealed trait Update extends Product with Serializable {
     newerVersions.head
 
   def replaceAllIn(target: String): Option[String] = {
+    def replaceVersion(regex: Regex): Option[String] = {
+      var updated = false
+      val result = regex.replaceAllIn(target, m => {
+        val group1 = m.group(1)
+        if (group1.contains("previous"))
+          m.matched
+        else {
+          updated = true
+          group1 + m.group(2) + nextVersion
+        }
+      })
+      if (updated) Some(result) else None
+    }
+
     val quotedSearchTerms = searchTerms
       .map { term =>
         Regex
@@ -47,18 +61,9 @@ sealed trait Update extends Product with Serializable {
       }
       .filter(_.nonEmpty)
     val searchTerm = quotedSearchTerms.mkString_("(", "|", ")")
-    val regex = s"(?i)(.*)($searchTerm.*?)${Regex.quote(currentVersion)}".r
-    var updated = false
-    val result = regex.replaceAllIn(target, m => {
-      val group1 = m.group(1)
-      if (group1.contains("previous"))
-        m.matched
-      else {
-        updated = true
-        group1 + m.group(2) + nextVersion
-      }
-    })
-    if (updated) Some(result) else None
+
+    replaceVersion(s"(?i)(.*)($groupId.*?$searchTerm.*?)${Regex.quote(currentVersion)}".r)
+      .orElse(replaceVersion(s"(?i)(.*)($searchTerm.*?)${Regex.quote(currentVersion)}".r))
   }
 
   def searchTerms: Nel[String] = {
