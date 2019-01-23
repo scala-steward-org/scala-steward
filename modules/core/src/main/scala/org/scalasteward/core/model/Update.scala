@@ -23,7 +23,6 @@ import org.scalasteward.core.model.Update.{Group, Single}
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.util.string.MinLengthString
-
 import scala.util.matching.Regex
 
 sealed trait Update extends Product with Serializable {

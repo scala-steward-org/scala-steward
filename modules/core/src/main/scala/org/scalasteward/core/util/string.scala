@@ -20,7 +20,6 @@ import eu.timepit.refined.api.Refined
 import eu.timepit.refined.collection.MinSize
 import eu.timepit.refined.refineV
 import shapeless.Witness
-
 import scala.util.matching.Regex
 
 object string {
