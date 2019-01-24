@@ -281,6 +281,9 @@
 - underscoreio/slickless
 - vectos/formulation
 - vectos/itinere
+- vigoo/prox
+- vigoo/simpp
+- vigoo/clipp
 - vlovgr/ciris
 - WellFactored/clovis
 - WellFactored/property-info
