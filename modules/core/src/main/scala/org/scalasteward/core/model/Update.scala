@@ -39,19 +39,14 @@ sealed trait Update extends Product with Serializable {
     newerVersions.head
 
   def replaceAllIn(target: String): Option[String] = {
-    def replaceVersion(regex: Regex): Option[String] = {
-      var updated = false
-      val result = regex.replaceAllIn(target, m => {
+    def replaceVersion(regex: Regex): Option[String] =
+      util.string.replaceSomeInOpt(regex, target, m => {
         val group1 = m.group(1)
         if (group1.contains("previous"))
-          m.matched
-        else {
-          updated = true
-          group1 + m.group(2) + nextVersion
-        }
+          None
+        else
+          Some(group1 + m.group(2) + nextVersion)
       })
-      if (updated) Some(result) else None
-    }
 
     val quotedSearchTerms = searchTerms
       .map { term =>
