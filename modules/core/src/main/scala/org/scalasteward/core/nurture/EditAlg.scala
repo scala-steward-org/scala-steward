@@ -19,8 +19,7 @@ package org.scalasteward.core.nurture
 import cats.effect.Sync
 import cats.implicits._
 import org.scalasteward.core.github.data.Repo
-import org.scalasteward.core.io.WorkspaceAlg
-import org.scalasteward.core.ioLegacy
+import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.model.Update
 
 trait EditAlg[F[_]] {
@@ -30,13 +29,14 @@ trait EditAlg[F[_]] {
 object EditAlg {
   def create[F[_]](
       implicit
+      fileAlg: FileAlg[F],
       workspaceAlg: WorkspaceAlg[F],
       F: Sync[F]
   ): EditAlg[F] =
     new EditAlg[F] {
       override def applyUpdate(repo: Repo, update: Update): F[Unit] =
         workspaceAlg.repoDir(repo).flatMap { repoDir =>
-          ioLegacy.updateDir(repoDir, update)
+          fileAlg.editSourceFiles(repoDir, update.replaceAllIn).void
         }
     }
 }

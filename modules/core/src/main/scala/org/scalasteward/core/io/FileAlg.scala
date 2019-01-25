@@ -17,9 +17,9 @@
 package org.scalasteward.core.io
 
 import better.files.File
-import cats.Functor
 import cats.effect.Sync
 import cats.implicits._
+import cats.{Functor, Monad}
 import fs2.{Pipe, Stream}
 import org.apache.commons.io.FileUtils
 import org.scalasteward.core.util
@@ -40,6 +40,17 @@ trait FileAlg[F[_]] {
   def walk(dir: File): Stream[F, File]
 
   def writeFile(file: File, content: String): F[Unit]
+
+  def editFile(file: File, edit: String => Option[String])(implicit F: Monad[F]): F[Boolean] =
+    readFile(file).flatMap {
+      _.flatMap(edit) match {
+        case Some(edited) => writeFile(file, edited).as(true)
+        case None         => F.pure(false)
+      }
+    }
+
+  def editSourceFiles(dir: File, edit: String => Option[String])(implicit F: Sync[F]): F[Boolean] =
+    walkSourceFiles(dir).evalMap(editFile(_, edit)).compile.fold(false)(_ || _)
 
   def ignoreSymlinks(implicit F: Functor[F]): Pipe[F, File, File] =
     util.evalFilter(file => isSymlink(file).map(!_))
