@@ -42,12 +42,7 @@ trait FileAlg[F[_]] {
   def writeFile(file: File, content: String): F[Unit]
 
   def editFile(file: File, edit: String => Option[String])(implicit F: Monad[F]): F[Boolean] =
-    readFile(file).flatMap {
-      _.flatMap(edit) match {
-        case Some(edited) => writeFile(file, edited).as(true)
-        case None         => F.pure(false)
-      }
-    }
+    readFile(file).flatMap(_.flatMap(edit).fold(F.pure(false))(writeFile(file, _).as(true)))
 
   def editSourceFiles(dir: File, edit: String => Option[String])(implicit F: Sync[F]): F[Boolean] =
     walkSourceFiles(dir).evalMap(editFile(_, edit)).compile.fold(false)(_ || _)
