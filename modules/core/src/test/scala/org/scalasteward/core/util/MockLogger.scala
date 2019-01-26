@@ -1,8 +1,8 @@
 package org.scalasteward.core.util
 
-import cats.data.State
-import org.scalasteward.core.MockState.MockEnv
+import cats.data.StateT
 import io.chrisdavenport.log4cats.Logger
+import org.scalasteward.core.MockState.MockEnv
 
 class MockLogger extends Logger[MockEnv] {
   override def error(t: Throwable)(message: => String): MockEnv[Unit] =
@@ -36,5 +36,5 @@ class MockLogger extends Logger[MockEnv] {
     impl(None, message)
 
   def impl(maybeThrowable: Option[Throwable], message: String): MockEnv[Unit] =
-    State.modify(_.log(maybeThrowable, message))
+    StateT.modify(_.log(maybeThrowable, message))
 }

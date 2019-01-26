@@ -35,7 +35,7 @@ class GitAlgTest extends FunSuite with Matchers {
     val url = util.uri
       .fromString[IO]("https://scala-steward@github.com/fthomas/datapackage")
       .unsafeRunSync()
-    val state = gitAlg.clone(repo, url).runS(MockState.empty).value
+    val state = gitAlg.clone(repo, url).runS(MockState.empty).unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
@@ -54,7 +54,7 @@ class GitAlgTest extends FunSuite with Matchers {
     val state = gitAlg
       .branchAuthors(repo, Branch("update/cats-1.0.0"), Branch("master"))
       .runS(MockState.empty)
-      .value
+      .unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
@@ -67,7 +67,7 @@ class GitAlgTest extends FunSuite with Matchers {
     val state = gitAlg
       .commitAll(repo, "Initial commit")
       .runS(MockState.empty)
-      .value
+      .unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
@@ -83,7 +83,7 @@ class GitAlgTest extends FunSuite with Matchers {
     val state = gitAlg
       .syncFork(repo, url, defaultBranch)
       .runS(MockState.empty)
-      .value
+      .unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
@@ -97,18 +97,19 @@ class GitAlgTest extends FunSuite with Matchers {
   }
 
   test("checkAndSyncFork should throw an exception when there is no parent fork is enabled") {
-    assertThrows[Throwable] {
-      gitAlg
-        .checkAndSyncFork(repo, parentRepoOut)(MockState.monadErrorInstance)
-        .runS(MockState.empty)
-    }
+    gitAlg
+      .checkAndSyncFork(repo, parentRepoOut)
+      .runS(MockState.empty)
+      .attempt
+      .map(_.isLeft)
+      .unsafeRunSync() shouldBe true
   }
 
   test("checkAndSyncFork should fork as usual when there is a parent") {
     val (state, result) = gitAlg
-      .checkAndSyncFork(repo, childRepoOut)(MockState.monadErrorInstance)
+      .checkAndSyncFork(repo, childRepoOut)
       .run(MockState.empty)
-      .value
+      .unsafeRunSync()
     state shouldBe MockState.empty.copy(
       commands = Vector(
         List(
@@ -138,9 +139,9 @@ class GitAlgTest extends FunSuite with Matchers {
       implicitly[Monad[MockEnv]]
     )
     val (state, repoOut) = gitAlgWithoutForking
-      .checkAndSyncFork(repo, parentRepoOut)(MockState.monadErrorInstance)
+      .checkAndSyncFork(repo, parentRepoOut)
       .run(MockState.empty)
-      .value
+      .unsafeRunSync()
     state shouldBe MockState.empty
     repoOut shouldBe parentRepoOut
   }
