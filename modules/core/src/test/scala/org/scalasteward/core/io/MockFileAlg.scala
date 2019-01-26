@@ -31,7 +31,9 @@ class MockFileAlg extends FileAlg[MockEnv] {
     StateT(s => IO.pure((s.exec(List("read", file.pathAsString)), s.files.get(file))))
 
   override def walk(dir: File): Stream[MockEnv, File] =
-    Stream.eval(StateT.pure(dir))
+    Stream
+      .eval(StateT((s: MockState) => IO.pure((s, s.files.keys.toList))))
+      .flatMap(files => Stream.emits[MockEnv, File](files))
 
   override def writeFile(file: File, content: String): MockEnv[Unit] =
     StateT.modify { s =>
