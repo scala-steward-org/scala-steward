@@ -1,4 +1,4 @@
-<img src="https://github.com/fthomas/scala-steward/raw/master/modules/readme/images/scala-steward-logo-hex-1.png" width="156px" height="180px" align="right">
+<img src="https://github.com/fthomas/scala-steward/raw/master/data/images/scala-steward-logo-hex-1.png" width="156px" height="180px" align="right">
 
 # scala-steward
 [![Build Status](https://travis-ci.org/fthomas/scala-steward.svg?branch=master)](https://travis-ci.org/fthomas/scala-steward)
