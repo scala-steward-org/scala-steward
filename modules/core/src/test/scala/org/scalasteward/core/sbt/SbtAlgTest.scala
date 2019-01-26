@@ -1,5 +1,6 @@
 package org.scalasteward.core.sbt
 
+import better.files.File
 import org.scalasteward.core.MockState
 import org.scalasteward.core.MockState.MockEnv
 import org.scalasteward.core.github.data.Repo
@@ -23,7 +24,13 @@ class SbtAlgTest extends FunSuite with Matchers {
         List("write", "/tmp/steward/.sbt/0.13/plugins/StewardPlugin.scala"),
         List("write", "/tmp/steward/.sbt/1.0/plugins/StewardPlugin.scala")
       ),
-      logs = Vector((None, "Add global sbt plugins"))
+      logs = Vector((None, "Add global sbt plugins")),
+      files = Map(
+        File("/tmp/steward/.sbt/0.13/plugins/sbt-updates.sbt") -> sbtUpdatesPlugin.content,
+        File("/tmp/steward/.sbt/1.0/plugins/sbt-updates.sbt") -> sbtUpdatesPlugin.content,
+        File("/tmp/steward/.sbt/0.13/plugins/StewardPlugin.scala") -> stewardPlugin.content,
+        File("/tmp/steward/.sbt/1.0/plugins/StewardPlugin.scala") -> stewardPlugin.content
+      )
     )
   }
 

@@ -9,7 +9,7 @@ import org.scalasteward.core.MockState.MockEnv
 
 class MockFileAlg extends FileAlg[MockEnv] {
   override def deleteForce(file: File): MockEnv[Unit] =
-    StateT.modify(s => s.exec(List("rm", "-rf", file.pathAsString)))
+    StateT.modify(s => s.exec(List("rm", "-rf", file.pathAsString)).copy(files = s.files - file))
 
   override def ensureExists(dir: File): MockEnv[File] =
     StateT(s => IO.pure((s.exec(List("mkdir", "-p", dir.pathAsString)), dir)))
@@ -28,11 +28,19 @@ class MockFileAlg extends FileAlg[MockEnv] {
     } yield a
 
   override def readFile(file: File): MockEnv[Option[String]] =
-    StateT(s => IO.pure((s.exec(List("read", file.pathAsString)), Option.empty[String])))
+    StateT(s => IO.pure((s.exec(List("read", file.pathAsString)), s.files.get(file))))
 
-  override def walk(dir: File): Stream[MockEnv, File] =
-    Stream.eval(StateT.pure(dir))
+  override def walk(dir: File): Stream[MockEnv, File] = {
+    val dirAsString = dir.pathAsString
+    val state = StateT { s: MockState =>
+      val files = s.files.keys.filter(_.pathAsString.startsWith(dirAsString)).toList
+      IO.pure((s, files))
+    }
+    Stream.eval(state).flatMap(Stream.emits[MockEnv, File])
+  }
 
   override def writeFile(file: File, content: String): MockEnv[Unit] =
-    StateT.modify(_.exec(List("write", file.pathAsString)))
+    StateT.modify { s =>
+      s.exec(List("write", file.pathAsString)).copy(files = s.files + ((file, content)))
+    }
 }
