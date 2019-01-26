@@ -17,7 +17,7 @@ class SbtAlgTest extends FunSuite with Matchers {
   val sbtAlg: SbtAlg[MockEnv] = SbtAlg.create
 
   test("addGlobalPlugins") {
-    sbtAlg.addGlobalPlugins.runS(MockState.empty).value shouldBe MockState.empty.copy(
+    sbtAlg.addGlobalPlugins.runS(MockState.empty).unsafeRunSync() shouldBe MockState.empty.copy(
       commands = Vector(
         List("write", "/tmp/steward/.sbt/0.13/plugins/sbt-updates.sbt"),
         List("write", "/tmp/steward/.sbt/1.0/plugins/sbt-updates.sbt"),
@@ -36,7 +36,7 @@ class SbtAlgTest extends FunSuite with Matchers {
 
   test("getUpdatesForRepo") {
     val repo = Repo("fthomas", "refined")
-    val state = sbtAlg.getUpdatesForRepo(repo).runS(MockState.empty).value
+    val state = sbtAlg.getUpdatesForRepo(repo).runS(MockState.empty).unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
       commands = Vector(

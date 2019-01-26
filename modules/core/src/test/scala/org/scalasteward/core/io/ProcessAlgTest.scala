@@ -30,7 +30,7 @@ class ProcessAlgTest extends FunSuite with Matchers {
     val state = mockProcessAlg
       .execSandboxed(Nel.of("echo", "hello"), File.root / "tmp")
       .runS(MockState.empty)
-      .value
+      .unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
       commands = Vector(

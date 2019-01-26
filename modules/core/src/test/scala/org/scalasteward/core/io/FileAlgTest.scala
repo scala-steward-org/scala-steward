@@ -11,7 +11,7 @@ class FileAlgTest extends FunSuite with Matchers {
     val (state, edited) = (for {
       home <- mockFileAlg.home
       edited <- mockFileAlg.editFile(home / "does-not-exists.txt", Some.apply)
-    } yield edited).run(MockState.empty).value
+    } yield edited).run(MockState.empty).unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
@@ -27,7 +27,7 @@ class FileAlgTest extends FunSuite with Matchers {
       _ <- mockFileAlg.writeFile(file, "123")
       edit = (s: String) => Some(s.replace("2", "4"))
       edited <- mockFileAlg.editFile(file, edit)
-    } yield edited).run(MockState.empty).value
+    } yield edited).run(MockState.empty).unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
