@@ -8,7 +8,7 @@ import fs2.Stream
 
 class MockFileAlg extends FileAlg[MockEnv] {
   override def deleteForce(file: File): MockEnv[Unit] =
-    State.modify(s => s.exec(List("rm", "-rf", file.pathAsString)))
+    State.modify(s => s.exec(List("rm", "-rf", file.pathAsString)).copy(files = s.files - file))
 
   override def ensureExists(dir: File): MockEnv[File] =
     State(s => (s.exec(List("mkdir", "-p", dir.pathAsString)), dir))
@@ -27,11 +27,13 @@ class MockFileAlg extends FileAlg[MockEnv] {
     } yield a
 
   override def readFile(file: File): MockEnv[Option[String]] =
-    State(s => (s.exec(List("read", file.pathAsString)), None))
+    State(s => (s.exec(List("read", file.pathAsString)), s.files.get(file)))
 
   override def walk(dir: File): Stream[MockEnv, File] =
     Stream.eval(State.pure(dir))
 
   override def writeFile(file: File, content: String): MockEnv[Unit] =
-    State.modify(_.exec(List("write", file.pathAsString)))
+    State.modify { s =>
+      s.exec(List("write", file.pathAsString)).copy(files = s.files + ((file, content)))
+    }
 }

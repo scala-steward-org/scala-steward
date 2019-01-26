@@ -1,12 +1,14 @@
 package org.scalasteward.core
 
+import better.files.File
 import cats.data.State
 import org.scalasteward.core.util.MonadThrowable
 import cats.{Monad, MonadError}
 
 final case class MockState(
     commands: Vector[List[String]],
-    logs: Vector[(Option[Throwable], String)]
+    logs: Vector[(Option[Throwable], String)],
+    files: Map[File, String]
 ) {
   def exec(cmd: List[String]): MockState =
     copy(commands = commands :+ cmd)
@@ -19,7 +21,7 @@ object MockState {
   type MockEnv[A] = State[MockState, A]
 
   def empty: MockState =
-    MockState(Vector.empty, Vector.empty)
+    MockState(Vector.empty, Vector.empty, Map.empty)
 
   // Unable to make this implicit. Ambiguous implicit error
   def monadErrorInstance(implicit M: Monad[MockEnv]): MonadThrowable[MockEnv] =
