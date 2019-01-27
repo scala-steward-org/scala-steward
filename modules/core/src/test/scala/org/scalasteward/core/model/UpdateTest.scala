@@ -145,6 +145,13 @@ class UpdateTest extends FunSuite with Matchers {
       .replaceAllInRelaxed(original) shouldBe Some(expected)
   }
 
+  test("replaceAllInRelaxed: artifactId with underscore") {
+    val original = """val scShapelessV = "1.1.6""""
+    val expected = """val scShapelessV = "1.1.8""""
+    Single("com.github.alexarchambault", "scalacheck-shapeless_1.13", "1.1.6", Nel.of("1.1.8"))
+      .replaceAllInRelaxed(original) shouldBe Some(expected)
+  }
+
   test("Group.artifactId") {
     Group(
       "org.http4s",
