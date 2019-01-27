@@ -83,7 +83,7 @@ class UpdateTest extends FunSuite with Matchers {
       .replaceAllIn(original) shouldBe Some(expected)
   }
 
-  test("replaceAllIn: use multi-step strategy") {
+  test("replaceAllInStrict") {
     val original =
       """ "org.http4s" %% "jawn-fs2" % "0.14.0"
         | "org.typelevel" %% "jawn-json4s"  % "0.14.0",
@@ -95,7 +95,7 @@ class UpdateTest extends FunSuite with Matchers {
         | "org.typelevel" %% "jawn-play" % "0.14.1"
       """.stripMargin.trim
     Group("org.typelevel", Nel.of("jawn-json4s", "jawn-play"), "0.14.0", Nel.of("0.14.1"))
-      .replaceAllIn(original) shouldBe Some(expected)
+      .replaceAllInStrict(original) shouldBe Some(expected)
   }
 
   test("replaceAllIn: artifactIds are common suffixes") {
@@ -136,6 +136,13 @@ class UpdateTest extends FunSuite with Matchers {
       "0.10.0",
       Nel.of("0.10.1")
     ).replaceAllIn(original) shouldBe Some(expected)
+  }
+
+  test("replaceAllInRelaxed") {
+    val original = """lazy val circeVersion = "0.9.3""""
+    val expected = """lazy val circeVersion = "0.11.1""""
+    Single("io.circe", "circe-generic", "0.9.3", Nel.of("0.11.1"))
+      .replaceAllInRelaxed(original) shouldBe Some(expected)
   }
 
   test("Group.artifactId") {

@@ -18,6 +18,7 @@ package org.scalasteward.core.nurture
 
 import cats.effect.Sync
 import cats.implicits._
+import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.github.data.Repo
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.model.Update
@@ -30,13 +31,25 @@ object EditAlg {
   def create[F[_]](
       implicit
       fileAlg: FileAlg[F],
+      logger: Logger[F],
       workspaceAlg: WorkspaceAlg[F],
       F: Sync[F]
   ): EditAlg[F] =
     new EditAlg[F] {
       override def applyUpdate(repo: Repo, update: Update): F[Unit] =
         workspaceAlg.repoDir(repo).flatMap { repoDir =>
-          fileAlg.editSourceFiles(repoDir, update.replaceAllIn).void
+          fileAlg.editSourceFiles(repoDir, update.replaceAllInStrict).flatMap {
+            case true => F.unit
+            case false =>
+              logger.info("Strict update strategy changed no files, trying normal strategy") >>
+                fileAlg.editSourceFiles(repoDir, update.replaceAllIn).flatMap {
+                  case true => F.unit
+                  case false =>
+                    logger
+                      .info("Normal update strategy changed no files, trying relaxed strategy") >>
+                      fileAlg.editSourceFiles(repoDir, update.replaceAllInRelaxed).void
+                }
+          }
         }
     }
 }
