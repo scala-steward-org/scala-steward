@@ -22,6 +22,7 @@ import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.github.data.Repo
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.model.Update
+import org.scalasteward.core.util._
 
 trait EditAlg[F[_]] {
   def applyUpdate(repo: Repo, update: Update): F[Unit]
@@ -38,18 +39,19 @@ object EditAlg {
     new EditAlg[F] {
       override def applyUpdate(repo: Repo, update: Update): F[Unit] =
         workspaceAlg.repoDir(repo).flatMap { repoDir =>
-          fileAlg.editSourceFiles(repoDir, update.replaceAllInStrict).flatMap {
-            case true => F.unit
-            case false =>
-              logger.info("Strict update strategy changed no files, trying normal strategy") >>
-                fileAlg.editSourceFiles(repoDir, update.replaceAllIn).flatMap {
-                  case true => F.unit
-                  case false =>
-                    logger
-                      .info("Normal update strategy changed no files, trying relaxed strategy") >>
-                      fileAlg.editSourceFiles(repoDir, update.replaceAllInRelaxed).void
-                }
-          }
+          def log(strategy: String): F[Unit] =
+            logger.info(s"Trying update strategy '$strategy'")
+
+          val strategies = Nel.of(
+            log("replaceAllInStrict") >>
+              fileAlg.editSourceFiles(repoDir, update.replaceAllInStrict),
+            log("replaceAllIn") >>
+              fileAlg.editSourceFiles(repoDir, update.replaceAllIn),
+            log("replaceAllInRelaxed") >>
+              fileAlg.editSourceFiles(repoDir, update.replaceAllInRelaxed)
+          )
+
+          bindUntilTrue(strategies).void
         }
     }
 }

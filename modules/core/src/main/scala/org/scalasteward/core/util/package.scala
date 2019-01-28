@@ -18,7 +18,7 @@ package org.scalasteward.core
 
 import cats.effect.Bracket
 import cats.implicits._
-import cats.{ApplicativeError, Eq, Foldable, Functor, MonadError, Semigroup, UnorderedFoldable}
+import cats._
 import eu.timepit.refined.types.numeric.PosInt
 import fs2.Pipe
 import scala.annotation.tailrec
@@ -34,6 +34,21 @@ package object util {
   type MonadThrowable[F[_]] = MonadError[F, Throwable]
 
   type BracketThrowable[F[_]] = Bracket[F, Throwable]
+
+  /**
+    * @example {{{
+    * scala> import cats.data.State
+    *
+    * scala> bindUntilTrue(Nel.of(
+    *      |   State((l: List[Int]) => (l :+ 1, false)),
+    *      |   State((l: List[Int]) => (l :+ 2, true )),
+    *      |   State((l: List[Int]) => (l :+ 3, false))
+    *      | )).runS(List(0)).value
+    * res1: List[Int] = List(0, 1, 2)
+    * }}}
+    */
+  def bindUntilTrue[G[_]: Foldable, F[_]: Monad](gfb: G[F[Boolean]]): F[Boolean] =
+    gfb.foldLeft(false.pure[F])((acc, fb) => acc.ifM(true.pure[F], fb))
 
   def divideOnError[F[_], G[_], A, B, E](a: A)(f: A => F[B])(divide: A => G[A])(
       handleError: (A, E) => F[B]
