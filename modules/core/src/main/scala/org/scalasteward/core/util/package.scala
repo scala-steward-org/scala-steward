@@ -35,8 +35,8 @@ package object util {
 
   type BracketThrowable[F[_]] = Bracket[F, Throwable]
 
-  /** Binds the elements of `gfb` via a left fold until the first `F[Boolean]`
-    * that evaluates to `true`.
+  /** Binds the elements of `gfb` until the first `F[Boolean]` that
+    * evaluates to `true`.
     *
     * @example {{{
     * scala> import cats.data.State
@@ -50,8 +50,14 @@ package object util {
     * res1: List[Int] = List(0, 1, 2)
     * }}}
     */
-  def bindUntilTrue[G[_]: Foldable, F[_]: Monad](gfb: G[F[Boolean]]): F[Boolean] =
-    gfb.foldLeft(false.pure[F])((acc, fb) => acc.ifM(true.pure[F], fb))
+  def bindUntilTrue[G[_]: Foldable, F[_]: Monad](gfb: G[F[Boolean]]): F[Boolean] = {
+    def loop(list: List[F[Boolean]]): F[Boolean] =
+      list match {
+        case x :: xs => x.ifM(true.pure[F], loop(xs))
+        case Nil     => false.pure[F]
+      }
+    loop(gfb.toList)
+  }
 
   def divideOnError[F[_], G[_], A, B, E](a: A)(f: A => F[B])(divide: A => G[A])(
       handleError: (A, E) => F[B]
