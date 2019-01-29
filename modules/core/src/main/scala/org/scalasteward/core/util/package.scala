@@ -35,14 +35,17 @@ package object util {
 
   type BracketThrowable[F[_]] = Bracket[F, Throwable]
 
-  /**
+  /** Binds the elements of `gfb` via a left fold until the first `F[Boolean]`
+    * that evaluates to `true`.
+    *
     * @example {{{
     * scala> import cats.data.State
     *
     * scala> bindUntilTrue(Nel.of(
     *      |   State((l: List[Int]) => (l :+ 1, false)),
     *      |   State((l: List[Int]) => (l :+ 2, true )),
-    *      |   State((l: List[Int]) => (l :+ 3, false))
+    *      |   State((l: List[Int]) => (l :+ 3, false)),
+    *      |   State((l: List[Int]) => (l :+ 4, true ))
     *      | )).runS(List(0)).value
     * res1: List[Int] = List(0, 1, 2)
     * }}}
