@@ -2,7 +2,7 @@ package org.scalasteward.core.git
 
 import cats.effect.IO
 import org.http4s.Uri
-import org.scalasteward.core.MockState.MockEnv
+import org.scalasteward.core.MockState.MockEff
 import org.scalasteward.core.application.{Config, ConfigTest}
 import org.scalasteward.core.github.data.{Repo, RepoOut, UserOut}
 import org.scalasteward.core.io.{MockFileAlg, MockProcessAlg, MockWorkspaceAlg}
@@ -14,7 +14,7 @@ class GitAlgTest extends FunSuite with Matchers {
   implicit val fileAlg: MockFileAlg = new MockFileAlg
   implicit val processAlg: MockProcessAlg = new MockProcessAlg
   implicit val workspaceAlg: MockWorkspaceAlg = new MockWorkspaceAlg
-  val gitAlg: GitAlg[MockEnv] = GitAlg.create
+  val gitAlg: GitAlg[MockEff] = GitAlg.create
   val repo = Repo("fthomas", "datapackage")
   val parentRepoOut = RepoOut(
     "datapackage",
@@ -129,15 +129,8 @@ class GitAlgTest extends FunSuite with Matchers {
   }
 
   test("checkAndSyncFork should not fork when doNotFork is enabled") {
-    import cats.Monad
-    val configWithForkingDisabled = ConfigTest.dummyConfig.copy(doNotFork = true)
-    val gitAlgWithoutForking = GitAlg.create(
-      configWithForkingDisabled,
-      fileAlg,
-      processAlg,
-      workspaceAlg,
-      implicitly[Monad[MockEnv]]
-    )
+    implicit val config: Config = ConfigTest.dummyConfig.copy(doNotFork = true)
+    val gitAlgWithoutForking = GitAlg.create
     val (state, repoOut) = gitAlgWithoutForking
       .checkAndSyncFork(repo, parentRepoOut)
       .run(MockState.empty)

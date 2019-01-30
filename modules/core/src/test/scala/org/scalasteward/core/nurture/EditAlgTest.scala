@@ -2,7 +2,7 @@ package org.scalasteward.core.nurture
 
 import better.files.File
 import org.scalasteward.core.MockState
-import org.scalasteward.core.MockState.MockEnv
+import org.scalasteward.core.MockState.MockEff
 import org.scalasteward.core.github.data.Repo
 import org.scalasteward.core.io.{MockFileAlg, MockWorkspaceAlg}
 import org.scalasteward.core.model.Update
@@ -14,7 +14,7 @@ class EditAlgTest extends FunSuite with Matchers {
   implicit val logger: MockLogger = new MockLogger
   implicit val workspaceAlg: MockWorkspaceAlg = new MockWorkspaceAlg
 
-  val editAlg: EditAlg[MockEnv] = EditAlg.create
+  val editAlg: EditAlg[MockEff] = EditAlg.create
 
   test("applyUpdate") {
     val repo = Repo("fthomas", "scala-steward")

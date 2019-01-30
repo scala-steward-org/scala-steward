@@ -12,6 +12,9 @@ final case class MockState(
   def add(file: File, content: String): MockState =
     copy(files = files + (file -> content))
 
+  def rm(file: File): MockState =
+    copy(files = files - file)
+
   def exec(cmd: List[String]): MockState =
     copy(commands = commands :+ cmd)
 
@@ -20,7 +23,7 @@ final case class MockState(
 }
 
 object MockState {
-  type MockEnv[A] = StateT[IO, MockState, A]
+  type MockEff[A] = StateT[IO, MockState, A]
 
   def empty: MockState =
     MockState(Vector.empty, Vector.empty, Map.empty)
