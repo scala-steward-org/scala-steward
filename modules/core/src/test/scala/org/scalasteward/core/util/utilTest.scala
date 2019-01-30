@@ -8,6 +8,10 @@ import org.scalatest.prop.PropertyChecks
 import org.scalatest.{FunSuite, Matchers}
 
 class utilTest extends FunSuite with Matchers with PropertyChecks {
+  test("bindUntilTrue: empty list") {
+    bindUntilTrue(List.empty[Option[Boolean]]) shouldBe Some(false)
+  }
+
   test("divideOnError") {
     /*
        5
