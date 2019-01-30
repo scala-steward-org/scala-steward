@@ -172,6 +172,17 @@
 - NeQuissimus/circe-kafka
 - NeQuissimus/nequi-kafka
 - NeQuissimus/zio-slf4j
+- nafg/cloud-logging-logback-scala
+- nafg/css-dsl
+- nafg/jewish-date
+- nafg/reactive
+- nafg/scalajs-facades
+- nafg/scalajs-react-util
+- nafg/scheduler
+- nafg/simpleivr
+- nafg/slick-additions
+- nafg/slick-migration-api
+- nafg/slick-migration-api-flyway
 - nrinaudo/kantan.codecs
 - olafurpg/sbt-ci-release
 - pathikrit/better-files
