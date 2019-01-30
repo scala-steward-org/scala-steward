@@ -9,6 +9,9 @@ final case class MockState(
     logs: Vector[(Option[Throwable], String)],
     files: Map[File, String]
 ) {
+  def add(file: File, content: String): MockState =
+    copy(files = files + (file -> content))
+
   def exec(cmd: List[String]): MockState =
     copy(commands = commands :+ cmd)
 
