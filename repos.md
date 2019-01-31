@@ -134,6 +134,7 @@
 - julienrf/endpoints
 - julien-truffaut/Monocle
 - julien-truffaut/newts
+- julien-truffaut/fp-foundation
 - kiambogo/fs2-jms
 - kubukoz/brick-store
 - kubukoz/error-control
