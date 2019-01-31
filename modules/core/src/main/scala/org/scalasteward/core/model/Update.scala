@@ -68,6 +68,7 @@ sealed trait Update extends Product with Serializable {
       .map { term =>
         Regex
           .quoteReplacement(Update.removeCommonSuffix(term))
+          .replace(".", ".?")
           .replace("-", ".?")
       }
       .filter(_.nonEmpty)
