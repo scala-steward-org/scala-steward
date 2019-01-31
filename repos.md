@@ -131,6 +131,7 @@
 - IronCoreLabs/argonaut-jwt-scala
 - IronCoreLabs/cats-scalatest
 - IronCoreLabs/recrypt
+- jmcardon/tsec
 - julienrf/endpoints
 - julien-truffaut/Monocle
 - julien-truffaut/newts
