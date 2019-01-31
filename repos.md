@@ -209,7 +209,6 @@
 - scala/hello-world.g8
 - scala/make-release-notes
 - scala/sbt-scala-module
-- scala/scabot
 - scala/scala-collection-compat
 - scala/scala-collection-contrib
 - scala/scala-collections-laws
