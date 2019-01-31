@@ -121,7 +121,7 @@ class UpdateTest extends FunSuite with Matchers {
     ).replaceAllIn(original) shouldBe None
   }
 
-  test("replaceAllIn:") {
+  test("replaceAllIn: ignore previous") {
     val original =
       """val circeVersion = "0.10.0"
         |val previousCirceIterateeVersion = "0.10.0"
@@ -136,6 +136,13 @@ class UpdateTest extends FunSuite with Matchers {
       "0.10.0",
       Nel.of("0.10.1")
     ).replaceAllIn(original) shouldBe Some(expected)
+  }
+
+  test("replaceAllIn: artifactId with dot") {
+    val original = """ def plotlyJs = "1.41.3" """
+    val expected = """ def plotlyJs = "1.43.2" """
+    Single("org.webjars.bower", "plotly.js", "1.41.3", Nel.of("1.43.2"))
+      .replaceAllIn(original) shouldBe Some(expected)
   }
 
   test("replaceAllInRelaxed") {
