@@ -301,3 +301,4 @@
 - WellFactored/property-info
 - WellFactored/resourcepool
 - X9Developers/block-explorer
+- yahoo/kafka-manager
