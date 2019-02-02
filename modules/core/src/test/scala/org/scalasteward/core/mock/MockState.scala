@@ -1,8 +1,6 @@
-package org.scalasteward.core
+package org.scalasteward.core.mock
 
 import better.files.File
-import cats.data.StateT
-import cats.effect.IO
 
 final case class MockState(
     commands: Vector[List[String]],
@@ -23,8 +21,6 @@ final case class MockState(
 }
 
 object MockState {
-  type MockEff[A] = StateT[IO, MockState, A]
-
   def empty: MockState =
     MockState(Vector.empty, Vector.empty, Map.empty)
 }

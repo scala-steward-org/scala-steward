@@ -3,11 +3,10 @@ package org.scalasteward.core.io
 import better.files.File
 import cats.data.StateT
 import cats.effect.IO
-import org.scalasteward.core.MockState.MockEff
-import org.scalasteward.core.application.ConfigTest
+import org.scalasteward.core.mock.{MockContext, MockEff}
 import org.scalasteward.core.util.Nel
 
-class MockProcessAlg extends ProcessAlg.UsingFirejail[MockEff](ConfigTest.dummyConfig) {
+class MockProcessAlg extends ProcessAlg.UsingFirejail[MockEff](MockContext.config) {
   override def exec(
       command: Nel[String],
       cwd: File,

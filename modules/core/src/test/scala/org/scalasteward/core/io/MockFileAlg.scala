@@ -4,8 +4,7 @@ import better.files.File
 import cats.data.StateT
 import cats.effect.IO
 import fs2.Stream
-import org.scalasteward.core.MockState
-import org.scalasteward.core.MockState.MockEff
+import org.scalasteward.core.mock.{MockEff, MockState}
 
 class MockFileAlg extends FileAlg[MockEff] {
   override def deleteForce(file: File): MockEff[Unit] =

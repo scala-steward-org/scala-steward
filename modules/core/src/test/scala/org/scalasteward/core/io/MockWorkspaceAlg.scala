@@ -2,8 +2,8 @@ package org.scalasteward.core.io
 
 import better.files.File
 import cats.data.StateT
-import org.scalasteward.core.MockState.MockEff
 import org.scalasteward.core.github.data.Repo
+import org.scalasteward.core.mock.MockEff
 
 class MockWorkspaceAlg extends WorkspaceAlg[MockEff] {
   override def cleanWorkspace: MockEff[Unit] =
