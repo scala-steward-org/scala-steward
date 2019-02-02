@@ -9,7 +9,7 @@ import org.scalasteward.core.sbt.SbtAlg
 
 object MockContext {
   implicit val config: Config = Config(
-    workspace = File.temp,
+    workspace = File.temp / "ws",
     reposFile = File.temp / "repos.md",
     gitAuthor = Author("", ""),
     gitHubApiHost = "",
