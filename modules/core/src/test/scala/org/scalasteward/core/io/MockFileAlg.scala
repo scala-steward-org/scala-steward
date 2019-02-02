@@ -4,6 +4,7 @@ import better.files.File
 import cats.data.StateT
 import cats.effect.IO
 import fs2.Stream
+import org.scalasteward.core.mock.applyPure
 import org.scalasteward.core.mock.{MockEff, MockState}
 
 class MockFileAlg extends FileAlg[MockEff] {
@@ -11,7 +12,7 @@ class MockFileAlg extends FileAlg[MockEff] {
     StateT.modify(_.exec(List("rm", "-rf", file.pathAsString)).rm(file))
 
   override def ensureExists(dir: File): MockEff[File] =
-    StateT(s => IO.pure((s.exec(List("mkdir", "-p", dir.pathAsString)), dir)))
+    applyPure(s => (s.exec(List("mkdir", "-p", dir.pathAsString)), dir))
 
   override def home: MockEff[File] =
     StateT.pure(File.root / "tmp" / "steward")
@@ -27,13 +28,12 @@ class MockFileAlg extends FileAlg[MockEff] {
     } yield a
 
   override def readFile(file: File): MockEff[Option[String]] =
-    StateT(s => IO.pure((s.exec(List("read", file.pathAsString)), s.files.get(file))))
+    applyPure(s => (s.exec(List("read", file.pathAsString)), s.files.get(file)))
 
   override def walk(dir: File): Stream[MockEff, File] = {
     val dirAsString = dir.pathAsString
-    val state = StateT { s: MockState =>
-      val files = s.files.keys.filter(_.pathAsString.startsWith(dirAsString)).toList
-      IO.pure((s, files))
+    val state: MockEff[List[File]] = StateT.inspect {
+      _.files.keys.filter(_.pathAsString.startsWith(dirAsString)).toList
     }
     Stream.eval(state).flatMap(Stream.emits[MockEff, File])
   }
