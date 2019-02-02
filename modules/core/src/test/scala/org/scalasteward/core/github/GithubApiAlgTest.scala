@@ -1,12 +1,13 @@
 package org.scalasteward.core.github
-import org.scalatest.{FunSuite, Matchers}
-import org.scalasteward.core.github.data._
-import org.scalasteward.core.git.Sha1.HexString
-import org.scalasteward.core.git.{Branch, Sha1}
-import org.scalasteward.core.application.ConfigTest
+
 import cats.effect.IO
 import org.http4s.Uri
-import org.scalasteward.core.util.uri.{fromString}
+import org.scalasteward.core.git.Sha1.HexString
+import org.scalasteward.core.git.{Branch, Sha1}
+import org.scalasteward.core.github.data._
+import org.scalasteward.core.mock.MockContext.config
+import org.scalasteward.core.util.uri.fromString
+import org.scalatest.{FunSuite, Matchers}
 
 class GithubApiAlgTest extends FunSuite with Matchers {
 
@@ -59,18 +60,18 @@ class GithubApiAlgTest extends FunSuite with Matchers {
   }
 
   test("CreateOrGetRepoInfo should create a fork when fork is enabled") {
-    mockGithubAlg.createOrGetRepoInfo(ConfigTest.dummyConfig, repo).unsafeRunSync() shouldBe fork
+    mockGithubAlg.createOrGetRepoInfo(config, repo).unsafeRunSync() shouldBe fork
   }
 
   test("CreateOrGetRepoInfo should get the repo info when fork is disabled") {
     mockGithubAlg
-      .createOrGetRepoInfo(ConfigTest.dummyConfig.copy(doNotFork = true), repo)
+      .createOrGetRepoInfo(config.copy(doNotFork = true), repo)
       .unsafeRunSync() shouldBe parent
   }
 
   test("CreateOrGetRepoInfoWithBranchInfo should fork and get default branch when fork is enabled") {
     mockGithubAlg
-      .createOrGetRepoInfoWithBranchInfo(ConfigTest.dummyConfig, repo)
+      .createOrGetRepoInfoWithBranchInfo(config, repo)
       .unsafeRunSync() shouldBe ((fork, defaultBranch))
   }
 
@@ -78,7 +79,7 @@ class GithubApiAlgTest extends FunSuite with Matchers {
     "CreateOrGetRepoInfoWithBranchInfo should just get repo info and default branch info without forking"
   ) {
     mockGithubAlg
-      .createOrGetRepoInfoWithBranchInfo(ConfigTest.dummyConfig.copy(doNotFork = true), repo)
+      .createOrGetRepoInfoWithBranchInfo(config.copy(doNotFork = true), repo)
       .unsafeRunSync() shouldBe ((parent, defaultBranch))
   }
 }

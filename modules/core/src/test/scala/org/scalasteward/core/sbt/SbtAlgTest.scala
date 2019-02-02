@@ -1,20 +1,12 @@
 package org.scalasteward.core.sbt
 
 import better.files.File
-import org.scalasteward.core.MockState
-import org.scalasteward.core.MockState.MockEff
 import org.scalasteward.core.github.data.Repo
-import org.scalasteward.core.io.{MockFileAlg, MockProcessAlg, MockWorkspaceAlg}
-import org.scalasteward.core.util.MockLogger
+import org.scalasteward.core.mock.MockContext.sbtAlg
+import org.scalasteward.core.mock.MockState
 import org.scalatest.{FunSuite, Matchers}
 
 class SbtAlgTest extends FunSuite with Matchers {
-  implicit val fileAlg: MockFileAlg = new MockFileAlg
-  implicit val loggerAlg: MockLogger = new MockLogger
-  implicit val processAlg: MockProcessAlg = new MockProcessAlg
-  implicit val workspaceAlg: MockWorkspaceAlg = new MockWorkspaceAlg
-
-  val sbtAlg: SbtAlg[MockEff] = SbtAlg.create
 
   test("addGlobalPlugins") {
     sbtAlg.addGlobalPlugins.runS(MockState.empty).unsafeRunSync() shouldBe MockState.empty.copy(
