@@ -20,8 +20,7 @@ import cats.effect.Sync
 import cats.implicits._
 import io.circe.Decoder
 import org.http4s.Method.{GET, POST}
-import org.http4s.circe.CirceEntityEncoder._
-import org.http4s.circe.jsonOf
+import org.http4s.circe.{jsonEncoderOf, jsonOf}
 import org.http4s.client.Client
 import org.http4s.headers.Authorization
 import org.http4s.{BasicCredentials, Headers, Request, Uri}
@@ -53,7 +52,7 @@ class Http4sGitHubApiAlg[F[_]](
       data: NewPullRequestData
   ): F[PullRequestOut] =
     http4sUrl.pulls[F](repo).flatMap { uri =>
-      val req = Request[F](POST, uri).withEntity(data)
+      val req = Request[F](POST, uri).withEntity(data)(jsonEncoderOf)
       expectJsonOf[PullRequestOut](req)
     }
 
