@@ -26,32 +26,19 @@ import org.scalasteward.core.util.MonadThrowable
 trait GitHubApiAlg[F[_]] {
 
   /** https://developer.github.com/v3/repos/forks/#create-a-fork */
-  def createFork(
-      repo: Repo
-  ): F[RepoOut]
+  def createFork(repo: Repo): F[RepoOut]
 
   /** https://developer.github.com/v3/pulls/#create-a-pull-request */
-  def createPullRequest(
-      repo: Repo,
-      data: NewPullRequestData
-  ): F[PullRequestOut]
+  def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut]
 
   /** https://developer.github.com/v3/repos/branches/#get-branch */
-  def getBranch(
-      repo: Repo,
-      branch: Branch
-  ): F[BranchOut]
+  def getBranch(repo: Repo, branch: Branch): F[BranchOut]
 
   /** https://developer.github.com/v3/repos/#get */
-  def getRepo(
-      repo: Repo
-  ): F[RepoOut]
+  def getRepo(repo: Repo): F[RepoOut]
 
   /** https://developer.github.com/v3/pulls/#list-pull-requests */
-  def listPullRequests(
-      repo: Repo,
-      head: String
-  ): F[List[PullRequestOut]]
+  def listPullRequests(repo: Repo, head: String): F[List[PullRequestOut]]
 
   def createForkOrGetRepo(config: Config, repo: Repo): F[RepoOut] =
     if (config.doNotFork) getRepo(repo)
