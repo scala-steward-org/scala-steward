@@ -16,6 +16,7 @@
 
 package org.scalasteward.core.github
 
+import cats.Monad
 import cats.implicits._
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.git.Branch
@@ -52,33 +53,33 @@ trait GitHubApiAlg[F[_]] {
       head: String
   ): F[List[PullRequestOut]]
 
-  def createForkAndGetDefaultBranch(
-      repo: Repo
-  )(implicit F: MonadThrowable[F]): F[(RepoOut, BranchOut)] =
+  def createForkOrGetRepo(config: Config, repo: Repo): F[RepoOut] =
+    if (config.doNotFork) getRepo(repo)
+    else createFork(repo)
+
+  def createForkOrGetRepoWithDefaultBranch(config: Config, repo: Repo)(
+      implicit F: MonadThrowable[F]
+  ): F[(RepoOut, BranchOut)] =
+    if (config.doNotFork) getRepoWithDefaultBranch(repo)
+    else createForkWithDefaultBranch(repo)
+
+  def createForkWithDefaultBranch(repo: Repo)(
+      implicit F: MonadThrowable[F]
+  ): F[(RepoOut, BranchOut)] =
     for {
       fork <- createFork(repo)
       parent <- fork.parentOrRaise[F]
       branchOut <- getDefaultBranch(parent)
     } yield (fork, branchOut)
 
-  def createOrGetRepoInfo(config: Config, repo: Repo): F[RepoOut] =
-    if (config.doNotFork) getRepo(repo)
-    else createFork(repo)
+  def getRepoWithDefaultBranch(repo: Repo)(
+      implicit F: Monad[F]
+  ): F[(RepoOut, BranchOut)] =
+    for {
+      repoOut <- getRepo(repo)
+      branchOut <- getDefaultBranch(repoOut)
+    } yield (repoOut, branchOut)
 
-  def createOrGetRepoInfoWithBranchInfo(
-      config: Config,
-      repo: Repo
-  )(implicit F: MonadThrowable[F]): F[(RepoOut, BranchOut)] =
-    if (config.doNotFork)
-      for {
-        repoOut <- getRepo(repo)
-        branchOut <- getDefaultBranch(repoOut)
-      } yield repoOut -> branchOut
-    else
-      createForkAndGetDefaultBranch(repo)
-
-  def getDefaultBranch(
-      repoOut: RepoOut
-  ): F[BranchOut] =
+  def getDefaultBranch(repoOut: RepoOut): F[BranchOut] =
     getBranch(repoOut.repo, repoOut.default_branch)
 }

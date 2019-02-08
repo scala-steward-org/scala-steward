@@ -59,27 +59,29 @@ class GithubApiAlgTest extends FunSuite with Matchers {
       IO.pure(List(samplePullRequestOut))
   }
 
-  test("CreateOrGetRepoInfo should create a fork when fork is enabled") {
-    mockGithubAlg.createOrGetRepoInfo(config, repo).unsafeRunSync() shouldBe fork
+  test("createForkOrGetRepo should create a fork when fork is enabled") {
+    mockGithubAlg.createForkOrGetRepo(config, repo).unsafeRunSync() shouldBe fork
   }
 
-  test("CreateOrGetRepoInfo should get the repo info when fork is disabled") {
+  test("createForkOrGetRepo should get the repo info when fork is disabled") {
     mockGithubAlg
-      .createOrGetRepoInfo(config.copy(doNotFork = true), repo)
+      .createForkOrGetRepo(config.copy(doNotFork = true), repo)
       .unsafeRunSync() shouldBe parent
   }
 
-  test("CreateOrGetRepoInfoWithBranchInfo should fork and get default branch when fork is enabled") {
+  test(
+    "createForkOrGetRepoWithDefaultBranch should fork and get default branch when fork is enabled"
+  ) {
     mockGithubAlg
-      .createOrGetRepoInfoWithBranchInfo(config, repo)
+      .createForkOrGetRepoWithDefaultBranch(config, repo)
       .unsafeRunSync() shouldBe ((fork, defaultBranch))
   }
 
   test(
-    "CreateOrGetRepoInfoWithBranchInfo should just get repo info and default branch info without forking"
+    "createForkOrGetRepoWithDefaultBranch should just get repo info and default branch info without forking"
   ) {
     mockGithubAlg
-      .createOrGetRepoInfoWithBranchInfo(config.copy(doNotFork = true), repo)
+      .createForkOrGetRepoWithDefaultBranch(config.copy(doNotFork = true), repo)
       .unsafeRunSync() shouldBe ((parent, defaultBranch))
   }
 }

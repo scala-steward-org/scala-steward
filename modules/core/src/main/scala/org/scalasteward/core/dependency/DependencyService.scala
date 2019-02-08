@@ -40,7 +40,7 @@ class DependencyService[F[_]](
   def checkDependencies(repo: Repo)(implicit F: MonadThrowable[F]): F[Unit] =
     logger.attemptLog_(s"Check dependencies of ${repo.show}") {
       for {
-        res <- gitHubApiAlg.createOrGetRepoInfoWithBranchInfo(config, repo)
+        res <- gitHubApiAlg.createForkOrGetRepoWithDefaultBranch(config, repo)
         (repoOut, branchOut) = res
         foundSha1 <- dependencyRepository.findSha1(repo)
         latestSha1 = branchOut.commit.sha
