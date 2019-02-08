@@ -24,7 +24,7 @@ import org.http4s.circe.CirceEntityEncoder._
 import org.http4s.circe.jsonOf
 import org.http4s.client.Client
 import org.http4s.headers.Authorization
-import org.http4s.{BasicCredentials, Headers, Request}
+import org.http4s.{BasicCredentials, Headers, Request, Uri}
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.github._
@@ -61,25 +61,19 @@ class Http4sGitHubApiAlg[F[_]](
       repo: Repo,
       branch: Branch
   ): F[BranchOut] =
-    http4sUrl.branches[F](repo, branch).flatMap { uri =>
-      val req = Request[F](GET, uri)
-      expectJsonOf[BranchOut](req)
-    }
+    http4sUrl.branches[F](repo, branch).flatMap(get[BranchOut])
 
   override def listPullRequests(
       repo: Repo,
       head: String
   ): F[List[PullRequestOut]] =
-    http4sUrl.listPullRequests[F](repo, head).flatMap { uri =>
-      val req = Request[F](GET, uri)
-      expectJsonOf[List[PullRequestOut]](req)
-    }
+    http4sUrl.listPullRequests[F](repo, head).flatMap(get[List[PullRequestOut]])
 
   override def getRepo(repo: Repo): F[RepoOut] =
-    http4sUrl.repos[F](repo).flatMap { uri =>
-      val req = Request[F](GET, uri)
-      expectJsonOf[RepoOut](req)
-    }
+    http4sUrl.repos[F](repo).flatMap(get[RepoOut])
+
+  def get[A: Decoder](uri: Uri): F[A] =
+    expectJsonOf[A](Request[F](GET, uri))
 
   def expectJsonOf[A: Decoder](req: Request[F]): F[A] =
     client.expect[A](authenticate(user)(req))(jsonOf)
