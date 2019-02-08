@@ -17,10 +17,10 @@
 package org.scalasteward.core.github
 
 import cats.implicits._
+import org.scalasteward.core.application.Config
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.github.data._
 import org.scalasteward.core.util.MonadThrowable
-import org.scalasteward.core.application.Config
 
 trait GitHubApiAlg[F[_]] {
 
@@ -41,6 +41,11 @@ trait GitHubApiAlg[F[_]] {
       branch: Branch
   ): F[BranchOut]
 
+  /** https://developer.github.com/v3/repos/#get */
+  def getRepoInfo(
+      repo: Repo
+  ): F[RepoOut]
+
   /** https://developer.github.com/v3/pulls/#list-pull-requests */
   def listPullRequests(
       repo: Repo,
@@ -55,8 +60,6 @@ trait GitHubApiAlg[F[_]] {
       parent <- fork.parentOrRaise[F]
       branchOut <- getDefaultBranch(parent)
     } yield (fork, branchOut)
-
-  def getRepoInfo(repo: Repo): F[RepoOut]
 
   def createOrGetRepoInfo(config: Config, repo: Repo): F[RepoOut] =
     if (config.doNotFork) getRepoInfo(repo)
