@@ -51,7 +51,7 @@ class GithubApiAlgTest extends FunSuite with Matchers {
 
     def getBranch(repo: Repo, branch: Branch): IO[BranchOut] = IO.pure(defaultBranch)
 
-    def getRepoInfo(repo: Repo): IO[RepoOut] =
+    def getRepo(repo: Repo): IO[RepoOut] =
       if (repo.owner == parent.owner.login) IO.pure(parent)
       else IO.pure(fork)
 

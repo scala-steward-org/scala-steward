@@ -42,7 +42,7 @@ trait GitHubApiAlg[F[_]] {
   ): F[BranchOut]
 
   /** https://developer.github.com/v3/repos/#get */
-  def getRepoInfo(
+  def getRepo(
       repo: Repo
   ): F[RepoOut]
 
@@ -62,7 +62,7 @@ trait GitHubApiAlg[F[_]] {
     } yield (fork, branchOut)
 
   def createOrGetRepoInfo(config: Config, repo: Repo): F[RepoOut] =
-    if (config.doNotFork) getRepoInfo(repo)
+    if (config.doNotFork) getRepo(repo)
     else createFork(repo)
 
   def createOrGetRepoInfoWithBranchInfo(
@@ -71,7 +71,7 @@ trait GitHubApiAlg[F[_]] {
   )(implicit F: MonadThrowable[F]): F[(RepoOut, BranchOut)] =
     if (config.doNotFork)
       for {
-        repoOut <- getRepoInfo(repo)
+        repoOut <- getRepo(repo)
         branchOut <- getDefaultBranch(repoOut)
       } yield repoOut -> branchOut
     else
