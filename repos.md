@@ -132,6 +132,7 @@
 - IronCoreLabs/cats-scalatest
 - IronCoreLabs/recrypt
 - jmcardon/tsec
+- JohnReedLOL/pos
 - julienrf/endpoints
 - julien-truffaut/Monocle
 - julien-truffaut/newts
