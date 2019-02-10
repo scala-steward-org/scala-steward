@@ -91,6 +91,7 @@
 - coursier/sbt-launcher
 - daandi/nice-url-encode-decode
 - daandi/nice-uuid
+- daniel-shuy/liquibase-slick-codegen-sbt-plugin
 - dhpiggott/liquidity
 - embeddedkafka/embedded-kafka
 - embeddedkafka/embedded-kafka-schema-registry
