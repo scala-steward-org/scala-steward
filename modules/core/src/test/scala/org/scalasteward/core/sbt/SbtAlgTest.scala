@@ -1,9 +1,10 @@
 package org.scalasteward.core.sbt
 
 import better.files.File
+import org.scalasteward.core.application.Config
 import org.scalasteward.core.github.data.Repo
-import org.scalasteward.core.mock.MockContext.sbtAlg
-import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.mock.MockContext._
+import org.scalasteward.core.mock.{MockContext, MockState}
 import org.scalatest.{FunSuite, Matchers}
 
 class SbtAlgTest extends FunSuite with Matchers {
@@ -50,16 +51,10 @@ class SbtAlgTest extends FunSuite with Matchers {
 
   test("getUpdatesForRepo keeping credentials") {
     val repo = Repo("fthomas", "refined")
-    val configWithKeepCredentialsEnabled = ConfigTest.dummyConfig.copy(keepCredentials = true)
-    val sbtAlgWithKeepCredentials = SbtAlg.create(
-      configWithKeepCredentialsEnabled,
-      fileAlg,
-      loggerAlg,
-      processAlg,
-      workspaceAlg,
-      implicitly[Monad[MockEnv]]
-    )
-    val state = sbtAlgWithKeepCredentials.getUpdatesForRepo(repo).runS(MockState.empty).value
+    implicit val config: Config = MockContext.config.copy(keepCredentials = true)
+    val sbtAlgKeepingCredentials = SbtAlg.create
+    val state =
+      sbtAlgKeepingCredentials.getUpdatesForRepo(repo).runS(MockState.empty).unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
       commands = Vector(

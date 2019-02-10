@@ -19,7 +19,8 @@ object MockContext {
     whitelistedDirectories = Nil,
     readOnlyDirectories = Nil,
     disableSandbox = false,
-    doNotFork = false
+    doNotFork = false,
+    keepCredentials = false
   )
 
   implicit val fileAlg: MockFileAlg = new MockFileAlg
