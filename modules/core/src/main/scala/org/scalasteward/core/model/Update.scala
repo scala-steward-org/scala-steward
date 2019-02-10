@@ -38,27 +38,44 @@ sealed trait Update extends Product with Serializable {
   def nextVersion: String =
     newerVersions.head
 
-  def replaceAllIn(target: String): Option[String] = {
+  def replaceAllInStrict(target: String): Option[String] =
+    replaceAllInImpl(target, true, false)
+
+  def replaceAllIn(target: String): Option[String] =
+    replaceAllInImpl(target, false, false)
+
+  def replaceAllInRelaxed(target: String): Option[String] =
+    replaceAllInImpl(target, false, true)
+
+  def replaceAllInImpl(
+      target: String,
+      includeGroupId: Boolean,
+      splitArtifactId: Boolean
+  ): Option[String] = {
+    def replaceVersion(regex: Regex): Option[String] =
+      util.string.replaceSomeInOpt(regex, target, m => {
+        val group1 = m.group(1)
+        if (group1.contains("previous"))
+          None
+        else
+          Some(group1 + m.group(2) + nextVersion)
+      })
+
+    val artifactIdParts =
+      if (splitArtifactId) artifactId.split(Array('-', '_')).filter(_.length >= 3).toList else Nil
     val quotedSearchTerms = searchTerms
+      .concat(artifactIdParts)
       .map { term =>
         Regex
           .quoteReplacement(Update.removeCommonSuffix(term))
+          .replace(".", ".?")
           .replace("-", ".?")
       }
       .filter(_.nonEmpty)
     val searchTerm = quotedSearchTerms.mkString_("(", "|", ")")
-    val regex = s"(?i)(.*)($searchTerm.*?)${Regex.quote(currentVersion)}".r
-    var updated = false
-    val result = regex.replaceAllIn(target, m => {
-      val group1 = m.group(1)
-      if (group1.contains("previous"))
-        m.matched
-      else {
-        updated = true
-        group1 + m.group(2) + nextVersion
-      }
-    })
-    if (updated) Some(result) else None
+    val groupIdPattern = if (includeGroupId) s"$groupId.*?" else ""
+
+    replaceVersion(s"(?i)(.*)($groupIdPattern$searchTerm.*?)${Regex.quote(currentVersion)}".r)
   }
 
   def searchTerms: Nel[String] = {

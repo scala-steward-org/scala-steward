@@ -56,7 +56,7 @@ class NurtureAlg[F[_]](
   def cloneAndSync(repo: Repo)(implicit F: MonadThrowable[F]): F[Branch] =
     for {
       _ <- logger.info(s"Clone and synchronize ${repo.show}")
-      repoOut <- gitHubApiAlg.createOrGetRepoInfo(config, repo)
+      repoOut <- gitHubApiAlg.createForkOrGetRepo(config, repo)
       cloneUrl = util.uri.withUserInfo(repoOut.clone_url, config.gitHubLogin)
       _ <- gitAlg.clone(repo, cloneUrl)
       _ <- gitAlg.setAuthor(repo, config.gitAuthor)

@@ -1,4 +1,4 @@
-<img src="https://github.com/fthomas/scala-steward/raw/master/modules/readme/images/scala-steward-logo-hex-1.png" width="156px" height="180px" align="right">
+<img src="https://github.com/fthomas/scala-steward/raw/master/data/images/scala-steward-logo-hex-1.png" width="156px" height="180px" align="right">
 
 # scala-steward
 [![Build Status](https://travis-ci.org/fthomas/scala-steward.svg?branch=master)](https://travis-ci.org/fthomas/scala-steward)
@@ -37,7 +37,9 @@ The following people have helped making scala-steward great:
 * [Filipe Regadas](https://github.com/regadas)
 * [Frank S. Thomas](https://github.com/fthomas)
 * [kenji yoshida](https://github.com/xuwei-k)
+* [Philippus Baalman](https://github.com/Philippus)
 * [Piotr Gabara](https://github.com/bhop)
+* [sullis](https://github.com/sullis)
 * [Zelenya](https://github.com/Zelenya)
 * Your name here :-)
 

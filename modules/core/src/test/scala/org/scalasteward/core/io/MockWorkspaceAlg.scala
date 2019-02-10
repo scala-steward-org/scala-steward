@@ -1,17 +1,17 @@
 package org.scalasteward.core.io
 
 import better.files.File
-import cats.data.State
-import org.scalasteward.core.MockState.MockEnv
+import cats.data.StateT
 import org.scalasteward.core.github.data.Repo
+import org.scalasteward.core.mock.{MockContext, MockEff}
 
-class MockWorkspaceAlg extends WorkspaceAlg[MockEnv] {
-  override def cleanWorkspace: MockEnv[Unit] =
-    State.pure(())
+class MockWorkspaceAlg extends WorkspaceAlg[MockEff] {
+  override def cleanWorkspace: MockEff[Unit] =
+    StateT.pure(())
 
-  override def rootDir: MockEnv[File] =
-    State.pure(File.root / "tmp" / "ws")
+  override def rootDir: MockEff[File] =
+    StateT.pure(MockContext.config.workspace)
 
-  override def repoDir(repo: Repo): MockEnv[File] =
-    State.pure(File.root / "tmp" / "ws" / repo.owner / repo.repo)
+  override def repoDir(repo: Repo): MockEff[File] =
+    rootDir.map(_ / repo.owner / repo.repo)
 }

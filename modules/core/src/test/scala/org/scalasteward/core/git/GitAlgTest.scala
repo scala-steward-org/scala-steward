@@ -2,19 +2,14 @@ package org.scalasteward.core.git
 
 import cats.effect.IO
 import org.http4s.Uri
-import org.scalasteward.core.MockState.MockEnv
-import org.scalasteward.core.application.{Config, ConfigTest}
+import org.scalasteward.core.application.Config
 import org.scalasteward.core.github.data.{Repo, RepoOut, UserOut}
-import org.scalasteward.core.io.{MockFileAlg, MockProcessAlg, MockWorkspaceAlg}
-import org.scalasteward.core.{util, MockState}
+import org.scalasteward.core.mock.MockContext._
+import org.scalasteward.core.mock.{MockContext, MockState}
+import org.scalasteward.core.util
 import org.scalatest.{FunSuite, Matchers}
 
 class GitAlgTest extends FunSuite with Matchers {
-  implicit val config: Config = ConfigTest.dummyConfig
-  implicit val fileAlg: MockFileAlg = new MockFileAlg
-  implicit val processAlg: MockProcessAlg = new MockProcessAlg
-  implicit val workspaceAlg: MockWorkspaceAlg = new MockWorkspaceAlg
-  val gitAlg: GitAlg[MockEnv] = GitAlg.create
   val repo = Repo("fthomas", "datapackage")
   val parentRepoOut = RepoOut(
     "datapackage",
@@ -35,7 +30,7 @@ class GitAlgTest extends FunSuite with Matchers {
     val url = util.uri
       .fromString[IO]("https://scala-steward@github.com/fthomas/datapackage")
       .unsafeRunSync()
-    val state = gitAlg.clone(repo, url).runS(MockState.empty).value
+    val state = gitAlg.clone(repo, url).runS(MockState.empty).unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
@@ -54,7 +49,7 @@ class GitAlgTest extends FunSuite with Matchers {
     val state = gitAlg
       .branchAuthors(repo, Branch("update/cats-1.0.0"), Branch("master"))
       .runS(MockState.empty)
-      .value
+      .unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
@@ -67,7 +62,7 @@ class GitAlgTest extends FunSuite with Matchers {
     val state = gitAlg
       .commitAll(repo, "Initial commit")
       .runS(MockState.empty)
-      .value
+      .unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
@@ -83,7 +78,7 @@ class GitAlgTest extends FunSuite with Matchers {
     val state = gitAlg
       .syncFork(repo, url, defaultBranch)
       .runS(MockState.empty)
-      .value
+      .unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
@@ -97,18 +92,19 @@ class GitAlgTest extends FunSuite with Matchers {
   }
 
   test("checkAndSyncFork should throw an exception when there is no parent fork is enabled") {
-    assertThrows[Throwable] {
-      gitAlg
-        .checkAndSyncFork(repo, parentRepoOut)(MockState.monadErrorInstance)
-        .runS(MockState.empty)
-    }
+    gitAlg
+      .checkAndSyncFork(repo, parentRepoOut)
+      .runS(MockState.empty)
+      .attempt
+      .map(_.isLeft)
+      .unsafeRunSync() shouldBe true
   }
 
   test("checkAndSyncFork should fork as usual when there is a parent") {
     val (state, result) = gitAlg
-      .checkAndSyncFork(repo, childRepoOut)(MockState.monadErrorInstance)
+      .checkAndSyncFork(repo, childRepoOut)
       .run(MockState.empty)
-      .value
+      .unsafeRunSync()
     state shouldBe MockState.empty.copy(
       commands = Vector(
         List(
@@ -128,19 +124,12 @@ class GitAlgTest extends FunSuite with Matchers {
   }
 
   test("checkAndSyncFork should not fork when doNotFork is enabled") {
-    import cats.Monad
-    val configWithForkingDisabled = ConfigTest.dummyConfig.copy(doNotFork = true)
-    val gitAlgWithoutForking = GitAlg.create(
-      configWithForkingDisabled,
-      fileAlg,
-      processAlg,
-      workspaceAlg,
-      implicitly[Monad[MockEnv]]
-    )
+    implicit val config: Config = MockContext.config.copy(doNotFork = true)
+    val gitAlgWithoutForking = GitAlg.create
     val (state, repoOut) = gitAlgWithoutForking
-      .checkAndSyncFork(repo, parentRepoOut)(MockState.monadErrorInstance)
+      .checkAndSyncFork(repo, parentRepoOut)
       .run(MockState.empty)
-      .value
+      .unsafeRunSync()
     state shouldBe MockState.empty
     repoOut shouldBe parentRepoOut
   }

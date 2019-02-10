@@ -7,7 +7,7 @@ import scala.concurrent.duration._
 
 class dateTimeTest extends FunSuite with Matchers {
   test("timed") {
-    timed(IO.pure(42)).map(_._2.length >= 0).unsafeRunSync()
+    timed(IO.pure(42)).map { case (_, duration) => duration.length >= 0 }.unsafeRunSync()
   }
 
   test("showDuration") {

@@ -25,7 +25,6 @@ trait Cli[F[_]] {
 }
 
 object Cli {
-
   final case class Args(
       workspace: String,
       reposFile: String,
@@ -44,9 +43,10 @@ object Cli {
 
   def create[F[_]](implicit F: ApplicativeThrowable[F]): Cli[F] = new Cli[F] {
     override def parseArgs(args: List[String]): F[Args] =
-      F.fromEither[Args] {
-        CaseApp.parse[Args](args).leftMap(e => new Throwable(e.message)).map(_._1)
+      F.fromEither {
+        CaseApp
+          .parse[Args](args)
+          .bimap(e => new Throwable(e.message), { case (parsed, _) => parsed })
       }
   }
-
 }

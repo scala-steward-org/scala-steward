@@ -20,7 +20,6 @@ import better.files.File
 import cats.implicits._
 import io.circe.parser.decode
 import io.circe.syntax._
-import org.scalasteward.core.dependency.Dependency
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.model.Update
 import org.scalasteward.core.update.UpdateRepository
@@ -39,8 +38,6 @@ class JsonUpdateRepository[F[_]](
 
   override def save(update: Update.Single): F[Unit] =
     readJson.map(s => UpdateStore((update :: s.store).distinct)).flatMap(writeJson)
-
-  override def find(dependency: Dependency): F[Option[Update.Single]] = ???
 
   def jsonFile: F[File] =
     workspaceAlg.rootDir.map(_ / "updates_v02.json")

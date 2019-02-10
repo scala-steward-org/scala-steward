@@ -1,12 +1,13 @@
 package org.scalasteward.core.github
-import org.scalatest.{FunSuite, Matchers}
-import org.scalasteward.core.github.data._
-import org.scalasteward.core.git.Sha1.HexString
-import org.scalasteward.core.git.{Branch, Sha1}
-import org.scalasteward.core.application.ConfigTest
+
 import cats.effect.IO
 import org.http4s.Uri
-import org.scalasteward.core.util.uri.{fromString}
+import org.scalasteward.core.git.Sha1.HexString
+import org.scalasteward.core.git.{Branch, Sha1}
+import org.scalasteward.core.github.data._
+import org.scalasteward.core.mock.MockContext.config
+import org.scalasteward.core.util.uri.fromString
+import org.scalatest.{FunSuite, Matchers}
 
 class GithubApiAlgTest extends FunSuite with Matchers {
 
@@ -50,7 +51,7 @@ class GithubApiAlgTest extends FunSuite with Matchers {
 
     def getBranch(repo: Repo, branch: Branch): IO[BranchOut] = IO.pure(defaultBranch)
 
-    def getRepoInfo(repo: Repo): IO[RepoOut] =
+    def getRepo(repo: Repo): IO[RepoOut] =
       if (repo.owner == parent.owner.login) IO.pure(parent)
       else IO.pure(fork)
 
@@ -58,27 +59,29 @@ class GithubApiAlgTest extends FunSuite with Matchers {
       IO.pure(List(samplePullRequestOut))
   }
 
-  test("CreateOrGetRepoInfo should create a fork when fork is enabled") {
-    mockGithubAlg.createOrGetRepoInfo(ConfigTest.dummyConfig, repo).unsafeRunSync() shouldBe fork
+  test("createForkOrGetRepo should create a fork when fork is enabled") {
+    mockGithubAlg.createForkOrGetRepo(config, repo).unsafeRunSync() shouldBe fork
   }
 
-  test("CreateOrGetRepoInfo should get the repo info when fork is disabled") {
+  test("createForkOrGetRepo should get the repo info when fork is disabled") {
     mockGithubAlg
-      .createOrGetRepoInfo(ConfigTest.dummyConfig.copy(doNotFork = true), repo)
+      .createForkOrGetRepo(config.copy(doNotFork = true), repo)
       .unsafeRunSync() shouldBe parent
   }
 
-  test("CreateOrGetRepoInfoWithBranchInfo should fork and get default branch when fork is enabled") {
+  test(
+    "createForkOrGetRepoWithDefaultBranch should fork and get default branch when fork is enabled"
+  ) {
     mockGithubAlg
-      .createOrGetRepoInfoWithBranchInfo(ConfigTest.dummyConfig, repo)
+      .createForkOrGetRepoWithDefaultBranch(config, repo)
       .unsafeRunSync() shouldBe ((fork, defaultBranch))
   }
 
   test(
-    "CreateOrGetRepoInfoWithBranchInfo should just get repo info and default branch info without forking"
+    "createForkOrGetRepoWithDefaultBranch should just get repo info and default branch info without forking"
   ) {
     mockGithubAlg
-      .createOrGetRepoInfoWithBranchInfo(ConfigTest.dummyConfig.copy(doNotFork = true), repo)
+      .createForkOrGetRepoWithDefaultBranch(config.copy(doNotFork = true), repo)
       .unsafeRunSync() shouldBe ((parent, defaultBranch))
   }
 }

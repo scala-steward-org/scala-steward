@@ -83,6 +83,21 @@ class UpdateTest extends FunSuite with Matchers {
       .replaceAllIn(original) shouldBe Some(expected)
   }
 
+  test("replaceAllInStrict") {
+    val original =
+      """ "org.http4s" %% "jawn-fs2" % "0.14.0"
+        | "org.typelevel" %% "jawn-json4s"  % "0.14.0",
+        | "org.typelevel" %% "jawn-play" % "0.14.0"
+      """.stripMargin.trim
+    val expected =
+      """ "org.http4s" %% "jawn-fs2" % "0.14.0"
+        | "org.typelevel" %% "jawn-json4s"  % "0.14.1",
+        | "org.typelevel" %% "jawn-play" % "0.14.1"
+      """.stripMargin.trim
+    Group("org.typelevel", Nel.of("jawn-json4s", "jawn-play"), "0.14.0", Nel.of("0.14.1"))
+      .replaceAllInStrict(original) shouldBe Some(expected)
+  }
+
   test("replaceAllIn: artifactIds are common suffixes") {
     val original =
       """lazy val scalajsReactVersion = "1.2.3"
@@ -106,7 +121,7 @@ class UpdateTest extends FunSuite with Matchers {
     ).replaceAllIn(original) shouldBe None
   }
 
-  test("replaceAllIn:") {
+  test("replaceAllIn: ignore previous") {
     val original =
       """val circeVersion = "0.10.0"
         |val previousCirceIterateeVersion = "0.10.0"
@@ -121,6 +136,27 @@ class UpdateTest extends FunSuite with Matchers {
       "0.10.0",
       Nel.of("0.10.1")
     ).replaceAllIn(original) shouldBe Some(expected)
+  }
+
+  test("replaceAllIn: artifactId with dot") {
+    val original = """ def plotlyJs = "1.41.3" """
+    val expected = """ def plotlyJs = "1.43.2" """
+    Single("org.webjars.bower", "plotly.js", "1.41.3", Nel.of("1.43.2"))
+      .replaceAllIn(original) shouldBe Some(expected)
+  }
+
+  test("replaceAllInRelaxed") {
+    val original = """lazy val circeVersion = "0.9.3""""
+    val expected = """lazy val circeVersion = "0.11.1""""
+    Single("io.circe", "circe-generic", "0.9.3", Nel.of("0.11.1"))
+      .replaceAllInRelaxed(original) shouldBe Some(expected)
+  }
+
+  test("replaceAllInRelaxed: artifactId with underscore") {
+    val original = """val scShapelessV = "1.1.6""""
+    val expected = """val scShapelessV = "1.1.8""""
+    Single("com.github.alexarchambault", "scalacheck-shapeless_1.13", "1.1.6", Nel.of("1.1.8"))
+      .replaceAllInRelaxed(original) shouldBe Some(expected)
   }
 
   test("Group.artifactId") {

@@ -18,7 +18,7 @@ package org.scalasteward.core
 
 import cats.effect.Bracket
 import cats.implicits._
-import cats.{ApplicativeError, Eq, Foldable, Functor, MonadError, Semigroup, UnorderedFoldable}
+import cats._
 import eu.timepit.refined.types.numeric.PosInt
 import fs2.Pipe
 import scala.annotation.tailrec
@@ -34,6 +34,30 @@ package object util {
   type MonadThrowable[F[_]] = MonadError[F, Throwable]
 
   type BracketThrowable[F[_]] = Bracket[F, Throwable]
+
+  /** Binds the elements of `gfb` until the first `F[Boolean]` that
+    * evaluates to `true`.
+    *
+    * @example {{{
+    * scala> import cats.data.State
+    *
+    * scala> bindUntilTrue(Nel.of(
+    *      |   State((l: List[Int]) => (l :+ 1, false)),
+    *      |   State((l: List[Int]) => (l :+ 2, true )),
+    *      |   State((l: List[Int]) => (l :+ 3, false)),
+    *      |   State((l: List[Int]) => (l :+ 4, true ))
+    *      | )).runS(List(0)).value
+    * res1: List[Int] = List(0, 1, 2)
+    * }}}
+    */
+  def bindUntilTrue[G[_]: Foldable, F[_]: Monad](gfb: G[F[Boolean]]): F[Boolean] = {
+    def loop(list: List[F[Boolean]]): F[Boolean] =
+      list match {
+        case x :: xs => x.ifM(true.pure[F], loop(xs))
+        case Nil     => false.pure[F]
+      }
+    loop(gfb.toList)
+  }
 
   def divideOnError[F[_], G[_], A, B, E](a: A)(f: A => F[B])(divide: A => G[A])(
       handleError: (A, E) => F[B]
@@ -67,6 +91,10 @@ package object util {
       ga: G[A]
   ): Boolean =
     fa.exists(a => ga.exists(b => a === b))
+
+  /** Removes all elements from `nel` which also exist in `as`. */
+  def removeAll[F[_]: UnorderedFoldable, A: Eq](nel: Nel[A], as: F[A]): Option[Nel[A]] =
+    Nel.fromList(nel.toList.filterNot(a => as.exists(_ === a)))
 
   /** Splits a list into chunks with maximum size `maxSize` such that
     * each chunk only consists of distinct elements with regards to the

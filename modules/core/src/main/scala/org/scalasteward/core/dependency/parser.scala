@@ -23,7 +23,7 @@ object parser {
   def parseDependencies(s: String): List[Dependency] =
     sbt.parser
       .removeSbtNoise(s)
-      .lines
+      .linesIterator
       .map(decode[List[Dependency]])
       .collect { case Right(list) => list }
       .flatten

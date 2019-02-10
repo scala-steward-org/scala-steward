@@ -58,7 +58,8 @@ lazy val core = myCrossProject("core")
 
       implicit val ctxShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
     """,
-    fork in run := true
+    fork in run := true,
+    fork in Test := true
   )
 
 lazy val readme = project
