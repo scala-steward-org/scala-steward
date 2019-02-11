@@ -228,6 +228,7 @@
 - scala/scala-swing
 - scala/scalatest-example.g8
 - scala/scala-xml
+- scalameta/metabrowse
 - scalaz/scalaz-nio
 - scalaz/scalaz-zio
 - scanamo/scanamo
