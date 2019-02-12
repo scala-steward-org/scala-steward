@@ -68,7 +68,7 @@ object SbtAlg {
       override def getDependencies(repo: Repo): F[List[Dependency]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          cmd = sbtCmd(libraryDependenciesAsJson, reloadPlugins, libraryDependenciesAsJson)
+          cmd = sbtCmd(List(libraryDependenciesAsJson, reloadPlugins, libraryDependenciesAsJson))
           lines <- exec(cmd, repoDir)
         } yield lines.flatMap(parseDependencies).distinct
 
@@ -79,7 +79,7 @@ object SbtAlg {
           _ <- fileAlg.writeFileData(updatesDir, project.mkBuildSbt)
           _ <- fileAlg.writeFileData(projectDir, project.mkBuildProperties)
           _ <- fileAlg.writeFileData(projectDir, project.mkPluginsSbt)
-          cmd = sbtCmd(project.dependencyUpdatesCmd: _*)
+          cmd = sbtCmd(project.dependencyUpdatesCmd)
           lines <- processAlg.exec(cmd, updatesDir)
           _ <- fileAlg.deleteForce(updatesDir)
         } yield parser.parseSingleUpdates(lines)
@@ -87,13 +87,10 @@ object SbtAlg {
       override def getUpdatesForRepo(repo: Repo): F[List[Update.Single]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          cmd = {
-            if (config.keepCredentials)
-              sbtCmd(dependencyUpdates, reloadPlugins, dependencyUpdates)
-            else
-              sbtCmd(setCredentialsToNil, dependencyUpdates, reloadPlugins, dependencyUpdates)
-          }
-          lines <- exec(cmd, repoDir)
+          maybeClearCredentials = if (config.keepCredentials) Nil else List(setCredentialsToNil)
+          commands = maybeClearCredentials ++
+            List(dependencyUpdates, reloadPlugins, dependencyUpdates)
+          lines <- exec(sbtCmd(commands), repoDir)
         } yield parser.parseSingleUpdates(lines)
 
       val sbtDir: F[File] =
@@ -102,8 +99,8 @@ object SbtAlg {
       def exec(command: Nel[String], repoDir: File): F[List[String]] =
         ignoreOptsFiles(repoDir)(processAlg.execSandboxed(command, repoDir))
 
-      def sbtCmd(command: String*): Nel[String] =
-        Nel.of("sbt", "-batch", "-no-colors", command.mkString(";", ";", ""))
+      def sbtCmd(commands: List[String]): Nel[String] =
+        Nel.of("sbt", "-batch", "-no-colors", commands.mkString(";", ";", ""))
 
       def ignoreOptsFiles[A](dir: File)(fa: F[A]): F[A] =
         fileAlg.removeTemporarily(dir / ".jvmopts") {
