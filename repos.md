@@ -135,6 +135,7 @@
 - IronCoreLabs/recrypt
 - jmcardon/tsec
 - JohnReedLOL/pos
+- JohnReedLOL/scala-trace-debug
 - julienrf/endpoints
 - julien-truffaut/fp-foundation
 - julien-truffaut/Monocle
