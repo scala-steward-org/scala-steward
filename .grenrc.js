@@ -13,6 +13,6 @@ module.exports = {
     },
     "changelogFilename": "CHANGELOG.md",
     "template": {
-      issue: "- {{name}} [{{text}}]({{url}})"
+      issue: "- {{name}} [{{text}}]({{url}}) by [@{{user_login}}]({{user_url}})"
     }
 }
