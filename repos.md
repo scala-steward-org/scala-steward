@@ -247,8 +247,8 @@
 - SethTisue/Project-Euler
 - shankarshastri/ScalaFPCode
 - sirocchj/sbt-api-builder
-- Sizmek/fast-string-interpolator
-- Sizmek/rtree2d
+- sizmek-public/fast-string-interpolator
+- sizmek-public/rtree2d
 - sksamuel/avro4s
 - sksamuel/elastic4s
 - sksamuel/pulsar4s
