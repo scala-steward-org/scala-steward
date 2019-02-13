@@ -138,6 +138,23 @@ class UpdateTest extends FunSuite with Matchers {
     ).replaceAllIn(original) shouldBe Some(expected)
   }
 
+  test("replaceAllIn: ignore mimaPreviousArtifacts") {
+    val original =
+      """"io.dropwizard.metrics" % "metrics-core" % "4.0.1"
+        |mimaPreviousArtifacts := Set("nl.grons" %% "metrics4-scala" % "4.0.1")
+      """.stripMargin
+    val expected =
+      """"io.dropwizard.metrics" % "metrics-core" % "4.0.3"
+        |mimaPreviousArtifacts := Set("nl.grons" %% "metrics4-scala" % "4.0.1")
+      """.stripMargin
+    Group(
+      "io.dropwizard.metrics",
+      Nel.of("metrics-core", "metrics-healthchecks"),
+      "4.0.1",
+      Nel.of("4.0.3")
+    ).replaceAllIn(original) shouldBe Some(expected)
+  }
+
   test("replaceAllIn: artifactId with dot") {
     val original = """ def plotlyJs = "1.41.3" """
     val expected = """ def plotlyJs = "1.43.2" """
