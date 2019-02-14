@@ -30,9 +30,11 @@ import org.scalasteward.core.github.http4s.Http4sGitHubApiAlg
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.json.JsonPullRequestRepo
 import org.scalasteward.core.nurture.{EditAlg, NurtureAlg, PullRequestRepository}
+import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.update.json.JsonUpdateRepository
 import org.scalasteward.core.update.{FilterAlg, UpdateRepository, UpdateService}
+
 import scala.concurrent.ExecutionContext
 
 final case class Context[F[_]](
@@ -58,10 +60,11 @@ object Context {
       implicit val config: Config = config_
       implicit val logger: Logger[F] = logger_
       implicit val fileAlg: FileAlg[F] = FileAlg.create[F]
-      implicit val filterAlg: FilterAlg[F] = FilterAlg.create[F]
       implicit val processAlg: ProcessAlg[F] = ProcessAlg.create[F]
       implicit val user: AuthenticatedUser = user_
       implicit val workspaceAlg: WorkspaceAlg[F] = WorkspaceAlg.create[F]
+      implicit val repoConfigAlg: RepoConfigAlg[F] = new RepoConfigAlg[F]
+      implicit val filterAlg: FilterAlg[F] = new FilterAlg[F]
       implicit val dependencyRepository: DependencyRepository[F] = new JsonDependencyRepository[F]
       implicit val editAlg: EditAlg[F] = EditAlg.create[F]
       implicit val gitAlg: GitAlg[F] = GitAlg.create[F]

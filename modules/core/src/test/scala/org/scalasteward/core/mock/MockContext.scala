@@ -5,7 +5,9 @@ import org.scalasteward.core.application.Config
 import org.scalasteward.core.git.{Author, GitAlg}
 import org.scalasteward.core.io.{MockFileAlg, MockProcessAlg, MockWorkspaceAlg}
 import org.scalasteward.core.nurture.EditAlg
+import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
+import org.scalasteward.core.update.FilterAlg
 
 object MockContext {
   implicit val config: Config = Config(
@@ -31,4 +33,6 @@ object MockContext {
   implicit val editAlg: EditAlg[MockEff] = EditAlg.create
   implicit val gitAlg: GitAlg[MockEff] = GitAlg.create
   implicit val sbtAlg: SbtAlg[MockEff] = SbtAlg.create
+  implicit val repoConfigAlg: RepoConfigAlg[MockEff] = new RepoConfigAlg[MockEff]
+  implicit val filterAlg: FilterAlg[MockEff] = new FilterAlg[MockEff]
 }

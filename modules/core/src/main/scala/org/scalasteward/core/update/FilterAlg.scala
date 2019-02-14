@@ -17,79 +17,64 @@
 package org.scalasteward.core.update
 
 import cats.implicits._
-import cats.{Applicative, TraverseFilter}
+import cats.{Monad, TraverseFilter}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.github.data.Repo
 import org.scalasteward.core.model.Update
+import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.util
 
-trait FilterAlg[F[_]] {
-  def globalKeep(update: Update.Single): Boolean
+class FilterAlg[F[_]](
+    implicit
+    logger: Logger[F],
+    repoConfigAlg: RepoConfigAlg[F],
+    F: Monad[F]
+) {
+  def globalKeep(update: Update.Single): Boolean = {
+    (update.groupId, update.artifactId) match {
+      case ("org.scala-lang", "scala-compiler") => false
+      case ("org.scala-lang", "scala-library")  => false
+      case ("org.scala-lang", "scala-reflect")  => false
+      case ("org.typelevel", "scala-library")   => false
+      case _                                    => true
+    }
+  } && {
+    update.configurations.fold("")(_.toLowerCase) match {
+      case "phantom-js-jetty"    => false
+      case "scalafmt"            => false
+      case "scripted-sbt"        => false
+      case "scripted-sbt-launch" => false
+      case "tut"                 => false
+      case _                     => true
+    }
+  }
 
-  def globalFilter(update: Update.Single): F[Option[Update.Single]]
+  def globalFilter(update: Update.Single): F[Option[Update.Single]] =
+    filterImpl(globalKeep(update), update)
 
-  def localKeep(repo: Repo, update: Update.Single): Boolean
-
-  def localFilter(repo: Repo, update: Update.Single): F[Option[Update.Single]]
-
-  final def globalFilterMany[G[_]: TraverseFilter](updates: G[Update.Single])(
-      implicit F: Applicative[F]
-  ): F[G[Update.Single]] =
+  def globalFilterMany[G[_]: TraverseFilter](updates: G[Update.Single]): F[G[Update.Single]] =
     updates.traverseFilter(globalFilter)
 
-  final def localFilterMany[G[_]: TraverseFilter](repo: Repo, updates: G[Update.Single])(
-      implicit F: Applicative[F]
+  def localFilterMany[G[_]: TraverseFilter](
+      repo: Repo,
+      updates: G[Update.Single]
   ): F[G[Update.Single]] =
-    updates.traverseFilter(update => localFilter(repo, update))
+    repoConfigAlg.getRepoConfig(repo).flatMap { config =>
+      updates.traverseFilter { update =>
+        val dependency = s"${update.groupId}:${update.artifactId}"
+        val ignored = config.ignoreDependencies.contains_(dependency)
+        filterImpl(globalKeep(update) && !ignored, update)
+      }
+    }
+
+  private def filterImpl(keep: Boolean, update: Update.Single): F[Option[Update.Single]] =
+    FilterAlg.removeBadVersions(update).filter(_ => keep) match {
+      case none @ None    => logger.info(s"Ignore ${update.show}") *> F.pure(none)
+      case some @ Some(_) => F.pure(some)
+    }
 }
 
 object FilterAlg {
-  def create[F[_]](implicit logger: Logger[F], F: Applicative[F]): FilterAlg[F] =
-    new FilterAlg[F] {
-      override def globalKeep(update: Update.Single): Boolean = {
-        (update.groupId, update.artifactId) match {
-          case ("org.scala-lang", "scala-compiler") => false
-          case ("org.scala-lang", "scala-library")  => false
-          case ("org.scala-lang", "scala-reflect")  => false
-
-          case ("org.typelevel", "scala-library") => false
-
-          case _ => true
-        }
-      } && {
-        update.configurations.fold("")(_.toLowerCase) match {
-          case "phantom-js-jetty"    => false
-          case "scalafmt"            => false
-          case "scripted-sbt"        => false
-          case "scripted-sbt-launch" => false
-          case "tut"                 => false
-          case _                     => true
-        }
-      }
-
-      override def localKeep(repo: Repo, update: Update.Single): Boolean =
-        (repo.show, update.groupId, update.artifactId) match {
-          case ("scala/scala-dist", "com.amazonaws", "aws-java-sdk-s3") => false
-
-          // https://github.com/scala/scala-dist/pull/200#issuecomment-440720981
-          case ("scala/scala-dist", "com.typesafe.sbt", "sbt-native-packager") => false
-
-          case _ => true
-        }
-
-      override def globalFilter(update: Update.Single): F[Option[Update.Single]] =
-        filterImpl(globalKeep(update), update)
-
-      override def localFilter(repo: Repo, update: Update.Single): F[Option[Update.Single]] =
-        filterImpl(globalKeep(update) && localKeep(repo, update), update)
-
-      def filterImpl(keep: Boolean, update: Update.Single): F[Option[Update.Single]] =
-        removeBadVersions(update).filter(_ => keep) match {
-          case none @ None    => logger.info(s"Ignore ${update.show}") *> F.pure(none)
-          case some @ Some(_) => F.pure(some)
-        }
-    }
-
   def badVersions(update: Update.Single): List[String] =
     (update.groupId, update.artifactId, update.currentVersion, update.nextVersion) match {
       // https://github.com/vlovgr/ciris/pull/182#issuecomment-420599759

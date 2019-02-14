@@ -1,8 +1,13 @@
 package org.scalasteward.core.update
 
+import better.files.File
+import cats.implicits._
+import org.scalasteward.core.github.data.Repo
+import org.scalasteward.core.mock.MockContext.filterAlg
+import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.model.Update
-import org.scalatest.{FunSuite, Matchers}
 import org.scalasteward.core.util.Nel
+import org.scalatest.{FunSuite, Matchers}
 
 class FilterAlgTest extends FunSuite with Matchers {
   test("removeBadVersions: update without bad version") {
@@ -18,5 +23,24 @@ class FilterAlgTest extends FunSuite with Matchers {
   test("removeBadVersions: update with only bad versions") {
     val update = Update.Single("org.http4s", "http4s-dsl", "0.18.0", Nel.of("0.19.0"))
     FilterAlg.removeBadVersions(update) shouldBe None
+  }
+
+  test("ignore update via repo config") {
+    val repo = Repo("fthomas", "scala-steward")
+    val update1 = Update.Single("org.http4s", "http4s-dsl", "0.17.0", Nel.of("0.18.0"))
+    val update2 = Update.Single("eu.timepit", "refined", "0.8.0", Nel.of("0.8.1"))
+
+    val configFile = File("/tmp/ws/fthomas/scala-steward/.scala-steward.conf")
+    val initialState =
+      MockState.empty.add(configFile, """ignoreDependencies: ["eu.timepit:refined"]""")
+
+    val (state, filtered) =
+      filterAlg.localFilterMany(repo, List(update1, update2)).run(initialState).unsafeRunSync()
+
+    filtered shouldBe List(update1)
+    state shouldBe initialState.copy(
+      commands = Vector(List("read", configFile.pathAsString)),
+      logs = Vector((None, "Ignore eu.timepit:refined : 0.8.0 -> 0.8.1"))
+    )
   }
 }
