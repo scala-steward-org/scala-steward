@@ -22,6 +22,7 @@ import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.github.data.Repo
 import org.scalasteward.core.model.Update
 import org.scalasteward.core.repoconfig.RepoConfigAlg
+import org.scalasteward.core.update.FilterAlg._
 import org.scalasteward.core.util
 
 class FilterAlg[F[_]](
@@ -31,7 +32,7 @@ class FilterAlg[F[_]](
     F: Monad[F]
 ) {
   def globalFilter(update: Update.Single): F[Option[Update.Single]] =
-    filterImpl(FilterAlg.globalKeep(update), update)
+    filterImpl(globalKeep(update), update)
 
   def globalFilterMany[G[_]: TraverseFilter](updates: G[Update.Single]): F[G[Update.Single]] =
     updates.traverseFilter(globalFilter)
@@ -42,9 +43,7 @@ class FilterAlg[F[_]](
   ): F[G[Update.Single]] =
     repoConfigAlg.getRepoConfig(repo).flatMap { config =>
       updates.traverseFilter { update =>
-        val dependency = s"${update.groupId}:${update.artifactId}"
-        val notIgnored = !config.ignoreDependencies.contains_(dependency)
-        filterImpl(FilterAlg.globalKeep(update) && notIgnored, update)
+        filterImpl(globalKeep(update) && !config.isIgnored(update), update)
       }
     }
 

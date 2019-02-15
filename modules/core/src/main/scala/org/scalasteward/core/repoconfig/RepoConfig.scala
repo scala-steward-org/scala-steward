@@ -16,12 +16,17 @@
 
 package org.scalasteward.core.repoconfig
 
+import cats.implicits._
 import io.circe.Decoder
 import io.circe.generic.semiauto.deriveDecoder
+import org.scalasteward.core.model.Update
 
 final case class RepoConfig(
     ignoreDependencies: List[String] = List.empty
-)
+) {
+  def isIgnored(update: Update.Single): Boolean =
+    ignoreDependencies.contains_(s"${update.groupId}:${update.artifactId}")
+}
 
 object RepoConfig {
   implicit val repoConfigDecoder: Decoder[RepoConfig] =
