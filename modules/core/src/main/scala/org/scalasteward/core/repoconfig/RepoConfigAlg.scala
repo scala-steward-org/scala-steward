@@ -34,16 +34,14 @@ class RepoConfigAlg[F[_]](
   def getRepoConfig(repo: Repo): F[RepoConfig] =
     workspaceAlg.repoDir(repo).flatMap { dir =>
       val file = dir / ".scala-steward.conf"
-      OptionT(fileAlg.readFile(file))
-        .flatMapF { content =>
-          parser.decode[RepoConfig](content) match {
-            case Right(config) => F.pure(config.some)
-            case Left(error) =>
-              logger
-                .info(s"Failed to parse ${file.name}: ${error.getMessage}")
-                .as(Option.empty[RepoConfig])
-          }
+      val maybeRepoConfig = OptionT(fileAlg.readFile(file)).flatMapF { content =>
+        parser.decode[RepoConfig](content) match {
+          case Right(config) =>
+            F.pure(config.some)
+          case Left(error) =>
+            logger.info(s"Failed to parse ${file.name}: ${error.getMessage}").as(none[RepoConfig])
         }
-        .getOrElse(RepoConfig())
+      }
+      maybeRepoConfig.getOrElse(RepoConfig())
     }
 }

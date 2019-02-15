@@ -43,7 +43,7 @@ class UpdateService[F[_]](
     updateRepository.deleteAll >>
       dependencyRepository.getDependencies(repos).flatMap { dependencies =>
         val (libraries, plugins) = dependencies
-          .filter(d => filterAlg.globalKeep(d.toUpdate) && UpdateService.includeInUpdateCheck(d))
+          .filter(d => FilterAlg.globalKeep(d.toUpdate) && UpdateService.includeInUpdateCheck(d))
           .partition(_.sbtVersion.isEmpty)
         val libProjects = splitter
           .xxx(libraries)

@@ -30,6 +30,32 @@ class FilterAlg[F[_]](
     repoConfigAlg: RepoConfigAlg[F],
     F: Monad[F]
 ) {
+  def globalFilter(update: Update.Single): F[Option[Update.Single]] =
+    filterImpl(FilterAlg.globalKeep(update), update)
+
+  def globalFilterMany[G[_]: TraverseFilter](updates: G[Update.Single]): F[G[Update.Single]] =
+    updates.traverseFilter(globalFilter)
+
+  def localFilterMany[G[_]: TraverseFilter](
+      repo: Repo,
+      updates: G[Update.Single]
+  ): F[G[Update.Single]] =
+    repoConfigAlg.getRepoConfig(repo).flatMap { config =>
+      updates.traverseFilter { update =>
+        val dependency = s"${update.groupId}:${update.artifactId}"
+        val notIgnored = !config.ignoreDependencies.contains_(dependency)
+        filterImpl(FilterAlg.globalKeep(update) && notIgnored, update)
+      }
+    }
+
+  private def filterImpl(keep: Boolean, update: Update.Single): F[Option[Update.Single]] =
+    FilterAlg.removeBadVersions(update).filter(_ => keep) match {
+      case none @ None    => logger.info(s"Ignore ${update.show}") *> F.pure(none)
+      case some @ Some(_) => F.pure(some)
+    }
+}
+
+object FilterAlg {
   def globalKeep(update: Update.Single): Boolean = {
     (update.groupId, update.artifactId) match {
       case ("org.scala-lang", "scala-compiler") => false
@@ -49,32 +75,6 @@ class FilterAlg[F[_]](
     }
   }
 
-  def globalFilter(update: Update.Single): F[Option[Update.Single]] =
-    filterImpl(globalKeep(update), update)
-
-  def globalFilterMany[G[_]: TraverseFilter](updates: G[Update.Single]): F[G[Update.Single]] =
-    updates.traverseFilter(globalFilter)
-
-  def localFilterMany[G[_]: TraverseFilter](
-      repo: Repo,
-      updates: G[Update.Single]
-  ): F[G[Update.Single]] =
-    repoConfigAlg.getRepoConfig(repo).flatMap { config =>
-      updates.traverseFilter { update =>
-        val dependency = s"${update.groupId}:${update.artifactId}"
-        val ignored = config.ignoreDependencies.contains_(dependency)
-        filterImpl(globalKeep(update) && !ignored, update)
-      }
-    }
-
-  private def filterImpl(keep: Boolean, update: Update.Single): F[Option[Update.Single]] =
-    FilterAlg.removeBadVersions(update).filter(_ => keep) match {
-      case none @ None    => logger.info(s"Ignore ${update.show}") *> F.pure(none)
-      case some @ Some(_) => F.pure(some)
-    }
-}
-
-object FilterAlg {
   def badVersions(update: Update.Single): List[String] =
     (update.groupId, update.artifactId, update.currentVersion, update.nextVersion) match {
       // https://github.com/vlovgr/ciris/pull/182#issuecomment-420599759
