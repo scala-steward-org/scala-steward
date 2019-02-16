@@ -43,7 +43,7 @@ class FilterAlg[F[_]](
   ): F[G[Update.Single]] =
     repoConfigAlg.getRepoConfig(repo).flatMap { config =>
       updates.traverseFilter { update =>
-        filterImpl(globalKeep(update) && !config.isIgnored(update), update)
+        filterImpl(globalKeep(update) && config.keep(update), update)
       }
     }
 

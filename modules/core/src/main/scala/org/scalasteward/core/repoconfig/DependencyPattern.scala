@@ -16,31 +16,30 @@
 
 package org.scalasteward.core.repoconfig
 
+import cats.implicits._
 import io.circe.Decoder
 import io.circe.generic.semiauto.deriveDecoder
 import org.scalasteward.core.model.Update
 
-final case class RepoConfig(
-    allowedUpdates: Option[List[DependencyPattern]] = None,
-    ignoredUpdates: Option[List[DependencyPattern]] = None
-) {
-  def keep(update: Update.Single): Boolean =
-    isAllowed(update) && !isIgnored(update)
+final case class DependencyPattern(
+    groupId: String,
+    artifactId: Option[String],
+    version: Option[String]
+)
 
-  private def isAllowed(update: Update.Single): Boolean = {
-    val patterns = allowedUpdates.getOrElse(List.empty)
-    val m = DependencyPattern.findMatch(patterns, update)
-    m.byArtifactId.isEmpty || m.byVersion.nonEmpty
+object DependencyPattern {
+  final case class MatchResult(
+      byArtifactId: List[DependencyPattern],
+      byVersion: List[DependencyPattern]
+  )
+
+  def findMatch(patterns: List[DependencyPattern], update: Update.Single): MatchResult = {
+    val byGroupId = patterns.filter(_.groupId === update.groupId)
+    val byArtifactId = byGroupId.filter(_.artifactId.forall(_ === update.artifactId))
+    val byVersion = byArtifactId.filter(_.version.forall(update.nextVersion.startsWith))
+    MatchResult(byArtifactId, byVersion)
   }
 
-  private def isIgnored(update: Update.Single): Boolean = {
-    val patterns = ignoredUpdates.getOrElse(List.empty)
-    val m = DependencyPattern.findMatch(patterns, update)
-    m.byVersion.nonEmpty
-  }
-}
-
-object RepoConfig {
-  implicit val repoConfigDecoder: Decoder[RepoConfig] =
+  implicit val dependencyPatternDecoder: Decoder[DependencyPattern] =
     deriveDecoder
 }
