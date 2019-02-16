@@ -22,6 +22,7 @@ import io.chrisdavenport.log4cats.Logger
 import io.circe.config.parser
 import org.scalasteward.core.github.data.Repo
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
+import org.scalasteward.core.repoconfig.RepoConfigAlg._
 import org.scalasteward.core.util.MonadThrowable
 
 class RepoConfigAlg[F[_]](
@@ -33,15 +34,22 @@ class RepoConfigAlg[F[_]](
 ) {
   def getRepoConfig(repo: Repo): F[RepoConfig] =
     workspaceAlg.repoDir(repo).flatMap { dir =>
-      val file = dir / ".scala-steward.conf"
-      val maybeRepoConfig = OptionT(fileAlg.readFile(file)).flatMapF { content =>
-        parser.decode[RepoConfig](content) match {
-          case Right(config) =>
-            F.pure(config.some)
-          case Left(error) =>
-            logger.info(s"Failed to parse ${file.name}: ${error.getMessage}").as(none[RepoConfig])
+      val configFile = dir / repoConfigBasename
+      val maybeRepoConfig = OptionT(fileAlg.readFile(configFile)).flatMapF { content =>
+        parseRepoConfig(content) match {
+          case Right(config)  => F.pure(config.some)
+          case Left(errorMsg) => logger.info(errorMsg).as(none[RepoConfig])
         }
       }
       maybeRepoConfig.getOrElse(RepoConfig())
+    }
+}
+
+object RepoConfigAlg {
+  val repoConfigBasename: String = ".scala-steward.conf"
+
+  def parseRepoConfig(input: String): Either[String, RepoConfig] =
+    parser.decode[RepoConfig](input).leftMap { error =>
+      s"Failed to parse $repoConfigBasename: ${error.getMessage}"
     }
 }
