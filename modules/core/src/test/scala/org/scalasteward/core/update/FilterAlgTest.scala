@@ -6,7 +6,7 @@ import org.scalasteward.core.github.data.Repo
 import org.scalasteward.core.mock.MockContext.filterAlg
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.model.Update
-import org.scalasteward.core.repoconfig.{RepoConfig, UpdatePattern}
+import org.scalasteward.core.repoconfig.{RepoConfig, UpdatePattern, UpdatesConfig}
 import org.scalasteward.core.update.FilterAlg.BadVersions
 import org.scalasteward.core.util.Nel
 import org.scalatest.{FunSuite, Matchers}
@@ -33,7 +33,8 @@ class FilterAlgTest extends FunSuite with Matchers {
     val update2 = Update.Single("eu.timepit", "refined", "0.8.0", Nel.of("0.8.1"))
 
     val configFile = File("/tmp/ws/fthomas/scala-steward/.scala-steward.conf")
-    val configContent = """ignoredUpdates: [ { groupId: "eu.timepit", artifactId: "refined" } ]"""
+    val configContent =
+      """updates.ignored = [ { groupId = "eu.timepit", artifactId = "refined" } ]"""
 
     val initialState = MockState.empty.add(configFile, configContent)
     val (state, filtered) =
@@ -51,10 +52,14 @@ class FilterAlgTest extends FunSuite with Matchers {
     val update2 = Update.Single("eu.timepit", "refined", "0.8.0", Nel.of("0.8.1"))
 
     val config = RepoConfig(
-      allowedUpdates = Some(
-        List(
-          UpdatePattern("org.http4s", None, Some("0.17")),
-          UpdatePattern("eu.timepit", Some("refined"), Some("0.8"))
+      updates = Some(
+        UpdatesConfig(
+          allowed = Some(
+            List(
+              UpdatePattern("org.http4s", None, Some("0.17")),
+              UpdatePattern("eu.timepit", Some("refined"), Some("0.8"))
+            )
+          )
         )
       )
     )

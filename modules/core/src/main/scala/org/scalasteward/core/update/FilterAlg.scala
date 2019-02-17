@@ -66,7 +66,9 @@ object FilterAlg {
     removeBadVersions(update).flatMap(isIgnoredGlobally)
 
   def localFilter(update: Update.Single, repoConfig: RepoConfig): FilterResult =
-    globalFilter(update).flatMap(repoConfig.keep)
+    globalFilter(update).flatMap { update1 =>
+      repoConfig.updates.map(_.keep(update1)).getOrElse(Right(update1))
+    }
 
   def isIgnoredGlobally(update: Update.Single): FilterResult = {
     val keep = ((update.groupId, update.artifactId) match {
