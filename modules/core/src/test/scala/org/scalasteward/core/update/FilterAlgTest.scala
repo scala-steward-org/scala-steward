@@ -27,14 +27,14 @@ class FilterAlgTest extends FunSuite with Matchers {
     FilterAlg.removeBadVersions(update) shouldBe Left(BadVersions(update))
   }
 
-  test("ignore update via repo config") {
+  test("ignore update via config updates.ignore") {
     val repo = Repo("fthomas", "scala-steward")
     val update1 = Update.Single("org.http4s", "http4s-dsl", "0.17.0", Nel.of("0.18.0"))
     val update2 = Update.Single("eu.timepit", "refined", "0.8.0", Nel.of("0.8.1"))
 
     val configFile = File("/tmp/ws/fthomas/scala-steward/.scala-steward.conf")
     val configContent =
-      """updates.ignored = [ { groupId = "eu.timepit", artifactId = "refined" } ]"""
+      """updates.ignore = [ { groupId = "eu.timepit", artifactId = "refined" } ]"""
 
     val initialState = MockState.empty.add(configFile, configContent)
     val (state, filtered) =
@@ -47,14 +47,14 @@ class FilterAlgTest extends FunSuite with Matchers {
     )
   }
 
-  test("ignore update via repo config using allowUpdates") {
+  test("ignore update via config updates.allow") {
     val update1 = Update.Single("org.http4s", "http4s-dsl", "0.17.0", Nel.of("0.18.0"))
     val update2 = Update.Single("eu.timepit", "refined", "0.8.0", Nel.of("0.8.1"))
 
     val config = RepoConfig(
       updates = Some(
         UpdatesConfig(
-          allowed = Some(
+          allow = Some(
             List(
               UpdatePattern("org.http4s", None, Some("0.17")),
               UpdatePattern("eu.timepit", Some("refined"), Some("0.8"))

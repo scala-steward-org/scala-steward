@@ -23,21 +23,21 @@ import org.scalasteward.core.model.Update
 import org.scalasteward.core.update.FilterAlg.{FilterResult, IgnoredByConfig, NotAllowedByConfig}
 
 final case class UpdatesConfig(
-    allowed: Option[List[UpdatePattern]] = None,
-    ignored: Option[List[UpdatePattern]] = None
+    allow: Option[List[UpdatePattern]] = None,
+    ignore: Option[List[UpdatePattern]] = None
 ) {
   def keep(update: Update.Single): FilterResult =
     isAllowed(update) *> isIgnored(update)
 
   private def isAllowed(update: Update.Single): FilterResult = {
-    val patterns = allowed.getOrElse(List.empty)
+    val patterns = allow.getOrElse(List.empty)
     val m = UpdatePattern.findMatch(patterns, update)
     if (m.byArtifactId.isEmpty || m.byVersion.nonEmpty) Right(update)
     else Left(NotAllowedByConfig(update))
   }
 
   private def isIgnored(update: Update.Single): FilterResult = {
-    val patterns = ignored.getOrElse(List.empty)
+    val patterns = ignore.getOrElse(List.empty)
     val m = UpdatePattern.findMatch(patterns, update)
     if (m.byVersion.nonEmpty) Left(IgnoredByConfig(update)) else Right(update)
   }
