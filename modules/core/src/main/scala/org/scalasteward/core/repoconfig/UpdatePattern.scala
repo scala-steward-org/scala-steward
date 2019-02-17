@@ -21,25 +21,25 @@ import io.circe.Decoder
 import io.circe.generic.semiauto.deriveDecoder
 import org.scalasteward.core.model.Update
 
-final case class DependencyPattern(
+final case class UpdatePattern(
     groupId: String,
     artifactId: Option[String],
     version: Option[String]
 )
 
-object DependencyPattern {
+object UpdatePattern {
   final case class MatchResult(
-      byArtifactId: List[DependencyPattern],
-      byVersion: List[DependencyPattern]
+      byArtifactId: List[UpdatePattern],
+      byVersion: List[UpdatePattern]
   )
 
-  def findMatch(patterns: List[DependencyPattern], update: Update.Single): MatchResult = {
+  def findMatch(patterns: List[UpdatePattern], update: Update.Single): MatchResult = {
     val byGroupId = patterns.filter(_.groupId === update.groupId)
     val byArtifactId = byGroupId.filter(_.artifactId.forall(_ === update.artifactId))
     val byVersion = byArtifactId.filter(_.version.forall(update.nextVersion.startsWith))
     MatchResult(byArtifactId, byVersion)
   }
 
-  implicit val dependencyPatternDecoder: Decoder[DependencyPattern] =
+  implicit val updatePatternDecoder: Decoder[UpdatePattern] =
     deriveDecoder
 }

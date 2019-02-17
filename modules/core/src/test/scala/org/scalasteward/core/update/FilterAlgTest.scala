@@ -6,23 +6,24 @@ import org.scalasteward.core.github.data.Repo
 import org.scalasteward.core.mock.MockContext.filterAlg
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.model.Update
+import org.scalasteward.core.update.FilterAlg.BadVersions
 import org.scalasteward.core.util.Nel
 import org.scalatest.{FunSuite, Matchers}
 
 class FilterAlgTest extends FunSuite with Matchers {
   test("removeBadVersions: update without bad version") {
     val update = Update.Single("com.jsuereth", "sbt-pgp", "1.1.0", Nel.of("1.1.2", "2.0.0"))
-    FilterAlg.removeBadVersions(update) shouldBe Some(update)
+    FilterAlg.removeBadVersions(update) shouldBe Right(update)
   }
 
   test("removeBadVersions: update with bad version") {
     val update = Update.Single("com.jsuereth", "sbt-pgp", "1.1.2-1", Nel.of("1.1.2", "2.0.0"))
-    FilterAlg.removeBadVersions(update) shouldBe Some(update.copy(newerVersions = Nel.of("2.0.0")))
+    FilterAlg.removeBadVersions(update) shouldBe Right(update.copy(newerVersions = Nel.of("2.0.0")))
   }
 
   test("removeBadVersions: update with only bad versions") {
     val update = Update.Single("org.http4s", "http4s-dsl", "0.18.0", Nel.of("0.19.0"))
-    FilterAlg.removeBadVersions(update) shouldBe None
+    FilterAlg.removeBadVersions(update) shouldBe Left(BadVersions(update))
   }
 
   test("ignore update via repo config") {

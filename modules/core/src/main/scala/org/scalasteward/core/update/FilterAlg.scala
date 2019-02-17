@@ -21,7 +21,7 @@ import cats.{Monad, TraverseFilter}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.github.data.Repo
 import org.scalasteward.core.model.Update
-import org.scalasteward.core.repoconfig.RepoConfigAlg
+import org.scalasteward.core.repoconfig.{RepoConfig, RepoConfigAlg}
 import org.scalasteward.core.update.FilterAlg._
 import org.scalasteward.core.util
 
@@ -31,50 +31,64 @@ class FilterAlg[F[_]](
     repoConfigAlg: RepoConfigAlg[F],
     F: Monad[F]
 ) {
-  def globalFilter(update: Update.Single): F[Option[Update.Single]] =
-    filterImpl(globalKeep(update), update)
-
   def globalFilterMany[G[_]: TraverseFilter](updates: G[Update.Single]): F[G[Update.Single]] =
-    updates.traverseFilter(globalFilter)
+    updates.traverseFilter(update => logIfRejected(globalFilter(update)))
 
   def localFilterMany[G[_]: TraverseFilter](
       repo: Repo,
       updates: G[Update.Single]
   ): F[G[Update.Single]] =
     repoConfigAlg.getRepoConfig(repo).flatMap { config =>
-      updates.traverseFilter { update =>
-        filterImpl(globalKeep(update) && config.keep(update), update)
-      }
+      updates.traverseFilter(update => logIfRejected(localFilter(update, config)))
     }
 
-  private def filterImpl(keep: Boolean, update: Update.Single): F[Option[Update.Single]] =
-    FilterAlg.removeBadVersions(update).filter(_ => keep) match {
-      case none @ None    => logger.info(s"Ignore ${update.show}") *> F.pure(none)
-      case some @ Some(_) => F.pure(some)
+  private def logIfRejected(result: FilterResult): F[Option[Update.Single]] =
+    result match {
+      case Right(update) => F.pure(update.some)
+      case Left(reason)  => logger.info(s"Ignore ${reason.update.show}") *> F.pure(None)
     }
 }
 
 object FilterAlg {
-  def globalKeep(update: Update.Single): Boolean = {
-    (update.groupId, update.artifactId) match {
+  type FilterResult = Either[RejectionReason, Update.Single]
+
+  sealed trait RejectionReason { def update: Update.Single }
+  case class IgnoredGlobally(update: Update.Single) extends RejectionReason
+  case class IgnoredByConfig(update: Update.Single) extends RejectionReason
+  case class NotAllowedByConfig(update: Update.Single) extends RejectionReason
+  case class BadVersions(update: Update.Single) extends RejectionReason
+
+  def globalFilter(update: Update.Single): FilterResult =
+    removeBadVersions(update).flatMap(isIgnoredGlobally)
+
+  def localFilter(update: Update.Single, repoConfig: RepoConfig): FilterResult =
+    globalFilter(update).flatMap(repoConfig.keep)
+
+  def isIgnoredGlobally(update: Update.Single): FilterResult = {
+    val keep = ((update.groupId, update.artifactId) match {
       case ("org.scala-lang", "scala-compiler") => false
       case ("org.scala-lang", "scala-library")  => false
       case ("org.scala-lang", "scala-reflect")  => false
       case ("org.typelevel", "scala-library")   => false
       case _                                    => true
-    }
-  } && {
-    update.configurations.fold("")(_.toLowerCase) match {
+    }) && (update.configurations.fold("")(_.toLowerCase) match {
       case "phantom-js-jetty"    => false
       case "scalafmt"            => false
       case "scripted-sbt"        => false
       case "scripted-sbt-launch" => false
       case "tut"                 => false
       case _                     => true
-    }
+    })
+    if (keep) Right(update) else Left(IgnoredGlobally(update))
   }
 
-  def badVersions(update: Update.Single): List[String] =
+  def removeBadVersions(update: Update.Single): FilterResult =
+    util
+      .removeAll(update.newerVersions, badVersions(update))
+      .map(versions => update.copy(newerVersions = versions))
+      .fold[FilterResult](Left(BadVersions(update)))(Right.apply)
+
+  private def badVersions(update: Update.Single): List[String] =
     (update.groupId, update.artifactId, update.currentVersion, update.nextVersion) match {
       // https://github.com/vlovgr/ciris/pull/182#issuecomment-420599759
       case ("com.jsuereth", "sbt-pgp", "1.1.2-1", "1.1.2") => List("1.1.2")
@@ -102,9 +116,4 @@ object FilterAlg {
 
       case _ => List.empty
     }
-
-  def removeBadVersions(update: Update.Single): Option[Update.Single] =
-    util
-      .removeAll(update.newerVersions, badVersions(update))
-      .map(versions => update.copy(newerVersions = versions))
 }
