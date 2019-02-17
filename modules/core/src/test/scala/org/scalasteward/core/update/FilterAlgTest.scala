@@ -6,6 +6,7 @@ import org.scalasteward.core.github.data.Repo
 import org.scalasteward.core.mock.MockContext.filterAlg
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.model.Update
+import org.scalasteward.core.repoconfig.{RepoConfig, UpdatePattern}
 import org.scalasteward.core.update.FilterAlg.BadVersions
 import org.scalasteward.core.util.Nel
 import org.scalatest.{FunSuite, Matchers}
@@ -46,26 +47,23 @@ class FilterAlgTest extends FunSuite with Matchers {
   }
 
   test("ignore update via repo config using allowUpdates") {
-    val repo = Repo("fthomas", "scala-steward")
     val update1 = Update.Single("org.http4s", "http4s-dsl", "0.17.0", Nel.of("0.18.0"))
     val update2 = Update.Single("eu.timepit", "refined", "0.8.0", Nel.of("0.8.1"))
 
-    val configFile = File("/tmp/ws/fthomas/scala-steward/.scala-steward.conf")
-    val configContent =
-      """|allowedUpdates: [
-         |  { groupId: "org.http4s", version: "0.17" },
-         |  { groupId: "eu.timepit", artifactId: "refined", version: "0.8" }
-         |]
-         |""".stripMargin
+    val config = RepoConfig(
+      allowedUpdates = Some(
+        List(
+          UpdatePattern("org.http4s", None, Some("0.17")),
+          UpdatePattern("eu.timepit", Some("refined"), Some("0.8"))
+        )
+      )
+    )
 
-    val initialState = MockState.empty.add(configFile, configContent)
-    val (state, filtered) =
-      filterAlg.localFilterMany(repo, List(update1, update2)).run(initialState).unsafeRunSync()
+    val filtered = filterAlg
+      .localFilterManyWithConfig(config, List(update1, update2))
+      .runA(MockState.empty)
+      .unsafeRunSync()
 
     filtered shouldBe List(update2)
-    state shouldBe initialState.copy(
-      commands = Vector(List("read", configFile.pathAsString)),
-      logs = Vector((None, "Ignore org.http4s:http4s-dsl : 0.17.0 -> 0.18.0"))
-    )
   }
 }

@@ -34,13 +34,17 @@ class FilterAlg[F[_]](
   def globalFilterMany[G[_]: TraverseFilter](updates: G[Update.Single]): F[G[Update.Single]] =
     updates.traverseFilter(update => logIfRejected(globalFilter(update)))
 
+  def localFilterManyWithConfig[G[_]: TraverseFilter](
+      config: RepoConfig,
+      updates: G[Update.Single]
+  ): F[G[Update.Single]] =
+    updates.traverseFilter(update => logIfRejected(localFilter(update, config)))
+
   def localFilterMany[G[_]: TraverseFilter](
       repo: Repo,
       updates: G[Update.Single]
   ): F[G[Update.Single]] =
-    repoConfigAlg.getRepoConfig(repo).flatMap { config =>
-      updates.traverseFilter(update => logIfRejected(localFilter(update, config)))
-    }
+    repoConfigAlg.getRepoConfig(repo).flatMap(localFilterManyWithConfig(_, updates))
 
   private def logIfRejected(result: FilterResult): F[Option[Update.Single]] =
     result match {
