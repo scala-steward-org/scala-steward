@@ -10,6 +10,7 @@ object Dependencies {
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.7.0"
   val caseApp = "com.github.alexarchambault" %% "case-app" % "2.0.0-M5"
   val catsEffect = "org.typelevel" %% "cats-effect" % "1.2.0"
+  val circeConfig = "io.circe" %% "circe-config" % "0.6.1"
   val circeGeneric = "io.circe" %% "circe-generic" % Versions.circe
   val circeParser = "io.circe" %% "circe-parser" % Versions.circe
   val circeRefined = "io.circe" %% "circe-refined" % Versions.circe
