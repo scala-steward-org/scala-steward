@@ -22,6 +22,7 @@ import io.chrisdavenport.log4cats.Logger
 import io.circe.config.parser
 import org.scalasteward.core.github.data.Repo
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
+import org.scalasteward.core.model.Update
 import org.scalasteward.core.repoconfig.RepoConfigAlg._
 import org.scalasteward.core.util.MonadThrowable
 
@@ -51,5 +52,13 @@ object RepoConfigAlg {
   def parseRepoConfig(input: String): Either[String, RepoConfig] =
     parser.decode[RepoConfig](input).leftMap { error =>
       s"Failed to parse $repoConfigBasename: ${error.getMessage}"
+    }
+
+  def configToIgnoreFurtherUpdates(update: Update): String =
+    update match {
+      case s: Update.Single =>
+        s"""updates.ignore = [{ groupId = "${s.groupId}", artifactId = "${s.artifactId}" }]"""
+      case g: Update.Group =>
+        s"""updates.ignore = [{ groupId = "${g.groupId}" }]"""
     }
 }

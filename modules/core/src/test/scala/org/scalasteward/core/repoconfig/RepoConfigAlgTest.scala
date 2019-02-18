@@ -4,6 +4,8 @@ import better.files.File
 import org.scalasteward.core.github.data.Repo
 import org.scalasteward.core.mock.MockContext.repoConfigAlg
 import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.model.Update
+import org.scalasteward.core.util.Nel
 import org.scalatest.{FunSuite, Matchers}
 
 class RepoConfigAlgTest extends FunSuite with Matchers {
@@ -36,5 +38,35 @@ class RepoConfigAlgTest extends FunSuite with Matchers {
     config shouldBe RepoConfig()
     state.logs.headOption.map { case (_, msg) => msg }.getOrElse("") should
       startWith("Failed to parse .scala-steward.conf")
+  }
+
+  test("configToIgnoreFurtherUpdates with single update") {
+    val update = Update.Single("a", "b", "c", Nel.of("d"))
+    val repoConfig = RepoConfigAlg
+      .parseRepoConfig(RepoConfigAlg.configToIgnoreFurtherUpdates(update))
+      .getOrElse(RepoConfig())
+
+    repoConfig shouldBe RepoConfig(
+      updates = Some(
+        UpdatesConfig(
+          ignore = Some(List(UpdatePattern("a", Some("b"), None)))
+        )
+      )
+    )
+  }
+
+  test("configToIgnoreFurtherUpdates with group update") {
+    val update = Update.Group("a", Nel.of("b", "e"), "c", Nel.of("d"))
+    val repoConfig = RepoConfigAlg
+      .parseRepoConfig(RepoConfigAlg.configToIgnoreFurtherUpdates(update))
+      .getOrElse(RepoConfig())
+
+    repoConfig shouldBe RepoConfig(
+      updates = Some(
+        UpdatesConfig(
+          ignore = Some(List(UpdatePattern("a", None, None)))
+        )
+      )
+    )
   }
 }
