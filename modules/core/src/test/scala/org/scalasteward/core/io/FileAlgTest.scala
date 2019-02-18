@@ -1,11 +1,25 @@
 package org.scalasteward.core.io
 
 import better.files.File
+import cats.effect.IO
+import cats.implicits._
+import org.scalacheck.Arbitrary
 import org.scalasteward.core.mock.MockContext.fileAlg
 import org.scalasteward.core.mock.MockState
 import org.scalatest.{FunSuite, Matchers}
 
 class FileAlgTest extends FunSuite with Matchers {
+  val ioFileAlg: FileAlg[IO] = FileAlg.create[IO]
+
+  test("writeFile *> readFile <* deleteForce") {
+    val file = File.temp / "test-scala-steward1.tmp"
+    val content = Arbitrary.arbitrary[String].sample.getOrElse("")
+    val read = ioFileAlg.writeFile(file, content) *>
+      ioFileAlg.readFile(file).map(_.getOrElse("")) <*
+      ioFileAlg.deleteForce(file)
+    read.unsafeRunSync() shouldBe content
+  }
+
   test("editFile: nonexistent file") {
     val (state, edited) = (for {
       home <- fileAlg.home
