@@ -22,6 +22,7 @@ import io.circe.generic.semiauto._
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.model.Update
 import org.scalasteward.core.nurture.UpdateData
+import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.{git, github}
 
 final case class NewPullRequestData(
@@ -51,6 +52,15 @@ object NewPullRequestData {
         |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention @$login in the comments below.
         |
         |Have a nice day!
+        |
+        |<details>
+        |<summary>Ignore future updates</summary>
+        |
+        |Add this to your `${RepoConfigAlg.repoConfigBasename}` file to ignore future updates of this dependency:
+        |```
+        |${RepoConfigAlg.configToIgnoreFurtherUpdates(update)}
+        |```
+        |</details>
         |""".stripMargin.trim
   }
 
