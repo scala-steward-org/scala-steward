@@ -254,6 +254,7 @@
 - sksamuel/elastic4s
 - sksamuel/pulsar4s
 - Slakah/uritemplate4s
+- snowplow-incubator/cla-bot
 - sphereio/sphere-scala-libs
 - spotify/big-data-rosetta-code
 - spotify/featran
