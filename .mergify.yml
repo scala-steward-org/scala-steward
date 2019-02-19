@@ -6,3 +6,5 @@ pull_request_rules:
     actions:
       merge:
         method: merge
+      label:
+        add: [dependency-update]
