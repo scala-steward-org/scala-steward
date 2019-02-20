@@ -212,6 +212,7 @@
 - ReactivePlatform/Reactive-Design-Patterns
 - sake92/hepek
 - saksdirect/sundial
+- sbt/sbt-java-formatter
 - scala/hello-world.g8
 - scala/make-release-notes
 - scalameta/metabrowse
