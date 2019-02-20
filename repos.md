@@ -220,7 +220,6 @@
 - scala/scala-collection-contrib
 - scala/scala-collections-laws
 - scala/scala-continuations
-- scala/scala-dist
 - scala/scala-dist-smoketest
 - scala/scala-java8-compat
 - scala/scala-module-dependency-sample
