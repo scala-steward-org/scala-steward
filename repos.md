@@ -44,6 +44,7 @@
 - ChristopherDavenport/Data.Maybe
 - ChristopherDavenport/default
 - ChristopherDavenport/ember
+- ChristopherDavenport/epimetheus
 - ChristopherDavenport/fuuid
 - ChristopherDavenport/http4s-client-example
 - ChristopherDavenport/http4s-resource-example
