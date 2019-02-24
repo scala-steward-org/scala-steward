@@ -296,6 +296,7 @@
 - typelevel/kittens
 - typelevel/machinist
 - typelevel/mouse
+- typelevel/spire
 - ua-parser/uap-scala
 - underscoreio/slickless
 - vectos/formulation
