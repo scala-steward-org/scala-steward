@@ -127,6 +127,7 @@ lazy val metadataSettings = Def.settings(
 lazy val dockerSettings = Def.settings(
   dockerCommands := Seq(
     Cmd("FROM", "openjdk:8"),
+    Cmd("ARG", "DEBIAN_FRONTEND=noninteractive"),
     ExecCmd("RUN", "apt-get", "update"),
     ExecCmd("RUN", "apt-get", "install", "-y", "apt-transport-https", "firejail"),
     ExecCmd(
