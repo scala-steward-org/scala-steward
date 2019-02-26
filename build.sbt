@@ -186,7 +186,8 @@ addCommandsAlias(
     "readme/tut",
     "package",
     "packageSrc",
-    "core/assembly"
+    "core/assembly",
+    "docker:publishLocal"
   )
 )
 
