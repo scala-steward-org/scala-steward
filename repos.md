@@ -45,6 +45,8 @@
 - ChristopherDavenport/default
 - ChristopherDavenport/ember
 - ChristopherDavenport/epimetheus
+- ChristopherDavenport/epimetheus-http4s
+- ChristopherDavenport/epimetheus-log4cats
 - ChristopherDavenport/fuuid
 - ChristopherDavenport/http4s-client-example
 - ChristopherDavenport/http4s-resource-example
