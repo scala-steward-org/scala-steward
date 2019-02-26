@@ -87,14 +87,14 @@ Or,
 ```bash
 sbt docker:publishLocal
 
-docker run -v $STEWARD_DIR:/opt/docker -it scala-steward:0.1.0-SNAPSHOT \
-  --workspace  "/opt/docker/workspace" \
-  --repos-file "/opt/docker/repos.md" \
+docker run -v $STEWARD_DIR:/opt/scala-steward -it scala-steward:0.1.0-SNAPSHOT \
+  --workspace  "/opt/scala-steward/workspace" \
+  --repos-file "/opt/scala-steward/repos.md" \
   --git-author-name "Scala steward" \
   --git-author-email ${EMAIL} \
   --github-api-host "https://api.github.com" \
   --github-login ${LOGIN} \
-  --git-ask-pass "/opt/docker/.github/askpass/$LOGIN.sh" \
+  --git-ask-pass "/opt/scala-steward/.github/askpass/$LOGIN.sh" \
   --sign-commits
 ```
 
