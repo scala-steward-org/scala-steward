@@ -4,6 +4,8 @@ jdk:
 - openjdk11
 scala:
 - 2.12.8
+services:
+- docker
 
 before_install:
 - git fetch --tags
