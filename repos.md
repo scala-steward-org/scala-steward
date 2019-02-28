@@ -178,6 +178,7 @@
 - monix/monix
 - monix/monix-kafka
 - mpilquist/simulacrum
+- mwz/sonar-scala
 - nafg/cloud-logging-logback-scala
 - nafg/css-dsl
 - nafg/jewish-date
