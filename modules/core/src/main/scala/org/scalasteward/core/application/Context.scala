@@ -34,12 +34,13 @@ import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.update.json.JsonUpdateRepository
 import org.scalasteward.core.update.{FilterAlg, UpdateRepository, UpdateService}
+import org.scalasteward.core.util.{DateTimeAlg, LogAlg}
 import scala.concurrent.ExecutionContext
 
 final case class Context[F[_]](
     config: Config,
     dependencyService: DependencyService[F],
-    logger: Logger[F],
+    logAlg: LogAlg[F],
     nurtureAlg: NurtureAlg[F],
     sbtAlg: SbtAlg[F],
     updateService: UpdateService[F],
@@ -58,7 +59,9 @@ object Context {
       implicit val client: Client[F] = client_
       implicit val config: Config = config_
       implicit val logger: Logger[F] = logger_
+      implicit val dateTimeAlg: DateTimeAlg[F] = DateTimeAlg.create[F]
       implicit val fileAlg: FileAlg[F] = FileAlg.create[F]
+      implicit val logAlg: LogAlg[F] = new LogAlg[F]
       implicit val processAlg: ProcessAlg[F] = ProcessAlg.create[F]
       implicit val user: AuthenticatedUser = user_
       implicit val workspaceAlg: WorkspaceAlg[F] = WorkspaceAlg.create[F]
@@ -77,7 +80,7 @@ object Context {
       Context(
         config,
         dependencyService,
-        logger,
+        logAlg,
         nurtureAlg,
         sbtAlg,
         updateService,
