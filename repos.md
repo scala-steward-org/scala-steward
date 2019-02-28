@@ -313,3 +313,4 @@
 - WellFactored/resourcepool
 - X9Developers/block-explorer
 - unfiltered/unfiltered
+- scalabin-no/http4s-directives
