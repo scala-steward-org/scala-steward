@@ -34,10 +34,11 @@ class DependencyService[F[_]](
     gitAlg: GitAlg[F],
     logAlg: LogAlg[F],
     logger: Logger[F],
-    sbtAlg: SbtAlg[F]
+    sbtAlg: SbtAlg[F],
+    F: MonadThrowable[F]
 ) {
 
-  def checkDependencies(repo: Repo)(implicit F: MonadThrowable[F]): F[Unit] =
+  def checkDependencies(repo: Repo): F[Unit] =
     logAlg.attemptLog_(s"Check dependencies of ${repo.show}") {
       for {
         res <- gitHubApiAlg.createForkOrGetRepoWithDefaultBranch(config, repo)
@@ -52,9 +53,7 @@ class DependencyService[F[_]](
       } yield ()
     }
 
-  def refreshDependencies(repo: Repo, repoOut: RepoOut, latestSha1: Sha1)(
-      implicit F: MonadThrowable[F]
-  ): F[Unit] =
+  def refreshDependencies(repo: Repo, repoOut: RepoOut, latestSha1: Sha1): F[Unit] =
     for {
       _ <- logger.info(s"Refresh dependencies of ${repo.show}")
       cloneUrl = util.uri.withUserInfo(repoOut.clone_url, config.gitHubLogin)
