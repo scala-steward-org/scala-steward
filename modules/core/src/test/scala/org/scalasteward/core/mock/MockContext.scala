@@ -8,6 +8,7 @@ import org.scalasteward.core.nurture.EditAlg
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.update.FilterAlg
+import org.scalasteward.core.util.{DateTimeAlg, LogAlg}
 
 object MockContext {
   implicit val config: Config = Config(
@@ -30,8 +31,10 @@ object MockContext {
   implicit val processAlg: MockProcessAlg = new MockProcessAlg
   implicit val workspaceAlg: MockWorkspaceAlg = new MockWorkspaceAlg
 
+  implicit val dateTimeAlg: DateTimeAlg[MockEff] = DateTimeAlg.create
   implicit val editAlg: EditAlg[MockEff] = EditAlg.create
   implicit val gitAlg: GitAlg[MockEff] = GitAlg.create
+  implicit val logAlg: LogAlg[MockEff] = new LogAlg[MockEff]
   implicit val sbtAlg: SbtAlg[MockEff] = SbtAlg.create
   implicit val repoConfigAlg: RepoConfigAlg[MockEff] = new RepoConfigAlg[MockEff]
   implicit val filterAlg: FilterAlg[MockEff] = new FilterAlg[MockEff]

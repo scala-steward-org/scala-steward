@@ -27,8 +27,7 @@ import org.scalasteward.core.github.data.{NewPullRequestData, Repo}
 import org.scalasteward.core.model.Update
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.update.FilterAlg
-import org.scalasteward.core.util.logger.LoggerOps
-import org.scalasteward.core.util.{BracketThrowable, MonadThrowable}
+import org.scalasteward.core.util.{BracketThrowable, LogAlg, MonadThrowable}
 import org.scalasteward.core.{git, github, util}
 
 class NurtureAlg[F[_]](
@@ -38,13 +37,14 @@ class NurtureAlg[F[_]](
     filterAlg: FilterAlg[F],
     gitAlg: GitAlg[F],
     gitHubApiAlg: GitHubApiAlg[F],
+    logAlg: LogAlg[F],
     logger: Logger[F],
     pullRequestRepo: PullRequestRepository[F],
     sbtAlg: SbtAlg[F]
 ) {
   def nurture(repo: Repo)(implicit F: Sync[F]): F[Unit] =
-    logger.infoTotalTime(repo.show) {
-      logger.attemptLog_(s"Nurture ${repo.show}") {
+    logAlg.infoTotalTime(repo.show) {
+      logAlg.attemptLog_(s"Nurture ${repo.show}") {
         for {
           baseBranch <- cloneAndSync(repo)
           _ <- updateDependencies(repo, baseBranch)

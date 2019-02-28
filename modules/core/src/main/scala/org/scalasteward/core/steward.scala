@@ -22,12 +22,11 @@ import cats.effect.{ExitCode, IO, IOApp, Sync}
 import cats.implicits._
 import org.scalasteward.core.application.Context
 import org.scalasteward.core.github.data.Repo
-import org.scalasteward.core.util.logger.LoggerOps
 
 object steward extends IOApp {
   override def run(args: List[String]): IO[ExitCode] =
     Context.create[IO](args).use { ctx =>
-      ctx.logger.infoTotalTime("run") {
+      ctx.logAlg.infoTotalTime("run") {
         for {
           repos <- readRepos[IO](ctx.config.reposFile)
           _ <- prepareEnv(ctx)

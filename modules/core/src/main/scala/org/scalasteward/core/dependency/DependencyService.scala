@@ -24,8 +24,7 @@ import org.scalasteward.core.github.GitHubApiAlg
 import org.scalasteward.core.github.data.{Repo, RepoOut}
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.util
-import org.scalasteward.core.util.MonadThrowable
-import org.scalasteward.core.util.logger.LoggerOps
+import org.scalasteward.core.util.{LogAlg, MonadThrowable}
 
 class DependencyService[F[_]](
     implicit
@@ -33,12 +32,13 @@ class DependencyService[F[_]](
     dependencyRepository: DependencyRepository[F],
     gitHubApiAlg: GitHubApiAlg[F],
     gitAlg: GitAlg[F],
+    logAlg: LogAlg[F],
     logger: Logger[F],
     sbtAlg: SbtAlg[F]
 ) {
 
   def checkDependencies(repo: Repo)(implicit F: MonadThrowable[F]): F[Unit] =
-    logger.attemptLog_(s"Check dependencies of ${repo.show}") {
+    logAlg.attemptLog_(s"Check dependencies of ${repo.show}") {
       for {
         res <- gitHubApiAlg.createForkOrGetRepoWithDefaultBranch(config, repo)
         (repoOut, branchOut) = res
