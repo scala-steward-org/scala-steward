@@ -20,6 +20,20 @@ class FileAlgTest extends FunSuite with Matchers {
     read.unsafeRunSync() shouldBe content
   }
 
+  test("removeTemporarily") {
+    val file = File.temp / "test-scala-steward2.tmp"
+    val content = Arbitrary.arbitrary[String].sample.getOrElse("")
+
+    val p = for {
+      _ <- ioFileAlg.writeFile(file, content)
+      before <- ioFileAlg.readFile(file)
+      during <- ioFileAlg.removeTemporarily(file)(ioFileAlg.readFile(file))
+      after <- ioFileAlg.readFile(file)
+    } yield (before, during, after)
+
+    p.unsafeRunSync() shouldBe ((Some(content), None, Some(content)))
+  }
+
   test("editFile: nonexistent file") {
     val (state, edited) = (for {
       home <- fileAlg.home
