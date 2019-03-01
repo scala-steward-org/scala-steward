@@ -4,10 +4,10 @@ import cats.effect.IO
 import cats.implicits._
 import eu.timepit.refined.scalacheck.numeric._
 import eu.timepit.refined.types.numeric.PosInt
-import org.scalatest.prop.PropertyChecks
 import org.scalatest.{FunSuite, Matchers}
+import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
-class utilTest extends FunSuite with Matchers with PropertyChecks {
+class utilTest extends FunSuite with Matchers with ScalaCheckPropertyChecks {
   test("bindUntilTrue: empty list") {
     bindUntilTrue(List.empty[Option[Boolean]]) shouldBe Some(false)
   }
