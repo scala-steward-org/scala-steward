@@ -5,9 +5,9 @@
 - akka/akka-grpc-sample-kubernetes-scala
 - akka/akka-minion
 - akka/akka-paradox
+- akka/akka-samples
 - akka/akka-sample-cluster-docker-compose-java
 - akka/akka-sample-cluster-docker-compose-scala
-- akka/akka-samples
 - alexarchambault/ammonite-spark
 - alexarchambault/argonaut-shapeless
 - alexarchambault/case-app
@@ -217,10 +217,14 @@
 - sake92/hepek
 - saksdirect/sundial
 - sbt/sbt-java-formatter
+- scalabin-no/http4s-directives
+- scalameta/metabrowse
+- scalaz/scalaz-nio
+- scalaz/scalaz-zio
 - scala/hello-world.g8
 - scala/make-release-notes
-- scalameta/metabrowse
 - scala/sbt-scala-module
+- scala/scalatest-example.g8
 - scala/scala-collection-compat
 - scala/scala-collection-contrib
 - scala/scala-collection-laws
@@ -232,10 +236,7 @@
 - scala/scala-parser-combinators
 - scala/scala-seed.g8
 - scala/scala-swing
-- scala/scalatest-example.g8
 - scala/scala-xml
-- scalaz/scalaz-nio
-- scalaz/scalaz-zio
 - scanamo/scanamo
 - schrepfler/artemis
 - schrepfler/cas-tools
@@ -264,8 +265,8 @@
 - spotify/featran
 - spotify/noether
 - spotify/scio
-- spotify/scio-contrib
 - spotify/scio.g8
+- spotify/scio-contrib
 - spotify/scio-idea-plugin
 - sullis/jms-testkit
 - ThoughtWorksInc/Binding.scala
@@ -302,6 +303,7 @@
 - typelevel/spire
 - ua-parser/uap-scala
 - underscoreio/slickless
+- unfiltered/unfiltered
 - vectos/formulation
 - vectos/itinere
 - vigoo/clipp
@@ -312,5 +314,3 @@
 - WellFactored/property-info
 - WellFactored/resourcepool
 - X9Developers/block-explorer
-- unfiltered/unfiltered
-- scalabin-no/http4s-directives
