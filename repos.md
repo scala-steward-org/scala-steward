@@ -223,7 +223,7 @@
 - scala/sbt-scala-module
 - scala/scala-collection-compat
 - scala/scala-collection-contrib
-- scala/scala-collections-laws
+- scala/scala-collection-laws
 - scala/scala-continuations
 - scala/scala-dist-smoketest
 - scala/scala-java8-compat
