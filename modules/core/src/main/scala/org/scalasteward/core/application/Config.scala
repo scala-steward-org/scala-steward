@@ -59,7 +59,7 @@ final case class Config(
 ) {
   def gitHubUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] =
     util.uri.fromString[F](gitHubApiHost).flatMap { url =>
-      val urlWithUser = util.uri.withUserInfo(url, gitHubLogin).renderString
+      val urlWithUser = util.uri.withUserInfo.set(gitHubLogin)(url).renderString
       val prompt = s"Password for '$urlWithUser': "
       F.delay {
         val password = Process(List(gitAskPass.pathAsString, prompt)).!!.trim

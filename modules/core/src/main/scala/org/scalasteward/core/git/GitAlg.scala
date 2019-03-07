@@ -187,7 +187,7 @@ object GitAlg {
         else {
           for {
             parent <- repoOut.parentOrRaise[F]
-            parentCloneUrl = util.uri.withUserInfo(parent.clone_url, config.gitHubLogin)
+            parentCloneUrl = util.uri.withUserInfo.set(config.gitHubLogin)(parent.clone_url)
             _ <- syncFork(repo, parentCloneUrl, parent.default_branch)
           } yield parent
         }

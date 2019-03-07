@@ -15,7 +15,7 @@ class uriTest extends FunSuite with Matchers {
 
   test("withUserInfo") {
     val url = Uri.uri("https://api.github.com/repos/")
-    uri.withUserInfo(url, "user:pass").toString shouldBe
+    uri.withUserInfo.set("user:pass")(url).toString shouldBe
       "https://user:pass@api.github.com/repos/"
   }
 }

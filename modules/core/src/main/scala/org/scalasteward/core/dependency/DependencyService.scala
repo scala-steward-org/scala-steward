@@ -56,7 +56,7 @@ class DependencyService[F[_]](
   def refreshDependencies(repo: Repo, repoOut: RepoOut, latestSha1: Sha1): F[Unit] =
     for {
       _ <- logger.info(s"Refresh dependencies of ${repo.show}")
-      cloneUrl = util.uri.withUserInfo(repoOut.clone_url, config.gitHubLogin)
+      cloneUrl = util.uri.withUserInfo.set(config.gitHubLogin)(repoOut.clone_url)
       _ <- gitAlg.clone(repo, cloneUrl)
       _ <- gitAlg.checkAndSyncFork(repo, repoOut)
       dependencies <- sbtAlg.getDependencies(repo)
