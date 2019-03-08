@@ -38,6 +38,8 @@ class SbtAlgTest extends FunSuite with Matchers {
         List(
           "firejail",
           "--whitelist=/tmp/ws/fthomas/refined",
+          "--env=TEST_VAR=GREAT",
+          "--env=ANOTHER_TEST_VAR=ALSO_GREAT",
           "sbt",
           "-batch",
           "-no-colors",
@@ -63,6 +65,8 @@ class SbtAlgTest extends FunSuite with Matchers {
         List(
           "firejail",
           "--whitelist=/tmp/ws/fthomas/refined",
+          "--env=TEST_VAR=GREAT",
+          "--env=ANOTHER_TEST_VAR=ALSO_GREAT",
           "sbt",
           "-batch",
           "-no-colors",
