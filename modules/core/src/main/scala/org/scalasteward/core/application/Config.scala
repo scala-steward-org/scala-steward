@@ -18,7 +18,7 @@ package org.scalasteward.core.application
 
 import better.files._
 import cats.effect.Sync
-import cats.implicits._
+import org.http4s.Uri
 import org.scalasteward.core.git.Author
 import org.scalasteward.core.github.data.AuthenticatedUser
 import org.scalasteward.core.util
@@ -47,7 +47,7 @@ final case class Config(
     workspace: File,
     reposFile: File,
     gitAuthor: Author,
-    gitHubApiHost: String,
+    gitHubApiHost: Uri,
     gitHubLogin: String,
     gitAskPass: File,
     signCommits: Boolean,
@@ -57,15 +57,14 @@ final case class Config(
     doNotFork: Boolean,
     keepCredentials: Boolean
 ) {
-  def gitHubUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] =
-    util.uri.fromString[F](gitHubApiHost).flatMap { url =>
-      val urlWithUser = util.uri.withUserInfo.set(gitHubLogin)(url).renderString
-      val prompt = s"Password for '$urlWithUser': "
-      F.delay {
-        val password = Process(List(gitAskPass.pathAsString, prompt)).!!.trim
-        AuthenticatedUser(gitHubLogin, password)
-      }
+  def gitHubUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] = {
+    val urlWithUser = util.uri.withUserInfo.set(gitHubLogin)(gitHubApiHost).renderString
+    val prompt = s"Password for '$urlWithUser': "
+    F.delay {
+      val password = Process(List(gitAskPass.pathAsString, prompt)).!!.trim
+      AuthenticatedUser(gitHubLogin, password)
     }
+  }
 }
 
 object Config {
@@ -75,7 +74,7 @@ object Config {
         workspace = args.workspace.toFile,
         reposFile = args.reposFile.toFile,
         gitAuthor = Author(args.gitAuthorName, args.gitAuthorEmail),
-        gitHubApiHost = args.githubApiHost,
+        gitHubApiHost = Uri.unsafeFromString(args.githubApiHost),
         gitHubLogin = args.githubLogin,
         gitAskPass = args.gitAskPass.toFile,
         signCommits = args.signCommits,

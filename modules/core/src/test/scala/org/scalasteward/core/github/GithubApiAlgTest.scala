@@ -6,29 +6,27 @@ import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.github.data._
 import org.scalasteward.core.mock.MockContext.config
-import org.scalasteward.core.util.uri.fromString
 import org.scalatest.{FunSuite, Matchers}
 
 class GithubApiAlgTest extends FunSuite with Matchers {
 
   val repo = Repo("ChristopherDavenport", "base.g8")
 
-  val parent =
-    RepoOut(
-      "base.g8",
-      UserOut("ChristopherDavenport"),
-      None,
-      Uri.uri("https://github.com/ChristopherDavenport/base.g8.git"),
-      Branch("master")
-    )
-  val fork =
-    RepoOut(
-      "base.g8-1",
-      UserOut("scala-steward"),
-      Some(parent),
-      Uri.uri("https://github.com/scala-steward/base.g8-1.git"),
-      Branch("master")
-    )
+  val parent = RepoOut(
+    "base.g8",
+    UserOut("ChristopherDavenport"),
+    None,
+    Uri.uri("https://github.com/ChristopherDavenport/base.g8.git"),
+    Branch("master")
+  )
+
+  val fork = RepoOut(
+    "base.g8-1",
+    UserOut("scala-steward"),
+    Some(parent),
+    Uri.uri("https://github.com/scala-steward/base.g8-1.git"),
+    Branch("master")
+  )
 
   val defaultBranch = BranchOut(
     Branch("master"),
@@ -36,7 +34,7 @@ class GithubApiAlgTest extends FunSuite with Matchers {
   )
 
   val samplePullRequestOut = PullRequestOut(
-    fromString[IO]("https://github.com/octocat/Hello-World/pull/1347").unsafeRunSync(),
+    Uri.uri("https://github.com/octocat/Hello-World/pull/1347"),
     "open",
     "new-feature"
   )
