@@ -85,7 +85,7 @@ object Config {
         disableSandbox = args.disableSandbox,
         doNotFork = args.doNotFork,
         keepCredentials = args.keepCredentials,
-        environmentVariables = args.envVars
+        environmentVariables = args.envVar
       )
     }
 }
