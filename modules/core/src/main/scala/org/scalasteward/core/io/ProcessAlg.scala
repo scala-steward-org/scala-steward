@@ -40,7 +40,9 @@ object ProcessAlg {
           .map(dir => s"--whitelist=$dir")
         val readOnly = config.readOnlyDirectories
           .map(dir => s"--read-only=$dir")
-        exec(Nel("firejail", whitelisted ++ readOnly) ::: command, cwd)
+        val envVars = config.environmentVariables
+          .map(envVar => s"--env=$envVar")
+        exec(Nel("firejail", whitelisted ++ readOnly ++ envVars) ::: command, cwd)
       }
   }
 

@@ -23,7 +23,8 @@ object MockContext {
     readOnlyDirectories = Nil,
     disableSandbox = false,
     doNotFork = false,
-    keepCredentials = false
+    keepCredentials = false,
+    environmentVariables = List("TEST_VAR=GREAT", "ANOTHER_TEST_VAR=ALSO_GREAT")
   )
 
   implicit val fileAlg: MockFileAlg = new MockFileAlg

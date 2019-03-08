@@ -32,7 +32,14 @@ class ProcessAlgTest extends FunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List("firejail", "--whitelist=/tmp", "echo", "hello")
+        List(
+          "firejail",
+          "--whitelist=/tmp",
+          "--env=TEST_VAR=GREAT",
+          "--env=ANOTHER_TEST_VAR=ALSO_GREAT",
+          "echo",
+          "hello"
+        )
       )
     )
   }
