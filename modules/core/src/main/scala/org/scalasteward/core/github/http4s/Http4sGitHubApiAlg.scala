@@ -17,7 +17,6 @@
 package org.scalasteward.core.github.http4s
 
 import cats.effect.Sync
-import cats.implicits._
 import io.circe.Decoder
 import org.http4s.Method.{GET, POST}
 import org.http4s.circe.{jsonEncoderOf, jsonOf}
@@ -37,28 +36,26 @@ class Http4sGitHubApiAlg[F[_]](
     user: AuthenticatedUser,
     F: Sync[F]
 ) extends GitHubApiAlg[F] {
-  val http4sUrl = new Http4sUrl(config.gitHubApiHost)
+  val url = new Url(config.gitHubApiHost)
 
-  override def createFork(repo: Repo): F[RepoOut] =
-    http4sUrl.forks[F](repo).flatMap { uri =>
-      val req = Request[F](POST, uri)
-      expectJsonOf[RepoOut](req)
-    }
+  override def createFork(repo: Repo): F[RepoOut] = {
+    val req = Request[F](POST, url.forks(repo))
+    expectJsonOf[RepoOut](req)
+  }
 
-  override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] =
-    http4sUrl.pulls[F](repo).flatMap { uri =>
-      val req = Request[F](POST, uri).withEntity(data)(jsonEncoderOf)
-      expectJsonOf[PullRequestOut](req)
-    }
+  override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] = {
+    val req = Request[F](POST, url.pulls(repo)).withEntity(data)(jsonEncoderOf)
+    expectJsonOf[PullRequestOut](req)
+  }
 
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
-    http4sUrl.branches[F](repo, branch).flatMap(get[BranchOut])
+    get[BranchOut](url.branches(repo, branch))
 
   override def getRepo(repo: Repo): F[RepoOut] =
-    http4sUrl.repos[F](repo).flatMap(get[RepoOut])
+    get[RepoOut](url.repos(repo))
 
   override def listPullRequests(repo: Repo, head: String): F[List[PullRequestOut]] =
-    http4sUrl.listPullRequests[F](repo, head).flatMap(get[List[PullRequestOut]])
+    get[List[PullRequestOut]](url.listPullRequests(repo, head))
 
   def get[A: Decoder](uri: Uri): F[A] =
     expectJsonOf[A](Request[F](GET, uri))

@@ -16,19 +16,23 @@
 
 package org.scalasteward.core.github
 
+import org.http4s.Uri
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.github.data.Repo
 
-class Url(apiHost: String) {
-  def branches(repo: Repo, branch: Branch): String =
-    s"${repos(repo)}/branches/${branch.name}"
+class Url(apiHost: Uri) {
+  def branches(repo: Repo, branch: Branch): Uri =
+    repos(repo) / "branches" / branch.name
 
-  def forks(repo: Repo): String =
-    s"${repos(repo)}/forks"
+  def forks(repo: Repo): Uri =
+    repos(repo) / "forks"
 
-  def pulls(repo: Repo): String =
-    s"${repos(repo)}/pulls"
+  def listPullRequests(repo: Repo, head: String): Uri =
+    pulls(repo).withQueryParam("head", head).withQueryParam("state", "all")
 
-  def repos(repo: Repo): String =
-    s"$apiHost/repos/${repo.owner}/${repo.repo}"
+  def pulls(repo: Repo): Uri =
+    repos(repo) / "pulls"
+
+  def repos(repo: Repo): Uri =
+    apiHost / "repos" / repo.owner / repo.repo
 }

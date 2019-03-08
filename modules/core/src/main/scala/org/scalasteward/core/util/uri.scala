@@ -24,10 +24,7 @@ import org.http4s.Uri.{Authority, UserInfo}
 
 object uri {
   implicit val uriDecoder: Decoder[Uri] =
-    Decoder[String].emap(s => fromString[Either[Throwable, ?]](s).leftMap(_.getMessage))
-
-  def fromString[F[_]](s: String)(implicit F: ApplicativeThrowable[F]): F[Uri] =
-    F.fromEither(Uri.fromString(s))
+    Decoder[String].emap(s => Uri.fromString(s).leftMap(_.getMessage))
 
   val withAuthority: Optional[Uri, Authority] =
     Optional[Uri, Authority](_.authority)(authority => _.copy(authority = Some(authority)))
