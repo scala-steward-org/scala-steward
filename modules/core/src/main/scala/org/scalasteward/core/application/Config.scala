@@ -74,7 +74,7 @@ object Config {
         workspace = args.workspace.toFile,
         reposFile = args.reposFile.toFile,
         gitAuthor = Author(args.gitAuthorName, args.gitAuthorEmail),
-        gitHubApiHost = Uri.unsafeFromString(args.githubApiHost),
+        gitHubApiHost = args.githubApiHost,
         gitHubLogin = args.githubLogin,
         gitAskPass = args.gitAskPass.toFile,
         signCommits = args.signCommits,
