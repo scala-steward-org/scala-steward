@@ -2,6 +2,7 @@ package org.scalasteward.core.application
 
 import cats.implicits._
 import org.http4s.Uri
+import org.scalasteward.core.application.Cli.EnvVar
 import org.scalatest.{FunSuite, Matchers}
 
 class CliTest extends FunSuite with Matchers {
@@ -17,7 +18,9 @@ class CliTest extends FunSuite with Matchers {
         List("--git-author-email", "d"),
         List("--github-api-host", "http://example.com"),
         List("--github-login", "e"),
-        List("--git-ask-pass", "f")
+        List("--git-ask-pass", "f"),
+        List("--env-var", "g=h"),
+        List("--env-var", "i=j")
       ).flatten
     ) shouldBe Right(
       Cli.Args(
@@ -27,7 +30,8 @@ class CliTest extends FunSuite with Matchers {
         gitAuthorEmail = "d",
         githubApiHost = Uri.uri("http://example.com"),
         githubLogin = "e",
-        gitAskPass = "f"
+        gitAskPass = "f",
+        envVar = List(EnvVar("g", "h"), EnvVar("i", "j"))
       )
     )
   }
