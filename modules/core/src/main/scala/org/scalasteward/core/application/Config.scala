@@ -19,9 +19,11 @@ package org.scalasteward.core.application
 import better.files._
 import cats.effect.Sync
 import cats.implicits._
+import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.git.Author
 import org.scalasteward.core.github.data.AuthenticatedUser
 import org.scalasteward.core.util
+
 import scala.sys.process.Process
 
 /** Configuration for scala-steward.
@@ -44,19 +46,19 @@ import scala.sys.process.Process
   * See also [[https://git-scm.com/docs/gitcredentials]].
   */
 final case class Config(
-    workspace: File,
-    reposFile: File,
-    gitAuthor: Author,
-    gitHubApiHost: String,
-    gitHubLogin: String,
-    gitAskPass: File,
-    signCommits: Boolean,
-    whitelistedDirectories: List[String],
-    readOnlyDirectories: List[String],
-    disableSandbox: Boolean,
-    doNotFork: Boolean,
-    keepCredentials: Boolean,
-    environmentVariables: List[String]
+                         workspace: File,
+                         reposFile: File,
+                         gitAuthor: Author,
+                         gitHubApiHost: String,
+                         gitHubLogin: String,
+                         gitAskPass: File,
+                         signCommits: Boolean,
+                         whitelistedDirectories: List[String],
+                         readOnlyDirectories: List[String],
+                         disableSandbox: Boolean,
+                         doNotFork: Boolean,
+                         keepCredentials: Boolean,
+                         envVars: List[EnvVar]
 ) {
   def gitHubUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] =
     util.uri.fromString[F](gitHubApiHost).flatMap { url =>
@@ -85,7 +87,7 @@ object Config {
         disableSandbox = args.disableSandbox,
         doNotFork = args.doNotFork,
         keepCredentials = args.keepCredentials,
-        environmentVariables = args.envVar
+        envVars = args.envVar
       )
     }
 }

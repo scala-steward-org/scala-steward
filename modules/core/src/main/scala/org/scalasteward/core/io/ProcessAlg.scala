@@ -19,6 +19,7 @@ package org.scalasteward.core.io
 import better.files.File
 import cats.effect.Sync
 import java.io.IOException
+import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.util.Nel
 import scala.collection.mutable.ListBuffer
@@ -32,18 +33,20 @@ trait ProcessAlg[F[_]] {
 
 object ProcessAlg {
   abstract class UsingFirejail[F[_]](config: Config) extends ProcessAlg[F] {
-    override def execSandboxed(command: Nel[String], cwd: File): F[List[String]] =
+    override def execSandboxed(command: Nel[String], cwd: File): F[List[String]] = {
       if (config.disableSandbox) {
-        exec(command, cwd)
+        val envVars = config.envVars.map(EnvVar.unapply(_).get)
+        exec(command, cwd, envVars: _*)
       } else {
         val whitelisted = (cwd.pathAsString :: config.whitelistedDirectories)
           .map(dir => s"--whitelist=$dir")
         val readOnly = config.readOnlyDirectories
           .map(dir => s"--read-only=$dir")
-        val envVars = config.environmentVariables
-          .map(envVar => s"--env=$envVar")
+        val envVars = config.envVars
+          .map(envVar => s"--env=${envVar.name}=${envVar.value}")
         exec(Nel("firejail", whitelisted ++ readOnly ++ envVars) ::: command, cwd)
       }
+    }
   }
 
   def create[F[_]](implicit config: Config, F: Sync[F]): ProcessAlg[F] =

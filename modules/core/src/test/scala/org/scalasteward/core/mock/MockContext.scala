@@ -1,6 +1,7 @@
 package org.scalasteward.core.mock
 
 import better.files.File
+import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.git.{Author, GitAlg}
 import org.scalasteward.core.io.{MockFileAlg, MockProcessAlg, MockWorkspaceAlg}
@@ -24,7 +25,10 @@ object MockContext {
     disableSandbox = false,
     doNotFork = false,
     keepCredentials = false,
-    environmentVariables = List("TEST_VAR=GREAT", "ANOTHER_TEST_VAR=ALSO_GREAT")
+    envVars = List(
+      EnvVar("TEST_VAR", "GREAT"),
+      EnvVar("ANOTHER_TEST_VAR", "ALSO_GREAT")
+    )
   )
 
   implicit val fileAlg: MockFileAlg = new MockFileAlg
