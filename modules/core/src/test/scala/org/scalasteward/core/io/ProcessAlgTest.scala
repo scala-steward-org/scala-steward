@@ -50,11 +50,12 @@ class ProcessAlgTest extends FunSuite with Matchers {
         List(
           "firejail",
           "--whitelist=/tmp",
-          "--env=TEST_VAR=GREAT",
-          "--env=ANOTHER_TEST_VAR=ALSO_GREAT",
           "echo",
           "hello"
         )
+      ),
+      extraEnv = Vector(
+        List(("TEST_VAR", "GREAT"), ("ANOTHER_TEST_VAR", "ALSO_GREAT"))
       )
     )
   }
