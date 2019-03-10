@@ -23,7 +23,6 @@ import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.git.Author
 import org.scalasteward.core.github.data.AuthenticatedUser
 import org.scalasteward.core.util
-
 import scala.sys.process.Process
 
 /** Configuration for scala-steward.

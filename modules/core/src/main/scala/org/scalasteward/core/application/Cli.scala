@@ -52,10 +52,12 @@ object Cli {
         case name :: value :: Nil =>
           Right(EnvVar(name.trim, value.trim))
         case _ =>
-          Left(core.Error.MalformedValue(
-            "env-var",
-            "The value is expected in the following format: NAME=VALUE."
-          ))
+          Left(
+            core.Error.MalformedValue(
+              "env-var",
+              "The value is expected in the following format: NAME=VALUE."
+            )
+          )
       }
     }
 
