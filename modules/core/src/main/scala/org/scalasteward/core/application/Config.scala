@@ -18,7 +18,7 @@ package org.scalasteward.core.application
 
 import better.files._
 import cats.effect.Sync
-import cats.implicits._
+import org.http4s.Uri
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.git.Author
 import org.scalasteward.core.github.data.AuthenticatedUser
@@ -46,29 +46,28 @@ import scala.sys.process.Process
   * See also [[https://git-scm.com/docs/gitcredentials]].
   */
 final case class Config(
-                         workspace: File,
-                         reposFile: File,
-                         gitAuthor: Author,
-                         gitHubApiHost: String,
-                         gitHubLogin: String,
-                         gitAskPass: File,
-                         signCommits: Boolean,
-                         whitelistedDirectories: List[String],
-                         readOnlyDirectories: List[String],
-                         disableSandbox: Boolean,
-                         doNotFork: Boolean,
-                         keepCredentials: Boolean,
-                         envVars: List[EnvVar]
+    workspace: File,
+    reposFile: File,
+    gitAuthor: Author,
+    gitHubApiHost: Uri,
+    gitHubLogin: String,
+    gitAskPass: File,
+    signCommits: Boolean,
+    whitelistedDirectories: List[String],
+    readOnlyDirectories: List[String],
+    disableSandbox: Boolean,
+    doNotFork: Boolean,
+    keepCredentials: Boolean,
+    envVars: List[EnvVar]
 ) {
-  def gitHubUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] =
-    util.uri.fromString[F](gitHubApiHost).flatMap { url =>
-      val urlWithUser = util.uri.withUserInfo.set(gitHubLogin)(url).renderString
-      val prompt = s"Password for '$urlWithUser': "
-      F.delay {
-        val password = Process(List(gitAskPass.pathAsString, prompt)).!!.trim
-        AuthenticatedUser(gitHubLogin, password)
-      }
+  def gitHubUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] = {
+    val urlWithUser = util.uri.withUserInfo.set(gitHubLogin)(gitHubApiHost).renderString
+    val prompt = s"Password for '$urlWithUser': "
+    F.delay {
+      val password = Process(List(gitAskPass.pathAsString, prompt)).!!.trim
+      AuthenticatedUser(gitHubLogin, password)
     }
+  }
 }
 
 object Config {

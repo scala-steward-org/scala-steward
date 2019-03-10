@@ -205,13 +205,13 @@ addCommandsAlias(
 addCommandAlias(
   "runSteward", {
     val home = System.getenv("HOME")
+    val projectDir = s"$home/code/sso/bot"
     Seq(
       Seq("core/run"),
-      Seq("--workspace", s"$home/code/$projectName/workspace"),
-      Seq("--repos-file", s"$home/code/$projectName/repos.md"),
+      Seq("--workspace", s"$projectDir/workspace"),
+      Seq("--repos-file", s"$projectDir/repos.md"),
       Seq("--git-author-name", "Scala steward"),
       Seq("--git-author-email", s"me@$projectName.org"),
-      Seq("--github-api-host", "https://api.github.com"),
       Seq("--github-login", projectName),
       Seq("--git-ask-pass", s"$home/.github/askpass/$projectName.sh"),
       Seq("--whitelist", s"$home/.cache/coursier"),

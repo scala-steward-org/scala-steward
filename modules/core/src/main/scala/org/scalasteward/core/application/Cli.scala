@@ -17,8 +17,11 @@
 package org.scalasteward.core.application
 
 import caseapp._
+import caseapp.core.Error.MalformedValue
+import caseapp.core.argparser.ArgParser
 import caseapp.core.argparser.SimpleArgParser
 import cats.implicits._
+import org.http4s.Uri
 import org.scalasteward.core.util.ApplicativeThrowable
 
 trait Cli[F[_]] {
@@ -31,7 +34,7 @@ object Cli {
       reposFile: String,
       gitAuthorName: String,
       gitAuthorEmail: String,
-      githubApiHost: String,
+      githubApiHost: Uri = Uri.uri("https://api.github.com"),
       githubLogin: String,
       gitAskPass: String,
       signCommits: Boolean = false,
@@ -64,4 +67,10 @@ object Cli {
           .bimap(e => new Throwable(e.message), { case (parsed, _) => parsed })
       }
   }
+
+  implicit val uriArgParser: ArgParser[Uri] =
+    ArgParser[String].xmapError(
+      _.renderString,
+      s => Uri.fromString(s).leftMap(pf => MalformedValue("Uri", pf.message))
+    )
 }

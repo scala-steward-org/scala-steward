@@ -1,16 +1,15 @@
 package org.scalasteward.core.git
 
-import cats.effect.IO
 import org.http4s.Uri
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.github.data.{Repo, RepoOut, UserOut}
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.{MockContext, MockState}
-import org.scalasteward.core.util
 import org.scalatest.{FunSuite, Matchers}
 
 class GitAlgTest extends FunSuite with Matchers {
   val repo = Repo("fthomas", "datapackage")
+
   val parentRepoOut = RepoOut(
     "datapackage",
     UserOut("fthomas"),
@@ -18,6 +17,7 @@ class GitAlgTest extends FunSuite with Matchers {
     Uri.uri("https://fthomas@github.com/fthomas/datapackage"),
     Branch("master")
   )
+
   val childRepoOut = RepoOut(
     "datapackage",
     UserOut("scalasteward"),
@@ -27,9 +27,7 @@ class GitAlgTest extends FunSuite with Matchers {
   )
 
   test("clone") {
-    val url = util.uri
-      .fromString[IO]("https://scala-steward@github.com/fthomas/datapackage")
-      .unsafeRunSync()
+    val url = Uri.uri("https://scala-steward@github.com/fthomas/datapackage")
     val state = gitAlg.clone(repo, url).runS(MockState.empty).unsafeRunSync()
 
     state shouldBe MockState.empty.copy(

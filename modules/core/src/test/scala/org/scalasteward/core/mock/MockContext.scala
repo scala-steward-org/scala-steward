@@ -2,6 +2,7 @@ package org.scalasteward.core.mock
 
 import better.files.File
 import org.scalasteward.core.application.Cli.EnvVar
+import org.http4s.Uri
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.git.{Author, GitAlg}
 import org.scalasteward.core.io.{MockFileAlg, MockProcessAlg, MockWorkspaceAlg}
@@ -16,7 +17,7 @@ object MockContext {
     workspace = File.temp / "ws",
     reposFile = File.temp / "repos.md",
     gitAuthor = Author("", ""),
-    gitHubApiHost = "",
+    gitHubApiHost = Uri.uri(""),
     gitHubLogin = "",
     gitAskPass = File.temp / "askpass.sh",
     signCommits = true,
