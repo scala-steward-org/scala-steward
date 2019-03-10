@@ -39,8 +39,11 @@ class GitAlgTest extends FunSuite with Matchers {
           "clone",
           "--recursive",
           "https://scala-steward@github.com/fthomas/datapackage",
-          "/tmp/ws/fthomas/datapackage"
+          (config.workspace / "fthomas/datapackage").toString
         )
+      ),
+      extraEnv = Vector(
+        List(("GIT_ASKPASS", config.gitAskPass.toString))
       )
     )
   }
@@ -54,6 +57,9 @@ class GitAlgTest extends FunSuite with Matchers {
     state shouldBe MockState.empty.copy(
       commands = Vector(
         List("git", "log", "--pretty=format:'%an'", "master..update/cats-1.0.0")
+      ),
+      extraEnv = Vector(
+        List(("GIT_ASKPASS", config.gitAskPass.toString))
       )
     )
   }
@@ -67,6 +73,9 @@ class GitAlgTest extends FunSuite with Matchers {
     state shouldBe MockState.empty.copy(
       commands = Vector(
         List("git", "commit", "--all", "-m", "Initial commit", "--gpg-sign")
+      ),
+      extraEnv = Vector(
+        List(("GIT_ASKPASS", config.gitAskPass.toString))
       )
     )
   }
@@ -87,6 +96,13 @@ class GitAlgTest extends FunSuite with Matchers {
         List("git", "checkout", "-B", "master", "--track", "upstream/master"),
         List("git", "merge", "upstream/master"),
         List("git", "push", "--force", "--set-upstream", "origin", "master")
+      ),
+      extraEnv = Vector(
+        List(("GIT_ASKPASS", config.gitAskPass.toString)),
+        List(("GIT_ASKPASS", config.gitAskPass.toString)),
+        List(("GIT_ASKPASS", config.gitAskPass.toString)),
+        List(("GIT_ASKPASS", config.gitAskPass.toString)),
+        List(("GIT_ASKPASS", config.gitAskPass.toString))
       )
     )
   }
@@ -118,6 +134,13 @@ class GitAlgTest extends FunSuite with Matchers {
         List("git", "checkout", "-B", "master", "--track", "upstream/master"),
         List("git", "merge", "upstream/master"),
         List("git", "push", "--force", "--set-upstream", "origin", "master")
+      ),
+      extraEnv = Vector(
+        List(("GIT_ASKPASS", config.gitAskPass.toString)),
+        List(("GIT_ASKPASS", config.gitAskPass.toString)),
+        List(("GIT_ASKPASS", config.gitAskPass.toString)),
+        List(("GIT_ASKPASS", config.gitAskPass.toString)),
+        List(("GIT_ASKPASS", config.gitAskPass.toString))
       )
     )
     result shouldBe parentRepoOut

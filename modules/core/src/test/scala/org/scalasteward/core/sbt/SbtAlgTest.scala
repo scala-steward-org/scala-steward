@@ -33,11 +33,11 @@ class SbtAlgTest extends FunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List("rm", "/tmp/ws/fthomas/refined/.jvmopts"),
-        List("rm", "/tmp/ws/fthomas/refined/.sbtopts"),
+        List("rm", (config.workspace / "fthomas/refined/.jvmopts").toString),
+        List("rm", (config.workspace / "fthomas/refined/.sbtopts").toString),
         List(
           "firejail",
-          "--whitelist=/tmp/ws/fthomas/refined",
+          s"--whitelist=${(config.workspace / "fthomas/refined").toString}",
           "--env=TEST_VAR=GREAT",
           "--env=ANOTHER_TEST_VAR=ALSO_GREAT",
           "sbt",
@@ -45,8 +45,8 @@ class SbtAlgTest extends FunSuite with Matchers {
           "-no-colors",
           ";set every credentials := Nil;dependencyUpdates;reload plugins;dependencyUpdates"
         ),
-        List("restore", "/tmp/ws/fthomas/refined/.sbtopts"),
-        List("restore", "/tmp/ws/fthomas/refined/.jvmopts")
+        List("restore", (config.workspace / "fthomas/refined/.sbtopts").toString),
+        List("restore", (config.workspace / "fthomas/refined/.jvmopts").toString)
       )
     )
   }
@@ -60,11 +60,11 @@ class SbtAlgTest extends FunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List("rm", "/tmp/ws/fthomas/refined/.jvmopts"),
-        List("rm", "/tmp/ws/fthomas/refined/.sbtopts"),
+        List("rm", (config.workspace / "fthomas/refined/.jvmopts").toString),
+        List("rm", (config.workspace / "fthomas/refined/.sbtopts").toString),
         List(
           "firejail",
-          "--whitelist=/tmp/ws/fthomas/refined",
+          s"--whitelist=${(config.workspace / "fthomas/refined").toString}",
           "--env=TEST_VAR=GREAT",
           "--env=ANOTHER_TEST_VAR=ALSO_GREAT",
           "sbt",
@@ -72,8 +72,8 @@ class SbtAlgTest extends FunSuite with Matchers {
           "-no-colors",
           ";dependencyUpdates;reload plugins;dependencyUpdates"
         ),
-        List("restore", "/tmp/ws/fthomas/refined/.sbtopts"),
-        List("restore", "/tmp/ws/fthomas/refined/.jvmopts")
+        List("restore", (config.workspace / "fthomas/refined/.sbtopts").toString),
+        List("restore", (config.workspace / "fthomas/refined/.jvmopts").toString)
       )
     )
   }
