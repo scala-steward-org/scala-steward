@@ -33,18 +33,21 @@ class SbtAlgTest extends FunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List("rm", "/tmp/ws/fthomas/refined/.jvmopts"),
-        List("rm", "/tmp/ws/fthomas/refined/.sbtopts"),
+        List("rm", (config.workspace / "fthomas/refined/.jvmopts").toString),
+        List("rm", (config.workspace / "fthomas/refined/.sbtopts").toString),
         List(
           "firejail",
-          "--whitelist=/tmp/ws/fthomas/refined",
+          s"--whitelist=${(config.workspace / "fthomas/refined").toString}",
           "sbt",
           "-batch",
           "-no-colors",
           ";set every credentials := Nil;dependencyUpdates;reload plugins;dependencyUpdates"
         ),
-        List("restore", "/tmp/ws/fthomas/refined/.sbtopts"),
-        List("restore", "/tmp/ws/fthomas/refined/.jvmopts")
+        List("restore", (config.workspace / "fthomas/refined/.sbtopts").toString),
+        List("restore", (config.workspace / "fthomas/refined/.jvmopts").toString)
+      ),
+      extraEnv = Vector(
+        List(("TEST_VAR", "GREAT"), ("ANOTHER_TEST_VAR", "ALSO_GREAT"))
       )
     )
   }
@@ -58,18 +61,21 @@ class SbtAlgTest extends FunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List("rm", "/tmp/ws/fthomas/refined/.jvmopts"),
-        List("rm", "/tmp/ws/fthomas/refined/.sbtopts"),
+        List("rm", (config.workspace / "fthomas/refined/.jvmopts").toString),
+        List("rm", (config.workspace / "fthomas/refined/.sbtopts").toString),
         List(
           "firejail",
-          "--whitelist=/tmp/ws/fthomas/refined",
+          s"--whitelist=${(config.workspace / "fthomas/refined").toString}",
           "sbt",
           "-batch",
           "-no-colors",
           ";dependencyUpdates;reload plugins;dependencyUpdates"
         ),
-        List("restore", "/tmp/ws/fthomas/refined/.sbtopts"),
-        List("restore", "/tmp/ws/fthomas/refined/.jvmopts")
+        List("restore", (config.workspace / "fthomas/refined/.sbtopts").toString),
+        List("restore", (config.workspace / "fthomas/refined/.jvmopts").toString)
+      ),
+      extraEnv = Vector(
+        List(("TEST_VAR", "GREAT"), ("ANOTHER_TEST_VAR", "ALSO_GREAT"))
       )
     )
   }

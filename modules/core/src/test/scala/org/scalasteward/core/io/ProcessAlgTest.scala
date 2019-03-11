@@ -24,6 +24,21 @@ class ProcessAlgTest extends FunSuite with Matchers {
       .unsafeRunSync()
   }
 
+  test("respect the disableSandbox setting") {
+    val cfg = config.copy(disableSandbox = true)
+    val processAlg = new MockProcessAlg()(cfg)
+
+    val state = processAlg
+      .execSandboxed(Nel.of("echo", "hello"), File.root / "tmp")
+      .runS(MockState.empty)
+      .unsafeRunSync()
+
+    state shouldBe MockState.empty.copy(
+      commands = Vector(List("echo", "hello")),
+      extraEnv = Vector(List(("TEST_VAR", "GREAT"), ("ANOTHER_TEST_VAR", "ALSO_GREAT")))
+    )
+  }
+
   test("execSandboxed echo") {
     val state = processAlg
       .execSandboxed(Nel.of("echo", "hello"), File.root / "tmp")
@@ -32,7 +47,15 @@ class ProcessAlgTest extends FunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List("firejail", "--whitelist=/tmp", "echo", "hello")
+        List(
+          "firejail",
+          "--whitelist=/tmp",
+          "echo",
+          "hello"
+        )
+      ),
+      extraEnv = Vector(
+        List(("TEST_VAR", "GREAT"), ("ANOTHER_TEST_VAR", "ALSO_GREAT"))
       )
     )
   }

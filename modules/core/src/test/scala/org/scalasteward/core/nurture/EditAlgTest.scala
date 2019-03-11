@@ -20,7 +20,7 @@ class EditAlgTest extends FunSuite with Matchers {
       .runS(MockState.empty.add(file, """val catsVersion = "1.2.0""""))
       .unsafeRunSync()
 
-    state shouldBe MockState(
+    state shouldBe MockState.empty.copy(
       commands = Vector(
         List("read", file.pathAsString),
         List("read", file.pathAsString),

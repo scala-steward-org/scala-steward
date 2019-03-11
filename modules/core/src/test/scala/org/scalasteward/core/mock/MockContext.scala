@@ -1,6 +1,7 @@
 package org.scalasteward.core.mock
 
 import better.files.File
+import org.scalasteward.core.application.Cli.EnvVar
 import org.http4s.Uri
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.git.{Author, GitAlg}
@@ -24,7 +25,11 @@ object MockContext {
     readOnlyDirectories = Nil,
     disableSandbox = false,
     doNotFork = false,
-    keepCredentials = false
+    keepCredentials = false,
+    envVars = List(
+      EnvVar("TEST_VAR", "GREAT"),
+      EnvVar("ANOTHER_TEST_VAR", "ALSO_GREAT")
+    )
   )
 
   implicit val fileAlg: MockFileAlg = new MockFileAlg

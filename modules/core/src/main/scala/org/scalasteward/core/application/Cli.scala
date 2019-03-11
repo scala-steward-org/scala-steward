@@ -19,6 +19,7 @@ package org.scalasteward.core.application
 import caseapp._
 import caseapp.core.Error.MalformedValue
 import caseapp.core.argparser.ArgParser
+import caseapp.core.argparser.SimpleArgParser
 import cats.implicits._
 import org.http4s.Uri
 import org.scalasteward.core.util.ApplicativeThrowable
@@ -41,8 +42,24 @@ object Cli {
       readOnly: List[String] = Nil,
       disableSandbox: Boolean = false,
       doNotFork: Boolean = false,
-      keepCredentials: Boolean = false
+      keepCredentials: Boolean = false,
+      envVar: List[EnvVar] = Nil
   )
+  final case class EnvVar(name: String, value: String)
+  implicit val envVarParser: SimpleArgParser[EnvVar] =
+    SimpleArgParser.from[EnvVar]("env-var") { s =>
+      s.trim.split('=').toList match {
+        case name :: value :: Nil =>
+          Right(EnvVar(name.trim, value.trim))
+        case _ =>
+          Left(
+            core.Error.MalformedValue(
+              "env-var",
+              "The value is expected in the following format: NAME=VALUE."
+            )
+          )
+      }
+    }
 
   def create[F[_]](implicit F: ApplicativeThrowable[F]): Cli[F] = new Cli[F] {
     override def parseArgs(args: List[String]): F[Args] =

@@ -19,6 +19,7 @@ package org.scalasteward.core.application
 import better.files._
 import cats.effect.Sync
 import org.http4s.Uri
+import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.git.Author
 import org.scalasteward.core.github.data.AuthenticatedUser
 import org.scalasteward.core.util
@@ -55,7 +56,8 @@ final case class Config(
     readOnlyDirectories: List[String],
     disableSandbox: Boolean,
     doNotFork: Boolean,
-    keepCredentials: Boolean
+    keepCredentials: Boolean,
+    envVars: List[EnvVar]
 ) {
   def gitHubUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] = {
     val urlWithUser = util.uri.withUserInfo.set(gitHubLogin)(gitHubApiHost).renderString
@@ -82,7 +84,8 @@ object Config {
         readOnlyDirectories = args.readOnly,
         disableSandbox = args.disableSandbox,
         doNotFork = args.doNotFork,
-        keepCredentials = args.keepCredentials
+        keepCredentials = args.keepCredentials,
+        envVars = args.envVar
       )
     }
 }
