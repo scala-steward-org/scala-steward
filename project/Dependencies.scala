@@ -12,12 +12,14 @@ object Dependencies {
   val catsEffect = "org.typelevel" %% "cats-effect" % "1.2.0"
   val circeConfig = "io.circe" %% "circe-config" % "0.6.1"
   val circeGeneric = "io.circe" %% "circe-generic" % Versions.circe
+  val circeLiteral = "io.circe" %% "circe-literal" % Versions.circe
   val circeParser = "io.circe" %% "circe-parser" % Versions.circe
   val circeRefined = "io.circe" %% "circe-refined" % Versions.circe
   val commonsIo = "commons-io" % "commons-io" % "2.6"
   val fs2Core = "co.fs2" %% "fs2-core" % "1.0.4"
   val http4sBlazeClient = "org.http4s" %% "http4s-blaze-client" % Versions.http4s
   val http4sCirce = "org.http4s" %% "http4s-circe" % Versions.http4s
+  val http4sDsl = "org.http4s" %% "http4s-dsl" % Versions.http4s
   val kindProjector = "org.spire-math" %% "kind-projector" % "0.9.9"
   val log4catsSlf4j = "io.chrisdavenport" %% "log4cats-slf4j" % "0.3.0"
   val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.2.3"
