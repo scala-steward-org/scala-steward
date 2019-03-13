@@ -42,6 +42,8 @@ lazy val core = myCrossProject("core")
       Dependencies.monocleCore,
       Dependencies.refined,
       Dependencies.logbackClassic % Runtime,
+      Dependencies.circeLiteral % Test,
+      Dependencies.http4sDsl % Test,
       Dependencies.refinedScalacheck % Test,
       Dependencies.scalacheck % Test,
       Dependencies.scalaTest % Test
