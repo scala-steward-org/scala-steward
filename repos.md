@@ -270,6 +270,8 @@
 - spotify/scio.g8
 - spotify/scio-contrib
 - spotify/scio-idea-plugin
+- swagger-akka-http/swagger-akka-http
+- swagger-akka-http/swagger-scala-module
 - sullis/jms-testkit
 - ThoughtWorksInc/Binding.scala
 - ThoughtWorksInc/Dsl.scala
