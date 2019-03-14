@@ -200,6 +200,7 @@
 - pdalpra/gh4s
 - pepegar/base.g8
 - pepegar/hammock
+- phdoerfler/beegment
 - phdoerfler/enni
 - phenoscape/scowl
 - Philippus/baggage-jwt
