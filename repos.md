@@ -197,6 +197,7 @@
 - olafurpg/sbt-ci-release
 - pathikrit/better-files
 - pauljamescleary/scala-pet-store
+- pbernet/akka_streams_tutorial
 - pdalpra/gh4s
 - pepegar/base.g8
 - pepegar/hammock
