@@ -285,6 +285,7 @@
 - ThoughtWorksInc/sbt-ammonite-classpath
 - ThoughtWorksInc/sbt-api-mappings
 - ThoughtWorksInc/sbt-best-practice
+- ThoughtWorksInc/sbt-delombok
 - ThoughtWorksInc/sbt-example
 - ThoughtWorksInc/sbt-scala-js-map
 - ThoughtWorksInc/todo
