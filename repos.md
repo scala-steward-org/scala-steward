@@ -273,6 +273,7 @@
 - swagger-akka-http/swagger-akka-http
 - swagger-akka-http/swagger-scala-module
 - sullis/jms-testkit
+- ThoughtWorksInc/bindable.scala
 - ThoughtWorksInc/Binding.scala
 - ThoughtWorksInc/Dsl.scala
 - ThoughtWorksInc/each
