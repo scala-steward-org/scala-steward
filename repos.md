@@ -100,6 +100,7 @@
 - dhpiggott/liquidity
 - embeddedkafka/embedded-kafka
 - embeddedkafka/embedded-kafka-schema-registry
+- enzief/recursionz
 - erikvanoosten/metrics-scala
 - esamson/remder
 - esamson/sbt-groovy
