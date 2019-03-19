@@ -227,6 +227,7 @@
 - sbt/sbt-java-formatter
 - scalabin-no/http4s-directives
 - scalameta/metabrowse
+- scalaz/scalaz-distributed
 - scalaz/scalaz-nio
 - scalaz/scalaz-zio
 - scala/hello-world.g8
