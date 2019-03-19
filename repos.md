@@ -40,14 +40,17 @@
 - ChristopherDavenport/cats-scalacheck
 - ChristopherDavenport/cats-time
 - ChristopherDavenport/circuit
+- ChristopherDavenport/circuit-http4s
 - ChristopherDavenport/cls-sch-pipe
 - ChristopherDavenport/cormorant
 - ChristopherDavenport/Data.Maybe
 - ChristopherDavenport/default
 - ChristopherDavenport/ember
 - ChristopherDavenport/epimetheus
+- ChristopherDavenport/epimetheus-circuit
 - ChristopherDavenport/epimetheus-http4s
 - ChristopherDavenport/epimetheus-log4cats
+- ChristopherDavenport/epimetheus-mules
 - ChristopherDavenport/fuuid
 - ChristopherDavenport/http4s-client-example
 - ChristopherDavenport/http4s-resource-example
