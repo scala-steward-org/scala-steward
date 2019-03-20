@@ -56,9 +56,8 @@ class Http4sGitHubApiAlgTest extends FunSuite with Matchers {
         NotFound()
     }
 
-  implicit val client: Client[IO] = Client.fromHttpApp(routes.orNotFound)
-  implicit val user: AuthenticatedUser = AuthenticatedUser("", "")
-  val gitHubApiAlg = new Http4sGitHubApiAlg[IO]
+  val client: Client[IO] = Client.fromHttpApp(routes.orNotFound)
+  val gitHubApiAlg = new Http4sGitHubApiAlg[IO](client, config.gitHubApiHost, IO.pure)
 
   val repo = Repo("fthomas", "base.g8")
 

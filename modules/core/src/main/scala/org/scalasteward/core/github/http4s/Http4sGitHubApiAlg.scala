@@ -21,22 +21,17 @@ import io.circe.Decoder
 import org.http4s.Method.{GET, POST}
 import org.http4s.circe.{jsonEncoderOf, jsonOf}
 import org.http4s.client.Client
-import org.http4s.headers.Authorization
-import org.http4s.{BasicCredentials, Headers, Request, Uri}
-import org.scalasteward.core.application.Config
+import org.http4s.{Request, Uri}
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.github._
 import org.scalasteward.core.github.data._
-import org.scalasteward.core.github.http4s.Http4sGitHubApiAlg._
 
-class Http4sGitHubApiAlg[F[_]](
-    implicit
+final class Http4sGitHubApiAlg[F[_]: Sync](
     client: Client[F],
-    config: Config,
-    user: AuthenticatedUser,
-    F: Sync[F]
+    gitHubApiHost: Uri,
+    modify: Request[F] => F[Request[F]]
 ) extends GitHubApiAlg[F] {
-  val url = new Url(config.gitHubApiHost)
+  val url = new Url(gitHubApiHost)
 
   override def createFork(repo: Repo): F[RepoOut] = {
     val req = Request[F](POST, url.forks(repo))
@@ -61,13 +56,5 @@ class Http4sGitHubApiAlg[F[_]](
     expectJsonOf[A](Request[F](GET, uri))
 
   def expectJsonOf[A: Decoder](req: Request[F]): F[A] =
-    client.expect[A](authenticate(user)(req))(jsonOf)
-}
-
-object Http4sGitHubApiAlg {
-  def authenticate[F[_]](user: AuthenticatedUser)(req: Request[F]): Request[F] =
-    req.withHeaders(req.headers ++ Headers(toBasicAuth(user)))
-
-  def toBasicAuth(user: AuthenticatedUser): Authorization =
-    Authorization(BasicCredentials(user.login, user.accessToken))
+    client.expect[A](modify(req))(jsonOf)
 }
