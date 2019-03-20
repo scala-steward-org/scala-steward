@@ -25,7 +25,8 @@ import org.scalasteward.core.dependency.{DependencyRepository, DependencyService
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.github.GitHubApiAlg
 import org.scalasteward.core.github.data.AuthenticatedUser
-import org.scalasteward.core.github.http4s.{BasicAuthorization, Http4sGitHubApiAlg}
+import org.scalasteward.core.github.http4s.Http4sGitHubApiAlg
+import org.scalasteward.core.github.http4s.authentication.addCredentials
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.json.JsonPullRequestRepo
 import org.scalasteward.core.nurture.{EditAlg, NurtureAlg, PullRequestRepository}
@@ -69,7 +70,7 @@ object Context {
       implicit val editAlg: EditAlg[F] = EditAlg.create[F]
       implicit val gitAlg: GitAlg[F] = GitAlg.create[F]
       implicit val gitHubApiAlg: GitHubApiAlg[F] =
-        new Http4sGitHubApiAlg[F](client_, config.gitHubApiHost, BasicAuthorization.authorize(user))
+        new Http4sGitHubApiAlg[F](client_, config.gitHubApiHost, addCredentials(user))
       implicit val pullRequestRepo: PullRequestRepository[F] = new JsonPullRequestRepo[F]
       implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F]
       implicit val updateRepository: UpdateRepository[F] = new JsonUpdateRepository[F]

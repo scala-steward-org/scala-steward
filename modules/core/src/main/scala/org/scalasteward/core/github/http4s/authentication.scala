@@ -22,10 +22,7 @@ import org.http4s.headers.Authorization
 import org.http4s.{BasicCredentials, Request}
 import org.scalasteward.core.github.data.AuthenticatedUser
 
-object BasicAuthorization {
-  def authorize[F[_]: Applicative](user: AuthenticatedUser): Request[F] => F[Request[F]] =
-    _.putHeaders(basicAuth(user)).pure[F]
-
-  def basicAuth(user: AuthenticatedUser): Authorization =
-    Authorization(BasicCredentials(user.login, user.accessToken))
+object authentication {
+  def addCredentials[F[_]: Applicative](user: AuthenticatedUser): Request[F] => F[Request[F]] =
+    _.putHeaders(Authorization(BasicCredentials(user.login, user.accessToken))).pure[F]
 }
