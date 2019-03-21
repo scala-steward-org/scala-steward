@@ -40,5 +40,5 @@ final class HttpJsonClient[F[_]: Sync](
     expectJsonOf[A](Request[F](method, uri))
 
   def expectJsonOf[A: Decoder](req: Request[F]): F[A] =
-    client.expect[A](modify(req))(jsonOf)
+    client.expect[A](modify(req))(jsonOf[F, A])
 }
