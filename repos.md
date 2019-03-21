@@ -216,6 +216,7 @@
 - Philippus/julius
 - Philippus/scala-for-all
 - pjan/akka-d3
+- playframework/play-grpc
 - plokhotnyuk/jsoniter-scala
 - ppurang/asynch
 - pshirshov/izumi-r2
