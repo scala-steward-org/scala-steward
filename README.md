@@ -36,6 +36,7 @@ The following people have helped making scala-steward great:
 * [Arulselvan Madhavan](https://github.com/ArulselvanMadhavan)
 * [Filipe Regadas](https://github.com/regadas)
 * [Frank S. Thomas](https://github.com/fthomas)
+* [Jeff](https://github.com/custommonkey)
 * [kenji yoshida](https://github.com/xuwei-k)
 * [Michael Wizner](https://github.com/mwz)
 * [Philippus Baalman](https://github.com/Philippus)
