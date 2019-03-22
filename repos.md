@@ -101,6 +101,11 @@
 - daniel-shuy/liquibase-slick-codegen-sbt-plugin
 - daniel-shuy/scripted-scalatest-sbt-plugin
 - dhpiggott/liquidity
+- dwijnand/sbt-compat
+- dwijnand/sbt-dynver
+- dwijnand/sbt-project-graph
+- dwijnand/sbt-reloadquick
+- dwijnand/sbt-travisci
 - embeddedkafka/embedded-kafka
 - embeddedkafka/embedded-kafka-schema-registry
 - enzief/recursionz
