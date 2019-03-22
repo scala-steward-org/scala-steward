@@ -64,11 +64,11 @@ object NewPullRequestData {
         |""".stripMargin.trim
   }
 
-  def from(data: UpdateData, login: String): NewPullRequestData =
+  def from(data: UpdateData, headLogin: String, authorLogin: String): NewPullRequestData =
     NewPullRequestData(
       title = git.commitMsgFor(data.update),
-      body = bodyFor(data.update, login),
-      head = github.headFor(login, data.update),
+      body = bodyFor(data.update, authorLogin),
+      head = github.headFor(headLogin, data.update),
       base = data.baseBranch
     )
 }
