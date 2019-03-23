@@ -23,7 +23,7 @@ import org.http4s.client.blaze.BlazeClientBuilder
 import org.scalasteward.core.dependency.json.JsonDependencyRepository
 import org.scalasteward.core.dependency.{DependencyRepository, DependencyService}
 import org.scalasteward.core.git.GitAlg
-import org.scalasteward.core.github.GitHubApiAlg
+import org.scalasteward.core.github.{GitHubApiAlg, RepoAlg}
 import org.scalasteward.core.github.data.AuthenticatedUser
 import org.scalasteward.core.github.http4s.Http4sGitHubApiAlg
 import org.scalasteward.core.github.http4s.authentication.addCredentials
@@ -72,6 +72,7 @@ object Context {
       implicit val gitHubApiAlg: GitHubApiAlg[F] =
         new Http4sGitHubApiAlg[F](client_, config.gitHubApiHost, addCredentials(user))
       implicit val pullRequestRepo: PullRequestRepository[F] = new JsonPullRequestRepo[F]
+      implicit val repoAlg: RepoAlg[F] = RepoAlg.create[F](config, gitAlg)
       implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F]
       implicit val updateRepository: UpdateRepository[F] = new JsonUpdateRepository[F]
       implicit val dependencyService: DependencyService[F] = new DependencyService[F]
