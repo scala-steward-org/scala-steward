@@ -29,22 +29,24 @@ class SbtAlgTest extends FunSuite with Matchers {
 
   test("getUpdatesForRepo") {
     val repo = Repo("fthomas", "refined")
+    val repoDir = config.workspace / "fthomas/refined"
     val state = sbtAlg.getUpdatesForRepo(repo).runS(MockState.empty).unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List("rm", (config.workspace / "fthomas/refined/.jvmopts").toString),
-        List("rm", (config.workspace / "fthomas/refined/.sbtopts").toString),
+        List("rm", (repoDir / ".jvmopts").toString),
+        List("rm", (repoDir / ".sbtopts").toString),
         List(
+          repoDir.toString,
           "firejail",
-          s"--whitelist=${(config.workspace / "fthomas/refined").toString}",
+          s"--whitelist=$repoDir",
           "sbt",
           "-batch",
           "-no-colors",
           ";set every credentials := Nil;dependencyUpdates;reload plugins;dependencyUpdates"
         ),
-        List("restore", (config.workspace / "fthomas/refined/.sbtopts").toString),
-        List("restore", (config.workspace / "fthomas/refined/.jvmopts").toString)
+        List("restore", (repoDir / ".sbtopts").toString),
+        List("restore", (repoDir / ".jvmopts").toString)
       ),
       extraEnv = Vector(
         List(("TEST_VAR", "GREAT"), ("ANOTHER_TEST_VAR", "ALSO_GREAT"))
@@ -53,26 +55,28 @@ class SbtAlgTest extends FunSuite with Matchers {
   }
 
   test("getUpdatesForRepo keeping credentials") {
-    val repo = Repo("fthomas", "refined")
     implicit val config: Config = MockContext.config.copy(keepCredentials = true)
     val sbtAlgKeepingCredentials = SbtAlg.create
+    val repo = Repo("fthomas", "refined")
+    val repoDir = config.workspace / "fthomas/refined"
     val state =
       sbtAlgKeepingCredentials.getUpdatesForRepo(repo).runS(MockState.empty).unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List("rm", (config.workspace / "fthomas/refined/.jvmopts").toString),
-        List("rm", (config.workspace / "fthomas/refined/.sbtopts").toString),
+        List("rm", (repoDir / ".jvmopts").toString),
+        List("rm", (repoDir / ".sbtopts").toString),
         List(
+          repoDir.toString,
           "firejail",
-          s"--whitelist=${(config.workspace / "fthomas/refined").toString}",
+          s"--whitelist=$repoDir",
           "sbt",
           "-batch",
           "-no-colors",
           ";dependencyUpdates;reload plugins;dependencyUpdates"
         ),
-        List("restore", (config.workspace / "fthomas/refined/.sbtopts").toString),
-        List("restore", (config.workspace / "fthomas/refined/.jvmopts").toString)
+        List("restore", (repoDir / ".sbtopts").toString),
+        List("restore", (repoDir / ".jvmopts").toString)
       ),
       extraEnv = Vector(
         List(("TEST_VAR", "GREAT"), ("ANOTHER_TEST_VAR", "ALSO_GREAT"))
