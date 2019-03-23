@@ -9,6 +9,7 @@ import org.scalatest.{FunSuite, Matchers}
 
 class GitAlgTest extends FunSuite with Matchers {
   val repo = Repo("fthomas", "datapackage")
+  val repoDir: String = (config.workspace / "fthomas/datapackage").toString
 
   val parentRepoOut = RepoOut(
     "datapackage",
@@ -33,11 +34,12 @@ class GitAlgTest extends FunSuite with Matchers {
     state shouldBe MockState.empty.copy(
       commands = Vector(
         List(
+          config.workspace.toString,
           "git",
           "clone",
           "--recursive",
           "https://scala-steward@github.com/fthomas/datapackage",
-          (config.workspace / "fthomas/datapackage").toString
+          repoDir
         )
       ),
       extraEnv = Vector(
@@ -54,7 +56,7 @@ class GitAlgTest extends FunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List("git", "log", "--pretty=format:'%an'", "master..update/cats-1.0.0")
+        List(repoDir, "git", "log", "--pretty=format:'%an'", "master..update/cats-1.0.0")
       ),
       extraEnv = Vector(
         List(("GIT_ASKPASS", config.gitAskPass.toString))
@@ -70,7 +72,7 @@ class GitAlgTest extends FunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List("git", "commit", "--all", "-m", "Initial commit", "--gpg-sign")
+        List(repoDir, "git", "commit", "--all", "-m", "Initial commit", "--gpg-sign")
       ),
       extraEnv = Vector(
         List(("GIT_ASKPASS", config.gitAskPass.toString))
@@ -89,11 +91,11 @@ class GitAlgTest extends FunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List("git", "remote", "add", "upstream", "http://github.com/fthomas/datapackage"),
-        List("git", "fetch", "upstream"),
-        List("git", "checkout", "-B", "master", "--track", "upstream/master"),
-        List("git", "merge", "upstream/master"),
-        List("git", "push", "--force", "--set-upstream", "origin", "master")
+        List(repoDir, "git", "remote", "add", "upstream", "http://github.com/fthomas/datapackage"),
+        List(repoDir, "git", "fetch", "upstream"),
+        List(repoDir, "git", "checkout", "-B", "master", "--track", "upstream/master"),
+        List(repoDir, "git", "merge", "upstream/master"),
+        List(repoDir, "git", "push", "--force", "--set-upstream", "origin", "master")
       ),
       extraEnv = Vector(
         List(("GIT_ASKPASS", config.gitAskPass.toString)),
@@ -122,16 +124,17 @@ class GitAlgTest extends FunSuite with Matchers {
     state shouldBe MockState.empty.copy(
       commands = Vector(
         List(
+          repoDir,
           "git",
           "remote",
           "add",
           "upstream",
           s"https://@${config.gitHubLogin}github.com/fthomas/datapackage"
         ),
-        List("git", "fetch", "upstream"),
-        List("git", "checkout", "-B", "master", "--track", "upstream/master"),
-        List("git", "merge", "upstream/master"),
-        List("git", "push", "--force", "--set-upstream", "origin", "master")
+        List(repoDir, "git", "fetch", "upstream"),
+        List(repoDir, "git", "checkout", "-B", "master", "--track", "upstream/master"),
+        List(repoDir, "git", "merge", "upstream/master"),
+        List(repoDir, "git", "push", "--force", "--set-upstream", "origin", "master")
       ),
       extraEnv = Vector(
         List(("GIT_ASKPASS", config.gitAskPass.toString)),

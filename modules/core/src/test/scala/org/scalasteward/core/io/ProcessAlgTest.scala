@@ -29,30 +29,25 @@ class ProcessAlgTest extends FunSuite with Matchers {
     val processAlg = new MockProcessAlg()(cfg)
 
     val state = processAlg
-      .execSandboxed(Nel.of("echo", "hello"), File.root / "tmp")
+      .execSandboxed(Nel.of("echo", "hello"), File.temp)
       .runS(MockState.empty)
       .unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
-      commands = Vector(List("echo", "hello")),
+      commands = Vector(List(File.temp.toString, "echo", "hello")),
       extraEnv = Vector(List(("TEST_VAR", "GREAT"), ("ANOTHER_TEST_VAR", "ALSO_GREAT")))
     )
   }
 
   test("execSandboxed echo") {
     val state = processAlg
-      .execSandboxed(Nel.of("echo", "hello"), File.root / "tmp")
+      .execSandboxed(Nel.of("echo", "hello"), File.temp)
       .runS(MockState.empty)
       .unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List(
-          "firejail",
-          "--whitelist=/tmp",
-          "echo",
-          "hello"
-        )
+        List(File.temp.toString, "firejail", "--whitelist=/tmp", "echo", "hello")
       ),
       extraEnv = Vector(
         List(("TEST_VAR", "GREAT"), ("ANOTHER_TEST_VAR", "ALSO_GREAT"))
