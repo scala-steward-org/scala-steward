@@ -37,7 +37,7 @@ class RepoAlgTest extends FunSuite with Matchers {
           "git",
           "clone",
           "--recursive",
-          s"https://@${config.gitHubLogin}github.com/scala-steward/datapackage",
+          s"https://${config.gitHubLogin}@github.com/scala-steward/datapackage",
           repoDir.toString
         ),
         List(repoDir, "git", "config", "user.email", "bot@example.org"),
@@ -71,7 +71,7 @@ class RepoAlgTest extends FunSuite with Matchers {
           "remote",
           "add",
           "upstream",
-          s"https://@${config.gitHubLogin}github.com/fthomas/datapackage"
+          s"https://${config.gitHubLogin}@github.com/fthomas/datapackage"
         ),
         List(repoDir, "git", "fetch", "upstream"),
         List(repoDir, "git", "checkout", "-B", "master", "--track", "upstream/master"),

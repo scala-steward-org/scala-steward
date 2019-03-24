@@ -19,7 +19,7 @@ object MockContext {
     reposFile = File.temp / "repos.md",
     gitAuthor = Author("Bot Doe", "bot@example.org"),
     gitHubApiHost = Uri.uri(""),
-    gitHubLogin = "",
+    gitHubLogin = "bot-doe",
     gitAskPass = File.temp / "askpass.sh",
     signCommits = true,
     whitelistedDirectories = Nil,

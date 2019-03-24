@@ -8,7 +8,7 @@ class GithubPackageTest extends FunSuite with Matchers {
   val repo = Repo("fthomas", "datapackage")
 
   test("github login for fork enabled configuration") {
-    getLogin(config, repo) shouldBe ""
+    getLogin(config, repo) shouldBe config.gitHubLogin
   }
 
   test("github login for fork disabled configuration") {
