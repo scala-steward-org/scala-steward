@@ -17,6 +17,7 @@
 package org.scalasteward.core.github
 
 import cats.implicits._
+import org.http4s.Uri
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.github.data.{Repo, RepoOut}
@@ -32,22 +33,22 @@ trait RepoAlg[F[_]] {
 object RepoAlg {
   def create[F[_]: MonadThrowable](config: Config, gitAlg: GitAlg[F]): RepoAlg[F] =
     new RepoAlg[F] {
-      override def clone(repo: Repo, repoOut: RepoOut): F[Unit] = {
-        val cloneUrl = util.uri.withUserInfo.set(config.gitHubLogin)(repoOut.clone_url)
+      override def clone(repo: Repo, repoOut: RepoOut): F[Unit] =
         for {
-          _ <- gitAlg.clone(repo, cloneUrl)
+          _ <- gitAlg.clone(repo, withLogin(repoOut.clone_url))
           _ <- gitAlg.setAuthor(repo, config.gitAuthor)
         } yield ()
-      }
 
       override def syncFork(repo: Repo, repoOut: RepoOut): F[RepoOut] =
         if (config.doNotFork) repoOut.pure[F]
         else {
           for {
             parent <- repoOut.parentOrRaise[F]
-            parentCloneUrl = util.uri.withUserInfo.set(config.gitHubLogin)(parent.clone_url)
-            _ <- gitAlg.syncFork(repo, parentCloneUrl, parent.default_branch)
+            _ <- gitAlg.syncFork(repo, withLogin(parent.clone_url), parent.default_branch)
           } yield parent
         }
+
+      val withLogin: Uri => Uri =
+        util.uri.withUserInfo.set(config.gitHubLogin)
     }
 }

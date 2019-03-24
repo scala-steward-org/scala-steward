@@ -17,7 +17,7 @@ object MockContext {
   implicit val config: Config = Config(
     workspace = File.temp / "ws",
     reposFile = File.temp / "repos.md",
-    gitAuthor = Author("", ""),
+    gitAuthor = Author("Bot Doe", "bot@example.org"),
     gitHubApiHost = Uri.uri(""),
     gitHubLogin = "",
     gitAskPass = File.temp / "askpass.sh",

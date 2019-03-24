@@ -19,13 +19,37 @@ class RepoAlgTest extends FunSuite with Matchers {
     Branch("master")
   )
 
-  val childRepoOut = RepoOut(
+  val forkRepoOut = RepoOut(
     "datapackage",
     UserOut("scalasteward"),
     Some(parentRepoOut),
     Uri.uri("https://github.com/scala-steward/datapackage"),
     Branch("master")
   )
+
+  test("clone") {
+    val state = repoAlg.clone(repo, forkRepoOut).runS(MockState.empty).unsafeRunSync()
+
+    state shouldBe MockState.empty.copy(
+      commands = Vector(
+        List(
+          config.workspace.toString,
+          "git",
+          "clone",
+          "--recursive",
+          s"https://@${config.gitHubLogin}github.com/scala-steward/datapackage",
+          repoDir.toString
+        ),
+        List(repoDir, "git", "config", "user.email", "bot@example.org"),
+        List(repoDir, "git", "config", "user.name", "Bot Doe")
+      ),
+      extraEnv = Vector(
+        List(("GIT_ASKPASS", config.gitAskPass.toString)),
+        List(("GIT_ASKPASS", config.gitAskPass.toString)),
+        List(("GIT_ASKPASS", config.gitAskPass.toString))
+      )
+    )
+  }
 
   test("syncFork should throw an exception when doNotFork = false and there is no parent") {
     repoAlg
@@ -37,7 +61,7 @@ class RepoAlgTest extends FunSuite with Matchers {
   }
 
   test("syncFork should sync when doNotFork = false and there is a parent") {
-    val (state, result) = repoAlg.syncFork(repo, childRepoOut).run(MockState.empty).unsafeRunSync()
+    val (state, result) = repoAlg.syncFork(repo, forkRepoOut).run(MockState.empty).unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
