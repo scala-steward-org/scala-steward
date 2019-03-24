@@ -29,8 +29,8 @@ class DependencyService[F[_]](
     implicit
     config: Config,
     dependencyRepository: DependencyRepository[F],
-    gitHubApiAlg: GitHubApiAlg[F],
     gitAlg: GitAlg[F],
+    gitHubApiAlg: GitHubApiAlg[F],
     gitHubRepoAlg: GitHubRepoAlg[F],
     logAlg: LogAlg[F],
     logger: Logger[F],
