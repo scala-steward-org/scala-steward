@@ -3,11 +3,11 @@ package org.scalasteward.core.github
 import org.http4s.Uri
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.github.data.{Repo, RepoOut, UserOut}
-import org.scalasteward.core.mock.MockContext.{config, gitAlg, repoAlg}
+import org.scalasteward.core.mock.MockContext.{config, gitAlg, gitHubRepoAlg}
 import org.scalasteward.core.mock.{MockContext, MockState}
 import org.scalatest.{FunSuite, Matchers}
 
-class RepoAlgTest extends FunSuite with Matchers {
+class GitHubRepoAlgTest extends FunSuite with Matchers {
   val repo = Repo("fthomas", "datapackage")
   val repoDir: String = (config.workspace / "fthomas/datapackage").toString
 
@@ -28,7 +28,7 @@ class RepoAlgTest extends FunSuite with Matchers {
   )
 
   test("clone") {
-    val state = repoAlg.clone(repo, forkRepoOut).runS(MockState.empty).unsafeRunSync()
+    val state = gitHubRepoAlg.clone(repo, forkRepoOut).runS(MockState.empty).unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
@@ -52,7 +52,7 @@ class RepoAlgTest extends FunSuite with Matchers {
   }
 
   test("syncFork should throw an exception when doNotFork = false and there is no parent") {
-    repoAlg
+    gitHubRepoAlg
       .syncFork(repo, parentRepoOut)
       .runS(MockState.empty)
       .attempt
@@ -61,7 +61,8 @@ class RepoAlgTest extends FunSuite with Matchers {
   }
 
   test("syncFork should sync when doNotFork = false and there is a parent") {
-    val (state, result) = repoAlg.syncFork(repo, forkRepoOut).run(MockState.empty).unsafeRunSync()
+    val (state, result) =
+      gitHubRepoAlg.syncFork(repo, forkRepoOut).run(MockState.empty).unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
@@ -90,9 +91,12 @@ class RepoAlgTest extends FunSuite with Matchers {
   }
 
   test("syncFork should do nothing when doNotFork = true") {
-    val repoAlg = RepoAlg.create(MockContext.config.copy(doNotFork = true), gitAlg)
     val (state, repoOut) =
-      repoAlg.syncFork(repo, parentRepoOut).run(MockState.empty).unsafeRunSync()
+      GitHubRepoAlg
+        .create(MockContext.config.copy(doNotFork = true), gitAlg)
+        .syncFork(repo, parentRepoOut)
+        .run(MockState.empty)
+        .unsafeRunSync()
 
     state shouldBe MockState.empty
     repoOut shouldBe parentRepoOut

@@ -21,7 +21,7 @@ import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.git.{Branch, GitAlg}
 import org.scalasteward.core.github.data.{NewPullRequestData, Repo}
-import org.scalasteward.core.github.{GitHubApiAlg, RepoAlg}
+import org.scalasteward.core.github.{GitHubApiAlg, GitHubRepoAlg}
 import org.scalasteward.core.model.Update
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.update.FilterAlg
@@ -35,10 +35,10 @@ class NurtureAlg[F[_]](
     filterAlg: FilterAlg[F],
     gitAlg: GitAlg[F],
     gitHubApiAlg: GitHubApiAlg[F],
+    gitHubRepoAlg: GitHubRepoAlg[F],
     logAlg: LogAlg[F],
     logger: Logger[F],
     pullRequestRepo: PullRequestRepository[F],
-    repoAlg: RepoAlg[F],
     sbtAlg: SbtAlg[F],
     F: BracketThrowable[F]
 ) {
@@ -57,8 +57,8 @@ class NurtureAlg[F[_]](
     for {
       _ <- logger.info(s"Clone and synchronize ${repo.show}")
       repoOut <- gitHubApiAlg.createForkOrGetRepo(config, repo)
-      _ <- repoAlg.clone(repo, repoOut)
-      parent <- repoAlg.syncFork(repo, repoOut)
+      _ <- gitHubRepoAlg.clone(repo, repoOut)
+      parent <- gitHubRepoAlg.syncFork(repo, repoOut)
     } yield parent.default_branch
 
   def updateDependencies(repo: Repo, baseBranch: Branch): F[Unit] =

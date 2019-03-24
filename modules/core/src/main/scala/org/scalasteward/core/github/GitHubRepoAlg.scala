@@ -24,15 +24,15 @@ import org.scalasteward.core.github.data.{Repo, RepoOut}
 import org.scalasteward.core.util
 import org.scalasteward.core.util.MonadThrowable
 
-trait RepoAlg[F[_]] {
+trait GitHubRepoAlg[F[_]] {
   def clone(repo: Repo, repoOut: RepoOut): F[Unit]
 
   def syncFork(repo: Repo, repoOut: RepoOut): F[RepoOut]
 }
 
-object RepoAlg {
-  def create[F[_]: MonadThrowable](config: Config, gitAlg: GitAlg[F]): RepoAlg[F] =
-    new RepoAlg[F] {
+object GitHubRepoAlg {
+  def create[F[_]: MonadThrowable](config: Config, gitAlg: GitAlg[F]): GitHubRepoAlg[F] =
+    new GitHubRepoAlg[F] {
       override def clone(repo: Repo, repoOut: RepoOut): F[Unit] =
         for {
           _ <- gitAlg.clone(repo, withLogin(repoOut.clone_url))
