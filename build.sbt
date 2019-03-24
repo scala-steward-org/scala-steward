@@ -207,7 +207,7 @@ addCommandsAlias(
 addCommandAlias(
   "runSteward", {
     val home = System.getenv("HOME")
-    val projectDir = s"$home/code/sso/bot"
+    val projectDir = s"$home/code/sso/batch"
     Seq(
       Seq("core/run"),
       Seq("--workspace", s"$projectDir/workspace"),

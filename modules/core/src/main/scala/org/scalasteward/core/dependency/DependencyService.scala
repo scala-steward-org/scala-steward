@@ -20,18 +20,18 @@ import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.git.{GitAlg, Sha1}
-import org.scalasteward.core.github.GitHubApiAlg
 import org.scalasteward.core.github.data.{Repo, RepoOut}
+import org.scalasteward.core.github.{GitHubApiAlg, GitHubRepoAlg}
 import org.scalasteward.core.sbt.SbtAlg
-import org.scalasteward.core.util
 import org.scalasteward.core.util.{LogAlg, MonadThrowable}
 
 class DependencyService[F[_]](
     implicit
     config: Config,
     dependencyRepository: DependencyRepository[F],
-    gitHubApiAlg: GitHubApiAlg[F],
     gitAlg: GitAlg[F],
+    gitHubApiAlg: GitHubApiAlg[F],
+    gitHubRepoAlg: GitHubRepoAlg[F],
     logAlg: LogAlg[F],
     logger: Logger[F],
     sbtAlg: SbtAlg[F],
@@ -56,9 +56,8 @@ class DependencyService[F[_]](
   def refreshDependencies(repo: Repo, repoOut: RepoOut, latestSha1: Sha1): F[Unit] =
     for {
       _ <- logger.info(s"Refresh dependencies of ${repo.show}")
-      cloneUrl = util.uri.withUserInfo.set(config.gitHubLogin)(repoOut.clone_url)
-      _ <- gitAlg.clone(repo, cloneUrl)
-      _ <- gitAlg.checkAndSyncFork(repo, repoOut)
+      _ <- gitHubRepoAlg.clone(repo, repoOut)
+      _ <- gitHubRepoAlg.syncFork(repo, repoOut)
       dependencies <- sbtAlg.getDependencies(repo)
       _ <- dependencyRepository.setDependencies(repo, latestSha1, dependencies)
       _ <- gitAlg.removeClone(repo)
