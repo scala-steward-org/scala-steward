@@ -311,7 +311,6 @@
 - travisbrown/iteratee-twitter
 - twilio/guardrail
 - typelevel/cats
-- typelevel/sbt-catalysts
 - typelevel/cats-collections
 - typelevel/cats-effect
 - typelevel/cats-mtl
@@ -321,6 +320,7 @@
 - typelevel/kittens
 - typelevel/machinist
 - typelevel/mouse
+- typelevel/sbt-catalysts
 - typelevel/spire
 - ua-parser/uap-scala
 - underscoreio/slickless
