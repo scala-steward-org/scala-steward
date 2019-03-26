@@ -320,6 +320,7 @@
 - typelevel/kittens
 - typelevel/machinist
 - typelevel/mouse
+- typelevel/sbt-catalysts
 - typelevel/spire
 - ua-parser/uap-scala
 - underscoreio/slickless
