@@ -311,6 +311,7 @@
 - travisbrown/iteratee-twitter
 - twilio/guardrail
 - typelevel/cats
+- typelevel/sbt-catalysts
 - typelevel/cats-collections
 - typelevel/cats-effect
 - typelevel/cats-mtl
