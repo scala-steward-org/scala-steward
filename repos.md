@@ -2,6 +2,7 @@
 - 2m/ciris-hocon
 - agourlay/cornichon
 - agourlay/json-2-csv
+- akka/akka-grpc
 - akka/akka-grpc-sample-kubernetes-scala
 - akka/akka-minion
 - akka/akka-paradox
