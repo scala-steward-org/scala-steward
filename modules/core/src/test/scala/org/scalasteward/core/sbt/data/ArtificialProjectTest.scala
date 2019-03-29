@@ -9,7 +9,7 @@ class ArtificialProjectTest extends FunSuite with Matchers {
   val scalaLibrary =
     Dependency("org.scala-lang", "scala-library", "scala-library", "2.12.6", None)
   val sbtTravisci =
-    Dependency("com.dwijnand", "sbt-travisci", "sbt-travisci", "1.1.3", Some(SbtVersion("1.0")))
+    Dependency("com.dwijnand", "sbt-travisci", "sbt-travisci", "1.2.0", Some(SbtVersion("1.0")))
   val sbtScalafmt =
     Dependency("com.geirsson", "sbt-scalafmt", "sbt-scalafmt", "1.6.0-RC4", Some(SbtVersion("1.0")))
   val project = ArtificialProject(
@@ -43,7 +43,7 @@ class ArtificialProjectTest extends FunSuite with Matchers {
 
   test("mkPluginsSbt") {
     project.mkPluginsSbt.content shouldBe
-      """|addSbtPlugin("com.dwijnand" % "sbt-travisci" % "1.1.3")
+      """|addSbtPlugin("com.dwijnand" % "sbt-travisci" % "1.2.0")
          |addSbtPlugin("com.geirsson" % "sbt-scalafmt" % "1.6.0-RC4")
          |""".stripMargin.trim
   }
