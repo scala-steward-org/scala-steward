@@ -285,6 +285,7 @@
 - spotify/scio.g8
 - spotify/scio-contrib
 - spotify/scio-idea-plugin
+- stryker-mutator/stryker4s
 - swagger-akka-http/swagger-akka-http
 - swagger-akka-http/swagger-scala-module
 - sullis/jms-testkit
