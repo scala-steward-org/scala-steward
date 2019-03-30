@@ -24,21 +24,19 @@ import org.http4s.client.Client
 import org.http4s.{Method, Request, Uri}
 
 final class HttpJsonClient[F[_]: Sync](
-    client: Client[F],
-    modify: Request[F] => F[Request[F]]
+    implicit client: Client[F]
 ) {
-  def get[A: Decoder](uri: Uri): F[A] =
-    request[A](GET, uri)
+  type ModReq = Request[F] => F[Request[F]]
 
-  def post[A: Decoder](uri: Uri): F[A] =
-    request[A](POST, uri)
+  def get[A: Decoder](uri: Uri, modify: ModReq): F[A] =
+    request[A](GET, uri, modify)
 
-  def postWithBody[A: Decoder, B: Encoder](uri: Uri, body: B): F[A] =
-    expectJsonOf[A](Request[F](POST, uri).withEntity(body)(jsonEncoderOf[F, B]))
+  def post[A: Decoder](uri: Uri, modify: ModReq): F[A] =
+    request[A](POST, uri, modify)
 
-  def request[A: Decoder](method: Method, uri: Uri): F[A] =
-    expectJsonOf[A](Request[F](method, uri))
+  def postWithBody[A: Decoder, B: Encoder](uri: Uri, body: B, modify: ModReq): F[A] =
+    post[A](uri, modify.compose(_.withEntity(body)(jsonEncoderOf[F, B])))
 
-  def expectJsonOf[A: Decoder](req: Request[F]): F[A] =
-    client.expect[A](modify(req))(jsonOf[F, A])
+  private def request[A: Decoder](method: Method, uri: Uri, modify: ModReq): F[A] =
+    client.expect[A](modify(Request[F](method, uri)))(jsonOf[F, A])
 }
