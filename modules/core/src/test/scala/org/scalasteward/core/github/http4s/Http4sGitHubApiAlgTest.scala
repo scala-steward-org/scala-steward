@@ -11,6 +11,7 @@ import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.github.data._
 import org.scalasteward.core.mock.MockContext.config
+import org.scalasteward.core.util.HttpJsonClient
 import org.scalatest.{FunSuite, Matchers}
 
 class Http4sGitHubApiAlgTest extends FunSuite with Matchers {
@@ -56,8 +57,9 @@ class Http4sGitHubApiAlgTest extends FunSuite with Matchers {
         NotFound()
     }
 
-  val client: Client[IO] = Client.fromHttpApp(routes.orNotFound)
-  val gitHubApiAlg = new Http4sGitHubApiAlg[IO](client, config.gitHubApiHost, IO.pure)
+  implicit val client: Client[IO] = Client.fromHttpApp(routes.orNotFound)
+  implicit val httpJsonClient: HttpJsonClient[IO] = new HttpJsonClient[IO]
+  val gitHubApiAlg = new Http4sGitHubApiAlg[IO](config.gitHubApiHost, _ => IO.pure)
 
   val repo = Repo("fthomas", "base.g8")
 

@@ -19,6 +19,7 @@ package org.scalasteward.core.application
 import cats.effect.{ConcurrentEffect, Resource}
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
 import org.scalasteward.core.dependency.json.JsonDependencyRepository
 import org.scalasteward.core.dependency.{DependencyRepository, DependencyService}
@@ -34,7 +35,7 @@ import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.update.json.JsonUpdateRepository
 import org.scalasteward.core.update.{FilterAlg, UpdateRepository, UpdateService}
-import org.scalasteward.core.util.{DateTimeAlg, LogAlg}
+import org.scalasteward.core.util.{DateTimeAlg, HttpJsonClient, LogAlg}
 import scala.concurrent.ExecutionContext
 
 final case class Context[F[_]](
@@ -56,6 +57,7 @@ object Context {
       logger_ <- Resource.liftF(Slf4jLogger.create[F])
       user_ <- Resource.liftF(config_.gitHubUser[F])
     } yield {
+      implicit val client: Client[F] = client_
       implicit val config: Config = config_
       implicit val logger: Logger[F] = logger_
       implicit val dateTimeAlg: DateTimeAlg[F] = DateTimeAlg.create[F]
@@ -69,8 +71,9 @@ object Context {
       implicit val dependencyRepository: DependencyRepository[F] = new JsonDependencyRepository[F]
       implicit val editAlg: EditAlg[F] = EditAlg.create[F]
       implicit val gitAlg: GitAlg[F] = GitAlg.create[F]
+      implicit val httpJsonClient: HttpJsonClient[F] = new HttpJsonClient[F]
       implicit val gitHubApiAlg: GitHubApiAlg[F] =
-        new Http4sGitHubApiAlg[F](client_, config.gitHubApiHost, addCredentials(user))
+        new Http4sGitHubApiAlg[F](config.gitHubApiHost, _ => addCredentials(user))
       implicit val gitHubRepoAlg: GitHubRepoAlg[F] = GitHubRepoAlg.create[F](config, gitAlg)
       implicit val pullRequestRepo: PullRequestRepository[F] = new JsonPullRequestRepo[F]
       implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F]

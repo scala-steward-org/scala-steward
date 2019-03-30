@@ -17,7 +17,6 @@
 package org.scalasteward.core.github.http4s
 
 import cats.effect.Sync
-import org.http4s.client.Client
 import org.http4s.{Request, Uri}
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.github._
@@ -25,25 +24,26 @@ import org.scalasteward.core.github.data._
 import org.scalasteward.core.util.HttpJsonClient
 
 final class Http4sGitHubApiAlg[F[_]: Sync](
-    client: Client[F],
     gitHubApiHost: Uri,
-    modify: Request[F] => F[Request[F]]
+    modify: Repo => Request[F] => F[Request[F]]
+)(
+    implicit
+    client: HttpJsonClient[F]
 ) extends GitHubApiAlg[F] {
-  private val jsonClient = new HttpJsonClient[F](client, modify)
   private val url = new Url(gitHubApiHost)
 
   override def createFork(repo: Repo): F[RepoOut] =
-    jsonClient.post(url.forks(repo))
+    client.post(url.forks(repo), modify(repo))
 
   override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] =
-    jsonClient.postWithBody(url.pulls(repo), data)
+    client.postWithBody(url.pulls(repo), data, modify(repo))
 
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
-    jsonClient.get(url.branches(repo, branch))
+    client.get(url.branches(repo, branch), modify(repo))
 
   override def getRepo(repo: Repo): F[RepoOut] =
-    jsonClient.get(url.repos(repo))
+    client.get(url.repos(repo), modify(repo))
 
   override def listPullRequests(repo: Repo, head: String): F[List[PullRequestOut]] =
-    jsonClient.get(url.listPullRequests(repo, head))
+    client.get(url.listPullRequests(repo, head), modify(repo))
 }
