@@ -338,4 +338,5 @@
 - WellFactored/clovis
 - WellFactored/property-info
 - WellFactored/resourcepool
+- yannick-cw/elastic-indexer4s
 - X9Developers/block-explorer
