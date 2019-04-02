@@ -170,6 +170,8 @@
 - larsrh/sbt-libisabelle
 - laserdisc-io/laserdisc
 - laserdisc-io/log-effect
+- leigh-perry/template-cats-io-app
+- leigh-perry/conduction
 - lemastero/scala_typeclassopedia
 - lightbend/genjavadoc
 - lightbend/lightbend-emoji
