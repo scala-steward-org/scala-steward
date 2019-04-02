@@ -128,7 +128,9 @@ object UpdateService {
   def includeInUpdateCheck(dependency: Dependency): Boolean =
     (dependency.groupId, dependency.artifactId) match {
       case ("com.ccadllc.cedi", "build")                     => false
+      case ("com.gilt.sbt", "sbt-newrelic")                  => false
       case ("com.nrinaudo", "kantan.sbt-kantan")             => false
+      case ("com.typesafe.play", "interplay")                => false
       case ("org.foundweekends.giter8", "sbt-giter8")        => false
       case ("org.scala-lang.modules", "sbt-scala-module")    => false
       case ("org.scala-lang.modules", "scala-module-plugin") => false
