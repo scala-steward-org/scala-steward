@@ -103,6 +103,7 @@
 - daniel-shuy/liquibase-slick-codegen-sbt-plugin
 - daniel-shuy/scripted-scalatest-sbt-plugin
 - dhpiggott/liquidity
+- dispalt/tagless-redux
 - dwijnand/sbt-compat
 - dwijnand/sbt-dynver
 - dwijnand/sbt-project-graph
