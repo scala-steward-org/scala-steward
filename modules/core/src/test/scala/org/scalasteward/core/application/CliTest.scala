@@ -19,6 +19,7 @@ class CliTest extends FunSuite with Matchers {
         List("--github-api-host", "http://example.com"),
         List("--github-login", "e"),
         List("--git-ask-pass", "f"),
+        List("--ignore-opts-files"),
         List("--env-var", "g=h"),
         List("--env-var", "i=j")
       ).flatten
@@ -31,6 +32,7 @@ class CliTest extends FunSuite with Matchers {
         githubApiHost = Uri.uri("http://example.com"),
         githubLogin = "e",
         gitAskPass = "f",
+        ignoreOptsFiles = true,
         envVar = List(EnvVar("g", "h"), EnvVar("i", "j"))
       )
     )

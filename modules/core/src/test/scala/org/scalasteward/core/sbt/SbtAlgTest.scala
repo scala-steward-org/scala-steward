@@ -34,6 +34,32 @@ class SbtAlgTest extends FunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
+        List(
+          repoDir.toString,
+          "firejail",
+          s"--whitelist=$repoDir",
+          "sbt",
+          "-batch",
+          "-no-colors",
+          ";set every credentials := Nil;dependencyUpdates;reload plugins;dependencyUpdates"
+        )
+      ),
+      extraEnv = Vector(
+        List(("TEST_VAR", "GREAT"), ("ANOTHER_TEST_VAR", "ALSO_GREAT"))
+      )
+    )
+  }
+
+  test("getUpdatesForRepo ignoring .jvmopts and .sbtopts files") {
+    implicit val config: Config = MockContext.config.copy(ignoreOptsFiles = true)
+    val sbtAlgKeepingCredentials = SbtAlg.create
+    val repo = Repo("fthomas", "refined")
+    val repoDir = config.workspace / "fthomas/refined"
+    val state =
+      sbtAlgKeepingCredentials.getUpdatesForRepo(repo).runS(MockState.empty).unsafeRunSync()
+
+    state shouldBe MockState.empty.copy(
+      commands = Vector(
         List("rm", (repoDir / ".jvmopts").toString),
         List("rm", (repoDir / ".sbtopts").toString),
         List(
@@ -64,8 +90,6 @@ class SbtAlgTest extends FunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List("rm", (repoDir / ".jvmopts").toString),
-        List("rm", (repoDir / ".sbtopts").toString),
         List(
           repoDir.toString,
           "firejail",
@@ -74,9 +98,7 @@ class SbtAlgTest extends FunSuite with Matchers {
           "-batch",
           "-no-colors",
           ";dependencyUpdates;reload plugins;dependencyUpdates"
-        ),
-        List("restore", (repoDir / ".sbtopts").toString),
-        List("restore", (repoDir / ".jvmopts").toString)
+        )
       ),
       extraEnv = Vector(
         List(("TEST_VAR", "GREAT"), ("ANOTHER_TEST_VAR", "ALSO_GREAT"))
