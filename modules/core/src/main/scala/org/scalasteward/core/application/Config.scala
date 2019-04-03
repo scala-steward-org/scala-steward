@@ -56,6 +56,7 @@ final case class Config(
     readOnlyDirectories: List[String],
     disableSandbox: Boolean,
     doNotFork: Boolean,
+    ignoreOptsFiles: Boolean,
     keepCredentials: Boolean,
     envVars: List[EnvVar]
 ) {
@@ -84,6 +85,7 @@ object Config {
         readOnlyDirectories = args.readOnly,
         disableSandbox = args.disableSandbox,
         doNotFork = args.doNotFork,
+        ignoreOptsFiles = args.ignoreOptsFiles,
         keepCredentials = args.keepCredentials,
         envVars = args.envVar
       )

@@ -26,6 +26,7 @@ object MockContext {
     readOnlyDirectories = Nil,
     disableSandbox = false,
     doNotFork = false,
+    ignoreOptsFiles = false,
     keepCredentials = false,
     envVars = List(
       EnvVar("TEST_VAR", "GREAT"),

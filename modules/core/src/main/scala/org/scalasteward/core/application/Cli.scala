@@ -42,6 +42,7 @@ object Cli {
       readOnly: List[String] = Nil,
       disableSandbox: Boolean = false,
       doNotFork: Boolean = false,
+      ignoreOptsFiles: Boolean = false,
       keepCredentials: Boolean = false,
       envVar: List[EnvVar] = Nil
   )
