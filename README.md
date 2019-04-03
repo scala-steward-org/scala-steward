@@ -42,6 +42,7 @@ The following people have helped making scala-steward great:
 * [Philippus Baalman](https://github.com/Philippus)
 * [Piotr Gabara](https://github.com/bhop)
 * [sullis](https://github.com/sullis)
+* [Thomas Kaliakos](https://github.com/thomaska)
 * [Zelenya](https://github.com/Zelenya)
 * Your name here :-)
 
