@@ -20,6 +20,7 @@ java -jar ${JAR} \
   --git-author-email "me@$LOGIN.org" \
   --github-login ${LOGIN} \
   --git-ask-pass "$HOME/.github/askpass/$LOGIN.sh" \
+  --ignore-opts-files \
   --sign-commits \
   --whitelist $HOME/.cache/coursier \
   --whitelist $HOME/.coursier \

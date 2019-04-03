@@ -112,7 +112,7 @@ class UpdateService[F[_]](
               ignUpdate =>
                 update.groupId == ignUpdate.groupId && update.nextVersion == ignUpdate.nextVersion &&
                   ignUpdate.artifactIds.exists(id => update.artifactId.startsWith(id))
-            )
+          )
         )
         _ <- F.pure(println(repo + " " + updates1))
       } yield updates1.headOption.as(repo)
