@@ -95,6 +95,7 @@
 - comcast/ip4s
 - coursier/coursier
 - coursier/echo
+- coursier/interface
 - coursier/http-server
 - coursier/sbt-coursier
 - coursier/sbt-launcher
