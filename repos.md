@@ -317,6 +317,7 @@
 - ThoughtWorksInc/Extractor.scala
 - ThoughtWorksInc/feature.scala
 - ThoughtWorksInc/future.scala
+- ThoughtWorksInc/LatestEvent.scala
 - ThoughtWorksInc/RAII.scala
 - ThoughtWorksInc/sbt-ammonite-classpath
 - ThoughtWorksInc/sbt-api-mappings
