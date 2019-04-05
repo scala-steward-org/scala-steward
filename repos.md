@@ -324,6 +324,7 @@
 - ThoughtWorksInc/sbt-delombok
 - ThoughtWorksInc/sbt-example
 - ThoughtWorksInc/sbt-scala-js-map
+- ThoughtWorksInc/sde
 - ThoughtWorksInc/todo
 - ThoughtWorksInc/tryt.scala
 - tjheslin1/DMsPredictor
