@@ -311,6 +311,8 @@
 - sullis/jms-testkit
 - ThoughtWorksInc/bindable.scala
 - ThoughtWorksInc/Binding.scala
+- ThoughtWorksInc/Compute.scala
+- ThoughtWorksInc/DeepLearning.scala
 - ThoughtWorksInc/Dsl.scala
 - ThoughtWorksInc/each
 - ThoughtWorksInc/enableIf.scala
