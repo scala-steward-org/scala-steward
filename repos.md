@@ -311,12 +311,16 @@
 - sullis/jms-testkit
 - ThoughtWorksInc/bindable.scala
 - ThoughtWorksInc/Binding.scala
+- ThoughtWorksInc/Compute.scala
+- ThoughtWorksInc/DeepLearning.scala
 - ThoughtWorksInc/Dsl.scala
 - ThoughtWorksInc/each
 - ThoughtWorksInc/enableIf.scala
 - ThoughtWorksInc/Extractor.scala
 - ThoughtWorksInc/feature.scala
 - ThoughtWorksInc/future.scala
+- ThoughtWorksInc/HashRoute.scala
+- ThoughtWorksInc/LatestEvent.scala
 - ThoughtWorksInc/RAII.scala
 - ThoughtWorksInc/sbt-ammonite-classpath
 - ThoughtWorksInc/sbt-api-mappings
