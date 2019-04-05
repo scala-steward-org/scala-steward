@@ -47,7 +47,7 @@ class ProcessAlgTest extends FunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List(File.temp.toString, "firejail", "--whitelist=/tmp", "echo", "hello")
+        List(File.temp.toString, "firejail", s"--whitelist=${File.temp}", "echo", "hello")
       ),
       extraEnv = Vector(
         List(("TEST_VAR", "GREAT"), ("ANOTHER_TEST_VAR", "ALSO_GREAT"))

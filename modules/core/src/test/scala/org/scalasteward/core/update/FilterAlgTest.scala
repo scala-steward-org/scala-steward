@@ -32,7 +32,7 @@ class FilterAlgTest extends FunSuite with Matchers {
     val update1 = Update.Single("org.http4s", "http4s-dsl", "0.17.0", Nel.of("0.18.0"))
     val update2 = Update.Single("eu.timepit", "refined", "0.8.0", Nel.of("0.8.1"))
 
-    val configFile = File("/tmp/ws/fthomas/scala-steward/.scala-steward.conf")
+    val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
     val configContent =
       """updates.ignore = [ { groupId = "eu.timepit", artifactId = "refined" } ]"""
 

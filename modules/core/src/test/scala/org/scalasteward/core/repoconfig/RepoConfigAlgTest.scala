@@ -11,7 +11,7 @@ import org.scalatest.{FunSuite, Matchers}
 class RepoConfigAlgTest extends FunSuite with Matchers {
   test("config with all fields set") {
     val repo = Repo("fthomas", "scala-steward")
-    val configFile = File("/tmp/ws/fthomas/scala-steward/.scala-steward.conf")
+    val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
     val content =
       """|updates.allow  = [ { groupId = "eu.timepit", artifactId = "refined", version = "0.8." } ]
          |updates.ignore = [ { groupId = "org.acme", version = "1.0" } ]
@@ -31,7 +31,7 @@ class RepoConfigAlgTest extends FunSuite with Matchers {
 
   test("malformed config") {
     val repo = Repo("fthomas", "scala-steward")
-    val configFile = File("/tmp/ws/fthomas/scala-steward/.scala-steward.conf")
+    val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
     val initialState = MockState.empty.add(configFile, """updates.ignore = [ "foo """)
     val (state, config) = repoConfigAlg.getRepoConfig(repo).run(initialState).unsafeRunSync()
 
