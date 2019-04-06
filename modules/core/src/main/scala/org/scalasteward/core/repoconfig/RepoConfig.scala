@@ -21,7 +21,7 @@ import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.deriveDecoder
 
 final case class RepoConfig(
-    updates: Option[UpdatesConfig] = None,
+    updates: UpdatesConfig = UpdatesConfig(),
     updatePullRequests: Boolean = true
 )
 

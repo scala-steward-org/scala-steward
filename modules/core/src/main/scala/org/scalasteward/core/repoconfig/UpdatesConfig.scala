@@ -18,32 +18,34 @@ package org.scalasteward.core.repoconfig
 
 import cats.implicits._
 import io.circe.Decoder
-import io.circe.generic.semiauto.deriveDecoder
+import io.circe.generic.extras.Configuration
+import io.circe.generic.extras.semiauto.deriveDecoder
 import org.scalasteward.core.model.Update
 import org.scalasteward.core.update.FilterAlg.{FilterResult, IgnoredByConfig, NotAllowedByConfig}
 
 final case class UpdatesConfig(
-    allow: Option[List[UpdatePattern]] = None,
-    ignore: Option[List[UpdatePattern]] = None
+    allow: List[UpdatePattern] = List.empty,
+    ignore: List[UpdatePattern] = List.empty
 ) {
   def keep(update: Update.Single): FilterResult =
     isAllowed(update) *> isIgnored(update)
 
   private def isAllowed(update: Update.Single): FilterResult = {
-    val patterns = allow.getOrElse(List.empty)
-    val m = UpdatePattern.findMatch(patterns, update)
+    val m = UpdatePattern.findMatch(allow, update)
     if (m.byArtifactId.isEmpty || m.byVersion.nonEmpty) Right(update)
     else Left(NotAllowedByConfig(update))
   }
 
   private def isIgnored(update: Update.Single): FilterResult = {
-    val patterns = ignore.getOrElse(List.empty)
-    val m = UpdatePattern.findMatch(patterns, update)
+    val m = UpdatePattern.findMatch(ignore, update)
     if (m.byVersion.nonEmpty) Left(IgnoredByConfig(update)) else Right(update)
   }
 }
 
 object UpdatesConfig {
+  implicit val customConfig: Configuration =
+    Configuration.default.withDefaults
+
   implicit val updatesConfigDecoder: Decoder[UpdatesConfig] =
     deriveDecoder
 }

@@ -36,7 +36,7 @@ class FilterAlgTest extends FunSuite with Matchers {
     val configContent =
       """updates.ignore = [ { groupId = "eu.timepit", artifactId = "refined" } ]"""
     val parsedConfig =
-      "RepoConfig(Some(UpdatesConfig(None,Some(List(UpdatePattern(eu.timepit,Some(refined),None))))),true)"
+      "RepoConfig(UpdatesConfig(List(),List(UpdatePattern(eu.timepit,Some(refined),None))),true)"
 
     val initialState = MockState.empty.add(configFile, configContent)
     val (state, filtered) =
@@ -57,14 +57,10 @@ class FilterAlgTest extends FunSuite with Matchers {
     val update2 = Update.Single("eu.timepit", "refined", "0.8.0", Nel.of("0.8.1"))
 
     val config = RepoConfig(
-      updates = Some(
-        UpdatesConfig(
-          allow = Some(
-            List(
-              UpdatePattern("org.http4s", None, Some("0.17")),
-              UpdatePattern("eu.timepit", Some("refined"), Some("0.8"))
-            )
-          )
+      updates = UpdatesConfig(
+        allow = List(
+          UpdatePattern("org.http4s", None, Some("0.17")),
+          UpdatePattern("eu.timepit", Some("refined"), Some("0.8"))
         )
       )
     )

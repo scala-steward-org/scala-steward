@@ -20,11 +20,9 @@ class RepoConfigAlgTest extends FunSuite with Matchers {
     val config = repoConfigAlg.getRepoConfig(repo).runA(initialState).unsafeRunSync()
 
     config shouldBe RepoConfig(
-      updates = Some(
-        UpdatesConfig(
-          allow = Some(List(UpdatePattern("eu.timepit", Some("refined"), Some("0.8.")))),
-          ignore = Some(List(UpdatePattern("org.acme", None, Some("1.0"))))
-        )
+      updates = UpdatesConfig(
+        allow = List(UpdatePattern("eu.timepit", Some("refined"), Some("0.8."))),
+        ignore = List(UpdatePattern("org.acme", None, Some("1.0")))
       )
     )
   }
@@ -32,16 +30,11 @@ class RepoConfigAlgTest extends FunSuite with Matchers {
   test("config with 'updateBranch disabled") {
     val repo = Repo("fthomas", "scala-steward")
     val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
-    val content =
-      """|updatePullRequests = false
-         |""".stripMargin
+    val content = "updatePullRequests = false"
     val initialState = MockState.empty.add(configFile, content)
     val config = repoConfigAlg.getRepoConfig(repo).runA(initialState).unsafeRunSync()
 
-    config shouldBe RepoConfig(
-      updates = None,
-      updatePullRequests = false
-    )
+    config shouldBe RepoConfig(updatePullRequests = false)
   }
 
   test("malformed config") {
@@ -62,10 +55,8 @@ class RepoConfigAlgTest extends FunSuite with Matchers {
       .getOrElse(RepoConfig())
 
     repoConfig shouldBe RepoConfig(
-      updates = Some(
-        UpdatesConfig(
-          ignore = Some(List(UpdatePattern("a", Some("b"), None)))
-        )
+      updates = UpdatesConfig(
+        ignore = List(UpdatePattern("a", Some("b"), None))
       )
     )
   }
@@ -77,11 +68,7 @@ class RepoConfigAlgTest extends FunSuite with Matchers {
       .getOrElse(RepoConfig())
 
     repoConfig shouldBe RepoConfig(
-      updates = Some(
-        UpdatesConfig(
-          ignore = Some(List(UpdatePattern("a", None, None)))
-        )
-      )
+      updates = UpdatesConfig(ignore = List(UpdatePattern("a", None, None)))
     )
   }
 }
