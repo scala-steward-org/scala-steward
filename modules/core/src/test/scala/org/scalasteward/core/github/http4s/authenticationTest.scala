@@ -10,9 +10,9 @@ class authenticationTest extends FunSuite with Matchers {
   test("addCredentials") {
     val request = authentication
       .addCredentials(AuthenticatedUser("user", "pass"))
-      .apply(Request[Id](headers = Headers(Accept(MediaType.text.plain))))
+      .apply(Request[Id](headers = Headers.of(Accept(MediaType.text.plain))))
 
     request.headers shouldBe
-      Headers(Accept(MediaType.text.plain), Authorization(BasicCredentials("user", "pass")))
+      Headers.of(Accept(MediaType.text.plain), Authorization(BasicCredentials("user", "pass")))
   }
 }
