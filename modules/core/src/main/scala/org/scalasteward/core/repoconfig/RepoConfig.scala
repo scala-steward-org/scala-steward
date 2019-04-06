@@ -17,13 +17,18 @@
 package org.scalasteward.core.repoconfig
 
 import io.circe.Decoder
-import io.circe.generic.semiauto.deriveDecoder
+import io.circe.generic.extras.semiauto.deriveDecoder
+import io.circe.generic.extras.Configuration
 
 final case class RepoConfig(
-    updates: Option[UpdatesConfig] = None
+    updates: Option[UpdatesConfig] = None,
+    updatePullRequests: Boolean = true
 )
 
 object RepoConfig {
+
+  implicit val customConfig: Configuration = Configuration.default.withDefaults
+
   implicit val repoConfigDecoder: Decoder[RepoConfig] =
     deriveDecoder
 }

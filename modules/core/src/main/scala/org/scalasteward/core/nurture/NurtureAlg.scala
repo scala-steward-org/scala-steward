@@ -23,6 +23,7 @@ import org.scalasteward.core.git.{Branch, GitAlg}
 import org.scalasteward.core.github.data.{NewPullRequestData, Repo}
 import org.scalasteward.core.github.{GitHubApiAlg, GitHubRepoAlg}
 import org.scalasteward.core.model.Update
+import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.update.FilterAlg
 import org.scalasteward.core.util.{BracketThrowable, LogAlg}
@@ -32,6 +33,7 @@ class NurtureAlg[F[_]](
     implicit
     config: Config,
     editAlg: EditAlg[F],
+    repoConfigAlg: RepoConfigAlg[F],
     filterAlg: FilterAlg[F],
     gitAlg: GitAlg[F],
     gitHubApiAlg: GitHubApiAlg[F],
@@ -79,12 +81,15 @@ class NurtureAlg[F[_]](
     for {
       _ <- logger.info(s"Process update ${data.update.show}")
       head = github.headFor(github.getLogin(config, data.repo), data.update)
+      repoConfig <- repoConfigAlg.getRepoConfig(data.repo)
       pullRequests <- gitHubApiAlg.listPullRequests(data.repo, head)
       _ <- pullRequests.headOption match {
         case Some(pr) if pr.isClosed =>
           logger.info(s"PR ${pr.html_url} is closed")
-        case Some(pr) =>
+        case Some(pr) if repoConfig.updatePullRequests =>
           logger.info(s"Found PR ${pr.html_url}") >> updatePullRequest(data)
+        case Some(_) =>
+          logger.info(s"PR updates disabled by flag")
         case None =>
           applyNewUpdate(data)
       }
