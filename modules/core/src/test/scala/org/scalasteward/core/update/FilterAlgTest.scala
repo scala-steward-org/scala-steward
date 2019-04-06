@@ -35,6 +35,8 @@ class FilterAlgTest extends FunSuite with Matchers {
     val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
     val configContent =
       """updates.ignore = [ { groupId = "eu.timepit", artifactId = "refined" } ]"""
+    val parsedConfig =
+      "RepoConfig(Some(UpdatesConfig(None,Some(List(UpdatePattern(eu.timepit,Some(refined),None))))),true)"
 
     val initialState = MockState.empty.add(configFile, configContent)
     val (state, filtered) =
@@ -42,8 +44,11 @@ class FilterAlgTest extends FunSuite with Matchers {
 
     filtered shouldBe List(update1)
     state shouldBe initialState.copy(
-      commands = Vector(List("read", configFile.pathAsString)),
-      logs = Vector((None, "Ignore eu.timepit:refined : 0.8.0 -> 0.8.1"))
+      commands = Vector(List("read", configFile.toString)),
+      logs = Vector(
+        (None, s"Parsed $parsedConfig from $configFile"),
+        (None, "Ignore eu.timepit:refined : 0.8.0 -> 0.8.1")
+      )
     )
   }
 
