@@ -88,8 +88,8 @@ class NurtureAlg[F[_]](
           logger.info(s"PR ${pr.html_url} is closed")
         case Some(pr) if repoConfig.updatePullRequests =>
           logger.info(s"Found PR ${pr.html_url}") >> updatePullRequest(data)
-        case Some(_) =>
-          logger.info(s"PR updates disabled by flag")
+        case Some(pr) =>
+          logger.info(s"Found PR ${pr.html_url}, but updates are disabled by flag")
         case None =>
           applyNewUpdate(data)
       }
