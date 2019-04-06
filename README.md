@@ -34,6 +34,7 @@ look like, here are the ones it has created so far:
 The following people have helped making scala-steward great:
 
 * [Arulselvan Madhavan](https://github.com/ArulselvanMadhavan)
+* [Dale Wijnand](https://github.com/dwijnand)
 * [Filipe Regadas](https://github.com/regadas)
 * [Frank S. Thomas](https://github.com/fthomas)
 * [JCollier](https://github.com/Slakah)
