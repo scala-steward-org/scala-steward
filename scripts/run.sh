@@ -27,5 +27,6 @@ java -jar ${JAR} \
   --whitelist $HOME/.ivy2 \
   --whitelist $HOME/.sbt \
   --whitelist $HOME/.scio-ideaPluginIC \
+  --whitelist $HOME/.tagless-redux-ijextPluginIC \
   --whitelist $JAVA_HOME \
   --read-only $JAVA_HOME
