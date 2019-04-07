@@ -309,6 +309,7 @@
 - swagger-akka-http/swagger-akka-http
 - swagger-akka-http/swagger-scala-module
 - sullis/jms-testkit
+- tanishiking/scalaunfmt
 - ThoughtWorksInc/bindable.scala
 - ThoughtWorksInc/Binding.scala
 - ThoughtWorksInc/Compute.scala
