@@ -16,26 +16,22 @@
 
 package org.scalasteward.core.github.data
 
-import cats.implicits._
+import cats.Eq
 import io.circe.Decoder
-import io.circe.generic.semiauto._
-import org.http4s.Uri
-import org.scalasteward.core.github.data.PullRequestState.Closed
-import org.scalasteward.core.util.uri.uriDecoder
 
-final case class PullRequestOut(
-    html_url: Uri,
-    state: PullRequestState,
-    title: String
-) {
-  def isClosed: Boolean =
-    state === Closed
-}
+sealed trait PullRequestState
 
-object PullRequestOut {
-  implicit val pullRequestOutDecoder: Decoder[PullRequestOut] =
-    deriveDecoder
+object PullRequestState {
+  case object Open extends PullRequestState
+  case object Closed extends PullRequestState
 
-  // prevent IntelliJ from removing the import of uriDecoder
-  locally(uriDecoder)
+  implicit val pullRequestStateEq: Eq[PullRequestState] =
+    Eq.fromUniversalEquals
+
+  implicit val pullRequestStateDecoder: Decoder[PullRequestState] =
+    Decoder[String].emap {
+      case "open"   => Right(Open)
+      case "closed" => Right(Closed)
+      case unknown  => Left(s"Unexpected string '$unknown'")
+    }
 }
