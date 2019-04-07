@@ -174,7 +174,6 @@ addCommandsAlias(
     "test",
     "coverageReport",
     "doc",
-    "readme/tut",
     "package",
     "packageSrc",
     "core/assembly",
