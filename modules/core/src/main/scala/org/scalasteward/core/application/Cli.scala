@@ -40,6 +40,7 @@ object Cli {
       signCommits: Boolean = false,
       whitelist: List[String] = Nil,
       readOnly: List[String] = Nil,
+      prLabels: List[String] = Nil,
       disableSandbox: Boolean = false,
       doNotFork: Boolean = false,
       ignoreOptsFiles: Boolean = false,

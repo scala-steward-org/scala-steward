@@ -23,6 +23,7 @@ object MockContext {
     gitAskPass = File.temp / "askpass.sh",
     signCommits = true,
     whitelistedDirectories = Nil,
+    prLabels = Nil,
     readOnlyDirectories = Nil,
     disableSandbox = false,
     doNotFork = false,

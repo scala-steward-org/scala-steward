@@ -29,7 +29,8 @@ final case class NewPullRequestData(
     title: String,
     body: String,
     head: String,
-    base: Branch
+    base: Branch,
+    labels: List[String],
 )
 
 object NewPullRequestData {
@@ -64,11 +65,12 @@ object NewPullRequestData {
         |""".stripMargin.trim
   }
 
-  def from(data: UpdateData, headLogin: String, authorLogin: String): NewPullRequestData =
+  def from(data: UpdateData, headLogin: String, authorLogin: String, labels: List[String]): NewPullRequestData =
     NewPullRequestData(
       title = git.commitMsgFor(data.update),
       body = bodyFor(data.update, authorLogin),
       head = github.headFor(headLogin, data.update),
-      base = data.baseBranch
+      base = data.baseBranch,
+      labels = labels
     )
 }

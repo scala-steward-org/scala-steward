@@ -116,7 +116,7 @@ class NurtureAlg[F[_]](
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
       headLogin = github.getLogin(config, data.repo)
-      requestData = NewPullRequestData.from(data, headLogin, config.gitHubLogin)
+      requestData = NewPullRequestData.from(data, headLogin, config.gitHubLogin, config.prLabels)
       pr <- gitHubApiAlg.createPullRequest(data.repo, requestData)
       _ <- pullRequestRepo.createOrUpdate(data.repo, pr.html_url, data.baseSha1, data.update)
       _ <- logger.info(s"Created PR ${pr.html_url}")
