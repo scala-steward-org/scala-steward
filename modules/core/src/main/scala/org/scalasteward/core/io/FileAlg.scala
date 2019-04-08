@@ -17,12 +17,13 @@
 package org.scalasteward.core.io
 
 import better.files.File
+import cats.Functor
 import cats.effect.Sync
 import cats.implicits._
-import cats.{Functor, Monad}
 import fs2.{Pipe, Stream}
 import org.apache.commons.io.FileUtils
 import org.scalasteward.core.util
+import org.scalasteward.core.util.MonadThrowable
 
 trait FileAlg[F[_]] {
   def deleteForce(file: File): F[Unit]
@@ -41,8 +42,12 @@ trait FileAlg[F[_]] {
 
   def writeFile(file: File, content: String): F[Unit]
 
-  def editFile(file: File, edit: String => Option[String])(implicit F: Monad[F]): F[Boolean] =
-    readFile(file).flatMap(_.flatMap(edit).fold(F.pure(false))(writeFile(file, _).as(true)))
+  def editFile(file: File, edit: String => Option[String])(
+      implicit F: MonadThrowable[F]
+  ): F[Boolean] =
+    readFile(file)
+      .flatMap(_.flatMap(edit).fold(F.pure(false))(writeFile(file, _).as(true)))
+      .adaptError { case t => new Throwable(s"failed to edit $file", t) }
 
   def editSourceFiles(dir: File, edit: String => Option[String])(implicit F: Sync[F]): F[Boolean] =
     walkSourceFiles(dir).evalMap(editFile(_, edit)).compile.fold(false)(_ || _)
