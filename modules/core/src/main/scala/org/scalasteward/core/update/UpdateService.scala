@@ -135,6 +135,7 @@ object UpdateService {
       case ("org.scala-lang.modules", "sbt-scala-module")    => false
       case ("org.scala-lang.modules", "scala-module-plugin") => false
       case ("org.scodec", "scodec-build")                    => false
+      case ("org.xerial.sbt", "sbt-pack")                    => false
       case _                                                 => true
     }
 }
