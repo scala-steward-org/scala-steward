@@ -94,7 +94,7 @@ class NurtureAlg[F[_]](
           applyNewUpdate(data)
       }
       _ <- pullRequests.headOption.fold(F.unit) { pr =>
-        pullRequestRepo.createOrUpdate(data.repo, pr.html_url, data.baseSha1, data.update)
+        pullRequestRepo.createOrUpdate(data.repo, pr.html_url, data.baseSha1, data.update, pr.state)
       }
     } yield ()
 
@@ -123,7 +123,13 @@ class NurtureAlg[F[_]](
       headLogin = github.getLogin(config, data.repo)
       requestData = NewPullRequestData.from(data, headLogin, config.gitHubLogin)
       pr <- gitHubApiAlg.createPullRequest(data.repo, requestData)
-      _ <- pullRequestRepo.createOrUpdate(data.repo, pr.html_url, data.baseSha1, data.update)
+      _ <- pullRequestRepo.createOrUpdate(
+        data.repo,
+        pr.html_url,
+        data.baseSha1,
+        data.update,
+        pr.state
+      )
       _ <- logger.info(s"Created PR ${pr.html_url}")
     } yield ()
 

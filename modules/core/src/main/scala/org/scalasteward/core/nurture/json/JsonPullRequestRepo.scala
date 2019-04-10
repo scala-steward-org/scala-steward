@@ -22,7 +22,7 @@ import io.circe.parser.decode
 import io.circe.syntax._
 import org.http4s.Uri
 import org.scalasteward.core.git.Sha1
-import org.scalasteward.core.github.data.Repo
+import org.scalasteward.core.github.data.{PullRequestState, Repo}
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.model.Update
 import org.scalasteward.core.nurture.PullRequestRepository
@@ -34,11 +34,17 @@ class JsonPullRequestRepo[F[_]](
     workspaceAlg: WorkspaceAlg[F],
     F: MonadThrowable[F]
 ) extends PullRequestRepository[F] {
-  override def createOrUpdate(repo: Repo, url: Uri, baseSha1: Sha1, update: Update): F[Unit] =
+  override def createOrUpdate(
+      repo: Repo,
+      url: Uri,
+      baseSha1: Sha1,
+      update: Update,
+      state: PullRequestState
+  ): F[Unit] =
     readJson.flatMap { store =>
       val updated = store.store.get(repo) match {
-        case Some(prs) => prs.updated(url.toString(), PullRequestData(baseSha1, update))
-        case None      => Map(url.toString() -> PullRequestData(baseSha1, update))
+        case Some(prs) => prs.updated(url.toString(), PullRequestData(baseSha1, update, state))
+        case None      => Map(url.toString() -> PullRequestData(baseSha1, update, state))
       }
       writeJson(PullRequestStore(store.store.updated(repo, updated)))
     }
@@ -51,7 +57,7 @@ class JsonPullRequestRepo[F[_]](
     }
 
   def jsonFile: F[File] =
-    workspaceAlg.rootDir.map(_ / "prs_v01.json")
+    workspaceAlg.rootDir.map(_ / "prs_v02.json")
 
   def readJson: F[PullRequestStore] =
     jsonFile.flatMap { file =>

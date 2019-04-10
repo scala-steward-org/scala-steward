@@ -39,7 +39,7 @@ class UpdateService[F[_]](
 ) {
 
   // WIP
-  def checkForUpdates(repos: List[Repo])(implicit F: MonadThrowable[F]): F[List[Update.Single]] =
+  def checkForUpdates(repos: List[Repo]): F[List[Update.Single]] =
     updateRepository.deleteAll >>
       dependencyRepository.getDependencies(repos).flatMap { dependencies =>
         val (libraries, plugins) = dependencies

@@ -17,7 +17,7 @@
 package org.scalasteward.core.github.data
 
 import cats.Eq
-import io.circe.Decoder
+import io.circe.{Decoder, Encoder}
 
 sealed trait PullRequestState
 
@@ -33,5 +33,11 @@ object PullRequestState {
       case "open"   => Right(Open)
       case "closed" => Right(Closed)
       case unknown  => Left(s"Unexpected string '$unknown'")
+    }
+
+  implicit val pullRequestStateEncoder: Encoder[PullRequestState] =
+    Encoder[String].contramap {
+      case Open   => "open"
+      case Closed => "closed"
     }
 }
