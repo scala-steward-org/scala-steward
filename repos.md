@@ -17,6 +17,7 @@
 - alexarchambault/scalacheck-shapeless
 - almond-sh/almond
 - alonsodomin/cron4s
+- alonsodomin/sbt-spark
 - alonsodomin/scala-colog
 - Atry/fastring
 - azhur/kafka-serde-scala
