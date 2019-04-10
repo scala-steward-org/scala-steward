@@ -1,6 +1,6 @@
 import com.typesafe.sbt.packager.docker._
 import sbtcrossproject.{CrossProject, CrossType, Platform}
-
+import java.io.File
 /// variables
 
 val groupId = "org.scala-steward"
@@ -208,6 +208,58 @@ addCommandAlias(
       Seq("--whitelist", s"$home/.ivy2"),
       Seq("--whitelist", s"$home/.sbt"),
       Seq("--whitelist", s"$home/.scio-ideaPluginIC")
+    ).flatten.mkString(" ")
+  }
+)
+
+addCommandAlias(
+  "runAdserverBot", {
+    val home = System.getenv("HOME")
+    val projectDir = "/home/jenkins/workspace/adserver-bot-runner"
+    val githubPass = System.getenv("GIT_ASKPASS")
+    println(s"GIT PASS - ${githubPass}")
+    Seq(
+      Seq("core/run"),
+      Seq("--workspace", s"$projectDir/workspace"),
+      Seq("--repos-file", s"$projectDir/repos.md"),
+      Seq("--git-author-name", "adserver-bot"),
+      Seq("--git-author-email", s"adserver-team@chartboost.com"),
+      Seq("--github-api-host", "https://api.github.com"),
+      Seq("--github-login", "adserver-bot"),
+      Seq("--git-ask-pass", "/home/jenkins/workspace/adserver-bot-runner/scala_steward.sh"),
+      Seq("--disable-sandbox"),
+      Seq("--do-not-fork"),
+      // Seq("--sign-commits"), -- try to sign commits
+      Seq("--whitelist", s"$home/.cache/coursier"),
+      Seq("--whitelist", s"$home/.coursier"),
+      Seq("--whitelist", s"$home/.ivy2"),
+      Seq("--whitelist", s"$home/.sbt"),
+      Seq("--whitelist", s"$home/.scio-ideaPluginIC")     
+    ).flatten.mkString(" ")
+  }
+)
+
+addCommandAlias(
+  "runLocal", {
+    val home = System.getenv("HOME")
+    val projectDir = "/Users/arul.madhavan/dev/chartboost/scala-steward"
+    Seq(
+      Seq("core/run"),
+      Seq("--workspace", s"$projectDir/workspace"),
+      Seq("--repos-file", s"$projectDir/repos.md"),
+      Seq("--git-author-name", "adserver-bot"),
+      Seq("--git-author-email", s"adserver-team@chartboost.com"),
+      Seq("--github-api-host", "https://api.github.com"),
+      Seq("--github-login", "adserver-bot"),
+      Seq("--git-ask-pass", "/Users/arul.madhavan/.github/askpass/scala-steward.sh"),
+      Seq("--disable-sandbox"),
+      Seq("--do-not-fork"),
+      // Seq("--sign-commits"), -- try to sign commits
+      Seq("--whitelist", s"$home/.cache/coursier"),
+      Seq("--whitelist", s"$home/.coursier"),
+      Seq("--whitelist", s"$home/.ivy2"),
+      Seq("--whitelist", s"$home/.sbt"),
+      Seq("--whitelist", s"$home/.scio-ideaPluginIC")     
     ).flatten.mkString(" ")
   }
 )

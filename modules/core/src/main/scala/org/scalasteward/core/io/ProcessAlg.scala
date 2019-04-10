@@ -55,6 +55,7 @@ object ProcessAlg {
           extraEnv: (String, String)*
       ): F[List[String]] =
         F.delay {
+          println(s"Command - ${command} - ${extraEnv}")
           val lb = ListBuffer.empty[String]
           val log = new ProcessLogger {
             override def out(s: => String): Unit = lb.append(s)
