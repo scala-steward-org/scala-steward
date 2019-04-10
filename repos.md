@@ -352,6 +352,7 @@
 - typelevel/paiges
 - typelevel/sbt-catalysts
 - typelevel/spire
+- TinkoffCreditSystems/typed-schema
 - ua-parser/uap-scala
 - underscoreio/slickless
 - unfiltered/unfiltered
