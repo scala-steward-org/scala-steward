@@ -1,5 +1,6 @@
 - 2m/authors
 - 2m/ciris-hocon
+- 2m/polyfact
 - 2m/sonatype-stats
 - agourlay/cornichon
 - agourlay/json-2-csv
