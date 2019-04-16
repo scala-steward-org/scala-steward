@@ -14,25 +14,25 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.github
+package org.scalasteward.core.vcs
 
 import cats.implicits._
 import org.http4s.Uri
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.git.GitAlg
-import org.scalasteward.core.vcs.data.{Repo, RepoOut}
 import org.scalasteward.core.util
 import org.scalasteward.core.util.MonadThrowable
+import org.scalasteward.core.vcs.data.{Repo, RepoOut}
 
-trait GitHubRepoAlg[F[_]] {
+trait VCSRepoAlg[F[_]] {
   def clone(repo: Repo, repoOut: RepoOut): F[Unit]
 
   def syncFork(repo: Repo, repoOut: RepoOut): F[RepoOut]
 }
 
-object GitHubRepoAlg {
-  def create[F[_]: MonadThrowable](config: Config, gitAlg: GitAlg[F]): GitHubRepoAlg[F] =
-    new GitHubRepoAlg[F] {
+object VCSRepoAlg {
+  def create[F[_]: MonadThrowable](config: Config, gitAlg: GitAlg[F]): VCSRepoAlg[F] =
+    new VCSRepoAlg[F] {
       override def clone(repo: Repo, repoOut: RepoOut): F[Unit] =
         for {
           _ <- gitAlg.clone(repo, withLogin(repoOut.clone_url))

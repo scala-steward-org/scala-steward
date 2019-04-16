@@ -5,6 +5,7 @@ import org.scalasteward.core.git.Branch
 import org.scalasteward.core.vcs.data.{Repo, RepoOut, UserOut}
 import org.scalasteward.core.mock.MockContext.{config, gitAlg, gitHubRepoAlg}
 import org.scalasteward.core.mock.{MockContext, MockState}
+import org.scalasteward.core.vcs.VCSRepoAlg
 import org.scalatest.{FunSuite, Matchers}
 
 class GitHubRepoAlgTest extends FunSuite with Matchers {
@@ -92,7 +93,7 @@ class GitHubRepoAlgTest extends FunSuite with Matchers {
 
   test("syncFork should do nothing when doNotFork = true") {
     val (state, repoOut) =
-      GitHubRepoAlg
+      VCSRepoAlg
         .create(MockContext.config.copy(doNotFork = true), gitAlg)
         .syncFork(repo, parentRepoOut)
         .run(MockState.empty)
