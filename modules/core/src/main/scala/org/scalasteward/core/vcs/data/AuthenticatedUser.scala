@@ -14,18 +14,9 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.github.data
+package org.scalasteward.core.vcs.data
 
-import io.circe.Decoder
-import io.circe.generic.semiauto._
-import org.scalasteward.core.git.Branch
-
-final case class BranchOut(
-    name: Branch,
-    commit: CommitOut
+final case class AuthenticatedUser(
+    login: String,
+    accessToken: String
 )
-
-object BranchOut {
-  implicit val branchOutDecoder: Decoder[BranchOut] =
-    deriveDecoder
-}

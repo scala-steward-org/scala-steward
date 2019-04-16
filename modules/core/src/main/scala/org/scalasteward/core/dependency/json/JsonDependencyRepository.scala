@@ -22,7 +22,7 @@ import io.circe.parser.decode
 import io.circe.syntax._
 import org.scalasteward.core.dependency.{Dependency, DependencyRepository}
 import org.scalasteward.core.git.Sha1
-import org.scalasteward.core.github.data.Repo
+import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.util.MonadThrowable
 

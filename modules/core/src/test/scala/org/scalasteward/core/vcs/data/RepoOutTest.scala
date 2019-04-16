@@ -1,4 +1,4 @@
-package org.scalasteward.core.github.data
+package org.scalasteward.core.vcs.data
 
 import cats.effect.IO
 import io.circe.parser

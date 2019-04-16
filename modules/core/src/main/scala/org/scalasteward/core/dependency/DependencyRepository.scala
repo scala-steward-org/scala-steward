@@ -17,7 +17,7 @@
 package org.scalasteward.core.dependency
 
 import org.scalasteward.core.git.Sha1
-import org.scalasteward.core.github.data.Repo
+import org.scalasteward.core.vcs.data.Repo
 
 trait DependencyRepository[F[_]] {
   def findSha1(repo: Repo): F[Option[Sha1]]

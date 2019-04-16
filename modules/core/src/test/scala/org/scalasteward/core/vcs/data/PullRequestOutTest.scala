@@ -1,8 +1,8 @@
-package org.scalasteward.core.github.data
+package org.scalasteward.core.vcs.data
 
 import io.circe.parser
 import org.http4s.Uri
-import org.scalasteward.core.github.data.PullRequestState.Open
+import org.scalasteward.core.vcs.data.PullRequestState.Open
 import org.scalatest.{FunSuite, Matchers}
 import scala.io.Source
 

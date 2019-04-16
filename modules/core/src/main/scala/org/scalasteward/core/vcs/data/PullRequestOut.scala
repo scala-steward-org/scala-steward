@@ -14,17 +14,28 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.github.data
+package org.scalasteward.core.vcs.data
 
+import cats.implicits._
 import io.circe.Decoder
 import io.circe.generic.semiauto._
-import org.scalasteward.core.git.Sha1
+import org.http4s.Uri
+import org.scalasteward.core.vcs.data.PullRequestState.Closed
+import org.scalasteward.core.util.uri.uriDecoder
 
-final case class CommitOut(
-    sha: Sha1
-)
+final case class PullRequestOut(
+    html_url: Uri,
+    state: PullRequestState,
+    title: String
+) {
+  def isClosed: Boolean =
+    state === Closed
+}
 
-object CommitOut {
-  implicit val commitOutDecoder: Decoder[CommitOut] =
+object PullRequestOut {
+  implicit val pullRequestOutDecoder: Decoder[PullRequestOut] =
     deriveDecoder
+
+  // prevent IntelliJ from removing the import of uriDecoder
+  locally(uriDecoder)
 }

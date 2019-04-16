@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.github.data
+package org.scalasteward.core.vcs.data
 
 import io.circe.Decoder
 import io.circe.generic.semiauto._

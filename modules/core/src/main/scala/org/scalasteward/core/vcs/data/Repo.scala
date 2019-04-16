@@ -14,9 +14,27 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.github.data
+package org.scalasteward.core.vcs.data
 
-final case class AuthenticatedUser(
-    login: String,
-    accessToken: String
-)
+import io.circe.{KeyDecoder, KeyEncoder}
+
+final case class Repo(
+    owner: String,
+    repo: String
+) {
+  def show: String = s"$owner/$repo"
+}
+
+object Repo {
+  implicit val repoKeyDecoder: KeyDecoder[Repo] = {
+    val string = "([^/]+)"
+    val / = s"$string/$string".r
+    KeyDecoder.instance {
+      case owner / repo => Some(Repo(owner, repo))
+      case _            => None
+    }
+  }
+
+  implicit val repoKeyEncoder: KeyEncoder[Repo] =
+    KeyEncoder.instance(repo => repo.owner + "/" + repo.repo)
+}

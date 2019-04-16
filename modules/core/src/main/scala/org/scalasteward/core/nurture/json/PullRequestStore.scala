@@ -18,7 +18,7 @@ package org.scalasteward.core.nurture.json
 
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
-import org.scalasteward.core.github.data.Repo
+import org.scalasteward.core.vcs.data.Repo
 
 final case class PullRequestStore(store: Map[Repo, Map[String, PullRequestData]])
 

@@ -20,7 +20,7 @@ import cats.Applicative
 import cats.implicits._
 import org.http4s.headers.Authorization
 import org.http4s.{BasicCredentials, Request}
-import org.scalasteward.core.github.data.AuthenticatedUser
+import org.scalasteward.core.vcs.data.AuthenticatedUser
 
 object authentication {
   def addCredentials[F[_]: Applicative](user: AuthenticatedUser): Request[F] => F[Request[F]] =

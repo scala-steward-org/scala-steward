@@ -18,7 +18,7 @@ package org.scalasteward.core.dependency.json
 
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
-import org.scalasteward.core.github.data.Repo
+import org.scalasteward.core.vcs.data.Repo
 
 final case class RepoStore(store: Map[Repo, RepoData])
 

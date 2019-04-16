@@ -20,7 +20,7 @@ import cats.data.OptionT
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import io.circe.config.parser
-import org.scalasteward.core.github.data.Repo
+import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.model.Update
 import org.scalasteward.core.repoconfig.RepoConfigAlg._

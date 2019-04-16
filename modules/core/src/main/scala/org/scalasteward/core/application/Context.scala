@@ -25,7 +25,7 @@ import org.scalasteward.core.dependency.json.JsonDependencyRepository
 import org.scalasteward.core.dependency.{DependencyRepository, DependencyService}
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.github.{GitHubApiAlg, GitHubRepoAlg}
-import org.scalasteward.core.github.data.AuthenticatedUser
+import org.scalasteward.core.vcs.data.AuthenticatedUser
 import org.scalasteward.core.github.http4s.Http4sGitHubApiAlg
 import org.scalasteward.core.github.http4s.authentication.addCredentials
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}

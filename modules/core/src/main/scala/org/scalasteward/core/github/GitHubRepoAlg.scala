@@ -20,7 +20,7 @@ import cats.implicits._
 import org.http4s.Uri
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.git.GitAlg
-import org.scalasteward.core.github.data.{Repo, RepoOut}
+import org.scalasteward.core.vcs.data.{Repo, RepoOut}
 import org.scalasteward.core.util
 import org.scalasteward.core.util.MonadThrowable
 

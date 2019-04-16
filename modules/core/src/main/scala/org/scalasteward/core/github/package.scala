@@ -17,7 +17,7 @@
 package org.scalasteward.core
 
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.github.data.Repo
+import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.model.Update
 
 package object github {

@@ -19,7 +19,7 @@ package org.scalasteward.core.nurture.json
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.git.Sha1
-import org.scalasteward.core.github.data.PullRequestState
+import org.scalasteward.core.vcs.data.PullRequestState
 import org.scalasteward.core.model.Update
 
 final case class PullRequestData(
