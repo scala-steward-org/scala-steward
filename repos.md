@@ -104,6 +104,7 @@
 - daandi/nice-url-encode-decode
 - daandi/nice-uuid
 - daniel-shuy/liquibase-slick-codegen-sbt-plugin
+- daniel-shuy/sbt-release-mdoc
 - daniel-shuy/scripted-scalatest-sbt-plugin
 - dhpiggott/liquidity
 - dispalt/tagless-redux
