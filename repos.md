@@ -120,6 +120,7 @@
 - esamson/remder
 - esamson/sbt-groovy
 - fiadliel/fs2-grpc
+- finagle/finagle-mysql-shapes
 - finagle/finagle-oauth2
 - finagle/finagle-postgres
 - finagle/finch
