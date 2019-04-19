@@ -28,7 +28,7 @@ import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.update.FilterAlg
 import org.scalasteward.core.util.{BracketThrowable, LogAlg}
 import org.scalasteward.core.vcs.VCSRepoAlg
-import org.scalasteward.core.{git, github, util}
+import org.scalasteward.core.{git, util, vcs}
 
 class NurtureAlg[F[_]](
     implicit
@@ -81,7 +81,7 @@ class NurtureAlg[F[_]](
   def processUpdate(data: UpdateData): F[Unit] =
     for {
       _ <- logger.info(s"Process update ${data.update.show}")
-      head = github.headFor(github.getLogin(config, data.repo), data.update)
+      head = vcs.headFor(vcs.getLogin(config, data.repo), data.update)
       repoConfig <- repoConfigAlg.getRepoConfig(data.repo)
       pullRequests <- gitHubApiAlg.listPullRequests(data.repo, head, data.baseBranch)
       _ <- pullRequests.headOption match {
@@ -121,7 +121,7 @@ class NurtureAlg[F[_]](
   def createPullRequest(data: UpdateData): F[Unit] =
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
-      headLogin = github.getLogin(config, data.repo)
+      headLogin = vcs.getLogin(config, data.repo)
       requestData = NewPullRequestData.from(data, headLogin, config.gitHubLogin)
       pr <- gitHubApiAlg.createPullRequest(data.repo, requestData)
       _ <- pullRequestRepo.createOrUpdate(

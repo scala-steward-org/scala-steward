@@ -23,7 +23,7 @@ import org.scalasteward.core.git.Branch
 import org.scalasteward.core.model.{SemVer, Update}
 import org.scalasteward.core.nurture.UpdateData
 import org.scalasteward.core.repoconfig.RepoConfigAlg
-import org.scalasteward.core.{git, github}
+import org.scalasteward.core.{git, vcs}
 
 final case class NewPullRequestData(
     title: String,
@@ -77,7 +77,7 @@ object NewPullRequestData {
     NewPullRequestData(
       title = git.commitMsgFor(data.update),
       body = bodyFor(data.update, authorLogin),
-      head = github.headFor(headLogin, data.update),
+      head = vcs.headFor(headLogin, data.update),
       base = data.baseBranch
     )
 }
