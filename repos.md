@@ -258,6 +258,8 @@
 - ReactivePlatform/Reactive-Design-Patterns
 - sake92/hepek
 - saksdirect/sundial
+- sbt/sbt-autoversion
+- sbt/sbt-duplicates-finder
 - sbt/sbt-java-formatter
 - scalabin-no/http4s-directives
 - scalameta/metabrowse
