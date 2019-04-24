@@ -342,6 +342,9 @@
 - ThoughtWorksInc/tryt.scala
 - tjheslin1/DMsPredictor
 - tomwadeson/barebones
+- tpolecat/atto
+- tpolecat/doobie
+- tpolecat/skunk
 - travisbrown/catbird
 - travisbrown/iteratee
 - travisbrown/iteratee-twitter
