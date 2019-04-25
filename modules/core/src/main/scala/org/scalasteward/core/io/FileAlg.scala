@@ -26,6 +26,8 @@ import org.scalasteward.core.util
 import org.scalasteward.core.util.MonadThrowable
 
 trait FileAlg[F[_]] {
+  def createTemporarily[A](file: File, content: String)(fa: F[A]): F[A]
+
   def deleteForce(file: File): F[Unit]
 
   def ensureExists(dir: File): F[File]
@@ -65,6 +67,9 @@ trait FileAlg[F[_]] {
 object FileAlg {
   def create[F[_]](implicit F: Sync[F]): FileAlg[F] =
     new FileAlg[F] {
+      override def createTemporarily[A](file: File, content: String)(fa: F[A]): F[A] =
+        F.bracket(writeFile(file, content))(_ => fa)(_ => deleteForce(file))
+
       override def deleteForce(file: File): F[Unit] =
         F.delay(if (file.exists) FileUtils.forceDelete(file.toJava))
 
