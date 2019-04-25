@@ -40,6 +40,7 @@ The following people have helped making scala-steward great:
 * [JCollier](https://github.com/Slakah)
 * [Jeff](https://github.com/custommonkey)
 * [kenji yoshida](https://github.com/xuwei-k)
+* [Mark Canlas](https://github.com/mcanlas)
 * [Michael Wizner](https://github.com/mwz)
 * [Philippus Baalman](https://github.com/Philippus)
 * [Piotr Gabara](https://github.com/bhop)
