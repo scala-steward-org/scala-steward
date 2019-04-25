@@ -2,6 +2,7 @@
 - 2m/ciris-hocon
 - 2m/polyfact
 - 2m/sonatype-stats
+- 7mind/izumi-r2
 - agourlay/cornichon
 - agourlay/json-2-csv
 - akka/akka-grpc
@@ -183,7 +184,6 @@
 - lightbend/lightbend-emoji
 - lightbend/migration-manager
 - lightbend/paradox
-- lightbend/scala-fortify-docs
 - lightbend/scala-logging
 - lightbend/scala-sculpt
 - lightbend/ssl-config
@@ -252,7 +252,6 @@
 - playframework/twirl
 - plokhotnyuk/jsoniter-scala
 - ppurang/asynch
-- pshirshov/izumi-r2
 - raboof/sbt-reproducible-builds
 - ReactivePlatform/Pragmatic-Scala
 - ReactivePlatform/Reactive-Design-Patterns
@@ -340,6 +339,7 @@
 - ThoughtWorksInc/sde
 - ThoughtWorksInc/todo
 - ThoughtWorksInc/tryt.scala
+- TinkoffCreditSystems/typed-schema
 - tjheslin1/DMsPredictor
 - tomwadeson/barebones
 - tpolecat/atto
@@ -362,7 +362,6 @@
 - typelevel/paiges
 - typelevel/sbt-catalysts
 - typelevel/spire
-- TinkoffCreditSystems/typed-schema
 - ua-parser/uap-scala
 - underscoreio/slickless
 - unfiltered/unfiltered
