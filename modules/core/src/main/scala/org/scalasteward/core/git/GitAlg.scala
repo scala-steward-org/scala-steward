@@ -95,7 +95,7 @@ object GitAlg {
       override def commitAll(repo: Repo, message: String): F[Unit] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          sign = if (config.signCommits) List("--gpg-sign") else List.empty
+          sign = if (config.signCommits) List("--gpg-sign") else List("--no-gpg-sign")
           _ <- exec(Nel.of("commit", "--all", "-m", message) ++ sign, repoDir)
         } yield ()
 
