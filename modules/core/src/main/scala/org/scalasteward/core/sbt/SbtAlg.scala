@@ -97,18 +97,23 @@ object SbtAlg {
         fileAlg.home.map(_ / ".sbt")
 
       def exec(command: Nel[String], repoDir: File): F[List[String]] =
-        if (config.ignoreOptsFiles) {
-          ignoreOptsFiles(repoDir)(processAlg.execSandboxed(command, repoDir))
-        } else processAlg.execSandboxed(command, repoDir)
+        maybeIgnoreOptsFiles(repoDir)(processAlg.execSandboxed(command, repoDir))
 
       def sbtCmd(commands: List[String]): Nel[String] =
         Nel.of("sbt", "-batch", "-no-colors", commands.mkString(";", ";", ""))
 
-      def ignoreOptsFiles[A](dir: File)(fa: F[A]): F[A] =
-        fileAlg.removeTemporarily(dir / ".jvmopts") {
+      def maybeIgnoreOptsFiles[A](dir: File)(fa: F[A]): F[A] =
+        if (config.ignoreOptsFiles) ignoreOptsFiles(dir)(fa) else fa
+
+      def ignoreOptsFiles[A](dir: File)(fa: F[A]): F[A] = {
+        val jvmopts = ".jvmopts"
+        fileAlg.removeTemporarily(dir / jvmopts) {
           fileAlg.removeTemporarily(dir / ".sbtopts") {
-            fa
+            fileAlg.createTemporarily(dir / jvmopts, "-Xss8m") {
+              fa
+            }
           }
         }
+      }
     }
 }

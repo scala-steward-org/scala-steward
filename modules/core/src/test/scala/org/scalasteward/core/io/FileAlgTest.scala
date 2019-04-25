@@ -11,6 +11,19 @@ import org.scalatest.{FunSuite, Matchers}
 class FileAlgTest extends FunSuite with Matchers {
   val ioFileAlg: FileAlg[IO] = FileAlg.create[IO]
 
+  test("createTemporarily") {
+    val file = File.temp / "test-scala-steward3.tmp"
+    val content = Arbitrary.arbitrary[String].sample.getOrElse("")
+
+    val p = for {
+      before <- ioFileAlg.readFile(file)
+      during <- ioFileAlg.createTemporarily(file, content)(ioFileAlg.readFile(file))
+      after <- ioFileAlg.readFile(file)
+    } yield (before, during, after)
+
+    p.unsafeRunSync() shouldBe ((None, Some(content), None))
+  }
+
   test("writeFile *> readFile <* deleteForce") {
     val file = File.temp / "test-scala-steward1.tmp"
     val content = Arbitrary.arbitrary[String].sample.getOrElse("")

@@ -7,6 +7,13 @@ import fs2.Stream
 import org.scalasteward.core.mock.{applyPure, MockEff, MockState}
 
 class MockFileAlg extends FileAlg[MockEff] {
+  override def createTemporarily[A](file: File, content: String)(fa: MockEff[A]): MockEff[A] =
+    for {
+      _ <- StateT.modify[IO, MockState](_.exec(List("create", file.pathAsString)))
+      a <- fa
+      _ <- StateT.modify[IO, MockState](_.exec(List("rm", file.pathAsString)))
+    } yield a
+
   override def deleteForce(file: File): MockEff[Unit] =
     StateT.modify(_.exec(List("rm", "-rf", file.pathAsString)).rm(file))
 
