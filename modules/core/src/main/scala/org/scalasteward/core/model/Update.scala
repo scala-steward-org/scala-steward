@@ -55,7 +55,7 @@ sealed trait Update extends Product with Serializable {
     def replaceVersion(regex: Regex): Option[String] =
       util.string.replaceSomeInOpt(regex, target, m => {
         val group1 = m.group(1)
-        if (group1.toLowerCase.contains("previous"))
+        if (group1.toLowerCase.contains("previous") || group1.startsWith("//"))
           None
         else
           Some(group1 + m.group(2) + nextVersion)
