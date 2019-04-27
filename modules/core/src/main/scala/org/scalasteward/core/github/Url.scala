@@ -27,8 +27,11 @@ class Url(apiHost: Uri) {
   def forks(repo: Repo): Uri =
     repos(repo) / "forks"
 
-  def listPullRequests(repo: Repo, head: String): Uri =
-    pulls(repo).withQueryParam("head", head).withQueryParam("state", "all")
+  def listPullRequests(repo: Repo, head: String, base: Branch): Uri =
+    pulls(repo)
+      .withQueryParam("head", head)
+      .withQueryParam("base", base.name)
+      .withQueryParam("state", "all")
 
   def pulls(repo: Repo): Uri =
     repos(repo) / "pulls"
