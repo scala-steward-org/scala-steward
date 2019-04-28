@@ -62,6 +62,17 @@
       "contributions": [
         "design"
       ]
+    },
+    {
+      "login": "regadas",
+      "name": "Filipe Regadas",
+      "avatar_url": "https://avatars2.githubusercontent.com/u/163899?v=4",
+      "profile": "https://github.com/regadas",
+      "contributions": [
+        "code",
+        "test",
+        "platform"
+      ]
     }
   ],
   "contributorsPerLine": 7,
