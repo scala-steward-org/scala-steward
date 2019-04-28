@@ -42,10 +42,18 @@ class UpdateTest extends FunSuite with Matchers {
     val original =
       """// val scalajsJqueryVersion = "0.9.3
         |val scalajsJqueryVersion = "0.9.3 //bla
+        | "be.doeraene" %% "scalajs-jquery"  % "0.9.3"
+        | // "be.doeraene" %% "scalajs-jquery"  % "0.9.3"
+        |   addSbtPlugin("be.doeraene" %% "scalajs-jquery"  % "0.9.3")
+        |   //addSbtPlugin("be.doeraene" %% "scalajs-jquery"  % "0.9.3")
         |"""".stripMargin.trim
     val expected =
       """// val scalajsJqueryVersion = "0.9.3
         |val scalajsJqueryVersion = "0.9.4 //bla
+        | "be.doeraene" %% "scalajs-jquery"  % "0.9.4"
+        | // "be.doeraene" %% "scalajs-jquery"  % "0.9.3"
+        |   addSbtPlugin("be.doeraene" %% "scalajs-jquery"  % "0.9.4")
+        |   //addSbtPlugin("be.doeraene" %% "scalajs-jquery"  % "0.9.3")
         |"""".stripMargin.trim
     Single("be.doeraene", "scalajs-jquery", "0.9.3", Nel.of("0.9.4"))
       .replaceAllIn(original) shouldBe Some(expected)
