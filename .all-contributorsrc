@@ -113,6 +113,15 @@
         "code",
         "test"
       ]
+    },
+    {
+      "login": "custommonkey",
+      "name": "Jeff",
+      "avatar_url": "https://avatars2.githubusercontent.com/u/1583909?v=4",
+      "profile": "https://github.com/custommonkey",
+      "contributions": [
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,
