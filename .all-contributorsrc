@@ -122,6 +122,15 @@
       "contributions": [
         "test"
       ]
+    },
+    {
+      "login": "dwijnand",
+      "name": "Dale Wijnand",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/344610?v=4",
+      "profile": "https://twitter.com/dwijnand",
+      "contributions": [
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,
