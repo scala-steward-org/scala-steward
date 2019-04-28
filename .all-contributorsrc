@@ -44,6 +44,15 @@
         "code",
         "test"
       ]
+    },
+    {
+      "login": "xuwei-k",
+      "name": "kenji yoshida",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/389787?v=4",
+      "profile": "https://twitter.com/xuwei_k",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
