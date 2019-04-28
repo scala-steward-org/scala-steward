@@ -101,7 +101,8 @@
       "contributions": [
         "code",
         "test",
-        "platform"
+        "platform",
+        "doc"
       ]
     }
   ],
