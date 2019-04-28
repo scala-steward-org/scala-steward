@@ -83,6 +83,15 @@
         "code",
         "test"
       ]
+    },
+    {
+      "login": "sullis",
+      "name": "sullis",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/30938?v=4",
+      "profile": "https://github.com/sullis",
+      "contributions": [
+        "infra"
+      ]
     }
   ],
   "contributorsPerLine": 7,
