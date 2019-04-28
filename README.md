@@ -1,5 +1,5 @@
 <img src="https://github.com/fthomas/scala-steward/raw/master/data/images/scala-steward-logo-hex-1.png" width="156px" height="180px" align="right">
-[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors)
+[![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors)
 
 # scala-steward
 [![Build Status](https://travis-ci.org/fthomas/scala-steward.svg?branch=master)](https://travis-ci.org/fthomas/scala-steward)
@@ -34,7 +34,7 @@ look like, here are the ones it has created so far:
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore -->
-<table><tr><td align="center"><a href="https://timepit.eu/~frank/"><img src="https://avatars1.githubusercontent.com/u/141252?v=4" width="100px;" alt="Frank S. Thomas"/><br /><sub><b>Frank S. Thomas</b></sub></a><br /><a href="https://github.com/fthomas/scala-steward/commits?author=fthomas" title="Code">💻</a> <a href="https://github.com/fthomas/scala-steward/commits?author=fthomas" title="Tests">⚠️</a></td></tr></table>
+<table><tr><td align="center"><a href="https://timepit.eu/~frank/"><img src="https://avatars1.githubusercontent.com/u/141252?v=4" width="100px;" alt="Frank S. Thomas"/><br /><sub><b>Frank S. Thomas</b></sub></a><br /><a href="https://github.com/fthomas/scala-steward/commits?author=fthomas" title="Code">💻</a> <a href="https://github.com/fthomas/scala-steward/commits?author=fthomas" title="Tests">⚠️</a></td><td align="center"><a href="https://github.com/kiranbayram"><img src="https://avatars0.githubusercontent.com/u/3471570?v=4" width="100px;" alt="Bayram Kiran"/><br /><sub><b>Bayram Kiran</b></sub></a><br /><a href="https://github.com/fthomas/scala-steward/commits?author=kiranbayram" title="Code">💻</a> <a href="https://github.com/fthomas/scala-steward/commits?author=kiranbayram" title="Tests">⚠️</a></td></tr></table>
 
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 The following people have helped making scala-steward great:
