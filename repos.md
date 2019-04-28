@@ -155,6 +155,15 @@
 - IronCoreLabs/argonaut-jwt-scala
 - IronCoreLabs/cats-scalatest
 - IronCoreLabs/recrypt
+- japgolly/clear-config
+- japgolly/microlibs
+- japgolly/nyaya
+- japgolly/scalacss
+- japgolly/scala-graal
+- japgolly/scalajs-benchmark
+- japgolly/scalajs-react
+- japgolly/test-state
+- japgolly/univeq
 - jmcardon/tsec
 - JohnReedLOL/pos
 - JohnReedLOL/scala-trace-debug
