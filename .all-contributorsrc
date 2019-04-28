@@ -151,6 +151,15 @@
         "code",
         "test"
       ]
+    },
+    {
+      "login": "mcanlas",
+      "name": "Mark Canlas",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/881934?v=4",
+      "profile": "https://www.markcanlas.com/",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
