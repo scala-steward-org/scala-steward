@@ -1,0 +1,24 @@
+{
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "contributors": [
+    {
+      "login": "fthomas",
+      "name": "Frank S. Thomas",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/141252?v=4",
+      "profile": "https://timepit.eu/~frank/",
+      "contributions": [
+        "code",
+        "test"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "projectName": "scala-steward",
+  "projectOwner": "fthomas",
+  "repoType": "github",
+  "repoHost": "https://github.com"
+}
