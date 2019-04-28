@@ -38,6 +38,19 @@ class UpdateTest extends FunSuite with Matchers {
       .replaceAllIn(original) shouldBe Some(expected)
   }
 
+  test("replaceAllIn: do not update comments") {
+    val original =
+      """// val scalajsJqueryVersion = "0.9.3
+        |val scalajsJqueryVersion = "0.9.3 //bla
+        |"""".stripMargin.trim
+    val expected =
+      """// val scalajsJqueryVersion = "0.9.3
+        |val scalajsJqueryVersion = "0.9.4 //bla
+        |"""".stripMargin.trim
+    Single("be.doeraene", "scalajs-jquery", "0.9.3", Nel.of("0.9.4"))
+      .replaceAllIn(original) shouldBe Some(expected)
+  }
+
   test("replaceAllIn: ignore '-core' suffix") {
     val original = """val specs2Version = "4.2.0""""
     val expected = """val specs2Version = "4.3.4""""
