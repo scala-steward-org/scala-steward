@@ -53,13 +53,17 @@ sealed trait Update extends Product with Serializable {
       splitArtifactId: Boolean
   ): Option[String] = {
     def replaceVersion(regex: Regex): Option[String] =
-      util.string.replaceSomeInOpt(regex, target, m => {
-        val group1 = m.group(1)
-        if (group1.toLowerCase.contains("previous") || group1.startsWith("//"))
-          None
-        else
-          Some(group1 + m.group(2) + nextVersion)
-      })
+      util.string.replaceSomeInOpt(
+        regex,
+        target,
+        m => {
+          val group1 = m.group(1)
+          if (group1.toLowerCase.contains("previous") || group1.trim.startsWith("//"))
+            None
+          else
+            Some(group1 + m.group(2) + nextVersion)
+        }
+      )
 
     val artifactIdParts =
       if (splitArtifactId) artifactId.split(Array('-', '_')).filter(_.length >= 3).toList else Nil
