@@ -141,6 +141,16 @@
         "code",
         "test"
       ]
+    },
+    {
+      "login": "Slakah",
+      "name": "JCollier",
+      "avatar_url": "https://avatars2.githubusercontent.com/u/16853?v=4",
+      "profile": "https://github.com/Slakah",
+      "contributions": [
+        "code",
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,
