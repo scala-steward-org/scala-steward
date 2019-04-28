@@ -44,6 +44,6 @@ final class Http4sGitHubApiAlg[F[_]: Sync](
   override def getRepo(repo: Repo): F[RepoOut] =
     client.get(url.repos(repo), modify(repo))
 
-  override def listPullRequests(repo: Repo, head: String): F[List[PullRequestOut]] =
-    client.get(url.listPullRequests(repo, head), modify(repo))
+  override def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]] =
+    client.get(url.listPullRequests(repo, head, base), modify(repo))
 }

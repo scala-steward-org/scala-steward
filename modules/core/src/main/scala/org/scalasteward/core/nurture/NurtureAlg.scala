@@ -82,7 +82,7 @@ class NurtureAlg[F[_]](
       _ <- logger.info(s"Process update ${data.update.show}")
       head = github.headFor(github.getLogin(config, data.repo), data.update)
       repoConfig <- repoConfigAlg.getRepoConfig(data.repo)
-      pullRequests <- gitHubApiAlg.listPullRequests(data.repo, head)
+      pullRequests <- gitHubApiAlg.listPullRequests(data.repo, head, data.baseBranch)
       _ <- pullRequests.headOption match {
         case Some(pr) if pr.isClosed =>
           logger.info(s"PR ${pr.html_url} is closed")

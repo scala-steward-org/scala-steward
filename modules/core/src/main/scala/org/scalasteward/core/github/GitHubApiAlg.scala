@@ -38,7 +38,7 @@ trait GitHubApiAlg[F[_]] {
   def getRepo(repo: Repo): F[RepoOut]
 
   /** https://developer.github.com/v3/pulls/#list-pull-requests */
-  def listPullRequests(repo: Repo, head: String): F[List[PullRequestOut]]
+  def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]]
 
   def createForkOrGetRepo(config: Config, repo: Repo): F[RepoOut] =
     if (config.doNotFork) getRepo(repo)
