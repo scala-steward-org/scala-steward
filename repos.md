@@ -275,7 +275,6 @@
 - scalameta/metabrowse
 - scalaz/scalaz-nio
 - scalaz/scalaz-zio
-- scalaz/scalaz-ziokeeper
 - scala/hello-world.g8
 - scala/make-release-notes
 - scala/sbt-scala-module
@@ -387,3 +386,4 @@
 - WellFactored/resourcepool
 - X9Developers/block-explorer
 - yannick-cw/elastic-indexer4s
+- zio/zio-keeper
