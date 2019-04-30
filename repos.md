@@ -50,6 +50,7 @@
 - ChristopherDavenport/cormorant
 - ChristopherDavenport/Data.Maybe
 - ChristopherDavenport/default
+- ChristopherDavenport/doobie-pool
 - ChristopherDavenport/ember
 - ChristopherDavenport/epimetheus
 - ChristopherDavenport/epimetheus-circuit
@@ -64,6 +65,7 @@
 - ChristopherDavenport/http4s-task-example
 - ChristopherDavenport/http4s-websocket-example
 - ChristopherDavenport/iork
+- ChristopherDavenport/keypool
 - ChristopherDavenport/linebacker
 - ChristopherDavenport/log4cats
 - ChristopherDavenport/log4cats-writer-example
