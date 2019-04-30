@@ -156,7 +156,7 @@
 - IronCoreLabs/cats-scalatest
 - IronCoreLabs/recrypt
 - japgolly/clear-config
-- japgolly/microlibs
+- japgolly/microlibs-scala
 - japgolly/nyaya
 - japgolly/scalacss
 - japgolly/scala-graal
