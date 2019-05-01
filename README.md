@@ -15,7 +15,7 @@ and sbt plugins up-to-date.
 Open a pull request that adds the GitHub repository of your Scala project
 to [repos.md](https://github.com/fthomas/scala-steward/edit/master/repos.md).
 Once that PR is merged, [**@scala-steward**][@scala-steward] will check
-periodically for updates of libraries and plugins in your project and will open
+periodically for updates of libraries and plugins (see [examples](https://github.com/fthomas/scala-steward/blob/master/EXAMPLES.md)) in your project and will open
 pull requests in your repository if it can figure out where version numbers need
 to be updated.
 
