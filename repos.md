@@ -190,6 +190,7 @@
 - laserdisc-io/log-effect
 - leigh-perry/conduction
 - leigh-perry/template-cats-io-app
+- leigh-perry/template-cats-zio-app
 - lemastero/scala_typeclassopedia
 - lightbend/genjavadoc
 - lightbend/lightbend-emoji
