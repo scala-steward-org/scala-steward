@@ -229,6 +229,9 @@
 - NeQuissimus/circe-kafka
 - NeQuissimus/nequi-kafka
 - NeQuissimus/zio-slf4j
+- nevillelyh/protobuf-generic
+- nevillelyh/parquet-avro-extra
+- nevillelyh/shapeless-datatype
 - nrinaudo/kantan.codecs
 - olafurpg/sbt-ci-release
 - olivierschultz/typelevel-template.g8
@@ -270,6 +273,7 @@
 - sake92/hepek
 - saksdirect/sundial
 - sbt/sbt-autoversion
+- sbt/sbt-avro
 - sbt/sbt-duplicates-finder
 - sbt/sbt-java-formatter
 - scalabin-no/http4s-directives
