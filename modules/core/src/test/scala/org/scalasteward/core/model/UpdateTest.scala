@@ -183,6 +183,13 @@ class UpdateTest extends FunSuite with Matchers {
       .replaceAllIn(original) shouldBe Some(expected)
   }
 
+  test("replaceAllIn: val with backticks") {
+    val original = """ val `plotly.js` = "1.41.3" """
+    val expected = """ val `plotly.js` = "1.43.2" """
+    Single("org.webjars.bower", "plotly.js", "1.41.3", Nel.of("1.43.2"))
+      .replaceAllIn(original) shouldBe Some(expected)
+  }
+
   test("replaceAllInRelaxed") {
     val original = """lazy val circeVersion = "0.9.3""""
     val expected = """lazy val circeVersion = "0.11.1""""
