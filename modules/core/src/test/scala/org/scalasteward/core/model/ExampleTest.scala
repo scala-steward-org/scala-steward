@@ -6,8 +6,8 @@ import org.scalatest.{Matchers, WordSpec}
 
 class ExampleTest extends WordSpec with Matchers {
 
-  "Good examples of dependency definitions" which {
-    "will be identified by scala-steward without any problems are" that {
+  "Good examples of dependency definitions".which {
+    "will be identified by scala-steward without any problems are".that {
       val goodExample1 = """val scalajsJqueryVersion = "0.9.3""""
       s"$goodExample1" in {
         val expectedResult = Some("""val scalajsJqueryVersion = "0.9.4"""")
@@ -52,7 +52,7 @@ class ExampleTest extends WordSpec with Matchers {
     }
   }
 
-  "Bad examples of dependency definitions" which {
+  "Bad examples of dependency definitions".which {
     "won't be identified by scala-steward are".that {
       val badExample1 =
         """val scalajsJqueryVersion =
@@ -63,9 +63,11 @@ class ExampleTest extends WordSpec with Matchers {
           .replaceAllIn(badExample1) shouldBe expectedResult
       }
 
-      val badExample2 = """val scalajsJqueryVersion = "0.9.3" // val scalajsJqueryVersion = "0.9.3""""
+      val badExample2 =
+        """val scalajsJqueryVersion = "0.9.3" // val scalajsJqueryVersion = "0.9.3""""
       s"$badExample2" in {
-        val expectedResult = Some("""val scalajsJqueryVersion = "0.9.3" // val scalajsJqueryVersion = "0.9.4"""")
+        val expectedResult =
+          Some("""val scalajsJqueryVersion = "0.9.3" // val scalajsJqueryVersion = "0.9.4"""")
         Single("be.doeraene", "scalajs-jquery", "0.9.3", Nel.of("0.9.4"))
           .replaceAllIn(badExample2) shouldBe expectedResult
       }
