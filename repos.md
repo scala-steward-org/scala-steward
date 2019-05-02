@@ -172,7 +172,6 @@
 - julienrf/endpoints
 - julien-truffaut/fp-foundation
 - julien-truffaut/Monocle
-- julien-truffaut/newts
 - kiambogo/fs2-jms
 - kontainers/micrometer-akka
 - kubukoz/brick-store
