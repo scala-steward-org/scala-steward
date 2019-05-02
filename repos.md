@@ -353,6 +353,7 @@
 - ThoughtWorksInc/sde
 - ThoughtWorksInc/todo
 - ThoughtWorksInc/tryt.scala
+- TimWSpence/cats-stm
 - TinkoffCreditSystems/typed-schema
 - tjheslin1/DMsPredictor
 - tomwadeson/barebones
