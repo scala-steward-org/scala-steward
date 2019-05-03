@@ -17,11 +17,13 @@
 package org.scalasteward.core
 
 import better.files.File
+import cats.implicits._
 
 package object io {
   def isSourceFile(file: File): Boolean = {
     val scalaOrSbtFile = file.extension.exists(Set(".scala", ".sbt"))
+    val travisYmlFile = file.name === ".travis.yml"
     val notInGitDir = !file.pathAsString.contains(".git/")
-    scalaOrSbtFile && notInGitDir
+    (scalaOrSbtFile || travisYmlFile) && notInGitDir
   }
 }
