@@ -182,7 +182,6 @@
 - kwark/play-refined
 - kwark/slick-refined
 - lagom/lagom
-- lagom/lagom-akka-discovery-service-locator
 - lancewalton/treelog
 - larsrh/sbt-libisabelle
 - laserdisc-io/laserdisc
