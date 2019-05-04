@@ -204,6 +204,13 @@ class UpdateTest extends FunSuite with Matchers {
       .replaceAllInRelaxed(original) shouldBe Some(expected)
   }
 
+  test("replaceAllInRelaxed: camel case artifactId") {
+    val original = """val hikariVersion = "3.3.0" """
+    val expected = """val hikariVersion = "3.4.0" """
+    Single("com.zaxxer", "HikariCP", "3.3.0", Nel.of("3.4.0"))
+      .replaceAllInRelaxed(original) shouldBe Some(expected)
+  }
+
   test("Group.artifactId") {
     Group(
       "org.http4s",

@@ -70,4 +70,20 @@ object string {
     val line = "─" * 12
     s"$line $s $line"
   }
+
+  /**
+    * @example {{{
+    * scala> string.splitBetweenLowerAndUpperChars("javaLowerCase")
+    * res1: List[String] = List(java, Lower, Case)
+    *
+    * scala> string.splitBetweenLowerAndUpperChars("HikariCP")
+    * res2: List[String] = List(Hikari, CP)
+    * }}}
+    */
+  def splitBetweenLowerAndUpperChars(s: String): List[String] = {
+    val lowerAndThenUpper = "\\p{javaLowerCase}\\p{javaUpperCase}".r
+    val bounds = lowerAndThenUpper.findAllIn(s).matchData.map(_.start + 1).toList
+    val indices = (0 +: bounds :+ s.length).distinct
+    indices.sliding(2).collect { case i1 :: i2 :: Nil => s.substring(i1, i2) }.toList
+  }
 }

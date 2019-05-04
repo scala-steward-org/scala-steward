@@ -66,7 +66,13 @@ sealed trait Update extends Product with Serializable {
       )
 
     val artifactIdParts =
-      if (splitArtifactId) artifactId.split(Array('-', '_')).filter(_.length >= 3).toList else Nil
+      if (splitArtifactId) {
+        artifactId
+          .split(Array('-', '_'))
+          .toList
+          .flatMap(util.string.splitBetweenLowerAndUpperChars)
+          .filter(_.length >= 3)
+      } else Nil
     val quotedSearchTerms = searchTerms
       .concat(artifactIdParts)
       .map { term =>
