@@ -18,4 +18,14 @@ class stringTest extends FunSuite with Matchers with ScalaCheckPropertyChecks {
         .forall(sub => sub.matches(".*\\p{javaLowerCase}") || sub.matches("\\p{javaUpperCase}*"))
     }
   }
+
+  test("splitBetweenLowerAndUpperChars: examples") {
+    string.splitBetweenLowerAndUpperChars("") shouldBe List("")
+    string.splitBetweenLowerAndUpperChars("a") shouldBe List("a")
+    string.splitBetweenLowerAndUpperChars("A") shouldBe List("A")
+    string.splitBetweenLowerAndUpperChars("aa") shouldBe List("aa")
+    string.splitBetweenLowerAndUpperChars("AA") shouldBe List("AA")
+    string.splitBetweenLowerAndUpperChars("aA") shouldBe List("a", "A")
+    string.splitBetweenLowerAndUpperChars("aAbB") shouldBe List("a", "Ab", "B")
+  }
 }
