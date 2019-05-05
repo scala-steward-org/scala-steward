@@ -71,7 +71,8 @@ object string {
     s"$line $s $line"
   }
 
-  /**
+  /** Splits a string between lower and upper case characters.
+    *
     * @example {{{
     * scala> string.splitBetweenLowerAndUpperChars("javaLowerCase")
     * res1: List[String] = List(java, Lower, Case)
@@ -83,7 +84,7 @@ object string {
   def splitBetweenLowerAndUpperChars(s: String): List[String] = {
     val lowerAndThenUpper = "\\p{javaLowerCase}\\p{javaUpperCase}".r
     val bounds = lowerAndThenUpper.findAllIn(s).matchData.map(_.start + 1).toList
-    val indices = (0 +: bounds :+ s.length).distinct
+    val indices = 0 +: bounds :+ s.length
     indices.sliding(2).collect { case i1 :: i2 :: Nil => s.substring(i1, i2) }.toList
   }
 }
