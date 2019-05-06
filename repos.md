@@ -31,6 +31,7 @@
 - BenFradet/gsheets4s
 - BenFradet/spark-kafka-writer
 - BenFradet/struct-type-encoder
+- blemale/scaffeine
 - cb372/cats-retry
 - cb372/scalacache
 - ccadllc/cedi-circuitbreakers
