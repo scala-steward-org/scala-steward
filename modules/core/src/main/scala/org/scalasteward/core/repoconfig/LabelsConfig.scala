@@ -20,17 +20,16 @@ import io.circe.Decoder
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.deriveDecoder
 
-final case class RepoConfig(
-    updates: UpdatesConfig = UpdatesConfig(),
-    updatePullRequests: Boolean = true,
-    addLabelsToPullRequests: Boolean = false,
-    labelsConfig: LabelsConfig = LabelsConfig()
-)
+final case class LabelsConfig(
+    library: List[UpdatePattern] = List.empty,
+    testLibrary: List[UpdatePattern] = List.empty,
+    sbtPlugin: List[UpdatePattern] = List.empty
+) {}
 
-object RepoConfig {
+object LabelsConfig {
   implicit val customConfig: Configuration =
     Configuration.default.withDefaults
 
-  implicit val repoConfigDecoder: Decoder[RepoConfig] =
+  implicit val labelsConfigDecoder: Decoder[LabelsConfig] =
     deriveDecoder
 }
