@@ -142,6 +142,7 @@
 - functional-streams-for-scala/fs2
 - gearpump/gearpump
 - getquill/quill
+- gnieh/diffson
 - hipjim/scala-retry
 - hseeberger/akka-http-json
 - http4s/blaze
