@@ -142,10 +142,6 @@
 - functional-streams-for-scala/fs2
 - gearpump/gearpump
 - getquill/quill
-- gvolpe/console4cats
-- gvolpe/fs2-rabbit
-- gvolpe/fs2-redis
-- gvolpe/http4s-tracer
 - hipjim/scala-retry
 - hseeberger/akka-http-json
 - http4s/blaze
@@ -268,6 +264,10 @@
 - playframework/twirl
 - plokhotnyuk/jsoniter-scala
 - ppurang/asynch
+- profunktor/console4cats
+- profunktor/fs2-rabbit
+- profunktor/http4s-tracer
+- profunktor/redis4cats
 - raboof/sbt-reproducible-builds
 - ReactivePlatform/Pragmatic-Scala
 - ReactivePlatform/Reactive-Design-Patterns
