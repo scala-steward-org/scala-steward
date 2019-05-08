@@ -18,11 +18,13 @@ package org.scalasteward.core.update
 
 import cats.Traverse
 import cats.implicits._
-import org.scalasteward.core.model.Update
+import org.scalasteward.core.model._
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 
 object show {
+  def oneLiner(labels: Nel[Label]): String = labels.map(_.name).toList.mkString(", ")
+
   def oneLiner(update: Update): String =
     commaSeparated(update.groupId, update.artifactIds)
 

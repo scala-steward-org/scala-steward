@@ -1,5 +1,6 @@
 package org.scalasteward.core.update
 
+import org.scalasteward.core.model.Label
 import org.scalasteward.core.model.Update.{Group, Single}
 import org.scalasteward.core.util.Nel
 import org.scalatest.{FunSuite, Matchers}
@@ -69,5 +70,17 @@ class showTest extends FunSuite with Matchers {
     )
     val expected = "sttp:circe, sttp:core, ..."
     show.oneLiner(update) shouldBe expected
+  }
+
+  test("oneLiner: one label") {
+    val labels = Nel.of(Label.SbtPluginUpdate)
+    val expected = "sbt-plugin-update"
+    show.oneLiner(labels) shouldBe expected
+  }
+
+  test("oneLiner: all labels") {
+    val labels = Nel.of(Label.TestLibraryUpdate, Label.LibraryUpdate, Label.SbtPluginUpdate)
+    val expected = "test-library-update, library-update, sbt-plugin-update"
+    show.oneLiner(labels) shouldBe expected
   }
 }
