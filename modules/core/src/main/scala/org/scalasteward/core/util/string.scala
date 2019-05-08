@@ -19,11 +19,24 @@ package org.scalasteward.core.util
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.collection.MinSize
 import eu.timepit.refined.refineV
-import shapeless.Witness
 import scala.util.matching.Regex
+import shapeless.Witness
 
 object string {
   type MinLengthString[N] = String Refined MinSize[N]
+
+  /** Extracts words from a string.
+    *
+    * Words are separated by '-', '_', or a change from lower to upper case
+    * and are at least three characters long.
+    */
+  def extractWords(s: String): List[String] = {
+    val minLength = 3
+    val splitBySeparators: String => List[String] = _.split(Array('-', '_')).toList
+    splitBySeparators(s)
+      .flatMap(splitBetweenLowerAndUpperChars)
+      .filter(_.length >= minLength)
+  }
 
   def longestCommonPrefix(s1: String, s2: String): String = {
     var i = 0
