@@ -24,7 +24,7 @@ final case class RepoConfig(
     updates: UpdatesConfig = UpdatesConfig(),
     updatePullRequests: Boolean = true,
     addLabelsToPullRequests: Boolean = false,
-    labelsConfig: LabelsConfig = LabelsConfig()
+    labels: LabelsConfig = LabelsConfig()
 )
 
 object RepoConfig {

@@ -71,4 +71,34 @@ class RepoConfigAlgTest extends FunSuite with Matchers {
       updates = UpdatesConfig(ignore = List(UpdatePattern("a", None, None)))
     )
   }
+
+  test("config with addLabelsToPullRequests enabled") {
+    val repo = Repo("fthomas", "scala-steward")
+    val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
+    val content = "addLabelsToPullRequests = true"
+    val initialState = MockState.empty.add(configFile, content)
+    val config = repoConfigAlg.getRepoConfig(repo).runA(initialState).unsafeRunSync()
+
+    config shouldBe RepoConfig(addLabelsToPullRequests = true)
+  }
+
+  test("config with all label definitions") {
+    val repo = Repo("fthomas", "scala-steward")
+    val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
+    val content =
+      """|labels.library      = [ { groupId = "eu.timepit", artifactId = "refined", version = "0.8." } ]
+         |labels.testLibrary  = [ { groupId = "org.scalatest", artifactId = "scalatest" } ]
+         |labels.sbtPlugin    = [ { groupId = "com.geirsson", artifactId = "sbt-scalafmt" } ]
+         |""".stripMargin
+    val initialState = MockState.empty.add(configFile, content)
+    val config = repoConfigAlg.getRepoConfig(repo).runA(initialState).unsafeRunSync()
+
+    config shouldBe RepoConfig(
+      labels = LabelsConfig(
+        library = List(UpdatePattern("eu.timepit", Some("refined"), Some("0.8."))),
+        testLibrary = List(UpdatePattern("org.scalatest", Some("scalatest"), None)),
+        sbtPlugin = List(UpdatePattern("com.geirsson", Some("sbt-scalafmt"), None))
+      )
+    )
+  }
 }
