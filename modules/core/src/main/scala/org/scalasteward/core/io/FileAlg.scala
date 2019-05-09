@@ -88,8 +88,8 @@ object FileAlg {
       override def removeTemporarily[A](file: File)(fa: F[A]): F[A] =
         F.bracket {
           F.delay {
-            if (file.exists) Some(file.moveTo(File.newTemporaryFile(), overwrite = true))
-            else None
+            val copyOptions = File.CopyOptions(overwrite = true)
+            if (file.exists) Some(file.moveTo(File.newTemporaryFile())(copyOptions)) else None
           }
         } { _ =>
           fa
