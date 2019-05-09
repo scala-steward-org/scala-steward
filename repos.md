@@ -112,6 +112,8 @@
 - daniel-shuy/scripted-scalatest-sbt-plugin
 - dhpiggott/liquidity
 - dispalt/tagless-redux
+- djspiewak/gll-combinators
+- djspiewak/shims
 - dwijnand/sbt-compat
 - dwijnand/sbt-dynver
 - dwijnand/sbt-project-graph
@@ -320,6 +322,14 @@
 - sksamuel/elastic4s
 - sksamuel/pulsar4s
 - Slakah/uritemplate4s
+- slamdata/qdata
+- slamdata/quasar
+- slamdata/quasar-datasource-azure
+- slamdata/quasar-datasource-s3
+- slamdata/quasar-datasource-mongo
+- slamdata/quasar-datasource-url
+- slamdata/sbt-slamdata
+- slamdata/tectonic
 - snowplow-incubator/cla-bot
 - sphereio/sphere-scala-libs
 - spotify/big-data-rosetta-code
