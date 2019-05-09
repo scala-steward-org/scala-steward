@@ -150,8 +150,8 @@
 - hseeberger/akka-http-json
 - http4s/blaze
 - http4s/http4s
-- http4s/http4s-jdk-http-client
 - http4s/http4s.g8
+- http4s/http4s-jdk-http-client
 - http4s/jawn-fs2
 - http4s/rho
 - ilya-murzinov/finch-todo-backend
@@ -163,9 +163,9 @@
 - japgolly/microlibs-scala
 - japgolly/nyaya
 - japgolly/scalacss
-- japgolly/scala-graal
 - japgolly/scalajs-benchmark
 - japgolly/scalajs-react
+- japgolly/scala-graal
 - japgolly/test-state
 - japgolly/univeq
 - jmcardon/tsec
@@ -229,8 +229,8 @@
 - NeQuissimus/circe-kafka
 - NeQuissimus/nequi-kafka
 - NeQuissimus/zio-slf4j
-- nevillelyh/protobuf-generic
 - nevillelyh/parquet-avro-extra
+- nevillelyh/protobuf-generic
 - nevillelyh/shapeless-datatype
 - nrinaudo/kantan.codecs
 - olafurpg/sbt-ci-release
@@ -326,8 +326,8 @@
 - slamdata/qdata
 - slamdata/quasar
 - slamdata/quasar-datasource-azure
-- slamdata/quasar-datasource-s3
 - slamdata/quasar-datasource-mongo
+- slamdata/quasar-datasource-s3
 - slamdata/quasar-datasource-url
 - slamdata/sbt-slamdata
 - slamdata/tectonic
