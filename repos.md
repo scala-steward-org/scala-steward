@@ -52,6 +52,7 @@
 - ChristopherDavenport/Data.Maybe
 - ChristopherDavenport/default
 - ChristopherDavenport/doobie-pool
+- ChristopherDavenport/dynamapath
 - ChristopherDavenport/ember
 - ChristopherDavenport/epimetheus
 - ChristopherDavenport/epimetheus-circuit
