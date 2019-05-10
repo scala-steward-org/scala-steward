@@ -196,6 +196,7 @@
 - lightbend/lightbend-emoji
 - lightbend/migration-manager
 - lightbend/paradox
+- lightbend/sbt-paradox-apidoc
 - lightbend/scala-logging
 - lightbend/scala-sculpt
 - lightbend/ssl-config
