@@ -57,13 +57,16 @@ object FilterAlg {
   type FilterResult = Either[RejectionReason, Update.Single]
 
   sealed trait RejectionReason { def update: Update.Single }
-  case class IgnoredGlobally(update: Update.Single) extends RejectionReason
-  case class IgnoredByConfig(update: Update.Single) extends RejectionReason
-  case class NotAllowedByConfig(update: Update.Single) extends RejectionReason
-  case class BadVersions(update: Update.Single) extends RejectionReason
+  final case class IgnoredGlobally(update: Update.Single) extends RejectionReason
+  final case class IgnoredByConfig(update: Update.Single) extends RejectionReason
+  final case class NotAllowedByConfig(update: Update.Single) extends RejectionReason
+  final case class BadVersions(update: Update.Single) extends RejectionReason
+  final case class NonSnapshotToSnapshotUpdate(update: Update.Single) extends RejectionReason
 
   def globalFilter(update: Update.Single): FilterResult =
-    removeBadVersions(update).flatMap(isIgnoredGlobally)
+    removeBadVersions(update)
+      .flatMap(isIgnoredGlobally)
+      .flatMap(ignoreNonSnapshotToSnapshotUpdate)
 
   def localFilter(update: Update.Single, repoConfig: RepoConfig): FilterResult =
     globalFilter(update).flatMap(repoConfig.updates.keep)
@@ -84,6 +87,14 @@ object FilterAlg {
       case _                     => true
     })
     if (keep) Right(update) else Left(IgnoredGlobally(update))
+  }
+
+  def ignoreNonSnapshotToSnapshotUpdate(update: Update.Single): FilterResult = {
+    val snap = "-SNAP"
+    if (update.newerVersions.head.contains(snap) && !update.currentVersion.contains(snap))
+      Left(NonSnapshotToSnapshotUpdate(update))
+    else
+      Right(update)
   }
 
   def removeBadVersions(update: Update.Single): FilterResult =

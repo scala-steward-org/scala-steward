@@ -7,11 +7,22 @@ import org.scalasteward.core.mock.MockContext.filterAlg
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.model.Update
 import org.scalasteward.core.repoconfig.{RepoConfig, UpdatePattern, UpdatesConfig}
-import org.scalasteward.core.update.FilterAlg.BadVersions
+import org.scalasteward.core.update.FilterAlg.{BadVersions, NonSnapshotToSnapshotUpdate}
 import org.scalasteward.core.util.Nel
 import org.scalatest.{FunSuite, Matchers}
 
 class FilterAlgTest extends FunSuite with Matchers {
+  test("ignoreNonSnapshotToSnapshotUpdate: SNAP -> SNAP") {
+    val update = Update.Single("org.scalatest", "scalatest", "3.0.8-SNAP2", Nel.of("3.1.0-SNAP10"))
+    FilterAlg.ignoreNonSnapshotToSnapshotUpdate(update) shouldBe Right(update)
+  }
+
+  test("ignoreNonSnapshotToSnapshotUpdate: RC -> SNAP") {
+    val update = Update.Single("org.scalatest", "scalatest", "3.0.8-RC2", Nel.of("3.1.0-SNAP10"))
+    FilterAlg.ignoreNonSnapshotToSnapshotUpdate(update) shouldBe
+      Left(NonSnapshotToSnapshotUpdate(update))
+  }
+
   test("removeBadVersions: update without bad version") {
     val update = Update.Single("com.jsuereth", "sbt-pgp", "1.1.0", Nel.of("1.1.2", "2.0.0"))
     FilterAlg.removeBadVersions(update) shouldBe Right(update)
