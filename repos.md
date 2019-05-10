@@ -2,7 +2,7 @@
 - 2m/ciris-hocon
 - 2m/polyfact
 - 2m/sonatype-stats
-- 7mind/izumi-r2
+- 7mind/izumi
 - agourlay/cornichon
 - agourlay/json-2-csv
 - akka/akka-grpc
@@ -267,6 +267,8 @@
 - playframework/scalatestplus-play
 - playframework/twirl
 - plokhotnyuk/jsoniter-scala
+- plokhotnyuk/fast-string-interpolator
+- plokhotnyuk/rtree2d
 - ppurang/asynch
 - profunktor/console4cats
 - profunktor/fs2-rabbit
@@ -317,8 +319,6 @@
 - SethTisue/Project-Euler
 - shankarshastri/ScalaFPCode
 - sirocchj/sbt-api-builder
-- sizmek-public/fast-string-interpolator
-- sizmek-public/rtree2d
 - sksamuel/avro4s
 - sksamuel/elastic4s
 - sksamuel/pulsar4s
