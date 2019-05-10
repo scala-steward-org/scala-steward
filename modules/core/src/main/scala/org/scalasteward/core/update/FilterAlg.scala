@@ -64,7 +64,7 @@ object FilterAlg {
   final case class NonSnapshotToSnapshotUpdate(update: Update.Single) extends RejectionReason
 
   def globalFilter(update: Update.Single): FilterResult =
-    ignoreBadVersions(update)
+    removeBadVersions(update)
       .flatMap(isIgnoredGlobally)
       .flatMap(ignoreNonSnapshotToSnapshotUpdate)
 
@@ -97,7 +97,7 @@ object FilterAlg {
       Right(update)
   }
 
-  def ignoreBadVersions(update: Update.Single): FilterResult =
+  def removeBadVersions(update: Update.Single): FilterResult =
     util
       .removeAll(update.newerVersions, badVersions(update))
       .map(versions => update.copy(newerVersions = versions))

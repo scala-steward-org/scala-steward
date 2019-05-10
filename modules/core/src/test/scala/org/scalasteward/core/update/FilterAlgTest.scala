@@ -23,19 +23,19 @@ class FilterAlgTest extends FunSuite with Matchers {
       Left(NonSnapshotToSnapshotUpdate(update))
   }
 
-  test("ignoreBadVersions: update without bad version") {
+  test("removeBadVersions: update without bad version") {
     val update = Update.Single("com.jsuereth", "sbt-pgp", "1.1.0", Nel.of("1.1.2", "2.0.0"))
-    FilterAlg.ignoreBadVersions(update) shouldBe Right(update)
+    FilterAlg.removeBadVersions(update) shouldBe Right(update)
   }
 
-  test("ignoreBadVersions: update with bad version") {
+  test("removeBadVersions: update with bad version") {
     val update = Update.Single("com.jsuereth", "sbt-pgp", "1.1.2-1", Nel.of("1.1.2", "2.0.0"))
-    FilterAlg.ignoreBadVersions(update) shouldBe Right(update.copy(newerVersions = Nel.of("2.0.0")))
+    FilterAlg.removeBadVersions(update) shouldBe Right(update.copy(newerVersions = Nel.of("2.0.0")))
   }
 
-  test("ignoreBadVersions: update with only bad versions") {
+  test("removeBadVersions: update with only bad versions") {
     val update = Update.Single("org.http4s", "http4s-dsl", "0.18.0", Nel.of("0.19.0"))
-    FilterAlg.ignoreBadVersions(update) shouldBe Left(BadVersions(update))
+    FilterAlg.removeBadVersions(update) shouldBe Left(BadVersions(update))
   }
 
   test("ignore update via config updates.ignore") {
