@@ -146,6 +146,7 @@
 - gearpump/gearpump
 - getquill/quill
 - gnieh/diffson
+- henricook/SAMLer
 - hipjim/scala-retry
 - hseeberger/akka-http-json
 - http4s/blaze
