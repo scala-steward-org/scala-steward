@@ -176,6 +176,7 @@
 - julien-truffaut/fp-foundation
 - julien-truffaut/Monocle
 - kiambogo/fs2-jms
+- kemitix/s3thorp
 - kontainers/micrometer-akka
 - kubukoz/brick-store
 - kubukoz/error-control
