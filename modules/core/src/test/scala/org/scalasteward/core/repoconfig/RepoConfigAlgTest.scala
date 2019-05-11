@@ -86,8 +86,8 @@ class RepoConfigAlgTest extends FunSuite with Matchers {
     val repo = Repo("fthomas", "scala-steward")
     val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
     val content =
-      """|labels.library      = [ { groupId = "eu.timepit", artifactId = "refined", version = "0.8." } ]
-         |labels.testLibrary  = [ { groupId = "org.scalatest", artifactId = "scalatest" } ]
+      """|labels.library      = [ { groupId = "eu.timepit", artifactId = "refined" } ]
+         |labels.testLibrary  = [ { groupId = "org.scalatest" } ]
          |labels.sbtPlugin    = [ { groupId = "com.geirsson", artifactId = "sbt-scalafmt" } ]
          |""".stripMargin
     val initialState = MockState.empty.add(configFile, content)
@@ -95,9 +95,9 @@ class RepoConfigAlgTest extends FunSuite with Matchers {
 
     config shouldBe RepoConfig(
       labels = LabelsConfig(
-        library = List(UpdatePattern("eu.timepit", Some("refined"), Some("0.8."))),
-        testLibrary = List(UpdatePattern("org.scalatest", Some("scalatest"), None)),
-        sbtPlugin = List(UpdatePattern("com.geirsson", Some("sbt-scalafmt"), None))
+        library = List(LabelPattern("eu.timepit", Some("refined"))),
+        testLibrary = List(LabelPattern("org.scalatest", None)),
+        sbtPlugin = List(LabelPattern("com.geirsson", Some("sbt-scalafmt")))
       )
     )
   }

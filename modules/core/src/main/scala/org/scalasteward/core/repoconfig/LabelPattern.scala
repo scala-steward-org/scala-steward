@@ -16,20 +16,25 @@
 
 package org.scalasteward.core.repoconfig
 
+import cats.implicits._
 import io.circe.Decoder
-import io.circe.generic.extras.Configuration
-import io.circe.generic.extras.semiauto.deriveDecoder
+import io.circe.generic.semiauto.deriveDecoder
+import org.scalasteward.core.model.Update
 
-final case class LabelsConfig(
-    library: List[LabelPattern] = List.empty,
-    testLibrary: List[LabelPattern] = List.empty,
-    sbtPlugin: List[LabelPattern] = List.empty
-) {}
+final case class LabelPattern(
+    groupId: String,
+    artifactId: Option[String]
+)
 
-object LabelsConfig {
-  implicit val customConfig: Configuration =
-    Configuration.default.withDefaults
+object LabelPattern {
+  final case class MatchResult(byArtifactId: List[LabelPattern])
 
-  implicit val labelsConfigDecoder: Decoder[LabelsConfig] =
+  def findMatch(patterns: List[LabelPattern], update: Update.Single): MatchResult = {
+    val byGroupId = patterns.filter(_.groupId === update.groupId)
+    val byArtifactId = byGroupId.filter(_.artifactId.forall(_ === update.artifactId))
+    MatchResult(byArtifactId)
+  }
+
+  implicit val labelPatternDecoder: Decoder[LabelPattern] =
     deriveDecoder
 }
