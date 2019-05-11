@@ -27,12 +27,10 @@ final case class LabelPattern(
 )
 
 object LabelPattern {
-  final case class MatchResult(byArtifactId: List[LabelPattern])
 
-  def findMatch(patterns: List[LabelPattern], update: Update.Single): MatchResult = {
+  def doesMatch(patterns: List[LabelPattern], update: Update.Single): Boolean = {
     val byGroupId = patterns.filter(_.groupId === update.groupId)
-    val byArtifactId = byGroupId.filter(_.artifactId.forall(_ === update.artifactId))
-    MatchResult(byArtifactId)
+    byGroupId.exists(_.artifactId.forall(_ === update.artifactId))
   }
 
   implicit val labelPatternDecoder: Decoder[LabelPattern] =

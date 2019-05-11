@@ -19,12 +19,35 @@ package org.scalasteward.core.repoconfig
 import io.circe.Decoder
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.deriveDecoder
+import org.scalasteward.core.model._
 
 final case class LabelsConfig(
     library: List[LabelPattern] = List.empty,
     testLibrary: List[LabelPattern] = List.empty,
     sbtPlugin: List[LabelPattern] = List.empty
-) {}
+) {
+  def getLabels(update: Update.Single): List[Label] = {
+    val maybeLibraryLabel = maybeLabel(library, update, Label.LibraryUpdate)
+    val maybeTestLibraryLabel = maybeLabel(testLibrary, update, Label.TestLibraryUpdate)
+    val maybeSbtPluginLabel = maybeLabel(sbtPlugin, update, Label.SbtPluginUpdate)
+
+    List(
+      maybeLibraryLabel,
+      maybeTestLibraryLabel,
+      maybeSbtPluginLabel
+    ).flatten
+  }
+
+  private def maybeLabel(
+      patterns: List[LabelPattern],
+      update: Update.Single,
+      label: Label
+  ): Option[Label] =
+    Option(LabelPattern.doesMatch(patterns, update)).collect {
+      case true => label
+    }
+
+}
 
 object LabelsConfig {
   implicit val customConfig: Configuration =

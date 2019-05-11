@@ -15,6 +15,7 @@
  */
 
 package org.scalasteward.core.model
+import io.circe.{Decoder, Encoder}
 
 sealed trait Label {
   def name: String
@@ -32,4 +33,10 @@ object Label {
   final case object SbtPluginUpdate extends Label {
     val name = "sbt-plugin-update"
   }
+
+  implicit val labelEncoder: Encoder[Label] =
+    io.circe.generic.semiauto.deriveEncoder
+
+  implicit val labelDecoder: Decoder[Label] =
+    io.circe.generic.semiauto.deriveDecoder
 }
