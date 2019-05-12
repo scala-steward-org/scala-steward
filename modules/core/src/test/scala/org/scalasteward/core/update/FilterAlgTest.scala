@@ -11,34 +11,36 @@ import org.scalatest.{FunSuite, Matchers}
 
 class FilterAlgTest extends FunSuite with Matchers {
   test("ignoreNonSnapshotToSnapshotUpdate: SNAP -> SNAP") {
-    val update = Update.Single("org.scalatest", "scalatest", "3.0.8-SNAP2", Nel.of("3.1.0-SNAP10"))
+    val update =
+      Update.Single("org.scalatest", "scalatest", "3.0.8-SNAP2", Nel.of("3.1.0-SNAP10"), None)
     FilterAlg.ignoreNonSnapshotToSnapshotUpdate(update) shouldBe Right(update)
   }
 
   test("ignoreNonSnapshotToSnapshotUpdate: RC -> SNAP") {
-    val update = Update.Single("org.scalatest", "scalatest", "3.0.8-RC2", Nel.of("3.1.0-SNAP10"))
+    val update =
+      Update.Single("org.scalatest", "scalatest", "3.0.8-RC2", Nel.of("3.1.0-SNAP10"), None)
     FilterAlg.ignoreNonSnapshotToSnapshotUpdate(update) shouldBe
       Left(NonSnapshotToSnapshotUpdate(update))
   }
 
   test("removeBadVersions: update without bad version") {
-    val update = Update.Single("com.jsuereth", "sbt-pgp", "1.1.0", Nel.of("1.1.2", "2.0.0"))
+    val update = Update.Single("com.jsuereth", "sbt-pgp", "1.1.0", Nel.of("1.1.2", "2.0.0"), None)
     FilterAlg.removeBadVersions(update) shouldBe Right(update)
   }
 
   test("removeBadVersions: update with bad version") {
-    val update = Update.Single("com.jsuereth", "sbt-pgp", "1.1.2-1", Nel.of("1.1.2", "2.0.0"))
+    val update = Update.Single("com.jsuereth", "sbt-pgp", "1.1.2-1", Nel.of("1.1.2", "2.0.0"), None)
     FilterAlg.removeBadVersions(update) shouldBe Right(update.copy(newerVersions = Nel.of("2.0.0")))
   }
 
   test("removeBadVersions: update with only bad versions") {
-    val update = Update.Single("org.http4s", "http4s-dsl", "0.18.0", Nel.of("0.19.0"))
+    val update = Update.Single("org.http4s", "http4s-dsl", "0.18.0", Nel.of("0.19.0"), None)
     FilterAlg.removeBadVersions(update) shouldBe Left(BadVersions(update))
   }
 
   test("ignore update via config updates.ignore") {
-    val update1 = Update.Single("org.http4s", "http4s-dsl", "0.17.0", Nel.of("0.18.0"))
-    val update2 = Update.Single("eu.timepit", "refined", "0.8.0", Nel.of("0.8.1"))
+    val update1 = Update.Single("org.http4s", "http4s-dsl", "0.17.0", Nel.of("0.18.0"), None)
+    val update2 = Update.Single("eu.timepit", "refined", "0.8.0", Nel.of("0.8.1"), None)
     val config =
       RepoConfig(UpdatesConfig(ignore = List(UpdatePattern("eu.timepit", Some("refined"), None))))
 
@@ -55,8 +57,8 @@ class FilterAlgTest extends FunSuite with Matchers {
   }
 
   test("ignore update via config updates.allow") {
-    val update1 = Update.Single("org.http4s", "http4s-dsl", "0.17.0", Nel.of("0.18.0"))
-    val update2 = Update.Single("eu.timepit", "refined", "0.8.0", Nel.of("0.8.1"))
+    val update1 = Update.Single("org.http4s", "http4s-dsl", "0.17.0", Nel.of("0.18.0"), None)
+    val update2 = Update.Single("eu.timepit", "refined", "0.8.0", Nel.of("0.8.1"), None)
 
     val config = RepoConfig(
       updates = UpdatesConfig(

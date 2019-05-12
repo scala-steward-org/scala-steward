@@ -32,6 +32,7 @@ sealed trait Update extends Product with Serializable {
   def artifactIds: Nel[String]
   def currentVersion: String
   def newerVersions: Nel[String]
+  def labels: Option[List[Label]]
 
   def name: String =
     Update.nameOf(groupId, artifactId)
@@ -109,6 +110,7 @@ object Update {
       artifactId: String,
       currentVersion: String,
       newerVersions: Nel[String],
+      labels: Option[List[Label]],
       configurations: Option[String] = None
   ) extends Update {
     override def artifactIds: Nel[String] =
@@ -124,7 +126,8 @@ object Update {
       groupId: String,
       artifactIds: Nel[String],
       currentVersion: String,
-      newerVersions: Nel[String]
+      newerVersions: Nel[String],
+      labels: Option[List[Label]]
   ) extends Update {
     override def artifactId: String = {
       val possibleMainArtifactIds = for {
@@ -151,7 +154,7 @@ object Update {
         val head = nel.head
         val artifacts = nel.map(_.artifactId).distinct.sorted
         if (artifacts.tail.nonEmpty)
-          Group(head.groupId, artifacts, head.currentVersion, head.newerVersions)
+          Group(head.groupId, artifacts, head.currentVersion, head.newerVersions, head.labels)
         else
           head
       }

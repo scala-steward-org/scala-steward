@@ -34,7 +34,14 @@ final case class Dependency(
     s""""$groupId" % "$artifactIdCross" % "$version""""
 
   def toUpdate: Update.Single =
-    Update.Single(groupId, artifactId, version, Nel.of(version), configurations)
+    Update.Single(
+      groupId = groupId,
+      artifactId = artifactId,
+      currentVersion = version,
+      newerVersions = Nel.of(version),
+      labels = None,
+      configurations = configurations
+    )
 }
 
 object Dependency {

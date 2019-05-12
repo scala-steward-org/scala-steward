@@ -9,7 +9,7 @@ import org.scalasteward.core.io.{MockFileAlg, MockProcessAlg, MockWorkspaceAlg}
 import org.scalasteward.core.nurture.EditAlg
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
-import org.scalasteward.core.update.FilterAlg
+import org.scalasteward.core.update.{FilterAlg, LabelAlg}
 import org.scalasteward.core.util.{DateTimeAlg, LogAlg}
 import org.scalasteward.core.vcs.VCSRepoAlg
 
@@ -44,7 +44,8 @@ object MockContext {
   implicit val gitAlg: GitAlg[MockEff] = GitAlg.create
   implicit val gitHubRepoAlg: VCSRepoAlg[MockEff] = VCSRepoAlg.create(config, gitAlg)
   implicit val logAlg: LogAlg[MockEff] = new LogAlg[MockEff]
-  implicit val sbtAlg: SbtAlg[MockEff] = SbtAlg.create
   implicit val repoConfigAlg: RepoConfigAlg[MockEff] = new RepoConfigAlg[MockEff]
+  implicit val labelAlg: LabelAlg[MockEff] = new LabelAlg[MockEff]
+  implicit val sbtAlg: SbtAlg[MockEff] = SbtAlg.create
   implicit val filterAlg: FilterAlg[MockEff] = new FilterAlg[MockEff]
 }

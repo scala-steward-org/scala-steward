@@ -35,7 +35,15 @@ object parser {
           currentVersion <- Either.fromOption(versions.headOption, msg("currentVersion"))
           newerVersionsList = versions.drop(1).toList.filterNot(_.startsWith("InvalidVersion"))
           newerVersions <- Either.fromOption(Nel.fromList(newerVersionsList), msg("newerVersions"))
-        } yield Update.Single(groupId, artifactId, currentVersion, newerVersions, configurations)
+        } yield
+          Update.Single(
+            groupId = groupId,
+            artifactId = artifactId,
+            currentVersion = currentVersion,
+            newerVersions = newerVersions,
+            labels = None,
+            configurations = configurations
+          )
 
       case _ => Left(s"'$str' must contain ' : ' exactly once")
     }

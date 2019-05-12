@@ -30,14 +30,22 @@ class LabelAlg[F[_]](
 ) {
   def getLabels(repo: Repo, update: Update.Single): F[LabelsResult] =
     repoConfigAlg.getRepoConfig(repo).map { config =>
-      if (config.addLabelsToPullRequests) {
-        val labels = config.labels.getLabels(update)
+      if (config.addLabelsToPullRequests)
+        Right(config.labels.getLabels(update))
+      else
+        Left(LabelAlg.FeatureIsDisabled)
+    }
 
-        if (labels.isEmpty)
-          Left(LabelAlg.NoLabelsFound)
-        else
-          Right(labels)
-      } else Left(LabelAlg.FeatureIsDisabled)
+  def extendUpdatesWithLabels(repo: Repo, updates: List[Update.Single]): F[List[Update.Single]] =
+    updates.traverse { update =>
+      for {
+        result <- getLabels(repo, update)
+      } yield {
+        result match {
+          case Right(labels) => update.copy(labels = Some(labels))
+          case _             => update
+        }
+      }
     }
 }
 
@@ -46,6 +54,5 @@ object LabelAlg {
 
   sealed trait FailureReason
   final case object FeatureIsDisabled extends FailureReason
-  final case object NoLabelsFound extends FailureReason
 
 }

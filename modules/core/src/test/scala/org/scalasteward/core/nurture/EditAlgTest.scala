@@ -12,7 +12,7 @@ class EditAlgTest extends FunSuite with Matchers {
 
   test("applyUpdate") {
     val repo = Repo("fthomas", "scala-steward")
-    val update = Update.Single("org.typelevel", "cats-core", "1.2.0", Nel.of("1.3.0"))
+    val update = Update.Single("org.typelevel", "cats-core", "1.2.0", Nel.of("1.3.0"), None)
     val file = File.temp / "ws/fthomas/scala-steward/build.sbt"
 
     val state = editAlg

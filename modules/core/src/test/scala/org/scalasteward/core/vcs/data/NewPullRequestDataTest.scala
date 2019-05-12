@@ -13,7 +13,7 @@ class NewPullRequestDataTest extends FunSuite with Matchers {
     val data = UpdateData(
       Repo("foo", "bar"),
       RepoConfig(),
-      Update.Single("ch.qos.logback", "logback-classic", "1.2.0", Nel.of("1.2.3")),
+      Update.Single("ch.qos.logback", "logback-classic", "1.2.0", Nel.of("1.2.3"), None),
       Branch("master"),
       Sha1(Sha1.HexString("d6b6791d2ea11df1d156fe70979ab8c3a5ba3433")),
       Branch("update/logback-classic-1.2.3")

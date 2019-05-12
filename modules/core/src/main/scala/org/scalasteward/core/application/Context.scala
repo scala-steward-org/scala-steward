@@ -34,7 +34,7 @@ import org.scalasteward.core.nurture.{EditAlg, NurtureAlg, PullRequestRepository
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.update.json.JsonUpdateRepository
-import org.scalasteward.core.update.{FilterAlg, UpdateRepository, UpdateService}
+import org.scalasteward.core.update.{FilterAlg, LabelAlg, UpdateRepository, UpdateService}
 import org.scalasteward.core.util.{DateTimeAlg, HttpJsonClient, LogAlg}
 import org.scalasteward.core.vcs.VCSRepoAlg
 
@@ -47,7 +47,8 @@ final case class Context[F[_]](
     nurtureAlg: NurtureAlg[F],
     sbtAlg: SbtAlg[F],
     updateService: UpdateService[F],
-    workspaceAlg: WorkspaceAlg[F]
+    workspaceAlg: WorkspaceAlg[F],
+    labelAlg: LabelAlg[F]
 )
 
 object Context {
@@ -78,6 +79,7 @@ object Context {
         new Http4sGitHubApiAlg[F](config.gitHubApiHost, _ => addCredentials(user))
       implicit val vcsRepoAlg: VCSRepoAlg[F] = VCSRepoAlg.create[F](config, gitAlg)
       implicit val pullRequestRepo: PullRequestRepository[F] = new JsonPullRequestRepo[F]
+      implicit val labelAlg: LabelAlg[F] = new LabelAlg[F]
       implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F]
       implicit val updateRepository: UpdateRepository[F] = new JsonUpdateRepository[F]
       implicit val dependencyService: DependencyService[F] = new DependencyService[F]
@@ -90,7 +92,8 @@ object Context {
         nurtureAlg,
         sbtAlg,
         updateService,
-        workspaceAlg
+        workspaceAlg,
+        labelAlg
       )
     }
 }

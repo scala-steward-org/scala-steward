@@ -28,6 +28,7 @@ import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.model.Update
 import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.sbt.data.ArtificialProject
+import org.scalasteward.core.update.LabelAlg
 import org.scalasteward.core.util.Nel
 
 trait SbtAlg[F[_]] {
@@ -50,6 +51,7 @@ object SbtAlg {
       logger: Logger[F],
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F],
+      labelAlg: LabelAlg[F],
       F: Monad[F]
   ): SbtAlg[F] =
     new SbtAlg[F] {
@@ -97,7 +99,9 @@ object SbtAlg {
           commands = maybeClearCredentials ++
             List(dependencyUpdates, reloadPlugins, dependencyUpdates)
           lines <- exec(sbtCmd(commands), repoDir)
-        } yield parser.parseSingleUpdates(lines)
+          updates = parser.parseSingleUpdates(lines)
+          updatesWithLabels <- labelAlg.extendUpdatesWithLabels(repo, updates)
+        } yield updatesWithLabels
 
       val sbtDir: F[File] =
         fileAlg.home.map(_ / ".sbt")

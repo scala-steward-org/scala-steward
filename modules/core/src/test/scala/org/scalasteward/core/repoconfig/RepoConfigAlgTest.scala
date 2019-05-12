@@ -49,7 +49,7 @@ class RepoConfigAlgTest extends FunSuite with Matchers {
   }
 
   test("configToIgnoreFurtherUpdates with single update") {
-    val update = Update.Single("a", "b", "c", Nel.of("d"))
+    val update = Update.Single("a", "b", "c", Nel.of("d"), None)
     val repoConfig = RepoConfigAlg
       .parseRepoConfig(RepoConfigAlg.configToIgnoreFurtherUpdates(update))
       .getOrElse(RepoConfig())
@@ -62,7 +62,7 @@ class RepoConfigAlgTest extends FunSuite with Matchers {
   }
 
   test("configToIgnoreFurtherUpdates with group update") {
-    val update = Update.Group("a", Nel.of("b", "e"), "c", Nel.of("d"))
+    val update = Update.Group("a", Nel.of("b", "e"), "c", Nel.of("d"), None)
     val repoConfig = RepoConfigAlg
       .parseRepoConfig(RepoConfigAlg.configToIgnoreFurtherUpdates(update))
       .getOrElse(RepoConfig())

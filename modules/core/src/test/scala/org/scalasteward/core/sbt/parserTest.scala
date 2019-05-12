@@ -10,13 +10,15 @@ class parserTest extends FunSuite with Matchers {
   test("parseSingleUpdate: 1 new version") {
     val str = "org.scala-js:sbt-scalajs : 0.6.24 -> 0.6.25"
     parseSingleUpdate(str) shouldBe
-      Right(Update.Single("org.scala-js", "sbt-scalajs", "0.6.24", Nel.of("0.6.25")))
+      Right(Update.Single("org.scala-js", "sbt-scalajs", "0.6.24", Nel.of("0.6.25"), None))
   }
 
   test("parseSingleUpdate: 2 new versions") {
     val str = "org.scala-lang:scala-library   : 2.9.1 -> 2.9.3 -> 2.10.3"
     parseSingleUpdate(str) shouldBe
-      Right(Update.Single("org.scala-lang", "scala-library", "2.9.1", Nel.of("2.9.3", "2.10.3")))
+      Right(
+        Update.Single("org.scala-lang", "scala-library", "2.9.1", Nel.of("2.9.3", "2.10.3"), None)
+      )
   }
 
   test("parseSingleUpdate: 3 new versions") {
@@ -24,7 +26,13 @@ class parserTest extends FunSuite with Matchers {
     parseSingleUpdate(str) shouldBe
       Right(
         Update
-          .Single("ch.qos.logback", "logback-classic", "0.8", Nel.of("0.8.1", "0.9.30", "1.0.13"))
+          .Single(
+            "ch.qos.logback",
+            "logback-classic",
+            "0.8",
+            Nel.of("0.8.1", "0.9.30", "1.0.13"),
+            None
+          )
       )
   }
 
@@ -38,6 +46,7 @@ class parserTest extends FunSuite with Matchers {
             "scalacheck",
             "1.12.5",
             Nel.of("1.12.6", "1.14.0"),
+            None,
             Some("test")
           )
       )
@@ -81,16 +90,17 @@ class parserTest extends FunSuite with Matchers {
       """.stripMargin.trim
     parseSingleUpdates(str.linesIterator.toList) shouldBe
       List(
-        Update.Single("ai.x", "diff", "1.2.0", Nel.of("1.2.1"), Some("test")),
+        Update.Single("ai.x", "diff", "1.2.0", Nel.of("1.2.1"), None, Some("test")),
         Update
           .Single(
             "com.geirsson",
             "scalafmt-cli_2.11",
             "0.3.0",
             Nel.of("0.3.1", "0.6.8", "1.5.1"),
+            None,
             Some("scalafmt")
           ),
-        Update.Single("eu.timepit", "refined", "0.7.0", Nel.of("0.9.3"))
+        Update.Single("eu.timepit", "refined", "0.7.0", Nel.of("0.9.3"), None)
       )
   }
 
@@ -107,9 +117,9 @@ class parserTest extends FunSuite with Matchers {
     )
     parseSingleUpdates(lines) shouldBe
       List(
-        Update.Single("com.github.pureconfig", "pureconfig", "0.8.0", Nel.of("0.9.2")),
-        Update.Single("org.scala-lang", "scala-library", "2.12.3", Nel.of("2.12.6")),
-        Update.Single("org.scalacheck", "scalacheck", "1.13.5", Nel.of("1.14.0"))
+        Update.Single("com.github.pureconfig", "pureconfig", "0.8.0", Nel.of("0.9.2"), None),
+        Update.Single("org.scala-lang", "scala-library", "2.12.3", Nel.of("2.12.6"), None),
+        Update.Single("org.scalacheck", "scalacheck", "1.13.5", Nel.of("1.14.0"), None)
       )
   }
 }
