@@ -76,8 +76,6 @@ class NewPullRequestDataTest extends FunSuite with Matchers {
          |}
          |""".stripMargin.trim
 
-    println(result)
-    println(expected)
     result shouldBe expected
   }
 }

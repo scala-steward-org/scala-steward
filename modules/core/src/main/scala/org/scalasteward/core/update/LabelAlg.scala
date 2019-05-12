@@ -28,14 +28,6 @@ class LabelAlg[F[_]](
     repoConfigAlg: RepoConfigAlg[F],
     F: Monad[F]
 ) {
-  def getLabels(repo: Repo, update: Update.Single): F[LabelsResult] =
-    repoConfigAlg.getRepoConfig(repo).map { config =>
-      if (config.addLabelsToPullRequests)
-        Right(config.labels.getLabels(update))
-      else
-        Left(LabelAlg.FeatureIsDisabled)
-    }
-
   def extendUpdatesWithLabels(repo: Repo, updates: List[Update.Single]): F[List[Update.Single]] =
     updates.traverse { update =>
       for {
@@ -46,6 +38,14 @@ class LabelAlg[F[_]](
           case _             => update
         }
       }
+    }
+
+  private def getLabels(repo: Repo, update: Update.Single): F[LabelsResult] =
+    repoConfigAlg.getRepoConfig(repo).map { config =>
+      if (config.addLabelsToPullRequests)
+        Right(config.labels.getLabels(update))
+      else
+        Left(LabelAlg.FeatureIsDisabled)
     }
 }
 
