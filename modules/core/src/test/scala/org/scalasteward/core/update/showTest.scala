@@ -77,13 +77,13 @@ class showTest extends FunSuite with Matchers {
   }
 
   test("oneLiner: one label") {
-    val labels = Nel.of(Label.SbtPluginUpdate)
+    val labels = List(Label.SbtPluginUpdate)
     val expected = "sbt-plugin-update"
     show.oneLiner(labels) shouldBe expected
   }
 
   test("oneLiner: all labels") {
-    val labels = Nel.of(Label.TestLibraryUpdate, Label.LibraryUpdate, Label.SbtPluginUpdate)
+    val labels = List(Label.TestLibraryUpdate, Label.LibraryUpdate, Label.SbtPluginUpdate)
     val expected = "test-library-update, library-update, sbt-plugin-update"
     show.oneLiner(labels) shouldBe expected
   }

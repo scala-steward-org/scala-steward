@@ -24,6 +24,7 @@ import org.scalasteward.core.model.{SemVer, Update}
 import org.scalasteward.core.nurture.UpdateData
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.{git, vcs}
+import org.scalasteward.core.update.show
 
 final case class NewPullRequestData(
     title: String,
@@ -45,9 +46,15 @@ object NewPullRequestData {
           .map(artifactId => s"* ${g.groupId}:$artifactId\n")
           .mkString_("\n", "", "\n")
     }
+    val labels = update.labels.fold("") { labels =>
+      s"""|
+          |
+          |labels: ${show.oneLiner(labels)}""".stripMargin
+    }
+
     s"""|Updates${artifacts}from ${update.currentVersion} to ${update.nextVersion}.
         |
-        |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
+        |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.$labels
         |
         |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention @$login in the comments below.
         |

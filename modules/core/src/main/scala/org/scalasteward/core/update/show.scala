@@ -23,7 +23,7 @@ import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 
 object show {
-  def oneLiner(labels: Nel[Label]): String = labels.map(_.name).toList.mkString(", ")
+  def oneLiner(labels: List[Label]): String = labels.map(_.name).mkString(", ")
 
   def oneLiner(update: Update): String =
     commaSeparated(update.groupId, update.artifactIds)
