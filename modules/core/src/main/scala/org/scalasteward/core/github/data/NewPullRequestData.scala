@@ -20,7 +20,7 @@ import cats.implicits._
 import io.circe.Encoder
 import io.circe.generic.semiauto._
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.model.Update
+import org.scalasteward.core.model.{SemVer, Update}
 import org.scalasteward.core.nurture.UpdateData
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.{git, github}
@@ -61,8 +61,17 @@ object NewPullRequestData {
         |${RepoConfigAlg.configToIgnoreFurtherUpdates(update)}
         |```
         |</details>
+        |
+        |${semVerLabel(update).getOrElse("")}
         |""".stripMargin.trim
   }
+
+  def semVerLabel(update: Update): Option[String] =
+    for {
+      curr <- SemVer.parse(update.currentVersion)
+      next <- SemVer.parse(update.nextVersion)
+      change <- SemVer.getChange(curr, next)
+    } yield s"semver: ${change.render}"
 
   def from(data: UpdateData, headLogin: String, authorLogin: String): NewPullRequestData =
     NewPullRequestData(
