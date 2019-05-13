@@ -336,6 +336,7 @@
 - slamdata/sbt-slamdata
 - slamdata/tectonic
 - snowplow-incubator/cla-bot
+- snowplow-incubator/snowplow-indicative-relay
 - sphereio/sphere-scala-libs
 - spotify/big-data-rosetta-code
 - spotify/featran

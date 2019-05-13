@@ -47,6 +47,7 @@ The following companies are using _scala-steward_ to manage their scala dependen
 * [HolidayCheck](https://github.com/holidaycheck)
 * [iAdvize](https://www.iadvize.com/en/)
 * [SlamData](https://slamdata.com/)
+* [Snowplow Analytics](https://snowplowanalytics.com/)
 * [Zalando](https://en.zalando.de/)
 
 ## Participation
