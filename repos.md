@@ -284,8 +284,10 @@
 - saksdirect/sundial
 - sbt/sbt-autoversion
 - sbt/sbt-avro
+- sbt/sbt-bintray
 - sbt/sbt-duplicates-finder
 - sbt/sbt-java-formatter
+- sbt/sbt-unidoc
 - scalabin-no/http4s-directives
 - scalameta/metabrowse
 - scalaz/scalaz-nio
