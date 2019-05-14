@@ -19,6 +19,7 @@ package org.scalasteward.core.model
 import cats.implicits._
 import eu.timepit.refined.cats.refTypeEq
 import eu.timepit.refined.types.numeric.NonNegBigInt
+import eu.timepit.refined.types.string.NonEmptyString
 import org.scalasteward.core.model.SemVer.Change._
 import scala.util.Try
 
@@ -26,16 +27,21 @@ final case class SemVer(
     major: NonNegBigInt,
     minor: NonNegBigInt,
     patch: NonNegBigInt,
-    preRelease: Option[String],
-    buildMetadata: Option[String]
+    preRelease: Option[NonEmptyString],
+    buildMetadata: Option[NonEmptyString]
 ) {
   def render: String =
-    s"${major.value}.${minor.value}.${patch.value}" +
-      preRelease.fold("")("-" + _) + buildMetadata.fold("")("+" + _)
+    s"$major.$minor.$patch" + preRelease.fold("")("-" + _) + buildMetadata.fold("")("+" + _)
 }
 
 object SemVer {
   def parse(s: String): Option[SemVer] = {
+    def parseNonNegBigInt(s: String): Option[NonNegBigInt] =
+      Try(BigInt(s)).toOption.flatMap(NonNegBigInt.unapply)
+
+    def parseIdentifier(s: String): Option[NonEmptyString] =
+      Option(s).map(_.drop(1)).flatMap(NonEmptyString.unapply)
+
     val pattern = raw"""(\d+)\.(\d+)\.(\d+)(\-[^\+]+)?(\+.+)?""".r
     val maybeSemVer = s match {
       case pattern(majorStr, minorStr, patchStr, preReleaseStr, buildMetadataStr) =>
@@ -43,16 +49,13 @@ object SemVer {
           major <- parseNonNegBigInt(majorStr)
           minor <- parseNonNegBigInt(minorStr)
           patch <- parseNonNegBigInt(patchStr)
-          preRelease = Option(preReleaseStr).map(_.drop(1))
-          buildMetadata = Option(buildMetadataStr).map(_.drop(1))
+          preRelease = parseIdentifier(preReleaseStr)
+          buildMetadata = parseIdentifier(buildMetadataStr)
         } yield SemVer(major, minor, patch, preRelease, buildMetadata)
       case _ => None
     }
     maybeSemVer.filter(_.render === s)
   }
-
-  def parseNonNegBigInt(s: String): Option[NonNegBigInt] =
-    Try(BigInt(s)).toOption.flatMap(NonNegBigInt.unapply)
 
   sealed abstract class Change(val render: String)
   object Change {
