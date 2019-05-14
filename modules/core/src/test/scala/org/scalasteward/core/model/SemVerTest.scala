@@ -1,11 +1,12 @@
 package org.scalasteward.core.model
 
-import eu.timepit.refined.types.numeric.NonNegInt
+import eu.timepit.refined.types.numeric.NonNegBigInt
 import org.scalasteward.core.model.SemVer.Change
 import org.scalatest.{FunSuite, Matchers}
 
 class SemVerTest extends FunSuite with Matchers {
-  implicit val toNonNegInt: Int => NonNegInt = NonNegInt.unsafeFrom
+  implicit val toNonNegBigInt: Int => NonNegBigInt =
+    i => NonNegBigInt.unsafeFrom(BigInt(i))
 
   test("parse: simple examples") {
     SemVer.parse("1.2.3") shouldBe Some(SemVer(1, 2, 3, None, None))
