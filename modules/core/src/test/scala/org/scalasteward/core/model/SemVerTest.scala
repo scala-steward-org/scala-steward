@@ -1,6 +1,7 @@
 package org.scalasteward.core.model
 
 import eu.timepit.refined.types.numeric.NonNegInt
+import org.scalasteward.core.model.SemVer.Change
 import org.scalatest.{FunSuite, Matchers}
 
 class SemVerTest extends FunSuite with Matchers {
@@ -43,5 +44,17 @@ class SemVerTest extends FunSuite with Matchers {
     SemVer.parse("01.0.0") shouldBe None
     SemVer.parse("0.01.0") shouldBe None
     SemVer.parse("0.0.01") shouldBe None
+  }
+
+  test("getChange") {
+    SemVer.getChange(SemVer(1, 3, 4, None, None), SemVer(2, 1, 2, None, None)) shouldBe
+      Some(Change.Major)
+    SemVer.getChange(SemVer(2, 3, 4, None, None), SemVer(2, 5, 2, None, None)) shouldBe
+      Some(Change.Minor)
+    SemVer.getChange(SemVer(2, 3, 4, Some("SNAP1"), None), SemVer(2, 3, 4, Some("SNAP2"), None)) shouldBe
+      Some(Change.PreRelease)
+    SemVer.getChange(SemVer(2, 3, 4, Some("M1"), Some("1")), SemVer(2, 3, 4, Some("M1"), Some("2"))) shouldBe
+      Some(Change.BuildMetadata)
+    SemVer.getChange(SemVer(2, 3, 4, Some("M1"), None), SemVer(2, 3, 4, Some("M1"), None)) shouldBe None
   }
 }
