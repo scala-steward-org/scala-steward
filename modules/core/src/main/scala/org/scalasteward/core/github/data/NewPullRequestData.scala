@@ -62,7 +62,7 @@ object NewPullRequestData {
         |```
         |</details>
         |
-        |${semVerLabel(update).getOrElse("")}
+        |${semVerLabel(update).fold("")("labels: " + _)}
         |""".stripMargin.trim
   }
 
@@ -71,7 +71,7 @@ object NewPullRequestData {
       curr <- SemVer.parse(update.currentVersion)
       next <- SemVer.parse(update.nextVersion)
       change <- SemVer.getChange(curr, next)
-    } yield s"semver: ${change.render}"
+    } yield s"semver-${change.render}"
 
   def from(data: UpdateData, headLogin: String, authorLogin: String): NewPullRequestData =
     NewPullRequestData(

@@ -56,11 +56,11 @@ object SemVer {
 
   sealed abstract class Change(val render: String)
   object Change {
-    case object Major extends Change("major-bump")
-    case object Minor extends Change("minor-bump")
-    case object Patch extends Change("patch-bump")
-    case object PreRelease extends Change("pre-release-change")
-    case object BuildMetadata extends Change("build-metadata-change")
+    case object Major extends Change("major")
+    case object Minor extends Change("minor")
+    case object Patch extends Change("patch")
+    case object PreRelease extends Change("pre-release")
+    case object BuildMetadata extends Change("build-metadata")
   }
 
   def getChange(from: SemVer, to: SemVer): Option[Change] =
