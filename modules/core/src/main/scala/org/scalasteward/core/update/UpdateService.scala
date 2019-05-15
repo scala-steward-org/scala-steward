@@ -111,7 +111,7 @@ class UpdateService[F[_]](
             ignorableUpdates.exists(
               ignUpdate =>
                 update.groupId == ignUpdate.groupId && update.nextVersion == ignUpdate.nextVersion &&
-                  ignUpdate.artifactIds.exists(id => update.artifactId.startsWith(id))
+                  ignUpdate.artifactIds.exists(_ === update.artifactId)
             )
         )
         _ <- F.pure(println(repo + " " + updates1))
@@ -122,7 +122,7 @@ class UpdateService[F[_]](
 object UpdateService {
   def isUpdateFor(update: Update.Single, dependency: Dependency): Boolean =
     update.groupId === dependency.groupId &&
-      update.artifactId === dependency.artifactIdCross &&
+      update.artifactId === dependency.artifactId &&
       update.currentVersion === dependency.version
 
   def includeInUpdateCheck(dependency: Dependency): Boolean =
