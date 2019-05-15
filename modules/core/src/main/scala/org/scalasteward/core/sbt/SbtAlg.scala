@@ -20,7 +20,6 @@ import better.files.File
 import cats.Monad
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
-import monocle.Lens
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.dependency.Dependency
 import org.scalasteward.core.dependency.parser.parseDependencies
