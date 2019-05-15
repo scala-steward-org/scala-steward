@@ -20,6 +20,7 @@ import better.files.File
 import cats.Monad
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
+import monocle.Lens
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.dependency.Dependency
 import org.scalasteward.core.dependency.parser.parseDependencies
@@ -86,7 +87,7 @@ object SbtAlg {
           allDeps = project.libraries ++ project.plugins
           uncross = allDeps.map(dep => dep.artifactIdCross -> dep.artifactId).toMap
           updates = updatesWithCrossSuffix.flatMap { update =>
-            uncross.get(update.artifactId).map(id => update.copy(artifactId = id)).toList
+            Update.Single.artifactId.modifyF(uncross.get)(update).toList
           }
         } yield updates
 
