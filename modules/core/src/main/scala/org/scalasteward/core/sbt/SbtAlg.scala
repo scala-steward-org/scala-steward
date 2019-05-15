@@ -86,7 +86,7 @@ object SbtAlg {
           allDeps = project.libraries ++ project.plugins
           uncross = allDeps.map(dep => dep.artifactIdCross -> dep.artifactId).toMap
           updates = updatesWithCrossSuffix.flatMap { update =>
-            Update.Single.artifactId.modifyF(uncross.get)(update).toList
+            Update.Single.artifactIdLens.modifyF(uncross.get)(update).toList
           }
         } yield updates
 

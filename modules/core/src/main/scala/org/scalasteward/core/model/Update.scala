@@ -113,7 +113,7 @@ object Update {
   }
 
   object Single {
-    val artifactId: Lens[Update.Single, String] =
+    val artifactIdLens: Lens[Update.Single, String] =
       Lens[Update.Single, String](_.artifactId)(artifactId => _.copy(artifactId = artifactId))
   }
 
