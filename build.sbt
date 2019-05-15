@@ -195,7 +195,7 @@ addCommandsAlias(
 addCommandAlias(
   "runSteward", {
     val home = System.getenv("HOME")
-    val projectDir = s"$home/code/sso/batch"
+    val projectDir = s"$home/code/scala-steward/core"
     Seq(
       Seq("core/run"),
       Seq("--workspace", s"$projectDir/workspace"),
@@ -207,8 +207,7 @@ addCommandAlias(
       Seq("--whitelist", s"$home/.cache/coursier"),
       Seq("--whitelist", s"$home/.coursier"),
       Seq("--whitelist", s"$home/.ivy2"),
-      Seq("--whitelist", s"$home/.sbt"),
-      Seq("--whitelist", s"$home/.scio-ideaPluginIC")
+      Seq("--whitelist", s"$home/.sbt")
     ).flatten.mkString(" ")
   }
 )

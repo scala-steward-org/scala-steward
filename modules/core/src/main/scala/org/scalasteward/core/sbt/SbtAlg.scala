@@ -82,7 +82,13 @@ object SbtAlg {
           cmd = sbtCmd(project.dependencyUpdatesCmd)
           lines <- processAlg.exec(cmd, updatesDir)
           _ <- fileAlg.deleteForce(updatesDir)
-        } yield parser.parseSingleUpdates(lines)
+          updatesWithCrossSuffix = parser.parseSingleUpdates(lines)
+          allDeps = project.libraries ++ project.plugins
+          uncross = allDeps.map(dep => dep.artifactIdCross -> dep.artifactId).toMap
+          updates = updatesWithCrossSuffix.flatMap { update =>
+            uncross.get(update.artifactId).map(id => update.copy(artifactId = id)).toList
+          }
+        } yield updates
 
       override def getUpdatesForRepo(repo: Repo): F[List[Update.Single]] =
         for {
