@@ -33,8 +33,8 @@ object parser {
           artifactId <- Either.fromOption(moduleId.lift(1), msg("artifactId"))
           configurations = moduleId.lift(2)
           currentVersion <- Either.fromOption(versions.headOption, msg("currentVersion"))
-          maybeNewerVersions = Nel.fromList(versions.drop(1).toList)
-          newerVersions <- Either.fromOption(maybeNewerVersions, msg("newerVersions"))
+          newerVersionsList = versions.drop(1).toList.filterNot(_.startsWith("InvalidVersion"))
+          newerVersions <- Either.fromOption(Nel.fromList(newerVersionsList), msg("newerVersions"))
         } yield Update.Single(groupId, artifactId, currentVersion, newerVersions, configurations)
 
       case _ => Left(s"'$str' must contain ' : ' exactly once")
