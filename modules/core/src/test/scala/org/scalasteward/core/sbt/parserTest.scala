@@ -58,6 +58,20 @@ class parserTest extends FunSuite with Matchers {
     parseSingleUpdate(str).isLeft
   }
 
+  test("parseSingleUpdate: all new versions are invalid") {
+    val str =
+      "bigdataoss:gcs-connector : hadoop2-1.9.16 -> InvalidVersion(hadoop3-2.0.0-SNAPSHOT)"
+    parseSingleUpdate(str).isLeft
+  }
+
+  test("parseSingleUpdate: one new version is invalid") {
+    val str =
+      "bigdataoss:gcs-connector : hadoop2-1.9.16 -> InvalidVersion(hadoop3-2.0.0-SNAPSHOT) -> 1.9.4-hadoop3"
+    parseSingleUpdate(str) shouldBe Right(
+      Update.Single("bigdataoss", "gcs-connector", "hadoop2-1.9.16", Nel.of("1.9.4-hadoop3"))
+    )
+  }
+
   test("parseSingleUpdates 1") {
     val str =
       """[info] Found 3 dependency updates for datapackage
