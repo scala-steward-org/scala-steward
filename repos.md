@@ -343,7 +343,6 @@
 - spotify/noether
 - spotify/scio
 - spotify/scio.g8
-- spotify/scio-contrib
 - spotify/scio-idea-plugin
 - stryker-mutator/stryker4s
 - sullis/jms-testkit
