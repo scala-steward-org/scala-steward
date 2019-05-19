@@ -28,7 +28,7 @@ import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.update.FilterAlg
 import org.scalasteward.core.util.{BracketThrowable, LogAlg}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg, VCSSpecifics}
-import org.scalasteward.core.{git, util, vcs}
+import org.scalasteward.core.{git, util}
 
 final class NurtureAlg[F[_]](
     implicit
@@ -124,7 +124,7 @@ final class NurtureAlg[F[_]](
   def createPullRequest(data: UpdateData): F[Unit] =
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
-      headLogin = vcs.getLogin(config, data.repo)
+      headLogin = vcsSpecifics.sourceFor(data.repo, data.update)
       requestData = NewPullRequestData.from(data, headLogin, config.vcsLogin)
       pr <- vcsApiAlg.createPullRequest(data.repo, requestData)
       _ <- pullRequestRepo.createOrUpdate(

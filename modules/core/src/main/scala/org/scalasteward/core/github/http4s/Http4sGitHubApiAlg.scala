@@ -16,6 +16,7 @@
 
 package org.scalasteward.core.github.http4s
 
+import cats.Monad
 import org.http4s.{Request, Uri}
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.github._
@@ -34,7 +35,9 @@ final class Http4sGitHubApiAlg[F[_]](
   override def createFork(repo: Repo): F[RepoOut] =
     client.post(url.forks(repo), modify(repo))
 
-  override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] =
+  override def createPullRequest(repo: Repo, data: NewPullRequestData)(
+      implicit F: Monad[F]
+  ): F[PullRequestOut] =
     client.postWithBody(url.pulls(repo), data, modify(repo))
 
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =

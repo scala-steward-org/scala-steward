@@ -14,11 +14,14 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.vcs
+package org.scalasteward.core.gitlab.http4s
 
-import org.scalasteward.core.model.Update
-import org.scalasteward.core.vcs.data.Repo
+import cats.Applicative
+import cats.implicits._
+import org.http4s.{Header, Request}
+import org.scalasteward.core.vcs.data.AuthenticatedUser
 
-trait VCSSpecifics {
-  def sourceFor(repo: Repo, update: Update): String
+object authentication {
+  def addCredentials[F[_]: Applicative](user: AuthenticatedUser): Request[F] => F[Request[F]] =
+    _.putHeaders(Header("Private-Token", user.accessToken)).pure[F]
 }

@@ -27,7 +27,9 @@ trait VCSApiAlg[F[_]] {
 
   def createFork(repo: Repo): F[RepoOut]
 
-  def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut]
+  def createPullRequest(repo: Repo, data: NewPullRequestData)(
+      implicit F: Monad[F]
+  ): F[PullRequestOut]
 
   def getBranch(repo: Repo, branch: Branch): F[BranchOut]
 
