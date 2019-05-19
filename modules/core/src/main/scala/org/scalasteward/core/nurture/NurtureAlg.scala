@@ -27,7 +27,7 @@ import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.update.FilterAlg
 import org.scalasteward.core.util.{BracketThrowable, LogAlg}
-import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
+import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg, VCSSpecifics}
 import org.scalasteward.core.{git, util, vcs}
 
 final class NurtureAlg[F[_]](
@@ -37,6 +37,7 @@ final class NurtureAlg[F[_]](
     repoConfigAlg: RepoConfigAlg[F],
     filterAlg: FilterAlg[F],
     gitAlg: GitAlg[F],
+    vcsSpecifics: VCSSpecifics,
     vcsApiAlg: VCSApiAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
     logAlg: LogAlg[F],
@@ -83,7 +84,7 @@ final class NurtureAlg[F[_]](
   def processUpdate(data: UpdateData): F[Unit] =
     for {
       _ <- logger.info(s"Process update ${data.update.show}")
-      head = vcs.headFor(vcs.getLogin(config, data.repo), data.update)
+      head = vcsSpecifics.sourceFor(data.repo, data.update)
       repoConfig <- repoConfigAlg.getRepoConfig(data.repo)
       pullRequests <- vcsApiAlg.listPullRequests(data.repo, head, data.baseBranch)
       _ <- pullRequests.headOption match {
