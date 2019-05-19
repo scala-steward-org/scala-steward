@@ -19,11 +19,15 @@ package org.scalasteward.core.update
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.dependency.{Dependency, DependencyRepository}
+import org.scalasteward.core.git.Sha1
+import org.scalasteward.core.github.data.PullRequestState.Closed
 import org.scalasteward.core.github.data.Repo
 import org.scalasteward.core.model.Update
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.sbt._
 import org.scalasteward.core.sbt.data.ArtificialProject
+import org.scalasteward.core.update.data.UpdateState
+import org.scalasteward.core.update.data.UpdateState._
 import org.scalasteward.core.util
 import org.scalasteward.core.util.MonadThrowable
 
@@ -95,34 +99,57 @@ class UpdateService[F[_]](
       }
 
   def filterByApplicableUpdates(repos: List[Repo], updates: List[Update.Single]): F[List[Repo]] =
-    repos.traverseFilter { repo =>
-      for {
-        dependencies <- dependencyRepository.getDependencies(List(repo))
-        matchingUpdates = updates.filter { update =>
-          dependencies.exists(dependency => UpdateService.isUpdateFor(update, dependency))
+    repos.filterA(needsAttention(_, updates))
+
+  def needsAttention(repo: Repo, updates: List[Update.Single]): F[Boolean] =
+    for {
+      allStates <- findAllUpdateStates(repo, updates)
+      _ <- logger.info(s"Update states for ${repo.show}\n" + allStates.map("  " + _).mkString("\n"))
+    } yield
+      allStates.exists {
+        case UpdateFound(_, _)            => true
+        case PullRequestOutdated(_, _, _) => true
+        case _                            => false
+      }
+
+  def findAllUpdateStates(repo: Repo, updates: List[Update.Single]): F[List[UpdateState]] =
+    dependencyRepository.findSha1(repo).flatMap {
+      case Some(baseSha1) =>
+        for {
+          dependencies <- dependencyRepository.getDependencies(List(repo))
+          states <- dependencies.traverse { dependency =>
+            findUpdateState(repo, baseSha1, dependency, updates)
+          }
+        } yield states
+      case None => List.empty[UpdateState].pure[F]
+    }
+
+  def findUpdateState(
+      repo: Repo,
+      sha1: Sha1,
+      dependency: Dependency,
+      updates: List[Update.Single]
+  ): F[UpdateState] =
+    updates.find(UpdateService.isUpdateFor(_, dependency)) match {
+      case None => F.pure(NoUpdateFound(dependency))
+      case Some(update) =>
+        pullRequestRepo.findPullRequest(repo, dependency).map {
+          case None =>
+            UpdateFound(dependency, update)
+          case Some((uri, _, state)) if state === Closed =>
+            PullRequestClosed(dependency, update, uri)
+          case Some((uri, baseSha1, _)) if baseSha1 === sha1 =>
+            PullRequestUpToDate(dependency, update, uri)
+          case Some((uri, _, _)) =>
+            PullRequestOutdated(dependency, update, uri)
         }
-        maybeBaseSha1 <- dependencyRepository.findSha1(repo)
-        ignorableUpdates <- maybeBaseSha1 match {
-          case Some(baseSha1) => pullRequestRepo.findUpdates(repo, baseSha1)
-          case None           => F.pure(List.empty[Update])
-        }
-        updates1 = matchingUpdates.filterNot(
-          update =>
-            ignorableUpdates.exists(
-              ignUpdate =>
-                update.groupId == ignUpdate.groupId && update.nextVersion == ignUpdate.nextVersion &&
-                  ignUpdate.artifactIds.exists(_ === update.artifactId)
-            )
-        )
-        _ <- F.pure(println(repo + " " + updates1))
-      } yield updates1.headOption.as(repo)
     }
 }
 
 object UpdateService {
-  def isUpdateFor(update: Update.Single, dependency: Dependency): Boolean =
+  def isUpdateFor(update: Update, dependency: Dependency): Boolean =
     update.groupId === dependency.groupId &&
-      update.artifactId === dependency.artifactId &&
+      update.artifactIds.contains_(dependency.artifactId) &&
       update.currentVersion === dependency.version
 
   def includeInUpdateCheck(dependency: Dependency): Boolean =

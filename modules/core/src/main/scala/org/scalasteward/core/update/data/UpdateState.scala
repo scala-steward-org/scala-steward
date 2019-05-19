@@ -14,24 +14,27 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.nurture
+package org.scalasteward.core.update.data
 
 import org.http4s.Uri
 import org.scalasteward.core.dependency.Dependency
-import org.scalasteward.core.git.Sha1
-import org.scalasteward.core.github.data.{PullRequestState, Repo}
 import org.scalasteward.core.model.Update
 
-trait PullRequestRepository[F[_]] {
-  def createOrUpdate(
-      repo: Repo,
-      url: Uri,
-      baseSha1: Sha1,
-      update: Update,
-      state: PullRequestState
-  ): F[Unit]
+sealed trait UpdateState extends Product with Serializable {
+  def dependency: Dependency
+}
 
-  def findUpdates(repo: Repo, baseSha1: Sha1): F[List[Update]]
+object UpdateState {
+  final case class NoUpdateFound(dependency: Dependency) extends UpdateState
 
-  def findPullRequest(repo: Repo, dependency: Dependency): F[Option[(Uri, Sha1, PullRequestState)]]
+  final case class UpdateFound(dependency: Dependency, update: Update) extends UpdateState
+
+  final case class PullRequestUpToDate(dependency: Dependency, update: Update, pr: Uri)
+      extends UpdateState
+
+  final case class PullRequestOutdated(dependency: Dependency, update: Update, pr: Uri)
+      extends UpdateState
+
+  final case class PullRequestClosed(dependency: Dependency, update: Update, pr: Uri)
+      extends UpdateState
 }

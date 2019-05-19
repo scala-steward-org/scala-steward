@@ -21,11 +21,13 @@ import cats.implicits._
 import io.circe.parser.decode
 import io.circe.syntax._
 import org.http4s.Uri
+import org.scalasteward.core.dependency.Dependency
 import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.github.data.{PullRequestState, Repo}
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.model.Update
 import org.scalasteward.core.nurture.PullRequestRepository
+import org.scalasteward.core.update.UpdateService
 import org.scalasteward.core.util.MonadThrowable
 
 class JsonPullRequestRepo[F[_]](
@@ -54,6 +56,17 @@ class JsonPullRequestRepo[F[_]](
       store.store.get(repo).fold(List.empty[Update]) { data =>
         data.values.filter(_.baseSha1 == baseSha1).map(_.update).toList
       }
+    }
+
+  override def findPullRequest(
+      repo: Repo,
+      dependency: Dependency
+  ): F[Option[(Uri, Sha1, PullRequestState)]] =
+    readJson.map { store =>
+      val pullRequests = store.store.get(repo).fold(List.empty[(String, PullRequestData)])(_.toList)
+      pullRequests
+        .find { case (_, data) => UpdateService.isUpdateFor(data.update, dependency) }
+        .map { case (url, data) => (Uri.unsafeFromString(url), data.baseSha1, data.state) }
     }
 
   def jsonFile: F[File] =
