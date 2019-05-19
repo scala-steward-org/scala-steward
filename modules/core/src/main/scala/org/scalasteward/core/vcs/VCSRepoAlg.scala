@@ -49,6 +49,6 @@ object VCSRepoAlg {
         }
 
       val withLogin: Uri => Uri =
-        util.uri.withUserInfo.set(config.gitHubLogin)
+        util.uri.withUserInfo.set(config.vcsLogin)
     }
 }

@@ -21,17 +21,16 @@ import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.git.{GitAlg, Sha1}
 import org.scalasteward.core.vcs.data.{Repo, RepoOut}
-import org.scalasteward.core.github.GitHubApiAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.util.{LogAlg, MonadThrowable}
-import org.scalasteward.core.vcs.VCSRepoAlg
+import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
 
 final class DependencyService[F[_]](
     implicit
     config: Config,
     dependencyRepository: DependencyRepository[F],
     gitAlg: GitAlg[F],
-    gitHubApiAlg: GitHubApiAlg[F],
+    vcsApiAlg: VCSApiAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
     logAlg: LogAlg[F],
     logger: Logger[F],
@@ -42,7 +41,8 @@ final class DependencyService[F[_]](
   def checkDependencies(repo: Repo): F[Unit] =
     logAlg.attemptLog_(s"Check dependencies of ${repo.show}") {
       for {
-        (repoOut, branchOut) <- gitHubApiAlg.createForkOrGetRepoWithDefaultBranch(config, repo)
+        res <- vcsApiAlg.createForkOrGetRepoWithDefaultBranch(config, repo)
+        (repoOut, branchOut) = res
         foundSha1 <- dependencyRepository.findSha1(repo)
         latestSha1 = branchOut.commit.sha
         refreshRequired = foundSha1.fold(true)(_ =!= latestSha1)

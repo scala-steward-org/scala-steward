@@ -27,7 +27,7 @@ import scala.sys.process.Process
 
 /** Configuration for scala-steward.
   *
-  * == [[gitHubApiHost]] ==
+  * == [[vcsApiHost]] ==
   * REST API v3 endpoints prefix
   *
   * For github.com this is "https://api.github.com", see
@@ -38,7 +38,7 @@ import scala.sys.process.Process
   *
   * == [[gitAskPass]] ==
   * Program that is invoked by scala-steward and git (via the `GIT_ASKPASS`
-  * environment variable) to request the password for the user [[gitHubLogin]].
+  * environment variable) to request the password for the user [[vcsLogin]].
   *
   * This program could just be a simple shell script that echos the password.
   *
@@ -48,8 +48,8 @@ final case class Config(
     workspace: File,
     reposFile: File,
     gitAuthor: Author,
-    gitHubApiHost: Uri,
-    gitHubLogin: String,
+    vcsApiHost: Uri,
+    vcsLogin: String,
     gitAskPass: File,
     signCommits: Boolean,
     whitelistedDirectories: List[String],
@@ -61,11 +61,11 @@ final case class Config(
     envVars: List[EnvVar]
 ) {
   def gitHubUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] = {
-    val urlWithUser = util.uri.withUserInfo.set(gitHubLogin)(gitHubApiHost).renderString
+    val urlWithUser = util.uri.withUserInfo.set(vcsLogin)(vcsApiHost).renderString
     val prompt = s"Password for '$urlWithUser': "
     F.delay {
       val password = Process(List(gitAskPass.pathAsString, prompt)).!!.trim
-      AuthenticatedUser(gitHubLogin, password)
+      AuthenticatedUser(vcsLogin, password)
     }
   }
 }
@@ -77,8 +77,8 @@ object Config {
         workspace = args.workspace.toFile,
         reposFile = args.reposFile.toFile,
         gitAuthor = Author(args.gitAuthorName, args.gitAuthorEmail),
-        gitHubApiHost = args.githubApiHost,
-        gitHubLogin = args.githubLogin,
+        vcsApiHost = args.vcsApiHost,
+        vcsLogin = args.vcsLogin,
         gitAskPass = args.gitAskPass.toFile,
         signCommits = args.signCommits,
         whitelistedDirectories = args.whitelist,
