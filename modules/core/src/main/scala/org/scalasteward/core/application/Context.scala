@@ -26,8 +26,6 @@ import org.scalasteward.core.dependency.{DependencyRepository, DependencyService
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.vcs.data.AuthenticatedUser
-import org.scalasteward.core.github.http4s.Http4sGitHubApiAlg
-import org.scalasteward.core.github.http4s.authentication.addCredentials
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.json.JsonPullRequestRepo
 import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository}
@@ -36,10 +34,9 @@ import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.update.json.JsonUpdateRepository
 import org.scalasteward.core.update.{FilterAlg, UpdateRepository, UpdateService}
 import org.scalasteward.core.util.{DateTimeAlg, HttpJsonClient, LogAlg}
-import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg, VCSSpecifics}
+import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg, VCSSelection, VCSSpecifics}
 
 import scala.concurrent.ExecutionContext
-import org.scalasteward.core.github.GitHubSpecifics
 
 object Context {
   def create[F[_]: ConcurrentEffect](args: List[String]): Resource[F, StewardAlg[F]] =
@@ -60,9 +57,9 @@ object Context {
       implicit val dependencyRepository: DependencyRepository[F] = new JsonDependencyRepository[F]
       implicit val gitAlg: GitAlg[F] = GitAlg.create[F]
       implicit val httpJsonClient: HttpJsonClient[F] = new HttpJsonClient[F]
-      implicit val vcsSpecifics: VCSSpecifics = new GitHubSpecifics(config)
-      implicit val vcsApiAlg: VCSApiAlg[F] =
-        new Http4sGitHubApiAlg[F](config.vcsApiHost, _ => addCredentials(user)) //TODO SELECT GIVEN A CONFIG
+      val vcsSelection = new VCSSelection[F]
+      implicit val (vcsApiAlg: VCSApiAlg[F], vcsSpecifics: VCSSpecifics) =
+        vcsSelection.build(config)
       implicit val vcsRepoAlg: VCSRepoAlg[F] = VCSRepoAlg.create[F](config, gitAlg)
       implicit val pullRequestRepo: PullRequestRepository[F] = new JsonPullRequestRepo[F]
       implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F]

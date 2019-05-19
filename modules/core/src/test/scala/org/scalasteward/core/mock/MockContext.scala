@@ -12,12 +12,14 @@ import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.update.FilterAlg
 import org.scalasteward.core.util.{DateTimeAlg, LogAlg}
 import org.scalasteward.core.vcs.VCSRepoAlg
+import org.scalasteward.core.application.SupportedVCS
 
 object MockContext {
   implicit val config: Config = Config(
     workspace = File.temp / "ws",
     reposFile = File.temp / "repos.md",
     gitAuthor = Author("Bot Doe", "bot@example.org"),
+    vcsType = SupportedVCS.GitHub,
     vcsApiHost = Uri.uri(""),
     vcsLogin = "bot-doe",
     gitAskPass = File.temp / "askpass.sh",

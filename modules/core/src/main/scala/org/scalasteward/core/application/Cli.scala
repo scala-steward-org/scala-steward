@@ -37,6 +37,7 @@ object Cli {
       reposFile: String,
       gitAuthorName: String,
       gitAuthorEmail: String,
+      vcsType: SupportedVCS = SupportedVCS.GitHub,
       vcsApiHost: Uri = Uri.uri("https://api.github.com"),
       vcsLogin: String,
       gitAskPass: String,
