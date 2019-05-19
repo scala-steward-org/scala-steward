@@ -65,8 +65,8 @@ class JsonPullRequestRepo[F[_]](
     readJson.map { store =>
       val pullRequests = store.store.get(repo).fold(List.empty[(String, PullRequestData)])(_.toList)
       pullRequests
-        .find(d => UpdateService.isUpdateFor(d._2.update, dependency))
-        .map(d => (Uri.unsafeFromString(d._1), d._2.baseSha1, d._2.state))
+        .find { case (_, data) => UpdateService.isUpdateFor(data.update, dependency) }
+        .map { case (url, data) => (Uri.unsafeFromString(url), data.baseSha1, data.state) }
     }
 
   def jsonFile: F[File] =
