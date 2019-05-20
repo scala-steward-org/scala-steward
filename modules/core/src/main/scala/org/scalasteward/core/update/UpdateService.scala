@@ -104,13 +104,19 @@ class UpdateService[F[_]](
   def needsAttention(repo: Repo, updates: List[Update.Single]): F[Boolean] =
     for {
       allStates <- findAllUpdateStates(repo, updates)
-      _ <- logger.info(s"Update states for ${repo.show}\n" + allStates.map("  " + _).mkString("\n"))
-    } yield
-      allStates.exists {
-        case UpdateFound(_, _)            => true
+      outdatedStates = allStates.filter {
+        case DependencyOutdated(_, _)     => true
         case PullRequestOutdated(_, _, _) => true
         case _                            => false
       }
+      isOutdated = outdatedStates.nonEmpty
+      _ <- {
+        if (isOutdated) {
+          val statesAsString = util.string.indentLines(outdatedStates.map(_.toString).sorted)
+          logger.info(s"Update states for ${repo.show} is outdated:\n" + statesAsString)
+        } else F.unit
+      }
+    } yield isOutdated
 
   def findAllUpdateStates(repo: Repo, updates: List[Update.Single]): F[List[UpdateState]] =
     dependencyRepository.findSha1(repo).flatMap {
@@ -131,11 +137,11 @@ class UpdateService[F[_]](
       updates: List[Update.Single]
   ): F[UpdateState] =
     updates.find(UpdateService.isUpdateFor(_, dependency)) match {
-      case None => F.pure(NoUpdateFound(dependency))
+      case None => F.pure(DependencyUpToDate(dependency))
       case Some(update) =>
         pullRequestRepo.findPullRequest(repo, dependency).map {
           case None =>
-            UpdateFound(dependency, update)
+            DependencyOutdated(dependency, update)
           case Some((uri, _, state)) if state === Closed =>
             PullRequestClosed(dependency, update, uri)
           case Some((uri, baseSha1, _)) if baseSha1 === sha1 =>
@@ -155,8 +161,10 @@ object UpdateService {
   def includeInUpdateCheck(dependency: Dependency): Boolean =
     (dependency.groupId, dependency.artifactId) match {
       case ("com.ccadllc.cedi", "build")                     => false
+      case ("com.codecommit", "sbt-spiewak-sonatype")        => false
       case ("com.gilt.sbt", "sbt-newrelic")                  => false
       case ("com.nrinaudo", "kantan.sbt-kantan")             => false
+      case ("com.slamdata", "sbt-quasar-datasource")         => false
       case ("com.typesafe.play", "interplay")                => false
       case ("org.foundweekends.giter8", "sbt-giter8")        => false
       case ("org.scala-lang.modules", "sbt-scala-module")    => false

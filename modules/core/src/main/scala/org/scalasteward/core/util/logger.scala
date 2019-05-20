@@ -22,7 +22,7 @@ import org.scalasteward.core.model.Update
 
 object logger {
   def showUpdates[F[_]: Foldable: Functor](updates: F[Update]): String = {
-    val list = updates.map(u => "  " + u.show).foldSmash("", "\n", "")
+    val list = string.indentLines(updates.map(_.show))
     updates.size match {
       case 0 => s"Found 0 updates"
       case 1 => s"Found 1 update:\n$list"

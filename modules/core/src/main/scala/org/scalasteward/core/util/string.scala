@@ -16,6 +16,8 @@
 
 package org.scalasteward.core.util
 
+import cats.Foldable
+import cats.implicits._
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.collection.MinSize
 import eu.timepit.refined.refineV
@@ -36,6 +38,12 @@ object string {
     splitBySeparators(s)
       .flatMap(splitBetweenLowerAndUpperChars)
       .filter(_.length >= minLength)
+  }
+
+  def indentLines[F[_]: Foldable](fs: F[String]): String = {
+    val indent = "  "
+    val delim = "\n" + indent
+    fs.foldSmash(indent, delim, "")
   }
 
   def longestCommonPrefix(s1: String, s2: String): String = {
