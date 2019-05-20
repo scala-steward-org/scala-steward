@@ -33,7 +33,6 @@ object steward extends IOApp {
           _ <- repos.traverse(ctx.dependencyService.checkDependencies)
           allUpdates <- ctx.updateService.checkForUpdates(repos)
           reposToNurture <- ctx.updateService.filterByApplicableUpdates(repos, allUpdates)
-          _ <- IO(reposToNurture.map(_.show).foreach(println))
           _ <- IO(println(reposToNurture.size))
           _ <- reposToNurture.filter(repos.contains).traverse_(ctx.nurtureAlg.nurture)
           //_ <- repos.traverse_(ctx.nurtureAlg.nurture)

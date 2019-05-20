@@ -25,16 +25,16 @@ sealed trait UpdateState extends Product with Serializable {
 }
 
 object UpdateState {
-  final case class NoUpdateFound(dependency: Dependency) extends UpdateState
+  final case class DependencyUpToDate(dependency: Dependency) extends UpdateState
 
-  final case class UpdateFound(dependency: Dependency, update: Update) extends UpdateState
+  final case class DependencyOutdated(dependency: Dependency, update: Update) extends UpdateState
 
-  final case class PullRequestUpToDate(dependency: Dependency, update: Update, pr: Uri)
+  final case class PullRequestUpToDate(dependency: Dependency, update: Update, pullRequest: Uri)
       extends UpdateState
 
-  final case class PullRequestOutdated(dependency: Dependency, update: Update, pr: Uri)
+  final case class PullRequestOutdated(dependency: Dependency, update: Update, pullRequest: Uri)
       extends UpdateState
 
-  final case class PullRequestClosed(dependency: Dependency, update: Update, pr: Uri)
+  final case class PullRequestClosed(dependency: Dependency, update: Update, pullRequest: Uri)
       extends UpdateState
 }
