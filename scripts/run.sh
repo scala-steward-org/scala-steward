@@ -2,9 +2,6 @@
 
 set -ex
 
-export JAVA_HOME="/opt/jre/current"
-export PATH="$JAVA_HOME/bin:$PATH"
-
 SCRIPT=$(readlink -f "$0")
 STEWARD_DIR=$(dirname "$SCRIPT")/..
 cd "$STEWARD_DIR"
@@ -16,7 +13,7 @@ LOGIN="scala-steward"
 java -jar ${JAR} \
   --workspace  "$STEWARD_DIR/workspace" \
   --repos-file "$STEWARD_DIR/repos.md" \
-  --git-author-name "Scala steward" \
+  --git-author-name "Scala Steward" \
   --git-author-email "me@$LOGIN.org" \
   --github-login ${LOGIN} \
   --git-ask-pass "$HOME/.github/askpass/$LOGIN.sh" \
