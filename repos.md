@@ -12,6 +12,7 @@
 - akka/akka-samples
 - akka/akka-sample-cluster-docker-compose-java
 - akka/akka-sample-cluster-docker-compose-scala
+- akka/akka-sample-cluster-kubernetes-dns-java
 - alexarchambault/ammonite-spark
 - alexarchambault/argonaut-shapeless
 - alexarchambault/case-app
