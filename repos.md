@@ -100,6 +100,7 @@
 - circe/circe-spire
 - circe/circe-spray
 - circe/circe-yaml
+- CleverCloud/akka-warp10-scala-client
 - clovellytech/http4s-modules
 - comcast/ip4s
 - coursier/coursier
