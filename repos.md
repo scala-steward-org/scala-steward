@@ -193,6 +193,7 @@
 - larsrh/sbt-libisabelle
 - laserdisc-io/laserdisc
 - laserdisc-io/log-effect
+- laserdisc-io/stream-it
 - leigh-perry/conduction
 - leigh-perry/template-cats-io-app
 - leigh-perry/template-cats-zio-app
