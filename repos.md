@@ -348,6 +348,7 @@
 - snowplow-incubator/cla-bot
 - snowplow-incubator/snowplow-indicative-relay
 - softwaremill/sttp
+- softwaremill/tapir
 - sphereio/sphere-scala-libs
 - spotify/big-data-rosetta-code
 - spotify/featran
