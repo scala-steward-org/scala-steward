@@ -23,6 +23,7 @@
 - alonsodomin/sbt-spark
 - alonsodomin/scala-colog
 - Atry/fastring
+- AVSystem/scala-commons
 - azhur/kafka-serde-scala
 - balhoff/whelk
 - barambani/http4s-extend
