@@ -211,6 +211,8 @@
 - maximn/scala-workshop
 - maximn/TaxCalculator
 - mefellows/sbt-dotenv
+- metabookmarks/lagom-silhouette
+- metabookmarks/sbt-plantuml-plugin
 - mfirry/scala-http-clients
 - mfirry/web-frameworks-templates
 - milessabin/shapeless
