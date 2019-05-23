@@ -186,6 +186,7 @@
 - kubukoz/slick-effect
 - kubukoz/sup
 - kubukoz/vivalidi
+- kovszilard/twitter-server-prometheus
 - kwark/play-refined
 - kwark/slick-refined
 - lagom/lagom
