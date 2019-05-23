@@ -230,6 +230,10 @@
 - nafg/slick-additions
 - nafg/slick-migration-api
 - nafg/slick-migration-api-flyway
+- navicore/NaviPath
+- navicore/naviblob
+- navicore/navilake
+- navicore/akka-eventhubs
 - NeQuissimus/circe-kafka
 - NeQuissimus/nequi-kafka
 - NeQuissimus/zio-slf4j
