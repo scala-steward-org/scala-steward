@@ -427,3 +427,4 @@
 - yannick-cw/elastic-indexer4s
 - zio/zio-keeper
 - ziyasal/reducio
+- picnicml/doddle-model
