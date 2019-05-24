@@ -411,6 +411,7 @@
 - typelevel/sbt-catalysts
 - typelevel/spire
 - ua-parser/uap-scala
+- UdashFramework/udash-core
 - underscoreio/slickless
 - unfiltered/unfiltered
 - vectos/formulation
