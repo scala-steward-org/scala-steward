@@ -41,6 +41,8 @@
 - ccadllc/cedi-dtrace
 - ccamel/playground-binding.scala
 - channingwalton/http4sWS
+- ChocPanda/scalacheck-magnolia
+- ChocPanda/argonaut-magnolia
 - ChristopherDavenport/agitation
 - ChristopherDavenport/bank
 - ChristopherDavenport/base.g8
