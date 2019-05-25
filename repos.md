@@ -307,7 +307,6 @@
 - scalapb/protobuf-scala-runtime
 - scalapb/protoc-bridge
 - scalapb/scalapb-json4s
-- scalapb/
 - scalaz/scalaz-nio
 - scalaz/scalaz-zio
 - scala/hello-world.g8
