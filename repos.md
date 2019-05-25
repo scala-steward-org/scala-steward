@@ -303,6 +303,11 @@
 - sbt/sbt-unidoc
 - scalabin-no/http4s-directives
 - scalameta/metabrowse
+- scalapb/ScalaPB
+- scalapb/protobuf-scala-runtime
+- scalapb/protoc-bridge
+- scalapb/scalapb-json4s
+- scalapb/
 - scalaz/scalaz-nio
 - scalaz/scalaz-zio
 - scala/hello-world.g8
@@ -364,6 +369,7 @@
 - swagger-akka-http/swagger-akka-http
 - swagger-akka-http/swagger-scala-module
 - tanishiking/scalaunfmt
+- thesamet/sbt-protoc
 - ThoughtWorksInc/bindable.scala
 - ThoughtWorksInc/Binding.scala
 - ThoughtWorksInc/Compute.scala
