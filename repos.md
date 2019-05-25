@@ -41,8 +41,8 @@
 - ccadllc/cedi-dtrace
 - ccamel/playground-binding.scala
 - channingwalton/http4sWS
-- ChocPanda/scalacheck-magnolia
 - ChocPanda/argonaut-magnolia
+- ChocPanda/scalacheck-magnolia
 - ChristopherDavenport/agitation
 - ChristopherDavenport/bank
 - ChristopherDavenport/base.g8
@@ -180,15 +180,15 @@
 - julienrf/endpoints
 - julien-truffaut/fp-foundation
 - julien-truffaut/Monocle
-- kiambogo/fs2-jms
 - kemitix/s3thorp
+- kiambogo/fs2-jms
 - kontainers/micrometer-akka
+- kovszilard/twitter-server-prometheus
 - kubukoz/brick-store
 - kubukoz/error-control
 - kubukoz/slick-effect
 - kubukoz/sup
 - kubukoz/vivalidi
-- kovszilard/twitter-server-prometheus
 - kwark/play-refined
 - kwark/slick-refined
 - lagom/lagom
@@ -238,10 +238,10 @@
 - nafg/slick-additions
 - nafg/slick-migration-api
 - nafg/slick-migration-api-flyway
-- navicore/NaviPath
+- navicore/akka-eventhubs
 - navicore/naviblob
 - navicore/navilake
-- navicore/akka-eventhubs
+- navicore/NaviPath
 - NeQuissimus/circe-kafka
 - NeQuissimus/nequi-kafka
 - NeQuissimus/zio-slf4j
@@ -267,6 +267,7 @@
 - Philippus/emoji-clock
 - Philippus/julius
 - Philippus/scala-for-all
+- picnicml/doddle-model
 - pjan/akka-d3
 - playframework/cachecontrol
 - playframework/interplay
@@ -282,8 +283,8 @@
 - playframework/play-ws
 - playframework/scalatestplus-play
 - playframework/twirl
-- plokhotnyuk/jsoniter-scala
 - plokhotnyuk/fast-string-interpolator
+- plokhotnyuk/jsoniter-scala
 - plokhotnyuk/rtree2d
 - ppurang/asynch
 - profunktor/console4cats
@@ -303,9 +304,9 @@
 - sbt/sbt-unidoc
 - scalabin-no/http4s-directives
 - scalameta/metabrowse
-- scalapb/ScalaPB
 - scalapb/protobuf-scala-runtime
 - scalapb/protoc-bridge
+- scalapb/ScalaPB
 - scalapb/scalapb-json4s
 - scalaz/scalaz-nio
 - scalaz/scalaz-zio
@@ -433,4 +434,3 @@
 - yannick-cw/elastic-indexer4s
 - zio/zio-keeper
 - ziyasal/reducio
-- picnicml/doddle-model
