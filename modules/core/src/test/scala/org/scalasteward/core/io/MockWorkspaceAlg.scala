@@ -2,7 +2,7 @@ package org.scalasteward.core.io
 
 import better.files.File
 import cats.data.StateT
-import org.scalasteward.core.github.data.Repo
+import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.mock.{MockContext, MockEff}
 
 class MockWorkspaceAlg extends WorkspaceAlg[MockEff] {

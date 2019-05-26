@@ -2,7 +2,7 @@ package org.scalasteward.core.github
 
 import org.http4s.Uri
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.github.data.Repo
+import org.scalasteward.core.vcs.data.Repo
 import org.scalatest.{FunSuite, Matchers}
 
 class UrlTest extends FunSuite with Matchers {

@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.github.data
+package org.scalasteward.core.vcs.data
 
 import cats.implicits._
 import io.circe.Decoder
 import io.circe.generic.semiauto._
 import org.http4s.Uri
-import org.scalasteward.core.github.data.PullRequestState.Closed
+import org.scalasteward.core.vcs.data.PullRequestState.Closed
 import org.scalasteward.core.util.uri.uriDecoder
 
 final case class PullRequestOut(

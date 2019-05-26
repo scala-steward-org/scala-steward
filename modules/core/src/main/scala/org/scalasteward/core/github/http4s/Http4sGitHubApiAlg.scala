@@ -20,7 +20,7 @@ import cats.effect.Sync
 import org.http4s.{Request, Uri}
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.github._
-import org.scalasteward.core.github.data._
+import org.scalasteward.core.vcs.data._
 import org.scalasteward.core.util.HttpJsonClient
 
 final class Http4sGitHubApiAlg[F[_]: Sync](

@@ -19,7 +19,7 @@ package org.scalasteward.core.nurture
 import cats.effect.Sync
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
-import org.scalasteward.core.github.data.Repo
+import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.model.Update
 import org.scalasteward.core.util._

@@ -2,7 +2,7 @@ package org.scalasteward.core.update
 
 import better.files.File
 import cats.implicits._
-import org.scalasteward.core.github.data.Repo
+import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.mock.MockContext.filterAlg
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.model.Update

@@ -23,7 +23,7 @@ import io.circe.syntax._
 import org.http4s.Uri
 import org.scalasteward.core.dependency.Dependency
 import org.scalasteward.core.git.Sha1
-import org.scalasteward.core.github.data.{PullRequestState, Repo}
+import org.scalasteward.core.vcs.data.{PullRequestState, Repo}
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.model.Update
 import org.scalasteward.core.nurture.PullRequestRepository

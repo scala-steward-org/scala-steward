@@ -18,7 +18,7 @@ package org.scalasteward.core.github
 
 import org.http4s.Uri
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.github.data.Repo
+import org.scalasteward.core.vcs.data.Repo
 
 class Url(apiHost: Uri) {
   def branches(repo: Repo, branch: Branch): Uri =

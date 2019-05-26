@@ -19,7 +19,7 @@ package org.scalasteward.core.update
 import cats.implicits._
 import cats.{Monad, TraverseFilter}
 import io.chrisdavenport.log4cats.Logger
-import org.scalasteward.core.github.data.Repo
+import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.model.Update
 import org.scalasteward.core.repoconfig.{RepoConfig, RepoConfigAlg}
 import org.scalasteward.core.update.FilterAlg._

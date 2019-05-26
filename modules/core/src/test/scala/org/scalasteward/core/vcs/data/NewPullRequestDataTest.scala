@@ -1,4 +1,4 @@
-package org.scalasteward.core.github.data
+package org.scalasteward.core.vcs.data
 
 import io.circe.syntax._
 import org.scalasteward.core.git.{Branch, Sha1}

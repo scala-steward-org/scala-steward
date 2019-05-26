@@ -1,7 +1,7 @@
 package org.scalasteward.core.nurture
 
 import better.files.File
-import org.scalasteward.core.github.data.Repo
+import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.mock.MockContext.editAlg
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.model.Update

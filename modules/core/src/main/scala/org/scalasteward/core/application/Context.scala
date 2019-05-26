@@ -24,8 +24,8 @@ import org.http4s.client.blaze.BlazeClientBuilder
 import org.scalasteward.core.dependency.json.JsonDependencyRepository
 import org.scalasteward.core.dependency.{DependencyRepository, DependencyService}
 import org.scalasteward.core.git.GitAlg
-import org.scalasteward.core.github.{GitHubApiAlg, GitHubRepoAlg}
-import org.scalasteward.core.github.data.AuthenticatedUser
+import org.scalasteward.core.github.GitHubApiAlg
+import org.scalasteward.core.vcs.data.AuthenticatedUser
 import org.scalasteward.core.github.http4s.Http4sGitHubApiAlg
 import org.scalasteward.core.github.http4s.authentication.addCredentials
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
@@ -36,6 +36,8 @@ import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.update.json.JsonUpdateRepository
 import org.scalasteward.core.update.{FilterAlg, UpdateRepository, UpdateService}
 import org.scalasteward.core.util.{DateTimeAlg, HttpJsonClient, LogAlg}
+import org.scalasteward.core.vcs.VCSRepoAlg
+
 import scala.concurrent.ExecutionContext
 
 final case class Context[F[_]](
@@ -74,7 +76,7 @@ object Context {
       implicit val httpJsonClient: HttpJsonClient[F] = new HttpJsonClient[F]
       implicit val gitHubApiAlg: GitHubApiAlg[F] =
         new Http4sGitHubApiAlg[F](config.gitHubApiHost, _ => addCredentials(user))
-      implicit val gitHubRepoAlg: GitHubRepoAlg[F] = GitHubRepoAlg.create[F](config, gitAlg)
+      implicit val vcsRepoAlg: VCSRepoAlg[F] = VCSRepoAlg.create[F](config, gitAlg)
       implicit val pullRequestRepo: PullRequestRepository[F] = new JsonPullRequestRepo[F]
       implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F]
       implicit val updateRepository: UpdateRepository[F] = new JsonUpdateRepository[F]

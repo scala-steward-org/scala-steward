@@ -20,7 +20,7 @@ import cats.Monad
 import cats.implicits._
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.github.data._
+import org.scalasteward.core.vcs.data._
 import org.scalasteward.core.util.MonadThrowable
 
 trait GitHubApiAlg[F[_]] {

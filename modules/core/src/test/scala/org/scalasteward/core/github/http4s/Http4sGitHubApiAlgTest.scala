@@ -9,7 +9,7 @@ import org.http4s.implicits._
 import org.http4s.{HttpRoutes, Uri}
 import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.git.{Branch, Sha1}
-import org.scalasteward.core.github.data._
+import org.scalasteward.core.vcs.data._
 import org.scalasteward.core.mock.MockContext.config
 import org.scalasteward.core.util.HttpJsonClient
 import org.scalatest.{FunSuite, Matchers}

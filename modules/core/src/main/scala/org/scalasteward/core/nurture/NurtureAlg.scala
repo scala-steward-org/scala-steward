@@ -20,14 +20,15 @@ import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.git.{Branch, GitAlg}
-import org.scalasteward.core.github.data.{NewPullRequestData, Repo}
-import org.scalasteward.core.github.{GitHubApiAlg, GitHubRepoAlg}
+import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo}
+import org.scalasteward.core.github.GitHubApiAlg
 import org.scalasteward.core.model.Update
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.update.FilterAlg
 import org.scalasteward.core.util.{BracketThrowable, LogAlg}
-import org.scalasteward.core.{git, github, util}
+import org.scalasteward.core.vcs.VCSRepoAlg
+import org.scalasteward.core.{git, util, vcs}
 
 class NurtureAlg[F[_]](
     implicit
@@ -37,7 +38,7 @@ class NurtureAlg[F[_]](
     filterAlg: FilterAlg[F],
     gitAlg: GitAlg[F],
     gitHubApiAlg: GitHubApiAlg[F],
-    gitHubRepoAlg: GitHubRepoAlg[F],
+    vcsRepoAlg: VCSRepoAlg[F],
     logAlg: LogAlg[F],
     logger: Logger[F],
     pullRequestRepo: PullRequestRepository[F],
@@ -59,8 +60,8 @@ class NurtureAlg[F[_]](
     for {
       _ <- logger.info(s"Clone and synchronize ${repo.show}")
       repoOut <- gitHubApiAlg.createForkOrGetRepo(config, repo)
-      _ <- gitHubRepoAlg.clone(repo, repoOut)
-      parent <- gitHubRepoAlg.syncFork(repo, repoOut)
+      _ <- vcsRepoAlg.clone(repo, repoOut)
+      parent <- vcsRepoAlg.syncFork(repo, repoOut)
     } yield parent.default_branch
 
   def updateDependencies(repo: Repo, baseBranch: Branch): F[Unit] =
@@ -80,7 +81,7 @@ class NurtureAlg[F[_]](
   def processUpdate(data: UpdateData): F[Unit] =
     for {
       _ <- logger.info(s"Process update ${data.update.show}")
-      head = github.headFor(github.getLogin(config, data.repo), data.update)
+      head = vcs.headFor(vcs.getLogin(config, data.repo), data.update)
       repoConfig <- repoConfigAlg.getRepoConfig(data.repo)
       pullRequests <- gitHubApiAlg.listPullRequests(data.repo, head, data.baseBranch)
       _ <- pullRequests.headOption match {
@@ -120,7 +121,7 @@ class NurtureAlg[F[_]](
   def createPullRequest(data: UpdateData): F[Unit] =
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
-      headLogin = github.getLogin(config, data.repo)
+      headLogin = vcs.getLogin(config, data.repo)
       requestData = NewPullRequestData.from(data, headLogin, config.gitHubLogin)
       pr <- gitHubApiAlg.createPullRequest(data.repo, requestData)
       _ <- pullRequestRepo.createOrUpdate(

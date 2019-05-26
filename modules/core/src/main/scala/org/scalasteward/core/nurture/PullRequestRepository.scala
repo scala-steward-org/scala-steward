@@ -19,7 +19,7 @@ package org.scalasteward.core.nurture
 import org.http4s.Uri
 import org.scalasteward.core.dependency.Dependency
 import org.scalasteward.core.git.Sha1
-import org.scalasteward.core.github.data.{PullRequestState, Repo}
+import org.scalasteward.core.vcs.data.{PullRequestState, Repo}
 import org.scalasteward.core.model.Update
 
 trait PullRequestRepository[F[_]] {
