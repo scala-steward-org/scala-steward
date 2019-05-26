@@ -48,7 +48,9 @@ class FilterAlgTest extends FunSuite with Matchers {
 
     filtered shouldBe List(update1)
     state shouldBe initialState.copy(
-      logs = Vector((None, "Ignore eu.timepit:refined : 0.8.0 -> 0.8.1"))
+      logs = Vector(
+        (None, "Ignore eu.timepit:refined : 0.8.0 -> 0.8.1 (reason: ignored by config)")
+      )
     )
   }
 

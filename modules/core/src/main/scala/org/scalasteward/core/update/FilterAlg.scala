@@ -41,14 +41,25 @@ class FilterAlg[F[_]](
   private def logIfRejected(result: FilterResult): F[Option[Update.Single]] =
     result match {
       case Right(update) => F.pure(update.some)
-      case Left(reason)  => logger.info(s"Ignore ${reason.update.show}") *> F.pure(None)
+      case Left(reason) =>
+        logger.info(s"Ignore ${reason.update.show} (reason: ${reason.show})") *> F.pure(None)
     }
 }
 
 object FilterAlg {
   type FilterResult = Either[RejectionReason, Update.Single]
 
-  sealed trait RejectionReason { def update: Update.Single }
+  sealed trait RejectionReason {
+    def update: Update.Single
+    def show: String = this match {
+      case IgnoredGlobally(_)             => "ignored globally"
+      case IgnoredByConfig(_)             => "ignored by config"
+      case NotAllowedByConfig(_)          => "not allowed by config"
+      case BadVersions(_)                 => "bad versions"
+      case NonSnapshotToSnapshotUpdate(_) => "non-snapshot to snapshot"
+    }
+  }
+
   final case class IgnoredGlobally(update: Update.Single) extends RejectionReason
   final case class IgnoredByConfig(update: Update.Single) extends RejectionReason
   final case class NotAllowedByConfig(update: Update.Single) extends RejectionReason
