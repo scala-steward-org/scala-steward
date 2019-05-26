@@ -40,7 +40,7 @@ Thanks goes to these wonderful people:
 * [Filipe Regadas](https://github.com/regadas)
 * [Frank S. Thomas](https://github.com/fthomas)
 * [JCollier](https://github.com/Slakah)
-* [Jeff](https://github.com/custommonkey)
+* [Jeff Martin](https://github.com/custommonkey)
 * [kenji yoshida](https://github.com/xuwei-k)
 * [Mark Canlas](https://github.com/mcanlas)
 * [Michael Wizner](https://github.com/mwz)
