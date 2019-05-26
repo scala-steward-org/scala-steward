@@ -1,8 +1,6 @@
 package org.scalasteward.core.update
 
-import better.files.File
 import cats.implicits._
-import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.mock.MockContext.filterAlg
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.model.Update
@@ -39,27 +37,18 @@ class FilterAlgTest extends FunSuite with Matchers {
   }
 
   test("ignore update via config updates.ignore") {
-    val repo = Repo("fthomas", "scala-steward")
     val update1 = Update.Single("org.http4s", "http4s-dsl", "0.17.0", Nel.of("0.18.0"))
     val update2 = Update.Single("eu.timepit", "refined", "0.8.0", Nel.of("0.8.1"))
+    val config =
+      RepoConfig(UpdatesConfig(ignore = List(UpdatePattern("eu.timepit", Some("refined"), None))))
 
-    val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
-    val configContent =
-      """updates.ignore = [ { groupId = "eu.timepit", artifactId = "refined" } ]"""
-    val parsedConfig =
-      "RepoConfig(UpdatesConfig(List(),List(UpdatePattern(eu.timepit,Some(refined),None))),true)"
-
-    val initialState = MockState.empty.add(configFile, configContent)
+    val initialState = MockState.empty
     val (state, filtered) =
-      filterAlg.localFilterMany(repo, List(update1, update2)).run(initialState).unsafeRunSync()
+      filterAlg.localFilterMany(config, List(update1, update2)).run(initialState).unsafeRunSync()
 
     filtered shouldBe List(update1)
     state shouldBe initialState.copy(
-      commands = Vector(List("read", configFile.toString)),
-      logs = Vector(
-        (None, s"Parsed $parsedConfig from $configFile"),
-        (None, "Ignore eu.timepit:refined : 0.8.0 -> 0.8.1")
-      )
+      logs = Vector((None, "Ignore eu.timepit:refined : 0.8.0 -> 0.8.1"))
     )
   }
 
@@ -77,7 +66,7 @@ class FilterAlgTest extends FunSuite with Matchers {
     )
 
     val filtered = filterAlg
-      .localFilterManyWithConfig(config, List(update1, update2))
+      .localFilterMany(config, List(update1, update2))
       .runA(MockState.empty)
       .unsafeRunSync()
 

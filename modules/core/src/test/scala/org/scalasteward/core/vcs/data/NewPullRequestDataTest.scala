@@ -4,6 +4,7 @@ import io.circe.syntax._
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.model.Update
 import org.scalasteward.core.nurture.UpdateData
+import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.Nel
 import org.scalatest.{FunSuite, Matchers}
 
@@ -11,6 +12,7 @@ class NewPullRequestDataTest extends FunSuite with Matchers {
   test("asJson") {
     val data = UpdateData(
       Repo("foo", "bar"),
+      RepoConfig(),
       Update.Single("ch.qos.logback", "logback-classic", "1.2.0", Nel.of("1.2.3")),
       Branch("master"),
       Sha1(Sha1.HexString("d6b6791d2ea11df1d156fe70979ab8c3a5ba3433")),

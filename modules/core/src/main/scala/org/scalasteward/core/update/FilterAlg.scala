@@ -19,32 +19,24 @@ package org.scalasteward.core.update
 import cats.implicits._
 import cats.{Monad, TraverseFilter}
 import io.chrisdavenport.log4cats.Logger
-import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.model.Update
-import org.scalasteward.core.repoconfig.{RepoConfig, RepoConfigAlg}
+import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.update.FilterAlg._
 import org.scalasteward.core.util
 
 class FilterAlg[F[_]](
     implicit
     logger: Logger[F],
-    repoConfigAlg: RepoConfigAlg[F],
     F: Monad[F]
 ) {
   def globalFilterMany[G[_]: TraverseFilter](updates: G[Update.Single]): F[G[Update.Single]] =
     updates.traverseFilter(update => logIfRejected(globalFilter(update)))
 
-  def localFilterManyWithConfig[G[_]: TraverseFilter](
+  def localFilterMany[G[_]: TraverseFilter](
       config: RepoConfig,
       updates: G[Update.Single]
   ): F[G[Update.Single]] =
     updates.traverseFilter(update => logIfRejected(localFilter(update, config)))
-
-  def localFilterMany[G[_]: TraverseFilter](
-      repo: Repo,
-      updates: G[Update.Single]
-  ): F[G[Update.Single]] =
-    repoConfigAlg.getRepoConfig(repo).flatMap(localFilterManyWithConfig(_, updates))
 
   private def logIfRejected(result: FilterResult): F[Option[Update.Single]] =
     result match {

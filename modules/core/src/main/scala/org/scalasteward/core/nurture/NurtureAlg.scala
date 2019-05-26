@@ -67,13 +67,14 @@ class NurtureAlg[F[_]](
   def updateDependencies(repo: Repo, baseBranch: Branch): F[Unit] =
     for {
       _ <- logger.info(s"Find updates for ${repo.show}")
+      repoConfig <- repoConfigAlg.getRepoConfig(repo)
       updates <- sbtAlg.getUpdatesForRepo(repo)
-      filtered <- filterAlg.localFilterMany(repo, updates)
+      filtered <- filterAlg.localFilterMany(repoConfig, updates)
       grouped = Update.group(filtered)
       _ <- logger.info(util.logger.showUpdates(grouped))
       baseSha1 <- gitAlg.latestSha1(repo, baseBranch)
       _ <- grouped.traverse_ { update =>
-        val data = UpdateData(repo, update, baseBranch, baseSha1, git.branchFor(update))
+        val data = UpdateData(repo, repoConfig, update, baseBranch, baseSha1, git.branchFor(update))
         processUpdate(data)
       }
     } yield ()
@@ -82,12 +83,11 @@ class NurtureAlg[F[_]](
     for {
       _ <- logger.info(s"Process update ${data.update.show}")
       head = vcs.headFor(vcs.getLogin(config, data.repo), data.update)
-      repoConfig <- repoConfigAlg.getRepoConfig(data.repo)
       pullRequests <- gitHubApiAlg.listPullRequests(data.repo, head, data.baseBranch)
       _ <- pullRequests.headOption match {
         case Some(pr) if pr.isClosed =>
           logger.info(s"PR ${pr.html_url} is closed")
-        case Some(pr) if repoConfig.updatePullRequests =>
+        case Some(pr) if data.repoConfig.updatePullRequests =>
           logger.info(s"Found PR ${pr.html_url}") >> updatePullRequest(data)
         case Some(pr) =>
           logger.info(s"Found PR ${pr.html_url}, but updates are disabled by flag")
