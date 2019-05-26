@@ -42,7 +42,7 @@ class FilterAlg[F[_]](
     result match {
       case Right(update) => F.pure(update.some)
       case Left(reason) =>
-        logger.info(s"Ignore ${reason.update.show} (reason: ${reason.describe})") *> F.pure(None)
+        logger.info(s"Ignore ${reason.update.show} (reason: ${reason.show})") *> F.pure(None)
     }
 }
 
@@ -51,7 +51,7 @@ object FilterAlg {
 
   sealed trait RejectionReason {
     def update: Update.Single
-    def describe: String = this match {
+    def show: String = this match {
       case IgnoredGlobally(_)             => "ignored globally"
       case IgnoredByConfig(_)             => "ignored by config"
       case NotAllowedByConfig(_)          => "not allowed by config"
