@@ -11,6 +11,9 @@ final case class MockState(
   def add(file: File, content: String): MockState =
     copy(files = files + (file -> content))
 
+  def addFiles(newFiles: Map[File, String]): MockState =
+    copy(files = files ++ newFiles)
+
   def rm(file: File): MockState =
     copy(files = files - file)
 
