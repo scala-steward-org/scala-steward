@@ -239,6 +239,7 @@
 - nafg/slick-migration-api
 - nafg/slick-migration-api-flyway
 - navicore/akka-eventhubs
+- navicore/lots-of-names
 - navicore/naviblob
 - navicore/navilake
 - navicore/NaviPath
