@@ -211,6 +211,17 @@ class UpdateTest extends FunSuite with Matchers {
       .replaceAllInRelaxed(original) shouldBe Some(expected)
   }
 
+  test("replaceAllInSliding: mongo from mongodb") {
+    val original = """val mongoVersion = "3.7.0" """
+    val expected = """val mongoVersion = "3.7.1" """
+    Group(
+      "org.mongodb",
+      Nel.of("mongodb-driver", "mongodb-driver-async", "mongodb-driver-core"),
+      "3.7.0",
+      Nel.of("3.7.1")
+    ).replaceAllInSliding(original) shouldBe Some(expected)
+  }
+
   test("Group.artifactId") {
     Group(
       "org.http4s",

@@ -40,18 +40,21 @@ sealed trait Update extends Product with Serializable {
     newerVersions.head
 
   def replaceAllInStrict(target: String): Option[String] =
-    replaceAllInImpl(target, true, false)
+    replaceAllInImpl(target, true, identity)
 
   def replaceAllIn(target: String): Option[String] =
-    replaceAllInImpl(target, false, false)
+    replaceAllInImpl(target, false, identity)
 
   def replaceAllInRelaxed(target: String): Option[String] =
-    replaceAllInImpl(target, false, true)
+    replaceAllInImpl(target, false, terms => terms ++ util.string.extractWords(artifactId))
+
+  def replaceAllInSliding(target: String): Option[String] =
+    replaceAllInImpl(target, false, terms => terms ++ artifactId.sliding(5).take(5).toList)
 
   def replaceAllInImpl(
       target: String,
       includeGroupId: Boolean,
-      splitArtifactId: Boolean
+      modifySearchTerms: Nel[String] => Nel[String]
   ): Option[String] = {
     def replaceVersion(regex: Regex): Option[String] =
       util.string.replaceSomeInOpt(
@@ -65,10 +68,7 @@ sealed trait Update extends Product with Serializable {
             Some(group1 + m.group(2) + nextVersion)
         }
       )
-
-    val artifactIdParts = if (splitArtifactId) util.string.extractWords(artifactId) else Nil
-    val quotedSearchTerms = searchTerms
-      .concat(artifactIdParts)
+    val quotedSearchTerms = modifySearchTerms(searchTerms)
       .map { term =>
         Regex
           .quoteReplacement(Update.removeCommonSuffix(term))
