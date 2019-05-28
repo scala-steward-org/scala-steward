@@ -356,9 +356,9 @@
 - slamdata/tectonic
 - snowplow-incubator/cla-bot
 - snowplow-incubator/snowplow-indicative-relay
+- softwaremill/sbt-softwaremill
 - softwaremill/sttp
 - softwaremill/tapir
-- softwaremill/sbt-softwaremill
 - sphereio/sphere-scala-libs
 - spotify/big-data-rosetta-code
 - spotify/featran
