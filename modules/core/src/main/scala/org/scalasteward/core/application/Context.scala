@@ -45,7 +45,7 @@ object Context {
       implicit0(config: Config) <- Resource.liftF(Config.create[F](cliArgs_))
       implicit0(client: Client[F]) <- BlazeClientBuilder[F](ExecutionContext.global).resource
       implicit0(logger: Logger[F]) <- Resource.liftF(Slf4jLogger.create[F])
-      implicit0(user: AuthenticatedUser) <- Resource.liftF(config.gitHubUser[F])
+      implicit0(user: AuthenticatedUser) <- Resource.liftF(config.vcsUser[F])
     } yield {
       implicit val dateTimeAlg: DateTimeAlg[F] = DateTimeAlg.create[F]
       implicit val fileAlg: FileAlg[F] = FileAlg.create[F]
