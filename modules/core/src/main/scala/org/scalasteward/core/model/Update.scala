@@ -39,35 +39,22 @@ sealed trait Update extends Product with Serializable {
   def nextVersion: String =
     newerVersions.head
 
-  def replaceAllInStrict(target: String): Option[String] =
-    replaceAllInImpl(target, true, identity)
+  def replaceAllInStrict: String => Option[String] =
+    replaceAllInImpl(true, identity)
 
-  def replaceAllIn(target: String): Option[String] =
-    replaceAllInImpl(target, false, identity)
+  def replaceAllIn: String => Option[String] =
+    replaceAllInImpl(false, identity)
 
-  def replaceAllInRelaxed(target: String): Option[String] =
-    replaceAllInImpl(target, false, terms => terms ++ util.string.extractWords(artifactId))
+  def replaceAllInRelaxed: String => Option[String] =
+    replaceAllInImpl(false, terms => terms ++ util.string.extractWords(artifactId))
 
-  def replaceAllInSliding(target: String): Option[String] =
-    replaceAllInImpl(target, false, terms => terms ++ artifactId.sliding(5).take(5).toList)
+  def replaceAllInSliding: String => Option[String] =
+    replaceAllInImpl(false, terms => terms ++ artifactId.sliding(5).take(5).toList)
 
   def replaceAllInImpl(
-      target: String,
       includeGroupId: Boolean,
       modifySearchTerms: Nel[String] => Nel[String]
-  ): Option[String] = {
-    def replaceVersion(regex: Regex): Option[String] =
-      util.string.replaceSomeInOpt(
-        regex,
-        target,
-        m => {
-          val group1 = m.group(1)
-          if (group1.toLowerCase.contains("previous") || group1.trim.startsWith("//"))
-            None
-          else
-            Some(group1 + m.group(2) + nextVersion)
-        }
-      )
+  ): String => Option[String] = {
     val quotedSearchTerms = modifySearchTerms(searchTerms)
       .map { term =>
         Regex
@@ -81,6 +68,20 @@ sealed trait Update extends Product with Serializable {
 
     replaceVersion(s"(?i)(.*)($groupIdPattern$searchTerm.*?)${Regex.quote(currentVersion)}".r)
   }
+
+  private def replaceVersion(regex: Regex): String => Option[String] =
+    target =>
+      util.string.replaceSomeInOpt(
+        regex,
+        target,
+        m => {
+          val group1 = m.group(1)
+          if (group1.toLowerCase.contains("previous") || group1.trim.startsWith("//"))
+            None
+          else
+            Some(group1 + m.group(2) + nextVersion)
+        }
+      )
 
   def searchTerms: Nel[String] = {
     val terms = this match {
