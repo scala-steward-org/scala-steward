@@ -61,7 +61,7 @@ final case class Config(
     keepCredentials: Boolean,
     envVars: List[EnvVar]
 ) {
-  def gitHubUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] = {
+  def vcsUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] = {
     val urlWithUser = util.uri.withUserInfo.set(vcsLogin)(vcsApiHost).renderString
     val prompt = s"Password for '$urlWithUser': "
     F.delay {
