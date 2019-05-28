@@ -48,7 +48,9 @@ object EditAlg {
             log("replaceAllIn") >>
               fileAlg.editSourceFiles(repoDir, update.replaceAllIn),
             log("replaceAllInRelaxed") >>
-              fileAlg.editSourceFiles(repoDir, update.replaceAllInRelaxed)
+              fileAlg.editSourceFiles(repoDir, update.replaceAllInRelaxed),
+            log("replaceAllInSliding") >>
+              fileAlg.editSourceFiles(repoDir, update.replaceAllInSliding)
           )
 
           bindUntilTrue(strategies).void
