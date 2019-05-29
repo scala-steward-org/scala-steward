@@ -359,6 +359,7 @@
 - softwaremill/sbt-softwaremill
 - softwaremill/sttp
 - softwaremill/tapir
+- softwaremill/elasticmq
 - sphereio/sphere-scala-libs
 - spotify/big-data-rosetta-code
 - spotify/featran
