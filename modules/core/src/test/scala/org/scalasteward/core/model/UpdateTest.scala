@@ -222,6 +222,12 @@ class UpdateTest extends FunSuite with Matchers {
     ).replaceAllInSliding(original) shouldBe Some(expected)
   }
 
+  test("replaceAllInSliding: artifactId with common suffix") {
+    val original = """case _ => "1.0.2" """
+    Single("co.fs2", "fs2-core", "1.0.2", Nel.of("1.0.4"))
+      .replaceAllInSliding(original) shouldBe None
+  }
+
   test("Group.artifactId") {
     Group(
       "org.http4s",
