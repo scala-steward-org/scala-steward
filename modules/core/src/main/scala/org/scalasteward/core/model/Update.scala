@@ -55,14 +55,16 @@ sealed trait Update extends Product with Serializable {
       includeGroupId: Boolean,
       modifySearchTerms: Nel[String] => Nel[String]
   ): String => Option[String] = {
+    val ignoreChar = ".?"
     val quotedSearchTerms = modifySearchTerms(searchTerms)
       .map { term =>
         Regex
           .quoteReplacement(Update.removeCommonSuffix(term))
-          .replace(".", ".?")
-          .replace("-", ".?")
+          .replace(".", ignoreChar)
+          .replace("-", ignoreChar)
       }
-      .filter(_.nonEmpty)
+      .filter(term => term.nonEmpty && term =!= ignoreChar)
+
     val searchTerm = quotedSearchTerms.mkString_("(", "|", ")")
     val groupIdPattern = if (includeGroupId) s"$groupId.*?" else ""
 
