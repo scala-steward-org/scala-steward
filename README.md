@@ -61,6 +61,7 @@ The following companies are using _scala-steward_ to manage their scala dependen
 * [SlamData](https://slamdata.com/)
 * [Snowplow Analytics](https://snowplowanalytics.com/)
 * [Zalando](https://en.zalando.de/)
+* [SoftwareMill](https://softwaremill.com)
 
 ## Participation
 
