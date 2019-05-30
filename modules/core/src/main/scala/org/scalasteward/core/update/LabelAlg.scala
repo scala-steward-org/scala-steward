@@ -18,7 +18,7 @@ package org.scalasteward.core.update
 
 import cats.Monad
 import cats.implicits._
-import org.scalasteward.core.github.data.Repo
+import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.model.{Label, Update}
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.update.LabelAlg.LabelsResult

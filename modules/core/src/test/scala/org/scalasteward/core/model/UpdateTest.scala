@@ -232,13 +232,14 @@ class UpdateTest extends FunSuite with Matchers {
       "org.mongodb",
       Nel.of("mongodb-driver", "mongodb-driver-async", "mongodb-driver-core"),
       "3.7.0",
-      Nel.of("3.7.1")
+      Nel.of("3.7.1"),
+      None
     ).replaceAllInSliding(original) shouldBe Some(expected)
   }
 
   test("replaceAllInSliding: artifactId with common suffix") {
     val original = """case _ => "1.0.2" """
-    Single("co.fs2", "fs2-core", "1.0.2", Nel.of("1.0.4"))
+    Single("co.fs2", "fs2-core", "1.0.2", Nel.of("1.0.4"), None)
       .replaceAllInSliding(original) shouldBe None
   }
 

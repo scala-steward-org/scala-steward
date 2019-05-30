@@ -31,6 +31,7 @@ class NewPullRequestDataTest extends FunSuite with Matchers {
   test("asJson with a single update label") {
     val data = UpdateData(
       Repo("foo", "bar"),
+      RepoConfig(),
       Update.Single(
         "ch.qos.logback",
         "logback-classic",
@@ -55,6 +56,7 @@ class NewPullRequestDataTest extends FunSuite with Matchers {
   test("asJson with multiple update labels") {
     val data = UpdateData(
       Repo("foo", "bar"),
+      RepoConfig(),
       Update.Single(
         "ch.qos.logback",
         "logback-classic",

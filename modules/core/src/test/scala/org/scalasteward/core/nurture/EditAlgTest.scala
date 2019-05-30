@@ -46,7 +46,7 @@ class EditAlgTest extends FunSuite with Matchers {
   }
 
   test("reproduce https://github.com/circe/circe-config/pull/40") {
-    val update = Update.Single("com.typesafe", "config", "1.3.3", Nel.of("1.3.4"))
+    val update = Update.Single("com.typesafe", "config", "1.3.3", Nel.of("1.3.4"), None)
     val original = Map(
       "build.sbt" -> """val config = "1.3.3"""",
       "project/plugins.sbt" -> """addSbtPlugin("com.typesafe.sbt" % "sbt-site" % "1.3.3")"""
