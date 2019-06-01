@@ -222,6 +222,7 @@
 - mfirry/scala-http-clients
 - mfirry/web-frameworks-templates
 - milessabin/shapeless
+- molikto/mlang
 - monadless/monadless
 - monix/monix
 - monix/monix-kafka
