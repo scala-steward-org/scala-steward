@@ -193,6 +193,7 @@
 - kwark/slick-refined
 - lagom/lagom
 - lancewalton/treelog
+- larsrh/libisabelle
 - larsrh/sbt-libisabelle
 - laserdisc-io/laserdisc
 - laserdisc-io/log-effect
