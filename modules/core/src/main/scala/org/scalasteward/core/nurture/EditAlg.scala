@@ -16,13 +16,15 @@
 
 package org.scalasteward.core.nurture
 
+import better.files.File
+import cats.Traverse
 import cats.effect.Sync
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
-import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.model.Update
 import org.scalasteward.core.util._
+import org.scalasteward.core.vcs.data.Repo
 
 trait EditAlg[F[_]] {
   def applyUpdate(repo: Repo, update: Update): F[Unit]
@@ -38,22 +40,24 @@ object EditAlg {
   ): EditAlg[F] =
     new EditAlg[F] {
       override def applyUpdate(repo: Repo, update: Update): F[Unit] =
-        workspaceAlg.repoDir(repo).flatMap { repoDir =>
-          def log(strategy: String): F[Unit] =
-            logger.info(s"Trying update strategy '$strategy'")
+        for {
+          repoDir <- workspaceAlg.repoDir(repo)
+          files <- fileAlg.findSourceFilesContaining(repoDir, update.currentVersion)
+          noFilesFound = logger.warn("No files found that contain the current version")
+          _ <- files.toNel.fold(noFilesFound)(applyUpdateTo(_, update))
+        } yield ()
 
-          val strategies = Nel.of(
-            log("replaceAllInStrict") >>
-              fileAlg.editSourceFiles(repoDir, update.replaceAllInStrict),
-            log("replaceAllIn") >>
-              fileAlg.editSourceFiles(repoDir, update.replaceAllIn),
-            log("replaceAllInRelaxed") >>
-              fileAlg.editSourceFiles(repoDir, update.replaceAllInRelaxed),
-            log("replaceAllInSliding") >>
-              fileAlg.editSourceFiles(repoDir, update.replaceAllInSliding)
-          )
+      def applyUpdateTo[G[_]: Traverse](files: G[File], update: Update): F[Unit] = {
+        def applyHeuristic(name: String, edit: String => Option[String]): F[Boolean] =
+          logger.info(s"Trying heuristic '$name'") >> fileAlg.editFiles(files, edit)
 
-          bindUntilTrue(strategies).void
-        }
+        val heuristics = Nel.of(
+          applyHeuristic("strict", update.replaceAllInStrict),
+          applyHeuristic("original", update.replaceAllIn),
+          applyHeuristic("relaxed", update.replaceAllInRelaxed),
+          applyHeuristic("sliding", update.replaceAllInSliding)
+        )
+        bindUntilTrue(heuristics).void
+      }
     }
 }
