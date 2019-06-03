@@ -13,24 +13,27 @@ class EditAlgTest extends FunSuite with Matchers {
   test("applyUpdate") {
     val repo = Repo("fthomas", "scala-steward")
     val update = Update.Single("org.typelevel", "cats-core", "1.2.0", Nel.of("1.3.0"))
-    val file = File.temp / "ws/fthomas/scala-steward/build.sbt"
+    val file1 = File.temp / "ws/fthomas/scala-steward/build.sbt"
+    val file2 = File.temp / "ws/fthomas/scala-steward/project/Dependencies.scala"
 
     val state = editAlg
       .applyUpdate(repo, update)
-      .runS(MockState.empty.add(file, """val catsVersion = "1.2.0""""))
+      .runS(MockState.empty.add(file1, """val catsVersion = "1.2.0"""").add(file2, ""))
       .unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List("read", file.pathAsString),
-        List("read", file.pathAsString),
-        List("write", file.pathAsString)
+        List("read", file1.pathAsString),
+        List("read", file2.pathAsString),
+        List("read", file1.pathAsString),
+        List("read", file1.pathAsString),
+        List("write", file1.pathAsString)
       ),
       logs = Vector(
-        (None, "Trying update strategy 'replaceAllInStrict'"),
-        (None, "Trying update strategy 'replaceAllIn'")
+        (None, "Trying heuristic 'strict'"),
+        (None, "Trying heuristic 'original'")
       ),
-      files = Map(file -> """val catsVersion = "1.3.0"""")
+      files = Map(file1 -> """val catsVersion = "1.3.0"""", file2 -> "")
     )
   }
 
