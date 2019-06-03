@@ -43,7 +43,7 @@ object EditAlg {
         for {
           repoDir <- workspaceAlg.repoDir(repo)
           files <- fileAlg.findSourceFilesContaining(repoDir, update.currentVersion)
-          noFilesFound = logger.warn("No source files found that contain the current version")
+          noFilesFound = logger.warn("No files found that contain the current version")
           _ <- files.toNel.fold(noFilesFound)(applyUpdateTo(_, update))
         } yield ()
 
