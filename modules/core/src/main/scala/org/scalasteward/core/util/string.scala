@@ -29,13 +29,13 @@ object string {
 
   /** Extracts words from a string.
     *
-    * Words are separated by '-', '_', or a change from lower to upper case
-    * and are at least three characters long.
+    * Words are separated by '-', '_', '.', or a change from lower to
+    * upper case and are at least three characters long.
     */
   def extractWords(s: String): List[String] = {
     val minLength = 3
-    val splitBySeparators: String => List[String] = _.split(Array('-', '_')).toList
-    splitBySeparators(s)
+    val splitBySeparators = s.split(Array('-', '_', '.')).toList
+    splitBySeparators
       .flatMap(splitBetweenLowerAndUpperChars)
       .filter(_.length >= minLength)
   }

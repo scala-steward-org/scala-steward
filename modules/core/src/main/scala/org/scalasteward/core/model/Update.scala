@@ -40,23 +40,23 @@ sealed trait Update extends Product with Serializable {
     newerVersions.head
 
   def replaceAllInStrict: String => Option[String] =
-    replaceAllInImpl(true, identity)
+    replaceAllInImpl(true, searchTerms.toList)
 
   def replaceAllIn: String => Option[String] =
-    replaceAllInImpl(false, identity)
+    replaceAllInImpl(false, searchTerms.toList)
 
   def replaceAllInRelaxed: String => Option[String] =
-    replaceAllInImpl(false, terms => terms ++ util.string.extractWords(artifactId))
+    replaceAllInImpl(false, util.string.extractWords(artifactId))
 
   def replaceAllInSliding: String => Option[String] =
-    replaceAllInImpl(false, terms => terms ++ artifactId.sliding(5).take(5).toList)
+    replaceAllInImpl(false, artifactId.sliding(5).take(5).toList)
 
-  def replaceAllInImpl(
-      includeGroupId: Boolean,
-      modifySearchTerms: Nel[String] => Nel[String]
-  ): String => Option[String] = {
+  def replaceAllInGroupId: String => Option[String] =
+    replaceAllInImpl(false, util.string.extractWords(groupId))
+
+  def replaceAllInImpl(includeGroupId: Boolean, terms: List[String]): String => Option[String] = {
     val ignoreChar = ".?"
-    val quotedSearchTerms = modifySearchTerms(searchTerms)
+    val quotedSearchTerms = terms
       .map { term =>
         Regex
           .quoteReplacement(Update.removeCommonSuffix(term))

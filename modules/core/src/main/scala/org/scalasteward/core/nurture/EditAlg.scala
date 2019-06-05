@@ -55,7 +55,8 @@ object EditAlg {
           applyHeuristic("strict", update.replaceAllInStrict),
           applyHeuristic("original", update.replaceAllIn),
           applyHeuristic("relaxed", update.replaceAllInRelaxed),
-          applyHeuristic("sliding", update.replaceAllInSliding)
+          applyHeuristic("sliding", update.replaceAllInSliding),
+          applyHeuristic("groupId", update.replaceAllInGroupId)
         )
         bindUntilTrue(heuristics).void
       }
