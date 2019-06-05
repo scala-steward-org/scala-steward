@@ -442,3 +442,4 @@
 - yannick-cw/elastic-indexer4s
 - zio/zio-keeper
 - ziyasal/reducio
+- srenault/sre-api
