@@ -228,6 +228,13 @@ class UpdateTest extends FunSuite with Matchers {
       .replaceAllInSliding(original) shouldBe None
   }
 
+  test("replaceAllInGroupId: word from groupId") {
+    val original = """val acolyteVersion = "1.0.49" """
+    val expected = """val acolyteVersion = "1.0.51" """
+    Single("org.eu.acolyte", "jdbc-driver", "1.0.49", Nel.of("1.0.51"))
+      .replaceAllInGroupId(original) shouldBe Some(expected)
+  }
+
   test("Group.artifactId") {
     Group(
       "org.http4s",
