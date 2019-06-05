@@ -163,6 +163,7 @@
 - http4s/jawn-fs2
 - http4s/rho
 - ilya-murzinov/finch-todo-backend
+- intracer/scalawiki
 - INCATools/dosdp-tools
 - IronCoreLabs/argonaut-jwt-scala
 - IronCoreLabs/cats-scalatest
