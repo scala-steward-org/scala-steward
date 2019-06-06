@@ -235,6 +235,18 @@ class UpdateTest extends FunSuite with Matchers {
       .replaceAllInGroupId(original) shouldBe Some(expected)
   }
 
+  test("replaceAllInGroupId: ignore TLD") {
+    val original = """ "com.propensive" %% "contextual" % "1.0.1" """
+    Single("com.slamdata", "fs2-gzip", "1.0.1", Nel.of("1.1.1"))
+      .replaceAllInGroupId(original) shouldBe None
+  }
+
+  test("replaceAllInGroupId: ignore short words") {
+    val original = "SBT_VERSION=1.2.7"
+    Single("org.scala-sbt", "scripted-plugin", "1.2.7", Nel.of("1.2.8"))
+      .replaceAllInGroupId(original) shouldBe None
+  }
+
   test("Group.artifactId") {
     Group(
       "org.http4s",
