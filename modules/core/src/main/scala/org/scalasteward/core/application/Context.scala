@@ -71,7 +71,7 @@ object Context {
       implicit val repoConfigAlg: RepoConfigAlg[F] = new RepoConfigAlg[F]
       implicit val filterAlg: FilterAlg[F] = new FilterAlg[F]
       implicit val dependencyRepository: DependencyRepository[F] = new JsonDependencyRepository[F]
-      implicit val editAlg: EditAlg[F] = EditAlg.create[F]
+      implicit val editAlg: EditAlg[F] = new EditAlg[F]
       implicit val gitAlg: GitAlg[F] = GitAlg.create[F]
       implicit val httpJsonClient: HttpJsonClient[F] = new HttpJsonClient[F]
       implicit val gitHubApiAlg: GitHubApiAlg[F] =

@@ -40,7 +40,7 @@ object MockContext {
   implicit val workspaceAlg: MockWorkspaceAlg = new MockWorkspaceAlg
 
   implicit val dateTimeAlg: DateTimeAlg[MockEff] = DateTimeAlg.create
-  implicit val editAlg: EditAlg[MockEff] = EditAlg.create
+  implicit val editAlg: EditAlg[MockEff] = new EditAlg[MockEff]
   implicit val gitAlg: GitAlg[MockEff] = GitAlg.create
   implicit val gitHubRepoAlg: VCSRepoAlg[MockEff] = VCSRepoAlg.create(config, gitAlg)
   implicit val logAlg: LogAlg[MockEff] = new LogAlg[MockEff]
