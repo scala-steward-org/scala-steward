@@ -40,17 +40,17 @@ trait GitHubApiAlg[F[_]] {
   /** https://developer.github.com/v3/pulls/#list-pull-requests */
   def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]]
 
-  def createForkOrGetRepo(config: Config, repo: Repo): F[RepoOut] =
+  final def createForkOrGetRepo(config: Config, repo: Repo): F[RepoOut] =
     if (config.doNotFork) getRepo(repo)
     else createFork(repo)
 
-  def createForkOrGetRepoWithDefaultBranch(config: Config, repo: Repo)(
+  final def createForkOrGetRepoWithDefaultBranch(config: Config, repo: Repo)(
       implicit F: MonadThrowable[F]
   ): F[(RepoOut, BranchOut)] =
     if (config.doNotFork) getRepoWithDefaultBranch(repo)
     else createForkWithDefaultBranch(repo)
 
-  def createForkWithDefaultBranch(repo: Repo)(
+  final def createForkWithDefaultBranch(repo: Repo)(
       implicit F: MonadThrowable[F]
   ): F[(RepoOut, BranchOut)] =
     for {
@@ -59,7 +59,7 @@ trait GitHubApiAlg[F[_]] {
       branchOut <- getDefaultBranch(parent)
     } yield (fork, branchOut)
 
-  def getRepoWithDefaultBranch(repo: Repo)(
+  final def getRepoWithDefaultBranch(repo: Repo)(
       implicit F: Monad[F]
   ): F[(RepoOut, BranchOut)] =
     for {
@@ -67,6 +67,6 @@ trait GitHubApiAlg[F[_]] {
       branchOut <- getDefaultBranch(repoOut)
     } yield (repoOut, branchOut)
 
-  def getDefaultBranch(repoOut: RepoOut): F[BranchOut] =
+  final def getDefaultBranch(repoOut: RepoOut): F[BranchOut] =
     getBranch(repoOut.repo, repoOut.default_branch)
 }

@@ -24,7 +24,7 @@ import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.update.FilterAlg._
 import org.scalasteward.core.util
 
-class FilterAlg[F[_]](
+final class FilterAlg[F[_]](
     implicit
     logger: Logger[F],
     F: Monad[F]

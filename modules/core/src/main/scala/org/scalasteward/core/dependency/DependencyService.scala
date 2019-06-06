@@ -26,7 +26,7 @@ import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.util.{LogAlg, MonadThrowable}
 import org.scalasteward.core.vcs.VCSRepoAlg
 
-class DependencyService[F[_]](
+final class DependencyService[F[_]](
     implicit
     config: Config,
     dependencyRepository: DependencyRepository[F],

@@ -47,21 +47,23 @@ trait FileAlg[F[_]] {
   def containsString(file: File, string: String)(implicit F: Functor[F]): F[Boolean] =
     readFile(file).map(_.fold(false)(_.contains(string)))
 
-  def editFile(file: File, edit: String => Option[String])(
+  final def editFile(file: File, edit: String => Option[String])(
       implicit F: MonadThrowable[F]
   ): F[Boolean] =
     readFile(file)
       .flatMap(_.flatMap(edit).fold(F.pure(false))(writeFile(file, _).as(true)))
       .adaptError { case t => new Throwable(s"failed to edit $file", t) }
 
-  def editFiles[G[_]](files: G[File], edit: String => Option[String])(
+  final def editFiles[G[_]](files: G[File], edit: String => Option[String])(
       implicit
       F: MonadThrowable[F],
       G: Traverse[G]
   ): F[Boolean] =
     files.traverse(editFile(_, edit)).map(_.foldLeft(false)(_ || _))
 
-  def findSourceFilesContaining(dir: File, string: String)(implicit F: Sync[F]): F[List[File]] =
+  final def findSourceFilesContaining(dir: File, string: String)(
+      implicit F: Sync[F]
+  ): F[List[File]] =
     walk(dir)
       .filter(isSourceFile)
       .through(util.evalFilter(isNoSymlink))
@@ -69,10 +71,10 @@ trait FileAlg[F[_]] {
       .compile
       .toList
 
-  def isNoSymlink(file: File)(implicit F: Functor[F]): F[Boolean] =
+  final def isNoSymlink(file: File)(implicit F: Functor[F]): F[Boolean] =
     isSymlink(file).map(!_)
 
-  def writeFileData(dir: File, fileData: FileData): F[Unit] =
+  final def writeFileData(dir: File, fileData: FileData): F[Unit] =
     writeFile(dir / fileData.name, fileData.content)
 }
 
@@ -85,7 +87,7 @@ object FileAlg {
       override def deleteForce(file: File): F[Unit] =
         F.delay(if (file.exists) FileUtils.forceDelete(file.toJava))
 
-      def ensureExists(dir: File): F[File] =
+      override def ensureExists(dir: File): F[File] =
         F.delay {
           if (!dir.exists) dir.createDirectories()
           dir
