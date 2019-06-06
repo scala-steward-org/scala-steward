@@ -52,7 +52,10 @@ sealed trait Update extends Product with Serializable {
     replaceAllInImpl(false, artifactId.sliding(5).take(5).toList)
 
   def replaceAllInGroupId: String => Option[String] =
-    replaceAllInImpl(false, util.string.extractWords(groupId))
+    replaceAllInImpl(
+      false,
+      groupId.split('.').toList.drop(1).flatMap(util.string.extractWords).filter(_.length > 3)
+    )
 
   def replaceAllInImpl(includeGroupId: Boolean, terms: List[String]): String => Option[String] = {
     val ignoreChar = ".?"
@@ -65,10 +68,14 @@ sealed trait Update extends Product with Serializable {
       }
       .filter(term => term.nonEmpty && term =!= ignoreChar)
 
-    val searchTerm = quotedSearchTerms.mkString_("(", "|", ")")
-    val groupIdPattern = if (includeGroupId) s"$groupId.*?" else ""
+    if (quotedSearchTerms.nonEmpty) {
+      val searchTerm = quotedSearchTerms.mkString_("(", "|", ")")
+      val groupIdPattern = if (includeGroupId) s"$groupId.*?" else ""
 
-    replaceVersion(s"(?i)(.*)($groupIdPattern$searchTerm.*?)${Regex.quote(currentVersion)}".r)
+      replaceVersion(s"(?i)(.*)($groupIdPattern$searchTerm.*?)${Regex.quote(currentVersion)}".r)
+    } else { _ =>
+      None
+    }
   }
 
   private def replaceVersion(regex: Regex): String => Option[String] =
