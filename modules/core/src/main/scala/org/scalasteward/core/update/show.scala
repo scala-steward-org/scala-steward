@@ -35,7 +35,7 @@ object show {
 
   private def maxArtifacts(artifacts: List[String]): Int = {
     val maxLength = 32
-    val accumulatedLengths = artifacts.map(_.length).scanLeft(0)(_ + _).tail
+    val accumulatedLengths = artifacts.map(_.length).scanLeft(0)(_ + _).drop(1)
     math.max(1, accumulatedLengths.takeWhile(_ <= maxLength).size)
   }
 

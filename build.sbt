@@ -97,6 +97,7 @@ lazy val commonSettings = Def.settings(
 
 lazy val compileSettings = Def.settings(
   doctestTestFramework := DoctestTestFramework.ScalaTest,
+  wartremoverErrors ++= Seq(Wart.TraversableOps),
   wartremoverErrors in (Compile, compile) ++= Seq(Wart.Equals)
 )
 
