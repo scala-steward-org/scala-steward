@@ -25,7 +25,7 @@ import scala.concurrent.duration.FiniteDuration
 trait DateTimeAlg[F[_]] {
   def currentTimeMillis: F[Long]
 
-  def timed[A](fa: F[A])(implicit F: Monad[F]): F[(A, FiniteDuration)] =
+  final def timed[A](fa: F[A])(implicit F: Monad[F]): F[(A, FiniteDuration)] =
     for {
       start <- currentTimeMillis
       a <- fa

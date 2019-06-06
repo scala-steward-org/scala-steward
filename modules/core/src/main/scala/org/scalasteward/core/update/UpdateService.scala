@@ -31,7 +31,7 @@ import org.scalasteward.core.update.data.UpdateState._
 import org.scalasteward.core.util
 import org.scalasteward.core.util.MonadThrowable
 
-class UpdateService[F[_]](
+final class UpdateService[F[_]](
     implicit
     dependencyRepository: DependencyRepository[F],
     filterAlg: FilterAlg[F],

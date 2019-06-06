@@ -49,7 +49,7 @@ object string {
   def longestCommonPrefix(s1: String, s2: String): String = {
     var i = 0
     val min = math.min(s1.length, s2.length)
-    while (i < min && s1(i) == s2(i)) i = i + 1
+    while (i < min && s1(i) === s2(i)) i = i + 1
     s1.substring(0, i)
   }
 

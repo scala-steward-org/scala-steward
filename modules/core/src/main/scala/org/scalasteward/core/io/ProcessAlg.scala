@@ -18,6 +18,7 @@ package org.scalasteward.core.io
 
 import better.files.File
 import cats.effect.Sync
+import cats.implicits._
 import java.io.IOException
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.Config
@@ -62,7 +63,7 @@ object ProcessAlg {
             override def buffer[T](f: => T): T = f
           }
           val exitCode = Process(command.toList, cwd.toJava, extraEnv: _*).!(log)
-          if (exitCode != 0) throw new IOException(lb.mkString("\n"))
+          if (exitCode =!= 0) throw new IOException(lb.mkString("\n"))
           lb.result()
         }
     }

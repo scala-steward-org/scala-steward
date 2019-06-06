@@ -20,7 +20,7 @@ import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import scala.concurrent.duration.FiniteDuration
 
-class LogAlg[F[_]](
+final class LogAlg[F[_]](
     implicit
     dateTimeAlg: DateTimeAlg[F],
     logger: Logger[F],

@@ -26,7 +26,7 @@ import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.util.MonadThrowable
 
-class JsonDependencyRepository[F[_]](
+final class JsonDependencyRepository[F[_]](
     implicit
     fileAlg: FileAlg[F],
     workspaceAlg: WorkspaceAlg[F],

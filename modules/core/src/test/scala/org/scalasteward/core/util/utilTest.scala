@@ -77,7 +77,7 @@ class utilTest extends FunSuite with Matchers with ScalaCheckPropertyChecks {
   test("separateBy: sublists decrease in length") {
     forAll { (l: List[Char], n: PosInt, f: Char => Int) =>
       val lengths = separateBy(l)(n)(f).map(_.length)
-      lengths.zip((lengths :+ 0).tail).forall { case (l1, l2) => l1 >= l2 } shouldBe true
+      lengths.zip((lengths :+ 0).drop(1)).forall { case (l1, l2) => l1 >= l2 } shouldBe true
     }
   }
 

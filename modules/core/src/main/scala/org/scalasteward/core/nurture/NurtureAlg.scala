@@ -30,7 +30,7 @@ import org.scalasteward.core.util.{BracketThrowable, LogAlg}
 import org.scalasteward.core.vcs.VCSRepoAlg
 import org.scalasteward.core.{git, util, vcs}
 
-class NurtureAlg[F[_]](
+final class NurtureAlg[F[_]](
     implicit
     config: Config,
     editAlg: EditAlg[F],

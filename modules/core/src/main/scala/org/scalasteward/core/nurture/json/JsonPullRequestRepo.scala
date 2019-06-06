@@ -54,7 +54,7 @@ class JsonPullRequestRepo[F[_]](
   override def findUpdates(repo: Repo, baseSha1: Sha1): F[List[Update]] =
     readJson.map { store =>
       store.store.get(repo).fold(List.empty[Update]) { data =>
-        data.values.filter(_.baseSha1 == baseSha1).map(_.update).toList
+        data.values.filter(_.baseSha1 === baseSha1).map(_.update).toList
       }
     }
 
