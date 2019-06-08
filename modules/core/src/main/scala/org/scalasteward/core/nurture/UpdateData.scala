@@ -23,6 +23,7 @@ import org.scalasteward.core.repoconfig.RepoConfig
 
 final case class UpdateData(
     repo: Repo,
+    fork: Repo,
     repoConfig: RepoConfig,
     update: Update,
     baseBranch: Branch,

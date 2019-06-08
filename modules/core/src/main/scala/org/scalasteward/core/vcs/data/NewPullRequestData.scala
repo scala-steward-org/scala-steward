@@ -73,11 +73,11 @@ object NewPullRequestData {
       change <- SemVer.getChange(curr, next)
     } yield s"semver-${change.render}"
 
-  def from(data: UpdateData, headLogin: String, authorLogin: String): NewPullRequestData =
+  def from(data: UpdateData, authorLogin: String): NewPullRequestData =
     NewPullRequestData(
       title = git.commitMsgFor(data.update),
       body = bodyFor(data.update, authorLogin),
-      head = vcs.headFor(headLogin, data.update),
+      head = vcs.headFor(data.fork.owner, data.update),
       base = data.baseBranch
     )
 }
