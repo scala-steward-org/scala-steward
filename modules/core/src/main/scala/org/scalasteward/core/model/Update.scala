@@ -20,6 +20,7 @@ import cats.implicits._
 import eu.timepit.refined.W
 import io.circe.{Decoder, Encoder}
 import monocle.Lens
+import org.scalasteward.core.edit.replace
 import org.scalasteward.core.model.Update.{Group, Single}
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
@@ -57,26 +58,13 @@ sealed trait Update extends Product with Serializable {
       groupId.split('.').toList.drop(1).flatMap(util.string.extractWords).filter(_.length > 3)
     )
 
-  def replaceAllInImpl(includeGroupId: Boolean, terms: List[String]): String => Option[String] = {
-    val ignoreChar = ".?"
-    val quotedSearchTerms = terms
-      .map { term =>
-        Regex
-          .quoteReplacement(Update.removeCommonSuffix(term))
-          .replace(".", ignoreChar)
-          .replace("-", ignoreChar)
+  def replaceAllInImpl(includeGroupId: Boolean, terms: List[String]): String => Option[String] =
+    replace
+      .searchTermsToAlternation(terms.map(Update.removeCommonSuffix))
+      .fold((_: String) => Option.empty[String]) { searchTerm =>
+        val groupIdPattern = if (includeGroupId) s"$groupId.*?" else ""
+        replaceVersion(s"(?i)(.*)($groupIdPattern$searchTerm.*?)${Regex.quote(currentVersion)}".r)
       }
-      .filter(term => term.nonEmpty && term =!= ignoreChar)
-
-    if (quotedSearchTerms.nonEmpty) {
-      val searchTerm = quotedSearchTerms.mkString_("(", "|", ")")
-      val groupIdPattern = if (includeGroupId) s"$groupId.*?" else ""
-
-      replaceVersion(s"(?i)(.*)($groupIdPattern$searchTerm.*?)${Regex.quote(currentVersion)}".r)
-    } else { _ =>
-      None
-    }
-  }
 
   private def replaceVersion(regex: Regex): String => Option[String] =
     target =>
