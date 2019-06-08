@@ -163,8 +163,8 @@
 - http4s/jawn-fs2
 - http4s/rho
 - ilya-murzinov/finch-todo-backend
-- intracer/scalawiki
 - INCATools/dosdp-tools
+- intracer/scalawiki
 - IronCoreLabs/argonaut-jwt-scala
 - IronCoreLabs/cats-scalatest
 - IronCoreLabs/recrypt
@@ -315,7 +315,6 @@
 - scalapb/ScalaPB
 - scalapb/scalapb-json4s
 - scalaz/scalaz-nio
-- scalaz/scalaz-zio
 - scala/hello-world.g8
 - scala/make-release-notes
 - scala/sbt-scala-module
@@ -361,10 +360,10 @@
 - slamdata/tectonic
 - snowplow-incubator/cla-bot
 - snowplow-incubator/snowplow-indicative-relay
+- softwaremill/elasticmq
 - softwaremill/sbt-softwaremill
 - softwaremill/sttp
 - softwaremill/tapir
-- softwaremill/elasticmq
 - sphereio/sphere-scala-libs
 - spotify/big-data-rosetta-code
 - spotify/featran
@@ -372,6 +371,7 @@
 - spotify/scio
 - spotify/scio.g8
 - spotify/scio-idea-plugin
+- srenault/sre-api
 - stryker-mutator/stryker4s
 - sullis/jms-testkit
 - swagger-akka-http/swagger-akka-http
@@ -440,6 +440,6 @@
 - WellFactored/resourcepool
 - X9Developers/block-explorer
 - yannick-cw/elastic-indexer4s
+- zio/zio
 - zio/zio-keeper
 - ziyasal/reducio
-- srenault/sre-api
