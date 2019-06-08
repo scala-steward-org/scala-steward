@@ -19,6 +19,7 @@ package org.scalasteward.core.nurture
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
+import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Branch, GitAlg}
 import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo}
 import org.scalasteward.core.github.GitHubApiAlg

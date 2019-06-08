@@ -4,9 +4,9 @@ import better.files.File
 import org.scalasteward.core.application.Cli.EnvVar
 import org.http4s.Uri
 import org.scalasteward.core.application.Config
+import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Author, GitAlg}
 import org.scalasteward.core.io.{MockFileAlg, MockProcessAlg, MockWorkspaceAlg}
-import org.scalasteward.core.nurture.EditAlg
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.update.FilterAlg

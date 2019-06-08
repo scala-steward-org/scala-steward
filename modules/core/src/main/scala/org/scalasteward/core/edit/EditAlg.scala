@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.nurture
+package org.scalasteward.core.edit
 
 import better.files.File
 import cats.Traverse

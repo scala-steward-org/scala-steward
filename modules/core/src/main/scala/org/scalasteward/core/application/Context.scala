@@ -23,6 +23,7 @@ import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
 import org.scalasteward.core.dependency.json.JsonDependencyRepository
 import org.scalasteward.core.dependency.{DependencyRepository, DependencyService}
+import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.github.GitHubApiAlg
 import org.scalasteward.core.vcs.data.AuthenticatedUser
@@ -30,14 +31,13 @@ import org.scalasteward.core.github.http4s.Http4sGitHubApiAlg
 import org.scalasteward.core.github.http4s.authentication.addCredentials
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.json.JsonPullRequestRepo
-import org.scalasteward.core.nurture.{EditAlg, NurtureAlg, PullRequestRepository}
+import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository}
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.update.json.JsonUpdateRepository
 import org.scalasteward.core.update.{FilterAlg, UpdateRepository, UpdateService}
 import org.scalasteward.core.util.{DateTimeAlg, HttpJsonClient, LogAlg}
 import org.scalasteward.core.vcs.VCSRepoAlg
-
 import scala.concurrent.ExecutionContext
 
 final case class Context[F[_]](
