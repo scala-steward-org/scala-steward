@@ -49,22 +49,23 @@ final class NurtureAlg[F[_]](
     logAlg.infoTotalTime(repo.show) {
       logAlg.attemptLog_(s"Nurture ${repo.show}") {
         for {
-          baseBranch <- cloneAndSync(repo)
-          _ <- updateDependencies(repo, baseBranch)
+          res <- cloneAndSync(repo)
+          (fork, baseBranch) = res
+          _ <- updateDependencies(repo, fork, baseBranch)
           _ <- gitAlg.removeClone(repo)
         } yield ()
       }
     }
 
-  def cloneAndSync(repo: Repo): F[Branch] =
+  def cloneAndSync(repo: Repo): F[(Repo, Branch)] =
     for {
       _ <- logger.info(s"Clone and synchronize ${repo.show}")
       repoOut <- gitHubApiAlg.createForkOrGetRepo(config, repo)
       _ <- vcsRepoAlg.clone(repo, repoOut)
       parent <- vcsRepoAlg.syncFork(repo, repoOut)
-    } yield parent.default_branch
+    } yield (repoOut.repo, parent.default_branch)
 
-  def updateDependencies(repo: Repo, baseBranch: Branch): F[Unit] =
+  def updateDependencies(repo: Repo, fork: Repo, baseBranch: Branch): F[Unit] =
     for {
       _ <- logger.info(s"Find updates for ${repo.show}")
       repoConfig <- repoConfigAlg.getRepoConfig(repo)
@@ -74,7 +75,8 @@ final class NurtureAlg[F[_]](
       _ <- logger.info(util.logger.showUpdates(grouped))
       baseSha1 <- gitAlg.latestSha1(repo, baseBranch)
       _ <- grouped.traverse_ { update =>
-        val data = UpdateData(repo, repoConfig, update, baseBranch, baseSha1, git.branchFor(update))
+        val data =
+          UpdateData(repo, fork, repoConfig, update, baseBranch, baseSha1, git.branchFor(update))
         processUpdate(data)
       }
     } yield ()
@@ -82,7 +84,7 @@ final class NurtureAlg[F[_]](
   def processUpdate(data: UpdateData): F[Unit] =
     for {
       _ <- logger.info(s"Process update ${data.update.show}")
-      head = vcs.headFor(vcs.getLogin(config, data.repo), data.update)
+      head = vcs.headFor(data.fork.show, data.update)
       pullRequests <- gitHubApiAlg.listPullRequests(data.repo, head, data.baseBranch)
       _ <- pullRequests.headOption match {
         case Some(pr) if pr.isClosed =>
@@ -121,8 +123,7 @@ final class NurtureAlg[F[_]](
   def createPullRequest(data: UpdateData): F[Unit] =
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
-      headLogin = vcs.getLogin(config, data.repo)
-      requestData = NewPullRequestData.from(data, headLogin, config.gitHubLogin)
+      requestData = NewPullRequestData.from(data, config.gitHubLogin)
       pr <- gitHubApiAlg.createPullRequest(data.repo, requestData)
       _ <- pullRequestRepo.createOrUpdate(
         data.repo,
