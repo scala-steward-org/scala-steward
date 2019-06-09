@@ -17,8 +17,8 @@
 package org.scalasteward.core.edit
 
 import org.scalasteward.core.model.Update
-import scala.util.matching.Regex
 import org.scalasteward.core.util
+import scala.util.matching.Regex
 
 final case class UpdateHeuristic(
     name: String,
@@ -27,12 +27,13 @@ final case class UpdateHeuristic(
     getPrefixRegex: Update => Option[String] = _ => None
 ) {
   def mkRegex(update: Update): Option[Regex] =
-    replace.searchTermsToAlternation(getSearchTerms(update).map(Update.removeCommonSuffix)).map {
-      searchTerms =>
+    UpdateHeuristic
+      .searchTermsToAlternation(getSearchTerms(update).map(Update.removeCommonSuffix))
+      .map { searchTerms =>
         val prefix = getPrefixRegex(update).getOrElse("")
         val currentVersion = Regex.quote(update.currentVersion)
         s"(?i)(.*)($prefix$searchTerms.*?)$currentVersion".r
-    }
+      }
 
   def replaceF(update: Update): String => Option[String] =
     mkRegex(update).fold((_: String) => Option.empty[String]) { regex => target =>
@@ -52,6 +53,20 @@ final case class UpdateHeuristic(
 }
 
 object UpdateHeuristic {
+  def searchTermsToAlternation(terms: List[String]): Option[String] = {
+    val ignoreChar = ".?"
+    val ignorableStrings = List(".", "-")
+    val terms1 = terms
+      .filterNot(term => term.isEmpty || ignorableStrings.contains(term))
+      .map { term =>
+        ignorableStrings.foldLeft(term) {
+          case (term1, ignorable) => term1.replace(ignorable, ignoreChar)
+        }
+      }
+
+    if (terms1.nonEmpty) Some(terms1.mkString("(", "|", ")")) else None
+  }
+
   val strict = UpdateHeuristic(
     name = "strict",
     order = 1,
