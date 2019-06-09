@@ -20,12 +20,11 @@ import cats.implicits._
 import eu.timepit.refined.W
 import io.circe.{Decoder, Encoder}
 import monocle.Lens
-import org.scalasteward.core.edit.replace
+import org.scalasteward.core.edit.UpdateHeuristic
 import org.scalasteward.core.model.Update.{Group, Single}
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.util.string.MinLengthString
-import scala.util.matching.Regex
 
 sealed trait Update extends Product with Serializable {
   def groupId: String
@@ -41,44 +40,19 @@ sealed trait Update extends Product with Serializable {
     newerVersions.head
 
   def replaceAllInStrict: String => Option[String] =
-    replaceAllInImpl(true, searchTerms.toList)
+    UpdateHeuristic.strict.replaceF(this)
 
   def replaceAllIn: String => Option[String] =
-    replaceAllInImpl(false, searchTerms.toList)
+    UpdateHeuristic.original.replaceF(this)
 
   def replaceAllInRelaxed: String => Option[String] =
-    replaceAllInImpl(false, util.string.extractWords(artifactId))
+    UpdateHeuristic.relaxed.replaceF(this)
 
   def replaceAllInSliding: String => Option[String] =
-    replaceAllInImpl(false, artifactId.sliding(5).take(5).toList)
+    UpdateHeuristic.sliding.replaceF(this)
 
   def replaceAllInGroupId: String => Option[String] =
-    replaceAllInImpl(
-      false,
-      groupId.split('.').toList.drop(1).flatMap(util.string.extractWords).filter(_.length > 3)
-    )
-
-  def replaceAllInImpl(includeGroupId: Boolean, terms: List[String]): String => Option[String] =
-    replace
-      .searchTermsToAlternation(terms.map(Update.removeCommonSuffix))
-      .fold((_: String) => Option.empty[String]) { searchTerm =>
-        val groupIdPattern = if (includeGroupId) s"$groupId.*?" else ""
-        replaceVersion(s"(?i)(.*)($groupIdPattern$searchTerm.*?)${Regex.quote(currentVersion)}".r)
-      }
-
-  private def replaceVersion(regex: Regex): String => Option[String] =
-    target =>
-      util.string.replaceSomeInOpt(
-        regex,
-        target,
-        m => {
-          val group1 = m.group(1)
-          if (group1.toLowerCase.contains("previous") || group1.trim.startsWith("//"))
-            None
-          else
-            Some(group1 + m.group(2) + nextVersion)
-        }
-      )
+    UpdateHeuristic.groupId.replaceF(this)
 
   def searchTerms: Nel[String] = {
     val terms = this match {
