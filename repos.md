@@ -113,13 +113,13 @@
 - coursier/interface
 - coursier/sbt-coursier
 - coursier/sbt-launcher
-- cquiroz/scala-java-locales
-- cquiroz/scala-java-time
+- cquiroz/scalajs-react-clipboard
 - cquiroz/scalajs-react-common
-- cquiroz/scalajs-react-virtualized
 - cquiroz/scalajs-react-draggable
 - cquiroz/scalajs-react-semantic-ui
-- cquiroz/scalajs-react-clipboard
+- cquiroz/scalajs-react-virtualized
+- cquiroz/scala-java-locales
+- cquiroz/scala-java-time
 - daandi/nice-url-encode-decode
 - daandi/nice-uuid
 - daniel-shuy/liquibase-slick-codegen-sbt-plugin
@@ -214,7 +214,7 @@
 - lemastero/scala_typeclassopedia
 - lightbend/genjavadoc
 - lightbend/lightbend-emoji
-- lightbend/migration-manager
+- lightbend/mima
 - lightbend/paradox
 - lightbend/sbt-paradox-apidoc
 - lightbend/scala-logging
