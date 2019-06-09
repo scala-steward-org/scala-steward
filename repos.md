@@ -113,6 +113,13 @@
 - coursier/interface
 - coursier/sbt-coursier
 - coursier/sbt-launcher
+- cquiroz/scala-java-locales
+- cquiroz/scala-java-time
+- cquiroz/scalajs-react-common
+- cquiroz/scalajs-react-virtualized
+- cquiroz/scalajs-react-draggable
+- cquiroz/scalajs-react-semantic-ui
+- cquiroz/scalajs-react-clipboard
 - daandi/nice-url-encode-decode
 - daandi/nice-uuid
 - daniel-shuy/liquibase-slick-codegen-sbt-plugin
