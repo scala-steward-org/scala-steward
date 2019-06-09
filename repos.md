@@ -237,7 +237,6 @@
 - monadless/monadless
 - monix/monix
 - monix/monix-kafka
-- mpilquist/simulacrum
 - mwz/sonar-scala
 - nafg/cloud-logging-logback-scala
 - nafg/css-dsl
@@ -431,6 +430,7 @@
 - typelevel/mouse
 - typelevel/paiges
 - typelevel/sbt-catalysts
+- typelevel/simulacrum
 - typelevel/spire
 - ua-parser/uap-scala
 - UdashFramework/udash-core
