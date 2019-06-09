@@ -16,8 +16,10 @@
 
 package org.scalasteward.core.edit
 
+import cats.implicits._
 import org.scalasteward.core.model.Update
 import org.scalasteward.core.util
+import org.scalasteward.core.util.Nel
 import scala.util.matching.Regex
 
 final case class UpdateHeuristic(
@@ -103,4 +105,7 @@ object UpdateHeuristic {
         .flatMap(util.string.extractWords)
         .filter(_.length > 3)
   )
+
+  val all: Nel[UpdateHeuristic] =
+    Nel.of(strict, original, relaxed, sliding, groupId).sortBy(_.order)
 }
