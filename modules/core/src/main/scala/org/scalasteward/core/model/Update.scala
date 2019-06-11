@@ -24,7 +24,6 @@ import org.scalasteward.core.model.Update.{Group, Single}
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.util.string.MinLengthString
-import scala.util.matching.Regex
 
 sealed trait Update extends Product with Serializable {
   def groupId: String
@@ -38,59 +37,6 @@ sealed trait Update extends Product with Serializable {
 
   def nextVersion: String =
     newerVersions.head
-
-  def replaceAllInStrict: String => Option[String] =
-    replaceAllInImpl(true, searchTerms.toList)
-
-  def replaceAllIn: String => Option[String] =
-    replaceAllInImpl(false, searchTerms.toList)
-
-  def replaceAllInRelaxed: String => Option[String] =
-    replaceAllInImpl(false, util.string.extractWords(artifactId))
-
-  def replaceAllInSliding: String => Option[String] =
-    replaceAllInImpl(false, artifactId.sliding(5).take(5).toList)
-
-  def replaceAllInGroupId: String => Option[String] =
-    replaceAllInImpl(
-      false,
-      groupId.split('.').toList.drop(1).flatMap(util.string.extractWords).filter(_.length > 3)
-    )
-
-  def replaceAllInImpl(includeGroupId: Boolean, terms: List[String]): String => Option[String] = {
-    val ignoreChar = ".?"
-    val quotedSearchTerms = terms
-      .map { term =>
-        Regex
-          .quoteReplacement(Update.removeCommonSuffix(term))
-          .replace(".", ignoreChar)
-          .replace("-", ignoreChar)
-      }
-      .filter(term => term.nonEmpty && term =!= ignoreChar)
-
-    if (quotedSearchTerms.nonEmpty) {
-      val searchTerm = quotedSearchTerms.mkString_("(", "|", ")")
-      val groupIdPattern = if (includeGroupId) s"$groupId.*?" else ""
-
-      replaceVersion(s"(?i)(.*)($groupIdPattern$searchTerm.*?)${Regex.quote(currentVersion)}".r)
-    } else { _ =>
-      None
-    }
-  }
-
-  private def replaceVersion(regex: Regex): String => Option[String] =
-    target =>
-      util.string.replaceSomeInOpt(
-        regex,
-        target,
-        m => {
-          val group1 = m.group(1)
-          if (group1.toLowerCase.contains("previous") || group1.trim.startsWith("//"))
-            None
-          else
-            Some(group1 + m.group(2) + nextVersion)
-        }
-      )
 
   def searchTerms: Nel[String] = {
     val terms = this match {

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.nurture
+package org.scalasteward.core.edit
 
 import better.files.File
 import cats.Traverse
@@ -42,16 +42,10 @@ final class EditAlg[F[_]](
     } yield ()
 
   def applyUpdateTo[G[_]: Traverse](files: G[File], update: Update): F[Unit] = {
-    def applyHeuristic(name: String, edit: String => Option[String]): F[Boolean] =
-      logger.info(s"Trying heuristic '$name'") >> fileAlg.editFiles(files, edit)
-
-    val heuristics = Nel.of(
-      applyHeuristic("strict", update.replaceAllInStrict),
-      applyHeuristic("original", update.replaceAllIn),
-      applyHeuristic("relaxed", update.replaceAllInRelaxed),
-      applyHeuristic("sliding", update.replaceAllInSliding),
-      applyHeuristic("groupId", update.replaceAllInGroupId)
-    )
-    bindUntilTrue(heuristics).void
+    val actions = UpdateHeuristic.all.map { heuristic =>
+      logger.info(s"Trying heuristic '${heuristic.name}'") >>
+        fileAlg.editFiles(files, heuristic.replaceF(update))
+    }
+    bindUntilTrue(actions).void
   }
 }
