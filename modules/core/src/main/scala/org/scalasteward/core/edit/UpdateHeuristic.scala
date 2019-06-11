@@ -45,10 +45,8 @@ final case class UpdateHeuristic(
         match0 => {
           val group1 = match0.group(1)
           val group2 = match0.group(2)
-          if (group1.toLowerCase.contains("previous") || group1.trim.startsWith("//"))
-            None
-          else
-            Some(group1 + group2 + update.nextVersion)
+          if (group1.toLowerCase.contains("previous") || group1.trim.startsWith("//")) None
+          else Some(group1 + group2 + update.nextVersion)
         }
       )
     }

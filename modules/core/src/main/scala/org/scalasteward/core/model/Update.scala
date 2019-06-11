@@ -20,7 +20,6 @@ import cats.implicits._
 import eu.timepit.refined.W
 import io.circe.{Decoder, Encoder}
 import monocle.Lens
-import org.scalasteward.core.edit.UpdateHeuristic
 import org.scalasteward.core.model.Update.{Group, Single}
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
@@ -38,21 +37,6 @@ sealed trait Update extends Product with Serializable {
 
   def nextVersion: String =
     newerVersions.head
-
-  def replaceAllInStrict: String => Option[String] =
-    UpdateHeuristic.strict.replaceF(this)
-
-  def replaceAllIn: String => Option[String] =
-    UpdateHeuristic.original.replaceF(this)
-
-  def replaceAllInRelaxed: String => Option[String] =
-    UpdateHeuristic.relaxed.replaceF(this)
-
-  def replaceAllInSliding: String => Option[String] =
-    UpdateHeuristic.sliding.replaceF(this)
-
-  def replaceAllInGroupId: String => Option[String] =
-    UpdateHeuristic.groupId.replaceF(this)
 
   def searchTerms: Nel[String] = {
     val terms = this match {
