@@ -13,11 +13,11 @@ and sbt plugins up-to-date.
 ## Quick start guide
 
 Open a pull request that adds the GitHub repository of your Scala project
-to [repos.md](https://github.com/fthomas/scala-steward/edit/master/repos.md).
+to [repos.md](https://github.com/fthomas/scala-steward/blob/master/repos.md)
+([edit](https://github.com/fthomas/scala-steward/edit/master/repos.md)).
 Once that PR is merged, [**@scala-steward**][@scala-steward] will check
-periodically for updates of libraries and plugins (see [examples](https://github.com/fthomas/scala-steward/blob/master/modules/core/src/test/scala/org/scalasteward/core/model/ExampleTest.scala)) 
-in your project and will open pull requests in your repository if it can figure out 
-where version numbers need to be updated.
+periodically for updates of libraries and plugins in your project and will
+open pull requests for updates it found.
 
 ## Show us the pull requests!
 
@@ -25,9 +25,9 @@ If you are curious how [**@scala-steward**'s][@scala-steward] pull requests
 look like, here are the ones it has created so far:
 
 * [Created pull requests](https://github.com/search?q=author%3Ascala-steward+is%3Apr)
-  ([compact view](        https://github.com/pulls?q=author%3Ascala-steward+is%3Apr))
+  ([compact](             https://github.com/pulls?q=author%3Ascala-steward+is%3Apr))
 * [Merged pull requests]( https://github.com/search?q=author%3Ascala-steward+is%3Amerged+sort%3Aupdated-desc)
-  ([compact view](        https://github.com/pulls?q=author%3Ascala-steward+is%3Amerged+sort%3Aupdated-desc))
+  ([compact](             https://github.com/pulls?q=author%3Ascala-steward+is%3Amerged+sort%3Aupdated-desc))
 
 ## Contributors
 
@@ -53,15 +53,17 @@ Thanks goes to these wonderful people:
 
 ## Community
 
-The following companies are using _scala-steward_ to manage their scala dependencies. Using _scala-steward_ in your company and don't see it listed here? Consider creating PR to add your name to the list and join the community.
+The following companies are using scala-steward to manage their dependencies.
+Using scala-steward in your company and don't see it listed here?
+Consider creating PR to add your name to the list and join the community.
 
 * [Chartboost](https://www.chartboost.com/)
 * [HolidayCheck](https://github.com/holidaycheck)
 * [iAdvize](https://www.iadvize.com/en/)
 * [SlamData](https://slamdata.com/)
 * [Snowplow Analytics](https://snowplowanalytics.com/)
-* [Zalando](https://en.zalando.de/)
 * [SoftwareMill](https://softwaremill.com)
+* [Zalando](https://en.zalando.de/)
 
 ## Participation
 
@@ -78,7 +80,7 @@ and other Scala [libraries](https://github.com/fthomas/scala-steward/blob/master
 [**@scala-steward**][@scala-steward]'s cute profile picture is by
 [@impurepics](https://twitter.com/impurepics/).
 
-## Running `scala-steward`
+## Running scala-steward
 
 ```bash
 sbt stage
