@@ -55,7 +55,7 @@ Thanks goes to these wonderful people:
 
 The following companies are using scala-steward to manage their dependencies.
 Using scala-steward in your company and don't see it listed here?
-Consider creating PR to add your name to the list and join the community.
+Consider creating PR to add your company to the list and join the community.
 
 * [Chartboost](https://www.chartboost.com/)
 * [HolidayCheck](https://github.com/holidaycheck)
