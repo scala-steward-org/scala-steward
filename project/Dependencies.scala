@@ -3,7 +3,7 @@ import sbt._
 object Versions {
   val circe = "0.11.1"
   val http4s = "0.20.1"
-  val refined = "0.9.7"
+  val refined = "0.9.8"
 }
 
 object Dependencies {
@@ -17,7 +17,7 @@ object Dependencies {
   val circeRefined = "io.circe" %% "circe-refined" % Versions.circe
   val circeExtras = "io.circe" %% "circe-generic-extras" % Versions.circe
   val commonsIo = "commons-io" % "commons-io" % "2.6"
-  val fs2Core = "co.fs2" %% "fs2-core" % "1.0.4"
+  val fs2Core = "co.fs2" %% "fs2-core" % "1.0.5"
   val http4sBlazeClient = "org.http4s" %% "http4s-blaze-client" % Versions.http4s
   val http4sCirce = "org.http4s" %% "http4s-circe" % Versions.http4s
   val http4sDsl = "org.http4s" %% "http4s-dsl" % Versions.http4s
@@ -29,5 +29,5 @@ object Dependencies {
   val refinedCats = "eu.timepit" %% "refined-cats" % Versions.refined
   val refinedScalacheck = "eu.timepit" %% "refined-scalacheck" % Versions.refined
   val scalacheck = "org.scalacheck" %% "scalacheck" % "1.14.0"
-  val scalaTest = "org.scalatest" %% "scalatest" % "3.0.7"
+  val scalaTest = "org.scalatest" %% "scalatest" % "3.0.8"
 }
