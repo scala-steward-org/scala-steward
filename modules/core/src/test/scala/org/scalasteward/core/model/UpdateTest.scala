@@ -224,7 +224,7 @@ class UpdateTest extends FunSuite with Matchers {
 
   test("replaceAllInSliding: artifactId with common suffix") {
     val original = """case _ => "1.0.2" """
-    Single("co.fs2", "fs2-core", "1.0.2", Nel.of("1.0.4"))
+    Single("co.fs2", "fs2-core", "1.0.2", Nel.of("1.0.5"))
       .replaceAllInSliding(original) shouldBe None
   }
 
