@@ -248,6 +248,12 @@ class UpdateHeuristicTest extends FunSuite with Matchers {
       .replaceVersionIn(original) shouldBe (None -> UpdateHeuristic.all.last.name)
   }
 
+  test("ignore 'scala' substring") {
+    val original = """ val scalaTestVersion = "3.0.7" """
+    Single("org.scalactic", "scalactic", "3.0.7", Nel.of("3.0.8"))
+      .replaceVersionIn(original) shouldBe (None -> UpdateHeuristic.all.last.name)
+  }
+
   test("NOK: change of unrelated ModuleID") {
     val original = """ "com.geirsson" % "sbt-ci-release" % "1.2.1" """
     val expected = """ "com.geirsson" % "sbt-ci-release" % "1.2.4" """
