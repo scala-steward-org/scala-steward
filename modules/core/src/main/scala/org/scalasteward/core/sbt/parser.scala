@@ -29,11 +29,17 @@ object parser {
         def msg(part: String) = s"failed to parse $part in '$str'"
 
         for {
-          groupId <- Either.fromOption(moduleId.headOption, msg("groupId"))
+          groupId <- Either.fromOption(moduleId.headOption.filter(_.nonEmpty), msg("groupId"))
           artifactId <- Either.fromOption(moduleId.lift(1), msg("artifactId"))
           configurations = moduleId.lift(2)
-          currentVersion <- Either.fromOption(versions.headOption, msg("currentVersion"))
-          newerVersionsList = versions.drop(1).toList.filterNot(_.startsWith("InvalidVersion"))
+          currentVersion <- Either.fromOption(
+            versions.headOption.filter(_.nonEmpty),
+            msg("currentVersion")
+          )
+          newerVersionsList = versions
+            .drop(1)
+            .filterNot(v => v.startsWith("InvalidVersion") || v === currentVersion)
+            .toList
           newerVersions <- Either.fromOption(Nel.fromList(newerVersionsList), msg("newerVersions"))
         } yield Update.Single(groupId, artifactId, currentVersion, newerVersions, configurations)
 
