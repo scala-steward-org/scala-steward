@@ -89,7 +89,7 @@ object UpdateHeuristic {
   val sliding = UpdateHeuristic(
     name = "sliding",
     order = 4,
-    getSearchTerms = update => update.artifactId.sliding(5).take(5).toList
+    getSearchTerms = update => update.artifactId.sliding(5).take(5).filterNot(_ === "scala").toList
   )
 
   val groupId = UpdateHeuristic(
