@@ -38,8 +38,8 @@ object parser {
           )
           newerVersionsList = versions
             .drop(1)
-            .toList
             .filterNot(v => v.startsWith("InvalidVersion") || v === currentVersion)
+            .toList
           newerVersions <- Either.fromOption(Nel.fromList(newerVersionsList), msg("newerVersions"))
         } yield Update.Single(groupId, artifactId, currentVersion, newerVersions, configurations)
 
