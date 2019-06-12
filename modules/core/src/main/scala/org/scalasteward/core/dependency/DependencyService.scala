@@ -42,8 +42,7 @@ final class DependencyService[F[_]](
   def checkDependencies(repo: Repo): F[Unit] =
     logAlg.attemptLog_(s"Check dependencies of ${repo.show}") {
       for {
-        res <- gitHubApiAlg.createForkOrGetRepoWithDefaultBranch(config, repo)
-        (repoOut, branchOut) = res
+        (repoOut, branchOut) <- gitHubApiAlg.createForkOrGetRepoWithDefaultBranch(config, repo)
         foundSha1 <- dependencyRepository.findSha1(repo)
         latestSha1 = branchOut.commit.sha
         refreshRequired = foundSha1.fold(true)(_ =!= latestSha1)

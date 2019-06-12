@@ -25,6 +25,7 @@ lazy val core = myCrossProject("core")
   .settings(dockerSettings)
   .settings(
     libraryDependencies ++= Seq(
+      compilerPlugin(Dependencies.betterMonadicFor),
       compilerPlugin(Dependencies.kindProjector),
       Dependencies.betterFiles,
       Dependencies.caseApp,

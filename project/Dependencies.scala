@@ -8,6 +8,7 @@ object Versions {
 
 object Dependencies {
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.8.0"
+  val betterMonadicFor = "com.olegpy" %% "better-monadic-for" % "0.3.0"
   val caseApp = "com.github.alexarchambault" %% "case-app" % "2.0.0-M9"
   val catsEffect = "org.typelevel" %% "cats-effect" % "1.3.1"
   val circeConfig = "io.circe" %% "circe-config" % "0.6.1"
