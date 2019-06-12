@@ -50,8 +50,7 @@ final class NurtureAlg[F[_]](
     logAlg.infoTotalTime(repo.show) {
       logAlg.attemptLog_(s"Nurture ${repo.show}") {
         for {
-          res <- cloneAndSync(repo)
-          (fork, baseBranch) = res
+          (fork, baseBranch) <- cloneAndSync(repo)
           _ <- updateDependencies(repo, fork, baseBranch)
           _ <- gitAlg.removeClone(repo)
         } yield ()
