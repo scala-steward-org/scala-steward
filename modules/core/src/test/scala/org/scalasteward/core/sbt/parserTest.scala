@@ -45,23 +45,23 @@ class parserTest extends FunSuite with Matchers {
 
   test("parseSingleUpdate: no groupId") {
     val str = ":sbt-scalajs : 0.6.24 -> 0.6.25"
-    parseSingleUpdate(str).isLeft
+    parseSingleUpdate(str) shouldBe Left(s"failed to parse groupId in '$str'")
   }
 
   test("parseSingleUpdate: no current version") {
     val str = "ch.qos.logback:logback-classic :  -> 0.8.1 -> 0.9.30 -> 1.0.13"
-    parseSingleUpdate(str).isLeft
+    parseSingleUpdate(str) shouldBe Left(s"failed to parse currentVersion in '$str'")
   }
 
   test("parseSingleUpdate: no new versions") {
     val str = "ch.qos.logback:logback-classic : 0.8 ->"
-    parseSingleUpdate(str).isLeft
+    parseSingleUpdate(str) shouldBe Left(s"failed to parse newerVersions in '$str'")
   }
 
   test("parseSingleUpdate: all new versions are invalid") {
     val str =
       "bigdataoss:gcs-connector : hadoop2-1.9.16 -> InvalidVersion(hadoop3-2.0.0-SNAPSHOT)"
-    parseSingleUpdate(str).isLeft
+    parseSingleUpdate(str) shouldBe Left(s"failed to parse newerVersions in '$str'")
   }
 
   test("parseSingleUpdate: one new version is invalid") {
@@ -72,7 +72,12 @@ class parserTest extends FunSuite with Matchers {
     )
   }
 
-  test("parseSingleUpdates 1") {
+  test("parseSingleUpdate: new version is current version") {
+    val str = "org.scalacheck:scalacheck:test : 1.14.0 -> 1.14.0"
+    parseSingleUpdate(str) shouldBe Left(s"failed to parse newerVersions in '$str'")
+  }
+
+  test("parseSingleUpdates: 3 updates") {
     val str =
       """[info] Found 3 dependency updates for datapackage
         |[info]   ai.x:diff:test                           : 1.2.0  -> 1.2.1
