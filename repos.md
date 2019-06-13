@@ -162,6 +162,7 @@
 - gnieh/diffson
 - henricook/SAMLer
 - hipjim/scala-retry
+- holidaycheck/easy-akka-http
 - hseeberger/akka-http-json
 - http4s/blaze
 - http4s/http4s
