@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 scala-steward contributors
+ * Copyright 2018-2019 scala-steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,10 @@ package org.scalasteward.core.application
 
 import better.files._
 import cats.effect.Sync
-import cats.implicits._
+import org.http4s.Uri
+import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.git.Author
-import org.scalasteward.core.github.data.AuthenticatedUser
+import org.scalasteward.core.vcs.data.AuthenticatedUser
 import org.scalasteward.core.util
 import scala.sys.process.Process
 
@@ -47,23 +48,26 @@ final case class Config(
     workspace: File,
     reposFile: File,
     gitAuthor: Author,
-    gitHubApiHost: String,
+    gitHubApiHost: Uri,
     gitHubLogin: String,
     gitAskPass: File,
     signCommits: Boolean,
     whitelistedDirectories: List[String],
     readOnlyDirectories: List[String],
-    execSandbox: Boolean
+    disableSandbox: Boolean,
+    doNotFork: Boolean,
+    ignoreOptsFiles: Boolean,
+    keepCredentials: Boolean,
+    envVars: List[EnvVar]
 ) {
-  def gitHubUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] =
-    util.uri.fromString[F](gitHubApiHost).flatMap { url =>
-      val urlWithUser = util.uri.withUserInfo(url, gitHubLogin).renderString
-      val prompt = s"Password for '$urlWithUser': "
-      F.delay {
-        val password = Process(List(gitAskPass.pathAsString, prompt)).!!.trim
-        AuthenticatedUser(gitHubLogin, password)
-      }
+  def gitHubUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] = {
+    val urlWithUser = util.uri.withUserInfo.set(gitHubLogin)(gitHubApiHost).renderString
+    val prompt = s"Password for '$urlWithUser': "
+    F.delay {
+      val password = Process(List(gitAskPass.pathAsString, prompt)).!!.trim
+      AuthenticatedUser(gitHubLogin, password)
     }
+  }
 }
 
 object Config {
@@ -79,7 +83,11 @@ object Config {
         signCommits = args.signCommits,
         whitelistedDirectories = args.whitelist,
         readOnlyDirectories = args.readOnly,
-        execSandbox = args.execSandbox
+        disableSandbox = args.disableSandbox,
+        doNotFork = args.doNotFork,
+        ignoreOptsFiles = args.ignoreOptsFiles,
+        keepCredentials = args.keepCredentials,
+        envVars = args.envVar
       )
     }
 }

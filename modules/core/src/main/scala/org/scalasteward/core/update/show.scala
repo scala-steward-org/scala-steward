@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 scala-steward contributors
+ * Copyright 2018-2019 scala-steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ object show {
 
   private def maxArtifacts(artifacts: List[String]): Int = {
     val maxLength = 32
-    val accumulatedLengths = artifacts.map(_.length).scanLeft(0)(_ + _).tail
+    val accumulatedLengths = artifacts.map(_.length).scanLeft(0)(_ + _).drop(1)
     math.max(1, accumulatedLengths.takeWhile(_ <= maxLength).size)
   }
 
@@ -45,7 +45,7 @@ object show {
   }
 
   private def showArtifact(groupId: String, artifactId: String, includeGroupId: Boolean): String = {
-    val groupName = groupId.split('.').lastOption.getOrElse(groupId)
+    val groupName = util.string.rightmostLabel(groupId)
     if (!includeGroupId || artifactId.contains(groupName)) artifactId
     else groupName + ":" + artifactId
   }

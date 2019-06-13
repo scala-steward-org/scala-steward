@@ -1,16 +1,15 @@
 package org.scalasteward.core.io
 
 import better.files.File
-import cats.data.State
-import org.scalasteward.core.MockState.MockEnv
-import org.scalasteward.core.application.ConfigTest
+import org.scalasteward.core.application.Config
+import org.scalasteward.core.mock.{applyPure, MockEff}
 import org.scalasteward.core.util.Nel
 
-class MockProcessAlg extends ProcessAlg.UsingFirejail[MockEnv](ConfigTest.dummyConfig) {
+class MockProcessAlg(implicit config: Config) extends ProcessAlg.UsingFirejail[MockEff](config) {
   override def exec(
       command: Nel[String],
       cwd: File,
       extraEnv: (String, String)*
-  ): MockEnv[List[String]] =
-    State(s => (s.exec(command.toList), List.empty))
+  ): MockEff[List[String]] =
+    applyPure(s => (s.exec(cwd.toString :: command.toList, extraEnv: _*), List.empty[String]))
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 scala-steward contributors
+ * Copyright 2018-2019 scala-steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ package object sbt {
     FileData("sbt-scalafix.sbt", """addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.1")""")
 
   val sbtUpdatesPlugin: FileData =
-    FileData("sbt-updates.sbt", """addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.4")""")
+    FileData("sbt-updates.sbt", """addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.4.0")""")
 
   val stewardPlugin: FileData = {
     val name = "StewardPlugin.scala"

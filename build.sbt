@@ -17,7 +17,6 @@ val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
 lazy val root = project
   .in(file("."))
   .aggregate(core.jvm)
-  .aggregate(readme)
   .settings(commonSettings)
   .settings(noPublishSettings)
 
@@ -26,20 +25,27 @@ lazy val core = myCrossProject("core")
   .settings(dockerSettings)
   .settings(
     libraryDependencies ++= Seq(
+      compilerPlugin(Dependencies.betterMonadicFor),
       compilerPlugin(Dependencies.kindProjector),
       Dependencies.betterFiles,
       Dependencies.caseApp,
       Dependencies.catsEffect,
+      Dependencies.circeConfig,
       Dependencies.circeGeneric,
       Dependencies.circeParser,
       Dependencies.circeRefined,
+      Dependencies.circeExtras,
       Dependencies.commonsIo,
       Dependencies.fs2Core,
       Dependencies.http4sBlazeClient,
       Dependencies.http4sCirce,
       Dependencies.log4catsSlf4j,
-      Dependencies.logbackClassic,
+      Dependencies.monocleCore,
       Dependencies.refined,
+      Dependencies.refinedCats,
+      Dependencies.logbackClassic % Runtime,
+      Dependencies.circeLiteral % Test,
+      Dependencies.http4sDsl % Test,
       Dependencies.refinedScalacheck % Test,
       Dependencies.scalacheck % Test,
       Dependencies.scalaTest % Test
@@ -49,7 +55,7 @@ lazy val core = myCrossProject("core")
     buildInfoPackage := moduleRootPkg.value,
     initialCommands += s"""
       import ${moduleRootPkg.value}._
-      import ${moduleRootPkg.value}.github.data._
+      import ${moduleRootPkg.value}.vcs.data._
       import better.files.File
       import cats.effect.ContextShift
       import cats.effect.IO
@@ -58,19 +64,8 @@ lazy val core = myCrossProject("core")
 
       implicit val ctxShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
     """,
-    fork in run := true
-  )
-
-lazy val readme = project
-  .in(file("modules/readme"))
-  .enablePlugins(TutPlugin)
-  .settings(commonSettings)
-  .settings(noPublishSettings)
-  .settings(
-    fork in Tut := true,
-    scalacOptions -= "-Ywarn-unused:imports",
-    tutSourceDirectory := baseDirectory.value,
-    tutTargetDirectory := (LocalRootProject / baseDirectory).value
+    fork in run := true,
+    fork in Test := true
   )
 
 /// settings
@@ -102,7 +97,9 @@ lazy val commonSettings = Def.settings(
 )
 
 lazy val compileSettings = Def.settings(
-  doctestTestFramework := DoctestTestFramework.ScalaTest
+  doctestTestFramework := DoctestTestFramework.ScalaTest,
+  wartremoverErrors ++= Seq(Wart.TraversableOps),
+  wartremoverErrors in (Compile, compile) ++= Seq(Wart.Equals)
 )
 
 lazy val metadataSettings = Def.settings(
@@ -111,7 +108,7 @@ lazy val metadataSettings = Def.settings(
   homepage := Some(url(s"https://github.com/$gitHubOwner/$projectName")),
   startYear := Some(2018),
   licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
-  headerLicense := Some(HeaderLicense.ALv2("2018", s"$projectName contributors")),
+  headerLicense := Some(HeaderLicense.ALv2("2018-2019", s"$projectName contributors")),
   developers := List(
     Developer(
       id = "fthomas",
@@ -125,6 +122,7 @@ lazy val metadataSettings = Def.settings(
 lazy val dockerSettings = Def.settings(
   dockerCommands := Seq(
     Cmd("FROM", "openjdk:8"),
+    Cmd("ARG", "DEBIAN_FRONTEND=noninteractive"),
     ExecCmd("RUN", "apt-get", "update"),
     ExecCmd("RUN", "apt-get", "install", "-y", "apt-transport-https", "firejail"),
     ExecCmd(
@@ -175,14 +173,15 @@ addCommandsAlias(
     "scalafmtCheck",
     "scalafmtSbtCheck",
     "test:scalafmtCheck",
+    "unusedCompileDependenciesTest",
     "coverage",
     "test",
     "coverageReport",
     "doc",
-    "readme/tut",
     "package",
     "packageSrc",
-    "core/assembly"
+    "core/assembly",
+    "docker:publishLocal"
   )
 )
 
@@ -199,21 +198,19 @@ addCommandsAlias(
 addCommandAlias(
   "runSteward", {
     val home = System.getenv("HOME")
+    val projectDir = s"$home/code/scala-steward/core"
     Seq(
       Seq("core/run"),
-      Seq("--workspace", s"$home/code/$projectName/workspace"),
-      Seq("--repos-file", s"$home/code/$projectName/repos.md"),
+      Seq("--workspace", s"$projectDir/workspace"),
+      Seq("--repos-file", s"$projectDir/repos.md"),
       Seq("--git-author-name", "Scala steward"),
       Seq("--git-author-email", s"me@$projectName.org"),
-      Seq("--github-api-host", "https://api.github.com"),
       Seq("--github-login", projectName),
       Seq("--git-ask-pass", s"$home/.github/askpass/$projectName.sh"),
-      Seq("--sign-commits"),
       Seq("--whitelist", s"$home/.cache/coursier"),
       Seq("--whitelist", s"$home/.coursier"),
       Seq("--whitelist", s"$home/.ivy2"),
-      Seq("--whitelist", s"$home/.sbt"),
-      Seq("--whitelist", s"$home/.scio-ideaPluginIC")
+      Seq("--whitelist", s"$home/.sbt")
     ).flatten.mkString(" ")
   }
 )

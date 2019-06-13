@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 scala-steward contributors
+ * Copyright 2018-2019 scala-steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,26 @@
 
 package org.scalasteward.core.github
 
+import org.http4s.Uri
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.github.data.Repo
+import org.scalasteward.core.vcs.data.Repo
 
-class Url(apiHost: String) {
-  def branches(repo: Repo, branch: Branch): String =
-    s"${repos(repo)}/branches/${branch.name}"
+class Url(apiHost: Uri) {
+  def branches(repo: Repo, branch: Branch): Uri =
+    repos(repo) / "branches" / branch.name
 
-  def forks(repo: Repo): String =
-    s"${repos(repo)}/forks"
+  def forks(repo: Repo): Uri =
+    repos(repo) / "forks"
 
-  def pulls(repo: Repo): String =
-    s"${repos(repo)}/pulls"
+  def listPullRequests(repo: Repo, head: String, base: Branch): Uri =
+    pulls(repo)
+      .withQueryParam("head", head)
+      .withQueryParam("base", base.name)
+      .withQueryParam("state", "all")
 
-  def repos(repo: Repo): String =
-    s"$apiHost/repos/${repo.owner}/${repo.repo}"
+  def pulls(repo: Repo): Uri =
+    repos(repo) / "pulls"
+
+  def repos(repo: Repo): Uri =
+    apiHost / "repos" / repo.owner / repo.repo
 }

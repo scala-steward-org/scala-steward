@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 scala-steward contributors
+ * Copyright 2018-2019 scala-steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,13 @@
 package org.scalasteward.core.dependency
 
 import io.circe.parser.decode
+import org.scalasteward.core.sbt
 
 object parser {
   def parseDependencies(s: String): List[Dependency] =
-    s.replace("[info]", "")
-      .lines
+    sbt.parser
+      .removeSbtNoise(s)
+      .linesIterator
       .map(decode[List[Dependency]])
       .collect { case Right(list) => list }
       .flatten

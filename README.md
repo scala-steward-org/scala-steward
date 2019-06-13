@@ -1,4 +1,4 @@
-<img src="https://github.com/fthomas/scala-steward/raw/master/modules/readme/images/scala-steward-logo-hex-1.png" width="156px" height="180px" align="right">
+<img src="https://github.com/fthomas/scala-steward/raw/master/data/images/scala-steward-logo-hex-1.png" width="156px" height="180px" align="right">
 
 # scala-steward
 [![Build Status](https://travis-ci.org/fthomas/scala-steward.svg?branch=master)](https://travis-ci.org/fthomas/scala-steward)
@@ -13,11 +13,11 @@ and sbt plugins up-to-date.
 ## Quick start guide
 
 Open a pull request that adds the GitHub repository of your Scala project
-to [repos.md](https://github.com/fthomas/scala-steward/edit/master/repos.md).
+to [repos.md](https://github.com/fthomas/scala-steward/blob/master/repos.md)
+([edit](https://github.com/fthomas/scala-steward/edit/master/repos.md)).
 Once that PR is merged, [**@scala-steward**][@scala-steward] will check
-periodically for updates of libraries and plugins in your project and will open
-pull requests in your repository if it can figure out where version numbers need
-to be updated.
+periodically for updates of libraries and plugins in your project and will
+open pull requests for updates it found.
 
 ## Show us the pull requests!
 
@@ -25,21 +25,45 @@ If you are curious how [**@scala-steward**'s][@scala-steward] pull requests
 look like, here are the ones it has created so far:
 
 * [Created pull requests](https://github.com/search?q=author%3Ascala-steward+is%3Apr)
-  ([compact view](        https://github.com/pulls?q=author%3Ascala-steward+is%3Apr))
+  ([compact](             https://github.com/pulls?q=author%3Ascala-steward+is%3Apr))
 * [Merged pull requests]( https://github.com/search?q=author%3Ascala-steward+is%3Amerged+sort%3Aupdated-desc)
-  ([compact view](        https://github.com/pulls?q=author%3Ascala-steward+is%3Amerged+sort%3Aupdated-desc))
+  ([compact](             https://github.com/pulls?q=author%3Ascala-steward+is%3Amerged+sort%3Aupdated-desc))
 
 ## Contributors
 
-The following people have helped making scala-steward great:
+Thanks goes to these wonderful people:
 
 * [Arulselvan Madhavan](https://github.com/ArulselvanMadhavan)
+* [Bayram Kiran](https://github.com/kiranbayram)
+* [Dale Wijnand](https://github.com/dwijnand)
+* [David Francoeur](https://github.com/daddykotex)
 * [Filipe Regadas](https://github.com/regadas)
 * [Frank S. Thomas](https://github.com/fthomas)
+* [JCollier](https://github.com/Slakah)
+* [Jeff Martin](https://github.com/custommonkey)
 * [kenji yoshida](https://github.com/xuwei-k)
-* [Piotr Gabara](https://github.com/bhop)
+* [Mark Canlas](https://github.com/mcanlas)
+* [Michael Wizner](https://github.com/mwz)
+* [Philippus Baalman](https://github.com/Philippus)
+* [Piotr Gabara](https://github.com/pgabara)
+* [Renato Cavalcanti](https://github.com/renatocaval)
+* [sullis](https://github.com/sullis)
+* [Thomas Kaliakos](https://github.com/thomaska)
 * [Zelenya](https://github.com/Zelenya)
-* Your name here :-)
+
+## Community
+
+The following companies are using scala-steward to manage their dependencies.
+Using scala-steward in your company and don't see it listed here?
+Consider creating PR to add your company to the list and join the community.
+
+* [Chartboost](https://www.chartboost.com/)
+* [HolidayCheck](https://github.com/holidaycheck)
+* [iAdvize](https://www.iadvize.com/en/)
+* [SlamData](https://slamdata.com/)
+* [Snowplow Analytics](https://snowplowanalytics.com/)
+* [SoftwareMill](https://softwaremill.com)
+* [Zalando](https://en.zalando.de/)
 
 ## Participation
 
@@ -56,7 +80,7 @@ and other Scala [libraries](https://github.com/fthomas/scala-steward/blob/master
 [**@scala-steward**][@scala-steward]'s cute profile picture is by
 [@impurepics](https://twitter.com/impurepics/).
 
-## Running `scala-steward`
+## Running scala-steward
 
 ```bash
 sbt stage
@@ -69,7 +93,8 @@ sbt stage
   --github-api-host "https://api.github.com" \
   --github-login ${LOGIN} \
   --git-ask-pass "$STEWARD_DIR/.github/askpass/$LOGIN.sh" \
-  --sign-commits
+  --sign-commits \
+  --env-var FOO=BAR
 ```
 
 Or,
@@ -77,16 +102,26 @@ Or,
 ```bash
 sbt docker:publishLocal
 
-docker run -v $STEWARD_DIR:/opt/docker -it scala-steward:0.1.0-SNAPSHOT \
-  --workspace  "/opt/docker/workspace" \
-  --repos-file "/opt/docker/repos.md" \
+docker run -v $STEWARD_DIR:/opt/scala-steward -it scala-steward:0.1.0-SNAPSHOT \
+  --workspace  "/opt/scala-steward/workspace" \
+  --repos-file "/opt/scala-steward/repos.md" \
   --git-author-name "Scala steward" \
   --git-author-email ${EMAIL} \
   --github-api-host "https://api.github.com" \
   --github-login ${LOGIN} \
-  --git-ask-pass "/opt/docker/.github/askpass/$LOGIN.sh" \
-  --sign-commits
+  --git-ask-pass "/opt/scala-steward/.github/askpass/$LOGIN.sh" \
+  --sign-commits \
+  --env-var FOO=BAR
 ```
+
+If you run scala-steward for your own private projects, you can pass additional environment variables from the command line using the `--env-var` flag as shown in the examples above. You can use this to pass any credentials required by your projects to resolve any private dependencies, e.g.: 
+
+```bash
+--env-var BINTRAY_USER=username \
+--env-var BINTRAY_PASS=password
+```
+
+These variables will be accessible (in sbt) to all of the projects that scala-steward checks dependencies for.
 
 ## License
 

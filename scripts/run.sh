@@ -1,9 +1,6 @@
-#!/bin/sh
+#!/bin/bash -l
 
 set -ex
-
-export JAVA_HOME="/opt/jre/current"
-export PATH="$JAVA_HOME/bin:$PATH"
 
 SCRIPT=$(readlink -f "$0")
 STEWARD_DIR=$(dirname "$SCRIPT")/..
@@ -16,16 +13,17 @@ LOGIN="scala-steward"
 java -jar ${JAR} \
   --workspace  "$STEWARD_DIR/workspace" \
   --repos-file "$STEWARD_DIR/repos.md" \
-  --git-author-name "Scala steward" \
+  --git-author-name "Scala Steward" \
   --git-author-email "me@$LOGIN.org" \
-  --github-api-host "https://api.github.com" \
   --github-login ${LOGIN} \
   --git-ask-pass "$HOME/.github/askpass/$LOGIN.sh" \
+  --ignore-opts-files \
   --sign-commits \
   --whitelist $HOME/.cache/coursier \
   --whitelist $HOME/.coursier \
   --whitelist $HOME/.ivy2 \
   --whitelist $HOME/.sbt \
   --whitelist $HOME/.scio-ideaPluginIC \
+  --whitelist $HOME/.tagless-redux-ijextPluginIC \
   --whitelist $JAVA_HOME \
   --read-only $JAVA_HOME

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 scala-steward contributors
+ * Copyright 2018-2019 scala-steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import cats.FlatMap
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.github.data.Repo
+import org.scalasteward.core.vcs.data.Repo
 
 trait WorkspaceAlg[F[_]] {
   def cleanWorkspace: F[Unit]

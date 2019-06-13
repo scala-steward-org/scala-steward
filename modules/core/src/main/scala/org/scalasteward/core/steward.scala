@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 scala-steward contributors
+ * Copyright 2018-2019 scala-steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,21 +21,19 @@ import cats.FlatMap
 import cats.effect.{ExitCode, IO, IOApp, Sync}
 import cats.implicits._
 import org.scalasteward.core.application.Context
-import org.scalasteward.core.github.data.Repo
-import org.scalasteward.core.util.logger.LoggerOps
+import org.scalasteward.core.vcs.data.Repo
 
 object steward extends IOApp {
   override def run(args: List[String]): IO[ExitCode] =
     Context.create[IO](args).use { ctx =>
-      ctx.logger.infoTotalTime("run") {
+      ctx.logAlg.infoTotalTime("run") {
         for {
           repos <- readRepos[IO](ctx.config.reposFile)
           _ <- prepareEnv(ctx)
           /*
-          _ <- repos.traverse(ctx.dependencyService.forkAndCheckDependencies)
+          _ <- repos.traverse(ctx.dependencyService.checkDependencies)
           allUpdates <- ctx.updateService.checkForUpdates(repos)
           reposToNurture <- ctx.updateService.filterByApplicableUpdates(repos, allUpdates)
-          _ <- IO(reposToNurture.map(_.show).foreach(println))
           _ <- IO(println(reposToNurture.size))
           _ <- reposToNurture.filter(repos.contains).traverse_(ctx.nurtureAlg.nurture)*/
           _ <- repos.traverse_(ctx.nurtureAlg.nurture)

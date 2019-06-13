@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 scala-steward contributors
+ * Copyright 2018-2019 scala-steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,88 +17,121 @@
 package org.scalasteward.core.update
 
 import cats.implicits._
-import cats.{Applicative, TraverseFilter}
+import cats.{Monad, TraverseFilter}
 import io.chrisdavenport.log4cats.Logger
-import org.scalasteward.core.github.data.Repo
 import org.scalasteward.core.model.Update
+import org.scalasteward.core.repoconfig.RepoConfig
+import org.scalasteward.core.update.FilterAlg._
+import org.scalasteward.core.util
 
-trait FilterAlg[F[_]] {
-  def globalKeep(update: Update.Single): Boolean
+final class FilterAlg[F[_]](
+    implicit
+    logger: Logger[F],
+    F: Monad[F]
+) {
+  def globalFilterMany[G[_]: TraverseFilter](updates: G[Update.Single]): F[G[Update.Single]] =
+    updates.traverseFilter(update => logIfRejected(globalFilter(update)))
 
-  def globalFilter(update: Update.Single): F[Option[Update.Single]]
-
-  def localKeep(repo: Repo, update: Update.Single): Boolean
-
-  def localFilter(repo: Repo, update: Update.Single): F[Option[Update.Single]]
-
-  final def globalFilterMany[G[_]: TraverseFilter](updates: G[Update.Single])(
-      implicit F: Applicative[F]
+  def localFilterMany[G[_]: TraverseFilter](
+      config: RepoConfig,
+      updates: G[Update.Single]
   ): F[G[Update.Single]] =
-    updates.traverseFilter(globalFilter)
+    updates.traverseFilter(update => logIfRejected(localFilter(update, config)))
 
-  final def localFilterMany[G[_]: TraverseFilter](repo: Repo, updates: G[Update.Single])(
-      implicit F: Applicative[F]
-  ): F[G[Update.Single]] =
-    updates.traverseFilter(update => localFilter(repo, update))
+  private def logIfRejected(result: FilterResult): F[Option[Update.Single]] =
+    result match {
+      case Right(update) => F.pure(update.some)
+      case Left(reason) =>
+        logger.info(s"Ignore ${reason.update.show} (reason: ${reason.show})") *> F.pure(None)
+    }
 }
 
 object FilterAlg {
-  def create[F[_]](implicit logger: Logger[F], F: Applicative[F]): FilterAlg[F] =
-    new FilterAlg[F] {
-      override def globalKeep(update: Update.Single): Boolean = {
-        (update.groupId, update.artifactId, update.currentVersion, update.nextVersion) match {
-          case ("org.scala-lang", "scala-compiler", _, _) => false
-          case ("org.scala-lang", "scala-library", _, _)  => false
-          case ("org.scala-lang", "scala-reflect", _, _)  => false
+  type FilterResult = Either[RejectionReason, Update.Single]
 
-          case ("org.typelevel", "scala-library", _, _) => false
+  sealed trait RejectionReason {
+    def update: Update.Single
+    def show: String = this match {
+      case IgnoredGlobally(_)             => "ignored globally"
+      case IgnoredByConfig(_)             => "ignored by config"
+      case NotAllowedByConfig(_)          => "not allowed by config"
+      case BadVersions(_)                 => "bad versions"
+      case NonSnapshotToSnapshotUpdate(_) => "non-snapshot to snapshot"
+    }
+  }
 
-          // https://github.com/vlovgr/ciris/pull/182#issuecomment-420599759
-          case ("com.jsuereth", "sbt-pgp", "1.1.2-1", "1.1.2") => false
+  final case class IgnoredGlobally(update: Update.Single) extends RejectionReason
+  final case class IgnoredByConfig(update: Update.Single) extends RejectionReason
+  final case class NotAllowedByConfig(update: Update.Single) extends RejectionReason
+  final case class BadVersions(update: Update.Single) extends RejectionReason
+  final case class NonSnapshotToSnapshotUpdate(update: Update.Single) extends RejectionReason
 
+  def globalFilter(update: Update.Single): FilterResult =
+    removeBadVersions(update)
+      .flatMap(isIgnoredGlobally)
+      .flatMap(ignoreNonSnapshotToSnapshotUpdate)
+
+  def localFilter(update: Update.Single, repoConfig: RepoConfig): FilterResult =
+    globalFilter(update).flatMap(repoConfig.updates.keep)
+
+  def isIgnoredGlobally(update: Update.Single): FilterResult = {
+    val keep = ((update.groupId, update.artifactId) match {
+      case ("org.scala-lang", "scala-compiler") => false
+      case ("org.scala-lang", "scala-library")  => false
+      case ("org.scala-lang", "scala-reflect")  => false
+      case ("org.typelevel", "scala-library")   => false
+      case _                                    => true
+    }) && (update.configurations.fold("")(_.toLowerCase) match {
+      case "phantom-js-jetty"    => false
+      case "scalafmt"            => false
+      case "scripted-sbt"        => false
+      case "scripted-sbt-launch" => false
+      case "tut"                 => false
+      case _                     => true
+    })
+    if (keep) Right(update) else Left(IgnoredGlobally(update))
+  }
+
+  def ignoreNonSnapshotToSnapshotUpdate(update: Update.Single): FilterResult = {
+    val snap = "-SNAP"
+    if (update.newerVersions.head.contains(snap) && !update.currentVersion.contains(snap))
+      Left(NonSnapshotToSnapshotUpdate(update))
+    else
+      Right(update)
+  }
+
+  def removeBadVersions(update: Update.Single): FilterResult =
+    util
+      .removeAll(update.newerVersions, badVersions(update))
+      .map(versions => update.copy(newerVersions = versions))
+      .fold[FilterResult](Left(BadVersions(update)))(Right.apply)
+
+  private def badVersions(update: Update.Single): List[String] =
+    (update.groupId, update.artifactId, update.currentVersion, update.nextVersion) match {
+      // https://github.com/vlovgr/ciris/pull/182#issuecomment-420599759
+      case ("com.jsuereth", "sbt-pgp", "1.1.2-1", "1.1.2") => List("1.1.2")
+
+      case ("io.monix", _, _, _) =>
+        List(
           // https://github.com/fthomas/scala-steward/issues/105
-          case ("io.monix", _, _, "3.0.0-fbcb270") => false
-
+          "3.0.0-fbcb270"
+        )
+      case ("net.sourceforge.plantuml", "plantuml", _, _) =>
+        List(
           // https://github.com/esamson/remder/pull/5
-          case ("net.sourceforge.plantuml", "plantuml", _, "8059") => false
-
+          "8059"
+        )
+      case ("org.http4s", _, _, _) =>
+        List(
           // https://github.com/http4s/http4s/pull/2153
-          case ("org.http4s", _, _, "0.19.0") => false
-
+          "0.19.0"
+        )
+      case ("org.scalatest", "scalatest", _, _) =>
+        List(
           // https://github.com/lightbend/migration-manager/pull/260
-          case ("org.scalatest", "scalatest", _, "3.2.0-SNAP10") => false
+          "3.2.0-SNAP10"
+        )
 
-          case _ => true
-        }
-      } && {
-        update.configurations.fold("")(_.toLowerCase) match {
-          case "phantom-js-jetty"    => false
-          case "scalafmt"            => false
-          case "scripted-sbt"        => false
-          case "scripted-sbt-launch" => false
-          case "tut"                 => false
-          case _                     => true
-        }
-      }
-
-      override def localKeep(repo: Repo, update: Update.Single): Boolean =
-        (repo.show, update.groupId, update.artifactId) match {
-          case ("scala/scala-dist", "com.amazonaws", "aws-java-sdk-s3") => false
-
-          // https://github.com/scala/scala-dist/pull/200#issuecomment-440720981
-          case ("scala/scala-dist", "com.typesafe.sbt", "sbt-native-packager") => false
-
-          case _ => true
-        }
-
-      override def globalFilter(update: Update.Single): F[Option[Update.Single]] =
-        filterImpl(globalKeep(update), update)
-
-      override def localFilter(repo: Repo, update: Update.Single): F[Option[Update.Single]] =
-        filterImpl(globalKeep(update) && localKeep(repo, update), update)
-
-      def filterImpl(keep: Boolean, update: Update.Single): F[Option[Update.Single]] =
-        if (keep) F.pure(Some(update))
-        else logger.info(s"Ignore ${update.show}") *> F.pure(None)
+      case _ => List.empty
     }
 }

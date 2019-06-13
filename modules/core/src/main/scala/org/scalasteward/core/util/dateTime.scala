@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 scala-steward contributors
+ * Copyright 2018-2019 scala-steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,11 @@
 
 package org.scalasteward.core.util
 
-import cats.effect.Sync
-import cats.implicits._
 import java.util.concurrent.TimeUnit
 import scala.annotation.tailrec
 import scala.concurrent.duration._
 
 object dateTime {
-  def currentTimeMillis[F[_]](implicit F: Sync[F]): F[Long] =
-    F.delay(System.currentTimeMillis())
-
-  def timed[F[_]: Sync, A](fa: F[A]): F[(A, FiniteDuration)] =
-    for {
-      start <- currentTimeMillis[F]
-      a <- fa
-      end <- currentTimeMillis[F]
-      duration = FiniteDuration(end - start, TimeUnit.MILLISECONDS)
-    } yield (a, duration)
-
   def showDuration(d: FiniteDuration): String = {
     def symbol(unit: TimeUnit): String =
       unit match {

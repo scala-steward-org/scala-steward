@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 scala-steward contributors
+ * Copyright 2018-2019 scala-steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,20 @@ package org.scalasteward.core.util
 
 import cats.implicits._
 import io.circe.Decoder
+import monocle.Optional
 import org.http4s.Uri
+import org.http4s.Uri.{Authority, UserInfo}
 
 object uri {
   implicit val uriDecoder: Decoder[Uri] =
-    Decoder[String].emap(s => fromString[Either[Throwable, ?]](s).leftMap(_.getMessage))
+    Decoder[String].emap(s => Uri.fromString(s).leftMap(_.getMessage))
 
-  def fromString[F[_]](s: String)(implicit F: ApplicativeThrowable[F]): F[Uri] =
-    F.fromEither(Uri.fromString(s))
+  val withAuthority: Optional[Uri, Authority] =
+    Optional[Uri, Authority](_.authority)(authority => _.copy(authority = Some(authority)))
 
-  def withUserInfo(uri: Uri, userInfo: String): Uri =
-    uri.authority.fold(uri) { auth =>
-      uri.copy(authority = Some(auth.copy(userInfo = Some(userInfo))))
-    }
+  val authorityWithUserInfo: Optional[Authority, UserInfo] =
+    Optional[Authority, UserInfo](_.userInfo)(userInfo => _.copy(userInfo = Some(userInfo)))
+
+  val withUserInfo: Optional[Uri, UserInfo] =
+    authorityWithUserInfo.compose(withAuthority)
 }

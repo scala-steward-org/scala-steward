@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 scala-steward contributors
+ * Copyright 2018-2019 scala-steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,88 +16,92 @@
 
 package org.scalasteward.core.nurture
 
-import cats.effect.Sync
 import cats.implicits._
-import cats.{FlatMap, Monad}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
+import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Branch, GitAlg}
+import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo}
 import org.scalasteward.core.github.GitHubApiAlg
-import org.scalasteward.core.github.data.{NewPullRequestData, Repo}
 import org.scalasteward.core.model.Update
+import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.update.FilterAlg
-import org.scalasteward.core.util.logger.LoggerOps
-import org.scalasteward.core.util.{BracketThrowable, MonadThrowable}
-import org.scalasteward.core.{git, github, util}
+import org.scalasteward.core.util.{BracketThrowable, LogAlg}
+import org.scalasteward.core.vcs.VCSRepoAlg
+import org.scalasteward.core.{git, util, vcs}
 
-class NurtureAlg[F[_]](
+final class NurtureAlg[F[_]](
     implicit
     config: Config,
     editAlg: EditAlg[F],
+    repoConfigAlg: RepoConfigAlg[F],
     filterAlg: FilterAlg[F],
     gitAlg: GitAlg[F],
     gitHubApiAlg: GitHubApiAlg[F],
+    vcsRepoAlg: VCSRepoAlg[F],
+    logAlg: LogAlg[F],
     logger: Logger[F],
     pullRequestRepo: PullRequestRepository[F],
-    sbtAlg: SbtAlg[F]
+    sbtAlg: SbtAlg[F],
+    F: BracketThrowable[F]
 ) {
-  def nurture(repo: Repo)(implicit F: Sync[F]): F[Unit] =
-    logger.infoTotalTime(repo.show) {
-      logger.attemptLog_(s"Nurture ${repo.show}") {
+  def nurture(repo: Repo): F[Unit] =
+    logAlg.infoTotalTime(repo.show) {
+      logAlg.attemptLog_(s"Nurture ${repo.show}") {
         for {
-          baseBranch <- cloneAndSync(repo)
-          _ <- updateDependencies(repo, baseBranch)
+          (fork, baseBranch) <- cloneAndSync(repo)
+          _ <- updateDependencies(repo, fork, baseBranch)
           _ <- gitAlg.removeClone(repo)
         } yield ()
       }
     }
 
-  def cloneAndSync(repo: Repo)(implicit F: MonadThrowable[F]): F[Branch] =
+  def cloneAndSync(repo: Repo): F[(Repo, Branch)] =
     for {
       _ <- logger.info(s"Clone and synchronize ${repo.show}")
-      repoOut <- gitHubApiAlg.createFork(repo)
-      parent <- repoOut.parentOrRaise[F]
-      cloneUrl = util.uri.withUserInfo(repoOut.clone_url, config.gitHubLogin)
-      parentCloneUrl = util.uri.withUserInfo(parent.clone_url, config.gitHubLogin)
-      _ <- gitAlg.clone(repo, cloneUrl)
-      _ <- gitAlg.setAuthor(repo, config.gitAuthor)
-      _ <- gitAlg.syncFork(repo, parentCloneUrl, parent.default_branch)
-    } yield parent.default_branch
+      repoOut <- gitHubApiAlg.createForkOrGetRepo(config, repo)
+      _ <- vcsRepoAlg.clone(repo, repoOut)
+      parent <- vcsRepoAlg.syncFork(repo, repoOut)
+    } yield (repoOut.repo, parent.default_branch)
 
-  def updateDependencies(repo: Repo, baseBranch: Branch)(implicit F: BracketThrowable[F]): F[Unit] =
+  def updateDependencies(repo: Repo, fork: Repo, baseBranch: Branch): F[Unit] =
     for {
       _ <- logger.info(s"Find updates for ${repo.show}")
+      repoConfig <- repoConfigAlg.getRepoConfig(repo)
       updates <- sbtAlg.getUpdatesForRepo(repo)
-      filtered <- filterAlg.localFilterMany(repo, updates)
+      filtered <- filterAlg.localFilterMany(repoConfig, updates)
       grouped = Update.group(filtered)
       _ <- logger.info(util.logger.showUpdates(grouped))
       baseSha1 <- gitAlg.latestSha1(repo, baseBranch)
       _ <- grouped.traverse_ { update =>
-        val data = UpdateData(repo, update, baseBranch, baseSha1, git.branchFor(update))
+        val data =
+          UpdateData(repo, fork, repoConfig, update, baseBranch, baseSha1, git.branchFor(update))
         processUpdate(data)
       }
     } yield ()
 
-  def processUpdate(data: UpdateData)(implicit F: BracketThrowable[F]): F[Unit] =
+  def processUpdate(data: UpdateData): F[Unit] =
     for {
       _ <- logger.info(s"Process update ${data.update.show}")
-      head = github.headFor(config.gitHubLogin, data.update)
-      pullRequests <- gitHubApiAlg.listPullRequests(data.repo, head)
+      head = vcs.headFor(data.fork.show, data.update)
+      pullRequests <- gitHubApiAlg.listPullRequests(data.repo, head, data.baseBranch)
       _ <- pullRequests.headOption match {
         case Some(pr) if pr.isClosed =>
           logger.info(s"PR ${pr.html_url} is closed")
-        case Some(pr) =>
+        case Some(pr) if data.repoConfig.updatePullRequests =>
           logger.info(s"Found PR ${pr.html_url}") >> updatePullRequest(data)
+        case Some(pr) =>
+          logger.info(s"Found PR ${pr.html_url}, but updates are disabled by flag")
         case None =>
           applyNewUpdate(data)
       }
       _ <- pullRequests.headOption.fold(F.unit) { pr =>
-        pullRequestRepo.createOrUpdate(data.repo, pr.html_url, data.baseSha1, data.update)
+        pullRequestRepo.createOrUpdate(data.repo, pr.html_url, data.baseSha1, data.update, pr.state)
       }
     } yield ()
 
-  def applyNewUpdate(data: UpdateData)(implicit F: BracketThrowable[F]): F[Unit] =
+  def applyNewUpdate(data: UpdateData): F[Unit] =
     (editAlg.applyUpdate(data.repo, data.update) >> gitAlg.containsChanges(data.repo)).ifM(
       gitAlg.returnToCurrentBranch(data.repo) {
         for {
@@ -110,22 +114,28 @@ class NurtureAlg[F[_]](
       logger.warn("No files were changed")
     )
 
-  def commitAndPush(data: UpdateData)(implicit F: FlatMap[F]): F[Unit] =
+  def commitAndPush(data: UpdateData): F[Unit] =
     for {
       _ <- gitAlg.commitAll(data.repo, git.commitMsgFor(data.update))
       _ <- gitAlg.push(data.repo, data.updateBranch)
     } yield ()
 
-  def createPullRequest(data: UpdateData)(implicit F: FlatMap[F]): F[Unit] =
+  def createPullRequest(data: UpdateData): F[Unit] =
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
       requestData = NewPullRequestData.from(data, config.gitHubLogin)
       pr <- gitHubApiAlg.createPullRequest(data.repo, requestData)
-      _ <- pullRequestRepo.createOrUpdate(data.repo, pr.html_url, data.baseSha1, data.update)
+      _ <- pullRequestRepo.createOrUpdate(
+        data.repo,
+        pr.html_url,
+        data.baseSha1,
+        data.update,
+        pr.state
+      )
       _ <- logger.info(s"Created PR ${pr.html_url}")
     } yield ()
 
-  def updatePullRequest(data: UpdateData)(implicit F: BracketThrowable[F]): F[Unit] =
+  def updatePullRequest(data: UpdateData): F[Unit] =
     gitAlg.returnToCurrentBranch(data.repo) {
       for {
         _ <- gitAlg.checkoutBranch(data.repo, data.updateBranch)
@@ -134,7 +144,7 @@ class NurtureAlg[F[_]](
       } yield ()
     }
 
-  def shouldBeReset(data: UpdateData)(implicit F: FlatMap[F]): F[Boolean] =
+  def shouldBeReset(data: UpdateData): F[Boolean] =
     for {
       authors <- gitAlg.branchAuthors(data.repo, data.updateBranch, data.baseBranch)
       distinctAuthors = authors.distinct
@@ -155,7 +165,7 @@ class NurtureAlg[F[_]](
       _ <- logger.info(msg)
     } yield result
 
-  def resetAndUpdate(data: UpdateData)(implicit F: Monad[F]): F[Unit] =
+  def resetAndUpdate(data: UpdateData): F[Unit] =
     for {
       _ <- logger.info(s"Reset and update ${data.updateBranch.name}")
       _ <- gitAlg.resetHard(data.repo, data.baseBranch)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 scala-steward contributors
+ * Copyright 2018-2019 scala-steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,23 +21,37 @@ import org.scalasteward.core.model.Update
 import org.scalasteward.core.util.Nel
 
 object parser {
-  def parseSingleUpdate(str: String): Either[Throwable, Update.Single] =
-    Either.catchNonFatal {
-      val regex = """([^\s:]+):([^\s:]+)(:([^\s]+))?\s+:\s+([^\s]+)\s+->(.+)""".r
-      str match {
-        case regex(groupId, artifactId, _, configurationsOrNull, current, newer) =>
-          val configurations = Option(configurationsOrNull)
-          val newerVersions = Nel.fromListUnsafe(newer.split("->").map(_.trim).toList)
-          Update.Single(groupId, artifactId, current, newerVersions, configurations)
-      }
+  def parseSingleUpdate(str: String): Either[String, Update.Single] =
+    str.split("""\s:\s""") match {
+      case Array(left, right) =>
+        val moduleId = left.split(":").map(_.trim)
+        val versions = right.split("->").map(_.trim)
+        def msg(part: String) = s"failed to parse $part in '$str'"
+
+        for {
+          groupId <- Either.fromOption(moduleId.headOption.filter(_.nonEmpty), msg("groupId"))
+          artifactId <- Either.fromOption(moduleId.lift(1), msg("artifactId"))
+          configurations = moduleId.lift(2)
+          currentVersion <- Either.fromOption(
+            versions.headOption.filter(_.nonEmpty),
+            msg("currentVersion")
+          )
+          newerVersionsList = versions
+            .drop(1)
+            .filterNot(v => v.startsWith("InvalidVersion") || v === currentVersion)
+            .toList
+          newerVersions <- Either.fromOption(Nel.fromList(newerVersionsList), msg("newerVersions"))
+        } yield Update.Single(groupId, artifactId, currentVersion, newerVersions, configurations)
+
+      case _ => Left(s"'$str' must contain ' : ' exactly once")
     }
 
   def parseSingleUpdates(lines: List[String]): List[Update.Single] =
     lines
-      .flatMap { line =>
-        val trimmed = line.replace("[info]", "").trim
-        parseSingleUpdate(trimmed).toList
-      }
+      .flatMap(line => parseSingleUpdate(removeSbtNoise(line)).toList)
       .distinct
       .sortBy(update => (update.groupId, update.artifactId, update.currentVersion))
+
+  def removeSbtNoise(s: String): String =
+    s.replace("[info]", "").trim
 }

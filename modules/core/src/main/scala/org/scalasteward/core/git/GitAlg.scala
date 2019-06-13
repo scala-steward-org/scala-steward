@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 scala-steward contributors
+ * Copyright 2018-2019 scala-steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,11 @@
 package org.scalasteward.core.git
 
 import better.files.File
-import cats.Monad
 import cats.effect.Bracket
 import cats.implicits._
 import org.http4s.Uri
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.github.data.Repo
+import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.{MonadThrowable, Nel}
 
@@ -45,7 +44,7 @@ trait GitAlg[F[_]] {
 
   def isMerged(repo: Repo, branch: Branch, base: Branch): F[Boolean]
 
-  def latestSha1(repo: Repo, branch: Branch)(implicit F: MonadThrowable[F]): F[Sha1]
+  def latestSha1(repo: Repo, branch: Branch): F[Sha1]
 
   def push(repo: Repo, branch: Branch): F[Unit]
 
@@ -59,7 +58,7 @@ trait GitAlg[F[_]] {
 
   def syncFork(repo: Repo, upstreamUrl: Uri, defaultBranch: Branch): F[Unit]
 
-  def returnToCurrentBranch[A, E](repo: Repo)(fa: F[A])(implicit F: Bracket[F, E]): F[A] =
+  final def returnToCurrentBranch[A, E](repo: Repo)(fa: F[A])(implicit F: Bracket[F, E]): F[A] =
     F.bracket(currentBranch(repo))(_ => fa)(checkoutBranch(repo, _))
 }
 
@@ -72,7 +71,7 @@ object GitAlg {
       fileAlg: FileAlg[F],
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F],
-      F: Monad[F]
+      F: MonadThrowable[F]
   ): GitAlg[F] =
     new GitAlg[F] {
       override def branchAuthors(repo: Repo, branch: Branch, base: Branch): F[List[String]] =
@@ -96,7 +95,7 @@ object GitAlg {
       override def commitAll(repo: Repo, message: String): F[Unit] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          sign = if (config.signCommits) List("--gpg-sign") else List.empty
+          sign = if (config.signCommits) List("--gpg-sign") else List("--no-gpg-sign")
           _ <- exec(Nel.of("commit", "--all", "-m", message) ++ sign, repoDir)
         } yield ()
 
@@ -127,7 +126,7 @@ object GitAlg {
           exec(Nel.of("log", "--pretty=format:'%h'", dotdot(base, branch)), repoDir).map(_.isEmpty)
         }
 
-      override def latestSha1(repo: Repo, branch: Branch)(implicit F: MonadThrowable[F]): F[Sha1] =
+      override def latestSha1(repo: Repo, branch: Branch): F[Sha1] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
           lines <- exec(Nel.of("rev-parse", "--verify", branch.name), repoDir)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 scala-steward contributors
+ * Copyright 2018-2019 scala-steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,13 @@ import cats.implicits._
 import io.circe.parser.decode
 import io.circe.syntax._
 import org.http4s.Uri
+import org.scalasteward.core.dependency.Dependency
 import org.scalasteward.core.git.Sha1
-import org.scalasteward.core.github.data.Repo
+import org.scalasteward.core.vcs.data.{PullRequestState, Repo}
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.model.Update
 import org.scalasteward.core.nurture.PullRequestRepository
+import org.scalasteward.core.update.UpdateService
 import org.scalasteward.core.util.MonadThrowable
 
 class JsonPullRequestRepo[F[_]](
@@ -34,11 +36,17 @@ class JsonPullRequestRepo[F[_]](
     workspaceAlg: WorkspaceAlg[F],
     F: MonadThrowable[F]
 ) extends PullRequestRepository[F] {
-  override def createOrUpdate(repo: Repo, url: Uri, baseSha1: Sha1, update: Update): F[Unit] =
+  override def createOrUpdate(
+      repo: Repo,
+      url: Uri,
+      baseSha1: Sha1,
+      update: Update,
+      state: PullRequestState
+  ): F[Unit] =
     readJson.flatMap { store =>
       val updated = store.store.get(repo) match {
-        case Some(prs) => prs.updated(url.toString(), PullRequestData(baseSha1, update))
-        case None      => Map(url.toString() -> PullRequestData(baseSha1, update))
+        case Some(prs) => prs.updated(url.toString(), PullRequestData(baseSha1, update, state))
+        case None      => Map(url.toString() -> PullRequestData(baseSha1, update, state))
       }
       writeJson(PullRequestStore(store.store.updated(repo, updated)))
     }
@@ -46,12 +54,23 @@ class JsonPullRequestRepo[F[_]](
   override def findUpdates(repo: Repo, baseSha1: Sha1): F[List[Update]] =
     readJson.map { store =>
       store.store.get(repo).fold(List.empty[Update]) { data =>
-        data.values.filter(_.baseSha1 == baseSha1).map(_.update).toList
+        data.values.filter(_.baseSha1 === baseSha1).map(_.update).toList
       }
     }
 
+  override def findPullRequest(
+      repo: Repo,
+      dependency: Dependency
+  ): F[Option[(Uri, Sha1, PullRequestState)]] =
+    readJson.map { store =>
+      val pullRequests = store.store.get(repo).fold(List.empty[(String, PullRequestData)])(_.toList)
+      pullRequests
+        .find { case (_, data) => UpdateService.isUpdateFor(data.update, dependency) }
+        .map { case (url, data) => (Uri.unsafeFromString(url), data.baseSha1, data.state) }
+    }
+
   def jsonFile: F[File] =
-    workspaceAlg.rootDir.map(_ / "prs_v01.json")
+    workspaceAlg.rootDir.map(_ / "prs_v02.json")
 
   def readJson: F[PullRequestStore] =
     jsonFile.flatMap { file =>

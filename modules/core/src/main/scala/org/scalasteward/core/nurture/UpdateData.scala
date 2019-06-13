@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 scala-steward contributors
+ * Copyright 2018-2019 scala-steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,14 @@
 package org.scalasteward.core.nurture
 
 import org.scalasteward.core.git.{Branch, Sha1}
-import org.scalasteward.core.github.data.Repo
+import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.model.Update
+import org.scalasteward.core.repoconfig.RepoConfig
 
 final case class UpdateData(
     repo: Repo,
+    fork: Repo,
+    repoConfig: RepoConfig,
     update: Update,
     baseBranch: Branch,
     baseSha1: Sha1,

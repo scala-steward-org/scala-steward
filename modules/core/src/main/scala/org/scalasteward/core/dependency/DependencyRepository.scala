@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 scala-steward contributors
+ * Copyright 2018-2019 scala-steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package org.scalasteward.core.dependency
 
 import org.scalasteward.core.git.Sha1
-import org.scalasteward.core.github.data.Repo
+import org.scalasteward.core.vcs.data.Repo
 
 trait DependencyRepository[F[_]] {
   def findSha1(repo: Repo): F[Option[Sha1]]

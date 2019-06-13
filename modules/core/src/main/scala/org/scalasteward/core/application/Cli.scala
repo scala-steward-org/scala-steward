@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 scala-steward contributors
+ * Copyright 2018-2019 scala-steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,11 @@
 package org.scalasteward.core.application
 
 import caseapp._
+import caseapp.core.Error.MalformedValue
+import caseapp.core.argparser.ArgParser
+import caseapp.core.argparser.SimpleArgParser
 import cats.implicits._
+import org.http4s.Uri
 import org.scalasteward.core.util.ApplicativeThrowable
 
 trait Cli[F[_]] {
@@ -25,26 +29,51 @@ trait Cli[F[_]] {
 }
 
 object Cli {
-
   final case class Args(
       workspace: String,
       reposFile: String,
       gitAuthorName: String,
       gitAuthorEmail: String,
-      githubApiHost: String,
+      githubApiHost: Uri = Uri.uri("https://api.github.com"),
       githubLogin: String,
       gitAskPass: String,
       signCommits: Boolean = false,
       whitelist: List[String] = Nil,
       readOnly: List[String] = Nil,
-      execSandbox: Boolean = true
+      disableSandbox: Boolean = false,
+      doNotFork: Boolean = false,
+      ignoreOptsFiles: Boolean = false,
+      keepCredentials: Boolean = false,
+      envVar: List[EnvVar] = Nil
   )
+  final case class EnvVar(name: String, value: String)
+  implicit val envVarParser: SimpleArgParser[EnvVar] =
+    SimpleArgParser.from[EnvVar]("env-var") { s =>
+      s.trim.split('=').toList match {
+        case name :: value :: Nil =>
+          Right(EnvVar(name.trim, value.trim))
+        case _ =>
+          Left(
+            core.Error.MalformedValue(
+              "env-var",
+              "The value is expected in the following format: NAME=VALUE."
+            )
+          )
+      }
+    }
 
   def create[F[_]](implicit F: ApplicativeThrowable[F]): Cli[F] = new Cli[F] {
     override def parseArgs(args: List[String]): F[Args] =
-      F.fromEither[Args] {
-        CaseApp.parse[Args](args).leftMap(e => new Throwable(e.message)).map(_._1)
+      F.fromEither {
+        CaseApp
+          .parse[Args](args)
+          .bimap(e => new Throwable(e.message), { case (parsed, _) => parsed })
       }
   }
 
+  implicit val uriArgParser: ArgParser[Uri] =
+    ArgParser[String].xmapError(
+      _.renderString,
+      s => Uri.fromString(s).leftMap(pf => MalformedValue("Uri", pf.message))
+    )
 }

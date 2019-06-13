@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 scala-steward contributors
+ * Copyright 2018-2019 scala-steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,10 @@ import better.files.File
 import cats.Monad
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
+import org.scalasteward.core.application.Config
 import org.scalasteward.core.dependency.Dependency
 import org.scalasteward.core.dependency.parser.parseDependencies
-import org.scalasteward.core.github.data.Repo
+import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.model.Update
 import org.scalasteward.core.sbt.command._
@@ -47,6 +48,7 @@ trait SbtAlg[F[_]] {
 object SbtAlg {
   def create[F[_]](
       implicit
+      config: Config,
       fileAlg: FileAlg[F],
       logger: Logger[F],
       processAlg: ProcessAlg[F],
@@ -70,7 +72,7 @@ object SbtAlg {
       override def getDependencies(repo: Repo): F[List[Dependency]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          cmd = sbtCmd(libraryDependenciesAsJson, reloadPlugins, libraryDependenciesAsJson)
+          cmd = sbtCmd(List(libraryDependenciesAsJson, reloadPlugins, libraryDependenciesAsJson))
           lines <- exec(cmd, repoDir)
         } yield lines.flatMap(parseDependencies).distinct
 
@@ -81,39 +83,54 @@ object SbtAlg {
           _ <- fileAlg.writeFileData(updatesDir, project.mkBuildSbt)
           _ <- fileAlg.writeFileData(projectDir, project.mkBuildProperties)
           _ <- fileAlg.writeFileData(projectDir, project.mkPluginsSbt)
-          cmd = sbtCmd(project.dependencyUpdatesCmd: _*)
+          cmd = sbtCmd(project.dependencyUpdatesCmd)
           lines <- processAlg.exec(cmd, updatesDir)
           _ <- fileAlg.deleteForce(updatesDir)
-        } yield parser.parseSingleUpdates(lines)
+          updatesWithCrossSuffix = parser.parseSingleUpdates(lines)
+          allDeps = project.libraries ++ project.plugins
+          uncross = allDeps.map(dep => dep.artifactIdCross -> dep.artifactId).toMap
+          updates = updatesWithCrossSuffix.flatMap { update =>
+            Update.Single.artifactIdLens.modifyF(uncross.get)(update).toList
+          }
+        } yield updates
 
       override def getUpdatesForRepo(repo: Repo): F[List[Update.Single]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          cmd = sbtCmd(setCredentialsToNil, dependencyUpdates, reloadPlugins, dependencyUpdates)
-          lines <- exec(cmd, repoDir)
+          maybeClearCredentials = if (config.keepCredentials) Nil else List(setCredentialsToNil)
+          commands = maybeClearCredentials ++
+            List(dependencyUpdates, reloadPlugins, dependencyUpdates)
+          lines <- exec(sbtCmd(commands), repoDir)
         } yield parser.parseSingleUpdates(lines)
 
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
           scalafixCmds = migrations.map(m => s"$scalafix ${m.rewriteRule}").toList
-          _ <- exec(sbtCmd(scalafixEnable :: scalafixCmds: _*), repoDir)
+          _ <- exec(sbtCmd(scalafixEnable :: scalafixCmds), repoDir)
         } yield ()
 
       val sbtDir: F[File] =
         fileAlg.home.map(_ / ".sbt")
 
       def exec(command: Nel[String], repoDir: File): F[List[String]] =
-        ignoreOptsFiles(repoDir)(processAlg.execSandboxed(command, repoDir))
+        maybeIgnoreOptsFiles(repoDir)(processAlg.execSandboxed(command, repoDir))
 
-      def sbtCmd(command: String*): Nel[String] =
-        Nel.of("sbt", "-batch", "-no-colors", command.mkString(";", ";", ""))
+      def sbtCmd(commands: List[String]): Nel[String] =
+        Nel.of("sbt", "-batch", "-no-colors", commands.mkString(";", ";", ""))
 
-      def ignoreOptsFiles[A](dir: File)(fa: F[A]): F[A] =
-        fileAlg.removeTemporarily(dir / ".jvmopts") {
+      def maybeIgnoreOptsFiles[A](dir: File)(fa: F[A]): F[A] =
+        if (config.ignoreOptsFiles) ignoreOptsFiles(dir)(fa) else fa
+
+      def ignoreOptsFiles[A](dir: File)(fa: F[A]): F[A] = {
+        val jvmopts = ".jvmopts"
+        fileAlg.removeTemporarily(dir / jvmopts) {
           fileAlg.removeTemporarily(dir / ".sbtopts") {
-            fa
+            fileAlg.createTemporarily(dir / jvmopts, "-Xss8m") {
+              fa
+            }
           }
         }
+      }
     }
 }

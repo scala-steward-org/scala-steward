@@ -1,12 +1,17 @@
 package org.scalasteward.core.util
 
+import cats.effect.IO
 import cats.implicits._
 import eu.timepit.refined.scalacheck.numeric._
 import eu.timepit.refined.types.numeric.PosInt
-import org.scalatest.prop.PropertyChecks
 import org.scalatest.{FunSuite, Matchers}
+import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
-class utilTest extends FunSuite with Matchers with PropertyChecks {
+class utilTest extends FunSuite with Matchers with ScalaCheckPropertyChecks {
+  test("bindUntilTrue: empty list") {
+    bindUntilTrue(List.empty[Option[Boolean]]) shouldBe Some(false)
+  }
+
   test("divideOnError") {
     /*
        5
@@ -22,6 +27,15 @@ class utilTest extends FunSuite with Matchers with PropertyChecks {
     }((_, e: Unit) => Left(e))
 
     res shouldBe Right(5)
+  }
+
+  test("evalFilter") {
+    fs2.Stream
+      .range[IO](1, 10)
+      .through(evalFilter(i => IO(i % 2 == 0)))
+      .compile
+      .toList
+      .unsafeRunSync() shouldBe List(2, 4, 6, 8)
   }
 
   test("halve: halves concatenated yields the original sequence") {
@@ -43,20 +57,34 @@ class utilTest extends FunSuite with Matchers with PropertyChecks {
   }
 
   test("separateBy: retains elements") {
-    forAll { (l: List[String], n: PosInt) =>
-      separateBy(l)(n)(_.length).flatMap(_.toList).sorted shouldBe l.sorted
+    forAll { (l: List[Char], n: PosInt, f: Char => Int) =>
+      separateBy(l)(n)(f).flatMap(_.toList).sorted shouldBe l.sorted
     }
   }
 
   test("separateBy: no duplicates in sublists") {
-    forAll { (l: List[String], n: PosInt) =>
-      separateBy(l)(n)(_.length).forall(_.groupBy(_.length).values.forall(_.size == 1))
+    forAll { (l: List[Char], n: PosInt, f: Char => Int) =>
+      separateBy(l)(n)(f).forall(_.groupBy(f).values.forall(_.size == 1)) shouldBe true
     }
   }
 
   test("separateBy: sublists are not longer than maxSize") {
-    forAll { (l: List[String], n: PosInt) =>
-      separateBy(l)(n)(_.length).forall(_.length <= n.value)
+    forAll { (l: List[Char], n: PosInt, f: Char => Int) =>
+      separateBy(l)(n)(f).forall(_.length <= n.value) shouldBe true
+    }
+  }
+
+  test("separateBy: sublists decrease in length") {
+    forAll { (l: List[Char], n: PosInt, f: Char => Int) =>
+      val lengths = separateBy(l)(n)(f).map(_.length)
+      lengths.zip((lengths :+ 0).drop(1)).forall { case (l1, l2) => l1 >= l2 } shouldBe true
+    }
+  }
+
+  test("separateBy: at least one sublist is densely packed") {
+    forAll { (l: List[Char], n: PosInt, f: Char => Int) =>
+      val maxSize = math.min(l.map(f).toSet.size, n.value)
+      (l.isEmpty || separateBy(l)(n)(f).exists(_.size == maxSize)) shouldBe true
     }
   }
 }

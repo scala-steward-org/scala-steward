@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 scala-steward contributors
+ * Copyright 2018-2019 scala-steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,11 @@ package org.scalasteward.core.model
 import cats.implicits._
 import eu.timepit.refined.W
 import io.circe.{Decoder, Encoder}
+import monocle.Lens
 import org.scalasteward.core.model.Update.{Group, Single}
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.util.string.MinLengthString
-import scala.util.matching.Regex
 
 sealed trait Update extends Product with Serializable {
   def groupId: String
@@ -37,24 +37,6 @@ sealed trait Update extends Product with Serializable {
 
   def nextVersion: String =
     newerVersions.head
-
-  def replaceAllIn(target: String): Option[String] = {
-    val quotedSearchTerms = searchTerms
-      .map { term =>
-        Regex
-          .quoteReplacement(Update.removeCommonSuffix(term))
-          .replace("-", ".?")
-      }
-      .filter(_.nonEmpty)
-    val searchTerm = quotedSearchTerms.mkString_("(", "|", ")")
-    val regex = s"(?i)($searchTerm.*?)${Regex.quote(currentVersion)}".r
-    var updated = false
-    val result = regex.replaceAllIn(target, m => {
-      updated = true
-      m.group(1) + nextVersion
-    })
-    if (updated) Some(result) else None
-  }
 
   def searchTerms: Nel[String] = {
     val terms = this match {
@@ -84,6 +66,11 @@ object Update {
   ) extends Update {
     override def artifactIds: Nel[String] =
       Nel.one(artifactId)
+  }
+
+  object Single {
+    val artifactIdLens: Lens[Update.Single, String] =
+      Lens[Update.Single, String](_.artifactId)(artifactId => _.copy(artifactId = artifactId))
   }
 
   final case class Group(
@@ -132,7 +119,7 @@ object Update {
 
   def nameOf(groupId: String, artifactId: String): String =
     if (commonSuffixes.contains(artifactId))
-      groupId.split('.').lastOption.getOrElse(groupId)
+      util.string.rightmostLabel(groupId)
     else
       artifactId
 

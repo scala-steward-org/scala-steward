@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 scala-steward contributors
+ * Copyright 2018-2019 scala-steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,13 @@ package org.scalasteward.core.nurture.json
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.git.Sha1
+import org.scalasteward.core.vcs.data.PullRequestState
 import org.scalasteward.core.model.Update
 
 final case class PullRequestData(
     baseSha1: Sha1,
-    update: Update
+    update: Update,
+    state: PullRequestState
 )
 
 object PullRequestData {

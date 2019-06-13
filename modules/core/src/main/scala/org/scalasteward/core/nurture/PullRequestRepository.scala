@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 scala-steward contributors
+ * Copyright 2018-2019 scala-steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,21 @@
 package org.scalasteward.core.nurture
 
 import org.http4s.Uri
+import org.scalasteward.core.dependency.Dependency
 import org.scalasteward.core.git.Sha1
-import org.scalasteward.core.github.data.Repo
+import org.scalasteward.core.vcs.data.{PullRequestState, Repo}
 import org.scalasteward.core.model.Update
 
 trait PullRequestRepository[F[_]] {
-  def createOrUpdate(repo: Repo, url: Uri, baseSha1: Sha1, update: Update): F[Unit]
+  def createOrUpdate(
+      repo: Repo,
+      url: Uri,
+      baseSha1: Sha1,
+      update: Update,
+      state: PullRequestState
+  ): F[Unit]
 
   def findUpdates(repo: Repo, baseSha1: Sha1): F[List[Update]]
+
+  def findPullRequest(repo: Repo, dependency: Dependency): F[Option[(Uri, Sha1, PullRequestState)]]
 }

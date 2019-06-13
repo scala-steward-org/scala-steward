@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 scala-steward contributors
+ * Copyright 2018-2019 scala-steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,73 +16,33 @@
 
 package org.scalasteward.core.github.http4s
 
-import cats.effect.Sync
-import cats.implicits._
-import io.circe.Decoder
-import org.http4s.Method.{GET, POST}
-import org.http4s.circe.CirceEntityEncoder._
-import org.http4s.circe.jsonOf
-import org.http4s.client.Client
-import org.http4s.headers.Authorization
-import org.http4s.{BasicCredentials, Headers, Request}
-import org.scalasteward.core.application.Config
+import org.http4s.{Request, Uri}
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.github._
-import org.scalasteward.core.github.data._
-import org.scalasteward.core.github.http4s.Http4sGitHubApiAlg._
+import org.scalasteward.core.util.HttpJsonClient
+import org.scalasteward.core.vcs.data._
 
-class Http4sGitHubApiAlg[F[_]](
+final class Http4sGitHubApiAlg[F[_]](
+    gitHubApiHost: Uri,
+    modify: Repo => Request[F] => F[Request[F]]
+)(
     implicit
-    client: Client[F],
-    config: Config,
-    user: AuthenticatedUser,
-    F: Sync[F]
+    client: HttpJsonClient[F]
 ) extends GitHubApiAlg[F] {
-  val http4sUrl = new Http4sUrl(config.gitHubApiHost)
+  private val url = new Url(gitHubApiHost)
 
-  override def createFork(
-      repo: Repo
-  ): F[RepoOut] =
-    http4sUrl.forks[F](repo).flatMap { uri =>
-      val req = Request[F](POST, uri)
-      expectJsonOf[RepoOut](req)
-    }
+  override def createFork(repo: Repo): F[RepoOut] =
+    client.post(url.forks(repo), modify(repo))
 
-  override def createPullRequest(
-      repo: Repo,
-      data: NewPullRequestData
-  ): F[PullRequestOut] =
-    http4sUrl.pulls[F](repo).flatMap { uri =>
-      val req = Request[F](POST, uri).withEntity(data)
-      expectJsonOf[PullRequestOut](req)
-    }
+  override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] =
+    client.postWithBody(url.pulls(repo), data, modify(repo))
 
-  override def getBranch(
-      repo: Repo,
-      branch: Branch
-  ): F[BranchOut] =
-    http4sUrl.branches[F](repo, branch).flatMap { uri =>
-      val req = Request[F](GET, uri)
-      expectJsonOf[BranchOut](req)
-    }
+  override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
+    client.get(url.branches(repo, branch), modify(repo))
 
-  override def listPullRequests(
-      repo: Repo,
-      head: String
-  ): F[List[PullRequestOut]] =
-    http4sUrl.listPullRequests[F](repo, head).flatMap { uri =>
-      val req = Request[F](GET, uri)
-      expectJsonOf[List[PullRequestOut]](req)
-    }
+  override def getRepo(repo: Repo): F[RepoOut] =
+    client.get(url.repos(repo), modify(repo))
 
-  def expectJsonOf[A: Decoder](req: Request[F]): F[A] =
-    client.expect[A](authenticate(user)(req))(jsonOf)
-}
-
-object Http4sGitHubApiAlg {
-  def authenticate[F[_]](user: AuthenticatedUser)(req: Request[F]): Request[F] =
-    req.withHeaders(req.headers ++ Headers(toBasicAuth(user)))
-
-  def toBasicAuth(user: AuthenticatedUser): Authorization =
-    Authorization(BasicCredentials(user.login, user.accessToken))
+  override def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]] =
+    client.get(url.listPullRequests(repo, head, base), modify(repo))
 }

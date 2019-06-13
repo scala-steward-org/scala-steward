@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 scala-steward contributors
+ * Copyright 2018-2019 scala-steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,13 @@
 package org.scalasteward.core
 
 import better.files.File
-import cats.effect.Sync
-import fs2.Pipe
+import cats.implicits._
 
 package object io {
-  def ignoreSymlinks[F[_]](implicit F: Sync[F]): Pipe[F, File, File] =
-    _.evalMap(f => F.delay((f, f.isSymbolicLink))).collect { case (f, false) => f }
+  def isSourceFile(file: File): Boolean = {
+    val scalaOrSbtFile = file.extension.exists(Set(".scala", ".sbt"))
+    val travisYmlFile = file.name === ".travis.yml"
+    val notInGitDir = !file.pathAsString.contains(".git/")
+    (scalaOrSbtFile || travisYmlFile) && notInGitDir
+  }
 }

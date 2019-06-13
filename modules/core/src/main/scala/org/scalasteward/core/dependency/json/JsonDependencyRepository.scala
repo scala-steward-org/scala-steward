@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 scala-steward contributors
+ * Copyright 2018-2019 scala-steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,11 @@ import io.circe.parser.decode
 import io.circe.syntax._
 import org.scalasteward.core.dependency.{Dependency, DependencyRepository}
 import org.scalasteward.core.git.Sha1
-import org.scalasteward.core.github.data.Repo
+import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.util.MonadThrowable
 
-class JsonDependencyRepository[F[_]](
+final class JsonDependencyRepository[F[_]](
     implicit
     fileAlg: FileAlg[F],
     workspaceAlg: WorkspaceAlg[F],
