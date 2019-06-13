@@ -162,6 +162,7 @@
 - gnieh/diffson
 - henricook/SAMLer
 - hipjim/scala-retry
+- holidaycheck/easy-akka-http
 - hseeberger/akka-http-json
 - http4s/blaze
 - http4s/http4s
@@ -378,6 +379,7 @@
 - spotify/scio.g8
 - spotify/scio-idea-plugin
 - srenault/sre-api
+- stephennancekivell/scalatest-json
 - stryker-mutator/stryker4s
 - sullis/jms-testkit
 - swagger-akka-http/swagger-akka-http

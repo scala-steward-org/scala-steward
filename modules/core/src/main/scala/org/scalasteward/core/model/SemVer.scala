@@ -21,7 +21,7 @@ import eu.timepit.refined.cats.refTypeEq
 import eu.timepit.refined.types.numeric.NonNegBigInt
 import eu.timepit.refined.types.string.NonEmptyString
 import org.scalasteward.core.model.SemVer.Change._
-import scala.util.Try
+import org.scalasteward.core.util.string.parseNonNegBigInt
 
 final case class SemVer(
     major: NonNegBigInt,
@@ -36,14 +36,11 @@ final case class SemVer(
 
 object SemVer {
   def parse(s: String): Option[SemVer] = {
-    def parseNonNegBigInt(s: String): Option[NonNegBigInt] =
-      Try(BigInt(s)).toOption.flatMap(NonNegBigInt.unapply)
-
     def parseIdentifier(s: String): Option[NonEmptyString] =
       Option(s).map(_.drop(1)).flatMap(NonEmptyString.unapply)
 
     val pattern = raw"""(\d+)\.(\d+)\.(\d+)(\-[^\+]+)?(\+.+)?""".r
-    val maybeSemVer = s match {
+    s match {
       case pattern(majorStr, minorStr, patchStr, preReleaseStr, buildMetadataStr) =>
         for {
           major <- parseNonNegBigInt(majorStr)
@@ -51,10 +48,11 @@ object SemVer {
           patch <- parseNonNegBigInt(patchStr)
           preRelease = parseIdentifier(preReleaseStr)
           buildMetadata = parseIdentifier(buildMetadataStr)
-        } yield SemVer(major, minor, patch, preRelease, buildMetadata)
+          semVer = SemVer(major, minor, patch, preRelease, buildMetadata)
+          if semVer.render === s
+        } yield semVer
       case _ => None
     }
-    maybeSemVer.filter(_.render === s)
   }
 
   sealed abstract class Change(val render: String)
