@@ -379,6 +379,7 @@
 - spotify/scio.g8
 - spotify/scio-idea-plugin
 - srenault/sre-api
+- stephennancekivell/scalatest-json
 - stryker-mutator/stryker4s
 - sullis/jms-testkit
 - swagger-akka-http/swagger-akka-http
