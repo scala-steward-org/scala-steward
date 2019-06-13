@@ -21,6 +21,8 @@ class SbtAlgTest extends FunSuite with Matchers {
       ),
       logs = Vector((None, "Add global sbt plugins")),
       files = Map(
+        File("/tmp/steward/.sbt/0.13/plugins/sbt-scalafix.sbt") -> sbtScalafixPlugin.content,
+        File("/tmp/steward/.sbt/1.0/plugins/sbt-scalafix.sbt") -> sbtScalafixPlugin.content,
         File("/tmp/steward/.sbt/0.13/plugins/sbt-updates.sbt") -> sbtUpdatesPlugin.content,
         File("/tmp/steward/.sbt/1.0/plugins/sbt-updates.sbt") -> sbtUpdatesPlugin.content,
         File("/tmp/steward/.sbt/0.13/plugins/StewardPlugin.scala") -> stewardPlugin.content,

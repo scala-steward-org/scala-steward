@@ -36,7 +36,7 @@ package object sbt {
     }
 
   val sbtScalafixPlugin: FileData =
-    FileData("sbt-scalafix.sbt", """addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.1")""")
+    FileData("sbt-scalafix.sbt", """addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.5")""")
 
   val sbtUpdatesPlugin: FileData =
     FileData("sbt-updates.sbt", """addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.4.0")""")
