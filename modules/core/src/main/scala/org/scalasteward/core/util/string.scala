@@ -21,6 +21,8 @@ import cats.implicits._
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.collection.MinSize
 import eu.timepit.refined.refineV
+import eu.timepit.refined.types.numeric.NonNegBigInt
+import scala.util.Try
 import scala.util.matching.Regex
 import shapeless.Witness
 
@@ -91,6 +93,9 @@ object string {
     val line = "─" * 12
     s"$line $s $line"
   }
+
+  def parseNonNegBigInt(s: String): Option[NonNegBigInt] =
+    Try(BigInt(s)).toOption.flatMap(NonNegBigInt.unapply)
 
   /** Splits a string between lower and upper case characters.
     *
