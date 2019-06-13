@@ -34,7 +34,7 @@ final case class UpdateHeuristic(
       .map { searchTerms =>
         val prefix = getPrefixRegex(update).getOrElse("")
         val currentVersion = Regex.quote(update.currentVersion)
-        s"(?i)(.*)($prefix$searchTerms.*?)$currentVersion".r
+        s"(?i)(.*)($prefix$searchTerms.*?)$currentVersion(.?)".r
       }
 
   def replaceF(update: Update): String => Option[String] =
@@ -45,8 +45,13 @@ final case class UpdateHeuristic(
         match0 => {
           val group1 = match0.group(1)
           val group2 = match0.group(2)
-          if (group1.toLowerCase.contains("previous") || group1.trim.startsWith("//")) None
-          else Some(group1 + group2 + update.nextVersion)
+          val lastGroup = match0.group(match0.groupCount)
+          val versionInQuotes =
+            group2.lastOption.filter(_ === '"').fold(true)(lastGroup.headOption.contains_)
+          if (group1.toLowerCase.contains("previous")
+              || group1.trim.startsWith("//")
+              || !versionInQuotes) None
+          else Some(group1 + group2 + update.nextVersion + lastGroup)
         }
       )
     }

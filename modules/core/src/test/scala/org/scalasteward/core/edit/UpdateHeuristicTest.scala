@@ -43,11 +43,11 @@ class UpdateHeuristicTest extends FunSuite with Matchers {
   test("commented val") {
     val original =
       """// val scalajsJqueryVersion = "0.9.3
-        |val scalajsJqueryVersion = "0.9.3 //bla
+        |val scalajsJqueryVersion = "0.9.3" //bla
         |"""".stripMargin.trim
     val expected =
       """// val scalajsJqueryVersion = "0.9.3
-        |val scalajsJqueryVersion = "0.9.4 //bla
+        |val scalajsJqueryVersion = "0.9.4" //bla
         |"""".stripMargin.trim
     Single("be.doeraene", "scalajs-jquery", "0.9.3", Nel.of("0.9.4"))
       .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.original.name)
@@ -252,6 +252,25 @@ class UpdateHeuristicTest extends FunSuite with Matchers {
     val original = """ val scalaTestVersion = "3.0.7" """
     Single("org.scalactic", "scalactic", "3.0.7", Nel.of("3.0.8"))
       .replaceVersionIn(original) shouldBe (None -> UpdateHeuristic.all.last.name)
+  }
+
+  test("version that contains the current version as proper substring") {
+    val original =
+      """
+      libraryDependencies += "com.thoughtworks.dsl" %%% "keywords-using" % "1.2.0" % Optional
+      libraryDependencies += "com.thoughtworks.dsl" %%% "keywords-each"  % "1.2.0+14-7a373cbd" % Optional
+      """
+    val expected =
+      """
+      libraryDependencies += "com.thoughtworks.dsl" %%% "keywords-using" % "1.3.0" % Optional
+      libraryDependencies += "com.thoughtworks.dsl" %%% "keywords-each"  % "1.2.0+14-7a373cbd" % Optional
+      """
+    Group(
+      "com.thoughtworks.dsl",
+      Nel.of("keywords-each", "keywords-using"),
+      "1.2.0",
+      Nel.of("1.3.0")
+    ).replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.strict.name)
   }
 
   test("NOK: change of unrelated ModuleID") {
