@@ -273,6 +273,13 @@ class UpdateHeuristicTest extends FunSuite with Matchers {
     ).replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.strict.name)
   }
 
+  test("prevent exception: named capturing group is missing trailing '}'") {
+    val original = """ "org.nd4j" % s"nd4j-""" + "$" + """{nd4jRuntime.value}-platform" % "0.8.0""""
+    val expected = """ "org.nd4j" % s"nd4j-""" + "$" + """{nd4jRuntime.value}-platform" % "0.9.1""""
+    Group("org.nd4j", Nel.of("nd4j-api", "nd4j-native-platform"), "0.8.0", Nel.of("0.9.1"))
+      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.strict.name)
+  }
+
   test("NOK: change of unrelated ModuleID") {
     val original = """ "com.geirsson" % "sbt-ci-release" % "1.2.1" """
     val expected = """ "com.geirsson" % "sbt-ci-release" % "1.2.4" """

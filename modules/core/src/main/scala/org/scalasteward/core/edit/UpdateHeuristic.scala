@@ -51,7 +51,7 @@ final case class UpdateHeuristic(
           if (group1.toLowerCase.contains("previous")
               || group1.trim.startsWith("//")
               || !versionInQuotes) None
-          else Some(group1 + group2 + update.nextVersion + lastGroup)
+          else Some(Regex.quoteReplacement(group1 + group2 + update.nextVersion + lastGroup))
         }
       )
     }
