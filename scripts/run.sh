@@ -4,6 +4,8 @@ set -ex
 
 SCRIPT=$(readlink -f "$0")
 STEWARD_DIR=$(dirname "$SCRIPT")/..
+echo -n $$ > "$STEWARD_DIR/scala-steward.pid"
+
 cd "$STEWARD_DIR"
 git pull
 sbt -no-colors ";clean ;core/assembly"
