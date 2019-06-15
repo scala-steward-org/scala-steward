@@ -16,11 +16,12 @@
 
 package org.scalasteward.core.scalafix
 
+import org.scalasteward.core.model.Version
 import org.scalasteward.core.util.Nel
 
 final case class Migration(
     groupId: String,
     artifactIds: Nel[String],
-    newVersion: String,
+    newVersion: Version,
     rewriteRule: String
 )

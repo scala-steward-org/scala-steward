@@ -26,8 +26,8 @@ package object scalafix {
       Migration(
         "co.fs2",
         Nel.one("fs2-core"),
-        "1.0.0",
-        "github:amarrella/fs2/v1?sha=672ea4f9"
+        Version("1.0.0"),
+        "github:amarrella/fs2/v1?sha=scalafix"
       )
     )
 
@@ -35,7 +35,7 @@ package object scalafix {
     migrations.filter { migration =>
       update.groupId === migration.groupId &&
       util.intersects(update.artifactIds, migration.artifactIds) &&
-      Version(update.currentVersion) < Version(migration.newVersion) &&
-      Version(update.newerVersions.head) >= Version(migration.newVersion)
+      Version(update.currentVersion) < migration.newVersion &&
+      Version(update.newerVersions.head) >= migration.newVersion
     }
 }
