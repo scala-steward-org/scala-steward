@@ -18,14 +18,17 @@ package org.scalasteward.core.application
 
 import caseapp._
 import caseapp.core.Error.MalformedValue
-import caseapp.core.argparser.ArgParser
-import caseapp.core.argparser.SimpleArgParser
+import caseapp.core.argparser.{ArgParser, SimpleArgParser}
 import cats.implicits._
 import org.http4s.Uri
+import org.scalasteward.core.application.Cli._
 import org.scalasteward.core.util.ApplicativeThrowable
 
-trait Cli[F[_]] {
-  def parseArgs(args: List[String]): F[Cli.Args]
+final class Cli[F[_]](implicit F: ApplicativeThrowable[F]) {
+  def parseArgs(args: List[String]): F[Args] =
+    F.fromEither {
+      CaseApp.parse[Args](args).bimap(e => new Throwable(e.message), { case (parsed, _) => parsed })
+    }
 }
 
 object Cli {
@@ -46,7 +49,9 @@ object Cli {
       keepCredentials: Boolean = false,
       envVar: List[EnvVar] = Nil
   )
+
   final case class EnvVar(name: String, value: String)
+
   implicit val envVarParser: SimpleArgParser[EnvVar] =
     SimpleArgParser.from[EnvVar]("env-var") { s =>
       s.trim.split('=').toList match {
@@ -54,22 +59,10 @@ object Cli {
           Right(EnvVar(name.trim, value.trim))
         case _ =>
           Left(
-            core.Error.MalformedValue(
-              "env-var",
-              "The value is expected in the following format: NAME=VALUE."
-            )
+            MalformedValue("EnvVar", "The value is expected in the following format: NAME=VALUE.")
           )
       }
     }
-
-  def create[F[_]](implicit F: ApplicativeThrowable[F]): Cli[F] = new Cli[F] {
-    override def parseArgs(args: List[String]): F[Args] =
-      F.fromEither {
-        CaseApp
-          .parse[Args](args)
-          .bimap(e => new Throwable(e.message), { case (parsed, _) => parsed })
-      }
-  }
 
   implicit val uriArgParser: ArgParser[Uri] =
     ArgParser[String].xmapError(

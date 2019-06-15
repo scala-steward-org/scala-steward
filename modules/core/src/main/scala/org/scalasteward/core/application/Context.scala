@@ -53,7 +53,7 @@ final case class Context[F[_]](
 object Context {
   def create[F[_]: ConcurrentEffect](args: List[String]): Resource[F, Context[F]] =
     for {
-      cliArgs_ <- Resource.liftF(Cli.create[F].parseArgs(args))
+      cliArgs_ <- Resource.liftF(new Cli[F].parseArgs(args))
       config_ <- Resource.liftF(Config.create[F](cliArgs_))
       client_ <- BlazeClientBuilder[F](ExecutionContext.global).resource
       logger_ <- Resource.liftF(Slf4jLogger.create[F])
