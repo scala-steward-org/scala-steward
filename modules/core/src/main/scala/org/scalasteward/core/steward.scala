@@ -30,13 +30,12 @@ object steward extends IOApp {
         for {
           repos <- readRepos[IO](ctx.config.reposFile)
           _ <- prepareEnv(ctx)
-          /*
           _ <- repos.traverse(ctx.dependencyService.checkDependencies)
           allUpdates <- ctx.updateService.checkForUpdates(repos)
           reposToNurture <- ctx.updateService.filterByApplicableUpdates(repos, allUpdates)
           _ <- IO(println(reposToNurture.size))
-          _ <- reposToNurture.filter(repos.contains).traverse_(ctx.nurtureAlg.nurture)*/
-          _ <- repos.traverse_(ctx.nurtureAlg.nurture)
+          _ <- reposToNurture.filter(repos.contains).traverse_(ctx.nurtureAlg.nurture)
+          //_ <- repos.traverse_(ctx.nurtureAlg.nurture)
         } yield ExitCode.Success
       }
     }
