@@ -28,6 +28,7 @@ import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.model.Update
 import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.sbt.data.ArtificialProject
+import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
 
 trait SbtAlg[F[_]] {
@@ -40,6 +41,8 @@ trait SbtAlg[F[_]] {
   def getUpdatesForProject(project: ArtificialProject): F[List[Update.Single]]
 
   def getUpdatesForRepo(repo: Repo): F[List[Update.Single]]
+
+  def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit]
 }
 
 object SbtAlg {
@@ -61,6 +64,7 @@ object SbtAlg {
       override def addGlobalPlugins: F[Unit] =
         for {
           _ <- logger.info("Add global sbt plugins")
+          _ <- addGlobalPlugin(sbtScalafixPlugin)
           _ <- addGlobalPlugin(sbtUpdatesPlugin)
           _ <- addGlobalPlugin(stewardPlugin)
         } yield ()
@@ -98,6 +102,13 @@ object SbtAlg {
             List(dependencyUpdates, reloadPlugins, dependencyUpdates)
           lines <- exec(sbtCmd(commands), repoDir)
         } yield parser.parseSingleUpdates(lines)
+
+      override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
+        for {
+          repoDir <- workspaceAlg.repoDir(repo)
+          scalafixCmds = migrations.map(m => s"$scalafix ${m.rewriteRule}").toList
+          _ <- exec(sbtCmd(scalafixEnable :: scalafixCmds), repoDir)
+        } yield ()
 
       val sbtDir: F[File] =
         fileAlg.home.map(_ / ".sbt")

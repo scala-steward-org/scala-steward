@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.sbt
+package org.scalasteward.core.scalafix
 
-object command {
-  val dependencyUpdates = "dependencyUpdates"
-  val libraryDependenciesAsJson = "libraryDependenciesAsJson"
-  val reloadPlugins = "reload plugins"
-  val scalafix = "scalafix"
-  val scalafixEnable = "scalafixEnable"
-  val setCredentialsToNil = "set every credentials := Nil"
-}
+import org.scalasteward.core.util.Nel
+
+final case class Migration(
+    groupId: String,
+    artifactIds: Nel[String],
+    newVersion: String,
+    rewriteRule: String
+)

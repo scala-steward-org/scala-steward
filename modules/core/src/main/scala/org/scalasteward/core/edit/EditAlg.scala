@@ -23,6 +23,8 @@ import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.model.Update
+import org.scalasteward.core.sbt.SbtAlg
+import org.scalasteward.core.scalafix
 import org.scalasteward.core.util._
 import org.scalasteward.core.vcs.data.Repo
 
@@ -30,11 +32,13 @@ final class EditAlg[F[_]](
     implicit
     fileAlg: FileAlg[F],
     logger: Logger[F],
+    sbtAlg: SbtAlg[F],
     workspaceAlg: WorkspaceAlg[F],
     F: Sync[F]
 ) {
   def applyUpdate(repo: Repo, update: Update): F[Unit] =
     for {
+      _ <- applyScalafixMigrations(repo, update)
       repoDir <- workspaceAlg.repoDir(repo)
       files <- fileAlg.findSourceFilesContaining(repoDir, update.currentVersion)
       noFilesFound = logger.warn("No files found that contain the current version")
@@ -48,4 +52,12 @@ final class EditAlg[F[_]](
     }
     bindUntilTrue(actions).void
   }
+
+  def applyScalafixMigrations(repo: Repo, update: Update): F[Unit] =
+    Nel.fromList(scalafix.findMigrations(update)) match {
+      case Some(migrations) =>
+        logger.info(s"Applying migrations: $migrations") >> sbtAlg.runMigrations(repo, migrations)
+      case None =>
+        F.unit
+    }
 }
