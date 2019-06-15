@@ -17,7 +17,7 @@
 package org.scalasteward.core
 
 import cats.implicits._
-import org.scalasteward.core.model.Update
+import org.scalasteward.core.model.{Update, Version}
 import org.scalasteward.core.util.Nel
 
 package object scalafix {
@@ -35,7 +35,7 @@ package object scalafix {
     migrations.filter { migration =>
       update.groupId === migration.groupId &&
       util.intersects(update.artifactIds, migration.artifactIds) &&
-      // currentVersion < migration.newVersion && newerVersions.head >= migration.newVersion
-      update.newerVersions.head === migration.newVersion
+      Version(update.currentVersion) < Version(migration.newVersion) &&
+      Version(update.newerVersions.head) >= Version(migration.newVersion)
     }
 }

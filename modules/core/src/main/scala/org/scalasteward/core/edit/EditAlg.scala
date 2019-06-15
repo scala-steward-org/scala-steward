@@ -55,7 +55,9 @@ final class EditAlg[F[_]](
 
   def applyScalafixMigrations(repo: Repo, update: Update): F[Unit] =
     Nel.fromList(scalafix.findMigrations(update)) match {
-      case Some(migrations) => sbtAlg.runMigrations(repo, migrations)
-      case None             => F.unit
+      case Some(migrations) =>
+        logger.info(s"Applying migrations: $migrations") >> sbtAlg.runMigrations(repo, migrations)
+      case None =>
+        F.unit
     }
 }
