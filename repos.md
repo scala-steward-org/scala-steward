@@ -121,7 +121,6 @@
 - cquiroz/scala-java-locales
 - cquiroz/scala-java-time
 - daandi/nice-url-encode-decode
-- daandi/nice-uuid
 - daniel-shuy/liquibase-slick-codegen-sbt-plugin
 - daniel-shuy/sbt-release-mdoc
 - daniel-shuy/scripted-scalatest-sbt-plugin
@@ -188,7 +187,6 @@
 - japgolly/univeq
 - jmcardon/tsec
 - JohnReedLOL/pos
-- JohnReedLOL/scala-trace-debug
 - julienrf/endpoints
 - julien-truffaut/Monocle
 - kemitix/s3thorp
