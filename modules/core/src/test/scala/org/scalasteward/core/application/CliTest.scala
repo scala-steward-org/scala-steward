@@ -37,4 +37,8 @@ class CliTest extends FunSuite with Matchers {
       )
     )
   }
+
+  test("malformed env-var") {
+    cli.parseArgs(List("--env-var", "foo=bar=baz")).isLeft shouldBe true
+  }
 }
