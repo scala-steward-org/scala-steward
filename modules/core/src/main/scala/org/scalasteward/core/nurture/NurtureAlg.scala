@@ -48,7 +48,7 @@ final class NurtureAlg[F[_]](
 ) {
   def nurture(repo: Repo): F[Unit] =
     logAlg.infoTotalTime(repo.show) {
-      logAlg.attemptLog_(s"Nurture ${repo.show}") {
+      logAlg.attemptLog_(util.string.lineLeftRight(s"Nurture ${repo.show}")) {
         for {
           (fork, baseBranch) <- cloneAndSync(repo)
           _ <- updateDependencies(repo, fork, baseBranch)

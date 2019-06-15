@@ -38,10 +38,8 @@ final class RepoConfigAlg[F[_]](
       val configFile = dir / repoConfigBasename
       val maybeRepoConfig = OptionT(fileAlg.readFile(configFile)).flatMapF { content =>
         parseRepoConfig(content) match {
-          case Right(config) =>
-            logger.info(s"Parsed $config from $configFile") >> F.pure(config.some)
-          case Left(errorMsg) =>
-            logger.info(errorMsg).as(none[RepoConfig])
+          case Right(config)  => logger.info(s"Parsed $config") >> F.pure(config.some)
+          case Left(errorMsg) => logger.info(errorMsg).as(none[RepoConfig])
         }
       }
       maybeRepoConfig.getOrElse(RepoConfig())

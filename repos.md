@@ -146,6 +146,7 @@
 - finagle/finagle-postgres
 - finagle/finch
 - finch/finch-oauth2
+- fp-tower/foundation
 - fthomas/crjdt
 - fthomas/datapackage
 - fthomas/fs2-cron
@@ -189,7 +190,6 @@
 - JohnReedLOL/pos
 - JohnReedLOL/scala-trace-debug
 - julienrf/endpoints
-- julien-truffaut/fp-foundation
 - julien-truffaut/Monocle
 - kemitix/s3thorp
 - kiambogo/fs2-jms

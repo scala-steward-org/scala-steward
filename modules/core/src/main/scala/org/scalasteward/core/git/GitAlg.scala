@@ -101,7 +101,7 @@ object GitAlg {
 
       override def containsChanges(repo: Repo): F[Boolean] =
         workspaceAlg.repoDir(repo).flatMap { repoDir =>
-          exec(Nel.of("status", "--porcelain"), repoDir).map(_.nonEmpty)
+          exec(Nel.of("status", "--porcelain", "--untracked-files=no"), repoDir).map(_.nonEmpty)
         }
 
       override def createBranch(repo: Repo, branch: Branch): F[Unit] =
