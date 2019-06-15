@@ -113,10 +113,9 @@ object string {
   def splitNumericAndNonNumeric(s: String): List[String] =
     splitBetween2CharMatches("\\d\\D".r)(s).flatMap(splitBetween2CharMatches("\\D\\d".r))
 
-  def splitBetween2CharMatches(regex: Regex)(s: String): List[String] = {
+  private def splitBetween2CharMatches(regex: Regex)(s: String): List[String] = {
     val bounds = regex.findAllIn(s).matchData.map(_.start + 1).toList
     val indices = 0 +: bounds :+ s.length
     indices.sliding(2).collect { case i1 :: i2 :: Nil => s.substring(i1, i2) }.toList
   }
-
 }

@@ -14,7 +14,8 @@ class VersionTest extends FunSuite with Matchers {
     ("1.2.3", "1.2.3", EqualTo),
     ("2.1", "2.1.3", LessThan),
     ("2.13.0-RC1", "2.13.0", LessThan),
-    ("2.13.0-M2", "2.13.0", LessThan)
+    ("2.13.0-M2", "2.13.0", LessThan),
+    ("2.13.0-M2", "2.13.0-RC1", LessThan)
   )
 
   test("comparison") {
