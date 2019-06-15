@@ -26,7 +26,6 @@ import org.scalasteward.core.dependency.{DependencyRepository, DependencyService
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.github.GitHubApiAlg
-import org.scalasteward.core.vcs.data.AuthenticatedUser
 import org.scalasteward.core.github.http4s.Http4sGitHubApiAlg
 import org.scalasteward.core.github.http4s.authentication.addCredentials
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
@@ -38,20 +37,11 @@ import org.scalasteward.core.update.json.JsonUpdateRepository
 import org.scalasteward.core.update.{FilterAlg, UpdateRepository, UpdateService}
 import org.scalasteward.core.util.{DateTimeAlg, HttpJsonClient, LogAlg}
 import org.scalasteward.core.vcs.VCSRepoAlg
+import org.scalasteward.core.vcs.data.AuthenticatedUser
 import scala.concurrent.ExecutionContext
 
-final case class Context[F[_]](
-    config: Config,
-    dependencyService: DependencyService[F],
-    logAlg: LogAlg[F],
-    nurtureAlg: NurtureAlg[F],
-    sbtAlg: SbtAlg[F],
-    updateService: UpdateService[F],
-    workspaceAlg: WorkspaceAlg[F]
-)
-
 object Context {
-  def create[F[_]: ConcurrentEffect](args: List[String]): Resource[F, Context[F]] =
+  def create[F[_]: ConcurrentEffect](args: List[String]): Resource[F, StewardAlg[F]] =
     for {
       cliArgs_ <- Resource.liftF(new Cli[F].parseArgs(args))
       config_ <- Resource.liftF(Config.create[F](cliArgs_))
@@ -83,14 +73,6 @@ object Context {
       implicit val dependencyService: DependencyService[F] = new DependencyService[F]
       implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F]
       implicit val updateService: UpdateService[F] = new UpdateService[F]
-      Context(
-        config,
-        dependencyService,
-        logAlg,
-        nurtureAlg,
-        sbtAlg,
-        updateService,
-        workspaceAlg
-      )
+      new StewardAlg[F]
     }
 }
