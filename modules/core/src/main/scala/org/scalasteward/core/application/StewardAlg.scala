@@ -50,7 +50,7 @@ final class StewardAlg[F[_]](
     fileAlg.readFile(reposFile).map { maybeContent =>
       val regex = """-\s+(.+)/(.+)""".r
       val content = maybeContent.getOrElse("")
-      content.lines.collect { case regex(owner, repo) => Repo(owner.trim, repo.trim) }.toList
+      content.linesIterator.collect { case regex(owner, repo) => Repo(owner.trim, repo.trim) }.toList
     }
 
   def pruneRepos(repos: List[Repo]): F[List[Repo]] =
