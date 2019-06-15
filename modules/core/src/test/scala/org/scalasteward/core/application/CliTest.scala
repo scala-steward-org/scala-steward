@@ -7,14 +7,14 @@ import org.scalatest.{FunSuite, Matchers}
 
 class CliTest extends FunSuite with Matchers {
   type Result[A] = Either[Throwable, A]
-  val cli: Cli[Result] = Cli.create[Result]
+  val cli: Cli[Result] = new Cli[Result]
 
   test("parseArgs") {
     cli.parseArgs(
       List(
         List("--workspace", "a"),
         List("--repos-file", "b"),
-        List("--git-author-name", "c"),
+        List("--git-author-name", "Scala Steward"),
         List("--git-author-email", "d"),
         List("--github-api-host", "http://example.com"),
         List("--github-login", "e"),
@@ -27,7 +27,7 @@ class CliTest extends FunSuite with Matchers {
       Cli.Args(
         workspace = "a",
         reposFile = "b",
-        gitAuthorName = "c",
+        gitAuthorName = "Scala Steward",
         gitAuthorEmail = "d",
         githubApiHost = Uri.uri("http://example.com"),
         githubLogin = "e",
