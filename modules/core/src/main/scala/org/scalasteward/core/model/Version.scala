@@ -22,15 +22,15 @@ import org.scalasteward.core.util
 import scala.util.Try
 
 final case class Version(value: String) {
-  def numericComponents: List[Long] =
+  def numericComponents: List[BigInt] =
     value
-      .split(Array('.', '-'))
+      .split(Array('.', '-', '+'))
       .flatMap(util.string.splitNumericAndNonNumeric)
       .map {
-        case "SNAP" | "SNAPSHOT" => -3L
-        case "M"                 => -2L
-        case "RC"                => -1L
-        case s                   => Try(s.toLong).getOrElse(0L)
+        case "SNAP" | "SNAPSHOT" => BigInt(-3)
+        case "M"                 => BigInt(-2)
+        case "RC"                => BigInt(-1)
+        case s                   => Try(BigInt(s)).getOrElse(BigInt(0))
       }
       .toList
 }
@@ -41,8 +41,8 @@ object Version {
       val c1 = v1.numericComponents
       val c2 = v2.numericComponents
       val maxLength = math.max(c1.length, c2.length)
-      val padded1 = c1.padTo(maxLength, 0L)
-      val padded2 = c2.padTo(maxLength, 0L)
+      val padded1 = c1.padTo(maxLength, BigInt(0))
+      val padded2 = c2.padTo(maxLength, BigInt(0))
       padded1.compare(padded2)
     }
 }
