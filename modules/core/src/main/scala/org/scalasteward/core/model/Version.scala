@@ -30,7 +30,6 @@ final case class Version(value: String) {
         case "SNAP" | "SNAPSHOT" => -3L
         case "M"                 => -2L
         case "RC"                => -1L
-        case "RELEASE"           => 0L
         case s                   => Try(s.toLong).getOrElse(0L)
       }
       .toList
