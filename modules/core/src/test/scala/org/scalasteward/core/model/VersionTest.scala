@@ -23,7 +23,8 @@ class VersionTest extends FunSuite with Discipline with Matchers {
       ("2.13.0-M2", "2.13.0", LessThan),
       ("2.13.0-M2", "2.13.0-RC1", LessThan),
       ("5.3.2.201906051522-r", "5.4.0.201906121030-r", LessThan),
-      ("105", "104", GreaterThan)
+      ("105", "104", GreaterThan),
+      ("1.0.0+20130313", "1.0.0+20130320", LessThan)
     )
 
     forAll(versions) { (x, y, result) =>
