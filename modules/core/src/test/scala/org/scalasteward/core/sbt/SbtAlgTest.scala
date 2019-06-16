@@ -12,19 +12,15 @@ class SbtAlgTest extends FunSuite with Matchers {
   test("addGlobalPlugins") {
     sbtAlg.addGlobalPlugins.runS(MockState.empty).unsafeRunSync() shouldBe MockState.empty.copy(
       commands = Vector(
-        List("write", "/tmp/steward/.sbt/0.13/plugins/sbt-scalafix.sbt"),
-        List("write", "/tmp/steward/.sbt/1.0/plugins/sbt-scalafix.sbt"),
-        List("write", "/tmp/steward/.sbt/0.13/plugins/sbt-updates.sbt"),
-        List("write", "/tmp/steward/.sbt/1.0/plugins/sbt-updates.sbt"),
+        List("write", "/tmp/steward/.sbt/0.13/plugins/scala-steward.sbt"),
+        List("write", "/tmp/steward/.sbt/1.0/plugins/scala-steward.sbt"),
         List("write", "/tmp/steward/.sbt/0.13/plugins/StewardPlugin.scala"),
         List("write", "/tmp/steward/.sbt/1.0/plugins/StewardPlugin.scala")
       ),
       logs = Vector((None, "Add global sbt plugins")),
       files = Map(
-        File("/tmp/steward/.sbt/0.13/plugins/sbt-scalafix.sbt") -> sbtScalafixPlugin.content,
-        File("/tmp/steward/.sbt/1.0/plugins/sbt-scalafix.sbt") -> sbtScalafixPlugin.content,
-        File("/tmp/steward/.sbt/0.13/plugins/sbt-updates.sbt") -> sbtUpdatesPlugin.content,
-        File("/tmp/steward/.sbt/1.0/plugins/sbt-updates.sbt") -> sbtUpdatesPlugin.content,
+        File("/tmp/steward/.sbt/0.13/plugins/scala-steward.sbt") -> scalaStewardSbt.content,
+        File("/tmp/steward/.sbt/1.0/plugins/scala-steward.sbt") -> scalaStewardSbt.content,
         File("/tmp/steward/.sbt/0.13/plugins/StewardPlugin.scala") -> stewardPlugin.content,
         File("/tmp/steward/.sbt/1.0/plugins/StewardPlugin.scala") -> stewardPlugin.content
       )
