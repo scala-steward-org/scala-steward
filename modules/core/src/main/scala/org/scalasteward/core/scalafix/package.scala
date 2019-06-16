@@ -25,9 +25,19 @@ package object scalafix {
     List(
       Migration(
         "co.fs2",
-        Nel.one("fs2-core"),
+        Nel.of("fs2-core"),
         Version("1.0.0"),
         "github:functional-streams-for-scala/fs2/v1?sha=v1.0.5"
+      ),
+      Migration(
+        "org.http4s",
+        Nel.of(
+          "http4s-blaze-client",
+          "http4s-blaze-server",
+          "http4s-core"
+        ),
+        Version("0.20.0"),
+        "github:http4s/http4s/v0_20?sha=v0.20.3"
       )
     )
 
