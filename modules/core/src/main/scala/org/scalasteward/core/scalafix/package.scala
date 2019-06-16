@@ -27,7 +27,7 @@ package object scalafix {
         "co.fs2",
         Nel.one("fs2-core"),
         Version("1.0.0"),
-        "github:amarrella/fs2/v1?sha=scalafix"
+        "github:functional-streams-for-scala/fs2/v1?sha=v1.0.5"
       )
     )
 
