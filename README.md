@@ -39,6 +39,7 @@ Thanks goes to these wonderful people:
 * [David Francoeur](https://github.com/daddykotex)
 * [Filipe Regadas](https://github.com/regadas)
 * [Frank S. Thomas](https://github.com/fthomas)
+* [Jakub Kozłowski](https://github.com/kubukoz)
 * [JCollier](https://github.com/Slakah)
 * [Jeff Martin](https://github.com/custommonkey)
 * [kenji yoshida](https://github.com/xuwei-k)
