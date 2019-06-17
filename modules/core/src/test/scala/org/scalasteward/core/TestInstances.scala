@@ -15,5 +15,5 @@ object TestInstances {
   }
 
   implicit val cogenVersion: Cogen[Version] =
-    Cogen[String].contramap(_.value)
+    Cogen(_.numericComponents.map(_.toLong).sum)
 }
