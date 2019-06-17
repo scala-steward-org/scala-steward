@@ -237,6 +237,7 @@
 - monadless/monadless
 - monix/monix
 - monix/monix-kafka
+- mwz/sbt-sonar
 - mwz/sonar-scala
 - nafg/cloud-logging-logback-scala
 - nafg/css-dsl
