@@ -44,19 +44,15 @@ object Context {
   def create[F[_]: ConcurrentEffect](args: List[String]): Resource[F, StewardAlg[F]] =
     for {
       cliArgs_ <- Resource.liftF(new Cli[F].parseArgs(args))
-      config_ <- Resource.liftF(Config.create[F](cliArgs_))
-      client_ <- BlazeClientBuilder[F](ExecutionContext.global).resource
-      logger_ <- Resource.liftF(Slf4jLogger.create[F])
-      user_ <- Resource.liftF(config_.gitHubUser[F])
+      implicit0(config: Config) <- Resource.liftF(Config.create[F](cliArgs_))
+      implicit0(client: Client[F]) <- BlazeClientBuilder[F](ExecutionContext.global).resource
+      implicit0(logger: Logger[F]) <- Resource.liftF(Slf4jLogger.create[F])
+      implicit0(user: AuthenticatedUser) <- Resource.liftF(config.gitHubUser[F])
     } yield {
-      implicit val client: Client[F] = client_
-      implicit val config: Config = config_
-      implicit val logger: Logger[F] = logger_
       implicit val dateTimeAlg: DateTimeAlg[F] = DateTimeAlg.create[F]
       implicit val fileAlg: FileAlg[F] = FileAlg.create[F]
       implicit val logAlg: LogAlg[F] = new LogAlg[F]
       implicit val processAlg: ProcessAlg[F] = ProcessAlg.create[F]
-      implicit val user: AuthenticatedUser = user_
       implicit val workspaceAlg: WorkspaceAlg[F] = WorkspaceAlg.create[F]
       implicit val repoConfigAlg: RepoConfigAlg[F] = new RepoConfigAlg[F]
       implicit val filterAlg: FilterAlg[F] = new FilterAlg[F]
