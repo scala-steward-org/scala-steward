@@ -1,6 +1,6 @@
 package org.scalasteward.core.github
 
-import org.http4s.Uri
+import org.http4s.Http4sLiteralSyntax
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.vcs.data.{Repo, RepoOut, UserOut}
 import org.scalasteward.core.mock.MockContext.{config, gitAlg, gitHubRepoAlg}
@@ -16,7 +16,7 @@ class GitHubRepoAlgTest extends FunSuite with Matchers {
     "datapackage",
     UserOut("fthomas"),
     None,
-    Uri.uri("https://github.com/fthomas/datapackage"),
+    uri"https://github.com/fthomas/datapackage",
     Branch("master")
   )
 
@@ -24,7 +24,7 @@ class GitHubRepoAlgTest extends FunSuite with Matchers {
     "datapackage",
     UserOut("scalasteward"),
     Some(parentRepoOut),
-    Uri.uri("https://github.com/scala-steward/datapackage"),
+    uri"https://github.com/scala-steward/datapackage",
     Branch("master")
   )
 

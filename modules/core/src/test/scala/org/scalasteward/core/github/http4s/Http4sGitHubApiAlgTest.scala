@@ -6,7 +6,7 @@ import org.http4s.circe._
 import org.http4s.client.Client
 import org.http4s.dsl.io._
 import org.http4s.implicits._
-import org.http4s.{HttpRoutes, Uri}
+import org.http4s.{Http4sLiteralSyntax, HttpRoutes}
 import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.vcs.data._
@@ -67,7 +67,7 @@ class Http4sGitHubApiAlgTest extends FunSuite with Matchers {
     "base.g8",
     UserOut("fthomas"),
     None,
-    Uri.uri("https://github.com/fthomas/base.g8.git"),
+    uri"https://github.com/fthomas/base.g8.git",
     Branch("master")
   )
 
@@ -75,7 +75,7 @@ class Http4sGitHubApiAlgTest extends FunSuite with Matchers {
     "base.g8-1",
     UserOut("scala-steward"),
     Some(parent),
-    Uri.uri("https://github.com/scala-steward/base.g8-1.git"),
+    uri"https://github.com/scala-steward/base.g8-1.git",
     Branch("master")
   )
 
