@@ -16,9 +16,8 @@
 
 package org.scalasteward.core
 
-import sbt._
 import sbt.Keys._
-import scala.collection.mutable.ListBuffer
+import sbt._
 
 object StewardPlugin extends AutoPlugin {
 
