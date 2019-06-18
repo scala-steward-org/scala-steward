@@ -20,6 +20,7 @@ import better.files.File
 import cats.Monad
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
+import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.dependency.DependencyService
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.NurtureAlg
@@ -34,6 +35,7 @@ final class StewardAlg[F[_]](
     dependencyService: DependencyService[F],
     fileAlg: FileAlg[F],
     logAlg: LogAlg[F],
+    logger: Logger[F],
     nurtureAlg: NurtureAlg[F],
     sbtAlg: SbtAlg[F],
     updateService: UpdateService[F],
@@ -58,9 +60,15 @@ final class StewardAlg[F[_]](
       for {
         _ <- repos.traverse(dependencyService.checkDependencies)
         allUpdates <- updateService.checkForUpdates(repos)
-        reposToNurture <- updateService.filterByApplicableUpdates(repos, allUpdates)
-        _ = println(reposToNurture.size)
-      } yield reposToNurture
+        filteredRepos <- updateService.filterByApplicableUpdates(repos, allUpdates)
+        countTotal = repos.size
+        countFiltered = filteredRepos.size
+        countPruned = countTotal - countFiltered
+        _ <- logger.info(s"""Repos count:
+                            |  total    = $countTotal
+                            |  filtered = $countFiltered
+                            |  pruned   = $countPruned""".stripMargin)
+      } yield filteredRepos
     }
 
   def runF: F[ExitCode] =
