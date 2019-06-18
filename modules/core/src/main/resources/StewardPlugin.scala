@@ -32,10 +32,13 @@ object StewardPlugin extends AutoPlugin {
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
     libraryDependenciesAsJson := {
       val sourcePositions = dependencyPositions.value
+      val scalaBinaryVersionValue = scalaBinaryVersion.value
+      val scalaVersionValue = scalaVersion.value
+
       val deps = libraryDependencies.value.filter(isDefinedInBuildFiles(_, sourcePositions)).map {
         moduleId =>
           val cross =
-            CrossVersion(moduleId.crossVersion, scalaVersion.value, scalaBinaryVersion.value)
+            CrossVersion(moduleId.crossVersion, scalaVersionValue, scalaBinaryVersionValue)
 
           val artifactIdCross =
             cross.fold(moduleId.name)(_(moduleId.name))
