@@ -33,6 +33,7 @@ look like, here are the ones it has created so far:
 
 Thanks goes to these wonderful people:
 
+* [Alex](https://github.com/jhnsmth)
 * [Arulselvan Madhavan](https://github.com/ArulselvanMadhavan)
 * [Bayram Kiran](https://github.com/kiranbayram)
 * [Dale Wijnand](https://github.com/dwijnand)
