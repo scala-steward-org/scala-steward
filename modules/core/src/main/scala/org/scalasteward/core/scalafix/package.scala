@@ -25,16 +25,22 @@ package object scalafix {
     List(
       Migration(
         "co.fs2",
-        Nel.one("fs2-core"),
+        Nel.of("fs2-.*".r),
         Version("1.0.0"),
         "github:functional-streams-for-scala/fs2/v1?sha=v1.0.5"
+      ),
+      Migration(
+        "org.http4s",
+        Nel.of("http4s-.*".r),
+        Version("0.20.0"),
+        "github:http4s/http4s/v0_20?sha=v0.20.3"
       )
     )
 
   def findMigrations(update: Update): List[Migration] =
     migrations.filter { migration =>
       update.groupId === migration.groupId &&
-      util.intersects(update.artifactIds, migration.artifactIds) &&
+      migration.artifactIds.exists(re => update.artifactIds.exists(re.findFirstIn(_).isDefined)) &&
       Version(update.currentVersion) < migration.newVersion &&
       Version(update.newerVersions.head) >= migration.newVersion
     }
