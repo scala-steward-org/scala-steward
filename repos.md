@@ -304,6 +304,7 @@
 - profunktor/fs2-rabbit
 - profunktor/http4s-tracer
 - profunktor/redis4cats
+- pureconfig/pureconfig
 - raboof/sbt-reproducible-builds
 - ReactivePlatform/Pragmatic-Scala
 - ReactivePlatform/Reactive-Design-Patterns
