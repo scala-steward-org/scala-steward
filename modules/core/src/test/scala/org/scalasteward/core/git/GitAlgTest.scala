@@ -1,6 +1,6 @@
 package org.scalasteward.core.git
 
-import org.http4s.Uri
+import org.http4s.Http4sLiteralSyntax
 import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockState
@@ -11,7 +11,7 @@ class GitAlgTest extends FunSuite with Matchers {
   val repoDir: String = (config.workspace / "fthomas/datapackage").toString
 
   test("clone") {
-    val url = Uri.uri("https://scala-steward@github.com/fthomas/datapackage")
+    val url = uri"https://scala-steward@github.com/fthomas/datapackage"
     val state = gitAlg.clone(repo, url).runS(MockState.empty).unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
@@ -64,7 +64,7 @@ class GitAlgTest extends FunSuite with Matchers {
   }
 
   test("syncFork") {
-    val url = Uri.uri("http://github.com/fthomas/datapackage")
+    val url = uri"http://github.com/fthomas/datapackage"
     val defaultBranch = Branch("master")
 
     val state = gitAlg

@@ -1,7 +1,7 @@
 package org.scalasteward.core.vcs.data
 
 import io.circe.parser
-import org.http4s.Uri
+import org.http4s.Http4sLiteralSyntax
 import org.scalasteward.core.vcs.data.PullRequestState.Open
 import org.scalatest.{FunSuite, Matchers}
 import scala.io.Source
@@ -11,7 +11,7 @@ class PullRequestOutTest extends FunSuite with Matchers {
     val expected =
       List(
         PullRequestOut(
-          Uri.unsafeFromString("https://github.com/octocat/Hello-World/pull/1347"),
+          uri"https://github.com/octocat/Hello-World/pull/1347",
           Open,
           "new-feature"
         )

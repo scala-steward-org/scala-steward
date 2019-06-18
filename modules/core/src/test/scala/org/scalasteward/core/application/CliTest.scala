@@ -1,7 +1,7 @@
 package org.scalasteward.core.application
 
 import cats.implicits._
-import org.http4s.Uri
+import org.http4s.Http4sLiteralSyntax
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalatest.{FunSuite, Matchers}
 
@@ -29,7 +29,7 @@ class CliTest extends FunSuite with Matchers {
         reposFile = "b",
         gitAuthorName = "Scala Steward",
         gitAuthorEmail = "d",
-        githubApiHost = Uri.uri("http://example.com"),
+        githubApiHost = uri"http://example.com",
         githubLogin = "e",
         gitAskPass = "f",
         ignoreOptsFiles = true,
