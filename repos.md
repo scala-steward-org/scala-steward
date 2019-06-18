@@ -189,7 +189,7 @@
 - JohnReedLOL/pos
 - julienrf/endpoints
 - julien-truffaut/Monocle
-- kemitix/s3thorp
+- kemitix/thorp
 - kiambogo/fs2-jms
 - kontainers/micrometer-akka
 - kovszilard/twitter-server-prometheus
