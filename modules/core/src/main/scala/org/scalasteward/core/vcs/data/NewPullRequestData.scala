@@ -51,7 +51,7 @@ object NewPullRequestData {
         |
         |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention @$login in the comments below.
         |
-        |Have a nice day!
+        |Have a fantastic day writing Scala!
         |
         |<details>
         |<summary>Ignore future updates</summary>

@@ -22,16 +22,15 @@ import org.scalasteward.core.util
 import scala.util.Try
 
 final case class Version(value: String) {
-  def numericComponents: List[Long] =
+  def numericComponents: List[BigInt] =
     value
-      .split(Array('.', '-'))
+      .split(Array('.', '-', '+'))
       .flatMap(util.string.splitNumericAndNonNumeric)
       .map {
-        case "SNAP" | "SNAPSHOT" => -3L
-        case "M"                 => -2L
-        case "RC"                => -1L
-        case "RELEASE"           => 0L
-        case s                   => Try(s.toLong).getOrElse(0L)
+        case "SNAP" | "SNAPSHOT" => BigInt(-3)
+        case "M"                 => BigInt(-2)
+        case "RC"                => BigInt(-1)
+        case s                   => Try(BigInt(s)).getOrElse(BigInt(0))
       }
       .toList
 }
@@ -39,11 +38,12 @@ final case class Version(value: String) {
 object Version {
   implicit val versionOrder: Order[Version] =
     Order.from[Version] { (v1, v2) =>
-      val c1 = v1.numericComponents
-      val c2 = v2.numericComponents
-      val maxLength = math.max(c1.length, c2.length)
-      val padded1 = c1.padTo(maxLength, 0L)
-      val padded2 = c2.padTo(maxLength, 0L)
-      padded1.compare(padded2)
+      val (c1, c2) = padToSameLength(v1.numericComponents, v2.numericComponents, BigInt(0))
+      c1.compare(c2)
     }
+
+  private def padToSameLength[A](l1: List[A], l2: List[A], elem: A): (List[A], List[A]) = {
+    val maxLength = math.max(l1.length, l2.length)
+    (l1.padTo(maxLength, elem), l2.padTo(maxLength, elem))
+  }
 }

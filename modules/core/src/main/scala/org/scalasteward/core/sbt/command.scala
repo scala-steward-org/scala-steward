@@ -18,7 +18,7 @@ package org.scalasteward.core.sbt
 
 object command {
   val dependencyUpdates = "dependencyUpdates"
-  val libraryDependenciesAsJson = "libraryDependenciesAsJson"
+  val libraryDependenciesAsJson = "show libraryDependenciesAsJson"
   val reloadPlugins = "reload plugins"
   val scalafix = "scalafix"
   val scalafixEnable = "scalafixEnable"

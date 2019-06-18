@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sbt.scalasteward
+package org.scalasteward.core
 
 import sbt.Keys._
 import sbt._
@@ -24,19 +24,24 @@ object StewardPlugin extends AutoPlugin {
   override def trigger: PluginTrigger = allRequirements
 
   object autoImport {
-    val libraryDependenciesAsJson = settingKey[String]("")
+    val libraryDependenciesAsJson = taskKey[String]("")
   }
 
   import autoImport._
 
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
     libraryDependenciesAsJson := {
-      val deps = libraryDependencies.value.map {
+      val sourcePositions = dependencyPositions.value
+      val scalaBinaryVersionValue = scalaBinaryVersion.value
+      val scalaVersionValue = scalaVersion.value
+
+      val deps = libraryDependencies.value.filter(isDefinedInBuildFiles(_, sourcePositions)).map {
         moduleId =>
           val cross =
-            CrossVersion(moduleId.crossVersion, scalaVersion.value, scalaBinaryVersion.value)
+            CrossVersion(moduleId.crossVersion, scalaVersionValue, scalaBinaryVersionValue)
+
           val artifactIdCross =
-            CrossVersion.applyCross(moduleId.name, cross)
+            cross.fold(moduleId.name)(_(moduleId.name))
 
           val entries: List[(String, String)] = List(
             "groupId" -> moduleId.organization,
@@ -52,4 +57,16 @@ object StewardPlugin extends AutoPlugin {
       deps.mkString("[ ", ", ", " ]")
     }
   )
+
+  // Inspired by https://github.com/rtimush/sbt-updates/issues/42
+  private def isDefinedInBuildFiles(
+      moduleId: ModuleID,
+      sourcePositions: Map[ModuleID, SourcePosition]
+  ): Boolean =
+    sourcePositions.get(moduleId) match {
+      case Some(fp: FilePosition) if fp.path.startsWith("(sbt.Classpaths") => true
+      case Some(fp: FilePosition) if fp.path.startsWith("(")               => false
+      case Some(fp: FilePosition) if fp.path.startsWith("Defaults.scala")  => false
+      case _                                                               => true
+    }
 }

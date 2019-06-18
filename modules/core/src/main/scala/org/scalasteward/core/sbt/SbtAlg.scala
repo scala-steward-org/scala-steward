@@ -64,8 +64,7 @@ object SbtAlg {
       override def addGlobalPlugins: F[Unit] =
         for {
           _ <- logger.info("Add global sbt plugins")
-          _ <- addGlobalPlugin(sbtScalafixPlugin)
-          _ <- addGlobalPlugin(sbtUpdatesPlugin)
+          _ <- addGlobalPlugin(scalaStewardSbt)
           _ <- addGlobalPlugin(stewardPlugin)
         } yield ()
 
