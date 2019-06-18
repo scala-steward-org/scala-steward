@@ -32,9 +32,13 @@ package object scalafix {
       Migration(
         "org.http4s",
         Nel.of(
+          "http4s-async-http-client",
           "http4s-blaze-client",
           "http4s-blaze-server",
-          "http4s-core"
+          "http4s-core",
+          "http4s-client",
+          "http4s-jetty-client",
+          "http4s-okhttp-client"
         ),
         Version("0.20.0"),
         "github:http4s/http4s/v0_20?sha=v0.20.3"
