@@ -37,6 +37,7 @@ package object scalafix {
           "http4s-blaze-server",
           "http4s-core",
           "http4s-client",
+          "http4s-dsl",
           "http4s-jetty-client",
           "http4s-okhttp-client"
         ),
