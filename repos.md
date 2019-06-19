@@ -157,6 +157,10 @@
 - fthomas/singleton-ops
 - fthomas/status-page
 - functional-streams-for-scala/fs2
+- gemini-hlsw/ocs3
+- gemini-hlsw/gsp-math
+- gemini-hlsw/sbt-gsp
+- gemini-hlsw/gemini-locales
 - gearpump/gearpump
 - getquill/quill
 - gnieh/diffson
