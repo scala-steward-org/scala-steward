@@ -47,6 +47,11 @@ class FileAlgTest extends FunSuite with Matchers {
     p.unsafeRunSync() shouldBe ((Some(content), None, Some(content)))
   }
 
+  test("removeTemporarily: nonexistent file") {
+    val file = File.temp / "does-not-exists.txt"
+    ioFileAlg.removeTemporarily(file)(IO.pure(42)).unsafeRunSync() shouldBe 42
+  }
+
   test("editFile: nonexistent file") {
     val (state, edited) = (for {
       home <- fileAlg.home
