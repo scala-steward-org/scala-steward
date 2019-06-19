@@ -35,6 +35,8 @@ class SbtAlgTest extends FunSuite with Matchers {
     state shouldBe MockState.empty.copy(
       commands = Vector(
         List(
+          "TEST_VAR=GREAT",
+          "ANOTHER_TEST_VAR=ALSO_GREAT",
           repoDir.toString,
           "firejail",
           s"--whitelist=$repoDir",
@@ -43,9 +45,6 @@ class SbtAlgTest extends FunSuite with Matchers {
           "-no-colors",
           ";set every credentials := Nil;dependencyUpdates;reload plugins;dependencyUpdates"
         )
-      ),
-      extraEnv = Vector(
-        List(("TEST_VAR", "GREAT"), ("ANOTHER_TEST_VAR", "ALSO_GREAT"))
       )
     )
   }
@@ -64,6 +63,8 @@ class SbtAlgTest extends FunSuite with Matchers {
         List("rm", (repoDir / ".sbtopts").toString),
         List("create", (repoDir / ".jvmopts").toString),
         List(
+          "TEST_VAR=GREAT",
+          "ANOTHER_TEST_VAR=ALSO_GREAT",
           repoDir.toString,
           "firejail",
           s"--whitelist=$repoDir",
@@ -75,9 +76,6 @@ class SbtAlgTest extends FunSuite with Matchers {
         List("rm", (repoDir / ".jvmopts").toString),
         List("restore", (repoDir / ".sbtopts").toString),
         List("restore", (repoDir / ".jvmopts").toString)
-      ),
-      extraEnv = Vector(
-        List(("TEST_VAR", "GREAT"), ("ANOTHER_TEST_VAR", "ALSO_GREAT"))
       )
     )
   }
@@ -93,6 +91,8 @@ class SbtAlgTest extends FunSuite with Matchers {
     state shouldBe MockState.empty.copy(
       commands = Vector(
         List(
+          "TEST_VAR=GREAT",
+          "ANOTHER_TEST_VAR=ALSO_GREAT",
           repoDir.toString,
           "firejail",
           s"--whitelist=$repoDir",
@@ -101,9 +101,6 @@ class SbtAlgTest extends FunSuite with Matchers {
           "-no-colors",
           ";dependencyUpdates;reload plugins;dependencyUpdates"
         )
-      ),
-      extraEnv = Vector(
-        List(("TEST_VAR", "GREAT"), ("ANOTHER_TEST_VAR", "ALSO_GREAT"))
       )
     )
   }

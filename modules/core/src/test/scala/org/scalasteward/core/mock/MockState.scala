@@ -4,7 +4,6 @@ import better.files.File
 
 final case class MockState(
     commands: Vector[List[String]],
-    extraEnv: Vector[List[(String, String)]],
     logs: Vector[(Option[Throwable], String)],
     files: Map[File, String]
 ) {
@@ -18,9 +17,7 @@ final case class MockState(
     copy(files = files - file)
 
   def exec(cmd: List[String], env: (String, String)*): MockState =
-    // Vector() != Vector(List())
-    if (env.isEmpty) copy(commands = commands :+ cmd)
-    else copy(commands = commands :+ cmd, extraEnv :+ env.toList)
+    copy(commands = commands :+ (env.map { case (k, v) => s"$k=$v" }.toList ++ cmd))
 
   def log(maybeThrowable: Option[Throwable], msg: String): MockState =
     copy(logs = logs :+ ((maybeThrowable, msg)))
@@ -28,5 +25,5 @@ final case class MockState(
 
 object MockState {
   def empty: MockState =
-    MockState(Vector.empty, Vector.empty, Vector.empty, Map.empty)
+    MockState(commands = Vector.empty, logs = Vector.empty, files = Map.empty)
 }
