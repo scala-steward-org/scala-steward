@@ -34,8 +34,9 @@ class ProcessAlgTest extends FunSuite with Matchers {
       .unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
-      commands = Vector(List(File.temp.toString, "echo", "hello")),
-      extraEnv = Vector(List(("TEST_VAR", "GREAT"), ("ANOTHER_TEST_VAR", "ALSO_GREAT")))
+      commands = Vector(
+        List("TEST_VAR=GREAT", "ANOTHER_TEST_VAR=ALSO_GREAT", File.temp.toString, "echo", "hello")
+      )
     )
   }
 
@@ -47,10 +48,15 @@ class ProcessAlgTest extends FunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List(File.temp.toString, "firejail", s"--whitelist=${File.temp}", "echo", "hello")
-      ),
-      extraEnv = Vector(
-        List(("TEST_VAR", "GREAT"), ("ANOTHER_TEST_VAR", "ALSO_GREAT"))
+        List(
+          "TEST_VAR=GREAT",
+          "ANOTHER_TEST_VAR=ALSO_GREAT",
+          File.temp.toString,
+          "firejail",
+          s"--whitelist=${File.temp}",
+          "echo",
+          "hello"
+        )
       )
     )
   }

@@ -9,6 +9,7 @@ import org.scalatest.{FunSuite, Matchers}
 class GitAlgTest extends FunSuite with Matchers {
   val repo = Repo("fthomas", "datapackage")
   val repoDir: String = (config.workspace / "fthomas/datapackage").toString
+  val askPass = s"GIT_ASKPASS=${config.gitAskPass}"
 
   test("clone") {
     val url = uri"https://scala-steward@github.com/fthomas/datapackage"
@@ -17,6 +18,7 @@ class GitAlgTest extends FunSuite with Matchers {
     state shouldBe MockState.empty.copy(
       commands = Vector(
         List(
+          askPass,
           config.workspace.toString,
           "git",
           "clone",
@@ -24,9 +26,6 @@ class GitAlgTest extends FunSuite with Matchers {
           "https://scala-steward@github.com/fthomas/datapackage",
           repoDir
         )
-      ),
-      extraEnv = Vector(
-        List(("GIT_ASKPASS", config.gitAskPass.toString))
       )
     )
   }
@@ -39,10 +38,7 @@ class GitAlgTest extends FunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List(repoDir, "git", "log", "--pretty=format:'%an'", "master..update/cats-1.0.0")
-      ),
-      extraEnv = Vector(
-        List(("GIT_ASKPASS", config.gitAskPass.toString))
+        List(askPass, repoDir, "git", "log", "--pretty=format:'%an'", "master..update/cats-1.0.0")
       )
     )
   }
@@ -55,10 +51,7 @@ class GitAlgTest extends FunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List(repoDir, "git", "commit", "--all", "-m", "Initial commit", "--gpg-sign")
-      ),
-      extraEnv = Vector(
-        List(("GIT_ASKPASS", config.gitAskPass.toString))
+        List(askPass, repoDir, "git", "commit", "--all", "-m", "Initial commit", "--gpg-sign")
       )
     )
   }
@@ -74,18 +67,19 @@ class GitAlgTest extends FunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List(repoDir, "git", "remote", "add", "upstream", "http://github.com/fthomas/datapackage"),
-        List(repoDir, "git", "fetch", "upstream"),
-        List(repoDir, "git", "checkout", "-B", "master", "--track", "upstream/master"),
-        List(repoDir, "git", "merge", "upstream/master"),
-        List(repoDir, "git", "push", "--force", "--set-upstream", "origin", "master")
-      ),
-      extraEnv = Vector(
-        List(("GIT_ASKPASS", config.gitAskPass.toString)),
-        List(("GIT_ASKPASS", config.gitAskPass.toString)),
-        List(("GIT_ASKPASS", config.gitAskPass.toString)),
-        List(("GIT_ASKPASS", config.gitAskPass.toString)),
-        List(("GIT_ASKPASS", config.gitAskPass.toString))
+        List(
+          askPass,
+          repoDir,
+          "git",
+          "remote",
+          "add",
+          "upstream",
+          "http://github.com/fthomas/datapackage"
+        ),
+        List(askPass, repoDir, "git", "fetch", "upstream"),
+        List(askPass, repoDir, "git", "checkout", "-B", "master", "--track", "upstream/master"),
+        List(askPass, repoDir, "git", "merge", "upstream/master"),
+        List(askPass, repoDir, "git", "push", "--force", "--set-upstream", "origin", "master")
       )
     )
   }
