@@ -38,9 +38,13 @@ package object sbt {
   val scalaStewardSbt: FileData =
     FileData(
       "scala-steward.sbt",
-      """addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.5")
-        |addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.4.1")
-        |""".stripMargin.trim
+      """addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.4.1")"""
+    )
+
+  val scalaStewardScalafixSbt: FileData =
+    FileData(
+      "scala-steward-scalafix.sbt",
+      """addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.5")"""
     )
 
   val stewardPlugin: FileData = {

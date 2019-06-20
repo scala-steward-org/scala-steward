@@ -2,9 +2,12 @@ package org.scalasteward.core.sbt
 
 import better.files.File
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.{MockContext, MockState}
+import org.scalasteward.core.model.Version
+import org.scalasteward.core.scalafix.Migration
+import org.scalasteward.core.util.Nel
+import org.scalasteward.core.vcs.data.Repo
 import org.scalatest.{FunSuite, Matchers}
 
 class SbtAlgTest extends FunSuite with Matchers {
@@ -101,6 +104,40 @@ class SbtAlgTest extends FunSuite with Matchers {
           "-no-colors",
           ";dependencyUpdates;reload plugins;dependencyUpdates"
         )
+      )
+    )
+  }
+
+  test("runMigrations") {
+    val repo = Repo("fthomas", "scala-steward")
+    val repoDir = config.workspace / repo.owner / repo.repo
+    val migrations = Nel.of(
+      Migration(
+        "co.fs2",
+        Nel.of("fs2-core".r),
+        Version("1.0.0"),
+        "github:functional-streams-for-scala/fs2/v1?sha=v1.0.5"
+      )
+    )
+    val state = sbtAlg.runMigrations(repo, migrations).runS(MockState.empty).unsafeRunSync()
+
+    state shouldBe MockState.empty.copy(
+      commands = Vector(
+        List("create", "/tmp/steward/.sbt/0.13/plugins/scala-steward-scalafix.sbt"),
+        List("create", "/tmp/steward/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
+        List(
+          "TEST_VAR=GREAT",
+          "ANOTHER_TEST_VAR=ALSO_GREAT",
+          repoDir.toString,
+          "firejail",
+          s"--whitelist=$repoDir",
+          "sbt",
+          "-batch",
+          "-no-colors",
+          ";scalafixEnable;scalafix github:functional-streams-for-scala/fs2/v1?sha=v1.0.5"
+        ),
+        List("rm", "/tmp/steward/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
+        List("rm", "/tmp/steward/.sbt/0.13/plugins/scala-steward-scalafix.sbt")
       )
     )
   }
