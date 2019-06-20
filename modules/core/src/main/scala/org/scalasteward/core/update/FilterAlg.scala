@@ -119,7 +119,9 @@ object FilterAlg {
       case ("net.sourceforge.plantuml", "plantuml", _, _) =>
         List(
           // https://github.com/esamson/remder/pull/5
-          "8059"
+          "8059",
+          // https://github.com/metabookmarks/sbt-plantuml-plugin/pull/10
+          "2017.11"
         )
       case ("org.http4s", _, _, _) =>
         List(
