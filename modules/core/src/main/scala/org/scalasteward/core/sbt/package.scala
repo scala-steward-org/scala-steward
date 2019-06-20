@@ -39,7 +39,7 @@ package object sbt {
     FileData(
       "scala-steward.sbt",
       """addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.5")
-        |addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.4.0")
+        |addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.4.1")
         |""".stripMargin.trim
     )
 
