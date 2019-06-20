@@ -34,6 +34,8 @@ import org.scalasteward.core.util.Nel
 trait SbtAlg[F[_]] {
   def addGlobalPlugin(plugin: FileData): F[Unit]
 
+  def addGlobalPluginTemporarily[A](plugin: FileData)(fa: F[A]): F[A]
+
   def addGlobalPlugins: F[Unit]
 
   def getDependencies(repo: Repo): F[List[Dependency]]
@@ -59,6 +61,16 @@ object SbtAlg {
       override def addGlobalPlugin(plugin: FileData): F[Unit] =
         List("0.13", "1.0").traverse_ { series =>
           sbtDir.flatMap(dir => fileAlg.writeFileData(dir / series / "plugins", plugin))
+        }
+
+      override def addGlobalPluginTemporarily[A](plugin: FileData)(fa: F[A]): F[A] =
+        sbtDir.flatMap { dir =>
+          val plugins = "plugins"
+          fileAlg.createTemporarily(dir / "0.13" / plugins / plugin.name, plugin.content) {
+            fileAlg.createTemporarily(dir / "1.0" / plugins / plugin.name, plugin.content) {
+              fa
+            }
+          }
         }
 
       override def addGlobalPlugins: F[Unit] =
@@ -103,11 +115,13 @@ object SbtAlg {
         } yield parser.parseSingleUpdates(lines)
 
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
-        for {
-          repoDir <- workspaceAlg.repoDir(repo)
-          scalafixCmds = migrations.map(m => s"$scalafix ${m.rewriteRule}").toList
-          _ <- exec(sbtCmd(scalafixEnable :: scalafixCmds), repoDir)
-        } yield ()
+        addGlobalPluginTemporarily(scalaStewardScalafixSbt) {
+          for {
+            repoDir <- workspaceAlg.repoDir(repo)
+            scalafixCmds = migrations.map(m => s"$scalafix ${m.rewriteRule}").toList
+            _ <- exec(sbtCmd(scalafixEnable :: scalafixCmds), repoDir)
+          } yield ()
+        }
 
       val sbtDir: F[File] =
         fileAlg.home.map(_ / ".sbt")
