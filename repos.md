@@ -417,7 +417,7 @@
 - TimWSpence/cats-stm
 - TinkoffCreditSystems/typed-schema
 - tjheslin1/DMsPredictor
-- tomwadeson/barebones
+- tomwadeson/scala-barebones
 - tpolecat/atto
 - tpolecat/doobie
 - tpolecat/skunk
