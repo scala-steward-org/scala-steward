@@ -19,10 +19,10 @@ which resolves those rules and edits the source code accordingly.
 
 ## Writing migration rules for your project
 
-See the [Scalafix Developer Guide] for more information about writing rewrite
-rules or have a look at the existing [migration rules][migrations] for
-inspiration. Rules in Scala Steward must be accessible via the
-[github:][using-github] or [http:][using-http] schemes.
+See the [Scalafix Developer Guide][scalafix-dev-guide] for more information
+about writing rewrite rules or have a look at the existing
+[migration rules][migrations] for inspiration. Rules in Scala Steward must be
+accessible via the [github:][using-github] or [http:][using-http] schemes.
 
 ## Adding migration rules to Scala Steward
 
