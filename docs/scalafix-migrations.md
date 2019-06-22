@@ -26,10 +26,10 @@ accessible via the [github:][using-github] or [http:][using-http] schemes.
 
 ## Adding migration rules to Scala Steward
 
-Once you have written a new migration rule for a new version of your project,
+After you have written a new migration rule for a new version of your project,
 Scala Steward needs to be made aware of it. Creating a pull request that adds
-the new rule to list of [migrations][migrations] is enough for that. Once that
-PR is merged, Scala Steward will start using this migration.
+the new rule to the list of [migrations][migrations] is enough for that. Once
+that pull request is merged, Scala Steward will start using this migration.
 
 [Scalafix]: https://scalacenter.github.io/scalafix/
 [migrations]: https://github.com/fthomas/scala-steward/blob/master/modules/core/src/main/scala/org/scalasteward/core/scalafix/package.scala
