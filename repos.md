@@ -154,6 +154,7 @@
 - fthomas/properly
 - fthomas/refined
 - fthomas/refined-sjs-example
+- fthomas/scalafix-test
 - fthomas/scala-steward
 - fthomas/singleton-ops
 - fthomas/status-page
