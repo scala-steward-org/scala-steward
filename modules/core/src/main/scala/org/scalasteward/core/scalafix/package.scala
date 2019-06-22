@@ -34,6 +34,12 @@ package object scalafix {
         Nel.of("http4s-.*".r),
         Version("0.20.0"),
         "github:http4s/http4s/v0_20?sha=v0.20.3"
+      ),
+      Migration(
+        "org.typelevel",
+        Nel.of("cats-core".r),
+        Version("1.0.0"),
+        "github:typelevel/cats/Cats_v1_0_0?sha=v1.1.0"
       )
     )
 
