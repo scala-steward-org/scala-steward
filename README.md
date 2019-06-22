@@ -31,7 +31,7 @@ look like, here are the ones it has created so far:
 
 ## Documentation
 
-The [`docs/`](https://github.com/fthomas/scala-steward/tree/master/docs) directory
+The [`docs`](https://github.com/fthomas/scala-steward/tree/master/docs) directory
 contains documentation about these topics:
 
 * [Running scala-steward](https://github.com/fthomas/scala-steward/tree/master/docs/running.md)
