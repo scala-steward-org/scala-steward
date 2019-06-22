@@ -5,7 +5,7 @@ to not only bump version numbers but to also adapt the code for the new
 version. This allows to automatically rewrite deprecated code or code that
 would not compile with the new version of the dependency.
 
-Here are two pull request that demonstrate this feature:
+Here are two pull requests that demonstrate this feature:
  * https://github.com/barambani/http4s-extend/pull/67/files
  * https://github.com/fthomas/scalafix-test/pull/6/files
 
