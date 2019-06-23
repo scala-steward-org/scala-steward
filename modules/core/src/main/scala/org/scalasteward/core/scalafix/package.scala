@@ -39,7 +39,7 @@ package object scalafix {
         "org.typelevel",
         Nel.of("cats-core".r),
         Version("1.0.0"),
-        "github:typelevel/cats/Cats_v1_0_0?sha=v1.1.0"
+        "github:fthomas/cats/Cats_v1_0_0?sha=update/scalafix"
       )
     )
 
