@@ -30,6 +30,15 @@ package object scalafix {
         "github:functional-streams-for-scala/fs2/v1?sha=v1.0.5"
       ),
       Migration(
+        "com.spotify",
+        Nel.of("scio-core".r),
+        Version("0.7.0"),
+        "github:spotify/scio/FixAvroIO?sha=v0.7.4"
+        // github:spotify/scio/AddMissingImports?sha=v0.7.4
+        // github:spotify/scio/RewriteSysProp?sha=v0.7.4
+        // github:spotify/scio/BQClientRefactoring?sha=v0.7.4
+      ),
+      Migration(
         "org.http4s",
         Nel.of("http4s-.*".r),
         Version("0.20.0"),
