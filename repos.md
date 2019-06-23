@@ -455,4 +455,11 @@
 - yannick-cw/elastic-indexer4s
 - zio/zio
 - zio/zio-keeper
+- zio/interop-cats
+- zio/interop-future
+- zio/interop-java
+- zio/interop-monix
+- zio/interop-reactive-streams
+- zio/interop-scalaz
+- zio/interop-twitter
 - ziyasal/reducio
