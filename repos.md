@@ -121,9 +121,6 @@
 - cquiroz/scala-java-locales
 - cquiroz/scala-java-time
 - daandi/nice-url-encode-decode
-- daniel-shuy/liquibase-slick-codegen-sbt-plugin
-- daniel-shuy/sbt-release-mdoc
-- daniel-shuy/scripted-scalatest-sbt-plugin
 - dhpiggott/liquidity-service
 - dispalt/tagless-redux
 - djspiewak/gll-combinators
