@@ -84,8 +84,7 @@ final class UpdateService[F[_]](
             util.divideOnError(prj)(sbtAlg.getUpdatesForProject)(_.halve.toList.flatMap {
               case (p1, p2) => List(p1, p2)
             }) { (failedP: ArtificialProject, t: Throwable) =>
-              println(s"failed finding updates for $failedP")
-              println(t)
+              logger.error(t)(s"failed finding updates for $failedP error=${t.getMessage}")
               F.pure(List.empty[Update.Single])
             }
 
