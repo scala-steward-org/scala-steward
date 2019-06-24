@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
+    <!-- Pass -DLOG_LEVEL=<LOG_LEVEL> to override -->
+    <property scope="local" name="log_level" value="${LOG_LEVEL:-INFO}"/>
+    <!-- Pass -DROOT_LOG_LEVEL=<LOG_LEVEL> to override -->
+    <property scope="local" name="root_log_level" value="${ROOT_LOG_LEVEL:-INFO}"/>
+
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <charset>UTF-8</charset>
@@ -7,7 +12,11 @@
         </encoder>
     </appender>
 
-    <root level="INFO">
+    <logger name="org.scalasteward.core" level="${log_level}" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <root level="${root_log_level}">
         <appender-ref ref="CONSOLE"/>
     </root>
 </configuration>
