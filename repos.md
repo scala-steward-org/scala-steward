@@ -24,6 +24,7 @@
 - alonsodomin/cron4s
 - alonsodomin/sbt-spark
 - alonsodomin/scala-colog
+- Atry/Dsl.scala-akka-actor
 - Atry/fastring
 - AVSystem/scala-commons
 - azhur/kafka-serde-scala
