@@ -193,6 +193,7 @@
 - JohnReedLOL/pos
 - julienrf/endpoints
 - julien-truffaut/Monocle
+- KelkooGroup/theGardener
 - kemitix/thorp
 - kiambogo/fs2-jms
 - kontainers/micrometer-akka
