@@ -109,7 +109,7 @@ lazy val metadataSettings = Def.settings(
   homepage := Some(url(s"https://github.com/$gitHubOwner/$projectName")),
   startYear := Some(2018),
   licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
-  headerLicense := Some(HeaderLicense.ALv2("2018-2019", s"$projectName contributors")),
+  headerLicense := Some(HeaderLicense.ALv2("2018-2019", "Scala Steward contributors")),
   developers := List(
     Developer(
       id = "fthomas",
@@ -204,7 +204,7 @@ addCommandAlias(
       Seq("core/run"),
       Seq("--workspace", s"$projectDir/workspace"),
       Seq("--repos-file", s"$projectDir/repos.md"),
-      Seq("--git-author-name", "Scala steward"),
+      Seq("--git-author-name", "Scala Steward"),
       Seq("--git-author-email", s"me@$projectName.org"),
       Seq("--github-login", projectName),
       Seq("--git-ask-pass", s"$home/.github/askpass/$projectName.sh"),
