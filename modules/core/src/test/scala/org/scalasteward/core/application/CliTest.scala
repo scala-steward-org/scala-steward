@@ -1,9 +1,9 @@
 package org.scalasteward.core.application
 
 import cats.implicits._
-import org.http4s.Http4sLiteralSyntax
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalatest.{FunSuite, Matchers}
+import org.http4s.Uri
 
 class CliTest extends FunSuite with Matchers {
   type Result[A] = Either[Throwable, A]
@@ -14,7 +14,7 @@ class CliTest extends FunSuite with Matchers {
       List(
         List("--workspace", "a"),
         List("--repos-file", "b"),
-        List("--git-author-name", "Scala Steward"),
+        List("--git-author-name", "c"),
         List("--git-author-email", "d"),
         List("--vcs-type", "gitlab"),
         List("--vcs-api-host", "http://example.com"),

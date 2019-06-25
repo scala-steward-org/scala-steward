@@ -20,7 +20,7 @@ import caseapp._
 import caseapp.core.Error.MalformedValue
 import caseapp.core.argparser.{ArgParser, SimpleArgParser}
 import cats.implicits._
-import org.http4s.{Http4sLiteralSyntax, Uri}
+import org.http4s.{Uri}
 import org.scalasteward.core.application.Cli._
 import org.scalasteward.core.util.ApplicativeThrowable
 

@@ -85,7 +85,6 @@ final class NurtureAlg[F[_]](
     for {
       _ <- logger.info(s"Process update ${data.update.show}")
       head = vcsSpecifics.sourceFor(data.repo, data.update)
-      repoConfig <- repoConfigAlg.getRepoConfig(data.repo)
       pullRequests <- vcsApiAlg.listPullRequests(data.repo, head, data.baseBranch)
       _ <- pullRequests.headOption match {
         case Some(pr) if pr.isClosed =>
@@ -124,8 +123,7 @@ final class NurtureAlg[F[_]](
   def createPullRequest(data: UpdateData): F[Unit] =
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
-      headLogin = vcsSpecifics.sourceFor(data.repo, data.update)
-      requestData = NewPullRequestData.from(data, headLogin, config.vcsLogin)
+      requestData = NewPullRequestData.from(data, config.vcsLogin)
       pr <- vcsApiAlg.createPullRequest(data.repo, requestData)
       _ <- pullRequestRepo.createOrUpdate(
         data.repo,
