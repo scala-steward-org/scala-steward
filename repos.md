@@ -126,7 +126,6 @@
 - dispalt/tagless-redux
 - djspiewak/gll-combinators
 - djspiewak/shims
-- dominique-unruh/qrhl-tool
 - dwijnand/sbt-compat
 - dwijnand/sbt-dynver
 - dwijnand/sbt-project-graph
