@@ -32,7 +32,7 @@ class VCSSelection[F[_]: Sync](implicit client: HttpJsonClient[F], user: Authent
     import org.scalasteward.core.github.http4s.authentication.addCredentials
 
     val alg = new Http4sGitHubApiAlg[F](config.vcsApiHost, _ => addCredentials(user))
-    val specifics = new GitHubSpecifics(config)
+    val specifics = new GitHubSpecifics()
     (alg, specifics)
   }
   private def gitlab(config: Config): (Http4sGitLabApiAlg[F], GitlabSpecifics) = {
