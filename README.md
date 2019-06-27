@@ -35,6 +35,7 @@ The [`docs`](docs) directory contains documentation about these topics:
 
 * [Running Scala Steward](docs/running.md)
 * [Scalafix Migrations](docs/scalafix-migrations.md)
+* [Frequently Asked Questions](docs/faq.md)
 
 ## Contributors
 
