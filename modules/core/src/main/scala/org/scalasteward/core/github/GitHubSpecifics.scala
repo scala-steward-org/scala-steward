@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core
+package org.scalasteward.core.github
 
 import org.scalasteward.core.model.Update
+import org.scalasteward.core.vcs.data.Repo
+import org.scalasteward.core.vcs
+import org.scalasteward.core.git
+import org.scalasteward.core.vcs.VCSSpecifics
 
-package object vcs {
-
-  def headFor(origin: String, update: Update): String =
-    s"$origin:${git.branchFor(update).name}"
-
+class GitHubSpecifics extends VCSSpecifics {
+  override def sourceFor(repo: Repo, update: Update): String =
+    s"${vcs.headFor(repo.owner, update)}:${git.branchFor(update).name}"
 }

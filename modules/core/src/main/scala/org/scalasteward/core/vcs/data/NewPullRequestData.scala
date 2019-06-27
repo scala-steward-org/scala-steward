@@ -23,7 +23,8 @@ import org.scalasteward.core.git.Branch
 import org.scalasteward.core.model.{SemVer, Update}
 import org.scalasteward.core.nurture.UpdateData
 import org.scalasteward.core.repoconfig.RepoConfigAlg
-import org.scalasteward.core.{git, vcs}
+import org.scalasteward.core.git
+import org.scalasteward.core.vcs
 
 final case class NewPullRequestData(
     title: String,

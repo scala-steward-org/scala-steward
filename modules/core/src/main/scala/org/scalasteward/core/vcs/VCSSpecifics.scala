@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core
+package org.scalasteward.core.vcs
 
 import org.scalasteward.core.model.Update
+import org.scalasteward.core.vcs.data.Repo
 
-package object vcs {
-
-  def headFor(origin: String, update: Update): String =
-    s"$origin:${git.branchFor(update).name}"
-
+trait VCSSpecifics {
+  def sourceFor(repo: Repo, update: Update): String
 }
