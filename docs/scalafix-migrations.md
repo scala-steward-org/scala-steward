@@ -31,8 +31,11 @@ Scala Steward needs to be made aware of it. Creating a pull request that adds
 the new rule to the list of [migrations][migrations] is enough for that. Once
 that pull request is merged, Scala Steward will start using this migration.
 
+Pull requests that added migration rules can be found [here](scalafix-prs).
+
 [Scalafix]: https://scalacenter.github.io/scalafix/
 [migrations]: https://github.com/fthomas/scala-steward/blob/master/modules/core/src/main/scala/org/scalasteward/core/scalafix/package.scala
 [scalafix-dev-guide]: https://scalacenter.github.io/scalafix/docs/developers/setup.html
 [using-github]: https://scalacenter.github.io/scalafix/docs/developers/sharing-rules.html#using-github
 [using-http]: https://scalacenter.github.io/scalafix/docs/developers/sharing-rules.html#using-http
+[scalafix-prs]: https://github.com/fthomas/scala-steward/pulls?q=label%3Ascalafix-migration
