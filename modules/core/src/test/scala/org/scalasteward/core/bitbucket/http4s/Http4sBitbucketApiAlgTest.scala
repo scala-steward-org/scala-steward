@@ -1,0 +1,185 @@
+package org.scalasteward.core.bitbucket.http4s
+
+import cats.effect.IO
+import io.circe.literal._
+import org.http4s.circe._
+import org.http4s.client.Client
+import org.http4s.dsl.io._
+import org.http4s.implicits._
+import org.http4s.{HttpRoutes}
+import org.scalasteward.core.mock.MockContext.config
+import org.scalasteward.core.util.HttpJsonClient
+import org.scalatest.{FunSuite, Matchers}
+
+import org.scalasteward.core.vcs.data._
+import org.scalasteward.core.git._
+import org.http4s._
+import org.scalasteward.core.git.Sha1.HexString
+
+class Http4sBitbucketApiAlgTest extends FunSuite with Matchers {
+
+  val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    case GET -> Root / "repositories" / "fthomas" / "base.g8" =>
+      Ok(
+        json"""{
+          "name": "base.g8",
+          "mainbranch": {
+              "type": "branch",
+              "name": "master"
+          },
+          "owner": {
+              "nickname": "fthomas"
+          },
+          "links": {
+              "clone": [
+                  {
+                      "href": "https://scala-steward@bitbucket.org/fthomas/base.g8.git",
+                      "name": "https"
+                  }
+              ]
+          }
+        }"""
+      )
+    case GET -> Root / "repositories" / "scala-steward" / "base.g8" =>
+      Ok(
+        json"""{
+          "name": "base.g8",
+          "mainbranch": {
+              "type": "branch",
+              "name": "master"
+          },
+          "owner": {
+              "nickname": "scala-steward"
+          },
+          "parent": {
+              "full_name": "fthomas/base.g8"
+          },
+          "links": {
+              "clone": [
+                  {
+                      "href": "https://scala-steward@bitbucket.org/scala-steward/base.g8.git",
+                      "name": "https"
+                  }
+              ]
+          }
+        }"""
+      )
+    case GET -> Root / "repositories" / "fthomas" / "base.g8" / "refs" / "branches" / "master" =>
+      Ok(
+        json"""{
+          "name": "master",
+          "target": {
+              "hash": "07eb2a203e297c8340273950e98b2cab68b560c1"
+          }
+        }"""
+      )
+    case POST -> Root / "repositories" / "fthomas" / "base.g8" / "forks" =>
+      Ok(
+        json"""{
+          "name": "base.g8",
+          "mainbranch": {
+            "type": "branch",
+            "name": "master"
+          },
+          "owner": {
+            "nickname": "scala-steward"
+          },
+          "parent": {
+            "full_name": "fthomas/base.g8"
+          },
+          "links": {
+            "clone": [
+                {
+                    "href": "https://scala-steward@bitbucket.org/scala-steward/base.g8.git",
+                    "name": "https"
+                }
+            ]
+          }
+        }"""
+      )
+    case POST -> Root / "repositories" / "fthomas" / "base.g8" / "pullrequests" =>
+        Ok(
+          json"""{
+            "title": "scala-steward-pr",
+            "state": "OPEN",
+            "links": {
+                "self": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/fthomas/base.g8/pullrequests/2"
+                }
+            }
+          }"""
+        )
+    case GET -> Root / "repositories" / "fthomas" / "base.g8" / "pullrequests" =>
+      Ok(
+        json"""{
+          "values": [
+              {
+                  "title": "scala-steward-pr",
+                  "state": "OPEN",
+                  "links": {
+                      "self": {
+                          "href": "https://api.bitbucket.org/2.0/repositories/fthomas/base.g8/pullrequests/2"
+                      }
+                  }
+              }
+          ]
+      }"""
+    )
+  }
+
+  implicit val client: Client[IO] = Client.fromHttpApp(routes.orNotFound)
+  implicit val httpJsonClient: HttpJsonClient[IO] = new HttpJsonClient[IO]
+  val bitbucketApiAlg = new Http4sBitbucketApiAlg[IO](config.vcsApiHost, _ => IO.pure)
+
+  val repo = Repo("fthomas", "base.g8")
+
+  val parent = RepoOut(
+    "base.g8",
+    UserOut("fthomas"),
+    None,
+    uri"https://scala-steward@bitbucket.org/fthomas/base.g8.git",
+    Branch("master")
+  )
+
+  val fork = RepoOut(
+    "base.g8",
+    UserOut("scala-steward"),
+    Some(parent),
+    uri"https://scala-steward@bitbucket.org/scala-steward/base.g8.git",
+    Branch("master")
+  )
+
+  val defaultBranch = BranchOut(
+    Branch("master"),
+    CommitOut(Sha1(HexString("07eb2a203e297c8340273950e98b2cab68b560c1")))
+  )
+
+  test("createForkOrGetRepo") {
+    val repoOut =
+      bitbucketApiAlg.createForkOrGetRepo(config, repo).unsafeRunSync()
+    repoOut shouldBe fork
+  }
+
+  test("createForkOrGetRepo without forking") {
+    val repoOut =
+      bitbucketApiAlg.createForkOrGetRepo(config.copy(doNotFork = true), repo).unsafeRunSync()
+    repoOut shouldBe parent
+  }
+
+  test("createForkOrGetRepoWithDefaultBranch") {
+    val (repoOut, branchOut) =
+      bitbucketApiAlg.createForkOrGetRepoWithDefaultBranch(config, repo).unsafeRunSync()
+    repoOut shouldBe fork
+    branchOut shouldBe defaultBranch
+  }
+
+  test("createForkOrGetRepoWithDefaultBranch without forking") {
+    val (repoOut, branchOut) =
+      bitbucketApiAlg
+        .createForkOrGetRepoWithDefaultBranch(config.copy(doNotFork = true), repo)
+        .unsafeRunSync()
+    repoOut shouldBe parent
+    branchOut shouldBe defaultBranch
+  }
+
+}

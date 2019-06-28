@@ -1,0 +1,55 @@
+GET /repositories
+
+{
+    "name": "scala-steward-bitbucket-example",
+    "mainbranch": {
+        "type": "branch",
+        "name": "master"
+    },
+    "owner": {
+        "nickname": "firstbird-ci"
+    },
+    "parent": {
+        "full_name": "firstbird/scala-steward-bitbucket-example"
+    },
+    "links": {
+        "clone": [
+            {
+                "href": "https://firstbird-ci@bitbucket.org/firstbird-ci/scala-steward-bitbucket-example.git",
+                "name": "https"
+            }
+        ]
+    }
+}
+
+
+
+GET /refs/branches/<branch-name>
+{
+    "name": "akka_cluster",
+    "target": {
+        "hash": "81ed403d7715266494b1eb1656fb3c06d87d90d0"
+    }
+}
+
+
+
+
+
+    "parent": {
+        "links": {
+            "self": {
+                "href": "https://api.bitbucket.org/2.0/repositories/firstbird/scala-steward-bitbucket-example"
+            },
+            "html": {
+                "href": "https://bitbucket.org/firstbird/scala-steward-bitbucket-example"
+            },
+            "avatar": {
+                "href": "https://bytebucket.org/ravatar/%7B1f796016-7a51-47ca-b025-1afd1a313126%7D?ts=scala"
+            }
+        },
+        "type": "repository",
+        "name": "scala-steward-bitbucket-example",
+        "full_name": "firstbird/scala-steward-bitbucket-example",
+        "uuid": "{1f796016-7a51-47ca-b025-1afd1a313126}"
+    },
