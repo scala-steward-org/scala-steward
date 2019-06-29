@@ -29,6 +29,7 @@
 - AVSystem/scala-commons
 - azhur/kafka-serde-scala
 - balhoff/whelk
+- barambani/docker-effect
 - barambani/http4s-extend
 - barambani/http4s-poc-api
 - barambani/laws
