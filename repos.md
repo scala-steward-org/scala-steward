@@ -138,6 +138,9 @@
 - erikvanoosten/metrics-scala
 - esamson/remder
 - esamson/sbt-groovy
+- exoego/aws-sdk-scalajs-facade
+- exoego/aws-sdk-scalajs-facade-generator
+- exoego/scala-js-nodejs
 - fiadliel/fs2-grpc
 - finagle/finagle-mysql-shapes
 - finagle/finagle-oauth2
