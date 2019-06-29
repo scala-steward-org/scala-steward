@@ -212,6 +212,7 @@
 - laserdisc-io/laserdisc
 - laserdisc-io/log-effect
 - laserdisc-io/stream-it
+- leanovate/play-mockws
 - leigh-perry/conduction
 - leigh-perry/template-cats-io-app
 - leigh-perry/template-cats-zio-app
