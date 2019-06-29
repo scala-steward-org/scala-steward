@@ -41,7 +41,7 @@ final private[http4s] case class MergeRequestPayload(
 )
 private[http4s] object MergeRequestPayload {
   def apply(id: String, projectId: Long, data: NewPullRequestData): MergeRequestPayload =
-    MergeRequestPayload(id, data.title, data.body, projectId, data.head, data.base)
+    MergeRequestPayload(id, data.title, data.body, projectId, data.sourceBranch.name, data.destinationBranch)
 }
 final private[http4s] case class MergeRequestOut(
     web_url: Uri,

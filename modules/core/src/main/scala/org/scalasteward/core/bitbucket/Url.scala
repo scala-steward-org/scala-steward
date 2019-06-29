@@ -9,7 +9,10 @@ class Url(apiHost: Uri) {
   def forks(rep: Repo): Uri =
     repo(rep) / "forks"
 
-  def pullRequests(rep: Repo): Uri =
+  def listPullRequests(rep: Repo, head: String): Uri =
+    pullRequests(rep).withQueryParam("q", s"""source.branch.name = "$head" """)
+
+  def pullRequests(rep: Repo): Uri = 
     repo(rep) / "pullrequests"
 
   def branch(rep: Repo, branch: Branch): Uri =

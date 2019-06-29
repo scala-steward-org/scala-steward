@@ -26,6 +26,9 @@ import org.scalasteward.core.vcs.data.AuthenticatedUser
 import cats.effect.Sync
 import org.scalasteward.core.application.SupportedVCS.GitHub
 import org.scalasteward.core.application.SupportedVCS.Gitlab
+import org.scalasteward.core.bitbucket.http4s.Http4sBitbucketApiAlg
+import org.scalasteward.core.bitbucket.BitbucketSpecifics
+import org.scalasteward.core.application.SupportedVCS.Bitbucket
 
 class VCSSelection[F[_]: Sync](implicit client: HttpJsonClient[F], user: AuthenticatedUser) {
   private def github(config: Config): (Http4sGitHubApiAlg[F], GitHubSpecifics) = {
@@ -42,8 +45,17 @@ class VCSSelection[F[_]: Sync](implicit client: HttpJsonClient[F], user: Authent
     val specifics = new GitlabSpecifics()
     (alg, specifics)
   }
+
+  private def bitbucket(config: Config): (Http4sBitbucketApiAlg[F], BitbucketSpecifics) = {
+    import org.scalasteward.core.bitbucket.http4s.authentication.addCredentials
+
+    val alg = new Http4sBitbucketApiAlg(config.vcsApiHost, user, _ => addCredentials(user))
+    val specifics = new BitbucketSpecifics()
+    (alg, specifics)
+  }
   def build(config: Config): (VCSApiAlg[F], VCSSpecifics) = config.vcsType match {
-    case GitHub => github(config)
-    case Gitlab => gitlab(config)
+    case GitHub    => github(config)
+    case Gitlab    => gitlab(config)
+    case Bitbucket => bitbucket(config)
   }
 }

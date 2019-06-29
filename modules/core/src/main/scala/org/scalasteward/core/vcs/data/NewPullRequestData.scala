@@ -18,24 +18,32 @@ package org.scalasteward.core.vcs.data
 
 import cats.implicits._
 import io.circe.Encoder
-import io.circe.generic.semiauto._
+import io.circe.syntax._
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.model.{SemVer, Update}
 import org.scalasteward.core.nurture.UpdateData
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.git
-import org.scalasteward.core.vcs
+import io.circe.Json
 
 final case class NewPullRequestData(
     title: String,
     body: String,
-    head: String,
-    base: Branch
+    sourceRepo: Repo,
+    sourceBranch: Branch,
+    destinationBranch: Branch
 )
 
 object NewPullRequestData {
-  implicit val newPullRequestDataEncoder: Encoder[NewPullRequestData] =
-    deriveEncoder
+  
+  implicit val newPullRequestDataEncoder2: Encoder[NewPullRequestData] = Encoder.instance{ d =>
+      Json.obj(
+        "title" -> d.title.asJson,
+        "body" -> d.body.asJson,
+        "head" -> s"${d.sourceRepo.owner}:${d.sourceBranch.name}".asJson,
+        "base" -> d.destinationBranch.name.asJson
+      )
+  }
 
   def bodyFor(update: Update, login: String): String = {
     val artifacts = update match {
@@ -78,7 +86,8 @@ object NewPullRequestData {
     NewPullRequestData(
       title = git.commitMsgFor(data.update),
       body = bodyFor(data.update, authorLogin),
-      head = vcs.headFor(data.fork.owner, data.update),
-      base = data.baseBranch
+      sourceBranch = git.branchFor(data.update),
+      sourceRepo = data.fork,
+      destinationBranch = data.baseBranch
     )
 }

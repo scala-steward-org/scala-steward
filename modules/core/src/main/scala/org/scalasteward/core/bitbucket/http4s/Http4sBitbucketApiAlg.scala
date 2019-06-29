@@ -18,13 +18,27 @@ import org.scalasteward.core.vcs.data.{
 }
 import io.circe.{Decoder, DecodingFailure, Encoder, Json}
 import cats.implicits._
-import org.scalasteward.core.util.uri._
-import org.scalasteward.core.vcs.data.CommitOut
+import org.scalasteward.core.bitbucket.http4s.Http4sBitbucketApiAlg.Page
 import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.git.Sha1._
+import org.scalasteward.core.util.uri._
+import org.scalasteward.core.vcs.data.CommitOut
+import org.http4s.client.UnexpectedStatus
+import org.http4s.Status
+import org.scalasteward.core.vcs.data.AuthenticatedUser
+
+object Http4sBitbucketApiAlg {
+  case class Page[A](values: List[A])
+  object Page {
+    implicit def pageDecoder[A: Decoder]: Decoder[Page[A]] = Decoder.instance { c =>
+      c.downField("values").as[List[A]].map(Page(_))
+    }
+  }
+}
 
 class Http4sBitbucketApiAlg[F[_]: Sync](
     bitbucketApiHost: Uri,
+    user: AuthenticatedUser,
     modify: Repo => Request[F] => F[Request[F]]
 )(implicit client: HttpJsonClient[F], E: MonadThrowable[F])
     extends VCSApiAlg[F] {
@@ -43,7 +57,11 @@ class Http4sBitbucketApiAlg[F[_]: Sync](
   implicit val repoOutDecoder: Decoder[RepoOut] = Decoder.instance { c =>
     for {
       name <- c.downField("name").as[String]
-      owner <- c.downField("owner").downField("nickname").as[String]
+      owner <- c
+        .downField("owner")
+        .downField("username")
+        .as[String]
+        .orElse(c.downField("owner").downField("nickname").as[String])
       cloneUrl <- c
         .downField("links")
         .downField("clone")
@@ -75,15 +93,32 @@ class Http4sBitbucketApiAlg[F[_]: Sync](
 
   implicit val pullRequestOutDecoder: Decoder[PullRequestOut] = Decoder.instance { c =>
     for {
-      html_url <- c.downField("title").as[Uri]
+      title <- c.downField("title").as[String]
       state <- c.downField("state").as[PullRequestState]
-      title <- c.downField("links").downField("self").downField("href").as[String]
+      html_url <- c.downField("links").downField("self").downField("href").as[Uri]
     } yield (PullRequestOut(html_url, state, title))
   }
 
   implicit val newPullRequestData: Encoder[NewPullRequestData] = Encoder.instance { d =>
     Json.obj(
-      ("title", Json.fromString(d.title))
+      ("title", Json.fromString(d.title)),
+      (
+        "source",
+        Json.obj(
+          ("branch", Json.obj(("name", Json.fromString(d.sourceBranch.name)))),
+          (
+            "repository",
+            Json.obj(("full_name", Json.fromString(s"${d.sourceRepo.owner}/${d.sourceRepo.repo}")))
+          )
+        )
+      ),
+      ("description", Json.fromString(d.body)),
+      (
+        "destination",
+        Json.obj(
+          ("branch", Json.obj(("name", Json.fromString(d.destinationBranch.name))))
+        )
+      )
     )
   }
 
@@ -91,7 +126,12 @@ class Http4sBitbucketApiAlg[F[_]: Sync](
 
   override def createFork(repo: Repo): F[RepoOut] =
     for {
-      forkJson <- client.post[Json](url.forks(repo), modify(repo))
+      forkJson <- client
+        .post[Json](url.forks(repo), modify(repo))
+        .handleErrorWith {
+          case UnexpectedStatus(Status.BadRequest) =>
+            client.get(url.repo(repo.copy(owner = user.login)), modify(repo))
+        }
       fork <- decodeJsonF[RepoOut](forkJson)
       maybeParentRepo <- decodeJsonF(forkJson)(parentRepoNameDecoder)
       maybeParentRepoOut <- maybeParentRepo
@@ -101,7 +141,8 @@ class Http4sBitbucketApiAlg[F[_]: Sync](
 
   override def createPullRequest(repo: Repo, data: NewPullRequestData)(
       implicit F: Monad[F]
-  ): F[PullRequestOut] = ???
+  ): F[PullRequestOut] =
+    client.postWithBody(url.pullRequests(repo), data, modify(repo))
 
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
     client.get(url.branch(repo, branch), modify(repo))
@@ -109,7 +150,7 @@ class Http4sBitbucketApiAlg[F[_]: Sync](
   override def getRepo(repo: Repo): F[RepoOut] =
     for {
       json <- client.get[Json](url.repo(repo), modify(repo))
-      repoOut <- client.get[RepoOut](url.repo(repo), modify(repo))
+      repoOut <- decodeJsonF[RepoOut](json)
       maybeParentRepo <- decodeJsonF(json)(parentRepoNameDecoder)
       maybeParentRepoOut <- maybeParentRepo
         .map(n => client.get[RepoOut](url.repo(n), modify(n)))
@@ -123,6 +164,8 @@ class Http4sBitbucketApiAlg[F[_]: Sync](
     }
 
   override def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]] =
-    ???
+    client
+      .get[Page[PullRequestOut]](url.listPullRequests(repo, head), modify(repo))
+      .map(_.values)
 
 }
