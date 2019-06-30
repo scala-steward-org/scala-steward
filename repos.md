@@ -460,6 +460,7 @@
 - X9Developers/block-explorer
 - yannick-cw/elastic-indexer4s
 - zio/zio
+- zio/zio-actors
 - zio/zio-keeper
 - zio/interop-cats
 - zio/interop-future
