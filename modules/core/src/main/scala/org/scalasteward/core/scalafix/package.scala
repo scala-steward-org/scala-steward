@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 scala-steward contributors
+ * Copyright 2018-2019 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,19 +27,30 @@ package object scalafix {
         "co.fs2",
         Nel.of("fs2-.*".r),
         Version("1.0.0"),
-        "github:functional-streams-for-scala/fs2/v1?sha=v1.0.5"
+        Nel.of("github:functional-streams-for-scala/fs2/v1?sha=v1.0.5")
+      ),
+      Migration(
+        "com.spotify",
+        Nel.of("scio-.*".r),
+        Version("0.7.0"),
+        Nel.of(
+          "github:spotify/scio/FixAvroIO?sha=v0.7.4",
+          "github:spotify/scio/AddMissingImports?sha=v0.7.4",
+          "github:spotify/scio/RewriteSysProp?sha=v0.7.4",
+          "github:spotify/scio/BQClientRefactoring?sha=v0.7.4"
+        )
       ),
       Migration(
         "org.http4s",
         Nel.of("http4s-.*".r),
         Version("0.20.0"),
-        "github:http4s/http4s/v0_20?sha=v0.20.3"
+        Nel.of("github:http4s/http4s/v0_20?sha=v0.20.3")
       ),
       Migration(
         "org.typelevel",
         Nel.of("cats-core".r),
         Version("1.0.0"),
-        "github:fthomas/cats/Cats_v1_0_0?sha=update/scalafix"
+        Nel.of("github:fthomas/cats/Cats_v1_0_0?sha=update/scalafix")
       )
     )
 

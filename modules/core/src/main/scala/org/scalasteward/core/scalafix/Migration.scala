@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 scala-steward contributors
+ * Copyright 2018-2019 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,5 +24,5 @@ final case class Migration(
     groupId: String,
     artifactIds: Nel[Regex],
     newVersion: Version,
-    rewriteRule: String
+    rewriteRules: Nel[String]
 )

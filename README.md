@@ -1,13 +1,13 @@
 <img src="https://github.com/fthomas/scala-steward/raw/master/data/images/scala-steward-logo-hex-1.png" width="156px" height="180px" align="right">
 
-# scala-steward
+# Scala Steward
 [![Build Status](https://travis-ci.org/fthomas/scala-steward.svg?branch=master)](https://travis-ci.org/fthomas/scala-steward)
 [![codecov](https://codecov.io/gh/fthomas/scala-steward/branch/master/graph/badge.svg)](https://codecov.io/gh/fthomas/scala-steward)
 [![Join the chat at https://gitter.im/fthomas/scala-steward](https://badges.gitter.im/fthomas/scala-steward.svg)](https://gitter.im/fthomas/scala-steward?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/4573461025c642daa4128b659ee54fc9)](https://www.codacy.com/app/fthomas/scala-steward?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=fthomas/scala-steward&amp;utm_campaign=Badge_Grade)
 [![Typelevel project](https://img.shields.io/badge/typelevel-project-brightgreen.svg)](https://typelevel.org/projects/#scala-steward)
 
-scala-steward is a robot that helps you keeping library dependencies
+Scala Steward is a robot that helps you keeping library dependencies
 and sbt plugins up-to-date.
 
 ## Quick start guide
@@ -33,8 +33,9 @@ look like, here are the ones it has created so far:
 
 The [`docs`](docs) directory contains documentation about these topics:
 
-* [Running scala-steward](docs/running.md)
+* [Running Scala Steward](docs/running.md)
 * [Scalafix Migrations](docs/scalafix-migrations.md)
+* [Frequently Asked Questions](docs/faq.md)
 
 ## Contributors
 
@@ -62,8 +63,8 @@ Thanks goes to these wonderful people:
 
 ## Community
 
-The following companies are using scala-steward to manage their dependencies.
-Using scala-steward in your company and don't see it listed here?
+The following companies are using Scala Steward to manage their dependencies.
+Using Scala Steward in your company and don't see it listed here?
 Consider creating PR to add your company to the list and join the community.
 
 * [Chartboost](https://www.chartboost.com/)
@@ -76,13 +77,13 @@ Consider creating PR to add your company to the list and join the community.
 
 ## Participation
 
-The scala-steward project supports the [Scala Code of Conduct][CoC]
+The Scala Steward project supports the [Scala Code of Conduct][CoC]
 and wants all of its channels (GitHub, Gitter, etc.) to be welcoming
 environments for everyone.
 
 ## Credit
 
-scala-steward wouldn't exist without the great [sbt-updates][sbt-updates]
+Scala Steward wouldn't exist without the great [sbt-updates][sbt-updates]
 plugin to determine dependency updates and a bunch of [Typelevel][Typelevel]
 and other Scala [libraries](https://github.com/fthomas/scala-steward/blob/master/project/Dependencies.scala).
 
@@ -91,7 +92,7 @@ and other Scala [libraries](https://github.com/fthomas/scala-steward/blob/master
 
 ## License
 
-scala-steward is licensed under the
+Scala Steward is licensed under the
 [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0).
 
 [CoC]: https://github.com/fthomas/scala-steward/blob/master/CODE_OF_CONDUCT.md
