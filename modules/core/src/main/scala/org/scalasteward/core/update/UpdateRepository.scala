@@ -21,5 +21,5 @@ import org.scalasteward.core.model.Update
 trait UpdateRepository[F[_]] {
   def deleteAll: F[Unit]
 
-  def save(update: Update.Single): F[Unit]
+  def saveMany(updates: List[Update.Single]): F[Unit]
 }
