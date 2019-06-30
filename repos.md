@@ -469,3 +469,4 @@
 - zio/interop-scalaz
 - zio/interop-twitter
 - ziyasal/reducio
+- d2a4u/sqs4s
