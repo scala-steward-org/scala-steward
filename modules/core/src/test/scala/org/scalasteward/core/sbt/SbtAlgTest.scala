@@ -116,7 +116,7 @@ class SbtAlgTest extends FunSuite with Matchers {
         "co.fs2",
         Nel.of("fs2-core".r),
         Version("1.0.0"),
-        "github:functional-streams-for-scala/fs2/v1?sha=v1.0.5"
+        Nel.of("github:functional-streams-for-scala/fs2/v1?sha=v1.0.5")
       )
     )
     val state = sbtAlg.runMigrations(repo, migrations).runS(MockState.empty).unsafeRunSync()
