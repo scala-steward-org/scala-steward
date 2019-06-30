@@ -89,9 +89,9 @@ final class UpdateService[F[_]](
               F.pure(List.empty[Update.Single])
             }
 
-          fa.flatMap { updates =>
+          fa.flatTap { updates =>
             logger.info(util.logger.showUpdates(updates.widen[Update])) >>
-              updates.traverse_(updateRepository.save) >> F.pure(updates)
+              updateRepository.saveMany(updates)
           }
         }
 

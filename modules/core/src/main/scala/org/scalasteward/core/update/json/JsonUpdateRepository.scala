@@ -34,10 +34,10 @@ class JsonUpdateRepository[F[_]](
 ) extends UpdateRepository[F] {
 
   override def deleteAll: F[Unit] =
-    writeJson(UpdateStore(List.empty))
+    writeJson(UpdateStore(Set.empty))
 
-  override def save(update: Update.Single): F[Unit] =
-    readJson.map(s => UpdateStore((update :: s.store).distinct)).flatMap(writeJson)
+  override def saveMany(updates: List[Update.Single]): F[Unit] =
+    readJson.map(s => UpdateStore(s.store ++ updates)).flatMap(writeJson)
 
   def jsonFile: F[File] =
     workspaceAlg.rootDir.map(_ / "updates_v02.json")
@@ -46,7 +46,7 @@ class JsonUpdateRepository[F[_]](
     jsonFile.flatMap { file =>
       fileAlg.readFile(file).flatMap {
         case Some(content) => F.fromEither(decode[UpdateStore](content))
-        case None          => F.pure(UpdateStore(List.empty))
+        case None          => F.pure(UpdateStore(Set.empty))
       }
     }
 
