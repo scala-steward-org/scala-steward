@@ -44,7 +44,7 @@ class utilTest extends FunSuite with Matchers with ScalaCheckPropertyChecks {
     }
   }
 
-  test("halve: first halve is at most one element longer than the second") {
+  test("halve: first half is at most one element longer than the second") {
     forAll { l: List[Int] =>
       val (fst, snd) = halve(l).leftMap(lst => (lst, List.empty[Int])).merge
       (fst.size - snd.size) should equal(0).or(equal(1))
