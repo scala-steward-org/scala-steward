@@ -122,6 +122,7 @@
 - cquiroz/scalajs-react-virtualized
 - cquiroz/scala-java-locales
 - cquiroz/scala-java-time
+- d2a4u/sqs4s
 - daandi/nice-url-encode-decode
 - dhpiggott/liquidity-service
 - dispalt/tagless-redux
@@ -160,11 +161,11 @@
 - fthomas/singleton-ops
 - fthomas/status-page
 - functional-streams-for-scala/fs2
-- gemini-hlsw/ocs3
-- gemini-hlsw/gsp-math
-- gemini-hlsw/sbt-gsp
-- gemini-hlsw/gemini-locales
 - gearpump/gearpump
+- gemini-hlsw/gemini-locales
+- gemini-hlsw/gsp-math
+- gemini-hlsw/ocs3
+- gemini-hlsw/sbt-gsp
 - getquill/quill
 - gnieh/diffson
 - henricook/SAMLer
@@ -459,9 +460,6 @@
 - WellFactored/resourcepool
 - X9Developers/block-explorer
 - yannick-cw/elastic-indexer4s
-- zio/zio
-- zio/zio-actors
-- zio/zio-keeper
 - zio/interop-cats
 - zio/interop-future
 - zio/interop-java
@@ -469,5 +467,7 @@
 - zio/interop-reactive-streams
 - zio/interop-scalaz
 - zio/interop-twitter
+- zio/zio
+- zio/zio-actors
+- zio/zio-keeper
 - ziyasal/reducio
-- d2a4u/sqs4s
