@@ -17,12 +17,11 @@
 package org.scalasteward.core.github
 
 import org.scalasteward.core.model.Update
-import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.vcs
-import org.scalasteward.core.git
 import org.scalasteward.core.vcs.VCSSpecifics
+import org.scalasteward.core.vcs.data.Repo
 
 class GitHubSpecifics extends VCSSpecifics {
-  override def sourceFor(repo: Repo, update: Update): String =
-    s"${vcs.headFor(repo.owner, update)}:${git.branchFor(update).name}"
+  override def headForListingPullRequests(fork: Repo, update: Update): String =
+    vcs.headFor(fork.show, update)
 }

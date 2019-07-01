@@ -22,6 +22,6 @@ import org.scalasteward.core.git
 import org.scalasteward.core.vcs.VCSSpecifics
 
 class GitlabSpecifics extends VCSSpecifics {
-  override def sourceFor(repo: Repo, update: Update): String =
+  override def headForListingPullRequests(fork: Repo, update: Update): String =
     git.branchFor(update).name
 }

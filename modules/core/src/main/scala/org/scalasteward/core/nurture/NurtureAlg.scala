@@ -84,7 +84,7 @@ final class NurtureAlg[F[_]](
   def processUpdate(data: UpdateData): F[Unit] =
     for {
       _ <- logger.info(s"Process update ${data.update.show}")
-      head = vcsSpecifics.sourceFor(data.repo, data.update)
+      head = vcsSpecifics.headForListingPullRequests(data.fork, data.update)
       pullRequests <- vcsApiAlg.listPullRequests(data.repo, head, data.baseBranch)
       _ <- pullRequests.headOption match {
         case Some(pr) if pr.isClosed =>
