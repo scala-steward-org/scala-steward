@@ -20,5 +20,9 @@ import org.scalasteward.core.model.Update
 import org.scalasteward.core.vcs.data.Repo
 
 trait VCSSpecifics {
-  def sourceFor(repo: Repo, update: Update): String
+
+  /** Determines the `head` (GitHub) / `source_branch` (GitLab) parameter for searching
+    * for already existing pull requests.
+    */
+  def headForListingPullRequests(fork: Repo, update: Update): String
 }
