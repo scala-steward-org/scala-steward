@@ -17,7 +17,7 @@ class RepoConfigAlgTest extends FunSuite with Matchers {
          |updates.ignore = [ { groupId = "org.acme", version = "1.0" } ]
          |""".stripMargin
     val initialState = MockState.empty.add(configFile, content)
-    val config = repoConfigAlg.getRepoConfig(repo).runA(initialState).unsafeRunSync()
+    val config = repoConfigAlg.readRepoConfigOrDefault(repo).runA(initialState).unsafeRunSync()
 
     config shouldBe RepoConfig(
       updates = UpdatesConfig(
@@ -32,7 +32,7 @@ class RepoConfigAlgTest extends FunSuite with Matchers {
     val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
     val content = "updatePullRequests = false"
     val initialState = MockState.empty.add(configFile, content)
-    val config = repoConfigAlg.getRepoConfig(repo).runA(initialState).unsafeRunSync()
+    val config = repoConfigAlg.readRepoConfigOrDefault(repo).runA(initialState).unsafeRunSync()
 
     config shouldBe RepoConfig(updatePullRequests = false)
   }
@@ -41,7 +41,8 @@ class RepoConfigAlgTest extends FunSuite with Matchers {
     val repo = Repo("fthomas", "scala-steward")
     val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
     val initialState = MockState.empty.add(configFile, """updates.ignore = [ "foo """)
-    val (state, config) = repoConfigAlg.getRepoConfig(repo).run(initialState).unsafeRunSync()
+    val (state, config) =
+      repoConfigAlg.readRepoConfigOrDefault(repo).run(initialState).unsafeRunSync()
 
     config shouldBe RepoConfig()
     state.logs.headOption.map { case (_, msg) => msg }.getOrElse("") should
