@@ -67,8 +67,8 @@ object SemVer {
   def getChange(from: SemVer, to: SemVer): Option[Change] =
     if (from.major =!= to.major) Some(Major)
     else if (from.minor =!= to.minor) Some(Minor)
-    else if (from.patch =!= to.patch) Some(Patch)
     else if (from.preRelease =!= to.preRelease) Some(PreRelease)
+    else if (from.patch =!= to.patch) Some(Patch)
     else if (from.buildMetadata =!= to.buildMetadata) Some(BuildMetadata)
     else None
 }
