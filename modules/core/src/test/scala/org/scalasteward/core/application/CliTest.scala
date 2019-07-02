@@ -1,7 +1,7 @@
 package org.scalasteward.core.application
 
 import cats.implicits._
-import org.http4s._
+import org.http4s.Http4sLiteralSyntax
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalatest.{FunSuite, Matchers}
 
@@ -14,7 +14,7 @@ class CliTest extends FunSuite with Matchers {
       List(
         List("--workspace", "a"),
         List("--repos-file", "b"),
-        List("--git-author-name", "c"),
+        List("--git-author-name", "Scala Steward"),
         List("--git-author-email", "d"),
         List("--vcs-type", "gitlab"),
         List("--vcs-api-host", "http://example.com"),
@@ -28,7 +28,7 @@ class CliTest extends FunSuite with Matchers {
       Cli.Args(
         workspace = "a",
         reposFile = "b",
-        gitAuthorName = "c",
+        gitAuthorName = "Scala Steward",
         gitAuthorEmail = "d",
         vcsType = SupportedVCS.Gitlab,
         uri"http://example.com",

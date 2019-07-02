@@ -2,19 +2,18 @@ package org.scalasteward.core.bitbucket.http4s
 
 import cats.effect.IO
 import io.circe.literal._
+import org.http4s._
 import org.http4s.circe._
 import org.http4s.client.Client
 import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.http4s.{HttpRoutes}
+import org.scalasteward.core.git._
+import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.mock.MockContext.config
 import org.scalasteward.core.util.HttpJsonClient
-import org.scalatest.{FunSuite, Matchers}
-
 import org.scalasteward.core.vcs.data._
-import org.scalasteward.core.git._
-import org.http4s._
-import org.scalasteward.core.git.Sha1.HexString
+import org.scalatest.{FunSuite, Matchers}
 
 class Http4sBitbucketApiAlgTest extends FunSuite with Matchers {
 

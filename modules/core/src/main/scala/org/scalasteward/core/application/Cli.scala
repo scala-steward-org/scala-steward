@@ -20,7 +20,7 @@ import caseapp._
 import caseapp.core.Error.MalformedValue
 import caseapp.core.argparser.{ArgParser, SimpleArgParser}
 import cats.implicits._
-import org.http4s.{Uri}
+import org.http4s.{Http4sLiteralSyntax, Uri}
 import org.scalasteward.core.application.Cli._
 import org.scalasteward.core.util.ApplicativeThrowable
 
@@ -38,7 +38,7 @@ object Cli {
       gitAuthorName: String,
       gitAuthorEmail: String,
       vcsType: SupportedVCS = SupportedVCS.GitHub,
-      vcsApiHost: Uri = Uri.uri("https://api.github.com"),
+      vcsApiHost: Uri = uri"https://api.github.com",
       vcsLogin: String,
       gitAskPass: String,
       signCommits: Boolean = false,

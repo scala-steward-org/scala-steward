@@ -35,9 +35,6 @@ trait VCSApiAlg[F[_]] {
 
   def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]]
 
-  final def getDefaultBranch(repoOut: RepoOut): F[BranchOut] =
-    getBranch(repoOut.repo, repoOut.default_branch)
-
   final def createForkOrGetRepo(config: Config, repo: Repo): F[RepoOut] =
     if (config.doNotFork) getRepo(repo)
     else createFork(repo)
@@ -64,4 +61,7 @@ trait VCSApiAlg[F[_]] {
       repoOut <- getRepo(repo)
       branchOut <- getDefaultBranch(repoOut)
     } yield (repoOut, branchOut)
+
+  final def getDefaultBranch(repoOut: RepoOut): F[BranchOut] =
+    getBranch(repoOut.repo, repoOut.default_branch)
 }

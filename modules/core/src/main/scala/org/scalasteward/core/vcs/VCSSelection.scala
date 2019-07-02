@@ -1,9 +1,5 @@
 /*
-<<<<<<< HEAD
- * Copyright 2018-2019 scala-steward contributors
-=======
  * Copyright 2018-2019 Scala Steward contributors
->>>>>>> upstream/topic/gitlab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,19 +16,19 @@
 
 package org.scalasteward.core.vcs
 
-import org.scalasteward.core.application.Config
-import org.scalasteward.core.util.HttpJsonClient
-import org.scalasteward.core.github.GitHubSpecifics
-import org.scalasteward.core.github.http4s.Http4sGitHubApiAlg
-import org.scalasteward.core.gitlab.http4s.Http4sGitLabApiAlg
-import org.scalasteward.core.gitlab.GitlabSpecifics
-import org.scalasteward.core.vcs.data.AuthenticatedUser
 import cats.effect.Sync
+import org.scalasteward.core.application.Config
+import org.scalasteward.core.application.SupportedVCS.Bitbucket
 import org.scalasteward.core.application.SupportedVCS.GitHub
 import org.scalasteward.core.application.SupportedVCS.Gitlab
-import org.scalasteward.core.bitbucket.http4s.Http4sBitbucketApiAlg
 import org.scalasteward.core.bitbucket.BitbucketSpecifics
-import org.scalasteward.core.application.SupportedVCS.Bitbucket
+import org.scalasteward.core.bitbucket.http4s.Http4sBitbucketApiAlg
+import org.scalasteward.core.github.GitHubSpecifics
+import org.scalasteward.core.github.http4s.Http4sGitHubApiAlg
+import org.scalasteward.core.gitlab.GitlabSpecifics
+import org.scalasteward.core.gitlab.http4s.Http4sGitLabApiAlg
+import org.scalasteward.core.util.HttpJsonClient
+import org.scalasteward.core.vcs.data.AuthenticatedUser
 
 class VCSSelection[F[_]: Sync](implicit client: HttpJsonClient[F], user: AuthenticatedUser) {
   private def github(config: Config): (Http4sGitHubApiAlg[F], GitHubSpecifics) = {
