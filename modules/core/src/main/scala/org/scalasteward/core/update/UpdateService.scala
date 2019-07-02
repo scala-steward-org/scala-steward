@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 scala-steward contributors
+ * Copyright 2018-2019 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,9 +89,9 @@ final class UpdateService[F[_]](
               F.pure(List.empty[Update.Single])
             }
 
-          fa.flatMap { updates =>
+          fa.flatTap { updates =>
             logger.info(util.logger.showUpdates(updates.widen[Update])) >>
-              updates.traverse_(updateRepository.save) >> F.pure(updates)
+              updateRepository.saveMany(updates)
           }
         }
 

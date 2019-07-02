@@ -20,7 +20,7 @@ object MockContext {
     reposFile = File.temp / "repos.md",
     gitAuthor = Author("Bot Doe", "bot@example.org"),
     vcsType = SupportedVCS.GitHub,
-    vcsApiHost = Uri.uri(""),
+    vcsApiHost = Uri(),
     vcsLogin = "bot-doe",
     gitAskPass = File.temp / "askpass.sh",
     signCommits = true,

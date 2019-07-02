@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 scala-steward contributors
+ * Copyright 2018-2019 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import org.scalasteward.core.dependency.json.JsonDependencyRepository
 import org.scalasteward.core.dependency.{DependencyRepository, DependencyService}
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.GitAlg
-import org.scalasteward.core.vcs.data.AuthenticatedUser
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.json.JsonPullRequestRepo
 import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository}
@@ -34,6 +33,7 @@ import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.update.json.JsonUpdateRepository
 import org.scalasteward.core.update.{FilterAlg, UpdateRepository, UpdateService}
 import org.scalasteward.core.util.{DateTimeAlg, HttpJsonClient, LogAlg}
+import org.scalasteward.core.vcs.data.AuthenticatedUser
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg, VCSSelection, VCSSpecifics}
 
 import scala.concurrent.ExecutionContext

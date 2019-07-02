@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 scala-steward contributors
+ * Copyright 2018-2019 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,7 @@ trait VCSApiAlg[F[_]] {
 
   def createFork(repo: Repo): F[RepoOut]
 
-  def createPullRequest(repo: Repo, data: NewPullRequestData)(
-      implicit F: Monad[F]
-  ): F[PullRequestOut]
+  def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut]
 
   def getBranch(repo: Repo, branch: Branch): F[BranchOut]
 

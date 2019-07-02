@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 scala-steward contributors
+ * Copyright 2018-2019 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.model.Update
 
-final case class UpdateStore(store: List[Update.Single])
+final case class UpdateStore(store: Set[Update.Single])
 
 object UpdateStore {
   implicit val updateStoreDecoder: Decoder[UpdateStore] =

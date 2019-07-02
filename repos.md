@@ -29,6 +29,7 @@
 - AVSystem/scala-commons
 - azhur/kafka-serde-scala
 - balhoff/whelk
+- barambani/docker-effect
 - barambani/http4s-extend
 - barambani/http4s-poc-api
 - barambani/laws
@@ -121,12 +122,12 @@
 - cquiroz/scalajs-react-virtualized
 - cquiroz/scala-java-locales
 - cquiroz/scala-java-time
+- d2a4u/sqs4s
 - daandi/nice-url-encode-decode
 - dhpiggott/liquidity-service
 - dispalt/tagless-redux
 - djspiewak/gll-combinators
 - djspiewak/shims
-- dominique-unruh/qrhl-tool
 - dwijnand/sbt-compat
 - dwijnand/sbt-dynver
 - dwijnand/sbt-project-graph
@@ -138,6 +139,9 @@
 - erikvanoosten/metrics-scala
 - esamson/remder
 - esamson/sbt-groovy
+- exoego/aws-sdk-scalajs-facade
+- exoego/aws-sdk-scalajs-facade-generator
+- exoego/scala-js-nodejs
 - fiadliel/fs2-grpc
 - finagle/finagle-mysql-shapes
 - finagle/finagle-oauth2
@@ -157,11 +161,11 @@
 - fthomas/singleton-ops
 - fthomas/status-page
 - functional-streams-for-scala/fs2
-- gemini-hlsw/ocs3
-- gemini-hlsw/gsp-math
-- gemini-hlsw/sbt-gsp
-- gemini-hlsw/gemini-locales
 - gearpump/gearpump
+- gemini-hlsw/gemini-locales
+- gemini-hlsw/gsp-math
+- gemini-hlsw/ocs3
+- gemini-hlsw/sbt-gsp
 - getquill/quill
 - gnieh/diffson
 - henricook/SAMLer
@@ -212,6 +216,7 @@
 - laserdisc-io/laserdisc
 - laserdisc-io/log-effect
 - laserdisc-io/stream-it
+- leanovate/play-mockws
 - leigh-perry/conduction
 - leigh-perry/template-cats-io-app
 - leigh-perry/template-cats-zio-app
@@ -455,8 +460,6 @@
 - WellFactored/resourcepool
 - X9Developers/block-explorer
 - yannick-cw/elastic-indexer4s
-- zio/zio
-- zio/zio-keeper
 - zio/interop-cats
 - zio/interop-future
 - zio/interop-java
@@ -464,4 +467,7 @@
 - zio/interop-reactive-streams
 - zio/interop-scalaz
 - zio/interop-twitter
+- zio/zio
+- zio/zio-actors
+- zio/zio-keeper
 - ziyasal/reducio

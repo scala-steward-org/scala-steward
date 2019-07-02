@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 scala-steward contributors
+ * Copyright 2018-2019 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.dependency.Dependency
-import org.scalasteward.core.dependency.parser.parseDependencies
 import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.model.Update
@@ -85,7 +84,7 @@ object SbtAlg {
           repoDir <- workspaceAlg.repoDir(repo)
           cmd = sbtCmd(List(libraryDependenciesAsJson, reloadPlugins, libraryDependenciesAsJson))
           lines <- exec(cmd, repoDir)
-        } yield lines.flatMap(parseDependencies).distinct
+        } yield parser.parseDependencies(lines)
 
       override def getUpdatesForProject(project: ArtificialProject): F[List[Update.Single]] =
         for {

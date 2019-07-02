@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 scala-steward contributors
+ * Copyright 2018-2019 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.scalasteward.core.gitlab.http4s
 
-import cats.Monad
 import cats.implicits._
 import io.circe._
 import io.circe.generic.semiauto._
@@ -124,9 +123,7 @@ class Http4sGitLabApiAlg[F[_]: MonadThrowable](
       }
   }
 
-  def createPullRequest(repo: Repo, data: NewPullRequestData)(
-      implicit F: Monad[F]
-  ): F[PullRequestOut] = {
+  def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] = {
     val userOwnedRepo = repo.copy(owner = user.login)
     for {
       projectId <- client.get[ProjectId](url.repos(repo), modify(repo))

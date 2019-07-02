@@ -1,9 +1,9 @@
 package org.scalasteward.core.application
 
 import cats.implicits._
+import org.http4s._
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalatest.{FunSuite, Matchers}
-import org.http4s.Uri
 
 class CliTest extends FunSuite with Matchers {
   type Result[A] = Either[Throwable, A]
@@ -28,10 +28,10 @@ class CliTest extends FunSuite with Matchers {
       Cli.Args(
         workspace = "a",
         reposFile = "b",
-        vcsType = SupportedVCS.Gitlab,
         gitAuthorName = "c",
         gitAuthorEmail = "d",
-        vcsApiHost = Uri.uri("http://example.com"),
+        vcsType = SupportedVCS.Gitlab,
+        uri"http://example.com",
         vcsLogin = "e",
         gitAskPass = "f",
         ignoreOptsFiles = true,

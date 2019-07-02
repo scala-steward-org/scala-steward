@@ -16,7 +16,6 @@
 
 package org.scalasteward.core.bitbucket.http4s
 
-import cats.Monad
 import cats.effect.Sync
 import cats.implicits._
 import org.http4s.{Request, Status, Uri}
@@ -67,9 +66,7 @@ class Http4sBitbucketApiAlg[F[_]: Sync](
       repo.mainBranch
     )
 
-  override def createPullRequest(repo: Repo, data: NewPullRequestData)(
-      implicit F: Monad[F]
-  ): F[PullRequestOut] = {
+  override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] = {
 
     val payload = CreatePullRequestRequest(
       data.title,

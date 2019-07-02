@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 scala-steward contributors
+ * Copyright 2018-2019 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,5 +20,9 @@ import org.scalasteward.core.model.Update
 import org.scalasteward.core.vcs.data.Repo
 
 trait VCSSpecifics {
-  def sourceFor(repo: Repo, update: Update): String
+
+  /** Determines the `head` (GitHub) / `source_branch` (GitLab) parameter for searching
+    * for already existing pull requests.
+    */
+  def headForListingPullRequests(fork: Repo, update: Update): String
 }

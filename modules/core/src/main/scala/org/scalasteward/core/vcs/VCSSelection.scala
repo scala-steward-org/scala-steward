@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 2018-2019 scala-steward contributors
+=======
+ * Copyright 2018-2019 Scala Steward contributors
+>>>>>>> upstream/topic/gitlab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +39,7 @@ class VCSSelection[F[_]: Sync](implicit client: HttpJsonClient[F], user: Authent
     import org.scalasteward.core.github.http4s.authentication.addCredentials
 
     val alg = new Http4sGitHubApiAlg[F](config.vcsApiHost, _ => addCredentials(user))
-    val specifics = new GitHubSpecifics(config)
+    val specifics = new GitHubSpecifics()
     (alg, specifics)
   }
   private def gitlab(config: Config): (Http4sGitLabApiAlg[F], GitlabSpecifics) = {

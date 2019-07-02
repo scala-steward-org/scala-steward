@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 scala-steward contributors
+ * Copyright 2018-2019 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,8 +41,7 @@ final class DependencyService[F[_]](
   def checkDependencies(repo: Repo): F[Unit] =
     logAlg.attemptLog_(s"Check dependencies of ${repo.show}") {
       for {
-        res <- vcsApiAlg.createForkOrGetRepoWithDefaultBranch(config, repo)
-        (repoOut, branchOut) = res
+        (repoOut, branchOut) <- vcsApiAlg.createForkOrGetRepoWithDefaultBranch(config, repo)
         foundSha1 <- dependencyRepository.findSha1(repo)
         latestSha1 = branchOut.commit.sha
         refreshRequired = foundSha1.fold(true)(_ =!= latestSha1)

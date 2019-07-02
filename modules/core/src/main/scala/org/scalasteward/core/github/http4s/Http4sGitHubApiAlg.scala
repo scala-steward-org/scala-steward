@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 scala-steward contributors
+ * Copyright 2018-2019 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,12 @@
 
 package org.scalasteward.core.github.http4s
 
-import cats.Monad
 import org.http4s.{Request, Uri}
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.github._
 import org.scalasteward.core.util.HttpJsonClient
+import org.scalasteward.core.vcs.data._
 import org.scalasteward.core.vcs.VCSApiAlg
-import org.scalasteward.core.vcs.data.{BranchOut, NewPullRequestData, PullRequestOut, Repo, RepoOut}
 
 final class Http4sGitHubApiAlg[F[_]](
     gitHubApiHost: Uri,
@@ -36,9 +35,7 @@ final class Http4sGitHubApiAlg[F[_]](
   override def createFork(repo: Repo): F[RepoOut] =
     client.post(url.forks(repo), modify(repo))
 
-  override def createPullRequest(repo: Repo, data: NewPullRequestData)(
-      implicit F: Monad[F]
-  ): F[PullRequestOut] =
+  override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] =
     client.postWithBody(url.pulls(repo), data, modify(repo))
 
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =

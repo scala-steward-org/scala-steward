@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 scala-steward contributors
+ * Copyright 2018-2019 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,11 @@
 package org.scalasteward.core.github
 
 import org.scalasteward.core.model.Update
-import org.scalasteward.core.vcs.data.Repo
-import org.scalasteward.core.application.Config
 import org.scalasteward.core.vcs
-import org.scalasteward.core.git
 import org.scalasteward.core.vcs.VCSSpecifics
+import org.scalasteward.core.vcs.data.Repo
 
-class GitHubSpecifics(config: Config) extends VCSSpecifics {
-  override def sourceFor(repo: Repo, update: Update): String =
-    s"${vcs.getLogin(config, repo)}:${git.branchFor(update).name}"
+class GitHubSpecifics extends VCSSpecifics {
+  override def headForListingPullRequests(fork: Repo, update: Update): String =
+    vcs.headFor(fork.show, update)
 }

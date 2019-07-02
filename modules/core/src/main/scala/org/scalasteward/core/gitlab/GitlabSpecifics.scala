@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 2018-2019 scala-steward contributors
+=======
+ * Copyright 2018-2019 Scala Steward contributors
+>>>>>>> upstream/topic/gitlab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +26,6 @@ import org.scalasteward.core.git
 import org.scalasteward.core.vcs.VCSSpecifics
 
 class GitlabSpecifics extends VCSSpecifics {
-  override def sourceFor(repo: Repo, update: Update): String =
+  override def headForListingPullRequests(fork: Repo, update: Update): String =
     git.branchFor(update).name
 }
