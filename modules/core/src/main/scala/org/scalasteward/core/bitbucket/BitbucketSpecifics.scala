@@ -18,8 +18,8 @@ package org.scalasteward.core.bitbucket
 
 import org.scalasteward.core.git
 import org.scalasteward.core.model.Update
-import org.scalasteward.core.vcs.VCSSpecifics
 import org.scalasteward.core.vcs.data.Repo
+import org.scalasteward.core.vcs.VCSSpecifics
 
 class BitbucketSpecifics extends VCSSpecifics {
   override def sourceFor(repo: Repo, update: Update): String =

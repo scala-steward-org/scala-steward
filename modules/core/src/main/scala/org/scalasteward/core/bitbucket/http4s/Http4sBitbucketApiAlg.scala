@@ -19,7 +19,8 @@ package org.scalasteward.core.bitbucket.http4s
 import cats.Monad
 import cats.effect.Sync
 import cats.implicits._
-import org.http4s.{Request, Uri}
+import org.http4s.{Request, Status, Uri}
+import org.http4s.client.UnexpectedStatus
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.bitbucket.Url
 import org.scalasteward.core.bitbucket.http4s.json._
@@ -33,8 +34,6 @@ import org.scalasteward.core.vcs.data.{
   RepoOut
 }
 import org.scalasteward.core.vcs.VCSApiAlg
-import org.http4s.client.UnexpectedStatus
-import org.http4s.Status
 
 class Http4sBitbucketApiAlg[F[_]: Sync](
     bitbucketApiHost: Uri,

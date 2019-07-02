@@ -15,14 +15,13 @@
  */
 
 package org.scalasteward.core.bitbucket.http4s
-import org.scalasteward.core.git.Branch
-import org.http4s.Uri
-import org.scalasteward.core.vcs.data.Repo
-import io.circe.Decoder
+
 import cats.implicits._
+import io.circe.{Decoder, DecodingFailure}
+import org.http4s.Uri
+import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.uri._
-import org.scalasteward.core.vcs.data.UserOut
-import io.circe.DecodingFailure
+import org.scalasteward.core.vcs.data.{Repo, UserOut}
 
 final private[http4s] case class RepositoryResponse(
     name: String,

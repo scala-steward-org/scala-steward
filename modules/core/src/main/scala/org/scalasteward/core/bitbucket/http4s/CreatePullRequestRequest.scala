@@ -15,9 +15,10 @@
  */
 
 package org.scalasteward.core.bitbucket.http4s
+
+import io.circe.{Encoder, Json}
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.vcs.data.Repo
-import io.circe.{Encoder, Json}
 
 private[http4s] case class CreatePullRequestRequest(
     title: String,

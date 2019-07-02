@@ -20,10 +20,9 @@ import cats.Eq
 import cats.implicits._
 import caseapp.core.Error.MalformedValue
 import caseapp.core.argparser.ArgParser
-import org.scalasteward.core.application.SupportedVCS.Bitbucket
 
 sealed trait SupportedVCS {
-  import SupportedVCS.{GitHub, Gitlab}
+  import SupportedVCS.{Bitbucket, GitHub, Gitlab}
   val asString = this match {
     case GitHub    => "github"
     case Gitlab    => "gitlab"
