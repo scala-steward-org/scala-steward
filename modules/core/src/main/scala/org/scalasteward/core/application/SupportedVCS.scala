@@ -25,8 +25,8 @@ import org.scalasteward.core.application.SupportedVCS.Bitbucket
 sealed trait SupportedVCS {
   import SupportedVCS.{GitHub, Gitlab}
   val asString = this match {
-    case GitHub => "github"
-    case Gitlab => "gitlab"
+    case GitHub    => "github"
+    case Gitlab    => "gitlab"
     case Bitbucket => "bitbucket"
   }
 }
@@ -40,10 +40,10 @@ object SupportedVCS {
     Eq.fromUniversalEquals
 
   def parse(value: String): Either[String, SupportedVCS] = value match {
-    case "github" => Right(GitHub)
-    case "gitlab" => Right(Gitlab)
+    case "github"    => Right(GitHub)
+    case "gitlab"    => Right(Gitlab)
     case "bitbucket" => Right(Bitbucket)
-    case unknown  => Left(s"Unexpected string '$unknown'")
+    case unknown     => Left(s"Unexpected string '$unknown'")
   }
 
   implicit val supportedVCSParser: ArgParser[SupportedVCS] =

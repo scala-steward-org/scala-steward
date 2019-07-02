@@ -129,7 +129,11 @@ class Http4sBitbucketApiAlgTest extends FunSuite with Matchers {
 
   implicit val client: Client[IO] = Client.fromHttpApp(routes.orNotFound)
   implicit val httpJsonClient: HttpJsonClient[IO] = new HttpJsonClient[IO]
-  val bitbucketApiAlg = new Http4sBitbucketApiAlg[IO](config.vcsApiHost,AuthenticatedUser("scala-steward", ""), _ => IO.pure)
+  val bitbucketApiAlg = new Http4sBitbucketApiAlg[IO](
+    config.vcsApiHost,
+    AuthenticatedUser("scala-steward", ""),
+    _ => IO.pure
+  )
 
   val prUrl = uri"https://api.bitbucket.org/2.0/repositories/fthomas/base.g8/pullrequests/2"
   val repo = Repo("fthomas", "base.g8")
@@ -155,7 +159,7 @@ class Http4sBitbucketApiAlgTest extends FunSuite with Matchers {
     CommitOut(Sha1(HexString("07eb2a203e297c8340273950e98b2cab68b560c1")))
   )
 
- val pullRequest = PullRequestOut(prUrl,PullRequestState.Open, "scala-steward-pr")
+  val pullRequest = PullRequestOut(prUrl, PullRequestState.Open, "scala-steward-pr")
 
   test("createForkOrGetRepo") {
     val repoOut =
@@ -196,7 +200,7 @@ class Http4sBitbucketApiAlgTest extends FunSuite with Matchers {
     pr shouldBe pullRequest
   }
 
-  test("listPullRequests"){
+  test("listPullRequests") {
     val prs = bitbucketApiAlg.listPullRequests(repo, "master", master).unsafeRunSync()
     prs should contain only pullRequest
   }
