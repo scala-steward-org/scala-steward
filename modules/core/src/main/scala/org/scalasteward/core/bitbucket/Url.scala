@@ -4,7 +4,7 @@ import org.http4s.Uri
 import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.git.Branch
 
-class Url(apiHost: Uri) {
+private[bitbucket] class Url(apiHost: Uri) {
 
   def forks(rep: Repo): Uri =
     repo(rep) / "forks"

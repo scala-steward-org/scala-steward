@@ -18,7 +18,7 @@ import org.scalasteward.core.git.Sha1.HexString
 
 class Http4sBitbucketApiAlgTest extends FunSuite with Matchers {
 
-  val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
+  private val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case GET -> Root / "repositories" / "fthomas" / "base.g8" =>
       Ok(
         json"""{
@@ -131,14 +131,15 @@ class Http4sBitbucketApiAlgTest extends FunSuite with Matchers {
   implicit val httpJsonClient: HttpJsonClient[IO] = new HttpJsonClient[IO]
   val bitbucketApiAlg = new Http4sBitbucketApiAlg[IO](config.vcsApiHost,AuthenticatedUser("scala-steward", ""), _ => IO.pure)
 
+  val prUrl = uri"https://api.bitbucket.org/2.0/repositories/fthomas/base.g8/pullrequests/2"
   val repo = Repo("fthomas", "base.g8")
-
+  val master = Branch("master")
   val parent = RepoOut(
     "base.g8",
     UserOut("fthomas"),
     None,
     uri"https://scala-steward@bitbucket.org/fthomas/base.g8.git",
-    Branch("master")
+    master
   )
 
   val fork = RepoOut(
@@ -146,13 +147,15 @@ class Http4sBitbucketApiAlgTest extends FunSuite with Matchers {
     UserOut("scala-steward"),
     Some(parent),
     uri"https://scala-steward@bitbucket.org/scala-steward/base.g8.git",
-    Branch("master")
+    master
   )
 
   val defaultBranch = BranchOut(
-    Branch("master"),
+    master,
     CommitOut(Sha1(HexString("07eb2a203e297c8340273950e98b2cab68b560c1")))
   )
+
+ val pullRequest = PullRequestOut(prUrl,PullRequestState.Open, "scala-steward-pr")
 
   test("createForkOrGetRepo") {
     val repoOut =
@@ -180,6 +183,22 @@ class Http4sBitbucketApiAlgTest extends FunSuite with Matchers {
         .unsafeRunSync()
     repoOut shouldBe parent
     branchOut shouldBe defaultBranch
+  }
+
+  test("createPullRequest") {
+    val data = NewPullRequestData(
+      "scala-steward-pr",
+      "body",
+      "master",
+      Branch("master")
+    )
+    val pr = bitbucketApiAlg.createPullRequest(repo, data).unsafeRunSync()
+    pr shouldBe pullRequest
+  }
+
+  test("listPullRequests"){
+    val prs = bitbucketApiAlg.listPullRequests(repo, "master", master).unsafeRunSync()
+    prs should contain only pullRequest
   }
 
 }
