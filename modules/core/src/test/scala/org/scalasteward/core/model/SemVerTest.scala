@@ -61,5 +61,7 @@ class SemVerTest extends FunSuite with Matchers {
     SemVer.getChange(SemVer(2, 3, 4, Some("M1"), Some("1")), SemVer(2, 3, 4, Some("M1"), Some("2"))) shouldBe
       Some(Change.BuildMetadata)
     SemVer.getChange(SemVer(2, 3, 4, Some("M1"), None), SemVer(2, 3, 4, Some("M1"), None)) shouldBe None
+    SemVer.getChange(SemVer(0,20,0, Some("M4"), None), SemVer(0, 20, 3, None, None)) shouldBe
+      Some(Change.PreRelease)
   }
 }
