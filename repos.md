@@ -277,6 +277,7 @@
 - olafurpg/sbt-ci-release
 - olivierschultz/typelevel-template.g8
 - ovotech/kafka-serialization
+- ovotech/vulcan
 - pathikrit/better-files
 - pauljamescleary/scala-pet-store
 - pbernet/akka_streams_tutorial
