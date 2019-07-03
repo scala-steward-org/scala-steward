@@ -24,7 +24,6 @@ import org.scalasteward.core.model.{SemVer, Update}
 import org.scalasteward.core.nurture.UpdateData
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.git
-import org.scalasteward.core.vcs
 
 final case class NewPullRequestData(
     title: String,
@@ -74,11 +73,11 @@ object NewPullRequestData {
       change <- SemVer.getChange(curr, next)
     } yield s"semver-${change.render}"
 
-  def from(data: UpdateData, authorLogin: String): NewPullRequestData =
+  def from(data: UpdateData, branchName: String, authorLogin: String): NewPullRequestData =
     NewPullRequestData(
       title = git.commitMsgFor(data.update),
       body = bodyFor(data.update, authorLogin),
-      head = vcs.headFor(data.fork.owner, data.update),
+      head = branchName,
       base = data.baseBranch
     )
 }
