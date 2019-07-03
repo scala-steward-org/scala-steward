@@ -69,6 +69,7 @@ Using Scala Steward in your company and don't see it listed here?
 Consider creating PR to add your company to the list and join the community.
 
 * [Chartboost](https://www.chartboost.com/)
+* [Firstbird](https://firstbird.com)
 * [HolidayCheck](https://github.com/holidaycheck)
 * [iAdvize](https://www.iadvize.com/en/)
 * [SlamData](https://slamdata.com/)
