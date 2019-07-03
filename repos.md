@@ -122,6 +122,8 @@
 - cquiroz/scalajs-react-virtualized
 - cquiroz/scala-java-locales
 - cquiroz/scala-java-time
+- criteo/cuttle
+- criteo/lolhttp
 - d2a4u/sqs4s
 - daandi/nice-url-encode-decode
 - dhpiggott/liquidity-service
