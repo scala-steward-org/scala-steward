@@ -17,7 +17,7 @@ java -jar ${JAR} \
   --repos-file "$STEWARD_DIR/repos.md" \
   --git-author-name "Scala Steward" \
   --git-author-email "me@$LOGIN.org" \
-  --github-login ${LOGIN} \
+  --vcs-login ${LOGIN} \
   --git-ask-pass "$HOME/.github/askpass/$LOGIN.sh" \
   --ignore-opts-files \
   --sign-commits \
