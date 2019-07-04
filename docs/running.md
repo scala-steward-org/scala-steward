@@ -8,8 +8,8 @@ sbt stage
   --repos-file "$STEWARD_DIR/repos.md" \
   --git-author-name "Scala steward" \
   --git-author-email ${EMAIL} \
-  --github-api-host "https://api.github.com" \
-  --github-login ${LOGIN} \
+  --vcs-api-host "https://api.github.com" \
+  --vcs-login ${LOGIN} \
   --git-ask-pass "$STEWARD_DIR/.github/askpass/$LOGIN.sh" \
   --sign-commits \
   --env-var FOO=BAR
@@ -25,8 +25,8 @@ docker run -v $STEWARD_DIR:/opt/scala-steward -it scala-steward:0.1.0-SNAPSHOT \
   --repos-file "/opt/scala-steward/repos.md" \
   --git-author-name "Scala steward" \
   --git-author-email ${EMAIL} \
-  --github-api-host "https://api.github.com" \
-  --github-login ${LOGIN} \
+  --vcs-api-host "https://api.github.com" \
+  --vcs-login ${LOGIN} \
   --git-ask-pass "/opt/scala-steward/.github/askpass/$LOGIN.sh" \
   --sign-commits \
   --env-var FOO=BAR
