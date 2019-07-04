@@ -46,7 +46,9 @@ Thanks goes to these wonderful people:
 * [Bayram Kiran](https://github.com/kiranbayram)
 * [Christopher Davenport](https://github.com/ChristopherDavenport)
 * [Dale Wijnand](https://github.com/dwijnand)
+* [Daniel Pfeiffer](https://github.com/dpfeiffer)
 * [David Francoeur](https://github.com/daddykotex)
+* [Fabian](https://github.com/fg-devs)
 * [Filipe Regadas](https://github.com/regadas)
 * [Frank S. Thomas](https://github.com/fthomas)
 * [Jakub Kozłowski](https://github.com/kubukoz)
@@ -59,6 +61,7 @@ Thanks goes to these wonderful people:
 * [Piotr Gabara](https://github.com/pgabara)
 * [Renato Cavalcanti](https://github.com/renatocaval)
 * [sullis](https://github.com/sullis)
+* [Thomas Heslin](https://github.com/tjheslin1)
 * [Thomas Kaliakos](https://github.com/thomaska)
 * [Zelenya](https://github.com/Zelenya)
 
