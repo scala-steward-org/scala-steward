@@ -20,7 +20,7 @@ class NewPullRequestDataTest extends FunSuite with Matchers {
       Branch("update/logback-classic-1.2.3")
     )
     NewPullRequestData
-      .from(data, "scala-steward")
+      .from(data, "scala-steward:update/logback-classic-1.2.3", "scala-steward")
       .asJson
       .spaces2 shouldBe
       """|{

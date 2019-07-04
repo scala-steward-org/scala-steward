@@ -27,8 +27,8 @@ import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.update.FilterAlg
 import org.scalasteward.core.util.{BracketThrowable, LogAlg}
-import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg, VCSSpecifics}
-import org.scalasteward.core.{git, util}
+import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
+import org.scalasteward.core.{git, util, vcs}
 
 final class NurtureAlg[F[_]](
     implicit
@@ -37,7 +37,6 @@ final class NurtureAlg[F[_]](
     repoConfigAlg: RepoConfigAlg[F],
     filterAlg: FilterAlg[F],
     gitAlg: GitAlg[F],
-    vcsSpecifics: VCSSpecifics,
     vcsApiAlg: VCSApiAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
     logAlg: LogAlg[F],
@@ -84,7 +83,7 @@ final class NurtureAlg[F[_]](
   def processUpdate(data: UpdateData): F[Unit] =
     for {
       _ <- logger.info(s"Process update ${data.update.show}")
-      head = vcsSpecifics.headForListingPullRequests(data.fork, data.update)
+      head = vcs.listingBranch(config.vcsType, data.fork, data.update)
       pullRequests <- vcsApiAlg.listPullRequests(data.repo, head, data.baseBranch)
       _ <- pullRequests.headOption match {
         case Some(pr) if pr.isClosed =>
@@ -123,7 +122,8 @@ final class NurtureAlg[F[_]](
   def createPullRequest(data: UpdateData): F[Unit] =
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
-      requestData = NewPullRequestData.from(data, config.vcsLogin)
+      branchName = vcs.createBranch(config.vcsType, data.fork, data.update)
+      requestData = NewPullRequestData.from(data, branchName, config.vcsLogin)
       pr <- vcsApiAlg.createPullRequest(data.repo, requestData)
       _ <- pullRequestRepo.createOrUpdate(
         data.repo,
