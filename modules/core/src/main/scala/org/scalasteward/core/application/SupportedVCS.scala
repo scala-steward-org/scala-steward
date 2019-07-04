@@ -22,24 +22,27 @@ import caseapp.core.Error.MalformedValue
 import caseapp.core.argparser.ArgParser
 
 sealed trait SupportedVCS {
-  import SupportedVCS.{GitHub, Gitlab}
+  import SupportedVCS.{Bitbucket, GitHub, Gitlab}
   val asString = this match {
-    case GitHub => "github"
-    case Gitlab => "gitlab"
+    case GitHub    => "github"
+    case Gitlab    => "gitlab"
+    case Bitbucket => "bitbucket"
   }
 }
 
 object SupportedVCS {
   case object GitHub extends SupportedVCS
   case object Gitlab extends SupportedVCS
+  case object Bitbucket extends SupportedVCS
 
   implicit val supportedVCSEq: Eq[SupportedVCS] =
     Eq.fromUniversalEquals
 
   def parse(value: String): Either[String, SupportedVCS] = value match {
-    case "github" => Right(GitHub)
-    case "gitlab" => Right(Gitlab)
-    case unknown  => Left(s"Unexpected string '$unknown'")
+    case "github"    => Right(GitHub)
+    case "gitlab"    => Right(Gitlab)
+    case "bitbucket" => Right(Bitbucket)
+    case unknown     => Left(s"Unexpected string '$unknown'")
   }
 
   implicit val supportedVCSParser: ArgParser[SupportedVCS] =
