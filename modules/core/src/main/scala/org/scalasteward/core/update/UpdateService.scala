@@ -167,6 +167,7 @@ object UpdateService {
       case ("com.slamdata", "sbt-quasar-datasource")         => false
       case ("com.typesafe.play", "interplay")                => false
       case ("org.foundweekends.giter8", "sbt-giter8")        => false
+      case ("org.scalablytyped", "sbt-scalablytyped")        => false
       case ("org.scala-lang.modules", "sbt-scala-module")    => false
       case ("org.scala-lang.modules", "scala-module-plugin") => false
       case ("org.scodec", "scodec-build")                    => false
