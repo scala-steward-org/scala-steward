@@ -27,3 +27,6 @@ repository [here](https://github.com/fthomas/scala-steward/blob/master/.mergify.
 Mergify can also be configured to only merge patch updates (in case the version
 number adheres to [Semantic Versioning](https://semver.org/)) as demonstrated
 [here](https://github.com/fthomas/refined/blob/master/.mergify.yml).
+
+Other examples of Mergify rules for Scala Steward can be found via
+[GitHub's code search](https://github.com/search?p=6&q=%22author%3Dscala-steward%22+filename%3A.mergify.yml&type=Code).

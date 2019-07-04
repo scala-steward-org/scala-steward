@@ -44,6 +44,7 @@ Thanks goes to these wonderful people:
 * [Alex](https://github.com/jhnsmth)
 * [Arulselvan Madhavan](https://github.com/ArulselvanMadhavan)
 * [Bayram Kiran](https://github.com/kiranbayram)
+* [Christopher Davenport](https://github.com/ChristopherDavenport)
 * [Dale Wijnand](https://github.com/dwijnand)
 * [David Francoeur](https://github.com/daddykotex)
 * [Filipe Regadas](https://github.com/regadas)
@@ -68,10 +69,12 @@ Using Scala Steward in your company and don't see it listed here?
 Consider creating PR to add your company to the list and join the community.
 
 * [Chartboost](https://www.chartboost.com/)
+* [Firstbird](https://firstbird.com)
 * [HolidayCheck](https://github.com/holidaycheck)
 * [iAdvize](https://www.iadvize.com/en/)
 * [SlamData](https://slamdata.com/)
 * [Snowplow Analytics](https://snowplowanalytics.com/)
+* [SpringerNature](https://www.springernature.com)
 * [SoftwareMill](https://softwaremill.com)
 * [Zalando](https://en.zalando.de/)
 

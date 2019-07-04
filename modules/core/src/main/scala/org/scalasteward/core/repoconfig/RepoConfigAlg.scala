@@ -20,11 +20,11 @@ import cats.data.OptionT
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import io.circe.config.parser
-import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.model.Update
 import org.scalasteward.core.repoconfig.RepoConfigAlg._
 import org.scalasteward.core.util.MonadThrowable
+import org.scalasteward.core.vcs.data.Repo
 
 final class RepoConfigAlg[F[_]](
     implicit
@@ -33,16 +33,17 @@ final class RepoConfigAlg[F[_]](
     workspaceAlg: WorkspaceAlg[F],
     F: MonadThrowable[F]
 ) {
-  def getRepoConfig(repo: Repo): F[RepoConfig] =
+  def readRepoConfigOrDefault(repo: Repo): F[RepoConfig] =
+    readRepoConfig(repo).map(_.getOrElse(RepoConfig.default))
+
+  def readRepoConfig(repo: Repo): F[Option[RepoConfig]] =
     workspaceAlg.repoDir(repo).flatMap { dir =>
       val configFile = dir / repoConfigBasename
-      val maybeRepoConfig = OptionT(fileAlg.readFile(configFile)).flatMapF { content =>
-        parseRepoConfig(content) match {
-          case Right(config)  => logger.info(s"Parsed $config") >> F.pure(config.some)
-          case Left(errorMsg) => logger.info(errorMsg).as(none[RepoConfig])
-        }
+      val maybeRepoConfig = OptionT(fileAlg.readFile(configFile)).map(parseRepoConfig).flatMapF {
+        case Right(config)  => logger.info(s"Parsed $config") >> F.pure(config.some)
+        case Left(errorMsg) => logger.info(errorMsg).as(none[RepoConfig])
       }
-      maybeRepoConfig.getOrElse(RepoConfig())
+      maybeRepoConfig.value
     }
 }
 

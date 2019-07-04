@@ -24,6 +24,7 @@
 - alonsodomin/cron4s
 - alonsodomin/sbt-spark
 - alonsodomin/scala-colog
+- Atry/Binding.scala-template
 - Atry/Dsl.scala-akka-actor
 - Atry/fastring
 - AVSystem/scala-commons
@@ -44,6 +45,10 @@
 - ccadllc/cedi-config
 - ccadllc/cedi-dtrace
 - ccamel/playground-binding.scala
+- cchantep/acolyte
+- cchantep/alohura
+- cchantep/foorgol
+- cchantep/sbt-hl-compiler
 - channingwalton/http4sWS
 - ChocPanda/argonaut-magnolia
 - ChocPanda/scalacheck-magnolia
@@ -114,6 +119,7 @@
 - coursier/http-server
 - coursier/interface
 - coursier/sbt-coursier
+- coursier/sbt-cs-publish
 - coursier/sbt-launcher
 - cquiroz/scalajs-react-clipboard
 - cquiroz/scalajs-react-common
@@ -122,6 +128,8 @@
 - cquiroz/scalajs-react-virtualized
 - cquiroz/scala-java-locales
 - cquiroz/scala-java-time
+- criteo/cuttle
+- criteo/lolhttp
 - d2a4u/sqs4s
 - daandi/nice-url-encode-decode
 - dhpiggott/liquidity-service
@@ -275,6 +283,7 @@
 - olafurpg/sbt-ci-release
 - olivierschultz/typelevel-template.g8
 - ovotech/kafka-serialization
+- ovotech/vulcan
 - pathikrit/better-files
 - pauljamescleary/scala-pet-store
 - pbernet/akka_streams_tutorial
@@ -292,6 +301,7 @@
 - Philippus/scala-for-all
 - picnicml/doddle-model
 - pjan/akka-d3
+- playframework/anorm
 - playframework/cachecontrol
 - playframework/interplay
 - playframework/omnidoc
@@ -316,6 +326,11 @@
 - profunktor/redis4cats
 - pureconfig/pureconfig
 - raboof/sbt-reproducible-builds
+- ReactiveMongo/Play-ReactiveMongo
+- ReactiveMongo/ReactiveMongo
+- ReactiveMongo/ReactiveMongo-BSON
+- ReactiveMongo/ReactiveMongo-Play-Json
+- ReactiveMongo/ReactiveMongo-Streaming
 - ReactivePlatform/Pragmatic-Scala
 - ReactivePlatform/Reactive-Design-Patterns
 - sake92/hepek
@@ -460,6 +475,8 @@
 - WellFactored/resourcepool
 - X9Developers/block-explorer
 - yannick-cw/elastic-indexer4s
+- zengularity/benji
+- zengularity/query-monad
 - zio/interop-cats
 - zio/interop-future
 - zio/interop-java

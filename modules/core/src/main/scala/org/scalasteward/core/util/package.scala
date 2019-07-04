@@ -50,14 +50,8 @@ package object util {
     * res1: List[Int] = List(0, 1, 2)
     * }}}
     */
-  def bindUntilTrue[G[_]: Foldable, F[_]: Monad](gfb: G[F[Boolean]]): F[Boolean] = {
-    def loop(list: List[F[Boolean]]): F[Boolean] =
-      list match {
-        case x :: xs => x.ifM(true.pure[F], loop(xs))
-        case Nil     => false.pure[F]
-      }
-    loop(gfb.toList)
-  }
+  def bindUntilTrue[G[_]: Foldable, F[_]: Monad](gfb: G[F[Boolean]]): F[Boolean] =
+    gfb.existsM(identity)
 
   def divideOnError[F[_], G[_], A, B, E](a: A)(f: A => F[B])(divide: A => G[A])(
       handleError: (A, E) => F[B]
@@ -78,7 +72,7 @@ package object util {
   }
 
   def evalFilter[F[_]: Functor, A](p: A => F[Boolean]): Pipe[F, A, A] =
-    _.evalMap(a => p(a).map(b => (a, b))).collect { case (a, true) => a }
+    _.evalMap(a => p(a).tupleLeft(a)).collect { case (a, true) => a }
 
   def halve[C](c: C)(implicit ev: C => TraversableLike[_, C]): Either[C, (C, C)] = {
     val size = c.size
