@@ -74,6 +74,7 @@ Consider creating PR to add your company to the list and join the community.
 * [iAdvize](https://www.iadvize.com/en/)
 * [SlamData](https://slamdata.com/)
 * [Snowplow Analytics](https://snowplowanalytics.com/)
+* [SpringerNature](https://www.springernature.com)
 * [SoftwareMill](https://softwaremill.com)
 * [Zalando](https://en.zalando.de/)
 
