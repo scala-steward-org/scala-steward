@@ -115,6 +115,7 @@
 - coursier/http-server
 - coursier/interface
 - coursier/sbt-coursier
+- coursier/sbt-cs-publish
 - coursier/sbt-launcher
 - cquiroz/scalajs-react-clipboard
 - cquiroz/scalajs-react-common
