@@ -45,6 +45,10 @@
 - ccadllc/cedi-config
 - ccadllc/cedi-dtrace
 - ccamel/playground-binding.scala
+- cchantep/acolyte
+- cchantep/alohura
+- cchantep/foorgol
+- cchantep/sbt-hl-compiler
 - channingwalton/http4sWS
 - ChocPanda/argonaut-magnolia
 - ChocPanda/scalacheck-magnolia
@@ -297,6 +301,7 @@
 - Philippus/scala-for-all
 - picnicml/doddle-model
 - pjan/akka-d3
+- playframework/anorm
 - playframework/cachecontrol
 - playframework/interplay
 - playframework/omnidoc
@@ -321,6 +326,11 @@
 - profunktor/redis4cats
 - pureconfig/pureconfig
 - raboof/sbt-reproducible-builds
+- ReactiveMongo/Play-ReactiveMongo
+- ReactiveMongo/ReactiveMongo
+- ReactiveMongo/ReactiveMongo-BSON
+- ReactiveMongo/ReactiveMongo-Play-Json
+- ReactiveMongo/ReactiveMongo-Streaming
 - ReactivePlatform/Pragmatic-Scala
 - ReactivePlatform/Reactive-Design-Patterns
 - sake92/hepek
@@ -465,6 +475,8 @@
 - WellFactored/resourcepool
 - X9Developers/block-explorer
 - yannick-cw/elastic-indexer4s
+- zengularity/benji
+- zengularity/query-monad
 - zio/interop-cats
 - zio/interop-future
 - zio/interop-java
