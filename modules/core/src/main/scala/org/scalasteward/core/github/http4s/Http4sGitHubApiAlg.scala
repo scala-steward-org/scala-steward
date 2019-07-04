@@ -21,6 +21,7 @@ import org.scalasteward.core.git.Branch
 import org.scalasteward.core.github._
 import org.scalasteward.core.util.HttpJsonClient
 import org.scalasteward.core.vcs.data._
+import org.scalasteward.core.vcs.VCSApiAlg
 
 final class Http4sGitHubApiAlg[F[_]](
     gitHubApiHost: Uri,
@@ -28,7 +29,7 @@ final class Http4sGitHubApiAlg[F[_]](
 )(
     implicit
     client: HttpJsonClient[F]
-) extends GitHubApiAlg[F] {
+) extends VCSApiAlg[F] {
   private val url = new Url(gitHubApiHost)
 
   override def createFork(repo: Repo): F[RepoOut] =

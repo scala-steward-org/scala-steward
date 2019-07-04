@@ -16,10 +16,36 @@
 
 package org.scalasteward.core
 
+import org.scalasteward.core.application.SupportedVCS
+import org.scalasteward.core.application.SupportedVCS.GitHub
+import org.scalasteward.core.application.SupportedVCS.Gitlab
+import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.model.Update
 
 package object vcs {
 
-  def headFor(origin: String, update: Update): String =
-    s"$origin:${git.branchFor(update).name}"
+  /** Determines the `head` (GitHub) / `source_branch` (GitLab) parameter for searching
+    * for already existing pull requests.
+    */
+  def listingBranch(vcsType: SupportedVCS, fork: Repo, update: Update): String =
+    vcsType match {
+      case GitHub =>
+        s"${fork.show}:${git.branchFor(update).name}"
+
+      case Gitlab =>
+        git.branchFor(update).name
+    }
+
+  /** Determines the `head` (GitHub) / `source_branch` (GitLab) parameter for creating
+    * a new pull requests.
+    */
+  def createBranch(vcsType: SupportedVCS, fork: Repo, update: Update): String =
+    vcsType match {
+      case GitHub =>
+        s"${fork.owner}:${git.branchFor(update).name}"
+
+      case Gitlab =>
+        git.branchFor(update).name
+    }
+
 }

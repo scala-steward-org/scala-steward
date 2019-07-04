@@ -206,7 +206,7 @@ addCommandAlias(
       Seq("--repos-file", s"$projectDir/repos.md"),
       Seq("--git-author-name", "Scala Steward"),
       Seq("--git-author-email", s"me@$projectName.org"),
-      Seq("--github-login", projectName),
+      Seq("--vcs-login", projectName),
       Seq("--git-ask-pass", s"$home/.github/askpass/$projectName.sh"),
       Seq("--whitelist", s"$home/.cache/coursier"),
       Seq("--whitelist", s"$home/.coursier"),
