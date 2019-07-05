@@ -475,6 +475,7 @@
 - WellFactored/resourcepool
 - X9Developers/block-explorer
 - yannick-cw/elastic-indexer4s
+- yannick-cw/sjq
 - zengularity/benji
 - zengularity/query-monad
 - zio/interop-cats
