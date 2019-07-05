@@ -73,6 +73,7 @@
 - ChristopherDavenport/epimetheus-log4cats
 - ChristopherDavenport/epimetheus-mules
 - ChristopherDavenport/fuuid
+- ChristopherDavenport/fuuid-annotation
 - ChristopherDavenport/http4s-client-example
 - ChristopherDavenport/http4s-resource-example
 - ChristopherDavenport/http4s-rho-example
