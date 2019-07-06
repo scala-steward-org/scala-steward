@@ -73,6 +73,7 @@ Thanks goes to these wonderful people:
 * [Piotr Gabara](https://github.com/pgabara)
 * [Renato Cavalcanti](https://github.com/renatocaval)
 * [sullis](https://github.com/sullis)
+* [TATSUNO Yasuhiro](https://github.com/exoego)
 * [Thomas Heslin](https://github.com/tjheslin1)
 * [Thomas Kaliakos](https://github.com/thomaska)
 * [Zelenya](https://github.com/Zelenya)
