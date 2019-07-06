@@ -25,6 +25,7 @@ import org.scalasteward.core.dependency.Dependency
 import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.model.Update
+import org.scalasteward.core.sbt
 import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.sbt.data.ArtificialProject
 import org.scalasteward.core.scalafix.Migration
@@ -110,8 +111,10 @@ object SbtAlg {
           maybeClearCredentials = if (config.keepCredentials) Nil else List(setCredentialsToNil)
           commands = maybeClearCredentials ++
             List(dependencyUpdates, reloadPlugins, dependencyUpdates)
-          lines <- exec(sbtCmd(commands), repoDir)
-        } yield parser.parseSingleUpdates(lines)
+          sourceUpdates = exec(sbtCmd(commands), repoDir).map(parser.parseSingleUpdates)
+          buildPropUpdates = proposeBuildPropertiesUpdate()
+          updates <- sourceUpdates.product(buildPropUpdates).map(p => p._1 ::: p._2)
+        } yield updates
 
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
         addGlobalPluginTemporarily(scalaStewardScalafixSbt) {
@@ -124,6 +127,31 @@ object SbtAlg {
 
       val sbtDir: F[File] =
         fileAlg.home.map(_ / ".sbt")
+
+      val buildPropertiesFile: F[File] =
+        fileAlg.home.map(_ / "project" / "build.properties")
+
+      final private val sbtVersionRegex = s"build.properties=(.+)".r
+      final private val latestSbtVersions = List(sbt.defaultSbtVersion, sbt.latestSbtVersion_0_13)
+        .map(_.value)
+
+      def proposeBuildPropertiesUpdate(): F[List[Update.Single]] =
+        buildPropertiesFile.flatMap { prop =>
+          fileAlg
+            .readFile(prop)
+            .map { maybeContent =>
+              for {
+                content <- maybeContent
+                currentVer <- sbtVersionRegex.findFirstMatchIn(content).map(_.group(1))
+                if !latestSbtVersions.contains(currentVer)
+                newVer = if (currentVer.startsWith("0."))
+                  sbt.latestSbtVersion_0_13
+                else
+                  sbt.defaultSbtVersion
+              } yield Update.Single("org.scala-sbt", "sbt", currentVer, Nel.of(newVer.value))
+            }
+            .map(_.toList)
+        }
 
       def exec(command: Nel[String], repoDir: File): F[List[String]] =
         maybeIgnoreOptsFiles(repoDir)(processAlg.execSandboxed(command, repoDir))

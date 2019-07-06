@@ -23,7 +23,8 @@ package object io {
   def isSourceFile(file: File): Boolean = {
     val scalaOrSbtFile = file.extension.exists(Set(".scala", ".sbt"))
     val travisYmlFile = file.name === ".travis.yml"
+    val sbtPropertiesFile = file.name === "build.properties"
     val notInGitDir = !file.pathAsString.contains(".git/")
-    (scalaOrSbtFile || travisYmlFile) && notInGitDir
+    (scalaOrSbtFile || travisYmlFile || sbtPropertiesFile) && notInGitDir
   }
 }

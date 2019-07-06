@@ -25,12 +25,16 @@ package object sbt {
   val defaultSbtVersion: SbtVersion =
     SbtVersion(BuildInfo.sbtVersion)
 
+  // Needs manual update
+  val latestSbtVersion_0_13: SbtVersion =
+    SbtVersion("0.13.18")
+
   val defaultScalaVersion: ScalaVersion =
     ScalaVersion(BuildInfo.scalaVersion)
 
   def seriesToSpecificVersion(sbtSeries: SbtVersion): SbtVersion =
     sbtSeries.value match {
-      case "0.13" => SbtVersion("0.13.18")
+      case "0.13" => latestSbtVersion_0_13
       case "1.0"  => defaultSbtVersion
       case _      => defaultSbtVersion
     }

@@ -47,7 +47,8 @@ class SbtAlgTest extends FunSuite with Matchers {
           "-batch",
           "-no-colors",
           ";set every credentials := Nil;dependencyUpdates;reload plugins;dependencyUpdates"
-        )
+        ),
+        List("read", "/tmp/steward/project/build.properties")
       )
     )
   }
@@ -78,7 +79,8 @@ class SbtAlgTest extends FunSuite with Matchers {
         ),
         List("rm", (repoDir / ".jvmopts").toString),
         List("restore", (repoDir / ".sbtopts").toString),
-        List("restore", (repoDir / ".jvmopts").toString)
+        List("restore", (repoDir / ".jvmopts").toString),
+        List("read", "/tmp/steward/project/build.properties")
       )
     )
   }
@@ -103,7 +105,8 @@ class SbtAlgTest extends FunSuite with Matchers {
           "-batch",
           "-no-colors",
           ";dependencyUpdates;reload plugins;dependencyUpdates"
-        )
+        ),
+        List("read", "/tmp/steward/project/build.properties")
       )
     )
   }

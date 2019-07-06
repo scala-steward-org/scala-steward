@@ -12,7 +12,7 @@ class UpdateHeuristicTest extends FunSuite with Matchers {
     val original = """sbt.version=1.3.0-RC1"""
     val expected = """sbt.version=1.3.0"""
     Single("org.scala-sbt", "sbt", "1.3.0-RC1", Nel.of("1.3.0"))
-      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.sbt.name)
+      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.original.name)
   }
 
   test("sbt plugins") {
