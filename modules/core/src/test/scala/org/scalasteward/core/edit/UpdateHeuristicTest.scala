@@ -8,6 +8,13 @@ import org.scalatest.{FunSuite, Matchers}
 
 class UpdateHeuristicTest extends FunSuite with Matchers {
 
+  test("sbt: build.properties") {
+    val original = """sbt.version=1.3.0-RC1"""
+    val expected = """sbt.version=1.3.0"""
+    Single("org.scala-sbt", "sbt", "1.3.0-RC1", Nel.of("1.3.0"))
+      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.sbt.name)
+  }
+
   test("sbt plugins") {
     val original =
       """addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.3.3")

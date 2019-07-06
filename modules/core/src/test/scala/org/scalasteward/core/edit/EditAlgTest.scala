@@ -27,10 +27,12 @@ class EditAlgTest extends FunSuite with Matchers {
         List("read", file2.pathAsString),
         List("read", file1.pathAsString),
         List("read", file1.pathAsString),
+        List("read", file1.pathAsString),
         List("write", file1.pathAsString)
       ),
       logs = Vector(
         (None, "Trying heuristic 'strict'"),
+        (None, "Trying heuristic 'sbt'"),
         (None, "Trying heuristic 'original'")
       ),
       files = Map(file1 -> """val catsVersion = "1.3.0"""", file2 -> "")

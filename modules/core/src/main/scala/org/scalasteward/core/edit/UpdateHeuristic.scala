@@ -79,27 +79,34 @@ object UpdateHeuristic {
     getPrefixRegex = update => Some(s"${update.groupId}.*?")
   )
 
+  val sbt = UpdateHeuristic(
+    name = "sbt",
+    order = 2,
+    getSearchTerms = _ => List("sbt\\.version="),
+    getPrefixRegex = _ => None
+  )
+
   val original = UpdateHeuristic(
     name = "original",
-    order = 2,
+    order = 3,
     getSearchTerms = update => update.searchTerms.toList
   )
 
   val relaxed = UpdateHeuristic(
     name = "relaxed",
-    order = 3,
+    order = 4,
     getSearchTerms = update => util.string.extractWords(update.artifactId)
   )
 
   val sliding = UpdateHeuristic(
     name = "sliding",
-    order = 4,
+    order = 5,
     getSearchTerms = update => update.artifactId.sliding(5).take(5).filterNot(_ === "scala").toList
   )
 
   val groupId = UpdateHeuristic(
     name = "groupId",
-    order = 5,
+    order = 6,
     getSearchTerms = update =>
       update.groupId
         .split('.')
@@ -110,5 +117,5 @@ object UpdateHeuristic {
   )
 
   val all: Nel[UpdateHeuristic] =
-    Nel.of(strict, original, relaxed, sliding, groupId).sortBy(_.order)
+    Nel.of(strict, original, relaxed, sliding, groupId, sbt).sortBy(_.order)
 }
