@@ -156,7 +156,7 @@ object SbtAlg {
       }
     }
 
-  final private val sbtVersionRegex = s"build.properties=(.+)".r
+  final private val sbtVersionRegex = s"sbt.version=(.+)".r
 
   def extractBuildPropertiesUpdate(content: String): Option[Update.Single] =
     for {
