@@ -112,7 +112,7 @@ object SbtAlg {
           commands = maybeClearCredentials ++
             List(dependencyUpdates, reloadPlugins, dependencyUpdates)
           sourceUpdates <- exec(sbtCmd(commands), repoDir).map(parser.parseSingleUpdates)
-          buildPropUpdates <- proposeBuildPropertiesUpdate()
+          buildPropUpdates <- proposeBuildPropertiesUpdate(repo)
         } yield sourceUpdates ++ buildPropUpdates
 
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
@@ -127,12 +127,11 @@ object SbtAlg {
       val sbtDir: F[File] =
         fileAlg.home.map(_ / ".sbt")
 
-      val buildPropertiesFile: F[File] =
-        fileAlg.home.map(_ / "project" / "build.properties")
-
-      def proposeBuildPropertiesUpdate(): F[Option[Update.Single]] =
-        buildPropertiesFile.flatMap { prop =>
-          fileAlg.readFile(prop).map(_.flatMap(extractBuildPropertiesUpdate))
+      def proposeBuildPropertiesUpdate(repo: Repo): F[Option[Update.Single]] =
+        workspaceAlg.repoDir(repo).flatMap { repoDir =>
+          fileAlg
+            .readFile(repoDir / "project" / "build.properties")
+            .map(_.flatMap(extractBuildPropertiesUpdate))
         }
 
       def exec(command: Nel[String], repoDir: File): F[List[String]] =
