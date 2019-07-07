@@ -25,7 +25,7 @@
 - alonsodomin/sbt-spark
 - alonsodomin/scala-colog
 - amarrella/fs2-elastic
-- Atry/Binding.scala-template
+- Atry/scalajs-all-in-one-template
 - Atry/Dsl.scala-akka-actor
 - Atry/fastring
 - AVSystem/scala-commons
