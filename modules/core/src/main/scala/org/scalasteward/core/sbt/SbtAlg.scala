@@ -130,26 +130,9 @@ object SbtAlg {
       val buildPropertiesFile: F[File] =
         fileAlg.home.map(_ / "project" / "build.properties")
 
-      final private val sbtVersionRegex = s"build.properties=(.+)".r
-      final private val latestSbtVersions = List(sbt.defaultSbtVersion, sbt.latestSbtVersion_0_13)
-        .map(_.value)
-
       def proposeBuildPropertiesUpdate(): F[Option[Update.Single]] =
         buildPropertiesFile.flatMap { prop =>
-          fileAlg
-            .readFile(prop)
-            .map { maybeContent =>
-              for {
-                content <- maybeContent
-                currentVer <- sbtVersionRegex.findFirstMatchIn(content).map(_.group(1))
-                if !latestSbtVersions.contains(currentVer)
-                newVer = if (currentVer.startsWith("0."))
-                  sbt.latestSbtVersion_0_13.value
-                else
-                  sbt.defaultSbtVersion.value
-                _ <- Some(()) if Version(newVer) > Version(currentVer)
-              } yield Update.Single("org.scala-sbt", "sbt", currentVer, Nel.of(newVer))
-            }
+          fileAlg.readFile(prop).map(_.flatMap(extractBuildPropertiesUpdate))
         }
 
       def exec(command: Nel[String], repoDir: File): F[List[String]] =
@@ -172,4 +155,16 @@ object SbtAlg {
         }
       }
     }
+
+  final private val sbtVersionRegex = s"build.properties=(.+)".r
+
+  def extractBuildPropertiesUpdate(content: String): Option[Update.Single] =
+    for {
+      currentVer <- sbtVersionRegex.findFirstMatchIn(content).map(_.group(1))
+      newVer = if (currentVer.startsWith("0."))
+        sbt.latestSbtVersion_0_13.value
+      else
+        sbt.defaultSbtVersion.value
+      _ <- Some(()) if Version(newVer) > Version(currentVer)
+    } yield Update.Single("org.scala-sbt", "sbt", currentVer, Nel.of(newVer))
 }
