@@ -134,7 +134,7 @@ object SbtAlg {
       final private val latestSbtVersions = List(sbt.defaultSbtVersion, sbt.latestSbtVersion_0_13)
         .map(_.value)
 
-      def proposeBuildPropertiesUpdate(): F[List[Update.Single]] =
+      def proposeBuildPropertiesUpdate(): F[Option[Update.Single]] =
         buildPropertiesFile.flatMap { prop =>
           fileAlg
             .readFile(prop)
@@ -149,7 +149,6 @@ object SbtAlg {
                   sbt.defaultSbtVersion
               } yield Update.Single("org.scala-sbt", "sbt", currentVer, Nel.of(newVer.value))
             }
-            .map(_.toList)
         }
 
       def exec(command: Nel[String], repoDir: File): F[List[String]] =
