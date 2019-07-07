@@ -111,10 +111,9 @@ object SbtAlg {
           maybeClearCredentials = if (config.keepCredentials) Nil else List(setCredentialsToNil)
           commands = maybeClearCredentials ++
             List(dependencyUpdates, reloadPlugins, dependencyUpdates)
-          sourceUpdates = exec(sbtCmd(commands), repoDir).map(parser.parseSingleUpdates)
-          buildPropUpdates = proposeBuildPropertiesUpdate()
-          updates <- sourceUpdates.product(buildPropUpdates).map(p => p._1 ::: p._2)
-        } yield updates
+          sourceUpdates <- exec(sbtCmd(commands), repoDir).map(parser.parseSingleUpdates)
+          buildPropUpdates <- proposeBuildPropertiesUpdate()
+        } yield sourceUpdates ++ buildPropUpdates
 
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
         addGlobalPluginTemporarily(scalaStewardScalafixSbt) {
