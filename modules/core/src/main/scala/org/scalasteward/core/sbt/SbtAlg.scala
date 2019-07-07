@@ -24,7 +24,7 @@ import org.scalasteward.core.application.Config
 import org.scalasteward.core.dependency.Dependency
 import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.model.Update
+import org.scalasteward.core.model.{Update, Version}
 import org.scalasteward.core.sbt
 import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.sbt.data.ArtificialProject
@@ -144,10 +144,11 @@ object SbtAlg {
                 currentVer <- sbtVersionRegex.findFirstMatchIn(content).map(_.group(1))
                 if !latestSbtVersions.contains(currentVer)
                 newVer = if (currentVer.startsWith("0."))
-                  sbt.latestSbtVersion_0_13
+                  sbt.latestSbtVersion_0_13.value
                 else
-                  sbt.defaultSbtVersion
-              } yield Update.Single("org.scala-sbt", "sbt", currentVer, Nel.of(newVer.value))
+                  sbt.defaultSbtVersion.value
+                _ <- Some(()) if Version(newVer) > Version(currentVer)
+              } yield Update.Single("org.scala-sbt", "sbt", currentVer, Nel.of(newVer))
             }
         }
 
