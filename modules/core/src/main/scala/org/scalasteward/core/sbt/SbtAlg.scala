@@ -22,14 +22,13 @@ import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.dependency.Dependency
-import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.model.{Update, Version}
-import org.scalasteward.core.sbt
+import org.scalasteward.core.model.Update
 import org.scalasteward.core.sbt.command._
-import org.scalasteward.core.sbt.data.ArtificialProject
+import org.scalasteward.core.sbt.data.{ArtificialProject, SbtVersion}
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
+import org.scalasteward.core.vcs.data.Repo
 
 trait SbtAlg[F[_]] {
   def addGlobalPlugin(plugin: FileData): F[Unit]
@@ -160,10 +159,6 @@ object SbtAlg {
   def extractBuildPropertiesUpdate(content: String): Option[Update.Single] =
     for {
       currentVer <- sbtVersionRegex.findFirstMatchIn(content).map(_.group(1))
-      newVer = if (currentVer.startsWith("0."))
-        sbt.latestSbtVersion_0_13.value
-      else
-        sbt.defaultSbtVersion.value
-      _ <- Some(()) if Version(newVer) > Version(currentVer)
-    } yield Update.Single("org.scala-sbt", "sbt", currentVer, Nel.of(newVer))
+      newVer <- findNewerSbtVersion(SbtVersion(currentVer))
+    } yield Update.Single("org.scala-sbt", "sbt", currentVer, Nel.of(newVer.value))
 }
