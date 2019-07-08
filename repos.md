@@ -159,6 +159,7 @@
 - finagle/finch
 - finch/finch-oauth2
 - fp-tower/foundation
+- fthomas/base.g8
 - fthomas/crjdt
 - fthomas/datapackage
 - fthomas/fs2-cron
