@@ -60,4 +60,17 @@ class EditAlgTest extends FunSuite with Matchers {
     )
     runApplyUpdate(update, original) shouldBe expected
   }
+
+  test("file restriction when sbt update") {
+    val update = Update.Single("org.scala-sbt", "sbt", "1.1.2", Nel.of("1.2.8"))
+    val original = Map(
+      "build.properties" -> """sbt.version=1.1.2""",
+      "project/plugins.sbt" -> """addSbtPlugin("com.jsuereth" % "sbt-pgp" % "1.1.2")"""
+    )
+    val expected = Map(
+      "build.properties" -> """sbt.version=1.2.8""", // the version should have been updated here
+      "project/plugins.sbt" -> """addSbtPlugin("com.jsuereth" % "sbt-pgp" % "1.1.2")"""
+    )
+    runApplyUpdate(update, original) shouldBe expected
+  }
 }

@@ -17,8 +17,11 @@
 package org.scalasteward.core.sbt.data
 
 import io.circe.{Decoder, Encoder}
+import org.scalasteward.core.model.Version
 
-final case class SbtVersion(value: String)
+final case class SbtVersion(value: String) {
+  def toVersion: Version = Version(value)
+}
 
 object SbtVersion {
   implicit val sbtVersionDecoder: Decoder[SbtVersion] =

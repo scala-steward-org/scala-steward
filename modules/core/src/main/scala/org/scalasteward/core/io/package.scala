@@ -18,12 +18,20 @@ package org.scalasteward.core
 
 import better.files.File
 import cats.implicits._
+import org.scalasteward.core.model.Update
 
 package object io {
   def isSourceFile(file: File): Boolean = {
     val scalaOrSbtFile = file.extension.exists(Set(".scala", ".sbt"))
     val travisYmlFile = file.name === ".travis.yml"
+    val sbtPropertiesFile = file.name === "build.properties"
     val notInGitDir = !file.pathAsString.contains(".git/")
-    (scalaOrSbtFile || travisYmlFile) && notInGitDir
+    (scalaOrSbtFile || travisYmlFile || sbtPropertiesFile) && notInGitDir
   }
+
+  def isFileSpecificTo(update: Update)(f: File): Boolean =
+    update match {
+      case Update.Single("org.scala-sbt", "sbt", _, _, _) => f.name === "build.properties"
+      case _                                              => true
+    }
 }

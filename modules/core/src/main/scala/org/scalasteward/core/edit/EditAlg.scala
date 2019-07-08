@@ -21,7 +21,7 @@ import cats.Traverse
 import cats.effect.Sync
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
-import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
+import org.scalasteward.core.io.{isFileSpecificTo, isSourceFile, FileAlg, WorkspaceAlg}
 import org.scalasteward.core.model.Update
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.scalafix
@@ -40,7 +40,11 @@ final class EditAlg[F[_]](
     for {
       _ <- applyScalafixMigrations(repo, update)
       repoDir <- workspaceAlg.repoDir(repo)
-      files <- fileAlg.findSourceFilesContaining(repoDir, update.currentVersion)
+      files <- fileAlg.findSourceFilesContaining(
+        repoDir,
+        update.currentVersion,
+        f => isSourceFile(f) && isFileSpecificTo(update)(f)
+      )
       noFilesFound = logger.warn("No files found that contain the current version")
       _ <- files.toNel.fold(noFilesFound)(applyUpdateTo(_, update))
     } yield ()

@@ -22,13 +22,13 @@ import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.dependency.Dependency
-import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.model.Update
 import org.scalasteward.core.sbt.command._
-import org.scalasteward.core.sbt.data.ArtificialProject
+import org.scalasteward.core.sbt.data.{ArtificialProject, SbtVersion}
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
+import org.scalasteward.core.vcs.data.Repo
 
 trait SbtAlg[F[_]] {
   def addGlobalPlugin(plugin: FileData): F[Unit]
@@ -110,8 +110,9 @@ object SbtAlg {
           maybeClearCredentials = if (config.keepCredentials) Nil else List(setCredentialsToNil)
           commands = maybeClearCredentials ++
             List(dependencyUpdates, reloadPlugins, dependencyUpdates)
-          lines <- exec(sbtCmd(commands), repoDir)
-        } yield parser.parseSingleUpdates(lines)
+          sourceUpdates <- exec(sbtCmd(commands), repoDir).map(parser.parseSingleUpdates)
+          buildPropUpdates <- proposeBuildPropertiesUpdate(repo)
+        } yield sourceUpdates ++ buildPropUpdates
 
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
         addGlobalPluginTemporarily(scalaStewardScalafixSbt) {
@@ -124,6 +125,13 @@ object SbtAlg {
 
       val sbtDir: F[File] =
         fileAlg.home.map(_ / ".sbt")
+
+      def proposeBuildPropertiesUpdate(repo: Repo): F[Option[Update.Single]] =
+        workspaceAlg.repoDir(repo).flatMap { repoDir =>
+          fileAlg
+            .readFile(repoDir / "project" / "build.properties")
+            .map(_.flatMap(extractBuildPropertiesUpdate))
+        }
 
       def exec(command: Nel[String], repoDir: File): F[List[String]] =
         maybeIgnoreOptsFiles(repoDir)(processAlg.execSandboxed(command, repoDir))
@@ -145,4 +153,12 @@ object SbtAlg {
         }
       }
     }
+
+  final private val sbtVersionRegex = s"sbt.version=(.+)".r
+
+  def extractBuildPropertiesUpdate(content: String): Option[Update.Single] =
+    for {
+      currentVer <- sbtVersionRegex.findFirstMatchIn(content).map(_.group(1))
+      newVer <- findNewerSbtVersion(SbtVersion(currentVer))
+    } yield Update.Single("org.scala-sbt", "sbt", currentVer, Nel.of(newVer.value))
 }
