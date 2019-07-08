@@ -61,11 +61,11 @@ trait FileAlg[F[_]] {
   ): F[Boolean] =
     files.traverse(editFile(_, edit)).map(_.foldLeft(false)(_ || _))
 
-  final def findSourceFilesContaining(dir: File, string: String)(
+  final def findSourceFilesContaining(dir: File, string: String, fileFilter: File => Boolean)(
       implicit F: Sync[F]
   ): F[List[File]] =
     walk(dir)
-      .filter(isSourceFile)
+      .filter(fileFilter)
       .through(util.evalFilter(isNoSymlink))
       .through(util.evalFilter(containsString(_, string)))
       .compile
