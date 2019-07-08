@@ -298,7 +298,20 @@ class UpdateHeuristicTest extends FunSuite with Matchers {
     ).replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.relaxed.name)
   }
 
-  test("disable updates on the lines after `off` (no `on`)") {
+  test("disable updates on single lines with `off` (no `on`)") {
+    val original =
+      """  "com.typesafe.akka" %% "akka-actor" % "2.4.0", // scala-steward:off
+        |  "com.typesafe.akka" %% "akka-testkit" % "2.4.0",
+        |  """.stripMargin.trim
+    val expected =
+      """  "com.typesafe.akka" %% "akka-actor" % "2.4.0", // scala-steward:off
+        |  "com.typesafe.akka" %% "akka-testkit" % "2.5.0",
+        |  """.stripMargin.trim
+    Group("com.typesafe.akka", Nel.of("akka-actor", "akka-testkit"), "2.4.0", Nel.of("2.5.0"))
+      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.strict.name)
+  }
+
+  test("disable updates on multiple lines after `off` (no `on`)") {
     val original =
       """  // scala-steward:off
         |  "com.typesafe.akka" %% "akka-actor" % "2.4.0",
@@ -308,7 +321,7 @@ class UpdateHeuristicTest extends FunSuite with Matchers {
       .replaceVersionIn(original) shouldBe (None -> UpdateHeuristic.groupId.name)
   }
 
-  test("update the lines between `on` and `off") {
+  test("update multiple lines between `on` and `off") {
     val original =
       """  // scala-steward:off
         |  "com.typesafe.akka" %% "akka-actor" % "2.4.20",

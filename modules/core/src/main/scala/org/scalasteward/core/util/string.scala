@@ -60,6 +60,8 @@ object string {
   ): Option[MinLengthString[N]] =
     refineV[MinSize[N]](xs.reduceLeft(longestCommonPrefix)).toOption
 
+  final private val regexIgnoreMultiLinesBegins = "^\\s*//\\s*scala-steward:off".r
+
   /** Like `Regex.replaceSomeIn` but indicates via the return type if there
     * was at least one match that has been replaced.
     */
@@ -82,12 +84,12 @@ object string {
               ignoreLines = false
               regex.replaceSomeIn(s, replacer1)
             } else s
-          } else {
-            if (s.contains("scala-steward:off")) {
+          } else if (s.contains("scala-steward:off")) {
+            if (!ignoreLines && regexIgnoreMultiLinesBegins.findFirstIn(s).isDefined) {
               ignoreLines = true
-              s
-            } else regex.replaceSomeIn(s, replacer1)
-          }
+            }
+            s
+          } else regex.replaceSomeIn(s, replacer1)
         })
         .mkString(System.lineSeparator())
     }
