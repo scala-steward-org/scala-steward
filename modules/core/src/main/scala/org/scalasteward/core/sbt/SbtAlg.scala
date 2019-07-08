@@ -17,8 +17,8 @@
 package org.scalasteward.core.sbt
 
 import better.files.File
-import cats.Monad
 import cats.implicits._
+import cats.{Functor, Monad}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.dependency.Dependency
@@ -37,6 +37,8 @@ trait SbtAlg[F[_]] {
 
   def addGlobalPlugins: F[Unit]
 
+  def getSbtVersion(repo: Repo): F[Option[SbtVersion]]
+
   def getDependencies(repo: Repo): F[List[Dependency]]
 
   def getUpdatesForProject(project: ArtificialProject): F[List[Update.Single]]
@@ -44,6 +46,19 @@ trait SbtAlg[F[_]] {
   def getUpdatesForRepo(repo: Repo): F[List[Update.Single]]
 
   def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit]
+
+  final def getSbtUpdate(repo: Repo)(implicit F: Functor[F]): F[Option[Update.Single]] =
+    getSbtVersion(repo).map { maybeCurrentVersion =>
+      for {
+        currentVersion <- maybeCurrentVersion
+        newerVersion <- findNewerSbtVersion(currentVersion)
+      } yield Update.Single(
+        "org.scala-sbt",
+        "sbt",
+        currentVersion.value,
+        Nel.of(newerVersion.value)
+      )
+    }
 }
 
 object SbtAlg {
@@ -79,6 +94,16 @@ object SbtAlg {
           _ <- addGlobalPlugin(stewardPlugin)
         } yield ()
 
+      override def getSbtVersion(repo: Repo): F[Option[SbtVersion]] =
+        for {
+          repoDir <- workspaceAlg.repoDir(repo)
+          maybeProperties <- fileAlg.readFile(repoDir / "project" / "build.properties")
+          version = maybeProperties
+            .flatMap("sbt.version=(.+)".r.findFirstMatchIn)
+            .map(_.group(1))
+            .map(SbtVersion.apply)
+        } yield version
+
       override def getDependencies(repo: Repo): F[List[Dependency]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
@@ -110,9 +135,9 @@ object SbtAlg {
           maybeClearCredentials = if (config.keepCredentials) Nil else List(setCredentialsToNil)
           commands = maybeClearCredentials ++
             List(dependencyUpdates, reloadPlugins, dependencyUpdates)
-          sourceUpdates <- exec(sbtCmd(commands), repoDir).map(parser.parseSingleUpdates)
-          buildPropUpdates <- proposeBuildPropertiesUpdate(repo)
-        } yield sourceUpdates ++ buildPropUpdates
+          updates <- exec(sbtCmd(commands), repoDir).map(parser.parseSingleUpdates)
+          maybeSbtUpdate <- getSbtUpdate(repo)
+        } yield maybeSbtUpdate.toList ::: updates
 
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
         addGlobalPluginTemporarily(scalaStewardScalafixSbt) {
@@ -125,13 +150,6 @@ object SbtAlg {
 
       val sbtDir: F[File] =
         fileAlg.home.map(_ / ".sbt")
-
-      def proposeBuildPropertiesUpdate(repo: Repo): F[Option[Update.Single]] =
-        workspaceAlg.repoDir(repo).flatMap { repoDir =>
-          fileAlg
-            .readFile(repoDir / "project" / "build.properties")
-            .map(_.flatMap(extractBuildPropertiesUpdate))
-        }
 
       def exec(command: Nel[String], repoDir: File): F[List[String]] =
         maybeIgnoreOptsFiles(repoDir)(processAlg.execSandboxed(command, repoDir))
@@ -153,12 +171,4 @@ object SbtAlg {
         }
       }
     }
-
-  final private val sbtVersionRegex = s"sbt.version=(.+)".r
-
-  def extractBuildPropertiesUpdate(content: String): Option[Update.Single] =
-    for {
-      currentVer <- sbtVersionRegex.findFirstMatchIn(content).map(_.group(1))
-      newVer <- findNewerSbtVersion(SbtVersion(currentVer))
-    } yield Update.Single("org.scala-sbt", "sbt", currentVer, Nel.of(newVer.value))
 }
