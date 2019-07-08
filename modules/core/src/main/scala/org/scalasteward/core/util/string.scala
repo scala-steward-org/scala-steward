@@ -68,24 +68,29 @@ object string {
       target: CharSequence,
       replacer: Regex.Match => Option[String]
   ): Option[String] = {
-    var ignoreLines = false
     var changed = false
     val replacer1 = replacer.andThen(_.map(r => { changed = true; r }))
-    val result = target.toString.linesIterator
-      .map(s => {
-        if (ignoreLines) {
-          if (s.contains("scala-steward:on")) {
-            ignoreLines = false
-            regex.replaceSomeIn(s, replacer1)
-          } else s
-        } else {
-          if (s.contains("scala-steward:off")) {
-            ignoreLines = true
-            s
-          } else regex.replaceSomeIn(s, replacer1)
-        }
-      })
-      .mkString(System.lineSeparator())
+    val targetString = target.toString
+    val result = if (!targetString.contains("scala-steward:off")) {
+      regex.replaceSomeIn(target, replacer1)
+    } else {
+      var ignoreLines = false
+      targetString.linesIterator
+        .map(s => {
+          if (ignoreLines) {
+            if (s.contains("scala-steward:on")) {
+              ignoreLines = false
+              regex.replaceSomeIn(s, replacer1)
+            } else s
+          } else {
+            if (s.contains("scala-steward:off")) {
+              ignoreLines = true
+              s
+            } else regex.replaceSomeIn(s, replacer1)
+          }
+        })
+        .mkString(System.lineSeparator())
+    }
     if (changed) Some(result) else None
   }
 
