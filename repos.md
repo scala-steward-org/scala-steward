@@ -451,6 +451,7 @@
 - typelevel/cats
 - typelevel/cats-collections
 - typelevel/cats-effect
+- typelevel/cats-tagless
 - typelevel/cats-mtl
 - typelevel/claimant
 - typelevel/discipline
