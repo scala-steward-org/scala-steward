@@ -25,9 +25,9 @@
 - alonsodomin/sbt-spark
 - alonsodomin/scala-colog
 - amarrella/fs2-elastic
-- Atry/scalajs-all-in-one-template
 - Atry/Dsl.scala-akka-actor
 - Atry/fastring
+- Atry/scalajs-all-in-one-template
 - AVSystem/scala-commons
 - azhur/kafka-serde-scala
 - balhoff/whelk
@@ -451,8 +451,8 @@
 - typelevel/cats
 - typelevel/cats-collections
 - typelevel/cats-effect
-- typelevel/cats-tagless
 - typelevel/cats-mtl
+- typelevel/cats-tagless
 - typelevel/claimant
 - typelevel/discipline
 - typelevel/frameless
