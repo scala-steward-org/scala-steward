@@ -150,8 +150,7 @@ lazy val dockerSettings = Def.settings(
     ExecCmd("ENTRYPOINT", "/opt/docker/bin/scala-steward"),
     ExecCmd("CMD", "")
   ),
-  // TODO: change owner to gitHubOwner
-  Docker / packageName := s"slakah/${name.value}",
+  Docker / packageName := s"${gitHubOwner}/${name.value}",
   dockerUpdateLatest := true
 )
 
