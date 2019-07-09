@@ -91,6 +91,8 @@ def myCrossProject(name: String): CrossProject =
       }
     }))
 
+ThisBuild / dynverSeparator := "-"
+
 lazy val commonSettings = Def.settings(
   compileSettings,
   metadataSettings,
@@ -147,7 +149,10 @@ lazy val dockerSettings = Def.settings(
     Cmd("ADD", "opt", "/opt"),
     ExecCmd("ENTRYPOINT", "/opt/docker/bin/scala-steward"),
     ExecCmd("CMD", "")
-  )
+  ),
+  // TODO: change owner to gitHubOwner
+  Docker / packageName := s"slakah/${name.value}",
+  dockerUpdateLatest := true
 )
 
 lazy val noPublishSettings = Def.settings(
