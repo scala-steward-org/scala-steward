@@ -206,6 +206,7 @@
 - japgolly/univeq
 - jmcardon/tsec
 - JohnReedLOL/pos
+- jsuereth/scala-arm
 - julienrf/endpoints
 - julien-truffaut/Monocle
 - kailuowang/henkan
