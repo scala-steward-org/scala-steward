@@ -177,4 +177,17 @@ object UpdateService {
       case ("org.xerial.sbt", "sbt-pack")                    => false
       case _                                                 => true
     }
+
+  def getNewerGroupId(currentGroupId: String, artifactId: String): Option[(String, String)] =
+    Option((currentGroupId, artifactId) match {
+      case ("org.spire-math", "kind-projector") => ("org.typelevel", "0.10.0")
+      case ("com.geirsson", "sbt-scalafmt")     => ("org.scalameta", "2.0.0")
+      case _                                    => ("", "")
+    }).filter(_._1.nonEmpty)
+
+  def findUpdateUnderNewGroup(dep: Dependency): Option[Update.Single] =
+    getNewerGroupId(dep.groupId, dep.artifactId).map {
+      case (newId, fromVersion) =>
+        dep.toUpdate.copy(newerGroupId = Some(newId), newerVersions = util.Nel.of(fromVersion))
+    }
 }

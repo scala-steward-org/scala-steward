@@ -32,8 +32,9 @@ package object io {
 
   def isFileSpecificTo(update: Update)(f: File): Boolean =
     update match {
-      case Update.Single("org.scala-sbt", "sbt", _, _, _)           => f.name === "build.properties"
-      case Update.Single("org.scalameta", "scalafmt-core", _, _, _) => f.name === ".scalafmt.conf"
-      case _                                                        => true
+      case Update.Single("org.scala-sbt", "sbt", _, _, _, _) => f.name === "build.properties"
+      case Update.Single("org.scalameta", "scalafmt-core", _, _, _, _) =>
+        f.name === ".scalafmt.conf"
+      case _ => true
     }
 }
