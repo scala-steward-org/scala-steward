@@ -329,6 +329,7 @@
 - profunktor/http4s-tracer
 - profunktor/redis4cats
 - pureconfig/pureconfig
+- qbicsoftware/scark-cli
 - raboof/sbt-reproducible-builds
 - ReactiveMongo/Play-ReactiveMongo
 - ReactiveMongo/ReactiveMongo
