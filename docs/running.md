@@ -51,4 +51,4 @@ It can also be useful to pass additional environment variables from the command 
 --env-var BINTRAY_PASS=password
 ```
 
-These variables will be accessible (in SBT) to all of the projects that Scala Steward checks dependencies for.
+These variables will be accessible (in sbt) to all of the projects that Scala Steward checks dependencies for.
