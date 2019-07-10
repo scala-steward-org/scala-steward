@@ -5,7 +5,7 @@ module.exports = {
     "groupBy": {
         "Enhancements": ["enhancement"],
         "Bug Fixes": ["bug"],
-        "Documentation": ["doc"],
+        "Documentation": ["documentation"],
         "Test Improvements": ["testing"],
         "Build Improvements": ["build"],
         "Dependency Updates": ["dependency-update"],

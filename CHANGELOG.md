@@ -34,6 +34,18 @@
 - Ignore untracked files when checking if a repository has changes [#571](https://github.com/fthomas/scala-steward/pull/571) by [@fthomas](https://github.com/fthomas)
 - Fix exception "named capturing group is missing trailing '}'" [#566](https://github.com/fthomas/scala-steward/pull/566) by [@fthomas](https://github.com/fthomas)
 
+#### Documentation
+
+- Update run documentation [#683](https://github.com/fthomas/scala-steward/pull/683) by [@cchantep](https://github.com/cchantep)
+- Add link to badge and use brightgreen [#667](https://github.com/fthomas/scala-steward/pull/667) by [@fthomas](https://github.com/fthomas)
+- Add Scala Steward badge [#666](https://github.com/fthomas/scala-steward/pull/666) by [@exoego](https://github.com/exoego)
+- Update running.md with --vcs-api-host --vcs-login flags [#660](https://github.com/fthomas/scala-steward/pull/660) by [@custommonkey](https://github.com/custommonkey)
+- Add link to GH search for example Mergify rules [#651](https://github.com/fthomas/scala-steward/pull/651) by [@fthomas](https://github.com/fthomas)
+- Link to list of PRs that add Scalafix migrations [#634](https://github.com/fthomas/scala-steward/pull/634) by [@fthomas](https://github.com/fthomas)
+- FAQ: How does Scala Steward decide what version it is updating to? [#633](https://github.com/fthomas/scala-steward/pull/633) by [@fthomas](https://github.com/fthomas)
+- Add FAQs [#632](https://github.com/fthomas/scala-steward/pull/632) by [@fthomas](https://github.com/fthomas)
+- Move "Running scala-steward" section to docs/ [#610](https://github.com/fthomas/scala-steward/pull/610) by [@fthomas](https://github.com/fthomas)
+
 #### Test Improvements
 
 - Test FileAlg.removeTemporarily with a nonexistent file [#594](https://github.com/fthomas/scala-steward/pull/594) by [@fthomas](https://github.com/fthomas)
