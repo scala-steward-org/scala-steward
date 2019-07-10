@@ -14,11 +14,20 @@ cache:
   - "$HOME/.ivy2/cache"
   - "$HOME/.sbt/boot/"
 
-install:
-- pip install --user codecov
-script: sbt ++$TRAVIS_SCALA_VERSION validate
-after_success:
-- codecov
+stages:
+- name: test
+- name: release
+  if: (branch = master AND type = push) OR (tag IS present)
+
+jobs:
+  include:
+  - install:
+    - pip install --user codecov
+    script: sbt ++$TRAVIS_SCALA_VERSION validate
+    after_success:
+    - codecov
+  - stage: release
+    script: docker login -u $DOCKER_USER -p $DOCKER_PASS && sbt docker:publish
 
 notifications:
   webhooks:

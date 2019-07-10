@@ -22,7 +22,7 @@ Or as a [Docker](https://www.docker.com/) container:
 ```bash
 sbt docker:publishLocal
 
-docker run -v $STEWARD_DIR:/opt/scala-steward -it scala-steward:0.1.0-SNAPSHOT \
+docker run -v $STEWARD_DIR:/opt/scala-steward -it fthomas/scala-steward:latest \
   --workspace  "/opt/scala-steward/workspace" \
   --repos-file "/opt/scala-steward/repos.md" \
   --git-author-name "Scala steward" \
