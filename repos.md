@@ -134,7 +134,6 @@
 - criteo/lolhttp
 - d2a4u/sqs4s
 - daandi/nice-url-encode-decode
-- dhpiggott/liquidity-service
 - dispalt/tagless-redux
 - djspiewak/gll-combinators
 - djspiewak/shims
