@@ -16,13 +16,15 @@
 
 package org.scalasteward.core.nurture
 
+import better.files.File
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Branch, GitAlg}
-import org.scalasteward.core.repoconfig.RepoConfigAlg
+import org.scalasteward.core.io.WorkspaceAlg
+import org.scalasteward.core.repoconfig.{RepoConfig, RepoConfigAlg}
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.update.FilterAlg
 import org.scalasteward.core.util.{BracketThrowable, LogAlg}
@@ -43,6 +45,7 @@ final class NurtureAlg[F[_]](
     logger: Logger[F],
     pullRequestRepo: PullRequestRepository[F],
     sbtAlg: SbtAlg[F],
+    workspaceAlg: WorkspaceAlg[F],
     F: BracketThrowable[F]
 ) {
   def nurture(repo: Repo): F[Unit] =
@@ -68,9 +71,9 @@ final class NurtureAlg[F[_]](
     for {
       _ <- logger.info(s"Find updates for ${repo.show}")
       repoConfig <- repoConfigAlg.readRepoConfigOrDefault(repo)
-      updates <- sbtAlg.getUpdatesForRepo(repo)
-      filtered <- filterAlg.localFilterMany(repoConfig, updates)
-      grouped = Update.group(filtered)
+      subProjects <- workspaceAlg.findSubProjectDirs(repo)
+      updates <- findUpdatesInAllProjects(subProjects, repoConfig)
+      grouped = Update.group(updates)
       _ <- logger.info(util.logger.showUpdates(grouped))
       baseSha1 <- gitAlg.latestSha1(repo, baseBranch)
       _ <- grouped.traverse_ { update =>
@@ -79,6 +82,19 @@ final class NurtureAlg[F[_]](
         processUpdate(data)
       }
     } yield ()
+
+  def findUpdatesInAllProjects(
+      subProjectRoots: List[File],
+      repoConfig: RepoConfig
+  ): F[List[Update.Single]] =
+    subProjectRoots
+      .traverse { projectDir =>
+        for {
+          updates <- sbtAlg.getUpdatesForRepo(projectDir)
+          filtered <- filterAlg.localFilterMany(repoConfig, updates)
+        } yield filtered
+      }
+      .map(_.flatten)
 
   def processUpdate(data: UpdateData): F[Unit] =
     for {

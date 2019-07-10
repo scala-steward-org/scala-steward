@@ -31,10 +31,8 @@ class SbtAlgTest extends FunSuite with Matchers {
   }
 
   test("getUpdatesForRepo") {
-    val repo = Repo("fthomas", "refined")
     val repoDir = config.workspace / "fthomas/refined"
-    val state = sbtAlg.getUpdatesForRepo(repo).runS(MockState.empty).unsafeRunSync()
-
+    val state = sbtAlg.getUpdatesForRepo(repoDir).runS(MockState.empty).unsafeRunSync()
     state shouldBe MockState.empty.copy(
       commands = Vector(
         List(
@@ -56,10 +54,9 @@ class SbtAlgTest extends FunSuite with Matchers {
   test("getUpdatesForRepo ignoring .jvmopts and .sbtopts files") {
     implicit val config: Config = MockContext.config.copy(ignoreOptsFiles = true)
     val sbtAlgKeepingCredentials = SbtAlg.create
-    val repo = Repo("fthomas", "refined")
     val repoDir = config.workspace / "fthomas/refined"
     val state =
-      sbtAlgKeepingCredentials.getUpdatesForRepo(repo).runS(MockState.empty).unsafeRunSync()
+      sbtAlgKeepingCredentials.getUpdatesForRepo(repoDir).runS(MockState.empty).unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
@@ -88,10 +85,9 @@ class SbtAlgTest extends FunSuite with Matchers {
   test("getUpdatesForRepo keeping credentials") {
     implicit val config: Config = MockContext.config.copy(keepCredentials = true)
     val sbtAlgKeepingCredentials = SbtAlg.create
-    val repo = Repo("fthomas", "refined")
     val repoDir = config.workspace / "fthomas/refined"
     val state =
-      sbtAlgKeepingCredentials.getUpdatesForRepo(repo).runS(MockState.empty).unsafeRunSync()
+      sbtAlgKeepingCredentials.getUpdatesForRepo(repoDir).runS(MockState.empty).unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
@@ -150,7 +146,7 @@ class SbtAlgTest extends FunSuite with Matchers {
     val repoDir = config.workspace / repo.owner / repo.repo
     val buildProperties = repoDir / "project" / "build.properties"
     val initialState = MockState.empty.add(buildProperties, "sbt.version=1.2.6")
-    val (state, maybeUpdate) = sbtAlg.getSbtUpdate(repo).run(initialState).unsafeRunSync()
+    val (state, maybeUpdate) = sbtAlg.getSbtUpdate(repoDir).run(initialState).unsafeRunSync()
 
     maybeUpdate shouldBe Some(
       Update.Single("org.scala-sbt", "sbt", "1.2.6", Nel.of(defaultSbtVersion.value))

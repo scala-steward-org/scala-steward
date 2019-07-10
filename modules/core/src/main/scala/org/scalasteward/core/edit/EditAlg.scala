@@ -39,12 +39,16 @@ final class EditAlg[F[_]](
   def applyUpdate(repo: Repo, update: Update): F[Unit] =
     for {
       _ <- applyScalafixMigrations(repo, update)
-      repoDir <- workspaceAlg.repoDir(repo)
-      files <- fileAlg.findSourceFilesContaining(
-        repoDir,
-        update.currentVersion,
-        f => isSourceFile(f) && isFileSpecificTo(update)(f)
-      )
+      repoDirectroies <- workspaceAlg.findSubProjectDirs(repo)
+      files <- repoDirectroies
+        .traverse { repoDir =>
+          fileAlg.findSourceFilesContaining(
+            repoDir,
+            update.currentVersion,
+            f => isSourceFile(f) && isFileSpecificTo(update)(f)
+          )
+        }
+        .map(_.flatten)
       noFilesFound = logger.warn("No files found that contain the current version")
       _ <- files.toNel.fold(noFilesFound)(applyUpdateTo(_, update))
     } yield ()

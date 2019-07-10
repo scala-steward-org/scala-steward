@@ -29,6 +29,8 @@ trait WorkspaceAlg[F[_]] {
   def rootDir: F[File]
 
   def repoDir(repo: Repo): F[File]
+
+  def findSubProjectDirs(repo: Repo): F[List[File]]
 }
 
 object WorkspaceAlg {
@@ -54,5 +56,16 @@ object WorkspaceAlg {
 
       override def repoDir(repo: Repo): F[File] =
         fileAlg.ensureExists(reposDir / repo.owner / repo.repo)
+
+      override def findSubProjectDirs(repo: Repo): F[List[File]] = {
+        def findSubProject(file: File): List[File] =
+          if (!file.isDirectory) List.empty
+          else if (file.contains(File("build.sbt"))) List(file)
+          else file.children.flatMap(findSubProject).toList
+
+        repoDir(repo).map { rootDir =>
+          findSubProject(rootDir)
+        }
+      }
     }
 }

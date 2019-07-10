@@ -36,18 +36,18 @@ trait SbtAlg[F[_]] {
 
   def addGlobalPlugins: F[Unit]
 
-  def getSbtVersion(repo: Repo): F[Option[SbtVersion]]
+  def getSbtVersion(repoDir: File): F[Option[SbtVersion]]
 
   def getDependencies(repo: Repo): F[List[Dependency]]
 
   def getUpdatesForProject(project: ArtificialProject): F[List[Update.Single]]
 
-  def getUpdatesForRepo(repo: Repo): F[List[Update.Single]]
+  def getUpdatesForRepo(repoDir: File): F[List[Update.Single]]
 
   def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit]
 
-  final def getSbtUpdate(repo: Repo)(implicit F: Functor[F]): F[Option[Update.Single]] =
-    getSbtVersion(repo).map(_.flatMap(findSbtUpdate))
+  final def getSbtUpdate(repoDir: File)(implicit F: Functor[F]): F[Option[Update.Single]] =
+    getSbtVersion(repoDir).map(_.flatMap(findSbtUpdate))
 }
 
 object SbtAlg {
@@ -83,9 +83,8 @@ object SbtAlg {
           _ <- addGlobalPlugin(stewardPlugin)
         } yield ()
 
-      override def getSbtVersion(repo: Repo): F[Option[SbtVersion]] =
+      override def getSbtVersion(repoDir: File): F[Option[SbtVersion]] =
         for {
-          repoDir <- workspaceAlg.repoDir(repo)
           maybeProperties <- fileAlg.readFile(repoDir / "project" / "build.properties")
           version = maybeProperties.flatMap(parser.parseBuildProperties)
         } yield version
@@ -115,15 +114,17 @@ object SbtAlg {
           }
         } yield updates
 
-      override def getUpdatesForRepo(repo: Repo): F[List[Update.Single]] =
+      override def getUpdatesForRepo(
+          repoDir: File
+      ): F[List[Update.Single]] = {
+        val maybeClearCredentials = if (config.keepCredentials) Nil else List(setCredentialsToNil)
+        val commands = maybeClearCredentials ++
+          List(dependencyUpdates, reloadPlugins, dependencyUpdates)
         for {
-          repoDir <- workspaceAlg.repoDir(repo)
-          maybeClearCredentials = if (config.keepCredentials) Nil else List(setCredentialsToNil)
-          commands = maybeClearCredentials ++
-            List(dependencyUpdates, reloadPlugins, dependencyUpdates)
           updates <- exec(sbtCmd(commands), repoDir).map(parser.parseSingleUpdates)
-          maybeSbtUpdate <- getSbtUpdate(repo)
+          maybeSbtUpdate <- getSbtUpdate(repoDir)
         } yield maybeSbtUpdate.toList ::: updates
+      }
 
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
         addGlobalPluginTemporarily(scalaStewardScalafixSbt) {

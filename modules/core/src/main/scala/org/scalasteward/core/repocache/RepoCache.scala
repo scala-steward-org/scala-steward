@@ -26,7 +26,7 @@ import org.scalasteward.core.sbt.data.SbtVersion
 final case class RepoCache(
     sha1: Sha1,
     dependencies: List[Dependency],
-    maybeSbtVersion: Option[SbtVersion],
+    maybeSbtVersion: Map[String, SbtVersion],
     maybeRepoConfig: Option[RepoConfig]
 )
 

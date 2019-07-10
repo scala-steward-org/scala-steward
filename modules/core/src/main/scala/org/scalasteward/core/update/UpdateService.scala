@@ -121,7 +121,7 @@ final class UpdateService[F[_]](
   def findAllUpdateStates(repo: Repo, updates: List[Update.Single]): F[List[UpdateState]] =
     repoCacheRepository.findCache(repo).flatMap {
       case Some(repoCache) =>
-        val maybeSbtUpdate = repoCache.maybeSbtVersion.flatMap(sbt.findSbtUpdate)
+        val maybeSbtUpdate = repoCache.maybeSbtVersion.values.flatMap(sbt.findSbtUpdate)
         val updates1 = maybeSbtUpdate.toList ++ updates
         val maybeSbtDependency = maybeSbtUpdate.map { update =>
           Dependency(update.groupId, update.artifactId, update.artifactId, update.currentVersion)

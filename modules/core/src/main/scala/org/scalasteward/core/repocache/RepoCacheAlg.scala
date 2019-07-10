@@ -20,6 +20,7 @@ import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.git.{GitAlg, Sha1}
+import org.scalasteward.core.io.WorkspaceAlg
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.util.{LogAlg, MonadThrowable}
@@ -37,6 +38,7 @@ final class RepoCacheAlg[F[_]](
     sbtAlg: SbtAlg[F],
     vcsApiAlg: VCSApiAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
+    workspaceAlg: WorkspaceAlg[F],
     F: MonadThrowable[F]
 ) {
 
@@ -57,7 +59,9 @@ final class RepoCacheAlg[F[_]](
       _ <- vcsRepoAlg.clone(repo, repoOut)
       _ <- vcsRepoAlg.syncFork(repo, repoOut)
       dependencies <- sbtAlg.getDependencies(repo)
-      maybeSbtVersion <- sbtAlg.getSbtVersion(repo)
+      subProjects <- workspaceAlg.findSubProjectDirs(repo)
+      sbtVersions <- subProjects.traverse(sbtAlg.getSbtVersion)
+      maybeSbtVersion = subProjects.map(_.pathAsString).zip(sbtVersions).toMap.mapFilter(identity)
       maybeRepoConfig <- repoConfigAlg.readRepoConfig(repo)
       cache = RepoCache(latestSha1, dependencies, maybeSbtVersion, maybeRepoConfig)
       _ <- repoCacheRepository.updateCache(repo, cache)
