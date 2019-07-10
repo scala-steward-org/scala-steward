@@ -2,8 +2,6 @@ language: scala
 jdk:
 - openjdk8
 - openjdk11
-scala:
-- 2.12.8
 services:
 - docker
 
@@ -21,7 +19,10 @@ stages:
 
 jobs:
   include:
-  - install:
+  - stage: test
+    scala:
+    - 2.12.8
+    install:
     - pip install --user codecov
     script: sbt ++$TRAVIS_SCALA_VERSION validate
     after_success:
