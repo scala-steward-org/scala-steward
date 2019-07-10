@@ -14,6 +14,12 @@ cache:
   - "$HOME/.ivy2/cache"
   - "$HOME/.sbt/boot/"
 
+install:
+- pip install --user codecov
+script: sbt ++$TRAVIS_SCALA_VERSION validate
+after_success:
+- codecov
+
 stages:
 - name: test
 - name: release
@@ -21,12 +27,8 @@ stages:
 
 jobs:
   include:
-  - install:
-    - pip install --user codecov
-    script: sbt ++$TRAVIS_SCALA_VERSION validate
-    after_success:
-    - codecov
   - stage: release
+    jdk: openjdk8
     script: docker login -u $DOCKER_USER -p $DOCKER_PASS && sbt docker:publish
 
 notifications:
