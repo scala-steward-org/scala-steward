@@ -23,7 +23,7 @@ import org.scalasteward.core.git.Branch
 import org.scalasteward.core.model.{SemVer, Update}
 import org.scalasteward.core.nurture.UpdateData
 import org.scalasteward.core.repoconfig.RepoConfigAlg
-import org.scalasteward.core.git
+import org.scalasteward.core.{git, scalafix}
 
 final case class NewPullRequestData(
     title: String,
@@ -45,6 +45,9 @@ object NewPullRequestData {
           .map(artifactId => s"* ${g.groupId}:$artifactId\n")
           .mkString_("\n", "", "\n")
     }
+    val (migrationLabel, appliedMigrations) = migrationNote(update)
+    val labels = List(semVerLabel(update), migrationLabel).flatten
+
     s"""|Updates${artifacts}from ${update.currentVersion} to ${update.nextVersion}.
         |
         |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
@@ -61,9 +64,27 @@ object NewPullRequestData {
         |${RepoConfigAlg.configToIgnoreFurtherUpdates(update)}
         |```
         |</details>
-        |
-        |${semVerLabel(update).fold("")("labels: " + _)}
+        |${appliedMigrations.getOrElse("")}
+        |labels: ${labels.mkString(", ")}
         |""".stripMargin.trim
+  }
+
+  def migrationNote(update: Update): (Option[String], Option[String]) = {
+    val migrations = scalafix.findMigrations(update)
+    if (migrations.isEmpty)
+      (None, None)
+    else
+      (
+        Some("scalafix-migrations"),
+        Some(
+          s"""<details>
+             |<summary>Applied Migrations</summary>
+             |
+             |${migrations.flatMap(_.rewriteRules.toList).map(rule => s"* ${rule}").mkString("\n")}
+             |</details>
+             |""".stripMargin.trim
+        )
+      )
   }
 
   def semVerLabel(update: Update): Option[String] =
