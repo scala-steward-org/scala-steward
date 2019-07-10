@@ -56,6 +56,7 @@ Thanks goes to these wonderful people:
 * [Alex](https://github.com/jhnsmth)
 * [Arulselvan Madhavan](https://github.com/ArulselvanMadhavan)
 * [Bayram Kiran](https://github.com/kiranbayram)
+* [Cédric Chantepie](https://github.com/cchantep)
 * [Christopher Davenport](https://github.com/ChristopherDavenport)
 * [Dale Wijnand](https://github.com/dwijnand)
 * [Daniel Pfeiffer](https://github.com/dpfeiffer)
