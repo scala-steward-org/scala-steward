@@ -16,9 +16,9 @@
 
 package org.scalasteward.core.repoconfig
 
-import io.circe.Decoder
 import io.circe.generic.extras.Configuration
-import io.circe.generic.extras.semiauto.deriveDecoder
+import io.circe.generic.extras.semiauto._
+import io.circe.{Decoder, Encoder}
 
 final case class RepoConfig(
     updates: UpdatesConfig = UpdatesConfig(),
@@ -33,4 +33,7 @@ object RepoConfig {
 
   implicit val repoConfigDecoder: Decoder[RepoConfig] =
     deriveDecoder
+
+  implicit val repoConfigEncoder: Encoder[RepoConfig] =
+    deriveEncoder
 }

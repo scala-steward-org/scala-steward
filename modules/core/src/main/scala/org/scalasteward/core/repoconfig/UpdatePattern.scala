@@ -17,8 +17,8 @@
 package org.scalasteward.core.repoconfig
 
 import cats.implicits._
-import io.circe.Decoder
-import io.circe.generic.semiauto.deriveDecoder
+import io.circe.generic.semiauto._
+import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.model.Update
 
 final case class UpdatePattern(
@@ -42,4 +42,7 @@ object UpdatePattern {
 
   implicit val updatePatternDecoder: Decoder[UpdatePattern] =
     deriveDecoder
+
+  implicit val updatePatternEncoder: Encoder[UpdatePattern] =
+    deriveEncoder
 }

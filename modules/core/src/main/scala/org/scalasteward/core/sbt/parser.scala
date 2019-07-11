@@ -18,8 +18,7 @@ package org.scalasteward.core.sbt
 
 import cats.implicits._
 import io.circe.parser.decode
-import org.scalasteward.core.dependency.Dependency
-import org.scalasteward.core.model.Update
+import org.scalasteward.core.model.{Dependency, Update}
 import org.scalasteward.core.util.Nel
 
 object parser {

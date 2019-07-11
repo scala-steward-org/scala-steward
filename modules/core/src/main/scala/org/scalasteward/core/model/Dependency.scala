@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.dependency
+package org.scalasteward.core.model
 
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
-import org.scalasteward.core.model.Update
 import org.scalasteward.core.sbt.data.SbtVersion
 import org.scalasteward.core.util.Nel
 

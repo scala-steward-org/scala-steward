@@ -14,15 +14,26 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.dependency
+package org.scalasteward.core.repocache
 
+import io.circe.generic.semiauto._
+import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.git.Sha1
-import org.scalasteward.core.vcs.data.Repo
+import org.scalasteward.core.model.Dependency
+import org.scalasteward.core.repoconfig.RepoConfig
+import org.scalasteward.core.sbt.data.SbtVersion
 
-trait DependencyRepository[F[_]] {
-  def findSha1(repo: Repo): F[Option[Sha1]]
+final case class RepoCache(
+    sha1: Sha1,
+    dependencies: List[Dependency],
+    maybeSbtVersion: Option[SbtVersion],
+    maybeRepoConfig: Option[RepoConfig]
+)
 
-  def getDependencies(repos: List[Repo]): F[List[Dependency]]
+object RepoCache {
+  implicit val repoCacheDecoder: Decoder[RepoCache] =
+    deriveDecoder
 
-  def setDependencies(repo: Repo, sha1: Sha1, dependencies: List[Dependency]): F[Unit]
+  implicit val repoCacheEncoder: Encoder[RepoCache] =
+    deriveEncoder
 }

@@ -18,25 +18,25 @@ package org.scalasteward.core.update
 
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
-import org.scalasteward.core.dependency.{Dependency, DependencyRepository}
 import org.scalasteward.core.git.Sha1
-import org.scalasteward.core.vcs.data.PullRequestState.Closed
-import org.scalasteward.core.vcs.data.Repo
-import org.scalasteward.core.model.Update
+import org.scalasteward.core.model.{Dependency, Update}
 import org.scalasteward.core.nurture.PullRequestRepository
+import org.scalasteward.core.repocache.RepoCacheRepository
 import org.scalasteward.core.sbt._
 import org.scalasteward.core.sbt.data.ArtificialProject
 import org.scalasteward.core.update.data.UpdateState
 import org.scalasteward.core.update.data.UpdateState._
 import org.scalasteward.core.util
 import org.scalasteward.core.util.MonadThrowable
+import org.scalasteward.core.vcs.data.PullRequestState.Closed
+import org.scalasteward.core.vcs.data.Repo
 
 final class UpdateService[F[_]](
     implicit
-    dependencyRepository: DependencyRepository[F],
     filterAlg: FilterAlg[F],
     logger: Logger[F],
     pullRequestRepo: PullRequestRepository[F],
+    repoCacheRepository: RepoCacheRepository[F],
     sbtAlg: SbtAlg[F],
     updateRepository: UpdateRepository[F],
     F: MonadThrowable[F]
@@ -45,7 +45,7 @@ final class UpdateService[F[_]](
   // WIP
   def checkForUpdates(repos: List[Repo]): F[List[Update.Single]] =
     updateRepository.deleteAll >>
-      dependencyRepository.getDependencies(repos).flatMap { dependencies =>
+      repoCacheRepository.getDependencies(repos).flatMap { dependencies =>
         val (libraries, plugins) = dependencies
           .filter(
             d =>
@@ -119,10 +119,10 @@ final class UpdateService[F[_]](
     } yield isOutdated
 
   def findAllUpdateStates(repo: Repo, updates: List[Update.Single]): F[List[UpdateState]] =
-    dependencyRepository.findSha1(repo).flatMap {
+    repoCacheRepository.findSha1(repo).flatMap {
       case Some(baseSha1) =>
         for {
-          dependencies <- dependencyRepository.getDependencies(List(repo))
+          dependencies <- repoCacheRepository.getDependencies(List(repo))
           states <- dependencies.traverse { dependency =>
             findUpdateState(repo, baseSha1, dependency, updates)
           }

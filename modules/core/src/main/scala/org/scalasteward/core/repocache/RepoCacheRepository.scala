@@ -14,18 +14,21 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.dependency.json
+package org.scalasteward.core.repocache
 
-import io.circe.generic.semiauto._
-import io.circe.{Decoder, Encoder}
+import cats.Functor
+import cats.implicits._
+import org.scalasteward.core.git.Sha1
+import org.scalasteward.core.model.Dependency
 import org.scalasteward.core.vcs.data.Repo
 
-final case class RepoStore(store: Map[Repo, RepoData])
+trait RepoCacheRepository[F[_]] {
+  def findCache(repo: Repo): F[Option[RepoCache]]
 
-object RepoStore {
-  implicit val repoStoreDecoder: Decoder[RepoStore] =
-    deriveDecoder
+  def updateCache(repo: Repo, repoCache: RepoCache): F[Unit]
 
-  implicit val repoStoreEncoder: Encoder[RepoStore] =
-    deriveEncoder
+  def getDependencies(repos: List[Repo]): F[List[Dependency]]
+
+  final def findSha1(repo: Repo)(implicit F: Functor[F]): F[Option[Sha1]] =
+    findCache(repo).map(_.map(_.sha1))
 }

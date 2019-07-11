@@ -18,7 +18,7 @@ package org.scalasteward.core.update
 
 import cats.implicits._
 import eu.timepit.refined.types.numeric.PosInt
-import org.scalasteward.core.dependency.Dependency
+import org.scalasteward.core.model.Dependency
 import org.scalasteward.core.util
 
 object splitter {

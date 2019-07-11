@@ -17,9 +17,9 @@
 package org.scalasteward.core.repoconfig
 
 import cats.implicits._
-import io.circe.Decoder
 import io.circe.generic.extras.Configuration
-import io.circe.generic.extras.semiauto.deriveDecoder
+import io.circe.generic.extras.semiauto._
+import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.model.Update
 import org.scalasteward.core.update.FilterAlg.{FilterResult, IgnoredByConfig, NotAllowedByConfig}
 
@@ -48,4 +48,7 @@ object UpdatesConfig {
 
   implicit val updatesConfigDecoder: Decoder[UpdatesConfig] =
     deriveDecoder
+
+  implicit val updatesConfigEncoder: Encoder[UpdatesConfig] =
+    deriveEncoder
 }
