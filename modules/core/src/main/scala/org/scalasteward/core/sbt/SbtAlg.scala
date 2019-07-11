@@ -97,10 +97,7 @@ object SbtAlg {
         for {
           repoDir <- workspaceAlg.repoDir(repo)
           maybeProperties <- fileAlg.readFile(repoDir / "project" / "build.properties")
-          version = maybeProperties
-            .flatMap("sbt.version=(.+)".r.findFirstMatchIn)
-            .map(_.group(1))
-            .map(SbtVersion.apply)
+          version = maybeProperties.flatMap(parser.parseBuildProperties)
         } yield version
 
       override def getDependencies(repo: Repo): F[List[Dependency]] =
