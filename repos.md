@@ -283,6 +283,7 @@
 - nevillelyh/parquet-avro-extra
 - nevillelyh/protobuf-generic
 - nevillelyh/shapeless-datatype
+- notxcain/aecor
 - nrinaudo/kantan.codecs
 - olafurpg/sbt-ci-release
 - olivierschultz/typelevel-template.g8
