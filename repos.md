@@ -287,6 +287,7 @@
 - nrinaudo/kantan.codecs
 - olafurpg/sbt-ci-release
 - olivierschultz/typelevel-template.g8
+- ovotech/fs2-kafka
 - ovotech/kafka-serialization
 - ovotech/vulcan
 - pathikrit/better-files
