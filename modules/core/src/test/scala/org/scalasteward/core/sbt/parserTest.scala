@@ -1,7 +1,6 @@
 package org.scalasteward.core.sbt
 
-import org.scalasteward.core.dependency.Dependency
-import org.scalasteward.core.model.Update
+import org.scalasteward.core.model.{Dependency, Update}
 import org.scalasteward.core.sbt.data.SbtVersion
 import org.scalasteward.core.sbt.parser._
 import org.scalasteward.core.util.Nel

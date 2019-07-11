@@ -14,51 +14,50 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.dependency
+package org.scalasteward.core.repocache
 
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.git.{GitAlg, Sha1}
-import org.scalasteward.core.vcs.data.{Repo, RepoOut}
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.util.{LogAlg, MonadThrowable}
+import org.scalasteward.core.vcs.data.{Repo, RepoOut}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
 
-final class DependencyService[F[_]](
+final class RepoCacheAlg[F[_]](
     implicit
     config: Config,
-    dependencyRepository: DependencyRepository[F],
     gitAlg: GitAlg[F],
-    vcsApiAlg: VCSApiAlg[F],
-    vcsRepoAlg: VCSRepoAlg[F],
     logAlg: LogAlg[F],
     logger: Logger[F],
+    repoCacheRepository: RepoCacheRepository[F],
     sbtAlg: SbtAlg[F],
+    vcsApiAlg: VCSApiAlg[F],
+    vcsRepoAlg: VCSRepoAlg[F],
     F: MonadThrowable[F]
 ) {
 
-  def checkDependencies(repo: Repo): F[Unit] =
-    logAlg.attemptLog_(s"Check dependencies of ${repo.show}") {
+  def checkCache(repo: Repo): F[Unit] =
+    logAlg.attemptLog_(s"Check cache of ${repo.show}") {
       for {
         (repoOut, branchOut) <- vcsApiAlg.createForkOrGetRepoWithDefaultBranch(config, repo)
-        foundSha1 <- dependencyRepository.findSha1(repo)
+        cachedSha1 <- repoCacheRepository.findSha1(repo)
         latestSha1 = branchOut.commit.sha
-        refreshRequired = foundSha1.fold(true)(_ =!= latestSha1)
-        _ <- {
-          if (refreshRequired) refreshDependencies(repo, repoOut, latestSha1)
-          else F.unit
-        }
+        refreshRequired = cachedSha1.forall(_ =!= latestSha1)
+        _ <- if (refreshRequired) refreshCache(repo, repoOut, latestSha1) else F.unit
       } yield ()
     }
 
-  def refreshDependencies(repo: Repo, repoOut: RepoOut, latestSha1: Sha1): F[Unit] =
+  private def refreshCache(repo: Repo, repoOut: RepoOut, latestSha1: Sha1): F[Unit] =
     for {
-      _ <- logger.info(s"Refresh dependencies of ${repo.show}")
+      _ <- logger.info(s"Refresh cache of ${repo.show}")
       _ <- vcsRepoAlg.clone(repo, repoOut)
       _ <- vcsRepoAlg.syncFork(repo, repoOut)
       dependencies <- sbtAlg.getDependencies(repo)
-      _ <- dependencyRepository.setDependencies(repo, latestSha1, dependencies)
+      maybeSbtVersion <- sbtAlg.getSbtVersion(repo)
+      cache = RepoCache(latestSha1, dependencies, maybeSbtVersion)
+      _ <- repoCacheRepository.updateCache(repo, cache)
       _ <- gitAlg.removeClone(repo)
     } yield ()
 }

@@ -14,15 +14,21 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.dependency
+package org.scalasteward.core.repocache
 
+import cats.Functor
+import cats.implicits._
 import org.scalasteward.core.git.Sha1
+import org.scalasteward.core.model.Dependency
 import org.scalasteward.core.vcs.data.Repo
 
-trait DependencyRepository[F[_]] {
-  def findSha1(repo: Repo): F[Option[Sha1]]
+trait RepoCacheRepository[F[_]] {
+  def findCache(repo: Repo): F[Option[RepoCache]]
+
+  def updateCache(repo: Repo, repoCache: RepoCache): F[Unit]
 
   def getDependencies(repos: List[Repo]): F[List[Dependency]]
 
-  def setDependencies(repo: Repo, sha1: Sha1, dependencies: List[Dependency]): F[Unit]
+  final def findSha1(repo: Repo)(implicit F: Functor[F]): F[Option[Sha1]] =
+    findCache(repo).map(_.map(_.sha1))
 }

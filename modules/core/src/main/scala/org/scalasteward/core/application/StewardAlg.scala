@@ -21,7 +21,7 @@ import cats.Monad
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
-import org.scalasteward.core.dependency.DependencyService
+import org.scalasteward.core.repocache.RepoCacheAlg
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.NurtureAlg
 import org.scalasteward.core.sbt.SbtAlg
@@ -32,11 +32,11 @@ import org.scalasteward.core.vcs.data.Repo
 final class StewardAlg[F[_]](
     implicit
     config: Config,
-    dependencyService: DependencyService[F],
     fileAlg: FileAlg[F],
     logAlg: LogAlg[F],
     logger: Logger[F],
     nurtureAlg: NurtureAlg[F],
+    repoCacheAlg: RepoCacheAlg[F],
     sbtAlg: SbtAlg[F],
     updateService: UpdateService[F],
     workspaceAlg: WorkspaceAlg[F],
@@ -58,7 +58,7 @@ final class StewardAlg[F[_]](
   def pruneRepos(repos: List[Repo]): F[List[Repo]] =
     logAlg.infoTotalTime("pruning repos") {
       for {
-        _ <- repos.traverse(dependencyService.checkDependencies)
+        _ <- repos.traverse(repoCacheAlg.checkCache)
         allUpdates <- updateService.checkForUpdates(repos)
         filteredRepos <- updateService.filterByApplicableUpdates(repos, allUpdates)
         countTotal = repos.size

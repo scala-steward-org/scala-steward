@@ -1,6 +1,6 @@
 package org.scalasteward.core.sbt.data
 
-import org.scalasteward.core.dependency.Dependency
+import org.scalasteward.core.model.Dependency
 import org.scalatest.{FunSuite, Matchers}
 
 class ArtificialProjectTest extends FunSuite with Matchers {

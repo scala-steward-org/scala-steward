@@ -14,22 +14,19 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.dependency.json
+package org.scalasteward.core.repocache.json
 
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
-import org.scalasteward.core.dependency.Dependency
-import org.scalasteward.core.git.Sha1
+import org.scalasteward.core.repocache.RepoCache
+import org.scalasteward.core.vcs.data.Repo
 
-final case class RepoData(
-    sha1: Sha1,
-    dependencies: List[Dependency]
-)
+final case class RepoStore(store: Map[Repo, RepoCache])
 
-object RepoData {
-  implicit val repoDataDecoder: Decoder[RepoData] =
+object RepoStore {
+  implicit val repoStoreDecoder: Decoder[RepoStore] =
     deriveDecoder
 
-  implicit val repoDataEncoder: Encoder[RepoData] =
+  implicit val repoStoreEncoder: Encoder[RepoStore] =
     deriveEncoder
 }
