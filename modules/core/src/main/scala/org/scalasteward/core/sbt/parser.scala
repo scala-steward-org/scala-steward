@@ -19,9 +19,12 @@ package org.scalasteward.core.sbt
 import cats.implicits._
 import io.circe.parser.decode
 import org.scalasteward.core.model.{Dependency, Update}
+import org.scalasteward.core.sbt.data.SbtVersion
 import org.scalasteward.core.util.Nel
 
 object parser {
+  def parseBuildProperties(s: String): Option[SbtVersion] =
+    """sbt.version\s*=\s*(.+)""".r.findFirstMatchIn(s).map(_.group(1)).map(SbtVersion.apply)
 
   /** Parses a single line of output from sbt-updates' `dependencyUpdates` task. */
   def parseSingleUpdate(line: String): Either[String, Update.Single] =

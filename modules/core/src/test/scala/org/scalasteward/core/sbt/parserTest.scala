@@ -7,6 +7,9 @@ import org.scalasteward.core.util.Nel
 import org.scalatest.{FunSuite, Matchers}
 
 class parserTest extends FunSuite with Matchers {
+  test("parseBuildProperties: with whitespace") {
+    parseBuildProperties("sbt.version = 1.2.8") shouldBe Some(SbtVersion("1.2.8"))
+  }
 
   test("parseSingleUpdate: 1 new version") {
     val str = "org.scala-js:sbt-scalajs : 0.6.24 -> 0.6.25"
