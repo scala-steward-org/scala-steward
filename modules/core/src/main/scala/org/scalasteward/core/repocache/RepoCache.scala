@@ -20,12 +20,14 @@ import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.model.Dependency
+import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.sbt.data.SbtVersion
 
 final case class RepoCache(
     sha1: Sha1,
     dependencies: List[Dependency],
-    maybeSbtVersion: Option[SbtVersion]
+    maybeSbtVersion: Option[SbtVersion],
+    maybeRepoConfig: Option[RepoConfig]
 )
 
 object RepoCache {

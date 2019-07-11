@@ -20,6 +20,7 @@ import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.git.{GitAlg, Sha1}
+import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.util.{LogAlg, MonadThrowable}
 import org.scalasteward.core.vcs.data.{Repo, RepoOut}
@@ -32,6 +33,7 @@ final class RepoCacheAlg[F[_]](
     logAlg: LogAlg[F],
     logger: Logger[F],
     repoCacheRepository: RepoCacheRepository[F],
+    repoConfigAlg: RepoConfigAlg[F],
     sbtAlg: SbtAlg[F],
     vcsApiAlg: VCSApiAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
@@ -56,7 +58,8 @@ final class RepoCacheAlg[F[_]](
       _ <- vcsRepoAlg.syncFork(repo, repoOut)
       dependencies <- sbtAlg.getDependencies(repo)
       maybeSbtVersion <- sbtAlg.getSbtVersion(repo)
-      cache = RepoCache(latestSha1, dependencies, maybeSbtVersion)
+      maybeRepoConfig <- repoConfigAlg.readRepoConfig(repo)
+      cache = RepoCache(latestSha1, dependencies, maybeSbtVersion, maybeRepoConfig)
       _ <- repoCacheRepository.updateCache(repo, cache)
       _ <- gitAlg.removeClone(repo)
     } yield ()
