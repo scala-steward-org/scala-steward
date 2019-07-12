@@ -190,7 +190,10 @@
 - http4s/http4s-jdk-http-client
 - http4s/jawn-fs2
 - http4s/rho
-- hntd187/spotify
+- iheartradio/ficus
+- iheartradio/play-swagger
+- iheartradio/thomas
+- iheartradio/lihua
 - ilya-murzinov/finch-todo-backend
 - INCATools/dosdp-tools
 - intracer/scalawiki
