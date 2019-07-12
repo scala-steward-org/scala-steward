@@ -254,6 +254,7 @@
 - mfirry/scala-http-clients
 - mfirry/web-frameworks-templates
 - milessabin/shapeless
+- mitochon/polyjuice
 - mockito/mockito-scala
 - molikto/mlang
 - monadless/monadless
