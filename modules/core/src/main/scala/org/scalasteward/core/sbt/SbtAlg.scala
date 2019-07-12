@@ -47,17 +47,7 @@ trait SbtAlg[F[_]] {
   def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit]
 
   final def getSbtUpdate(repo: Repo)(implicit F: Functor[F]): F[Option[Update.Single]] =
-    getSbtVersion(repo).map { maybeCurrentVersion =>
-      for {
-        currentVersion <- maybeCurrentVersion
-        newerVersion <- findNewerSbtVersion(currentVersion)
-      } yield Update.Single(
-        "org.scala-sbt",
-        "sbt",
-        currentVersion.value,
-        Nel.of(newerVersion.value)
-      )
-    }
+    getSbtVersion(repo).map(_.flatMap(findSbtUpdate))
 }
 
 object SbtAlg {

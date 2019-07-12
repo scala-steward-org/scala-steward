@@ -19,7 +19,9 @@ package org.scalasteward.core
 import cats.effect.{IO, Resource}
 import cats.implicits._
 import org.scalasteward.core.io.FileData
+import org.scalasteward.core.model.Update
 import org.scalasteward.core.sbt.data.{SbtVersion, ScalaVersion}
+import org.scalasteward.core.util.Nel
 import scala.io.Source
 
 package object sbt {
@@ -39,6 +41,11 @@ package object sbt {
       case v if v.startsWith("1.")    => Some(defaultSbtVersion)
       case _                          => None
     }).filter(_.toVersion > sbtVersion.toVersion)
+
+  def findSbtUpdate(currentVersion: SbtVersion): Option[Update.Single] =
+    findNewerSbtVersion(currentVersion).map { newerVersion =>
+      Update.Single("org.scala-sbt", "sbt", currentVersion.value, Nel.of(newerVersion.value))
+    }
 
   def seriesToSpecificVersion(sbtSeries: SbtVersion): SbtVersion =
     sbtSeries.value match {

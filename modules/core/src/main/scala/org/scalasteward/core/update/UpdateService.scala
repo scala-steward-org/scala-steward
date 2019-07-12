@@ -26,7 +26,7 @@ import org.scalasteward.core.sbt._
 import org.scalasteward.core.sbt.data.ArtificialProject
 import org.scalasteward.core.update.data.UpdateState
 import org.scalasteward.core.update.data.UpdateState._
-import org.scalasteward.core.util
+import org.scalasteward.core.{sbt, util}
 import org.scalasteward.core.util.MonadThrowable
 import org.scalasteward.core.vcs.data.PullRequestState.Closed
 import org.scalasteward.core.vcs.data.Repo
@@ -119,14 +119,18 @@ final class UpdateService[F[_]](
     } yield isOutdated
 
   def findAllUpdateStates(repo: Repo, updates: List[Update.Single]): F[List[UpdateState]] =
-    repoCacheRepository.findSha1(repo).flatMap {
-      case Some(baseSha1) =>
-        for {
-          dependencies <- repoCacheRepository.getDependencies(List(repo))
-          states <- dependencies.traverse { dependency =>
-            findUpdateState(repo, baseSha1, dependency, updates)
-          }
-        } yield states
+    repoCacheRepository.findCache(repo).flatMap {
+      case Some(repoCache) =>
+        val maybeSbtUpdate = repoCache.maybeSbtVersion.flatMap(sbt.findSbtUpdate)
+        val updates1 = maybeSbtUpdate.toList ++ updates
+        val maybeSbtDependency = maybeSbtUpdate.map { update =>
+          Dependency(update.groupId, update.artifactId, update.artifactId, update.currentVersion)
+        }
+        val dependencies = maybeSbtDependency.toList ++ repoCache.dependencies
+
+        dependencies.traverse { dependency =>
+          findUpdateState(repo, repoCache.sha1, dependency, updates1)
+        }
       case None => List.empty[UpdateState].pure[F]
     }
 
