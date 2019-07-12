@@ -182,6 +182,7 @@
 - henricook/SAMLer
 - hipjim/scala-retry
 - holidaycheck/easy-akka-http
+- hrj/abandon
 - hseeberger/akka-http-json
 - http4s/blaze
 - http4s/http4s
