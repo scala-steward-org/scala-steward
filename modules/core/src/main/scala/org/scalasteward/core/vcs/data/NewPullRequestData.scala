@@ -65,7 +65,7 @@ object NewPullRequestData {
         |```
         |</details>
         |${appliedMigrations.getOrElse("")}
-        |labels: ${labels.mkString(", ")}
+        |${labels.mkString(start = "labels: ", sep = ", ", end = "")}
         |""".stripMargin.trim
   }
 
