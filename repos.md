@@ -39,6 +39,7 @@
 - BenFradet/gsheets4s
 - BenFradet/spark-kafka-writer
 - BenFradet/struct-type-encoder
+- bitcoin-s/bitcoin-s
 - blemale/scaffeine
 - cb372/cats-retry
 - cb372/scalacache
