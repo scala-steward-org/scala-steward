@@ -25,13 +25,15 @@ package object io {
     val scalaOrSbtFile = file.extension.exists(Set(".scala", ".sbt"))
     val travisYmlFile = file.name === ".travis.yml"
     val sbtPropertiesFile = file.name === "build.properties"
+    val scalafmtConfigFile = file.name === ".scalafmt.conf"
     val notInGitDir = !file.pathAsString.contains(".git/")
-    (scalaOrSbtFile || travisYmlFile || sbtPropertiesFile) && notInGitDir
+    (scalaOrSbtFile || travisYmlFile || sbtPropertiesFile || scalafmtConfigFile) && notInGitDir
   }
 
   def isFileSpecificTo(update: Update)(f: File): Boolean =
     update match {
-      case Update.Single("org.scala-sbt", "sbt", _, _, _) => f.name === "build.properties"
-      case _                                              => true
+      case Update.Single("org.scala-sbt", "sbt", _, _, _)      => f.name === "build.properties"
+      case Update.Single("org.scalameta", "scalafmt", _, _, _) => f.name === ".scalafmt.conf"
+      case _                                                   => true
     }
 }

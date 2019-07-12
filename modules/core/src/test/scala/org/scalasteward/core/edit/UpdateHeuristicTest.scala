@@ -318,7 +318,7 @@ class UpdateHeuristicTest extends FunSuite with Matchers {
         |  "com.typesafe.akka" %% "akka-testkit" % "2.4.0",
         |  """.stripMargin.trim
     Group("com.typesafe.akka", Nel.of("akka-actor", "akka-testkit"), "2.4.0", Nel.of("2.5.0"))
-      .replaceVersionIn(original) shouldBe (None -> UpdateHeuristic.groupId.name)
+      .replaceVersionIn(original) shouldBe (None -> UpdateHeuristic.all.last.name)
   }
 
   test("update multiple lines between `on` and `off`") {
@@ -344,6 +344,13 @@ class UpdateHeuristicTest extends FunSuite with Matchers {
       "2.4.20",
       Nel.of("2.5.0")
     ).replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.strict.name)
+  }
+
+  test("scalafmt: .scalafmt.conf") {
+    val original = """version=1.9.0"""
+    val expected = """version=2.0.0"""
+    Single("org.scalameta", "scalafmt", "1.9.0", Nel.of("2.0.0"))
+      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.version.name)
   }
 }
 
