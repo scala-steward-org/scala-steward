@@ -181,6 +181,7 @@
 - gnieh/diffson
 - henricook/SAMLer
 - hipjim/scala-retry
+- hntd187/spotify
 - holidaycheck/easy-akka-http
 - hrj/abandon
 - hseeberger/akka-http-json
