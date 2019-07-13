@@ -72,6 +72,7 @@ Thanks goes to these wonderful people:
 * [kenji yoshida](https://github.com/xuwei-k)
 * [Mark Canlas](https://github.com/mcanlas)
 * [Michael Wizner](https://github.com/mwz)
+* [nafg](https://github.com/nafg)
 * [Philippus Baalman](https://github.com/Philippus)
 * [Piotr Gabara](https://github.com/pgabara)
 * [Renato Cavalcanti](https://github.com/renatocaval)
