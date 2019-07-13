@@ -167,6 +167,7 @@ object UpdateService {
       case ("com.ccadllc.cedi", "build")                     => false
       case ("com.codecommit", "sbt-spiewak-sonatype")        => false
       case ("com.gilt.sbt", "sbt-newrelic")                  => false
+      case ("com.iheart", "sbt-play-swagger")                => false
       case ("com.nrinaudo", "kantan.sbt-kantan")             => false
       case ("com.slamdata", "sbt-quasar-datasource")         => false
       case ("com.typesafe.play", "interplay")                => false
