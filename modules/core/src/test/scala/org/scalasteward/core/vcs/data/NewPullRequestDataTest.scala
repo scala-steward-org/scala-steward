@@ -31,4 +31,29 @@ class NewPullRequestDataTest extends FunSuite with Matchers {
          |}
          |""".stripMargin.trim
   }
+
+  test("migrationNote: when no migrations") {
+    val update = Update.Single("com.example", "foo", "0.6.0", Nel.of("0.7.0"))
+    val (label, appliedMigrations) = NewPullRequestData.migrationNote(update)
+
+    label shouldBe None
+    appliedMigrations shouldBe None
+  }
+
+  test("migrationNote: when artifact has migrations") {
+    val update = Update.Single("com.spotify", "scio-core", "0.6.0", Nel.of("0.7.0"))
+    val (label, appliedMigrations) = NewPullRequestData.migrationNote(update)
+
+    label shouldBe Some("scalafix-migrations")
+    appliedMigrations.getOrElse("") shouldBe
+      """<details>
+        |<summary>Applied Migrations</summary>
+        |
+        |* github:spotify/scio/FixAvroIO?sha=v0.7.4
+        |* github:spotify/scio/AddMissingImports?sha=v0.7.4
+        |* github:spotify/scio/RewriteSysProp?sha=v0.7.4
+        |* github:spotify/scio/BQClientRefactoring?sha=v0.7.4
+        |</details>
+      """.stripMargin.trim
+  }
 }
