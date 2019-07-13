@@ -22,12 +22,12 @@ import io.circe.parser.decode
 import io.circe.syntax._
 import org.http4s.Uri
 import org.scalasteward.core.git.Sha1
-import org.scalasteward.core.vcs.data.{PullRequestState, Repo}
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.model.{Dependency, Update}
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.update.UpdateService
 import org.scalasteward.core.util.MonadThrowable
+import org.scalasteward.core.vcs.data.{PullRequestState, Repo}
 
 class JsonPullRequestRepo[F[_]](
     implicit
@@ -50,21 +50,18 @@ class JsonPullRequestRepo[F[_]](
       writeJson(PullRequestStore(store.store.updated(repo, updated)))
     }
 
-  override def findUpdates(repo: Repo, baseSha1: Sha1): F[List[Update]] =
-    readJson.map { store =>
-      store.store.get(repo).fold(List.empty[Update]) { data =>
-        data.values.filter(_.baseSha1 === baseSha1).map(_.update).toList
-      }
-    }
-
   override def findPullRequest(
       repo: Repo,
-      dependency: Dependency
+      dependency: Dependency,
+      newVersion: String
   ): F[Option[(Uri, Sha1, PullRequestState)]] =
     readJson.map { store =>
       val pullRequests = store.store.get(repo).fold(List.empty[(String, PullRequestData)])(_.toList)
       pullRequests
-        .find { case (_, data) => UpdateService.isUpdateFor(data.update, dependency) }
+        .find {
+          case (_, data) =>
+            UpdateService.isUpdateFor(data.update, dependency) && data.update.nextVersion === newVersion
+        }
         .map { case (url, data) => (Uri.unsafeFromString(url), data.baseSha1, data.state) }
     }
 
