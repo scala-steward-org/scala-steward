@@ -8,16 +8,16 @@ version, it proposes an update to the latest minor version at the same major
 version. And if the dependency is already on the latest minor version, it
 proposes an update to the latest major version.
 
-Here is an example. Suppose you are depending on a library foo 1.0.0 and the
-newer versions 1.0.1, 1.0.2, 1.1.0, 1.2.0, 2.0.0, and 3.0.0 already exist.
-In this case Scala Steward will create three pull requests:
+Here is an example. Suppose you are depending on a library foo, which has been
+published for the following versions: 1.0.0, 1.0.1, 1.0.2, 1.1.0, 1.2.0, 2.0.0,
+and 3.0.0.
 
-1. updating 1.0.0 to 1.0.2
-1. updating 1.0.2 to 1.2.0
-1. and updating 1.2.0 to 3.0.0
+* If your version is 1.0.0 or 1.0.1, Scala Steward would create a PR updating it to 1.0.2
+* If your version is 1.0.2 or 1.1.0, Scala Steward would create a PR updating it to 1.2.0
+* If your version is 1.2.0 or 2.0.0, Scala Steward would create a PR updating it to 3.0.0
 
-Succeeding pull requests are only created if a dependency is on the latest
-patch, minor, or major version.
+Of course, once you merge a Scala Steward PR, you've updated your version,
+which can result in Scala Steward sending another PR making the next update.
 
 ## How can Scala Steward's PRs be merged automatically?
 
