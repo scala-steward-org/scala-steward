@@ -486,6 +486,7 @@
 - vigoo/prox
 - vigoo/simpp
 - vlovgr/ciris
+- Wei-1/scala-machine-learning
 - WellFactored/clovis
 - WellFactored/property-info
 - WellFactored/resourcepool
