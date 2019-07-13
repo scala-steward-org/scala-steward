@@ -502,5 +502,7 @@
 - zio/interop-twitter
 - zio/zio
 - zio/zio-actors
+- zio/zio-akka-cluster
 - zio/zio-keeper
+- zio/zio-sqs
 - ziyasal/reducio
