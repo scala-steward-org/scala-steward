@@ -143,7 +143,7 @@ final class UpdateService[F[_]](
     updates.find(UpdateService.isUpdateFor(_, dependency)) match {
       case None => F.pure(DependencyUpToDate(dependency))
       case Some(update) =>
-        pullRequestRepo.findPullRequest(repo, dependency).map {
+        pullRequestRepo.findPullRequest(repo, dependency, update.nextVersion).map {
           case None =>
             DependencyOutdated(dependency, update)
           case Some((uri, _, state)) if state === Closed =>

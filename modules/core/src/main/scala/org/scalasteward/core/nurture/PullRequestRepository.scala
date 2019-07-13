@@ -18,8 +18,8 @@ package org.scalasteward.core.nurture
 
 import org.http4s.Uri
 import org.scalasteward.core.git.Sha1
-import org.scalasteward.core.vcs.data.{PullRequestState, Repo}
 import org.scalasteward.core.model.{Dependency, Update}
+import org.scalasteward.core.vcs.data.{PullRequestState, Repo}
 
 trait PullRequestRepository[F[_]] {
   def createOrUpdate(
@@ -30,7 +30,9 @@ trait PullRequestRepository[F[_]] {
       state: PullRequestState
   ): F[Unit]
 
-  def findUpdates(repo: Repo, baseSha1: Sha1): F[List[Update]]
-
-  def findPullRequest(repo: Repo, dependency: Dependency): F[Option[(Uri, Sha1, PullRequestState)]]
+  def findPullRequest(
+      repo: Repo,
+      dependency: Dependency,
+      newVersion: String
+  ): F[Option[(Uri, Sha1, PullRequestState)]]
 }
