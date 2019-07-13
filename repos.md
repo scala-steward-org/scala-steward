@@ -378,6 +378,7 @@
 - scala/scala-parser-combinators
 - scala/scala-seed.g8
 - scala/scala-xml
+- scala-ts/scala-ts
 - scanamo/scanamo
 - schrepfler/artemis
 - schrepfler/cas-tools
