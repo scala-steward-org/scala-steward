@@ -48,7 +48,8 @@ object Cli {
       doNotFork: Boolean = false,
       ignoreOptsFiles: Boolean = false,
       keepCredentials: Boolean = false,
-      envVar: List[EnvVar] = Nil
+      envVar: List[EnvVar] = Nil,
+      pruneRepos: Boolean = false
   )
 
   final case class EnvVar(name: String, value: String)
