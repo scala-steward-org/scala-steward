@@ -4,7 +4,7 @@ import org.scalasteward.core.application.SupportedVCS.GitHub
 import org.scalasteward.core.application.SupportedVCS.Gitlab
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
-import org.scalasteward.core.model.Update
+import org.scalasteward.core.data.Update
 
 import org.scalatest.{FunSuite, Matchers}
 

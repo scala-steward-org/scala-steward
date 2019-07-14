@@ -16,10 +16,10 @@
 
 package org.scalasteward.core.nurture
 
+import org.scalasteward.core.data.Update
 import org.scalasteward.core.git.{Branch, Sha1}
-import org.scalasteward.core.vcs.data.Repo
-import org.scalasteward.core.model.Update
 import org.scalasteward.core.repoconfig.RepoConfig
+import org.scalasteward.core.vcs.data.Repo
 
 final case class UpdateData(
     repo: Repo,

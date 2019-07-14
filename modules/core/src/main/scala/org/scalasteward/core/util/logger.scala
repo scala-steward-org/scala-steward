@@ -18,7 +18,7 @@ package org.scalasteward.core.util
 
 import cats.implicits._
 import cats.{Foldable, Functor}
-import org.scalasteward.core.model.Update
+import org.scalasteward.core.data.Update
 
 object logger {
   def showUpdates[F[_]: Foldable: Functor](updates: F[Update]): String = {

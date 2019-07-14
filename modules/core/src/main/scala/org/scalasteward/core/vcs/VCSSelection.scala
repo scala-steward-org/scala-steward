@@ -19,10 +19,10 @@ package org.scalasteward.core.vcs
 import cats.effect.Sync
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.application.SupportedVCS.{Bitbucket, GitHub, Gitlab}
-import org.scalasteward.core.util.HttpJsonClient
 import org.scalasteward.core.bitbucket.http4s.Http4sBitbucketApiAlg
 import org.scalasteward.core.github.http4s.Http4sGitHubApiAlg
 import org.scalasteward.core.gitlab.http4s.Http4sGitLabApiAlg
+import org.scalasteward.core.util.HttpJsonClient
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 
 class VCSSelection[F[_]: Sync](implicit client: HttpJsonClient[F], user: AuthenticatedUser) {

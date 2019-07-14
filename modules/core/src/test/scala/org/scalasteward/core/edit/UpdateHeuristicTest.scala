@@ -1,8 +1,8 @@
 package org.scalasteward.core.edit
 
 import org.scalasteward.core.edit.UpdateHeuristicTest.UpdateOps
-import org.scalasteward.core.model.Update
-import org.scalasteward.core.model.Update.{Group, Single}
+import org.scalasteward.core.data.Update
+import org.scalasteward.core.data.Update.{Group, Single}
 import org.scalasteward.core.util.Nel
 import org.scalatest.{FunSuite, Matchers}
 

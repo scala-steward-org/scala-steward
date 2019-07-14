@@ -17,7 +17,7 @@
 package org.scalasteward.core.edit
 
 import cats.implicits._
-import org.scalasteward.core.model.Update
+import org.scalasteward.core.data.Update
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 import scala.util.matching.Regex

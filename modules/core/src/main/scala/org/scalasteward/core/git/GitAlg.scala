@@ -21,9 +21,9 @@ import cats.effect.Bracket
 import cats.implicits._
 import org.http4s.Uri
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.{MonadThrowable, Nel}
+import org.scalasteward.core.vcs.data.Repo
 
 trait GitAlg[F[_]] {
   def branchAuthors(repo: Repo, branch: Branch, base: Branch): F[List[String]]

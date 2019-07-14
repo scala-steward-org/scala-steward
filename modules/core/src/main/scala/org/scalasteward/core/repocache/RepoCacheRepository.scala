@@ -18,8 +18,8 @@ package org.scalasteward.core.repocache
 
 import cats.Functor
 import cats.implicits._
+import org.scalasteward.core.data.Dependency
 import org.scalasteward.core.git.Sha1
-import org.scalasteward.core.model.Dependency
 import org.scalasteward.core.vcs.data.Repo
 
 trait RepoCacheRepository[F[_]] {

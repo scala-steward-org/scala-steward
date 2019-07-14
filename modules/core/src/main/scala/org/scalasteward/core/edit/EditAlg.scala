@@ -21,8 +21,8 @@ import cats.Traverse
 import cats.effect.Sync
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
+import org.scalasteward.core.data.Update
 import org.scalasteward.core.io.{isFileSpecificTo, isSourceFile, FileAlg, WorkspaceAlg}
-import org.scalasteward.core.model.Update
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.scalafix
 import org.scalasteward.core.util._

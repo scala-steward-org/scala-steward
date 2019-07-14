@@ -18,7 +18,7 @@ package org.scalasteward.core.update.json
 
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
-import org.scalasteward.core.model.Update
+import org.scalasteward.core.data.Update
 
 final case class UpdateStore(store: Set[Update.Single])
 

@@ -17,8 +17,8 @@
 package org.scalasteward.core.bitbucket
 
 import org.http4s.Uri
-import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.git.Branch
+import org.scalasteward.core.vcs.data.Repo
 
 private[bitbucket] class Url(apiHost: Uri) {
 

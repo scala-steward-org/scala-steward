@@ -16,7 +16,7 @@
 
 package org.scalasteward.core
 
-import org.scalasteward.core.model.Update
+import org.scalasteward.core.data.Update
 import org.scalasteward.core.update.show
 
 package object git {

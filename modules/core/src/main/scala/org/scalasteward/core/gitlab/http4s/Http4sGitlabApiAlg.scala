@@ -19,15 +19,14 @@ package org.scalasteward.core.gitlab.http4s
 import cats.implicits._
 import io.circe._
 import io.circe.generic.semiauto._
-import org.scalasteward.core.util.HttpJsonClient
 import org.http4s.client.UnexpectedStatus
 import org.http4s.{Request, Status, Uri}
 import org.scalasteward.core.git.{Branch, Sha1}
-import org.scalasteward.core.vcs.data._
-import org.scalasteward.core.vcs.VCSApiAlg
 import org.scalasteward.core.gitlab._
+import org.scalasteward.core.util.{HttpJsonClient, MonadThrowable}
 import org.scalasteward.core.util.uri.uriDecoder
-import org.scalasteward.core.util.MonadThrowable
+import org.scalasteward.core.vcs.VCSApiAlg
+import org.scalasteward.core.vcs.data._
 
 final private[http4s] case class ForkPayload(id: String, namespace: String)
 final private[http4s] case class MergeRequestPayload(

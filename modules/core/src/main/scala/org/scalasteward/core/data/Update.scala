@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.model
+package org.scalasteward.core.data
 
 import cats.implicits._
 import eu.timepit.refined.W
 import io.circe.{Decoder, Encoder}
 import monocle.Lens
-import org.scalasteward.core.model.Update.{Group, Single}
+import org.scalasteward.core.data.Update.{Group, Single}
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.util.string.MinLengthString

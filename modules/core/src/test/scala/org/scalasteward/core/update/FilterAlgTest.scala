@@ -3,7 +3,7 @@ package org.scalasteward.core.update
 import cats.implicits._
 import org.scalasteward.core.mock.MockContext.filterAlg
 import org.scalasteward.core.mock.MockState
-import org.scalasteward.core.model.Update
+import org.scalasteward.core.data.Update
 import org.scalasteward.core.repoconfig.{RepoConfig, UpdatePattern, UpdatesConfig}
 import org.scalasteward.core.update.FilterAlg.{BadVersions, NonSnapshotToSnapshotUpdate}
 import org.scalasteward.core.util.Nel

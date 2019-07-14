@@ -17,7 +17,7 @@
 package org.scalasteward.core
 
 import cats.implicits._
-import org.scalasteward.core.model.{Update, Version}
+import org.scalasteward.core.data.{Update, Version}
 import org.scalasteward.core.util.Nel
 
 package object scalafix {

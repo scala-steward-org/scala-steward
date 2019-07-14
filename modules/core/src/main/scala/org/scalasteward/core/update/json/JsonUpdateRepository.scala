@@ -20,8 +20,8 @@ import better.files.File
 import cats.implicits._
 import io.circe.parser.decode
 import io.circe.syntax._
+import org.scalasteward.core.data.Update
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
-import org.scalasteward.core.model.Update
 import org.scalasteward.core.update.UpdateRepository
 import org.scalasteward.core.util.MonadThrowable
 

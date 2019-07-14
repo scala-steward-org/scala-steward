@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.model
+package org.scalasteward.core.data
 
 import cats.implicits._
 import eu.timepit.refined.cats.refTypeEq
 import eu.timepit.refined.types.numeric.NonNegBigInt
 import eu.timepit.refined.types.string.NonEmptyString
-import org.scalasteward.core.model.SemVer.Change._
+import org.scalasteward.core.data.SemVer.Change._
 import org.scalasteward.core.util.string.parseNonNegBigInt
 
 final case class SemVer(

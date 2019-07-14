@@ -18,21 +18,14 @@ package org.scalasteward.core.bitbucket.http4s
 
 import cats.effect.Sync
 import cats.implicits._
-import org.http4s.{Request, Status, Uri}
 import org.http4s.client.UnexpectedStatus
-import org.scalasteward.core.git.Branch
+import org.http4s.{Request, Status, Uri}
 import org.scalasteward.core.bitbucket.Url
 import org.scalasteward.core.bitbucket.http4s.json._
+import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.HttpJsonClient
-import org.scalasteward.core.vcs.data.{
-  AuthenticatedUser,
-  BranchOut,
-  NewPullRequestData,
-  PullRequestOut,
-  Repo,
-  RepoOut
-}
 import org.scalasteward.core.vcs.VCSApiAlg
+import org.scalasteward.core.vcs.data._
 
 class Http4sBitbucketApiAlg[F[_]: Sync](
     bitbucketApiHost: Uri,

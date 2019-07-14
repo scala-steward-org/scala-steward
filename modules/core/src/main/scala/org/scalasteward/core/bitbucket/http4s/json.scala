@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.bitbucket.http4s
 
-import io.circe.{Decoder}
+import io.circe.Decoder
 import org.http4s.Uri
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.util.uri.uriDecoder

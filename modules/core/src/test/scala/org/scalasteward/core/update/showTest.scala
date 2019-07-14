@@ -1,6 +1,6 @@
 package org.scalasteward.core.update
 
-import org.scalasteward.core.model.Update.{Group, Single}
+import org.scalasteward.core.data.Update.{Group, Single}
 import org.scalasteward.core.util.Nel
 import org.scalatest.{FunSuite, Matchers}
 
