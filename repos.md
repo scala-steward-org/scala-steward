@@ -453,6 +453,14 @@
 - TimWSpence/cats-stm
 - TinkoffCreditSystems/typed-schema
 - tjheslin1/DMsPredictor
+- tmtsoftware/csw
+- tmtsoftware/esw
+- tmtsoftware/embedded-keycloak
+- tmtsoftware/csw.g8
+- tmtsoftware/csw-acceptance
+- tmtsoftware/csw-client
+- tmtsoftware/esw-prototype
+- tmtsoftware/sequencer-scripts
 - tomwadeson/scala-barebones
 - tpolecat/atto
 - tpolecat/doobie
