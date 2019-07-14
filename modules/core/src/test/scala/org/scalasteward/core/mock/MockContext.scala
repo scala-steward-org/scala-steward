@@ -33,7 +33,8 @@ object MockContext {
     envVars = List(
       EnvVar("TEST_VAR", "GREAT"),
       EnvVar("ANOTHER_TEST_VAR", "ALSO_GREAT")
-    )
+    ),
+    pruneRepos = false
   )
 
   implicit val fileAlg: MockFileAlg = new MockFileAlg

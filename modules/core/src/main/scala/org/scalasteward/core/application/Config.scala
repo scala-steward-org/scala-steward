@@ -59,7 +59,8 @@ final case class Config(
     doNotFork: Boolean,
     ignoreOptsFiles: Boolean,
     keepCredentials: Boolean,
-    envVars: List[EnvVar]
+    envVars: List[EnvVar],
+    pruneRepos: Boolean
 ) {
   def vcsUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] = {
     val urlWithUser = util.uri.withUserInfo.set(vcsLogin)(vcsApiHost).renderString
@@ -89,7 +90,8 @@ object Config {
         doNotFork = args.doNotFork,
         ignoreOptsFiles = args.ignoreOptsFiles,
         keepCredentials = args.keepCredentials,
-        envVars = args.envVar
+        envVars = args.envVar,
+        pruneRepos = args.pruneRepos
       )
     }
 }

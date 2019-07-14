@@ -22,7 +22,8 @@ class CliTest extends FunSuite with Matchers {
         List("--git-ask-pass", "f"),
         List("--ignore-opts-files"),
         List("--env-var", "g=h"),
-        List("--env-var", "i=j")
+        List("--env-var", "i=j"),
+        List("--prune-repos")
       ).flatten
     ) shouldBe Right(
       Cli.Args(
@@ -35,7 +36,8 @@ class CliTest extends FunSuite with Matchers {
         vcsLogin = "e",
         gitAskPass = "f",
         ignoreOptsFiles = true,
-        envVar = List(EnvVar("g", "h"), EnvVar("i", "j"))
+        envVar = List(EnvVar("g", "h"), EnvVar("i", "j")),
+        pruneRepos = true
       )
     )
   }
