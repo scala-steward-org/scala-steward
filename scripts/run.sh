@@ -12,7 +12,7 @@ sbt -no-colors ";clean ;core/assembly"
 JAR=$(find -name "*assembly*.jar" | head -n1)
 
 LOGIN="scala-steward"
-java -jar ${JAR} \
+java -DROOT_LOG_LEVEL=INFO -DLOG_LEVEL=INFO -jar ${JAR} \
   --workspace  "$STEWARD_DIR/workspace" \
   --repos-file "$STEWARD_DIR/repos.md" \
   --git-author-name "Scala Steward" \
