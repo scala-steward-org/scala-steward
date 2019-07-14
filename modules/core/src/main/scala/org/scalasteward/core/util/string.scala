@@ -77,7 +77,7 @@ object string {
       regex.replaceSomeIn(target, replacer1)
     } else {
       var ignoreLines = false
-      targetString.linesIterator
+      targetString.linesWithSeparators
         .map(s => {
           if (ignoreLines) {
             if (s.contains("scala-steward:on")) {
@@ -91,7 +91,7 @@ object string {
             s
           } else regex.replaceSomeIn(s, replacer1)
         })
-        .mkString(System.lineSeparator())
+        .mkString("")
     }
     if (changed) Some(result) else None
   }
