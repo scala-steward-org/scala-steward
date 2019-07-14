@@ -60,39 +60,28 @@ object string {
   ): Option[MinLengthString[N]] =
     refineV[MinSize[N]](xs.reduceLeft(longestCommonPrefix)).toOption
 
-  final private val regexIgnoreMultiLinesBegins = "^\\s*//\\s*scala-steward:off".r
-
   /** Like `Regex.replaceSomeIn` but indicates via the return type if there
     * was at least one match that has been replaced.
     */
   def replaceSomeInOpt(
       regex: Regex,
       target: CharSequence,
+      splitter: String => Nel[(String, Boolean)],
       replacer: Regex.Match => Option[String]
   ): Option[String] = {
     var changed = false
     val replacer1 = replacer.andThen(_.map(r => { changed = true; r }))
     val targetString = target.toString
-    val result = if (!targetString.contains("scala-steward:off")) {
-      regex.replaceSomeIn(target, replacer1)
-    } else {
-      var ignoreLines = false
-      targetString.linesWithSeparators
-        .map(s => {
-          if (ignoreLines) {
-            if (s.contains("scala-steward:on")) {
-              ignoreLines = false
-              regex.replaceSomeIn(s, replacer1)
-            } else s
-          } else if (s.contains("scala-steward:off")) {
-            if (!ignoreLines && regexIgnoreMultiLinesBegins.findFirstIn(s).isDefined) {
-              ignoreLines = true
-            }
-            s
-          } else regex.replaceSomeIn(s, replacer1)
-        })
-        .mkString("")
-    }
+    val result = splitter(targetString)
+      .map {
+        case (str, canReplace) =>
+          if (canReplace) {
+            regex.replaceSomeIn(str, replacer1)
+          } else {
+            str
+          }
+      }
+      .mkString_("")
     if (changed) Some(result) else None
   }
 
