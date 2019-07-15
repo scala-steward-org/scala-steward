@@ -411,6 +411,8 @@
 - slamdata/tectonic
 - snowplow-incubator/cla-bot
 - snowplow-incubator/snowplow-indicative-relay
+- softwaremill/bootzooka
+- softwaremill/correlator
 - softwaremill/elasticmq
 - softwaremill/sbt-softwaremill
 - softwaremill/sttp
