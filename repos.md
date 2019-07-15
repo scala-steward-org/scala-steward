@@ -255,6 +255,7 @@
 - maximn/coding-interview-questions-scala
 - maximn/scala-workshop
 - maximn/TaxCalculator
+- max-leuthaeuser/SCROLL
 - mefellows/sbt-dotenv
 - metabookmarks/lagom-silhouette
 - metabookmarks/sbt-plantuml-plugin
