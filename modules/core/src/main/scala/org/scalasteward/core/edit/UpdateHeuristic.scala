@@ -20,7 +20,6 @@ import cats.implicits._
 import org.scalasteward.core.model.Update
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
-import scala.collection.mutable
 import scala.util.matching.Regex
 
 final case class UpdateHeuristic(
@@ -38,48 +37,11 @@ final case class UpdateHeuristic(
         s"(?i)(.*)($prefix$searchTerms.*?)$currentVersion(.?)".r
       }
 
-  def splitter(targetString: String): Nel[(String, Boolean)] =
-    if (!targetString.contains("scala-steward:off")) {
-      Nel.of((targetString, true))
-    } else {
-      val buffer = mutable.ListBuffer.empty[(String, Boolean)]
-      val on = StringBuilder.newBuilder
-      val off = StringBuilder.newBuilder
-      val regexIgnoreMultiLinesBegins = "^\\s*//\\s*scala-steward:off".r
-      def flush(builder: StringBuilder, canReplace: Boolean): Unit =
-        if (builder.nonEmpty) {
-          buffer.append((builder.toString(), canReplace))
-          builder.clear()
-        }
-      targetString.linesWithSeparators.foreach { s =>
-        if (off.nonEmpty) {
-          if (s.contains("scala-steward:on")) {
-            flush(off, false)
-            on.append(s)
-          } else {
-            off.append(s)
-          }
-        } else if (s.contains("scala-steward:off")) {
-          flush(on, true)
-          if (regexIgnoreMultiLinesBegins.findFirstIn(s).isDefined) {
-            off.append(s)
-          } else {
-            // single line off
-            buffer.append((s, false))
-          }
-        } else on.append(s)
-      }
-      flush(on, true)
-      flush(off, false)
-      Nel.fromListUnsafe(buffer.toList)
-    }
-
   def replaceF(update: Update): String => Option[String] =
     mkRegex(update).fold((_: String) => Option.empty[String]) { regex => target =>
-      util.string.replaceSomeInOpt(
+      replaceSomeInAllowedParts(
         regex,
         target,
-        splitter,
         match0 => {
           val group1 = match0.group(1)
           val group2 = match0.group(2)
@@ -91,7 +53,7 @@ final case class UpdateHeuristic(
               || !versionInQuotes) None
           else Some(Regex.quoteReplacement(group1 + group2 + update.nextVersion + lastGroup))
         }
-      )
+      ).someIfChanged
     }
 }
 
