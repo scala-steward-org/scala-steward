@@ -16,7 +16,7 @@ class editTest extends FunSuite with Matchers with ScalaCheckPropertyChecks {
 
   test("splitByOffOnMarker") {
     forAll(contentGen) { s: String =>
-      splitByOffOnMarker(s).map(_._1).mkString_("") shouldBe s
+      splitByOffOnMarker(s).foldMap { case (part, _) => part } shouldBe s
     }
   }
 }
