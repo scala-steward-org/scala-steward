@@ -66,11 +66,22 @@ object string {
   def replaceSomeInOpt(
       regex: Regex,
       target: CharSequence,
+      splitter: String => Nel[(String, Boolean)],
       replacer: Regex.Match => Option[String]
   ): Option[String] = {
     var changed = false
     val replacer1 = replacer.andThen(_.map(r => { changed = true; r }))
-    val result = regex.replaceSomeIn(target, replacer1)
+    val targetString = target.toString
+    val result = splitter(targetString)
+      .map {
+        case (str, canReplace) =>
+          if (canReplace) {
+            regex.replaceSomeIn(str, replacer1)
+          } else {
+            str
+          }
+      }
+      .mkString_("")
     if (changed) Some(result) else None
   }
 
