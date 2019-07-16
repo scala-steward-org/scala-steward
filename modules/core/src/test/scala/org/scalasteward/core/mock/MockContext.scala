@@ -13,6 +13,7 @@ import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.update.FilterAlg
 import org.scalasteward.core.util.{BracketThrowable, DateTimeAlg, LogAlg}
 import org.scalasteward.core.vcs.VCSRepoAlg
+import org.scalasteward.core.vcs.data.AuthenticatedUser
 
 object MockContext {
   implicit val config: Config = Config(
@@ -46,6 +47,7 @@ object MockContext {
 
   implicit val dateTimeAlg: DateTimeAlg[MockEff] = DateTimeAlg.create
   implicit val gitAlg: GitAlg[MockEff] = GitAlg.create
+  implicit val user: AuthenticatedUser = AuthenticatedUser("scala-steward", "token")
   implicit val gitHubRepoAlg: VCSRepoAlg[MockEff] = VCSRepoAlg.create(config, gitAlg)
   implicit val logAlg: LogAlg[MockEff] = new LogAlg[MockEff]
   implicit val sbtAlg: SbtAlg[MockEff] = SbtAlg.create
