@@ -297,6 +297,54 @@ class UpdateHeuristicTest extends FunSuite with Matchers {
       Nel.of("1.2.4")
     ).replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.relaxed.name)
   }
+
+  test("disable updates on single lines with `off` (no `on`)") {
+    val original =
+      """  "com.typesafe.akka" %% "akka-actor" % "2.4.0", // scala-steward:off
+        |  "com.typesafe.akka" %% "akka-testkit" % "2.4.0",
+        |  """.stripMargin.trim
+    val expected =
+      """  "com.typesafe.akka" %% "akka-actor" % "2.4.0", // scala-steward:off
+        |  "com.typesafe.akka" %% "akka-testkit" % "2.5.0",
+        |  """.stripMargin.trim
+    Group("com.typesafe.akka", Nel.of("akka-actor", "akka-testkit"), "2.4.0", Nel.of("2.5.0"))
+      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.strict.name)
+  }
+
+  test("disable updates on multiple lines after `off` (no `on`)") {
+    val original =
+      """  // scala-steward:off
+        |  "com.typesafe.akka" %% "akka-actor" % "2.4.0",
+        |  "com.typesafe.akka" %% "akka-testkit" % "2.4.0",
+        |  """.stripMargin.trim
+    Group("com.typesafe.akka", Nel.of("akka-actor", "akka-testkit"), "2.4.0", Nel.of("2.5.0"))
+      .replaceVersionIn(original) shouldBe (None -> UpdateHeuristic.groupId.name)
+  }
+
+  test("update multiple lines between `on` and `off`") {
+    val original =
+      """  // scala-steward:off
+        |  "com.typesafe.akka" %% "akka-actor" % "2.4.20",
+        |  // scala-steward:on
+        |  "com.typesafe.akka" %% "akka-slf4j" % "2.4.20" % "test"
+        |  // scala-steward:off
+        |  "com.typesafe.akka" %% "akka-testkit" % "2.4.20" % "test"
+        |  """.stripMargin.trim
+    val expected =
+      """  // scala-steward:off
+        |  "com.typesafe.akka" %% "akka-actor" % "2.4.20",
+        |  // scala-steward:on
+        |  "com.typesafe.akka" %% "akka-slf4j" % "2.5.0" % "test"
+        |  // scala-steward:off
+        |  "com.typesafe.akka" %% "akka-testkit" % "2.4.20" % "test"
+        |  """.stripMargin.trim
+    Group(
+      "com.typesafe.akka",
+      Nel.of("akka-actor", "akka-testkit", "akka-slf4j"),
+      "2.4.20",
+      Nel.of("2.5.0")
+    ).replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.strict.name)
+  }
 }
 
 object UpdateHeuristicTest {

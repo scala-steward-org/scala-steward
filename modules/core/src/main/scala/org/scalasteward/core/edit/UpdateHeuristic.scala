@@ -39,7 +39,7 @@ final case class UpdateHeuristic(
 
   def replaceF(update: Update): String => Option[String] =
     mkRegex(update).fold((_: String) => Option.empty[String]) { regex => target =>
-      util.string.replaceSomeInOpt(
+      replaceSomeInAllowedParts(
         regex,
         target,
         match0 => {
@@ -53,7 +53,7 @@ final case class UpdateHeuristic(
               || !versionInQuotes) None
           else Some(Regex.quoteReplacement(group1 + group2 + update.nextVersion + lastGroup))
         }
-      )
+      ).someIfChanged
     }
 }
 

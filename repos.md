@@ -159,6 +159,7 @@
 - finagle/finch
 - finch/finch-oauth2
 - fp-tower/foundation
+- fthomas/akka
 - fthomas/base.g8
 - fthomas/crjdt
 - fthomas/datapackage
@@ -255,11 +256,13 @@
 - maximn/coding-interview-questions-scala
 - maximn/scala-workshop
 - maximn/TaxCalculator
+- max-leuthaeuser/SCROLL
 - mefellows/sbt-dotenv
 - metabookmarks/lagom-silhouette
 - metabookmarks/sbt-plantuml-plugin
 - mfirry/scala-http-clients
 - mfirry/web-frameworks-templates
+- MichaelJAllen/facsimile
 - milessabin/shapeless
 - mitochon/polyjuice
 - mockito/mockito-scala
@@ -409,6 +412,8 @@
 - slamdata/tectonic
 - snowplow-incubator/cla-bot
 - snowplow-incubator/snowplow-indicative-relay
+- softwaremill/bootzooka
+- softwaremill/correlator
 - softwaremill/elasticmq
 - softwaremill/sbt-softwaremill
 - softwaremill/sttp
@@ -454,11 +459,12 @@
 - TinkoffCreditSystems/typed-schema
 - tjheslin1/DMsPredictor
 - tmtsoftware/csw
-- tmtsoftware/esw
-- tmtsoftware/embedded-keycloak
-- tmtsoftware/csw.g8
 - tmtsoftware/csw-acceptance
 - tmtsoftware/csw-client
+- tmtsoftware/csw-js
+- tmtsoftware/csw.g8
+- tmtsoftware/embedded-keycloak
+- tmtsoftware/esw
 - tmtsoftware/esw-prototype
 - tmtsoftware/sequencer-scripts
 - tomwadeson/scala-barebones

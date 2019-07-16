@@ -2,9 +2,14 @@ package org.scalasteward.core
 
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 import org.scalasteward.core.data.Version
+import org.scalasteward.core.util.Change
+import org.scalasteward.core.util.Change.{Changed, Unchanged}
 
 object TestInstances {
-  implicit val arbitraryVersion: Arbitrary[Version] = {
+  implicit def changeArbitrary[T](implicit arbT: Arbitrary[T]): Arbitrary[Change[T]] =
+    Arbitrary(arbT.arbitrary.flatMap(t => Gen.oneOf(Changed(t), Unchanged(t))))
+
+  implicit val versionArbitrary: Arbitrary[Version] = {
     val versionChar = Gen.frequency(
       (8, Gen.numChar),
       (5, Gen.const('.')),
@@ -14,6 +19,6 @@ object TestInstances {
     Arbitrary(Gen.listOf(versionChar).map(_.mkString).map(Version.apply))
   }
 
-  implicit val cogenVersion: Cogen[Version] =
+  implicit val versionCogen: Cogen[Version] =
     Cogen(_.numericComponents.map(_.toLong).sum)
 }

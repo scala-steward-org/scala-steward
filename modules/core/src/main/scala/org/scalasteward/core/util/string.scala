@@ -22,6 +22,7 @@ import eu.timepit.refined.api.Refined
 import eu.timepit.refined.collection.MinSize
 import eu.timepit.refined.refineV
 import eu.timepit.refined.types.numeric.NonNegBigInt
+import org.scalasteward.core.util.Change.{Changed, Unchanged}
 import scala.util.Try
 import scala.util.matching.Regex
 import shapeless.Witness
@@ -63,15 +64,15 @@ object string {
   /** Like `Regex.replaceSomeIn` but indicates via the return type if there
     * was at least one match that has been replaced.
     */
-  def replaceSomeInOpt(
+  def replaceSomeInChange(
       regex: Regex,
       target: CharSequence,
       replacer: Regex.Match => Option[String]
-  ): Option[String] = {
+  ): Change[String] = {
     var changed = false
     val replacer1 = replacer.andThen(_.map(r => { changed = true; r }))
     val result = regex.replaceSomeIn(target, replacer1)
-    if (changed) Some(result) else None
+    if (changed) Changed(result) else Unchanged(result)
   }
 
   def removeSuffix(target: String, suffixes: List[String]): String =
