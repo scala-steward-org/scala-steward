@@ -19,8 +19,8 @@ package org.scalasteward.core.vcs.data
 import cats.implicits._
 import io.circe.Encoder
 import io.circe.generic.semiauto._
+import org.scalasteward.core.data.{SemVer, Update}
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.model.{SemVer, Update}
 import org.scalasteward.core.nurture.UpdateData
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.{git, scalafix}

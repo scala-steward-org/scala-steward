@@ -18,8 +18,8 @@ package org.scalasteward.core.bitbucket.http4s
 
 import cats.Applicative
 import cats.implicits._
-import org.http4s.{BasicCredentials, Request}
 import org.http4s.headers.Authorization
+import org.http4s.{BasicCredentials, Request}
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 
 object authentication {

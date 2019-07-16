@@ -21,8 +21,8 @@ import cats.effect.Sync
 import org.http4s.Uri
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.git.Author
-import org.scalasteward.core.vcs.data.AuthenticatedUser
 import org.scalasteward.core.util
+import org.scalasteward.core.vcs.data.AuthenticatedUser
 import scala.sys.process.Process
 
 /** Configuration for scala-steward.

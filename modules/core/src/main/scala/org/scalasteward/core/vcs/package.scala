@@ -17,11 +17,9 @@
 package org.scalasteward.core
 
 import org.scalasteward.core.application.SupportedVCS
-import org.scalasteward.core.application.SupportedVCS.Bitbucket
-import org.scalasteward.core.application.SupportedVCS.GitHub
-import org.scalasteward.core.application.SupportedVCS.Gitlab
+import org.scalasteward.core.application.SupportedVCS.{Bitbucket, GitHub, Gitlab}
+import org.scalasteward.core.data.Update
 import org.scalasteward.core.vcs.data.Repo
-import org.scalasteward.core.model.Update
 
 package object vcs {
 

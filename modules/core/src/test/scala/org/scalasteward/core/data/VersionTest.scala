@@ -1,4 +1,4 @@
-package org.scalasteward.core.model
+package org.scalasteward.core.data
 
 import cats.implicits._
 import cats.kernel.Comparison.{EqualTo, GreaterThan, LessThan}

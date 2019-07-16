@@ -17,7 +17,7 @@
 package org.scalasteward.core.update.data
 
 import org.http4s.Uri
-import org.scalasteward.core.model.{Dependency, Update}
+import org.scalasteward.core.data.{Dependency, Update}
 
 sealed trait UpdateState extends Product with Serializable {
   def dependency: Dependency

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.model
+package org.scalasteward.core.data
 
 import cats.Order
 import cats.implicits._

@@ -18,8 +18,8 @@ package org.scalasteward.core
 
 import cats.effect.{IO, Resource}
 import cats.implicits._
+import org.scalasteward.core.data.Update
 import org.scalasteward.core.io.FileData
-import org.scalasteward.core.model.Update
 import org.scalasteward.core.sbt.data.{SbtVersion, ScalaVersion}
 import org.scalasteward.core.util.Nel
 import scala.io.Source

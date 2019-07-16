@@ -4,7 +4,7 @@ import better.files.File
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.{MockContext, MockState}
-import org.scalasteward.core.model.{Update, Version}
+import org.scalasteward.core.data.{Update, Version}
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo

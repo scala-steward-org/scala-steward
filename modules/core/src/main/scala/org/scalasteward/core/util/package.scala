@@ -16,9 +16,9 @@
 
 package org.scalasteward.core
 
+import cats._
 import cats.effect.Bracket
 import cats.implicits._
-import cats._
 import eu.timepit.refined.types.numeric.PosInt
 import fs2.Pipe
 import scala.annotation.tailrec

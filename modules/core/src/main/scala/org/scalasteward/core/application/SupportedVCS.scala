@@ -16,10 +16,10 @@
 
 package org.scalasteward.core.application
 
-import cats.Eq
-import cats.implicits._
 import caseapp.core.Error.MalformedValue
 import caseapp.core.argparser.ArgParser
+import cats.Eq
+import cats.implicits._
 
 sealed trait SupportedVCS {
   import SupportedVCS.{Bitbucket, GitHub, Gitlab}

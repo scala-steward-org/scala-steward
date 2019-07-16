@@ -20,8 +20,8 @@ import cats.implicits._
 import io.circe.Decoder
 import io.circe.generic.semiauto._
 import org.http4s.Uri
-import org.scalasteward.core.vcs.data.PullRequestState.Closed
 import org.scalasteward.core.util.uri.uriDecoder
+import org.scalasteward.core.vcs.data.PullRequestState.Closed
 
 final case class PullRequestOut(
     html_url: Uri,

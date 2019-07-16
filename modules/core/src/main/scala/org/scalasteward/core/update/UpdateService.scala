@@ -18,18 +18,18 @@ package org.scalasteward.core.update
 
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
+import org.scalasteward.core.data.{Dependency, Update}
 import org.scalasteward.core.git.Sha1
-import org.scalasteward.core.model.{Dependency, Update}
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.repocache.RepoCacheRepository
 import org.scalasteward.core.sbt._
 import org.scalasteward.core.sbt.data.ArtificialProject
 import org.scalasteward.core.update.data.UpdateState
 import org.scalasteward.core.update.data.UpdateState._
-import org.scalasteward.core.{sbt, util}
 import org.scalasteward.core.util.MonadThrowable
 import org.scalasteward.core.vcs.data.PullRequestState.Closed
 import org.scalasteward.core.vcs.data.Repo
+import org.scalasteward.core.{sbt, util}
 
 final class UpdateService[F[_]](
     implicit

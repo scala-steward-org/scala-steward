@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.scalafix
 
-import org.scalasteward.core.model.Version
+import org.scalasteward.core.data.Version
 import org.scalasteward.core.util.Nel
 import scala.util.matching.Regex
 

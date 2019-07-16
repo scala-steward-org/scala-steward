@@ -2,7 +2,7 @@ package org.scalasteward.core.vcs.data
 
 import io.circe.syntax._
 import org.scalasteward.core.git.{Branch, Sha1}
-import org.scalasteward.core.model.Update
+import org.scalasteward.core.data.Update
 import org.scalasteward.core.nurture.UpdateData
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.Nel

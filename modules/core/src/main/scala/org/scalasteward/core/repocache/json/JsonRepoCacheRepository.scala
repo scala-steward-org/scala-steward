@@ -20,8 +20,8 @@ import better.files.File
 import cats.implicits._
 import io.circe.parser.decode
 import io.circe.syntax._
+import org.scalasteward.core.data.Dependency
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
-import org.scalasteward.core.model.Dependency
 import org.scalasteward.core.repocache.{RepoCache, RepoCacheRepository}
 import org.scalasteward.core.util.MonadThrowable
 import org.scalasteward.core.vcs.data.Repo

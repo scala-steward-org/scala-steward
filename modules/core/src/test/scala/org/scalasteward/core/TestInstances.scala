@@ -1,7 +1,7 @@
 package org.scalasteward.core
 
 import org.scalacheck.{Arbitrary, Cogen, Gen}
-import org.scalasteward.core.model.Version
+import org.scalasteward.core.data.Version
 import org.scalasteward.core.util.Change
 import org.scalasteward.core.util.Change.{Changed, Unchanged}
 

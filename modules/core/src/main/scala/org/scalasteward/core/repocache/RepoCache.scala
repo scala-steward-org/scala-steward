@@ -18,8 +18,8 @@ package org.scalasteward.core.repocache
 
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
+import org.scalasteward.core.data.Dependency
 import org.scalasteward.core.git.Sha1
-import org.scalasteward.core.model.Dependency
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.sbt.data.SbtVersion
 

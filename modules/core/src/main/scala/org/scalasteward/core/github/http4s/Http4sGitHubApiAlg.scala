@@ -20,8 +20,8 @@ import org.http4s.{Request, Uri}
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.github._
 import org.scalasteward.core.util.HttpJsonClient
-import org.scalasteward.core.vcs.data._
 import org.scalasteward.core.vcs.VCSApiAlg
+import org.scalasteward.core.vcs.data._
 
 final class Http4sGitHubApiAlg[F[_]](
     gitHubApiHost: Uri,

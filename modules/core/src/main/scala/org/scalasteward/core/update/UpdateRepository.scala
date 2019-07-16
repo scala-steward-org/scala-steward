@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.update
 
-import org.scalasteward.core.model.Update
+import org.scalasteward.core.data.Update
 
 trait UpdateRepository[F[_]] {
   def deleteAll: F[Unit]

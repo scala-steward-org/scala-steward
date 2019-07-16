@@ -21,13 +21,13 @@ import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
-import org.scalasteward.core.repocache.json.JsonRepoCacheRepository
-import org.scalasteward.core.repocache.{RepoCacheAlg, RepoCacheRepository}
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.json.JsonPullRequestRepo
 import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository}
+import org.scalasteward.core.repocache.json.JsonRepoCacheRepository
+import org.scalasteward.core.repocache.{RepoCacheAlg, RepoCacheRepository}
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.update.json.JsonUpdateRepository
@@ -35,7 +35,6 @@ import org.scalasteward.core.update.{FilterAlg, UpdateRepository, UpdateService}
 import org.scalasteward.core.util.{DateTimeAlg, HttpJsonClient, LogAlg}
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg, VCSSelection}
-
 import scala.concurrent.ExecutionContext
 
 object Context {

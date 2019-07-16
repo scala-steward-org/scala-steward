@@ -21,9 +21,9 @@ import cats.Monad
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
-import org.scalasteward.core.repocache.RepoCacheAlg
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.NurtureAlg
+import org.scalasteward.core.repocache.RepoCacheAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.update.UpdateService
 import org.scalasteward.core.util.LogAlg

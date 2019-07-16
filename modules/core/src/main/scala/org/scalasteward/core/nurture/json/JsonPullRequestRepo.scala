@@ -21,9 +21,9 @@ import cats.implicits._
 import io.circe.parser.decode
 import io.circe.syntax._
 import org.http4s.Uri
+import org.scalasteward.core.data.{Dependency, Update}
 import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
-import org.scalasteward.core.model.{Dependency, Update}
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.update.UpdateService
 import org.scalasteward.core.util.MonadThrowable
