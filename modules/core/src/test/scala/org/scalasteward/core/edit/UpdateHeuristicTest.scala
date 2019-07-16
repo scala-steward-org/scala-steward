@@ -321,7 +321,7 @@ class UpdateHeuristicTest extends FunSuite with Matchers {
       .replaceVersionIn(original) shouldBe (None -> UpdateHeuristic.groupId.name)
   }
 
-  test("update multiple lines between `on` and `off") {
+  test("update multiple lines between `on` and `off`") {
     val original =
       """  // scala-steward:off
         |  "com.typesafe.akka" %% "akka-actor" % "2.4.20",

@@ -23,6 +23,10 @@ import scala.collection.mutable
 import scala.util.matching.Regex
 
 package object edit {
+
+  /** Like `replaceSomeInChange` but does not change anything between
+    * `scala-steward:off` and `scala-steward:on` markers.
+    */
   def replaceSomeInAllowedParts(
       regex: Regex,
       target: CharSequence,
