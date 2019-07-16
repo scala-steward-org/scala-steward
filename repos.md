@@ -459,11 +459,12 @@
 - TinkoffCreditSystems/typed-schema
 - tjheslin1/DMsPredictor
 - tmtsoftware/csw
-- tmtsoftware/esw
-- tmtsoftware/embedded-keycloak
-- tmtsoftware/csw.g8
 - tmtsoftware/csw-acceptance
 - tmtsoftware/csw-client
+- tmtsoftware/csw-js
+- tmtsoftware/csw.g8
+- tmtsoftware/embedded-keycloak
+- tmtsoftware/esw
 - tmtsoftware/esw-prototype
 - tmtsoftware/sequencer-scripts
 - tomwadeson/scala-barebones
