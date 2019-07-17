@@ -364,6 +364,7 @@
 - ReactiveMongo/ReactiveMongo-Streaming
 - ReactivePlatform/Pragmatic-Scala
 - ReactivePlatform/Reactive-Design-Patterns
+- rtimush/sbt-updates
 - sake92/hepek
 - saksdirect/sundial
 - sbt/sbt-autoversion
