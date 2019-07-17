@@ -117,6 +117,11 @@
 - CleverCloud/akka-warp10-scala-client
 - clovellytech/http4s-modules
 - comcast/ip4s
+- cornerman/chameleon
+- cornerman/covenant
+- cornerman/mycelium
+- cornerman/scala-cuid
+- cornerman/sloth
 - coursier/coursier
 - coursier/echo
 - coursier/http-server
@@ -152,6 +157,12 @@
 - exoego/aws-sdk-scalajs-facade
 - exoego/aws-sdk-scalajs-facade-generator
 - exoego/scala-js-nodejs
+- fdietze/bench
+- fdietze/colorado
+- fdietze/flatland
+- fdietze/scala-js-d3v4
+- fdietze/scala-js-fontawesome
+- fdietze/vectory
 - fiadliel/fs2-grpc
 - finagle/finagle-mysql-shapes
 - finagle/finagle-oauth2
@@ -249,6 +260,7 @@
 - lightbend/scala-logging
 - lightbend/scala-sculpt
 - lightbend/ssl-config
+- lihaoyi/scala.rx
 - LREN-CHUV/woken
 - LREN-CHUV/woken-messages
 - LREN-CHUV/woken-validation
@@ -298,6 +310,7 @@
 - nrinaudo/kantan.codecs
 - olafurpg/sbt-ci-release
 - olivierschultz/typelevel-template.g8
+- OutWatch/outwatch
 - ovotech/fs2-kafka
 - ovotech/kafka-serialization
 - ovotech/vulcan
