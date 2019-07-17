@@ -13,8 +13,8 @@ class sbtTest extends FunSuite with Matchers {
       (SbtVersion("0.13.16"), Some(latestSbtVersion_0_13)),
       (defaultSbtVersion, None),
       (latestSbtVersion_0_13, None),
-      (SbtVersion("1.3.0-RC1"), Some(SbtVersion("1.3.0-RC2"))),
-      (SbtVersion("1.3.0-RC2"), None)
+      (SbtVersion("1.3.0-RC1"), Some(SbtVersion("1.3.0-RC3"))),
+      (SbtVersion("1.3.0-RC3"), None)
     )
 
     forAll(versions) { (curr: SbtVersion, maybeNewer: Option[SbtVersion]) =>

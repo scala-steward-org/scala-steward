@@ -38,7 +38,7 @@ package object sbt {
   def findNewerSbtVersion(sbtVersion: SbtVersion): Option[SbtVersion] =
     (sbtVersion.value match {
       case v if v.startsWith("0.13.")    => Some(latestSbtVersion_0_13)
-      case v if v.startsWith("1.3.0-RC") => Some(SbtVersion("1.3.0-RC2"))
+      case v if v.startsWith("1.3.0-RC") => Some(SbtVersion("1.3.0-RC3"))
       case v if v.startsWith("1.")       => Some(defaultSbtVersion)
       case _                             => None
     }).filter(_.toVersion > sbtVersion.toVersion)
