@@ -4,15 +4,13 @@ import better.files.File
 import cats.effect.IO
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import org.scalasteward.core.io.ProcessAlgTest.ioProcessAlg
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.util.Nel
 import org.scalatest.{FunSuite, Matchers}
 
 class ProcessAlgTest extends FunSuite with Matchers {
-  implicit val logger: Logger[IO] = Slf4jLogger.getLogger[IO]
-  val ioProcessAlg: ProcessAlg[IO] = ProcessAlg.create[IO]
-
   test("exec echo") {
     ioProcessAlg
       .exec(Nel.of("echo", "hello"), File.currentWorkingDirectory)
@@ -63,4 +61,9 @@ class ProcessAlgTest extends FunSuite with Matchers {
       )
     )
   }
+}
+
+object ProcessAlgTest {
+  implicit val ioLogger: Logger[IO] = Slf4jLogger.getLogger[IO]
+  implicit val ioProcessAlg: ProcessAlg[IO] = ProcessAlg.create[IO]
 }

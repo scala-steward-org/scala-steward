@@ -22,7 +22,7 @@ import cats.implicits._
 import org.http4s.Uri
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.util.{MonadThrowable, Nel}
+import org.scalasteward.core.util.{BracketThrowable, Nel}
 import org.scalasteward.core.vcs.data.Repo
 
 trait GitAlg[F[_]] {
@@ -40,7 +40,8 @@ trait GitAlg[F[_]] {
 
   def currentBranch(repo: Repo): F[Branch]
 
-  def isBehind(repo: Repo, branch: Branch, base: Branch): F[Boolean]
+  /** Returns `true` if merging `branch` into `base` results in merge conflicts. */
+  def hasConflicts(repo: Repo, branch: Branch, base: Branch): F[Boolean]
 
   def isMerged(repo: Repo, branch: Branch, base: Branch): F[Boolean]
 
@@ -71,7 +72,7 @@ object GitAlg {
       fileAlg: FileAlg[F],
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F],
-      F: MonadThrowable[F]
+      F: BracketThrowable[F]
   ): GitAlg[F] =
     new GitAlg[F] {
       override def branchAuthors(repo: Repo, branch: Branch, base: Branch): F[List[String]] =
@@ -116,9 +117,14 @@ object GitAlg {
           lines <- exec(Nel.of("rev-parse", "--abbrev-ref", "HEAD"), repoDir)
         } yield Branch(lines.mkString.trim)
 
-      override def isBehind(repo: Repo, branch: Branch, base: Branch): F[Boolean] =
+      override def hasConflicts(repo: Repo, branch: Branch, base: Branch): F[Boolean] =
         workspaceAlg.repoDir(repo).flatMap { repoDir =>
-          exec(Nel.of("log", "--pretty=format:'%h'", dotdot(branch, base)), repoDir).map(_.nonEmpty)
+          val tryMerge = exec(Nel.of("merge", "--no-commit", "--no-ff", branch.name), repoDir)
+          val abortMerge = exec(Nel.of("merge", "--abort"), repoDir).void
+
+          returnToCurrentBranch(repo) {
+            checkoutBranch(repo, base) >> F.guarantee(tryMerge)(abortMerge).attempt.map(_.isLeft)
+          }
         }
 
       override def isMerged(repo: Repo, branch: Branch, base: Branch): F[Boolean] =

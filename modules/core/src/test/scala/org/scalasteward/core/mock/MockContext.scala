@@ -1,18 +1,18 @@
 package org.scalasteward.core.mock
 
 import better.files.File
-import org.scalasteward.core.application.Cli.EnvVar
+import cats.effect.Sync
 import org.http4s.Uri
-import org.scalasteward.core.application.Config
+import org.scalasteward.core.application.Cli.EnvVar
+import org.scalasteward.core.application.{Config, SupportedVCS}
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Author, GitAlg}
 import org.scalasteward.core.io.{MockFileAlg, MockProcessAlg, MockWorkspaceAlg}
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.update.FilterAlg
-import org.scalasteward.core.util.{DateTimeAlg, LogAlg}
+import org.scalasteward.core.util.{BracketThrowable, DateTimeAlg, LogAlg}
 import org.scalasteward.core.vcs.VCSRepoAlg
-import org.scalasteward.core.application.SupportedVCS
 
 object MockContext {
   implicit val config: Config = Config(
@@ -36,6 +36,8 @@ object MockContext {
     ),
     pruneRepos = false
   )
+
+  implicit val mockEffBracketThrowable: BracketThrowable[MockEff] = Sync[MockEff]
 
   implicit val fileAlg: MockFileAlg = new MockFileAlg
   implicit val logger: MockLogger = new MockLogger

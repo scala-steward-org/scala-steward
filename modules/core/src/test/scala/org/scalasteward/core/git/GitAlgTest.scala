@@ -1,12 +1,23 @@
 package org.scalasteward.core.git
 
+import better.files.File
+import cats.Monad
+import cats.effect.IO
+import cats.implicits._
 import org.http4s.Http4sLiteralSyntax
-import org.scalasteward.core.vcs.data.Repo
+import org.scalasteward.core.io.FileAlgTest._
+import org.scalasteward.core.io.ProcessAlgTest._
+import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.util.Nel
+import org.scalasteward.core.vcs.data.Repo
 import org.scalatest.{FunSuite, Matchers}
 
 class GitAlgTest extends FunSuite with Matchers {
+  implicit val workspaceAlg: WorkspaceAlg[IO] = WorkspaceAlg.create[IO]
+  val ioGitAlg: GitAlg[IO] = GitAlg.create[IO]
+
   val repo = Repo("fthomas", "datapackage")
   val repoDir: String = (config.workspace / "fthomas/datapackage").toString
   val askPass = s"GIT_ASKPASS=${config.gitAskPass}"
@@ -83,4 +94,60 @@ class GitAlgTest extends FunSuite with Matchers {
       )
     )
   }
+
+  test("hasConflicts") {
+    val repo = Repo("merge", "conflict")
+    val p = for {
+      repoDir <- workspaceAlg.repoDir(repo)
+      _ <- GitAlgTest.createGitRepoWithConflict[IO](repoDir)
+      c1 <- ioGitAlg.hasConflicts(repo, Branch("branch-with-conflict"), Branch("master"))
+      c2 <- ioGitAlg.hasConflicts(repo, Branch("branch-without-conflict"), Branch("master"))
+    } yield (c1, c2)
+    p.unsafeRunSync() shouldBe ((true, false))
+  }
+}
+
+object GitAlgTest {
+  def createGitRepoWithConflict[F[_]](repoDir: File)(
+      implicit
+      fileAlg: FileAlg[F],
+      processAlg: ProcessAlg[F],
+      F: Monad[F]
+  ): F[Unit] =
+    for {
+      _ <- fileAlg.deleteForce(repoDir)
+      _ <- fileAlg.ensureExists(repoDir)
+      _ <- processAlg.exec(Nel.of("git", "init", "."), repoDir)
+      // work on master
+      _ <- fileAlg.writeFile(repoDir / "file1", "file1, line1")
+      _ <- fileAlg.writeFile(repoDir / "file2", "file2, line1")
+      _ <- processAlg.exec(Nel.of("git", "add", "file1"), repoDir)
+      _ <- processAlg.exec(Nel.of("git", "add", "file2"), repoDir)
+      _ <- processAlg.exec(Nel.of("git", "commit", "-m", "Initial commit"), repoDir)
+      // work on branch-without-conflict
+      _ <- processAlg.exec(Nel.of("git", "checkout", "-b", "branch-without-conflict"), repoDir)
+      _ <- fileAlg.writeFile(repoDir / "file3", "file3, line1")
+      _ <- processAlg.exec(Nel.of("git", "add", "file3"), repoDir)
+      _ <- processAlg.exec(
+        Nel.of("git", "commit", "-m", "Add file3 on branch-without-conflict"),
+        repoDir
+      )
+      _ <- processAlg.exec(Nel.of("git", "checkout", "master"), repoDir)
+      // work on branch-with-conflict
+      _ <- processAlg.exec(Nel.of("git", "checkout", "-b", "branch-with-conflict"), repoDir)
+      _ <- fileAlg.writeFile(
+        repoDir / "file2",
+        "file2, line1\nfile2, line2 on branch-with-conflict"
+      )
+      _ <- processAlg.exec(Nel.of("git", "add", "file2"), repoDir)
+      _ <- processAlg.exec(
+        Nel.of("git", "commit", "-m", "Modify file2 on branch-with-conflict"),
+        repoDir
+      )
+      _ <- processAlg.exec(Nel.of("git", "checkout", "master"), repoDir)
+      // work on master
+      _ <- fileAlg.writeFile(repoDir / "file2", "file2, line1\nfile2, line2 on master")
+      _ <- processAlg.exec(Nel.of("git", "add", "file2"), repoDir)
+      _ <- processAlg.exec(Nel.of("git", "commit", "-m", "Modify file2 on master"), repoDir)
+    } yield ()
 }

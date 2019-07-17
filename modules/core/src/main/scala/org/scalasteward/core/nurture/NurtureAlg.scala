@@ -148,7 +148,7 @@ final class NurtureAlg[F[_]](
     for {
       authors <- gitAlg.branchAuthors(data.repo, data.updateBranch, data.baseBranch)
       distinctAuthors = authors.distinct
-      isBehind <- gitAlg.isBehind(data.repo, data.updateBranch, data.baseBranch)
+      hasConflicts <- gitAlg.hasConflicts(data.repo, data.updateBranch, data.baseBranch)
       isMerged <- gitAlg.isMerged(data.repo, data.updateBranch, data.baseBranch)
       (result, msg) = {
         if (isMerged)
@@ -157,8 +157,8 @@ final class NurtureAlg[F[_]](
           (false, s"PR has commits by ${distinctAuthors.mkString(", ")}")
         else if (authors.length >= 2)
           (true, "PR has multiple commits")
-        else if (isBehind)
-          (true, s"PR is behind ${data.baseBranch.name}")
+        else if (hasConflicts)
+          (true, s"PR has conflicts with ${data.baseBranch.name}")
         else
           (false, s"PR is up-to-date with ${data.baseBranch.name}")
       }
