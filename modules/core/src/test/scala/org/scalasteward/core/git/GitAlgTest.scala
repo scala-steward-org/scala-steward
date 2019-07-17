@@ -100,8 +100,8 @@ class GitAlgTest extends FunSuite with Matchers {
     val p = for {
       repoDir <- workspaceAlg.repoDir(repo)
       _ <- GitAlgTest.createGitRepoWithConflict[IO](repoDir)
-      c1 <- ioGitAlg.hasConflicts(repo, Branch("branch-with-conflict"), Branch("master"))
-      c2 <- ioGitAlg.hasConflicts(repo, Branch("branch-without-conflict"), Branch("master"))
+      c1 <- ioGitAlg.hasConflicts(repo, Branch("conflicts-yes"), Branch("master"))
+      c2 <- ioGitAlg.hasConflicts(repo, Branch("conflicts-no"), Branch("master"))
     } yield (c1, c2)
     p.unsafeRunSync() shouldBe ((true, false))
   }
@@ -124,26 +124,17 @@ object GitAlgTest {
       _ <- processAlg.exec(Nel.of("git", "add", "file1"), repoDir)
       _ <- processAlg.exec(Nel.of("git", "add", "file2"), repoDir)
       _ <- processAlg.exec(Nel.of("git", "commit", "-m", "Initial commit"), repoDir)
-      // work on branch-without-conflict
-      _ <- processAlg.exec(Nel.of("git", "checkout", "-b", "branch-without-conflict"), repoDir)
+      // work on conflicts-no
+      _ <- processAlg.exec(Nel.of("git", "checkout", "-b", "conflicts-no"), repoDir)
       _ <- fileAlg.writeFile(repoDir / "file3", "file3, line1")
       _ <- processAlg.exec(Nel.of("git", "add", "file3"), repoDir)
-      _ <- processAlg.exec(
-        Nel.of("git", "commit", "-m", "Add file3 on branch-without-conflict"),
-        repoDir
-      )
+      _ <- processAlg.exec(Nel.of("git", "commit", "-m", "Add file3 on conflicts-no"), repoDir)
       _ <- processAlg.exec(Nel.of("git", "checkout", "master"), repoDir)
-      // work on branch-with-conflict
-      _ <- processAlg.exec(Nel.of("git", "checkout", "-b", "branch-with-conflict"), repoDir)
-      _ <- fileAlg.writeFile(
-        repoDir / "file2",
-        "file2, line1\nfile2, line2 on branch-with-conflict"
-      )
+      // work on conflicts-yes
+      _ <- processAlg.exec(Nel.of("git", "checkout", "-b", "conflicts-yes"), repoDir)
+      _ <- fileAlg.writeFile(repoDir / "file2", "file2, line1\nfile2, line2 on conflicts-yes")
       _ <- processAlg.exec(Nel.of("git", "add", "file2"), repoDir)
-      _ <- processAlg.exec(
-        Nel.of("git", "commit", "-m", "Modify file2 on branch-with-conflict"),
-        repoDir
-      )
+      _ <- processAlg.exec(Nel.of("git", "commit", "-m", "Modify file2 on conflicts-yes"), repoDir)
       _ <- processAlg.exec(Nel.of("git", "checkout", "master"), repoDir)
       // work on master
       _ <- fileAlg.writeFile(repoDir / "file2", "file2, line1\nfile2, line2 on master")
