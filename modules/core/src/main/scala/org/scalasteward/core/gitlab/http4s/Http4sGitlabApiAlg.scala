@@ -90,7 +90,8 @@ private[http4s] object GitlabJsonCodec {
 class Http4sGitLabApiAlg[F[_]: MonadThrowable](
     gitlabApiHost: Uri,
     user: AuthenticatedUser,
-    modify: Repo => Request[F] => F[Request[F]]
+    modify: Repo => Request[F] => F[Request[F]],
+    doNotFork: Boolean
 )(
     implicit
     client: HttpJsonClient[F]
@@ -113,12 +114,12 @@ class Http4sGitLabApiAlg[F[_]: MonadThrowable](
   }
 
   def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] = {
-    val userOwnedRepo = repo.copy(owner = user.login)
+    val targetRepo = if (doNotFork) repo else repo.copy(owner = user.login)
     for {
       projectId <- client.get[ProjectId](url.repos(repo), modify(repo))
-      payload = MergeRequestPayload(url.encodedProjectId(userOwnedRepo), projectId.id, data)
+      payload = MergeRequestPayload(url.encodedProjectId(targetRepo), projectId.id, data)
       res <- client.postWithBody[PullRequestOut, MergeRequestPayload](
-        url.mergeRequest(userOwnedRepo),
+        url.mergeRequest(targetRepo),
         payload,
         modify(repo)
       )
