@@ -81,6 +81,7 @@ Thanks goes to these wonderful people:
 * [TATSUNO Yasuhiro](https://github.com/exoego)
 * [Thomas Heslin](https://github.com/tjheslin1)
 * [Thomas Kaliakos](https://github.com/thomaska)
+* [Yan](https://github.com/yaroot)
 * [Zelenya](https://github.com/Zelenya)
 
 ## Community
