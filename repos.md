@@ -445,6 +445,7 @@
 - sullis/jms-testkit
 - swagger-akka-http/swagger-akka-http
 - swagger-akka-http/swagger-scala-module
+- synesso/scala-stellar-sdk
 - tanishiking/scalaunfmt
 - thesamet/sbt-protoc
 - ThoughtWorksInc/bindable.scala
