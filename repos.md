@@ -157,6 +157,7 @@
 - exoego/aws-sdk-scalajs-facade
 - exoego/aws-sdk-scalajs-facade-generator
 - exoego/scala-js-nodejs
+- exoego/scala-js-ts-importer
 - fdietze/bench
 - fdietze/colorado
 - fdietze/flatland
