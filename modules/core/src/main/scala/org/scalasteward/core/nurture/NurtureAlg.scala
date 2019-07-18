@@ -144,26 +144,25 @@ final class NurtureAlg[F[_]](
       } yield ()
     }
 
-  def shouldBeReset(data: UpdateData): F[Boolean] =
-    for {
-      authors <- gitAlg.branchAuthors(data.repo, data.updateBranch, data.baseBranch)
-      distinctAuthors = authors.distinct
-      hasConflicts <- gitAlg.hasConflicts(data.repo, data.updateBranch, data.baseBranch)
-      isMerged <- gitAlg.isMerged(data.repo, data.updateBranch, data.baseBranch)
-      (result, msg) = {
-        if (isMerged)
-          (false, "PR has been merged")
-        else if (distinctAuthors.length >= 2)
-          (false, s"PR has commits by ${distinctAuthors.mkString(", ")}")
-        else if (authors.length >= 2)
-          (true, "PR has multiple commits")
-        else if (hasConflicts)
-          (true, s"PR has conflicts with ${data.baseBranch.name}")
-        else
-          (false, s"PR is up-to-date with ${data.baseBranch.name}")
-      }
-      _ <- logger.info(msg)
-    } yield result
+  def shouldBeReset(data: UpdateData): F[Boolean] = {
+    val result = gitAlg.isMerged(data.repo, data.updateBranch, data.baseBranch).flatMap {
+      case true => (false, "PR has been merged").pure[F]
+      case false =>
+        gitAlg.branchAuthors(data.repo, data.updateBranch, data.baseBranch).flatMap { authors =>
+          val distinctAuthors = authors.distinct
+          if (distinctAuthors.length >= 2)
+            (false, s"PR has commits by ${distinctAuthors.mkString(", ")}").pure[F]
+          else if (authors.length >= 2)
+            (true, "PR has multiple commits").pure[F]
+          else
+            gitAlg.hasConflicts(data.repo, data.updateBranch, data.baseBranch).map {
+              case true  => (true, s"PR has conflicts with ${data.baseBranch.name}")
+              case false => (false, s"PR is up-to-date with ${data.baseBranch.name}")
+            }
+        }
+    }
+    result.flatMap { case (reset, msg) => logger.info(msg).as(reset) }
+  }
 
   def resetAndUpdate(data: UpdateData): F[Unit] =
     for {
