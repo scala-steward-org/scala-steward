@@ -143,6 +143,7 @@
 - dispalt/tagless-redux
 - djspiewak/gll-combinators
 - djspiewak/shims
+- dmrolfs/omnibus
 - dwijnand/sbt-compat
 - dwijnand/sbt-dynver
 - dwijnand/sbt-project-graph
