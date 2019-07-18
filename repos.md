@@ -347,6 +347,7 @@
 - playframework/play-ws
 - playframework/scalatestplus-play
 - playframework/twirl
+- plokhotnyuk/expression-evaluator
 - plokhotnyuk/fast-string-interpolator
 - plokhotnyuk/jsoniter-scala
 - plokhotnyuk/rtree2d
