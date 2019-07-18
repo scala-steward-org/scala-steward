@@ -21,6 +21,7 @@ import cats.effect.Sync
 import cats.implicits._
 import cats.{Functor, Traverse}
 import fs2.Stream
+import io.chrisdavenport.log4cats.Logger
 import org.apache.commons.io.FileUtils
 import org.scalasteward.core.util
 import org.scalasteward.core.util.MonadThrowable
@@ -79,7 +80,7 @@ trait FileAlg[F[_]] {
 }
 
 object FileAlg {
-  def create[F[_]](implicit F: Sync[F]): FileAlg[F] =
+  def create[F[_]](implicit logger: Logger[F], F: Sync[F]): FileAlg[F] =
     new FileAlg[F] {
       override def createTemporarily[A](file: File, content: String)(fa: F[A]): F[A] =
         F.bracket(writeFile(file, content))(_ => fa)(_ => deleteForce(file))
@@ -119,6 +120,8 @@ object FileAlg {
         Stream.eval(F.delay(dir.walk())).flatMap(Stream.fromIterator(_))
 
       override def writeFile(file: File, content: String): F[Unit] =
-        file.parentOption.fold(F.unit)(ensureExists(_).void) >> F.delay(file.write(content)).void
+        logger.debug(s"Write $file") >>
+          file.parentOption.fold(F.unit)(ensureExists(_).void) >>
+          F.delay(file.write(content)).void
     }
 }

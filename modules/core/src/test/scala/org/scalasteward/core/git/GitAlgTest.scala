@@ -5,8 +5,9 @@ import cats.Monad
 import cats.effect.IO
 import cats.implicits._
 import org.http4s.Http4sLiteralSyntax
-import org.scalasteward.core.io.FileAlgTest._
-import org.scalasteward.core.io.ProcessAlgTest._
+import org.scalasteward.core.io.FileAlgTest.ioFileAlg
+import org.scalasteward.core.io.LoggerTest.ioLogger
+import org.scalasteward.core.io.ProcessAlgTest.ioProcessAlg
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockState
