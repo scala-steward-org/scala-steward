@@ -61,27 +61,17 @@ private[http4s] object GitlabJsonCodec {
   implicit val userOutDecoder: Decoder[UserOut] = Decoder.instance {
     _.downField("username").as[String].map(UserOut(_))
   }
-  val parentRepoOutDecoder: Decoder[RepoOut] = Decoder.instance { c =>
-    for {
-      name <- c.downField("name").as[String]
-      ownerC = c.downField("namespace")
-      owner <- ownerC.downField("name").as[String]
-      _ = c.up
-      cloneUrl <- c.downField("http_url_to_repo").as[Uri]
-      defaultBranch <- c
-        .downField("default_branch")
-        .as[Option[Branch]]
-        .map(_.getOrElse(Branch("master")))
-    } yield RepoOut(name, UserOut(owner), None, cloneUrl, defaultBranch)
-  }
   implicit val repoOutDecoder: Decoder[RepoOut] = Decoder.instance { c =>
     for {
       name <- c.downField("name").as[String]
-      owner <- c.downField("owner").as[UserOut]
+      owner <- c
+        .downField("owner")
+        .as[UserOut]
+        .orElse(c.downField("namespace").downField("name").as[String].map(UserOut(_)))
       cloneUrl <- c.downField("http_url_to_repo").as[Uri]
       parent <- c
         .downField("forked_from_project")
-        .as[Option[RepoOut]](Decoder.decodeOption(parentRepoOutDecoder))
+        .as[Option[RepoOut]]
       defaultBranch <- c
         .downField("default_branch")
         .as[Option[Branch]]
