@@ -30,3 +30,7 @@ number adheres to [Semantic Versioning](https://semver.org/)) as demonstrated
 
 Other examples of Mergify rules for Scala Steward can be found via
 [GitHub's code search](https://github.com/search?p=6&q=%22author%3Dscala-steward%22+filename%3A.mergify.yml&type=Code).
+
+### Does it work with sbt 0.13.x
+
+not out of the box as it depends on dependencyUpdates task. However, adding the following sbt plugin https://github.com/rtimush/sbt-updates (requires sbt 0.13.9) does the job.
