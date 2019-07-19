@@ -101,6 +101,7 @@ Consider creating PR to add your company to the list and join the community.
 * [SoftwareMill](https://softwaremill.com)
 * [Tegonal GmbH](https://tegonal.com)
 * [Zalando](https://en.zalando.de/)
+* [Colisweb](https://www.colisweb.com/)
 
 ## Participation
 
