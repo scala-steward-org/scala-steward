@@ -1,9 +1,9 @@
 package org.scalasteward.core.vcs.data
 
+import org.scalasteward.core.vcs.data.Repo.repoKeyDecoder
 import org.scalatest.{FunSuite, Matchers}
 
 class RepoTest extends FunSuite with Matchers {
-  import Repo.repoKeyDecoder
 
   test("decode") {
     repoKeyDecoder("owner/repo") shouldBe Some(Repo("owner", "repo"))
