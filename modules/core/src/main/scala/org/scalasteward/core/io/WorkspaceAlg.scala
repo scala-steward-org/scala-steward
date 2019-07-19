@@ -16,12 +16,16 @@
 
 package org.scalasteward.core.io
 
+import java.nio.file.Files
+
 import better.files.File
 import cats.FlatMap
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.vcs.data.Repo
+
+import scala.annotation.tailrec
 
 trait WorkspaceAlg[F[_]] {
   def cleanWorkspace: F[Unit]
@@ -58,13 +62,15 @@ object WorkspaceAlg {
         fileAlg.ensureExists(reposDir / repo.owner / repo.repo)
 
       override def findSubProjectDirs(repo: Repo): F[List[File]] = {
-        def findSubProject(file: File): List[File] =
-          if (!file.isDirectory) List.empty
-          else if (file.contains(File("build.sbt"))) List(file)
-          else file.children.flatMap(findSubProject).toList
-
+        @tailrec
+        def findSubProject(files: List[File], acc: List[File]): List[File] = files match {
+          case Nil => acc
+          case file :: rest =>
+            if (Files.exists(file.path.resolve("build.sbt"))) findSubProject(rest, file :: acc)
+            else findSubProject(file.children.filter(_.isDirectory).toList ::: rest, acc)
+        }
         repoDir(repo).map { rootDir =>
-          findSubProject(rootDir)
+          findSubProject(List(rootDir), Nil)
         }
       }
     }
