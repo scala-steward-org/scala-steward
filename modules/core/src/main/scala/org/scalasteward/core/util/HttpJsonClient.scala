@@ -49,17 +49,13 @@ final class HttpJsonClient[F[_]: Sync](
       uri: Uri,
       method: Method,
       response: Response[F]
-  ): F[Throwable] =
-    response.body
-      .through(fs2.text.utf8Decode)
-      .compile
-      .foldMonoid
-      .map { body =>
-        UnexpectedResponse(uri, method, response.headers, response.status, body)
-      }
+  ): F[Throwable] = {
+    val body = response.body.through(fs2.text.utf8Decode).compile.foldMonoid
+    body.map(UnexpectedResponse(uri, method, response.headers, response.status, _))
+  }
 }
 
-case class UnexpectedResponse(
+final case class UnexpectedResponse(
     uri: Uri,
     method: Method,
     headers: Headers,
