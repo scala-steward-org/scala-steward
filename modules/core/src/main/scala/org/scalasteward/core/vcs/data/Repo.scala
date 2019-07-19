@@ -27,8 +27,7 @@ final case class Repo(
 
 object Repo {
   implicit val repoKeyDecoder: KeyDecoder[Repo] = {
-    val string = "([^/]+)"
-    val / = s"$string/$string".r
+    val / = s"(.+)/([^/]+)".r
     KeyDecoder.instance {
       case owner / repo => Some(Repo(owner, repo))
       case _            => None
