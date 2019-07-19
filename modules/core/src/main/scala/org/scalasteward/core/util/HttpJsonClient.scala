@@ -17,11 +17,14 @@
 package org.scalasteward.core.util
 
 import cats.effect.Sync
+import cats.implicits._
 import io.circe.{Decoder, Encoder}
 import org.http4s.Method.{GET, POST}
 import org.http4s.circe.{jsonEncoderOf, jsonOf}
 import org.http4s.client.Client
-import org.http4s.{Method, Request, Uri}
+import org.http4s.{Headers, Method, Request, Response, Status, Uri}
+
+import scala.util.control.NoStackTrace
 
 final class HttpJsonClient[F[_]: Sync](
     implicit client: Client[F]
@@ -38,5 +41,33 @@ final class HttpJsonClient[F[_]: Sync](
     post[A](uri, modify.compose(_.withEntity(body)(jsonEncoderOf[F, B])))
 
   private def request[A: Decoder](method: Method, uri: Uri, modify: ModReq): F[A] =
-    client.expect[A](modify(Request[F](method, uri)))(jsonOf[F, A])
+    client.expectOr[A](modify(Request[F](method, uri)))(
+      resp => toUnexpectedResponse(uri, method, resp)
+    )(jsonOf[F, A])
+
+  private def toUnexpectedResponse(
+      uri: Uri,
+      method: Method,
+      response: Response[F]
+  ): F[Throwable] =
+    response.body
+      .through(fs2.text.utf8Decode)
+      .compile
+      .foldMonoid
+      .map { body =>
+        UnexpectedResponse(uri, method, response.headers, response.status, body)
+      }
+}
+
+case class UnexpectedResponse(
+    uri: Uri,
+    method: Method,
+    headers: Headers,
+    status: Status,
+    body: String
+) extends RuntimeException
+    with NoStackTrace {
+
+  override def getMessage: String =
+    s"uri: $uri\nmethod: $method\nstatus: $status\nheaders: $headers\nbody: $body"
 }
