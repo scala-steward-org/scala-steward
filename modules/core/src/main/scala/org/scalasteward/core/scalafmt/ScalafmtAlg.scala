@@ -20,10 +20,13 @@ import cats.implicits._
 import cats.{Functor, Monad}
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.data.{Update, Version}
+import org.scalasteward.core.util.MonadThrowable
 import org.scalasteward.core.vcs.data.Repo
 
 trait ScalafmtAlg[F[_]] {
   def getScalafmtVersion(repo: Repo): F[Option[Version]]
+
+  def editScalafmtConf(repo: Repo)(implicit F: MonadThrowable[F]): F[Unit]
 
   final def getScalafmtUpdate(repo: Repo)(implicit F: Functor[F]): F[Option[Update.Single]] =
     getScalafmtVersion(repo).map(_.flatMap(findScalafmtUpdate))
@@ -44,5 +47,22 @@ object ScalafmtAlg {
       } yield {
         fileContent.flatMap(parseScalafmtConf)
       }
+
+    override def editScalafmtConf(repo: Repo)(implicit F: MonadThrowable[F]): F[Unit] =
+      for {
+        repoDir <- workspaceAlg.repoDir(repo)
+        scalafmtConfFile = repoDir / ".scalafmt.conf"
+        _ <- fileAlg.editFile(
+          scalafmtConfFile,
+          content => {
+            for {
+              currentVersion <- parseScalafmtConf(content)
+              pattern = s"(version\\s*=\\s*)${currentVersion.value}"
+              replacer = s"$$1${latestScalafmtVersion.value}"
+              changed <- Some(content.replaceFirst(pattern, replacer)) if changed =!= content
+            } yield changed
+          }
+        )
+      } yield ()
   }
 }

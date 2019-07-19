@@ -109,12 +109,6 @@ object UpdateHeuristic {
         .filter(_.length > 3)
   )
 
-  val version = UpdateHeuristic(
-    name = "version",
-    order = 6,
-    getSearchTerms = _ => List("^version\\s*=")
-  )
-
   val all: Nel[UpdateHeuristic] =
-    Nel.of(strict, original, relaxed, sliding, groupId, version).sortBy(_.order)
+    Nel.of(strict, original, relaxed, sliding, groupId).sortBy(_.order)
 }
