@@ -78,6 +78,7 @@ Thanks goes to these wonderful people:
 * [Philippus Baalman](https://github.com/Philippus)
 * [Piotr Gabara](https://github.com/pgabara)
 * [Renato Cavalcanti](https://github.com/renatocaval)
+* [Robert Stoll](https://github.com/robstoll)
 * [sullis](https://github.com/sullis)
 * [TATSUNO Yasuhiro](https://github.com/exoego)
 * [Thomas Heslin](https://github.com/tjheslin1)
