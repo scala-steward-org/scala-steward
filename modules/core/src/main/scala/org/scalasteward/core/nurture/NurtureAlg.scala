@@ -157,7 +157,7 @@ final class NurtureAlg[F[_]](
           else
             gitAlg.hasConflicts(data.repo, data.updateBranch, data.baseBranch).map {
               case true  => (true, s"PR has conflicts with ${data.baseBranch.name}")
-              case false => (false, s"PR is up-to-date with ${data.baseBranch.name}")
+              case false => (false, s"PR has no conflict with ${data.baseBranch.name}")
             }
         }
     }
