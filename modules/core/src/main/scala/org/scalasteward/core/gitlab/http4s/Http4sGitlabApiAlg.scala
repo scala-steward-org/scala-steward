@@ -100,7 +100,7 @@ class Http4sGitLabApiAlg[F[_]: MonadThrowable](
   val url = new Url(gitlabApiHost)
 
   override def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]] =
-    client.get(url.listMergeRequests(repo, head), modify(repo))
+    client.get(url.listMergeRequests(repo, head, base.name), modify(repo))
 
   def createFork(repo: Repo): F[RepoOut] = {
     val userOwnedRepo = repo.copy(owner = user.login)

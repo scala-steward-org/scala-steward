@@ -35,8 +35,10 @@ class Url(apiHost: Uri) {
   def mergeRequest(repo: Repo): Uri =
     repos(repo) / "merge_requests"
 
-  def listMergeRequests(repo: Repo, head: String): Uri =
-    mergeRequest(repo).withQueryParam("source_branch", head)
+  def listMergeRequests(repo: Repo, source: String, target: String): Uri =
+    mergeRequest(repo)
+      .withQueryParam("source_branch", source)
+      .withQueryParam("target_branch", target)
 
   def repos(repo: Repo): Uri =
     apiHost / "projects" / s"${repo.owner}/${repo.repo}"
