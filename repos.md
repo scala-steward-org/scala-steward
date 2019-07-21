@@ -141,6 +141,7 @@
 - d2a4u/sqs4s
 - daandi/nice-url-encode-decode
 - dispalt/tagless-redux
+- dispalt/scala-relay
 - djspiewak/gll-combinators
 - djspiewak/shims
 - dmrolfs/omnibus
