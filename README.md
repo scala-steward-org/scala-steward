@@ -70,6 +70,7 @@ Thanks goes to these wonderful people:
 * [Jakub Kozłowski](https://github.com/kubukoz)
 * [JCollier](https://github.com/Slakah)
 * [Jeff Martin](https://github.com/custommonkey)
+* [kalejami](https://github.com/kalejami)
 * [KAWACHI Takashi](https://github.com/tkawachi)
 * [kenji yoshida](https://github.com/xuwei-k)
 * [Mark Canlas](https://github.com/mcanlas)
