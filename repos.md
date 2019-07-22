@@ -41,6 +41,8 @@
 - BenFradet/struct-type-encoder
 - bitcoin-s/bitcoin-s
 - blemale/scaffeine
+- butcherless/incubator
+- butcherless/scala
 - cb372/cats-retry
 - cb372/scalacache
 - ccadllc/cedi-circuitbreakers
