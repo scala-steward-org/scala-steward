@@ -12,6 +12,9 @@
 Scala Steward is a robot that helps you keeping library dependencies
 and sbt plugins up-to-date.
 
+See also the announcement blog post:
+[*Keep your projects up-to-date with Scala Steward*](https://www.scala-lang.org/blog/2019/07/10/announcing-scala-steward.html)
+
 ## Quick start guide
 
 Open a pull request that adds the GitHub repository of your Scala project
