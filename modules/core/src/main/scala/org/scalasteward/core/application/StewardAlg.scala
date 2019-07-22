@@ -18,7 +18,7 @@ package org.scalasteward.core.application
 
 import better.files.File
 import cats.Monad
-import cats.effect.{ExitCode, IO, IOApp}
+import cats.effect.ExitCode
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
@@ -80,9 +80,4 @@ final class StewardAlg[F[_]](
         _ <- reposToNurture.traverse_(nurtureAlg.nurture)
       } yield ExitCode.Success
     }
-}
-
-object StewardAlg extends IOApp {
-  override def run(args: List[String]): IO[ExitCode] =
-    Context.create[IO](args).use(_.runF)
 }
