@@ -25,6 +25,7 @@ import org.scalasteward.core.data.Update
 import org.scalasteward.core.io.{isFileSpecificTo, isSourceFile, FileAlg, WorkspaceAlg}
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.scalafix
+import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.util._
 import org.scalasteward.core.vcs.data.Repo
 
@@ -33,12 +34,14 @@ final class EditAlg[F[_]](
     fileAlg: FileAlg[F],
     logger: Logger[F],
     sbtAlg: SbtAlg[F],
+    scalafmtAlg: ScalafmtAlg[F],
     workspaceAlg: WorkspaceAlg[F],
     F: Sync[F]
 ) {
   def applyUpdate(repo: Repo, update: Update): F[Unit] =
     for {
       _ <- applyScalafixMigrations(repo, update)
+      _ <- scalafmtAlg.editScalafmtConf(repo)
       repoDir <- workspaceAlg.repoDir(repo)
       files <- fileAlg.findSourceFilesContaining(
         repoDir,
