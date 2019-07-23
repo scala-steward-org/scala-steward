@@ -28,7 +28,7 @@ class NewPullRequestDataTest extends AnyFunSuite with Matchers {
       .spaces2 shouldBe
       """|{
          |  "title" : "Update logback-classic to 1.2.3",
-         |  "body" : "Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3.\n\n\nI'll automatically update this PR to resolve conflicts as long as you don't change it yourself.\n\nIf you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.\n\nHave a fantastic day writing Scala!\n\n<details>\n<summary>Ignore future updates</summary>\n\nAdd this to your `.scala-steward.conf` file to ignore future updates of this dependency:\n```\nupdates.ignore = [ { groupId = \"ch.qos.logback\", artifactId = \"logback-classic\" } ]\n```\n</details>\n\nlabels: semver-patch",
+         |  "body" : "Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3.\n\n\nI'll automatically update this PR to resolve conflicts as long as you don't change it yourself.\n\nIf you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.\n\nHave a fantastic day writing Scala!\n\n<details>\n<summary>Ignore future updates</summary>\n\nAdd this to your `.scala-steward.conf` file to ignore future updates of this dependency:\n```\nupdates.ignore = [ { groupId = \"ch.qos.logback\", artifactId = \"logback-classic\" } ]\n```\n</details>\n\nlabels: library-update, semver-patch",
          |  "head" : "scala-steward:update/logback-classic-1.2.3",
          |  "base" : "master"
          |}
@@ -108,5 +108,20 @@ class NewPullRequestDataTest extends AnyFunSuite with Matchers {
         |* I am a rewrite rule
         |</details>
       """.stripMargin.trim
+  }
+
+  test("updateType") {
+    val single = Update.Single(GroupId("com.example"), ArtifactId("foo"), "0.1", Nel.of("0.2"))
+    val group = Update.Group(
+      GroupId("com.example"),
+      Nel.of(ArtifactId("foo"), ArtifactId("bar")),
+      "0.1",
+      Nel.of("0.2")
+    )
+    NewPullRequestData.updateType(single) shouldBe "library-update"
+    NewPullRequestData.updateType(group) shouldBe "library-update"
+
+    NewPullRequestData.updateType(single.copy(configurations = Some("test"))) shouldBe "test-library-update"
+    NewPullRequestData.updateType(single.copy(configurations = Some("sbt-plugin"))) shouldBe "sbt-plugin-update"
   }
 }
