@@ -166,7 +166,8 @@ final class NurtureAlg[F[_]](
   def mergeAndApplyAgain(data: UpdateData): F[Unit] =
     for {
       _ <- logger.info(
-        s"Merge branch '${data.baseBranch.name}' into ${data.updateBranch.name} and apply again")
+        s"Merge branch '${data.baseBranch.name}' into ${data.updateBranch.name} and apply again"
+      )
       _ <- gitAlg.mergeTheirs(data.repo, data.baseBranch)
       _ <- editAlg.applyUpdate(data.repo, data.update)
       containsChanges <- gitAlg.containsChanges(data.repo)
