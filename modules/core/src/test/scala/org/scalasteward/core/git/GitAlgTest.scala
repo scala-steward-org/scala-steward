@@ -106,6 +106,21 @@ class GitAlgTest extends FunSuite with Matchers {
     } yield (c1, c2)
     p.unsafeRunSync() shouldBe ((true, false))
   }
+
+  test("mergeTheirs") {
+    val repo = Repo("merge", "theirs")
+    val p = for {
+      repoDir <- workspaceAlg.repoDir(repo)
+      _ <- GitAlgTest.createGitRepoWithConflict[IO](repoDir)
+      master = Branch("master")
+      branch = Branch("conflicts-yes")
+      c1 <- ioGitAlg.hasConflicts(repo, branch, master)
+      _ <- ioGitAlg.checkoutBranch(repo, branch)
+      _ <- ioGitAlg.mergeTheirs(repo, master)
+      c2 <- ioGitAlg.hasConflicts(repo, branch, master)
+    } yield (c1, c2)
+    p.unsafeRunSync() shouldBe ((true, false))
+  }
 }
 
 object GitAlgTest {

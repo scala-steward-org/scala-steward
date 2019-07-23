@@ -115,6 +115,7 @@ final class NurtureAlg[F[_]](
 
   def commitAndPush(data: UpdateData): F[Unit] =
     for {
+      _ <- logger.info("Commit and push changes")
       _ <- gitAlg.commitAll(data.repo, git.commitMsgFor(data.update))
       _ <- gitAlg.push(data.repo, data.updateBranch)
     } yield ()
@@ -140,7 +141,7 @@ final class NurtureAlg[F[_]](
       for {
         _ <- gitAlg.checkoutBranch(data.repo, data.updateBranch)
         reset <- shouldBeReset(data)
-        _ <- if (reset) resetAndUpdate(data) else F.unit
+        _ <- if (reset) mergeAndApplyAgain(data) else F.unit
       } yield ()
     }
 
@@ -152,8 +153,6 @@ final class NurtureAlg[F[_]](
           val distinctAuthors = authors.distinct
           if (distinctAuthors.length >= 2)
             (false, s"PR has commits by ${distinctAuthors.mkString(", ")}").pure[F]
-          else if (authors.length >= 2)
-            (true, "PR has multiple commits").pure[F]
           else
             gitAlg.hasConflicts(data.repo, data.updateBranch, data.baseBranch).map {
               case true  => (true, s"PR has conflicts with ${data.baseBranch.name}")
@@ -164,10 +163,11 @@ final class NurtureAlg[F[_]](
     result.flatMap { case (reset, msg) => logger.info(msg).as(reset) }
   }
 
-  def resetAndUpdate(data: UpdateData): F[Unit] =
+  def mergeAndApplyAgain(data: UpdateData): F[Unit] =
     for {
-      _ <- logger.info(s"Reset and update ${data.updateBranch.name}")
-      _ <- gitAlg.resetHard(data.repo, data.baseBranch)
+      _ <- logger.info(
+        s"Merge branch '${data.baseBranch.name}' into ${data.updateBranch.name} and apply again")
+      _ <- gitAlg.mergeTheirs(data.repo, data.baseBranch)
       _ <- editAlg.applyUpdate(data.repo, data.update)
       containsChanges <- gitAlg.containsChanges(data.repo)
       _ <- if (containsChanges) commitAndPush(data) else F.unit

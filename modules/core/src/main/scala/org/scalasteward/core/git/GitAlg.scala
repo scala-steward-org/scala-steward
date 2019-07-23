@@ -47,13 +47,14 @@ trait GitAlg[F[_]] {
 
   def latestSha1(repo: Repo, branch: Branch): F[Sha1]
 
+  /** Merges `branch` into the current branch using `theirs` as merge strategy option. */
+  def mergeTheirs(repo: Repo, branch: Branch): F[Unit]
+
   def push(repo: Repo, branch: Branch): F[Unit]
 
   def remoteBranchExists(repo: Repo, branch: Branch): F[Boolean]
 
   def removeClone(repo: Repo): F[Unit]
-
-  def resetHard(repo: Repo, base: Branch): F[Unit]
 
   def setAuthor(repo: Repo, author: Author): F[Unit]
 
@@ -139,6 +140,12 @@ object GitAlg {
           sha1 <- F.fromEither(Sha1.from(lines.mkString("").trim))
         } yield sha1
 
+      override def mergeTheirs(repo: Repo, branch: Branch): F[Unit] =
+        for {
+          repoDir <- workspaceAlg.repoDir(repo)
+          _ <- exec(Nel.of("merge", "--strategy-option=theirs", branch.name), repoDir)
+        } yield ()
+
       override def push(repo: Repo, branch: Branch): F[Unit] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
@@ -153,12 +160,6 @@ object GitAlg {
 
       override def removeClone(repo: Repo): F[Unit] =
         workspaceAlg.repoDir(repo).flatMap(fileAlg.deleteForce)
-
-      override def resetHard(repo: Repo, base: Branch): F[Unit] =
-        for {
-          repoDir <- workspaceAlg.repoDir(repo)
-          _ <- exec(Nel.of("reset", "--hard", base.name), repoDir)
-        } yield ()
 
       override def setAuthor(repo: Repo, author: Author): F[Unit] =
         for {
