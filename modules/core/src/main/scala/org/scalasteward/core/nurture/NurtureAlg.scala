@@ -140,12 +140,12 @@ final class NurtureAlg[F[_]](
     gitAlg.returnToCurrentBranch(data.repo) {
       for {
         _ <- gitAlg.checkoutBranch(data.repo, data.updateBranch)
-        reset <- shouldBeReset(data)
-        _ <- if (reset) mergeAndApplyAgain(data) else F.unit
+        updated <- shouldBeUpdated(data)
+        _ <- if (updated) mergeAndApplyAgain(data) else F.unit
       } yield ()
     }
 
-  def shouldBeReset(data: UpdateData): F[Boolean] = {
+  def shouldBeUpdated(data: UpdateData): F[Boolean] = {
     val result = gitAlg.isMerged(data.repo, data.updateBranch, data.baseBranch).flatMap {
       case true => (false, "PR has been merged").pure[F]
       case false =>
