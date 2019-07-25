@@ -10,7 +10,7 @@ class LogAlgTest extends FunSuite with Matchers {
     final case class Err(msg: String) extends Throwable(msg)
     val err = Err("hmm?")
     val state =
-      logAlg.attemptLog_("run")(Sync[MockEff].raiseError(err)).runS(MockState.empty).unsafeRunSync()
+      logAlg.attemptLog("run")(Sync[MockEff].raiseError(err)).runS(MockState.empty).unsafeRunSync()
 
     state.logs shouldBe Vector((None, "run"), (Some(err), "run failed"))
   }
