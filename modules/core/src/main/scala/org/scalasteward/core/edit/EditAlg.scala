@@ -24,7 +24,7 @@ import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.io.{isFileSpecificTo, isSourceFile, FileAlg, WorkspaceAlg}
 import org.scalasteward.core.sbt.SbtAlg
-import org.scalasteward.core.scalafix
+import org.scalasteward.core.{scalafix, scalafmt}
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.util._
 import org.scalasteward.core.vcs.data.Repo
@@ -41,7 +41,7 @@ final class EditAlg[F[_]](
   def applyUpdate(repo: Repo, update: Update): F[Unit] =
     for {
       _ <- applyScalafixMigrations(repo, update)
-      _ <- scalafmtAlg.editScalafmtConf(repo)
+      _ <- applyScalafmtConfUpdate(repo, update)
       repoDir <- workspaceAlg.repoDir(repo)
       files <- fileAlg.findSourceFilesContaining(
         repoDir,
@@ -67,4 +67,10 @@ final class EditAlg[F[_]](
       case None =>
         F.unit
     }
+
+  def applyScalafmtConfUpdate(repo: Repo, update: Update): F[Unit] =
+    if (scalafmt.isScalafmtUpdate(update))
+      scalafmtAlg.editScalafmtConf(repo, update.nextVersion)
+    else
+      F.unit
 }

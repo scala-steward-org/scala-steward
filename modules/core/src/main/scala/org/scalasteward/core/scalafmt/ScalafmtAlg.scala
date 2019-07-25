@@ -26,7 +26,7 @@ import org.scalasteward.core.vcs.data.Repo
 trait ScalafmtAlg[F[_]] {
   def getScalafmtVersion(repo: Repo): F[Option[Version]]
 
-  def editScalafmtConf(repo: Repo)(implicit F: MonadThrowable[F]): F[Unit]
+  def editScalafmtConf(repo: Repo, nextVersion: String)(implicit F: MonadThrowable[F]): F[Unit]
 
   final def getScalafmtUpdate(repo: Repo)(implicit F: Functor[F]): F[Option[Update.Single]] =
     getScalafmtVersion(repo).map(_.flatMap(findScalafmtUpdate))
@@ -48,7 +48,9 @@ object ScalafmtAlg {
         fileContent.flatMap(parseScalafmtConf)
       }
 
-    override def editScalafmtConf(repo: Repo)(implicit F: MonadThrowable[F]): F[Unit] =
+    override def editScalafmtConf(repo: Repo, nextVersion: String)(
+        implicit F: MonadThrowable[F]
+    ): F[Unit] =
       for {
         repoDir <- workspaceAlg.repoDir(repo)
         scalafmtConfFile = repoDir / ".scalafmt.conf"
@@ -58,7 +60,7 @@ object ScalafmtAlg {
             for {
               currentVersion <- parseScalafmtConf(content)
               pattern = s"(version\\s*=\\s*)${currentVersion.value}"
-              replacer = s"$$1${latestScalafmtVersion.value}"
+              replacer = s"$$1${nextVersion}"
               changed <- Some(content.replaceFirst(pattern, replacer)) if changed =!= content
             } yield changed
           }

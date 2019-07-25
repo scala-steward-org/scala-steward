@@ -13,7 +13,6 @@ class EditAlgTest extends FunSuite with Matchers {
   test("applyUpdate") {
     val repo = Repo("fthomas", "scala-steward")
     val update = Update.Single("org.typelevel", "cats-core", "1.2.0", Nel.of("1.3.0"))
-    val scalafmtFile = File.temp / "ws/fthomas/scala-steward/.scalafmt.conf"
     val file1 = File.temp / "ws/fthomas/scala-steward/build.sbt"
     val file2 = File.temp / "ws/fthomas/scala-steward/project/Dependencies.scala"
 
@@ -24,7 +23,6 @@ class EditAlgTest extends FunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List("read", scalafmtFile.pathAsString),
         List("read", file1.pathAsString),
         List("read", file2.pathAsString),
         List("read", file1.pathAsString),
@@ -36,6 +34,30 @@ class EditAlgTest extends FunSuite with Matchers {
         (None, "Trying heuristic 'original'")
       ),
       files = Map(file1 -> """val catsVersion = "1.3.0"""", file2 -> "")
+    )
+  }
+
+  test("applyUpdate with scalafmt update") {
+    val repo = Repo("fthomas", "scala-steward")
+    val update = Update.Single("org.scalameta", "scalafmt", "2.0.0", Nel.of("2.1.0"))
+    val scalafmtFile = File.temp / "ws/fthomas/scala-steward/.scalafmt.conf"
+    val file1 = File.temp / "ws/fthomas/scala-steward/build.sbt"
+
+    val state = editAlg
+      .applyUpdate(repo, update)
+      .runS(MockState.empty.add(scalafmtFile, """version = "2.0.0"""").add(file1, ""))
+      .unsafeRunSync()
+
+    state shouldBe MockState.empty.copy(
+      commands = Vector(
+        List("read", scalafmtFile.pathAsString),
+        List("write", scalafmtFile.pathAsString),
+        List("read", file1.pathAsString)
+      ),
+      logs = Vector(
+        (None, "No files found that contain the current version")
+      ),
+      files = Map(scalafmtFile -> """version = "2.1.0"""", file1 -> "")
     )
   }
 

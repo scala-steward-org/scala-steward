@@ -16,11 +16,14 @@
 
 package org.scalasteward.core
 
+import cats.implicits._
 import org.scalasteward.core.data.{Update, Version}
 import org.scalasteward.core.util.Nel
 
 package object scalafmt {
   val latestScalafmtVersion: Version = Version("2.0.0")
+  val scalafmtGroupId = "org.scalameta"
+  val scalafmtArtifactId = "scalafmt"
 
   def findNewerScalafmtVersion(currentVersion: Version): Option[Version] =
     if (Version.versionOrder.lt(currentVersion, latestScalafmtVersion))
@@ -33,7 +36,14 @@ package object scalafmt {
 
   def findScalafmtUpdate(currentVersion: Version): Option[Update.Single] =
     findNewerScalafmtVersion(currentVersion).map { newerVersion =>
-      Update.Single("org.scalameta", "scalafmt", currentVersion.value, Nel.of(newerVersion.value))
+      Update.Single(
+        scalafmtGroupId,
+        scalafmtArtifactId,
+        currentVersion.value,
+        Nel.of(newerVersion.value)
+      )
     }
 
+  def isScalafmtUpdate(update: Update): Boolean =
+    update.groupId === scalafmtGroupId && update.artifactId === scalafmtArtifactId
 }

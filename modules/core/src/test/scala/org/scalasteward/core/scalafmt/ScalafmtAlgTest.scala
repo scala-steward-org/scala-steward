@@ -26,18 +26,7 @@ class ScalafmtAlgTest extends FunSuite with Matchers {
   }
 
   test("editScalafmtConf") {
-    val repo = Repo("fthomas", "scala-steward")
-    val repoDir = config.workspace / repo.owner / repo.repo
-    val scalafmtConf = repoDir / ".scalafmt.conf"
-    val initialState = MockState.empty.add(scalafmtConf, "version = 2.0.0-RC8")
-    val (state, _) = scalafmtAlg.editScalafmtConf(repo).run(initialState).unsafeRunSync()
-    state shouldBe MockState.empty.copy(
-      commands = Vector(
-        List("read", s"$repoDir/.scalafmt.conf"),
-        List("write", s"$repoDir/.scalafmt.conf")
-      ),
-      files = Map(scalafmtConf -> s"version = ${latestScalafmtVersion.value}")
-    )
+    // Tested in EditAlgTest
   }
 
 }
