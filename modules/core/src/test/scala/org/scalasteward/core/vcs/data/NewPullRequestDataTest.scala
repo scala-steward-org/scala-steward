@@ -32,6 +32,34 @@ class NewPullRequestDataTest extends FunSuite with Matchers {
          |""".stripMargin.trim
   }
 
+  test("showing artifacts with URL in Markdown format") {
+    NewPullRequestData.artifactsWithOptionalUrl(
+      Update.Single(
+        "com.example",
+        "foo",
+        "1.2.0",
+        Nel.of("1.2.3"),
+        None,
+        Map("foo" -> "https://github.com/foo/foo")
+      )
+    ) shouldBe "[com.example:foo](https://github.com/foo/foo)"
+
+    NewPullRequestData.artifactsWithOptionalUrl(
+      Update.Group(
+        "com.example",
+        Nel.of("foo", "bar"),
+        "1.2.0",
+        Nel.of("1.2.3"),
+        Map("foo" -> "https://github.com/foo/foo", "bar" -> "https://github.com/bar/bar")
+      )
+    ) shouldBe
+      """
+        |* [com.example:foo](https://github.com/foo/foo)
+        |* [com.example:bar](https://github.com/bar/bar)
+        |
+        |""".stripMargin
+  }
+
   test("migrationNote: when no migrations") {
     val update = Update.Single("com.example", "foo", "0.6.0", Nel.of("0.7.0"))
     val (label, appliedMigrations) = NewPullRequestData.migrationNote(update)

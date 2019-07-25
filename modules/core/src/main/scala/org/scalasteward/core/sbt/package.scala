@@ -35,6 +35,8 @@ package object sbt {
   val defaultScalaVersion: ScalaVersion =
     ScalaVersion(BuildInfo.scalaVersion)
 
+  val sbtArtifactMapping: Map[String, String] = Map("sbt" -> "https://github.com/sbt/sbt")
+
   def findNewerSbtVersion(sbtVersion: SbtVersion): Option[SbtVersion] =
     (sbtVersion.value match {
       case v if v.startsWith("0.13.")    => Some(latestSbtVersion_0_13)
@@ -45,7 +47,14 @@ package object sbt {
 
   def findSbtUpdate(currentVersion: SbtVersion): Option[Update.Single] =
     findNewerSbtVersion(currentVersion).map { newerVersion =>
-      Update.Single("org.scala-sbt", "sbt", currentVersion.value, Nel.of(newerVersion.value))
+      Update.Single(
+        "org.scala-sbt",
+        "sbt",
+        currentVersion.value,
+        Nel.of(newerVersion.value),
+        None,
+        sbtArtifactMapping
+      )
     }
 
   def seriesToSpecificVersion(sbtSeries: SbtVersion): SbtVersion =

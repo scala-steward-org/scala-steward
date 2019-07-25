@@ -38,18 +38,11 @@ object NewPullRequestData {
     deriveEncoder
 
   def bodyFor(update: Update, login: String): String = {
-    val artifacts = update match {
-      case s: Update.Single =>
-        s" ${s.groupId}:${s.artifactId} "
-      case g: Update.Group =>
-        g.artifactIds
-          .map(artifactId => s"* ${g.groupId}:$artifactId\n")
-          .mkString_("\n", "", "\n")
-    }
+    val artifacts = artifactsWithOptionalUrl(update)
     val (migrationLabel, appliedMigrations) = migrationNote(update)
     val labels = Nel.fromList(semVerLabel(update).toList ++ migrationLabel.toList)
 
-    s"""|Updates${artifacts}from ${update.currentVersion} to ${update.nextVersion}.
+    s"""|Updates ${artifacts} from ${update.currentVersion} to ${update.nextVersion}.
         |
         |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
         |
@@ -69,6 +62,28 @@ object NewPullRequestData {
         |${labels.fold("")(_.mkString_("labels: ", ", ", ""))}
         |""".stripMargin.trim
   }
+
+  def artifactsWithOptionalUrl(update: Update): String =
+    update match {
+      case s: Update.Single => artifactWithOptionalUrl(s.groupId, s.artifactId, s.artifactIdToUrl)
+      case g: Update.Group =>
+        g.artifactIds
+          .map(
+            artifactId =>
+              s"* ${artifactWithOptionalUrl(g.groupId, artifactId, g.artifactIdToUrl)}\n"
+          )
+          .mkString_("\n", "", "\n")
+    }
+
+  def artifactWithOptionalUrl(
+      groupId: String,
+      artifactId: String,
+      artifactId2Url: Map[String, String]
+  ): String =
+    artifactId2Url.get(artifactId) match {
+      case Some(url) => s"[${groupId}:${artifactId}](${url})"
+      case None      => s"${groupId}:${artifactId}"
+    }
 
   def migrationNote(update: Update): (Option[String], Option[String]) = {
     val migrations = scalafix.findMigrations(update)
