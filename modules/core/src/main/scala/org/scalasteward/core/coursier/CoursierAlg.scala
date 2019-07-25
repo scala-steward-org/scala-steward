@@ -56,7 +56,9 @@ object CoursierAlg {
 
         for {
           fetchResult <- fetch
-            .addDependencies(coursier.Dependency.of(module, dependency.version))
+            .addDependencies(
+              coursier.Dependency.of(module, dependency.version).withTransitive(false)
+            )
             .addArtifactTypes(coursier.Type.pom)
             .ioResult
         } yield {
