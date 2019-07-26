@@ -76,6 +76,7 @@ Thanks goes to these wonderful people:
 * [kalejami](https://github.com/kalejami)
 * [KAWACHI Takashi](https://github.com/tkawachi)
 * [kenji yoshida](https://github.com/xuwei-k)
+* [Manuel Cueto](https://github.com/manuelcueto)
 * [Mark Canlas](https://github.com/mcanlas)
 * [Michael Wizner](https://github.com/mwz)
 * [Michel Daviot](https://github.com/tyrcho)
