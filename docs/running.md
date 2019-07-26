@@ -6,7 +6,6 @@ sbt stage
 ./modules/core/.jvm/target/universal/stage/bin/scala-steward \
   --workspace  "$STEWARD_DIR/workspace" \
   --repos-file "$STEWARD_DIR/repos.md" \
-  --git-author-name "Scala steward" \
   --git-author-email ${EMAIL} \
   --vcs-api-host "https://api.github.com" \
   --vcs-login ${LOGIN} \
@@ -25,7 +24,6 @@ sbt docker:publishLocal
 docker run -v $STEWARD_DIR:/opt/scala-steward -it fthomas/scala-steward:latest \
   --workspace  "/opt/scala-steward/workspace" \
   --repos-file "/opt/scala-steward/repos.md" \
-  --git-author-name "Scala steward" \
   --git-author-email ${EMAIL} \
   --vcs-api-host "https://api.github.com" \
   --vcs-login ${LOGIN} \
@@ -67,7 +65,6 @@ run
     --workspace "/path/workspace" \
     --repos-file "/path/repos.md" \
     --git-ask-pass "/path/pass.sh" \
-    --git-author-name "Scala Steward" \
     --git-author-email "email@example.org" \
     --vcs-type "gitlab" \
     --vcs-api-host "https://gitlab.com/api/v4/" \

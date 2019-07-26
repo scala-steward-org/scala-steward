@@ -35,7 +35,7 @@ object Cli {
   final case class Args(
       workspace: String,
       reposFile: String,
-      gitAuthorName: String,
+      gitAuthorName: String = "Scala Steward",
       gitAuthorEmail: String,
       vcsType: SupportedVCS = SupportedVCS.GitHub,
       vcsApiHost: Uri = uri"https://api.github.com",

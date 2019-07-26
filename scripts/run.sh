@@ -16,7 +16,6 @@ java -DROOT_LOG_LEVEL=INFO -DLOG_LEVEL=INFO -jar ${JAR} \
   --workspace  "$STEWARD_DIR/workspace" \
   --repos-file "$STEWARD_DIR/repos.md" \
   --prune-repos \
-  --git-author-name "Scala Steward" \
   --git-author-email "me@$LOGIN.org" \
   --vcs-login ${LOGIN} \
   --git-ask-pass "$HOME/.github/askpass/$LOGIN.sh" \
