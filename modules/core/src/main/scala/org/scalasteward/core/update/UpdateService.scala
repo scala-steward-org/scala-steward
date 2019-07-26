@@ -23,6 +23,7 @@ import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.repocache.RepoCacheRepository
 import org.scalasteward.core.sbt._
+import org.scalasteward.core.unitUnless
 import org.scalasteward.core.sbt.data.ArtificialProject
 import org.scalasteward.core.update.data.UpdateState
 import org.scalasteward.core.update.data.UpdateState._
@@ -111,10 +112,10 @@ final class UpdateService[F[_]](
       }
       isOutdated = outdatedStates.nonEmpty
       _ <- {
-        if (isOutdated) {
+        unitUnless(isOutdated) {
           val statesAsString = util.string.indentLines(outdatedStates.map(_.toString).sorted)
           logger.info(s"Update states for ${repo.show} is outdated:\n" + statesAsString)
-        } else F.unit
+        }
       }
     } yield isOutdated
 

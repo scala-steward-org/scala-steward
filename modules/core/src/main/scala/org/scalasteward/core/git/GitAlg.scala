@@ -50,7 +50,7 @@ trait GitAlg[F[_]] {
   /** Merges `branch` into the current branch using `theirs` as merge strategy option. */
   def mergeTheirs(repo: Repo, branch: Branch): F[Unit]
 
-  def push(repo: Repo, branch: Branch): F[Unit]
+  def forcePush(repo: Repo, branch: Branch): F[Unit]
 
   def remoteBranchExists(repo: Repo, branch: Branch): F[Boolean]
 
@@ -130,7 +130,7 @@ object GitAlg {
         execFromRepo_(Nel.of("merge", "--strategy-option=theirs", sign, branch.name), repo)
       }
 
-      override def push(repo: Repo, branch: Branch): F[Unit] =
+      override def forcePush(repo: Repo, branch: Branch): F[Unit] =
         execFromRepo_(Nel.of("push", "--force", "--set-upstream", "origin", branch.name), repo)
 
       override def remoteBranchExists(repo: Repo, branch: Branch): F[Boolean] =
@@ -158,7 +158,7 @@ object GitAlg {
           _ <- exec(Nel.of("fetch", remote), repoDir)
           _ <- exec(Nel.of("checkout", "-B", branch, "--track", remoteBranch), repoDir)
           _ <- exec(Nel.of("merge", remoteBranch), repoDir)
-          _ <- push(repo, defaultBranch)
+          _ <- forcePush(repo, defaultBranch)
         } yield ()
 
       def execFromRepo_(command: Nel[String], repo: Repo): F[Unit] =

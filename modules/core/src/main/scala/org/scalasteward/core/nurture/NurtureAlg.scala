@@ -29,7 +29,7 @@ import org.scalasteward.core.update.FilterAlg
 import org.scalasteward.core.util.{BracketThrowable, LogAlg}
 import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
-import org.scalasteward.core.{git, util, vcs}
+import org.scalasteward.core.{git, unitUnless, util, vcs}
 
 final class NurtureAlg[F[_]](
     implicit
@@ -115,18 +115,18 @@ final class NurtureAlg[F[_]](
         for {
           _ <- logger.info(s"Create branch ${data.updateBranch.name}")
           _ <- gitAlg.createBranch(data.repo, data.updateBranch)
-          _ <- commitAndPush(data)
+          _ <- commitAndForcePush(data)
           _ <- createPullRequest(data)
         } yield ()
       },
       logger.warn("No files were changed")
     )
 
-  def commitAndPush(data: UpdateData): F[Unit] =
+  def commitAndForcePush(data: UpdateData): F[Unit] =
     for {
       _ <- logger.info("Commit and push changes")
       _ <- gitAlg.commitAll(data.repo, git.commitMsgFor(data.update))
-      _ <- gitAlg.push(data.repo, data.updateBranch)
+      _ <- gitAlg.forcePush(data.repo, data.updateBranch)
     } yield ()
 
   def createPullRequest(data: UpdateData): F[Unit] =
@@ -149,8 +149,8 @@ final class NurtureAlg[F[_]](
     gitAlg.returnToCurrentBranch(data.repo) {
       for {
         _ <- gitAlg.checkoutBranch(data.repo, data.updateBranch)
-        updated <- shouldBeUpdated(data)
-        _ <- if (updated) mergeAndApplyAgain(data) else F.unit
+        shallUpdate <- shouldBeUpdated(data)
+        _ <- unitUnless(shallUpdate)(mergeAndApplyAgain(data))
       } yield ()
     }
 
@@ -180,6 +180,6 @@ final class NurtureAlg[F[_]](
       _ <- gitAlg.mergeTheirs(data.repo, data.baseBranch)
       _ <- editAlg.applyUpdate(data.repo, data.update)
       containsChanges <- gitAlg.containsChanges(data.repo)
-      _ <- if (containsChanges) commitAndPush(data) else F.unit
+      _ <- unitUnless(containsChanges)(commitAndForcePush(data))
     } yield ()
 }
