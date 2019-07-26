@@ -77,15 +77,10 @@ object GitAlg {
   ): GitAlg[F] =
     new GitAlg[F] {
       override def branchAuthors(repo: Repo, branch: Branch, base: Branch): F[List[String]] =
-        workspaceAlg.repoDir(repo).flatMap { repoDir =>
-          exec(Nel.of("log", "--pretty=format:'%an'", dotdot(base, branch)), repoDir)
-        }
+        execFromRepo(Nel.of("log", "--pretty=format:'%an'", dotdot(base, branch)), repo)
 
       override def checkoutBranch(repo: Repo, branch: Branch): F[Unit] =
-        for {
-          repoDir <- workspaceAlg.repoDir(repo)
-          _ <- exec(Nel.of("checkout", branch.name), repoDir)
-        } yield ()
+        execFromRepo_(Nel.of("checkout", branch.name), repo)
 
       override def clone(repo: Repo, url: Uri): F[Unit] =
         for {
@@ -94,28 +89,20 @@ object GitAlg {
           _ <- exec(Nel.of("clone", "--recursive", url.toString, repoDir.pathAsString), rootDir)
         } yield ()
 
-      override def commitAll(repo: Repo, message: String): F[Unit] =
-        for {
-          repoDir <- workspaceAlg.repoDir(repo)
-          sign = if (config.signCommits) List("--gpg-sign") else List("--no-gpg-sign")
-          _ <- exec(Nel.of("commit", "--all", "-m", message) ++ sign, repoDir)
-        } yield ()
+      override def commitAll(repo: Repo, message: String): F[Unit] = {
+        val sign = if (config.signCommits) "--gpg-sign" else "--no-gpg-sign"
+        execFromRepo_(Nel.of("commit", "--all", "-m", message, sign), repo)
+      }
 
       override def containsChanges(repo: Repo): F[Boolean] =
-        workspaceAlg.repoDir(repo).flatMap { repoDir =>
-          exec(Nel.of("status", "--porcelain", "--untracked-files=no"), repoDir).map(_.nonEmpty)
-        }
+        execFromRepo(Nel.of("status", "--porcelain", "--untracked-files=no"), repo).map(_.nonEmpty)
 
       override def createBranch(repo: Repo, branch: Branch): F[Unit] =
-        for {
-          repoDir <- workspaceAlg.repoDir(repo)
-          _ <- exec(Nel.of("checkout", "-b", branch.name), repoDir)
-        } yield ()
+        execFromRepo_(Nel.of("checkout", "-b", branch.name), repo)
 
       override def currentBranch(repo: Repo): F[Branch] =
         for {
-          repoDir <- workspaceAlg.repoDir(repo)
-          lines <- exec(Nel.of("rev-parse", "--abbrev-ref", "HEAD"), repoDir)
+          lines <- execFromRepo(Nel.of("rev-parse", "--abbrev-ref", "HEAD"), repo)
         } yield Branch(lines.mkString.trim)
 
       override def hasConflicts(repo: Repo, branch: Branch, base: Branch): F[Boolean] =
@@ -129,34 +116,26 @@ object GitAlg {
         }
 
       override def isMerged(repo: Repo, branch: Branch, base: Branch): F[Boolean] =
-        workspaceAlg.repoDir(repo).flatMap { repoDir =>
-          exec(Nel.of("log", "--pretty=format:'%h'", dotdot(base, branch)), repoDir).map(_.isEmpty)
-        }
+        execFromRepo(Nel.of("log", "--pretty=format:'%h'", dotdot(base, branch)), repo)
+          .map(_.isEmpty)
 
       override def latestSha1(repo: Repo, branch: Branch): F[Sha1] =
         for {
-          repoDir <- workspaceAlg.repoDir(repo)
-          lines <- exec(Nel.of("rev-parse", "--verify", branch.name), repoDir)
+          lines <- execFromRepo(Nel.of("rev-parse", "--verify", branch.name), repo)
           sha1 <- F.fromEither(Sha1.from(lines.mkString("").trim))
         } yield sha1
 
-      override def mergeTheirs(repo: Repo, branch: Branch): F[Unit] =
-        for {
-          repoDir <- workspaceAlg.repoDir(repo)
-          sign = if (config.signCommits) List("--gpg-sign") else List.empty[String]
-          _ <- exec(Nel.of("merge", "--strategy-option=theirs") ++ (sign :+ branch.name), repoDir)
-        } yield ()
+      override def mergeTheirs(repo: Repo, branch: Branch): F[Unit] = {
+        val sign = if (config.signCommits) "--gpg-sign" else "--no-gpg-sign"
+        execFromRepo_(Nel.of("merge", "--strategy-option=theirs", sign, branch.name), repo)
+      }
 
       override def push(repo: Repo, branch: Branch): F[Unit] =
-        for {
-          repoDir <- workspaceAlg.repoDir(repo)
-          _ <- exec(Nel.of("push", "--force", "--set-upstream", "origin", branch.name), repoDir)
-        } yield ()
+        execFromRepo_(Nel.of("push", "--force", "--set-upstream", "origin", branch.name), repo)
 
       override def remoteBranchExists(repo: Repo, branch: Branch): F[Boolean] =
         for {
-          repoDir <- workspaceAlg.repoDir(repo)
-          branches <- exec(Nel.of("branch", "-r"), repoDir)
+          branches <- execFromRepo(Nel.of("branch", "-r"), repo)
         } yield branches.exists(_.endsWith(branch.name))
 
       override def removeClone(repo: Repo): F[Unit] =
@@ -181,6 +160,15 @@ object GitAlg {
           _ <- exec(Nel.of("merge", remoteBranch), repoDir)
           _ <- push(repo, defaultBranch)
         } yield ()
+
+      def execFromRepo_(command: Nel[String], repo: Repo): F[Unit] =
+        execFromRepo(command, repo).as(())
+
+      def execFromRepo(command: Nel[String], repo: Repo): F[List[String]] =
+        for {
+          repoDir <- workspaceAlg.repoDir(repo)
+          result <- exec(command, repoDir)
+        } yield result
 
       def exec(command: Nel[String], cwd: File): F[List[String]] =
         processAlg.exec(gitCmd :: command, cwd, "GIT_ASKPASS" -> config.gitAskPass.pathAsString)
