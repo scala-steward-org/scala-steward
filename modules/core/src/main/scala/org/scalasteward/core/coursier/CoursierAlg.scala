@@ -24,6 +24,7 @@ import org.scalasteward.core.data.Dependency
 
 trait CoursierAlg[F[_]] {
   def getProjectHomepage(dependency: Dependency): F[Option[String]]
+  def getProjectHomepages(dependencies: List[Dependency]): F[Map[String, String]]
 }
 
 object CoursierAlg {
@@ -55,20 +56,32 @@ object CoursierAlg {
         )
 
         for {
-          fetchResult <- fetch
+          maybeFetchResult <- fetch
             .addDependencies(
               coursier.Dependency.of(module, dependency.version).withTransitive(false)
             )
             .addArtifactTypes(coursier.Type.pom)
             .ioResult
+            .map(Option.apply)
+            .recover {
+              case _: coursier.error.ResolutionError => None
+            }
         } yield {
-          fetchResult.resolution.projectCache.get((module, dependency.version)).flatMap {
-            case (_, project) =>
-              // TODO: use Scm info if published https://github.com/coursier/coursier/pull/1291
-              Option(project.info.homePage)
-          }
+          maybeFetchResult.flatMap(
+            _.resolution.projectCache.get((module, dependency.version)).flatMap {
+              case (_, project) =>
+                // TODO: use Scm info if published https://github.com/coursier/coursier/pull/1291
+                Option(project.info.homePage)
+            }
+          )
         }
-      }
+
+      override def getProjectHomepages(dependencies: List[Dependency]): F[Map[String, String]] =
+        for {
+          entries <- dependencies.traverse(dep => {
+            getProjectHomepage(dep).map(dep.artifactId -> _.getOrElse(""))
+          })
+        } yield Map(entries.filter { case (_, url) => url =!= "" }: _*)
     }
   }
 }

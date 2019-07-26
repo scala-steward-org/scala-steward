@@ -19,6 +19,7 @@ package org.scalasteward.core.nurture
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
+import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Branch, GitAlg}
@@ -38,6 +39,7 @@ final class NurtureAlg[F[_]](
     repoConfigAlg: RepoConfigAlg[F],
     filterAlg: FilterAlg[F],
     gitAlg: GitAlg[F],
+    coursierAlg: CoursierAlg[F],
     vcsApiAlg: VCSApiAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
     logAlg: LogAlg[F],
@@ -73,7 +75,10 @@ final class NurtureAlg[F[_]](
       sbtUpdates <- sbtAlg.getUpdatesForRepo(repo)
       nonSbtUpdates <- getNonSbtUpdates(repo)
       updates = sbtUpdates ::: nonSbtUpdates
-      filtered <- filterAlg.localFilterMany(repoConfig, updates)
+      dependencies <- sbtAlg.getDependencies(repo)
+      mapping <- coursierAlg.getProjectHomepages(dependencies)
+      updatesWithMapping = updates.map(_.copy(artifactIdToUrl = mapping))
+      filtered <- filterAlg.localFilterMany(repoConfig, updatesWithMapping)
       grouped = Update.group(filtered)
       _ <- logger.info(util.logger.showUpdates(grouped))
       baseSha1 <- gitAlg.latestSha1(repo, baseBranch)
