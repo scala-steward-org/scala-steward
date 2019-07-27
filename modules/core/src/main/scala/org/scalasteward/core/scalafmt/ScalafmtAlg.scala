@@ -23,6 +23,8 @@ import org.scalasteward.core.data.{Update, Version}
 import org.scalasteward.core.util.MonadThrowable
 import org.scalasteward.core.vcs.data.Repo
 
+import scala.util.matching.Regex
+
 trait ScalafmtAlg[F[_]] {
   def getScalafmtVersion(repo: Repo): F[Option[Version]]
 
@@ -59,8 +61,9 @@ object ScalafmtAlg {
           content => {
             for {
               currentVersion <- parseScalafmtConf(content)
-              pattern = s"(version\\s*=\\s*)${currentVersion.value}"
-              replacer = s"$$1${nextVersion}"
+              curVer = Regex.quote(currentVersion.value)
+              pattern = s"""(version\\s*=\\s*.*?)${curVer}(.?)"""
+              replacer = s"$$1${nextVersion}$$2"
               changed <- Some(content.replaceFirst(pattern, replacer)) if changed =!= content
             } yield changed
           }

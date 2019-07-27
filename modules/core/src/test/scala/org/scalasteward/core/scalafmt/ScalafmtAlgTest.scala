@@ -13,7 +13,7 @@ class ScalafmtAlgTest extends FunSuite with Matchers {
     val repo = Repo("fthomas", "scala-steward")
     val repoDir = config.workspace / repo.owner / repo.repo
     val scalafmtConf = repoDir / ".scalafmt.conf"
-    val initialState = MockState.empty.add(scalafmtConf, "version = 2.0.0-RC8")
+    val initialState = MockState.empty.add(scalafmtConf, """version = 2.0.0-RC8""")
     val (state, maybeUpdate) = scalafmtAlg.getScalafmtUpdate(repo).run(initialState).unsafeRunSync()
 
     maybeUpdate shouldBe Some(
