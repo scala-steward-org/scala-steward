@@ -24,7 +24,7 @@ object MockContext {
     vcsApiHost = Uri(),
     vcsLogin = "bot-doe",
     gitAskPass = File.temp / "askpass.sh",
-    signCommits = true,
+    signCommits = false,
     whitelistedDirectories = Nil,
     readOnlyDirectories = Nil,
     disableSandbox = false,

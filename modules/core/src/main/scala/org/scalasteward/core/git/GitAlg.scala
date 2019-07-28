@@ -143,7 +143,8 @@ object GitAlg {
       override def mergeTheirs(repo: Repo, branch: Branch): F[Unit] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          _ <- exec(Nel.of("merge", "--strategy-option=theirs", branch.name), repoDir)
+          sign = if (config.signCommits) List("--gpg-sign") else List.empty[String]
+          _ <- exec(Nel.of("merge", "--strategy-option=theirs") ++ (sign :+ branch.name), repoDir)
         } yield ()
 
       override def push(repo: Repo, branch: Branch): F[Unit] =

@@ -63,7 +63,7 @@ class GitAlgTest extends FunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List(askPass, repoDir, "git", "commit", "--all", "-m", "Initial commit", "--gpg-sign")
+        List(askPass, repoDir, "git", "commit", "--all", "-m", "Initial commit", "--no-gpg-sign")
       )
     )
   }
