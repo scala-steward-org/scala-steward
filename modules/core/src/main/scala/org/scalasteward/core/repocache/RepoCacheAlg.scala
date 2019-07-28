@@ -41,17 +41,15 @@ final class RepoCacheAlg[F[_]](
 ) {
 
   def checkCache(repo: Repo): F[Unit] =
-    logAlg
-      .attemptLog(s"Check cache of ${repo.show}") {
-        for {
-          (repoOut, branchOut) <- vcsApiAlg.createForkOrGetRepoWithDefaultBranch(config, repo)
-          cachedSha1 <- repoCacheRepository.findSha1(repo)
-          latestSha1 = branchOut.commit.sha
-          refreshRequired = cachedSha1.forall(_ =!= latestSha1)
-          _ <- if (refreshRequired) refreshCache(repo, repoOut, latestSha1) else F.unit
-        } yield ()
-      }
-      .map(_ => ())
+    logAlg.attemptLog_(s"Check cache of ${repo.show}") {
+      for {
+        (repoOut, branchOut) <- vcsApiAlg.createForkOrGetRepoWithDefaultBranch(config, repo)
+        cachedSha1 <- repoCacheRepository.findSha1(repo)
+        latestSha1 = branchOut.commit.sha
+        refreshRequired = cachedSha1.forall(_ =!= latestSha1)
+        _ <- if (refreshRequired) refreshCache(repo, repoOut, latestSha1) else F.unit
+      } yield ()
+    }
 
   private def refreshCache(repo: Repo, repoOut: RepoOut, latestSha1: Sha1): F[Unit] =
     for {

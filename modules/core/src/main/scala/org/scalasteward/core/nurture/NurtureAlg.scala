@@ -45,7 +45,7 @@ final class NurtureAlg[F[_]](
     sbtAlg: SbtAlg[F],
     F: BracketThrowable[F]
 ) {
-  def nurture(repo: Repo): F[Either[Unit, Unit]] =
+  def nurture(repo: Repo): F[Either[Throwable, Unit]] =
     logAlg.infoTotalTime(repo.show) {
       logAlg.attemptLog(util.string.lineLeftRight(s"Nurture ${repo.show}")) {
         for {

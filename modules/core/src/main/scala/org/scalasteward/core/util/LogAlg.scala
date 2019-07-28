@@ -26,11 +26,14 @@ final class LogAlg[F[_]](
     logger: Logger[F],
     F: MonadThrowable[F]
 ) {
-  def attemptLog[A](message: String)(fa: F[A]): F[Either[Unit, Unit]] =
-    logger.info(message) >> fa.attempt.flatMap {
-      case Left(t)  => logger.error(t)(s"$message failed").map(Left(_))
-      case Right(_) => F.unit.map(Right(_))
+  def attemptLog[A](message: String)(fa: F[A]): F[Either[Throwable, A]] =
+    logger.info(message) >> fa.attempt.flatTap {
+      case Left(t)  => logger.error(t)(s"$message failed")
+      case Right(_) => F.unit
     }
+
+  def attemptLog_[A](message: String)(fa: F[A]): F[Unit] =
+    attemptLog(message)(fa).void
 
   def infoTimed[A](msg: FiniteDuration => String)(fa: F[A]): F[A] =
     dateTimeAlg.timed(fa).flatMap {
