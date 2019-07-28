@@ -45,7 +45,17 @@ class EditAlgTest extends FunSuite with Matchers {
 
     val state = editAlg
       .applyUpdate(repo, update)
-      .runS(MockState.empty.add(scalafmtFile, """version = "2.0.0"""").add(file1, ""))
+      .runS(
+        MockState.empty
+          .add(
+            scalafmtFile,
+            """maxColumn = 100
+              |version = 2.0.0
+              |align.openParenCallSite = false
+              |""".stripMargin
+          )
+          .add(file1, "")
+      )
       .unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
@@ -57,7 +67,14 @@ class EditAlgTest extends FunSuite with Matchers {
       logs = Vector(
         (None, "No files found that contain the current version")
       ),
-      files = Map(scalafmtFile -> """version = "2.1.0"""", file1 -> "")
+      files = Map(
+        scalafmtFile ->
+          """maxColumn = 100
+            |version = 2.1.0
+            |align.openParenCallSite = false
+            |""".stripMargin,
+        file1 -> ""
+      )
     )
   }
 

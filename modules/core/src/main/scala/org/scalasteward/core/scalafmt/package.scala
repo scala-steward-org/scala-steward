@@ -32,7 +32,10 @@ package object scalafmt {
       None
 
   def parseScalafmtConf(s: String): Option[Version] =
-    """version\s*=\s*"?([^"]+)""".r.findFirstMatchIn(s).map(_.group(1)).map(Version.apply)
+    """version\s*=\s*(.+)""".r
+      .findFirstMatchIn(s)
+      .map(_.group(1).replaceAllLiterally("\"", ""))
+      .map(Version.apply)
 
   def findScalafmtUpdate(currentVersion: Version): Option[Update.Single] =
     findNewerScalafmtVersion(currentVersion).map { newerVersion =>
