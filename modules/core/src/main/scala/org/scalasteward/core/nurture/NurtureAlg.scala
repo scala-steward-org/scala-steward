@@ -45,9 +45,9 @@ final class NurtureAlg[F[_]](
     sbtAlg: SbtAlg[F],
     F: BracketThrowable[F]
 ) {
-  def nurture(repo: Repo): F[Unit] =
+  def nurture(repo: Repo): F[Either[Throwable, Unit]] =
     logAlg.infoTotalTime(repo.show) {
-      logAlg.attemptLog_(util.string.lineLeftRight(s"Nurture ${repo.show}")) {
+      logAlg.attemptLog(util.string.lineLeftRight(s"Nurture ${repo.show}")) {
         for {
           (fork, baseBranch) <- cloneAndSync(repo)
           _ <- updateDependencies(repo, fork, baseBranch)

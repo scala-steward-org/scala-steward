@@ -77,7 +77,7 @@ final class StewardAlg[F[_]](
         _ <- prepareEnv
         repos <- readRepos(config.reposFile)
         reposToNurture <- if (config.pruneRepos) pruneRepos(repos) else F.pure(repos)
-        _ <- reposToNurture.traverse_(nurtureAlg.nurture)
-      } yield ExitCode.Success
+        result <- reposToNurture.traverse(nurtureAlg.nurture)
+      } yield if (result.forall(_.isRight)) ExitCode.Success else ExitCode.Error
     }
 }
