@@ -7,10 +7,10 @@ import org.scalatest.{FunSuite, Matchers}
 
 class CoursierAlgTest extends FunSuite with Matchers {
 
-  test("getProjectHomepage") {
+  test("getArtifactUrl") {
     val dep = Dependency("org.typelevel", "cats-effect", "cats-effect_2.12", "1.0.0")
     coursierAlg
-      .getProjectHomepage(dep)
+      .getArtifactUrl(dep)
       .runS(MockState.empty)
       .unsafeRunSync() shouldBe MockState.empty.copy(
       commands = Vector(),

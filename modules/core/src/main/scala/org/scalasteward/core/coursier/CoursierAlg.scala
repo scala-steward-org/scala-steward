@@ -23,38 +23,42 @@ import cats.implicits._
 import org.scalasteward.core.data.Dependency
 
 trait CoursierAlg[F[_]] {
-  def getProjectHomepage(dependency: Dependency): F[Option[String]]
-  def getProjectHomepages(dependencies: List[Dependency]): F[Map[String, String]]
+  def getArtifactUrl(dependency: Dependency): F[Option[String]]
+  def getArtifactIdUrlMapping(dependencies: List[Dependency]): F[Map[String, String]]
 }
 
 object CoursierAlg {
+  // TODO: Use coursier.interop.cats._ in https://github.com/coursier/coursier/pull/1294 when published
+  implicit def createCoursierSync[F[_]](
+      implicit
+      F: Sync[F]
+  ): coursier.util.Sync[F] = new coursier.util.Sync[F] {
+    override def point[A](a: A): F[A] = F.point(a)
+    override def bind[A, B](elem: F[A])(f: A => F[B]): F[B] = F.flatMap(elem)(f)
+    override def delay[A](a: => A): F[A] = F.delay(a)
+    override def fromAttempt[A](a: Either[Throwable, A]): F[A] = F.fromEither(a)
+    override def handle[A](a: F[A])(f: PartialFunction[Throwable, A]): F[A] =
+      F.handleError(a)(f.apply)
+    override def gather[A](elems: Seq[F[A]]): F[Seq[A]] =
+      elems.foldLeft(F.delay(Seq.empty[A])) {
+        case (fseq, f) =>
+          fseq.flatMap(seq => f.map(seq :+ _))
+      }
+    override def schedule[A](unused: ExecutorService)(f: => A): F[A] = F.delay(f)
+  }
+
   def create[F[_]](
       implicit
       F: Sync[F]
   ): CoursierAlg[F] = {
-    implicit val coursierSync: coursier.util.Sync[F] = new coursier.util.Sync[F] {
-      override def point[A](a: A): F[A] = F.point(a)
-      override def bind[A, B](elem: F[A])(f: A => F[B]): F[B] = F.flatMap(elem)(f)
-      override def delay[A](a: => A): F[A] = F.delay(a)
-      override def fromAttempt[A](a: Either[Throwable, A]): F[A] = F.fromEither(a)
-      override def handle[A](a: F[A])(f: PartialFunction[Throwable, A]): F[A] =
-        F.handleError(a)(f.apply)
-      override def gather[A](elems: Seq[F[A]]): F[Seq[A]] =
-        elems.foldLeft(F.delay(Seq.empty[A])) {
-          case (fseq, f) =>
-            fseq.flatMap(seq => f.map(seq :+ _))
-        }
-      override def schedule[A](unused: ExecutorService)(f: => A): F[A] = F.delay(f)
-    }
     val cache = coursier.cache.FileCache[F]()
-    val fetch = coursier.Fetch[F](cache)(coursierSync)
+    val fetch = coursier.Fetch[F](cache)
     new CoursierAlg[F] {
-      override def getProjectHomepage(dependency: Dependency): F[Option[String]] = {
+      override def getArtifactUrl(dependency: Dependency): F[Option[String]] = {
         val module = coursier.Module(
           coursier.Organization(dependency.groupId),
           coursier.ModuleName(dependency.artifactIdCross)
         )
-
         for {
           maybeFetchResult <- fetch
             .addDependencies(
@@ -75,11 +79,12 @@ object CoursierAlg {
             }
           )
         }
+      }
 
-      override def getProjectHomepages(dependencies: List[Dependency]): F[Map[String, String]] =
+      override def getArtifactIdUrlMapping(dependencies: List[Dependency]): F[Map[String, String]] =
         for {
           entries <- dependencies.traverse(dep => {
-            getProjectHomepage(dep).map(dep.artifactId -> _.getOrElse(""))
+            getArtifactUrl(dep).map(dep.artifactId -> _.getOrElse(""))
           })
         } yield Map(entries.filter { case (_, url) => url =!= "" }: _*)
     }

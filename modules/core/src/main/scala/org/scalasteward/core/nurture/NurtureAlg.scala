@@ -76,7 +76,7 @@ final class NurtureAlg[F[_]](
       nonSbtUpdates <- getNonSbtUpdates(repo)
       updates = sbtUpdates ::: nonSbtUpdates
       dependencies <- sbtAlg.getDependencies(repo)
-      mapping <- coursierAlg.getProjectHomepages(dependencies)
+      mapping <- coursierAlg.getArtifactIdUrlMapping(dependencies)
       updatesWithMapping = updates.map(_.copy(artifactIdToUrl = mapping))
       filtered <- filterAlg.localFilterMany(repoConfig, updatesWithMapping)
       grouped = Update.group(filtered)
