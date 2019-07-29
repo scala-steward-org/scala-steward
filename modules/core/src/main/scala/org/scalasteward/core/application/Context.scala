@@ -30,6 +30,7 @@ import org.scalasteward.core.repocache.json.JsonRepoCacheRepository
 import org.scalasteward.core.repocache.{RepoCacheAlg, RepoCacheRepository}
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
+import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.json.JsonUpdateRepository
 import org.scalasteward.core.update.{FilterAlg, UpdateRepository, UpdateService}
 import org.scalasteward.core.util.{DateTimeAlg, HttpJsonClient, LogAlg}
@@ -61,6 +62,7 @@ object Context {
       implicit val vcsRepoAlg: VCSRepoAlg[F] = VCSRepoAlg.create[F](config, gitAlg)
       implicit val pullRequestRepo: PullRequestRepository[F] = new JsonPullRequestRepo[F]
       implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F]
+      implicit val scalafmtAlg: ScalafmtAlg[F] = ScalafmtAlg.create[F]
       implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F]
       implicit val editAlg: EditAlg[F] = new EditAlg[F]
       implicit val updateRepository: UpdateRepository[F] = new JsonUpdateRepository[F]

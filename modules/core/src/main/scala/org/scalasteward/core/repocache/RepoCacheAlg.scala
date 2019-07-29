@@ -22,6 +22,7 @@ import org.scalasteward.core.application.Config
 import org.scalasteward.core.git.{GitAlg, Sha1}
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
+import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.util.{LogAlg, MonadThrowable}
 import org.scalasteward.core.vcs.data.{Repo, RepoOut}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
@@ -35,6 +36,7 @@ final class RepoCacheAlg[F[_]](
     repoCacheRepository: RepoCacheRepository[F],
     repoConfigAlg: RepoConfigAlg[F],
     sbtAlg: SbtAlg[F],
+    scalafmtAlg: ScalafmtAlg[F],
     vcsApiAlg: VCSApiAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
     F: MonadThrowable[F]
@@ -58,8 +60,15 @@ final class RepoCacheAlg[F[_]](
       _ <- vcsRepoAlg.syncFork(repo, repoOut)
       dependencies <- sbtAlg.getDependencies(repo)
       maybeSbtVersion <- sbtAlg.getSbtVersion(repo)
+      maybeScalafmtVersion <- scalafmtAlg.getScalafmtVersion(repo)
       maybeRepoConfig <- repoConfigAlg.readRepoConfig(repo)
-      cache = RepoCache(latestSha1, dependencies, maybeSbtVersion, maybeRepoConfig)
+      cache = RepoCache(
+        latestSha1,
+        dependencies,
+        maybeSbtVersion,
+        maybeScalafmtVersion,
+        maybeRepoConfig
+      )
       _ <- repoCacheRepository.updateCache(repo, cache)
       _ <- gitAlg.removeClone(repo)
     } yield ()

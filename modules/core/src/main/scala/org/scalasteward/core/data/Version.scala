@@ -18,7 +18,10 @@ package org.scalasteward.core.data
 
 import cats.Order
 import cats.implicits._
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import org.scalasteward.core.util
+
 import scala.util.Try
 
 final case class Version(value: String) {
@@ -41,6 +44,12 @@ object Version {
       val (c1, c2) = padToSameLength(v1.numericComponents, v2.numericComponents, BigInt(0))
       c1.compare(c2)
     }
+
+  implicit val versionDecoder: Decoder[Version] =
+    deriveDecoder
+
+  implicit val versionEncoder: Encoder[Version] =
+    deriveEncoder
 
   private def padToSameLength[A](l1: List[A], l2: List[A], elem: A): (List[A], List[A]) = {
     val maxLength = math.max(l1.length, l2.length)
