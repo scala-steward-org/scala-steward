@@ -65,7 +65,11 @@ final class RepoCacheAlg[F[_]](
       sbtVersions <- subProjects.traverse(sbtAlg.getSbtVersion)
       scalafmtVersions <- subProjects.traverse(scalafmtAlg.getScalafmtVersion)
       maybeSbtVersion = subProjects.map(_.pathAsString).zip(sbtVersions).toMap.mapFilter(identity)
-      maybeScalafmtVersion  = subProjects.map(_.pathAsString).zip(scalafmtVersions).toMap.mapFilter(identity)
+      maybeScalafmtVersion = subProjects
+        .map(_.pathAsString)
+        .zip(scalafmtVersions)
+        .toMap
+        .mapFilter(identity)
       maybeRepoConfig <- repoConfigAlg.readRepoConfig(repo)
       cache = RepoCache(
         latestSha1,

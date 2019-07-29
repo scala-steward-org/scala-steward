@@ -20,7 +20,8 @@ class ScalafmtAlgTest extends FunSuite with Matchers {
         |align.openParenCallSite = false
         |""".stripMargin
     )
-    val (state, maybeUpdate) = scalafmtAlg.getScalafmtUpdate(repo).run(initialState).unsafeRunSync()
+    val (state, maybeUpdate) =
+      scalafmtAlg.getScalafmtUpdate(repoDir).run(initialState).unsafeRunSync()
 
     maybeUpdate shouldBe Some(
       Update.Single("org.scalameta", "scalafmt", "2.0.0-RC8", Nel.of(latestScalafmtVersion.value))
@@ -48,7 +49,7 @@ class ScalafmtAlgTest extends FunSuite with Matchers {
         |align.openParenCallSite = false
         |""".stripMargin
     )
-    val (_, maybeUpdate) = scalafmtAlg.getScalafmtUpdate(repo).run(initialState).unsafeRunSync()
+    val (_, maybeUpdate) = scalafmtAlg.getScalafmtUpdate(repoDir).run(initialState).unsafeRunSync()
     maybeUpdate shouldBe Some(
       Update.Single("org.scalameta", "scalafmt", "2.0.0-RC8", Nel.of(latestScalafmtVersion.value))
     )

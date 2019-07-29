@@ -16,21 +16,21 @@
 
 package org.scalasteward.core.scalafmt
 
+import better.files.File
 import cats.implicits._
 import cats.{Functor, Monad}
-import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
+import org.scalasteward.core.io.FileAlg
 import org.scalasteward.core.data.{Update, Version}
 import org.scalasteward.core.util.MonadThrowable
-import org.scalasteward.core.vcs.data.Repo
 
 import scala.util.matching.Regex
 
 trait ScalafmtAlg[F[_]] {
-  def getScalafmtVersion(repo: Repo): F[Option[Version]]
+  def getScalafmtVersion(repo: File): F[Option[Version]]
 
-  def editScalafmtConf(repo: Repo, nextVersion: String)(implicit F: MonadThrowable[F]): F[Unit]
+  def editScalafmtConf(repo: File, nextVersion: String)(implicit F: MonadThrowable[F]): F[Unit]
 
-  final def getScalafmtUpdate(repo: Repo)(implicit F: Functor[F]): F[Option[Update.Single]] =
+  final def getScalafmtUpdate(repo: File)(implicit F: Functor[F]): F[Option[Update.Single]] =
     getScalafmtVersion(repo).map(_.flatMap(findScalafmtUpdate))
 }
 
@@ -38,26 +38,21 @@ object ScalafmtAlg {
   def create[F[_]](
       implicit
       fileAlg: FileAlg[F],
-      workspaceAlg: WorkspaceAlg[F],
       F: Monad[F]
   ): ScalafmtAlg[F] = new ScalafmtAlg[F] {
-    override def getScalafmtVersion(repo: Repo): F[Option[Version]] =
+    override def getScalafmtVersion(projectDir: File): F[Option[Version]] =
       for {
-        repoDir <- workspaceAlg.repoDir(repo)
-        scalafmtConfFile = repoDir / ".scalafmt.conf"
-        fileContent <- fileAlg.readFile(scalafmtConfFile)
+        fileContent <- fileAlg.readFile(projectDir / ".scalafmt.conf")
       } yield {
         fileContent.flatMap(parseScalafmtConf)
       }
 
-    override def editScalafmtConf(repo: Repo, nextVersion: String)(
+    override def editScalafmtConf(repoDir: File, nextVersion: String)(
         implicit F: MonadThrowable[F]
     ): F[Unit] =
       for {
-        repoDir <- workspaceAlg.repoDir(repo)
-        scalafmtConfFile = repoDir / ".scalafmt.conf"
         _ <- fileAlg.editFile(
-          scalafmtConfFile,
+          repoDir / ".scalafmt.conf",
           content => {
             for {
               currentVersion <- parseScalafmtConf(content)

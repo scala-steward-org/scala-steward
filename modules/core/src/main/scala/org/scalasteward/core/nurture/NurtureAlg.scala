@@ -85,20 +85,20 @@ final class NurtureAlg[F[_]](
       }
     } yield ()
 
-  def getNonSbtUpdates(repo: Repo): F[List[Update.Single]] =
+  def getNonSbtUpdates(projectDir: File): F[List[Update.Single]] =
     for {
-      maybeScalafmt <- scalafmtAlg.getScalafmtUpdate(repo)
+      maybeScalafmt <- scalafmtAlg.getScalafmtUpdate(projectDir)
     } yield List(maybeScalafmt).flatten
 
   def findUpdatesInAllProjects(
-    subProjectRoots: List[File],
-    repoConfig: RepoConfig
+      subProjectRoots: List[File],
+      repoConfig: RepoConfig
   ): F[List[Update.Single]] =
     subProjectRoots
       .traverse { projectDir =>
         for {
-          sbtUpdates <- sbtAlg.getUpdatesForRepo(repo)
-          nonSbtUpdates <- getNonSbtUpdates(repo)
+          sbtUpdates <- sbtAlg.getUpdatesForRepo(projectDir)
+          nonSbtUpdates <- getNonSbtUpdates(projectDir)
           updates = sbtUpdates ::: nonSbtUpdates
           filtered <- filterAlg.localFilterMany(repoConfig, updates)
         } yield filtered

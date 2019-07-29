@@ -40,7 +40,12 @@ final class EditAlg[F[_]](
 ) {
   def applyUpdate(repo: Repo, update: Update): F[Unit] =
     if (scalafmt.isScalafmtUpdate(update))
-      scalafmtAlg.editScalafmtConf(repo, update.nextVersion)
+      for {
+        repoDirectroies <- workspaceAlg.findSubProjectDirs(repo)
+        _ <- repoDirectroies.traverse { repoDir =>
+          scalafmtAlg.editScalafmtConf(repoDir, update.nextVersion)
+        }
+      } yield ()
     else
       for {
         _ <- applyScalafixMigrations(repo, update)
