@@ -1,7 +1,7 @@
 <img src="https://github.com/fthomas/scala-steward/raw/master/data/images/scala-steward-logo-hex-1.png" width="156px" height="180px" align="right">
 
 # Scala Steward
-[![Build Status](https://travis-ci.org/fthomas/scala-steward.svg?branch=master)](https://travis-ci.org/fthomas/scala-steward)
+[![Build Status](https://travis-ci.com/fthomas/scala-steward.svg?branch=master)](https://travis-ci.com/fthomas/scala-steward)
 [![codecov](https://codecov.io/gh/fthomas/scala-steward/branch/master/graph/badge.svg)](https://codecov.io/gh/fthomas/scala-steward)
 [![Join the chat at https://gitter.im/fthomas/scala-steward](https://badges.gitter.im/fthomas/scala-steward.svg)](https://gitter.im/fthomas/scala-steward?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/4573461025c642daa4128b659ee54fc9)](https://www.codacy.com/app/fthomas/scala-steward?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=fthomas/scala-steward&amp;utm_campaign=Badge_Grade)
@@ -11,6 +11,9 @@
 
 Scala Steward is a robot that helps you keeping library dependencies
 and sbt plugins up-to-date.
+
+See also the announcement blog post:
+[*Keep your projects up-to-date with Scala Steward*](https://www.scala-lang.org/blog/2019/07/10/announcing-scala-steward.html)
 
 ## Quick start guide
 
@@ -70,17 +73,23 @@ Thanks goes to these wonderful people:
 * [Jakub Kozłowski](https://github.com/kubukoz)
 * [JCollier](https://github.com/Slakah)
 * [Jeff Martin](https://github.com/custommonkey)
+* [kalejami](https://github.com/kalejami)
+* [KAWACHI Takashi](https://github.com/tkawachi)
 * [kenji yoshida](https://github.com/xuwei-k)
+* [Manuel Cueto](https://github.com/manuelcueto)
 * [Mark Canlas](https://github.com/mcanlas)
 * [Michael Wizner](https://github.com/mwz)
+* [Michel Daviot](https://github.com/tyrcho)
 * [nafg](https://github.com/nafg)
 * [Philippus Baalman](https://github.com/Philippus)
 * [Piotr Gabara](https://github.com/pgabara)
 * [Renato Cavalcanti](https://github.com/renatocaval)
+* [Robert Stoll](https://github.com/robstoll)
 * [sullis](https://github.com/sullis)
 * [TATSUNO Yasuhiro](https://github.com/exoego)
 * [Thomas Heslin](https://github.com/tjheslin1)
 * [Thomas Kaliakos](https://github.com/thomaska)
+* [Yan](https://github.com/yaroot)
 * [Zelenya](https://github.com/Zelenya)
 
 ## Community
@@ -97,7 +106,9 @@ Consider creating PR to add your company to the list and join the community.
 * [Snowplow Analytics](https://snowplowanalytics.com/)
 * [SpringerNature](https://www.springernature.com)
 * [SoftwareMill](https://softwaremill.com)
+* [Tegonal GmbH](https://tegonal.com)
 * [Zalando](https://en.zalando.de/)
+* [Colisweb](https://www.colisweb.com/)
 
 ## Participation
 

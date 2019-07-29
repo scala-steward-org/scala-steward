@@ -24,7 +24,8 @@ import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.io.{isFileSpecificTo, isSourceFile, FileAlg, WorkspaceAlg}
 import org.scalasteward.core.sbt.SbtAlg
-import org.scalasteward.core.scalafix
+import org.scalasteward.core.{scalafix, scalafmt}
+import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.util._
 import org.scalasteward.core.vcs.data.Repo
 
@@ -33,25 +34,29 @@ final class EditAlg[F[_]](
     fileAlg: FileAlg[F],
     logger: Logger[F],
     sbtAlg: SbtAlg[F],
+    scalafmtAlg: ScalafmtAlg[F],
     workspaceAlg: WorkspaceAlg[F],
     F: Sync[F]
 ) {
   def applyUpdate(repo: Repo, update: Update): F[Unit] =
-    for {
-      _ <- applyScalafixMigrations(repo, update)
-      repoDirectroies <- workspaceAlg.findSubProjectDirs(repo)
-      files <- repoDirectroies
-        .traverse { repoDir =>
-          fileAlg.findSourceFilesContaining(
-            repoDir,
-            update.currentVersion,
-            f => isSourceFile(f) && isFileSpecificTo(update)(f)
-          )
-        }
-        .map(_.flatten)
-      noFilesFound = logger.warn("No files found that contain the current version")
-      _ <- files.toNel.fold(noFilesFound)(applyUpdateTo(_, update))
-    } yield ()
+    if (scalafmt.isScalafmtUpdate(update))
+      scalafmtAlg.editScalafmtConf(repo, update.nextVersion)
+    else
+      for {
+        _ <- applyScalafixMigrations(repo, update)
+        repoDirectroies <- workspaceAlg.findSubProjectDirs(repo)
+        files <- repoDirectroies
+          .traverse { repoDir =>
+            fileAlg.findSourceFilesContaining(
+              repoDir,
+              update.currentVersion,
+              f => isSourceFile(f) && isFileSpecificTo(update)(f)
+            )
+          }
+          .map(_.flatten)
+        noFilesFound = logger.warn("No files found that contain the current version")
+        _ <- files.toNel.fold(noFilesFound)(applyUpdateTo(_, update))
+      } yield ()
 
   def applyUpdateTo[G[_]: Traverse](files: G[File], update: Update): F[Unit] = {
     val actions = UpdateHeuristic.all.map { heuristic =>

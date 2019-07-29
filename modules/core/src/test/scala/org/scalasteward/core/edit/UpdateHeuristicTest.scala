@@ -318,7 +318,7 @@ class UpdateHeuristicTest extends FunSuite with Matchers {
         |  "com.typesafe.akka" %% "akka-testkit" % "2.4.0",
         |  """.stripMargin.trim
     Group("com.typesafe.akka", Nel.of("akka-actor", "akka-testkit"), "2.4.0", Nel.of("2.5.0"))
-      .replaceVersionIn(original) shouldBe (None -> UpdateHeuristic.groupId.name)
+      .replaceVersionIn(original) shouldBe (None -> UpdateHeuristic.all.last.name)
   }
 
   test("update multiple lines between `on` and `off`") {

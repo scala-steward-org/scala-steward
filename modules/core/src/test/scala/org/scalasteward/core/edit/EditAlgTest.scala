@@ -37,6 +37,44 @@ class EditAlgTest extends FunSuite with Matchers {
     )
   }
 
+  test("applyUpdate with scalafmt update") {
+    val repo = Repo("fthomas", "scala-steward")
+    val update = Update.Single("org.scalameta", "scalafmt", "2.0.0", Nel.of("2.1.0"))
+    val scalafmtFile = File.temp / "ws/fthomas/scala-steward/.scalafmt.conf"
+    val file1 = File.temp / "ws/fthomas/scala-steward/build.sbt"
+
+    val state = editAlg
+      .applyUpdate(repo, update)
+      .runS(
+        MockState.empty
+          .add(
+            scalafmtFile,
+            """maxColumn = 100
+              |version = 2.0.0
+              |align.openParenCallSite = false
+              |""".stripMargin
+          )
+          .add(file1, "")
+      )
+      .unsafeRunSync()
+
+    state shouldBe MockState.empty.copy(
+      commands = Vector(
+        List("read", scalafmtFile.pathAsString),
+        List("write", scalafmtFile.pathAsString)
+      ),
+      logs = Vector(),
+      files = Map(
+        scalafmtFile ->
+          """maxColumn = 100
+            |version = 2.1.0
+            |align.openParenCallSite = false
+            |""".stripMargin,
+        file1 -> ""
+      )
+    )
+  }
+
   test("applyUpdate: sub projects") {
     val repo = Repo("fthomas", "scala-steward")
     val update = Update.Single("org.typelevel", "cats-core", "1.2.0", Nel.of("1.3.0"))

@@ -19,12 +19,11 @@ package org.scalasteward.core.gitlab.http4s
 import cats.implicits._
 import io.circe._
 import io.circe.generic.semiauto._
-import org.http4s.client.UnexpectedStatus
 import org.http4s.{Request, Status, Uri}
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.gitlab._
-import org.scalasteward.core.util.{HttpJsonClient, MonadThrowable}
 import org.scalasteward.core.util.uri.uriDecoder
+import org.scalasteward.core.util.{HttpJsonClient, MonadThrowable, UnexpectedResponse}
 import org.scalasteward.core.vcs.VCSApiAlg
 import org.scalasteward.core.vcs.data._
 
@@ -61,27 +60,17 @@ private[http4s] object GitlabJsonCodec {
   implicit val userOutDecoder: Decoder[UserOut] = Decoder.instance {
     _.downField("username").as[String].map(UserOut(_))
   }
-  val parentRepoOutDecoder: Decoder[RepoOut] = Decoder.instance { c =>
-    for {
-      name <- c.downField("name").as[String]
-      ownerC = c.downField("namespace")
-      owner <- ownerC.downField("name").as[String]
-      _ = c.up
-      cloneUrl <- c.downField("http_url_to_repo").as[Uri]
-      defaultBranch <- c
-        .downField("default_branch")
-        .as[Option[Branch]]
-        .map(_.getOrElse(Branch("master")))
-    } yield RepoOut(name, UserOut(owner), None, cloneUrl, defaultBranch)
-  }
   implicit val repoOutDecoder: Decoder[RepoOut] = Decoder.instance { c =>
     for {
       name <- c.downField("name").as[String]
-      owner <- c.downField("owner").as[UserOut]
+      owner <- c
+        .downField("owner")
+        .as[UserOut]
+        .orElse(c.downField("namespace").downField("name").as[String].map(UserOut(_)))
       cloneUrl <- c.downField("http_url_to_repo").as[Uri]
       parent <- c
         .downField("forked_from_project")
-        .as[Option[RepoOut]](Decoder.decodeOption(parentRepoOutDecoder))
+        .as[Option[RepoOut]]
       defaultBranch <- c
         .downField("default_branch")
         .as[Option[Branch]]
@@ -100,7 +89,8 @@ private[http4s] object GitlabJsonCodec {
 class Http4sGitLabApiAlg[F[_]: MonadThrowable](
     gitlabApiHost: Uri,
     user: AuthenticatedUser,
-    modify: Repo => Request[F] => F[Request[F]]
+    modify: Repo => Request[F] => F[Request[F]],
+    doNotFork: Boolean
 )(
     implicit
     client: HttpJsonClient[F]
@@ -110,25 +100,25 @@ class Http4sGitLabApiAlg[F[_]: MonadThrowable](
   val url = new Url(gitlabApiHost)
 
   override def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]] =
-    client.get(url.listMergeRequests(repo, head), modify(repo))
+    client.get(url.listMergeRequests(repo, head, base.name), modify(repo))
 
   def createFork(repo: Repo): F[RepoOut] = {
     val userOwnedRepo = repo.copy(owner = user.login)
     val data = ForkPayload(url.encodedProjectId(userOwnedRepo), user.login)
     client
       .postWithBody[RepoOut, ForkPayload](url.createFork(repo), data, modify(repo))
-      .handleErrorWith {
-        case UnexpectedStatus(Status.Conflict) => getRepo(userOwnedRepo)
+      .recoverWith {
+        case UnexpectedResponse(_, _, _, Status.Conflict, _) => getRepo(userOwnedRepo)
       }
   }
 
   def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] = {
-    val userOwnedRepo = repo.copy(owner = user.login)
+    val targetRepo = if (doNotFork) repo else repo.copy(owner = user.login)
     for {
       projectId <- client.get[ProjectId](url.repos(repo), modify(repo))
-      payload = MergeRequestPayload(url.encodedProjectId(userOwnedRepo), projectId.id, data)
+      payload = MergeRequestPayload(url.encodedProjectId(targetRepo), projectId.id, data)
       res <- client.postWithBody[PullRequestOut, MergeRequestPayload](
-        url.mergeRequest(userOwnedRepo),
+        url.mergeRequest(targetRepo),
         payload,
         modify(repo)
       )

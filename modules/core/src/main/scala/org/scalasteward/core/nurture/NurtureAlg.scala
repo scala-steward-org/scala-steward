@@ -26,6 +26,7 @@ import org.scalasteward.core.git.{Branch, GitAlg}
 import org.scalasteward.core.io.WorkspaceAlg
 import org.scalasteward.core.repoconfig.{RepoConfig, RepoConfigAlg}
 import org.scalasteward.core.sbt.SbtAlg
+import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.FilterAlg
 import org.scalasteward.core.util.{BracketThrowable, LogAlg}
 import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo}
@@ -45,12 +46,13 @@ final class NurtureAlg[F[_]](
     logger: Logger[F],
     pullRequestRepo: PullRequestRepository[F],
     sbtAlg: SbtAlg[F],
+    scalafmtAlg: ScalafmtAlg[F],
     workspaceAlg: WorkspaceAlg[F],
     F: BracketThrowable[F]
 ) {
-  def nurture(repo: Repo): F[Unit] =
+  def nurture(repo: Repo): F[Either[Throwable, Unit]] =
     logAlg.infoTotalTime(repo.show) {
-      logAlg.attemptLog_(util.string.lineLeftRight(s"Nurture ${repo.show}")) {
+      logAlg.attemptLog(util.string.lineLeftRight(s"Nurture ${repo.show}")) {
         for {
           (fork, baseBranch) <- cloneAndSync(repo)
           _ <- updateDependencies(repo, fork, baseBranch)
@@ -72,8 +74,8 @@ final class NurtureAlg[F[_]](
       _ <- logger.info(s"Find updates for ${repo.show}")
       repoConfig <- repoConfigAlg.readRepoConfigOrDefault(repo)
       subProjects <- workspaceAlg.findSubProjectDirs(repo)
-      updates <- findUpdatesInAllProjects(subProjects, repoConfig)
-      grouped = Update.group(updates)
+      filtered <- findUpdatesInAllProjects(subProjects, repoConfig)
+      grouped = Update.group(filtered)
       _ <- logger.info(util.logger.showUpdates(grouped))
       baseSha1 <- gitAlg.latestSha1(repo, baseBranch)
       _ <- grouped.traverse_ { update =>
@@ -83,14 +85,21 @@ final class NurtureAlg[F[_]](
       }
     } yield ()
 
+  def getNonSbtUpdates(repo: Repo): F[List[Update.Single]] =
+    for {
+      maybeScalafmt <- scalafmtAlg.getScalafmtUpdate(repo)
+    } yield List(maybeScalafmt).flatten
+
   def findUpdatesInAllProjects(
-      subProjectRoots: List[File],
-      repoConfig: RepoConfig
+    subProjectRoots: List[File],
+    repoConfig: RepoConfig
   ): F[List[Update.Single]] =
     subProjectRoots
       .traverse { projectDir =>
         for {
-          updates <- sbtAlg.getUpdatesForRepo(projectDir)
+          sbtUpdates <- sbtAlg.getUpdatesForRepo(repo)
+          nonSbtUpdates <- getNonSbtUpdates(repo)
+          updates = sbtUpdates ::: nonSbtUpdates
           filtered <- filterAlg.localFilterMany(repoConfig, updates)
         } yield filtered
       }
@@ -131,6 +140,7 @@ final class NurtureAlg[F[_]](
 
   def commitAndPush(data: UpdateData): F[Unit] =
     for {
+      _ <- logger.info("Commit and push changes")
       _ <- gitAlg.commitAll(data.repo, git.commitMsgFor(data.update))
       _ <- gitAlg.push(data.repo, data.updateBranch)
     } yield ()
@@ -155,36 +165,35 @@ final class NurtureAlg[F[_]](
     gitAlg.returnToCurrentBranch(data.repo) {
       for {
         _ <- gitAlg.checkoutBranch(data.repo, data.updateBranch)
-        reset <- shouldBeReset(data)
-        _ <- if (reset) resetAndUpdate(data) else F.unit
+        updated <- shouldBeUpdated(data)
+        _ <- if (updated) mergeAndApplyAgain(data) else F.unit
       } yield ()
     }
 
-  def shouldBeReset(data: UpdateData): F[Boolean] =
-    for {
-      authors <- gitAlg.branchAuthors(data.repo, data.updateBranch, data.baseBranch)
-      distinctAuthors = authors.distinct
-      isBehind <- gitAlg.isBehind(data.repo, data.updateBranch, data.baseBranch)
-      isMerged <- gitAlg.isMerged(data.repo, data.updateBranch, data.baseBranch)
-      (result, msg) = {
-        if (isMerged)
-          (false, "PR has been merged")
-        else if (distinctAuthors.length >= 2)
-          (false, s"PR has commits by ${distinctAuthors.mkString(", ")}")
-        else if (authors.length >= 2)
-          (true, "PR has multiple commits")
-        else if (isBehind)
-          (true, s"PR is behind ${data.baseBranch.name}")
-        else
-          (false, s"PR is up-to-date with ${data.baseBranch.name}")
-      }
-      _ <- logger.info(msg)
-    } yield result
+  def shouldBeUpdated(data: UpdateData): F[Boolean] = {
+    val result = gitAlg.isMerged(data.repo, data.updateBranch, data.baseBranch).flatMap {
+      case true => (false, "PR has been merged").pure[F]
+      case false =>
+        gitAlg.branchAuthors(data.repo, data.updateBranch, data.baseBranch).flatMap { authors =>
+          val distinctAuthors = authors.distinct
+          if (distinctAuthors.length >= 2)
+            (false, s"PR has commits by ${distinctAuthors.mkString(", ")}").pure[F]
+          else
+            gitAlg.hasConflicts(data.repo, data.updateBranch, data.baseBranch).map {
+              case true  => (true, s"PR has conflicts with ${data.baseBranch.name}")
+              case false => (false, s"PR has no conflict with ${data.baseBranch.name}")
+            }
+        }
+    }
+    result.flatMap { case (reset, msg) => logger.info(msg).as(reset) }
+  }
 
-  def resetAndUpdate(data: UpdateData): F[Unit] =
+  def mergeAndApplyAgain(data: UpdateData): F[Unit] =
     for {
-      _ <- logger.info(s"Reset and update ${data.updateBranch.name}")
-      _ <- gitAlg.resetHard(data.repo, data.baseBranch)
+      _ <- logger.info(
+        s"Merge branch '${data.baseBranch.name}' into ${data.updateBranch.name} and apply again"
+      )
+      _ <- gitAlg.mergeTheirs(data.repo, data.baseBranch)
       _ <- editAlg.applyUpdate(data.repo, data.update)
       containsChanges <- gitAlg.containsChanges(data.repo)
       _ <- if (containsChanges) commitAndPush(data) else F.unit

@@ -14,26 +14,12 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.vcs.data
+package org.scalasteward.core
 
-import io.circe.{KeyDecoder, KeyEncoder}
+import cats.effect.{ExitCode, IO, IOApp}
+import org.scalasteward.core.application.Context
 
-final case class Repo(
-    owner: String,
-    repo: String
-) {
-  def show: String = s"$owner/$repo"
-}
-
-object Repo {
-  implicit val repoKeyDecoder: KeyDecoder[Repo] = {
-    val / = s"(.+)/([^/]+)".r
-    KeyDecoder.instance {
-      case owner / repo => Some(Repo(owner, repo))
-      case _            => None
-    }
-  }
-
-  implicit val repoKeyEncoder: KeyEncoder[Repo] =
-    KeyEncoder.instance(repo => repo.owner + "/" + repo.repo)
+object Main extends IOApp {
+  override def run(args: List[String]): IO[ExitCode] =
+    Context.create[IO](args).use(_.runF)
 }

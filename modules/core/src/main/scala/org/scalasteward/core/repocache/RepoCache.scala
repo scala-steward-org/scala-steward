@@ -18,7 +18,7 @@ package org.scalasteward.core.repocache
 
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
-import org.scalasteward.core.data.Dependency
+import org.scalasteward.core.data.{Dependency, Version}
 import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.sbt.data.SbtVersion
@@ -27,6 +27,7 @@ final case class RepoCache(
     sha1: Sha1,
     dependencies: List[Dependency],
     maybeSbtVersion: Map[String, SbtVersion],
+    maybeScalafmtVersion: Map[String, Version],
     maybeRepoConfig: Option[RepoConfig]
 )
 

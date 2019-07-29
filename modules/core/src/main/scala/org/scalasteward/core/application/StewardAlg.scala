@@ -18,7 +18,7 @@ package org.scalasteward.core.application
 
 import better.files.File
 import cats.Monad
-import cats.effect.{ExitCode, IO, IOApp}
+import cats.effect.ExitCode
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
@@ -50,7 +50,7 @@ final class StewardAlg[F[_]](
 
   def readRepos(reposFile: File): F[List[Repo]] =
     fileAlg.readFile(reposFile).map { maybeContent =>
-      val regex = """-\s+(.+)/(.+)""".r
+      val regex = """-\s+(.+)/([^/]+)""".r
       val content = maybeContent.getOrElse("")
       content.linesIterator.collect { case regex(owner, repo) => Repo(owner.trim, repo.trim) }.toList
     }
@@ -77,12 +77,7 @@ final class StewardAlg[F[_]](
         _ <- prepareEnv
         repos <- readRepos(config.reposFile)
         reposToNurture <- if (config.pruneRepos) pruneRepos(repos) else F.pure(repos)
-        _ <- reposToNurture.traverse_(nurtureAlg.nurture)
-      } yield ExitCode.Success
+        result <- reposToNurture.traverse(nurtureAlg.nurture)
+      } yield if (result.forall(_.isRight)) ExitCode.Success else ExitCode.Error
     }
-}
-
-object StewardAlg extends IOApp {
-  override def run(args: List[String]): IO[ExitCode] =
-    Context.create[IO](args).use(_.runF)
 }

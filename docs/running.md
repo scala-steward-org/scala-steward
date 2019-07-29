@@ -6,7 +6,6 @@ sbt stage
 ./modules/core/.jvm/target/universal/stage/bin/scala-steward \
   --workspace  "$STEWARD_DIR/workspace" \
   --repos-file "$STEWARD_DIR/repos.md" \
-  --git-author-name "Scala steward" \
   --git-author-email ${EMAIL} \
   --vcs-api-host "https://api.github.com" \
   --vcs-login ${LOGIN} \
@@ -25,7 +24,6 @@ sbt docker:publishLocal
 docker run -v $STEWARD_DIR:/opt/scala-steward -it fthomas/scala-steward:latest \
   --workspace  "/opt/scala-steward/workspace" \
   --repos-file "/opt/scala-steward/repos.md" \
-  --git-author-name "Scala steward" \
   --git-author-email ${EMAIL} \
   --vcs-api-host "https://api.github.com" \
   --vcs-login ${LOGIN} \
@@ -52,3 +50,24 @@ It can also be useful to pass additional environment variables from the command 
 ```
 
 These variables will be accessible (in sbt) to all of the projects that Scala Steward checks dependencies for.
+
+
+### Running locally from sbt
+
+#### Sample run for Gitlab
+
+```
+sbt
+project core
+run
+    --disable-sandbox \
+    --do-not-fork \
+    --workspace "/path/workspace" \
+    --repos-file "/path/repos.md" \
+    --git-ask-pass "/path/pass.sh" \
+    --git-author-email "email@example.org" \
+    --vcs-type "gitlab" \
+    --vcs-api-host "https://gitlab.com/api/v4/" \
+    --vcs-login "gitlab.steward"
+
+```

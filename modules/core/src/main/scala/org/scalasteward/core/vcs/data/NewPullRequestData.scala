@@ -23,6 +23,7 @@ import org.scalasteward.core.data.{SemVer, Update}
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.nurture.UpdateData
 import org.scalasteward.core.repoconfig.RepoConfigAlg
+import org.scalasteward.core.util.Nel
 import org.scalasteward.core.{git, scalafix}
 
 final case class NewPullRequestData(
@@ -46,7 +47,7 @@ object NewPullRequestData {
           .mkString_("\n", "", "\n")
     }
     val (migrationLabel, appliedMigrations) = migrationNote(update)
-    val labels = List(semVerLabel(update), migrationLabel).flatten
+    val labels = Nel.fromList(semVerLabel(update).toList ++ migrationLabel.toList)
 
     s"""|Updates${artifacts}from ${update.currentVersion} to ${update.nextVersion}.
         |
@@ -65,7 +66,7 @@ object NewPullRequestData {
         |```
         |</details>
         |${appliedMigrations.getOrElse("")}
-        |${labels.mkString(start = "labels: ", sep = ", ", end = "")}
+        |${labels.fold("")(_.mkString_("labels: ", ", ", ""))}
         |""".stripMargin.trim
   }
 

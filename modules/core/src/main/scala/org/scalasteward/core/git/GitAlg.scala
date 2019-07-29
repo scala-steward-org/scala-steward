@@ -22,7 +22,7 @@ import cats.implicits._
 import org.http4s.Uri
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.util.{MonadThrowable, Nel}
+import org.scalasteward.core.util.{BracketThrowable, Nel}
 import org.scalasteward.core.vcs.data.Repo
 
 trait GitAlg[F[_]] {
@@ -40,19 +40,21 @@ trait GitAlg[F[_]] {
 
   def currentBranch(repo: Repo): F[Branch]
 
-  def isBehind(repo: Repo, branch: Branch, base: Branch): F[Boolean]
+  /** Returns `true` if merging `branch` into `base` results in merge conflicts. */
+  def hasConflicts(repo: Repo, branch: Branch, base: Branch): F[Boolean]
 
   def isMerged(repo: Repo, branch: Branch, base: Branch): F[Boolean]
 
   def latestSha1(repo: Repo, branch: Branch): F[Sha1]
+
+  /** Merges `branch` into the current branch using `theirs` as merge strategy option. */
+  def mergeTheirs(repo: Repo, branch: Branch): F[Unit]
 
   def push(repo: Repo, branch: Branch): F[Unit]
 
   def remoteBranchExists(repo: Repo, branch: Branch): F[Boolean]
 
   def removeClone(repo: Repo): F[Unit]
-
-  def resetHard(repo: Repo, base: Branch): F[Unit]
 
   def setAuthor(repo: Repo, author: Author): F[Unit]
 
@@ -71,7 +73,7 @@ object GitAlg {
       fileAlg: FileAlg[F],
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F],
-      F: MonadThrowable[F]
+      F: BracketThrowable[F]
   ): GitAlg[F] =
     new GitAlg[F] {
       override def branchAuthors(repo: Repo, branch: Branch, base: Branch): F[List[String]] =
@@ -116,9 +118,14 @@ object GitAlg {
           lines <- exec(Nel.of("rev-parse", "--abbrev-ref", "HEAD"), repoDir)
         } yield Branch(lines.mkString.trim)
 
-      override def isBehind(repo: Repo, branch: Branch, base: Branch): F[Boolean] =
+      override def hasConflicts(repo: Repo, branch: Branch, base: Branch): F[Boolean] =
         workspaceAlg.repoDir(repo).flatMap { repoDir =>
-          exec(Nel.of("log", "--pretty=format:'%h'", dotdot(branch, base)), repoDir).map(_.nonEmpty)
+          val tryMerge = exec(Nel.of("merge", "--no-commit", "--no-ff", branch.name), repoDir)
+          val abortMerge = exec(Nel.of("merge", "--abort"), repoDir).void
+
+          returnToCurrentBranch(repo) {
+            checkoutBranch(repo, base) >> F.guarantee(tryMerge)(abortMerge).attempt.map(_.isLeft)
+          }
         }
 
       override def isMerged(repo: Repo, branch: Branch, base: Branch): F[Boolean] =
@@ -132,6 +139,13 @@ object GitAlg {
           lines <- exec(Nel.of("rev-parse", "--verify", branch.name), repoDir)
           sha1 <- F.fromEither(Sha1.from(lines.mkString("").trim))
         } yield sha1
+
+      override def mergeTheirs(repo: Repo, branch: Branch): F[Unit] =
+        for {
+          repoDir <- workspaceAlg.repoDir(repo)
+          sign = if (config.signCommits) List("--gpg-sign") else List.empty[String]
+          _ <- exec(Nel.of("merge", "--strategy-option=theirs") ++ (sign :+ branch.name), repoDir)
+        } yield ()
 
       override def push(repo: Repo, branch: Branch): F[Unit] =
         for {
@@ -147,12 +161,6 @@ object GitAlg {
 
       override def removeClone(repo: Repo): F[Unit] =
         workspaceAlg.repoDir(repo).flatMap(fileAlg.deleteForce)
-
-      override def resetHard(repo: Repo, base: Branch): F[Unit] =
-        for {
-          repoDir <- workspaceAlg.repoDir(repo)
-          _ <- exec(Nel.of("reset", "--hard", base.name), repoDir)
-        } yield ()
 
       override def setAuthor(repo: Repo, author: Author): F[Unit] =
         for {

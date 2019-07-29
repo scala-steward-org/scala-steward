@@ -23,6 +23,7 @@ import org.scalasteward.core.git.{GitAlg, Sha1}
 import org.scalasteward.core.io.WorkspaceAlg
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
+import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.util.{LogAlg, MonadThrowable}
 import org.scalasteward.core.vcs.data.{Repo, RepoOut}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
@@ -36,6 +37,7 @@ final class RepoCacheAlg[F[_]](
     repoCacheRepository: RepoCacheRepository[F],
     repoConfigAlg: RepoConfigAlg[F],
     sbtAlg: SbtAlg[F],
+    scalafmtAlg: ScalafmtAlg[F],
     vcsApiAlg: VCSApiAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
     workspaceAlg: WorkspaceAlg[F],
@@ -61,9 +63,17 @@ final class RepoCacheAlg[F[_]](
       dependencies <- sbtAlg.getDependencies(repo)
       subProjects <- workspaceAlg.findSubProjectDirs(repo)
       sbtVersions <- subProjects.traverse(sbtAlg.getSbtVersion)
+      scalafmtVersions <- subProjects.traverse(scalafmtAlg.getScalafmtVersion)
       maybeSbtVersion = subProjects.map(_.pathAsString).zip(sbtVersions).toMap.mapFilter(identity)
+      maybeScalafmtVersion  = subProjects.map(_.pathAsString).zip(scalafmtVersions).toMap.mapFilter(identity)
       maybeRepoConfig <- repoConfigAlg.readRepoConfig(repo)
-      cache = RepoCache(latestSha1, dependencies, maybeSbtVersion, maybeRepoConfig)
+      cache = RepoCache(
+        latestSha1,
+        dependencies,
+        maybeSbtVersion,
+        maybeScalafmtVersion,
+        maybeRepoConfig
+      )
       _ <- repoCacheRepository.updateCache(repo, cache)
       _ <- gitAlg.removeClone(repo)
     } yield ()

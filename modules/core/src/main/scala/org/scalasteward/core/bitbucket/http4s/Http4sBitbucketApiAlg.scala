@@ -18,12 +18,11 @@ package org.scalasteward.core.bitbucket.http4s
 
 import cats.effect.Sync
 import cats.implicits._
-import org.http4s.client.UnexpectedStatus
 import org.http4s.{Request, Status, Uri}
 import org.scalasteward.core.bitbucket.Url
 import org.scalasteward.core.bitbucket.http4s.json._
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.util.HttpJsonClient
+import org.scalasteward.core.util.{HttpJsonClient, UnexpectedResponse}
 import org.scalasteward.core.vcs.VCSApiAlg
 import org.scalasteward.core.vcs.data._
 
@@ -38,8 +37,8 @@ class Http4sBitbucketApiAlg[F[_]: Sync](
 
   override def createFork(repo: Repo): F[RepoOut] =
     for {
-      fork <- client.post[RepositoryResponse](url.forks(repo), modify(repo)).handleErrorWith {
-        case UnexpectedStatus(Status.BadRequest) =>
+      fork <- client.post[RepositoryResponse](url.forks(repo), modify(repo)).recoverWith {
+        case UnexpectedResponse(_, _, _, Status.BadRequest, _) =>
           client.get(url.repo(repo.copy(owner = user.login)), modify(repo))
       }
       maybeParent <- fork.parent

@@ -1,3 +1,4 @@
+- 0um/thehand
 - 2m/authors
 - 2m/ciris-hocon
 - 2m/citywasp-api
@@ -41,6 +42,8 @@
 - BenFradet/struct-type-encoder
 - bitcoin-s/bitcoin-s
 - blemale/scaffeine
+- butcherless/incubator
+- butcherless/scala
 - cb372/cats-retry
 - cb372/scalacache
 - ccadllc/cedi-circuitbreakers
@@ -117,6 +120,11 @@
 - CleverCloud/akka-warp10-scala-client
 - clovellytech/http4s-modules
 - comcast/ip4s
+- cornerman/chameleon
+- cornerman/covenant
+- cornerman/mycelium
+- cornerman/scala-cuid
+- cornerman/sloth
 - coursier/coursier
 - coursier/echo
 - coursier/http-server
@@ -136,8 +144,10 @@
 - d2a4u/sqs4s
 - daandi/nice-url-encode-decode
 - dispalt/tagless-redux
+- dispalt/scala-relay
 - djspiewak/gll-combinators
 - djspiewak/shims
+- dmrolfs/omnibus
 - dwijnand/sbt-compat
 - dwijnand/sbt-dynver
 - dwijnand/sbt-project-graph
@@ -152,6 +162,13 @@
 - exoego/aws-sdk-scalajs-facade
 - exoego/aws-sdk-scalajs-facade-generator
 - exoego/scala-js-nodejs
+- exoego/scala-js-ts-importer
+- fdietze/bench
+- fdietze/colorado
+- fdietze/flatland
+- fdietze/scala-js-d3v4
+- fdietze/scala-js-fontawesome
+- fdietze/vectory
 - fiadliel/fs2-grpc
 - finagle/finagle-mysql-shapes
 - finagle/finagle-oauth2
@@ -167,7 +184,6 @@
 - fthomas/kartograffel
 - fthomas/properly
 - fthomas/refined
-- fthomas/refined-sjs-example
 - fthomas/scalafix-test
 - fthomas/scala-steward
 - fthomas/singleton-ops
@@ -249,6 +265,7 @@
 - lightbend/scala-logging
 - lightbend/scala-sculpt
 - lightbend/ssl-config
+- lihaoyi/scala.rx
 - LREN-CHUV/woken
 - LREN-CHUV/woken-messages
 - LREN-CHUV/woken-validation
@@ -298,6 +315,7 @@
 - nrinaudo/kantan.codecs
 - olafurpg/sbt-ci-release
 - olivierschultz/typelevel-template.g8
+- OutWatch/outwatch
 - ovotech/fs2-kafka
 - ovotech/kafka-serialization
 - ovotech/vulcan
@@ -333,6 +351,7 @@
 - playframework/play-ws
 - playframework/scalatestplus-play
 - playframework/twirl
+- plokhotnyuk/expression-evaluator
 - plokhotnyuk/fast-string-interpolator
 - plokhotnyuk/jsoniter-scala
 - plokhotnyuk/rtree2d
@@ -351,6 +370,7 @@
 - ReactiveMongo/ReactiveMongo-Streaming
 - ReactivePlatform/Pragmatic-Scala
 - ReactivePlatform/Reactive-Design-Patterns
+- rtimush/sbt-updates
 - sake92/hepek
 - saksdirect/sundial
 - sbt/sbt-autoversion
@@ -431,6 +451,7 @@
 - sullis/jms-testkit
 - swagger-akka-http/swagger-akka-http
 - swagger-akka-http/swagger-scala-module
+- synesso/scala-stellar-sdk
 - tanishiking/scalaunfmt
 - thesamet/sbt-protoc
 - ThoughtWorksInc/bindable.scala

@@ -208,7 +208,6 @@ addCommandAlias(
       Seq("core/run"),
       Seq("--workspace", s"$projectDir/workspace"),
       Seq("--repos-file", s"$projectDir/repos.md"),
-      Seq("--git-author-name", "Scala Steward"),
       Seq("--git-author-email", s"me@$projectName.org"),
       Seq("--vcs-login", projectName),
       Seq("--git-ask-pass", s"$home/.github/askpass/$projectName.sh"),

@@ -3,12 +3,12 @@ import sbt._
 object Versions {
   val circe = "0.11.1"
   val http4s = "0.20.6"
-  val refined = "0.9.8"
+  val refined = "0.9.9"
 }
 
 object Dependencies {
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.8.0"
-  val betterMonadicFor = "com.olegpy" %% "better-monadic-for" % "0.3.0"
+  val betterMonadicFor = "com.olegpy" %% "better-monadic-for" % "0.3.1"
   val caseApp = "com.github.alexarchambault" %% "case-app" % "2.0.0-M9"
   val catsEffect = "org.typelevel" %% "cats-effect" % "1.3.1"
   val catsKernelLaws = "org.typelevel" %% "cats-kernel-laws" % "1.6.1"

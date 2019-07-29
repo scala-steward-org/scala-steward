@@ -4,13 +4,13 @@ import better.files.File
 import cats.effect.IO
 import cats.implicits._
 import org.scalacheck.Arbitrary
+import org.scalasteward.core.io.FileAlgTest.ioFileAlg
+import org.scalasteward.core.io.LoggerTest.ioLogger
 import org.scalasteward.core.mock.MockContext.fileAlg
 import org.scalasteward.core.mock.MockState
 import org.scalatest.{FunSuite, Matchers}
 
 class FileAlgTest extends FunSuite with Matchers {
-  val ioFileAlg: FileAlg[IO] = FileAlg.create[IO]
-
   test("createTemporarily") {
     val file = File.temp / "test-scala-steward3.tmp"
     val content = Arbitrary.arbitrary[String].sample.getOrElse("")
@@ -84,4 +84,8 @@ class FileAlgTest extends FunSuite with Matchers {
     )
     edited shouldBe true
   }
+}
+
+object FileAlgTest {
+  implicit val ioFileAlg: FileAlg[IO] = FileAlg.create[IO]
 }
