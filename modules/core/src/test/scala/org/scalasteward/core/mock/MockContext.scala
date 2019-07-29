@@ -10,6 +10,7 @@ import org.scalasteward.core.git.{Author, GitAlg}
 import org.scalasteward.core.io.{MockFileAlg, MockProcessAlg, MockWorkspaceAlg}
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
+import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.FilterAlg
 import org.scalasteward.core.util.{BracketThrowable, DateTimeAlg, LogAlg}
 import org.scalasteward.core.vcs.VCSRepoAlg
@@ -24,7 +25,7 @@ object MockContext {
     vcsApiHost = Uri(),
     vcsLogin = "bot-doe",
     gitAskPass = File.temp / "askpass.sh",
-    signCommits = true,
+    signCommits = false,
     whitelistedDirectories = Nil,
     readOnlyDirectories = Nil,
     disableSandbox = false,
@@ -51,6 +52,7 @@ object MockContext {
   implicit val gitHubRepoAlg: VCSRepoAlg[MockEff] = VCSRepoAlg.create(config, gitAlg)
   implicit val logAlg: LogAlg[MockEff] = new LogAlg[MockEff]
   implicit val sbtAlg: SbtAlg[MockEff] = SbtAlg.create
+  implicit val scalafmtAlg: ScalafmtAlg[MockEff] = ScalafmtAlg.create
   implicit val editAlg: EditAlg[MockEff] = new EditAlg[MockEff]
   implicit val repoConfigAlg: RepoConfigAlg[MockEff] = new RepoConfigAlg[MockEff]
   implicit val filterAlg: FilterAlg[MockEff] = new FilterAlg[MockEff]
