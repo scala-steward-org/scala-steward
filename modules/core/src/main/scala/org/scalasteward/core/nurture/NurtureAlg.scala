@@ -22,6 +22,7 @@ import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Branch, GitAlg}
+import org.scalasteward.core.implicits._
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.scalafmt.ScalafmtAlg
@@ -49,13 +50,15 @@ final class NurtureAlg[F[_]](
 ) {
   def nurture(repo: Repo): F[Either[Throwable, Unit]] =
     logAlg.infoTotalTime(repo.show) {
-      logAlg.attemptLog(util.string.lineLeftRight(s"Nurture ${repo.show}")) {
-        for {
-          (fork, baseBranch) <- cloneAndSync(repo)
-          _ <- updateDependencies(repo, fork, baseBranch)
-          _ <- gitAlg.removeClone(repo)
-        } yield ()
-      }
+      logAlg
+        .attemptLog(util.string.lineLeftRight(s"Nurture ${repo.show}")) {
+          for {
+            (fork, baseBranch) <- cloneAndSync(repo)
+            result <- updateDependencies(repo, fork, baseBranch)
+            _ <- gitAlg.removeClone(repo)
+          } yield result
+        }
+        .map(x => x.fold(_.asLeft[Unit], identity))
     }
 
   def cloneAndSync(repo: Repo): F[(Repo, Branch)] =
@@ -66,7 +69,7 @@ final class NurtureAlg[F[_]](
       parent <- vcsRepoAlg.syncFork(repo, repoOut)
     } yield (repoOut.repo, parent.default_branch)
 
-  def updateDependencies(repo: Repo, fork: Repo, baseBranch: Branch): F[Unit] =
+  def updateDependencies(repo: Repo, fork: Repo, baseBranch: Branch): F[Either[Throwable, Unit]] =
     for {
       _ <- logger.info(s"Find updates for ${repo.show}")
       repoConfig <- repoConfigAlg.readRepoConfigOrDefault(repo)
@@ -77,37 +80,43 @@ final class NurtureAlg[F[_]](
       grouped = Update.group(filtered)
       _ <- logger.info(util.logger.showUpdates(grouped))
       baseSha1 <- gitAlg.latestSha1(repo, baseBranch)
-      _ <- grouped.traverse_ { update =>
+      result <- grouped.traverse { update =>
         val data =
           UpdateData(repo, fork, repoConfig, update, baseBranch, baseSha1, git.branchFor(update))
         processUpdate(data)
       }
-    } yield ()
+    } yield toFoldableOps(result).fold
 
   def getNonSbtUpdates(repo: Repo): F[List[Update.Single]] =
     for {
       maybeScalafmt <- scalafmtAlg.getScalafmtUpdate(repo)
     } yield List(maybeScalafmt).flatten
 
-  def processUpdate(data: UpdateData): F[Unit] =
+  def processUpdate(data: UpdateData): F[Either[Throwable, Unit]] =
     for {
       _ <- logger.info(s"Process update ${data.update.show}")
       head = vcs.listingBranch(config.vcsType, data.fork, data.update)
       pullRequests <- vcsApiAlg.listPullRequests(data.repo, head, data.baseBranch)
-      _ <- pullRequests.headOption match {
+      result <- pullRequests.headOption match {
         case Some(pr) if pr.isClosed =>
-          logger.info(s"PR ${pr.html_url} is closed")
+          logger.info(s"PR ${pr.html_url} is closed").asRight
         case Some(pr) if data.repoConfig.updatePullRequests =>
-          logger.info(s"Found PR ${pr.html_url}") >> updatePullRequest(data)
+          logger.info(s"Found PR ${pr.html_url}") >>
+            updatePullRequest(data).attempt
+              .logError(s"Updating PR in branch ${data.baseBranch.name} failed")
         case Some(pr) =>
-          logger.info(s"Found PR ${pr.html_url}, but updates are disabled by flag")
+          logger.info(s"Found PR ${pr.html_url}, but updates are disabled by flag").asRight
         case None =>
-          applyNewUpdate(data)
+          applyNewUpdate(data).asRight
       }
       _ <- pullRequests.headOption.fold(F.unit) { pr =>
         pullRequestRepo.createOrUpdate(data.repo, pr.html_url, data.baseSha1, data.update, pr.state)
       }
-    } yield ()
+    } yield result
+
+  implicit private class RxF[A](f: F[A]) {
+    def asRight: F[Either[Throwable, A]] = f.map(_.asRight[Throwable])
+  }
 
   def applyNewUpdate(data: UpdateData): F[Unit] =
     (editAlg.applyUpdate(data.repo, data.update) >> gitAlg.containsChanges(data.repo)).ifM(

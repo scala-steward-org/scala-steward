@@ -18,6 +18,8 @@ package org.scalasteward.core.util
 
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
+import org.scalasteward.core.implicits._
+
 import scala.concurrent.duration.FiniteDuration
 
 final class LogAlg[F[_]](
@@ -27,10 +29,7 @@ final class LogAlg[F[_]](
     F: MonadThrowable[F]
 ) {
   def attemptLog[A](message: String)(fa: F[A]): F[Either[Throwable, A]] =
-    logger.info(message) >> fa.attempt.flatTap {
-      case Left(t)  => logger.error(t)(s"$message failed")
-      case Right(_) => F.unit
-    }
+    logger.info(message) >> fa.attempt.logError(s"$message failed")
 
   def attemptLog_[A](message: String)(fa: F[A]): F[Unit] =
     attemptLog(message)(fa).void
@@ -46,4 +45,21 @@ final class LogAlg[F[_]](
       string.lineLeftRight(s"Total time:$label1 ${dateTime.showDuration(duration)}")
     }(fa)
   }
+}
+
+trait LogAlgSyntax {
+  implicit final def syntaxLogEither[F[_], A](fea: F[Either[Throwable, A]]): LogEitherOps[F, A] =
+    new LogEitherOps[F, A](fea)
+}
+
+final class LogEitherOps[F[_], A](private val fea: F[Either[Throwable, A]]) extends AnyVal {
+
+  def logError(message: => String)(
+      implicit logger: Logger[F],
+      F: MonadThrowable[F]
+  ): F[Either[Throwable, A]] =
+    fea.flatTap {
+      case Left(t)  => logger.error(t)(message)
+      case Right(_) => F.unit
+    }
 }
