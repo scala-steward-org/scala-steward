@@ -516,8 +516,6 @@
 - UdashFramework/udash-core
 - underscoreio/slickless
 - unfiltered/unfiltered
-- vectos/formulation
-- vectos/itinere
 - vigoo/clipp
 - vigoo/prox
 - vigoo/simpp
