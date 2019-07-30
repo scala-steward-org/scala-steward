@@ -11,10 +11,10 @@ class processTest extends FunSuite with Matchers {
   implicit val timerIO: Timer[IO] = IO.timer(ExecutionContext.global)
 
   def slurp1(cmd: Nel[String]): IO[List[String]] =
-    process.slurp[IO](cmd, 1.minute, _ => IO.unit, _ => IO.unit)
+    process.slurp[IO](cmd, None, Map.empty, 1.minute, _ => IO.unit, _ => IO.unit)
 
   def slurp2(cmd: Nel[String], timeout: FiniteDuration): IO[List[String]] =
-    process.slurp[IO](cmd, timeout, _ => IO.unit, _ => IO.unit)
+    process.slurp[IO](cmd, None, Map.empty, timeout, _ => IO.unit, _ => IO.unit)
 
   test("echo hello") {
     slurp1(Nel.of("echo", "-n", "hello")).unsafeRunSync() shouldBe List("hello")

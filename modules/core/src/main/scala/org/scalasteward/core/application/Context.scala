@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.application
 
-import cats.effect.{ConcurrentEffect, Resource}
+import cats.effect.{ConcurrentEffect, ContextShift, Resource, Timer}
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.client.Client
@@ -39,7 +39,9 @@ import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg, VCSSelection}
 import scala.concurrent.ExecutionContext
 
 object Context {
-  def create[F[_]: ConcurrentEffect](args: List[String]): Resource[F, StewardAlg[F]] =
+  def create[F[_]: ConcurrentEffect: ContextShift: Timer](
+      args: List[String]
+  ): Resource[F, StewardAlg[F]] =
     for {
       cliArgs_ <- Resource.liftF(new Cli[F].parseArgs(args))
       implicit0(config: Config) <- Resource.liftF(Config.create[F](cliArgs_))

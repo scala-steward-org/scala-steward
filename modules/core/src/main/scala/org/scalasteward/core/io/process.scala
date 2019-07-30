@@ -19,7 +19,7 @@ package org.scalasteward.core.io
 import cats.effect._
 import cats.implicits._
 import fs2.Stream
-import java.io.{IOException, InputStream}
+import java.io.{File, IOException, InputStream}
 import java.util.concurrent.Executors
 import org.scalasteward.core.util.Nel
 import scala.collection.mutable.ListBuffer
@@ -29,20 +29,29 @@ import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService, Time
 object process {
   def slurp[F[_]](
       cmd: Nel[String],
+      cwd: Option[File],
+      extraEnv: Map[String, String],
       timeout: FiniteDuration,
       out: String => F[Unit],
       err: String => F[Unit]
   )(implicit F: Concurrent[F], cs: ContextShift[F], timer: Timer[F]): F[List[String]] =
-    F.delay(new ProcessBuilder(cmd.toList: _*).start()).flatMap { process =>
-      F.delay(new ListBuffer[String]).flatMap { buffer =>
-        blockingContext[F].use { ec =>
-          val stdout = readInputStream[F](process.getInputStream, ec).evalTap(out)
-          val stderr = readInputStream[F](process.getErrorStream, ec).evalTap(err)
-
-          val readOutErr = Stream(stdout, stderr).parJoinUnbounded
-            .evalMap(line => F.delay(buffer.append(line)))
-            .compile
-            .drain
+    F.delay {
+        val pb = new ProcessBuilder(cmd.toList: _*)
+        val env = pb.environment()
+        cwd.foreach(pb.directory)
+        extraEnv.foreach { case (key, value) => env.put(key, value) }
+        pb.start()
+      }
+      .flatMap { process =>
+        F.delay(new ListBuffer[String]).flatMap { buffer =>
+          val readOutErr = blockingContext[F].use { ec =>
+            val stdout = readInputStream[F](process.getInputStream, ec).evalTap(out)
+            val stderr = readInputStream[F](process.getErrorStream, ec).evalTap(err)
+            Stream(stdout, stderr).parJoinUnbounded
+              .evalMap(line => F.delay(buffer.append(line)))
+              .compile
+              .drain
+          }
 
           val result = readOutErr.flatMap(_ => F.delay(process.waitFor())).flatMap { exitValue =>
             if (exitValue === 0) F.pure(buffer.toList)
@@ -55,7 +64,6 @@ object process {
           Concurrent.timeoutTo(result, timeout, fallback)
         }
       }
-    }
 
   private def blockingContext[F[_]](
       implicit F: Sync[F]
