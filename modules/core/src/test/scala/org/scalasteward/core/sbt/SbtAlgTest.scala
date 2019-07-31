@@ -145,6 +145,44 @@ class SbtAlgTest extends FunSuite with Matchers {
     )
   }
 
+  test("runMigrations for test codes") {
+    val repo = Repo("fthomas", "scala-steward")
+    val repoDir = config.workspace / repo.owner / repo.repo
+    val migrations = Nel.of(
+      Migration(
+        "org.scalatest",
+        Nel.of("scalatest".r),
+        Version("3.1.0"),
+        Nel.of(
+          "https://raw.githubusercontent.com/scalatest/autofix/6168da0e2bd113872b7dcd22cad7688d97ef9381/3.0.x/rules/src/main/scala/org/scalatest/autofix/v3_0_x/RenameDeprecatedPackage.scala",
+          "https://raw.githubusercontent.com/scalatest/autofix/6168da0e2bd113872b7dcd22cad7688d97ef9381/3.1.x/rules/src/main/scala/org/scalatest/autofix/v3_1_x/RewriteDeprecatedNames.scala"
+        ),
+        Some("test")
+      )
+    )
+    val state = sbtAlg.runMigrations(repo, migrations).runS(MockState.empty).unsafeRunSync()
+
+    state shouldBe MockState.empty.copy(
+      commands = Vector(
+        List("create", "/tmp/steward/.sbt/0.13/plugins/scala-steward-scalafix.sbt"),
+        List("create", "/tmp/steward/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
+        List(
+          "TEST_VAR=GREAT",
+          "ANOTHER_TEST_VAR=ALSO_GREAT",
+          repoDir.toString,
+          "firejail",
+          s"--whitelist=$repoDir",
+          "sbt",
+          "-batch",
+          "-no-colors",
+          ";scalafixEnable;test:scalafix https://raw.githubusercontent.com/scalatest/autofix/6168da0e2bd113872b7dcd22cad7688d97ef9381/3.0.x/rules/src/main/scala/org/scalatest/autofix/v3_0_x/RenameDeprecatedPackage.scala;test:scalafix https://raw.githubusercontent.com/scalatest/autofix/6168da0e2bd113872b7dcd22cad7688d97ef9381/3.1.x/rules/src/main/scala/org/scalatest/autofix/v3_1_x/RewriteDeprecatedNames.scala"
+        ),
+        List("rm", "/tmp/steward/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
+        List("rm", "/tmp/steward/.sbt/0.13/plugins/scala-steward-scalafix.sbt")
+      )
+    )
+  }
+
   test("getSbtUpdate") {
     val repo = Repo("fthomas", "scala-steward")
     val repoDir = config.workspace / repo.owner / repo.repo
