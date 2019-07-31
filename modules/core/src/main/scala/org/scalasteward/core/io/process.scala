@@ -20,11 +20,10 @@ import cats.effect._
 import cats.implicits._
 import fs2.Stream
 import java.io.{File, IOException, InputStream}
-import java.util.concurrent.Executors
 import org.scalasteward.core.util.Nel
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService, TimeoutException}
+import scala.concurrent.{ExecutionContext, TimeoutException}
 
 object process {
   def slurp[F[_]](
@@ -44,8 +43,8 @@ object process {
       }
       .flatMap { process =>
         F.delay(new ListBuffer[String]).flatMap { buffer =>
-          val readOut = blockingContext[F].use { ec =>
-            val out = readInputStream[F](process.getInputStream, ec)
+          val readOut = Blocker[F].use { blocker =>
+            val out = readInputStream[F](process.getInputStream, blocker.blockingContext)
             out.evalMap(line => F.delay(buffer.append(line)) >> log(line)).compile.drain
           }
 
@@ -60,13 +59,6 @@ object process {
           Concurrent.timeoutTo(result, timeout, fallback)
         }
       }
-
-  private def blockingContext[F[_]](
-      implicit F: Sync[F]
-  ): Resource[F, ExecutionContextExecutorService] = {
-    val alloc = F.delay(ExecutionContext.fromExecutorService(Executors.newCachedThreadPool()))
-    Resource.make(alloc)(ec => F.delay(ec.shutdown()))
-  }
 
   private def readInputStream[F[_]](is: InputStream, blockingContext: ExecutionContext)(
       implicit
