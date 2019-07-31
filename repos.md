@@ -269,6 +269,7 @@
 - LREN-CHUV/woken
 - LREN-CHUV/woken-messages
 - LREN-CHUV/woken-validation
+- ltbs/uniform-scala
 - lucidd/rpm4s
 - maximn/coding-interview-questions-scala
 - maximn/scala-workshop
@@ -385,7 +386,6 @@
 - scalapb/protoc-bridge
 - scalapb/ScalaPB
 - scalapb/scalapb-json4s
-- scalaz/scalaz-nio
 - scala/hello-world.g8
 - scala/make-release-notes
 - scala/sbt-scala-module
@@ -516,8 +516,6 @@
 - UdashFramework/udash-core
 - underscoreio/slickless
 - unfiltered/unfiltered
-- vectos/formulation
-- vectos/itinere
 - vigoo/clipp
 - vigoo/prox
 - vigoo/simpp
@@ -542,5 +540,6 @@
 - zio/zio-actors
 - zio/zio-akka-cluster
 - zio/zio-keeper
+- zio/zio-nio
 - zio/zio-sqs
 - ziyasal/reducio
