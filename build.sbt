@@ -56,14 +56,17 @@ lazy val core = myCrossProject("core")
     buildInfoPackage := moduleRootPkg.value,
     initialCommands += s"""
       import ${moduleRootPkg.value}._
+      import ${moduleRootPkg.value}.util.Nel
       import ${moduleRootPkg.value}.vcs.data._
       import better.files.File
       import cats.effect.ContextShift
       import cats.effect.IO
+      import cats.effect.Timer
       import org.http4s.client.blaze.BlazeClientBuilder
       import scala.concurrent.ExecutionContext
 
-      implicit val ctxShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
+      implicit val ioContextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
+      implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
     """,
     fork in run := true,
     fork in Test := true
