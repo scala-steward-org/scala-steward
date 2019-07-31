@@ -65,8 +65,8 @@ lazy val core = myCrossProject("core")
       import org.http4s.client.blaze.BlazeClientBuilder
       import scala.concurrent.ExecutionContext
 
-      implicit val contextShiftIO: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-      implicit val timerIO: Timer[IO] = IO.timer(ExecutionContext.global)
+      implicit val ioContextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
+      implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
     """,
     fork in run := true,
     fork in Test := true

@@ -50,10 +50,10 @@ object ProcessAlg {
   def create[F[_]](
       implicit
       config: Config,
+      contextShift: ContextShift[F],
       logger: Logger[F],
-      F: Concurrent[F],
-      cs: ContextShift[F],
-      timer: Timer[F]
+      timer: Timer[F],
+      F: Concurrent[F]
   ): ProcessAlg[F] =
     new UsingFirejail[F](config) {
       override def exec(
@@ -62,13 +62,6 @@ object ProcessAlg {
           extraEnv: (String, String)*
       ): F[List[String]] =
         logger.debug(s"Execute ${command.mkString_(" ")}") >>
-          process.slurp[F](
-            command,
-            Some(cwd.toJava),
-            extraEnv.toMap,
-            10.minutes,
-            logger.trace(_),
-            logger.trace(_)
-          )
+          process.slurp[F](command, Some(cwd.toJava), extraEnv.toMap, 10.minutes, logger.trace(_))
     }
 }

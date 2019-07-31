@@ -32,28 +32,24 @@ object process {
       cwd: Option[File],
       extraEnv: Map[String, String],
       timeout: FiniteDuration,
-      out: String => F[Unit],
-      err: String => F[Unit]
-  )(implicit F: Concurrent[F], cs: ContextShift[F], timer: Timer[F]): F[List[String]] =
+      log: String => F[Unit]
+  )(implicit contextShift: ContextShift[F], timer: Timer[F], F: Concurrent[F]): F[List[String]] =
     F.delay {
         val pb = new ProcessBuilder(cmd.toList: _*)
         val env = pb.environment()
         cwd.foreach(pb.directory)
         extraEnv.foreach { case (key, value) => env.put(key, value) }
+        pb.redirectErrorStream(true)
         pb.start()
       }
       .flatMap { process =>
         F.delay(new ListBuffer[String]).flatMap { buffer =>
-          val readOutErr = blockingContext[F].use { ec =>
-            val stdout = readInputStream[F](process.getInputStream, ec).evalTap(out)
-            val stderr = readInputStream[F](process.getErrorStream, ec).evalTap(err)
-            Stream(stdout, stderr).parJoinUnbounded
-              .evalMap(line => F.delay(buffer.append(line)))
-              .compile
-              .drain
+          val readOut = blockingContext[F].use { ec =>
+            val out = readInputStream[F](process.getInputStream, ec)
+            out.evalMap(line => F.delay(buffer.append(line)) >> log(line)).compile.drain
           }
 
-          val result = readOutErr.flatMap(_ => F.delay(process.waitFor())).flatMap { exitValue =>
+          val result = readOut.flatMap(_ => F.delay(process.waitFor())).flatMap { exitValue =>
             if (exitValue === 0) F.pure(buffer.toList)
             else F.raiseError[List[String]](new IOException(buffer.mkString("\n")))
           }

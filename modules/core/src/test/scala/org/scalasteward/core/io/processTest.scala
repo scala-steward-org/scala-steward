@@ -1,20 +1,17 @@
 package org.scalasteward.core.io
 
-import cats.effect.{ContextShift, IO, Timer}
+import cats.effect.IO
+import org.scalasteward.core.TestInstances._
 import org.scalasteward.core.util.Nel
 import org.scalatest.{FunSuite, Matchers}
-import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 class processTest extends FunSuite with Matchers {
-  implicit val contextShiftIO: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-  implicit val timerIO: Timer[IO] = IO.timer(ExecutionContext.global)
-
   def slurp1(cmd: Nel[String]): IO[List[String]] =
-    process.slurp[IO](cmd, None, Map.empty, 1.minute, _ => IO.unit, _ => IO.unit)
+    process.slurp[IO](cmd, None, Map.empty, 1.minute, _ => IO.unit)
 
   def slurp2(cmd: Nel[String], timeout: FiniteDuration): IO[List[String]] =
-    process.slurp[IO](cmd, None, Map.empty, timeout, _ => IO.unit, _ => IO.unit)
+    process.slurp[IO](cmd, None, Map.empty, timeout, _ => IO.unit)
 
   test("echo hello") {
     slurp1(Nel.of("echo", "-n", "hello")).unsafeRunSync() shouldBe List("hello")
