@@ -238,6 +238,7 @@
 - kiambogo/fs2-jms
 - kontainers/micrometer-akka
 - kovszilard/twitter-server-prometheus
+- krasserm/streamz
 - kubukoz/brick-store
 - kubukoz/error-control
 - kubukoz/slick-effect
