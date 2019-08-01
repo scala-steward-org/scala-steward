@@ -245,6 +245,7 @@
 - kubukoz/vivalidi
 - kwark/play-refined
 - kwark/slick-refined
+- labra/shaclex
 - lagom/lagom
 - lancewalton/treelog
 - larsrh/libisabelle
