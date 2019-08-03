@@ -62,8 +62,8 @@ object CoursierAlg {
           maybeFetchResult.flatMap(
             _.resolution.projectCache.get((module, dependency.version)).flatMap {
               case (_, project) =>
-                // TODO: use Scm info if published https://github.com/coursier/coursier/pull/1291
-                Option(project.info.homePage)
+                val info = project.info
+                info.scm.map(_.url).orElse(Option(info.homePage)).filter(_.nonEmpty)
             }
           )
         }
