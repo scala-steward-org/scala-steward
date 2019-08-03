@@ -37,6 +37,7 @@ lazy val core = myCrossProject("core")
       Dependencies.circeExtras,
       Dependencies.commonsIo,
       Dependencies.coursierCore,
+      Dependencies.coursierCatsInterop,
       Dependencies.fs2Core,
       Dependencies.http4sBlazeClient,
       Dependencies.http4sCirce,

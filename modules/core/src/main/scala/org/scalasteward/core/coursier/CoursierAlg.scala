@@ -16,11 +16,13 @@
 
 package org.scalasteward.core.coursier
 
-import java.util.concurrent.ExecutorService
-
 import cats.effect._
 import cats.implicits._
+import cats.Parallel
+import coursier.interop.cats._
 import org.scalasteward.core.data.Dependency
+
+import scala.concurrent.ExecutionContext
 
 trait CoursierAlg[F[_]] {
   def getArtifactUrl(dependency: Dependency): F[Option[String]]
@@ -28,29 +30,15 @@ trait CoursierAlg[F[_]] {
 }
 
 object CoursierAlg {
-  // TODO: Use coursier.interop.cats._ in https://github.com/coursier/coursier/pull/1294 when published
-  implicit def createCoursierSync[F[_]](
-      implicit
-      F: Sync[F]
-  ): coursier.util.Sync[F] = new coursier.util.Sync[F] {
-    override def point[A](a: A): F[A] = F.point(a)
-    override def bind[A, B](elem: F[A])(f: A => F[B]): F[B] = F.flatMap(elem)(f)
-    override def delay[A](a: => A): F[A] = F.delay(a)
-    override def fromAttempt[A](a: Either[Throwable, A]): F[A] = F.fromEither(a)
-    override def handle[A](a: F[A])(f: PartialFunction[Throwable, A]): F[A] =
-      F.handleError(a)(f.apply)
-    override def gather[A](elems: Seq[F[A]]): F[Seq[A]] =
-      elems.foldLeft(F.delay(Seq.empty[A])) {
-        case (fseq, f) =>
-          fseq.flatMap(seq => f.map(seq :+ _))
-      }
-    override def schedule[A](unused: ExecutorService)(f: => A): F[A] = F.delay(f)
-  }
-
   def create[F[_]](
       implicit
       F: Sync[F]
   ): CoursierAlg[F] = {
+    implicit val P = Parallel.identity[F]
+    implicit val cs: ContextShift[F] = new ContextShift[F] {
+      override def shift: F[Unit] = F.unit
+      override def evalOn[A](ec: ExecutionContext)(fa: F[A]): F[A] = F.defer(fa)
+    }
     val cache = coursier.cache.FileCache[F]()
     val fetch = coursier.Fetch[F](cache)
     new CoursierAlg[F] {
