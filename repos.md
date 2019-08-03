@@ -504,6 +504,8 @@
 - typelevel/cats-tagless
 - typelevel/claimant
 - typelevel/discipline
+- typelevel/discipline-scalatest
+- typelevel/discipline-specs2
 - typelevel/frameless
 - typelevel/jawn
 - typelevel/kittens
