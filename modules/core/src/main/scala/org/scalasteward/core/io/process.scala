@@ -33,32 +33,43 @@ object process {
       timeout: FiniteDuration,
       log: String => F[Unit]
   )(implicit contextShift: ContextShift[F], timer: Timer[F], F: Concurrent[F]): F[List[String]] =
-    F.delay {
-        val pb = new ProcessBuilder(cmd.toList: _*)
-        val env = pb.environment()
-        cwd.foreach(pb.directory)
-        extraEnv.foreach { case (key, value) => env.put(key, value) }
-        pb.redirectErrorStream(true)
-        pb.start()
-      }
-      .flatMap { process =>
-        F.delay(new ListBuffer[String]).flatMap { buffer =>
-          val readOut = Blocker[F].use { blocker =>
-            val out = readInputStream[F](process.getInputStream, blocker.blockingContext)
-            out.evalMap(line => F.delay(buffer.append(line)) >> log(line)).compile.drain
-          }
-
-          val result = readOut.flatMap(_ => F.delay(process.waitFor())).flatMap { exitValue =>
-            if (exitValue === 0) F.pure(buffer.toList)
-            else F.raiseError[List[String]](new IOException(buffer.mkString("\n")))
-          }
-
-          val fallback = F.delay(process.destroyForcibly()) >>
-            F.raiseError[List[String]](new TimeoutException(buffer.mkString("\n")))
-
-          Concurrent.timeoutTo(result, timeout, fallback)
+    createProcess(cmd, cwd, extraEnv).flatMap { process =>
+      F.delay(new ListBuffer[String]).flatMap { buffer =>
+        val readOut = Blocker[F].use { blocker =>
+          val out = readInputStream[F](process.getInputStream, blocker.blockingContext)
+          out.evalMap(line => F.delay(buffer.append(line)) >> log(line)).compile.drain
         }
+
+        val result = readOut >> F.delay(process.waitFor()) >>= { exitValue =>
+          if (exitValue === 0) F.pure(buffer.toList)
+          else {
+            val msg = s"'${cmd.mkString_(" ")}' exited with code $exitValue"
+            F.raiseError[List[String]](new IOException(makeMessage(msg, buffer.toList)))
+          }
+        }
+
+        val fallback = F.delay(process.destroyForcibly()) >> {
+          val msg = s"'${cmd.mkString_(" ")}' timed out after ${timeout.toString}"
+          F.raiseError[List[String]](new TimeoutException(makeMessage(msg, buffer.toList)))
+        }
+
+        Concurrent.timeoutTo(result, timeout, fallback)
       }
+    }
+
+  private def createProcess[F[_]](
+      cmd: Nel[String],
+      cwd: Option[File],
+      extraEnv: Map[String, String]
+  )(implicit F: Sync[F]): F[Process] =
+    F.delay {
+      val pb = new ProcessBuilder(cmd.toList: _*)
+      val env = pb.environment()
+      cwd.foreach(pb.directory)
+      extraEnv.foreach { case (key, value) => env.put(key, value) }
+      pb.redirectErrorStream(true)
+      pb.start()
+    }
 
   private def readInputStream[F[_]](is: InputStream, blockingContext: ExecutionContext)(
       implicit
@@ -69,4 +80,7 @@ object process {
       .readInputStream(F.pure(is), chunkSize = 4096, blockingContext)
       .through(fs2.text.utf8Decode)
       .through(fs2.text.lines)
+
+  private def makeMessage(prefix: String, output: List[String]): String =
+    (prefix :: output).mkString("\n")
 }
