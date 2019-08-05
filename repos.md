@@ -59,7 +59,6 @@
 - ChocPanda/scalacheck-magnolia
 - ChristopherDavenport/agitation
 - ChristopherDavenport/bank
-- ChristopherDavenport/base.g8
 - ChristopherDavenport/cats-par
 - ChristopherDavenport/cats-scalacheck
 - ChristopherDavenport/cats-time
@@ -87,6 +86,7 @@
 - ChristopherDavenport/http4s-websocket-example
 - ChristopherDavenport/iork
 - ChristopherDavenport/keypool
+- ChristopherDavenport/library.g8
 - ChristopherDavenport/linebacker
 - ChristopherDavenport/log4cats
 - ChristopherDavenport/log4cats-writer-example
