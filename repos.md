@@ -313,6 +313,8 @@
 - nevillelyh/parquet-avro-extra
 - nevillelyh/protobuf-generic
 - nevillelyh/shapeless-datatype
+- NomadBlacky/scala_examples
+- NomadBlacky/scaladog
 - notxcain/aecor
 - nrinaudo/kantan.codecs
 - olafurpg/sbt-ci-release
