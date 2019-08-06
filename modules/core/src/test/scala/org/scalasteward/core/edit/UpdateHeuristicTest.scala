@@ -345,6 +345,24 @@ class UpdateHeuristicTest extends FunSuite with Matchers {
       Nel.of("2.5.0")
     ).replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.strict.name)
   }
+
+  test(
+    "https://github.com/functional-streams-for-scala/fs2/pull/1550/commits/3f7107b20d57faa4d3ee78550efef1dfe8337ff8") {
+    val original =
+      """ "org.typelevel" %%% "cats-core" % "2.0.0-M4",
+        | "org.typelevel" %%% "cats-laws" % "2.0.0-M4" % "test",
+        | "org.typelevel" %%% "cats-effect" % "2.0.0-M4",
+        | "org.typelevel" %%% "cats-effect-laws" % "2.0.0-M4" % "test",
+        |""".stripMargin
+    val expected =
+      """ "org.typelevel" %%% "cats-core" % "2.0.0-RC1",
+        | "org.typelevel" %%% "cats-laws" % "2.0.0-RC1" % "test",
+        | "org.typelevel" %%% "cats-effect" % "2.0.0-M4",
+        | "org.typelevel" %%% "cats-effect-laws" % "2.0.0-M4" % "test",
+        |""".stripMargin
+    Group("org.typelevel", Nel.of("cats-core", "cats-laws"), "2.0.0-M4", Nel.of("2.0.0-RC1"))
+      .replaceVersionIn(original) shouldBe (Some(expected) -> "")
+  }
 }
 
 object UpdateHeuristicTest {
