@@ -351,7 +351,7 @@ object UpdateHeuristicTest {
   implicit class UpdateOps(update: Update) {
     def replaceVersionIn(target: String): (Option[String], String) =
       UpdateHeuristic.all.foldLeft((Option.empty[String], "")) {
-        case ((None, _), heuristic) => (heuristic.replaceF(update)(target), heuristic.name)
+        case ((None, _), heuristic) => (heuristic.replaceVersion(update)(target), heuristic.name)
         case (result, _)            => result
       }
   }

@@ -57,7 +57,7 @@ final class EditAlg[F[_]](
   def applyUpdateTo[G[_]: Traverse](files: G[File], update: Update): F[Unit] = {
     val actions = UpdateHeuristic.all.map { heuristic =>
       logger.info(s"Trying heuristic '${heuristic.name}'") >>
-        fileAlg.editFiles(files, heuristic.replaceF(update))
+        fileAlg.editFiles(files, heuristic.replaceVersion(update))
     }
     bindUntilTrue(actions).void
   }
