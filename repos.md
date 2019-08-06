@@ -70,7 +70,6 @@
 - ChristopherDavenport/default
 - ChristopherDavenport/doobie-pool
 - ChristopherDavenport/dynamapath
-- ChristopherDavenport/ember
 - ChristopherDavenport/epimetheus
 - ChristopherDavenport/epimetheus-circuit
 - ChristopherDavenport/epimetheus-http4s
@@ -96,7 +95,6 @@
 - ChristopherDavenport/rank3
 - ChristopherDavenport/reactive-potato
 - ChristopherDavenport/read
-- ChristopherDavenport/scalaz-task-effect
 - ChristopherDavenport/selection
 - ChristopherDavenport/semigroups
 - ChristopherDavenport/synchronized
