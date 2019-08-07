@@ -50,6 +50,7 @@
 - ccadllc/cedi-config
 - ccadllc/cedi-dtrace
 - ccamel/playground-binding.scala
+- ccamel/poc-piper-worker-flink
 - cchantep/acolyte
 - cchantep/alohura
 - cchantep/foorgol
