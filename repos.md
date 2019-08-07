@@ -423,12 +423,14 @@
 - sksamuel/elastic4s
 - sksamuel/pulsar4s
 - Slakah/uritemplate4s
+- slamdata/async-blobstore
 - slamdata/qdata
 - slamdata/quasar
 - slamdata/quasar-datasource-azure
 - slamdata/quasar-datasource-mongo
 - slamdata/quasar-datasource-s3
 - slamdata/quasar-datasource-url
+- slamdata/sbt-quasar-datasource
 - slamdata/sbt-slamdata
 - slamdata/tectonic
 - snowplow-incubator/cla-bot
