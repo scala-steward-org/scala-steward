@@ -62,8 +62,9 @@ object CoursierAlg {
           maybeFetchResult.flatMap(
             _.resolution.projectCache.get((module, dependency.version)).flatMap {
               case (_, project) =>
-                val info = project.info
-                info.scm.map(_.url).orElse(Option(info.homePage)).filter(_.nonEmpty)
+                val maybeScmUrl = project.info.scm.flatMap(i => Option(i.url)).filter(_.nonEmpty)
+                val maybeHomepage = Option(project.info.homePage).filter(_.nonEmpty)
+                maybeScmUrl.orElse(maybeHomepage)
             }
           )
         }
