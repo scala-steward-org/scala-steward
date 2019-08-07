@@ -9,14 +9,16 @@ class CoursierAlgTest extends FunSuite with Matchers {
 
   test("getArtifactUrl") {
     val dep = Dependency("org.typelevel", "cats-effect", "cats-effect_2.12", "1.0.0")
-    coursierAlg
+    val (state, result) = coursierAlg
       .getArtifactUrl(dep)
-      .runS(MockState.empty)
-      .unsafeRunSync() shouldBe MockState.empty.copy(
+      .run(MockState.empty)
+      .unsafeRunSync()
+    state shouldBe MockState.empty.copy(
       commands = Vector(),
       logs = Vector(),
       files = Map()
     )
+    result shouldBe Some("https://typelevel.org/cats-effect/")
   }
 
 }
