@@ -526,6 +526,8 @@
 - vigoo/clipp
 - vigoo/prox
 - vigoo/simpp
+- VladKopanev/cats-saga
+- VladKopanev/zio-saga
 - vlovgr/ciris
 - Wei-1/scala-machine-learning
 - WellFactored/clovis
