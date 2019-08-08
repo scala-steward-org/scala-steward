@@ -142,8 +142,8 @@
 - criteo/lolhttp
 - d2a4u/sqs4s
 - daandi/nice-url-encode-decode
-- dispalt/tagless-redux
 - dispalt/scala-relay
+- dispalt/tagless-redux
 - djspiewak/gll-combinators
 - djspiewak/shims
 - dmrolfs/omnibus
@@ -235,6 +235,9 @@
 - KelkooGroup/theGardener
 - kemitix/thorp
 - kiambogo/fs2-jms
+- kmizu/jsonda
+- kmizu/macro_peg
+- kmizu/pegex
 - kontainers/micrometer-akka
 - kovszilard/twitter-server-prometheus
 - kubukoz/brick-store
@@ -312,8 +315,8 @@
 - nevillelyh/parquet-avro-extra
 - nevillelyh/protobuf-generic
 - nevillelyh/shapeless-datatype
-- NomadBlacky/scala_examples
 - NomadBlacky/scaladog
+- NomadBlacky/scala_examples
 - notxcain/aecor
 - nrinaudo/kantan.codecs
 - olafurpg/sbt-ci-release
@@ -351,11 +354,11 @@
 - playframework/play-grpc
 - playframework/play-json
 - playframework/play-slick
+- playframework/play-soap
 - playframework/play-socket.io
 - playframework/play-ws
 - playframework/scalatestplus-play
 - playframework/twirl
-- playframework/play-soap
 - plokhotnyuk/expression-evaluator
 - plokhotnyuk/fast-string-interpolator
 - plokhotnyuk/jsoniter-scala
@@ -390,6 +393,7 @@
 - scalapb/protoc-bridge
 - scalapb/ScalaPB
 - scalapb/scalapb-json4s
+- scala-ts/scala-ts
 - scala/hello-world.g8
 - scala/make-release-notes
 - scala/sbt-scala-module
@@ -405,8 +409,8 @@
 - scala/scala-parser-combinators
 - scala/scala-seed.g8
 - scala/scala-xml
-- scala-ts/scala-ts
 - scanamo/scanamo
+- scaruby/scaruby
 - schrepfler/artemis
 - schrepfler/cas-tools
 - schrepfler/crdt-kit
@@ -486,10 +490,10 @@
 - TinkoffCreditSystems/typed-schema
 - tjheslin1/DMsPredictor
 - tmtsoftware/csw
+- tmtsoftware/csw.g8
 - tmtsoftware/csw-acceptance
 - tmtsoftware/csw-client
 - tmtsoftware/csw-js
-- tmtsoftware/csw.g8
 - tmtsoftware/embedded-keycloak
 - tmtsoftware/esw
 - tmtsoftware/esw-prototype
@@ -553,7 +557,3 @@
 - zio/zio-nio
 - zio/zio-sqs
 - ziyasal/reducio
-- kmizu/macro_peg
-- kmizu/jsonda
-- kmizu/pegex
-- scaruby/scaruby
