@@ -84,6 +84,7 @@ Thanks goes to these wonderful people:
 * [Philippus Baalman](https://github.com/Philippus)
 * [Piotr Gabara](https://github.com/pgabara)
 * [Renato Cavalcanti](https://github.com/renatocaval)
+* [Rikito Taniguchi](https://github.com/tanishiking)
 * [Robert Stoll](https://github.com/robstoll)
 * [sullis](https://github.com/sullis)
 * [TATSUNO Yasuhiro](https://github.com/exoego)
@@ -99,6 +100,7 @@ Using Scala Steward in your company and don't see it listed here?
 Consider creating PR to add your company to the list and join the community.
 
 * [Chartboost](https://www.chartboost.com/)
+* [Colisweb](https://www.colisweb.com/)
 * [Firstbird](https://firstbird.com)
 * [HolidayCheck](https://github.com/holidaycheck)
 * [iAdvize](https://www.iadvize.com/en/)
@@ -108,7 +110,6 @@ Consider creating PR to add your company to the list and join the community.
 * [SoftwareMill](https://softwaremill.com)
 * [Tegonal GmbH](https://tegonal.com)
 * [Zalando](https://en.zalando.de/)
-* [Colisweb](https://www.colisweb.com/)
 
 ## Participation
 
