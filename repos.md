@@ -549,3 +549,7 @@
 - zio/zio-nio
 - zio/zio-sqs
 - ziyasal/reducio
+- kmizu/macro_peg
+- kmizu/jsonda
+- kmizu/pegex
+- scaruby/scaruby
