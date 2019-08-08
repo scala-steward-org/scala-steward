@@ -7,6 +7,8 @@ scala:
 services:
 - docker
 
+git:
+  depth: 500
 before_install:
 - git fetch --tags
 cache:
