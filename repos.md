@@ -328,6 +328,7 @@
 - pdalpra/gh4s
 - pepegar/base.g8
 - pepegar/hammock
+- permutive/fs2-google-pubsub
 - phdoerfler/beegment
 - phdoerfler/enni
 - phenoscape/scowl
