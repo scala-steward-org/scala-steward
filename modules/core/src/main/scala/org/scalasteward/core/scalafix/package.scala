@@ -50,7 +50,7 @@ package object scalafix {
         "org.typelevel",
         Nel.of("cats-core".r),
         Version("1.0.0"),
-        Nel.of("github:fthomas/cats/Cats_v1_0_0?sha=update/scalafix")
+        Nel.of("https://raw.githubusercontent.com/typelevel/cats/master/scalafix/rules/src/main/scala/fix/Cats_v1_0_0.scala")
       ),
       Migration(
         "org.scalatest",
