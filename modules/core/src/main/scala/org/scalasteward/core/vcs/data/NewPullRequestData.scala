@@ -37,8 +37,8 @@ object NewPullRequestData {
   implicit val newPullRequestDataEncoder: Encoder[NewPullRequestData] =
     deriveEncoder
 
-  def bodyFor(update: Update, login: String): String = {
-    val artifacts = artifactsWithOptionalUrl(update)
+  def bodyFor(update: Update, login: String, artifactIdToUrl: Map[String, String]): String = {
+    val artifacts = artifactsWithOptionalUrl(update, artifactIdToUrl)
     val (migrationLabel, appliedMigrations) = migrationNote(update)
     val labels = Nel.fromList(semVerLabel(update).toList ++ migrationLabel.toList)
 
@@ -63,14 +63,13 @@ object NewPullRequestData {
         |""".stripMargin.trim
   }
 
-  def artifactsWithOptionalUrl(update: Update): String =
+  def artifactsWithOptionalUrl(update: Update, artifactIdToUrl: Map[String, String]): String =
     update match {
-      case s: Update.Single => artifactWithOptionalUrl(s.groupId, s.artifactId, s.artifactIdToUrl)
+      case s: Update.Single => artifactWithOptionalUrl(s.groupId, s.artifactId, artifactIdToUrl)
       case g: Update.Group =>
         g.artifactIds
           .map(
-            artifactId =>
-              s"* ${artifactWithOptionalUrl(g.groupId, artifactId, g.artifactIdToUrl)}\n"
+            artifactId => s"* ${artifactWithOptionalUrl(g.groupId, artifactId, artifactIdToUrl)}\n"
           )
           .mkString_("\n", "", "\n")
     }
@@ -113,7 +112,7 @@ object NewPullRequestData {
   def from(data: UpdateData, branchName: String, authorLogin: String): NewPullRequestData =
     NewPullRequestData(
       title = git.commitMsgFor(data.update),
-      body = bodyFor(data.update, authorLogin),
+      body = bodyFor(data.update, authorLogin, data.artifactIdToUrl),
       head = branchName,
       base = data.baseBranch
     )

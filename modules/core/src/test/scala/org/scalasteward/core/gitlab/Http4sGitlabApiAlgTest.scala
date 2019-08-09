@@ -55,7 +55,8 @@ class Http4sGitlabApiAlgTest extends FunSuite with Matchers {
     Update.Single("ch.qos.logback", "logback-classic", "1.2.0", Nel.of("1.2.3")),
     Branch("master"),
     Sha1(Sha1.HexString("d6b6791d2ea11df1d156fe70979ab8c3a5ba3433")),
-    Branch("update/logback-classic-1.2.3")
+    Branch("update/logback-classic-1.2.3"),
+    Map.empty
   )
   val newPRData =
     NewPullRequestData.from(data, "scala-steward:update/logback-classic-1.2.3", "scala-steward")

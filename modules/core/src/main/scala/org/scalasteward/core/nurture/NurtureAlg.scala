@@ -77,14 +77,22 @@ final class NurtureAlg[F[_]](
       updates = sbtUpdates ::: nonSbtUpdates
       dependencies <- sbtAlg.getDependencies(repo)
       mapping <- coursierAlg.getArtifactIdUrlMapping(dependencies)
-      updatesWithMapping = updates.map(_.copy(artifactIdToUrl = mapping))
-      filtered <- filterAlg.localFilterMany(repoConfig, updatesWithMapping)
+      filtered <- filterAlg.localFilterMany(repoConfig, updates)
       grouped = Update.group(filtered)
       _ <- logger.info(util.logger.showUpdates(grouped))
       baseSha1 <- gitAlg.latestSha1(repo, baseBranch)
       _ <- grouped.traverse_ { update =>
         val data =
-          UpdateData(repo, fork, repoConfig, update, baseBranch, baseSha1, git.branchFor(update))
+          UpdateData(
+            repo,
+            fork,
+            repoConfig,
+            update,
+            baseBranch,
+            baseSha1,
+            git.branchFor(update),
+            mapping
+          )
         processUpdate(data)
       }
     } yield ()

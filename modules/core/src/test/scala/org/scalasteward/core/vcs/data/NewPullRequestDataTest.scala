@@ -17,7 +17,8 @@ class NewPullRequestDataTest extends FunSuite with Matchers {
       Update.Single("ch.qos.logback", "logback-classic", "1.2.0", Nel.of("1.2.3")),
       Branch("master"),
       Sha1(Sha1.HexString("d6b6791d2ea11df1d156fe70979ab8c3a5ba3433")),
-      Branch("update/logback-classic-1.2.3")
+      Branch("update/logback-classic-1.2.3"),
+      Map.empty
     )
     NewPullRequestData
       .from(data, "scala-steward:update/logback-classic-1.2.3", "scala-steward")
@@ -34,24 +35,13 @@ class NewPullRequestDataTest extends FunSuite with Matchers {
 
   test("showing artifacts with URL in Markdown format") {
     NewPullRequestData.artifactsWithOptionalUrl(
-      Update.Single(
-        "com.example",
-        "foo",
-        "1.2.0",
-        Nel.of("1.2.3"),
-        None,
-        Map("foo" -> "https://github.com/foo/foo")
-      )
+      Update.Single("com.example", "foo", "1.2.0", Nel.of("1.2.3"), None),
+      Map("foo" -> "https://github.com/foo/foo")
     ) shouldBe "[com.example:foo](https://github.com/foo/foo)"
 
     NewPullRequestData.artifactsWithOptionalUrl(
-      Update.Group(
-        "com.example",
-        Nel.of("foo", "bar"),
-        "1.2.0",
-        Nel.of("1.2.3"),
-        Map("foo" -> "https://github.com/foo/foo", "bar" -> "https://github.com/bar/bar")
-      )
+      Update.Group("com.example", Nel.of("foo", "bar"), "1.2.0", Nel.of("1.2.3")),
+      Map("foo" -> "https://github.com/foo/foo", "bar" -> "https://github.com/bar/bar")
     ) shouldBe
       """
         |* [com.example:foo](https://github.com/foo/foo)
