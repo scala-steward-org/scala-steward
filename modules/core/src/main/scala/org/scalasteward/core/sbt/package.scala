@@ -45,13 +45,7 @@ package object sbt {
 
   def findSbtUpdate(currentVersion: SbtVersion): Option[Update.Single] =
     findNewerSbtVersion(currentVersion).map { newerVersion =>
-      Update.Single(
-        "org.scala-sbt",
-        "sbt",
-        currentVersion.value,
-        Nel.of(newerVersion.value),
-        None
-      )
+      Update.Single("org.scala-sbt", "sbt", currentVersion.value, Nel.of(newerVersion.value))
     }
 
   def seriesToSpecificVersion(sbtSeries: SbtVersion): SbtVersion =

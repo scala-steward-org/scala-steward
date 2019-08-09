@@ -153,7 +153,7 @@ class SbtAlgTest extends FunSuite with Matchers {
     val (state, maybeUpdate) = sbtAlg.getSbtUpdate(repo).run(initialState).unsafeRunSync()
 
     maybeUpdate shouldBe Some(
-      Update.Single("org.scala-sbt", "sbt", "1.2.6", Nel.of(defaultSbtVersion.value), None)
+      Update.Single("org.scala-sbt", "sbt", "1.2.6", Nel.of(defaultSbtVersion.value))
     )
     state shouldBe MockState.empty.copy(
       commands = Vector(List("read", s"$repoDir/project/build.properties")),
