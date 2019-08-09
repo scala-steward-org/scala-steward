@@ -20,7 +20,7 @@ import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.coursier.CoursierAlg
-import org.scalasteward.core.data.Update
+import org.scalasteward.core.data.{Dependency, Update}
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Branch, GitAlg}
 import org.scalasteward.core.repoconfig.RepoConfigAlg
@@ -68,6 +68,14 @@ final class NurtureAlg[F[_]](
       parent <- vcsRepoAlg.syncFork(repo, repoOut)
     } yield (repoOut.repo, parent.default_branch)
 
+  private def dependenciesInUpdates(
+      dependencies: List[Dependency],
+      updates: List[Update]
+  ): List[Dependency] = {
+    val updateIdSet = updates.map(u => (u.groupId, u.artifactId)).toSet
+    dependencies.filter(dep => updateIdSet((dep.groupId, dep.artifactId)))
+  }
+
   def updateDependencies(repo: Repo, fork: Repo, baseBranch: Branch): F[Unit] =
     for {
       _ <- logger.info(s"Find updates for ${repo.show}")
@@ -75,9 +83,10 @@ final class NurtureAlg[F[_]](
       sbtUpdates <- sbtAlg.getUpdatesForRepo(repo)
       nonSbtUpdates <- getNonSbtUpdates(repo)
       updates = sbtUpdates ::: nonSbtUpdates
-      dependencies <- sbtAlg.getDependencies(repo)
-      mapping <- coursierAlg.getArtifactIdUrlMapping(dependencies)
       filtered <- filterAlg.localFilterMany(repoConfig, updates)
+      dependencies <- sbtAlg.getDependencies(repo)
+      filteredDependencies = dependenciesInUpdates(dependencies, filtered)
+      mapping <- coursierAlg.getArtifactIdUrlMapping(filteredDependencies)
       grouped = Update.group(filtered)
       _ <- logger.info(util.logger.showUpdates(grouped))
       baseSha1 <- gitAlg.latestSha1(repo, baseBranch)
