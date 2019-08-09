@@ -147,6 +147,7 @@
 - djspiewak/gll-combinators
 - djspiewak/shims
 - dmrolfs/omnibus
+- dmrolfs/base-sbt-mult-project
 - dwijnand/sbt-compat
 - dwijnand/sbt-dynver
 - dwijnand/sbt-project-graph
