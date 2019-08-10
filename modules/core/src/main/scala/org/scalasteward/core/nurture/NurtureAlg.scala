@@ -17,6 +17,7 @@
 package org.scalasteward.core.nurture
 
 import cats.implicits._
+import cats.effect.Async
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.coursier.CoursierAlg
@@ -47,7 +48,8 @@ final class NurtureAlg[F[_]](
     pullRequestRepo: PullRequestRepository[F],
     sbtAlg: SbtAlg[F],
     scalafmtAlg: ScalafmtAlg[F],
-    F: BracketThrowable[F]
+    F: BracketThrowable[F],
+    A: Async[F]
 ) {
   def nurture(repo: Repo): F[Either[Throwable, Unit]] =
     logAlg.infoTotalTime(repo.show) {
@@ -79,6 +81,7 @@ final class NurtureAlg[F[_]](
       grouped = Update.group(filtered)
       _ <- logger.info(util.logger.showUpdates(grouped))
       baseSha1 <- gitAlg.latestSha1(repo, baseBranch)
+      memoizedGetDependencies <- Async.memoize(sbtAlg.getDependencies(repo))
       _ <- grouped.traverse_ { update =>
         val data =
           UpdateData(
@@ -90,7 +93,7 @@ final class NurtureAlg[F[_]](
             baseSha1,
             git.branchFor(update)
           )
-        processUpdate(data)
+        processUpdate(data, memoizedGetDependencies)
       }
     } yield ()
 
@@ -99,7 +102,7 @@ final class NurtureAlg[F[_]](
       maybeScalafmt <- scalafmtAlg.getScalafmtUpdate(repo)
     } yield List(maybeScalafmt).flatten
 
-  def processUpdate(data: UpdateData): F[Unit] =
+  def processUpdate(data: UpdateData, getDependencies: F[List[Dependency]]): F[Unit] =
     for {
       _ <- logger.info(s"Process update ${data.update.show}")
       head = vcs.listingBranch(config.vcsType, data.fork, data.update)
@@ -112,21 +115,21 @@ final class NurtureAlg[F[_]](
         case Some(pr) =>
           logger.info(s"Found PR ${pr.html_url}, but updates are disabled by flag")
         case None =>
-          applyNewUpdate(data)
+          applyNewUpdate(data, getDependencies)
       }
       _ <- pullRequests.headOption.fold(F.unit) { pr =>
         pullRequestRepo.createOrUpdate(data.repo, pr.html_url, data.baseSha1, data.update, pr.state)
       }
     } yield ()
 
-  def applyNewUpdate(data: UpdateData): F[Unit] =
+  def applyNewUpdate(data: UpdateData, getDependencies: F[List[Dependency]]): F[Unit] =
     (editAlg.applyUpdate(data.repo, data.update) >> gitAlg.containsChanges(data.repo)).ifM(
       gitAlg.returnToCurrentBranch(data.repo) {
         for {
           _ <- logger.info(s"Create branch ${data.updateBranch.name}")
           _ <- gitAlg.createBranch(data.repo, data.updateBranch)
           _ <- commitAndPush(data)
-          _ <- createPullRequest(data)
+          _ <- createPullRequest(data, getDependencies)
         } yield ()
       },
       logger.warn("No files were changed")
@@ -139,10 +142,10 @@ final class NurtureAlg[F[_]](
       _ <- gitAlg.push(data.repo, data.updateBranch)
     } yield ()
 
-  def createPullRequest(data: UpdateData): F[Unit] =
+  def createPullRequest(data: UpdateData, getDependencies: F[List[Dependency]]): F[Unit] =
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
-      dependencies <- sbtAlg.getDependencies(data.repo)
+      dependencies <- getDependencies
       filteredDependencies = dependenciesInUpdates(dependencies, data.update)
       artifactIdToUrl <- coursierAlg.getArtifactIdUrlMapping(filteredDependencies)
       branchName = vcs.createBranch(config.vcsType, data.fork, data.update)
