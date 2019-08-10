@@ -68,14 +68,6 @@ final class NurtureAlg[F[_]](
       parent <- vcsRepoAlg.syncFork(repo, repoOut)
     } yield (repoOut.repo, parent.default_branch)
 
-  private def dependenciesInUpdates(
-      dependencies: List[Dependency],
-      updates: List[Update]
-  ): List[Dependency] = {
-    val updateIdSet = updates.map(u => (u.groupId, u.artifactId)).toSet
-    dependencies.filter(dep => updateIdSet((dep.groupId, dep.artifactId)))
-  }
-
   def updateDependencies(repo: Repo, fork: Repo, baseBranch: Branch): F[Unit] =
     for {
       _ <- logger.info(s"Find updates for ${repo.show}")
@@ -84,9 +76,6 @@ final class NurtureAlg[F[_]](
       nonSbtUpdates <- getNonSbtUpdates(repo)
       updates = sbtUpdates ::: nonSbtUpdates
       filtered <- filterAlg.localFilterMany(repoConfig, updates)
-      dependencies <- sbtAlg.getDependencies(repo)
-      filteredDependencies = dependenciesInUpdates(dependencies, filtered)
-      mapping <- coursierAlg.getArtifactIdUrlMapping(filteredDependencies)
       grouped = Update.group(filtered)
       _ <- logger.info(util.logger.showUpdates(grouped))
       baseSha1 <- gitAlg.latestSha1(repo, baseBranch)
@@ -99,8 +88,7 @@ final class NurtureAlg[F[_]](
             update,
             baseBranch,
             baseSha1,
-            git.branchFor(update),
-            mapping
+            git.branchFor(update)
           )
         processUpdate(data)
       }
@@ -154,8 +142,11 @@ final class NurtureAlg[F[_]](
   def createPullRequest(data: UpdateData): F[Unit] =
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
+      dependencies <- sbtAlg.getDependencies(data.repo)
+      filteredDependencies = dependenciesInUpdates(dependencies, data.update)
+      artifactIdToUrl <- coursierAlg.getArtifactIdUrlMapping(filteredDependencies)
       branchName = vcs.createBranch(config.vcsType, data.fork, data.update)
-      requestData = NewPullRequestData.from(data, branchName, config.vcsLogin)
+      requestData = NewPullRequestData.from(data, branchName, config.vcsLogin, artifactIdToUrl)
       pr <- vcsApiAlg.createPullRequest(data.repo, requestData)
       _ <- pullRequestRepo.createOrUpdate(
         data.repo,
@@ -166,6 +157,20 @@ final class NurtureAlg[F[_]](
       )
       _ <- logger.info(s"Created PR ${pr.html_url}")
     } yield ()
+
+  private def dependenciesInUpdates(
+      dependencies: List[Dependency],
+      update: Update
+  ): List[Dependency] =
+    update match {
+      case Update.Single(groupId, artifactId, _, _, _) =>
+        dependencies.filter(dep => dep.groupId === groupId && dep.artifactId === artifactId)
+      case Update.Group(groupId, artifactIds, _, _) =>
+        val artifactIdSet = artifactIds.toList.toSet
+        dependencies.filter(
+          dep => dep.groupId === groupId && artifactIdSet.contains(dep.artifactId)
+        )
+    }
 
   def updatePullRequest(data: UpdateData): F[Unit] =
     gitAlg.returnToCurrentBranch(data.repo) {

@@ -28,6 +28,5 @@ final case class UpdateData(
     update: Update,
     baseBranch: Branch,
     baseSha1: Sha1,
-    updateBranch: Branch,
-    artifactIdToUrl: Map[String, String] = Map.empty
+    updateBranch: Branch
 )
