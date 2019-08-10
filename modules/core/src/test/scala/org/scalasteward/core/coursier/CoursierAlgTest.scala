@@ -21,4 +21,24 @@ class CoursierAlgTest extends FunSuite with Matchers {
     result shouldBe Some("https://typelevel.org/cats-effect/")
   }
 
+  test("getArtifactIdUrlMapping") {
+    val dependencies = List(
+      Dependency("org.typelevel", "cats-core", "cats-core_2.12", "1.6.0"),
+      Dependency("org.typelevel", "cats-effect", "cats-effect_2.12", "1.0.0")
+    )
+    val (state, result) = coursierAlg
+      .getArtifactIdUrlMapping(dependencies)
+      .run(MockState.empty)
+      .unsafeRunSync()
+    state shouldBe MockState.empty.copy(
+      commands = Vector(),
+      logs = Vector(),
+      files = Map()
+    )
+    result shouldBe Map(
+      "cats-core" -> "https://github.com/typelevel/cats",
+      "cats-effect" -> "https://typelevel.org/cats-effect/"
+    )
+  }
+
 }
