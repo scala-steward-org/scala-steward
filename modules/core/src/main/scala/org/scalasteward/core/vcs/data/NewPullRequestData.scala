@@ -37,19 +37,12 @@ object NewPullRequestData {
   implicit val newPullRequestDataEncoder: Encoder[NewPullRequestData] =
     deriveEncoder
 
-  def bodyFor(update: Update, login: String): String = {
-    val artifacts = update match {
-      case s: Update.Single =>
-        s" ${s.groupId}:${s.artifactId} "
-      case g: Update.Group =>
-        g.artifactIds
-          .map(artifactId => s"* ${g.groupId}:$artifactId\n")
-          .mkString_("\n", "", "\n")
-    }
+  def bodyFor(update: Update, login: String, artifactIdToUrl: Map[String, String]): String = {
+    val artifacts = artifactsWithOptionalUrl(update, artifactIdToUrl)
     val (migrationLabel, appliedMigrations) = migrationNote(update)
     val labels = Nel.fromList(semVerLabel(update).toList ++ migrationLabel.toList)
 
-    s"""|Updates${artifacts}from ${update.currentVersion} to ${update.nextVersion}.
+    s"""|Updates ${artifacts} from ${update.currentVersion} to ${update.nextVersion}.
         |
         |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
         |
@@ -69,6 +62,27 @@ object NewPullRequestData {
         |${labels.fold("")(_.mkString_("labels: ", ", ", ""))}
         |""".stripMargin.trim
   }
+
+  def artifactsWithOptionalUrl(update: Update, artifactIdToUrl: Map[String, String]): String =
+    update match {
+      case s: Update.Single => artifactWithOptionalUrl(s.groupId, s.artifactId, artifactIdToUrl)
+      case g: Update.Group =>
+        g.artifactIds
+          .map(
+            artifactId => s"* ${artifactWithOptionalUrl(g.groupId, artifactId, artifactIdToUrl)}\n"
+          )
+          .mkString_("\n", "", "\n")
+    }
+
+  def artifactWithOptionalUrl(
+      groupId: String,
+      artifactId: String,
+      artifactId2Url: Map[String, String]
+  ): String =
+    artifactId2Url.get(artifactId) match {
+      case Some(url) => s"[${groupId}:${artifactId}](${url})"
+      case None      => s"${groupId}:${artifactId}"
+    }
 
   def migrationNote(update: Update): (Option[String], Option[String]) = {
     val migrations = scalafix.findMigrations(update)
@@ -95,10 +109,15 @@ object NewPullRequestData {
       change <- SemVer.getChange(curr, next)
     } yield s"semver-${change.render}"
 
-  def from(data: UpdateData, branchName: String, authorLogin: String): NewPullRequestData =
+  def from(
+      data: UpdateData,
+      branchName: String,
+      authorLogin: String,
+      artifactIdToUrl: Map[String, String] = Map.empty
+  ): NewPullRequestData =
     NewPullRequestData(
       title = git.commitMsgFor(data.update),
-      body = bodyFor(data.update, authorLogin),
+      body = bodyFor(data.update, authorLogin, artifactIdToUrl),
       head = branchName,
       base = data.baseBranch
     )

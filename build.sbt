@@ -36,6 +36,8 @@ lazy val core = myCrossProject("core")
       Dependencies.circeRefined,
       Dependencies.circeExtras,
       Dependencies.commonsIo,
+      Dependencies.coursierCore,
+      Dependencies.coursierCatsInterop,
       Dependencies.fs2Core,
       Dependencies.http4sBlazeClient,
       Dependencies.http4sCirce,
@@ -52,6 +54,17 @@ lazy val core = myCrossProject("core")
       Dependencies.scalaTest % Test
     ),
     assembly / test := {},
+    assemblyMergeStrategy in assembly := {
+      val nativeSuffix = "\\.(?:dll|jnilib|so)$".r
+
+      {
+        case PathList(ps @ _*) if nativeSuffix.findFirstMatchIn(ps.last).isDefined =>
+          MergeStrategy.first
+        case otherwise =>
+          val defaultStrategy = (assemblyMergeStrategy in assembly).value
+          defaultStrategy(otherwise)
+      }
+    },
     buildInfoKeys := Seq[BuildInfoKey](scalaVersion, sbtVersion),
     buildInfoPackage := moduleRootPkg.value,
     initialCommands += s"""
