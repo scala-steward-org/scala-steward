@@ -16,8 +16,8 @@
 
 package org.scalasteward.core.nurture
 
-import cats.implicits._
 import cats.effect.Async
+import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.coursier.CoursierAlg
@@ -28,7 +28,7 @@ import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.FilterAlg
-import org.scalasteward.core.util.{BracketThrowable, LogAlg}
+import org.scalasteward.core.util.LogAlg
 import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
 import org.scalasteward.core.{git, util, vcs}
@@ -48,8 +48,7 @@ final class NurtureAlg[F[_]](
     pullRequestRepo: PullRequestRepository[F],
     sbtAlg: SbtAlg[F],
     scalafmtAlg: ScalafmtAlg[F],
-    F: BracketThrowable[F],
-    A: Async[F]
+    F: Async[F]
 ) {
   def nurture(repo: Repo): F[Either[Throwable, Unit]] =
     logAlg.infoTotalTime(repo.show) {
