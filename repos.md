@@ -327,6 +327,7 @@
 - ovotech/kafka-serialization
 - ovotech/vulcan
 - pathikrit/better-files
+- pathikrit/dijon
 - pauljamescleary/scala-pet-store
 - pbernet/akka_streams_tutorial
 - pdalpra/gh4s
