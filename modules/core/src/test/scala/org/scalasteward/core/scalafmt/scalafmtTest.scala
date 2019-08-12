@@ -9,7 +9,7 @@ class scalafmtTest extends FunSuite with Matchers {
     val versions = Table(
       ("in", "out"),
       (Version("2.0.0-RC8"), Some(latestScalafmtVersion)),
-      (Version("2.0.1"), None)
+      (latestScalafmtVersion, None)
     )
 
     forAll(versions) { (curr: Version, maybeNewer: Option[Version]) =>

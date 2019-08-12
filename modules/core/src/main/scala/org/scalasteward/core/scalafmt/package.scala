@@ -26,10 +26,7 @@ package object scalafmt {
   val scalafmtArtifactId = "scalafmt"
 
   def findNewerScalafmtVersion(currentVersion: Version): Option[Version] =
-    if (Version.versionOrder.lt(currentVersion, latestScalafmtVersion))
-      Some(latestScalafmtVersion)
-    else
-      None
+    if (currentVersion < latestScalafmtVersion) Some(latestScalafmtVersion) else None
 
   def parseScalafmtConf(s: String): Option[Version] =
     """version\s*=\s*(.+)""".r
