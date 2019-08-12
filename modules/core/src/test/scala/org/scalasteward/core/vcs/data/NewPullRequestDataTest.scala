@@ -32,6 +32,19 @@ class NewPullRequestDataTest extends FunSuite with Matchers {
          |""".stripMargin.trim
   }
 
+  test("fromTo") {
+    NewPullRequestData.fromTo(
+      Update.Single("com.example", "foo", "1.2.0", Nel.of("1.2.3")),
+      None
+    ) shouldBe "from 1.2.0 to 1.2.3"
+
+    NewPullRequestData.fromTo(
+      Update.Group("com.example", Nel.of("foo", "bar"), "1.2.0", Nel.of("1.2.3")),
+      Some("http://example.com/compare/v1.2.0...v1.2.3")
+    ) shouldBe
+      "[from 1.2.0 to 1.2.3](http://example.com/compare/v1.2.0...v1.2.3)"
+  }
+
   test("showing artifacts with URL in Markdown format") {
     NewPullRequestData.artifactsWithOptionalUrl(
       Update.Single("com.example", "foo", "1.2.0", Nel.of("1.2.3")),

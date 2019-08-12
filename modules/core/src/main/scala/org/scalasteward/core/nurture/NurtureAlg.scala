@@ -28,7 +28,7 @@ import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.FilterAlg
-import org.scalasteward.core.util.LogAlg
+import org.scalasteward.core.util.{HttpExistenceClient, LogAlg}
 import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
 import org.scalasteward.core.{git, util, vcs}
@@ -48,6 +48,7 @@ final class NurtureAlg[F[_]](
     pullRequestRepo: PullRequestRepository[F],
     sbtAlg: SbtAlg[F],
     scalafmtAlg: ScalafmtAlg[F],
+    existenceClient: HttpExistenceClient[F],
     F: Async[F]
 ) {
   def nurture(repo: Repo): F[Either[Throwable, Unit]] =
@@ -141,14 +142,36 @@ final class NurtureAlg[F[_]](
       _ <- gitAlg.push(data.repo, data.updateBranch)
     } yield ()
 
+  def getBranchCompareUrl(maybeRepoUrl: Option[String], update: Update): F[Option[String]] =
+    maybeRepoUrl
+      .flatMap { repoUrl =>
+        vcs.createCompareUrl(repoUrl, update)
+      }
+      .fold(F.pure(Option.empty[String])) { url =>
+        existenceClient.exists(url).map {
+          case true  => Some(url)
+          case false => None
+        }
+      }
+
   def createPullRequest(data: UpdateData, getDependencies: F[List[Dependency]]): F[Unit] =
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
       dependencies <- getDependencies
       filteredDependencies = dependenciesInUpdates(dependencies, data.update)
       artifactIdToUrl <- coursierAlg.getArtifactIdUrlMapping(filteredDependencies)
+      branchCompareUrl <- getBranchCompareUrl(
+        artifactIdToUrl.get(data.update.artifactId),
+        data.update
+      )
       branchName = vcs.createBranch(config.vcsType, data.fork, data.update)
-      requestData = NewPullRequestData.from(data, branchName, config.vcsLogin, artifactIdToUrl)
+      requestData = NewPullRequestData.from(
+        data,
+        branchName,
+        config.vcsLogin,
+        artifactIdToUrl,
+        branchCompareUrl
+      )
       pr <- vcsApiAlg.createPullRequest(data.repo, requestData)
       _ <- pullRequestRepo.createOrUpdate(
         data.repo,
