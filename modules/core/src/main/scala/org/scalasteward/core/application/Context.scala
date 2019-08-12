@@ -36,7 +36,7 @@ import org.scalasteward.core.update.json.JsonUpdateRepository
 import org.scalasteward.core.update.{FilterAlg, UpdateRepository, UpdateService}
 import org.scalasteward.core.util.{DateTimeAlg, HttpExistenceClient, HttpJsonClient, LogAlg}
 import org.scalasteward.core.vcs.data.AuthenticatedUser
-import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg, VCSSelection}
+import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg, VCSSelection}
 
 import scala.concurrent.ExecutionContext
 
@@ -65,6 +65,7 @@ object Context {
       val vcsSelection = new VCSSelection[F]
       implicit val vcsApiAlg: VCSApiAlg[F] = vcsSelection.getAlg(config)
       implicit val vcsRepoAlg: VCSRepoAlg[F] = VCSRepoAlg.create[F](config, gitAlg)
+      implicit val vcsExtraAlg: VCSExtraAlg[F] = VCSExtraAlg.create[F]
       implicit val pullRequestRepo: PullRequestRepository[F] = new JsonPullRequestRepo[F]
       implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F]
       implicit val scalafmtAlg: ScalafmtAlg[F] = ScalafmtAlg.create[F]
