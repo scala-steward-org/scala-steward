@@ -23,7 +23,8 @@ class ScalafmtAlgTest extends FunSuite with Matchers {
     val (state, maybeUpdate) = scalafmtAlg.getScalafmtUpdate(repo).run(initialState).unsafeRunSync()
 
     maybeUpdate shouldBe Some(
-      Update.Single("org.scalameta", "scalafmt", "2.0.0-RC8", Nel.of(latestScalafmtVersion.value))
+      Update
+        .Single("org.scalameta", "scalafmt-core", "2.0.0-RC8", Nel.of(latestScalafmtVersion.value))
     )
     state shouldBe MockState.empty.copy(
       commands = Vector(List("read", s"$repoDir/.scalafmt.conf")),
@@ -50,7 +51,8 @@ class ScalafmtAlgTest extends FunSuite with Matchers {
     )
     val (_, maybeUpdate) = scalafmtAlg.getScalafmtUpdate(repo).run(initialState).unsafeRunSync()
     maybeUpdate shouldBe Some(
-      Update.Single("org.scalameta", "scalafmt", "2.0.0-RC8", Nel.of(latestScalafmtVersion.value))
+      Update
+        .Single("org.scalameta", "scalafmt-core", "2.0.0-RC8", Nel.of(latestScalafmtVersion.value))
     )
   }
 

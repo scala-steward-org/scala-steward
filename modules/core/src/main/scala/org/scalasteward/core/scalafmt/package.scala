@@ -23,7 +23,7 @@ import org.scalasteward.core.util.Nel
 package object scalafmt {
   val latestScalafmtVersion: Version = Version("2.0.1")
   val scalafmtGroupId = "org.scalameta"
-  val scalafmtArtifactId = "scalafmt"
+  val scalafmtArtifactId = "scalafmt-core"
 
   def findNewerScalafmtVersion(currentVersion: Version): Option[Version] =
     if (currentVersion < latestScalafmtVersion) Some(latestScalafmtVersion) else None
