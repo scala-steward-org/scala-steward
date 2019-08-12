@@ -16,7 +16,6 @@
 
 package org.scalasteward.core.util
 
-import cats.effect.Sync
 import cats.implicits._
 import org.http4s.client.Client
 import org.http4s.{Method, Request, Uri}
@@ -24,7 +23,7 @@ import org.http4s.{Method, Request, Uri}
 final class HttpExistenceClient[F[_]](
     implicit
     client: Client[F],
-    F: Sync[F]
+    F: MonadThrowable[F]
 ) {
   def exists(uri: String): F[Boolean] = F.fromEither(Uri.fromString(uri)).flatMap(exists)
 

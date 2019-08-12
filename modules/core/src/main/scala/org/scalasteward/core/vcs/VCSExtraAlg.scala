@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.vcs
 
-import cats.effect.Async
+import cats.Monad
 import cats.implicits._
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.util.HttpExistenceClient
@@ -30,7 +30,7 @@ object VCSExtraAlg {
   def create[F[_]](
       implicit
       existenceClient: HttpExistenceClient[F],
-      F: Async[F]
+      F: Monad[F]
   ): VCSExtraAlg[F] = new VCSExtraAlg[F] {
     override def getBranchCompareUrl(
         maybeRepoUrl: Option[String],

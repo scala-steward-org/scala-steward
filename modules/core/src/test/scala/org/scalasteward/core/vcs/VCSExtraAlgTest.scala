@@ -1,6 +1,6 @@
 package org.scalasteward.core.vcs
 
-import cats.effect.{Async, IO}
+import cats.effect.IO
 import org.http4s.HttpRoutes
 import org.http4s.client.Client
 import org.http4s.dsl.io.{->, /, HEAD, NotFound, Ok, Root, _}
@@ -18,9 +18,8 @@ class VCSExtraAlgTest extends FunSuite with Matchers {
 
   implicit val client = Client.fromHttpApp[IO](routes.orNotFound)
   implicit val httpExistenceClient = new HttpExistenceClient[IO]
-  implicit val mockEffAsync = Async[IO]
 
-  val vcsExtraAlg = VCSExtraAlg.create[IO](httpExistenceClient, mockEffAsync)
+  val vcsExtraAlg = VCSExtraAlg.create[IO]
   val updateFoo = Update.Single("com.example", "foo", "0.1.0", Nel.of("0.2.0"))
   val updateBar = Update.Single("com.example", "bar", "0.1.0", Nel.of("0.2.0"))
 
