@@ -21,7 +21,7 @@ import org.scalasteward.core.data.{Update, Version}
 import org.scalasteward.core.util.Nel
 
 package object scalafmt {
-  val latestScalafmtVersion: Version = Version("2.0.0")
+  val latestScalafmtVersion: Version = Version("2.0.1")
   val scalafmtGroupId = "org.scalameta"
   val scalafmtArtifactId = "scalafmt"
 
