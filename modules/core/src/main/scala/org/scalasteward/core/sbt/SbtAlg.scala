@@ -48,6 +48,9 @@ trait SbtAlg[F[_]] {
 
   final def getSbtUpdate(repo: Repo)(implicit F: Functor[F]): F[Option[Update.Single]] =
     getSbtVersion(repo).map(_.flatMap(findSbtUpdate))
+
+  final def getSbtDependency(repo: Repo)(implicit F: Functor[F]): F[Option[Dependency]] =
+    getSbtUpdate(repo).map(_.map(_.toDependency(None)))
 }
 
 object SbtAlg {

@@ -35,18 +35,11 @@ trait ScalafmtAlg[F[_]] {
 
   final def getScalafmtDependency(repo: Repo)(implicit F: Functor[F]): F[List[Dependency]] =
     getScalafmtUpdate(repo).map {
-      case None => List.empty
+      case None         => List.empty
       case Some(update) =>
         // FIXME: Scala version is required to fetch artifact URL using Coursier
         val scalaVersions = List("2.12", "2.13")
-        scalaVersions.map { scalaV =>
-          Dependency(
-            update.groupId,
-            update.artifactId,
-            s"${update.artifactId}_${scalaV}",
-            update.currentVersion
-          )
-        }
+        scalaVersions.map(scalaV => update.toDependency(Some(scalaV)))
     }
 }
 

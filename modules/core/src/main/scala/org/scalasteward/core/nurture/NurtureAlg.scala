@@ -84,8 +84,9 @@ final class NurtureAlg[F[_]](
       memoizedGetDependencies <- Async.memoize {
         for {
           deps <- sbtAlg.getDependencies(repo)
+          sbtDeps <- sbtAlg.getSbtDependency(repo)
           scalafmtDeps <- scalafmtAlg.getScalafmtDependency(repo)
-          filtered <- filterAlg.globalFilterDependenciesMany(deps ++ scalafmtDeps)
+          filtered <- filterAlg.globalFilterDependenciesMany(deps ++ sbtDeps.toList ++ scalafmtDeps)
         } yield filtered
       }
       _ <- grouped.traverse_ { update =>

@@ -54,6 +54,14 @@ sealed trait Update extends Product with Serializable {
     val versions = (currentVersion :: newerVersions).mkString_("", " -> ", "")
     s"$groupId:$artifacts : $versions"
   }
+
+  final def toDependency(scalaVersion: Option[String]): Dependency = Dependency(
+    groupId,
+    artifactId,
+    // Non-Scala dependencies do not need Scala version suffix
+    scalaVersion.map(v => s"${artifactId}_${v}").getOrElse(artifactId),
+    currentVersion
+  )
 }
 
 object Update {
