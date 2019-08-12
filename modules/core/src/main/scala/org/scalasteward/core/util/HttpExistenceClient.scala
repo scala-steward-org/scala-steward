@@ -21,10 +21,12 @@ import cats.implicits._
 import org.http4s.client.Client
 import org.http4s.{Method, Request, Uri}
 
-final class HttpExistenceClient[F[_]: Sync](
-    implicit client: Client[F]
+final class HttpExistenceClient[F[_]](
+    implicit
+    client: Client[F],
+    F: Sync[F]
 ) {
-  def exists(uri: String): F[Boolean] = exists(Uri.unsafeFromString(uri))
+  def exists(uri: String): F[Boolean] = F.fromEither(Uri.fromString(uri)).flatMap(exists)
 
   def exists(uri: Uri): F[Boolean] = {
     val req: Request[F] = Request(method = Method.HEAD, uri = uri)
