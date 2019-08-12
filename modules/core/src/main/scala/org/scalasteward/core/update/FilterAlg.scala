@@ -19,7 +19,7 @@ package org.scalasteward.core.update
 import cats.implicits._
 import cats.{Monad, TraverseFilter}
 import io.chrisdavenport.log4cats.Logger
-import org.scalasteward.core.data.Update
+import org.scalasteward.core.data.{Dependency, Update}
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.update.FilterAlg._
 import org.scalasteward.core.util
@@ -29,6 +29,9 @@ final class FilterAlg[F[_]](
     logger: Logger[F],
     F: Monad[F]
 ) {
+  def globalFilterDependenciesMany[G[_]: TraverseFilter](updates: G[Dependency]): F[G[Dependency]] =
+    updates.traverseFilter(dep => logIfRejected(globalFilter(dep.toUpdate)).map(_.map(_ => dep)))
+
   def globalFilterMany[G[_]: TraverseFilter](updates: G[Update.Single]): F[G[Update.Single]] =
     updates.traverseFilter(update => logIfRejected(globalFilter(update)))
 

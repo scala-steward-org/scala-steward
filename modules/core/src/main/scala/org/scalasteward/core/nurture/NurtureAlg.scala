@@ -81,7 +81,11 @@ final class NurtureAlg[F[_]](
       grouped = Update.group(filtered)
       _ <- logger.info(util.logger.showUpdates(grouped))
       baseSha1 <- gitAlg.latestSha1(repo, baseBranch)
-      memoizedGetDependencies <- Async.memoize(sbtAlg.getDependencies(repo))
+      memoizedGetDependencies <- Async.memoize(
+        sbtAlg
+          .getDependencies(repo)
+          .flatMap(deps => filterAlg.globalFilterDependenciesMany(deps))
+      )
       _ <- grouped.traverse_ { update =>
         val data =
           UpdateData(
@@ -146,8 +150,7 @@ final class NurtureAlg[F[_]](
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
       dependencies <- getDependencies
-      filteredDependencies = dependenciesInUpdates(dependencies, data.update)
-      artifactIdToUrl <- coursierAlg.getArtifactIdUrlMapping(filteredDependencies)
+      artifactIdToUrl <- coursierAlg.getArtifactIdUrlMapping(dependencies)
       branchCompareUrl <- vcsExtraAlg.getBranchCompareUrl(
         artifactIdToUrl.get(data.update.artifactId),
         data.update
@@ -170,20 +173,6 @@ final class NurtureAlg[F[_]](
       )
       _ <- logger.info(s"Created PR ${pr.html_url}")
     } yield ()
-
-  private def dependenciesInUpdates(
-      dependencies: List[Dependency],
-      update: Update
-  ): List[Dependency] =
-    update match {
-      case Update.Single(groupId, artifactId, _, _, _) =>
-        dependencies.filter(dep => dep.groupId === groupId && dep.artifactId === artifactId)
-      case Update.Group(groupId, artifactIds, _, _) =>
-        val artifactIdSet = artifactIds.toList.toSet
-        dependencies.filter(
-          dep => dep.groupId === groupId && artifactIdSet.contains(dep.artifactId)
-        )
-    }
 
   def updatePullRequest(data: UpdateData): F[Unit] =
     gitAlg.returnToCurrentBranch(data.repo) {
