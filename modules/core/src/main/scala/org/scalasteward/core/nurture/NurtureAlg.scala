@@ -30,7 +30,7 @@ import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.FilterAlg
 import org.scalasteward.core.util.LogAlg
 import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo}
-import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
+import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg}
 import org.scalasteward.core.{git, util, vcs}
 
 final class NurtureAlg[F[_]](
@@ -43,6 +43,7 @@ final class NurtureAlg[F[_]](
     coursierAlg: CoursierAlg[F],
     vcsApiAlg: VCSApiAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
+    vcsExtraAlg: VCSExtraAlg[F],
     logAlg: LogAlg[F],
     logger: Logger[F],
     pullRequestRepo: PullRequestRepository[F],
@@ -147,8 +148,18 @@ final class NurtureAlg[F[_]](
       dependencies <- getDependencies
       filteredDependencies = dependenciesInUpdates(dependencies, data.update)
       artifactIdToUrl <- coursierAlg.getArtifactIdUrlMapping(filteredDependencies)
+      branchCompareUrl <- vcsExtraAlg.getBranchCompareUrl(
+        artifactIdToUrl.get(data.update.artifactId),
+        data.update
+      )
       branchName = vcs.createBranch(config.vcsType, data.fork, data.update)
-      requestData = NewPullRequestData.from(data, branchName, config.vcsLogin, artifactIdToUrl)
+      requestData = NewPullRequestData.from(
+        data,
+        branchName,
+        config.vcsLogin,
+        artifactIdToUrl,
+        branchCompareUrl
+      )
       pr <- vcsApiAlg.createPullRequest(data.repo, requestData)
       _ <- pullRequestRepo.createOrUpdate(
         data.repo,

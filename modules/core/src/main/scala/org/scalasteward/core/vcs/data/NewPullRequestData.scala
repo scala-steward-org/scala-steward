@@ -37,12 +37,17 @@ object NewPullRequestData {
   implicit val newPullRequestDataEncoder: Encoder[NewPullRequestData] =
     deriveEncoder
 
-  def bodyFor(update: Update, login: String, artifactIdToUrl: Map[String, String]): String = {
+  def bodyFor(
+      update: Update,
+      login: String,
+      artifactIdToUrl: Map[String, String],
+      branchCompareUrl: Option[String]
+  ): String = {
     val artifacts = artifactsWithOptionalUrl(update, artifactIdToUrl)
     val (migrationLabel, appliedMigrations) = migrationNote(update)
     val labels = Nel.fromList(semVerLabel(update).toList ++ migrationLabel.toList)
 
-    s"""|Updates ${artifacts} from ${update.currentVersion} to ${update.nextVersion}.
+    s"""|Updates ${artifacts} ${fromTo(update, branchCompareUrl)}.
         |
         |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
         |
@@ -61,6 +66,14 @@ object NewPullRequestData {
         |${appliedMigrations.getOrElse("")}
         |${labels.fold("")(_.mkString_("labels: ", ", ", ""))}
         |""".stripMargin.trim
+  }
+
+  def fromTo(update: Update, branchCompareUrl: Option[String]): String = {
+    val fromToVersions = s"from ${update.currentVersion} to ${update.nextVersion}"
+    branchCompareUrl match {
+      case None             => fromToVersions
+      case Some(compareUrl) => s"[${fromToVersions}](${compareUrl})"
+    }
   }
 
   def artifactsWithOptionalUrl(update: Update, artifactIdToUrl: Map[String, String]): String =
@@ -113,11 +126,12 @@ object NewPullRequestData {
       data: UpdateData,
       branchName: String,
       authorLogin: String,
-      artifactIdToUrl: Map[String, String] = Map.empty
+      artifactIdToUrl: Map[String, String] = Map.empty,
+      branchCompareUrl: Option[String] = None
   ): NewPullRequestData =
     NewPullRequestData(
       title = git.commitMsgFor(data.update),
-      body = bodyFor(data.update, authorLogin, artifactIdToUrl),
+      body = bodyFor(data.update, authorLogin, artifactIdToUrl, branchCompareUrl),
       head = branchName,
       base = data.baseBranch
     )
