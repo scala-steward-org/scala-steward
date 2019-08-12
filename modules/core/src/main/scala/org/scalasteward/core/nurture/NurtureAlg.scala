@@ -81,11 +81,13 @@ final class NurtureAlg[F[_]](
       grouped = Update.group(filtered)
       _ <- logger.info(util.logger.showUpdates(grouped))
       baseSha1 <- gitAlg.latestSha1(repo, baseBranch)
-      memoizedGetDependencies <- Async.memoize(
-        sbtAlg
-          .getDependencies(repo)
-          .flatMap(deps => filterAlg.globalFilterDependenciesMany(deps))
-      )
+      memoizedGetDependencies <- Async.memoize {
+        for {
+          deps <- sbtAlg.getDependencies(repo)
+          scalafmtDeps <- scalafmtAlg.getScalafmtDependency(repo)
+          filtered <- filterAlg.globalFilterDependenciesMany(deps ++ scalafmtDeps)
+        } yield filtered
+      }
       _ <- grouped.traverse_ { update =>
         val data =
           UpdateData(

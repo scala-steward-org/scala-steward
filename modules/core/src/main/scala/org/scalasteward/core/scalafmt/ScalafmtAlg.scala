@@ -19,7 +19,7 @@ package org.scalasteward.core.scalafmt
 import cats.implicits._
 import cats.{Functor, Monad}
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
-import org.scalasteward.core.data.{Update, Version}
+import org.scalasteward.core.data.{Dependency, Update, Version}
 import org.scalasteward.core.util.MonadThrowable
 import org.scalasteward.core.vcs.data.Repo
 
@@ -32,6 +32,22 @@ trait ScalafmtAlg[F[_]] {
 
   final def getScalafmtUpdate(repo: Repo)(implicit F: Functor[F]): F[Option[Update.Single]] =
     getScalafmtVersion(repo).map(_.flatMap(findScalafmtUpdate))
+
+  final def getScalafmtDependency(repo: Repo)(implicit F: Functor[F]): F[List[Dependency]] =
+    getScalafmtUpdate(repo).map {
+      case None => List.empty
+      case Some(update) =>
+        // FIXME: Scala version is required to fetch artifact URL using Coursier
+        val scalaVersions = List("2.12", "2.13")
+        scalaVersions.map { scalaV =>
+          Dependency(
+            update.groupId,
+            update.artifactId,
+            s"${update.artifactId}_${scalaV}",
+            update.currentVersion
+          )
+        }
+    }
 }
 
 object ScalafmtAlg {
