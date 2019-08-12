@@ -68,12 +68,13 @@ object NewPullRequestData {
         |""".stripMargin.trim
   }
 
-  def fromTo(update: Update, branchCompareUrl: Option[String]): String =
+  def fromTo(update: Update, branchCompareUrl: Option[String]): String = {
+    val fromToVersions = s"from ${update.currentVersion} to ${update.nextVersion}"
     branchCompareUrl match {
-      case None => s"from ${update.currentVersion} to ${update.nextVersion}"
-      case Some(compareUrl) =>
-        s"[from ${update.currentVersion} to ${update.nextVersion}](${compareUrl})"
+      case None             => fromToVersions
+      case Some(compareUrl) => s"[${fromToVersions}](${compareUrl})"
     }
+  }
 
   def artifactsWithOptionalUrl(update: Update, artifactIdToUrl: Map[String, String]): String =
     update match {
