@@ -81,14 +81,7 @@ final class NurtureAlg[F[_]](
       grouped = Update.group(filtered)
       _ <- logger.info(util.logger.showUpdates(grouped))
       baseSha1 <- gitAlg.latestSha1(repo, baseBranch)
-      memoizedGetDependencies <- Async.memoize {
-        for {
-          deps <- sbtAlg.getDependencies(repo)
-          sbtDeps <- sbtAlg.getSbtDependency(repo)
-          scalafmtDeps <- scalafmtAlg.getScalafmtDependency(repo)
-          filtered <- filterAlg.globalFilterDependenciesMany(deps ++ sbtDeps.toList ++ scalafmtDeps)
-        } yield filtered
-      }
+      memoizedGetDependencies <- NurtureAlg.getAllDependency(repo)
       _ <- grouped.traverse_ { update =>
         val data =
           UpdateData(
@@ -214,4 +207,22 @@ final class NurtureAlg[F[_]](
       containsChanges <- gitAlg.containsChanges(data.repo)
       _ <- if (containsChanges) commitAndPush(data) else F.unit
     } yield ()
+}
+
+object NurtureAlg {
+  def getAllDependency[F[_]](repo: Repo)(
+      implicit
+      sbtAlg: SbtAlg[F],
+      scalafmtAlg: ScalafmtAlg[F],
+      filterAlg: FilterAlg[F],
+      F: Async[F]
+  ): F[F[List[Dependency]]] = Async.memoize {
+    for {
+      deps <- sbtAlg.getDependencies(repo)
+      sbtDeps <- sbtAlg.getSbtDependency(repo)
+      scalafmtDeps <- scalafmtAlg.getScalafmtDependency(repo)
+      filtered <- filterAlg.globalFilterDependenciesMany(deps ++ sbtDeps.toList ++ scalafmtDeps)
+    } yield filtered
+  }
+
 }
