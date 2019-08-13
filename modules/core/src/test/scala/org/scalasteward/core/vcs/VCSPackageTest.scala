@@ -24,18 +24,18 @@ class VCSPackageTest extends FunSuite with Matchers {
 
   test("possibleCompareUrls") {
     possibleCompareUrls("https://github.com/foo/bar", update) shouldBe List(
-      "https://github.com/foo/bar/compare/1.2.0...1.2.3",
-      "https://github.com/foo/bar/compare/v1.2.0...v1.2.3"
+      "https://github.com/foo/bar/compare/v1.2.0...v1.2.3",
+      "https://github.com/foo/bar/compare/1.2.0...1.2.3"
     )
     // should canonicalize (drop last slash)
     possibleCompareUrls("https://github.com/foo/bar/", update) shouldBe List(
-      "https://github.com/foo/bar/compare/1.2.0...1.2.3",
-      "https://github.com/foo/bar/compare/v1.2.0...v1.2.3"
+      "https://github.com/foo/bar/compare/v1.2.0...v1.2.3",
+      "https://github.com/foo/bar/compare/1.2.0...1.2.3"
     )
 
     possibleCompareUrls("https://gitlab.com/foo/bar", update) shouldBe List(
-      "https://gitlab.com/foo/bar/compare/1.2.0...1.2.3",
-      "https://gitlab.com/foo/bar/compare/v1.2.0...v1.2.3"
+      "https://gitlab.com/foo/bar/compare/v1.2.0...v1.2.3",
+      "https://gitlab.com/foo/bar/compare/1.2.0...1.2.3"
     )
     possibleCompareUrls("https://bitbucket.org/foo/bar", update) shouldBe List(
       "https://bitbucket.org/foo/bar/compare/1.2.3..1.2.0#diff"

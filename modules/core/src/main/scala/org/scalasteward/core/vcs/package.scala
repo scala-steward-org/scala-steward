@@ -53,8 +53,8 @@ package object vcs {
     val canonicalized = repoUrl.replaceAll("/$", "")
     if (repoUrl.startsWith("https://github.com/") || repoUrl.startsWith("https://gitlab.com/"))
       List(
-        s"${canonicalized}/compare/${from}...${to}",
-        s"${canonicalized}/compare/v${from}...v${to}"
+        s"${canonicalized}/compare/v${from}...v${to}",
+        s"${canonicalized}/compare/${from}...${to}"
       )
     else if (repoUrl.startsWith("https://bitbucket.org/"))
       List(s"${canonicalized}/compare/${to}..${from}#diff")
