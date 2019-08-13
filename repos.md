@@ -56,6 +56,7 @@
 - cchantep/alohura
 - cchantep/foorgol
 - cchantep/sbt-hl-compiler
+- ceedubs/irrec
 - channingwalton/http4sWS
 - ChocPanda/argonaut-magnolia
 - ChocPanda/scalacheck-magnolia
