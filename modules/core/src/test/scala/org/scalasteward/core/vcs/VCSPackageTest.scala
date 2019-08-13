@@ -38,6 +38,7 @@ class VCSPackageTest extends FunSuite with Matchers {
       "https://gitlab.com/foo/bar/compare/1.2.0...1.2.3"
     )
     possibleCompareUrls("https://bitbucket.org/foo/bar", update) shouldBe List(
+      "https://bitbucket.org/foo/bar/compare/v1.2.3..v1.2.0#diff",
       "https://bitbucket.org/foo/bar/compare/1.2.3..1.2.0#diff"
     )
 

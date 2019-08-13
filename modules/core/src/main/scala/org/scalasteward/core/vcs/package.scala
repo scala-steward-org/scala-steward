@@ -57,7 +57,10 @@ package object vcs {
         s"${canonicalized}/compare/${from}...${to}"
       )
     else if (repoUrl.startsWith("https://bitbucket.org/"))
-      List(s"${canonicalized}/compare/${to}..${from}#diff")
+      List(
+        s"${canonicalized}/compare/v${to}..v${from}#diff",
+        s"${canonicalized}/compare/${to}..${from}#diff"
+      )
     else
       List.empty
   }
