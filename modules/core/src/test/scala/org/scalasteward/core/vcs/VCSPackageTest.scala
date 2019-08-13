@@ -8,7 +8,7 @@ import org.scalasteward.core.data.Update
 
 import org.scalatest.{FunSuite, Matchers}
 
-class BranchOutTest extends FunSuite with Matchers {
+class VCSPackageTest extends FunSuite with Matchers {
   val repo = Repo("foo", "bar")
   val update = Update.Single("ch.qos.logback", "logback-classic", "1.2.0", Nel.of("1.2.3"))
 
@@ -22,22 +22,25 @@ class BranchOutTest extends FunSuite with Matchers {
     createBranch(Gitlab, repo, update) shouldBe "update/logback-classic-1.2.3"
   }
 
-  test("createCompareUrl") {
-    createCompareUrl("https://github.com/foo/bar", update) shouldBe Some(
-      "https://github.com/foo/bar/compare/v1.2.0...v1.2.3"
+  test("possibleCompareUrls") {
+    possibleCompareUrls("https://github.com/foo/bar", update) shouldBe List(
+      "https://github.com/foo/bar/compare/v1.2.0...v1.2.3",
+      "https://github.com/foo/bar/compare/1.2.0...1.2.3"
     )
     // should canonicalize (drop last slash)
-    createCompareUrl("https://github.com/foo/bar/", update) shouldBe Some(
-      "https://github.com/foo/bar/compare/v1.2.0...v1.2.3"
+    possibleCompareUrls("https://github.com/foo/bar/", update) shouldBe List(
+      "https://github.com/foo/bar/compare/v1.2.0...v1.2.3",
+      "https://github.com/foo/bar/compare/1.2.0...1.2.3"
     )
 
-    createCompareUrl("https://gitlab.com/foo/bar", update) shouldBe Some(
-      "https://gitlab.com/foo/bar/compare/v1.2.0...v1.2.3"
+    possibleCompareUrls("https://gitlab.com/foo/bar", update) shouldBe List(
+      "https://gitlab.com/foo/bar/compare/v1.2.0...v1.2.3",
+      "https://gitlab.com/foo/bar/compare/1.2.0...1.2.3"
     )
-    createCompareUrl("https://bitbucket.org/foo/bar", update) shouldBe Some(
+    possibleCompareUrls("https://bitbucket.org/foo/bar", update) shouldBe List(
       "https://bitbucket.org/foo/bar/compare/1.2.3..1.2.0#diff"
     )
 
-    createCompareUrl("https://scalacenter.github.io/scalafix/", update) shouldBe None
+    possibleCompareUrls("https://scalacenter.github.io/scalafix/", update) shouldBe List()
   }
 }
