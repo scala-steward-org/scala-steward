@@ -520,11 +520,13 @@
 - typelevel/discipline-specs2
 - typelevel/frameless
 - typelevel/jawn
+- typelevel/kind-projector
 - typelevel/kittens
 - typelevel/machinist
 - typelevel/mouse
 - typelevel/paiges
 - typelevel/sbt-catalysts
+- typelevel/scalacheck
 - typelevel/simulacrum
 - typelevel/spire
 - ua-parser/uap-scala
