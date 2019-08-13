@@ -120,6 +120,8 @@
 - CleverCloud/akka-warp10-scala-client
 - clovellytech/http4s-modules
 - comcast/ip4s
+- concrete-cp/cspom
+- concrete-cp/concrete
 - cornerman/chameleon
 - cornerman/covenant
 - cornerman/mycelium
