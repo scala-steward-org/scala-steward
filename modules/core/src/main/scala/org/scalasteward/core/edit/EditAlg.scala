@@ -39,20 +39,20 @@ final class EditAlg[F[_]](
     F: Sync[F]
 ) {
   def applyUpdate(repo: Repo, update: Update): F[Unit] =
-    if (scalafmt.isScalafmtUpdate(update))
-      scalafmtAlg.editScalafmtConf(repo, update.nextVersion)
-    else
-      for {
-        _ <- applyScalafixMigrations(repo, update)
-        repoDir <- workspaceAlg.repoDir(repo)
-        files <- fileAlg.findSourceFilesContaining(
-          repoDir,
-          update.currentVersion,
-          f => isSourceFile(f) && isFileSpecificTo(update)(f)
-        )
-        noFilesFound = logger.warn("No files found that contain the current version")
-        _ <- files.toNel.fold(noFilesFound)(applyUpdateTo(_, update))
-      } yield ()
+    for {
+      _ <- if (scalafmt.isScalafmtUpdate(update))
+        scalafmtAlg.editScalafmtConf(repo, update.nextVersion)
+      else F.unit
+      _ <- applyScalafixMigrations(repo, update)
+      repoDir <- workspaceAlg.repoDir(repo)
+      files <- fileAlg.findSourceFilesContaining(
+        repoDir,
+        update.currentVersion,
+        f => isSourceFile(f) && isFileSpecificTo(update)(f)
+      )
+      noFilesFound = logger.warn("No files found that contain the current version")
+      _ <- files.toNel.fold(noFilesFound)(applyUpdateTo(_, update))
+    } yield ()
 
   def applyUpdateTo[G[_]: Traverse](files: G[File], update: Update): F[Unit] = {
     val actions = UpdateHeuristic.all.map { heuristic =>
