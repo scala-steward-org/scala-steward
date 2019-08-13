@@ -36,13 +36,6 @@ object VCSExtraAlg {
         maybeRepoUrl: Option[String],
         update: Update
     ): F[Option[String]] =
-      maybeRepoUrl
-        .flatMap(vcs.createCompareUrl(_, update))
-        .fold(F.pure(Option.empty[String])) { url =>
-          existenceClient.exists(url).map {
-            case true  => Some(url)
-            case false => None
-          }
-        }
+      maybeRepoUrl.toList.flatMap(vcs.possibleCompareUrls(_, update)).findM(existenceClient.exists)
   }
 }

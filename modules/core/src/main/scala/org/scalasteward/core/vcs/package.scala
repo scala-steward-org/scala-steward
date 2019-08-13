@@ -47,16 +47,18 @@ package object vcs {
         git.branchFor(update).name
     }
 
-  def createCompareUrl(repoUrl: String, update: Update): Option[String] = {
+  def possibleCompareUrls(repoUrl: String, update: Update): List[String] = {
     val from = update.currentVersion
     val to = update.nextVersion
     val canonicalized = repoUrl.replaceAll("/$", "")
     if (repoUrl.startsWith("https://github.com/") || repoUrl.startsWith("https://gitlab.com/"))
-      Some(s"${canonicalized}/compare/v${from}...v${to}")
+      List(
+        s"${canonicalized}/compare/${from}...${to}",
+        s"${canonicalized}/compare/v${from}...v${to}"
+      )
     else if (repoUrl.startsWith("https://bitbucket.org/"))
-      Some(s"${canonicalized}/compare/${to}..${from}#diff")
+      List(s"${canonicalized}/compare/${to}..${from}#diff")
     else
-      // unsupported VCS or just homepage
-      None
+      List.empty
   }
 }
