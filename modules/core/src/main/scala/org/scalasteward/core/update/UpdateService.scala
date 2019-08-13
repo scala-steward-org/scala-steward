@@ -125,9 +125,7 @@ final class UpdateService[F[_]](
         val maybeScalafmtUpdate =
           repoCache.maybeScalafmtVersion.flatMap(scalafmt.findScalafmtUpdate)
         val updates1 = maybeSbtUpdate.toList ++ maybeScalafmtUpdate.toList ++ updates
-        val maybeSbtDependency = maybeSbtUpdate.map { update =>
-          Dependency(update.groupId, update.artifactId, update.artifactId, update.currentVersion)
-        }
+        val maybeSbtDependency = maybeSbtUpdate.map(_.toDependency(None))
         val dependencies = maybeSbtDependency.toList ++ repoCache.dependencies
 
         dependencies.traverse { dependency =>
