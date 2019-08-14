@@ -40,9 +40,11 @@ final class EditAlg[F[_]](
 ) {
   def applyUpdate(repo: Repo, update: Update): F[Unit] =
     for {
-      _ <- if (scalafmt.isScalafmtUpdate(update))
-        scalafmtAlg.editScalafmtConf(repo, update.nextVersion)
-      else F.unit
+      noFilesFound <- if (scalafmt.isScalafmtUpdate(update)) {
+        scalafmtAlg.editScalafmtConf(repo, update.nextVersion).map(_ => F.unit)
+      } else {
+        F.pure(logger.warn("No files found that contain the current version"))
+      }
       _ <- applyScalafixMigrations(repo, update)
       repoDir <- workspaceAlg.repoDir(repo)
       files <- fileAlg.findSourceFilesContaining(
@@ -50,7 +52,6 @@ final class EditAlg[F[_]](
         update.currentVersion,
         f => isSourceFile(f) && isFileSpecificTo(update)(f)
       )
-      noFilesFound = logger.warn("No files found that contain the current version")
       _ <- files.toNel.fold(noFilesFound)(applyUpdateTo(_, update))
     } yield ()
 

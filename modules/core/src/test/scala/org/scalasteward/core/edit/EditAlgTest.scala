@@ -61,7 +61,8 @@ class EditAlgTest extends FunSuite with Matchers {
     state shouldBe MockState.empty.copy(
       commands = Vector(
         List("read", scalafmtFile.pathAsString),
-        List("write", scalafmtFile.pathAsString)
+        List("write", scalafmtFile.pathAsString),
+        List("read", file1.pathAsString)
       ),
       logs = Vector(),
       files = Map(
