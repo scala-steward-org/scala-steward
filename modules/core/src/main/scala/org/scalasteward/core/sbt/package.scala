@@ -17,6 +17,7 @@
 package org.scalasteward.core
 
 import cats.effect.{IO, Resource}
+import org.scalasteward.core.data.Dependency
 import org.scalasteward.core.io.FileData
 import org.scalasteward.core.sbt.data.{SbtVersion, ScalaVersion}
 import scala.io.Source
@@ -38,6 +39,9 @@ package object sbt {
       case "1.0"  => defaultSbtVersion
       case _      => defaultSbtVersion
     }
+
+  def sbtDependency(version: SbtVersion): Dependency =
+    Dependency("org.scala-sbt", "sbt", "sbt", version.value)
 
   val scalaStewardSbt: FileData =
     FileData(

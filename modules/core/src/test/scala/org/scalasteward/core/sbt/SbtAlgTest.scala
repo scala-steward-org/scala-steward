@@ -33,11 +33,15 @@ class SbtAlgTest extends FunSuite with Matchers {
   test("getUpdatesForRepo") {
     val repo = Repo("fthomas", "refined")
     val repoDir = config.workspace / "fthomas/refined"
-    val state = sbtAlg.getUpdatesForRepo(repo).runS(MockState.empty).unsafeRunSync()
+    val buildProperties = repoDir / "project" / "build.properties"
+    val initialState = MockState.empty.copy(files = Map(buildProperties -> "sbt.version=1.2.6"))
+    val state = sbtAlg.getUpdatesForRepo(repo).runS(initialState).unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
+      files = Map(buildProperties -> "sbt.version=1.2.6"),
       commands = Vector(
         List("read", s"$repoDir/project/build.properties"),
+        List("create", s"$repoDir/project/tmp-sbt-dep.sbt"),
         List(
           "TEST_VAR=GREAT",
           "ANOTHER_TEST_VAR=ALSO_GREAT",
@@ -48,7 +52,8 @@ class SbtAlgTest extends FunSuite with Matchers {
           "-batch",
           "-no-colors",
           ";set every credentials := Nil;dependencyUpdates;reload plugins;dependencyUpdates"
-        )
+        ),
+        List("rm", s"$repoDir/project/tmp-sbt-dep.sbt")
       )
     )
   }

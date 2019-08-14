@@ -166,7 +166,7 @@ object SbtAlg {
           case Some(sbtVersion) if sbtVersion.toVersion >= Version("1.0.0") =>
             workspaceAlg.repoDir(repo).flatMap { repoDir =>
               val content =
-                s"""libraryDependencies += "org.scala-sbt" % "sbt" % "${sbtVersion.value}""""
+                s"""libraryDependencies += ${sbtDependency(sbtVersion).formatAsModuleId}"""
               fileAlg.createTemporarily(repoDir / "project" / "tmp-sbt-dep.sbt", content)(fa)
             }
           case _ => fa
