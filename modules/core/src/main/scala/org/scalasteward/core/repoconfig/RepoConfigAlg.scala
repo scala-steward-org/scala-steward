@@ -58,8 +58,8 @@ object RepoConfigAlg {
   def configToIgnoreFurtherUpdates(update: Update): String =
     update match {
       case s: Update.Single =>
-        s"""updates.ignore = [{ groupId = "${s.groupId}", artifactId = "${s.artifactId}" }]"""
+        s"""updates.ignore = [ { groupId = "${s.groupId}", artifactId = "${s.artifactId}" } ]"""
       case g: Update.Group =>
-        s"""updates.ignore = [{ groupId = "${g.groupId}" }]"""
+        s"""updates.ignore = [ { groupId = "${g.groupId}" } ]"""
     }
 }
