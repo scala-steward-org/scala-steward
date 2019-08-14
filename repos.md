@@ -148,6 +148,7 @@
 - daandi/nice-url-encode-decode
 - dispalt/scala-relay
 - dispalt/tagless-redux
+- djspiewak/cats-effect-testing
 - djspiewak/gll-combinators
 - djspiewak/shims
 - dmrolfs/omnibus
