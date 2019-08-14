@@ -247,6 +247,7 @@
 - kontainers/micrometer-akka
 - kovszilard/twitter-server-prometheus
 - kubukoz/brick-store
+- kubukoz/datas
 - kubukoz/error-control
 - kubukoz/slick-effect
 - kubukoz/sup
