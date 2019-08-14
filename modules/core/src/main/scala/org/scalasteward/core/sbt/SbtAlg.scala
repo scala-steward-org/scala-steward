@@ -17,11 +17,11 @@
 package org.scalasteward.core.sbt
 
 import better.files.File
+import cats.Monad
 import cats.implicits._
-import cats.{Functor, Monad}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.data.{Dependency, Update}
+import org.scalasteward.core.data.{Dependency, Update, Version}
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.sbt.data.{ArtificialProject, SbtVersion}
@@ -45,9 +45,6 @@ trait SbtAlg[F[_]] {
   def getUpdatesForRepo(repo: Repo): F[List[Update.Single]]
 
   def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit]
-
-  final def getSbtUpdate(repo: Repo)(implicit F: Functor[F]): F[Option[Update.Single]] =
-    getSbtVersion(repo).map(_.flatMap(findSbtUpdate))
 }
 
 object SbtAlg {
@@ -94,7 +91,7 @@ object SbtAlg {
         for {
           repoDir <- workspaceAlg.repoDir(repo)
           cmd = sbtCmd(List(libraryDependenciesAsJson, reloadPlugins, libraryDependenciesAsJson))
-          lines <- exec(cmd, repoDir)
+          lines <- withTemporarySbtDependency(repo)(exec(cmd, repoDir))
         } yield parser.parseDependencies(lines)
 
       override def getUpdatesForProject(project: ArtificialProject): F[List[Update.Single]] =
@@ -121,9 +118,10 @@ object SbtAlg {
           maybeClearCredentials = if (config.keepCredentials) Nil else List(setCredentialsToNil)
           commands = maybeClearCredentials ++
             List(dependencyUpdates, reloadPlugins, dependencyUpdates)
-          updates <- exec(sbtCmd(commands), repoDir).map(parser.parseSingleUpdates)
-          maybeSbtUpdate <- getSbtUpdate(repo)
-        } yield maybeSbtUpdate.toList ::: updates
+          updates <- withTemporarySbtDependency(repo) {
+            exec(sbtCmd(commands), repoDir).map(parser.parseSingleUpdates)
+          }
+        } yield updates
 
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
         addGlobalPluginTemporarily(scalaStewardScalafixSbt) {
@@ -162,5 +160,16 @@ object SbtAlg {
           }
         }
       }
+
+      def withTemporarySbtDependency[A](repo: Repo)(fa: F[A]): F[A] =
+        getSbtVersion(repo).flatMap {
+          case Some(sbtVersion) if sbtVersion.toVersion >= Version("1.0.0") =>
+            workspaceAlg.repoDir(repo).flatMap { repoDir =>
+              val content =
+                s"""libraryDependencies += "org.scala-sbt" % "sbt" % "${sbtVersion.value}""""
+              fileAlg.createTemporarily(repoDir / "project" / "tmp-sbt-dep.sbt", content)(fa)
+            }
+          case _ => fa
+        }
     }
 }
