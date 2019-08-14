@@ -17,8 +17,8 @@
 package org.scalasteward.core.sbt
 
 import better.files.File
+import cats.Monad
 import cats.implicits._
-import cats.{Functor, Monad}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.{Dependency, Update}
@@ -45,9 +45,6 @@ trait SbtAlg[F[_]] {
   def getUpdatesForRepo(repo: Repo): F[List[Update.Single]]
 
   def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit]
-
-  final def getSbtUpdate(repo: Repo)(implicit F: Functor[F]): F[Option[Update.Single]] =
-    getSbtVersion(repo).map(_.flatMap(findSbtUpdate))
 }
 
 object SbtAlg {
@@ -95,7 +92,9 @@ object SbtAlg {
           repoDir <- workspaceAlg.repoDir(repo)
           cmd = sbtCmd(List(libraryDependenciesAsJson, reloadPlugins, libraryDependenciesAsJson))
           lines <- exec(cmd, repoDir)
-        } yield parser.parseDependencies(lines)
+          maybeSbtVersion <- getSbtVersion(repo)
+          maybeSbtDependency = maybeSbtVersion.flatMap(sbtDependency)
+        } yield maybeSbtDependency.toList ++ parser.parseDependencies(lines)
 
       override def getUpdatesForProject(project: ArtificialProject): F[List[Update.Single]] =
         for {
@@ -121,9 +120,10 @@ object SbtAlg {
           maybeClearCredentials = if (config.keepCredentials) Nil else List(setCredentialsToNil)
           commands = maybeClearCredentials ++
             List(dependencyUpdates, reloadPlugins, dependencyUpdates)
-          updates <- exec(sbtCmd(commands), repoDir).map(parser.parseSingleUpdates)
-          maybeSbtUpdate <- getSbtUpdate(repo)
-        } yield maybeSbtUpdate.toList ::: updates
+          updates <- withTemporarySbtDependency(repo) {
+            exec(sbtCmd(commands), repoDir).map(parser.parseSingleUpdates)
+          }
+        } yield updates
 
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
         addGlobalPluginTemporarily(scalaStewardScalafixSbt) {
@@ -162,5 +162,15 @@ object SbtAlg {
           }
         }
       }
+
+      def withTemporarySbtDependency[A](repo: Repo)(fa: F[A]): F[A] =
+        getSbtVersion(repo).flatMap {
+          _.flatMap(sbtDependency).fold(fa) { dependency =>
+            workspaceAlg.repoDir(repo).flatMap { repoDir =>
+              val content = s"libraryDependencies += ${dependency.formatAsModuleId}"
+              fileAlg.createTemporarily(repoDir / "project" / "tmp-sbt-dep.sbt", content)(fa)
+            }
+          }
+        }
     }
 }

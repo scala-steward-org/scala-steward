@@ -2,9 +2,9 @@ package org.scalasteward.core.sbt
 
 import better.files.File
 import org.scalasteward.core.application.Config
+import org.scalasteward.core.data.Version
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.{MockContext, MockState}
-import org.scalasteward.core.data.{Update, Version}
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
@@ -33,10 +33,15 @@ class SbtAlgTest extends FunSuite with Matchers {
   test("getUpdatesForRepo") {
     val repo = Repo("fthomas", "refined")
     val repoDir = config.workspace / "fthomas/refined"
-    val state = sbtAlg.getUpdatesForRepo(repo).runS(MockState.empty).unsafeRunSync()
+    val buildProperties = repoDir / "project" / "build.properties"
+    val initialState = MockState.empty.copy(files = Map(buildProperties -> "sbt.version=1.2.6"))
+    val state = sbtAlg.getUpdatesForRepo(repo).runS(initialState).unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
+      files = Map(buildProperties -> "sbt.version=1.2.6"),
       commands = Vector(
+        List("read", s"$repoDir/project/build.properties"),
+        List("create", s"$repoDir/project/tmp-sbt-dep.sbt"),
         List(
           "TEST_VAR=GREAT",
           "ANOTHER_TEST_VAR=ALSO_GREAT",
@@ -48,7 +53,7 @@ class SbtAlgTest extends FunSuite with Matchers {
           "-no-colors",
           ";set every credentials := Nil;dependencyUpdates;reload plugins;dependencyUpdates"
         ),
-        List("read", s"$repoDir/project/build.properties")
+        List("rm", s"$repoDir/project/tmp-sbt-dep.sbt")
       )
     )
   }
@@ -63,6 +68,7 @@ class SbtAlgTest extends FunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
+        List("read", s"$repoDir/project/build.properties"),
         List("rm", (repoDir / ".jvmopts").toString),
         List("rm", (repoDir / ".sbtopts").toString),
         List("create", (repoDir / ".jvmopts").toString),
@@ -79,8 +85,7 @@ class SbtAlgTest extends FunSuite with Matchers {
         ),
         List("rm", (repoDir / ".jvmopts").toString),
         List("restore", (repoDir / ".sbtopts").toString),
-        List("restore", (repoDir / ".jvmopts").toString),
-        List("read", s"$repoDir/project/build.properties")
+        List("restore", (repoDir / ".jvmopts").toString)
       )
     )
   }
@@ -95,6 +100,7 @@ class SbtAlgTest extends FunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
+        List("read", s"$repoDir/project/build.properties"),
         List(
           "TEST_VAR=GREAT",
           "ANOTHER_TEST_VAR=ALSO_GREAT",
@@ -105,8 +111,7 @@ class SbtAlgTest extends FunSuite with Matchers {
           "-batch",
           "-no-colors",
           ";dependencyUpdates;reload plugins;dependencyUpdates"
-        ),
-        List("read", s"$repoDir/project/build.properties")
+        )
       )
     )
   }
@@ -180,22 +185,6 @@ class SbtAlgTest extends FunSuite with Matchers {
         List("rm", "/tmp/steward/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
         List("rm", "/tmp/steward/.sbt/0.13/plugins/scala-steward-scalafix.sbt")
       )
-    )
-  }
-
-  test("getSbtUpdate") {
-    val repo = Repo("fthomas", "scala-steward")
-    val repoDir = config.workspace / repo.owner / repo.repo
-    val buildProperties = repoDir / "project" / "build.properties"
-    val initialState = MockState.empty.add(buildProperties, "sbt.version=1.2.6")
-    val (state, maybeUpdate) = sbtAlg.getSbtUpdate(repo).run(initialState).unsafeRunSync()
-
-    maybeUpdate shouldBe Some(
-      Update.Single("org.scala-sbt", "sbt", "1.2.6", Nel.of(defaultSbtVersion.value))
-    )
-    state shouldBe MockState.empty.copy(
-      commands = Vector(List("read", s"$repoDir/project/build.properties")),
-      files = Map(buildProperties -> "sbt.version=1.2.6")
     )
   }
 }

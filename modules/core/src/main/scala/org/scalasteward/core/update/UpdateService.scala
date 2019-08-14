@@ -29,7 +29,7 @@ import org.scalasteward.core.update.data.UpdateState._
 import org.scalasteward.core.util.MonadThrowable
 import org.scalasteward.core.vcs.data.PullRequestState.Closed
 import org.scalasteward.core.vcs.data.Repo
-import org.scalasteward.core.{sbt, scalafmt, util}
+import org.scalasteward.core.{scalafmt, util}
 
 final class UpdateService[F[_]](
     implicit
@@ -121,14 +121,10 @@ final class UpdateService[F[_]](
   def findAllUpdateStates(repo: Repo, updates: List[Update.Single]): F[List[UpdateState]] =
     repoCacheRepository.findCache(repo).flatMap {
       case Some(repoCache) =>
-        val maybeSbtUpdate = repoCache.maybeSbtVersion.flatMap(sbt.findSbtUpdate)
         val maybeScalafmtUpdate =
           repoCache.maybeScalafmtVersion.flatMap(scalafmt.findScalafmtUpdate)
-        val updates1 = maybeSbtUpdate.toList ++ maybeScalafmtUpdate.toList ++ updates
-        val maybeSbtDependency = maybeSbtUpdate.map { update =>
-          Dependency(update.groupId, update.artifactId, update.artifactId, update.currentVersion)
-        }
-        val dependencies = maybeSbtDependency.toList ++ repoCache.dependencies
+        val updates1 = maybeScalafmtUpdate.toList ++ updates
+        val dependencies = repoCache.dependencies
 
         dependencies.traverse { dependency =>
           findUpdateState(repo, repoCache.sha1, dependency, updates1)

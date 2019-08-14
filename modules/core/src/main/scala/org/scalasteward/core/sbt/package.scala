@@ -16,12 +16,11 @@
 
 package org.scalasteward.core
 
-import cats.effect.{IO, Resource}
 import cats.implicits._
-import org.scalasteward.core.data.Update
+import cats.effect.{IO, Resource}
+import org.scalasteward.core.data.{Dependency, Version}
 import org.scalasteward.core.io.FileData
 import org.scalasteward.core.sbt.data.{SbtVersion, ScalaVersion}
-import org.scalasteward.core.util.Nel
 import scala.io.Source
 
 package object sbt {
@@ -35,25 +34,18 @@ package object sbt {
   val defaultScalaVersion: ScalaVersion =
     ScalaVersion(BuildInfo.scalaVersion)
 
-  def findNewerSbtVersion(sbtVersion: SbtVersion): Option[SbtVersion] =
-    (sbtVersion.value match {
-      case v if v.startsWith("0.13.")    => Some(latestSbtVersion_0_13)
-      case v if v.startsWith("1.3.0-RC") => Some(SbtVersion("1.3.0-RC3"))
-      case v if v.startsWith("1.")       => Some(defaultSbtVersion)
-      case _                             => None
-    }).filter(_.toVersion > sbtVersion.toVersion)
-
-  def findSbtUpdate(currentVersion: SbtVersion): Option[Update.Single] =
-    findNewerSbtVersion(currentVersion).map { newerVersion =>
-      Update.Single("org.scala-sbt", "sbt", currentVersion.value, Nel.of(newerVersion.value))
-    }
-
   def seriesToSpecificVersion(sbtSeries: SbtVersion): SbtVersion =
     sbtSeries.value match {
       case "0.13" => latestSbtVersion_0_13
       case "1.0"  => defaultSbtVersion
       case _      => defaultSbtVersion
     }
+
+  def sbtDependency(sbtVersion: SbtVersion): Option[Dependency] =
+    if (sbtVersion.toVersion >= Version("1.0.0"))
+      Some(Dependency("org.scala-sbt", "sbt", "sbt", sbtVersion.value))
+    else
+      None
 
   val scalaStewardSbt: FileData =
     FileData(
