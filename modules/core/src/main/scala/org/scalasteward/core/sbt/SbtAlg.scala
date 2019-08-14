@@ -21,7 +21,7 @@ import cats.Monad
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.data.{Dependency, Update, Version}
+import org.scalasteward.core.data.{Dependency, Update}
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.sbt.data.{ArtificialProject, SbtVersion}
@@ -91,8 +91,10 @@ object SbtAlg {
         for {
           repoDir <- workspaceAlg.repoDir(repo)
           cmd = sbtCmd(List(libraryDependenciesAsJson, reloadPlugins, libraryDependenciesAsJson))
-          lines <- withTemporarySbtDependency(repo)(exec(cmd, repoDir))
-        } yield parser.parseDependencies(lines)
+          lines <- exec(cmd, repoDir)
+          maybeSbtVersion <- getSbtVersion(repo)
+          maybeSbtDependency = maybeSbtVersion.flatMap(sbtDependency)
+        } yield maybeSbtDependency.toList ++ parser.parseDependencies(lines)
 
       override def getUpdatesForProject(project: ArtificialProject): F[List[Update.Single]] =
         for {
@@ -163,13 +165,12 @@ object SbtAlg {
 
       def withTemporarySbtDependency[A](repo: Repo)(fa: F[A]): F[A] =
         getSbtVersion(repo).flatMap {
-          case Some(sbtVersion) if sbtVersion.toVersion >= Version("1.0.0") =>
+          _.flatMap(sbtDependency).fold(fa) { dependency =>
             workspaceAlg.repoDir(repo).flatMap { repoDir =>
-              val content =
-                s"""libraryDependencies += ${sbtDependency(sbtVersion).formatAsModuleId}"""
+              val content = s"libraryDependencies += ${dependency.formatAsModuleId}"
               fileAlg.createTemporarily(repoDir / "project" / "tmp-sbt-dep.sbt", content)(fa)
             }
-          case _ => fa
+          }
         }
     }
 }
