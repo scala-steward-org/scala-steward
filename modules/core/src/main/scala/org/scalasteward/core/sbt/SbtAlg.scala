@@ -94,7 +94,7 @@ object SbtAlg {
           lines <- exec(cmd, repoDir)
           maybeSbtVersion <- getSbtVersion(repo)
           maybeSbtDependency = maybeSbtVersion.flatMap(sbtDependency)
-        } yield maybeSbtDependency.toList ++ parser.parseDependencies(lines)
+        } yield (maybeSbtDependency.toList ++ parser.parseDependencies(lines)).distinct
 
       override def getUpdatesForProject(project: ArtificialProject): F[List[Update.Single]] =
         for {
