@@ -61,9 +61,7 @@ object parser {
 
   /** Parses the output of our own `libraryDependenciesAsJson` task. */
   def parseDependencies(lines: List[String]): List[Dependency] =
-    lines
-      .flatMap(line => decode[List[Dependency]](removeSbtNoise(line)).getOrElse(List.empty))
-      .distinct
+    lines.flatMap(line => decode[List[Dependency]](removeSbtNoise(line)).getOrElse(List.empty))
 
   private def removeSbtNoise(s: String): String =
     s.replace("[info]", "").trim
