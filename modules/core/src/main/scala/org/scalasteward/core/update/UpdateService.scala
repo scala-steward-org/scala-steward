@@ -19,9 +19,8 @@ package org.scalasteward.core.update
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data.{Dependency, Update}
-import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.nurture.PullRequestRepository
-import org.scalasteward.core.repocache.RepoCacheRepository
+import org.scalasteward.core.repocache.{RepoCache, RepoCacheRepository}
 import org.scalasteward.core.sbt._
 import org.scalasteward.core.sbt.data.ArtificialProject
 import org.scalasteward.core.update.data.UpdateState
@@ -113,7 +112,7 @@ final class UpdateService[F[_]](
       _ <- {
         if (isOutdated) {
           val statesAsString = util.string.indentLines(outdatedStates.map(_.toString).sorted)
-          logger.info(s"Update states for ${repo.show} is outdated:\n" + statesAsString)
+          logger.info(s"Update states for ${repo.show}:\n" + statesAsString)
         } else F.unit
       }
     } yield isOutdated
@@ -127,29 +126,34 @@ final class UpdateService[F[_]](
         val dependencies = repoCache.dependencies
 
         dependencies.traverse { dependency =>
-          findUpdateState(repo, repoCache.sha1, dependency, updates1)
+          findUpdateState(repo, repoCache, dependency, updates1)
         }
       case None => List.empty[UpdateState].pure[F]
     }
 
   def findUpdateState(
       repo: Repo,
-      sha1: Sha1,
+      repoCache: RepoCache,
       dependency: Dependency,
       updates: List[Update.Single]
   ): F[UpdateState] =
     updates.find(UpdateService.isUpdateFor(_, dependency)) match {
       case None => F.pure(DependencyUpToDate(dependency))
       case Some(update) =>
-        pullRequestRepo.findPullRequest(repo, dependency, update.nextVersion).map {
-          case None =>
-            DependencyOutdated(dependency, update)
-          case Some((uri, _, state)) if state === Closed =>
-            PullRequestClosed(dependency, update, uri)
-          case Some((uri, baseSha1, _)) if baseSha1 === sha1 =>
-            PullRequestUpToDate(dependency, update, uri)
-          case Some((uri, _, _)) =>
-            PullRequestOutdated(dependency, update, uri)
+        repoCache.maybeRepoConfig.map(_.updates.keep(update)) match {
+          case Some(Left(reason)) =>
+            F.pure(UpdateRejectedByConfig(dependency, reason))
+          case _ =>
+            pullRequestRepo.findPullRequest(repo, dependency, update.nextVersion).map {
+              case None =>
+                DependencyOutdated(dependency, update)
+              case Some((uri, _, state)) if state === Closed =>
+                PullRequestClosed(dependency, update, uri)
+              case Some((uri, baseSha1, _)) if baseSha1 === repoCache.sha1 =>
+                PullRequestUpToDate(dependency, update, uri)
+              case Some((uri, _, _)) =>
+                PullRequestOutdated(dependency, update, uri)
+            }
         }
     }
 }
