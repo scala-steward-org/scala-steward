@@ -79,11 +79,25 @@ object Cli {
   implicit val finiteDurationParser: ArgParser[FiniteDuration] =
     ArgParser[String].xmapError(
       _.toString(),
-      s => Try {
-        Duration(s) match {
-          case fd: FiniteDuration => Right(fd)
-          case _ => Left(MalformedValue("FiniteDuration", "The value is expected in the following format: <length><unit>"))
-        }
-      }.getOrElse(Left(MalformedValue("FiniteDuration", "The value is expected in the following format: <length><unit>")))
+      s =>
+        Try {
+          Duration(s) match {
+            case fd: FiniteDuration => Right(fd)
+            case _ =>
+              Left(
+                MalformedValue(
+                  "FiniteDuration",
+                  "The value is expected in the following format: <length><unit>"
+                )
+              )
+          }
+        }.getOrElse(
+          Left(
+            MalformedValue(
+              "FiniteDuration",
+              "The value is expected in the following format: <length><unit>"
+            )
+          )
+        )
     )
 }
