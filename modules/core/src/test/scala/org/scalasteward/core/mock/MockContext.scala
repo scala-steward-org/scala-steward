@@ -16,6 +16,7 @@ import org.scalasteward.core.update.FilterAlg
 import org.scalasteward.core.util.{BracketThrowable, DateTimeAlg, LogAlg}
 import org.scalasteward.core.vcs.VCSRepoAlg
 import org.scalasteward.core.vcs.data.AuthenticatedUser
+import scala.concurrent.duration._
 
 object MockContext {
   implicit val config: Config = Config(
@@ -37,7 +38,8 @@ object MockContext {
       EnvVar("TEST_VAR", "GREAT"),
       EnvVar("ANOTHER_TEST_VAR", "ALSO_GREAT")
     ),
-    pruneRepos = false
+    pruneRepos = false,
+    processTimeout = 10.minutes
   )
 
   implicit val mockEffBracketThrowable: BracketThrowable[MockEff] = Sync[MockEff]

@@ -24,6 +24,9 @@ import org.http4s.{Http4sLiteralSyntax, Uri}
 import org.scalasteward.core.application.Cli._
 import org.scalasteward.core.util.ApplicativeThrowable
 
+import scala.concurrent.duration._
+import scala.util.Try
+
 final class Cli[F[_]](implicit F: ApplicativeThrowable[F]) {
   def parseArgs(args: List[String]): F[Args] =
     F.fromEither {
@@ -49,7 +52,8 @@ object Cli {
       ignoreOptsFiles: Boolean = false,
       keepCredentials: Boolean = false,
       envVar: List[EnvVar] = Nil,
-      pruneRepos: Boolean = false
+      pruneRepos: Boolean = false,
+      processTimeout: FiniteDuration = 10.minutes
   )
 
   final case class EnvVar(name: String, value: String)
@@ -70,5 +74,30 @@ object Cli {
     ArgParser[String].xmapError(
       _.renderString,
       s => Uri.fromString(s).leftMap(pf => MalformedValue("Uri", pf.message))
+    )
+
+  implicit val finiteDurationParser: ArgParser[FiniteDuration] =
+    ArgParser[String].xmapError(
+      _.toString(),
+      s =>
+        Try {
+          Duration(s) match {
+            case fd: FiniteDuration => Right(fd)
+            case _ =>
+              Left(
+                MalformedValue(
+                  "FiniteDuration",
+                  "The value is expected in the following format: <length><unit>"
+                )
+              )
+          }
+        }.getOrElse(
+          Left(
+            MalformedValue(
+              "FiniteDuration",
+              "The value is expected in the following format: <length><unit>"
+            )
+          )
+        )
     )
 }
