@@ -54,4 +54,8 @@ class CliTest extends FunSuite with Matchers {
   test("malformed timeout") {
     Cli.finiteDurationParser(None, "xyz").isLeft shouldBe true
   }
+
+  test("malformed timeout (Inf)") {
+    Cli.finiteDurationParser(None, "Inf").isLeft shouldBe true
+  }
 }
