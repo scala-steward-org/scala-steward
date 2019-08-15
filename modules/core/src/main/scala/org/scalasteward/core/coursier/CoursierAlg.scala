@@ -16,12 +16,11 @@
 
 package org.scalasteward.core.coursier
 
+import cats.Parallel
 import cats.effect._
 import cats.implicits._
-import cats.Parallel
 import coursier.interop.cats._
 import org.scalasteward.core.data.Dependency
-
 import scala.concurrent.ExecutionContext
 
 trait CoursierAlg[F[_]] {
@@ -70,11 +69,9 @@ object CoursierAlg {
       }
 
       override def getArtifactIdUrlMapping(dependencies: List[Dependency]): F[Map[String, String]] =
-        for {
-          entries <- dependencies.traverse(dep => {
-            getArtifactUrl(dep).map(dep.artifactId -> _.getOrElse(""))
-          })
-        } yield Map(entries.filter { case (_, url) => url =!= "" }: _*)
+        dependencies
+          .traverseFilter(dep => getArtifactUrl(dep).map(_.map(dep.artifactId -> _)))
+          .map(_.toMap)
     }
   }
 }
