@@ -4,6 +4,7 @@ import cats.implicits._
 import org.http4s.Http4sLiteralSyntax
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalatest.{FunSuite, Matchers}
+import scala.concurrent.duration._
 
 class CliTest extends FunSuite with Matchers {
   type Result[A] = Either[Throwable, A]
@@ -22,7 +23,8 @@ class CliTest extends FunSuite with Matchers {
         List("--ignore-opts-files"),
         List("--env-var", "g=h"),
         List("--env-var", "i=j"),
-        List("--prune-repos")
+        List("--prune-repos"),
+        List("--timeout", "30min")
       ).flatten
     ) shouldBe Right(
       Cli.Args(
@@ -35,12 +37,21 @@ class CliTest extends FunSuite with Matchers {
         gitAskPass = "f",
         ignoreOptsFiles = true,
         envVar = List(EnvVar("g", "h"), EnvVar("i", "j")),
-        pruneRepos = true
+        pruneRepos = true,
+        timeout = 30.minutes
       )
     )
   }
 
   test("malformed env-var") {
     cli.parseArgs(List("--env-var", "foo=bar=baz")).isLeft shouldBe true
+  }
+
+  test("valid timeout") {
+    Cli.finiteDurationParser(None, "30min") shouldBe Right(30.minutes)
+  }
+
+  test("malformed timeout") {
+    Cli.finiteDurationParser(None, "xyz").isLeft shouldBe true
   }
 }

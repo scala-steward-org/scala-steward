@@ -23,7 +23,6 @@ import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.util.Nel
-import scala.concurrent.duration._
 
 trait ProcessAlg[F[_]] {
   def exec(command: Nel[String], cwd: File, extraEnv: (String, String)*): F[List[String]]
@@ -62,6 +61,6 @@ object ProcessAlg {
           extraEnv: (String, String)*
       ): F[List[String]] =
         logger.debug(s"Execute ${command.mkString_(" ")}") >>
-          process.slurp[F](command, Some(cwd.toJava), extraEnv.toMap, 10.minutes, logger.trace(_))
+          process.slurp[F](command, Some(cwd.toJava), extraEnv.toMap, config.timeout, logger.trace(_))
     }
 }

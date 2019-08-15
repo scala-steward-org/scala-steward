@@ -23,6 +23,8 @@ import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.git.Author
 import org.scalasteward.core.util
 import org.scalasteward.core.vcs.data.AuthenticatedUser
+
+import scala.concurrent.duration.FiniteDuration
 import scala.sys.process.Process
 
 /** Configuration for scala-steward.
@@ -60,7 +62,8 @@ final case class Config(
     ignoreOptsFiles: Boolean,
     keepCredentials: Boolean,
     envVars: List[EnvVar],
-    pruneRepos: Boolean
+    pruneRepos: Boolean,
+    timeout: FiniteDuration
 ) {
   def vcsUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] = {
     val urlWithUser = util.uri.withUserInfo.set(vcsLogin)(vcsApiHost).renderString
@@ -91,7 +94,8 @@ object Config {
         ignoreOptsFiles = args.ignoreOptsFiles,
         keepCredentials = args.keepCredentials,
         envVars = args.envVar,
-        pruneRepos = args.pruneRepos
+        pruneRepos = args.pruneRepos,
+        timeout = args.timeout
       )
     }
 }
