@@ -39,7 +39,7 @@ object MockContext {
       EnvVar("ANOTHER_TEST_VAR", "ALSO_GREAT")
     ),
     pruneRepos = false,
-    timeout = 10.minutes
+    processTimeout = 10.minutes
   )
 
   implicit val mockEffBracketThrowable: BracketThrowable[MockEff] = Sync[MockEff]

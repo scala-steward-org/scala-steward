@@ -53,7 +53,7 @@ object Cli {
       keepCredentials: Boolean = false,
       envVar: List[EnvVar] = Nil,
       pruneRepos: Boolean = false,
-      timeout: FiniteDuration = 10.minutes
+      processTimeout: FiniteDuration = 10.minutes
   )
 
   final case class EnvVar(name: String, value: String)

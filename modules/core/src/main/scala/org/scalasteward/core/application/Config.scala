@@ -63,7 +63,7 @@ final case class Config(
     keepCredentials: Boolean,
     envVars: List[EnvVar],
     pruneRepos: Boolean,
-    timeout: FiniteDuration
+    processTimeout: FiniteDuration
 ) {
   def vcsUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] = {
     val urlWithUser = util.uri.withUserInfo.set(vcsLogin)(vcsApiHost).renderString
@@ -95,7 +95,7 @@ object Config {
         keepCredentials = args.keepCredentials,
         envVars = args.envVar,
         pruneRepos = args.pruneRepos,
-        timeout = args.timeout
+        processTimeout = args.processTimeout
       )
     }
 }

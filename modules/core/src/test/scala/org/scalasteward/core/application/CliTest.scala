@@ -24,7 +24,7 @@ class CliTest extends FunSuite with Matchers {
         List("--env-var", "g=h"),
         List("--env-var", "i=j"),
         List("--prune-repos"),
-        List("--timeout", "30min")
+        List("--process-timeout", "30min")
       ).flatten
     ) shouldBe Right(
       Cli.Args(
@@ -38,7 +38,7 @@ class CliTest extends FunSuite with Matchers {
         ignoreOptsFiles = true,
         envVar = List(EnvVar("g", "h"), EnvVar("i", "j")),
         pruneRepos = true,
-        timeout = 30.minutes
+        processTimeout = 30.minutes
       )
     )
   }
