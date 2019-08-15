@@ -59,14 +59,13 @@ object CoursierAlg {
               case _: coursier.error.ResolutionError => None
             }
         } yield {
-          maybeFetchResult.flatMap(
-            _.resolution.projectCache.get((module, dependency.version)).flatMap {
-              case (_, project) =>
-                val maybeScmUrl = project.info.scm.flatMap(_.url).filter(_.nonEmpty)
-                val maybeHomepage = Option(project.info.homePage).filter(_.nonEmpty)
-                maybeScmUrl.orElse(maybeHomepage)
-            }
-          )
+          for {
+            result <- maybeFetchResult
+            (_, project) <- result.resolution.projectCache.get((module, dependency.version))
+            maybeScmUrl = project.info.scm.flatMap(_.url).filter(_.nonEmpty)
+            maybeHomepage = Option(project.info.homePage).filter(_.nonEmpty)
+            url <- maybeScmUrl.orElse(maybeHomepage)
+          } yield url
         }
       }
 
