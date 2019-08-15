@@ -4,6 +4,7 @@ object Versions {
   val circe = "0.11.1"
   val http4s = "0.20.10"
   val refined = "0.9.9"
+  val coursier = "2.0.0-RC3-3"
 }
 
 object Dependencies {
@@ -19,8 +20,8 @@ object Dependencies {
   val circeRefined = "io.circe" %% "circe-refined" % Versions.circe
   val circeExtras = "io.circe" %% "circe-generic-extras" % Versions.circe
   val commonsIo = "commons-io" % "commons-io" % "2.6"
-  val coursierCore = "io.get-coursier" %% "coursier" % "2.0.0-RC3-2"
-  val coursierCatsInterop = "io.get-coursier" %% "coursier-cats-interop" % "2.0.0-RC3-2"
+  val coursierCore = "io.get-coursier" %% "coursier" % Versions.coursier
+  val coursierCatsInterop = "io.get-coursier" %% "coursier-cats-interop" % Versions.coursier
   val fs2Core = "co.fs2" %% "fs2-core" % "1.0.5"
   val http4sBlazeClient = "org.http4s" %% "http4s-blaze-client" % Versions.http4s
   val http4sCirce = "org.http4s" %% "http4s-circe" % Versions.http4s
