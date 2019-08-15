@@ -29,7 +29,7 @@ object UpdateState {
 
   final case class DependencyOutdated(dependency: Dependency, update: Update) extends UpdateState
 
-  final case class UpdateRejectedByConfig(dependency: Dependency, reason: RejectionReason)
+  final case class UpdateRejectedByConfig(dependency: Dependency, rejectionReason: RejectionReason)
       extends UpdateState
 
   final case class PullRequestUpToDate(dependency: Dependency, update: Update, pullRequest: Uri)
