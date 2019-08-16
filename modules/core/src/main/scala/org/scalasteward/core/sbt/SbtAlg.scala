@@ -152,16 +152,12 @@ object SbtAlg {
       def maybeIgnoreOptsFiles[A](dir: File)(fa: F[A]): F[A] =
         if (config.ignoreOptsFiles) ignoreOptsFiles(dir)(fa) else fa
 
-      def ignoreOptsFiles[A](dir: File)(fa: F[A]): F[A] = {
-        val jvmopts = ".jvmopts"
-        fileAlg.removeTemporarily(dir / jvmopts) {
+      def ignoreOptsFiles[A](dir: File)(fa: F[A]): F[A] =
+        fileAlg.removeTemporarily(dir / ".jvmopts") {
           fileAlg.removeTemporarily(dir / ".sbtopts") {
-            fileAlg.createTemporarily(dir / jvmopts, "-Xss8m") {
-              fa
-            }
+            fa
           }
         }
-      }
 
       def withTemporarySbtDependency[A](repo: Repo)(fa: F[A]): F[A] =
         getSbtVersion(repo).flatMap {
