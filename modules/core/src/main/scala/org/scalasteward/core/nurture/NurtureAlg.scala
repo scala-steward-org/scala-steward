@@ -20,13 +20,11 @@ import cats.effect.Async
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.{Dependency, Update}
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Branch, GitAlg}
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
-import org.scalasteward.core.scaladex.ScaladexAlg
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.FilterAlg
 import org.scalasteward.core.util.LogAlg
@@ -41,8 +39,7 @@ final class NurtureAlg[F[_]](
     repoConfigAlg: RepoConfigAlg[F],
     filterAlg: FilterAlg[F],
     gitAlg: GitAlg[F],
-    coursierAlg: CoursierAlg[F],
-    scaladexAlg: ScaladexAlg[F],
+    urlMappingAlg: UrlMappingAlg[F],
     vcsApiAlg: VCSApiAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
     vcsExtraAlg: VCSExtraAlg[F],
@@ -144,23 +141,12 @@ final class NurtureAlg[F[_]](
       _ <- gitAlg.push(data.repo, data.updateBranch)
     } yield ()
 
-  def getArtifactIdUrlMapping(dependencies: List[Dependency]): F[Map[String, String]] =
-    for {
-      coursierResult <- coursierAlg.getArtifactIdUrlMapping(dependencies)
-      notFoundInCoursier = dependencies.filter { dep =>
-        !coursierResult.get(dep.artifactId).exists(vcs.isVcsUrl)
-      }
-      scaladexResult <- scaladexAlg.getArtifactIdUrlMapping(notFoundInCoursier)
-      _ <- logger.info(s"Complement ${scaladexResult.size} artifacts' SCM URL from scaladex")
-      merged = util.combineMapLastWin(coursierResult, scaladexResult)
-    } yield merged
-
   def createPullRequest(data: UpdateData, getDependencies: F[List[Dependency]]): F[Unit] =
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
       dependencies <- getDependencies
       filteredDependencies = dependenciesInUpdates(dependencies, data.update)
-      artifactIdToUrl <- getArtifactIdUrlMapping(filteredDependencies)
+      artifactIdToUrl <- urlMappingAlg.getArtifactIdUrlMapping(filteredDependencies)
       branchCompareUrl <- vcsExtraAlg.getBranchCompareUrl(
         artifactIdToUrl.get(data.update.artifactId),
         data.update

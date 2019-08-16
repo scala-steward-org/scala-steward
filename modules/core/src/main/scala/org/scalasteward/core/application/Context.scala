@@ -26,7 +26,7 @@ import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.json.JsonPullRequestRepo
-import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository}
+import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository, UrlMappingAlg}
 import org.scalasteward.core.repocache.json.JsonRepoCacheRepository
 import org.scalasteward.core.repocache.{RepoCacheAlg, RepoCacheRepository}
 import org.scalasteward.core.repoconfig.RepoConfigAlg
@@ -76,6 +76,7 @@ object Context {
       implicit val updateRepository: UpdateRepository[F] = new JsonUpdateRepository[F]
       implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create
       implicit val scaladexAlg: ScaladexAlg[F] = ScaladexAlg.create
+      implicit val urlMappingAlg: UrlMappingAlg[F] = UrlMappingAlg.create
       implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F]
       implicit val updateService: UpdateService[F] = new UpdateService[F]
       new StewardAlg[F]
