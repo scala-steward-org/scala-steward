@@ -216,6 +216,8 @@ addCommandsAlias(
   )
 )
 
+// Run Scala Steward from sbt for development and testing.
+// Do not do this in production.
 addCommandAlias(
   "runSteward", {
     val home = System.getenv("HOME")
