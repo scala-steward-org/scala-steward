@@ -20,7 +20,7 @@ java -DROOT_LOG_LEVEL=INFO -DLOG_LEVEL=INFO -jar ${JAR} \
   --vcs-login ${LOGIN} \
   --git-ask-pass "$HOME/.github/askpass/$LOGIN.sh" \
   --ignore-opts-files \
-  --env-var "SBT_OPTS=-Xss8m -XX:MaxMetaspaceSize=512m" \
+  --env-var "SBT_OPTS=-Xmx1536m -Xss8m -XX:MaxMetaspaceSize=512m" \
   --sign-commits \
   --whitelist $HOME/.cache/coursier \
   --whitelist $HOME/.coursier \

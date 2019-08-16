@@ -61,13 +61,12 @@ object ProcessAlg {
           extraEnv: (String, String)*
       ): F[List[String]] =
         logger.debug(s"Execute ${command.mkString_(" ")}") >>
-          process
-            .slurp[F](
-              command,
-              Some(cwd.toJava),
-              extraEnv.toMap,
-              config.processTimeout,
-              logger.trace(_)
-            )
+          process.slurp[F](
+            command,
+            Some(cwd.toJava),
+            extraEnv.toMap,
+            config.processTimeout,
+            logger.trace(_)
+          )
     }
 }
