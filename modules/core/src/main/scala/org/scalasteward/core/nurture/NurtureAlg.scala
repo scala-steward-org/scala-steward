@@ -26,7 +26,6 @@ import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Branch, GitAlg}
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
-import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.FilterAlg
 import org.scalasteward.core.util.LogAlg
 import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo}
@@ -48,7 +47,6 @@ final class NurtureAlg[F[_]](
     logger: Logger[F],
     pullRequestRepo: PullRequestRepository[F],
     sbtAlg: SbtAlg[F],
-    scalafmtAlg: ScalafmtAlg[F],
     F: Async[F]
 ) {
   def nurture(repo: Repo): F[Either[Throwable, Unit]] =
@@ -74,9 +72,7 @@ final class NurtureAlg[F[_]](
     for {
       _ <- logger.info(s"Find updates for ${repo.show}")
       repoConfig <- repoConfigAlg.readRepoConfigOrDefault(repo)
-      sbtUpdates <- sbtAlg.getUpdatesForRepo(repo)
-      nonSbtUpdates <- getNonSbtUpdates(repo)
-      updates = sbtUpdates ::: nonSbtUpdates
+      updates <- sbtAlg.getUpdatesForRepo(repo)
       filtered <- filterAlg.localFilterMany(repoConfig, updates)
       grouped = Update.group(filtered)
       _ <- logger.info(util.logger.showUpdates(grouped))
@@ -96,11 +92,6 @@ final class NurtureAlg[F[_]](
         processUpdate(data, memoizedGetDependencies)
       }
     } yield ()
-
-  def getNonSbtUpdates(repo: Repo): F[List[Update.Single]] =
-    for {
-      maybeScalafmt <- scalafmtAlg.getScalafmtUpdate(repo)
-    } yield List(maybeScalafmt).flatten
 
   def processUpdate(data: UpdateData, getDependencies: F[List[Dependency]]): F[Unit] =
     for {

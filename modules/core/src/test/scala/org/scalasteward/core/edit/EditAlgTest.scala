@@ -39,7 +39,7 @@ class EditAlgTest extends FunSuite with Matchers {
 
   test("applyUpdate with scalafmt update") {
     val repo = Repo("fthomas", "scala-steward")
-    val update = Update.Single("org.scalameta", "scalafmt", "2.0.0", Nel.of("2.1.0"))
+    val update = Update.Single("org.scalameta", "scalafmt-core", "2.0.0", Nel.of("2.1.0"))
     val scalafmtFile = File.temp / "ws/fthomas/scala-steward/.scalafmt.conf"
     val file1 = File.temp / "ws/fthomas/scala-steward/build.sbt"
 
@@ -61,7 +61,8 @@ class EditAlgTest extends FunSuite with Matchers {
     state shouldBe MockState.empty.copy(
       commands = Vector(
         List("read", scalafmtFile.pathAsString),
-        List("write", scalafmtFile.pathAsString)
+        List("write", scalafmtFile.pathAsString),
+        List("read", file1.pathAsString)
       ),
       logs = Vector(),
       files = Map(
