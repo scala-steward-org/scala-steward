@@ -109,6 +109,7 @@ class Http4sGitLabApiAlg[F[_]: MonadThrowable](
       .postWithBody[RepoOut, ForkPayload](url.createFork(repo), data, modify(repo))
       .recoverWith {
         case UnexpectedResponse(_, _, _, Status.Conflict, _) => getRepo(userOwnedRepo)
+        case UnexpectedResponse(_, _, _, Status.NotFound, _) => getRepo(userOwnedRepo)
       }
   }
 
