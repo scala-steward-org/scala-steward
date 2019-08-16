@@ -64,4 +64,9 @@ package object vcs {
     else
       List.empty
   }
+
+  def isVcsUrl(url: String): Boolean =
+    url.startsWith("https://github.com/") || url.startsWith("https://gitlab.com/") || url
+      .startsWith("https://bitbucket.org/")
+
 }

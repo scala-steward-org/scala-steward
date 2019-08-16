@@ -146,4 +146,8 @@ package object util {
 
     outerLoop(list, ListBuffer.empty, ListBuffer.empty).toList
   }
+
+  def combineMapLastWin[K, V](first: Map[K, V], last: Map[K, V]): Map[K, V] =
+    first.filterKeys(key => !last.contains(key)) ++ last
+
 }

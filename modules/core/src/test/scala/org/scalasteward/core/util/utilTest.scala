@@ -4,6 +4,7 @@ import cats.effect.IO
 import cats.implicits._
 import eu.timepit.refined.scalacheck.numeric._
 import eu.timepit.refined.types.numeric.PosInt
+import org.scalasteward.core.util
 import org.scalatest.{FunSuite, Matchers}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
@@ -86,5 +87,15 @@ class utilTest extends FunSuite with Matchers with ScalaCheckPropertyChecks {
       val maxSize = math.min(l.map(f).toSet.size, n.value)
       (l.isEmpty || separateBy(l)(n)(f).exists(_.size == maxSize)) shouldBe true
     }
+  }
+
+  test("combineMapLastWin") {
+    val a = Map("foo" -> "https://github.com/foo/foo", "bar" -> "https://bar.example.com")
+    val b = Map("bar" -> "https://github.com/bar/bar", "buz" -> "https://bitbucket.org/buz/buz")
+    util.combineMapLastWin(a, b) shouldBe Map(
+      "foo" -> "https://github.com/foo/foo",
+      "bar" -> "https://github.com/bar/bar", // last win
+      "buz" -> "https://bitbucket.org/buz/buz"
+    )
   }
 }

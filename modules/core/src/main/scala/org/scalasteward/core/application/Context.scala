@@ -31,6 +31,7 @@ import org.scalasteward.core.repocache.json.JsonRepoCacheRepository
 import org.scalasteward.core.repocache.{RepoCacheAlg, RepoCacheRepository}
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
+import org.scalasteward.core.scaladex.{HttpScaladexClient, ScaladexAlg}
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.json.JsonUpdateRepository
 import org.scalasteward.core.update.{FilterAlg, UpdateRepository, UpdateService}
@@ -61,6 +62,7 @@ object Context {
       implicit val gitAlg: GitAlg[F] = GitAlg.create[F]
       implicit val httpJsonClient: HttpJsonClient[F] = new HttpJsonClient[F]
       implicit val httpExistenceClient: HttpExistenceClient[F] = new HttpExistenceClient[F]
+      implicit val httpScaladexClient: HttpScaladexClient[F] = new HttpScaladexClient[F]
       implicit val repoCacheRepository: RepoCacheRepository[F] = new JsonRepoCacheRepository[F]
       val vcsSelection = new VCSSelection[F]
       implicit val vcsApiAlg: VCSApiAlg[F] = vcsSelection.getAlg(config)
@@ -73,6 +75,7 @@ object Context {
       implicit val editAlg: EditAlg[F] = new EditAlg[F]
       implicit val updateRepository: UpdateRepository[F] = new JsonUpdateRepository[F]
       implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create
+      implicit val scaladexAlg: ScaladexAlg[F] = ScaladexAlg.create
       implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F]
       implicit val updateService: UpdateService[F] = new UpdateService[F]
       new StewardAlg[F]
