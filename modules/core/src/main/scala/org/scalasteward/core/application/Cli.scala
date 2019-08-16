@@ -61,12 +61,11 @@ object Cli {
   implicit val envVarParser: SimpleArgParser[EnvVar] =
     SimpleArgParser.from[EnvVar]("env-var") { s =>
       s.trim.split('=').toList match {
-        case name :: value :: Nil =>
-          Right(EnvVar(name.trim, value.trim))
+        case name :: (value @ _ :: _) =>
+          Right(EnvVar(name.trim, value.mkString("=").trim))
         case _ =>
-          Left(
-            MalformedValue("EnvVar", "The value is expected in the following format: NAME=VALUE.")
-          )
+          val error = "The value is expected in the following format: NAME=VALUE."
+          Left(MalformedValue("EnvVar", error))
       }
     }
 

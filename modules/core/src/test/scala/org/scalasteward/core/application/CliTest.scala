@@ -43,8 +43,13 @@ class CliTest extends FunSuite with Matchers {
     )
   }
 
-  test("malformed env-var") {
-    cli.parseArgs(List("--env-var", "foo=bar=baz")).isLeft shouldBe true
+  test("env-var without equals sign") {
+    Cli.envVarParser(None, "SBT_OPTS").isLeft shouldBe true
+  }
+
+  test("env-var with multiple equals signs") {
+    val value = "-Xss8m -XX:MaxMetaspaceSize=256m"
+    Cli.envVarParser(None, s"SBT_OPTS=$value") shouldBe Right(EnvVar("SBT_OPTS", value))
   }
 
   test("valid timeout") {
