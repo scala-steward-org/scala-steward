@@ -16,14 +16,10 @@
 
 package org.scalasteward.core
 
-import cats.implicits._
-import org.scalasteward.core.data.{Dependency, Update, Version}
+import org.scalasteward.core.data.{Dependency, Version}
 import org.scalasteward.core.sbt.data.ScalaVersion
 
 package object scalafmt {
-  val scalafmtGroupId = "org.scalameta"
-  val scalafmtArtifactId = "scalafmt-core"
-
   def scalafmtDependency(scalaVersion: ScalaVersion)(scalafmtVersion: Version): Option[Dependency] =
     Some(
       Dependency(
@@ -39,7 +35,4 @@ package object scalafmt {
       .findFirstMatchIn(s)
       .map(_.group(1).replaceAllLiterally("\"", ""))
       .map(Version.apply)
-
-  def isScalafmtUpdate(update: Update): Boolean =
-    update.groupId === scalafmtGroupId && update.artifactId === scalafmtArtifactId
 }

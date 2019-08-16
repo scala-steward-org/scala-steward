@@ -61,10 +61,22 @@ class EditAlgTest extends FunSuite with Matchers {
     state shouldBe MockState.empty.copy(
       commands = Vector(
         List("read", scalafmtFile.pathAsString),
-        List("write", scalafmtFile.pathAsString),
-        List("read", file1.pathAsString)
+        List("read", scalafmtFile.pathAsString),
+        List("read", scalafmtFile.pathAsString),
+        List("read", scalafmtFile.pathAsString),
+        List("read", scalafmtFile.pathAsString),
+        List("read", scalafmtFile.pathAsString),
+        List("read", scalafmtFile.pathAsString),
+        List("write", scalafmtFile.pathAsString)
       ),
-      logs = Vector(),
+      logs = Vector(
+        (None, "Trying heuristic 'strict'"),
+        (None, "Trying heuristic 'original'"),
+        (None, "Trying heuristic 'relaxed'"),
+        (None, "Trying heuristic 'sliding'"),
+        (None, "Trying heuristic 'groupId'"),
+        (None, "Trying heuristic 'scalafmt'")
+      ),
       files = Map(
         scalafmtFile ->
           """maxColumn = 100

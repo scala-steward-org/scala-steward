@@ -20,15 +20,10 @@ import cats.implicits._
 import cats.Monad
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.data.Version
-import org.scalasteward.core.util.MonadThrowable
 import org.scalasteward.core.vcs.data.Repo
-
-import scala.util.matching.Regex
 
 trait ScalafmtAlg[F[_]] {
   def getScalafmtVersion(repo: Repo): F[Option[Version]]
-
-  def editScalafmtConf(repo: Repo, nextVersion: String)(implicit F: MonadThrowable[F]): F[Unit]
 }
 
 object ScalafmtAlg {
@@ -46,25 +41,5 @@ object ScalafmtAlg {
       } yield {
         fileContent.flatMap(parseScalafmtConf)
       }
-
-    override def editScalafmtConf(repo: Repo, nextVersion: String)(
-        implicit F: MonadThrowable[F]
-    ): F[Unit] =
-      for {
-        repoDir <- workspaceAlg.repoDir(repo)
-        scalafmtConfFile = repoDir / ".scalafmt.conf"
-        _ <- fileAlg.editFile(
-          scalafmtConfFile,
-          content => {
-            for {
-              currentVersion <- parseScalafmtConf(content)
-              curVer = Regex.quote(currentVersion.value)
-              pattern = s"""(version\\s*=\\s*.*?)${curVer}(.?)"""
-              replacer = s"$$1${nextVersion}$$2"
-              changed <- Some(content.replaceFirst(pattern, replacer)) if changed =!= content
-            } yield changed
-          }
-        )
-      } yield ()
   }
 }

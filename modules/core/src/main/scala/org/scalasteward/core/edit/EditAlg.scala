@@ -24,8 +24,7 @@ import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.io.{isFileSpecificTo, isSourceFile, FileAlg, WorkspaceAlg}
 import org.scalasteward.core.sbt.SbtAlg
-import org.scalasteward.core.{scalafix, scalafmt}
-import org.scalasteward.core.scalafmt.ScalafmtAlg
+import org.scalasteward.core.scalafix
 import org.scalasteward.core.util._
 import org.scalasteward.core.vcs.data.Repo
 
@@ -34,17 +33,11 @@ final class EditAlg[F[_]](
     fileAlg: FileAlg[F],
     logger: Logger[F],
     sbtAlg: SbtAlg[F],
-    scalafmtAlg: ScalafmtAlg[F],
     workspaceAlg: WorkspaceAlg[F],
     F: Sync[F]
 ) {
   def applyUpdate(repo: Repo, update: Update): F[Unit] =
     for {
-      noFilesFound <- if (scalafmt.isScalafmtUpdate(update)) {
-        scalafmtAlg.editScalafmtConf(repo, update.nextVersion).map(_ => F.unit)
-      } else {
-        F.pure(logger.warn("No files found that contain the current version"))
-      }
       _ <- applyScalafixMigrations(repo, update)
       repoDir <- workspaceAlg.repoDir(repo)
       files <- fileAlg.findSourceFilesContaining(
@@ -52,6 +45,7 @@ final class EditAlg[F[_]](
         update.currentVersion,
         f => isSourceFile(f) && isFileSpecificTo(update)(f)
       )
+      noFilesFound = logger.warn("No files found that contain the current version")
       _ <- files.toNel.fold(noFilesFound)(applyUpdateTo(_, update))
     } yield ()
 
