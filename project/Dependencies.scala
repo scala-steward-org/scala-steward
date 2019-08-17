@@ -2,9 +2,9 @@ import sbt._
 
 object Versions {
   val circe = "0.11.1"
+  val coursier = "2.0.0-RC3-3"
   val http4s = "0.20.10"
   val refined = "0.9.9"
-  val coursier = "2.0.0-RC3-3"
 }
 
 object Dependencies {
