@@ -75,7 +75,7 @@ class EditAlgTest extends FunSuite with Matchers {
         (None, "Trying heuristic 'relaxed'"),
         (None, "Trying heuristic 'sliding'"),
         (None, "Trying heuristic 'groupId'"),
-        (None, "Trying heuristic 'scalafmt'")
+        (None, "Trying heuristic 'specific'")
       ),
       files = Map(
         scalafmtFile ->

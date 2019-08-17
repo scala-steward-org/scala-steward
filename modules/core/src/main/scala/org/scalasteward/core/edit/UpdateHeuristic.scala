@@ -111,13 +111,14 @@ object UpdateHeuristic {
     )
   )
 
-  val scalafmtSpecific = UpdateHeuristic(
-    name = "scalafmt",
-    replaceVersion = defaultReplaceVersion(
-      update => List("version").filter(_ => update.artifactId === "scalafmt-core")
-    )
+  val specific = UpdateHeuristic(
+    name = "specific",
+    replaceVersion = defaultReplaceVersion {
+      case Update.Single("org.scalameta", "scalafmt-core", _, _, _) => List("version")
+      case _                                                        => List.empty
+    }
   )
 
   val all: Nel[UpdateHeuristic] =
-    Nel.of(strict, original, relaxed, sliding, groupId, scalafmtSpecific)
+    Nel.of(strict, original, relaxed, sliding, groupId, specific)
 }
