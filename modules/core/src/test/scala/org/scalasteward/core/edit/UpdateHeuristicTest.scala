@@ -243,6 +243,26 @@ class UpdateHeuristicTest extends FunSuite with Matchers {
       .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.groupId.name)
   }
 
+  test("specific to scalafmt: should be Scala version agnostic") {
+    Seq(
+      ("""version = "2.0.0" """, """version = "2.0.1" """),
+      ("""version="2.0.0"""", """version="2.0.1""""),
+      ("""version = 2.0.0 """, """version = 2.0.1 """),
+      ("""version=2.0.0 """, """version=2.0.1 """)
+    ).foreach {
+      case (original, expected) =>
+        Single("org.scalameta", "scalafmt-core", "2.0.0", Nel.of("2.0.1"))
+          .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.specific.name)
+        // Should not edit if artifactId ontains scalaBinaryVersion
+        Single("org.scalameta", "scalafmt-core_2.12", "2.0.0", Nel.of("2.0.1"))
+          .replaceVersionIn(original) shouldBe (None -> UpdateHeuristic.specific.name)
+    }
+
+    val original = """version=2.0.0"""
+    Single("org.scalameta", "other-artifact", "2.0.0", Nel.of("2.0.1"))
+      .replaceVersionIn(original) shouldBe (None -> UpdateHeuristic.all.last.name)
+  }
+
   test("ignore TLD") {
     val original = """ "com.propensive" %% "contextual" % "1.0.1" """
     Single("com.slamdata", "fs2-gzip", "1.0.1", Nel.of("1.1.1"))

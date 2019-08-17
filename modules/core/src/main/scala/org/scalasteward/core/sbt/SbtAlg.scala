@@ -168,15 +168,18 @@ object SbtAlg {
 
       def withTemporarySbtDependency[A](repo: Repo)(fa: F[A]): F[A] =
         for {
-          maybeSbtDep <- getSbtVersion(repo).map(_.flatMap(sbtDependency))
+          maybeSbtDep <- getSbtVersion(repo).map(_.flatMap(sbtDependency).map(_.formatAsModuleId))
           maybeScalafmtDep <- scalafmtAlg
             .getScalafmtVersion(repo)
-            .map(_.map(scalafmtDependency(defaultScalaBinaryVersion)))
+            .map(
+              _.map(scalafmtDependency(defaultScalaBinaryVersion))
+                .map(_.formatAsModuleIdScalaVersionAgnostic)
+            )
           fakeDeps = Option(maybeSbtDep.toList ++ maybeScalafmtDep.toList).filter(_.nonEmpty)
           a <- fakeDeps.fold(fa) { dependencies =>
             workspaceAlg.repoDir(repo).flatMap { repoDir =>
               val content = dependencies
-                .map(dep => s"libraryDependencies += ${dep.formatAsModuleId}")
+                .map(dep => s"libraryDependencies += ${dep}")
                 .mkString(System.lineSeparator())
               fileAlg.createTemporarily(repoDir / "project" / "tmp-sbt-dep.sbt", content)(fa)
             }
