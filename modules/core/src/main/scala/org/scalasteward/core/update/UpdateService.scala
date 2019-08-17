@@ -183,7 +183,7 @@ object UpdateService {
       case ("org.spire-math", "kind-projector") => ("org.typelevel", "0.10.0")
       case ("com.geirsson", "sbt-scalafmt")     => ("org.scalameta", "2.0.0")
       case _                                    => ("", "")
-    }).filter(_._1.nonEmpty)
+    }).filter { case (groupId, _) => groupId.nonEmpty }
 
   def findUpdateUnderNewGroup(dep: Dependency): Option[Update.Single] =
     getNewerGroupId(dep.groupId, dep.artifactId).map {
