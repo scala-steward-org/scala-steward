@@ -67,8 +67,8 @@ object Context {
       implicit val vcsRepoAlg: VCSRepoAlg[F] = VCSRepoAlg.create[F](config, gitAlg)
       implicit val vcsExtraAlg: VCSExtraAlg[F] = VCSExtraAlg.create[F]
       implicit val pullRequestRepo: PullRequestRepository[F] = new JsonPullRequestRepo[F]
-      implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F]
       implicit val scalafmtAlg: ScalafmtAlg[F] = ScalafmtAlg.create[F]
+      implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F]
       implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F]
       implicit val editAlg: EditAlg[F] = new EditAlg[F]
       implicit val updateRepository: UpdateRepository[F] = new JsonUpdateRepository[F]

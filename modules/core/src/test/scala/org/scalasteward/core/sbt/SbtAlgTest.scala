@@ -33,29 +33,36 @@ class SbtAlgTest extends FunSuite with Matchers {
   test("getUpdatesForRepo") {
     val repo = Repo("fthomas", "refined")
     val repoDir = config.workspace / "fthomas/refined"
-    val buildProperties = repoDir / "project" / "build.properties"
-    val initialState = MockState.empty.copy(files = Map(buildProperties -> "sbt.version=1.2.6"))
-    val state = sbtAlg.getUpdatesForRepo(repo).runS(initialState).unsafeRunSync()
-
-    state shouldBe MockState.empty.copy(
-      files = Map(buildProperties -> "sbt.version=1.2.6"),
-      commands = Vector(
-        List("read", s"$repoDir/project/build.properties"),
-        List("create", s"$repoDir/project/tmp-sbt-dep.sbt"),
-        List(
-          "TEST_VAR=GREAT",
-          "ANOTHER_TEST_VAR=ALSO_GREAT",
-          repoDir.toString,
-          "firejail",
-          s"--whitelist=$repoDir",
-          "sbt",
-          "-batch",
-          "-no-colors",
-          ";set every credentials := Nil;dependencyUpdates;reload plugins;dependencyUpdates"
-        ),
-        List("rm", s"$repoDir/project/tmp-sbt-dep.sbt")
-      )
+    val files = Map(
+      repoDir / "project" / "build.properties" -> "sbt.version=1.2.6",
+      repoDir / ".scalafmt.conf" -> "version=2.0.0"
     )
+
+    files.foreach {
+      case (file, content) =>
+        val initialState = MockState.empty.copy(files = Map(file -> content))
+        val state = sbtAlg.getUpdatesForRepo(repo).runS(initialState).unsafeRunSync()
+        state shouldBe MockState.empty.copy(
+          files = Map(file -> content),
+          commands = Vector(
+            List("read", s"$repoDir/project/build.properties"),
+            List("read", s"$repoDir/.scalafmt.conf"),
+            List("create", s"$repoDir/project/tmp-sbt-dep.sbt"),
+            List(
+              "TEST_VAR=GREAT",
+              "ANOTHER_TEST_VAR=ALSO_GREAT",
+              repoDir.toString,
+              "firejail",
+              s"--whitelist=$repoDir",
+              "sbt",
+              "-batch",
+              "-no-colors",
+              ";set every credentials := Nil;dependencyUpdates;reload plugins;dependencyUpdates"
+            ),
+            List("rm", s"$repoDir/project/tmp-sbt-dep.sbt")
+          )
+        )
+    }
   }
 
   test("getUpdatesForRepo ignoring .jvmopts and .sbtopts files") {
@@ -69,6 +76,7 @@ class SbtAlgTest extends FunSuite with Matchers {
     state shouldBe MockState.empty.copy(
       commands = Vector(
         List("read", s"$repoDir/project/build.properties"),
+        List("read", s"$repoDir/.scalafmt.conf"),
         List("rm", (repoDir / ".jvmopts").toString),
         List("rm", (repoDir / ".sbtopts").toString),
         List(
@@ -99,6 +107,7 @@ class SbtAlgTest extends FunSuite with Matchers {
     state shouldBe MockState.empty.copy(
       commands = Vector(
         List("read", s"$repoDir/project/build.properties"),
+        List("read", s"$repoDir/.scalafmt.conf"),
         List(
           "TEST_VAR=GREAT",
           "ANOTHER_TEST_VAR=ALSO_GREAT",

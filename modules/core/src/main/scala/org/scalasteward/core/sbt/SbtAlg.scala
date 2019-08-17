@@ -26,6 +26,7 @@ import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.sbt.data.{ArtificialProject, SbtVersion}
 import org.scalasteward.core.scalafix.Migration
+import org.scalasteward.core.scalafmt.{scalafmtDependency, ScalafmtAlg}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
@@ -55,6 +56,7 @@ object SbtAlg {
       logger: Logger[F],
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F],
+      scalafmtAlg: ScalafmtAlg[F],
       F: Monad[F]
   ): SbtAlg[F] =
     new SbtAlg[F] {
@@ -94,7 +96,12 @@ object SbtAlg {
           lines <- exec(cmd, repoDir)
           maybeSbtVersion <- getSbtVersion(repo)
           maybeSbtDependency = maybeSbtVersion.flatMap(sbtDependency)
-        } yield (maybeSbtDependency.toList ++ parser.parseDependencies(lines)).distinct
+          maybeScalafmtVersion <- scalafmtAlg.getScalafmtVersion(repo)
+          maybeScalafmtDependency = maybeScalafmtVersion.flatMap(
+            scalafmtDependency(defaultScalaVersion)
+          )
+        } yield (maybeSbtDependency.toList ++ maybeScalafmtDependency.toList ++ parser
+          .parseDependencies(lines)).distinct
 
       override def getUpdatesForProject(project: ArtificialProject): F[List[Update.Single]] =
         for {
@@ -160,13 +167,21 @@ object SbtAlg {
         }
 
       def withTemporarySbtDependency[A](repo: Repo)(fa: F[A]): F[A] =
-        getSbtVersion(repo).flatMap {
-          _.flatMap(sbtDependency).fold(fa) { dependency =>
+        for {
+          maybeSbtDep <- getSbtVersion(repo).map(_.flatMap(sbtDependency))
+          maybeScalafmtDep <- scalafmtAlg
+            .getScalafmtVersion(repo)
+            .map(_.flatMap(scalafmtDependency(defaultScalaVersion)))
+          fakeDeps = Option(maybeSbtDep.toList ++ maybeScalafmtDep.toList).filter(_.nonEmpty)
+          a <- fakeDeps.fold(fa) { dependencies =>
             workspaceAlg.repoDir(repo).flatMap { repoDir =>
-              val content = s"libraryDependencies += ${dependency.formatAsModuleId}"
+              val content = dependencies
+                .map(dep => s"libraryDependencies += ${dep.formatAsModuleId}")
+                .mkString(System.lineSeparator())
               fileAlg.createTemporarily(repoDir / "project" / "tmp-sbt-dep.sbt", content)(fa)
             }
           }
-        }
+        } yield a
+
     }
 }
