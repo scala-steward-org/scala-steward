@@ -17,22 +17,15 @@
 package org.scalasteward.core
 
 import org.scalasteward.core.data.{Dependency, Version}
-import org.scalasteward.core.sbt.data.ScalaVersion
 
 package object scalafmt {
-  def scalafmtDependency(
-      scalaVersion: ScalaVersion
-  )(scalafmtVersion: Version): Option[Dependency] = {
-    val scalaMajor = scalaVersion.value.split("\\.").take(2).mkString(".")
-    Some(
-      Dependency(
-        "org.scalameta",
-        "scalafmt-core",
-        s"scalafmt-core_${scalaMajor}",
-        scalafmtVersion.value
-      )
+  def scalafmtDependency(scalaBinaryVersion: String)(scalafmtVersion: Version): Dependency =
+    Dependency(
+      "org.scalameta",
+      "scalafmt-core",
+      s"scalafmt-core_${scalaBinaryVersion}",
+      scalafmtVersion.value
     )
-  }
 
   def parseScalafmtConf(s: String): Option[Version] =
     """version\s*=\s*(.+)""".r

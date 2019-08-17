@@ -34,6 +34,9 @@ package object sbt {
   val defaultScalaVersion: ScalaVersion =
     ScalaVersion(BuildInfo.scalaVersion)
 
+  val defaultScalaBinaryVersion: String =
+    BuildInfo.scalaBinaryVersion
+
   def seriesToSpecificVersion(sbtSeries: SbtVersion): SbtVersion =
     sbtSeries.value match {
       case "0.13" => latestSbtVersion_0_13
