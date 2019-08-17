@@ -97,11 +97,11 @@ object SbtAlg {
           maybeSbtVersion <- getSbtVersion(repo)
           maybeSbtDependency = maybeSbtVersion.flatMap(sbtDependency)
           maybeScalafmtVersion <- scalafmtAlg.getScalafmtVersion(repo)
-          maybeScalafmtDependency = maybeScalafmtVersion.flatMap(
-            scalafmtDependency(defaultScalaVersion)
+          maybeScalafmtDependency = maybeScalafmtVersion.map(
+            scalafmtDependency(defaultScalaBinaryVersion)
           )
-        } yield (maybeSbtDependency.toList ++ maybeScalafmtDependency.toList ++ parser
-          .parseDependencies(lines)).distinct
+        } yield (maybeSbtDependency.toList ++ maybeScalafmtDependency.toList ++
+          parser.parseDependencies(lines)).distinct
 
       override def getUpdatesForProject(project: ArtificialProject): F[List[Update.Single]] =
         for {
@@ -171,7 +171,7 @@ object SbtAlg {
           maybeSbtDep <- getSbtVersion(repo).map(_.flatMap(sbtDependency))
           maybeScalafmtDep <- scalafmtAlg
             .getScalafmtVersion(repo)
-            .map(_.flatMap(scalafmtDependency(defaultScalaVersion)))
+            .map(_.map(scalafmtDependency(defaultScalaBinaryVersion)))
           fakeDeps = Option(maybeSbtDep.toList ++ maybeScalafmtDep.toList).filter(_.nonEmpty)
           a <- fakeDeps.fold(fa) { dependencies =>
             workspaceAlg.repoDir(repo).flatMap { repoDir =>

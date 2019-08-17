@@ -65,7 +65,7 @@ lazy val core = myCrossProject("core")
           defaultStrategy(otherwise)
       }
     },
-    buildInfoKeys := Seq[BuildInfoKey](scalaVersion, sbtVersion),
+    buildInfoKeys := Seq[BuildInfoKey](scalaVersion, scalaBinaryVersion, sbtVersion),
     buildInfoPackage := moduleRootPkg.value,
     initialCommands += s"""
       import ${moduleRootPkg.value}._
