@@ -30,10 +30,10 @@ final case class Dependency(
     configurations: Option[String] = None
 ) {
   def formatAsModuleId: String =
-    s""""$groupId" % "$artifactIdCross" % "$version""""
-
-  def formatAsModuleIdScalaVersionAgnostic: String =
-    s""""$groupId" %% "$artifactId" % "$version""""
+    artifactId match {
+      case `artifactIdCross` => s""""$groupId" % "$artifactIdCross" % "$version""""
+      case _                 => s""""$groupId" %% "$artifactId" % "$version""""
+    }
 
   def toUpdate: Update.Single =
     Update.Single(groupId, artifactId, version, Nel.of(version), configurations)
