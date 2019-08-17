@@ -40,7 +40,7 @@ final class EditAlg[F[_]](
     for {
       _ <- applyScalafixMigrations(repo, update)
       repoDir <- workspaceAlg.repoDir(repo)
-      files <- fileAlg.findSourceFilesContaining(
+      files <- fileAlg.findFilesContaining(
         repoDir,
         update.currentVersion,
         f => isSourceFile(f) && isFileSpecificTo(update)(f)
