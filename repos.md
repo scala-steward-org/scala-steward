@@ -181,7 +181,6 @@
 - finagle/finch
 - finch/finch-oauth2
 - fp-tower/foundation
-- fthomas/akka
 - fthomas/base.g8
 - fthomas/crjdt
 - fthomas/datapackage
