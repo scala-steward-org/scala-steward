@@ -60,17 +60,7 @@ class SbtAlgTest extends FunSuite with Matchers {
               ";set every credentials := Nil;dependencyUpdates;reload plugins;dependencyUpdates"
             ),
             List("rm", s"$repoDir/project/tmp-sbt-dep.sbt"),
-            List(
-              "TEST_VAR=GREAT",
-              "ANOTHER_TEST_VAR=ALSO_GREAT",
-              repoDir.toString,
-              "firejail",
-              s"--whitelist=$repoDir",
-              "sbt",
-              "-batch",
-              "-no-colors",
-              ";show libraryDependenciesAsJson;reload plugins;show libraryDependenciesAsJson"
-            )
+            List("read", s"/tmp/ws/repos_v05.json")
           )
         )
     }
@@ -103,21 +93,7 @@ class SbtAlgTest extends FunSuite with Matchers {
         ),
         List("restore", (repoDir / ".sbtopts").toString),
         List("restore", (repoDir / ".jvmopts").toString),
-        List("rm", (repoDir / ".jvmopts").toString),
-        List("rm", (repoDir / ".sbtopts").toString),
-        List(
-          "TEST_VAR=GREAT",
-          "ANOTHER_TEST_VAR=ALSO_GREAT",
-          repoDir.toString,
-          "firejail",
-          s"--whitelist=$repoDir",
-          "sbt",
-          "-batch",
-          "-no-colors",
-          ";show libraryDependenciesAsJson;reload plugins;show libraryDependenciesAsJson"
-        ),
-        List("restore", (repoDir / ".sbtopts").toString),
-        List("restore", (repoDir / ".jvmopts").toString)
+        List("read", s"/tmp/ws/repos_v05.json")
       )
     )
   }
@@ -145,17 +121,7 @@ class SbtAlgTest extends FunSuite with Matchers {
           "-no-colors",
           ";dependencyUpdates;reload plugins;dependencyUpdates"
         ),
-        List(
-          "TEST_VAR=GREAT",
-          "ANOTHER_TEST_VAR=ALSO_GREAT",
-          repoDir.toString,
-          "firejail",
-          s"--whitelist=$repoDir",
-          "sbt",
-          "-batch",
-          "-no-colors",
-          ";show libraryDependenciesAsJson;reload plugins;show libraryDependenciesAsJson"
-        )
+        List("read", s"/tmp/ws/repos_v05.json")
       )
     )
   }

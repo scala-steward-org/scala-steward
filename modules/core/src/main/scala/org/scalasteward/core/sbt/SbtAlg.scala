@@ -23,6 +23,7 @@ import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.{Dependency, Update}
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
+import org.scalasteward.core.repocache.RepoCacheRepository
 import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.sbt.data.{ArtificialProject, SbtVersion}
 import org.scalasteward.core.scalafix.Migration
@@ -58,6 +59,7 @@ object SbtAlg {
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F],
       scalafmtAlg: ScalafmtAlg[F],
+      cacheRepository: RepoCacheRepository[F],
       F: Monad[F]
   ): SbtAlg[F] =
     new SbtAlg[F] {
@@ -136,7 +138,7 @@ object SbtAlg {
           updates <- withTemporarySbtDependency(repo) {
             exec(sbtCmd(commands), repoDir).map(parser.parseSingleUpdates)
           }
-          originalDependencies <- getOriginalDependencies(repo)
+          originalDependencies <- cacheRepository.getDependencies(List(repo))
           updatesUnderNewGroupId = originalDependencies.flatMap(
             UpdateService.findUpdateUnderNewGroup
           )
