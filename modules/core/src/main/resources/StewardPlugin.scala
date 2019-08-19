@@ -69,12 +69,20 @@ object StewardPlugin extends AutoPlugin {
           toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue)
             .copy(newerVersions = newerVersions.toList.map(_.toString))
       }
-      val updatesWithNewGroupId = libraryDependencies.value.collect {
-        case moduleId
-            if moduleId.organization == "org.spire-math" && moduleId.name == "kind-projector" && moduleId.revision == "0.9.10" =>
-          toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue)
-            .copy(newerVersions = List("0.10.0"), newGroupId = Some("org.typelevel"))
-      }
+      val updatesWithNewGroupId = libraryDependencies.value
+        .map(toDependency(_, scalaVersionValue, scalaBinaryVersionValue))
+        .collect {
+          case d
+              if d.groupId == "org.spire-math"
+                && d.artifactId == "kind-projector"
+                && d.version == "0.9.10" =>
+            d.copy(newGroupId = Some("org.typelevel"), newerVersions = List("0.10.0"))
+          case d
+              if d.groupId == "com.geirsson"
+                && d.artifactId == "sbt-scalafmt"
+                && (d.version == "1.5.1" || d.version == "1.6.0-RC4") =>
+            d.copy(newGroupId = Some("org.scalameta"), newerVersions = List("2.0.0"))
+        }
       seqToJson((updatesWithNewerVersions ++ updatesWithNewGroupId).map(_.asJson))
     }
   )
