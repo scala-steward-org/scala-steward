@@ -64,7 +64,8 @@ object StewardPlugin extends AutoPlugin {
     sourcePositions.get(moduleId) match {
       case Some(fp: FilePosition) if fp.path.startsWith("(sbt.Classpaths") => true
       case Some(fp: FilePosition) if fp.path.startsWith("(")               => false
-      case Some(fp: FilePosition) if fp.path.startsWith("Defaults.scala")  => false
+      case Some(fp: FilePosition) if fp.path.startsWith("Defaults.scala")
+        && !moduleId.configurations.contains("plugin->default(compile)")   => false
       case _                                                               => true
     }
 }

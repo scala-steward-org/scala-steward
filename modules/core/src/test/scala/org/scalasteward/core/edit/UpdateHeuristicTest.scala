@@ -109,6 +109,18 @@ class UpdateHeuristicTest extends FunSuite with Matchers {
     ).replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.original.name)
   }
 
+  test("update under different group id") {
+    val original = """ "org.spire-math" %% "kind-projector" % "0.9.0""""
+    val expected = """ "org.typelevel" %% "kind-projector" % "0.10.0""""
+    Single(
+      "org.spire-math",
+      "kind-projector",
+      "0.9.0",
+      Nel.of("0.10.0"),
+      newerGroupId = Some("org.typelevel")
+    ).replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.strict.name)
+  }
+
   test("group with repeated version") {
     val original =
       """ "com.pepegar" %% "hammock-core"  % "0.8.1",

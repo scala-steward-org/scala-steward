@@ -23,10 +23,12 @@ import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.{Dependency, Update}
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
+import org.scalasteward.core.repocache.RepoCacheRepository
 import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.sbt.data.{ArtificialProject, SbtVersion}
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.scalafmt.{scalafmtDependency, ScalafmtAlg}
+import org.scalasteward.core.update.UpdateService
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
@@ -57,6 +59,7 @@ object SbtAlg {
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F],
       scalafmtAlg: ScalafmtAlg[F],
+      cacheRepository: RepoCacheRepository[F],
       F: Monad[F]
   ): SbtAlg[F] =
     new SbtAlg[F] {
@@ -91,9 +94,7 @@ object SbtAlg {
 
       override def getDependencies(repo: Repo): F[List[Dependency]] =
         for {
-          repoDir <- workspaceAlg.repoDir(repo)
-          cmd = sbtCmd(List(libraryDependenciesAsJson, reloadPlugins, libraryDependenciesAsJson))
-          lines <- exec(cmd, repoDir)
+          originalDependencies <- getOriginalDependencies(repo)
           maybeSbtVersion <- getSbtVersion(repo)
           maybeSbtDependency = maybeSbtVersion.flatMap(sbtDependency)
           maybeScalafmtVersion <- scalafmtAlg.getScalafmtVersion(repo)
@@ -101,7 +102,14 @@ object SbtAlg {
             scalafmtDependency(defaultScalaBinaryVersion)
           )
         } yield (maybeSbtDependency.toList ++ maybeScalafmtDependency.toList ++
-          parser.parseDependencies(lines)).distinct
+          originalDependencies).distinct
+
+      def getOriginalDependencies(repo: Repo): F[List[Dependency]] =
+        for {
+          repoDir <- workspaceAlg.repoDir(repo)
+          cmd = sbtCmd(List(libraryDependenciesAsJson, reloadPlugins, libraryDependenciesAsJson))
+          lines <- exec(cmd, repoDir)
+        } yield parser.parseDependencies(lines)
 
       override def getUpdatesForProject(project: ArtificialProject): F[List[Update.Single]] =
         for {
@@ -130,7 +138,11 @@ object SbtAlg {
           updates <- withTemporarySbtDependency(repo) {
             exec(sbtCmd(commands), repoDir).map(parser.parseSingleUpdates)
           }
-        } yield updates
+          originalDependencies <- cacheRepository.getDependencies(List(repo))
+          updatesUnderNewGroupId = originalDependencies.flatMap(
+            UpdateService.findUpdateUnderNewGroup
+          )
+        } yield updates ++ updatesUnderNewGroupId
 
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
         addGlobalPluginTemporarily(scalaStewardScalafixSbt) {

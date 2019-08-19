@@ -61,6 +61,13 @@ object UpdateHeuristic {
       }
 
     def replaceF(update: Update): String => Option[String] =
+      target =>
+        for {
+          s <- replaceVersionF(update)(target)
+          s <- replaceGroupF(update)(s)
+        } yield s
+
+    def replaceVersionF(update: Update): String => Option[String] =
       mkRegex(update).fold((_: String) => Option.empty[String]) { regex => target =>
         replaceSomeInAllowedParts(
           regex,
@@ -78,6 +85,21 @@ object UpdateHeuristic {
           }
         ).someIfChanged
       }
+
+    def replaceGroupF(update: Update): String => Option[String] = { target =>
+      update match {
+        case Update.Single(groupId, artifactId, _, _, _, Some(newerGroupId)) =>
+          val currentGroupId = Regex.quote(groupId)
+          val currentArtifactId = Regex.quote(artifactId)
+          val regex = s"""(?i)(.*)${currentGroupId}(.*${currentArtifactId})""".r
+          replaceSomeInAllowedParts(regex, target, match0 => {
+            val group1 = match0.group(1)
+            val group2 = match0.group(2)
+            Some(s"""$group1$newerGroupId$group2""")
+          }).someIfChanged
+        case _ => Some(target)
+      }
+    }
 
     replaceF
   }
@@ -114,8 +136,8 @@ object UpdateHeuristic {
   val specific = UpdateHeuristic(
     name = "specific",
     replaceVersion = defaultReplaceVersion {
-      case Update.Single("org.scalameta", "scalafmt-core", _, _, _) => List("version")
-      case _                                                        => List.empty
+      case Update.Single("org.scalameta", "scalafmt-core", _, _, _, _) => List("version")
+      case _                                                           => List.empty
     }
   )
 
