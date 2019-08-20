@@ -16,16 +16,17 @@
 
 package org.scalasteward.core
 
-import sbt.Keys._
 import sbt._
+import sbt.Keys._
+import sbt.complete.DefaultParsers._
 
 object StewardPlugin extends AutoPlugin {
 
   override def trigger: PluginTrigger = allRequirements
 
   object autoImport {
-    val stewardDependencies = taskKey[String]("")
-    val stewardUpdates = taskKey[String]("")
+    val stewardDependencies = inputKey[String]("")
+    val stewardDependenciesWithUpdates = inputKey[String]("")
   }
 
   import autoImport._
@@ -37,7 +38,8 @@ object StewardPlugin extends AutoPlugin {
   def toDependency(
       moduleId: ModuleID,
       scalaVersion: String,
-      scalaBinaryVersion: String
+      scalaBinaryVersion: String,
+      label: Option[String]
   ): Dependency =
     Dependency(
       groupId = moduleId.organization,
@@ -45,45 +47,36 @@ object StewardPlugin extends AutoPlugin {
       artifactIdCross = crossName(moduleId, scalaVersion, scalaBinaryVersion),
       version = moduleId.revision,
       newerVersions = List.empty,
-      newGroupId = None,
-      configurations = moduleId.configurations
+      configurations = moduleId.configurations,
+      label = label
     )
 
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
     stewardDependencies := {
       val scalaBinaryVersionValue = scalaBinaryVersion.value
       val scalaVersionValue = scalaVersion.value
+      val label = spaceDelimited("<label>").parsed.headOption
 
       val deps = libraryDependencies.value.map { moduleId =>
-        toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue).asJson
+        toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue, label).asJson
       }
       seqToJson(deps)
     },
-    stewardUpdates := {
+    stewardDependenciesWithUpdates := {
       val scalaBinaryVersionValue = scalaBinaryVersion.value
       val scalaVersionValue = scalaVersion.value
+      val label = spaceDelimited("<label>").parsed.headOption
 
       val updatesData = com.timushev.sbt.updates.UpdatesKeys.dependencyUpdatesData.value
-      val updatesWithNewerVersions = updatesData.toList.map {
+      val updates = updatesData.toList.map {
         case (moduleId, newerVersions) =>
-          toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue)
+          toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue, label)
             .copy(newerVersions = newerVersions.toList.map(_.toString))
       }
-      val updatesWithNewGroupId = libraryDependencies.value
-        .map(toDependency(_, scalaVersionValue, scalaBinaryVersionValue))
-        .collect {
-          case d
-              if d.groupId == "org.spire-math"
-                && d.artifactId == "kind-projector"
-                && d.version == "0.9.10" =>
-            d.copy(newGroupId = Some("org.typelevel"), newerVersions = List("0.10.0"))
-          case d
-              if d.groupId == "com.geirsson"
-                && d.artifactId == "sbt-scalafmt"
-                && (d.version == "1.5.1" || d.version == "1.6.0-RC4") =>
-            d.copy(newGroupId = Some("org.scalameta"), newerVersions = List("2.0.0"))
-        }
-      seqToJson((updatesWithNewerVersions ++ updatesWithNewGroupId).map(_.asJson))
+      val dependencies = libraryDependencies.value
+        .map(toDependency(_, scalaVersionValue, scalaBinaryVersionValue, label))
+        .filterNot(d => updates.exists(u => d == u.copy(newerVersions = List.empty)))
+      seqToJson((updates ++ dependencies).map(_.asJson))
     }
   )
 
@@ -93,8 +86,8 @@ object StewardPlugin extends AutoPlugin {
       artifactIdCross: String,
       version: String,
       newerVersions: List[String],
-      newGroupId: Option[String],
-      configurations: Option[String]
+      configurations: Option[String],
+      label: Option[String]
   ) {
     def asJson: String =
       objToJson(
@@ -104,8 +97,8 @@ object StewardPlugin extends AutoPlugin {
           "artifactIdCross" -> strToJson(artifactIdCross),
           "version" -> strToJson(version),
           "newerVersions" -> seqToJson(newerVersions.map(strToJson)),
-          "newGroupId" -> optToJson(newGroupId.map(strToJson)),
           "configurations" -> optToJson(configurations.map(strToJson)),
+          "label" -> optToJson(label.map(strToJson))
         )
       )
   }
