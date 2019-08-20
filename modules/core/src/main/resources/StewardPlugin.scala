@@ -39,7 +39,7 @@ object StewardPlugin extends AutoPlugin {
       moduleId: ModuleID,
       scalaVersion: String,
       scalaBinaryVersion: String,
-      label: Option[String]
+      origin: String
   ): Dependency =
     Dependency(
       groupId = moduleId.organization,
@@ -48,33 +48,33 @@ object StewardPlugin extends AutoPlugin {
       version = moduleId.revision,
       newerVersions = List.empty,
       configurations = moduleId.configurations,
-      label = label
+      origin = origin
     )
 
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
     stewardDependencies := {
       val scalaBinaryVersionValue = scalaBinaryVersion.value
       val scalaVersionValue = scalaVersion.value
-      val label = spaceDelimited("<label>").parsed.headOption
+      val origin = spaceDelimited("<origin>").parsed.headOption.getOrElse("")
 
       val deps = libraryDependencies.value.map { moduleId =>
-        toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue, label).asJson
+        toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue, origin).asJson
       }
       seqToJson(deps)
     },
     stewardDependenciesWithUpdates := {
       val scalaBinaryVersionValue = scalaBinaryVersion.value
       val scalaVersionValue = scalaVersion.value
-      val label = spaceDelimited("<label>").parsed.headOption
+      val origin = spaceDelimited("<origin>").parsed.headOption.getOrElse("")
 
       val updatesData = com.timushev.sbt.updates.UpdatesKeys.dependencyUpdatesData.value
       val updates = updatesData.toList.map {
         case (moduleId, newerVersions) =>
-          toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue, label)
+          toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue, origin)
             .copy(newerVersions = newerVersions.toList.map(_.toString))
       }
       val dependencies = libraryDependencies.value
-        .map(toDependency(_, scalaVersionValue, scalaBinaryVersionValue, label))
+        .map(toDependency(_, scalaVersionValue, scalaBinaryVersionValue, origin))
         .filterNot(d => updates.exists(u => d == u.copy(newerVersions = List.empty)))
       seqToJson((updates ++ dependencies).map(_.asJson))
     }
@@ -87,7 +87,7 @@ object StewardPlugin extends AutoPlugin {
       version: String,
       newerVersions: List[String],
       configurations: Option[String],
-      label: Option[String]
+      origin: String
   ) {
     def asJson: String =
       objToJson(
@@ -98,7 +98,7 @@ object StewardPlugin extends AutoPlugin {
           "version" -> strToJson(version),
           "newerVersions" -> seqToJson(newerVersions.map(strToJson)),
           "configurations" -> optToJson(configurations.map(strToJson)),
-          "label" -> optToJson(label.map(strToJson))
+          "origin" -> strToJson(origin)
         )
       )
   }
