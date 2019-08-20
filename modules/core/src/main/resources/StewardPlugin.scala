@@ -16,6 +16,8 @@
 
 package org.scalasteward.core
 
+import com.timushev.sbt.updates.UpdatesKeys.dependencyUpdatesData
+import com.timushev.sbt.updates.versions.ValidVersion
 import sbt._
 import sbt.Keys._
 import sbt.complete.DefaultParsers._
@@ -31,31 +33,35 @@ object StewardPlugin extends AutoPlugin {
 
   import autoImport._
 
-  def crossName(moduleId: ModuleID, scalaVersion: String, scalaBinaryVersion: String): String =
-    CrossVersion(moduleId.crossVersion, scalaVersion, scalaBinaryVersion)
-      .getOrElse(identity[String](_))(moduleId.name)
+  def crossName(
+      moduleId: ModuleID,
+      scalaVersion: String,
+      scalaBinaryVersion: String
+  ): Option[String] =
+    CrossVersion(moduleId.crossVersion, scalaVersion, scalaBinaryVersion).map(_(moduleId.name))
 
   def toDependency(
       moduleId: ModuleID,
       scalaVersion: String,
       scalaBinaryVersion: String,
-      origin: String
+      origin: Option[String]
   ): Dependency =
     Dependency(
       groupId = moduleId.organization,
       artifactId = moduleId.name,
-      artifactIdCross = crossName(moduleId, scalaVersion, scalaBinaryVersion),
+      crossArtifactIds = crossName(moduleId, scalaVersion, scalaBinaryVersion).toList,
       version = moduleId.revision,
       newerVersions = List.empty,
       configurations = moduleId.configurations,
-      origin = origin
+      origin = origin,
+      sbtSeries = moduleId.extraAttributes.get("e:sbtVersion")
     )
 
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
     stewardDependencies := {
       val scalaBinaryVersionValue = scalaBinaryVersion.value
       val scalaVersionValue = scalaVersion.value
-      val origin = spaceDelimited("<origin>").parsed.headOption.getOrElse("")
+      val origin = spaceDelimited("<origin>").parsed.headOption
 
       val deps = libraryDependencies.value.map { moduleId =>
         toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue, origin).asJson
@@ -65,13 +71,14 @@ object StewardPlugin extends AutoPlugin {
     stewardDependenciesWithUpdates := {
       val scalaBinaryVersionValue = scalaBinaryVersion.value
       val scalaVersionValue = scalaVersion.value
-      val origin = spaceDelimited("<origin>").parsed.headOption.getOrElse("")
+      val origin = spaceDelimited("<origin>").parsed.headOption
 
-      val updatesData = com.timushev.sbt.updates.UpdatesKeys.dependencyUpdatesData.value
-      val updates = updatesData.toList.map {
+      val updates = dependencyUpdatesData.value.toList.map {
         case (moduleId, newerVersions) =>
           toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue, origin)
-            .copy(newerVersions = newerVersions.toList.map(_.toString))
+            .copy(newerVersions = newerVersions.toList.collect {
+              case v: ValidVersion if moduleId.revision != v.text => v.text
+            })
       }
       val dependencies = libraryDependencies.value
         .map(toDependency(_, scalaVersionValue, scalaBinaryVersionValue, origin))
@@ -83,22 +90,24 @@ object StewardPlugin extends AutoPlugin {
   final case class Dependency(
       groupId: String,
       artifactId: String,
-      artifactIdCross: String,
+      crossArtifactIds: List[String],
       version: String,
       newerVersions: List[String],
       configurations: Option[String],
-      origin: String
+      origin: Option[String],
+      sbtSeries: Option[String]
   ) {
     def asJson: String =
       objToJson(
         List(
           "groupId" -> strToJson(groupId),
           "artifactId" -> strToJson(artifactId),
-          "artifactIdCross" -> strToJson(artifactIdCross),
+          "crossArtifactIds" -> seqToJson(crossArtifactIds.map(strToJson)),
           "version" -> strToJson(version),
           "newerVersions" -> seqToJson(newerVersions.map(strToJson)),
           "configurations" -> optToJson(configurations.map(strToJson)),
-          "origin" -> strToJson(origin)
+          "origin" -> optToJson(origin.map(strToJson)),
+          "sbtSeries" -> optToJson(sbtSeries.map(strToJson))
         )
       )
   }
