@@ -284,6 +284,11 @@
 - maximn/scala-workshop
 - maximn/TaxCalculator
 - max-leuthaeuser/SCROLL
+- mbuzdalov/data-slicer
+- mbuzdalov/generic-onell
+- mbuzdalov/incremental-orthants
+- mbuzdalov/orthant-search
+- mbuzdalov/non-dominated-sorting
 - mefellows/sbt-dotenv
 - metabookmarks/lagom-silhouette
 - metabookmarks/sbt-plantuml-plugin
