@@ -148,14 +148,12 @@ object SbtAlg {
         addGlobalPluginTemporarily(scalaStewardScalafixSbt) {
           for {
             repoDir <- workspaceAlg.repoDir(repo)
-            scalafixCmds = migrations.flatMap { migration =>
-              val cmd = migration.configuration match {
-                case Some("test") => testScalafix
-                case _            => scalafix
-              }
-              migration.rewriteRules.map(rule => s"$cmd $rule")
-            }.toList
-            _ <- exec(sbtCmd(scalafixEnable :: scalafixCmds), repoDir)
+            scalafixCmds = for {
+              migration <- migrations
+              rule <- migration.rewriteRules
+              cmd <- Nel.of(scalafix, testScalafix)
+            } yield s"$cmd $rule"
+            _ <- exec(sbtCmd(scalafixEnable :: scalafixCmds.toList), repoDir)
           } yield ()
         }
 

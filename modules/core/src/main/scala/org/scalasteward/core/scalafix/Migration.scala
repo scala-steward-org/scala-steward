@@ -24,6 +24,5 @@ final case class Migration(
     groupId: String,
     artifactIds: Nel[Regex],
     newVersion: Version,
-    rewriteRules: Nel[String],
-    configuration: Option[String] = None
+    rewriteRules: Nel[String]
 )
