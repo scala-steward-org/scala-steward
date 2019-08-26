@@ -441,6 +441,7 @@
 - sksamuel/avro4s
 - sksamuel/elastic4s
 - sksamuel/pulsar4s
+- Slakah/fastparse-parsers
 - Slakah/uritemplate4s
 - slamdata/async-blobstore
 - slamdata/qdata
