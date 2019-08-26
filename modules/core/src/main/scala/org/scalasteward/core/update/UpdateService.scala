@@ -182,6 +182,7 @@ object UpdateService {
     Option((currentGroupId, artifactId) match {
       case ("org.spire-math", "kind-projector") => ("org.typelevel", "0.10.0")
       case ("com.geirsson", "sbt-scalafmt")     => ("org.scalameta", "2.0.0")
+      case ("net.ceedubs", "ficus")             => ("com.iheart", "1.3.4")
       case _                                    => ("", "")
     }).filter { case (groupId, _) => groupId.nonEmpty }
 
