@@ -572,3 +572,4 @@
 - zio/zio-nio
 - zio/zio-sqs
 - ziyasal/reducio
+- transcendent-ai-labs/DynaML
