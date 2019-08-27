@@ -192,6 +192,7 @@
 - fthomas/scala-steward
 - fthomas/singleton-ops
 - fthomas/status-page
+- fullfacing/keycloak4s
 - functional-streams-for-scala/fs2
 - gearpump/gearpump
 - gemini-hlsw/gemini-locales
