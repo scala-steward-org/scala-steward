@@ -265,6 +265,7 @@
 - leigh-perry/conduction
 - leigh-perry/template-cats-io-app
 - leigh-perry/template-cats-zio-app
+- leigh-perry/metamorphosis
 - lemastero/scala_typeclassopedia
 - lightbend/genjavadoc
 - lightbend/lightbend-emoji
