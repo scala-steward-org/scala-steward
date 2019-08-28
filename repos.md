@@ -480,6 +480,7 @@
 - swagger-akka-http/swagger-scala-module
 - synesso/scala-stellar-sdk
 - tanishiking/scalaunfmt
+- tbrown1979/totp4s
 - thesamet/sbt-protoc
 - ThoughtWorksInc/bindable.scala
 - ThoughtWorksInc/Binding.scala
