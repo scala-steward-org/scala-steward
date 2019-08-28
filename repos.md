@@ -62,6 +62,7 @@
 - ChocPanda/scalacheck-magnolia
 - ChristopherDavenport/agitation
 - ChristopherDavenport/bank
+- ChristopherDavenport/cats-effect-time
 - ChristopherDavenport/cats-par
 - ChristopherDavenport/cats-scalacheck
 - ChristopherDavenport/cats-time
