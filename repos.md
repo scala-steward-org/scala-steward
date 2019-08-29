@@ -240,6 +240,7 @@
 - julienrf/endpoints
 - julien-truffaut/Monocle
 - kailuowang/henkan
+- kailuowang/mau
 - KelkooGroup/theGardener
 - kemitix/thorp
 - kiambogo/fs2-jms
