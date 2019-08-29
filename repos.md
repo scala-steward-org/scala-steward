@@ -530,6 +530,7 @@
 - typelevel/cats-effect
 - typelevel/cats-mtl
 - typelevel/cats-tagless
+- typelevel/cats-testkit-scalatest
 - typelevel/claimant
 - typelevel/discipline
 - typelevel/discipline-scalatest
