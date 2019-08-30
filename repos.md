@@ -334,6 +334,7 @@
 - NomadBlacky/scaladog
 - NomadBlacky/scala_examples
 - notxcain/aecor
+- novakov-alexey/http4s-spnego
 - nrinaudo/kantan.codecs
 - olafurpg/sbt-ci-release
 - olivierschultz/typelevel-template.g8
