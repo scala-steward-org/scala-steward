@@ -225,6 +225,7 @@
 - IronCoreLabs/argonaut-jwt-scala
 - IronCoreLabs/cats-scalatest
 - IronCoreLabs/recrypt
+- JannikArndt/scala-start
 - japgolly/clear-config
 - japgolly/microlibs-scala
 - japgolly/nyaya
