@@ -24,5 +24,5 @@ import org.scalasteward.core.util
 object splitter {
   // WIP
   def xxx(dependencies: List[Dependency]): List[List[Dependency]] =
-    util.separateBy(dependencies)(PosInt(30))(d => (d.groupId, d.artifactIdCross)).map(_.toList)
+    util.separateBy(dependencies)(PosInt(30))(d => (d.groupId, d.crossArtifactIds)).map(_.toList)
 }

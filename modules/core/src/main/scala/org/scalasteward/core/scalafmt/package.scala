@@ -22,10 +22,11 @@ import org.scalasteward.core.data.{Dependency, Version}
 package object scalafmt {
   def scalafmtDependency(scalaBinaryVersion: String)(scalafmtVersion: Version): Dependency =
     Dependency(
-      if (scalafmtVersion > Version("2.0.0-RC1")) "org.scalameta" else "com.geirsson",
-      "scalafmt-core",
-      s"scalafmt-core_${scalaBinaryVersion}",
-      scalafmtVersion.value
+      groupId = if (scalafmtVersion > Version("2.0.0-RC1")) "org.scalameta" else "com.geirsson",
+      artifactId = "scalafmt-core",
+      crossArtifactIds = List(s"scalafmt-core_${scalaBinaryVersion}"),
+      version = scalafmtVersion.value,
+      origin = Some("project")
     )
 
   def parseScalafmtConf(s: String): Option[Version] =

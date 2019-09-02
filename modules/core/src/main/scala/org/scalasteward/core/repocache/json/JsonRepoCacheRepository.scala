@@ -44,7 +44,7 @@ final class JsonRepoCacheRepository[F[_]](
     readJson.map(_.store.filterKeys(repos.contains).values.flatMap(_.dependencies).toList.distinct)
 
   def jsonFile: F[File] =
-    workspaceAlg.rootDir.map(_ / "repos_v05.json")
+    workspaceAlg.rootDir.map(_ / "repos_v06.json")
 
   def readJson: F[RepoStore] =
     jsonFile.flatMap { file =>

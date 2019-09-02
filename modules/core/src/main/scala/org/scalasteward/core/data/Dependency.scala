@@ -18,17 +18,21 @@ package org.scalasteward.core.data
 
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
-import org.scalasteward.core.sbt.data.SbtVersion
 import org.scalasteward.core.util.Nel
 
 final case class Dependency(
     groupId: String,
     artifactId: String,
-    artifactIdCross: String,
+    crossArtifactIds: List[String],
     version: String,
-    sbtVersion: Option[SbtVersion] = None,
-    configurations: Option[String] = None
+    newerVersions: List[String] = List.empty,
+    configurations: Option[String] = None,
+    origin: Option[String] = None,
+    sbtSeries: Option[String] = None
 ) {
+  def artifactIdCross: String =
+    crossArtifactIds.sorted.headOption.getOrElse(artifactId)
+
   def formatAsModuleId: String =
     s""""$groupId" % "$artifactIdCross" % "$version""""
 

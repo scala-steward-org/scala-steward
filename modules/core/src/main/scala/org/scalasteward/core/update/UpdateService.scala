@@ -29,6 +29,7 @@ import org.scalasteward.core.util.MonadThrowable
 import org.scalasteward.core.vcs.data.PullRequestState.Closed
 import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.util
+import org.scalasteward.core.util.Nel
 
 final class UpdateService[F[_]](
     implicit
@@ -51,7 +52,7 @@ final class UpdateService[F[_]](
               FilterAlg.isIgnoredGlobally(d.toUpdate).isRight && UpdateService
                 .includeInUpdateCheck(d)
           )
-          .partition(_.sbtVersion.isEmpty)
+          .partition(_.sbtSeries.isEmpty)
         val libProjects = splitter
           .xxx(libraries)
           .map { libs =>
@@ -64,7 +65,7 @@ final class UpdateService[F[_]](
           }
 
         val pluginProjects = plugins
-          .groupBy(_.sbtVersion)
+          .groupBy(_.sbtSeries)
           .flatMap {
             case (maybeSbtVersion, plugins1) =>
               splitter.xxx(plugins1).map { ps =>
@@ -110,8 +111,8 @@ final class UpdateService[F[_]](
       }
       isOutdated = outdatedStates.nonEmpty
       _ <- {
-        if (isOutdated) {
-          val statesAsString = util.string.indentLines(outdatedStates.map(_.toString).sorted)
+        if (true) {
+          val statesAsString = util.string.indentLines(allStates.map(_.toString).sorted)
           logger.info(s"Update states for ${repo.show}:\n" + statesAsString)
         } else F.unit
       }
@@ -157,7 +158,7 @@ final class UpdateService[F[_]](
 object UpdateService {
   def isUpdateFor(update: Update, dependency: Dependency): Boolean =
     update.groupId === dependency.groupId &&
-      update.artifactIds.contains_(dependency.artifactId) &&
+      util.intersects(update.artifactIds, dependency.artifactId :: dependency.crossArtifactIds) &&
       update.currentVersion === dependency.version
 
   def includeInUpdateCheck(dependency: Dependency): Boolean =
@@ -189,5 +190,18 @@ object UpdateService {
     getNewerGroupId(dep.groupId, dep.artifactId).map {
       case (newId, fromVersion) =>
         dep.toUpdate.copy(newerGroupId = Some(newId), newerVersions = util.Nel.of(fromVersion))
+    }
+
+  def dependencyToUpdate(dependency: Dependency): Option[Update.Single] =
+    findUpdateUnderNewGroup(dependency).orElse {
+      Nel.fromList(dependency.newerVersions).map { newerVersions =>
+        Update.Single(
+          groupId = dependency.groupId,
+          artifactId = dependency.artifactId,
+          currentVersion = dependency.version,
+          newerVersions = newerVersions,
+          configurations = dependency.configurations
+        )
+      }
     }
 }

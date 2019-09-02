@@ -37,8 +37,8 @@ package object sbt {
   val defaultScalaBinaryVersion: String =
     BuildInfo.scalaBinaryVersion
 
-  def seriesToSpecificVersion(sbtSeries: SbtVersion): SbtVersion =
-    sbtSeries.value match {
+  def seriesToSpecificVersion(sbtSeries: String): SbtVersion =
+    sbtSeries match {
       case "0.13" => latestSbtVersion_0_13
       case "1.0"  => defaultSbtVersion
       case _      => defaultSbtVersion
@@ -46,7 +46,15 @@ package object sbt {
 
   def sbtDependency(sbtVersion: SbtVersion): Option[Dependency] =
     if (sbtVersion.toVersion >= Version("1.0.0"))
-      Some(Dependency("org.scala-sbt", "sbt", "sbt", sbtVersion.value))
+      Some(
+        Dependency(
+          groupId = "org.scala-sbt",
+          artifactId = "sbt",
+          crossArtifactIds = List.empty,
+          version = sbtVersion.value,
+          origin = Some("build")
+        )
+      )
     else
       None
 

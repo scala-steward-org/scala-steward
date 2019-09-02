@@ -18,7 +18,7 @@ package org.scalasteward.core.sbt.data
 
 import org.scalasteward.core.data.Dependency
 import org.scalasteward.core.io.FileData
-import org.scalasteward.core.sbt.command.{dependencyUpdates, reloadPlugins}
+import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.util
 import scala.collection.mutable.ListBuffer
 
@@ -31,9 +31,9 @@ final case class ArtificialProject(
   def dependencyUpdatesCmd: List[String] = {
     val lb = new ListBuffer[String]
     if (libraries.nonEmpty)
-      lb.append(dependencyUpdates)
+      lb.append(projectDependenciesWithUpdates)
     if (plugins.nonEmpty)
-      lb.append(reloadPlugins, dependencyUpdates)
+      lb.append(reloadPlugins, buildDependenciesWithUpdates)
     lb.toList
   }
 

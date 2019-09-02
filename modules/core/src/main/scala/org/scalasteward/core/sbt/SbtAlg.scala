@@ -23,7 +23,6 @@ import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.{Dependency, Update}
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.repocache.RepoCacheRepository
 import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.sbt.data.{ArtificialProject, SbtVersion}
 import org.scalasteward.core.scalafix.Migration
@@ -59,7 +58,6 @@ object SbtAlg {
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F],
       scalafmtAlg: ScalafmtAlg[F],
-      cacheRepository: RepoCacheRepository[F],
       F: Monad[F]
   ): SbtAlg[F] =
     new SbtAlg[F] {
@@ -94,22 +92,18 @@ object SbtAlg {
 
       override def getDependencies(repo: Repo): F[List[Dependency]] =
         for {
-          originalDependencies <- getOriginalDependencies(repo)
+          repoDir <- workspaceAlg.repoDir(repo)
+          cmd = sbtCmd(List(projectDependencies, reloadPlugins, buildDependencies))
+          lines <- exec(cmd, repoDir)
+          dependencies = parser.parseDependencies(lines)
           maybeSbtVersion <- getSbtVersion(repo)
           maybeSbtDependency = maybeSbtVersion.flatMap(sbtDependency)
           maybeScalafmtVersion <- scalafmtAlg.getScalafmtVersion(repo)
           maybeScalafmtDependency = maybeScalafmtVersion.map(
             scalafmtDependency(defaultScalaBinaryVersion)
           )
-        } yield (maybeSbtDependency.toList ++ maybeScalafmtDependency.toList ++
-          originalDependencies).distinct
-
-      def getOriginalDependencies(repo: Repo): F[List[Dependency]] =
-        for {
-          repoDir <- workspaceAlg.repoDir(repo)
-          cmd = sbtCmd(List(libraryDependenciesAsJson, reloadPlugins, libraryDependenciesAsJson))
-          lines <- exec(cmd, repoDir)
-        } yield parser.parseDependencies(lines)
+        } yield
+          (maybeSbtDependency.toList ++ maybeScalafmtDependency.toList ++ dependencies).distinct
 
       override def getUpdatesForProject(project: ArtificialProject): F[List[Update.Single]] =
         for {
@@ -120,29 +114,19 @@ object SbtAlg {
           _ <- fileAlg.writeFileData(projectDir, project.mkPluginsSbt)
           cmd = sbtCmd(project.dependencyUpdatesCmd)
           lines <- processAlg.exec(cmd, updatesDir)
+          dependencies = parser.parseDependencies(lines)
           _ <- fileAlg.deleteForce(updatesDir)
-          updatesWithCrossSuffix = parser.parseSingleUpdates(lines)
-          allDeps = project.libraries ++ project.plugins
-          uncross = allDeps.map(dep => dep.artifactIdCross -> dep.artifactId).toMap
-          updates = updatesWithCrossSuffix.flatMap { update =>
-            Update.Single.artifactIdLens.modifyF(uncross.get)(update).toList
-          }
-        } yield updates
+        } yield dependencies.flatMap(UpdateService.dependencyToUpdate(_).toList)
 
       override def getUpdatesForRepo(repo: Repo): F[List[Update.Single]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
           maybeClearCredentials = if (config.keepCredentials) Nil else List(setCredentialsToNil)
           commands = maybeClearCredentials ++
-            List(dependencyUpdates, reloadPlugins, dependencyUpdates)
-          updates <- withTemporarySbtDependency(repo) {
-            exec(sbtCmd(commands), repoDir).map(parser.parseSingleUpdates)
-          }
-          originalDependencies <- cacheRepository.getDependencies(List(repo))
-          updatesUnderNewGroupId = originalDependencies.flatMap(
-            UpdateService.findUpdateUnderNewGroup
-          )
-        } yield updates ++ updatesUnderNewGroupId
+            List(projectDependenciesWithUpdates, reloadPlugins, buildDependenciesWithUpdates)
+          lines <- withTemporarySbtDependency(repo)(exec(sbtCmd(commands), repoDir))
+          dependencies = parser.parseDependencies(lines)
+        } yield dependencies.flatMap(UpdateService.dependencyToUpdate(_).toList)
 
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
         addGlobalPluginTemporarily(scalaStewardScalafixSbt) {
