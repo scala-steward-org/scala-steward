@@ -70,6 +70,7 @@ Thanks goes to these wonderful people:
 * [Fabian](https://github.com/fg-devs)
 * [Filipe Regadas](https://github.com/regadas)
 * [Frank S. Thomas](https://github.com/fthomas)
+* [Guillaume Martres](https://github.com/smarter)
 * [Jakub Kozłowski](https://github.com/kubukoz)
 * [JCollier](https://github.com/Slakah)
 * [Jeff Martin](https://github.com/custommonkey)
