@@ -47,4 +47,21 @@ package object vcs {
         git.branchFor(update).name
     }
 
+  def possibleCompareUrls(repoUrl: String, update: Update): List[String] = {
+    val from = update.currentVersion
+    val to = update.nextVersion
+    val canonicalized = repoUrl.replaceAll("/$", "")
+    if (repoUrl.startsWith("https://github.com/") || repoUrl.startsWith("https://gitlab.com/"))
+      List(
+        s"${canonicalized}/compare/v${from}...v${to}",
+        s"${canonicalized}/compare/${from}...${to}"
+      )
+    else if (repoUrl.startsWith("https://bitbucket.org/"))
+      List(
+        s"${canonicalized}/compare/v${to}..v${from}#diff",
+        s"${canonicalized}/compare/${to}..${from}#diff"
+      )
+    else
+      List.empty
+  }
 }

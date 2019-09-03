@@ -1,13 +1,26 @@
 package org.scalasteward.core
 
+import _root_.io.chrisdavenport.log4cats.Logger
+import _root_.io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import cats.effect.{ContextShift, IO, Timer}
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 import org.scalasteward.core.data.Version
 import org.scalasteward.core.util.Change
 import org.scalasteward.core.util.Change.{Changed, Unchanged}
+import scala.concurrent.ExecutionContext
 
 object TestInstances {
   implicit def changeArbitrary[T](implicit arbT: Arbitrary[T]): Arbitrary[Change[T]] =
     Arbitrary(arbT.arbitrary.flatMap(t => Gen.oneOf(Changed(t), Unchanged(t))))
+
+  implicit val ioContextShift: ContextShift[IO] =
+    IO.contextShift(ExecutionContext.global)
+
+  implicit val ioLogger: Logger[IO] =
+    Slf4jLogger.getLogger[IO]
+
+  implicit val ioTimer: Timer[IO] =
+    IO.timer(ExecutionContext.global)
 
   implicit val versionArbitrary: Arbitrary[Version] = {
     val versionChar = Gen.frequency(

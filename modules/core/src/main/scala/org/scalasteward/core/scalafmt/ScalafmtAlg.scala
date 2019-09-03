@@ -18,51 +18,28 @@ package org.scalasteward.core.scalafmt
 
 import better.files.File
 import cats.implicits._
-import cats.{Functor, Monad}
-import org.scalasteward.core.io.FileAlg
-import org.scalasteward.core.data.{Update, Version}
-import org.scalasteward.core.util.MonadThrowable
-
-import scala.util.matching.Regex
+import cats.Monad
+import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
+import org.scalasteward.core.data.Version
+import org.scalasteward.core.vcs.data.Repo
 
 trait ScalafmtAlg[F[_]] {
-  def getScalafmtVersion(repo: File): F[Option[Version]]
-
-  def editScalafmtConf(repo: File, nextVersion: String)(implicit F: MonadThrowable[F]): F[Unit]
-
-  final def getScalafmtUpdate(repo: File)(implicit F: Functor[F]): F[Option[Update.Single]] =
-    getScalafmtVersion(repo).map(_.flatMap(findScalafmtUpdate))
+  def getScalafmtVersion(projectDir: File): F[Option[Version]]
 }
 
 object ScalafmtAlg {
   def create[F[_]](
       implicit
       fileAlg: FileAlg[F],
+      workspaceAlg: WorkspaceAlg[F],
       F: Monad[F]
   ): ScalafmtAlg[F] = new ScalafmtAlg[F] {
     override def getScalafmtVersion(projectDir: File): F[Option[Version]] =
       for {
-        fileContent <- fileAlg.readFile(projectDir / ".scalafmt.conf")
+        scalafmtConfFile = projectDir / ".scalafmt.conf"
+        fileContent <- fileAlg.readFile(scalafmtConfFile)
       } yield {
         fileContent.flatMap(parseScalafmtConf)
       }
-
-    override def editScalafmtConf(repoDir: File, nextVersion: String)(
-        implicit F: MonadThrowable[F]
-    ): F[Unit] =
-      for {
-        _ <- fileAlg.editFile(
-          repoDir / ".scalafmt.conf",
-          content => {
-            for {
-              currentVersion <- parseScalafmtConf(content)
-              curVer = Regex.quote(currentVersion.value)
-              pattern = s"""(version\\s*=\\s*.*?)${curVer}(.?)"""
-              replacer = s"$$1${nextVersion}$$2"
-              changed <- Some(content.replaceFirst(pattern, replacer)) if changed =!= content
-            } yield changed
-          }
-        )
-      } yield ()
   }
 }

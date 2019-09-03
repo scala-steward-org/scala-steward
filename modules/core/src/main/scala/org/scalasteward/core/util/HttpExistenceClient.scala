@@ -14,23 +14,21 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core
+package org.scalasteward.core.util
 
 import cats.implicits._
-import org.scalasteward.core.data.{Dependency, Version}
+import org.http4s.client.Client
+import org.http4s.{Method, Request, Uri}
 
-package object scalafmt {
-  def scalafmtDependency(scalaBinaryVersion: String)(scalafmtVersion: Version): Dependency =
-    Dependency(
-      if (scalafmtVersion > Version("2.0.0-RC1")) "org.scalameta" else "com.geirsson",
-      "scalafmt-core",
-      s"scalafmt-core_${scalaBinaryVersion}",
-      scalafmtVersion.value
-    )
+final class HttpExistenceClient[F[_]](
+    implicit
+    client: Client[F],
+    F: MonadThrowable[F]
+) {
+  def exists(uri: String): F[Boolean] = F.fromEither(Uri.fromString(uri)).flatMap(exists)
 
-  def parseScalafmtConf(s: String): Option[Version] =
-    """version\s*=\s*(.+)""".r
-      .findFirstMatchIn(s)
-      .map(_.group(1).replaceAllLiterally("\"", ""))
-      .map(Version.apply)
+  def exists(uri: Uri): F[Boolean] = {
+    val req: Request[F] = Request(method = Method.HEAD, uri = uri)
+    client.status(req).map(_.isSuccess)
+  }
 }

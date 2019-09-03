@@ -17,15 +17,12 @@
 package org.scalasteward.core.io
 
 import better.files.File
-import cats.effect.Sync
+import cats.effect.{Concurrent, ContextShift, Timer}
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
-import java.io.IOException
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.util.Nel
-import scala.collection.mutable.ListBuffer
-import scala.sys.process.{Process, ProcessLogger}
 
 trait ProcessAlg[F[_]] {
   def exec(command: Nel[String], cwd: File, extraEnv: (String, String)*): F[List[String]]
@@ -49,7 +46,14 @@ object ProcessAlg {
     }
   }
 
-  def create[F[_]](implicit config: Config, logger: Logger[F], F: Sync[F]): ProcessAlg[F] =
+  def create[F[_]](
+      implicit
+      config: Config,
+      contextShift: ContextShift[F],
+      logger: Logger[F],
+      timer: Timer[F],
+      F: Concurrent[F]
+  ): ProcessAlg[F] =
     new UsingFirejail[F](config) {
       override def exec(
           command: Nel[String],
@@ -57,16 +61,12 @@ object ProcessAlg {
           extraEnv: (String, String)*
       ): F[List[String]] =
         logger.debug(s"Execute ${command.mkString_(" ")}") >>
-          F.delay {
-            val lb = ListBuffer.empty[String]
-            val log = new ProcessLogger {
-              override def out(s: => String): Unit = lb.append(s)
-              override def err(s: => String): Unit = lb.append(s)
-              override def buffer[T](f: => T): T = f
-            }
-            val exitCode = Process(command.toList, cwd.toJava, extraEnv: _*).!(log)
-            if (exitCode =!= 0) throw new IOException(lb.mkString("\n"))
-            lb.result()
-          }
+          process.slurp[F](
+            command,
+            Some(cwd.toJava),
+            extraEnv.toMap,
+            config.processTimeout,
+            logger.trace(_)
+          )
     }
 }

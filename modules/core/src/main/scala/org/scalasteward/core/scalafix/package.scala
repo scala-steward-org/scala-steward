@@ -44,13 +44,30 @@ package object scalafix {
         "org.http4s",
         Nel.of("http4s-.*".r),
         Version("0.20.0"),
-        Nel.of("github:http4s/http4s/v0_20?sha=v0.20.6")
+        Nel.of("github:http4s/http4s/v0_20?sha=v0.20.10")
       ),
       Migration(
         "org.typelevel",
         Nel.of("cats-core".r),
         Version("1.0.0"),
-        Nel.of("github:fthomas/cats/Cats_v1_0_0?sha=update/scalafix")
+        Nel.of(
+          "https://raw.githubusercontent.com/typelevel/cats/master/scalafix/rules/src/main/scala/fix/Cats_v1_0_0.scala"
+        )
+      ),
+      Migration(
+        "org.scalatest",
+        Nel.of("scalatest".r),
+        Version("3.1.0"),
+        Nel.of(
+          "https://raw.githubusercontent.com/scalatest/autofix/6168da0e2bd113872b7dcd22cad7688d97ef9381/3.0.x/rules/src/main/scala/org/scalatest/autofix/v3_0_x/RenameDeprecatedPackage.scala",
+          "https://raw.githubusercontent.com/scalatest/autofix/6168da0e2bd113872b7dcd22cad7688d97ef9381/3.1.x/rules/src/main/scala/org/scalatest/autofix/v3_1_x/RewriteDeprecatedNames.scala"
+        )
+      ),
+      Migration(
+        "org.scalacheck",
+        Nel.of("scalacheck".r),
+        Version("1.14.1"),
+        Nel.of("github:typelevel/scalacheck/v1_14_1?sha=3fc537dde9d8fdf951503a8d8b027a568d52d055")
       )
     )
 

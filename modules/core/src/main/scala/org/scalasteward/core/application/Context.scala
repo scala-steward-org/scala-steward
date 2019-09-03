@@ -16,11 +16,12 @@
 
 package org.scalasteward.core.application
 
-import cats.effect.{ConcurrentEffect, Resource}
+import cats.effect.{ConcurrentEffect, ContextShift, Resource, Timer}
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
+import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
@@ -33,13 +34,16 @@ import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.json.JsonUpdateRepository
 import org.scalasteward.core.update.{FilterAlg, UpdateRepository, UpdateService}
-import org.scalasteward.core.util.{DateTimeAlg, HttpJsonClient, LogAlg}
+import org.scalasteward.core.util.{DateTimeAlg, HttpExistenceClient, HttpJsonClient, LogAlg}
 import org.scalasteward.core.vcs.data.AuthenticatedUser
-import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg, VCSSelection}
+import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg, VCSSelection}
+
 import scala.concurrent.ExecutionContext
 
 object Context {
-  def create[F[_]: ConcurrentEffect](args: List[String]): Resource[F, StewardAlg[F]] =
+  def create[F[_]: ConcurrentEffect: ContextShift: Timer](
+      args: List[String]
+  ): Resource[F, StewardAlg[F]] =
     for {
       cliArgs_ <- Resource.liftF(new Cli[F].parseArgs(args))
       implicit0(config: Config) <- Resource.liftF(Config.create[F](cliArgs_))
@@ -56,16 +60,19 @@ object Context {
       implicit val filterAlg: FilterAlg[F] = new FilterAlg[F]
       implicit val gitAlg: GitAlg[F] = GitAlg.create[F]
       implicit val httpJsonClient: HttpJsonClient[F] = new HttpJsonClient[F]
+      implicit val httpExistenceClient: HttpExistenceClient[F] = new HttpExistenceClient[F]
       implicit val repoCacheRepository: RepoCacheRepository[F] = new JsonRepoCacheRepository[F]
       val vcsSelection = new VCSSelection[F]
       implicit val vcsApiAlg: VCSApiAlg[F] = vcsSelection.getAlg(config)
       implicit val vcsRepoAlg: VCSRepoAlg[F] = VCSRepoAlg.create[F](config, gitAlg)
+      implicit val vcsExtraAlg: VCSExtraAlg[F] = VCSExtraAlg.create[F]
       implicit val pullRequestRepo: PullRequestRepository[F] = new JsonPullRequestRepo[F]
-      implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F]
       implicit val scalafmtAlg: ScalafmtAlg[F] = ScalafmtAlg.create[F]
+      implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F]
       implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F]
       implicit val editAlg: EditAlg[F] = new EditAlg[F]
       implicit val updateRepository: UpdateRepository[F] = new JsonUpdateRepository[F]
+      implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create
       implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F]
       implicit val updateService: UpdateService[F] = new UpdateService[F]
       new StewardAlg[F]

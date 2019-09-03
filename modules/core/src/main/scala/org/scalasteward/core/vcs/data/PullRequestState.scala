@@ -30,9 +30,9 @@ object PullRequestState {
 
   implicit val pullRequestStateDecoder: Decoder[PullRequestState] =
     Decoder[String].emap {
-      case "open" | "opened" => Right(Open)
-      case "closed"          => Right(Closed)
-      case unknown           => Left(s"Unexpected string '$unknown'")
+      case "open" | "opened"   => Right(Open)
+      case "closed" | "merged" => Right(Closed)
+      case unknown             => Left(s"Unexpected string '$unknown'")
     }
 
   implicit val pullRequestStateEncoder: Encoder[PullRequestState] =

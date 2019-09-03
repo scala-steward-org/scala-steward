@@ -25,11 +25,41 @@ class NewPullRequestDataTest extends FunSuite with Matchers {
       .spaces2 shouldBe
       """|{
          |  "title" : "Update logback-classic to 1.2.3",
-         |  "body" : "Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3.\n\nI'll automatically update this PR to resolve conflicts as long as you don't change it yourself.\n\nIf you'd like to skip this version, you can just close this PR. If you have any feedback, just mention @scala-steward in the comments below.\n\nHave a fantastic day writing Scala!\n\n<details>\n<summary>Ignore future updates</summary>\n\nAdd this to your `.scala-steward.conf` file to ignore future updates of this dependency:\n```\nupdates.ignore = [{ groupId = \"ch.qos.logback\", artifactId = \"logback-classic\" }]\n```\n</details>\n\nlabels: semver-patch",
+         |  "body" : "Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3.\n\nI'll automatically update this PR to resolve conflicts as long as you don't change it yourself.\n\nIf you'd like to skip this version, you can just close this PR. If you have any feedback, just mention @scala-steward in the comments below.\n\nHave a fantastic day writing Scala!\n\n<details>\n<summary>Ignore future updates</summary>\n\nAdd this to your `.scala-steward.conf` file to ignore future updates of this dependency:\n```\nupdates.ignore = [ { groupId = \"ch.qos.logback\", artifactId = \"logback-classic\" } ]\n```\n</details>\n\nlabels: semver-patch",
          |  "head" : "scala-steward:update/logback-classic-1.2.3",
          |  "base" : "master"
          |}
          |""".stripMargin.trim
+  }
+
+  test("fromTo") {
+    NewPullRequestData.fromTo(
+      Update.Single("com.example", "foo", "1.2.0", Nel.of("1.2.3")),
+      None
+    ) shouldBe "from 1.2.0 to 1.2.3"
+
+    NewPullRequestData.fromTo(
+      Update.Group("com.example", Nel.of("foo", "bar"), "1.2.0", Nel.of("1.2.3")),
+      Some("http://example.com/compare/v1.2.0...v1.2.3")
+    ) shouldBe
+      "[from 1.2.0 to 1.2.3](http://example.com/compare/v1.2.0...v1.2.3)"
+  }
+
+  test("showing artifacts with URL in Markdown format") {
+    NewPullRequestData.artifactsWithOptionalUrl(
+      Update.Single("com.example", "foo", "1.2.0", Nel.of("1.2.3")),
+      Map("foo" -> "https://github.com/foo/foo")
+    ) shouldBe "[com.example:foo](https://github.com/foo/foo)"
+
+    NewPullRequestData.artifactsWithOptionalUrl(
+      Update.Group("com.example", Nel.of("foo", "bar"), "1.2.0", Nel.of("1.2.3")),
+      Map("foo" -> "https://github.com/foo/foo", "bar" -> "https://github.com/bar/bar")
+    ) shouldBe
+      """
+        |* [com.example:foo](https://github.com/foo/foo)
+        |* [com.example:bar](https://github.com/bar/bar)
+        |
+        |""".stripMargin
   }
 
   test("migrationNote: when no migrations") {

@@ -51,15 +51,23 @@ final class RepoCacheAlg[F[_]](
         cachedSha1 <- repoCacheRepository.findSha1(repo)
         latestSha1 = branchOut.commit.sha
         refreshRequired = cachedSha1.forall(_ =!= latestSha1)
-        _ <- if (refreshRequired) refreshCache(repo, repoOut, latestSha1) else F.unit
+        _ <- if (refreshRequired) cloneAndRefreshCache(repo, repoOut) else F.unit
       } yield ()
     }
 
-  private def refreshCache(repo: Repo, repoOut: RepoOut, latestSha1: Sha1): F[Unit] =
+  private def cloneAndRefreshCache(repo: Repo, repoOut: RepoOut): F[Unit] =
     for {
       _ <- logger.info(s"Refresh cache of ${repo.show}")
       _ <- vcsRepoAlg.clone(repo, repoOut)
       _ <- vcsRepoAlg.syncFork(repo, repoOut)
+      _ <- refreshCache(repo)
+      _ <- gitAlg.removeClone(repo)
+    } yield ()
+
+  private def refreshCache(repo: Repo): F[RepoCache] =
+    for {
+      branch <- gitAlg.currentBranch(repo)
+      latestSha1 <- gitAlg.latestSha1(repo, branch)
       dependencies <- sbtAlg.getDependencies(repo)
       subProjects <- workspaceAlg.findSubProjectDirs(repo)
       sbtVersions <- subProjects.traverse(sbtAlg.getSbtVersion)
@@ -79,6 +87,5 @@ final class RepoCacheAlg[F[_]](
         maybeRepoConfig
       )
       _ <- repoCacheRepository.updateCache(repo, cache)
-      _ <- gitAlg.removeClone(repo)
-    } yield ()
+    } yield cache
 }

@@ -3,10 +3,12 @@ jdk:
 - openjdk8
 - openjdk11
 scala:
-- 2.12.8
+- 2.12.9
 services:
 - docker
 
+git:
+  depth: 500
 before_install:
 - git fetch --tags
 cache:

@@ -2,7 +2,7 @@ package org.scalasteward.core.io
 
 import better.files.File
 import cats.effect.IO
-import org.scalasteward.core.io.LoggerTest.ioLogger
+import org.scalasteward.core.TestInstances._
 import org.scalasteward.core.io.ProcessAlgTest.ioProcessAlg
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockState
@@ -12,7 +12,7 @@ import org.scalatest.{FunSuite, Matchers}
 class ProcessAlgTest extends FunSuite with Matchers {
   test("exec echo") {
     ioProcessAlg
-      .exec(Nel.of("echo", "hello"), File.currentWorkingDirectory)
+      .exec(Nel.of("echo", "-n", "hello"), File.currentWorkingDirectory)
       .unsafeRunSync() shouldBe List("hello")
   }
 

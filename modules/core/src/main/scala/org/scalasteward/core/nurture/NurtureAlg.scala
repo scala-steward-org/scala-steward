@@ -17,20 +17,21 @@
 package org.scalasteward.core.nurture
 
 import better.files.File
+import cats.effect.Async
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.data.Update
+import org.scalasteward.core.coursier.CoursierAlg
+import org.scalasteward.core.data.{Dependency, Update}
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Branch, GitAlg}
 import org.scalasteward.core.io.WorkspaceAlg
 import org.scalasteward.core.repoconfig.{RepoConfig, RepoConfigAlg}
 import org.scalasteward.core.sbt.SbtAlg
-import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.FilterAlg
-import org.scalasteward.core.util.{BracketThrowable, LogAlg}
+import org.scalasteward.core.util.LogAlg
 import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo}
-import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
+import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg}
 import org.scalasteward.core.{git, util, vcs}
 
 final class NurtureAlg[F[_]](
@@ -40,15 +41,16 @@ final class NurtureAlg[F[_]](
     repoConfigAlg: RepoConfigAlg[F],
     filterAlg: FilterAlg[F],
     gitAlg: GitAlg[F],
+    coursierAlg: CoursierAlg[F],
     vcsApiAlg: VCSApiAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
+    vcsExtraAlg: VCSExtraAlg[F],
     logAlg: LogAlg[F],
     logger: Logger[F],
     pullRequestRepo: PullRequestRepository[F],
     sbtAlg: SbtAlg[F],
-    scalafmtAlg: ScalafmtAlg[F],
     workspaceAlg: WorkspaceAlg[F],
-    F: BracketThrowable[F]
+    F: Async[F]
 ) {
   def nurture(repo: Repo): F[Either[Throwable, Unit]] =
     logAlg.infoTotalTime(repo.show) {
@@ -78,34 +80,36 @@ final class NurtureAlg[F[_]](
       grouped = Update.group(filtered)
       _ <- logger.info(util.logger.showUpdates(grouped))
       baseSha1 <- gitAlg.latestSha1(repo, baseBranch)
+      memoizedGetDependencies <- Async.memoize(sbtAlg.getDependencies(repo))
       _ <- grouped.traverse_ { update =>
         val data =
-          UpdateData(repo, fork, repoConfig, update, baseBranch, baseSha1, git.branchFor(update))
-        processUpdate(data)
+          UpdateData(
+            repo,
+            fork,
+            repoConfig,
+            update,
+            baseBranch,
+            baseSha1,
+            git.branchFor(update)
+          )
+        processUpdate(data, memoizedGetDependencies)
       }
     } yield ()
 
-  def getNonSbtUpdates(projectDir: File): F[List[Update.Single]] =
-    for {
-      maybeScalafmt <- scalafmtAlg.getScalafmtUpdate(projectDir)
-    } yield List(maybeScalafmt).flatten
-
   def findUpdatesInAllProjects(
-      subProjectRoots: List[File],
-      repoConfig: RepoConfig
+    subProjectRoots: List[File],
+    repoConfig: RepoConfig
   ): F[List[Update.Single]] =
     subProjectRoots
       .traverse { projectDir =>
         for {
           sbtUpdates <- sbtAlg.getUpdatesForRepo(projectDir)
-          nonSbtUpdates <- getNonSbtUpdates(projectDir)
-          updates = sbtUpdates ::: nonSbtUpdates
           filtered <- filterAlg.localFilterMany(repoConfig, updates)
         } yield filtered
       }
       .map(_.flatten)
-
-  def processUpdate(data: UpdateData): F[Unit] =
+  
+  def processUpdate(data: UpdateData, getDependencies: F[List[Dependency]]): F[Unit] =
     for {
       _ <- logger.info(s"Process update ${data.update.show}")
       head = vcs.listingBranch(config.vcsType, data.fork, data.update)
@@ -118,21 +122,21 @@ final class NurtureAlg[F[_]](
         case Some(pr) =>
           logger.info(s"Found PR ${pr.html_url}, but updates are disabled by flag")
         case None =>
-          applyNewUpdate(data)
+          applyNewUpdate(data, getDependencies)
       }
       _ <- pullRequests.headOption.fold(F.unit) { pr =>
         pullRequestRepo.createOrUpdate(data.repo, pr.html_url, data.baseSha1, data.update, pr.state)
       }
     } yield ()
 
-  def applyNewUpdate(data: UpdateData): F[Unit] =
+  def applyNewUpdate(data: UpdateData, getDependencies: F[List[Dependency]]): F[Unit] =
     (editAlg.applyUpdate(data.repo, data.update) >> gitAlg.containsChanges(data.repo)).ifM(
       gitAlg.returnToCurrentBranch(data.repo) {
         for {
           _ <- logger.info(s"Create branch ${data.updateBranch.name}")
           _ <- gitAlg.createBranch(data.repo, data.updateBranch)
           _ <- commitAndPush(data)
-          _ <- createPullRequest(data)
+          _ <- createPullRequest(data, getDependencies)
         } yield ()
       },
       logger.warn("No files were changed")
@@ -145,11 +149,24 @@ final class NurtureAlg[F[_]](
       _ <- gitAlg.push(data.repo, data.updateBranch)
     } yield ()
 
-  def createPullRequest(data: UpdateData): F[Unit] =
+  def createPullRequest(data: UpdateData, getDependencies: F[List[Dependency]]): F[Unit] =
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
+      dependencies <- getDependencies
+      filteredDependencies = dependenciesInUpdates(dependencies, data.update)
+      artifactIdToUrl <- coursierAlg.getArtifactIdUrlMapping(filteredDependencies)
+      branchCompareUrl <- vcsExtraAlg.getBranchCompareUrl(
+        artifactIdToUrl.get(data.update.artifactId),
+        data.update
+      )
       branchName = vcs.createBranch(config.vcsType, data.fork, data.update)
-      requestData = NewPullRequestData.from(data, branchName, config.vcsLogin)
+      requestData = NewPullRequestData.from(
+        data,
+        branchName,
+        config.vcsLogin,
+        artifactIdToUrl,
+        branchCompareUrl
+      )
       pr <- vcsApiAlg.createPullRequest(data.repo, requestData)
       _ <- pullRequestRepo.createOrUpdate(
         data.repo,
@@ -160,6 +177,20 @@ final class NurtureAlg[F[_]](
       )
       _ <- logger.info(s"Created PR ${pr.html_url}")
     } yield ()
+
+  private def dependenciesInUpdates(
+      dependencies: List[Dependency],
+      update: Update
+  ): List[Dependency] =
+    update match {
+      case Update.Single(groupId, artifactId, _, _, _, _) =>
+        dependencies.filter(dep => dep.groupId === groupId && dep.artifactId === artifactId)
+      case Update.Group(groupId, artifactIds, _, _) =>
+        val artifactIdSet = artifactIds.toList.toSet
+        dependencies.filter(
+          dep => dep.groupId === groupId && artifactIdSet.contains(dep.artifactId)
+        )
+    }
 
   def updatePullRequest(data: UpdateData): F[Unit] =
     gitAlg.returnToCurrentBranch(data.repo) {

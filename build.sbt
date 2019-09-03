@@ -36,6 +36,8 @@ lazy val core = myCrossProject("core")
       Dependencies.circeRefined,
       Dependencies.circeExtras,
       Dependencies.commonsIo,
+      Dependencies.coursierCore,
+      Dependencies.coursierCatsInterop,
       Dependencies.fs2Core,
       Dependencies.http4sBlazeClient,
       Dependencies.http4sCirce,
@@ -52,18 +54,32 @@ lazy val core = myCrossProject("core")
       Dependencies.scalaTest % Test
     ),
     assembly / test := {},
-    buildInfoKeys := Seq[BuildInfoKey](scalaVersion, sbtVersion),
+    assemblyMergeStrategy in assembly := {
+      val nativeSuffix = "\\.(?:dll|jnilib|so)$".r
+
+      {
+        case PathList(ps @ _*) if nativeSuffix.findFirstMatchIn(ps.last).isDefined =>
+          MergeStrategy.first
+        case otherwise =>
+          val defaultStrategy = (assemblyMergeStrategy in assembly).value
+          defaultStrategy(otherwise)
+      }
+    },
+    buildInfoKeys := Seq[BuildInfoKey](scalaVersion, scalaBinaryVersion, sbtVersion),
     buildInfoPackage := moduleRootPkg.value,
     initialCommands += s"""
       import ${moduleRootPkg.value}._
+      import ${moduleRootPkg.value}.util.Nel
       import ${moduleRootPkg.value}.vcs.data._
       import better.files.File
       import cats.effect.ContextShift
       import cats.effect.IO
+      import cats.effect.Timer
       import org.http4s.client.blaze.BlazeClientBuilder
       import scala.concurrent.ExecutionContext
 
-      implicit val ctxShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
+      implicit val ioContextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
+      implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
     """,
     fork in run := true,
     fork in Test := true
@@ -124,7 +140,7 @@ lazy val metadataSettings = Def.settings(
 
 lazy val dockerSettings = Def.settings(
   dockerCommands := Seq(
-    Cmd("FROM", "openjdk:8"),
+    Cmd("FROM", Option(System.getenv("DOCKER_BASE_IMAGE")).getOrElse("openjdk:8")),
     Cmd("ARG", "DEBIAN_FRONTEND=noninteractive"),
     ExecCmd("RUN", "apt-get", "update"),
     ExecCmd("RUN", "apt-get", "install", "-y", "apt-transport-https", "firejail"),
@@ -200,6 +216,8 @@ addCommandsAlias(
   )
 )
 
+// Run Scala Steward from sbt for development and testing.
+// Do not do this in production.
 addCommandAlias(
   "runSteward", {
     val home = System.getenv("HOME")
@@ -214,7 +232,8 @@ addCommandAlias(
       Seq("--whitelist", s"$home/.cache/coursier"),
       Seq("--whitelist", s"$home/.coursier"),
       Seq("--whitelist", s"$home/.ivy2"),
-      Seq("--whitelist", s"$home/.sbt")
+      Seq("--whitelist", s"$home/.sbt"),
+      Seq("--prune-repos=false")
     ).flatten.mkString(" ")
   }
 )
