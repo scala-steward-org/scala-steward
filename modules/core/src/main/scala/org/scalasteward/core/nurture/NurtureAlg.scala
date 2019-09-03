@@ -97,18 +97,18 @@ final class NurtureAlg[F[_]](
     } yield ()
 
   def findUpdatesInAllProjects(
-    subProjectRoots: List[File],
-    repoConfig: RepoConfig
+      subProjectRoots: List[File],
+      repoConfig: RepoConfig
   ): F[List[Update.Single]] =
     subProjectRoots
       .traverse { projectDir =>
         for {
-          sbtUpdates <- sbtAlg.getUpdatesForRepo(projectDir)
+          updates <- sbtAlg.getUpdatesForRepo(projectDir)
           filtered <- filterAlg.localFilterMany(repoConfig, updates)
         } yield filtered
       }
       .map(_.flatten)
-  
+
   def processUpdate(data: UpdateData, getDependencies: F[List[Dependency]]): F[Unit] =
     for {
       _ <- logger.info(s"Process update ${data.update.show}")

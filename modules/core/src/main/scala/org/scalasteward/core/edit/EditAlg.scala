@@ -42,7 +42,7 @@ final class EditAlg[F[_]](
       repoDirectroies <- workspaceAlg.findSubProjectDirs(repo)
       files <- repoDirectroies
         .traverse { repoDir =>
-          fileAlg.findSourceFilesContaining(
+          fileAlg.findFilesContaining(
             repoDir,
             update.currentVersion,
             f => isSourceFile(f) && isFileSpecificTo(update)(f)

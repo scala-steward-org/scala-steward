@@ -85,19 +85,19 @@ object SbtAlg {
           _ <- addGlobalPlugin(stewardPlugin)
         } yield ()
 
-      override def getSbtVersion(repo: Repo): F[Option[SbtVersion]] =
+      override def getSbtVersion(repoDir: File): F[Option[SbtVersion]] =
         for {
-          repoDir <- workspaceAlg.repoDir(repo)
           maybeProperties <- fileAlg.readFile(repoDir / "project" / "build.properties")
           version = maybeProperties.flatMap(parser.parseBuildProperties)
         } yield version
 
       override def getDependencies(repo: Repo): F[List[Dependency]] =
         for {
+          repoDir <- workspaceAlg.repoDir(repo)
           originalDependencies <- getOriginalDependencies(repo)
-          maybeSbtVersion <- getSbtVersion(repo)
+          maybeSbtVersion <- getSbtVersion(repoDir)
           maybeSbtDependency = maybeSbtVersion.flatMap(sbtDependency)
-          maybeScalafmtVersion <- scalafmtAlg.getScalafmtVersion(repo)
+          maybeScalafmtVersion <- scalafmtAlg.getScalafmtVersion(repoDir)
           maybeScalafmtDependency = maybeScalafmtVersion.map(
             scalafmtDependency(defaultScalaBinaryVersion)
           )
@@ -129,20 +129,21 @@ object SbtAlg {
           }
         } yield updates
 
-      override def getUpdatesForRepo(repo: Repo): F[List[Update.Single]] =
+      override def getUpdatesForRepo(repoDir: File): F[List[Update.Single]] = {
+        val maybeClearCredentials = if (config.keepCredentials) Nil else List(setCredentialsToNil)
+        val commands = maybeClearCredentials ++
+          List(dependencyUpdates, reloadPlugins, dependencyUpdates)
         for {
-          repoDir <- workspaceAlg.repoDir(repo)
-          maybeClearCredentials = if (config.keepCredentials) Nil else List(setCredentialsToNil)
-          commands = maybeClearCredentials ++
-            List(dependencyUpdates, reloadPlugins, dependencyUpdates)
-          updates <- withTemporarySbtDependency(repo) {
+          updates <- withTemporarySbtDependency(repoDir) {
             exec(sbtCmd(commands), repoDir).map(parser.parseSingleUpdates)
           }
-          originalDependencies <- cacheRepository.getDependencies(List(repo))
+          // FIXME: Repos
+          originalDependencies <- cacheRepository.getDependencies(List.empty)
           updatesUnderNewGroupId = originalDependencies.flatMap(
             UpdateService.findUpdateUnderNewGroup
           )
         } yield updates ++ updatesUnderNewGroupId
+      }
 
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
         addGlobalPluginTemporarily(scalaStewardScalafixSbt) {
@@ -176,23 +177,23 @@ object SbtAlg {
           }
         }
 
-      def withTemporarySbtDependency[A](repo: Repo)(fa: F[A]): F[A] =
+      def withTemporarySbtDependency[A](repoDir: File)(fa: F[A]): F[A] =
         for {
-          maybeSbtDep <- getSbtVersion(repo).map(_.flatMap(sbtDependency).map(_.formatAsModuleId))
+          maybeSbtDep <- getSbtVersion(repoDir).map(
+            _.flatMap(sbtDependency).map(_.formatAsModuleId)
+          )
           maybeScalafmtDep <- scalafmtAlg
-            .getScalafmtVersion(repo)
+            .getScalafmtVersion(repoDir)
             .map(
               _.map(scalafmtDependency(defaultScalaBinaryVersion))
                 .map(_.formatAsModuleIdScalaVersionAgnostic)
             )
           fakeDeps = Option(maybeSbtDep.toList ++ maybeScalafmtDep.toList).filter(_.nonEmpty)
           a <- fakeDeps.fold(fa) { dependencies =>
-            workspaceAlg.repoDir(repo).flatMap { repoDir =>
-              val content = dependencies
-                .map(dep => s"libraryDependencies += ${dep}")
-                .mkString(System.lineSeparator())
-              fileAlg.createTemporarily(repoDir / "project" / "tmp-sbt-dep.sbt", content)(fa)
-            }
+            val content = dependencies
+              .map(dep => s"libraryDependencies += ${dep}")
+              .mkString(System.lineSeparator())
+            fileAlg.createTemporarily(repoDir / "project" / "tmp-sbt-dep.sbt", content)(fa)
           }
         } yield a
 

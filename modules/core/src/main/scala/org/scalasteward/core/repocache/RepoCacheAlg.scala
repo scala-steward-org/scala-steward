@@ -19,7 +19,7 @@ package org.scalasteward.core.repocache
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.git.{GitAlg, Sha1}
+import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io.WorkspaceAlg
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
