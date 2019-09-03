@@ -148,6 +148,7 @@
 - criteo/lolhttp
 - d2a4u/sqs4s
 - daandi/nice-url-encode-decode
+- daenyth/scytest
 - dispalt/scala-relay
 - dispalt/tagless-redux
 - djspiewak/cats-effect-testing
