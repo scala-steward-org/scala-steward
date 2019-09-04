@@ -153,7 +153,7 @@ object GitAlg {
       override def push(repo: Repo, branch: Branch): F[Unit] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          _ <- exec(Nel.of("push", "--force", "--set-upstream", "origin", branch.name), repoDir)
+          _ <- exec(Nel.of("push", "--set-upstream", "origin", branch.name), repoDir)
         } yield ()
 
       override def remoteBranchExists(repo: Repo, branch: Branch): F[Boolean] =
