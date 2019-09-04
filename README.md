@@ -110,6 +110,7 @@ Consider creating PR to add your company to the list and join the community.
 * [Snowplow Analytics](https://snowplowanalytics.com/)
 * [SpringerNature](https://www.springernature.com)
 * [SoftwareMill](https://softwaremill.com)
+* [Spotify](https://www.spotify.com)
 * [Tegonal GmbH](https://tegonal.com)
 * [Zalando](https://en.zalando.de/)
 
