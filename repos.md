@@ -284,6 +284,7 @@
 - lightbend/scala-sculpt
 - lightbend/ssl-config
 - lihaoyi/scala.rx
+- loicknuchel/gospeak
 - LREN-CHUV/woken
 - LREN-CHUV/woken-messages
 - LREN-CHUV/woken-validation
