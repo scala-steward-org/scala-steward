@@ -90,6 +90,7 @@
 - ChristopherDavenport/http4s-websocket-example
 - ChristopherDavenport/iork
 - ChristopherDavenport/keypool
+- ChristopherDavenport/keysemaphore
 - ChristopherDavenport/library.g8
 - ChristopherDavenport/linebacker
 - ChristopherDavenport/log4cats
