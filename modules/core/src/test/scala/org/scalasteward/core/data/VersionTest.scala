@@ -32,4 +32,28 @@ class VersionTest extends FunSuite with Discipline with Matchers {
       Version(x).comparison(Version(y)) shouldBe result
     }
   }
+
+  test("selectNext") {
+    val allVersions =
+      List("1.0.0", "1.0.1", "1.0.2", "1.1.0", "1.2.0", "2.0.0", "3.0.0", "3.0.0.1", "3.1")
+        .map(Version.apply)
+
+    val nextVersions = Table(
+      ("current", "result"),
+      ("1.0.0", Some("1.0.2")),
+      ("1.0.1", Some("1.0.2")),
+      ("1.0.2", Some("1.2.0")),
+      ("1.1.0", Some("1.2.0")),
+      ("1.2.0", Some("3.1")),
+      ("2.0.0", Some("3.1")),
+      ("3.0.0", Some("3.0.0.1")),
+      ("3.0.0.1", Some("3.1")),
+      ("3.1", None),
+      ("4", None)
+    )
+
+    forAll(nextVersions) { (current, result) =>
+      Version(current).selectNext(allVersions) shouldBe result.map(Version.apply)
+    }
+  }
 }

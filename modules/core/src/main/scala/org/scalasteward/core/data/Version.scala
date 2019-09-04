@@ -18,14 +18,13 @@ package org.scalasteward.core.data
 
 import cats.Order
 import cats.implicits._
-import io.circe.{Decoder, Encoder}
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.util
-
 import scala.util.Try
 
 final case class Version(value: String) {
-  def numericComponents: List[BigInt] =
+  val numericComponents: List[BigInt] =
     value
       .split(Array('.', '-', '+'))
       .flatMap(util.string.splitNumericAndNonNumeric)
@@ -36,6 +35,23 @@ final case class Version(value: String) {
         case s                   => Try(BigInt(s)).getOrElse(BigInt(0))
       }
       .toList
+
+  /** Selects the next version from a list of potentially newer versions.
+    *
+    * Implements the scheme described in this FAQ:
+    * https://github.com/fthomas/scala-steward/blob/master/docs/faq.md#how-does-scala-steward-decide-what-version-it-is-updating-to
+    */
+  def selectNext(versions: List[Version]): Option[Version] =
+    versions
+      .filter(_ > this)
+      .groupBy {
+        _.numericComponents.zip(numericComponents).takeWhile { case (c1, c2) => c1 === c2 }.size
+      }
+      .toList
+      .sortBy { case (commonPrefixLength, _) => commonPrefixLength }
+      .lastOption
+      .map { case (_, vs) => vs }
+      .flatMap(_.lastOption)
 }
 
 object Version {
