@@ -567,6 +567,7 @@
 - WellFactored/property-info
 - WellFactored/resourcepool
 - wegtam/amws-scala
+- wvlet/airframe
 - X9Developers/block-explorer
 - yannick-cw/elastic-indexer4s
 - yannick-cw/sjq
