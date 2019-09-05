@@ -20,6 +20,7 @@ import cats.Parallel
 import cats.effect._
 import cats.implicits._
 import coursier.interop.cats._
+import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data.Dependency
 import scala.concurrent.ExecutionContext
 
@@ -31,6 +32,7 @@ trait CoursierAlg[F[_]] {
 object CoursierAlg {
   def create[F[_]](
       implicit
+      logger: Logger[F],
       F: Sync[F]
   ): CoursierAlg[F] = {
     implicit val P = Parallel.identity[F]
@@ -46,16 +48,16 @@ object CoursierAlg {
           coursier.Organization(dependency.groupId),
           coursier.ModuleName(dependency.artifactIdCross)
         )
+        val coursierDependency =
+          coursier.Dependency.of(module, dependency.version).withTransitive(false)
         for {
           maybeFetchResult <- fetch
-            .addDependencies(
-              coursier.Dependency.of(module, dependency.version).withTransitive(false)
-            )
+            .addDependencies(coursierDependency)
             .addArtifactTypes(coursier.Type.pom)
             .ioResult
             .map(Option.apply)
-            .recover {
-              case _: coursier.error.ResolutionError => None
+            .handleErrorWith { throwable =>
+              logger.debug(throwable)(s"Failed to fetch POM of $coursierDependency").as(None)
             }
         } yield {
           for {
