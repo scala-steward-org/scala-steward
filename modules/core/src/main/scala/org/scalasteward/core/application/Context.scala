@@ -20,7 +20,7 @@ import cats.effect.{ConcurrentEffect, ContextShift, Resource, Timer}
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.client.Client
-import org.http4s.client.blaze.BlazeClientBuilder
+import org.http4s.client.asynchttpclient.AsyncHttpClient
 import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.GitAlg
@@ -38,8 +38,6 @@ import org.scalasteward.core.util.{DateTimeAlg, HttpExistenceClient, HttpJsonCli
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg, VCSSelection}
 
-import scala.concurrent.ExecutionContext
-
 object Context {
   def create[F[_]: ConcurrentEffect: ContextShift: Timer](
       args: List[String]
@@ -47,7 +45,7 @@ object Context {
     for {
       cliArgs_ <- Resource.liftF(new Cli[F].parseArgs(args))
       implicit0(config: Config) <- Resource.liftF(Config.create[F](cliArgs_))
-      implicit0(client: Client[F]) <- BlazeClientBuilder[F](ExecutionContext.global).resource
+      implicit0(client: Client[F]) <- AsyncHttpClient.resource[F]()
       implicit0(logger: Logger[F]) <- Resource.liftF(Slf4jLogger.create[F])
       implicit0(user: AuthenticatedUser) <- Resource.liftF(config.vcsUser[F])
     } yield {
