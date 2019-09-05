@@ -131,7 +131,8 @@ class Http4sBitbucketApiAlgTest extends FunSuite with Matchers {
   val bitbucketApiAlg = new Http4sBitbucketApiAlg[IO](
     config.vcsApiHost,
     AuthenticatedUser("scala-steward", ""),
-    _ => IO.pure
+    _ => IO.pure,
+    false
   )
 
   val prUrl = uri"https://api.bitbucket.org/2.0/repositories/fthomas/base.g8/pullrequests/2"
