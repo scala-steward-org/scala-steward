@@ -568,6 +568,8 @@
 - WellFactored/resourcepool
 - wegtam/amws-scala
 - X9Developers/block-explorer
+- xerial/sbt-pack
+- xerial/sbt-sonatype
 - yannick-cw/elastic-indexer4s
 - yannick-cw/sjq
 - zengularity/benji
