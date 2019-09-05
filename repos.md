@@ -341,6 +341,7 @@
 - notxcain/aecor
 - novakov-alexey/http4s-spnego
 - nrinaudo/kantan.codecs
+- NYC-Infra/nyci-pipelines
 - olafurpg/sbt-ci-release
 - olivierschultz/typelevel-template.g8
 - OutWatch/outwatch
