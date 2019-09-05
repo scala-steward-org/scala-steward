@@ -26,11 +26,11 @@
 - alonsodomin/sbt-spark
 - alonsodomin/scala-colog
 - amarrella/fs2-elastic
-- avast/datadog4s
 - Atry/Curried.scala
 - Atry/Dsl.scala-akka-actor
 - Atry/fastring
 - Atry/scalajs-all-in-one-template
+- avast/datadog4s
 - AVSystem/scala-commons
 - azhur/kafka-serde-scala
 - balhoff/whelk
@@ -124,8 +124,8 @@
 - CleverCloud/akka-warp10-scala-client
 - clovellytech/http4s-modules
 - comcast/ip4s
-- concrete-cp/cspom
 - concrete-cp/concrete
+- concrete-cp/cspom
 - cornerman/chameleon
 - cornerman/covenant
 - cornerman/mycelium
@@ -155,8 +155,8 @@
 - djspiewak/cats-effect-testing
 - djspiewak/gll-combinators
 - djspiewak/shims
-- dmrolfs/omnibus
 - dmrolfs/base-sbt-mult-project
+- dmrolfs/omnibus
 - dwijnand/sbt-compat
 - dwijnand/sbt-dynver
 - dwijnand/sbt-project-graph
@@ -271,9 +271,9 @@
 - laserdisc-io/stream-it
 - leanovate/play-mockws
 - leigh-perry/conduction
+- leigh-perry/metamorphosis
 - leigh-perry/template-cats-io-app
 - leigh-perry/template-cats-zio-app
-- leigh-perry/metamorphosis
 - lemastero/scala_typeclassopedia
 - lightbend/genjavadoc
 - lightbend/lightbend-emoji
@@ -297,8 +297,8 @@
 - mbuzdalov/data-slicer
 - mbuzdalov/generic-onell
 - mbuzdalov/incremental-orthants
-- mbuzdalov/orthant-search
 - mbuzdalov/non-dominated-sorting
+- mbuzdalov/orthant-search
 - mefellows/sbt-dotenv
 - metabookmarks/lagom-silhouette
 - metabookmarks/sbt-plantuml-plugin
@@ -527,6 +527,7 @@
 - tpolecat/atto
 - tpolecat/doobie
 - tpolecat/skunk
+- transcendent-ai-labs/DynaML
 - travisbrown/catbird
 - travisbrown/iteratee
 - travisbrown/iteratee-twitter
@@ -562,11 +563,11 @@
 - VladKopanev/cats-saga
 - VladKopanev/zio-saga
 - vlovgr/ciris
+- wegtam/amws-scala
 - Wei-1/scala-machine-learning
 - WellFactored/clovis
 - WellFactored/property-info
 - WellFactored/resourcepool
-- wegtam/amws-scala
 - wvlet/airframe
 - X9Developers/block-explorer
 - xerial/sbt-pack
@@ -589,4 +590,3 @@
 - zio/zio-nio
 - zio/zio-sqs
 - ziyasal/reducio
-- transcendent-ai-labs/DynaML
