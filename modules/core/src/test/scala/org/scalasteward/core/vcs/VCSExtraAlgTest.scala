@@ -5,6 +5,7 @@ import org.http4s.HttpRoutes
 import org.http4s.client.Client
 import org.http4s.dsl.io.{->, /, HEAD, NotFound, Ok, Root, _}
 import org.http4s.implicits._
+import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.util.{HttpExistenceClient, Nel}
 import org.scalatest.{FunSuite, Matchers}
