@@ -61,7 +61,7 @@ class Http4sBitbucketApiAlg[F[_]: Sync](
 
   override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] = {
 
-    val sourceBranchOwner = if(doNotFork) repo.owner else user.login
+    val sourceBranchOwner = if (doNotFork) repo.owner else user.login
 
     val payload = CreatePullRequestRequest(
       data.title,
