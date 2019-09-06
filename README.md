@@ -100,6 +100,7 @@ The following companies are using Scala Steward to manage their dependencies.
 Using Scala Steward in your company and don't see it listed here?
 Consider creating PR to add your company to the list and join the community.
 
+* [AutoScout24](https://www.autoscout24.de/)
 * [Chartboost](https://www.chartboost.com/)
 * [Colisweb](https://www.colisweb.com/)
 * [Firstbird](https://firstbird.com)
