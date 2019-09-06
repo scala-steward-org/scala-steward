@@ -564,6 +564,7 @@
 - VladKopanev/zio-saga
 - vlovgr/ciris
 - wegtam/amws-scala
+- wehkamp/cakemix
 - Wei-1/scala-machine-learning
 - WellFactored/clovis
 - WellFactored/property-info
