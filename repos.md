@@ -260,6 +260,7 @@
 - kailuowang/henkan
 - kailuowang/mau
 - KelkooGroup/theGardener
+- kemitix/eip-zio
 - kemitix/thorp
 - kiambogo/fs2-jms
 - kmizu/jsonda
