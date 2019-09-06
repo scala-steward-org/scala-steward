@@ -591,3 +591,4 @@
 - zio/zio-sqs
 - ziyasal/reducio
 - emartech/pure-scheduler 
+- Fabszn/scaffolding-plugin-lagom
