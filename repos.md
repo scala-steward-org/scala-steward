@@ -205,6 +205,20 @@
 - gemini-hlsw/ocs3
 - gemini-hlsw/sbt-gsp
 - getquill/quill
+- gfc-collective/gfc-aws-cloudwatch
+- gfc-collective/gfc-aws-kinesis
+- gfc-collective/gfc-aws-s3
+- gfc-collective/gfc-cache
+- gfc-collective/gfc-collection
+- gfc-collective/gfc-concurrent
+- gfc-collective/gfc-crypto
+- gfc-collective/gfc-guava
+- gfc-collective/gfc-id
+- gfc-collective/gfc-logging
+- gfc-collective/gfc-semver
+- gfc-collective/gfc-time
+- gfc-collective/gfc-timeuuid
+- gfc-collective/gfc-util
 - gnieh/diffson
 - henricook/SAMLer
 - hipjim/scala-retry
@@ -591,5 +605,5 @@
 - zio/zio-nio
 - zio/zio-sqs
 - ziyasal/reducio
-- emartech/pure-scheduler 
+- emartech/pure-scheduler
 - Fabszn/scaffolding-plugin-lagom
