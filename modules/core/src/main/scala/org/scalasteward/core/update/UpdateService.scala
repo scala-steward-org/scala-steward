@@ -30,7 +30,7 @@ import org.scalasteward.core.vcs.data.PullRequestState.Closed
 import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.util
 
-final class UpdateService[F[_]](
+class UpdateService[F[_]](
     implicit
     filterAlg: FilterAlg[F],
     logger: Logger[F],

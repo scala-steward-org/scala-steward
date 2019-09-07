@@ -32,7 +32,7 @@ import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg}
 import org.scalasteward.core.{git, util, vcs}
 
-final class NurtureAlg[F[_]](
+class NurtureAlg[F[_]](
     implicit
     config: Config,
     editAlg: EditAlg[F],

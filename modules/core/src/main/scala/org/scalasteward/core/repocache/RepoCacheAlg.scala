@@ -27,7 +27,7 @@ import org.scalasteward.core.util.{LogAlg, MonadThrowable}
 import org.scalasteward.core.vcs.data.{Repo, RepoOut}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
 
-final class RepoCacheAlg[F[_]](
+class RepoCacheAlg[F[_]](
     implicit
     config: Config,
     gitAlg: GitAlg[F],

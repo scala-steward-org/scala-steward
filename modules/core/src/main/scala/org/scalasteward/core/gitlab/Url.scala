@@ -40,6 +40,8 @@ class Url(apiHost: Uri) {
       .withQueryParam("source_branch", source)
       .withQueryParam("target_branch", target)
 
-  def repos(repo: Repo): Uri =
-    apiHost / "projects" / s"${repo.owner}/${repo.repo}"
+  def repos(repo: Repo): Uri = {
+    val baseUri = apiHost / "projects"
+    repo.pid.fold(baseUri / s"${repo.owner}/${repo.repo}")(baseUri / _.toString)
+  }
 }
