@@ -162,6 +162,7 @@
 - dwijnand/sbt-project-graph
 - dwijnand/sbt-reloadquick
 - dwijnand/sbt-travisci
+- emartech/pure-scheduler
 - embeddedkafka/embedded-kafka
 - embeddedkafka/embedded-kafka-schema-registry
 - enzief/recursionz
@@ -173,6 +174,7 @@
 - exoego/aws-sdk-scalajs-facade-generator
 - exoego/scala-js-nodejs
 - exoego/scala-js-ts-importer
+- Fabszn/scaffolding-plugin-lagom
 - fdietze/bench
 - fdietze/colorado
 - fdietze/flatland
@@ -611,5 +613,3 @@
 - zio/zio-nio
 - zio/zio-sqs
 - ziyasal/reducio
-- emartech/pure-scheduler
-- Fabszn/scaffolding-plugin-lagom
