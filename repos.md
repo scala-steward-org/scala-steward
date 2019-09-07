@@ -497,6 +497,7 @@
 - srenault/sre-api
 - stephennancekivell/scalatest-json
 - stryker-mutator/stryker4s
+- sullis/java-scala-interop-examples
 - sullis/jms-testkit
 - swagger-akka-http/swagger-akka-http
 - swagger-akka-http/swagger-scala-module
