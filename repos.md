@@ -508,6 +508,7 @@
 - ThoughtWorksInc/Compute.scala
 - ThoughtWorksInc/DeepLearning.scala
 - ThoughtWorksInc/Dsl.scala
+- ThoughtWorksInc/dsl-domains-cats
 - ThoughtWorksInc/each
 - ThoughtWorksInc/enableIf.scala
 - ThoughtWorksInc/Extractor.scala
