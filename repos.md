@@ -219,6 +219,9 @@
 - gfc-collective/gfc-time
 - gfc-collective/gfc-timeuuid
 - gfc-collective/gfc-util
+- gfc-collective/sbt-aws-cloudwatch
+- gfc-collective/sbt-dependency-graph-sugar
+- gfc-collective/sbt-newrelic
 - gnieh/diffson
 - henricook/SAMLer
 - hipjim/scala-retry
