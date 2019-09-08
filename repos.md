@@ -509,6 +509,7 @@
 - swagger-akka-http/swagger-scala-module
 - synesso/scala-stellar-sdk
 - tanishiking/scalaunfmt
+- testcontainers/testcontainers-scala
 - tbrown1979/totp4s
 - thesamet/sbt-protoc
 - ThoughtWorksInc/bindable.scala
