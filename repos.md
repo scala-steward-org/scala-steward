@@ -43,6 +43,7 @@
 - BenFradet/spark-kafka-writer
 - BenFradet/struct-type-encoder
 - bitcoin-s/bitcoin-s
+- bkirwi/decline
 - blemale/scaffeine
 - butcherless/incubator
 - butcherless/scala
