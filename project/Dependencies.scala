@@ -35,5 +35,5 @@ object Dependencies {
   val refinedScalacheck = "eu.timepit" %% "refined-scalacheck" % Versions.refined
   val scalacheck = "org.scalacheck" %% "scalacheck" % "1.14.0"
   val scalaTest = "org.scalatest" %% "scalatest" % "3.0.8"
-  val mockito = "org.mockito" % "mockito-core" % "2.9.0"
+  val mockito = "org.mockito" % "mockito-core" % "3.0.0"
 }

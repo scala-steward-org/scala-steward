@@ -51,7 +51,7 @@ final class StewardAlg[F[_]](
   def readRepos(reposFile: File): F[List[Repo]] =
     fileAlg.readFile(reposFile).map { maybeContent =>
       val regex = """-\s+(.+)/([^/]+)""".r
-      val regexWithProjectId = """-\s+(.+)/([^/]+)/pid:([0-9]+)""".r
+      val regexWithProjectId = """-\s+(.+)/([^/]+)/pid:([0-9]+)$""".r
       val content = maybeContent.getOrElse("")
       content.linesIterator.collect {
         case regexWithProjectId(owner, repo, pid) if config.vcsType === SupportedVCS.Gitlab =>
