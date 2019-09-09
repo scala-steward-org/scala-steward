@@ -60,8 +60,12 @@ final class StewardAlg[F[_]](
           Repo(
             owner.trim,
             repo.trim,
-            Try(pid.toLong).toOption.orElse(throw new IllegalArgumentException(
-              s"illegal PID for ${owner.trim}/${repo.trim} : not a number")))
+            Try(pid.toLong).toOption.orElse(
+              throw new IllegalArgumentException(
+                s"illegal PID for ${owner.trim}/${repo.trim} : not a number"
+              )
+            )
+          )
         case regex(owner, repo) =>
           Repo(owner.trim, repo.trim)
       }.toList
