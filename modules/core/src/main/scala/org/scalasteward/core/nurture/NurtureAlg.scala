@@ -143,13 +143,18 @@ final class NurtureAlg[F[_]](
         artifactIdToUrl.get(data.update.artifactId),
         data.update
       )
+      releaseNoteUrl <- vcsExtraAlg.getReleaseNoteUrl(
+        artifactIdToUrl.get(data.update.artifactId),
+        data.update
+      )
       branchName = vcs.createBranch(config.vcsType, data.fork, data.update)
       requestData = NewPullRequestData.from(
         data,
         branchName,
         config.vcsLogin,
         artifactIdToUrl,
-        branchCompareUrl
+        branchCompareUrl,
+        releaseNoteUrl
       )
       pr <- vcsApiAlg.createPullRequest(data.repo, requestData)
       _ <- pullRequestRepo.createOrUpdate(
