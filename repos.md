@@ -35,6 +35,7 @@
 - avast/datadog4s
 - AVSystem/scala-commons
 - azhur/kafka-serde-scala
+- balhoff/arachne
 - balhoff/whelk
 - barambani/docker-effect
 - barambani/http4s-extend
