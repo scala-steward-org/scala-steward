@@ -32,6 +32,7 @@
 - Atry/Dsl.scala-akka-actor
 - Atry/fastring
 - Atry/scalajs-all-in-one-template
+- augustjune/canoe
 - avast/datadog4s
 - AVSystem/scala-commons
 - azhur/kafka-serde-scala
@@ -619,4 +620,3 @@
 - zio/zio-nio
 - zio/zio-sqs
 - ziyasal/reducio
-- augustjune/canoe
