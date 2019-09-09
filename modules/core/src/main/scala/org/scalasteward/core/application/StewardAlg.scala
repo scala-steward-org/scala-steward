@@ -29,6 +29,8 @@ import org.scalasteward.core.update.UpdateService
 import org.scalasteward.core.util.LogAlg
 import org.scalasteward.core.vcs.data.Repo
 
+import scala.util.Try
+
 final class StewardAlg[F[_]](
     implicit
     config: Config,
@@ -51,11 +53,15 @@ final class StewardAlg[F[_]](
   def readRepos(reposFile: File): F[List[Repo]] =
     fileAlg.readFile(reposFile).map { maybeContent =>
       val regex = """-\s+(.+)/([^/]+)""".r
-      val regexWithProjectId = """-\s+(.+)/([^/]+)/pid:([0-9]+)$""".r
+      val regexWithProjectId = """-\s+(.+)/([^/]+)/pid:(.+)$""".r
       val content = maybeContent.getOrElse("")
       content.linesIterator.collect {
         case regexWithProjectId(owner, repo, pid) if config.vcsType === SupportedVCS.Gitlab =>
-          Repo(owner.trim, repo.trim, Some(pid.toLong))
+          Repo(
+            owner.trim,
+            repo.trim,
+            Try(pid.toLong).toOption.orElse(throw new IllegalArgumentException(
+              s"illegal PID for ${owner.trim}/${repo.trim} : not a number")))
         case regex(owner, repo) =>
           Repo(owner.trim, repo.trim)
       }.toList
