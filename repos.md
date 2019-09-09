@@ -6,6 +6,7 @@
 - 2m/polyfact
 - 2m/sonatype-stats
 - 7mind/izumi
+- 7mind/sbtgen
 - agourlay/cornichon
 - agourlay/json-2-csv
 - akka/akka-grpc
