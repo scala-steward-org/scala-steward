@@ -466,6 +466,7 @@
 - scodec/scodec-build
 - scodec/scodec-protocols
 - scodec/scodec-stream
+- scullxbones/akka-persistence-mongo
 - SethTisue/cloc-plugin
 - SethTisue/Project-Euler
 - shankarshastri/ScalaFPCode
