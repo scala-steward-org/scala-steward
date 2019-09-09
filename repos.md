@@ -10,6 +10,7 @@
 - agourlay/json-2-csv
 - akka/akka-grpc
 - akka/akka-grpc-sample-kubernetes-scala
+- akka/akka-http
 - akka/akka-minion
 - akka/akka-paradox
 - akka/akka-samples
