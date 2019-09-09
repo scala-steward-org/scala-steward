@@ -19,7 +19,7 @@ package org.scalasteward.core.util
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.http4s.client.Client
-import org.http4s.{Method, Request, Uri}
+import org.http4s.{Method, Request, Status, Uri}
 
 final class HttpExistenceClient[F[_]](
     implicit
@@ -31,7 +31,7 @@ final class HttpExistenceClient[F[_]](
 
   def exists(uri: Uri): F[Boolean] = {
     val req = Request[F](method = Method.HEAD, uri = uri)
-    client.status(req).map(_.isSuccess).handleErrorWith { throwable =>
+    client.status(req).map(_ === Status.Ok).handleErrorWith { throwable =>
       logger.debug(throwable)(s"Failed to check if $uri exists").as(false)
     }
   }
