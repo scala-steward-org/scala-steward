@@ -24,6 +24,7 @@ import org.scalasteward.core.vcs
 
 trait VCSExtraAlg[F[_]] {
   def getBranchCompareUrl(maybeRepoUrl: Option[String], update: Update): F[Option[String]]
+  def getReleaseNoteUrl(maybeRepoUrl: Option[String], update: Update): F[Option[String]]
 }
 
 object VCSExtraAlg {
@@ -37,5 +38,13 @@ object VCSExtraAlg {
         update: Update
     ): F[Option[String]] =
       maybeRepoUrl.toList.flatMap(vcs.possibleCompareUrls(_, update)).findM(existenceClient.exists)
+
+    override def getReleaseNoteUrl(
+        maybeRepoUrl: Option[String],
+        update: Update
+    ): F[Option[String]] =
+      maybeRepoUrl.toList
+        .flatMap(vcs.possibleReleaseNoteFiles(_, update))
+        .findM(existenceClient.exists)
   }
 }
