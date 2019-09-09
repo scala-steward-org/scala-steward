@@ -76,7 +76,7 @@ class GitHubRepoAlgTest extends FunSuite with Matchers {
         List(askPass, repoDir, "git", "fetch", "upstream"),
         List(askPass, repoDir, "git", "checkout", "-B", "master", "--track", "upstream/master"),
         List(askPass, repoDir, "git", "merge", "upstream/master"),
-        List(askPass, repoDir, "git", "push", "--set-upstream", "origin", "master")
+        List(askPass, repoDir, "git", "push", "--force", "--set-upstream", "origin", "master")
       )
     )
     result shouldBe parentRepoOut
