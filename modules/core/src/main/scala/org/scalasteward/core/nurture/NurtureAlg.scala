@@ -27,7 +27,8 @@ import org.scalasteward.core.git.{Branch, GitAlg}
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.update.FilterAlg
-import org.scalasteward.core.util.LogAlg
+import org.scalasteward.core.util.DateTimeAlg
+import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg}
 import org.scalasteward.core.{git, util, vcs}
@@ -35,6 +36,7 @@ import org.scalasteward.core.{git, util, vcs}
 final class NurtureAlg[F[_]](
     implicit
     config: Config,
+    dateTimeAlg: DateTimeAlg[F],
     editAlg: EditAlg[F],
     repoConfigAlg: RepoConfigAlg[F],
     filterAlg: FilterAlg[F],
@@ -43,15 +45,14 @@ final class NurtureAlg[F[_]](
     vcsApiAlg: VCSApiAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
     vcsExtraAlg: VCSExtraAlg[F],
-    logAlg: LogAlg[F],
     logger: Logger[F],
     pullRequestRepo: PullRequestRepository[F],
     sbtAlg: SbtAlg[F],
     F: Async[F]
 ) {
   def nurture(repo: Repo): F[Either[Throwable, Unit]] =
-    logAlg.infoTotalTime(repo.show) {
-      logAlg.attemptLog(util.string.lineLeftRight(s"Nurture ${repo.show}")) {
+    logger.infoTotalTime(repo.show) {
+      logger.attemptLog(util.string.lineLeftRight(s"Nurture ${repo.show}")) {
         for {
           (fork, baseBranch) <- cloneAndSync(repo)
           _ <- updateDependencies(repo, fork, baseBranch)

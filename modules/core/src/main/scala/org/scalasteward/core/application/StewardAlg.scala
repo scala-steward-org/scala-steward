@@ -26,14 +26,15 @@ import org.scalasteward.core.nurture.NurtureAlg
 import org.scalasteward.core.repocache.RepoCacheAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.update.UpdateService
-import org.scalasteward.core.util.LogAlg
+import org.scalasteward.core.util.DateTimeAlg
+import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data.Repo
 
 final class StewardAlg[F[_]](
     implicit
     config: Config,
+    dateTimeAlg: DateTimeAlg[F],
     fileAlg: FileAlg[F],
-    logAlg: LogAlg[F],
     logger: Logger[F],
     nurtureAlg: NurtureAlg[F],
     repoCacheAlg: RepoCacheAlg[F],
@@ -56,7 +57,7 @@ final class StewardAlg[F[_]](
     }
 
   def pruneRepos(repos: List[Repo]): F[List[Repo]] =
-    logAlg.infoTotalTime("pruning repos") {
+    logger.infoTotalTime("pruning repos") {
       for {
         _ <- repos.traverse(repoCacheAlg.checkCache)
         allUpdates <- updateService.checkForUpdates(repos)
@@ -72,7 +73,7 @@ final class StewardAlg[F[_]](
     }
 
   def runF: F[ExitCode] =
-    logAlg.infoTotalTime("run") {
+    logger.infoTotalTime("run") {
       for {
         _ <- prepareEnv
         repos <- readRepos(config.reposFile)

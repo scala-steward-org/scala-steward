@@ -15,7 +15,7 @@ import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.FilterAlg
-import org.scalasteward.core.util.{BracketThrowable, DateTimeAlg, LogAlg}
+import org.scalasteward.core.util.{BracketThrowable, DateTimeAlg}
 import org.scalasteward.core.vcs.VCSRepoAlg
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 import scala.concurrent.duration._
@@ -47,7 +47,7 @@ object MockContext {
   implicit val mockEffBracketThrowable: BracketThrowable[MockEff] = Sync[MockEff]
 
   implicit val fileAlg: MockFileAlg = new MockFileAlg
-  implicit val logger: MockLogger = new MockLogger
+  implicit val mockLogger: MockLogger = new MockLogger
   implicit val processAlg: MockProcessAlg = new MockProcessAlg
   implicit val workspaceAlg: MockWorkspaceAlg = new MockWorkspaceAlg
 
@@ -56,7 +56,6 @@ object MockContext {
   implicit val gitAlg: GitAlg[MockEff] = GitAlg.create
   implicit val user: AuthenticatedUser = AuthenticatedUser("scala-steward", "token")
   implicit val gitHubRepoAlg: VCSRepoAlg[MockEff] = VCSRepoAlg.create(config, gitAlg)
-  implicit val logAlg: LogAlg[MockEff] = new LogAlg[MockEff]
   implicit val scalafmtAlg: ScalafmtAlg[MockEff] = ScalafmtAlg.create
   implicit val cacheRepository: RepoCacheRepository[MockEff] =
     new JsonRepoCacheRepository[MockEff]()

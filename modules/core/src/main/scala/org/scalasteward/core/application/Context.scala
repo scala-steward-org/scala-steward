@@ -34,7 +34,7 @@ import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.json.JsonUpdateRepository
 import org.scalasteward.core.update.{FilterAlg, UpdateRepository, UpdateService}
-import org.scalasteward.core.util.{DateTimeAlg, HttpExistenceClient, HttpJsonClient, LogAlg}
+import org.scalasteward.core.util.{DateTimeAlg, HttpExistenceClient, HttpJsonClient}
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg, VCSSelection}
 
@@ -51,7 +51,6 @@ object Context {
     } yield {
       implicit val dateTimeAlg: DateTimeAlg[F] = DateTimeAlg.create[F]
       implicit val fileAlg: FileAlg[F] = FileAlg.create[F]
-      implicit val logAlg: LogAlg[F] = new LogAlg[F]
       implicit val processAlg: ProcessAlg[F] = ProcessAlg.create[F]
       implicit val workspaceAlg: WorkspaceAlg[F] = WorkspaceAlg.create[F]
       implicit val repoConfigAlg: RepoConfigAlg[F] = new RepoConfigAlg[F]
