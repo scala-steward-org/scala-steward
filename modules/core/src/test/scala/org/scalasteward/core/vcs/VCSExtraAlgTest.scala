@@ -14,6 +14,7 @@ class VCSExtraAlgTest extends FunSuite with Matchers {
   val routes: HttpRoutes[IO] =
     HttpRoutes.of[IO] {
       case HEAD -> Root / "foo" / "bar" / "compare" / "v0.1.0...v0.2.0" => Ok("exist")
+      case HEAD -> Root / "foo" / "buz" / "compare" / "v0.1.0...v0.2.0" => PermanentRedirect()
       case _                                                            => NotFound()
     }
 
@@ -23,6 +24,7 @@ class VCSExtraAlgTest extends FunSuite with Matchers {
   val vcsExtraAlg = VCSExtraAlg.create[IO]
   val updateFoo = Update.Single("com.example", "foo", "0.1.0", Nel.of("0.2.0"))
   val updateBar = Update.Single("com.example", "bar", "0.1.0", Nel.of("0.2.0"))
+  val updateBuz = Update.Single("com.example", "buz", "0.1.0", Nel.of("0.2.0"))
 
   test("getBranchCompareUrl") {
     vcsExtraAlg.getBranchCompareUrl(None, updateBar).unsafeRunSync() shouldBe None
@@ -32,5 +34,8 @@ class VCSExtraAlgTest extends FunSuite with Matchers {
     vcsExtraAlg
       .getBranchCompareUrl(Some("https://github.com/foo/bar"), updateBar)
       .unsafeRunSync() shouldBe Some("https://github.com/foo/bar/compare/v0.1.0...v0.2.0")
+    vcsExtraAlg
+      .getBranchCompareUrl(Some("https://github.com/foo/buz"), updateBuz)
+      .unsafeRunSync() shouldBe None
   }
 }
