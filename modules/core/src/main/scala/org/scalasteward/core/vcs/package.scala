@@ -79,6 +79,6 @@ package object vcs {
       name <- List("CHANGELOG", "Changelog", "changelog", "RELEASES", "Releases", "releases")
       ext <- List("md", "markdown", "rst")
     } yield s"${canonicalized}/${name}.${ext}"
-    vcsSpecific ++ files
+    files ++ vcsSpecific
   }
 }
