@@ -9,6 +9,7 @@
 - 7mind/sbtgen
 - agourlay/cornichon
 - agourlay/json-2-csv
+- akka/akka
 - akka/akka-grpc
 - akka/akka-grpc-sample-kubernetes-scala
 - akka/akka-http
