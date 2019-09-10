@@ -584,6 +584,7 @@
 - typelevel/scalacheck
 - typelevel/simulacrum
 - typelevel/spire
+- typelevel/squants
 - ua-parser/uap-scala
 - UdashFramework/udash-core
 - underscoreio/slickless
