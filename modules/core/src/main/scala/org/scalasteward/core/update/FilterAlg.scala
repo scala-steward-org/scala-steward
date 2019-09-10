@@ -133,6 +133,11 @@ object FilterAlg {
           // https://github.com/lightbend/migration-manager/pull/260
           "3.2.0-SNAP10"
         )
+      case ("io.circe", _, _, _) =>
+        List(
+          // https://github.com/circe/circe/issues/1250
+          "0.12.0"
+        )
 
       case _ => List.empty
     }
