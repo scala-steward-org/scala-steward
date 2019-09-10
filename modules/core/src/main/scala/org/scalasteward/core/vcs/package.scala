@@ -80,7 +80,7 @@ package object vcs {
       else
         List.empty
     val files =
-      if (isVcsUrl(url)) 
+      if (isVcsUrl(repoUrl))
         for {
           name <- List("CHANGELOG", "Changelog", "changelog", "RELEASES", "Releases", "releases")
           ext <- List("md", "markdown", "rst")
