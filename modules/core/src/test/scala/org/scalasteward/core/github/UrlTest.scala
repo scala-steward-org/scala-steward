@@ -3,9 +3,10 @@ package org.scalasteward.core.github
 import org.http4s.Http4sLiteralSyntax
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.vcs.data.Repo
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.Matchers
+import org.scalatest.funsuite.AnyFunSuite
 
-class UrlTest extends FunSuite with Matchers {
+class UrlTest extends AnyFunSuite with Matchers {
   val url = new Url(uri"https://api.github.com")
   import url._
 

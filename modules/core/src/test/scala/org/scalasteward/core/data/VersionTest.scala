@@ -4,11 +4,12 @@ import cats.implicits._
 import cats.kernel.Comparison.{EqualTo, GreaterThan, LessThan}
 import cats.kernel.laws.discipline.OrderTests
 import org.scalasteward.core.TestInstances._
+import org.scalatest.Matchers
+import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.prop.TableDrivenPropertyChecks._
-import org.scalatest.{FunSuite, Matchers}
 import org.typelevel.discipline.scalatest.Discipline
 
-class VersionTest extends FunSuite with Discipline with Matchers {
+class VersionTest extends AnyFunSuite with Discipline with Matchers {
   checkAll("Order[Version]", OrderTests[Version].order)
 
   test("comparison") {

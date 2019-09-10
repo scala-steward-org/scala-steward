@@ -2,13 +2,14 @@ package org.scalasteward.core.github
 
 import org.http4s.Http4sLiteralSyntax
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.vcs.data.{Repo, RepoOut, UserOut}
 import org.scalasteward.core.mock.MockContext.{config, gitAlg, gitHubRepoAlg}
 import org.scalasteward.core.mock.{MockContext, MockState}
 import org.scalasteward.core.vcs.VCSRepoAlg
-import org.scalatest.{FunSuite, Matchers}
+import org.scalasteward.core.vcs.data.{Repo, RepoOut, UserOut}
+import org.scalatest.Matchers
+import org.scalatest.funsuite.AnyFunSuite
 
-class GitHubRepoAlgTest extends FunSuite with Matchers {
+class GitHubRepoAlgTest extends AnyFunSuite with Matchers {
   val repo = Repo("fthomas", "datapackage")
   val repoDir: String = (config.workspace / "fthomas/datapackage").toString
   val askPass = s"GIT_ASKPASS=${config.gitAskPass}"

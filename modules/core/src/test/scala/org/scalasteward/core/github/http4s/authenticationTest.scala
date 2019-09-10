@@ -4,9 +4,10 @@ import cats.Id
 import org.http4s.headers.{Accept, Authorization}
 import org.http4s.{BasicCredentials, Headers, MediaType, Request}
 import org.scalasteward.core.vcs.data.AuthenticatedUser
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.Matchers
+import org.scalatest.funsuite.AnyFunSuite
 
-class authenticationTest extends FunSuite with Matchers {
+class authenticationTest extends AnyFunSuite with Matchers {
   test("addCredentials") {
     val request = authentication
       .addCredentials(AuthenticatedUser("user", "pass"))

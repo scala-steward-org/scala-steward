@@ -1,14 +1,15 @@
 package org.scalasteward.core.repoconfig
 
 import better.files.File
-import org.scalasteward.core.vcs.data.Repo
+import org.scalasteward.core.data.Update
 import org.scalasteward.core.mock.MockContext.repoConfigAlg
 import org.scalasteward.core.mock.MockState
-import org.scalasteward.core.data.Update
 import org.scalasteward.core.util.Nel
-import org.scalatest.{FunSuite, Matchers}
+import org.scalasteward.core.vcs.data.Repo
+import org.scalatest.Matchers
+import org.scalatest.funsuite.AnyFunSuite
 
-class RepoConfigAlgTest extends FunSuite with Matchers {
+class RepoConfigAlgTest extends AnyFunSuite with Matchers {
   test("config with all fields set") {
     val repo = Repo("fthomas", "scala-steward")
     val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"

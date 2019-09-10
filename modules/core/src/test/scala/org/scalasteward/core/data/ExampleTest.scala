@@ -1,11 +1,12 @@
 package org.scalasteward.core.data
 
-import org.scalasteward.core.edit.UpdateHeuristicTest.UpdateOps
 import org.scalasteward.core.data.Update.Single
+import org.scalasteward.core.edit.UpdateHeuristicTest.UpdateOps
 import org.scalasteward.core.util.Nel
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
-class ExampleTest extends WordSpec with Matchers {
+class ExampleTest extends AnyWordSpec with Matchers {
 
   "Good examples of dependency definitions".which {
     "will be identified by scala-steward without any problems are".that {
