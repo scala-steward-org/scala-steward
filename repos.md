@@ -183,6 +183,7 @@
 - exoego/scala-js-nodejs
 - exoego/scala-js-ts-importer
 - Fabszn/scaffolding-plugin-lagom
+- Facsimiler/facsimile
 - fdietze/bench
 - fdietze/colorado
 - fdietze/flatland
@@ -332,7 +333,6 @@
 - metabookmarks/sbt-plantuml-plugin
 - mfirry/scala-http-clients
 - mfirry/web-frameworks-templates
-- MichaelJAllen/facsimile
 - milessabin/shapeless
 - mitochon/polyjuice
 - mockito/mockito-scala
