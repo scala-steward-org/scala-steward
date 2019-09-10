@@ -23,8 +23,8 @@ class MockFileAlg extends FileAlg[MockEff] {
   override def home: MockEff[File] =
     StateT.pure(File.root / "tmp" / "steward")
 
-  override def isSymlink(file: File): MockEff[Boolean] =
-    StateT.pure(false)
+  override def isRegularFile(file: File): MockEff[Boolean] =
+    StateT.pure(true)
 
   override def removeTemporarily[A](file: File)(fa: MockEff[A]): MockEff[A] =
     for {

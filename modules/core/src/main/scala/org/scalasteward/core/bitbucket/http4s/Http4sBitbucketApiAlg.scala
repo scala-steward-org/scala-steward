@@ -29,7 +29,8 @@ import org.scalasteward.core.vcs.data._
 class Http4sBitbucketApiAlg[F[_]: Sync](
     bitbucketApiHost: Uri,
     user: AuthenticatedUser,
-    modify: Repo => Request[F] => F[Request[F]]
+    modify: Repo => Request[F] => F[Request[F]],
+    doNotFork: Boolean
 )(implicit client: HttpJsonClient[F])
     extends VCSApiAlg[F] {
 
@@ -60,10 +61,12 @@ class Http4sBitbucketApiAlg[F[_]: Sync](
 
   override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] = {
 
+    val sourceBranchOwner = if (doNotFork) repo.owner else user.login
+
     val payload = CreatePullRequestRequest(
       data.title,
       Branch(data.head),
-      Repo(user.login, repo.repo),
+      Repo(sourceBranchOwner, repo.repo),
       data.base,
       data.body
     )

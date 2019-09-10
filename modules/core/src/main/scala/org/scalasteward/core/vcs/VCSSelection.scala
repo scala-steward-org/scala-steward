@@ -40,7 +40,7 @@ class VCSSelection[F[_]: Sync](implicit client: HttpJsonClient[F], user: Authent
   private def bitbucket(config: Config): Http4sBitbucketApiAlg[F] = {
     import org.scalasteward.core.bitbucket.http4s.authentication.addCredentials
 
-    new Http4sBitbucketApiAlg(config.vcsApiHost, user, _ => addCredentials(user))
+    new Http4sBitbucketApiAlg(config.vcsApiHost, user, _ => addCredentials(user), config.doNotFork)
   }
 
   def getAlg(config: Config): VCSApiAlg[F] = config.vcsType match {

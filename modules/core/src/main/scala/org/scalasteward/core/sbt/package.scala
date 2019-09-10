@@ -34,6 +34,9 @@ package object sbt {
   val defaultScalaVersion: ScalaVersion =
     ScalaVersion(BuildInfo.scalaVersion)
 
+  val defaultScalaBinaryVersion: String =
+    BuildInfo.scalaBinaryVersion
+
   def seriesToSpecificVersion(sbtSeries: SbtVersion): SbtVersion =
     sbtSeries.value match {
       case "0.13" => latestSbtVersion_0_13
@@ -56,7 +59,7 @@ package object sbt {
   val scalaStewardScalafixSbt: FileData =
     FileData(
       "scala-steward-scalafix.sbt",
-      """addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.5")"""
+      """addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.6")"""
     )
 
   val stewardPlugin: FileData = {

@@ -9,11 +9,13 @@ import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Author, GitAlg}
 import org.scalasteward.core.io.{MockFileAlg, MockProcessAlg, MockWorkspaceAlg}
+import org.scalasteward.core.repocache.RepoCacheRepository
+import org.scalasteward.core.repocache.json.JsonRepoCacheRepository
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.FilterAlg
-import org.scalasteward.core.util.{BracketThrowable, DateTimeAlg, LogAlg}
+import org.scalasteward.core.util.{BracketThrowable, DateTimeAlg}
 import org.scalasteward.core.vcs.VCSRepoAlg
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 import scala.concurrent.duration._
@@ -45,7 +47,7 @@ object MockContext {
   implicit val mockEffBracketThrowable: BracketThrowable[MockEff] = Sync[MockEff]
 
   implicit val fileAlg: MockFileAlg = new MockFileAlg
-  implicit val logger: MockLogger = new MockLogger
+  implicit val mockLogger: MockLogger = new MockLogger
   implicit val processAlg: MockProcessAlg = new MockProcessAlg
   implicit val workspaceAlg: MockWorkspaceAlg = new MockWorkspaceAlg
 
@@ -54,9 +56,10 @@ object MockContext {
   implicit val gitAlg: GitAlg[MockEff] = GitAlg.create
   implicit val user: AuthenticatedUser = AuthenticatedUser("scala-steward", "token")
   implicit val gitHubRepoAlg: VCSRepoAlg[MockEff] = VCSRepoAlg.create(config, gitAlg)
-  implicit val logAlg: LogAlg[MockEff] = new LogAlg[MockEff]
-  implicit val sbtAlg: SbtAlg[MockEff] = SbtAlg.create
   implicit val scalafmtAlg: ScalafmtAlg[MockEff] = ScalafmtAlg.create
+  implicit val cacheRepository: RepoCacheRepository[MockEff] =
+    new JsonRepoCacheRepository[MockEff]()
+  implicit val sbtAlg: SbtAlg[MockEff] = SbtAlg.create
   implicit val editAlg: EditAlg[MockEff] = new EditAlg[MockEff]
   implicit val repoConfigAlg: RepoConfigAlg[MockEff] = new RepoConfigAlg[MockEff]
   implicit val filterAlg: FilterAlg[MockEff] = new FilterAlg[MockEff]

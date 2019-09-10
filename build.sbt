@@ -39,7 +39,7 @@ lazy val core = myCrossProject("core")
       Dependencies.coursierCore,
       Dependencies.coursierCatsInterop,
       Dependencies.fs2Core,
-      Dependencies.http4sBlazeClient,
+      Dependencies.http4sAsyncHttpClient,
       Dependencies.http4sCirce,
       Dependencies.log4catsSlf4j,
       Dependencies.monocleCore,
@@ -60,12 +60,15 @@ lazy val core = myCrossProject("core")
       {
         case PathList(ps @ _*) if nativeSuffix.findFirstMatchIn(ps.last).isDefined =>
           MergeStrategy.first
+        case PathList(ps @ _*) if ps.last == "io.netty.versions.properties" =>
+          // This is included in Netty JARs which are pulled in by http4s-async-http-client.
+          MergeStrategy.first
         case otherwise =>
           val defaultStrategy = (assemblyMergeStrategy in assembly).value
           defaultStrategy(otherwise)
       }
     },
-    buildInfoKeys := Seq[BuildInfoKey](scalaVersion, sbtVersion),
+    buildInfoKeys := Seq[BuildInfoKey](scalaVersion, scalaBinaryVersion, sbtVersion),
     buildInfoPackage := moduleRootPkg.value,
     initialCommands += s"""
       import ${moduleRootPkg.value}._

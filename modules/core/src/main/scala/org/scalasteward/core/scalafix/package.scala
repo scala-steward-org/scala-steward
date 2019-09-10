@@ -61,8 +61,13 @@ package object scalafix {
         Nel.of(
           "https://raw.githubusercontent.com/scalatest/autofix/6168da0e2bd113872b7dcd22cad7688d97ef9381/3.0.x/rules/src/main/scala/org/scalatest/autofix/v3_0_x/RenameDeprecatedPackage.scala",
           "https://raw.githubusercontent.com/scalatest/autofix/6168da0e2bd113872b7dcd22cad7688d97ef9381/3.1.x/rules/src/main/scala/org/scalatest/autofix/v3_1_x/RewriteDeprecatedNames.scala"
-        ),
-        Some("test")
+        )
+      ),
+      Migration(
+        "org.scalacheck",
+        Nel.of("scalacheck".r),
+        Version("1.14.1"),
+        Nel.of("github:typelevel/scalacheck/v1_14_1?sha=3fc537dde9d8fdf951503a8d8b027a568d52d055")
       )
     )
 

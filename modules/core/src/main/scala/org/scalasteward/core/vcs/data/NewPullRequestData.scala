@@ -41,13 +41,15 @@ object NewPullRequestData {
       update: Update,
       login: String,
       artifactIdToUrl: Map[String, String],
-      branchCompareUrl: Option[String]
+      branchCompareUrl: Option[String],
+      releaseNoteUrl: Option[String]
   ): String = {
     val artifacts = artifactsWithOptionalUrl(update, artifactIdToUrl)
     val (migrationLabel, appliedMigrations) = migrationNote(update)
     val labels = Nel.fromList(semVerLabel(update).toList ++ migrationLabel.toList)
 
     s"""|Updates ${artifacts} ${fromTo(update, branchCompareUrl)}.
+        |${releaseNote(releaseNoteUrl).getOrElse("")}
         |
         |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
         |
@@ -67,6 +69,11 @@ object NewPullRequestData {
         |${labels.fold("")(_.mkString_("labels: ", ", ", ""))}
         |""".stripMargin.trim
   }
+
+  def releaseNote(releaseNoteUrl: Option[String]): Option[String] =
+    releaseNoteUrl.map { url =>
+      s"[Release Notes/Changelog](${url})"
+    }
 
   def fromTo(update: Update, branchCompareUrl: Option[String]): String = {
     val fromToVersions = s"from ${update.currentVersion} to ${update.nextVersion}"
@@ -127,11 +134,18 @@ object NewPullRequestData {
       branchName: String,
       authorLogin: String,
       artifactIdToUrl: Map[String, String] = Map.empty,
-      branchCompareUrl: Option[String] = None
+      branchCompareUrl: Option[String] = None,
+      releaseNoteUrl: Option[String] = None
   ): NewPullRequestData =
     NewPullRequestData(
       title = git.commitMsgFor(data.update),
-      body = bodyFor(data.update, authorLogin, artifactIdToUrl, branchCompareUrl),
+      body = bodyFor(
+        data.update,
+        authorLogin,
+        artifactIdToUrl,
+        branchCompareUrl,
+        releaseNoteUrl
+      ),
       head = branchName,
       base = data.baseBranch
     )

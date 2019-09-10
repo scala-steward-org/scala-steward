@@ -35,7 +35,7 @@ trait FileAlg[F[_]] {
 
   def home: F[File]
 
-  def isSymlink(file: File): F[Boolean]
+  def isRegularFile(file: File): F[Boolean]
 
   def removeTemporarily[A](file: File)(fa: F[A]): F[A]
 
@@ -62,18 +62,15 @@ trait FileAlg[F[_]] {
   ): F[Boolean] =
     files.traverse(editFile(_, edit)).map(_.foldLeft(false)(_ || _))
 
-  final def findSourceFilesContaining(dir: File, string: String, fileFilter: File => Boolean)(
+  final def findFilesContaining(dir: File, string: String, fileFilter: File => Boolean)(
       implicit F: Sync[F]
   ): F[List[File]] =
     walk(dir)
+      .through(util.evalFilter(isRegularFile))
       .filter(fileFilter)
-      .through(util.evalFilter(isNoSymlink))
       .through(util.evalFilter(containsString(_, string)))
       .compile
       .toList
-
-  final def isNoSymlink(file: File)(implicit F: Functor[F]): F[Boolean] =
-    isSymlink(file).map(!_)
 
   final def writeFileData(dir: File, fileData: FileData): F[Unit] =
     writeFile(dir / fileData.name, fileData.content)
@@ -97,8 +94,8 @@ object FileAlg {
       override def home: F[File] =
         F.delay(File.home)
 
-      override def isSymlink(file: File): F[Boolean] =
-        F.delay(file.isSymbolicLink)
+      override def isRegularFile(file: File): F[Boolean] =
+        F.delay(file.isRegularFile(File.LinkOptions.noFollow))
 
       override def removeTemporarily[A](file: File)(fa: F[A]): F[A] =
         F.bracket {

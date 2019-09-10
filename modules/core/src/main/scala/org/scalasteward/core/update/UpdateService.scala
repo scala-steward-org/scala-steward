@@ -28,7 +28,7 @@ import org.scalasteward.core.update.data.UpdateState._
 import org.scalasteward.core.util.MonadThrowable
 import org.scalasteward.core.vcs.data.PullRequestState.Closed
 import org.scalasteward.core.vcs.data.Repo
-import org.scalasteward.core.{scalafmt, util}
+import org.scalasteward.core.util
 
 final class UpdateService[F[_]](
     implicit
@@ -120,13 +120,9 @@ final class UpdateService[F[_]](
   def findAllUpdateStates(repo: Repo, updates: List[Update.Single]): F[List[UpdateState]] =
     repoCacheRepository.findCache(repo).flatMap {
       case Some(repoCache) =>
-        val maybeScalafmtUpdate =
-          repoCache.maybeScalafmtVersion.flatMap(scalafmt.findScalafmtUpdate)
-        val updates1 = maybeScalafmtUpdate.toList ++ updates
         val dependencies = repoCache.dependencies
-
         dependencies.traverse { dependency =>
-          findUpdateState(repo, repoCache, dependency, updates1)
+          findUpdateState(repo, repoCache, dependency, updates)
         }
       case None => List.empty[UpdateState].pure[F]
     }
@@ -180,5 +176,19 @@ object UpdateService {
       case ("org.scodec", "scodec-build")                    => false
       case ("org.xerial.sbt", "sbt-pack")                    => false
       case _                                                 => true
+    }
+
+  def getNewerGroupId(currentGroupId: String, artifactId: String): Option[(String, String)] =
+    Option((currentGroupId, artifactId) match {
+      case ("org.spire-math", "kind-projector") => ("org.typelevel", "0.10.0")
+      case ("com.geirsson", "sbt-scalafmt")     => ("org.scalameta", "2.0.0")
+      case ("net.ceedubs", "ficus")             => ("com.iheart", "1.3.4")
+      case _                                    => ("", "")
+    }).filter { case (groupId, _) => groupId.nonEmpty }
+
+  def findUpdateUnderNewGroup(dep: Dependency): Option[Update.Single] =
+    getNewerGroupId(dep.groupId, dep.artifactId).map {
+      case (newId, fromVersion) =>
+        dep.toUpdate.copy(newerGroupId = Some(newId), newerVersions = util.Nel.of(fromVersion))
     }
 }

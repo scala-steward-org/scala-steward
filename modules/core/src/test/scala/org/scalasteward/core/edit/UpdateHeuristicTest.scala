@@ -109,6 +109,18 @@ class UpdateHeuristicTest extends FunSuite with Matchers {
     ).replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.original.name)
   }
 
+  test("update under different group id") {
+    val original = """ "org.spire-math" %% "kind-projector" % "0.9.0""""
+    val expected = """ "org.typelevel" %% "kind-projector" % "0.10.0""""
+    Single(
+      "org.spire-math",
+      "kind-projector",
+      "0.9.0",
+      Nel.of("0.10.0"),
+      newerGroupId = Some("org.typelevel")
+    ).replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.strict.name)
+  }
+
   test("group with repeated version") {
     val original =
       """ "com.pepegar" %% "hammock-core"  % "0.8.1",
@@ -241,6 +253,26 @@ class UpdateHeuristicTest extends FunSuite with Matchers {
     val expected = """val acolyteVersion = "1.0.51" """
     Single("org.eu.acolyte", "jdbc-driver", "1.0.49", Nel.of("1.0.51"))
       .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.groupId.name)
+  }
+
+  test("specific to scalafmt: should be Scala version agnostic") {
+    Seq(
+      ("""version = "2.0.0" """, """version = "2.0.1" """),
+      ("""version="2.0.0"""", """version="2.0.1""""),
+      ("""version = 2.0.0 """, """version = 2.0.1 """),
+      ("""version=2.0.0 """, """version=2.0.1 """)
+    ).foreach {
+      case (original, expected) =>
+        Single("org.scalameta", "scalafmt-core", "2.0.0", Nel.of("2.0.1"))
+          .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.specific.name)
+        // Should not edit if artifactId ontains scalaBinaryVersion
+        Single("org.scalameta", "scalafmt-core_2.12", "2.0.0", Nel.of("2.0.1"))
+          .replaceVersionIn(original) shouldBe (None -> UpdateHeuristic.specific.name)
+    }
+
+    val original = """version=2.0.0"""
+    Single("org.scalameta", "other-artifact", "2.0.0", Nel.of("2.0.1"))
+      .replaceVersionIn(original) shouldBe (None -> UpdateHeuristic.all.last.name)
   }
 
   test("ignore TLD") {

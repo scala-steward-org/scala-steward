@@ -23,7 +23,8 @@ import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.scalafmt.ScalafmtAlg
-import org.scalasteward.core.util.{LogAlg, MonadThrowable}
+import org.scalasteward.core.util.MonadThrowable
+import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data.{Repo, RepoOut}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
 
@@ -31,7 +32,6 @@ final class RepoCacheAlg[F[_]](
     implicit
     config: Config,
     gitAlg: GitAlg[F],
-    logAlg: LogAlg[F],
     logger: Logger[F],
     repoCacheRepository: RepoCacheRepository[F],
     repoConfigAlg: RepoConfigAlg[F],
@@ -43,7 +43,7 @@ final class RepoCacheAlg[F[_]](
 ) {
 
   def checkCache(repo: Repo): F[Unit] =
-    logAlg.attemptLog_(s"Check cache of ${repo.show}") {
+    logger.attemptLog_(s"Check cache of ${repo.show}") {
       for {
         (repoOut, branchOut) <- vcsApiAlg.createForkOrGetRepoWithDefaultBranch(config, repo)
         cachedSha1 <- repoCacheRepository.findSha1(repo)

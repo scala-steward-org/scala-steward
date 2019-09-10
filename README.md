@@ -70,6 +70,7 @@ Thanks goes to these wonderful people:
 * [Fabian](https://github.com/fg-devs)
 * [Filipe Regadas](https://github.com/regadas)
 * [Frank S. Thomas](https://github.com/fthomas)
+* [Guillaume Martres](https://github.com/smarter)
 * [Jakub Kozłowski](https://github.com/kubukoz)
 * [JCollier](https://github.com/Slakah)
 * [Jeff Martin](https://github.com/custommonkey)
@@ -99,6 +100,7 @@ The following companies are using Scala Steward to manage their dependencies.
 Using Scala Steward in your company and don't see it listed here?
 Consider creating PR to add your company to the list and join the community.
 
+* [AutoScout24](https://www.autoscout24.de/)
 * [Chartboost](https://www.chartboost.com/)
 * [Colisweb](https://www.colisweb.com/)
 * [Firstbird](https://firstbird.com)
@@ -109,6 +111,7 @@ Consider creating PR to add your company to the list and join the community.
 * [Snowplow Analytics](https://snowplowanalytics.com/)
 * [SpringerNature](https://www.springernature.com)
 * [SoftwareMill](https://softwaremill.com)
+* [Spotify](https://www.spotify.com)
 * [Tegonal GmbH](https://tegonal.com)
 * [Zalando](https://en.zalando.de/)
 

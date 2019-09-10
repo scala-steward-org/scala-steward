@@ -33,29 +33,37 @@ class SbtAlgTest extends FunSuite with Matchers {
   test("getUpdatesForRepo") {
     val repo = Repo("fthomas", "refined")
     val repoDir = config.workspace / "fthomas/refined"
-    val buildProperties = repoDir / "project" / "build.properties"
-    val initialState = MockState.empty.copy(files = Map(buildProperties -> "sbt.version=1.2.6"))
-    val state = sbtAlg.getUpdatesForRepo(repo).runS(initialState).unsafeRunSync()
-
-    state shouldBe MockState.empty.copy(
-      files = Map(buildProperties -> "sbt.version=1.2.6"),
-      commands = Vector(
-        List("read", s"$repoDir/project/build.properties"),
-        List("create", s"$repoDir/project/tmp-sbt-dep.sbt"),
-        List(
-          "TEST_VAR=GREAT",
-          "ANOTHER_TEST_VAR=ALSO_GREAT",
-          repoDir.toString,
-          "firejail",
-          s"--whitelist=$repoDir",
-          "sbt",
-          "-batch",
-          "-no-colors",
-          ";set every credentials := Nil;dependencyUpdates;reload plugins;dependencyUpdates"
-        ),
-        List("rm", s"$repoDir/project/tmp-sbt-dep.sbt")
-      )
+    val files = Map(
+      repoDir / "project" / "build.properties" -> "sbt.version=1.2.6",
+      repoDir / ".scalafmt.conf" -> "version=2.0.0"
     )
+
+    files.foreach {
+      case (file, content) =>
+        val initialState = MockState.empty.copy(files = Map(file -> content))
+        val state = sbtAlg.getUpdatesForRepo(repo).runS(initialState).unsafeRunSync()
+        state shouldBe MockState.empty.copy(
+          files = Map(file -> content),
+          commands = Vector(
+            List("read", s"$repoDir/project/build.properties"),
+            List("read", s"$repoDir/.scalafmt.conf"),
+            List("create", s"$repoDir/project/tmp-sbt-dep.sbt"),
+            List(
+              "TEST_VAR=GREAT",
+              "ANOTHER_TEST_VAR=ALSO_GREAT",
+              repoDir.toString,
+              "firejail",
+              s"--whitelist=$repoDir",
+              "sbt",
+              "-batch",
+              "-no-colors",
+              ";set every credentials := Nil;dependencyUpdates;reload plugins;dependencyUpdates"
+            ),
+            List("rm", s"$repoDir/project/tmp-sbt-dep.sbt"),
+            List("read", s"/tmp/ws/repos_v05.json")
+          )
+        )
+    }
   }
 
   test("getUpdatesForRepo ignoring .jvmopts and .sbtopts files") {
@@ -69,6 +77,7 @@ class SbtAlgTest extends FunSuite with Matchers {
     state shouldBe MockState.empty.copy(
       commands = Vector(
         List("read", s"$repoDir/project/build.properties"),
+        List("read", s"$repoDir/.scalafmt.conf"),
         List("rm", (repoDir / ".jvmopts").toString),
         List("rm", (repoDir / ".sbtopts").toString),
         List(
@@ -83,7 +92,8 @@ class SbtAlgTest extends FunSuite with Matchers {
           ";set every credentials := Nil;dependencyUpdates;reload plugins;dependencyUpdates"
         ),
         List("restore", (repoDir / ".sbtopts").toString),
-        List("restore", (repoDir / ".jvmopts").toString)
+        List("restore", (repoDir / ".jvmopts").toString),
+        List("read", s"/tmp/ws/repos_v05.json")
       )
     )
   }
@@ -99,6 +109,7 @@ class SbtAlgTest extends FunSuite with Matchers {
     state shouldBe MockState.empty.copy(
       commands = Vector(
         List("read", s"$repoDir/project/build.properties"),
+        List("read", s"$repoDir/.scalafmt.conf"),
         List(
           "TEST_VAR=GREAT",
           "ANOTHER_TEST_VAR=ALSO_GREAT",
@@ -109,7 +120,8 @@ class SbtAlgTest extends FunSuite with Matchers {
           "-batch",
           "-no-colors",
           ";dependencyUpdates;reload plugins;dependencyUpdates"
-        )
+        ),
+        List("read", s"/tmp/ws/repos_v05.json")
       )
     )
   }
@@ -140,45 +152,7 @@ class SbtAlgTest extends FunSuite with Matchers {
           "sbt",
           "-batch",
           "-no-colors",
-          ";scalafixEnable;scalafix github:functional-streams-for-scala/fs2/v1?sha=v1.0.5"
-        ),
-        List("rm", "/tmp/steward/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
-        List("rm", "/tmp/steward/.sbt/0.13/plugins/scala-steward-scalafix.sbt")
-      )
-    )
-  }
-
-  test("runMigrations for test codes") {
-    val repo = Repo("fthomas", "scala-steward")
-    val repoDir = config.workspace / repo.owner / repo.repo
-    val migrations = Nel.of(
-      Migration(
-        "org.scalatest",
-        Nel.of("scalatest".r),
-        Version("3.1.0"),
-        Nel.of(
-          "https://raw.githubusercontent.com/scalatest/autofix/6168da0e2bd113872b7dcd22cad7688d97ef9381/3.0.x/rules/src/main/scala/org/scalatest/autofix/v3_0_x/RenameDeprecatedPackage.scala",
-          "https://raw.githubusercontent.com/scalatest/autofix/6168da0e2bd113872b7dcd22cad7688d97ef9381/3.1.x/rules/src/main/scala/org/scalatest/autofix/v3_1_x/RewriteDeprecatedNames.scala"
-        ),
-        Some("test")
-      )
-    )
-    val state = sbtAlg.runMigrations(repo, migrations).runS(MockState.empty).unsafeRunSync()
-
-    state shouldBe MockState.empty.copy(
-      commands = Vector(
-        List("create", "/tmp/steward/.sbt/0.13/plugins/scala-steward-scalafix.sbt"),
-        List("create", "/tmp/steward/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
-        List(
-          "TEST_VAR=GREAT",
-          "ANOTHER_TEST_VAR=ALSO_GREAT",
-          repoDir.toString,
-          "firejail",
-          s"--whitelist=$repoDir",
-          "sbt",
-          "-batch",
-          "-no-colors",
-          ";scalafixEnable;test:scalafix https://raw.githubusercontent.com/scalatest/autofix/6168da0e2bd113872b7dcd22cad7688d97ef9381/3.0.x/rules/src/main/scala/org/scalatest/autofix/v3_0_x/RenameDeprecatedPackage.scala;test:scalafix https://raw.githubusercontent.com/scalatest/autofix/6168da0e2bd113872b7dcd22cad7688d97ef9381/3.1.x/rules/src/main/scala/org/scalatest/autofix/v3_1_x/RewriteDeprecatedNames.scala"
+          ";scalafixEnable;scalafix github:functional-streams-for-scala/fs2/v1?sha=v1.0.5;test:scalafix github:functional-streams-for-scala/fs2/v1?sha=v1.0.5"
         ),
         List("rm", "/tmp/steward/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
         List("rm", "/tmp/steward/.sbt/0.13/plugins/scala-steward-scalafix.sbt")
