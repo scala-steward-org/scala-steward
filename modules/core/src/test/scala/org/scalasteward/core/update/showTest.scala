@@ -2,9 +2,10 @@ package org.scalasteward.core.update
 
 import org.scalasteward.core.data.Update.{Group, Single}
 import org.scalasteward.core.util.Nel
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.Matchers
+import org.scalatest.funsuite.AnyFunSuite
 
-class showTest extends FunSuite with Matchers {
+class showTest extends AnyFunSuite with Matchers {
 
   test("oneLiner: cats-core") {
     val update = Single("org.typelevel", "cats-core", "0.9.0", Nel.one("1.0.0"))

@@ -1,14 +1,15 @@
 package org.scalasteward.core.vcs.data
 
 import io.circe.syntax._
-import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.data.Update
+import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.nurture.UpdateData
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.Nel
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.Matchers
+import org.scalatest.funsuite.AnyFunSuite
 
-class NewPullRequestDataTest extends FunSuite with Matchers {
+class NewPullRequestDataTest extends AnyFunSuite with Matchers {
   test("asJson") {
     val data = UpdateData(
       Repo("foo", "bar"),

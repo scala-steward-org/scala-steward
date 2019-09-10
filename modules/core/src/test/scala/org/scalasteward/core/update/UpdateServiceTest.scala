@@ -2,9 +2,10 @@ package org.scalasteward.core.update
 
 import org.scalasteward.core.data.{Dependency, Update}
 import org.scalasteward.core.util.Nel
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.Matchers
+import org.scalatest.funsuite.AnyFunSuite
 
-class UpdateServiceTest extends FunSuite with Matchers {
+class UpdateServiceTest extends AnyFunSuite with Matchers {
 
   test("findUpdateUnderNewGroup: returns empty if dep is not listed") {
     val original = new Dependency("org.spire-math", "UNKNOWN", "_2.12", "1.0.0")

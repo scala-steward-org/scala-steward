@@ -1,14 +1,13 @@
 package org.scalasteward.core.vcs
 
-import org.scalasteward.core.application.SupportedVCS.GitHub
-import org.scalasteward.core.application.SupportedVCS.Gitlab
+import org.scalasteward.core.application.SupportedVCS.{GitHub, Gitlab}
+import org.scalasteward.core.data.Update
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
-import org.scalasteward.core.data.Update
+import org.scalatest.Matchers
+import org.scalatest.funsuite.AnyFunSuite
 
-import org.scalatest.{FunSuite, Matchers}
-
-class VCSPackageTest extends FunSuite with Matchers {
+class VCSPackageTest extends AnyFunSuite with Matchers {
   val repo = Repo("foo", "bar")
   val update = Update.Single("ch.qos.logback", "logback-classic", "1.2.0", Nel.of("1.2.3"))
 

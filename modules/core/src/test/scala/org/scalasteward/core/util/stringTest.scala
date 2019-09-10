@@ -1,10 +1,11 @@
 package org.scalasteward.core.util
 
 import org.scalacheck.Gen
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.Matchers
+import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
-class stringTest extends FunSuite with Matchers with ScalaCheckPropertyChecks {
+class stringTest extends AnyFunSuite with Matchers with ScalaCheckPropertyChecks {
   test("splitBetweenLowerAndUpperChars(s).mkString == s") {
     forAll(Gen.asciiStr) { s: String =>
       string.splitBetweenLowerAndUpperChars(s).mkString shouldBe s

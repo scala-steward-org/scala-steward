@@ -1,9 +1,10 @@
 package org.scalasteward.core.sbt.data
 
 import org.scalasteward.core.data.Dependency
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.Matchers
+import org.scalatest.funsuite.AnyFunSuite
 
-class ArtificialProjectTest extends FunSuite with Matchers {
+class ArtificialProjectTest extends AnyFunSuite with Matchers {
   val catsEffect =
     Dependency("org.typelevel", "cats-effect", "cats-effect_2.12", "1.0.0", None)
   val scalaLibrary =
