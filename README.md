@@ -81,6 +81,7 @@ Thanks goes to these wonderful people:
 * [Mark Canlas](https://github.com/mcanlas)
 * [Michael Wizner](https://github.com/mwz)
 * [Michel Daviot](https://github.com/tyrcho)
+* [miguelpuyol](https://github.com/miguelpuyol)
 * [nafg](https://github.com/nafg)
 * [Philippus Baalman](https://github.com/Philippus)
 * [Piotr Gabara](https://github.com/pgabara)
