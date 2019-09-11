@@ -2,9 +2,10 @@ package org.scalasteward.core.data
 
 import org.scalasteward.core.data.Update.{Group, Single}
 import org.scalasteward.core.util.Nel
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.Matchers
+import org.scalatest.funsuite.AnyFunSuite
 
-class UpdateTest extends FunSuite with Matchers {
+class UpdateTest extends AnyFunSuite with Matchers {
 
   test("Group.artifactId") {
     Group(

@@ -13,9 +13,10 @@ import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.Matchers
+import org.scalatest.funsuite.AnyFunSuite
 
-class GitAlgTest extends FunSuite with Matchers {
+class GitAlgTest extends AnyFunSuite with Matchers {
   implicit val workspaceAlg: WorkspaceAlg[IO] = WorkspaceAlg.create[IO]
   val ioGitAlg: GitAlg[IO] = GitAlg.create[IO]
 

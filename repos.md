@@ -9,6 +9,7 @@
 - 7mind/sbtgen
 - agourlay/cornichon
 - agourlay/json-2-csv
+- akka/akka
 - akka/akka-grpc
 - akka/akka-grpc-sample-kubernetes-scala
 - akka/akka-http
@@ -18,6 +19,7 @@
 - akka/akka-sample-cluster-docker-compose-java
 - akka/akka-sample-cluster-docker-compose-scala
 - akka/akka-sample-cluster-kubernetes-dns-java
+- alekslitvinenk/logshingles
 - alexarchambault/ammonite-spark
 - alexarchambault/argonaut-shapeless
 - alexarchambault/case-app
@@ -181,6 +183,7 @@
 - exoego/scala-js-nodejs
 - exoego/scala-js-ts-importer
 - Fabszn/scaffolding-plugin-lagom
+- Facsimiler/facsimile
 - fdietze/bench
 - fdietze/colorado
 - fdietze/flatland
@@ -227,7 +230,7 @@
 - gfc-collective/gfc-time
 - gfc-collective/gfc-timeuuid
 - gfc-collective/gfc-util
-- gfc-collective/sbt-aws-cloudwatch
+- gfc-collective/sbt-aws-lambda
 - gfc-collective/sbt-dependency-graph-sugar
 - gfc-collective/sbt-newrelic
 - gnieh/diffson
@@ -330,7 +333,6 @@
 - metabookmarks/sbt-plantuml-plugin
 - mfirry/scala-http-clients
 - mfirry/web-frameworks-templates
-- MichaelJAllen/facsimile
 - milessabin/shapeless
 - mitochon/polyjuice
 - mockito/mockito-scala

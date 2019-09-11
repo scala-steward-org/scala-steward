@@ -3,10 +3,11 @@ package org.scalasteward.core.io
 import cats.effect.IO
 import org.scalasteward.core.TestInstances._
 import org.scalasteward.core.util.Nel
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.Matchers
+import org.scalatest.funsuite.AnyFunSuite
 import scala.concurrent.duration._
 
-class processTest extends FunSuite with Matchers {
+class processTest extends AnyFunSuite with Matchers {
   def slurp1(cmd: Nel[String]): IO[List[String]] =
     process.slurp[IO](cmd, None, Map.empty, 1.minute, _ => IO.unit)
 

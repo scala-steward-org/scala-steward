@@ -1,15 +1,16 @@
 package org.scalasteward.core.update
 
 import cats.implicits._
+import org.scalasteward.core.data.Update
 import org.scalasteward.core.mock.MockContext.filterAlg
 import org.scalasteward.core.mock.MockState
-import org.scalasteward.core.data.Update
 import org.scalasteward.core.repoconfig.{RepoConfig, UpdatePattern, UpdatesConfig}
 import org.scalasteward.core.update.FilterAlg.{BadVersions, NonSnapshotToSnapshotUpdate}
 import org.scalasteward.core.util.Nel
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.Matchers
+import org.scalatest.funsuite.AnyFunSuite
 
-class FilterAlgTest extends FunSuite with Matchers {
+class FilterAlgTest extends AnyFunSuite with Matchers {
   test("ignoreNonSnapshotToSnapshotUpdate: SNAP -> SNAP") {
     val update = Update.Single("org.scalatest", "scalatest", "3.0.8-SNAP2", Nel.of("3.1.0-SNAP10"))
     FilterAlg.ignoreNonSnapshotToSnapshotUpdate(update) shouldBe Right(update)

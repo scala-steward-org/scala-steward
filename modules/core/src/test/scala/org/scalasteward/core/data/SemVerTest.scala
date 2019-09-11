@@ -3,9 +3,10 @@ package org.scalasteward.core.data
 import eu.timepit.refined.types.numeric.NonNegBigInt
 import eu.timepit.refined.types.string.NonEmptyString
 import org.scalasteward.core.data.SemVer.Change
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.Matchers
+import org.scalatest.funsuite.AnyFunSuite
 
-class SemVerTest extends FunSuite with Matchers {
+class SemVerTest extends AnyFunSuite with Matchers {
   implicit val toNonNegBigInt: Int => NonNegBigInt =
     i => NonNegBigInt.unsafeFrom(BigInt(i))
 
