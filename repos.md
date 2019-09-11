@@ -484,6 +484,8 @@
 - sksamuel/pulsar4s
 - Slakah/fastparse-parsers
 - Slakah/uritemplate4s
+- slamdata/fs2-job
+- slamdata/fs2-ssh
 - slamdata/async-blobstore
 - slamdata/qdata
 - slamdata/quasar
@@ -492,6 +494,7 @@
 - slamdata/quasar-datasource-s3
 - slamdata/quasar-datasource-url
 - slamdata/sbt-quasar-datasource
+- slamdata/sbt-quasar-destination
 - slamdata/sbt-slamdata
 - slamdata/tectonic
 - snowplow-incubator/cla-bot
