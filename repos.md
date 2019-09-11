@@ -41,7 +41,6 @@
 - balhoff/arachne
 - balhoff/whelk
 - barambani/docker-effect
-- barambani/http4s-extend
 - barambani/http4s-poc-api
 - barambani/laws
 - BenFradet/dashing
@@ -109,6 +108,7 @@
 - ChristopherDavenport/rank3
 - ChristopherDavenport/reactive-potato
 - ChristopherDavenport/read
+- ChristopherDavenport/sbt-mima-version-check
 - ChristopherDavenport/selection
 - ChristopherDavenport/semigroups
 - ChristopherDavenport/synchronized
@@ -483,6 +483,8 @@
 - sksamuel/pulsar4s
 - Slakah/fastparse-parsers
 - Slakah/uritemplate4s
+- slamdata/fs2-job
+- slamdata/fs2-ssh
 - slamdata/async-blobstore
 - slamdata/qdata
 - slamdata/quasar
@@ -491,6 +493,7 @@
 - slamdata/quasar-datasource-s3
 - slamdata/quasar-datasource-url
 - slamdata/sbt-quasar-datasource
+- slamdata/sbt-quasar-destination
 - slamdata/sbt-slamdata
 - slamdata/tectonic
 - snowplow-incubator/cla-bot
@@ -584,6 +587,7 @@
 - typelevel/scalacheck
 - typelevel/simulacrum
 - typelevel/spire
+- typelevel/squants
 - ua-parser/uap-scala
 - UdashFramework/udash-core
 - underscoreio/slickless
