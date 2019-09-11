@@ -109,6 +109,7 @@
 - ChristopherDavenport/rank3
 - ChristopherDavenport/reactive-potato
 - ChristopherDavenport/read
+- ChristopherDavenport/sbt-mima-version-check
 - ChristopherDavenport/selection
 - ChristopherDavenport/semigroups
 - ChristopherDavenport/synchronized
