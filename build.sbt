@@ -79,7 +79,6 @@ lazy val core = myCrossProject("core")
       import cats.effect.ContextShift
       import cats.effect.IO
       import cats.effect.Timer
-      import org.http4s.client.blaze.BlazeClientBuilder
       import scala.concurrent.ExecutionContext
 
       implicit val ioContextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
