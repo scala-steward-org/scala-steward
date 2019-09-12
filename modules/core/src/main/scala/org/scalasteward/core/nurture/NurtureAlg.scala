@@ -24,6 +24,7 @@ import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.{Dependency, Update}
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Branch, GitAlg}
+import org.scalasteward.core.implicits._
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.update.FilterAlg
@@ -52,13 +53,15 @@ final class NurtureAlg[F[_]](
 ) {
   def nurture(repo: Repo): F[Either[Throwable, Unit]] =
     logger.infoTotalTime(repo.show) {
-      logger.attemptLog(util.string.lineLeftRight(s"Nurture ${repo.show}")) {
-        for {
-          (fork, baseBranch) <- cloneAndSync(repo)
-          _ <- updateDependencies(repo, fork, baseBranch)
-          _ <- gitAlg.removeClone(repo)
-        } yield ()
-      }
+      logger
+        .attemptLog(util.string.lineLeftRight(s"Nurture ${repo.show}")) {
+          for {
+            (fork, baseBranch) <- cloneAndSync(repo)
+            result <- updateDependencies(repo, fork, baseBranch)
+            _ <- gitAlg.removeClone(repo)
+          } yield result
+        }
+        .map(x => x.fold(_.asLeft[Unit], identity))
     }
 
   def cloneAndSync(repo: Repo): F[(Repo, Branch)] =
@@ -69,7 +72,7 @@ final class NurtureAlg[F[_]](
       parent <- vcsRepoAlg.syncFork(repo, repoOut)
     } yield (repoOut.repo, parent.default_branch)
 
-  def updateDependencies(repo: Repo, fork: Repo, baseBranch: Branch): F[Unit] =
+  def updateDependencies(repo: Repo, fork: Repo, baseBranch: Branch): F[Either[Throwable, Unit]] =
     for {
       _ <- logger.info(s"Find updates for ${repo.show}")
       repoConfig <- repoConfigAlg.readRepoConfigOrDefault(repo)
@@ -81,20 +84,25 @@ final class NurtureAlg[F[_]](
       memoizedGetDependencies <- Async.memoize {
         sbtAlg.getDependencies(repo).handleError(_ => List.empty)
       }
-      _ <- grouped.traverse_ { update =>
-        val data =
-          UpdateData(
-            repo,
-            fork,
-            repoConfig,
-            update,
-            baseBranch,
-            baseSha1,
-            git.branchFor(update)
-          )
-        processUpdate(data, memoizedGetDependencies)
-      }
-    } yield ()
+      result <- grouped
+        .traverse_ { update =>
+          val data =
+            UpdateData(
+              repo,
+              fork,
+              repoConfig,
+              update,
+              baseBranch,
+              baseSha1,
+              git.branchFor(update)
+            )
+          processUpdate(data, memoizedGetDependencies)
+        }
+        .attempt
+        .logExceptionWithMessage(
+          s"Processing updates for PR based on branch ${baseBranch.name} failed"
+        )
+    } yield result
 
   def processUpdate(data: UpdateData, getDependencies: F[List[Dependency]]): F[Unit] =
     for {

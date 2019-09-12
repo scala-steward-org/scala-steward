@@ -21,16 +21,16 @@ import cats.{Foldable, Functor, Monad}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data.Update
 import scala.concurrent.duration.FiniteDuration
+import org.scalasteward.core.implicits._
 
 object logger {
   implicit final class LoggerOps[F[_]](private val logger: Logger[F]) extends AnyVal {
     def attemptLog[A](message: String)(fa: F[A])(
         implicit F: MonadThrowable[F]
-    ): F[Either[Throwable, A]] =
-      logger.info(message) >> fa.attempt.flatTap {
-        case Left(t)  => logger.error(t)(s"$message failed")
-        case Right(_) => F.unit
-      }
+    ): F[Either[Throwable, A]] = {
+      implicit val l = logger
+      logger.info(message) >> fa.attempt.logExceptionWithMessage(s"$message failed")
+    }
 
     def attemptLog_[A](message: String)(fa: F[A])(implicit F: MonadThrowable[F]): F[Unit] =
       attemptLog(message)(fa).void
@@ -64,4 +64,22 @@ object logger {
       case n => s"Found $n updates:\n$list"
     }
   }
+}
+
+trait LogAlgSyntax {
+  implicit final def syntaxLogEither[F[_], T <: Throwable, A](
+      fea: F[Either[T, A]]
+  ): LogEitherOps[F, T, A] = new LogEitherOps[F, T, A](fea)
+}
+
+final class LogEitherOps[F[_], T <: Throwable, A](private val fea: F[Either[T, A]]) extends AnyVal {
+
+  def logExceptionWithMessage(message: => String)(
+      implicit logger: Logger[F],
+      F: MonadThrowable[F]
+  ): F[Either[T, A]] =
+    fea.flatTap {
+      case Left(t)  => logger.error(t)(message)
+      case Right(_) => F.unit
+    }
 }
