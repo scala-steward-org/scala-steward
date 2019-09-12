@@ -43,4 +43,77 @@ class VCSPackageTest extends AnyFunSuite with Matchers {
 
     possibleCompareUrls("https://scalacenter.github.io/scalafix/", update) shouldBe List()
   }
+
+  test("possibleReleaseNoteFiles") {
+    // blob/<branch>
+    possibleReleaseNoteFiles("https://github.com/foo/bar", update) shouldBe List(
+      "https://github.com/foo/bar/blob/master/CHANGELOG.md",
+      "https://github.com/foo/bar/blob/master/CHANGELOG.markdown",
+      "https://github.com/foo/bar/blob/master/CHANGELOG.rst",
+      "https://github.com/foo/bar/blob/master/Changelog.md",
+      "https://github.com/foo/bar/blob/master/Changelog.markdown",
+      "https://github.com/foo/bar/blob/master/Changelog.rst",
+      "https://github.com/foo/bar/blob/master/changelog.md",
+      "https://github.com/foo/bar/blob/master/changelog.markdown",
+      "https://github.com/foo/bar/blob/master/changelog.rst",
+      "https://github.com/foo/bar/blob/master/RELEASES.md",
+      "https://github.com/foo/bar/blob/master/RELEASES.markdown",
+      "https://github.com/foo/bar/blob/master/RELEASES.rst",
+      "https://github.com/foo/bar/blob/master/Releases.md",
+      "https://github.com/foo/bar/blob/master/Releases.markdown",
+      "https://github.com/foo/bar/blob/master/Releases.rst",
+      "https://github.com/foo/bar/blob/master/releases.md",
+      "https://github.com/foo/bar/blob/master/releases.markdown",
+      "https://github.com/foo/bar/blob/master/releases.rst",
+      "https://github.com/foo/bar/releases/tag/1.2.3",
+      "https://github.com/foo/bar/releases/tag/v1.2.3"
+    )
+
+    // blob/<branch>
+    possibleReleaseNoteFiles("https://gitlab.com/foo/bar", update) shouldBe List(
+      "https://gitlab.com/foo/bar/blob/master/CHANGELOG.md",
+      "https://gitlab.com/foo/bar/blob/master/CHANGELOG.markdown",
+      "https://gitlab.com/foo/bar/blob/master/CHANGELOG.rst",
+      "https://gitlab.com/foo/bar/blob/master/Changelog.md",
+      "https://gitlab.com/foo/bar/blob/master/Changelog.markdown",
+      "https://gitlab.com/foo/bar/blob/master/Changelog.rst",
+      "https://gitlab.com/foo/bar/blob/master/changelog.md",
+      "https://gitlab.com/foo/bar/blob/master/changelog.markdown",
+      "https://gitlab.com/foo/bar/blob/master/changelog.rst",
+      "https://gitlab.com/foo/bar/blob/master/RELEASES.md",
+      "https://gitlab.com/foo/bar/blob/master/RELEASES.markdown",
+      "https://gitlab.com/foo/bar/blob/master/RELEASES.rst",
+      "https://gitlab.com/foo/bar/blob/master/Releases.md",
+      "https://gitlab.com/foo/bar/blob/master/Releases.markdown",
+      "https://gitlab.com/foo/bar/blob/master/Releases.rst",
+      "https://gitlab.com/foo/bar/blob/master/releases.md",
+      "https://gitlab.com/foo/bar/blob/master/releases.markdown",
+      "https://gitlab.com/foo/bar/blob/master/releases.rst"
+    )
+
+    // just <branch>
+    possibleReleaseNoteFiles("https://bitbucket.org/foo/bar", update) shouldBe List(
+      "https://bitbucket.org/foo/bar/master/CHANGELOG.md",
+      "https://bitbucket.org/foo/bar/master/CHANGELOG.markdown",
+      "https://bitbucket.org/foo/bar/master/CHANGELOG.rst",
+      "https://bitbucket.org/foo/bar/master/Changelog.md",
+      "https://bitbucket.org/foo/bar/master/Changelog.markdown",
+      "https://bitbucket.org/foo/bar/master/Changelog.rst",
+      "https://bitbucket.org/foo/bar/master/changelog.md",
+      "https://bitbucket.org/foo/bar/master/changelog.markdown",
+      "https://bitbucket.org/foo/bar/master/changelog.rst",
+      "https://bitbucket.org/foo/bar/master/RELEASES.md",
+      "https://bitbucket.org/foo/bar/master/RELEASES.markdown",
+      "https://bitbucket.org/foo/bar/master/RELEASES.rst",
+      "https://bitbucket.org/foo/bar/master/Releases.md",
+      "https://bitbucket.org/foo/bar/master/Releases.markdown",
+      "https://bitbucket.org/foo/bar/master/Releases.rst",
+      "https://bitbucket.org/foo/bar/master/releases.md",
+      "https://bitbucket.org/foo/bar/master/releases.markdown",
+      "https://bitbucket.org/foo/bar/master/releases.rst"
+    )
+
+    // Empty for homepage
+    possibleReleaseNoteFiles("https://scalacenter.github.io/scalafix/", update) shouldBe List()
+  }
 }
