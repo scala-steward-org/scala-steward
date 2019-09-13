@@ -11,10 +11,15 @@ git:
   depth: 500
 before_install:
 - git fetch --tags
+before_cache:
+  - find $HOME/.sbt -name "*.lock" -type f -delete
+  - find $HOME/.ivy2/cache -name "ivydata-*.properties" -type f -delete
+  - find $HOME/.coursier/cache -name "*.lock" -type f -delete
 cache:
   directories:
-  - "$HOME/.ivy2/cache"
-  - "$HOME/.sbt/boot/"
+  - $HOME/.coursier
+  - $HOME/.ivy2/cache
+  - $HOME/.sbt/boot
 
 install:
 - pip install --user codecov
