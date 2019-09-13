@@ -177,6 +177,7 @@
 - erikvanoosten/metrics-scala
 - esamson/remder
 - esamson/sbt-groovy
+- evolution-gaming/kafka-journal
 - exoego/aws-lambda-scalajs-facade
 - exoego/aws-sdk-scalajs-facade
 - exoego/aws-sdk-scalajs-facade-generator
