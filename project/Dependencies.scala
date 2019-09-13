@@ -13,7 +13,7 @@ object Dependencies {
   val caseApp = "com.github.alexarchambault" %% "case-app" % "2.0.0-M9"
   val catsEffect = "org.typelevel" %% "cats-effect" % "1.4.0"
   val catsKernelLaws = "org.typelevel" %% "cats-kernel-laws" % "2.0.0"
-  val circeConfig = "io.circe" %% "circe-config" % "0.6.1"
+  val circeConfig = "io.circe" %% "circe-config" % "0.7.0"
   val circeGeneric = "io.circe" %% "circe-generic" % Versions.circe
   val circeLiteral = "io.circe" %% "circe-literal" % Versions.circe
   val circeParser = "io.circe" %% "circe-parser" % Versions.circe
