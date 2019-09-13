@@ -61,7 +61,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
               ";set every credentials := Nil;dependencyUpdates;reload plugins;dependencyUpdates"
             ),
             List("rm", s"$repoDir/project/tmp-sbt-dep.sbt"),
-            List("read", s"/tmp/ws/repos_v05.json")
+            List("read", s"/tmp/ws/repos_v6.json")
           )
         )
     }
@@ -94,7 +94,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
         ),
         List("restore", (repoDir / ".sbtopts").toString),
         List("restore", (repoDir / ".jvmopts").toString),
-        List("read", s"/tmp/ws/repos_v05.json")
+        List("read", s"/tmp/ws/repos_v6.json")
       )
     )
   }
@@ -122,7 +122,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
           "-no-colors",
           ";dependencyUpdates;reload plugins;dependencyUpdates"
         ),
-        List("read", s"/tmp/ws/repos_v05.json")
+        List("read", s"/tmp/ws/repos_v6.json")
       )
     )
   }
