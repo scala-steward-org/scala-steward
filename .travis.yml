@@ -12,7 +12,6 @@ git:
 before_install:
 - git fetch --tags
 before_cache:
-  - find $HOME/.cache/coursier -name "*.lock" -type f -delete
   - find $HOME/.ivy2/cache -name "ivydata-*.properties" -type f -delete
   - find $HOME/.sbt -name "*.lock" -type f -delete
 cache:
