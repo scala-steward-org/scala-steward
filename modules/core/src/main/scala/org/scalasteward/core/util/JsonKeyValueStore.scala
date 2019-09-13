@@ -33,8 +33,11 @@ final class JsonKeyValueStore[F[_], K, V](name: String, schemaVersion: String)(
     valueDecoder: Decoder[V],
     valueEncoder: Encoder[V]
 ) {
+  private val filename =
+    s"${name}_v${schemaVersion}.json"
+
   private val jsonFile: F[File] =
-    workspaceAlg.rootDir.map(_ / s"${name}_v${schemaVersion}.json")
+    workspaceAlg.rootDir.map(_ / filename)
 
   def get(key: K): F[Option[V]] =
     read.map(_.get(key))

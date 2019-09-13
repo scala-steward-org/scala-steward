@@ -16,24 +16,19 @@
 
 package org.scalasteward.core.nurture.json
 
+import cats.FlatMap
 import cats.implicits._
 import org.http4s.Uri
 import org.scalasteward.core.data.{Dependency, Update}
 import org.scalasteward.core.git.Sha1
-import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.update.UpdateService
-import org.scalasteward.core.util.{JsonKeyValueStore, MonadThrowable}
+import org.scalasteward.core.util.JsonKeyValueStore
 import org.scalasteward.core.vcs.data.{PullRequestState, Repo}
 
-final class JsonPullRequestRepo[F[_]](
-    implicit
-    fileAlg: FileAlg[F],
-    workspaceAlg: WorkspaceAlg[F],
-    F: MonadThrowable[F]
+final class JsonPullRequestRepo[F[_]: FlatMap](
+    kvStore: JsonKeyValueStore[F, Repo, Map[String, PullRequestData]]
 ) extends PullRequestRepository[F] {
-  private val kvStore = new JsonKeyValueStore[F, Repo, Map[String, PullRequestData]]("prs", "3")
-
   override def createOrUpdate(
       repo: Repo,
       url: Uri,

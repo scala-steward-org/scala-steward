@@ -16,19 +16,15 @@
 
 package org.scalasteward.core.update.json
 
+import cats.FlatMap
 import cats.implicits._
 import org.scalasteward.core.data.Update
-import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.update.UpdateRepository
-import org.scalasteward.core.util.{JsonKeyValueStore, MonadThrowable}
+import org.scalasteward.core.util.JsonKeyValueStore
 
-final class JsonUpdateRepository[F[_]](
-    implicit
-    fileAlg: FileAlg[F],
-    workspaceAlg: WorkspaceAlg[F],
-    F: MonadThrowable[F]
+final class JsonUpdateRepository[F[_]: FlatMap](
+    kvStore: JsonKeyValueStore[F, String, List[Update.Single]]
 ) extends UpdateRepository[F] {
-  private val kvStore = new JsonKeyValueStore[F, String, List[Update.Single]]("updates", "3")
   private val key = "updates"
 
   override def deleteAll: F[Unit] =

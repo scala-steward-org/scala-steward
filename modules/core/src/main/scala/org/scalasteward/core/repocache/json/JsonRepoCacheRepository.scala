@@ -16,21 +16,16 @@
 
 package org.scalasteward.core.repocache.json
 
+import cats.Functor
 import cats.implicits._
 import org.scalasteward.core.data.Dependency
-import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.repocache.{RepoCache, RepoCacheRepository}
-import org.scalasteward.core.util.{JsonKeyValueStore, MonadThrowable}
+import org.scalasteward.core.util.JsonKeyValueStore
 import org.scalasteward.core.vcs.data.Repo
 
-final class JsonRepoCacheRepository[F[_]](
-    implicit
-    fileAlg: FileAlg[F],
-    workspaceAlg: WorkspaceAlg[F],
-    F: MonadThrowable[F]
+final class JsonRepoCacheRepository[F[_]: Functor](
+    kvStore: JsonKeyValueStore[F, Repo, RepoCache]
 ) extends RepoCacheRepository[F] {
-  private val kvStore = new JsonKeyValueStore[F, Repo, RepoCache]("repos", "6")
-
   override def findCache(repo: Repo): F[Option[RepoCache]] =
     kvStore.get(repo)
 
