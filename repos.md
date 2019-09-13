@@ -511,6 +511,7 @@
 - spotify/scio
 - spotify/scio.g8
 - spotify/scio-idea-plugin
+- spotify/tfexample-derive
 - srenault/sre-api
 - stephennancekivell/scalatest-json
 - stryker-mutator/stryker4s
