@@ -12,14 +12,14 @@ git:
 before_install:
 - git fetch --tags
 before_cache:
-  - find $HOME/.sbt -name "*.lock" -type f -delete
+  - find $HOME/.cache/coursier -name "*.lock" -type f -delete
   - find $HOME/.ivy2/cache -name "ivydata-*.properties" -type f -delete
-  - find $HOME/.coursier/cache -name "*.lock" -type f -delete
+  - find $HOME/.sbt -name "*.lock" -type f -delete
 cache:
   directories:
-  - $HOME/.coursier
+  - $HOME/.cache/coursier
   - $HOME/.ivy2/cache
-  - $HOME/.sbt/boot
+  - $HOME/.sbt
 
 install:
 - pip install --user codecov
