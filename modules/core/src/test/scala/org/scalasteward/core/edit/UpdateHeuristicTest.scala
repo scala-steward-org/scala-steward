@@ -213,8 +213,8 @@ class UpdateHeuristicTest extends AnyFunSuite with Matchers {
 
   test("word from artifactId") {
     val original = """lazy val circeVersion = "0.9.3""""
-    val expected = """lazy val circeVersion = "0.11.1""""
-    Single("io.circe", "circe-generic", "0.9.3", Nel.of("0.11.1"))
+    val expected = """lazy val circeVersion = "0.12.2""""
+    Single("io.circe", "circe-generic", "0.9.3", Nel.of("0.12.2"))
       .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.relaxed.name)
   }
 
