@@ -16,25 +16,24 @@
 
 package org.scalasteward.core.nurture.json
 
-import better.files.File
 import cats.implicits._
-import io.circe.parser.decode
-import io.circe.syntax._
 import org.http4s.Uri
 import org.scalasteward.core.data.{Dependency, Update}
 import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.update.UpdateService
-import org.scalasteward.core.util.MonadThrowable
+import org.scalasteward.core.util.{JsonKeyValueStore, MonadThrowable}
 import org.scalasteward.core.vcs.data.{PullRequestState, Repo}
 
-class JsonPullRequestRepo[F[_]](
+final class JsonPullRequestRepo[F[_]](
     implicit
     fileAlg: FileAlg[F],
     workspaceAlg: WorkspaceAlg[F],
     F: MonadThrowable[F]
 ) extends PullRequestRepository[F] {
+  private val kvStore = new JsonKeyValueStore[F, Repo, Map[String, PullRequestData]]("prs", "3")
+
   override def createOrUpdate(
       repo: Repo,
       url: Uri,
@@ -42,12 +41,12 @@ class JsonPullRequestRepo[F[_]](
       update: Update,
       state: PullRequestState
   ): F[Unit] =
-    readJson.flatMap { store =>
-      val updated = store.store.get(repo) match {
+    kvStore.read.flatMap { store =>
+      val updated = store.get(repo) match {
         case Some(prs) => prs.updated(url.toString(), PullRequestData(baseSha1, update, state))
         case None      => Map(url.toString() -> PullRequestData(baseSha1, update, state))
       }
-      writeJson(PullRequestStore(store.store.updated(repo, updated)))
+      kvStore.write(store.updated(repo, updated))
     }
 
   override def findPullRequest(
@@ -55,29 +54,13 @@ class JsonPullRequestRepo[F[_]](
       dependency: Dependency,
       newVersion: String
   ): F[Option[(Uri, Sha1, PullRequestState)]] =
-    readJson.map { store =>
-      val pullRequests = store.store.get(repo).fold(List.empty[(String, PullRequestData)])(_.toList)
+    kvStore.read.map { store =>
+      val pullRequests = store.get(repo).fold(List.empty[(String, PullRequestData)])(_.toList)
       pullRequests
         .find {
           case (_, data) =>
             UpdateService.isUpdateFor(data.update, dependency) && data.update.nextVersion === newVersion
         }
         .map { case (url, data) => (Uri.unsafeFromString(url), data.baseSha1, data.state) }
-    }
-
-  def jsonFile: F[File] =
-    workspaceAlg.rootDir.map(_ / "prs_v02.json")
-
-  def readJson: F[PullRequestStore] =
-    jsonFile.flatMap { file =>
-      fileAlg.readFile(file).flatMap {
-        case Some(content) => F.fromEither(decode[PullRequestStore](content))
-        case None          => F.pure(PullRequestStore(Map.empty))
-      }
-    }
-
-  def writeJson(store: PullRequestStore): F[Unit] =
-    jsonFile.flatMap { file =>
-      fileAlg.writeFile(file, store.asJson.toString)
     }
 }

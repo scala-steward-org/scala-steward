@@ -16,42 +16,27 @@
 
 package org.scalasteward.core.update.json
 
-import better.files.File
 import cats.implicits._
-import io.circe.parser.decode
-import io.circe.syntax._
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.update.UpdateRepository
-import org.scalasteward.core.util.MonadThrowable
+import org.scalasteward.core.util.{JsonKeyValueStore, MonadThrowable}
 
-// WIP
-class JsonUpdateRepository[F[_]](
+final class JsonUpdateRepository[F[_]](
     implicit
     fileAlg: FileAlg[F],
     workspaceAlg: WorkspaceAlg[F],
     F: MonadThrowable[F]
 ) extends UpdateRepository[F] {
+  private val kvStore = new JsonKeyValueStore[F, String, List[Update.Single]]("updates", "3")
+  private val key = "updates"
 
   override def deleteAll: F[Unit] =
-    writeJson(UpdateStore(Set.empty))
+    kvStore.write(Map.empty)
 
   override def saveMany(updates: List[Update.Single]): F[Unit] =
-    readJson.map(s => UpdateStore(s.store ++ updates)).flatMap(writeJson)
-
-  def jsonFile: F[File] =
-    workspaceAlg.rootDir.map(_ / "updates_v02.json")
-
-  def readJson: F[UpdateStore] =
-    jsonFile.flatMap { file =>
-      fileAlg.readFile(file).flatMap {
-        case Some(content) => F.fromEither(decode[UpdateStore](content))
-        case None          => F.pure(UpdateStore(Set.empty))
-      }
-    }
-
-  def writeJson(store: UpdateStore): F[Unit] =
-    jsonFile.flatMap { file =>
-      fileAlg.writeFile(file, store.asJson.toString)
-    }
+    kvStore
+      .getOrElse(key, List.empty)
+      .map(_ ++ updates)
+      .flatMap(list => kvStore.write(Map(key -> list)))
 }
