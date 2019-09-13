@@ -15,7 +15,7 @@ import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.FilterAlg
-import org.scalasteward.core.util.{BracketThrowable, DateTimeAlg}
+import org.scalasteward.core.util.{BracketThrowable, DateTimeAlg, JsonKeyValueStore}
 import org.scalasteward.core.vcs.VCSRepoAlg
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 import scala.concurrent.duration._
@@ -58,7 +58,7 @@ object MockContext {
   implicit val gitHubRepoAlg: VCSRepoAlg[MockEff] = VCSRepoAlg.create(config, gitAlg)
   implicit val scalafmtAlg: ScalafmtAlg[MockEff] = ScalafmtAlg.create
   implicit val cacheRepository: RepoCacheRepository[MockEff] =
-    new JsonRepoCacheRepository[MockEff]()
+    new JsonRepoCacheRepository[MockEff](new JsonKeyValueStore("repos", "6"))
   implicit val sbtAlg: SbtAlg[MockEff] = SbtAlg.create
   implicit val editAlg: EditAlg[MockEff] = new EditAlg[MockEff]
   implicit val repoConfigAlg: RepoConfigAlg[MockEff] = new RepoConfigAlg[MockEff]
