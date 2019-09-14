@@ -174,6 +174,7 @@
 - embeddedkafka/embedded-kafka
 - embeddedkafka/embedded-kafka-schema-registry
 - enzief/recursionz
+- erikerlandson/coulomb
 - erikvanoosten/metrics-scala
 - esamson/remder
 - esamson/sbt-groovy
