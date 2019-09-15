@@ -158,6 +158,7 @@
 - d2a4u/sqs4s
 - daandi/nice-url-encode-decode
 - daenyth/scytest
+- devilune/dotty-graalvm.g8
 - dispalt/scala-relay
 - dispalt/tagless-redux
 - djspiewak/cats-effect-testing
