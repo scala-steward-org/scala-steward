@@ -520,6 +520,7 @@
 - stryker-mutator/stryker4s
 - sullis/java-scala-interop-examples
 - sullis/jms-testkit
+- sullis/scala-hello-world-app
 - swagger-akka-http/swagger-akka-http
 - swagger-akka-http/swagger-scala-module
 - synesso/scala-stellar-sdk
