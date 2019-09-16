@@ -14,25 +14,21 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.update.json
+package org.scalasteward.core.persistence
 
-import cats.FlatMap
+import cats.Applicative
 import cats.implicits._
-import org.scalasteward.core.data.Update
-import org.scalasteward.core.update.UpdateRepository
-import org.scalasteward.core.util.JsonKeyValueStore
 
-final class JsonUpdateRepository[F[_]: FlatMap](
-    kvStore: JsonKeyValueStore[F, String, List[Update.Single]]
-) extends UpdateRepository[F] {
-  private val key = "updates"
+trait KeyValueStore[F[_], K, V] {
+  def get(key: K): F[Option[V]]
 
-  override def deleteAll: F[Unit] =
-    kvStore.write(Map.empty)
+  def getMany(keys: List[K]): F[Map[K, V]]
 
-  override def saveMany(updates: List[Update.Single]): F[Unit] =
-    kvStore
-      .getOrElse(key, List.empty)
-      .map(_ ++ updates)
-      .flatMap(list => kvStore.write(Map(key -> list)))
+  def modifyF(key: K)(f: Option[V] => F[Option[V]]): F[Option[V]]
+
+  final def modify(key: K)(f: Option[V] => Option[V])(implicit F: Applicative[F]): F[Option[V]] =
+    modifyF(key)(f.andThen(F.pure))
+
+  final def put(key: K, value: V)(implicit F: Applicative[F]): F[Unit] =
+    modify(key)(_ => Some(value)).void
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.nurture.json
+package org.scalasteward.core.nurture
 
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
