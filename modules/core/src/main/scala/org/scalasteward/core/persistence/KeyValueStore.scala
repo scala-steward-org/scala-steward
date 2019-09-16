@@ -26,6 +26,9 @@ trait KeyValueStore[F[_], K, V] {
 
   def modifyF(key: K)(f: Option[V] => F[Option[V]]): F[Option[V]]
 
+  final def delete(key: K)(implicit F: Applicative[F]): F[Unit] =
+    modify(key)(_ => None).void
+
   final def modify(key: K)(f: Option[V] => Option[V])(implicit F: Applicative[F]): F[Option[V]] =
     modifyF(key)(f.andThen(F.pure))
 

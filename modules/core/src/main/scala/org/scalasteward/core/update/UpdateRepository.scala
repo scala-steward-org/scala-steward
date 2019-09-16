@@ -27,7 +27,7 @@ final class UpdateRepository[F[_]: Applicative](
   private val key = "updates"
 
   def deleteAll: F[Unit] =
-    kvStore.put(key, List.empty)
+    kvStore.delete(key)
 
   def saveMany(updates: List[Update.Single]): F[Unit] =
     kvStore.modify(key)(maybeList => Some(maybeList.getOrElse(List.empty) ++ updates)).void
