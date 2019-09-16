@@ -67,6 +67,7 @@ Thanks goes to these wonderful people:
 * [Dale Wijnand](https://github.com/dwijnand)
 * [Daniel Pfeiffer](https://github.com/dpfeiffer)
 * [David Francoeur](https://github.com/daddykotex)
+* [Eldar Yusupov](https://github.com/eyusupov)
 * [Fabian](https://github.com/fg-devs)
 * [Filipe Regadas](https://github.com/regadas)
 * [Frank S. Thomas](https://github.com/fthomas)
