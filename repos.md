@@ -575,6 +575,7 @@
 - travisbrown/iteratee
 - travisbrown/iteratee-twitter
 - twilio/guardrail
+- twitter/algebird
 - typelevel/cats
 - typelevel/cats-collections
 - typelevel/cats-effect
