@@ -293,6 +293,9 @@
 - kubukoz/vivalidi
 - kwark/play-refined
 - kwark/slick-refined
+- L-space/L-space
+- L-space/L-space-NS
+- L-space/Types
 - labra/shaclex
 - lagom/lagom
 - lancewalton/treelog
