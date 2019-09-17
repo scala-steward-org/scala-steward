@@ -17,7 +17,6 @@
 package org.scalasteward.core.update
 
 import cats.Applicative
-import cats.implicits._
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.persistence.KeyValueStore
 
@@ -30,5 +29,5 @@ final class UpdateRepository[F[_]: Applicative](
     kvStore.delete(key)
 
   def saveMany(updates: List[Update.Single]): F[Unit] =
-    kvStore.modify(key)(maybeList => Some(maybeList.getOrElse(List.empty) ++ updates)).void
+    kvStore.update(key)(_.getOrElse(List.empty) ++ updates)
 }

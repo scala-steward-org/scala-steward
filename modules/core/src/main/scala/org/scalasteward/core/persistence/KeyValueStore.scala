@@ -34,4 +34,7 @@ trait KeyValueStore[F[_], K, V] {
 
   final def put(key: K, value: V)(implicit F: Applicative[F]): F[Unit] =
     modify(key)(_ => Some(value)).void
+
+  final def update(key: K)(f: Option[V] => V)(implicit F: Applicative[F]): F[Unit] =
+    modify(key)(f.andThen(Some.apply)).void
 }

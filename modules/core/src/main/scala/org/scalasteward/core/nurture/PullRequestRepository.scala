@@ -35,13 +35,10 @@ final class PullRequestRepository[F[_]: Applicative](
       update: Update,
       state: PullRequestState
   ): F[Unit] =
-    kvStore
-      .modify(repo) {
-        case Some(prs) =>
-          Some(prs.updated(url.toString(), PullRequestData(baseSha1, update, state)))
-        case None => Some(Map(url.toString() -> PullRequestData(baseSha1, update, state)))
-      }
-      .void
+    kvStore.update(repo) {
+      case Some(prs) => prs.updated(url.toString(), PullRequestData(baseSha1, update, state))
+      case None      => Map(url.toString() -> PullRequestData(baseSha1, update, state))
+    }
 
   def findPullRequest(
       repo: Repo,

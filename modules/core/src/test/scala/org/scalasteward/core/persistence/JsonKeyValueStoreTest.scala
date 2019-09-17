@@ -37,4 +37,13 @@ class JsonKeyValueStoreTest extends AnyFunSuite with Matchers {
       )
     )
   }
+
+  test("update") {
+    val kvStore = new JsonKeyValueStore[MockEff, String, String]("test", "0")
+    val p = for {
+      _ <- kvStore.update("k1")(_.fold("v0")(_ + "v1"))
+      v1 <- kvStore.get("k1")
+    } yield v1
+    p.runA(MockState.empty).unsafeRunSync() shouldBe Some("v0")
+  }
 }
