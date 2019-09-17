@@ -28,7 +28,7 @@ import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.sbt.data.{ArtificialProject, SbtVersion}
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.scalafmt.{scalafmtDependency, ScalafmtAlg}
-import org.scalasteward.core.update.UpdateService
+import org.scalasteward.core.update.UpdateAlg
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
@@ -140,7 +140,7 @@ object SbtAlg {
           }
           originalDependencies <- cacheRepository.getDependencies(List(repo))
           updatesUnderNewGroupId = originalDependencies.flatMap(
-            UpdateService.findUpdateUnderNewGroup
+            UpdateAlg.findUpdateUnderNewGroup
           )
         } yield updates ++ updatesUnderNewGroupId
 
