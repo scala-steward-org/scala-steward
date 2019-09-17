@@ -9,13 +9,13 @@ import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Author, GitAlg}
 import org.scalasteward.core.io.{MockFileAlg, MockProcessAlg, MockWorkspaceAlg}
+import org.scalasteward.core.persistence.JsonKeyValueStore
 import org.scalasteward.core.repocache.RepoCacheRepository
-import org.scalasteward.core.repocache.json.JsonRepoCacheRepository
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.FilterAlg
-import org.scalasteward.core.util.{BracketThrowable, DateTimeAlg, JsonKeyValueStore}
+import org.scalasteward.core.util.{BracketThrowable, DateTimeAlg}
 import org.scalasteward.core.vcs.VCSRepoAlg
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 import scala.concurrent.duration._
@@ -58,7 +58,7 @@ object MockContext {
   implicit val gitHubRepoAlg: VCSRepoAlg[MockEff] = VCSRepoAlg.create(config, gitAlg)
   implicit val scalafmtAlg: ScalafmtAlg[MockEff] = ScalafmtAlg.create
   implicit val cacheRepository: RepoCacheRepository[MockEff] =
-    new JsonRepoCacheRepository[MockEff](new JsonKeyValueStore("repos", "6"))
+    new RepoCacheRepository[MockEff](new JsonKeyValueStore("repos", "6"))
   implicit val sbtAlg: SbtAlg[MockEff] = SbtAlg.create
   implicit val editAlg: EditAlg[MockEff] = new EditAlg[MockEff]
   implicit val repoConfigAlg: RepoConfigAlg[MockEff] = new RepoConfigAlg[MockEff]

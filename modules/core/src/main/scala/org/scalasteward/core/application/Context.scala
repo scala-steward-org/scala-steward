@@ -25,14 +25,12 @@ import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.nurture.json.JsonPullRequestRepo
 import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository}
-import org.scalasteward.core.repocache.json.JsonRepoCacheRepository
+import org.scalasteward.core.persistence.JsonKeyValueStore
 import org.scalasteward.core.repocache.{RepoCacheAlg, RepoCacheRepository}
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.scalafmt.ScalafmtAlg
-import org.scalasteward.core.update.json.JsonUpdateRepository
 import org.scalasteward.core.update.{FilterAlg, UpdateRepository, UpdateService}
 import org.scalasteward.core.util._
 import org.scalasteward.core.vcs.data.AuthenticatedUser
@@ -59,19 +57,19 @@ object Context {
       implicit val httpJsonClient: HttpJsonClient[F] = new HttpJsonClient[F]
       implicit val httpExistenceClient: HttpExistenceClient[F] = new HttpExistenceClient[F]
       implicit val repoCacheRepository: RepoCacheRepository[F] =
-        new JsonRepoCacheRepository[F](new JsonKeyValueStore("repos", "6"))
+        new RepoCacheRepository[F](new JsonKeyValueStore("repos", "6"))
       val vcsSelection = new VCSSelection[F]
       implicit val vcsApiAlg: VCSApiAlg[F] = vcsSelection.getAlg(config)
       implicit val vcsRepoAlg: VCSRepoAlg[F] = VCSRepoAlg.create[F](config, gitAlg)
       implicit val vcsExtraAlg: VCSExtraAlg[F] = VCSExtraAlg.create[F]
-      implicit val pullRequestRepo: PullRequestRepository[F] =
-        new JsonPullRequestRepo[F](new JsonKeyValueStore("prs", "3"))
+      implicit val pullRequestRepository: PullRequestRepository[F] =
+        new PullRequestRepository[F](new JsonKeyValueStore("prs", "3"))
       implicit val scalafmtAlg: ScalafmtAlg[F] = ScalafmtAlg.create[F]
       implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F]
       implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F]
       implicit val editAlg: EditAlg[F] = new EditAlg[F]
       implicit val updateRepository: UpdateRepository[F] =
-        new JsonUpdateRepository[F](new JsonKeyValueStore("updates", "3"))
+        new UpdateRepository[F](new JsonKeyValueStore("updates", "3"))
       implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create
       implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F]
       implicit val updateService: UpdateService[F] = new UpdateService[F]
