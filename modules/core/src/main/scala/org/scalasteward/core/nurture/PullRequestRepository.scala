@@ -22,7 +22,7 @@ import org.http4s.Uri
 import org.scalasteward.core.data.{Dependency, Update}
 import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.persistence.KeyValueStore
-import org.scalasteward.core.update.UpdateService
+import org.scalasteward.core.update.UpdateAlg
 import org.scalasteward.core.vcs.data.{PullRequestState, Repo}
 
 final class PullRequestRepository[F[_]: Applicative](
@@ -50,7 +50,7 @@ final class PullRequestRepository[F[_]: Applicative](
       pullRequests
         .find {
           case (_, data) =>
-            UpdateService
+            UpdateAlg
               .isUpdateFor(data.update, dependency) && data.update.nextVersion === newVersion
         }
         .map { case (url, data) => (Uri.unsafeFromString(url), data.baseSha1, data.state) }

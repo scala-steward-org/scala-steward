@@ -30,7 +30,7 @@ import org.scalasteward.core.vcs.data.PullRequestState.Closed
 import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.util
 
-final class UpdateService[F[_]](
+final class UpdateAlg[F[_]](
     implicit
     filterAlg: FilterAlg[F],
     logger: Logger[F],
@@ -46,11 +46,9 @@ final class UpdateService[F[_]](
     updateRepository.deleteAll >>
       repoCacheRepository.getDependencies(repos).flatMap { dependencies =>
         val (libraries, plugins) = dependencies
-          .filter(
-            d =>
-              FilterAlg.isIgnoredGlobally(d.toUpdate).isRight && UpdateService
-                .includeInUpdateCheck(d)
-          )
+          .filter { d =>
+            FilterAlg.isIgnoredGlobally(d.toUpdate).isRight && UpdateAlg.includeInUpdateCheck(d)
+          }
           .partition(_.sbtVersion.isEmpty)
         val libProjects = splitter
           .xxx(libraries)
@@ -131,7 +129,7 @@ final class UpdateService[F[_]](
       dependency: Dependency,
       updates: List[Update.Single]
   ): F[UpdateState] =
-    updates.find(UpdateService.isUpdateFor(_, dependency)) match {
+    updates.find(UpdateAlg.isUpdateFor(_, dependency)) match {
       case None => F.pure(DependencyUpToDate(dependency))
       case Some(update) =>
         repoCache.maybeRepoConfig.map(_.updates.keep(update)) match {
@@ -152,7 +150,7 @@ final class UpdateService[F[_]](
     }
 }
 
-object UpdateService {
+object UpdateAlg {
   def isUpdateFor(update: Update, dependency: Dependency): Boolean =
     update.groupId === dependency.groupId &&
       update.artifactIds.contains_(dependency.artifactId) &&

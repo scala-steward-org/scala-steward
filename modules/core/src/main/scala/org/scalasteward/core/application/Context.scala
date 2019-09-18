@@ -31,7 +31,7 @@ import org.scalasteward.core.repocache.{RepoCacheAlg, RepoCacheRepository}
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.scalafmt.ScalafmtAlg
-import org.scalasteward.core.update.{FilterAlg, UpdateRepository, UpdateService}
+import org.scalasteward.core.update.{FilterAlg, UpdateAlg, UpdateRepository}
 import org.scalasteward.core.util._
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg, VCSSelection}
@@ -72,7 +72,7 @@ object Context {
         new UpdateRepository[F](new JsonKeyValueStore("updates", "3"))
       implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create
       implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F]
-      implicit val updateService: UpdateService[F] = new UpdateService[F]
+      implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]
       new StewardAlg[F]
     }
 }
