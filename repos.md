@@ -439,6 +439,7 @@
 - ReactivePlatform/Pragmatic-Scala
 - ReactivePlatform/Reactive-Design-Patterns
 - rtimush/sbt-updates
+- ruippeixotog/scala-scraper
 - sake92/hepek
 - saksdirect/sundial
 - sbt/sbt-autoversion
