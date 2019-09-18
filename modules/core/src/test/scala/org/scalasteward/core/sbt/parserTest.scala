@@ -34,7 +34,7 @@ class parserTest extends AnyFunSuite with Matchers {
   }
 
   test("parseSingleUpdate: test dependency") {
-    val str = "org.scalacheck:scalacheck:test   : 1.12.5 -> 1.12.6  -> 1.14.0"
+    val str = "org.scalacheck:scalacheck:test   : 1.12.5 -> 1.12.6  -> 1.14.1"
     parseSingleUpdate(str) shouldBe
       Right(
         Update
@@ -78,7 +78,7 @@ class parserTest extends AnyFunSuite with Matchers {
   }
 
   test("parseSingleUpdate: new version is current version") {
-    val str = "org.scalacheck:scalacheck:test : 1.14.0 -> 1.14.0"
+    val str = "org.scalacheck:scalacheck:test : 1.14.1 -> 1.14.0"
     parseSingleUpdate(str) shouldBe Left(s"failed to parse newerVersions in '$str'")
   }
 
@@ -110,7 +110,7 @@ class parserTest extends AnyFunSuite with Matchers {
       "[info]   org.scala-lang:scala-library : 2.12.3 -> 2.12.6",
       "[info] Found 2 dependency updates for refined-scalacheck",
       "[info]   org.scala-lang:scala-library : 2.12.3 -> 2.12.6",
-      "[info]   org.scalacheck:scalacheck    : 1.13.5           -> 1.14.0",
+      "[info]   org.scalacheck:scalacheck    : 1.13.5           -> 1.14.1",
       "[info] Found 2 dependency updates for refined-pureconfig",
       "[info]   com.github.pureconfig:pureconfig : 0.8.0            -> 0.9.2",
       "[info]   org.scala-lang:scala-library     : 2.12.3 -> 2.12.6"
@@ -119,7 +119,7 @@ class parserTest extends AnyFunSuite with Matchers {
       List(
         Update.Single("com.github.pureconfig", "pureconfig", "0.8.0", Nel.of("0.9.2")),
         Update.Single("org.scala-lang", "scala-library", "2.12.3", Nel.of("2.12.6")),
-        Update.Single("org.scalacheck", "scalacheck", "1.13.5", Nel.of("1.14.0"))
+        Update.Single("org.scalacheck", "scalacheck", "1.13.5", Nel.of("1.14.1"))
       )
   }
 
