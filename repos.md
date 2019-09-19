@@ -433,6 +433,7 @@
 - pureconfig/pureconfig
 - qbicsoftware/scark-cli
 - raboof/sbt-reproducible-builds
+- raster-foundry/raster-foundry
 - ReactiveMongo/Play-ReactiveMongo
 - ReactiveMongo/ReactiveMongo
 - ReactiveMongo/ReactiveMongo-BSON
