@@ -403,6 +403,7 @@
 - Philippus/scala-for-all
 - picnicml/doddle-model
 - pjan/akka-d3
+- playalot/ReactiveMongo-Extensions
 - playframework/anorm
 - playframework/cachecontrol
 - playframework/interplay
