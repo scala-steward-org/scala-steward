@@ -425,6 +425,7 @@
 - plokhotnyuk/jsoniter-scala
 - plokhotnyuk/rtree2d
 - ppurang/asynch
+- pravin-raha/maantrack
 - profunktor/console4cats
 - profunktor/fs2-rabbit
 - profunktor/http4s-tracer
