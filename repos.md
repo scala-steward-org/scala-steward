@@ -37,6 +37,7 @@
 - Atry/scalajs-all-in-one-template
 - augustjune/canoe
 - avast/datadog4s
+- avast/scala-server-toolkit
 - AVSystem/scala-commons
 - azhur/kafka-serde-scala
 - balhoff/arachne
