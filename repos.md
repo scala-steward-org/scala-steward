@@ -506,7 +506,7 @@
 - slamdata/quasar-datasource-mongo
 - slamdata/quasar-datasource-s3
 - slamdata/quasar-datasource-url
-- slamdata/sbt-quasar-datasource
+- slamdata/sbt-quasar-plugin
 - slamdata/sbt-quasar-destination
 - slamdata/sbt-slamdata
 - slamdata/tectonic
