@@ -490,6 +490,7 @@
 - SethTisue/Project-Euler
 - shankarshastri/ScalaFPCode
 - sirocchj/sbt-api-builder
+- sirthias/borer
 - sksamuel/avro4s
 - sksamuel/elastic4s
 - sksamuel/pulsar4s
