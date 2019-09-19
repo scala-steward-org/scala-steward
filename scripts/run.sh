@@ -9,7 +9,7 @@ echo -n $$ > "$STEWARD_DIR/scala-steward.pid"
 cd "$STEWARD_DIR"
 git pull
 sbt -no-colors ";clean ;core/assembly"
-JAR=$(find -name "*assembly*.jar" | head -n1)
+JAR=$(find modules/ -name "scala-steward-assembly*.jar" | head -n1)
 
 LOGIN="scala-steward"
 java -DROOT_LOG_LEVEL=INFO -DLOG_LEVEL=INFO -jar ${JAR} \
