@@ -5,6 +5,14 @@
 - 2m/kabrioletas
 - 2m/polyfact
 - 2m/sonatype-stats
+- 47deg/fetch
+- 47deg/github4s
+- 47deg/metrifier
+- 47deg/mu-smart-home
+- 47deg/pbdirect
+- 47deg/sbt-microsites
+- 47deg/sbt-org-policies
+- 47deg/scalacheck-toolbox
 - 7mind/izumi
 - 7mind/sbtgen
 - agourlay/cornichon
