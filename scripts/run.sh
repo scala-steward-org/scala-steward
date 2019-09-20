@@ -9,7 +9,7 @@ echo -n $$ > "$STEWARD_DIR/scala-steward.pid"
 cd "$STEWARD_DIR"
 git pull
 sbt -no-colors ";clean ;core/assembly"
-JAR=$(find -name "*assembly*.jar" | head -n1)
+JAR=$(find modules/ -name "scala-steward-assembly*.jar" | head -n1)
 
 LOGIN="scala-steward"
 java -DROOT_LOG_LEVEL=INFO -DLOG_LEVEL=INFO -jar ${JAR} \
@@ -22,6 +22,7 @@ java -DROOT_LOG_LEVEL=INFO -DLOG_LEVEL=INFO -jar ${JAR} \
   --ignore-opts-files \
   --env-var "SBT_OPTS=-Xmx2048m -Xss8m -XX:MaxMetaspaceSize=512m" \
   --sign-commits \
+  --process-timeout 20min \
   --whitelist $HOME/.cache/coursier \
   --whitelist $HOME/.coursier \
   --whitelist $HOME/.ivy2 \

@@ -14,25 +14,24 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.update.json
+package org.scalasteward.core.nurture
 
-import cats.FlatMap
-import cats.implicits._
+import io.circe.generic.semiauto._
+import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.data.Update
-import org.scalasteward.core.update.UpdateRepository
-import org.scalasteward.core.util.JsonKeyValueStore
+import org.scalasteward.core.git.Sha1
+import org.scalasteward.core.vcs.data.PullRequestState
 
-final class JsonUpdateRepository[F[_]: FlatMap](
-    kvStore: JsonKeyValueStore[F, String, List[Update.Single]]
-) extends UpdateRepository[F] {
-  private val key = "updates"
+final case class PullRequestData(
+    baseSha1: Sha1,
+    update: Update,
+    state: PullRequestState
+)
 
-  override def deleteAll: F[Unit] =
-    kvStore.write(Map.empty)
+object PullRequestData {
+  implicit val pullRequestDataDecoder: Decoder[PullRequestData] =
+    deriveDecoder
 
-  override def saveMany(updates: List[Update.Single]): F[Unit] =
-    kvStore
-      .getOrElse(key, List.empty)
-      .map(_ ++ updates)
-      .flatMap(list => kvStore.write(Map(key -> list)))
+  implicit val pullRequestDataEncoder: Encoder[PullRequestData] =
+    deriveEncoder
 }

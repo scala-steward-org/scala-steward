@@ -44,7 +44,7 @@ package object scalafix {
         "org.http4s",
         Nel.of("http4s-.*".r),
         Version("0.20.0"),
-        Nel.of("github:http4s/http4s/v0_20?sha=v0.20.10")
+        Nel.of("github:http4s/http4s/v0_20?sha=v0.20.11")
       ),
       Migration(
         "org.typelevel",

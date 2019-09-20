@@ -3,8 +3,8 @@ import sbt._
 object Versions {
   val circe = "0.11.1"
   val coursier = "2.0.0-RC3-4"
-  val http4s = "0.20.10"
-  val refined = "0.9.10"
+  val http4s = "0.20.11"
+  val refined = "0.9.9"
 }
 
 object Dependencies {
@@ -34,6 +34,6 @@ object Dependencies {
   val refined = "eu.timepit" %% "refined" % Versions.refined
   val refinedCats = "eu.timepit" %% "refined-cats" % Versions.refined
   val refinedScalacheck = "eu.timepit" %% "refined-scalacheck" % Versions.refined
-  val scalacheck = "org.scalacheck" %% "scalacheck" % "1.14.0"
+  val scalacheck = "org.scalacheck" %% "scalacheck" % "1.14.1"
   val scalaTest = "org.scalatest" %% "scalatest" % "3.1.0-SNAP13"
 }

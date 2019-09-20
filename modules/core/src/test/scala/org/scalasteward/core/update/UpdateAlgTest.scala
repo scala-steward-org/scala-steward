@@ -5,16 +5,16 @@ import org.scalasteward.core.util.Nel
 import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
 
-class UpdateServiceTest extends AnyFunSuite with Matchers {
+class UpdateAlgTest extends AnyFunSuite with Matchers {
 
   test("findUpdateUnderNewGroup: returns empty if dep is not listed") {
     val original = new Dependency("org.spire-math", "UNKNOWN", "_2.12", "1.0.0")
-    UpdateService.findUpdateUnderNewGroup(original) shouldBe None
+    UpdateAlg.findUpdateUnderNewGroup(original) shouldBe None
   }
 
   test("findUpdateUnderNewGroup: returns Update.Single for updateing groupId") {
     val original = new Dependency("org.spire-math", "kind-projector", "_2.12", "0.9.0")
-    UpdateService.findUpdateUnderNewGroup(original) shouldBe Some(
+    UpdateAlg.findUpdateUnderNewGroup(original) shouldBe Some(
       Update.Single(
         "org.spire-math",
         "kind-projector",
