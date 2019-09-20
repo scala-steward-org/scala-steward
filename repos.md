@@ -249,6 +249,14 @@
 - gfc-collective/sbt-newrelic
 - gnieh/diffson
 - henricook/SAMLer
+- higherkindness/compendium
+- higherkindness/compendium-example
+- higherkindness/droste
+- higherkindness/mu
+- higherkindness/mu-client.g8
+- higherkindness/mu-server.g8
+- higherkindness/sbt-compendium
+- higherkindness/skeuomorph
 - hipjim/scala-retry
 - hntd187/spotify
 - holidaycheck/easy-akka-http
