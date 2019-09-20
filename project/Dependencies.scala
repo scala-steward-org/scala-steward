@@ -4,7 +4,7 @@ object Versions {
   val circe = "0.11.1"
   val coursier = "2.0.0-RC3-4"
   val http4s = "0.20.11"
-  val refined = "0.9.9"
+  val refined = "0.9.10"
 }
 
 object Dependencies {
