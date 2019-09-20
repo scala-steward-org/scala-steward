@@ -153,7 +153,7 @@ object SbtAlg {
               rule <- migration.rewriteRules
               cmd <- Nel.of(scalafix, testScalafix)
             } yield s"$cmd $rule"
-            _ <- exec(sbtCmd(scalafixEnable :: scalafixCmds.toList), repoDir)
+            _ <- exec(sbtCmd("++2.12.10!" :: scalafixEnable :: scalafixCmds.toList), repoDir)
           } yield ()
         }
 
