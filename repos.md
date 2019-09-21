@@ -168,6 +168,9 @@
 - criteo/lolhttp
 - d2a4u/sqs4s
 - daandi/nice-url-encode-decode
+- DanielaSfregola/random-data-generator
+- DanielaSfregola/random-data-generator-magnolia
+- DanielaSfregola/twitter4s
 - daenyth/scytest
 - devilune/dotty-graalvm.g8
 - dispalt/scala-relay
