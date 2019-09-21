@@ -119,6 +119,7 @@
 - ChristopherDavenport/reactive-potato
 - ChristopherDavenport/read
 - ChristopherDavenport/sbt-mima-version-check
+- ChristopherDavenport/sbt-no-publish
 - ChristopherDavenport/selection
 - ChristopherDavenport/semigroups
 - ChristopherDavenport/synchronized
