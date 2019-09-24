@@ -82,12 +82,11 @@ final class RepoCacheAlg[F[_]](
       maybeSbtVersion <- sbtAlg.getSbtVersion(repo)
       maybeScalafmtVersion <- scalafmtAlg.getScalafmtVersion(repo)
       maybeRepoConfig <- repoConfigAlg.readRepoConfig(repo)
-    } yield
-      RepoCache(
-        latestSha1,
-        dependencies,
-        maybeSbtVersion,
-        maybeScalafmtVersion,
-        maybeRepoConfig
-      )
+    } yield RepoCache(
+      latestSha1,
+      dependencies,
+      maybeSbtVersion,
+      maybeScalafmtVersion,
+      maybeRepoConfig
+    )
 }
