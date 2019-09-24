@@ -17,7 +17,7 @@
 package org.scalasteward.core
 
 import org.scalasteward.core.application.SupportedVCS
-import org.scalasteward.core.application.SupportedVCS.{Bitbucket, GitHub, Gitlab}
+import org.scalasteward.core.application.SupportedVCS.{Bitbucket, BitbucketServer, GitHub, Gitlab}
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.vcs.data.Repo
 
@@ -31,7 +31,7 @@ package object vcs {
       case GitHub =>
         s"${fork.show}:${git.branchFor(update).name}"
 
-      case Gitlab | Bitbucket =>
+      case Gitlab | Bitbucket | BitbucketServer =>
         git.branchFor(update).name
     }
 
@@ -43,7 +43,7 @@ package object vcs {
       case GitHub =>
         s"${fork.owner}:${git.branchFor(update).name}"
 
-      case Gitlab | Bitbucket =>
+      case Gitlab | Bitbucket | BitbucketServer =>
         git.branchFor(update).name
     }
 
