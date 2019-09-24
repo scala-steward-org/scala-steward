@@ -27,7 +27,7 @@ import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository}
 import org.scalasteward.core.persistence.JsonKeyValueStore
-import org.scalasteward.core.repocache.{RepoCacheAlg, RepoCacheRepository}
+import org.scalasteward.core.repocache.{RefreshErrorAlg, RepoCacheAlg, RepoCacheRepository}
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.scalafmt.ScalafmtAlg
@@ -66,6 +66,8 @@ object Context {
         new PullRequestRepository[F](new JsonKeyValueStore("prs", "3"))
       implicit val scalafmtAlg: ScalafmtAlg[F] = ScalafmtAlg.create[F]
       implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F]
+      implicit val refreshErrorAlg =
+        new RefreshErrorAlg[F](new JsonKeyValueStore("repos_refresh_errors", "1"))
       implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F]
       implicit val editAlg: EditAlg[F] = new EditAlg[F]
       implicit val updateRepository: UpdateRepository[F] =
