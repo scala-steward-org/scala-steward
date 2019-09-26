@@ -56,7 +56,7 @@ class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
     Branch("update/logback-classic-1.2.3")
   )
   val newPRData =
-    NewPullRequestData.from(data, "scala-steward:update/logback-classic-1.2.3", "scala-steward")
+    NewPullRequestData.from(data, "scala-steward:update/logback-classic-1.2.3")
 
   test("createPullRequest") {
     val prOut =

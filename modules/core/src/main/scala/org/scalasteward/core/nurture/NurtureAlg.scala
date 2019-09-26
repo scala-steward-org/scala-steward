@@ -154,7 +154,6 @@ final class NurtureAlg[F[_]](
       requestData = NewPullRequestData.from(
         data,
         branchName,
-        config.vcsLogin,
         artifactIdToUrl,
         branchCompareUrl,
         releaseNoteUrl
