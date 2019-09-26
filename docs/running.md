@@ -71,3 +71,35 @@ run
     --vcs-login "gitlab.steward"
 
 ```
+
+
+#### Running on Docker for Bitbucket
+
+* Create a file `repos.md` that will be injected into the container as as volume.
+* Create a file `run.sh` with this content:
+
+```
+echo "echo $BITBUCKET_PASSWORD" >pass.sh
+
+chmod +x pass.sh
+
+docker run -v $PWD:/opt/scala-steward \
+    -v ~/.sbt/:/root/.sbt \
+    -it fthomas/scala-steward:latest \
+    --disable-sandbox \
+    --env-var LOG_LEVEL=TRACE \
+    --do-not-fork \
+    --workspace "/opt/scala-steward/workspace" \
+    --repos-file "/opt/scala-steward/repos.md" \
+    --git-ask-pass "/opt/scala-steward/pass.sh" \
+    --git-author-email "myemail@company.xyz" \
+    --vcs-type "bitbucket" \
+    --vcs-api-host "https://api.bitbucket.org/2.0" \
+    --vcs-login "$BITBUCKET_USERNAME"
+    
+```
+
+* Run it from a CI tool or manually using with this command:
+
+`BITBUCKET_USERNAME=<myuser> BITBUCKET_PASSWORD=<mypass> ./run.sh`
+

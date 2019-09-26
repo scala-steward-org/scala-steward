@@ -27,7 +27,7 @@ import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.sbt.data.{ArtificialProject, SbtVersion}
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.scalafmt.{scalafmtDependency, ScalafmtAlg}
-import org.scalasteward.core.update.UpdateService
+import org.scalasteward.core.update.UpdateAlg
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
@@ -116,7 +116,7 @@ object SbtAlg {
           lines <- processAlg.exec(cmd, updatesDir)
           dependencies = parser.parseDependencies(lines)
           _ <- fileAlg.deleteForce(updatesDir)
-        } yield dependencies.flatMap(UpdateService.dependencyToUpdate(_).toList)
+        } yield dependencies.flatMap(UpdateAlg.dependencyToUpdate(_).toList)
 
       override def getUpdatesForRepo(repo: Repo): F[List[Update.Single]] =
         for {
@@ -126,20 +126,18 @@ object SbtAlg {
             List(projectDependenciesWithUpdates, reloadPlugins, buildDependenciesWithUpdates)
           lines <- withTemporarySbtDependency(repo)(exec(sbtCmd(commands), repoDir))
           dependencies = parser.parseDependencies(lines)
-        } yield dependencies.flatMap(UpdateService.dependencyToUpdate(_).toList)
+        } yield dependencies.flatMap(UpdateAlg.dependencyToUpdate(_).toList)
 
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
         addGlobalPluginTemporarily(scalaStewardScalafixSbt) {
           for {
             repoDir <- workspaceAlg.repoDir(repo)
-            scalafixCmds = migrations.flatMap { migration =>
-              val cmd = migration.configuration match {
-                case Some("test") => testScalafix
-                case _            => scalafix
-              }
-              migration.rewriteRules.map(rule => s"$cmd $rule")
-            }.toList
-            _ <- exec(sbtCmd(scalafixEnable :: scalafixCmds), repoDir)
+            scalafixCmds = for {
+              migration <- migrations
+              rule <- migration.rewriteRules
+              cmd <- Nel.of(scalafix, testScalafix)
+            } yield s"$cmd $rule"
+            _ <- exec(sbtCmd("++2.12.10!" :: scalafixEnable :: scalafixCmds.toList), repoDir)
           } yield ()
         }
 

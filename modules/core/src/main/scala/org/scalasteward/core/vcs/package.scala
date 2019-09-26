@@ -64,4 +64,33 @@ package object vcs {
     else
       List.empty
   }
+
+  def possibleReleaseNoteFiles(repoUrl: String, update: Update): List[String] = {
+    val canonicalized = repoUrl.replaceAll("/$", "")
+    val vcsSpecific =
+      if (repoUrl.startsWith("https://github.com/"))
+        List(
+          s"${canonicalized}/releases/tag/${update.nextVersion}",
+          s"${canonicalized}/releases/tag/v${update.nextVersion}"
+        )
+      else
+        List.empty
+    val files = {
+      val pathToFile =
+        if (repoUrl.startsWith("https://github.com/") || repoUrl.startsWith("https://gitlab.com/")) {
+          Some("blob/master")
+        } else if (repoUrl.startsWith("https://bitbucket.org/")) {
+          Some("master")
+        } else {
+          None
+        }
+      pathToFile.toList.flatMap { path =>
+        for {
+          name <- List("CHANGELOG", "Changelog", "changelog", "RELEASES", "Releases", "releases")
+          ext <- List("md", "markdown", "rst")
+        } yield s"${canonicalized}/${path}/${name}.${ext}"
+      }
+    }
+    files ++ vcsSpecific
+  }
 }

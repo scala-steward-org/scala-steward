@@ -1,26 +1,24 @@
 package org.scalasteward.core.gitlab.http4s
 
 import cats.effect.IO
-import io.circe.parser._
 import io.circe.literal._
-import org.scalatest.{FunSuite, Matchers}
-import org.scalasteward.core.vcs.data._
-import org.scalasteward.core.nurture.UpdateData
-import org.scalasteward.core.repoconfig.RepoConfig
-import org.scalasteward.core.data.Update
-import org.scalasteward.core.git.Sha1
-import org.scalasteward.core.vcs.data.NewPullRequestData
-import org.scalasteward.core.git.Branch
-import org.scalasteward.core.util.Nel
-import org.scalasteward.core.util.HttpJsonClient
-import org.scalasteward.core.mock.MockContext.{config, user}
+import io.circe.parser._
 import org.http4s.circe._
 import org.http4s.client.Client
 import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.http4s.{Http4sLiteralSyntax, HttpRoutes}
+import org.scalasteward.core.data.Update
+import org.scalasteward.core.git.{Branch, Sha1}
+import org.scalasteward.core.mock.MockContext.{config, user}
+import org.scalasteward.core.nurture.UpdateData
+import org.scalasteward.core.repoconfig.RepoConfig
+import org.scalasteward.core.util.{HttpJsonClient, Nel}
+import org.scalasteward.core.vcs.data.{NewPullRequestData, _}
+import org.scalatest.Matchers
+import org.scalatest.funsuite.AnyFunSuite
 
-class Http4sGitlabApiAlgTest extends FunSuite with Matchers {
+class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
   import GitlabJsonCodec._
 
   val routes: HttpRoutes[IO] =
@@ -58,7 +56,7 @@ class Http4sGitlabApiAlgTest extends FunSuite with Matchers {
     Branch("update/logback-classic-1.2.3")
   )
   val newPRData =
-    NewPullRequestData.from(data, "scala-steward:update/logback-classic-1.2.3", "scala-steward")
+    NewPullRequestData.from(data, "scala-steward:update/logback-classic-1.2.3")
 
   test("createPullRequest") {
     val prOut =

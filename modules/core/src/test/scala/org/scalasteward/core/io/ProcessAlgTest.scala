@@ -7,9 +7,10 @@ import org.scalasteward.core.io.ProcessAlgTest.ioProcessAlg
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.util.Nel
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.Matchers
+import org.scalatest.funsuite.AnyFunSuite
 
-class ProcessAlgTest extends FunSuite with Matchers {
+class ProcessAlgTest extends AnyFunSuite with Matchers {
   test("exec echo") {
     ioProcessAlg
       .exec(Nel.of("echo", "-n", "hello"), File.currentWorkingDirectory)

@@ -7,15 +7,15 @@ import org.http4s.circe._
 import org.http4s.client.Client
 import org.http4s.dsl.io._
 import org.http4s.implicits._
-import org.http4s.{HttpRoutes}
-import org.scalasteward.core.git._
 import org.scalasteward.core.git.Sha1.HexString
+import org.scalasteward.core.git._
 import org.scalasteward.core.mock.MockContext.config
 import org.scalasteward.core.util.HttpJsonClient
 import org.scalasteward.core.vcs.data._
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.Matchers
+import org.scalatest.funsuite.AnyFunSuite
 
-class Http4sBitbucketApiAlgTest extends FunSuite with Matchers {
+class Http4sBitbucketApiAlgTest extends AnyFunSuite with Matchers {
 
   private val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case GET -> Root / "repositories" / "fthomas" / "base.g8" =>
@@ -131,7 +131,8 @@ class Http4sBitbucketApiAlgTest extends FunSuite with Matchers {
   val bitbucketApiAlg = new Http4sBitbucketApiAlg[IO](
     config.vcsApiHost,
     AuthenticatedUser("scala-steward", ""),
-    _ => IO.pure
+    _ => IO.pure,
+    false
   )
 
   val prUrl = uri"https://api.bitbucket.org/2.0/repositories/fthomas/base.g8/pullrequests/2"
@@ -201,7 +202,7 @@ class Http4sBitbucketApiAlgTest extends FunSuite with Matchers {
 
   test("listPullRequests") {
     val prs = bitbucketApiAlg.listPullRequests(repo, "master", master).unsafeRunSync()
-    prs should contain only pullRequest
+    (prs should contain).only(pullRequest)
   }
 
 }

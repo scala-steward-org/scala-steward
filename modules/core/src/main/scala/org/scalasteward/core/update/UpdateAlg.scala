@@ -31,8 +31,9 @@ import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 
-final class UpdateService[F[_]](
+final class UpdateAlg[F[_]](
     implicit
+    excludeAlg: ExcludeAlg[F],
     filterAlg: FilterAlg[F],
     logger: Logger[F],
     pullRequestRepo: PullRequestRepository[F],
@@ -43,15 +44,15 @@ final class UpdateService[F[_]](
 ) {
 
   // WIP
-  def checkForUpdates(repos: List[Repo]): F[List[Update.Single]] =
+  def checkForUpdates(repos: List[Repo]): F[List[Update.Single]] = {
+    val getDependencies =
+      repoCacheRepository.getDependencies(repos).flatMap(excludeAlg.removeExcluded)
     updateRepository.deleteAll >>
-      repoCacheRepository.getDependencies(repos).flatMap { dependencies =>
+      getDependencies.flatMap { dependencies =>
         val (libraries, plugins) = dependencies
-          .filter(
-            d =>
-              FilterAlg.isIgnoredGlobally(d.toUpdate).isRight && UpdateService
-                .includeInUpdateCheck(d)
-          )
+          .filter { d =>
+            FilterAlg.isIgnoredGlobally(d.toUpdate).isRight
+          }
           .partition(_.sbtSeries.isEmpty)
         val libProjects = splitter
           .xxx(libraries)
@@ -84,9 +85,10 @@ final class UpdateService[F[_]](
             util.divideOnError(prj)(sbtAlg.getUpdatesForProject)(_.halve.toList.flatMap {
               case (p1, p2) => List(p1, p2)
             }) { (failedP: ArtificialProject, t: Throwable) =>
-              println(s"failed finding updates for $failedP")
-              println(t)
-              F.pure(List.empty[Update.Single])
+              for {
+                _ <- logger.error(t)(s"failed finding updates for $failedP")
+                _ <- excludeAlg.excludeTemporarily(failedP.libraries ++ failedP.plugins)
+              } yield List.empty[Update.Single]
             }
 
           fa.flatTap { updates =>
@@ -97,6 +99,7 @@ final class UpdateService[F[_]](
 
         x.flatMap(updates => filterAlg.globalFilterMany(updates))
       }
+  }
 
   def filterByApplicableUpdates(repos: List[Repo], updates: List[Update.Single]): F[List[Repo]] =
     repos.filterA(needsAttention(_, updates))
@@ -134,7 +137,7 @@ final class UpdateService[F[_]](
       dependency: Dependency,
       updates: List[Update.Single]
   ): F[UpdateState] =
-    updates.find(UpdateService.isUpdateFor(_, dependency)) match {
+    updates.find(UpdateAlg.isUpdateFor(_, dependency)) match {
       case None => F.pure(DependencyUpToDate(dependency))
       case Some(update) =>
         repoCache.maybeRepoConfig.map(_.updates.keep(update)) match {
@@ -155,35 +158,19 @@ final class UpdateService[F[_]](
     }
 }
 
-object UpdateService {
+object UpdateAlg {
   def isUpdateFor(update: Update, dependency: Dependency): Boolean =
     update.groupId === dependency.groupId &&
       util.intersects(update.artifactIds, dependency.artifactId :: dependency.crossArtifactIds) &&
       update.currentVersion === dependency.version
 
-  def includeInUpdateCheck(dependency: Dependency): Boolean =
-    (dependency.groupId, dependency.artifactId) match {
-      case ("com.ccadllc.cedi", "build")                     => false
-      case ("com.codecommit", "sbt-spiewak-sonatype")        => false
-      case ("com.gilt.sbt", "sbt-newrelic")                  => false
-      case ("com.iheart", "sbt-play-swagger")                => false
-      case ("com.nrinaudo", "kantan.sbt-kantan")             => false
-      case ("com.slamdata", "sbt-quasar-datasource")         => false
-      case ("com.typesafe.play", "interplay")                => false
-      case ("org.foundweekends.giter8", "sbt-giter8")        => false
-      case ("org.scalablytyped", "sbt-scalablytyped")        => false
-      case ("org.scala-lang.modules", "sbt-scala-module")    => false
-      case ("org.scala-lang.modules", "scala-module-plugin") => false
-      case ("org.scodec", "scodec-build")                    => false
-      case ("org.xerial.sbt", "sbt-pack")                    => false
-      case _                                                 => true
-    }
-
   def getNewerGroupId(currentGroupId: String, artifactId: String): Option[(String, String)] =
     Option((currentGroupId, artifactId) match {
-      case ("org.spire-math", "kind-projector") => ("org.typelevel", "0.10.0")
-      case ("com.geirsson", "sbt-scalafmt")     => ("org.scalameta", "2.0.0")
-      case _                                    => ("", "")
+      case ("org.spire-math", "kind-projector")   => ("org.typelevel", "0.10.0")
+      case ("com.github.mpilquist", "simulacrum") => ("org.typelevel", "1.0.0")
+      case ("com.geirsson", "sbt-scalafmt")       => ("org.scalameta", "2.0.0")
+      case ("net.ceedubs", "ficus")               => ("com.iheart", "1.3.4")
+      case _                                      => ("", "")
     }).filter { case (groupId, _) => groupId.nonEmpty }
 
   def findUpdateUnderNewGroup(dep: Dependency): Option[Update.Single] =

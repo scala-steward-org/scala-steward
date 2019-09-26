@@ -16,10 +16,18 @@
 
 package org.scalasteward.core.update
 
+import cats.Applicative
 import org.scalasteward.core.data.Update
+import org.scalasteward.core.persistence.KeyValueStore
 
-trait UpdateRepository[F[_]] {
-  def deleteAll: F[Unit]
+final class UpdateRepository[F[_]: Applicative](
+    kvStore: KeyValueStore[F, String, List[Update.Single]]
+) {
+  private val key = "updates"
 
-  def saveMany(updates: List[Update.Single]): F[Unit]
+  def deleteAll: F[Unit] =
+    kvStore.delete(key)
+
+  def saveMany(updates: List[Update.Single]): F[Unit] =
+    kvStore.update(key)(_.getOrElse(List.empty) ++ updates)
 }

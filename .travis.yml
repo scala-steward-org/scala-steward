@@ -3,7 +3,7 @@ jdk:
 - openjdk8
 - openjdk11
 scala:
-- 2.12.9
+- 2.12.10
 services:
 - docker
 
@@ -11,10 +11,14 @@ git:
   depth: 500
 before_install:
 - git fetch --tags
+before_cache:
+  - find $HOME/.ivy2/cache -name "ivydata-*.properties" -type f -delete
+  - find $HOME/.sbt -name "*.lock" -type f -delete
 cache:
   directories:
-  - "$HOME/.ivy2/cache"
-  - "$HOME/.sbt/boot/"
+  - $HOME/.cache/coursier
+  - $HOME/.ivy2/cache
+  - $HOME/.sbt
 
 install:
 - pip install --user codecov

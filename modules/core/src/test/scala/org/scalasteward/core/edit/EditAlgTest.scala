@@ -1,14 +1,15 @@
 package org.scalasteward.core.edit
 
 import better.files.File
+import org.scalasteward.core.data.Update
 import org.scalasteward.core.mock.MockContext.editAlg
 import org.scalasteward.core.mock.MockState
-import org.scalasteward.core.data.Update
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.Matchers
+import org.scalatest.funsuite.AnyFunSuite
 
-class EditAlgTest extends FunSuite with Matchers {
+class EditAlgTest extends AnyFunSuite with Matchers {
 
   test("applyUpdate") {
     val repo = Repo("fthomas", "scala-steward")

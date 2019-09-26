@@ -8,9 +8,10 @@ import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
 import org.scalasteward.core.mock.MockContext.fileAlg
 import org.scalasteward.core.mock.MockState
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.Matchers
+import org.scalatest.funsuite.AnyFunSuite
 
-class FileAlgTest extends FunSuite with Matchers {
+class FileAlgTest extends AnyFunSuite with Matchers {
   test("createTemporarily") {
     val file = File.temp / "test-scala-steward3.tmp"
     val content = Arbitrary.arbitrary[String].sample.getOrElse("")

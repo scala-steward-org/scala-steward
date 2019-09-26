@@ -13,9 +13,10 @@ import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.Matchers
+import org.scalatest.funsuite.AnyFunSuite
 
-class GitAlgTest extends FunSuite with Matchers {
+class GitAlgTest extends AnyFunSuite with Matchers {
   implicit val workspaceAlg: WorkspaceAlg[IO] = WorkspaceAlg.create[IO]
   val ioGitAlg: GitAlg[IO] = GitAlg.create[IO]
 
@@ -88,7 +89,7 @@ class GitAlgTest extends FunSuite with Matchers {
           "upstream",
           "http://github.com/fthomas/datapackage"
         ),
-        List(askPass, repoDir, "git", "fetch", "upstream"),
+        List(askPass, repoDir, "git", "fetch", "upstream", "master"),
         List(askPass, repoDir, "git", "checkout", "-B", "master", "--track", "upstream/master"),
         List(askPass, repoDir, "git", "merge", "upstream/master"),
         List(askPass, repoDir, "git", "push", "--force", "--set-upstream", "origin", "master")

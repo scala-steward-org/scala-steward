@@ -2,10 +2,11 @@ package org.scalasteward.core.edit
 
 import cats.implicits._
 import org.scalacheck.{Arbitrary, Gen}
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.Matchers
+import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
-class editTest extends FunSuite with Matchers with ScalaCheckPropertyChecks {
+class editTest extends AnyFunSuite with Matchers with ScalaCheckPropertyChecks {
   private val lineGen = Gen.frequency(
     3 -> Arbitrary.arbString.arbitrary,
     1 -> Gen.oneOf("scala-steward:off", "scala-steward:on"),

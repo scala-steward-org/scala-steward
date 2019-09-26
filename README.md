@@ -18,8 +18,8 @@ See also the announcement blog post:
 ## Quick start guide
 
 Open a pull request that adds the GitHub repository of your Scala project
-to [repos.md](https://github.com/fthomas/scala-steward/blob/master/repos.md)
-([edit](https://github.com/fthomas/scala-steward/edit/master/repos.md)).
+to [repos.md](https://github.com/scala-steward-org/repos/blob/master/repos.md)
+([edit](https://github.com/scala-steward-org/repos/edit/master/repos.md)).
 Once that PR is merged, [**@scala-steward**][@scala-steward] will check
 periodically for updates of libraries and plugins in your project and will
 open pull requests for updates it found.
@@ -67,9 +67,11 @@ Thanks goes to these wonderful people:
 * [Dale Wijnand](https://github.com/dwijnand)
 * [Daniel Pfeiffer](https://github.com/dpfeiffer)
 * [David Francoeur](https://github.com/daddykotex)
+* [Eldar Yusupov](https://github.com/eyusupov)
 * [Fabian](https://github.com/fg-devs)
 * [Filipe Regadas](https://github.com/regadas)
 * [Frank S. Thomas](https://github.com/fthomas)
+* [Guillaume Martres](https://github.com/smarter)
 * [Jakub Kozłowski](https://github.com/kubukoz)
 * [JCollier](https://github.com/Slakah)
 * [Jeff Martin](https://github.com/custommonkey)
@@ -80,6 +82,7 @@ Thanks goes to these wonderful people:
 * [Mark Canlas](https://github.com/mcanlas)
 * [Michael Wizner](https://github.com/mwz)
 * [Michel Daviot](https://github.com/tyrcho)
+* [miguelpuyol](https://github.com/miguelpuyol)
 * [nafg](https://github.com/nafg)
 * [Philippus Baalman](https://github.com/Philippus)
 * [Piotr Gabara](https://github.com/pgabara)
@@ -99,6 +102,7 @@ The following companies are using Scala Steward to manage their dependencies.
 Using Scala Steward in your company and don't see it listed here?
 Consider creating PR to add your company to the list and join the community.
 
+* [AutoScout24](https://www.autoscout24.de/)
 * [Chartboost](https://www.chartboost.com/)
 * [Colisweb](https://www.colisweb.com/)
 * [Firstbird](https://firstbird.com)
@@ -109,6 +113,7 @@ Consider creating PR to add your company to the list and join the community.
 * [Snowplow Analytics](https://snowplowanalytics.com/)
 * [SpringerNature](https://www.springernature.com)
 * [SoftwareMill](https://softwaremill.com)
+* [Spotify](https://www.spotify.com)
 * [Tegonal GmbH](https://tegonal.com)
 * [Zalando](https://en.zalando.de/)
 
