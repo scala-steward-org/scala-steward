@@ -102,8 +102,8 @@ object SbtAlg {
           maybeScalafmtDependency = maybeScalafmtVersion.map(
             scalafmtDependency(defaultScalaBinaryVersion)
           )
-        } yield
-          (maybeSbtDependency.toList ++ maybeScalafmtDependency.toList ++ dependencies).distinct
+          allDependencies = maybeSbtDependency.toList ++ maybeScalafmtDependency.toList ++ dependencies
+        } yield allDependencies.distinct
 
       override def getUpdatesForProject(project: ArtificialProject): F[List[Update.Single]] =
         for {
