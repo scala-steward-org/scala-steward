@@ -6,14 +6,13 @@ import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
 
 class UpdateAlgTest extends AnyFunSuite with Matchers {
-
   test("findUpdateUnderNewGroup: returns empty if dep is not listed") {
-    val original = new Dependency("org.spire-math", "UNKNOWN", "_2.12", "1.0.0")
+    val original = new Dependency("org.spire-math", "UNKNOWN", List("_2.12"), "1.0.0")
     UpdateAlg.findUpdateUnderNewGroup(original) shouldBe None
   }
 
   test("findUpdateUnderNewGroup: returns Update.Single for updateing groupId") {
-    val original = new Dependency("org.spire-math", "kind-projector", "_2.12", "0.9.0")
+    val original = new Dependency("org.spire-math", "kind-projector", List("_2.12"), "0.9.0")
     UpdateAlg.findUpdateUnderNewGroup(original) shouldBe Some(
       Update.Single(
         "org.spire-math",
@@ -24,5 +23,4 @@ class UpdateAlgTest extends AnyFunSuite with Matchers {
       )
     )
   }
-
 }

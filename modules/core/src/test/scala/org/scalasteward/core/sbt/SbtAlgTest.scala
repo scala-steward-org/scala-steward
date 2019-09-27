@@ -5,6 +5,7 @@ import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.Version
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.{MockContext, MockState}
+import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
@@ -58,10 +59,9 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
               "sbt",
               "-batch",
               "-no-colors",
-              ";set every credentials := Nil;dependencyUpdates;reload plugins;dependencyUpdates"
+              s";set every credentials := Nil;$projectDependenciesWithUpdates;$reloadPlugins;$buildDependenciesWithUpdates"
             ),
-            List("rm", s"$repoDir/project/tmp-sbt-dep.sbt"),
-            List("read", s"/tmp/ws/repos_v6.json")
+            List("rm", s"$repoDir/project/tmp-sbt-dep.sbt")
           )
         )
     }
@@ -90,11 +90,10 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
           "sbt",
           "-batch",
           "-no-colors",
-          ";set every credentials := Nil;dependencyUpdates;reload plugins;dependencyUpdates"
+          s";set every credentials := Nil;$projectDependenciesWithUpdates;$reloadPlugins;$buildDependenciesWithUpdates"
         ),
         List("restore", (repoDir / ".sbtopts").toString),
-        List("restore", (repoDir / ".jvmopts").toString),
-        List("read", s"/tmp/ws/repos_v6.json")
+        List("restore", (repoDir / ".jvmopts").toString)
       )
     )
   }
@@ -120,9 +119,8 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
           "sbt",
           "-batch",
           "-no-colors",
-          ";dependencyUpdates;reload plugins;dependencyUpdates"
-        ),
-        List("read", s"/tmp/ws/repos_v6.json")
+          s";$projectDependenciesWithUpdates;$reloadPlugins;$buildDependenciesWithUpdates"
+        )
       )
     )
   }

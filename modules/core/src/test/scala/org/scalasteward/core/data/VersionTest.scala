@@ -57,4 +57,10 @@ class VersionTest extends AnyFunSuite with Discipline with Matchers {
       Version(current).selectNext(allVersions) shouldBe result.map(Version.apply)
     }
   }
+
+  test("selectNext: RC and regular versions") {
+    val current = "1.3.0-RC3"
+    val versions = List("1.3.0-RC4", "1.3.0-RC5", "1.3.0", "1.3.1", "1.3.2").map(Version.apply)
+    Version(current).selectNext(versions) shouldBe Some(Version("1.3.0-RC5"))
+  }
 }

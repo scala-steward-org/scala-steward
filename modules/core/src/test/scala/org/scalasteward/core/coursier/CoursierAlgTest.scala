@@ -7,9 +7,8 @@ import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
 
 class CoursierAlgTest extends AnyFunSuite with Matchers {
-
   test("getArtifactUrl") {
-    val dep = Dependency("org.typelevel", "cats-effect", "cats-effect_2.12", "1.0.0")
+    val dep = Dependency("org.typelevel", "cats-effect", List("cats-effect_2.12"), "1.0.0")
     val (state, result) = coursierAlg
       .getArtifactUrl(dep)
       .run(MockState.empty)
@@ -24,8 +23,8 @@ class CoursierAlgTest extends AnyFunSuite with Matchers {
 
   test("getArtifactIdUrlMapping") {
     val dependencies = List(
-      Dependency("org.typelevel", "cats-core", "cats-core_2.12", "1.6.0"),
-      Dependency("org.typelevel", "cats-effect", "cats-effect_2.12", "1.0.0")
+      Dependency("org.typelevel", "cats-core", List("cats-core_2.12"), "1.6.0"),
+      Dependency("org.typelevel", "cats-effect", List("cats-effect_2.12"), "1.0.0")
     )
     val (state, result) = coursierAlg
       .getArtifactIdUrlMapping(dependencies)
@@ -41,5 +40,4 @@ class CoursierAlgTest extends AnyFunSuite with Matchers {
       "cats-effect" -> "https://typelevel.org/cats-effect/"
     )
   }
-
 }

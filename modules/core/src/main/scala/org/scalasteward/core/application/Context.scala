@@ -57,7 +57,7 @@ object Context {
       implicit val httpJsonClient: HttpJsonClient[F] = new HttpJsonClient[F]
       implicit val httpExistenceClient: HttpExistenceClient[F] = new HttpExistenceClient[F]
       implicit val repoCacheRepository: RepoCacheRepository[F] =
-        new RepoCacheRepository[F](new JsonKeyValueStore("repos", "6"))
+        new RepoCacheRepository[F](new JsonKeyValueStore("repos", "7"))
       val vcsSelection = new VCSSelection[F]
       implicit val vcsApiAlg: VCSApiAlg[F] = vcsSelection.getAlg(config)
       implicit val vcsRepoAlg: VCSRepoAlg[F] = VCSRepoAlg.create[F](config, gitAlg)
@@ -75,7 +75,7 @@ object Context {
       implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create
       implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F]
       implicit val excludeAlg: ExcludeAlg[F] =
-        new ExcludeAlg[F](new JsonKeyValueStore("excluded", "1"))
+        new ExcludeAlg[F](new JsonKeyValueStore("excluded", "2"))
       implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]
       new StewardAlg[F]
     }

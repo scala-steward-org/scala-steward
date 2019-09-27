@@ -36,8 +36,9 @@ sealed trait Update extends Product with Serializable {
     Update.nameOf(groupId, artifactId)
 
   def nextVersion: String =
-    // nope
-    newerVersions.head
+    Version(currentVersion)
+      .selectNext(newerVersions.toList.map(Version.apply))
+      .fold(newerVersions.head)(_.value)
 
   def searchTerms: Nel[String] = {
     val terms = this match {

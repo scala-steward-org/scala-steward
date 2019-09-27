@@ -110,7 +110,7 @@ object FilterAlg {
   private def badVersions(update: Update.Single): List[String] =
     (update.groupId, update.artifactId, update.currentVersion, update.nextVersion) match {
       // https://github.com/vlovgr/ciris/pull/182#issuecomment-420599759
-      case ("com.jsuereth", "sbt-pgp", "1.1.2-1", "1.1.2") => List("1.1.2")
+      case ("com.jsuereth", "sbt-pgp", "1.1.2-1", _) => List("1.1.2")
 
       case ("io.monix", _, _, _) =>
         List(
