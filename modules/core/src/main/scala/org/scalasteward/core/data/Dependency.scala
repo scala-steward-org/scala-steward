@@ -25,7 +25,7 @@ final case class Dependency(
     artifactId: String,
     crossArtifactIds: List[String],
     version: String,
-    newerVersions: List[String] = List.empty,
+    newerVersions: Option[List[String]] = None,
     configurations: Option[String] = None,
     origin: Option[String] = None,
     sbtSeries: Option[String] = None

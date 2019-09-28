@@ -181,7 +181,7 @@ object UpdateAlg {
 
   def dependencyToUpdate(dependency: Dependency): Option[Update.Single] =
     findUpdateUnderNewGroup(dependency).orElse {
-      Nel.fromList(dependency.newerVersions).map { newerVersions =>
+      dependency.newerVersions.flatMap(Nel.fromList).map { newerVersions =>
         Update.Single(
           groupId = dependency.groupId,
           artifactId = dependency.artifactId,

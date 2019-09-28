@@ -51,7 +51,7 @@ object StewardPlugin extends AutoPlugin {
       artifactId = moduleId.name,
       crossArtifactIds = crossName(moduleId, scalaVersion, scalaBinaryVersion).toList,
       version = moduleId.revision,
-      newerVersions = List.empty,
+      newerVersions = None,
       configurations = moduleId.configurations,
       origin = origin,
       sbtSeries = moduleId.extraAttributes.get("e:sbtVersion")
@@ -76,13 +76,13 @@ object StewardPlugin extends AutoPlugin {
       val updates = dependencyUpdatesData.value.toList.map {
         case (moduleId, newerVersions) =>
           toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue, origin)
-            .copy(newerVersions = newerVersions.toList.collect {
+            .copy(newerVersions = Some(newerVersions.toList.collect {
               case v: ValidVersion if moduleId.revision != v.text => v.text
-            })
+            }))
       }
       val dependencies = libraryDependencies.value
         .map(toDependency(_, scalaVersionValue, scalaBinaryVersionValue, origin))
-        .filterNot(d => updates.exists(u => d == u.copy(newerVersions = List.empty)))
+        .filterNot(d => updates.exists(u => d == u.copy(newerVersions = None)))
       seqToJson((updates ++ dependencies).map(_.asJson))
     }
   )
@@ -92,7 +92,7 @@ object StewardPlugin extends AutoPlugin {
       artifactId: String,
       crossArtifactIds: List[String],
       version: String,
-      newerVersions: List[String],
+      newerVersions: Option[List[String]],
       configurations: Option[String],
       origin: Option[String],
       sbtSeries: Option[String]
@@ -104,7 +104,7 @@ object StewardPlugin extends AutoPlugin {
           "artifactId" -> strToJson(artifactId),
           "crossArtifactIds" -> seqToJson(crossArtifactIds.map(strToJson)),
           "version" -> strToJson(version),
-          "newerVersions" -> seqToJson(newerVersions.map(strToJson)),
+          "newerVersions" -> newerVersions.fold("null")(vs => seqToJson(vs.map(strToJson))),
           "configurations" -> optToJson(configurations.map(strToJson)),
           "origin" -> optToJson(origin.map(strToJson)),
           "sbtSeries" -> optToJson(sbtSeries.map(strToJson))
