@@ -29,10 +29,10 @@ object parser {
     lines
       .flatMap(line => decode[List[Dependency]](removeSbtNoise(line)).getOrElse(List.empty))
       .groupBy(_.copy(crossArtifactIds = List.empty))
-      .toList
       .map {
         case (d, ds) => d.copy(crossArtifactIds = ds.flatMap(_.crossArtifactIds).distinct.sorted)
       }
+      .toList
 
   private def removeSbtNoise(s: String): String =
     s.replace("[info]", "").trim

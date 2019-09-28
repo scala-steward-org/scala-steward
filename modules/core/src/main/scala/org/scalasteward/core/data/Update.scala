@@ -19,7 +19,6 @@ package org.scalasteward.core.data
 import cats.implicits._
 import eu.timepit.refined.W
 import io.circe.{Decoder, Encoder}
-import monocle.Lens
 import org.scalasteward.core.data.Update.{Group, Single}
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
@@ -69,11 +68,6 @@ object Update {
   ) extends Update {
     override def artifactIds: Nel[String] =
       Nel.one(artifactId)
-  }
-
-  object Single {
-    val artifactIdLens: Lens[Update.Single, String] =
-      Lens[Update.Single, String](_.artifactId)(artifactId => _.copy(artifactId = artifactId))
   }
 
   final case class Group(

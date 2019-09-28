@@ -44,6 +44,8 @@ trait SbtAlg[F[_]] {
 
   def getUpdatesForProject(project: ArtificialProject): F[List[Update.Single]]
 
+  def getUpdatesForRepoWithDeps(repo: Repo): F[(List[Update.Single], List[Dependency])]
+
   def getUpdatesForRepo(repo: Repo): F[List[Update.Single]]
 
   def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit]
@@ -118,7 +120,9 @@ object SbtAlg {
           _ <- fileAlg.deleteForce(updatesDir)
         } yield dependencies.flatMap(UpdateAlg.dependencyToUpdate(_).toList)
 
-      override def getUpdatesForRepo(repo: Repo): F[List[Update.Single]] =
+      override def getUpdatesForRepoWithDeps(
+          repo: Repo
+      ): F[(List[Update.Single], List[Dependency])] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
           maybeClearCredentials = if (config.keepCredentials) Nil else List(setCredentialsToNil)
@@ -126,7 +130,10 @@ object SbtAlg {
             List(projectDependenciesWithUpdates, reloadPlugins, buildDependenciesWithUpdates)
           lines <- withTemporarySbtDependency(repo)(exec(sbtCmd(commands), repoDir))
           dependencies = parser.parseDependencies(lines)
-        } yield dependencies.flatMap(UpdateAlg.dependencyToUpdate(_).toList)
+        } yield (dependencies.flatMap(UpdateAlg.dependencyToUpdate(_).toList), dependencies)
+
+      override def getUpdatesForRepo(repo: Repo): F[List[Update.Single]] =
+        getUpdatesForRepoWithDeps(repo).map(_._1)
 
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
         addGlobalPluginTemporarily(scalaStewardScalafixSbt) {
