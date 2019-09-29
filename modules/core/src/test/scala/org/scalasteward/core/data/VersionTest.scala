@@ -8,6 +8,7 @@ import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.typelevel.discipline.scalatest.Discipline
+import scala.util.Random
 
 class VersionTest extends AnyFunSuite with Discipline with Matchers {
   checkAll("Order[Version]", OrderTests[Version].order)
@@ -72,8 +73,10 @@ class VersionTest extends AnyFunSuite with Discipline with Matchers {
       ("0.19.0-RC1", List("0.20.0-RC1", "0.21.0-RC1"), None)
     )
 
+    val rnd = new Random()
     forAll(nextVersions) { (current, versions, result) =>
-      Version(current).selectNext(versions.map(Version.apply)) shouldBe result.map(Version.apply)
+      Version(current).selectNext(rnd.shuffle(versions).map(Version.apply)) shouldBe
+        result.map(Version.apply)
     }
   }
 }

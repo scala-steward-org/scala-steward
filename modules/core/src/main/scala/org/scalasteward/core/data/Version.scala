@@ -44,19 +44,19 @@ final case class Version(value: String) {
     */
   def selectNext(versions: List[Version]): Option[Version] = {
     val cutoff = preReleaseIndex.fold(numericComponents.size)(_.value - 1)
-    versions
-      .filter(_ > this)
-      .groupBy(_.numericComponents.zip(numericComponents).take(cutoff).takeWhile {
-        case (c1, c2) => c1 === c2
-      })
-      .toList
-      .sortBy {
-        case (commonPrefix, _) => commonPrefix.length
-      }
+    val newerVersionsByCommonPrefix: Map[List[(BigInt, BigInt)], List[Version]] =
+      versions
+        .filter(_ > this)
+        .groupBy(_.numericComponents.zip(numericComponents).take(cutoff).takeWhile {
+          case (c1, c2) => c1 === c2
+        })
+
+    newerVersionsByCommonPrefix.toList
+      .sortBy { case (commonPrefix, _) => commonPrefix.length }
       .flatMap {
         case (commonPrefix, vs) =>
           // Do not select pre-release versions of a different series.
-          vs.filterNot(_.isPreRelease && cutoff =!= commonPrefix.length)
+          vs.filterNot(_.isPreRelease && cutoff =!= commonPrefix.length).sorted
       }
       .lastOption
   }
