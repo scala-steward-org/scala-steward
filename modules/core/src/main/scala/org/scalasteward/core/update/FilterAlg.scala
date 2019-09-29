@@ -75,7 +75,6 @@ object FilterAlg {
     globalFilter(update).flatMap(repoConfig.updates.keep)
 
   def isIgnoredGlobally(update: Update.Single): FilterResult = {
-    println(update)
     val keep = ((update.groupId, update.artifactId) match {
       case ("org.scala-lang", "scala-compiler") => false
       case ("org.scala-lang", "scala-library")  => false

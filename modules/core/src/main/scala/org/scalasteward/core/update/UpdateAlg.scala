@@ -114,8 +114,8 @@ final class UpdateAlg[F[_]](
       }
       isOutdated = outdatedStates.nonEmpty
       _ <- {
-        if (true) {
-          val statesAsString = util.string.indentLines(allStates.map(_.toString).sorted)
+        if (isOutdated) {
+          val statesAsString = util.string.indentLines(outdatedStates.map(_.toString).sorted)
           logger.info(s"Update states for ${repo.show}:\n" + statesAsString)
         } else F.unit
       }
