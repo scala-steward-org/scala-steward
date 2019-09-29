@@ -2,9 +2,9 @@ package org.scalasteward.core.edit
 
 import cats.implicits._
 import org.scalacheck.{Arbitrary, Gen}
-import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import org.scalatest.matchers.should.Matchers
 
 class editTest extends AnyFunSuite with Matchers with ScalaCheckPropertyChecks {
   private val lineGen = Gen.frequency(

@@ -8,8 +8,8 @@ import org.scalasteward.core.mock.{MockContext, MockState}
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
-import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 class SbtAlgTest extends AnyFunSuite with Matchers {
 

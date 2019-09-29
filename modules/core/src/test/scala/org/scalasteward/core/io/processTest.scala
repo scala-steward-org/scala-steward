@@ -3,9 +3,9 @@ package org.scalasteward.core.io
 import cats.effect.IO
 import org.scalasteward.core.TestInstances._
 import org.scalasteward.core.util.Nel
-import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
 import scala.concurrent.duration._
+import org.scalatest.matchers.should.Matchers
 
 class processTest extends AnyFunSuite with Matchers {
   def slurp1(cmd: Nel[String]): IO[List[String]] =

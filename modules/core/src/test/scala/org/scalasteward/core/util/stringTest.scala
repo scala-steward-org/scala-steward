@@ -1,9 +1,9 @@
 package org.scalasteward.core.util
 
 import org.scalacheck.Gen
-import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import org.scalatest.matchers.should.Matchers
 
 class stringTest extends AnyFunSuite with Matchers with ScalaCheckPropertyChecks {
   test("splitBetweenLowerAndUpperChars(s).mkString == s") {

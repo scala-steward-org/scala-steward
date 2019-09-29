@@ -3,9 +3,9 @@ package org.scalasteward.core.vcs.data
 import io.circe.parser
 import org.http4s.Http4sLiteralSyntax
 import org.scalasteward.core.vcs.data.PullRequestState.Open
-import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
 import scala.io.Source
+import org.scalatest.matchers.should.Matchers
 
 class PullRequestOutTest extends AnyFunSuite with Matchers {
   test("decode") {

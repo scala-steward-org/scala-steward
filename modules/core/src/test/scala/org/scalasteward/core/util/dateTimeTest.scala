@@ -1,9 +1,9 @@
 package org.scalasteward.core.util
 
 import org.scalasteward.core.util.dateTime._
-import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
 import scala.concurrent.duration._
+import org.scalatest.matchers.should.Matchers
 
 class dateTimeTest extends AnyFunSuite with Matchers {
   test("showDuration") {

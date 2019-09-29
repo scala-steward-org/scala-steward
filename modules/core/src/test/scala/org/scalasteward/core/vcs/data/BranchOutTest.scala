@@ -3,9 +3,9 @@ package org.scalasteward.core.vcs.data
 import io.circe.parser
 import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.git.{Branch, Sha1}
-import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
 import scala.io.Source
+import org.scalatest.matchers.should.Matchers
 
 class BranchOutTest extends AnyFunSuite with Matchers {
   test("decode") {
