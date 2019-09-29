@@ -180,15 +180,17 @@ object UpdateAlg {
     }
 
   def dependencyToUpdate(dependency: Dependency): Option[Update.Single] =
-    findUpdateUnderNewGroup(dependency).orElse {
-      dependency.newerVersions.flatMap(Nel.fromList).map { newerVersions =>
-        Update.Single(
-          groupId = dependency.groupId,
-          artifactId = dependency.artifactId,
-          currentVersion = dependency.version,
-          newerVersions = newerVersions,
-          configurations = dependency.configurations
-        )
+    findUpdateUnderNewGroup(dependency)
+      .orElse {
+        dependency.newerVersions.flatMap(Nel.fromList).map { newerVersions =>
+          Update.Single(
+            groupId = dependency.groupId,
+            artifactId = dependency.artifactId,
+            currentVersion = dependency.version,
+            newerVersions = newerVersions,
+            configurations = dependency.configurations
+          )
+        }
       }
-    }
+      .filter(_.maybeNextVersion.isDefined)
 }
