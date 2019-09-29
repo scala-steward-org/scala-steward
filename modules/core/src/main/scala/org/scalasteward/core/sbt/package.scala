@@ -51,8 +51,7 @@ package object sbt {
           groupId = "org.scala-sbt",
           artifactId = "sbt",
           crossArtifactIds = List.empty,
-          version = sbtVersion.value,
-          origin = Some("build")
+          version = sbtVersion.value
         )
       )
     else

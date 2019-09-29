@@ -20,15 +20,14 @@ import com.timushev.sbt.updates.UpdatesKeys.dependencyUpdatesData
 import com.timushev.sbt.updates.versions.ValidVersion
 import sbt._
 import sbt.Keys._
-import sbt.complete.DefaultParsers._
 
 object StewardPlugin extends AutoPlugin {
 
   override def trigger: PluginTrigger = allRequirements
 
   object autoImport {
-    val stewardDependencies = inputKey[String]("")
-    val stewardDependenciesWithUpdates = inputKey[String]("")
+    val stewardDependencies = taskKey[String]("")
+    val stewardDependenciesWithUpdates = taskKey[String]("")
   }
 
   import autoImport._
@@ -43,8 +42,7 @@ object StewardPlugin extends AutoPlugin {
   def toDependency(
       moduleId: ModuleID,
       scalaVersion: String,
-      scalaBinaryVersion: String,
-      origin: Option[String]
+      scalaBinaryVersion: String
   ): Dependency =
     Dependency(
       groupId = moduleId.organization,
@@ -53,7 +51,6 @@ object StewardPlugin extends AutoPlugin {
       version = moduleId.revision,
       newerVersions = None,
       configurations = moduleId.configurations,
-      origin = origin,
       sbtSeries = moduleId.extraAttributes.get("e:sbtVersion")
     )
 
@@ -61,27 +58,25 @@ object StewardPlugin extends AutoPlugin {
     stewardDependencies := {
       val scalaBinaryVersionValue = scalaBinaryVersion.value
       val scalaVersionValue = scalaVersion.value
-      val origin = spaceDelimited("<origin>").parsed.headOption
 
       val deps = libraryDependencies.value.map { moduleId =>
-        toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue, origin).asJson
+        toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue).asJson
       }
       seqToJson(deps)
     },
     stewardDependenciesWithUpdates := {
       val scalaBinaryVersionValue = scalaBinaryVersion.value
       val scalaVersionValue = scalaVersion.value
-      val origin = spaceDelimited("<origin>").parsed.headOption
 
       val updates = dependencyUpdatesData.value.toList.map {
         case (moduleId, newerVersions) =>
-          toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue, origin)
+          toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue)
             .copy(newerVersions = Some(newerVersions.toList.collect {
               case v: ValidVersion if moduleId.revision != v.text => v.text
             }))
       }
       val dependencies = libraryDependencies.value
-        .map(toDependency(_, scalaVersionValue, scalaBinaryVersionValue, origin))
+        .map(toDependency(_, scalaVersionValue, scalaBinaryVersionValue))
         .filterNot(d => updates.exists(u => d == u.copy(newerVersions = None)))
       seqToJson((updates ++ dependencies).map(_.asJson))
     }
@@ -94,7 +89,6 @@ object StewardPlugin extends AutoPlugin {
       version: String,
       newerVersions: Option[List[String]],
       configurations: Option[String],
-      origin: Option[String],
       sbtSeries: Option[String]
   ) {
     def asJson: String =
@@ -106,7 +100,6 @@ object StewardPlugin extends AutoPlugin {
           "version" -> strToJson(version),
           "newerVersions" -> newerVersions.fold("null")(vs => seqToJson(vs.map(strToJson))),
           "configurations" -> optToJson(configurations.map(strToJson)),
-          "origin" -> optToJson(origin.map(strToJson)),
           "sbtSeries" -> optToJson(sbtSeries.map(strToJson))
         )
       )

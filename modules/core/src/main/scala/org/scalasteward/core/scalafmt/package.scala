@@ -25,8 +25,7 @@ package object scalafmt {
       groupId = if (scalafmtVersion > Version("2.0.0-RC1")) "org.scalameta" else "com.geirsson",
       artifactId = "scalafmt-core",
       crossArtifactIds = List(s"scalafmt-core_${scalaBinaryVersion}"),
-      version = scalafmtVersion.value,
-      origin = Some("project")
+      version = scalafmtVersion.value
     )
 
   def parseScalafmtConf(s: String): Option[Version] =

@@ -27,7 +27,6 @@ final case class Dependency(
     version: String,
     newerVersions: Option[List[String]] = None,
     configurations: Option[String] = None,
-    origin: Option[String] = None,
     sbtSeries: Option[String] = None
 ) {
   def artifactIdCross: String =
