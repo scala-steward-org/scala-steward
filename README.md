@@ -108,6 +108,7 @@ Consider creating PR to add your company to the list and join the community.
 * [Firstbird](https://firstbird.com)
 * [HolidayCheck](https://github.com/holidaycheck)
 * [iAdvize](https://www.iadvize.com/en/)
+* [Rewards Network](https://www.rewardsnetwork.com/)
 * [Septeni Original](https://www.septeni-original.co.jp)
 * [SlamData](https://slamdata.com/)
 * [Snowplow Analytics](https://snowplowanalytics.com/)
