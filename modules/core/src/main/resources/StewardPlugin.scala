@@ -26,12 +26,8 @@ object StewardPlugin extends AutoPlugin {
   override def trigger: PluginTrigger = allRequirements
 
   object autoImport {
-    val stewardDependencies = taskKey[String](
-      "JSON representation of libraryDependencies for Scala Steward"
-    )
-    val stewardUpdates = taskKey[String](
-      "JSON representation of libraryDependencies with potential newer versions for Scala Steward"
-    )
+    val stewardDependencies = taskKey[String]("")
+    val stewardUpdates = taskKey[String]("")
   }
 
   import autoImport._
