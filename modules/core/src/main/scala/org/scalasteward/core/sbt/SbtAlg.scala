@@ -133,7 +133,7 @@ object SbtAlg {
         } yield (dependencies.flatMap(UpdateAlg.dependencyToUpdate(_).toList), dependencies)
 
       override def getUpdatesForRepo(repo: Repo): F[List[Update.Single]] =
-        getUpdatesForRepoWithDeps(repo).map(_._1)
+        getUpdatesForRepoWithDeps(repo).map { case (updates, _) => updates }
 
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
         addGlobalPluginTemporarily(scalaStewardScalafixSbt) {
