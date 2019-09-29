@@ -41,17 +41,21 @@ final case class Version(value: String) {
     * Implements the scheme described in this FAQ:
     * https://github.com/fthomas/scala-steward/blob/master/docs/faq.md#how-does-scala-steward-decide-what-version-it-is-updating-to
     */
-  def selectNext(versions: List[Version]): Option[Version] =
+  def selectNext(versions: List[Version]): Option[Version] = {
+    val firstNegative = numericComponents.indexWhere(_ < 0)
+    val cutoff = if (firstNegative < 0) numericComponents.size else firstNegative - 1
+
     versions
       .filter(_ > this)
-      .groupBy {
-        _.numericComponents.zip(numericComponents).takeWhile { case (c1, c2) => c1 === c2 }.size
-      }
+      .groupBy(_.numericComponents.zip(numericComponents).take(cutoff).takeWhile {
+        case (c1, c2) => c1 === c2
+      })
       .toList
-      .sortBy { case (commonPrefixLength, _) => commonPrefixLength }
+      .sortBy { case (commonPrefix, _) => commonPrefix.length }
       .lastOption
       .map { case (_, vs) => vs }
       .flatMap(_.lastOption)
+  }
 }
 
 object Version {

@@ -34,7 +34,7 @@ class VersionTest extends AnyFunSuite with Discipline with Matchers {
     }
   }
 
-  test("selectNext") {
+  test("selectNext, table 1") {
     val allVersions =
       List("1.0.0", "1.0.1", "1.0.2", "1.1.0", "1.2.0", "2.0.0", "3.0.0", "3.0.0.1", "3.1")
         .map(Version.apply)
@@ -58,9 +58,20 @@ class VersionTest extends AnyFunSuite with Discipline with Matchers {
     }
   }
 
-  test("selectNext: RC and regular versions") {
-    val current = "1.3.0-RC3"
-    val versions = List("1.3.0-RC4", "1.3.0-RC5", "1.3.0", "1.3.1", "1.3.2").map(Version.apply)
-    Version(current).selectNext(versions) shouldBe Some(Version("1.3.0-RC5"))
+  test("selectNext, table 2") {
+    val nextVersions = Table(
+      ("current", "versions", "result"),
+      ("1.3.0-RC3", List("1.3.0-RC4", "1.3.0-RC5"), Some("1.3.0-RC5")),
+      ("1.3.0-RC3", List("1.3.0-RC4", "1.3.0-RC5", "1.3.0", "1.3.2"), Some("1.3.2")),
+      ("3.0-RC3", List("3.0-RC4", "3.0-RC5", "3.0", "3.2"), Some("3.2")),
+      ("1.3.0-RC5", List("1.3.0", "1.3.1", "1.3.2"), Some("1.3.2")),
+      ("2.5", List("2.6", "3.6"), Some("2.6")),
+      ("1.3.0-RC5", List("1.3.0", "1.4.0"), Some("1.3.0"))
+      // ("1.1.2-1", List("2.0.0", "2.0.1-M3"), Some("2.0.0"))
+    )
+
+    forAll(nextVersions) { (current, versions, result) =>
+      Version(current).selectNext(versions.map(Version.apply)) shouldBe result.map(Version.apply)
+    }
   }
 }
