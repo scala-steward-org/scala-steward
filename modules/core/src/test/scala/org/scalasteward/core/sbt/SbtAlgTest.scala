@@ -59,7 +59,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
               "sbt",
               "-batch",
               "-no-colors",
-              s";set every credentials := Nil;$projectDependenciesWithUpdates;$reloadPlugins;$buildDependenciesWithUpdates"
+              s";set every credentials := Nil;$stewardUpdates;$reloadPlugins;$stewardUpdates"
             ),
             List("rm", s"$repoDir/project/tmp-sbt-dep.sbt")
           )
@@ -90,7 +90,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
           "sbt",
           "-batch",
           "-no-colors",
-          s";set every credentials := Nil;$projectDependenciesWithUpdates;$reloadPlugins;$buildDependenciesWithUpdates"
+          s";set every credentials := Nil;$stewardUpdates;$reloadPlugins;$stewardUpdates"
         ),
         List("restore", (repoDir / ".sbtopts").toString),
         List("restore", (repoDir / ".jvmopts").toString)
@@ -119,7 +119,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
           "sbt",
           "-batch",
           "-no-colors",
-          s";$projectDependenciesWithUpdates;$reloadPlugins;$buildDependenciesWithUpdates"
+          s";$stewardUpdates;$reloadPlugins;$stewardUpdates"
         )
       )
     )

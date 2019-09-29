@@ -35,9 +35,9 @@ class ArtificialProjectTest extends AnyFunSuite with Matchers {
 
   test("dependencyUpdatesCmd") {
     project.dependencyUpdatesCmd shouldBe List(
-      projectDependenciesWithUpdates,
+      stewardUpdates,
       reloadPlugins,
-      buildDependenciesWithUpdates
+      stewardUpdates
     )
   }
 

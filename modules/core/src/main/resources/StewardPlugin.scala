@@ -26,8 +26,12 @@ object StewardPlugin extends AutoPlugin {
   override def trigger: PluginTrigger = allRequirements
 
   object autoImport {
-    val stewardDependencies = taskKey[String]("")
-    val stewardDependenciesWithUpdates = taskKey[String]("")
+    val stewardDependencies = taskKey[String](
+      "JSON representation of libraryDependencies for Scala Steward"
+    )
+    val stewardUpdates = taskKey[String](
+      "JSON representation of libraryDependencies with potential newer versions for Scala Steward"
+    )
   }
 
   import autoImport._
@@ -64,7 +68,7 @@ object StewardPlugin extends AutoPlugin {
       }
       seqToJson(deps)
     },
-    stewardDependenciesWithUpdates := {
+    stewardUpdates := {
       val scalaBinaryVersionValue = scalaBinaryVersion.value
       val scalaVersionValue = scalaVersion.value
 

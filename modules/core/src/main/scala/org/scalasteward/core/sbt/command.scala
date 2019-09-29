@@ -17,11 +17,8 @@
 package org.scalasteward.core.sbt
 
 object command {
-  val projectDependencies = "show stewardDependencies"
-  val buildDependencies = "show stewardDependencies"
-
-  val projectDependenciesWithUpdates = "show stewardDependenciesWithUpdates"
-  val buildDependenciesWithUpdates = "show stewardDependenciesWithUpdates"
+  val stewardDependencies = "show stewardDependencies"
+  val stewardUpdates = "show stewardUpdates"
 
   val reloadPlugins = "reload plugins"
   val scalafix = "scalafix"

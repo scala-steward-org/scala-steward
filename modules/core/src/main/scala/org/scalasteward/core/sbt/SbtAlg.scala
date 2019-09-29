@@ -95,7 +95,7 @@ object SbtAlg {
       override def getDependencies(repo: Repo): F[List[Dependency]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          cmd = sbtCmd(List(projectDependencies, reloadPlugins, buildDependencies))
+          cmd = sbtCmd(List(stewardDependencies, reloadPlugins, stewardDependencies))
           lines <- exec(cmd, repoDir)
           dependencies = parser.parseDependencies(lines)
           maybeSbtVersion <- getSbtVersion(repo)
@@ -127,7 +127,7 @@ object SbtAlg {
           repoDir <- workspaceAlg.repoDir(repo)
           maybeClearCredentials = if (config.keepCredentials) Nil else List(setCredentialsToNil)
           commands = maybeClearCredentials ++
-            List(projectDependenciesWithUpdates, reloadPlugins, buildDependenciesWithUpdates)
+            List(stewardUpdates, reloadPlugins, stewardUpdates)
           lines <- withTemporarySbtDependency(repo)(exec(sbtCmd(commands), repoDir))
           dependencies = parser.parseDependencies(lines)
         } yield (dependencies.flatMap(UpdateAlg.dependencyToUpdate(_).toList), dependencies)

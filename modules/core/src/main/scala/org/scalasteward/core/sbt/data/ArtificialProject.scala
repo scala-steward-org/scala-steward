@@ -31,9 +31,9 @@ final case class ArtificialProject(
   def dependencyUpdatesCmd: List[String] = {
     val lb = new ListBuffer[String]
     if (libraries.nonEmpty)
-      lb.append(projectDependenciesWithUpdates)
+      lb.append(stewardUpdates)
     if (plugins.nonEmpty)
-      lb.append(reloadPlugins, buildDependenciesWithUpdates)
+      lb.append(reloadPlugins, stewardUpdates)
     lb.toList
   }
 
