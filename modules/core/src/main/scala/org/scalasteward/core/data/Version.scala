@@ -29,8 +29,11 @@ final case class Version(value: String) {
     value
       .split(Array('.', '-', '+'))
       .flatMap(util.string.splitNumericAndNonNumeric)
+      .map(_.toUpperCase)
       .map {
-        case "SNAP" | "SNAPSHOT" => BigInt(-3)
+        case "SNAP" | "SNAPSHOT" => BigInt(-5)
+        case "ALPHA"             => BigInt(-4)
+        case "BETA"              => BigInt(-3)
         case "M"                 => BigInt(-2)
         case "RC"                => BigInt(-1)
         case s                   => Try(BigInt(s)).getOrElse(BigInt(0))
