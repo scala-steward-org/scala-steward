@@ -73,7 +73,10 @@ class VersionTest extends AnyFunSuite with Discipline with Matchers {
       ("0.19.0-RC1", List("0.20.0-RC1", "0.21.0-RC1"), None),
       ("1.14.0", List("1.14.1-RC1", "1.14.1", "1.14.2"), Some("1.14.2")),
       ("3.1.0-SNAP13", List("3.2.0-M1"), None),
-      ("3.1.0-SNAP13", List("3.2.0-M1", "3.2.0"), Some("3.2.0"))
+      ("3.1.0-SNAP13", List("3.2.0-M1", "3.2.0"), Some("3.2.0")),
+      ("4.1.42.Final", List("5.0.0.Alpha2"), None),
+      ("4.1.0.Beta7", List("4.1.0.Final"), Some("4.1.0.Final")),
+      ("4.1.0.Beta7", List("5.0.0.Beta1"), None)
     )
 
     val rnd = new Random()
