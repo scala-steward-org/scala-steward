@@ -17,7 +17,7 @@
 package org.scalasteward.core.io
 
 import better.files.File
-import cats.effect.{Concurrent, ContextShift, Timer}
+import cats.effect.{Blocker, Concurrent, ContextShift, Timer}
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Cli.EnvVar
@@ -46,7 +46,7 @@ object ProcessAlg {
     }
   }
 
-  def create[F[_]](
+  def create[F[_]](blocker: Blocker)(
       implicit
       config: Config,
       contextShift: ContextShift[F],
@@ -66,7 +66,8 @@ object ProcessAlg {
             Some(cwd.toJava),
             extraEnv.toMap,
             config.processTimeout,
-            logger.trace(_)
+            logger.trace(_),
+            blocker
           )
     }
 }
