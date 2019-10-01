@@ -113,6 +113,12 @@ object FilterAlg {
       // https://github.com/vlovgr/ciris/pull/182#issuecomment-420599759
       case ("com.jsuereth", "sbt-pgp", "1.1.2-1", "1.1.2") => List("1.1.2")
 
+      case ("commons-collections", "commons-collections", _, _) =>
+        List(
+          // https://github.com/albuch/sbt-dependency-check/pull/85
+          "20040102.233541"
+        )
+
       case ("io.monix", _, _, _) =>
         List(
           // https://github.com/fthomas/scala-steward/issues/105
