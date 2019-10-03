@@ -117,7 +117,7 @@ object Version {
                 loop(t, h :: accN, List.empty, materialize(List.empty, accA, acc))
 
               case _ if h.isDigit && accA.isEmpty =>
-                loop(t, h :: accN, accA, acc)
+                loop(t, h :: accN, List.empty, acc)
 
               case _ if accN.nonEmpty =>
                 loop(t, List.empty, h :: accA, materialize(accN, List.empty, acc))
