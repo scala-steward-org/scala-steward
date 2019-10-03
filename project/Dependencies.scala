@@ -23,7 +23,7 @@ object Dependencies {
   val coursierCore = "io.get-coursier" %% "coursier" % Versions.coursier
   val coursierCatsInterop = "io.get-coursier" %% "coursier-cats-interop" % Versions.coursier
   val disciplineScalatest = "org.typelevel" %% "discipline-scalatest" % "1.0.0-RC1"
-  val fs2Core = "co.fs2" %% "fs2-core" % "1.0.5"
+  val fs2Core = "co.fs2" %% "fs2-core" % "2.0.1"
   val http4sAsyncHttpClient = "org.http4s" %% "http4s-async-http-client" % Versions.http4s
   val http4sCirce = "org.http4s" %% "http4s-circe" % Versions.http4s
   val http4sDsl = "org.http4s" %% "http4s-dsl" % Versions.http4s
