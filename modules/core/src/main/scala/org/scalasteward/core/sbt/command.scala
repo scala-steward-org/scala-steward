@@ -24,4 +24,5 @@ object command {
   val testScalafix = "test:scalafix"
   val scalafixEnable = "scalafixEnable"
   val setCredentialsToNil = "set every credentials := Nil"
+  val setDependencyUpdatesFailBuild = "set every dependencyUpdatesFailBuild := false"
 }

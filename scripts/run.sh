@@ -11,10 +11,13 @@ git pull
 sbt -no-colors ";clean ;core/assembly"
 JAR=$(find modules/ -name "scala-steward-assembly*.jar" | head -n1)
 
+REPOS_FILE="$STEWARD_DIR/public-repos.md"
+curl -o "$REPOS_FILE" https://raw.githubusercontent.com/scala-steward-org/repos/master/repos.md
+
 LOGIN="scala-steward"
 java -DROOT_LOG_LEVEL=INFO -DLOG_LEVEL=INFO -jar ${JAR} \
   --workspace  "$STEWARD_DIR/workspace" \
-  --repos-file "$STEWARD_DIR/repos.md" \
+  --repos-file "$REPOS_FILE" \
   --prune-repos \
   --git-author-email "me@$LOGIN.org" \
   --vcs-login ${LOGIN} \

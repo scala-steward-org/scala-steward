@@ -2,17 +2,18 @@ package org.scalasteward.core.io
 
 import cats.effect.IO
 import org.scalasteward.core.TestInstances._
+import org.scalasteward.core.io.ProcessAlgTest.blocker
 import org.scalasteward.core.util.Nel
-import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import scala.concurrent.duration._
 
 class processTest extends AnyFunSuite with Matchers {
   def slurp1(cmd: Nel[String]): IO[List[String]] =
-    process.slurp[IO](cmd, None, Map.empty, 1.minute, _ => IO.unit)
+    process.slurp[IO](cmd, None, Map.empty, 1.minute, _ => IO.unit, blocker)
 
   def slurp2(cmd: Nel[String], timeout: FiniteDuration): IO[List[String]] =
-    process.slurp[IO](cmd, None, Map.empty, timeout, _ => IO.unit)
+    process.slurp[IO](cmd, None, Map.empty, timeout, _ => IO.unit, blocker)
 
   test("echo hello") {
     slurp1(Nel.of("echo", "-n", "hello")).unsafeRunSync() shouldBe List("hello")

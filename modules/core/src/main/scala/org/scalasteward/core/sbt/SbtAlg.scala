@@ -134,7 +134,7 @@ object SbtAlg {
           repoDir <- workspaceAlg.repoDir(repo)
           maybeClearCredentials = if (config.keepCredentials) Nil else List(setCredentialsToNil)
           commands = maybeClearCredentials ++
-            List(dependencyUpdates, reloadPlugins, dependencyUpdates)
+            List(setDependencyUpdatesFailBuild, dependencyUpdates, reloadPlugins, dependencyUpdates)
           updates <- withTemporarySbtDependency(repo) {
             exec(sbtCmd(commands), repoDir).map(parser.parseSingleUpdates)
           }

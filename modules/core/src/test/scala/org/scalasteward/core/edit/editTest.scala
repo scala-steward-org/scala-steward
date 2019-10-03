@@ -2,8 +2,8 @@ package org.scalasteward.core.edit
 
 import cats.implicits._
 import org.scalacheck.{Arbitrary, Gen}
-import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 class editTest extends AnyFunSuite with Matchers with ScalaCheckPropertyChecks {

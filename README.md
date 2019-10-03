@@ -18,8 +18,8 @@ See also the announcement blog post:
 ## Quick start guide
 
 Open a pull request that adds the GitHub repository of your Scala project
-to [repos.md](https://github.com/fthomas/scala-steward/blob/master/repos.md)
-([edit](https://github.com/fthomas/scala-steward/edit/master/repos.md)).
+to [repos.md](https://github.com/scala-steward-org/repos/blob/master/repos.md)
+([edit](https://github.com/scala-steward-org/repos/edit/master/repos.md)).
 Once that PR is merged, [**@scala-steward**][@scala-steward] will check
 periodically for updates of libraries and plugins in your project and will
 open pull requests for updates it found.
@@ -78,6 +78,7 @@ Thanks goes to these wonderful people:
 * [kalejami](https://github.com/kalejami)
 * [KAWACHI Takashi](https://github.com/tkawachi)
 * [kenji yoshida](https://github.com/xuwei-k)
+* [Lars Hupel](https://github.com/larsrh)
 * [Manuel Cueto](https://github.com/manuelcueto)
 * [Mark Canlas](https://github.com/mcanlas)
 * [Michael Wizner](https://github.com/mwz)
@@ -108,6 +109,7 @@ Consider creating PR to add your company to the list and join the community.
 * [Firstbird](https://firstbird.com)
 * [HolidayCheck](https://github.com/holidaycheck)
 * [iAdvize](https://www.iadvize.com/en/)
+* [Rewards Network](https://www.rewardsnetwork.com/)
 * [Septeni Original](https://www.septeni-original.co.jp)
 * [SlamData](https://slamdata.com/)
 * [Snowplow Analytics](https://snowplowanalytics.com/)

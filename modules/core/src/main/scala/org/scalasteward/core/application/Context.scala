@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.application
 
-import cats.effect.{ConcurrentEffect, ContextShift, Resource, Timer}
+import cats.effect._
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.client.Client
@@ -27,7 +27,7 @@ import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository}
 import org.scalasteward.core.persistence.JsonKeyValueStore
-import org.scalasteward.core.repocache.{RepoCacheAlg, RepoCacheRepository}
+import org.scalasteward.core.repocache.{RefreshErrorAlg, RepoCacheAlg, RepoCacheRepository}
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.scalafmt.ScalafmtAlg
@@ -41,6 +41,7 @@ object Context {
       args: List[String]
   ): Resource[F, StewardAlg[F]] =
     for {
+      blocker <- Blocker[F]
       cliArgs_ <- Resource.liftF(new Cli[F].parseArgs(args))
       implicit0(config: Config) <- Resource.liftF(Config.create[F](cliArgs_))
       implicit0(client: Client[F]) <- AsyncHttpClient.resource[F]()
@@ -49,7 +50,7 @@ object Context {
     } yield {
       implicit val dateTimeAlg: DateTimeAlg[F] = DateTimeAlg.create[F]
       implicit val fileAlg: FileAlg[F] = FileAlg.create[F]
-      implicit val processAlg: ProcessAlg[F] = ProcessAlg.create[F]
+      implicit val processAlg: ProcessAlg[F] = ProcessAlg.create[F](blocker)
       implicit val workspaceAlg: WorkspaceAlg[F] = WorkspaceAlg.create[F]
       implicit val repoConfigAlg: RepoConfigAlg[F] = new RepoConfigAlg[F]
       implicit val filterAlg: FilterAlg[F] = new FilterAlg[F]
@@ -66,6 +67,8 @@ object Context {
         new PullRequestRepository[F](new JsonKeyValueStore("prs", "3"))
       implicit val scalafmtAlg: ScalafmtAlg[F] = ScalafmtAlg.create[F]
       implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F]
+      implicit val refreshErrorAlg: RefreshErrorAlg[F] =
+        new RefreshErrorAlg[F](new JsonKeyValueStore("repos_refresh_errors", "1"))
       implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F]
       implicit val editAlg: EditAlg[F] = new EditAlg[F]
       implicit val updateRepository: UpdateRepository[F] =

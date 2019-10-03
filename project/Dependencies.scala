@@ -22,8 +22,8 @@ object Dependencies {
   val commonsIo = "commons-io" % "commons-io" % "2.6"
   val coursierCore = "io.get-coursier" %% "coursier" % Versions.coursier
   val coursierCatsInterop = "io.get-coursier" %% "coursier-cats-interop" % Versions.coursier
-  val disciplineScalatest = "org.typelevel" %% "discipline-scalatest" % "1.0.0-M1"
-  val fs2Core = "co.fs2" %% "fs2-core" % "2.0.1"
+  val disciplineScalatest = "org.typelevel" %% "discipline-scalatest" % "1.0.0-RC1"
+  val fs2Core = "co.fs2" %% "fs2-core" % "1.0.5"
   val http4sAsyncHttpClient = "org.http4s" %% "http4s-async-http-client" % Versions.http4s
   val http4sCirce = "org.http4s" %% "http4s-circe" % Versions.http4s
   val http4sDsl = "org.http4s" %% "http4s-dsl" % Versions.http4s
@@ -34,6 +34,6 @@ object Dependencies {
   val refined = "eu.timepit" %% "refined" % Versions.refined
   val refinedCats = "eu.timepit" %% "refined-cats" % Versions.refined
   val refinedScalacheck = "eu.timepit" %% "refined-scalacheck" % Versions.refined
-  val scalacheck = "org.scalacheck" %% "scalacheck" % "1.14.1"
+  val scalacheck = "org.scalacheck" %% "scalacheck" % "1.14.2"
   val scalaTest = "org.scalatest" %% "scalatest" % "3.1.0-SNAP13"
 }

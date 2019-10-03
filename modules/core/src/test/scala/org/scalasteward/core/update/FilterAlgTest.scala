@@ -5,36 +5,40 @@ import org.scalasteward.core.data.Update
 import org.scalasteward.core.mock.MockContext.filterAlg
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.repoconfig.{RepoConfig, UpdatePattern, UpdatesConfig}
-import org.scalasteward.core.update.FilterAlg.{BadVersions, NonSnapshotToSnapshotUpdate}
+import org.scalasteward.core.update.FilterAlg.{BadVersions, NoSuitableNextVersion}
 import org.scalasteward.core.util.Nel
-import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 class FilterAlgTest extends AnyFunSuite with Matchers {
-  test("ignoreNonSnapshotToSnapshotUpdate: SNAP -> SNAP") {
-    val update = Update.Single("org.scalatest", "scalatest", "3.0.8-SNAP2", Nel.of("3.1.0-SNAP10"))
-    FilterAlg.ignoreNonSnapshotToSnapshotUpdate(update) shouldBe Right(update)
+  test("globalFilter: SNAP -> SNAP") {
+    val update = Update.Single("org.scalatest", "scalatest", "3.0.8-SNAP2", Nel.of("3.0.8-SNAP10"))
+    FilterAlg.globalFilter(update) shouldBe Right(update)
   }
 
-  test("ignoreNonSnapshotToSnapshotUpdate: RC -> SNAP") {
+  test("globalFilter: RC -> SNAP") {
     val update = Update.Single("org.scalatest", "scalatest", "3.0.8-RC2", Nel.of("3.1.0-SNAP10"))
-    FilterAlg.ignoreNonSnapshotToSnapshotUpdate(update) shouldBe
-      Left(NonSnapshotToSnapshotUpdate(update))
+    FilterAlg.globalFilter(update) shouldBe Left(NoSuitableNextVersion(update))
   }
 
-  test("removeBadVersions: update without bad version") {
+  test("globalFilter: update without bad version") {
     val update = Update.Single("com.jsuereth", "sbt-pgp", "1.1.0", Nel.of("1.1.2", "2.0.0"))
-    FilterAlg.removeBadVersions(update) shouldBe Right(update)
+    FilterAlg.globalFilter(update) shouldBe Right(update.copy(newerVersions = Nel.of("1.1.2")))
   }
 
-  test("removeBadVersions: update with bad version") {
+  test("globalFilter: update with bad version") {
     val update = Update.Single("com.jsuereth", "sbt-pgp", "1.1.2-1", Nel.of("1.1.2", "2.0.0"))
-    FilterAlg.removeBadVersions(update) shouldBe Right(update.copy(newerVersions = Nel.of("2.0.0")))
+    FilterAlg.globalFilter(update) shouldBe Right(update.copy(newerVersions = Nel.of("2.0.0")))
   }
 
-  test("removeBadVersions: update with only bad versions") {
+  test("globalFilter: update with only bad versions") {
     val update = Update.Single("org.http4s", "http4s-dsl", "0.18.0", Nel.of("0.19.0"))
-    FilterAlg.removeBadVersions(update) shouldBe Left(BadVersions(update))
+    FilterAlg.globalFilter(update) shouldBe Left(BadVersions(update))
+  }
+
+  test("globalFilter: update to pre-release of a different series") {
+    val update = Update.Single("com.jsuereth", "sbt-pgp", "1.1.2-1", Nel.of("2.0.1-M3"))
+    FilterAlg.globalFilter(update) shouldBe Left(NoSuitableNextVersion(update))
   }
 
   test("ignore update via config updates.ignore") {

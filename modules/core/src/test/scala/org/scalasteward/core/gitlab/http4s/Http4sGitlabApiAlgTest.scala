@@ -15,8 +15,8 @@ import org.scalasteward.core.nurture.UpdateData
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.{HttpJsonClient, Nel}
 import org.scalasteward.core.vcs.data.{NewPullRequestData, _}
-import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
   import GitlabJsonCodec._
@@ -56,7 +56,7 @@ class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
     Branch("update/logback-classic-1.2.3")
   )
   val newPRData =
-    NewPullRequestData.from(data, "scala-steward:update/logback-classic-1.2.3", "scala-steward")
+    NewPullRequestData.from(data, "scala-steward:update/logback-classic-1.2.3")
 
   test("createPullRequest") {
     val prOut =

@@ -2,8 +2,8 @@ package org.scalasteward.core.update
 
 import org.scalasteward.core.data.Update.{Group, Single}
 import org.scalasteward.core.util.Nel
-import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 class showTest extends AnyFunSuite with Matchers {
 

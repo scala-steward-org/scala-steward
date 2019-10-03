@@ -5,11 +5,12 @@ import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.Version
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.{MockContext, MockState}
+import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
-import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 class SbtAlgTest extends AnyFunSuite with Matchers {
 
@@ -58,7 +59,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
               "sbt",
               "-batch",
               "-no-colors",
-              ";set every credentials := Nil;dependencyUpdates;reload plugins;dependencyUpdates"
+              s";$setCredentialsToNil;$setDependencyUpdatesFailBuild;$dependencyUpdates;$reloadPlugins;$dependencyUpdates"
             ),
             List("rm", s"$repoDir/project/tmp-sbt-dep.sbt"),
             List("read", s"/tmp/ws/repos_v6.json")
@@ -90,7 +91,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
           "sbt",
           "-batch",
           "-no-colors",
-          ";set every credentials := Nil;dependencyUpdates;reload plugins;dependencyUpdates"
+          s";$setCredentialsToNil;$setDependencyUpdatesFailBuild;$dependencyUpdates;$reloadPlugins;$dependencyUpdates"
         ),
         List("restore", (repoDir / ".sbtopts").toString),
         List("restore", (repoDir / ".jvmopts").toString),
@@ -120,7 +121,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
           "sbt",
           "-batch",
           "-no-colors",
-          ";dependencyUpdates;reload plugins;dependencyUpdates"
+          s";$setDependencyUpdatesFailBuild;$dependencyUpdates;$reloadPlugins;$dependencyUpdates"
         ),
         List("read", s"/tmp/ws/repos_v6.json")
       )
