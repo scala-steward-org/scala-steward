@@ -4,8 +4,8 @@ import cats.effect.IO
 import org.scalasteward.core.TestInstances._
 import org.scalasteward.core.io.ProcessAlgTest.blocker
 import org.scalasteward.core.util.Nel
-import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import scala.concurrent.duration._
 
 class processTest extends AnyFunSuite with Matchers {

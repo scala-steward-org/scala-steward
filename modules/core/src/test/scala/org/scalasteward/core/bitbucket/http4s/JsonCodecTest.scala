@@ -2,8 +2,8 @@ package org.scalasteward.core.bitbucket.http4s
 
 import io.circe.Json
 import org.scalasteward.core.vcs.data.PullRequestState
-import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 class JsonCodecTest extends AnyFunSuite with Matchers {
 

@@ -8,8 +8,8 @@ import org.scalasteward.core.io.ProcessAlgTest.ioProcessAlg
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.util.Nel
-import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 class ProcessAlgTest extends AnyFunSuite with Matchers {
   test("exec echo") {
