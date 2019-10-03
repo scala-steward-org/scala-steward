@@ -4,8 +4,8 @@ import org.scalasteward.core.data.{Dependency, Update}
 import org.scalasteward.core.sbt.data.SbtVersion
 import org.scalasteward.core.sbt.parser._
 import org.scalasteward.core.util.Nel
-import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 class parserTest extends AnyFunSuite with Matchers {
   test("parseBuildProperties: with whitespace") {

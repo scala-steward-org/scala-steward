@@ -2,8 +2,8 @@ package org.scalasteward.core.persistence
 
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.{MockEff, MockState}
-import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 class JsonKeyValueStoreTest extends AnyFunSuite with Matchers {
   test("put, get, getMany, delete") {

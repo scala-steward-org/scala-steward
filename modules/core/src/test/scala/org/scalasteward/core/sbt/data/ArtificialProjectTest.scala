@@ -1,8 +1,8 @@
 package org.scalasteward.core.sbt.data
 
 import org.scalasteward.core.data.Dependency
-import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 class ArtificialProjectTest extends AnyFunSuite with Matchers {
   val catsEffect =

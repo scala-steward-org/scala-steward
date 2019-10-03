@@ -6,8 +6,8 @@ import org.scalasteward.core.mock.MockContext.editAlg
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
-import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 class EditAlgTest extends AnyFunSuite with Matchers {
 

@@ -1,8 +1,8 @@
 package org.scalasteward.core.util
 
 import org.scalacheck.Gen
-import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 class stringTest extends AnyFunSuite with Matchers with ScalaCheckPropertyChecks {

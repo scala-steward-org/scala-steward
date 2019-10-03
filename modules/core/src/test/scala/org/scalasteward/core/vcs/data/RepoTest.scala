@@ -1,8 +1,8 @@
 package org.scalasteward.core.vcs.data
 
 import org.scalasteward.core.vcs.data.Repo.repoKeyDecoder
-import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 class RepoTest extends AnyFunSuite with Matchers {
 
