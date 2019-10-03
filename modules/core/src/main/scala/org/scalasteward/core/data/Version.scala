@@ -80,7 +80,7 @@ object Version {
     (l1.padTo(maxLength, elem), l2.padTo(maxLength, elem))
   }
 
-  sealed trait Component
+  sealed trait Component extends Product with Serializable
   object Component {
     final case class Numeric(value: String) extends Component
     final case class Alpha(value: String) extends Component {
@@ -93,10 +93,9 @@ object Version {
         case _                   => 0
       }
     }
-    sealed trait Separator extends Component
-    case object Dot extends Separator
-    case object Hyphen extends Separator
-    case object Plus extends Separator
+    case object Dot extends Component
+    case object Hyphen extends Component
+    case object Plus extends Component
     case object Empty extends Component
 
     def parse(str: String): List[Component] = {
