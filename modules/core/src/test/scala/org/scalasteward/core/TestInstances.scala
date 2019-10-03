@@ -33,5 +33,9 @@ object TestInstances {
   }
 
   implicit val versionCogen: Cogen[Version] =
-    Cogen(_.numericComponents.map(_.toLong).sum)
+    Cogen(_.components.map {
+      case Version.Component.Numeric(value) => BigInt(value).toLong
+      case a @ Version.Component.Alpha(_)   => a.order.toLong
+      case _                                => 0L
+    }.sum)
 }
