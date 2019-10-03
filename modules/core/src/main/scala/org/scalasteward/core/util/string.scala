@@ -111,9 +111,6 @@ object string {
   def splitBetweenLowerAndUpperChars(s: String): List[String] =
     splitBetween2CharMatches("\\p{javaLowerCase}\\p{javaUpperCase}".r)(s)
 
-  def splitNumericAndNonNumeric(s: String): List[String] =
-    splitBetween2CharMatches("\\d\\D".r)(s).flatMap(splitBetween2CharMatches("\\D\\d".r))
-
   private def splitBetween2CharMatches(regex: Regex)(s: String): List[String] = {
     val bounds = regex.findAllIn(s).matchData.map(_.start + 1).toList
     val indices = 0 +: bounds :+ s.length
