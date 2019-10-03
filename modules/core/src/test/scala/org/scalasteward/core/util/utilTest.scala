@@ -4,8 +4,8 @@ import cats.effect.IO
 import cats.implicits._
 import eu.timepit.refined.scalacheck.numeric._
 import eu.timepit.refined.types.numeric.PosInt
-import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 class utilTest extends AnyFunSuite with Matchers with ScalaCheckPropertyChecks {

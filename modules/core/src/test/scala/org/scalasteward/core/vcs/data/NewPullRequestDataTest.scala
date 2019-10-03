@@ -6,8 +6,8 @@ import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.nurture.UpdateData
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.Nel
-import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 class NewPullRequestDataTest extends AnyFunSuite with Matchers {
   test("asJson") {

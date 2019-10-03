@@ -3,7 +3,7 @@ package org.scalasteward.core.data
 import org.scalasteward.core.data.Update.Single
 import org.scalasteward.core.edit.UpdateHeuristicTest.UpdateOps
 import org.scalasteward.core.util.Nel
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 class ExampleTest extends AnyWordSpec with Matchers {

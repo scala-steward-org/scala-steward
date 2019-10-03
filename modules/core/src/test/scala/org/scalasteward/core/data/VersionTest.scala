@@ -3,8 +3,8 @@ package org.scalasteward.core.data
 import cats.implicits._
 import cats.kernel.laws.discipline.OrderTests
 import org.scalasteward.core.TestInstances._
-import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import org.typelevel.discipline.scalatest.Discipline
 import scala.util.Random

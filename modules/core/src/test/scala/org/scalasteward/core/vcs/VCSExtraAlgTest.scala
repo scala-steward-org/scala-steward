@@ -8,8 +8,8 @@ import org.http4s.implicits._
 import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.util.{HttpExistenceClient, Nel}
-import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 class VCSExtraAlgTest extends AnyFunSuite with Matchers {
   val routes: HttpRoutes[IO] =

@@ -6,8 +6,8 @@ import org.scalasteward.core.mock.MockContext.{config, gitAlg, gitHubRepoAlg}
 import org.scalasteward.core.mock.{MockContext, MockState}
 import org.scalasteward.core.vcs.VCSRepoAlg
 import org.scalasteward.core.vcs.data.{Repo, RepoOut, UserOut}
-import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 class GitHubRepoAlgTest extends AnyFunSuite with Matchers {
   val repo = Repo("fthomas", "datapackage")
