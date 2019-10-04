@@ -120,7 +120,6 @@ Consider creating PR to add your company to the list and join the community.
 * [Zalando](https://en.zalando.de/)
 * [Evolution Gaming](https://www.evolutiongaming.com/)
 
-
 ## Participation
 
 The Scala Steward project supports the [Scala Code of Conduct][CoC]
