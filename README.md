@@ -118,6 +118,7 @@ Consider creating PR to add your company to the list and join the community.
 * [Spotify](https://www.spotify.com)
 * [Tegonal GmbH](https://tegonal.com)
 * [Zalando](https://en.zalando.de/)
+* [Evolution Gaming](https://www.evolutiongaming.com/)
 
 ## Participation
 
