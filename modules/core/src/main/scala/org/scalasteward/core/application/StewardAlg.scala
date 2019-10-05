@@ -25,7 +25,7 @@ import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.NurtureAlg
 import org.scalasteward.core.repocache.RepoCacheAlg
 import org.scalasteward.core.sbt.SbtAlg
-import org.scalasteward.core.update.UpdateService
+import org.scalasteward.core.update.UpdateAlg
 import org.scalasteward.core.util.DateTimeAlg
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data.Repo
@@ -39,10 +39,22 @@ final class StewardAlg[F[_]](
     nurtureAlg: NurtureAlg[F],
     repoCacheAlg: RepoCacheAlg[F],
     sbtAlg: SbtAlg[F],
-    updateService: UpdateService[F],
+    updateAlg: UpdateAlg[F],
     workspaceAlg: WorkspaceAlg[F],
     F: Monad[F]
 ) {
+  def printBanner: F[Unit] = {
+    val banner =
+      """|  ____            _         ____  _                             _
+         | / ___|  ___ __ _| | __ _  / ___|| |_ _____      ____ _ _ __ __| |
+         | \___ \ / __/ _` | |/ _` | \___ \| __/ _ \ \ /\ / / _` | '__/ _` |
+         |  ___) | (_| (_| | | (_| |  ___) | ||  __/\ V  V / (_| | | | (_| |
+         | |____/ \___\__,_|_|\__,_| |____/ \__\___| \_/\_/ \__,_|_|  \__,_|""".stripMargin
+    val msg = List(" ", banner, s" v${org.scalasteward.core.BuildInfo.version}", " ")
+      .mkString(System.lineSeparator())
+    logger.info(msg)
+  }
+
   def prepareEnv: F[Unit] =
     for {
       _ <- sbtAlg.addGlobalPlugins
@@ -60,8 +72,8 @@ final class StewardAlg[F[_]](
     logger.infoTotalTime("pruning repos") {
       for {
         _ <- repos.traverse(repoCacheAlg.checkCache)
-        allUpdates <- updateService.checkForUpdates(repos)
-        filteredRepos <- updateService.filterByApplicableUpdates(repos, allUpdates)
+        allUpdates <- updateAlg.checkForUpdates(repos)
+        filteredRepos <- updateAlg.filterByApplicableUpdates(repos, allUpdates)
         countTotal = repos.size
         countFiltered = filteredRepos.size
         countPruned = countTotal - countFiltered
@@ -75,6 +87,7 @@ final class StewardAlg[F[_]](
   def runF: F[ExitCode] =
     logger.infoTotalTime("run") {
       for {
+        _ <- printBanner
         _ <- prepareEnv
         repos <- readRepos(config.reposFile)
         reposToNurture <- if (config.pruneRepos) pruneRepos(repos) else F.pure(repos)

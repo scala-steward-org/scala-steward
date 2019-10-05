@@ -26,7 +26,7 @@ lazy val core = myCrossProject("core")
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin(Dependencies.betterMonadicFor),
-      compilerPlugin(Dependencies.kindProjector),
+      compilerPlugin(Dependencies.kindProjector.cross(CrossVersion.full)),
       Dependencies.betterFiles,
       Dependencies.caseApp,
       Dependencies.catsEffect,
@@ -48,6 +48,7 @@ lazy val core = myCrossProject("core")
       Dependencies.logbackClassic % Runtime,
       Dependencies.catsKernelLaws % Test,
       Dependencies.circeLiteral % Test,
+      Dependencies.disciplineScalatest % Test,
       Dependencies.http4sDsl % Test,
       Dependencies.refinedScalacheck % Test,
       Dependencies.scalacheck % Test,
@@ -68,7 +69,7 @@ lazy val core = myCrossProject("core")
           defaultStrategy(otherwise)
       }
     },
-    buildInfoKeys := Seq[BuildInfoKey](scalaVersion, scalaBinaryVersion, sbtVersion),
+    buildInfoKeys := Seq[BuildInfoKey](version, scalaVersion, scalaBinaryVersion, sbtVersion),
     buildInfoPackage := moduleRootPkg.value,
     initialCommands += s"""
       import ${moduleRootPkg.value}._
@@ -78,7 +79,6 @@ lazy val core = myCrossProject("core")
       import cats.effect.ContextShift
       import cats.effect.IO
       import cats.effect.Timer
-      import org.http4s.client.blaze.BlazeClientBuilder
       import scala.concurrent.ExecutionContext
 
       implicit val ioContextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
@@ -119,7 +119,7 @@ lazy val commonSettings = Def.settings(
 )
 
 lazy val compileSettings = Def.settings(
-  doctestTestFramework := DoctestTestFramework.ScalaTest,
+  doctestTestFramework := DoctestTestFramework.ScalaCheck,
   wartremoverErrors ++= Seq(Wart.TraversableOps),
   wartremoverErrors in (Compile, compile) ++= Seq(Wart.Equals)
 )
@@ -166,6 +166,7 @@ lazy val dockerSettings = Def.settings(
     ExecCmd("RUN", "apt-get", "install", "-y", "sbt"),
     Cmd("WORKDIR", "/opt/docker"),
     Cmd("ADD", "opt", "/opt"),
+    ExecCmd("RUN", "chmod", "0755", "/opt/docker/bin/scala-steward"),
     ExecCmd("ENTRYPOINT", "/opt/docker/bin/scala-steward"),
     ExecCmd("CMD", "")
   ),

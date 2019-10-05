@@ -5,12 +5,14 @@ import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.Version
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.{MockContext, MockState}
+import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-class SbtAlgTest extends FunSuite with Matchers {
+class SbtAlgTest extends AnyFunSuite with Matchers {
 
   test("addGlobalPlugins") {
     sbtAlg.addGlobalPlugins.runS(MockState.empty).unsafeRunSync() shouldBe MockState.empty.copy(
@@ -57,10 +59,10 @@ class SbtAlgTest extends FunSuite with Matchers {
               "sbt",
               "-batch",
               "-no-colors",
-              ";set every credentials := Nil;dependencyUpdates;reload plugins;dependencyUpdates"
+              s";$setCredentialsToNil;$setDependencyUpdatesFailBuild;$dependencyUpdates;$reloadPlugins;$dependencyUpdates"
             ),
             List("rm", s"$repoDir/project/tmp-sbt-dep.sbt"),
-            List("read", s"/tmp/ws/repos_v05.json")
+            List("read", s"/tmp/ws/repos_v6.json")
           )
         )
     }
@@ -89,11 +91,11 @@ class SbtAlgTest extends FunSuite with Matchers {
           "sbt",
           "-batch",
           "-no-colors",
-          ";set every credentials := Nil;dependencyUpdates;reload plugins;dependencyUpdates"
+          s";$setCredentialsToNil;$setDependencyUpdatesFailBuild;$dependencyUpdates;$reloadPlugins;$dependencyUpdates"
         ),
         List("restore", (repoDir / ".sbtopts").toString),
         List("restore", (repoDir / ".jvmopts").toString),
-        List("read", s"/tmp/ws/repos_v05.json")
+        List("read", s"/tmp/ws/repos_v6.json")
       )
     )
   }
@@ -119,9 +121,9 @@ class SbtAlgTest extends FunSuite with Matchers {
           "sbt",
           "-batch",
           "-no-colors",
-          ";dependencyUpdates;reload plugins;dependencyUpdates"
+          s";$setDependencyUpdatesFailBuild;$dependencyUpdates;$reloadPlugins;$dependencyUpdates"
         ),
-        List("read", s"/tmp/ws/repos_v05.json")
+        List("read", s"/tmp/ws/repos_v6.json")
       )
     )
   }
@@ -152,7 +154,7 @@ class SbtAlgTest extends FunSuite with Matchers {
           "sbt",
           "-batch",
           "-no-colors",
-          ";scalafixEnable;scalafix github:functional-streams-for-scala/fs2/v1?sha=v1.0.5;test:scalafix github:functional-streams-for-scala/fs2/v1?sha=v1.0.5"
+          ";++2.12.10!;scalafixEnable;scalafix github:functional-streams-for-scala/fs2/v1?sha=v1.0.5;test:scalafix github:functional-streams-for-scala/fs2/v1?sha=v1.0.5"
         ),
         List("rm", "/tmp/steward/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
         List("rm", "/tmp/steward/.sbt/0.13/plugins/scala-steward-scalafix.sbt")

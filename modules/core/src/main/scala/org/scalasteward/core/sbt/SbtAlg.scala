@@ -28,7 +28,7 @@ import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.sbt.data.{ArtificialProject, SbtVersion}
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.scalafmt.{scalafmtDependency, ScalafmtAlg}
-import org.scalasteward.core.update.UpdateService
+import org.scalasteward.core.update.UpdateAlg
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
@@ -134,13 +134,13 @@ object SbtAlg {
           repoDir <- workspaceAlg.repoDir(repo)
           maybeClearCredentials = if (config.keepCredentials) Nil else List(setCredentialsToNil)
           commands = maybeClearCredentials ++
-            List(dependencyUpdates, reloadPlugins, dependencyUpdates)
+            List(setDependencyUpdatesFailBuild, dependencyUpdates, reloadPlugins, dependencyUpdates)
           updates <- withTemporarySbtDependency(repo) {
             exec(sbtCmd(commands), repoDir).map(parser.parseSingleUpdates)
           }
           originalDependencies <- cacheRepository.getDependencies(List(repo))
           updatesUnderNewGroupId = originalDependencies.flatMap(
-            UpdateService.findUpdateUnderNewGroup
+            UpdateAlg.findUpdateUnderNewGroup
           )
         } yield updates ++ updatesUnderNewGroupId
 
@@ -153,7 +153,7 @@ object SbtAlg {
               rule <- migration.rewriteRules
               cmd <- Nel.of(scalafix, testScalafix)
             } yield s"$cmd $rule"
-            _ <- exec(sbtCmd(scalafixEnable :: scalafixCmds.toList), repoDir)
+            _ <- exec(sbtCmd("++2.12.10!" :: scalafixEnable :: scalafixCmds.toList), repoDir)
           } yield ()
         }
 

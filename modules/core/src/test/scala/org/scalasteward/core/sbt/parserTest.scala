@@ -4,9 +4,10 @@ import org.scalasteward.core.data.{Dependency, Update}
 import org.scalasteward.core.sbt.data.SbtVersion
 import org.scalasteward.core.sbt.parser._
 import org.scalasteward.core.util.Nel
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-class parserTest extends FunSuite with Matchers {
+class parserTest extends AnyFunSuite with Matchers {
   test("parseBuildProperties: with whitespace") {
     parseBuildProperties("sbt.version = 1.2.8") shouldBe Some(SbtVersion("1.2.8"))
   }

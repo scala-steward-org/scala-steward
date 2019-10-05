@@ -52,8 +52,6 @@ trait GitAlg[F[_]] {
 
   def push(repo: Repo, branch: Branch): F[Unit]
 
-  def remoteBranchExists(repo: Repo, branch: Branch): F[Boolean]
-
   def removeClone(repo: Repo): F[Unit]
 
   def setAuthor(repo: Repo, author: Author): F[Unit]
@@ -156,12 +154,6 @@ object GitAlg {
           _ <- exec(Nel.of("push", "--force", "--set-upstream", "origin", branch.name), repoDir)
         } yield ()
 
-      override def remoteBranchExists(repo: Repo, branch: Branch): F[Boolean] =
-        for {
-          repoDir <- workspaceAlg.repoDir(repo)
-          branches <- exec(Nel.of("branch", "-r"), repoDir)
-        } yield branches.exists(_.endsWith(branch.name))
-
       override def removeClone(repo: Repo): F[Unit] =
         workspaceAlg.repoDir(repo).flatMap(fileAlg.deleteForce)
 
@@ -179,7 +171,7 @@ object GitAlg {
           branch = defaultBranch.name
           remoteBranch = s"$remote/$branch"
           _ <- exec(Nel.of("remote", "add", remote, upstreamUrl.toString), repoDir)
-          _ <- exec(Nel.of("fetch", remote), repoDir)
+          _ <- exec(Nel.of("fetch", remote, branch), repoDir)
           _ <- exec(Nel.of("checkout", "-B", branch, "--track", remoteBranch), repoDir)
           _ <- exec(Nel.of("merge", remoteBranch), repoDir)
           _ <- push(repo, defaultBranch)

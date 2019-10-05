@@ -1,12 +1,13 @@
 package org.scalasteward.core.edit
 
-import org.scalasteward.core.edit.UpdateHeuristicTest.UpdateOps
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.data.Update.{Group, Single}
+import org.scalasteward.core.edit.UpdateHeuristicTest.UpdateOps
 import org.scalasteward.core.util.Nel
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-class UpdateHeuristicTest extends FunSuite with Matchers {
+class UpdateHeuristicTest extends AnyFunSuite with Matchers {
 
   test("sbt: build.properties") {
     val original = """sbt.version=1.3.0-RC1"""

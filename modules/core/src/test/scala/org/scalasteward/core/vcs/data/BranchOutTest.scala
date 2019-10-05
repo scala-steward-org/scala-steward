@@ -3,10 +3,11 @@ package org.scalasteward.core.vcs.data
 import io.circe.parser
 import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.git.{Branch, Sha1}
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import scala.io.Source
 
-class BranchOutTest extends FunSuite with Matchers {
+class BranchOutTest extends AnyFunSuite with Matchers {
   test("decode") {
     val input = Source.fromResource("get-branch.json").mkString
     parser.decode[BranchOut](input) shouldBe

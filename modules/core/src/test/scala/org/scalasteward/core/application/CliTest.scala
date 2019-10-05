@@ -3,10 +3,11 @@ package org.scalasteward.core.application
 import cats.implicits._
 import org.http4s.Http4sLiteralSyntax
 import org.scalasteward.core.application.Cli.EnvVar
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import scala.concurrent.duration._
 
-class CliTest extends FunSuite with Matchers {
+class CliTest extends AnyFunSuite with Matchers {
   type Result[A] = Either[Throwable, A]
   val cli: Cli[Result] = new Cli[Result]
 

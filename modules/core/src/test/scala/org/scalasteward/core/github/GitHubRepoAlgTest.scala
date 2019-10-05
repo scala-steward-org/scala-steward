@@ -2,13 +2,14 @@ package org.scalasteward.core.github
 
 import org.http4s.Http4sLiteralSyntax
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.vcs.data.{Repo, RepoOut, UserOut}
 import org.scalasteward.core.mock.MockContext.{config, gitAlg, gitHubRepoAlg}
 import org.scalasteward.core.mock.{MockContext, MockState}
 import org.scalasteward.core.vcs.VCSRepoAlg
-import org.scalatest.{FunSuite, Matchers}
+import org.scalasteward.core.vcs.data.{Repo, RepoOut, UserOut}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-class GitHubRepoAlgTest extends FunSuite with Matchers {
+class GitHubRepoAlgTest extends AnyFunSuite with Matchers {
   val repo = Repo("fthomas", "datapackage")
   val repoDir: String = (config.workspace / "fthomas/datapackage").toString
   val askPass = s"GIT_ASKPASS=${config.gitAskPass}"
@@ -73,7 +74,7 @@ class GitHubRepoAlgTest extends FunSuite with Matchers {
           "upstream",
           s"https://${config.vcsLogin}@github.com/fthomas/datapackage"
         ),
-        List(askPass, repoDir, "git", "fetch", "upstream"),
+        List(askPass, repoDir, "git", "fetch", "upstream", "master"),
         List(askPass, repoDir, "git", "checkout", "-B", "master", "--track", "upstream/master"),
         List(askPass, repoDir, "git", "merge", "upstream/master"),
         List(askPass, repoDir, "git", "push", "--force", "--set-upstream", "origin", "master")

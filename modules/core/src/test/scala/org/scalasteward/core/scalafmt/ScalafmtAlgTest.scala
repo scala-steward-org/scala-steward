@@ -4,9 +4,10 @@ import org.scalasteward.core.data.Version
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.vcs.data.Repo
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-class ScalafmtAlgTest extends FunSuite with Matchers {
+class ScalafmtAlgTest extends AnyFunSuite with Matchers {
 
   test("getScalafmtVersion on unquoted version") {
     val repo = Repo("fthomas", "scala-steward")

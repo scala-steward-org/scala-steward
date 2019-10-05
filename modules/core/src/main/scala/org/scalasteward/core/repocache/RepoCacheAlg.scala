@@ -33,6 +33,7 @@ final class RepoCacheAlg[F[_]](
     config: Config,
     gitAlg: GitAlg[F],
     logger: Logger[F],
+    refreshErrorAlg: RefreshErrorAlg[F],
     repoCacheRepository: RepoCacheRepository[F],
     repoConfigAlg: RepoConfigAlg[F],
     sbtAlg: SbtAlg[F],
@@ -44,13 +45,16 @@ final class RepoCacheAlg[F[_]](
 
   def checkCache(repo: Repo): F[Unit] =
     logger.attemptLog_(s"Check cache of ${repo.show}") {
-      for {
-        (repoOut, branchOut) <- vcsApiAlg.createForkOrGetRepoWithDefaultBranch(config, repo)
-        cachedSha1 <- repoCacheRepository.findSha1(repo)
-        latestSha1 = branchOut.commit.sha
-        refreshRequired = cachedSha1.forall(_ =!= latestSha1)
-        _ <- if (refreshRequired) cloneAndRefreshCache(repo, repoOut) else F.unit
-      } yield ()
+      F.ifM(refreshErrorAlg.failedRecently(repo))(
+        F.unit,
+        for {
+          (repoOut, branchOut) <- vcsApiAlg.createForkOrGetRepoWithDefaultBranch(config, repo)
+          cachedSha1 <- repoCacheRepository.findSha1(repo)
+          latestSha1 = branchOut.commit.sha
+          refreshRequired = cachedSha1.forall(_ =!= latestSha1)
+          _ <- if (refreshRequired) cloneAndRefreshCache(repo, repoOut) else F.unit
+        } yield ()
+      )
     }
 
   private def cloneAndRefreshCache(repo: Repo, repoOut: RepoOut): F[Unit] =
@@ -62,7 +66,15 @@ final class RepoCacheAlg[F[_]](
       _ <- gitAlg.removeClone(repo)
     } yield ()
 
-  private def refreshCache(repo: Repo): F[RepoCache] =
+  private def refreshCache(repo: Repo): F[Unit] =
+    computeCache(repo).attempt.flatMap {
+      case Right(cache) =>
+        repoCacheRepository.updateCache(repo, cache)
+      case Left(throwable) =>
+        refreshErrorAlg.persistError(repo, throwable) >> F.raiseError(throwable)
+    }
+
+  private def computeCache(repo: Repo): F[RepoCache] =
     for {
       branch <- gitAlg.currentBranch(repo)
       latestSha1 <- gitAlg.latestSha1(repo, branch)
@@ -70,13 +82,11 @@ final class RepoCacheAlg[F[_]](
       maybeSbtVersion <- sbtAlg.getSbtVersion(repo)
       maybeScalafmtVersion <- scalafmtAlg.getScalafmtVersion(repo)
       maybeRepoConfig <- repoConfigAlg.readRepoConfig(repo)
-      cache = RepoCache(
-        latestSha1,
-        dependencies,
-        maybeSbtVersion,
-        maybeScalafmtVersion,
-        maybeRepoConfig
-      )
-      _ <- repoCacheRepository.updateCache(repo, cache)
-    } yield cache
+    } yield RepoCache(
+      latestSha1,
+      dependencies,
+      maybeSbtVersion,
+      maybeScalafmtVersion,
+      maybeRepoConfig
+    )
 }

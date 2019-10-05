@@ -78,7 +78,9 @@ final class NurtureAlg[F[_]](
       grouped = Update.group(filtered)
       _ <- logger.info(util.logger.showUpdates(grouped))
       baseSha1 <- gitAlg.latestSha1(repo, baseBranch)
-      memoizedGetDependencies <- Async.memoize(sbtAlg.getDependencies(repo))
+      memoizedGetDependencies <- Async.memoize {
+        sbtAlg.getDependencies(repo).handleError(_ => List.empty)
+      }
       _ <- grouped.traverse_ { update =>
         val data =
           UpdateData(
@@ -152,7 +154,6 @@ final class NurtureAlg[F[_]](
       requestData = NewPullRequestData.from(
         data,
         branchName,
-        config.vcsLogin,
         artifactIdToUrl,
         branchCompareUrl,
         releaseNoteUrl

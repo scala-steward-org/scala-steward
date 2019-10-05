@@ -75,10 +75,22 @@ package object vcs {
         )
       else
         List.empty
-    val files = for {
-      name <- List("CHANGELOG", "Changelog", "changelog", "RELEASES", "Releases", "releases")
-      ext <- List("md", "markdown", "rst")
-    } yield s"${canonicalized}/${name}.${ext}"
+    val files = {
+      val pathToFile =
+        if (repoUrl.startsWith("https://github.com/") || repoUrl.startsWith("https://gitlab.com/")) {
+          Some("blob/master")
+        } else if (repoUrl.startsWith("https://bitbucket.org/")) {
+          Some("master")
+        } else {
+          None
+        }
+      pathToFile.toList.flatMap { path =>
+        for {
+          name <- List("CHANGELOG", "Changelog", "changelog", "RELEASES", "Releases", "releases")
+          ext <- List("md", "markdown", "rst")
+        } yield s"${canonicalized}/${path}/${name}.${ext}"
+      }
+    }
     files ++ vcsSpecific
   }
 }
