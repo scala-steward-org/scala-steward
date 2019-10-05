@@ -27,7 +27,7 @@ object Dependencies {
   val http4sAsyncHttpClient = "org.http4s" %% "http4s-async-http-client" % Versions.http4s
   val http4sCirce = "org.http4s" %% "http4s-circe" % Versions.http4s
   val http4sDsl = "org.http4s" %% "http4s-dsl" % Versions.http4s
-  val kindProjector = "org.typelevel" %% "kind-projector" % "0.10.3"
+  val kindProjector = "org.typelevel" %% "kind-projector" % "0.11.0"
   val log4catsSlf4j = "io.chrisdavenport" %% "log4cats-slf4j" % "0.3.0"
   val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.2.3"
   val monocleCore = "com.github.julien-truffaut" %% "monocle-core" % "1.5.1-cats"
