@@ -3,7 +3,7 @@ pull_request_rules:
     conditions:
       - author=scala-steward
     actions:
-      request_reviews:
+      assign:
         users: [fthomas]
       label:
         add: [dependency-update]
