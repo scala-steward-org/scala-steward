@@ -18,7 +18,7 @@ package org.scalasteward.core.update
 
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
-import org.scalasteward.core.data.{Dependency, Update}
+import org.scalasteward.core.data.{Dependency, GroupId, Update}
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.repocache.{RepoCache, RepoCacheRepository}
 import org.scalasteward.core.sbt._
@@ -163,9 +163,9 @@ object UpdateAlg {
       update.artifactIds.contains_(dependency.artifactId) &&
       update.currentVersion === dependency.version
 
-  def getNewerGroupId(currentGroupId: String, artifactId: String): Option[(String, String)] =
-    Option((currentGroupId, artifactId) match {
-      case ("org.spire-math", "kind-projector")   => ("org.typelevel", "0.10.0")
+  def getNewerGroupId(currentGroupId: GroupId, artifactId: String): Option[(GroupId, String)] =
+    Option((currentGroupId.value, artifactId) match {
+      case ("org.spire-math", "kind-projector")   => (GroupId("org.typelevel"), "0.10.0")
       case ("com.github.mpilquist", "simulacrum") => ("org.typelevel", "1.0.0")
       case ("com.geirsson", "sbt-scalafmt")       => ("org.scalameta", "2.0.0")
       case ("net.ceedubs", "ficus")               => ("com.iheart", "1.3.4")
