@@ -18,7 +18,7 @@ package org.scalasteward.core.sbt
 
 import cats.implicits._
 import io.circe.parser.decode
-import org.scalasteward.core.data.{Dependency, Update}
+import org.scalasteward.core.data.{Dependency, GroupId, Update}
 import org.scalasteward.core.sbt.data.SbtVersion
 import org.scalasteward.core.util.Nel
 
@@ -35,7 +35,9 @@ object parser {
         def msg(part: String) = s"failed to parse $part in '$line'"
 
         for {
-          groupId <- Either.fromOption(moduleId.headOption.filter(_.nonEmpty), msg("groupId"))
+          groupId <- Either
+            .fromOption(moduleId.headOption.filter(_.nonEmpty), msg("groupId"))
+            .map(GroupId.apply)
           artifactId <- Either.fromOption(moduleId.lift(1), msg("artifactId"))
           configurations = moduleId.lift(2)
           currentVersion <- Either.fromOption(

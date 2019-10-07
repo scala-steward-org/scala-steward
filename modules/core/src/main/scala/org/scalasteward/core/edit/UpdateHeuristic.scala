@@ -17,7 +17,7 @@
 package org.scalasteward.core.edit
 
 import cats.implicits._
-import org.scalasteward.core.data.Update
+import org.scalasteward.core.data.{GroupId, Update}
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 import scala.util.matching.Regex
@@ -89,7 +89,7 @@ object UpdateHeuristic {
     def replaceGroupF(update: Update): String => Option[String] = { target =>
       update match {
         case Update.Single(groupId, artifactId, _, _, _, Some(newerGroupId)) =>
-          val currentGroupId = Regex.quote(groupId)
+          val currentGroupId = Regex.quote(groupId.value)
           val currentArtifactId = Regex.quote(artifactId)
           val regex = s"""(?i)(.*)${currentGroupId}(.*${currentArtifactId})""".r
           replaceSomeInAllowedParts(regex, target, match0 => {
@@ -129,15 +129,20 @@ object UpdateHeuristic {
   val groupId = UpdateHeuristic(
     name = "groupId",
     replaceVersion = defaultReplaceVersion(
-      _.groupId.split('.').toList.drop(1).flatMap(util.string.extractWords).filter(_.length > 3)
+      _.groupId.value
+        .split('.')
+        .toList
+        .drop(1)
+        .flatMap(util.string.extractWords)
+        .filter(_.length > 3)
     )
   )
 
   val specific = UpdateHeuristic(
     name = "specific",
     replaceVersion = defaultReplaceVersion {
-      case Update.Single("org.scalameta", "scalafmt-core", _, _, _, _) => List("version")
-      case _                                                           => List.empty
+      case Update.Single(GroupId("org.scalameta"), "scalafmt-core", _, _, _, _) => List("version")
+      case _                                                                    => List.empty
     }
   )
 

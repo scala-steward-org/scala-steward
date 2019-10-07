@@ -18,7 +18,6 @@ package org.scalasteward.core.data
 
 import cats.Order
 import cats.implicits._
-import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 
 final case class GroupId(value: String) extends AnyVal {
@@ -26,7 +25,7 @@ final case class GroupId(value: String) extends AnyVal {
 }
 
 object GroupId {
-  implicit val groupIdDecoder: Decoder[GroupId] = deriveDecoder
-  implicit val groupIdEncoder: Encoder[GroupId] = deriveEncoder
+  implicit val groupIdDecoder: Decoder[GroupId] = Decoder[String].map(GroupId.apply)
+  implicit val groupIdEncoder: Encoder[GroupId] = Encoder[String].contramap(_.value)
   implicit val groupIdOrder: Order[GroupId] = Order[String].contramap(_.value)
 }

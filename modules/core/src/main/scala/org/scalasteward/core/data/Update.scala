@@ -63,7 +63,7 @@ object Update {
       currentVersion: String,
       newerVersions: Nel[String],
       configurations: Option[String] = None,
-      newerGroupId: Option[String] = None
+      newerGroupId: Option[GroupId] = None
   ) extends Update {
     override def artifactIds: Nel[String] =
       Nel.one(artifactId)
