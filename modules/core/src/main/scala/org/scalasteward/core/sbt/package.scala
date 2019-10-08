@@ -18,7 +18,7 @@ package org.scalasteward.core
 
 import cats.implicits._
 import cats.effect.{IO, Resource}
-import org.scalasteward.core.data.{Dependency, Version}
+import org.scalasteward.core.data.{Dependency, GroupId, Version}
 import org.scalasteward.core.io.FileData
 import org.scalasteward.core.sbt.data.{SbtVersion, ScalaVersion}
 import scala.io.Source
@@ -46,7 +46,7 @@ package object sbt {
 
   def sbtDependency(sbtVersion: SbtVersion): Option[Dependency] =
     if (sbtVersion.toVersion >= Version("1.0.0"))
-      Some(Dependency("org.scala-sbt", "sbt", "sbt", sbtVersion.value))
+      Some(Dependency(GroupId("org.scala-sbt"), "sbt", "sbt", sbtVersion.value))
     else
       None
 

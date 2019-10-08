@@ -2,7 +2,7 @@ package org.scalasteward.core.sbt
 
 import better.files.File
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.data.Version
+import org.scalasteward.core.data.{GroupId, Version}
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.{MockContext, MockState}
 import org.scalasteward.core.sbt.command._
@@ -105,7 +105,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
     val repoDir = config.workspace / repo.owner / repo.repo
     val migrations = Nel.of(
       Migration(
-        "co.fs2",
+        GroupId("co.fs2"),
         Nel.of("fs2-core".r),
         Version("1.0.0"),
         Nel.of("github:functional-streams-for-scala/fs2/v1?sha=v1.0.5")

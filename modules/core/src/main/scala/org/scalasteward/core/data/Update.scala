@@ -26,7 +26,7 @@ import org.scalasteward.core.util.Nel
 import org.scalasteward.core.util.string.MinLengthString
 
 sealed trait Update extends Product with Serializable {
-  def groupId: String
+  def groupId: GroupId
   def artifactId: String
   def artifactIds: Nel[String]
   def currentVersion: String
@@ -58,12 +58,12 @@ sealed trait Update extends Product with Serializable {
 
 object Update {
   final case class Single(
-      groupId: String,
+      groupId: GroupId,
       artifactId: String,
       currentVersion: String,
       newerVersions: Nel[String],
       configurations: Option[String] = None,
-      newerGroupId: Option[String] = None
+      newerGroupId: Option[GroupId] = None
   ) extends Update {
     override def artifactIds: Nel[String] =
       Nel.one(artifactId)
@@ -75,7 +75,7 @@ object Update {
   }
 
   final case class Group(
-      groupId: String,
+      groupId: GroupId,
       artifactIds: Nel[String],
       currentVersion: String,
       newerVersions: Nel[String]
@@ -118,9 +118,9 @@ object Update {
   def removeCommonSuffix(str: String): String =
     util.string.removeSuffix(str, commonSuffixes)
 
-  def nameOf(groupId: String, artifactId: String): String =
+  def nameOf(groupId: GroupId, artifactId: String): String =
     if (commonSuffixes.contains(artifactId))
-      util.string.rightmostLabel(groupId)
+      util.string.rightmostLabel(groupId.value)
     else
       artifactId
 
