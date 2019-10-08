@@ -60,7 +60,6 @@ final case class Config(
     disableSandbox: Boolean,
     doNotFork: Boolean,
     ignoreOptsFiles: Boolean,
-    keepCredentials: Boolean,
     envVars: List[EnvVar],
     pruneRepos: Boolean,
     processTimeout: FiniteDuration
@@ -92,7 +91,6 @@ object Config {
         disableSandbox = args.disableSandbox,
         doNotFork = args.doNotFork,
         ignoreOptsFiles = args.ignoreOptsFiles,
-        keepCredentials = args.keepCredentials,
         envVars = args.envVar,
         pruneRepos = args.pruneRepos,
         processTimeout = args.processTimeout
