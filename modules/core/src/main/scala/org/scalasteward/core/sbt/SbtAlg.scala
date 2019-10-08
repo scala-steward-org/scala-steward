@@ -132,9 +132,7 @@ object SbtAlg {
       override def getUpdatesForRepo(repo: Repo): F[List[Update.Single]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          maybeClearCredentials = if (config.keepCredentials) Nil else List(setCredentialsToNil)
-          commands = maybeClearCredentials ++
-            List(setDependencyUpdatesFailBuild, dependencyUpdates, reloadPlugins, dependencyUpdates)
+          commands = List(setDependencyUpdatesFailBuild, dependencyUpdates, reloadPlugins, dependencyUpdates)
           updates <- withTemporarySbtDependency(repo) {
             exec(sbtCmd(commands), repoDir).map(parser.parseSingleUpdates)
           }
