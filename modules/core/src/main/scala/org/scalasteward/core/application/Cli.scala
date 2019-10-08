@@ -50,7 +50,6 @@ object Cli {
       disableSandbox: Boolean = false,
       doNotFork: Boolean = false,
       ignoreOptsFiles: Boolean = false,
-      keepCredentials: Boolean = false,
       envVar: List[EnvVar] = Nil,
       pruneRepos: Boolean = false,
       processTimeout: FiniteDuration = 10.minutes

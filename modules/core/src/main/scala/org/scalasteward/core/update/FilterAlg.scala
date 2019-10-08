@@ -76,7 +76,7 @@ object FilterAlg {
     globalFilter(update).flatMap(repoConfig.updates.keep)
 
   def isIgnoredGlobally(update: Update.Single): FilterResult = {
-    val keep = ((update.groupId, update.artifactId) match {
+    val keep = ((update.groupId.value, update.artifactId) match {
       case ("org.scala-lang", "scala-compiler") => false
       case ("org.scala-lang", "scala-library")  => false
       case ("org.scala-lang", "scala-reflect")  => false
@@ -109,7 +109,7 @@ object FilterAlg {
       .fold[FilterResult](Left(BadVersions(update)))(Right.apply)
 
   private def badVersions(update: Update.Single): List[String] =
-    (update.groupId, update.artifactId, update.currentVersion, update.nextVersion) match {
+    (update.groupId.value, update.artifactId, update.currentVersion, update.nextVersion) match {
       // https://github.com/vlovgr/ciris/pull/182#issuecomment-420599759
       case ("com.jsuereth", "sbt-pgp", "1.1.2-1", "1.1.2") => List("1.1.2")
 

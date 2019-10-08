@@ -14,23 +14,18 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core
+package org.scalasteward.core.data
 
+import cats.Order
 import cats.implicits._
-import org.scalasteward.core.data.{Dependency, GroupId, Version}
+import io.circe.{Decoder, Encoder}
 
-package object scalafmt {
-  def scalafmtDependency(scalaBinaryVersion: String)(scalafmtVersion: Version): Dependency =
-    Dependency(
-      GroupId(if (scalafmtVersion > Version("2.0.0-RC1")) "org.scalameta" else "com.geirsson"),
-      "scalafmt-core",
-      s"scalafmt-core_${scalaBinaryVersion}",
-      scalafmtVersion.value
-    )
+final case class GroupId(value: String) extends AnyVal {
+  override def toString: String = value
+}
 
-  def parseScalafmtConf(s: String): Option[Version] =
-    """version\s*=\s*(.+)""".r
-      .findFirstMatchIn(s)
-      .map(_.group(1).replaceAllLiterally("\"", ""))
-      .map(Version.apply)
+object GroupId {
+  implicit val groupIdDecoder: Decoder[GroupId] = Decoder[String].map(GroupId.apply)
+  implicit val groupIdEncoder: Encoder[GroupId] = Encoder[String].contramap(_.value)
+  implicit val groupIdOrder: Order[GroupId] = Order[String].contramap(_.value)
 }

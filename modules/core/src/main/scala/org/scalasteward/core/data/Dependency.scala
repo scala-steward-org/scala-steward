@@ -22,7 +22,7 @@ import org.scalasteward.core.sbt.data.SbtVersion
 import org.scalasteward.core.util.Nel
 
 final case class Dependency(
-    groupId: String,
+    groupId: GroupId,
     artifactId: String,
     artifactIdCross: String,
     version: String,

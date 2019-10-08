@@ -19,7 +19,7 @@ package org.scalasteward.core.vcs.data
 import cats.implicits._
 import io.circe.Encoder
 import io.circe.generic.semiauto._
-import org.scalasteward.core.data.{SemVer, Update}
+import org.scalasteward.core.data.{GroupId, SemVer, Update}
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.nurture.UpdateData
 import org.scalasteward.core.repoconfig.RepoConfigAlg
@@ -94,7 +94,7 @@ object NewPullRequestData {
     }
 
   def artifactWithOptionalUrl(
-      groupId: String,
+      groupId: GroupId,
       artifactId: String,
       artifactId2Url: Map[String, String]
   ): String =
