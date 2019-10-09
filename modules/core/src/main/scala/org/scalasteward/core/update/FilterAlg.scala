@@ -109,39 +109,31 @@ object FilterAlg {
       .fold[FilterResult](Left(BadVersions(update)))(Right.apply)
 
   private def badVersions(update: Update.Single): List[String] =
-    (update.groupId.value, update.artifactId, update.currentVersion, update.nextVersion) match {
+    (update.groupId.value, update.artifactId, update.currentVersion) match {
       // https://github.com/vlovgr/ciris/pull/182#issuecomment-420599759
-      case ("com.jsuereth", "sbt-pgp", "1.1.2-1", "1.1.2") => List("1.1.2")
-
-      case ("commons-collections", "commons-collections", _, _) =>
+      case ("com.jsuereth", "sbt-pgp", "1.1.2-1") => List("1.1.2")
+      case ("commons-collections", "commons-collections", _) =>
         List(
           // https://github.com/albuch/sbt-dependency-check/pull/85
           "20040102.233541"
         )
-
-      case ("io.monix", _, _, _) =>
+      case ("io.monix", _, _) =>
         List(
           // https://github.com/fthomas/scala-steward/issues/105
           "3.0.0-fbcb270"
         )
-      case ("net.sourceforge.plantuml", "plantuml", _, _) =>
+      case ("net.sourceforge.plantuml", "plantuml", _) =>
         List(
           // https://github.com/esamson/remder/pull/5
           "8059",
           // https://github.com/metabookmarks/sbt-plantuml-plugin/pull/10
           "2017.11"
         )
-      case ("org.http4s", _, _, _) =>
+      case ("org.http4s", _, _) =>
         List(
           // https://github.com/http4s/http4s/pull/2153
           "0.19.0"
         )
-      case ("org.scalatest", "scalatest", _, _) =>
-        List(
-          // https://github.com/lightbend/migration-manager/pull/260
-          "3.2.0-SNAP10"
-        )
-
       case _ => List.empty
     }
 }
