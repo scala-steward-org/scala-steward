@@ -90,7 +90,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
           "sbt",
           "-batch",
           "-no-colors",
-          s"$setDependencyUpdatesFailBuild;$stewardUpdates;$reloadPlugins;$stewardUpdates"
+          s";$setDependencyUpdatesFailBuild;$stewardUpdates;$reloadPlugins;$stewardUpdates"
         ),
         List("restore", (repoDir / ".sbtopts").toString),
         List("restore", (repoDir / ".jvmopts").toString)
