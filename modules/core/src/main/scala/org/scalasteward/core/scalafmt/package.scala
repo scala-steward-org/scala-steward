@@ -17,12 +17,12 @@
 package org.scalasteward.core
 
 import cats.implicits._
-import org.scalasteward.core.data.{Dependency, Version}
+import org.scalasteward.core.data.{Dependency, GroupId, Version}
 
 package object scalafmt {
   def scalafmtDependency(scalaBinaryVersion: String)(scalafmtVersion: Version): Dependency =
     Dependency(
-      groupId = if (scalafmtVersion > Version("2.0.0-RC1")) "org.scalameta" else "com.geirsson",
+      GroupId(if (scalafmtVersion > Version("2.0.0-RC1")) "org.scalameta" else "com.geirsson"),
       artifactId = "scalafmt-core",
       crossArtifactIds = List(s"scalafmt-core_${scalaBinaryVersion}"),
       version = scalafmtVersion.value

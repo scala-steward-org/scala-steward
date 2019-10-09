@@ -3,16 +3,18 @@ package org.scalasteward.core.sbt.data
 import org.scalasteward.core.data.Dependency
 import org.scalasteward.core.sbt.command._
 import org.scalatest.Matchers
+import org.scalasteward.core.data.{Dependency, GroupId}
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 class ArtificialProjectTest extends AnyFunSuite with Matchers {
   val catsEffect =
-    Dependency("org.typelevel", "cats-effect", List("cats-effect_2.12"), "1.0.0")
+    Dependency(GroupId("org.typelevel"), "cats-effect", List("cats-effect_2.12"), "1.0.0")
   val scalaLibrary =
-    Dependency("org.scala-lang", "scala-library", List("scala-library"), "2.12.6")
+    Dependency(GroupId("org.scala-lang"), "scala-library", List("scala-library"), "2.12.6")
   val sbtTravisci =
     Dependency(
-      "com.dwijnand",
+      GroupId("com.dwijnand"),
       "sbt-travisci",
       List("sbt-travisci"),
       "1.1.3",
@@ -20,7 +22,7 @@ class ArtificialProjectTest extends AnyFunSuite with Matchers {
     )
   val sbtScalafmt =
     Dependency(
-      "com.geirsson",
+      GroupId("com.geirsson"),
       "sbt-scalafmt",
       List("sbt-scalafmt"),
       "1.6.0-RC4",

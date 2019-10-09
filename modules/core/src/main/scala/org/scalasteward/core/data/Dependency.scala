@@ -21,7 +21,7 @@ import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.util.Nel
 
 final case class Dependency(
-    groupId: String,
+    groupId: GroupId,
     artifactId: String,
     crossArtifactIds: List[String],
     version: String,

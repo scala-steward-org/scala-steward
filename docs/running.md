@@ -14,7 +14,7 @@ sbt stage
   --env-var FOO=BAR
 ```
 
-> If [Firejail](https://firejail.wordpress.com/) is not available locally, the option `--disable-sandbox` can be used (not recommanded for production environment).
+> If [Firejail](https://firejail.wordpress.com/) is not available locally, the option `--disable-sandbox` can be used (not recommended for production environment).
 
 Or as a [Docker](https://www.docker.com/) container:
 
@@ -35,7 +35,7 @@ docker run -v $STEWARD_DIR:/opt/scala-steward -it fthomas/scala-steward:latest \
 The [`git-ask-pass` option](https://git-scm.com/docs/gitcredentials) must specify an executable file (script) that returns (on the stdout),
 
 - either the plain text password corresponding to the configured `${LOGIN}`,
-- or (recommanded) an authentication token corresponding to `${LOGIN}` (with appropriate permissions to watch the repositories; e.g. [Create a personal access token](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line) for GitHub).
+- or (recommended) an authentication token corresponding to `${LOGIN}` (with appropriate permissions to watch the repositories; e.g. [Create a personal access token](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line) for GitHub).
 
 ### Private repositories
 

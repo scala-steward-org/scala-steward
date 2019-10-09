@@ -12,8 +12,8 @@ import org.scalasteward.core.git._
 import org.scalasteward.core.mock.MockContext.config
 import org.scalasteward.core.util.HttpJsonClient
 import org.scalasteward.core.vcs.data._
-import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 class Http4sBitbucketApiAlgTest extends AnyFunSuite with Matchers {
 

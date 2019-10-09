@@ -45,7 +45,7 @@ object CoursierAlg {
     new CoursierAlg[F] {
       override def getArtifactUrl(dependency: Dependency): F[Option[String]] = {
         val module = coursier.Module(
-          coursier.Organization(dependency.groupId),
+          coursier.Organization(dependency.groupId.value),
           coursier.ModuleName(dependency.artifactIdCross)
         )
         val coursierDependency =

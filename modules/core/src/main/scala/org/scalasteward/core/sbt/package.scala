@@ -18,7 +18,7 @@ package org.scalasteward.core
 
 import cats.implicits._
 import cats.effect.{IO, Resource}
-import org.scalasteward.core.data.{Dependency, Version}
+import org.scalasteward.core.data.{Dependency, GroupId, Version}
 import org.scalasteward.core.io.FileData
 import org.scalasteward.core.sbt.data.{SbtVersion, ScalaVersion}
 import scala.io.Source
@@ -48,7 +48,7 @@ package object sbt {
     if (sbtVersion.toVersion >= Version("1.0.0"))
       Some(
         Dependency(
-          groupId = "org.scala-sbt",
+          groupId = GroupId("org.scala-sbt"),
           artifactId = "sbt",
           crossArtifactIds = List.empty,
           version = sbtVersion.value
@@ -60,7 +60,7 @@ package object sbt {
   val scalaStewardSbt: FileData =
     FileData(
       "scala-steward.sbt",
-      """addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.4.2")"""
+      """addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.4.3")"""
     )
 
   val scalaStewardScalafixSbt: FileData =

@@ -1,14 +1,15 @@
 package org.scalasteward.core.io
 
 import better.files.File
-import cats.effect.IO
+import cats.effect.{Blocker, IO}
+import java.util.concurrent.Executors
 import org.scalasteward.core.TestInstances._
 import org.scalasteward.core.io.ProcessAlgTest.ioProcessAlg
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.util.Nel
-import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 class ProcessAlgTest extends AnyFunSuite with Matchers {
   test("exec echo") {
@@ -64,5 +65,6 @@ class ProcessAlgTest extends AnyFunSuite with Matchers {
 }
 
 object ProcessAlgTest {
-  implicit val ioProcessAlg: ProcessAlg[IO] = ProcessAlg.create[IO]
+  val blocker: Blocker = Blocker.liftExecutorService(Executors.newCachedThreadPool())
+  implicit val ioProcessAlg: ProcessAlg[IO] = ProcessAlg.create[IO](blocker)
 }

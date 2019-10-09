@@ -14,15 +14,18 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.scalafix
+package org.scalasteward.core.data
 
-import org.scalasteward.core.data.{GroupId, Version}
-import org.scalasteward.core.util.Nel
-import scala.util.matching.Regex
+import cats.Order
+import cats.implicits._
+import io.circe.{Decoder, Encoder}
 
-final case class Migration(
-    groupId: GroupId,
-    artifactIds: Nel[Regex],
-    newVersion: Version,
-    rewriteRules: Nel[String]
-)
+final case class GroupId(value: String) extends AnyVal {
+  override def toString: String = value
+}
+
+object GroupId {
+  implicit val groupIdDecoder: Decoder[GroupId] = Decoder[String].map(GroupId.apply)
+  implicit val groupIdEncoder: Encoder[GroupId] = Encoder[String].contramap(_.value)
+  implicit val groupIdOrder: Order[GroupId] = Order[String].contramap(_.value)
+}

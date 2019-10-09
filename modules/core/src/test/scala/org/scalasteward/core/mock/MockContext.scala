@@ -35,7 +35,6 @@ object MockContext {
     disableSandbox = false,
     doNotFork = false,
     ignoreOptsFiles = false,
-    keepCredentials = false,
     envVars = List(
       EnvVar("TEST_VAR", "GREAT"),
       EnvVar("ANOTHER_TEST_VAR", "ALSO_GREAT")

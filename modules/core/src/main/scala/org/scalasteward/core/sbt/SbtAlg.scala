@@ -125,9 +125,12 @@ object SbtAlg {
       ): F[(List[Update.Single], List[Dependency])] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          maybeClearCredentials = if (config.keepCredentials) Nil else List(setCredentialsToNil)
-          commands = maybeClearCredentials ++
-            List(stewardUpdates, reloadPlugins, stewardUpdates)
+          commands = List(
+            setDependencyUpdatesFailBuild,
+            stewardUpdates,
+            reloadPlugins,
+            stewardUpdates
+          )
           lines <- withTemporarySbtDependency(repo)(exec(sbtCmd(commands), repoDir))
           dependencies = parser.parseDependencies(lines)
         } yield (dependencies.flatMap(UpdateAlg.dependencyToUpdate(_).toList), dependencies)

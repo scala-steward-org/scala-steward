@@ -1,10 +1,10 @@
 package org.scalasteward.core.sbt
 
-import org.scalasteward.core.data.Dependency
+import org.scalasteward.core.data.{Dependency, GroupId}
 import org.scalasteward.core.sbt.data.SbtVersion
 import org.scalasteward.core.sbt.parser._
-import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 class parserTest extends AnyFunSuite with Matchers {
   test("parseBuildProperties: with whitespace") {
@@ -20,38 +20,38 @@ class parserTest extends AnyFunSuite with Matchers {
          |""".stripMargin.linesIterator.toList
     parseDependencies(lines).toSet shouldBe Set(
       Dependency(
-        "org.scala-lang",
+        GroupId("org.scala-lang"),
         "scala-library",
         List("scala-library"),
         "2.12.7"
       ),
       Dependency(
-        "com.github.pathikrit",
+        GroupId("com.github.pathikrit"),
         "better-files",
         List("better-files_2.12"),
         "3.6.0"
       ),
       Dependency(
-        "org.typelevel",
+        GroupId("org.typelevel"),
         "cats-effect",
         List("cats-effect_2.12"),
         "1.0.0"
       ),
       Dependency(
-        "org.scala-lang",
+        GroupId("org.scala-lang"),
         "scala-library",
         List("scala-library"),
         "2.12.6"
       ),
       Dependency(
-        "com.dwijnand",
+        GroupId("com.dwijnand"),
         "sbt-travisci",
         List("sbt-travisci"),
         "1.1.3",
         sbtSeries = Some("1.0")
       ),
       Dependency(
-        "com.eed3si9n",
+        GroupId("com.eed3si9n"),
         "sbt-assembly",
         List("sbt-assembly"),
         "0.14.8",
@@ -59,7 +59,7 @@ class parserTest extends AnyFunSuite with Matchers {
         sbtSeries = Some("1.0")
       ),
       Dependency(
-        "com.geirsson",
+        GroupId("com.geirsson"),
         "sbt-scalafmt",
         List("sbt-scalafmt"),
         "1.6.0-RC4",

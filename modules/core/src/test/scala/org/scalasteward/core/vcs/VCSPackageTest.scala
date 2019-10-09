@@ -1,15 +1,15 @@
 package org.scalasteward.core.vcs
 
 import org.scalasteward.core.application.SupportedVCS.{GitHub, Gitlab}
-import org.scalasteward.core.data.Update
+import org.scalasteward.core.data.{GroupId, Update}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
-import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 class VCSPackageTest extends AnyFunSuite with Matchers {
   val repo = Repo("foo", "bar")
-  val update = Update.Single("ch.qos.logback", "logback-classic", "1.2.0", Nel.of("1.2.3"))
+  val update = Update.Single(GroupId("ch.qos.logback"), "logback-classic", "1.2.0", Nel.of("1.2.3"))
 
   test("listingBranch") {
     listingBranch(GitHub, repo, update) shouldBe "foo/bar:update/logback-classic-1.2.3"

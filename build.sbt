@@ -26,7 +26,7 @@ lazy val core = myCrossProject("core")
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin(Dependencies.betterMonadicFor),
-      compilerPlugin(Dependencies.kindProjector),
+      compilerPlugin(Dependencies.kindProjector.cross(CrossVersion.full)),
       Dependencies.betterFiles,
       Dependencies.caseApp,
       Dependencies.catsEffect,
@@ -119,7 +119,7 @@ lazy val commonSettings = Def.settings(
 )
 
 lazy val compileSettings = Def.settings(
-  doctestTestFramework := DoctestTestFramework.ScalaTest,
+  doctestTestFramework := DoctestTestFramework.ScalaCheck,
   wartremoverErrors ++= Seq(Wart.TraversableOps),
   wartremoverErrors in (Compile, compile) ++= Seq(Wart.Equals)
 )

@@ -1,19 +1,19 @@
 package org.scalasteward.core.edit
 
 import better.files.File
-import org.scalasteward.core.data.Update
+import org.scalasteward.core.data.{GroupId, Update}
 import org.scalasteward.core.mock.MockContext.editAlg
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
-import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 class EditAlgTest extends AnyFunSuite with Matchers {
 
   test("applyUpdate") {
     val repo = Repo("fthomas", "scala-steward")
-    val update = Update.Single("org.typelevel", "cats-core", "1.2.0", Nel.of("1.3.0"))
+    val update = Update.Single(GroupId("org.typelevel"), "cats-core", "1.2.0", Nel.of("1.3.0"))
     val file1 = File.temp / "ws/fthomas/scala-steward/build.sbt"
     val file2 = File.temp / "ws/fthomas/scala-steward/project/Dependencies.scala"
 
@@ -40,7 +40,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
 
   test("applyUpdate with scalafmt update") {
     val repo = Repo("fthomas", "scala-steward")
-    val update = Update.Single("org.scalameta", "scalafmt-core", "2.0.0", Nel.of("2.1.0"))
+    val update = Update.Single(GroupId("org.scalameta"), "scalafmt-core", "2.0.0", Nel.of("2.1.0"))
     val scalafmtFile = File.temp / "ws/fthomas/scala-steward/.scalafmt.conf"
     val file1 = File.temp / "ws/fthomas/scala-steward/build.sbt"
 
@@ -101,7 +101,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
   }
 
   test("reproduce https://github.com/circe/circe-config/pull/40") {
-    val update = Update.Single("com.typesafe", "config", "1.3.3", Nel.of("1.3.4"))
+    val update = Update.Single(GroupId("com.typesafe"), "config", "1.3.3", Nel.of("1.3.4"))
     val original = Map(
       "build.sbt" -> """val config = "1.3.3"""",
       "project/plugins.sbt" -> """addSbtPlugin("com.typesafe.sbt" % "sbt-site" % "1.3.3")"""
@@ -114,7 +114,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
   }
 
   test("file restriction when sbt update") {
-    val update = Update.Single("org.scala-sbt", "sbt", "1.1.2", Nel.of("1.2.8"))
+    val update = Update.Single(GroupId("org.scala-sbt"), "sbt", "1.1.2", Nel.of("1.2.8"))
     val original = Map(
       "build.properties" -> """sbt.version=1.1.2""",
       "project/plugins.sbt" -> """addSbtPlugin("com.jsuereth" % "sbt-pgp" % "1.1.2")"""

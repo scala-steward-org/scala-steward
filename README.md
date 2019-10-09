@@ -78,6 +78,7 @@ Thanks goes to these wonderful people:
 * [kalejami](https://github.com/kalejami)
 * [KAWACHI Takashi](https://github.com/tkawachi)
 * [kenji yoshida](https://github.com/xuwei-k)
+* [Lars Hupel](https://github.com/larsrh)
 * [Manuel Cueto](https://github.com/manuelcueto)
 * [Mark Canlas](https://github.com/mcanlas)
 * [Michael Wizner](https://github.com/mwz)
@@ -108,6 +109,7 @@ Consider creating PR to add your company to the list and join the community.
 * [Firstbird](https://firstbird.com)
 * [HolidayCheck](https://github.com/holidaycheck)
 * [iAdvize](https://www.iadvize.com/en/)
+* [Rewards Network](https://www.rewardsnetwork.com/)
 * [Septeni Original](https://www.septeni-original.co.jp)
 * [SlamData](https://slamdata.com/)
 * [Snowplow Analytics](https://snowplowanalytics.com/)
@@ -116,6 +118,7 @@ Consider creating PR to add your company to the list and join the community.
 * [Spotify](https://www.spotify.com)
 * [Tegonal GmbH](https://tegonal.com)
 * [Zalando](https://en.zalando.de/)
+* [Evolution Gaming](https://www.evolutiongaming.com/)
 
 ## Participation
 
