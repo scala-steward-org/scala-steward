@@ -25,7 +25,7 @@ class UpdateAlgTest extends AnyFunSuite with Matchers {
   }
 
   test("dependencyToUpdate") {
-    val dependency = Dependency("groupId", "artifactId", List.empty, "1", Some(List("2")))
+    val dependency = Dependency(GroupId("groupId"), "artifactId", List.empty, "1", Some(List("2")))
     UpdateAlg.dependencyToUpdate(dependency) shouldBe Some(
       Update.Single(GroupId("groupId"), "artifactId", "1", Nel.of("2"))
     )
