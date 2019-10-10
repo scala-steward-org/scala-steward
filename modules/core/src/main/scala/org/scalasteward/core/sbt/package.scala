@@ -44,18 +44,15 @@ package object sbt {
       case _      => defaultSbtVersion
     }
 
-  def sbtDependency(sbtVersion: SbtVersion): Option[Dependency] =
-    if (sbtVersion.toVersion >= Version("1.0.0"))
-      Some(
-        Dependency(
-          groupId = GroupId("org.scala-sbt"),
-          artifactId = "sbt",
-          crossArtifactIds = List.empty,
-          version = sbtVersion.value
-        )
-      )
-    else
-      None
+  def sbtDependency(sbtVersion: SbtVersion): Option[Dependency] = {
+    val dependency = Dependency(
+      groupId = GroupId("org.scala-sbt"),
+      artifactId = "sbt",
+      crossArtifactIds = List.empty,
+      version = sbtVersion.value
+    )
+    if (sbtVersion.toVersion >= Version("1.0.0")) Some(dependency) else None
+  }
 
   val scalaStewardSbt: FileData =
     FileData(
