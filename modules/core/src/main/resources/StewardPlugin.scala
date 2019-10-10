@@ -32,40 +32,14 @@ object StewardPlugin extends AutoPlugin {
 
   import autoImport._
 
-  def crossName(
-      moduleId: ModuleID,
-      scalaVersion: String,
-      scalaBinaryVersion: String
-  ): Option[String] =
-    CrossVersion(moduleId.crossVersion, scalaVersion, scalaBinaryVersion).map(_(moduleId.name))
-
-  def toDependency(
-      moduleId: ModuleID,
-      scalaVersion: String,
-      scalaBinaryVersion: String
-  ): Dependency =
-    Dependency(
-      groupId = moduleId.organization,
-      artifactId = moduleId.name,
-      crossArtifactIds = crossName(moduleId, scalaVersion, scalaBinaryVersion).toList,
-      version = moduleId.revision,
-      newerVersions = None,
-      configurations = moduleId.configurations,
-      sbtSeries = moduleId.extraAttributes.get("e:sbtVersion")
-    )
-
-  def multilineJson(dependencies: Seq[Dependency]): String =
-    dependencies
-      .sortBy(dep => (dep.groupId, dep.artifactId))
-      .map(_.asJson)
-      .mkString(System.lineSeparator())
-
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
     stewardDependencies := {
       val scalaBinaryVersionValue = scalaBinaryVersion.value
       val scalaVersionValue = scalaVersion.value
+      val sourcePositions = dependencyPositions.value
 
       val dependencies = libraryDependencies.value
+        .filter(isDefinedInBuildFiles(_, sourcePositions))
         .map(moduleId => toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue))
 
       multilineJson(dependencies)
@@ -89,7 +63,50 @@ object StewardPlugin extends AutoPlugin {
     }
   )
 
-  final case class Dependency(
+  private def crossName(
+      moduleId: ModuleID,
+      scalaVersion: String,
+      scalaBinaryVersion: String
+  ): Option[String] =
+    CrossVersion(moduleId.crossVersion, scalaVersion, scalaBinaryVersion).map(_(moduleId.name))
+
+  private def toDependency(
+      moduleId: ModuleID,
+      scalaVersion: String,
+      scalaBinaryVersion: String
+  ): Dependency =
+    Dependency(
+      groupId = moduleId.organization,
+      artifactId = moduleId.name,
+      crossArtifactIds = crossName(moduleId, scalaVersion, scalaBinaryVersion).toList,
+      version = moduleId.revision,
+      newerVersions = None,
+      configurations = moduleId.configurations,
+      sbtSeries = moduleId.extraAttributes.get("e:sbtVersion")
+    )
+
+  private def multilineJson(dependencies: Seq[Dependency]): String =
+    dependencies
+      .sortBy(dep => (dep.groupId, dep.artifactId))
+      .map(_.asJson)
+      .mkString(System.lineSeparator())
+
+  // Inspired by https://github.com/rtimush/sbt-updates/issues/42
+  private def isDefinedInBuildFiles(
+      moduleId: ModuleID,
+      sourcePositions: Map[ModuleID, SourcePosition]
+  ): Boolean =
+    sourcePositions.get(moduleId) match {
+      case Some(fp: FilePosition) if fp.path.startsWith("(sbt.Classpaths") => true
+      case Some(fp: FilePosition) if fp.path.startsWith("(")               => false
+      case Some(fp: FilePosition)
+          if fp.path.startsWith("Defaults.scala")
+            && !moduleId.configurations.exists(_ == "plugin->default(compile)") =>
+        false
+      case _ => true
+    }
+
+  final private case class Dependency(
       groupId: String,
       artifactId: String,
       crossArtifactIds: List[String],
@@ -112,15 +129,15 @@ object StewardPlugin extends AutoPlugin {
       )
   }
 
-  def strToJson(str: String): String =
+  private def strToJson(str: String): String =
     s""""$str""""
 
-  def optToJson(opt: Option[String]): String =
+  private def optToJson(opt: Option[String]): String =
     opt.getOrElse("null")
 
-  def seqToJson(seq: Seq[String]): String =
+  private def seqToJson(seq: Seq[String]): String =
     seq.mkString("[ ", ", ", " ]")
 
-  def objToJson(obj: List[(String, String)]): String =
+  private def objToJson(obj: List[(String, String)]): String =
     obj.map { case (k, v) => s""""$k": $v""" }.mkString("{ ", ", ", " }")
 }
