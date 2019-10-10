@@ -54,15 +54,21 @@ object StewardPlugin extends AutoPlugin {
       sbtSeries = moduleId.extraAttributes.get("e:sbtVersion")
     )
 
+  def multilineJson(dependencies: Seq[Dependency]): String =
+    dependencies
+      .sortBy(dep => (dep.groupId, dep.artifactId))
+      .map(_.asJson)
+      .mkString(System.lineSeparator())
+
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
     stewardDependencies := {
       val scalaBinaryVersionValue = scalaBinaryVersion.value
       val scalaVersionValue = scalaVersion.value
 
-      val deps = libraryDependencies.value.map { moduleId =>
-        toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue).asJson
-      }
-      seqToJson(deps)
+      val dependencies = libraryDependencies.value
+        .map(moduleId => toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue))
+
+      multilineJson(dependencies)
     },
     stewardUpdates := {
       val scalaBinaryVersionValue = scalaBinaryVersion.value
@@ -70,15 +76,16 @@ object StewardPlugin extends AutoPlugin {
 
       val updates = dependencyUpdatesData.value.toList.map {
         case (moduleId, newerVersions) =>
+          val validNewerVersions = newerVersions.toList.collect { case v: ValidVersion => v.text }
           toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue)
-            .copy(newerVersions = Some(newerVersions.toList.collect {
-              case v: ValidVersion if moduleId.revision != v.text => v.text
-            }))
+            .copy(newerVersions = Some(validNewerVersions))
       }
+      val updatesWithoutNewerVersions = updates.map(_.copy(newerVersions = None))
       val dependencies = libraryDependencies.value
         .map(toDependency(_, scalaVersionValue, scalaBinaryVersionValue))
-        .filterNot(d => updates.exists(u => d == u.copy(newerVersions = None)))
-      seqToJson((updates ++ dependencies).map(_.asJson))
+        .filterNot(updatesWithoutNewerVersions.contains)
+
+      multilineJson(updates ++ dependencies)
     }
   )
 

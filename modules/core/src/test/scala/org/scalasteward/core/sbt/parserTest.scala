@@ -13,10 +13,15 @@ class parserTest extends AnyFunSuite with Matchers {
 
   test("parseDependencies") {
     val lines =
-      """|[info] core / libraryDependenciesAsJson
-         |[info] 	[ { "groupId": "org.scala-lang", "artifactId": "scala-library", "crossArtifactIds": [ "scala-library" ], "version": "2.12.7" }, { "groupId": "com.github.pathikrit", "artifactId": "better-files", "crossArtifactIds": [ "better-files_2.12" ], "version": "3.6.0" }, { "groupId": "org.typelevel", "artifactId": "cats-effect", "crossArtifactIds": [ "cats-effect_2.12" ], "version": "1.0.0" } ]
-         |sbt:project> libraryDependenciesAsJson
-         |[info] [ { "groupId": "org.scala-lang", "artifactId": "scala-library", "crossArtifactIds": [ "scala-library" ], "version": "2.12.6" }, { "groupId": "com.dwijnand", "artifactId": "sbt-travisci", "crossArtifactIds": [ "sbt-travisci" ], "version": "1.1.3",  "sbtSeries": "1.0" }, { "groupId": "com.eed3si9n", "artifactId": "sbt-assembly", "crossArtifactIds": [ "sbt-assembly" ], "version": "0.14.8", "sbtSeries": "1.0", "configurations": "foo" }, { "groupId": "com.geirsson", "artifactId": "sbt-scalafmt", "crossArtifactIds": [ "sbt-scalafmt" ], "version": "1.6.0-RC4", "sbtSeries": "1.0" } ]
+      """|[info] core / stewardDependencies
+         |[info] { "groupId": "org.scala-lang", "artifactId": "scala-library", "crossArtifactIds": [ "scala-library" ], "version": "2.12.7" }
+         |[info] { "groupId": "com.github.pathikrit", "artifactId": "better-files", "crossArtifactIds": [ "better-files_2.12" ], "version": "3.6.0" }
+         |[info] { "groupId": "org.typelevel", "artifactId": "cats-effect", "crossArtifactIds": [ "cats-effect_2.12" ], "version": "1.0.0" }
+         |sbt:project> stewardDependencies
+         |[info] { "groupId": "org.scala-lang", "artifactId": "scala-library", "crossArtifactIds": [ "scala-library" ], "version": "2.12.6" }
+         |[info] { "groupId": "com.dwijnand", "artifactId": "sbt-travisci", "crossArtifactIds": [ "sbt-travisci" ], "version": "1.1.3",  "sbtSeries": "1.0" }
+         |[info] { "groupId": "com.eed3si9n", "artifactId": "sbt-assembly", "crossArtifactIds": [ "sbt-assembly" ], "version": "0.14.8", "sbtSeries": "1.0", "configurations": "foo" }
+         |[info] { "groupId": "com.geirsson", "artifactId": "sbt-scalafmt", "crossArtifactIds": [ "sbt-scalafmt" ], "version": "1.6.0-RC4", "sbtSeries": "1.0" }
          |""".stripMargin.linesIterator.toList
     parseDependencies(lines).toSet shouldBe Set(
       Dependency(

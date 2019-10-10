@@ -27,7 +27,7 @@ object parser {
 
   def parseDependencies(lines: List[String]): List[Dependency] =
     lines
-      .flatMap(line => decode[List[Dependency]](removeSbtNoise(line)).getOrElse(List.empty))
+      .flatMap(line => decode[Dependency](removeSbtNoise(line)).toList)
       .groupBy(_.copy(crossArtifactIds = List.empty))
       .map {
         case (d, ds) => d.copy(crossArtifactIds = ds.flatMap(_.crossArtifactIds).distinct.sorted)
