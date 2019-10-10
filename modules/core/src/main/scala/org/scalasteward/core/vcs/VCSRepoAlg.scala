@@ -45,14 +45,14 @@ object VCSRepoAlg {
           for {
             parent <- repoOut.parentOrRaise[F]
             _ <- gitAlg.syncFork(repo, withLogin(parent.clone_url), parent.default_branch)
-            _ <- maybeRemoveUpdateBranch(repo)
+            _ <- maybeDeleteUpdateBranch(repo)
           } yield parent
         }
 
       val withLogin: Uri => Uri =
         util.uri.withUserInfo.set(config.vcsLogin)
 
-      def maybeRemoveUpdateBranch(repo: Repo): F[Unit] = {
+      def maybeDeleteUpdateBranch(repo: Repo): F[Unit] = {
         val branch = Branch(updateBranchPrefix)
         for {
           _ <- gitAlg.deleteLocalBranch(repo, branch).attempt
