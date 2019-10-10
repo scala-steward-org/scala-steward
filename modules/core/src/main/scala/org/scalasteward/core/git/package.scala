@@ -20,8 +20,10 @@ import org.scalasteward.core.data.Update
 import org.scalasteward.core.update.show
 
 package object git {
+  val updateBranchPrefix: String = "update"
+
   def branchFor(update: Update): Branch =
-    Branch(s"update/${update.name}-${update.nextVersion}")
+    Branch(s"${updateBranchPrefix}/${update.name}-${update.nextVersion}")
 
   def commitMsgFor(update: Update): String =
     s"Update ${show.oneLiner(update)} to ${update.nextVersion}"

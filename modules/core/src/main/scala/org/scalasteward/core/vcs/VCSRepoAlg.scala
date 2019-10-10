@@ -19,7 +19,7 @@ package org.scalasteward.core.vcs
 import cats.implicits._
 import org.http4s.Uri
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.git.GitAlg
+import org.scalasteward.core.git._
 import org.scalasteward.core.util
 import org.scalasteward.core.util.MonadThrowable
 import org.scalasteward.core.vcs.data.{Repo, RepoOut}
@@ -45,10 +45,19 @@ object VCSRepoAlg {
           for {
             parent <- repoOut.parentOrRaise[F]
             _ <- gitAlg.syncFork(repo, withLogin(parent.clone_url), parent.default_branch)
+            _ <- maybeRemoveUpdateBranch(repo)
           } yield parent
         }
 
       val withLogin: Uri => Uri =
         util.uri.withUserInfo.set(config.vcsLogin)
+
+      def maybeRemoveUpdateBranch(repo: Repo): F[Unit] = {
+        val branch = Branch(updateBranchPrefix)
+        for {
+          _ <- gitAlg.deleteLocalBranch(repo, branch).attempt
+          _ <- gitAlg.deleteRemoteBranch(repo, branch).attempt
+        } yield ()
+      }
     }
 }

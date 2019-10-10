@@ -40,6 +40,10 @@ trait GitAlg[F[_]] {
 
   def currentBranch(repo: Repo): F[Branch]
 
+  def deleteLocalBranch(repo: Repo, branch: Branch): F[Unit]
+
+  def deleteRemoteBranch(repo: Repo, branch: Branch): F[Unit]
+
   /** Returns `true` if merging `branch` into `base` results in merge conflicts. */
   def hasConflicts(repo: Repo, branch: Branch, base: Branch): F[Boolean]
 
@@ -118,6 +122,16 @@ object GitAlg {
           repoDir <- workspaceAlg.repoDir(repo)
           lines <- exec(Nel.of("rev-parse", "--abbrev-ref", "HEAD"), repoDir)
         } yield Branch(lines.mkString.trim)
+
+      override def deleteLocalBranch(repo: Repo, branch: Branch): F[Unit] =
+        workspaceAlg.repoDir(repo).flatMap { repoDir =>
+          exec(Nel.of("branch", "-D", branch.name), repoDir).void
+        }
+
+      override def deleteRemoteBranch(repo: Repo, branch: Branch): F[Unit] =
+        workspaceAlg.repoDir(repo).flatMap { repoDir =>
+          exec(Nel.of("push", "origin", s":${branch.name}"), repoDir).void
+        }
 
       override def hasConflicts(repo: Repo, branch: Branch, base: Branch): F[Boolean] =
         workspaceAlg.repoDir(repo).flatMap { repoDir =>
