@@ -34,9 +34,9 @@ object StewardPlugin extends AutoPlugin {
 
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
     stewardDependencies := {
+      val sourcePositions = dependencyPositions.value
       val scalaBinaryVersionValue = scalaBinaryVersion.value
       val scalaVersionValue = scalaVersion.value
-      val sourcePositions = dependencyPositions.value
 
       val dependencies = libraryDependencies.value
         .filter(isDefinedInBuildFiles(_, sourcePositions))
