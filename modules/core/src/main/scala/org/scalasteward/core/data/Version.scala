@@ -55,11 +55,15 @@ final case class Version(value: String) {
     preReleaseIndex.isDefined
 
   private def preReleaseIndex: Option[NonNegInt] =
-    NonNegInt.unapply(components.indexWhere {
-      case Version.Component.Hyphen       => true
-      case a @ Version.Component.Alpha(_) => a.order < 0
-      case _                              => false
-    })
+    NonNegInt.unapply {
+      val preReleaseIdentIndex = components.indexWhere {
+        case a @ Version.Component.Alpha(_) => a.isPreReleaseIdent
+        case _                              => false
+      }
+      val precedingIndex = preReleaseIdentIndex - 1
+      if (components.lift(precedingIndex).contains(Version.Component.Hyphen)) precedingIndex
+      else preReleaseIdentIndex
+    }
 }
 
 object Version {
@@ -84,6 +88,7 @@ object Version {
   object Component {
     final case class Numeric(value: String) extends Component
     final case class Alpha(value: String) extends Component {
+      def isPreReleaseIdent: Boolean = order < 0
       def order: Int = value.toUpperCase match {
         case "SNAP" | "SNAPSHOT" => -5
         case "ALPHA"             => -4
