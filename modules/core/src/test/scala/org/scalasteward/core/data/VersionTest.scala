@@ -3,6 +3,7 @@ package org.scalasteward.core.data
 import cats.implicits._
 import cats.kernel.laws.discipline.OrderTests
 import org.scalasteward.core.TestInstances._
+import org.scalasteward.core.data.Version.Component
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
@@ -134,13 +135,13 @@ class VersionTest extends AnyFunSuite with Discipline with Matchers with ScalaCh
 
   test("Component: round-trip") {
     forAll { str: String =>
-      Version.Component.render(Version.Component.parse(str)) shouldBe str
+      Component.render(Component.parse(str)) shouldBe str
     }
   }
 
   test("Component: round-trip example") {
     val original = "1.0.0-rc.1+build.1"
-    Version.Component.render(Version.Component.parse(original)) shouldBe original
+    Component.render(Component.Empty :: Component.parse(original)) shouldBe original
   }
 
   def checkPairwise(versions: List[String]): Unit = {
