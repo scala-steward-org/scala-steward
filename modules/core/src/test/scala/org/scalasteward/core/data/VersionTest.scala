@@ -138,6 +138,11 @@ class VersionTest extends AnyFunSuite with Discipline with Matchers with ScalaCh
     }
   }
 
+  test("Component: round-trip example") {
+    val original = "1.0.0-rc.1+build.1"
+    Version.Component.render(Version.Component.parse(original)) shouldBe original
+  }
+
   def checkPairwise(versions: List[String]): Unit = {
     val pairs = versions.tails.flatMap {
       case h :: t => t.map(v => (Version(h), Version(v)))
