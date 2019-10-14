@@ -2,7 +2,7 @@ package org.scalasteward.core.vcs.data
 
 import cats.effect.IO
 import io.circe.parser
-import org.http4s.Http4sLiteralSyntax
+import org.http4s.syntax.literals._
 import org.scalasteward.core.git.Branch
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers

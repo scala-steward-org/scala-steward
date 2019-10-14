@@ -19,11 +19,11 @@ package org.scalasteward.core.application
 import better.files._
 import cats.effect.Sync
 import org.http4s.Uri
+import org.http4s.Uri.UserInfo
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.git.Author
 import org.scalasteward.core.util
 import org.scalasteward.core.vcs.data.AuthenticatedUser
-
 import scala.concurrent.duration.FiniteDuration
 import scala.sys.process.Process
 
@@ -65,7 +65,7 @@ final case class Config(
     processTimeout: FiniteDuration
 ) {
   def vcsUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] = {
-    val urlWithUser = util.uri.withUserInfo.set(vcsLogin)(vcsApiHost).renderString
+    val urlWithUser = util.uri.withUserInfo.set(UserInfo(vcsLogin, None))(vcsApiHost).renderString
     val prompt = s"Password for '$urlWithUser': "
     F.delay {
       val password = Process(List(gitAskPass.pathAsString, prompt)).!!.trim

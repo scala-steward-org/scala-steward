@@ -1,7 +1,7 @@
 package org.scalasteward.core.vcs.data
 
 import io.circe.parser
-import org.http4s.Http4sLiteralSyntax
+import org.http4s.syntax.literals._
 import org.scalasteward.core.vcs.data.PullRequestState.Open
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers

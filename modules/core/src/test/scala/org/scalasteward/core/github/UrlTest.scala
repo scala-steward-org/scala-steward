@@ -1,6 +1,6 @@
 package org.scalasteward.core.github
 
-import org.http4s.Http4sLiteralSyntax
+import org.http4s.syntax.literals._
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.vcs.data.Repo
 import org.scalatest.funsuite.AnyFunSuite

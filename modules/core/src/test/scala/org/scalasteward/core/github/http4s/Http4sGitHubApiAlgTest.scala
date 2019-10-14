@@ -2,11 +2,11 @@ package org.scalasteward.core.github.http4s
 
 import cats.effect.IO
 import io.circe.literal._
+import org.http4s.HttpRoutes
 import org.http4s.circe._
 import org.http4s.client.Client
 import org.http4s.dsl.io._
 import org.http4s.implicits._
-import org.http4s.{Http4sLiteralSyntax, HttpRoutes}
 import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.mock.MockContext.config
