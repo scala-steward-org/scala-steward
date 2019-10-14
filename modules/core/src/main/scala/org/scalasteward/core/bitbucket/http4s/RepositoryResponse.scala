@@ -17,11 +17,12 @@
 package org.scalasteward.core.bitbucket.http4s
 
 import cats.implicits._
-import io.circe.{Decoder, DecodingFailure}
+import io.circe.{ACursor, Decoder, DecodingFailure, Json}
 import org.http4s.Uri
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.uri._
 import org.scalasteward.core.vcs.data.{Repo, UserOut}
+import scala.annotation.tailrec
 
 final private[http4s] case class RepositoryResponse(
     name: String,
@@ -33,7 +34,7 @@ final private[http4s] case class RepositoryResponse(
 
 private[http4s] object RepositoryResponse {
 
-  implicit private val repoDecoder = Decoder.instance { c =>
+  implicit private val repoDecoder: Decoder[Repo] = Decoder.instance { c =>
     c.as[String].map(_.split('/')).flatMap { parts =>
       parts match {
         case Array(owner, name) => Repo(owner, name).asRight
@@ -64,5 +65,28 @@ private[http4s] object RepositoryResponse {
       defaultBranch <- c.downField("mainbranch").downField("name").as[Branch]
       maybeParent <- c.downField("parent").downField("full_name").as[Option[Repo]]
     } yield RepositoryResponse(name, defaultBranch, UserOut(owner), cloneUrl, maybeParent)
+  }
+
+  /**
+    * Monkey patches the [[io.circe.ACursor]] class to get the `downAt` function back, which was removed in
+    * version 0.12.0-M4.
+    *
+    * @see https://gitter.im/circe/circe?at=5d3f71eff0ff3e2bba8ece73
+    * @param cursor The cursor to patch.
+    */
+  implicit class RichACursor(cursor: ACursor) {
+
+    /**
+      * If the focus is a JSON array, move to the first element that satisfies the given predicate.
+      */
+    def downAt(p: Json => Boolean): ACursor = {
+      @tailrec
+      def find(c: ACursor): ACursor =
+        if (c.succeeded) {
+          if (c.focus.exists(p)) c else find(c.right)
+        } else c
+
+      find(cursor.downArray)
+    }
   }
 }

@@ -19,7 +19,7 @@ class CoursierAlgTest extends AnyFunSuite with Matchers {
       logs = Vector(),
       files = Map()
     )
-    result shouldBe Some("https://typelevel.org/cats-effect/")
+    result shouldBe Some("https://github.com/typelevel/cats-effect")
   }
 
   test("getArtifactIdUrlMapping") {
@@ -38,7 +38,7 @@ class CoursierAlgTest extends AnyFunSuite with Matchers {
     )
     result shouldBe Map(
       "cats-core" -> "https://github.com/typelevel/cats",
-      "cats-effect" -> "https://typelevel.org/cats-effect/"
+      "cats-effect" -> "https://github.com/typelevel/cats-effect"
     )
   }
 

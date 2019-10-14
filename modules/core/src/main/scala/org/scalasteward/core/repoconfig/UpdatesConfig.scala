@@ -47,8 +47,8 @@ object UpdatesConfig {
     Configuration.default.withDefaults
 
   implicit val updatesConfigDecoder: Decoder[UpdatesConfig] =
-    deriveDecoder
+    deriveConfiguredDecoder
 
   implicit val updatesConfigEncoder: Encoder[UpdatesConfig] =
-    deriveEncoder
+    deriveConfiguredEncoder
 }
