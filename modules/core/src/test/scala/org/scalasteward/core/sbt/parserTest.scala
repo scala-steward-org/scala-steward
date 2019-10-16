@@ -180,6 +180,7 @@ class parserTest extends AnyFunSuite with Matchers {
         "sbt-assembly",
         "0.14.8",
         Some(SbtVersion("1.0")),
+        None,
         Some("foo")
       ),
       Dependency(

@@ -48,6 +48,7 @@ object StewardPlugin extends AutoPlugin {
             "version" -> moduleId.revision
           ) ++
             moduleId.extraAttributes.get("e:sbtVersion").map("sbtVersion" -> _).toList ++
+            moduleId.extraAttributes.get("e:scalaVersion").map("scalaVersion" -> _).toList ++
             moduleId.configurations.map("configurations" -> _).toList
 
           entries.map { case (k, v) => s""""$k": "$v"""" }.mkString("{ ", ", ", " }")
