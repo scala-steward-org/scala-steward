@@ -106,6 +106,7 @@ Consider creating PR to add your company to the list and join the community.
 * [AutoScout24](https://www.autoscout24.de/)
 * [Chartboost](https://www.chartboost.com/)
 * [Colisweb](https://www.colisweb.com/)
+* [Evolution Gaming](https://www.evolutiongaming.com/)
 * [Firstbird](https://firstbird.com)
 * [HolidayCheck](https://github.com/holidaycheck)
 * [iAdvize](https://www.iadvize.com/en/)
@@ -113,13 +114,12 @@ Consider creating PR to add your company to the list and join the community.
 * [Septeni Original](https://www.septeni-original.co.jp)
 * [SlamData](https://slamdata.com/)
 * [Snowplow Analytics](https://snowplowanalytics.com/)
-* [SpringerNature](https://www.springernature.com)
 * [SoftwareMill](https://softwaremill.com)
 * [Spotify](https://www.spotify.com)
+* [SpringerNature](https://www.springernature.com)
 * [Tegonal GmbH](https://tegonal.com)
-* [Zalando](https://en.zalando.de/)
-* [Evolution Gaming](https://www.evolutiongaming.com/)
 * [Tupl](https://www.tupl.com)
+* [Zalando](https://en.zalando.de/)
 
 ## Participation
 
