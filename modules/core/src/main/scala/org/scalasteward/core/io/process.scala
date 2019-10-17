@@ -78,7 +78,7 @@ object process {
       cs: ContextShift[F]
   ): Stream[F, String] =
     fs2.io
-      .readInputStream(F.pure(is), chunkSize = 4096, blocker.blockingContext)
+      .readInputStream(F.pure(is), chunkSize = 4096, blocker)
       .through(fs2.text.utf8Decode)
       .through(fs2.text.lines)
 

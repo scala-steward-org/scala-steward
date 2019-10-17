@@ -82,7 +82,8 @@ object StewardPlugin extends AutoPlugin {
       version = moduleId.revision,
       newerVersions = None,
       configurations = moduleId.configurations,
-      sbtSeries = moduleId.extraAttributes.get("e:sbtVersion")
+      sbtVersion = moduleId.extraAttributes.get("e:sbtVersion"),
+      scalaVersion = moduleId.extraAttributes.get("e:scalaVersion")
     )
 
   private def multilineJson(dependencies: Seq[Dependency]): String =
@@ -113,7 +114,8 @@ object StewardPlugin extends AutoPlugin {
       version: String,
       newerVersions: Option[List[String]],
       configurations: Option[String],
-      sbtSeries: Option[String]
+      sbtVersion: Option[String],
+      scalaVersion: Option[String]
   ) {
     def asJson: String =
       objToJson(
@@ -124,7 +126,8 @@ object StewardPlugin extends AutoPlugin {
           "version" -> strToJson(version),
           "newerVersions" -> newerVersions.fold("null")(vs => seqToJson(vs.map(strToJson))),
           "configurations" -> optToJson(configurations.map(strToJson)),
-          "sbtSeries" -> optToJson(sbtSeries.map(strToJson))
+          "sbtVersion" -> optToJson(sbtVersion.map(strToJson)),
+          "scalaVersion" -> optToJson(scalaVersion.map(strToJson))
         )
       )
   }

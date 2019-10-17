@@ -20,6 +20,7 @@ import cats.Parallel
 import cats.effect._
 import cats.implicits._
 import coursier.interop.cats._
+import coursier.{Module, ModuleName, Organization}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data.Dependency
 import scala.concurrent.ExecutionContext
@@ -44,12 +45,7 @@ object CoursierAlg {
     val fetch = coursier.Fetch[F](cache)
     new CoursierAlg[F] {
       override def getArtifactUrl(dependency: Dependency): F[Option[String]] = {
-        val module = coursier.Module(
-          coursier.Organization(dependency.groupId.value),
-          coursier.ModuleName(dependency.artifactIdCross)
-        )
-        val coursierDependency =
-          coursier.Dependency.of(module, dependency.version).withTransitive(false)
+        val coursierDependency = toCoursierDependency(dependency)
         for {
           maybeFetchResult <- fetch
             .addDependencies(coursierDependency)
@@ -62,7 +58,8 @@ object CoursierAlg {
         } yield {
           for {
             result <- maybeFetchResult
-            (_, project) <- result.resolution.projectCache.get((module, dependency.version))
+            (_, project) <- result.resolution.projectCache
+              .get((coursierDependency.module, coursierDependency.version))
             maybeScmUrl = project.info.scm.flatMap(_.url).filter(_.nonEmpty)
             maybeHomepage = Option(project.info.homePage).filter(_.nonEmpty)
             url <- maybeScmUrl.orElse(maybeHomepage)
@@ -75,5 +72,17 @@ object CoursierAlg {
           .traverseFilter(dep => getArtifactUrl(dep).map(_.map(dep.artifactId -> _)))
           .map(_.toMap)
     }
+  }
+
+  private def toCoursierDependency(dependency: Dependency): coursier.Dependency = {
+    val attributes =
+      dependency.sbtVersion.map("sbtVersion" -> _.value).toMap ++
+        dependency.scalaVersion.map("scalaVersion" -> _.value).toMap
+    val module = Module(
+      Organization(dependency.groupId.value),
+      ModuleName(dependency.artifactIdCross),
+      attributes
+    )
+    coursier.Dependency.of(module, dependency.version).withTransitive(false)
   }
 }

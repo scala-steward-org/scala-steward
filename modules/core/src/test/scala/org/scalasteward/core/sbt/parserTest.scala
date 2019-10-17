@@ -53,7 +53,7 @@ class parserTest extends AnyFunSuite with Matchers {
         "sbt-travisci",
         List("sbt-travisci"),
         "1.1.3",
-        sbtSeries = Some("1.0")
+        sbtVersion = Some(SbtVersion("1.0"))
       ),
       Dependency(
         GroupId("com.eed3si9n"),
@@ -61,14 +61,14 @@ class parserTest extends AnyFunSuite with Matchers {
         List("sbt-assembly"),
         "0.14.8",
         configurations = Some("foo"),
-        sbtSeries = Some("1.0")
+        sbtVersion = Some(SbtVersion("1.0"))
       ),
       Dependency(
         GroupId("com.geirsson"),
         "sbt-scalafmt",
         List("sbt-scalafmt"),
         "1.6.0-RC4",
-        sbtSeries = Some("1.0")
+        sbtVersion = Some(SbtVersion("1.0"))
       )
     )
   }

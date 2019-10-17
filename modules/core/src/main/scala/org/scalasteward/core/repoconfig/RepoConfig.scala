@@ -32,8 +32,8 @@ object RepoConfig {
     Configuration.default.withDefaults
 
   implicit val repoConfigDecoder: Decoder[RepoConfig] =
-    deriveDecoder
+    deriveConfiguredDecoder
 
   implicit val repoConfigEncoder: Encoder[RepoConfig] =
-    deriveEncoder
+    deriveConfiguredEncoder
 }

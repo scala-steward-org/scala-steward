@@ -18,8 +18,8 @@ package org.scalasteward.core.edit
 
 import better.files.File
 import cats.Traverse
-import cats.effect.Sync
 import cats.implicits._
+import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.io.{isFileSpecificTo, isSourceFile, FileAlg, WorkspaceAlg}
@@ -33,8 +33,9 @@ final class EditAlg[F[_]](
     fileAlg: FileAlg[F],
     logger: Logger[F],
     sbtAlg: SbtAlg[F],
+    streamCompiler: Stream.Compiler[F, F],
     workspaceAlg: WorkspaceAlg[F],
-    F: Sync[F]
+    F: MonadThrowable[F]
 ) {
   def applyUpdate(repo: Repo, update: Update): F[Unit] =
     for {
