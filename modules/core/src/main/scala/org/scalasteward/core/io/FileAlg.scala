@@ -63,7 +63,9 @@ trait FileAlg[F[_]] {
     files.traverse(editFile(_, edit)).map(_.foldLeft(false)(_ || _))
 
   final def findFilesContaining(dir: File, string: String, fileFilter: File => Boolean)(
-      implicit F: Sync[F]
+      implicit
+      streamCompiler: Stream.Compiler[F, F],
+      F: Functor[F]
   ): F[List[File]] =
     walk(dir)
       .through(util.evalFilter(isRegularFile))
