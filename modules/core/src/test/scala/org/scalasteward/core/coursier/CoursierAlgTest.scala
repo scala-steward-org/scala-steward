@@ -22,10 +22,10 @@ class CoursierAlgTest extends AnyFunSuite with Matchers {
     val dep = Dependency(
       GroupId("org.xerial.sbt"),
       "sbt-sonatype",
-      "sbt-sonatype",
+      List("sbt-sonatype"),
       "3.8",
-      Some(SbtVersion("1.0")),
-      Some(ScalaVersion("2.12"))
+      sbtVersion = Some(SbtVersion("1.0")),
+      scalaVersion = Some(ScalaVersion("2.12"))
     )
     val (state, result) = coursierAlg
       .getArtifactUrl(dep)

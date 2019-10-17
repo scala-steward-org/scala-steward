@@ -37,8 +37,8 @@ package object sbt {
   val defaultScalaBinaryVersion: String =
     BuildInfo.scalaBinaryVersion
 
-  def seriesToSpecificVersion(sbtSeries: String): SbtVersion =
-    sbtSeries match {
+  def seriesToSpecificVersion(sbtSeries: SbtVersion): SbtVersion =
+    sbtSeries.value match {
       case "0.13" => latestSbtVersion_0_13
       case "1.0"  => defaultSbtVersion
       case _      => defaultSbtVersion

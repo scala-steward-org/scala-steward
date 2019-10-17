@@ -18,7 +18,7 @@ class ArtificialProjectTest extends AnyFunSuite with Matchers {
       "sbt-travisci",
       List("sbt-travisci"),
       "1.1.3",
-      sbtSeries = Some("1.0")
+      sbtVersion = Some(SbtVersion("1.0"))
     )
   val sbtScalafmt =
     Dependency(
@@ -26,7 +26,7 @@ class ArtificialProjectTest extends AnyFunSuite with Matchers {
       "sbt-scalafmt",
       List("sbt-scalafmt"),
       "1.6.0-RC4",
-      sbtSeries = Some("1.0")
+      sbtVersion = Some(SbtVersion("1.0"))
     )
   val project = ArtificialProject(
     ScalaVersion("2.12.7"),

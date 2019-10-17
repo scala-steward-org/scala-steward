@@ -53,7 +53,7 @@ final class UpdateAlg[F[_]](
           .filter { d =>
             FilterAlg.isIgnoredGlobally(d.toUpdate).isRight
           }
-          .partition(_.sbtSeries.isEmpty)
+          .partition(_.sbtVersion.isEmpty)
         val libProjects = splitter
           .xxx(libraries)
           .map { libs =>
@@ -66,7 +66,7 @@ final class UpdateAlg[F[_]](
           }
 
         val pluginProjects = plugins
-          .groupBy(_.sbtSeries)
+          .groupBy(_.sbtVersion)
           .flatMap {
             case (maybeSbtVersion, plugins1) =>
               splitter.xxx(plugins1).map { ps =>

@@ -29,7 +29,7 @@ final case class Dependency(
     newerVersions: Option[List[String]] = None,
     configurations: Option[String] = None,
     sbtVersion: Option[SbtVersion] = None,
-    scalaVersion: Option[ScalaVersion] = None,
+    scalaVersion: Option[ScalaVersion] = None
 ) {
   def artifactIdCross: String =
     crossArtifactIds.sorted.headOption.getOrElse(artifactId)
