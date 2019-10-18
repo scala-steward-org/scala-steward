@@ -16,6 +16,7 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     val content =
       """|updates.allow  = [ { groupId = "eu.timepit", artifactId = "refined", version = "0.8." } ]
          |updates.ignore = [ { groupId = "org.acme", version = "1.0" } ]
+         |updates.limit = 4
          |""".stripMargin
     val initialState = MockState.empty.add(configFile, content)
     val config = repoConfigAlg.readRepoConfigOrDefault(repo).runA(initialState).unsafeRunSync()
@@ -23,7 +24,8 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     config shouldBe RepoConfig(
       updates = UpdatesConfig(
         allow = List(UpdatePattern(GroupId("eu.timepit"), Some("refined"), Some("0.8."))),
-        ignore = List(UpdatePattern(GroupId("org.acme"), None, Some("1.0")))
+        ignore = List(UpdatePattern(GroupId("org.acme"), None, Some("1.0"))),
+        limit = Some(4)
       )
     )
   }

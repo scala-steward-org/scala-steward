@@ -25,7 +25,8 @@ import org.scalasteward.core.update.FilterAlg.{FilterResult, IgnoredByConfig, No
 
 final case class UpdatesConfig(
     allow: List[UpdatePattern] = List.empty,
-    ignore: List[UpdatePattern] = List.empty
+    ignore: List[UpdatePattern] = List.empty,
+    limit: Option[Int] = None
 ) {
   def keep(update: Update.Single): FilterResult =
     isAllowed(update) *> isIgnored(update)
