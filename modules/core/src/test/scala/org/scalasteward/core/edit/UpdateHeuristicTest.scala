@@ -92,6 +92,29 @@ class UpdateHeuristicTest extends AnyFunSuite with Matchers {
       .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.original.name)
   }
 
+  test("short groupIds") {
+    val original = """
+                     |private val mapCommonsDeps = Seq(
+                     |    "akka-streams",
+                     |    "akka-streams-kafka"
+                     |  ).map("com.sky" %% _ % "1.2.0")
+                     |""".stripMargin
+
+    val expected = """
+                     |private val mapCommonsDeps = Seq(
+                     |    "akka-streams",
+                     |    "akka-streams-kafka"
+                     |  ).map("com.sky" %% _ % "1.3.0")
+                     |""".stripMargin
+
+    Group(
+      GroupId("com.sky"),
+      Nel.of("akka-streams", "akka-streams-kafka"),
+      "1.2.0",
+      Nel.one("1.3.0")
+    ).replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.completeGroupId.name)
+  }
+
   test("version range") {
     val original = """Seq("org.specs2" %% "specs2-core" % "3.+" % "test")"""
     val expected = """Seq("org.specs2" %% "specs2-core" % "4.3.4" % "test")"""
