@@ -33,6 +33,24 @@ final case class UpdateHeuristic(
 )
 
 object UpdateHeuristic {
+  private def shouldBeIgnored(prefix: String): Boolean =
+    prefix.toLowerCase.contains("previous") || prefix.trim.startsWith("//")
+
+  private def replaceGroupF(update: Update): String => Option[String] = { target =>
+    update match {
+      case Update.Single(groupId, artifactId, _, _, _, Some(newerGroupId)) =>
+        val currentGroupId = Regex.quote(groupId.value)
+        val currentArtifactId = Regex.quote(artifactId)
+        val regex = s"""(?i)(.*)${currentGroupId}(.*${currentArtifactId})""".r
+        replaceSomeInAllowedParts(regex, target, match0 => {
+          val group1 = match0.group(1)
+          val group2 = match0.group(2)
+          Some(s"""$group1$newerGroupId$group2""")
+        }).someIfChanged
+      case _ => Some(target)
+    }
+  }
+
   private def defaultReplaceVersion(
       getSearchTerms: Update => List[String],
       getPrefixRegex: Update => Option[String] = _ => None
@@ -61,11 +79,7 @@ object UpdateHeuristic {
       }
 
     def replaceF(update: Update): String => Option[String] =
-      target =>
-        for {
-          s <- replaceVersionF(update)(target)
-          s <- replaceGroupF(update)(s)
-        } yield s
+      target => replaceVersionF(update)(target) >>= replaceGroupF(update)
 
     def replaceVersionF(update: Update): String => Option[String] =
       mkRegex(update).fold((_: String) => Option.empty[String]) { regex => target =>
@@ -78,31 +92,35 @@ object UpdateHeuristic {
             val lastGroup = match0.group(match0.groupCount)
             val versionInQuotes =
               group2.lastOption.filter(_ === '"').fold(true)(lastGroup.headOption.contains_)
-            if (group1.toLowerCase.contains("previous")
-                || group1.trim.startsWith("//")
-                || !versionInQuotes) None
+            if (shouldBeIgnored(group1) || !versionInQuotes) None
             else Some(Regex.quoteReplacement(group1 + group2 + update.nextVersion + lastGroup))
           }
         ).someIfChanged
       }
 
-    def replaceGroupF(update: Update): String => Option[String] = { target =>
-      update match {
-        case Update.Single(groupId, artifactId, _, _, _, Some(newerGroupId)) =>
-          val currentGroupId = Regex.quote(groupId.value)
-          val currentArtifactId = Regex.quote(artifactId)
-          val regex = s"""(?i)(.*)${currentGroupId}(.*${currentArtifactId})""".r
-          replaceSomeInAllowedParts(regex, target, match0 => {
-            val group1 = match0.group(1)
-            val group2 = match0.group(2)
-            Some(s"""$group1$newerGroupId$group2""")
-          }).someIfChanged
-        case _ => Some(target)
-      }
-    }
-
     replaceF
   }
+
+  val moduleId = UpdateHeuristic(
+    name = "moduleId",
+    replaceVersion = update =>
+      target => {
+        val groupId = Regex.quote(update.groupId.value)
+        val artifactIds = update.artifactIds.map(Regex.quote).mkString_("(", "|", ")")
+        val currentVersion = Regex.quote(update.currentVersion)
+        val regex = raw"""(.*)("$groupId"\s*%+\s*"$artifactIds"\s*%\s*)"($currentVersion)"""".r
+        replaceSomeInAllowedParts(
+          regex,
+          target,
+          match0 => {
+            val group1 = match0.group(1)
+            val group2 = match0.group(2)
+            if (shouldBeIgnored(group1)) None
+            else Some(Regex.quoteReplacement(s"""$group1$group2"${update.nextVersion}""""))
+          }
+        ).someIfChanged
+      } >>= replaceGroupF(update)
+  )
 
   val strict = UpdateHeuristic(
     name = "strict",
@@ -152,5 +170,5 @@ object UpdateHeuristic {
   )
 
   val all: Nel[UpdateHeuristic] =
-    Nel.of(strict, original, relaxed, sliding, completeGroupId, groupId, specific)
+    Nel.of(moduleId, strict, original, relaxed, sliding, completeGroupId, groupId, specific)
 }

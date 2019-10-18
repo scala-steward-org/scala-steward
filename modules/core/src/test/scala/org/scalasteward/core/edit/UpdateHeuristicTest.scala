@@ -28,7 +28,7 @@ class UpdateHeuristicTest extends AnyFunSuite with Matchers {
         |addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.4.0")
       """.stripMargin.trim
     Single(GroupId("org.scala-js"), "sbt-scalajs", "0.6.24", Nel.of("0.6.25"))
-      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.strict.name)
+      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.moduleId.name)
   }
 
   test("sbt plugins: missing version") {
@@ -75,7 +75,7 @@ class UpdateHeuristicTest extends AnyFunSuite with Matchers {
         |   //addSbtPlugin("be.doeraene" %% "scalajs-jquery"  % "0.9.3")
         |"""".stripMargin.trim
     Single(GroupId("be.doeraene"), "scalajs-jquery", "0.9.3", Nel.of("0.9.4"))
-      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.strict.name)
+      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.moduleId.name)
   }
 
   test("ignore '-core' suffix") {
@@ -119,7 +119,7 @@ class UpdateHeuristicTest extends AnyFunSuite with Matchers {
     val original = """Seq("org.specs2" %% "specs2-core" % "3.+" % "test")"""
     val expected = """Seq("org.specs2" %% "specs2-core" % "4.3.4" % "test")"""
     Single(GroupId("org.specs2"), "specs2-core", "3.+", Nel.of("4.3.4"))
-      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.strict.name)
+      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.moduleId.name)
   }
 
   test("group with prefix val") {
@@ -142,7 +142,7 @@ class UpdateHeuristicTest extends AnyFunSuite with Matchers {
       "0.9.0",
       Nel.of("0.10.0"),
       newerGroupId = Some(GroupId("org.typelevel"))
-    ).replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.strict.name)
+    ).replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.moduleId.name)
   }
 
   test("group with repeated version") {
@@ -155,7 +155,7 @@ class UpdateHeuristicTest extends AnyFunSuite with Matchers {
         | "com.pepegar" %% "hammock-circe" % "0.8.5"
       """.stripMargin.trim
     Group(GroupId("com.pepegar"), Nel.of("hammock-core", "hammock-circe"), "0.8.1", Nel.of("0.8.5"))
-      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.strict.name)
+      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.moduleId.name)
   }
 
   test("same version, same artifact prefix, different groupId") {
@@ -170,7 +170,7 @@ class UpdateHeuristicTest extends AnyFunSuite with Matchers {
         | "org.typelevel" %% "jawn-play" % "0.14.1"
       """.stripMargin.trim
     Group(GroupId("org.typelevel"), Nel.of("jawn-json4s", "jawn-play"), "0.14.0", Nel.of("0.14.1"))
-      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.strict.name)
+      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.moduleId.name)
   }
 
   test("artifactIds are common suffixes") {
@@ -210,18 +210,18 @@ class UpdateHeuristicTest extends AnyFunSuite with Matchers {
   test("ignore mimaPreviousArtifacts") {
     val original =
       """"io.dropwizard.metrics" % "metrics-core" % "4.0.1"
-        |mimaPreviousArtifacts := Set("nl.grons" %% "metrics4-scala" % "4.0.1")
+        |mimaPreviousArtifacts := Set("io.dropwizard.metrics" %% "metrics-core" % "4.0.1")
       """.stripMargin
     val expected =
       """"io.dropwizard.metrics" % "metrics-core" % "4.0.3"
-        |mimaPreviousArtifacts := Set("nl.grons" %% "metrics4-scala" % "4.0.1")
+        |mimaPreviousArtifacts := Set("io.dropwizard.metrics" %% "metrics-core" % "4.0.1")
       """.stripMargin
     Group(
       GroupId("io.dropwizard.metrics"),
       Nel.of("metrics-core", "metrics-healthchecks"),
       "4.0.1",
       Nel.of("4.0.3")
-    ).replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.strict.name)
+    ).replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.moduleId.name)
   }
 
   test("artifactId with dot") {
@@ -341,7 +341,7 @@ class UpdateHeuristicTest extends AnyFunSuite with Matchers {
       Nel.of("keywords-each", "keywords-using"),
       "1.2.0",
       Nel.of("1.3.0")
-    ).replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.strict.name)
+    ).replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.moduleId.name)
   }
 
   test("prevent exception: named capturing group is missing trailing '}'") {
@@ -376,7 +376,7 @@ class UpdateHeuristicTest extends AnyFunSuite with Matchers {
       Nel.of("akka-actor", "akka-testkit"),
       "2.4.0",
       Nel.of("2.5.0")
-    ).replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.strict.name)
+    ).replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.moduleId.name)
   }
 
   test("disable updates on multiple lines after `off` (no `on`)") {
@@ -415,11 +415,10 @@ class UpdateHeuristicTest extends AnyFunSuite with Matchers {
       Nel.of("akka-actor", "akka-testkit", "akka-slf4j"),
       "2.4.20",
       Nel.of("2.5.0")
-    ).replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.strict.name)
+    ).replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.moduleId.name)
   }
 
-  test(
-    "https://github.com/functional-streams-for-scala/fs2/pull/1550/commits/3f7107b20d57faa4d3ee78550efef1dfe8337ff8") {
+  test("similar artifactIds and same version") {
     val original =
       """ "org.typelevel" %%% "cats-core" % "2.0.0-M4",
         | "org.typelevel" %%% "cats-laws" % "2.0.0-M4" % "test",
@@ -432,8 +431,12 @@ class UpdateHeuristicTest extends AnyFunSuite with Matchers {
         | "org.typelevel" %%% "cats-effect" % "2.0.0-M4",
         | "org.typelevel" %%% "cats-effect-laws" % "2.0.0-M4" % "test",
         |""".stripMargin
-    Group("org.typelevel", Nel.of("cats-core", "cats-laws"), "2.0.0-M4", Nel.of("2.0.0-RC1"))
-      .replaceVersionIn(original) shouldBe (Some(expected) -> "")
+    Group(
+      GroupId("org.typelevel"),
+      Nel.of("cats-core", "cats-laws"),
+      "2.0.0-M4",
+      Nel.of("2.0.0-RC1")
+    ).replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.moduleId.name)
   }
 }
 
