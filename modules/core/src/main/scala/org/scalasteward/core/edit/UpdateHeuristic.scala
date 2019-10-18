@@ -16,6 +16,7 @@
 
 package org.scalasteward.core.edit
 
+import cats.Foldable
 import cats.implicits._
 import org.scalasteward.core.data.{GroupId, Update}
 import org.scalasteward.core.util
@@ -33,6 +34,9 @@ final case class UpdateHeuristic(
 )
 
 object UpdateHeuristic {
+  private def alternation[F[_]: Foldable](strings: F[String]): String =
+    strings.mkString_("(", "|", ")")
+
   private def shouldBeIgnored(prefix: String): Boolean =
     prefix.toLowerCase.contains("previous") || prefix.trim.startsWith("//")
 
@@ -67,7 +71,7 @@ object UpdateHeuristic {
           }
         }
 
-      if (terms1.nonEmpty) Some(terms1.mkString("(", "|", ")")) else None
+      if (terms1.nonEmpty) Some(alternation(terms1)) else None
     }
 
     def mkRegex(update: Update): Option[Regex] =
@@ -106,7 +110,7 @@ object UpdateHeuristic {
     replaceVersion = update =>
       target => {
         val groupId = Regex.quote(update.groupId.value)
-        val artifactIds = update.artifactIds.map(Regex.quote).mkString_("(", "|", ")")
+        val artifactIds = alternation(update.artifactIds.map(Regex.quote))
         val currentVersion = Regex.quote(update.currentVersion)
         val regex = raw"""(.*)("$groupId"\s*%+\s*"$artifactIds"\s*%\s*)"($currentVersion)"""".r
         replaceSomeInAllowedParts(
