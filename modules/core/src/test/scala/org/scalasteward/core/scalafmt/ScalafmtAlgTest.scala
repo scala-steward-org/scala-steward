@@ -1,15 +1,15 @@
 package org.scalasteward.core.scalafmt
 
+import org.scalasteward.core.data.Version
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockState
-import org.scalasteward.core.data.Update
-import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-class ScalafmtAlgTest extends FunSuite with Matchers {
+class ScalafmtAlgTest extends AnyFunSuite with Matchers {
 
-  test("getScalafmtUpdate on unquoted version") {
+  test("getScalafmtVersion on unquoted version") {
     val repo = Repo("fthomas", "scala-steward")
     val repoDir = config.workspace / repo.owner / repo.repo
     val scalafmtConf = repoDir / ".scalafmt.conf"
@@ -20,11 +20,10 @@ class ScalafmtAlgTest extends FunSuite with Matchers {
         |align.openParenCallSite = false
         |""".stripMargin
     )
-    val (state, maybeUpdate) = scalafmtAlg.getScalafmtUpdate(repo).run(initialState).unsafeRunSync()
+    val (state, maybeUpdate) =
+      scalafmtAlg.getScalafmtVersion(repo).run(initialState).unsafeRunSync()
 
-    maybeUpdate shouldBe Some(
-      Update.Single("org.scalameta", "scalafmt", "2.0.0-RC8", Nel.of(latestScalafmtVersion.value))
-    )
+    maybeUpdate shouldBe Some(Version("2.0.0-RC8"))
     state shouldBe MockState.empty.copy(
       commands = Vector(List("read", s"$repoDir/.scalafmt.conf")),
       files = Map(
@@ -37,7 +36,7 @@ class ScalafmtAlgTest extends FunSuite with Matchers {
     )
   }
 
-  test("getScalafmtUpdate on quoted version") {
+  test("getScalafmtVersion on quoted version") {
     val repo = Repo("fthomas", "scala-steward")
     val repoDir = config.workspace / repo.owner / repo.repo
     val scalafmtConf = repoDir / ".scalafmt.conf"
@@ -48,10 +47,8 @@ class ScalafmtAlgTest extends FunSuite with Matchers {
         |align.openParenCallSite = false
         |""".stripMargin
     )
-    val (_, maybeUpdate) = scalafmtAlg.getScalafmtUpdate(repo).run(initialState).unsafeRunSync()
-    maybeUpdate shouldBe Some(
-      Update.Single("org.scalameta", "scalafmt", "2.0.0-RC8", Nel.of(latestScalafmtVersion.value))
-    )
+    val (_, maybeUpdate) = scalafmtAlg.getScalafmtVersion(repo).run(initialState).unsafeRunSync()
+    maybeUpdate shouldBe Some(Version("2.0.0-RC8"))
   }
 
   test("editScalafmtConf") {

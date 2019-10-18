@@ -17,15 +17,18 @@
 package org.scalasteward.core.sbt
 
 import better.files.File
+import cats.Monad
 import cats.implicits._
-import cats.{Functor, Monad}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.{Dependency, Update}
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
+import org.scalasteward.core.repocache.RepoCacheRepository
 import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.sbt.data.{ArtificialProject, SbtVersion}
 import org.scalasteward.core.scalafix.Migration
+import org.scalasteward.core.scalafmt.{scalafmtDependency, ScalafmtAlg}
+import org.scalasteward.core.update.UpdateAlg
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
@@ -45,9 +48,6 @@ trait SbtAlg[F[_]] {
   def getUpdatesForRepo(repo: Repo): F[List[Update.Single]]
 
   def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit]
-
-  final def getSbtUpdate(repo: Repo)(implicit F: Functor[F]): F[Option[Update.Single]] =
-    getSbtVersion(repo).map(_.flatMap(findSbtUpdate))
 }
 
 object SbtAlg {
@@ -58,6 +58,8 @@ object SbtAlg {
       logger: Logger[F],
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F],
+      scalafmtAlg: ScalafmtAlg[F],
+      cacheRepository: RepoCacheRepository[F],
       F: Monad[F]
   ): SbtAlg[F] =
     new SbtAlg[F] {
@@ -92,6 +94,18 @@ object SbtAlg {
 
       override def getDependencies(repo: Repo): F[List[Dependency]] =
         for {
+          originalDependencies <- getOriginalDependencies(repo)
+          maybeSbtVersion <- getSbtVersion(repo)
+          maybeSbtDependency = maybeSbtVersion.flatMap(sbtDependency)
+          maybeScalafmtVersion <- scalafmtAlg.getScalafmtVersion(repo)
+          maybeScalafmtDependency = maybeScalafmtVersion.map(
+            scalafmtDependency(defaultScalaBinaryVersion)
+          )
+        } yield (maybeSbtDependency.toList ++ maybeScalafmtDependency.toList ++
+          originalDependencies).distinct
+
+      def getOriginalDependencies(repo: Repo): F[List[Dependency]] =
+        for {
           repoDir <- workspaceAlg.repoDir(repo)
           cmd = sbtCmd(List(libraryDependenciesAsJson, reloadPlugins, libraryDependenciesAsJson))
           lines <- exec(cmd, repoDir)
@@ -118,25 +132,31 @@ object SbtAlg {
       override def getUpdatesForRepo(repo: Repo): F[List[Update.Single]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          maybeClearCredentials = if (config.keepCredentials) Nil else List(setCredentialsToNil)
-          commands = maybeClearCredentials ++
-            List(dependencyUpdates, reloadPlugins, dependencyUpdates)
-          updates <- exec(sbtCmd(commands), repoDir).map(parser.parseSingleUpdates)
-          maybeSbtUpdate <- getSbtUpdate(repo)
-        } yield maybeSbtUpdate.toList ::: updates
+          commands = List(
+            setDependencyUpdatesFailBuild,
+            dependencyUpdates,
+            reloadPlugins,
+            dependencyUpdates
+          )
+          updates <- withTemporarySbtDependency(repo) {
+            exec(sbtCmd(commands), repoDir).map(parser.parseSingleUpdates)
+          }
+          originalDependencies <- cacheRepository.getDependencies(List(repo))
+          updatesUnderNewGroupId = originalDependencies.flatMap(
+            UpdateAlg.findUpdateUnderNewGroup
+          )
+        } yield updates ++ updatesUnderNewGroupId
 
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
         addGlobalPluginTemporarily(scalaStewardScalafixSbt) {
           for {
             repoDir <- workspaceAlg.repoDir(repo)
-            scalafixCmds = migrations.flatMap { migration =>
-              val cmd = migration.configuration match {
-                case Some("test") => testScalafix
-                case _            => scalafix
-              }
-              migration.rewriteRules.map(rule => s"$cmd $rule")
-            }.toList
-            _ <- exec(sbtCmd(scalafixEnable :: scalafixCmds), repoDir)
+            scalafixCmds = for {
+              migration <- migrations
+              rule <- migration.rewriteRules
+              cmd <- Nel.of(scalafix, testScalafix)
+            } yield s"$cmd $rule"
+            _ <- exec(sbtCmd("++2.12.10!" :: scalafixEnable :: scalafixCmds.toList), repoDir)
           } yield ()
         }
 
@@ -152,15 +172,32 @@ object SbtAlg {
       def maybeIgnoreOptsFiles[A](dir: File)(fa: F[A]): F[A] =
         if (config.ignoreOptsFiles) ignoreOptsFiles(dir)(fa) else fa
 
-      def ignoreOptsFiles[A](dir: File)(fa: F[A]): F[A] = {
-        val jvmopts = ".jvmopts"
-        fileAlg.removeTemporarily(dir / jvmopts) {
+      def ignoreOptsFiles[A](dir: File)(fa: F[A]): F[A] =
+        fileAlg.removeTemporarily(dir / ".jvmopts") {
           fileAlg.removeTemporarily(dir / ".sbtopts") {
-            fileAlg.createTemporarily(dir / jvmopts, "-Xss8m") {
-              fa
-            }
+            fa
           }
         }
-      }
+
+      def withTemporarySbtDependency[A](repo: Repo)(fa: F[A]): F[A] =
+        for {
+          maybeSbtDep <- getSbtVersion(repo).map(_.flatMap(sbtDependency).map(_.formatAsModuleId))
+          maybeScalafmtDep <- scalafmtAlg
+            .getScalafmtVersion(repo)
+            .map(
+              _.map(scalafmtDependency(defaultScalaBinaryVersion))
+                .map(_.formatAsModuleIdScalaVersionAgnostic)
+            )
+          fakeDeps = Option(maybeSbtDep.toList ++ maybeScalafmtDep.toList).filter(_.nonEmpty)
+          a <- fakeDeps.fold(fa) { dependencies =>
+            workspaceAlg.repoDir(repo).flatMap { repoDir =>
+              val content = dependencies
+                .map(dep => s"libraryDependencies += ${dep}")
+                .mkString(System.lineSeparator())
+              fileAlg.createTemporarily(repoDir / "project" / "tmp-sbt-dep.sbt", content)(fa)
+            }
+          }
+        } yield a
+
     }
 }

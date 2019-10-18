@@ -17,36 +17,20 @@
 package org.scalasteward.core
 
 import cats.implicits._
-import org.scalasteward.core.data.{Update, Version}
-import org.scalasteward.core.util.Nel
+import org.scalasteward.core.data.{Dependency, GroupId, Version}
 
 package object scalafmt {
-  val latestScalafmtVersion: Version = Version("2.0.0")
-  val scalafmtGroupId = "org.scalameta"
-  val scalafmtArtifactId = "scalafmt"
-
-  def findNewerScalafmtVersion(currentVersion: Version): Option[Version] =
-    if (Version.versionOrder.lt(currentVersion, latestScalafmtVersion))
-      Some(latestScalafmtVersion)
-    else
-      None
+  def scalafmtDependency(scalaBinaryVersion: String)(scalafmtVersion: Version): Dependency =
+    Dependency(
+      GroupId(if (scalafmtVersion > Version("2.0.0-RC1")) "org.scalameta" else "com.geirsson"),
+      "scalafmt-core",
+      s"scalafmt-core_${scalaBinaryVersion}",
+      scalafmtVersion.value
+    )
 
   def parseScalafmtConf(s: String): Option[Version] =
     """version\s*=\s*(.+)""".r
       .findFirstMatchIn(s)
       .map(_.group(1).replaceAllLiterally("\"", ""))
       .map(Version.apply)
-
-  def findScalafmtUpdate(currentVersion: Version): Option[Update.Single] =
-    findNewerScalafmtVersion(currentVersion).map { newerVersion =>
-      Update.Single(
-        scalafmtGroupId,
-        scalafmtArtifactId,
-        currentVersion.value,
-        Nel.of(newerVersion.value)
-      )
-    }
-
-  def isScalafmtUpdate(update: Update): Boolean =
-    update.groupId === scalafmtGroupId && update.artifactId === scalafmtArtifactId
 }

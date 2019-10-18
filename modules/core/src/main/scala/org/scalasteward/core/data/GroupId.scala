@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.update.json
+package org.scalasteward.core.data
 
-import io.circe.generic.semiauto._
+import cats.Order
+import cats.implicits._
 import io.circe.{Decoder, Encoder}
-import org.scalasteward.core.data.Update
 
-final case class UpdateStore(store: Set[Update.Single])
+final case class GroupId(value: String) extends AnyVal {
+  override def toString: String = value
+}
 
-object UpdateStore {
-  implicit val updateStoreDecoder: Decoder[UpdateStore] =
-    deriveDecoder
-
-  implicit val updateStoreEncoder: Encoder[UpdateStore] =
-    deriveEncoder
+object GroupId {
+  implicit val groupIdDecoder: Decoder[GroupId] = Decoder[String].map(GroupId.apply)
+  implicit val groupIdEncoder: Encoder[GroupId] = Encoder[String].contramap(_.value)
+  implicit val groupIdOrder: Order[GroupId] = Order[String].contramap(_.value)
 }

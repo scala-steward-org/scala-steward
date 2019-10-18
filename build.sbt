@@ -26,7 +26,7 @@ lazy val core = myCrossProject("core")
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin(Dependencies.betterMonadicFor),
-      compilerPlugin(Dependencies.kindProjector),
+      compilerPlugin(Dependencies.kindProjector.cross(CrossVersion.full)),
       Dependencies.betterFiles,
       Dependencies.caseApp,
       Dependencies.catsEffect,
@@ -36,8 +36,10 @@ lazy val core = myCrossProject("core")
       Dependencies.circeRefined,
       Dependencies.circeExtras,
       Dependencies.commonsIo,
+      Dependencies.coursierCore,
+      Dependencies.coursierCatsInterop,
       Dependencies.fs2Core,
-      Dependencies.http4sBlazeClient,
+      Dependencies.http4sAsyncHttpClient,
       Dependencies.http4sCirce,
       Dependencies.log4catsSlf4j,
       Dependencies.monocleCore,
@@ -46,13 +48,28 @@ lazy val core = myCrossProject("core")
       Dependencies.logbackClassic % Runtime,
       Dependencies.catsKernelLaws % Test,
       Dependencies.circeLiteral % Test,
+      Dependencies.disciplineScalatest % Test,
       Dependencies.http4sDsl % Test,
       Dependencies.refinedScalacheck % Test,
       Dependencies.scalacheck % Test,
       Dependencies.scalaTest % Test
     ),
     assembly / test := {},
-    buildInfoKeys := Seq[BuildInfoKey](scalaVersion, sbtVersion),
+    assemblyMergeStrategy in assembly := {
+      val nativeSuffix = "\\.(?:dll|jnilib|so)$".r
+
+      {
+        case PathList(ps @ _*) if nativeSuffix.findFirstMatchIn(ps.last).isDefined =>
+          MergeStrategy.first
+        case PathList(ps @ _*) if ps.last == "io.netty.versions.properties" =>
+          // This is included in Netty JARs which are pulled in by http4s-async-http-client.
+          MergeStrategy.first
+        case otherwise =>
+          val defaultStrategy = (assemblyMergeStrategy in assembly).value
+          defaultStrategy(otherwise)
+      }
+    },
+    buildInfoKeys := Seq[BuildInfoKey](version, scalaVersion, scalaBinaryVersion, sbtVersion),
     buildInfoPackage := moduleRootPkg.value,
     initialCommands += s"""
       import ${moduleRootPkg.value}._
@@ -62,7 +79,6 @@ lazy val core = myCrossProject("core")
       import cats.effect.ContextShift
       import cats.effect.IO
       import cats.effect.Timer
-      import org.http4s.client.blaze.BlazeClientBuilder
       import scala.concurrent.ExecutionContext
 
       implicit val ioContextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
@@ -103,7 +119,7 @@ lazy val commonSettings = Def.settings(
 )
 
 lazy val compileSettings = Def.settings(
-  doctestTestFramework := DoctestTestFramework.ScalaTest,
+  doctestTestFramework := DoctestTestFramework.ScalaCheck,
   wartremoverErrors ++= Seq(Wart.TraversableOps),
   wartremoverErrors in (Compile, compile) ++= Seq(Wart.Equals)
 )
@@ -150,6 +166,7 @@ lazy val dockerSettings = Def.settings(
     ExecCmd("RUN", "apt-get", "install", "-y", "sbt"),
     Cmd("WORKDIR", "/opt/docker"),
     Cmd("ADD", "opt", "/opt"),
+    ExecCmd("RUN", "chmod", "0755", "/opt/docker/bin/scala-steward"),
     ExecCmd("ENTRYPOINT", "/opt/docker/bin/scala-steward"),
     ExecCmd("CMD", "")
   ),
@@ -203,6 +220,8 @@ addCommandsAlias(
   )
 )
 
+// Run Scala Steward from sbt for development and testing.
+// Do not do this in production.
 addCommandAlias(
   "runSteward", {
     val home = System.getenv("HOME")
@@ -217,7 +236,8 @@ addCommandAlias(
       Seq("--whitelist", s"$home/.cache/coursier"),
       Seq("--whitelist", s"$home/.coursier"),
       Seq("--whitelist", s"$home/.ivy2"),
-      Seq("--whitelist", s"$home/.sbt")
+      Seq("--whitelist", s"$home/.sbt"),
+      Seq("--prune-repos=false")
     ).flatten.mkString(" ")
   }
 )

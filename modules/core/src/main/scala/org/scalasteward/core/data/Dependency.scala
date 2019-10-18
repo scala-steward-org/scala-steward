@@ -18,19 +18,23 @@ package org.scalasteward.core.data
 
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
-import org.scalasteward.core.sbt.data.SbtVersion
+import org.scalasteward.core.sbt.data.{SbtVersion, ScalaVersion}
 import org.scalasteward.core.util.Nel
 
 final case class Dependency(
-    groupId: String,
+    groupId: GroupId,
     artifactId: String,
     artifactIdCross: String,
     version: String,
     sbtVersion: Option[SbtVersion] = None,
+    scalaVersion: Option[ScalaVersion] = None,
     configurations: Option[String] = None
 ) {
   def formatAsModuleId: String =
     s""""$groupId" % "$artifactIdCross" % "$version""""
+
+  def formatAsModuleIdScalaVersionAgnostic: String =
+    s""""$groupId" %% "$artifactId" % "$version""""
 
   def toUpdate: Update.Single =
     Update.Single(groupId, artifactId, version, Nel.of(version), configurations)

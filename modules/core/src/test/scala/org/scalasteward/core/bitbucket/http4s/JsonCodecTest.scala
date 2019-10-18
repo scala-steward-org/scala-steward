@@ -1,10 +1,11 @@
 package org.scalasteward.core.bitbucket.http4s
 
 import io.circe.Json
-import org.scalatest.{FunSuite, Matchers}
 import org.scalasteward.core.vcs.data.PullRequestState
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-class JsonCodecTest extends FunSuite with Matchers {
+class JsonCodecTest extends AnyFunSuite with Matchers {
 
   test("PullRequestStatus decoding of expected values") {
 

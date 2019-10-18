@@ -19,7 +19,7 @@ package org.scalasteward.core.vcs.data
 import cats.implicits._
 import io.circe.Encoder
 import io.circe.generic.semiauto._
-import org.scalasteward.core.data.{SemVer, Update}
+import org.scalasteward.core.data.{GroupId, SemVer, Update}
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.nurture.UpdateData
 import org.scalasteward.core.repoconfig.RepoConfigAlg
@@ -37,23 +37,22 @@ object NewPullRequestData {
   implicit val newPullRequestDataEncoder: Encoder[NewPullRequestData] =
     deriveEncoder
 
-  def bodyFor(update: Update, login: String): String = {
-    val artifacts = update match {
-      case s: Update.Single =>
-        s" ${s.groupId}:${s.artifactId} "
-      case g: Update.Group =>
-        g.artifactIds
-          .map(artifactId => s"* ${g.groupId}:$artifactId\n")
-          .mkString_("\n", "", "\n")
-    }
+  def bodyFor(
+      update: Update,
+      artifactIdToUrl: Map[String, String],
+      branchCompareUrl: Option[String],
+      releaseNoteUrl: Option[String]
+  ): String = {
+    val artifacts = artifactsWithOptionalUrl(update, artifactIdToUrl)
     val (migrationLabel, appliedMigrations) = migrationNote(update)
     val labels = Nel.fromList(semVerLabel(update).toList ++ migrationLabel.toList)
 
-    s"""|Updates${artifacts}from ${update.currentVersion} to ${update.nextVersion}.
+    s"""|Updates ${artifacts} ${fromTo(update, branchCompareUrl)}.
+        |${releaseNote(releaseNoteUrl).getOrElse("")}
         |
         |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
         |
-        |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention @$login in the comments below.
+        |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.
         |
         |Have a fantastic day writing Scala!
         |
@@ -69,6 +68,40 @@ object NewPullRequestData {
         |${labels.fold("")(_.mkString_("labels: ", ", ", ""))}
         |""".stripMargin.trim
   }
+
+  def releaseNote(releaseNoteUrl: Option[String]): Option[String] =
+    releaseNoteUrl.map { url =>
+      s"[Release Notes/Changelog](${url})"
+    }
+
+  def fromTo(update: Update, branchCompareUrl: Option[String]): String = {
+    val fromToVersions = s"from ${update.currentVersion} to ${update.nextVersion}"
+    branchCompareUrl match {
+      case None             => fromToVersions
+      case Some(compareUrl) => s"[${fromToVersions}](${compareUrl})"
+    }
+  }
+
+  def artifactsWithOptionalUrl(update: Update, artifactIdToUrl: Map[String, String]): String =
+    update match {
+      case s: Update.Single => artifactWithOptionalUrl(s.groupId, s.artifactId, artifactIdToUrl)
+      case g: Update.Group =>
+        g.artifactIds
+          .map(
+            artifactId => s"* ${artifactWithOptionalUrl(g.groupId, artifactId, artifactIdToUrl)}\n"
+          )
+          .mkString_("\n", "", "\n")
+    }
+
+  def artifactWithOptionalUrl(
+      groupId: GroupId,
+      artifactId: String,
+      artifactId2Url: Map[String, String]
+  ): String =
+    artifactId2Url.get(artifactId) match {
+      case Some(url) => s"[${groupId}:${artifactId}](${url})"
+      case None      => s"${groupId}:${artifactId}"
+    }
 
   def migrationNote(update: Update): (Option[String], Option[String]) = {
     val migrations = scalafix.findMigrations(update)
@@ -95,10 +128,21 @@ object NewPullRequestData {
       change <- SemVer.getChange(curr, next)
     } yield s"semver-${change.render}"
 
-  def from(data: UpdateData, branchName: String, authorLogin: String): NewPullRequestData =
+  def from(
+      data: UpdateData,
+      branchName: String,
+      artifactIdToUrl: Map[String, String] = Map.empty,
+      branchCompareUrl: Option[String] = None,
+      releaseNoteUrl: Option[String] = None
+  ): NewPullRequestData =
     NewPullRequestData(
       title = git.commitMsgFor(data.update),
-      body = bodyFor(data.update, authorLogin),
+      body = bodyFor(
+        data.update,
+        artifactIdToUrl,
+        branchCompareUrl,
+        releaseNoteUrl
+      ),
       head = branchName,
       base = data.baseBranch
     )

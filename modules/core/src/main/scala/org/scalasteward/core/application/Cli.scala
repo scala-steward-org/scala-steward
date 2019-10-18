@@ -20,9 +20,12 @@ import caseapp._
 import caseapp.core.Error.MalformedValue
 import caseapp.core.argparser.{ArgParser, SimpleArgParser}
 import cats.implicits._
-import org.http4s.{Http4sLiteralSyntax, Uri}
+import org.http4s.Uri
+import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Cli._
 import org.scalasteward.core.util.ApplicativeThrowable
+import scala.concurrent.duration._
+import scala.util.Try
 
 final class Cli[F[_]](implicit F: ApplicativeThrowable[F]) {
   def parseArgs(args: List[String]): F[Args] =
@@ -47,9 +50,9 @@ object Cli {
       disableSandbox: Boolean = false,
       doNotFork: Boolean = false,
       ignoreOptsFiles: Boolean = false,
-      keepCredentials: Boolean = false,
       envVar: List[EnvVar] = Nil,
-      pruneRepos: Boolean = false
+      pruneRepos: Boolean = false,
+      processTimeout: FiniteDuration = 10.minutes
   )
 
   final case class EnvVar(name: String, value: String)
@@ -57,12 +60,11 @@ object Cli {
   implicit val envVarParser: SimpleArgParser[EnvVar] =
     SimpleArgParser.from[EnvVar]("env-var") { s =>
       s.trim.split('=').toList match {
-        case name :: value :: Nil =>
-          Right(EnvVar(name.trim, value.trim))
+        case name :: (value @ _ :: _) =>
+          Right(EnvVar(name.trim, value.mkString("=").trim))
         case _ =>
-          Left(
-            MalformedValue("EnvVar", "The value is expected in the following format: NAME=VALUE.")
-          )
+          val error = "The value is expected in the following format: NAME=VALUE."
+          Left(MalformedValue("EnvVar", error))
       }
     }
 
@@ -71,4 +73,23 @@ object Cli {
       _.renderString,
       s => Uri.fromString(s).leftMap(pf => MalformedValue("Uri", pf.message))
     )
+
+  implicit val finiteDurationParser: ArgParser[FiniteDuration] = {
+    val error = Left(
+      MalformedValue(
+        "FiniteDuration",
+        "The value is expected in the following format: <length><unit>"
+      )
+    )
+    ArgParser[String].xmapError(
+      _.toString(),
+      s =>
+        Try {
+          Duration(s) match {
+            case fd: FiniteDuration => Right(fd)
+            case _                  => error
+          }
+        }.getOrElse(error)
+    )
+  }
 }

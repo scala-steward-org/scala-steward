@@ -17,7 +17,7 @@
 package org.scalasteward.core.edit
 
 import cats.implicits._
-import org.scalasteward.core.data.Update
+import org.scalasteward.core.data.{GroupId, Update}
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 import scala.util.matching.Regex
@@ -61,6 +61,13 @@ object UpdateHeuristic {
       }
 
     def replaceF(update: Update): String => Option[String] =
+      target =>
+        for {
+          s <- replaceVersionF(update)(target)
+          s <- replaceGroupF(update)(s)
+        } yield s
+
+    def replaceVersionF(update: Update): String => Option[String] =
       mkRegex(update).fold((_: String) => Option.empty[String]) { regex => target =>
         replaceSomeInAllowedParts(
           regex,
@@ -78,6 +85,21 @@ object UpdateHeuristic {
           }
         ).someIfChanged
       }
+
+    def replaceGroupF(update: Update): String => Option[String] = { target =>
+      update match {
+        case Update.Single(groupId, artifactId, _, _, _, Some(newerGroupId)) =>
+          val currentGroupId = Regex.quote(groupId.value)
+          val currentArtifactId = Regex.quote(artifactId)
+          val regex = s"""(?i)(.*)${currentGroupId}(.*${currentArtifactId})""".r
+          replaceSomeInAllowedParts(regex, target, match0 => {
+            val group1 = match0.group(1)
+            val group2 = match0.group(2)
+            Some(s"""$group1$newerGroupId$group2""")
+          }).someIfChanged
+        case _ => Some(target)
+      }
+    }
 
     replaceF
   }
@@ -104,13 +126,31 @@ object UpdateHeuristic {
       defaultReplaceVersion(_.artifactId.sliding(5).take(5).filterNot(_ === "scala").toList)
   )
 
+  val completeGroupId = UpdateHeuristic(
+    name = "completeGroupId",
+    replaceVersion = defaultReplaceVersion(update => List(update.groupId.value))
+  )
+
   val groupId = UpdateHeuristic(
     name = "groupId",
     replaceVersion = defaultReplaceVersion(
-      _.groupId.split('.').toList.drop(1).flatMap(util.string.extractWords).filter(_.length > 3)
+      _.groupId.value
+        .split('.')
+        .toList
+        .drop(1)
+        .flatMap(util.string.extractWords)
+        .filter(_.length > 3)
     )
   )
 
+  val specific = UpdateHeuristic(
+    name = "specific",
+    replaceVersion = defaultReplaceVersion {
+      case Update.Single(GroupId("org.scalameta"), "scalafmt-core", _, _, _, _) => List("version")
+      case _                                                                    => List.empty
+    }
+  )
+
   val all: Nel[UpdateHeuristic] =
-    Nel.of(strict, original, relaxed, sliding, groupId)
+    Nel.of(strict, original, relaxed, sliding, completeGroupId, groupId, specific)
 }

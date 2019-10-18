@@ -22,8 +22,8 @@ import fs2.Stream
 import java.io.{File, IOException, InputStream}
 import org.scalasteward.core.util.Nel
 import scala.collection.mutable.ListBuffer
+import scala.concurrent.TimeoutException
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, TimeoutException}
 
 object process {
   def slurp[F[_]](
@@ -31,12 +31,13 @@ object process {
       cwd: Option[File],
       extraEnv: Map[String, String],
       timeout: FiniteDuration,
-      log: String => F[Unit]
+      log: String => F[Unit],
+      blocker: Blocker
   )(implicit contextShift: ContextShift[F], timer: Timer[F], F: Concurrent[F]): F[List[String]] =
     createProcess(cmd, cwd, extraEnv).flatMap { process =>
       F.delay(new ListBuffer[String]).flatMap { buffer =>
-        val readOut = Blocker[F].use { blocker =>
-          val out = readInputStream[F](process.getInputStream, blocker.blockingContext)
+        val readOut = {
+          val out = readInputStream[F](process.getInputStream, blocker)
           out.evalMap(line => F.delay(buffer.append(line)) >> log(line)).compile.drain
         }
 
@@ -71,13 +72,13 @@ object process {
       pb.start()
     }
 
-  private def readInputStream[F[_]](is: InputStream, blockingContext: ExecutionContext)(
+  private def readInputStream[F[_]](is: InputStream, blocker: Blocker)(
       implicit
       F: Sync[F],
       cs: ContextShift[F]
   ): Stream[F, String] =
     fs2.io
-      .readInputStream(F.pure(is), chunkSize = 4096, blockingContext)
+      .readInputStream(F.pure(is), chunkSize = 4096, blocker)
       .through(fs2.text.utf8Decode)
       .through(fs2.text.lines)
 

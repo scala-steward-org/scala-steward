@@ -1,14 +1,15 @@
 package org.scalasteward.core.repoconfig
 
 import better.files.File
-import org.scalasteward.core.vcs.data.Repo
+import org.scalasteward.core.data.{GroupId, Update}
 import org.scalasteward.core.mock.MockContext.repoConfigAlg
 import org.scalasteward.core.mock.MockState
-import org.scalasteward.core.data.Update
 import org.scalasteward.core.util.Nel
-import org.scalatest.{FunSuite, Matchers}
+import org.scalasteward.core.vcs.data.Repo
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-class RepoConfigAlgTest extends FunSuite with Matchers {
+class RepoConfigAlgTest extends AnyFunSuite with Matchers {
   test("config with all fields set") {
     val repo = Repo("fthomas", "scala-steward")
     val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
@@ -21,8 +22,8 @@ class RepoConfigAlgTest extends FunSuite with Matchers {
 
     config shouldBe RepoConfig(
       updates = UpdatesConfig(
-        allow = List(UpdatePattern("eu.timepit", Some("refined"), Some("0.8."))),
-        ignore = List(UpdatePattern("org.acme", None, Some("1.0")))
+        allow = List(UpdatePattern(GroupId("eu.timepit"), Some("refined"), Some("0.8."))),
+        ignore = List(UpdatePattern(GroupId("org.acme"), None, Some("1.0")))
       )
     )
   }
@@ -50,26 +51,26 @@ class RepoConfigAlgTest extends FunSuite with Matchers {
   }
 
   test("configToIgnoreFurtherUpdates with single update") {
-    val update = Update.Single("a", "b", "c", Nel.of("d"))
+    val update = Update.Single(GroupId("a"), "b", "c", Nel.of("d"))
     val repoConfig = RepoConfigAlg
       .parseRepoConfig(RepoConfigAlg.configToIgnoreFurtherUpdates(update))
       .getOrElse(RepoConfig())
 
     repoConfig shouldBe RepoConfig(
       updates = UpdatesConfig(
-        ignore = List(UpdatePattern("a", Some("b"), None))
+        ignore = List(UpdatePattern(GroupId("a"), Some("b"), None))
       )
     )
   }
 
   test("configToIgnoreFurtherUpdates with group update") {
-    val update = Update.Group("a", Nel.of("b", "e"), "c", Nel.of("d"))
+    val update = Update.Group(GroupId("a"), Nel.of("b", "e"), "c", Nel.of("d"))
     val repoConfig = RepoConfigAlg
       .parseRepoConfig(RepoConfigAlg.configToIgnoreFurtherUpdates(update))
       .getOrElse(RepoConfig())
 
     repoConfig shouldBe RepoConfig(
-      updates = UpdatesConfig(ignore = List(UpdatePattern("a", None, None)))
+      updates = UpdatesConfig(ignore = List(UpdatePattern(GroupId("a"), None, None)))
     )
   }
 }

@@ -16,14 +16,13 @@
 
 package org.scalasteward.core.scalafix
 
-import org.scalasteward.core.data.Version
+import org.scalasteward.core.data.{GroupId, Version}
 import org.scalasteward.core.util.Nel
 import scala.util.matching.Regex
 
 final case class Migration(
-    groupId: String,
+    groupId: GroupId,
     artifactIds: Nel[Regex],
     newVersion: Version,
-    rewriteRules: Nel[String],
-    configuration: Option[String] = None
+    rewriteRules: Nel[String]
 )

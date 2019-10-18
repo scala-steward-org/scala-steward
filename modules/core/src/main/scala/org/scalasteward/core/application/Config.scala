@@ -19,10 +19,12 @@ package org.scalasteward.core.application
 import better.files._
 import cats.effect.Sync
 import org.http4s.Uri
+import org.http4s.Uri.UserInfo
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.git.Author
 import org.scalasteward.core.util
 import org.scalasteward.core.vcs.data.AuthenticatedUser
+import scala.concurrent.duration.FiniteDuration
 import scala.sys.process.Process
 
 /** Configuration for scala-steward.
@@ -58,12 +60,12 @@ final case class Config(
     disableSandbox: Boolean,
     doNotFork: Boolean,
     ignoreOptsFiles: Boolean,
-    keepCredentials: Boolean,
     envVars: List[EnvVar],
-    pruneRepos: Boolean
+    pruneRepos: Boolean,
+    processTimeout: FiniteDuration
 ) {
   def vcsUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] = {
-    val urlWithUser = util.uri.withUserInfo.set(vcsLogin)(vcsApiHost).renderString
+    val urlWithUser = util.uri.withUserInfo.set(UserInfo(vcsLogin, None))(vcsApiHost).renderString
     val prompt = s"Password for '$urlWithUser': "
     F.delay {
       val password = Process(List(gitAskPass.pathAsString, prompt)).!!.trim
@@ -89,9 +91,9 @@ object Config {
         disableSandbox = args.disableSandbox,
         doNotFork = args.doNotFork,
         ignoreOptsFiles = args.ignoreOptsFiles,
-        keepCredentials = args.keepCredentials,
         envVars = args.envVar,
-        pruneRepos = args.pruneRepos
+        pruneRepos = args.pruneRepos,
+        processTimeout = args.processTimeout
       )
     }
 }

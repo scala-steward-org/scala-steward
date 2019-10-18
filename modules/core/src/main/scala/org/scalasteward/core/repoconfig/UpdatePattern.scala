@@ -19,10 +19,10 @@ package org.scalasteward.core.repoconfig
 import cats.implicits._
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
-import org.scalasteward.core.data.Update
+import org.scalasteward.core.data.{GroupId, Update}
 
 final case class UpdatePattern(
-    groupId: String,
+    groupId: GroupId,
     artifactId: Option[String],
     version: Option[String]
 )

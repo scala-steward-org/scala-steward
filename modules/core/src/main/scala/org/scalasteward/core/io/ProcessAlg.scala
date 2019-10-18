@@ -17,13 +17,12 @@
 package org.scalasteward.core.io
 
 import better.files.File
-import cats.effect.{Concurrent, ContextShift, Timer}
+import cats.effect.{Blocker, Concurrent, ContextShift, Timer}
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.util.Nel
-import scala.concurrent.duration._
 
 trait ProcessAlg[F[_]] {
   def exec(command: Nel[String], cwd: File, extraEnv: (String, String)*): F[List[String]]
@@ -47,7 +46,7 @@ object ProcessAlg {
     }
   }
 
-  def create[F[_]](
+  def create[F[_]](blocker: Blocker)(
       implicit
       config: Config,
       contextShift: ContextShift[F],
@@ -62,6 +61,13 @@ object ProcessAlg {
           extraEnv: (String, String)*
       ): F[List[String]] =
         logger.debug(s"Execute ${command.mkString_(" ")}") >>
-          process.slurp[F](command, Some(cwd.toJava), extraEnv.toMap, 10.minutes, logger.trace(_))
+          process.slurp[F](
+            command,
+            Some(cwd.toJava),
+            extraEnv.toMap,
+            config.processTimeout,
+            logger.trace(_),
+            blocker
+          )
     }
 }

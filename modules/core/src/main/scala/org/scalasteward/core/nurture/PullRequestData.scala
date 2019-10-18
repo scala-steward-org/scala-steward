@@ -14,18 +14,24 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.nurture.json
+package org.scalasteward.core.nurture
 
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
-import org.scalasteward.core.vcs.data.Repo
+import org.scalasteward.core.data.Update
+import org.scalasteward.core.git.Sha1
+import org.scalasteward.core.vcs.data.PullRequestState
 
-final case class PullRequestStore(store: Map[Repo, Map[String, PullRequestData]])
+final case class PullRequestData(
+    baseSha1: Sha1,
+    update: Update,
+    state: PullRequestState
+)
 
-object PullRequestStore {
-  implicit val pullRequestStoreDecoder: Decoder[PullRequestStore] =
+object PullRequestData {
+  implicit val pullRequestDataDecoder: Decoder[PullRequestData] =
     deriveDecoder
 
-  implicit val pullRequestStoreEncoder: Encoder[PullRequestStore] =
+  implicit val pullRequestDataEncoder: Encoder[PullRequestData] =
     deriveEncoder
 }

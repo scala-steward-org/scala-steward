@@ -29,6 +29,10 @@ object StewardPlugin extends AutoPlugin {
 
   import autoImport._
 
+  def crossName(moduleId: ModuleID, scalaVersion: String, scalaBinaryVersion: String): String =
+    CrossVersion(moduleId.crossVersion, scalaVersion, scalaBinaryVersion)
+      .getOrElse(identity[String](_))(moduleId.name)
+
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
     libraryDependenciesAsJson := {
       val sourcePositions = dependencyPositions.value
@@ -37,19 +41,14 @@ object StewardPlugin extends AutoPlugin {
 
       val deps = libraryDependencies.value.filter(isDefinedInBuildFiles(_, sourcePositions)).map {
         moduleId =>
-          val cross =
-            CrossVersion(moduleId.crossVersion, scalaVersionValue, scalaBinaryVersionValue)
-
-          val artifactIdCross =
-            cross.fold(moduleId.name)(_(moduleId.name))
-
           val entries: List[(String, String)] = List(
             "groupId" -> moduleId.organization,
             "artifactId" -> moduleId.name,
-            "artifactIdCross" -> artifactIdCross,
+            "artifactIdCross" -> crossName(moduleId, scalaVersionValue, scalaBinaryVersionValue),
             "version" -> moduleId.revision
           ) ++
             moduleId.extraAttributes.get("e:sbtVersion").map("sbtVersion" -> _).toList ++
+            moduleId.extraAttributes.get("e:scalaVersion").map("scalaVersion" -> _).toList ++
             moduleId.configurations.map("configurations" -> _).toList
 
           entries.map { case (k, v) => s""""$k": "$v"""" }.mkString("{ ", ", ", " }")
@@ -66,7 +65,10 @@ object StewardPlugin extends AutoPlugin {
     sourcePositions.get(moduleId) match {
       case Some(fp: FilePosition) if fp.path.startsWith("(sbt.Classpaths") => true
       case Some(fp: FilePosition) if fp.path.startsWith("(")               => false
-      case Some(fp: FilePosition) if fp.path.startsWith("Defaults.scala")  => false
-      case _                                                               => true
+      case Some(fp: FilePosition)
+          if fp.path.startsWith("Defaults.scala")
+            && !moduleId.configurations.exists(_ == "plugin->default(compile)") =>
+        false
+      case _ => true
     }
 }

@@ -2,15 +2,17 @@ package org.scalasteward.core.sbt
 
 import better.files.File
 import org.scalasteward.core.application.Config
+import org.scalasteward.core.data.{GroupId, Version}
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.{MockContext, MockState}
-import org.scalasteward.core.data.{Update, Version}
+import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-class SbtAlgTest extends FunSuite with Matchers {
+class SbtAlgTest extends AnyFunSuite with Matchers {
 
   test("addGlobalPlugins") {
     sbtAlg.addGlobalPlugins.runS(MockState.empty).unsafeRunSync() shouldBe MockState.empty.copy(
@@ -33,24 +35,37 @@ class SbtAlgTest extends FunSuite with Matchers {
   test("getUpdatesForRepo") {
     val repo = Repo("fthomas", "refined")
     val repoDir = config.workspace / "fthomas/refined"
-    val state = sbtAlg.getUpdatesForRepo(repo).runS(MockState.empty).unsafeRunSync()
-
-    state shouldBe MockState.empty.copy(
-      commands = Vector(
-        List(
-          "TEST_VAR=GREAT",
-          "ANOTHER_TEST_VAR=ALSO_GREAT",
-          repoDir.toString,
-          "firejail",
-          s"--whitelist=$repoDir",
-          "sbt",
-          "-batch",
-          "-no-colors",
-          ";set every credentials := Nil;dependencyUpdates;reload plugins;dependencyUpdates"
-        ),
-        List("read", s"$repoDir/project/build.properties")
-      )
+    val files = Map(
+      repoDir / "project" / "build.properties" -> "sbt.version=1.2.6",
+      repoDir / ".scalafmt.conf" -> "version=2.0.0"
     )
+
+    files.foreach {
+      case (file, content) =>
+        val initialState = MockState.empty.copy(files = Map(file -> content))
+        val state = sbtAlg.getUpdatesForRepo(repo).runS(initialState).unsafeRunSync()
+        state shouldBe MockState.empty.copy(
+          files = Map(file -> content),
+          commands = Vector(
+            List("read", s"$repoDir/project/build.properties"),
+            List("read", s"$repoDir/.scalafmt.conf"),
+            List("create", s"$repoDir/project/tmp-sbt-dep.sbt"),
+            List(
+              "TEST_VAR=GREAT",
+              "ANOTHER_TEST_VAR=ALSO_GREAT",
+              repoDir.toString,
+              "firejail",
+              s"--whitelist=$repoDir",
+              "sbt",
+              "-batch",
+              "-no-colors",
+              s";$setDependencyUpdatesFailBuild;$dependencyUpdates;$reloadPlugins;$dependencyUpdates"
+            ),
+            List("rm", s"$repoDir/project/tmp-sbt-dep.sbt"),
+            List("read", s"${config.workspace}/repos_v6.json")
+          )
+        )
+    }
   }
 
   test("getUpdatesForRepo ignoring .jvmopts and .sbtopts files") {
@@ -63,9 +78,10 @@ class SbtAlgTest extends FunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
+        List("read", s"$repoDir/project/build.properties"),
+        List("read", s"$repoDir/.scalafmt.conf"),
         List("rm", (repoDir / ".jvmopts").toString),
         List("rm", (repoDir / ".sbtopts").toString),
-        List("create", (repoDir / ".jvmopts").toString),
         List(
           "TEST_VAR=GREAT",
           "ANOTHER_TEST_VAR=ALSO_GREAT",
@@ -75,38 +91,11 @@ class SbtAlgTest extends FunSuite with Matchers {
           "sbt",
           "-batch",
           "-no-colors",
-          ";set every credentials := Nil;dependencyUpdates;reload plugins;dependencyUpdates"
+          s";$setDependencyUpdatesFailBuild;$dependencyUpdates;$reloadPlugins;$dependencyUpdates"
         ),
-        List("rm", (repoDir / ".jvmopts").toString),
         List("restore", (repoDir / ".sbtopts").toString),
         List("restore", (repoDir / ".jvmopts").toString),
-        List("read", s"$repoDir/project/build.properties")
-      )
-    )
-  }
-
-  test("getUpdatesForRepo keeping credentials") {
-    implicit val config: Config = MockContext.config.copy(keepCredentials = true)
-    val sbtAlgKeepingCredentials = SbtAlg.create
-    val repo = Repo("fthomas", "refined")
-    val repoDir = config.workspace / "fthomas/refined"
-    val state =
-      sbtAlgKeepingCredentials.getUpdatesForRepo(repo).runS(MockState.empty).unsafeRunSync()
-
-    state shouldBe MockState.empty.copy(
-      commands = Vector(
-        List(
-          "TEST_VAR=GREAT",
-          "ANOTHER_TEST_VAR=ALSO_GREAT",
-          repoDir.toString,
-          "firejail",
-          s"--whitelist=$repoDir",
-          "sbt",
-          "-batch",
-          "-no-colors",
-          ";dependencyUpdates;reload plugins;dependencyUpdates"
-        ),
-        List("read", s"$repoDir/project/build.properties")
+        List("read", s"${config.workspace}/repos_v6.json")
       )
     )
   }
@@ -116,7 +105,7 @@ class SbtAlgTest extends FunSuite with Matchers {
     val repoDir = config.workspace / repo.owner / repo.repo
     val migrations = Nel.of(
       Migration(
-        "co.fs2",
+        GroupId("co.fs2"),
         Nel.of("fs2-core".r),
         Version("1.0.0"),
         Nel.of("github:functional-streams-for-scala/fs2/v1?sha=v1.0.5")
@@ -137,65 +126,11 @@ class SbtAlgTest extends FunSuite with Matchers {
           "sbt",
           "-batch",
           "-no-colors",
-          ";scalafixEnable;scalafix github:functional-streams-for-scala/fs2/v1?sha=v1.0.5"
+          ";++2.12.10!;scalafixEnable;scalafix github:functional-streams-for-scala/fs2/v1?sha=v1.0.5;test:scalafix github:functional-streams-for-scala/fs2/v1?sha=v1.0.5"
         ),
         List("rm", "/tmp/steward/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
         List("rm", "/tmp/steward/.sbt/0.13/plugins/scala-steward-scalafix.sbt")
       )
-    )
-  }
-
-  test("runMigrations for test codes") {
-    val repo = Repo("fthomas", "scala-steward")
-    val repoDir = config.workspace / repo.owner / repo.repo
-    val migrations = Nel.of(
-      Migration(
-        "org.scalatest",
-        Nel.of("scalatest".r),
-        Version("3.1.0"),
-        Nel.of(
-          "https://raw.githubusercontent.com/scalatest/autofix/6168da0e2bd113872b7dcd22cad7688d97ef9381/3.0.x/rules/src/main/scala/org/scalatest/autofix/v3_0_x/RenameDeprecatedPackage.scala",
-          "https://raw.githubusercontent.com/scalatest/autofix/6168da0e2bd113872b7dcd22cad7688d97ef9381/3.1.x/rules/src/main/scala/org/scalatest/autofix/v3_1_x/RewriteDeprecatedNames.scala"
-        ),
-        Some("test")
-      )
-    )
-    val state = sbtAlg.runMigrations(repo, migrations).runS(MockState.empty).unsafeRunSync()
-
-    state shouldBe MockState.empty.copy(
-      commands = Vector(
-        List("create", "/tmp/steward/.sbt/0.13/plugins/scala-steward-scalafix.sbt"),
-        List("create", "/tmp/steward/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
-        List(
-          "TEST_VAR=GREAT",
-          "ANOTHER_TEST_VAR=ALSO_GREAT",
-          repoDir.toString,
-          "firejail",
-          s"--whitelist=$repoDir",
-          "sbt",
-          "-batch",
-          "-no-colors",
-          ";scalafixEnable;test:scalafix https://raw.githubusercontent.com/scalatest/autofix/6168da0e2bd113872b7dcd22cad7688d97ef9381/3.0.x/rules/src/main/scala/org/scalatest/autofix/v3_0_x/RenameDeprecatedPackage.scala;test:scalafix https://raw.githubusercontent.com/scalatest/autofix/6168da0e2bd113872b7dcd22cad7688d97ef9381/3.1.x/rules/src/main/scala/org/scalatest/autofix/v3_1_x/RewriteDeprecatedNames.scala"
-        ),
-        List("rm", "/tmp/steward/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
-        List("rm", "/tmp/steward/.sbt/0.13/plugins/scala-steward-scalafix.sbt")
-      )
-    )
-  }
-
-  test("getSbtUpdate") {
-    val repo = Repo("fthomas", "scala-steward")
-    val repoDir = config.workspace / repo.owner / repo.repo
-    val buildProperties = repoDir / "project" / "build.properties"
-    val initialState = MockState.empty.add(buildProperties, "sbt.version=1.2.6")
-    val (state, maybeUpdate) = sbtAlg.getSbtUpdate(repo).run(initialState).unsafeRunSync()
-
-    maybeUpdate shouldBe Some(
-      Update.Single("org.scala-sbt", "sbt", "1.2.6", Nel.of(defaultSbtVersion.value))
-    )
-    state shouldBe MockState.empty.copy(
-      commands = Vector(List("read", s"$repoDir/project/build.properties")),
-      files = Map(buildProperties -> "sbt.version=1.2.6")
     )
   }
 }
