@@ -68,6 +68,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
         List("read", scalafmtFile.pathAsString),
         List("read", scalafmtFile.pathAsString),
         List("read", scalafmtFile.pathAsString),
+        List("read", scalafmtFile.pathAsString),
         List("write", scalafmtFile.pathAsString)
       ),
       logs = Vector(
@@ -75,6 +76,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
         (None, "Trying heuristic 'original'"),
         (None, "Trying heuristic 'relaxed'"),
         (None, "Trying heuristic 'sliding'"),
+        (None, "Trying heuristic 'completeGroupId'"),
         (None, "Trying heuristic 'groupId'"),
         (None, "Trying heuristic 'specific'")
       ),

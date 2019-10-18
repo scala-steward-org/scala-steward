@@ -126,6 +126,11 @@ object UpdateHeuristic {
       defaultReplaceVersion(_.artifactId.sliding(5).take(5).filterNot(_ === "scala").toList)
   )
 
+  val completeGroupId = UpdateHeuristic(
+    name = "completeGroupId",
+    replaceVersion = defaultReplaceVersion(update => List(update.groupId.value))
+  )
+
   val groupId = UpdateHeuristic(
     name = "groupId",
     replaceVersion = defaultReplaceVersion(
@@ -147,5 +152,5 @@ object UpdateHeuristic {
   )
 
   val all: Nel[UpdateHeuristic] =
-    Nel.of(strict, original, relaxed, sliding, groupId, specific)
+    Nel.of(strict, original, relaxed, sliding, completeGroupId, groupId, specific)
 }
