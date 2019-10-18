@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://github.com/fthomas/scala-steward/raw/master/data/images/scala-steward-logo-circle-0.png" height="180px">
+</p>
+
 # Scala Steward
 [![Build Status](https://travis-ci.com/fthomas/scala-steward.svg?branch=master)](https://travis-ci.com/fthomas/scala-steward)
 [![codecov](https://codecov.io/gh/fthomas/scala-steward/branch/master/graph/badge.svg)](https://codecov.io/gh/fthomas/scala-steward)
@@ -12,10 +16,6 @@ and sbt plugins up-to-date.
 
 See also the announcement blog post:
 [*Keep your projects up-to-date with Scala Steward*](https://www.scala-lang.org/blog/2019/07/10/announcing-scala-steward.html)
-
-<p align="center">
-<img src="https://github.com/fthomas/scala-steward/raw/master/data/images/scala-steward-logo-circle-0.png" height="180px">
-</p>
 
 ## Quick start guide
 
@@ -36,7 +36,7 @@ look like, here are the ones it has created so far:
 * [Merged pull requests]( https://github.com/search?q=author%3Ascala-steward+is%3Amerged+sort%3Aupdated-desc)
   ([compact](             https://github.com/pulls?q=author%3Ascala-steward+is%3Amerged+sort%3Aupdated-desc))
 
-## Wanna have a badge ?
+## Wanna have a badge?
 
 A badge is available to show that Scala Steward is helping your repos.
 Let's spread Scala Steward to keep Scala ecosystem updated.
