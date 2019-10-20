@@ -36,10 +36,10 @@ object CoursierAlg {
       logger: Logger[F],
       F: Sync[F]
   ): CoursierAlg[F] = {
-    implicit val P = Parallel.identity[F]
-    implicit val cs: ContextShift[F] = new ContextShift[F] {
+    implicit val parallel: Parallel.Aux[F, F] = Parallel.identity[F]
+    implicit val contextShift: ContextShift[F] = new ContextShift[F] {
       override def shift: F[Unit] = F.unit
-      override def evalOn[A](ec: ExecutionContext)(fa: F[A]): F[A] = F.defer(fa)
+      override def evalOn[A](ec: ExecutionContext)(fa: F[A]): F[A] = fa
     }
     val cache = coursier.cache.FileCache[F]()
     val fetch = coursier.Fetch[F](cache)

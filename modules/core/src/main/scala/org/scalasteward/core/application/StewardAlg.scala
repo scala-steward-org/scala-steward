@@ -71,7 +71,7 @@ final class StewardAlg[F[_]](
   def pruneRepos(repos: List[Repo]): F[List[Repo]] =
     logger.infoTotalTime("pruning repos") {
       for {
-        _ <- repos.traverse(repoCacheAlg.checkCache)
+        _ <- repos.traverse_(repoCacheAlg.checkCache)
         allUpdates <- updateAlg.checkForUpdates(repos)
         filteredRepos <- updateAlg.filterByApplicableUpdates(repos, allUpdates)
         countTotal = repos.size
