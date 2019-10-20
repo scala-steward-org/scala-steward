@@ -33,6 +33,8 @@ class VersionTest extends AnyFunSuite with Discipline with Matchers with ScalaCh
       "2.13.0",
       "3.0.7-SNAP5",
       "3.0.7-RC1",
+      "4.0RC1",
+      "4.0",
       "5.3.2.201906051522-r",
       "5.4.0.201906121030-r",
       "104",
