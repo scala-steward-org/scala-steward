@@ -13,6 +13,11 @@ updates.allow  = [ { groupId = "com.example" } ]
 # Defaults to empty `[]` which mean Scala Steward will not ignore dependencies.
 updates.ignore = [ { groupId = "org.acme", artifactId="foo", version = "1.0" } ]
 
+# If set, Scala Steward will only attempt to create or update `n` PRs.
+# Useful if running frequently and/or CI build are costly
+# Default: None
+updates.limit = 5
+
 # If true, Scala Steward will update the PR it created to resolve conflicts as
 # long as you don't change it yourself.
 # Default: true

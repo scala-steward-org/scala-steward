@@ -146,4 +146,5 @@ package object util {
 
     outerLoop(list, ListBuffer.empty, ListBuffer.empty).toList
   }
+
 }
