@@ -83,7 +83,12 @@ class NewPullRequestDataTest extends AnyFunSuite with Matchers {
 
   test("migrationNote: when artifact has migrations") {
     val update = Update.Single(GroupId("com.spotify"), "scio-core", "0.6.0", Nel.of("0.7.0"))
-    val migration = Migration(update.groupId, Nel.of(update.artifactId.r), Version("0.7.0"),Nel.of("I am a rewrite rule"))
+    val migration = Migration(
+      update.groupId,
+      Nel.of(update.artifactId.r),
+      Version("0.7.0"),
+      Nel.of("I am a rewrite rule")
+    )
     val (label, appliedMigrations) = NewPullRequestData.migrationNote(update, List(migration))
 
     label shouldBe Some("scalafix-migrations")
