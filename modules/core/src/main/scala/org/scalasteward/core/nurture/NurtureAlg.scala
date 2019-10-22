@@ -28,6 +28,7 @@ import org.scalasteward.core.git.{Branch, GitAlg}
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.update.FilterAlg
+import org.scalasteward.core.scalafix.MigrationAlg
 import org.scalasteward.core.util.DateTimeAlg
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo}
@@ -46,6 +47,7 @@ final class NurtureAlg[F[_]](
     vcsApiAlg: VCSApiAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
     vcsExtraAlg: VCSExtraAlg[F],
+    migrationAlg: MigrationAlg[F],
     logger: Logger[F],
     pullRequestRepo: PullRequestRepository[F],
     sbtAlg: SbtAlg[F],
@@ -148,12 +150,14 @@ final class NurtureAlg[F[_]](
         .get(data.update.artifactId)
         .flatTraverse(vcsExtraAlg.getReleaseNoteUrl(_, data.update))
       branchName = vcs.createBranch(config.vcsType, data.fork, data.update)
+      migrations <- migrationAlg.loadMigrations(data.repo)
       requestData = NewPullRequestData.from(
         data,
         branchName,
         artifactIdToUrl,
         branchCompareUrl,
-        releaseNoteUrl
+        releaseNoteUrl,
+        migrations
       )
       pr <- vcsApiAlg.createPullRequest(data.repo, requestData)
       _ <- pullRequestRepo.createOrUpdate(

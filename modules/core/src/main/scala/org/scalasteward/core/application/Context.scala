@@ -35,6 +35,7 @@ import org.scalasteward.core.update.{ExcludeAlg, FilterAlg, UpdateAlg, UpdateRep
 import org.scalasteward.core.util._
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg, VCSSelection}
+import org.scalasteward.core.scalafix.MigrationAlg
 
 object Context {
   def create[F[_]: ConcurrentEffect: ContextShift: Timer](
@@ -71,6 +72,7 @@ object Context {
       implicit val refreshErrorAlg: RefreshErrorAlg[F] =
         new RefreshErrorAlg[F](new JsonKeyValueStore("repos_refresh_errors", "1"))
       implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F]
+      implicit val migrationAlg: MigrationAlg[F] = MigrationAlg.create[F]
       implicit val editAlg: EditAlg[F] = new EditAlg[F]
       implicit val updateRepository: UpdateRepository[F] =
         new UpdateRepository[F](new JsonKeyValueStore("updates", "3"))

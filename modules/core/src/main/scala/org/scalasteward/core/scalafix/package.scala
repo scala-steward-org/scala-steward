@@ -71,8 +71,8 @@ package object scalafix {
       )
     )
 
-  def findMigrations(update: Update): List[Migration] =
-    migrations.filter { migration =>
+  def findMigrations(givenMigrations: List[Migration], update: Update): List[Migration] =
+    givenMigrations.filter { migration =>
       update.groupId === migration.groupId &&
       migration.artifactIds.exists(re => update.artifactIds.exists(re.findFirstIn(_).isDefined)) &&
       Version(update.currentVersion) < migration.newVersion &&

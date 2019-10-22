@@ -17,12 +17,37 @@
 package org.scalasteward.core.scalafix
 
 import org.scalasteward.core.data.{GroupId, Version}
+import cats.Eq
 import org.scalasteward.core.util.Nel
 import scala.util.matching.Regex
+import io.circe.Decoder
+import io.circe.generic.semiauto._
+import io.circe.Decoder._
+import cats.syntax.eq._
+import cats.instances.string._
+import cats.instances.int._
 
 final case class Migration(
     groupId: GroupId,
     artifactIds: Nel[Regex],
     newVersion: Version,
     rewriteRules: Nel[String]
-)
+) {
+
+  override def equals(x: Any): Boolean = {
+    implicit val regexEq: Eq[Regex] = Eq.by(_.regex)
+    lazy val other: Migration = x.asInstanceOf[Migration]
+    this.hashCode === x.hashCode && 
+    x.isInstanceOf[Migration] &&
+    other.artifactIds === this.artifactIds &&
+    other.groupId === this.groupId &&
+    other.newVersion === this.newVersion &&
+    other.rewriteRules === this.rewriteRules
+  }
+}
+
+object Migration {
+  implicit val regexDecoder: Decoder[Regex] = decodeString.map(_.r)
+  implicit val versionDecoder: Decoder[Version] = decodeString.map(Version.apply)
+  implicit val migrationDecoder: Decoder[Migration] = deriveDecoder[Migration]
+}
