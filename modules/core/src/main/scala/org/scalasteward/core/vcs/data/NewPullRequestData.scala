@@ -25,7 +25,6 @@ import org.scalasteward.core.nurture.UpdateData
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.{git, scalafix}
-import org.scalasteward.core.git
 import org.scalasteward.core.scalafix.Migration
 
 final case class NewPullRequestData(

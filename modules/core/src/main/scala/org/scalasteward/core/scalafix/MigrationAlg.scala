@@ -16,9 +16,8 @@
 
 package org.scalasteward.core.scalafix
 
-import org.scalasteward.core.io.FileAlg
+import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.vcs.data.Repo
-import org.scalasteward.core.io.WorkspaceAlg
 import cats.implicits._
 import cats.Monad
 import io.circe.parser._

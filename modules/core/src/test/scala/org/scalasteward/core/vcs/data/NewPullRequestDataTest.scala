@@ -1,7 +1,7 @@
 package org.scalasteward.core.vcs.data
 
 import io.circe.syntax._
-import org.scalasteward.core.data.{GroupId, Update}
+import org.scalasteward.core.data.{GroupId, Update, Version}
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.nurture.UpdateData
 import org.scalasteward.core.repoconfig.RepoConfig
@@ -9,7 +9,6 @@ import org.scalasteward.core.util.Nel
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalasteward.core.scalafix.Migration
-import org.scalasteward.core.data.Version
 
 class NewPullRequestDataTest extends AnyFunSuite with Matchers {
   test("asJson") {

@@ -25,6 +25,10 @@ import io.circe.generic.semiauto._
 import io.circe.Decoder._
 import cats.syntax.eq._
 import cats.instances.string._
+import cats.kernel.Hash
+import cats.instances.tuple._
+import cats.instances.int._
+import cats.instances.list._
 
 final case class Migration(
     groupId: GroupId,
@@ -33,9 +37,13 @@ final case class Migration(
     rewriteRules: Nel[String]
 ) {
 
+  override def hashCode: Int = Hash[Migration].hash(this)
+
   override def equals(x: Any): Boolean = {
     implicit val regexEq: Eq[Regex] = Eq.by(_.regex)
     lazy val other: Migration = x.asInstanceOf[Migration]
+
+    this.hashCode() === x.hashCode() &&
     x.isInstanceOf[Migration] &&
     other.artifactIds === this.artifactIds &&
     other.groupId === this.groupId &&
@@ -48,4 +56,12 @@ object Migration {
   implicit val regexDecoder: Decoder[Regex] = decodeString.map(_.r)
   implicit val versionDecoder: Decoder[Version] = decodeString.map(Version.apply)
   implicit val migrationDecoder: Decoder[Migration] = deriveDecoder[Migration]
+
+  implicit val migrationHash: Hash[Migration] = {
+    implicit def nelHash[A: Hash]: Hash[Nel[A]] = Hash.by(_.toList)
+    implicit val regexHash: Hash[Regex] = Hash.by[Regex, String](_.regex)
+    implicit val versionHash: Hash[Version] = Hash.fromUniversalHashCode
+    implicit val groupIdHash: Hash[GroupId] = Hash.fromUniversalHashCode
+    Hash.by(m => (m.artifactIds, m.groupId, m.newVersion, m.rewriteRules))
+  }
 }
