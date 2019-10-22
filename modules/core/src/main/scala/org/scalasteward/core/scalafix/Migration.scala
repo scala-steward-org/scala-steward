@@ -25,7 +25,6 @@ import io.circe.generic.semiauto._
 import io.circe.Decoder._
 import cats.syntax.eq._
 import cats.instances.string._
-import cats.instances.int._
 
 final case class Migration(
     groupId: GroupId,
@@ -37,7 +36,6 @@ final case class Migration(
   override def equals(x: Any): Boolean = {
     implicit val regexEq: Eq[Regex] = Eq.by(_.regex)
     lazy val other: Migration = x.asInstanceOf[Migration]
-    this.hashCode === x.hashCode && 
     x.isInstanceOf[Migration] &&
     other.artifactIds === this.artifactIds &&
     other.groupId === this.groupId &&

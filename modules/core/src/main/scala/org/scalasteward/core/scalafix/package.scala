@@ -17,60 +17,9 @@
 package org.scalasteward.core
 
 import cats.implicits._
-import org.scalasteward.core.data.{GroupId, Update, Version}
-import org.scalasteward.core.util.Nel
+import org.scalasteward.core.data.{Update, Version}
 
 package object scalafix {
-  val migrations: List[Migration] =
-    List(
-      Migration(
-        GroupId("co.fs2"),
-        Nel.of("fs2-.*".r),
-        Version("1.0.0"),
-        Nel.of("github:functional-streams-for-scala/fs2/v1?sha=v1.0.5")
-      ),
-      Migration(
-        GroupId("com.spotify"),
-        Nel.of("scio-.*".r),
-        Version("0.7.0"),
-        Nel.of(
-          "github:spotify/scio/FixAvroIO?sha=v0.7.4",
-          "github:spotify/scio/AddMissingImports?sha=v0.7.4",
-          "github:spotify/scio/RewriteSysProp?sha=v0.7.4",
-          "github:spotify/scio/BQClientRefactoring?sha=v0.7.4"
-        )
-      ),
-      Migration(
-        GroupId("org.http4s"),
-        Nel.of("http4s-.*".r),
-        Version("0.20.0"),
-        Nel.of("github:http4s/http4s/v0_20?sha=v0.20.11")
-      ),
-      Migration(
-        GroupId("org.typelevel"),
-        Nel.of("cats-core".r),
-        Version("1.0.0"),
-        Nel.of(
-          "https://raw.githubusercontent.com/typelevel/cats/master/scalafix/rules/src/main/scala/fix/Cats_v1_0_0.scala"
-        )
-      ),
-      Migration(
-        GroupId("org.scalatest"),
-        Nel.of("scalatest".r),
-        Version("3.1.0"),
-        Nel.of(
-          "https://raw.githubusercontent.com/scalatest/autofix/e4de53fa40fac423bd64d165ff36bde38ce52388/3.0.x/rules/src/main/scala/org/scalatest/autofix/v3_0_x/RenameDeprecatedPackage.scala",
-          "https://raw.githubusercontent.com/scalatest/autofix/e4de53fa40fac423bd64d165ff36bde38ce52388/3.1.x/rules/src/main/scala/org/scalatest/autofix/v3_1_x/RewriteDeprecatedNames.scala"
-        )
-      ),
-      Migration(
-        GroupId("org.scalacheck"),
-        Nel.of("scalacheck".r),
-        Version("1.14.1"),
-        Nel.of("github:typelevel/scalacheck/v1_14_1?sha=3fc537dde9d8fdf951503a8d8b027a568d52d055")
-      )
-    )
-
   def findMigrations(givenMigrations: List[Migration], update: Update): List[Migration] =
     givenMigrations.filter { migration =>
       update.groupId === migration.groupId &&

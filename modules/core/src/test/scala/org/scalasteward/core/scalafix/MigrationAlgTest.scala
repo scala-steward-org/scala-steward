@@ -32,7 +32,7 @@ class MigrationAlgTest extends AnyFunSuite with Matchers {
         |    "github:spotify/scio/BQClientRefactoring?sha=v0.7.4"]
         |}]""".stripMargin
         val initialState = MockState.empty.add(scalafmtConf, migrationsFile)
-        val (_, migrations) = migrationAlg.loadMigrations(repo).run(initialState).unsafeRunSync()
+        val (_, migrations) = migrationAlg.loadMigrations(repo).run(initialState).unsafeRunSync
 
         migrations should contain theSameElementsAs List(Migration(
             GroupId("co.fs2"),
@@ -55,8 +55,14 @@ class MigrationAlgTest extends AnyFunSuite with Matchers {
 
     test("loadMigrations on malformed File") {
         val initialState = MockState.empty.add(scalafmtConf, """{"key": "i'm not a valid Migration"}""")
-        val (state, migrations) = migrationAlg.loadMigrations(repo).run(initialState).unsafeRunSync()
+        val (state, migrations) = migrationAlg.loadMigrations(repo).run(initialState).unsafeRunSync
         migrations shouldBe empty
         state.logs shouldBe Vector(None -> "Failed to parse migrations file")
+    }
+
+    test("loadMigrations on no File") {
+        val (_, migrations) = migrationAlg.loadMigrations(repo).run(MockState.empty).unsafeRunSync
+
+        migrations shouldBe empty
     }
 }

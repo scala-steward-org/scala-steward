@@ -106,7 +106,10 @@ object NewPullRequestData {
       case None      => s"${groupId}:${artifactId}"
     }
 
-  def migrationNote(update: Update, migrations: List[Migration]): (Option[String], Option[String]) = {
+  def migrationNote(
+      update: Update,
+      migrations: List[Migration]
+  ): (Option[String], Option[String]) = {
     update.artifactId
     val migrationsForUpdate = scalafix.findMigrations(migrations, update)
     if (migrationsForUpdate.isEmpty)
@@ -118,7 +121,10 @@ object NewPullRequestData {
           s"""<details>
              |<summary>Applied Migrations</summary>
              |
-             |${migrationsForUpdate.flatMap(_.rewriteRules.toList).map(rule => s"* ${rule}").mkString("\n")}
+             |${migrationsForUpdate
+               .flatMap(_.rewriteRules.toList)
+               .map(rule => s"* ${rule}")
+               .mkString("\n")}
              |</details>
              |""".stripMargin.trim
         )
@@ -146,7 +152,7 @@ object NewPullRequestData {
         data.update,
         artifactIdToUrl,
         branchCompareUrl,
-        releaseNoteUrl, 
+        releaseNoteUrl,
         migrations
       ),
       head = branchName,

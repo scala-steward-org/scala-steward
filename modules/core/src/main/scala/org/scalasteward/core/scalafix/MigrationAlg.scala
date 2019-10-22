@@ -24,17 +24,28 @@ import cats.Monad
 import io.circe.parser._
 import io.chrisdavenport.log4cats.Logger
 
-trait MigrationAlg[F[_]]{
-    def loadMigrations(repo: Repo): F[List[Migration]]
+trait MigrationAlg[F[_]] {
+  def loadMigrations(repo: Repo): F[List[Migration]]
 }
 
 object MigrationAlg {
 
-    def create[F[_]](implicit fileAlg: FileAlg[F], workspaceAlg: WorkspaceAlg[F], logger: Logger[F], F: Monad[F]): MigrationAlg[F] = new MigrationAlg[F] {
-        override def loadMigrations(repo: Repo): F[List[Migration]] = for {
-            repoDir <- workspaceAlg.repoDir(repo)
-            migrationsFile <- fileAlg.readFile(repoDir / ".scalafix-migrations.conf")
-            migrations <- migrationsFile.traverse(parse(_).flatMap(_.as[List[Migration]])).fold(_ => logger.warn("Failed to parse migrations file") >> F.pure(List.empty[Migration]),x => F.pure(x.combineAll))
-        } yield migrations
-    }
+  def create[F[_]](
+      implicit fileAlg: FileAlg[F],
+      workspaceAlg: WorkspaceAlg[F],
+      logger: Logger[F],
+      F: Monad[F]
+  ): MigrationAlg[F] = new MigrationAlg[F] {
+    override def loadMigrations(repo: Repo): F[List[Migration]] =
+      for {
+        repoDir <- workspaceAlg.repoDir(repo)
+        migrationsFile <- fileAlg.readFile(repoDir / ".scalafix-migrations.conf")
+        migrations <- migrationsFile
+          .traverse(parse(_).flatMap(_.as[List[Migration]]))
+          .fold(
+            _ => logger.warn("Failed to parse migrations file") >> F.pure(List.empty[Migration]),
+            x => F.pure(x.combineAll)
+          )
+      } yield migrations
+  }
 }
