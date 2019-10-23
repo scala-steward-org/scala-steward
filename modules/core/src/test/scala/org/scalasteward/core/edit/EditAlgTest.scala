@@ -99,24 +99,33 @@ class EditAlgTest extends AnyFunSuite with Matchers {
     val repo = Repo("fthomas", "scala-steward")
     val update = Update.Single(GroupId("org.typelevel"), "cats-core", "1.2.0", Nel.of("1.3.0"))
     val file1 = File.temp / "ws/fthomas/scala-steward/script.sc"
+    val file2 = File.temp / "ws/fthomas/scala-steward/build.sbt"
 
     val state = editAlg
       .applyUpdate(repo, update)
-      .runS(MockState.empty.add(file1, """import $ivy.`org.typelevel::cats-core:1.2.0`, cats.implicits._""""))
+      .runS(
+        MockState.empty
+          .add(file1, """import $ivy.`org.typelevel::cats-core:1.2.0`, cats.implicits._"""")
+          .add(file2, """"org.typelevel" %% "cats-core" % "1.2.0"""")
+      )
       .unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
         List("read", file1.pathAsString),
+        List("read", file2.pathAsString),
         List("read", file1.pathAsString),
-        List("read", file1.pathAsString),
-        List("write", file1.pathAsString)
+        List("write", file1.pathAsString),
+        List("read", file2.pathAsString),
+        List("write", file2.pathAsString)
       ),
       logs = Vector(
-        (None, "Trying heuristic 'moduleId'"),
-        (None, "Trying heuristic 'strict'")
+        (None, "Trying heuristic 'moduleId'")
       ),
-      files = Map(file1 -> """import $ivy.`org.typelevel::cats-core:1.3.0`, cats.implicits._"""")
+      files = Map(
+        file1 -> """import $ivy.`org.typelevel::cats-core:1.3.0`, cats.implicits._"""",
+        file2 -> """"org.typelevel" %% "cats-core" % "1.3.0""""
+      )
     )
   }
 

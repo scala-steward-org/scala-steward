@@ -20,7 +20,6 @@ import better.files.File
 import cats.Monad
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
-import org.scalasteward.core.ammonite.AmmoniteAlg
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.{Dependency, Update}
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
@@ -60,7 +59,6 @@ object SbtAlg {
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F],
       scalafmtAlg: ScalafmtAlg[F],
-      ammoniteAlg: AmmoniteAlg[F],
       cacheRepository: RepoCacheRepository[F],
       F: Monad[F]
   ): SbtAlg[F] =
@@ -100,11 +98,10 @@ object SbtAlg {
           maybeSbtVersion <- getSbtVersion(repo)
           maybeSbtDependency = maybeSbtVersion.flatMap(sbtDependency)
           maybeScalafmtVersion <- scalafmtAlg.getScalafmtVersion(repo)
-          ammoniteScriptDependencies <- ammoniteAlg.getAmmoniteScriptDependencies(repo)
           maybeScalafmtDependency = maybeScalafmtVersion.map(
             scalafmtDependency(defaultScalaBinaryVersion)
           )
-        } yield (ammoniteScriptDependencies ++ maybeSbtDependency.toList ++ maybeScalafmtDependency.toList ++
+        } yield (maybeSbtDependency.toList ++ maybeScalafmtDependency.toList ++
           originalDependencies).distinct
 
       def getOriginalDependencies(repo: Repo): F[List[Dependency]] =
@@ -142,11 +139,7 @@ object SbtAlg {
             dependencyUpdates
           )
           updates <- withTemporarySbtDependency(repo) {
-            fileAlg.readFile(repoDir / "project" / "tmp-sbt-dep.sbt").flatMap { file =>
-              logger.info(s"ms vanjie $file") >> exec(sbtCmd(commands), repoDir)
-                .flatMap(ff => logger.info(s"$ff") >> F.pure(ff))
-                .map(parser.parseSingleUpdates)
-            }
+            exec(sbtCmd(commands), repoDir).map(parser.parseSingleUpdates)
           }
           originalDependencies <- cacheRepository.getDependencies(List(repo))
           updatesUnderNewGroupId = originalDependencies.flatMap(
@@ -195,11 +188,7 @@ object SbtAlg {
               _.map(scalafmtDependency(defaultScalaBinaryVersion))
                 .map(_.formatAsModuleIdScalaVersionAgnostic)
             )
-          ammoniteDeps <- ammoniteAlg.getAmmoniteScriptDependencies(repo)
-          ammoniteDepAsString = ammoniteDeps.map(_.formatAsModuleIdScalaVersionAgnostic)
-          _ <- logger.info(s"read ammonite deps: $ammoniteDepAsString")
-          fakeDeps = Option(ammoniteDepAsString ++ maybeSbtDep ++ maybeScalafmtDep)
-            .filter(_.nonEmpty)
+          fakeDeps = Option(maybeSbtDep.toList ++ maybeScalafmtDep.toList).filter(_.nonEmpty)
           a <- fakeDeps.fold(fa) { dependencies =>
             workspaceAlg.repoDir(repo).flatMap { repoDir =>
               val content = dependencies

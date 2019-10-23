@@ -71,7 +71,7 @@ final class NurtureAlg[F[_]](
 
   def updateDependencies(repo: Repo, fork: Repo, baseBranch: Branch): F[Unit] =
     for {
-      _ <- logger.info(s"sFind updates for ${repo.show}")
+      _ <- logger.info(s"Find updates for ${repo.show}")
       repoConfig <- repoConfigAlg.readRepoConfigOrDefault(repo)
       updates <- sbtAlg.getUpdatesForRepo(repo)
       filtered <- filterAlg.localFilterMany(repoConfig, updates)

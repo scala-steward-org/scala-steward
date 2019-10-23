@@ -46,7 +46,6 @@ final class EditAlg[F[_]](
         update.currentVersion,
         f => isSourceFile(f) && isFileSpecificTo(update)(f)
       )
-      _ <- logger.info(s"files $files")
       noFilesFound = logger.warn("No files found that contain the current version")
       _ <- files.toNel.fold(noFilesFound)(applyUpdateTo(_, update))
     } yield ()

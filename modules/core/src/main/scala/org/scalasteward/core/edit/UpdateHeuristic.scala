@@ -112,15 +112,23 @@ object UpdateHeuristic {
         val groupId = Regex.quote(update.groupId.value)
         val artifactIds = alternation(update.artifactIds.map(Regex.quote))
         val currentVersion = Regex.quote(update.currentVersion)
-        val regex = raw"""(.*)("$groupId"\s*%+\s*"$artifactIds"\s*%\s*)"($currentVersion)"""".r
+        val regex =
+          raw"""(.*)(["|`]$groupId(?:"\s*%+\s*"|:+)$artifactIds(?:"\s*%\s*|:+))("?)($currentVersion)("|`)""".r
         replaceSomeInAllowedParts(
           regex,
           target,
           match0 => {
-            val group1 = match0.group(1)
-            val group2 = match0.group(2)
-            if (shouldBeIgnored(group1)) None
-            else Some(Regex.quoteReplacement(s"""$group1$group2"${update.nextVersion}""""))
+            val precedingCharacters = match0.group(1)
+            val dependency = match0.group(2)
+            val versionPrefix = match0.group(4)
+            val versionSuffix = match0.group(6)
+            if (shouldBeIgnored(precedingCharacters)) None
+            else
+              Some(
+                Regex.quoteReplacement(
+                  s"""$precedingCharacters$dependency$versionPrefix${update.nextVersion}$versionSuffix"""
+                )
+              )
           }
         ).someIfChanged
       } >>= replaceGroupF(update)

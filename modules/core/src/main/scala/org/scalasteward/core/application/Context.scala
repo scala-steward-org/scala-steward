@@ -21,7 +21,6 @@ import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.client.Client
 import org.http4s.client.asynchttpclient.AsyncHttpClient
-import org.scalasteward.core.ammonite.AmmoniteAlg
 import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.GitAlg
@@ -67,7 +66,6 @@ object Context {
       implicit val pullRequestRepository: PullRequestRepository[F] =
         new PullRequestRepository[F](new JsonKeyValueStore("prs", "3"))
       implicit val scalafmtAlg: ScalafmtAlg[F] = ScalafmtAlg.create[F]
-      implicit val ammoniteAlg: AmmoniteAlg[F] = AmmoniteAlg.create[F]
       implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F]
       implicit val refreshErrorAlg: RefreshErrorAlg[F] =
         new RefreshErrorAlg[F](new JsonKeyValueStore("repos_refresh_errors", "1"))

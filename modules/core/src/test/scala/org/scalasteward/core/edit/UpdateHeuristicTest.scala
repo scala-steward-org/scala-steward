@@ -438,6 +438,14 @@ class UpdateHeuristicTest extends AnyFunSuite with Matchers {
       Nel.of("2.0.0-RC1")
     ).replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.moduleId.name)
   }
+
+  test("ammonite script syntax") {
+    val original = " import $ivy.`org.typelevel::cats-core:1.2.0` ".stripMargin
+    val expected = " import $ivy.`org.typelevel::cats-core:1.3.0` ".stripMargin
+
+    Single(GroupId("org.typelevel"), "cats-core", "1.2.0", Nel.of("1.3.0"))
+      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.moduleId.name)
+  }
 }
 
 object UpdateHeuristicTest {

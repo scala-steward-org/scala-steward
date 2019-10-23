@@ -3,7 +3,6 @@ package org.scalasteward.core.mock
 import better.files.File
 import cats.effect.Sync
 import org.http4s.Uri
-import org.scalasteward.core.ammonite.AmmoniteAlg
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.{Config, SupportedVCS}
 import org.scalasteward.core.coursier.CoursierAlg
@@ -60,7 +59,6 @@ object MockContext {
   implicit val scalafmtAlg: ScalafmtAlg[MockEff] = ScalafmtAlg.create
   implicit val cacheRepository: RepoCacheRepository[MockEff] =
     new RepoCacheRepository[MockEff](new JsonKeyValueStore("repos", "6"))
-  implicit val ammoniteAlg: AmmoniteAlg[MockEff] = AmmoniteAlg.create[MockEff]
   implicit val sbtAlg: SbtAlg[MockEff] = SbtAlg.create
   implicit val editAlg: EditAlg[MockEff] = new EditAlg[MockEff]
   implicit val repoConfigAlg: RepoConfigAlg[MockEff] = new RepoConfigAlg[MockEff]
