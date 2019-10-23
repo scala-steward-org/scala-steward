@@ -27,10 +27,24 @@ accessible via the [github:][using-github] or [http:][using-http] schemes.
 ## Adding migration rules to Scala Steward
 
 After you have written a new migration rule for a new version of your project,
-Scala Steward needs to be made aware of it. To do so, your project needs to provide 
-a file `".scalafix-migrations.conf"` in the project's root, and it should contain 
-a list of json objects representing a migration like in [here][migrations-conf].
-Providing an empty list or no file will result in no fixes applied to that specific Repo.
+Scala Steward needs to be made aware of it. Creating a pull request that adds
+the new rule to the list of [migrations][migrations] is enough for that. Once
+that pull request is merged, Scala Steward will start using this migration.
+When running Scala Steward you can specify a file containing extra migrations 
+that might not be present in the [default list][migrations]. 
+You can also specify if you want the default list to be disabled.  
+
+The file should look like this:
+```json
+{
+ "disableDefaults": true,
+ "extraMigrations": [{
+    "groupId": "org.ice.cream",
+    "artifactIds": ["yumyum-.*"],
+    "newVersion": "1.0.0",
+    "rewriteRules": ["awesome rewrite rule"]}
+]}
+```
 
 Pull requests that added migration rules can be found [here][scalafix-prs].
 
@@ -40,4 +54,3 @@ Pull requests that added migration rules can be found [here][scalafix-prs].
 [using-github]: https://scalacenter.github.io/scalafix/docs/developers/sharing-rules.html#using-github
 [using-http]: https://scalacenter.github.io/scalafix/docs/developers/sharing-rules.html#using-http
 [scalafix-prs]: https://github.com/fthomas/scala-steward/pulls?q=label%3Ascalafix-migration
-[migrations-conf]: https://github.com/fthomas/scala-steward/blob/master/.scalafix-migrations.conf

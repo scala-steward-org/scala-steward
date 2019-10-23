@@ -15,7 +15,6 @@ class EditAlgTest extends AnyFunSuite with Matchers {
     val update = Update.Single(GroupId("org.typelevel"), "cats-core", "1.2.0", Nel.of("1.3.0"))
     val file1 = File.temp / "ws/fthomas/scala-steward/build.sbt"
     val file2 = File.temp / "ws/fthomas/scala-steward/project/Dependencies.scala"
-    val file3 = File.temp / "ws/fthomas/scala-steward/.scalafix-migrations.conf"
 
     val state = editAlg
       .applyUpdate(repo, update)
@@ -24,7 +23,6 @@ class EditAlgTest extends AnyFunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List("read", file3.pathAsString),
         List("read", file1.pathAsString),
         List("read", file2.pathAsString),
         List("read", file1.pathAsString),
@@ -46,7 +44,6 @@ class EditAlgTest extends AnyFunSuite with Matchers {
     val update = Update.Single(GroupId("org.scalameta"), "scalafmt-core", "2.0.0", Nel.of("2.1.0"))
     val scalafmtFile = File.temp / "ws/fthomas/scala-steward/.scalafmt.conf"
     val file1 = File.temp / "ws/fthomas/scala-steward/build.sbt"
-    val file2 = File.temp / "ws/fthomas/scala-steward/.scalafix-migrations.conf"
 
     val state = editAlg
       .applyUpdate(repo, update)
@@ -65,7 +62,6 @@ class EditAlgTest extends AnyFunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List("read", file2.pathAsString),
         List("read", scalafmtFile.pathAsString),
         List("read", scalafmtFile.pathAsString),
         List("read", scalafmtFile.pathAsString),

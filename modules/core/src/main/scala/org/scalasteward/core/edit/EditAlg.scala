@@ -21,6 +21,7 @@ import cats.Traverse
 import cats.implicits._
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
+import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.io.{isFileSpecificTo, isSourceFile, FileAlg, WorkspaceAlg}
 import org.scalasteward.core.sbt.SbtAlg
@@ -32,6 +33,7 @@ import org.scalasteward.core.scalafix.MigrationAlg
 final class EditAlg[F[_]](
     implicit
     fileAlg: FileAlg[F],
+    config: Config,
     logger: Logger[F],
     sbtAlg: SbtAlg[F],
     streamCompiler: Stream.Compiler[F, F],
@@ -61,7 +63,7 @@ final class EditAlg[F[_]](
   }
 
   def applyScalafixMigrations(repo: Repo, update: Update): F[Unit] =
-    migrationAlg.loadMigrations(repo) >>= { migrations =>
+    migrationAlg.loadMigrations(config.scalafixMigrations) >>= { migrations =>
       Nel.fromList(scalafix.findMigrations(migrations, update)).fold(F.unit) { migrations =>
         logger.info(s"Applying migrations: $migrations") >> sbtAlg.runMigrations(repo, migrations)
       }

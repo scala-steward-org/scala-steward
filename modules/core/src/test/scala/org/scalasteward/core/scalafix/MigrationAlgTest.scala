@@ -7,6 +7,7 @@ import org.scalasteward.core.data.{GroupId, Version}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.scalafix.{migrations => defaultMigrations}
 
 class MigrationAlgTest extends AnyFunSuite with Matchers {
 
@@ -17,54 +18,64 @@ class MigrationAlgTest extends AnyFunSuite with Matchers {
   test("loadMigrations on correct file") {
     val migrationsFile =
       """
-        |[{
-        |    "groupId": "co.fs2",
-        |    "artifactIds": ["fs2-.*"],
+        |{
+        | "disableDefaults": false,
+        | "extraMigrations": [{
+        |    "groupId": "org.ice.cream",
+        |    "artifactIds": ["yumyum-.*"],
         |    "newVersion": "1.0.0",
-        |    "rewriteRules": ["github:functional-streams-for-scala/fs2/v1?sha=v1.0.5"]
-        |},
-        |{"groupId": "com.spotify",
-        |    "artifactIds": ["scio-.*"],
-        |    "newVersion": "0.7.0",
-        |    "rewriteRules": ["github:spotify/scio/FixAvroIO?sha=v0.7.4",
-        |    "github:spotify/scio/AddMissingImports?sha=v0.7.4",
-        |    "github:spotify/scio/RewriteSysProp?sha=v0.7.4",
-        |    "github:spotify/scio/BQClientRefactoring?sha=v0.7.4"]
-        |}]""".stripMargin
+        |    "rewriteRules": ["awesome rewrite rule"]}
+        |]}""".stripMargin
     val initialState = MockState.empty.add(scalafmtConf, migrationsFile)
-    val (_, migrations) = migrationAlg.loadMigrations(repo).run(initialState).unsafeRunSync
+    val (_, migrations) =
+      migrationAlg.loadMigrations(Some(scalafmtConf)).run(initialState).unsafeRunSync
 
     migrations should contain theSameElementsAs List(
       Migration(
-        GroupId("co.fs2"),
-        Nel.of("fs2-.*".r),
+        GroupId("org.ice.cream"),
+        Nel.of("yumyum-.*".r),
         Version("1.0.0"),
-        Nel.of("github:functional-streams-for-scala/fs2/v1?sha=v1.0.5")
-      ),
+        Nel.of("awesome rewrite rule")
+      )
+    ) ++ defaultMigrations
+  }
+
+  test("loadMigrations with disable defaultMigrations") {
+    val migrationsFile =
+      """
+        |{
+        | "disableDefaults": true,
+        | "extraMigrations": [{
+        |    "groupId": "org.ice.cream",
+        |    "artifactIds": ["yumyum-.*"],
+        |    "newVersion": "1.0.0",
+        |    "rewriteRules": ["awesome rewrite rule"]}
+        |]}""".stripMargin
+    val initialState = MockState.empty.add(scalafmtConf, migrationsFile)
+    val (_, migrations) =
+      migrationAlg.loadMigrations(Some(scalafmtConf)).run(initialState).unsafeRunSync
+
+    migrations should contain theSameElementsAs List(
       Migration(
-        GroupId("com.spotify"),
-        Nel.of("scio-.*".r),
-        Version("0.7.0"),
-        Nel.of(
-          "github:spotify/scio/FixAvroIO?sha=v0.7.4",
-          "github:spotify/scio/AddMissingImports?sha=v0.7.4",
-          "github:spotify/scio/RewriteSysProp?sha=v0.7.4",
-          "github:spotify/scio/BQClientRefactoring?sha=v0.7.4"
-        )
+        GroupId("org.ice.cream"),
+        Nel.of("yumyum-.*".r),
+        Version("1.0.0"),
+        Nel.of("awesome rewrite rule")
       )
     )
   }
 
   test("loadMigrations on malformed File") {
     val initialState = MockState.empty.add(scalafmtConf, """{"key": "i'm not a valid Migration"}""")
-    val (state, migrations) = migrationAlg.loadMigrations(repo).run(initialState).unsafeRunSync
-    migrations shouldBe empty
+    val (state, migrations) =
+      migrationAlg.loadMigrations(Some(scalafmtConf)).run(initialState).unsafeRunSync
+    migrations shouldBe defaultMigrations
     state.logs shouldBe Vector(None -> "Failed to parse migrations file")
   }
 
   test("loadMigrations on no File") {
-    val (_, migrations) = migrationAlg.loadMigrations(repo).run(MockState.empty).unsafeRunSync
+    val (_, migrations) = migrationAlg.loadMigrations(None).run(MockState.empty).unsafeRunSync
 
-    migrations shouldBe empty
+    migrations shouldBe defaultMigrations
   }
 }

@@ -150,7 +150,7 @@ final class NurtureAlg[F[_]](
         .get(data.update.artifactId)
         .flatTraverse(vcsExtraAlg.getReleaseNoteUrl(_, data.update))
       branchName = vcs.createBranch(config.vcsType, data.fork, data.update)
-      migrations <- migrationAlg.loadMigrations(data.repo)
+      migrations <- migrationAlg.loadMigrations(config.scalafixMigrations)
       requestData = NewPullRequestData.from(
         data,
         branchName,
