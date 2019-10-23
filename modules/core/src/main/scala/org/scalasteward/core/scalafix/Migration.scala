@@ -45,8 +45,8 @@ final case class Migration(
     implicit val regexEq: Eq[Regex] = Eq.by(_.regex)
     lazy val other: Migration = x.asInstanceOf[Migration]
     x.isInstanceOf[Migration] &&
-    this.ne(null) &&
-    other.ne(null) &&
+    Option(this).nonEmpty &&
+    Option(x).nonEmpty &&
     this.hashCode() === other.hashCode() &&
     this.artifactIds === other.artifactIds &&
     this.groupId === other.groupId &&
