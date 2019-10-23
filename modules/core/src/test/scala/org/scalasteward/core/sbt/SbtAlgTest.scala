@@ -39,6 +39,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
       repoDir / "project" / "build.properties" -> "sbt.version=1.2.6",
       repoDir / ".scalafmt.conf" -> "version=2.0.0"
     )
+
     files.foreach {
       case (file, content) =>
         val initialState = MockState.empty.copy(files = Map(file -> content))

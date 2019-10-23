@@ -18,7 +18,6 @@ import org.scalasteward.core.update.FilterAlg
 import org.scalasteward.core.util.{BracketThrowable, DateTimeAlg}
 import org.scalasteward.core.vcs.VCSRepoAlg
 import org.scalasteward.core.vcs.data.AuthenticatedUser
-
 import scala.concurrent.duration._
 
 object MockContext {
