@@ -27,7 +27,8 @@ package object io {
     val sbtPropertiesFile = file.name === "build.properties"
     val scalafmtConfFile = file.name === ".scalafmt.conf"
     val notInGitDir = !file.pathAsString.contains(".git/")
-    (scalaOrSbtFile || travisYmlFile || sbtPropertiesFile || scalafmtConfFile) && notInGitDir
+    val ammoniteFile = file.extension.exists(_ === ".sc")
+    (scalaOrSbtFile || travisYmlFile || sbtPropertiesFile || scalafmtConfFile || ammoniteFile) && notInGitDir
   }
 
   def isFileSpecificTo(update: Update)(f: File): Boolean =
