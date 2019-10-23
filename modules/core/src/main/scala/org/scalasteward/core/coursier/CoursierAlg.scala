@@ -83,6 +83,6 @@ object CoursierAlg {
       ModuleName(dependency.artifactIdCross),
       attributes
     )
-    coursier.Dependency.of(module, dependency.version).withTransitive(false)
+    coursier.Dependency(module, dependency.version).withTransitive(false)
   }
 }
