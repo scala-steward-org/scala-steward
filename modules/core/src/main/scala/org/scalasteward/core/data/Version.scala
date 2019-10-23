@@ -25,7 +25,10 @@ import scala.annotation.tailrec
 
 final case class Version(value: String) {
   val components: List[Version.Component] =
-    Version.Component.parse(value)
+    Version.Component.parse(value).filterNot {
+      case Version.Component.Separator(_) => true
+      case _                              => false
+    }
 
   /** Selects the next version from a list of potentially newer versions.
     *
@@ -56,13 +59,10 @@ final case class Version(value: String) {
 
   private def preReleaseIndex: Option[NonNegInt] =
     NonNegInt.unapply {
-      val preReleaseIdentIndex = components.indexWhere {
+      components.indexWhere {
         case a @ Version.Component.Alpha(_) => a.isPreReleaseIdent
         case _                              => false
       }
-      val precedingIndex = preReleaseIdentIndex - 1
-      if (components.lift(precedingIndex).contains(Version.Component.Hyphen)) precedingIndex
-      else preReleaseIdentIndex
     }
 }
 
@@ -93,14 +93,12 @@ object Version {
         case "SNAP" | "SNAPSHOT" => -5
         case "ALPHA"             => -4
         case "BETA"              => -3
-        case "M"                 => -2
+        case "M" | "MILESTONE"   => -2
         case "RC"                => -1
         case _                   => 0
       }
     }
-    case object Dot extends Component
-    case object Hyphen extends Component
-    case object Plus extends Component
+    final case class Separator(c: Char) extends Component
     case object Empty extends Component
 
     def parse(str: String): List[Component] = {
@@ -114,9 +112,8 @@ object Version {
         rest match {
           case h :: t =>
             h match {
-              case '.' | '-' | '+' =>
-                val sep = if (h === '.') Dot else if (h === '-') Hyphen else Plus
-                loop(t, List.empty, List.empty, sep :: materialize(accN, accA, acc))
+              case '.' | '-' | '_' | '+' =>
+                loop(t, List.empty, List.empty, Separator(h) :: materialize(accN, accA, acc))
 
               case _ if h.isDigit && accA.nonEmpty =>
                 loop(t, h :: accN, List.empty, materialize(List.empty, accA, acc))
@@ -145,17 +142,18 @@ object Version {
       components.map {
         case Numeric(value) => value
         case Alpha(value)   => value
-        case Dot            => "."
-        case Hyphen         => "-"
-        case Plus           => "+"
+        case Separator(c)   => c.toString
         case Empty          => ""
       }.mkString
 
+    // This is similar to https://get-coursier.io/docs/other-version-handling.html#ordering
+    // but not exactly the same ordering as used by Coursier. One difference is that we are
+    // using different pre-release identifiers.
     implicit val componentOrder: Order[Component] =
       Order.from[Component] {
         case (Numeric(v1), Numeric(v2)) => BigInt(v1).compare(BigInt(v2))
-        case (Numeric(_), Alpha(_))     => -1
-        case (Alpha(_), Numeric(_))     => 1
+        case (Numeric(_), a @ Alpha(_)) => if (a.isPreReleaseIdent) 1 else -1
+        case (a @ Alpha(_), Numeric(_)) => if (a.isPreReleaseIdent) -1 else 1
         case (Numeric(_), _)            => 1
         case (_, Numeric(_))            => -1
 
@@ -169,19 +167,7 @@ object Version {
         case (Alpha(_), _) => 1
         case (_, Alpha(_)) => -1
 
-        case (Hyphen, Hyphen) => 0
-        case (Hyphen, _)      => -1
-        case (_, Hyphen)      => 1
-
-        case (Dot, Dot) => 0
-        case (Dot, _)   => 1
-        case (_, Dot)   => -1
-
-        case (Plus, Plus) => 0
-        case (Plus, _)    => 1
-        case (_, Plus)    => -1
-
-        case (Empty, Empty) => 0
+        case _ => 0
       }
   }
 }

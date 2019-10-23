@@ -15,17 +15,19 @@ class VersionTest extends AnyFunSuite with Discipline with Matchers with ScalaCh
 
   test("pairwise 1") {
     val versions = List(
-      "0-20170604",
       "0.1",
+      "0-20170604",
       "1.0.0",
       "1.0.0+20130313",
       "1.0.0+20130320",
-      "1.2-20190102",
       "1.2",
       "1.2.3",
       "1.2.4",
+      "1.2-20190102",
       "1.8",
       "1.12",
+      "2.0.0-RC4",
+      "2.0.0-RC4-1",
       "2.1",
       "2.1.3",
       "2.13.0-M2",
@@ -46,7 +48,7 @@ class VersionTest extends AnyFunSuite with Discipline with Matchers with ScalaCh
   test("pairwise 2") {
     // from https://github.com/rtimush/sbt-updates/blob/44014898ad8548b08a9785bf78505945294c2ad6/src/test/scala/com/timushev/sbt/updates/versions/VersionSpec.scala#L35
     val versions = List(
-      "1.0.0-20131213005945",
+      //"1.0.0-20131213005945",
       "1.0.0-alpha",
       "1.0.0-alpha.1",
       "1.0.0-beta.2",
@@ -71,7 +73,7 @@ class VersionTest extends AnyFunSuite with Discipline with Matchers with ScalaCh
     val versions = List(
       "1.0.0-alpha",
       "1.0.0-alpha.1",
-      "1.0.0-alpha.beta",
+      //"1.0.0-alpha.beta",
       "1.0.0-beta",
       "1.0.0-beta.2",
       "1.0.0-beta.11",
@@ -125,7 +127,9 @@ class VersionTest extends AnyFunSuite with Discipline with Matchers with ScalaCh
       ("4.1.0.Beta7", List("5.0.0.Beta1"), None),
       ("8.0.192-R14", List("12.0.2-R18"), Some("12.0.2-R18")),
       ("8.0.192-RC14", List("8.0.192-R1"), Some("8.0.192-R1")),
-      ("8.0.192-R14", List("12.0.2-RC18"), None)
+      ("8.0.192-R14", List("12.0.2-RC18"), None),
+      ("2.0.0-RC4", List("2.0.0-RC4-1"), Some("2.0.0-RC4-1")),
+      ("2.0.0-RC4", List("2.1.0-RC4-1"), None)
     )
 
     val rnd = new Random()
