@@ -226,15 +226,17 @@ object NurtureAlg {
       updateF: Update => F[ProcessResult],
       updatesLimit: Option[Int]
   ): F[Unit] =
-    fs2.Stream
-      .emits(updates)
-      .evalMap(updateF)
-      .map {
-        case Ignored => 0
-        case Updated => 1
-      }
-      .scanMonoid
-      .takeWhile(updateCount => updatesLimit.fold(true)(_ > updateCount))
-      .compile
-      .drain
+    updatesLimit match {
+      case None => updates.traverse_(updateF)
+      case Some(limit) =>
+        fs2.Stream
+          .emits(updates)
+          .evalMap(updateF)
+          .through(util.takeUntil(limit) {
+            case Ignored => 0
+            case Updated => 1
+          })
+          .compile
+          .drain
+    }
 }
