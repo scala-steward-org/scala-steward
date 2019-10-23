@@ -95,6 +95,31 @@ class EditAlgTest extends AnyFunSuite with Matchers {
     )
   }
 
+  test("apply update to ammonite file") {
+    val repo = Repo("fthomas", "scala-steward")
+    val update = Update.Single(GroupId("org.typelevel"), "cats-core", "1.2.0", Nel.of("1.3.0"))
+    val file1 = File.temp / "ws/fthomas/scala-steward/script.sc"
+
+    val state = editAlg
+      .applyUpdate(repo, update)
+      .runS(MockState.empty.add(file1, """import $ivy.`org.typelevel::cats-core:1.2.0`, cats.implicits._""""))
+      .unsafeRunSync()
+
+    state shouldBe MockState.empty.copy(
+      commands = Vector(
+        List("read", file1.pathAsString),
+        List("read", file1.pathAsString),
+        List("read", file1.pathAsString),
+        List("write", file1.pathAsString)
+      ),
+      logs = Vector(
+        (None, "Trying heuristic 'moduleId'"),
+        (None, "Trying heuristic 'strict'")
+      ),
+      files = Map(file1 -> """import $ivy.`org.typelevel::cats-core:1.3.0`, cats.implicits._"""")
+    )
+  }
+
   def runApplyUpdate(update: Update, files: Map[String, String]): Map[String, String] = {
     val repoDir = File.temp / "ws/owner/repo"
     val filesInRepoDir = files.map { case (file, content) => repoDir / file -> content }
