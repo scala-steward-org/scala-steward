@@ -86,7 +86,15 @@ package object vcs {
         }
       pathToFile.toList.flatMap { path =>
         for {
-          name <- List("CHANGELOG", "Changelog", "changelog", "RELEASES", "Releases", "releases")
+          name <- List(
+            "CHANGELOG",
+            "Changelog",
+            "changelog",
+            "RELEASES",
+            "Releases",
+            "releases",
+            "ReleaseNotes"
+          )
           ext <- List("md", "markdown", "rst")
         } yield s"${canonicalized}/${path}/${name}.${ext}"
       }
