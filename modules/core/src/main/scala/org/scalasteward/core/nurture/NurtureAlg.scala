@@ -32,7 +32,7 @@ import org.scalasteward.core.util.DateTimeAlg
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg}
-import org.scalasteward.core.{git, util, vcs}
+import org.scalasteward.core.{git, scalafix, util, vcs}
 
 final class NurtureAlg[F[_]](
     implicit
@@ -77,13 +77,14 @@ final class NurtureAlg[F[_]](
       updates <- sbtAlg.getUpdatesForRepo(repo)
       filtered <- filterAlg.localFilterMany(repoConfig, updates)
       grouped = Update.group(filtered)
-      _ <- logger.info(util.logger.showUpdates(grouped))
+      sorted = NurtureAlg.sortUpdatesByMigration(grouped)
+      _ <- logger.info(util.logger.showUpdates(sorted))
       baseSha1 <- gitAlg.latestSha1(repo, baseBranch)
       memoizedGetDependencies <- Async.memoize {
         sbtAlg.getDependencies(repo).handleError(_ => List.empty)
       }
       _ <- NurtureAlg.processUpdates(
-        grouped,
+        sorted,
         update =>
           processUpdate(
             UpdateData(repo, fork, repoConfig, update, baseBranch, baseSha1, git.branchFor(update)),
@@ -239,4 +240,7 @@ object NurtureAlg {
           .compile
           .drain
     }
+
+  def sortUpdatesByMigration(updates: List[Update]): List[Update] =
+    updates.sortBy(scalafix.findMigrations(_).size)
 }
