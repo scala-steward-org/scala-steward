@@ -50,7 +50,7 @@ final class HttpJsonClient[F[_]: Sync](
       method: Method,
       response: Response[F]
   ): F[Throwable] = {
-    val body = response.body.through(fs2.text.utf8Decode).compile.foldMonoid
+    val body = response.body.through(fs2.text.utf8Decode).compile.string
     body.map(UnexpectedResponse(uri, method, response.headers, response.status, _))
   }
 }
