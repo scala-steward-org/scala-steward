@@ -65,6 +65,9 @@ class VCSPackageTest extends AnyFunSuite with Matchers {
       "https://github.com/foo/bar/blob/master/releases.md",
       "https://github.com/foo/bar/blob/master/releases.markdown",
       "https://github.com/foo/bar/blob/master/releases.rst",
+      "https://github.com/foo/bar/blob/master/ReleaseNotes.md",
+      "https://github.com/foo/bar/blob/master/ReleaseNotes.markdown",
+      "https://github.com/foo/bar/blob/master/ReleaseNotes.rst",
       "https://github.com/foo/bar/releases/tag/1.2.3",
       "https://github.com/foo/bar/releases/tag/v1.2.3"
     )
@@ -88,7 +91,10 @@ class VCSPackageTest extends AnyFunSuite with Matchers {
       "https://gitlab.com/foo/bar/blob/master/Releases.rst",
       "https://gitlab.com/foo/bar/blob/master/releases.md",
       "https://gitlab.com/foo/bar/blob/master/releases.markdown",
-      "https://gitlab.com/foo/bar/blob/master/releases.rst"
+      "https://gitlab.com/foo/bar/blob/master/releases.rst",
+      "https://gitlab.com/foo/bar/blob/master/ReleaseNotes.md",
+      "https://gitlab.com/foo/bar/blob/master/ReleaseNotes.markdown",
+      "https://gitlab.com/foo/bar/blob/master/ReleaseNotes.rst"
     )
 
     // just <branch>
@@ -110,7 +116,10 @@ class VCSPackageTest extends AnyFunSuite with Matchers {
       "https://bitbucket.org/foo/bar/master/Releases.rst",
       "https://bitbucket.org/foo/bar/master/releases.md",
       "https://bitbucket.org/foo/bar/master/releases.markdown",
-      "https://bitbucket.org/foo/bar/master/releases.rst"
+      "https://bitbucket.org/foo/bar/master/releases.rst",
+      "https://bitbucket.org/foo/bar/master/ReleaseNotes.md",
+      "https://bitbucket.org/foo/bar/master/ReleaseNotes.markdown",
+      "https://bitbucket.org/foo/bar/master/ReleaseNotes.rst"
     )
 
     // Empty for homepage
