@@ -96,6 +96,7 @@ Thanks goes to these wonderful people:
 * [Thomas Heslin](https://github.com/tjheslin1)
 * [Thomas Kaliakos](https://github.com/thomaska)
 * [Yan](https://github.com/yaroot)
+* [Zack Powers](https://github.com/Milyardo)
 * [Zelenya](https://github.com/Zelenya)
 
 ## Community
