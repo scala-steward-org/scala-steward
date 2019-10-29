@@ -22,11 +22,12 @@ import cats.Eq
 import cats.implicits._
 
 sealed trait SupportedVCS {
-  import SupportedVCS.{Bitbucket, GitHub, Gitlab}
+  import SupportedVCS.{Bitbucket, BitbucketServer, GitHub, Gitlab}
   val asString = this match {
-    case GitHub    => "github"
-    case Gitlab    => "gitlab"
-    case Bitbucket => "bitbucket"
+    case GitHub          => "github"
+    case Gitlab          => "gitlab"
+    case Bitbucket       => "bitbucket"
+    case BitbucketServer => "bitbucket-server"
   }
 }
 
@@ -34,15 +35,17 @@ object SupportedVCS {
   case object GitHub extends SupportedVCS
   case object Gitlab extends SupportedVCS
   case object Bitbucket extends SupportedVCS
+  case object BitbucketServer extends SupportedVCS
 
   implicit val supportedVCSEq: Eq[SupportedVCS] =
     Eq.fromUniversalEquals
 
   def parse(value: String): Either[String, SupportedVCS] = value match {
-    case "github"    => Right(GitHub)
-    case "gitlab"    => Right(Gitlab)
-    case "bitbucket" => Right(Bitbucket)
-    case unknown     => Left(s"Unexpected string '$unknown'")
+    case "github"           => Right(GitHub)
+    case "gitlab"           => Right(Gitlab)
+    case "bitbucket"        => Right(Bitbucket)
+    case "bitbucket-server" => Right(BitbucketServer)
+    case unknown            => Left(s"Unexpected string '$unknown'")
   }
 
   implicit val supportedVCSParser: ArgParser[SupportedVCS] =
