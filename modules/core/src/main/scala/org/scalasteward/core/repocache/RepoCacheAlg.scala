@@ -42,7 +42,6 @@ final class RepoCacheAlg[F[_]](
     vcsRepoAlg: VCSRepoAlg[F],
     F: MonadThrowable[F]
 ) {
-
   def checkCache(repo: Repo): F[Unit] =
     logger.attemptLog_(s"Check cache of ${repo.show}") {
       F.ifM(refreshErrorAlg.failedRecently(repo))(

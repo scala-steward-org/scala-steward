@@ -6,7 +6,6 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class UpdateAlgTest extends AnyFunSuite with Matchers {
-
   test("findUpdateUnderNewGroup: returns empty if dep is not listed") {
     val original = Dependency(GroupId("org.spire-math"), "UNKNOWN", "_2.12", "1.0.0")
     UpdateAlg.findUpdateUnderNewGroup(original) shouldBe None
@@ -24,5 +23,4 @@ class UpdateAlgTest extends AnyFunSuite with Matchers {
       )
     )
   }
-
 }

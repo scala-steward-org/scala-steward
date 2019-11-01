@@ -59,7 +59,6 @@ object UpdateHeuristic {
       getSearchTerms: Update => List[String],
       getPrefixRegex: Update => Option[String] = _ => None
   ): Update => String => Option[String] = {
-
     def searchTermsToAlternation(terms: List[String]): Option[String] = {
       val ignoreChar = ".?"
       val ignorableStrings = List(".", "-")

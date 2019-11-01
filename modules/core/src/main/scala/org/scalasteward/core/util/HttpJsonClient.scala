@@ -63,7 +63,6 @@ final case class UnexpectedResponse(
     body: String
 ) extends RuntimeException
     with NoStackTrace {
-
   override def getMessage: String =
     s"uri: $uri\nmethod: $method\nstatus: $status\nheaders: $headers\nbody: $body"
 }

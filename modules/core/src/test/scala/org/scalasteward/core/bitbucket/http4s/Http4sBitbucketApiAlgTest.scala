@@ -16,7 +16,6 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class Http4sBitbucketApiAlgTest extends AnyFunSuite with Matchers {
-
   private val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case GET -> Root / "repositories" / "fthomas" / "base.g8" =>
       Ok(
@@ -204,5 +203,4 @@ class Http4sBitbucketApiAlgTest extends AnyFunSuite with Matchers {
     val prs = bitbucketApiAlg.listPullRequests(repo, "master", master).unsafeRunSync()
     (prs should contain).only(pullRequest)
   }
-
 }

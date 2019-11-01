@@ -33,7 +33,6 @@ final private[http4s] case class RepositoryResponse(
 )
 
 private[http4s] object RepositoryResponse {
-
   implicit private val repoDecoder: Decoder[Repo] = Decoder.instance { c =>
     c.as[String].map(_.split('/')).flatMap { parts =>
       parts match {
@@ -75,7 +74,6 @@ private[http4s] object RepositoryResponse {
     * @param cursor The cursor to patch.
     */
   implicit class RichACursor(cursor: ACursor) {
-
     /**
       * If the focus is a JSON array, move to the first element that satisfies the given predicate.
       */

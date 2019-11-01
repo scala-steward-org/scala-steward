@@ -34,7 +34,6 @@ final class JsonKeyValueStore[F[_], K, V](name: String, schemaVersion: String)(
     valueDecoder: Decoder[V],
     valueEncoder: Encoder[V]
 ) extends KeyValueStore[F, K, V] {
-
   override def get(key: K): F[Option[V]] =
     read.map(_.get(key))
 

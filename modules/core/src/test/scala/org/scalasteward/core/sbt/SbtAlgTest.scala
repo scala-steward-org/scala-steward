@@ -13,7 +13,6 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class SbtAlgTest extends AnyFunSuite with Matchers {
-
   test("addGlobalPlugins") {
     sbtAlg.addGlobalPlugins.runS(MockState.empty).unsafeRunSync() shouldBe MockState.empty.copy(
       commands = Vector(

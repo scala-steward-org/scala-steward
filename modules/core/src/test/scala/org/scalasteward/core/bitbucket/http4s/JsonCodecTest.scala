@@ -6,9 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class JsonCodecTest extends AnyFunSuite with Matchers {
-
   test("PullRequestStatus decoding of expected values") {
-
     val mapping = Map(
       "OPEN" -> PullRequestState.Open,
       "MERGED" -> PullRequestState.Closed,
@@ -20,6 +18,5 @@ class JsonCodecTest extends AnyFunSuite with Matchers {
       case (string, state) =>
         json.pullRequestStateDecoder.decodeJson(Json.fromString(string)) shouldBe Right(state)
     }
-
   }
 }

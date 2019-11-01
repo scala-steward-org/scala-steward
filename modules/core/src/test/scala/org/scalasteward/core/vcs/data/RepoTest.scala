@@ -5,7 +5,6 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class RepoTest extends AnyFunSuite with Matchers {
-
   test("decode") {
     repoKeyDecoder("owner/repo") shouldBe Some(Repo("owner", "repo"))
   }
