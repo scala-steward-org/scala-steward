@@ -91,7 +91,6 @@ class Http4sBitbucketServerApiAlg[F[_]: Sync](
   def ni(name: String): Nothing = throw new NotImplementedError(name)
 
   object Json {
-
     case class Page[A](values: List[A])
 
     case class Repo(name: String, forkable: Boolean, project: Project, links: Links)
@@ -138,7 +137,6 @@ class Http4sBitbucketServerApiAlg[F[_]: Sync](
     implicit val encodeReviewer: Encoder[Reviewer] = deriveEncoder
     implicit val encodeUser: Encoder[User] = deriveEncoder
   }
-
 }
 
 final class StashUrls(base: Uri) {

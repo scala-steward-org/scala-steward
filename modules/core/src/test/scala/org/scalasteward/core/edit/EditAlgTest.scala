@@ -10,7 +10,6 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class EditAlgTest extends AnyFunSuite with Matchers {
-
   test("applyUpdate") {
     val repo = Repo("fthomas", "scala-steward")
     val update = Update.Single(GroupId("org.typelevel"), "cats-core", "1.2.0", Nel.of("1.3.0"))

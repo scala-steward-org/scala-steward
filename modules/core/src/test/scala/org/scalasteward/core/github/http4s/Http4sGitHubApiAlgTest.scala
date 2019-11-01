@@ -16,7 +16,6 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class Http4sGitHubApiAlgTest extends AnyFunSuite with Matchers {
-
   val routes: HttpRoutes[IO] =
     HttpRoutes.of[IO] {
       case GET -> Root / "repos" / "fthomas" / "base.g8" =>

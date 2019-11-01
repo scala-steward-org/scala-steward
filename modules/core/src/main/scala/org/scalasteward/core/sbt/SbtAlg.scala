@@ -198,6 +198,5 @@ object SbtAlg {
             }
           }
         } yield a
-
     }
 }

@@ -21,7 +21,6 @@ import org.scalasteward.core.git.Branch
 import org.scalasteward.core.vcs.data.Repo
 
 private[bitbucket] class Url(apiHost: Uri) {
-
   def forks(rep: Repo): Uri =
     repo(rep) / "forks"
 
@@ -36,5 +35,4 @@ private[bitbucket] class Url(apiHost: Uri) {
 
   def repo(repo: Repo): Uri =
     apiHost / "repositories" / repo.owner / repo.repo
-
 }

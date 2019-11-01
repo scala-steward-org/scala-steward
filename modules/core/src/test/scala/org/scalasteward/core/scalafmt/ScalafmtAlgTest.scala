@@ -8,7 +8,6 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class ScalafmtAlgTest extends AnyFunSuite with Matchers {
-
   test("getScalafmtVersion on unquoted version") {
     val repo = Repo("fthomas", "scala-steward")
     val repoDir = config.workspace / repo.owner / repo.repo
@@ -54,5 +53,4 @@ class ScalafmtAlgTest extends AnyFunSuite with Matchers {
   test("editScalafmtConf") {
     // Tested in EditAlgTest
   }
-
 }

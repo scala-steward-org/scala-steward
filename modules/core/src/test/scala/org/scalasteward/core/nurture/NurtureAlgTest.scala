@@ -13,7 +13,6 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 class NurtureAlgTest extends AnyFunSuite with Matchers with ScalaCheckPropertyChecks {
-
   implicit val updateArbitrary: Arbitrary[Update] = Arbitrary(for {
     groupId <- Gen.alphaStr.map(GroupId.apply)
     artifactId <- Gen.alphaStr
@@ -58,6 +57,5 @@ class NurtureAlgTest extends AnyFunSuite with Matchers with ScalaCheckPropertyCh
 
       NurtureAlg.sortUpdatesByMigration(migrationUpdate :: updates) shouldBe updates :+ migrationUpdate
     }
-
   }
 }

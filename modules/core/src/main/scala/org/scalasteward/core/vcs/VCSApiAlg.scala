@@ -24,7 +24,6 @@ import org.scalasteward.core.util.MonadThrowable
 import org.scalasteward.core.vcs.data._
 
 trait VCSApiAlg[F[_]] {
-
   def createFork(repo: Repo): F[RepoOut]
 
   def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut]

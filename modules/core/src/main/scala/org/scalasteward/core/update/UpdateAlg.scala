@@ -41,7 +41,6 @@ final class UpdateAlg[F[_]](
     updateRepository: UpdateRepository[F],
     F: MonadThrowable[F]
 ) {
-
   // WIP
   def checkForUpdates(repos: List[Repo]): F[List[Update.Single]] = {
     val getDependencies =

@@ -33,7 +33,6 @@ class Http4sBitbucketApiAlg[F[_]: Sync](
     doNotFork: Boolean
 )(implicit client: HttpJsonClient[F])
     extends VCSApiAlg[F] {
-
   private val url = new Url(bitbucketApiHost)
 
   override def createFork(repo: Repo): F[RepoOut] =
@@ -60,7 +59,6 @@ class Http4sBitbucketApiAlg[F[_]: Sync](
     )
 
   override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] = {
-
     val sourceBranchOwner = if (doNotFork) repo.owner else user.login
 
     val payload = CreatePullRequestRequest(
@@ -88,5 +86,4 @@ class Http4sBitbucketApiAlg[F[_]: Sync](
     client
       .get[Page[PullRequestOut]](url.listPullRequests(repo, head), modify(repo))
       .map(_.values)
-
 }

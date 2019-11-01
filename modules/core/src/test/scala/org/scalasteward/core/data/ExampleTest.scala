@@ -7,7 +7,6 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 class ExampleTest extends AnyWordSpec with Matchers {
-
   "Good examples of dependency definitions".which {
     "will be identified by scala-steward without any problems are".that {
       val goodExample1 = """val scalajsJqueryVersion = "0.9.3""""

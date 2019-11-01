@@ -7,7 +7,6 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class showTest extends AnyFunSuite with Matchers {
-
   test("oneLiner: cats-core") {
     val update = Single(GroupId("org.typelevel"), "cats-core", "0.9.0", Nel.one("1.0.0"))
     show.oneLiner(update) shouldBe "cats-core"
