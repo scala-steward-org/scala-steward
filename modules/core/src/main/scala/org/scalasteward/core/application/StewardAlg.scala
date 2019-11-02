@@ -39,6 +39,7 @@ final class StewardAlg[F[_]](
     nurtureAlg: NurtureAlg[F],
     repoCacheAlg: RepoCacheAlg[F],
     sbtAlg: SbtAlg[F],
+    selfCheckAlg: SelfCheckAlg[F],
     updateAlg: UpdateAlg[F],
     workspaceAlg: WorkspaceAlg[F],
     F: Monad[F]
@@ -88,6 +89,7 @@ final class StewardAlg[F[_]](
     logger.infoTotalTime("run") {
       for {
         _ <- printBanner
+        _ <- selfCheckAlg.checkAll
         _ <- prepareEnv
         repos <- readRepos(config.reposFile)
         reposToNurture <- if (config.pruneRepos) pruneRepos(repos) else F.pure(repos)

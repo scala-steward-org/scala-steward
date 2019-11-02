@@ -59,6 +59,7 @@ object Context {
       implicit val httpExistenceClient: HttpExistenceClient[F] = new HttpExistenceClient[F]
       implicit val repoCacheRepository: RepoCacheRepository[F] =
         new RepoCacheRepository[F](new JsonKeyValueStore("repos", "6"))
+      implicit val selfCheckAlg: SelfCheckAlg[F] = new SelfCheckAlg[F]
       val vcsSelection = new VCSSelection[F]
       implicit val vcsApiAlg: VCSApiAlg[F] = vcsSelection.getAlg(config)
       implicit val vcsRepoAlg: VCSRepoAlg[F] = VCSRepoAlg.create[F](config, gitAlg)
