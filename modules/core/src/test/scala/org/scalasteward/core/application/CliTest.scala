@@ -45,23 +45,23 @@ class CliTest extends AnyFunSuite with Matchers {
   }
 
   test("env-var without equals sign") {
-    Cli.envVarParser(None, "SBT_OPTS").isLeft shouldBe true
+    Cli.envVarArgParser(None, "SBT_OPTS").isLeft shouldBe true
   }
 
   test("env-var with multiple equals signs") {
     val value = "-Xss8m -XX:MaxMetaspaceSize=256m"
-    Cli.envVarParser(None, s"SBT_OPTS=$value") shouldBe Right(EnvVar("SBT_OPTS", value))
+    Cli.envVarArgParser(None, s"SBT_OPTS=$value") shouldBe Right(EnvVar("SBT_OPTS", value))
   }
 
   test("valid timeout") {
-    Cli.finiteDurationParser(None, "30min") shouldBe Right(30.minutes)
+    Cli.finiteDurationArgParser(None, "30min") shouldBe Right(30.minutes)
   }
 
   test("malformed timeout") {
-    Cli.finiteDurationParser(None, "xyz").isLeft shouldBe true
+    Cli.finiteDurationArgParser(None, "xyz").isLeft shouldBe true
   }
 
   test("malformed timeout (Inf)") {
-    Cli.finiteDurationParser(None, "Inf").isLeft shouldBe true
+    Cli.finiteDurationArgParser(None, "Inf").isLeft shouldBe true
   }
 }

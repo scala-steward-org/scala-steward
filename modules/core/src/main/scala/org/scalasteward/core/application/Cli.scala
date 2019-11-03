@@ -56,7 +56,7 @@ object Cli {
 
   final case class EnvVar(name: String, value: String)
 
-  implicit val envVarParser: SimpleArgParser[EnvVar] =
+  implicit val envVarArgParser: SimpleArgParser[EnvVar] =
     SimpleArgParser.from[EnvVar]("env-var") { s =>
       s.trim.split('=').toList match {
         case name :: (value @ _ :: _) =>
@@ -67,13 +67,7 @@ object Cli {
       }
     }
 
-  implicit val uriArgParser: ArgParser[Uri] =
-    ArgParser[String].xmapError(
-      _.renderString,
-      s => Uri.fromString(s).leftMap(pf => MalformedValue("Uri", pf.message))
-    )
-
-  implicit val finiteDurationParser: ArgParser[FiniteDuration] = {
+  implicit val finiteDurationArgParser: ArgParser[FiniteDuration] = {
     ArgParser[String].xmapError(
       _.toString(),
       s =>
@@ -89,4 +83,10 @@ object Cli {
       case fd: FiniteDuration => Right(fd)
       case d                  => Left(new Throwable(s"$d is not a FiniteDuration"))
     }
+
+  implicit val uriArgParser: ArgParser[Uri] =
+    ArgParser[String].xmapError(
+      _.renderString,
+      s => Uri.fromString(s).leftMap(pf => MalformedValue("Uri", pf.message))
+    )
 }
