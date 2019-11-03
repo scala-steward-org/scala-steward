@@ -74,13 +74,13 @@ object Cli {
     )
 
   implicit val finiteDurationParser: ArgParser[FiniteDuration] = {
-    val error = MalformedValue(
-      "FiniteDuration",
-      "The value is expected in the following format: <length><unit>"
-    )
     ArgParser[String].xmapError(
       _.toString(),
-      s => parseFiniteDuration(s).leftMap(_ => error)
+      s =>
+        parseFiniteDuration(s).leftMap { throwable =>
+          val error = s"The value is expected in the following format: <length><unit>. ($throwable)"
+          MalformedValue("FiniteDuration", error)
+        }
     )
   }
 
