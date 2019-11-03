@@ -25,7 +25,6 @@ import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Cli._
 import org.scalasteward.core.util.ApplicativeThrowable
 import scala.concurrent.duration._
-import scala.util.Try
 
 final class Cli[F[_]](implicit F: ApplicativeThrowable[F]) {
   def parseArgs(args: List[String]): F[Args] =
@@ -57,7 +56,7 @@ object Cli {
 
   final case class EnvVar(name: String, value: String)
 
-  implicit val envVarParser: SimpleArgParser[EnvVar] =
+  implicit val envVarArgParser: SimpleArgParser[EnvVar] =
     SimpleArgParser.from[EnvVar]("env-var") { s =>
       s.trim.split('=').toList match {
         case name :: (value @ _ :: _) =>
@@ -68,28 +67,26 @@ object Cli {
       }
     }
 
+  implicit val finiteDurationArgParser: ArgParser[FiniteDuration] = {
+    ArgParser[String].xmapError(
+      _.toString(),
+      s =>
+        parseFiniteDuration(s).leftMap { throwable =>
+          val error = s"The value is expected in the following format: <length><unit>. ($throwable)"
+          MalformedValue("FiniteDuration", error)
+        }
+    )
+  }
+
+  private def parseFiniteDuration(s: String): Either[Throwable, FiniteDuration] =
+    Either.catchNonFatal(Duration(s)).flatMap {
+      case fd: FiniteDuration => Right(fd)
+      case d                  => Left(new Throwable(s"$d is not a FiniteDuration"))
+    }
+
   implicit val uriArgParser: ArgParser[Uri] =
     ArgParser[String].xmapError(
       _.renderString,
       s => Uri.fromString(s).leftMap(pf => MalformedValue("Uri", pf.message))
     )
-
-  implicit val finiteDurationParser: ArgParser[FiniteDuration] = {
-    val error = Left(
-      MalformedValue(
-        "FiniteDuration",
-        "The value is expected in the following format: <length><unit>"
-      )
-    )
-    ArgParser[String].xmapError(
-      _.toString(),
-      s =>
-        Try {
-          Duration(s) match {
-            case fd: FiniteDuration => Right(fd)
-            case _                  => error
-          }
-        }.getOrElse(error)
-    )
-  }
 }
