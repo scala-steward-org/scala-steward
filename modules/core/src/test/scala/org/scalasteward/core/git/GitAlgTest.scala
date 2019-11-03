@@ -116,11 +116,13 @@ class GitAlgTest extends AnyFunSuite with Matchers {
       master = Branch("master")
       branch = Branch("conflicts-yes")
       c1 <- ioGitAlg.hasConflicts(repo, branch, master)
+      m1 <- ioGitAlg.isMerged(repo, master, branch)
       _ <- ioGitAlg.checkoutBranch(repo, branch)
       _ <- ioGitAlg.mergeTheirs(repo, master)
       c2 <- ioGitAlg.hasConflicts(repo, branch, master)
-    } yield (c1, c2)
-    p.unsafeRunSync() shouldBe ((true, false))
+      m2 <- ioGitAlg.isMerged(repo, master, branch)
+    } yield (c1, m1, c2, m2)
+    p.unsafeRunSync() shouldBe ((true, false, false, true))
   }
 }
 
