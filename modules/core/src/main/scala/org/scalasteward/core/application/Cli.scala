@@ -25,7 +25,6 @@ import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Cli._
 import org.scalasteward.core.util.ApplicativeThrowable
 import scala.concurrent.duration._
-import scala.util.Try
 
 final class Cli[F[_]](implicit F: ApplicativeThrowable[F]) {
   def parseArgs(args: List[String]): F[Args] =
@@ -75,21 +74,19 @@ object Cli {
     )
 
   implicit val finiteDurationParser: ArgParser[FiniteDuration] = {
-    val error = Left(
-      MalformedValue(
-        "FiniteDuration",
-        "The value is expected in the following format: <length><unit>"
-      )
+    val error = MalformedValue(
+      "FiniteDuration",
+      "The value is expected in the following format: <length><unit>"
     )
     ArgParser[String].xmapError(
       _.toString(),
-      s =>
-        Try {
-          Duration(s) match {
-            case fd: FiniteDuration => Right(fd)
-            case _                  => error
-          }
-        }.getOrElse(error)
+      s => parseFiniteDuration(s).leftMap(_ => error)
     )
   }
+
+  private def parseFiniteDuration(s: String): Either[Throwable, FiniteDuration] =
+    Either.catchNonFatal(Duration(s)).flatMap {
+      case fd: FiniteDuration => Right(fd)
+      case d                  => Left(new Throwable(s"$d is not a FiniteDuration"))
+    }
 }
