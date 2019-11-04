@@ -23,8 +23,8 @@ import org.scalasteward.core.util.HttpExistenceClient
 import org.scalasteward.core.vcs
 
 trait VCSExtraAlg[F[_]] {
-  def getBranchCompareUrl(maybeRepoUrl: Option[String], update: Update): F[Option[String]]
-  def getReleaseNoteUrl(maybeRepoUrl: Option[String], update: Update): F[Option[String]]
+  def getBranchCompareUrl(repoUrl: String, update: Update): F[Option[String]]
+  def getReleaseNoteUrl(repoUrl: String, update: Update): F[Option[String]]
 }
 
 object VCSExtraAlg {
@@ -33,18 +33,10 @@ object VCSExtraAlg {
       existenceClient: HttpExistenceClient[F],
       F: Monad[F]
   ): VCSExtraAlg[F] = new VCSExtraAlg[F] {
-    override def getBranchCompareUrl(
-        maybeRepoUrl: Option[String],
-        update: Update
-    ): F[Option[String]] =
-      maybeRepoUrl.toList.flatMap(vcs.possibleCompareUrls(_, update)).findM(existenceClient.exists)
+    override def getBranchCompareUrl(repoUrl: String, update: Update): F[Option[String]] =
+      vcs.possibleCompareUrls(repoUrl, update).findM(existenceClient.exists)
 
-    override def getReleaseNoteUrl(
-        maybeRepoUrl: Option[String],
-        update: Update
-    ): F[Option[String]] =
-      maybeRepoUrl.toList
-        .flatMap(vcs.possibleReleaseNoteFiles(_, update))
-        .findM(existenceClient.exists)
+    override def getReleaseNoteUrl(repoUrl: String, update: Update): F[Option[String]] =
+      vcs.possibleReleaseNoteFiles(repoUrl, update).findM(existenceClient.exists)
   }
 }
