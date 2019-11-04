@@ -28,15 +28,14 @@ class VCSExtraAlgTest extends AnyFunSuite with Matchers {
   val updateBuz = Update.Single(GroupId("com.example"), "buz", "0.1.0", Nel.of("0.2.0"))
 
   test("getBranchCompareUrl") {
-    vcsExtraAlg.getBranchCompareUrl(None, updateBar).unsafeRunSync() shouldBe None
     vcsExtraAlg
-      .getBranchCompareUrl(Some("https://github.com/foo/foo"), updateFoo)
+      .getBranchCompareUrl("https://github.com/foo/foo", updateFoo)
       .unsafeRunSync() shouldBe None
     vcsExtraAlg
-      .getBranchCompareUrl(Some("https://github.com/foo/bar"), updateBar)
+      .getBranchCompareUrl("https://github.com/foo/bar", updateBar)
       .unsafeRunSync() shouldBe Some("https://github.com/foo/bar/compare/v0.1.0...v0.2.0")
     vcsExtraAlg
-      .getBranchCompareUrl(Some("https://github.com/foo/buz"), updateBuz)
+      .getBranchCompareUrl("https://github.com/foo/buz", updateBuz)
       .unsafeRunSync() shouldBe None
   }
 }
