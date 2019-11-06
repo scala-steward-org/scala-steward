@@ -46,6 +46,7 @@ object Context {
       implicit0(config: Config) <- Resource.liftF(Config.create[F](cliArgs_))
       implicit0(client: Client[F]) <- AsyncHttpClient.resource[F]()
       implicit0(logger: Logger[F]) <- Resource.liftF(Slf4jLogger.create[F])
+      implicit0(httpExistenceClient: HttpExistenceClient[F]) <- HttpExistenceClient.create[F]
       implicit0(user: AuthenticatedUser) <- Resource.liftF(config.vcsUser[F])
     } yield {
       implicit val dateTimeAlg: DateTimeAlg[F] = DateTimeAlg.create[F]
@@ -56,7 +57,6 @@ object Context {
       implicit val filterAlg: FilterAlg[F] = new FilterAlg[F]
       implicit val gitAlg: GitAlg[F] = GitAlg.create[F]
       implicit val httpJsonClient: HttpJsonClient[F] = new HttpJsonClient[F]
-      implicit val httpExistenceClient: HttpExistenceClient[F] = new HttpExistenceClient[F]
       implicit val repoCacheRepository: RepoCacheRepository[F] =
         new RepoCacheRepository[F](new JsonKeyValueStore("repos", "6"))
       val vcsSelection = new VCSSelection[F]

@@ -20,7 +20,8 @@ class VCSExtraAlgTest extends AnyFunSuite with Matchers {
     }
 
   implicit val client = Client.fromHttpApp[IO](routes.orNotFound)
-  implicit val httpExistenceClient = new HttpExistenceClient[IO]
+  implicit val httpExistenceClient =
+    HttpExistenceClient.create[IO].allocated.map(_._1).unsafeRunSync()
 
   val vcsExtraAlg = VCSExtraAlg.create[IO]
   val updateFoo = Update.Single(GroupId("com.example"), "foo", "0.1.0", Nel.of("0.2.0"))

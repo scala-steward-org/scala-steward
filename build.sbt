@@ -45,6 +45,8 @@ lazy val core = myCrossProject("core")
       Dependencies.monocleCore,
       Dependencies.refined,
       Dependencies.refinedCats,
+      Dependencies.scalacacheCaffeine,
+      Dependencies.scalacacheCatsEffect,
       Dependencies.logbackClassic % Runtime,
       Dependencies.catsKernelLaws % Test,
       Dependencies.circeLiteral % Test,
@@ -73,16 +75,23 @@ lazy val core = myCrossProject("core")
     buildInfoPackage := moduleRootPkg.value,
     initialCommands += s"""
       import ${moduleRootPkg.value}._
+      import ${moduleRootPkg.value}.data._
       import ${moduleRootPkg.value}.util.Nel
       import ${moduleRootPkg.value}.vcs.data._
       import better.files.File
       import cats.effect.ContextShift
       import cats.effect.IO
       import cats.effect.Timer
+      import _root_.io.chrisdavenport.log4cats.Logger
+      import _root_.io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+      import org.http4s.client.Client
+      import org.http4s.client.asynchttpclient.AsyncHttpClient
       import scala.concurrent.ExecutionContext
 
       implicit val ioContextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
       implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
+      implicit val logger: Logger[IO] = Slf4jLogger.getLogger[IO]
+      implicit val client: Client[IO] = AsyncHttpClient.allocate[IO]().map(_._1).unsafeRunSync
     """,
     fork in run := true,
     fork in Test := true
