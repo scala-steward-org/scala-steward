@@ -12,6 +12,7 @@ import org.scalasteward.core.util.Nel
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import MockContext._
 
 class NurtureAlgTest extends AnyFunSuite with Matchers with ScalaCheckPropertyChecks {
   implicit val updateArbitrary: Arbitrary[Update] = Arbitrary(for {
@@ -52,7 +53,6 @@ class NurtureAlgTest extends AnyFunSuite with Matchers with ScalaCheckPropertyCh
   }
 
   test("sortUpdatesByMigration should send updates with migrations to the end") {
-    import MockContext._
     forAll { updates: List[Update] =>
       val migrationUpdate =
         Single(GroupId("org.scalacheck"), "scalacheck", "1.14.0", Nel.of("1.15.0"))
