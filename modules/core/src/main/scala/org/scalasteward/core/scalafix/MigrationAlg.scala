@@ -16,15 +16,18 @@
 
 package org.scalasteward.core.scalafix
 
-import better.files.File
 import org.scalasteward.core.io.FileAlg
 import cats.implicits._
 import cats.Monad
 import io.circe.parser._
 import io.chrisdavenport.log4cats.Logger
+import org.scalasteward.core.application.Config
+import org.scalasteward.core.data.Update
+import org.scalasteward.core.scalafix
 
 trait MigrationAlg[F[_]] {
-  def loadMigrations(migrationsFile: Option[File]): F[List[Migration]]
+  def loadMigrations: F[List[Migration]]
+  def findMigrations(update: Update): F[List[Migration]]
 }
 
 object MigrationAlg {
@@ -32,11 +35,12 @@ object MigrationAlg {
   def create[F[_]](
       implicit fileAlg: FileAlg[F],
       logger: Logger[F],
-      F: Monad[F]
+      F: Monad[F],
+      config: Config
   ): MigrationAlg[F] = new MigrationAlg[F] {
-    override def loadMigrations(migrationsFile: Option[File]): F[List[Migration]] =
+    override def loadMigrations: F[List[Migration]] =
       for {
-        fileContents <- migrationsFile.flatTraverse(fileAlg.readFile)
+        fileContents <- config.scalafixMigrations.flatTraverse(fileAlg.readFile)
         defaultMigrations = migrations
         allMigrations <- fileContents
           .traverse(parse(_).flatMap(_.as[ScalafixMigrations]))
@@ -46,5 +50,8 @@ object MigrationAlg {
           )
 
       } yield allMigrations
+
+    override def findMigrations(update: Update): F[List[Migration]] =
+      loadMigrations.map(scalafix.findMigrations(_, update))
   }
 }

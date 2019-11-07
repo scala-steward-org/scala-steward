@@ -42,7 +42,7 @@ object MockContext {
     ),
     pruneRepos = false,
     processTimeout = 10.minutes,
-    None
+    scalafixMigrations = None
   )
 
   implicit val mockEffBracketThrowable: BracketThrowable[MockEff] = Sync[MockEff]

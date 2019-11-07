@@ -14,6 +14,8 @@ class MigrationAlgTest extends AnyFunSuite with Matchers {
   val repo = Repo("fthomas", "scala-steward")
   val repoDir = config.workspace / repo.owner / repo.repo
   val scalafmtConf = repoDir / ".scalafix-migrations.conf"
+  val configWithMigrations = config.copy(scalafixMigrations = Some(scalafmtConf))
+  val alg = MigrationAlg.create(fileAlg, mockLogger, mockEffBracketThrowable, configWithMigrations)
 
   test("loadMigrations on correct file") {
     val migrationsFile =
@@ -28,7 +30,7 @@ class MigrationAlgTest extends AnyFunSuite with Matchers {
         |]}""".stripMargin
     val initialState = MockState.empty.add(scalafmtConf, migrationsFile)
     val (_, migrations) =
-      migrationAlg.loadMigrations(Some(scalafmtConf)).run(initialState).unsafeRunSync
+      alg.loadMigrations.run(initialState).unsafeRunSync
 
     migrations should contain theSameElementsAs List(
       Migration(
@@ -53,7 +55,7 @@ class MigrationAlgTest extends AnyFunSuite with Matchers {
         |]}""".stripMargin
     val initialState = MockState.empty.add(scalafmtConf, migrationsFile)
     val (_, migrations) =
-      migrationAlg.loadMigrations(Some(scalafmtConf)).run(initialState).unsafeRunSync
+      alg.loadMigrations.run(initialState).unsafeRunSync
 
     migrations should contain theSameElementsAs List(
       Migration(
@@ -68,13 +70,13 @@ class MigrationAlgTest extends AnyFunSuite with Matchers {
   test("loadMigrations on malformed File") {
     val initialState = MockState.empty.add(scalafmtConf, """{"key": "i'm not a valid Migration"}""")
     val (state, migrations) =
-      migrationAlg.loadMigrations(Some(scalafmtConf)).run(initialState).unsafeRunSync
+      alg.loadMigrations.run(initialState).unsafeRunSync
     migrations shouldBe defaultMigrations
     state.logs shouldBe Vector(None -> "Failed to parse migrations file")
   }
 
   test("loadMigrations on no File") {
-    val (_, migrations) = migrationAlg.loadMigrations(None).run(MockState.empty).unsafeRunSync
+    val (_, migrations) = migrationAlg.loadMigrations.run(MockState.empty).unsafeRunSync
 
     migrations shouldBe defaultMigrations
   }

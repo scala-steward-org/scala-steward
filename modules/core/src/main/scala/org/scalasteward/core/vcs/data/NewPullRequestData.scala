@@ -24,7 +24,7 @@ import org.scalasteward.core.git.Branch
 import org.scalasteward.core.nurture.UpdateData
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.util.Nel
-import org.scalasteward.core.{git, scalafix}
+import org.scalasteward.core.git
 import org.scalasteward.core.scalafix.Migration
 
 final case class NewPullRequestData(
@@ -110,8 +110,7 @@ object NewPullRequestData {
       migrations: List[Migration]
   ): (Option[String], Option[String]) = {
     update.artifactId
-    val migrationsForUpdate = scalafix.findMigrations(migrations, update)
-    if (migrationsForUpdate.isEmpty)
+    if (migrations.isEmpty)
       (None, None)
     else
       (
@@ -120,9 +119,9 @@ object NewPullRequestData {
           s"""<details>
              |<summary>Applied Migrations</summary>
              |
-             |${migrationsForUpdate
+             |${migrations
                .flatMap(_.rewriteRules.toList)
-               .map(rule => s"* ${rule}")
+               .map(rule => s"* $rule")
                .mkString("\n")}
              |</details>
              |""".stripMargin.trim
