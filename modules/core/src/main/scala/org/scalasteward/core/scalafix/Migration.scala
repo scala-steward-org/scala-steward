@@ -36,12 +36,10 @@ final case class Migration(
     newVersion: Version,
     rewriteRules: Nel[String]
 ) {
-
   override def hashCode: Int = Hash[Migration].hash(this)
 
   @SuppressWarnings(Array("org.wartremover.warts.Equals"))
   override def equals(x: Any): Boolean = {
-
     implicit val regexEq: Eq[Regex] = Eq.by(_.regex)
     lazy val other: Migration = x.asInstanceOf[Migration]
     x.isInstanceOf[Migration] &&

@@ -21,7 +21,6 @@ import org.scalasteward.core.util._
 import org.scalasteward.core.data.{GroupId, Update, Version}
 
 package object scalafix {
-
   val migrations: List[Migration] =
     List(
       Migration(

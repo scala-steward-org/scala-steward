@@ -31,7 +31,6 @@ trait MigrationAlg[F[_]] {
 }
 
 object MigrationAlg {
-
   def create[F[_]](
       implicit fileAlg: FileAlg[F],
       logger: Logger[F],
@@ -48,7 +47,6 @@ object MigrationAlg {
             _ => logger.warn("Failed to parse migrations file") >> defaultMigrations.pure[F],
             _.fold(defaultMigrations)(_.migrations(defaultMigrations)).pure[F]
           )
-
       } yield allMigrations
 
     override def findMigrations(update: Update): F[List[Migration]] =

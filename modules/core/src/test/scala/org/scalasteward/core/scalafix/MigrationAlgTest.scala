@@ -10,7 +10,6 @@ import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.scalafix.{migrations => defaultMigrations}
 
 class MigrationAlgTest extends AnyFunSuite with Matchers {
-
   val repo = Repo("fthomas", "scala-steward")
   val repoDir = config.workspace / repo.owner / repo.repo
   val scalafmtConf = repoDir / ".scalafix-migrations.conf"
