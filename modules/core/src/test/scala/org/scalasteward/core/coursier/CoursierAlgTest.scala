@@ -18,6 +18,21 @@ class CoursierAlgTest extends AnyFunSuite with Matchers {
     result shouldBe Some("https://github.com/typelevel/cats-effect")
   }
 
+  test("getArtifactUrl: defaults to homepage") {
+    val dep = Dependency(
+      GroupId("com.typesafe.play"),
+      "play-ws-standalone-json",
+      "play-ws-standalone-json_2.12",
+      "2.1.0-M7"
+    )
+    val (state, result) = coursierAlg
+      .getArtifactUrl(dep)
+      .run(MockState.empty)
+      .unsafeRunSync()
+    state shouldBe MockState.empty
+    result shouldBe Some("https://github.com/playframework/play-ws")
+  }
+
   test("getArtifactUrl: sbt plugin") {
     val dep = Dependency(
       GroupId("org.xerial.sbt"),

@@ -60,7 +60,9 @@ object CoursierAlg {
             result <- maybeFetchResult
             (_, project) <- result.resolution.projectCache
               .get((coursierDependency.module, coursierDependency.version))
-            maybeScmUrl = project.info.scm.flatMap(_.url).filter(_.nonEmpty)
+            maybeScmUrl = project.info.scm
+              .flatMap(_.url)
+              .filter(url => url.nonEmpty && !url.startsWith("git@"))
             maybeHomepage = Option(project.info.homePage).filter(_.nonEmpty)
             url <- maybeScmUrl.orElse(maybeHomepage)
           } yield url
