@@ -24,21 +24,25 @@ class VCSPackageTest extends AnyFunSuite with Matchers {
   test("possibleCompareUrls") {
     possibleCompareUrls("https://github.com/foo/bar", update) shouldBe List(
       "https://github.com/foo/bar/compare/v1.2.0...v1.2.3",
-      "https://github.com/foo/bar/compare/1.2.0...1.2.3"
+      "https://github.com/foo/bar/compare/1.2.0...1.2.3",
+      "https://github.com/foo/bar/compare/release-1.2.0...release-1.2.3"
     )
     // should canonicalize (drop last slash)
     possibleCompareUrls("https://github.com/foo/bar/", update) shouldBe List(
       "https://github.com/foo/bar/compare/v1.2.0...v1.2.3",
-      "https://github.com/foo/bar/compare/1.2.0...1.2.3"
+      "https://github.com/foo/bar/compare/1.2.0...1.2.3",
+      "https://github.com/foo/bar/compare/release-1.2.0...release-1.2.3"
     )
 
     possibleCompareUrls("https://gitlab.com/foo/bar", update) shouldBe List(
       "https://gitlab.com/foo/bar/compare/v1.2.0...v1.2.3",
-      "https://gitlab.com/foo/bar/compare/1.2.0...1.2.3"
+      "https://gitlab.com/foo/bar/compare/1.2.0...1.2.3",
+      "https://gitlab.com/foo/bar/compare/release-1.2.0...release-1.2.3"
     )
     possibleCompareUrls("https://bitbucket.org/foo/bar", update) shouldBe List(
       "https://bitbucket.org/foo/bar/compare/v1.2.3..v1.2.0#diff",
-      "https://bitbucket.org/foo/bar/compare/1.2.3..1.2.0#diff"
+      "https://bitbucket.org/foo/bar/compare/1.2.3..1.2.0#diff",
+      "https://bitbucket.org/foo/bar/compare/release-1.2.3..release-1.2.0#diff"
     )
 
     possibleCompareUrls("https://scalacenter.github.io/scalafix/", update) shouldBe List()
@@ -68,8 +72,9 @@ class VCSPackageTest extends AnyFunSuite with Matchers {
       "https://github.com/foo/bar/blob/master/ReleaseNotes.md",
       "https://github.com/foo/bar/blob/master/ReleaseNotes.markdown",
       "https://github.com/foo/bar/blob/master/ReleaseNotes.rst",
+      "https://github.com/foo/bar/releases/tag/v1.2.3",
       "https://github.com/foo/bar/releases/tag/1.2.3",
-      "https://github.com/foo/bar/releases/tag/v1.2.3"
+      "https://github.com/foo/bar/releases/tag/release-1.2.3"
     )
 
     // blob/<branch>
