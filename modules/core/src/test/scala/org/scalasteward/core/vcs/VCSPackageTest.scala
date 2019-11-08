@@ -48,9 +48,8 @@ class VCSPackageTest extends AnyFunSuite with Matchers {
     possibleCompareUrls("https://scalacenter.github.io/scalafix/", update) shouldBe List()
   }
 
-  test("possibleReleaseNoteFiles") {
-    // blob/<branch>
-    possibleReleaseNoteFiles("https://github.com/foo/bar", update) shouldBe List(
+  test("possibleChangelogUrls: github.com") {
+    possibleChangelogUrls("https://github.com/foo/bar", update) shouldBe List(
       "https://github.com/foo/bar/blob/master/CHANGELOG.md",
       "https://github.com/foo/bar/blob/master/CHANGELOG.markdown",
       "https://github.com/foo/bar/blob/master/CHANGELOG.rst",
@@ -60,6 +59,12 @@ class VCSPackageTest extends AnyFunSuite with Matchers {
       "https://github.com/foo/bar/blob/master/changelog.md",
       "https://github.com/foo/bar/blob/master/changelog.markdown",
       "https://github.com/foo/bar/blob/master/changelog.rst",
+      "https://github.com/foo/bar/blob/master/CHANGES.md",
+      "https://github.com/foo/bar/blob/master/CHANGES.markdown",
+      "https://github.com/foo/bar/blob/master/CHANGES.rst",
+      "https://github.com/foo/bar/blob/master/ReleaseNotes.md",
+      "https://github.com/foo/bar/blob/master/ReleaseNotes.markdown",
+      "https://github.com/foo/bar/blob/master/ReleaseNotes.rst",
       "https://github.com/foo/bar/blob/master/RELEASES.md",
       "https://github.com/foo/bar/blob/master/RELEASES.markdown",
       "https://github.com/foo/bar/blob/master/RELEASES.rst",
@@ -69,65 +74,23 @@ class VCSPackageTest extends AnyFunSuite with Matchers {
       "https://github.com/foo/bar/blob/master/releases.md",
       "https://github.com/foo/bar/blob/master/releases.markdown",
       "https://github.com/foo/bar/blob/master/releases.rst",
-      "https://github.com/foo/bar/blob/master/ReleaseNotes.md",
-      "https://github.com/foo/bar/blob/master/ReleaseNotes.markdown",
-      "https://github.com/foo/bar/blob/master/ReleaseNotes.rst",
       "https://github.com/foo/bar/releases/tag/v1.2.3",
       "https://github.com/foo/bar/releases/tag/1.2.3",
       "https://github.com/foo/bar/releases/tag/release-1.2.3"
     )
+  }
 
-    // blob/<branch>
-    possibleReleaseNoteFiles("https://gitlab.com/foo/bar", update) shouldBe List(
-      "https://gitlab.com/foo/bar/blob/master/CHANGELOG.md",
-      "https://gitlab.com/foo/bar/blob/master/CHANGELOG.markdown",
-      "https://gitlab.com/foo/bar/blob/master/CHANGELOG.rst",
-      "https://gitlab.com/foo/bar/blob/master/Changelog.md",
-      "https://gitlab.com/foo/bar/blob/master/Changelog.markdown",
-      "https://gitlab.com/foo/bar/blob/master/Changelog.rst",
-      "https://gitlab.com/foo/bar/blob/master/changelog.md",
-      "https://gitlab.com/foo/bar/blob/master/changelog.markdown",
-      "https://gitlab.com/foo/bar/blob/master/changelog.rst",
-      "https://gitlab.com/foo/bar/blob/master/RELEASES.md",
-      "https://gitlab.com/foo/bar/blob/master/RELEASES.markdown",
-      "https://gitlab.com/foo/bar/blob/master/RELEASES.rst",
-      "https://gitlab.com/foo/bar/blob/master/Releases.md",
-      "https://gitlab.com/foo/bar/blob/master/Releases.markdown",
-      "https://gitlab.com/foo/bar/blob/master/Releases.rst",
-      "https://gitlab.com/foo/bar/blob/master/releases.md",
-      "https://gitlab.com/foo/bar/blob/master/releases.markdown",
-      "https://gitlab.com/foo/bar/blob/master/releases.rst",
-      "https://gitlab.com/foo/bar/blob/master/ReleaseNotes.md",
-      "https://gitlab.com/foo/bar/blob/master/ReleaseNotes.markdown",
-      "https://gitlab.com/foo/bar/blob/master/ReleaseNotes.rst"
-    )
+  test("possibleChangelogUrls: gitlab.com") {
+    possibleChangelogUrls("https://gitlab.com/foo/bar", update) shouldBe
+      possibleChangelogFilenames.map(name => s"https://gitlab.com/foo/bar/blob/master/$name")
+  }
 
-    // just <branch>
-    possibleReleaseNoteFiles("https://bitbucket.org/foo/bar", update) shouldBe List(
-      "https://bitbucket.org/foo/bar/master/CHANGELOG.md",
-      "https://bitbucket.org/foo/bar/master/CHANGELOG.markdown",
-      "https://bitbucket.org/foo/bar/master/CHANGELOG.rst",
-      "https://bitbucket.org/foo/bar/master/Changelog.md",
-      "https://bitbucket.org/foo/bar/master/Changelog.markdown",
-      "https://bitbucket.org/foo/bar/master/Changelog.rst",
-      "https://bitbucket.org/foo/bar/master/changelog.md",
-      "https://bitbucket.org/foo/bar/master/changelog.markdown",
-      "https://bitbucket.org/foo/bar/master/changelog.rst",
-      "https://bitbucket.org/foo/bar/master/RELEASES.md",
-      "https://bitbucket.org/foo/bar/master/RELEASES.markdown",
-      "https://bitbucket.org/foo/bar/master/RELEASES.rst",
-      "https://bitbucket.org/foo/bar/master/Releases.md",
-      "https://bitbucket.org/foo/bar/master/Releases.markdown",
-      "https://bitbucket.org/foo/bar/master/Releases.rst",
-      "https://bitbucket.org/foo/bar/master/releases.md",
-      "https://bitbucket.org/foo/bar/master/releases.markdown",
-      "https://bitbucket.org/foo/bar/master/releases.rst",
-      "https://bitbucket.org/foo/bar/master/ReleaseNotes.md",
-      "https://bitbucket.org/foo/bar/master/ReleaseNotes.markdown",
-      "https://bitbucket.org/foo/bar/master/ReleaseNotes.rst"
-    )
+  test("possibleChangelogUrls: bitbucket.org") {
+    possibleChangelogUrls("https://bitbucket.org/foo/bar", update) shouldBe
+      possibleChangelogFilenames.map(name => s"https://bitbucket.org/foo/bar/master/$name")
+  }
 
-    // Empty for homepage
-    possibleReleaseNoteFiles("https://scalacenter.github.io/scalafix/", update) shouldBe List()
+  test("possibleChangelogUrls: homepage") {
+    possibleChangelogUrls("https://scalacenter.github.io/scalafix/", update) shouldBe List()
   }
 }
