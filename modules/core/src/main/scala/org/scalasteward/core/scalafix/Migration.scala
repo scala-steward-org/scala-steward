@@ -17,52 +17,19 @@
 package org.scalasteward.core.scalafix
 
 import org.scalasteward.core.data.{GroupId, Version}
-import cats.Eq
 import org.scalasteward.core.util.Nel
-import scala.util.matching.Regex
 import io.circe.Decoder
 import io.circe.generic.semiauto._
 import io.circe.Decoder._
-import cats.syntax.eq._
-import cats.instances.string._
-import cats.kernel.Hash
-import cats.instances.tuple._
-import cats.instances.int._
-import cats.instances.list._
 
 final case class Migration(
     groupId: GroupId,
-    artifactIds: Nel[Regex],
+    artifactIds: Nel[String],
     newVersion: Version,
     rewriteRules: Nel[String]
-) {
-  override def hashCode: Int = Hash[Migration].hash(this)
-
-  @SuppressWarnings(Array("org.wartremover.warts.Equals"))
-  override def equals(x: Any): Boolean = {
-    implicit val regexEq: Eq[Regex] = Eq.by(_.regex)
-    lazy val other: Migration = x.asInstanceOf[Migration]
-    x.isInstanceOf[Migration] &&
-    Option(this).nonEmpty &&
-    Option(x).nonEmpty &&
-    this.hashCode() === other.hashCode() &&
-    this.artifactIds === other.artifactIds &&
-    this.groupId === other.groupId &&
-    this.newVersion === other.newVersion &&
-    this.rewriteRules === other.rewriteRules
-  }
-}
+)
 
 object Migration {
-  implicit val regexDecoder: Decoder[Regex] = decodeString.map(_.r)
   implicit val versionDecoder: Decoder[Version] = decodeString.map(Version.apply)
   implicit val migrationDecoder: Decoder[Migration] = deriveDecoder[Migration]
-
-  implicit val migrationHash: Hash[Migration] = {
-    implicit def nelHash[A: Hash]: Hash[Nel[A]] = Hash.by(_.toList)
-    implicit val regexHash: Hash[Regex] = Hash.by[Regex, String](_.regex)
-    implicit val versionHash: Hash[Version] = Hash.fromUniversalHashCode
-    implicit val groupIdHash: Hash[GroupId] = Hash.fromUniversalHashCode
-    Hash.by(m => (m.artifactIds, m.groupId, m.newVersion, m.rewriteRules))
-  }
 }

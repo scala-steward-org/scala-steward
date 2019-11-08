@@ -34,7 +34,7 @@ class MigrationAlgTest extends AnyFunSuite with Matchers {
     migrations should contain theSameElementsAs List(
       Migration(
         GroupId("org.ice.cream"),
-        Nel.of("yumyum-.*".r),
+        Nel.of("yumyum-.*"),
         Version("1.0.0"),
         Nel.of("awesome rewrite rule")
       )
@@ -59,7 +59,7 @@ class MigrationAlgTest extends AnyFunSuite with Matchers {
     migrations should contain theSameElementsAs List(
       Migration(
         GroupId("org.ice.cream"),
-        Nel.of("yumyum-.*".r),
+        Nel.of("yumyum-.*"),
         Version("1.0.0"),
         Nel.of("awesome rewrite rule")
       )
