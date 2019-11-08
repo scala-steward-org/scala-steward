@@ -16,6 +16,7 @@
 
 package org.scalasteward.core
 
+import cats.implicits._
 import org.scalasteward.core.application.SupportedVCS
 import org.scalasteward.core.application.SupportedVCS.{Bitbucket, BitbucketServer, GitHub, Gitlab}
 import org.scalasteward.core.data.Update
@@ -49,6 +50,21 @@ package object vcs {
   def possibleTags(version: String): List[String] =
     List(s"v$version", version, s"release-$version")
 
+  val possibleChangelogFilenames: List[String] = {
+    val basenames = List(
+      "CHANGELOG",
+      "Changelog",
+      "changelog",
+      "CHANGES",
+      "ReleaseNotes",
+      "RELEASES",
+      "Releases",
+      "releases"
+    )
+    val extensions = List("md", "markdown", "rst")
+    (basenames, extensions).mapN { case (base, ext) => s"$base.$ext" }
+  }
+
   def possibleCompareUrls(repoUrl: String, update: Update): List[String] = {
     val from = update.currentVersion
     val to = update.nextVersion
@@ -65,7 +81,7 @@ package object vcs {
       List.empty
   }
 
-  def possibleReleaseNoteFiles(repoUrl: String, update: Update): List[String] = {
+  def possibleChangelogUrls(repoUrl: String, update: Update): List[String] = {
     val canonicalized = repoUrl.replaceAll("/$", "")
     val vcsSpecific =
       if (repoUrl.startsWith("https://github.com/"))
@@ -82,18 +98,7 @@ package object vcs {
           None
         }
       pathToFile.toList.flatMap { path =>
-        for {
-          name <- List(
-            "CHANGELOG",
-            "Changelog",
-            "changelog",
-            "RELEASES",
-            "Releases",
-            "releases",
-            "ReleaseNotes"
-          )
-          ext <- List("md", "markdown", "rst")
-        } yield s"${canonicalized}/${path}/${name}.${ext}"
+        possibleChangelogFilenames.map(name => s"${canonicalized}/${path}/$name")
       }
     }
     files ++ vcsSpecific

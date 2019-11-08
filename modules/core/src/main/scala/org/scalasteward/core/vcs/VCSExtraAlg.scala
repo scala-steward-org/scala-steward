@@ -37,6 +37,6 @@ object VCSExtraAlg {
       vcs.possibleCompareUrls(repoUrl, update).findM(existenceClient.exists)
 
     override def getReleaseNoteUrl(repoUrl: String, update: Update): F[Option[String]] =
-      vcs.possibleReleaseNoteFiles(repoUrl, update).findM(existenceClient.exists)
+      vcs.possibleChangelogUrls(repoUrl, update).findM(existenceClient.exists)
   }
 }
