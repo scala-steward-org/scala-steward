@@ -20,7 +20,7 @@ import cats.Parallel
 import cats.effect._
 import cats.implicits._
 import coursier.interop.cats._
-import coursier.{Module, ModuleName, Organization}
+import coursier.{Info, Module, ModuleName, Organization}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data.Dependency
 import scala.concurrent.ExecutionContext
@@ -58,13 +58,9 @@ object CoursierAlg {
         } yield {
           for {
             result <- maybeFetchResult
-            (_, project) <- result.resolution.projectCache
-              .get((coursierDependency.module, coursierDependency.version))
-            maybeScmUrl = project.info.scm
-              .flatMap(_.url)
-              .filter(url => url.nonEmpty && !url.startsWith("git@"))
-            maybeHomepage = Option(project.info.homePage).filter(_.nonEmpty)
-            url <- maybeScmUrl.orElse(maybeHomepage)
+            moduleVersion = (coursierDependency.module, coursierDependency.version)
+            (_, project) <- result.resolution.projectCache.get(moduleVersion)
+            url <- getScmUrlOrHomePage(project.info)
           } yield url
         }
       }
@@ -87,4 +83,9 @@ object CoursierAlg {
     )
     coursier.Dependency(module, dependency.version).withTransitive(false)
   }
+
+  private def getScmUrlOrHomePage(info: Info): Option[String] =
+    (info.scm.flatMap(_.url).toList :+ info.homePage)
+      .filterNot(url => url.isEmpty || url.startsWith("git@"))
+      .headOption
 }
