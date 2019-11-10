@@ -62,7 +62,8 @@ final case class Config(
     ignoreOptsFiles: Boolean,
     envVars: List[EnvVar],
     pruneRepos: Boolean,
-    processTimeout: FiniteDuration
+    processTimeout: FiniteDuration,
+    scalafixMigrations: Option[File]
 ) {
   def vcsUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] = {
     val urlWithUser = util.uri.withUserInfo.set(UserInfo(vcsLogin, None))(vcsApiHost).renderString
@@ -93,7 +94,8 @@ object Config {
         ignoreOptsFiles = args.ignoreOptsFiles,
         envVars = args.envVar,
         pruneRepos = args.pruneRepos,
-        processTimeout = args.processTimeout
+        processTimeout = args.processTimeout,
+        scalafixMigrations = args.scalafixMigrations.map(_.toFile)
       )
     }
 }

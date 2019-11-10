@@ -1,13 +1,14 @@
 package org.scalasteward.core.vcs.data
 
 import io.circe.syntax._
-import org.scalasteward.core.data.{GroupId, Update}
+import org.scalasteward.core.data.{GroupId, Update, Version}
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.nurture.UpdateData
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.Nel
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalasteward.core.scalafix.Migration
 
 class NewPullRequestDataTest extends AnyFunSuite with Matchers {
   test("asJson") {
@@ -73,7 +74,7 @@ class NewPullRequestDataTest extends AnyFunSuite with Matchers {
 
   test("migrationNote: when no migrations") {
     val update = Update.Single(GroupId("com.example"), "foo", "0.6.0", Nel.of("0.7.0"))
-    val (label, appliedMigrations) = NewPullRequestData.migrationNote(update)
+    val (label, appliedMigrations) = NewPullRequestData.migrationNote(update, List.empty)
 
     label shouldBe None
     appliedMigrations shouldBe None
@@ -81,17 +82,20 @@ class NewPullRequestDataTest extends AnyFunSuite with Matchers {
 
   test("migrationNote: when artifact has migrations") {
     val update = Update.Single(GroupId("com.spotify"), "scio-core", "0.6.0", Nel.of("0.7.0"))
-    val (label, appliedMigrations) = NewPullRequestData.migrationNote(update)
+    val migration = Migration(
+      update.groupId,
+      Nel.of(update.artifactId),
+      Version("0.7.0"),
+      Nel.of("I am a rewrite rule")
+    )
+    val (label, appliedMigrations) = NewPullRequestData.migrationNote(update, List(migration))
 
     label shouldBe Some("scalafix-migrations")
     appliedMigrations.getOrElse("") shouldBe
       """<details>
         |<summary>Applied Migrations</summary>
         |
-        |* github:spotify/scio/FixAvroIO?sha=v0.7.4
-        |* github:spotify/scio/AddMissingImports?sha=v0.7.4
-        |* github:spotify/scio/RewriteSysProp?sha=v0.7.4
-        |* github:spotify/scio/BQClientRefactoring?sha=v0.7.4
+        |* I am a rewrite rule
         |</details>
       """.stripMargin.trim
   }

@@ -17,21 +17,21 @@
 package org.scalasteward.core
 
 import cats.implicits._
+import org.scalasteward.core.util._
 import org.scalasteward.core.data.{GroupId, Update, Version}
-import org.scalasteward.core.util.Nel
 
 package object scalafix {
   val migrations: List[Migration] =
     List(
       Migration(
         GroupId("co.fs2"),
-        Nel.of("fs2-.*".r),
+        Nel.of("fs2-.*"),
         Version("1.0.0"),
         Nel.of("github:functional-streams-for-scala/fs2/v1?sha=v1.0.5")
       ),
       Migration(
         GroupId("com.spotify"),
-        Nel.of("scio-.*".r),
+        Nel.of("scio-.*"),
         Version("0.7.0"),
         Nel.of(
           "github:spotify/scio/FixAvroIO?sha=v0.7.4",
@@ -42,13 +42,13 @@ package object scalafix {
       ),
       Migration(
         GroupId("org.http4s"),
-        Nel.of("http4s-.*".r),
+        Nel.of("http4s-.*"),
         Version("0.20.0"),
         Nel.of("github:http4s/http4s/v0_20?sha=v0.20.11")
       ),
       Migration(
         GroupId("org.typelevel"),
-        Nel.of("cats-core".r),
+        Nel.of("cats-core"),
         Version("1.0.0"),
         Nel.of(
           "https://raw.githubusercontent.com/typelevel/cats/master/scalafix/rules/src/main/scala/fix/Cats_v1_0_0.scala"
@@ -56,7 +56,7 @@ package object scalafix {
       ),
       Migration(
         GroupId("org.scalatest"),
-        Nel.of("scalatest".r),
+        Nel.of("scalatest"),
         Version("3.1.0"),
         Nel.of(
           "https://raw.githubusercontent.com/scalatest/autofix/e4de53fa40fac423bd64d165ff36bde38ce52388/3.0.x/rules/src/main/scala/org/scalatest/autofix/v3_0_x/RenameDeprecatedPackage.scala",
@@ -65,16 +65,15 @@ package object scalafix {
       ),
       Migration(
         GroupId("org.scalacheck"),
-        Nel.of("scalacheck".r),
+        Nel.of("scalacheck"),
         Version("1.14.1"),
         Nel.of("github:typelevel/scalacheck/v1_14_1?sha=3fc537dde9d8fdf951503a8d8b027a568d52d055")
       )
     )
-
-  def findMigrations(update: Update): List[Migration] =
-    migrations.filter { migration =>
+  def findMigrations(givenMigrations: List[Migration], update: Update): List[Migration] =
+    givenMigrations.filter { migration =>
       update.groupId === migration.groupId &&
-      migration.artifactIds.exists(re => update.artifactIds.exists(re.findFirstIn(_).isDefined)) &&
+      migration.artifactIds.exists(re => update.artifactIds.exists(re.r.findFirstIn(_).isDefined)) &&
       Version(update.currentVersion) < migration.newVersion &&
       Version(update.newerVersions.head) >= migration.newVersion
     }

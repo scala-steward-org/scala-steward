@@ -30,6 +30,21 @@ After you have written a new migration rule for a new version of your project,
 Scala Steward needs to be made aware of it. Creating a pull request that adds
 the new rule to the list of [migrations][migrations] is enough for that. Once
 that pull request is merged, Scala Steward will start using this migration.
+When running Scala Steward you can specify a file containing extra migrations 
+that might not be present in the [default list][migrations]. 
+You can also specify if you want the default list to be disabled.  
+
+The file should look like this:
+```json
+{
+ "disableDefaults": true,
+ "extraMigrations": [{
+    "groupId": "org.ice.cream",
+    "artifactIds": ["yumyum-.*"],
+    "newVersion": "1.0.0",
+    "rewriteRules": ["awesome rewrite rule"]}
+]}
+```
 
 Pull requests that added migration rules can be found [here][scalafix-prs].
 

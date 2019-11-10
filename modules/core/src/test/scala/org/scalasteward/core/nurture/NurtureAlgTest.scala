@@ -7,10 +7,12 @@ import org.scalacheck.{Arbitrary, Gen}
 import org.scalasteward.core.data.ProcessResult.{Ignored, Updated}
 import org.scalasteward.core.data.Update.Single
 import org.scalasteward.core.data.{GroupId, ProcessResult, Update}
+import org.scalasteward.core.mock.{MockContext, MockEff, MockState}
 import org.scalasteward.core.util.Nel
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import MockContext._
 
 class NurtureAlgTest extends AnyFunSuite with Matchers with ScalaCheckPropertyChecks {
   implicit val updateArbitrary: Arbitrary[Update] = Arbitrary(for {
@@ -54,8 +56,10 @@ class NurtureAlgTest extends AnyFunSuite with Matchers with ScalaCheckPropertyCh
     forAll { updates: List[Update] =>
       val migrationUpdate =
         Single(GroupId("org.scalacheck"), "scalacheck", "1.14.0", Nel.of("1.15.0"))
-
-      NurtureAlg.sortUpdatesByMigration(migrationUpdate :: updates) shouldBe updates :+ migrationUpdate
+      NurtureAlg
+        .sortUpdatesByMigration[MockEff](migrationUpdate :: updates)
+        .runA(MockState.empty)
+        .unsafeRunSync() shouldBe updates :+ migrationUpdate
     }
   }
 }

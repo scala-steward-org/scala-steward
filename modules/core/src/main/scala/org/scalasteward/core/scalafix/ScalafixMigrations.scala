@@ -16,20 +16,17 @@
 
 package org.scalasteward.core.scalafix
 
-import org.scalasteward.core.data.{GroupId, Version}
-import org.scalasteward.core.util.Nel
 import io.circe.Decoder
 import io.circe.generic.semiauto._
-import io.circe.Decoder._
 
-final case class Migration(
-    groupId: GroupId,
-    artifactIds: Nel[String],
-    newVersion: Version,
-    rewriteRules: Nel[String]
-)
+final case class ScalafixMigrations(
+    disableDefaults: Boolean = false,
+    extraMigrations: List[Migration] = List.empty
+) {
+  def migrations(defaultMigrations: List[Migration]) =
+    if (disableDefaults) extraMigrations else defaultMigrations ++ extraMigrations
+}
 
-object Migration {
-  implicit val versionDecoder: Decoder[Version] = decodeString.map(Version.apply)
-  implicit val migrationDecoder: Decoder[Migration] = deriveDecoder[Migration]
+object ScalafixMigrations {
+  implicit val scalafixMigrationsDecoder: Decoder[ScalafixMigrations] = deriveDecoder
 }

@@ -24,7 +24,8 @@ import org.scalasteward.core.git.Branch
 import org.scalasteward.core.nurture.UpdateData
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.util.Nel
-import org.scalasteward.core.{git, scalafix}
+import org.scalasteward.core.git
+import org.scalasteward.core.scalafix.Migration
 
 final case class NewPullRequestData(
     title: String,
@@ -41,10 +42,11 @@ object NewPullRequestData {
       update: Update,
       artifactIdToUrl: Map[String, String],
       branchCompareUrl: Option[String],
-      releaseNoteUrl: Option[String]
+      releaseNoteUrl: Option[String],
+      migrations: List[Migration]
   ): String = {
     val artifacts = artifactsWithOptionalUrl(update, artifactIdToUrl)
-    val (migrationLabel, appliedMigrations) = migrationNote(update)
+    val (migrationLabel, appliedMigrations) = migrationNote(update, migrations)
     val labels = Nel.fromList(semVerLabel(update).toList ++ migrationLabel.toList)
 
     s"""|Updates ${artifacts} ${fromTo(update, branchCompareUrl)}.
@@ -103,8 +105,11 @@ object NewPullRequestData {
       case None      => s"${groupId}:${artifactId}"
     }
 
-  def migrationNote(update: Update): (Option[String], Option[String]) = {
-    val migrations = scalafix.findMigrations(update)
+  def migrationNote(
+      update: Update,
+      migrations: List[Migration]
+  ): (Option[String], Option[String]) = {
+    update.artifactId
     if (migrations.isEmpty)
       (None, None)
     else
@@ -114,7 +119,10 @@ object NewPullRequestData {
           s"""<details>
              |<summary>Applied Migrations</summary>
              |
-             |${migrations.flatMap(_.rewriteRules.toList).map(rule => s"* ${rule}").mkString("\n")}
+             |${migrations
+               .flatMap(_.rewriteRules.toList)
+               .map(rule => s"* $rule")
+               .mkString("\n")}
              |</details>
              |""".stripMargin.trim
         )
@@ -133,7 +141,8 @@ object NewPullRequestData {
       branchName: String,
       artifactIdToUrl: Map[String, String] = Map.empty,
       branchCompareUrl: Option[String] = None,
-      releaseNoteUrl: Option[String] = None
+      releaseNoteUrl: Option[String] = None,
+      migrations: List[Migration] = List.empty
   ): NewPullRequestData =
     NewPullRequestData(
       title = git.commitMsgFor(data.update),
@@ -141,7 +150,8 @@ object NewPullRequestData {
         data.update,
         artifactIdToUrl,
         branchCompareUrl,
-        releaseNoteUrl
+        releaseNoteUrl,
+        migrations
       ),
       head = branchName,
       base = data.baseBranch

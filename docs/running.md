@@ -37,6 +37,8 @@ The [`git-ask-pass` option](https://git-scm.com/docs/gitcredentials) must specif
 - either the plain text password corresponding to the configured `${LOGIN}`,
 - or (recommended) an authentication token corresponding to `${LOGIN}` (with appropriate permissions to watch the repositories; e.g. [Create a personal access token](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line) for GitHub).
 
+You can also provide a `--scalafix-migrations` option with the path to a file containing scalafix migrations.
+More information can be found [here][migrations]
 ### Private repositories
 
 If you run Scala Steward for your own private projects, the option `--do-not-fork` can be required, not to fork.
@@ -103,3 +105,4 @@ docker run -v $PWD:/opt/scala-steward \
 
 `BITBUCKET_USERNAME=<myuser> BITBUCKET_PASSWORD=<mypass> ./run.sh`
 
+[migrations]: https://github.com/fthomas/scala-steward/blob/master/docs/scalafix-migrations.md
