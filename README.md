@@ -111,6 +111,7 @@ Consider creating PR to add your company to the list and join the community.
 * [Colisweb](https://www.colisweb.com/)
 * [Evolution Gaming](https://www.evolutiongaming.com/)
 * [Firstbird](https://firstbird.com)
+* [Hellosoda](https://hellosoda.com/)
 * [HolidayCheck](https://github.com/holidaycheck)
 * [iAdvize](https://www.iadvize.com/en/)
 * [LeadIQ](https://leadiq.com/)
