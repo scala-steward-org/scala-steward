@@ -33,7 +33,7 @@ class CoursierAlgTest extends AnyFunSuite with Matchers {
     result shouldBe Some("https://github.com/playframework/play-ws")
   }
 
-  test("getArtifactUrl: sbt plugin") {
+  test("getArtifactUrl: sbt plugin on Maven Central") {
     val dep = Dependency(
       GroupId("org.xerial.sbt"),
       "sbt-sonatype",
@@ -48,6 +48,19 @@ class CoursierAlgTest extends AnyFunSuite with Matchers {
       .unsafeRunSync()
     state shouldBe MockState.empty
     result shouldBe Some("https://github.com/xerial/sbt-sonatype")
+  }
+
+  test("getArtifactUrl: sbt plugin on sbt-plugin-releases") {
+    val dep = Dependency(
+      GroupId("com.github.gseitz"),
+      "sbt-release",
+      "sbt-release",
+      "1.0.12",
+      Some(SbtVersion("1.0")),
+      Some(ScalaVersion("2.12"))
+    )
+    val result = coursierAlg.getArtifactUrl(dep).runA(MockState.empty).unsafeRunSync()
+    result shouldBe Some("https://github.com/sbt/sbt-release")
   }
 
   test("getArtifactIdUrlMapping") {

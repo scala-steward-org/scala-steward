@@ -20,6 +20,7 @@ import cats.Parallel
 import cats.effect._
 import cats.implicits._
 import coursier.interop.cats._
+import coursier.util.StringInterpolators.SafeIvyRepository
 import coursier.{Info, Module, ModuleName, Organization}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data.Dependency
@@ -42,18 +43,20 @@ object CoursierAlg {
       override def evalOn[A](ec: ExecutionContext)(fa: F[A]): F[A] = fa
     }
     val cache = coursier.cache.FileCache[F]()
-    val fetch = coursier.Fetch[F](cache)
+    val sbtPluginReleases =
+      ivy"https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/[defaultPattern]"
+    val fetch = coursier.Fetch[F](cache).addRepositories(sbtPluginReleases)
     new CoursierAlg[F] {
       override def getArtifactUrl(dependency: Dependency): F[Option[String]] = {
         val coursierDependency = toCoursierDependency(dependency)
         for {
           maybeFetchResult <- fetch
             .addDependencies(coursierDependency)
-            .addArtifactTypes(coursier.Type.pom)
+            .addArtifactTypes(coursier.Type.pom, coursier.Type.ivy)
             .ioResult
             .map(Option.apply)
             .handleErrorWith { throwable =>
-              logger.debug(throwable)(s"Failed to fetch POM of $coursierDependency").as(None)
+              logger.debug(throwable)(s"Failed to fetch artifacts of $coursierDependency").as(None)
             }
         } yield {
           for {
