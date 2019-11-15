@@ -16,28 +16,25 @@
 
 package org.scalasteward.core.scalafmt
 
-import cats.implicits._
+import better.files.File
 import cats.Monad
-import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
+import cats.implicits._
 import org.scalasteward.core.data.Version
-import org.scalasteward.core.vcs.data.Repo
+import org.scalasteward.core.io.FileAlg
 
 trait ScalafmtAlg[F[_]] {
-  def getScalafmtVersion(repo: Repo): F[Option[Version]]
+  def getScalafmtVersion(projectDir: File): F[Option[Version]]
 }
 
 object ScalafmtAlg {
   def create[F[_]](
       implicit
       fileAlg: FileAlg[F],
-      workspaceAlg: WorkspaceAlg[F],
       F: Monad[F]
   ): ScalafmtAlg[F] = new ScalafmtAlg[F] {
-    override def getScalafmtVersion(repo: Repo): F[Option[Version]] =
+    override def getScalafmtVersion(projectDir: File): F[Option[Version]] =
       for {
-        repoDir <- workspaceAlg.repoDir(repo)
-        scalafmtConfFile = repoDir / ".scalafmt.conf"
-        fileContent <- fileAlg.readFile(scalafmtConfFile)
+        fileContent <- fileAlg.readFile(projectDir / ".scalafmt.conf")
       } yield {
         fileContent.flatMap(parseScalafmtConf)
       }

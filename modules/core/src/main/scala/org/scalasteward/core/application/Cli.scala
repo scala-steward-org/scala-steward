@@ -24,6 +24,7 @@ import org.http4s.Uri
 import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Cli._
 import org.scalasteward.core.util.ApplicativeThrowable
+
 import scala.concurrent.duration._
 
 final class Cli[F[_]](implicit F: ApplicativeThrowable[F]) {
@@ -34,6 +35,36 @@ final class Cli[F[_]](implicit F: ApplicativeThrowable[F]) {
 }
 
 object Cli {
+  /**
+    * == [[projectDirs]] ==
+    * If defined (it is optional) via `--project-dirs`, it specifies that scala-steward shall search for projects not
+    * only in the root of a repository but based on defined
+    * [[https://github.com/pathikrit/better-files#globbing glob patterns]] relative to the workspace directory.
+    * Multiple glob patterns can be defined where all are used to find projects. They need to be separated with `;`.
+    *
+    * If you define projectDirs then you have to make sure that all repositories find a project somehow, otherwise it will
+    * fail with an IllegalStateException. Or in other words, add `*&#47;*` as one pattern if you have repositories with and
+    * without special project layout (i.e. build.sbt is not in the root).
+    *
+    * A project is identified by searching for `glob + /build.sbt` where the corresponding
+    * parent directory is used as project directory.
+    *
+    * Following some examples:
+    *
+    * owner/repo1/app;**&#47;component  // use `app` as project for repository `owner/repo1` and additionally search
+    *                                   // for projects located in a directory named `component` located in a repository
+    *
+    * owner/repo2&#47;**                // search for any project but only in a sub directory of repository `owner/repo2`
+    * owner/repo2;repo2&#47;**          // search for a project located in the root of `owner/repo2` as well as
+    *                                   //  any project in a sub directory of repository `owner/repo2`
+    *
+    * **                                // search for any project in all repositories
+    * *&#47*                            // search in root of all repositories
+    * *&#47*&#47*                       // search in direct sub directories of all repositories
+    * *&#47*&#47**                      // search in all sub directories of all repositories
+    *
+    * *&#47;domain&#47;*&#47;core&#47;** // search for projects in sub directories of ./domain and ./core in any repository
+    */
   final case class Args(
       workspace: String,
       reposFile: String,
@@ -52,7 +83,8 @@ object Cli {
       envVar: List[EnvVar] = Nil,
       pruneRepos: Boolean = false,
       processTimeout: FiniteDuration = 10.minutes,
-      scalafixMigrations: Option[String] = None
+      scalafixMigrations: Option[String] = None,
+      projectDirs: Option[String] = None
   )
 
   final case class EnvVar(name: String, value: String)

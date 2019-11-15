@@ -24,6 +24,7 @@ import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.git.Author
 import org.scalasteward.core.util
 import org.scalasteward.core.vcs.data.AuthenticatedUser
+
 import scala.concurrent.duration.FiniteDuration
 import scala.sys.process.Process
 
@@ -63,7 +64,8 @@ final case class Config(
     envVars: List[EnvVar],
     pruneRepos: Boolean,
     processTimeout: FiniteDuration,
-    scalafixMigrations: Option[File]
+    scalafixMigrations: Option[File],
+    projectDirs: List[String]
 ) {
   def vcsUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] = {
     val urlWithUser = util.uri.withUserInfo.set(UserInfo(vcsLogin, None))(vcsApiHost).renderString
@@ -95,7 +97,8 @@ object Config {
         envVars = args.envVar,
         pruneRepos = args.pruneRepos,
         processTimeout = args.processTimeout,
-        scalafixMigrations = args.scalafixMigrations.map(_.toFile)
+        scalafixMigrations = args.scalafixMigrations.map(_.toFile),
+        projectDirs = args.projectDirs.fold(List.empty[String])(_.split(";").toList)
       )
     }
 }

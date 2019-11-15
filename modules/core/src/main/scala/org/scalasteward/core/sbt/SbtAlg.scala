@@ -39,13 +39,13 @@ trait SbtAlg[F[_]] {
 
   def addGlobalPlugins: F[Unit]
 
-  def getSbtVersion(repo: Repo): F[Option[SbtVersion]]
+  def getSbtVersion(projectDir: File): F[Option[SbtVersion]]
 
-  def getDependencies(repo: Repo): F[List[Dependency]]
+  def getDependencies(projectDirs: List[File]): F[List[Dependency]]
 
   def getUpdatesForProject(project: ArtificialProject): F[List[Update.Single]]
 
-  def getUpdatesForRepo(repo: Repo): F[List[Update.Single]]
+  def getUpdatesForProjectDirInRepo(projectDir: File, repo: Repo): F[List[Update.Single]]
 
   def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit]
 }
@@ -85,31 +85,28 @@ object SbtAlg {
           _ <- addGlobalPlugin(stewardPlugin)
         } yield ()
 
-      override def getSbtVersion(repo: Repo): F[Option[SbtVersion]] =
+      override def getSbtVersion(projectDir: File): F[Option[SbtVersion]] =
         for {
-          repoDir <- workspaceAlg.repoDir(repo)
-          maybeProperties <- fileAlg.readFile(repoDir / "project" / "build.properties")
+          maybeProperties <- fileAlg.readFile(projectDir / "project" / "build.properties")
           version = maybeProperties.flatMap(parser.parseBuildProperties)
         } yield version
 
-      override def getDependencies(repo: Repo): F[List[Dependency]] =
+      override def getDependencies(projectDirs: List[File]): F[List[Dependency]] =
         for {
-          originalDependencies <- getOriginalDependencies(repo)
-          maybeSbtVersion <- getSbtVersion(repo)
-          maybeSbtDependency = maybeSbtVersion.flatMap(sbtDependency)
-          maybeScalafmtVersion <- scalafmtAlg.getScalafmtVersion(repo)
-          maybeScalafmtDependency = maybeScalafmtVersion.map(
-            scalafmtDependency(defaultScalaBinaryVersion)
+          originalDependencies <- projectDirs.traverse(getOriginalDependencies).map(_.flatten)
+          maybeSbtVersions <- projectDirs.traverse(getSbtVersion)
+          maybeSbtDependencies = maybeSbtVersions.flatMap(_.flatMap(sbtDependency))
+          maybeScalafmtVersions <- projectDirs.traverse(scalafmtAlg.getScalafmtVersion)
+          maybeScalafmtDependencies = maybeScalafmtVersions.flatMap(
+            _.map(scalafmtDependency(defaultScalaBinaryVersion))
           )
-        } yield (maybeSbtDependency.toList ++ maybeScalafmtDependency.toList ++
+        } yield (maybeSbtDependencies ++ maybeScalafmtDependencies ++
           originalDependencies).distinct
 
-      def getOriginalDependencies(repo: Repo): F[List[Dependency]] =
-        for {
-          repoDir <- workspaceAlg.repoDir(repo)
-          cmd = sbtCmd(List(libraryDependenciesAsJson, reloadPlugins, libraryDependenciesAsJson))
-          lines <- exec(cmd, repoDir)
-        } yield parser.parseDependencies(lines)
+      def getOriginalDependencies(projectDir: File): F[List[Dependency]] = {
+        val cmd = sbtCmd(List(libraryDependenciesAsJson, reloadPlugins, libraryDependenciesAsJson))
+        exec(cmd, projectDir).map(parser.parseDependencies)
+      }
 
       override def getUpdatesForProject(project: ArtificialProject): F[List[Update.Single]] =
         for {
@@ -129,23 +126,22 @@ object SbtAlg {
           }
         } yield updates
 
-      override def getUpdatesForRepo(repo: Repo): F[List[Update.Single]] =
+      override def getUpdatesForProjectDirInRepo(
+          projectDir: File,
+          repo: Repo
+      ): F[List[Update.Single]] = {
+        val commands =
+          List(setDependencyUpdatesFailBuild, dependencyUpdates, reloadPlugins, dependencyUpdates)
         for {
-          repoDir <- workspaceAlg.repoDir(repo)
-          commands = List(
-            setDependencyUpdatesFailBuild,
-            dependencyUpdates,
-            reloadPlugins,
-            dependencyUpdates
-          )
-          updates <- withTemporarySbtDependency(repo) {
-            exec(sbtCmd(commands), repoDir).map(parser.parseSingleUpdates)
+          updates <- withTemporarySbtDependency(projectDir) {
+            exec(sbtCmd(commands), projectDir).map(parser.parseSingleUpdates)
           }
           originalDependencies <- cacheRepository.getDependencies(List(repo))
           updatesUnderNewGroupId = originalDependencies.flatMap(
             UpdateAlg.findUpdateUnderNewGroup
           )
         } yield updates ++ updatesUnderNewGroupId
+      }
 
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
         addGlobalPluginTemporarily(scalaStewardScalafixSbt) {
@@ -163,8 +159,8 @@ object SbtAlg {
       val sbtDir: F[File] =
         fileAlg.home.map(_ / ".sbt")
 
-      def exec(command: Nel[String], repoDir: File): F[List[String]] =
-        maybeIgnoreOptsFiles(repoDir)(processAlg.execSandboxed(command, repoDir))
+      def exec(command: Nel[String], projectDir: File): F[List[String]] =
+        maybeIgnoreOptsFiles(projectDir)(processAlg.execSandboxed(command, projectDir))
 
       def sbtCmd(commands: List[String]): Nel[String] =
         Nel.of("sbt", "-batch", "-no-colors", commands.mkString(";", ";", ""))
@@ -179,23 +175,23 @@ object SbtAlg {
           }
         }
 
-      def withTemporarySbtDependency[A](repo: Repo)(fa: F[A]): F[A] =
+      def withTemporarySbtDependency[A](projectDir: File)(fa: F[A]): F[A] =
         for {
-          maybeSbtDep <- getSbtVersion(repo).map(_.flatMap(sbtDependency).map(_.formatAsModuleId))
+          maybeSbtDep <- getSbtVersion(projectDir).map(
+            _.flatMap(sbtDependency).map(_.formatAsModuleId)
+          )
           maybeScalafmtDep <- scalafmtAlg
-            .getScalafmtVersion(repo)
+            .getScalafmtVersion(projectDir)
             .map(
               _.map(scalafmtDependency(defaultScalaBinaryVersion))
                 .map(_.formatAsModuleIdScalaVersionAgnostic)
             )
           fakeDeps = Option(maybeSbtDep.toList ++ maybeScalafmtDep.toList).filter(_.nonEmpty)
           a <- fakeDeps.fold(fa) { dependencies =>
-            workspaceAlg.repoDir(repo).flatMap { repoDir =>
-              val content = dependencies
-                .map(dep => s"libraryDependencies += ${dep}")
-                .mkString(System.lineSeparator())
-              fileAlg.createTemporarily(repoDir / "project" / "tmp-sbt-dep.sbt", content)(fa)
-            }
+            val content = dependencies
+              .map(dep => s"libraryDependencies += ${dep}")
+              .mkString(System.lineSeparator())
+            fileAlg.createTemporarily(projectDir / "project" / "tmp-sbt-dep.sbt", content)(fa)
           }
         } yield a
     }

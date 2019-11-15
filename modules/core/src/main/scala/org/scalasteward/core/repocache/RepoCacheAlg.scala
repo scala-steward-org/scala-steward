@@ -16,10 +16,12 @@
 
 package org.scalasteward.core.repocache
 
+import better.files.File
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.git.GitAlg
+import org.scalasteward.core.io.WorkspaceAlg
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.scalafmt.ScalafmtAlg
@@ -40,6 +42,7 @@ final class RepoCacheAlg[F[_]](
     scalafmtAlg: ScalafmtAlg[F],
     vcsApiAlg: VCSApiAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
+    workspaceAlg: WorkspaceAlg[F],
     F: MonadThrowable[F]
 ) {
   def checkCache(repo: Repo): F[Unit] =
@@ -73,19 +76,24 @@ final class RepoCacheAlg[F[_]](
         refreshErrorAlg.persistError(repo, throwable) >> F.raiseError(throwable)
     }
 
-  private def computeCache(repo: Repo): F[RepoCache] =
+  private def computeCache(repo: Repo): F[RepoCache] = {
+    def projectDirTo[A[_], E](projectDirs: List[File], f: File => F[A[E]]) =
+      projectDirs.map(p => f(p).map(p.pathAsString -> _)).sequence
+
     for {
       branch <- gitAlg.currentBranch(repo)
       latestSha1 <- gitAlg.latestSha1(repo, branch)
-      dependencies <- sbtAlg.getDependencies(repo)
-      maybeSbtVersion <- sbtAlg.getSbtVersion(repo)
-      maybeScalafmtVersion <- scalafmtAlg.getScalafmtVersion(repo)
+      projectDirs <- workspaceAlg.findProjects(repo)
+      dependencies <- sbtAlg.getDependencies(projectDirs)
+      sbtVersions <- projectDirTo(projectDirs, sbtAlg.getSbtVersion)
+      scalafmtVersions <- projectDirTo(projectDirs, scalafmtAlg.getScalafmtVersion)
       maybeRepoConfig <- repoConfigAlg.readRepoConfig(repo)
     } yield RepoCache(
       latestSha1,
       dependencies,
-      maybeSbtVersion,
-      maybeScalafmtVersion,
+      sbtVersions.toMap.mapFilter(identity),
+      scalafmtVersions.toMap.mapFilter(identity),
       maybeRepoConfig
     )
+  }
 }

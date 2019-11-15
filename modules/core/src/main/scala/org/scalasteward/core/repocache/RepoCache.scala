@@ -26,15 +26,12 @@ import org.scalasteward.core.sbt.data.SbtVersion
 final case class RepoCache(
     sha1: Sha1,
     dependencies: List[Dependency],
-    maybeSbtVersion: Option[SbtVersion],
-    maybeScalafmtVersion: Option[Version],
+    projectPathToSbtVersion: Map[String, SbtVersion],
+    projectPathToScalafmtVersion: Map[String, Version],
     maybeRepoConfig: Option[RepoConfig]
 )
 
 object RepoCache {
-  implicit val repoCacheDecoder: Decoder[RepoCache] =
-    deriveDecoder
-
-  implicit val repoCacheEncoder: Encoder[RepoCache] =
-    deriveEncoder
+  implicit val repoCacheDecoder: Decoder[RepoCache] = deriveDecoder
+  implicit val repoCacheEncoder: Encoder[RepoCache] = deriveEncoder
 }

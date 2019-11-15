@@ -20,7 +20,7 @@ class ScalafmtAlgTest extends AnyFunSuite with Matchers {
         |""".stripMargin
     )
     val (state, maybeUpdate) =
-      scalafmtAlg.getScalafmtVersion(repo).run(initialState).unsafeRunSync()
+      scalafmtAlg.getScalafmtVersion(repoDir).run(initialState).unsafeRunSync()
 
     maybeUpdate shouldBe Some(Version("2.0.0-RC8"))
     state shouldBe MockState.empty.copy(
@@ -46,7 +46,7 @@ class ScalafmtAlgTest extends AnyFunSuite with Matchers {
         |align.openParenCallSite = false
         |""".stripMargin
     )
-    val (_, maybeUpdate) = scalafmtAlg.getScalafmtVersion(repo).run(initialState).unsafeRunSync()
+    val (_, maybeUpdate) = scalafmtAlg.getScalafmtVersion(repoDir).run(initialState).unsafeRunSync()
     maybeUpdate shouldBe Some(Version("2.0.0-RC8"))
   }
 

@@ -3,11 +3,13 @@ package org.scalasteward.core.application
 import cats.implicits._
 import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Cli.EnvVar
+import org.scalatest.{EitherValues, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+
 import scala.concurrent.duration._
 
-class CliTest extends AnyFunSuite with Matchers {
+class CliTest extends AnyFunSuite with Matchers with EitherValues with OptionValues {
   type Result[A] = Either[Throwable, A]
   val cli: Cli[Result] = new Cli[Result]
 
@@ -25,7 +27,8 @@ class CliTest extends AnyFunSuite with Matchers {
         List("--env-var", "g=h"),
         List("--env-var", "i=j"),
         List("--prune-repos"),
-        List("--process-timeout", "30min")
+        List("--process-timeout", "30min"),
+        List("--project-dirs", "repo1/**;**/app")
       ).flatten
     ) shouldBe Right(
       Cli.Args(
@@ -39,7 +42,8 @@ class CliTest extends AnyFunSuite with Matchers {
         ignoreOptsFiles = true,
         envVar = List(EnvVar("g", "h"), EnvVar("i", "j")),
         pruneRepos = true,
-        processTimeout = 30.minutes
+        processTimeout = 30.minutes,
+        projectDirs = Some("repo1/**;**/app")
       )
     )
   }

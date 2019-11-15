@@ -42,7 +42,8 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
     files.foreach {
       case (file, content) =>
         val initialState = MockState.empty.copy(files = Map(file -> content))
-        val state = sbtAlg.getUpdatesForRepo(repo).runS(initialState).unsafeRunSync()
+        val state =
+          sbtAlg.getUpdatesForProjectDirInRepo(repoDir, repo).runS(initialState).unsafeRunSync()
         state shouldBe MockState.empty.copy(
           files = Map(file -> content),
           commands = Vector(
@@ -73,7 +74,10 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
     val repo = Repo("fthomas", "refined")
     val repoDir = config.workspace / "fthomas/refined"
     val state =
-      sbtAlgKeepingCredentials.getUpdatesForRepo(repo).runS(MockState.empty).unsafeRunSync()
+      sbtAlgKeepingCredentials
+        .getUpdatesForProjectDirInRepo(repoDir, repo)
+        .runS(MockState.empty)
+        .unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
       commands = Vector(

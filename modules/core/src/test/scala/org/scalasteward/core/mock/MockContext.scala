@@ -13,13 +13,14 @@ import org.scalasteward.core.persistence.JsonKeyValueStore
 import org.scalasteward.core.repocache.RepoCacheRepository
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
+import org.scalasteward.core.scalafix.MigrationAlg
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.FilterAlg
 import org.scalasteward.core.util.{BracketThrowable, DateTimeAlg}
 import org.scalasteward.core.vcs.VCSRepoAlg
 import org.scalasteward.core.vcs.data.AuthenticatedUser
+
 import scala.concurrent.duration._
-import org.scalasteward.core.scalafix.MigrationAlg
 
 object MockContext {
   implicit val config: Config = Config(
@@ -42,7 +43,8 @@ object MockContext {
     ),
     pruneRepos = false,
     processTimeout = 10.minutes,
-    scalafixMigrations = None
+    scalafixMigrations = None,
+    projectDirs = List.empty
   )
 
   implicit val mockEffBracketThrowable: BracketThrowable[MockEff] = Sync[MockEff]

@@ -14,4 +14,7 @@ class MockWorkspaceAlg extends WorkspaceAlg[MockEff] {
 
   override def repoDir(repo: Repo): MockEff[File] =
     rootDir.map(_ / repo.owner / repo.repo)
+
+  override def findProjects(repo: Repo): MockEff[List[File]] =
+    repoDir(repo).map(f => List(f))
 }

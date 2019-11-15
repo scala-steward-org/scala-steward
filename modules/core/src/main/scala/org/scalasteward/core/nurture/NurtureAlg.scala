@@ -16,6 +16,7 @@
 
 package org.scalasteward.core.nurture
 
+import better.files.File
 import cats.effect.Async
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
@@ -25,10 +26,11 @@ import org.scalasteward.core.data.ProcessResult.{Ignored, Updated}
 import org.scalasteward.core.data.{Dependency, ProcessResult, Update}
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Branch, GitAlg}
-import org.scalasteward.core.repoconfig.RepoConfigAlg
+import org.scalasteward.core.io.WorkspaceAlg
+import org.scalasteward.core.repoconfig.{RepoConfig, RepoConfigAlg}
 import org.scalasteward.core.sbt.SbtAlg
-import org.scalasteward.core.update.FilterAlg
 import org.scalasteward.core.scalafix.MigrationAlg
+import org.scalasteward.core.update.FilterAlg
 import org.scalasteward.core.util.DateTimeAlg
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo}
@@ -51,6 +53,7 @@ final class NurtureAlg[F[_]](
     logger: Logger[F],
     pullRequestRepo: PullRequestRepository[F],
     sbtAlg: SbtAlg[F],
+    workspaceAlg: WorkspaceAlg[F],
     F: Async[F]
 ) {
   def nurture(repo: Repo): F[Either[Throwable, Unit]] =
@@ -76,14 +79,17 @@ final class NurtureAlg[F[_]](
     for {
       _ <- logger.info(s"Find updates for ${repo.show}")
       repoConfig <- repoConfigAlg.readRepoConfigOrDefault(repo)
-      updates <- sbtAlg.getUpdatesForRepo(repo)
-      filtered <- filterAlg.localFilterMany(repoConfig, updates)
+      projectDirs <- workspaceAlg.findProjects(repo)
+      _ <- checkHasProjectsAndLogIfProjectDirsDefined(repo, projectDirs)
+      filtered <- findUpdatesInAllProjects(repo, projectDirs, repoConfig)
       grouped = Update.group(filtered)
       sorted <- NurtureAlg.sortUpdatesByMigration(grouped)
       _ <- logger.info(util.logger.showUpdates(sorted))
       baseSha1 <- gitAlg.latestSha1(repo, baseBranch)
+      // We do not differentiate between individual project dependencies.
+      // After all, after an update all will have the same version anyway.
       memoizedGetDependencies <- Async.memoize {
-        sbtAlg.getDependencies(repo).handleError(_ => List.empty)
+        sbtAlg.getDependencies(projectDirs).handleError(_ => List.empty)
       }
       _ <- NurtureAlg.processUpdates(
         sorted,
@@ -95,6 +101,37 @@ final class NurtureAlg[F[_]](
         repoConfig.updates.limit
       )
     } yield ()
+
+  private def checkHasProjectsAndLogIfProjectDirsDefined(
+      repo: Repo,
+      projectDirs: List[File]
+  ): F[Unit] =
+    projectDirs match {
+      case Nil =>
+        throw new IllegalStateException(
+          s"no project found in ${repo.owner}/${repo.repo} with projectDirs: ${config.projectDirs.mkString(";")}"
+        )
+      case _ if config.projectDirs.nonEmpty =>
+        val workspacePathLength = (config.workspace / "repos").pathAsString.length
+        logger.info(
+          s"Found projects: ${projectDirs.map(_.pathAsString.substring(workspacePathLength)).mkString(", ")}"
+        )
+      case _ => F.unit
+    }
+
+  def findUpdatesInAllProjects(
+      repo: Repo,
+      projectDirs: List[File],
+      repoConfig: RepoConfig
+  ): F[List[Update.Single]] =
+    projectDirs
+      .traverse { projectDir =>
+        for {
+          updates <- sbtAlg.getUpdatesForProjectDirInRepo(projectDir, repo)
+          filtered <- filterAlg.localFilterMany(repoConfig, updates)
+        } yield filtered
+      }
+      .map(_.flatten)
 
   def processUpdate(data: UpdateData, getDependencies: F[List[Dependency]]): F[ProcessResult] =
     for {
