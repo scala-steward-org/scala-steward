@@ -40,6 +40,7 @@
 - Add update state UpdateRejectedByConfig [#836](https://github.com/fthomas/scala-steward/pull/836) by [@fthomas](https://github.com/fthomas)
 - Better handling scm url  [#834](https://github.com/fthomas/scala-steward/pull/834) by [@exoego](https://github.com/exoego)
 - Added --process-timeout option [#832](https://github.com/fthomas/scala-steward/pull/832) by [@tkawachi](https://github.com/tkawachi)
+- Added --project-dirs option [#1093](https://github.com/fthomas/scala-steward/pull/1093) by [Tegonal GmbH](https://github.com/tegonal)
 
 #### Bug Fixes
 

@@ -93,6 +93,7 @@ Thanks goes to these wonderful people:
 * [Robert Stoll](https://github.com/robstoll)
 * [sullis](https://github.com/sullis)
 * [TATSUNO Yasuhiro](https://github.com/exoego)
+* [Tegonal GmbH](https://github.com/tegonal)
 * [Thomas Heslin](https://github.com/tjheslin1)
 * [Thomas Kaliakos](https://github.com/thomaska)
 * [Yan](https://github.com/yaroot)
