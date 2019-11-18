@@ -90,12 +90,12 @@ object Version {
     final case class Alpha(value: String) extends Component {
       def isPreReleaseIdent: Boolean = order < 0
       def order: Int = value.toUpperCase match {
-        case "SNAP" | "SNAPSHOT" => -5
-        case "ALPHA"             => -4
-        case "BETA"              => -3
-        case "M" | "MILESTONE"   => -2
-        case "RC"                => -1
-        case _                   => 0
+        case "SNAP" | "SNAPSHOT"      => -5
+        case "ALPHA"                  => -4
+        case "BETA"                   => -3
+        case "M" | "MILESTONE" | "AM" => -2
+        case "RC"                     => -1
+        case _                        => 0
       }
     }
     final case class Separator(c: Char) extends Component
