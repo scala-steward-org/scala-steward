@@ -134,6 +134,18 @@ object FilterAlg {
           // https://github.com/http4s/http4s/pull/2153
           "0.19.0"
         )
+
+      case (
+          "org.scala-js",
+          "sbt-scalajs" | "scalajs-compiler" | "scalajs-library" | "scalajs-test-bridge" |
+          "scalajs-test-interface",
+          _
+          ) =>
+        List(
+          //https://github.com/scala-js/scala-js/issues/3865
+          "0.6.30"
+        )
+
       case _ => List.empty
     }
 }
