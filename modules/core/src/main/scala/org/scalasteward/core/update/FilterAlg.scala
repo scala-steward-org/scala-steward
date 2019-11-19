@@ -137,7 +137,8 @@ object FilterAlg {
 
       case (
           "org.scala-js",
-          "sbt-scalajs" | "scalajs-compiler" | "scalajs-test-bridge" | "scalajs-test-interface",
+          "sbt-scalajs" | "scalajs-compiler" | "scalajs-library" | "scalajs-test-bridge" |
+          "scalajs-test-interface",
           _
           ) =>
         List(
