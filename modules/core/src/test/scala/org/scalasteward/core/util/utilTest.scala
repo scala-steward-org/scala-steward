@@ -1,6 +1,5 @@
 package org.scalasteward.core.util
 
-import cats.effect.IO
 import cats.implicits._
 import eu.timepit.refined.scalacheck.numeric._
 import eu.timepit.refined.types.numeric.PosInt
@@ -28,15 +27,6 @@ class utilTest extends AnyFunSuite with Matchers with ScalaCheckPropertyChecks {
     }((_, e: Unit) => Left(e))
 
     res shouldBe Right(5)
-  }
-
-  test("evalFilter") {
-    fs2.Stream
-      .range[IO](1, 10)
-      .through(evalFilter(i => IO(i % 2 == 0)))
-      .compile
-      .toList
-      .unsafeRunSync() shouldBe List(2, 4, 6, 8)
   }
 
   test("halve: halves concatenated yields the original sequence") {

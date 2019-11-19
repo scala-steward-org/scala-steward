@@ -23,7 +23,6 @@ import cats.{Functor, Traverse}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import org.apache.commons.io.FileUtils
-import org.scalasteward.core.util
 import org.scalasteward.core.util.MonadThrowable
 
 trait FileAlg[F[_]] {
@@ -68,9 +67,9 @@ trait FileAlg[F[_]] {
       F: Functor[F]
   ): F[List[File]] =
     walk(dir)
-      .through(util.evalFilter(isRegularFile))
+      .evalFilter(isRegularFile)
       .filter(fileFilter)
-      .through(util.evalFilter(containsString(_, string)))
+      .evalFilter(containsString(_, string))
       .compile
       .toList
 

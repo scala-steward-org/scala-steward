@@ -71,9 +71,6 @@ package object util {
     loop(a)
   }
 
-  def evalFilter[F[_]: Functor, A](p: A => F[Boolean]): Pipe[F, A, A] =
-    _.evalMap(a => p(a).tupleLeft(a)).collect { case (a, true) => a }
-
   def halve[C](c: C)(implicit ev: C => TraversableLike[_, C]): Either[C, (C, C)] = {
     val size = c.size
     if (size < 2) Left(c) else Right(c.splitAt((size + 1) / 2))
