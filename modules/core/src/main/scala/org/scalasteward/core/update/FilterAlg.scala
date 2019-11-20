@@ -19,7 +19,7 @@ package org.scalasteward.core.update
 import cats.implicits._
 import cats.{Monad, TraverseFilter}
 import io.chrisdavenport.log4cats.Logger
-import org.scalasteward.core.data.{Update, Version}
+import org.scalasteward.core.data.{GroupId, Update, Version}
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.update.FilterAlg._
 import org.scalasteward.core.util
@@ -104,48 +104,39 @@ object FilterAlg {
 
   def removeBadVersions(update: Update.Single): FilterResult =
     util
-      .removeAll(update.newerVersions, badVersions(update))
+      .removeAll(update.newerVersions, badVersions(update.groupId, update.artifactId))
       .map(versions => update.copy(newerVersions = versions))
       .fold[FilterResult](Left(BadVersions(update)))(Right.apply)
 
-  private def badVersions(update: Update.Single): List[String] =
-    (update.groupId.value, update.artifactId, update.currentVersion) match {
-      // https://github.com/vlovgr/ciris/pull/182#issuecomment-420599759
-      case ("com.jsuereth", "sbt-pgp", "1.1.2-1") => List("1.1.2")
-      case ("commons-collections", "commons-collections", _) =>
+  private def badVersions(groupId: GroupId, artifactId: String): List[String] =
+    (groupId.value, artifactId) match {
+      case ("commons-collections", "commons-collections") =>
         List(
           // https://github.com/albuch/sbt-dependency-check/pull/85
           "20040102.233541"
         )
-      case ("io.monix", _, _) =>
+      case ("io.monix", _) =>
         List(
           // https://github.com/fthomas/scala-steward/issues/105
           "3.0.0-fbcb270"
         )
-      case ("net.sourceforge.plantuml", "plantuml", _) =>
+      case ("net.sourceforge.plantuml", "plantuml") =>
         List(
           // https://github.com/esamson/remder/pull/5
           "8059",
           // https://github.com/metabookmarks/sbt-plantuml-plugin/pull/10
           "2017.11"
         )
-      case ("org.http4s", _, _) =>
+      case ("org.http4s", _) =>
         List(
           // https://github.com/http4s/http4s/pull/2153
           "0.19.0"
         )
-
-      case (
-          "org.scala-js",
-          "sbt-scalajs" | "scalajs-compiler" | "scalajs-library" | "scalajs-test-bridge" |
-          "scalajs-test-interface",
-          _
-          ) =>
+      case ("org.scala-js", _) =>
         List(
-          //https://github.com/scala-js/scala-js/issues/3865
+          // https://github.com/scala-js/scala-js/issues/3865
           "0.6.30"
         )
-
       case _ => List.empty
     }
 }
