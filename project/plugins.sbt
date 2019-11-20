@@ -9,7 +9,7 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.5.0")
 addSbtPlugin("de.heikoseeberger" % "sbt-header" % "5.3.0")
 addSbtPlugin("io.github.davidgregory084" % "sbt-tpolecat" % "0.1.8")
 addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.6.1")
-addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.6.0")
+addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.6.1")
 addSbtPlugin("org.wartremover" % "sbt-wartremover" % "2.4.3")
 
 // This is only here so that Scala Steward updates the version in sbt/package.scala too.
