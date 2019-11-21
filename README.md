@@ -60,6 +60,7 @@ The [`docs`](docs) directory contains documentation about these topics:
 Thanks goes to these wonderful people:
 
 * [Alex](https://github.com/jhnsmth)
+* [Andrea Mistretta](https://github.com/andreami)
 * [Anil Kumar Myla](https://github.com/anilkumarmyla)
 * [Arulselvan Madhavan](https://github.com/ArulselvanMadhavan)
 * [Bayram Kiran](https://github.com/kiranbayram)
