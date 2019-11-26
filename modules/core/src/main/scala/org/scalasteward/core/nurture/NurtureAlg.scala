@@ -104,11 +104,8 @@ final class NurtureAlg[F[_]](
       result <- pullRequests.headOption match {
         case Some(pr) if pr.isClosed =>
           logger.info(s"PR ${pr.html_url} is closed") >> F.pure[ProcessResult](Ignored)
-        case Some(pr) if data.repoConfig.updatePullRequests =>
-          logger.info(s"Found PR ${pr.html_url}") >> updatePullRequest(data)
         case Some(pr) =>
-          logger.info(s"Found PR ${pr.html_url}, but updates are disabled by flag") >> F
-            .pure[ProcessResult](Ignored)
+          logger.info(s"Found PR ${pr.html_url}") >> updatePullRequest(data)
         case None =>
           applyNewUpdate(data, getDependencies)
       }
@@ -185,12 +182,16 @@ final class NurtureAlg[F[_]](
     }
 
   def updatePullRequest(data: UpdateData): F[ProcessResult] =
-    gitAlg.returnToCurrentBranch(data.repo) {
-      for {
-        _ <- gitAlg.checkoutBranch(data.repo, data.updateBranch)
-        updated <- shouldBeUpdated(data)
-        result <- if (updated) mergeAndApplyAgain(data) else F.pure[ProcessResult](Ignored)
-      } yield result
+    if (data.repoConfig.updatePullRequests) {
+      gitAlg.returnToCurrentBranch(data.repo) {
+        for {
+          _ <- gitAlg.checkoutBranch(data.repo, data.updateBranch)
+          update <- shouldBeUpdated(data)
+          result <- if (update) mergeAndApplyAgain(data) else F.pure[ProcessResult](Ignored)
+        } yield result
+      }
+    } else {
+      logger.info("PR updates are disabled by flag").as(Ignored)
     }
 
   def shouldBeUpdated(data: UpdateData): F[Boolean] = {
@@ -208,7 +209,7 @@ final class NurtureAlg[F[_]](
             }
         }
     }
-    result.flatMap { case (reset, msg) => logger.info(msg).as(reset) }
+    result.flatMap { case (update, msg) => logger.info(msg).as(update) }
   }
 
   def mergeAndApplyAgain(data: UpdateData): F[ProcessResult] =
