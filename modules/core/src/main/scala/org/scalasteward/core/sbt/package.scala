@@ -67,7 +67,7 @@ package object sbt {
     // I don't consider reading a resource as side-effect,
     // so it is OK to call `unsafeRunSync` here.
     Resource
-      .fromAutoCloseable(IO(Source.fromResource(name)))
+      .fromAutoCloseable(IO(Source.fromResource(s"org/scalasteward/plugin/$name")))
       .use(src => IO(FileData(name, src.mkString)))
       .unsafeRunSync()
   }
