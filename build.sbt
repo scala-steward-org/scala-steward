@@ -103,6 +103,7 @@ lazy val plugin = myCrossProject("plugin")
   .settings(noPublishSettings)
   .settings(
     sbtPlugin := true,
+    addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.5.0"),
     Compile / compile / wartremoverErrors -= Wart.Equals
   )
 
