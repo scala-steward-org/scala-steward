@@ -58,7 +58,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
               "sbt",
               "-batch",
               "-no-colors",
-              s";$setDependencyUpdatesFailBuild;$dependencyUpdates;$reloadPlugins;$dependencyUpdates"
+              s";$stewardUpdates;$reloadPlugins;$stewardUpdates"
             ),
             List("rm", s"$repoDir/project/tmp-sbt-dep.sbt"),
             List("read", s"${config.workspace}/repos_v6.json")
@@ -90,7 +90,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
           "sbt",
           "-batch",
           "-no-colors",
-          s";$setDependencyUpdatesFailBuild;$dependencyUpdates;$reloadPlugins;$dependencyUpdates"
+          s";$stewardUpdates;$reloadPlugins;$stewardUpdates"
         ),
         List("restore", (repoDir / ".sbtopts").toString),
         List("restore", (repoDir / ".jvmopts").toString),

@@ -17,11 +17,10 @@
 package org.scalasteward.core.sbt
 
 object command {
-  val dependencyUpdates = "dependencyUpdates"
-  val libraryDependenciesAsJson = "show libraryDependenciesAsJson"
+  val stewardUpdates = "show stewardUpdates"
+  val stewardDependencies = "show stewardDependencies"
   val reloadPlugins = "reload plugins"
   val scalafix = "scalafix"
   val testScalafix = "test:scalafix"
   val scalafixEnable = "scalafixEnable"
-  val setDependencyUpdatesFailBuild = "set every dependencyUpdatesFailBuild := false"
 }

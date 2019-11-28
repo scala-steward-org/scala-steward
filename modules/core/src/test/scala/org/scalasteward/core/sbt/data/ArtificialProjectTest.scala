@@ -1,6 +1,7 @@
 package org.scalasteward.core.sbt.data
 
 import org.scalasteward.core.data.{Dependency, GroupId}
+import org.scalasteward.core.sbt.command._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
@@ -34,9 +35,9 @@ class ArtificialProjectTest extends AnyFunSuite with Matchers {
 
   test("dependencyUpdatesCmd") {
     project.dependencyUpdatesCmd shouldBe List(
-      "dependencyUpdates",
-      "reload plugins",
-      "dependencyUpdates"
+      stewardUpdates,
+      reloadPlugins,
+      stewardUpdates
     )
   }
 

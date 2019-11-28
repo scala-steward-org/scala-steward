@@ -16,6 +16,8 @@
 
 package org.scalasteward.plugin
 
+import com.timushev.sbt.updates.UpdatesKeys.dependencyUpdatesData
+import com.timushev.sbt.updates.versions.{InvalidVersion, ValidVersion}
 import sbt.Keys._
 import sbt._
 
@@ -23,36 +25,42 @@ object StewardPlugin extends AutoPlugin {
   override def trigger: PluginTrigger = allRequirements
 
   object autoImport {
-    val libraryDependenciesAsJson = taskKey[String]("")
+    val stewardDependencies =
+      taskKey[String]("Dependencies as JSON for consumption by Scala Steward.")
+    val stewardUpdates =
+      taskKey[String]("Dependency updates as JSON for consumption by Scala Steward.")
   }
 
   import autoImport._
 
-  def crossName(moduleId: ModuleID, scalaVersion: String, scalaBinaryVersion: String): String =
-    CrossVersion(moduleId.crossVersion, scalaVersion, scalaBinaryVersion)
-      .getOrElse(identity[String](_))(moduleId.name)
-
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
-    libraryDependenciesAsJson := {
+    stewardDependencies := {
       val sourcePositions = dependencyPositions.value
       val scalaBinaryVersionValue = scalaBinaryVersion.value
       val scalaVersionValue = scalaVersion.value
 
-      val deps = libraryDependencies.value.filter(isDefinedInBuildFiles(_, sourcePositions)).map {
-        moduleId =>
-          val entries: List[(String, String)] = List(
-            "groupId" -> moduleId.organization,
-            "artifactId" -> moduleId.name,
-            "artifactIdCross" -> crossName(moduleId, scalaVersionValue, scalaBinaryVersionValue),
-            "version" -> moduleId.revision
-          ) ++
-            moduleId.extraAttributes.get("e:sbtVersion").map("sbtVersion" -> _).toList ++
-            moduleId.extraAttributes.get("e:scalaVersion").map("scalaVersion" -> _).toList ++
-            moduleId.configurations.map("configurations" -> _).toList
+      val dependencies = libraryDependencies.value
+        .filter(isDefinedInBuildFiles(_, sourcePositions))
+        .map(moduleId => toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue))
 
-          entries.map { case (k, v) => s""""$k": "$v"""" }.mkString("{ ", ", ", " }")
+      dependencies.map(_.asJson).mkString(System.lineSeparator())
+    },
+    stewardUpdates := {
+      val scalaBinaryVersionValue = scalaBinaryVersion.value
+      val scalaVersionValue = scalaVersion.value
+
+      val updates = dependencyUpdatesData.value.toList.map {
+        case (moduleId, versions) =>
+          Update(
+            dependency = toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue),
+            newerVersions = versions.toList.map {
+              case v: ValidVersion   => v.text
+              case v: InvalidVersion => v.text
+            }
+          )
       }
-      deps.mkString("[ ", ", ", " ]")
+
+      updates.map(_.asJson).mkString(System.lineSeparator())
     }
   )
 
@@ -70,4 +78,75 @@ object StewardPlugin extends AutoPlugin {
         false
       case _ => true
     }
+
+  private def crossName(
+      moduleId: ModuleID,
+      scalaVersion: String,
+      scalaBinaryVersion: String
+  ): String =
+    CrossVersion(moduleId.crossVersion, scalaVersion, scalaBinaryVersion)
+      .getOrElse(identity[String](_))(moduleId.name)
+
+  private def toDependency(
+      moduleId: ModuleID,
+      scalaVersion: String,
+      scalaBinaryVersion: String
+  ): Dependency =
+    Dependency(
+      groupId = moduleId.organization,
+      artifactId = moduleId.name,
+      artifactIdCross = crossName(moduleId, scalaVersion, scalaBinaryVersion),
+      version = moduleId.revision,
+      configurations = moduleId.configurations,
+      sbtVersion = moduleId.extraAttributes.get("e:sbtVersion"),
+      scalaVersion = moduleId.extraAttributes.get("e:scalaVersion")
+    )
+
+  final private case class Dependency(
+      groupId: String,
+      artifactId: String,
+      artifactIdCross: String,
+      version: String,
+      configurations: Option[String],
+      sbtVersion: Option[String],
+      scalaVersion: Option[String]
+  ) {
+    def asJson: String =
+      objToJson(
+        List(
+          "groupId" -> strToJson(groupId),
+          "artifactId" -> strToJson(artifactId),
+          "artifactIdCross" -> strToJson(artifactIdCross),
+          "version" -> strToJson(version),
+          "configurations" -> optToJson(configurations.map(strToJson)),
+          "sbtVersion" -> optToJson(sbtVersion.map(strToJson)),
+          "scalaVersion" -> optToJson(scalaVersion.map(strToJson))
+        )
+      )
+  }
+
+  final private case class Update(
+      dependency: Dependency,
+      newerVersions: List[String]
+  ) {
+    def asJson: String =
+      objToJson(
+        List(
+          "dependency" -> dependency.asJson,
+          "newerVersions" -> seqToJson(newerVersions.map(strToJson))
+        )
+      )
+  }
+
+  private def strToJson(str: String): String =
+    s""""$str""""
+
+  private def optToJson(opt: Option[String]): String =
+    opt.getOrElse("null")
+
+  private def seqToJson(seq: Seq[String]): String =
+    seq.mkString("[ ", ", ", " ]")
+
+  private def objToJson(obj: List[(String, String)]): String =
+    obj.map { case (k, v) => s""""$k": $v""" }.mkString("{ ", ", ", " }")
 }

@@ -107,7 +107,7 @@ object SbtAlg {
       def getOriginalDependencies(repo: Repo): F[List[Dependency]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          cmd = sbtCmd(List(libraryDependenciesAsJson, reloadPlugins, libraryDependenciesAsJson))
+          cmd = sbtCmd(List(stewardDependencies, reloadPlugins, stewardDependencies))
           lines <- exec(cmd, repoDir)
         } yield parser.parseDependencies(lines)
 
@@ -132,12 +132,7 @@ object SbtAlg {
       override def getUpdatesForRepo(repo: Repo): F[List[Update.Single]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          commands = List(
-            setDependencyUpdatesFailBuild,
-            dependencyUpdates,
-            reloadPlugins,
-            dependencyUpdates
-          )
+          commands = List(stewardUpdates, reloadPlugins, stewardUpdates)
           updates <- withTemporarySbtDependency(repo) {
             exec(sbtCmd(commands), repoDir).map(parser.parseSingleUpdates)
           }
