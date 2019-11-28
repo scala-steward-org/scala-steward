@@ -9,14 +9,15 @@ val rootPkg = groupId.replace("-", "")
 val gitHubOwner = "fthomas"
 
 val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
-  "core" -> List(JVMPlatform)
+  "core" -> List(JVMPlatform),
+  "plugin" -> List(JVMPlatform)
 )
 
 /// projects
 
 lazy val root = project
   .in(file("."))
-  .aggregate(core.jvm)
+  .aggregate(core.jvm, plugin.jvm)
   .settings(commonSettings)
   .settings(noPublishSettings)
 
@@ -94,7 +95,15 @@ lazy val core = myCrossProject("core")
       implicit val client: Client[IO] = AsyncHttpClient.allocate[IO]().map(_._1).unsafeRunSync
     """,
     fork in run := true,
-    fork in Test := true
+    fork in Test := true,
+    Compile / unmanagedResourceDirectories ++= (plugin.jvm / Compile / unmanagedSourceDirectories).value
+  )
+
+lazy val plugin = myCrossProject("plugin")
+  .settings(noPublishSettings)
+  .settings(
+    sbtPlugin := true,
+    Compile / compile / wartremoverErrors -= Wart.Equals
   )
 
 /// settings
@@ -130,7 +139,7 @@ lazy val commonSettings = Def.settings(
 lazy val compileSettings = Def.settings(
   doctestTestFramework := DoctestTestFramework.ScalaCheck,
   wartremoverErrors ++= Seq(Wart.TraversableOps),
-  wartremoverErrors in (Compile, compile) ++= Seq(Wart.Equals)
+  Compile / compile / wartremoverErrors ++= Seq(Wart.Equals)
 )
 
 lazy val metadataSettings = Def.settings(
@@ -193,6 +202,14 @@ lazy val noPublishSettings = Def.settings(
 lazy val scaladocSettings = Def.settings()
 
 /// setting keys
+
+lazy val installPlugin = taskKey[Unit]("Copies StewardPlugin.scala into global plugins directory.")
+installPlugin := {
+  val name = "StewardPlugin.scala"
+  val source = (plugin.jvm / Compile / sources).value.find(_.name == name).get
+  val target = file(System.getProperty("user.home")) / ".sbt" / "1.0" / "plugins" / name
+  IO.copyFile(source, target)
+}
 
 lazy val moduleRootPkg = settingKey[String]("")
 moduleRootPkg := rootPkg

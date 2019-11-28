@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core
+package org.scalasteward.plugin
 
 import sbt.Keys._
 import sbt._
 
 object StewardPlugin extends AutoPlugin {
-
   override def trigger: PluginTrigger = allRequirements
 
   object autoImport {
