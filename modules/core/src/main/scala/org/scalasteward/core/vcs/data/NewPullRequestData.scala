@@ -20,12 +20,12 @@ import cats.implicits._
 import io.circe.Encoder
 import io.circe.generic.semiauto._
 import org.scalasteward.core.data.{GroupId, SemVer, Update}
+import org.scalasteward.core.git
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.nurture.UpdateData
 import org.scalasteward.core.repoconfig.RepoConfigAlg
-import org.scalasteward.core.util.Nel
-import org.scalasteward.core.git
 import org.scalasteward.core.scalafix.Migration
+import org.scalasteward.core.util.{Details, Nel}
 
 final case class NewPullRequestData(
     title: String,
@@ -47,6 +47,7 @@ object NewPullRequestData {
   ): String = {
     val artifacts = artifactsWithOptionalUrl(update, artifactIdToUrl)
     val (migrationLabel, appliedMigrations) = migrationNote(update, migrations)
+    val details = ignoreFutureUpdates(update) :: appliedMigrations.toList
     val labels = Nel.fromList(semVerLabel(update).toList ++ migrationLabel.toList)
 
     s"""|Updates ${artifacts} ${fromTo(update, branchCompareUrl)}.
@@ -58,15 +59,8 @@ object NewPullRequestData {
         |
         |Have a fantastic day writing Scala!
         |
-        |<details>
-        |<summary>Ignore future updates</summary>
+        |${details.map(_.toHtml).mkString("\n")}
         |
-        |Add this to your `${RepoConfigAlg.repoConfigBasename}` file to ignore future updates of this dependency:
-        |```
-        |${RepoConfigAlg.configToIgnoreFurtherUpdates(update)}
-        |```
-        |</details>
-        |${appliedMigrations.getOrElse("")}
         |${labels.fold("")(_.mkString_("labels: ", ", ", ""))}
         |""".stripMargin.trim
   }
@@ -105,10 +99,20 @@ object NewPullRequestData {
       case None      => s"${groupId}:${artifactId}"
     }
 
+  def ignoreFutureUpdates(update: Update): Details =
+    Details(
+      "Ignore future updates",
+      s"""|Add this to your `${RepoConfigAlg.repoConfigBasename}` file to ignore future updates of this dependency:
+          |```
+          |${RepoConfigAlg.configToIgnoreFurtherUpdates(update)}
+          |```
+          |""".stripMargin.trim
+    )
+
   def migrationNote(
       update: Update,
       migrations: List[Migration]
-  ): (Option[String], Option[String]) = {
+  ): (Option[String], Option[Details]) = {
     update.artifactId
     if (migrations.isEmpty)
       (None, None)
@@ -116,15 +120,10 @@ object NewPullRequestData {
       (
         Some("scalafix-migrations"),
         Some(
-          s"""<details>
-             |<summary>Applied Migrations</summary>
-             |
-             |${migrations
-               .flatMap(_.rewriteRules.toList)
-               .map(rule => s"* $rule")
-               .mkString("\n")}
-             |</details>
-             |""".stripMargin.trim
+          Details(
+            "Applied Migrations",
+            migrations.flatMap(_.rewriteRules.toList).map(rule => s"* $rule").mkString("\n")
+          )
         )
       )
   }

@@ -91,7 +91,7 @@ class NewPullRequestDataTest extends AnyFunSuite with Matchers {
     val (label, appliedMigrations) = NewPullRequestData.migrationNote(update, List(migration))
 
     label shouldBe Some("scalafix-migrations")
-    appliedMigrations.getOrElse("") shouldBe
+    appliedMigrations.fold("")(_.toHtml) shouldBe
       """<details>
         |<summary>Applied Migrations</summary>
         |
