@@ -30,5 +30,5 @@ object Dependencies {
   val scalacacheCaffeine = "com.github.cb372" %% "scalacache-caffeine" % "0.28.0"
   val scalacacheCatsEffect = "com.github.cb372" %% "scalacache-cats-effect" % scalacacheCaffeine.revision
   val scalacheck = "org.scalacheck" %% "scalacheck" % "1.14.2"
-  val scalaTest = "org.scalatest" %% "scalatest" % "3.1.0-RC3"
+  val scalaTest = "org.scalatest" %% "scalatest" % "3.1.0"
 }
