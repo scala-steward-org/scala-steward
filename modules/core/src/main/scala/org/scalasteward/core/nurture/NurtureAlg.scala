@@ -56,11 +56,9 @@ final class NurtureAlg[F[_]](
   def nurture(repo: Repo): F[Either[Throwable, Unit]] =
     logger.infoTotalTime(repo.show) {
       logger.attemptLog(util.string.lineLeftRight(s"Nurture ${repo.show}")) {
-        for {
-          (fork, baseBranch) <- cloneAndSync(repo)
-          _ <- updateDependencies(repo, fork, baseBranch)
-          _ <- gitAlg.removeClone(repo)
-        } yield ()
+        F.bracket(cloneAndSync(repo)) {
+          case (fork, baseBranch) => updateDependencies(repo, fork, baseBranch)
+        }(_ => gitAlg.removeClone(repo))
       }
     }
 
