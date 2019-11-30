@@ -112,6 +112,9 @@ object FilterAlg {
     (groupId.value, artifactId) match {
       case ("commons-collections", "commons-collections") =>
         List(
+          "20030418.083655",
+          // https://github.com/albuch/sbt-dependency-check/pull/107
+          "20031027.000000",
           // https://github.com/albuch/sbt-dependency-check/pull/85
           "20040102.233541"
         )
@@ -124,6 +127,10 @@ object FilterAlg {
         List(
           // https://github.com/esamson/remder/pull/5
           "8059",
+          "2017.08",
+          "2017.09",
+          // https://github.com/metabookmarks/sbt-plantuml-plugin/pull/21
+          "2017.10",
           // https://github.com/metabookmarks/sbt-plantuml-plugin/pull/10
           "2017.11"
         )
