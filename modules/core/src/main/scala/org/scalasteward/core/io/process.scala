@@ -20,7 +20,7 @@ import cats.effect._
 import cats.implicits._
 import fs2.Stream
 import java.io.{File, IOException, InputStream}
-import org.scalasteward.core.util.Nel
+import org.scalasteward.core.util._
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.TimeoutException
 import scala.concurrent.duration.FiniteDuration
@@ -38,7 +38,7 @@ object process {
       F.delay(new ListBuffer[String]).flatMap { buffer =>
         val readOut = {
           val out = readInputStream[F](process.getInputStream, blocker)
-          out.evalMap(line => F.delay(buffer.append(line)) >> log(line)).compile.drain
+          out.evalMap(line => F.delay(appendBounded(buffer, line, 4096)) >> log(line)).compile.drain
         }
 
         val result = readOut >> F.delay(process.waitFor()) >>= { exitValue =>
