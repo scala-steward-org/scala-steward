@@ -35,6 +35,12 @@ package object util {
 
   type BracketThrowable[F[_]] = Bracket[F, Throwable]
 
+  /** Appends `elem` to `buffer` such that its size does not exceed `maxSize`. */
+  def appendBounded[A](buffer: ListBuffer[A], elem: A, maxSize: Int): Unit = {
+    if (buffer.size >= maxSize) buffer.remove(0, maxSize / 2)
+    buffer.append(elem)
+  }
+
   /** Binds the elements of `gfb` until the first `F[Boolean]` that
     * evaluates to `true`.
     *

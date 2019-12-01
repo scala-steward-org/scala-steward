@@ -6,8 +6,32 @@ import eu.timepit.refined.types.numeric.PosInt
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import scala.collection.mutable.ListBuffer
 
 class utilTest extends AnyFunSuite with Matchers with ScalaCheckPropertyChecks {
+  test("appendBounded") {
+    val lb = new ListBuffer[Int]
+    lb.append(1, 2, 3)
+
+    appendBounded(lb, 4, 4)
+    lb.toList shouldBe List(1, 2, 3, 4)
+
+    appendBounded(lb, 5, 4)
+    lb.toList shouldBe List(3, 4, 5)
+
+    appendBounded(lb, 6, 4)
+    lb.toList shouldBe List(3, 4, 5, 6)
+
+    appendBounded(lb, 7, 6)
+    lb.toList shouldBe List(3, 4, 5, 6, 7)
+
+    appendBounded(lb, 8, 6)
+    lb.toList shouldBe List(3, 4, 5, 6, 7, 8)
+
+    appendBounded(lb, 9, 6)
+    lb.toList shouldBe List(6, 7, 8, 9)
+  }
+
   test("bindUntilTrue: empty list") {
     bindUntilTrue(List.empty[Option[Boolean]]) shouldBe Some(false)
   }
