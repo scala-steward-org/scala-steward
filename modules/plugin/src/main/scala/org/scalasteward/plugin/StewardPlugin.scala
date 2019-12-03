@@ -51,7 +51,7 @@ object StewardPlugin extends AutoPlugin {
 
       val updates = dependencyUpdatesData.value.toList.map {
         case (moduleId, versions) =>
-          Update(
+          RawUpdate(
             dependency = toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue),
             newerVersions = versions.toList.map {
               case v: ValidVersion   => v.text
@@ -125,7 +125,7 @@ object StewardPlugin extends AutoPlugin {
       )
   }
 
-  final private case class Update(
+  final private case class RawUpdate(
       dependency: Dependency,
       newerVersions: List[String]
   ) {
