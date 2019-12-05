@@ -38,10 +38,11 @@ object parser {
     lines.flatMap(line => decode[Dependency](removeSbtNoise(line)).toList)
 
   def parseDependenciesAndUpdates(lines: List[String]): (List[Dependency], List[RawUpdate]) =
-    lines
-      .flatMap(line => parse(removeSbtNoise(line)).toList)
-      .flatMap(json => Decoder[Dependency].either(Decoder[RawUpdate]).decodeJson(json).toList)
-      .separate
+    lines.flatMap { line =>
+      parse(removeSbtNoise(line)).flatMap { json =>
+        Decoder[Dependency].either(Decoder[RawUpdate]).decodeJson(json)
+      }.toList
+    }.separate
 
   private def removeSbtNoise(s: String): String =
     s.replace("[info]", "").trim
