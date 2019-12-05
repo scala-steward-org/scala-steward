@@ -1,6 +1,6 @@
 package org.scalasteward.core.sbt
 
-import org.scalasteward.core.data.{Dependency, GroupId, Update}
+import org.scalasteward.core.data.{Dependency, GroupId, RawUpdate, Update}
 import org.scalasteward.core.sbt.data.SbtVersion
 import org.scalasteward.core.sbt.parser._
 import org.scalasteward.core.util.Nel
@@ -116,6 +116,33 @@ class parserTest extends AnyFunSuite with Matchers {
         "1.6.0-RC4",
         Some(SbtVersion("1.0"))
       )
+    )
+  }
+
+  test("parseDependenciesAndUpdates") {
+    val lines =
+      """|[info] core / stewardDependencies
+         |[info] { "groupId": "io.get-coursier", "artifactId": "coursier", "artifactIdCross": "coursier_2.12", "version": "2.0.0-RC5-2", "configurations": null, "sbtVersion": null, "scalaVersion": null }
+         |[info] { "groupId": "io.get-coursier", "artifactId": "coursier-cats-interop", "artifactIdCross": "coursier-cats-interop_2.12", "version": "2.0.0-RC5-2", "configurations": null, "sbtVersion": null, "scalaVersion": null }
+         |[info] core / stewardUpdates
+         |[info] { "dependency": { "groupId": "io.get-coursier", "artifactId": "coursier", "artifactIdCross": "coursier_2.12", "version": "2.0.0-RC5-2", "configurations": null, "sbtVersion": null, "scalaVersion": null }, "newerVersions": [ "2.0.0-RC5-3" ] }
+         |[info] { "dependency": { "groupId": "io.get-coursier", "artifactId": "coursier-cats-interop", "artifactIdCross": "coursier-cats-interop_2.12", "version": "2.0.0-RC5-2", "configurations": null, "sbtVersion": null, "scalaVersion": null }, "newerVersions": [ "2.0.0-RC5-3" ] }
+         |""".stripMargin.linesIterator.toList
+
+    val coursier =
+      Dependency(GroupId("io.get-coursier"), "coursier", "coursier_2.12", "2.0.0-RC5-2")
+    val catsInterop =
+      Dependency(
+        GroupId("io.get-coursier"),
+        "coursier-cats-interop",
+        "coursier-cats-interop_2.12",
+        "2.0.0-RC5-2"
+      )
+    val (dependencies, updates) = parser.parseDependenciesAndUpdates(lines)
+    dependencies shouldBe List(coursier, catsInterop)
+    updates shouldBe List(
+      RawUpdate(coursier, Nel.of("2.0.0-RC5-3")),
+      RawUpdate(catsInterop, Nel.of("2.0.0-RC5-3"))
     )
   }
 }
