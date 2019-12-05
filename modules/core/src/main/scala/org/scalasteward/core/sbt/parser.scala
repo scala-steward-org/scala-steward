@@ -17,7 +17,8 @@
 package org.scalasteward.core.sbt
 
 import cats.implicits._
-import io.circe.parser.decode
+import io.circe.Decoder
+import io.circe.parser._
 import org.scalasteward.core.data.{Dependency, RawUpdate, Update}
 import org.scalasteward.core.sbt.data.SbtVersion
 
@@ -35,6 +36,12 @@ object parser {
   /** Parses the output of our own `stewardDependencies` task. */
   def parseDependencies(lines: List[String]): List[Dependency] =
     lines.flatMap(line => decode[Dependency](removeSbtNoise(line)).toList)
+
+  def parseDependenciesAndUpdates(lines: List[String]): (List[Dependency], List[RawUpdate]) =
+    lines
+      .flatMap(line => parse(removeSbtNoise(line)).toList)
+      .flatMap(json => Decoder[Dependency].either(Decoder[RawUpdate]).decodeJson(json).toList)
+      .separate
 
   private def removeSbtNoise(s: String): String =
     s.replace("[info]", "").trim
