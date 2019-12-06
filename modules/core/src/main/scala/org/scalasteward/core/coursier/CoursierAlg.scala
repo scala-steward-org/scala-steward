@@ -76,10 +76,16 @@ object CoursierAlg {
           .traverseFilter(dep => getArtifactUrl(dep).map(_.map(dep.artifactId -> _)))
           .map(_.toMap)
 
-      override def getNewerVersions(dependency: Dependency): F[List[Version]] =
-        versions.withModule(toCoursierModule(dependency)).versions().map { allVersions =>
-          allVersions.available.map(Version.apply).filter(_ > Version(dependency.version))
-        }
+      override def getNewerVersions(dependency: Dependency): F[List[Version]] = {
+        val module = toCoursierModule(dependency)
+        versions
+          .withModule(module)
+          .versions()
+          .map(_.available.map(Version.apply).filter(_ > Version(dependency.version)))
+          .handleErrorWith { throwable =>
+            logger.error(throwable)(s"Failed to get newer versions of $module").as(List.empty)
+          }
+      }
     }
   }
 
