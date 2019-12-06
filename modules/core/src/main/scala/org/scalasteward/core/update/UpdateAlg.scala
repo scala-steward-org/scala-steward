@@ -18,6 +18,7 @@ package org.scalasteward.core.update
 
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
+import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.{Dependency, GroupId, Update}
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.repocache.{RepoCache, RepoCacheRepository}
@@ -25,7 +26,7 @@ import org.scalasteward.core.sbt._
 import org.scalasteward.core.sbt.data.ArtificialProject
 import org.scalasteward.core.update.data.UpdateState
 import org.scalasteward.core.update.data.UpdateState._
-import org.scalasteward.core.util.MonadThrowable
+import org.scalasteward.core.util.{MonadThrowable, Nel}
 import org.scalasteward.core.vcs.data.PullRequestState.Closed
 import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.util
@@ -37,7 +38,7 @@ final class UpdateAlg[F[_]](
     logger: Logger[F],
     pullRequestRepo: PullRequestRepository[F],
     repoCacheRepository: RepoCacheRepository[F],
-    sbtAlg: SbtAlg[F],
+    coursierAlg: CoursierAlg[F],
     updateRepository: UpdateRepository[F],
     F: MonadThrowable[F]
 ) {
@@ -79,8 +80,14 @@ final class UpdateAlg[F[_]](
           .toList
 
         val x = (libProjects ++ pluginProjects).flatTraverse { prj =>
+          val updates = (project: ArtificialProject) =>
+            (project.libraries ++ project.plugins).traverseFilter { dep =>
+              coursierAlg
+                .getNextVersion(dep)
+                .map(_.map(vers => dep.toUpdate.copy(newerVersions = Nel.of(vers.value))))
+            }
           val fa =
-            util.divideOnError(prj)(sbtAlg.getUpdatesForProject)(_.halve.toList.flatMap {
+            util.divideOnError(prj)(updates)(_.halve.toList.flatMap {
               case (p1, p2) => List(p1, p2)
             }) { (failedP: ArtificialProject, t: Throwable) =>
               for {
@@ -88,7 +95,6 @@ final class UpdateAlg[F[_]](
                 _ <- excludeAlg.excludeTemporarily(failedP.libraries ++ failedP.plugins)
               } yield List.empty[Update.Single]
             }
-
           fa.flatTap { updates =>
             logger.info(util.logger.showUpdates(updates.widen[Update])) >>
               updateRepository.saveMany(updates)
