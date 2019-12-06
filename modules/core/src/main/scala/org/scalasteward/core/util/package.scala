@@ -19,10 +19,7 @@ package org.scalasteward.core
 import cats._
 import cats.effect.Bracket
 import cats.implicits._
-import eu.timepit.refined.types.numeric.PosInt
 import fs2.Pipe
-import scala.annotation.tailrec
-import scala.collection.TraversableLike
 import scala.collection.mutable.ListBuffer
 
 package object util {
@@ -59,29 +56,6 @@ package object util {
   def bindUntilTrue[G[_]: Foldable, F[_]: Monad](gfb: G[F[Boolean]]): F[Boolean] =
     gfb.existsM(identity)
 
-  def divideOnError[F[_], G[_], A, B, E](a: A)(f: A => F[B])(divide: A => G[A])(
-      handleError: (A, E) => F[B]
-  )(
-      implicit
-      F: ApplicativeError[F, E],
-      G: Foldable[G],
-      B: Semigroup[B]
-  ): F[B] = {
-    def loop(a1: A): F[B] =
-      f(a1).handleErrorWith { e =>
-        Nel.fromFoldable(divide(a1)) match {
-          case None      => handleError(a1, e)
-          case Some(nel) => nel.traverse(loop).map(_.reduce)
-        }
-      }
-    loop(a)
-  }
-
-  def halve[C](c: C)(implicit ev: C => TraversableLike[_, C]): Either[C, (C, C)] = {
-    val size = c.size
-    if (size < 2) Left(c) else Right(c.splitAt((size + 1) / 2))
-  }
-
   /** Returns true if there is an element that is both in `fa` and `ga`. */
   def intersects[F[_]: UnorderedFoldable, G[_]: UnorderedFoldable, A: Eq](
       fa: F[A],
@@ -111,61 +85,4 @@ package object util {
   /** Removes all elements from `nel` which also exist in `as`. */
   def removeAll[F[_]: UnorderedFoldable, A: Eq](nel: Nel[A], as: F[A]): Option[Nel[A]] =
     Nel.fromList(nel.toList.filterNot(a => as.exists(_ === a)))
-
-  /** Splits a list into chunks with maximum size `maxSize` such that
-    * each chunk only consists of distinct elements with regards to the
-    * discriminator function `f`.
-    *
-    * @example {{{
-    * scala> import cats.implicits._
-    *      | import eu.timepit.refined.types.numeric.PosInt
-    *
-    * scala> separateBy(List("a", "b", "cd", "efg", "hi", "jk", "lmn"))(PosInt(3))(_.length)
-    * res1: List[Nel[String]] = List(NonEmptyList(a, cd, efg), NonEmptyList(b, hi, lmn), NonEmptyList(jk))
-    * }}}
-    */
-  def separateBy[A, K: Eq](list: List[A])(maxSize: PosInt)(f: A => K): List[Nel[A]] = {
-    @tailrec
-    def innerLoop(
-        unseen: List[A],
-        queue: ListBuffer[(A, K)],
-        fromQueue: Boolean,
-        chunkA: ListBuffer[A],
-        chunkK: List[K]
-    ): (List[A], ListBuffer[(A, K)], ListBuffer[A]) =
-      unseen match {
-        case _ if chunkA.size >= maxSize.value => (unseen, queue, chunkA)
-
-        case _ if fromQueue =>
-          queue.find { case (_, k) => !chunkK.contains_(k) } match {
-            case Some(ak @ (a, k)) =>
-              val queue1 = queue -= ak
-              innerLoop(unseen, queue1, queue1.nonEmpty, chunkA :+ a, k :: chunkK)
-            case None =>
-              innerLoop(unseen, queue, false, chunkA, chunkK)
-          }
-
-        case a :: as =>
-          val k = f(a)
-          if (chunkK.contains_(k))
-            innerLoop(as, queue :+ ((a, k)), false, chunkA, chunkK)
-          else
-            innerLoop(as, queue, false, chunkA :+ a, k :: chunkK)
-
-        case Nil => (unseen, queue, chunkA)
-      }
-
-    @tailrec
-    def outerLoop(
-        unseen: List[A],
-        queue: ListBuffer[(A, K)],
-        acc: ListBuffer[Nel[A]]
-    ): ListBuffer[Nel[A]] = {
-      val (unseen1, queue1, chunk) = innerLoop(unseen, queue, queue.nonEmpty, ListBuffer.empty, Nil)
-      val acc1 = Nel.fromList(chunk.toList).fold(acc)(acc :+ _)
-      if (unseen1.nonEmpty || queue1.nonEmpty) outerLoop(unseen1, queue1, acc1) else acc1
-    }
-
-    outerLoop(list, ListBuffer.empty, ListBuffer.empty).toList
-  }
 }
