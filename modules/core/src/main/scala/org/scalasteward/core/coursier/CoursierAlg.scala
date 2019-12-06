@@ -21,14 +21,16 @@ import cats.effect._
 import cats.implicits._
 import coursier.interop.cats._
 import coursier.util.StringInterpolators.SafeIvyRepository
-import coursier.{Info, Module, ModuleName, Organization}
+import coursier.{Info, Module, ModuleName, Organization, Versions}
 import io.chrisdavenport.log4cats.Logger
-import org.scalasteward.core.data.Dependency
+import org.scalasteward.core.data.{Dependency, Version}
+
 import scala.concurrent.ExecutionContext
 
 trait CoursierAlg[F[_]] {
   def getArtifactUrl(dependency: Dependency): F[Option[String]]
   def getArtifactIdUrlMapping(dependencies: List[Dependency]): F[Map[String, String]]
+  def getNextVersion(dependency: Dependency): F[Option[Version]]
 }
 
 object CoursierAlg {
@@ -72,19 +74,26 @@ object CoursierAlg {
         dependencies
           .traverseFilter(dep => getArtifactUrl(dep).map(_.map(dep.artifactId -> _)))
           .map(_.toMap)
+
+      override def getNextVersion(dependency: Dependency): F[Option[Version]] =
+        Versions[F](cache).withModule(toCoursierModule(dependency)).versions().map { allVersions =>
+          Version(dependency.version).selectNext(allVersions.available.map(Version.apply))
+        }
     }
   }
 
-  private def toCoursierDependency(dependency: Dependency): coursier.Dependency = {
+  private def toCoursierDependency(dependency: Dependency): coursier.Dependency =
+    coursier.Dependency(toCoursierModule(dependency), dependency.version).withTransitive(false)
+
+  private def toCoursierModule(dependency: Dependency): coursier.Module = {
     val attributes =
       dependency.sbtVersion.map("sbtVersion" -> _.value).toMap ++
         dependency.scalaVersion.map("scalaVersion" -> _.value).toMap
-    val module = Module(
+    Module(
       Organization(dependency.groupId.value),
       ModuleName(dependency.artifactIdCross),
       attributes
     )
-    coursier.Dependency(module, dependency.version).withTransitive(false)
   }
 
   private def getScmUrlOrHomePage(info: Info): Option[String] =

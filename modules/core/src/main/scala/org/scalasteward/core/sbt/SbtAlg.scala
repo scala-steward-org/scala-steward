@@ -25,7 +25,7 @@ import org.scalasteward.core.data.{Dependency, Update}
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.repocache.RepoCacheRepository
 import org.scalasteward.core.sbt.command._
-import org.scalasteward.core.sbt.data.{ArtificialProject, SbtVersion}
+import org.scalasteward.core.sbt.data.SbtVersion
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.scalafmt.{scalafmtDependency, ScalafmtAlg}
 import org.scalasteward.core.update.UpdateAlg
@@ -42,8 +42,6 @@ trait SbtAlg[F[_]] {
   def getSbtVersion(repo: Repo): F[Option[SbtVersion]]
 
   def getDependencies(repo: Repo): F[List[Dependency]]
-
-  def getUpdatesForProject(project: ArtificialProject): F[List[Update.Single]]
 
   def getUpdatesForRepo(repo: Repo): F[List[Update.Single]]
 
@@ -110,24 +108,6 @@ object SbtAlg {
           cmd = sbtCmd(List(stewardDependencies, reloadPlugins, stewardDependencies))
           lines <- exec(cmd, repoDir)
         } yield parser.parseDependencies(lines)
-
-      override def getUpdatesForProject(project: ArtificialProject): F[List[Update.Single]] =
-        for {
-          updatesDir <- workspaceAlg.rootDir.map(_ / "updates")
-          projectDir = updatesDir / "project"
-          _ <- fileAlg.writeFileData(updatesDir, project.mkBuildSbt)
-          _ <- fileAlg.writeFileData(projectDir, project.mkBuildProperties)
-          _ <- fileAlg.writeFileData(projectDir, project.mkPluginsSbt)
-          cmd = sbtCmd(project.dependencyUpdatesCmd)
-          lines <- processAlg.exec(cmd, updatesDir)
-          _ <- fileAlg.deleteForce(updatesDir)
-          updatesWithCrossSuffix = parser.parseSingleUpdates(lines)
-          allDeps = project.libraries ++ project.plugins
-          uncross = allDeps.map(dep => dep.artifactIdCross -> dep.artifactId).toMap
-          updates = updatesWithCrossSuffix.flatMap { update =>
-            Update.Single.artifactIdLens.modifyF(uncross.get)(update).toList
-          }
-        } yield updates
 
       override def getUpdatesForRepo(repo: Repo): F[List[Update.Single]] =
         for {
