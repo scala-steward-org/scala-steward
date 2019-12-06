@@ -16,6 +16,7 @@
 
 package org.scalasteward.core.update
 
+import cats.Monad
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.coursier.CoursierAlg
@@ -25,41 +26,39 @@ import org.scalasteward.core.repocache.{RepoCache, RepoCacheRepository}
 import org.scalasteward.core.update.data.UpdateState
 import org.scalasteward.core.update.data.UpdateState._
 import org.scalasteward.core.util
-import org.scalasteward.core.util.{MonadThrowable, Nel}
+import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.PullRequestState.Closed
 import org.scalasteward.core.vcs.data.Repo
 
 final class UpdateAlg[F[_]](
     implicit
+    coursierAlg: CoursierAlg[F],
     filterAlg: FilterAlg[F],
     logger: Logger[F],
     pullRequestRepo: PullRequestRepository[F],
     repoCacheRepository: RepoCacheRepository[F],
-    coursierAlg: CoursierAlg[F],
     updateRepository: UpdateRepository[F],
-    F: MonadThrowable[F]
+    F: Monad[F]
 ) {
-  // WIP
   def checkForUpdates(repos: List[Repo]): F[List[Update.Single]] =
     updateRepository.deleteAll >>
       repoCacheRepository.getDependencies(repos).flatMap { dependencies =>
         val filteredDependencies =
           dependencies.filter(d => FilterAlg.isIgnoredGlobally(d.toUpdate).isRight)
 
-        val x = {
-          val fa = filteredDependencies.traverseFilter { dep =>
-            coursierAlg
-              .getNextVersion(dep)
-              .map(_.map(vers => dep.toUpdate.copy(newerVersions = Nel.of(vers.value))))
-          }
-
-          fa.flatTap { updates =>
-            logger.info(util.logger.showUpdates(updates.widen[Update])) >>
-              updateRepository.saveMany(updates)
+        val updates = filteredDependencies.traverseFilter { dependency =>
+          coursierAlg.getNewerVersions(dependency).map(Nel.fromList).flatMap { maybeNewerVersions =>
+            val maybeUpdate = maybeNewerVersions.map { newerVersions =>
+              dependency.toUpdate.copy(newerVersions = newerVersions.map(_.value))
+            }
+            maybeUpdate.flatTraverse(filterAlg.globalFilterOne)
           }
         }
 
-        x.flatMap(updates => filterAlg.globalFilterMany(updates))
+        updates.flatTap { updates =>
+          logger.info(util.logger.showUpdates(updates.widen[Update])) >>
+            updateRepository.saveMany(updates)
+        }
       }
 
   def filterByApplicableUpdates(repos: List[Repo], updates: List[Update.Single]): F[List[Repo]] =
