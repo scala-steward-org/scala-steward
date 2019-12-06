@@ -22,18 +22,15 @@ import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.{Dependency, GroupId, Update}
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.repocache.{RepoCache, RepoCacheRepository}
-import org.scalasteward.core.sbt._
-import org.scalasteward.core.sbt.data.ArtificialProject
 import org.scalasteward.core.update.data.UpdateState
 import org.scalasteward.core.update.data.UpdateState._
+import org.scalasteward.core.util
 import org.scalasteward.core.util.{MonadThrowable, Nel}
 import org.scalasteward.core.vcs.data.PullRequestState.Closed
 import org.scalasteward.core.vcs.data.Repo
-import org.scalasteward.core.util
 
 final class UpdateAlg[F[_]](
     implicit
-    excludeAlg: ExcludeAlg[F],
     filterAlg: FilterAlg[F],
     logger: Logger[F],
     pullRequestRepo: PullRequestRepository[F],
@@ -43,58 +40,19 @@ final class UpdateAlg[F[_]](
     F: MonadThrowable[F]
 ) {
   // WIP
-  def checkForUpdates(repos: List[Repo]): F[List[Update.Single]] = {
-    val getDependencies =
-      repoCacheRepository.getDependencies(repos).flatMap(excludeAlg.removeExcluded)
+  def checkForUpdates(repos: List[Repo]): F[List[Update.Single]] =
     updateRepository.deleteAll >>
-      getDependencies.flatMap { dependencies =>
-        val (libraries, plugins) = dependencies
-          .filter { d =>
-            FilterAlg.isIgnoredGlobally(d.toUpdate).isRight
-          }
-          .partition(_.sbtVersion.isEmpty)
-        val libProjects = splitter
-          .xxx(libraries)
-          .map { libs =>
-            ArtificialProject(
-              defaultScalaVersion,
-              defaultSbtVersion,
-              libs.sortBy(_.formatAsModuleId),
-              List.empty
-            )
+      repoCacheRepository.getDependencies(repos).flatMap { dependencies =>
+        val filteredDependencies =
+          dependencies.filter(d => FilterAlg.isIgnoredGlobally(d.toUpdate).isRight)
+
+        val x = {
+          val fa = filteredDependencies.traverseFilter { dep =>
+            coursierAlg
+              .getNextVersion(dep)
+              .map(_.map(vers => dep.toUpdate.copy(newerVersions = Nel.of(vers.value))))
           }
 
-        val pluginProjects = plugins
-          .groupBy(_.sbtVersion)
-          .flatMap {
-            case (maybeSbtVersion, plugins1) =>
-              splitter.xxx(plugins1).map { ps =>
-                ArtificialProject(
-                  defaultScalaVersion,
-                  seriesToSpecificVersion(maybeSbtVersion.get),
-                  List.empty,
-                  ps.sortBy(_.formatAsModuleId)
-                )
-              }
-          }
-          .toList
-
-        val x = (libProjects ++ pluginProjects).flatTraverse { prj =>
-          val updates = (project: ArtificialProject) =>
-            (project.libraries ++ project.plugins).traverseFilter { dep =>
-              coursierAlg
-                .getNextVersion(dep)
-                .map(_.map(vers => dep.toUpdate.copy(newerVersions = Nel.of(vers.value))))
-            }
-          val fa =
-            util.divideOnError(prj)(updates)(_.halve.toList.flatMap {
-              case (p1, p2) => List(p1, p2)
-            }) { (failedP: ArtificialProject, t: Throwable) =>
-              for {
-                _ <- logger.error(t)(s"failed finding updates for $failedP")
-                _ <- excludeAlg.excludeTemporarily(failedP.libraries ++ failedP.plugins)
-              } yield List.empty[Update.Single]
-            }
           fa.flatTap { updates =>
             logger.info(util.logger.showUpdates(updates.widen[Update])) >>
               updateRepository.saveMany(updates)
@@ -103,7 +61,6 @@ final class UpdateAlg[F[_]](
 
         x.flatMap(updates => filterAlg.globalFilterMany(updates))
       }
-  }
 
   def filterByApplicableUpdates(repos: List[Repo], updates: List[Update.Single]): F[List[Repo]] =
     repos.filterA(needsAttention(_, updates))

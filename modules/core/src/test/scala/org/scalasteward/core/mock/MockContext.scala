@@ -14,14 +14,13 @@ import org.scalasteward.core.persistence.JsonKeyValueStore
 import org.scalasteward.core.repocache.RepoCacheRepository
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
+import org.scalasteward.core.scalafix.MigrationAlg
 import org.scalasteward.core.scalafmt.ScalafmtAlg
-import org.scalasteward.core.update.{ExcludeAlg, FilterAlg, UpdateAlg, UpdateRepository}
+import org.scalasteward.core.update.{FilterAlg, UpdateAlg, UpdateRepository}
 import org.scalasteward.core.util.{BracketThrowable, DateTimeAlg}
 import org.scalasteward.core.vcs.VCSRepoAlg
 import org.scalasteward.core.vcs.data.AuthenticatedUser
-
 import scala.concurrent.duration._
-import org.scalasteward.core.scalafix.MigrationAlg
 
 object MockContext {
   implicit val config: Config = Config(
@@ -69,8 +68,6 @@ object MockContext {
   implicit val filterAlg: FilterAlg[MockEff] = new FilterAlg[MockEff]
   implicit val updateRepo: UpdateRepository[MockEff] =
     new UpdateRepository[MockEff](new JsonKeyValueStore("updateKVStore", "7"))
-  implicit val excludeAlg: ExcludeAlg[MockEff] =
-    new ExcludeAlg[MockEff](new JsonKeyValueStore("exclusions", "8"))
   implicit val prRepo: PullRequestRepository[MockEff] =
     new PullRequestRepository[MockEff](new JsonKeyValueStore("pullrequests", "9"))
 

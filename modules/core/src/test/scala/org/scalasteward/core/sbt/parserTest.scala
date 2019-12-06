@@ -1,6 +1,6 @@
 package org.scalasteward.core.sbt
 
-import org.scalasteward.core.data.{Dependency, GroupId, RawUpdate, Update}
+import org.scalasteward.core.data.{Dependency, GroupId, RawUpdate}
 import org.scalasteward.core.sbt.data.SbtVersion
 import org.scalasteward.core.sbt.parser._
 import org.scalasteward.core.util.Nel
@@ -10,46 +10,6 @@ import org.scalatest.matchers.should.Matchers
 class parserTest extends AnyFunSuite with Matchers {
   test("parseBuildProperties: with whitespace") {
     parseBuildProperties("sbt.version = 1.2.8") shouldBe Some(SbtVersion("1.2.8"))
-  }
-
-  test("parseSingleUpdates: 3 updates") {
-    val str =
-      """[info] Found 3 dependency updates for datapackage
-        |[info]  { "dependency": { "groupId": "ai.x", "artifactId": "diff", "artifactIdCross": "diff_2.11", "version": "1.2.0", "configurations": "test" }, "newerVersions": [ "1.2.1" ] }
-        |[info]  { "dependency": { "groupId": "eu.timepit", "artifactId": "refined", "artifactIdCross": "refined_2.11", "version": "0.7.0" }, "newerVersions": [ "0.9.3" ] }
-        |[info]  { "dependency": { "groupId": "com.geirsson", "artifactId": "scalafmt-cli_2.11", "artifactIdCross": "scalafmt-cli_2.11", "version": "0.3.0", "configurations": "scalafmt" }, "newerVersions": [ "0.3.1", "0.6.8", "1.5.1" ] }
-      """.stripMargin.trim
-    parseSingleUpdates(str.linesIterator.toList) shouldBe
-      List(
-        Update.Single(GroupId("ai.x"), "diff", "1.2.0", Nel.of("1.2.1"), Some("test")),
-        Update
-          .Single(
-            GroupId("com.geirsson"),
-            "scalafmt-cli_2.11",
-            "0.3.0",
-            Nel.of("0.3.1", "0.6.8", "1.5.1"),
-            Some("scalafmt")
-          ),
-        Update.Single(GroupId("eu.timepit"), "refined", "0.7.0", Nel.of("0.9.3"))
-      )
-  }
-
-  test("parseSingleUpdates: with duplicates") {
-    val lines =
-      """|[info] Found 1 dependency update for refined",
-         |[info]  { "dependency": { "groupId": "org.scala-lang", "artifactId": "scala-library", "artifactIdCross": "scala-library", "version": "2.12.3" }, "newerVersions": [ "2.12.6" ] }
-         |[info] Found 2 dependency updates for refined-scalacheck",
-         |[info]  { "dependency": { "groupId": "org.scala-lang", "artifactId": "scala-library", "artifactIdCross": "scala-library", "version": "2.12.3" }, "newerVersions": [ "2.12.6" ] }
-         |[info]  { "dependency": { "groupId": "org.scalacheck", "artifactId": "scalacheck", "artifactIdCross": "scalacheck_2.12", "version": "1.13.5" }, "newerVersions": [ "1.14.0" ] }
-         |[info] Found 2 dependency updates for refined-pureconfig",
-         |[info]  { "dependency": { "groupId": "com.github.pureconfig", "artifactId": "pureconfig", "artifactIdCross": "pureconfig_2.12", "version": "0.8.0" }, "newerVersions": [ "0.9.2" ] }
-         |""".stripMargin.linesIterator.toList
-    parseSingleUpdates(lines) shouldBe
-      List(
-        Update.Single(GroupId("com.github.pureconfig"), "pureconfig", "0.8.0", Nel.of("0.9.2")),
-        Update.Single(GroupId("org.scala-lang"), "scala-library", "2.12.3", Nel.of("2.12.6")),
-        Update.Single(GroupId("org.scalacheck"), "scalacheck", "1.13.5", Nel.of("1.14.0"))
-      )
   }
 
   test("parseDependencies") {
