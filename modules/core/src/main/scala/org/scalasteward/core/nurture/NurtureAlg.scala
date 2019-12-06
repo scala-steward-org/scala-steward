@@ -174,8 +174,7 @@ final class NurtureAlg[F[_]](
         dependencies.filter(dep => dep.groupId === groupId && dep.artifactId === artifactId)
       case Update.Group(groupId, artifactIds, _, _) =>
         val artifactIdSet = artifactIds.toList.toSet
-        dependencies.filter(
-          dep => dep.groupId === groupId && artifactIdSet.contains(dep.artifactId)
+        dependencies.filter(dep => dep.groupId === groupId && artifactIdSet.contains(dep.artifactId)
         )
     }
 

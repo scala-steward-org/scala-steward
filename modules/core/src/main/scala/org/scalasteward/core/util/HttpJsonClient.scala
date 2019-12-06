@@ -41,8 +41,8 @@ final class HttpJsonClient[F[_]: Sync](
     post[A](uri, modify.compose(_.withEntity(body)(jsonEncoderOf[F, B])))
 
   private def request[A: Decoder](method: Method, uri: Uri, modify: ModReq): F[A] =
-    client.expectOr[A](modify(Request[F](method, uri)))(
-      resp => toUnexpectedResponse(uri, method, resp)
+    client.expectOr[A](modify(Request[F](method, uri)))(resp =>
+      toUnexpectedResponse(uri, method, resp)
     )(jsonOf[F, A])
 
   private def toUnexpectedResponse(

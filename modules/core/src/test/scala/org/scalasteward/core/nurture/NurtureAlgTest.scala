@@ -41,9 +41,8 @@ class NurtureAlgTest extends AnyFunSuite with Matchers with ScalaCheckPropertyCh
 
       implicit val stateAsync = Async.catsStateTAsync[IO, Int]
       val f: Update => StateT[IO, Int, ProcessResult] = update =>
-        StateT[IO, Int, ProcessResult](
-          actionAcc =>
-            IO.pure(actionAcc + 1 -> (if (ignorableUpdates.contains(update)) Ignored else Updated))
+        StateT[IO, Int, ProcessResult](actionAcc =>
+          IO.pure(actionAcc + 1 -> (if (ignorableUpdates.contains(update)) Ignored else Updated))
         )
       NurtureAlg
         .processUpdates(ignorableUpdates ++ appliableUpdates, f, appliableUpdates.size.some)

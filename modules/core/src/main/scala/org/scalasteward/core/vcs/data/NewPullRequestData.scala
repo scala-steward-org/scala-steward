@@ -83,8 +83,8 @@ object NewPullRequestData {
       case s: Update.Single => artifactWithOptionalUrl(s.groupId, s.artifactId, artifactIdToUrl)
       case g: Update.Group =>
         g.artifactIds
-          .map(
-            artifactId => s"* ${artifactWithOptionalUrl(g.groupId, artifactId, artifactIdToUrl)}\n"
+          .map(artifactId =>
+            s"* ${artifactWithOptionalUrl(g.groupId, artifactId, artifactIdToUrl)}\n"
           )
           .mkString_("\n", "", "\n")
     }
