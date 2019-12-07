@@ -34,7 +34,12 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
   test("getDependencies") {
     val repo = Repo("typelevel", "cats")
     val repoDir = config.workspace / repo.show
-    val state = sbtAlg.getDependencies(repo).runS(MockState.empty).unsafeRunSync()
+    val files = Map(
+      repoDir / "project" / "build.properties" -> "sbt.version=1.2.6",
+      repoDir / ".scalafmt.conf" -> "version=2.0.0"
+    )
+    val state =
+      sbtAlg.getDependencies(repo).runS(MockState.empty.copy(files = files)).unsafeRunSync()
     state shouldBe MockState.empty.copy(
       commands = Vector(
         List(
@@ -50,7 +55,8 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
         ),
         List("read", s"$repoDir/project/build.properties"),
         List("read", s"$repoDir/.scalafmt.conf")
-      )
+      ),
+      files = files
     )
   }
 
