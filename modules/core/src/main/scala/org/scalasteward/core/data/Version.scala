@@ -24,8 +24,11 @@ import io.circe.{Decoder, Encoder}
 import scala.annotation.tailrec
 
 final case class Version(value: String) {
-  val components: List[Version.Component] =
-    Version.Component.parse(value).filterNot {
+  private val components: List[Version.Component] =
+    Version.Component.parse(value)
+
+  val alnumComponents: List[Version.Component] =
+    components.filterNot {
       case Version.Component.Separator(_) => true
       case _                              => false
     }
@@ -36,11 +39,11 @@ final case class Version(value: String) {
     * https://github.com/fthomas/scala-steward/blob/master/docs/faq.md#how-does-scala-steward-decide-what-version-it-is-updating-to
     */
   def selectNext(versions: List[Version]): Option[Version] = {
-    val cutoff = preReleaseIndex.fold(components.size)(_.value - 1)
+    val cutoff = preReleaseIndex.fold(alnumComponents.size)(_.value - 1)
     val newerVersionsByCommonPrefix =
       versions
         .filter(_ > this)
-        .groupBy(_.components.zip(components).take(cutoff).takeWhile {
+        .groupBy(_.alnumComponents.zip(alnumComponents).take(cutoff).takeWhile {
           case (c1, c2) => c1 === c2
         })
 
@@ -49,17 +52,24 @@ final case class Version(value: String) {
       .flatMap {
         case (commonPrefix, vs) =>
           // Do not select pre-release versions of a different series.
-          vs.filterNot(_.isPreRelease && cutoff =!= commonPrefix.length).sorted
+          val vs1 = vs.filterNot(_.isPreRelease && cutoff =!= commonPrefix.length)
+          // Do not select dynamic versions if this is not a dynamic version.
+          // E.g. 1.2.0 -> 1.2.0+17-7ef98061.
+          val vs2 = vs1.filterNot(_.containsPlus =!= containsPlus)
+          vs2.sorted
       }
       .lastOption
   }
+
+  private def containsPlus: Boolean =
+    components.contains(Version.Component.Separator('+'))
 
   private def isPreRelease: Boolean =
     preReleaseIndex.isDefined
 
   private def preReleaseIndex: Option[NonNegInt] =
     NonNegInt.unapply {
-      components.indexWhere {
+      alnumComponents.indexWhere {
         case a @ Version.Component.Alpha(_) => a.isPreReleaseIdent
         case _                              => false
       }
@@ -69,7 +79,7 @@ final case class Version(value: String) {
 object Version {
   implicit val versionOrder: Order[Version] =
     Order.from[Version] { (v1, v2) =>
-      val (c1, c2) = padToSameLength(v1.components, v2.components, Component.Empty)
+      val (c1, c2) = padToSameLength(v1.alnumComponents, v2.alnumComponents, Component.Empty)
       c1.compare(c2)
     }
 
