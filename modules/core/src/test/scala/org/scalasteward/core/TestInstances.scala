@@ -33,7 +33,7 @@ object TestInstances {
   }
 
   implicit val versionCogen: Cogen[Version] =
-    Cogen(_.components.map {
+    Cogen(_.alnumComponents.map {
       case Version.Component.Numeric(value) => BigInt(value).toLong
       case a @ Version.Component.Alpha(_)   => a.order.toLong
       case _                                => 0L

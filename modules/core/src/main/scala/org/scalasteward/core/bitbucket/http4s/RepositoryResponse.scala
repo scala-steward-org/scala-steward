@@ -74,6 +74,7 @@ private[http4s] object RepositoryResponse {
     * @param cursor The cursor to patch.
     */
   implicit class RichACursor(cursor: ACursor) {
+
     /**
       * If the focus is a JSON array, move to the first element that satisfies the given predicate.
       */

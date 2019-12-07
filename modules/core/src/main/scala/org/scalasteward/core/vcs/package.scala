@@ -23,6 +23,7 @@ import org.scalasteward.core.data.Update
 import org.scalasteward.core.vcs.data.Repo
 
 package object vcs {
+
   /** Determines the `head` (GitHub) / `source_branch` (GitLab, Bitbucket) parameter for searching
     * for already existing pull requests.
     */
