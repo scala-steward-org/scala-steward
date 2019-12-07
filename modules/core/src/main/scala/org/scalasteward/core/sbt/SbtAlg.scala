@@ -90,22 +90,17 @@ object SbtAlg {
 
       override def getDependencies(repo: Repo): F[List[Dependency]] =
         for {
-          originalDependencies <- getOriginalDependencies(repo)
+          repoDir <- workspaceAlg.repoDir(repo)
+          cmd = sbtCmd(List(stewardDependencies, reloadPlugins, stewardDependencies))
+          lines <- exec(cmd, repoDir)
+          dependencies = parser.parseDependencies(lines)
           maybeSbtVersion <- getSbtVersion(repo)
           maybeSbtDependency = maybeSbtVersion.flatMap(sbtDependency)
           maybeScalafmtVersion <- scalafmtAlg.getScalafmtVersion(repo)
           maybeScalafmtDependency = maybeScalafmtVersion.map(
             scalafmtDependency(defaultScalaBinaryVersion)
           )
-        } yield (maybeSbtDependency.toList ++ maybeScalafmtDependency.toList ++
-          originalDependencies).distinct
-
-      def getOriginalDependencies(repo: Repo): F[List[Dependency]] =
-        for {
-          repoDir <- workspaceAlg.repoDir(repo)
-          cmd = sbtCmd(List(stewardDependencies, reloadPlugins, stewardDependencies))
-          lines <- exec(cmd, repoDir)
-        } yield parser.parseDependencies(lines)
+        } yield (maybeSbtDependency.toList ++ maybeScalafmtDependency.toList ++ dependencies).distinct
 
       override def getUpdatesForRepo(repo: Repo): F[List[Update.Single]] =
         for {

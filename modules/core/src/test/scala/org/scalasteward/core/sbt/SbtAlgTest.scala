@@ -31,6 +31,35 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
     )
   }
 
+  test("getDependencies") {
+    val repo = Repo("typelevel", "cats")
+    val repoDir = config.workspace / repo.show
+    val files = Map(
+      repoDir / "project" / "build.properties" -> "sbt.version=1.2.6",
+      repoDir / ".scalafmt.conf" -> "version=2.0.0"
+    )
+    val state =
+      sbtAlg.getDependencies(repo).runS(MockState.empty.copy(files = files)).unsafeRunSync()
+    state shouldBe MockState.empty.copy(
+      commands = Vector(
+        List(
+          "TEST_VAR=GREAT",
+          "ANOTHER_TEST_VAR=ALSO_GREAT",
+          repoDir.toString,
+          "firejail",
+          s"--whitelist=$repoDir",
+          "sbt",
+          "-batch",
+          "-no-colors",
+          s";$stewardDependencies;$reloadPlugins;$stewardDependencies"
+        ),
+        List("read", s"$repoDir/project/build.properties"),
+        List("read", s"$repoDir/.scalafmt.conf")
+      ),
+      files = files
+    )
+  }
+
   test("getUpdatesForRepo") {
     val repo = Repo("fthomas", "refined")
     val repoDir = config.workspace / "fthomas/refined"
