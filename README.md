@@ -35,6 +35,8 @@ look like, here are the ones it has created so far:
 * [Merged pull requests]( https://github.com/search?q=author%3Ascala-steward+is%3Amerged+sort%3Aupdated-desc)
   ([compact](             https://github.com/pulls?q=author%3Ascala-steward+is%3Amerged+sort%3Aupdated-desc))
 
+You can also watch what it is currently doing [here](https://gitstalk.netlify.com/scala-steward).
+
 ## Wanna have a badge?
 
 A badge is available to show that Scala Steward is helping your repos.
