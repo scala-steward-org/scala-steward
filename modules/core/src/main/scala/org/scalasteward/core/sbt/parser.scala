@@ -19,19 +19,12 @@ package org.scalasteward.core.sbt
 import cats.implicits._
 import io.circe.Decoder
 import io.circe.parser._
-import org.scalasteward.core.data.{Dependency, RawUpdate, Update}
+import org.scalasteward.core.data.{Dependency, RawUpdate}
 import org.scalasteward.core.sbt.data.SbtVersion
 
 object parser {
   def parseBuildProperties(s: String): Option[SbtVersion] =
     """sbt.version\s*=\s*(.+)""".r.findFirstMatchIn(s).map(_.group(1)).map(SbtVersion.apply)
-
-  /** Parses the output of our own `stewardUpdates` task. */
-  def parseSingleUpdates(lines: List[String]): List[Update.Single] =
-    lines
-      .flatMap(line => decode[RawUpdate](removeSbtNoise(line)).map(_.toUpdate).toList)
-      .distinct
-      .sortBy(update => (update.groupId, update.artifactId, update.currentVersion))
 
   /** Parses the output of our own `stewardDependencies` task. */
   def parseDependencies(lines: List[String]): List[Dependency] =

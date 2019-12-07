@@ -16,87 +16,52 @@
 
 package org.scalasteward.core.update
 
+import cats.Monad
 import cats.implicits._
+import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
+import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.{Dependency, GroupId, Update}
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.repocache.{RepoCache, RepoCacheRepository}
-import org.scalasteward.core.sbt._
-import org.scalasteward.core.sbt.data.ArtificialProject
 import org.scalasteward.core.update.data.UpdateState
 import org.scalasteward.core.update.data.UpdateState._
-import org.scalasteward.core.util.MonadThrowable
+import org.scalasteward.core.util
+import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.PullRequestState.Closed
 import org.scalasteward.core.vcs.data.Repo
-import org.scalasteward.core.util
 
 final class UpdateAlg[F[_]](
     implicit
-    excludeAlg: ExcludeAlg[F],
+    coursierAlg: CoursierAlg[F],
     filterAlg: FilterAlg[F],
     logger: Logger[F],
     pullRequestRepo: PullRequestRepository[F],
     repoCacheRepository: RepoCacheRepository[F],
-    sbtAlg: SbtAlg[F],
+    streamCompiler: Stream.Compiler[F, F],
     updateRepository: UpdateRepository[F],
-    F: MonadThrowable[F]
+    F: Monad[F]
 ) {
-  // WIP
   def checkForUpdates(repos: List[Repo]): F[List[Update.Single]] = {
-    val getDependencies =
-      repoCacheRepository.getDependencies(repos).flatMap(excludeAlg.removeExcluded)
-    updateRepository.deleteAll >>
-      getDependencies.flatMap { dependencies =>
-        val (libraries, plugins) = dependencies
-          .filter { d =>
-            FilterAlg.isIgnoredGlobally(d.toUpdate).isRight
-          }
-          .partition(_.sbtVersion.isEmpty)
-        val libProjects = splitter
-          .xxx(libraries)
-          .map { libs =>
-            ArtificialProject(
-              defaultScalaVersion,
-              defaultSbtVersion,
-              libs.sortBy(_.formatAsModuleId),
-              List.empty
-            )
-          }
-
-        val pluginProjects = plugins
-          .groupBy(_.sbtVersion)
-          .flatMap {
-            case (maybeSbtVersion, plugins1) =>
-              splitter.xxx(plugins1).map { ps =>
-                ArtificialProject(
-                  defaultScalaVersion,
-                  seriesToSpecificVersion(maybeSbtVersion.get),
-                  List.empty,
-                  ps.sortBy(_.formatAsModuleId)
-                )
-              }
-          }
-          .toList
-
-        val x = (libProjects ++ pluginProjects).flatTraverse { prj =>
-          val fa =
-            util.divideOnError(prj)(sbtAlg.getUpdatesForProject)(_.halve.toList.flatMap {
-              case (p1, p2) => List(p1, p2)
-            }) { (failedP: ArtificialProject, t: Throwable) =>
-              for {
-                _ <- logger.error(t)(s"failed finding updates for $failedP")
-                _ <- excludeAlg.excludeTemporarily(failedP.libraries ++ failedP.plugins)
-              } yield List.empty[Update.Single]
-            }
-
-          fa.flatTap { updates =>
-            logger.info(util.logger.showUpdates(updates.widen[Update])) >>
-              updateRepository.saveMany(updates)
+    val findUpdates = Stream
+      .evals(repoCacheRepository.getDependencies(repos))
+      .filter(dep => FilterAlg.isIgnoredGlobally(dep.toUpdate).isRight)
+      .evalMap { dep =>
+        coursierAlg.getNewerVersions(dep).map { versions =>
+          Nel.fromList(versions).map { newerVersions =>
+            dep.toUpdate.copy(newerVersions = newerVersions.map(_.value))
           }
         }
-
-        x.flatMap(updates => filterAlg.globalFilterMany(updates))
       }
+      .evalMap(_.flatTraverse(filterAlg.globalFilterOne))
+      .unNone
+      .compile
+      .toList
+
+    updateRepository.deleteAll >> findUpdates.flatTap { updates =>
+      logger.info(util.logger.showUpdates(updates.widen[Update])) >>
+        updateRepository.saveMany(updates)
+    }
   }
 
   def filterByApplicableUpdates(repos: List[Repo], updates: List[Update.Single]): F[List[Repo]] =

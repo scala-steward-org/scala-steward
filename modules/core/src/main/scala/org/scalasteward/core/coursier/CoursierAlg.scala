@@ -23,12 +23,13 @@ import coursier.interop.cats._
 import coursier.util.StringInterpolators.SafeIvyRepository
 import coursier.{Info, Module, ModuleName, Organization}
 import io.chrisdavenport.log4cats.Logger
-import org.scalasteward.core.data.Dependency
+import org.scalasteward.core.data.{Dependency, Version}
 import scala.concurrent.ExecutionContext
 
 trait CoursierAlg[F[_]] {
   def getArtifactUrl(dependency: Dependency): F[Option[String]]
   def getArtifactIdUrlMapping(dependencies: List[Dependency]): F[Map[String, String]]
+  def getNewerVersions(dependency: Dependency): F[List[Version]]
 }
 
 object CoursierAlg {
@@ -46,6 +47,8 @@ object CoursierAlg {
     val sbtPluginReleases =
       ivy"https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/[defaultPattern]"
     val fetch = coursier.Fetch[F](cache).addRepositories(sbtPluginReleases)
+    val versions = coursier.Versions[F](cache).addRepositories(sbtPluginReleases)
+
     new CoursierAlg[F] {
       override def getArtifactUrl(dependency: Dependency): F[Option[String]] = {
         val coursierDependency = toCoursierDependency(dependency)
@@ -72,19 +75,32 @@ object CoursierAlg {
         dependencies
           .traverseFilter(dep => getArtifactUrl(dep).map(_.map(dep.artifactId -> _)))
           .map(_.toMap)
+
+      override def getNewerVersions(dependency: Dependency): F[List[Version]] = {
+        val module = toCoursierModule(dependency)
+        versions
+          .withModule(module)
+          .versions()
+          .map(_.available.map(Version.apply).filter(_ > Version(dependency.version)))
+          .handleErrorWith { throwable =>
+            logger.error(throwable)(s"Failed to get newer versions of $module").as(List.empty)
+          }
+      }
     }
   }
 
-  private def toCoursierDependency(dependency: Dependency): coursier.Dependency = {
+  private def toCoursierDependency(dependency: Dependency): coursier.Dependency =
+    coursier.Dependency(toCoursierModule(dependency), dependency.version).withTransitive(false)
+
+  private def toCoursierModule(dependency: Dependency): Module = {
     val attributes =
       dependency.sbtVersion.map("sbtVersion" -> _.value).toMap ++
         dependency.scalaVersion.map("scalaVersion" -> _.value).toMap
-    val module = Module(
+    Module(
       Organization(dependency.groupId.value),
       ModuleName(dependency.artifactIdCross),
       attributes
     )
-    coursier.Dependency(module, dependency.version).withTransitive(false)
   }
 
   private def getScmUrlOrHomePage(info: Info): Option[String] =
