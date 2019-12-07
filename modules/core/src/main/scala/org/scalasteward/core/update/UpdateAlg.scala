@@ -18,6 +18,7 @@ package org.scalasteward.core.update
 
 import cats.Monad
 import cats.implicits._
+import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.{Dependency, GroupId, Update}
@@ -37,29 +38,31 @@ final class UpdateAlg[F[_]](
     logger: Logger[F],
     pullRequestRepo: PullRequestRepository[F],
     repoCacheRepository: RepoCacheRepository[F],
+    streamCompiler: Stream.Compiler[F, F],
     updateRepository: UpdateRepository[F],
     F: Monad[F]
 ) {
-  def checkForUpdates(repos: List[Repo]): F[List[Update.Single]] =
-    updateRepository.deleteAll >>
-      repoCacheRepository.getDependencies(repos).flatMap { dependencies =>
-        val filteredDependencies =
-          dependencies.filter(d => FilterAlg.isIgnoredGlobally(d.toUpdate).isRight)
-
-        val updates = filteredDependencies.traverseFilter { dependency =>
-          coursierAlg.getNewerVersions(dependency).map(Nel.fromList).flatMap { maybeNewerVersions =>
-            val maybeUpdate = maybeNewerVersions.map { newerVersions =>
-              dependency.toUpdate.copy(newerVersions = newerVersions.map(_.value))
-            }
-            maybeUpdate.flatTraverse(filterAlg.globalFilterOne)
+  def checkForUpdates(repos: List[Repo]): F[List[Update.Single]] = {
+    val findUpdates = Stream
+      .evals(repoCacheRepository.getDependencies(repos))
+      .filter(dep => FilterAlg.isIgnoredGlobally(dep.toUpdate).isRight)
+      .evalMap { dep =>
+        coursierAlg.getNewerVersions(dep).map { versions =>
+          Nel.fromList(versions).map { newerVersions =>
+            dep.toUpdate.copy(newerVersions = newerVersions.map(_.value))
           }
         }
-
-        updates.flatTap { updates =>
-          logger.info(util.logger.showUpdates(updates.widen[Update])) >>
-            updateRepository.saveMany(updates)
-        }
       }
+      .evalMap(_.flatTraverse(filterAlg.globalFilterOne))
+      .unNone
+      .compile
+      .toList
+
+    updateRepository.deleteAll >> findUpdates.flatTap { updates =>
+      logger.info(util.logger.showUpdates(updates.widen[Update])) >>
+        updateRepository.saveMany(updates)
+    }
+  }
 
   def filterByApplicableUpdates(repos: List[Repo], updates: List[Update.Single]): F[List[Repo]] =
     repos.filterA(needsAttention(_, updates))
