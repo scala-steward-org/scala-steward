@@ -40,8 +40,8 @@ final class EditAlg[F[_]](
 ) {
   def applyUpdate(repo: Repo, update: Update): F[Unit] =
     for {
-      _ <- applyScalafixMigrations(repo, update).handleErrorWith(
-        e => logger.warn(s"Could not apply ${update.show} : $e")
+      _ <- applyScalafixMigrations(repo, update).handleErrorWith(e =>
+        logger.warn(s"Could not apply ${update.show} : $e")
       )
       repoDir <- workspaceAlg.repoDir(repo)
       files <- fileAlg.findFilesContaining(
