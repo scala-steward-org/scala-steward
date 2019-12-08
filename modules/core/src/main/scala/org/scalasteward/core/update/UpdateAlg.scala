@@ -52,19 +52,19 @@ final class UpdateAlg[F[_]](
       .toList
 
     updateRepository.deleteAll >> findUpdates.flatTap { updates =>
-      logger.info(util.logger.showUpdates(updates.widen[Update])) >>
-        updateRepository.saveMany(updates)
+      updateRepository.saveMany(updates)
     }
   }
 
   def findUpdate(dependency: Dependency): F[Option[Update.Single]] =
     for {
-      newerVersions <- coursierAlg.getNewerVersions(dependency)
-      maybeUpdate0 = Nel.fromList(newerVersions).map { newerVersions1 =>
+      newerVersions0 <- coursierAlg.getNewerVersions(dependency)
+      maybeUpdate0 = Nel.fromList(newerVersions0).map { newerVersions1 =>
         dependency.toUpdate.copy(newerVersions = newerVersions1.map(_.value))
       }
       maybeUpdate1 <- maybeUpdate0.flatTraverse(filterAlg.globalFilterOne)
       maybeUpdate2 = maybeUpdate1.orElse(UpdateAlg.findUpdateUnderNewGroup(dependency))
+      _ <- maybeUpdate2.fold(F.unit)(update => logger.info(s"Found update: ${update.show}"))
     } yield maybeUpdate2
 
   def filterByApplicableUpdates(repos: List[Repo], updates: List[Update.Single]): F[List[Repo]] =
