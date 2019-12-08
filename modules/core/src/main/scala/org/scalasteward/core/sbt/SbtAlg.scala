@@ -17,8 +17,9 @@
 package org.scalasteward.core.sbt
 
 import better.files.File
-import cats.Monad
+import cats.data.OptionT
 import cats.implicits._
+import cats.{Functor, Monad}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.{Dependency, Update}
@@ -26,7 +27,7 @@ import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.sbt.data.SbtVersion
 import org.scalasteward.core.scalafix.Migration
-import org.scalasteward.core.scalafmt.{scalafmtDependency, ScalafmtAlg}
+import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.UpdateAlg
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
@@ -45,6 +46,9 @@ trait SbtAlg[F[_]] {
   def getUpdatesForRepo(repo: Repo): F[List[Update.Single]]
 
   def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit]
+
+  final def getSbtDependency(repo: Repo)(implicit F: Functor[F]): F[Option[Dependency]] =
+    OptionT(getSbtVersion(repo)).subflatMap(sbtDependency).value
 }
 
 object SbtAlg {
@@ -94,12 +98,8 @@ object SbtAlg {
           cmd = sbtCmd(List(stewardDependencies, reloadPlugins, stewardDependencies))
           lines <- exec(cmd, repoDir)
           dependencies = parser.parseDependencies(lines)
-          maybeSbtVersion <- getSbtVersion(repo)
-          maybeSbtDependency = maybeSbtVersion.flatMap(sbtDependency)
-          maybeScalafmtVersion <- scalafmtAlg.getScalafmtVersion(repo)
-          maybeScalafmtDependency = maybeScalafmtVersion.map(
-            scalafmtDependency(defaultScalaBinaryVersion)
-          )
+          maybeSbtDependency <- getSbtDependency(repo)
+          maybeScalafmtDependency <- scalafmtAlg.getScalafmtDependency(repo)
         } yield (maybeSbtDependency.toList ++ maybeScalafmtDependency.toList ++ dependencies).distinct
 
       override def getUpdatesForRepo(repo: Repo): F[List[Update.Single]] =
@@ -151,13 +151,10 @@ object SbtAlg {
 
       def withTemporarySbtDependency[A](repo: Repo)(fa: F[A]): F[A] =
         for {
-          maybeSbtDep <- getSbtVersion(repo).map(_.flatMap(sbtDependency).map(_.formatAsModuleId))
+          maybeSbtDep <- getSbtDependency(repo).map(_.map(_.formatAsModuleId))
           maybeScalafmtDep <- scalafmtAlg
-            .getScalafmtVersion(repo)
-            .map(
-              _.map(scalafmtDependency(defaultScalaBinaryVersion))
-                .map(_.formatAsModuleIdScalaVersionAgnostic)
-            )
+            .getScalafmtDependency(repo)
+            .map(_.map(_.formatAsModuleIdScalaVersionAgnostic))
           fakeDeps = Option(maybeSbtDep.toList ++ maybeScalafmtDep.toList).filter(_.nonEmpty)
           a <- fakeDeps.fold(fa) { dependencies =>
             workspaceAlg.repoDir(repo).flatMap { repoDir =>

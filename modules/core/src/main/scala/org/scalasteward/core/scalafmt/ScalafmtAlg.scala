@@ -16,14 +16,19 @@
 
 package org.scalasteward.core.scalafmt
 
+import cats.data.Nested
 import cats.implicits._
-import cats.Monad
+import cats.{Functor, Monad}
+import org.scalasteward.core.data.{Dependency, Version}
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
-import org.scalasteward.core.data.Version
+import org.scalasteward.core.sbt.defaultScalaBinaryVersion
 import org.scalasteward.core.vcs.data.Repo
 
 trait ScalafmtAlg[F[_]] {
   def getScalafmtVersion(repo: Repo): F[Option[Version]]
+
+  final def getScalafmtDependency(repo: Repo)(implicit F: Functor[F]): F[Option[Dependency]] =
+    Nested(getScalafmtVersion(repo)).map(scalafmtDependency(defaultScalaBinaryVersion)).value
 }
 
 object ScalafmtAlg {
@@ -38,8 +43,6 @@ object ScalafmtAlg {
         repoDir <- workspaceAlg.repoDir(repo)
         scalafmtConfFile = repoDir / ".scalafmt.conf"
         fileContent <- fileAlg.readFile(scalafmtConfFile)
-      } yield {
-        fileContent.flatMap(parseScalafmtConf)
-      }
+      } yield fileContent.flatMap(parseScalafmtConf)
   }
 }
