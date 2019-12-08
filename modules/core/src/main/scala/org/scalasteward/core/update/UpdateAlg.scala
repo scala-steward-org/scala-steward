@@ -46,23 +46,26 @@ final class UpdateAlg[F[_]](
     val findUpdates = Stream
       .evals(repoCacheRepository.getDependencies(repos))
       .filter(dep => FilterAlg.isIgnoredGlobally(dep.toUpdate).isRight)
-      .evalMap { dep =>
-        coursierAlg.getNewerVersions(dep).map { versions =>
-          Nel.fromList(versions).map { newerVersions =>
-            dep.toUpdate.copy(newerVersions = newerVersions.map(_.value))
-          }
-        }
-      }
-      .evalMap(_.flatTraverse(filterAlg.globalFilterOne))
+      .evalMap(findUpdate)
       .unNone
       .compile
       .toList
 
     updateRepository.deleteAll >> findUpdates.flatTap { updates =>
-      logger.info(util.logger.showUpdates(updates.widen[Update])) >>
-        updateRepository.saveMany(updates)
+      updateRepository.saveMany(updates)
     }
   }
+
+  def findUpdate(dependency: Dependency): F[Option[Update.Single]] =
+    for {
+      newerVersions0 <- coursierAlg.getNewerVersions(dependency)
+      maybeUpdate0 = Nel.fromList(newerVersions0).map { newerVersions1 =>
+        dependency.toUpdate.copy(newerVersions = newerVersions1.map(_.value))
+      }
+      maybeUpdate1 <- maybeUpdate0.flatTraverse(filterAlg.globalFilterOne)
+      maybeUpdate2 = maybeUpdate1.orElse(UpdateAlg.findUpdateUnderNewGroup(dependency))
+      _ <- maybeUpdate2.fold(F.unit)(update => logger.info(s"Found update: ${update.show}"))
+    } yield maybeUpdate2
 
   def filterByApplicableUpdates(repos: List[Repo], updates: List[Update.Single]): F[List[Repo]] =
     repos.filterA(needsAttention(_, updates))

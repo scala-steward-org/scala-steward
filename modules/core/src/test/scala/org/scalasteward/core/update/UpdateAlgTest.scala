@@ -50,4 +50,19 @@ class UpdateAlgTest extends AnyFunSuite with Matchers {
 
     result.runA(MockState.empty).unsafeRunSync() shouldBe expectedUpdates
   }
+
+  test("findUpdate: newer groupId") {
+    val dependency =
+      Dependency(GroupId("org.spire-math"), "kind-projector", "kind-projector_2.12", "0.9.10")
+    val expected = Update.Single(
+      GroupId("org.spire-math"),
+      "kind-projector",
+      "0.9.10",
+      Nel.of("0.10.0"),
+      newerGroupId = Some(GroupId("org.typelevel"))
+    )
+
+    val actual = updateAlg.findUpdate(dependency).runA(MockState.empty).unsafeRunSync()
+    actual shouldBe Some(expected)
+  }
 }
