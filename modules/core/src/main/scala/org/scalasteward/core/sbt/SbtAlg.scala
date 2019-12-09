@@ -22,13 +22,12 @@ import cats.implicits._
 import cats.{Functor, Monad}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.data.{Dependency, Update}
+import org.scalasteward.core.data.Dependency
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.sbt.data.SbtVersion
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.scalafmt.ScalafmtAlg
-import org.scalasteward.core.update.UpdateAlg
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
@@ -42,8 +41,6 @@ trait SbtAlg[F[_]] {
   def getSbtVersion(repo: Repo): F[Option[SbtVersion]]
 
   def getDependencies(repo: Repo): F[List[Dependency]]
-
-  def getUpdatesForRepo(repo: Repo): F[List[Update.Single]]
 
   def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit]
 
@@ -102,21 +99,6 @@ object SbtAlg {
           maybeScalafmtDependency <- scalafmtAlg.getScalafmtDependency(repo)
         } yield (maybeSbtDependency.toList ++ maybeScalafmtDependency.toList ++ dependencies).distinct
 
-      override def getUpdatesForRepo(repo: Repo): F[List[Update.Single]] =
-        for {
-          repoDir <- workspaceAlg.repoDir(repo)
-          commands = {
-            val stewardCommands = List(stewardDependencies, stewardUpdates)
-            stewardCommands ++ List(reloadPlugins) ++ stewardCommands
-          }
-          lines <- withTemporarySbtDependency(repo)(exec(sbtCmd(commands), repoDir))
-          (dependencies, updates) = parser.parseDependenciesAndUpdates(lines)
-          upToDateDependencies = dependencies.diff(updates.map(_.dependency))
-          updatesWithNewGroupId = upToDateDependencies.flatMap(UpdateAlg.findUpdateUnderNewGroup)
-          result = (updates.map(_.toUpdate) ++ updatesWithNewGroupId).distinct
-            .sortBy(update => (update.groupId, update.artifactId, update.currentVersion))
-        } yield result
-
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
         addGlobalPluginTemporarily(scalaStewardScalafixSbt) {
           for {
@@ -148,22 +130,5 @@ object SbtAlg {
             fa
           }
         }
-
-      def withTemporarySbtDependency[A](repo: Repo)(fa: F[A]): F[A] =
-        for {
-          maybeSbtDep <- getSbtDependency(repo).map(_.map(_.formatAsModuleId))
-          maybeScalafmtDep <- scalafmtAlg
-            .getScalafmtDependency(repo)
-            .map(_.map(_.formatAsModuleIdScalaVersionAgnostic))
-          fakeDeps = Option(maybeSbtDep.toList ++ maybeScalafmtDep.toList).filter(_.nonEmpty)
-          a <- fakeDeps.fold(fa) { dependencies =>
-            workspaceAlg.repoDir(repo).flatMap { repoDir =>
-              val content = dependencies
-                .map(dep => s"libraryDependencies += ${dep}")
-                .mkString(System.lineSeparator())
-              fileAlg.createTemporarily(repoDir / "project" / "tmp-sbt-dep.sbt", content)(fa)
-            }
-          }
-        } yield a
     }
 }

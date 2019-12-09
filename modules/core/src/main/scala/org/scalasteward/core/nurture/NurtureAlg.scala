@@ -27,7 +27,7 @@ import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Branch, GitAlg}
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
-import org.scalasteward.core.update.FilterAlg
+import org.scalasteward.core.update.{FilterAlg, UpdateAlg}
 import org.scalasteward.core.scalafix.MigrationAlg
 import org.scalasteward.core.util.DateTimeAlg
 import org.scalasteward.core.util.logger.LoggerOps
@@ -48,6 +48,7 @@ final class NurtureAlg[F[_]](
     vcsRepoAlg: VCSRepoAlg[F],
     vcsExtraAlg: VCSExtraAlg[F],
     migrationAlg: MigrationAlg[F],
+    updateAlg: UpdateAlg[F],
     logger: Logger[F],
     pullRequestRepo: PullRequestRepository[F],
     sbtAlg: SbtAlg[F],
@@ -74,7 +75,8 @@ final class NurtureAlg[F[_]](
     for {
       _ <- logger.info(s"Find updates for ${repo.show}")
       repoConfig <- repoConfigAlg.readRepoConfigOrDefault(repo)
-      updates <- sbtAlg.getUpdatesForRepo(repo)
+      dependencies <- sbtAlg.getDependencies(repo)
+      updates <- dependencies.traverse(updateAlg.findUpdate).map(_.flatten)
       filtered <- filterAlg.localFilterMany(repoConfig, updates)
       grouped = Update.group(filtered)
       sorted <- NurtureAlg.sortUpdatesByMigration(grouped)

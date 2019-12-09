@@ -77,8 +77,8 @@ object Context {
       implicit val updateRepository: UpdateRepository[F] =
         new UpdateRepository[F](new JsonKeyValueStore("updates", "3"))
       implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create
-      implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F]
       implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]
+      implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F]
       new StewardAlg[F]
     }
 }
