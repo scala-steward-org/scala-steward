@@ -134,7 +134,9 @@ class VersionTest extends AnyFunSuite with Discipline with Matchers with ScalaCh
       ("2.0.0.AM4", List("2.0.0"), Some("2.0.0")),
       ("1.1.2-1", List("1.1.2"), None),
       ("1.2.0+9-4a769501", List("1.2.0+17-7ef98061"), Some("1.2.0+17-7ef98061")),
-      ("1.2.0", List("1.2.0+17-7ef98061"), None)
+      ("1.2.0", List("1.2.0+17-7ef98061"), None),
+      ("2.4.4", List("3.0.0-preview"), None),
+      ("2.3.2", List("2.3.3-b02"), None)
     )
 
     val rnd = new Random()
