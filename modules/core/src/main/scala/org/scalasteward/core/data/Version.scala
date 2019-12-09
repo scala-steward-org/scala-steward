@@ -101,8 +101,8 @@ object Version {
       def isPreReleaseIdent: Boolean = order < 0
       def order: Int = value.toUpperCase match {
         case "SNAP" | "SNAPSHOT"      => -5
-        case "ALPHA"                  => -4
-        case "BETA"                   => -3
+        case "ALPHA" | "PREVIEW"      => -4
+        case "BETA" | "B"             => -3
         case "M" | "MILESTONE" | "AM" => -2
         case "RC"                     => -1
         case _                        => 0
