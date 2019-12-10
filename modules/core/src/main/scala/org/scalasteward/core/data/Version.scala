@@ -55,7 +55,7 @@ final case class Version(value: String) {
           val vs1 = vs.filterNot(_.isPreRelease && cutoff =!= commonPrefix.length)
           // Do not select dynamic versions if this is not a dynamic version.
           // E.g. 1.2.0 -> 1.2.0+17-7ef98061.
-          val vs2 = vs1.filterNot(_.containsPlus =!= containsPlus)
+          val vs2 = vs1.filterNot(_.containsPlus && !containsPlus)
           vs2.sorted
       }
       .lastOption
