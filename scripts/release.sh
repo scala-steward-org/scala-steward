@@ -7,8 +7,3 @@ fi
 
 git tag -a -s v$VERSION -m "Releasing $VERSION"
 git push --tags
-
-gren changelog --generate --override
-
-git commit -a -m "Update changelog for version $VERSION"
-git push
