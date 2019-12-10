@@ -17,6 +17,7 @@ categories:
     label: 'dependency-update'
 exclude-labels:
   - 'administration'
+  - 'repos-update'
 template: |
   ## What's Changed
 
