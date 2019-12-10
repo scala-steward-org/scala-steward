@@ -53,13 +53,19 @@ final case class Version(value: String) {
         case (commonPrefix, vs) =>
           // Do not select pre-release versions of a different series.
           val vs1 = vs.filterNot(_.isPreRelease && cutoff =!= commonPrefix.length)
-          // Do not select dynamic versions if this is not a dynamic version.
-          // E.g. 1.2.0 -> 1.2.0+17-7ef98061.
-          val vs2 = vs1.filterNot(_.containsPlus && !containsPlus)
+          // Do not select versions with a '+' or '-' if this is version does not
+          // contain such separator.
+          // E.g. 1.2.0 -> 1.2.0+17-7ef98061 or 3.1.0 -> 3.1.0-2156c0e.
+          val vs2 = vs1.filterNot { v =>
+            (v.containsHyphen && !containsHyphen) || (v.containsPlus && !containsPlus)
+          }
           vs2.sorted
       }
       .lastOption
   }
+
+  private def containsHyphen: Boolean =
+    components.contains(Version.Component.Separator('-'))
 
   private def containsPlus: Boolean =
     components.contains(Version.Component.Separator('+'))
