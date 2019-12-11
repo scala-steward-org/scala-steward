@@ -58,8 +58,9 @@ object SbtAlg {
       fileAlg: FileAlg[F],
       logger: Logger[F],
       processAlg: ProcessAlg[F],
-      workspaceAlg: WorkspaceAlg[F],
       scalafmtAlg: ScalafmtAlg[F],
+      updateAlg: UpdateAlg[F],
+      workspaceAlg: WorkspaceAlg[F],
       F: Monad[F]
   ): SbtAlg[F] =
     new SbtAlg[F] {
@@ -109,11 +110,12 @@ object SbtAlg {
             val stewardCommands = List(stewardDependencies, stewardUpdates)
             stewardCommands ++ List(reloadPlugins) ++ stewardCommands
           }
-          lines <- withTemporarySbtDependency(repo)(exec(sbtCmd(commands), repoDir))
+          lines <- exec(sbtCmd(commands), repoDir)
           (dependencies, updates) = parser.parseDependenciesAndUpdates(lines)
           upToDateDependencies = dependencies.diff(updates.map(_.dependency))
           updatesWithNewGroupId = upToDateDependencies.flatMap(UpdateAlg.findUpdateUnderNewGroup)
-          result = (updates.map(_.toUpdate) ++ updatesWithNewGroupId).distinct
+          additionalUpdates <- findAdditionalUpdates(repo)
+          result = (updates.map(_.toUpdate) ++ updatesWithNewGroupId ++ additionalUpdates).distinct
             .sortBy(update => (update.groupId, update.artifactId, update.currentVersion))
         } yield result
 
@@ -149,21 +151,12 @@ object SbtAlg {
           }
         }
 
-      def withTemporarySbtDependency[A](repo: Repo)(fa: F[A]): F[A] =
+      def findAdditionalUpdates(repo: Repo): F[List[Update.Single]] =
         for {
-          maybeSbtDep <- getSbtDependency(repo).map(_.map(_.formatAsModuleId))
-          maybeScalafmtDep <- scalafmtAlg
-            .getScalafmtDependency(repo)
-            .map(_.map(_.formatAsModuleIdScalaVersionAgnostic))
-          fakeDeps = Option(maybeSbtDep.toList ++ maybeScalafmtDep.toList).filter(_.nonEmpty)
-          a <- fakeDeps.fold(fa) { dependencies =>
-            workspaceAlg.repoDir(repo).flatMap { repoDir =>
-              val content = dependencies
-                .map(dep => s"libraryDependencies += ${dep}")
-                .mkString(System.lineSeparator())
-              fileAlg.createTemporarily(repoDir / "project" / "tmp-sbt-dep.sbt", content)(fa)
-            }
-          }
-        } yield a
+          maybeSbtDependency <- getSbtDependency(repo)
+          maybeScalafmtDependency <- scalafmtAlg.getScalafmtDependency(repo)
+          maybeSbtUpdate <- maybeSbtDependency.flatTraverse(updateAlg.findUpdate)
+          maybeScalafmtUpdate <- maybeScalafmtDependency.flatTraverse(updateAlg.findUpdate)
+        } yield maybeSbtUpdate.toList ++ maybeScalafmtUpdate.toList
     }
 }

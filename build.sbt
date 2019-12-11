@@ -267,7 +267,7 @@ addCommandAlias(
       Seq("--whitelist", s"$home/.coursier"),
       Seq("--whitelist", s"$home/.ivy2"),
       Seq("--whitelist", s"$home/.sbt"),
-      Seq("--prune-repos=false")
+      Seq("--prune-repos=true")
     ).flatten.mkString(" ")
   }
 )
