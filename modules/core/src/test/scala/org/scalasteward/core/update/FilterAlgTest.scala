@@ -41,7 +41,7 @@ class FilterAlgTest extends AnyFunSuite with Matchers {
         GroupId("net.sourceforge.plantuml"),
         "plantuml",
         "1.2019.11",
-        Nel.of("7726", "8020", "1.2019.12")
+        Nel.of("7726", "8020", "2017.09", "1.2019.12")
       )
     FilterAlg.globalFilter(update) shouldBe Right(update.copy(newerVersions = Nel.of("1.2019.12")))
   }
