@@ -22,7 +22,6 @@ import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data.{GroupId, Update, Version}
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.update.FilterAlg._
-import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 
 final class FilterAlg[F[_]](
@@ -103,12 +102,13 @@ object FilterAlg {
   }
 
   def removeBadVersions(update: Update.Single): FilterResult =
-    util
-      .removeAll(update.newerVersions, badVersions(update.groupId, update.artifactId))
+    update.newerVersions
+      .filterNot(badVersions(update.groupId, update.artifactId))
+      .toNel
       .map(versions => update.copy(newerVersions = versions))
       .fold[FilterResult](Left(BadVersions(update)))(Right.apply)
 
-  private def badVersions(groupId: GroupId, artifactId: String): List[String] =
+  private def badVersions(groupId: GroupId, artifactId: String): String => Boolean =
     (groupId.value, artifactId) match {
       case ("commons-collections", "commons-collections") =>
         List(
@@ -116,34 +116,33 @@ object FilterAlg {
           // https://github.com/albuch/sbt-dependency-check/pull/107
           "20031027.000000",
           // https://github.com/albuch/sbt-dependency-check/pull/85
-          "20040102.233541"
-        )
+          "20040102.233541",
+          "20040616"
+        ).contains
       case ("io.monix", _) =>
         List(
           // https://github.com/fthomas/scala-steward/issues/105
           "3.0.0-fbcb270"
-        )
+        ).contains
       case ("net.sourceforge.plantuml", "plantuml") =>
-        List(
+        s => {
+          val v = Version(s)
           // https://github.com/esamson/remder/pull/5
-          "8059",
-          "2017.08",
-          "2017.09",
+          (v >= Version("6055") && v <= Version("8059")) ||
           // https://github.com/metabookmarks/sbt-plantuml-plugin/pull/21
-          "2017.10",
           // https://github.com/metabookmarks/sbt-plantuml-plugin/pull/10
-          "2017.11"
-        )
+          (v >= Version("2017.08") && v <= Version("2017.11"))
+        }
       case ("org.http4s", _) =>
         List(
           // https://github.com/http4s/http4s/pull/2153
           "0.19.0"
-        )
+        ).contains
       case ("org.scala-js", _) =>
         List(
           // https://github.com/scala-js/scala-js/issues/3865
           "0.6.30"
-        )
-      case _ => List.empty
+        ).contains
+      case _ => _ => false
     }
 }
