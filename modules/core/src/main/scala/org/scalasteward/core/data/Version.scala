@@ -51,15 +51,17 @@ final case class Version(value: String) {
       .sortBy { case (commonPrefix, _) => commonPrefix.length }
       .flatMap {
         case (commonPrefix, vs) =>
-          // Do not select pre-release versions of a different series.
-          val vs1 = vs.filterNot(_.isPreRelease && cutoff =!= commonPrefix.length)
-          // Do not select versions with a '+' or '-' if this is version does not
-          // contain such separator.
-          // E.g. 1.2.0 -> 1.2.0+17-7ef98061 or 3.1.0 -> 3.1.0-2156c0e.
-          val vs2 = vs1.filterNot { v =>
-            (v.containsHyphen && !containsHyphen) || (v.containsPlus && !containsPlus)
-          }
-          vs2.sorted
+          vs.filterNot { v =>
+            // Do not select pre-release versions of a different series.
+            (v.isPreRelease && cutoff =!= commonPrefix.length) ||
+            // Do not select versions with a '+' or '-' if this is version does not
+            // contain such separator.
+            // E.g. 1.2.0 -> 1.2.0+17-7ef98061 or 3.1.0 -> 3.1.0-2156c0e.
+            (v.containsHyphen && !containsHyphen) ||
+            (v.containsPlus && !containsPlus) ||
+            // Don't select "versions" like %5BWARNING%5D.
+            !v.startsWithLetterOrDigit
+          }.sorted
       }
       .lastOption
   }
@@ -69,6 +71,13 @@ final case class Version(value: String) {
 
   private def containsPlus: Boolean =
     components.contains(Version.Component.Separator('+'))
+
+  private def startsWithLetterOrDigit: Boolean =
+    components.headOption.forall {
+      case Version.Component.Numeric(_)   => true
+      case Version.Component.Alpha(value) => value.headOption.forall(_.isLetter)
+      case _                              => false
+    }
 
   private def isPreRelease: Boolean =
     preReleaseIndex.isDefined
