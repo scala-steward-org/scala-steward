@@ -19,7 +19,7 @@ package org.scalasteward.core.sbt
 import cats.implicits._
 import io.circe.Decoder
 import io.circe.parser._
-import org.scalasteward.core.data.{CrossDependency, Dependency, Update}
+import org.scalasteward.core.data.{CrossDependency, Dependency, Update, Resolver}
 import org.scalasteward.core.sbt.data.SbtVersion
 import org.scalasteward.core.util.Nel
 
@@ -45,6 +45,9 @@ object parser {
       }.toList
     }.separate
   }
+
+  def parseResolvers(lines: List[String]): List[Resolver] =
+    lines.flatMap(line => decode[Resolver](removeSbtNoise(line)).toList)
 
   private def removeSbtNoise(s: String): String =
     s.replace("[info]", "").trim

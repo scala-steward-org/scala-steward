@@ -64,6 +64,32 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
     )
   }
 
+  test("getResolvers") {
+    val repo = Repo("fthomas", "refined")
+    val repoDir = config.workspace / "fthomas/refined"
+    val files = Map(
+      repoDir / "build.sbt" -> """resolvers += "awesomeResolver" at "www.awesome.com""""
+    )
+
+    val state = sbtAlg.getResolvers(repo).runS(MockState.empty.copy(files = files)).unsafeRunSync()
+    state shouldBe MockState.empty.copy(
+      commands = Vector(
+        List(
+          "TEST_VAR=GREAT",
+          "ANOTHER_TEST_VAR=ALSO_GREAT",
+          repoDir.toString,
+          "firejail",
+          s"--whitelist=$repoDir",
+          "sbt",
+          "-batch",
+          "-no-colors",
+          s";$crossStewardResolvers;$reloadPlugins;$stewardResolvers"
+        )
+      ),
+      files = files
+    )
+  }
+
   test("getUpdates") {
     val repo = Repo("fthomas", "refined")
     val repoDir = config.workspace / "fthomas/refined"

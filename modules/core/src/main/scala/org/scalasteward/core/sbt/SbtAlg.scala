@@ -22,7 +22,7 @@ import cats.implicits._
 import cats.{Functor, Monad}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.data.{Dependency, Update}
+import org.scalasteward.core.data.{Dependency, Resolver, Update}
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.sbt.data.SbtVersion
@@ -40,6 +40,8 @@ trait SbtAlg[F[_]] {
   def getSbtVersion(repo: Repo): F[Option[SbtVersion]]
 
   def getDependencies(repo: Repo): F[List[Dependency]]
+
+  def getResolvers(repo: Repo): F[List[Resolver]]
 
   def getUpdates(repo: Repo): F[List[Update.Single]]
 
@@ -98,6 +100,13 @@ object SbtAlg {
           maybeSbtDependency <- getSbtDependency(repo)
           maybeScalafmtDependency <- scalafmtAlg.getScalafmtDependency(repo)
         } yield (maybeSbtDependency.toList ++ maybeScalafmtDependency.toList ++ dependencies).distinct
+
+      override def getResolvers(repo: Repo): F[List[Resolver]] =
+        for {
+          repoDir <- workspaceAlg.repoDir(repo)
+          cmd = sbtCmd(List(crossStewardResolvers, reloadPlugins, stewardResolvers))
+          lines <- exec(cmd, repoDir)
+        } yield parser.parseResolvers(lines)
 
       override def getUpdates(repo: Repo): F[List[Update.Single]] =
         for {

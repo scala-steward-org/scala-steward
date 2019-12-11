@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2019 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,13 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.sbt
+package org.scalasteward.core.data
 
-object command {
-  val stewardUpdates = "stewardUpdates"
-  val stewardDependencies = "stewardDependencies"
-  val stewardResolvers = "stewardResolvers"
-  val crossStewardUpdates = s"+ $stewardUpdates"
-  val crossStewardDependencies = s"+ $stewardDependencies"
-  val crossStewardResolvers = s"+ $stewardResolvers"
-  val reloadPlugins = "reload plugins"
-  val scalafix = "scalafix"
-  val testScalafix = "test:scalafix"
-  val scalafixEnable = "scalafixEnable"
+import io.circe.Decoder
+import io.circe.generic.semiauto._
+
+final case class Resolver(name: String, location: String)
+
+object Resolver {
+  implicit val resolverDecoder: Decoder[Resolver] = deriveDecoder
 }

@@ -1,7 +1,7 @@
 package org.scalasteward.core.sbt
 
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.{ArtifactId, Update}
+import org.scalasteward.core.data.{ArtifactId, Update, Resolver}
 import org.scalasteward.core.sbt.data.SbtVersion
 import org.scalasteward.core.sbt.parser._
 import org.scalasteward.core.util.Nel
@@ -56,6 +56,20 @@ class parserTest extends AnyFunSuite with Matchers {
     updates should contain theSameElementsAs List(
       Update.Single(coursier, Nel.of("2.0.0-RC5-3")),
       Update.Single(catsInterop, Nel.of("2.0.0-RC5-3"))
+    )
+  }
+
+  test("parseResolvers") {
+    val lines =
+      """
+        |[info] core / stewardResolvers
+        |[info] { "name": "confluent-release", "location": "http://packages.confluent.io/maven/" }
+        |[info] { "name": "bintray-ovotech-maven", "location": "https://dl.bintray.com/ovotech/maven/" }
+        |""".stripMargin.linesIterator.toList
+    val resolvers = parser.parseResolvers(lines)
+    resolvers shouldBe List(
+      Resolver("confluent-release", "http://packages.confluent.io/maven/"),
+      Resolver("bintray-ovotech-maven", "https://dl.bintray.com/ovotech/maven/")
     )
   }
 }
