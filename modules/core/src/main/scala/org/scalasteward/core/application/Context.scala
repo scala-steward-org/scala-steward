@@ -32,7 +32,7 @@ import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.scalafix.MigrationAlg
 import org.scalasteward.core.scalafmt.ScalafmtAlg
-import org.scalasteward.core.update.{FilterAlg, UpdateAlg, UpdateRepository}
+import org.scalasteward.core.update.{FilterAlg, PruningAlg, UpdateAlg, UpdateRepository}
 import org.scalasteward.core.util._
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg, VCSSelection}
@@ -79,6 +79,7 @@ object Context {
       implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create
       implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F]
       implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]
+      implicit val pruningAlg: PruningAlg[F] = new PruningAlg[F]
       new StewardAlg[F]
     }
 }

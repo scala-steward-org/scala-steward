@@ -25,7 +25,7 @@ import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.NurtureAlg
 import org.scalasteward.core.repocache.RepoCacheAlg
 import org.scalasteward.core.sbt.SbtAlg
-import org.scalasteward.core.update.UpdateAlg
+import org.scalasteward.core.update.PruningAlg
 import org.scalasteward.core.util.DateTimeAlg
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data.Repo
@@ -37,10 +37,10 @@ final class StewardAlg[F[_]](
     fileAlg: FileAlg[F],
     logger: Logger[F],
     nurtureAlg: NurtureAlg[F],
+    pruningAlg: PruningAlg[F],
     repoCacheAlg: RepoCacheAlg[F],
     sbtAlg: SbtAlg[F],
     selfCheckAlg: SelfCheckAlg[F],
-    updateAlg: UpdateAlg[F],
     workspaceAlg: WorkspaceAlg[F],
     F: Monad[F]
 ) {
@@ -73,8 +73,8 @@ final class StewardAlg[F[_]](
     logger.infoTotalTime("pruning repos") {
       for {
         _ <- repos.traverse_(repoCacheAlg.checkCache)
-        allUpdates <- updateAlg.checkForUpdates(repos)
-        filteredRepos <- updateAlg.filterByApplicableUpdates(repos, allUpdates)
+        allUpdates <- pruningAlg.checkForUpdates(repos)
+        filteredRepos <- pruningAlg.filterByApplicableUpdates(repos, allUpdates)
         countTotal = repos.size
         countFiltered = filteredRepos.size
         countPruned = countTotal - countFiltered

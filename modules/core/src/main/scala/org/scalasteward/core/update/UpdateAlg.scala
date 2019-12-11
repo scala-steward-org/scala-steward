@@ -18,44 +18,19 @@ package org.scalasteward.core.update
 
 import cats.Monad
 import cats.implicits._
-import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.{Dependency, GroupId, Update}
-import org.scalasteward.core.nurture.PullRequestRepository
-import org.scalasteward.core.repocache.{RepoCache, RepoCacheRepository}
-import org.scalasteward.core.update.data.UpdateState
-import org.scalasteward.core.update.data.UpdateState._
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
-import org.scalasteward.core.vcs.data.PullRequestState.Closed
-import org.scalasteward.core.vcs.data.Repo
 
 final class UpdateAlg[F[_]](
     implicit
     coursierAlg: CoursierAlg[F],
     filterAlg: FilterAlg[F],
     logger: Logger[F],
-    pullRequestRepo: PullRequestRepository[F],
-    repoCacheRepository: RepoCacheRepository[F],
-    streamCompiler: Stream.Compiler[F, F],
-    updateRepository: UpdateRepository[F],
     F: Monad[F]
 ) {
-  def checkForUpdates(repos: List[Repo]): F[List[Update.Single]] = {
-    val findUpdates = Stream
-      .evals(repoCacheRepository.getDependencies(repos))
-      .filter(dep => FilterAlg.isIgnoredGlobally(dep.toUpdate).isRight)
-      .evalMap(findUpdate)
-      .unNone
-      .compile
-      .toList
-
-    updateRepository.deleteAll >> findUpdates.flatTap { updates =>
-      updateRepository.saveMany(updates)
-    }
-  }
-
   def findUpdate(dependency: Dependency): F[Option[Update.Single]] =
     for {
       newerVersions0 <- coursierAlg.getNewerVersions(dependency)
@@ -66,62 +41,6 @@ final class UpdateAlg[F[_]](
       maybeUpdate2 = maybeUpdate1.orElse(UpdateAlg.findUpdateUnderNewGroup(dependency))
       _ <- maybeUpdate2.fold(F.unit)(update => logger.info(s"Found update: ${update.show}"))
     } yield maybeUpdate2
-
-  def filterByApplicableUpdates(repos: List[Repo], updates: List[Update.Single]): F[List[Repo]] =
-    repos.filterA(needsAttention(_, updates))
-
-  def needsAttention(repo: Repo, updates: List[Update.Single]): F[Boolean] =
-    for {
-      allStates <- findAllUpdateStates(repo, updates)
-      outdatedStates = allStates.filter {
-        case DependencyOutdated(_, _)     => true
-        case PullRequestOutdated(_, _, _) => true
-        case _                            => false
-      }
-      isOutdated = outdatedStates.nonEmpty
-      _ <- {
-        if (isOutdated) {
-          val statesAsString = util.string.indentLines(outdatedStates.map(_.toString).sorted)
-          logger.info(s"Update states for ${repo.show}:\n" + statesAsString)
-        } else F.unit
-      }
-    } yield isOutdated
-
-  def findAllUpdateStates(repo: Repo, updates: List[Update.Single]): F[List[UpdateState]] =
-    repoCacheRepository.findCache(repo).flatMap {
-      case Some(repoCache) =>
-        val dependencies = repoCache.dependencies
-        dependencies.traverse { dependency =>
-          findUpdateState(repo, repoCache, dependency, updates)
-        }
-      case None => List.empty[UpdateState].pure[F]
-    }
-
-  def findUpdateState(
-      repo: Repo,
-      repoCache: RepoCache,
-      dependency: Dependency,
-      updates: List[Update.Single]
-  ): F[UpdateState] =
-    updates.find(UpdateAlg.isUpdateFor(_, dependency)) match {
-      case None => F.pure(DependencyUpToDate(dependency))
-      case Some(update) =>
-        repoCache.maybeRepoConfig.map(_.updates.keep(update)) match {
-          case Some(Left(reason)) =>
-            F.pure(UpdateRejectedByConfig(dependency, reason))
-          case _ =>
-            pullRequestRepo.findPullRequest(repo, dependency, update.nextVersion).map {
-              case None =>
-                DependencyOutdated(dependency, update)
-              case Some((uri, _, state)) if state === Closed =>
-                PullRequestClosed(dependency, update, uri)
-              case Some((uri, baseSha1, _)) if baseSha1 === repoCache.sha1 =>
-                PullRequestUpToDate(dependency, update, uri)
-              case Some((uri, _, _)) =>
-                PullRequestOutdated(dependency, update, uri)
-            }
-        }
-    }
 }
 
 object UpdateAlg {
