@@ -81,8 +81,4 @@ package object util {
       .takeThrough { case (_, total) => total < limit }
       .map { case (a, _) => a }
   }
-
-  /** Removes all elements from `nel` which also exist in `as`. */
-  def removeAll[F[_]: UnorderedFoldable, A: Eq](nel: Nel[A], as: F[A]): Option[Nel[A]] =
-    Nel.fromList(nel.toList.filterNot(a => as.exists(_ === a)))
 }

@@ -35,6 +35,17 @@ class FilterAlgTest extends AnyFunSuite with Matchers {
     FilterAlg.globalFilter(update) shouldBe Right(update.copy(newerVersions = Nel.of("2.0.0")))
   }
 
+  test("globalFilter: update with bad version 2") {
+    val update =
+      Update.Single(
+        GroupId("net.sourceforge.plantuml"),
+        "plantuml",
+        "1.2019.11",
+        Nel.of("7726", "8020", "2017.09", "1.2019.12")
+      )
+    FilterAlg.globalFilter(update) shouldBe Right(update.copy(newerVersions = Nel.of("1.2019.12")))
+  }
+
   test("globalFilter: update with only bad versions") {
     val update = Update.Single(GroupId("org.http4s"), "http4s-dsl", "0.18.0", Nel.of("0.19.0"))
     FilterAlg.globalFilter(update) shouldBe Left(BadVersions(update))
