@@ -62,14 +62,14 @@ object MockContext {
   implicit val migrationAlg: MigrationAlg[MockEff] = MigrationAlg.create
   implicit val cacheRepository: RepoCacheRepository[MockEff] =
     new RepoCacheRepository[MockEff](new JsonKeyValueStore("repos", "6"))
+  implicit val filterAlg: FilterAlg[MockEff] = new FilterAlg[MockEff]
+  implicit val updateAlg: UpdateAlg[MockEff] = new UpdateAlg[MockEff]
   implicit val sbtAlg: SbtAlg[MockEff] = SbtAlg.create
   implicit val editAlg: EditAlg[MockEff] = new EditAlg[MockEff]
   implicit val repoConfigAlg: RepoConfigAlg[MockEff] = new RepoConfigAlg[MockEff]
-  implicit val filterAlg: FilterAlg[MockEff] = new FilterAlg[MockEff]
   implicit val updateRepo: UpdateRepository[MockEff] =
     new UpdateRepository[MockEff](new JsonKeyValueStore("updateKVStore", "7"))
   implicit val prRepo: PullRequestRepository[MockEff] =
     new PullRequestRepository[MockEff](new JsonKeyValueStore("pullrequests", "9"))
-  implicit val updateAlg: UpdateAlg[MockEff] = new UpdateAlg[MockEff]
   implicit val pruningAlg: PruningAlg[MockEff] = new PruningAlg[MockEff]
 }
