@@ -25,6 +25,7 @@ import coursier.{Info, Module, ModuleName, Organization}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data.{Dependency, Version}
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
 
 trait CoursierAlg[F[_]] {
   def getArtifactUrl(dependency: Dependency): F[Option[String]]
@@ -43,7 +44,7 @@ object CoursierAlg {
       override def shift: F[Unit] = F.unit
       override def evalOn[A](ec: ExecutionContext)(fa: F[A]): F[A] = fa
     }
-    val cache = coursier.cache.FileCache[F]()
+    val cache = coursier.cache.FileCache[F]().withTtl(1.hour)
     val sbtPluginReleases =
       ivy"https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/[defaultPattern]"
     val fetch = coursier.Fetch[F](cache).addRepositories(sbtPluginReleases)
