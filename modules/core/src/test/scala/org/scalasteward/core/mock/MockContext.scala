@@ -3,6 +3,7 @@ package org.scalasteward.core.mock
 import better.files.File
 import cats.effect.Sync
 import org.http4s.Uri
+import org.scalasteward.core.TestInstances.ioContextShift
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.{Config, SupportedVCS}
 import org.scalasteward.core.coursier.CoursierAlg

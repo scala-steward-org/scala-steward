@@ -16,34 +16,40 @@
 
 package org.scalasteward.core.coursier
 
-import cats.Parallel
 import cats.effect._
 import cats.implicits._
+import cats.{Applicative, Parallel}
 import coursier.interop.cats._
 import coursier.util.StringInterpolators.SafeIvyRepository
 import coursier.{Info, Module, ModuleName, Organization}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data.{Dependency, Version}
-import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
+/** An interface to [[https://get-coursier.io Coursier]] used for
+  * fetching dependency versions and metadata.
+  */
 trait CoursierAlg[F[_]] {
   def getArtifactUrl(dependency: Dependency): F[Option[String]]
-  def getArtifactIdUrlMapping(dependencies: List[Dependency]): F[Map[String, String]]
+
   def getNewerVersions(dependency: Dependency): F[List[Version]]
+
+  final def getArtifactIdUrlMapping(dependencies: List[Dependency])(
+      implicit F: Applicative[F]
+  ): F[Map[String, String]] =
+    dependencies
+      .traverseFilter(dep => getArtifactUrl(dep).map(_.map(dep.artifactId -> _)))
+      .map(_.toMap)
 }
 
 object CoursierAlg {
   def create[F[_]](
       implicit
+      contextShift: ContextShift[F],
       logger: Logger[F],
       F: Sync[F]
   ): CoursierAlg[F] = {
     implicit val parallel: Parallel.Aux[F, F] = Parallel.identity[F]
-    implicit val contextShift: ContextShift[F] = new ContextShift[F] {
-      override def shift: F[Unit] = F.unit
-      override def evalOn[A](ec: ExecutionContext)(fa: F[A]): F[A] = fa
-    }
     val cache = coursier.cache.FileCache[F]().withTtl(1.hour)
     val sbtPluginReleases =
       ivy"https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/[defaultPattern]"
@@ -72,17 +78,13 @@ object CoursierAlg {
         }
       }
 
-      override def getArtifactIdUrlMapping(dependencies: List[Dependency]): F[Map[String, String]] =
-        dependencies
-          .traverseFilter(dep => getArtifactUrl(dep).map(_.map(dep.artifactId -> _)))
-          .map(_.toMap)
-
       override def getNewerVersions(dependency: Dependency): F[List[Version]] = {
         val module = toCoursierModule(dependency)
+        val version = Version(dependency.version)
         versions
           .withModule(module)
           .versions()
-          .map(_.available.map(Version.apply).filter(_ > Version(dependency.version)))
+          .map(_.available.map(Version.apply).filter(_ > version))
           .handleErrorWith { throwable =>
             logger.error(throwable)(s"Failed to get newer versions of $module").as(List.empty)
           }
@@ -93,16 +95,12 @@ object CoursierAlg {
   private def toCoursierDependency(dependency: Dependency): coursier.Dependency =
     coursier.Dependency(toCoursierModule(dependency), dependency.version).withTransitive(false)
 
-  private def toCoursierModule(dependency: Dependency): Module = {
-    val attributes =
-      dependency.sbtVersion.map("sbtVersion" -> _.value).toMap ++
-        dependency.scalaVersion.map("scalaVersion" -> _.value).toMap
+  private def toCoursierModule(dependency: Dependency): Module =
     Module(
       Organization(dependency.groupId.value),
       ModuleName(dependency.artifactIdCross),
-      attributes
+      dependency.attributes
     )
-  }
 
   private def getScmUrlOrHomePage(info: Info): Option[String] =
     (info.scm.flatMap(_.url).toList :+ info.homePage)
