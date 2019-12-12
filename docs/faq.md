@@ -33,5 +33,6 @@ Other examples of Mergify rules for Scala Steward can be found via
 
 ## Where can Scala Steward's PGP key be found?
 
-Scala Steward signs commits with a PGP key (key ID 96BDF10FFAB8B6A6).
-The complete key can be found at https://keys.openpgp.org/search?q=me@scala-steward.org.
+Scala Steward signs commits with a PGP key. The fingerprint of that key is
+774C3674392662AE645C9B8396BDF10FFAB8B6A6 and it can be found at
+https://keys.openpgp.org/search?q=me@scala-steward.org.
