@@ -31,21 +31,13 @@ sealed trait Update extends Product with Serializable {
   def currentVersion: String
   def newerVersions: Nel[String]
 
-  def name: String =
+  final def name: String =
     Update.nameOf(groupId, artifactId)
 
-  def nextVersion: String =
+  final def nextVersion: String =
     newerVersions.head
 
-  def searchTerms: Nel[String] = {
-    val terms = this match {
-      case s: Single => s.artifactIds
-      case g: Group  => g.artifactIds.concat(g.artifactIdsPrefix.map(_.value).toList)
-    }
-    terms.map(Update.nameOf(groupId, _))
-  }
-
-  def show: String = {
+  final def show: String = {
     val artifacts = this match {
       case s: Single => s.artifactId + s.configurations.fold("")(":" + _)
       case g: Group  => g.artifactIds.mkString_("{", ", ", "}")

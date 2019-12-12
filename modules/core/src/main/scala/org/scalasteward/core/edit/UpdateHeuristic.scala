@@ -104,6 +104,14 @@ object UpdateHeuristic {
     replaceF
   }
 
+  private def searchTerms(update: Update): List[String] = {
+    val terms = update match {
+      case s: Update.Single => s.artifactIds
+      case g: Update.Group  => g.artifactIds.concat(g.artifactIdsPrefix.map(_.value).toList)
+    }
+    terms.map(Update.nameOf(update.groupId, _)).toList
+  }
+
   val moduleId = UpdateHeuristic(
     name = "moduleId",
     replaceVersion = update =>
@@ -135,13 +143,12 @@ object UpdateHeuristic {
 
   val strict = UpdateHeuristic(
     name = "strict",
-    replaceVersion =
-      defaultReplaceVersion(_.searchTerms.toList, update => Some(s"${update.groupId}.*?"))
+    replaceVersion = defaultReplaceVersion(searchTerms, update => Some(s"${update.groupId}.*?"))
   )
 
   val original = UpdateHeuristic(
     name = "original",
-    replaceVersion = defaultReplaceVersion(_.searchTerms.toList)
+    replaceVersion = defaultReplaceVersion(searchTerms)
   )
 
   val relaxed = UpdateHeuristic(
