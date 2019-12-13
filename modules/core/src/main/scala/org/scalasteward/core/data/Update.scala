@@ -101,9 +101,6 @@ object Update {
   val commonSuffixes: List[String] =
     List("config", "contrib", "core", "extra", "server")
 
-  def removeCommonSuffix(str: String): String =
-    util.string.removeSuffix(str, commonSuffixes)
-
   def nameOf(groupId: GroupId, artifactId: String): String =
     if (commonSuffixes.contains(artifactId))
       util.string.rightmostLabel(groupId.value)
