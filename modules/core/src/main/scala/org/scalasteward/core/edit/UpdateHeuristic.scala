@@ -74,11 +74,10 @@ object UpdateHeuristic {
     }
 
     def mkRegex(update: Update): Option[Regex] =
-      searchTermsToAlternation(getSearchTerms(update).map(Update.removeCommonSuffix)).map {
-        searchTerms =>
-          val prefix = getPrefixRegex(update).getOrElse("")
-          val currentVersion = Regex.quote(update.currentVersion)
-          s"(?i)(.*)($prefix$searchTerms.*?)$currentVersion(.?)".r
+      searchTermsToAlternation(getSearchTerms(update).map(removeCommonSuffix)).map { searchTerms =>
+        val prefix = getPrefixRegex(update).getOrElse("")
+        val currentVersion = Regex.quote(update.currentVersion)
+        s"(?i)(.*)($prefix$searchTerms.*?)$currentVersion(.?)".r
       }
 
     def replaceF(update: Update): String => Option[String] =
@@ -111,6 +110,9 @@ object UpdateHeuristic {
     }
     terms.map(Update.nameOf(update.groupId, _)).toList
   }
+
+  private def removeCommonSuffix(str: String): String =
+    util.string.removeSuffix(str, Update.commonSuffixes)
 
   val moduleId = UpdateHeuristic(
     name = "moduleId",
