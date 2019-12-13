@@ -29,13 +29,16 @@ after_success:
 stages:
 - name: test
 - name: release
-  if: (branch = master AND type = push) OR (tag IS present)
+  if: ((branch = master AND type = push) OR (tag IS present)) AND NOT fork
 
 jobs:
   include:
   - stage: release
     jdk: openjdk8
     script: docker login -u $DOCKER_USER -p $DOCKER_PASS && sbt docker:publish
+    name: docker
+  - script: sbt ci-release
+    name: jar
 
 notifications:
   webhooks:
