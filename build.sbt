@@ -200,7 +200,18 @@ lazy val noPublishSettings = Def.settings(
   skip in publish := true
 )
 
-lazy val scaladocSettings = Def.settings()
+lazy val scaladocSettings = Def.settings(
+  Compile / doc / scalacOptions ++= {
+    val tag = s"v${version.value}"
+    val tree = if (isSnapshot.value) git.gitHeadCommit.value.getOrElse("master") else tag
+    Seq(
+      "-doc-source-url",
+      s"${scmInfo.value.get.browseUrl}/blob/${tree}€{FILE_PATH}.scala",
+      "-sourcepath",
+      (LocalRootProject / baseDirectory).value.getAbsolutePath
+    )
+  }
+)
 
 /// setting keys
 
