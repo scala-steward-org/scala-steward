@@ -96,7 +96,7 @@ object Update {
           head
       }
       .toList
-      .sortBy(update => (update.groupId, update.artifactId))
+      .sortBy(update => (update.groupId, update.artifactIds))
 
   val commonSuffixes: List[String] =
     List("config", "contrib", "core", "extra", "server")
