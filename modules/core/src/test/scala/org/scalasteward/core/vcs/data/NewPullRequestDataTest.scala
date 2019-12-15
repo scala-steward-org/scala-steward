@@ -73,8 +73,7 @@ class NewPullRequestDataTest extends AnyFunSuite with Matchers {
   }
 
   test("migrationNote: when no migrations") {
-    val update = Update.Single(GroupId("com.example"), "foo", "0.6.0", Nel.of("0.7.0"))
-    val (label, appliedMigrations) = NewPullRequestData.migrationNote(update, List.empty)
+    val (label, appliedMigrations) = NewPullRequestData.migrationNote(List.empty)
 
     label shouldBe None
     appliedMigrations shouldBe None
@@ -88,7 +87,7 @@ class NewPullRequestDataTest extends AnyFunSuite with Matchers {
       Version("0.7.0"),
       Nel.of("I am a rewrite rule")
     )
-    val (label, appliedMigrations) = NewPullRequestData.migrationNote(update, List(migration))
+    val (label, appliedMigrations) = NewPullRequestData.migrationNote(List(migration))
 
     label shouldBe Some("scalafix-migrations")
     appliedMigrations.fold("")(_.toHtml) shouldBe
