@@ -26,13 +26,13 @@ import org.scalasteward.core.util.string.MinLengthString
 
 sealed trait Update extends Product with Serializable {
   def groupId: GroupId
-  def artifactId: String
+  def mainArtifactId: String
   def artifactIds: Nel[String]
   def currentVersion: String
   def newerVersions: Nel[String]
 
   final def name: String =
-    Update.nameOf(groupId, artifactId)
+    Update.nameOf(groupId, mainArtifactId)
 
   final def nextVersion: String =
     newerVersions.head
@@ -56,6 +56,9 @@ object Update {
       configurations: Option[String] = None,
       newerGroupId: Option[GroupId] = None
   ) extends Update {
+    override def mainArtifactId: String =
+      artifactId
+
     override def artifactIds: Nel[String] =
       Nel.one(artifactId)
   }
@@ -66,15 +69,13 @@ object Update {
       currentVersion: String,
       newerVersions: Nel[String]
   ) extends Update {
-    override def artifactId: String = {
+    override def mainArtifactId: String = {
       val possibleMainArtifactIds = for {
         prefix <- artifactIdsPrefix.toList
         suffix <- commonSuffixes
       } yield prefix.value + suffix
 
-      artifactIds
-        .find(artifactId => possibleMainArtifactIds.contains(artifactId))
-        .getOrElse(artifactIds.head)
+      artifactIds.find(possibleMainArtifactIds.contains).getOrElse(artifactIds.head)
     }
 
     def artifactIdsPrefix: Option[MinLengthString[W.`3`.T]] =
