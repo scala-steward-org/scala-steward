@@ -139,10 +139,10 @@ final class NurtureAlg[F[_]](
       filteredDependencies = dependenciesInUpdates(dependencies, data.update)
       artifactIdToUrl <- coursierAlg.getArtifactIdUrlMapping(filteredDependencies)
       branchCompareUrl <- artifactIdToUrl
-        .get(data.update.artifactId)
+        .get(data.update.mainArtifactId)
         .flatTraverse(vcsExtraAlg.getBranchCompareUrl(_, data.update))
       releaseNoteUrl <- artifactIdToUrl
-        .get(data.update.artifactId)
+        .get(data.update.mainArtifactId)
         .flatTraverse(vcsExtraAlg.getReleaseNoteUrl(_, data.update))
       branchName = vcs.createBranch(config.vcsType, data.fork, data.update)
       migrations <- migrationAlg.findMigrations(data.update)

@@ -155,13 +155,15 @@ object UpdateHeuristic {
 
   val relaxed = UpdateHeuristic(
     name = "relaxed",
-    replaceVersion = defaultReplaceVersion(update => util.string.extractWords(update.artifactId))
+    replaceVersion = defaultReplaceVersion { update =>
+      util.string.extractWords(update.mainArtifactId)
+    }
   )
 
   val sliding = UpdateHeuristic(
     name = "sliding",
     replaceVersion =
-      defaultReplaceVersion(_.artifactId.sliding(5).take(5).filterNot(_ === "scala").toList)
+      defaultReplaceVersion(_.mainArtifactId.sliding(5).take(5).filterNot(_ === "scala").toList)
   )
 
   val completeGroupId = UpdateHeuristic(

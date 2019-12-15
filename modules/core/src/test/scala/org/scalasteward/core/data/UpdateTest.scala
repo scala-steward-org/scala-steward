@@ -6,13 +6,22 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class UpdateTest extends AnyFunSuite with Matchers {
-  test("Group.artifactId") {
+  test("Group.mainArtifactId") {
     Group(
       GroupId("org.http4s"),
       Nel.of("http4s-blaze-server", "http4s-circe", "http4s-core", "http4s-dsl"),
       "0.18.16",
       Nel.of("0.18.18")
-    ).artifactId shouldBe "http4s-core"
+    ).mainArtifactId shouldBe "http4s-core"
+  }
+
+  test("Group.mainArtifactId: artifactIds contains a common suffix") {
+    Group(
+      GroupId("com.softwaremill.sttp"),
+      Nel.of("circe", "core", "monix"),
+      "1.3.2",
+      Nel.of("1.3.3")
+    ).mainArtifactId shouldBe "circe"
   }
 
   test("group: 1 update") {
