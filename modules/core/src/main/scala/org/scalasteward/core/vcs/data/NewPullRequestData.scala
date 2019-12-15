@@ -46,7 +46,7 @@ object NewPullRequestData {
       migrations: List[Migration]
   ): String = {
     val artifacts = artifactsWithOptionalUrl(update, artifactIdToUrl)
-    val (migrationLabel, appliedMigrations) = migrationNote(update, migrations)
+    val (migrationLabel, appliedMigrations) = migrationNote(migrations)
     val details = ignoreFutureUpdates(update) :: appliedMigrations.toList
     val labels = Nel.fromList(semVerLabel(update).toList ++ migrationLabel.toList)
 
@@ -109,13 +109,8 @@ object NewPullRequestData {
           |""".stripMargin.trim
     )
 
-  def migrationNote(
-      update: Update,
-      migrations: List[Migration]
-  ): (Option[String], Option[Details]) = {
-    update.artifactId
-    if (migrations.isEmpty)
-      (None, None)
+  def migrationNote(migrations: List[Migration]): (Option[String], Option[Details]) =
+    if (migrations.isEmpty) (None, None)
     else
       (
         Some("scalafix-migrations"),
@@ -126,7 +121,6 @@ object NewPullRequestData {
           )
         )
       )
-  }
 
   def semVerLabel(update: Update): Option[String] =
     for {
