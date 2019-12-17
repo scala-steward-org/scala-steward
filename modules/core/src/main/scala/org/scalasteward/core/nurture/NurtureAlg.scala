@@ -74,7 +74,7 @@ final class NurtureAlg[F[_]](
     for {
       _ <- logger.info(s"Find updates for ${repo.show}")
       repoConfig <- repoConfigAlg.readRepoConfigOrDefault(repo)
-      updates <- sbtAlg.getUpdatesForRepo(repo)
+      updates <- sbtAlg.getUpdates(repo)
       filtered <- filterAlg.localFilterMany(repoConfig, updates)
       grouped = Update.group(filtered)
       sorted <- NurtureAlg.sortUpdatesByMigration(grouped)
@@ -171,10 +171,13 @@ final class NurtureAlg[F[_]](
   ): List[Dependency] =
     update match {
       case Update.Single(groupId, artifactId, _, _, _, _) =>
-        dependencies.filter(dep => dep.groupId === groupId && dep.artifactId === artifactId)
+        dependencies.filter(dep =>
+          dep.groupId === groupId && dep.artifactId.name === artifactId.name
+        )
       case Update.Group(groupId, artifactIds, _, _) =>
-        val artifactIdSet = artifactIds.toList.toSet
-        dependencies.filter(dep => dep.groupId === groupId && artifactIdSet.contains(dep.artifactId)
+        val artifactIdSet = artifactIds.toList.map(_.name).toSet
+        dependencies.filter(dep =>
+          dep.groupId === groupId && artifactIdSet.contains(dep.artifactId.name)
         )
     }
 

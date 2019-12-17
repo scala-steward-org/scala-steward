@@ -20,7 +20,7 @@ import cats.Monad
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.coursier.CoursierAlg
-import org.scalasteward.core.data.{Dependency, GroupId, Update}
+import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId, Update}
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 
@@ -46,11 +46,14 @@ final class UpdateAlg[F[_]](
 object UpdateAlg {
   def isUpdateFor(update: Update, dependency: Dependency): Boolean =
     update.groupId === dependency.groupId &&
-      update.artifactIds.contains_(dependency.artifactId) &&
+      update.artifactIds.exists { artifactId =>
+        artifactId.name === dependency.artifactId.name &&
+        dependency.artifactId.crossNames.forall(artifactId.crossNames.contains)
+      } &&
       update.currentVersion === dependency.version
 
-  def getNewerGroupId(currentGroupId: GroupId, artifactId: String): Option[(GroupId, String)] =
-    Some((currentGroupId.value, artifactId)).collect {
+  def getNewerGroupId(currentGroupId: GroupId, artifactId: ArtifactId): Option[(GroupId, String)] =
+    Some((currentGroupId.value, artifactId.name)).collect {
       case ("org.spire-math", "kind-projector")   => (GroupId("org.typelevel"), "0.10.0")
       case ("com.github.mpilquist", "simulacrum") => (GroupId("org.typelevel"), "1.0.0")
       case ("com.geirsson", "sbt-scalafmt")       => (GroupId("org.scalameta"), "2.0.0")

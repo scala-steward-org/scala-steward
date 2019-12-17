@@ -38,7 +38,7 @@ trait CoursierAlg[F[_]] {
       implicit F: Applicative[F]
   ): F[Map[String, String]] =
     dependencies
-      .traverseFilter(dep => getArtifactUrl(dep).map(_.map(dep.artifactId -> _)))
+      .traverseFilter(dep => getArtifactUrl(dep).map(_.map(dep.artifactId.name -> _)))
       .map(_.toMap)
 }
 
@@ -98,7 +98,7 @@ object CoursierAlg {
   private def toCoursierModule(dependency: Dependency): Module =
     Module(
       Organization(dependency.groupId.value),
-      ModuleName(dependency.artifactIdCross),
+      ModuleName(dependency.artifactId.firstCrossName),
       dependency.attributes
     )
 

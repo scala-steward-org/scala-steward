@@ -83,9 +83,8 @@ object StewardPlugin extends AutoPlugin {
       moduleId: ModuleID,
       scalaVersion: String,
       scalaBinaryVersion: String
-  ): String =
-    CrossVersion(moduleId.crossVersion, scalaVersion, scalaBinaryVersion)
-      .getOrElse(identity[String](_))(moduleId.name)
+  ): Option[String] =
+    CrossVersion(moduleId.crossVersion, scalaVersion, scalaBinaryVersion).map(_(moduleId.name))
 
   private def toDependency(
       moduleId: ModuleID,
@@ -94,18 +93,30 @@ object StewardPlugin extends AutoPlugin {
   ): Dependency =
     Dependency(
       groupId = moduleId.organization,
-      artifactId = moduleId.name,
-      artifactIdCross = crossName(moduleId, scalaVersion, scalaBinaryVersion),
+      artifactId =
+        ArtifactId(moduleId.name, crossName(moduleId, scalaVersion, scalaBinaryVersion).toList),
       version = moduleId.revision,
       configurations = moduleId.configurations,
       sbtVersion = moduleId.extraAttributes.get("e:sbtVersion"),
       scalaVersion = moduleId.extraAttributes.get("e:scalaVersion")
     )
 
+  final private case class ArtifactId(
+      name: String,
+      crossNames: List[String]
+  ) {
+    def asJson: String =
+      objToJson(
+        List(
+          "name" -> strToJson(name),
+          "crossNames" -> seqToJson(crossNames.map(strToJson))
+        )
+      )
+  }
+
   final private case class Dependency(
       groupId: String,
-      artifactId: String,
-      artifactIdCross: String,
+      artifactId: ArtifactId,
       version: String,
       configurations: Option[String],
       sbtVersion: Option[String],
@@ -115,8 +126,7 @@ object StewardPlugin extends AutoPlugin {
       objToJson(
         List(
           "groupId" -> strToJson(groupId),
-          "artifactId" -> strToJson(artifactId),
-          "artifactIdCross" -> strToJson(artifactIdCross),
+          "artifactId" -> artifactId.asJson,
           "version" -> strToJson(version),
           "configurations" -> optToJson(configurations.map(strToJson)),
           "sbtVersion" -> optToJson(sbtVersion.map(strToJson)),

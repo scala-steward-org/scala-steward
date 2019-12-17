@@ -20,7 +20,7 @@ import cats.Monad
 import cats.implicits._
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
-import org.scalasteward.core.data.{Dependency, Update}
+import org.scalasteward.core.data.{ArtifactId, Dependency, Update}
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.repocache.{RepoCache, RepoCacheRepository}
 import org.scalasteward.core.update.data.UpdateState
@@ -43,14 +43,14 @@ final class PruningAlg[F[_]](
     val findUpdates = Stream
       .evals(repoCacheRepository.getDependencies(repos))
       .filter(dep => FilterAlg.isIgnoredGlobally(dep.toUpdate).isRight)
-      .evalMap(updateAlg.findUpdate)
+      .evalMap(dependency => updateAlg.findUpdate(dependency.copy(configurations = None)))
       .unNone
       .compile
       .toList
 
-    updateRepository.deleteAll >> findUpdates.flatTap { updates =>
-      updateRepository.saveMany(updates)
-    }
+    updateRepository.deleteAll >> findUpdates
+      .flatTap(updateRepository.saveMany)
+      .map(ArtifactId.combineCrossNames(Update.Single.artifactId))
   }
 
   def filterByApplicableUpdates(repos: List[Repo], updates: List[Update.Single]): F[List[Repo]] =
@@ -76,7 +76,8 @@ final class PruningAlg[F[_]](
   def findAllUpdateStates(repo: Repo, updates: List[Update.Single]): F[List[UpdateState]] =
     repoCacheRepository.findCache(repo).flatMap {
       case Some(repoCache) =>
-        val dependencies = repoCache.dependencies
+        val dependencies =
+          ArtifactId.combineCrossNames(Dependency.artifactId)(repoCache.dependencies)
         dependencies.traverse { dependency =>
           findUpdateState(repo, repoCache, dependency, updates)
         }

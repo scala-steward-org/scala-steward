@@ -51,7 +51,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
           "sbt",
           "-batch",
           "-no-colors",
-          s";$stewardDependencies;$reloadPlugins;$stewardDependencies"
+          s";$crossStewardDependencies;$reloadPlugins;$stewardDependencies"
         ),
         List("read", s"$repoDir/project/build.properties"),
         List("read", s"$repoDir/.scalafmt.conf")
@@ -60,7 +60,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
     )
   }
 
-  test("getUpdatesForRepo") {
+  test("getUpdates") {
     val repo = Repo("fthomas", "refined")
     val repoDir = config.workspace / "fthomas/refined"
     val files = Map(
@@ -68,7 +68,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
       repoDir / ".scalafmt.conf" -> "version=2.0.0"
     )
     val initialState = MockState.empty.copy(files = files)
-    val state = sbtAlg.getUpdatesForRepo(repo).runS(initialState).unsafeRunSync()
+    val state = sbtAlg.getUpdates(repo).runS(initialState).unsafeRunSync()
     state shouldBe initialState.copy(
       commands = Vector(
         List(
@@ -80,25 +80,25 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
           "sbt",
           "-batch",
           "-no-colors",
-          s";$stewardDependencies;$stewardUpdates;$reloadPlugins;$stewardDependencies;$stewardUpdates"
+          s";$crossStewardDependencies;$crossStewardUpdates;$reloadPlugins;$stewardDependencies;$stewardUpdates"
         ),
         List("read", s"$repoDir/project/build.properties"),
         List("read", s"$repoDir/.scalafmt.conf")
       ),
       logs = Vector(
         (None, "Found update: org.scala-sbt:sbt : 1.2.6 -> 1.2.8"),
-        (None, "Found update: org.scalameta:scalafmt-core : 2.0.0 -> 2.0.1")
+        (None, "Found update: org.scalameta:(scalafmt-core, scalafmt-core_2.12) : 2.0.0 -> 2.0.1")
       )
     )
   }
 
-  test("getUpdatesForRepo ignoring .jvmopts and .sbtopts files") {
+  test("getUpdates ignoring .jvmopts and .sbtopts files") {
     implicit val config: Config = MockContext.config.copy(ignoreOptsFiles = true)
     val sbtAlgKeepingCredentials = SbtAlg.create
     val repo = Repo("fthomas", "refined")
     val repoDir = config.workspace / "fthomas/refined"
     val state =
-      sbtAlgKeepingCredentials.getUpdatesForRepo(repo).runS(MockState.empty).unsafeRunSync()
+      sbtAlgKeepingCredentials.getUpdates(repo).runS(MockState.empty).unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
@@ -113,7 +113,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
           "sbt",
           "-batch",
           "-no-colors",
-          s";$stewardDependencies;$stewardUpdates;$reloadPlugins;$stewardDependencies;$stewardUpdates"
+          s";$crossStewardDependencies;$crossStewardUpdates;$reloadPlugins;$stewardDependencies;$stewardUpdates"
         ),
         List("restore", (repoDir / ".sbtopts").toString),
         List("restore", (repoDir / ".jvmopts").toString),

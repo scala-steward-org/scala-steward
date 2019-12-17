@@ -35,7 +35,7 @@ object UpdatePattern {
 
   def findMatch(patterns: List[UpdatePattern], update: Update.Single): MatchResult = {
     val byGroupId = patterns.filter(_.groupId === update.groupId)
-    val byArtifactId = byGroupId.filter(_.artifactId.forall(_ === update.artifactId))
+    val byArtifactId = byGroupId.filter(_.artifactId.forall(_ === update.artifactId.name))
     val byVersion = byArtifactId.filter(_.version.forall(update.nextVersion.startsWith))
     MatchResult(byArtifactId, byVersion)
   }

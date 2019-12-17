@@ -19,6 +19,7 @@ package org.scalasteward.core.data
 import cats.implicits._
 import eu.timepit.refined.W
 import io.circe.{Decoder, Encoder}
+import monocle.Lens
 import org.scalasteward.core.data.Update.{Group, Single}
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
@@ -27,7 +28,7 @@ import org.scalasteward.core.util.string.MinLengthString
 sealed trait Update extends Product with Serializable {
   def groupId: GroupId
   def mainArtifactId: String
-  def artifactIds: Nel[String]
+  def artifactIds: Nel[ArtifactId]
   def currentVersion: String
   def newerVersions: Nel[String]
 
@@ -39,8 +40,8 @@ sealed trait Update extends Product with Serializable {
 
   final def show: String = {
     val artifacts = this match {
-      case s: Single => s.artifactId + s.configurations.fold("")(":" + _)
-      case g: Group  => g.artifactIds.mkString_("{", ", ", "}")
+      case s: Single => s.artifactId.show + s.configurations.fold("")(":" + _)
+      case g: Group  => g.artifactIds.map(_.show).mkString_("{", ", ", "}")
     }
     val versions = (currentVersion :: newerVersions).mkString_("", " -> ", "")
     s"$groupId:$artifacts : $versions"
@@ -50,22 +51,27 @@ sealed trait Update extends Product with Serializable {
 object Update {
   final case class Single(
       groupId: GroupId,
-      artifactId: String,
+      artifactId: ArtifactId,
       currentVersion: String,
       newerVersions: Nel[String],
       configurations: Option[String] = None,
       newerGroupId: Option[GroupId] = None
   ) extends Update {
     override def mainArtifactId: String =
-      artifactId
+      artifactId.name
 
-    override def artifactIds: Nel[String] =
+    override def artifactIds: Nel[ArtifactId] =
       Nel.one(artifactId)
+  }
+
+  object Single {
+    val artifactId: Lens[Single, ArtifactId] =
+      Lens[Single, ArtifactId](_.artifactId)(artifactId => _.copy(artifactId = artifactId))
   }
 
   final case class Group(
       groupId: GroupId,
-      artifactIds: Nel[String],
+      artifactIds: Nel[ArtifactId],
       currentVersion: String,
       newerVersions: Nel[String]
   ) extends Update {
@@ -75,11 +81,15 @@ object Update {
         suffix <- commonSuffixes
       } yield prefix.value + suffix
 
-      artifactIds.find(possibleMainArtifactIds.contains).getOrElse(artifactIds.head)
+      artifactIds
+        .collectFirst {
+          case artifactId if possibleMainArtifactIds.contains(artifactId.name) => artifactId.name
+        }
+        .getOrElse(artifactIds.head.name)
     }
 
     def artifactIdsPrefix: Option[MinLengthString[W.`3`.T]] =
-      util.string.longestCommonPrefixGreater[W.`3`.T](artifactIds)
+      util.string.longestCommonPrefixGreater[W.`3`.T](artifactIds.map(_.name))
   }
 
   ///
