@@ -18,6 +18,7 @@ package org.scalasteward.core.data
 
 import io.circe.Decoder
 import io.circe.generic.semiauto.deriveDecoder
+import monocle.Lens
 import org.scalasteward.core.util.Nel
 
 final case class RawUpdate(
@@ -29,6 +30,9 @@ final case class RawUpdate(
 }
 
 object RawUpdate {
+  val dependency: Lens[RawUpdate, Dependency] =
+    Lens[RawUpdate, Dependency](_.dependency)(dependency => _.copy(dependency = dependency))
+
   implicit val rawUpdateDecoder: Decoder[RawUpdate] =
     deriveDecoder
 }

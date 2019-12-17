@@ -19,7 +19,7 @@ package org.scalasteward.core.update
 import cats.implicits._
 import cats.{Monad, TraverseFilter}
 import io.chrisdavenport.log4cats.Logger
-import org.scalasteward.core.data.{GroupId, Update, Version}
+import org.scalasteward.core.data.{ArtifactId, GroupId, Update, Version}
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.update.FilterAlg._
 import org.scalasteward.core.util.Nel
@@ -75,7 +75,7 @@ object FilterAlg {
     globalFilter(update).flatMap(repoConfig.updates.keep)
 
   def isIgnoredGlobally(update: Update.Single): FilterResult = {
-    val keep = ((update.groupId.value, update.artifactId) match {
+    val keep = ((update.groupId.value, update.artifactId.name) match {
       case ("org.scala-lang", "scala-compiler") => false
       case ("org.scala-lang", "scala-library")  => false
       case ("org.scala-lang", "scala-reflect")  => false
@@ -108,8 +108,8 @@ object FilterAlg {
       .map(versions => update.copy(newerVersions = versions))
       .fold[FilterResult](Left(BadVersions(update)))(Right.apply)
 
-  private def badVersions(groupId: GroupId, artifactId: String): String => Boolean =
-    (groupId.value, artifactId) match {
+  private def badVersions(groupId: GroupId, artifactId: ArtifactId): String => Boolean =
+    (groupId.value, artifactId.name) match {
       case ("commons-collections", "commons-collections") =>
         List(
           "20030418.083655",

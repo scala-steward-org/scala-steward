@@ -18,7 +18,7 @@ package org.scalasteward.core.edit
 
 import cats.Foldable
 import cats.implicits._
-import org.scalasteward.core.data.{GroupId, Update}
+import org.scalasteward.core.data.{ArtifactId, GroupId, Update}
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 import scala.util.matching.Regex
@@ -44,7 +44,7 @@ object UpdateHeuristic {
     update match {
       case Update.Single(groupId, artifactId, _, _, _, Some(newerGroupId)) =>
         val currentGroupId = Regex.quote(groupId.value)
-        val currentArtifactId = Regex.quote(artifactId)
+        val currentArtifactId = Regex.quote(artifactId.name)
         val regex = s"""(?i)(.*)${currentGroupId}(.*${currentArtifactId})""".r
         replaceSomeInAllowedParts(regex, target, match0 => {
           val group1 = match0.group(1)
@@ -105,8 +105,9 @@ object UpdateHeuristic {
 
   private def searchTerms(update: Update): List[String] = {
     val terms = update match {
-      case s: Update.Single => s.artifactIds
-      case g: Update.Group  => g.artifactIds.concat(g.artifactIdsPrefix.map(_.value).toList)
+      case s: Update.Single => Nel.one(s.artifactId.name)
+      case g: Update.Group =>
+        g.artifactIds.map(_.name).concat(g.artifactIdsPrefix.map(_.value).toList)
     }
     terms.map(Update.nameOf(update.groupId, _)).toList
   }
@@ -119,7 +120,8 @@ object UpdateHeuristic {
     replaceVersion = update =>
       target => {
         val groupId = Regex.quote(update.groupId.value)
-        val artifactIds = alternation(update.artifactIds.map(Regex.quote))
+        val artifactIds =
+          alternation(update.artifactIds.map(artifactId => Regex.quote(artifactId.name)))
         val currentVersion = Regex.quote(update.currentVersion)
         val regex =
           raw"""(.*)(["|`]$groupId(?:"\s*%+\s*"|:+)$artifactIds(?:"\s*%\s*|:+))("?)($currentVersion)("|`)""".r
@@ -186,8 +188,10 @@ object UpdateHeuristic {
   val specific = UpdateHeuristic(
     name = "specific",
     replaceVersion = defaultReplaceVersion {
-      case Update.Single(GroupId("org.scalameta"), "scalafmt-core", _, _, _, _) => List("version")
-      case _                                                                    => List.empty
+      case Update
+            .Single(GroupId("org.scalameta"), ArtifactId("scalafmt-core", _), _, _, _, _) =>
+        List("version")
+      case _ => List.empty
     }
   )
 

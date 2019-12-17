@@ -1,6 +1,6 @@
 package org.scalasteward.core.coursier
 
-import org.scalasteward.core.data.{Dependency, GroupId}
+import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId}
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.sbt.data.{SbtVersion, ScalaVersion}
@@ -9,7 +9,8 @@ import org.scalatest.matchers.should.Matchers
 
 class CoursierAlgTest extends AnyFunSuite with Matchers {
   test("getArtifactUrl: library") {
-    val dep = Dependency(GroupId("org.typelevel"), "cats-effect", "cats-effect_2.12", "1.0.0")
+    val dep =
+      Dependency(GroupId("org.typelevel"), ArtifactId("cats-effect", "cats-effect_2.12"), "1.0.0")
     val (state, result) = coursierAlg
       .getArtifactUrl(dep)
       .run(MockState.empty)
@@ -21,8 +22,7 @@ class CoursierAlgTest extends AnyFunSuite with Matchers {
   test("getArtifactUrl: defaults to homepage") {
     val dep = Dependency(
       GroupId("com.typesafe.play"),
-      "play-ws-standalone-json",
-      "play-ws-standalone-json_2.12",
+      ArtifactId("play-ws-standalone-json", "play-ws-standalone-json_2.12"),
       "2.1.0-M7"
     )
     val (state, result) = coursierAlg
@@ -36,8 +36,7 @@ class CoursierAlgTest extends AnyFunSuite with Matchers {
   test("getArtifactUrl: sbt plugin on Maven Central") {
     val dep = Dependency(
       GroupId("org.xerial.sbt"),
-      "sbt-sonatype",
-      "sbt-sonatype",
+      ArtifactId("sbt-sonatype"),
       "3.8",
       Some(SbtVersion("1.0")),
       Some(ScalaVersion("2.12"))
@@ -53,8 +52,7 @@ class CoursierAlgTest extends AnyFunSuite with Matchers {
   test("getArtifactUrl: sbt plugin on sbt-plugin-releases") {
     val dep = Dependency(
       GroupId("com.github.gseitz"),
-      "sbt-release",
-      "sbt-release",
+      ArtifactId("sbt-release"),
       "1.0.12",
       Some(SbtVersion("1.0")),
       Some(ScalaVersion("2.12"))
@@ -65,8 +63,8 @@ class CoursierAlgTest extends AnyFunSuite with Matchers {
 
   test("getArtifactIdUrlMapping") {
     val dependencies = List(
-      Dependency(GroupId("org.typelevel"), "cats-core", "cats-core_2.12", "1.6.0"),
-      Dependency(GroupId("org.typelevel"), "cats-effect", "cats-effect_2.12", "1.0.0")
+      Dependency(GroupId("org.typelevel"), ArtifactId("cats-core", "cats-core_2.12"), "1.6.0"),
+      Dependency(GroupId("org.typelevel"), ArtifactId("cats-effect", "cats-effect_2.12"), "1.0.0")
     )
     val (state, result) = coursierAlg
       .getArtifactIdUrlMapping(dependencies)

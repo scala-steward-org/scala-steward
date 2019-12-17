@@ -50,7 +50,7 @@ object NewPullRequestData {
     val details = ignoreFutureUpdates(update) :: appliedMigrations.toList
     val labels = Nel.fromList(semVerLabel(update).toList ++ migrationLabel.toList)
 
-    s"""|Updates ${artifacts} ${fromTo(update, branchCompareUrl)}.
+    s"""|Updates $artifacts ${fromTo(update, branchCompareUrl)}.
         |${releaseNote(releaseNoteUrl).getOrElse("")}
         |
         |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
@@ -80,11 +80,12 @@ object NewPullRequestData {
 
   def artifactsWithOptionalUrl(update: Update, artifactIdToUrl: Map[String, String]): String =
     update match {
-      case s: Update.Single => artifactWithOptionalUrl(s.groupId, s.artifactId, artifactIdToUrl)
+      case s: Update.Single =>
+        artifactWithOptionalUrl(s.groupId, s.artifactId.name, artifactIdToUrl)
       case g: Update.Group =>
         g.artifactIds
           .map(artifactId =>
-            s"* ${artifactWithOptionalUrl(g.groupId, artifactId, artifactIdToUrl)}\n"
+            s"* ${artifactWithOptionalUrl(g.groupId, artifactId.name, artifactIdToUrl)}\n"
           )
           .mkString_("\n", "", "\n")
     }
@@ -95,8 +96,8 @@ object NewPullRequestData {
       artifactId2Url: Map[String, String]
   ): String =
     artifactId2Url.get(artifactId) match {
-      case Some(url) => s"[${groupId}:${artifactId}](${url})"
-      case None      => s"${groupId}:${artifactId}"
+      case Some(url) => s"[$groupId:$artifactId]($url)"
+      case None      => s"$groupId:$artifactId"
     }
 
   def ignoreFutureUpdates(update: Update): Details =

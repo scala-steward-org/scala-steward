@@ -59,14 +59,14 @@ object Context {
       implicit val gitAlg: GitAlg[F] = GitAlg.create[F]
       implicit val httpJsonClient: HttpJsonClient[F] = new HttpJsonClient[F]
       implicit val repoCacheRepository: RepoCacheRepository[F] =
-        new RepoCacheRepository[F](new JsonKeyValueStore("repos", "6"))
+        new RepoCacheRepository[F](new JsonKeyValueStore("repos", "7"))
       implicit val selfCheckAlg: SelfCheckAlg[F] = new SelfCheckAlg[F]
       val vcsSelection = new VCSSelection[F]
       implicit val vcsApiAlg: VCSApiAlg[F] = vcsSelection.getAlg(config)
       implicit val vcsRepoAlg: VCSRepoAlg[F] = VCSRepoAlg.create[F](config, gitAlg)
       implicit val vcsExtraAlg: VCSExtraAlg[F] = VCSExtraAlg.create[F]
       implicit val pullRequestRepository: PullRequestRepository[F] =
-        new PullRequestRepository[F](new JsonKeyValueStore("prs", "3"))
+        new PullRequestRepository[F](new JsonKeyValueStore("prs", "4"))
       implicit val scalafmtAlg: ScalafmtAlg[F] = ScalafmtAlg.create[F]
       implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create
       implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]
@@ -77,7 +77,7 @@ object Context {
       implicit val migrationAlg: MigrationAlg[F] = MigrationAlg.create[F]
       implicit val editAlg: EditAlg[F] = new EditAlg[F]
       implicit val updateRepository: UpdateRepository[F] =
-        new UpdateRepository[F](new JsonKeyValueStore("updates", "3"))
+        new UpdateRepository[F](new JsonKeyValueStore("updates", "4"))
       implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F]
       implicit val pruningAlg: PruningAlg[F] = new PruningAlg[F]
       new StewardAlg[F]

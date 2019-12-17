@@ -1,14 +1,14 @@
 package org.scalasteward.core.vcs.data
 
 import io.circe.syntax._
-import org.scalasteward.core.data.{GroupId, Update, Version}
+import org.scalasteward.core.data.{ArtifactId, GroupId, Update, Version}
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.nurture.UpdateData
 import org.scalasteward.core.repoconfig.RepoConfig
+import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalasteward.core.scalafix.Migration
 
 class NewPullRequestDataTest extends AnyFunSuite with Matchers {
   test("asJson") {
@@ -16,7 +16,8 @@ class NewPullRequestDataTest extends AnyFunSuite with Matchers {
       Repo("foo", "bar"),
       Repo("scala-steward", "bar"),
       RepoConfig(),
-      Update.Single(GroupId("ch.qos.logback"), "logback-classic", "1.2.0", Nel.of("1.2.3")),
+      Update
+        .Single(GroupId("ch.qos.logback"), ArtifactId("logback-classic"), "1.2.0", Nel.of("1.2.3")),
       Branch("master"),
       Sha1(Sha1.HexString("d6b6791d2ea11df1d156fe70979ab8c3a5ba3433")),
       Branch("update/logback-classic-1.2.3")
@@ -36,15 +37,19 @@ class NewPullRequestDataTest extends AnyFunSuite with Matchers {
 
   test("fromTo") {
     NewPullRequestData.fromTo(
-      Update.Single(GroupId("com.example"), "foo", "1.2.0", Nel.of("1.2.3")),
+      Update.Single(GroupId("com.example"), ArtifactId("foo"), "1.2.0", Nel.of("1.2.3")),
       None
     ) shouldBe "from 1.2.0 to 1.2.3"
 
     NewPullRequestData.fromTo(
-      Update.Group(GroupId("com.example"), Nel.of("foo", "bar"), "1.2.0", Nel.of("1.2.3")),
+      Update.Group(
+        GroupId("com.example"),
+        Nel.of(ArtifactId("foo"), ArtifactId("bar")),
+        "1.2.0",
+        Nel.of("1.2.3")
+      ),
       Some("http://example.com/compare/v1.2.0...v1.2.3")
-    ) shouldBe
-      "[from 1.2.0 to 1.2.3](http://example.com/compare/v1.2.0...v1.2.3)"
+    ) shouldBe "[from 1.2.0 to 1.2.3](http://example.com/compare/v1.2.0...v1.2.3)"
   }
 
   test("links to release notes/changelog") {
@@ -57,12 +62,17 @@ class NewPullRequestDataTest extends AnyFunSuite with Matchers {
 
   test("showing artifacts with URL in Markdown format") {
     NewPullRequestData.artifactsWithOptionalUrl(
-      Update.Single(GroupId("com.example"), "foo", "1.2.0", Nel.of("1.2.3")),
+      Update.Single(GroupId("com.example"), ArtifactId("foo"), "1.2.0", Nel.of("1.2.3")),
       Map("foo" -> "https://github.com/foo/foo")
     ) shouldBe "[com.example:foo](https://github.com/foo/foo)"
 
     NewPullRequestData.artifactsWithOptionalUrl(
-      Update.Group(GroupId("com.example"), Nel.of("foo", "bar"), "1.2.0", Nel.of("1.2.3")),
+      Update.Group(
+        GroupId("com.example"),
+        Nel.of(ArtifactId("foo"), ArtifactId("bar")),
+        "1.2.0",
+        Nel.of("1.2.3")
+      ),
       Map("foo" -> "https://github.com/foo/foo", "bar" -> "https://github.com/bar/bar")
     ) shouldBe
       """
@@ -80,10 +90,11 @@ class NewPullRequestDataTest extends AnyFunSuite with Matchers {
   }
 
   test("migrationNote: when artifact has migrations") {
-    val update = Update.Single(GroupId("com.spotify"), "scio-core", "0.6.0", Nel.of("0.7.0"))
+    val update =
+      Update.Single(GroupId("com.spotify"), ArtifactId("scio-core"), "0.6.0", Nel.of("0.7.0"))
     val migration = Migration(
       update.groupId,
-      Nel.of(update.artifactId),
+      Nel.of(update.artifactId.name),
       Version("0.7.0"),
       Nel.of("I am a rewrite rule")
     )

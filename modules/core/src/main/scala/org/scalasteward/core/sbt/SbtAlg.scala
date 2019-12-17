@@ -43,7 +43,7 @@ trait SbtAlg[F[_]] {
 
   def getDependencies(repo: Repo): F[List[Dependency]]
 
-  def getUpdatesForRepo(repo: Repo): F[List[Update.Single]]
+  def getUpdates(repo: Repo): F[List[Update.Single]]
 
   def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit]
 
@@ -96,20 +96,23 @@ object SbtAlg {
       override def getDependencies(repo: Repo): F[List[Dependency]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          cmd = sbtCmd(List(stewardDependencies, reloadPlugins, stewardDependencies))
+          cmd = sbtCmd(List(crossStewardDependencies, reloadPlugins, stewardDependencies))
           lines <- exec(cmd, repoDir)
           dependencies = parser.parseDependencies(lines)
           maybeSbtDependency <- getSbtDependency(repo)
           maybeScalafmtDependency <- scalafmtAlg.getScalafmtDependency(repo)
         } yield (maybeSbtDependency.toList ++ maybeScalafmtDependency.toList ++ dependencies).distinct
 
-      override def getUpdatesForRepo(repo: Repo): F[List[Update.Single]] =
+      override def getUpdates(repo: Repo): F[List[Update.Single]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          commands = {
-            val stewardCommands = List(stewardDependencies, stewardUpdates)
-            stewardCommands ++ List(reloadPlugins) ++ stewardCommands
-          }
+          commands = List(
+            crossStewardDependencies,
+            crossStewardUpdates,
+            reloadPlugins,
+            stewardDependencies,
+            stewardUpdates
+          )
           lines <- exec(sbtCmd(commands), repoDir)
           (dependencies, updates) = parser.parseDependenciesAndUpdates(lines)
           upToDateDependencies = dependencies.diff(updates.map(_.dependency))

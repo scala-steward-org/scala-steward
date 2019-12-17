@@ -16,15 +16,15 @@
 
 package org.scalasteward.core.data
 
+import io.circe.Codec
 import io.circe.generic.semiauto._
-import io.circe.{Decoder, Encoder}
+import monocle.Lens
 import org.scalasteward.core.sbt.data.{SbtVersion, ScalaVersion}
 import org.scalasteward.core.util.Nel
 
 final case class Dependency(
     groupId: GroupId,
-    artifactId: String,
-    artifactIdCross: String,
+    artifactId: ArtifactId,
     version: String,
     sbtVersion: Option[SbtVersion] = None,
     scalaVersion: Option[ScalaVersion] = None,
@@ -39,9 +39,9 @@ final case class Dependency(
 }
 
 object Dependency {
-  implicit val dependencyDecoder: Decoder[Dependency] =
-    deriveDecoder
+  val artifactId: Lens[Dependency, ArtifactId] =
+    Lens[Dependency, ArtifactId](_.artifactId)(artifactId => _.copy(artifactId = artifactId))
 
-  implicit val dependencyEncoder: Encoder[Dependency] =
-    deriveEncoder
+  implicit val dependencyCodec: Codec[Dependency] =
+    deriveCodec
 }

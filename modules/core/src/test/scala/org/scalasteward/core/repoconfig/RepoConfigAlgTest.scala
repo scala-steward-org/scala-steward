@@ -1,7 +1,7 @@
 package org.scalasteward.core.repoconfig
 
 import better.files.File
-import org.scalasteward.core.data.{GroupId, Update}
+import org.scalasteward.core.data.{ArtifactId, GroupId, Update}
 import org.scalasteward.core.mock.MockContext.repoConfigAlg
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.util.Nel
@@ -53,7 +53,7 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
   }
 
   test("configToIgnoreFurtherUpdates with single update") {
-    val update = Update.Single(GroupId("a"), "b", "c", Nel.of("d"))
+    val update = Update.Single(GroupId("a"), ArtifactId("b"), "c", Nel.of("d"))
     val repoConfig = RepoConfigAlg
       .parseRepoConfig(RepoConfigAlg.configToIgnoreFurtherUpdates(update))
       .getOrElse(RepoConfig())
@@ -66,7 +66,8 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
   }
 
   test("configToIgnoreFurtherUpdates with group update") {
-    val update = Update.Group(GroupId("a"), Nel.of("b", "e"), "c", Nel.of("d"))
+    val update =
+      Update.Group(GroupId("a"), Nel.of(ArtifactId("b"), ArtifactId("e")), "c", Nel.of("d"))
     val repoConfig = RepoConfigAlg
       .parseRepoConfig(RepoConfigAlg.configToIgnoreFurtherUpdates(update))
       .getOrElse(RepoConfig())
