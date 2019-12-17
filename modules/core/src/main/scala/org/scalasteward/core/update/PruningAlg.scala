@@ -49,9 +49,7 @@ final class PruningAlg[F[_]](
       .toList
 
     updateRepository.deleteAll >> findUpdates
-      .flatTap { updates =>
-        updateRepository.saveMany(updates)
-      }
+      .flatTap(updateRepository.saveMany)
       .map(ArtifactId.combineCrossNames(Update.Single.artifactId))
   }
 

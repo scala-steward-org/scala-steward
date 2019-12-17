@@ -18,7 +18,7 @@ package org.scalasteward.core
 
 import better.files.File
 import cats.implicits._
-import org.scalasteward.core.data.{ArtifactId, GroupId, Update}
+import org.scalasteward.core.data.{GroupId, Update}
 
 package object io {
   def isSourceFile(file: File): Boolean = {
@@ -33,16 +33,11 @@ package object io {
 
   def isFileSpecificTo(update: Update)(f: File): Boolean =
     update match {
-      case Update.Single(GroupId("org.scala-sbt"), ArtifactId("sbt", _), _, _, _, _) =>
+      case s: Update.Single
+          if s.groupId === GroupId("org.scala-sbt") && s.artifactId.name === "sbt" =>
         f.name === "build.properties"
-      case Update.Single(
-          GroupId("org.scalameta"),
-          ArtifactId("scalafmt-core", _),
-          _,
-          _,
-          _,
-          _
-          ) =>
+      case s: Update.Single
+          if s.groupId === GroupId("org.scalameta") && s.artifactId.name === "scalafmt-core" =>
         f.name === ".scalafmt.conf"
       case _ => true
     }

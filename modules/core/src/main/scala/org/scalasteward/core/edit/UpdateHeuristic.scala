@@ -18,7 +18,7 @@ package org.scalasteward.core.edit
 
 import cats.Foldable
 import cats.implicits._
-import org.scalasteward.core.data.{ArtifactId, GroupId, Update}
+import org.scalasteward.core.data.{GroupId, Update}
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 import scala.util.matching.Regex
@@ -188,8 +188,8 @@ object UpdateHeuristic {
   val specific = UpdateHeuristic(
     name = "specific",
     replaceVersion = defaultReplaceVersion {
-      case Update
-            .Single(GroupId("org.scalameta"), ArtifactId("scalafmt-core", _), _, _, _, _) =>
+      case s: Update.Single
+          if s.groupId === GroupId("org.scalameta") && s.artifactId.name === "scalafmt-core" =>
         List("version")
       case _ => List.empty
     }
