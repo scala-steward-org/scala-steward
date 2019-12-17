@@ -23,6 +23,7 @@ import org.scalasteward.core.data.{CrossDependency, Dependency, Update}
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.repocache.{RepoCache, RepoCacheRepository}
 import org.scalasteward.core.repoconfig.RepoConfig
+import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.update.data.UpdateState
 import org.scalasteward.core.update.data.UpdateState._
 import org.scalasteward.core.util
@@ -34,6 +35,7 @@ final class PruningAlg[F[_]](
     logger: Logger[F],
     pullRequestRepo: PullRequestRepository[F],
     repoCacheRepository: RepoCacheRepository[F],
+    sbtAlg: SbtAlg[F],
     updateAlg: UpdateAlg[F],
     F: Monad[F]
 ) {
@@ -47,7 +49,8 @@ final class PruningAlg[F[_]](
           .sorted
         val repoConfig = repoCache.maybeRepoConfig.getOrElse(RepoConfig.default)
         for {
-          updates <- updateAlg.findUpdates(dependencies, repoConfig)
+          resolvers <- sbtAlg.getResolvers(repo)
+          updates <- updateAlg.findUpdates(dependencies, repoConfig, resolvers)
           updateStates <- findAllUpdateStates(repo, repoCache, dependencies, updates)
           attentionNeeded <- checkUpdateStates(repo, updateStates)
         } yield attentionNeeded

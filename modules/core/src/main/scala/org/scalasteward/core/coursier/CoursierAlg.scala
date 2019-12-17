@@ -20,20 +20,27 @@ import cats.effect._
 import cats.implicits._
 import cats.{Applicative, Parallel}
 import coursier.interop.cats._
+import coursier.maven.MavenRepository
 import coursier.util.StringInterpolators.SafeIvyRepository
 import coursier.{Info, Module, ModuleName, Organization}
 import io.chrisdavenport.log4cats.Logger
 import org.http4s.Uri
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.data.{Dependency, Version}
+import org.scalasteward.core.data.{Dependency, Resolver, Version}
 
 /** An interface to [[https://get-coursier.io Coursier]] used for
   * fetching dependency versions and metadata.
   */
 trait CoursierAlg[F[_]] {
-  def getArtifactUrl(dependency: Dependency): F[Option[Uri]]
+  def getArtifactUrl(
+      dependency: Dependency,
+      extraResolvers: List[Resolver] = List.empty
+  ): F[Option[Uri]]
 
-  def getVersions(dependency: Dependency): F[List[Version]]
+  def getVersions(
+      dependency: Dependency,
+      extraResolvers: List[Resolver] = List.empty
+  ): F[List[Version]]
 
   final def getArtifactIdUrlMapping(dependencies: List[Dependency])(
       implicit F: Applicative[F]
@@ -59,10 +66,16 @@ object CoursierAlg {
     val versions = coursier.Versions[F](cache).addRepositories(sbtPluginReleases)
 
     new CoursierAlg[F] {
-      override def getArtifactUrl(dependency: Dependency): F[Option[Uri]] = {
+      override def getArtifactUrl(
+          dependency: Dependency,
+          extraResolvers: List[Resolver] = List.empty
+      ): F[Option[Uri]] = {
         val coursierDependency = toCoursierDependency(dependency)
         for {
           maybeFetchResult <- fetch
+            .addRepositories(
+              extraResolvers.map(resolver => MavenRepository.apply(resolver.location)): _*
+            )
             .addDependencies(coursierDependency)
             .addArtifactTypes(coursier.Type.pom, coursier.Type.ivy)
             .ioResult
@@ -80,8 +93,12 @@ object CoursierAlg {
         }
       }
 
-      override def getVersions(dependency: Dependency): F[List[Version]] =
+      override def getVersions(dependency: Dependency,
+                               extraResolvers: List[Resolver] = List.empty): F[List[Version]] =
         versions
+          .addRepositories(
+            extraResolvers.map(resolver => MavenRepository.apply(resolver.location)): _*
+          )
           .withModule(toCoursierModule(dependency))
           .versions()
           .map(_.available.map(Version.apply).sorted)

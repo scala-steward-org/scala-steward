@@ -123,6 +123,17 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
         List(
           "write",
           s"${config.workspace}/store/versions_v1/org/scalameta/scalafmt-core_2.13/versions.json"
+        ),
+        List(
+          "TEST_VAR=GREAT",
+          "ANOTHER_TEST_VAR=ALSO_GREAT",
+          repoDir.toString,
+          "firejail",
+          s"--whitelist=$repoDir",
+          "sbt",
+          "-batch",
+          "-no-colors",
+          s";$crossStewardResolvers;$reloadPlugins;$stewardResolvers"
         )
       )
     )
@@ -154,7 +165,22 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
         List("restore", (repoDir / ".sbtopts").toString),
         List("restore", (repoDir / ".jvmopts").toString),
         List("read", s"$repoDir/project/build.properties"),
-        List("read", s"$repoDir/.scalafmt.conf")
+        List("read", s"$repoDir/.scalafmt.conf"),
+        List("rm", (repoDir / ".jvmopts").toString),
+        List("rm", (repoDir / ".sbtopts").toString),
+        List(
+          "TEST_VAR=GREAT",
+          "ANOTHER_TEST_VAR=ALSO_GREAT",
+          repoDir.toString,
+          "firejail",
+          s"--whitelist=$repoDir",
+          "sbt",
+          "-batch",
+          "-no-colors",
+          s";$crossStewardResolvers;$reloadPlugins;$stewardResolvers"
+        ),
+        List("restore", (repoDir / ".sbtopts").toString),
+        List("restore", (repoDir / ".jvmopts").toString)
       )
     )
   }

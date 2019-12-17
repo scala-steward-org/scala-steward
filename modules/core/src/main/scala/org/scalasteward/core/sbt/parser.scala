@@ -19,7 +19,7 @@ package org.scalasteward.core.sbt
 import cats.implicits._
 import io.circe.Decoder
 import io.circe.parser._
-import org.scalasteward.core.data.{CrossDependency, Dependency, Update, Resolver}
+import org.scalasteward.core.data.{CrossDependency, Dependency, Resolver, Update}
 import org.scalasteward.core.sbt.data.SbtVersion
 import org.scalasteward.core.util.Nel
 

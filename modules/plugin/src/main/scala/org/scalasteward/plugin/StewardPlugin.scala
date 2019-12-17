@@ -70,9 +70,12 @@ object StewardPlugin extends AutoPlugin {
     },
     stewardResolvers := {
       val log = streams.value.log
-      resolvers.value.toList.collect{
-        case repo:MavenRepository => Resolver(repo.name, repo.root)
-      }.map(_.asJson).foreach(s => log.info(s))
+      resolvers.value.toList
+        .collect {
+          case repo: MavenRepository => Resolver(repo.name, repo.root)
+        }
+        .map(_.asJson)
+        .foreach(s => log.info(s))
     }
   )
 
@@ -170,7 +173,8 @@ object StewardPlugin extends AutoPlugin {
   }
 
   final private case class Resolver(name: String, location: String) {
-    def asJson: String = objToJson(List("name" -> strToJson(name), "location" -> strToJson(location)))
+    def asJson: String =
+      objToJson(List("name" -> strToJson(name), "location" -> strToJson(location)))
   }
 
   final private case class Update(

@@ -1,7 +1,7 @@
 package org.scalasteward.core.sbt
 
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.{ArtifactId, Update, Resolver}
+import org.scalasteward.core.data.{ArtifactId, Resolver, Update}
 import org.scalasteward.core.sbt.data.SbtVersion
 import org.scalasteward.core.sbt.parser._
 import org.scalasteward.core.util.Nel
