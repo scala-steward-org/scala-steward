@@ -17,8 +17,8 @@
 package org.scalasteward.core.sbt
 
 object command {
-  val stewardUpdates = "show stewardUpdates"
-  val stewardDependencies = "show stewardDependencies"
+  val stewardUpdates = "stewardUpdates"
+  val stewardDependencies = "stewardDependencies"
   val crossStewardUpdates = s"+ $stewardUpdates"
   val crossStewardDependencies = s"+ $stewardDependencies"
   val reloadPlugins = "reload plugins"
