@@ -18,7 +18,6 @@ package org.scalasteward.core.update
 
 import cats.Monad
 import cats.implicits._
-import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId, Update}
 import org.scalasteward.core.util
@@ -27,8 +26,6 @@ import org.scalasteward.core.util.Nel
 final class UpdateAlg[F[_]](
     implicit
     coursierAlg: CoursierAlg[F],
-    filterAlg: FilterAlg[F],
-    logger: Logger[F],
     F: Monad[F]
 ) {
   def findUpdate(dependency: Dependency): F[Option[Update.Single]] =
@@ -37,10 +34,8 @@ final class UpdateAlg[F[_]](
       maybeUpdate0 = Nel.fromList(newerVersions0).map { newerVersions1 =>
         dependency.toUpdate.copy(newerVersions = newerVersions1.map(_.value))
       }
-      maybeUpdate1 <- maybeUpdate0.flatTraverse(filterAlg.globalFilterOne)
-      maybeUpdate2 = maybeUpdate1.orElse(UpdateAlg.findUpdateUnderNewGroup(dependency))
-      _ <- maybeUpdate2.fold(F.unit)(update => logger.info(s"Found update: ${update.show}"))
-    } yield maybeUpdate2
+      maybeUpdate1 = maybeUpdate0.orElse(UpdateAlg.findUpdateUnderNewGroup(dependency))
+    } yield maybeUpdate1
 }
 
 object UpdateAlg {

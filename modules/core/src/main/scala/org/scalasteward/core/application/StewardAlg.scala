@@ -20,7 +20,9 @@ import better.files.File
 import cats.Monad
 import cats.effect.ExitCode
 import cats.implicits._
+import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
+import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.NurtureAlg
 import org.scalasteward.core.repocache.RepoCacheAlg
@@ -35,12 +37,14 @@ final class StewardAlg[F[_]](
     config: Config,
     dateTimeAlg: DateTimeAlg[F],
     fileAlg: FileAlg[F],
+    gitAlg: GitAlg[F],
     logger: Logger[F],
     nurtureAlg: NurtureAlg[F],
     pruningAlg: PruningAlg[F],
     repoCacheAlg: RepoCacheAlg[F],
     sbtAlg: SbtAlg[F],
     selfCheckAlg: SelfCheckAlg[F],
+    streamCompiler: Stream.Compiler[F, F],
     workspaceAlg: WorkspaceAlg[F],
     F: Monad[F]
 ) {
@@ -69,31 +73,22 @@ final class StewardAlg[F[_]](
       content.linesIterator.collect { case regex(owner, repo) => Repo(owner.trim, repo.trim) }.toList
     }
 
-  def pruneRepos(repos: List[Repo]): F[List[Repo]] =
-    logger.infoTotalTime("pruning repos") {
-      for {
-        _ <- repos.traverse_(repoCacheAlg.checkCache)
-        allUpdates <- pruningAlg.checkForUpdates(repos)
-        filteredRepos <- pruningAlg.filterByApplicableUpdates(repos, allUpdates)
-        countTotal = repos.size
-        countFiltered = filteredRepos.size
-        countPruned = countTotal - countFiltered
-        _ <- logger.info(s"""Repos count:
-                            |  total    = $countTotal
-                            |  filtered = $countFiltered
-                            |  pruned   = $countPruned""".stripMargin)
-      } yield filteredRepos
-    }
-
   def runF: F[ExitCode] =
     logger.infoTotalTime("run") {
       for {
         _ <- printBanner
         _ <- selfCheckAlg.checkAll
         _ <- prepareEnv
-        repos <- readRepos(config.reposFile)
-        reposToNurture <- if (config.pruneRepos) pruneRepos(repos) else F.pure(repos)
-        result <- reposToNurture.traverse(nurtureAlg.nurture)
-      } yield if (result.forall(_.isRight)) ExitCode.Success else ExitCode.Error
+        reposList <- readRepos(config.reposFile)
+        repos = Stream.emits(reposList).covary[F]
+        reposToNurture = {
+          if (config.pruneRepos) {
+            repos.evalTap(repoCacheAlg.checkCache).evalFilter { repo =>
+              pruningAlg.needsAttention(repo).flatTap(if (_) F.unit else gitAlg.removeClone(repo))
+            }
+          } else repos
+        }
+        result <- reposToNurture.evalMap(nurtureAlg.nurture).compile.foldMonoid
+      } yield result.fold(_ => ExitCode.Error, _ => ExitCode.Success)
     }
 }

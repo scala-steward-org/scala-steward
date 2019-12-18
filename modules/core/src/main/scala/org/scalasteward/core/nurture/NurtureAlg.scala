@@ -27,8 +27,8 @@ import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Branch, GitAlg}
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
-import org.scalasteward.core.update.FilterAlg
 import org.scalasteward.core.scalafix.MigrationAlg
+import org.scalasteward.core.update.FilterAlg
 import org.scalasteward.core.util.DateTimeAlg
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo}
@@ -66,7 +66,7 @@ final class NurtureAlg[F[_]](
     for {
       _ <- logger.info(s"Clone and synchronize ${repo.show}")
       repoOut <- vcsApiAlg.createForkOrGetRepo(config, repo)
-      _ <- vcsRepoAlg.clone(repo, repoOut)
+      _ <- gitAlg.cloneExists(repo).ifM(F.unit, vcsRepoAlg.clone(repo, repoOut))
       parent <- vcsRepoAlg.syncFork(repo, repoOut)
     } yield (repoOut.repo, parent.default_branch)
 

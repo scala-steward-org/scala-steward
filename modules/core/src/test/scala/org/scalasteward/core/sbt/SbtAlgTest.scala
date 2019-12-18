@@ -84,10 +84,6 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
         ),
         List("read", s"$repoDir/project/build.properties"),
         List("read", s"$repoDir/.scalafmt.conf")
-      ),
-      logs = Vector(
-        (None, "Found update: org.scala-sbt:sbt : 1.2.6 -> 1.2.8"),
-        (None, "Found update: org.scalameta:(scalafmt-core, scalafmt-core_2.12) : 2.0.0 -> 2.0.1")
       )
     )
   }

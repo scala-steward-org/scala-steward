@@ -17,7 +17,7 @@ import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.scalafix.MigrationAlg
 import org.scalasteward.core.scalafmt.ScalafmtAlg
-import org.scalasteward.core.update.{FilterAlg, PruningAlg, UpdateAlg, UpdateRepository}
+import org.scalasteward.core.update.{FilterAlg, PruningAlg, UpdateAlg}
 import org.scalasteward.core.util.{BracketThrowable, DateTimeAlg}
 import org.scalasteward.core.vcs.VCSRepoAlg
 import org.scalasteward.core.vcs.data.AuthenticatedUser
@@ -68,8 +68,6 @@ object MockContext {
   implicit val sbtAlg: SbtAlg[MockEff] = SbtAlg.create
   implicit val editAlg: EditAlg[MockEff] = new EditAlg[MockEff]
   implicit val repoConfigAlg: RepoConfigAlg[MockEff] = new RepoConfigAlg[MockEff]
-  implicit val updateRepo: UpdateRepository[MockEff] =
-    new UpdateRepository[MockEff](new JsonKeyValueStore("updateKVStore", "7"))
   implicit val prRepo: PullRequestRepository[MockEff] =
     new PullRequestRepository[MockEff](new JsonKeyValueStore("pullrequests", "9"))
   implicit val pruningAlg: PruningAlg[MockEff] = new PruningAlg[MockEff]

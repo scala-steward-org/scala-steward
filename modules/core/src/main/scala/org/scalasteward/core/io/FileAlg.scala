@@ -34,6 +34,8 @@ trait FileAlg[F[_]] {
 
   def home: F[File]
 
+  def isDirectory(file: File): F[Boolean]
+
   def isRegularFile(file: File): F[Boolean]
 
   def removeTemporarily[A](file: File)(fa: F[A]): F[A]
@@ -94,6 +96,9 @@ object FileAlg {
 
       override def home: F[File] =
         F.delay(File.home)
+
+      override def isDirectory(file: File): F[Boolean] =
+        F.delay(file.isDirectory(File.LinkOptions.noFollow))
 
       override def isRegularFile(file: File): F[Boolean] =
         F.delay(file.isRegularFile(File.LinkOptions.noFollow))
