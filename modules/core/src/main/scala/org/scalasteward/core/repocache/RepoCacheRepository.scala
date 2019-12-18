@@ -18,7 +18,6 @@ package org.scalasteward.core.repocache
 
 import cats.Applicative
 import cats.implicits._
-import org.scalasteward.core.data.Dependency
 import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.persistence.KeyValueStore
 import org.scalasteward.core.vcs.data.Repo
@@ -29,9 +28,6 @@ final class RepoCacheRepository[F[_]: Applicative](kvStore: KeyValueStore[F, Rep
 
   def findSha1(repo: Repo): F[Option[Sha1]] =
     findCache(repo).map(_.map(_.sha1))
-
-  def getDependencies(repos: List[Repo]): F[List[Dependency]] =
-    kvStore.getMany(repos).map(_.values.flatMap(_.dependencies).toList.distinct)
 
   def updateCache(repo: Repo, repoCache: RepoCache): F[Unit] =
     kvStore.put(repo, repoCache)

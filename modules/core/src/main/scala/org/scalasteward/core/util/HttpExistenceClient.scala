@@ -20,6 +20,7 @@ import cats.effect.{Async, Resource}
 import cats.implicits._
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.chrisdavenport.log4cats.Logger
+import java.util.concurrent.TimeUnit
 import org.http4s.client.Client
 import org.http4s.{Method, Request, Status, Uri}
 import scalacache.CatsEffect.modes._
@@ -54,7 +55,13 @@ object HttpExistenceClient {
       F: Async[F]
   ): Resource[F, HttpExistenceClient[F]] = {
     val buildCache = F.delay {
-      CaffeineCache(Caffeine.newBuilder().maximumSize(16384L).build[String, Entry[Status]]())
+      CaffeineCache(
+        Caffeine
+          .newBuilder()
+          .maximumSize(16384L)
+          .expireAfterWrite(1, TimeUnit.HOURS)
+          .build[String, Entry[Status]]()
+      )
     }
     Resource.make(buildCache)(_.close().void).map(new HttpExistenceClient[F](_))
   }

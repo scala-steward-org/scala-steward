@@ -23,6 +23,9 @@ class MockFileAlg extends FileAlg[MockEff] {
   override def home: MockEff[File] =
     StateT.pure(File.root / "tmp" / "steward")
 
+  override def isDirectory(file: File): MockEff[Boolean] =
+    StateT.pure(false)
+
   override def isRegularFile(file: File): MockEff[Boolean] =
     StateT.pure(true)
 

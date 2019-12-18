@@ -18,7 +18,6 @@ package org.scalasteward.core.update.data
 
 import org.http4s.Uri
 import org.scalasteward.core.data.{Dependency, Update}
-import org.scalasteward.core.update.FilterAlg.RejectionReason
 
 sealed trait UpdateState extends Product with Serializable {
   def dependency: Dependency
@@ -28,9 +27,6 @@ object UpdateState {
   final case class DependencyUpToDate(dependency: Dependency) extends UpdateState
 
   final case class DependencyOutdated(dependency: Dependency, update: Update) extends UpdateState
-
-  final case class UpdateRejectedByConfig(dependency: Dependency, rejectionReason: RejectionReason)
-      extends UpdateState
 
   final case class PullRequestUpToDate(dependency: Dependency, update: Update, pullRequest: Uri)
       extends UpdateState

@@ -32,7 +32,7 @@ import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.scalafix.MigrationAlg
 import org.scalasteward.core.scalafmt.ScalafmtAlg
-import org.scalasteward.core.update.{FilterAlg, PruningAlg, UpdateAlg, UpdateRepository}
+import org.scalasteward.core.update.{FilterAlg, PruningAlg, UpdateAlg}
 import org.scalasteward.core.util._
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg, VCSSelection}
@@ -76,8 +76,6 @@ object Context {
       implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F]
       implicit val migrationAlg: MigrationAlg[F] = MigrationAlg.create[F]
       implicit val editAlg: EditAlg[F] = new EditAlg[F]
-      implicit val updateRepository: UpdateRepository[F] =
-        new UpdateRepository[F](new JsonKeyValueStore("updates", "4"))
       implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F]
       implicit val pruningAlg: PruningAlg[F] = new PruningAlg[F]
       new StewardAlg[F]

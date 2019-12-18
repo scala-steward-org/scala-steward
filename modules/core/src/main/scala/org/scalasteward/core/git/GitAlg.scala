@@ -32,6 +32,8 @@ trait GitAlg[F[_]] {
 
   def clone(repo: Repo, url: Uri): F[Unit]
 
+  def cloneExists(repo: Repo): F[Boolean]
+
   def commitAll(repo: Repo, message: String): F[Unit]
 
   def containsChanges(repo: Repo): F[Boolean]
@@ -91,6 +93,12 @@ object GitAlg {
           repoDir <- workspaceAlg.repoDir(repo)
           _ <- exec(Nel.of("clone", "--recursive", url.toString, repoDir.pathAsString), rootDir)
         } yield ()
+
+      override def cloneExists(repo: Repo): F[Boolean] =
+        for {
+          repoDir <- workspaceAlg.repoDir(repo)
+          dotGitExists <- fileAlg.isDirectory(repoDir / ".git")
+        } yield dotGitExists
 
       override def commitAll(repo: Repo, message: String): F[Unit] =
         for {

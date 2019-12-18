@@ -18,11 +18,11 @@ package org.scalasteward.core.update
 
 import cats.Monad
 import cats.implicits._
-import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data.{ArtifactId, Dependency, Update}
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.repocache.{RepoCache, RepoCacheRepository}
+import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.update.data.UpdateState
 import org.scalasteward.core.update.data.UpdateState._
 import org.scalasteward.core.util
@@ -31,82 +31,75 @@ import org.scalasteward.core.vcs.data.Repo
 
 final class PruningAlg[F[_]](
     implicit
+    filterAlg: FilterAlg[F],
     logger: Logger[F],
     pullRequestRepo: PullRequestRepository[F],
     repoCacheRepository: RepoCacheRepository[F],
-    streamCompiler: Stream.Compiler[F, F],
     updateAlg: UpdateAlg[F],
-    updateRepository: UpdateRepository[F],
     F: Monad[F]
 ) {
-  def checkForUpdates(repos: List[Repo]): F[List[Update.Single]] = {
-    val findUpdates = Stream
-      .evals(repoCacheRepository.getDependencies(repos))
-      .filter(dep => FilterAlg.isIgnoredGlobally(dep.toUpdate).isRight)
-      .evalMap(dependency => updateAlg.findUpdate(dependency.copy(configurations = None)))
-      .unNone
-      .compile
-      .toList
-
-    updateRepository.deleteAll >> findUpdates
-      .flatTap(updateRepository.saveMany)
-      .map(ArtifactId.combineCrossNames(Update.Single.artifactId))
-  }
-
-  def filterByApplicableUpdates(repos: List[Repo], updates: List[Update.Single]): F[List[Repo]] =
-    repos.filterA(needsAttention(_, updates))
-
-  def needsAttention(repo: Repo, updates: List[Update.Single]): F[Boolean] =
-    for {
-      allStates <- findAllUpdateStates(repo, updates)
-      outdatedStates = allStates.filter {
-        case DependencyOutdated(_, _)     => true
-        case PullRequestOutdated(_, _, _) => true
-        case _                            => false
-      }
-      isOutdated = outdatedStates.nonEmpty
-      _ <- {
-        if (isOutdated) {
-          val statesAsString = util.string.indentLines(outdatedStates.map(_.toString).sorted)
-          logger.info(s"Update states for ${repo.show}:\n" + statesAsString)
-        } else F.unit
-      }
-    } yield isOutdated
-
-  def findAllUpdateStates(repo: Repo, updates: List[Update.Single]): F[List[UpdateState]] =
+  def needsAttention(repo: Repo): F[Boolean] =
     repoCacheRepository.findCache(repo).flatMap {
       case Some(repoCache) =>
-        val dependencies =
-          ArtifactId.combineCrossNames(Dependency.artifactId)(repoCache.dependencies)
-        dependencies.traverse { dependency =>
-          findUpdateState(repo, repoCache, dependency, updates)
-        }
-      case None => List.empty[UpdateState].pure[F]
+        for {
+          updates <- findUpdates(repoCache)
+          _ <- logger.info(util.logger.showUpdates(updates.widen[Update]))
+          updateStates <- findAllUpdateStates(repo, repoCache, updates)
+          attentionNeeded <- checkUpdateStates(repo, updateStates)
+        } yield attentionNeeded
+      case None => F.pure(false)
     }
 
-  def findUpdateState(
+  private def findUpdates(repoCache: RepoCache): F[List[Update.Single]] =
+    repoCache.dependencies
+      .flatTraverse(d => updateAlg.findUpdate(d.copy(configurations = None)).map(_.toList))
+      .flatMap { updates =>
+        val repoConfig = repoCache.maybeRepoConfig.getOrElse(RepoConfig.default)
+        filterAlg
+          .localFilterMany(repoConfig, updates)
+          .map(ArtifactId.combineCrossNames(Update.Single.artifactId))
+          .map(_.sortBy(u => (u.groupId, u.artifactId)))
+      }
+
+  private def findAllUpdateStates(
       repo: Repo,
       repoCache: RepoCache,
-      dependency: Dependency,
       updates: List[Update.Single]
+  ): F[List[UpdateState]] = {
+    val dependencies = ArtifactId.combineCrossNames(Dependency.artifactId)(repoCache.dependencies)
+    dependencies.traverse(findUpdateState(repo, repoCache, updates))
+  }
+
+  private def findUpdateState(repo: Repo, repoCache: RepoCache, updates: List[Update.Single])(
+      dependency: Dependency
   ): F[UpdateState] =
     updates.find(UpdateAlg.isUpdateFor(_, dependency)) match {
       case None => F.pure(DependencyUpToDate(dependency))
       case Some(update) =>
-        repoCache.maybeRepoConfig.map(_.updates.keep(update)) match {
-          case Some(Left(reason)) =>
-            F.pure(UpdateRejectedByConfig(dependency, reason))
-          case _ =>
-            pullRequestRepo.findPullRequest(repo, dependency, update.nextVersion).map {
-              case None =>
-                DependencyOutdated(dependency, update)
-              case Some((uri, _, state)) if state === Closed =>
-                PullRequestClosed(dependency, update, uri)
-              case Some((uri, baseSha1, _)) if baseSha1 === repoCache.sha1 =>
-                PullRequestUpToDate(dependency, update, uri)
-              case Some((uri, _, _)) =>
-                PullRequestOutdated(dependency, update, uri)
-            }
+        pullRequestRepo.findPullRequest(repo, dependency, update.nextVersion).map {
+          case None =>
+            DependencyOutdated(dependency, update)
+          case Some((uri, _, state)) if state === Closed =>
+            PullRequestClosed(dependency, update, uri)
+          case Some((uri, baseSha1, _)) if baseSha1 === repoCache.sha1 =>
+            PullRequestUpToDate(dependency, update, uri)
+          case Some((uri, _, _)) =>
+            PullRequestOutdated(dependency, update, uri)
         }
     }
+
+  private def checkUpdateStates(repo: Repo, updateStates: List[UpdateState]): F[Boolean] = {
+    val outdatedStates = updateStates.collect {
+      case s: DependencyOutdated  => s
+      case s: PullRequestOutdated => s
+    }
+    val isOutdated = outdatedStates.nonEmpty
+    val message = if (isOutdated) {
+      val states = util.string.indentLines(outdatedStates.map(_.toString).sorted)
+      s"${repo.show} is outdated:\n" + states
+    } else {
+      s"${repo.show} is up-to-date"
+    }
+    logger.info(message).as(isOutdated)
+  }
 }

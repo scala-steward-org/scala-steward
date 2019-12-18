@@ -29,9 +29,6 @@ final class FilterAlg[F[_]](
     logger: Logger[F],
     F: Monad[F]
 ) {
-  def globalFilterOne(update: Update.Single): F[Option[Update.Single]] =
-    logIfRejected(globalFilter(update))
-
   def localFilterMany[G[_]: TraverseFilter](
       config: RepoConfig,
       updates: G[Update.Single]

@@ -62,7 +62,6 @@ final class RepoCacheAlg[F[_]](
       _ <- vcsRepoAlg.clone(repo, repoOut)
       _ <- vcsRepoAlg.syncFork(repo, repoOut)
       _ <- refreshCache(repo)
-      _ <- gitAlg.removeClone(repo)
     } yield ()
 
   private def refreshCache(repo: Repo): F[Unit] =
