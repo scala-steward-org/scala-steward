@@ -5,7 +5,7 @@ object Dependencies {
   val betterMonadicFor = "com.olegpy" %% "better-monadic-for" % "0.3.1"
   val caseApp = "com.github.alexarchambault" %% "case-app" % "2.0.0-M9"
   val catsEffect = "org.typelevel" %% "cats-effect" % "2.0.0"
-  val catsKernelLaws = "org.typelevel" %% "cats-kernel-laws" % "2.0.0"
+  val catsKernelLaws = "org.typelevel" %% "cats-kernel-laws" % "2.1.0"
   val circeConfig = "io.circe" %% "circe-config" % "0.7.0"
   val circeGeneric = "io.circe" %% "circe-generic" % "0.12.3"
   val circeGenericExtras = "io.circe" %% "circe-generic-extras" % "0.12.2"
