@@ -26,9 +26,9 @@ object StewardPlugin extends AutoPlugin {
 
   object autoImport {
     val stewardDependencies =
-      taskKey[String]("Dependencies as JSON for consumption by Scala Steward.")
+      taskKey[Unit]("Prints dependencies as JSON for consumption by Scala Steward.")
     val stewardUpdates =
-      taskKey[String]("Dependency updates as JSON for consumption by Scala Steward.")
+      taskKey[Unit]("Prints dependency updates as JSON for consumption by Scala Steward.")
   }
 
   import autoImport._
@@ -43,7 +43,7 @@ object StewardPlugin extends AutoPlugin {
         .filter(isDefinedInBuildFiles(_, sourcePositions))
         .map(moduleId => toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue))
 
-      dependencies.map(_.asJson).mkString(System.lineSeparator())
+      dependencies.map(_.asJson).foreach(println)
     },
     stewardUpdates := {
       val scalaBinaryVersionValue = scalaBinaryVersion.value
@@ -60,7 +60,7 @@ object StewardPlugin extends AutoPlugin {
           )
       }
 
-      updates.map(_.asJson).mkString(System.lineSeparator())
+      updates.map(_.asJson).foreach(println)
     }
   )
 

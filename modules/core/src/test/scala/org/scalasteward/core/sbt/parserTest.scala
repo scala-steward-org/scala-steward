@@ -15,14 +15,14 @@ class parserTest extends AnyFunSuite with Matchers {
   test("parseDependencies") {
     val lines =
       """|[info] core / stewardDependencies
-         |[info]  { "groupId": "org.scala-lang", "artifactId": { "name": "scala-library", "crossNames": [ ] }, "version": "2.12.7" }
-         |[info]  { "groupId": "com.github.pathikrit", "artifactId": { "name": "better-files", "crossNames": [ "better-files_2.12" ] }, "version": "3.6.0" }
-         |[info]  { "groupId": "org.typelevel", "artifactId": { "name": "cats-effect", "crossNames": [ "cats-effect_2.12" ] }, "version": "1.0.0" }
+         |{ "groupId": "org.scala-lang", "artifactId": { "name": "scala-library", "crossNames": [ ] }, "version": "2.12.7" }
+         |{ "groupId": "com.github.pathikrit", "artifactId": { "name": "better-files", "crossNames": [ "better-files_2.12" ] }, "version": "3.6.0" }
+         |{ "groupId": "org.typelevel", "artifactId": { "name": "cats-effect", "crossNames": [ "cats-effect_2.12" ] }, "version": "1.0.0" }
          |sbt:project> stewardDependencies
-         |[info]  { "groupId": "org.scala-lang", "artifactId": { "name": "scala-library", "crossNames": [ ] }, "version": "2.12.6" }
-         |[info]  { "groupId": "com.dwijnand", "artifactId": { "name": "sbt-travisci", "crossNames": [ ] }, "version": "1.1.3",  "sbtVersion": "1.0" }
-         |[info]  { "groupId": "com.eed3si9n", "artifactId": { "name": "sbt-assembly", "crossNames": [ ] }, "version": "0.14.8", "sbtVersion": "1.0", "configurations": "foo" }
-         |[info]  { "groupId": "com.geirsson", "artifactId": { "name": "sbt-scalafmt", "crossNames": [ ] }, "version": "1.6.0-RC4", "sbtVersion": "1.0" }
+         |{ "groupId": "org.scala-lang", "artifactId": { "name": "scala-library", "crossNames": [ ] }, "version": "2.12.6" }
+         |{ "groupId": "com.dwijnand", "artifactId": { "name": "sbt-travisci", "crossNames": [ ] }, "version": "1.1.3",  "sbtVersion": "1.0" }
+         |{ "groupId": "com.eed3si9n", "artifactId": { "name": "sbt-assembly", "crossNames": [ ] }, "version": "0.14.8", "sbtVersion": "1.0", "configurations": "foo" }
+         |{ "groupId": "com.geirsson", "artifactId": { "name": "sbt-scalafmt", "crossNames": [ ] }, "version": "1.6.0-RC4", "sbtVersion": "1.0" }
          |""".stripMargin.linesIterator.toList
     parseDependencies(lines) should contain theSameElementsAs List(
       Dependency(
@@ -75,11 +75,11 @@ class parserTest extends AnyFunSuite with Matchers {
   test("parseDependenciesAndUpdates") {
     val lines =
       """|[info] core / stewardDependencies
-         |[info] { "groupId": "io.get-coursier", "artifactId": { "name": "coursier", "crossNames": [ "coursier_2.12" ] }, "version": "2.0.0-RC5-2", "configurations": null, "sbtVersion": null, "scalaVersion": null }
-         |[info] { "groupId": "io.get-coursier", "artifactId": { "name": "coursier-cats-interop", "crossNames": [ "coursier-cats-interop_2.12" ] }, "version": "2.0.0-RC5-2", "configurations": null, "sbtVersion": null, "scalaVersion": null }
+         |{ "groupId": "io.get-coursier", "artifactId": { "name": "coursier", "crossNames": [ "coursier_2.12" ] }, "version": "2.0.0-RC5-2", "configurations": null, "sbtVersion": null, "scalaVersion": null }
+         |{ "groupId": "io.get-coursier", "artifactId": { "name": "coursier-cats-interop", "crossNames": [ "coursier-cats-interop_2.12" ] }, "version": "2.0.0-RC5-2", "configurations": null, "sbtVersion": null, "scalaVersion": null }
          |[info] core / stewardUpdates
-         |[info] { "dependency": { "groupId": "io.get-coursier", "artifactId": { "name": "coursier", "crossNames": [ "coursier_2.12" ] }, "version": "2.0.0-RC5-2", "configurations": null, "sbtVersion": null, "scalaVersion": null }, "newerVersions": [ "2.0.0-RC5-3" ] }
-         |[info] { "dependency": { "groupId": "io.get-coursier", "artifactId": { "name": "coursier-cats-interop", "crossNames": [ "coursier-cats-interop_2.12" ] }, "version": "2.0.0-RC5-2", "configurations": null, "sbtVersion": null, "scalaVersion": null }, "newerVersions": [ "2.0.0-RC5-3" ] }
+         |{ "dependency": { "groupId": "io.get-coursier", "artifactId": { "name": "coursier", "crossNames": [ "coursier_2.12" ] }, "version": "2.0.0-RC5-2", "configurations": null, "sbtVersion": null, "scalaVersion": null }, "newerVersions": [ "2.0.0-RC5-3" ] }
+         |{ "dependency": { "groupId": "io.get-coursier", "artifactId": { "name": "coursier-cats-interop", "crossNames": [ "coursier-cats-interop_2.12" ] }, "version": "2.0.0-RC5-2", "configurations": null, "sbtVersion": null, "scalaVersion": null }, "newerVersions": [ "2.0.0-RC5-3" ] }
          |""".stripMargin.linesIterator.toList
 
     val coursier =
