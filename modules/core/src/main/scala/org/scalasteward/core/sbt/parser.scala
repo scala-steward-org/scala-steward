@@ -28,11 +28,11 @@ object parser {
 
   /** Parses the output of our own `stewardDependencies` task. */
   def parseDependencies(lines: List[String]): List[Dependency] =
-    lines.flatMap(line => decode[Dependency](line).toList)
+    lines.flatMap(line => decode[Dependency](removeSbtNoise(line)).toList)
 
   def parseDependenciesAndUpdates(lines: List[String]): (List[Dependency], List[RawUpdate]) = {
     val (dependencies, updates) = lines.flatMap { line =>
-      parse(line).flatMap { json =>
+      parse(removeSbtNoise(line)).flatMap { json =>
         Decoder[Dependency].either(Decoder[RawUpdate]).decodeJson(json)
       }.toList
     }.separate
@@ -42,4 +42,7 @@ object parser {
       ArtifactId.combineCrossNames(Dependency.artifactId.compose(RawUpdate.dependency))(updates)
     )
   }
+
+  private def removeSbtNoise(s: String): String =
+    s.replace("[info]", "").trim
 }
