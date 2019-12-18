@@ -35,6 +35,7 @@ object StewardPlugin extends AutoPlugin {
 
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
     stewardDependencies := {
+      val log = streams.value.log
       val sourcePositions = dependencyPositions.value
       val scalaBinaryVersionValue = scalaBinaryVersion.value
       val scalaVersionValue = scalaVersion.value
@@ -43,9 +44,10 @@ object StewardPlugin extends AutoPlugin {
         .filter(isDefinedInBuildFiles(_, sourcePositions))
         .map(moduleId => toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue))
 
-      dependencies.map(_.asJson).foreach(println)
+      dependencies.map(_.asJson).foreach(s => log.info(s))
     },
     stewardUpdates := {
+      val log = streams.value.log
       val scalaBinaryVersionValue = scalaBinaryVersion.value
       val scalaVersionValue = scalaVersion.value
 
@@ -60,7 +62,7 @@ object StewardPlugin extends AutoPlugin {
           )
       }
 
-      updates.map(_.asJson).foreach(println)
+      updates.map(_.asJson).foreach(s => log.info(s))
     }
   )
 
