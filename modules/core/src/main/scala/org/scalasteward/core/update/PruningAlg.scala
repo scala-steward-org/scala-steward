@@ -41,34 +41,40 @@ final class PruningAlg[F[_]](
   def needsAttention(repo: Repo): F[Boolean] =
     repoCacheRepository.findCache(repo).flatMap {
       case Some(repoCache) =>
+        val dependencies = repoCache.dependencies
+          .map(_.copy(configurations = None))
+          .distinct
+          .sortBy(d => (d.groupId, d.artifactId))
+        val repoConfig = repoCache.maybeRepoConfig.getOrElse(RepoConfig.default)
         for {
-          updates <- findUpdates(repoCache)
+          updates <- findUpdates(dependencies, repoConfig)
           _ <- logger.info(util.logger.showUpdates(updates.widen[Update]))
-          updateStates <- findAllUpdateStates(repo, repoCache, updates)
+          updateStates <- findAllUpdateStates(repo, repoCache, dependencies, updates)
           attentionNeeded <- checkUpdateStates(repo, updateStates)
         } yield attentionNeeded
       case None => F.pure(false)
     }
 
-  private def findUpdates(repoCache: RepoCache): F[List[Update.Single]] =
-    repoCache.dependencies
-      .flatTraverse(d => updateAlg.findUpdate(d.copy(configurations = None)).map(_.toList))
-      .flatMap { updates =>
-        val repoConfig = repoCache.maybeRepoConfig.getOrElse(RepoConfig.default)
-        filterAlg
-          .localFilterMany(repoConfig, updates)
-          .map(ArtifactId.combineCrossNames(Update.Single.artifactId))
-          .map(_.sortBy(u => (u.groupId, u.artifactId)))
-      }
+  private def findUpdates(
+      dependencies: List[Dependency],
+      repoConfig: RepoConfig
+  ): F[List[Update.Single]] =
+    dependencies.flatTraverse(updateAlg.findUpdate(_).map(_.toList)).flatMap { updates =>
+      filterAlg
+        .localFilterMany(repoConfig, updates)
+        .map(ArtifactId.combineCrossNames(Update.Single.artifactId))
+        .map(_.sortBy(u => (u.groupId, u.artifactId)))
+    }
 
   private def findAllUpdateStates(
       repo: Repo,
       repoCache: RepoCache,
+      dependencies: List[Dependency],
       updates: List[Update.Single]
-  ): F[List[UpdateState]] = {
-    val dependencies = ArtifactId.combineCrossNames(Dependency.artifactId)(repoCache.dependencies)
-    dependencies.traverse(findUpdateState(repo, repoCache, updates))
-  }
+  ): F[List[UpdateState]] =
+    ArtifactId
+      .combineCrossNames(Dependency.artifactId)(dependencies)
+      .traverse(findUpdateState(repo, repoCache, updates))
 
   private def findUpdateState(repo: Repo, repoCache: RepoCache, updates: List[Update.Single])(
       dependency: Dependency
