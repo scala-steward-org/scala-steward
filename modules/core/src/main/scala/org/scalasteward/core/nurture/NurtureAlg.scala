@@ -66,9 +66,11 @@ final class NurtureAlg[F[_]](
     for {
       _ <- logger.info(s"Clone and synchronize ${repo.show}")
       repoOut <- vcsApiAlg.createForkOrGetRepo(config, repo)
-      _ <- gitAlg.cloneExists(repo).ifM(F.unit, vcsRepoAlg.clone(repo, repoOut))
-      parent <- vcsRepoAlg.syncFork(repo, repoOut)
-    } yield (repoOut.repo, parent.default_branch)
+      _ <- gitAlg
+        .cloneExists(repo)
+        .ifM(F.unit, vcsRepoAlg.clone(repo, repoOut) >> vcsRepoAlg.syncFork(repo, repoOut))
+      defaultBranch <- vcsRepoAlg.defaultBranch(repoOut)
+    } yield (repoOut.repo, defaultBranch)
 
   def updateDependencies(repo: Repo, fork: Repo, baseBranch: Branch): F[Unit] =
     for {
