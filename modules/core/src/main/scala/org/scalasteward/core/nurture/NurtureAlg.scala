@@ -53,14 +53,16 @@ final class NurtureAlg[F[_]](
     sbtAlg: SbtAlg[F],
     F: Async[F]
 ) {
-  def nurture(repo: Repo): F[Either[Throwable, Unit]] =
-    logger.infoTotalTime(repo.show) {
-      logger.attemptLog(util.string.lineLeftRight(s"Nurture ${repo.show}")) {
+  def nurture(repo: Repo): F[Either[Throwable, Unit]] = {
+    val label = s"Nurture ${repo.show}"
+    logger.infoTotalTime(label) {
+      logger.attemptLog(util.string.lineLeftRight(label)) {
         F.bracket(cloneAndSync(repo)) {
           case (fork, baseBranch) => updateDependencies(repo, fork, baseBranch)
         }(_ => gitAlg.removeClone(repo))
       }
     }
+  }
 
   def cloneAndSync(repo: Repo): F[(Repo, Branch)] =
     for {
