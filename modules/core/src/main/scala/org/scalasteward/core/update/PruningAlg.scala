@@ -31,7 +31,6 @@ import org.scalasteward.core.vcs.data.Repo
 
 final class PruningAlg[F[_]](
     implicit
-    filterAlg: FilterAlg[F],
     logger: Logger[F],
     pullRequestRepo: PullRequestRepository[F],
     repoCacheRepository: RepoCacheRepository[F],
@@ -47,23 +46,11 @@ final class PruningAlg[F[_]](
           .sortBy(d => (d.groupId, d.artifactId))
         val repoConfig = repoCache.maybeRepoConfig.getOrElse(RepoConfig.default)
         for {
-          updates <- findUpdates(dependencies, repoConfig)
-          _ <- logger.info(util.logger.showUpdates(updates.widen[Update]))
+          updates <- updateAlg.findUpdates(dependencies, repoConfig)
           updateStates <- findAllUpdateStates(repo, repoCache, dependencies, updates)
           attentionNeeded <- checkUpdateStates(repo, updateStates)
         } yield attentionNeeded
       case None => F.pure(false)
-    }
-
-  private def findUpdates(
-      dependencies: List[Dependency],
-      repoConfig: RepoConfig
-  ): F[List[Update.Single]] =
-    dependencies.flatTraverse(updateAlg.findUpdate(_).map(_.toList)).flatMap { updates =>
-      filterAlg
-        .localFilterMany(repoConfig, updates)
-        .map(ArtifactId.combineCrossNames(Update.Single.artifactId))
-        .map(_.sortBy(u => (u.groupId, u.artifactId)))
     }
 
   private def findAllUpdateStates(

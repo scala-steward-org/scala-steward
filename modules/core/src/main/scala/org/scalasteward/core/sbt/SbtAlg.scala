@@ -116,7 +116,7 @@ object SbtAlg {
           lines <- exec(sbtCmd(commands), repoDir)
           (dependencies, updates) = parser.parseDependenciesAndUpdates(lines)
           upToDateDependencies = dependencies.diff(updates.map(_.dependency))
-          updatesWithNewGroupId = upToDateDependencies.flatMap(UpdateAlg.findUpdateUnderNewGroup)
+          updatesWithNewGroupId = upToDateDependencies.flatMap(UpdateAlg.findUpdateWithNewerGroupId)
           additionalUpdates <- findAdditionalUpdates(repo)
           result = (updates.map(_.toUpdate) ++ updatesWithNewGroupId ++ additionalUpdates).distinct
             .sortBy(update => (update.groupId, update.artifactId, update.currentVersion))

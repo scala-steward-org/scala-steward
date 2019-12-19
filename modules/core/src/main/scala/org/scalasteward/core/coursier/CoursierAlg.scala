@@ -84,7 +84,7 @@ object CoursierAlg {
         versions
           .withModule(module)
           .versions()
-          .map(_.available.map(Version.apply).filter(_ > version))
+          .map(_.available.map(Version.apply).filter(_ > version).sorted)
           .handleErrorWith { throwable =>
             logger.error(throwable)(s"Failed to get newer versions of $module").as(List.empty)
           }
