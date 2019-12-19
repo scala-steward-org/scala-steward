@@ -28,6 +28,7 @@ import org.scalasteward.core.nurture.NurtureAlg
 import org.scalasteward.core.repocache.RepoCacheAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.update.PruningAlg
+import org.scalasteward.core.util
 import org.scalasteward.core.util.DateTimeAlg
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data.Repo
@@ -48,7 +49,7 @@ final class StewardAlg[F[_]](
     workspaceAlg: WorkspaceAlg[F],
     F: Monad[F]
 ) {
-  def printBanner: F[Unit] = {
+  private def printBanner: F[Unit] = {
     val banner =
       """|  ____            _         ____  _                             _
          | / ___|  ___ __ _| | __ _  / ___|| |_ _____      ____ _ _ __ __| |
@@ -60,18 +61,34 @@ final class StewardAlg[F[_]](
     logger.info(msg)
   }
 
-  def prepareEnv: F[Unit] =
+  private def prepareEnv: F[Unit] =
     for {
       _ <- sbtAlg.addGlobalPlugins
       _ <- workspaceAlg.cleanWorkspace
     } yield ()
 
-  def readRepos(reposFile: File): F[List[Repo]] =
+  private def readRepos(reposFile: File): F[List[Repo]] =
     fileAlg.readFile(reposFile).map { maybeContent =>
       val regex = """-\s+(.+)/([^/]+)""".r
       val content = maybeContent.getOrElse("")
       content.linesIterator.collect { case regex(owner, repo) => Repo(owner.trim, repo.trim) }.toList
     }
+
+  private def steward(repo: Repo): F[Either[Throwable, Unit]] =
+    if (config.pruneRepos) {
+      val label = s"Steward ${repo.show}"
+      logger.infoTotalTime(label) {
+        for {
+          _ <- logger.info(util.string.lineLeftRight(label))
+          _ <- repoCacheAlg.checkCache(repo)
+          attentionNeeded <- pruningAlg.needsAttention(repo)
+          result <- {
+            if (attentionNeeded) nurtureAlg.nurture(repo)
+            else gitAlg.removeClone(repo).as(().asRight[Throwable])
+          }
+        } yield result
+      }
+    } else nurtureAlg.nurture(repo)
 
   def runF: F[ExitCode] =
     logger.infoTotalTime("run") {
@@ -79,16 +96,8 @@ final class StewardAlg[F[_]](
         _ <- printBanner
         _ <- selfCheckAlg.checkAll
         _ <- prepareEnv
-        reposList <- readRepos(config.reposFile)
-        repos = Stream.emits(reposList).covary[F]
-        reposToNurture = {
-          if (config.pruneRepos) {
-            repos.evalTap(repoCacheAlg.checkCache).evalFilter { repo =>
-              pruningAlg.needsAttention(repo).flatTap(if (_) F.unit else gitAlg.removeClone(repo))
-            }
-          } else repos
-        }
-        result <- reposToNurture.evalMap(nurtureAlg.nurture).compile.foldMonoid
+        repos <- readRepos(config.reposFile)
+        result <- Stream.emits(repos).evalMap(steward).compile.foldMonoid
       } yield result.fold(_ => ExitCode.Error, _ => ExitCode.Success)
     }
 }
