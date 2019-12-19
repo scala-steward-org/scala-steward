@@ -88,9 +88,7 @@ final class StewardAlg[F[_]](
           }
         } yield result
       }
-    } else {
-      nurtureAlg.nurture(repo)
-    }
+    } else nurtureAlg.nurture(repo)
 
   def runF: F[ExitCode] =
     logger.infoTotalTime("run") {
