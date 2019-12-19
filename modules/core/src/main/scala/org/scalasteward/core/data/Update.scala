@@ -43,7 +43,11 @@ sealed trait Update extends Product with Serializable {
       case s: Single => s.artifactId.show + s.configurations.fold("")(":" + _)
       case g: Group  => g.artifactIds.map(_.show).mkString_("{", ", ", "}")
     }
-    val versions = (currentVersion :: newerVersions).mkString_("", " -> ", "")
+    val versions = {
+      val vs0 = (currentVersion :: newerVersions).toList
+      val vs1 = if (vs0.size > 6) vs0.take(3) ++ ("..." :: vs0.takeRight(3)) else vs0
+      vs1.mkString("", " -> ", "")
+    }
     s"$groupId:$artifacts : $versions"
   }
 }

@@ -21,6 +21,7 @@ import cats.implicits._
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 import monocle.Lens
+import org.scalasteward.core.util.Nel
 
 /** A name of an artifact as used in build files and with potential
   * cross version suffixes.
@@ -41,8 +42,11 @@ final case class ArtifactId(name: String, crossNames: List[String] = Nil) {
   def firstCrossName: String =
     crossNames.headOption.getOrElse(name)
 
+  def names: Nel[String] =
+    Nel(name, crossNames)
+
   def show: String =
-    if (crossNames.isEmpty) name else (name :: crossNames).mkString("(", ", ", ")")
+    if (crossNames.isEmpty) name else names.mkString_("(", ", ", ")")
 }
 
 object ArtifactId {
