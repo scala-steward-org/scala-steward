@@ -107,6 +107,8 @@ object FilterAlg {
 
   private def badVersions(groupId: GroupId, artifactId: ArtifactId): String => Boolean =
     (groupId.value, artifactId.name) match {
+      case ("com.google.guava", "guava") =>
+        List("r03", "r05", "r06", "r07", "r08", "r09").contains
       case ("commons-collections", "commons-collections") =>
         List(
           "20030418.083655",
