@@ -39,7 +39,7 @@ final class FilterAlg[F[_]](
     result match {
       case Right(update) => F.pure(update.some)
       case Left(reason) =>
-        logger.info(s"Ignore ${reason.update.show} (reason: ${reason.show})") *> F.pure(None)
+        logger.info(s"Ignore ${reason.update.show} (reason: ${reason.show})").as(None)
     }
 }
 
@@ -68,10 +68,10 @@ object FilterAlg {
       .flatMap(isIgnoredGlobally)
       .flatMap(selectSuitableNextVersion)
 
-  def localFilter(update: Update.Single, repoConfig: RepoConfig): FilterResult =
+  private def localFilter(update: Update.Single, repoConfig: RepoConfig): FilterResult =
     globalFilter(update).flatMap(repoConfig.updates.keep)
 
-  def isIgnoredGlobally(update: Update.Single): FilterResult = {
+  private def isIgnoredGlobally(update: Update.Single): FilterResult = {
     val keep = ((update.groupId.value, update.artifactId.name) match {
       case ("org.scala-lang", "scala-compiler") => false
       case ("org.scala-lang", "scala-library")  => false
@@ -89,7 +89,7 @@ object FilterAlg {
     if (keep) Right(update) else Left(IgnoredGlobally(update))
   }
 
-  def selectSuitableNextVersion(update: Update.Single): FilterResult = {
+  private def selectSuitableNextVersion(update: Update.Single): FilterResult = {
     val newerVersions = update.newerVersions.map(Version.apply).toList
     val maybeNext = Version(update.currentVersion).selectNext(newerVersions)
     maybeNext match {
@@ -98,7 +98,7 @@ object FilterAlg {
     }
   }
 
-  def removeBadVersions(update: Update.Single): FilterResult =
+  private def removeBadVersions(update: Update.Single): FilterResult =
     update.newerVersions
       .filterNot(badVersions(update.groupId, update.artifactId))
       .toNel

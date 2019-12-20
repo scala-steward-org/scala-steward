@@ -44,7 +44,7 @@ final class UpdateAlg[F[_]](
   def findUpdates(dependencies: List[Dependency], repoConfig: RepoConfig): F[List[Update.Single]] =
     for {
       _ <- logger.info(s"Find updates")
-      updates0 <- dependencies.flatTraverse(findUpdate(_).map(_.toList))
+      updates0 <- dependencies.traverseFilter(findUpdate)
       updates1 <- filterAlg.localFilterMany(repoConfig, updates0)
       updates2 = ArtifactId
         .combineCrossNames(Update.Single.artifactId)(updates1)
