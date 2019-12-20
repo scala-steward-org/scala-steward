@@ -22,10 +22,12 @@ import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.client.Client
 import org.http4s.client.asynchttpclient.AsyncHttpClient
+import org.scalasteward.core.build.system.BuildSystemAlg
 import org.scalasteward.core.coursier.{CoursierAlg, VersionsCache}
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
+import org.scalasteward.core.maven.MavenAlg
 import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository}
 import org.scalasteward.core.persistence.JsonKeyValueStore
 import org.scalasteward.core.repocache.{RefreshErrorAlg, RepoCacheAlg, RepoCacheRepository}
@@ -36,7 +38,7 @@ import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.{FilterAlg, GroupMigrations, PruningAlg, UpdateAlg}
 import org.scalasteward.core.util._
 import org.scalasteward.core.util.uri._
-import org.scalasteward.core.vcs.data.AuthenticatedUser
+import org.scalasteward.core.vcs.data.{AuthenticatedUser, RepoType}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg, VCSSelection}
 
 object Context {
@@ -81,11 +83,44 @@ object Context {
       implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]
       implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F]
       implicit val refreshErrorAlg: RefreshErrorAlg[F] =
-        new RefreshErrorAlg[F](new JsonKeyValueStore("refresh_error", "1", kvsPrefix))
-      implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F]
-      implicit val editAlg: EditAlg[F] = new EditAlg[F]
-      implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F]
-      implicit val pruningAlg: PruningAlg[F] = new PruningAlg[F]
-      new StewardAlg[F]
+        new RefreshErrorAlg[F](new JsonKeyValueStore("refresh_error", "1"))
+      implicit val migrationAlg: MigrationAlg[F] = MigrationAlg.create[F]
+
+      // implicit val updateRepository: UpdateRepository[F] =
+        // new UpdateRepository[F](new JsonKeyValueStore("updates", "3"))
+
+      implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create
+      implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]
+
+      val mavenNurtureAlg: NurtureAlg[F] = {
+        implicit val mavenAlg: BuildSystemAlg[F] = MavenAlg.create[F]
+        implicit val editAlg: EditAlg[F] = new EditAlg[F]
+        implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F]
+        nurtureAlg
+      }
+
+      val sbtNurtureAlg: NurtureAlg[F] = {
+        implicit val sbtAlg: BuildSystemAlg[F] = SbtAlg.create[F]
+        implicit val editAlg: EditAlg[F] = new EditAlg[F]
+        implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F]
+        nurtureAlg
+      }
+
+      def repoTypeToNurture(repoType: RepoType): NurtureAlg[F] = {
+        repoType match {
+          case RepoType.Maven => mavenNurtureAlg
+          case RepoType.SBT => sbtNurtureAlg
+        }
+      }
+
+
+      implicit val prepareEnvAlg: PrepareEnvAlg[F] = new PrepareEnvAlg[F]()
+
+//      implicit val repoConfigAlg: RepoConfigAlg[F] = new RepoConfigAlg[F]()
+//      implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F]()
+
+      implicit val pruningAlg: PruningAlg[F] = new PruningAlg[F]()
+
+      new StewardAlg[F](repoTypeToNurture)
     }
 }

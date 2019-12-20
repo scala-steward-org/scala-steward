@@ -20,6 +20,7 @@ import cats.Parallel
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
+import org.scalasteward.core.build.system.BuildSystemAlg
 import org.scalasteward.core.data.{Dependency, DependencyInfo}
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.repoconfig.RepoConfigAlg
@@ -30,18 +31,18 @@ import org.scalasteward.core.vcs.data.{Repo, RepoOut}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
 
 final class RepoCacheAlg[F[_]](
-    implicit
-    config: Config,
-    gitAlg: GitAlg[F],
-    logger: Logger[F],
-    parallel: Parallel[F],
-    refreshErrorAlg: RefreshErrorAlg[F],
-    repoCacheRepository: RepoCacheRepository[F],
-    repoConfigAlg: RepoConfigAlg[F],
-    sbtAlg: SbtAlg[F],
-    vcsApiAlg: VCSApiAlg[F],
-    vcsRepoAlg: VCSRepoAlg[F],
-    F: MonadThrowable[F]
+                                implicit
+                                config: Config,
+                                gitAlg: GitAlg[F],
+                                logger: Logger[F],
+                                parallel: Parallel[F],refreshErrorAlg: RefreshErrorAlg[F],
+                                repoCacheRepository: RepoCacheRepository[F],
+                                repoConfigAlg: RepoConfigAlg[F],
+                                buildSystemAlg: BuildSystemAlg[F],
+
+                                vcsApiAlg: VCSApiAlg[F],
+                                vcsRepoAlg: VCSRepoAlg[F],
+                                F: MonadThrowable[F]
 ) {
   def checkCache(repo: Repo): F[Unit] =
     logger.attemptLog_(s"Check cache of ${repo.show}") {
