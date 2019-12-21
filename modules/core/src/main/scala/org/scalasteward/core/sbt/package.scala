@@ -29,7 +29,14 @@ package object sbt {
 
   def sbtDependency(sbtVersion: SbtVersion): Option[Dependency] =
     if (sbtVersion.toVersion >= Version("1.0.0"))
-      Some(Dependency(GroupId("org.scala-sbt"), ArtifactId("sbt"), sbtVersion.value))
+      Some(
+        Dependency(
+          GroupId("org.scala-sbt"),
+          ArtifactId("sbt"),
+          sbtVersion.value,
+          configurations = Some("sbt-plugin")
+        )
+      )
     else
       None
 

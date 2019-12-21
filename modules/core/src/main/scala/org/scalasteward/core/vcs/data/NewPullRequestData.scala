@@ -48,7 +48,8 @@ object NewPullRequestData {
     val artifacts = artifactsWithOptionalUrl(update, artifactIdToUrl)
     val (migrationLabel, appliedMigrations) = migrationNote(migrations)
     val details = ignoreFutureUpdates(update) :: appliedMigrations.toList
-    val labels = Nel.fromList(semVerLabel(update).toList ++ migrationLabel.toList)
+    val labels =
+      Nel.fromList(List(updateType(update)) ++ semVerLabel(update).toList ++ migrationLabel.toList)
 
     s"""|Updates $artifacts ${fromTo(update, branchCompareUrl)}.
         |${releaseNote(releaseNoteUrl).getOrElse("")}
@@ -63,6 +64,15 @@ object NewPullRequestData {
         |
         |${labels.fold("")(_.mkString_("labels: ", ", ", ""))}
         |""".stripMargin.trim
+  }
+
+  def updateType(update: Update): String = update match {
+    case s: Update.Single if s.configurations.contains("test") =>
+      "test-library-update"
+    case s: Update.Single if s.configurations.contains("sbt-plugin") =>
+      "sbt-plugin-update"
+    case _ =>
+      "library-update"
   }
 
   def releaseNote(releaseNoteUrl: Option[String]): Option[String] =

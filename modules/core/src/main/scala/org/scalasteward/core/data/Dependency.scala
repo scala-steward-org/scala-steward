@@ -35,7 +35,9 @@ final case class Dependency(
       scalaVersion.map("scalaVersion" -> _.value).toMap
 
   def toUpdate: Update.Single =
-    Update.Single(groupId, artifactId, version, Nel.of(version), configurations)
+    Update.Single(groupId, artifactId, version, Nel.of(version), configurations.orElse {
+      sbtVersion.map(_ => "sbt-plugin")
+    })
 }
 
 object Dependency {
