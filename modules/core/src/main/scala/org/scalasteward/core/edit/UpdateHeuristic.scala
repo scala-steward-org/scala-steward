@@ -164,8 +164,9 @@ object UpdateHeuristic {
 
   val sliding = UpdateHeuristic(
     name = "sliding",
-    replaceVersion =
-      defaultReplaceVersion(_.mainArtifactId.sliding(5).take(5).filterNot(_ === "scala").toList)
+    replaceVersion = defaultReplaceVersion(
+      _.mainArtifactId.toSeq.sliding(5).map(_.unwrap).take(5).filterNot(_ === "scala").toList
+    )
   )
 
   val completeGroupId = UpdateHeuristic(
