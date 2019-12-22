@@ -37,9 +37,6 @@ final class JsonKeyValueStore[F[_], K, V](name: String, schemaVersion: String)(
   override def get(key: K): F[Option[V]] =
     read.map(_.get(key))
 
-  override def getMany(keys: List[K]): F[Map[K, V]] =
-    read.map(_.view.filterKeys(keys.contains).toMap)
-
   override def modifyF(key: K)(f: Option[V] => F[Option[V]]): F[Option[V]] =
     read.flatMap { store =>
       f(store.get(key)).flatMap {
