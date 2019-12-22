@@ -38,7 +38,7 @@ object StewardPlugin extends AutoPlugin {
     stewardDependencies := {
       val log = streams.value.log
       val sourcePositions = dependencyPositions.value
-      val buildRoot = (ThisBuild / baseDirectory).value
+      val buildRoot = baseDirectory.in(ThisBuild).value
       val scalaBinaryVersionValue = scalaBinaryVersion.value
       val scalaVersionValue = scalaVersion.value
 
