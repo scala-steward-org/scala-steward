@@ -40,8 +40,11 @@ final class PruningAlg[F[_]](
   def needsAttention(repo: Repo): F[Boolean] =
     repoCacheRepository.findCache(repo).flatMap {
       case Some(repoCache) =>
-        val dependencies = repoCache.dependencies
-          .map(_.copy(configurations = None))
+        val dependencies = repoCache.dependencyInfos
+          .collect {
+            case info if info.filesContainingVersion.nonEmpty =>
+              info.dependency.copy(configurations = None)
+          }
           .distinct
           .sortBy(d => (d.groupId, d.artifactId))
         val repoConfig = repoCache.maybeRepoConfig.getOrElse(RepoConfig.default)

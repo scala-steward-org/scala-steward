@@ -42,6 +42,8 @@ trait GitAlg[F[_]] {
 
   def currentBranch(repo: Repo): F[Branch]
 
+  def findFilesContaining(repo: Repo, string: String): F[List[String]]
+
   /** Returns `true` if merging `branch` into `base` results in merge conflicts. */
   def hasConflicts(repo: Repo, branch: Branch, base: Branch): F[Boolean]
 
@@ -126,6 +128,13 @@ object GitAlg {
           repoDir <- workspaceAlg.repoDir(repo)
           lines <- exec(Nel.of("rev-parse", "--abbrev-ref", "HEAD"), repoDir)
         } yield Branch(lines.mkString.trim)
+
+      override def findFilesContaining(repo: Repo, string: String): F[List[String]] =
+        for {
+          repoDir <- workspaceAlg.repoDir(repo)
+          args = Nel.of("grep", "-I", "--fixed-strings", "--files-with-matches", string)
+          lines <- exec(args, repoDir).handleError(_ => List.empty[String])
+        } yield lines.filter(_.nonEmpty)
 
       override def hasConflicts(repo: Repo, branch: Branch, base: Branch): F[Boolean] =
         workspaceAlg.repoDir(repo).flatMap { repoDir =>
