@@ -20,6 +20,7 @@ import com.timushev.sbt.updates.UpdatesKeys.dependencyUpdatesData
 import com.timushev.sbt.updates.versions.{InvalidVersion, ValidVersion}
 import sbt.Keys._
 import sbt._
+import scala.util.matching.Regex
 
 object StewardPlugin extends AutoPlugin {
   override def trigger: PluginTrigger = allRequirements
@@ -37,11 +38,12 @@ object StewardPlugin extends AutoPlugin {
     stewardDependencies := {
       val log = streams.value.log
       val sourcePositions = dependencyPositions.value
+      val buildRoot = (ThisBuild / baseDirectory).value
       val scalaBinaryVersionValue = scalaBinaryVersion.value
       val scalaVersionValue = scalaVersion.value
 
       val dependencies = libraryDependencies.value
-        .filter(isDefinedInBuildFiles(_, sourcePositions))
+        .filter(isDefinedInBuildFiles(_, sourcePositions, buildRoot))
         .map(moduleId => toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue))
 
       dependencies.map(_.asJson).foreach(s => log.info(s))
@@ -66,20 +68,43 @@ object StewardPlugin extends AutoPlugin {
     }
   )
 
-  // Inspired by https://github.com/rtimush/sbt-updates/issues/42
+  // Inspired by https://github.com/rtimush/sbt-updates/issues/42 and
+  // https://github.com/rtimush/sbt-updates/pull/112
   private def isDefinedInBuildFiles(
       moduleId: ModuleID,
-      sourcePositions: Map[ModuleID, SourcePosition]
+      sourcePositions: Map[ModuleID, SourcePosition],
+      buildRoot: File
   ): Boolean =
     sourcePositions.get(moduleId) match {
-      case Some(fp: FilePosition) if fp.path.startsWith("(sbt.Classpaths") => true
-      case Some(fp: FilePosition) if fp.path.startsWith("(")               => false
-      case Some(fp: FilePosition)
-          if fp.path.startsWith("Defaults.scala")
-            && !moduleId.configurations.exists(_ == "plugin->default(compile)") =>
-        false
+      case Some(fp: FilePosition) =>
+        val path = fp.path
+        () match {
+          case _ if path.startsWith("(sbt.Classpaths") => true
+          case _ if path.startsWith("(") =>
+            extractFileName(path).exists(fileExists(buildRoot, _))
+
+          // Compiler plugins added via addCompilerPlugin(...) have a SourcePosition
+          // like this: LinePosition(Defaults.scala,3738).
+          case _ if path.startsWith("Defaults.scala") && isCompilerPlugin(moduleId) => true
+          case _ if path.startsWith("Defaults.scala")                               => false
+          case _                                                                    => true
+        }
       case _ => true
     }
+
+  private def extractFileName(path: String): Option[String] = {
+    val FileNamePattern: Regex = "^\\([^\\)]+\\) (.*)$".r
+    path match {
+      case FileNamePattern(fileName) => Some(fileName)
+      case _                         => None
+    }
+  }
+
+  private def fileExists(buildRoot: File, file: String): Boolean =
+    (buildRoot / "project" / file).exists()
+
+  private def isCompilerPlugin(moduleId: ModuleID): Boolean =
+    moduleId.configurations.exists(_ == "plugin->default(compile)")
 
   private def crossName(
       moduleId: ModuleID,
