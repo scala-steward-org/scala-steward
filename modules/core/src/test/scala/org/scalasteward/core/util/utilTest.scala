@@ -9,7 +9,7 @@ import scala.collection.mutable.ListBuffer
 class utilTest extends AnyFunSuite with Matchers with ScalaCheckPropertyChecks {
   test("appendBounded") {
     val lb = new ListBuffer[Int]
-    lb.append(1, 2, 3)
+    lb.appendAll(List(1, 2, 3))
 
     appendBounded(lb, 4, 4)
     lb.toList shouldBe List(1, 2, 3, 4)

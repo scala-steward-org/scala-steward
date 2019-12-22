@@ -102,6 +102,7 @@ lazy val core = myCrossProject("core")
 lazy val plugin = myCrossProject("plugin")
   .settings(noPublishSettings)
   .settings(
+    scalaVersion := "2.12.10",
     sbtPlugin := true,
     addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.5.0"),
     Compile / compile / wartremoverErrors -= Wart.Equals

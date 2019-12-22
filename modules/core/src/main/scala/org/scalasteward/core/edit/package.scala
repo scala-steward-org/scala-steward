@@ -42,8 +42,8 @@ package object edit {
       Nel.of((target, true))
     } else {
       val buffer = mutable.ListBuffer.empty[(String, Boolean)]
-      val on = StringBuilder.newBuilder
-      val off = StringBuilder.newBuilder
+      val on = new StringBuilder()
+      val off = new StringBuilder()
       val regexIgnoreMultiLinesBegins = "^\\s*//\\s*scala-steward:off".r
       def flush(builder: StringBuilder, canReplace: Boolean): Unit =
         if (builder.nonEmpty) {
