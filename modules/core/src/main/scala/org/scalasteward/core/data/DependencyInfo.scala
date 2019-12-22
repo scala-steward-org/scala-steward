@@ -14,24 +14,17 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.repocache
+package org.scalasteward.core.data
 
 import io.circe.Codec
-import io.circe.generic.semiauto._
-import org.scalasteward.core.data.{DependencyInfo, Version}
-import org.scalasteward.core.git.Sha1
-import org.scalasteward.core.repoconfig.RepoConfig
-import org.scalasteward.core.sbt.data.SbtVersion
+import io.circe.generic.semiauto.deriveCodec
 
-final case class RepoCache(
-    sha1: Sha1,
-    dependencyInfos: List[DependencyInfo],
-    maybeSbtVersion: Option[SbtVersion],
-    maybeScalafmtVersion: Option[Version],
-    maybeRepoConfig: Option[RepoConfig]
+final case class DependencyInfo(
+    dependency: Dependency,
+    filesContainingVersion: List[String]
 )
 
-object RepoCache {
-  implicit val repoCacheCodec: Codec[RepoCache] =
+object DependencyInfo {
+  implicit val dependencyInfoCodec: Codec[DependencyInfo] =
     deriveCodec
 }

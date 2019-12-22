@@ -19,6 +19,7 @@ package org.scalasteward.core.repocache
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
+import org.scalasteward.core.data.{Dependency, DependencyInfo}
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
@@ -77,14 +78,18 @@ final class RepoCacheAlg[F[_]](
       branch <- gitAlg.currentBranch(repo)
       latestSha1 <- gitAlg.latestSha1(repo, branch)
       dependencies <- sbtAlg.getDependencies(repo)
+      dependencyInfos <- dependencies.traverse(gatherDependencyInfo(repo, _))
       maybeSbtVersion <- sbtAlg.getSbtVersion(repo)
       maybeScalafmtVersion <- scalafmtAlg.getScalafmtVersion(repo)
       maybeRepoConfig <- repoConfigAlg.readRepoConfig(repo)
     } yield RepoCache(
       latestSha1,
-      dependencies,
+      dependencyInfos,
       maybeSbtVersion,
       maybeScalafmtVersion,
       maybeRepoConfig
     )
+
+  private def gatherDependencyInfo(repo: Repo, dependency: Dependency): F[DependencyInfo] =
+    gitAlg.findFilesContaining(repo, dependency.version).map(DependencyInfo(dependency, _))
 }
