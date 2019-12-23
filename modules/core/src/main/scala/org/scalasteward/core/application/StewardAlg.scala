@@ -22,37 +22,35 @@ import cats.effect.ExitCode
 import cats.implicits._
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
-import org.scalasteward.core.build.system.BuildSystemAlg
-import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.NurtureAlg
 import org.scalasteward.core.repocache.RepoCacheAlg
-import org.scalasteward.core.update.{PruningAlg, UpdateAlg}
+import org.scalasteward.core.update.PruningAlg
 import org.scalasteward.core.util
 import org.scalasteward.core.util.DateTimeAlg
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
 import org.scalasteward.core.vcs.data.{Repo, RepoType}
 
-final class StewardAlg[F[_]](nurtureAlgCreator: RepoType => NurtureAlg[F])(
-                              implicit
-                              config: Config,
-                              dateTimeAlg: DateTimeAlg[F],
-                              fileAlg: FileAlg[F],
-                              logger: Logger[F],
-//                              repoCacheAlg: RepoCacheAlg[F],
-                              selfCheckAlg: SelfCheckAlg[F],
-                              updateAlg: UpdateAlg[F],
-                              pruningAlg: PruningAlg[F],
-                              streamCompiler: Stream.Compiler[F, F],
-                              workspaceAlg: WorkspaceAlg[F],
-                              processAlg: ProcessAlg[F],
-                              vcsApiAlg: VCSApiAlg[F],
-                              gitAlg: GitAlg[F],
-                              vcsRepoAlg: VCSRepoAlg[F],
-                              prepareEnvAlg: PrepareEnvAlg[F],
-                              F: Monad[F]
+final class StewardAlg[F[_]](
+    nurtureAlgCreator: RepoType => NurtureAlg[F],
+    getRepoCacheAlg: RepoType => RepoCacheAlg[F]
+)(
+    implicit
+    config: Config,
+    dateTimeAlg: DateTimeAlg[F],
+    fileAlg: FileAlg[F],
+    logger: Logger[F],
+    selfCheckAlg: SelfCheckAlg[F],
+    pruningAlg: PruningAlg[F],
+    streamCompiler: Stream.Compiler[F, F],
+    workspaceAlg: WorkspaceAlg[F],
+    vcsApiAlg: VCSApiAlg[F],
+    gitAlg: GitAlg[F],
+    vcsRepoAlg: VCSRepoAlg[F],
+    prepareEnvAlg: PrepareEnvAlg[F],
+    F: Monad[F]
 ) {
   private def printBanner: F[Unit] = {
     val banner =

@@ -37,7 +37,11 @@ package object io {
 
   private def isGenericSourceFile(file: File, fileExtensions: Set[String]): Boolean = {
     val name = file.name
-    fileExtensions.exists(suffix => name.endsWith(suffix) && !name.startsWith(suffix))
+    val allowedByExtension = file.extension.exists(Set(".scala", ".sbt", ".sc", ".pom"))
+    def allowedByName: Boolean = Set(".travis.yml").contains(name)
+    def allowedBySuffix: Boolean =
+      Set(".sbt.shared").exists(suffix => name.endsWith(suffix) && !name.startsWith(suffix))
+    allowedByExtension || allowedByName || allowedBySuffix
   }
 
   private def isSbtUpdate(update: Update): Boolean =

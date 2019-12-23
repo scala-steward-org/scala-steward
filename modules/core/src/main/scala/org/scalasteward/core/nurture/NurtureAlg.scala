@@ -32,7 +32,7 @@ import org.scalasteward.core.repoconfig.{PullRequestUpdateStrategy, RepoConfigAl
 import org.scalasteward.core.scalafix.MigrationAlg
 import org.scalasteward.core.util.{DateTimeAlg, HttpExistenceClient}
 import org.scalasteward.core.util.logger.LoggerOps
-import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo, RepoType}
+import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg}
 import org.scalasteward.core.{git, util, vcs}
 
@@ -42,6 +42,7 @@ final class NurtureAlg[F[_]](
     dateTimeAlg: DateTimeAlg[F],
     editAlg: EditAlg[F],
     repoConfigAlg: RepoConfigAlg[F],
+
     gitAlg: GitAlg[F],
     coursierAlg: CoursierAlg[F],
     vcsApiAlg: VCSApiAlg[F],
@@ -50,8 +51,7 @@ final class NurtureAlg[F[_]](
     existenceClient: HttpExistenceClient[F],
     logger: Logger[F],
     migrationAlg: MigrationAlg,
-    pullRequestRepository: PullRequestRepository[F],
-    repoCacheRepository: RepoCacheRepository[F],
+    pullRequestRepository: PullRequestRepository[F],repoCacheRepository: RepoCacheRepository[F],
     buildSystemAlg: BuildSystemAlg[F],
     F: Sync[F]
 ) {

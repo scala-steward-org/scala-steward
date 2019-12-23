@@ -24,25 +24,24 @@ import org.scalasteward.core.build.system.BuildSystemAlg
 import org.scalasteward.core.data.{Dependency, DependencyInfo}
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.repoconfig.RepoConfigAlg
-import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.util.MonadThrowable
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data.{Repo, RepoOut}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
 
 final class RepoCacheAlg[F[_]](
-                                implicit
-                                config: Config,
-                                gitAlg: GitAlg[F],
-                                logger: Logger[F],
-                                parallel: Parallel[F],refreshErrorAlg: RefreshErrorAlg[F],
-                                repoCacheRepository: RepoCacheRepository[F],
-                                repoConfigAlg: RepoConfigAlg[F],
-                                buildSystemAlg: BuildSystemAlg[F],
-
-                                vcsApiAlg: VCSApiAlg[F],
-                                vcsRepoAlg: VCSRepoAlg[F],
-                                F: MonadThrowable[F]
+    implicit
+    config: Config,
+    gitAlg: GitAlg[F],
+    logger: Logger[F],
+    parallel: Parallel[F],
+    refreshErrorAlg: RefreshErrorAlg[F],
+    repoCacheRepository: RepoCacheRepository[F],
+    repoConfigAlg: RepoConfigAlg[F],
+    buildSystemAlg: BuildSystemAlg[F],
+    vcsApiAlg: VCSApiAlg[F],
+    vcsRepoAlg: VCSRepoAlg[F],
+    F: MonadThrowable[F]
 ) {
   def checkCache(repo: Repo): F[Unit] =
     logger.attemptLog_(s"Check cache of ${repo.show}") {
@@ -80,7 +79,7 @@ final class RepoCacheAlg[F[_]](
     for {
       branch <- gitAlg.currentBranch(repo)
       latestSha1 <- gitAlg.latestSha1(repo, branch)
-      dependencies <- sbtAlg.getDependencies(repo)
+      dependencies <- buildSystemAlg.getDependencies(repo)
       dependencyInfos <- dependencies
         .traverse(_.traverse(_.traverse(gatherDependencyInfo(repo, _))))
       maybeRepoConfig <- repoConfigAlg.readRepoConfig(repo)

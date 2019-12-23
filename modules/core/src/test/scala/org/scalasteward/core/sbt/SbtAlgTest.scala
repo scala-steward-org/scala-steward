@@ -14,20 +14,18 @@ import org.scalatest.matchers.should.Matchers
 class SbtAlgTest extends AnyFunSuite with Matchers {
   test("addGlobalPlugins") {
     prepareEnvAlg
-      .addGlobalPlugins(StateT.modify(_.exec(List("fa", "fa"))))
-      .runS(MockState.empty)
-      .unsafeRunSync() shouldBe MockState.empty.copy(
-      commands = Vector(
-        List("read", "classpath:org/scalasteward/plugin/StewardPlugin.scala"),
-        List("create", "/tmp/steward/.sbt/0.13/plugins/StewardPlugin.scala"),
-        List("create", "/tmp/steward/.sbt/1.0/plugins/StewardPlugin.scala"),
+      .addGlobalPlugins(StateT.modify(_.exec(List("fa", "fa")))).runS(MockState.empty).unsafeRunSync() shouldBe MockState.empty
+      .copy(
+        commands = Vector(
+          List("read", "classpath:org/scalasteward/plugin/StewardPlugin.scala"),List("create", "/tmp/steward/.sbt/0.13/plugins/StewardPlugin.scala"),
+          List("create", "/tmp/steward/.sbt/1.0/plugins/StewardPlugin.scala"),
         List("fa", "fa"),
-        List("rm", "/tmp/steward/.sbt/1.0/plugins/StewardPlugin.scala"),
-        List("rm", "/tmp/steward/.sbt/0.13/plugins/StewardPlugin.scala")
-      ),
-      logs = Vector((None, "Add global sbt plugins")),
-      files = Map.empty
-    )
+          List("rm", "/tmp/steward/.sbt/1.0/plugins/StewardPlugin.scala"),
+          List("rm", "/tmp/steward/.sbt/0.13/plugins/StewardPlugin.scala")
+        ),
+        logs = Vector((None, "Add global sbt plugins")),
+        files = Map.empty
+      )
   }
 
   test("getDependenciesAndResolvers") {

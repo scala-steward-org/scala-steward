@@ -20,7 +20,6 @@ import better.files.File
 import cats.data.OptionT
 import cats.implicits._
 import cats.{Functor, Monad}
-import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.build.system.BuildSystemAlg
 import org.scalasteward.core.data.{Dependency, Resolver, Scope}
@@ -37,7 +36,6 @@ object SbtAlg {
       implicit
       config: Config,
       fileAlg: FileAlg[F],
-      logger: Logger[F],
       processAlg: ProcessAlg[F],
       scalafmtAlg: ScalafmtAlg[F],
       workspaceAlg: WorkspaceAlg[F],

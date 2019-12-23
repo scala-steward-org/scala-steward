@@ -144,20 +144,20 @@ def myCrossProject(name: String): CrossProject =
 ThisBuild / dynverSeparator := "-"
 
 lazy val commonSettings = Def.settings(
-  scalacOptions := Seq(
-    "-encoding", "utf8",
-    "-deprecation",
-    "-explaintypes",
-    "-feature",
-    "-unchecked",
-    "-language:experimental.macros",
-    "-language:implicitConversions",
-    "-language:higherKinds",
-    "-language:existentials",
-    "-language:postfixOps",
-    "-Ypartial-unification",
-    "-Yno-adapted-args"
-  ),
+//  scalacOptions := Seq(
+//    "-encoding", "utf8",
+//    "-deprecation",
+//    "-explaintypes",
+//    "-feature",
+//    "-unchecked",
+//    "-language:experimental.macros",
+//    "-language:implicitConversions",
+//    "-language:higherKinds",
+//    "-language:existentials",
+//    "-language:postfixOps",
+//    "-Ypartial-unification",
+//    "-Yno-adapted-args"
+//  ),
   compileSettings,
   metadataSettings,
   scaladocSettings
@@ -165,8 +165,8 @@ lazy val commonSettings = Def.settings(
 
 lazy val compileSettings = Def.settings(
   doctestTestFramework := DoctestTestFramework.ScalaCheck,
-//  wartremoverErrors ++= Seq(Wart.TraversableOps),
-//  Compile / compile / wartremoverErrors ++= Seq(Wart.Equals)
+  wartremoverErrors ++= Seq(Wart.TraversableOps),
+  Compile / compile / wartremoverErrors ++= Seq(Wart.Equals)
 )
 
 lazy val metadataSettings = Def.settings(

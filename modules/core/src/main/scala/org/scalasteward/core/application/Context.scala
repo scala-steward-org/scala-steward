@@ -86,41 +86,49 @@ object Context {
         new RefreshErrorAlg[F](new JsonKeyValueStore("refresh_error", "1"))
       implicit val migrationAlg: MigrationAlg[F] = MigrationAlg.create[F]
 
-      // implicit val updateRepository: UpdateRepository[F] =
-        // new UpdateRepository[F](new JsonKeyValueStore("updates", "3"))
-
       implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create
       implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]
 
+      val mavenAlg: BuildSystemAlg[F] = MavenAlg.create[F]
+      val sbtAlg: BuildSystemAlg[F] = SbtAlg.create[F]
+
       val mavenNurtureAlg: NurtureAlg[F] = {
-        implicit val mavenAlg: BuildSystemAlg[F] = MavenAlg.create[F]
+        implicit val mvn: BuildSystemAlg[F] = mavenAlg
         implicit val editAlg: EditAlg[F] = new EditAlg[F]
         implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F]
         nurtureAlg
       }
 
       val sbtNurtureAlg: NurtureAlg[F] = {
-        implicit val sbtAlg: BuildSystemAlg[F] = SbtAlg.create[F]
+        implicit val sbt: BuildSystemAlg[F] = sbtAlg
         implicit val editAlg: EditAlg[F] = new EditAlg[F]
         implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F]
         nurtureAlg
       }
 
-      def repoTypeToNurture(repoType: RepoType): NurtureAlg[F] = {
-        repoType match {
-          case RepoType.Maven => mavenNurtureAlg
-          case RepoType.SBT => sbtNurtureAlg
-        }
+      val mavenCacheAlg = {
+        implicit val mvn: BuildSystemAlg[F] = mavenAlg
+        new RepoCacheAlg[F]()
       }
 
+      val sbtCacheAlg = {
+        implicit val sbt: BuildSystemAlg[F] = sbtAlg
+        new RepoCacheAlg[F]()
+      }
+
+      def repoTypeToNurture(repoType: RepoType): NurtureAlg[F] = repoType match {
+        case RepoType.Maven => mavenNurtureAlg
+        case RepoType.SBT   => sbtNurtureAlg
+      }
+
+      def repoTypeToCacheAlg(repoType: RepoType): RepoCacheAlg[F] = repoType match {
+        case RepoType.Maven => mavenCacheAlg
+        case RepoType.SBT   => sbtCacheAlg
+      }
 
       implicit val prepareEnvAlg: PrepareEnvAlg[F] = new PrepareEnvAlg[F]()
-
-//      implicit val repoConfigAlg: RepoConfigAlg[F] = new RepoConfigAlg[F]()
-//      implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F]()
-
       implicit val pruningAlg: PruningAlg[F] = new PruningAlg[F]()
 
-      new StewardAlg[F](repoTypeToNurture)
+      new StewardAlg[F](repoTypeToNurture, repoTypeToCacheAlg)
     }
 }

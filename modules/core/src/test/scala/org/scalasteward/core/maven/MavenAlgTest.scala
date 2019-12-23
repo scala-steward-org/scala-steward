@@ -17,20 +17,44 @@ class MavenAlgTest extends AnyFunSuite with Matchers {
     val repoDir = config.workspace / repo.show
     val files: Map[File, String] = Map.empty
 
-    mavenAlg.getUpdatesForRepo(repo).runS(
-      MockState.empty.copy(files = files)
-    ).unsafeRunSync() shouldBe MockState(
+    mavenAlg
+      .getUpdatesForRepo(repo)
+      .runS(
+        MockState.empty.copy(files = files)
+      )
+      .unsafeRunSync() shouldBe MockState(
       Vector(
         List(
-          var1, var2, s"$repoDir", "firejail", s"--whitelist=$repoDir",
-          "mvn", "versions:display-dependency-updates", "-DallowMajorUpdates=false", "-DallowMinorUpdates=false", "-DallowIncrementalUpdates=true", "-DallowAnyUpdates=false"
+          var1,
+          var2,
+          s"$repoDir",
+          "firejail",
+          s"--whitelist=$repoDir",
+          "mvn",
+          "versions:display-dependency-updates",
+          "-DallowMajorUpdates=false",
+          "-DallowMinorUpdates=false",
+          "-DallowIncrementalUpdates=true",
+          "-DallowAnyUpdates=false"
         ),
         List(
-          var1, var2, s"$repoDir", "firejail", s"--whitelist=$repoDir",
-          "mvn", "versions:display-dependency-updates"),
+          var1,
+          var2,
+          s"$repoDir",
+          "firejail",
+          s"--whitelist=$repoDir",
+          "mvn",
+          "versions:display-dependency-updates"
+        ),
         List(
-          var1, var2, s"$repoDir", "firejail", s"--whitelist=$repoDir",
-          "mvn", "versions:display-plugin-updates")
+          var1,
+          var2,
+          s"$repoDir",
+          "firejail",
+          s"--whitelist=$repoDir",
+          "mvn",
+          "versions:display-plugin-updates"
+        )
       ),
       logs = Vector(),
       files = Map()
@@ -43,19 +67,23 @@ class MavenAlgTest extends AnyFunSuite with Matchers {
     val repoDir = config.workspace / repo.show
     val files: Map[File, String] = Map.empty
 
-    val state = mavenAlg.getDependencies(repo).runS(
-      MockState.empty.copy(files = files)).unsafeRunSync()
+    val state =
+      mavenAlg.getDependencies(repo).runS(MockState.empty.copy(files = files)).unsafeRunSync()
 
     state shouldBe MockState(
       files = files,
       logs = Vector.empty,
       commands = Vector(
         List(
-          var1, var2, repoDir.toString,
+          var1,
+          var2,
+          repoDir.toString,
           "firejail",
           s"--whitelist=$repoDir",
-          "mvn clean", "dependency:list"
-        ),
+          "mvn",
+          "clean",
+          "dependency:list"
+        )
       )
     )
   }
