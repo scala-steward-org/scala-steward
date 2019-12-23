@@ -16,6 +16,7 @@
 
 package org.scalasteward.core.application
 
+import cats.Parallel
 import cats.effect._
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
@@ -38,7 +39,7 @@ import org.scalasteward.core.vcs.data.AuthenticatedUser
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg, VCSSelection}
 
 object Context {
-  def create[F[_]: ConcurrentEffect: ContextShift: Timer](
+  def create[F[_]: ConcurrentEffect: ContextShift: Parallel: Timer](
       args: List[String]
   ): Resource[F, StewardAlg[F]] =
     for {

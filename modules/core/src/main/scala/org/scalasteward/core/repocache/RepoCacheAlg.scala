@@ -16,6 +16,7 @@
 
 package org.scalasteward.core.repocache
 
+import cats.Parallel
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
@@ -34,6 +35,7 @@ final class RepoCacheAlg[F[_]](
     config: Config,
     gitAlg: GitAlg[F],
     logger: Logger[F],
+    parallel: Parallel[F],
     refreshErrorAlg: RefreshErrorAlg[F],
     repoCacheRepository: RepoCacheRepository[F],
     repoConfigAlg: RepoConfigAlg[F],
@@ -48,8 +50,10 @@ final class RepoCacheAlg[F[_]](
       F.ifM(refreshErrorAlg.failedRecently(repo))(
         F.unit,
         for {
-          (repoOut, branchOut) <- vcsApiAlg.createForkOrGetRepoWithDefaultBranch(config, repo)
-          cachedSha1 <- repoCacheRepository.findSha1(repo)
+          ((repoOut, branchOut), cachedSha1) <- (
+            vcsApiAlg.createForkOrGetRepoWithDefaultBranch(config, repo),
+            repoCacheRepository.findSha1(repo)
+          ).parTupled
           latestSha1 = branchOut.commit.sha
           refreshRequired = cachedSha1.forall(_ =!= latestSha1)
           _ <- if (refreshRequired) cloneAndRefreshCache(repo, repoOut) else F.unit
