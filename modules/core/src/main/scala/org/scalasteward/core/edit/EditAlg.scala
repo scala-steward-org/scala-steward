@@ -22,11 +22,11 @@ import cats.implicits._
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data.Update
-import org.scalasteward.core.io.{isFileSpecificTo, isSourceFile, FileAlg, WorkspaceAlg}
+import org.scalasteward.core.io.{isSourceFile, FileAlg, WorkspaceAlg}
 import org.scalasteward.core.sbt.SbtAlg
+import org.scalasteward.core.scalafix.MigrationAlg
 import org.scalasteward.core.util._
 import org.scalasteward.core.vcs.data.Repo
-import org.scalasteward.core.scalafix.MigrationAlg
 
 final class EditAlg[F[_]](
     implicit
@@ -44,11 +44,7 @@ final class EditAlg[F[_]](
         logger.warn(s"Could not apply ${update.show} : $e")
       )
       repoDir <- workspaceAlg.repoDir(repo)
-      files <- fileAlg.findFilesContaining(
-        repoDir,
-        update.currentVersion,
-        f => isSourceFile(f) && isFileSpecificTo(update)(f)
-      )
+      files <- fileAlg.findFilesContaining(repoDir, update.currentVersion, isSourceFile(update))
       noFilesFound = logger.warn("No files found that contain the current version")
       _ <- files.toNel.fold(noFilesFound)(applyUpdateTo(_, update))
     } yield ()
