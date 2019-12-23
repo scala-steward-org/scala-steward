@@ -19,7 +19,6 @@ package org.scalasteward.core.data
 import cats.Order
 import cats.implicits._
 import eu.timepit.refined.types.numeric.NonNegInt
-import io.circe.{Codec, Decoder, Encoder}
 import scala.annotation.tailrec
 
 final case class Version(value: String) {
@@ -96,9 +95,6 @@ object Version {
       val (c1, c2) = padToSameLength(v1.alnumComponents, v2.alnumComponents, Component.Empty)
       c1.compare(c2)
     }
-
-  implicit val versionCodec: Codec[Version] =
-    Codec.from(Decoder[String].map(Version.apply), Encoder[String].contramap(_.value))
 
   private def padToSameLength[A](l1: List[A], l2: List[A], elem: A): (List[A], List[A]) = {
     val maxLength = math.max(l1.length, l2.length)
