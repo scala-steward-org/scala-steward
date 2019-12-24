@@ -24,7 +24,6 @@ import org.scalasteward.core.data.{Dependency, DependencyInfo}
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
-import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.util.MonadThrowable
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data.{Repo, RepoOut}
@@ -40,7 +39,6 @@ final class RepoCacheAlg[F[_]](
     repoCacheRepository: RepoCacheRepository[F],
     repoConfigAlg: RepoConfigAlg[F],
     sbtAlg: SbtAlg[F],
-    scalafmtAlg: ScalafmtAlg[F],
     vcsApiAlg: VCSApiAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
     F: MonadThrowable[F]
@@ -83,16 +81,8 @@ final class RepoCacheAlg[F[_]](
       latestSha1 <- gitAlg.latestSha1(repo, branch)
       dependencies <- sbtAlg.getDependencies(repo)
       dependencyInfos <- dependencies.traverse(gatherDependencyInfo(repo, _))
-      maybeSbtVersion <- sbtAlg.getSbtVersion(repo)
-      maybeScalafmtVersion <- scalafmtAlg.getScalafmtVersion(repo)
       maybeRepoConfig <- repoConfigAlg.readRepoConfig(repo)
-    } yield RepoCache(
-      latestSha1,
-      dependencyInfos,
-      maybeSbtVersion,
-      maybeScalafmtVersion,
-      maybeRepoConfig
-    )
+    } yield RepoCache(latestSha1, dependencyInfos, maybeRepoConfig)
 
   private def gatherDependencyInfo(repo: Repo, dependency: Dependency): F[DependencyInfo] =
     gitAlg.findFilesContaining(repo, dependency.version).map(DependencyInfo(dependency, _))
