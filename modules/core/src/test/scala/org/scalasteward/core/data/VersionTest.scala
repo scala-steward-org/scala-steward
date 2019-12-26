@@ -48,22 +48,22 @@ class VersionTest extends AnyFunSuite with Discipline with Matchers with ScalaCh
   test("pairwise 2") {
     // from https://github.com/rtimush/sbt-updates/blob/44014898ad8548b08a9785bf78505945294c2ad6/src/test/scala/com/timushev/sbt/updates/versions/VersionSpec.scala#L35
     val versions = List(
-      //"1.0.0-20131213005945",
       "1.0.0-alpha",
       "1.0.0-alpha.1",
       "1.0.0-beta.2",
       "1.0.0-beta.11",
-      "1.0.0-rc.1",
       "1.0.0-rc.1+build.1",
+      "1.0.0-rc.1",
       "1.0.0",
       "1.0.0+0.3.7",
+      "1.0.0-20131213005945",
       "1.33.7+build",
       "1.33.7+build.2.b8f12d7",
       "1.33.7+build.11.e0f985a",
       "2.0.M5b",
       "2.0.M6-SNAP9",
-      "2.0.M6-SNAP23",
-      "2.0.M6-SNAP23a"
+      "2.0.M6-SNAP23a",
+      "2.0.M6-SNAP23"
     )
     checkPairwise(versions)
   }
@@ -71,9 +71,9 @@ class VersionTest extends AnyFunSuite with Discipline with Matchers with ScalaCh
   test("pairwise 3") {
     // from https://semver.org/#spec-item-11
     val versions = List(
+      "1.0.0-alpha.beta",
       "1.0.0-alpha",
       "1.0.0-alpha.1",
-      //"1.0.0-alpha.beta",
       "1.0.0-beta",
       "1.0.0-beta.2",
       "1.0.0-beta.11",
@@ -81,6 +81,28 @@ class VersionTest extends AnyFunSuite with Discipline with Matchers with ScalaCh
       "1.0.0"
     )
     checkPairwise(versions)
+  }
+
+  test("similar ordering as Coursier") {
+    List(
+      ("1.0.1e", "1.0.1"),
+      ("42.2.9.jre7", "42.2.9"),
+      ("42.2.9.jre7", "42.2.9.jre8"),
+      ("2.0.M6-SNAP23a", "2.0.M6-SNAP23"),
+      ("2.13.0-M2", "2.13.0-RC1"),
+      ("4.0RC1", "4.0.0")
+    ).foreach {
+      case (s1, s2) =>
+        val c1 = coursier.core.Version(s1)
+        val c2 = coursier.core.Version(s2)
+        c1 should be < c2
+        c2 should be > c1
+
+        val v1 = Version(s1)
+        val v2 = Version(s2)
+        v1 should be < v2
+        v2 should be > v1
+    }
   }
 
   test("selectNext, table 1") {
