@@ -66,12 +66,13 @@ object NewPullRequestData {
         |""".stripMargin.trim
   }
 
-  def updateType(update: Update): String = update match {
-    case s: Update.Single if s.configurations.contains("test") =>
+  def updateType(update: Update): String = {
+    val dependencies = update.dependencies
+    if (dependencies.forall(_.configurations.contains("test")))
       "test-library-update"
-    case s: Update.Single if s.configurations.contains("sbt-plugin") =>
+    else if (dependencies.forall(_.sbtVersion.isDefined))
       "sbt-plugin-update"
-    case _ =>
+    else
       "library-update"
   }
 

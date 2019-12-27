@@ -16,7 +16,10 @@
 
 package org.scalasteward.core.sbt.data
 
-import io.circe.{Decoder, Encoder}
+import cats.Order
+import cats.implicits._
+import io.circe.Codec
+import io.circe.generic.extras.semiauto._
 import org.scalasteward.core.data.Version
 
 final case class SbtVersion(value: String) {
@@ -24,9 +27,9 @@ final case class SbtVersion(value: String) {
 }
 
 object SbtVersion {
-  implicit val sbtVersionDecoder: Decoder[SbtVersion] =
-    Decoder[String].map(SbtVersion.apply)
+  implicit val sbtVersionCodec: Codec[SbtVersion] =
+    deriveUnwrappedCodec
 
-  implicit val sbtVersionEncoder: Encoder[SbtVersion] =
-    Encoder[String].contramap(_.value)
+  implicit val sbtVersionOrder: Order[SbtVersion] =
+    Order[String].contramap(_.value)
 }

@@ -33,8 +33,7 @@ package object sbt {
         Dependency(
           GroupId("org.scala-sbt"),
           ArtifactId("sbt"),
-          sbtVersion.value,
-          configurations = Some("sbt-plugin")
+          sbtVersion.value
         )
       )
     else

@@ -98,7 +98,7 @@ object CoursierAlg {
   private def toCoursierModule(dependency: Dependency): Module =
     Module(
       Organization(dependency.groupId.value),
-      ModuleName(dependency.artifactId.firstCrossName),
+      ModuleName(dependency.artifactId.crossName),
       dependency.attributes
     )
 

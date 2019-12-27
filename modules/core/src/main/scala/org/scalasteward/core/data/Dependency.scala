@@ -16,11 +16,11 @@
 
 package org.scalasteward.core.data
 
+import cats.Order
+import cats.implicits._
 import io.circe.Codec
 import io.circe.generic.semiauto._
-import monocle.Lens
 import org.scalasteward.core.sbt.data.{SbtVersion, ScalaVersion}
-import org.scalasteward.core.util.Nel
 
 final case class Dependency(
     groupId: GroupId,
@@ -33,17 +33,14 @@ final case class Dependency(
   def attributes: Map[String, String] =
     sbtVersion.map("sbtVersion" -> _.value).toMap ++
       scalaVersion.map("scalaVersion" -> _.value).toMap
-
-  def toUpdate: Update.Single =
-    Update.Single(groupId, artifactId, version, Nel.of(version), configurations.orElse {
-      sbtVersion.map(_ => "sbt-plugin")
-    })
 }
 
 object Dependency {
-  val artifactId: Lens[Dependency, ArtifactId] =
-    Lens[Dependency, ArtifactId](_.artifactId)(artifactId => _.copy(artifactId = artifactId))
-
   implicit val dependencyCodec: Codec[Dependency] =
     deriveCodec
+
+  implicit val dependencyOrder: Order[Dependency] =
+    Order.by { d: Dependency =>
+      (d.groupId, d.artifactId, d.version, d.sbtVersion, d.scalaVersion, d.configurations)
+    }
 }

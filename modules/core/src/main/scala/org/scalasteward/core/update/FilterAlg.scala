@@ -19,7 +19,7 @@ package org.scalasteward.core.update
 import cats.implicits._
 import cats.{Monad, TraverseFilter}
 import io.chrisdavenport.log4cats.Logger
-import org.scalasteward.core.data.{ArtifactId, GroupId, Update, Version}
+import org.scalasteward.core.data._
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.update.FilterAlg._
 import org.scalasteward.core.util.Nel
@@ -49,7 +49,6 @@ object FilterAlg {
   sealed trait RejectionReason {
     def update: Update.Single
     def show: String = this match {
-      case IgnoredGlobally(_)       => "ignored globally"
       case IgnoredByConfig(_)       => "ignored by config"
       case NotAllowedByConfig(_)    => "not allowed by config"
       case BadVersions(_)           => "bad versions"
@@ -57,37 +56,32 @@ object FilterAlg {
     }
   }
 
-  final case class IgnoredGlobally(update: Update.Single) extends RejectionReason
   final case class IgnoredByConfig(update: Update.Single) extends RejectionReason
   final case class NotAllowedByConfig(update: Update.Single) extends RejectionReason
   final case class BadVersions(update: Update.Single) extends RejectionReason
   final case class NoSuitableNextVersion(update: Update.Single) extends RejectionReason
 
   def globalFilter(update: Update.Single): FilterResult =
-    removeBadVersions(update)
-      .flatMap(isIgnoredGlobally)
-      .flatMap(selectSuitableNextVersion)
+    removeBadVersions(update).flatMap(selectSuitableNextVersion)
 
   private def localFilter(update: Update.Single, repoConfig: RepoConfig): FilterResult =
     globalFilter(update).flatMap(repoConfig.updates.keep)
 
-  private def isIgnoredGlobally(update: Update.Single): FilterResult = {
-    val keep = ((update.groupId.value, update.artifactId.name) match {
-      case ("org.scala-lang", "scala-compiler") => false
-      case ("org.scala-lang", "scala-library")  => false
-      case ("org.scala-lang", "scala-reflect")  => false
-      case ("org.typelevel", "scala-library")   => false
-      case _                                    => true
-    }) && (update.configurations.fold("")(_.toLowerCase) match {
-      case "phantom-js-jetty"    => false
-      case "scalafmt"            => false
-      case "scripted-sbt"        => false
-      case "scripted-sbt-launch" => false
-      case "tut"                 => false
-      case _                     => true
+  def isIgnoredGlobally(dependency: Dependency): Boolean =
+    ((dependency.groupId.value, dependency.artifactId.name) match {
+      case ("org.scala-lang", "scala-compiler") => true
+      case ("org.scala-lang", "scala-library")  => true
+      case ("org.scala-lang", "scala-reflect")  => true
+      case ("org.typelevel", "scala-library")   => true
+      case _                                    => false
+    }) || (dependency.configurations.fold("")(_.toLowerCase) match {
+      case "phantom-js-jetty"    => true
+      case "scalafmt"            => true
+      case "scripted-sbt"        => true
+      case "scripted-sbt-launch" => true
+      case "tut"                 => true
+      case _                     => false
     })
-    if (keep) Right(update) else Left(IgnoredGlobally(update))
-  }
 
   private def selectSuitableNextVersion(update: Update.Single): FilterResult = {
     val newerVersions = update.newerVersions.map(Version.apply).toList

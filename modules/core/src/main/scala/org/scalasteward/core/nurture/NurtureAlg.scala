@@ -16,13 +16,13 @@
 
 package org.scalasteward.core.nurture
 
-import cats.effect.Async
+import cats.effect.Sync
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.ProcessResult.{Ignored, Updated}
-import org.scalasteward.core.data.{Dependency, ProcessResult, Update}
+import org.scalasteward.core.data.{ProcessResult, Update}
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Branch, GitAlg}
 import org.scalasteward.core.repoconfig.RepoConfigAlg
@@ -51,7 +51,7 @@ final class NurtureAlg[F[_]](
     logger: Logger[F],
     pullRequestRepo: PullRequestRepository[F],
     sbtAlg: SbtAlg[F],
-    F: Async[F]
+    F: Sync[F]
 ) {
   def nurture(repo: Repo): F[Either[Throwable, Unit]] = {
     val label = s"Nurture ${repo.show}"
@@ -80,25 +80,21 @@ final class NurtureAlg[F[_]](
       repoConfig <- repoConfigAlg.readRepoConfigOrDefault(repo)
       updates <- sbtAlg.getUpdates(repo)
       filtered <- filterAlg.localFilterMany(repoConfig, updates)
-      grouped = Update.group(filtered)
+      grouped = Update.groupByGroupId(filtered)
       sorted <- NurtureAlg.sortUpdatesByMigration(grouped)
       _ <- logger.info(util.logger.showUpdates(sorted))
       baseSha1 <- gitAlg.latestSha1(repo, baseBranch)
-      memoizedGetDependencies <- Async.memoize {
-        sbtAlg.getDependencies(repo).handleError(_ => List.empty)
-      }
       _ <- NurtureAlg.processUpdates(
         sorted,
         update =>
           processUpdate(
-            UpdateData(repo, fork, repoConfig, update, baseBranch, baseSha1, git.branchFor(update)),
-            memoizedGetDependencies
+            UpdateData(repo, fork, repoConfig, update, baseBranch, baseSha1, git.branchFor(update))
           ),
         repoConfig.updates.limit
       )
     } yield ()
 
-  def processUpdate(data: UpdateData, getDependencies: F[List[Dependency]]): F[ProcessResult] =
+  def processUpdate(data: UpdateData): F[ProcessResult] =
     for {
       _ <- logger.info(s"Process update ${data.update.show}")
       head = vcs.listingBranch(config.vcsType, data.fork, data.update)
@@ -109,21 +105,21 @@ final class NurtureAlg[F[_]](
         case Some(pr) =>
           logger.info(s"Found PR ${pr.html_url}") >> updatePullRequest(data)
         case None =>
-          applyNewUpdate(data, getDependencies)
+          applyNewUpdate(data)
       }
       _ <- pullRequests.headOption.fold(F.unit) { pr =>
         pullRequestRepo.createOrUpdate(data.repo, pr.html_url, data.baseSha1, data.update, pr.state)
       }
     } yield result
 
-  def applyNewUpdate(data: UpdateData, getDependencies: F[List[Dependency]]): F[ProcessResult] =
+  def applyNewUpdate(data: UpdateData): F[ProcessResult] =
     (editAlg.applyUpdate(data.repo, data.update) >> gitAlg.containsChanges(data.repo)).ifM(
       gitAlg.returnToCurrentBranch(data.repo) {
         for {
           _ <- logger.info(s"Create branch ${data.updateBranch.name}")
           _ <- gitAlg.createBranch(data.repo, data.updateBranch)
           _ <- commitAndPush(data)
-          _ <- createPullRequest(data, getDependencies)
+          _ <- createPullRequest(data)
         } yield Updated
       },
       logger.warn("No files were changed") >> F.pure[ProcessResult](Ignored)
@@ -136,12 +132,10 @@ final class NurtureAlg[F[_]](
       _ <- gitAlg.push(data.repo, data.updateBranch)
     } yield Updated
 
-  def createPullRequest(data: UpdateData, getDependencies: F[List[Dependency]]): F[Unit] =
+  def createPullRequest(data: UpdateData): F[Unit] =
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
-      dependencies <- getDependencies
-      filteredDependencies = dependenciesInUpdates(dependencies, data.update)
-      artifactIdToUrl <- coursierAlg.getArtifactIdUrlMapping(filteredDependencies)
+      artifactIdToUrl <- coursierAlg.getArtifactIdUrlMapping(data.update.dependencies.toList)
       branchCompareUrl <- artifactIdToUrl
         .get(data.update.mainArtifactId)
         .flatTraverse(vcsExtraAlg.getBranchCompareUrl(_, data.update))
@@ -168,22 +162,6 @@ final class NurtureAlg[F[_]](
       )
       _ <- logger.info(s"Created PR ${pr.html_url}")
     } yield ()
-
-  private def dependenciesInUpdates(
-      dependencies: List[Dependency],
-      update: Update
-  ): List[Dependency] =
-    update match {
-      case Update.Single(groupId, artifactId, _, _, _, _) =>
-        dependencies.filter(dep =>
-          dep.groupId === groupId && dep.artifactId.name === artifactId.name
-        )
-      case Update.Group(groupId, artifactIds, _, _) =>
-        val artifactIdSet = artifactIds.toList.map(_.name).toSet
-        dependencies.filter(dep =>
-          dep.groupId === groupId && artifactIdSet.contains(dep.artifactId.name)
-        )
-    }
 
   def updatePullRequest(data: UpdateData): F[ProcessResult] =
     if (data.repoConfig.updatePullRequests) {
@@ -229,7 +207,7 @@ final class NurtureAlg[F[_]](
 }
 
 object NurtureAlg {
-  def processUpdates[F[_]: Async](
+  def processUpdates[F[_]: Sync](
       updates: List[Update],
       updateF: Update => F[ProcessResult],
       updatesLimit: Option[Int]
@@ -248,7 +226,7 @@ object NurtureAlg {
           .drain
     }
 
-  def sortUpdatesByMigration[F[_]: Async](
+  def sortUpdatesByMigration[F[_]: Sync](
       updates: List[Update]
   )(implicit migrationAlg: MigrationAlg[F]): F[List[Update]] =
     updates

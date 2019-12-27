@@ -42,9 +42,9 @@ object UpdateHeuristic {
 
   private def replaceGroupF(update: Update): String => Option[String] = { target =>
     update match {
-      case Update.Single(groupId, artifactId, _, _, _, Some(newerGroupId)) =>
-        val currentGroupId = Regex.quote(groupId.value)
-        val currentArtifactId = Regex.quote(artifactId.name)
+      case s @ Update.Single(_, _, Some(newerGroupId)) =>
+        val currentGroupId = Regex.quote(s.groupId.value)
+        val currentArtifactId = Regex.quote(s.artifactId.name)
         val regex = s"""(?i)(.*)${currentGroupId}(.*${currentArtifactId})""".r
         replaceSomeInAllowedParts(regex, target, match0 => {
           val group1 = match0.group(1)
