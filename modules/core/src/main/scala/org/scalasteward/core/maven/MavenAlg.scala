@@ -85,10 +85,10 @@ object MavenAlg {
   private def mvnCmd(commands: String*): Nel[String] =
     Nel.of("mvn", commands.flatMap(_.split(" ")): _*)
 
-  private def removeNoise(s: String): String = s.replace("[INFO]", "").trim
+  def removeNoise(s: String): String = s.replace("[INFO]", "").trim
 
   def parseDependencies(lines: List[String]): List[Dependency] = {
-    val pattern = """\s*(\S*):(.*):jar:([0-9]*\.[0-9]*\.[0-9]*):compile$""".r
+    val pattern = """(.*):(.*):jar:(.*):compile""".r
     lines
       .map(removeNoise)
       .map(_.trim)
