@@ -20,9 +20,9 @@ import cats.effect.{Async, Resource}
 import cats.implicits._
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.chrisdavenport.log4cats.Logger
-import java.util.concurrent.TimeUnit
 import org.http4s.client.Client
 import org.http4s.{Method, Request, Status, Uri}
+import org.scalasteward.core.application.Config
 import scalacache.CatsEffect.modes._
 import scalacache.caffeine.CaffeineCache
 import scalacache.{Async => _, _}
@@ -50,6 +50,7 @@ final class HttpExistenceClient[F[_]](statusCache: Cache[Status])(
 object HttpExistenceClient {
   def create[F[_]](
       implicit
+      config: Config,
       client: Client[F],
       logger: Logger[F],
       F: Async[F]
@@ -59,7 +60,7 @@ object HttpExistenceClient {
         Caffeine
           .newBuilder()
           .maximumSize(16384L)
-          .expireAfterWrite(1, TimeUnit.HOURS)
+          .expireAfterWrite(config.cacheTtl.length, config.cacheTtl.unit)
           .build[String, Entry[Status]]()
       )
     }
