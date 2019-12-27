@@ -5,14 +5,11 @@ import org.scalasteward.core.util.Nel
 
 object TestSyntax {
   implicit class StringOps(val self: String) extends AnyVal {
-    def %(artifactId: String): (GroupId, ArtifactId) =
-      (GroupId(self), ArtifactId(artifactId))
-
     def %(artifactId: ArtifactId): (GroupId, ArtifactId) =
       (GroupId(self), artifactId)
 
-    def %(artifactIds: Nel[String]): (GroupId, Nel[ArtifactId]) =
-      (GroupId(self), artifactIds.map(ArtifactId(_)))
+    def %(artifactIds: Nel[ArtifactId]): (GroupId, Nel[ArtifactId]) =
+      (GroupId(self), artifactIds)
   }
 
   implicit class GroupIdAndArtifactIdOps(val self: (GroupId, ArtifactId)) extends AnyVal {
@@ -29,6 +26,12 @@ object TestSyntax {
     def %(configurations: String): Dependency =
       self.copy(configurations = Some(configurations))
   }
+
+  implicit def stringToArtifactId(string: String): ArtifactId =
+    ArtifactId(string)
+
+  implicit def stringsToArtifactId(strings: Nel[String]): Nel[ArtifactId] =
+    strings.map(stringToArtifactId)
 
   implicit def dependencyToCrossDependency(dependency: Dependency): CrossDependency =
     CrossDependency(dependency)

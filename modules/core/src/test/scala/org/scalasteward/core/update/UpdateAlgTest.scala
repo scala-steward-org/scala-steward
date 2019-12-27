@@ -1,7 +1,7 @@
 package org.scalasteward.core.update
 
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.{ArtifactId, GroupId, Update}
+import org.scalasteward.core.data.{ArtifactId, CrossDependency, GroupId, Update}
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.util.Nel
@@ -33,5 +33,19 @@ class UpdateAlgTest extends AnyFunSuite with Matchers {
     )
     val actual = updateAlg.findUpdate(dependency).runA(MockState.empty).unsafeRunSync()
     actual shouldBe Some(expected)
+  }
+
+  test("isUpdateFor") {
+    val update =
+      Update.Group(
+        "io.circe" % Nel.of(
+          ArtifactId("circe-refined", "circe-refined_2.12"),
+          ArtifactId("circe-refined", "circe-refined_sjs0.6_2.12")
+        ) % "0.11.2",
+        Nel.of("0.12.3")
+      )
+    val crossDependency: CrossDependency =
+      "io.circe" % ArtifactId("circe-refined", "circe-refined_2.12") % "0.11.2"
+    UpdateAlg.isUpdateFor(update, crossDependency) shouldBe true
   }
 }
