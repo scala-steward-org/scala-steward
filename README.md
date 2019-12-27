@@ -119,6 +119,7 @@ Consider creating PR to add your company to the list and join the community.
 * [iAdvize](https://www.iadvize.com/en/)
 * [LeadIQ](https://leadiq.com/)
 * [Lightbend](https://www.lightbend.com/)
+* [Ocado Technology](https://ocadotechnology.com/)
 * [Rewards Network](https://www.rewardsnetwork.com/)
 * [Septeni Original](https://www.septeni-original.co.jp)
 * [SlamData](https://slamdata.com/)
