@@ -27,10 +27,10 @@ package object io {
   }
 
   private def isSpecificOrGenericSourceFile(update: Update)(file: File): Boolean =
-    update match {
-      case s: Update.Single if isSbtUpdate(s)          => file.name === "build.properties"
-      case s: Update.Single if isScalafmtCoreUpdate(s) => file.name === ".scalafmt.conf"
-      case _                                           => isGenericSourceFile(file)
+    () match {
+      case _ if isSbtUpdate(update)          => file.name === "build.properties"
+      case _ if isScalafmtCoreUpdate(update) => file.name === ".scalafmt.conf"
+      case _                                 => isGenericSourceFile(file)
     }
 
   private def isGenericSourceFile(file: File): Boolean = {
@@ -42,9 +42,11 @@ package object io {
     allowedByExtension || allowedByName || allowedBySuffix
   }
 
-  private def isSbtUpdate(update: Update.Single): Boolean =
-    update.groupId === GroupId("org.scala-sbt") && update.artifactId.name === "sbt"
+  private def isSbtUpdate(update: Update): Boolean =
+    update.groupId === GroupId("org.scala-sbt") &&
+      update.artifactIds.exists(_.name === "sbt")
 
-  private def isScalafmtCoreUpdate(update: Update.Single): Boolean =
-    update.groupId === GroupId("org.scalameta") && update.artifactId.name === "scalafmt-core"
+  private def isScalafmtCoreUpdate(update: Update): Boolean =
+    update.groupId === GroupId("org.scalameta") &&
+      update.artifactIds.exists(_.name === "scalafmt-core")
 }
