@@ -21,7 +21,7 @@ import cats.Monad
 import cats.implicits._
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.build.system.BuildSystemAlg
-import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId, RawUpdate, Update}
+import org.scalasteward.core.data.{ArtifactId, CrossDependency, Dependency, GroupId, Update}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
@@ -71,11 +71,8 @@ object MavenAlg {
           majorUpdates = parseUpdates(majorUpdatesRawLines)
           pluginUpdatesRawLines <- exec(mvnCmd(command.PluginUpdates), repoDir)
           pluginUpdates = parseUpdates(pluginUpdatesRawLines)
-          updates = groupNewerVersions(minorUpdates ++ majorUpdates)
-          result = (updates ++ pluginUpdates)
-            .map(_.toUpdate)
-            .sortBy(update => (update.groupId, update.artifactId, update.currentVersion))
-
+          updates = Update.groupByArtifactIdName(minorUpdates ++ majorUpdates)
+          result = updates ++ pluginUpdates
         } yield result
 
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
@@ -108,18 +105,7 @@ object MavenAlg {
       .collect { case Some(x) => x }
   }
 
-  def groupNewerVersions(updates: List[RawUpdate]): List[RawUpdate] =
-    updates
-      .groupBy(_.dependency)
-      .map {
-        case (dependency, updates) =>
-          val newUpdates: List[String] = updates.flatMap(_.newerVersions.toList).distinct
-          Nel.fromList(newUpdates).map(RawUpdate(dependency, _))
-      }
-      .collect { case Some(x) => x }
-      .toList
-
-  def parseUpdates(lines: List[String]): List[RawUpdate] = {
+  def parseUpdates(lines: List[String]): List[Update.Single] = {
 
     val pattern = """\s*([^:]+):([^ ]+)\s+(?:\.|\s)+([^ ]+)\s+->\s+(.*)$""".r
     lines
@@ -137,7 +123,11 @@ object MavenAlg {
             ArtifactId(artifactId, artifactIdCross),
             currentVersion
           )
-          val rawUpdate = RawUpdate(dependency, Nel.one[String](newVersion))
+
+          val rawUpdate = Update.Single(
+            crossDependency = CrossDependency(dependency),
+            newerVersions = Nel.one[String](newVersion)
+          )
           rawUpdate
         }.toOption // TODO: this doesn't catch exceptions thrown by Try, if any
       // TODO: does regex throw exceptions if there are no matches?

@@ -110,7 +110,8 @@ object MockMavenContext {
     ),
     pruneRepos = false,
     processTimeout = 10.minutes,
-    scalafixMigrations = None
+    scalafixMigrations = None,
+    cacheTtl = 1.hour
   )
 
   implicit val mockEffBracketThrowable: BracketThrowable[MockEff] = Sync[MockEff]

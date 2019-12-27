@@ -30,6 +30,7 @@ import org.scalasteward.core.git.{Branch, GitAlg}
 import org.scalasteward.core.repocache.RepoCacheRepository
 import org.scalasteward.core.repoconfig.{PullRequestUpdateStrategy, RepoConfigAlg}
 import org.scalasteward.core.scalafix.MigrationAlg
+import org.scalasteward.core.update.FilterAlg
 import org.scalasteward.core.util.{DateTimeAlg, HttpExistenceClient}
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo}

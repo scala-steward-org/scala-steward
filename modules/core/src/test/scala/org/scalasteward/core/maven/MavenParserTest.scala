@@ -1,8 +1,7 @@
 package org.scalasteward.core.maven
 
 import cats.data.NonEmptyList
-import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId, RawUpdate}
-import org.scalasteward.core.util.Nel
+import org.scalasteward.core.data.{ArtifactId, CrossDependency, Dependency, GroupId, Update}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
@@ -146,25 +145,29 @@ class MavenParserTest extends AnyFunSuite with Matchers {
 
   test("parse `mvn versions:display-plugin-updates`") {
     MavenAlg.parseUpdates(pluginUpdates) shouldBe List(
-      RawUpdate(
-        Dependency(
-          GroupId("com.twilio.maven.plugins"),
-          ArtifactId("guardrail-twilio-maven-plugin", "guardrail-twilio-maven-plugin"),
-          "0.53.1",
-          None,
-          None,
-          None
+      Update.Single(
+        CrossDependency(
+          Dependency(
+            GroupId("com.twilio.maven.plugins"),
+            ArtifactId("guardrail-twilio-maven-plugin", "guardrail-twilio-maven-plugin"),
+            "0.53.1",
+            None,
+            None,
+            None
+          )
         ),
         NonEmptyList.one("4.jsterlinginstanttest")
       ),
-      RawUpdate(
-        Dependency(
-          GroupId("net.alchim31.maven"),
-          ArtifactId("scala-maven-plugin", "scala-maven-plugin"),
-          "3.3.2",
-          None,
-          None,
-          None
+      Update.Single(
+        CrossDependency(
+          Dependency(
+            GroupId("net.alchim31.maven"),
+            ArtifactId("scala-maven-plugin", "scala-maven-plugin"),
+            "3.3.2",
+            None,
+            None,
+            None
+          )
         ),
         NonEmptyList.one("4.3.0")
       )
@@ -183,85 +186,21 @@ class MavenParserTest extends AnyFunSuite with Matchers {
 
   test("parse mvn display-dependency-updates into updates") {
     MavenAlg.parseUpdates(updates).headOption should contain(
-      RawUpdate(
-        Dependency(
-          GroupId("io.kamon"),
-          ArtifactId("kamon-core", "kamon-core_2.12"),
-          "0.6.5",
-          sbtVersion = None,
-          scalaVersion = None,
-          configurations = None
-        ),
+      Update.Single(
+        CrossDependency(
+          Dependency(
+            GroupId("io.kamon"),
+            ArtifactId("kamon-core", "kamon-core_2.12"),
+            "0.6.5",
+            sbtVersion = None,
+            scalaVersion = None,
+            configurations = None
+          )),
         NonEmptyList.one("2.0.2")
       )
     )
 
     //todo: configuration (test, provided) is missing
-  }
-
-  test("merge minor and major dependency updates") {
-    val minorUpdate1 = RawUpdate(
-      Dependency(
-        GroupId("io.kamon"),
-        ArtifactId("kamon-core", "kamon-core_2.12"),
-        "0.6.5",
-        sbtVersion = None,
-        scalaVersion = None,
-        configurations = None
-      ),
-      NonEmptyList.one("0.6.8")
-    )
-
-    val minorUpdate2 = RawUpdate(
-      Dependency(
-        GroupId("io.kamon"),
-        ArtifactId("kamon-datadog", "kamon-datadog_2.12"),
-        "0.6.5",
-        sbtVersion = None,
-        scalaVersion = None,
-        configurations = None
-      ),
-      NonEmptyList.one("0.6.8")
-    )
-
-    val majorUpdate1 = RawUpdate(
-      Dependency(
-        GroupId("io.kamon"),
-        ArtifactId("kamon-core", "kamon-core_2.12"),
-        "0.6.5",
-        sbtVersion = None,
-        scalaVersion = None,
-        configurations = None
-      ),
-      NonEmptyList.one("2.0.2")
-    )
-
-    MavenAlg
-      .groupNewerVersions(Nel.of(minorUpdate1, minorUpdate2, majorUpdate1).toList)
-      .toSet shouldBe Set(
-      RawUpdate(
-        Dependency(
-          GroupId("io.kamon"),
-          ArtifactId("kamon-datadog", "kamon-datadog_2.12"),
-          "0.6.5",
-          None,
-          None,
-          None
-        ),
-        NonEmptyList.one("0.6.8")
-      ),
-      RawUpdate(
-        Dependency(
-          GroupId("io.kamon"),
-          ArtifactId("kamon-core", "kamon-core_2.12"),
-          "0.6.5",
-          None,
-          None,
-          None
-        ),
-        NonEmptyList.of("0.6.8", "2.0.2")
-      )
-    )
   }
 
 }
