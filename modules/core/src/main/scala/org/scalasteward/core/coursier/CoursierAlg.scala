@@ -23,8 +23,8 @@ import coursier.interop.cats._
 import coursier.util.StringInterpolators.SafeIvyRepository
 import coursier.{Info, Module, ModuleName, Organization}
 import io.chrisdavenport.log4cats.Logger
+import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.{Dependency, Version}
-import scala.concurrent.duration._
 
 /** An interface to [[https://get-coursier.io Coursier]] used for
   * fetching dependency versions and metadata.
@@ -45,12 +45,13 @@ trait CoursierAlg[F[_]] {
 object CoursierAlg {
   def create[F[_]](
       implicit
+      config: Config,
       contextShift: ContextShift[F],
       logger: Logger[F],
       F: Sync[F]
   ): CoursierAlg[F] = {
     implicit val parallel: Parallel.Aux[F, F] = Parallel.identity[F]
-    val cache = coursier.cache.FileCache[F]().withTtl(1.hour)
+    val cache = coursier.cache.FileCache[F]().withTtl(config.cacheTtl)
     val sbtPluginReleases =
       ivy"https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/[defaultPattern]"
     val fetch = coursier.Fetch[F](cache).addRepositories(sbtPluginReleases)
