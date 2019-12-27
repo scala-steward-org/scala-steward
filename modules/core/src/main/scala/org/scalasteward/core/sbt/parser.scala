@@ -19,8 +19,9 @@ package org.scalasteward.core.sbt
 import cats.implicits._
 import io.circe.Decoder
 import io.circe.parser._
-import org.scalasteward.core.data.{ArtifactId, Dependency, RawUpdate}
+import org.scalasteward.core.data.{CrossDependency, Dependency, Update}
 import org.scalasteward.core.sbt.data.SbtVersion
+import org.scalasteward.core.util.Nel
 
 object parser {
   def parseBuildProperties(s: String): Option[SbtVersion] =
@@ -30,17 +31,19 @@ object parser {
   def parseDependencies(lines: List[String]): List[Dependency] =
     lines.flatMap(line => decode[Dependency](removeSbtNoise(line)).toList)
 
-  def parseDependenciesAndUpdates(lines: List[String]): (List[Dependency], List[RawUpdate]) = {
-    val (dependencies, updates) = lines.flatMap { line =>
+  def parseDependenciesAndUpdates(lines: List[String]): (List[Dependency], List[Update.Single]) = {
+    val updateDecoder = Decoder.instance { c =>
+      for {
+        dependency <- c.downField("dependency").as[Dependency]
+        newerVersions <- c.downField("newerVersions").as[Nel[String]]
+      } yield Update.Single(CrossDependency(dependency), newerVersions)
+    }
+
+    lines.flatMap { line =>
       parse(removeSbtNoise(line)).flatMap { json =>
-        Decoder[Dependency].either(Decoder[RawUpdate]).decodeJson(json)
+        Decoder[Dependency].either(updateDecoder).decodeJson(json)
       }.toList
     }.separate
-
-    (
-      ArtifactId.combineCrossNames(Dependency.artifactId)(dependencies),
-      ArtifactId.combineCrossNames(Dependency.artifactId.compose(RawUpdate.dependency))(updates)
-    )
   }
 
   private def removeSbtNoise(s: String): String =

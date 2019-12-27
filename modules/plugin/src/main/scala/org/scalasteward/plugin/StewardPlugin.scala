@@ -55,7 +55,7 @@ object StewardPlugin extends AutoPlugin {
 
       val updates = dependencyUpdatesData.value.toList.map {
         case (moduleId, versions) =>
-          RawUpdate(
+          Update(
             dependency = toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue),
             newerVersions = versions.toList.map {
               case v: ValidVersion   => v.text
@@ -120,23 +120,22 @@ object StewardPlugin extends AutoPlugin {
   ): Dependency =
     Dependency(
       groupId = moduleId.organization,
-      artifactId =
-        ArtifactId(moduleId.name, crossName(moduleId, scalaVersion, scalaBinaryVersion).toList),
+      artifactId = ArtifactId(moduleId.name, crossName(moduleId, scalaVersion, scalaBinaryVersion)),
       version = moduleId.revision,
-      configurations = moduleId.configurations,
       sbtVersion = moduleId.extraAttributes.get("e:sbtVersion"),
-      scalaVersion = moduleId.extraAttributes.get("e:scalaVersion")
+      scalaVersion = moduleId.extraAttributes.get("e:scalaVersion"),
+      configurations = moduleId.configurations
     )
 
   final private case class ArtifactId(
       name: String,
-      crossNames: List[String]
+      maybeCrossName: Option[String]
   ) {
     def asJson: String =
       objToJson(
         List(
           "name" -> strToJson(name),
-          "crossNames" -> seqToJson(crossNames.map(strToJson))
+          "maybeCrossName" -> optToJson(maybeCrossName.map(strToJson))
         )
       )
   }
@@ -145,9 +144,9 @@ object StewardPlugin extends AutoPlugin {
       groupId: String,
       artifactId: ArtifactId,
       version: String,
-      configurations: Option[String],
       sbtVersion: Option[String],
-      scalaVersion: Option[String]
+      scalaVersion: Option[String],
+      configurations: Option[String]
   ) {
     def asJson: String =
       objToJson(
@@ -155,14 +154,14 @@ object StewardPlugin extends AutoPlugin {
           "groupId" -> strToJson(groupId),
           "artifactId" -> artifactId.asJson,
           "version" -> strToJson(version),
-          "configurations" -> optToJson(configurations.map(strToJson)),
           "sbtVersion" -> optToJson(sbtVersion.map(strToJson)),
-          "scalaVersion" -> optToJson(scalaVersion.map(strToJson))
+          "scalaVersion" -> optToJson(scalaVersion.map(strToJson)),
+          "configurations" -> optToJson(configurations.map(strToJson))
         )
       )
   }
 
-  final private case class RawUpdate(
+  final private case class Update(
       dependency: Dependency,
       newerVersions: List[String]
   ) {

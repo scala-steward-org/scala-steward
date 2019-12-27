@@ -19,7 +19,7 @@ package org.scalasteward.core.nurture
 import cats.Applicative
 import cats.implicits._
 import org.http4s.Uri
-import org.scalasteward.core.data.{Dependency, Update}
+import org.scalasteward.core.data.{CrossDependency, Update}
 import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.persistence.KeyValueStore
 import org.scalasteward.core.update.UpdateAlg
@@ -42,7 +42,7 @@ final class PullRequestRepository[F[_]: Applicative](
 
   def findPullRequest(
       repo: Repo,
-      dependency: Dependency,
+      crossDependency: CrossDependency,
       newVersion: String
   ): F[Option[(Uri, Sha1, PullRequestState)]] =
     kvStore.get(repo).map { maybePRs =>
@@ -50,8 +50,8 @@ final class PullRequestRepository[F[_]: Applicative](
       pullRequests
         .find {
           case (_, data) =>
-            UpdateAlg
-              .isUpdateFor(data.update, dependency) && data.update.nextVersion === newVersion
+            UpdateAlg.isUpdateFor(data.update, crossDependency) &&
+              data.update.nextVersion === newVersion
         }
         .map { case (url, data) => (Uri.unsafeFromString(url), data.baseSha1, data.state) }
     }

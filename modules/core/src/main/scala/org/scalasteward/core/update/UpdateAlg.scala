@@ -20,7 +20,7 @@ import cats.Monad
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.coursier.CoursierAlg
-import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId, Update}
+import org.scalasteward.core.data._
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
@@ -36,7 +36,7 @@ final class UpdateAlg[F[_]](
     for {
       newerVersions0 <- coursierAlg.getNewerVersions(dependency)
       maybeUpdate0 = Nel.fromList(newerVersions0).map { newerVersions1 =>
-        dependency.toUpdate.copy(newerVersions = newerVersions1.map(_.value))
+        Update.Single(CrossDependency(dependency), newerVersions1.map(_.value))
       }
       maybeUpdate1 = maybeUpdate0.orElse(UpdateAlg.findUpdateWithNewerGroupId(dependency))
     } yield maybeUpdate1
@@ -46,25 +46,23 @@ final class UpdateAlg[F[_]](
       _ <- logger.info(s"Find updates")
       updates0 <- dependencies.traverseFilter(findUpdate)
       updates1 <- filterAlg.localFilterMany(repoConfig, updates0)
-      updates2 = ArtifactId
-        .combineCrossNames(Update.Single.artifactId)(updates1)
-        .sortBy(u => (u.groupId, u.artifactId))
+      updates2 = Update.groupByArtifactIdName(updates1)
       _ <- logger.info(util.logger.showUpdates(updates2.widen[Update]))
     } yield updates2
 }
 
 object UpdateAlg {
-  def isUpdateFor(update: Update, dependency: Dependency): Boolean =
-    update.groupId === dependency.groupId &&
+  def isUpdateFor(update: Update, crossDependency: CrossDependency): Boolean =
+    crossDependency.dependencies.forall { dependency =>
+      update.groupId === dependency.groupId &&
       update.currentVersion === dependency.version &&
-      update.artifactIds.exists { artifactId =>
-        dependency.artifactId.names.forall(artifactId.names.contains_)
-      }
+      update.artifactIds.contains_(dependency.artifactId)
+    }
 
   def findUpdateWithNewerGroupId(dependency: Dependency): Option[Update.Single] =
     newerGroupId(dependency.groupId, dependency.artifactId).map {
       case (groupId, version) =>
-        dependency.toUpdate.copy(newerGroupId = Some(groupId), newerVersions = Nel.one(version))
+        Update.Single(CrossDependency(dependency), Nel.one(version), Some(groupId))
     }
 
   private def newerGroupId(groupId: GroupId, artifactId: ArtifactId): Option[(GroupId, String)] =

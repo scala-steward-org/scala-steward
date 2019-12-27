@@ -115,12 +115,11 @@ object SbtAlg {
           )
           lines <- exec(sbtCmd(commands), repoDir)
           (dependencies, updates) = parser.parseDependenciesAndUpdates(lines)
-          upToDateDependencies = dependencies.diff(updates.map(_.dependency))
+          outOfDateDependencies = updates.flatMap(_.crossDependency.dependencies.toList)
+          upToDateDependencies = dependencies.diff(outOfDateDependencies)
           updatesWithNewGroupId = upToDateDependencies.flatMap(UpdateAlg.findUpdateWithNewerGroupId)
           additionalUpdates <- findAdditionalUpdates(repo)
-          result = (updates.map(_.toUpdate) ++ updatesWithNewGroupId ++ additionalUpdates).distinct
-            .sortBy(update => (update.groupId, update.artifactId, update.currentVersion))
-        } yield result
+        } yield Update.groupByArtifactIdName(updates ++ updatesWithNewGroupId ++ additionalUpdates)
 
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
         addGlobalPluginTemporarily(scalaStewardScalafixSbt) {

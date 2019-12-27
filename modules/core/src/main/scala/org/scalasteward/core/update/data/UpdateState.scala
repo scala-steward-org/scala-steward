@@ -17,23 +17,37 @@
 package org.scalasteward.core.update.data
 
 import org.http4s.Uri
-import org.scalasteward.core.data.{Dependency, Update}
+import org.scalasteward.core.data.{CrossDependency, Update}
 
 sealed trait UpdateState extends Product with Serializable {
-  def dependency: Dependency
+  def crossDependency: CrossDependency
 }
 
 object UpdateState {
-  final case class DependencyUpToDate(dependency: Dependency) extends UpdateState
+  final case class DependencyUpToDate(
+      crossDependency: CrossDependency
+  ) extends UpdateState
 
-  final case class DependencyOutdated(dependency: Dependency, update: Update) extends UpdateState
+  final case class DependencyOutdated(
+      crossDependency: CrossDependency,
+      update: Update
+  ) extends UpdateState
 
-  final case class PullRequestUpToDate(dependency: Dependency, update: Update, pullRequest: Uri)
-      extends UpdateState
+  final case class PullRequestUpToDate(
+      crossDependency: CrossDependency,
+      update: Update,
+      pullRequest: Uri
+  ) extends UpdateState
 
-  final case class PullRequestOutdated(dependency: Dependency, update: Update, pullRequest: Uri)
-      extends UpdateState
+  final case class PullRequestOutdated(
+      crossDependency: CrossDependency,
+      update: Update,
+      pullRequest: Uri
+  ) extends UpdateState
 
-  final case class PullRequestClosed(dependency: Dependency, update: Update, pullRequest: Uri)
-      extends UpdateState
+  final case class PullRequestClosed(
+      crossDependency: CrossDependency,
+      update: Update,
+      pullRequest: Uri
+  ) extends UpdateState
 }

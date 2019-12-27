@@ -20,52 +20,23 @@ import cats.Order
 import cats.implicits._
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
-import monocle.Lens
 import org.scalasteward.core.util.Nel
 
-/** A name of an artifact as used in build files and with potential
-  * cross version suffixes.
-  *
-  * @example {{{
-  * scala> ArtifactId(
-  *      |   name = "discipline-core",
-  *      |   crossNames = List(
-  *      |     "discipline-core_2.12",
-  *      |     "discipline-core_2.13",
-  *      |     "discipline-core_sjs0.6_2.12",
-  *      |     "discipline-core_sjs0.6_2.13"
-  *      | )).getClass.getSimpleName
-  * res1: String = ArtifactId
-  * }}}
-  */
-final case class ArtifactId(name: String, crossNames: List[String] = Nil) {
-  def firstCrossName: String =
-    crossNames.headOption.getOrElse(name)
+final case class ArtifactId(name: String, maybeCrossName: Option[String] = None) {
+  def crossName: String =
+    maybeCrossName.getOrElse(name)
 
   def names: Nel[String] =
-    Nel(name, crossNames)
-
-  def show: String =
-    if (crossNames.isEmpty) name else names.mkString_("(", ", ", ")")
+    Nel(name, maybeCrossName.toList)
 }
 
 object ArtifactId {
   def apply(name: String, crossName: String): ArtifactId =
-    ArtifactId(name, List(crossName))
-
-  val crossName: Lens[ArtifactId, List[String]] =
-    Lens[ArtifactId, List[String]](_.crossNames)(crossNames => _.copy(crossNames = crossNames))
-
-  def combineCrossNames[A](lens: Lens[A, ArtifactId])(as: List[A]): List[A] = {
-    val l = crossName.compose(lens)
-    as.groupBy(l.set(Nil))
-      .map { case (a, grouped) => l.set(grouped.flatMap(l.get).distinct.sorted)(a) }
-      .toList
-  }
+    ArtifactId(name, Some(crossName))
 
   implicit val artifactIdCodec: Codec[ArtifactId] =
     deriveCodec
 
   implicit val artifactIdOrder: Order[ArtifactId] =
-    Order.by((a: ArtifactId) => (a.name, a.crossNames))
+    Order.by((a: ArtifactId) => (a.name, a.maybeCrossName))
 }

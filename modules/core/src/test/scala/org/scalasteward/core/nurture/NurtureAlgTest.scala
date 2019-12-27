@@ -1,26 +1,27 @@
 package org.scalasteward.core.nurture
 
-import cats.data.{NonEmptyList, StateT}
-import cats.effect.{Async, IO}
+import cats.data.StateT
+import cats.effect.IO
 import cats.syntax.option._
 import org.scalacheck.{Arbitrary, Gen}
+import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.ProcessResult.{Ignored, Updated}
 import org.scalasteward.core.data.Update.Single
-import org.scalasteward.core.data.{ArtifactId, GroupId, ProcessResult, Update}
-import org.scalasteward.core.mock.{MockContext, MockEff, MockState}
+import org.scalasteward.core.data.{ArtifactId, ProcessResult, Update}
+import org.scalasteward.core.mock.MockContext._
+import org.scalasteward.core.mock.{MockEff, MockState}
 import org.scalasteward.core.util.Nel
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import MockContext._
 
 class NurtureAlgTest extends AnyFunSuite with Matchers with ScalaCheckPropertyChecks {
   implicit val updateArbitrary: Arbitrary[Update] = Arbitrary(for {
-    groupId <- Gen.alphaStr.map(GroupId.apply)
-    artifactId <- Gen.alphaStr.map(ArtifactId(_))
+    groupId <- Gen.alphaStr
+    artifactId <- Gen.alphaStr
     currentVersion <- Gen.alphaStr
     newerVersion <- Gen.alphaStr
-  } yield Single(groupId, artifactId, currentVersion, NonEmptyList.one(newerVersion)))
+  } yield Single(groupId % artifactId % currentVersion, Nel.one(newerVersion)))
 
   test("processUpdates with No Limiting") {
     forAll { updates: List[Update] =>
@@ -38,8 +39,6 @@ class NurtureAlgTest extends AnyFunSuite with Matchers with ScalaCheckPropertyCh
   test("processUpdates with Limiting should process all updates up to the limit") {
     forAll { updates: Set[Update] =>
       val (ignorableUpdates, appliableUpdates) = updates.toList.splitAt(updates.size / 2)
-
-      implicit val stateAsync = Async.catsStateTAsync[IO, Int]
       val f: Update => StateT[IO, Int, ProcessResult] = update =>
         StateT[IO, Int, ProcessResult](actionAcc =>
           IO.pure(actionAcc + 1 -> (if (ignorableUpdates.contains(update)) Ignored else Updated))
@@ -55,9 +54,7 @@ class NurtureAlgTest extends AnyFunSuite with Matchers with ScalaCheckPropertyCh
     forAll { updates: List[Update] =>
       val migrationUpdate =
         Single(
-          GroupId("org.scalacheck"),
-          ArtifactId("scalacheck", "scalacheck_2.12"),
-          "1.14.0",
+          "org.scalacheck" % ArtifactId("scalacheck", "scalacheck_2.12") % "1.14.0",
           Nel.of("1.15.0")
         )
       NurtureAlg

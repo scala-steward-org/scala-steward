@@ -16,19 +16,22 @@
 
 package org.scalasteward.core.data
 
+import cats.Order
 import cats.implicits._
 import eu.timepit.refined.W
-import io.circe.{Decoder, Encoder}
-import monocle.Lens
+import io.circe.Codec
+import io.circe.generic.semiauto._
 import org.scalasteward.core.data.Update.{Group, Single}
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.util.string.MinLengthString
 
 sealed trait Update extends Product with Serializable {
+  def crossDependencies: Nel[CrossDependency]
+  def dependencies: Nel[Dependency]
   def groupId: GroupId
-  def mainArtifactId: String
   def artifactIds: Nel[ArtifactId]
+  def mainArtifactId: String
   def currentVersion: String
   def newerVersions: Nel[String]
 
@@ -40,8 +43,8 @@ sealed trait Update extends Product with Serializable {
 
   final def show: String = {
     val artifacts = this match {
-      case s: Single => s.artifactId.show + s.configurations.fold("")(":" + _)
-      case g: Group  => g.artifactIds.map(_.show).mkString_("{", ", ", "}")
+      case s: Single => s.crossDependency.showArtifactNames
+      case g: Group  => g.crossDependencies.map(_.showArtifactNames).mkString_("{", ", ", "}")
     }
     val versions = {
       val vs0 = (currentVersion :: newerVersions).toList
@@ -54,31 +57,45 @@ sealed trait Update extends Product with Serializable {
 
 object Update {
   final case class Single(
-      groupId: GroupId,
-      artifactId: ArtifactId,
-      currentVersion: String,
+      crossDependency: CrossDependency,
       newerVersions: Nel[String],
-      configurations: Option[String] = None,
       newerGroupId: Option[GroupId] = None
   ) extends Update {
+    override def crossDependencies: Nel[CrossDependency] =
+      Nel.one(crossDependency)
+
+    override def dependencies: Nel[Dependency] =
+      crossDependency.dependencies
+
+    override def groupId: GroupId =
+      crossDependency.head.groupId
+
+    override def artifactIds: Nel[ArtifactId] =
+      dependencies.map(_.artifactId)
+
     override def mainArtifactId: String =
       artifactId.name
 
-    override def artifactIds: Nel[ArtifactId] =
-      Nel.one(artifactId)
-  }
+    override def currentVersion: String =
+      crossDependency.head.version
 
-  object Single {
-    val artifactId: Lens[Single, ArtifactId] =
-      Lens[Single, ArtifactId](_.artifactId)(artifactId => _.copy(artifactId = artifactId))
+    def artifactId: ArtifactId =
+      crossDependency.head.artifactId
   }
 
   final case class Group(
-      groupId: GroupId,
-      artifactIds: Nel[ArtifactId],
-      currentVersion: String,
+      crossDependencies: Nel[CrossDependency],
       newerVersions: Nel[String]
   ) extends Update {
+    override def dependencies: Nel[Dependency] =
+      crossDependencies.flatMap(_.dependencies)
+
+    override def groupId: GroupId =
+      dependencies.head.groupId
+
+    override def artifactIds: Nel[ArtifactId] =
+      dependencies.map(_.artifactId)
+
     override def mainArtifactId: String = {
       val possibleMainArtifactIds = for {
         prefix <- artifactIdsPrefix.toList
@@ -86,32 +103,17 @@ object Update {
       } yield prefix.value + suffix
 
       artifactIds
-        .collectFirst {
-          case artifactId if possibleMainArtifactIds.contains(artifactId.name) => artifactId.name
-        }
+        .map(_.name)
+        .find(possibleMainArtifactIds.contains)
         .getOrElse(artifactIds.head.name)
     }
+
+    override def currentVersion: String =
+      dependencies.head.version
 
     def artifactIdsPrefix: Option[MinLengthString[W.`3`.T]] =
       util.string.longestCommonPrefixGreater[W.`3`.T](artifactIds.map(_.name))
   }
-
-  ///
-
-  def group(updates: List[Single]): List[Update] =
-    updates
-      .groupByNel(update => (update.groupId, update.currentVersion, update.newerVersions))
-      .values
-      .map { nel =>
-        val head = nel.head
-        val artifacts = nel.map(_.artifactId).distinct.sorted
-        if (artifacts.tail.nonEmpty)
-          Group(head.groupId, artifacts, head.currentVersion, head.newerVersions)
-        else
-          head
-      }
-      .toList
-      .sortBy(update => (update.groupId, update.artifactIds))
 
   val commonSuffixes: List[String] =
     List("config", "contrib", "core", "extra", "server")
@@ -122,15 +124,29 @@ object Update {
     else
       artifactId
 
-  implicit val updateEncoder: Encoder[Update] =
-    io.circe.generic.semiauto.deriveEncoder
+  def groupByArtifactIdName(updates: List[Single]): List[Single] = {
+    val groups0 =
+      updates.groupByNel(s => (s.groupId, s.artifactId.name, s.currentVersion, s.newerVersions))
+    val groups1 = groups0.values.map { group =>
+      val dependencies = group.flatMap(_.crossDependency.dependencies).distinct.sorted
+      group.head.copy(crossDependency = CrossDependency(dependencies))
+    }
+    groups1.toList.distinct.sortBy(u => u: Update)
+  }
 
-  implicit val updateDecoder: Decoder[Update] =
-    io.circe.generic.semiauto.deriveDecoder
+  def groupByGroupId(updates: List[Single]): List[Update] = {
+    val groups0 =
+      updates.groupByNel(s => (s.groupId, s.currentVersion, s.newerVersions))
+    val groups1 = groups0.values.map { group =>
+      if (group.tail.isEmpty) group.head
+      else Group(group.map(_.crossDependency), group.head.newerVersions)
+    }
+    groups1.toList.distinct.sorted
+  }
 
-  implicit val updateSingleEncoder: Encoder[Update.Single] =
-    io.circe.generic.semiauto.deriveEncoder
+  implicit val updateCodec: Codec[Update] =
+    deriveCodec
 
-  implicit val updateSingleDecoder: Decoder[Update.Single] =
-    io.circe.generic.semiauto.deriveDecoder
+  implicit val updateOrder: Order[Update] =
+    Order.by((u: Update) => (u.crossDependencies, u.newerVersions))
 }

@@ -24,8 +24,7 @@ package object scalafmt {
     Dependency(
       GroupId(if (scalafmtVersion > Version("2.0.0-RC1")) "org.scalameta" else "com.geirsson"),
       ArtifactId("scalafmt-core", s"scalafmt-core_$scalaBinaryVersion"),
-      scalafmtVersion.value,
-      configurations = Some("sbt-plugin")
+      scalafmtVersion.value
     )
 
   def parseScalafmtConf(s: String): Option[Version] =
