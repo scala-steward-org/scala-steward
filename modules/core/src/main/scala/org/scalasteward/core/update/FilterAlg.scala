@@ -49,6 +49,7 @@ object FilterAlg {
   sealed trait RejectionReason {
     def update: Update.Single
     def show: String = this match {
+      case IgnoredGlobally(_)       => "ignored globally"
       case IgnoredByConfig(_)       => "ignored by config"
       case NotAllowedByConfig(_)    => "not allowed by config"
       case BadVersions(_)           => "bad versions"
@@ -56,13 +57,16 @@ object FilterAlg {
     }
   }
 
+  final case class IgnoredGlobally(update: Update.Single) extends RejectionReason
   final case class IgnoredByConfig(update: Update.Single) extends RejectionReason
   final case class NotAllowedByConfig(update: Update.Single) extends RejectionReason
   final case class BadVersions(update: Update.Single) extends RejectionReason
   final case class NoSuitableNextVersion(update: Update.Single) extends RejectionReason
 
   def globalFilter(update: Update.Single): FilterResult =
-    removeBadVersions(update).flatMap(selectSuitableNextVersion)
+    removeBadVersions(update)
+      .flatMap(isIgnoredGlobally)
+      .flatMap(selectSuitableNextVersion)
 
   private def localFilter(update: Update.Single, repoConfig: RepoConfig): FilterResult =
     globalFilter(update).flatMap(repoConfig.updates.keep)
@@ -82,6 +86,12 @@ object FilterAlg {
       case "tut"                 => true
       case _                     => false
     })
+
+  private def isIgnoredGlobally(update: Update.Single): FilterResult =
+    Nel.fromList(update.dependencies.filterNot(isIgnoredGlobally)) match {
+      case Some(dependencies) => Right(update.copy(crossDependency = CrossDependency(dependencies)))
+      case None               => Left(IgnoredGlobally(update))
+    }
 
   private def selectSuitableNextVersion(update: Update.Single): FilterResult = {
     val newerVersions = update.newerVersions.map(Version.apply).toList
