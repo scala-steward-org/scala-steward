@@ -24,7 +24,7 @@ import org.scalasteward.core.util.Nel
 
 object show {
   def oneLiner(update: Update): String =
-    commaSeparated(update.groupId, update.artifactIds.map(_.name))
+    commaSeparated(update.groupId, update.crossDependencies.map(_.head.artifactId.name))
 
   private def commaSeparated(groupId: GroupId, artifactIds: Nel[String]): String = {
     val artifacts = showArtifacts(groupId, artifactIds).toList
