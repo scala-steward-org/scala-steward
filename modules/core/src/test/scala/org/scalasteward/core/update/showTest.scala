@@ -1,6 +1,7 @@
 package org.scalasteward.core.update
 
 import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.data.ArtifactId
 import org.scalasteward.core.data.Update.{Group, Single}
 import org.scalasteward.core.util.Nel
 import org.scalatest.funsuite.AnyFunSuite
@@ -8,7 +9,13 @@ import org.scalatest.matchers.should.Matchers
 
 class showTest extends AnyFunSuite with Matchers {
   test("oneLiner: cats-core") {
-    val update = Single("org.typelevel" % "cats-core" % "0.9.0", Nel.one("1.0.0"))
+    val update = Single(
+      "org.typelevel" % Nel.of(
+        ArtifactId("cats-core", "cats-core_2.11"),
+        ArtifactId("cats-core", "cats-core_2.12")
+      ) % "0.9.0",
+      Nel.one("1.0.0")
+    )
     show.oneLiner(update) shouldBe "cats-core"
   }
 
