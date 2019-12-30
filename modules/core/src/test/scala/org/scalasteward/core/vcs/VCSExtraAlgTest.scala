@@ -32,13 +32,13 @@ class VCSExtraAlgTest extends AnyFunSuite with Matchers {
 
   test("getBranchCompareUrl") {
     vcsExtraAlg
-      .getBranchCompareUrl("https://github.com/foo/foo", updateFoo)
+      .getBranchCompareUrl(uri"https://github.com/foo/foo", updateFoo)
       .unsafeRunSync() shouldBe None
     vcsExtraAlg
-      .getBranchCompareUrl("https://github.com/foo/bar", updateBar)
-      .unsafeRunSync() shouldBe Some("https://github.com/foo/bar/compare/v0.1.0...v0.2.0")
+      .getBranchCompareUrl(uri"https://github.com/foo/bar", updateBar)
+      .unsafeRunSync() shouldBe Some(uri"https://github.com/foo/bar/compare/v0.1.0...v0.2.0")
     vcsExtraAlg
-      .getBranchCompareUrl("https://github.com/foo/buz", updateBuz)
+      .getBranchCompareUrl(uri"https://github.com/foo/buz", updateBuz)
       .unsafeRunSync() shouldBe None
   }
 }

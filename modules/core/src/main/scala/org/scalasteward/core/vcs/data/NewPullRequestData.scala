@@ -19,6 +19,7 @@ package org.scalasteward.core.vcs.data
 import cats.implicits._
 import io.circe.Encoder
 import io.circe.generic.semiauto._
+import org.http4s.Uri
 import org.scalasteward.core.data.{GroupId, SemVer, Update}
 import org.scalasteward.core.git
 import org.scalasteward.core.git.Branch
@@ -40,9 +41,9 @@ object NewPullRequestData {
 
   def bodyFor(
       update: Update,
-      artifactIdToUrl: Map[String, String],
-      branchCompareUrl: Option[String],
-      releaseNoteUrl: Option[String],
+      artifactIdToUrl: Map[String, Uri],
+      branchCompareUrl: Option[Uri],
+      releaseNoteUrl: Option[Uri],
       migrations: List[Migration]
   ): String = {
     val artifacts = artifactsWithOptionalUrl(update, artifactIdToUrl)
@@ -76,20 +77,20 @@ object NewPullRequestData {
       "library-update"
   }
 
-  def releaseNote(releaseNoteUrl: Option[String]): Option[String] =
+  def releaseNote(releaseNoteUrl: Option[Uri]): Option[String] =
     releaseNoteUrl.map { url =>
-      s"[Release Notes/Changelog](${url})"
+      s"[Release Notes/Changelog](${url.renderString})"
     }
 
-  def fromTo(update: Update, branchCompareUrl: Option[String]): String = {
+  def fromTo(update: Update, branchCompareUrl: Option[Uri]): String = {
     val fromToVersions = s"from ${update.currentVersion} to ${update.nextVersion}"
     branchCompareUrl match {
       case None             => fromToVersions
-      case Some(compareUrl) => s"[${fromToVersions}](${compareUrl})"
+      case Some(compareUrl) => s"[${fromToVersions}](${compareUrl.renderString})"
     }
   }
 
-  def artifactsWithOptionalUrl(update: Update, artifactIdToUrl: Map[String, String]): String =
+  def artifactsWithOptionalUrl(update: Update, artifactIdToUrl: Map[String, Uri]): String =
     update match {
       case s: Update.Single =>
         artifactWithOptionalUrl(s.groupId, s.artifactId.name, artifactIdToUrl)
@@ -104,10 +105,10 @@ object NewPullRequestData {
   def artifactWithOptionalUrl(
       groupId: GroupId,
       artifactId: String,
-      artifactId2Url: Map[String, String]
+      artifactId2Url: Map[String, Uri]
   ): String =
     artifactId2Url.get(artifactId) match {
-      case Some(url) => s"[$groupId:$artifactId]($url)"
+      case Some(url) => s"[$groupId:$artifactId](${url.renderString})"
       case None      => s"$groupId:$artifactId"
     }
 
@@ -144,9 +145,9 @@ object NewPullRequestData {
   def from(
       data: UpdateData,
       branchName: String,
-      artifactIdToUrl: Map[String, String] = Map.empty,
-      branchCompareUrl: Option[String] = None,
-      releaseNoteUrl: Option[String] = None,
+      artifactIdToUrl: Map[String, Uri] = Map.empty,
+      branchCompareUrl: Option[Uri] = None,
+      releaseNoteUrl: Option[Uri] = None,
       migrations: List[Migration] = List.empty
   ): NewPullRequestData =
     NewPullRequestData(

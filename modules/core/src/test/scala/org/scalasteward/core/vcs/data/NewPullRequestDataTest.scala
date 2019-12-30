@@ -1,6 +1,7 @@
 package org.scalasteward.core.vcs.data
 
 import io.circe.syntax._
+import org.http4s.syntax.literals._
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.{Update, Version}
 import org.scalasteward.core.git.{Branch, Sha1}
@@ -44,14 +45,14 @@ class NewPullRequestDataTest extends AnyFunSuite with Matchers {
 
     NewPullRequestData.fromTo(
       Update.Group("com.example" % Nel.of("foo", "bar") % "1.2.0", Nel.of("1.2.3")),
-      Some("http://example.com/compare/v1.2.0...v1.2.3")
+      Some(uri"http://example.com/compare/v1.2.0...v1.2.3")
     ) shouldBe "[from 1.2.0 to 1.2.3](http://example.com/compare/v1.2.0...v1.2.3)"
   }
 
   test("links to release notes/changelog") {
     NewPullRequestData.releaseNote(None) shouldBe None
 
-    NewPullRequestData.releaseNote(Some("https://github.com/foo/foo/CHANGELOG.rst")) shouldBe Some(
+    NewPullRequestData.releaseNote(Some(uri"https://github.com/foo/foo/CHANGELOG.rst")) shouldBe Some(
       "[Release Notes/Changelog](https://github.com/foo/foo/CHANGELOG.rst)"
     )
   }
@@ -59,12 +60,12 @@ class NewPullRequestDataTest extends AnyFunSuite with Matchers {
   test("showing artifacts with URL in Markdown format") {
     NewPullRequestData.artifactsWithOptionalUrl(
       Update.Single("com.example" % "foo" % "1.2.0", Nel.of("1.2.3")),
-      Map("foo" -> "https://github.com/foo/foo")
+      Map("foo" -> uri"https://github.com/foo/foo")
     ) shouldBe "[com.example:foo](https://github.com/foo/foo)"
 
     NewPullRequestData.artifactsWithOptionalUrl(
       Update.Group("com.example" % Nel.of("foo", "bar") % "1.2.0", Nel.of("1.2.3")),
-      Map("foo" -> "https://github.com/foo/foo", "bar" -> "https://github.com/bar/bar")
+      Map("foo" -> uri"https://github.com/foo/foo", "bar" -> uri"https://github.com/bar/bar")
     ) shouldBe
       """
         |* [com.example:foo](https://github.com/foo/foo)

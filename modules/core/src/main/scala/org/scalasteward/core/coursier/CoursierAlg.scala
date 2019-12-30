@@ -23,6 +23,7 @@ import coursier.interop.cats._
 import coursier.util.StringInterpolators.SafeIvyRepository
 import coursier.{Info, Module, ModuleName, Organization}
 import io.chrisdavenport.log4cats.Logger
+import org.http4s.Uri
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.{Dependency, Version}
 
@@ -30,13 +31,13 @@ import org.scalasteward.core.data.{Dependency, Version}
   * fetching dependency versions and metadata.
   */
 trait CoursierAlg[F[_]] {
-  def getArtifactUrl(dependency: Dependency): F[Option[String]]
+  def getArtifactUrl(dependency: Dependency): F[Option[Uri]]
 
   def getNewerVersions(dependency: Dependency): F[List[Version]]
 
   final def getArtifactIdUrlMapping(dependencies: List[Dependency])(
       implicit F: Applicative[F]
-  ): F[Map[String, String]] =
+  ): F[Map[String, Uri]] =
     dependencies
       .traverseFilter(dep => getArtifactUrl(dep).map(_.map(dep.artifactId.name -> _)))
       .map(_.toMap)
@@ -58,7 +59,7 @@ object CoursierAlg {
     val versions = coursier.Versions[F](cache).addRepositories(sbtPluginReleases)
 
     new CoursierAlg[F] {
-      override def getArtifactUrl(dependency: Dependency): F[Option[String]] = {
+      override def getArtifactUrl(dependency: Dependency): F[Option[Uri]] = {
         val coursierDependency = toCoursierDependency(dependency)
         for {
           maybeFetchResult <- fetch
@@ -103,8 +104,9 @@ object CoursierAlg {
       dependency.attributes
     )
 
-  private def getScmUrlOrHomePage(info: Info): Option[String] =
+  private def getScmUrlOrHomePage(info: Info): Option[Uri] =
     (info.scm.flatMap(_.url).toList :+ info.homePage)
       .filterNot(url => url.isEmpty || url.startsWith("git@"))
+      .flatMap(Uri.fromString(_).toList)
       .headOption
 }

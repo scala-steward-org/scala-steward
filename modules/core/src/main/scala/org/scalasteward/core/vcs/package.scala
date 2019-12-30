@@ -17,6 +17,7 @@
 package org.scalasteward.core
 
 import cats.implicits._
+import org.http4s.Uri
 import org.scalasteward.core.application.SupportedVCS
 import org.scalasteward.core.application.SupportedVCS.{Bitbucket, BitbucketServer, GitHub, Gitlab}
 import org.scalasteward.core.data.Update
@@ -66,40 +67,42 @@ package object vcs {
     (basenames, extensions).mapN { case (base, ext) => s"$base.$ext" }
   }
 
-  def possibleCompareUrls(repoUrl: String, update: Update): List[String] = {
+  def possibleCompareUrls(repoUrl: Uri, update: Update): List[Uri] = {
+    val host = repoUrl.host.map(_.value)
     val from = update.currentVersion
     val to = update.nextVersion
-    val canonicalized = repoUrl.replaceAll("/$", "")
-    if (repoUrl.startsWith("https://github.com/") || repoUrl.startsWith("https://gitlab.com/"))
+
+    if (host.exists(Set("github.com", "gitlab.com")))
       possibleTags(from).zip(possibleTags(to)).map {
-        case (from1, to1) => s"${canonicalized}/compare/$from1...$to1"
+        case (from1, to1) => repoUrl / "compare" / s"$from1...$to1"
       }
-    else if (repoUrl.startsWith("https://bitbucket.org/"))
+    else if (host.contains_("bitbucket.org"))
       possibleTags(from).zip(possibleTags(to)).map {
-        case (from1, to1) => s"${canonicalized}/compare/${to1}..${from1}#diff"
+        case (from1, to1) => (repoUrl / "compare" / s"$to1..$from1").withFragment("diff")
       }
     else
       List.empty
   }
 
-  def possibleChangelogUrls(repoUrl: String, update: Update): List[String] = {
-    val canonicalized = repoUrl.replaceAll("/$", "")
+  def possibleChangelogUrls(repoUrl: Uri, update: Update): List[Uri] = {
+    val host = repoUrl.host.map(_.value)
     val vcsSpecific =
-      if (repoUrl.startsWith("https://github.com/"))
-        possibleTags(update.nextVersion).map(tag => s"${canonicalized}/releases/tag/$tag")
+      if (host.contains_("github.com"))
+        possibleTags(update.nextVersion).map(tag => repoUrl / "releases" / "tag" / tag)
       else
         List.empty
     val files = {
-      val pathToFile =
-        if (repoUrl.startsWith("https://github.com/") || repoUrl.startsWith("https://gitlab.com/")) {
-          Some("blob/master")
-        } else if (repoUrl.startsWith("https://bitbucket.org/")) {
-          Some("master")
+      val maybeSegments =
+        if (host.exists(Set("github.com", "gitlab.com"))) {
+          Some(List("blob", "master"))
+        } else if (host.contains_("bitbucket.org")) {
+          Some(List("master"))
         } else {
           None
         }
-      pathToFile.toList.flatMap { path =>
-        possibleChangelogFilenames.map(name => s"${canonicalized}/${path}/$name")
+      maybeSegments.toList.flatMap { segments =>
+        val base = segments.foldLeft(repoUrl)(_ / _)
+        possibleChangelogFilenames.map(name => base / name)
       }
     }
     files ++ vcsSpecific

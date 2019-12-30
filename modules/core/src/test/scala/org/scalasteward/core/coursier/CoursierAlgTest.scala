@@ -1,5 +1,6 @@
 package org.scalasteward.core.coursier
 
+import org.http4s.syntax.literals._
 import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId}
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockState
@@ -16,7 +17,7 @@ class CoursierAlgTest extends AnyFunSuite with Matchers {
       .run(MockState.empty)
       .unsafeRunSync()
     state shouldBe MockState.empty
-    result shouldBe Some("https://github.com/typelevel/cats-effect")
+    result shouldBe Some(uri"https://github.com/typelevel/cats-effect")
   }
 
   test("getArtifactUrl: defaults to homepage") {
@@ -30,7 +31,7 @@ class CoursierAlgTest extends AnyFunSuite with Matchers {
       .run(MockState.empty)
       .unsafeRunSync()
     state shouldBe MockState.empty
-    result shouldBe Some("https://github.com/playframework/play-ws")
+    result shouldBe Some(uri"https://github.com/playframework/play-ws")
   }
 
   test("getArtifactUrl: sbt plugin on Maven Central") {
@@ -46,7 +47,7 @@ class CoursierAlgTest extends AnyFunSuite with Matchers {
       .run(MockState.empty)
       .unsafeRunSync()
     state shouldBe MockState.empty
-    result shouldBe Some("https://github.com/xerial/sbt-sonatype")
+    result shouldBe Some(uri"https://github.com/xerial/sbt-sonatype")
   }
 
   test("getArtifactUrl: sbt plugin on sbt-plugin-releases") {
@@ -58,7 +59,7 @@ class CoursierAlgTest extends AnyFunSuite with Matchers {
       Some(ScalaVersion("2.12"))
     )
     val result = coursierAlg.getArtifactUrl(dep).runA(MockState.empty).unsafeRunSync()
-    result shouldBe Some("https://github.com/sbt/sbt-release")
+    result shouldBe Some(uri"https://github.com/sbt/sbt-release")
   }
 
   test("getArtifactIdUrlMapping") {
@@ -72,8 +73,8 @@ class CoursierAlgTest extends AnyFunSuite with Matchers {
       .unsafeRunSync()
     state shouldBe MockState.empty
     result shouldBe Map(
-      "cats-core" -> "https://github.com/typelevel/cats",
-      "cats-effect" -> "https://github.com/typelevel/cats-effect"
+      "cats-core" -> uri"https://github.com/typelevel/cats",
+      "cats-effect" -> uri"https://github.com/typelevel/cats-effect"
     )
   }
 }
