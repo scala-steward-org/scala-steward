@@ -1,5 +1,6 @@
 package org.scalasteward.core.vcs
 
+import org.http4s.syntax.literals._
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.application.SupportedVCS.{GitHub, Gitlab}
 import org.scalasteward.core.data.Update
@@ -24,34 +25,39 @@ class VCSPackageTest extends AnyFunSuite with Matchers {
   }
 
   test("possibleCompareUrls") {
-    possibleCompareUrls("https://github.com/foo/bar", update) shouldBe List(
+    possibleCompareUrls(uri"https://github.com/foo/bar", update)
+      .map(_.renderString) shouldBe List(
       "https://github.com/foo/bar/compare/v1.2.0...v1.2.3",
       "https://github.com/foo/bar/compare/1.2.0...1.2.3",
       "https://github.com/foo/bar/compare/release-1.2.0...release-1.2.3"
     )
     // should canonicalize (drop last slash)
-    possibleCompareUrls("https://github.com/foo/bar/", update) shouldBe List(
+    possibleCompareUrls(uri"https://github.com/foo/bar/", update)
+      .map(_.renderString) shouldBe List(
       "https://github.com/foo/bar/compare/v1.2.0...v1.2.3",
       "https://github.com/foo/bar/compare/1.2.0...1.2.3",
       "https://github.com/foo/bar/compare/release-1.2.0...release-1.2.3"
     )
 
-    possibleCompareUrls("https://gitlab.com/foo/bar", update) shouldBe List(
+    possibleCompareUrls(uri"https://gitlab.com/foo/bar", update)
+      .map(_.renderString) shouldBe List(
       "https://gitlab.com/foo/bar/compare/v1.2.0...v1.2.3",
       "https://gitlab.com/foo/bar/compare/1.2.0...1.2.3",
       "https://gitlab.com/foo/bar/compare/release-1.2.0...release-1.2.3"
     )
-    possibleCompareUrls("https://bitbucket.org/foo/bar", update) shouldBe List(
+    possibleCompareUrls(uri"https://bitbucket.org/foo/bar", update)
+      .map(_.renderString) shouldBe List(
       "https://bitbucket.org/foo/bar/compare/v1.2.3..v1.2.0#diff",
       "https://bitbucket.org/foo/bar/compare/1.2.3..1.2.0#diff",
       "https://bitbucket.org/foo/bar/compare/release-1.2.3..release-1.2.0#diff"
     )
 
-    possibleCompareUrls("https://scalacenter.github.io/scalafix/", update) shouldBe List()
+    possibleCompareUrls(uri"https://scalacenter.github.io/scalafix/", update) shouldBe List()
   }
 
   test("possibleChangelogUrls: github.com") {
-    possibleChangelogUrls("https://github.com/foo/bar", update) shouldBe List(
+    possibleChangelogUrls(uri"https://github.com/foo/bar", update)
+      .map(_.renderString) shouldBe List(
       "https://github.com/foo/bar/blob/master/CHANGELOG.md",
       "https://github.com/foo/bar/blob/master/CHANGELOG.markdown",
       "https://github.com/foo/bar/blob/master/CHANGELOG.rst",
@@ -83,16 +89,19 @@ class VCSPackageTest extends AnyFunSuite with Matchers {
   }
 
   test("possibleChangelogUrls: gitlab.com") {
-    possibleChangelogUrls("https://gitlab.com/foo/bar", update) shouldBe
+    possibleChangelogUrls(uri"https://gitlab.com/foo/bar", update)
+      .map(_.renderString) shouldBe
       possibleChangelogFilenames.map(name => s"https://gitlab.com/foo/bar/blob/master/$name")
   }
 
   test("possibleChangelogUrls: bitbucket.org") {
-    possibleChangelogUrls("https://bitbucket.org/foo/bar", update) shouldBe
+    possibleChangelogUrls(uri"https://bitbucket.org/foo/bar", update)
+      .map(_.renderString) shouldBe
       possibleChangelogFilenames.map(name => s"https://bitbucket.org/foo/bar/master/$name")
   }
 
   test("possibleChangelogUrls: homepage") {
-    possibleChangelogUrls("https://scalacenter.github.io/scalafix/", update) shouldBe List()
+    possibleChangelogUrls(uri"https://scalacenter.github.io/scalafix/", update)
+      .map(_.renderString) shouldBe List()
   }
 }

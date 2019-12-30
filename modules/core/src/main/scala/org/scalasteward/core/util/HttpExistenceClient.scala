@@ -34,8 +34,6 @@ final class HttpExistenceClient[F[_]](statusCache: Cache[Status])(
     mode: Mode[F],
     F: MonadThrowable[F]
 ) {
-  def exists(uri: String): F[Boolean] = F.fromEither(Uri.fromString(uri)).flatMap(exists)
-
   def exists(uri: Uri): F[Boolean] =
     status(uri).map(_ === Status.Ok).handleErrorWith { throwable =>
       logger.debug(throwable)(s"Failed to check if $uri exists").as(false)

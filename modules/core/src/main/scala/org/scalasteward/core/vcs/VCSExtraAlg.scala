@@ -18,13 +18,14 @@ package org.scalasteward.core.vcs
 
 import cats.Monad
 import cats.implicits._
+import org.http4s.Uri
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.util.HttpExistenceClient
 import org.scalasteward.core.vcs
 
 trait VCSExtraAlg[F[_]] {
-  def getBranchCompareUrl(repoUrl: String, update: Update): F[Option[String]]
-  def getReleaseNoteUrl(repoUrl: String, update: Update): F[Option[String]]
+  def getBranchCompareUrl(repoUrl: Uri, update: Update): F[Option[Uri]]
+  def getReleaseNoteUrl(repoUrl: Uri, update: Update): F[Option[Uri]]
 }
 
 object VCSExtraAlg {
@@ -33,10 +34,10 @@ object VCSExtraAlg {
       existenceClient: HttpExistenceClient[F],
       F: Monad[F]
   ): VCSExtraAlg[F] = new VCSExtraAlg[F] {
-    override def getBranchCompareUrl(repoUrl: String, update: Update): F[Option[String]] =
+    override def getBranchCompareUrl(repoUrl: Uri, update: Update): F[Option[Uri]] =
       vcs.possibleCompareUrls(repoUrl, update).findM(existenceClient.exists)
 
-    override def getReleaseNoteUrl(repoUrl: String, update: Update): F[Option[String]] =
+    override def getReleaseNoteUrl(repoUrl: Uri, update: Update): F[Option[Uri]] =
       vcs.possibleChangelogUrls(repoUrl, update).findM(existenceClient.exists)
   }
 }
