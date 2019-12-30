@@ -178,8 +178,8 @@ object Version {
           val (o1, o2) = (a1.order, a2.order)
           if (o1 < 0 || o2 < 0) o1.compare(o2) else v1.compare(v2)
 
-        case (a @ Alpha(_), Empty) if a.isPreReleaseIdent => -1
-        case (Empty, a @ Alpha(_)) if a.isPreReleaseIdent => 1
+        case (Alpha(_), Empty) => -1
+        case (Empty, Alpha(_)) => 1
 
         case (Alpha(_), _) => 1
         case (_, Alpha(_)) => -1
