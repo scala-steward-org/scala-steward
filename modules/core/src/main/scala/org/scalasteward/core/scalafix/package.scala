@@ -68,6 +68,14 @@ package object scalafix {
         Nel.of("scalacheck"),
         Version("1.14.1"),
         Nel.of("github:typelevel/scalacheck/v1_14_1?sha=3fc537dde9d8fdf951503a8d8b027a568d52d055")
+      ),
+      Migration(
+        GroupId("org.manatki"),
+        Nel.of("derevo-.*"),
+        Version("0.11.0"),
+        Nel.of(
+          "https://gist.githubusercontent.com/REDNBLACK/9bc56ad71e4b01a63001339fa61b4cfd/raw/5f1cd32713c3235a83fe2d1d182bd71a001ef464/derevo-v0.11.0.scala"
+        )
       )
     )
   def findMigrations(givenMigrations: List[Migration], update: Update): List[Migration] =
