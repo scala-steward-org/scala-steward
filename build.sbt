@@ -244,8 +244,8 @@ runSteward := Def.inputTaskDyn {
     Seq("--whitelist", s"$home/.ivy2"),
     Seq("--whitelist", s"$home/.sbt"),
     Seq("--prune-repos=true")
-  ).flatten.mkString(" ")
-  (core.jvm / Compile / run).toTask(" " + args)
+  ).flatten.mkString(" ", " ", "")
+  (core.jvm / Compile / run).toTask(args)
 }.evaluated
 
 /// commands
