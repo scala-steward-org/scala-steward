@@ -229,8 +229,8 @@ moduleRootPkg := rootPkg
 
 // Run Scala Steward from sbt for development and testing.
 // Do not do this in production.
-lazy val runSteward = inputKey[Unit]("")
-runSteward := Def.inputTaskDyn {
+lazy val runSteward = taskKey[Unit]("")
+runSteward := Def.taskDyn {
   val home = System.getenv("HOME")
   val projectDir = (LocalRootProject / baseDirectory).value
   val args = Seq(
@@ -246,7 +246,7 @@ runSteward := Def.inputTaskDyn {
     Seq("--prune-repos=true")
   ).flatten.mkString(" ", " ", "")
   (core.jvm / Compile / run).toTask(args)
-}.evaluated
+}.value
 
 /// commands
 
