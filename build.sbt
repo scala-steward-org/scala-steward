@@ -227,6 +227,27 @@ installPlugin := {
 lazy val moduleRootPkg = settingKey[String]("")
 moduleRootPkg := rootPkg
 
+// Run Scala Steward from sbt for development and testing.
+// Do not do this in production.
+lazy val runSteward = inputKey[Unit]("")
+runSteward := Def.inputTaskDyn {
+  val home = System.getenv("HOME")
+  val projectDir = (LocalRootProject / baseDirectory).value
+  val args = Seq(
+    Seq("--workspace", s"$projectDir/workspace"),
+    Seq("--repos-file", s"$projectDir/repos.md"),
+    Seq("--git-author-email", s"me@$projectName.org"),
+    Seq("--vcs-login", projectName),
+    Seq("--git-ask-pass", s"$home/.github/askpass/$projectName.sh"),
+    Seq("--whitelist", s"$home/.cache/coursier"),
+    Seq("--whitelist", s"$home/.coursier"),
+    Seq("--whitelist", s"$home/.ivy2"),
+    Seq("--whitelist", s"$home/.sbt"),
+    Seq("--prune-repos=true")
+  ).flatten.mkString(" ")
+  (core.jvm / Compile / run).toTask(" " + args)
+}.evaluated
+
 /// commands
 
 def addCommandsAlias(name: String, cmds: Seq[String]) =
@@ -260,26 +281,4 @@ addCommandsAlias(
     "test:scalafmt",
     "scalafmtSbt"
   )
-)
-
-// Run Scala Steward from sbt for development and testing.
-// Do not do this in production.
-addCommandAlias(
-  "runSteward", {
-    val home = System.getenv("HOME")
-    val projectDir = s"$home/code/scala-steward/core"
-    Seq(
-      Seq("core/run"),
-      Seq("--workspace", s"$projectDir/workspace"),
-      Seq("--repos-file", s"$projectDir/repos.md"),
-      Seq("--git-author-email", s"me@$projectName.org"),
-      Seq("--vcs-login", projectName),
-      Seq("--git-ask-pass", s"$home/.github/askpass/$projectName.sh"),
-      Seq("--whitelist", s"$home/.cache/coursier"),
-      Seq("--whitelist", s"$home/.coursier"),
-      Seq("--whitelist", s"$home/.ivy2"),
-      Seq("--whitelist", s"$home/.sbt"),
-      Seq("--prune-repos=true")
-    ).flatten.mkString(" ")
-  }
 )
