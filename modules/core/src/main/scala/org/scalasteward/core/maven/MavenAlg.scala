@@ -26,7 +26,8 @@ import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
-
+import atto.Parser
+import atto.Atto._
 import scala.util.Try
 
 object MavenAlg {
@@ -105,33 +106,100 @@ object MavenAlg {
       .collect { case Some(x) => x }
   }
 
-  def parseUpdates(lines: List[String]): List[Update.Single] = {
-
-    val pattern = """\s*([^:]+):([^ ]+)\s+(?:\.|\s)+([^ ]+)\s+->\s+(.*)$""".r
+  def parseUpdates(lines: List[String]): List[Update.Single] =
     lines
       .map(removeNoise)
       .map(_.trim)
       .map { s =>
-        Try {
-          val pattern(groupId, artifactIdCross, currentVersion, newVersion) = s
-          val lastUScore = artifactIdCross.lastIndexOf('_')
-          // fixme: make sure last segment actually looks like a scala binary version
-          val artifactId =
-            if (lastUScore >= 0) artifactIdCross.substring(0, lastUScore) else artifactIdCross
-          val dependency = new Dependency(
-            GroupId(groupId),
-            ArtifactId(artifactId, artifactIdCross),
-            currentVersion
-          )
-
-          val rawUpdate = Update.Single(
-            crossDependency = CrossDependency(dependency),
-            newerVersions = Nel.one[String](newVersion)
-          )
-          rawUpdate
-        }.toOption // TODO: this doesn't catch exceptions thrown by Try, if any
-      // TODO: does regex throw exceptions if there are no matches?
+        MavenParser.parse(s).toOption
       }
       .collect { case Some(x) => x }
+}
+
+object MavenParser {
+
+  private val dot: Parser[Char] = char('.')
+  private val arrow = char('-') ~ char('>')
+
+  case class Version(major: Int, minor: Int, patch: Option[Int]) {
+    override def toString: String = {
+      val x = (major :: minor :: Nil) ++ patch.toList
+      x.map(_.toString).mkString(".")
+    }
   }
+
+  private val version: Parser[Version] = {
+    val version3args: Parser[Version] =
+      for {
+        a <- int <~ dot
+        b <- int <~ dot
+        c <- int
+      } yield Version(a, b, Some(c))
+
+    val version2args: Parser[Version] =
+      for {
+        a <- int <~ dot
+        b <- int <~ dot
+        c <- int
+      } yield Version(a, b, Some(c))
+
+    version2args | version3args
+  }
+
+  val group: Parser[GroupId] = for {
+    groupParts <- (many1(noneOf(".:")) ~ opt(dot)).many1
+  } yield {
+    GroupId(groupParts.toList.map { case (g, d) => (g.toList ++ d.toList).mkString }.mkString)
+  }
+
+  private def artifact: Parser[ArtifactId] = {
+    val artifactString: Parser[String] = many1(noneOf("_ ")).map(_.toList.mkString)
+    val underscore = char('_')
+
+    for {
+      init <- artifactString
+      restOpt <- opt(many1(underscore ~ artifactString))
+    } yield {
+      restOpt.fold(ArtifactId(init, Option.empty[String])) { rest =>
+        val crossVersion: Option[String] = for {
+          possibleVersion <- rest.toList.lastOption.map {
+            case (_, possibleVersion) => possibleVersion
+          }
+          crossVersion <- Option.when(possibleVersion.toFloatOption.isDefined)(possibleVersion)
+        } yield crossVersion
+
+        val suffix = crossVersion.fold(
+          rest.map { case (underscore, str) => s"$underscore$str" }.toList.mkString
+        ) { _ =>
+          rest.init.map { case (underscore, str) => s"$underscore$str" }.mkString
+        }
+
+        ArtifactId(init + suffix, crossVersion)
+      }
+    }
+  }
+
+  val parser: Parser[Update.Single] = for {
+    groupId <- group <~ char(':')
+    artifactId <- artifact <~ many1(oneOf(" ."))
+    currentVersion <- version
+    _ <- opt(whitespace) ~ arrow ~ opt(whitespace)
+    to <- version
+  } yield {
+
+    val dependency = Dependency(
+      groupId = groupId,
+      artifactId = artifactId,
+      version = currentVersion.toString
+    )
+
+    Update.Single(
+      crossDependency = CrossDependency(dependency),
+      newerVersions = Nel.one[String](to.toString)
+    )
+  }
+
+  def parse(raw: String): Either[String, Update.Single] =
+    parser.parse(raw).done.either
+
 }

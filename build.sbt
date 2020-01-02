@@ -49,6 +49,7 @@ lazy val core = myCrossProject("core")
       Dependencies.refinedCats,
       Dependencies.scalacacheCaffeine,
       Dependencies.scalacacheCatsEffect,
+      Dependencies.atto,
       Dependencies.logbackClassic % Runtime,
       Dependencies.catsKernelLaws % Test,
       Dependencies.circeLiteral % Test,
