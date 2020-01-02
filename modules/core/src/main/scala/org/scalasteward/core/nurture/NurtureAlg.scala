@@ -27,7 +27,6 @@ import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Branch, GitAlg}
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.scalafix.MigrationAlg
-import org.scalasteward.core.update.FilterAlg
 import org.scalasteward.core.util.DateTimeAlg
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo}
@@ -40,7 +39,6 @@ final class NurtureAlg[F[_]](
     dateTimeAlg: DateTimeAlg[F],
     editAlg: EditAlg[F],
     repoConfigAlg: RepoConfigAlg[F],
-    filterAlg: FilterAlg[F],
     gitAlg: GitAlg[F],
     coursierAlg: CoursierAlg[F],
     vcsApiAlg: VCSApiAlg[F],
@@ -80,8 +78,7 @@ final class NurtureAlg[F[_]](
   ): F[Unit] =
     for {
       repoConfig <- repoConfigAlg.readRepoConfigOrDefault(repo)
-      filtered <- filterAlg.localFilterMany(repoConfig, updates)
-      grouped = Update.groupByGroupId(filtered)
+      grouped = Update.groupByGroupId(updates)
       sorted <- NurtureAlg.sortUpdatesByMigration(grouped)
       _ <- logger.info(util.logger.showUpdates(sorted))
       baseSha1 <- gitAlg.latestSha1(repo, baseBranch)
