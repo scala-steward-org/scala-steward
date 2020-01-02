@@ -1,10 +1,9 @@
 package org.scalasteward.core.sbt
 
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.{ArtifactId, Update}
+import org.scalasteward.core.data.ArtifactId
 import org.scalasteward.core.sbt.data.SbtVersion
 import org.scalasteward.core.sbt.parser._
-import org.scalasteward.core.util.Nel
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
@@ -34,28 +33,6 @@ class parserTest extends AnyFunSuite with Matchers {
       ("com.eed3si9n" % "sbt-assembly" % "0.14.8" % "foo")
         .copy(sbtVersion = Some(SbtVersion("1.0"))),
       ("com.geirsson" % "sbt-scalafmt" % "1.6.0-RC4").copy(sbtVersion = Some(SbtVersion("1.0")))
-    )
-  }
-
-  test("parseDependenciesAndUpdates") {
-    val lines =
-      """|[info] core / stewardDependencies
-         |[info] { "groupId": "io.get-coursier", "artifactId": { "name": "coursier", "maybeCrossName": "coursier_2.12" }, "version": "2.0.0-RC5-2", "configurations": null, "sbtVersion": null, "scalaVersion": null }
-         |[info] { "groupId": "io.get-coursier", "artifactId": { "name": "coursier-cats-interop", "maybeCrossName": "coursier-cats-interop_2.12" }, "version": "2.0.0-RC5-2", "configurations": null, "sbtVersion": null, "scalaVersion": null }
-         |[info] core / stewardUpdates
-         |[info] { "dependency": { "groupId": "io.get-coursier", "artifactId": { "name": "coursier", "maybeCrossName": "coursier_2.12" }, "version": "2.0.0-RC5-2", "configurations": null, "sbtVersion": null, "scalaVersion": null }, "newerVersions": [ "2.0.0-RC5-3" ] }
-         |[info] { "dependency": { "groupId": "io.get-coursier", "artifactId": { "name": "coursier-cats-interop", "maybeCrossName": "coursier-cats-interop_2.12" }, "version": "2.0.0-RC5-2", "configurations": null, "sbtVersion": null, "scalaVersion": null }, "newerVersions": [ "2.0.0-RC5-3" ] }
-         |""".stripMargin.linesIterator.toList
-
-    val coursier = "io.get-coursier" % ArtifactId("coursier", "coursier_2.12") % "2.0.0-RC5-2"
-    val catsInterop = "io.get-coursier" %
-      ArtifactId("coursier-cats-interop", "coursier-cats-interop_2.12") % "2.0.0-RC5-2"
-
-    val (dependencies, updates) = parser.parseDependenciesAndUpdates(lines)
-    dependencies should contain theSameElementsAs List(coursier, catsInterop)
-    updates should contain theSameElementsAs List(
-      Update.Single(coursier, Nel.of("2.0.0-RC5-3")),
-      Update.Single(catsInterop, Nel.of("2.0.0-RC5-3"))
     )
   }
 }
