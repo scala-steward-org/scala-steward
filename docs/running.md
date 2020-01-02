@@ -81,7 +81,7 @@ run
 * Create a file `run.sh` with this content:
 
 ```
-echo "echo $BITBUCKET_PASSWORD" >pass.sh
+echo "echo '$BITBUCKET_PASSWORD'" >pass.sh
 
 chmod +x pass.sh
 
