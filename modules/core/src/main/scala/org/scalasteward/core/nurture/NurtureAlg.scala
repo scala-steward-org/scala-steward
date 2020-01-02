@@ -26,7 +26,6 @@ import org.scalasteward.core.data.{ProcessResult, Update}
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Branch, GitAlg}
 import org.scalasteward.core.repoconfig.RepoConfigAlg
-import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.scalafix.MigrationAlg
 import org.scalasteward.core.update.FilterAlg
 import org.scalasteward.core.util.DateTimeAlg
@@ -50,15 +49,14 @@ final class NurtureAlg[F[_]](
     migrationAlg: MigrationAlg[F],
     logger: Logger[F],
     pullRequestRepo: PullRequestRepository[F],
-    sbtAlg: SbtAlg[F],
     F: Sync[F]
 ) {
-  def nurture(repo: Repo): F[Either[Throwable, Unit]] = {
+  def nurture(repo: Repo, updates: List[Update.Single]): F[Either[Throwable, Unit]] = {
     val label = s"Nurture ${repo.show}"
     logger.infoTotalTime(label) {
       logger.attemptLog(util.string.lineLeftRight(label)) {
         F.bracket(cloneAndSync(repo)) {
-          case (fork, baseBranch) => updateDependencies(repo, fork, baseBranch)
+          case (fork, baseBranch) => updateDependencies(repo, fork, baseBranch, updates)
         }(_ => gitAlg.removeClone(repo))
       }
     }
@@ -74,11 +72,14 @@ final class NurtureAlg[F[_]](
       defaultBranch <- vcsRepoAlg.defaultBranch(repoOut)
     } yield (repoOut.repo, defaultBranch)
 
-  def updateDependencies(repo: Repo, fork: Repo, baseBranch: Branch): F[Unit] =
+  def updateDependencies(
+      repo: Repo,
+      fork: Repo,
+      baseBranch: Branch,
+      updates: List[Update.Single]
+  ): F[Unit] =
     for {
-      _ <- logger.info(s"Find updates for ${repo.show}")
       repoConfig <- repoConfigAlg.readRepoConfigOrDefault(repo)
-      updates <- sbtAlg.getUpdates(repo)
       filtered <- filterAlg.localFilterMany(repoConfig, updates)
       grouped = Update.groupByGroupId(filtered)
       sorted <- NurtureAlg.sortUpdatesByMigration(grouped)

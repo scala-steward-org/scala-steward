@@ -24,7 +24,6 @@ class CliTest extends AnyFunSuite with Matchers {
         List("--ignore-opts-files"),
         List("--env-var", "g=h"),
         List("--env-var", "i=j"),
-        List("--prune-repos"),
         List("--process-timeout", "30min")
       ).flatten
     ) shouldBe Right(
@@ -38,7 +37,6 @@ class CliTest extends AnyFunSuite with Matchers {
         gitAskPass = "f",
         ignoreOptsFiles = true,
         envVar = List(EnvVar("g", "h"), EnvVar("i", "j")),
-        pruneRepos = true,
         processTimeout = 30.minutes
       )
     )

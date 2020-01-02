@@ -104,7 +104,6 @@ lazy val plugin = myCrossProject("plugin")
   .settings(
     scalaVersion := "2.12.10",
     sbtPlugin := true,
-    addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.5.0"),
     Compile / compile / wartremoverErrors -= Wart.Equals
   )
 
@@ -242,8 +241,7 @@ runSteward := Def.taskDyn {
     Seq("--whitelist", s"$home/.cache/coursier"),
     Seq("--whitelist", s"$home/.coursier"),
     Seq("--whitelist", s"$home/.ivy2"),
-    Seq("--whitelist", s"$home/.sbt"),
-    Seq("--prune-repos=true")
+    Seq("--whitelist", s"$home/.sbt")
   ).flatten.mkString(" ", " ", "")
   (core.jvm / Compile / run).toTask(args)
 }.value

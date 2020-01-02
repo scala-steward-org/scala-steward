@@ -37,9 +37,9 @@ final class PruningAlg[F[_]](
     updateAlg: UpdateAlg[F],
     F: Monad[F]
 ) {
-  def needsAttention(repo: Repo): F[Boolean] =
+  def needsAttention(repo: Repo): F[(Boolean, List[Update.Single])] =
     repoCacheRepository.findCache(repo).flatMap {
-      case None => F.pure(false)
+      case None => F.pure((false, List.empty))
       case Some(repoCache) =>
         val dependencies = repoCache.dependencyInfos
           .collect { case info if info.filesContainingVersion.nonEmpty => info.dependency }
@@ -50,7 +50,7 @@ final class PruningAlg[F[_]](
           updates <- updateAlg.findUpdates(dependencies, repoConfig)
           updateStates <- findAllUpdateStates(repo, repoCache, dependencies, updates)
           attentionNeeded <- checkUpdateStates(repo, updateStates)
-        } yield attentionNeeded
+        } yield (attentionNeeded, updates)
     }
 
   private def findAllUpdateStates(

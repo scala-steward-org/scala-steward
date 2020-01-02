@@ -74,21 +74,20 @@ final class StewardAlg[F[_]](
       content.linesIterator.collect { case regex(owner, repo) => Repo(owner.trim, repo.trim) }.toList
     }
 
-  private def steward(repo: Repo): F[Either[Throwable, Unit]] =
-    if (config.pruneRepos) {
-      val label = s"Steward ${repo.show}"
-      logger.infoTotalTime(label) {
-        for {
-          _ <- logger.info(util.string.lineLeftRight(label))
-          _ <- repoCacheAlg.checkCache(repo)
-          attentionNeeded <- pruningAlg.needsAttention(repo)
-          result <- {
-            if (attentionNeeded) nurtureAlg.nurture(repo)
-            else gitAlg.removeClone(repo).as(().asRight[Throwable])
-          }
-        } yield result
-      }
-    } else nurtureAlg.nurture(repo)
+  private def steward(repo: Repo): F[Either[Throwable, Unit]] = {
+    val label = s"Steward ${repo.show}"
+    logger.infoTotalTime(label) {
+      for {
+        _ <- logger.info(util.string.lineLeftRight(label))
+        _ <- repoCacheAlg.checkCache(repo)
+        (attentionNeeded, updates) <- pruningAlg.needsAttention(repo)
+        result <- {
+          if (attentionNeeded) nurtureAlg.nurture(repo, updates)
+          else gitAlg.removeClone(repo).as(().asRight[Throwable])
+        }
+      } yield result
+    }
+  }
 
   def runF: F[ExitCode] =
     logger.infoTotalTime("run") {

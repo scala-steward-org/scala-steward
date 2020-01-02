@@ -18,7 +18,6 @@ LOGIN="scala-steward"
 java -DROOT_LOG_LEVEL=INFO -DLOG_LEVEL=INFO -jar ${JAR} \
   --workspace  "$STEWARD_DIR/workspace" \
   --repos-file "$REPOS_FILE" \
-  --prune-repos \
   --git-author-email "me@$LOGIN.org" \
   --vcs-login ${LOGIN} \
   --git-ask-pass "$HOME/.github/askpass/$LOGIN.sh" \

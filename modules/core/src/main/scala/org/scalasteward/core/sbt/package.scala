@@ -39,12 +39,6 @@ package object sbt {
     else
       None
 
-  val scalaStewardSbt: FileData =
-    FileData(
-      "scala-steward.sbt",
-      """addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.5.0")"""
-    )
-
   val scalaStewardScalafixSbt: FileData =
     FileData(
       "scala-steward-scalafix.sbt",

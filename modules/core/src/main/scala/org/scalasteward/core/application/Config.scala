@@ -61,7 +61,6 @@ final case class Config(
     doNotFork: Boolean,
     ignoreOptsFiles: Boolean,
     envVars: List[EnvVar],
-    pruneRepos: Boolean,
     processTimeout: FiniteDuration,
     scalafixMigrations: Option[File],
     cacheTtl: FiniteDuration
@@ -94,7 +93,6 @@ object Config {
         doNotFork = args.doNotFork,
         ignoreOptsFiles = args.ignoreOptsFiles,
         envVars = args.envVar,
-        pruneRepos = args.pruneRepos,
         processTimeout = args.processTimeout,
         scalafixMigrations = args.scalafixMigrations.map(_.toFile),
         cacheTtl = args.cacheTtl
