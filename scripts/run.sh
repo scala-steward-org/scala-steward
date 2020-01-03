@@ -2,6 +2,9 @@
 
 set -ex
 
+# Don't start if we can't reach Maven Central.
+curl --fail https://repo1.maven.org/maven2/
+
 SCRIPT=$(readlink -f "$0")
 STEWARD_DIR=$(dirname "$SCRIPT")/..
 echo -n $$ > "$STEWARD_DIR/scala-steward.pid"
@@ -24,7 +27,7 @@ java -DROOT_LOG_LEVEL=INFO -DLOG_LEVEL=INFO -jar ${JAR} \
   --ignore-opts-files \
   --env-var "SBT_OPTS=-Xmx2048m -Xss8m -XX:MaxMetaspaceSize=512m" \
   --sign-commits \
-  --cache-ttl 2hours \
+  --cache-ttl 3hours \
   --process-timeout 20min \
   --whitelist $HOME/.cache/coursier \
   --whitelist $HOME/.coursier \

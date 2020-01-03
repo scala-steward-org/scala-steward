@@ -49,10 +49,11 @@ object FilterAlg {
   sealed trait RejectionReason {
     def update: Update.Single
     def show: String = this match {
-      case IgnoredByConfig(_)       => "ignored by config"
-      case NotAllowedByConfig(_)    => "not allowed by config"
-      case BadVersions(_)           => "bad versions"
-      case NoSuitableNextVersion(_) => "no suitable next version"
+      case IgnoredByConfig(_)         => "ignored by config"
+      case NotAllowedByConfig(_)      => "not allowed by config"
+      case BadVersions(_)             => "bad versions"
+      case NoSuitableNextVersion(_)   => "no suitable next version"
+      case VersionOrderingConflict(_) => "version ordering conflict"
     }
   }
 
@@ -60,10 +61,12 @@ object FilterAlg {
   final case class NotAllowedByConfig(update: Update.Single) extends RejectionReason
   final case class BadVersions(update: Update.Single) extends RejectionReason
   final case class NoSuitableNextVersion(update: Update.Single) extends RejectionReason
+  final case class VersionOrderingConflict(update: Update.Single) extends RejectionReason
 
   def globalFilter(update: Update.Single): FilterResult =
     removeBadVersions(update)
       .flatMap(selectSuitableNextVersion)
+      .flatMap(checkVersionOrdering)
 
   private def localFilter(update: Update.Single, repoConfig: RepoConfig): FilterResult =
     globalFilter(update).flatMap(repoConfig.updates.keep)
@@ -91,6 +94,12 @@ object FilterAlg {
       case Some(next) => Right(update.copy(newerVersions = Nel.of(next.value)))
       case None       => Left(NoSuitableNextVersion(update))
     }
+  }
+
+  private def checkVersionOrdering(update: Update.Single): FilterResult = {
+    val nextVersionIsGreater =
+      coursier.core.Version(update.currentVersion) < coursier.core.Version(update.nextVersion)
+    if (nextVersionIsGreater) Right(update) else Left(VersionOrderingConflict(update))
   }
 
   private def removeBadVersions(update: Update.Single): FilterResult =
