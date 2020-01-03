@@ -95,9 +95,9 @@ object NewPullRequestData {
       case s: Update.Single =>
         artifactWithOptionalUrl(s.groupId, s.artifactId.name, artifactIdToUrl)
       case g: Update.Group =>
-        g.artifactIds
-          .map(artifactId =>
-            s"* ${artifactWithOptionalUrl(g.groupId, artifactId.name, artifactIdToUrl)}\n"
+        g.crossDependencies
+          .map(crossDependency =>
+            s"* ${artifactWithOptionalUrl(g.groupId, crossDependency.head.artifactId.name, artifactIdToUrl)}\n"
           )
           .mkString_("\n", "", "\n")
     }
