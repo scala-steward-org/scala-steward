@@ -61,12 +61,6 @@ final class StewardAlg[F[_]](
     logger.info(msg)
   }
 
-  private def prepareEnv: F[Unit] =
-    for {
-      _ <- sbtAlg.addGlobalPlugins
-      _ <- workspaceAlg.cleanWorkspace
-    } yield ()
-
   private def readRepos(reposFile: File): F[List[Repo]] =
     fileAlg.readFile(reposFile).map { maybeContent =>
       val regex = """-\s+(.+)/([^/]+)""".r
@@ -95,9 +89,13 @@ final class StewardAlg[F[_]](
       for {
         _ <- printBanner
         _ <- selfCheckAlg.checkAll
-        _ <- prepareEnv
-        repos <- readRepos(config.reposFile)
-        result <- Stream.emits(repos).evalMap(steward).compile.foldMonoid
-      } yield result.fold(_ => ExitCode.Error, _ => ExitCode.Success)
+        exitCode <- sbtAlg.addGlobalPlugins {
+          for {
+            _ <- workspaceAlg.cleanWorkspace
+            repos <- readRepos(config.reposFile)
+            result <- Stream.emits(repos).evalMap(steward).compile.foldMonoid
+          } yield result.fold(_ => ExitCode.Error, _ => ExitCode.Success)
+        }
+      } yield exitCode
     }
 }
