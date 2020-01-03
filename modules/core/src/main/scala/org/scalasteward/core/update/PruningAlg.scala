@@ -49,8 +49,8 @@ final class PruningAlg[F[_]](
         for {
           updates <- updateAlg.findUpdates(dependencies, repoConfig)
           updateStates <- findAllUpdateStates(repo, repoCache, dependencies, updates)
-          attentionNeeded <- checkUpdateStates(repo, updateStates)
-        } yield (attentionNeeded, updates)
+          result <- checkUpdateStates(repo, updateStates)
+        } yield result
     }
 
   private def findAllUpdateStates(
@@ -79,11 +79,14 @@ final class PruningAlg[F[_]](
         }
     }
 
-  private def checkUpdateStates(repo: Repo, updateStates: List[UpdateState]): F[Boolean] = {
-    val outdatedStates = updateStates.collect {
-      case s: DependencyOutdated  => s
-      case s: PullRequestOutdated => s
-    }
+  private def checkUpdateStates(
+      repo: Repo,
+      updateStates: List[UpdateState]
+  ): F[(Boolean, List[Update.Single])] = {
+    val (outdatedStates, updates) = updateStates.collect {
+      case s: DependencyOutdated  => (s, s.update)
+      case s: PullRequestOutdated => (s, s.update)
+    }.separate
     val isOutdated = outdatedStates.nonEmpty
     val message = if (isOutdated) {
       val states = util.string.indentLines(outdatedStates.map(_.toString).sorted)
@@ -91,6 +94,6 @@ final class PruningAlg[F[_]](
     } else {
       s"${repo.show} is up-to-date"
     }
-    logger.info(message).as(isOutdated)
+    logger.info(message).as((isOutdated, updates))
   }
 }
