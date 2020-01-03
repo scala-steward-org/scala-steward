@@ -33,11 +33,9 @@ import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
 trait SbtAlg[F[_]] {
-  def addGlobalPlugin(plugin: FileData): F[Unit]
-
   def addGlobalPluginTemporarily[A](plugin: FileData)(fa: F[A]): F[A]
 
-  def addGlobalPlugins: F[Unit]
+  def addGlobalPlugins[A](fa: F[A]): F[A]
 
   def getSbtVersion(repo: Repo): F[Option[SbtVersion]]
 
@@ -64,11 +62,6 @@ object SbtAlg {
       F: Monad[F]
   ): SbtAlg[F] =
     new SbtAlg[F] {
-      override def addGlobalPlugin(plugin: FileData): F[Unit] =
-        List("0.13", "1.0").traverse_ { series =>
-          sbtDir.flatMap(dir => fileAlg.writeFileData(dir / series / "plugins", plugin))
-        }
-
       override def addGlobalPluginTemporarily[A](plugin: FileData)(fa: F[A]): F[A] =
         sbtDir.flatMap { dir =>
           val plugins = "plugins"
@@ -79,12 +72,15 @@ object SbtAlg {
           }
         }
 
-      override def addGlobalPlugins: F[Unit] =
+      override def addGlobalPlugins[A](fa: F[A]): F[A] =
         for {
           _ <- logger.info("Add global sbt plugins")
-          _ <- addGlobalPlugin(scalaStewardSbt)
-          _ <- addGlobalPlugin(stewardPlugin)
-        } yield ()
+          result <- addGlobalPluginTemporarily(scalaStewardSbt) {
+            addGlobalPluginTemporarily(stewardPlugin) {
+              fa
+            }
+          }
+        } yield result
 
       override def getSbtVersion(repo: Repo): F[Option[SbtVersion]] =
         for {
