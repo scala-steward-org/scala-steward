@@ -30,24 +30,24 @@ object UpdateState {
 
   final case class DependencyOutdated(
       crossDependency: CrossDependency,
-      update: Update
+      update: Update.Single
   ) extends UpdateState
 
   final case class PullRequestUpToDate(
       crossDependency: CrossDependency,
-      update: Update,
+      update: Update.Single,
       pullRequest: Uri
   ) extends UpdateState
 
   final case class PullRequestOutdated(
       crossDependency: CrossDependency,
-      update: Update,
+      update: Update.Single,
       pullRequest: Uri
   ) extends UpdateState
 
   final case class PullRequestClosed(
       crossDependency: CrossDependency,
-      update: Update,
+      update: Update.Single,
       pullRequest: Uri
   ) extends UpdateState
 }
