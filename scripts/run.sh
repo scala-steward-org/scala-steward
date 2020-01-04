@@ -3,7 +3,7 @@
 set -ex
 
 # Don't start if we can't reach Maven Central.
-curl --fail https://repo1.maven.org/maven2/
+curl --head --fail https://repo1.maven.org/maven2/
 
 SCRIPT=$(readlink -f "$0")
 STEWARD_DIR=$(dirname "$SCRIPT")/..
