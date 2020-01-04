@@ -84,6 +84,7 @@ Thanks goes to these wonderful people:
 * [kenji yoshida](https://github.com/xuwei-k)
 * [Lars Hupel](https://github.com/larsrh)
 * [Manuel Cueto](https://github.com/manuelcueto)
+* [Marco Zühlke](https://github.com/mzuehlke) 
 * [Mark Canlas](https://github.com/mcanlas)
 * [Michael Wizner](https://github.com/mwz)
 * [Michel Daviot](https://github.com/tyrcho)
