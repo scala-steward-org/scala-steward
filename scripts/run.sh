@@ -2,9 +2,6 @@
 
 set -ex
 
-# Don't start if we can't reach Maven Central.
-curl --head --fail https://repo1.maven.org/maven2/
-
 SCRIPT=$(readlink -f "$0")
 STEWARD_DIR=$(dirname "$SCRIPT")/..
 echo -n $$ > "$STEWARD_DIR/scala-steward.pid"
@@ -16,6 +13,9 @@ JAR=$(find modules/ -name "scala-steward-assembly*.jar" | head -n1)
 
 REPOS_FILE="$STEWARD_DIR/public-repos.md"
 curl -o "$REPOS_FILE" https://raw.githubusercontent.com/scala-steward-org/repos/master/repos.md
+
+# Don't start if we can't reach Maven Central.
+curl --head --fail https://repo1.maven.org/maven2/
 
 LOGIN="scala-steward"
 java -DROOT_LOG_LEVEL=INFO -DLOG_LEVEL=INFO -jar ${JAR} \
