@@ -15,7 +15,7 @@ REPOS_FILE="$STEWARD_DIR/public-repos.md"
 curl -s -o "$REPOS_FILE" https://raw.githubusercontent.com/scala-steward-org/repos/master/repos.md
 
 # Don't start if we can't reach Maven Central.
-curl -s --head --fail https://repo1.maven.org/maven2/
+#curl -s --head --fail https://repo1.maven.org/maven2/
 
 LOGIN="scala-steward"
 java -DROOT_LOG_LEVEL=INFO -DLOG_LEVEL=INFO -jar ${JAR} \
@@ -27,7 +27,7 @@ java -DROOT_LOG_LEVEL=INFO -DLOG_LEVEL=INFO -jar ${JAR} \
   --ignore-opts-files \
   --env-var "SBT_OPTS=-Xmx2048m -Xss8m -XX:MaxMetaspaceSize=512m" \
   --sign-commits \
-  --cache-ttl 6hours \
+  --cache-ttl 4hours \
   --process-timeout 20min \
   --whitelist $HOME/.cache/coursier \
   --whitelist $HOME/.coursier \

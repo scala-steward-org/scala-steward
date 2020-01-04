@@ -1,6 +1,7 @@
 package org.scalasteward.core.mock
 
 import better.files.File
+import cats.Parallel
 import cats.effect.Sync
 import org.http4s.Uri
 import org.scalasteward.core.TestInstances.ioContextShift
@@ -48,6 +49,7 @@ object MockContext {
   )
 
   implicit val mockEffBracketThrowable: BracketThrowable[MockEff] = Sync[MockEff]
+  implicit val mockEffParallel: Parallel[MockEff] = Parallel.identity
 
   implicit val fileAlg: MockFileAlg = new MockFileAlg
   implicit val mockLogger: MockLogger = new MockLogger
