@@ -16,8 +16,8 @@
 
 package org.scalasteward.core.update
 
+import cats.Monad
 import cats.implicits._
-import cats.{Monad, Parallel}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data._
@@ -30,7 +30,6 @@ final class UpdateAlg[F[_]](
     coursierAlg: CoursierAlg[F],
     filterAlg: FilterAlg[F],
     logger: Logger[F],
-    parallel: Parallel[F],
     F: Monad[F]
 ) {
   def findUpdate(dependency: Dependency): F[Option[Update.Single]] =
@@ -45,7 +44,7 @@ final class UpdateAlg[F[_]](
   def findUpdates(dependencies: List[Dependency], repoConfig: RepoConfig): F[List[Update.Single]] =
     for {
       _ <- logger.info(s"Find updates")
-      updates0 <- dependencies.parFlatTraverse(findUpdate(_).map(_.toList))
+      updates0 <- dependencies.traverseFilter(findUpdate)
       updates1 <- filterAlg.localFilterMany(repoConfig, updates0)
       updates2 = Update.groupByArtifactIdName(updates1)
       _ <- logger.info(util.logger.showUpdates(updates2.widen[Update]))
