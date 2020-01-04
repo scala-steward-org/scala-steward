@@ -107,6 +107,6 @@ object CoursierAlg {
   private def getScmUrlOrHomePage(info: Info): Option[Uri] =
     (info.scm.flatMap(_.url).toList :+ info.homePage)
       .filterNot(url => url.isEmpty || url.startsWith("git@"))
-      .flatMap(Uri.fromString(_).toList)
+      .flatMap(Uri.fromString(_).toList.filter(_.scheme.isDefined))
       .headOption
 }
