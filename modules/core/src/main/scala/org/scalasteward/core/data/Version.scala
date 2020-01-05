@@ -103,7 +103,9 @@ object Version {
 
   sealed trait Component extends Product with Serializable
   object Component {
-    final case class Numeric(value: String) extends Component
+    final case class Numeric(value: String) extends Component {
+      def isZero: Boolean = BigInt(value) === BigInt(0)
+    }
     final case class Alpha(value: String) extends Component {
       def isPreReleaseIdent: Boolean = order < 0
       def order: Int = value.toUpperCase match {
@@ -168,11 +170,11 @@ object Version {
     // using different pre-release identifiers.
     implicit val componentOrder: Order[Component] =
       Order.from[Component] {
-        case (Numeric(v1), Numeric(v2)) => BigInt(v1).compare(BigInt(v2))
-        case (Numeric(_), a @ Alpha(_)) => if (a.isPreReleaseIdent) 1 else -1
-        case (a @ Alpha(_), Numeric(_)) => if (a.isPreReleaseIdent) -1 else 1
-        case (Numeric(_), _)            => 1
-        case (_, Numeric(_))            => -1
+        case (Numeric(v1), Numeric(v2))     => BigInt(v1).compare(BigInt(v2))
+        case (n @ Numeric(_), a @ Alpha(_)) => if (a.isPreReleaseIdent || !n.isZero) 1 else -1
+        case (a @ Alpha(_), n @ Numeric(_)) => if (a.isPreReleaseIdent || !n.isZero) -1 else 1
+        case (Numeric(_), _)                => 1
+        case (_, Numeric(_))                => -1
 
         case (a1 @ Alpha(v1), a2 @ Alpha(v2)) =>
           val (o1, o2) = (a1.order, a2.order)

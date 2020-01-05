@@ -17,6 +17,8 @@ class VersionTest extends AnyFunSuite with Discipline with Matchers with ScalaCh
     val versions = List(
       "0.1",
       "0-20170604",
+      "1.0.0-SNAP8",
+      "1.0.0-M2",
       "1.0.0",
       "1.0.0+20130313",
       "1.0.0+20130320",
@@ -90,7 +92,9 @@ class VersionTest extends AnyFunSuite with Discipline with Matchers with ScalaCh
       ("42.2.9.jre7", "42.2.9.jre8"),
       ("2.0.M6-SNAP23a", "2.0.M6-SNAP23"),
       ("2.13.0-M2", "2.13.0-RC1"),
-      ("4.0RC1", "4.0.0")
+      ("4.0RC1", "4.0.0"),
+      ("1.7R5", "1.7"),
+      ("1.7R5", "1.7.11")
     ).foreach {
       case (s1, s2) =>
         val c1 = coursier.core.Version(s1)
@@ -103,6 +107,10 @@ class VersionTest extends AnyFunSuite with Discipline with Matchers with ScalaCh
         v1 should be < v2
         v2 should be > v1
     }
+  }
+
+  test("equal") {
+    Version("3.0").compare(Version("3.0.+")) shouldBe 0
   }
 
   test("selectNext, table 1") {
