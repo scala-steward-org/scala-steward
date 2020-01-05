@@ -50,6 +50,7 @@ object Context {
       implicit0(logger: Logger[F]) <- Resource.liftF(Slf4jLogger.create[F])
       implicit0(httpExistenceClient: HttpExistenceClient[F]) <- HttpExistenceClient.create[F]
       implicit0(user: AuthenticatedUser) <- Resource.liftF(config.vcsUser[F])
+      updateAlgRateLimiter <- RateLimiter.create[F]
     } yield {
       implicit val dateTimeAlg: DateTimeAlg[F] = DateTimeAlg.create[F]
       implicit val fileAlg: FileAlg[F] = FileAlg.create[F]
@@ -70,7 +71,7 @@ object Context {
         new PullRequestRepository[F](new JsonKeyValueStore("prs", "5"))
       implicit val scalafmtAlg: ScalafmtAlg[F] = ScalafmtAlg.create[F]
       implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create
-      implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]
+      implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F](updateAlgRateLimiter)
       implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F]
       implicit val refreshErrorAlg: RefreshErrorAlg[F] =
         new RefreshErrorAlg[F](new JsonKeyValueStore("repos_refresh_errors", "1"))

@@ -23,9 +23,9 @@ import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data._
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util
-import org.scalasteward.core.util.Nel
+import org.scalasteward.core.util.{Nel, RateLimiter}
 
-final class UpdateAlg[F[_]](
+final class UpdateAlg[F[_]](rateLimiter: RateLimiter[F])(
     implicit
     coursierAlg: CoursierAlg[F],
     filterAlg: FilterAlg[F],
@@ -35,12 +35,17 @@ final class UpdateAlg[F[_]](
 ) {
   def findUpdate(dependency: Dependency): F[Option[Update.Single]] =
     for {
-      newerVersions0 <- coursierAlg.getNewerVersions(dependency)
+      newerVersions0 <- getNewerVersions(dependency)
       maybeUpdate0 = Nel.fromList(newerVersions0).map { newerVersions1 =>
         Update.Single(CrossDependency(dependency), newerVersions1.map(_.value))
       }
       maybeUpdate1 = maybeUpdate0.orElse(UpdateAlg.findUpdateWithNewerGroupId(dependency))
     } yield maybeUpdate1
+
+  private def getNewerVersions(dependency: Dependency): F[List[Version]] = {
+    val key = s" ${dependency.groupId.value}:${dependency.artifactId.crossName}"
+    rateLimiter.limitUnseen(key)(coursierAlg.getNewerVersions(dependency))
+  }
 
   def findUpdates(dependencies: List[Dependency], repoConfig: RepoConfig): F[List[Update.Single]] =
     for {
