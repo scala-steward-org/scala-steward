@@ -80,16 +80,11 @@ object CoursierAlg {
         }
       }
 
-      override def getVersions(dependency: Dependency): F[List[Version]] = {
-        val module = toCoursierModule(dependency)
+      override def getVersions(dependency: Dependency): F[List[Version]] =
         versions
-          .withModule(module)
+          .withModule(toCoursierModule(dependency))
           .versions()
           .map(_.available.map(Version.apply).sorted)
-          .handleErrorWith { throwable =>
-            logger.error(throwable)(s"Failed to get newer versions of $module").as(List.empty)
-          }
-      }
     }
   }
 
