@@ -69,7 +69,8 @@ final class VersionsCacheAlg[F[_]](
 object VersionsCacheAlg {
   final case class Module(dependency: Dependency) {
     def key: String =
-      dependency.groupId.value + "/" + dependency.artifactId.crossName +
+      dependency.groupId.value.replace('.', '/') + "/" +
+        dependency.artifactId.crossName +
         dependency.scalaVersion.fold("")("_" + _.value) +
         dependency.sbtVersion.fold("")("_" + _.value)
   }
