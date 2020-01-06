@@ -51,7 +51,8 @@ final class VersionsCacheAlg[F[_]](
             .flatTap(versions => kvStore.put(module, Entry(now, versions)))
             .handleErrorWith { throwable =>
               val message = s"Failed to get versions of $dependency"
-              logger.error(throwable)(message).as(maybeEntry.map(_.versions).getOrElse(List.empty))
+              val versions = maybeEntry.map(_.versions).getOrElse(List.empty)
+              logger.error(throwable)(message).as(versions)
             }
       }
     }
