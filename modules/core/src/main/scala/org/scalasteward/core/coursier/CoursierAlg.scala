@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 Scala Steward contributors
+ * Copyright 2018-2020 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,16 +80,11 @@ object CoursierAlg {
         }
       }
 
-      override def getVersions(dependency: Dependency): F[List[Version]] = {
-        val module = toCoursierModule(dependency)
+      override def getVersions(dependency: Dependency): F[List[Version]] =
         versions
-          .withModule(module)
+          .withModule(toCoursierModule(dependency))
           .versions()
           .map(_.available.map(Version.apply).sorted)
-          .handleErrorWith { throwable =>
-            logger.error(throwable)(s"Failed to get newer versions of $module").as(List.empty)
-          }
-      }
     }
   }
 

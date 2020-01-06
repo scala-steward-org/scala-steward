@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 Scala Steward contributors
+ * Copyright 2018-2020 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package org.scalasteward.core.update
 
-import cats.Monad
 import cats.implicits._
+import io.chrisdavenport.log4cats.Logger
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, KeyEncoder}
 import java.util.concurrent.TimeUnit
@@ -26,7 +26,7 @@ import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.{Dependency, Version}
 import org.scalasteward.core.persistence.KeyValueStore
 import org.scalasteward.core.update.VersionsCacheAlg.{Entry, Module}
-import org.scalasteward.core.util.{DateTimeAlg, RateLimiter}
+import org.scalasteward.core.util.{DateTimeAlg, MonadThrowable, RateLimiter}
 import scala.concurrent.duration.FiniteDuration
 
 final class VersionsCacheAlg[F[_]](
@@ -37,17 +37,26 @@ final class VersionsCacheAlg[F[_]](
     config: Config,
     coursierAlg: CoursierAlg[F],
     dateTimeAlg: DateTimeAlg[F],
-    F: Monad[F]
+    logger: Logger[F],
+    F: MonadThrowable[F]
 ) {
   def getVersions(dependency: Dependency): F[List[Version]] = {
     val module = Module(dependency)
     dateTimeAlg.currentTimeMillis.flatMap { now =>
       kvStore.get(module).flatMap {
         case Some(entry) if entry.age(now) <= config.cacheTtl => F.pure(entry.versions.sorted)
-        case _ =>
+        case maybeEntry =>
           rateLimiter
-            .limit(coursierAlg.getVersions(dependency))
-            .flatTap(versions => kvStore.put(module, Entry(now, versions)))
+            .limit {
+              coursierAlg.getVersions(dependency).flatTap { versions =>
+                kvStore.put(module, Entry(now, versions))
+              }
+            }
+            .handleErrorWith { throwable =>
+              val message = s"Failed to get versions of $dependency"
+              val versions = maybeEntry.map(_.versions).getOrElse(List.empty)
+              logger.error(throwable)(message).as(versions)
+            }
       }
     }
   }
