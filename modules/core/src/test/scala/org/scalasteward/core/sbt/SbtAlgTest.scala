@@ -73,7 +73,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
     )
     val initialState = MockState.empty.copy(files = files)
     val state = sbtAlg.getUpdates(repo).runS(initialState).unsafeRunSync()
-    state shouldBe initialState.copy(
+    state.copy(files = files) shouldBe initialState.copy(
       commands = Vector(
         List(
           "TEST_VAR=GREAT",
@@ -87,7 +87,17 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
           s";$crossStewardDependencies;$crossStewardUpdates;$reloadPlugins;$stewardDependencies;$stewardUpdates"
         ),
         List("read", s"$repoDir/project/build.properties"),
-        List("read", s"$repoDir/.scalafmt.conf")
+        List("read", s"$repoDir/.scalafmt.conf"),
+        List("read", s"${config.workspace}/store/versions_v1/org.scala-sbt/sbt/versions.json"),
+        List("write", s"${config.workspace}/store/versions_v1/org.scala-sbt/sbt/versions.json"),
+        List(
+          "read",
+          s"${config.workspace}/store/versions_v1/org.scalameta/scalafmt-core_2.13/versions.json"
+        ),
+        List(
+          "write",
+          s"${config.workspace}/store/versions_v1/org.scalameta/scalafmt-core_2.13/versions.json"
+        )
       )
     )
   }

@@ -22,13 +22,12 @@ import cats.implicits._
 trait KeyValueStore[F[_], K, V] {
   def get(key: K): F[Option[V]]
 
+  def put(key: K, value: V): F[Unit]
+
   def modifyF(key: K)(f: Option[V] => F[Option[V]]): F[Option[V]]
 
   final def modify(key: K)(f: Option[V] => Option[V])(implicit F: Applicative[F]): F[Option[V]] =
     modifyF(key)(f.andThen(F.pure))
-
-  final def put(key: K, value: V)(implicit F: Applicative[F]): F[Unit] =
-    modify(key)(_ => Some(value)).void
 
   final def update(key: K)(f: Option[V] => V)(implicit F: Applicative[F]): F[Unit] =
     modify(key)(f.andThen(Some.apply)).void

@@ -33,7 +33,7 @@ import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.scalafix.MigrationAlg
 import org.scalasteward.core.scalafmt.ScalafmtAlg
-import org.scalasteward.core.update.{FilterAlg, PruningAlg, UpdateAlg}
+import org.scalasteward.core.update.{FilterAlg, PruningAlg, UpdateAlg, VersionsCacheAlg}
 import org.scalasteward.core.util._
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg, VCSSelection}
@@ -50,7 +50,7 @@ object Context {
       implicit0(logger: Logger[F]) <- Resource.liftF(Slf4jLogger.create[F])
       implicit0(httpExistenceClient: HttpExistenceClient[F]) <- HttpExistenceClient.create[F]
       implicit0(user: AuthenticatedUser) <- Resource.liftF(config.vcsUser[F])
-      updateAlgRateLimiter <- RateLimiter.create[F]
+      rateLimiter <- Resource.liftF(RateLimiter.create[F])
     } yield {
       implicit val dateTimeAlg: DateTimeAlg[F] = DateTimeAlg.create[F]
       implicit val fileAlg: FileAlg[F] = FileAlg.create[F]
@@ -61,20 +61,22 @@ object Context {
       implicit val gitAlg: GitAlg[F] = GitAlg.create[F]
       implicit val httpJsonClient: HttpJsonClient[F] = new HttpJsonClient[F]
       implicit val repoCacheRepository: RepoCacheRepository[F] =
-        new RepoCacheRepository[F](new JsonKeyValueStore("repos", "9"))
+        new RepoCacheRepository[F](new JsonKeyValueStore("repo_cache", "1"))
       implicit val selfCheckAlg: SelfCheckAlg[F] = new SelfCheckAlg[F]
       val vcsSelection = new VCSSelection[F]
       implicit val vcsApiAlg: VCSApiAlg[F] = vcsSelection.getAlg(config)
       implicit val vcsRepoAlg: VCSRepoAlg[F] = VCSRepoAlg.create[F](config, gitAlg)
       implicit val vcsExtraAlg: VCSExtraAlg[F] = VCSExtraAlg.create[F]
       implicit val pullRequestRepository: PullRequestRepository[F] =
-        new PullRequestRepository[F](new JsonKeyValueStore("prs", "5"))
+        new PullRequestRepository[F](new JsonKeyValueStore("pull_requests", "1"))
       implicit val scalafmtAlg: ScalafmtAlg[F] = ScalafmtAlg.create[F]
       implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create
-      implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F](updateAlgRateLimiter)
+      implicit val versionsCacheAlg: VersionsCacheAlg[F] =
+        new VersionsCacheAlg[F](new JsonKeyValueStore("versions", "1"), rateLimiter)
+      implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]
       implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F]
       implicit val refreshErrorAlg: RefreshErrorAlg[F] =
-        new RefreshErrorAlg[F](new JsonKeyValueStore("repos_refresh_errors", "1"))
+        new RefreshErrorAlg[F](new JsonKeyValueStore("refresh_error", "1"))
       implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F]
       implicit val migrationAlg: MigrationAlg[F] = MigrationAlg.create[F]
       implicit val editAlg: EditAlg[F] = new EditAlg[F]
