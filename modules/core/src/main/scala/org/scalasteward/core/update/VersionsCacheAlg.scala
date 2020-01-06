@@ -47,8 +47,11 @@ final class VersionsCacheAlg[F[_]](
         case Some(entry) if entry.age(now) <= config.cacheTtl => F.pure(entry.versions.sorted)
         case maybeEntry =>
           rateLimiter
-            .limit(coursierAlg.getVersions(dependency))
-            .flatTap(versions => kvStore.put(module, Entry(now, versions)))
+            .limit {
+              coursierAlg.getVersions(dependency).flatTap { versions =>
+                kvStore.put(module, Entry(now, versions))
+              }
+            }
             .handleErrorWith { throwable =>
               val message = s"Failed to get versions of $dependency"
               val versions = maybeEntry.map(_.versions).getOrElse(List.empty)
