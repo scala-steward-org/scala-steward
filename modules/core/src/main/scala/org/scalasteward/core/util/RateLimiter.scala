@@ -17,30 +17,20 @@
 package org.scalasteward.core.util
 
 import cats.effect.concurrent.Semaphore
-import cats.effect.{Concurrent, Resource, Timer}
+import cats.effect.{Concurrent, Timer}
 import cats.implicits._
-import com.github.benmanes.caffeine.cache.Caffeine
 import scala.concurrent.duration._
-import scalacache.CatsEffect.modes._
-import scalacache.Entry
-import scalacache.caffeine.CaffeineCache
 
 trait RateLimiter[F[_]] {
-  def limitUnseen[A](key: String)(fa: F[A]): F[A]
+  def limit[A](fa: F[A]): F[A]
 }
 
 object RateLimiter {
-  def create[F[_]](implicit timer: Timer[F], F: Concurrent[F]): Resource[F, RateLimiter[F]] =
-    for {
-      cache <- Resource.make(F.delay {
-        CaffeineCache(Caffeine.newBuilder().maximumSize(65536L).build[String, Entry[Unit]]())
-      })(_.close().void)
-      semaphore <- Resource.liftF(Semaphore(1))
-    } yield new RateLimiter[F] {
-      override def limitUnseen[A](key: String)(fa: F[A]): F[A] =
-        cache.get(key).flatMap {
-          case Some(_) => fa
-          case None    => semaphore.withPermit(timer.sleep(250.millis) *> fa <* cache.put(key)(()))
-        }
+  def create[F[_]](implicit timer: Timer[F], F: Concurrent[F]): F[RateLimiter[F]] =
+    Semaphore(1).map { semaphore =>
+      new RateLimiter[F] {
+        override def limit[A](fa: F[A]): F[A] =
+          semaphore.withPermit(timer.sleep(250.millis) >> fa)
+      }
     }
 }

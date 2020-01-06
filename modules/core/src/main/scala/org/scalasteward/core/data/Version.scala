@@ -19,6 +19,8 @@ package org.scalasteward.core.data
 import cats.Order
 import cats.implicits._
 import eu.timepit.refined.types.numeric.NonNegInt
+import io.circe.Codec
+import io.circe.generic.extras.semiauto.deriveUnwrappedCodec
 import scala.annotation.tailrec
 
 final case class Version(value: String) {
@@ -90,6 +92,9 @@ final case class Version(value: String) {
 }
 
 object Version {
+  implicit val versionCodec: Codec[Version] =
+    deriveUnwrappedCodec
+
   implicit val versionOrder: Order[Version] =
     Order.from[Version] { (v1, v2) =>
       val (c1, c2) = padToSameLength(v1.alnumComponents, v2.alnumComponents, Component.Empty)
