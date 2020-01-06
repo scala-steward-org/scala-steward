@@ -22,6 +22,11 @@ updates.limit = 5
 # long as you don't change it yourself.
 # Default: true
 updatePullRequests = true
+
+# If true, Scala Steward will perform a check to see if the PR has conflicts in
+# order to decide to update the PR (assuming that all other conditions are satisfied).
+# Default: true
+checkConflictsWhenUpdatingPRs = true
 ```
 
 ## Ignore lines

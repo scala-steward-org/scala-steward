@@ -31,7 +31,7 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     )
   }
 
-  test("config with 'updateBranch disabled") {
+  test("config with 'updateBranch disabled'") {
     val repo = Repo("fthomas", "scala-steward")
     val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
     val content = "updatePullRequests = false"
@@ -39,6 +39,16 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     val config = repoConfigAlg.readRepoConfigOrDefault(repo).runA(initialState).unsafeRunSync()
 
     config shouldBe RepoConfig(updatePullRequests = false)
+  }
+
+  test("config with 'checkConflictsWhenUpdatingPRs disabled'") {
+    val repo = Repo("fthomas", "scala-steward")
+    val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
+    val content = "checkConflictsWhenUpdatingPRs = false"
+    val initialState = MockState.empty.add(configFile, content)
+    val config = repoConfigAlg.readRepoConfigOrDefault(repo).runA(initialState).unsafeRunSync()
+
+    config shouldBe RepoConfig(checkConflictsWhenUpdatingPRs = false)
   }
 
   test("malformed config") {

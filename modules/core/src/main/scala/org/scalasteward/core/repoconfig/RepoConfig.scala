@@ -22,7 +22,8 @@ import io.circe.{Decoder, Encoder}
 
 final case class RepoConfig(
     updates: UpdatesConfig = UpdatesConfig(),
-    updatePullRequests: Boolean = true
+    updatePullRequests: Boolean = true,
+    checkConflictsWhenUpdatingPRs: Boolean = true
 )
 
 object RepoConfig {

@@ -184,11 +184,15 @@ final class NurtureAlg[F[_]](
           val distinctAuthors = authors.distinct
           if (distinctAuthors.length >= 2)
             (false, s"PR has commits by ${distinctAuthors.mkString(", ")}").pure[F]
-          else
-            gitAlg.hasConflicts(data.repo, data.updateBranch, data.baseBranch).map {
-              case true  => (true, s"PR has conflicts with ${data.baseBranch.name}")
-              case false => (false, s"PR has no conflict with ${data.baseBranch.name}")
-            }
+          else {
+            if (!data.repoConfig.checkConflictsWhenUpdatingPRs)
+              (true, "Conflict check is disabled in repo configuration").pure[F]
+            else
+              gitAlg.hasConflicts(data.repo, data.updateBranch, data.baseBranch).map {
+                case true  => (true, s"PR has conflicts with ${data.baseBranch.name}")
+                case false => (false, s"PR has no conflict with ${data.baseBranch.name}")
+              }
+          }
         }
     }
     result.flatMap { case (update, msg) => logger.info(msg).as(update) }
