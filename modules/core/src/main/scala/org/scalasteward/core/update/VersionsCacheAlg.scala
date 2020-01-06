@@ -40,26 +40,25 @@ final class VersionsCacheAlg[F[_]](
     logger: Logger[F],
     F: MonadThrowable[F]
 ) {
-  def getVersions(dependency: Dependency): F[List[Version]] = {
-    val module = Module(dependency)
-    dateTimeAlg.currentTimeMillis.flatMap { now =>
-      kvStore.get(module).flatMap {
+  def getVersions(dependency: Dependency): F[List[Version]] =
+    for {
+      now <- dateTimeAlg.currentTimeMillis
+      module = Module(dependency)
+      versions <- kvStore.get(module).flatMap {
         case Some(entry) if entry.age(now) <= config.cacheTtl => F.pure(entry.versions.sorted)
         case maybeEntry =>
-          rateLimiter
-            .limit {
-              coursierAlg.getVersions(dependency).flatTap { versions =>
-                kvStore.put(module, Entry(now, versions))
-              }
+          val getAndPut = rateLimiter.limit {
+            coursierAlg.getVersions(dependency).flatTap { versions =>
+              kvStore.put(module, Entry(now, versions))
             }
-            .handleErrorWith { throwable =>
-              val message = s"Failed to get versions of $dependency"
-              val versions = maybeEntry.map(_.versions).getOrElse(List.empty)
-              logger.error(throwable)(message).as(versions)
-            }
+          }
+          getAndPut.handleErrorWith { throwable =>
+            val message = s"Failed to get versions of $dependency"
+            val versions = maybeEntry.map(_.versions).getOrElse(List.empty).sorted
+            logger.error(throwable)(message).as(versions)
+          }
       }
-    }
-  }
+    } yield versions
 
   def getNewerVersions(dependency: Dependency): F[List[Version]] = {
     val current = Version(dependency.version)
@@ -68,15 +67,16 @@ final class VersionsCacheAlg[F[_]](
 }
 
 object VersionsCacheAlg {
-  final case class Module(dependency: Dependency)
+  final case class Module(dependency: Dependency) {
+    def key: String =
+      dependency.groupId.value + "/" + dependency.artifactId.crossName +
+        dependency.scalaVersion.fold("")("_" + _.value) +
+        dependency.sbtVersion.fold("")("_" + _.value)
+  }
 
   object Module {
     implicit val moduleKeyEncoder: KeyEncoder[Module] =
-      KeyEncoder.instance { m =>
-        m.dependency.groupId.value + "/" + m.dependency.artifactId.crossName +
-          m.dependency.scalaVersion.fold("")("_" + _.value) +
-          m.dependency.sbtVersion.fold("")("_" + _.value)
-      }
+      KeyEncoder.instance(_.key)
   }
 
   final case class Entry(updatedAt: Long, versions: List[Version]) {
