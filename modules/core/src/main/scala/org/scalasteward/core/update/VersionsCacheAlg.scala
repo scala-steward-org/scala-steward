@@ -43,7 +43,7 @@ final class VersionsCacheAlg[F[_]](
     val module = Module(dependency)
     dateTimeAlg.currentTimeMillis.flatMap { now =>
       kvStore.get(module).flatMap {
-        case Some(entry) if entry.age(now) <= config.cacheTtl => F.pure(entry.versions)
+        case Some(entry) if entry.age(now) <= config.cacheTtl => F.pure(entry.versions.sorted)
         case _ =>
           rateLimiter
             .limit(coursierAlg.getVersions(dependency))
