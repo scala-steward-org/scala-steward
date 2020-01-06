@@ -46,7 +46,7 @@ final class RepoCacheAlg[F[_]](
   def checkCache(repo: Repo): F[Unit] =
     logger.attemptLog_(s"Check cache of ${repo.show}") {
       F.ifM(refreshErrorAlg.failedRecently(repo))(
-        F.unit,
+        logger.info(s"Skipping due to previous error"),
         for {
           ((repoOut, branchOut), cachedSha1) <- (
             vcsApiAlg.createForkOrGetRepoWithDefaultBranch(config, repo),
