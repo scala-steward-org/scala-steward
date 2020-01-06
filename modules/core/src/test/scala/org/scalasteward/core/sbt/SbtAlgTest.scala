@@ -88,15 +88,15 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
         ),
         List("read", s"$repoDir/project/build.properties"),
         List("read", s"$repoDir/.scalafmt.conf"),
-        List("read", s"${config.workspace}/store/versions_v1/org.scala-sbt/sbt/versions.json"),
-        List("write", s"${config.workspace}/store/versions_v1/org.scala-sbt/sbt/versions.json"),
+        List("read", s"${config.workspace}/store/versions_v1/org/scala-sbt/sbt/versions.json"),
+        List("write", s"${config.workspace}/store/versions_v1/org/scala-sbt/sbt/versions.json"),
         List(
           "read",
-          s"${config.workspace}/store/versions_v1/org.scalameta/scalafmt-core_2.13/versions.json"
+          s"${config.workspace}/store/versions_v1/org/scalameta/scalafmt-core_2.13/versions.json"
         ),
         List(
           "write",
-          s"${config.workspace}/store/versions_v1/org.scalameta/scalafmt-core_2.13/versions.json"
+          s"${config.workspace}/store/versions_v1/org/scalameta/scalafmt-core_2.13/versions.json"
         )
       )
     )
