@@ -20,43 +20,36 @@ import better.files.File
 import cats.implicits._
 import io.circe.parser.decode
 import io.circe.syntax._
-import io.circe.{Decoder, Encoder, KeyDecoder, KeyEncoder}
+import io.circe.{Decoder, Encoder, KeyEncoder}
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.util.MonadThrowable
 
 final class JsonKeyValueStore[F[_], K, V](name: String, schemaVersion: String)(
     implicit
     fileAlg: FileAlg[F],
-    workspaceAlg: WorkspaceAlg[F],
-    F: MonadThrowable[F],
-    keyDecoder: KeyDecoder[K],
     keyEncoder: KeyEncoder[K],
     valueDecoder: Decoder[V],
-    valueEncoder: Encoder[V]
+    valueEncoder: Encoder[V],
+    workspaceAlg: WorkspaceAlg[F],
+    F: MonadThrowable[F]
 ) extends KeyValueStore[F, K, V] {
   override def get(key: K): F[Option[V]] =
-    read.map(_.get(key))
+    jsonFile(key).flatMap(fileAlg.readFile).flatMap {
+      case Some(content) => F.fromEither(decode[Option[V]](content))
+      case None          => F.pure(Option.empty[V])
+    }
+
+  override def put(key: K, value: V): F[Unit] =
+    write(key, Some(value))
 
   override def modifyF(key: K)(f: Option[V] => F[Option[V]]): F[Option[V]] =
-    read.flatMap { store =>
-      f(store.get(key)).flatMap {
-        case res @ Some(updated) => write(store.updated(key, updated)).as(res)
-        case None                => write(store - key).as(None)
-      }
-    }
+    get(key).flatMap(maybeValue => f(maybeValue).flatTap(write(key, _)))
 
-  private val filename =
-    s"${name}_v${schemaVersion}.json"
+  private def jsonFile(key: K): F[File] =
+    workspaceAlg.rootDir.map(
+      _ / "store" / s"${name}_v${schemaVersion}" / keyEncoder(key) / s"$name.json"
+    )
 
-  private val jsonFile: F[File] =
-    workspaceAlg.rootDir.map(_ / filename)
-
-  private def read: F[Map[K, V]] =
-    jsonFile.flatMap(fileAlg.readFile).flatMap {
-      case Some(content) => F.fromEither(decode[Map[K, V]](content))
-      case None          => F.pure(Map.empty[K, V])
-    }
-
-  private def write(store: Map[K, V]): F[Unit] =
-    jsonFile.flatMap(fileAlg.writeFile(_, store.asJson.toString))
+  private def write(key: K, value: Option[V]): F[Unit] =
+    jsonFile(key).flatMap(fileAlg.writeFile(_, value.asJson.toString))
 }

@@ -6,7 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class JsonKeyValueStoreTest extends AnyFunSuite with Matchers {
-  test("put, get, getMany, delete") {
+  test("put, get") {
     val kvStore = new JsonKeyValueStore[MockEff, String, String]("test", "0")
     val p = for {
       _ <- kvStore.put("k1", "v1")
@@ -16,22 +16,20 @@ class JsonKeyValueStoreTest extends AnyFunSuite with Matchers {
     } yield (v1, v3)
     val (state, value) = p.run(MockState.empty).unsafeRunSync()
 
-    val file = config.workspace / "test_v0.json"
+    val k1File = config.workspace / "store" / "test_v0" / "k1" / "test.json"
+    val k2File = config.workspace / "store" / "test_v0" / "k2" / "test.json"
+    val k3File = config.workspace / "store" / "test_v0" / "k3" / "test.json"
     value shouldBe (Some("v1") -> None)
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List("read", file.toString),
-        List("write", file.toString),
-        List("read", file.toString),
-        List("read", file.toString),
-        List("write", file.toString),
-        List("read", file.toString)
+        List("write", k1File.toString),
+        List("read", k1File.toString),
+        List("write", k2File.toString),
+        List("read", k3File.toString)
       ),
       files = Map(
-        file -> """|{
-                   |  "k1" : "v1",
-                   |  "k2" : "v2"
-                   |}""".stripMargin.trim
+        k1File -> """"v1"""",
+        k2File -> """"v2""""
       )
     )
   }

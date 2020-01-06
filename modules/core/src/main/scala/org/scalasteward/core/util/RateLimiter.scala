@@ -14,21 +14,23 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.persistence
+package org.scalasteward.core.util
 
-import cats.Applicative
+import cats.effect.concurrent.Semaphore
+import cats.effect.{Concurrent, Timer}
 import cats.implicits._
+import scala.concurrent.duration._
 
-trait KeyValueStore[F[_], K, V] {
-  def get(key: K): F[Option[V]]
+trait RateLimiter[F[_]] {
+  def limit[A](fa: F[A]): F[A]
+}
 
-  def put(key: K, value: V): F[Unit]
-
-  def modifyF(key: K)(f: Option[V] => F[Option[V]]): F[Option[V]]
-
-  final def modify(key: K)(f: Option[V] => Option[V])(implicit F: Applicative[F]): F[Option[V]] =
-    modifyF(key)(f.andThen(F.pure))
-
-  final def update(key: K)(f: Option[V] => V)(implicit F: Applicative[F]): F[Unit] =
-    modify(key)(f.andThen(Some.apply)).void
+object RateLimiter {
+  def create[F[_]](implicit timer: Timer[F], F: Concurrent[F]): F[RateLimiter[F]] =
+    Semaphore(1).map { semaphore =>
+      new RateLimiter[F] {
+        override def limit[A](fa: F[A]): F[A] =
+          semaphore.withPermit(timer.sleep(250.millis) >> fa)
+      }
+    }
 }

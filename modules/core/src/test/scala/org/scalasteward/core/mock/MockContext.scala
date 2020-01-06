@@ -18,8 +18,8 @@ import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.scalafix.MigrationAlg
 import org.scalasteward.core.scalafmt.ScalafmtAlg
-import org.scalasteward.core.update.{FilterAlg, PruningAlg, UpdateAlg}
-import org.scalasteward.core.util.{BracketThrowable, DateTimeAlg}
+import org.scalasteward.core.update.{FilterAlg, PruningAlg, UpdateAlg, VersionsCacheAlg}
+import org.scalasteward.core.util.{BracketThrowable, DateTimeAlg, RateLimiter}
 import org.scalasteward.core.vcs.VCSRepoAlg
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 import scala.concurrent.duration._
@@ -48,6 +48,10 @@ object MockContext {
     cacheTtl = 1.hour
   )
 
+  val nopLimiter: RateLimiter[MockEff] = new RateLimiter[MockEff] {
+    override def limit[A](fa: MockEff[A]): MockEff[A] = fa
+  }
+
   implicit val mockEffBracketThrowable: BracketThrowable[MockEff] = Sync[MockEff]
   implicit val mockEffParallel: Parallel[MockEff] = Parallel.identity
 
@@ -64,13 +68,15 @@ object MockContext {
   implicit val scalafmtAlg: ScalafmtAlg[MockEff] = ScalafmtAlg.create
   implicit val migrationAlg: MigrationAlg[MockEff] = MigrationAlg.create
   implicit val cacheRepository: RepoCacheRepository[MockEff] =
-    new RepoCacheRepository[MockEff](new JsonKeyValueStore("repos", "6"))
+    new RepoCacheRepository[MockEff](new JsonKeyValueStore("repo_cache", "1"))
   implicit val filterAlg: FilterAlg[MockEff] = new FilterAlg[MockEff]
+  implicit val versionsCacheAlg: VersionsCacheAlg[MockEff] =
+    new VersionsCacheAlg[MockEff](new JsonKeyValueStore("versions", "1"), nopLimiter)
   implicit val updateAlg: UpdateAlg[MockEff] = new UpdateAlg[MockEff]
   implicit val sbtAlg: SbtAlg[MockEff] = SbtAlg.create
   implicit val editAlg: EditAlg[MockEff] = new EditAlg[MockEff]
   implicit val repoConfigAlg: RepoConfigAlg[MockEff] = new RepoConfigAlg[MockEff]
   implicit val prRepo: PullRequestRepository[MockEff] =
-    new PullRequestRepository[MockEff](new JsonKeyValueStore("pullrequests", "9"))
+    new PullRequestRepository[MockEff](new JsonKeyValueStore("pull_requests", "1"))
   implicit val pruningAlg: PruningAlg[MockEff] = new PruningAlg[MockEff]
 }

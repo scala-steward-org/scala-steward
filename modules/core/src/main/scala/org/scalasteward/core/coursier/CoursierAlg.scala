@@ -33,7 +33,7 @@ import org.scalasteward.core.data.{Dependency, Version}
 trait CoursierAlg[F[_]] {
   def getArtifactUrl(dependency: Dependency): F[Option[Uri]]
 
-  def getNewerVersions(dependency: Dependency): F[List[Version]]
+  def getVersions(dependency: Dependency): F[List[Version]]
 
   final def getArtifactIdUrlMapping(dependencies: List[Dependency])(
       implicit F: Applicative[F]
@@ -80,13 +80,12 @@ object CoursierAlg {
         }
       }
 
-      override def getNewerVersions(dependency: Dependency): F[List[Version]] = {
+      override def getVersions(dependency: Dependency): F[List[Version]] = {
         val module = toCoursierModule(dependency)
-        val version = Version(dependency.version)
         versions
           .withModule(module)
           .versions()
-          .map(_.available.map(Version.apply).filter(_ > version).sorted)
+          .map(_.available.map(Version.apply).sorted)
           .handleErrorWith { throwable =>
             logger.error(throwable)(s"Failed to get newer versions of $module").as(List.empty)
           }
