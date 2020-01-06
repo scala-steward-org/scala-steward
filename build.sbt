@@ -153,7 +153,7 @@ lazy val metadataSettings = Def.settings(
   scmInfo := Some(
     ScmInfo(homepage.value.get, s"scm:git:https://github.com/$gitHubOwner/$projectName.git")
   ),
-  headerLicense := Some(HeaderLicense.ALv2("2018-2019", "Scala Steward contributors")),
+  headerLicense := Some(HeaderLicense.ALv2("2018-2020", "Scala Steward contributors")),
   developers := List(
     Developer(
       id = "fthomas",
