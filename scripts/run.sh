@@ -15,7 +15,7 @@ REPOS_FILE="$STEWARD_DIR/public-repos.md"
 curl -s -o "$REPOS_FILE" https://raw.githubusercontent.com/scala-steward-org/repos/master/repos.md
 
 # Don't start if we can't reach Maven Central.
-#curl -s --head --fail https://repo1.maven.org/maven2/
+curl -s --head --fail https://repo1.maven.org/maven2/
 
 LOGIN="scala-steward"
 java -DROOT_LOG_LEVEL=INFO -DLOG_LEVEL=INFO -jar ${JAR} \
