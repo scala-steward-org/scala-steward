@@ -37,7 +37,7 @@ final class UpdateAlg[F[_]](
       additionalResolvers: List[Resolver]
   ): F[Option[Update.Single]] =
     for {
-      newerVersions0 <- versionsCacheAlg.getNewerVersions(dependency)
+      newerVersions0 <- versionsCacheAlg.getNewerVersions(dependency, additionalResolvers)
       maybeUpdate0 = Nel.fromList(newerVersions0).map { newerVersions1 =>
         Update.Single(CrossDependency(dependency), newerVersions1.map(_.value))
       }

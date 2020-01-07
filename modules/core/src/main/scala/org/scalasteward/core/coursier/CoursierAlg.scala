@@ -93,8 +93,10 @@ object CoursierAlg {
         }
       }
 
-      override def getVersions(dependency: Dependency,
-                               extraResolvers: List[Resolver] = List.empty): F[List[Version]] =
+      override def getVersions(
+          dependency: Dependency,
+          extraResolvers: List[Resolver] = List.empty
+      ): F[List[Version]] =
         versions
           .addRepositories(
             extraResolvers.map(resolver => MavenRepository.apply(resolver.location)): _*

@@ -21,12 +21,14 @@ import io.chrisdavenport.log4cats.Logger
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, KeyEncoder}
 import java.util.concurrent.TimeUnit
+
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.coursier.CoursierAlg
-import org.scalasteward.core.data.{Dependency, Version}
+import org.scalasteward.core.data.{Dependency, Resolver, Version}
 import org.scalasteward.core.persistence.KeyValueStore
 import org.scalasteward.core.update.VersionsCacheAlg.{Entry, Module}
 import org.scalasteward.core.util.{DateTimeAlg, MonadThrowable, RateLimiter}
+
 import scala.concurrent.duration.FiniteDuration
 
 final class VersionsCacheAlg[F[_]](
@@ -40,7 +42,7 @@ final class VersionsCacheAlg[F[_]](
     logger: Logger[F],
     F: MonadThrowable[F]
 ) {
-  def getVersions(dependency: Dependency): F[List[Version]] =
+  def getVersions(dependency: Dependency, extraResolvers: List[Resolver]): F[List[Version]] =
     for {
       now <- dateTimeAlg.currentTimeMillis
       module = Module(dependency)
@@ -48,7 +50,7 @@ final class VersionsCacheAlg[F[_]](
         case Some(entry) if entry.age(now) <= config.cacheTtl => F.pure(entry.versions.sorted)
         case maybeEntry =>
           val getAndPut = rateLimiter.limit {
-            coursierAlg.getVersions(dependency).flatTap { versions =>
+            coursierAlg.getVersions(dependency, extraResolvers).flatTap { versions =>
               kvStore.put(module, Entry(now, versions))
             }
           }
@@ -60,9 +62,9 @@ final class VersionsCacheAlg[F[_]](
       }
     } yield versions
 
-  def getNewerVersions(dependency: Dependency): F[List[Version]] = {
+  def getNewerVersions(dependency: Dependency, extraResolvers: List[Resolver]): F[List[Version]] = {
     val current = Version(dependency.version)
-    getVersions(dependency).map(_.filter(_ > current))
+    getVersions(dependency, extraResolvers).map(_.filter(_ > current))
   }
 }
 
