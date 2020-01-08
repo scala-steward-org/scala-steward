@@ -18,15 +18,13 @@ updates.ignore = [ { groupId = "org.acme", artifactId="foo", version = "1.0" } ]
 # Default: None
 updates.limit = 5
 
-# If true, Scala Steward will update the PR it created to resolve conflicts as
+# If "on-conflicts", Scala Steward will update the PR it created to resolve conflicts as
 # long as you don't change it yourself.
-# Default: true
-updatePullRequests = true
-
-# If true, Scala Steward will perform a check to see if the PR has conflicts in
-# order to decide to update the PR (assuming that all other conditions are satisfied).
-# Default: true
-checkConflictsWhenUpdatingPRs = true
+# If "always", Scala Steward will always update the PR it created as long as
+# you don't change it yourself.
+# If "never", Scala Steward will never update the PR
+# Default: "on-conflicts"
+updatePullRequests = "always" | "on-conflicts" | "never"
 ```
 
 ## Ignore lines

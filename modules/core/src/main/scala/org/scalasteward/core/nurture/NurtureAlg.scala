@@ -25,7 +25,7 @@ import org.scalasteward.core.data.ProcessResult.{Ignored, Updated}
 import org.scalasteward.core.data.{ProcessResult, Update}
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Branch, GitAlg}
-import org.scalasteward.core.repoconfig.RepoConfigAlg
+import org.scalasteward.core.repoconfig.{PullRequestUpdateStrategy, RepoConfigAlg}
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.scalafix.MigrationAlg
 import org.scalasteward.core.update.FilterAlg
@@ -164,7 +164,7 @@ final class NurtureAlg[F[_]](
     } yield ()
 
   def updatePullRequest(data: UpdateData): F[ProcessResult] =
-    if (data.repoConfig.updatePullRequests) {
+    if (data.repoConfig.updatePullRequests =!= PullRequestUpdateStrategy.Never) {
       gitAlg.returnToCurrentBranch(data.repo) {
         for {
           _ <- gitAlg.checkoutBranch(data.repo, data.updateBranch)
@@ -185,8 +185,8 @@ final class NurtureAlg[F[_]](
           if (distinctAuthors.length >= 2)
             (false, s"PR has commits by ${distinctAuthors.mkString(", ")}").pure[F]
           else {
-            if (!data.repoConfig.checkConflictsWhenUpdatingPRs)
-              (true, "Conflict check is disabled in repo configuration").pure[F]
+            if (data.repoConfig.updatePullRequests === PullRequestUpdateStrategy.Always)
+              (true, "PR update strategy is set to always").pure[F]
             else
               gitAlg.hasConflicts(data.repo, data.updateBranch, data.baseBranch).map {
                 case true  => (true, s"PR has conflicts with ${data.baseBranch.name}")

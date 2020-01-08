@@ -19,11 +19,11 @@ package org.scalasteward.core.repoconfig
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 import io.circe.{Decoder, Encoder}
+import PullRequestUpdateStrategy.{prUpdateStrategyDecoder, prUpdateStrategyEncoder}
 
 final case class RepoConfig(
     updates: UpdatesConfig = UpdatesConfig(),
-    updatePullRequests: Boolean = true,
-    checkConflictsWhenUpdatingPRs: Boolean = true
+    updatePullRequests: PullRequestUpdateStrategy = PullRequestUpdateStrategy.default
 )
 
 object RepoConfig {
