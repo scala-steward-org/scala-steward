@@ -31,14 +31,54 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     )
   }
 
-  test("config with 'updateBranch disabled") {
+  test("config with 'updatePullRequests = false'") {
     val repo = Repo("fthomas", "scala-steward")
     val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
     val content = "updatePullRequests = false"
     val initialState = MockState.empty.add(configFile, content)
     val config = repoConfigAlg.readRepoConfigOrDefault(repo).runA(initialState).unsafeRunSync()
 
-    config shouldBe RepoConfig(updatePullRequests = false)
+    config shouldBe RepoConfig(updatePullRequests = PullRequestUpdateStrategy.Never)
+  }
+
+  test("config with 'updatePullRequests = true'") {
+    val repo = Repo("fthomas", "scala-steward")
+    val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
+    val content = "updatePullRequests = true"
+    val initialState = MockState.empty.add(configFile, content)
+    val config = repoConfigAlg.readRepoConfigOrDefault(repo).runA(initialState).unsafeRunSync()
+
+    config shouldBe RepoConfig(updatePullRequests = PullRequestUpdateStrategy.OnConflicts)
+  }
+
+  test("config with 'updatePullRequests = always") {
+    val repo = Repo("fthomas", "scala-steward")
+    val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
+    val content = """updatePullRequests = "always" """
+    val initialState = MockState.empty.add(configFile, content)
+    val config = repoConfigAlg.readRepoConfigOrDefault(repo).runA(initialState).unsafeRunSync()
+
+    config shouldBe RepoConfig(updatePullRequests = PullRequestUpdateStrategy.Always)
+  }
+
+  test("config with 'updatePullRequests = on-conflicts") {
+    val repo = Repo("fthomas", "scala-steward")
+    val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
+    val content = """updatePullRequests = "on-conflicts" """
+    val initialState = MockState.empty.add(configFile, content)
+    val config = repoConfigAlg.readRepoConfigOrDefault(repo).runA(initialState).unsafeRunSync()
+
+    config shouldBe RepoConfig(updatePullRequests = PullRequestUpdateStrategy.OnConflicts)
+  }
+
+  test("config with 'updatePullRequests = never") {
+    val repo = Repo("fthomas", "scala-steward")
+    val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
+    val content = """updatePullRequests = "never" """
+    val initialState = MockState.empty.add(configFile, content)
+    val config = repoConfigAlg.readRepoConfigOrDefault(repo).runA(initialState).unsafeRunSync()
+
+    config shouldBe RepoConfig(updatePullRequests = PullRequestUpdateStrategy.Never)
   }
 
   test("malformed config") {
