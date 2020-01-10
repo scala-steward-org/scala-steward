@@ -48,6 +48,20 @@ class CoursierAlgTest extends AnyFunSuite with Matchers {
     result shouldBe Some(uri"http://msgpack.org/")
   }
 
+  test("getArtifactUrl: from parent") {
+    val dep = Dependency(
+      GroupId("net.bytebuddy"),
+      ArtifactId("byte-buddy"),
+      "1.10.5"
+    )
+    val (state, result) = coursierAlg
+      .getArtifactUrl(dep)
+      .run(MockState.empty)
+      .unsafeRunSync()
+    state shouldBe MockState.empty
+    result shouldBe Some(uri"https://bytebuddy.net")
+  }
+
   test("getArtifactUrl: sbt plugin on Maven Central") {
     val dep = Dependency(
       GroupId("org.xerial.sbt"),

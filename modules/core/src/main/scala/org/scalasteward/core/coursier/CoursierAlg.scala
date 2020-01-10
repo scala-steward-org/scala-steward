@@ -16,9 +16,11 @@
 
 package org.scalasteward.core.coursier
 
+import cats.data.OptionT
 import cats.effect._
 import cats.implicits._
 import cats.{Applicative, Parallel}
+import coursier.core.Project
 import coursier.interop.cats._
 import coursier.util.StringInterpolators.SafeIvyRepository
 import coursier.{Info, Module, ModuleName, Organization}
@@ -59,9 +61,11 @@ object CoursierAlg {
     val versions = coursier.Versions[F](cache).addRepositories(sbtPluginReleases)
 
     new CoursierAlg[F] {
-      override def getArtifactUrl(dependency: Dependency): F[Option[Uri]] = {
-        val coursierDependency = toCoursierDependency(dependency)
-        for {
+      override def getArtifactUrl(dependency: Dependency): F[Option[Uri]] =
+        getArtifactUrlImpl(toCoursierDependency(dependency))
+
+      private def getArtifactUrlImpl(coursierDependency: coursier.Dependency): F[Option[Uri]] =
+        (for {
           maybeFetchResult <- fetch
             .addDependencies(coursierDependency)
             .addArtifactTypes(coursier.Type.pom, coursier.Type.ivy)
@@ -71,14 +75,23 @@ object CoursierAlg {
               logger.debug(throwable)(s"Failed to fetch artifacts of $coursierDependency").as(None)
             }
         } yield {
-          for {
-            result <- maybeFetchResult
+          (for {
+            result <- maybeFetchResult.toOptionT[F]
             moduleVersion = (coursierDependency.module, coursierDependency.version)
-            (_, project) <- result.resolution.projectCache.get(moduleVersion)
+            (_, project) <- result.resolution.projectCache.get(moduleVersion).toOptionT[F]
             url <- getScmUrlOrHomePage(project.info)
-          } yield url
+              .toOptionT[F]
+              .orElse(OptionT(getParentArtifactUrl(project)))
+          } yield url).value
+        }).flatten
+
+      private def getParentArtifactUrl(project: Project): F[Option[Uri]] =
+        project.parent match {
+          case None => F.pure(none[Uri])
+          case Some((module, version)) =>
+            val parentDep = coursier.Dependency(module, version).withTransitive(false)
+            getArtifactUrlImpl(parentDep)
         }
-      }
 
       override def getVersions(dependency: Dependency): F[List[Version]] =
         versions
