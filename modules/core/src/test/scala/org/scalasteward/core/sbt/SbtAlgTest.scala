@@ -114,17 +114,6 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
         ),
         List("read", s"$repoDir/project/build.properties"),
         List("read", s"$repoDir/.scalafmt.conf"),
-        List(
-          "TEST_VAR=GREAT",
-          "ANOTHER_TEST_VAR=ALSO_GREAT",
-          repoDir.toString,
-          "firejail",
-          s"--whitelist=$repoDir",
-          "sbt",
-          "-batch",
-          "-no-colors",
-          s";$crossStewardResolvers;$reloadPlugins;$stewardResolvers"
-        ),
         List("read", s"${config.workspace}/store/versions_v1/org/scala-sbt/sbt/versions.json"),
         List("write", s"${config.workspace}/store/versions_v1/org/scala-sbt/sbt/versions.json"),
         List(
@@ -165,22 +154,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
         List("restore", (repoDir / ".sbtopts").toString),
         List("restore", (repoDir / ".jvmopts").toString),
         List("read", s"$repoDir/project/build.properties"),
-        List("read", s"$repoDir/.scalafmt.conf"),
-        List("rm", (repoDir / ".jvmopts").toString),
-        List("rm", (repoDir / ".sbtopts").toString),
-        List(
-          "TEST_VAR=GREAT",
-          "ANOTHER_TEST_VAR=ALSO_GREAT",
-          repoDir.toString,
-          "firejail",
-          s"--whitelist=$repoDir",
-          "sbt",
-          "-batch",
-          "-no-colors",
-          s";$crossStewardResolvers;$reloadPlugins;$stewardResolvers"
-        ),
-        List("restore", (repoDir / ".sbtopts").toString),
-        List("restore", (repoDir / ".jvmopts").toString)
+        List("read", s"$repoDir/.scalafmt.conf")
       )
     )
   }

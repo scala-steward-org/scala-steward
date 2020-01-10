@@ -162,10 +162,9 @@ object SbtAlg {
         for {
           maybeSbtDependency <- getSbtDependency(repo)
           maybeScalafmtDependency <- scalafmtAlg.getScalafmtDependency(repo)
-          resolvers <- getResolvers(repo)
-          maybeSbtUpdate <- maybeSbtDependency.flatTraverse(updateAlg.findUpdate(_, resolvers))
+          maybeSbtUpdate <- maybeSbtDependency.flatTraverse(updateAlg.findUpdate(_, List.empty))
           maybeScalafmtUpdate <- maybeScalafmtDependency.flatTraverse(
-            updateAlg.findUpdate(_, resolvers)
+            updateAlg.findUpdate(_, List.empty)
           )
         } yield maybeSbtUpdate.toList ++ maybeScalafmtUpdate.toList
     }
