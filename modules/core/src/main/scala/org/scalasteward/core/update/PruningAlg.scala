@@ -47,7 +47,7 @@ final class PruningAlg[F[_]](
           .sorted
         val repoConfig = repoCache.maybeRepoConfig.getOrElse(RepoConfig.default)
         for {
-          updates <- updateAlg.findUpdates(dependencies, repoConfig)
+          updates <- updateAlg.findUpdates(dependencies, repoConfig, repoCache.additionalResolvers)
           updateStates <- findAllUpdateStates(repo, repoCache, dependencies, updates)
           attentionNeeded <- checkUpdateStates(repo, updateStates)
         } yield attentionNeeded

@@ -14,22 +14,13 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.repocache
+package org.scalasteward.core.data
 
-import io.circe.Codec
 import io.circe.generic.semiauto._
-import org.scalasteward.core.data.{DependencyInfo, Resolver}
-import org.scalasteward.core.git.Sha1
-import org.scalasteward.core.repoconfig.RepoConfig
+import io.circe.Codec
 
-final case class RepoCache(
-    sha1: Sha1,
-    dependencyInfos: List[DependencyInfo],
-    maybeRepoConfig: Option[RepoConfig],
-    additionalResolvers: List[Resolver]
-)
+final case class Resolver(name: String, location: String)
 
-object RepoCache {
-  implicit val repoCacheCodec: Codec[RepoCache] =
-    deriveCodec
+object Resolver {
+  implicit val resolverDecoder: Codec[Resolver] = deriveCodec
 }

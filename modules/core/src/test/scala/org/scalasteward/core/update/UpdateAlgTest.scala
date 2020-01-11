@@ -31,7 +31,7 @@ class UpdateAlgTest extends AnyFunSuite with Matchers {
       Nel.of("0.10.0"),
       Some(GroupId("org.typelevel"))
     )
-    val actual = updateAlg.findUpdate(dependency).runA(MockState.empty).unsafeRunSync()
+    val actual = updateAlg.findUpdate(dependency, List.empty).runA(MockState.empty).unsafeRunSync()
     actual shouldBe Some(expected)
   }
 

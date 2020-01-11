@@ -1,7 +1,7 @@
 package org.scalasteward.core.sbt
 
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.{ArtifactId, Update}
+import org.scalasteward.core.data.{ArtifactId, Resolver, Update}
 import org.scalasteward.core.sbt.data.SbtVersion
 import org.scalasteward.core.sbt.parser._
 import org.scalasteward.core.util.Nel
@@ -24,8 +24,12 @@ class parserTest extends AnyFunSuite with Matchers {
          |[info] { "groupId": "com.dwijnand", "artifactId": { "name": "sbt-travisci", "maybeCrossName": null }, "version": "1.1.3",  "sbtVersion": "1.0" }
          |[info] { "groupId": "com.eed3si9n", "artifactId": { "name": "sbt-assembly", "maybeCrossName": null }, "version": "0.14.8", "sbtVersion": "1.0", "configurations": "foo" }
          |[info] { "groupId": "com.geirsson", "artifactId": { "name": "sbt-scalafmt", "maybeCrossName": null }, "version": "1.6.0-RC4", "sbtVersion": "1.0" }
+         |[info] core / stewardResolvers
+         |[info] { "name": "confluent-release", "location": "http://packages.confluent.io/maven/" }
+         |[info] { "name": "bintray-ovotech-maven", "location": "https://dl.bintray.com/ovotech/maven/" }
          |""".stripMargin.linesIterator.toList
-    parseDependencies(lines) should contain theSameElementsAs List(
+    val (deps, resolvers) = parseDependenciesAndResolvers(lines)
+    deps should contain theSameElementsAs List(
       "org.scala-lang" % "scala-library" % "2.12.7",
       "com.github.pathikrit" % ArtifactId("better-files", "better-files_2.12") % "3.6.0",
       "org.typelevel" % ArtifactId("cats-effect", "cats-effect_2.12") % "1.0.0",
@@ -34,6 +38,10 @@ class parserTest extends AnyFunSuite with Matchers {
       ("com.eed3si9n" % "sbt-assembly" % "0.14.8" % "foo")
         .copy(sbtVersion = Some(SbtVersion("1.0"))),
       ("com.geirsson" % "sbt-scalafmt" % "1.6.0-RC4").copy(sbtVersion = Some(SbtVersion("1.0")))
+    )
+    resolvers shouldBe List(
+      Resolver("confluent-release", "http://packages.confluent.io/maven/"),
+      Resolver("bintray-ovotech-maven", "https://dl.bintray.com/ovotech/maven/")
     )
   }
 

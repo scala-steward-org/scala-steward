@@ -35,7 +35,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
     )
   }
 
-  test("getDependencies") {
+  test("getDependenciesAndResolvers") {
     val repo = Repo("typelevel", "cats")
     val repoDir = config.workspace / repo.show
     val files = Map(
@@ -43,7 +43,10 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
       repoDir / ".scalafmt.conf" -> "version=2.0.0"
     )
     val state =
-      sbtAlg.getDependencies(repo).runS(MockState.empty.copy(files = files)).unsafeRunSync()
+      sbtAlg
+        .getDependenciesAndResolvers(repo)
+        .runS(MockState.empty.copy(files = files))
+        .unsafeRunSync()
     state shouldBe MockState.empty.copy(
       commands = Vector(
         List(
@@ -55,7 +58,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
           "sbt",
           "-batch",
           "-no-colors",
-          s";$crossStewardDependencies;$reloadPlugins;$stewardDependencies"
+          s";$crossStewardDependencies;$crossStewardResolvers;$reloadPlugins;$stewardDependencies;$stewardResolvers"
         ),
         List("read", s"$repoDir/project/build.properties"),
         List("read", s"$repoDir/.scalafmt.conf")

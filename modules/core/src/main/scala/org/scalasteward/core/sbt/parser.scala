@@ -19,7 +19,7 @@ package org.scalasteward.core.sbt
 import cats.implicits._
 import io.circe.Decoder
 import io.circe.parser._
-import org.scalasteward.core.data.{CrossDependency, Dependency, Update}
+import org.scalasteward.core.data.{CrossDependency, Dependency, Resolver, Update}
 import org.scalasteward.core.sbt.data.SbtVersion
 import org.scalasteward.core.util.Nel
 
@@ -28,8 +28,11 @@ object parser {
     """sbt.version\s*=\s*(.+)""".r.findFirstMatchIn(s).map(_.group(1)).map(SbtVersion.apply)
 
   /** Parses the output of our own `stewardDependencies` task. */
-  def parseDependencies(lines: List[String]): List[Dependency] =
-    lines.flatMap(line => decode[Dependency](removeSbtNoise(line)).toList)
+  def parseDependenciesAndResolvers(lines: List[String]): (List[Dependency], List[Resolver]) =
+    lines.flatMap { line =>
+      implicit val dec = Decoder[Dependency].either(Decoder[Resolver])
+      decode[Either[Dependency, Resolver]](removeSbtNoise(line)).toList
+    }.separate
 
   def parseDependenciesAndUpdates(lines: List[String]): (List[Dependency], List[Update.Single]) = {
     val updateDecoder = Decoder.instance { c =>

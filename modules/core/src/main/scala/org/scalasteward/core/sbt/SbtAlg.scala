@@ -22,7 +22,7 @@ import cats.implicits._
 import cats.{Functor, Monad}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.data.{Dependency, Update}
+import org.scalasteward.core.data.{Dependency, Resolver, Update}
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.sbt.data.SbtVersion
@@ -39,7 +39,7 @@ trait SbtAlg[F[_]] {
 
   def getSbtVersion(repo: Repo): F[Option[SbtVersion]]
 
-  def getDependencies(repo: Repo): F[List[Dependency]]
+  def getDependenciesAndResolvers(repo: Repo): F[(List[Dependency], List[Resolver])]
 
   def getUpdates(repo: Repo): F[List[Update.Single]]
 
@@ -89,15 +89,23 @@ object SbtAlg {
           version = maybeProperties.flatMap(parser.parseBuildProperties)
         } yield version
 
-      override def getDependencies(repo: Repo): F[List[Dependency]] =
+      override def getDependenciesAndResolvers(repo: Repo): F[(List[Dependency], List[Resolver])] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          cmd = sbtCmd(List(crossStewardDependencies, reloadPlugins, stewardDependencies))
+          cmd = sbtCmd(
+            List(
+              crossStewardDependencies,
+              crossStewardResolvers,
+              reloadPlugins,
+              stewardDependencies,
+              stewardResolvers
+            )
+          )
           lines <- exec(cmd, repoDir)
-          dependencies = parser.parseDependencies(lines)
+          (dependencies, resolvers) = parser.parseDependenciesAndResolvers(lines)
           maybeSbtDependency <- getSbtDependency(repo)
           maybeScalafmtDependency <- scalafmtAlg.getScalafmtDependency(repo)
-        } yield (maybeSbtDependency.toList ++ maybeScalafmtDependency.toList ++ dependencies).distinct
+        } yield (maybeSbtDependency.toList ++ maybeScalafmtDependency.toList ++ dependencies).distinct -> resolvers.distinct
 
       override def getUpdates(repo: Repo): F[List[Update.Single]] =
         for {
@@ -153,8 +161,10 @@ object SbtAlg {
         for {
           maybeSbtDependency <- getSbtDependency(repo)
           maybeScalafmtDependency <- scalafmtAlg.getScalafmtDependency(repo)
-          maybeSbtUpdate <- maybeSbtDependency.flatTraverse(updateAlg.findUpdate)
-          maybeScalafmtUpdate <- maybeScalafmtDependency.flatTraverse(updateAlg.findUpdate)
+          maybeSbtUpdate <- maybeSbtDependency.flatTraverse(updateAlg.findUpdate(_, List.empty))
+          maybeScalafmtUpdate <- maybeScalafmtDependency.flatTraverse(
+            updateAlg.findUpdate(_, List.empty)
+          )
         } yield maybeSbtUpdate.toList ++ maybeScalafmtUpdate.toList
     }
 }
