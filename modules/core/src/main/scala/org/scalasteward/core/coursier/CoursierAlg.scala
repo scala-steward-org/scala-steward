@@ -77,9 +77,7 @@ object CoursierAlg {
       ): F[Option[Uri]] =
         (for {
           maybeFetchResult <- fetch
-            .addRepositories(
-              extraResolvers.map(resolver => MavenRepository.apply(resolver.location)): _*
-            )
+            .addRepositories(extraResolvers.map(toCoursierRepository): _*)
             .addDependencies(coursierDependency)
             .addArtifactTypes(coursier.Type.pom, coursier.Type.ivy)
             .ioResult
