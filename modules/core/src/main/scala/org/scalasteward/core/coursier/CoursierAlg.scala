@@ -39,10 +39,7 @@ trait CoursierAlg[F[_]] {
       extraResolvers: List[Resolver] = List.empty
   ): F[Option[Uri]]
 
-  def getVersions(
-      dependency: Dependency,
-      extraResolvers: List[Resolver] = List.empty
-  ): F[List[Version]]
+  def getVersions(dependency: Dependency, resolvers: List[Resolver]): F[List[Version]]
 
   final def getArtifactIdUrlMapping(dependencies: List[Dependency])(
       implicit F: Applicative[F]
@@ -65,7 +62,7 @@ object CoursierAlg {
     val sbtPluginReleases =
       ivy"https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/[defaultPattern]"
     val fetch = coursier.Fetch[F](cache).addRepositories(sbtPluginReleases)
-    val versions = coursier.Versions[F](cache).addRepositories(sbtPluginReleases)
+    val versions = coursier.Versions[F](cache).withRepositories(List(sbtPluginReleases))
 
     new CoursierAlg[F] {
       override def getArtifactUrl(
@@ -80,9 +77,7 @@ object CoursierAlg {
       ): F[Option[Uri]] =
         (for {
           maybeFetchResult <- fetch
-            .addRepositories(
-              extraResolvers.map(resolver => MavenRepository.apply(resolver.location)): _*
-            )
+            .addRepositories(extraResolvers.map(toCoursierRepository): _*)
             .addDependencies(coursierDependency)
             .addArtifactTypes(coursier.Type.pom, coursier.Type.ivy)
             .ioResult
@@ -111,12 +106,10 @@ object CoursierAlg {
 
       override def getVersions(
           dependency: Dependency,
-          extraResolvers: List[Resolver] = List.empty
+          resolvers: List[Resolver]
       ): F[List[Version]] =
         versions
-          .addRepositories(
-            extraResolvers.map(resolver => MavenRepository.apply(resolver.location)): _*
-          )
+          .addRepositories(resolvers.map(toCoursierRepository): _*)
           .withModule(toCoursierModule(dependency))
           .versions()
           .map(_.available.map(Version.apply).sorted)
@@ -132,6 +125,9 @@ object CoursierAlg {
       ModuleName(dependency.artifactId.crossName),
       dependency.attributes
     )
+
+  private def toCoursierRepository(resolver: Resolver): coursier.Repository =
+    MavenRepository.apply(resolver.location)
 
   private def getScmUrlOrHomePage(info: Info): Option[Uri] =
     (info.scm.flatMap(_.url).toList :+ info.homePage)

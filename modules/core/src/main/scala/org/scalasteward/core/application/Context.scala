@@ -61,7 +61,7 @@ object Context {
       implicit val gitAlg: GitAlg[F] = GitAlg.create[F]
       implicit val httpJsonClient: HttpJsonClient[F] = new HttpJsonClient[F]
       implicit val repoCacheRepository: RepoCacheRepository[F] =
-        new RepoCacheRepository[F](new JsonKeyValueStore("repo_cache", "2"))
+        new RepoCacheRepository[F](new JsonKeyValueStore("repo_cache", "3"))
       implicit val selfCheckAlg: SelfCheckAlg[F] = new SelfCheckAlg[F]
       val vcsSelection = new VCSSelection[F]
       implicit val vcsApiAlg: VCSApiAlg[F] = vcsSelection.getAlg(config)

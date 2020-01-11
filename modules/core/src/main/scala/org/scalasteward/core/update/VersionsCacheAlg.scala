@@ -42,7 +42,7 @@ final class VersionsCacheAlg[F[_]](
     logger: Logger[F],
     F: MonadThrowable[F]
 ) {
-  def getVersions(dependency: Dependency, extraResolvers: List[Resolver]): F[List[Version]] =
+  def getVersions(dependency: Dependency, resolvers: List[Resolver]): F[List[Version]] =
     for {
       now <- dateTimeAlg.currentTimeMillis
       module = Module(dependency)
@@ -50,7 +50,7 @@ final class VersionsCacheAlg[F[_]](
         case Some(entry) if entry.age(now) <= config.cacheTtl => F.pure(entry.versions.sorted)
         case maybeEntry =>
           val getAndPut = rateLimiter.limit {
-            coursierAlg.getVersions(dependency, extraResolvers).flatTap { versions =>
+            coursierAlg.getVersions(dependency, resolvers).flatTap { versions =>
               kvStore.put(module, Entry(now, versions))
             }
           }
@@ -62,9 +62,9 @@ final class VersionsCacheAlg[F[_]](
       }
     } yield versions
 
-  def getNewerVersions(dependency: Dependency, extraResolvers: List[Resolver]): F[List[Version]] = {
+  def getNewerVersions(dependency: Dependency, resolvers: List[Resolver]): F[List[Version]] = {
     val current = Version(dependency.version)
-    getVersions(dependency, extraResolvers).map(_.filter(_ > current))
+    getVersions(dependency, resolvers).map(_.filter(_ > current))
   }
 }
 

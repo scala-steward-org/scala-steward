@@ -31,7 +31,7 @@ object StewardPlugin extends AutoPlugin {
     val stewardUpdates =
       taskKey[Unit]("Prints dependency updates as JSON for consumption by Scala Steward.")
     val stewardResolvers =
-      taskKey[Unit]("Resolvers as JSON for consumption by Scala Steward.")
+      taskKey[Unit]("Prints resolvers as JSON for consumption by Scala Steward.")
   }
 
   import autoImport._
@@ -70,9 +70,10 @@ object StewardPlugin extends AutoPlugin {
     },
     stewardResolvers := {
       val log = streams.value.log
-      resolvers.value.toList
+      fullResolvers.value
         .collect {
-          case repo: MavenRepository => Resolver(repo.name, repo.root)
+          case repo: MavenRepository if !repo.root.startsWith("file://") =>
+            Resolver(repo.name, repo.root)
         }
         .map(_.asJson)
         .foreach(s => log.info(s))
