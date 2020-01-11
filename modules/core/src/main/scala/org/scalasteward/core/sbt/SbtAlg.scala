@@ -105,7 +105,7 @@ object SbtAlg {
           (dependencies, resolvers) = parser.parseDependenciesAndResolvers(lines)
           maybeSbtDependency <- getSbtDependency(repo)
           maybeScalafmtDependency <- scalafmtAlg.getScalafmtDependency(repo)
-        } yield (maybeSbtDependency.toList ++ maybeScalafmtDependency.toList ++ dependencies).distinct -> resolvers
+        } yield (maybeSbtDependency.toList ++ maybeScalafmtDependency.toList ++ dependencies).distinct -> resolvers.distinct
 
       override def getUpdates(repo: Repo): F[List[Update.Single]] =
         for {
