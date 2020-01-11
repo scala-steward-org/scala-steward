@@ -13,9 +13,9 @@ object Dependencies {
   val circeParser = "io.circe" %% "circe-parser" % circeGeneric.revision
   val circeRefined = "io.circe" %% "circe-refined" % circeGeneric.revision
   val commonsIo = "commons-io" % "commons-io" % "2.6"
-  val coursierCore = "io.get-coursier" %% "coursier" % "2.0.0-RC5-5"
+  val coursierCore = "io.get-coursier" %% "coursier" % "2.0.0-RC5-6"
   val coursierCatsInterop = "io.get-coursier" %% "coursier-cats-interop" % coursierCore.revision
-  val disciplineScalatest = "org.typelevel" %% "discipline-scalatest" % "1.0.0-RC1"
+  val disciplineScalatest = "org.typelevel" %% "discipline-scalatest" % "1.0.0-RC2"
   val fs2Core = "co.fs2" %% "fs2-core" % "2.1.0"
   val http4sAsyncHttpClient = "org.http4s" %% "http4s-async-http-client" % "0.21.0-M6"
   val http4sCirce = "org.http4s" %% "http4s-circe" % http4sAsyncHttpClient.revision
@@ -23,7 +23,7 @@ object Dependencies {
   val kindProjector = "org.typelevel" %% "kind-projector" % "0.11.0"
   val log4catsSlf4j = "io.chrisdavenport" %% "log4cats-slf4j" % "1.0.1"
   val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.2.3"
-  val monocleCore = "com.github.julien-truffaut" %% "monocle-core" % "2.0.0"
+  val monocleCore = "com.github.julien-truffaut" %% "monocle-core" % "2.0.1"
   val refined = "eu.timepit" %% "refined" % "0.9.10"
   val refinedCats = "eu.timepit" %% "refined-cats" % refined.revision
   val refinedScalacheck = "eu.timepit" %% "refined-scalacheck" % refined.revision

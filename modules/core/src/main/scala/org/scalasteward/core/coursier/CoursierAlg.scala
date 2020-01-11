@@ -16,9 +16,11 @@
 
 package org.scalasteward.core.coursier
 
+import cats.data.OptionT
 import cats.effect._
 import cats.implicits._
 import cats.{Applicative, Parallel}
+import coursier.core.Project
 import coursier.interop.cats._
 import coursier.maven.MavenRepository
 import coursier.util.StringInterpolators.SafeIvyRepository
@@ -69,9 +71,14 @@ object CoursierAlg {
       override def getArtifactUrl(
           dependency: Dependency,
           extraResolvers: List[Resolver] = List.empty
-      ): F[Option[Uri]] = {
-        val coursierDependency = toCoursierDependency(dependency)
-        for {
+      ): F[Option[Uri]] =
+        getArtifactUrlImpl(toCoursierDependency(dependency), extraResolvers)
+
+      private def getArtifactUrlImpl(
+          coursierDependency: coursier.Dependency,
+          extraResolvers: List[Resolver] = List.empty
+      ): F[Option[Uri]] =
+        (for {
           maybeFetchResult <- fetch
             .addRepositories(
               extraResolvers.map(resolver => MavenRepository.apply(resolver.location)): _*
@@ -84,14 +91,23 @@ object CoursierAlg {
               logger.debug(throwable)(s"Failed to fetch artifacts of $coursierDependency").as(None)
             }
         } yield {
-          for {
-            result <- maybeFetchResult
+          (for {
+            result <- maybeFetchResult.toOptionT[F]
             moduleVersion = (coursierDependency.module, coursierDependency.version)
-            (_, project) <- result.resolution.projectCache.get(moduleVersion)
+            (_, project) <- result.resolution.projectCache.get(moduleVersion).toOptionT[F]
             url <- getScmUrlOrHomePage(project.info)
-          } yield url
+              .toOptionT[F]
+              .orElse(OptionT(getParentArtifactUrl(project)))
+          } yield url).value
+        }).flatten
+
+      private def getParentArtifactUrl(project: Project): F[Option[Uri]] =
+        project.parent match {
+          case None => F.pure(none[Uri])
+          case Some((module, version)) =>
+            val parentDep = coursier.Dependency(module, version).withTransitive(false)
+            getArtifactUrlImpl(parentDep)
         }
-      }
 
       override def getVersions(
           dependency: Dependency,
@@ -119,7 +135,7 @@ object CoursierAlg {
 
   private def getScmUrlOrHomePage(info: Info): Option[Uri] =
     (info.scm.flatMap(_.url).toList :+ info.homePage)
-      .filterNot(url => url.isEmpty || url.startsWith("git@"))
+      .filterNot(url => url.isEmpty || url.startsWith("git@") || url.startsWith("git:"))
       .flatMap(Uri.fromString(_).toList.filter(_.scheme.isDefined))
       .headOption
 }
