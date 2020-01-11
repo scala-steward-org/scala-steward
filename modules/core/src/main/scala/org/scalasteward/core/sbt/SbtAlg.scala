@@ -39,9 +39,7 @@ trait SbtAlg[F[_]] {
 
   def getSbtVersion(repo: Repo): F[Option[SbtVersion]]
 
-  def getDependencies(repo: Repo): F[List[Dependency]]
-
-  def getResolvers(repo: Repo): F[List[Resolver]]
+  def getDependenciesAndResolvers(repo: Repo): F[(List[Dependency], List[Resolver])]
 
   def getUpdates(repo: Repo): F[List[Update.Single]]
 
@@ -91,22 +89,23 @@ object SbtAlg {
           version = maybeProperties.flatMap(parser.parseBuildProperties)
         } yield version
 
-      override def getDependencies(repo: Repo): F[List[Dependency]] =
+      override def getDependenciesAndResolvers(repo: Repo): F[(List[Dependency], List[Resolver])] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          cmd = sbtCmd(List(crossStewardDependencies, reloadPlugins, stewardDependencies))
+          cmd = sbtCmd(
+            List(
+              crossStewardDependencies,
+              crossStewardResolvers,
+              reloadPlugins,
+              stewardDependencies,
+              stewardResolvers
+            )
+          )
           lines <- exec(cmd, repoDir)
-          dependencies = parser.parseDependencies(lines)
+          (dependencies, resolvers) = parser.parseDependenciesAndResolvers(lines)
           maybeSbtDependency <- getSbtDependency(repo)
           maybeScalafmtDependency <- scalafmtAlg.getScalafmtDependency(repo)
-        } yield (maybeSbtDependency.toList ++ maybeScalafmtDependency.toList ++ dependencies).distinct
-
-      override def getResolvers(repo: Repo): F[List[Resolver]] =
-        for {
-          repoDir <- workspaceAlg.repoDir(repo)
-          cmd = sbtCmd(List(crossStewardResolvers, reloadPlugins, stewardResolvers))
-          lines <- exec(cmd, repoDir)
-        } yield parser.parseResolvers(lines)
+        } yield (maybeSbtDependency.toList ++ maybeScalafmtDependency.toList ++ dependencies).distinct -> resolvers
 
       override def getUpdates(repo: Repo): F[List[Update.Single]] =
         for {

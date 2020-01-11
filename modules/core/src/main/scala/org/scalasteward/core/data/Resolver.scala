@@ -16,11 +16,11 @@
 
 package org.scalasteward.core.data
 
-import io.circe.Decoder
 import io.circe.generic.semiauto._
+import io.circe.Codec
 
 final case class Resolver(name: String, location: String)
 
 object Resolver {
-  implicit val resolverDecoder: Decoder[Resolver] = deriveDecoder
+  implicit val resolverDecoder: Codec[Resolver] = deriveCodec
 }

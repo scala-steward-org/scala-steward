@@ -28,8 +28,11 @@ object parser {
     """sbt.version\s*=\s*(.+)""".r.findFirstMatchIn(s).map(_.group(1)).map(SbtVersion.apply)
 
   /** Parses the output of our own `stewardDependencies` task. */
-  def parseDependencies(lines: List[String]): List[Dependency] =
-    lines.flatMap(line => decode[Dependency](removeSbtNoise(line)).toList)
+  def parseDependenciesAndResolvers(lines: List[String]): (List[Dependency], List[Resolver]) =
+    lines.flatMap { line =>
+      implicit val dec = Decoder[Dependency].either(Decoder[Resolver])
+      decode[Either[Dependency, Resolver]](removeSbtNoise(line)).toList
+    }.separate
 
   def parseDependenciesAndUpdates(lines: List[String]): (List[Dependency], List[Update.Single]) = {
     val updateDecoder = Decoder.instance { c =>
@@ -45,9 +48,6 @@ object parser {
       }.toList
     }.separate
   }
-
-  def parseResolvers(lines: List[String]): List[Resolver] =
-    lines.flatMap(line => decode[Resolver](removeSbtNoise(line)).toList)
 
   private def removeSbtNoise(s: String): String =
     s.replace("[info]", "").trim
