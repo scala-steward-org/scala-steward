@@ -26,7 +26,7 @@ final case class RepoCache(
     sha1: Sha1,
     dependencyInfos: List[DependencyInfo],
     maybeRepoConfig: Option[RepoConfig],
-    additionalResolvers: List[Resolver]
+    resolvers: List[Resolver]
 )
 
 object RepoCache {
