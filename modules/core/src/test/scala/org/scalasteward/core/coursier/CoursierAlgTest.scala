@@ -34,18 +34,30 @@ class CoursierAlgTest extends AnyFunSuite with Matchers {
     result shouldBe Some(uri"https://github.com/playframework/play-ws")
   }
 
-  test("getArtifactUrl: URL without a scheme") {
-    val dep = Dependency(
+  test("getArtifactUrl: URL with no or invalid scheme") {
+    val dep1 = Dependency(
       GroupId("org.msgpack"),
       ArtifactId("msgpack-core"),
       "0.8.20"
     )
-    val (state, result) = coursierAlg
-      .getArtifactUrl(dep)
+    val (state1, result1) = coursierAlg
+      .getArtifactUrl(dep1)
       .run(MockState.empty)
       .unsafeRunSync()
-    state shouldBe MockState.empty
-    result shouldBe Some(uri"http://msgpack.org/")
+    state1 shouldBe MockState.empty
+    result1 shouldBe Some(uri"http://msgpack.org/")
+
+    val dep2 = Dependency(
+      GroupId("org.xhtmlrenderer"),
+      ArtifactId("flying-saucer-parent"),
+      "9.0.1"
+    )
+    val (state2, result2) = coursierAlg
+      .getArtifactUrl(dep2)
+      .run(MockState.empty)
+      .unsafeRunSync()
+    state2 shouldBe MockState.empty
+    result2 shouldBe Some(uri"http://code.google.com/p/flying-saucer/")
   }
 
   test("getArtifactUrl: from parent") {
@@ -60,6 +72,20 @@ class CoursierAlgTest extends AnyFunSuite with Matchers {
       .unsafeRunSync()
     state shouldBe MockState.empty
     result shouldBe Some(uri"https://bytebuddy.net")
+  }
+
+  test("getArtifactUrl: minimal pom") {
+    val dep = Dependency(
+      GroupId("altrmi"),
+      ArtifactId("altrmi-common"),
+      "0.9.6"
+    )
+    val (state, result) = coursierAlg
+      .getArtifactUrl(dep)
+      .run(MockState.empty)
+      .unsafeRunSync()
+    state shouldBe MockState.empty
+    result shouldBe None
   }
 
   test("getArtifactUrl: sbt plugin on Maven Central") {
@@ -86,7 +112,8 @@ class CoursierAlgTest extends AnyFunSuite with Matchers {
       Some(SbtVersion("1.0")),
       Some(ScalaVersion("2.12"))
     )
-    val result = coursierAlg.getArtifactUrl(dep).runA(MockState.empty).unsafeRunSync()
+    val (state, result) = coursierAlg.getArtifactUrl(dep).run(MockState.empty).unsafeRunSync()
+    state shouldBe MockState.empty
     result shouldBe Some(uri"https://github.com/sbt/sbt-release")
   }
 
