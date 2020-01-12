@@ -34,18 +34,15 @@ import org.scalasteward.core.data.{Dependency, Resolver, Version}
   * fetching dependency versions and metadata.
   */
 trait CoursierAlg[F[_]] {
-  def getArtifactUrl(
-      dependency: Dependency,
-      extraResolvers: List[Resolver] = List.empty
-  ): F[Option[Uri]]
+  def getArtifactUrl(dependency: Dependency, resolvers: List[Resolver]): F[Option[Uri]]
 
   def getVersions(dependency: Dependency, resolvers: List[Resolver]): F[List[Version]]
 
-  final def getArtifactIdUrlMapping(dependencies: List[Dependency])(
+  final def getArtifactIdUrlMapping(dependencies: List[Dependency], resolvers: List[Resolver])(
       implicit F: Applicative[F]
   ): F[Map[String, Uri]] =
     dependencies
-      .traverseFilter(dep => getArtifactUrl(dep).map(_.map(dep.artifactId.name -> _)))
+      .traverseFilter(dep => getArtifactUrl(dep, resolvers).map(_.map(dep.artifactId.name -> _)))
       .map(_.toMap)
 }
 
@@ -61,23 +58,23 @@ object CoursierAlg {
     val cache = coursier.cache.FileCache[F]().withTtl(config.cacheTtl)
     val sbtPluginReleases =
       ivy"https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/[defaultPattern]"
-    val fetch = coursier.Fetch[F](cache).addRepositories(sbtPluginReleases)
+    val fetch = coursier.Fetch[F](cache).withRepositories(List(sbtPluginReleases))
     val versions = coursier.Versions[F](cache).withRepositories(List(sbtPluginReleases))
 
     new CoursierAlg[F] {
       override def getArtifactUrl(
           dependency: Dependency,
-          extraResolvers: List[Resolver] = List.empty
+          resolvers: List[Resolver]
       ): F[Option[Uri]] =
-        getArtifactUrlImpl(toCoursierDependency(dependency), extraResolvers)
+        getArtifactUrlImpl(toCoursierDependency(dependency), resolvers)
 
       private def getArtifactUrlImpl(
           coursierDependency: coursier.Dependency,
-          extraResolvers: List[Resolver] = List.empty
+          resolvers: List[Resolver]
       ): F[Option[Uri]] =
         (for {
           maybeFetchResult <- fetch
-            .addRepositories(extraResolvers.map(toCoursierRepository): _*)
+            .addRepositories(resolvers.map(toCoursierRepository): _*)
             .addDependencies(coursierDependency)
             .addArtifactTypes(coursier.Type.pom, coursier.Type.ivy)
             .ioResult
@@ -90,19 +87,11 @@ object CoursierAlg {
             result <- maybeFetchResult.toOptionT[F]
             moduleVersion = (coursierDependency.module, coursierDependency.version)
             (_, project) <- result.resolution.projectCache.get(moduleVersion).toOptionT[F]
-            url <- getScmUrlOrHomePage(project.info)
-              .toOptionT[F]
-              .orElse(OptionT(getParentArtifactUrl(project)))
+            parentUrl = getParentDependency(project)
+              .traverseFilter(getArtifactUrlImpl(_, resolvers))
+            url <- getScmUrlOrHomePage(project.info).toOptionT[F].orElse(OptionT(parentUrl))
           } yield url).value
         }).flatten
-
-      private def getParentArtifactUrl(project: Project): F[Option[Uri]] =
-        project.parent match {
-          case None => F.pure(none[Uri])
-          case Some((module, version)) =>
-            val parentDep = coursier.Dependency(module, version).withTransitive(false)
-            getArtifactUrlImpl(parentDep)
-        }
 
       override def getVersions(
           dependency: Dependency,
@@ -128,6 +117,12 @@ object CoursierAlg {
 
   private def toCoursierRepository(resolver: Resolver): coursier.Repository =
     MavenRepository.apply(resolver.location)
+
+  private def getParentDependency(project: Project): Option[coursier.Dependency] =
+    project.parent.map {
+      case (module, version) =>
+        coursier.Dependency(module, version).withTransitive(false)
+    }
 
   private def getScmUrlOrHomePage(info: Info): Option[Uri] =
     (info.scm.flatMap(_.url).toList :+ info.homePage)

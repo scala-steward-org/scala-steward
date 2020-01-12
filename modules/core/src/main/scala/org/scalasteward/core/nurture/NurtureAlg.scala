@@ -25,6 +25,7 @@ import org.scalasteward.core.data.ProcessResult.{Ignored, Updated}
 import org.scalasteward.core.data.{ProcessResult, Update}
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Branch, GitAlg}
+import org.scalasteward.core.repocache.RepoCacheRepository
 import org.scalasteward.core.repoconfig.{PullRequestUpdateStrategy, RepoConfigAlg}
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.scalafix.MigrationAlg
@@ -50,6 +51,7 @@ final class NurtureAlg[F[_]](
     migrationAlg: MigrationAlg[F],
     logger: Logger[F],
     pullRequestRepo: PullRequestRepository[F],
+    repoCacheRepository: RepoCacheRepository[F],
     sbtAlg: SbtAlg[F],
     F: Sync[F]
 ) {
@@ -135,7 +137,12 @@ final class NurtureAlg[F[_]](
   def createPullRequest(data: UpdateData): F[Unit] =
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
-      artifactIdToUrl <- coursierAlg.getArtifactIdUrlMapping(data.update.dependencies.toList)
+      maybeRepoCache <- repoCacheRepository.findCache(data.repo)
+      resolvers = maybeRepoCache.map(_.resolvers).getOrElse(List.empty)
+      artifactIdToUrl <- coursierAlg.getArtifactIdUrlMapping(
+        data.update.dependencies.toList,
+        resolvers
+      )
       branchCompareUrl <- artifactIdToUrl
         .get(data.update.mainArtifactId)
         .flatTraverse(vcsExtraAlg.getBranchCompareUrl(_, data.update))
