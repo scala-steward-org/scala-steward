@@ -73,7 +73,9 @@ object StewardPlugin extends AutoPlugin {
       fullResolvers.value
         .collect {
           case repo: MavenRepository if !repo.root.startsWith("file://") =>
-            Resolver(repo.name, repo.root)
+            Resolver.MavenRepository(repo.name, repo.root)
+          case repo: URLRepository =>
+            Resolver.IvyRepository(repo.name, repo.patterns.ivyPatterns.mkString)
         }
         .map(_.asJson)
         .foreach(s => log.info(s))
@@ -173,9 +175,32 @@ object StewardPlugin extends AutoPlugin {
       )
   }
 
-  final private case class Resolver(name: String, location: String) {
-    def asJson: String =
-      objToJson(List("name" -> strToJson(name), "location" -> strToJson(location)))
+  sealed trait Resolver {
+    def asJson: String
+  }
+
+  object Resolver {
+    final case class MavenRepository(name: String, location: String) extends Resolver {
+      override def asJson: String =
+        objToJson(
+          List(
+            "MavenRepository" -> objToJson(
+              List("name" -> strToJson(name), "location" -> strToJson(location))
+            )
+          )
+        )
+    }
+
+    final case class IvyRepository(name: String, pattern: String) extends Resolver {
+      override def asJson: String =
+        objToJson(
+          List(
+            "IvyRepository" -> objToJson(
+              List("name" -> strToJson(name), "pattern" -> strToJson(pattern))
+            )
+          )
+        )
+    }
   }
 
   final private case class Update(

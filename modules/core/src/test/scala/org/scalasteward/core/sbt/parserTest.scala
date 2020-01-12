@@ -25,8 +25,9 @@ class parserTest extends AnyFunSuite with Matchers {
          |[info] { "groupId": "com.eed3si9n", "artifactId": { "name": "sbt-assembly", "maybeCrossName": null }, "version": "0.14.8", "sbtVersion": "1.0", "configurations": "foo" }
          |[info] { "groupId": "com.geirsson", "artifactId": { "name": "sbt-scalafmt", "maybeCrossName": null }, "version": "1.6.0-RC4", "sbtVersion": "1.0" }
          |[info] core / stewardResolvers
-         |[info] { "name": "confluent-release", "location": "http://packages.confluent.io/maven/" }
-         |[info] { "name": "bintray-ovotech-maven", "location": "https://dl.bintray.com/ovotech/maven/" }
+         |[info] { "MavenRepository": { "name": "confluent-release", "location": "http://packages.confluent.io/maven/" } }
+         |[info] { "MavenRepository": { "name": "bintray-ovotech-maven", "location": "https://dl.bintray.com/ovotech/maven/" } }
+         |[info] { "IvyRepository" : { "name": "sbt-plugin-releases", "pattern": "https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/[organisation]/[module]/(scala_[scalaVersion]/)(sbt_[sbtVersion]/)([branch]/)[revision]/[type]s/[artifact](-[classifier]).[ext]" } }
          |""".stripMargin.linesIterator.toList
     val (deps, resolvers) = parseDependenciesAndResolvers(lines)
     deps should contain theSameElementsAs List(
@@ -40,8 +41,12 @@ class parserTest extends AnyFunSuite with Matchers {
       ("com.geirsson" % "sbt-scalafmt" % "1.6.0-RC4").copy(sbtVersion = Some(SbtVersion("1.0")))
     )
     resolvers shouldBe List(
-      Resolver("confluent-release", "http://packages.confluent.io/maven/"),
-      Resolver("bintray-ovotech-maven", "https://dl.bintray.com/ovotech/maven/")
+      Resolver.MavenRepository("confluent-release", "http://packages.confluent.io/maven/"),
+      Resolver.MavenRepository("bintray-ovotech-maven", "https://dl.bintray.com/ovotech/maven/"),
+      Resolver.IvyRepository(
+        "sbt-plugin-releases",
+        "https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/[organisation]/[module]/(scala_[scalaVersion]/)(sbt_[sbtVersion]/)([branch]/)[revision]/[type]s/[artifact](-[classifier]).[ext]"
+      )
     )
   }
 

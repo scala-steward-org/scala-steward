@@ -22,7 +22,6 @@ import cats.implicits._
 import cats.{Applicative, Parallel}
 import coursier.core.Project
 import coursier.interop.cats._
-import coursier.maven.MavenRepository
 import coursier.util.StringInterpolators.SafeIvyRepository
 import coursier.{Info, Module, ModuleName, Organization}
 import io.chrisdavenport.log4cats.Logger
@@ -62,7 +61,7 @@ object CoursierAlg {
     val sbtPluginReleases =
       ivy"https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/[defaultPattern]"
     val fetch = coursier.Fetch[F](cache).addRepositories(sbtPluginReleases)
-    val versions = coursier.Versions[F](cache).withRepositories(List(sbtPluginReleases))
+    val versions = coursier.Versions[F](cache)
 
     new CoursierAlg[F] {
       override def getArtifactUrl(
@@ -76,8 +75,9 @@ object CoursierAlg {
           extraResolvers: List[Resolver] = List.empty
       ): F[Option[Uri]] =
         (for {
+          repositories <- extraResolvers.traverseFilter(convertResolver)
           maybeFetchResult <- fetch
-            .addRepositories(extraResolvers.map(toCoursierRepository): _*)
+            .addRepositories(repositories: _*)
             .addDependencies(coursierDependency)
             .addArtifactTypes(coursier.Type.pom, coursier.Type.ivy)
             .ioResult
@@ -108,11 +108,19 @@ object CoursierAlg {
           dependency: Dependency,
           resolvers: List[Resolver]
       ): F[List[Version]] =
-        versions
-          .addRepositories(resolvers.map(toCoursierRepository): _*)
-          .withModule(toCoursierModule(dependency))
-          .versions()
-          .map(_.available.map(Version.apply).sorted)
+        resolvers.traverseFilter(convertResolver).flatMap { repositories =>
+          versions
+            .withModule(toCoursierModule(dependency))
+            .withRepositories(repositories)
+            .versions()
+            .map(_.available.map(Version.apply).sorted)
+        }
+
+      private def convertResolver(resolver: Resolver): F[Option[coursier.Repository]] =
+        toCoursierRepository(resolver) match {
+          case Right(repository) => F.pure(Some(repository))
+          case Left(message)     => logger.error(s"Failed to convert $resolver: $message").as(None)
+        }
     }
   }
 
@@ -126,8 +134,13 @@ object CoursierAlg {
       dependency.attributes
     )
 
-  private def toCoursierRepository(resolver: Resolver): coursier.Repository =
-    MavenRepository.apply(resolver.location)
+  private def toCoursierRepository(resolver: Resolver): Either[String, coursier.Repository] =
+    resolver match {
+      case Resolver.MavenRepository(_, location) =>
+        Right(coursier.maven.MavenRepository.apply(location))
+      case Resolver.IvyRepository(_, pattern) =>
+        coursier.ivy.IvyRepository.parse(pattern)
+    }
 
   private def getScmUrlOrHomePage(info: Info): Option[Uri] =
     (info.scm.flatMap(_.url).toList :+ info.homePage)

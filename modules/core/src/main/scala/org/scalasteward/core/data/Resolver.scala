@@ -16,11 +16,15 @@
 
 package org.scalasteward.core.data
 
-import io.circe.generic.semiauto._
 import io.circe.Codec
+import io.circe.generic.semiauto._
 
-final case class Resolver(name: String, location: String)
+sealed trait Resolver extends Product with Serializable
 
 object Resolver {
-  implicit val resolverDecoder: Codec[Resolver] = deriveCodec
+  final case class MavenRepository(name: String, location: String) extends Resolver
+  final case class IvyRepository(name: String, pattern: String) extends Resolver
+
+  implicit val resolverCodec: Codec[Resolver] =
+    deriveCodec
 }
