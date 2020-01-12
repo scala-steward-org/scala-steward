@@ -22,7 +22,7 @@ import cats.implicits._
 import cats.{Functor, Monad}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.data.{Dependency, Resolver, Update}
+import org.scalasteward.core.data.{Dependency, ResolutionScope, Update}
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.sbt.data.SbtVersion
@@ -39,7 +39,7 @@ trait SbtAlg[F[_]] {
 
   def getSbtVersion(repo: Repo): F[Option[SbtVersion]]
 
-  def getDependenciesAndResolvers(repo: Repo): F[(List[Dependency], List[Resolver])]
+  def getDependenciesAndResolvers(repo: Repo): F[List[ResolutionScope.Dependencies]]
 
   def getUpdates(repo: Repo): F[List[Update.Single]]
 
@@ -89,23 +89,19 @@ object SbtAlg {
           version = maybeProperties.flatMap(parser.parseBuildProperties)
         } yield version
 
-      override def getDependenciesAndResolvers(repo: Repo): F[(List[Dependency], List[Resolver])] =
+      override def getDependenciesAndResolvers(repo: Repo): F[List[ResolutionScope.Dependencies]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          cmd = sbtCmd(
-            List(
-              crossStewardDependencies,
-              crossStewardResolvers,
-              reloadPlugins,
-              stewardDependencies,
-              stewardResolvers
-            )
-          )
+          cmd = sbtCmd(List(crossStewardDependencies, reloadPlugins, stewardDependencies))
           lines <- exec(cmd, repoDir)
-          (dependencies, resolvers) = parser.parseDependenciesAndResolvers(lines)
+          scopes = parser.parseDependenciesScopes(lines)
           maybeSbtDependency <- getSbtDependency(repo)
           maybeScalafmtDependency <- scalafmtAlg.getScalafmtDependency(repo)
-        } yield (maybeSbtDependency.toList ++ maybeScalafmtDependency.toList ++ dependencies).distinct -> resolvers.distinct
+          artScope = ResolutionScope(
+            maybeSbtDependency.toList ++ maybeScalafmtDependency.toList,
+            List.empty
+          )
+        } yield artScope :: scopes
 
       override def getUpdates(repo: Repo): F[List[Update.Single]] =
         for {

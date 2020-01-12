@@ -41,7 +41,13 @@ final class PruningAlg[F[_]](
     repoCacheRepository.findCache(repo).flatMap {
       case None => F.pure(false)
       case Some(repoCache) =>
-        val dependencies = repoCache.dependencyInfos
+        val scopes = repoCache.resolutionScopes.map { scope =>
+          scope.map(_.collect {
+            case info if info.filesContainingVersion.nonEmpty => info.dependency
+          })
+        }
+
+        val dependencies = repoCache.resolutionScopes
           .collect { case info if info.filesContainingVersion.nonEmpty => info.dependency }
           .filterNot(FilterAlg.isIgnoredGlobally)
           .sorted

@@ -27,7 +27,7 @@ import coursier.{Info, Module, ModuleName, Organization}
 import io.chrisdavenport.log4cats.Logger
 import org.http4s.Uri
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.data.{Dependency, Resolver, Version}
+import org.scalasteward.core.data.{Dependency, ResolutionScope, Resolver, Version}
 
 /** An interface to [[https://get-coursier.io Coursier]] used for
   * fetching dependency versions and metadata.
@@ -38,7 +38,7 @@ trait CoursierAlg[F[_]] {
       extraResolvers: List[Resolver] = List.empty
   ): F[Option[Uri]]
 
-  def getVersions(dependency: Dependency, resolvers: List[Resolver]): F[List[Version]]
+  def getVersions(dependency: ResolutionScope.Dependency): F[List[Version]]
 
   final def getArtifactIdUrlMapping(dependencies: List[Dependency])(
       implicit F: Applicative[F]
@@ -104,13 +104,10 @@ object CoursierAlg {
             getArtifactUrlImpl(parentDep)
         }
 
-      override def getVersions(
-          dependency: Dependency,
-          resolvers: List[Resolver]
-      ): F[List[Version]] =
-        resolvers.traverseFilter(convertResolver).flatMap { repositories =>
+      override def getVersions(dependency: ResolutionScope.Dependency): F[List[Version]] =
+        dependency.resolvers.traverseFilter(convertResolver).flatMap { repositories =>
           versions
-            .withModule(toCoursierModule(dependency))
+            .withModule(toCoursierModule(dependency.value))
             .withRepositories(repositories)
             .versions()
             .map(_.available.map(Version.apply).sorted)

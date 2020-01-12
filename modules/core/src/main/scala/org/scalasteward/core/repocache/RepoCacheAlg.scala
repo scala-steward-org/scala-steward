@@ -79,10 +79,12 @@ final class RepoCacheAlg[F[_]](
     for {
       branch <- gitAlg.currentBranch(repo)
       latestSha1 <- gitAlg.latestSha1(repo, branch)
-      (dependencies, resolvers) <- sbtAlg.getDependenciesAndResolvers(repo)
-      dependencyInfos <- dependencies.traverse(gatherDependencyInfo(repo, _))
+      scopes <- sbtAlg.getDependenciesAndResolvers(repo)
+      dependencyInfos <- scopes.traverse(s =>
+        s.value.traverse(gatherDependencyInfo(repo, _)).map(l => s.copy(value = l))
+      )
       maybeRepoConfig <- repoConfigAlg.readRepoConfig(repo)
-    } yield RepoCache(latestSha1, dependencyInfos, resolvers, maybeRepoConfig)
+    } yield RepoCache(latestSha1, dependencyInfos, maybeRepoConfig)
 
   private def gatherDependencyInfo(repo: Repo, dependency: Dependency): F[DependencyInfo] =
     gitAlg.findFilesContaining(repo, dependency.version).map(DependencyInfo(dependency, _))

@@ -18,14 +18,13 @@ package org.scalasteward.core.repocache
 
 import io.circe.Codec
 import io.circe.generic.semiauto._
-import org.scalasteward.core.data.{DependencyInfo, Resolver}
+import org.scalasteward.core.data.{DependencyInfo, ResolutionScope}
 import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.repoconfig.RepoConfig
 
 final case class RepoCache(
     sha1: Sha1,
-    dependencyInfos: List[DependencyInfo],
-    resolvers: List[Resolver],
+    resolutionScopes: List[ResolutionScope[List[DependencyInfo]]],
     maybeRepoConfig: Option[RepoConfig]
 )
 

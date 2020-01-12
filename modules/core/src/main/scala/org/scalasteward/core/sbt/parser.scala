@@ -19,20 +19,17 @@ package org.scalasteward.core.sbt
 import cats.implicits._
 import io.circe.Decoder
 import io.circe.parser._
-import org.scalasteward.core.data.{CrossDependency, Dependency, Resolver, Update}
+import org.scalasteward.core.data.{CrossDependency, Dependency, ResolutionScope, Update}
 import org.scalasteward.core.sbt.data.SbtVersion
 import org.scalasteward.core.util.Nel
+import scala.annotation.tailrec
 
 object parser {
   def parseBuildProperties(s: String): Option[SbtVersion] =
     """sbt.version\s*=\s*(.+)""".r.findFirstMatchIn(s).map(_.group(1)).map(SbtVersion.apply)
 
-  /** Parses the output of our own `stewardDependencies` task. */
-  def parseDependenciesAndResolvers(lines: List[String]): (List[Dependency], List[Resolver]) =
-    lines.flatMap { line =>
-      implicit val dec = Decoder[Dependency].either(Decoder[Resolver])
-      decode[Either[Dependency, Resolver]](removeSbtNoise(line)).toList
-    }.separate
+  def parseDependenciesScopes(lines: List[String]): List[ResolutionScope.Dependencies] =
+    extractJsonFragments(lines).flatMap(decode[ResolutionScope.Dependencies](_).toList)
 
   def parseDependenciesAndUpdates(lines: List[String]): (List[Dependency], List[Update.Single]) = {
     val updateDecoder = Decoder.instance { c =>
@@ -47,6 +44,26 @@ object parser {
         Decoder[Dependency].either(updateDecoder).decodeJson(json)
       }.toList
     }.separate
+  }
+
+  private def extractJsonFragments(lines: List[String]): List[String] = {
+    @tailrec def loop(
+        lines: List[String],
+        isJson: Boolean,
+        fragment: StringBuilder,
+        acc: List[String]
+    ): List[String] =
+      lines match {
+        case h :: t =>
+          removeSbtNoise(h) match {
+            case "<<< json"     => loop(t, isJson = true, new StringBuilder, acc)
+            case ">>> json"     => loop(t, isJson = false, fragment, fragment.toString :: acc)
+            case line if isJson => loop(t, isJson, fragment.append(line), acc)
+            case _              => loop(t, isJson, fragment, acc)
+          }
+        case Nil => acc.reverse
+      }
+    loop(lines, isJson = false, new StringBuilder, List.empty)
   }
 
   private def removeSbtNoise(s: String): String =

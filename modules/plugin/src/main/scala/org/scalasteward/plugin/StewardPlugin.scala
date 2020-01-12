@@ -16,8 +16,8 @@
 
 package org.scalasteward.plugin
 
-import com.timushev.sbt.updates.UpdatesKeys.dependencyUpdatesData
-import com.timushev.sbt.updates.versions.{InvalidVersion, ValidVersion}
+//import com.timushev.sbt.updates.UpdatesKeys.dependencyUpdatesData
+//import com.timushev.sbt.updates.versions.{InvalidVersion, ValidVersion}
 import sbt.Keys._
 import sbt._
 import scala.util.matching.Regex
@@ -26,18 +26,16 @@ object StewardPlugin extends AutoPlugin {
   override def trigger: PluginTrigger = allRequirements
 
   object autoImport {
-    val stewardDependencies =
-      taskKey[Unit]("Prints dependencies as JSON for consumption by Scala Steward.")
+    val stewardDependenciesScope =
+      taskKey[Unit]("Prints dependencies and resolvers as JSON for consumption by Scala Steward.")
     val stewardUpdates =
       taskKey[Unit]("Prints dependency updates as JSON for consumption by Scala Steward.")
-    val stewardResolvers =
-      taskKey[Unit]("Prints resolvers as JSON for consumption by Scala Steward.")
   }
 
   import autoImport._
 
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
-    stewardDependencies := {
+    stewardDependenciesScope := {
       val log = streams.value.log
       val sourcePositions = dependencyPositions.value
       val buildRoot = baseDirectory.in(ThisBuild).value
@@ -48,9 +46,19 @@ object StewardPlugin extends AutoPlugin {
         .filter(isDefinedInBuildFiles(_, sourcePositions, buildRoot))
         .map(moduleId => toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue))
 
-      dependencies.map(_.asJson).foreach(s => log.info(s))
+      val resolvers = fullResolvers.value.collect {
+        case repo: MavenRepository if !repo.root.startsWith("file://") =>
+          Resolver.MavenRepository(repo.name, repo.root)
+        case repo: URLRepository =>
+          Resolver.IvyRepository(repo.name, repo.patterns.ivyPatterns.mkString)
+      }
+
+      log.info("<<< json")
+      log.info(DependenciesScope(dependencies, resolvers).asJson)
+      log.info(">>> json")
     },
     stewardUpdates := {
+      /*
       val log = streams.value.log
       val scalaBinaryVersionValue = scalaBinaryVersion.value
       val scalaVersionValue = scalaVersion.value
@@ -67,18 +75,9 @@ object StewardPlugin extends AutoPlugin {
       }
 
       updates.map(_.asJson).foreach(s => log.info(s))
-    },
-    stewardResolvers := {
-      val log = streams.value.log
-      fullResolvers.value
-        .collect {
-          case repo: MavenRepository if !repo.root.startsWith("file://") =>
-            Resolver.MavenRepository(repo.name, repo.root)
-          case repo: URLRepository =>
-            Resolver.IvyRepository(repo.name, repo.patterns.ivyPatterns.mkString)
-        }
-        .map(_.asJson)
-        .foreach(s => log.info(s))
+
+       */
+      ()
     }
   )
 
@@ -203,6 +202,19 @@ object StewardPlugin extends AutoPlugin {
     }
   }
 
+  final private case class DependenciesScope(
+      dependencies: Seq[Dependency],
+      resolvers: Seq[Resolver]
+  ) {
+    def asJson: String =
+      objToJsonLf(
+        List(
+          "dependencies" -> seqToJsonLf(dependencies.map(_.asJson)),
+          "resolvers" -> seqToJsonLf(resolvers.map(_.asJson))
+        )
+      )
+  }
+
   final private case class Update(
       dependency: Dependency,
       newerVersions: List[String]
@@ -225,6 +237,12 @@ object StewardPlugin extends AutoPlugin {
   private def seqToJson(seq: Seq[String]): String =
     seq.mkString("[ ", ", ", " ]")
 
+  private def seqToJsonLf(seq: Seq[String]): String =
+    seq.mkString("[\n", ",\n", " ]")
+
   private def objToJson(obj: List[(String, String)]): String =
     obj.map { case (k, v) => s""""$k": $v""" }.mkString("{ ", ", ", " }")
+
+  private def objToJsonLf(obj: List[(String, String)]): String =
+    obj.map { case (k, v) => s""""$k": $v""" }.mkString("{\n", ",\n", " }")
 }

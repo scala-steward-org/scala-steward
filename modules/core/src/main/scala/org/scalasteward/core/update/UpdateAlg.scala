@@ -32,13 +32,13 @@ final class UpdateAlg[F[_]](
     versionsCacheAlg: VersionsCacheAlg[F],
     F: Monad[F]
 ) {
-  def findUpdate(dependency: Dependency, resolvers: List[Resolver]): F[Option[Update.Single]] =
+  def findUpdate(dependency: ResolutionScope[Dependency]): F[Option[Update.Single]] =
     for {
-      newerVersions0 <- versionsCacheAlg.getNewerVersions(dependency, resolvers)
+      newerVersions0 <- versionsCacheAlg.getNewerVersions(dependency)
       maybeUpdate0 = Nel.fromList(newerVersions0).map { newerVersions1 =>
-        Update.Single(CrossDependency(dependency), newerVersions1.map(_.value))
+        Update.Single(CrossDependency(dependency.value), newerVersions1.map(_.value))
       }
-      maybeUpdate1 = maybeUpdate0.orElse(UpdateAlg.findUpdateWithNewerGroupId(dependency))
+      maybeUpdate1 = maybeUpdate0.orElse(UpdateAlg.findUpdateWithNewerGroupId(dependency.value))
     } yield maybeUpdate1
 
   def findUpdates(
