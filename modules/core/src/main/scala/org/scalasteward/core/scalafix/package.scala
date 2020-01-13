@@ -32,14 +32,19 @@ package object scalafix {
       Migration(
         GroupId("com.spotify"),
         Nel.of("scio-.*"),
-        Version("0.8.0"),
+        Version("0.7.0"),
         Nel.of(
           "github:spotify/scio/FixAvroIO?sha=v0.7.4",
           "github:spotify/scio/AddMissingImports?sha=v0.7.4",
           "github:spotify/scio/RewriteSysProp?sha=v0.7.4",
-          "github:spotify/scio/BQClientRefactoring?sha=v0.7.4",
-          "github:spotify/scio/MigrateV0_8?sha=v0.8.0"
+          "github:spotify/scio/BQClientRefactoring?sha=v0.7.4"
         )
+      ),
+      Migration(
+        GroupId("com.spotify"),
+        Nel.of("scio-.*"),
+        Version("0.8.0"),
+        Nel.of("github:spotify/scio/MigrateV0_8?sha=v0.8.0")
       ),
       Migration(
         GroupId("org.http4s"),
