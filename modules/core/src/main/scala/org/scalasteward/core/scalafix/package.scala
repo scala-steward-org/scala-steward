@@ -41,6 +41,12 @@ package object scalafix {
         )
       ),
       Migration(
+        GroupId("com.spotify"),
+        Nel.of("scio-.*"),
+        Version("0.8.0"),
+        Nel.of("github:spotify/scio/MigrateV0_8?sha=v0.8.0")
+      ),
+      Migration(
         GroupId("org.http4s"),
         Nel.of("http4s-.*"),
         Version("0.20.0"),
