@@ -16,7 +16,6 @@
 
 package org.scalasteward.core.coursier
 
-import cats.data.OptionT
 import cats.effect._
 import cats.implicits._
 import cats.{Applicative, Parallel}
@@ -66,32 +65,32 @@ object CoursierAlg {
           dependency: Dependency,
           resolvers: List[Resolver]
       ): F[Option[Uri]] =
-        getArtifactUrlImpl(toCoursierDependency(dependency), resolvers)
+        getArtifactUrlImpl(toCoursierDependency(dependency), resolvers.map(toCoursierRepository))
 
       private def getArtifactUrlImpl(
-          coursierDependency: coursier.Dependency,
-          resolvers: List[Resolver]
-      ): F[Option[Uri]] =
-        (for {
-          maybeFetchResult <- fetch
-            .addRepositories(resolvers.map(toCoursierRepository): _*)
-            .addDependencies(coursierDependency)
-            .addArtifactTypes(coursier.Type.pom, coursier.Type.ivy)
-            .ioResult
-            .map(Option.apply)
-            .handleErrorWith { throwable =>
-              logger.debug(throwable)(s"Failed to fetch artifacts of $coursierDependency").as(None)
+          dependency: coursier.Dependency,
+          repositories: List[coursier.Repository]
+      ): F[Option[Uri]] = {
+        val fetchArtifacts = fetch
+          .addArtifactTypes(coursier.Type.pom, coursier.Type.ivy)
+          .addDependencies(dependency)
+          .addRepositories(repositories: _*)
+        fetchArtifacts.ioResult.attempt.flatMap {
+          case Left(throwable) =>
+            logger.debug(throwable)(s"Failed to fetch artifacts of $dependency").as(None)
+          case Right(result) =>
+            val maybeProject = result.resolution.projectCache
+              .get(dependency.moduleVersion)
+              .map { case (_, project) => project }
+            maybeProject.traverseFilter { project =>
+              getScmUrlOrHomePage(project.info) match {
+                case Some(url) => F.pure(Some(url))
+                case None =>
+                  getParentDependency(project).traverseFilter(getArtifactUrlImpl(_, repositories))
+              }
             }
-        } yield {
-          (for {
-            result <- maybeFetchResult.toOptionT[F]
-            moduleVersion = (coursierDependency.module, coursierDependency.version)
-            (_, project) <- result.resolution.projectCache.get(moduleVersion).toOptionT[F]
-            parentUrl = getParentDependency(project)
-              .traverseFilter(getArtifactUrlImpl(_, resolvers))
-            url <- getScmUrlOrHomePage(project.info).toOptionT[F].orElse(OptionT(parentUrl))
-          } yield url).value
-        }).flatten
+        }
+      }
 
       override def getVersions(
           dependency: Dependency,
