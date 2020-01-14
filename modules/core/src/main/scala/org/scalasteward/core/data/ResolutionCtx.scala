@@ -16,7 +16,8 @@
 
 package org.scalasteward.core.data
 
-import cats.Functor
+import cats.implicits._
+import cats.{Applicative, Eval, Traverse}
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, Decoder, Encoder}
 
@@ -26,10 +27,20 @@ object ResolutionCtx {
   type Dep = ResolutionCtx[Dependency]
   type Deps = ResolutionCtx[List[Dependency]]
 
-  implicit def resolutionCtxFunctor: Functor[ResolutionCtx] =
-    new Functor[ResolutionCtx] {
-      override def map[A, B](fa: ResolutionCtx[A])(f: A => B): ResolutionCtx[B] =
-        fa.copy(value = f(fa.value))
+  implicit def resolutionCtxTraverse: Traverse[ResolutionCtx] =
+    new Traverse[ResolutionCtx] {
+      override def traverse[G[_]: Applicative, A, B](
+          fa: ResolutionCtx[A]
+      )(f: A => G[B]): G[ResolutionCtx[B]] =
+        f(fa.value).map(b => ResolutionCtx(b, fa.resolvers))
+
+      override def foldLeft[A, B](fa: ResolutionCtx[A], b: B)(f: (B, A) => B): B =
+        f(b, fa.value)
+
+      override def foldRight[A, B](fa: ResolutionCtx[A], lb: Eval[B])(
+          f: (A, Eval[B]) => Eval[B]
+      ): Eval[B] =
+        f(fa.value, lb)
     }
 
   implicit def resolutionCtxCodec[A: Decoder: Encoder]: Codec[ResolutionCtx[A]] =
