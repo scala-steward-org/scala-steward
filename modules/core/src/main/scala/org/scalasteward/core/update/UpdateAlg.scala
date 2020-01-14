@@ -19,6 +19,7 @@ package org.scalasteward.core.update
 import cats.implicits._
 import cats.{Monad, Parallel}
 import io.chrisdavenport.log4cats.Logger
+import org.scalasteward.core.coursier.VersionsCacheFacade
 import org.scalasteward.core.data._
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util
@@ -29,14 +30,16 @@ final class UpdateAlg[F[_]](
     filterAlg: FilterAlg[F],
     logger: Logger[F],
     parallel: Parallel[F],
-    versionsCacheAlg: VersionsCacheAlg[F],
+    versionsCache: VersionsCacheFacade[F],
     F: Monad[F]
 ) {
   def findUpdate(dependency: ResolutionScope[Dependency]): F[Option[Update.Single]] =
     for {
-      newerVersions0 <- versionsCacheAlg.getNewerVersions(dependency)
-      maybeUpdate0 = Nel.fromList(newerVersions0).map { newerVersions1 =>
-        Update.Single(CrossDependency(dependency.value), newerVersions1.map(_.value))
+      versions <- versionsCache.getVersions(dependency.value, dependency.resolvers)
+      current = Version(dependency.value.version)
+      maybeNewerVersions = Nel.fromList(versions.filter(_ > current))
+      maybeUpdate0 = maybeNewerVersions.map { newerVersions =>
+        Update.Single(CrossDependency(dependency.value), newerVersions.map(_.value))
       }
       maybeUpdate1 = maybeUpdate0.orElse(UpdateAlg.findUpdateWithNewerGroupId(dependency.value))
     } yield maybeUpdate1
@@ -48,7 +51,9 @@ final class UpdateAlg[F[_]](
   ): F[List[Update.Single]] =
     for {
       _ <- logger.info(s"Find updates")
-      updates0 <- dependencies.parFlatTraverse(findUpdate(_, resolvers).map(_.toList))
+      updates0 <- dependencies.parFlatTraverse(d =>
+        findUpdate(ResolutionScope(d, resolvers)).map(_.toList)
+      )
       updates1 <- filterAlg.localFilterMany(repoConfig, updates0)
       updates2 = Update.groupByArtifactIdName(updates1)
       _ <- logger.info(util.logger.showUpdates(updates2.widen[Update]))
