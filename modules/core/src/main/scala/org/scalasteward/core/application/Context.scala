@@ -22,7 +22,7 @@ import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.client.Client
 import org.http4s.client.asynchttpclient.AsyncHttpClient
-import org.scalasteward.core.coursier.CoursierAlg
+import org.scalasteward.core.coursier.{CoursierAlg, VersionsCacheFacade}
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
@@ -33,7 +33,7 @@ import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.scalafix.MigrationAlg
 import org.scalasteward.core.scalafmt.ScalafmtAlg
-import org.scalasteward.core.update.{FilterAlg, PruningAlg, UpdateAlg, VersionsCacheAlg}
+import org.scalasteward.core.update.{FilterAlg, PruningAlg, UpdateAlg}
 import org.scalasteward.core.util._
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg, VCSSelection}
@@ -70,9 +70,13 @@ object Context {
       implicit val pullRequestRepository: PullRequestRepository[F] =
         new PullRequestRepository[F](new JsonKeyValueStore("pull_requests", "1"))
       implicit val scalafmtAlg: ScalafmtAlg[F] = ScalafmtAlg.create[F]
-      implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create
-      implicit val versionsCacheAlg: VersionsCacheAlg[F] =
-        new VersionsCacheAlg[F](new JsonKeyValueStore("versions", "1"), rateLimiter)
+      implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create(config.cacheTtl)
+      implicit val versionsCacheAlg: VersionsCacheFacade[F] =
+        new VersionsCacheFacade[F](
+          config.cacheTtl,
+          new JsonKeyValueStore("versions", "2"),
+          rateLimiter
+        )
       implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]
       implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F]
       implicit val refreshErrorAlg: RefreshErrorAlg[F] =
