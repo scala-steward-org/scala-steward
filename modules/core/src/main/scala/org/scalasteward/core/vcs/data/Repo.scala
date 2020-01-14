@@ -17,8 +17,11 @@
 package org.scalasteward.core.vcs.data
 
 import io.circe.{KeyDecoder, KeyEncoder}
+import org.scalasteward.core.application.SupportedVCS
+import org.scalasteward.core.application.SupportedVCS.GitHub
 
 final case class Repo(
+    gitHost: SupportedVCS = GitHub,
     owner: String,
     repo: String
 ) {
@@ -27,13 +30,16 @@ final case class Repo(
 
 object Repo {
   implicit val repoKeyDecoder: KeyDecoder[Repo] = {
-    val / = s"(.+)/([^/]+)".r
+    val / = s"(?:(.*)(?=:):)?(.+)/([^/]+)".r
     KeyDecoder.instance {
-      case owner / repo => Some(Repo(owner, repo))
-      case _            => None
+      case /(host, owner, repo) =>
+        Option(host)
+          .fold[Option[SupportedVCS]](Some(GitHub))(SupportedVCS.parse(_).toOption)
+          .map(Repo(_, owner, repo))
+      case _ => None
     }
   }
 
   implicit val repoKeyEncoder: KeyEncoder[Repo] =
-    KeyEncoder.instance(repo => repo.owner + "/" + repo.repo)
+    KeyEncoder.instance(repo => repo.gitHost.asString + ":" + repo.owner + "/" + repo.repo)
 }

@@ -5,12 +5,13 @@ import org.scalasteward.core.git.Branch
 import org.scalasteward.core.vcs.data.Repo
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalasteward.core.application.SupportedVCS.GitHub
 
 class UrlTest extends AnyFunSuite with Matchers {
   val url = new Url(uri"https://api.github.com")
   import url._
 
-  val repo = Repo("fthomas", "refined")
+  val repo = Repo(GitHub, "fthomas", "refined")
   val branch = Branch("master")
 
   test("branches") {

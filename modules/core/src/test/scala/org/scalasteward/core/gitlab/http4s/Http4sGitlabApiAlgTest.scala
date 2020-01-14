@@ -18,6 +18,7 @@ import org.scalasteward.core.util.{HttpJsonClient, Nel}
 import org.scalasteward.core.vcs.data._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalasteward.core.application.SupportedVCS.Gitlab
 
 class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
   import GitlabJsonCodec._
@@ -48,8 +49,8 @@ class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
     new Http4sGitLabApiAlg[IO](config.vcsApiHost, user, _ => IO.pure, doNotFork = false)
 
   val data = UpdateData(
-    Repo("foo", "bar"),
-    Repo("scala-steward", "bar"),
+    Repo(Gitlab, "foo", "bar"),
+    Repo(Gitlab, "scala-steward", "bar"),
     RepoConfig(),
     Update.Single("ch.qos.logback" % "logback-classic" % "1.2.0", Nel.of("1.2.3")),
     Branch("master"),
@@ -62,7 +63,7 @@ class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
   test("createPullRequest") {
     val prOut =
       gitlabApiAlg
-        .createPullRequest(Repo("foo", "bar"), newPRData)
+        .createPullRequest(Repo(Gitlab, "foo", "bar"), newPRData)
         .unsafeRunSync()
 
     prOut shouldBe PullRequestOut(
@@ -77,7 +78,7 @@ class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
       new Http4sGitLabApiAlg[IO](config.vcsApiHost, user, _ => IO.pure, doNotFork = true)
     val prOut =
       gitlabApiAlgNoFork
-        .createPullRequest(Repo("foo", "bar"), newPRData)
+        .createPullRequest(Repo(Gitlab, "foo", "bar"), newPRData)
         .unsafeRunSync()
 
     prOut shouldBe PullRequestOut(

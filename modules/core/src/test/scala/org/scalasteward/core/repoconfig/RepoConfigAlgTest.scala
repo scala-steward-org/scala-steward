@@ -9,10 +9,11 @@ import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalasteward.core.application.SupportedVCS.GitHub
 
 class RepoConfigAlgTest extends AnyFunSuite with Matchers {
   test("config with all fields set") {
-    val repo = Repo("fthomas", "scala-steward")
+    val repo = Repo(GitHub, "fthomas", "scala-steward")
     val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
     val content =
       """|updates.allow  = [ { groupId = "eu.timepit", artifactId = "refined", version = "0.8." } ]
@@ -62,7 +63,7 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
   }
 
   test("malformed config") {
-    val repo = Repo("fthomas", "scala-steward")
+    val repo = Repo(GitHub, "fthomas", "scala-steward")
     val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
     val initialState = MockState.empty.add(configFile, """updates.ignore = [ "foo """)
     val (state, config) =

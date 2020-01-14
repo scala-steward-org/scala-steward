@@ -23,6 +23,8 @@ import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.uri._
 import org.scalasteward.core.vcs.data.{Repo, UserOut}
 import scala.annotation.tailrec
+import org.scalasteward.core.application.SupportedVCS
+import org.scalasteward.core.application.SupportedVCS.GitHub
 
 final private[http4s] case class RepositoryResponse(
     name: String,
@@ -34,9 +36,14 @@ final private[http4s] case class RepositoryResponse(
 
 private[http4s] object RepositoryResponse {
   implicit private val repoDecoder: Decoder[Repo] = Decoder.instance { c =>
-    c.as[String].map(_.split('/')).flatMap { parts =>
+    c.as[String].map(_.split(":|/")).flatMap { parts =>
       parts match {
-        case Array(owner, name) => Repo(owner, name).asRight
+        case Array(gitHost, owner, name) =>
+          SupportedVCS
+            .parse(gitHost)
+            .map(Repo(_, owner, name))
+            .leftMap(r => DecodingFailure(s"failed to parse gitHost, got: $r", c.history))
+        case Array(owner, name) => Repo(GitHub, owner, name).asRight
         case _                  => DecodingFailure("Repo", c.history).asLeft
       }
     }

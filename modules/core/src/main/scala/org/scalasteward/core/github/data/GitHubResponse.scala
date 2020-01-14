@@ -14,24 +14,28 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.vcs.data
+package org.scalasteward.core.github.data
 
+import io.circe.Decoder
+import io.circe.generic.semiauto._
+import org.scalasteward.core.util.uri.uriDecoder
+import org.scalasteward.core.vcs.data._
+import org.scalasteward.core.application.SupportedVCS.GitHub
 import org.http4s.Uri
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.util.ApplicativeThrowable
-import org.scalasteward.core.application.SupportedVCS
 
-final case class RepoOut(
-    gitHost: SupportedVCS,
+final case class GitHubResponse(
     name: String,
     owner: UserOut,
-    parent: Option[RepoOut],
+    parent: Option[GitHubResponse],
     clone_url: Uri,
     default_branch: Branch
 ) {
-  def parentOrRaise[F[_]](implicit F: ApplicativeThrowable[F]): F[RepoOut] =
-    parent.fold(F.raiseError[RepoOut](new Throwable(s"repo $name has no parent")))(F.pure)
+  def toRepoOut: RepoOut =
+    RepoOut(GitHub, name, owner, parent.map(_.toRepoOut), clone_url, default_branch)
+}
 
-  def repo: Repo =
-    Repo(gitHost, owner.login, name)
+object GitHubResponse {
+
+  implicit val githubResponseDecoder: Decoder[GitHubResponse] = deriveDecoder
 }

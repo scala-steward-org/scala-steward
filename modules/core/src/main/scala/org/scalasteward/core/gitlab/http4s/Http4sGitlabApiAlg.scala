@@ -26,6 +26,7 @@ import org.scalasteward.core.util.uri.uriDecoder
 import org.scalasteward.core.util.{HttpJsonClient, MonadThrowable, UnexpectedResponse}
 import org.scalasteward.core.vcs.VCSApiAlg
 import org.scalasteward.core.vcs.data._
+import org.scalasteward.core.application.SupportedVCS.Gitlab
 
 final private[http4s] case class ForkPayload(id: String, namespace: String)
 final private[http4s] case class MergeRequestPayload(
@@ -75,7 +76,7 @@ private[http4s] object GitlabJsonCodec {
         .downField("default_branch")
         .as[Option[Branch]]
         .map(_.getOrElse(Branch("master")))
-    } yield RepoOut(name, owner, parent, cloneUrl, defaultBranch)
+    } yield RepoOut(Gitlab, name, owner, parent, cloneUrl, defaultBranch)
   }
 
   implicit val projectIdDecoder: Decoder[ProjectId] = deriveDecoder

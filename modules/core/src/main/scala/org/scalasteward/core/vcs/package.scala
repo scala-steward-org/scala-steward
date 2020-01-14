@@ -32,7 +32,6 @@ package object vcs {
     vcsType match {
       case GitHub =>
         s"${fork.show}:${git.branchFor(update).name}"
-
       case Gitlab | Bitbucket | BitbucketServer =>
         git.branchFor(update).name
     }

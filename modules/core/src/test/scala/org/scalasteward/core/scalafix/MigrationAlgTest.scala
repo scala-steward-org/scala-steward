@@ -8,9 +8,10 @@ import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.scalafix.{migrations => defaultMigrations}
+import org.scalasteward.core.application.SupportedVCS.GitHub
 
 class MigrationAlgTest extends AnyFunSuite with Matchers {
-  val repo = Repo("fthomas", "scala-steward")
+  val repo = Repo(GitHub, "fthomas", "scala-steward")
   val repoDir = config.workspace / repo.owner / repo.repo
   val scalafmtConf = repoDir / ".scalafix-migrations.conf"
   val configWithMigrations = config.copy(scalafixMigrations = Some(scalafmtConf))

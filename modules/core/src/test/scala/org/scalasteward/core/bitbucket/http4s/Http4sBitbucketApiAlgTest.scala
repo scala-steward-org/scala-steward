@@ -14,6 +14,7 @@ import org.scalasteward.core.util.HttpJsonClient
 import org.scalasteward.core.vcs.data._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalasteward.core.application.SupportedVCS.Bitbucket
 
 class Http4sBitbucketApiAlgTest extends AnyFunSuite with Matchers {
   private val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
@@ -135,9 +136,10 @@ class Http4sBitbucketApiAlgTest extends AnyFunSuite with Matchers {
   )
 
   val prUrl = uri"https://api.bitbucket.org/2.0/repositories/fthomas/base.g8/pullrequests/2"
-  val repo = Repo("fthomas", "base.g8")
+  val repo = Repo(Bitbucket, "fthomas", "base.g8")
   val master = Branch("master")
   val parent = RepoOut(
+    Bitbucket,
     "base.g8",
     UserOut("fthomas"),
     None,
@@ -146,6 +148,7 @@ class Http4sBitbucketApiAlgTest extends AnyFunSuite with Matchers {
   )
 
   val fork = RepoOut(
+    Bitbucket,
     "base.g8",
     UserOut("scala-steward"),
     Some(parent),

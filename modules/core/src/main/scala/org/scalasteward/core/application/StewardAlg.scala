@@ -65,7 +65,10 @@ final class StewardAlg[F[_]](
     fileAlg.readFile(reposFile).map { maybeContent =>
       val regex = """-\s+(.+)/([^/]+)""".r
       val content = maybeContent.getOrElse("")
-      content.linesIterator.collect { case regex(owner, repo) => Repo(owner.trim, repo.trim) }.toList
+      content.linesIterator.flatMap {
+        case regex(gitHost, owner, repo) =>
+          SupportedVCS.parse(gitHost).map(Repo(_, owner.trim, repo.trim)).toList
+      }.toList
     }
 
   private def steward(repo: Repo): F[Either[Throwable, Unit]] =

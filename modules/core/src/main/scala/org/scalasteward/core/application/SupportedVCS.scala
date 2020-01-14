@@ -20,6 +20,7 @@ import caseapp.core.Error.MalformedValue
 import caseapp.core.argparser.ArgParser
 import cats.Eq
 import cats.implicits._
+import io.circe.Decoder
 
 sealed trait SupportedVCS {
   import SupportedVCS.{Bitbucket, BitbucketServer, GitHub, Gitlab}
@@ -39,6 +40,8 @@ object SupportedVCS {
 
   implicit val supportedVCSEq: Eq[SupportedVCS] =
     Eq.fromUniversalEquals
+
+  implicit val supportedVCSDecoder: Decoder[SupportedVCS] = Decoder.decodeString.emap(parse)
 
   def parse(value: String): Either[String, SupportedVCS] = value match {
     case "github"           => Right(GitHub)

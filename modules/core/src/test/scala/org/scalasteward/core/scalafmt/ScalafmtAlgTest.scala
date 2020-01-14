@@ -6,10 +6,11 @@ import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.vcs.data.Repo
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalasteward.core.application.SupportedVCS.GitHub
 
 class ScalafmtAlgTest extends AnyFunSuite with Matchers {
   test("getScalafmtVersion on unquoted version") {
-    val repo = Repo("fthomas", "scala-steward")
+    val repo = Repo(GitHub, "fthomas", "scala-steward")
     val repoDir = config.workspace / repo.owner / repo.repo
     val scalafmtConf = repoDir / ".scalafmt.conf"
     val initialState = MockState.empty.add(
@@ -36,7 +37,7 @@ class ScalafmtAlgTest extends AnyFunSuite with Matchers {
   }
 
   test("getScalafmtVersion on quoted version") {
-    val repo = Repo("fthomas", "scala-steward")
+    val repo = Repo(GitHub, "fthomas", "scala-steward")
     val repoDir = config.workspace / repo.owner / repo.repo
     val scalafmtConf = repoDir / ".scalafmt.conf"
     val initialState = MockState.empty.add(

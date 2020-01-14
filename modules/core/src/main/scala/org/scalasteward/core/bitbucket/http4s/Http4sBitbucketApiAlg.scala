@@ -25,6 +25,7 @@ import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.{HttpJsonClient, UnexpectedResponse}
 import org.scalasteward.core.vcs.VCSApiAlg
 import org.scalasteward.core.vcs.data._
+import org.scalasteward.core.application.SupportedVCS.Bitbucket
 
 class Http4sBitbucketApiAlg[F[_]: Sync](
     bitbucketApiHost: Uri,
@@ -51,6 +52,7 @@ class Http4sBitbucketApiAlg[F[_]: Sync](
       maybeParent: Option[RepositoryResponse]
   ): RepoOut =
     RepoOut(
+      Bitbucket,
       repo.name,
       repo.owner,
       maybeParent.map(p => mapToRepoOut(p, None)),
@@ -64,7 +66,7 @@ class Http4sBitbucketApiAlg[F[_]: Sync](
     val payload = CreatePullRequestRequest(
       data.title,
       Branch(data.head),
-      Repo(sourceBranchOwner, repo.repo),
+      Repo(repo.gitHost, sourceBranchOwner, repo.repo),
       data.base,
       data.body
     )

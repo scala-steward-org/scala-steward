@@ -12,12 +12,13 @@ import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalasteward.core.application.SupportedVCS.GitHub
 
 class NewPullRequestDataTest extends AnyFunSuite with Matchers {
   test("asJson") {
     val data = UpdateData(
-      Repo("foo", "bar"),
-      Repo("scala-steward", "bar"),
+      Repo(GitHub, "foo", "bar"),
+      Repo(GitHub, "scala-steward", "bar"),
       RepoConfig(),
       Update.Single("ch.qos.logback" % "logback-classic" % "1.2.0", Nel.of("1.2.3")),
       Branch("master"),

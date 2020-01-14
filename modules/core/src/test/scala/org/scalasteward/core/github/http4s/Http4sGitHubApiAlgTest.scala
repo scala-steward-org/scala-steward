@@ -14,6 +14,7 @@ import org.scalasteward.core.util.HttpJsonClient
 import org.scalasteward.core.vcs.data._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalasteward.core.application.SupportedVCS.GitHub
 
 class Http4sGitHubApiAlgTest extends AnyFunSuite with Matchers {
   val routes: HttpRoutes[IO] =
@@ -61,9 +62,10 @@ class Http4sGitHubApiAlgTest extends AnyFunSuite with Matchers {
   implicit val httpJsonClient: HttpJsonClient[IO] = new HttpJsonClient[IO]
   val gitHubApiAlg = new Http4sGitHubApiAlg[IO](config.vcsApiHost, _ => IO.pure)
 
-  val repo = Repo("fthomas", "base.g8")
+  val repo = Repo(GitHub, "fthomas", "base.g8")
 
   val parent = RepoOut(
+    GitHub,
     "base.g8",
     UserOut("fthomas"),
     None,
@@ -72,6 +74,7 @@ class Http4sGitHubApiAlgTest extends AnyFunSuite with Matchers {
   )
 
   val fork = RepoOut(
+    GitHub,
     "base.g8-1",
     UserOut("scala-steward"),
     Some(parent),

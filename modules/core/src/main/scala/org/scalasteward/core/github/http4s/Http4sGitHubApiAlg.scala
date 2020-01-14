@@ -16,24 +16,30 @@
 
 package org.scalasteward.core.github.http4s
 
+import cats.effect.Sync
+import cats.implicits._
 import org.http4s.{Request, Uri}
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.github._
 import org.scalasteward.core.util.HttpJsonClient
 import org.scalasteward.core.vcs.VCSApiAlg
 import org.scalasteward.core.vcs.data._
+import org.scalasteward.core.github.data.GitHubResponse
 
-final class Http4sGitHubApiAlg[F[_]](
+final class Http4sGitHubApiAlg[F[_]: Sync](
     gitHubApiHost: Uri,
     modify: Repo => Request[F] => F[Request[F]]
 )(
     implicit
     client: HttpJsonClient[F]
 ) extends VCSApiAlg[F] {
+
   private val url = new Url(gitHubApiHost)
 
   override def createFork(repo: Repo): F[RepoOut] =
-    client.post(url.forks(repo), modify(repo))
+    client
+      .post[GitHubResponse](url.forks(repo), modify(repo))
+      .map(_.toRepoOut)
 
   override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] =
     client.postWithBody(url.pulls(repo), data, modify(repo))
@@ -42,7 +48,7 @@ final class Http4sGitHubApiAlg[F[_]](
     client.get(url.branches(repo, branch), modify(repo))
 
   override def getRepo(repo: Repo): F[RepoOut] =
-    client.get(url.repos(repo), modify(repo))
+    client.get[GitHubResponse](url.repos(repo), modify(repo)).map(_.toRepoOut)
 
   override def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]] =
     client.get(url.listPullRequests(repo, head, base), modify(repo))

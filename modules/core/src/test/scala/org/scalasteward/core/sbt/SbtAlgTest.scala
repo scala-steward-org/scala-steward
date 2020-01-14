@@ -11,6 +11,7 @@ import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalasteward.core.application.SupportedVCS.GitHub
 
 class SbtAlgTest extends AnyFunSuite with Matchers {
 
@@ -36,7 +37,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
   }
 
   test("getDependenciesAndResolvers") {
-    val repo = Repo("typelevel", "cats")
+    val repo = Repo(GitHub, "typelevel", "cats")
     val repoDir = config.workspace / repo.show
     val files = Map(
       repoDir / "project" / "build.properties" -> "sbt.version=1.2.6",
@@ -68,7 +69,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
   }
 
   test("getUpdates") {
-    val repo = Repo("fthomas", "refined")
+    val repo = Repo(GitHub, "fthomas", "refined")
     val repoDir = config.workspace / "fthomas/refined"
     val files = Map(
       repoDir / "project" / "build.properties" -> "sbt.version=1.2.6",
@@ -108,7 +109,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
   test("getUpdates ignoring .jvmopts and .sbtopts files") {
     implicit val config: Config = MockContext.config.copy(ignoreOptsFiles = true)
     val sbtAlgKeepingCredentials = SbtAlg.create
-    val repo = Repo("fthomas", "refined")
+    val repo = Repo(GitHub, "fthomas", "refined")
     val repoDir = config.workspace / "fthomas/refined"
     val state =
       sbtAlgKeepingCredentials.getUpdates(repo).runS(MockState.empty).unsafeRunSync()
@@ -137,7 +138,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
   }
 
   test("runMigrations") {
-    val repo = Repo("fthomas", "scala-steward")
+    val repo = Repo(GitHub, "fthomas", "scala-steward")
     val repoDir = config.workspace / repo.owner / repo.repo
     val migrations = Nel.of(
       Migration(

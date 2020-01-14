@@ -15,12 +15,13 @@ import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalasteward.core.application.SupportedVCS.GitHub
 
 class GitAlgTest extends AnyFunSuite with Matchers {
   implicit val workspaceAlg: WorkspaceAlg[IO] = WorkspaceAlg.create[IO]
   val ioGitAlg: GitAlg[IO] = GitAlg.create[IO]
 
-  val repo = Repo("fthomas", "datapackage")
+  val repo = Repo(GitHub, "fthomas", "datapackage")
   val repoDir: String = (config.workspace / "fthomas/datapackage").toString
   val askPass = s"GIT_ASKPASS=${config.gitAskPass}"
 
@@ -98,7 +99,7 @@ class GitAlgTest extends AnyFunSuite with Matchers {
   }
 
   test("hasConflicts") {
-    val repo = Repo("merge", "conflict")
+    val repo = Repo(GitHub, "merge", "conflict")
     val p = for {
       repoDir <- workspaceAlg.repoDir(repo)
       _ <- GitAlgTest.createGitRepoWithConflict[IO](repoDir)
@@ -109,7 +110,7 @@ class GitAlgTest extends AnyFunSuite with Matchers {
   }
 
   test("mergeTheirs") {
-    val repo = Repo("merge", "theirs")
+    val repo = Repo(GitHub, "merge", "theirs")
     val p = for {
       repoDir <- workspaceAlg.repoDir(repo)
       _ <- GitAlgTest.createGitRepoWithConflict[IO](repoDir)

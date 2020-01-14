@@ -9,10 +9,11 @@ import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalasteward.core.application.SupportedVCS.GitHub
 
 class EditAlgTest extends AnyFunSuite with Matchers {
   test("applyUpdate") {
-    val repo = Repo("fthomas", "scala-steward")
+    val repo = Repo(GitHub, "fthomas", "scala-steward")
     val update = Update.Single("org.typelevel" % "cats-core" % "1.2.0", Nel.of("1.3.0"))
     val file1 = File.temp / "ws/fthomas/scala-steward/build.sbt"
     val file2 = File.temp / "ws/fthomas/scala-steward/project/Dependencies.scala"
@@ -41,7 +42,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
   }
 
   test("applyUpdate with scalafmt update") {
-    val repo = Repo("fthomas", "scala-steward")
+    val repo = Repo(GitHub, "fthomas", "scala-steward")
     val update = Update.Single("org.scalameta" % "scalafmt-core" % "2.0.0", Nel.of("2.1.0"))
     val scalafmtFile = File.temp / "ws/fthomas/scala-steward/.scalafmt.conf"
     val file1 = File.temp / "ws/fthomas/scala-steward/build.sbt"
@@ -96,7 +97,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
   }
 
   test("apply update to ammonite file") {
-    val repo = Repo("fthomas", "scala-steward")
+    val repo = Repo(GitHub, "fthomas", "scala-steward")
     val update = Update.Single("org.typelevel" % "cats-core" % "1.2.0", Nel.of("1.3.0"))
     val file1 = File.temp / "ws/fthomas/scala-steward/script.sc"
     val file2 = File.temp / "ws/fthomas/scala-steward/build.sbt"
@@ -133,7 +134,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
     val repoDir = File.temp / "ws/owner/repo"
     val filesInRepoDir = files.map { case (file, content) => repoDir / file -> content }
     editAlg
-      .applyUpdate(Repo("owner", "repo"), update)
+      .applyUpdate(Repo(GitHub, "owner", "repo"), update)
       .runS(MockState.empty.addFiles(filesInRepoDir))
       .map(_.files)
       .unsafeRunSync()

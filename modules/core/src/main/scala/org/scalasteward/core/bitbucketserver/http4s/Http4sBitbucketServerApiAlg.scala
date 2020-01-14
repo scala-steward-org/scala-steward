@@ -36,6 +36,7 @@ import org.scalasteward.core.vcs.data.{
   RepoOut,
   UserOut
 }
+import org.scalasteward.core.application.SupportedVCS.BitbucketServer
 
 /**
   * https://docs.atlassian.com/bitbucket-server/rest/6.6.1/bitbucket-rest.html
@@ -81,7 +82,7 @@ class Http4sBitbucketServerApiAlg[F[_]: Sync](
     for {
       r <- client.get[Json.Repo](url.repo(repo), modify(repo))
       cloneUri = r.links("clone").find(_.name.contains("http")).get.href
-    } yield RepoOut(r.name, UserOut(user.login), None, cloneUri, Branch("master"))
+    } yield RepoOut(BitbucketServer, r.name, UserOut(user.login), None, cloneUri, Branch("master"))
 
   override def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]] =
     client

@@ -7,13 +7,15 @@ import org.scalasteward.core.mock.{MockContext, MockState}
 import org.scalasteward.core.vcs.data.{Repo, RepoOut, UserOut}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalasteward.core.application.SupportedVCS.GitHub
 
 class VCSRepoAlgTest extends AnyFunSuite with Matchers {
-  val repo: Repo = Repo("fthomas", "datapackage")
+  val repo: Repo = Repo(GitHub, "fthomas", "datapackage")
   val repoDir: String = (config.workspace / "fthomas/datapackage").toString
   val askPass = s"GIT_ASKPASS=${config.gitAskPass}"
 
   val parentRepoOut: RepoOut = RepoOut(
+    GitHub,
     "datapackage",
     UserOut("fthomas"),
     None,
@@ -22,6 +24,7 @@ class VCSRepoAlgTest extends AnyFunSuite with Matchers {
   )
 
   val forkRepoOut: RepoOut = RepoOut(
+    GitHub,
     "datapackage",
     UserOut("scalasteward"),
     Some(parentRepoOut),
