@@ -19,15 +19,16 @@ package org.scalasteward.core.coursier
 import cats.effect._
 import cats.implicits._
 import cats.{Applicative, Parallel}
+import coursier.cache.FileCache
 import coursier.core.Project
 import coursier.interop.cats._
 import coursier.maven.MavenRepository
 import coursier.util.StringInterpolators.SafeIvyRepository
-import coursier.{Info, Module, ModuleName, Organization}
+import coursier.{Fetch, Info, Module, ModuleName, Organization, Versions}
 import io.chrisdavenport.log4cats.Logger
 import org.http4s.Uri
-import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.{Dependency, Resolver, Version}
+import scala.concurrent.duration.FiniteDuration
 
 /** An interface to [[https://get-coursier.io Coursier]] used for
   * fetching dependency versions and metadata.
@@ -36,6 +37,8 @@ trait CoursierAlg[F[_]] {
   def getArtifactUrl(dependency: Dependency, resolvers: List[Resolver]): F[Option[Uri]]
 
   def getVersions(dependency: Dependency, resolvers: List[Resolver]): F[List[Version]]
+
+  def getVersionsFresh(dependency: Dependency, resolvers: List[Resolver]): F[List[Version]]
 
   final def getArtifactIdUrlMapping(dependencies: List[Dependency], resolvers: List[Resolver])(
       implicit F: Applicative[F]
@@ -46,19 +49,24 @@ trait CoursierAlg[F[_]] {
 }
 
 object CoursierAlg {
-  def create[F[_]](
+  def create[F[_]](cacheTtl: FiniteDuration)(
       implicit
-      config: Config,
       contextShift: ContextShift[F],
       logger: Logger[F],
       F: Sync[F]
   ): CoursierAlg[F] = {
     implicit val parallel: Parallel.Aux[F, F] = Parallel.identity[F]
-    val cache = coursier.cache.FileCache[F]().withTtl(config.cacheTtl)
+
     val sbtPluginReleases =
       ivy"https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/[defaultPattern]"
-    val fetch = coursier.Fetch[F](cache).withRepositories(List(sbtPluginReleases))
-    val versions = coursier.Versions[F](cache).withRepositories(List(sbtPluginReleases))
+
+    val cache: FileCache[F] = FileCache[F]().withTtl(cacheTtl)
+    val cacheNoTtl: FileCache[F] = cache.withTtl(None)
+
+    val fetch: Fetch[F] = Fetch[F](cache).withRepositories(List(sbtPluginReleases))
+
+    val versions: Versions[F] = Versions[F](cache).withRepositories(List(sbtPluginReleases))
+    val versionsNoTtl: Versions[F] = versions.withCache(cacheNoTtl)
 
     new CoursierAlg[F] {
       override def getArtifactUrl(
@@ -96,11 +104,27 @@ object CoursierAlg {
           dependency: Dependency,
           resolvers: List[Resolver]
       ): F[List[Version]] =
+        getVersionsImpl(versions, dependency, resolvers)
+
+      override def getVersionsFresh(
+          dependency: Dependency,
+          resolvers: List[Resolver]
+      ): F[List[Version]] =
+        getVersionsImpl(versionsNoTtl, dependency, resolvers)
+
+      private def getVersionsImpl(
+          versions: Versions[F],
+          dependency: Dependency,
+          resolvers: List[Resolver]
+      ): F[List[Version]] =
         versions
           .addRepositories(resolvers.map(toCoursierRepository): _*)
           .withModule(toCoursierModule(dependency))
           .versions()
           .map(_.available.map(Version.apply).sorted)
+          .handleErrorWith { throwable =>
+            logger.debug(throwable)(s"Failed to get versions of $dependency").as(List.empty)
+          }
     }
   }
 
