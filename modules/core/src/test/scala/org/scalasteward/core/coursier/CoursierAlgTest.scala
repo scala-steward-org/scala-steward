@@ -1,6 +1,7 @@
 package org.scalasteward.core.coursier
 
 import org.http4s.syntax.literals._
+import org.scalasteward.core.data.Resolver.MavenRepository
 import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId, Resolver}
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockState
@@ -9,7 +10,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class CoursierAlgTest extends AnyFunSuite with Matchers {
-  val resolvers = List(Resolver("public", "https://repo1.maven.org/maven2/"))
+  val resolvers = List(MavenRepository("public", "https://repo1.maven.org/maven2/"))
 
   test("getArtifactUrl: library") {
     val dep =

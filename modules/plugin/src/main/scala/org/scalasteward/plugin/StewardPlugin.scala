@@ -26,7 +26,7 @@ object StewardPlugin extends AutoPlugin {
   override def trigger: PluginTrigger = allRequirements
 
   object autoImport {
-    val stewardDependenciesScope =
+    val stewardDependencyData =
       taskKey[Unit]("Prints dependencies and resolvers as JSON for consumption by Scala Steward.")
     val stewardUpdates =
       taskKey[Unit]("Prints dependency updates as JSON for consumption by Scala Steward.")
@@ -35,7 +35,7 @@ object StewardPlugin extends AutoPlugin {
   import autoImport._
 
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
-    stewardDependenciesScope := {
+    stewardDependencyData := {
       val log = streams.value.log
       val sourcePositions = dependencyPositions.value
       val buildRoot = baseDirectory.in(ThisBuild).value
@@ -53,9 +53,9 @@ object StewardPlugin extends AutoPlugin {
           Resolver.IvyRepository(repo.name, repo.patterns.ivyPatterns.mkString)
       }
 
-      log.info("<<< json")
-      log.info(DependenciesScope(dependencies, resolvers).asJson)
-      log.info(">>> json")
+      val output = (Seq("--- snip ---") ++ dependencies.map(_.asJson) ++ resolvers.map(_.asJson))
+        .mkString(System.lineSeparator())
+      log.info(output)
     },
     stewardUpdates := {
       /*
@@ -174,7 +174,7 @@ object StewardPlugin extends AutoPlugin {
       )
   }
 
-  sealed trait Resolver {
+  sealed trait Resolver extends Product with Serializable {
     def asJson: String
   }
 
@@ -202,19 +202,6 @@ object StewardPlugin extends AutoPlugin {
     }
   }
 
-  final private case class DependenciesScope(
-      dependencies: Seq[Dependency],
-      resolvers: Seq[Resolver]
-  ) {
-    def asJson: String =
-      objToJsonLf(
-        List(
-          "dependencies" -> seqToJsonLf(dependencies.map(_.asJson)),
-          "resolvers" -> seqToJsonLf(resolvers.map(_.asJson))
-        )
-      )
-  }
-
   final private case class Update(
       dependency: Dependency,
       newerVersions: List[String]
@@ -237,12 +224,6 @@ object StewardPlugin extends AutoPlugin {
   private def seqToJson(seq: Seq[String]): String =
     seq.mkString("[ ", ", ", " ]")
 
-  private def seqToJsonLf(seq: Seq[String]): String =
-    seq.mkString("[\n", ",\n", " ]")
-
   private def objToJson(obj: List[(String, String)]): String =
     obj.map { case (k, v) => s""""$k": $v""" }.mkString("{ ", ", ", " }")
-
-  private def objToJsonLf(obj: List[(String, String)]): String =
-    obj.map { case (k, v) => s""""$k": $v""" }.mkString("{\n", ",\n", " }")
 }

@@ -22,7 +22,8 @@ import cats.implicits._
 import cats.{Functor, Monad}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.data.{Dependency, ResolutionScope, Update}
+import org.scalasteward.core.data.Resolver.MavenRepository
+import org.scalasteward.core.data.{Dependency, ResolutionCtx, Update}
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.sbt.data.SbtVersion
@@ -39,7 +40,7 @@ trait SbtAlg[F[_]] {
 
   def getSbtVersion(repo: Repo): F[Option[SbtVersion]]
 
-  def getDependenciesAndResolvers(repo: Repo): F[List[ResolutionScope.Dependencies]]
+  def getDependenciesAndResolvers(repo: Repo): F[List[ResolutionCtx.Deps]]
 
   def getUpdates(repo: Repo): F[List[Update.Single]]
 
@@ -89,15 +90,15 @@ object SbtAlg {
           version = maybeProperties.flatMap(parser.parseBuildProperties)
         } yield version
 
-      override def getDependenciesAndResolvers(repo: Repo): F[List[ResolutionScope.Dependencies]] =
+      override def getDependenciesAndResolvers(repo: Repo): F[List[ResolutionCtx.Deps]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          cmd = sbtCmd(List(crossStewardDependencies, reloadPlugins, stewardDependencies))
+          cmd = sbtCmd(List(crossStewardDependencyData, reloadPlugins, stewardDependencyData))
           lines <- exec(cmd, repoDir)
-          scopes = parser.parseDependenciesScopes(lines)
+          scopes = parser.parseDependencies(lines)
           maybeSbtDependency <- getSbtDependency(repo)
           maybeScalafmtDependency <- scalafmtAlg.getScalafmtDependency(repo)
-          artScope = ResolutionScope(
+          artScope = ResolutionCtx(
             maybeSbtDependency.toList ++ maybeScalafmtDependency.toList,
             List.empty
           )
@@ -107,10 +108,10 @@ object SbtAlg {
         for {
           repoDir <- workspaceAlg.repoDir(repo)
           commands = List(
-            crossStewardDependencies,
+            crossStewardDependencyData,
             crossStewardUpdates,
             reloadPlugins,
-            stewardDependencies,
+            stewardDependencyData,
             stewardUpdates
           )
           lines <- exec(sbtCmd(commands), repoDir)
@@ -157,9 +158,12 @@ object SbtAlg {
         for {
           maybeSbtDependency <- getSbtDependency(repo)
           maybeScalafmtDependency <- scalafmtAlg.getScalafmtDependency(repo)
-          maybeSbtUpdate <- maybeSbtDependency.flatTraverse(updateAlg.findUpdate(_, List.empty))
-          maybeScalafmtUpdate <- maybeScalafmtDependency.flatTraverse(
-            updateAlg.findUpdate(_, List.empty)
+          resolvers = List(MavenRepository("public", "https://repo1.maven.org/maven2/"))
+          maybeSbtUpdate <- maybeSbtDependency.flatTraverse(dep =>
+            updateAlg.findUpdate(ResolutionCtx(dep, resolvers))
+          )
+          maybeScalafmtUpdate <- maybeScalafmtDependency.flatTraverse(dep =>
+            updateAlg.findUpdate(ResolutionCtx(dep, resolvers))
           )
         } yield maybeSbtUpdate.toList ++ maybeScalafmtUpdate.toList
     }

@@ -17,21 +17,21 @@
 package org.scalasteward.core.data
 
 import cats.Functor
-import io.circe.{Codec, Decoder, Encoder}
 import io.circe.generic.semiauto.deriveCodec
+import io.circe.{Codec, Decoder, Encoder}
 
-final case class ResolutionScope[A](value: A, resolvers: List[Resolver])
+final case class ResolutionCtx[A](value: A, resolvers: List[Resolver])
 
-object ResolutionScope {
-  type Dependency = ResolutionScope[org.scalasteward.core.data.Dependency]
-  type Dependencies = ResolutionScope[List[org.scalasteward.core.data.Dependency]]
+object ResolutionCtx {
+  type Dep = ResolutionCtx[Dependency]
+  type Deps = ResolutionCtx[List[Dependency]]
 
-  implicit def resolutionScopeFunctor: Functor[ResolutionScope] =
-    new Functor[ResolutionScope] {
-      override def map[A, B](fa: ResolutionScope[A])(f: A => B): ResolutionScope[B] =
+  implicit def resolutionCtxFunctor: Functor[ResolutionCtx] =
+    new Functor[ResolutionCtx] {
+      override def map[A, B](fa: ResolutionCtx[A])(f: A => B): ResolutionCtx[B] =
         fa.copy(value = f(fa.value))
     }
 
-  implicit def resolutionScopeCodec[A: Decoder: Encoder]: Codec[ResolutionScope[A]] =
+  implicit def resolutionCtxCodec[A: Decoder: Encoder]: Codec[ResolutionCtx[A]] =
     deriveCodec
 }

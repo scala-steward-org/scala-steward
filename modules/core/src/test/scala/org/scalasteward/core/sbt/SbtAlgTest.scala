@@ -58,7 +58,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
           "sbt",
           "-batch",
           "-no-colors",
-          s";$crossStewardDependencies;$crossStewardResolvers;$reloadPlugins;$stewardDependencies;$stewardResolvers"
+          s";$crossStewardDependencyData;$crossStewardResolvers;$reloadPlugins;$stewardDependencyData;$stewardResolvers"
         ),
         List("read", s"$repoDir/project/build.properties"),
         List("read", s"$repoDir/.scalafmt.conf")
@@ -87,7 +87,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
           "sbt",
           "-batch",
           "-no-colors",
-          s";$crossStewardDependencies;$crossStewardUpdates;$reloadPlugins;$stewardDependencies;$stewardUpdates"
+          s";$crossStewardDependencyData;$crossStewardUpdates;$reloadPlugins;$stewardDependencyData;$stewardUpdates"
         ),
         List("read", s"$repoDir/project/build.properties"),
         List("read", s"$repoDir/.scalafmt.conf"),
@@ -126,7 +126,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
           "sbt",
           "-batch",
           "-no-colors",
-          s";$crossStewardDependencies;$crossStewardUpdates;$reloadPlugins;$stewardDependencies;$stewardUpdates"
+          s";$crossStewardDependencyData;$crossStewardUpdates;$reloadPlugins;$stewardDependencyData;$stewardUpdates"
         ),
         List("restore", (repoDir / ".sbtopts").toString),
         List("restore", (repoDir / ".jvmopts").toString),
