@@ -16,8 +16,8 @@
 
 package org.scalasteward.plugin
 
-//import com.timushev.sbt.updates.UpdatesKeys.dependencyUpdatesData
-//import com.timushev.sbt.updates.versions.{InvalidVersion, ValidVersion}
+import com.timushev.sbt.updates.UpdatesKeys.dependencyUpdatesData
+import com.timushev.sbt.updates.versions.{InvalidVersion, ValidVersion}
 import sbt.Keys._
 import sbt._
 import scala.util.matching.Regex
@@ -58,7 +58,6 @@ object StewardPlugin extends AutoPlugin {
       log.info(output)
     },
     stewardUpdates := {
-      /*
       val log = streams.value.log
       val scalaBinaryVersionValue = scalaBinaryVersion.value
       val scalaVersionValue = scalaVersion.value
@@ -75,9 +74,6 @@ object StewardPlugin extends AutoPlugin {
       }
 
       updates.map(_.asJson).foreach(s => log.info(s))
-
-       */
-      ()
     }
   )
 

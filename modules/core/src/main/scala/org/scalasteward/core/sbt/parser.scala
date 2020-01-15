@@ -28,13 +28,13 @@ object parser {
     """sbt.version\s*=\s*(.+)""".r.findFirstMatchIn(s).map(_.group(1)).map(SbtVersion.apply)
 
   def parseDependencies(lines: List[String]): List[ResolversScope.Deps] = {
-    val delimiter = "--- snip ---"
+    val chunks = fs2.Stream.emits(lines).map(removeSbtNoise).split(_ === "--- snip ---")
     val decoder = Decoder[Dependency].either(Decoder[Resolver])
-    val stream = fs2.Stream.emits(lines).map(removeSbtNoise).split(_ === delimiter).map { chunk =>
+    chunks.mapFilter { chunk =>
       val (dependencies, resolvers) = chunk.toList.flatMap(decode(_)(decoder).toList).separate
-      ResolversScope(dependencies, resolvers)
-    }
-    stream.toList
+      if (dependencies.isEmpty || resolvers.isEmpty) None
+      else Some(ResolversScope(dependencies, resolvers))
+    }.toList
   }
 
   def parseDependenciesAndUpdates(lines: List[String]): (List[Dependency], List[Update.Single]) = {
