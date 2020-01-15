@@ -17,7 +17,7 @@
 package org.scalasteward.core.data
 
 import cats.implicits._
-import cats.{Applicative, Eval, Traverse}
+import cats.{Applicative, Eval, Order, Traverse}
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, Decoder, Encoder}
 
@@ -45,4 +45,7 @@ object ResolversScope {
 
   implicit def resolversScopeCodec[A: Decoder: Encoder]: Codec[ResolversScope[A]] =
     deriveCodec
+
+  implicit def resolversScopeOrder[A: Order]: Order[ResolversScope[A]] =
+    Order.by((scope: ResolversScope[A]) => (scope.value, scope.resolvers))
 }

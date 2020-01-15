@@ -16,6 +16,8 @@
 
 package org.scalasteward.core.data
 
+import cats.Order
+import cats.implicits._
 import io.circe.Codec
 import io.circe.generic.semiauto._
 
@@ -27,4 +29,10 @@ object Resolver {
 
   implicit val resolverCodec: Codec[Resolver] =
     deriveCodec
+
+  implicit val resolverOrder: Order[Resolver] =
+    Order.by {
+      case MavenRepository(name, location) => (1, name, location)
+      case IvyRepository(name, pattern)    => (2, name, pattern)
+    }
 }

@@ -22,7 +22,10 @@ import io.circe.generic.semiauto.deriveCodec
 final case class DependencyInfo(
     dependency: Dependency,
     filesContainingVersion: List[String]
-)
+) {
+  def versionInFiles: Boolean =
+    filesContainingVersion.nonEmpty
+}
 
 object DependencyInfo {
   implicit val dependencyInfoCodec: Codec[DependencyInfo] =
