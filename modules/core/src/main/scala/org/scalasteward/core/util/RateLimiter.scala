@@ -30,7 +30,7 @@ object RateLimiter {
     Semaphore(1).map { semaphore =>
       new RateLimiter[F] {
         override def limit[A](fa: F[A]): F[A] =
-          semaphore.withPermit(timer.sleep(250.millis) >> fa)
+          semaphore.withPermit(timer.sleep(300.millis) >> fa)
       }
     }
 }
