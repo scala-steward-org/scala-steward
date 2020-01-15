@@ -104,8 +104,7 @@ object SbtAlg {
               val ds = group.toList.flatMap(_.value).distinct.sorted
               ResolversScope(ds, group.head.resolvers)
             }
-            .toList
-        } yield result
+        } yield result.toList
 
       override def getUpdates(repo: Repo): F[List[Update.Single]] =
         for {

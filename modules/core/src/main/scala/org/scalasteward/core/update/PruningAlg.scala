@@ -43,8 +43,12 @@ final class PruningAlg[F[_]](
       case Some(repoCache) =>
         val dependencies = repoCache.dependencyInfos
           .flatMap(_.sequence)
-          .collect { case info if info.value.versionInFiles => info.map(_.dependency) }
-          .filterNot(dependency => FilterAlg.isIgnoredGlobally(dependency.value))
+          .collect {
+            case info
+                if info.value.filesContainingVersion.nonEmpty &&
+                  !FilterAlg.isIgnoredGlobally(info.value.dependency) =>
+              info.map(_.dependency)
+          }
           .sorted
 
         val repoConfig = repoCache.maybeRepoConfig.getOrElse(RepoConfig.default)
