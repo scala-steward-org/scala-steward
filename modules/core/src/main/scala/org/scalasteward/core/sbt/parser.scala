@@ -27,12 +27,12 @@ object parser {
   def parseBuildProperties(s: String): Option[SbtVersion] =
     """sbt.version\s*=\s*(.+)""".r.findFirstMatchIn(s).map(_.group(1)).map(SbtVersion.apply)
 
-  def parseDependencies(lines: List[String]): List[ResolutionCtx.Deps] = {
+  def parseDependencies(lines: List[String]): List[ResolversScope.Deps] = {
     val delimiter = "--- snip ---"
     val decoder = Decoder[Dependency].either(Decoder[Resolver])
     val stream = fs2.Stream.emits(lines).map(removeSbtNoise).split(_ === delimiter).map { chunk =>
       val (dependencies, resolvers) = chunk.toList.flatMap(decode(_)(decoder).toList).separate
-      ResolutionCtx(dependencies, resolvers)
+      ResolversScope(dependencies, resolvers)
     }
     stream.toList
   }

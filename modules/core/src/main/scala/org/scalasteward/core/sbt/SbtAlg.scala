@@ -23,7 +23,7 @@ import cats.{Functor, Monad}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.Resolver.MavenRepository
-import org.scalasteward.core.data.{Dependency, ResolutionCtx, Update}
+import org.scalasteward.core.data.{Dependency, ResolversScope, Update}
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.sbt.data.SbtVersion
@@ -40,7 +40,7 @@ trait SbtAlg[F[_]] {
 
   def getSbtVersion(repo: Repo): F[Option[SbtVersion]]
 
-  def getDependenciesAndResolvers(repo: Repo): F[List[ResolutionCtx.Deps]]
+  def getDependenciesAndResolvers(repo: Repo): F[List[ResolversScope.Deps]]
 
   def getUpdates(repo: Repo): F[List[Update.Single]]
 
@@ -90,7 +90,7 @@ object SbtAlg {
           version = maybeProperties.flatMap(parser.parseBuildProperties)
         } yield version
 
-      override def getDependenciesAndResolvers(repo: Repo): F[List[ResolutionCtx.Deps]] =
+      override def getDependenciesAndResolvers(repo: Repo): F[List[ResolversScope.Deps]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
           cmd = sbtCmd(List(crossStewardDependencyData, reloadPlugins, stewardDependencyData))
@@ -98,7 +98,7 @@ object SbtAlg {
           scopes = parser.parseDependencies(lines)
           maybeSbtDependency <- getSbtDependency(repo)
           maybeScalafmtDependency <- scalafmtAlg.getScalafmtDependency(repo)
-          artScope = ResolutionCtx(
+          artScope = ResolversScope(
             maybeSbtDependency.toList ++ maybeScalafmtDependency.toList,
             List.empty
           )
@@ -160,10 +160,10 @@ object SbtAlg {
           maybeScalafmtDependency <- scalafmtAlg.getScalafmtDependency(repo)
           resolvers = List(MavenRepository("public", "https://repo1.maven.org/maven2/"))
           maybeSbtUpdate <- maybeSbtDependency.flatTraverse(dep =>
-            updateAlg.findUpdate(ResolutionCtx(dep, resolvers))
+            updateAlg.findUpdate(ResolversScope(dep, resolvers))
           )
           maybeScalafmtUpdate <- maybeScalafmtDependency.flatTraverse(dep =>
-            updateAlg.findUpdate(ResolutionCtx(dep, resolvers))
+            updateAlg.findUpdate(ResolversScope(dep, resolvers))
           )
         } yield maybeSbtUpdate.toList ++ maybeScalafmtUpdate.toList
     }

@@ -22,7 +22,7 @@ import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, KeyEncoder}
 import java.util.concurrent.TimeUnit
 import org.scalasteward.core.coursier.VersionsCacheFacade.{Key, Value}
-import org.scalasteward.core.data.{Dependency, ResolutionCtx, Version}
+import org.scalasteward.core.data.{Dependency, ResolversScope, Version}
 import org.scalasteward.core.persistence.KeyValueStore
 import org.scalasteward.core.util.{DateTimeAlg, RateLimiter}
 import scala.concurrent.duration.FiniteDuration
@@ -48,7 +48,7 @@ final class VersionsCacheFacade[F[_]](
     dateTimeAlg: DateTimeAlg[F],
     F: FlatMap[F]
 ) {
-  def getVersions(dependency: ResolutionCtx.Dep): F[List[Version]] =
+  def getVersions(dependency: ResolversScope.Dep): F[List[Version]] =
     dateTimeAlg.currentTimeMillis.flatMap { now =>
       store.get(Key(dependency.value)).flatMap {
         case Some(value) if value.age(now) <= cacheTtl =>
@@ -58,7 +58,7 @@ final class VersionsCacheFacade[F[_]](
       }
     }
 
-  def getVersionsFresh(dependency: ResolutionCtx.Dep): F[List[Version]] =
+  def getVersionsFresh(dependency: ResolversScope.Dep): F[List[Version]] =
     rateLimiter.limit {
       dateTimeAlg.currentTimeMillis.flatMap { now =>
         coursierAlg.getVersionsFresh(dependency) <*

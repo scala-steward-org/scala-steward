@@ -25,20 +25,20 @@ import coursier.interop.cats._
 import coursier.{Fetch, Info, Module, ModuleName, Organization, Versions}
 import io.chrisdavenport.log4cats.Logger
 import org.http4s.Uri
-import org.scalasteward.core.data.{Dependency, ResolutionCtx, Resolver, Version}
+import org.scalasteward.core.data.{Dependency, Resolver, ResolversScope, Version}
 import scala.concurrent.duration.FiniteDuration
 
 /** An interface to [[https://get-coursier.io Coursier]] used for
   * fetching dependency versions and metadata.
   */
 trait CoursierAlg[F[_]] {
-  def getArtifactUrl(dependency: ResolutionCtx.Dep): F[Option[Uri]]
+  def getArtifactUrl(dependency: ResolversScope.Dep): F[Option[Uri]]
 
-  def getVersions(dependency: ResolutionCtx.Dep): F[List[Version]]
+  def getVersions(dependency: ResolversScope.Dep): F[List[Version]]
 
-  def getVersionsFresh(dependency: ResolutionCtx.Dep): F[List[Version]]
+  def getVersionsFresh(dependency: ResolversScope.Dep): F[List[Version]]
 
-  final def getArtifactIdUrlMapping(dependencies: ResolutionCtx.Deps)(
+  final def getArtifactIdUrlMapping(dependencies: ResolversScope.Deps)(
       implicit F: Applicative[F]
   ): F[Map[String, Uri]] =
     dependencies.sequence
@@ -64,7 +64,7 @@ object CoursierAlg {
     val versionsNoTtl: Versions[F] = versions.withCache(cacheNoTtl)
 
     new CoursierAlg[F] {
-      override def getArtifactUrl(dependency: ResolutionCtx.Dep): F[Option[Uri]] =
+      override def getArtifactUrl(dependency: ResolversScope.Dep): F[Option[Uri]] =
         dependency.resolvers.traverseFilter(convertResolver).flatMap { repositories =>
           getArtifactUrlImpl(toCoursierDependency(dependency.value), repositories)
         }
@@ -94,15 +94,15 @@ object CoursierAlg {
         }
       }
 
-      override def getVersions(dependency: ResolutionCtx.Dep): F[List[Version]] =
+      override def getVersions(dependency: ResolversScope.Dep): F[List[Version]] =
         getVersionsImpl(versions, dependency)
 
-      override def getVersionsFresh(dependency: ResolutionCtx.Dep): F[List[Version]] =
+      override def getVersionsFresh(dependency: ResolversScope.Dep): F[List[Version]] =
         getVersionsImpl(versionsNoTtl, dependency)
 
       private def getVersionsImpl(
           versions: Versions[F],
-          dependency: ResolutionCtx.Dep
+          dependency: ResolversScope.Dep
       ): F[List[Version]] =
         dependency.resolvers.traverseFilter(convertResolver).flatMap { repositories =>
           versions

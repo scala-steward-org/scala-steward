@@ -21,28 +21,28 @@ import cats.{Applicative, Eval, Traverse}
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, Decoder, Encoder}
 
-final case class ResolutionCtx[A](value: A, resolvers: List[Resolver])
+final case class ResolversScope[A](value: A, resolvers: List[Resolver])
 
-object ResolutionCtx {
-  type Dep = ResolutionCtx[Dependency]
-  type Deps = ResolutionCtx[List[Dependency]]
+object ResolversScope {
+  type Dep = ResolversScope[Dependency]
+  type Deps = ResolversScope[List[Dependency]]
 
-  implicit def resolutionCtxTraverse: Traverse[ResolutionCtx] =
-    new Traverse[ResolutionCtx] {
+  implicit def resolversScopeTraverse: Traverse[ResolversScope] =
+    new Traverse[ResolversScope] {
       override def traverse[G[_]: Applicative, A, B](
-          fa: ResolutionCtx[A]
-      )(f: A => G[B]): G[ResolutionCtx[B]] =
-        f(fa.value).map(b => ResolutionCtx(b, fa.resolvers))
+          fa: ResolversScope[A]
+      )(f: A => G[B]): G[ResolversScope[B]] =
+        f(fa.value).map(b => ResolversScope(b, fa.resolvers))
 
-      override def foldLeft[A, B](fa: ResolutionCtx[A], b: B)(f: (B, A) => B): B =
+      override def foldLeft[A, B](fa: ResolversScope[A], b: B)(f: (B, A) => B): B =
         f(b, fa.value)
 
-      override def foldRight[A, B](fa: ResolutionCtx[A], lb: Eval[B])(
+      override def foldRight[A, B](fa: ResolversScope[A], lb: Eval[B])(
           f: (A, Eval[B]) => Eval[B]
       ): Eval[B] =
         f(fa.value, lb)
     }
 
-  implicit def resolutionCtxCodec[A: Decoder: Encoder]: Codec[ResolutionCtx[A]] =
+  implicit def resolversScopeCodec[A: Decoder: Encoder]: Codec[ResolversScope[A]] =
     deriveCodec
 }

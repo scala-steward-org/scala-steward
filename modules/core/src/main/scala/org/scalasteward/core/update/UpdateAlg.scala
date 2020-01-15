@@ -33,7 +33,7 @@ final class UpdateAlg[F[_]](
     versionsCache: VersionsCacheFacade[F],
     F: Monad[F]
 ) {
-  def findUpdate(dependency: ResolutionCtx[Dependency]): F[Option[Update.Single]] =
+  def findUpdate(dependency: ResolversScope[Dependency]): F[Option[Update.Single]] =
     for {
       versions <- versionsCache.getVersions(dependency)
       current = Version(dependency.value.version)
@@ -45,13 +45,13 @@ final class UpdateAlg[F[_]](
     } yield maybeUpdate1
 
   def findUpdates(
-      dependencies: List[ResolutionCtx.Deps],
+      dependencies: List[ResolversScope.Deps],
       repoConfig: RepoConfig
   ): F[List[Update.Single]] =
     for {
       _ <- logger.info(s"Find updates")
       updates0 <- dependencies.parFlatTraverse(d =>
-        d.value.parFlatTraverse(d2 => findUpdate(ResolutionCtx(d2, d.resolvers)).map(_.toList))
+        d.value.parFlatTraverse(d2 => findUpdate(ResolversScope(d2, d.resolvers)).map(_.toList))
       )
       updates1 <- filterAlg.localFilterMany(repoConfig, updates0)
       updates2 = Update.groupByArtifactIdName(updates1)
