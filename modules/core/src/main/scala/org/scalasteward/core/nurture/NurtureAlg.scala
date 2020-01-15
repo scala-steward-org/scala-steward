@@ -138,7 +138,7 @@ final class NurtureAlg[F[_]](
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
       maybeRepoCache <- repoCacheRepository.findCache(data.repo)
-      resolvers = maybeRepoCache.map(_.resolutionScopes.flatMap(_.resolvers)).getOrElse(List.empty)
+      resolvers = maybeRepoCache.map(_.dependencyInfos.flatMap(_.resolvers)).getOrElse(List.empty)
       artifactIdToUrl <- coursierAlg.getArtifactIdUrlMapping(
         data.update.dependencies.toList,
         resolvers

@@ -45,14 +45,12 @@ final class UpdateAlg[F[_]](
     } yield maybeUpdate1
 
   def findUpdates(
-      dependencies: List[ResolversScope.Deps],
+      dependencies: List[ResolversScope.Dep],
       repoConfig: RepoConfig
   ): F[List[Update.Single]] =
     for {
       _ <- logger.info(s"Find updates")
-      updates0 <- dependencies.parFlatTraverse(d =>
-        d.value.parFlatTraverse(d2 => findUpdate(ResolversScope(d2, d.resolvers)).map(_.toList))
-      )
+      updates0 <- dependencies.parFlatTraverse(findUpdate(_).map(_.toList))
       updates1 <- filterAlg.localFilterMany(repoConfig, updates0)
       updates2 = Update.groupByArtifactIdName(updates1)
       _ <- logger.info(util.logger.showUpdates(updates2.widen[Update]))

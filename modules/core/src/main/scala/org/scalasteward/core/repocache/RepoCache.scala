@@ -24,7 +24,7 @@ import org.scalasteward.core.repoconfig.RepoConfig
 
 final case class RepoCache(
     sha1: Sha1,
-    resolutionScopes: List[ResolversScope[List[DependencyInfo]]],
+    dependencyInfos: List[ResolversScope[List[DependencyInfo]]],
     maybeRepoConfig: Option[RepoConfig]
 )
 
