@@ -161,9 +161,10 @@ object SbtAlg {
         for {
           maybeSbtDependency <- getSbtDependency(repo)
           maybeScalafmtDependency <- scalafmtAlg.getScalafmtDependency(repo)
-          maybeSbtUpdate <- maybeSbtDependency.flatTraverse(updateAlg.findUpdate(_, List.empty))
+          resolvers = List(Resolver("public", "https://repo1.maven.org/maven2/"))
+          maybeSbtUpdate <- maybeSbtDependency.flatTraverse(updateAlg.findUpdate(_, resolvers))
           maybeScalafmtUpdate <- maybeScalafmtDependency.flatTraverse(
-            updateAlg.findUpdate(_, List.empty)
+            updateAlg.findUpdate(_, resolvers)
           )
         } yield maybeSbtUpdate.toList ++ maybeScalafmtUpdate.toList
     }
