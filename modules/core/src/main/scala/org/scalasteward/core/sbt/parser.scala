@@ -33,7 +33,7 @@ object parser {
     chunks.mapFilter { chunk =>
       val (dependencies, resolvers) = chunk.toList.flatMap(decode(_)(decoder).toList).separate
       if (dependencies.isEmpty || resolvers.isEmpty) None
-      else Some(ResolversScope(dependencies, resolvers))
+      else Some(ResolversScope(dependencies, resolvers.sorted))
     }.toList
   }
 

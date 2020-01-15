@@ -7,7 +7,7 @@ import org.scalasteward.core.util.Nel
 object TestSyntax {
   implicit class GenericOps[A](val self: A) extends AnyVal {
     def withMavenCentral: ResolversScope[A] =
-      ResolversScope(self, List(MavenRepository("public", "https://repo1.maven.org/maven2/")))
+      ResolversScope(self, List(Resolver.mavenCentral))
 
     def withSbtPluginReleases: ResolversScope[A] = {
       val sbtPluginReleases = IvyRepository(

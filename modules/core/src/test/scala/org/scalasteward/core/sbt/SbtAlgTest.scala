@@ -44,7 +44,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
     )
     val state =
       sbtAlg
-        .getDependenciesAndResolvers(repo)
+        .getDependencies(repo)
         .runS(MockState.empty.copy(files = files))
         .unsafeRunSync()
     state shouldBe MockState.empty.copy(
@@ -58,7 +58,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
           "sbt",
           "-batch",
           "-no-colors",
-          s";$crossStewardDependencyData;$reloadPlugins;$stewardDependencyData"
+          s";$crossStewardDependencies;$reloadPlugins;$stewardDependencies"
         ),
         List("read", s"$repoDir/project/build.properties"),
         List("read", s"$repoDir/.scalafmt.conf")
@@ -87,7 +87,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
           "sbt",
           "-batch",
           "-no-colors",
-          s";$crossStewardDependencyData;$crossStewardUpdates;$reloadPlugins;$stewardDependencyData;$stewardUpdates"
+          s";$crossStewardDependencies;$crossStewardUpdates;$reloadPlugins;$stewardDependencies;$stewardUpdates"
         ),
         List("read", s"$repoDir/project/build.properties"),
         List("read", s"$repoDir/.scalafmt.conf"),
@@ -126,7 +126,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
           "sbt",
           "-batch",
           "-no-colors",
-          s";$crossStewardDependencyData;$crossStewardUpdates;$reloadPlugins;$stewardDependencyData;$stewardUpdates"
+          s";$crossStewardDependencies;$crossStewardUpdates;$reloadPlugins;$stewardDependencies;$stewardUpdates"
         ),
         List("restore", (repoDir / ".sbtopts").toString),
         List("restore", (repoDir / ".jvmopts").toString),

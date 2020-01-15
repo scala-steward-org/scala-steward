@@ -26,7 +26,7 @@ object StewardPlugin extends AutoPlugin {
   override def trigger: PluginTrigger = allRequirements
 
   object autoImport {
-    val stewardDependencyData =
+    val stewardDependencies =
       taskKey[Unit]("Prints dependencies and resolvers as JSON for consumption by Scala Steward.")
     val stewardUpdates =
       taskKey[Unit]("Prints dependency updates as JSON for consumption by Scala Steward.")
@@ -35,7 +35,7 @@ object StewardPlugin extends AutoPlugin {
   import autoImport._
 
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
-    stewardDependencyData := {
+    stewardDependencies := {
       val log = streams.value.log
       val sourcePositions = dependencyPositions.value
       val buildRoot = baseDirectory.in(ThisBuild).value
@@ -53,9 +53,12 @@ object StewardPlugin extends AutoPlugin {
           Resolver.IvyRepository(repo.name, repo.patterns.ivyPatterns.mkString)
       }
 
-      val output = (Seq("--- snip ---") ++ dependencies.map(_.asJson) ++ resolvers.map(_.asJson))
-        .mkString(System.lineSeparator())
-      log.info(output)
+      val sb = new StringBuilder(1024)
+      val ls = System.lineSeparator()
+      sb.append("--- snip ---").append(ls)
+      dependencies.foreach(d => sb.append(d.asJson).append(ls))
+      resolvers.foreach(r => sb.append(r.asJson).append(ls))
+      log.info(sb.result())
     },
     stewardUpdates := {
       val log = streams.value.log

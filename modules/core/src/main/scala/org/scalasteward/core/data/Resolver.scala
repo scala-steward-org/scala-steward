@@ -27,6 +27,9 @@ object Resolver {
   final case class MavenRepository(name: String, location: String) extends Resolver
   final case class IvyRepository(name: String, pattern: String) extends Resolver
 
+  val mavenCentral: MavenRepository =
+    MavenRepository("public", "https://repo1.maven.org/maven2/")
+
   implicit val resolverCodec: Codec[Resolver] =
     deriveCodec
 
