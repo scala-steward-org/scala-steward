@@ -58,7 +58,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
           "sbt",
           "-batch",
           "-no-colors",
-          s";$crossStewardDependencyData;$crossStewardResolvers;$reloadPlugins;$stewardDependencyData;$stewardResolvers"
+          s";$crossStewardDependencyData;$reloadPlugins;$stewardDependencyData"
         ),
         List("read", s"$repoDir/project/build.properties"),
         List("read", s"$repoDir/.scalafmt.conf")

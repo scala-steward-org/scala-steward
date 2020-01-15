@@ -29,8 +29,8 @@ class parserTest extends AnyFunSuite with Matchers {
          |[info] { "MavenRepository": { "name": "bintray-ovotech-maven", "location": "https://dl.bintray.com/ovotech/maven/" } }
          |[info] { "IvyRepository" : { "name": "sbt-plugin-releases", "pattern": "https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/[organisation]/[module]/(scala_[scalaVersion]/)(sbt_[sbtVersion]/)([branch]/)[revision]/[type]s/[artifact](-[classifier]).[ext]" } }
          |""".stripMargin.linesIterator.toList
-    val (deps, resolvers) = parseDependenciesAndResolvers(lines)
-    deps should contain theSameElementsAs List(
+    val deps = parseDependencies(lines)
+    deps.flatMap(_.value) should contain theSameElementsAs List(
       "org.scala-lang" % "scala-library" % "2.12.7",
       "com.github.pathikrit" % ArtifactId("better-files", "better-files_2.12") % "3.6.0",
       "org.typelevel" % ArtifactId("cats-effect", "cats-effect_2.12") % "1.0.0",
@@ -40,7 +40,7 @@ class parserTest extends AnyFunSuite with Matchers {
         .copy(sbtVersion = Some(SbtVersion("1.0"))),
       ("com.geirsson" % "sbt-scalafmt" % "1.6.0-RC4").copy(sbtVersion = Some(SbtVersion("1.0")))
     )
-    resolvers shouldBe List(
+    deps.flatMap(_.resolvers) shouldBe List(
       Resolver.MavenRepository("confluent-release", "http://packages.confluent.io/maven/"),
       Resolver.MavenRepository("bintray-ovotech-maven", "https://dl.bintray.com/ovotech/maven/"),
       Resolver.IvyRepository(

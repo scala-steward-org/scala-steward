@@ -1,8 +1,8 @@
 package org.scalasteward.core.coursier
 
 import org.http4s.syntax.literals._
-import org.scalasteward.core.data.Resolver.MavenRepository
-import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId, Resolver}
+import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId}
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.sbt.data.{SbtVersion, ScalaVersion}
@@ -10,13 +10,11 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class CoursierAlgTest extends AnyFunSuite with Matchers {
-  val resolvers = List(MavenRepository("public", "https://repo1.maven.org/maven2/"))
-
   test("getArtifactUrl: library") {
     val dep =
       Dependency(GroupId("org.typelevel"), ArtifactId("cats-effect", "cats-effect_2.12"), "1.0.0")
     val (state, result) = coursierAlg
-      .getArtifactUrl(dep, resolvers)
+      .getArtifactUrl(dep.withMavenCentral)
       .run(MockState.empty)
       .unsafeRunSync()
     state shouldBe MockState.empty
@@ -30,37 +28,39 @@ class CoursierAlgTest extends AnyFunSuite with Matchers {
       "2.1.0-M7"
     )
     val (state, result) = coursierAlg
-      .getArtifactUrl(dep, resolvers)
+      .getArtifactUrl(dep.withMavenCentral)
       .run(MockState.empty)
       .unsafeRunSync()
     state shouldBe MockState.empty
     result shouldBe Some(uri"https://github.com/playframework/play-ws")
   }
 
-  test("getArtifactUrl: URL with no or invalid scheme") {
-    val dep1 = Dependency(
+  test("getArtifactUrl: URL with no or invalid scheme 1") {
+    val dep = Dependency(
       GroupId("org.msgpack"),
       ArtifactId("msgpack-core"),
       "0.8.20"
     )
-    val (state1, result1) = coursierAlg
-      .getArtifactUrl(dep1, resolvers)
+    val (state, result) = coursierAlg
+      .getArtifactUrl(dep.withMavenCentral)
       .run(MockState.empty)
       .unsafeRunSync()
-    state1 shouldBe MockState.empty
-    result1 shouldBe Some(uri"http://msgpack.org/")
+    state shouldBe MockState.empty
+    result shouldBe Some(uri"http://msgpack.org/")
+  }
 
-    val dep2 = Dependency(
+  test("getArtifactUrl: URL with no or invalid scheme 2") {
+    val dep = Dependency(
       GroupId("org.xhtmlrenderer"),
       ArtifactId("flying-saucer-parent"),
       "9.0.1"
     )
-    val (state2, result2) = coursierAlg
-      .getArtifactUrl(dep2, resolvers)
+    val (state, result) = coursierAlg
+      .getArtifactUrl(dep.withMavenCentral)
       .run(MockState.empty)
       .unsafeRunSync()
-    state2 shouldBe MockState.empty
-    result2 shouldBe Some(uri"http://code.google.com/p/flying-saucer/")
+    state shouldBe MockState.empty
+    result shouldBe Some(uri"http://code.google.com/p/flying-saucer/")
   }
 
   test("getArtifactUrl: from parent") {
@@ -70,7 +70,7 @@ class CoursierAlgTest extends AnyFunSuite with Matchers {
       "1.10.5"
     )
     val (state, result) = coursierAlg
-      .getArtifactUrl(dep, resolvers)
+      .getArtifactUrl(dep.withMavenCentral)
       .run(MockState.empty)
       .unsafeRunSync()
     state shouldBe MockState.empty
@@ -84,7 +84,7 @@ class CoursierAlgTest extends AnyFunSuite with Matchers {
       "0.9.6"
     )
     val (state, result) = coursierAlg
-      .getArtifactUrl(dep, resolvers)
+      .getArtifactUrl(dep.withMavenCentral)
       .run(MockState.empty)
       .unsafeRunSync()
     state shouldBe MockState.empty
@@ -100,7 +100,7 @@ class CoursierAlgTest extends AnyFunSuite with Matchers {
       Some(ScalaVersion("2.12"))
     )
     val (state, result) = coursierAlg
-      .getArtifactUrl(dep, resolvers)
+      .getArtifactUrl(dep.withMavenCentral)
       .run(MockState.empty)
       .unsafeRunSync()
     state shouldBe MockState.empty
@@ -116,7 +116,7 @@ class CoursierAlgTest extends AnyFunSuite with Matchers {
       Some(ScalaVersion("2.12"))
     )
     val (state, result) =
-      coursierAlg.getArtifactUrl(dep, resolvers).run(MockState.empty).unsafeRunSync()
+      coursierAlg.getArtifactUrl(dep.withSbtPluginReleases).run(MockState.empty).unsafeRunSync()
     state shouldBe MockState.empty
     result shouldBe Some(uri"https://github.com/sbt/sbt-release")
   }
@@ -127,7 +127,7 @@ class CoursierAlgTest extends AnyFunSuite with Matchers {
       Dependency(GroupId("org.typelevel"), ArtifactId("cats-effect", "cats-effect_2.12"), "1.0.0")
     )
     val (state, result) = coursierAlg
-      .getArtifactIdUrlMapping(dependencies, resolvers)
+      .getArtifactIdUrlMapping(dependencies.withMavenCentral)
       .run(MockState.empty)
       .unsafeRunSync()
     state shouldBe MockState.empty
