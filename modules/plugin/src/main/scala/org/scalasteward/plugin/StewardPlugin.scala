@@ -53,7 +53,7 @@ object StewardPlugin extends AutoPlugin {
           Resolver.IvyRepository(repo.name, repo.patterns.ivyPatterns.mkString)
       }
 
-      val sb = new StringBuilder(1024)
+      val sb = new StringBuilder()
       val ls = System.lineSeparator()
       sb.append("--- snip ---").append(ls)
       dependencies.foreach(d => sb.append(d.asJson).append(ls))
