@@ -28,7 +28,7 @@ java -DROOT_LOG_LEVEL=INFO -DLOG_LEVEL=INFO -jar ${JAR} \
   --ignore-opts-files \
   --env-var "SBT_OPTS=-Xmx2048m -Xss8m -XX:MaxMetaspaceSize=512m" \
   --sign-commits \
-  --cache-ttl 4hours \
+  --cache-ttl 5hours \
   --process-timeout 20min \
   --whitelist $HOME/.cache/coursier \
   --whitelist $HOME/.coursier \
