@@ -42,15 +42,16 @@ final class PruningAlg[F[_]](
     repoCacheRepository.findCache(repo).flatMap {
       case None => F.pure(false)
       case Some(repoCache) =>
-        val dependencies = repoCache.dependencyInfos
+        val dependenciesWithResolvers = repoCache.dependencyInfos
           .flatMap(_.sequence)
           .collect { case info if !ignoreDependency(info.value) => info.map(_.dependency) }
           .sorted
+        val dependencies = dependenciesWithResolvers.map(_.value).distinct
 
         val repoConfig = repoCache.maybeRepoConfig.getOrElse(RepoConfig.default)
         for {
-          updates <- updateAlg.findUpdates(dependencies, repoConfig)
-          updateStates <- findAllUpdateStates(repo, repoCache, dependencies.map(_.value), updates)
+          updates <- updateAlg.findUpdates(dependenciesWithResolvers, repoConfig)
+          updateStates <- findAllUpdateStates(repo, repoCache, dependencies, updates)
           attentionNeeded <- checkUpdateStates(repo, updateStates)
         } yield attentionNeeded
     }
