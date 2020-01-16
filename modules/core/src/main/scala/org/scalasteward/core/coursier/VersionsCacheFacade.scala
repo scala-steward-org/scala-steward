@@ -30,13 +30,13 @@ import scala.concurrent.duration.FiniteDuration
 /** Facade of Coursier's versions cache that keeps track of the instant
   * when versions of a dependency are updated. This information is used
   * to rate limit calls to Coursier that require a network call to
-  * populate or refresh its cache. Calls that hit the cache are
-  * unlimited.
+  * populate or refresh its cache. Calls that probably hit the cache
+  * are unlimited.
   *
   * Note that resolvers are ignored when storing the instant of the
-  * last updates which could lead to unlimited calls to Coursier that
-  * hit the network. This will only happen for dependencies that are
-  * available in multiple repositories.
+  * last update which could lead to unlimited calls to Coursier that
+  * hit the network. This will happen for dependencies that have been
+  * checked against different resolvers before.
   */
 final class VersionsCacheFacade[F[_]](
     cacheTtl: FiniteDuration,

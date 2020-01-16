@@ -19,10 +19,11 @@ package org.scalasteward.core.update
 import cats.Monad
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
-import org.scalasteward.core.data.{CrossDependency, Dependency, Update}
+import org.scalasteward.core.data.{CrossDependency, Dependency, DependencyInfo, Update}
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.repocache.{RepoCache, RepoCacheRepository}
 import org.scalasteward.core.repoconfig.RepoConfig
+import org.scalasteward.core.update.PruningAlg.ignoreDependency
 import org.scalasteward.core.update.data.UpdateState
 import org.scalasteward.core.update.data.UpdateState._
 import org.scalasteward.core.util
@@ -43,12 +44,7 @@ final class PruningAlg[F[_]](
       case Some(repoCache) =>
         val dependencies = repoCache.dependencyInfos
           .flatMap(_.sequence)
-          .collect {
-            case info
-                if info.value.filesContainingVersion.nonEmpty &&
-                  !FilterAlg.isIgnoredGlobally(info.value.dependency) =>
-              info.map(_.dependency)
-          }
+          .collect { case info if !ignoreDependency(info.value) => info.map(_.dependency) }
           .sorted
 
         val repoConfig = repoCache.maybeRepoConfig.getOrElse(RepoConfig.default)
@@ -99,4 +95,9 @@ final class PruningAlg[F[_]](
     }
     logger.info(message).as(isOutdated)
   }
+}
+
+object PruningAlg {
+  def ignoreDependency(info: DependencyInfo): Boolean =
+    info.filesContainingVersion.isEmpty || FilterAlg.isIgnoredGlobally(info.dependency)
 }

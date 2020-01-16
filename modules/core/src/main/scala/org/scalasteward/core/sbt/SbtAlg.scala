@@ -100,11 +100,9 @@ object SbtAlg {
           result = (dependencies ++ additionalDependencies)
             .groupByNel(_.resolvers)
             .values
-            .map { group =>
-              val ds = group.toList.flatMap(_.value).distinct.sorted
-              ResolversScope(ds, group.head.resolvers)
-            }
-        } yield result.toList
+            .toList
+            .map(group => group.head.as(group.reduceMap(_.value).distinct.sorted))
+        } yield result
 
       override def getUpdates(repo: Repo): F[List[Update.Single]] =
         for {
