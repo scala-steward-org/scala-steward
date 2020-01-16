@@ -24,6 +24,7 @@ import org.scalasteward.core.data._
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
+import UpdateAlg._
 
 final class UpdateAlg[F[_]](
     implicit
@@ -33,15 +34,18 @@ final class UpdateAlg[F[_]](
     versionsCache: VersionsCacheFacade[F],
     F: Monad[F]
 ) {
-  def findUpdate(dependency: Scope[Dependency]): F[Option[Update.Single]] =
+  def findUpdate(dependency: Scope[Dependency], useCache: Boolean): F[Option[Update.Single]] =
     for {
-      versions <- versionsCache.getVersions(dependency)
+      versions <- {
+        if (useCache) versionsCache.getVersions(dependency)
+        else versionsCache.getVersionsFresh(dependency)
+      }
       current = Version(dependency.value.version)
       maybeNewerVersions = Nel.fromList(versions.filter(_ > current))
       maybeUpdate0 = maybeNewerVersions.map { newerVersions =>
         Update.Single(CrossDependency(dependency.value), newerVersions.map(_.value))
       }
-      maybeUpdate1 = maybeUpdate0.orElse(UpdateAlg.findUpdateWithNewerGroupId(dependency.value))
+      maybeUpdate1 = maybeUpdate0.orElse(findUpdateWithNewerGroupId(dependency.value))
     } yield maybeUpdate1
 
   def findUpdates(
@@ -50,11 +54,15 @@ final class UpdateAlg[F[_]](
   ): F[List[Update.Single]] =
     for {
       _ <- logger.info(s"Find updates")
-      updates0 <- dependencies.parFlatTraverse(findUpdate(_).map(_.toList))
+      updates0 <- dependencies.parFlatTraverse(findUpdate(_, useCache = true).map(_.toList))
       updates1 <- filterAlg.localFilterMany(repoConfig, updates0)
-      updates2 = Update.groupByArtifactIdName(updates1)
-      _ <- logger.info(util.logger.showUpdates(updates2.widen[Update]))
-    } yield updates2
+      (outOfSyncDependencies, updates2) = extractOutOfSyncDependencies(dependencies, updates1)
+      _ = outOfSyncDependencies.foreach(println)
+      newUpdates0 <- outOfSyncDependencies.traverseFilter(findUpdate(_, useCache = false))
+      newUpdates1 <- filterAlg.localFilterMany(repoConfig, newUpdates0)
+      updates3 = Update.groupByArtifactIdName(updates2 ++ newUpdates1)
+      _ <- logger.info(util.logger.showUpdates(updates3.widen[Update]))
+    } yield updates3
 }
 
 object UpdateAlg {
@@ -78,4 +86,38 @@ object UpdateAlg {
       case ("net.ceedubs", "ficus")               => (GroupId("com.iheart"), "1.3.4")
       case ("org.spire-math", "kind-projector")   => (GroupId("org.typelevel"), "0.10.0")
     }
+
+  /** Extracts dependency groups where each dependency in a group has
+    * the same groupId and version but different updates or no update
+    * at all.
+    *
+    * This is not unexpected since we're using a cache for dependency
+    * versions and not all artifacts of a dependency group are refreshed
+    * at the same time.
+    */
+  def extractOutOfSyncDependencies(
+      dependencies: List[Scope.Dependency],
+      updates: List[Update.Single]
+  ): (List[Scope.Dependency], List[Update.Single]) = {
+    val outdatedGroupIdVersionPairs = updates.map(u => (u.groupId, u.currentVersion))
+    val matchingDependencies = dependencies.filter { d =>
+      outdatedGroupIdVersionPairs.contains_((d.value.groupId, d.value.version))
+    }
+    val outOfSyncDependencies = matchingDependencies
+      .groupBy(d => (d.value.groupId, d.value.version))
+      .values
+      .filterNot(_.size === 1)
+      .filterNot { ds =>
+        val matchingUpdates = ds.mapFilter(d => updates.find(_.crossDependency.head === d.value))
+        val uniqueNextVersion = matchingUpdates.map(_.nextVersion).distinct.size === 1
+        (matchingUpdates.size === ds.size) && uniqueNextVersion
+      }
+      .toList
+      .flatten
+
+    val inSyncUpdates =
+      updates.filterNot(u => outOfSyncDependencies.exists(_.value === u.crossDependency.head))
+
+    (outOfSyncDependencies, inSyncUpdates)
+  }
 }
