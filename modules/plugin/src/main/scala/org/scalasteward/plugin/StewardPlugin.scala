@@ -27,11 +27,9 @@ object StewardPlugin extends AutoPlugin {
 
   object autoImport {
     val stewardDependencies =
-      taskKey[Unit]("Prints dependencies as JSON for consumption by Scala Steward.")
+      taskKey[Unit]("Prints dependencies and resolvers as JSON for consumption by Scala Steward.")
     val stewardUpdates =
       taskKey[Unit]("Prints dependency updates as JSON for consumption by Scala Steward.")
-    val stewardResolvers =
-      taskKey[Unit]("Prints resolvers as JSON for consumption by Scala Steward.")
   }
 
   import autoImport._
@@ -48,7 +46,19 @@ object StewardPlugin extends AutoPlugin {
         .filter(isDefinedInBuildFiles(_, sourcePositions, buildRoot))
         .map(moduleId => toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue))
 
-      dependencies.map(_.asJson).foreach(s => log.info(s))
+      val resolvers = fullResolvers.value.collect {
+        case repo: MavenRepository if !repo.root.startsWith("file://") =>
+          Resolver.MavenRepository(repo.name, repo.root)
+        case repo: URLRepository =>
+          Resolver.IvyRepository(repo.name, repo.patterns.ivyPatterns.mkString)
+      }
+
+      val sb = new StringBuilder()
+      val ls = System.lineSeparator()
+      sb.append("--- snip ---").append(ls)
+      dependencies.foreach(d => sb.append(d.asJson).append(ls))
+      resolvers.foreach(r => sb.append(r.asJson).append(ls))
+      log.info(sb.result())
     },
     stewardUpdates := {
       val log = streams.value.log
@@ -67,16 +77,6 @@ object StewardPlugin extends AutoPlugin {
       }
 
       updates.map(_.asJson).foreach(s => log.info(s))
-    },
-    stewardResolvers := {
-      val log = streams.value.log
-      fullResolvers.value
-        .collect {
-          case repo: MavenRepository if !repo.root.startsWith("file://") =>
-            Resolver(repo.name, repo.root)
-        }
-        .map(_.asJson)
-        .foreach(s => log.info(s))
     }
   )
 
@@ -173,9 +173,32 @@ object StewardPlugin extends AutoPlugin {
       )
   }
 
-  final private case class Resolver(name: String, location: String) {
-    def asJson: String =
-      objToJson(List("name" -> strToJson(name), "location" -> strToJson(location)))
+  sealed trait Resolver extends Product with Serializable {
+    def asJson: String
+  }
+
+  object Resolver {
+    final case class MavenRepository(name: String, location: String) extends Resolver {
+      override def asJson: String =
+        objToJson(
+          List(
+            "MavenRepository" -> objToJson(
+              List("name" -> strToJson(name), "location" -> strToJson(location))
+            )
+          )
+        )
+    }
+
+    final case class IvyRepository(name: String, pattern: String) extends Resolver {
+      override def asJson: String =
+        objToJson(
+          List(
+            "IvyRepository" -> objToJson(
+              List("name" -> strToJson(name), "pattern" -> strToJson(pattern))
+            )
+          )
+        )
+    }
   }
 
   final private case class Update(

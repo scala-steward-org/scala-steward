@@ -22,7 +22,7 @@ import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.ProcessResult.{Ignored, Updated}
-import org.scalasteward.core.data.{ProcessResult, Update}
+import org.scalasteward.core.data.{ProcessResult, Scope, Update}
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Branch, GitAlg}
 import org.scalasteward.core.repocache.RepoCacheRepository
@@ -138,10 +138,9 @@ final class NurtureAlg[F[_]](
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
       maybeRepoCache <- repoCacheRepository.findCache(data.repo)
-      resolvers = maybeRepoCache.map(_.resolvers).getOrElse(List.empty)
+      resolvers = maybeRepoCache.map(_.dependencyInfos.flatMap(_.resolvers)).getOrElse(List.empty)
       artifactIdToUrl <- coursierAlg.getArtifactIdUrlMapping(
-        data.update.dependencies.toList,
-        resolvers
+        Scope(data.update.dependencies.toList, resolvers)
       )
       branchCompareUrl <- artifactIdToUrl
         .get(data.update.mainArtifactId)

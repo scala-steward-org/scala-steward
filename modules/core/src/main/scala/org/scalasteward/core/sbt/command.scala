@@ -19,10 +19,8 @@ package org.scalasteward.core.sbt
 object command {
   val stewardUpdates = "stewardUpdates"
   val stewardDependencies = "stewardDependencies"
-  val stewardResolvers = "stewardResolvers"
   val crossStewardUpdates = s"+ $stewardUpdates"
   val crossStewardDependencies = s"+ $stewardDependencies"
-  val crossStewardResolvers = s"+ $stewardResolvers"
   val reloadPlugins = "reload plugins"
   val scalafix = "scalafix"
   val testScalafix = "test:scalafix"

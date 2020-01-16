@@ -22,7 +22,7 @@ import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, KeyEncoder}
 import java.util.concurrent.TimeUnit
 import org.scalasteward.core.coursier.VersionsCacheFacade.{Key, Value}
-import org.scalasteward.core.data.{Dependency, Resolver, Version}
+import org.scalasteward.core.data.{Dependency, Scope, Version}
 import org.scalasteward.core.persistence.KeyValueStore
 import org.scalasteward.core.util.{DateTimeAlg, RateLimiter}
 import scala.concurrent.duration.FiniteDuration
@@ -30,13 +30,13 @@ import scala.concurrent.duration.FiniteDuration
 /** Facade of Coursier's versions cache that keeps track of the instant
   * when versions of a dependency are updated. This information is used
   * to rate limit calls to Coursier that require a network call to
-  * populate or refresh its cache. Calls that hit the cache are
-  * unlimited.
+  * populate or refresh its cache. Calls that probably hit the cache
+  * are unlimited.
   *
   * Note that resolvers are ignored when storing the instant of the
-  * last updates which could lead to unlimited calls to Coursier that
-  * hit the network. This will only happen for dependencies that are
-  * available in multiple repositories.
+  * last update which could lead to unlimited calls to Coursier that
+  * hit the network. This will happen for dependencies that have been
+  * checked against different resolvers before.
   */
 final class VersionsCacheFacade[F[_]](
     cacheTtl: FiniteDuration,
@@ -48,21 +48,21 @@ final class VersionsCacheFacade[F[_]](
     dateTimeAlg: DateTimeAlg[F],
     F: FlatMap[F]
 ) {
-  def getVersions(dependency: Dependency, resolvers: List[Resolver]): F[List[Version]] =
+  def getVersions(dependency: Scope.Dependency): F[List[Version]] =
     dateTimeAlg.currentTimeMillis.flatMap { now =>
-      store.get(Key(dependency)).flatMap {
+      store.get(Key(dependency.value)).flatMap {
         case Some(value) if value.age(now) <= cacheTtl =>
-          coursierAlg.getVersions(dependency, resolvers)
+          coursierAlg.getVersions(dependency)
         case _ =>
-          getVersionsFresh(dependency, resolvers)
+          getVersionsFresh(dependency)
       }
     }
 
-  def getVersionsFresh(dependency: Dependency, resolvers: List[Resolver]): F[List[Version]] =
+  def getVersionsFresh(dependency: Scope.Dependency): F[List[Version]] =
     rateLimiter.limit {
       dateTimeAlg.currentTimeMillis.flatMap { now =>
-        coursierAlg.getVersionsFresh(dependency, resolvers) <*
-          store.put(Key(dependency), Value(now))
+        coursierAlg.getVersionsFresh(dependency) <*
+          store.put(Key(dependency.value), Value(now))
       }
     }
 }

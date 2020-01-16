@@ -22,29 +22,27 @@ import cats.{Applicative, Parallel}
 import coursier.cache.FileCache
 import coursier.core.Project
 import coursier.interop.cats._
-import coursier.maven.MavenRepository
-import coursier.util.StringInterpolators.SafeIvyRepository
 import coursier.{Fetch, Info, Module, ModuleName, Organization, Versions}
 import io.chrisdavenport.log4cats.Logger
 import org.http4s.Uri
-import org.scalasteward.core.data.{Dependency, Resolver, Version}
+import org.scalasteward.core.data.{Dependency, Resolver, Scope, Version}
 import scala.concurrent.duration.FiniteDuration
 
 /** An interface to [[https://get-coursier.io Coursier]] used for
   * fetching dependency versions and metadata.
   */
 trait CoursierAlg[F[_]] {
-  def getArtifactUrl(dependency: Dependency, resolvers: List[Resolver]): F[Option[Uri]]
+  def getArtifactUrl(dependency: Scope.Dependency): F[Option[Uri]]
 
-  def getVersions(dependency: Dependency, resolvers: List[Resolver]): F[List[Version]]
+  def getVersions(dependency: Scope.Dependency): F[List[Version]]
 
-  def getVersionsFresh(dependency: Dependency, resolvers: List[Resolver]): F[List[Version]]
+  def getVersionsFresh(dependency: Scope.Dependency): F[List[Version]]
 
-  final def getArtifactIdUrlMapping(dependencies: List[Dependency], resolvers: List[Resolver])(
+  final def getArtifactIdUrlMapping(dependencies: Scope.Dependencies)(
       implicit F: Applicative[F]
   ): F[Map[String, Uri]] =
-    dependencies
-      .traverseFilter(dep => getArtifactUrl(dep, resolvers).map(_.map(dep.artifactId.name -> _)))
+    dependencies.sequence
+      .traverseFilter(dep => getArtifactUrl(dep).map(_.map(dep.value.artifactId.name -> _)))
       .map(_.toMap)
 }
 
@@ -57,32 +55,24 @@ object CoursierAlg {
   ): CoursierAlg[F] = {
     implicit val parallel: Parallel.Aux[F, F] = Parallel.identity[F]
 
-    val sbtPluginReleases =
-      ivy"https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/[defaultPattern]"
-
     val cache: FileCache[F] = FileCache[F]().withTtl(cacheTtl)
     val cacheNoTtl: FileCache[F] = cache.withTtl(None)
-
-    val fetch: Fetch[F] = Fetch[F](cache).withRepositories(List(sbtPluginReleases))
-
-    val versions: Versions[F] = Versions[F](cache).withRepositories(List(sbtPluginReleases))
+    val fetch: Fetch[F] = Fetch[F](cache)
+    val versions: Versions[F] = Versions[F](cache)
     val versionsNoTtl: Versions[F] = versions.withCache(cacheNoTtl)
 
     new CoursierAlg[F] {
-      override def getArtifactUrl(
-          dependency: Dependency,
-          resolvers: List[Resolver]
-      ): F[Option[Uri]] =
-        getArtifactUrlImpl(toCoursierDependency(dependency), resolvers.map(toCoursierRepository))
+      override def getArtifactUrl(dependency: Scope.Dependency): F[Option[Uri]] =
+        convertToCoursierTypes(dependency).flatMap((getArtifactUrlImpl _).tupled)
 
       private def getArtifactUrlImpl(
           dependency: coursier.Dependency,
           repositories: List[coursier.Repository]
       ): F[Option[Uri]] = {
         val fetchArtifacts = fetch
-          .addArtifactTypes(coursier.Type.pom, coursier.Type.ivy)
-          .addDependencies(dependency)
-          .addRepositories(repositories: _*)
+          .withArtifactTypes(Set(coursier.Type.pom, coursier.Type.ivy))
+          .withDependencies(List(dependency))
+          .withRepositories(repositories)
         fetchArtifacts.ioResult.attempt.flatMap {
           case Left(throwable) =>
             logger.debug(throwable)(s"Failed to fetch artifacts of $dependency").as(None)
@@ -100,31 +90,40 @@ object CoursierAlg {
         }
       }
 
-      override def getVersions(
-          dependency: Dependency,
-          resolvers: List[Resolver]
-      ): F[List[Version]] =
-        getVersionsImpl(versions, dependency, resolvers)
+      override def getVersions(dependency: Scope.Dependency): F[List[Version]] =
+        getVersionsImpl(versions, dependency)
 
-      override def getVersionsFresh(
-          dependency: Dependency,
-          resolvers: List[Resolver]
-      ): F[List[Version]] =
-        getVersionsImpl(versionsNoTtl, dependency, resolvers)
+      override def getVersionsFresh(dependency: Scope.Dependency): F[List[Version]] =
+        getVersionsImpl(versionsNoTtl, dependency)
 
       private def getVersionsImpl(
           versions: Versions[F],
-          dependency: Dependency,
-          resolvers: List[Resolver]
+          dependency: Scope.Dependency
       ): F[List[Version]] =
-        versions
-          .addRepositories(resolvers.map(toCoursierRepository): _*)
-          .withModule(toCoursierModule(dependency))
-          .versions()
-          .map(_.available.map(Version.apply).sorted)
-          .handleErrorWith { throwable =>
-            logger.debug(throwable)(s"Failed to get versions of $dependency").as(List.empty)
-          }
+        convertToCoursierTypes(dependency).flatMap {
+          case (dependency, repositories) =>
+            versions
+              .withModule(dependency.module)
+              .withRepositories(repositories)
+              .versions()
+              .map(_.available.map(Version.apply).sorted)
+              .handleErrorWith { throwable =>
+                logger.debug(throwable)(s"Failed to get versions of $dependency").as(List.empty)
+              }
+        }
+
+      private def convertToCoursierTypes(
+          dependency: Scope.Dependency
+      ): F[(coursier.Dependency, List[coursier.Repository])] =
+        dependency.resolvers.traverseFilter(convertResolver).map { repositories =>
+          (toCoursierDependency(dependency.value), repositories)
+        }
+
+      private def convertResolver(resolver: Resolver): F[Option[coursier.Repository]] =
+        toCoursierRepository(resolver) match {
+          case Right(repository) => F.pure(Some(repository))
+          case Left(message)     => logger.error(s"Failed to convert $resolver: $message").as(None)
+        }
     }
   }
 
@@ -138,8 +137,13 @@ object CoursierAlg {
       dependency.attributes
     )
 
-  private def toCoursierRepository(resolver: Resolver): coursier.Repository =
-    MavenRepository.apply(resolver.location)
+  private def toCoursierRepository(resolver: Resolver): Either[String, coursier.Repository] =
+    resolver match {
+      case Resolver.MavenRepository(_, location) =>
+        Right(coursier.maven.MavenRepository.apply(location))
+      case Resolver.IvyRepository(_, pattern) =>
+        coursier.ivy.IvyRepository.parse(pattern)
+    }
 
   private def getParentDependency(project: Project): Option[coursier.Dependency] =
     project.parent.map {

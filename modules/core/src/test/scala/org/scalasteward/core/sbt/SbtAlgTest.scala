@@ -44,7 +44,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
     )
     val state =
       sbtAlg
-        .getDependenciesAndResolvers(repo)
+        .getDependencies(repo)
         .runS(MockState.empty.copy(files = files))
         .unsafeRunSync()
     state shouldBe MockState.empty.copy(
@@ -58,7 +58,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
           "sbt",
           "-batch",
           "-no-colors",
-          s";$crossStewardDependencies;$crossStewardResolvers;$reloadPlugins;$stewardDependencies;$stewardResolvers"
+          s";$crossStewardDependencies;$reloadPlugins;$stewardDependencies"
         ),
         List("read", s"$repoDir/project/build.properties"),
         List("read", s"$repoDir/.scalafmt.conf")
