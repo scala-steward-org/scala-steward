@@ -19,10 +19,11 @@ package org.scalasteward.core.update
 import cats.Monad
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
-import org.scalasteward.core.data.{CrossDependency, Dependency, Update}
+import org.scalasteward.core.data.{CrossDependency, Dependency, DependencyInfo, Update}
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.repocache.{RepoCache, RepoCacheRepository}
 import org.scalasteward.core.repoconfig.RepoConfig
+import org.scalasteward.core.update.PruningAlg.ignoreDependency
 import org.scalasteward.core.update.data.UpdateState
 import org.scalasteward.core.update.data.UpdateState._
 import org.scalasteward.core.util
@@ -41,13 +42,15 @@ final class PruningAlg[F[_]](
     repoCacheRepository.findCache(repo).flatMap {
       case None => F.pure((false, List.empty))
       case Some(repoCache) =>
-        val dependencies = repoCache.dependencyInfos
-          .collect { case info if info.filesContainingVersion.nonEmpty => info.dependency }
-          .filterNot(FilterAlg.isIgnoredGlobally)
+        val dependenciesWithResolvers = repoCache.dependencyInfos
+          .flatMap(_.sequence)
+          .collect { case info if !ignoreDependency(info.value) => info.map(_.dependency) }
           .sorted
+        val dependencies = dependenciesWithResolvers.map(_.value).distinct
+
         val repoConfig = repoCache.maybeRepoConfig.getOrElse(RepoConfig.default)
         for {
-          updates <- updateAlg.findUpdates(dependencies, repoConfig)
+          updates <- updateAlg.findUpdates(dependenciesWithResolvers, repoConfig)
           updateStates <- findAllUpdateStates(repo, repoCache, dependencies, updates)
           result <- checkUpdateStates(repo, updateStates)
         } yield result
@@ -96,4 +99,9 @@ final class PruningAlg[F[_]](
     }
     logger.info(message).as((isOutdated, updates))
   }
+}
+
+object PruningAlg {
+  def ignoreDependency(info: DependencyInfo): Boolean =
+    info.filesContainingVersion.isEmpty || FilterAlg.isIgnoredGlobally(info.dependency)
 }

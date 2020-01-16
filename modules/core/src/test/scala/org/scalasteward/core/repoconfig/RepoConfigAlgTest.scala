@@ -31,14 +31,34 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     )
   }
 
-  test("config with 'updateBranch disabled") {
-    val repo = Repo("fthomas", "scala-steward")
-    val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
+  test("config with 'updatePullRequests = false'") {
     val content = "updatePullRequests = false"
-    val initialState = MockState.empty.add(configFile, content)
-    val config = repoConfigAlg.readRepoConfigOrDefault(repo).runA(initialState).unsafeRunSync()
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    config shouldBe Right(RepoConfig(updatePullRequests = PullRequestUpdateStrategy.Never))
+  }
 
-    config shouldBe RepoConfig(updatePullRequests = false)
+  test("config with 'updatePullRequests = true'") {
+    val content = "updatePullRequests = true"
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    config shouldBe Right(RepoConfig(updatePullRequests = PullRequestUpdateStrategy.OnConflicts))
+  }
+
+  test("config with 'updatePullRequests = always") {
+    val content = """updatePullRequests = "always" """
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    config shouldBe Right(RepoConfig(updatePullRequests = PullRequestUpdateStrategy.Always))
+  }
+
+  test("config with 'updatePullRequests = on-conflicts") {
+    val content = """updatePullRequests = "on-conflicts" """
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    config shouldBe Right(RepoConfig(updatePullRequests = PullRequestUpdateStrategy.OnConflicts))
+  }
+
+  test("config with 'updatePullRequests = never") {
+    val content = """updatePullRequests = "never" """
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    config shouldBe Right(RepoConfig(updatePullRequests = PullRequestUpdateStrategy.Never))
   }
 
   test("malformed config") {

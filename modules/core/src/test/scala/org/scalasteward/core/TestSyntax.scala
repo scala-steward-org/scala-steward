@@ -1,9 +1,23 @@
 package org.scalasteward.core
 
-import org.scalasteward.core.data.{ArtifactId, CrossDependency, Dependency, GroupId}
+import org.scalasteward.core.data.Resolver.IvyRepository
+import org.scalasteward.core.data._
 import org.scalasteward.core.util.Nel
 
 object TestSyntax {
+  implicit class GenericOps[A](val self: A) extends AnyVal {
+    def withMavenCentral: Scope[A] =
+      Scope(self, List(Resolver.mavenCentral))
+
+    def withSbtPluginReleases: Scope[A] = {
+      val sbtPluginReleases = IvyRepository(
+        "sbt-plugin-releases",
+        "https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/[defaultPattern]"
+      )
+      Scope(self, List(sbtPluginReleases))
+    }
+  }
+
   implicit class StringOps(val self: String) extends AnyVal {
     def %(artifactId: ArtifactId): (GroupId, ArtifactId) =
       (GroupId(self), artifactId)

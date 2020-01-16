@@ -14,21 +14,28 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.repocache
+package org.scalasteward.core.data
 
+import cats.Order
+import cats.implicits._
 import io.circe.Codec
 import io.circe.generic.semiauto._
-import org.scalasteward.core.data.{DependencyInfo, Scope}
-import org.scalasteward.core.git.Sha1
-import org.scalasteward.core.repoconfig.RepoConfig
 
-final case class RepoCache(
-    sha1: Sha1,
-    dependencyInfos: List[Scope[List[DependencyInfo]]],
-    maybeRepoConfig: Option[RepoConfig]
-)
+sealed trait Resolver extends Product with Serializable
 
-object RepoCache {
-  implicit val repoCacheCodec: Codec[RepoCache] =
+object Resolver {
+  final case class MavenRepository(name: String, location: String) extends Resolver
+  final case class IvyRepository(name: String, pattern: String) extends Resolver
+
+  val mavenCentral: MavenRepository =
+    MavenRepository("public", "https://repo1.maven.org/maven2/")
+
+  implicit val resolverCodec: Codec[Resolver] =
     deriveCodec
+
+  implicit val resolverOrder: Order[Resolver] =
+    Order.by {
+      case MavenRepository(name, location) => (1, name, location)
+      case IvyRepository(name, pattern)    => (2, name, pattern)
+    }
 }

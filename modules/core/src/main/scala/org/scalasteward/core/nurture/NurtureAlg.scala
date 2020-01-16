@@ -22,10 +22,11 @@ import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.ProcessResult.{Ignored, Updated}
-import org.scalasteward.core.data.{ProcessResult, Update}
+import org.scalasteward.core.data.{ProcessResult, Scope, Update}
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Branch, GitAlg}
-import org.scalasteward.core.repoconfig.RepoConfigAlg
+import org.scalasteward.core.repocache.RepoCacheRepository
+import org.scalasteward.core.repoconfig.{PullRequestUpdateStrategy, RepoConfigAlg}
 import org.scalasteward.core.scalafix.MigrationAlg
 import org.scalasteward.core.util.DateTimeAlg
 import org.scalasteward.core.util.logger.LoggerOps
@@ -47,6 +48,7 @@ final class NurtureAlg[F[_]](
     migrationAlg: MigrationAlg[F],
     logger: Logger[F],
     pullRequestRepo: PullRequestRepository[F],
+    repoCacheRepository: RepoCacheRepository[F],
     F: Sync[F]
 ) {
   def nurture(repo: Repo, updates: List[Update.Single]): F[Either[Throwable, Unit]] = {
@@ -133,7 +135,11 @@ final class NurtureAlg[F[_]](
   def createPullRequest(data: UpdateData): F[Unit] =
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
-      artifactIdToUrl <- coursierAlg.getArtifactIdUrlMapping(data.update.dependencies.toList)
+      maybeRepoCache <- repoCacheRepository.findCache(data.repo)
+      resolvers = maybeRepoCache.map(_.dependencyInfos.flatMap(_.resolvers)).getOrElse(List.empty)
+      artifactIdToUrl <- coursierAlg.getArtifactIdUrlMapping(
+        Scope(data.update.dependencies.toList, resolvers)
+      )
       branchCompareUrl <- artifactIdToUrl
         .get(data.update.mainArtifactId)
         .flatTraverse(vcsExtraAlg.getBranchCompareUrl(_, data.update))
@@ -162,7 +168,7 @@ final class NurtureAlg[F[_]](
     } yield ()
 
   def updatePullRequest(data: UpdateData): F[ProcessResult] =
-    if (data.repoConfig.updatePullRequests) {
+    if (data.repoConfig.updatePullRequests =!= PullRequestUpdateStrategy.Never) {
       gitAlg.returnToCurrentBranch(data.repo) {
         for {
           _ <- gitAlg.checkoutBranch(data.repo, data.updateBranch)
@@ -182,11 +188,15 @@ final class NurtureAlg[F[_]](
           val distinctAuthors = authors.distinct
           if (distinctAuthors.length >= 2)
             (false, s"PR has commits by ${distinctAuthors.mkString(", ")}").pure[F]
-          else
-            gitAlg.hasConflicts(data.repo, data.updateBranch, data.baseBranch).map {
-              case true  => (true, s"PR has conflicts with ${data.baseBranch.name}")
-              case false => (false, s"PR has no conflict with ${data.baseBranch.name}")
-            }
+          else {
+            if (data.repoConfig.updatePullRequests === PullRequestUpdateStrategy.Always)
+              (true, "PR update strategy is set to always").pure[F]
+            else
+              gitAlg.hasConflicts(data.repo, data.updateBranch, data.baseBranch).map {
+                case true  => (true, s"PR has conflicts with ${data.baseBranch.name}")
+                case false => (false, s"PR has no conflict with ${data.baseBranch.name}")
+              }
+          }
         }
     }
     result.flatMap { case (update, msg) => logger.info(msg).as(update) }

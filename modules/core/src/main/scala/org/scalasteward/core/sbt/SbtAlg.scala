@@ -22,7 +22,7 @@ import cats.implicits._
 import cats.{Functor, Monad}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.data.Dependency
+import org.scalasteward.core.data.{Dependency, Resolver, Scope}
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.sbt.data.SbtVersion
@@ -38,7 +38,7 @@ trait SbtAlg[F[_]] {
 
   def getSbtVersion(repo: Repo): F[Option[SbtVersion]]
 
-  def getDependencies(repo: Repo): F[List[Dependency]]
+  def getDependencies(repo: Repo): F[List[Scope.Dependencies]]
 
   def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit]
 
@@ -69,14 +69,7 @@ object SbtAlg {
         }
 
       override def addGlobalPlugins[A](fa: F[A]): F[A] =
-        for {
-          _ <- logger.info("Add global sbt plugins")
-          result <- {
-            addGlobalPluginTemporarily(stewardPlugin) {
-              fa
-            }
-          }
-        } yield result
+        logger.info("Add global sbt plugins") >> addGlobalPluginTemporarily(stewardPlugin)(fa)
 
       override def getSbtVersion(repo: Repo): F[Option[SbtVersion]] =
         for {
@@ -85,15 +78,20 @@ object SbtAlg {
           version = maybeProperties.flatMap(parser.parseBuildProperties)
         } yield version
 
-      override def getDependencies(repo: Repo): F[List[Dependency]] =
+      override def getDependencies(repo: Repo): F[List[Scope.Dependencies]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          cmd = sbtCmd(List(crossStewardDependencies, reloadPlugins, stewardDependencies))
-          lines <- exec(cmd, repoDir)
+          commands = List(crossStewardDependencies, reloadPlugins, stewardDependencies)
+          lines <- exec(sbtCmd(commands), repoDir)
           dependencies = parser.parseDependencies(lines)
-          maybeSbtDependency <- getSbtDependency(repo)
-          maybeScalafmtDependency <- scalafmtAlg.getScalafmtDependency(repo)
-        } yield (maybeSbtDependency.toList ++ maybeScalafmtDependency.toList ++ dependencies).distinct
+          additionalDependencies <- getAdditionalDependencies(repo)
+          // combine scopes with the same resolvers
+          result = (dependencies ++ additionalDependencies)
+            .groupByNel(_.resolvers)
+            .values
+            .toList
+            .map(group => group.head.as(group.reduceMap(_.value).distinct.sorted))
+        } yield result
 
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
         addGlobalPluginTemporarily(scalaStewardScalafixSbt) {
@@ -126,5 +124,14 @@ object SbtAlg {
             fa
           }
         }
+
+      def getAdditionalDependencies(repo: Repo): F[List[Scope.Dependencies]] =
+        for {
+          maybeSbtDependency <- getSbtDependency(repo)
+          maybeScalafmtDependency <- scalafmtAlg.getScalafmtDependency(repo)
+        } yield Nel
+          .fromList(maybeSbtDependency.toList ++ maybeScalafmtDependency.toList)
+          .map(dependencies => Scope(dependencies.toList, List(Resolver.mavenCentral)))
+          .toList
     }
 }

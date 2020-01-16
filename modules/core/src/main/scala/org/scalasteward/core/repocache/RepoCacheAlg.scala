@@ -80,7 +80,8 @@ final class RepoCacheAlg[F[_]](
       branch <- gitAlg.currentBranch(repo)
       latestSha1 <- gitAlg.latestSha1(repo, branch)
       dependencies <- sbtAlg.getDependencies(repo)
-      dependencyInfos <- dependencies.traverse(gatherDependencyInfo(repo, _))
+      dependencyInfos <- dependencies
+        .traverse(_.traverse(_.traverse(gatherDependencyInfo(repo, _))))
       maybeRepoConfig <- repoConfigAlg.readRepoConfig(repo)
     } yield RepoCache(latestSha1, dependencyInfos, maybeRepoConfig)
 
