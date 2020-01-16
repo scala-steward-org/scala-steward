@@ -41,8 +41,8 @@ class parserTest extends AnyFunSuite with Matchers {
       ("com.geirsson" % "sbt-scalafmt" % "1.6.0-RC4").copy(sbtVersion = Some(SbtVersion("1.0")))
     )
     deps.flatMap(_.resolvers) shouldBe List(
-      Resolver.MavenRepository("confluent-release", "http://packages.confluent.io/maven/"),
       Resolver.MavenRepository("bintray-ovotech-maven", "https://dl.bintray.com/ovotech/maven/"),
+      Resolver.MavenRepository("confluent-release", "http://packages.confluent.io/maven/"),
       Resolver.IvyRepository(
         "sbt-plugin-releases",
         "https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/[organisation]/[module]/(scala_[scalaVersion]/)(sbt_[sbtVersion]/)([branch]/)[revision]/[type]s/[artifact](-[classifier]).[ext]"
