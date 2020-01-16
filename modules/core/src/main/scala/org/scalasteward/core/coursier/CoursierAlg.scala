@@ -57,26 +57,22 @@ object CoursierAlg {
 
     val cache: FileCache[F] = FileCache[F]().withTtl(cacheTtl)
     val cacheNoTtl: FileCache[F] = cache.withTtl(None)
-
     val fetch: Fetch[F] = Fetch[F](cache)
-
     val versions: Versions[F] = Versions[F](cache)
     val versionsNoTtl: Versions[F] = versions.withCache(cacheNoTtl)
 
     new CoursierAlg[F] {
       override def getArtifactUrl(dependency: ResolversScope.Dep): F[Option[Uri]] =
-        dependency.resolvers.traverseFilter(convertResolver).flatMap { repositories =>
-          getArtifactUrlImpl(toCoursierDependency(dependency.value), repositories)
-        }
+        convertToCoursierTypes(dependency).flatMap((getArtifactUrlImpl _).tupled)
 
       private def getArtifactUrlImpl(
           dependency: coursier.Dependency,
           repositories: List[coursier.Repository]
       ): F[Option[Uri]] = {
         val fetchArtifacts = fetch
-          .addArtifactTypes(coursier.Type.pom, coursier.Type.ivy)
-          .addDependencies(dependency)
-          .addRepositories(repositories: _*)
+          .withArtifactTypes(Set(coursier.Type.pom, coursier.Type.ivy))
+          .withDependencies(List(dependency))
+          .withRepositories(repositories)
         fetchArtifacts.ioResult.attempt.flatMap {
           case Left(throwable) =>
             logger.debug(throwable)(s"Failed to fetch artifacts of $dependency").as(None)
@@ -104,15 +100,23 @@ object CoursierAlg {
           versions: Versions[F],
           dependency: ResolversScope.Dep
       ): F[List[Version]] =
-        dependency.resolvers.traverseFilter(convertResolver).flatMap { repositories =>
-          versions
-            .withModule(toCoursierModule(dependency.value))
-            .withRepositories(repositories)
-            .versions()
-            .map(_.available.map(Version.apply).sorted)
-            .handleErrorWith { throwable =>
-              logger.debug(throwable)(s"Failed to get versions of $dependency").as(List.empty)
-            }
+        convertToCoursierTypes(dependency).flatMap {
+          case (dependency, repositories) =>
+            versions
+              .withModule(dependency.module)
+              .withRepositories(repositories)
+              .versions()
+              .map(_.available.map(Version.apply).sorted)
+              .handleErrorWith { throwable =>
+                logger.debug(throwable)(s"Failed to get versions of $dependency").as(List.empty)
+              }
+        }
+
+      private def convertToCoursierTypes(
+          dependency: ResolversScope.Dep
+      ): F[(coursier.Dependency, List[coursier.Repository])] =
+        dependency.resolvers.traverseFilter(convertResolver).map { repositories =>
+          (toCoursierDependency(dependency.value), repositories)
         }
 
       private def convertResolver(resolver: Resolver): F[Option[coursier.Repository]] =
