@@ -6,15 +6,15 @@ import org.scalasteward.core.util.Nel
 
 object TestSyntax {
   implicit class GenericOps[A](val self: A) extends AnyVal {
-    def withMavenCentral: ResolversScope[A] =
-      ResolversScope(self, List(Resolver.mavenCentral))
+    def withMavenCentral: Scope[A] =
+      Scope(self, List(Resolver.mavenCentral))
 
-    def withSbtPluginReleases: ResolversScope[A] = {
+    def withSbtPluginReleases: Scope[A] = {
       val sbtPluginReleases = IvyRepository(
         "sbt-plugin-releases",
         "https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/[defaultPattern]"
       )
-      ResolversScope(self, List(sbtPluginReleases))
+      Scope(self, List(sbtPluginReleases))
     }
   }
 

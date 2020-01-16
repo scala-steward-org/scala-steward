@@ -33,7 +33,7 @@ final class UpdateAlg[F[_]](
     versionsCache: VersionsCacheFacade[F],
     F: Monad[F]
 ) {
-  def findUpdate(dependency: ResolversScope[Dependency]): F[Option[Update.Single]] =
+  def findUpdate(dependency: Scope[Dependency]): F[Option[Update.Single]] =
     for {
       versions <- versionsCache.getVersions(dependency)
       current = Version(dependency.value.version)
@@ -45,7 +45,7 @@ final class UpdateAlg[F[_]](
     } yield maybeUpdate1
 
   def findUpdates(
-      dependencies: List[ResolversScope.Dep],
+      dependencies: List[Scope.Dependency],
       repoConfig: RepoConfig
   ): F[List[Update.Single]] =
     for {

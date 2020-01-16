@@ -28,13 +28,13 @@ object parser {
     """sbt.version\s*=\s*(.+)""".r.findFirstMatchIn(s).map(_.group(1)).map(SbtVersion.apply)
 
   /** Parses the output of our own `stewardDependencies` task. */
-  def parseDependencies(lines: List[String]): List[ResolversScope.Deps] = {
+  def parseDependencies(lines: List[String]): List[Scope.Dependencies] = {
     val chunks = fs2.Stream.emits(lines).map(removeSbtNoise).split(_ === "--- snip ---")
     val decoder = Decoder[Dependency].either(Decoder[Resolver])
     chunks.mapFilter { chunk =>
       val (dependencies, resolvers) = chunk.toList.flatMap(decode(_)(decoder).toList).separate
       if (dependencies.isEmpty || resolvers.isEmpty) None
-      else Some(ResolversScope(dependencies, resolvers.sorted))
+      else Some(Scope(dependencies, resolvers.sorted))
     }.toList
   }
 

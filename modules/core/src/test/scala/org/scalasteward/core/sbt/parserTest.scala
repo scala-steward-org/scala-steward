@@ -2,7 +2,7 @@ package org.scalasteward.core.sbt
 
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.Resolver.{IvyRepository, MavenRepository}
-import org.scalasteward.core.data.{ArtifactId, ResolversScope, Update}
+import org.scalasteward.core.data.{ArtifactId, Scope, Update}
 import org.scalasteward.core.sbt.data.SbtVersion
 import org.scalasteward.core.sbt.parser._
 import org.scalasteward.core.util.Nel
@@ -34,7 +34,7 @@ class parserTest extends AnyFunSuite with Matchers {
          |""".stripMargin.linesIterator.toList
     val scopes = parseDependencies(lines)
     scopes shouldBe List(
-      ResolversScope(
+      Scope(
         List(
           "org.scala-lang" % "scala-library" % "2.12.7",
           "com.github.pathikrit" % ArtifactId("better-files", "better-files_2.12") % "3.6.0",
@@ -45,7 +45,7 @@ class parserTest extends AnyFunSuite with Matchers {
           MavenRepository("confluent-release", "http://packages.confluent.io/maven/")
         )
       ),
-      ResolversScope(
+      Scope(
         List(
           "org.scala-lang" % "scala-library" % "2.12.6",
           ("com.dwijnand" % "sbt-travisci" % "1.1.3").copy(sbtVersion = Some(SbtVersion("1.0"))),

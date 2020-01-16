@@ -22,7 +22,7 @@ import cats.implicits._
 import cats.{Functor, Monad}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.data.{Dependency, Resolver, ResolversScope, Update}
+import org.scalasteward.core.data.{Dependency, Resolver, Scope, Update}
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.sbt.data.SbtVersion
@@ -39,7 +39,7 @@ trait SbtAlg[F[_]] {
 
   def getSbtVersion(repo: Repo): F[Option[SbtVersion]]
 
-  def getDependencies(repo: Repo): F[List[ResolversScope.Deps]]
+  def getDependencies(repo: Repo): F[List[Scope.Dependencies]]
 
   def getUpdates(repo: Repo): F[List[Update.Single]]
 
@@ -89,7 +89,7 @@ object SbtAlg {
           version = maybeProperties.flatMap(parser.parseBuildProperties)
         } yield version
 
-      override def getDependencies(repo: Repo): F[List[ResolversScope.Deps]] =
+      override def getDependencies(repo: Repo): F[List[Scope.Dependencies]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
           commands = List(crossStewardDependencies, reloadPlugins, stewardDependencies)
@@ -154,26 +154,19 @@ object SbtAlg {
           }
         }
 
-      def getAdditionalDependencies(repo: Repo): F[List[ResolversScope.Deps]] =
+      def getAdditionalDependencies(repo: Repo): F[List[Scope.Dependencies]] =
         for {
           maybeSbtDependency <- getSbtDependency(repo)
           maybeScalafmtDependency <- scalafmtAlg.getScalafmtDependency(repo)
         } yield Nel
           .fromList(maybeSbtDependency.toList ++ maybeScalafmtDependency.toList)
-          .map(ds => ResolversScope(ds.toList, List(Resolver.mavenCentral)))
+          .map(dependencies => Scope(dependencies.toList, List(Resolver.mavenCentral)))
           .toList
 
       def findAdditionalUpdates(repo: Repo): F[List[Update.Single]] =
         for {
-          maybeSbtDependency <- getSbtDependency(repo)
-          maybeScalafmtDependency <- scalafmtAlg.getScalafmtDependency(repo)
-          resolvers = List(Resolver.mavenCentral)
-          maybeSbtUpdate <- maybeSbtDependency.flatTraverse(dep =>
-            updateAlg.findUpdate(ResolversScope(dep, resolvers))
-          )
-          maybeScalafmtUpdate <- maybeScalafmtDependency.flatTraverse(dep =>
-            updateAlg.findUpdate(ResolversScope(dep, resolvers))
-          )
-        } yield maybeSbtUpdate.toList ++ maybeScalafmtUpdate.toList
+          dependencies <- getAdditionalDependencies(repo)
+          updates <- dependencies.flatMap(_.sequence).traverseFilter(updateAlg.findUpdate)
+        } yield updates
     }
 }
