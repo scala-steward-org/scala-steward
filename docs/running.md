@@ -39,6 +39,15 @@ The [`git-ask-pass` option](https://git-scm.com/docs/gitcredentials) must specif
 
 You can also provide a `--scalafix-migrations` option with the path to a file containing scalafix migrations.
 More information can be found [here][migrations]
+
+The `repos-file` argument should point to a file listing all repos to be nurtured, following the syntax:
+```
+  - VCS:owner/repo
+  - owner/repo
+```
+Where VCS can take the values 'github', 'gitlab', 'bitbucket' and 'bitbucket-server' depending on where your repo is hosted.
+If not present, as in the second line, it will default to Github.
+
 ### Private repositories
 
 If you run Scala Steward for your own private projects, the option `--do-not-fork` can be required, not to fork.
@@ -68,7 +77,6 @@ run
     --repos-file "/path/repos.md" \
     --git-ask-pass "/path/pass.sh" \
     --git-author-email "email@example.org" \
-    --vcs-type "gitlab" \
     --vcs-api-host "https://gitlab.com/api/v4/" \
     --vcs-login "gitlab.steward"
 
@@ -95,7 +103,6 @@ docker run -v $PWD:/opt/scala-steward \
     --repos-file "/opt/scala-steward/repos.md" \
     --git-ask-pass "/opt/scala-steward/pass.sh" \
     --git-author-email "myemail@company.xyz" \
-    --vcs-type "bitbucket" \
     --vcs-api-host "https://api.bitbucket.org/2.0" \
     --vcs-login "$BITBUCKET_USERNAME"
     

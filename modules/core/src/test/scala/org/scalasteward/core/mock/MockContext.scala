@@ -6,7 +6,7 @@ import cats.effect.Sync
 import org.http4s.Uri
 import org.scalasteward.core.TestInstances.ioContextShift
 import org.scalasteward.core.application.Cli.EnvVar
-import org.scalasteward.core.application.{Config, SupportedVCS}
+import org.scalasteward.core.application.Config
 import org.scalasteward.core.coursier.{CoursierAlg, VersionsCacheFacade}
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Author, GitAlg}
@@ -29,7 +29,6 @@ object MockContext {
     workspace = File.temp / "ws",
     reposFile = File.temp / "repos.md",
     gitAuthor = Author("Bot Doe", "bot@example.org"),
-    vcsType = SupportedVCS.GitHub,
     vcsApiHost = Uri(),
     vcsLogin = "bot-doe",
     gitAskPass = File.temp / "askpass.sh",

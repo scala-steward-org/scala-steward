@@ -33,8 +33,9 @@ import org.scalasteward.core.update.FilterAlg
 import org.scalasteward.core.util.DateTimeAlg
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo}
-import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg}
+import org.scalasteward.core.vcs.{VCSExtraAlg, VCSRepoAlg}
 import org.scalasteward.core.{git, util, vcs}
+import org.scalasteward.core.vcs.VCSSelection
 
 final class NurtureAlg[F[_]](
     implicit
@@ -45,7 +46,7 @@ final class NurtureAlg[F[_]](
     filterAlg: FilterAlg[F],
     gitAlg: GitAlg[F],
     coursierAlg: CoursierAlg[F],
-    vcsApiAlg: VCSApiAlg[F],
+    vcsSelection: VCSSelection[F],
     vcsRepoAlg: VCSRepoAlg[F],
     vcsExtraAlg: VCSExtraAlg[F],
     migrationAlg: MigrationAlg[F],
@@ -69,7 +70,7 @@ final class NurtureAlg[F[_]](
   def cloneAndSync(repo: Repo): F[(Repo, Branch)] =
     for {
       _ <- logger.info(s"Clone and synchronize ${repo.show}")
-      repoOut <- vcsApiAlg.createForkOrGetRepo(config, repo)
+      repoOut <- vcsSelection.getAlg(repo.gitHost).createForkOrGetRepo(config, repo)
       _ <- gitAlg
         .cloneExists(repo)
         .ifM(F.unit, vcsRepoAlg.clone(repo, repoOut) >> vcsRepoAlg.syncFork(repo, repoOut))
@@ -99,9 +100,12 @@ final class NurtureAlg[F[_]](
   def processUpdate(data: UpdateData): F[ProcessResult] =
     for {
       _ <- logger.info(s"Process update ${data.update.show}")
-      head = vcs.listingBranch(config.vcsType, data.fork, data.update)
-      pullRequests <- vcsApiAlg.listPullRequests(data.repo, head, data.baseBranch)
-      result <- pullRequests.headOption match {
+      head = vcs.listingBranch(data.repo.gitHost, data.fork, data.update)
+      pullRequests <- vcsSelection
+        .getAlg(data.repo.gitHost)
+        .listPullRequests(data.repo, head, data.baseBranch)
+        .map(_.headOption)
+      result <- pullRequests match {
         case Some(pr) if pr.isClosed =>
           logger.info(s"PR ${pr.html_url} is closed") >> F.pure[ProcessResult](Ignored)
         case Some(pr) =>
@@ -109,7 +113,7 @@ final class NurtureAlg[F[_]](
         case None =>
           applyNewUpdate(data)
       }
-      _ <- pullRequests.headOption.fold(F.unit) { pr =>
+      _ <- pullRequests.fold(F.unit) { pr =>
         pullRequestRepo.createOrUpdate(data.repo, pr.html_url, data.baseSha1, data.update, pr.state)
       }
     } yield result
@@ -148,7 +152,7 @@ final class NurtureAlg[F[_]](
       releaseNoteUrl <- artifactIdToUrl
         .get(data.update.mainArtifactId)
         .flatTraverse(vcsExtraAlg.getReleaseNoteUrl(_, data.update))
-      branchName = vcs.createBranch(config.vcsType, data.fork, data.update)
+      branchName = vcs.createBranch(data.repo.gitHost, data.fork, data.update)
       migrations <- migrationAlg.findMigrations(data.update)
       requestData = NewPullRequestData.from(
         data,
@@ -158,7 +162,7 @@ final class NurtureAlg[F[_]](
         releaseNoteUrl,
         migrations
       )
-      pr <- vcsApiAlg.createPullRequest(data.repo, requestData)
+      pr <- vcsSelection.getAlg(data.repo.gitHost).createPullRequest(data.repo, requestData)
       _ <- pullRequestRepo.createOrUpdate(
         data.repo,
         pr.html_url,

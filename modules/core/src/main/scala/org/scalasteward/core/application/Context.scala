@@ -22,9 +22,12 @@ import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.client.Client
 import org.http4s.client.asynchttpclient.AsyncHttpClient
+import org.scalasteward.core.bitbucket
 import org.scalasteward.core.coursier.{CoursierAlg, VersionsCacheFacade}
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.GitAlg
+import org.scalasteward.core.github
+import org.scalasteward.core.gitlab
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository}
 import org.scalasteward.core.persistence.JsonKeyValueStore
@@ -36,7 +39,11 @@ import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.{FilterAlg, PruningAlg, UpdateAlg}
 import org.scalasteward.core.util._
 import org.scalasteward.core.vcs.data.AuthenticatedUser
-import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg, VCSSelection}
+import org.scalasteward.core.vcs.{VCSExtraAlg, VCSRepoAlg, VCSSelection}
+import org.scalasteward.core.github.http4s.Http4sGitHubApiAlg
+import org.scalasteward.core.gitlab.http4s.Http4sGitLabApiAlg
+import org.scalasteward.core.bitbucket.http4s.Http4sBitbucketApiAlg
+import org.scalasteward.core.bitbucketserver.http4s.Http4sBitbucketServerApiAlg
 
 object Context {
   def create[F[_]: ConcurrentEffect: ContextShift: Parallel: Timer](
@@ -63,8 +70,28 @@ object Context {
       implicit val repoCacheRepository: RepoCacheRepository[F] =
         new RepoCacheRepository[F](new JsonKeyValueStore("repo_cache", "4"))
       implicit val selfCheckAlg: SelfCheckAlg[F] = new SelfCheckAlg[F]
-      val vcsSelection = new VCSSelection[F]
-      implicit val vcsApiAlg: VCSApiAlg[F] = vcsSelection.getAlg(config)
+      implicit val githubApiAlg = new Http4sGitHubApiAlg[F](
+        config.vcsApiHost,
+        _ => github.http4s.authentication.addCredentials(user)
+      )
+      implicit val gitlabApiAlg = new Http4sGitLabApiAlg[F](
+        config.vcsApiHost,
+        user,
+        _ => gitlab.http4s.authentication.addCredentials(user),
+        config.doNotFork
+      )
+      implicit val bitbucketApiAlg = new Http4sBitbucketApiAlg(
+        config.vcsApiHost,
+        user,
+        _ => bitbucket.http4s.authentication.addCredentials(user),
+        config.doNotFork
+      )
+      implicit val bitbucketServerApiAlg = new Http4sBitbucketServerApiAlg[F](
+        config.vcsApiHost,
+        user,
+        _ => bitbucket.http4s.authentication.addCredentials(user)
+      )
+      implicit val vcsSelection = new VCSSelection[F]
       implicit val vcsRepoAlg: VCSRepoAlg[F] = VCSRepoAlg.create[F](config, gitAlg)
       implicit val vcsExtraAlg: VCSExtraAlg[F] = VCSExtraAlg.create[F]
       implicit val pullRequestRepository: PullRequestRepository[F] =

@@ -27,7 +27,8 @@ import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.util.MonadThrowable
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data.{Repo, RepoOut}
-import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
+import org.scalasteward.core.vcs.VCSRepoAlg
+import org.scalasteward.core.vcs.VCSSelection
 
 final class RepoCacheAlg[F[_]](
     implicit
@@ -39,7 +40,7 @@ final class RepoCacheAlg[F[_]](
     repoCacheRepository: RepoCacheRepository[F],
     repoConfigAlg: RepoConfigAlg[F],
     sbtAlg: SbtAlg[F],
-    vcsApiAlg: VCSApiAlg[F],
+    vcsSelection: VCSSelection[F],
     vcsRepoAlg: VCSRepoAlg[F],
     F: MonadThrowable[F]
 ) {
@@ -49,7 +50,7 @@ final class RepoCacheAlg[F[_]](
         logger.info(s"Skipping due to previous error"),
         for {
           ((repoOut, branchOut), cachedSha1) <- (
-            vcsApiAlg.createForkOrGetRepoWithDefaultBranch(config, repo),
+            vcsSelection.getAlg(repo.gitHost).createForkOrGetRepoWithDefaultBranch(config, repo),
             repoCacheRepository.findSha1(repo)
           ).parTupled
           latestSha1 = branchOut.commit.sha
