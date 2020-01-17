@@ -19,11 +19,11 @@ package org.scalasteward.core.update
 import cats.Monad
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
-import org.scalasteward.core.data.{CrossDependency, Dependency, DependencyInfo, Update}
+import org.scalasteward.core.data.{CrossDependency, Dependency, DependencyInfo, Scope, Update}
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.repocache.{RepoCache, RepoCacheRepository}
 import org.scalasteward.core.repoconfig.RepoConfig
-import org.scalasteward.core.update.PruningAlg.ignoreDependency
+import org.scalasteward.core.update.PruningAlg._
 import org.scalasteward.core.update.data.UpdateState
 import org.scalasteward.core.update.data.UpdateState._
 import org.scalasteward.core.util
@@ -42,27 +42,51 @@ final class PruningAlg[F[_]](
     repoCacheRepository.findCache(repo).flatMap {
       case None => F.pure((false, List.empty))
       case Some(repoCache) =>
-        val dependenciesWithResolvers = repoCache.dependencyInfos
+        val dependencies = repoCache.dependencyInfos
           .flatMap(_.sequence)
           .collect { case info if !ignoreDependency(info.value) => info.map(_.dependency) }
           .sorted
-        val dependencies = dependenciesWithResolvers.map(_.value).distinct
-
-        val repoConfig = repoCache.maybeRepoConfig.getOrElse(RepoConfig.default)
-        for {
-          updates <- updateAlg.findUpdates(dependenciesWithResolvers, repoConfig)
-          updateStates <- findAllUpdateStates(repo, repoCache, dependencies, updates)
-          result <- checkUpdateStates(repo, updateStates)
-        } yield result
+        findUpdatesNeedingAttention(repo, repoCache, dependencies)
     }
+
+  private def findUpdatesNeedingAttention(
+      repo: Repo,
+      repoCache: RepoCache,
+      dependencies: List[Scope.Dependency]
+  ): F[(Boolean, List[Update.Single])] = {
+    val repoConfig = repoCache.maybeRepoConfig.getOrElse(RepoConfig.default)
+    val depsWithoutResolvers = dependencies.map(_.value).distinct
+    for {
+      _ <- logger.info(s"Find updates for ${repo.show}")
+      updates0 <- updateAlg.findAndFilterUpdates(dependencies, repoConfig, useCache = true)
+      updateStates0 <- findAllUpdateStates(repo, repoCache, depsWithoutResolvers, updates0)
+      (updateStates1, updates1) <- {
+        if (!containsNewUpdate(updateStates0)) F.pure((updateStates0, updates0))
+        else {
+          val (outOfSyncDeps, inSyncUpdates) = extractOutOfSyncDependencies(dependencies, updates0)
+          for {
+            newUpdates <- updateAlg
+              .findAndFilterUpdates(outOfSyncDeps, repoConfig, useCache = false)
+            freshUpdates = newUpdates ++ inSyncUpdates
+            freshStates <- findAllUpdateStates(repo, repoCache, depsWithoutResolvers, freshUpdates)
+          } yield (freshStates, freshUpdates)
+        }
+      }
+      _ <- logger.info(util.logger.showUpdates(updates1.widen[Update]))
+      result <- checkUpdateStates(repo, updateStates1)
+    } yield result
+  }
 
   private def findAllUpdateStates(
       repo: Repo,
       repoCache: RepoCache,
       dependencies: List[Dependency],
       updates: List[Update.Single]
-  ): F[List[UpdateState]] =
-    CrossDependency.group(dependencies).traverse(findUpdateState(repo, repoCache, updates))
+  ): F[List[UpdateState]] = {
+    val groupedDependencies = CrossDependency.group(dependencies)
+    val groupedUpdates = Update.groupByArtifactIdName(updates)
+    groupedDependencies.traverse(findUpdateState(repo, repoCache, groupedUpdates))
+  }
 
   private def findUpdateState(repo: Repo, repoCache: RepoCache, updates: List[Update.Single])(
       crossDependency: CrossDependency
@@ -104,4 +128,44 @@ final class PruningAlg[F[_]](
 object PruningAlg {
   def ignoreDependency(info: DependencyInfo): Boolean =
     info.filesContainingVersion.isEmpty || FilterAlg.isIgnoredGlobally(info.dependency)
+
+  def containsNewUpdate(updateStates: List[UpdateState]): Boolean =
+    updateStates.exists {
+      case _: DependencyOutdated => true
+      case _                     => false
+    }
+
+  /** Extracts dependency groups where each dependency in a group has
+    * the same groupId and version but different updates or no update
+    * at all.
+    *
+    * This is not unexpected since we're using a cache for dependency
+    * versions and not all artifacts of a dependency group are refreshed
+    * at the same time.
+    */
+  def extractOutOfSyncDependencies(
+      dependencies: List[Scope.Dependency],
+      updates: List[Update.Single]
+  ): (List[Scope.Dependency], List[Update.Single]) = {
+    val outdatedGroupIdVersionPairs = updates.map(u => (u.groupId, u.currentVersion))
+    val matchingDependencies = dependencies.filter { d =>
+      outdatedGroupIdVersionPairs.contains_((d.value.groupId, d.value.version))
+    }
+    val outOfSyncDependencies = matchingDependencies
+      .groupBy(d => (d.value.groupId, d.value.version))
+      .values
+      .filterNot(_.size === 1)
+      .filterNot { ds =>
+        val matchingUpdates = ds.mapFilter(d => updates.find(_.crossDependency.head === d.value))
+        val uniqueNextVersion = matchingUpdates.map(_.nextVersion).distinct.size === 1
+        (matchingUpdates.size === ds.size) && uniqueNextVersion
+      }
+      .toList
+      .flatten
+
+    val inSyncUpdates =
+      updates.filterNot(u => outOfSyncDependencies.exists(_.value === u.crossDependency.head))
+
+    (outOfSyncDependencies, inSyncUpdates)
+  }
 }
