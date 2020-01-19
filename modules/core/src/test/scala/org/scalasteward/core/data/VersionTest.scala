@@ -7,10 +7,14 @@ import org.scalasteward.core.data.Version.Component
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import org.typelevel.discipline.scalatest.Discipline
+import org.typelevel.discipline.scalatest.FunSuiteDiscipline
 import scala.util.Random
 
-class VersionTest extends AnyFunSuite with Discipline with Matchers with ScalaCheckPropertyChecks {
+class VersionTest
+    extends AnyFunSuite
+    with FunSuiteDiscipline
+    with Matchers
+    with ScalaCheckPropertyChecks {
   checkAll("Order[Version]", OrderTests[Version].order)
 
   test("pairwise 1") {
