@@ -18,7 +18,7 @@ curl -s -o "$REPOS_FILE" https://raw.githubusercontent.com/scala-steward-org/rep
 curl -s --head --fail https://repo1.maven.org/maven2/
 
 LOGIN="scala-steward"
-java -DROOT_LOG_LEVEL=INFO -DLOG_LEVEL=INFO -jar ${JAR} \
+exec java -DROOT_LOG_LEVEL=INFO -DLOG_LEVEL=INFO -jar ${JAR} \
   --workspace  "$STEWARD_DIR/workspace" \
   --repos-file "$REPOS_FILE" \
   --git-author-email "me@$LOGIN.org" \
