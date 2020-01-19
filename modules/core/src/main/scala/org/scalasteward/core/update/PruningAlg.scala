@@ -58,16 +58,23 @@ final class PruningAlg[F[_]](
     val depsWithoutResolvers = dependencies.map(_.value).distinct
     for {
       _ <- logger.info(s"Find updates for ${repo.show}")
-      updates0 <- updateAlg.findAndFilterUpdates(dependencies, repoConfig, useCache = true)
+      updates0 <- updateAlg.findUpdates(dependencies, repoConfig, useCache = true)
       updateStates0 <- findAllUpdateStates(repo, repoCache, depsWithoutResolvers, updates0)
+      outdatedDependecies = collectNewUpdates(updateStates0)
       (updateStates1, updates1) <- {
-        if (!containsNewUpdate(updateStates0)) F.pure((updateStates0, updates0))
+        if (outdatedDependecies.isEmpty) F.pure((updateStates0, updates0))
         else {
-          val (outOfSyncDeps, inSyncUpdates) = extractOutOfSyncDependencies(dependencies, updates0)
+          val newUpdates = outdatedDependecies.map(_.update)
+          val potentiallyOutOfSyncDeps = dependencies.filter { d =>
+            newUpdates.exists { u =>
+              u.groupId === d.value.groupId && u.currentVersion === d.value.version
+            }
+          }
+          val (outOfSyncDeps, inSyncUpdates) =
+            extractOutOfSyncDependencies(potentiallyOutOfSyncDeps, updates0)
           for {
-            newUpdates <- updateAlg
-              .findAndFilterUpdates(outOfSyncDeps, repoConfig, useCache = false)
-            freshUpdates = newUpdates ++ inSyncUpdates
+            newInSyncUpdates <- updateAlg.findUpdates(outOfSyncDeps, repoConfig, useCache = false)
+            freshUpdates = newInSyncUpdates ++ inSyncUpdates
             freshStates <- findAllUpdateStates(repo, repoCache, depsWithoutResolvers, freshUpdates)
           } yield (freshStates, freshUpdates)
         }
@@ -129,11 +136,8 @@ object PruningAlg {
   def ignoreDependency(info: DependencyInfo): Boolean =
     info.filesContainingVersion.isEmpty || FilterAlg.isIgnoredGlobally(info.dependency)
 
-  def containsNewUpdate(updateStates: List[UpdateState]): Boolean =
-    updateStates.exists {
-      case _: DependencyOutdated => true
-      case _                     => false
-    }
+  def collectNewUpdates(updateStates: List[UpdateState]): List[DependencyOutdated] =
+    updateStates.collect { case s: DependencyOutdated => s }
 
   /** Extracts dependency groups where each dependency in a group has
     * the same groupId and version but different updates or no update
@@ -147,11 +151,7 @@ object PruningAlg {
       dependencies: List[Scope.Dependency],
       updates: List[Update.Single]
   ): (List[Scope.Dependency], List[Update.Single]) = {
-    val outdatedGroupIdVersionPairs = updates.map(u => (u.groupId, u.currentVersion))
-    val matchingDependencies = dependencies.filter { d =>
-      outdatedGroupIdVersionPairs.contains_((d.value.groupId, d.value.version))
-    }
-    val outOfSyncDependencies = matchingDependencies
+    val outOfSyncDependencies = dependencies
       .groupBy(d => (d.value.groupId, d.value.version))
       .values
       .filterNot(_.size === 1)
@@ -160,8 +160,8 @@ object PruningAlg {
         val uniqueNextVersion = matchingUpdates.map(_.nextVersion).distinct.size === 1
         (matchingUpdates.size === ds.size) && uniqueNextVersion
       }
-      .toList
       .flatten
+      .toList
 
     val inSyncUpdates =
       updates.filterNot(u => outOfSyncDependencies.exists(_.value === u.crossDependency.head))

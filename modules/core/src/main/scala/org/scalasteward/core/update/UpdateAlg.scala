@@ -45,15 +45,16 @@ final class UpdateAlg[F[_]](
       maybeUpdate1 = maybeUpdate0.orElse(findUpdateWithNewerGroupId(dependency.value))
     } yield maybeUpdate1
 
-  def findAndFilterUpdates(
+  def findUpdates(
       dependencies: List[Scope.Dependency],
       repoConfig: RepoConfig,
       useCache: Boolean
-  ): F[List[Update.Single]] =
-    for {
-      updates <- dependencies.parFlatTraverse(findUpdate(_, useCache).map(_.toList))
-      filtered <- filterAlg.localFilterMany(repoConfig, updates)
-    } yield filtered
+  ): F[List[Update.Single]] = {
+    val updates =
+      if (useCache) dependencies.parFlatTraverse(findUpdate(_, useCache).map(_.toList))
+      else dependencies.traverseFilter(findUpdate(_, useCache))
+    updates.flatMap(filterAlg.localFilterMany(repoConfig, _))
+  }
 }
 
 object UpdateAlg {
