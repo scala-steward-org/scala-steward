@@ -17,6 +17,7 @@
 package org.scalasteward.core.sbt
 
 object command {
+  val setOffline = "set offline := true"
   val stewardUpdates = "stewardUpdates"
   val stewardDependencies = "stewardDependencies"
   val crossStewardUpdates = s"+ $stewardUpdates"
