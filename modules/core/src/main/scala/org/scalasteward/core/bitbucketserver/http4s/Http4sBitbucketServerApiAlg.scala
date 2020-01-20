@@ -33,10 +33,10 @@ import org.scalasteward.core.vcs.data._
   * https://docs.atlassian.com/bitbucket-server/rest/6.6.1/bitbucket-rest.html
   */
 class Http4sBitbucketServerApiAlg[F[_]](
-                                         bitbucketApiHost: Uri,
-                                         user: AuthenticatedUser,
-                                         modify: Repo => Request[F] => F[Request[F]],
-                                         useReviewers: Boolean
+    bitbucketApiHost: Uri,
+    user: AuthenticatedUser,
+    modify: Repo => Request[F] => F[Request[F]],
+    useReviewers: Boolean
 )(implicit client: HttpJsonClient[F], F: Sync[F])
     extends VCSApiAlg[F] {
   val url = new StashUrls(bitbucketApiHost)
