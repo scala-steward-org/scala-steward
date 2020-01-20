@@ -16,8 +16,8 @@
 
 package org.scalasteward.core.update
 
+import cats.Monad
 import cats.implicits._
-import cats.{Monad, Parallel}
 import org.scalasteward.core.coursier.VersionsCacheFacade
 import org.scalasteward.core.data._
 import org.scalasteward.core.repoconfig.RepoConfig
@@ -27,7 +27,6 @@ import org.scalasteward.core.util.Nel
 final class UpdateAlg[F[_]](
     implicit
     filterAlg: FilterAlg[F],
-    parallel: Parallel[F],
     versionsCache: VersionsCacheFacade[F],
     F: Monad[F]
 ) {
@@ -50,9 +49,7 @@ final class UpdateAlg[F[_]](
       repoConfig: RepoConfig,
       useCache: Boolean
   ): F[List[Update.Single]] = {
-    val updates =
-      if (useCache) dependencies.parFlatTraverse(findUpdate(_, useCache).map(_.toList))
-      else dependencies.traverseFilter(findUpdate(_, useCache))
+    val updates = dependencies.traverseFilter(findUpdate(_, useCache))
     updates.flatMap(filterAlg.localFilterMany(repoConfig, _))
   }
 }
