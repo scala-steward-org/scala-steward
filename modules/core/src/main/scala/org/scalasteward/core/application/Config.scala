@@ -64,7 +64,8 @@ final case class Config(
     processTimeout: FiniteDuration,
     scalafixMigrations: Option[File],
     cacheTtl: FiniteDuration,
-    cacheMissDelay: FiniteDuration
+    cacheMissDelay: FiniteDuration,
+    useDefaultReviewers: Boolean
 ) {
   def vcsUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] = {
     val urlWithUser = util.uri.withUserInfo.set(UserInfo(vcsLogin, None))(vcsApiHost).renderString
@@ -97,7 +98,8 @@ object Config {
         processTimeout = args.processTimeout,
         scalafixMigrations = args.scalafixMigrations.map(_.toFile),
         cacheTtl = args.cacheTtl,
-        cacheMissDelay = args.cacheMissDelay
+        cacheMissDelay = args.cacheMissDelay,
+        useDefaultReviewers = args.useDefaultReviewers
       )
     }
 }

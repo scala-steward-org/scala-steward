@@ -32,11 +32,12 @@ import org.scalasteward.core.vcs.data._
 /**
   * https://docs.atlassian.com/bitbucket-server/rest/6.6.1/bitbucket-rest.html
   */
-class Http4sBitbucketServerApiAlg[F[_]: Sync](
-    bitbucketApiHost: Uri,
-    user: AuthenticatedUser,
-    modify: Repo => Request[F] => F[Request[F]]
-)(implicit client: HttpJsonClient[F])
+class Http4sBitbucketServerApiAlg[F[_]](
+                                         bitbucketApiHost: Uri,
+                                         user: AuthenticatedUser,
+                                         modify: Repo => Request[F] => F[Request[F]],
+                                         useReviewers: Boolean
+)(implicit client: HttpJsonClient[F], F: Sync[F])
     extends VCSApiAlg[F] {
   val url = new StashUrls(bitbucketApiHost)
 
@@ -49,7 +50,7 @@ class Http4sBitbucketServerApiAlg[F[_]: Sync](
       Json.Ref("refs/heads/" + data.base.name, Json.Repository(repo.repo, Json.Project(repo.owner)))
 
     for {
-      reviewers <- getDefaultReviewers(repo)
+      reviewers <- useDefaultReviewers(repo)
       req = Json.NewPR(
         title = data.title,
         description = data.body,
@@ -64,6 +65,9 @@ class Http4sBitbucketServerApiAlg[F[_]: Sync](
       pr <- client.postWithBody[Json.PR, Json.NewPR](url.pullRequests(repo), req, modify(repo))
     } yield PullRequestOut(pr.links("self").head.href, pr.state, pr.title)
   }
+
+  private def useDefaultReviewers(repo: Repo): F[List[Reviewer]] =
+    if (useReviewers) getDefaultReviewers(repo) else F.pure(List[Reviewer]())
 
   def getDefaultReviewers(repo: Repo): F[List[Reviewer]] =
     client
