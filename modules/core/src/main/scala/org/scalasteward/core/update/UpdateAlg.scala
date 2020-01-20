@@ -23,6 +23,7 @@ import org.scalasteward.core.data._
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.update.UpdateAlg._
 import org.scalasteward.core.util.Nel
+import scala.concurrent.duration.FiniteDuration
 
 final class UpdateAlg[F[_]](
     implicit
@@ -30,12 +31,12 @@ final class UpdateAlg[F[_]](
     versionsCache: VersionsCacheFacade[F],
     F: Monad[F]
 ) {
-  def findUpdate(dependency: Scope[Dependency], useCache: Boolean): F[Option[Update.Single]] =
+  def findUpdate(
+      dependency: Scope[Dependency],
+      maxAge: Option[FiniteDuration]
+  ): F[Option[Update.Single]] =
     for {
-      versions <- {
-        if (useCache) versionsCache.getVersions(dependency)
-        else versionsCache.getVersionsFresh(dependency)
-      }
+      versions <- versionsCache.getVersions(dependency, maxAge)
       current = Version(dependency.value.version)
       maybeNewerVersions = Nel.fromList(versions.filter(_ > current))
       maybeUpdate0 = maybeNewerVersions.map { newerVersions =>
@@ -47,9 +48,9 @@ final class UpdateAlg[F[_]](
   def findUpdates(
       dependencies: List[Scope.Dependency],
       repoConfig: RepoConfig,
-      useCache: Boolean
+      maxAge: Option[FiniteDuration]
   ): F[List[Update.Single]] = {
-    val updates = dependencies.traverseFilter(findUpdate(_, useCache))
+    val updates = dependencies.traverseFilter(findUpdate(_, maxAge))
     updates.flatMap(filterAlg.localFilterMany(repoConfig, _))
   }
 }

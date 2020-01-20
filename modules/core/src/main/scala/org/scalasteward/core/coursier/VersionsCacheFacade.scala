@@ -48,21 +48,16 @@ final class VersionsCacheFacade[F[_]](
     dateTimeAlg: DateTimeAlg[F],
     F: FlatMap[F]
 ) {
-  def getVersions(dependency: Scope.Dependency): F[List[Version]] =
+  def getVersions(dependency: Scope.Dependency, maxAge: Option[FiniteDuration]): F[List[Version]] =
     dateTimeAlg.currentTimeMillis.flatMap { now =>
       store.get(Key(dependency.value)).flatMap {
-        case Some(value) if value.age(now) <= cacheTtl =>
+        case Some(value) if value.age(now) <= maxAge.getOrElse(cacheTtl) =>
           coursierAlg.getVersions(dependency)
         case _ =>
-          getVersionsFresh(dependency)
-      }
-    }
-
-  def getVersionsFresh(dependency: Scope.Dependency): F[List[Version]] =
-    rateLimiter.limit {
-      dateTimeAlg.currentTimeMillis.flatMap { now =>
-        coursierAlg.getVersionsFresh(dependency) <*
-          store.put(Key(dependency.value), Value(now))
+          rateLimiter.limit {
+            coursierAlg.getVersionsFresh(dependency) <*
+              store.put(Key(dependency.value), Value(now))
+          }
       }
     }
 }

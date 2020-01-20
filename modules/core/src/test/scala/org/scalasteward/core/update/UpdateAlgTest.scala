@@ -32,7 +32,7 @@ class UpdateAlgTest extends AnyFunSuite with Matchers {
       Some(GroupId("org.typelevel"))
     )
     val actual = updateAlg
-      .findUpdate(dependency.withMavenCentral, useCache = true)
+      .findUpdate(dependency.withMavenCentral, None)
       .runA(MockState.empty)
       .unsafeRunSync()
     actual shouldBe Some(expected)
