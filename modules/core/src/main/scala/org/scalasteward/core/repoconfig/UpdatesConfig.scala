@@ -33,7 +33,9 @@ final case class UpdatesConfig(
 
   private def isAllowed(update: Update.Single): FilterResult = {
     val m = UpdatePattern.findMatch(allow, update)
-    if (m.byArtifactId.isEmpty || m.byVersion.nonEmpty) Right(update)
+    val isAllowGroup = allow.isEmpty || allow.filter(_.groupId === update.groupId).nonEmpty
+    val isAllowArtifact = m.byArtifactId.isEmpty || m.byVersion.nonEmpty
+    if (isAllowGroup && isAllowArtifact) Right(update)
     else Left(NotAllowedByConfig(update))
   }
 
