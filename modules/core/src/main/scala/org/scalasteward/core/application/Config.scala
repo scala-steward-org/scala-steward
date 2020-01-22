@@ -63,7 +63,8 @@ final case class Config(
     envVars: List[EnvVar],
     processTimeout: FiniteDuration,
     scalafixMigrations: Option[File],
-    cacheTtl: FiniteDuration
+    cacheTtl: FiniteDuration,
+    cacheMissDelay: FiniteDuration
 ) {
   def vcsUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] = {
     val urlWithUser = util.uri.withUserInfo.set(UserInfo(vcsLogin, None))(vcsApiHost).renderString
@@ -95,7 +96,8 @@ object Config {
         envVars = args.envVar,
         processTimeout = args.processTimeout,
         scalafixMigrations = args.scalafixMigrations.map(_.toFile),
-        cacheTtl = args.cacheTtl
+        cacheTtl = args.cacheTtl,
+        cacheMissDelay = args.cacheMissDelay
       )
     }
 }

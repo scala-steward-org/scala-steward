@@ -52,7 +52,8 @@ object Cli {
       envVar: List[EnvVar] = Nil,
       processTimeout: FiniteDuration = 10.minutes,
       scalafixMigrations: Option[String] = None,
-      cacheTtl: FiniteDuration = 2.hours
+      cacheTtl: FiniteDuration = 2.hours,
+      cacheMissDelay: FiniteDuration = 0.milliseconds
   )
 
   final case class EnvVar(name: String, value: String)
