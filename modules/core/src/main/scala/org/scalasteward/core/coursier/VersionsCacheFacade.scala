@@ -17,6 +17,7 @@
 package org.scalasteward.core.coursier
 
 import cats.FlatMap
+import cats.effect.Timer
 import cats.implicits._
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, KeyEncoder}
@@ -24,14 +25,14 @@ import java.util.concurrent.TimeUnit
 import org.scalasteward.core.coursier.VersionsCacheFacade.{Key, Value}
 import org.scalasteward.core.data.{Dependency, Scope, Version}
 import org.scalasteward.core.persistence.KeyValueStore
-import org.scalasteward.core.util.{DateTimeAlg, RateLimiter}
+import org.scalasteward.core.util.DateTimeAlg
 import scala.concurrent.duration.FiniteDuration
 
 /** Facade of Coursier's versions cache that keeps track of the instant
   * when versions of a dependency are updated. This information is used
-  * to rate limit calls to Coursier that require a network call to
-  * populate or refresh its cache. Calls that probably hit the cache
-  * are unlimited.
+  * to delay calls to Coursier that require a network call to populate
+  * or refresh its cache. Calls that probably hit the cache are not
+  * delayed.
   *
   * Note that resolvers are ignored when storing the instant of the
   * last update which could lead to unlimited calls to Coursier that
@@ -40,29 +41,27 @@ import scala.concurrent.duration.FiniteDuration
   */
 final class VersionsCacheFacade[F[_]](
     cacheTtl: FiniteDuration,
-    store: KeyValueStore[F, Key, Value],
-    rateLimiter: RateLimiter[F]
+    cacheMissDelay: FiniteDuration,
+    store: KeyValueStore[F, Key, Value]
 )(
     implicit
     coursierAlg: CoursierAlg[F],
     dateTimeAlg: DateTimeAlg[F],
+    timer: Timer[F],
     F: FlatMap[F]
 ) {
-  def getVersions(dependency: Scope.Dependency): F[List[Version]] =
+  def getVersions(dependency: Scope.Dependency, maxAge: Option[FiniteDuration]): F[List[Version]] =
     dateTimeAlg.currentTimeMillis.flatMap { now =>
       store.get(Key(dependency.value)).flatMap {
-        case Some(value) if value.age(now) <= cacheTtl =>
+        case Some(value) if value.age(now) <= maxAge.getOrElse(cacheTtl) =>
           coursierAlg.getVersions(dependency)
         case _ =>
-          getVersionsFresh(dependency)
-      }
-    }
-
-  def getVersionsFresh(dependency: Scope.Dependency): F[List[Version]] =
-    rateLimiter.limit {
-      dateTimeAlg.currentTimeMillis.flatMap { now =>
-        coursierAlg.getVersionsFresh(dependency) <*
-          store.put(Key(dependency.value), Value(now))
+          for {
+            _ <- timer.sleep(cacheMissDelay)
+            now <- dateTimeAlg.currentTimeMillis
+            versions <- coursierAlg.getVersionsFresh(dependency)
+            _ <- store.put(Key(dependency.value), Value(now))
+          } yield versions
       }
     }
 }

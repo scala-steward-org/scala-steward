@@ -61,10 +61,10 @@ final case class Config(
     doNotFork: Boolean,
     ignoreOptsFiles: Boolean,
     envVars: List[EnvVar],
-    pruneRepos: Boolean,
     processTimeout: FiniteDuration,
     scalafixMigrations: Option[File],
-    cacheTtl: FiniteDuration
+    cacheTtl: FiniteDuration,
+    cacheMissDelay: FiniteDuration
 ) {
   def vcsUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] = {
     val urlWithUser = util.uri.withUserInfo.set(UserInfo(vcsLogin, None))(vcsApiHost).renderString
@@ -94,10 +94,10 @@ object Config {
         doNotFork = args.doNotFork,
         ignoreOptsFiles = args.ignoreOptsFiles,
         envVars = args.envVar,
-        pruneRepos = args.pruneRepos,
         processTimeout = args.processTimeout,
         scalafixMigrations = args.scalafixMigrations.map(_.toFile),
-        cacheTtl = args.cacheTtl
+        cacheTtl = args.cacheTtl,
+        cacheMissDelay = args.cacheMissDelay
       )
     }
 }

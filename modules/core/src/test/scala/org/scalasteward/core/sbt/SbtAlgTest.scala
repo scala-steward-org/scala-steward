@@ -1,10 +1,9 @@
 package org.scalasteward.core.sbt
 
 import cats.data.StateT
-import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.{GroupId, Version}
 import org.scalasteward.core.mock.MockContext._
-import org.scalasteward.core.mock.{MockContext, MockState}
+import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
@@ -20,15 +19,11 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
       .runS(MockState.empty)
       .unsafeRunSync() shouldBe MockState.empty.copy(
       commands = Vector(
-        List("create", "/tmp/steward/.sbt/0.13/plugins/scala-steward.sbt"),
-        List("create", "/tmp/steward/.sbt/1.0/plugins/scala-steward.sbt"),
         List("create", "/tmp/steward/.sbt/0.13/plugins/StewardPlugin.scala"),
         List("create", "/tmp/steward/.sbt/1.0/plugins/StewardPlugin.scala"),
         List("fa", "fa"),
         List("rm", "/tmp/steward/.sbt/1.0/plugins/StewardPlugin.scala"),
-        List("rm", "/tmp/steward/.sbt/0.13/plugins/StewardPlugin.scala"),
-        List("rm", "/tmp/steward/.sbt/1.0/plugins/scala-steward.sbt"),
-        List("rm", "/tmp/steward/.sbt/0.13/plugins/scala-steward.sbt")
+        List("rm", "/tmp/steward/.sbt/0.13/plugins/StewardPlugin.scala")
       ),
       logs = Vector((None, "Add global sbt plugins")),
       files = Map.empty
@@ -64,75 +59,6 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
         List("read", s"$repoDir/.scalafmt.conf")
       ),
       files = files
-    )
-  }
-
-  test("getUpdates") {
-    val repo = Repo("fthomas", "refined")
-    val repoDir = config.workspace / "fthomas/refined"
-    val files = Map(
-      repoDir / "project" / "build.properties" -> "sbt.version=1.2.6",
-      repoDir / ".scalafmt.conf" -> "version=2.0.0"
-    )
-    val initialState = MockState.empty.copy(files = files)
-    val state = sbtAlg.getUpdates(repo).runS(initialState).unsafeRunSync()
-    state.copy(files = files) shouldBe initialState.copy(
-      commands = Vector(
-        List(
-          "TEST_VAR=GREAT",
-          "ANOTHER_TEST_VAR=ALSO_GREAT",
-          repoDir.toString,
-          "firejail",
-          s"--whitelist=$repoDir",
-          "sbt",
-          "-batch",
-          "-no-colors",
-          s";$crossStewardDependencies;$crossStewardUpdates;$reloadPlugins;$stewardDependencies;$stewardUpdates"
-        ),
-        List("read", s"$repoDir/project/build.properties"),
-        List("read", s"$repoDir/.scalafmt.conf"),
-        List("read", s"${config.workspace}/store/versions_v1/org/scala-sbt/sbt/versions.json"),
-        List("write", s"${config.workspace}/store/versions_v1/org/scala-sbt/sbt/versions.json"),
-        List(
-          "read",
-          s"${config.workspace}/store/versions_v1/org/scalameta/scalafmt-core_2.13/versions.json"
-        ),
-        List(
-          "write",
-          s"${config.workspace}/store/versions_v1/org/scalameta/scalafmt-core_2.13/versions.json"
-        )
-      )
-    )
-  }
-
-  test("getUpdates ignoring .jvmopts and .sbtopts files") {
-    implicit val config: Config = MockContext.config.copy(ignoreOptsFiles = true)
-    val sbtAlgKeepingCredentials = SbtAlg.create
-    val repo = Repo("fthomas", "refined")
-    val repoDir = config.workspace / "fthomas/refined"
-    val state =
-      sbtAlgKeepingCredentials.getUpdates(repo).runS(MockState.empty).unsafeRunSync()
-
-    state shouldBe MockState.empty.copy(
-      commands = Vector(
-        List("rm", (repoDir / ".jvmopts").toString),
-        List("rm", (repoDir / ".sbtopts").toString),
-        List(
-          "TEST_VAR=GREAT",
-          "ANOTHER_TEST_VAR=ALSO_GREAT",
-          repoDir.toString,
-          "firejail",
-          s"--whitelist=$repoDir",
-          "sbt",
-          "-batch",
-          "-no-colors",
-          s";$crossStewardDependencies;$crossStewardUpdates;$reloadPlugins;$stewardDependencies;$stewardUpdates"
-        ),
-        List("restore", (repoDir / ".sbtopts").toString),
-        List("restore", (repoDir / ".jvmopts").toString),
-        List("read", s"$repoDir/project/build.properties"),
-        List("read", s"$repoDir/.scalafmt.conf")
-      )
     )
   }
 

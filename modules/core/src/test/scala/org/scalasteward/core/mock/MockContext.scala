@@ -4,7 +4,7 @@ import better.files.File
 import cats.Parallel
 import cats.effect.Sync
 import org.http4s.Uri
-import org.scalasteward.core.TestInstances.ioContextShift
+import org.scalasteward.core.TestInstances.{ioContextShift, ioTimer}
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.{Config, SupportedVCS}
 import org.scalasteward.core.coursier.{CoursierAlg, VersionsCacheFacade}
@@ -19,7 +19,7 @@ import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.scalafix.MigrationAlg
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.{FilterAlg, PruningAlg, UpdateAlg}
-import org.scalasteward.core.util.{BracketThrowable, DateTimeAlg, RateLimiter}
+import org.scalasteward.core.util.{BracketThrowable, DateTimeAlg}
 import org.scalasteward.core.vcs.VCSRepoAlg
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 import scala.concurrent.duration._
@@ -43,15 +43,11 @@ object MockContext {
       EnvVar("TEST_VAR", "GREAT"),
       EnvVar("ANOTHER_TEST_VAR", "ALSO_GREAT")
     ),
-    pruneRepos = false,
     processTimeout = 10.minutes,
     scalafixMigrations = None,
-    cacheTtl = 1.hour
+    cacheTtl = 1.hour,
+    cacheMissDelay = 0.milliseconds
   )
-
-  val nopLimiter: RateLimiter[MockEff] = new RateLimiter[MockEff] {
-    override def limit[A](fa: MockEff[A]): MockEff[A] = fa
-  }
 
   implicit val mockEffBracketThrowable: BracketThrowable[MockEff] = Sync[MockEff]
   implicit val mockEffParallel: Parallel[MockEff] = Parallel.identity
@@ -74,8 +70,8 @@ object MockContext {
   implicit val versionsCacheAlg: VersionsCacheFacade[MockEff] =
     new VersionsCacheFacade[MockEff](
       config.cacheTtl,
-      new JsonKeyValueStore("versions", "1"),
-      nopLimiter
+      config.cacheMissDelay,
+      new JsonKeyValueStore("versions", "1")
     )
   implicit val updateAlg: UpdateAlg[MockEff] = new UpdateAlg[MockEff]
   implicit val sbtAlg: SbtAlg[MockEff] = SbtAlg.create

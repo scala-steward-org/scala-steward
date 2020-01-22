@@ -18,17 +18,17 @@ curl -s -o "$REPOS_FILE" https://raw.githubusercontent.com/scala-steward-org/rep
 curl -s --head --fail https://repo1.maven.org/maven2/
 
 LOGIN="scala-steward"
-java -DROOT_LOG_LEVEL=INFO -DLOG_LEVEL=INFO -jar ${JAR} \
+exec java -DROOT_LOG_LEVEL=INFO -DLOG_LEVEL=INFO -jar ${JAR} \
   --workspace  "$STEWARD_DIR/workspace" \
   --repos-file "$REPOS_FILE" \
-  --prune-repos \
   --git-author-email "me@$LOGIN.org" \
   --vcs-login ${LOGIN} \
   --git-ask-pass "$HOME/.github/askpass/$LOGIN.sh" \
   --ignore-opts-files \
   --env-var "SBT_OPTS=-Xmx2048m -Xss8m -XX:MaxMetaspaceSize=512m" \
   --sign-commits \
-  --cache-ttl 5hours \
+  --cache-ttl 6hours \
+  --cache-miss-delay 1second \
   --process-timeout 20min \
   --whitelist $HOME/.cache/coursier \
   --whitelist $HOME/.coursier \

@@ -50,10 +50,10 @@ object Cli {
       doNotFork: Boolean = false,
       ignoreOptsFiles: Boolean = false,
       envVar: List[EnvVar] = Nil,
-      pruneRepos: Boolean = false,
       processTimeout: FiniteDuration = 10.minutes,
       scalafixMigrations: Option[String] = None,
-      cacheTtl: FiniteDuration = 2.hours
+      cacheTtl: FiniteDuration = 2.hours,
+      cacheMissDelay: FiniteDuration = 0.milliseconds
   )
 
   final case class EnvVar(name: String, value: String)

@@ -16,8 +16,6 @@
 
 package org.scalasteward.plugin
 
-import com.timushev.sbt.updates.UpdatesKeys.dependencyUpdatesData
-import com.timushev.sbt.updates.versions.{InvalidVersion, ValidVersion}
 import sbt.Keys._
 import sbt._
 import scala.util.matching.Regex
@@ -28,8 +26,6 @@ object StewardPlugin extends AutoPlugin {
   object autoImport {
     val stewardDependencies =
       taskKey[Unit]("Prints dependencies and resolvers as JSON for consumption by Scala Steward.")
-    val stewardUpdates =
-      taskKey[Unit]("Prints dependency updates as JSON for consumption by Scala Steward.")
   }
 
   import autoImport._
@@ -59,24 +55,6 @@ object StewardPlugin extends AutoPlugin {
       dependencies.foreach(d => sb.append(d.asJson).append(ls))
       resolvers.foreach(r => sb.append(r.asJson).append(ls))
       log.info(sb.result())
-    },
-    stewardUpdates := {
-      val log = streams.value.log
-      val scalaBinaryVersionValue = scalaBinaryVersion.value
-      val scalaVersionValue = scalaVersion.value
-
-      val updates = dependencyUpdatesData.value.toList.map {
-        case (moduleId, versions) =>
-          Update(
-            dependency = toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue),
-            newerVersions = versions.toList.map {
-              case v: ValidVersion   => v.text
-              case v: InvalidVersion => v.text
-            }
-          )
-      }
-
-      updates.map(_.asJson).foreach(s => log.info(s))
     }
   )
 
@@ -201,27 +179,11 @@ object StewardPlugin extends AutoPlugin {
     }
   }
 
-  final private case class Update(
-      dependency: Dependency,
-      newerVersions: List[String]
-  ) {
-    def asJson: String =
-      objToJson(
-        List(
-          "dependency" -> dependency.asJson,
-          "newerVersions" -> seqToJson(newerVersions.map(strToJson))
-        )
-      )
-  }
-
   private def strToJson(str: String): String =
     s""""$str""""
 
   private def optToJson(opt: Option[String]): String =
     opt.getOrElse("null")
-
-  private def seqToJson(seq: Seq[String]): String =
-    seq.mkString("[ ", ", ", " ]")
 
   private def objToJson(obj: List[(String, String)]): String =
     obj.map { case (k, v) => s""""$k": $v""" }.mkString("{ ", ", ", " }")

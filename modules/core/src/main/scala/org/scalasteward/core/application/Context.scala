@@ -50,7 +50,6 @@ object Context {
       implicit0(logger: Logger[F]) <- Resource.liftF(Slf4jLogger.create[F])
       implicit0(httpExistenceClient: HttpExistenceClient[F]) <- HttpExistenceClient.create[F]
       implicit0(user: AuthenticatedUser) <- Resource.liftF(config.vcsUser[F])
-      rateLimiter <- Resource.liftF(RateLimiter.create[F])
     } yield {
       implicit val dateTimeAlg: DateTimeAlg[F] = DateTimeAlg.create[F]
       implicit val fileAlg: FileAlg[F] = FileAlg.create[F]
@@ -74,8 +73,8 @@ object Context {
       implicit val versionsCacheAlg: VersionsCacheFacade[F] =
         new VersionsCacheFacade[F](
           config.cacheTtl,
-          new JsonKeyValueStore("versions", "2"),
-          rateLimiter
+          config.cacheMissDelay,
+          new JsonKeyValueStore("versions", "2")
         )
       implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]
       implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F]

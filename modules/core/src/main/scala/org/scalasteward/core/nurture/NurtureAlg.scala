@@ -27,9 +27,7 @@ import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Branch, GitAlg}
 import org.scalasteward.core.repocache.RepoCacheRepository
 import org.scalasteward.core.repoconfig.{PullRequestUpdateStrategy, RepoConfigAlg}
-import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.scalafix.MigrationAlg
-import org.scalasteward.core.update.FilterAlg
 import org.scalasteward.core.util.DateTimeAlg
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo}
@@ -42,7 +40,6 @@ final class NurtureAlg[F[_]](
     dateTimeAlg: DateTimeAlg[F],
     editAlg: EditAlg[F],
     repoConfigAlg: RepoConfigAlg[F],
-    filterAlg: FilterAlg[F],
     gitAlg: GitAlg[F],
     coursierAlg: CoursierAlg[F],
     vcsApiAlg: VCSApiAlg[F],
@@ -52,15 +49,14 @@ final class NurtureAlg[F[_]](
     logger: Logger[F],
     pullRequestRepo: PullRequestRepository[F],
     repoCacheRepository: RepoCacheRepository[F],
-    sbtAlg: SbtAlg[F],
     F: Sync[F]
 ) {
-  def nurture(repo: Repo): F[Either[Throwable, Unit]] = {
+  def nurture(repo: Repo, updates: List[Update.Single]): F[Either[Throwable, Unit]] = {
     val label = s"Nurture ${repo.show}"
     logger.infoTotalTime(label) {
       logger.attemptLog(util.string.lineLeftRight(label)) {
         F.bracket(cloneAndSync(repo)) {
-          case (fork, baseBranch) => updateDependencies(repo, fork, baseBranch)
+          case (fork, baseBranch) => updateDependencies(repo, fork, baseBranch, updates)
         }(_ => gitAlg.removeClone(repo))
       }
     }
@@ -76,13 +72,15 @@ final class NurtureAlg[F[_]](
       defaultBranch <- vcsRepoAlg.defaultBranch(repoOut)
     } yield (repoOut.repo, defaultBranch)
 
-  def updateDependencies(repo: Repo, fork: Repo, baseBranch: Branch): F[Unit] =
+  def updateDependencies(
+      repo: Repo,
+      fork: Repo,
+      baseBranch: Branch,
+      updates: List[Update.Single]
+  ): F[Unit] =
     for {
-      _ <- logger.info(s"Find updates for ${repo.show}")
       repoConfig <- repoConfigAlg.readRepoConfigOrDefault(repo)
-      updates <- sbtAlg.getUpdates(repo)
-      filtered <- filterAlg.localFilterMany(repoConfig, updates)
-      grouped = Update.groupByGroupId(filtered)
+      grouped = Update.groupByGroupId(updates)
       sorted <- NurtureAlg.sortUpdatesByMigration(grouped)
       _ <- logger.info(util.logger.showUpdates(sorted))
       baseSha1 <- gitAlg.latestSha1(repo, baseBranch)

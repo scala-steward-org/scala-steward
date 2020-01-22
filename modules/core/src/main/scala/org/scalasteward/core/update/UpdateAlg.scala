@@ -16,45 +16,43 @@
 
 package org.scalasteward.core.update
 
+import cats.Monad
 import cats.implicits._
-import cats.{Monad, Parallel}
-import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.coursier.VersionsCacheFacade
 import org.scalasteward.core.data._
 import org.scalasteward.core.repoconfig.RepoConfig
-import org.scalasteward.core.util
+import org.scalasteward.core.update.UpdateAlg._
 import org.scalasteward.core.util.Nel
+import scala.concurrent.duration.FiniteDuration
 
 final class UpdateAlg[F[_]](
     implicit
     filterAlg: FilterAlg[F],
-    logger: Logger[F],
-    parallel: Parallel[F],
     versionsCache: VersionsCacheFacade[F],
     F: Monad[F]
 ) {
-  def findUpdate(dependency: Scope[Dependency]): F[Option[Update.Single]] =
+  def findUpdate(
+      dependency: Scope[Dependency],
+      maxAge: Option[FiniteDuration]
+  ): F[Option[Update.Single]] =
     for {
-      versions <- versionsCache.getVersions(dependency)
+      versions <- versionsCache.getVersions(dependency, maxAge)
       current = Version(dependency.value.version)
       maybeNewerVersions = Nel.fromList(versions.filter(_ > current))
       maybeUpdate0 = maybeNewerVersions.map { newerVersions =>
         Update.Single(CrossDependency(dependency.value), newerVersions.map(_.value))
       }
-      maybeUpdate1 = maybeUpdate0.orElse(UpdateAlg.findUpdateWithNewerGroupId(dependency.value))
+      maybeUpdate1 = maybeUpdate0.orElse(findUpdateWithNewerGroupId(dependency.value))
     } yield maybeUpdate1
 
   def findUpdates(
       dependencies: List[Scope.Dependency],
-      repoConfig: RepoConfig
-  ): F[List[Update.Single]] =
-    for {
-      _ <- logger.info(s"Find updates")
-      updates0 <- dependencies.parFlatTraverse(findUpdate(_).map(_.toList))
-      updates1 <- filterAlg.localFilterMany(repoConfig, updates0)
-      updates2 = Update.groupByArtifactIdName(updates1)
-      _ <- logger.info(util.logger.showUpdates(updates2.widen[Update]))
-    } yield updates2
+      repoConfig: RepoConfig,
+      maxAge: Option[FiniteDuration]
+  ): F[List[Update.Single]] = {
+    val updates = dependencies.traverseFilter(findUpdate(_, maxAge))
+    updates.flatMap(filterAlg.localFilterMany(repoConfig, _))
+  }
 }
 
 object UpdateAlg {

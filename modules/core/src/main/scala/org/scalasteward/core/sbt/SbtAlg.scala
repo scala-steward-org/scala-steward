@@ -22,13 +22,12 @@ import cats.implicits._
 import cats.{Functor, Monad}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.data.{Dependency, Resolver, Scope, Update}
+import org.scalasteward.core.data.{Dependency, Resolver, Scope}
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.sbt.data.SbtVersion
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.scalafmt.ScalafmtAlg
-import org.scalasteward.core.update.UpdateAlg
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
@@ -40,8 +39,6 @@ trait SbtAlg[F[_]] {
   def getSbtVersion(repo: Repo): F[Option[SbtVersion]]
 
   def getDependencies(repo: Repo): F[List[Scope.Dependencies]]
-
-  def getUpdates(repo: Repo): F[List[Update.Single]]
 
   def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit]
 
@@ -57,7 +54,6 @@ object SbtAlg {
       logger: Logger[F],
       processAlg: ProcessAlg[F],
       scalafmtAlg: ScalafmtAlg[F],
-      updateAlg: UpdateAlg[F],
       workspaceAlg: WorkspaceAlg[F],
       F: Monad[F]
   ): SbtAlg[F] =
@@ -73,14 +69,7 @@ object SbtAlg {
         }
 
       override def addGlobalPlugins[A](fa: F[A]): F[A] =
-        for {
-          _ <- logger.info("Add global sbt plugins")
-          result <- addGlobalPluginTemporarily(scalaStewardSbt) {
-            addGlobalPluginTemporarily(stewardPlugin) {
-              fa
-            }
-          }
-        } yield result
+        logger.info("Add global sbt plugins") >> addGlobalPluginTemporarily(stewardPlugin)(fa)
 
       override def getSbtVersion(repo: Repo): F[Option[SbtVersion]] =
         for {
@@ -103,24 +92,6 @@ object SbtAlg {
             .toList
             .map(group => group.head.as(group.reduceMap(_.value).distinct.sorted))
         } yield result
-
-      override def getUpdates(repo: Repo): F[List[Update.Single]] =
-        for {
-          repoDir <- workspaceAlg.repoDir(repo)
-          commands = List(
-            crossStewardDependencies,
-            crossStewardUpdates,
-            reloadPlugins,
-            stewardDependencies,
-            stewardUpdates
-          )
-          lines <- exec(sbtCmd(commands), repoDir)
-          (dependencies, updates) = parser.parseDependenciesAndUpdates(lines)
-          outOfDateDependencies = updates.flatMap(_.crossDependency.dependencies.toList)
-          upToDateDependencies = dependencies.diff(outOfDateDependencies)
-          updatesWithNewGroupId = upToDateDependencies.flatMap(UpdateAlg.findUpdateWithNewerGroupId)
-          additionalUpdates <- findAdditionalUpdates(repo)
-        } yield Update.groupByArtifactIdName(updates ++ updatesWithNewGroupId ++ additionalUpdates)
 
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
         addGlobalPluginTemporarily(scalaStewardScalafixSbt) {
@@ -162,11 +133,5 @@ object SbtAlg {
           .fromList(maybeSbtDependency.toList ++ maybeScalafmtDependency.toList)
           .map(dependencies => Scope(dependencies.toList, List(Resolver.mavenCentral)))
           .toList
-
-      def findAdditionalUpdates(repo: Repo): F[List[Update.Single]] =
-        for {
-          dependencies <- getAdditionalDependencies(repo)
-          updates <- dependencies.flatMap(_.sequence).traverseFilter(updateAlg.findUpdate)
-        } yield updates
     }
 }

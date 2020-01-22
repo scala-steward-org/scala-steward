@@ -21,7 +21,6 @@ import io.circe.Decoder
 import io.circe.parser._
 import org.scalasteward.core.data._
 import org.scalasteward.core.sbt.data.SbtVersion
-import org.scalasteward.core.util.Nel
 
 object parser {
   def parseBuildProperties(s: String): Option[SbtVersion] =
@@ -36,21 +35,6 @@ object parser {
       if (dependencies.isEmpty || resolvers.isEmpty) None
       else Some(Scope(dependencies, resolvers.sorted))
     }.toList
-  }
-
-  def parseDependenciesAndUpdates(lines: List[String]): (List[Dependency], List[Update.Single]) = {
-    val updateDecoder = Decoder.instance { c =>
-      for {
-        dependency <- c.downField("dependency").as[Dependency]
-        newerVersions <- c.downField("newerVersions").as[Nel[String]]
-      } yield Update.Single(CrossDependency(dependency), newerVersions)
-    }
-
-    lines.flatMap { line =>
-      parse(removeSbtNoise(line)).flatMap { json =>
-        Decoder[Dependency].either(updateDecoder).decodeJson(json)
-      }.toList
-    }.separate
   }
 
   private def removeSbtNoise(s: String): String =
