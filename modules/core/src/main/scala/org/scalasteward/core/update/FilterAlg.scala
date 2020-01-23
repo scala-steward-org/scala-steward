@@ -52,7 +52,7 @@ object FilterAlg {
       case IgnoredGlobally(_)         => "ignored globally"
       case IgnoredByConfig(_)         => "ignored by config"
       case NotAllowedByConfig(_)      => "not allowed by config"
-      case NotIncludedByConfig(_)      => "not included by config"
+      case NotIncludedByConfig(_)     => "not included by config"
       case BadVersions(_)             => "bad versions"
       case NoSuitableNextVersion(_)   => "no suitable next version"
       case VersionOrderingConflict(_) => "version ordering conflict"
