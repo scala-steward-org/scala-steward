@@ -38,11 +38,8 @@ final case class UpdatesConfig(
     isIncluded(update) *> isAllowed(update) *> isIgnored(update)
 
   private def isIncluded(update: Update.Single): FilterResult = {
-    val includedGroup = include.filter(_.groupId === update.groupId)
-    val includedArtifact = includedGroup
-      .filter(_.artifactId.fold(true)(_ === update.artifactId.name))
-      .filter(_.version.fold(true)(update.nextVersion.startsWith))
-    val isIncluded = include.isEmpty || includedArtifact.nonEmpty
+    lazy val matched = UpdatePattern.findMatch(include, update)
+    val isIncluded = include.isEmpty || matched.byVersion.nonEmpty
     Either.cond(isIncluded, update, NotIncludedByConfig(update))
   }
 
