@@ -74,7 +74,6 @@ class FilterAlgTest extends AnyFunSuite with Matchers {
   test("ignore update via config updates.allow") {
     val update1 = Single("org.http4s" % "http4s-dsl" % "0.17.0", Nel.of("0.18.0"))
     val update2 = Single("eu.timepit" % "refined" % "0.8.0", Nel.of("0.8.1"))
-    val shouldNotAllow = Single("abc.def" % "ghi" % "0.8.0", Nel.of("0.8.1"))
 
     val config = RepoConfig(
       updates = UpdatesConfig(
@@ -86,10 +85,40 @@ class FilterAlgTest extends AnyFunSuite with Matchers {
     )
 
     val filtered = filterAlg
-      .localFilterMany(config, List(update1, update2, shouldNotAllow))
+      .localFilterMany(config, List(update1, update2))
       .runA(MockState.empty)
       .unsafeRunSync()
 
     filtered shouldBe List(update2)
+  }
+
+  test("ignore update via config updates.include") {
+    val included = List(
+      Single("org.my1" % "artifact" % "0.8.0", Nel.of("0.8.1")),
+      Single("org.my2" % "artifact" % "0.8.0", Nel.of("0.8.1")),
+      Single("org.my2" % "artifact" % "0.8.0", Nel.of("0.9.1")),
+    )
+    val notIncluded = List(
+      Single("org.http4s" % "http4s-dsl" % "0.17.0", Nel.of("0.18.0")),
+      Single("org.my1" % "artifact" % "0.8.0", Nel.of("0.9.1")),
+      Single("org.my3" % "abc" % "0.8.0", Nel.of("0.8.1")),
+    )
+
+    val config = RepoConfig(
+      updates = UpdatesConfig(
+        include = List(
+          UpdatePattern(GroupId("org.my1") , None, Some("0.8")),
+          UpdatePattern(GroupId("org.my2"), None, None),
+          UpdatePattern(GroupId("org.my3"), Some("artifact"), None)
+        )
+      )
+    )
+
+    val filtered = filterAlg
+      .localFilterMany(config, included ++ notIncluded)
+      .runA(MockState.empty)
+      .unsafeRunSync()
+
+    filtered shouldBe included
   }
 }

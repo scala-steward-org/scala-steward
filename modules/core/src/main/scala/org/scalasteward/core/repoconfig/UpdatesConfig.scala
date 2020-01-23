@@ -21,21 +21,29 @@ import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.data.Update
-import org.scalasteward.core.update.FilterAlg.{FilterResult, IgnoredByConfig, NotAllowedByConfig}
+import org.scalasteward.core.update.FilterAlg.{FilterResult, IgnoredByConfig, NotAllowedByConfig,NotIncludedByConfig}
 
 final case class UpdatesConfig(
     allow: List[UpdatePattern] = List.empty,
+    include: List[UpdatePattern] = List.empty,
     ignore: List[UpdatePattern] = List.empty,
     limit: Option[Int] = None
 ) {
   def keep(update: Update.Single): FilterResult =
-    isAllowed(update) *> isIgnored(update)
+    isIncluded(update) *> isAllowed(update) *> isIgnored(update)
+
+  private def isIncluded(update: Update.Single): FilterResult = {
+    val includedGroup = include.filter(_.groupId === update.groupId)
+    val includedArtifact = includedGroup
+      .filter(_.artifactId.fold(true)(_ === update.artifactId.name))
+      .filter(_.version.fold(true)(update.nextVersion.startsWith))
+    val isIncluded = include.isEmpty || includedArtifact.nonEmpty
+    Either.cond(isIncluded, update, NotIncludedByConfig(update))
+  }
 
   private def isAllowed(update: Update.Single): FilterResult = {
     val m = UpdatePattern.findMatch(allow, update)
-    val isAllowGroup = allow.isEmpty || allow.filter(_.groupId === update.groupId).nonEmpty
-    val isAllowArtifact = m.byArtifactId.isEmpty || m.byVersion.nonEmpty
-    if (isAllowGroup && isAllowArtifact) Right(update)
+    if (m.byArtifactId.isEmpty || m.byVersion.nonEmpty) Right(update)
     else Left(NotAllowedByConfig(update))
   }
 

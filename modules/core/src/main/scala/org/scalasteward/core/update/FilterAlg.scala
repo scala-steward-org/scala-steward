@@ -52,6 +52,7 @@ object FilterAlg {
       case IgnoredGlobally(_)         => "ignored globally"
       case IgnoredByConfig(_)         => "ignored by config"
       case NotAllowedByConfig(_)      => "not allowed by config"
+      case NotIncludedByConfig(_)      => "not included by config"
       case BadVersions(_)             => "bad versions"
       case NoSuitableNextVersion(_)   => "no suitable next version"
       case VersionOrderingConflict(_) => "version ordering conflict"
@@ -61,6 +62,7 @@ object FilterAlg {
   final case class IgnoredGlobally(update: Update.Single) extends RejectionReason
   final case class IgnoredByConfig(update: Update.Single) extends RejectionReason
   final case class NotAllowedByConfig(update: Update.Single) extends RejectionReason
+  final case class NotIncludedByConfig(update: Update.Single) extends RejectionReason
   final case class BadVersions(update: Update.Single) extends RejectionReason
   final case class NoSuitableNextVersion(update: Update.Single) extends RejectionReason
   final case class VersionOrderingConflict(update: Update.Single) extends RejectionReason
