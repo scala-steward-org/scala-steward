@@ -19,7 +19,7 @@ package org.scalasteward.core.coursier
 import cats.effect._
 import cats.implicits._
 import cats.{Applicative, Parallel}
-import coursier.cache.FileCache
+import coursier.cache.{CachePolicy, FileCache}
 import coursier.core.Project
 import coursier.interop.cats._
 import coursier.{Fetch, Info, Module, ModuleName, Organization, Versions}
@@ -54,12 +54,18 @@ object CoursierAlg {
       F: Sync[F]
   ): CoursierAlg[F] = {
     implicit val parallel: Parallel.Aux[F, F] = Parallel.identity[F]
+    val fetch: Fetch[F] = Fetch[F](FileCache[F]().withTtl(cacheTtl))
 
-    val cache: FileCache[F] = FileCache[F]().withTtl(cacheTtl)
-    val cacheNoTtl: FileCache[F] = cache.withTtl(None)
-    val fetch: Fetch[F] = Fetch[F](cache)
+    val cache: FileCache[F] = FileCache[F]()
+      .withTtl(cacheTtl)
+      .withCachePolicies(List(CachePolicy.LocalUpdateChanging))
+
+    val cacheNoTtl: FileCache[F] = FileCache[F]()
+      .withTtl(None)
+      .withCachePolicies(List(CachePolicy.Update))
+
     val versions: Versions[F] = Versions[F](cache)
-    val versionsNoTtl: Versions[F] = versions.withCache(cacheNoTtl)
+    val versionsNoTtl: Versions[F] = Versions[F](cacheNoTtl)
 
     new CoursierAlg[F] {
       override def getArtifactUrl(dependency: Scope.Dependency): F[Option[Uri]] =
