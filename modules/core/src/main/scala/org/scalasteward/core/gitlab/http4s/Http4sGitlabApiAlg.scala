@@ -66,7 +66,7 @@ private[http4s] object GitlabJsonCodec {
       owner <- c
         .downField("owner")
         .as[UserOut]
-        .orElse(c.downField("namespace").downField("name").as[String].map(UserOut(_)))
+        .orElse(c.downField("namespace").downField("full_path").as[String].map(UserOut(_)))
       cloneUrl <- c.downField("http_url_to_repo").as[Uri]
       parent <- c
         .downField("forked_from_project")
