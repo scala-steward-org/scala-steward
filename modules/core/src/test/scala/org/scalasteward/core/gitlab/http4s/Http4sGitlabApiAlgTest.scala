@@ -185,7 +185,7 @@ class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
         "last_activity_at": "2019-05-20T04:31:10.797Z",
         "namespace": {
           "id": 5239389,
-          "name": "foo",
+          "name": "foo description",
           "path": "foo",
           "kind": "user",
           "full_path": "foo",
