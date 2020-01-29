@@ -16,8 +16,8 @@
 
 package org.scalasteward.core.coursier
 
-import cats.Monad
 import cats.implicits._
+import cats.{Monad, Parallel}
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, KeyEncoder}
 import java.util.concurrent.TimeUnit
@@ -34,11 +34,12 @@ final class VersionsCache[F[_]](
     implicit
     coursierAlg: CoursierAlg[F],
     dateTimeAlg: DateTimeAlg[F],
+    parallel: Parallel[F],
     F: Monad[F]
 ) {
   def getVersions(dependency: Scope.Dependency, maxAge: Option[FiniteDuration]): F[List[Version]] =
     dependency.resolvers
-      .flatTraverse(getVersionsImpl(dependency.value, _, maxAge.getOrElse(cacheTtl)))
+      .parFlatTraverse(getVersionsImpl(dependency.value, _, maxAge.getOrElse(cacheTtl)))
       .map(_.sorted)
 
   private def getVersionsImpl(
