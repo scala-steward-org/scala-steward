@@ -16,60 +16,54 @@
 
 package org.scalasteward.core.coursier
 
-import cats.FlatMap
-import cats.effect.Timer
+import cats.Monad
 import cats.implicits._
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, KeyEncoder}
 import java.util.concurrent.TimeUnit
-import org.scalasteward.core.coursier.VersionsCacheFacade.{Key, Value}
-import org.scalasteward.core.data.{Dependency, Scope, Version}
+import org.scalasteward.core.coursier.VersionsCache.{Key, Value}
+import org.scalasteward.core.data.{Dependency, Resolver, Scope, Version}
 import org.scalasteward.core.persistence.KeyValueStore
 import org.scalasteward.core.util.DateTimeAlg
 import scala.concurrent.duration.FiniteDuration
 
-/** Facade of Coursier's versions cache that keeps track of the instant
-  * when versions of a dependency are updated. This information is used
-  * to delay calls to Coursier that require a network call to populate
-  * or refresh its cache. Calls that probably hit the cache are not
-  * delayed.
-  *
-  * Note that resolvers are ignored when storing the instant of the
-  * last update which could lead to unlimited calls to Coursier that
-  * hit the network. This will happen for dependencies that have been
-  * checked against different resolvers before.
-  */
-final class VersionsCacheFacade[F[_]](
+final class VersionsCache[F[_]](
     cacheTtl: FiniteDuration,
-    cacheMissDelay: FiniteDuration,
     store: KeyValueStore[F, Key, Value]
 )(
     implicit
     coursierAlg: CoursierAlg[F],
     dateTimeAlg: DateTimeAlg[F],
-    timer: Timer[F],
-    F: FlatMap[F]
+    F: Monad[F]
 ) {
   def getVersions(dependency: Scope.Dependency, maxAge: Option[FiniteDuration]): F[List[Version]] =
+    dependency.resolvers
+      .flatTraverse(getVersionsImpl(dependency.value, _, maxAge.getOrElse(cacheTtl)))
+      .map(_.sorted)
+
+  private def getVersionsImpl(
+      dependency: Dependency,
+      resolver: Resolver,
+      maxAge: FiniteDuration
+  ): F[List[Version]] =
     dateTimeAlg.currentTimeMillis.flatMap { now =>
-      store.get(Key(dependency.value)).flatMap {
-        case Some(value) if value.age(now) <= maxAge.getOrElse(cacheTtl) =>
-          coursierAlg.getVersions(dependency)
+      val key = Key(dependency, resolver)
+      store.get(key).flatMap {
+        case Some(value) if value.age(now) <= maxAge =>
+          F.pure(value.versions)
         case _ =>
-          for {
-            _ <- timer.sleep(cacheMissDelay)
-            now <- dateTimeAlg.currentTimeMillis
-            versions <- coursierAlg.getVersionsFresh(dependency)
-            _ <- store.put(Key(dependency.value), Value(now))
-          } yield versions
+          coursierAlg.getVersions(Scope(dependency, List(resolver))).flatTap { versions =>
+            store.put(key, Value(now, versions))
+          }
       }
     }
 }
 
-object VersionsCacheFacade {
-  final case class Key(dependency: Dependency) {
-    override def toString: String =
-      dependency.groupId.value.replace('.', '/') + "/" +
+object VersionsCache {
+  final case class Key(dependency: Dependency, resolver: Resolver) {
+    override val toString: String =
+      resolver.path + "/" +
+        dependency.groupId.value.replace('.', '/') + "/" +
         dependency.artifactId.crossName +
         dependency.scalaVersion.fold("")("_" + _.value) +
         dependency.sbtVersion.fold("")("_" + _.value)
@@ -80,7 +74,7 @@ object VersionsCacheFacade {
       KeyEncoder.instance(_.toString)
   }
 
-  final case class Value(updatedAt: Long) {
+  final case class Value(updatedAt: Long, versions: List[Version]) {
     def age(now: Long): FiniteDuration =
       FiniteDuration(now - updatedAt, TimeUnit.MILLISECONDS)
   }

@@ -26,7 +26,6 @@ import coursier.{Fetch, Info, Module, ModuleName, Organization, Versions}
 import io.chrisdavenport.log4cats.Logger
 import org.http4s.Uri
 import org.scalasteward.core.data.{Dependency, Resolver, Scope, Version}
-import scala.concurrent.duration.FiniteDuration
 
 /** An interface to [[https://get-coursier.io Coursier]] used for
   * fetching dependency versions and metadata.
@@ -35,8 +34,6 @@ trait CoursierAlg[F[_]] {
   def getArtifactUrl(dependency: Scope.Dependency): F[Option[Uri]]
 
   def getVersions(dependency: Scope.Dependency): F[List[Version]]
-
-  def getVersionsFresh(dependency: Scope.Dependency): F[List[Version]]
 
   final def getArtifactIdUrlMapping(dependencies: Scope.Dependencies)(
       implicit F: Applicative[F]
@@ -47,25 +44,18 @@ trait CoursierAlg[F[_]] {
 }
 
 object CoursierAlg {
-  def create[F[_]](cacheTtl: FiniteDuration)(
+  def create[F[_]](
       implicit
       contextShift: ContextShift[F],
       logger: Logger[F],
       F: Sync[F]
   ): CoursierAlg[F] = {
     implicit val parallel: Parallel.Aux[F, F] = Parallel.identity[F]
-    val fetch: Fetch[F] = Fetch[F](FileCache[F]().withTtl(cacheTtl))
+    val fetch: Fetch[F] = Fetch[F](FileCache[F]())
 
-    val cache: FileCache[F] = FileCache[F]()
-      .withTtl(cacheTtl)
-      .withCachePolicies(List(CachePolicy.LocalUpdateChanging))
-
-    val cacheNoTtl: FileCache[F] = FileCache[F]()
-      .withTtl(None)
-      .withCachePolicies(List(CachePolicy.Update))
-
-    val versions: Versions[F] = Versions[F](cache)
-    val versionsNoTtl: Versions[F] = Versions[F](cacheNoTtl)
+    val cacheNoTtl: FileCache[F] =
+      FileCache[F]().withTtl(None).withCachePolicies(List(CachePolicy.Update))
+    val versions: Versions[F] = Versions[F](cacheNoTtl)
 
     new CoursierAlg[F] {
       override def getArtifactUrl(dependency: Scope.Dependency): F[Option[Uri]] =
@@ -97,15 +87,6 @@ object CoursierAlg {
       }
 
       override def getVersions(dependency: Scope.Dependency): F[List[Version]] =
-        getVersionsImpl(versions, dependency)
-
-      override def getVersionsFresh(dependency: Scope.Dependency): F[List[Version]] =
-        getVersionsImpl(versionsNoTtl, dependency)
-
-      private def getVersionsImpl(
-          versions: Versions[F],
-          dependency: Scope.Dependency
-      ): F[List[Version]] =
         convertToCoursierTypes(dependency).flatMap {
           case (dependency, repositories) =>
             versions

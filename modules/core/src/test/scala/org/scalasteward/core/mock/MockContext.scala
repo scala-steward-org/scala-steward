@@ -4,10 +4,10 @@ import better.files.File
 import cats.Parallel
 import cats.effect.Sync
 import org.http4s.Uri
-import org.scalasteward.core.TestInstances.{ioContextShift, ioTimer}
+import org.scalasteward.core.TestInstances.ioContextShift
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.{Config, SupportedVCS}
-import org.scalasteward.core.coursier.{CoursierAlg, VersionsCacheFacade}
+import org.scalasteward.core.coursier.{CoursierAlg, VersionsCache}
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Author, GitAlg}
 import org.scalasteward.core.io.{MockFileAlg, MockProcessAlg, MockWorkspaceAlg}
@@ -57,7 +57,7 @@ object MockContext {
   implicit val processAlg: MockProcessAlg = new MockProcessAlg
   implicit val workspaceAlg: MockWorkspaceAlg = new MockWorkspaceAlg
 
-  implicit val coursierAlg: CoursierAlg[MockEff] = CoursierAlg.create(config.cacheTtl)
+  implicit val coursierAlg: CoursierAlg[MockEff] = CoursierAlg.create
   implicit val dateTimeAlg: DateTimeAlg[MockEff] = DateTimeAlg.create
   implicit val gitAlg: GitAlg[MockEff] = GitAlg.create
   implicit val user: AuthenticatedUser = AuthenticatedUser("scala-steward", "token")
@@ -67,12 +67,8 @@ object MockContext {
   implicit val cacheRepository: RepoCacheRepository[MockEff] =
     new RepoCacheRepository[MockEff](new JsonKeyValueStore("repo_cache", "1"))
   implicit val filterAlg: FilterAlg[MockEff] = new FilterAlg[MockEff]
-  implicit val versionsCacheAlg: VersionsCacheFacade[MockEff] =
-    new VersionsCacheFacade[MockEff](
-      config.cacheTtl,
-      config.cacheMissDelay,
-      new JsonKeyValueStore("versions", "1")
-    )
+  implicit val versionsCacheAlg: VersionsCache[MockEff] =
+    new VersionsCache[MockEff](config.cacheTtl, new JsonKeyValueStore("versions", "1"))
   implicit val updateAlg: UpdateAlg[MockEff] = new UpdateAlg[MockEff]
   implicit val sbtAlg: SbtAlg[MockEff] = SbtAlg.create
   implicit val editAlg: EditAlg[MockEff] = new EditAlg[MockEff]
