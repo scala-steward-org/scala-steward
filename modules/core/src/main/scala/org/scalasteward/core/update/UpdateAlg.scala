@@ -18,7 +18,7 @@ package org.scalasteward.core.update
 
 import cats.Monad
 import cats.implicits._
-import org.scalasteward.core.coursier.VersionsCacheFacade
+import org.scalasteward.core.coursier.VersionsCache
 import org.scalasteward.core.data._
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.update.UpdateAlg._
@@ -28,7 +28,7 @@ import scala.concurrent.duration.FiniteDuration
 final class UpdateAlg[F[_]](
     implicit
     filterAlg: FilterAlg[F],
-    versionsCache: VersionsCacheFacade[F],
+    versionsCache: VersionsCache[F],
     F: Monad[F]
 ) {
   def findUpdate(

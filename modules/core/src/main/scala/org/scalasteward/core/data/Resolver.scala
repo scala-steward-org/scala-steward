@@ -20,8 +20,17 @@ import cats.Order
 import cats.implicits._
 import io.circe.Codec
 import io.circe.generic.semiauto._
+import org.scalasteward.core.data.Resolver._
 
-sealed trait Resolver extends Product with Serializable
+sealed trait Resolver extends Product with Serializable {
+  val path: String = {
+    val url = this match {
+      case MavenRepository(_, location) => location
+      case IvyRepository(_, pattern)    => pattern.takeWhile(!Set('[', '(')(_))
+    }
+    url.replace(":", "")
+  }
+}
 
 object Resolver {
   final case class MavenRepository(name: String, location: String) extends Resolver
