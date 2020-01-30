@@ -43,7 +43,7 @@ object StewardPlugin extends AutoPlugin {
         .map(moduleId => toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue))
 
       val resolvers = fullResolvers.value.collect {
-        case repo: MavenRepository if !repo.root.startsWith("file:/") =>
+        case repo: MavenRepository if !repo.root.startsWith("file:") =>
           Resolver.MavenRepository(repo.name, repo.root)
         case repo: URLRepository =>
           Resolver.IvyRepository(repo.name, repo.patterns.ivyPatterns.mkString)
