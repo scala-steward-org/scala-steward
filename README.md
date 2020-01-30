@@ -64,6 +64,7 @@ Thanks goes to these wonderful people:
 * [Alex](https://github.com/jhnsmth)
 * [Andrea Mistretta](https://github.com/andreami)
 * [Anil Kumar Myla](https://github.com/anilkumarmyla)
+* [Arjun Dhawan](https://github.com/arjun-1)
 * [Arulselvan Madhavan](https://github.com/ArulselvanMadhavan)
 * [Bayram Kiran](https://github.com/kiranbayram)
 * [Cédric Chantepie](https://github.com/cchantep)
