@@ -16,9 +16,9 @@ class JsonKeyValueStoreTest extends AnyFunSuite with Matchers {
     } yield (v1, v3)
     val (state, value) = p.run(MockState.empty).unsafeRunSync()
 
-    val k1File = config.workspace / "store" / "test_v0" / "k1" / "test.json"
-    val k2File = config.workspace / "store" / "test_v0" / "k2" / "test.json"
-    val k3File = config.workspace / "store" / "test_v0" / "k3" / "test.json"
+    val k1File = config.workspace / "store" / "test" / "v0" / "k1" / "test.json"
+    val k2File = config.workspace / "store" / "test" / "v0" / "k2" / "test.json"
+    val k3File = config.workspace / "store" / "test" / "v0" / "k3" / "test.json"
     value shouldBe (Some("v1") -> None)
     state shouldBe MockState.empty.copy(
       commands = Vector(

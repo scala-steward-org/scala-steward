@@ -51,6 +51,7 @@ object Context {
       implicit0(httpExistenceClient: HttpExistenceClient[F]) <- HttpExistenceClient.create[F]
       implicit0(user: AuthenticatedUser) <- Resource.liftF(config.vcsUser[F])
     } yield {
+      val kvsPrefix = Some(config.vcsType.asString)
       implicit val dateTimeAlg: DateTimeAlg[F] = DateTimeAlg.create[F]
       implicit val fileAlg: FileAlg[F] = FileAlg.create[F]
       implicit val processAlg: ProcessAlg[F] = ProcessAlg.create[F](blocker)
@@ -60,22 +61,22 @@ object Context {
       implicit val gitAlg: GitAlg[F] = GitAlg.create[F]
       implicit val httpJsonClient: HttpJsonClient[F] = new HttpJsonClient[F]
       implicit val repoCacheRepository: RepoCacheRepository[F] =
-        new RepoCacheRepository[F](new JsonKeyValueStore("repo_cache", "4"))
+        new RepoCacheRepository[F](new JsonKeyValueStore("repo_cache", "1", kvsPrefix))
       implicit val selfCheckAlg: SelfCheckAlg[F] = new SelfCheckAlg[F]
       val vcsSelection = new VCSSelection[F]
       implicit val vcsApiAlg: VCSApiAlg[F] = vcsSelection.getAlg(config)
       implicit val vcsRepoAlg: VCSRepoAlg[F] = VCSRepoAlg.create[F](config, gitAlg)
       implicit val vcsExtraAlg: VCSExtraAlg[F] = VCSExtraAlg.create[F]
       implicit val pullRequestRepository: PullRequestRepository[F] =
-        new PullRequestRepository[F](new JsonKeyValueStore("pull_requests", "1"))
+        new PullRequestRepository[F](new JsonKeyValueStore("pull_requests", "1", kvsPrefix))
       implicit val scalafmtAlg: ScalafmtAlg[F] = ScalafmtAlg.create[F]
       implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create
       implicit val versionsCache: VersionsCache[F] =
-        new VersionsCache[F](config.cacheTtl, new JsonKeyValueStore("versions", "3"))
+        new VersionsCache[F](config.cacheTtl, new JsonKeyValueStore("versions", "1"))
       implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]
       implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F]
       implicit val refreshErrorAlg: RefreshErrorAlg[F] =
-        new RefreshErrorAlg[F](new JsonKeyValueStore("refresh_error", "1"))
+        new RefreshErrorAlg[F](new JsonKeyValueStore("refresh_error", "1", kvsPrefix))
       implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F]
       implicit val migrationAlg: MigrationAlg[F] = MigrationAlg.create[F]
       implicit val editAlg: EditAlg[F] = new EditAlg[F]
