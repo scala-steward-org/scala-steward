@@ -24,7 +24,11 @@ import io.circe.{Decoder, Encoder, KeyEncoder}
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.util.MonadThrowable
 
-final class JsonKeyValueStore[F[_], K, V](name: String, schemaVersion: String)(
+final class JsonKeyValueStore[F[_], K, V](
+    name: String,
+    schemaVersion: String,
+    maybePrefix: Option[String] = None
+)(
     implicit
     fileAlg: FileAlg[F],
     keyEncoder: KeyEncoder[K],
@@ -45,10 +49,10 @@ final class JsonKeyValueStore[F[_], K, V](name: String, schemaVersion: String)(
   override def modifyF(key: K)(f: Option[V] => F[Option[V]]): F[Option[V]] =
     get(key).flatMap(maybeValue => f(maybeValue).flatTap(write(key, _)))
 
-  private def jsonFile(key: K): F[File] =
-    workspaceAlg.rootDir.map(
-      _ / "store" / s"${name}_v${schemaVersion}" / keyEncoder(key) / s"$name.json"
-    )
+  private def jsonFile(key: K): F[File] = {
+    val keyPath = maybePrefix.fold("")(_ + "/") + keyEncoder(key)
+    workspaceAlg.rootDir.map(_ / "store" / name / s"v$schemaVersion" / keyPath / s"$name.json")
+  }
 
   private def write(key: K, value: Option[V]): F[Unit] =
     jsonFile(key).flatMap(fileAlg.writeFile(_, value.asJson.toString))
