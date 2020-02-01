@@ -30,15 +30,27 @@ final case class UpdatePattern(
 object UpdatePattern {
   final case class MatchResult(
       byArtifactId: List[UpdatePattern],
-      byVersion: List[UpdatePattern]
+      filteredVersions: List[String]
   )
 
-  def findMatch(patterns: List[UpdatePattern], update: Update.Single): MatchResult = {
+  def findMatch(
+      patterns: List[UpdatePattern],
+      update: Update.Single,
+      include: Boolean
+  ): MatchResult = {
     val byGroupId = patterns.filter(_.groupId === update.groupId)
     val byArtifactId = byGroupId.filter(_.artifactId.forall(_ === update.artifactId.name))
-    val byVersion = byArtifactId.filter(_.version.forall(update.nextVersion.startsWith))
-    MatchResult(byArtifactId, byVersion)
+    val filteredVersions = update.newerVersions.filter(newVersion =>
+      byArtifactId.exists(_.version.forall(versionComparison(_, newVersion))) === include
+    )
+    MatchResult(byArtifactId, filteredVersions)
   }
+
+  private def versionComparison(patternVersion: String, nextVersion: String): Boolean =
+    if (patternVersion.startsWith(".*"))
+      nextVersion.endsWith(patternVersion.substring(2))
+    else
+      nextVersion.startsWith(patternVersion)
 
   implicit val updatePatternDecoder: Decoder[UpdatePattern] =
     deriveDecoder

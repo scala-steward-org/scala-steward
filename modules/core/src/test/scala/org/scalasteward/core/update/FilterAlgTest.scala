@@ -91,4 +91,50 @@ class FilterAlgTest extends AnyFunSuite with Matchers {
 
     filtered shouldBe List(update2)
   }
+
+  test("ignore update via config updates.allow using suffix") {
+    val update =
+      Single(
+        "com.microsoft.sqlserver" % "mssql-jdbc" % "7.2.2.jre8",
+        Nel.of("7.2.2.jre11", "7.3.0.jre8", "7.3.0.jre11")
+      )
+
+    val config = RepoConfig(
+      updates = UpdatesConfig(
+        allow = List(
+          UpdatePattern(update.groupId, Some(update.artifactId.name), Some(".*jre8"))
+        )
+      )
+    )
+
+    val filtered = filterAlg
+      .localFilterMany(config, List(update))
+      .runA(MockState.empty)
+      .unsafeRunSync()
+
+    filtered shouldBe List(update.copy(newerVersions = Nel.of("7.3.0.jre8")))
+  }
+
+  test("ignore update via config updates.ignore using suffix") {
+    val update =
+      Single(
+        "com.microsoft.sqlserver" % "mssql-jdbc" % "7.2.2.jre8",
+        Nel.of("7.2.2.jre11", "7.3.0.jre8", "7.3.0.jre11")
+      )
+
+    val config = RepoConfig(
+      updates = UpdatesConfig(
+        ignore = List(
+          UpdatePattern(update.groupId, Some(update.artifactId.name), Some(".*jre11"))
+        )
+      )
+    )
+
+    val filtered = filterAlg
+      .localFilterMany(config, List(update))
+      .runA(MockState.empty)
+      .unsafeRunSync()
+
+    filtered shouldBe List(update.copy(newerVersions = Nel.of("7.3.0.jre8")))
+  }
 }
