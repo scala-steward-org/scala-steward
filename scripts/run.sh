@@ -56,10 +56,8 @@ PIDFILE="$STEWARD_DIR/scala-steward.pid"
 JAVA=$(which java)
 JAVA_ARGS="-DROOT_LOG_LEVEL=INFO -DLOG_LEVEL=INFO"
 
-rm -f $PIDFILE
 /sbin/start-stop-daemon --start --make-pidfile --pidfile $PIDFILE --chdir "$STEWARD_DIR" --exec "$JAVA" \
- -- $JAVA_ARGS -jar ${JAR} "${COMMON_ARGS[@]}" "${GITHUB_ARGS[@]}"
+ -- $JAVA_ARGS -jar ${JAR} "${COMMON_ARGS[@]}" "${GITHUB_ARGS[@]}" || true
 
-rm -f $PIDFILE
 /sbin/start-stop-daemon --start --make-pidfile --pidfile $PIDFILE --chdir "$STEWARD_DIR" --exec "$JAVA" \
- -- $JAVA_ARGS -jar ${JAR} "${COMMON_ARGS[@]}" "${GITLAB_ARGS[@]}"
+ -- $JAVA_ARGS -jar ${JAR} "${COMMON_ARGS[@]}" "${GITLAB_ARGS[@]}" || true
