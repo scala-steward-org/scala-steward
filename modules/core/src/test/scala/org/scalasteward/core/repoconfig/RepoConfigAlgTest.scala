@@ -25,7 +25,7 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
 
     config shouldBe RepoConfig(
       updates = UpdatesConfig(
-        allow = List(UpdatePattern(GroupId("eu.timepit"),None, None)),
+        allow = List(UpdatePattern(GroupId("eu.timepit"), None, None)),
         pin = List(UpdatePattern(GroupId("eu.timepit"), Some("refined"), Some("0.8."))),
         ignore = List(UpdatePattern(GroupId("org.acme"), None, Some("1.0"))),
         limit = Some(4)
