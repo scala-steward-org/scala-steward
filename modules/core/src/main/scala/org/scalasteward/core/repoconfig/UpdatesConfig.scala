@@ -25,28 +25,31 @@ import org.scalasteward.core.update.FilterAlg.{
   FilterResult,
   IgnoredByConfig,
   NotAllowedByConfig,
-  NotIncludedByConfig
+  VersionPinnedByConfig
 }
 
 final case class UpdatesConfig(
+    pin: List[UpdatePattern] = List.empty,
     allow: List[UpdatePattern] = List.empty,
-    include: List[UpdatePattern] = List.empty,
     ignore: List[UpdatePattern] = List.empty,
     limit: Option[Int] = None
 ) {
   def keep(update: Update.Single): FilterResult =
-    isIncluded(update) *> isAllowed(update) *> isIgnored(update)
-
-  private def isIncluded(update: Update.Single): FilterResult = {
-    lazy val matched = UpdatePattern.findMatch(include, update)
-    val isIncluded = include.isEmpty || matched.byVersion.nonEmpty
-    Either.cond(isIncluded, update, NotIncludedByConfig(update))
-  }
+    isAllowed(update) *> isPinned(update) *> isIgnored(update)
 
   private def isAllowed(update: Update.Single): FilterResult = {
-    val m = UpdatePattern.findMatch(allow, update)
-    if (m.byArtifactId.isEmpty || m.byVersion.nonEmpty) Right(update)
-    else Left(NotAllowedByConfig(update))
+    lazy val matched = UpdatePattern.findMatch(allow, update)
+    val isIncluded = allow.isEmpty || matched.byVersion.nonEmpty
+    Either.cond(isIncluded, update, NotAllowedByConfig(update))
+  }
+
+  private def isPinned(update: Update.Single): FilterResult = {
+    val m = UpdatePattern.findMatch(pin, update)
+    Either.cond(
+      m.byArtifactId.isEmpty || m.byVersion.nonEmpty,
+      update,
+      VersionPinnedByConfig(update)
+    )
   }
 
   private def isIgnored(update: Update.Single): FilterResult = {
