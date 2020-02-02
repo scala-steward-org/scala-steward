@@ -25,7 +25,7 @@ You can control the update of individual dependencies or of all dependencies
 belonging to a group by specifying version prefixes for them:
 
 ```properties
-updates.allow = [
+updates.pin = [
   # Allow x.y to x.(y+1), but not to (x+1).y
   { groupId = "a.group.id", artifactId="a.name", version="x." },
   # Allow x.y.z to x.y.(z+1), but not to x.(y+1)
