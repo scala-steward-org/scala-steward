@@ -70,9 +70,9 @@ object Context {
       implicit val pullRequestRepository: PullRequestRepository[F] =
         new PullRequestRepository[F](new JsonKeyValueStore("pull_requests", "1", kvsPrefix))
       implicit val scalafmtAlg: ScalafmtAlg[F] = ScalafmtAlg.create[F]
-      implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create
+      implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create[F]
       implicit val versionsCache: VersionsCache[F] =
-        new VersionsCache[F](config.cacheTtl, new JsonKeyValueStore("versions", "1"))
+        new VersionsCache[F](config.cacheTtl, new JsonKeyValueStore("versions", "2"))
       implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]
       implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F]
       implicit val refreshErrorAlg: RefreshErrorAlg[F] =

@@ -22,7 +22,7 @@ import cats.{Applicative, Parallel}
 import coursier.cache.{CachePolicy, FileCache}
 import coursier.core.Project
 import coursier.interop.cats._
-import coursier.{Fetch, Info, Module, ModuleName, Organization, Versions}
+import coursier.{Fetch, Info, Module, ModuleName, Organization}
 import io.chrisdavenport.log4cats.Logger
 import org.http4s.Uri
 import org.scalasteward.core.data.{Dependency, Resolver, Scope, Version}
@@ -33,7 +33,7 @@ import org.scalasteward.core.data.{Dependency, Resolver, Scope, Version}
 trait CoursierAlg[F[_]] {
   def getArtifactUrl(dependency: Scope.Dependency): F[Option[Uri]]
 
-  def getVersions(dependency: Scope.Dependency): F[List[Version]]
+  def getVersions(dependency: Dependency, resolver: Resolver): F[List[Version]]
 
   final def getArtifactIdUrlMapping(dependencies: Scope.Dependencies)(
       implicit F: Applicative[F]
@@ -51,11 +51,11 @@ object CoursierAlg {
       F: Sync[F]
   ): CoursierAlg[F] = {
     implicit val parallel: Parallel.Aux[F, F] = Parallel.identity[F]
+
     val fetch: Fetch[F] = Fetch[F](FileCache[F]())
 
     val cacheNoTtl: FileCache[F] =
       FileCache[F]().withTtl(None).withCachePolicies(List(CachePolicy.Update))
-    val versions: Versions[F] = Versions[F](cacheNoTtl)
 
     new CoursierAlg[F] {
       override def getArtifactUrl(dependency: Scope.Dependency): F[Option[Uri]] =
@@ -86,17 +86,16 @@ object CoursierAlg {
         }
       }
 
-      override def getVersions(dependency: Scope.Dependency): F[List[Version]] =
-        convertToCoursierTypes(dependency).flatMap {
-          case (dependency, repositories) =>
-            versions
-              .withModule(dependency.module)
-              .withRepositories(repositories)
-              .versions()
-              .map(_.available.map(Version.apply).sorted)
-              .handleErrorWith { throwable =>
-                logger.debug(throwable)(s"Failed to get versions of $dependency").as(List.empty)
-              }
+      override def getVersions(dependency: Dependency, resolver: Resolver): F[List[Version]] =
+        toCoursierRepository(resolver) match {
+          case Left(message) =>
+            logger.error(message) >> F.raiseError(new Throwable(message))
+          case Right(repository) =>
+            val module = toCoursierModule(dependency)
+            repository.versions(module, cacheNoTtl.fetch)(coursierMonadFromCats(F)).run.flatMap {
+              case Left(message)        => F.raiseError(new Throwable(message))
+              case Right((versions, _)) => F.pure(versions.available.map(Version.apply).sorted)
+            }
         }
 
       private def convertToCoursierTypes(
