@@ -15,7 +15,8 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     val repo = Repo("fthomas", "scala-steward")
     val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
     val content =
-      """|updates.allow  = [ { groupId = "eu.timepit", artifactId = "refined", version = "0.8." } ]
+      """|updates.allow  = [ { groupId = "eu.timepit"} ]
+         |updates.pin  = [ { groupId = "eu.timepit", artifactId = "refined", version = "0.8." } ]
          |updates.ignore = [ { groupId = "org.acme", version = "1.0" } ]
          |updates.limit = 4
          |""".stripMargin
@@ -24,7 +25,8 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
 
     config shouldBe RepoConfig(
       updates = UpdatesConfig(
-        allow = List(UpdatePattern(GroupId("eu.timepit"), Some("refined"), Some("0.8."))),
+        allow = List(UpdatePattern(GroupId("eu.timepit"), None, None)),
+        pin = List(UpdatePattern(GroupId("eu.timepit"), Some("refined"), Some("0.8."))),
         ignore = List(UpdatePattern(GroupId("org.acme"), None, Some("1.0"))),
         limit = Some(4)
       )

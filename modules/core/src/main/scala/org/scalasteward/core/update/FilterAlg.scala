@@ -50,6 +50,7 @@ object FilterAlg {
     def update: Update.Single
     def show: String = this match {
       case IgnoredByConfig(_)         => "ignored by config"
+      case VersionPinnedByConfig(_)   => "version is pinned by config"
       case NotAllowedByConfig(_)      => "not allowed by config"
       case BadVersions(_)             => "bad versions"
       case NoSuitableNextVersion(_)   => "no suitable next version"
@@ -58,6 +59,7 @@ object FilterAlg {
   }
 
   final case class IgnoredByConfig(update: Update.Single) extends RejectionReason
+  final case class VersionPinnedByConfig(update: Update.Single) extends RejectionReason
   final case class NotAllowedByConfig(update: Update.Single) extends RejectionReason
   final case class BadVersions(update: Update.Single) extends RejectionReason
   final case class NoSuitableNextVersion(update: Update.Single) extends RejectionReason

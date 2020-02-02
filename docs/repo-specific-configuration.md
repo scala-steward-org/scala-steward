@@ -8,6 +8,12 @@ You can add `<YOUR_REPO>/.scala-steward.conf` to configure how Scala Steward upd
 # Defaults to empty `[]` which mean Scala Steward will update all dependencies.
 updates.allow  = [ { groupId = "com.example" } ]
 
+# The dependencies which match the given version pattern are updated.
+# Each pattern must have `groupId`, `version` and optional `artifactId`.
+# Defaults to empty `[]` which mean Scala Steward will update all dependencies.
+# the following example will allow to update foo when version is 1.1.x
+updates.pin  = [ { groupId = "com.example", artifactId="foo", version = "1.1" } ]
+
 # The dependencies which match the given pattern are NOT updated.
 # Each pattern must have `groupId`, and may have `artifactId` and `version`.
 # Defaults to empty `[]` which mean Scala Steward will not ignore dependencies.
