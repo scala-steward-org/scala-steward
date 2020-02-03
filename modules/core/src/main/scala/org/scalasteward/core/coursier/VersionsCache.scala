@@ -58,7 +58,7 @@ final class VersionsCache[F[_]](
               store.put(key, Value(now, versions, None)).as(versions)
             case Left(throwable) =>
               val versions = maybeValue.map(_.versions).getOrElse(List.empty)
-              store.put(key, Value(now, versions, Some(throwable.getMessage))).as(versions)
+              store.put(key, Value(now, versions, Some(throwable.toString))).as(versions)
           }
       }
     }
