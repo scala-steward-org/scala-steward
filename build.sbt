@@ -67,6 +67,11 @@ lazy val core = myCrossProject("core")
         case PathList(ps @ _*) if ps.last == "io.netty.versions.properties" =>
           // This is included in Netty JARs which are pulled in by http4s-async-http-client.
           MergeStrategy.first
+        case PathList("org", "fusesource", _*) =>
+          // (core / assembly) deduplicate: different file contents found in the following:
+          // https/repo1.maven.org/maven2/jline/jline/2.14.6/jline-2.14.6.jar:org/fusesource/hawtjni/runtime/Callback.class
+          // https/repo1.maven.org/maven2/org/fusesource/jansi/jansi/1.18/jansi-1.18.jar:org/fusesource/hawtjni/runtime/Callback.class
+          MergeStrategy.first
         case otherwise =>
           val defaultStrategy = (assemblyMergeStrategy in assembly).value
           defaultStrategy(otherwise)
