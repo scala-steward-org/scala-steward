@@ -144,8 +144,11 @@ environments for everyone.
 ## Credit
 
 Scala Steward wouldn't exist without the great [sbt-updates][sbt-updates]
-plugin to determine dependency updates and a bunch of [Typelevel][Typelevel]
-and other Scala [libraries](https://github.com/fthomas/scala-steward/blob/master/project/Dependencies.scala).
+plugin which was used until version 0.6 to find dependency updates.
+
+Thanks goes also to the maintainers and contributors of the various
+[libraries](https://github.com/fthomas/scala-steward/blob/master/project/Dependencies.scala)
+this project depends on.
 
 [**@scala-steward**][@scala-steward]'s cute profile picture is by
 [@impurepics](https://twitter.com/impurepics/).
@@ -158,4 +161,3 @@ Scala Steward is licensed under the
 [CoC]: https://github.com/fthomas/scala-steward/blob/master/CODE_OF_CONDUCT.md
 [@scala-steward]: https://github.com/scala-steward
 [sbt-updates]: https://github.com/rtimush/sbt-updates
-[Typelevel]: https://typelevel.org/
