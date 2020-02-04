@@ -3,14 +3,24 @@
 You can add `<YOUR_REPO>/.scala-steward.conf` to configure how Scala Steward updates your repository.
 
 ```properties
-# The only dependencies which match the given pattern are updated.
+# Only these dependencies which match the given patterns are updated.
+#
 # Each pattern must have `groupId`, and may have `artifactId` and `version`.
 # The version is treated as a prefix of the new version, unless it starts with
 # ".*" then it is treated as a suffix.
 # Defaults to empty `[]` which mean Scala Steward will update all dependencies.
 updates.allow  = [ { groupId = "com.example" } ]
 
+# The dependencies which match the given version pattern are updated.
+# Dependencies that are not listed will be updated.
+#
+# Each pattern must have `groupId`, `version` and optional `artifactId`.
+# Defaults to empty `[]` which mean Scala Steward will update all dependencies.
+# the following example will allow to update foo when version is 1.1.x
+updates.pin  = [ { groupId = "com.example", artifactId="foo", version = "1.1" } ]
+
 # The dependencies which match the given pattern are NOT updated.
+#
 # Each pattern must have `groupId`, and may have `artifactId` and `version`.
 # The version is treated as a prefix of the new version, unless it starts with
 # ".*" then it is treated as a suffix.

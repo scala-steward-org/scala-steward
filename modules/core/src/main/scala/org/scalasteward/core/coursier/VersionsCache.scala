@@ -16,15 +16,15 @@
 
 package org.scalasteward.core.coursier
 
+import cats.Parallel
 import cats.implicits._
-import cats.{Monad, Parallel}
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, KeyEncoder}
 import java.util.concurrent.TimeUnit
 import org.scalasteward.core.coursier.VersionsCache.{Key, Value}
 import org.scalasteward.core.data.{Dependency, Resolver, Scope, Version}
 import org.scalasteward.core.persistence.KeyValueStore
-import org.scalasteward.core.util.DateTimeAlg
+import org.scalasteward.core.util.{DateTimeAlg, MonadThrowable}
 import scala.concurrent.duration.FiniteDuration
 
 final class VersionsCache[F[_]](
@@ -35,7 +35,7 @@ final class VersionsCache[F[_]](
     coursierAlg: CoursierAlg[F],
     dateTimeAlg: DateTimeAlg[F],
     parallel: Parallel[F],
-    F: Monad[F]
+    F: MonadThrowable[F]
 ) {
   def getVersions(dependency: Scope.Dependency, maxAge: Option[FiniteDuration]): F[List[Version]] =
     dependency.resolvers
@@ -50,11 +50,15 @@ final class VersionsCache[F[_]](
     dateTimeAlg.currentTimeMillis.flatMap { now =>
       val key = Key(dependency, resolver)
       store.get(key).flatMap {
-        case Some(value) if value.age(now) <= maxAge =>
+        case Some(value) if value.age(now) <= (maxAge * value.maxAgeFactor) =>
           F.pure(value.versions)
-        case _ =>
-          coursierAlg.getVersions(Scope(dependency, List(resolver))).flatTap { versions =>
-            store.put(key, Value(now, versions))
+        case maybeValue =>
+          coursierAlg.getVersions(dependency, resolver).attempt.flatMap {
+            case Right(versions) =>
+              store.put(key, Value(now, versions, None)).as(versions)
+            case Left(throwable) =>
+              val versions = maybeValue.map(_.versions).getOrElse(List.empty)
+              store.put(key, Value(now, versions, Some(throwable.toString))).as(versions)
           }
       }
     }
@@ -75,9 +79,16 @@ object VersionsCache {
       KeyEncoder.instance(_.toString)
   }
 
-  final case class Value(updatedAt: Long, versions: List[Version]) {
+  final case class Value(
+      updatedAt: Long,
+      versions: List[Version],
+      maybeError: Option[String]
+  ) {
     def age(now: Long): FiniteDuration =
       FiniteDuration(now - updatedAt, TimeUnit.MILLISECONDS)
+
+    def maxAgeFactor: Long =
+      if (maybeError.nonEmpty && versions.isEmpty) 4L else 1L
   }
 
   object Value {

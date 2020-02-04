@@ -20,24 +20,39 @@ import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.data.Update
-import org.scalasteward.core.update.FilterAlg.{FilterResult, IgnoredByConfig, NotAllowedByConfig}
+import org.scalasteward.core.update.FilterAlg.{
+  FilterResult,
+  IgnoredByConfig,
+  NotAllowedByConfig,
+  VersionPinnedByConfig
+}
 import org.scalasteward.core.util.Nel
 
 final case class UpdatesConfig(
+    pin: List[UpdatePattern] = List.empty,
     allow: List[UpdatePattern] = List.empty,
     ignore: List[UpdatePattern] = List.empty,
     limit: Option[Int] = None
 ) {
   def keep(update: Update.Single): FilterResult =
-    isAllowed(update).flatMap(isIgnored)
+    isAllowed(update).flatMap(isPinned).flatMap(isIgnored)
 
   private def isAllowed(update: Update.Single): FilterResult = {
     val m = UpdatePattern.findMatch(allow, update, include = true)
     if (m.filteredVersions.nonEmpty) {
       Right(update.copy(newerVersions = Nel.fromListUnsafe(m.filteredVersions)))
-    } else if (m.byArtifactId.isEmpty)
+    } else if (allow.isEmpty)
       Right(update)
     else Left(NotAllowedByConfig(update))
+  }
+
+  private def isPinned(update: Update.Single): FilterResult = {
+    val m = UpdatePattern.findMatch(pin, update, include = true)
+    if (m.filteredVersions.nonEmpty) {
+      Right(update.copy(newerVersions = Nel.fromListUnsafe(m.filteredVersions)))
+    } else if (m.byArtifactId.isEmpty)
+      Right(update)
+    else Left(VersionPinnedByConfig(update))
   }
 
   private def isIgnored(update: Update.Single): FilterResult = {
