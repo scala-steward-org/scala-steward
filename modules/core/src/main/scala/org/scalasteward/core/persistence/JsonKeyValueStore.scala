@@ -17,12 +17,13 @@
 package org.scalasteward.core.persistence
 
 import better.files.File
+import cats.Monad
 import cats.implicits._
+import io.chrisdavenport.log4cats.Logger
 import io.circe.parser.decode
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder, KeyEncoder}
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
-import org.scalasteward.core.util.MonadThrowable
 
 final class JsonKeyValueStore[F[_], K, V](
     name: String,
@@ -32,15 +33,23 @@ final class JsonKeyValueStore[F[_], K, V](
     implicit
     fileAlg: FileAlg[F],
     keyEncoder: KeyEncoder[K],
+    logger: Logger[F],
     valueDecoder: Decoder[V],
     valueEncoder: Encoder[V],
     workspaceAlg: WorkspaceAlg[F],
-    F: MonadThrowable[F]
+    F: Monad[F]
 ) extends KeyValueStore[F, K, V] {
   override def get(key: K): F[Option[V]] =
-    jsonFile(key).flatMap(fileAlg.readFile).flatMap {
-      case Some(content) => F.fromEither(decode[Option[V]](content))
-      case None          => F.pure(Option.empty[V])
+    jsonFile(key).flatMap { file =>
+      fileAlg.readFile(file).flatMap {
+        case Some(content) =>
+          decode[Option[V]](content) match {
+            case Right(maybeValue) => F.pure(maybeValue)
+            case Left(error) =>
+              logger.error(error)(s"Failed to parse or decode JSON from $file").as(Option.empty[V])
+          }
+        case None => F.pure(Option.empty[V])
+      }
     }
 
   override def put(key: K, value: V): F[Unit] =
