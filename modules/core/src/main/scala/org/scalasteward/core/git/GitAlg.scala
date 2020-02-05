@@ -188,7 +188,7 @@ object GitAlg {
           branch = defaultBranch.name
           remoteBranch = s"$remote/$branch"
           _ <- exec(Nel.of("remote", "add", remote, upstreamUrl.toString), repoDir)
-          _ <- exec(Nel.of("fetch", remote, branch), repoDir)
+          _ <- exec(Nel.of("fetch", "--tags", remote, branch), repoDir)
           _ <- exec(Nel.of("checkout", "-B", branch, "--track", remoteBranch), repoDir)
           _ <- exec(Nel.of("merge", remoteBranch), repoDir)
           _ <- push(repo, defaultBranch)
