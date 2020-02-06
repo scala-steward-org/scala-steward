@@ -21,6 +21,11 @@ import cats.{Applicative, Eval, Order, Traverse}
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, Decoder, Encoder}
 
+/** A container of a value of type `A` with associated resolvers.
+  *
+  * In most cases `Scope` contains dependencies extracted from a build
+  * in which these are always defined in the context of resolvers.
+  */
 final case class Scope[A](value: A, resolvers: List[Resolver])
 
 object Scope {
@@ -30,7 +35,7 @@ object Scope {
   implicit def scopeTraverse: Traverse[Scope] =
     new Traverse[Scope] {
       override def traverse[G[_]: Applicative, A, B](fa: Scope[A])(f: A => G[B]): G[Scope[B]] =
-        f(fa.value).map(b => Scope(b, fa.resolvers))
+        f(fa.value).map(b => fa.copy(value = b))
 
       override def foldLeft[A, B](fa: Scope[A], b: B)(f: (B, A) => B): B =
         f(b, fa.value)
