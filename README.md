@@ -147,7 +147,7 @@ environments for everyone.
 Scala Steward wouldn't exist without the great [sbt-updates][sbt-updates]
 plugin which was used until version 0.6 to find dependency updates.
 
-Thanks goes also to [**@impurepics**](https://twitter.com/impurepics/)
+Thanks goes also to [**@impurepics**](https://twitter.com/impurepics)
 for [**@scala-steward**][@scala-steward]'s cute profile picture and to
 the maintainers and contributors of the various
 [libraries](https://github.com/fthomas/scala-steward/blob/master/project/Dependencies.scala)
