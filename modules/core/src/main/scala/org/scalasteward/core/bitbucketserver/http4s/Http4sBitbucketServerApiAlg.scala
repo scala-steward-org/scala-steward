@@ -19,30 +19,20 @@ package org.scalasteward.core.bitbucketserver.http4s
 import cats.data.NonEmptyList
 import cats.effect.Sync
 import cats.implicits._
-import io.circe.{Decoder, Encoder}
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+import io.circe.{Decoder, Encoder}
 import org.http4s.{Request, Uri}
-import org.scalasteward.core.git.Branch
+import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.util.HttpJsonClient
 import org.scalasteward.core.vcs.VCSApiAlg
 import org.scalasteward.core.vcs.data.PullRequestState.Open
-import org.scalasteward.core.vcs.data.{
-  AuthenticatedUser,
-  BranchOut,
-  NewPullRequestData,
-  PullRequestOut,
-  PullRequestState,
-  Repo,
-  RepoOut,
-  UserOut
-}
+import org.scalasteward.core.vcs.data._
 
 /**
   * https://docs.atlassian.com/bitbucket-server/rest/6.6.1/bitbucket-rest.html
   */
 class Http4sBitbucketServerApiAlg[F[_]: Sync](
     bitbucketApiHost: Uri,
-    user: AuthenticatedUser,
     modify: Repo => Request[F] => F[Request[F]]
 )(implicit client: HttpJsonClient[F])
     extends VCSApiAlg[F] {
@@ -75,13 +65,17 @@ class Http4sBitbucketServerApiAlg[F[_]: Sync](
   }
 
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
-    ni(s"createBranch($repo,$branch)")
+    client
+      .get[Json.Branches](url.listBranch(repo, branch), modify(repo))
+      .map((a: Json.Branches) =>
+        BranchOut(Branch(a.values.head.id), CommitOut(a.values.head.latestCommit))
+      )
 
   override def getRepo(repo: Repo): F[RepoOut] =
     for {
       r <- client.get[Json.Repo](url.repo(repo), modify(repo))
       cloneUri = r.links("clone").find(_.name.contains("http")).get.href
-    } yield RepoOut(r.name, UserOut(user.login), None, cloneUri, Branch("master"))
+    } yield RepoOut(r.name, UserOut(repo.owner), None, cloneUri, Branch("master"))
 
   override def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]] =
     client
@@ -123,12 +117,18 @@ class Http4sBitbucketServerApiAlg[F[_]: Sync](
 
     case class User(name: String)
 
+    case class Branches(values: NonEmptyList[Branch])
+
+    case class Branch(id: String, latestCommit: Sha1)
+
     implicit def pageDecode[A: Decoder]: Decoder[Page[A]] = deriveDecoder
     implicit val repoDecode: Decoder[Repo] = deriveDecoder
     implicit val projectDecode: Decoder[Project] = deriveDecoder
     implicit val linkDecoder: Decoder[Link] = deriveDecoder
     implicit val uriDecoder: Decoder[Uri] = Decoder.decodeString.map(Uri.unsafeFromString)
     implicit val prDecoder: Decoder[PR] = deriveDecoder
+    implicit val branchDecoder: Decoder[Branch] = deriveDecoder
+    implicit val branchesDecoder: Decoder[Branches] = deriveDecoder
 
     implicit val encodeNewPR: Encoder[NewPR] = deriveEncoder
     implicit val encodeRef: Encoder[Ref] = deriveEncoder
@@ -152,4 +152,9 @@ final class StashUrls(base: Uri) {
       .withQueryParam("at", head)
       .withQueryParam("limit", "1000")
       .withQueryParam("direction", "outgoing")
+
+  def branches(r: Repo): Uri = repo(r) / "branches"
+
+  def listBranch(r: Repo, branch: Branch): Uri =
+    branches(r).withQueryParam("filterText", branch.name)
 }

@@ -3,7 +3,7 @@ import sbt._
 object Dependencies {
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.8.0"
   val betterMonadicFor = "com.olegpy" %% "better-monadic-for" % "0.3.1"
-  val caseApp = "com.github.alexarchambault" %% "case-app" % "2.0.0-M11"
+  val caseApp = "com.github.alexarchambault" %% "case-app" % "2.0.0-M13"
   val catsEffect = "org.typelevel" %% "cats-effect" % "2.1.0"
   val catsKernelLaws = "org.typelevel" %% "cats-kernel-laws" % "2.1.0"
   val circeConfig = "io.circe" %% "circe-config" % "0.7.0"
@@ -17,7 +17,7 @@ object Dependencies {
   val coursierCatsInterop = "io.get-coursier" %% "coursier-cats-interop" % coursierCore.revision
   val disciplineScalatest = "org.typelevel" %% "discipline-scalatest" % "1.0.0"
   val fs2Core = "co.fs2" %% "fs2-core" % "2.2.2"
-  val http4sAsyncHttpClient = "org.http4s" %% "http4s-async-http-client" % "0.21.0-RC3"
+  val http4sAsyncHttpClient = "org.http4s" %% "http4s-async-http-client" % "0.21.0-RC4"
   val http4sCirce = "org.http4s" %% "http4s-circe" % http4sAsyncHttpClient.revision
   val http4sDsl = "org.http4s" %% "http4s-dsl" % http4sAsyncHttpClient.revision
   val kindProjector = "org.typelevel" %% "kind-projector" % "0.11.0"
