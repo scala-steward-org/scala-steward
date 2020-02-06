@@ -6,8 +6,6 @@ You can add `<YOUR_REPO>/.scala-steward.conf` to configure how Scala Steward upd
 # Only these dependencies which match the given patterns are updated.
 #
 # Each pattern must have `groupId`, and may have `artifactId` and `version`.
-# The version is treated as a prefix of the new version, unless it starts with
-# ".*" then it is treated as a suffix.
 # Defaults to empty `[]` which mean Scala Steward will update all dependencies.
 updates.allow  = [ { groupId = "com.example" } ]
 
@@ -17,13 +15,11 @@ updates.allow  = [ { groupId = "com.example" } ]
 # Each pattern must have `groupId`, `version` and optional `artifactId`.
 # Defaults to empty `[]` which mean Scala Steward will update all dependencies.
 # the following example will allow to update foo when version is 1.1.x
-updates.pin  = [ { groupId = "com.example", artifactId="foo", version = "1.1" } ]
+updates.pin  = [ { groupId = "com.example", artifactId="foo", version = "1.1." } ]
 
 # The dependencies which match the given pattern are NOT updated.
 #
 # Each pattern must have `groupId`, and may have `artifactId` and `version`.
-# The version is treated as a prefix of the new version, unless it starts with
-# ".*" then it is treated as a suffix.
 # Defaults to empty `[]` which mean Scala Steward will not ignore dependencies.
 updates.ignore = [ { groupId = "org.acme", artifactId="foo", version = "1.0" } ]
 
@@ -39,6 +35,17 @@ updates.limit = 5
 # If "never", Scala Steward will never update the PR
 # Default: "on-conflicts"
 updatePullRequests = "always" | "on-conflicts" | "never"
+```
+
+The version information given in the patterns above can be in two formats:
+1. just a `version` field that is treated as a prefix of the version
+2. a structure consisting of `prefix` and / or `suffix` that are matched against the beginning or the end of the version
+
+```properties
+version = "1.1."
+version = { prefix = "1.1." }
+version = { suffix = "jre8" }
+version = { prefix = "1.1.", suffix = "jre8" }
 ```
 
 ## Ignore lines
