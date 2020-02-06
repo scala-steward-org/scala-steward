@@ -15,7 +15,7 @@ updates.allow  = [ { groupId = "com.example" } ]
 # Each pattern must have `groupId`, `version` and optional `artifactId`.
 # Defaults to empty `[]` which mean Scala Steward will update all dependencies.
 # the following example will allow to update foo when version is 1.1.x
-updates.pin  = [ { groupId = "com.example", artifactId="foo", version = "1.1" } ]
+updates.pin  = [ { groupId = "com.example", artifactId="foo", version = "1.1." } ]
 
 # The dependencies which match the given pattern are NOT updated.
 #
@@ -35,6 +35,17 @@ updates.limit = 5
 # If "never", Scala Steward will never update the PR
 # Default: "on-conflicts"
 updatePullRequests = "always" | "on-conflicts" | "never"
+```
+
+The version information given in the patterns above can be in two formats:
+1. just a `version` field that is treated as a prefix of the version
+2. a structure consisting of `prefix` and / or `suffix` that are matched against the beginning or the end of the version
+
+```properties
+version = "1.1."
+version = { prefix = "1.1." }
+version = { suffix = "jre8" }
+version = { prefix = "1.1.", suffix = "jre8" }
 ```
 
 ## Ignore lines

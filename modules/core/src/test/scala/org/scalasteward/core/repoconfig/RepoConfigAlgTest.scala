@@ -16,7 +16,12 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
     val content =
       """|updates.allow  = [ { groupId = "eu.timepit"} ]
-         |updates.pin  = [ { groupId = "eu.timepit", artifactId = "refined", version = "0.8." } ]
+         |updates.pin  = [
+         |                 { groupId = "eu.timepit", artifactId = "refined.1", version = "0.8." },
+         |                 { groupId = "eu.timepit", artifactId = "refined.2", version = { prefix="0.8." } },
+         |                 { groupId = "eu.timepit", artifactId = "refined.3", version = { suffix="jre" } },
+         |                 { groupId = "eu.timepit", artifactId = "refined.4", version = { prefix="0.8.", suffix="jre" } }
+         |               ]
          |updates.ignore = [ { groupId = "org.acme", version = "1.0" } ]
          |updates.limit = 4
          |""".stripMargin
@@ -26,8 +31,31 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     config shouldBe RepoConfig(
       updates = UpdatesConfig(
         allow = List(UpdatePattern(GroupId("eu.timepit"), None, None)),
-        pin = List(UpdatePattern(GroupId("eu.timepit"), Some("refined"), Some("0.8."))),
-        ignore = List(UpdatePattern(GroupId("org.acme"), None, Some("1.0"))),
+        pin = List(
+          UpdatePattern(
+            GroupId("eu.timepit"),
+            Some("refined.1"),
+            Some(UpdatePattern.Version(Some("0.8."), None))
+          ),
+          UpdatePattern(
+            GroupId("eu.timepit"),
+            Some("refined.2"),
+            Some(UpdatePattern.Version(Some("0.8."), None))
+          ),
+          UpdatePattern(
+            GroupId("eu.timepit"),
+            Some("refined.3"),
+            Some(UpdatePattern.Version(None, Some("jre")))
+          ),
+          UpdatePattern(
+            GroupId("eu.timepit"),
+            Some("refined.4"),
+            Some(UpdatePattern.Version(Some("0.8."), Some("jre")))
+          )
+        ),
+        ignore = List(
+          UpdatePattern(GroupId("org.acme"), None, Some(UpdatePattern.Version(Some("1.0"), None)))
+        ),
         limit = Some(4)
       )
     )

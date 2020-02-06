@@ -78,8 +78,12 @@ class FilterAlgTest extends AnyFunSuite with Matchers {
     val config = RepoConfig(
       updates = UpdatesConfig(
         pin = List(
-          UpdatePattern(update1.groupId, None, Some("0.17")),
-          UpdatePattern(update2.groupId, Some("refined"), Some("0.8"))
+          UpdatePattern(update1.groupId, None, Some(UpdatePattern.Version(Some("0.17"), None))),
+          UpdatePattern(
+            update2.groupId,
+            Some("refined"),
+            Some(UpdatePattern.Version(Some("0.8"), None))
+          )
         )
       )
     )
@@ -107,7 +111,7 @@ class FilterAlgTest extends AnyFunSuite with Matchers {
     val config = RepoConfig(
       updates = UpdatesConfig(
         allow = List(
-          UpdatePattern(GroupId("org.my1"), None, Some("0.8")),
+          UpdatePattern(GroupId("org.my1"), None, Some(UpdatePattern.Version(Some("0.8"), None))),
           UpdatePattern(GroupId("org.my2"), None, None),
           UpdatePattern(GroupId("org.my3"), Some("artifact"), None)
         )
@@ -120,5 +124,86 @@ class FilterAlgTest extends AnyFunSuite with Matchers {
       .unsafeRunSync()
 
     filtered shouldBe included
+  }
+
+  test("ignore update via config updates.pin using suffix") {
+    val update =
+      Single(
+        "com.microsoft.sqlserver" % "mssql-jdbc" % "7.2.2.jre8",
+        Nel.of("7.2.2.jre11", "7.3.0.jre8", "7.3.0.jre11")
+      )
+
+    val config = RepoConfig(
+      updates = UpdatesConfig(
+        pin = List(
+          UpdatePattern(
+            update.groupId,
+            Some(update.artifactId.name),
+            Some(UpdatePattern.Version(None, Some("jre8")))
+          )
+        )
+      )
+    )
+
+    val filtered = filterAlg
+      .localFilterMany(config, List(update))
+      .runA(MockState.empty)
+      .unsafeRunSync()
+
+    filtered shouldBe List(update.copy(newerVersions = Nel.of("7.3.0.jre8")))
+  }
+
+  test("ignore update via config updates.ignore using suffix") {
+    val update =
+      Single(
+        "com.microsoft.sqlserver" % "mssql-jdbc" % "7.2.2.jre8",
+        Nel.of("7.2.2.jre11", "7.3.0.jre8", "7.3.0.jre11")
+      )
+
+    val config = RepoConfig(
+      updates = UpdatesConfig(
+        ignore = List(
+          UpdatePattern(
+            update.groupId,
+            Some(update.artifactId.name),
+            Some(UpdatePattern.Version(None, Some("jre11")))
+          )
+        )
+      )
+    )
+
+    val filtered = filterAlg
+      .localFilterMany(config, List(update))
+      .runA(MockState.empty)
+      .unsafeRunSync()
+
+    filtered shouldBe List(update.copy(newerVersions = Nel.of("7.3.0.jre8")))
+  }
+
+  test("ignore update via config updates.pin using prefix and suffix") {
+    val update =
+      Single(
+        "com.microsoft.sqlserver" % "mssql-jdbc" % "7.2.2.jre8",
+        Nel.of("7.2.2.jre11", "7.3.0.jre8", "7.3.0.jre11")
+      )
+
+    val config = RepoConfig(
+      updates = UpdatesConfig(
+        pin = List(
+          UpdatePattern(
+            update.groupId,
+            Some(update.artifactId.name),
+            Some(UpdatePattern.Version(Some("7.2."), Some("jre8")))
+          )
+        )
+      )
+    )
+
+    val filtered = filterAlg
+      .localFilterMany(config, List(update))
+      .runA(MockState.empty)
+      .unsafeRunSync()
+
+    filtered shouldBe List()
   }
 }

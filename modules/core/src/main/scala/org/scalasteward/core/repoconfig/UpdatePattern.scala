@@ -18,31 +18,55 @@ package org.scalasteward.core.repoconfig
 
 import cats.implicits._
 import io.circe.generic.semiauto._
-import io.circe.{Decoder, Encoder}
+import io.circe.{Decoder, Encoder, HCursor}
 import org.scalasteward.core.data.{GroupId, Update}
 
 final case class UpdatePattern(
     groupId: GroupId,
     artifactId: Option[String],
-    version: Option[String]
+    version: Option[UpdatePattern.Version]
 )
 
 object UpdatePattern {
   final case class MatchResult(
       byArtifactId: List[UpdatePattern],
-      byVersion: List[UpdatePattern]
+      filteredVersions: List[String]
   )
 
-  def findMatch(patterns: List[UpdatePattern], update: Update.Single): MatchResult = {
+  final case class Version(prefix: Option[String], suffix: Option[String]) {
+    def matches(version: String): Boolean =
+      suffix.forall(version.endsWith) && prefix.forall(version.startsWith)
+  }
+
+  def findMatch(
+      patterns: List[UpdatePattern],
+      update: Update.Single,
+      include: Boolean
+  ): MatchResult = {
     val byGroupId = patterns.filter(_.groupId === update.groupId)
     val byArtifactId = byGroupId.filter(_.artifactId.forall(_ === update.artifactId.name))
-    val byVersion = byArtifactId.filter(_.version.forall(update.nextVersion.startsWith))
-    MatchResult(byArtifactId, byVersion)
+    val filteredVersions = update.newerVersions.filter(newVersion =>
+      byArtifactId.exists(_.version.forall(_.matches(newVersion))) === include
+    )
+    MatchResult(byArtifactId, filteredVersions)
   }
 
   implicit val updatePatternDecoder: Decoder[UpdatePattern] =
     deriveDecoder
 
   implicit val updatePatternEncoder: Encoder[UpdatePattern] =
+    deriveEncoder
+
+  implicit val updatePatternVersionDecoder: Decoder[Version] =
+    Decoder[String]
+      .map(s => Version(Some(s), None))
+      .or((hCursor: HCursor) =>
+        for {
+          prefix <- hCursor.downField("prefix").as[Option[String]]
+          suffix <- hCursor.downField("suffix").as[Option[String]]
+        } yield Version(prefix, suffix)
+      )
+
+  implicit val updatePatternVersionEncoder: Encoder[Version] =
     deriveEncoder
 }

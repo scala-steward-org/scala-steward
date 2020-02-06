@@ -71,7 +71,7 @@ object FilterAlg {
       .flatMap(checkVersionOrdering)
 
   private def localFilter(update: Update.Single, repoConfig: RepoConfig): FilterResult =
-    globalFilter(update).flatMap(repoConfig.updates.keep)
+    repoConfig.updates.keep(update).flatMap(globalFilter)
 
   def isIgnoredGlobally(dependency: Dependency): Boolean =
     ((dependency.groupId.value, dependency.artifactId.name) match {
@@ -148,6 +148,7 @@ object FilterAlg {
           // https://github.com/scala-js/scala-js/issues/3865
           "0.6.30"
         ).contains
-      case _ => _ => false
+      case _ =>
+        _ => false
     }
 }

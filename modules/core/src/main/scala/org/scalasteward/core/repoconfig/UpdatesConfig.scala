@@ -16,7 +16,6 @@
 
 package org.scalasteward.core.repoconfig
 
-import cats.implicits._
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 import io.circe.{Decoder, Encoder}
@@ -27,6 +26,7 @@ import org.scalasteward.core.update.FilterAlg.{
   NotAllowedByConfig,
   VersionPinnedByConfig
 }
+import org.scalasteward.core.util.Nel
 
 final case class UpdatesConfig(
     pin: List[UpdatePattern] = List.empty,
@@ -35,26 +35,32 @@ final case class UpdatesConfig(
     limit: Option[Int] = None
 ) {
   def keep(update: Update.Single): FilterResult =
-    isAllowed(update) *> isPinned(update) *> isIgnored(update)
+    isAllowed(update).flatMap(isPinned).flatMap(isIgnored)
 
   private def isAllowed(update: Update.Single): FilterResult = {
-    lazy val matched = UpdatePattern.findMatch(allow, update)
-    val isIncluded = allow.isEmpty || matched.byVersion.nonEmpty
-    Either.cond(isIncluded, update, NotAllowedByConfig(update))
+    val m = UpdatePattern.findMatch(allow, update, include = true)
+    if (m.filteredVersions.nonEmpty) {
+      Right(update.copy(newerVersions = Nel.fromListUnsafe(m.filteredVersions)))
+    } else if (allow.isEmpty)
+      Right(update)
+    else Left(NotAllowedByConfig(update))
   }
 
   private def isPinned(update: Update.Single): FilterResult = {
-    val m = UpdatePattern.findMatch(pin, update)
-    Either.cond(
-      m.byArtifactId.isEmpty || m.byVersion.nonEmpty,
-      update,
-      VersionPinnedByConfig(update)
-    )
+    val m = UpdatePattern.findMatch(pin, update, include = true)
+    if (m.filteredVersions.nonEmpty) {
+      Right(update.copy(newerVersions = Nel.fromListUnsafe(m.filteredVersions)))
+    } else if (m.byArtifactId.isEmpty)
+      Right(update)
+    else Left(VersionPinnedByConfig(update))
   }
 
   private def isIgnored(update: Update.Single): FilterResult = {
-    val m = UpdatePattern.findMatch(ignore, update)
-    if (m.byVersion.nonEmpty) Left(IgnoredByConfig(update)) else Right(update)
+    val m = UpdatePattern.findMatch(ignore, update, include = false)
+    if (m.filteredVersions.nonEmpty)
+      Right(update.copy(newerVersions = Nel.fromListUnsafe(m.filteredVersions)))
+    else
+      Left(IgnoredByConfig(update))
   }
 }
 
