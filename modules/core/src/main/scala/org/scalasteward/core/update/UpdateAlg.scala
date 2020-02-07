@@ -21,14 +21,15 @@ import cats.implicits._
 import org.scalasteward.core.coursier.VersionsCache
 import org.scalasteward.core.data._
 import org.scalasteward.core.repoconfig.RepoConfig
-import org.scalasteward.core.update.UpdateAlg._
 import org.scalasteward.core.util.Nel
 import scala.concurrent.duration.FiniteDuration
+import org.scalasteward.core.update.GroupMigrations
 
 final class UpdateAlg[F[_]](
     implicit
     filterAlg: FilterAlg[F],
     versionsCache: VersionsCache[F],
+    groupMigrations: GroupMigrations[F],
     F: Monad[F]
 ) {
   def findUpdate(
@@ -42,7 +43,8 @@ final class UpdateAlg[F[_]](
       maybeUpdate0 = maybeNewerVersions.map { newerVersions =>
         Update.Single(CrossDependency(dependency.value), newerVersions.map(_.value))
       }
-      maybeUpdate1 = maybeUpdate0.orElse(findUpdateWithNewerGroupId(dependency.value))
+      migratedUpdate = groupMigrations.findUpdateWithNewerGroupId(dependency.value)
+      maybeUpdate1 = maybeUpdate0.orElse(migratedUpdate)
     } yield maybeUpdate1
 
   def findUpdates(
@@ -61,19 +63,5 @@ object UpdateAlg {
       update.groupId === dependency.groupId &&
       update.currentVersion === dependency.version &&
       update.artifactIds.contains_(dependency.artifactId)
-    }
-
-  def findUpdateWithNewerGroupId(dependency: Dependency): Option[Update.Single] =
-    newerGroupId(dependency.groupId, dependency.artifactId).map {
-      case (groupId, version) =>
-        Update.Single(CrossDependency(dependency), Nel.one(version), Some(groupId))
-    }
-
-  private def newerGroupId(groupId: GroupId, artifactId: ArtifactId): Option[(GroupId, String)] =
-    Some((groupId.value, artifactId.name)).collect {
-      case ("com.geirsson", "sbt-scalafmt")       => (GroupId("org.scalameta"), "2.0.0")
-      case ("com.github.mpilquist", "simulacrum") => (GroupId("org.typelevel"), "1.0.0")
-      case ("net.ceedubs", "ficus")               => (GroupId("com.iheart"), "1.3.4")
-      case ("org.spire-math", "kind-projector")   => (GroupId("org.typelevel"), "0.10.0")
     }
 }

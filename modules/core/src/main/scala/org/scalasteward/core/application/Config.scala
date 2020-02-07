@@ -64,6 +64,7 @@ final case class Config(
     envVars: List[EnvVar],
     processTimeout: FiniteDuration,
     scalafixMigrations: Option[File],
+    groupMigrations: Option[File],
     cacheTtl: FiniteDuration,
     cacheMissDelay: FiniteDuration,
     bitbucketServerUseDefaultReviewers: Boolean
@@ -98,6 +99,7 @@ object Config {
         envVars = args.envVar,
         processTimeout = args.processTimeout,
         scalafixMigrations = args.scalafixMigrations.map(_.toFile),
+        groupMigrations = args.groupMigrations.map(_.toFile),
         cacheTtl = args.cacheTtl,
         cacheMissDelay = args.cacheMissDelay,
         bitbucketServerUseDefaultReviewers = args.bitbucketServerUseDefaultReviewers
