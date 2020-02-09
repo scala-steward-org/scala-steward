@@ -47,6 +47,12 @@ package object scalafix {
         Nel.of("github:spotify/scio/MigrateV0_8?sha=v0.8.0")
       ),
       Migration(
+        GroupId("dev.zio"),
+        Nel.of("zio-test"),
+        Version("1.0.0-RC17"),
+        Nel.of("github:zio/zio/CurriedAssert")
+      ),
+      Migration(
         GroupId("org.http4s"),
         Nel.of("http4s-.*"),
         Version("0.20.0"),
