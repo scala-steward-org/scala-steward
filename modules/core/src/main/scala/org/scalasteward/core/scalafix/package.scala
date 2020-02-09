@@ -49,7 +49,7 @@ package object scalafix {
       Migration(
         GroupId("dev.zio"),
         Nel.of("zio-test"),
-        Version("1.0.0-RC17"),
+        Version("1.0.0-RC18"),
         Nel.of("github:zio/zio/CurriedAssert")
       ),
       Migration(
