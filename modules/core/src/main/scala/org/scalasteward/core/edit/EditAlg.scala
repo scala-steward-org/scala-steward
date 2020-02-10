@@ -58,7 +58,7 @@ final class EditAlg[F[_]](
   }
 
   def applyScalafixMigrations(repo: Repo, update: Update): F[Unit] =
-    Nel.fromList(migrationAlg.findMigrations(update)).fold(F.unit) { migrations =>
+    Nel.fromList(migrationAlg.findMigrations(update)).traverse_ { migrations =>
       logger.info(s"Applying migrations: $migrations") >> sbtAlg.runMigrations(repo, migrations)
     }
 }
