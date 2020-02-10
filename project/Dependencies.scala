@@ -8,7 +8,7 @@ object Dependencies {
   val catsKernelLaws = "org.typelevel" %% "cats-kernel-laws" % "2.1.0"
   val circeConfig = "io.circe" %% "circe-config" % "0.7.0"
   val circeGeneric = "io.circe" %% "circe-generic" % "0.13.0"
-  val circeGenericExtras = "io.circe" %% "circe-generic-extras" % "0.12.2"
+  val circeGenericExtras = "io.circe" %% "circe-generic-extras" % "0.13.0"
   val circeLiteral = "io.circe" %% "circe-literal" % circeGeneric.revision
   val circeParser = "io.circe" %% "circe-parser" % circeGeneric.revision
   val circeRefined = "io.circe" %% "circe-refined" % circeGeneric.revision
