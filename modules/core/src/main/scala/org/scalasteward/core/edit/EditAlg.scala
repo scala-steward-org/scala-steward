@@ -32,10 +32,10 @@ final class EditAlg[F[_]](
     implicit
     fileAlg: FileAlg[F],
     logger: Logger[F],
+    migrationAlg: MigrationAlg,
     sbtAlg: SbtAlg[F],
     streamCompiler: Stream.Compiler[F, F],
     workspaceAlg: WorkspaceAlg[F],
-    migrationAlg: MigrationAlg[F],
     F: MonadThrowable[F]
 ) {
   def applyUpdate(repo: Repo, update: Update): F[Unit] =
@@ -58,9 +58,7 @@ final class EditAlg[F[_]](
   }
 
   def applyScalafixMigrations(repo: Repo, update: Update): F[Unit] =
-    migrationAlg.findMigrations(update) >>= { migrationsList =>
-      Nel.fromList(migrationsList).fold(F.unit) { migrations =>
-        logger.info(s"Applying migrations: $migrations") >> sbtAlg.runMigrations(repo, migrations)
-      }
+    Nel.fromList(migrationAlg.findMigrations(update)).fold(F.unit) { migrations =>
+      logger.info(s"Applying migrations: $migrations") >> sbtAlg.runMigrations(repo, migrations)
     }
 }

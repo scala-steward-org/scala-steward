@@ -63,7 +63,8 @@ object MockContext {
   implicit val user: AuthenticatedUser = AuthenticatedUser("scala-steward", "token")
   implicit val vcsRepoAlg: VCSRepoAlg[MockEff] = VCSRepoAlg.create(config, gitAlg)
   implicit val scalafmtAlg: ScalafmtAlg[MockEff] = ScalafmtAlg.create
-  implicit val migrationAlg: MigrationAlg[MockEff] = MigrationAlg.create
+  implicit val migrationAlg: MigrationAlg =
+    MigrationAlg.create[MockEff](config.scalafixMigrations).runA(MockState.empty).unsafeRunSync()
   implicit val cacheRepository: RepoCacheRepository[MockEff] =
     new RepoCacheRepository[MockEff](new JsonKeyValueStore("repo_cache", "1"))
   implicit val filterAlg: FilterAlg[MockEff] = new FilterAlg[MockEff]

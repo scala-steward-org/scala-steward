@@ -16,12 +16,11 @@
 
 package org.scalasteward.core
 
-import cats.effect.{IO, Resource}
+import cats.effect.IO
 import cats.implicits._
 import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId, Version}
 import org.scalasteward.core.io.FileData
 import org.scalasteward.core.sbt.data.SbtVersion
-import scala.io.Source
 
 package object sbt {
   val defaultScalaBinaryVersion: String =
@@ -49,9 +48,8 @@ package object sbt {
     val name = "StewardPlugin.scala"
     // I don't consider reading a resource as side-effect,
     // so it is OK to call `unsafeRunSync` here.
-    Resource
-      .fromAutoCloseable(IO(Source.fromResource(s"org/scalasteward/plugin/$name")))
-      .use(src => IO(FileData(name, src.mkString)))
+    io.readResource[IO](s"org/scalasteward/plugin/$name")
+      .map(content => FileData(name, content))
       .unsafeRunSync()
   }
 }
