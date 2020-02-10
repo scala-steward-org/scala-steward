@@ -123,7 +123,9 @@ object FileAlg {
         F.delay(if (file.exists) Some(file.contentAsString) else None)
 
       override def readResource(resource: String): F[String] =
-        readResourceImpl[F](resource)
+        Resource
+          .fromAutoCloseable(F.delay(Source.fromResource(resource)))
+          .use(src => F.delay(src.mkString))
 
       override def walk(dir: File): Stream[F, File] =
         Stream.eval(F.delay(dir.walk())).flatMap(Stream.fromIterator(_))
@@ -133,9 +135,4 @@ object FileAlg {
           file.parentOption.fold(F.unit)(ensureExists(_).void) >>
           F.delay(file.write(content)).void
     }
-
-  def readResourceImpl[F[_]](resource: String)(implicit F: Sync[F]): F[String] =
-    Resource
-      .fromAutoCloseable(F.delay(Source.fromResource(resource)))
-      .use(src => F.delay(src.mkString))
 }

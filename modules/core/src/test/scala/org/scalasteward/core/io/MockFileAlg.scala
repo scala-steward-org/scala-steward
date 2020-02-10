@@ -42,7 +42,7 @@ class MockFileAlg extends FileAlg[MockEff] {
   override def readResource(resource: String): MockEff[String] =
     for {
       _ <- StateT.modify[IO, MockState](_.exec(List("read", s"classpath:$resource")))
-      content <- StateT.liftF(FileAlg.readResourceImpl[IO](resource))
+      content <- StateT.liftF(FileAlgTest.ioFileAlg.readResource(resource))
     } yield content
 
   override def walk(dir: File): Stream[MockEff, File] = {
