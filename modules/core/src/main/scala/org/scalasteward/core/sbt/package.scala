@@ -16,12 +16,11 @@
 
 package org.scalasteward.core
 
-import cats.effect.{IO, Resource}
+import cats.Functor
 import cats.implicits._
 import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId, Version}
-import org.scalasteward.core.io.FileData
+import org.scalasteward.core.io.{FileAlg, FileData}
 import org.scalasteward.core.sbt.data.SbtVersion
-import scala.io.Source
 
 package object sbt {
   val defaultScalaBinaryVersion: String =
@@ -45,13 +44,8 @@ package object sbt {
       """addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.11")"""
     )
 
-  val stewardPlugin: FileData = {
+  def stewardPlugin[F[_]](implicit fileAlg: FileAlg[F], F: Functor[F]): F[FileData] = {
     val name = "StewardPlugin.scala"
-    // I don't consider reading a resource as side-effect,
-    // so it is OK to call `unsafeRunSync` here.
-    Resource
-      .fromAutoCloseable(IO(Source.fromResource(s"org/scalasteward/plugin/$name")))
-      .use(src => IO(FileData(name, src.mkString)))
-      .unsafeRunSync()
+    fileAlg.readResource(s"org/scalasteward/plugin/$name").map(FileData(name, _))
   }
 }
