@@ -39,6 +39,12 @@ class MockFileAlg extends FileAlg[MockEff] {
   override def readFile(file: File): MockEff[Option[String]] =
     applyPure(s => (s.exec(List("read", file.pathAsString)), s.files.get(file)))
 
+  override def readResource(resource: String): MockEff[String] =
+    for {
+      _ <- StateT.modify[IO, MockState](_.exec(List("read", s"classpath:$resource")))
+      content <- StateT.liftF(FileAlg.readResourceImpl[IO](resource))
+    } yield content
+
   override def walk(dir: File): Stream[MockEff, File] = {
     val dirAsString = dir.pathAsString
     val state: MockEff[List[File]] = StateT.inspect {

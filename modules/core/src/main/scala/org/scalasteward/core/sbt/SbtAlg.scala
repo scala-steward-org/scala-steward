@@ -69,7 +69,8 @@ object SbtAlg {
         }
 
       override def addGlobalPlugins[A](fa: F[A]): F[A] =
-        logger.info("Add global sbt plugins") >> addGlobalPluginTemporarily(stewardPlugin)(fa)
+        logger.info("Add global sbt plugins") >>
+          stewardPlugin.flatMap(addGlobalPluginTemporarily(_)(fa))
 
       override def getSbtVersion(repo: Repo): F[Option[SbtVersion]] =
         for {
