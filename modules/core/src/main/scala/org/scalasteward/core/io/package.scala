@@ -17,10 +17,8 @@
 package org.scalasteward.core
 
 import better.files.File
-import cats.effect.{Resource, Sync}
 import cats.implicits._
 import org.scalasteward.core.data.{GroupId, Update}
-import scala.io.Source
 
 package object io {
   def isSourceFile(update: Update)(file: File): Boolean = {
@@ -50,9 +48,4 @@ package object io {
   private def isScalafmtCoreUpdate(update: Update): Boolean =
     update.groupId === GroupId("org.scalameta") &&
       update.artifactIds.exists(_.name === "scalafmt-core")
-
-  def readResource[F[_]](resource: String)(implicit F: Sync[F]): F[String] =
-    Resource
-      .fromAutoCloseable(F.delay(Source.fromResource(resource)))
-      .use(src => F.delay(src.mkString))
 }

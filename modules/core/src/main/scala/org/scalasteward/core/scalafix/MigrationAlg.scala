@@ -17,11 +17,12 @@
 package org.scalasteward.core.scalafix
 
 import better.files.File
+import cats.data.OptionT
 import cats.effect.Sync
 import cats.implicits._
 import io.circe.config.parser.decode
 import org.scalasteward.core.data.{Update, Version}
-import org.scalasteward.core.io.{readResource, FileAlg}
+import org.scalasteward.core.io.FileAlg
 import org.scalasteward.core.util.{ApplicativeThrowable, MonadThrowable}
 
 trait MigrationAlg {
@@ -43,26 +44,20 @@ object MigrationAlg {
 
   def loadMigrations[F[_]](
       extraMigrations: Option[File]
-  )(implicit fileAlg: FileAlg[F], F: Sync[F]): F[List[Migration]] =
+  )(implicit fileAlg: FileAlg[F], F: MonadThrowable[F]): F[List[Migration]] =
     for {
-      default <- loadDefaultMigrations[F]
-      maybeExtra <- extraMigrations.flatTraverse(loadExtraMigrations[F])
+      default <- fileAlg
+        .readResource("scalafix-migrations.conf")
+        .flatMap(decodeMigrations[F](_, "default"))
+      maybeExtra <- OptionT(extraMigrations.flatTraverse(fileAlg.readFile))
+        .semiflatMap(decodeMigrations[F](_, "extra"))
+        .value
       migrations = maybeExtra match {
         case Some(extra) if extra.disableDefaults => extra.migrations
         case Some(extra)                          => default.migrations ++ extra.migrations
         case None                                 => default.migrations
       }
     } yield migrations
-
-  private def loadDefaultMigrations[F[_]](implicit F: Sync[F]): F[ScalafixMigrations] =
-    readResource[F]("scalafix-migrations.conf").flatMap(decodeMigrations[F](_, "default"))
-
-  private def loadExtraMigrations[F[_]](file: File)(
-      implicit
-      fileAlg: FileAlg[F],
-      F: MonadThrowable[F]
-  ): F[Option[ScalafixMigrations]] =
-    fileAlg.readFile(file).flatMap(_.traverse(decodeMigrations[F](_, "extra")))
 
   private def decodeMigrations[F[_]](content: String, tpe: String)(
       implicit F: ApplicativeThrowable[F]
