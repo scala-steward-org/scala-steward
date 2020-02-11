@@ -19,13 +19,12 @@ package org.scalasteward.core.vcs
 import cats.Monad
 import cats.implicits._
 import org.http4s.Uri
-import org.scalasteward.core.data.Update
+import org.scalasteward.core.data.{ReleaseRelatedUrl, Update}
 import org.scalasteward.core.util.HttpExistenceClient
 import org.scalasteward.core.vcs
 
 trait VCSExtraAlg[F[_]] {
-  def getBranchCompareUrl(repoUrl: Uri, update: Update): F[Option[Uri]]
-  def getReleaseNoteUrl(repoUrl: Uri, update: Update): F[Option[Uri]]
+  def getReleaseRelatedUrls(repoUrl: Uri, update: Update): F[List[ReleaseRelatedUrl]]
 }
 
 object VCSExtraAlg {
@@ -34,10 +33,10 @@ object VCSExtraAlg {
       existenceClient: HttpExistenceClient[F],
       F: Monad[F]
   ): VCSExtraAlg[F] = new VCSExtraAlg[F] {
-    override def getBranchCompareUrl(repoUrl: Uri, update: Update): F[Option[Uri]] =
-      vcs.possibleCompareUrls(repoUrl, update).findM(existenceClient.exists)
+    override def getReleaseRelatedUrls(repoUrl: Uri, update: Update): F[List[ReleaseRelatedUrl]] =
+      vcs
+        .possibleReleaseRelatedUrls(repoUrl, update)
+        .filterA(releaseRelatedUrl => existenceClient.exists(releaseRelatedUrl.url))
 
-    override def getReleaseNoteUrl(repoUrl: Uri, update: Update): F[Option[Uri]] =
-      vcs.possibleChangelogUrls(repoUrl, update).findM(existenceClient.exists)
   }
 }

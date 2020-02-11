@@ -7,7 +7,7 @@ import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.Update
+import org.scalasteward.core.data.{ReleaseRelatedUrl, Update}
 import org.scalasteward.core.mock.MockContext.config
 import org.scalasteward.core.util.{HttpExistenceClient, Nel}
 import org.scalatest.funsuite.AnyFunSuite
@@ -32,13 +32,15 @@ class VCSExtraAlgTest extends AnyFunSuite with Matchers {
 
   test("getBranchCompareUrl") {
     vcsExtraAlg
-      .getBranchCompareUrl(uri"https://github.com/foo/foo", updateFoo)
-      .unsafeRunSync() shouldBe None
+      .getReleaseRelatedUrls(uri"https://github.com/foo/foo", updateFoo)
+      .unsafeRunSync() shouldBe List.empty
     vcsExtraAlg
-      .getBranchCompareUrl(uri"https://github.com/foo/bar", updateBar)
-      .unsafeRunSync() shouldBe Some(uri"https://github.com/foo/bar/compare/v0.1.0...v0.2.0")
+      .getReleaseRelatedUrls(uri"https://github.com/foo/bar", updateBar)
+      .unsafeRunSync() shouldBe List(
+      ReleaseRelatedUrl.VersionDiff(uri"https://github.com/foo/bar/compare/v0.1.0...v0.2.0")
+    )
     vcsExtraAlg
-      .getBranchCompareUrl(uri"https://github.com/foo/buz", updateBuz)
-      .unsafeRunSync() shouldBe None
+      .getReleaseRelatedUrls(uri"https://github.com/foo/buz", updateBuz)
+      .unsafeRunSync() shouldBe List.empty
   }
 }

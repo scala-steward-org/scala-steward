@@ -17,13 +17,14 @@
 package org.scalasteward.core.io
 
 import better.files.File
-import cats.effect.Sync
+import cats.effect.{Resource, Sync}
 import cats.implicits._
 import cats.{Functor, Traverse}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import org.apache.commons.io.FileUtils
 import org.scalasteward.core.util.MonadThrowable
+import scala.io.Source
 
 trait FileAlg[F[_]] {
   def createTemporarily[A](file: File, content: String)(fa: F[A]): F[A]
@@ -41,6 +42,8 @@ trait FileAlg[F[_]] {
   def removeTemporarily[A](file: File)(fa: F[A]): F[A]
 
   def readFile(file: File): F[Option[String]]
+
+  def readResource(resource: String): F[String]
 
   def walk(dir: File): Stream[F, File]
 
@@ -118,6 +121,11 @@ object FileAlg {
 
       override def readFile(file: File): F[Option[String]] =
         F.delay(if (file.exists) Some(file.contentAsString) else None)
+
+      override def readResource(resource: String): F[String] =
+        Resource
+          .fromAutoCloseable(F.delay(Source.fromResource(resource)))
+          .use(src => F.delay(src.mkString))
 
       override def walk(dir: File): Stream[F, File] =
         Stream.eval(F.delay(dir.walk())).flatMap(Stream.fromIterator(_))

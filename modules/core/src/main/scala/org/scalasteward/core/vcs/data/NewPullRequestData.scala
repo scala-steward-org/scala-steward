@@ -20,7 +20,7 @@ import cats.implicits._
 import io.circe.Encoder
 import io.circe.generic.semiauto._
 import org.http4s.Uri
-import org.scalasteward.core.data.{GroupId, SemVer, Update}
+import org.scalasteward.core.data.{GroupId, ReleaseRelatedUrl, SemVer, Update}
 import org.scalasteward.core.git
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.nurture.UpdateData
@@ -42,8 +42,7 @@ object NewPullRequestData {
   def bodyFor(
       update: Update,
       artifactIdToUrl: Map[String, Uri],
-      branchCompareUrl: Option[Uri],
-      releaseNoteUrl: Option[Uri],
+      releaseRelatedUrls: List[ReleaseRelatedUrl],
       migrations: List[Migration]
   ): String = {
     val artifacts = artifactsWithOptionalUrl(update, artifactIdToUrl)
@@ -52,8 +51,8 @@ object NewPullRequestData {
     val labels =
       Nel.fromList(List(updateType(update)) ++ semVerLabel(update).toList ++ migrationLabel.toList)
 
-    s"""|Updates $artifacts ${fromTo(update, branchCompareUrl)}.
-        |${releaseNote(releaseNoteUrl).getOrElse("")}
+    s"""|Updates $artifacts ${fromTo(update)}.
+        |${releaseNote(releaseRelatedUrls).getOrElse("")}
         |
         |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
         |
@@ -77,18 +76,25 @@ object NewPullRequestData {
       "library-update"
   }
 
-  def releaseNote(releaseNoteUrl: Option[Uri]): Option[String] =
-    releaseNoteUrl.map { url =>
-      s"[Release Notes/Changelog](${url.renderString})"
-    }
+  def releaseNote(releaseRelatedUrls: List[ReleaseRelatedUrl]): Option[String] =
+    if (releaseRelatedUrls.isEmpty) None
+    else
+      releaseRelatedUrls
+        .map { url =>
+          url match {
+            case ReleaseRelatedUrl.CustomChangelog(url) => s"[Changelog](${url.renderString})"
+            case ReleaseRelatedUrl.CustomReleaseNotes(url) =>
+              s"[Release Notes](${url.renderString})"
+            case ReleaseRelatedUrl.GitHubReleaseNotes(url) =>
+              s"[GitHub Release Notes](${url.renderString})"
+            case ReleaseRelatedUrl.VersionDiff(url) => s"[Version Diff](${url.renderString})"
+          }
+        }
+        .mkString(" - ")
+        .some
 
-  def fromTo(update: Update, branchCompareUrl: Option[Uri]): String = {
-    val fromToVersions = s"from ${update.currentVersion} to ${update.nextVersion}"
-    branchCompareUrl match {
-      case None             => fromToVersions
-      case Some(compareUrl) => s"[${fromToVersions}](${compareUrl.renderString})"
-    }
-  }
+  def fromTo(update: Update): String =
+    s"from ${update.currentVersion} to ${update.nextVersion}"
 
   def artifactsWithOptionalUrl(update: Update, artifactIdToUrl: Map[String, Uri]): String =
     update match {
@@ -146,8 +152,7 @@ object NewPullRequestData {
       data: UpdateData,
       branchName: String,
       artifactIdToUrl: Map[String, Uri] = Map.empty,
-      branchCompareUrl: Option[Uri] = None,
-      releaseNoteUrl: Option[Uri] = None,
+      releaseRelatedUrls: List[ReleaseRelatedUrl] = List.empty,
       migrations: List[Migration] = List.empty
   ): NewPullRequestData =
     NewPullRequestData(
@@ -155,8 +160,7 @@ object NewPullRequestData {
       body = bodyFor(
         data.update,
         artifactIdToUrl,
-        branchCompareUrl,
-        releaseNoteUrl,
+        releaseRelatedUrls,
         migrations
       ),
       head = branchName,

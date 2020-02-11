@@ -3,7 +3,7 @@ package org.scalasteward.core.vcs.data
 import io.circe.syntax._
 import org.http4s.syntax.literals._
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.{Update, Version}
+import org.scalasteward.core.data.{ReleaseRelatedUrl, Update, Version}
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.nurture.UpdateData
 import org.scalasteward.core.repoconfig.RepoConfig
@@ -39,21 +39,33 @@ class NewPullRequestDataTest extends AnyFunSuite with Matchers {
 
   test("fromTo") {
     NewPullRequestData.fromTo(
-      Update.Single("com.example" % "foo" % "1.2.0", Nel.of("1.2.3")),
-      None
+      Update.Single("com.example" % "foo" % "1.2.0", Nel.of("1.2.3"))
     ) shouldBe "from 1.2.0 to 1.2.3"
-
-    NewPullRequestData.fromTo(
-      Update.Group("com.example" % Nel.of("foo", "bar") % "1.2.0", Nel.of("1.2.3")),
-      Some(uri"http://example.com/compare/v1.2.0...v1.2.3")
-    ) shouldBe "[from 1.2.0 to 1.2.3](http://example.com/compare/v1.2.0...v1.2.3)"
   }
 
   test("links to release notes/changelog") {
-    NewPullRequestData.releaseNote(None) shouldBe None
+    NewPullRequestData.releaseNote(List.empty) shouldBe None
 
-    NewPullRequestData.releaseNote(Some(uri"https://github.com/foo/foo/CHANGELOG.rst")) shouldBe Some(
-      "[Release Notes/Changelog](https://github.com/foo/foo/CHANGELOG.rst)"
+    NewPullRequestData.releaseNote(
+      List(ReleaseRelatedUrl.CustomChangelog(uri"https://github.com/foo/foo/CHANGELOG.rst"))
+    ) shouldBe Some(
+      "[Changelog](https://github.com/foo/foo/CHANGELOG.rst)"
+    )
+
+    NewPullRequestData.releaseNote(
+      List(
+        ReleaseRelatedUrl.CustomChangelog(uri"https://github.com/foo/foo/CHANGELOG.rst"),
+        ReleaseRelatedUrl.GitHubReleaseNotes(uri"https://github.com/foo/foo/releases/tag/v1.2.3"),
+        ReleaseRelatedUrl.CustomReleaseNotes(
+          uri"https://github.com/foo/bar/blob/master/ReleaseNotes.md"
+        ),
+        ReleaseRelatedUrl.CustomReleaseNotes(
+          uri"https://github.com/foo/bar/blob/master/Releases.md"
+        ),
+        ReleaseRelatedUrl.VersionDiff(uri"https://github.com/foo/foo/compare/v1.2.0...v1.2.3")
+      )
+    ) shouldBe Some(
+      "[Changelog](https://github.com/foo/foo/CHANGELOG.rst) - [GitHub Release Notes](https://github.com/foo/foo/releases/tag/v1.2.3) - [Release Notes](https://github.com/foo/bar/blob/master/ReleaseNotes.md) - [Release Notes](https://github.com/foo/bar/blob/master/Releases.md) - [Version Diff](https://github.com/foo/foo/compare/v1.2.0...v1.2.3)"
     )
   }
 
