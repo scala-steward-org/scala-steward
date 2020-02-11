@@ -45,8 +45,8 @@ final class NurtureAlg[F[_]](
     vcsApiAlg: VCSApiAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
     vcsExtraAlg: VCSExtraAlg[F],
-    migrationAlg: MigrationAlg[F],
     logger: Logger[F],
+    migrationAlg: MigrationAlg,
     pullRequestRepo: PullRequestRepository[F],
     repoCacheRepository: RepoCacheRepository[F],
     F: Sync[F]
@@ -81,7 +81,7 @@ final class NurtureAlg[F[_]](
     for {
       repoConfig <- repoConfigAlg.readRepoConfigOrDefault(repo)
       grouped = Update.groupByGroupId(updates)
-      sorted <- NurtureAlg.sortUpdatesByMigration(grouped)
+      sorted = grouped.sortBy { migrationAlg.findMigrations(_).size }
       _ <- logger.info(util.logger.showUpdates(sorted))
       baseSha1 <- gitAlg.latestSha1(repo, baseBranch)
       _ <- NurtureAlg.processUpdates(
@@ -144,7 +144,7 @@ final class NurtureAlg[F[_]](
         .get(data.update.mainArtifactId)
         .traverse(vcsExtraAlg.getReleaseRelatedUrls(_, data.update))
       branchName = vcs.createBranch(config.vcsType, data.fork, data.update)
-      migrations <- migrationAlg.findMigrations(data.update)
+      migrations = migrationAlg.findMigrations(data.update)
       requestData = NewPullRequestData.from(
         data,
         branchName,
@@ -229,12 +229,4 @@ object NurtureAlg {
           .compile
           .drain
     }
-
-  def sortUpdatesByMigration[F[_]: Sync](
-      updates: List[Update]
-  )(implicit migrationAlg: MigrationAlg[F]): F[List[Update]] =
-    updates
-      .traverse(update => migrationAlg.findMigrations(update).map(update -> _.size))
-      .map(_.sortBy { case (_, size) => size }
-        .map { case (up, _) => up })
 }

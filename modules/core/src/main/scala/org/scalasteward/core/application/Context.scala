@@ -50,10 +50,13 @@ object Context {
       implicit0(logger: Logger[F]) <- Resource.liftF(Slf4jLogger.create[F])
       implicit0(httpExistenceClient: HttpExistenceClient[F]) <- HttpExistenceClient.create[F]
       implicit0(user: AuthenticatedUser) <- Resource.liftF(config.vcsUser[F])
+      implicit0(fileAlg: FileAlg[F]) = FileAlg.create[F]
+      implicit0(migrationAlg: MigrationAlg) <- Resource.liftF(
+        MigrationAlg.create[F](config.scalafixMigrations)
+      )
     } yield {
       val kvsPrefix = Some(config.vcsType.asString)
       implicit val dateTimeAlg: DateTimeAlg[F] = DateTimeAlg.create[F]
-      implicit val fileAlg: FileAlg[F] = FileAlg.create[F]
       implicit val processAlg: ProcessAlg[F] = ProcessAlg.create[F](blocker)
       implicit val workspaceAlg: WorkspaceAlg[F] = WorkspaceAlg.create[F]
       implicit val repoConfigAlg: RepoConfigAlg[F] = new RepoConfigAlg[F]
@@ -78,7 +81,6 @@ object Context {
       implicit val refreshErrorAlg: RefreshErrorAlg[F] =
         new RefreshErrorAlg[F](new JsonKeyValueStore("refresh_error", "1", kvsPrefix))
       implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F]
-      implicit val migrationAlg: MigrationAlg[F] = MigrationAlg.create[F]
       implicit val editAlg: EditAlg[F] = new EditAlg[F]
       implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F]
       implicit val pruningAlg: PruningAlg[F] = new PruningAlg[F]

@@ -7,9 +7,7 @@ import org.scalacheck.{Arbitrary, Gen}
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.ProcessResult.{Ignored, Updated}
 import org.scalasteward.core.data.Update.Single
-import org.scalasteward.core.data.{ArtifactId, ProcessResult, Update}
-import org.scalasteward.core.mock.MockContext._
-import org.scalasteward.core.mock.{MockEff, MockState}
+import org.scalasteward.core.data.{ProcessResult, Update}
 import org.scalasteward.core.util.Nel
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -47,20 +45,6 @@ class NurtureAlgTest extends AnyFunSuite with Matchers with ScalaCheckPropertyCh
         .processUpdates(ignorableUpdates ++ appliableUpdates, f, appliableUpdates.size.some)
         .runS(0)
         .unsafeRunSync() shouldBe updates.size
-    }
-  }
-
-  test("sortUpdatesByMigration should send updates with migrations to the end") {
-    forAll { updates: List[Update] =>
-      val migrationUpdate =
-        Single(
-          "org.scalacheck" % ArtifactId("scalacheck", "scalacheck_2.12") % "1.14.0",
-          Nel.of("1.15.0")
-        )
-      NurtureAlg
-        .sortUpdatesByMigration[MockEff](migrationUpdate :: updates)
-        .runA(MockState.empty)
-        .unsafeRunSync() shouldBe updates :+ migrationUpdate
     }
   }
 }

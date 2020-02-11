@@ -30,27 +30,29 @@ After you have written a new migration rule for a new version of your project,
 Scala Steward needs to be made aware of it. Creating a pull request that adds
 the new rule to the list of [migrations][migrations] is enough for that. Once
 that pull request is merged, Scala Steward will start using this migration.
-When running Scala Steward you can specify a file containing extra migrations 
-that might not be present in the [default list][migrations]. 
-You can also specify if you want the default list to be disabled.  
+When running Scala Steward you can specify a file containing extra migrations
+that might not be present in the [default list][migrations].
+You can also specify if you want the default list to be disabled.
 
-The file should look like this:
-```json
-{
- "disableDefaults": true,
- "extraMigrations": [{
-    "groupId": "org.ice.cream",
-    "artifactIds": ["yumyum-.*"],
-    "newVersion": "1.0.0",
-    "rewriteRules": ["awesome rewrite rule"]}
-]}
+The file is in [HOCON][HOCON] and should look like this:
+```hocon
+disableDefaults = true
+migrations = [
+  {
+    groupId: "org.http4s",
+    artifactIds: ["http4s-.*"],
+    newVersion: "0.20.0",
+    rewriteRules: ["github:http4s/http4s/v0_20?sha=v0.20.11"]
+  }
+]
 ```
 
 Pull requests that added migration rules can be found [here][scalafix-prs].
 
 [Scalafix]: https://scalacenter.github.io/scalafix/
-[migrations]: https://github.com/fthomas/scala-steward/blob/master/modules/core/src/main/scala/org/scalasteward/core/scalafix/package.scala
+[migrations]: https://github.com/fthomas/scala-steward/blob/master/modules/core/src/main/resources/scalafix-migrations.conf
 [scalafix-dev-guide]: https://scalacenter.github.io/scalafix/docs/developers/setup.html
 [using-github]: https://scalacenter.github.io/scalafix/docs/developers/sharing-rules.html#using-github
 [using-http]: https://scalacenter.github.io/scalafix/docs/developers/sharing-rules.html#using-http
 [scalafix-prs]: https://github.com/fthomas/scala-steward/pulls?q=label%3Ascalafix-migration
+[HOCON]: https://github.com/lightbend/config/blob/master/HOCON.md

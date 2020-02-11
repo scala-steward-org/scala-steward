@@ -16,40 +16,65 @@
 
 package org.scalasteward.core.scalafix
 
-import org.scalasteward.core.io.FileAlg
+import better.files.File
+import cats.data.OptionT
+import cats.effect.Sync
 import cats.implicits._
-import cats.Monad
-import io.circe.parser._
-import io.chrisdavenport.log4cats.Logger
-import org.scalasteward.core.application.Config
-import org.scalasteward.core.data.Update
-import org.scalasteward.core.scalafix
+import io.circe.config.parser.decode
+import org.scalasteward.core.data.{Update, Version}
+import org.scalasteward.core.io.FileAlg
+import org.scalasteward.core.util.{ApplicativeThrowable, MonadThrowable}
 
-trait MigrationAlg[F[_]] {
-  def loadMigrations: F[List[Migration]]
-  def findMigrations(update: Update): F[List[Migration]]
+trait MigrationAlg {
+  def findMigrations(update: Update): List[Migration]
 }
 
 object MigrationAlg {
-  def create[F[_]](
-      implicit fileAlg: FileAlg[F],
-      logger: Logger[F],
-      F: Monad[F],
-      config: Config
-  ): MigrationAlg[F] = new MigrationAlg[F] {
-    override def loadMigrations: F[List[Migration]] =
-      for {
-        fileContents <- config.scalafixMigrations.flatTraverse(fileAlg.readFile)
-        defaultMigrations = migrations
-        allMigrations <- fileContents
-          .traverse(parse(_).flatMap(_.as[ScalafixMigrations]))
-          .fold(
-            _ => logger.warn("Failed to parse migrations file") >> defaultMigrations.pure[F],
-            _.fold(defaultMigrations)(_.migrations(defaultMigrations)).pure[F]
-          )
-      } yield allMigrations
+  def create[F[_]](extraMigrations: Option[File])(
+      implicit
+      fileAlg: FileAlg[F],
+      F: Sync[F]
+  ): F[MigrationAlg] =
+    loadMigrations(extraMigrations).map { migrations =>
+      new MigrationAlg {
+        override def findMigrations(update: Update): List[Migration] =
+          findMigrationsImpl(migrations, update)
+      }
+    }
 
-    override def findMigrations(update: Update): F[List[Migration]] =
-      loadMigrations.map(scalafix.findMigrations(_, update))
-  }
+  def loadMigrations[F[_]](
+      extraMigrations: Option[File]
+  )(implicit fileAlg: FileAlg[F], F: MonadThrowable[F]): F[List[Migration]] =
+    for {
+      default <- fileAlg
+        .readResource("scalafix-migrations.conf")
+        .flatMap(decodeMigrations[F](_, "default"))
+      maybeExtra <- OptionT(extraMigrations.flatTraverse(fileAlg.readFile))
+        .semiflatMap(decodeMigrations[F](_, "extra"))
+        .value
+      migrations = maybeExtra match {
+        case Some(extra) if extra.disableDefaults => extra.migrations
+        case Some(extra)                          => default.migrations ++ extra.migrations
+        case None                                 => default.migrations
+      }
+    } yield migrations
+
+  private def decodeMigrations[F[_]](content: String, tpe: String)(
+      implicit F: ApplicativeThrowable[F]
+  ): F[ScalafixMigrations] =
+    F.fromEither(decode[ScalafixMigrations](content))
+      .adaptErr(new Throwable(s"Failed to load $tpe Scalafix migrations", _))
+
+  private def findMigrationsImpl(
+      givenMigrations: List[Migration],
+      update: Update
+  ): List[Migration] =
+    givenMigrations.filter { migration =>
+      update.groupId === migration.groupId &&
+      migration.artifactIds.exists(re =>
+        update.artifactIds.exists(artifactId => re.r.findFirstIn(artifactId.name).isDefined)
+      ) &&
+      Version(update.currentVersion) < migration.newVersion &&
+      Version(update.newerVersions.head) >= migration.newVersion
+    }
 }

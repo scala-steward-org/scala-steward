@@ -16,11 +16,10 @@
 
 package org.scalasteward.core.scalafix
 
-import org.scalasteward.core.data.{GroupId, Version}
-import org.scalasteward.core.util.Nel
 import io.circe.Decoder
 import io.circe.generic.semiauto._
-import io.circe.Decoder._
+import org.scalasteward.core.data.{GroupId, Version}
+import org.scalasteward.core.util.Nel
 
 final case class Migration(
     groupId: GroupId,
@@ -30,6 +29,6 @@ final case class Migration(
 )
 
 object Migration {
-  implicit val versionDecoder: Decoder[Version] = decodeString.map(Version.apply)
-  implicit val migrationDecoder: Decoder[Migration] = deriveDecoder[Migration]
+  implicit val migrationDecoder: Decoder[Migration] =
+    deriveDecoder[Migration]
 }

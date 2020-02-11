@@ -1,62 +1,32 @@
 package org.scalasteward.core.scalafix
 
+import better.files.File
+import org.scalasteward.core.data.{GroupId, Version}
+import org.scalasteward.core.mock.MockContext._
+import org.scalasteward.core.mock.{MockEff, MockState}
+import org.scalasteward.core.util.Nel
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalasteward.core.mock.MockContext._
-import org.scalasteward.core.data.{GroupId, Version}
-import org.scalasteward.core.util.Nel
-import org.scalasteward.core.vcs.data.Repo
-import org.scalasteward.core.mock.MockState
-import org.scalasteward.core.scalafix.{migrations => defaultMigrations}
 
 class MigrationAlgTest extends AnyFunSuite with Matchers {
-  val repo = Repo("fthomas", "scala-steward")
-  val repoDir = config.workspace / repo.owner / repo.repo
-  val scalafmtConf = repoDir / ".scalafix-migrations.conf"
-  val configWithMigrations = config.copy(scalafixMigrations = Some(scalafmtConf))
-  val alg = MigrationAlg.create(fileAlg, mockLogger, mockEffBracketThrowable, configWithMigrations)
+  val extraFile: File = config.workspace / "extra-migrations.conf"
 
-  test("loadMigrations on correct file") {
-    val migrationsFile =
-      """
-        |{
-        | "disableDefaults": false,
-        | "extraMigrations": [{
-        |    "groupId": "org.ice.cream",
-        |    "artifactIds": ["yumyum-.*"],
-        |    "newVersion": "1.0.0",
-        |    "rewriteRules": ["awesome rewrite rule"]}
-        |]}""".stripMargin
-    val initialState = MockState.empty.add(scalafmtConf, migrationsFile)
-    val (_, migrations) =
-      alg.loadMigrations.run(initialState).unsafeRunSync
+  test("loadMigrations with extra file") {
+    val content =
+      """|migrations = [
+         |  {
+         |    groupId: "org.ice.cream",
+         |    artifactIds: ["yumyum-.*"],
+         |    newVersion: "1.0.0",
+         |    rewriteRules: ["awesome rewrite rule"]
+         |  }
+         |]""".stripMargin
+    val initialState = MockState.empty.add(extraFile, content)
+    val migrations =
+      MigrationAlg.loadMigrations[MockEff](Some(extraFile)).runA(initialState).unsafeRunSync
 
-    migrations should contain theSameElementsAs List(
-      Migration(
-        GroupId("org.ice.cream"),
-        Nel.of("yumyum-.*"),
-        Version("1.0.0"),
-        Nel.of("awesome rewrite rule")
-      )
-    ) ++ defaultMigrations
-  }
-
-  test("loadMigrations with disable defaultMigrations") {
-    val migrationsFile =
-      """
-        |{
-        | "disableDefaults": true,
-        | "extraMigrations": [{
-        |    "groupId": "org.ice.cream",
-        |    "artifactIds": ["yumyum-.*"],
-        |    "newVersion": "1.0.0",
-        |    "rewriteRules": ["awesome rewrite rule"]}
-        |]}""".stripMargin
-    val initialState = MockState.empty.add(scalafmtConf, migrationsFile)
-    val (_, migrations) =
-      alg.loadMigrations.run(initialState).unsafeRunSync
-
-    migrations should contain theSameElementsAs List(
+    migrations.size should be > 1
+    migrations should contain oneElementOf List(
       Migration(
         GroupId("org.ice.cream"),
         Nel.of("yumyum-.*"),
@@ -66,17 +36,48 @@ class MigrationAlgTest extends AnyFunSuite with Matchers {
     )
   }
 
-  test("loadMigrations on malformed File") {
-    val initialState = MockState.empty.add(scalafmtConf, """{"key": "i'm not a valid Migration"}""")
-    val (state, migrations) =
-      alg.loadMigrations.run(initialState).unsafeRunSync
-    migrations shouldBe defaultMigrations
-    state.logs shouldBe Vector(None -> "Failed to parse migrations file")
+  test("loadMigrations with extra file and disableDefaults = true") {
+    val content =
+      """|disableDefaults = true
+         |migrations = [
+         |  {
+         |    groupId: "org.ice.cream",
+         |    artifactIds: ["yumyum-.*"],
+         |    newVersion: "1.0.0",
+         |    rewriteRules: ["awesome rewrite rule"]
+         |  }
+         |]""".stripMargin
+    val initialState = MockState.empty.add(extraFile, content)
+    val migrations =
+      MigrationAlg.loadMigrations[MockEff](Some(extraFile)).runA(initialState).unsafeRunSync
+
+    migrations shouldBe List(
+      Migration(
+        GroupId("org.ice.cream"),
+        Nel.of("yumyum-.*"),
+        Version("1.0.0"),
+        Nel.of("awesome rewrite rule")
+      )
+    )
   }
 
-  test("loadMigrations on no File") {
-    val (_, migrations) = migrationAlg.loadMigrations.run(MockState.empty).unsafeRunSync
+  test("loadMigrations with extra file and disableDefaults = true only") {
+    val initialState = MockState.empty.add(extraFile, "disableDefaults = true")
+    val migrations =
+      MigrationAlg.loadMigrations[MockEff](Some(extraFile)).runA(initialState).unsafeRunSync
+    migrations.isEmpty shouldBe true
+  }
 
-    migrations shouldBe defaultMigrations
+  test("loadMigrations with malformed extra file") {
+    val initialState = MockState.empty.add(extraFile, """{"key": "i'm not a valid Migration}""")
+    val migrations =
+      MigrationAlg.loadMigrations[MockEff](Some(extraFile)).runA(initialState).attempt.unsafeRunSync
+    migrations.isLeft shouldBe true
+  }
+
+  test("loadMigrations without extra file") {
+    val migrations =
+      MigrationAlg.loadMigrations[MockEff](None).runA(MockState.empty).unsafeRunSync()
+    migrations.size shouldBe 9
   }
 }
