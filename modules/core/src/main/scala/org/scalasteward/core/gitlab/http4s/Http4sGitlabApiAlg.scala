@@ -62,7 +62,7 @@ private[http4s] object GitlabJsonCodec {
   }
   implicit val repoOutDecoder: Decoder[RepoOut] = Decoder.instance { c =>
     for {
-      name <- c.downField("name").as[String]
+      name <- c.downField("path").as[String]
       owner <- c
         .downField("owner")
         .as[UserOut]
