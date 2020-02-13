@@ -13,20 +13,27 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class PullRequestRepositoryTest extends AnyFunSuite with Matchers {
-  test("createOrUpdate") {
+  test("createOrUpdate >> findPullRequest") {
     val repo = Repo("typelevel", "cats")
     val url = uri"https://github.com/typelevel/cats/pull/3291"
     val sha1 = Sha1(HexString("a2ced5793c2832ada8c14ba5c77e51c4bc9656a8"))
     val update =
       Update.Single("org.portable-scala" % "sbt-scalajs-crossproject" % "0.6.1", Nel.of("1.0.0"))
-    val state = pullRequestRepository
-      .createOrUpdate(repo, url, sha1, update, PullRequestState.Open)
-      .runS(MockState.empty)
-      .unsafeRunSync()
+
+    val p = for {
+      _ <- pullRequestRepository.createOrUpdate(repo, url, sha1, update, PullRequestState.Open)
+      result <- pullRequestRepository.findPullRequest(repo, update.crossDependency, "1.0.0")
+    } yield result
+    val (state, result) = p.run(MockState.empty).unsafeRunSync()
 
     val store = (config.workspace / "store/pull_requests/v1/typelevel/cats/pull_requests.json")
+    result shouldBe Some((url, sha1, PullRequestState.Open))
     state shouldBe MockState.empty.copy(
-      commands = Vector(List("read", store.toString), List("write", store.toString)),
+      commands = Vector(
+        List("read", store.toString),
+        List("write", store.toString),
+        List("read", store.toString)
+      ),
       files = Map(
         store ->
           """|{
