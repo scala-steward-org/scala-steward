@@ -34,7 +34,7 @@ import scala.concurrent.duration._
 final class PruningAlg[F[_]](
     implicit
     logger: Logger[F],
-    pullRequestRepo: PullRequestRepository[F],
+    pullRequestRepository: PullRequestRepository[F],
     repoCacheRepository: RepoCacheRepository[F],
     updateAlg: UpdateAlg[F],
     F: Monad[F]
@@ -111,7 +111,7 @@ final class PruningAlg[F[_]](
     updates.find(UpdateAlg.isUpdateFor(_, crossDependency)) match {
       case None => F.pure(DependencyUpToDate(crossDependency))
       case Some(update) =>
-        pullRequestRepo.findPullRequest(repo, crossDependency, update.nextVersion).map {
+        pullRequestRepository.findPullRequest(repo, crossDependency, update.nextVersion).map {
           case None =>
             DependencyOutdated(crossDependency, update)
           case Some((uri, _, state)) if state === Closed =>

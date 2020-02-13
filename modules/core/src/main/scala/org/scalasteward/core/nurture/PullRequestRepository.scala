@@ -26,7 +26,7 @@ import org.scalasteward.core.update.UpdateAlg
 import org.scalasteward.core.vcs.data.{PullRequestState, Repo}
 
 final class PullRequestRepository[F[_]: Applicative](
-    kvStore: KeyValueStore[F, Repo, Map[String, PullRequestData]]
+    kvStore: KeyValueStore[F, Repo, Map[Uri, PullRequestData]]
 ) {
   def createOrUpdate(
       repo: Repo,
@@ -36,8 +36,8 @@ final class PullRequestRepository[F[_]: Applicative](
       state: PullRequestState
   ): F[Unit] =
     kvStore.update(repo) {
-      case Some(prs) => prs.updated(url.toString(), PullRequestData(baseSha1, update, state))
-      case None      => Map(url.toString() -> PullRequestData(baseSha1, update, state))
+      case Some(prs) => prs.updated(url, PullRequestData(baseSha1, update, state))
+      case None      => Map(url -> PullRequestData(baseSha1, update, state))
     }
 
   def findPullRequest(
@@ -46,13 +46,13 @@ final class PullRequestRepository[F[_]: Applicative](
       newVersion: String
   ): F[Option[(Uri, Sha1, PullRequestState)]] =
     kvStore.get(repo).map { maybePRs =>
-      val pullRequests = maybePRs.fold(List.empty[(String, PullRequestData)])(_.toList)
+      val pullRequests = maybePRs.fold(List.empty[(Uri, PullRequestData)])(_.toList)
       pullRequests
         .find {
           case (_, data) =>
             UpdateAlg.isUpdateFor(data.update, crossDependency) &&
               data.update.nextVersion === newVersion
         }
-        .map { case (url, data) => (Uri.unsafeFromString(url), data.baseSha1, data.state) }
+        .map { case (url, data) => (url, data.baseSha1, data.state) }
     }
 }
