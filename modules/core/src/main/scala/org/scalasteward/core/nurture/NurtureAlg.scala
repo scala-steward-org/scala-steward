@@ -47,7 +47,7 @@ final class NurtureAlg[F[_]](
     vcsExtraAlg: VCSExtraAlg[F],
     logger: Logger[F],
     migrationAlg: MigrationAlg,
-    pullRequestRepo: PullRequestRepository[F],
+    pullRequestRepository: PullRequestRepository[F],
     repoCacheRepository: RepoCacheRepository[F],
     F: Sync[F]
 ) {
@@ -107,8 +107,14 @@ final class NurtureAlg[F[_]](
         case None =>
           applyNewUpdate(data)
       }
-      _ <- pullRequests.headOption.fold(F.unit) { pr =>
-        pullRequestRepo.createOrUpdate(data.repo, pr.html_url, data.baseSha1, data.update, pr.state)
+      _ <- pullRequests.headOption.traverse_ { pr =>
+        pullRequestRepository.createOrUpdate(
+          data.repo,
+          pr.html_url,
+          data.baseSha1,
+          data.update,
+          pr.state
+        )
       }
     } yield result
 
@@ -153,7 +159,7 @@ final class NurtureAlg[F[_]](
         migrations
       )
       pr <- vcsApiAlg.createPullRequest(data.repo, requestData)
-      _ <- pullRequestRepo.createOrUpdate(
+      _ <- pullRequestRepository.createOrUpdate(
         data.repo,
         pr.html_url,
         data.baseSha1,
