@@ -61,17 +61,7 @@ These variables will be accessible (in sbt) to all of the projects that Scala St
 ```
 sbt
 project core
-run
-    --disable-sandbox \
-    --do-not-fork \
-    --workspace "/path/workspace" \
-    --repos-file "/path/repos.md" \
-    --git-ask-pass "/path/pass.sh" \
-    --git-author-email "email@example.org" \
-    --vcs-type "gitlab" \
-    --vcs-api-host "https://gitlab.com/api/v4/" \
-    --vcs-login "gitlab.steward"
-
+run --disable-sandbox --do-not-fork --workspace "/path/workspace" --repos-file "/path/repos.md" --git-ask-pass "/path/pass.sh" --git-author-email "email@example.org" --vcs-type "gitlab" --vcs-api-host "https://gitlab.com/api/v4/" --vcs-login "gitlab.steward"
 ```
 
 
