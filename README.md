@@ -62,6 +62,7 @@ The [`docs`](docs) directory contains documentation about these topics:
 
 Thanks goes to these wonderful people:
 
+* [Adam Fraser](https://github.com/adamgfraser)
 * [Alex](https://github.com/jhnsmth)
 * [Andrea Mistretta](https://github.com/andreami)
 * [Anil Kumar Myla](https://github.com/anilkumarmyla)
