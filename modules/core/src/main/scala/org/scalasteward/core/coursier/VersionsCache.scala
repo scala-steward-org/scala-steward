@@ -40,7 +40,7 @@ final class VersionsCache[F[_]](
   def getVersions(dependency: Scope.Dependency, maxAge: Option[FiniteDuration]): F[List[Version]] =
     dependency.resolvers
       .parFlatTraverse(getVersionsImpl(dependency.value, _, maxAge.getOrElse(cacheTtl)))
-      .map(_.sorted)
+      .map(_.distinct.sorted)
 
   private def getVersionsImpl(
       dependency: Dependency,
