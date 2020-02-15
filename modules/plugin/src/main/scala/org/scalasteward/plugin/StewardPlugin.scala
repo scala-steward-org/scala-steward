@@ -19,6 +19,7 @@ package org.scalasteward.plugin
 import sbt.Keys._
 import sbt._
 import scala.util.matching.Regex
+import scalafix.sbt.ScalafixPlugin.autoImport.{scalafixDependencies, scalafixResolvers}
 
 object StewardPlugin extends AutoPlugin {
   override def trigger: PluginTrigger = allRequirements
@@ -38,11 +39,15 @@ object StewardPlugin extends AutoPlugin {
       val scalaBinaryVersionValue = scalaBinaryVersion.value
       val scalaVersionValue = scalaVersion.value
 
-      val dependencies = libraryDependencies.value
+      val libraryDeps = libraryDependencies.value
         .filter(isDefinedInBuildFiles(_, sourcePositions, buildRoot))
         .map(moduleId => toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue))
+      val scalafixDeps = scalafixDependencies.value.map(moduleId =>
+        toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue, Some("scalafix-rule"))
+      )
+      val dependencies = libraryDeps ++ scalafixDeps
 
-      val resolvers = fullResolvers.value.collect {
+      val resolvers = (fullResolvers.value ++ scalafixResolvers.value).collect {
         case repo: MavenRepository if !repo.root.startsWith("file:") =>
           Resolver.MavenRepository(repo.name, repo.root)
         case repo: URLRepository =>
@@ -106,7 +111,8 @@ object StewardPlugin extends AutoPlugin {
   private def toDependency(
       moduleId: ModuleID,
       scalaVersion: String,
-      scalaBinaryVersion: String
+      scalaBinaryVersion: String,
+      configurations: Option[String] = None
   ): Dependency =
     Dependency(
       groupId = moduleId.organization,
@@ -114,7 +120,7 @@ object StewardPlugin extends AutoPlugin {
       version = moduleId.revision,
       sbtVersion = moduleId.extraAttributes.get("e:sbtVersion"),
       scalaVersion = moduleId.extraAttributes.get("e:scalaVersion"),
-      configurations = moduleId.configurations
+      configurations = configurations.orElse(moduleId.configurations)
     )
 
   final private case class ArtifactId(

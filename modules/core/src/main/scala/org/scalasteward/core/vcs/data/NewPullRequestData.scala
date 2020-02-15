@@ -70,6 +70,8 @@ object NewPullRequestData {
     val dependencies = update.dependencies
     if (dependencies.forall(_.configurations.contains("test")))
       "test-library-update"
+    else if (dependencies.forall(_.configurations.contains("scalafix-rule")))
+      "scalafix-rule-update"
     else if (dependencies.forall(_.sbtVersion.isDefined))
       "sbt-plugin-update"
     else

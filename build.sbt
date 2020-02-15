@@ -107,6 +107,7 @@ lazy val core = myCrossProject("core")
 lazy val plugin = myCrossProject("plugin")
   .settings(noPublishSettings)
   .settings(
+    addSbtPlugin(Dependencies.scalafixPlugin),
     scalaVersion := "2.12.10",
     sbtPlugin := true,
     Compile / compile / wartremoverErrors -= Wart.Equals
