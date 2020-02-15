@@ -118,31 +118,32 @@ object UpdateHeuristic {
   val moduleId = UpdateHeuristic(
     name = "moduleId",
     replaceVersion = update =>
-      target => {
-        val groupId = Regex.quote(update.groupId.value)
-        val artifactIds =
-          alternation(update.artifactIds.map(artifactId => Regex.quote(artifactId.name)))
-        val currentVersion = Regex.quote(update.currentVersion)
-        val regex =
-          raw"""(.*)(["|`]$groupId(?:"\s*%+\s*"|:+)$artifactIds(?:"\s*%\s*|:+))("?)($currentVersion)("|`)""".r
-        replaceSomeInAllowedParts(
-          regex,
-          target,
-          match0 => {
-            val precedingCharacters = match0.group(1)
-            val dependency = match0.group(2)
-            val versionPrefix = match0.group(4)
-            val versionSuffix = match0.group(6)
-            if (shouldBeIgnored(precedingCharacters)) None
-            else
-              Some(
-                Regex.quoteReplacement(
-                  s"""$precedingCharacters$dependency$versionPrefix${update.nextVersion}$versionSuffix"""
+      target =>
+        {
+          val groupId = Regex.quote(update.groupId.value)
+          val artifactIds =
+            alternation(update.artifactIds.map(artifactId => Regex.quote(artifactId.name)))
+          val currentVersion = Regex.quote(update.currentVersion)
+          val regex =
+            raw"""(.*)(["|`]$groupId(?:"\s*%+\s*"|:+)$artifactIds(?:"\s*%\s*|:+))("?)($currentVersion)("|`)""".r
+          replaceSomeInAllowedParts(
+            regex,
+            target,
+            match0 => {
+              val precedingCharacters = match0.group(1)
+              val dependency = match0.group(2)
+              val versionPrefix = match0.group(4)
+              val versionSuffix = match0.group(6)
+              if (shouldBeIgnored(precedingCharacters)) None
+              else
+                Some(
+                  Regex.quoteReplacement(
+                    s"""$precedingCharacters$dependency$versionPrefix${update.nextVersion}$versionSuffix"""
+                  )
                 )
-              )
-          }
-        ).someIfChanged
-      } >>= replaceGroupF(update)
+            }
+          ).someIfChanged
+        } >>= replaceGroupF(update)
   )
 
   val strict = UpdateHeuristic(

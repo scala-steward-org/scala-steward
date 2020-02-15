@@ -187,9 +187,7 @@ class VersionTest
   }
 
   test("Component: round-trip") {
-    forAll { str: String =>
-      Component.render(Component.parse(str)) shouldBe str
-    }
+    forAll(str: String => Component.render(Component.parse(str)) shouldBe str)
   }
 
   test("Component: round-trip example") {
