@@ -63,6 +63,14 @@ updates.limit = 5
 # If "never", Scala Steward will never update the PR
 # Default: "on-conflicts"
 updatePullRequests = "always" | "on-conflicts" | "never"
+
+# If set, Scala Steward will prepend the message prefix to the commit messages and PR titles.
+# Default: None
+commits.message.prefix = "foo"
+
+# If set, Scala Steward will append the message suffix to the commit messages and PR titles.
+# Default: None
+commits.message.suffix = "foo"
 ```
 
 The version information given in the patterns above can be in two formats:
