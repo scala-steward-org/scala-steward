@@ -112,9 +112,7 @@ object FileAlg {
             val copyOptions = File.CopyOptions(overwrite = true)
             if (file.exists) Some(file.moveTo(File.newTemporaryFile())(copyOptions)) else None
           }
-        } { _ =>
-          fa
-        } {
+        }(_ => fa) {
           case Some(tmpFile) => F.delay(tmpFile.moveTo(file)).void
           case None          => F.unit
         }

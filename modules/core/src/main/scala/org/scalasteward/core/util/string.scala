@@ -70,7 +70,7 @@ object string {
       replacer: Regex.Match => Option[String]
   ): Change[String] = {
     var changed = false
-    val replacer1 = replacer.andThen(_.map(r => { changed = true; r }))
+    val replacer1 = replacer.andThen(_.map { r => changed = true; r })
     val result = regex.replaceSomeIn(target, replacer1)
     if (changed) Changed(result) else Unchanged(result)
   }
