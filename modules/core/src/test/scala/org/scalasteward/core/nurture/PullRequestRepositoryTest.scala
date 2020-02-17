@@ -28,41 +28,11 @@ class PullRequestRepositoryTest extends AnyFunSuite with Matchers {
 
     val store = (config.workspace / "store/pull_requests/v1/typelevel/cats/pull_requests.json")
     result shouldBe Some((url, sha1, PullRequestState.Open))
-    state shouldBe MockState.empty.copy(
+    state.copy(files = Map.empty) shouldBe MockState.empty.copy(
       commands = Vector(
         List("read", store.toString),
         List("write", store.toString),
         List("read", store.toString)
-      ),
-      files = Map(
-        store ->
-          """|{
-             |  "https://github.com/typelevel/cats/pull/3291" : {
-             |    "baseSha1" : "a2ced5793c2832ada8c14ba5c77e51c4bc9656a8",
-             |    "update" : {
-             |      "Single" : {
-             |        "crossDependency" : [
-             |          {
-             |            "groupId" : "org.portable-scala",
-             |            "artifactId" : {
-             |              "name" : "sbt-scalajs-crossproject",
-             |              "maybeCrossName" : null
-             |            },
-             |            "version" : "0.6.1",
-             |            "sbtVersion" : null,
-             |            "scalaVersion" : null,
-             |            "configurations" : null
-             |          }
-             |        ],
-             |        "newerVersions" : [
-             |          "1.0.0"
-             |        ],
-             |        "newerGroupId" : null
-             |      }
-             |    },
-             |    "state" : "open"
-             |  }
-             |}""".stripMargin
       )
     )
   }

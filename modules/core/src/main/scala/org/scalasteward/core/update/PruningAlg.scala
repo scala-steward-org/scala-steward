@@ -114,7 +114,7 @@ final class PruningAlg[F[_]](
         pullRequestRepository.findPullRequest(repo, crossDependency, update.nextVersion).map {
           case None =>
             DependencyOutdated(crossDependency, update)
-          case Some((uri, _, state)) if state === Closed =>
+          case Some((uri, _, Closed)) =>
             PullRequestClosed(crossDependency, update, uri)
           case Some((uri, baseSha1, _)) if baseSha1 === repoCache.sha1 =>
             PullRequestUpToDate(crossDependency, update, uri)
