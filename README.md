@@ -118,6 +118,7 @@ Consider creating PR to add your company to the list and join the community.
 
 * [Adform](https://site.adform.com/)
 * [AutoScout24](https://www.autoscout24.de/)
+* [Besedo](https://www.besedo.com/)
 * [Bitrock](http://www.bitrock.it/)
 * [Chartboost](https://www.chartboost.com/)
 * [Colisweb](https://www.colisweb.com/)
