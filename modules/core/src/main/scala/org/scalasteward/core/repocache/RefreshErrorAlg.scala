@@ -18,12 +18,11 @@ package org.scalasteward.core.repocache
 
 import cats.Monad
 import cats.implicits._
-import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
-import io.circe.{Decoder, Encoder}
-import java.util.concurrent.TimeUnit
+import io.circe.Codec
+import io.circe.generic.semiauto.deriveCodec
 import org.scalasteward.core.persistence.KeyValueStore
 import org.scalasteward.core.repocache.RefreshErrorAlg.Entry
-import org.scalasteward.core.util.DateTimeAlg
+import org.scalasteward.core.util.{DateTimeAlg, Timestamp}
 import org.scalasteward.core.vcs.data.Repo
 import scala.concurrent.duration._
 
@@ -33,7 +32,7 @@ final class RefreshErrorAlg[F[_]](kvStore: KeyValueStore[F, Repo, Entry])(
     F: Monad[F]
 ) {
   def failedRecently(repo: Repo): F[Boolean] =
-    dateTimeAlg.currentTimeMillis.flatMap { now =>
+    dateTimeAlg.currentTimestamp.flatMap { now =>
       val maybeEntry = kvStore.modify(repo) {
         case Some(entry) if entry.hasExpired(now) => None
         case res                                  => res
@@ -42,24 +41,19 @@ final class RefreshErrorAlg[F[_]](kvStore: KeyValueStore[F, Repo, Entry])(
     }
 
   def persistError(repo: Repo, throwable: Throwable): F[Unit] =
-    dateTimeAlg.currentTimeMillis.flatMap { now =>
+    dateTimeAlg.currentTimestamp.flatMap { now =>
       kvStore.put(repo, Entry(now, throwable.getMessage))
     }
 }
 
 object RefreshErrorAlg {
-  final case class Entry(failedAt: Long, message: String) {
-    def hasExpired(now: Long): Boolean = {
-      val timeToLive = 7.days
-      FiniteDuration(now - failedAt, TimeUnit.MILLISECONDS) > timeToLive
-    }
+  final case class Entry(failedAt: Timestamp, message: String) {
+    def hasExpired(now: Timestamp): Boolean =
+      failedAt.until(now) > 7.days
   }
 
   object Entry {
-    implicit val entryDecoder: Decoder[Entry] =
-      deriveDecoder
-
-    implicit val entryEncoder: Encoder[Entry] =
-      deriveEncoder
+    implicit val entryCodec: Codec[Entry] =
+      deriveCodec
   }
 }
