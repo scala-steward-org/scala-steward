@@ -55,7 +55,7 @@ class FilterAlgTest extends AnyFunSuite with Matchers {
   test("ignore update via config updates.ignore") {
     val update1 = Single("org.http4s" % "http4s-dsl" % "0.17.0", Nel.of("0.18.0"))
     val update2 = Single("eu.timepit" % "refined" % "0.8.0", Nel.of("0.8.1"))
-    val config = RepoConfig(
+    val config = RepoConfig(updates =
       UpdatesConfig(ignore = List(UpdatePattern(GroupId("eu.timepit"), Some("refined"), None)))
     )
 
