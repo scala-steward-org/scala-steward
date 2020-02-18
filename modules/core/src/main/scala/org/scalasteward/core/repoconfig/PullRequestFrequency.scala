@@ -16,6 +16,7 @@
 
 package org.scalasteward.core.repoconfig
 
+import cats.Eq
 import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.repoconfig.PullRequestFrequency._
 import org.scalasteward.core.util.Timestamp
@@ -24,12 +25,12 @@ import scala.concurrent.duration._
 sealed trait PullRequestFrequency {
   def render: String
 
-  def elapsed(t1: Timestamp, t2: Timestamp): Boolean =
+  def timeout(lastCreated: Timestamp, now: Timestamp): FiniteDuration =
     this match {
-      case Asap    => true
-      case Daily   => t1.until(t2) >= 1.day
-      case Weekly  => t1.until(t2) >= 7.days
-      case Monthly => t1.until(t2) >= 30.days
+      case Asap    => 0.nanoseconds
+      case Daily   => 1.day - lastCreated.until(now)
+      case Weekly  => 7.days - lastCreated.until(now)
+      case Monthly => 30.days - lastCreated.until(now)
     }
 }
 
@@ -49,6 +50,9 @@ object PullRequestFrequency {
       case Monthly.render => Monthly
       case _              => default
     }
+
+  implicit val pullRequestFrequencyEq: Eq[PullRequestFrequency] =
+    Eq.fromUniversalEquals
 
   implicit val pullRequestFrequencyDecoder: Decoder[PullRequestFrequency] =
     Decoder[String].map(fromString)

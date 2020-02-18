@@ -16,6 +16,8 @@
 
 package org.scalasteward.core.util
 
+import cats.Order
+import cats.implicits._
 import io.circe.Codec
 import io.circe.generic.extras.semiauto.deriveUnwrappedCodec
 import java.util.concurrent.TimeUnit
@@ -29,4 +31,7 @@ final case class Timestamp(millis: Long) {
 object Timestamp {
   implicit val timestampCodec: Codec[Timestamp] =
     deriveUnwrappedCodec
+
+  implicit val timestampOrder: Order[Timestamp] =
+    Order.by(_.millis)
 }

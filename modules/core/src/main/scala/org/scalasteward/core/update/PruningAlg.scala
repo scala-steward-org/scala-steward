@@ -22,17 +22,19 @@ import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data._
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.repocache.{RepoCache, RepoCacheRepository}
-import org.scalasteward.core.repoconfig.RepoConfig
+import org.scalasteward.core.repoconfig.{PullRequestFrequency, RepoConfig}
 import org.scalasteward.core.update.PruningAlg._
 import org.scalasteward.core.update.data.UpdateState
 import org.scalasteward.core.update.data.UpdateState._
 import org.scalasteward.core.util
+import org.scalasteward.core.util.{dateTime, DateTimeAlg}
 import org.scalasteward.core.vcs.data.PullRequestState.Closed
 import org.scalasteward.core.vcs.data.Repo
 import scala.concurrent.duration._
 
 final class PruningAlg[F[_]](
     implicit
+    dateTimeAlg: DateTimeAlg[F],
     logger: Logger[F],
     pullRequestRepository: PullRequestRepository[F],
     repoCacheRepository: RepoCacheRepository[F],
@@ -72,7 +74,7 @@ final class PruningAlg[F[_]](
         }
       }
       _ <- logger.info(util.logger.showUpdates(updates1.widen[Update]))
-      result <- checkUpdateStates(repo, updateStates1)
+      result <- checkUpdateStates(repo, repoConfig, updateStates1)
     } yield result
   }
 
@@ -125,21 +127,39 @@ final class PruningAlg[F[_]](
 
   private def checkUpdateStates(
       repo: Repo,
+      repoConfig: RepoConfig,
       updateStates: List[UpdateState]
-  ): F[(Boolean, List[Update.Single])] = {
-    val (outdatedStates, updates) = updateStates.collect {
-      case s: DependencyOutdated  => (s, s.update)
-      case s: PullRequestOutdated => (s, s.update)
-    }.separate
-    val isOutdated = outdatedStates.nonEmpty
-    val message = if (isOutdated) {
-      val states = util.string.indentLines(outdatedStates.map(_.toString).sorted)
-      s"${repo.show} is outdated:\n" + states
-    } else {
-      s"${repo.show} is up-to-date"
+  ): F[(Boolean, List[Update.Single])] =
+    newPullRequestsAllowed(repo, repoConfig.pullRequests.frequency).flatMap { allowed =>
+      val (outdatedStates, updates) = updateStates.collect {
+        case s: DependencyOutdated if allowed => (s, s.update)
+        case s: PullRequestOutdated           => (s, s.update)
+      }.separate
+      val isOutdated = outdatedStates.nonEmpty
+      val message = if (isOutdated) {
+        val states = util.string.indentLines(outdatedStates.map(_.toString).sorted)
+        s"${repo.show} is outdated:\n" + states
+      } else {
+        s"${repo.show} is up-to-date"
+      }
+      logger.info(message).as((isOutdated, updates))
     }
-    logger.info(message).as((isOutdated, updates))
-  }
+
+  private def newPullRequestsAllowed(repo: Repo, frequency: PullRequestFrequency): F[Boolean] =
+    if (frequency === PullRequestFrequency.Asap)
+      true.pure[F]
+    else {
+      pullRequestRepository.lastPullRequestCreatedAt(repo).flatMap {
+        case None => true.pure[F]
+        case Some(createdAt) =>
+          dateTimeAlg.currentTimestamp.map(frequency.timeout(createdAt, _)).flatMap { timeout =>
+            if (timeout.length > 0) {
+              val message = s"Ignoring outdated dependencies for ${dateTime.showDuration(timeout)}"
+              logger.info(message).as(false)
+            } else true.pure[F]
+          }
+      }
+    }
 }
 
 object PruningAlg {
