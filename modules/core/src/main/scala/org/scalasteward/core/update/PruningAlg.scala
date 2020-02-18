@@ -146,17 +146,17 @@ final class PruningAlg[F[_]](
     }
 
   private def newPullRequestsAllowed(repo: Repo, frequency: PullRequestFrequency): F[Boolean] =
-    if (frequency === PullRequestFrequency.Asap)
-      true.pure[F]
+    if (frequency === PullRequestFrequency.Asap) true.pure[F]
     else {
       pullRequestRepository.lastPullRequestCreatedAt(repo).flatMap {
         case None => true.pure[F]
         case Some(createdAt) =>
           dateTimeAlg.currentTimestamp.map(frequency.timeout(createdAt, _)).flatMap { timeout =>
-            if (timeout.length > 0) {
+            if (timeout.length <= 0) true.pure[F]
+            else {
               val message = s"Ignoring outdated dependencies for ${dateTime.showDuration(timeout)}"
               logger.info(message).as(false)
-            } else true.pure[F]
+            }
           }
       }
     }

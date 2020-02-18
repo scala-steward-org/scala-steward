@@ -93,6 +93,14 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     config shouldBe Right(RepoConfig(updatePullRequests = PullRequestUpdateStrategy.Never))
   }
 
+  test("config with 'pullRequests.frequency = @asap'") {
+    val content = """pullRequests.frequency = "@asap" """
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    config shouldBe Right(
+      RepoConfig(pullRequests = PullRequestsConfig(frequency = PullRequestFrequency.Asap))
+    )
+  }
+
   test("config with 'pullRequests.frequency = @daily'") {
     val content = """pullRequests.frequency = "@daily" """
     val config = RepoConfigAlg.parseRepoConfig(content)
