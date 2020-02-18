@@ -25,13 +25,15 @@ import scala.concurrent.duration._
 sealed trait PullRequestFrequency {
   def render: String
 
-  def timeout(lastCreated: Timestamp, now: Timestamp): FiniteDuration =
-    this match {
-      case Asap    => 0.nanoseconds
-      case Daily   => 1.day - lastCreated.until(now)
-      case Weekly  => 7.days - lastCreated.until(now)
-      case Monthly => 30.days - lastCreated.until(now)
+  def timeout(lastCreated: Timestamp, now: Timestamp): Option[FiniteDuration] = {
+    val period = this match {
+      case Asap    => None
+      case Daily   => Some(1.day)
+      case Weekly  => Some(7.days)
+      case Monthly => Some(30.days)
     }
+    period.map(_ - lastCreated.until(now)).filter(_.length > 0)
+  }
 }
 
 object PullRequestFrequency {
