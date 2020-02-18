@@ -20,11 +20,10 @@ import cats.Parallel
 import cats.implicits._
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, KeyEncoder}
-import java.util.concurrent.TimeUnit
 import org.scalasteward.core.coursier.VersionsCache.{Key, Value}
 import org.scalasteward.core.data.{Dependency, Resolver, Scope, Version}
 import org.scalasteward.core.persistence.KeyValueStore
-import org.scalasteward.core.util.{DateTimeAlg, MonadThrowable}
+import org.scalasteward.core.util.{DateTimeAlg, MonadThrowable, Timestamp}
 import scala.concurrent.duration.FiniteDuration
 
 final class VersionsCache[F[_]](
@@ -47,10 +46,10 @@ final class VersionsCache[F[_]](
       resolver: Resolver,
       maxAge: FiniteDuration
   ): F[List[Version]] =
-    dateTimeAlg.currentTimeMillis.flatMap { now =>
+    dateTimeAlg.currentTimestamp.flatMap { now =>
       val key = Key(dependency, resolver)
       store.get(key).flatMap {
-        case Some(value) if value.age(now) <= (maxAge * value.maxAgeFactor) =>
+        case Some(value) if value.updatedAt.until(now) <= (maxAge * value.maxAgeFactor) =>
           F.pure(value.versions)
         case maybeValue =>
           coursierAlg.getVersions(dependency, resolver).attempt.flatMap {
@@ -80,13 +79,10 @@ object VersionsCache {
   }
 
   final case class Value(
-      updatedAt: Long,
+      updatedAt: Timestamp,
       versions: List[Version],
       maybeError: Option[String]
   ) {
-    def age(now: Long): FiniteDuration =
-      FiniteDuration(now - updatedAt, TimeUnit.MILLISECONDS)
-
     def maxAgeFactor: Long =
       if (maybeError.nonEmpty && versions.isEmpty) 4L else 1L
   }

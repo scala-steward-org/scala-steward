@@ -18,8 +18,13 @@ package org.scalasteward.core.util
 
 import io.circe.Codec
 import io.circe.generic.extras.semiauto.deriveUnwrappedCodec
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.FiniteDuration
 
-final case class Timestamp(millis: Long)
+final case class Timestamp(millis: Long) {
+  def until(that: Timestamp): FiniteDuration =
+    FiniteDuration(that.millis - millis, TimeUnit.MILLISECONDS)
+}
 
 object Timestamp {
   implicit val timestampCodec: Codec[Timestamp] =
