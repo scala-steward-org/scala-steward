@@ -93,6 +93,30 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     config shouldBe Right(RepoConfig(updatePullRequests = PullRequestUpdateStrategy.Never))
   }
 
+  test("config with 'pullRequests.frequency = @daily'") {
+    val content = """pullRequests.frequency = "@daily" """
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    config shouldBe Right(
+      RepoConfig(pullRequests = PullRequestsConfig(frequency = PullRequestFrequency.Daily))
+    )
+  }
+
+  test("config with 'pullRequests.frequency = @monthly'") {
+    val content = """pullRequests.frequency = "@monthly" """
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    config shouldBe Right(
+      RepoConfig(pullRequests = PullRequestsConfig(frequency = PullRequestFrequency.Monthly))
+    )
+  }
+
+  test("malformed pullRequests.frequency") {
+    val content = """pullRequests.frequency = "quack" """
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    config shouldBe Right(
+      RepoConfig(pullRequests = PullRequestsConfig(frequency = PullRequestFrequency.Asap))
+    )
+  }
+
   test("malformed config") {
     val repo = Repo("fthomas", "scala-steward")
     val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
