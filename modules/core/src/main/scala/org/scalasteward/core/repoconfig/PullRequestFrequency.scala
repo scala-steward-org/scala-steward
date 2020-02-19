@@ -17,6 +17,7 @@
 package org.scalasteward.core.repoconfig
 
 import cats.Eq
+import cats.implicits._
 import cron4s.lib.javatime._
 import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.repoconfig.PullRequestFrequency._
@@ -28,7 +29,7 @@ sealed trait PullRequestFrequency {
 
   def onSchedule(now: Timestamp): Boolean =
     this match {
-      case CronExpr(expr) => expr.datePart.allOf(now.toInstant)
+      case CronExpr(expr) => expr.datePart.allOf(now.toLocalDateTime)
       case _              => true
     }
 
@@ -38,7 +39,7 @@ sealed trait PullRequestFrequency {
       case Daily          => Some(lastCreated + 1.day)
       case Weekly         => Some(lastCreated + 7.days)
       case Monthly        => Some(lastCreated + 30.days)
-      case CronExpr(expr) => expr.next(lastCreated.toInstant).map(Timestamp.from)
+      case CronExpr(expr) => expr.next(lastCreated.toLocalDateTime).map(Timestamp.fromLocalDateTime)
     }
     nextPossible.map(now.until).filter(_.length > 0)
   }
@@ -61,7 +62,7 @@ object PullRequestFrequency {
       case Daily.render   => Daily
       case Weekly.render  => Weekly
       case Monthly.render => Monthly
-      case _              => cron4s.Cron.parse(s).fold(_ => default, CronExpr.apply)
+      case _              => Either.catchNonFatal(cron4s.Cron.unsafeParse(s)).fold(_ => default, CronExpr.apply)
     }
 
   implicit val pullRequestFrequencyEq: Eq[PullRequestFrequency] =
