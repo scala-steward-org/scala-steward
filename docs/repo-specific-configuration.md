@@ -28,7 +28,7 @@ You can add `<YOUR_REPO>/.scala-steward.conf` to configure how Scala Steward upd
 #
 # Default: @asap
 #
-#pullRequests.frequency = "0 0 * ? * 3" # every thursday on midnight
+#pullRequests.frequency = "0 0 0 ? * 3" # every thursday on midnight
 pullRequests.frequency = "@weekly"
 
 # Only these dependencies which match the given patterns are updated.
