@@ -20,15 +20,25 @@ import cats.Order
 import cats.implicits._
 import io.circe.Codec
 import io.circe.generic.extras.semiauto.deriveUnwrappedCodec
+import java.time.Instant
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 
 final case class Timestamp(millis: Long) {
+  def +(finiteDuration: FiniteDuration): Timestamp =
+    Timestamp(millis + finiteDuration.toMillis)
+
+  def toInstant: Instant =
+    Instant.ofEpochMilli(millis)
+
   def until(that: Timestamp): FiniteDuration =
     FiniteDuration(that.millis - millis, TimeUnit.MILLISECONDS)
 }
 
 object Timestamp {
+  def from(instant: Instant): Timestamp =
+    Timestamp(instant.toEpochMilli)
+
   implicit val timestampCodec: Codec[Timestamp] =
     deriveUnwrappedCodec
 

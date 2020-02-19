@@ -17,6 +17,7 @@
 package org.scalasteward.core.repoconfig
 
 import cats.Eq
+import cron4s.lib.javatime._
 import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.repoconfig.PullRequestFrequency._
 import org.scalasteward.core.util.Timestamp
@@ -25,14 +26,21 @@ import scala.concurrent.duration._
 sealed trait PullRequestFrequency {
   def render: String
 
-  def timeout(lastCreated: Timestamp, now: Timestamp): Option[FiniteDuration] = {
-    val period = this match {
-      case Asap    => None
-      case Daily   => Some(1.day)
-      case Weekly  => Some(7.days)
-      case Monthly => Some(30.days)
+  def onSchedule(now: Timestamp): Boolean =
+    this match {
+      case CronExpr(expr) => expr.datePart.allOf(now.toInstant)
+      case _              => true
     }
-    period.map(_ - lastCreated.until(now)).filter(_.length > 0)
+
+  def timeout(lastCreated: Timestamp, now: Timestamp): Option[FiniteDuration] = {
+    val nextPossible = this match {
+      case Asap           => None
+      case Daily          => Some(lastCreated + 1.day)
+      case Weekly         => Some(lastCreated + 7.days)
+      case Monthly        => Some(lastCreated + 30.days)
+      case CronExpr(expr) => expr.next(lastCreated.toInstant).map(Timestamp.from)
+    }
+    nextPossible.map(now.until).filter(_.length > 0)
   }
 }
 
@@ -41,6 +49,9 @@ object PullRequestFrequency {
   case object Daily extends PullRequestFrequency { val render = "@daily" }
   case object Weekly extends PullRequestFrequency { val render = "@weekly" }
   case object Monthly extends PullRequestFrequency { val render = "@monthly" }
+  final case class CronExpr(expr: cron4s.CronExpr) extends PullRequestFrequency {
+    val render: String = expr.toString
+  }
 
   val default: PullRequestFrequency = Asap
 
@@ -50,7 +61,7 @@ object PullRequestFrequency {
       case Daily.render   => Daily
       case Weekly.render  => Weekly
       case Monthly.render => Monthly
-      case _              => default
+      case _              => cron4s.Cron.parse(s).fold(_ => default, CronExpr.apply)
     }
 
   implicit val pullRequestFrequencyEq: Eq[PullRequestFrequency] =
