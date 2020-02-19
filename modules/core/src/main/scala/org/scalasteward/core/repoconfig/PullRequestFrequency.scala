@@ -62,7 +62,8 @@ object PullRequestFrequency {
       case Daily.render   => Daily
       case Weekly.render  => Weekly
       case Monthly.render => Monthly
-      case _              => Either.catchNonFatal(cron4s.Cron.unsafeParse(s)).fold(_ => default, CronExpr.apply)
+      case other =>
+        Either.catchNonFatal(cron4s.Cron.unsafeParse(other)).fold(_ => default, CronExpr.apply)
     }
 
   implicit val pullRequestFrequencyEq: Eq[PullRequestFrequency] =

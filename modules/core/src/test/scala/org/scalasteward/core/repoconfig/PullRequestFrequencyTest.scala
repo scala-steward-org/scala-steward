@@ -10,7 +10,7 @@ class PullRequestFrequencyTest extends AnyFunSuite with Matchers {
 
   test("onSchedule") {
     val thursday = PullRequestFrequency.fromString("0 0 * ? * THU")
-    val notThursday = PullRequestFrequency.fromString("0 0 * ? * 0,1,2,4,5,6")
+    val notThursday = PullRequestFrequency.fromString("0 0 * ? * MON-WED,FRI-SUN")
     thursday.onSchedule(epoch) shouldBe true
     notThursday.onSchedule(epoch) shouldBe false
   }
