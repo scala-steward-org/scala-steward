@@ -154,12 +154,12 @@ final class PruningAlg[F[_]](
         if (!frequency.onSchedule(now))
           logger.info(s"$ignoring according to $frequency").as(false)
         else {
-          val waitingTime = OptionT(pullRequestRepository.lastPullRequestCreatedAt(repo))
+          val maybeWaitingTime = OptionT(pullRequestRepository.lastPullRequestCreatedAt(repo))
             .subflatMap(frequency.waitingTime(_, now))
-          waitingTime.value.flatMap {
+          maybeWaitingTime.value.flatMap {
             case None => true.pure[F]
-            case Some(timeout) =>
-              val message = s"$ignoring for ${dateTime.showDuration(timeout)}"
+            case Some(waitingTime) =>
+              val message = s"$ignoring for ${dateTime.showDuration(waitingTime)}"
               logger.info(message).as(false)
           }
         }
