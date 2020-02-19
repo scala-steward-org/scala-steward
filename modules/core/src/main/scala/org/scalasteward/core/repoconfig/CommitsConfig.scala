@@ -21,23 +21,12 @@ import io.circe.generic.extras.semiauto._
 import io.circe.{Decoder, Encoder}
 
 final case class CommitsConfig(
-    message: CommitMessageConfig = CommitMessageConfig()
-)
-
-final case class CommitMessageConfig(
-    prefix: String = "",
-    suffix: String = ""
+    message: String = "Update ${artifactName} to ${nextVersion}"
 )
 
 object CommitsConfig {
   implicit val customConfig: Configuration =
     Configuration.default.withDefaults
-
-  implicit val commitMessageConfigDecoder: Decoder[CommitMessageConfig] =
-    deriveConfiguredDecoder
-
-  implicit val commitMessageConfigEncoder: Encoder[CommitMessageConfig] =
-    deriveConfiguredEncoder
 
   implicit val commitsConfigDecoder: Decoder[CommitsConfig] =
     deriveConfiguredDecoder

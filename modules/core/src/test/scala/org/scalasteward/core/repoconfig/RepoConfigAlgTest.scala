@@ -24,12 +24,9 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
          |               ]
          |updates.ignore = [ { groupId = "org.acme", version = "1.0" } ]
          |updates.limit = 4
-<<<<<<< HEAD
          |pullRequests.frequency = "@weekly"
-=======
          |commits.message.prefix = "my_prefix"
          |commits.message.suffix = "my_suffix"
->>>>>>> 93121f2a... Add formatting options to commit messages
          |""".stripMargin
     val initialState = MockState.empty.add(configFile, content)
     val config = repoConfigAlg.readRepoConfigOrDefault(repo).runA(initialState).unsafeRunSync()

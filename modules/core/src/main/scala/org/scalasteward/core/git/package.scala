@@ -18,14 +18,17 @@ package org.scalasteward.core
 
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.update.show
-import org.scalasteward.core.repoconfig.CommitMessageConfig
+import org.scalasteward.core.repoconfig.CommitsConfig
 
 package object git {
   def branchFor(update: Update): Branch =
     Branch(s"update/${update.name}-${update.nextVersion}")
 
-  def commitMsgFor(update: Update, msgConfig: CommitMessageConfig): String =
-    s"${msgConfig.prefix}Update ${show.oneLiner(update)} to ${update.nextVersion}${msgConfig.suffix}"
+  def commitMsgFor(update: Update, commitConfig: CommitsConfig): String =
+    commitConfig.message
+      .replace("${artifactName}", show.oneLiner(update))
+      .replace("${currentVersion}", update.currentVersion)
+      .replace("${nextVersion}", update.nextVersion)
 
   // man 7 gitrevisions:
   // When you have two commits r1 and r2 you can ask for commits that are

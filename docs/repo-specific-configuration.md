@@ -64,13 +64,10 @@ updates.limit = 5
 # Default: "on-conflicts"
 updatePullRequests = "always" | "on-conflicts" | "never"
 
-# If set, Scala Steward will prepend the message prefix to the commit messages and PR titles.
-# Default: None
-commits.message.prefix = "foo"
-
-# If set, Scala Steward will append the message suffix to the commit messages and PR titles.
-# Default: None
-commits.message.suffix = "foo"
+# If set, Scala Steward will use this message template for the commit messages and PR titles.
+# Supported variables: ${artifactName},  ${currentVersion},  ${nextVersion}
+# Default: "Update ${artifactName} to ${nextVersion}"
+commits.message = "Update ${artifactName} from ${currentVersion} to ${nextVersion}"
 ```
 
 The version information given in the patterns above can be in two formats:
