@@ -56,21 +56,21 @@ object PullRequestFrequency {
 
   val default: PullRequestFrequency = Asap
 
-  def fromString(s: String): PullRequestFrequency =
+  def fromString(s: String): Either[String, PullRequestFrequency] =
     s.trim.toLowerCase match {
-      case Asap.render    => Asap
-      case Daily.render   => Daily
-      case Weekly.render  => Weekly
-      case Monthly.render => Monthly
+      case Asap.render    => Right(Asap)
+      case Daily.render   => Right(Daily)
+      case Weekly.render  => Right(Weekly)
+      case Monthly.render => Right(Monthly)
       case other =>
-        Either.catchNonFatal(cron4s.Cron.unsafeParse(other)).fold(_ => default, CronExpr.apply)
+        Either.catchNonFatal(cron4s.Cron.unsafeParse(other)).leftMap(_.toString).map(CronExpr.apply)
     }
 
   implicit val pullRequestFrequencyEq: Eq[PullRequestFrequency] =
     Eq.fromUniversalEquals
 
   implicit val pullRequestFrequencyDecoder: Decoder[PullRequestFrequency] =
-    Decoder[String].map(fromString)
+    Decoder[String].emap(fromString)
 
   implicit val pullRequestFrequencyEncoder: Encoder[PullRequestFrequency] =
     Encoder[String].contramap(_.render)
