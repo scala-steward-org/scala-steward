@@ -17,6 +17,7 @@
 package org.scalasteward.core.update
 
 import cats.Monad
+import cats.data.OptionT
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data._
@@ -149,20 +150,19 @@ final class PruningAlg[F[_]](
     if (frequency === PullRequestFrequency.Asap) true.pure[F]
     else
       dateTimeAlg.currentTimestamp.flatMap { now =>
-        val ignoringDeps = "Ignoring outdated dependencies"
+        val ignoring = "Ignoring outdated dependencies"
         if (!frequency.onSchedule(now))
-          logger.info(s"$ignoringDeps according to $frequency").as(false)
-        else
-          pullRequestRepository.lastPullRequestCreatedAt(repo).flatMap {
+          logger.info(s"$ignoring according to $frequency").as(false)
+        else {
+          val timeout = OptionT(pullRequestRepository.lastPullRequestCreatedAt(repo))
+            .subflatMap(frequency.timeout(_, now))
+          timeout.value.flatMap {
             case None => true.pure[F]
-            case Some(createdAt) =>
-              frequency.timeout(createdAt, now) match {
-                case None => true.pure[F]
-                case Some(timeout) =>
-                  val message = s"$ignoringDeps for ${dateTime.showDuration(timeout)}"
-                  logger.info(message).as(false)
-              }
+            case Some(timeout) =>
+              val message = s"$ignoring for ${dateTime.showDuration(timeout)}"
+              logger.info(message).as(false)
           }
+        }
       }
 }
 
