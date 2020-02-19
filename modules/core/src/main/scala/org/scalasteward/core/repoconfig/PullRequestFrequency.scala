@@ -33,7 +33,7 @@ sealed trait PullRequestFrequency {
       case _              => true
     }
 
-  def timeout(lastCreated: Timestamp, now: Timestamp): Option[FiniteDuration] = {
+  def waitingTime(lastCreated: Timestamp, now: Timestamp): Option[FiniteDuration] = {
     val nextPossible = this match {
       case Asap           => None
       case Daily          => Some(lastCreated + 1.day)
