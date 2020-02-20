@@ -107,6 +107,7 @@ Thanks goes to these wonderful people:
 * [Thomas Kaliakos](https://github.com/thomaska)
 * [Victor Viale](https://github.com/Koroeskohr)
 * [Yan](https://github.com/yaroot)
+* [Yoan Alvarez-Vanhard](https://github.com/tyoras)
 * [Zack Powers](https://github.com/Milyardo)
 * [Zelenya](https://github.com/Zelenya)
 
