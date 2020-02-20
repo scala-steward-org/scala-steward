@@ -21,8 +21,11 @@ import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.deriveConfiguredCodec
 
 final case class PullRequestsConfig(
-    frequency: PullRequestFrequency = PullRequestFrequency.default
-)
+    frequency: Option[PullRequestFrequency] = None
+) {
+  def frequencyOrDefault: PullRequestFrequency =
+    frequency.getOrElse(PullRequestFrequency.default)
+}
 
 object PullRequestsConfig {
   implicit val customConfig: Configuration =

@@ -131,7 +131,7 @@ final class PruningAlg[F[_]](
       repoConfig: RepoConfig,
       updateStates: List[UpdateState]
   ): F[(Boolean, List[Update.Single])] =
-    newPullRequestsAllowed(repo, repoConfig.pullRequests.frequency).flatMap { allowed =>
+    newPullRequestsAllowed(repo, repoConfig.pullRequests.frequencyOrDefault).flatMap { allowed =>
       val (outdatedStates, updates) = updateStates.collect {
         case s: DependencyOutdated if allowed => (s, s.update)
         case s: PullRequestOutdated           => (s, s.update)
