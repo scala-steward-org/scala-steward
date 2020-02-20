@@ -30,7 +30,7 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     val config = repoConfigAlg.readRepoConfigOrDefault(repo).runA(initialState).unsafeRunSync()
 
     config shouldBe RepoConfig(
-      pullRequests = PullRequestsConfig(frequency = PullRequestFrequency.Weekly),
+      pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Weekly)),
       updates = UpdatesConfig(
         allow = List(UpdatePattern(GroupId("eu.timepit"), None, None)),
         pin = List(
@@ -97,7 +97,7 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     val content = """pullRequests.frequency = "@asap" """
     val config = RepoConfigAlg.parseRepoConfig(content)
     config shouldBe Right(
-      RepoConfig(pullRequests = PullRequestsConfig(frequency = PullRequestFrequency.Asap))
+      RepoConfig(pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Asap)))
     )
   }
 
@@ -105,7 +105,7 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     val content = """pullRequests.frequency = "@daily" """
     val config = RepoConfigAlg.parseRepoConfig(content)
     config shouldBe Right(
-      RepoConfig(pullRequests = PullRequestsConfig(frequency = PullRequestFrequency.Daily))
+      RepoConfig(pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Daily)))
     )
   }
 
@@ -113,7 +113,7 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     val content = """pullRequests.frequency = "@monthly" """
     val config = RepoConfigAlg.parseRepoConfig(content)
     config shouldBe Right(
-      RepoConfig(pullRequests = PullRequestsConfig(frequency = PullRequestFrequency.Monthly))
+      RepoConfig(pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Monthly)))
     )
   }
 
