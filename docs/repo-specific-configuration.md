@@ -16,8 +16,8 @@ You can add `<YOUR_REPO>/.scala-steward.conf` to configure how Scala Steward upd
 #   <CRON expression>
 #     PRs are created roughly according to the given CRON expression.
 #
-#     CRON expressions consist of six fields: seconds, minutes, hour of day,
-#     day of month, month, and day of week.
+#     CRON expressions consist of five fields:
+#     minutes, hour of day, day of month, month, and day of week.
 #
 #     See https://www.alonsodomin.me/cron4s/userguide/index.html#parsing for
 #     more information about the CRON expressions that are supported.
@@ -28,7 +28,7 @@ You can add `<YOUR_REPO>/.scala-steward.conf` to configure how Scala Steward upd
 #
 # Default: @asap
 #
-#pullRequests.frequency = "0 0 0 ? * 3" # every thursday on midnight
+#pullRequests.frequency = "0 0 ? * 3" # every thursday on midnight
 pullRequests.frequency = "@weekly"
 
 # Only these dependencies which match the given patterns are updated.

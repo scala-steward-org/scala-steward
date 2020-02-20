@@ -62,8 +62,12 @@ object PullRequestFrequency {
       case Daily.render   => Right(Daily)
       case Weekly.render  => Right(Weekly)
       case Monthly.render => Right(Monthly)
-      case other =>
-        Either.catchNonFatal(cron4s.Cron.unsafeParse(other)).leftMap(_.toString).map(CronExpr.apply)
+      case other          =>
+        // cron4s supports 6 fields, but we only want to support the more
+        // common format with 5 fields. Therefore we're prepending the "seconds"
+        // field ourselves.
+        val errorOrCronExpr = Either.catchNonFatal(cron4s.Cron.unsafeParse("0 " + other))
+        errorOrCronExpr.leftMap(_.toString).map(CronExpr.apply)
     }
 
   implicit val pullRequestFrequencyEq: Eq[PullRequestFrequency] =

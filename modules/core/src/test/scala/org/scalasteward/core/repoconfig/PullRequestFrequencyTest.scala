@@ -9,8 +9,8 @@ class PullRequestFrequencyTest extends AnyFunSuite with Matchers {
   val epoch: Timestamp = Timestamp(0L)
 
   test("onSchedule") {
-    val Right(thursday) = PullRequestFrequency.fromString("0 0 * ? * THU")
-    val Right(notThursday) = PullRequestFrequency.fromString("0 0 * ? * MON-WED,FRI-SUN")
+    val Right(thursday) = PullRequestFrequency.fromString("0 * ? * THU")
+    val Right(notThursday) = PullRequestFrequency.fromString("0 * ? * MON-WED,FRI-SUN")
     thursday.onSchedule(epoch) shouldBe true
     notThursday.onSchedule(epoch) shouldBe false
   }
@@ -21,7 +21,7 @@ class PullRequestFrequencyTest extends AnyFunSuite with Matchers {
   }
 
   test("waitingTime: cron expr") {
-    val Right(freq) = PullRequestFrequency.fromString("0 0 * ? * *")
+    val Right(freq) = PullRequestFrequency.fromString("0 1 ? * *")
     freq.waitingTime(epoch, Timestamp(20.minutes.toMillis)) shouldBe Some(40.minutes)
   }
 }
