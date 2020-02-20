@@ -4,8 +4,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalasteward.core.TestSyntax._
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import org.scalacheck.Arbitrary
-import org.scalacheck.Gen
+import org.scalacheck.{Arbitrary, Gen}
 import org.scalasteward.core.data.Update.Single
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.util.Nel
