@@ -24,11 +24,13 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
          |               ]
          |updates.ignore = [ { groupId = "org.acme", version = "1.0" } ]
          |updates.limit = 4
+         |pullRequests.frequency = "@weekly"
          |""".stripMargin
     val initialState = MockState.empty.add(configFile, content)
     val config = repoConfigAlg.readRepoConfigOrDefault(repo).runA(initialState).unsafeRunSync()
 
     config shouldBe RepoConfig(
+      pullRequests = PullRequestsConfig(frequency = PullRequestFrequency.Weekly),
       updates = UpdatesConfig(
         allow = List(UpdatePattern(GroupId("eu.timepit"), None, None)),
         pin = List(
@@ -89,6 +91,30 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     val content = """updatePullRequests = "never" """
     val config = RepoConfigAlg.parseRepoConfig(content)
     config shouldBe Right(RepoConfig(updatePullRequests = PullRequestUpdateStrategy.Never))
+  }
+
+  test("config with 'pullRequests.frequency = @asap'") {
+    val content = """pullRequests.frequency = "@asap" """
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    config shouldBe Right(
+      RepoConfig(pullRequests = PullRequestsConfig(frequency = PullRequestFrequency.Asap))
+    )
+  }
+
+  test("config with 'pullRequests.frequency = @daily'") {
+    val content = """pullRequests.frequency = "@daily" """
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    config shouldBe Right(
+      RepoConfig(pullRequests = PullRequestsConfig(frequency = PullRequestFrequency.Daily))
+    )
+  }
+
+  test("config with 'pullRequests.frequency = @monthly'") {
+    val content = """pullRequests.frequency = "@monthly" """
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    config shouldBe Right(
+      RepoConfig(pullRequests = PullRequestsConfig(frequency = PullRequestFrequency.Monthly))
+    )
   }
 
   test("malformed config") {
