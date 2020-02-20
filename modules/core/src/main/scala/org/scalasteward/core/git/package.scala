@@ -24,11 +24,15 @@ package object git {
   def branchFor(update: Update): Branch =
     Branch(s"update/${update.name}-${update.nextVersion}")
 
-  def commitMsgFor(update: Update, commitConfig: CommitsConfig): String =
+  def commitMsgFor(update: Update, commitConfig: CommitsConfig): String = {
+    val artifact = show.oneLiner(update)
+    val defaultMessage = s"Update $artifact to ${update.nextVersion}"
     commitConfig.message
-      .replace("${artifactName}", show.oneLiner(update))
+      .replace("${default}", defaultMessage)
+      .replace("${artifactName}", artifact)
       .replace("${currentVersion}", update.currentVersion)
       .replace("${nextVersion}", update.nextVersion)
+  }
 
   // man 7 gitrevisions:
   // When you have two commits r1 and r2 you can ask for commits that are

@@ -21,7 +21,7 @@ import io.circe.generic.extras.semiauto._
 import io.circe.{Decoder, Encoder}
 
 final case class CommitsConfig(
-    message: String = "Update ${artifactName} to ${nextVersion}"
+    message: String = "${default}"
 )
 
 object CommitsConfig {

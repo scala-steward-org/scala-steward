@@ -65,8 +65,8 @@ updates.limit = 5
 updatePullRequests = "always" | "on-conflicts" | "never"
 
 # If set, Scala Steward will use this message template for the commit messages and PR titles.
-# Supported variables: ${artifactName},  ${currentVersion},  ${nextVersion}
-# Default: "Update ${artifactName} to ${nextVersion}"
+# Supported variables: ${artifactName}, ${currentVersion}, ${nextVersion} and ${default}
+# Default: "${default}" which is equivalent to "Update ${artifactName} to ${nextVersion}" 
 commits.message = "Update ${artifactName} from ${currentVersion} to ${nextVersion}"
 ```
 
