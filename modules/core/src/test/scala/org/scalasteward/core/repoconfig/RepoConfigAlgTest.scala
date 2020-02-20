@@ -25,6 +25,7 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
          |updates.ignore = [ { groupId = "org.acme", version = "1.0" } ]
          |updates.limit = 4
          |pullRequests.frequency = "@weekly"
+         |commits.message = "Update ${artifactName} from ${currentVersion} to ${nextVersion}"
          |""".stripMargin
     val initialState = MockState.empty.add(configFile, content)
     val config = repoConfigAlg.readRepoConfigOrDefault(repo).runA(initialState).unsafeRunSync()
@@ -59,6 +60,9 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
           UpdatePattern(GroupId("org.acme"), None, Some(UpdatePattern.Version(Some("1.0"), None)))
         ),
         limit = Some(4)
+      ),
+      commits = CommitsConfig(
+        message = "Update ${artifactName} from ${currentVersion} to ${nextVersion}"
       )
     )
   }

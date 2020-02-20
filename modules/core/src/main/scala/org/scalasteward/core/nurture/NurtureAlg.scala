@@ -134,7 +134,8 @@ final class NurtureAlg[F[_]](
   def commitAndPush(data: UpdateData): F[ProcessResult] =
     for {
       _ <- logger.info("Commit and push changes")
-      _ <- gitAlg.commitAll(data.repo, git.commitMsgFor(data.update))
+      commitMsgConfig = data.repoConfig.commits
+      _ <- gitAlg.commitAll(data.repo, git.commitMsgFor(data.update, commitMsgConfig))
       _ <- gitAlg.push(data.repo, data.updateBranch)
     } yield Updated
 

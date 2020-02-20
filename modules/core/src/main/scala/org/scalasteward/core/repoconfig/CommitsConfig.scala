@@ -19,24 +19,18 @@ package org.scalasteward.core.repoconfig
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 import io.circe.{Decoder, Encoder}
-import PullRequestUpdateStrategy.{prUpdateStrategyDecoder, prUpdateStrategyEncoder}
 
-final case class RepoConfig(
-    pullRequests: PullRequestsConfig = PullRequestsConfig(),
-    updates: UpdatesConfig = UpdatesConfig(),
-    updatePullRequests: PullRequestUpdateStrategy = PullRequestUpdateStrategy.default,
-    commits: CommitsConfig = CommitsConfig()
+final case class CommitsConfig(
+    message: String = "${default}"
 )
 
-object RepoConfig {
-  val default: RepoConfig = RepoConfig()
-
+object CommitsConfig {
   implicit val customConfig: Configuration =
     Configuration.default.withDefaults
 
-  implicit val repoConfigDecoder: Decoder[RepoConfig] =
+  implicit val commitsConfigDecoder: Decoder[CommitsConfig] =
     deriveConfiguredDecoder
 
-  implicit val repoConfigEncoder: Encoder[RepoConfig] =
+  implicit val commitsConfigEncoder: Encoder[CommitsConfig] =
     deriveConfiguredEncoder
 }
