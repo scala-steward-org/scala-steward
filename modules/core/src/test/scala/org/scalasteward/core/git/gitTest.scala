@@ -20,12 +20,12 @@ class gitTest extends AnyFunSuite with Matchers with ScalaCheckPropertyChecks {
   } yield Single(groupId % artifactId % currentVersion, Nel.one(newerVersion)))
 
   test("commitMsgFor should work with static message") {
-    val commitsConfig = CommitsConfig("Static message")
+    val commitsConfig = CommitsConfig(Some("Static message"))
     forAll { update: Update => commitMsgFor(update, commitsConfig) shouldBe "Static message" }
   }
 
   test("commitMsgFor should work with default message") {
-    val commitsConfig = CommitsConfig("${default}")
+    val commitsConfig = CommitsConfig(Some("${default}"))
     forAll { update: Update =>
       commitMsgFor(update, commitsConfig) shouldBe s"Update ${show.oneLiner(update)} to ${update.nextVersion}"
     }
@@ -33,7 +33,7 @@ class gitTest extends AnyFunSuite with Matchers with ScalaCheckPropertyChecks {
 
   test("commitMsgFor should work with templated message") {
     val commitsConfig =
-      CommitsConfig("Update ${artifactName} from ${currentVersion} to ${nextVersion}")
+      CommitsConfig(Some("Update ${artifactName} from ${currentVersion} to ${nextVersion}"))
     forAll { update: Update =>
       commitMsgFor(update, commitsConfig) shouldBe s"Update ${show.oneLiner(update)} from ${update.currentVersion} to ${update.nextVersion}"
     }

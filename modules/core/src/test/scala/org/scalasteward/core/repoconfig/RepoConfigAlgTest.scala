@@ -62,7 +62,7 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
         limit = Some(4)
       ),
       commits = CommitsConfig(
-        message = "Update ${artifactName} from ${currentVersion} to ${nextVersion}"
+        message = Some("Update ${artifactName} from ${currentVersion} to ${nextVersion}")
       )
     )
   }
