@@ -16,16 +16,15 @@
 
 package org.scalasteward.core.repoconfig
 
+import io.circe.Codec
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
-import io.circe.{Decoder, Encoder}
-import PullRequestUpdateStrategy.{prUpdateStrategyDecoder, prUpdateStrategyEncoder}
 
 final case class RepoConfig(
+    commits: CommitsConfig = CommitsConfig(),
     pullRequests: PullRequestsConfig = PullRequestsConfig(),
     updates: UpdatesConfig = UpdatesConfig(),
-    updatePullRequests: PullRequestUpdateStrategy = PullRequestUpdateStrategy.default,
-    commits: CommitsConfig = CommitsConfig()
+    updatePullRequests: PullRequestUpdateStrategy = PullRequestUpdateStrategy.default
 )
 
 object RepoConfig {
@@ -34,9 +33,6 @@ object RepoConfig {
   implicit val customConfig: Configuration =
     Configuration.default.withDefaults
 
-  implicit val repoConfigDecoder: Decoder[RepoConfig] =
-    deriveConfiguredDecoder
-
-  implicit val repoConfigEncoder: Encoder[RepoConfig] =
-    deriveConfiguredEncoder
+  implicit val repoConfigCodec: Codec[RepoConfig] =
+    deriveConfiguredCodec
 }

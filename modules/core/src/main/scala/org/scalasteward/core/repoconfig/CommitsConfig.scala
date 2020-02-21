@@ -16,21 +16,23 @@
 
 package org.scalasteward.core.repoconfig
 
+import io.circe.Codec
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
-import io.circe.{Decoder, Encoder}
 
 final case class CommitsConfig(
-    message: String = "${default}"
-)
+    message: Option[String] = None
+) {
+  def messageOrDefault: String =
+    message.getOrElse(CommitsConfig.defaultMessage)
+}
 
 object CommitsConfig {
+  val defaultMessage = "${default}"
+
   implicit val customConfig: Configuration =
     Configuration.default.withDefaults
 
-  implicit val commitsConfigDecoder: Decoder[CommitsConfig] =
-    deriveConfiguredDecoder
-
-  implicit val commitsConfigEncoder: Encoder[CommitsConfig] =
-    deriveConfiguredEncoder
+  implicit val commitsConfigCodec: Codec[CommitsConfig] =
+    deriveConfiguredCodec
 }
