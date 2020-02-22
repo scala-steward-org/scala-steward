@@ -43,6 +43,17 @@ Updates for `sbt` and `scalafmt` can be controlled by using the following `group
 { groupId = "org.scalameta", artifactId = "scalafmt-core" }
 ```
 
+## Can Scala Steward update dependencies in giter8 templates ?
+
+Scala Steward can update versions in giter8 templates if the dependencies of the template 
+are also added as dependencies of the template build.
+An example is [library.g8](https://github.com/ChristopherDavenport/library.g8) ([example PR](https://github.com/ChristopherDavenport/library.g8/pull/100/files))
+
+## Why does Steward update provide no URLs in PRs
+
+Steward update can only provide links to release notes, diffs and changelogs if
+the `pom.xml` or `ivy.xml` file contain the `homepage` attribute.
+
 ## How can Scala Steward's PRs be merged automatically?
 
 You can use [Mergify](https://mergify.io) to automatically merge Scala Steward's
