@@ -44,7 +44,8 @@ object StewardPlugin extends AutoPlugin {
         .map(moduleId => toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue))
 
       val scalafixDeps = findScalafixDependencies.value.map(moduleId =>
-        toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue, Some("scalafix-rule")))
+        toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue, Some("scalafix-rule"))
+      )
       val dependencies = libraryDeps ++ scalafixDeps
 
       val resolvers = fullResolvers.value.collect {
