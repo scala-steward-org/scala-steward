@@ -28,7 +28,7 @@ object PullRequestUpdateStrategy {
   final case object OnConflicts extends PullRequestUpdateStrategy { val name = "on-conflicts" }
   final case object Never extends PullRequestUpdateStrategy { val name = "never" }
 
-  val default = OnConflicts
+  val default: PullRequestUpdateStrategy = OnConflicts
 
   def fromString(value: String): PullRequestUpdateStrategy =
     value.trim.toLowerCase match {

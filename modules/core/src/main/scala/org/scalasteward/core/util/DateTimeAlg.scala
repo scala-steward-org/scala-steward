@@ -16,14 +16,17 @@
 
 package org.scalasteward.core.util
 
-import cats.Monad
 import cats.effect.Sync
 import cats.implicits._
+import cats.{Functor, Monad}
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 
 trait DateTimeAlg[F[_]] {
   def currentTimeMillis: F[Long]
+
+  final def currentTimestamp(implicit F: Functor[F]): F[Timestamp] =
+    currentTimeMillis.map(Timestamp.apply)
 
   final def timed[A](fa: F[A])(implicit F: Monad[F]): F[(A, FiniteDuration)] =
     for {

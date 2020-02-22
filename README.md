@@ -20,8 +20,8 @@ See also the announcement blog post:
 ## Quick start guide
 
 Open a pull request that adds the GitHub repository of your Scala project
-to [repos.md](https://github.com/scala-steward-org/repos/blob/master/repos.md)
-([edit](https://github.com/scala-steward-org/repos/edit/master/repos.md)).
+to [repos-github.md](https://github.com/scala-steward-org/repos/blob/master/repos-github.md)
+([edit](https://github.com/scala-steward-org/repos/edit/master/repos-github.md)).
 Once that PR is merged, [**@scala-steward**][@scala-steward] will check
 periodically for updates of libraries and plugins in your project and will
 open pull requests for updates it found.
@@ -107,6 +107,7 @@ Thanks goes to these wonderful people:
 * [Thomas Kaliakos](https://github.com/thomaska)
 * [Victor Viale](https://github.com/Koroeskohr)
 * [Yan](https://github.com/yaroot)
+* [Yoan Alvarez-Vanhard](https://github.com/tyoras)
 * [Zack Powers](https://github.com/Milyardo)
 * [Zelenya](https://github.com/Zelenya)
 
@@ -118,6 +119,7 @@ Consider creating PR to add your company to the list and join the community.
 
 * [Adform](https://site.adform.com/)
 * [AutoScout24](https://www.autoscout24.de/)
+* [Besedo](https://www.besedo.com/)
 * [Bitrock](http://www.bitrock.it/)
 * [Chartboost](https://www.chartboost.com/)
 * [Colisweb](https://www.colisweb.com/)

@@ -18,21 +18,19 @@ package org.scalasteward.core.repoconfig
 
 import io.circe.Codec
 import io.circe.generic.extras.Configuration
-import io.circe.generic.extras.semiauto._
+import io.circe.generic.extras.semiauto.deriveConfiguredCodec
 
-final case class RepoConfig(
-    commits: CommitsConfig = CommitsConfig(),
-    pullRequests: PullRequestsConfig = PullRequestsConfig(),
-    updates: UpdatesConfig = UpdatesConfig(),
-    updatePullRequests: PullRequestUpdateStrategy = PullRequestUpdateStrategy.default
-)
+final case class PullRequestsConfig(
+    frequency: Option[PullRequestFrequency] = None
+) {
+  def frequencyOrDefault: PullRequestFrequency =
+    frequency.getOrElse(PullRequestFrequency.default)
+}
 
-object RepoConfig {
-  val default: RepoConfig = RepoConfig()
-
+object PullRequestsConfig {
   implicit val customConfig: Configuration =
     Configuration.default.withDefaults
 
-  implicit val repoConfigCodec: Codec[RepoConfig] =
+  implicit val pullRequestsConfigCodec: Codec[PullRequestsConfig] =
     deriveConfiguredCodec
 }

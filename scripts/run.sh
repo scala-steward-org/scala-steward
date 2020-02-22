@@ -14,7 +14,7 @@ JAR=$(find modules/ -name "scala-steward-assembly*.jar" | head -n1)
 curl -s --head --fail https://repo1.maven.org/maven2/
 
 REPOS_GITHUB="$STEWARD_DIR/repos-github.md"
-curl -s -o "$REPOS_GITHUB" https://raw.githubusercontent.com/scala-steward-org/repos/master/repos.md
+curl -s -o "$REPOS_GITHUB" https://raw.githubusercontent.com/scala-steward-org/repos/master/repos-github.md
 
 REPOS_GITLAB="$STEWARD_DIR/repos-gitlab.md"
 curl -s -o "$REPOS_GITLAB" https://raw.githubusercontent.com/scala-steward-org/repos/master/repos-gitlab.md

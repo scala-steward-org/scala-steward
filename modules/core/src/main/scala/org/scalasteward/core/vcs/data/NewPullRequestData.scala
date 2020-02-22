@@ -158,7 +158,7 @@ object NewPullRequestData {
       migrations: List[Migration] = List.empty
   ): NewPullRequestData =
     NewPullRequestData(
-      title = git.commitMsgFor(data.update),
+      title = git.commitMsgFor(data.update, data.repoConfig.commits),
       body = bodyFor(
         data.update,
         artifactIdToUrl,

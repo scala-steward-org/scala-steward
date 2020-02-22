@@ -6,8 +6,17 @@ version. This allows to automatically rewrite deprecated code or code that
 would not compile with the new version of the dependency.
 
 Here are two pull requests that demonstrate this feature:
- * https://github.com/barambani/http4s-extend/pull/67/files
- * https://github.com/fthomas/scalafix-test/pull/6/files
+
+* https://github.com/barambani/http4s-extend/pull/67/files
+* https://github.com/fthomas/scalafix-test/pull/6/files
+
+And here are all pull requests where Scala Steward applied Scalafix
+migrations:
+
+* [Created pull requests](https://github.com/search?q=author%3Ascala-steward+is%3Apr+scalafix-migrations)
+  ([compact](             https://github.com/pulls?q=author%3Ascala-steward+is%3Apr+scalafix-migrations))
+* [Merged pull requests]( https://github.com/search?q=author%3Ascala-steward+is%3Amerged+sort%3Aupdated-desc+scalafix-migrations)
+  ([compact](             https://github.com/pulls?q=author%3Ascala-steward+is%3Amerged+sort%3Aupdated-desc+scalafix-migrations))
 
 ## How does this work?
 

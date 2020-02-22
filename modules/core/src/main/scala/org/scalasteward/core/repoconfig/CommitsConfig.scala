@@ -20,19 +20,19 @@ import io.circe.Codec
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 
-final case class RepoConfig(
-    commits: CommitsConfig = CommitsConfig(),
-    pullRequests: PullRequestsConfig = PullRequestsConfig(),
-    updates: UpdatesConfig = UpdatesConfig(),
-    updatePullRequests: PullRequestUpdateStrategy = PullRequestUpdateStrategy.default
-)
+final case class CommitsConfig(
+    message: Option[String] = None
+) {
+  def messageOrDefault: String =
+    message.getOrElse(CommitsConfig.defaultMessage)
+}
 
-object RepoConfig {
-  val default: RepoConfig = RepoConfig()
+object CommitsConfig {
+  val defaultMessage = "${default}"
 
   implicit val customConfig: Configuration =
     Configuration.default.withDefaults
 
-  implicit val repoConfigCodec: Codec[RepoConfig] =
+  implicit val commitsConfigCodec: Codec[CommitsConfig] =
     deriveConfiguredCodec
 }

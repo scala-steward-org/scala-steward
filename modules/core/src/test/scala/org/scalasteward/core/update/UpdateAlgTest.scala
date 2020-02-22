@@ -25,7 +25,8 @@ class UpdateAlgTest extends AnyFunSuite with Matchers {
   }
 
   test("findUpdate: newer groupId") {
-    val dependency = "org.spire-math" % ArtifactId("kind-projector", "kind-projector_2.12") % "0.9.10"
+    val dependency =
+      "org.spire-math" % ArtifactId("kind-projector", "kind-projector_2.12") % "0.9.10"
     val expected = Update.Single(
       "org.spire-math" % ArtifactId("kind-projector", "kind-projector_2.12") % "0.9.10",
       Nel.of("0.10.0"),

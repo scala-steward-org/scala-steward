@@ -13,9 +13,10 @@ object Dependencies {
   val circeParser = "io.circe" %% "circe-parser" % circeGeneric.revision
   val circeRefined = "io.circe" %% "circe-refined" % circeGeneric.revision
   val commonsIo = "commons-io" % "commons-io" % "2.6"
-  val coursierCore = "io.get-coursier" %% "coursier" % "2.0.0-RC6-7"
+  val coursierCore = "io.get-coursier" %% "coursier" % "2.0.0-RC6-10"
   val coursierCatsInterop = "io.get-coursier" %% "coursier-cats-interop" % coursierCore.revision
-  val disciplineScalatest = "org.typelevel" %% "discipline-scalatest" % "1.0.0"
+  val cron4sCore = "com.github.alonsodomin.cron4s" %% "cron4s-core" % "0.6.0"
+  val disciplineScalatest = "org.typelevel" %% "discipline-scalatest" % "1.0.1"
   val fs2Core = "co.fs2" %% "fs2-core" % "2.2.2"
   val http4sAsyncHttpClient = "org.http4s" %% "http4s-async-http-client" % "0.21.1"
   val http4sCirce = "org.http4s" %% "http4s-circe" % http4sAsyncHttpClient.revision
@@ -28,7 +29,8 @@ object Dependencies {
   val refinedCats = "eu.timepit" %% "refined-cats" % refined.revision
   val refinedScalacheck = "eu.timepit" %% "refined-scalacheck" % refined.revision
   val scalacacheCaffeine = "com.github.cb372" %% "scalacache-caffeine" % "0.28.0"
-  val scalacacheCatsEffect = "com.github.cb372" %% "scalacache-cats-effect" % scalacacheCaffeine.revision
+  val scalacacheCatsEffect =
+    "com.github.cb372" %% "scalacache-cats-effect" % scalacacheCaffeine.revision
   val scalacheck = "org.scalacheck" %% "scalacheck" % "1.14.3"
-  val scalaTest = "org.scalatest" %% "scalatest" % "3.1.0"
+  val scalaTest = "org.scalatest" %% "scalatest" % "3.1.1"
 }

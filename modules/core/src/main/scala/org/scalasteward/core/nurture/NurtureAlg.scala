@@ -81,7 +81,7 @@ final class NurtureAlg[F[_]](
     for {
       repoConfig <- repoConfigAlg.readRepoConfigOrDefault(repo)
       grouped = Update.groupByGroupId(updates)
-      sorted = grouped.sortBy { migrationAlg.findMigrations(_).size }
+      sorted = grouped.sortBy(migrationAlg.findMigrations(_).size)
       _ <- logger.info(util.logger.showUpdates(sorted))
       baseSha1 <- gitAlg.latestSha1(repo, baseBranch)
       _ <- NurtureAlg.processUpdates(
@@ -134,7 +134,8 @@ final class NurtureAlg[F[_]](
   def commitAndPush(data: UpdateData): F[ProcessResult] =
     for {
       _ <- logger.info("Commit and push changes")
-      _ <- gitAlg.commitAll(data.repo, git.commitMsgFor(data.update))
+      commitMsgConfig = data.repoConfig.commits
+      _ <- gitAlg.commitAll(data.repo, git.commitMsgFor(data.update, commitMsgConfig))
       _ <- gitAlg.push(data.repo, data.updateBranch)
     } yield Updated
 

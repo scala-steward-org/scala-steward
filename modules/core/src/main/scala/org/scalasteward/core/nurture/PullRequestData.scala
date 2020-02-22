@@ -16,22 +16,21 @@
 
 package org.scalasteward.core.nurture
 
+import io.circe.Codec
 import io.circe.generic.semiauto._
-import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.git.Sha1
+import org.scalasteward.core.util.Timestamp
 import org.scalasteward.core.vcs.data.PullRequestState
 
 final case class PullRequestData(
     baseSha1: Sha1,
     update: Update,
-    state: PullRequestState
+    state: PullRequestState,
+    entryCreatedAt: Timestamp
 )
 
 object PullRequestData {
-  implicit val pullRequestDataDecoder: Decoder[PullRequestData] =
-    deriveDecoder
-
-  implicit val pullRequestDataEncoder: Encoder[PullRequestData] =
-    deriveEncoder
+  implicit val pullRequestDataCodec: Codec[PullRequestData] =
+    deriveCodec
 }
