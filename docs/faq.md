@@ -49,10 +49,11 @@ Scala Steward can update versions in giter8 templates if the dependencies of the
 are also added as dependencies of the template build.
 An example is [library.g8](https://github.com/ChristopherDavenport/library.g8) ([example PR](https://github.com/ChristopherDavenport/library.g8/pull/100/files))
 
-## Why does Steward update provide no URLs in PRs
+## Why do Scala Steward updates provide no URLs in PRs
 
-Steward update can only provide links to release notes, diffs and changelogs if
-the `pom.xml` or `ivy.xml` file contain the `homepage` attribute.
+Scala Steward updates can only provide links to release notes, diffs and changelogs if
+the `ivy.xml` file contain the `homepage` attribute or the `pom.xml` contains either
+a  `scm.url` or an `url` attribute.
 
 ## How can Scala Steward's PRs be merged automatically?
 
