@@ -18,7 +18,6 @@ package org.scalasteward.plugin
 
 import sbt.Keys._
 import sbt._
-
 import scala.util.matching.Regex
 
 object StewardPlugin extends AutoPlugin {
@@ -43,9 +42,11 @@ object StewardPlugin extends AutoPlugin {
         .filter(isDefinedInBuildFiles(_, sourcePositions, buildRoot))
         .map(moduleId => toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue))
 
-      val scalafixDeps = findScalafixDependencies.value.map(moduleId =>
-        toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue, Some("scalafix-rule"))
-      )
+      val scalafixDeps = findScalafixDependencies.value
+        .getOrElse(Seq.empty)
+        .map(moduleId =>
+          toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue, Some("scalafix-rule"))
+        )
       val dependencies = libraryDeps ++ scalafixDeps
 
       val resolvers = fullResolvers.value.collect {
@@ -102,10 +103,16 @@ object StewardPlugin extends AutoPlugin {
   private def isCompilerPlugin(moduleId: ModuleID): Boolean =
     moduleId.configurations.exists(_ == "plugin->default(compile)")
 
-  lazy val findScalafixDependencies: Def.Initialize[Seq[ModuleID]] = Def.settingDyn {
-    val scalafixDependencies = SettingKey[Seq[ModuleID]]("scalafixDependencies")
-    Def.setting {
-      scalafixDependencies.value
+  // base on mdoc
+  // https://github.com/scalameta/mdoc/blob/62cacfbc4c7b618228e349d4f460061916398424/mdoc-sbt/src/main/scala/mdoc/MdocPlugin.scala#L164-L182
+  lazy val findScalafixDependencies: Def.Initialize[Option[Seq[ModuleID]]] = Def.settingDyn {
+    try {
+      val scalafixDependencies = SettingKey[Seq[ModuleID]]("scalafixDependencies").?
+      Def.setting {
+        scalafixDependencies.value
+      }
+    } catch {
+      case _: ClassNotFoundException => Def.setting(None)
     }
   }
 
