@@ -124,5 +124,8 @@ class NewPullRequestDataTest extends AnyFunSuite with Matchers {
     NewPullRequestData.updateType(
       Update.Single(dependency.copy(sbtVersion = Some(SbtVersion("1.0"))), Nel.of("0.2"))
     ) shouldBe "sbt-plugin-update"
+    NewPullRequestData.updateType(
+      Update.Single(dependency.copy(configurations = Some("scalafix-rule")), Nel.of("0.2"))
+    ) shouldBe "scalafix-rule-update"
   }
 }

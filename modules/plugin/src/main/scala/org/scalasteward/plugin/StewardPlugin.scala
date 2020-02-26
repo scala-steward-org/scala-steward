@@ -38,9 +38,16 @@ object StewardPlugin extends AutoPlugin {
       val scalaBinaryVersionValue = scalaBinaryVersion.value
       val scalaVersionValue = scalaVersion.value
 
-      val dependencies = libraryDependencies.value
+      val libraryDeps = libraryDependencies.value
         .filter(isDefinedInBuildFiles(_, sourcePositions, buildRoot))
         .map(moduleId => toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue))
+
+      val scalafixDeps = findScalafixDependencies.value
+        .getOrElse(Seq.empty)
+        .map(moduleId =>
+          toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue, Some("scalafix-rule"))
+        )
+      val dependencies = libraryDeps ++ scalafixDeps
 
       val resolvers = fullResolvers.value.collect {
         case repo: MavenRepository if !repo.root.startsWith("file:") =>
@@ -96,6 +103,19 @@ object StewardPlugin extends AutoPlugin {
   private def isCompilerPlugin(moduleId: ModuleID): Boolean =
     moduleId.configurations.exists(_ == "plugin->default(compile)")
 
+  // base on mdoc
+  // https://github.com/scalameta/mdoc/blob/62cacfbc4c7b618228e349d4f460061916398424/mdoc-sbt/src/main/scala/mdoc/MdocPlugin.scala#L164-L182
+  lazy val findScalafixDependencies: Def.Initialize[Option[Seq[ModuleID]]] = Def.settingDyn {
+    try {
+      val scalafixDependencies = SettingKey[Seq[ModuleID]]("scalafixDependencies").?
+      Def.setting {
+        scalafixDependencies.value
+      }
+    } catch {
+      case _: ClassNotFoundException => Def.setting(None)
+    }
+  }
+
   private def crossName(
       moduleId: ModuleID,
       scalaVersion: String,
@@ -106,7 +126,8 @@ object StewardPlugin extends AutoPlugin {
   private def toDependency(
       moduleId: ModuleID,
       scalaVersion: String,
-      scalaBinaryVersion: String
+      scalaBinaryVersion: String,
+      configurations: Option[String] = None
   ): Dependency =
     Dependency(
       groupId = moduleId.organization,
@@ -114,7 +135,7 @@ object StewardPlugin extends AutoPlugin {
       version = moduleId.revision,
       sbtVersion = moduleId.extraAttributes.get("e:sbtVersion"),
       scalaVersion = moduleId.extraAttributes.get("e:scalaVersion"),
-      configurations = moduleId.configurations
+      configurations = configurations.orElse(moduleId.configurations)
     )
 
   final private case class ArtifactId(
