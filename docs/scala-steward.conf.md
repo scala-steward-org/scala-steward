@@ -6,7 +6,7 @@
 
 Allows to control how often or when Scala Steward is allowed to create pull requests.
 
-Possible values:
+*Possible values*:
  * `"@asap"`:
    Bla bla bla
    
@@ -20,7 +20,9 @@ Possible values:
  * `"<CRON expression>"`:
 
 
-Default: `"@asap"`
+*Default*: `"@asap"`
+
+*Examples*:
 
 ```properties
 pullRequests.frequency = "@weekly"
@@ -30,10 +32,21 @@ pullRequests.frequency = "@weekly"
 
 ### limit
 
-Default: `null`
+*Default*: `null`
+
+*Examples*:
+
+```properties
+updates.limit = 5
+```
 
 ## updatesPullRequests
 
-Possible values:
+*Possible values*:
+  * `"always"`
+  * `"never"`
+  * `"on-conflicts"`
 
-Default: `"on-conflicts"`
+*Default*: `"on-conflicts"`
+
+*Examples*:

@@ -4,9 +4,10 @@ import better.files.Dsl.SymbolicOperations
 import io.circe.Encoder
 import io.circe.syntax._
 import org.scalasteward.core.repoconfig.PullRequestFrequency._
+import org.scalasteward.core.repoconfig.PullRequestUpdateStrategy.{Always, Never, OnConflicts}
 import org.scalasteward.core.repoconfig.{
   PullRequestFrequency,
-  RepoConfig,
+  PullRequestUpdateStrategy,
   RepoConfigAlg,
   UpdatesConfig
 }
@@ -20,12 +21,14 @@ object ScalaStewardConf extends App {
 
   def validate(content: String): String = {
     RepoConfigAlg.parseRepoConfig(content).toOption.get
-    val md =
-      s"""|```properties
-          |${content.trim}
-          |```""".stripMargin.trim
-    md
+    s"""|```properties
+        |$content
+        |```""".stripMargin
   }
+
+  val possibleValues = "*Possible values*"
+  val default = "*Default*"
+  val examples = "*Examples*"
 
   val pullRequests = "pullRequests"
   val frequency = "frequency"
@@ -35,6 +38,7 @@ object ScalaStewardConf extends App {
   val monthly: PullRequestFrequency = Monthly
   val updates = "updates"
   val limit = "limit"
+  val updatesPullRequests = "updatesPullRequests"
 
   (out / "scala-steward.conf.md") < s"""
 # ${RepoConfigAlg.repoConfigBasename}
@@ -45,7 +49,7 @@ object ScalaStewardConf extends App {
 
 Allows to control how often or when Scala Steward is allowed to create pull requests.
 
-Possible values:
+$possibleValues:
  * ${showCode(asap)}:
    Bla bla bla
    
@@ -59,7 +63,9 @@ Possible values:
  * `"<CRON expression>"`:
 
 
-Default: `${show(PullRequestFrequency.default)}`
+$default: `${show(PullRequestFrequency.default)}`
+
+$examples:
 
 ${validate(pullRequests + "." + frequency + " = " + show(weekly))}
 
@@ -67,13 +73,22 @@ ${validate(pullRequests + "." + frequency + " = " + show(weekly))}
 
 ### $limit
 
-Default: ${showCode(UpdatesConfig().limit)}
+$default: ${showCode(UpdatesConfig().limit)}
 
-## updatesPullRequests
+$examples:
 
-Possible values:
+${validate(updates + "." + limit + " = " + "5")}
 
-Default: ${showCode(RepoConfig().updatePullRequests)}
+## $updatesPullRequests
+
+$possibleValues:
+  * ${showCode(Always: PullRequestUpdateStrategy)}
+  * ${showCode(Never: PullRequestUpdateStrategy)}
+  * ${showCode(OnConflicts: PullRequestUpdateStrategy)}
+
+$default: ${showCode(PullRequestUpdateStrategy.default)}
+
+$examples:
 
 """.trim + "\n"
 }
