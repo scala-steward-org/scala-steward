@@ -10,6 +10,7 @@ val gitHubOwner = "fthomas"
 
 val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
   "core" -> List(JVMPlatform),
+  "docs" -> List(JVMPlatform),
   "plugin" -> List(JVMPlatform)
 )
 
@@ -17,7 +18,7 @@ val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
 
 lazy val root = project
   .in(file("."))
-  .aggregate(core.jvm, plugin.jvm)
+  .aggregate(core.jvm, docs.jvm, plugin.jvm)
   .settings(commonSettings)
   .settings(noPublishSettings)
 
@@ -103,6 +104,15 @@ lazy val core = myCrossProject("core")
     fork in run := true,
     fork in Test := true,
     Compile / unmanagedResourceDirectories ++= (plugin.jvm / Compile / unmanagedSourceDirectories).value
+  )
+
+lazy val docs = myCrossProject("docs")
+  .enablePlugins(BuildInfoPlugin)
+  .dependsOn(core)
+  .settings(
+    buildInfoKeys := Seq[BuildInfoKey](
+      "docsOut" -> (LocalRootProject / baseDirectory).value / "docs"
+    )
   )
 
 lazy val plugin = myCrossProject("plugin")
