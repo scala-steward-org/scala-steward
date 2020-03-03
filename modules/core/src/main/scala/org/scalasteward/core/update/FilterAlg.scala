@@ -115,6 +115,11 @@ object FilterAlg {
     (groupId.value, artifactId.name) match {
       case ("com.google.guava", "guava") =>
         List("r03", "r05", "r06", "r07", "r08", "r09").contains
+      case ("com.nequissimus", "sort-imports") =>
+        List(
+          // https://github.com/beautiful-scala/sbt-scalastyle/pull/13
+          "36845576"
+        ).contains
       case ("commons-collections", "commons-collections") =>
         List(
           "20030418.083655",
