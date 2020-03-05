@@ -110,6 +110,7 @@ lazy val docs = myCrossProject("docs")
   .enablePlugins(BuildInfoPlugin)
   .dependsOn(core)
   .settings(
+    Compile / compile / wartremoverErrors -= Wart.Equals,
     buildInfoKeys := Seq[BuildInfoKey](
       "docsOut" -> (LocalRootProject / baseDirectory).value / "docs"
     )
