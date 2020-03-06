@@ -21,13 +21,14 @@ import cats.Monad
 import cats.implicits._
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.build.system.BuildSystemAlg
-import org.scalasteward.core.data.{ArtifactId, CrossDependency, Dependency, GroupId, Update}
+import org.scalasteward.core.data.{ArtifactId, CrossDependency, Dependency, GroupId, Scope, Update}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 import atto.Parser
 import atto.Atto._
+
 import scala.util.Try
 
 object MavenAlg {
@@ -42,15 +43,17 @@ object MavenAlg {
   ): BuildSystemAlg[F] =
     new BuildSystemAlg[F] {
 
-      override def getDependencies(repo: Repo): F[List[Dependency]] =
-        for {
+      override def getDependencies(repo: Repo): F[List[Scope.Dependencies]] = {
+        val x: F[List[Dependency]] = for {
           repoDir <- workspaceAlg.repoDir(repo)
           cmd = mvnCmd(command.Clean, command.mvnDepList)
           lines <- exec(cmd, repoDir)
           dependencies = parseDependencies(lines)
-          //TODO: revisit scala check
-          //          maybeScalafmtDependency <- scalafmtAlg.getScalafmtDependency(repo)
         } yield dependencies.distinct
+
+        x.map(deps => List(Scope(deps, List.empty))) //fixme: needs resolvers, might need a dedicated maven plugin
+
+      }
 
       def exec(command: Nel[String], repoDir: File): F[List[String]] =
         maybeIgnoreOptsFiles(repoDir)(processAlg.execSandboxed(command, repoDir))
@@ -63,18 +66,18 @@ object MavenAlg {
           fa
         }
 
-      override def getUpdatesForRepo(repo: Repo): F[List[Update.Single]] =
-        for {
-          repoDir <- workspaceAlg.repoDir(repo)
-          minorUpdatesRawLines <- exec(mvnCmd(command.MvnMinorUpdates), repoDir)
-          minorUpdates = parseUpdates(minorUpdatesRawLines)
-          majorUpdatesRawLines <- exec(mvnCmd(command.MvnDepUpdates), repoDir)
-          majorUpdates = parseUpdates(majorUpdatesRawLines)
-          pluginUpdatesRawLines <- exec(mvnCmd(command.PluginUpdates), repoDir)
-          pluginUpdates = parseUpdates(pluginUpdatesRawLines)
-          updates = Update.groupByArtifactIdName(minorUpdates ++ majorUpdates)
-          result = updates ++ pluginUpdates
-        } yield result
+//      override def getUpdatesForRepo(repo: Repo): F[List[Update.Single]] =
+//        for {
+//          repoDir <- workspaceAlg.repoDir(repo)
+//          minorUpdatesRawLines <- exec(mvnCmd(command.MvnMinorUpdates), repoDir)
+//          minorUpdates = parseUpdates(minorUpdatesRawLines)
+//          majorUpdatesRawLines <- exec(mvnCmd(command.MvnDepUpdates), repoDir)
+//          majorUpdates = parseUpdates(majorUpdatesRawLines)
+//          pluginUpdatesRawLines <- exec(mvnCmd(command.PluginUpdates), repoDir)
+//          pluginUpdates = parseUpdates(pluginUpdatesRawLines)
+//          updates = Update.groupByArtifactIdName(minorUpdates ++ majorUpdates)
+//          result = updates ++ pluginUpdates
+//        } yield result
 
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
         F.unit //fixme:implement
@@ -85,6 +88,7 @@ object MavenAlg {
 
   def removeNoise(s: String): String = s.replace("[INFO]", "").trim
 
+  //fixme: rewrite with atto
   def parseDependencies(lines: List[String]): List[Dependency] = {
     val pattern = """(.*):(.*):jar:(.*):compile""".r
     lines
@@ -106,14 +110,14 @@ object MavenAlg {
       .collect { case Some(x) => x }
   }
 
-  def parseUpdates(lines: List[String]): List[Update.Single] =
-    lines
-      .map(removeNoise)
-      .map(_.trim)
-      .map { s =>
-        MavenParser.parse(s).toOption
-      }
-      .collect { case Some(x) => x }
+//  def parseUpdates(lines: List[String]): List[Update.Single] =
+//    lines
+//      .map(removeNoise)
+//      .map(_.trim)
+//      .map { s =>
+//        MavenParser.parse(s).toOption
+//      }
+//      .collect { case Some(x) => x }
 }
 
 object MavenParser {

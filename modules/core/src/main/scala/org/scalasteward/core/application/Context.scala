@@ -76,18 +76,16 @@ object Context {
       implicit val vcsExtraAlg: VCSExtraAlg[F] = VCSExtraAlg.create[F]
       implicit val pullRequestRepository: PullRequestRepository[F] =
         new PullRequestRepository[F](new JsonKeyValueStore("pull_requests", "2", kvsPrefix))
-      implicit val scalafmtAlg: ScalafmtAlg[F] = ScalafmtAlg.create[F]
-      implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create[F]
+       implicit val scalafmtAlg: ScalafmtAlg[F] = ScalafmtAlg.create[F]
+      implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create
+      [F]
       implicit val versionsCache: VersionsCache[F] =
         new VersionsCache[F](config.cacheTtl, new JsonKeyValueStore("versions", "2"))
       implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]
-      implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F]
+
       implicit val refreshErrorAlg: RefreshErrorAlg[F] =
         new RefreshErrorAlg[F](new JsonKeyValueStore("refresh_error", "1"))
       implicit val migrationAlg: MigrationAlg[F] = MigrationAlg.create[F]
-
-      implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create
-      implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]
 
       val mavenAlg: BuildSystemAlg[F] = MavenAlg.create[F]
       val sbtAlg: BuildSystemAlg[F] = SbtAlg.create[F]

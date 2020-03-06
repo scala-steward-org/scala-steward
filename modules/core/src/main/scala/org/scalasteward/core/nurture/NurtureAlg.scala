@@ -21,7 +21,6 @@ import cats.implicits._
 import eu.timepit.refined.types.numeric.PosInt
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.build.system.BuildSystemAlg
 import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.ProcessResult.{Ignored, Updated}
 import org.scalasteward.core.data.{ProcessResult, Scope, Update}
@@ -30,7 +29,6 @@ import org.scalasteward.core.git.{Branch, GitAlg}
 import org.scalasteward.core.repocache.RepoCacheRepository
 import org.scalasteward.core.repoconfig.{PullRequestUpdateStrategy, RepoConfigAlg}
 import org.scalasteward.core.scalafix.MigrationAlg
-import org.scalasteward.core.update.FilterAlg
 import org.scalasteward.core.util.{DateTimeAlg, HttpExistenceClient}
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo}
@@ -43,7 +41,6 @@ final class NurtureAlg[F[_]](
     dateTimeAlg: DateTimeAlg[F],
     editAlg: EditAlg[F],
     repoConfigAlg: RepoConfigAlg[F],
-
     gitAlg: GitAlg[F],
     coursierAlg: CoursierAlg[F],
     vcsApiAlg: VCSApiAlg[F],
@@ -52,8 +49,8 @@ final class NurtureAlg[F[_]](
     existenceClient: HttpExistenceClient[F],
     logger: Logger[F],
     migrationAlg: MigrationAlg,
-    pullRequestRepository: PullRequestRepository[F],repoCacheRepository: RepoCacheRepository[F],
-    buildSystemAlg: BuildSystemAlg[F],
+    pullRequestRepository: PullRequestRepository[F],
+    repoCacheRepository: RepoCacheRepository[F],
     F: Sync[F]
 ) {
   def nurture(repo: Repo, updates: List[Update.Single]): F[Either[Throwable, Unit]] = {
@@ -62,7 +59,7 @@ final class NurtureAlg[F[_]](
       logger.attemptLog(util.string.lineLeftRight(label)) {
         F.bracket(cloneAndSync(repo)) {
           case (fork, baseBranch) => updateDependencies(repo, fork, baseBranch, updates)
-        }(_ => F.unit) //gitAlg.removeClone(repo))
+        }(_ => gitAlg.removeClone(repo))
       }
     }
   }

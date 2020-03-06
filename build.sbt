@@ -145,20 +145,18 @@ def myCrossProject(name: String): CrossProject =
 ThisBuild / dynverSeparator := "-"
 
 lazy val commonSettings = Def.settings(
-//  scalacOptions := Seq(
-//    "-encoding", "utf8",
-//    "-deprecation",
-//    "-explaintypes",
-//    "-feature",
-//    "-unchecked",
-//    "-language:experimental.macros",
-//    "-language:implicitConversions",
-//    "-language:higherKinds",
-//    "-language:existentials",
-//    "-language:postfixOps",
-//    "-Ypartial-unification",
-//    "-Yno-adapted-args"
-//  ),
+  scalacOptions := Seq(
+    "-encoding", "utf8",
+    "-deprecation",
+    "-explaintypes",
+    "-feature",
+    "-unchecked",
+    "-language:experimental.macros",
+    "-language:implicitConversions",
+    "-language:higherKinds",
+    "-language:existentials",
+    "-language:postfixOps"
+  ),
   compileSettings,
   metadataSettings,
   scaladocSettings

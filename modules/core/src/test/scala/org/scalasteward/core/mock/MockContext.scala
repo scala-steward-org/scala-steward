@@ -13,6 +13,7 @@ import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Author, GitAlg}
 import org.scalasteward.core.io.{MockFileAlg, MockProcessAlg, MockWorkspaceAlg}
 import org.scalasteward.core.maven.MavenAlg
+//import org.scalasteward.core.mock.MockContext.config
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.persistence.JsonKeyValueStore
 import org.scalasteward.core.repocache.RepoCacheRepository
@@ -28,6 +29,8 @@ import org.scalasteward.core.vcs.data.AuthenticatedUser
 
 import scala.concurrent.duration._
 import org.scalasteward.core.update.GroupMigrations
+
+//fixme: extract the common parts into one object
 
 object MockContext {
   implicit val config: Config = Config(
@@ -90,6 +93,8 @@ object MockContext {
 }
 
 object MockMavenContext {
+  implicit val mockEffParallel: Parallel[MockEff] = Parallel.identity
+
   implicit val config: Config = Config(
     workspace = File.temp / "ws",
     reposFile = File.temp / "repos.md",
@@ -108,10 +113,10 @@ object MockMavenContext {
       EnvVar("TEST_VAR", "GREAT"),
       EnvVar("ANOTHER_TEST_VAR", "ALSO_GREAT")
     ),
-    pruneRepos = false,
     processTimeout = 10.minutes,
     scalafixMigrations = None,
-    cacheTtl = 1.hour
+    cacheTtl = 1.hour,
+    cacheMissDelay = 0.milliseconds
   )
 
   implicit val mockEffBracketThrowable: BracketThrowable[MockEff] = Sync[MockEff]
@@ -134,6 +139,8 @@ object MockMavenContext {
   implicit val editAlg: EditAlg[MockEff] = new EditAlg[MockEff]
   implicit val repoConfigAlg: RepoConfigAlg[MockEff] = new RepoConfigAlg[MockEff]
   implicit val filterAlg: FilterAlg[MockEff] = new FilterAlg[MockEff]
+  implicit val versionsCacheAlg: VersionsCache[MockEff] =
+    new VersionsCache[MockEff](config.cacheTtl, new JsonKeyValueStore("versions", "1"))
   implicit val updateAlg: UpdateAlg[MockEff] = new UpdateAlg[MockEff]
 
   implicit val prRepo: PullRequestRepository[MockEff] =

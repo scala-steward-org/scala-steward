@@ -55,4 +55,10 @@ class MockFileAlg extends FileAlg[MockEff] {
 
   override def writeFile(file: File, content: String): MockEff[Unit] =
     StateT.modify(_.exec(List("write", file.pathAsString)).add(file, content))
+
+  override def readResource(resource: String): MockEff[String] =
+    for {
+      _ <- StateT.modify[IO, MockState](_.exec(List("read", s"classpath:$resource")))
+      content <- StateT.liftF(FileAlgTest.ioFileAlg.readResource(resource))
+    } yield content
 }

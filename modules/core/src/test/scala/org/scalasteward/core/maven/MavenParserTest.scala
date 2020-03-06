@@ -143,23 +143,23 @@ class MavenParserTest extends AnyFunSuite with Matchers {
       [INFO]    io.circe:circe-numbers_2.12:jar:0.11.1:compile
       |""".stripMargin.linesIterator.toList
 
-  test("parse `mvn versions:display-plugin-updates`") {
-    MavenAlg.parseUpdates(pluginUpdates) should contain allElementsOf List(
-      Update.Single(
-        CrossDependency(
-          Dependency(
-            GroupId("net.alchim31.maven"),
-            ArtifactId("scala-maven-plugin", None),
-            "3.3.2",
-            None,
-            None,
-            None
-          )
-        ),
-        NonEmptyList.one("4.3.0")
-      )
-    )
-  }
+//  test("parse `mvn versions:display-plugin-updates`") {
+//    MavenAlg.parseUpdates(pluginUpdates) should contain allElementsOf List(
+//      Update.Single(
+//        CrossDependency(
+//          Dependency(
+//            GroupId("net.alchim31.maven"),
+//            ArtifactId("scala-maven-plugin", None),
+//            "3.3.2",
+//            None,
+//            None,
+//            None
+//          )
+//        ),
+//        NonEmptyList.one("4.3.0")
+//      )
+//    )
+//  }
 
   test("parse mvn dependency:list into dependencies") {
     MavenAlg.parseDependencies(dependencies).headOption should contain(
@@ -171,24 +171,24 @@ class MavenParserTest extends AnyFunSuite with Matchers {
     )
   }
 
-  test("parse mvn display-dependency-updates into updates") {
-    MavenAlg.parseUpdates(updates).headOption should contain(
-      Update.Single(
-        CrossDependency(
-          Dependency(
-            GroupId("io.kamon"),
-            ArtifactId("kamon-core", "2.12"),
-            "0.6.5",
-            sbtVersion = None,
-            scalaVersion = None,
-            configurations = None
-          )
-        ),
-        NonEmptyList.one("2.0.2")
-      )
-    )
-
-    //todo: configuration (test, provided) is missing
-  }
+//  test("parse mvn display-dependency-updates into updates") {
+//    MavenAlg.parseUpdates(updates).headOption should contain(
+//      Update.Single(
+//        CrossDependency(
+//          Dependency(
+//            GroupId("io.kamon"),
+//            ArtifactId("kamon-core", "2.12"),
+//            "0.6.5",
+//            sbtVersion = None,
+//            scalaVersion = None,
+//            configurations = None
+//          )
+//        ),
+//        NonEmptyList.one("2.0.2")
+//      )
+//    )
+//
+//    //todo: configuration (test, provided) is missing
+//  }
 
 }

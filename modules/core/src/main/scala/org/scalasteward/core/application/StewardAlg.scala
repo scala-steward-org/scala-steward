@@ -18,11 +18,11 @@ package org.scalasteward.core.application
 
 import better.files.File
 import cats.Monad
-import cats.effect.ExitCode
+import cats.effect.{Bracket, ExitCode, Resource, Sync}
 import cats.implicits._
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
-import org.scalasteward.core.git.GitAlg
+import org.scalasteward.core.git.{Branch, GitAlg}
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.NurtureAlg
 import org.scalasteward.core.repocache.RepoCacheAlg
@@ -50,7 +50,7 @@ final class StewardAlg[F[_]](
     gitAlg: GitAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
     prepareEnvAlg: PrepareEnvAlg[F],
-    F: Monad[F]
+    F: Sync[F]
 ) {
   private def printBanner: F[Unit] = {
     val banner =
@@ -71,19 +71,42 @@ final class StewardAlg[F[_]](
       content.linesIterator.collect { case regex(owner, repo) => Repo(owner.trim, repo.trim) }.toList
     }
 
-  private def steward(repo: Repo): F[Either[Throwable, Unit]] = {
+  private def steward(repo: Repo, repoType: RepoType): F[Either[Throwable, Unit]] = {
     val label = s"Steward ${repo.show}"
     logger.infoTotalTime(label) {
       for {
         _ <- logger.info(util.string.lineLeftRight(label))
-        _ <- repoCacheAlg.checkCache(repo)
+        _ <- getRepoCacheAlg(repoType).checkCache(repo)
         (attentionNeeded, updates) <- pruningAlg.needsAttention(repo)
         result <- {
-          if (attentionNeeded) nurtureAlg.nurture(repo, updates)
+          if (attentionNeeded) nurtureAlgCreator(repoType).nurture(repo, updates)
           else gitAlg.removeClone(repo).as(().asRight[Throwable])
         }
       } yield result
     }
+  }
+
+  def determineRepoType(repo: Repo): F[RepoType] = {
+    def checkRepoType(repoDir: File): RepoType = {
+      if ((repoDir / "pom.xml").exists) RepoType.Maven else RepoType.SBT
+    }
+
+    def cloneAndSync(repo: Repo): F[Unit] =
+      for {
+        _ <- logger.info(s"Clone and synchronize ${repo.show}")
+        repoOut <- vcsApiAlg.createForkOrGetRepo(config, repo)
+        _ <- gitAlg
+          .cloneExists(repo)
+          .ifM(F.unit, vcsRepoAlg.clone(repo, repoOut) >> vcsRepoAlg.syncFork(repo, repoOut))
+      } yield ()
+
+    F.bracket(cloneAndSync(repo)) { _ =>
+      for {
+        repoDir <- workspaceAlg.repoDir(repo)
+        repoType <- F.pure(checkRepoType(repoDir))
+        _ <- logger.info(s"Repo type for $repo is:$repoType")
+      } yield repoType
+    }(_ => gitAlg.removeClone(repo))
   }
 
   def runF: F[ExitCode] =
@@ -91,11 +114,15 @@ final class StewardAlg[F[_]](
       for {
         _ <- printBanner
         _ <- selfCheckAlg.checkAll
-        exitCode <- sbtAlg.addGlobalPlugins {
+        exitCode <- prepareEnvAlg.addGlobalPlugins {
           for {
             _ <- workspaceAlg.cleanWorkspace
             repos <- readRepos(config.reposFile)
-            result <- Stream.emits(repos).evalMap(steward).compile.foldMonoid
+            reposWithTypes <- repos.traverse(
+              repo => determineRepoType(repo).map((repo, _))
+            )
+            result <- Stream.emits(reposWithTypes)
+              .evalMap{case (repo, repoType) => steward(repo, repoType)}.compile.foldMonoid
           } yield result.fold(_ => ExitCode.Error, _ => ExitCode.Success)
         }
       } yield exitCode

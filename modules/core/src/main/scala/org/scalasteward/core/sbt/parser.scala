@@ -21,7 +21,6 @@ import io.circe.Decoder
 import io.circe.parser._
 import org.scalasteward.core.data._
 import org.scalasteward.core.sbt.data.SbtVersion
-import org.scalasteward.core.util.Nel
 
 object parser {
   def parseBuildProperties(s: String): Option[SbtVersion] =
