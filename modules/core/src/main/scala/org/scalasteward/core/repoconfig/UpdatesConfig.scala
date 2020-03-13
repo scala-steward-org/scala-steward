@@ -16,8 +16,10 @@
 
 package org.scalasteward.core.repoconfig
 
+import eu.timepit.refined.types.numeric.PosInt
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
+import io.circe.refined._
 import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.update.FilterAlg.{
@@ -32,7 +34,7 @@ final case class UpdatesConfig(
     pin: List[UpdatePattern] = List.empty,
     allow: List[UpdatePattern] = List.empty,
     ignore: List[UpdatePattern] = List.empty,
-    limit: Option[Int] = None
+    limit: Option[PosInt] = None
 ) {
   def keep(update: Update.Single): FilterResult =
     isAllowed(update).flatMap(isPinned).flatMap(isIgnored)
@@ -73,4 +75,7 @@ object UpdatesConfig {
 
   implicit val updatesConfigEncoder: Encoder[UpdatesConfig] =
     deriveConfiguredEncoder
+
+  // prevent IntelliJ from removing the import of io.circe.refined._
+  locally(refinedDecoder: Decoder[PosInt])
 }

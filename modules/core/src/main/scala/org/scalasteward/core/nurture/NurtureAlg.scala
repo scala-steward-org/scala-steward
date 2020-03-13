@@ -18,6 +18,7 @@ package org.scalasteward.core.nurture
 
 import cats.effect.Sync
 import cats.implicits._
+import eu.timepit.refined.types.numeric.PosInt
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.coursier.CoursierAlg
@@ -221,7 +222,7 @@ object NurtureAlg {
   def processUpdates[F[_]: Sync](
       updates: List[Update],
       updateF: Update => F[ProcessResult],
-      updatesLimit: Option[Int]
+      updatesLimit: Option[PosInt]
   ): F[Unit] =
     updatesLimit match {
       case None => updates.traverse_(updateF)
@@ -229,7 +230,7 @@ object NurtureAlg {
         fs2.Stream
           .emits(updates)
           .evalMap(updateF)
-          .through(util.takeUntil(limit) {
+          .through(util.takeUntil(limit.value) {
             case Ignored => 0
             case Updated => 1
           })
