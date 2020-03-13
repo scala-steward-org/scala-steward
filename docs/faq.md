@@ -72,3 +72,7 @@ Other examples of Mergify rules for Scala Steward can be found via
 Scala Steward signs commits with a PGP key. The fingerprint of that key is
 774C3674392662AE645C9B8396BDF10FFAB8B6A6 and it can be found at
 https://keys.openpgp.org/search?q=me@scala-steward.org.
+
+## How can I change log levels?
+
+If you want to switch from the standard INFO log level you can call scala steward with `-DLOG_LEVEL=DEBUG` for example: `scala-steward -DLOG_LEVEL=DEBUG  --workspace  "$STEWARD_DIR/workspace" ...` 
