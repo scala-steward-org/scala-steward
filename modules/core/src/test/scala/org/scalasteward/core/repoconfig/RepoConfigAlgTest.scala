@@ -1,6 +1,7 @@
 package org.scalasteward.core.repoconfig
 
 import better.files.File
+import eu.timepit.refined.types.numeric.PosInt
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.{GroupId, Update}
 import org.scalasteward.core.mock.MockContext.repoConfigAlg
@@ -59,7 +60,7 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
         ignore = List(
           UpdatePattern(GroupId("org.acme"), None, Some(UpdatePattern.Version(Some("1.0"), None)))
         ),
-        limit = Some(4)
+        limit = Some(PosInt.unsafeFrom(4))
       ),
       commits = CommitsConfig(
         message = Some("Update ${artifactName} from ${currentVersion} to ${nextVersion}")

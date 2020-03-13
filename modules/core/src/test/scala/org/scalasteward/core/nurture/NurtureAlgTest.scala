@@ -2,7 +2,7 @@ package org.scalasteward.core.nurture
 
 import cats.data.StateT
 import cats.effect.IO
-import cats.syntax.option._
+import eu.timepit.refined.types.numeric.PosInt
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.ProcessResult.{Ignored, Updated}
@@ -42,7 +42,11 @@ class NurtureAlgTest extends AnyFunSuite with Matchers with ScalaCheckPropertyCh
           IO.pure(actionAcc + 1 -> (if (ignorableUpdates.contains(update)) Ignored else Updated))
         )
       NurtureAlg
-        .processUpdates(ignorableUpdates ++ appliableUpdates, f, appliableUpdates.size.some)
+        .processUpdates(
+          ignorableUpdates ++ appliableUpdates,
+          f,
+          PosInt.unapply(appliableUpdates.size)
+        )
         .runS(0)
         .unsafeRunSync() shouldBe updates.size
     }
