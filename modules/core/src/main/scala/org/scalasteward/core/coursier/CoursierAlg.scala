@@ -20,11 +20,12 @@ import cats.effect._
 import cats.implicits._
 import cats.{Applicative, Parallel}
 import coursier.cache.{CachePolicy, FileCache}
-import coursier.core.Project
+import coursier.core.{Authentication, Project}
 import coursier.interop.cats._
 import coursier.{Fetch, Info, Module, ModuleName, Organization}
 import io.chrisdavenport.log4cats.Logger
 import org.http4s.Uri
+import org.scalasteward.core.data.Resolver.Credentials
 import org.scalasteward.core.data.{Dependency, Resolver, Scope, Version}
 
 /** An interface to [[https://get-coursier.io Coursier]] used for
@@ -125,11 +126,15 @@ object CoursierAlg {
 
   private def toCoursierRepository(resolver: Resolver): Either[String, coursier.Repository] =
     resolver match {
-      case Resolver.MavenRepository(_, location) =>
-        Right(coursier.maven.MavenRepository.apply(location))
-      case Resolver.IvyRepository(_, pattern) =>
-        coursier.ivy.IvyRepository.parse(pattern)
+      case Resolver.MavenRepository(_, location, creds) =>
+        Right(coursier.maven.MavenRepository.apply(location, creds.map(toCoursierAuthentication)))
+      case Resolver.IvyRepository(_, pattern, creds) =>
+        coursier.ivy.IvyRepository
+          .parse(pattern, authentication = creds.map(toCoursierAuthentication))
     }
+
+  private def toCoursierAuthentication(credentials: Credentials): Authentication =
+    Authentication(credentials.user, credentials.pass)
 
   private def getParentDependency(project: Project): Option[coursier.Dependency] =
     project.parent.map {
