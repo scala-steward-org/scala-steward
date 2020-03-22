@@ -170,36 +170,22 @@ lazy val metadataSettings = Def.settings(
 )
 
 lazy val dockerSettings = Def.settings(
-  dockerCommands := Seq(
-    Cmd("FROM", Option(System.getenv("DOCKER_BASE_IMAGE")).getOrElse("openjdk:8")),
-    Cmd("ARG", "DEBIAN_FRONTEND=noninteractive"),
-    ExecCmd("RUN", "apt-get", "update"),
-    ExecCmd("RUN", "apt-get", "install", "-y", "apt-transport-https", "firejail"),
-    ExecCmd(
-      "RUN",
-      "sh",
-      "-c",
-      """echo \"deb https://dl.bintray.com/sbt/debian /\" | tee -a /etc/apt/sources.list.d/sbt.list"""
-    ),
-    ExecCmd(
-      "RUN",
-      "apt-key",
-      "adv",
-      "--keyserver",
-      "hkp://keyserver.ubuntu.com:80",
-      "--recv",
-      "2EE0EA64E40A89B84B2DF73499E82A75642AC823"
-    ),
-    ExecCmd("RUN", "apt-get", "update"),
-    ExecCmd("RUN", "apt-get", "install", "-y", "sbt"),
-    Cmd("WORKDIR", "/opt/docker"),
-    Cmd("ADD", "opt", "/opt"),
-    ExecCmd("RUN", "chmod", "0755", "/opt/docker/bin/scala-steward"),
-    ExecCmd("ENTRYPOINT", "/opt/docker/bin/scala-steward"),
-    ExecCmd("CMD", "")
-  ),
+  dockerBaseImage := Option(System.getenv("DOCKER_BASE_IMAGE")).getOrElse("openjdk:8-jre-alpine"),
+  dockerCommands ++= {
+    val getSbtVersion = sbtVersion.value
+    val sbtTgz = s"sbt-$getSbtVersion.tgz"
+    val sbtUrl = s"https://github.com/sbt/sbt/releases/download/v$getSbtVersion/$sbtTgz"
+    Seq(
+      Cmd("USER", "root"),
+      Cmd(
+        "RUN",
+        s"apk --no-cache add bash && wget $sbtUrl && tar -xf $sbtTgz && rm -f $sbtTgz && ln sbt/bin/sbt /usr/bin"
+      )
+    )
+  },
   Docker / packageName := s"${gitHubOwner}/${name.value}",
-  dockerUpdateLatest := true
+  dockerUpdateLatest := true,
+  dockerEntrypoint += "--disable-sandbox"
 )
 
 lazy val noPublishSettings = Def.settings(
