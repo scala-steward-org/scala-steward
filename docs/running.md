@@ -71,14 +71,14 @@ run --disable-sandbox --do-not-fork --workspace "/path/workspace" --repos-file "
 * Create a file `run.sh` with this content:
 
 ```
-echo "echo '$BITBUCKET_PASSWORD'" >pass.sh
+echo "#!/bin/sh"                  >> pass.sh  
+echo "echo '$BITBUCKET_PASSWORD'" >> pass.sh
 
 chmod +x pass.sh
 
 docker run -v $PWD:/opt/scala-steward \
     -v ~/.sbt/:/root/.sbt \
     -it fthomas/scala-steward:latest \
-    --disable-sandbox \
     --env-var LOG_LEVEL=TRACE \
     --do-not-fork \
     --workspace "/opt/scala-steward/workspace" \
