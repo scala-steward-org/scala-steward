@@ -48,7 +48,7 @@ object MockContext {
     scalafixMigrations = None,
     cacheTtl = 1.hour,
     cacheMissDelay = 0.milliseconds,
-    useDefaultReviewers = false
+    bitbucketServerUseDefaultReviewers = false
   )
 
   implicit val mockEffBracketThrowable: BracketThrowable[MockEff] = Sync[MockEff]

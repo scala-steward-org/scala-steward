@@ -18,12 +18,9 @@ package org.scalasteward.core.bitbucketserver.http4s
 
 import cats.effect.Sync
 import cats.implicits._
-import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
-import io.circe.{Decoder, Encoder}
 import org.http4s.{Request, Uri}
 import org.scalasteward.core.bitbucketserver.http4s.Json.{Reviewer, User}
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.util.HttpJsonClient
 import org.scalasteward.core.vcs.VCSApiAlg
 import org.scalasteward.core.vcs.data.PullRequestState.Open
@@ -34,7 +31,6 @@ import org.scalasteward.core.vcs.data._
   */
 class Http4sBitbucketServerApiAlg[F[_]](
     bitbucketApiHost: Uri,
-    user: AuthenticatedUser,
     modify: Repo => Request[F] => F[Request[F]],
     useReviewers: Boolean
 )(implicit client: HttpJsonClient[F], F: Sync[F])
@@ -119,7 +115,6 @@ final class StashUrls(base: Uri) {
       .withQueryParam("at", head)
       .withQueryParam("limit", "1000")
       .withQueryParam("direction", "outgoing")
-
 
   def branches(r: Repo): Uri = repo(r) / "branches"
 
