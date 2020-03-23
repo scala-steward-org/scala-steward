@@ -47,7 +47,7 @@ object NewPullRequestData {
   ): String = {
     val artifacts = artifactsWithOptionalUrl(update, artifactIdToUrl)
     val (migrationLabel, appliedMigrations) = migrationNote(migrations)
-    val details = ignoreFutureUpdates(update) :: appliedMigrations.toList
+    val details = repoSpecificConfiguration(update) :: appliedMigrations.toList
     val labels =
       Nel.fromList(List(updateType(update)) ++ semVerLabel(update).toList ++ migrationLabel.toList)
 
@@ -120,9 +120,9 @@ object NewPullRequestData {
       case None      => s"$groupId:$artifactId"
     }
 
-  def ignoreFutureUpdates(update: Update): Details =
+  def repoSpecificConfiguration(update: Update): Details =
     Details(
-      "Ignore future updates",
+      s"Configure `scala-steward` for your repository by adding [${RepoConfigAlg.repoConfigBasename}](https://github.com/fthomas/scala-steward/blob/master/docs/repo-specific-configuration.md)",
       s"""|Add this to your `${RepoConfigAlg.repoConfigBasename}` file to ignore future updates of this dependency:
           |```
           |${RepoConfigAlg.configToIgnoreFurtherUpdates(update)}
