@@ -49,9 +49,8 @@ class VCSSelection[F[_]: Sync](implicit client: HttpJsonClient[F], user: Authent
 
     new Http4sBitbucketServerApiAlg[F](
       config.vcsApiHost,
-      user,
       _ => addCredentials(user),
-      config.useDefaultReviewers
+      config.bitbucketServerUseDefaultReviewers
     )
   }
 

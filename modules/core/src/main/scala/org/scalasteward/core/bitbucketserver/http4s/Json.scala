@@ -20,6 +20,7 @@ import cats.data.NonEmptyList
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder}
 import org.http4s.Uri
+import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.vcs.data.PullRequestState
 
 object Json {
@@ -59,6 +60,10 @@ object Json {
 
   case class User(name: String)
 
+  case class Branches(values: NonEmptyList[Branch])
+
+  case class Branch(id: String, latestCommit: Sha1)
+
   implicit def pageDecode[A: Decoder]: Decoder[Page[A]] = deriveDecoder
   implicit val repoDecode: Decoder[Repo] = deriveDecoder
   implicit val projectDecode: Decoder[Project] = deriveDecoder
@@ -69,6 +74,8 @@ object Json {
   implicit val userDecoder: Decoder[User] = deriveDecoder
   implicit val defaultReviewerDecoder: Decoder[DefaultReviewer] = deriveDecoder
   implicit val conditionDecoder: Decoder[Condition] = deriveDecoder
+  implicit val branchDecoder: Decoder[Branch] = deriveDecoder
+  implicit val branchesDecoder: Decoder[Branches] = deriveDecoder
 
   implicit val encodeNewPR: Encoder[NewPR] = deriveEncoder
   implicit val encodeRef: Encoder[Ref] = deriveEncoder
