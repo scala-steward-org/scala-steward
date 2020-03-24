@@ -64,6 +64,7 @@ Thanks goes to these wonderful people:
 
 * [Adam Fraser](https://github.com/adamgfraser)
 * [Alex](https://github.com/jhnsmth)
+* [Andrea](https://github.com/Andrea)
 * [Andrea Mistretta](https://github.com/andreami)
 * [Anil Kumar Myla](https://github.com/anilkumarmyla)
 * [Arjun Dhawan](https://github.com/arjun-1)
@@ -79,6 +80,7 @@ Thanks goes to these wonderful people:
 * [Felix Dietze](https://github.com/fdietze)
 * [Filipe Regadas](https://github.com/regadas)
 * [Frank S. Thomas](https://github.com/fthomas)
+* [Georgy Davityan](https://github.com/implmnt)
 * [Guillaume Martres](https://github.com/smarter)
 * [Jakub Kozłowski](https://github.com/kubukoz)
 * [JCollier](https://github.com/Slakah)
