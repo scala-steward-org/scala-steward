@@ -20,6 +20,7 @@ import sbt.Keys._
 import sbt._
 
 import scala.util.matching.Regex
+import scala.util.Try
 
 object StewardPlugin extends AutoPlugin {
   override def trigger: PluginTrigger = allRequirements
@@ -52,8 +53,7 @@ object StewardPlugin extends AutoPlugin {
       val dependencies = libraryDeps ++ scalafixDeps
 
       def getCredentials(url: URL): Option[Resolver.Credentials] =
-        Credentials
-          .forHost(sbtCredentials, url.getHost)
+        Try(Credentials.forHost(sbtCredentials, url.getHost)).toOption.flatten
           .map(c => Resolver.Credentials(c.userName, c.passwd))
 
       val resolvers = fullResolvers.value.collect {
