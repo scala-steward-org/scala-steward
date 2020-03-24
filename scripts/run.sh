@@ -3,7 +3,7 @@
 set -ex
 
 SCRIPT=$(readlink -f "$0")
-STEWARD_DIR=$(dirname "$SCRIPT")/..
+STEWARD_DIR=$(dirname $(dirname "$SCRIPT"))
 
 cd "$STEWARD_DIR"
 git pull
