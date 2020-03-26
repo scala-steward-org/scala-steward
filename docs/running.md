@@ -21,7 +21,7 @@ Or as a [Docker](https://www.docker.com/) container:
 ```bash
 sbt docker:publishLocal
 
-apk add gnupg git # base image is alpine
+apk add git # base image is alpine and git is called from scala-steward
 
 docker run -v $STEWARD_DIR:/opt/scala-steward -it fthomas/scala-steward:latest \
   --workspace  "/opt/scala-steward/workspace" \
