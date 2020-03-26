@@ -24,6 +24,7 @@ import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.git.Author
 import org.scalasteward.core.util
 import org.scalasteward.core.vcs.data.AuthenticatedUser
+
 import scala.concurrent.duration.FiniteDuration
 import scala.sys.process.Process
 
@@ -64,7 +65,8 @@ final case class Config(
     processTimeout: FiniteDuration,
     scalafixMigrations: Option[File],
     cacheTtl: FiniteDuration,
-    cacheMissDelay: FiniteDuration
+    cacheMissDelay: FiniteDuration,
+    bitbucketServerUseDefaultReviewers: Boolean
 ) {
   def vcsUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] = {
     val urlWithUser = util.uri.withUserInfo.set(UserInfo(vcsLogin, None))(vcsApiHost).renderString
@@ -97,7 +99,8 @@ object Config {
         processTimeout = args.processTimeout,
         scalafixMigrations = args.scalafixMigrations.map(_.toFile),
         cacheTtl = args.cacheTtl,
-        cacheMissDelay = args.cacheMissDelay
+        cacheMissDelay = args.cacheMissDelay,
+        bitbucketServerUseDefaultReviewers = args.bitbucketServerUseDefaultReviewers
       )
     }
 }
