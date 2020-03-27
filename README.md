@@ -82,6 +82,7 @@ Thanks goes to these wonderful people:
 * [Filipe Regadas](https://github.com/regadas)
 * [Frank S. Thomas](https://github.com/fthomas)
 * [Georgy Davityan](https://github.com/implmnt)
+* [Grzegorz Kocur](https://github.com/gkocur)
 * [Guillaume Martres](https://github.com/smarter)
 * [Ingar Abrahamsen](https://github.com/ingarabr)
 * [Jakub Kozłowski](https://github.com/kubukoz)
