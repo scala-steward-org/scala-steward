@@ -37,6 +37,9 @@ The [`git-ask-pass` option](https://git-scm.com/docs/gitcredentials) must specif
 - either the plain text password corresponding to the configured `${LOGIN}`,
 - or (recommended) an authentication token corresponding to `${LOGIN}` (with appropriate permissions to watch the repositories; e.g. [Create a personal access token](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line) for GitHub).
 
+**Note about git-ask-pass option**: The provided script must start with a valid shebang like `#!/bin/sh`, see issue [#1374](/../../issues/1374)
+
+
 You can also provide a `--scalafix-migrations` option with the path to a file containing scalafix migrations.
 More information can be found [here][migrations]
 ### Private repositories
