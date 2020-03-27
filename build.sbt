@@ -179,13 +179,14 @@ lazy val dockerSettings = Def.settings(
       Cmd("USER", "root"),
       Cmd(
         "RUN",
-        s"apk --no-cache add bash git ca-certificates && wget $sbtUrl && tar -xf $sbtTgz && rm -f $sbtTgz && ln sbt/bin/sbt /usr/bin"
+        s"apk --no-cache add bash git ca-certificates && wget $sbtUrl && tar -xf $sbtTgz && rm -f $sbtTgz"
       )
     )
   },
   Docker / packageName := s"${gitHubOwner}/${name.value}",
   dockerUpdateLatest := true,
-  dockerEntrypoint += "--disable-sandbox"
+  dockerEntrypoint += "--disable-sandbox",
+  dockerEnvVars := Map("PATH" -> "/opt/docker/sbt/bin:${PATH}")
 )
 
 lazy val noPublishSettings = Def.settings(
