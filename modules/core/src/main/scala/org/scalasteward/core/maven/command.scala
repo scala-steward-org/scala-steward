@@ -19,8 +19,5 @@ package org.scalasteward.core.maven
 object command {
   val Clean = "clean"
   val mvnDepList = "dependency:list"
-  val MvnDepUpdates = "versions:display-dependency-updates"
-  val MvnMinorUpdates =
-    "versions:display-dependency-updates -DallowMajorUpdates=false -DallowMinorUpdates=false -DallowIncrementalUpdates=true -DallowAnyUpdates=false"
   val PluginUpdates = "versions:display-plugin-updates"
 }

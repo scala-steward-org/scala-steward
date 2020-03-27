@@ -7,92 +7,157 @@ import org.scalatest.matchers.should.Matchers
 
 class MavenParserTest extends AnyFunSuite with Matchers {
 
-  val pluginUpdates: List[String] =
+  val resolvers =
     """[INFO] Scanning for projects...
       |[WARNING] The project com.twilio:scala-service-maven-sample:pom:1.0-SNAPSHOT uses prerequisites which is only intended for maven-plugin projects but not for non maven-plugin projects. For such purposes you should use the maven-enforcer-plugin. See https://maven.apache.org/enforcer/enforcer-rules/requireMavenVersion.html
       |[WARNING] The project com.twilio:scala-service-maven-sample-client:jar:1.0-SNAPSHOT uses prerequisites which is only intended for maven-plugin projects but not for non maven-plugin projects. For such purposes you should use the maven-enforcer-plugin. See https://maven.apache.org/enforcer/enforcer-rules/requireMavenVersion.html
+      |[WARNING] The project com.twilio:scala-service-maven-sample-server:jar:1.0-SNAPSHOT uses prerequisites which is only intended for maven-plugin projects but not for non maven-plugin projects. For such purposes you should use the maven-enforcer-plugin. See https://maven.apache.org/enforcer/enforcer-rules/requireMavenVersion.html
       |[INFO] ------------------------------------------------------------------------
       |[INFO] Reactor Build Order:
       |[INFO]
       |[INFO] scala-service-maven-sample                                         [pom]
       |[INFO] scala-service-maven-sample-client                                  [jar]
+      |[INFO] scala-service-maven-sample-server                                  [jar]
       |[INFO]
       |[INFO] ---------------< com.twilio:scala-service-maven-sample >----------------
-      |[INFO] Building scala-service-maven-sample 1.0-SNAPSHOT                   [1/2]
+      |[INFO] Building scala-service-maven-sample 1.0-SNAPSHOT                   [1/3]
       |[INFO] --------------------------------[ pom ]---------------------------------
       |[INFO]
-      |[INFO] --- versions-maven-plugin:2.7:display-plugin-updates (default-cli) @ scala-service-maven-sample ---
-      |[INFO]
-      |[INFO] The following plugin updates are available:
-      |[INFO]   com.twilio.maven.plugins:guardrail-twilio-maven-plugin  0.53.1 -> 4.jsterlinginstanttest
-      |[INFO]   net.alchim31.maven:scala-maven-plugin .............. 3.3.2 -> 4.3.0
-      |[INFO]
-      |[WARNING] The following plugins do not have their version specified:
-      |[WARNING]   maven-clean-plugin ...................... (from super-pom) 3.1.0
-      |[WARNING]   maven-site-plugin ....................... (from super-pom) 3.8.2
-      |[INFO]
-      |[INFO] Project defines minimum Maven version as: 3.3.9
-      |[INFO] Plugins require minimum Maven version of: 3.0.5
-      |[INFO] Note: the super-pom from Maven 3.6.2 defines some of the plugin
-      |[INFO]       versions and may be influencing the plugins required minimum Maven
-      |[INFO]       version.
-      |[INFO]
-      |[INFO] No plugins require a newer version of Maven than specified by the pom.
-      |[INFO]
+      |[INFO] --- maven-dependency-plugin:3.0.2:list-repositories (default-cli) @ scala-service-maven-sample ---
+      |[INFO] Repositories used by this build:
+      |[INFO]        id: sonatype-nexus-snapshots
+      |      url: https://oss.sonatype.org/content/repositories/snapshots
+      |   layout: default
+      |snapshots: [enabled => true, update => daily]
+      | releases: [enabled => false, update => daily]
+      |
+      |[INFO]        id: bintrayakkamaven
+      |      url: https://dl.bintray.com/akka/maven/
+      |   layout: default
+      |snapshots: [enabled => true, update => daily]
+      | releases: [enabled => true, update => daily]
+      |
+      |[INFO]        id: apache.snapshots
+      |      url: http://repository.apache.org/snapshots
+      |   layout: default
+      |snapshots: [enabled => true, update => daily]
+      | releases: [enabled => false, update => daily]
+      |
+      |[INFO]        id: twilionexus
+      |      url: https://nexus.corp.twilio.com/content/groups/public/
+      |   layout: default
+      |snapshots: [enabled => true, update => daily]
+      | releases: [enabled => true, update => daily]
+      |
+      |[INFO]        id: twilio.nexus
+      |      url: https://nexus.corp.twilio.com/content/groups/public
+      |   layout: default
+      |snapshots: [enabled => true, update => daily]
+      | releases: [enabled => true, update => daily]
+      |
+      |[INFO]        id: central
+      |      url: https://repo.maven.apache.org/maven2
+      |   layout: default
+      |snapshots: [enabled => false, update => daily]
+      | releases: [enabled => true, update => daily]
+      |
       |[INFO]
       |[INFO] ------------< com.twilio:scala-service-maven-sample-client >------------
-      |[INFO] Building scala-service-maven-sample-client 1.0-SNAPSHOT            [2/2]
+      |[INFO] Building scala-service-maven-sample-client 1.0-SNAPSHOT            [2/3]
       |[INFO] --------------------------------[ jar ]---------------------------------
       |[INFO]
-      |[INFO] --- versions-maven-plugin:2.7:display-plugin-updates (default-cli) @ scala-service-maven-sample-client ---
+      |[INFO] --- maven-dependency-plugin:3.0.2:list-repositories (default-cli) @ scala-service-maven-sample-client ---
+      |[INFO] Repositories used by this build:
+      |[INFO]        id: sonatype-nexus-snapshots
+      |      url: https://oss.sonatype.org/content/repositories/snapshots
+      |   layout: default
+      |snapshots: [enabled => true, update => daily]
+      | releases: [enabled => false, update => daily]
+      |
+      |[INFO]        id: bintrayakkamaven
+      |      url: https://dl.bintray.com/akka/maven/
+      |   layout: default
+      |snapshots: [enabled => true, update => daily]
+      | releases: [enabled => true, update => daily]
+      |
+      |[INFO]        id: apache.snapshots
+      |      url: http://repository.apache.org/snapshots
+      |   layout: default
+      |snapshots: [enabled => true, update => daily]
+      | releases: [enabled => false, update => daily]
+      |
+      |[INFO]        id: twilionexus
+      |      url: https://nexus.corp.twilio.com/content/groups/public/
+      |   layout: default
+      |snapshots: [enabled => true, update => daily]
+      | releases: [enabled => true, update => daily]
+      |
+      |[INFO]        id: twilio.nexus
+      |      url: https://nexus.corp.twilio.com/content/groups/public
+      |   layout: default
+      |snapshots: [enabled => true, update => daily]
+      | releases: [enabled => true, update => daily]
+      |
+      |[INFO]        id: central
+      |      url: https://repo.maven.apache.org/maven2
+      |   layout: default
+      |snapshots: [enabled => false, update => daily]
+      | releases: [enabled => true, update => daily]
+      |
       |[INFO]
-      |[INFO] All plugins with a version specified are using the latest versions.
+      |[INFO] ------------< com.twilio:scala-service-maven-sample-server >------------
+      |[INFO] Building scala-service-maven-sample-server 1.0-SNAPSHOT            [3/3]
+      |[INFO] --------------------------------[ jar ]---------------------------------
       |[INFO]
-      |[WARNING] The following plugins do not have their version specified:
-      |[WARNING]   maven-clean-plugin ...................... (from super-pom) 3.1.0
-      |[WARNING]   maven-site-plugin ....................... (from super-pom) 3.8.2
-      |[INFO]
-      |[INFO] Project defines minimum Maven version as: 3.3.9
-      |[INFO] Plugins require minimum Maven version of: 3.0.5
-      |[INFO] Note: the super-pom from Maven 3.6.2 defines some of the plugin
-      |[INFO]       versions and may be influencing the plugins required minimum Maven
-      |[INFO]       version.
-      |[INFO]
-      |[INFO] No plugins require a newer version of Maven than specified by the pom.
-      |[INFO]
+      |[INFO] --- maven-dependency-plugin:3.0.2:list-repositories (default-cli) @ scala-service-maven-sample-server ---
+      |[INFO] Repositories used by this build:
+      |[INFO]        id: sonatype-nexus-snapshots
+      |      url: https://oss.sonatype.org/content/repositories/snapshots
+      |   layout: default
+      |snapshots: [enabled => true, update => daily]
+      | releases: [enabled => false, update => daily]
+      |
+      |[INFO]        id: bintrayakkamaven
+      |      url: https://dl.bintray.com/akka/maven/
+      |   layout: default
+      |snapshots: [enabled => true, update => daily]
+      | releases: [enabled => true, update => daily]
+      |
+      |[INFO]        id: apache.snapshots
+      |      url: http://repository.apache.org/snapshots
+      |   layout: default
+      |snapshots: [enabled => true, update => daily]
+      | releases: [enabled => false, update => daily]
+      |
+      |[INFO]        id: twilionexus
+      |      url: https://nexus.corp.twilio.com/content/groups/public/
+      |   layout: default
+      |snapshots: [enabled => true, update => daily]
+      | releases: [enabled => true, update => daily]
+      |
+      |[INFO]        id: twilio.nexus
+      |      url: https://nexus.corp.twilio.com/content/groups/public
+      |   layout: default
+      |snapshots: [enabled => true, update => daily]
+      | releases: [enabled => true, update => daily]
+      |
+      |[INFO]        id: central
+      |      url: https://repo.maven.apache.org/maven2
+      |   layout: default
+      |snapshots: [enabled => false, update => daily]
+      | releases: [enabled => true, update => daily]
+      |
       |[INFO] ------------------------------------------------------------------------
       |[INFO] Reactor Summary for scala-service-maven-sample 1.0-SNAPSHOT:
       |[INFO]
-      |[INFO] scala-service-maven-sample ......................... SUCCESS [  0.648 s]
-      |[INFO] scala-service-maven-sample-client .................. SUCCESS [  0.051 s]
+      |[INFO] scala-service-maven-sample ......................... SUCCESS [  0.906 s]
+      |[INFO] scala-service-maven-sample-client .................. SUCCESS [  0.033 s]
+      |[INFO] scala-service-maven-sample-server .................. SUCCESS [  0.029 s]
       |[INFO] ------------------------------------------------------------------------
       |[INFO] BUILD SUCCESS
       |[INFO] ------------------------------------------------------------------------
-      |[INFO] Total time:  0.915 s
-      |[INFO] Finished at: 2019-12-12T16:04:00+02:00
-      |[INFO] ------------------------------------------------------------------------""".stripMargin.stripMargin.linesIterator.toList
-
-  val updates: List[String] =
-    """[INFO] Scanning for projects...
-      |[WARNING] The project com.twilio:scala-service-maven-sample:jar:1.0-SNAPSHOT uses prerequisites which is only intended for maven-plugin projects but not for non maven-plugin projects. For such purposes you should use the maven-enforcer-plugin. See https://maven.apache.org/enforcer/enforcer-rules/requireMavenVersion.html
-      |[INFO]
-      |[INFO] ---------------< com.twilio:scala-service-maven-sample >----------------
-      |[INFO] Building scala-service-maven-sample 1.0-SNAPSHOT
-      |[INFO] --------------------------------[ jar ]---------------------------------
-      |[INFO]
-      |[INFO] --- versions-maven-plugin:2.7:display-dependency-updates (default-cli) @ scala-service-maven-sample ---
-      |[INFO] The following dependencies in Dependency Management have newer versions:
-      |[INFO]   io.kamon:kamon-core_2.12 .............................. 0.6.5 -> 2.0.2
-      |[INFO]   io.kamon:kamon-datadog_2.12 ........................... 0.6.5 -> 2.0.1
-      |[INFO]   io.kamon:kamon-system-metrics_2.12 .................... 0.6.5 -> 2.0.1
-      |[INFO]   org.scala-lang:scala-library ........................ 2.12.6 -> 2.13.1
-      |[INFO]   org.scalatest:scalatest_2.12 ................... 3.0.0 -> 3.2.0-SNAP10
-      |[INFO]
-      |[INFO] ------------------------------------------------------------------------
-      |[INFO] BUILD SUCCESS
-      |[INFO] ------------------------------------------------------------------------
-      |[INFO] Total time:  1.180 s
-      |[INFO] Finished at: 2019-12-11T11:23:38+02:00
+      |[INFO] Total time:  1.161 s
+      |[INFO] Finished at: 2020-03-07T16:37:38+02:00
       |[INFO] ------------------------------------------------------------------------""".stripMargin.linesIterator.toList
 
   val dependencies =
@@ -171,24 +236,6 @@ class MavenParserTest extends AnyFunSuite with Matchers {
     )
   }
 
-//  test("parse mvn display-dependency-updates into updates") {
-//    MavenAlg.parseUpdates(updates).headOption should contain(
-//      Update.Single(
-//        CrossDependency(
-//          Dependency(
-//            GroupId("io.kamon"),
-//            ArtifactId("kamon-core", "2.12"),
-//            "0.6.5",
-//            sbtVersion = None,
-//            scalaVersion = None,
-//            configurations = None
-//          )
-//        ),
-//        NonEmptyList.one("2.0.2")
-//      )
-//    )
-//
-//    //todo: configuration (test, provided) is missing
-//  }
+
 
 }

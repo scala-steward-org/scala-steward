@@ -93,15 +93,13 @@ object Context {
       val mavenNurtureAlg: NurtureAlg[F] = {
         implicit val mvn: BuildSystemAlg[F] = mavenAlg
         implicit val editAlg: EditAlg[F] = new EditAlg[F]
-        implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F]
-        nurtureAlg
+        new NurtureAlg[F]
       }
 
       val sbtNurtureAlg: NurtureAlg[F] = {
         implicit val sbt: BuildSystemAlg[F] = sbtAlg
         implicit val editAlg: EditAlg[F] = new EditAlg[F]
-        implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F]
-        nurtureAlg
+        new NurtureAlg[F]
       }
 
       val mavenCacheAlg = {

@@ -86,6 +86,7 @@ final class StewardAlg[F[_]](
     }
   }
 
+  //todo: ideally would be nice to introduce the repo type parameter to the configuration
   def determineRepoType(repo: Repo): F[RepoType] = {
     def checkRepoType(repoDir: File): RepoType = {
       if ((repoDir / "pom.xml").exists) RepoType.Maven else RepoType.SBT
