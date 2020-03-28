@@ -73,14 +73,23 @@ object FilterAlg {
   private def localFilter(update: Update.Single, repoConfig: RepoConfig): FilterResult =
     repoConfig.updates.keep(update).flatMap(globalFilter)
 
-  def isIgnoredGlobally(dependency: Dependency): Boolean =
-    ((dependency.groupId.value, dependency.artifactId.name) match {
+  def isScalaDependency(dependency: Dependency): Boolean =
+    (dependency.groupId.value, dependency.artifactId.name) match {
       case ("org.scala-lang", "scala-compiler") => true
       case ("org.scala-lang", "scala-library")  => true
       case ("org.scala-lang", "scala-reflect")  => true
       case ("org.typelevel", "scala-library")   => true
       case _                                    => false
-    }) || (dependency.configurations.fold("")(_.toLowerCase) match {
+    }
+
+  def isScalaDependencyIgnored(
+      dependency: Dependency,
+      ignoreScalaDependency: Boolean = true
+  ): Boolean =
+    ignoreScalaDependency && isScalaDependency(dependency)
+
+  def isDependencyConfigurationIgnored(dependency: Dependency): Boolean =
+    (dependency.configurations.fold("")(_.toLowerCase) match {
       case "phantom-js-jetty"    => true
       case "scalafmt"            => true
       case "scripted-sbt"        => true
