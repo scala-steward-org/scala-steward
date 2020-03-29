@@ -1,5 +1,6 @@
 package org.scalasteward.core.update
 
+import better.files.File
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.vcs.data.Repo
@@ -52,17 +53,27 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
           |    "entryCreatedAt" : 1581969227183
           |  }
           |}""".stripMargin
+    val repoConfigFile = File.temp / "ws/fthomas/scalafix-test/.scala-steward.conf"
+    val repoConfigContent = "updates.includeScala = true"
     val initial = MockState.empty
+      .add(repoConfigFile, repoConfigContent)
       .add(repoCacheFile, repoCacheContent)
       .add(pullRequestsFile, pullRequestsContent)
     val state = pruningAlg.needsAttention(repo).runS(initial).unsafeRunSync()
 
     state shouldBe initial.copy(
       commands = Vector(
+        List("read", repoConfigFile.toString),
         List("read", repoCacheFile.toString),
         List("read", pullRequestsFile.toString)
       ),
       logs = Vector(
+        (
+          None,
+          "Parsed RepoConfig(CommitsConfig(None),PullRequestsConfig(None)," +
+            "UpdatesConfig(List(),List(),List(),None,Some(true)),OnConflicts)"
+        ),
+        (None, "ignoreScalaDependency=false"),
         (None, "Find updates for fthomas/scalafix-test"),
         (None, "Found 0 updates"),
         (None, "fthomas/scalafix-test is up-to-date")
