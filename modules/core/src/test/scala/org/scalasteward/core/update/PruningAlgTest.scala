@@ -148,7 +148,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
       config.workspace / "store/versions/v1/https/foobar.org/maven2/org/scala-lang/scala-library/versions.json"
     val versionsContent =
       s"""|{
-          |  "updatedAt" : 1585437044085,
+          |  "updatedAt" : 9999999999999,
           |  "versions" : [
           |    "2.12.9",
           |    "2.12.10",
@@ -265,7 +265,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
       config.workspace / "store/versions/v1/https/foobar.org/maven2/org/scala-lang/scala-library/versions.json"
     val versionsContent =
       s"""|{
-          |  "updatedAt" : 1585437044085,
+          |  "updatedAt" : 9999999999999,
           |  "versions" : [
           |    "2.12.9",
           |    "2.12.10",
@@ -281,11 +281,23 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
       .add(versionsFile, versionsContent)
     val state = pruningAlg.needsAttention(repo).runS(initial).unsafeRunSync()
 
-    // TODO: Doing a full comparison of state impossible since VersionsCache is not correctly mocked
-    val expectedLogs = Vector(
-      (None, "Find updates for fthomas/scalafix-test"),
-      (None, "Found 1 update:\n  org.scala-lang:scala-library : 2.12.10 -> 2.12.11")
+    state shouldBe initial.copy(
+      commands = Vector(
+        List("read", repoCacheFile.toString),
+        List("read", versionsFile.toString),
+        List("read", pullRequestsFile.toString),
+        List("read", versionsFile.toString),
+        List("read", pullRequestsFile.toString),
+        List("read", pullRequestsFile.toString)
+      ),
+      logs = Vector(
+        (None, "Find updates for fthomas/scalafix-test"),
+        (None, "Found 1 update:\n  org.scala-lang:scala-library : 2.12.10 -> 2.12.11"),
+        (
+          None,
+          "fthomas/scalafix-test is outdated:\n  DependencyOutdated(CrossDependency(NonEmptyList(Dependency(org.scala-lang,ArtifactId(scala-library,None),2.12.10,None,None,None))),Single(CrossDependency(NonEmptyList(Dependency(org.scala-lang,ArtifactId(scala-library,None),2.12.10,None,None,None))),NonEmptyList(2.12.11),None))"
+        )
+      )
     )
-    expectedLogs.forall(log => state.logs.contains(log)) shouldBe true
   }
 }
