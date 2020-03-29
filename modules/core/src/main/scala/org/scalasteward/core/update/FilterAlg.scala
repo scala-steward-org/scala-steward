@@ -82,10 +82,7 @@ object FilterAlg {
       case _                                    => false
     }
 
-  def isScalaDependencyIgnored(
-      dependency: Dependency,
-      ignoreScalaDependency: Boolean = true
-  ): Boolean =
+  def isScalaDependencyIgnored(dependency: Dependency, ignoreScalaDependency: Boolean): Boolean =
     ignoreScalaDependency && isScalaDependency(dependency)
 
   def isDependencyConfigurationIgnored(dependency: Dependency): Boolean =
