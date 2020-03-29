@@ -23,7 +23,7 @@ import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data._
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.repocache.{RepoCache, RepoCacheRepository}
-import org.scalasteward.core.repoconfig.{PullRequestFrequency, RepoConfig, RepoConfigAlg}
+import org.scalasteward.core.repoconfig.{PullRequestFrequency, RepoConfig}
 import org.scalasteward.core.update.PruningAlg._
 import org.scalasteward.core.update.data.UpdateState
 import org.scalasteward.core.update.data.UpdateState._
@@ -37,32 +37,25 @@ final class PruningAlg[F[_]](
     implicit
     dateTimeAlg: DateTimeAlg[F],
     logger: Logger[F],
-    repoConfigAlg: RepoConfigAlg[F],
     pullRequestRepository: PullRequestRepository[F],
     repoCacheRepository: RepoCacheRepository[F],
     updateAlg: UpdateAlg[F],
     F: Monad[F]
 ) {
   def needsAttention(repo: Repo): F[(Boolean, List[Update.Single])] =
-    for {
-      repoConfig <- repoConfigAlg.readRepoConfigOrDefault(repo)
-      ignoreScalaDependency = !repoConfig.updates.includeScala.getOrElse(false)
-      _ <- logger.debug(s"ignoreScalaDependency=$ignoreScalaDependency")
-      maybeRepoCache <- repoCacheRepository.findCache(repo)
-      result <- maybeRepoCache
-        .map { repoCache =>
-          val dependencies = repoCache.dependencyInfos
-            .flatMap(_.sequence)
-            .collect {
-              case info if !ignoreDependency(info.value, ignoreScalaDependency) =>
-                info.map(_.dependency)
-            }
-            .sorted
-          findUpdatesNeedingAttention(repo, repoCache, dependencies)
-        }
-        .getOrElse(F.pure((false, List.empty)))
-    } yield {
-      result
+    repoCacheRepository.findCache(repo).flatMap {
+      case None => F.pure((false, List.empty))
+      case Some(repoCache) =>
+        val ignoreScalaDependency =
+          !repoCache.maybeRepoConfig.flatMap(_.updates.includeScala).getOrElse(false)
+        val dependencies = repoCache.dependencyInfos
+          .flatMap(_.sequence)
+          .collect {
+            case info if !ignoreDependency(info.value, ignoreScalaDependency) =>
+              info.map(_.dependency)
+          }
+          .sorted
+        findUpdatesNeedingAttention(repo, repoCache, dependencies)
     }
 
   private def findUpdatesNeedingAttention(
