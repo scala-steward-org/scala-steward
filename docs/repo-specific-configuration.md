@@ -56,6 +56,13 @@ updates.ignore = [ { groupId = "org.acme", artifactId="foo", version = "1.0" } ]
 # Default: None
 updates.limit = 5
 
+# By default, Scala Steward does not update scala version since its tricky, error-prone
+# and results in bad PRs and/or failed builds
+# If set to true, Scala Steward will attempt to update the scala version
+# Since this feature is experimental, the default is set to false
+# Default: false
+updates.includeScala = true
+
 # If "on-conflicts", Scala Steward will update the PR it created to resolve conflicts as
 # long as you don't change it yourself.
 # If "always", Scala Steward will always update the PR it created as long as
