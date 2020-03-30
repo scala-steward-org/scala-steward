@@ -127,10 +127,6 @@ object NewPullRequestData {
           |```
           |${RepoConfigAlg.configToIgnoreFurtherUpdates(update)}
           |```
-          |Add this to your `${RepoConfigAlg.repoConfigBasename}` file to make `scala-steward` create PRs only once a week:
-          |```
-          |pullRequests.frequency = "@weekly"
-          |```
           |""".stripMargin.trim
     )
 
