@@ -18,7 +18,9 @@ package org.scalasteward.plugin
 
 import sbt.Keys._
 import sbt._
+
 import scala.util.matching.Regex
+import scala.util.Try
 
 object StewardPlugin extends AutoPlugin {
   override def trigger: PluginTrigger = allRequirements
@@ -37,6 +39,7 @@ object StewardPlugin extends AutoPlugin {
       val buildRoot = baseDirectory.in(ThisBuild).value
       val scalaBinaryVersionValue = scalaBinaryVersion.value
       val scalaVersionValue = scalaVersion.value
+      val sbtCredentials = credentials.value
 
       val libraryDeps = libraryDependencies.value
         .filter(isDefinedInBuildFiles(_, sourcePositions, buildRoot))
@@ -49,11 +52,18 @@ object StewardPlugin extends AutoPlugin {
         )
       val dependencies = libraryDeps ++ scalafixDeps
 
+      def getCredentials(url: URL): Option[Resolver.Credentials] =
+        Try(Credentials.forHost(sbtCredentials, url.getHost)).toOption.flatten
+          .map(c => Resolver.Credentials(c.userName, c.passwd))
+
       val resolvers = fullResolvers.value.collect {
         case repo: MavenRepository if !repo.root.startsWith("file:") =>
-          Resolver.MavenRepository(repo.name, repo.root)
+          val creds = getCredentials(new URL(repo.root))
+          Resolver.MavenRepository(repo.name, repo.root, creds)
         case repo: URLRepository =>
-          Resolver.IvyRepository(repo.name, repo.patterns.ivyPatterns.mkString)
+          val ivyPatterns = repo.patterns.ivyPatterns.mkString
+          val creds = getCredentials(new URL(ivyPatterns))
+          Resolver.IvyRepository(repo.name, ivyPatterns, creds)
       }
 
       val sb = new StringBuilder()
@@ -177,23 +187,37 @@ object StewardPlugin extends AutoPlugin {
   }
 
   object Resolver {
-    final case class MavenRepository(name: String, location: String) extends Resolver {
+    final case class Credentials(user: String, pass: String) {
+      def asJson: String =
+        objToJson(
+          List("user" -> strToJson(user), "pass" -> strToJson(pass))
+        )
+    }
+
+    final case class MavenRepository(
+        name: String,
+        location: String,
+        credentials: Option[Credentials]
+    ) extends Resolver {
       override def asJson: String =
         objToJson(
           List(
             "MavenRepository" -> objToJson(
-              List("name" -> strToJson(name), "location" -> strToJson(location))
+              List("name" -> strToJson(name), "location" -> strToJson(location)) ++
+                credentials.map(c => "credentials" -> c.asJson).toList
             )
           )
         )
     }
 
-    final case class IvyRepository(name: String, pattern: String) extends Resolver {
+    final case class IvyRepository(name: String, pattern: String, credentials: Option[Credentials])
+        extends Resolver {
       override def asJson: String =
         objToJson(
           List(
             "IvyRepository" -> objToJson(
-              List("name" -> strToJson(name), "pattern" -> strToJson(pattern))
+              List("name" -> strToJson(name), "pattern" -> strToJson(pattern)) ++
+                credentials.map(c => "credentials" -> c.asJson).toList
             )
           )
         )
