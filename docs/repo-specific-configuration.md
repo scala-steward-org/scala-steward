@@ -3,6 +3,12 @@
 You can add `<YOUR_REPO>/.scala-steward.conf` to configure how Scala Steward updates your repository.
 
 ```properties
+# sbtDirectory allows to specify a repository subfolder where the sbt project is located
+#
+# Defaults to empty String
+#
+sbtDirectory = backend/scala
+
 # pullRequests.frequency allows to control how often or when Scala Steward
 # is allowed to create pull requests.
 #
@@ -77,7 +83,7 @@ updatePullRequests = "always" | "on-conflicts" | "never"
 
 # If set, Scala Steward will use this message template for the commit messages and PR titles.
 # Supported variables: ${artifactName}, ${currentVersion}, ${nextVersion} and ${default}
-# Default: "${default}" which is equivalent to "Update ${artifactName} to ${nextVersion}" 
+# Default: "${default}" which is equivalent to "Update ${artifactName} to ${nextVersion}"
 commits.message = "Update ${artifactName} from ${currentVersion} to ${nextVersion}"
 ```
 
@@ -103,7 +109,7 @@ libraryDependencies ++= Seq(
   // scala-steward:off
   "com.github.pathikrit" %% "better-files" % "3.8.0",
   "com.olegpy" %% "better-monadic-for" % "0.3.1",
-  // scala-steward:on 
+  // scala-steward:on
   "org.typelevel" %% "cats-effect" % "1.3.1",  // This and subsequent will get updated
   "org.typelevel" %% "cats-kernel-laws" % "1.6.1"
 )
