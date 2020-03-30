@@ -47,7 +47,7 @@ final class PruningAlg[F[_]](
       case None => F.pure((false, List.empty))
       case Some(repoCache) =>
         val ignoreScalaDependency =
-          !repoCache.maybeRepoConfig.flatMap(_.updates.includeScala).getOrElse(false)
+          !repoCache.maybeRepoConfig.exists(_.updates.defaultIncludeScala)
         val dependencies = repoCache.dependencyInfos
           .flatMap(_.sequence)
           .collect {

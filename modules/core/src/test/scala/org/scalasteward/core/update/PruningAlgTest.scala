@@ -70,7 +70,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
     )
   }
 
-  test("needsAttention: 0 updates when includeScala not specified in repo config") {
+  test("needsAttention: 0 updates when defaultIncludeScala not specified in repo config") {
     val repo = Repo("fthomas", "scalafix-test")
     val repoCacheFile =
       config.workspace / "store/repo_cache/v1/fthomas/scalafix-test/repo_cache.json"
@@ -177,7 +177,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
     )
   }
 
-  test("needsAttention: update scala-library when includeScala=true in repo config") {
+  test("needsAttention: update scala-library when defaultIncludeScala=true in repo config") {
     val repo = Repo("fthomas", "scalafix-test")
     val repoCacheFile =
       config.workspace / "store/repo_cache/v1/fthomas/scalafix-test/repo_cache.json"
@@ -226,7 +226,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
           |      "ignore" : [
           |      ],
           |      "limit" : null,
-          |      "includeScala" : true
+          |      "defaultIncludeScala" : true
           |    }
           |  }
           |}""".stripMargin

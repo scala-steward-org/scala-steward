@@ -61,7 +61,7 @@ updates.limit = 5
 # If set to true, Scala Steward will attempt to update the scala version
 # Since this feature is experimental, the default is set to false
 # Default: false
-updates.includeScala = true
+updates.defaultIncludeScala = true
 
 # If "on-conflicts", Scala Steward will update the PR it created to resolve conflicts as
 # long as you don't change it yourself.
