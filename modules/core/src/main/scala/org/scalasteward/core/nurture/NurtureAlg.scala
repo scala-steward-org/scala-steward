@@ -224,17 +224,14 @@ object NurtureAlg {
       updateF: Update => F[ProcessResult],
       updatesLimit: Option[PosInt]
   ): F[Unit] =
-    updatesLimit match {
-      case None => updates.traverse_(updateF)
-      case Some(limit) =>
-        fs2.Stream
-          .emits(updates)
-          .evalMap(updateF)
-          .through(util.takeUntil(limit.value) {
-            case Ignored => 0
-            case Updated => 1
-          })
-          .compile
-          .drain
-    }
+    fs2.Stream
+      .emits(updates)
+      .evalMap(updateF)
+      .through(util.takeUntilMaybe(updatesLimit.map(_.value)) {
+        case Ignored => 0
+        case Updated => 1
+      })
+      .compile
+      .drain
+
 }

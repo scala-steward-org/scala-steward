@@ -81,4 +81,15 @@ package object util {
       .takeThrough { case (_, total) => total < limit }
       .map { case (a, _) => a }
   }
+
+  /** A variant of `takeUntil` that takes an optional limit.
+    * This is the identity if `maybeLimit` is `None`.
+    */
+  def takeUntilMaybe[F[_], A, N](maybeLimit: Option[N])(weight: A => N)(
+      implicit N: Numeric[N]
+  ): Pipe[F, A, A] =
+    maybeLimit match {
+      case Some(limit) => takeUntil(limit)(weight)
+      case None        => identity
+    }
 }
