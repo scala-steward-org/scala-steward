@@ -30,6 +30,7 @@ import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.{BracketThrowable, Nel}
 import org.scalasteward.core.vcs.data.Repo
+import org.scalasteward.core.repoconfig.RepoConfigAlg
 
 trait SbtAlg[F[_]] extends BuildToolAlg[F] {
   def addGlobalPluginTemporarily[A](plugin: FileData)(fa: F[A]): F[A]
@@ -49,6 +50,7 @@ object SbtAlg {
       logger: Logger[F],
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F],
+	  repoConfigAlg: RepoConfigAlg[F],
       F: BracketThrowable[F]
   ): SbtAlg[F] =
     new SbtAlg[F] {
@@ -72,15 +74,19 @@ object SbtAlg {
       override def getSbtVersion(repo: Repo): F[Option[SbtVersion]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          maybeProperties <- fileAlg.readFile(repoDir / "project" / "build.properties")
+          repoConfig <- repoConfigAlg.readRepoConfigOrDefault(repo)
+          maybeProperties <- fileAlg.readFile(
+            repoDir / repoConfig.sbtDirectory / "project" / "build.properties"
+          )
           version = maybeProperties.flatMap(parser.parseBuildProperties)
         } yield version
 
       override def getDependencies(repo: Repo): F[List[Scope.Dependencies]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
+          repoConfig <- repoConfigAlg.readRepoConfigOrDefault(repo)
           commands = List(setOffline, crossStewardDependencies, reloadPlugins, stewardDependencies)
-          lines <- exec(sbtCmd(commands), repoDir)
+          lines <- exec(sbtCmd(commands), repoDir / repoConfig.sbtDirectory)
           dependencies = parser.parseDependencies(lines)
           additionalDependencies <- getAdditionalDependencies(repo)
         } yield additionalDependencies ::: dependencies
@@ -104,8 +110,8 @@ object SbtAlg {
       val sbtDir: F[File] =
         fileAlg.home.map(_ / ".sbt")
 
-      def exec(command: Nel[String], repoDir: File): F[List[String]] =
-        maybeIgnoreOptsFiles(repoDir)(processAlg.execSandboxed(command, repoDir))
+      def exec(command: Nel[String], sbtDir: File): F[List[String]] =
+        maybeIgnoreOptsFiles(sbtDir)(processAlg.execSandboxed(command, sbtDir))
 
       def sbtCmd(commands: List[String]): Nel[String] =
         Nel.of("sbt", "-batch", "-no-colors", commands.mkString(";", ";", ""))

@@ -70,6 +70,7 @@ object MockContext {
   implicit val gitAlg: GitAlg[MockEff] = GitAlg.create
   implicit val user: AuthenticatedUser = AuthenticatedUser("scala-steward", "token")
   implicit val vcsRepoAlg: VCSRepoAlg[MockEff] = VCSRepoAlg.create(config, gitAlg)
+  implicit val repoConfigAlg: RepoConfigAlg[MockEff] = new RepoConfigAlg[MockEff]
   implicit val scalafmtAlg: ScalafmtAlg[MockEff] = ScalafmtAlg.create
   implicit val migrationAlg: MigrationAlg =
     MigrationAlg.create[MockEff](config.scalafixMigrations).runA(MockState.empty).unsafeRunSync()
@@ -86,7 +87,6 @@ object MockContext {
   implicit val millAlg: MillAlg[MockEff] = MillAlg.create
   implicit val buildToolDispatcher: BuildToolDispatcher[MockEff] = BuildToolDispatcher.create
   implicit val editAlg: EditAlg[MockEff] = new EditAlg[MockEff]
-  implicit val repoConfigAlg: RepoConfigAlg[MockEff] = new RepoConfigAlg[MockEff]
   implicit val pullRequestRepository: PullRequestRepository[MockEff] =
     new PullRequestRepository[MockEff](new JsonKeyValueStore("pull_requests", "1"))
   implicit val pruningAlg: PruningAlg[MockEff] = new PruningAlg[MockEff]
