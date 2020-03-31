@@ -35,7 +35,7 @@ final case class UpdatesConfig(
     allow: List[UpdatePattern] = List.empty,
     ignore: List[UpdatePattern] = List.empty,
     limit: Option[PosInt] = None,
-    defaultIncludeScala: Boolean = false
+    includeScala: Option[Boolean] = None
 ) {
   def keep(update: Update.Single): FilterResult =
     isAllowed(update).flatMap(isPinned).flatMap(isIgnored)
