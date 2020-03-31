@@ -23,7 +23,7 @@ import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data._
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.repocache.{RepoCache, RepoCacheRepository}
-import org.scalasteward.core.repoconfig.{PullRequestFrequency, RepoConfig}
+import org.scalasteward.core.repoconfig.{PullRequestFrequency, RepoConfig, UpdatesConfig}
 import org.scalasteward.core.update.PruningAlg._
 import org.scalasteward.core.update.data.UpdateState
 import org.scalasteward.core.update.data.UpdateState._
@@ -47,7 +47,9 @@ final class PruningAlg[F[_]](
       case None => F.pure((false, List.empty))
       case Some(repoCache) =>
         val ignoreScalaDependency =
-          !repoCache.maybeRepoConfig.flatMap(_.updates.includeScala).getOrElse(false)
+          !repoCache.maybeRepoConfig
+            .flatMap(_.updates.includeScala)
+            .getOrElse(UpdatesConfig.defaultIncludeScala)
         val dependencies = repoCache.dependencyInfos
           .flatMap(_.sequence)
           .collect {

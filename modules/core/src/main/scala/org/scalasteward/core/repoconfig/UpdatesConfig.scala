@@ -77,6 +77,8 @@ object UpdatesConfig {
   implicit val updatesConfigEncoder: Encoder[UpdatesConfig] =
     deriveConfiguredEncoder
 
+  val defaultIncludeScala: Boolean = false
+
   // prevent IntelliJ from removing the import of io.circe.refined._
   locally(refinedDecoder: Decoder[PosInt])
 }
