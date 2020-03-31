@@ -34,7 +34,8 @@ final case class UpdatesConfig(
     pin: List[UpdatePattern] = List.empty,
     allow: List[UpdatePattern] = List.empty,
     ignore: List[UpdatePattern] = List.empty,
-    limit: Option[PosInt] = None
+    limit: Option[PosInt] = None,
+    includeScala: Option[Boolean] = None
 ) {
   def keep(update: Update.Single): FilterResult =
     isAllowed(update).flatMap(isPinned).flatMap(isIgnored)
@@ -75,6 +76,8 @@ object UpdatesConfig {
 
   implicit val updatesConfigEncoder: Encoder[UpdatesConfig] =
     deriveConfiguredEncoder
+
+  val defaultIncludeScala: Boolean = false
 
   // prevent IntelliJ from removing the import of io.circe.refined._
   locally(refinedDecoder: Decoder[PosInt])

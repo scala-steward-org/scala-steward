@@ -2,7 +2,7 @@ package org.scalasteward.core.update
 
 import cats.implicits._
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.GroupId
+import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId}
 import org.scalasteward.core.data.Update.Single
 import org.scalasteward.core.mock.MockContext.filterAlg
 import org.scalasteward.core.mock.MockState
@@ -205,5 +205,50 @@ class FilterAlgTest extends AnyFunSuite with Matchers {
       .unsafeRunSync()
 
     filtered shouldBe List()
+  }
+
+  test("isScalaDependency: true") {
+    val dependency = Dependency(
+      GroupId("org.scala-lang"),
+      ArtifactId("scala-compiler", "scala-compiler_2.12"),
+      "2.12.10"
+    )
+    FilterAlg.isScalaDependency(dependency) shouldBe true
+  }
+
+  test("isScalaDependency: false") {
+    val dependency =
+      Dependency(GroupId("org.typelevel"), ArtifactId("cats-effect", "cats-effect_2.12"), "1.0.0")
+    FilterAlg.isScalaDependency(dependency) shouldBe false
+  }
+
+  test("isScalaDependencyIgnored: true") {
+    val dependency = Dependency(
+      GroupId("org.scala-lang"),
+      ArtifactId("scala-compiler", "scala-compiler_2.12"),
+      "2.12.10"
+    )
+    FilterAlg.isScalaDependencyIgnored(dependency, ignoreScalaDependency = true) shouldBe true
+  }
+
+  test("isScalaDependencyIgnored: false") {
+    val dependency = Dependency(
+      GroupId("org.scala-lang"),
+      ArtifactId("scala-compiler", "scala-compiler_2.12"),
+      "2.12.10"
+    )
+    FilterAlg.isScalaDependencyIgnored(dependency, ignoreScalaDependency = false) shouldBe false
+  }
+
+  test("isDependencyConfigurationIgnored: false") {
+    val dependency =
+      Dependency(GroupId("org.typelevel"), ArtifactId("cats-effect", "cats-effect_2.12"), "1.0.0")
+    FilterAlg.isDependencyConfigurationIgnored(dependency.copy(configurations = Some("foo"))) shouldBe false
+  }
+
+  test("isDependencyConfigurationIgnored: true") {
+    val dependency =
+      Dependency(GroupId("org.typelevel"), ArtifactId("cats-effect", "cats-effect_2.12"), "1.0.0")
+    FilterAlg.isDependencyConfigurationIgnored(dependency.copy(configurations = Some("scalafmt"))) shouldBe true
   }
 }

@@ -23,7 +23,7 @@ import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data._
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.repocache.{RepoCache, RepoCacheRepository}
-import org.scalasteward.core.repoconfig.{PullRequestFrequency, RepoConfig}
+import org.scalasteward.core.repoconfig.{PullRequestFrequency, RepoConfig, UpdatesConfig}
 import org.scalasteward.core.update.PruningAlg._
 import org.scalasteward.core.update.data.UpdateState
 import org.scalasteward.core.update.data.UpdateState._
@@ -46,9 +46,16 @@ final class PruningAlg[F[_]](
     repoCacheRepository.findCache(repo).flatMap {
       case None => F.pure((false, List.empty))
       case Some(repoCache) =>
+        val ignoreScalaDependency =
+          !repoCache.maybeRepoConfig
+            .flatMap(_.updates.includeScala)
+            .getOrElse(UpdatesConfig.defaultIncludeScala)
         val dependencies = repoCache.dependencyInfos
           .flatMap(_.sequence)
-          .collect { case info if !ignoreDependency(info.value) => info.map(_.dependency) }
+          .collect {
+            case info if !ignoreDependency(info.value, ignoreScalaDependency) =>
+              info.map(_.dependency)
+          }
           .sorted
         findUpdatesNeedingAttention(repo, repoCache, dependencies)
     }
@@ -167,8 +174,10 @@ final class PruningAlg[F[_]](
 }
 
 object PruningAlg {
-  def ignoreDependency(info: DependencyInfo): Boolean =
-    info.filesContainingVersion.isEmpty || FilterAlg.isIgnoredGlobally(info.dependency)
+  def ignoreDependency(info: DependencyInfo, ignoreScalaDependency: Boolean = true): Boolean =
+    info.filesContainingVersion.isEmpty ||
+      FilterAlg.isScalaDependencyIgnored(info.dependency, ignoreScalaDependency) ||
+      FilterAlg.isDependencyConfigurationIgnored(info.dependency)
 
   def collectOutdatedDependencies(updateStates: List[UpdateState]): List[DependencyOutdated] =
     updateStates.collect { case state: DependencyOutdated => state }
