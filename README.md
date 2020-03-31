@@ -60,7 +60,7 @@ The [`docs`](docs) directory contains documentation about these topics:
 
 ## Contributors
 
-Thanks goes to these wonderful people:
+Thanks goes to these wonderful people for contributing to Scala Steward:
 
 * [Adam Fraser](https://github.com/adamgfraser)
 * [Alex](https://github.com/jhnsmth)
@@ -76,6 +76,7 @@ Thanks goes to these wonderful people:
 * [Daniel Pfeiffer](https://github.com/dpfeiffer)
 * [David Francoeur](https://github.com/daddykotex)
 * [Eldar Yusupov](https://github.com/eyusupov)
+* [Erik Erlandson](https://github.com/erikerlandson)
 * [Erlend Hamnaberg](https://github.com/hamnis)
 * [Fabian](https://github.com/fg-devs)
 * [Felix Dietze](https://github.com/fdietze)
