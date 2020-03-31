@@ -73,31 +73,35 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
   test("config with 'updatePullRequests = false'") {
     val content = "updatePullRequests = false"
     val config = RepoConfigAlg.parseRepoConfig(content)
-    config shouldBe Right(RepoConfig(updatePullRequests = PullRequestUpdateStrategy.Never))
+    config shouldBe Right(RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.Never)))
   }
 
   test("config with 'updatePullRequests = true'") {
     val content = "updatePullRequests = true"
     val config = RepoConfigAlg.parseRepoConfig(content)
-    config shouldBe Right(RepoConfig(updatePullRequests = PullRequestUpdateStrategy.OnConflicts))
+    config shouldBe Right(
+      RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.OnConflicts))
+    )
   }
 
   test("config with 'updatePullRequests = always") {
     val content = """updatePullRequests = "always" """
     val config = RepoConfigAlg.parseRepoConfig(content)
-    config shouldBe Right(RepoConfig(updatePullRequests = PullRequestUpdateStrategy.Always))
+    config shouldBe Right(RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.Always)))
   }
 
   test("config with 'updatePullRequests = on-conflicts") {
     val content = """updatePullRequests = "on-conflicts" """
     val config = RepoConfigAlg.parseRepoConfig(content)
-    config shouldBe Right(RepoConfig(updatePullRequests = PullRequestUpdateStrategy.OnConflicts))
+    config shouldBe Right(
+      RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.OnConflicts))
+    )
   }
 
   test("config with 'updatePullRequests = never") {
     val content = """updatePullRequests = "never" """
     val config = RepoConfigAlg.parseRepoConfig(content)
-    config shouldBe Right(RepoConfig(updatePullRequests = PullRequestUpdateStrategy.Never))
+    config shouldBe Right(RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.Never)))
   }
 
   test("config with 'pullRequests.frequency = @asap'") {

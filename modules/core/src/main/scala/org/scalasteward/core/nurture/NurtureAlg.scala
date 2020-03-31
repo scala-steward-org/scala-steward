@@ -172,7 +172,7 @@ final class NurtureAlg[F[_]](
     } yield ()
 
   def updatePullRequest(data: UpdateData): F[ProcessResult] =
-    if (data.repoConfig.updatePullRequests =!= PullRequestUpdateStrategy.Never) {
+    if (data.repoConfig.updatePullRequestsOrDefault =!= PullRequestUpdateStrategy.Never) {
       gitAlg.returnToCurrentBranch(data.repo) {
         for {
           _ <- gitAlg.checkoutBranch(data.repo, data.updateBranch)
@@ -193,7 +193,7 @@ final class NurtureAlg[F[_]](
           if (distinctAuthors.length >= 2)
             (false, s"PR has commits by ${distinctAuthors.mkString(", ")}").pure[F]
           else {
-            if (data.repoConfig.updatePullRequests === PullRequestUpdateStrategy.Always)
+            if (data.repoConfig.updatePullRequestsOrDefault === PullRequestUpdateStrategy.Always)
               (true, "PR update strategy is set to always").pure[F]
             else
               gitAlg.hasConflicts(data.repo, data.updateBranch, data.baseBranch).map {

@@ -24,8 +24,11 @@ final case class RepoConfig(
     commits: CommitsConfig = CommitsConfig(),
     pullRequests: PullRequestsConfig = PullRequestsConfig(),
     updates: UpdatesConfig = UpdatesConfig(),
-    updatePullRequests: PullRequestUpdateStrategy = PullRequestUpdateStrategy.default
-)
+    updatePullRequests: Option[PullRequestUpdateStrategy] = None
+) {
+  def updatePullRequestsOrDefault: PullRequestUpdateStrategy =
+    updatePullRequests.getOrElse(PullRequestUpdateStrategy.default)
+}
 
 object RepoConfig {
   val default: RepoConfig = RepoConfig()
