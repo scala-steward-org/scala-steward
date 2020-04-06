@@ -31,7 +31,7 @@ COMMON_ARGS=(
   --cache-ttl 6hours
   --process-timeout 20min
   --whitelist $HOME/.cache/coursier
-  --whitelist $HOME/.coursier
+  --whitelist $HOME/.cache/JNA
   --whitelist $HOME/.ivy2
   --whitelist $HOME/.sbt
   --whitelist $HOME/.scio-ideaPluginIC
