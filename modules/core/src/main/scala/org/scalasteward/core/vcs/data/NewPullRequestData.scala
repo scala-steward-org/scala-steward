@@ -20,6 +20,7 @@ import cats.implicits._
 import io.circe.Encoder
 import io.circe.generic.semiauto._
 import org.http4s.Uri
+import org.scalasteward.core.BuildInfo
 import org.scalasteward.core.data.{GroupId, ReleaseRelatedUrl, SemVer, Update}
 import org.scalasteward.core.git
 import org.scalasteward.core.git.Branch
@@ -47,7 +48,7 @@ object NewPullRequestData {
   ): String = {
     val artifacts = artifactsWithOptionalUrl(update, artifactIdToUrl)
     val (migrationLabel, appliedMigrations) = migrationNote(migrations)
-    val details = repoSpecificConfiguration(update) :: appliedMigrations.toList
+    val details = ignoreFutureUpdates(update) :: appliedMigrations.toList
     val labels =
       Nel.fromList(List(updateType(update)) ++ semVerLabel(update).toList ++ migrationLabel.toList)
 
@@ -57,6 +58,8 @@ object NewPullRequestData {
         |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
         |
         |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.
+        |
+        |Configure Scala Steward for your repository with a [`${RepoConfigAlg.repoConfigBasename}`](https://github.com/fthomas/scala-steward/blob/${BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
         |
         |Have a fantastic day writing Scala!
         |
@@ -120,9 +123,9 @@ object NewPullRequestData {
       case None      => s"$groupId:$artifactId"
     }
 
-  def repoSpecificConfiguration(update: Update): Details =
+  def ignoreFutureUpdates(update: Update): Details =
     Details(
-      s"Configure `scala-steward` for your repository by adding [${RepoConfigAlg.repoConfigBasename}](https://github.com/fthomas/scala-steward/blob/master/docs/repo-specific-configuration.md)",
+      "Ignore future updates",
       s"""|Add this to your `${RepoConfigAlg.repoConfigBasename}` file to ignore future updates of this dependency:
           |```
           |${RepoConfigAlg.configToIgnoreFurtherUpdates(update)}

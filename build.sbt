@@ -78,7 +78,13 @@ lazy val core = myCrossProject("core")
           defaultStrategy(otherwise)
       }
     },
-    buildInfoKeys := Seq[BuildInfoKey](version, scalaVersion, scalaBinaryVersion, sbtVersion),
+    buildInfoKeys := Seq[BuildInfoKey](
+      version,
+      scalaVersion,
+      scalaBinaryVersion,
+      sbtVersion,
+      BuildInfoKey.map(git.gitHeadCommit) { case (k, v) => k -> v.getOrElse("master") }
+    ),
     buildInfoPackage := moduleRootPkg.value,
     initialCommands += s"""
       import ${moduleRootPkg.value}._
