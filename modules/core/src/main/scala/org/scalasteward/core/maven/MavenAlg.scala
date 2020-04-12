@@ -31,6 +31,8 @@ import atto.Atto._
 import io.chrisdavenport.log4cats.Logger
 
 import scala.util.Try
+import cats.data.NonEmptyList
+import org.scalasteward.core.data.Resolver
 
 object MavenAlg {
 
@@ -44,65 +46,137 @@ object MavenAlg {
       F: Monad[F]
   ): BuildSystemAlg[F] = new BuildSystemAlg[F] {
 
-      override def getDependencies(repo: Repo): F[List[Scope.Dependencies]] = {
-        val x: F[List[Dependency]] = for {
-          repoDir <- workspaceAlg.repoDir(repo)
-          cmd = mvnCmd(command.Clean, command.mvnDepList)
-          lines <- exec(cmd, repoDir) <* logger.info(s"running $cmd for $repo")
-          _ <- logger.info(lines.mkString("\n"))
-          dependencies = parseDependencies(lines)
-        } yield dependencies.distinct
+    import MavenParser._
 
-        x.map(deps => List(Scope(deps, List.empty))) //fixme: needs resolvers, might need a dedicated maven plugin
-
+    override def getDependencies(repo: Repo): F[List[Scope.Dependencies]] = {
+      for {
+        repoDir <- workspaceAlg.repoDir(repo)
+        listDependenciesCommand = mvnCmd(command.Clean, command.mvnDepList)
+        listResolversCommand = mvnCmd(command.Clean, command.ListRepositories)
+        repositoriesRaw <- exec(listResolversCommand, repoDir) <* logger.info(
+          s"running $listResolversCommand for $repo"
+        )
+        dependenciesRaw <- exec(listDependenciesCommand, repoDir) <* logger.info(
+          s"running $listDependenciesCommand for $repo"
+        )
+        _ <- logger.info(dependenciesRaw.mkString("\n"))
+        (notParsed, dependencies) = parseAllDependencies(dependenciesRaw)
+        (notParsedResolvers, resolvers) = parseResolvers(repositoriesRaw.mkString("\n"))
+      } yield {
+        val deps = dependencies.distinct
+        List(Scope(deps, resolvers))
       }
 
-      def exec(command: Nel[String], repoDir: File): F[List[String]] =
-        maybeIgnoreOptsFiles(repoDir)(processAlg.execSandboxed(command, repoDir))
-
-      def maybeIgnoreOptsFiles[A](dir: File)(fa: F[A]): F[A] =
-        if (config.ignoreOptsFiles) ignoreOptsFiles(dir)(fa) else fa
-
-      def ignoreOptsFiles[A](dir: File)(fa: F[A]): F[A] =
-        fileAlg.removeTemporarily(dir / ".jvmopts") {
-          fa
-        }
-
-      override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
-        F.unit //fixme:implement
     }
+
+    def exec(command: Nel[String], repoDir: File): F[List[String]] =
+      maybeIgnoreOptsFiles(repoDir)(processAlg.execSandboxed(command, repoDir))
+
+    def maybeIgnoreOptsFiles[A](dir: File)(fa: F[A]): F[A] =
+      if (config.ignoreOptsFiles) ignoreOptsFiles(dir)(fa) else fa
+
+    def ignoreOptsFiles[A](dir: File)(fa: F[A]): F[A] =
+      fileAlg.removeTemporarily(dir / ".jvmopts") {
+        fa
+      }
+
+    override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
+      F.unit //fixme:implement
+  }
 
   private def mvnCmd(commands: String*): Nel[String] =
     Nel.of("mvn", commands.flatMap(_.split(" ")): _*)
 
-  def removeNoise(s: String): String = s.replace("[INFO]", "").trim
-
-  //fixme: rewrite with atto
-  def parseDependencies(lines: List[String]): List[Dependency] = {
-    val pattern = """(.*):(.*):jar:(.*):compile""".r
-    lines
-      .map(removeNoise)
-      .map(_.trim)
-      .map { s =>
-        Try {
-          val pattern(groupId, artifactIdCross, currentVersion) = s
-          val artifactId = artifactIdCross.split("_") //fixme: check if it's scala binary
-          new Dependency(
-            GroupId(groupId),
-            ArtifactId(artifactId(0), artifactIdCross),
-            currentVersion
-          )
-        }.toOption // TODO: this doesn't catch exceptions thrown by Try, if any
-      // TODO: does regex throw exceptions if there are no matches?
-      // todo: add logger and log the exceptions
-      }
-      .collect { case Some(x) => x }
-  }
-
 }
 
 object MavenParser {
+  import atto._
+  import Atto._
+  import cats.implicits._
 
+  private val dot: Parser[Char] = char('.')
+  private val underscore = char('_')
+  private val colon: Parser[Char] = char(':')
 
+  private val group: Parser[GroupId] = (for {
+    x <- (many1(noneOf(".:")) ~ opt(dot)).many1
+    _ <- colon
+  } yield {
+    val parts: NonEmptyList[(NonEmptyList[Char], Option[Char])] = x
+    val groupVal = x.toList.map { case (g, d) => (g.toList ++ d.toList).mkString }.mkString
+    GroupId(groupVal)
+  }).named("group")
+
+  private val version3args: Parser[String] =
+    for {
+      a <- int <~ dot
+      b <- int <~ dot
+      c <- int
+    } yield s"$a.$b.$c"
+
+  private val artifact: Parser[ArtifactId] = {
+    val artifactString: Parser[String] = many1(noneOf("_ :")).map(_.toList.mkString)
+
+    for {
+      init <- artifactString
+      restOpt <- opt(many1(underscore ~ artifactString))
+      _ <- colon
+    } yield {
+      restOpt.fold(ArtifactId(init, Option.empty[String])) { rest =>
+        val crossVersion: Option[String] =
+          Option.when(rest.last._2.toFloatOption.isDefined)(rest.last._2)
+
+        val suffix = crossVersion.fold(
+          rest.map { case (underscore, str) => s"${underscore}${str}" }.toList.mkString
+        ) { _ =>
+          rest.init.map { case (underscore, str) => s"${underscore}${str}" }.mkString
+        }
+
+        ArtifactId(init + suffix, maybeCrossName = crossVersion)
+      }
+    }
+  }
+
+  private val parserDependency = for {
+    _ <- opt(string("[INFO]") <~ many(whitespace))
+    g <- group
+    a <- artifact
+    _ <- string("jar") <~ colon
+    v <- version3args <~ colon <~ string("compile")
+  } yield {
+    Dependency(groupId = g, artifactId = a, version = v)
+  }
+
+  def parseAllDependencies(
+      input: List[String]
+  ): (List[(String, String)], List[Dependency]) =
+    input
+      .map { line =>
+        val either = parserDependency.parse(line).done.either
+        either.leftMap(err => line -> err)
+      }
+      .partitionMap(identity)
+
+  val resolverIdParser: Parser[String] = many1(noneOf(" ")).map(_.toList.mkString)
+  val urlParser: Parser[String] = many1(noneOf(" ")).map(_.toList.mkString)
+
+  private val parserResolver = for {
+    _ <- many(whitespace)
+    _ <- string("id:") ~ whitespace
+    id <- resolverIdParser
+    _ <- many(whitespace) <~ string("url:") <~ whitespace
+    url <- resolverIdParser
+    _ <- many(anyChar)
+  } yield {
+    Resolver.MavenRepository(id, url)
+  }
+
+  def parseResolvers(raw: String) = {
+    raw
+      .split("""\[INFO\]""")
+      .toList
+      .map(line => parserResolver.parse(line).done.either)
+      .partitionMap(identity)
+  }
 
 }

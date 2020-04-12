@@ -4,6 +4,7 @@ import cats.data.NonEmptyList
 import org.scalasteward.core.data.{ArtifactId, CrossDependency, Dependency, GroupId, Update}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalasteward.core.data.Resolver
 
 class MavenParserTest extends AnyFunSuite with Matchers {
 
@@ -208,34 +209,31 @@ class MavenParserTest extends AnyFunSuite with Matchers {
       [INFO]    io.circe:circe-numbers_2.12:jar:0.11.1:compile
       |""".stripMargin.linesIterator.toList
 
-//  test("parse `mvn versions:display-plugin-updates`") {
-//    MavenAlg.parseUpdates(pluginUpdates) should contain allElementsOf List(
-//      Update.Single(
-//        CrossDependency(
-//          Dependency(
-//            GroupId("net.alchim31.maven"),
-//            ArtifactId("scala-maven-plugin", None),
-//            "3.3.2",
-//            None,
-//            None,
-//            None
-//          )
-//        ),
-//        NonEmptyList.one("4.3.0")
-//      )
-//    )
-//  }
-
   test("parse mvn dependency:list into dependencies") {
-    MavenAlg.parseDependencies(dependencies).headOption should contain(
-      Dependency(
-        GroupId("com.twilio"),
-        ArtifactId("scala-service-http-server", "scala-service-http-server_2.12"),
-        "0.52.0"
-      )
-    )
+
+    val raw =
+      """|[INFO]        id: sonatype-nexus-snapshots
+        |      url: https://oss.sonatype.org/content/repositories/snapshots
+        |   layout: default
+        |snapshots: [enabled => true, update => daily]
+        | releases: [enabled => false, update => daily]
+        |
+        |[INFO]        id: bintrayakkamaven
+        |      url: https://dl.bintray.com/akka/maven/
+        |   layout: default
+        |snapshots: [enabled => true, update => daily]
+        | releases: [enabled => true, update => daily]
+        |
+        |[INFO]        id: apache.snapshots
+        |      url: http://repository.apache.org/snapshots
+        |   layout: default
+        |snapshots: [enabled => true, update => daily]
+        | releases: [enabled => false, update => daily]
+        |""".stripMargin
+
+    val x = MavenParser.parseResolvers(raw)
+
+    print(x._2)
   }
-
-
 
 }
