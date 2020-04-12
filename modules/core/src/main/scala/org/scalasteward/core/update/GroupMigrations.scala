@@ -21,49 +21,46 @@ import org.scalasteward.core.data._
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.io.FileAlg
 import org.scalasteward.core.util.Nel
+import org.scalasteward.core.util.MonadThrowable
 import io.circe.config.parser
 import io.circe.Decoder
 import io.circe.generic.extras.{semiauto, Configuration}
-import cats.effect.Sync
-import fs2.Stream
 
 trait GroupMigrations[F[_]] {
   def findUpdateWithNewerGroupId(dependency: Dependency): Option[Update.Single]
 }
 
 object GroupMigrations {
-  def create[F[_]: Sync](
+  def create[F[_]: MonadThrowable](
       implicit fileAlg: FileAlg[F],
       config: Config
   ): F[GroupMigrations[F]] = {
-    val migrationSources =
-      Stream
-        .emit("group-migrations.conf")
-        .evalMap(org.scalasteward.core.io.readResource[F](_)) ++
-        config.groupMigrations
-          .foldMap(Stream.emit)
-          .evalMap(fileAlg.readFile(_))
-          .evalMap(
-            _.toRight(new Throwable("Couldn't read the file with custom group migrations"))
-              .liftTo[F]
-          )
+    val migrationSources = {
+
+      val fromParameters: F[Option[String]] =
+        config.groupMigrations.traverse(fileAlg.readFile(_)).flatMap {
+          case None => none[String].pure[F]
+          case Some(None) =>
+            new Throwable("Couldn't read the file with custom group migrations")
+              .raiseError[F, Option[String]]
+          case Some(Some(text)) => text.some.pure[F]
+        }
+
+      List(
+        fileAlg.readResource("group-migrations.conf").map(List(_)),
+        fromParameters.map(_.toList)
+      ).flatSequence
+    }
+
+    val decodeFile: String => F[GroupIdChanges] = parser
+      .decode[GroupIdChanges](_)
+      .leftMap(e => new Throwable("Couldn't decode migrations file", e))
+      .liftTo[F]
 
     migrationSources
-      .evalMap(
-        parser
-          .decode[GroupIdChanges](_)
-          .leftMap(e => new Throwable("Couldn't decode migrations file", e))
-          .liftTo[F]
-      )
-      .flatMap(changes => Stream.emits(changes.changes))
-      .compile
-      .toList
-      .map { migrations =>
-        new GroupMigrations[F] {
-          def findUpdateWithNewerGroupId(dependency: Dependency): Option[Update.Single] =
-            migrateGroupId(dependency, migrations)
-        }
-      }
+      .flatMap(_.traverse(decodeFile))
+      .map(_.flatMap(_.changes))
+      .map(migrations => dependency => migrateGroupId(dependency, migrations))
   }
 
   def migrateGroupId(
