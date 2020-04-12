@@ -55,7 +55,7 @@ object Context {
       implicit0(migrationAlg: MigrationAlg) <- Resource.liftF(
         MigrationAlg.create[F](config.scalafixMigrations)
       )
-      implicit0(groupMigration: GroupMigrations[F]) <- Resource.liftF(GroupMigrations.create[F])
+      implicit0(groupMigration: GroupMigrations) <- Resource.liftF(GroupMigrations.create[F])
     } yield {
       val kvsPrefix = Some(config.vcsType.asString)
       implicit val dateTimeAlg: DateTimeAlg[F] = DateTimeAlg.create[F]

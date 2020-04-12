@@ -29,7 +29,7 @@ final class UpdateAlg[F[_]](
     implicit
     filterAlg: FilterAlg[F],
     versionsCache: VersionsCache[F],
-    groupMigrations: GroupMigrations[F],
+    groupMigrations: GroupMigrations,
     F: Monad[F]
 ) {
   def findUpdate(

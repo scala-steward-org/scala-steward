@@ -26,7 +26,7 @@ import io.circe.config.parser
 import io.circe.Decoder
 import io.circe.generic.extras.{semiauto, Configuration}
 
-trait GroupMigrations[F[_]] {
+trait GroupMigrations {
   def findUpdateWithNewerGroupId(dependency: Dependency): Option[Update.Single]
 }
 
@@ -34,7 +34,7 @@ object GroupMigrations {
   def create[F[_]: MonadThrowable](
       implicit fileAlg: FileAlg[F],
       config: Config
-  ): F[GroupMigrations[F]] = {
+  ): F[GroupMigrations] = {
     val migrationSources = {
 
       val fromParameters: F[Option[String]] =
