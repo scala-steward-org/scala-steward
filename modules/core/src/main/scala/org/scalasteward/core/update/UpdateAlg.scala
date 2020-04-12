@@ -24,6 +24,7 @@ import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.Nel
 import scala.concurrent.duration.FiniteDuration
 import org.scalasteward.core.update.GroupMigrations
+import cats.Eval
 
 final class UpdateAlg[F[_]](
     implicit
@@ -43,10 +44,9 @@ final class UpdateAlg[F[_]](
       maybeUpdate0 = maybeNewerVersions.map { newerVersions =>
         Update.Single(CrossDependency(dependency.value), newerVersions.map(_.value))
       }
-      migratedUpdate = groupMigrations.findUpdateWithNewerGroupId(dependency.value)
-      maybeUpdate1 = maybeUpdate0.orElse(migratedUpdate)
+      migratedUpdate = Eval.later(groupMigrations.findUpdateWithNewerGroupId(dependency.value))
+      maybeUpdate1 = maybeUpdate0.orElse(migratedUpdate.value)
     } yield maybeUpdate1
-
   def findUpdates(
       dependencies: List[Scope.Dependency],
       repoConfig: RepoConfig,
