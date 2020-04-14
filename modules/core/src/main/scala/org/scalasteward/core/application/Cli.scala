@@ -53,6 +53,7 @@ object Cli {
       envVar: List[EnvVar] = Nil,
       processTimeout: FiniteDuration = 10.minutes,
       scalafixMigrations: Option[String] = None,
+      groupMigrations: Option[String] = None,
       cacheTtl: FiniteDuration = 2.hours,
       cacheMissDelay: FiniteDuration = 0.milliseconds,
       bitbucketServerUseDefaultReviewers: Boolean = false

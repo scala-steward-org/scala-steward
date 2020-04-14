@@ -24,6 +24,7 @@ import org.scalasteward.core.util.{BracketThrowable, DateTimeAlg}
 import org.scalasteward.core.vcs.VCSRepoAlg
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 import scala.concurrent.duration._
+import org.scalasteward.core.update.GroupMigrations
 
 object MockContext {
   implicit val config: Config = Config(
@@ -46,6 +47,7 @@ object MockContext {
     ),
     processTimeout = 10.minutes,
     scalafixMigrations = None,
+    groupMigrations = None,
     cacheTtl = 1.hour,
     cacheMissDelay = 0.milliseconds,
     bitbucketServerUseDefaultReviewers = false
@@ -72,6 +74,8 @@ object MockContext {
   implicit val filterAlg: FilterAlg[MockEff] = new FilterAlg[MockEff]
   implicit val versionsCache: VersionsCache[MockEff] =
     new VersionsCache[MockEff](config.cacheTtl, new JsonKeyValueStore("versions", "1"))
+  implicit val groupMigrations: GroupMigrations =
+    GroupMigrations.create[MockEff].runA(MockState.empty).unsafeRunSync()
   implicit val updateAlg: UpdateAlg[MockEff] = new UpdateAlg[MockEff]
   implicit val sbtAlg: SbtAlg[MockEff] = SbtAlg.create
   implicit val editAlg: EditAlg[MockEff] = new EditAlg[MockEff]
