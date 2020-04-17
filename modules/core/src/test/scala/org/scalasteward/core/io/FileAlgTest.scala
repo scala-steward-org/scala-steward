@@ -2,7 +2,6 @@ package org.scalasteward.core.io
 
 import better.files.File
 import cats.effect.IO
-import cats.implicits._
 import org.scalacheck.Arbitrary
 import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
