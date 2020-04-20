@@ -63,6 +63,10 @@ updates.limit = 5
 # Default: false
 updates.includeScala = true
 
+# The extensions of files that should be updated.
+# Default: [".scala", ".sbt", ".sc", ".yml""]
+updates.fileExtensions = [".scala", ".sbt", ".sc", ".yml", ".md", ".markdown", ".txt"]
+
 # If "on-conflicts", Scala Steward will update the PR it created to resolve conflicts as
 # long as you don't change it yourself.
 # If "always", Scala Steward will always update the PR it created as long as

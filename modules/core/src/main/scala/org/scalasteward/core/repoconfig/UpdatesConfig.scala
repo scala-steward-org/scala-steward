@@ -35,10 +35,17 @@ final case class UpdatesConfig(
     allow: List[UpdatePattern] = List.empty,
     ignore: List[UpdatePattern] = List.empty,
     limit: Option[PosInt] = None,
-    includeScala: Option[Boolean] = None
+    includeScala: Option[Boolean] = None,
+    fileExtensions: List[String] = List.empty
 ) {
   def keep(update: Update.Single): FilterResult =
     isAllowed(update).flatMap(isPinned).flatMap(isIgnored)
+
+  def fileExtensionsOrDefault: Set[String] =
+    if (fileExtensions.isEmpty)
+      UpdatesConfig.defaultFileExtensions
+    else
+      fileExtensions.toSet
 
   private def isAllowed(update: Update.Single): FilterResult = {
     val m = UpdatePattern.findMatch(allow, update, include = true)
@@ -78,6 +85,8 @@ object UpdatesConfig {
     deriveConfiguredEncoder
 
   val defaultIncludeScala: Boolean = false
+
+  val defaultFileExtensions: Set[String] = Set(".scala", ".sbt", ".sc", ".yml")
 
   // prevent IntelliJ from removing the import of io.circe.refined._
   locally(refinedDecoder: Decoder[PosInt])
