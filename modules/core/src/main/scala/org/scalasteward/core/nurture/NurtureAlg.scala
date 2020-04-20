@@ -29,7 +29,7 @@ import org.scalasteward.core.git.{Branch, GitAlg}
 import org.scalasteward.core.repocache.RepoCacheRepository
 import org.scalasteward.core.repoconfig.{PullRequestUpdateStrategy, RepoConfigAlg}
 import org.scalasteward.core.scalafix.MigrationAlg
-import org.scalasteward.core.util.DateTimeAlg
+import org.scalasteward.core.util.{DateTimeAlg, HttpExistenceClient}
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg}
@@ -46,6 +46,7 @@ final class NurtureAlg[F[_]](
     vcsApiAlg: VCSApiAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
     vcsExtraAlg: VCSExtraAlg[F],
+    existenceClient: HttpExistenceClient[F],
     logger: Logger[F],
     migrationAlg: MigrationAlg,
     pullRequestRepository: PullRequestRepository[F],
@@ -153,10 +154,11 @@ final class NurtureAlg[F[_]](
         .traverse(vcsExtraAlg.getReleaseRelatedUrls(_, data.update))
       branchName = vcs.createBranch(config.vcsType, data.fork, data.update)
       migrations = migrationAlg.findMigrations(data.update)
+      existingArtifactUrls <- artifactIdToUrl.toList.filterA(a => existenceClient.exists(a._2))
       requestData = NewPullRequestData.from(
         data,
         branchName,
-        artifactIdToUrl,
+        existingArtifactUrls.toMap,
         releaseRelatedUrls.getOrElse(List.empty),
         migrations
       )
