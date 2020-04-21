@@ -13,4 +13,4 @@ addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.6.1")
 addSbtPlugin("org.wartremover" % "sbt-wartremover" % "2.4.7")
 
 // This is only here so that Scala Steward updates the version in sbt/package.scala too.
-addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.14")
+addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.15")
