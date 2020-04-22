@@ -25,7 +25,7 @@ object Dependencies {
   val log4catsSlf4j = "io.chrisdavenport" %% "log4cats-slf4j" % "1.0.1"
   val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.2.3"
   val monocleCore = "com.github.julien-truffaut" %% "monocle-core" % "2.0.4"
-  val refined = "eu.timepit" %% "refined" % "0.9.13"
+  val refined = "eu.timepit" %% "refined" % "0.9.14"
   val refinedCats = "eu.timepit" %% "refined-cats" % refined.revision
   val refinedScalacheck = "eu.timepit" %% "refined-scalacheck" % refined.revision
   val scalacacheCaffeine = "com.github.cb372" %% "scalacache-caffeine" % "0.28.0"
