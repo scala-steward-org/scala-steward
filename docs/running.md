@@ -42,10 +42,13 @@ The [`git-ask-pass` option](https://git-scm.com/docs/gitcredentials) must specif
 
 You can also provide a `--scalafix-migrations` option with the path to a file containing scalafix migrations.
 More information can be found [here][migrations]
+
 ### Private repositories
 
 If you run Scala Steward for your own private projects, the option `--do-not-fork` can be required, not to fork.
 Instead it will create pull requests directly on the private repository (as soon as the `${LOGIN}` can).
+
+#### Credentials using environment variables
 
 It can also be useful to pass additional environment variables from the command line using the `--env-var` flag as shown in the examples above. You can use this to pass any credentials required by your projects to resolve any private dependencies, e.g.:
 
@@ -56,6 +59,10 @@ It can also be useful to pass additional environment variables from the command 
 
 These variables will be accessible (in sbt) to all of the projects that Scala Steward checks dependencies for.
 
+#### Credentials using a credentials.sbt file
+
+If your projects require credentials, you can also provide global credentials in the `$HOME/.sbt/1.0/credentials.sbt` file. 
+The file should contain a single line: `credentials += Credentials("Some Nexus Repository Manager", "my.artifact.repo.net", "admin", "admin123")`.
 
 ### Running locally from sbt
 
