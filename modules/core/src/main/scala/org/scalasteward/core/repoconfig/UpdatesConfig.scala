@@ -86,7 +86,7 @@ object UpdatesConfig {
 
   val defaultIncludeScala: Boolean = false
 
-  val defaultFileExtensions: Set[String] = Set(".scala", ".sbt", ".sc", ".yml")
+  val defaultFileExtensions: Set[String] = Set(".scala", ".sbt", ".sbt.shared", ".sc", ".yml")
 
   // prevent IntelliJ from removing the import of io.circe.refined._
   locally(refinedDecoder: Decoder[PosInt])

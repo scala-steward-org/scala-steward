@@ -37,10 +37,7 @@ package object io {
 
   private def isGenericSourceFile(file: File, fileExtensions: Set[String]): Boolean = {
     val name = file.name
-    val allowedByExtension = file.extension.exists(fileExtensions)
-    def allowedBySuffix: Boolean =
-      Set(".sbt.shared").exists(suffix => name.endsWith(suffix) && !name.startsWith(suffix))
-    allowedByExtension || allowedBySuffix
+    fileExtensions.exists(suffix => name.endsWith(suffix) && !name.startsWith(suffix))
   }
 
   private def isSbtUpdate(update: Update): Boolean =

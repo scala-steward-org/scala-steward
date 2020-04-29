@@ -26,7 +26,7 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
          |updates.ignore = [ { groupId = "org.acme", version = "1.0" } ]
          |updates.limit = 4
          |updates.includeScala = true
-         |updates.fileExtensions = [ "*.txt" ]
+         |updates.fileExtensions = [ ".txt" ]
          |pullRequests.frequency = "@weekly"
          |commits.message = "Update ${artifactName} from ${currentVersion} to ${nextVersion}"
          |""".stripMargin
@@ -64,7 +64,7 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
         ),
         limit = Some(PosInt.unsafeFrom(4)),
         includeScala = Some(true),
-        fileExtensions = List("*.txt")
+        fileExtensions = List(".txt")
       ),
       commits = CommitsConfig(
         message = Some("Update ${artifactName} from ${currentVersion} to ${nextVersion}")
