@@ -78,6 +78,7 @@ object FilterAlg {
       case ("org.scala-lang", "scala-compiler") => true
       case ("org.scala-lang", "scala-library")  => true
       case ("org.scala-lang", "scala-reflect")  => true
+      case ("org.scala-lang", "scalap")         => true
       case ("org.typelevel", "scala-library")   => true
       case _                                    => false
     }
