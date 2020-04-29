@@ -64,6 +64,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 
 * [Adam Fraser](https://github.com/adamgfraser)
 * [Alex](https://github.com/jhnsmth)
+* [Alex Klibisz](https://github.com/alexklibisz)
 * [Andrea](https://github.com/Andrea)
 * [Andrea Mistretta](https://github.com/andreami)
 * [Anil Kumar Myla](https://github.com/anilkumarmyla)
