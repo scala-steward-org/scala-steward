@@ -5,6 +5,7 @@ import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.mock.MockContext.editAlg
 import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.repoconfig.UpdatesConfig
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 import org.scalatest.funsuite.AnyFunSuite
@@ -18,7 +19,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
     val file2 = File.temp / "ws/fthomas/scala-steward/project/Dependencies.scala"
 
     val state = editAlg
-      .applyUpdate(repo, update)
+      .applyUpdate(repo, update, UpdatesConfig.defaultFileExtensions)
       .runS(MockState.empty.add(file1, """val catsVersion = "1.2.0"""").add(file2, ""))
       .unsafeRunSync()
 
@@ -47,7 +48,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
     val file1 = File.temp / "ws/fthomas/scala-steward/build.sbt"
 
     val state = editAlg
-      .applyUpdate(repo, update)
+      .applyUpdate(repo, update, UpdatesConfig.defaultFileExtensions)
       .runS(
         MockState.empty
           .add(
@@ -102,7 +103,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
     val file2 = File.temp / "ws/fthomas/scala-steward/build.sbt"
 
     val state = editAlg
-      .applyUpdate(repo, update)
+      .applyUpdate(repo, update, UpdatesConfig.defaultFileExtensions)
       .runS(
         MockState.empty
           .add(file1, """import $ivy.`org.typelevel::cats-core:1.2.0`, cats.implicits._"""")
@@ -133,7 +134,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
     val repoDir = File.temp / "ws/owner/repo"
     val filesInRepoDir = files.map { case (file, content) => repoDir / file -> content }
     editAlg
-      .applyUpdate(Repo("owner", "repo"), update)
+      .applyUpdate(Repo("owner", "repo"), update, UpdatesConfig.defaultFileExtensions)
       .runS(MockState.empty.addFiles(filesInRepoDir))
       .map(_.files)
       .unsafeRunSync()

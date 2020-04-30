@@ -121,7 +121,8 @@ final class NurtureAlg[F[_]](
     } yield result
 
   def applyNewUpdate(data: UpdateData): F[ProcessResult] =
-    (editAlg.applyUpdate(data.repo, data.update) >> gitAlg.containsChanges(data.repo)).ifM(
+    (editAlg.applyUpdate(data.repo, data.update, data.repoConfig.updates.fileExtensionsOrDefault) >> gitAlg
+      .containsChanges(data.repo)).ifM(
       gitAlg.returnToCurrentBranch(data.repo) {
         for {
           _ <- logger.info(s"Create branch ${data.updateBranch.name}")
@@ -215,7 +216,11 @@ final class NurtureAlg[F[_]](
         s"Merge branch '${data.baseBranch.name}' into ${data.updateBranch.name} and apply again"
       )
       _ <- gitAlg.mergeTheirs(data.repo, data.baseBranch)
-      _ <- editAlg.applyUpdate(data.repo, data.update)
+      _ <- editAlg.applyUpdate(
+        data.repo,
+        data.update,
+        data.repoConfig.updates.fileExtensionsOrDefault
+      )
       containsChanges <- gitAlg.containsChanges(data.repo)
       result <- if (containsChanges) commitAndPush(data) else F.pure[ProcessResult](Ignored)
     } yield result

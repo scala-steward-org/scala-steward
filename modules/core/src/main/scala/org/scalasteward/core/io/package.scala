@@ -21,24 +21,23 @@ import cats.implicits._
 import org.scalasteward.core.data.{GroupId, Update}
 
 package object io {
-  def isSourceFile(update: Update)(file: File): Boolean = {
+  def isSourceFile(update: Update, fileExtensions: Set[String])(file: File): Boolean = {
     val notInGitDir = !file.pathAsString.contains(".git/")
-    notInGitDir && isSpecificOrGenericSourceFile(update)(file)
+    notInGitDir && isSpecificOrGenericSourceFile(update, fileExtensions)(file)
   }
 
-  private def isSpecificOrGenericSourceFile(update: Update)(file: File): Boolean =
+  private def isSpecificOrGenericSourceFile(update: Update, fileExtensions: Set[String])(
+      file: File
+  ): Boolean =
     () match {
       case _ if isSbtUpdate(update)          => file.name === "build.properties"
       case _ if isScalafmtCoreUpdate(update) => file.name === ".scalafmt.conf"
-      case _                                 => isGenericSourceFile(file)
+      case _                                 => isGenericSourceFile(file, fileExtensions)
     }
 
-  private def isGenericSourceFile(file: File): Boolean = {
+  private def isGenericSourceFile(file: File, fileExtensions: Set[String]): Boolean = {
     val name = file.name
-    val allowedByExtension = file.extension.exists(Set(".scala", ".sbt", ".sc", ".yml"))
-    def allowedBySuffix: Boolean =
-      Set(".sbt.shared").exists(suffix => name.endsWith(suffix) && !name.startsWith(suffix))
-    allowedByExtension || allowedBySuffix
+    fileExtensions.exists(suffix => name.endsWith(suffix) && !name.startsWith(suffix))
   }
 
   private def isSbtUpdate(update: Update): Boolean =

@@ -38,13 +38,17 @@ final class EditAlg[F[_]](
     workspaceAlg: WorkspaceAlg[F],
     F: MonadThrowable[F]
 ) {
-  def applyUpdate(repo: Repo, update: Update): F[Unit] =
+  def applyUpdate(repo: Repo, update: Update, fileExtensions: Set[String]): F[Unit] =
     for {
       _ <- applyScalafixMigrations(repo, update).handleErrorWith(e =>
         logger.warn(s"Could not apply ${update.show} : $e")
       )
       repoDir <- workspaceAlg.repoDir(repo)
-      files <- fileAlg.findFilesContaining(repoDir, update.currentVersion, isSourceFile(update))
+      files <- fileAlg.findFilesContaining(
+        repoDir,
+        update.currentVersion,
+        isSourceFile(update, fileExtensions)
+      )
       noFilesFound = logger.warn("No files found that contain the current version")
       _ <- files.toNel.fold(noFilesFound)(applyUpdateTo(_, update))
     } yield ()
