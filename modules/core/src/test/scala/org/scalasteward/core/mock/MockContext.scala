@@ -13,7 +13,6 @@ import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Author, GitAlg}
 import org.scalasteward.core.io.{MockFileAlg, MockProcessAlg, MockWorkspaceAlg}
 import org.scalasteward.core.maven.MavenAlg
-//import org.scalasteward.core.mock.MockContext.config
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.persistence.JsonKeyValueStore
 import org.scalasteward.core.repocache.RepoCacheRepository
@@ -26,11 +25,8 @@ import org.scalasteward.core.util.uri._
 import org.scalasteward.core.util.{BracketThrowable, DateTimeAlg}
 import org.scalasteward.core.vcs.VCSRepoAlg
 import org.scalasteward.core.vcs.data.AuthenticatedUser
-
 import scala.concurrent.duration._
 import org.scalasteward.core.update.GroupMigrations
-
-//fixme: extract the common parts into one object
 
 object MockContext {
   implicit val config: Config = Config(
@@ -58,94 +54,56 @@ object MockContext {
     cacheMissDelay = 0.milliseconds,
     bitbucketServerUseDefaultReviewers = false
   )
-
   implicit val mockEffBracketThrowable: BracketThrowable[MockEff] = Sync[MockEff]
   implicit val mockEffParallel: Parallel[MockEff] = Parallel.identity
 
   implicit val fileAlg: MockFileAlg = new MockFileAlg
+
   implicit val mockLogger: MockLogger = new MockLogger
   implicit val processAlg: MockProcessAlg = new MockProcessAlg
   implicit val workspaceAlg: MockWorkspaceAlg = new MockWorkspaceAlg
-
   implicit val coursierAlg: CoursierAlg[MockEff] = CoursierAlg.create
   implicit val dateTimeAlg: DateTimeAlg[MockEff] = DateTimeAlg.create
   implicit val gitAlg: GitAlg[MockEff] = GitAlg.create
   implicit val user: AuthenticatedUser = AuthenticatedUser("scala-steward", "token")
+
   implicit val vcsRepoAlg: VCSRepoAlg[MockEff] = VCSRepoAlg.create(config, gitAlg)
   implicit val scalafmtAlg: ScalafmtAlg[MockEff] = ScalafmtAlg.create
+
   implicit val migrationAlg: MigrationAlg =
     MigrationAlg.create[MockEff](config.scalafixMigrations).runA(MockState.empty).unsafeRunSync()
+
   implicit val cacheRepository: RepoCacheRepository[MockEff] =
     new RepoCacheRepository[MockEff](new JsonKeyValueStore("repo_cache", "1"))
-  implicit val filterAlg: FilterAlg[MockEff] = new FilterAlg[MockEff]
+
   implicit val versionsCache: VersionsCache[MockEff] =
     new VersionsCache[MockEff](config.cacheTtl, new JsonKeyValueStore("versions", "1"))
+
+  implicit val filterAlg: FilterAlg[MockEff] = new FilterAlg[MockEff]
+
   implicit val groupMigrations: GroupMigrations =
     GroupMigrations.create[MockEff].runA(MockState.empty).unsafeRunSync()
   implicit val updateAlg: UpdateAlg[MockEff] = new UpdateAlg[MockEff]
-  implicit val sbtAlg: BuildSystemAlg[MockEff] = SbtAlg.create
-  implicit val editAlg: EditAlg[MockEff] = new EditAlg[MockEff]
   implicit val repoConfigAlg: RepoConfigAlg[MockEff] = new RepoConfigAlg[MockEff]
+
   implicit val pullRequestRepository: PullRequestRepository[MockEff] =
     new PullRequestRepository[MockEff](new JsonKeyValueStore("pullrequests", "9"))
-  implicit val prepareEnvAlg: PrepareEnvAlg[MockEff] = new PrepareEnvAlg[MockEff]
-
-}
-
-object MockMavenContext {
-  implicit val mockEffParallel: Parallel[MockEff] = Parallel.identity
-
-  implicit val config: Config = Config(
-    workspace = File.temp / "ws",
-    reposFile = File.temp / "repos.md",
-    gitAuthor = Author("Bot Doe", "bot@example.org"),
-    vcsType = SupportedVCS.GitHub,
-    vcsApiHost = Uri(),
-    vcsLogin = "bot-doe",
-    gitAskPass = File.temp / "askpass.sh",
-    signCommits = false,
-    whitelistedDirectories = Nil,
-    readOnlyDirectories = Nil,
-    disableSandbox = false,
-    doNotFork = false,
-    ignoreOptsFiles = false,
-    envVars = List(
-      EnvVar("TEST_VAR", "GREAT"),
-      EnvVar("ANOTHER_TEST_VAR", "ALSO_GREAT")
-    ),
-    processTimeout = 10.minutes,
-    scalafixMigrations = None,
-    cacheTtl = 1.hour,
-    cacheMissDelay = 0.milliseconds
-  )
-
-  implicit val mockEffBracketThrowable: BracketThrowable[MockEff] = Sync[MockEff]
-
-  implicit val fileAlg: MockFileAlg = new MockFileAlg
-  implicit val mockLogger: MockLogger = new MockLogger
-  implicit val processAlg: MockProcessAlg = new MockProcessAlg
-  implicit val workspaceAlg: MockWorkspaceAlg = new MockWorkspaceAlg
-
-  implicit val coursierAlg: CoursierAlg[MockEff] = CoursierAlg.create
-  implicit val dateTimeAlg: DateTimeAlg[MockEff] = DateTimeAlg.create
-  implicit val gitAlg: GitAlg[MockEff] = GitAlg.create
-  implicit val user: AuthenticatedUser = AuthenticatedUser("scala-steward", "token")
-  implicit val gitHubRepoAlg: VCSRepoAlg[MockEff] = VCSRepoAlg.create(config, gitAlg)
-  implicit val scalafmtAlg: ScalafmtAlg[MockEff] = ScalafmtAlg.create
-  implicit val migrationAlg: MigrationAlg[MockEff] = MigrationAlg.create
-  implicit val cacheRepository: RepoCacheRepository[MockEff] =
-    new RepoCacheRepository[MockEff](new JsonKeyValueStore("repos", "6"))
-  implicit val mavenAlg: BuildSystemAlg[MockEff] = MavenAlg.create
-  implicit val editAlg: EditAlg[MockEff] = new EditAlg[MockEff]
-  implicit val repoConfigAlg: RepoConfigAlg[MockEff] = new RepoConfigAlg[MockEff]
-  implicit val filterAlg: FilterAlg[MockEff] = new FilterAlg[MockEff]
-  implicit val versionsCacheAlg: VersionsCache[MockEff] =
-    new VersionsCache[MockEff](config.cacheTtl, new JsonKeyValueStore("versions", "1"))
-  implicit val updateAlg: UpdateAlg[MockEff] = new UpdateAlg[MockEff]
-
-  implicit val prRepo: PullRequestRepository[MockEff] =
-    new PullRequestRepository[MockEff](new JsonKeyValueStore("pull_requests", "1"))
 
   implicit val prepareEnvAlg: PrepareEnvAlg[MockEff] = new PrepareEnvAlg[MockEff]
   implicit val pruningAlg: PruningAlg[MockEff] = new PruningAlg[MockEff]
+
+}
+
+object MockSbtContext {
+  import MockContext._
+
+  implicit val sbtAlg: BuildSystemAlg[MockEff] = SbtAlg.create
+  implicit val editAlg: EditAlg[MockEff] = new EditAlg[MockEff]
+}
+
+object MockMavenContext {
+  import MockContext._
+
+  implicit val mavenAlg: BuildSystemAlg[MockEff] = MavenAlg.create
+  implicit val editAlg: EditAlg[MockEff] = new EditAlg[MockEff]
 }

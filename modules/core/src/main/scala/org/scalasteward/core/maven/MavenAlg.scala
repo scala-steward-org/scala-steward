@@ -170,7 +170,7 @@ object MavenParser {
     url <- resolverIdParser
     _ <- many(anyChar)
   } yield {
-    Resolver.MavenRepository(id, url)
+    Resolver.MavenRepository(id, url, None)
   }
 
   def parseResolvers(raw: String) = {

@@ -85,7 +85,6 @@ object Context {
 
       implicit val refreshErrorAlg: RefreshErrorAlg[F] =
         new RefreshErrorAlg[F](new JsonKeyValueStore("refresh_error", "1"))
-      implicit val migrationAlg: MigrationAlg[F] = MigrationAlg.create[F]
 
       val mavenAlg: BuildSystemAlg[F] = MavenAlg.create[F]
       val sbtAlg: BuildSystemAlg[F] = SbtAlg.create[F]

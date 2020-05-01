@@ -35,7 +35,7 @@ final class EditAlg[F[_]](
     buildSystemAlg: BuildSystemAlg[F],
     streamCompiler: Stream.Compiler[F, F],
     workspaceAlg: WorkspaceAlg[F],
-    migrationAlg: MigrationAlg[F],
+    migrationAlg: MigrationAlg,
     F: MonadThrowable[F]
 ) {
   def applyUpdate(repo: Repo, update: Update, fileExtensions: Set[String]): F[Unit] =

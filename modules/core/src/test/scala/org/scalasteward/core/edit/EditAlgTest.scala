@@ -3,7 +3,7 @@ package org.scalasteward.core.edit
 import better.files.File
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.Update
-import org.scalasteward.core.mock.MockContext.editAlg
+import org.scalasteward.core.mock.MockSbtContext._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.repoconfig.UpdatesConfig
 import org.scalasteward.core.util.Nel

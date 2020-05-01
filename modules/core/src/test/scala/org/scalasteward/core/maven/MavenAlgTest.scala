@@ -1,6 +1,7 @@
 package org.scalasteward.core.maven
 
 import better.files.File
+import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockMavenContext._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.vcs.data.Repo

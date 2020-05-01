@@ -3,6 +3,7 @@ package org.scalasteward.core.sbt
 import cats.data.StateT
 import org.scalasteward.core.data.{GroupId, Version}
 import org.scalasteward.core.mock.MockContext._
+import org.scalasteward.core.mock.MockSbtContext._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.scalafix.Migration
