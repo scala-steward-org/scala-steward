@@ -18,21 +18,16 @@ package org.scalasteward.core.maven
 
 import better.files.File
 import cats.Monad
+import cats.data.NonEmptyList
 import cats.implicits._
+import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.build.system.BuildSystemAlg
-import org.scalasteward.core.data.{ArtifactId, CrossDependency, Dependency, GroupId, Scope, Update}
+import org.scalasteward.core.data._
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
-import atto.Parser
-import atto.Atto._
-import io.chrisdavenport.log4cats.Logger
-
-import scala.util.Try
-import cats.data.NonEmptyList
-import org.scalasteward.core.data.Resolver
 
 object MavenAlg {
 
@@ -60,8 +55,8 @@ object MavenAlg {
           s"running $listDependenciesCommand for $repo"
         )
         _ <- logger.info(dependenciesRaw.mkString("\n"))
-        (notParsed, dependencies) = parseAllDependencies(dependenciesRaw)
-        (notParsedResolvers, resolvers) = parseResolvers(repositoriesRaw.mkString("\n"))
+        (_, dependencies) = parseAllDependencies(dependenciesRaw)
+        (_, resolvers) = parseResolvers(repositoriesRaw.mkString("\n"))
       } yield {
         val deps = dependencies.distinct
         List(Scope(deps, resolvers))
@@ -80,8 +75,15 @@ object MavenAlg {
         fa
       }
 
-    override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
-      F.unit //fixme:implement
+    override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] = {
+      for {
+        repoDir <- workspaceAlg.repoDir(repo)
+        runScalafixCmd = mvnCmd(command.Clean, command.ScalafixMigrations)
+        _ <- exec(runScalafixCmd, repoDir) <* logger.info(
+          s"running $runScalafixCmd for $repo"
+        )
+      } yield ()
+    }
   }
 
   private def mvnCmd(commands: String*): Nel[String] =

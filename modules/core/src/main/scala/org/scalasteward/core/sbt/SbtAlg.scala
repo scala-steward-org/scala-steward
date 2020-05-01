@@ -63,17 +63,6 @@ object SbtAlg {
           version = maybeProperties.flatMap(parser.parseBuildProperties)
         } yield version
 
-//      override def getDependencies(repo: Repo): F[List[Dependency]] =
-//        for {
-//          repoDir <- workspaceAlg.repoDir(repo)
-//          cmd = sbtCmd(List(crossStewardDependencies, reloadPlugins, stewardDependencies))
-//          lines <- exec(cmd, repoDir)
-//          dependencies = parser.parseDependencies(lines)
-//          maybeSbtDependency <- getSbtDependency(repo)
-//          maybeScalafmtDependency <- scalafmtAlg.getScalafmtDependency(repo)
-//        } yield (maybeSbtDependency.toList ++ maybeScalafmtDependency.toList ++ dependencies).distinct
-
-
       override def getDependencies(repo: Repo): F[List[Scope.Dependencies]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
@@ -88,21 +77,6 @@ object SbtAlg {
             .toList
             .map(group => group.head.as(group.reduceMap(_.value).distinct.sorted))
         } yield result
-
-//      override def getUpdatesForRepo(repo: Repo): F[List[Update.Single]] =
-//        for {
-//          repoDir <- workspaceAlg.repoDir(repo)
-//          commands = List(setOffline, crossStewardDependencies, reloadPlugins, stewardDependencies)
-//          lines <- exec(sbtCmd(commands), repoDir)
-//          dependencies = parser.parseDependencies(lines)
-//          additionalDependencies <- getAdditionalDependencies(repo)
-//          // combine scopes with the same resolvers
-//          result = (dependencies ++ additionalDependencies)
-//            .groupByNel(_.resolvers)
-//            .values
-//            .toList
-//            .map(group => group.head.as(group.reduceMap(_.value).distinct.sorted))
-//        } yield result
 
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
         addGlobalPluginTemporarily(scalaStewardScalafixSbt) {

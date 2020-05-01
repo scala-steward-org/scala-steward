@@ -21,4 +21,5 @@ object command {
   val mvnDepList = "dependency:list"
   val ListRepositories = "dependency:list-repositories"
   val PluginUpdates = "versions:display-plugin-updates"
+  val ScalafixMigrations = "io.github.evis:scalafix-maven-plugin:0.1.2_0.9.5:scalafix"
 }
