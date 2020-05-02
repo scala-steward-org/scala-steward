@@ -28,8 +28,9 @@ final class HttpScaladexClient[F[_]](
     client: Client[F],
     F: Sync[F]
 ) {
-  private val projectTitleFragment = "<h4>([\\w-]+)/([\\w-]+)</h4>".r
-  private val githubUrlFragment = "<a href=\"https://github\\.com/([\\w-]+)/([\\w-]+)/?\"".r
+  private val ownerSlashRepo = "([\\w-]{1,256})/([\\w-]{1,256})"
+  private val projectTitleFragment = s"""<h4>${ownerSlashRepo}</h4>""".r
+  private val githubUrlFragment = s"""<a href="https://github.com/${ownerSlashRepo}/?""".r
 
   def searchProject(artifactId: String): F[Option[String]] =
     extractFromPage(toSearchUrl(artifactId), projectTitleFragment) { matched =>
