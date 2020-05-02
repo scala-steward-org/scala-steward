@@ -21,7 +21,6 @@ import cats.implicits._
 import eu.timepit.refined.types.numeric.PosInt
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.ProcessResult.{Ignored, Updated}
 import org.scalasteward.core.data.{ProcessResult, Scope, Update}
 import org.scalasteward.core.edit.EditAlg
@@ -42,10 +41,10 @@ final class NurtureAlg[F[_]](
     editAlg: EditAlg[F],
     repoConfigAlg: RepoConfigAlg[F],
     gitAlg: GitAlg[F],
-    coursierAlg: CoursierAlg[F],
     vcsApiAlg: VCSApiAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
     vcsExtraAlg: VCSExtraAlg[F],
+    urlMappingAlg: UrlMappingAlg[F],
     existenceClient: HttpExistenceClient[F],
     logger: Logger[F],
     migrationAlg: MigrationAlg,
@@ -147,7 +146,7 @@ final class NurtureAlg[F[_]](
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
       maybeRepoCache <- repoCacheRepository.findCache(data.repo)
       resolvers = maybeRepoCache.map(_.dependencyInfos.flatMap(_.resolvers)).getOrElse(List.empty)
-      artifactIdToUrl <- coursierAlg.getArtifactIdUrlMapping(
+      artifactIdToUrl <- urlMappingAlg.getArtifactIdUrlMapping(
         Scope(data.update.dependencies.toList, resolvers)
       )
       existingArtifactUrlsList <- artifactIdToUrl.toList.filterA(a => existenceClient.exists(a._2))
