@@ -127,6 +127,11 @@ object FilterAlg {
           // https://github.com/beautiful-scala/sbt-scalastyle/pull/13
           "36845576"
         ).contains
+      case ("com.nequissimus", "sort-imports_2.12") =>
+        List(
+          // https://github.com/fthomas/scala-steward/issues/1413
+          "36845576"
+        ).contains
       case ("commons-collections", "commons-collections") =>
         List(
           "20030418.083655",
