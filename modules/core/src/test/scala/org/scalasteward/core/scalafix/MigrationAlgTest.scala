@@ -78,6 +78,6 @@ class MigrationAlgTest extends AnyFunSuite with Matchers {
   test("loadMigrations without extra file") {
     val migrations =
       MigrationAlg.loadMigrations[MockEff](None).runA(MockState.empty).unsafeRunSync()
-    migrations.size shouldBe 9
+    migrations.size shouldBe 10
   }
 }
