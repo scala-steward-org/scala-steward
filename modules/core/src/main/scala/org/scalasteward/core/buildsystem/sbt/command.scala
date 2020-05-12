@@ -14,19 +14,14 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.sbt.data
+package org.scalasteward.core.buildsystem.sbt
 
-import cats.Order
-import cats.implicits._
-import io.circe.Codec
-import io.circe.generic.extras.semiauto._
-
-final case class ScalaVersion(value: String)
-
-object ScalaVersion {
-  implicit val scalaVersionCodec: Codec[ScalaVersion] =
-    deriveUnwrappedCodec
-
-  implicit val scalaVersionOrder: Order[ScalaVersion] =
-    Order[String].contramap(_.value)
+object command {
+  val setOffline = "set offline := true"
+  val stewardDependencies = "stewardDependencies"
+  val crossStewardDependencies = s"+ $stewardDependencies"
+  val reloadPlugins = "reload plugins"
+  val scalafix = "scalafix"
+  val testScalafix = "test:scalafix"
+  val scalafixEnable = "scalafixEnable"
 }

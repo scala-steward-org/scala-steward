@@ -1,10 +1,10 @@
-package org.scalasteward.core.sbt
+package org.scalasteward.core.buildsystem.sbt
 
 import cats.data.StateT
+import org.scalasteward.core.buildsystem.sbt.command._
 import org.scalasteward.core.data.{GroupId, Version}
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockState
-import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo

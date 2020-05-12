@@ -2,10 +2,10 @@ package org.scalasteward.core.coursier
 
 import org.http4s.syntax.literals._
 import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.buildsystem.sbt.data.{SbtVersion, ScalaVersion}
 import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId}
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockState
-import org.scalasteward.core.sbt.data.{SbtVersion, ScalaVersion}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 

@@ -14,26 +14,17 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.build.system
+package org.scalasteward.core.buildsystem
 
 import org.scalasteward.core.data.Scope
-import org.scalasteward.core.data.Scope.Dependencies
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
 trait BuildSystemAlg[F[_]] {
+  def containsBuild(repo: Repo): F[Boolean]
 
   def getDependencies(repo: Repo): F[List[Scope.Dependencies]]
 
   def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit]
-}
-
-object BuildSystemAlg {
-  def create[F[_]]: BuildSystemAlg[F] =
-    new BuildSystemAlg[F] {
-      override def getDependencies(repo: Repo): F[List[Dependencies]] = ???
-
-      override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] = ???
-    }
 }
