@@ -13,7 +13,7 @@ object Dependencies {
   val circeParser = "io.circe" %% "circe-parser" % circeGeneric.revision
   val circeRefined = "io.circe" %% "circe-refined" % circeGeneric.revision
   val commonsIo = "commons-io" % "commons-io" % "2.6"
-  val coursierCore = "io.get-coursier" %% "coursier" % "2.0.0-RC6-13"
+  val coursierCore = "io.get-coursier" %% "coursier" % "2.0.0-RC6-15"
   val coursierCatsInterop = "io.get-coursier" %% "coursier-cats-interop" % coursierCore.revision
   val cron4sCore = "com.github.alonsodomin.cron4s" %% "cron4s-core" % "0.6.0"
   val disciplineScalatest = "org.typelevel" %% "discipline-scalatest" % "1.0.1"
@@ -32,5 +32,5 @@ object Dependencies {
   val scalacacheCatsEffect =
     "com.github.cb372" %% "scalacache-cats-effect" % scalacacheCaffeine.revision
   val scalacheck = "org.scalacheck" %% "scalacheck" % "1.14.3"
-  val scalaTest = "org.scalatest" %% "scalatest" % "3.1.1"
+  val scalaTest = "org.scalatest" %% "scalatest" % "3.1.2"
 }
