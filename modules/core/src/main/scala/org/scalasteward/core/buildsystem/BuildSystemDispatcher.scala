@@ -16,11 +16,12 @@
 
 package org.scalasteward.core.buildsystem
 
+import cats.Monad
 import cats.implicits._
 import org.scalasteward.core.buildsystem.sbt.SbtAlg
 import org.scalasteward.core.data.Scope
 import org.scalasteward.core.scalafix.Migration
-import org.scalasteward.core.util.{MonadThrowable, Nel}
+import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
 trait BuildSystemDispatcher[F[_]] extends BuildSystemAlg[F]
@@ -29,7 +30,7 @@ object BuildSystemDispatcher {
   def create[F[_]](
       implicit
       sbtAlg: SbtAlg[F],
-      F: MonadThrowable[F]
+      F: Monad[F]
   ): BuildSystemDispatcher[F] = {
     val allBuildSystems = List(sbtAlg)
     val fallbackBuildSystem = List(sbtAlg)
