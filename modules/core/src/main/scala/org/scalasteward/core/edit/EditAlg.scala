@@ -23,19 +23,19 @@ import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.build.system.BuildSystemAlg
 import org.scalasteward.core.data.Update
-import org.scalasteward.core.util._
-import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.io.{isSourceFile, FileAlg, WorkspaceAlg}
 import org.scalasteward.core.scalafix.MigrationAlg
+import org.scalasteward.core.util._
+import org.scalasteward.core.vcs.data.Repo
 
 final class EditAlg[F[_]](
     implicit
+    buildSystemAlg: BuildSystemAlg[F],
     fileAlg: FileAlg[F],
     logger: Logger[F],
-    buildSystemAlg: BuildSystemAlg[F],
+    migrationAlg: MigrationAlg,
     streamCompiler: Stream.Compiler[F, F],
     workspaceAlg: WorkspaceAlg[F],
-    migrationAlg: MigrationAlg,
     F: MonadThrowable[F]
 ) {
   def applyUpdate(repo: Repo, update: Update, fileExtensions: Set[String]): F[Unit] =
@@ -63,7 +63,7 @@ final class EditAlg[F[_]](
 
   def applyScalafixMigrations(repo: Repo, update: Update): F[Unit] =
     Nel.fromList(migrationAlg.findMigrations(update)).traverse_ { migrations =>
-      logger.info(s"Applying migrations: $migrations") >> buildSystemAlg
-          .runMigrations(repo, migrations)
+      logger.info(s"Applying migrations: $migrations") >>
+        buildSystemAlg.runMigrations(repo, migrations)
     }
 }

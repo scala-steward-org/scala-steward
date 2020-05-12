@@ -39,5 +39,4 @@ object parser {
 
   private def removeSbtNoise(s: String): String =
     s.replace("[info]", "").trim
-
 }
