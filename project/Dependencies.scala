@@ -22,7 +22,7 @@ object Dependencies {
   val http4sCirce = "org.http4s" %% "http4s-circe" % http4sAsyncHttpClient.revision
   val http4sDsl = "org.http4s" %% "http4s-dsl" % http4sAsyncHttpClient.revision
   val kindProjector = "org.typelevel" % "kind-projector" % "0.11.0"
-  val log4catsSlf4j = "io.chrisdavenport" %% "log4cats-slf4j" % "1.0.1"
+  val log4catsSlf4j = "io.chrisdavenport" %% "log4cats-slf4j" % "1.1.1"
   val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.2.3"
   val monocleCore = "com.github.julien-truffaut" %% "monocle-core" % "2.0.4"
   val refined = "eu.timepit" %% "refined" % "0.9.14"
