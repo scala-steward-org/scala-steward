@@ -33,5 +33,4 @@ object Dependencies {
     "com.github.cb372" %% "scalacache-cats-effect" % scalacacheCaffeine.revision
   val scalacheck = "org.scalacheck" %% "scalacheck" % "1.14.3"
   val scalaTest = "org.scalatest" %% "scalatest" % "3.1.1"
-  val atto = "org.tpolecat" %% "atto-core" % "0.7.0"
 }

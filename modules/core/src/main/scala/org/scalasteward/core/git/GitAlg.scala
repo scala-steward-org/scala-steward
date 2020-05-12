@@ -93,8 +93,7 @@ object GitAlg {
         for {
           rootDir <- workspaceAlg.rootDir
           repoDir <- workspaceAlg.repoDir(repo)
-          out <- exec(Nel.of("clone", "--recursive", url.toString, repoDir.pathAsString), rootDir)
-          _ = println(out)
+          _ <- exec(Nel.of("clone", "--recursive", url.toString, repoDir.pathAsString), rootDir)
         } yield ()
 
       override def cloneExists(repo: Repo): F[Boolean] =
