@@ -27,7 +27,6 @@ import org.scalasteward.core.coursier.{CoursierAlg, VersionsCache}
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.maven.MavenAlg
 import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository}
 import org.scalasteward.core.persistence.JsonKeyValueStore
 import org.scalasteward.core.repocache.{RefreshErrorAlg, RepoCacheAlg, RepoCacheRepository}
@@ -38,7 +37,7 @@ import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.{FilterAlg, GroupMigrations, PruningAlg, UpdateAlg}
 import org.scalasteward.core.util._
 import org.scalasteward.core.util.uri._
-import org.scalasteward.core.vcs.data.{AuthenticatedUser, RepoType}
+import org.scalasteward.core.vcs.data.AuthenticatedUser
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg, VCSSelection}
 
 object Context {
@@ -60,6 +59,7 @@ object Context {
       implicit0(groupMigration: GroupMigrations) <- Resource.liftF(GroupMigrations.create[F])
     } yield {
       val kvsPrefix = Some(config.vcsType.asString)
+      implicit val buildSystemAlg: BuildSystemAlg[F] = BuildSystemAlg.create[F]
       implicit val dateTimeAlg: DateTimeAlg[F] = DateTimeAlg.create[F]
       implicit val processAlg: ProcessAlg[F] = ProcessAlg.create[F](blocker)
       implicit val workspaceAlg: WorkspaceAlg[F] = WorkspaceAlg.create[F]
@@ -76,54 +76,18 @@ object Context {
       implicit val vcsExtraAlg: VCSExtraAlg[F] = VCSExtraAlg.create[F]
       implicit val pullRequestRepository: PullRequestRepository[F] =
         new PullRequestRepository[F](new JsonKeyValueStore("pull_requests", "2", kvsPrefix))
-       implicit val scalafmtAlg: ScalafmtAlg[F] = ScalafmtAlg.create[F]
-      implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create
-      [F]
+      implicit val scalafmtAlg: ScalafmtAlg[F] = ScalafmtAlg.create[F]
+      implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create[F]
       implicit val versionsCache: VersionsCache[F] =
         new VersionsCache[F](config.cacheTtl, new JsonKeyValueStore("versions", "2"))
       implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]
-
+      implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F]
       implicit val refreshErrorAlg: RefreshErrorAlg[F] =
-        new RefreshErrorAlg[F](new JsonKeyValueStore("refresh_error", "1"))
-
-      val mavenAlg: BuildSystemAlg[F] = MavenAlg.create[F]
-      val sbtAlg: BuildSystemAlg[F] = SbtAlg.create[F]
-
-      val mavenNurtureAlg: NurtureAlg[F] = {
-        implicit val mvn: BuildSystemAlg[F] = mavenAlg
-        implicit val editAlg: EditAlg[F] = new EditAlg[F]
-        new NurtureAlg[F]
-      }
-
-      val sbtNurtureAlg: NurtureAlg[F] = {
-        implicit val sbt: BuildSystemAlg[F] = sbtAlg
-        implicit val editAlg: EditAlg[F] = new EditAlg[F]
-        new NurtureAlg[F]
-      }
-
-      val mavenCacheAlg = {
-        implicit val mvn: BuildSystemAlg[F] = mavenAlg
-        new RepoCacheAlg[F]()
-      }
-
-      val sbtCacheAlg = {
-        implicit val sbt: BuildSystemAlg[F] = sbtAlg
-        new RepoCacheAlg[F]()
-      }
-
-      def repoTypeToNurture(repoType: RepoType): NurtureAlg[F] = repoType match {
-        case RepoType.Maven => mavenNurtureAlg
-        case RepoType.SBT   => sbtNurtureAlg
-      }
-
-      def repoTypeToCacheAlg(repoType: RepoType): RepoCacheAlg[F] = repoType match {
-        case RepoType.Maven => mavenCacheAlg
-        case RepoType.SBT   => sbtCacheAlg
-      }
-
-      implicit val prepareEnvAlg: PrepareEnvAlg[F] = new PrepareEnvAlg[F]()
-      implicit val pruningAlg: PruningAlg[F] = new PruningAlg[F]()
-
-      new StewardAlg[F](repoTypeToNurture, repoTypeToCacheAlg)
+        new RefreshErrorAlg[F](new JsonKeyValueStore("refresh_error", "1", kvsPrefix))
+      implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F]
+      implicit val editAlg: EditAlg[F] = new EditAlg[F]
+      implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F]
+      implicit val pruningAlg: PruningAlg[F] = new PruningAlg[F]
+      new StewardAlg[F]
     }
 }

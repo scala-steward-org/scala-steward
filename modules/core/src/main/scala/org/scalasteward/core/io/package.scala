@@ -39,6 +39,7 @@ package object io {
     val name = file.name
     fileExtensions.exists(suffix => name.endsWith(suffix) && !name.startsWith(suffix))
   }
+
   private def isSbtUpdate(update: Update): Boolean =
     update.groupId === GroupId("org.scala-sbt") &&
       update.artifactIds.exists(_.name === "sbt")

@@ -20,8 +20,8 @@ import better.files.File
 import cats.data.OptionT
 import cats.implicits._
 import cats.{Functor, Monad}
+import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.build.system.BuildSystemAlg
 import org.scalasteward.core.data.{Dependency, Resolver, Scope}
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.sbt.command._
@@ -31,22 +31,34 @@ import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
+trait SbtAlg[F[_]] {
+  def addGlobalPluginTemporarily[A](plugin: FileData)(fa: F[A]): F[A]
+
+  def addGlobalPlugins[A](fa: F[A]): F[A]
+
+  def getSbtVersion(repo: Repo): F[Option[SbtVersion]]
+
+  def getDependencies(repo: Repo): F[List[Scope.Dependencies]]
+
+  def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit]
+
+  final def getSbtDependency(repo: Repo)(implicit F: Functor[F]): F[Option[Dependency]] =
+    OptionT(getSbtVersion(repo)).subflatMap(sbtDependency).value
+}
+
 object SbtAlg {
   def create[F[_]](
       implicit
       config: Config,
       fileAlg: FileAlg[F],
+      logger: Logger[F],
       processAlg: ProcessAlg[F],
       scalafmtAlg: ScalafmtAlg[F],
       workspaceAlg: WorkspaceAlg[F],
       F: Monad[F]
-  ): BuildSystemAlg[F] =
-    new BuildSystemAlg[F] {
-
-      final def getSbtDependency(repo: Repo)(implicit F: Functor[F]): F[Option[Dependency]] =
-        OptionT(getSbtVersion(repo)).subflatMap(sbtDependency).value
-
-      def addGlobalPluginTemporarily[A](plugin: FileData)(fa: F[A]): F[A] =
+  ): SbtAlg[F] =
+    new SbtAlg[F] {
+      override def addGlobalPluginTemporarily[A](plugin: FileData)(fa: F[A]): F[A] =
         sbtDir.flatMap { dir =>
           val plugins = "plugins"
           fileAlg.createTemporarily(dir / "0.13" / plugins / plugin.name, plugin.content) {
@@ -56,7 +68,11 @@ object SbtAlg {
           }
         }
 
-      def getSbtVersion(repo: Repo): F[Option[SbtVersion]] =
+      override def addGlobalPlugins[A](fa: F[A]): F[A] =
+        logger.info("Add global sbt plugins") >>
+          stewardPlugin.flatMap(addGlobalPluginTemporarily(_)(fa))
+
+      override def getSbtVersion(repo: Repo): F[Option[SbtVersion]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
           maybeProperties <- fileAlg.readFile(repoDir / "project" / "build.properties")

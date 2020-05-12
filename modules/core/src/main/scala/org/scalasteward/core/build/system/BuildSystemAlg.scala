@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 Scala Steward contributors
+ * Copyright 2018-2020 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.scalasteward.core.build.system
 
 import org.scalasteward.core.data.Scope
+import org.scalasteward.core.data.Scope.Dependencies
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
@@ -26,4 +27,13 @@ trait BuildSystemAlg[F[_]] {
   def getDependencies(repo: Repo): F[List[Scope.Dependencies]]
 
   def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit]
+}
+
+object BuildSystemAlg {
+  def create[F[_]]: BuildSystemAlg[F] =
+    new BuildSystemAlg[F] {
+      override def getDependencies(repo: Repo): F[List[Dependencies]] = ???
+
+      override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] = ???
+    }
 }
