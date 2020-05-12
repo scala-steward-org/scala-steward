@@ -25,13 +25,6 @@ final case class Repo(
   def show: String = s"$owner/$repo"
 }
 
-sealed trait RepoType
-
-object RepoType {
-  case object Maven extends RepoType
-  case object SBT extends RepoType
-}
-
 object Repo {
   implicit val repoKeyDecoder: KeyDecoder[Repo] = {
     val / = s"(.+)/([^/]+)".r

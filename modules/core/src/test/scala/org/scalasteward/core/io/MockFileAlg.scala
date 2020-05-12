@@ -55,5 +55,4 @@ class MockFileAlg extends FileAlg[MockEff] {
 
   override def writeFile(file: File, content: String): MockEff[Unit] =
     StateT.modify(_.exec(List("write", file.pathAsString)).add(file, content))
-
 }

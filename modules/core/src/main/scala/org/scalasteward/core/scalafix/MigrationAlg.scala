@@ -36,7 +36,10 @@ object MigrationAlg {
       F: Sync[F]
   ): F[MigrationAlg] =
     loadMigrations(extraMigrations).map { migrations =>
-      (update: Update) => findMigrationsImpl(migrations, update)
+      new MigrationAlg {
+        override def findMigrations(update: Update): List[Migration] =
+          findMigrationsImpl(migrations, update)
+      }
     }
 
   def loadMigrations[F[_]](

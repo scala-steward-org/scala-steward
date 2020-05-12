@@ -23,12 +23,7 @@ import org.scalasteward.core.vcs.data.Repo
 
 trait BuildSystemAlg[F[_]] {
 
-//  def getDependencies(repo: Repo): F[List[Dependency]]
-
   def getDependencies(repo: Repo): F[List[Scope.Dependencies]]
 
-//  def getUpdatesForRepo(repo: Repo): F[List[Update.Single]]
-
   def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit]
-
 }
