@@ -91,6 +91,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [JCollier](https://github.com/Slakah)
 * [Jeff Martin](https://github.com/custommonkey)
 * [Jichao Ouyang](https://github.com/jcouyang)
+* [José Eduardo Montenegro Cavalcanti de Oliveira](https://github.com/edumco)
 * [kalejami](https://github.com/kalejami)
 * [KAWACHI Takashi](https://github.com/tkawachi)
 * [kenji yoshida](https://github.com/xuwei-k)
