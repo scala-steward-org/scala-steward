@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 Scala Steward contributors
+ * Copyright 2018-2020 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,14 +24,16 @@ import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildsystem.BuildSystemAlg
+import org.scalasteward.core.buildsystem.maven.MavenParser._
 import org.scalasteward.core.data._
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
-object MavenAlg {
+trait MavenAlg[F[_]] extends BuildSystemAlg[F]
 
+object MavenAlg {
   def create[F[_]](
       implicit
       config: Config,
@@ -40,17 +42,15 @@ object MavenAlg {
       workspaceAlg: WorkspaceAlg[F],
       logger: Logger[F],
       F: Monad[F]
-  ): BuildSystemAlg[F] = new BuildSystemAlg[F] {
-
-    import MavenParser._
-
-    override def containsBuild(repo: Repo): F[Boolean] = ???
+  ): MavenAlg[F] = new MavenAlg[F] {
+    override def containsBuild(repo: Repo): F[Boolean] =
+      workspaceAlg.repoDir(repo).flatMap(repoDir => fileAlg.isRegularFile(repoDir / "pom.xml"))
 
     override def getDependencies(repo: Repo): F[List[Scope.Dependencies]] =
       for {
         repoDir <- workspaceAlg.repoDir(repo)
-        listDependenciesCommand = mvnCmd(command.Clean, command.mvnDepList)
-        listResolversCommand = mvnCmd(command.Clean, command.ListRepositories)
+        listDependenciesCommand = mvnCmd(command.clean, command.listDependencies)
+        listResolversCommand = mvnCmd(command.clean, command.listRepositories)
         repositoriesRaw <- exec(listResolversCommand, repoDir) <* logger.info(
           s"running $listResolversCommand for $repo"
         )
@@ -79,7 +79,7 @@ object MavenAlg {
     override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
       for {
         repoDir <- workspaceAlg.repoDir(repo)
-        runScalafixCmd = mvnCmd(command.Clean, command.ScalafixMigrations)
+        runScalafixCmd = mvnCmd(command.clean, command.scalafix)
         _ <- exec(runScalafixCmd, repoDir) <* logger.info(
           s"running $runScalafixCmd for $repo"
         )

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 Scala Steward contributors
+ * Copyright 2018-2020 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,8 @@
 package org.scalasteward.core.buildsystem.maven
 
 object command {
-  val Clean = "clean"
-  val mvnDepList = "dependency:list"
-  val ListRepositories = "dependency:list-repositories"
-  val PluginUpdates = "versions:display-plugin-updates"
-  val ScalafixMigrations = "io.github.evis:scalafix-maven-plugin:0.1.2_0.9.5:scalafix"
+  val clean = "clean"
+  val listDependencies = "dependency:list"
+  val listRepositories = "dependency:list-repositories"
+  val scalafix = "io.github.evis:scalafix-maven-plugin:0.1.2_0.9.5:scalafix"
 }

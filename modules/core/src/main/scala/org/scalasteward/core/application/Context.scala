@@ -23,6 +23,7 @@ import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.client.Client
 import org.http4s.client.asynchttpclient.AsyncHttpClient
 import org.scalasteward.core.buildsystem.BuildSystemDispatcher
+import org.scalasteward.core.buildsystem.maven.MavenAlg
 import org.scalasteward.core.buildsystem.sbt.SbtAlg
 import org.scalasteward.core.coursier.{CoursierAlg, VersionsCache}
 import org.scalasteward.core.edit.EditAlg
@@ -80,6 +81,7 @@ object Context {
       implicit val versionsCache: VersionsCache[F] =
         new VersionsCache[F](config.cacheTtl, new JsonKeyValueStore("versions", "2"))
       implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]
+      implicit val mavenAlg: MavenAlg[F] = MavenAlg.create[F]
       implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F]
       implicit val buildSystemDispatcher: BuildSystemDispatcher[F] = BuildSystemDispatcher.create[F]
       implicit val refreshErrorAlg: RefreshErrorAlg[F] =
