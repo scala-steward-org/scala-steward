@@ -38,9 +38,9 @@ object MavenAlg {
       implicit
       config: Config,
       fileAlg: FileAlg[F],
+      logger: Logger[F],
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F],
-      logger: Logger[F],
       F: Monad[F]
   ): MavenAlg[F] = new MavenAlg[F] {
     override def containsBuild(repo: Repo): F[Boolean] =
@@ -51,13 +51,11 @@ object MavenAlg {
         repoDir <- workspaceAlg.repoDir(repo)
         listDependenciesCommand = mvnCmd(command.clean, command.listDependencies)
         listResolversCommand = mvnCmd(command.clean, command.listRepositories)
-        repositoriesRaw <- exec(listResolversCommand, repoDir) <* logger.info(
-          s"running $listResolversCommand for $repo"
-        )
-        dependenciesRaw <- exec(listDependenciesCommand, repoDir) <* logger.info(
-          s"running $listDependenciesCommand for $repo"
-        )
-        _ <- logger.info(dependenciesRaw.mkString("\n"))
+        repositoriesRaw <- exec(listResolversCommand, repoDir)
+        //_ <- logger.info(s"running $listResolversCommand for $repo")
+        dependenciesRaw <- exec(listDependenciesCommand, repoDir)
+        //_ <- logger.info(s"running $listDependenciesCommand for $repo")
+        //_ <- logger.info(dependenciesRaw.mkString("\n"))
         (_, dependencies) = parseAllDependencies(dependenciesRaw)
         (_, resolvers) = parseResolvers(repositoriesRaw.mkString("\n"))
       } yield {
@@ -80,15 +78,13 @@ object MavenAlg {
       for {
         repoDir <- workspaceAlg.repoDir(repo)
         runScalafixCmd = mvnCmd(command.clean, command.scalafix)
-        _ <- exec(runScalafixCmd, repoDir) <* logger.info(
-          s"running $runScalafixCmd for $repo"
-        )
+        _ <- exec(runScalafixCmd, repoDir)
+        _ <- logger.info(s"running $runScalafixCmd for $repo")
       } yield ()
   }
 
   private def mvnCmd(commands: String*): Nel[String] =
     Nel.of("mvn", commands.flatMap(_.split(" ")): _*)
-
 }
 
 object MavenParser {
