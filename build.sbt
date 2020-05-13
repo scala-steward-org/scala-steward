@@ -28,6 +28,7 @@ lazy val core = myCrossProject("core")
     libraryDependencies ++= Seq(
       compilerPlugin(Dependencies.betterMonadicFor),
       compilerPlugin(Dependencies.kindProjector.cross(CrossVersion.full)),
+      Dependencies.atto,
       Dependencies.betterFiles,
       Dependencies.caseApp,
       Dependencies.catsEffect,
@@ -49,7 +50,6 @@ lazy val core = myCrossProject("core")
       Dependencies.refinedCats,
       Dependencies.scalacacheCaffeine,
       Dependencies.scalacacheCatsEffect,
-      Dependencies.atto,
       Dependencies.logbackClassic % Runtime,
       Dependencies.catsKernelLaws % Test,
       Dependencies.circeLiteral % Test,
@@ -145,18 +145,6 @@ def myCrossProject(name: String): CrossProject =
 ThisBuild / dynverSeparator := "-"
 
 lazy val commonSettings = Def.settings(
-  scalacOptions := Seq(
-    "-encoding", "utf8",
-    "-deprecation",
-    "-explaintypes",
-    "-feature",
-    "-unchecked",
-    "-language:experimental.macros",
-    "-language:implicitConversions",
-    "-language:higherKinds",
-    "-language:existentials",
-    "-language:postfixOps"
-  ),
   compileSettings,
   metadataSettings,
   scaladocSettings

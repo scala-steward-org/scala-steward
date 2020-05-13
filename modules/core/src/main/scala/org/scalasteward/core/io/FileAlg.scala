@@ -26,8 +26,6 @@ import org.apache.commons.io.FileUtils
 import org.scalasteward.core.util.MonadThrowable
 import scala.io.Source
 
-import scala.io.Source
-
 trait FileAlg[F[_]] {
   def createTemporarily[A](file: File, content: String)(fa: F[A]): F[A]
 
@@ -134,6 +132,5 @@ object FileAlg {
         logger.debug(s"Write $file") >>
           file.parentOption.fold(F.unit)(ensureExists(_).void) >>
           F.delay(file.write(content)).void
-
     }
 }
