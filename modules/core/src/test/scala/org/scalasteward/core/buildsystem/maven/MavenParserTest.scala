@@ -1,10 +1,7 @@
-package org.scalasteward.core.maven
+package org.scalasteward.core.buildsystem.maven
 
-import cats.data.NonEmptyList
-import org.scalasteward.core.data.{ArtifactId, CrossDependency, Dependency, GroupId, Update}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalasteward.core.data.Resolver
 
 class MavenParserTest extends AnyFunSuite with Matchers {
 
@@ -213,23 +210,23 @@ class MavenParserTest extends AnyFunSuite with Matchers {
 
     val raw =
       """|[INFO]        id: sonatype-nexus-snapshots
-        |      url: https://oss.sonatype.org/content/repositories/snapshots
-        |   layout: default
-        |snapshots: [enabled => true, update => daily]
-        | releases: [enabled => false, update => daily]
-        |
-        |[INFO]        id: bintrayakkamaven
-        |      url: https://dl.bintray.com/akka/maven/
-        |   layout: default
-        |snapshots: [enabled => true, update => daily]
-        | releases: [enabled => true, update => daily]
-        |
-        |[INFO]        id: apache.snapshots
-        |      url: http://repository.apache.org/snapshots
-        |   layout: default
-        |snapshots: [enabled => true, update => daily]
-        | releases: [enabled => false, update => daily]
-        |""".stripMargin
+         |      url: https://oss.sonatype.org/content/repositories/snapshots
+         |   layout: default
+         |snapshots: [enabled => true, update => daily]
+         | releases: [enabled => false, update => daily]
+         |
+         |[INFO]        id: bintrayakkamaven
+         |      url: https://dl.bintray.com/akka/maven/
+         |   layout: default
+         |snapshots: [enabled => true, update => daily]
+         | releases: [enabled => true, update => daily]
+         |
+         |[INFO]        id: apache.snapshots
+         |      url: http://repository.apache.org/snapshots
+         |   layout: default
+         |snapshots: [enabled => true, update => daily]
+         | releases: [enabled => false, update => daily]
+         |""".stripMargin
 
     val x = MavenParser.parseResolvers(raw)
 

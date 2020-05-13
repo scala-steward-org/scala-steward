@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.maven
+package org.scalasteward.core.buildsystem.maven
 
+import atto.Atto._
+import atto._
 import better.files.File
 import cats.Monad
-import cats.data.NonEmptyList
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.build.system.BuildSystemAlg
+import org.scalasteward.core.buildsystem.BuildSystemAlg
 import org.scalasteward.core.data._
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.scalafix.Migration
@@ -43,7 +44,9 @@ object MavenAlg {
 
     import MavenParser._
 
-    override def getDependencies(repo: Repo): F[List[Scope.Dependencies]] = {
+    override def containsBuild(repo: Repo): F[Boolean] = ???
+
+    override def getDependencies(repo: Repo): F[List[Scope.Dependencies]] =
       for {
         repoDir <- workspaceAlg.repoDir(repo)
         listDependenciesCommand = mvnCmd(command.Clean, command.mvnDepList)
@@ -62,8 +65,6 @@ object MavenAlg {
         List(Scope(deps, resolvers))
       }
 
-    }
-
     def exec(command: Nel[String], repoDir: File): F[List[String]] =
       maybeIgnoreOptsFiles(repoDir)(processAlg.execSandboxed(command, repoDir))
 
@@ -75,7 +76,7 @@ object MavenAlg {
         fa
       }
 
-    override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] = {
+    override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
       for {
         repoDir <- workspaceAlg.repoDir(repo)
         runScalafixCmd = mvnCmd(command.Clean, command.ScalafixMigrations)
@@ -83,7 +84,6 @@ object MavenAlg {
           s"running $runScalafixCmd for $repo"
         )
       } yield ()
-    }
   }
 
   private def mvnCmd(commands: String*): Nel[String] =
@@ -92,9 +92,6 @@ object MavenAlg {
 }
 
 object MavenParser {
-  import atto._
-  import Atto._
-  import cats.implicits._
 
   private val dot: Parser[Char] = char('.')
   private val underscore = char('_')
@@ -104,7 +101,7 @@ object MavenParser {
     x <- (many1(noneOf(".:")) ~ opt(dot)).many1
     _ <- colon
   } yield {
-    val parts: NonEmptyList[(NonEmptyList[Char], Option[Char])] = x
+    //val parts: NonEmptyList[(NonEmptyList[Char], Option[Char])] = x
     val groupVal = x.toList.map { case (g, d) => (g.toList ++ d.toList).mkString }.mkString
     GroupId(groupVal)
   }).named("group")
@@ -130,9 +127,7 @@ object MavenParser {
 
         val suffix = crossVersion.fold(
           rest.map { case (underscore, str) => s"${underscore}${str}" }.toList.mkString
-        ) { _ =>
-          rest.init.map { case (underscore, str) => s"${underscore}${str}" }.mkString
-        }
+        )(_ => rest.init.map { case (underscore, str) => s"${underscore}${str}" }.mkString)
 
         ArtifactId(init + suffix, maybeCrossName = crossVersion)
       }
@@ -173,12 +168,11 @@ object MavenParser {
     Resolver.MavenRepository(id, url, None)
   }
 
-  def parseResolvers(raw: String) = {
+  def parseResolvers(raw: String) =
     raw
       .split("""\[INFO\]""")
       .toList
       .map(line => parserResolver.parse(line).done.either)
       .partitionMap(identity)
-  }
 
 }

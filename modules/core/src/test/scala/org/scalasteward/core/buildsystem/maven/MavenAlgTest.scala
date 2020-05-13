@@ -1,8 +1,7 @@
-package org.scalasteward.core.maven
+package org.scalasteward.core.buildsystem.maven
 
 import better.files.File
 import org.scalasteward.core.mock.MockContext._
-import org.scalasteward.core.mock.MockMavenContext._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.vcs.data.Repo
 import org.scalatest.funsuite.AnyFunSuite
@@ -13,10 +12,10 @@ class MavenAlgTest extends AnyFunSuite with Matchers {
   val var1 = "TEST_VAR=GREAT"
   val var2 = "ANOTHER_TEST_VAR=ALSO_GREAT"
 
-  test("getUpdatesForRepo") {
-    val repo = Repo("namespace", "repo-name")
-    val repoDir = config.workspace / repo.show
-    val files: Map[File, String] = Map.empty
+  //test("getUpdatesForRepo") {
+  //val repo = Repo("namespace", "repo-name")
+  //val repoDir = config.workspace / repo.show
+  //val files: Map[File, String] = Map.empty
 
 //    mavenAlg
 //      .getUpdatesForRepo(repo)
@@ -61,7 +60,7 @@ class MavenAlgTest extends AnyFunSuite with Matchers {
 //      files = Map()
 //    )
 
-  }
+  //}
 
   test("getDependencies") {
     val repo = Repo("namespace", "repo-name")

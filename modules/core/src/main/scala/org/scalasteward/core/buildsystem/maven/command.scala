@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.maven
+package org.scalasteward.core.buildsystem.maven
 
 object command {
   val Clean = "clean"
