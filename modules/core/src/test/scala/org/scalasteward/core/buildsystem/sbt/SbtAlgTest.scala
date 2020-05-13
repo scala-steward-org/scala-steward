@@ -38,10 +38,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
       repoDir / ".scalafmt.conf" -> "version=2.0.0"
     )
     val state =
-      sbtAlg
-        .getDependencies(repo)
-        .runS(MockState.empty.copy(files = files))
-        .unsafeRunSync()
+      sbtAlg.getDependencies(repo).runS(MockState.empty.copy(files = files)).unsafeRunSync()
     state shouldBe MockState.empty.copy(
       commands = Vector(
         List(
@@ -64,7 +61,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
 
   test("runMigrations") {
     val repo = Repo("fthomas", "scala-steward")
-    val repoDir = config.workspace / repo.owner / repo.repo
+    val repoDir = config.workspace / repo.show
     val migrations = Nel.of(
       Migration(
         GroupId("co.fs2"),

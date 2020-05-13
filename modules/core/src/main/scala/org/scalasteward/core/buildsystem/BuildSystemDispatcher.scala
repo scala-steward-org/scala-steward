@@ -33,7 +33,7 @@ object BuildSystemDispatcher {
       F: Monad[F]
   ): BuildSystemDispatcher[F] = {
     val allBuildSystems = List(sbtAlg)
-    val fallbackBuildSystem = List(sbtAlg)
+    val fallbackBuildSystem = sbtAlg
 
     new BuildSystemDispatcher[F] {
       override def containsBuild(repo: Repo): F[Boolean] =
@@ -47,7 +47,7 @@ object BuildSystemDispatcher {
 
       private def foundBuildSystems(repo: Repo): F[List[BuildSystemAlg[F]]] =
         allBuildSystems.filterA(_.containsBuild(repo)).map {
-          case Nil  => fallbackBuildSystem
+          case Nil  => List(fallbackBuildSystem)
           case list => list
         }
     }
