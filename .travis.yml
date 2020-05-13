@@ -1,5 +1,9 @@
 language: scala
 
+os: linux
+
+dist: xenial
+
 scala: 
   - 2.13.1
 
