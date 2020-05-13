@@ -22,6 +22,8 @@ import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.client.Client
 import org.http4s.client.asynchttpclient.AsyncHttpClient
+import org.scalasteward.core.buildsystem.BuildSystemDispatcher
+import org.scalasteward.core.buildsystem.sbt.SbtAlg
 import org.scalasteward.core.coursier.{CoursierAlg, VersionsCache}
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.GitAlg
@@ -30,7 +32,6 @@ import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository}
 import org.scalasteward.core.persistence.JsonKeyValueStore
 import org.scalasteward.core.repocache.{RefreshErrorAlg, RepoCacheAlg, RepoCacheRepository}
 import org.scalasteward.core.repoconfig.RepoConfigAlg
-import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.scalafix.MigrationAlg
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.{FilterAlg, GroupMigrations, PruningAlg, UpdateAlg}
@@ -80,6 +81,7 @@ object Context {
         new VersionsCache[F](config.cacheTtl, new JsonKeyValueStore("versions", "2"))
       implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]
       implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F]
+      implicit val buildSystemDispatcher: BuildSystemDispatcher[F] = BuildSystemDispatcher.create[F]
       implicit val refreshErrorAlg: RefreshErrorAlg[F] =
         new RefreshErrorAlg[F](new JsonKeyValueStore("refresh_error", "1", kvsPrefix))
       implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F]

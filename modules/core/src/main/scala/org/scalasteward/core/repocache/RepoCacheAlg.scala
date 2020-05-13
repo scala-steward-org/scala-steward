@@ -20,10 +20,10 @@ import cats.Parallel
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
+import org.scalasteward.core.buildsystem.BuildSystemDispatcher
 import org.scalasteward.core.data.{Dependency, DependencyInfo}
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.repoconfig.RepoConfigAlg
-import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.util.MonadThrowable
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data.{Repo, RepoOut}
@@ -31,6 +31,7 @@ import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
 
 final class RepoCacheAlg[F[_]](
     implicit
+    buildSystemDispatcher: BuildSystemDispatcher[F],
     config: Config,
     gitAlg: GitAlg[F],
     logger: Logger[F],
@@ -38,7 +39,6 @@ final class RepoCacheAlg[F[_]](
     refreshErrorAlg: RefreshErrorAlg[F],
     repoCacheRepository: RepoCacheRepository[F],
     repoConfigAlg: RepoConfigAlg[F],
-    sbtAlg: SbtAlg[F],
     vcsApiAlg: VCSApiAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
     F: MonadThrowable[F]
@@ -79,7 +79,7 @@ final class RepoCacheAlg[F[_]](
     for {
       branch <- gitAlg.currentBranch(repo)
       latestSha1 <- gitAlg.latestSha1(repo, branch)
-      dependencies <- sbtAlg.getDependencies(repo)
+      dependencies <- buildSystemDispatcher.getDependencies(repo)
       dependencyInfos <- dependencies
         .traverse(_.traverse(_.traverse(gatherDependencyInfo(repo, _))))
       maybeRepoConfig <- repoConfigAlg.readRepoConfig(repo)

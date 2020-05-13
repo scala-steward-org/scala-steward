@@ -1,10 +1,10 @@
-package org.scalasteward.core.sbt
+package org.scalasteward.core.buildsystem.sbt
 
 import cats.data.StateT
+import org.scalasteward.core.buildsystem.sbt.command._
 import org.scalasteward.core.data.{GroupId, Version}
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockState
-import org.scalasteward.core.sbt.command._
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
@@ -38,10 +38,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
       repoDir / ".scalafmt.conf" -> "version=2.0.0"
     )
     val state =
-      sbtAlg
-        .getDependencies(repo)
-        .runS(MockState.empty.copy(files = files))
-        .unsafeRunSync()
+      sbtAlg.getDependencies(repo).runS(MockState.empty.copy(files = files)).unsafeRunSync()
     state shouldBe MockState.empty.copy(
       commands = Vector(
         List(
@@ -64,7 +61,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
 
   test("runMigrations") {
     val repo = Repo("fthomas", "scala-steward")
-    val repoDir = config.workspace / repo.owner / repo.repo
+    val repoDir = config.workspace / repo.show
     val migrations = Nel.of(
       Migration(
         GroupId("co.fs2"),

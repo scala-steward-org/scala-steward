@@ -22,11 +22,11 @@ import cats.effect.ExitCode
 import cats.implicits._
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
+import org.scalasteward.core.buildsystem.sbt.SbtAlg
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.NurtureAlg
 import org.scalasteward.core.repocache.RepoCacheAlg
-import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.update.PruningAlg
 import org.scalasteward.core.util
 import org.scalasteward.core.util.DateTimeAlg

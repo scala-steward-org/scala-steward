@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.sbt
+package org.scalasteward.core.buildsystem.sbt
 
 import better.files.File
 import cats.data.OptionT
@@ -22,25 +22,22 @@ import cats.implicits._
 import cats.{Functor, Monad}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
+import org.scalasteward.core.buildsystem.BuildSystemAlg
+import org.scalasteward.core.buildsystem.sbt.command._
+import org.scalasteward.core.buildsystem.sbt.data.SbtVersion
 import org.scalasteward.core.data.{Dependency, Resolver, Scope}
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.sbt.command._
-import org.scalasteward.core.sbt.data.SbtVersion
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
-trait SbtAlg[F[_]] {
+trait SbtAlg[F[_]] extends BuildSystemAlg[F] {
   def addGlobalPluginTemporarily[A](plugin: FileData)(fa: F[A]): F[A]
 
   def addGlobalPlugins[A](fa: F[A]): F[A]
 
   def getSbtVersion(repo: Repo): F[Option[SbtVersion]]
-
-  def getDependencies(repo: Repo): F[List[Scope.Dependencies]]
-
-  def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit]
 
   final def getSbtDependency(repo: Repo)(implicit F: Functor[F]): F[Option[Dependency]] =
     OptionT(getSbtVersion(repo)).subflatMap(sbtDependency).value
@@ -71,6 +68,9 @@ object SbtAlg {
       override def addGlobalPlugins[A](fa: F[A]): F[A] =
         logger.info("Add global sbt plugins") >>
           stewardPlugin.flatMap(addGlobalPluginTemporarily(_)(fa))
+
+      override def containsBuild(repo: Repo): F[Boolean] =
+        workspaceAlg.repoDir(repo).flatMap(repoDir => fileAlg.isRegularFile(repoDir / "build.sbt"))
 
       override def getSbtVersion(repo: Repo): F[Option[SbtVersion]] =
         for {

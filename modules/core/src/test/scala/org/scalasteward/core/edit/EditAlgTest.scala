@@ -3,7 +3,7 @@ package org.scalasteward.core.edit
 import better.files.File
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.Update
-import org.scalasteward.core.mock.MockContext.editAlg
+import org.scalasteward.core.mock.MockContext.{config, editAlg}
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.repoconfig.UpdatesConfig
 import org.scalasteward.core.util.Nel
@@ -14,9 +14,10 @@ import org.scalatest.matchers.should.Matchers
 class EditAlgTest extends AnyFunSuite with Matchers {
   test("applyUpdate") {
     val repo = Repo("fthomas", "scala-steward")
+    val repoDir = config.workspace / repo.show
     val update = Update.Single("org.typelevel" % "cats-core" % "1.2.0", Nel.of("1.3.0"))
-    val file1 = File.temp / "ws/fthomas/scala-steward/build.sbt"
-    val file2 = File.temp / "ws/fthomas/scala-steward/project/Dependencies.scala"
+    val file1 = repoDir / "build.sbt"
+    val file2 = repoDir / "project/Dependencies.scala"
 
     val state = editAlg
       .applyUpdate(repo, update, UpdatesConfig.defaultFileExtensions)
@@ -25,7 +26,9 @@ class EditAlgTest extends AnyFunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
+        List("test", "-f", file1.pathAsString),
         List("read", file1.pathAsString),
+        List("test", "-f", file2.pathAsString),
         List("read", file2.pathAsString),
         List("read", file1.pathAsString),
         List("read", file1.pathAsString),
@@ -43,37 +46,40 @@ class EditAlgTest extends AnyFunSuite with Matchers {
 
   test("applyUpdate with scalafmt update") {
     val repo = Repo("fthomas", "scala-steward")
+    val repoDir = config.workspace / repo.show
     val update = Update.Single("org.scalameta" % "scalafmt-core" % "2.0.0", Nel.of("2.1.0"))
-    val scalafmtFile = File.temp / "ws/fthomas/scala-steward/.scalafmt.conf"
-    val file1 = File.temp / "ws/fthomas/scala-steward/build.sbt"
+    val scalafmtConf = repoDir / ".scalafmt.conf"
+    val buildSbt = repoDir / "build.sbt"
 
     val state = editAlg
       .applyUpdate(repo, update, UpdatesConfig.defaultFileExtensions)
       .runS(
         MockState.empty
           .add(
-            scalafmtFile,
+            scalafmtConf,
             """maxColumn = 100
               |version = 2.0.0
               |align.openParenCallSite = false
               |""".stripMargin
           )
-          .add(file1, "")
+          .add(buildSbt, "")
       )
       .unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List("read", scalafmtFile.pathAsString),
-        List("read", scalafmtFile.pathAsString),
-        List("read", scalafmtFile.pathAsString),
-        List("read", scalafmtFile.pathAsString),
-        List("read", scalafmtFile.pathAsString),
-        List("read", scalafmtFile.pathAsString),
-        List("read", scalafmtFile.pathAsString),
-        List("read", scalafmtFile.pathAsString),
-        List("read", scalafmtFile.pathAsString),
-        List("write", scalafmtFile.pathAsString)
+        List("test", "-f", scalafmtConf.pathAsString),
+        List("read", scalafmtConf.pathAsString),
+        List("test", "-f", buildSbt.pathAsString),
+        List("read", scalafmtConf.pathAsString),
+        List("read", scalafmtConf.pathAsString),
+        List("read", scalafmtConf.pathAsString),
+        List("read", scalafmtConf.pathAsString),
+        List("read", scalafmtConf.pathAsString),
+        List("read", scalafmtConf.pathAsString),
+        List("read", scalafmtConf.pathAsString),
+        List("read", scalafmtConf.pathAsString),
+        List("write", scalafmtConf.pathAsString)
       ),
       logs = Vector(
         (None, "Trying heuristic 'moduleId'"),
@@ -86,21 +92,22 @@ class EditAlgTest extends AnyFunSuite with Matchers {
         (None, "Trying heuristic 'specific'")
       ),
       files = Map(
-        scalafmtFile ->
+        scalafmtConf ->
           """maxColumn = 100
             |version = 2.1.0
             |align.openParenCallSite = false
             |""".stripMargin,
-        file1 -> ""
+        buildSbt -> ""
       )
     )
   }
 
   test("apply update to ammonite file") {
     val repo = Repo("fthomas", "scala-steward")
+    val repoDir = config.workspace / repo.show
     val update = Update.Single("org.typelevel" % "cats-core" % "1.2.0", Nel.of("1.3.0"))
-    val file1 = File.temp / "ws/fthomas/scala-steward/script.sc"
-    val file2 = File.temp / "ws/fthomas/scala-steward/build.sbt"
+    val file1 = repoDir / "script.sc"
+    val file2 = repoDir / "build.sbt"
 
     val state = editAlg
       .applyUpdate(repo, update, UpdatesConfig.defaultFileExtensions)
@@ -113,7 +120,9 @@ class EditAlgTest extends AnyFunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
+        List("test", "-f", file1.pathAsString),
         List("read", file1.pathAsString),
+        List("test", "-f", file2.pathAsString),
         List("read", file2.pathAsString),
         List("read", file1.pathAsString),
         List("write", file1.pathAsString),

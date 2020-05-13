@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.sbt
+package org.scalasteward.core.buildsystem.sbt
 
 import cats.implicits._
 import io.circe.Decoder
 import io.circe.parser._
+import org.scalasteward.core.buildsystem.sbt.data.SbtVersion
 import org.scalasteward.core.data._
-import org.scalasteward.core.sbt.data.SbtVersion
 
 object parser {
   def parseBuildProperties(s: String): Option[SbtVersion] =

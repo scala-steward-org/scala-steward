@@ -4,11 +4,11 @@ import io.circe.syntax._
 import org.http4s.syntax.literals._
 import org.scalasteward.core.BuildInfo
 import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.buildsystem.sbt.data.SbtVersion
 import org.scalasteward.core.data.{ReleaseRelatedUrl, Update, Version}
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.nurture.UpdateData
 import org.scalasteward.core.repoconfig.RepoConfig
-import org.scalasteward.core.sbt.data.SbtVersion
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
 import org.scalatest.funsuite.AnyFunSuite

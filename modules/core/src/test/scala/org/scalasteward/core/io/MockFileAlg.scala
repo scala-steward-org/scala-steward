@@ -27,7 +27,11 @@ class MockFileAlg extends FileAlg[MockEff] {
     StateT.pure(false)
 
   override def isRegularFile(file: File): MockEff[Boolean] =
-    StateT.pure(true)
+    for {
+      _ <- StateT.modify[IO, MockState](_.exec(List("test", "-f", file.pathAsString)))
+      s <- StateT.get[IO, MockState]
+      exists = s.files.contains(file)
+    } yield exists
 
   override def removeTemporarily[A](file: File)(fa: MockEff[A]): MockEff[A] =
     for {
