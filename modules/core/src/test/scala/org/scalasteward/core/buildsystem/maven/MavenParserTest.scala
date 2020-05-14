@@ -1,9 +1,39 @@
 package org.scalasteward.core.buildsystem.maven
 
+import org.scalasteward.core.TestSyntax._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class MavenParserTest extends AnyFunSuite with Matchers {
+  test("parseAllDependencies") {
+    val input =
+      """|[INFO] Scanning for projects...
+         |[INFO]
+         |[INFO] ----------------------< com.mycompany.app:my-app >----------------------
+         |[INFO] Building my-app 1.0-SNAPSHOT
+         |[INFO] --------------------------------[ jar ]---------------------------------
+         |[INFO]
+         |[INFO] --- maven-dependency-plugin:2.8:list (default-cli) @ my-app ---
+         |[INFO]
+         |[INFO] The following files have been resolved:
+         |[INFO]    org.hamcrest:hamcrest-core:jar:1.3:test
+         |[INFO]    junit:junit:jar:4.12:test
+         |[INFO]    ch.qos.logback:logback-core:jar:1.1.11:compile
+         |[INFO]
+         |[INFO] ------------------------------------------------------------------------
+         |[INFO] BUILD SUCCESS
+         |[INFO] ------------------------------------------------------------------------
+         |[INFO] Total time:  1.150 s
+         |[INFO] Finished at: 2020-05-14T09:40:06+02:00
+         |[INFO] ------------------------------------------------------------------------
+         |""".stripMargin.linesIterator.toList
+    val (_, dependencies) = MavenParser.parseAllDependencies(input)
+    dependencies shouldBe List(
+      "org.hamcrest" % "hamcrest-core" % "1.3" % "test",
+      "junit" % "junit" % "4.12" % "test",
+      "ch.qos.logback" % "logback-core" % "1.1.11"
+    )
+  }
 
   val resolvers =
     """[INFO] Scanning for projects...
@@ -157,54 +187,6 @@ class MavenParserTest extends AnyFunSuite with Matchers {
       |[INFO] Total time:  1.161 s
       |[INFO] Finished at: 2020-03-07T16:37:38+02:00
       |[INFO] ------------------------------------------------------------------------""".stripMargin.linesIterator.toList
-
-  val dependencies =
-    """
-      |[INFO] Scanning for projects...
-      |Downloading from twilio.nexus: https://nexus.corp.twilio.com/content/groups/public/com/twilio/twilio-parent-pom/8.2.92/twilio-parent-pom-8.2.92.pom
-      |Downloaded from twilio.nexus: https://nexus.corp.twilio.com/content/groups/public/com/twilio/twilio-parent-pom/8.2.92/twilio-parent-pom-8.2.92.pom (38 kB at
-      |41 kB/s)
-      |[WARNING] The project com.twilio:scala-service-maven-sample:jar:1.0-SNAPSHOT uses prerequisites which is only intended for maven-plugin projects but not for
-      |non maven-plugin projects. For such purposes you should use the maven-enforcer-plugin. See https://maven.apache.org/enforcer/enforcer-rules/requireMavenVersi
-      |on.html
-      |[INFO]
-      |[INFO] ---------------< com.twilio:scala-service-maven-sample >----------------
-      |[INFO] Building scala-service-maven-sample 1.0-SNAPSHOT
-      |[INFO] --------------------------------[ jar ]---------------------------------
-      |[INFO] The following files have been resolved:
-      |[INFO]    com.twilio:scala-service-http-server_2.12:jar:0.52.0:compile
-      |[INFO]    org.scala-lang:scala-library:jar:2.12.6:compile
-      [INFO]    com.twilio:scala-service-json_2.12:jar:0.52.0:compile
-      [INFO]    io.circe:circe-java8_2.12:jar:0.11.1:compile
-      [INFO]    com.twilio:scala-service-headers_2.12:jar:0.52.0:compile
-      [INFO]    com.chuusai:shapeless_2.12:jar:2.3.3:compile
-      [INFO]    org.typelevel:macro-compat_2.12:jar:1.1.1:compile
-      [INFO]    com.typesafe.akka:akka-slf4j_2.12:jar:2.5.22:compile
-      [INFO]    com.typesafe:config:jar:1.3.4:compile
-      [INFO]    com.twilio:twilio-rollbar-logback:jar:4.2.1:compile
-      [INFO]    ch.qos.logback:logback-classic:jar:1.1.11:compile
-      [INFO]    ch.qos.logback:logback-core:jar:1.1.11:compile
-      [INFO]    net.java.dev.jna:jna:jar:4.0.0:compile
-      [INFO]    com.twilio:scala-service-http-client_2.12:jar:0.52.0:compile
-      [INFO]    com.twilio:coreutil-sids:jar:9.4.33:compile
-      [INFO]    commons-codec:commons-codec:jar:1.8:compile
-      [INFO]    org.typelevel:cats-core_2.12:jar:1.5.0:compile
-      [INFO]    org.typelevel:cats-macros_2.12:jar:1.5.0:compile
-      [INFO]    org.typelevel:cats-kernel_2.12:jar:1.5.0:compile
-      [INFO]    org.typelevel:machinist_2.12:jar:0.6.6:compile
-      [INFO]    org.slf4j:slf4j-api:jar:1.7.25:compile
-      [INFO]    com.typesafe.akka:akka-actor_2.12:jar:2.5.22:compile
-      [INFO]    org.scala-lang.modules:scala-java8-compat_2.12:jar:0.8.0:compile
-      [INFO]    com.typesafe.akka:akka-stream_2.12:jar:2.5.22:compile
-      [INFO]    com.typesafe.akka:akka-protobuf_2.12:jar:2.5.22:compile
-      [INFO]    org.reactivestreams:reactive-streams:jar:1.0.2:compile
-      [INFO]    com.typesafe:ssl-config-core_2.12:jar:0.3.7:compile
-      [INFO]    com.typesafe.akka:akka-http-core_2.12:jar:10.1.8:compile
-      [INFO]    com.typesafe.akka:akka-parsing_2.12:jar:10.1.8:compile
-      [INFO]    com.typesafe.akka:akka-http_2.12:jar:10.1.8:compile
-      [INFO]    io.circe:circe-core_2.12:jar:0.11.1:compile
-      [INFO]    io.circe:circe-numbers_2.12:jar:0.11.1:compile
-      |""".stripMargin.linesIterator.toList
 
   test("parse mvn dependency:list into dependencies") {
 

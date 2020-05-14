@@ -241,7 +241,8 @@ runSteward := Def.taskDyn {
     Seq("--whitelist", s"$home/.cache/coursier"),
     Seq("--whitelist", s"$home/.coursier"),
     Seq("--whitelist", s"$home/.ivy2"),
-    Seq("--whitelist", s"$home/.sbt")
+    Seq("--whitelist", s"$home/.sbt"),
+    Seq("--disable-sandbox")
   ).flatten.mkString(" ", " ", "")
   (core.jvm / Compile / run).toTask(args)
 }.value

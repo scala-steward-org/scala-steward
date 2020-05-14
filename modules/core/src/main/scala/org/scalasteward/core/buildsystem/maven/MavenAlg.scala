@@ -65,7 +65,7 @@ object MavenAlg {
       maybeIgnoreOptsFiles(repoDir)(processAlg.execSandboxed(command, repoDir))
 
     def mvnCmd(commands: String*): Nel[String] =
-      Nel.of("mvn", commands: _*)
+      Nel("mvn", "--batch-mode" :: commands.toList)
 
     def maybeIgnoreOptsFiles[A](dir: File)(fa: F[A]): F[A] =
       if (config.ignoreOptsFiles) ignoreOptsFiles(dir)(fa) else fa
@@ -89,12 +89,8 @@ object MavenParser {
     GroupId(groupVal)
   }).named("group")
 
-  private val version3args: Parser[String] =
-    for {
-      a <- int <~ dot
-      b <- int <~ dot
-      c <- int
-    } yield s"$a.$b.$c"
+  private val version: Parser[String] =
+    many1(noneOf(":")).map(_.mkString_(""))
 
   private val artifact: Parser[ArtifactId] = {
     val artifactString: Parser[String] = many1(noneOf("_ :")).map(_.toList.mkString)
@@ -117,14 +113,18 @@ object MavenParser {
     }
   }
 
+  private val configurations: Parser[Option[String]] =
+    string("compile").as(None) | string("test").map(Some(_))
+
   private val parserDependency = for {
     _ <- opt(string("[INFO]") <~ many(whitespace))
     g <- group
     a <- artifact
     _ <- string("jar") <~ colon
-    v <- version3args <~ colon <~ string("compile")
+    v <- version <~ colon
+    c <- configurations
   } yield {
-    Dependency(groupId = g, artifactId = a, version = v)
+    Dependency(groupId = g, artifactId = a, version = v, configurations = c)
   }
 
   def parseAllDependencies(input: List[String]): (List[(String, String)], List[Dependency]) =
