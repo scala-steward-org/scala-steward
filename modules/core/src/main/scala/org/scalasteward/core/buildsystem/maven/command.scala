@@ -17,8 +17,6 @@
 package org.scalasteward.core.buildsystem.maven
 
 object command {
-  val clean = "clean"
   val listDependencies = "dependency:list"
   val listRepositories = "dependency:list-repositories"
-  val scalafix = "io.github.evis:scalafix-maven-plugin:0.1.2_0.9.5:scalafix"
 }

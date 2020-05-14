@@ -21,7 +21,6 @@ import atto._
 import better.files.File
 import cats.Monad
 import cats.implicits._
-import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildsystem.BuildSystemAlg
 import org.scalasteward.core.buildsystem.maven.MavenParser._
@@ -38,7 +37,6 @@ object MavenAlg {
       implicit
       config: Config,
       fileAlg: FileAlg[F],
-      logger: Logger[F],
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F],
       F: Monad[F]
@@ -49,13 +47,10 @@ object MavenAlg {
     override def getDependencies(repo: Repo): F[List[Scope.Dependencies]] =
       for {
         repoDir <- workspaceAlg.repoDir(repo)
-        listDependenciesCommand = mvnCmd(command.clean, command.listDependencies)
-        listResolversCommand = mvnCmd(command.clean, command.listRepositories)
+        listDependenciesCommand = mvnCmd(command.listDependencies)
+        listResolversCommand = mvnCmd(command.listRepositories)
         repositoriesRaw <- exec(listResolversCommand, repoDir)
-        //_ <- logger.info(s"running $listResolversCommand for $repo")
         dependenciesRaw <- exec(listDependenciesCommand, repoDir)
-        //_ <- logger.info(s"running $listDependenciesCommand for $repo")
-        //_ <- logger.info(dependenciesRaw.mkString("\n"))
         (_, dependencies) = parseAllDependencies(dependenciesRaw)
         (_, resolvers) = parseResolvers(repositoriesRaw.mkString("\n"))
       } yield {
@@ -63,32 +58,24 @@ object MavenAlg {
         List(Scope(deps, resolvers))
       }
 
+    override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
+      F.unit
+
     def exec(command: Nel[String], repoDir: File): F[List[String]] =
       maybeIgnoreOptsFiles(repoDir)(processAlg.execSandboxed(command, repoDir))
+
+    def mvnCmd(commands: String*): Nel[String] =
+      Nel.of("mvn", commands: _*)
 
     def maybeIgnoreOptsFiles[A](dir: File)(fa: F[A]): F[A] =
       if (config.ignoreOptsFiles) ignoreOptsFiles(dir)(fa) else fa
 
     def ignoreOptsFiles[A](dir: File)(fa: F[A]): F[A] =
-      fileAlg.removeTemporarily(dir / ".jvmopts") {
-        fa
-      }
-
-    override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
-      for {
-        repoDir <- workspaceAlg.repoDir(repo)
-        runScalafixCmd = mvnCmd(command.clean, command.scalafix)
-        _ <- exec(runScalafixCmd, repoDir)
-        _ <- logger.info(s"running $runScalafixCmd for $repo")
-      } yield ()
+      fileAlg.removeTemporarily(dir / ".jvmopts")(fa)
   }
-
-  private def mvnCmd(commands: String*): Nel[String] =
-    Nel.of("mvn", commands.flatMap(_.split(" ")): _*)
 }
 
 object MavenParser {
-
   private val dot: Parser[Char] = char('.')
   private val underscore = char('_')
   private val colon: Parser[Char] = char(':')
@@ -140,9 +127,7 @@ object MavenParser {
     Dependency(groupId = g, artifactId = a, version = v)
   }
 
-  def parseAllDependencies(
-      input: List[String]
-  ): (List[(String, String)], List[Dependency]) =
+  def parseAllDependencies(input: List[String]): (List[(String, String)], List[Dependency]) =
     input
       .map { line =>
         val either = parserDependency.parse(line).done.either
@@ -164,7 +149,7 @@ object MavenParser {
     Resolver.MavenRepository(id, url, None)
   }
 
-  def parseResolvers(raw: String) =
+  def parseResolvers(raw: String): (List[String], List[Resolver.MavenRepository]) =
     raw
       .split("""\[INFO\]""")
       .toList
