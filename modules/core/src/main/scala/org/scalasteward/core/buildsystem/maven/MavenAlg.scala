@@ -44,16 +44,11 @@ object MavenAlg {
     override def getDependencies(repo: Repo): F[List[Scope.Dependencies]] =
       for {
         repoDir <- workspaceAlg.repoDir(repo)
-        listDependenciesCommand = mvnCmd(command.listDependencies)
-        listResolversCommand = mvnCmd(command.listRepositories)
-        repositoriesRaw <- exec(listResolversCommand, repoDir)
-        dependenciesRaw <- exec(listDependenciesCommand, repoDir)
-        (_, dependencies) = MavenParser.parseAllDependencies(dependenciesRaw)
-        (_, resolvers) = MavenParser.parseResolvers(repositoriesRaw.mkString("\n"))
-      } yield {
-        val deps = dependencies.distinct
-        List(Scope(deps, resolvers))
-      }
+        dependenciesRaw <- exec(mvnCmd(command.listDependencies), repoDir)
+        repositoriesRaw <- exec(mvnCmd(command.listRepositories), repoDir)
+        dependencies = MavenParser.parseDependencies(dependenciesRaw)
+        resolvers = MavenParser.parseResolvers(repositoriesRaw)
+      } yield List(Scope(dependencies.distinct, resolvers))
 
     override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
       F.unit

@@ -31,7 +31,7 @@ class MavenAlgTest extends AnyFunSuite with Matchers {
           s"--whitelist=$repoDir",
           "mvn",
           "--batch-mode",
-          command.listRepositories
+          command.listDependencies
         ),
         List(
           var1,
@@ -41,7 +41,7 @@ class MavenAlgTest extends AnyFunSuite with Matchers {
           s"--whitelist=$repoDir",
           "mvn",
           "--batch-mode",
-          command.listDependencies
+          command.listRepositories
         )
       )
     )

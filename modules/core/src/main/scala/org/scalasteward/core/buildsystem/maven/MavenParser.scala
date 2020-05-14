@@ -22,69 +22,57 @@ import cats.implicits._
 import org.scalasteward.core.data._
 
 object MavenParser {
-  private val dot: Parser[Char] = char('.')
-  private val underscore = char('_')
   private val colon: Parser[Char] = char(':')
 
-  private val group: Parser[GroupId] = (for {
-    x <- (many1(noneOf(".:")) ~ opt(dot)).many1
-    _ <- colon
-  } yield {
-    //val parts: NonEmptyList[(NonEmptyList[Char], Option[Char])] = x
-    val groupVal = x.toList.map { case (g, d) => (g.toList ++ d.toList).mkString }.mkString
-    GroupId(groupVal)
-  }).named("group")
+  private val underscore: Parser[Char] = char('_')
 
-  private val version: Parser[String] =
-    many1(noneOf(":")).map(_.mkString_(""))
+  private val stringNoSpace: Parser[String] =
+    many1(noneOf(" ")).map(_.mkString_(""))
 
-  private val artifact: Parser[ArtifactId] = {
-    val artifactString: Parser[String] = many1(noneOf("_ :")).map(_.toList.mkString)
+  private val stringNoSpaceNoColon: Parser[String] =
+    many1(noneOf(" :")).map(_.mkString_(""))
+
+  private val stringNoSpaceNoColonNoUnderscore: Parser[String] =
+    many1(noneOf(" :_")).map(_.mkString_(""))
+
+  private val artifactId: Parser[ArtifactId] =
     for {
-      init <- artifactString
-      restOpt <- opt(underscore ~ artifactString)
-      _ <- colon
-    } yield ArtifactId(init, restOpt.map { case (sep, suffix) => init + sep + suffix })
-  }
+      name <- stringNoSpaceNoColonNoUnderscore
+      suffix <- opt(underscore ~ stringNoSpaceNoColon)
+    } yield ArtifactId(name, suffix.map { case (c, str) => name + c + str })
 
   private val configurations: Parser[Option[String]] =
-    string("compile").as(None) | string("test").map(Some(_))
+    opt(stringNoSpaceNoColon).map(_.filterNot(_ === "compile"))
 
-  private val parserDependency = for {
-    _ <- opt(string("[INFO]") <~ many(whitespace))
-    g <- group
-    a <- artifact
-    _ <- string("jar") <~ colon
-    v <- version <~ colon
-    c <- configurations
-  } yield {
-    Dependency(groupId = g, artifactId = a, version = v, configurations = c)
-  }
+  private val dependency: Parser[Dependency] =
+    for {
+      _ <- opt(string("[INFO]") ~ many(whitespace))
+      groupId <- stringNoSpaceNoColon.map(GroupId.apply) <~ colon
+      artifactId <- artifactId <~ colon <~ string("jar") <~ colon
+      version <- stringNoSpaceNoColon <~ colon
+      configurations <- configurations
+    } yield Dependency(
+      groupId = groupId,
+      artifactId = artifactId,
+      version = version,
+      configurations = configurations
+    )
 
-  def parseAllDependencies(input: List[String]): (List[(String, String)], List[Dependency]) =
+  def parseDependencies(input: List[String]): List[Dependency] =
+    input.flatMap(line => dependency.parse(line).done.option)
+
+  private val resolver: Parser[Resolver] =
+    for {
+      _ <- many(whitespace) ~ string("id:") ~ whitespace
+      id <- stringNoSpace
+      _ <- many(whitespace) ~ string("url:") ~ whitespace
+      url <- stringNoSpace
+    } yield Resolver.MavenRepository(id, url, None)
+
+  def parseResolvers(input: List[String]): List[Resolver] =
     input
-      .map { line =>
-        val either = parserDependency.parse(line).done.either
-        either.leftMap(err => line -> err)
-      }
-      .partitionMap(identity)
-
-  val resolverIdParser: Parser[String] = many1(noneOf(" ")).map(_.toList.mkString)
-  val urlParser: Parser[String] = many1(noneOf(" ")).map(_.toList.mkString)
-
-  private val parserResolver = for {
-    _ <- many(whitespace)
-    _ <- string("id:") ~ whitespace
-    id <- resolverIdParser
-    _ <- many(whitespace) <~ string("url:") <~ whitespace
-    url <- resolverIdParser
-    _ <- many(anyChar)
-  } yield Resolver.MavenRepository(id.trim, url.trim, None)
-
-  def parseResolvers(raw: String): (List[String], List[Resolver.MavenRepository]) =
-    raw
+      .mkString("")
       .split("""\[INFO\]""")
       .toList
-      .map(line => parserResolver.parse(line).done.either)
-      .partitionMap(identity)
+      .flatMap(line => resolver.parse(line).done.option)
 }

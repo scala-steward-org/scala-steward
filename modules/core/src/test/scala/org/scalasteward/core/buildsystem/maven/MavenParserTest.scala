@@ -7,7 +7,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class MavenParserTest extends AnyFunSuite with Matchers {
-  test("parseAllDependencies") {
+  test("parseDependencies") {
     val input =
       """|[INFO] Scanning for projects...
          |[INFO]
@@ -30,7 +30,7 @@ class MavenParserTest extends AnyFunSuite with Matchers {
          |[INFO] Finished at: 2020-05-14T09:40:06+02:00
          |[INFO] ------------------------------------------------------------------------
          |""".stripMargin.linesIterator.toList
-    val (_, dependencies) = MavenParser.parseAllDependencies(input)
+    val dependencies = MavenParser.parseDependencies(input)
     dependencies shouldBe List(
       "org.typelevel" % ArtifactId("cats-core", "cats-core_2.12") % "1.5.0",
       "org.hamcrest" % "hamcrest-core" % "1.3" % "test",
@@ -58,8 +58,8 @@ class MavenParserTest extends AnyFunSuite with Matchers {
          |   layout: default
          |snapshots: [enabled => true, update => daily]
          | releases: [enabled => false, update => daily]
-         |""".stripMargin
-    val (_, resolvers) = MavenParser.parseResolvers(input)
+         |""".stripMargin.linesIterator.toList
+    val resolvers = MavenParser.parseResolvers(input)
     resolvers shouldBe List(
       MavenRepository(
         "sonatype-nexus-snapshots",
