@@ -40,23 +40,11 @@ object MavenParser {
 
   private val artifact: Parser[ArtifactId] = {
     val artifactString: Parser[String] = many1(noneOf("_ :")).map(_.toList.mkString)
-
     for {
       init <- artifactString
-      restOpt <- opt(many1(underscore ~ artifactString))
+      restOpt <- opt(underscore ~ artifactString)
       _ <- colon
-    } yield {
-      restOpt.fold(ArtifactId(init, Option.empty[String])) { rest =>
-        val crossVersion: Option[String] =
-          Option.when(rest.last._2.toFloatOption.isDefined)(rest.last._2)
-
-        val suffix = crossVersion.fold(
-          rest.map { case (underscore, str) => s"${underscore}${str}" }.toList.mkString
-        )(_ => rest.init.map { case (underscore, str) => s"${underscore}${str}" }.mkString)
-
-        ArtifactId(init + suffix, maybeCrossName = crossVersion)
-      }
-    }
+    } yield ArtifactId(init, restOpt.map { case (sep, suffix) => init + sep + suffix })
   }
 
   private val configurations: Parser[Option[String]] =

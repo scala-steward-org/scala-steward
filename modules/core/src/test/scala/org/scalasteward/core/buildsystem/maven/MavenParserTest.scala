@@ -1,6 +1,7 @@
 package org.scalasteward.core.buildsystem.maven
 
 import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.data.ArtifactId
 import org.scalasteward.core.data.Resolver.MavenRepository
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -17,6 +18,7 @@ class MavenParserTest extends AnyFunSuite with Matchers {
          |[INFO] --- maven-dependency-plugin:2.8:list (default-cli) @ my-app ---
          |[INFO]
          |[INFO] The following files have been resolved:
+         |[INFO]    org.typelevel:cats-core_2.12:jar:1.5.0:compile
          |[INFO]    org.hamcrest:hamcrest-core:jar:1.3:test
          |[INFO]    junit:junit:jar:4.12:test
          |[INFO]    ch.qos.logback:logback-core:jar:1.1.11:compile
@@ -30,6 +32,7 @@ class MavenParserTest extends AnyFunSuite with Matchers {
          |""".stripMargin.linesIterator.toList
     val (_, dependencies) = MavenParser.parseAllDependencies(input)
     dependencies shouldBe List(
+      "org.typelevel" % ArtifactId("cats-core", "cats-core_2.12") % "1.5.0",
       "org.hamcrest" % "hamcrest-core" % "1.3" % "test",
       "junit" % "junit" % "4.12" % "test",
       "ch.qos.logback" % "logback-core" % "1.1.11"
