@@ -30,6 +30,7 @@ class MavenAlgTest extends AnyFunSuite with Matchers {
           "firejail",
           s"--whitelist=$repoDir",
           "mvn",
+          "--batch-mode",
           command.listRepositories
         ),
         List(
@@ -39,6 +40,7 @@ class MavenAlgTest extends AnyFunSuite with Matchers {
           "firejail",
           s"--whitelist=$repoDir",
           "mvn",
+          "--batch-mode",
           command.listDependencies
         )
       )
