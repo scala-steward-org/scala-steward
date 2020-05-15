@@ -186,7 +186,7 @@ lazy val dockerSettings = Def.settings(
       Cmd("USER", "root"),
       Cmd(
         "RUN",
-        s"apk --no-cache add bash git ca-certificates && wget $sbtUrl && tar -xf $sbtTgz && rm -f $sbtTgz"
+        s"apk --no-cache add bash git ca-certificates maven && wget $sbtUrl && tar -xf $sbtTgz && rm -f $sbtTgz"
       )
     )
   },
