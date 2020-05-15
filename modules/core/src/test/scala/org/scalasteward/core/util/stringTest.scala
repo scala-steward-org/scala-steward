@@ -12,7 +12,9 @@ class stringTest extends AnyFunSuite with Matchers with ScalaCheckPropertyChecks
     }
   }
 
-  test("splitBetweenLowerAndUpperChars: substrings end with lower case char or all are upper case") {
+  test(
+    "splitBetweenLowerAndUpperChars: substrings end with lower case char or all are upper case"
+  ) {
     forAll(Gen.asciiStr) { s: String =>
       string
         .splitBetweenLowerAndUpperChars(s)

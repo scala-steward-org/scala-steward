@@ -26,8 +26,7 @@ import org.scalasteward.core.repoconfig.RepoConfigAlg._
 import org.scalasteward.core.util.MonadThrowable
 import org.scalasteward.core.vcs.data.Repo
 
-final class RepoConfigAlg[F[_]](
-    implicit
+final class RepoConfigAlg[F[_]](implicit
     fileAlg: FileAlg[F],
     logger: Logger[F],
     workspaceAlg: WorkspaceAlg[F],

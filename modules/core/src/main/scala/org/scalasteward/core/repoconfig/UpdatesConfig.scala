@@ -49,18 +49,18 @@ final case class UpdatesConfig(
 
   private def isAllowed(update: Update.Single): FilterResult = {
     val m = UpdatePattern.findMatch(allow, update, include = true)
-    if (m.filteredVersions.nonEmpty) {
+    if (m.filteredVersions.nonEmpty)
       Right(update.copy(newerVersions = Nel.fromListUnsafe(m.filteredVersions)))
-    } else if (allow.isEmpty)
+    else if (allow.isEmpty)
       Right(update)
     else Left(NotAllowedByConfig(update))
   }
 
   private def isPinned(update: Update.Single): FilterResult = {
     val m = UpdatePattern.findMatch(pin, update, include = true)
-    if (m.filteredVersions.nonEmpty) {
+    if (m.filteredVersions.nonEmpty)
       Right(update.copy(newerVersions = Nel.fromListUnsafe(m.filteredVersions)))
-    } else if (m.byArtifactId.isEmpty)
+    else if (m.byArtifactId.isEmpty)
       Right(update)
     else Left(VersionPinnedByConfig(update))
   }

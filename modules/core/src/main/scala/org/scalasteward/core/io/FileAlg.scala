@@ -52,22 +52,20 @@ trait FileAlg[F[_]] {
   def containsString(file: File, string: String)(implicit F: Functor[F]): F[Boolean] =
     readFile(file).map(_.fold(false)(_.contains(string)))
 
-  final def editFile(file: File, edit: String => Option[String])(
-      implicit F: MonadThrowable[F]
+  final def editFile(file: File, edit: String => Option[String])(implicit
+      F: MonadThrowable[F]
   ): F[Boolean] =
     readFile(file)
       .flatMap(_.flatMap(edit).fold(F.pure(false))(writeFile(file, _).as(true)))
       .adaptError { case t => new Throwable(s"failed to edit $file", t) }
 
-  final def editFiles[G[_]](files: G[File], edit: String => Option[String])(
-      implicit
+  final def editFiles[G[_]](files: G[File], edit: String => Option[String])(implicit
       F: MonadThrowable[F],
       G: Traverse[G]
   ): F[Boolean] =
     files.traverse(editFile(_, edit)).map(_.foldLeft(false)(_ || _))
 
-  final def findFilesContaining(dir: File, string: String, fileFilter: File => Boolean)(
-      implicit
+  final def findFilesContaining(dir: File, string: String, fileFilter: File => Boolean)(implicit
       streamCompiler: Stream.Compiler[F, F],
       F: Functor[F]
   ): F[List[File]] =

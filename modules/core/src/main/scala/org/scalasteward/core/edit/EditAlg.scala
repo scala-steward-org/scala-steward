@@ -28,8 +28,7 @@ import org.scalasteward.core.scalafix.MigrationAlg
 import org.scalasteward.core.util._
 import org.scalasteward.core.vcs.data.Repo
 
-final class EditAlg[F[_]](
-    implicit
+final class EditAlg[F[_]](implicit
     buildSystemDispatcher: BuildSystemDispatcher[F],
     fileAlg: FileAlg[F],
     logger: Logger[F],

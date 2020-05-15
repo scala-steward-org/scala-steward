@@ -53,20 +53,20 @@ object NewPullRequestData {
       Nel.fromList(List(updateType(update)) ++ semVerLabel(update).toList ++ migrationLabel.toList)
 
     s"""|Updates $artifacts ${fromTo(update)}.
-        |${releaseNote(releaseRelatedUrls).getOrElse("")}
-        |
-        |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
-        |
-        |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.
-        |
-        |Configure Scala Steward for your repository with a [`${RepoConfigAlg.repoConfigBasename}`](https://github.com/fthomas/scala-steward/blob/${BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
-        |
-        |Have a fantastic day writing Scala!
-        |
-        |${details.map(_.toHtml).mkString("\n")}
-        |
-        |${labels.fold("")(_.mkString_("labels: ", ", ", ""))}
-        |""".stripMargin.trim
+       |${releaseNote(releaseRelatedUrls).getOrElse("")}
+       |
+       |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
+       |
+       |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.
+       |
+       |Configure Scala Steward for your repository with a [`${RepoConfigAlg.repoConfigBasename}`](https://github.com/fthomas/scala-steward/blob/${BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
+       |
+       |Have a fantastic day writing Scala!
+       |
+       |${details.map(_.toHtml).mkString("\n")}
+       |
+       |${labels.fold("")(_.mkString_("labels: ", ", ", ""))}
+       |""".stripMargin.trim
   }
 
   def updateType(update: Update): String = {
@@ -127,10 +127,10 @@ object NewPullRequestData {
     Details(
       "Ignore future updates",
       s"""|Add this to your `${RepoConfigAlg.repoConfigBasename}` file to ignore future updates of this dependency:
-          |```
-          |${RepoConfigAlg.configToIgnoreFurtherUpdates(update)}
-          |```
-          |""".stripMargin.trim
+         |```
+         |${RepoConfigAlg.configToIgnoreFurtherUpdates(update)}
+         |```
+         |""".stripMargin.trim
     )
 
   def migrationNote(migrations: List[Migration]): (Option[String], Option[Details]) =

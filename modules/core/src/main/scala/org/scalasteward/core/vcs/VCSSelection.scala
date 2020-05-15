@@ -54,10 +54,11 @@ class VCSSelection[F[_]: Sync](implicit client: HttpJsonClient[F], user: Authent
     )
   }
 
-  def getAlg(config: Config): VCSApiAlg[F] = config.vcsType match {
-    case GitHub          => github(config)
-    case Gitlab          => gitlab(config)
-    case Bitbucket       => bitbucket(config)
-    case BitbucketServer => bitbucketServer(config)
-  }
+  def getAlg(config: Config): VCSApiAlg[F] =
+    config.vcsType match {
+      case GitHub          => github(config)
+      case Gitlab          => gitlab(config)
+      case Bitbucket       => bitbucket(config)
+      case BitbucketServer => bitbucketServer(config)
+    }
 }

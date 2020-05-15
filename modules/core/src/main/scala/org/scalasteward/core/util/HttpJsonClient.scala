@@ -26,8 +26,8 @@ import org.http4s.{DecodeFailure, Headers, HttpVersion, Method, Request, Respons
 
 import scala.util.control.NoStackTrace
 
-final class HttpJsonClient[F[_]: Sync](
-    implicit client: Client[F]
+final class HttpJsonClient[F[_]: Sync](implicit
+    client: Client[F]
 ) {
   type ModReq = Request[F] => F[Request[F]]
 

@@ -102,13 +102,12 @@ package object vcs {
         List.empty
     def files(fileNames: List[String]): List[Uri] = {
       val maybeSegments =
-        if (host.exists(Set("github.com", "gitlab.com"))) {
+        if (host.exists(Set("github.com", "gitlab.com")))
           Some(List("blob", "master"))
-        } else if (host.contains_("bitbucket.org")) {
+        else if (host.contains_("bitbucket.org"))
           Some(List("master"))
-        } else {
+        else
           None
-        }
       maybeSegments.toList.flatMap { segments =>
         val base = segments.foldLeft(repoUrl)(_ / _)
         fileNames.map(name => base / name)

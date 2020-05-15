@@ -33,8 +33,7 @@ import org.scalasteward.core.vcs.data.PullRequestState.Closed
 import org.scalasteward.core.vcs.data.Repo
 import scala.concurrent.duration._
 
-final class PruningAlg[F[_]](
-    implicit
+final class PruningAlg[F[_]](implicit
     dateTimeAlg: DateTimeAlg[F],
     logger: Logger[F],
     pullRequestRepository: PullRequestRepository[F],
@@ -74,12 +73,11 @@ final class PruningAlg[F[_]](
       outdatedDeps = collectOutdatedDependencies(updateStates0)
       (updateStates1, updates1) <- {
         if (outdatedDeps.isEmpty) F.pure((updateStates0, updates0))
-        else {
+        else
           for {
             freshUpdates <- ensureFreshUpdates(repoConfig, dependencies, outdatedDeps, updates0)
             freshStates <- findAllUpdateStates(repo, repoCache, depsWithoutResolvers, freshUpdates)
           } yield (freshStates, freshUpdates)
-        }
       }
       _ <- logger.info(util.logger.showUpdates(updates1.widen[Update]))
       result <- checkUpdateStates(repo, repoConfig, updateStates1)
@@ -147,9 +145,8 @@ final class PruningAlg[F[_]](
       val message = if (isOutdated) {
         val states = util.string.indentLines(outdatedStates.map(_.toString).sorted)
         s"${repo.show} is outdated:\n" + states
-      } else {
+      } else
         s"${repo.show} is up-to-date"
-      }
       logger.info(message).as((isOutdated, updates))
     }
 

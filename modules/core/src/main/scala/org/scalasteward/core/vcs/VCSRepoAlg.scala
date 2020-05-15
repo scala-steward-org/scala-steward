@@ -48,12 +48,11 @@ object VCSRepoAlg {
 
       override def syncFork(repo: Repo, repoOut: RepoOut): F[Unit] =
         if (config.doNotFork) ().pure[F]
-        else {
+        else
           for {
             parent <- repoOut.parentOrRaise[F]
             _ <- gitAlg.syncFork(repo, withLogin(parent.clone_url), parent.default_branch)
           } yield ()
-        }
 
       val withLogin: Uri => Uri =
         util.uri.withUserInfo.set(UserInfo(config.vcsLogin, None))

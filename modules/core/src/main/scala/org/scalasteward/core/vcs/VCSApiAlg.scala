@@ -38,14 +38,14 @@ trait VCSApiAlg[F[_]] {
     if (config.doNotFork) getRepo(repo)
     else createFork(repo)
 
-  final def createForkOrGetRepoWithDefaultBranch(config: Config, repo: Repo)(
-      implicit F: MonadThrowable[F]
+  final def createForkOrGetRepoWithDefaultBranch(config: Config, repo: Repo)(implicit
+      F: MonadThrowable[F]
   ): F[(RepoOut, BranchOut)] =
     if (config.doNotFork) getRepoWithDefaultBranch(repo)
     else createForkWithDefaultBranch(repo)
 
-  final def createForkWithDefaultBranch(repo: Repo)(
-      implicit F: MonadThrowable[F]
+  final def createForkWithDefaultBranch(repo: Repo)(implicit
+      F: MonadThrowable[F]
   ): F[(RepoOut, BranchOut)] =
     for {
       fork <- createFork(repo)
@@ -53,8 +53,8 @@ trait VCSApiAlg[F[_]] {
       branchOut <- getDefaultBranch(parent)
     } yield (fork, branchOut)
 
-  final def getRepoWithDefaultBranch(repo: Repo)(
-      implicit F: Monad[F]
+  final def getRepoWithDefaultBranch(repo: Repo)(implicit
+      F: Monad[F]
   ): F[(RepoOut, BranchOut)] =
     for {
       repoOut <- getRepo(repo)

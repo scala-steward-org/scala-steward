@@ -44,8 +44,7 @@ trait SbtAlg[F[_]] extends BuildSystemAlg[F] {
 }
 
 object SbtAlg {
-  def create[F[_]](
-      implicit
+  def create[F[_]](implicit
       config: Config,
       fileAlg: FileAlg[F],
       logger: Logger[F],
@@ -87,11 +86,12 @@ object SbtAlg {
           dependencies = parser.parseDependencies(lines)
           additionalDependencies <- getAdditionalDependencies(repo)
           // combine scopes with the same resolvers
-          result = (dependencies ++ additionalDependencies)
-            .groupByNel(_.resolvers)
-            .values
-            .toList
-            .map(group => group.head.as(group.reduceMap(_.value).distinct.sorted))
+          result =
+            (dependencies ++ additionalDependencies)
+              .groupByNel(_.resolvers)
+              .values
+              .toList
+              .map(group => group.head.as(group.reduceMap(_.value).distinct.sorted))
         } yield result
 
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
