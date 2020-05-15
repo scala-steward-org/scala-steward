@@ -46,8 +46,8 @@ object MavenAlg {
         repoDir <- workspaceAlg.repoDir(repo)
         dependenciesRaw <- exec(mvnCmd(command.listDependencies), repoDir)
         repositoriesRaw <- exec(mvnCmd(command.listRepositories), repoDir)
-        dependencies = MavenParser.parseDependencies(dependenciesRaw)
-        resolvers = MavenParser.parseResolvers(repositoriesRaw)
+        dependencies = parser.parseDependencies(dependenciesRaw)
+        resolvers = parser.parseResolvers(repositoriesRaw)
       } yield List(Scope(dependencies.distinct, resolvers))
 
     override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =

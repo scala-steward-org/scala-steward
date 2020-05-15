@@ -21,7 +21,7 @@ import atto._
 import cats.implicits._
 import org.scalasteward.core.data._
 
-object MavenParser {
+object parser {
   private val colon: Parser[Char] = char(':')
 
   private val underscore: Parser[Char] = char('_')
@@ -70,9 +70,5 @@ object MavenParser {
     } yield Resolver.MavenRepository(id, url, None)
 
   def parseResolvers(input: List[String]): List[Resolver] =
-    input
-      .mkString("")
-      .split("""\[INFO\]""")
-      .toList
-      .flatMap(line => resolver.parse(line).done.option)
+    input.mkString.split("""\[INFO\]""").toList.flatMap(line => resolver.parse(line).done.option)
 }
