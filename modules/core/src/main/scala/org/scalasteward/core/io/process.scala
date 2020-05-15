@@ -41,16 +41,17 @@ object process {
           out.evalMap(line => F.delay(appendBounded(buffer, line, 4096)) >> log(line)).compile.drain
         }
 
+        val showCmd = (extraEnv.map { case (k, v) => s"$k=$v" }.toList ++ cmd.toList).mkString_(" ")
         val result = readOut >> F.delay(process.waitFor()) >>= { exitValue =>
           if (exitValue === 0) F.pure(buffer.toList)
           else {
-            val msg = s"'${cmd.mkString_(" ")}' exited with code $exitValue"
+            val msg = s"'$showCmd' exited with code $exitValue"
             F.raiseError[List[String]](new IOException(makeMessage(msg, buffer.toList)))
           }
         }
 
         val fallback = F.delay(process.destroyForcibly()) >> {
-          val msg = s"'${cmd.mkString_(" ")}' timed out after ${timeout.toString}"
+          val msg = s"'$showCmd' timed out after ${timeout.toString}"
           F.raiseError[List[String]](new TimeoutException(makeMessage(msg, buffer.toList)))
         }
 
