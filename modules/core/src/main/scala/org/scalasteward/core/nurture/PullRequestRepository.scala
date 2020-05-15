@@ -28,8 +28,7 @@ import org.scalasteward.core.vcs.data.{PullRequestState, Repo}
 
 final class PullRequestRepository[F[_]](
     kvStore: KeyValueStore[F, Repo, Map[Uri, PullRequestData]]
-)(
-    implicit
+)(implicit
     dateTimeAlg: DateTimeAlg[F],
     F: Monad[F]
 ) {

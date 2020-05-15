@@ -27,8 +27,7 @@ import org.scalasteward.core.vcs.data.Repo
 trait BuildSystemDispatcher[F[_]] extends BuildSystemAlg[F]
 
 object BuildSystemDispatcher {
-  def create[F[_]](
-      implicit
+  def create[F[_]](implicit
       sbtAlg: SbtAlg[F],
       F: Monad[F]
   ): BuildSystemDispatcher[F] = {

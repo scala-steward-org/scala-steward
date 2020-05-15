@@ -27,8 +27,7 @@ import scalacache.CatsEffect.modes._
 import scalacache.caffeine.CaffeineCache
 import scalacache.{Async => _, _}
 
-final class HttpExistenceClient[F[_]](statusCache: Cache[Status])(
-    implicit
+final class HttpExistenceClient[F[_]](statusCache: Cache[Status])(implicit
     client: Client[F],
     logger: Logger[F],
     mode: Mode[F],
@@ -46,8 +45,7 @@ final class HttpExistenceClient[F[_]](statusCache: Cache[Status])(
 }
 
 object HttpExistenceClient {
-  def create[F[_]](
-      implicit
+  def create[F[_]](implicit
       config: Config,
       client: Client[F],
       logger: Logger[F],

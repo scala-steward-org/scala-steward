@@ -29,8 +29,7 @@ import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data.{Repo, RepoOut}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
 
-final class RepoCacheAlg[F[_]](
-    implicit
+final class RepoCacheAlg[F[_]](implicit
     buildSystemDispatcher: BuildSystemDispatcher[F],
     config: Config,
     gitAlg: GitAlg[F],
@@ -49,8 +48,8 @@ final class RepoCacheAlg[F[_]](
         logger.info(s"Skipping due to previous error"),
         for {
           ((repoOut, branchOut), cachedSha1) <- (
-            vcsApiAlg.createForkOrGetRepoWithDefaultBranch(config, repo),
-            repoCacheRepository.findSha1(repo)
+              vcsApiAlg.createForkOrGetRepoWithDefaultBranch(config, repo),
+              repoCacheRepository.findSha1(repo)
           ).parTupled
           latestSha1 = branchOut.commit.sha
           refreshRequired = cachedSha1.forall(_ =!= latestSha1)
@@ -80,8 +79,9 @@ final class RepoCacheAlg[F[_]](
       branch <- gitAlg.currentBranch(repo)
       latestSha1 <- gitAlg.latestSha1(repo, branch)
       dependencies <- buildSystemDispatcher.getDependencies(repo)
-      dependencyInfos <- dependencies
-        .traverse(_.traverse(_.traverse(gatherDependencyInfo(repo, _))))
+      dependencyInfos <-
+        dependencies
+          .traverse(_.traverse(_.traverse(gatherDependencyInfo(repo, _))))
       maybeRepoConfig <- repoConfigAlg.readRepoConfig(repo)
     } yield RepoCache(latestSha1, dependencyInfos, maybeRepoConfig)
 

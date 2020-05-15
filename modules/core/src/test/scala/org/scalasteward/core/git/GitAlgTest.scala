@@ -127,8 +127,7 @@ class GitAlgTest extends AnyFunSuite with Matchers {
 }
 
 object GitAlgTest {
-  def createGitRepoWithConflict[F[_]](repoDir: File)(
-      implicit
+  def createGitRepoWithConflict[F[_]](repoDir: File)(implicit
       fileAlg: FileAlg[F],
       processAlg: ProcessAlg[F],
       F: Monad[F]

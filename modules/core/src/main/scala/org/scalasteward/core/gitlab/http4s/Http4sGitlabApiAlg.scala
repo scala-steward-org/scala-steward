@@ -63,18 +63,18 @@ private[http4s] object GitlabJsonCodec {
   implicit val repoOutDecoder: Decoder[RepoOut] = Decoder.instance { c =>
     for {
       name <- c.downField("path").as[String]
-      owner <- c
-        .downField("owner")
-        .as[UserOut]
-        .orElse(c.downField("namespace").downField("full_path").as[String].map(UserOut(_)))
+      owner <-
+        c.downField("owner")
+          .as[UserOut]
+          .orElse(c.downField("namespace").downField("full_path").as[String].map(UserOut(_)))
       cloneUrl <- c.downField("http_url_to_repo").as[Uri]
-      parent <- c
-        .downField("forked_from_project")
-        .as[Option[RepoOut]]
-      defaultBranch <- c
-        .downField("default_branch")
-        .as[Option[Branch]]
-        .map(_.getOrElse(Branch("master")))
+      parent <-
+        c.downField("forked_from_project")
+          .as[Option[RepoOut]]
+      defaultBranch <-
+        c.downField("default_branch")
+          .as[Option[Branch]]
+          .map(_.getOrElse(Branch("master")))
     } yield RepoOut(name, owner, parent, cloneUrl, defaultBranch)
   }
 
@@ -91,8 +91,7 @@ class Http4sGitLabApiAlg[F[_]: MonadThrowable](
     user: AuthenticatedUser,
     modify: Repo => Request[F] => F[Request[F]],
     doNotFork: Boolean
-)(
-    implicit
+)(implicit
     client: HttpJsonClient[F]
 ) extends VCSApiAlg[F] {
   import GitlabJsonCodec._

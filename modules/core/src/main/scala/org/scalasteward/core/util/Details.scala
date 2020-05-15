@@ -23,9 +23,9 @@ package org.scalasteward.core.util
 final case class Details(summary: String, body: String) {
   def toHtml: String =
     s"""|<details>
-        |<summary>$summary</summary>
-        |
-        |$body
-        |</details>
-        |""".stripMargin.trim
+       |<summary>$summary</summary>
+       |
+       |$body
+       |</details>
+       |""".stripMargin.trim
 }

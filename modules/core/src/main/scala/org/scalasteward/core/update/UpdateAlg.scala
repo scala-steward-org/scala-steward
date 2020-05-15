@@ -26,8 +26,7 @@ import scala.concurrent.duration.FiniteDuration
 import org.scalasteward.core.update.GroupMigrations
 import cats.Eval
 
-final class UpdateAlg[F[_]](
-    implicit
+final class UpdateAlg[F[_]](implicit
     filterAlg: FilterAlg[F],
     versionsCache: VersionsCache[F],
     groupMigrations: GroupMigrations,

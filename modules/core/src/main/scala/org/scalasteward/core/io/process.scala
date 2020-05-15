@@ -73,8 +73,7 @@ object process {
       pb.start()
     }
 
-  private def readInputStream[F[_]](is: InputStream, blocker: Blocker)(
-      implicit
+  private def readInputStream[F[_]](is: InputStream, blocker: Blocker)(implicit
       F: Sync[F],
       cs: ContextShift[F]
   ): Stream[F, String] =

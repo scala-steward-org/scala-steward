@@ -24,8 +24,8 @@ import scala.concurrent.duration.FiniteDuration
 
 object logger {
   implicit final class LoggerOps[F[_]](private val logger: Logger[F]) extends AnyVal {
-    def attemptLog[A](message: String)(fa: F[A])(
-        implicit F: MonadThrowable[F]
+    def attemptLog[A](message: String)(fa: F[A])(implicit
+        F: MonadThrowable[F]
     ): F[Either[Throwable, A]] =
       logger.info(message) >> fa.attempt.flatTap {
         case Left(t)  => logger.error(t)(s"$message failed")
@@ -35,8 +35,7 @@ object logger {
     def attemptLog_[A](message: String)(fa: F[A])(implicit F: MonadThrowable[F]): F[Unit] =
       attemptLog(message)(fa).void
 
-    def infoTimed[A](msg: FiniteDuration => String)(fa: F[A])(
-        implicit
+    def infoTimed[A](msg: FiniteDuration => String)(fa: F[A])(implicit
         dateTimeAlg: DateTimeAlg[F],
         F: Monad[F]
     ): F[A] =
@@ -44,8 +43,7 @@ object logger {
         case (a, duration) => logger.info(msg(duration)) >> F.pure(a)
       }
 
-    def infoTotalTime[A](label: String)(fa: F[A])(
-        implicit
+    def infoTotalTime[A](label: String)(fa: F[A])(implicit
         dateTimeAlg: DateTimeAlg[F],
         F: Monad[F]
     ): F[A] = {

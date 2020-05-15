@@ -69,8 +69,7 @@ trait GitAlg[F[_]] {
 object GitAlg {
   val gitCmd: String = "git"
 
-  def create[F[_]](
-      implicit
+  def create[F[_]](implicit
       config: Config,
       fileAlg: FileAlg[F],
       processAlg: ProcessAlg[F],
