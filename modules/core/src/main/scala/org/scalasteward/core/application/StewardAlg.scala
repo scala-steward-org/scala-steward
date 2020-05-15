@@ -33,8 +33,7 @@ import org.scalasteward.core.util.DateTimeAlg
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data.Repo
 
-final class StewardAlg[F[_]](
-    implicit
+final class StewardAlg[F[_]](implicit
     config: Config,
     dateTimeAlg: DateTimeAlg[F],
     fileAlg: FileAlg[F],
@@ -65,7 +64,9 @@ final class StewardAlg[F[_]](
     fileAlg.readFile(reposFile).map { maybeContent =>
       val regex = """-\s+(.+)/([^/]+)""".r
       val content = maybeContent.getOrElse("")
-      content.linesIterator.collect { case regex(owner, repo) => Repo(owner.trim, repo.trim) }.toList
+      content.linesIterator.collect {
+        case regex(owner, repo) => Repo(owner.trim, repo.trim)
+      }.toList
     }
 
   private def steward(repo: Repo): F[Either[Throwable, Unit]] = {

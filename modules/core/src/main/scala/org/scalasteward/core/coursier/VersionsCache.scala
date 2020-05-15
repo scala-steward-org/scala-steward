@@ -29,8 +29,7 @@ import scala.concurrent.duration.FiniteDuration
 final class VersionsCache[F[_]](
     cacheTtl: FiniteDuration,
     store: KeyValueStore[F, Key, Value]
-)(
-    implicit
+)(implicit
     coursierAlg: CoursierAlg[F],
     dateTimeAlg: DateTimeAlg[F],
     parallel: Parallel[F],

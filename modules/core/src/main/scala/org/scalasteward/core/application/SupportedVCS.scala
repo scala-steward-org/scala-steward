@@ -40,13 +40,14 @@ object SupportedVCS {
   implicit val supportedVCSEq: Eq[SupportedVCS] =
     Eq.fromUniversalEquals
 
-  def parse(value: String): Either[String, SupportedVCS] = value match {
-    case "github"           => Right(GitHub)
-    case "gitlab"           => Right(Gitlab)
-    case "bitbucket"        => Right(Bitbucket)
-    case "bitbucket-server" => Right(BitbucketServer)
-    case unknown            => Left(s"Unexpected string '$unknown'")
-  }
+  def parse(value: String): Either[String, SupportedVCS] =
+    value match {
+      case "github"           => Right(GitHub)
+      case "gitlab"           => Right(Gitlab)
+      case "bitbucket"        => Right(Bitbucket)
+      case "bitbucket-server" => Right(BitbucketServer)
+      case unknown            => Left(s"Unexpected string '$unknown'")
+    }
 
   implicit val supportedVCSParser: ArgParser[SupportedVCS] =
     ArgParser[String].xmapError(

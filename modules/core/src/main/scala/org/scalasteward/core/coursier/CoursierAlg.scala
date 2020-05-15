@@ -36,8 +36,8 @@ trait CoursierAlg[F[_]] {
 
   def getVersions(dependency: Dependency, resolver: Resolver): F[List[Version]]
 
-  final def getArtifactIdUrlMapping(dependencies: Scope.Dependencies)(
-      implicit F: Applicative[F]
+  final def getArtifactIdUrlMapping(dependencies: Scope.Dependencies)(implicit
+      F: Applicative[F]
   ): F[Map[String, Uri]] =
     dependencies.sequence
       .traverseFilter(dep => getArtifactUrl(dep).map(_.map(dep.value.artifactId.name -> _)))
@@ -45,8 +45,7 @@ trait CoursierAlg[F[_]] {
 }
 
 object CoursierAlg {
-  def create[F[_]](
-      implicit
+  def create[F[_]](implicit
       contextShift: ContextShift[F],
       logger: Logger[F],
       F: Sync[F]

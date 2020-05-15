@@ -35,8 +35,7 @@ import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg}
 import org.scalasteward.core.{git, util, vcs}
 
-final class NurtureAlg[F[_]](
-    implicit
+final class NurtureAlg[F[_]](implicit
     config: Config,
     dateTimeAlg: DateTimeAlg[F],
     editAlg: EditAlg[F],
@@ -68,9 +67,10 @@ final class NurtureAlg[F[_]](
     for {
       _ <- logger.info(s"Clone and synchronize ${repo.show}")
       repoOut <- vcsApiAlg.createForkOrGetRepo(config, repo)
-      _ <- gitAlg
-        .cloneExists(repo)
-        .ifM(F.unit, vcsRepoAlg.clone(repo, repoOut) >> vcsRepoAlg.syncFork(repo, repoOut))
+      _ <-
+        gitAlg
+          .cloneExists(repo)
+          .ifM(F.unit, vcsRepoAlg.clone(repo, repoOut) >> vcsRepoAlg.syncFork(repo, repoOut))
       defaultBranch <- vcsRepoAlg.defaultBranch(repoOut)
     } yield (repoOut.repo, defaultBranch)
 
@@ -121,7 +121,11 @@ final class NurtureAlg[F[_]](
     } yield result
 
   def applyNewUpdate(data: UpdateData): F[ProcessResult] =
-    (editAlg.applyUpdate(data.repo, data.update, data.repoConfig.updates.fileExtensionsOrDefault) >> gitAlg
+    (editAlg.applyUpdate(
+      data.repo,
+      data.update,
+      data.repoConfig.updates.fileExtensionsOrDefault
+    ) >> gitAlg
       .containsChanges(data.repo)).ifM(
       gitAlg.returnToCurrentBranch(data.repo) {
         for {
@@ -152,9 +156,10 @@ final class NurtureAlg[F[_]](
       )
       existingArtifactUrlsList <- artifactIdToUrl.toList.filterA(a => existenceClient.exists(a._2))
       existingArtifactUrlsMap = existingArtifactUrlsList.toMap
-      releaseRelatedUrls <- existingArtifactUrlsMap
-        .get(data.update.mainArtifactId)
-        .traverse(vcsExtraAlg.getReleaseRelatedUrls(_, data.update))
+      releaseRelatedUrls <-
+        existingArtifactUrlsMap
+          .get(data.update.mainArtifactId)
+          .traverse(vcsExtraAlg.getReleaseRelatedUrls(_, data.update))
       branchName = vcs.createBranch(config.vcsType, data.fork, data.update)
       migrations = migrationAlg.findMigrations(data.update)
       requestData = NewPullRequestData.from(
@@ -176,7 +181,7 @@ final class NurtureAlg[F[_]](
     } yield ()
 
   def updatePullRequest(data: UpdateData): F[ProcessResult] =
-    if (data.repoConfig.updatePullRequestsOrDefault =!= PullRequestUpdateStrategy.Never) {
+    if (data.repoConfig.updatePullRequestsOrDefault =!= PullRequestUpdateStrategy.Never)
       gitAlg.returnToCurrentBranch(data.repo) {
         for {
           _ <- gitAlg.checkoutBranch(data.repo, data.updateBranch)
@@ -184,9 +189,8 @@ final class NurtureAlg[F[_]](
           result <- if (update) mergeAndApplyAgain(data) else F.pure[ProcessResult](Ignored)
         } yield result
       }
-    } else {
+    else
       logger.info("PR updates are disabled by flag").as(Ignored)
-    }
 
   def shouldBeUpdated(data: UpdateData): F[Boolean] = {
     val result = gitAlg.isMerged(data.repo, data.updateBranch, data.baseBranch).flatMap {
@@ -196,15 +200,13 @@ final class NurtureAlg[F[_]](
           val distinctAuthors = authors.distinct
           if (distinctAuthors.length >= 2)
             (false, s"PR has commits by ${distinctAuthors.mkString(", ")}").pure[F]
-          else {
-            if (data.repoConfig.updatePullRequestsOrDefault === PullRequestUpdateStrategy.Always)
-              (true, "PR update strategy is set to always").pure[F]
-            else
-              gitAlg.hasConflicts(data.repo, data.updateBranch, data.baseBranch).map {
-                case true  => (true, s"PR has conflicts with ${data.baseBranch.name}")
-                case false => (false, s"PR has no conflict with ${data.baseBranch.name}")
-              }
-          }
+          else if (data.repoConfig.updatePullRequestsOrDefault === PullRequestUpdateStrategy.Always)
+            (true, "PR update strategy is set to always").pure[F]
+          else
+            gitAlg.hasConflicts(data.repo, data.updateBranch, data.baseBranch).map {
+              case true  => (true, s"PR has conflicts with ${data.baseBranch.name}")
+              case false => (false, s"PR has no conflict with ${data.baseBranch.name}")
+            }
         }
     }
     result.flatMap { case (update, msg) => logger.info(msg).as(update) }

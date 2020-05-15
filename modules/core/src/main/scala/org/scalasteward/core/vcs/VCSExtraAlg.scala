@@ -28,15 +28,15 @@ trait VCSExtraAlg[F[_]] {
 }
 
 object VCSExtraAlg {
-  def create[F[_]](
-      implicit
+  def create[F[_]](implicit
       existenceClient: HttpExistenceClient[F],
       F: Monad[F]
-  ): VCSExtraAlg[F] = new VCSExtraAlg[F] {
-    override def getReleaseRelatedUrls(repoUrl: Uri, update: Update): F[List[ReleaseRelatedUrl]] =
-      vcs
-        .possibleReleaseRelatedUrls(repoUrl, update)
-        .filterA(releaseRelatedUrl => existenceClient.exists(releaseRelatedUrl.url))
+  ): VCSExtraAlg[F] =
+    new VCSExtraAlg[F] {
+      override def getReleaseRelatedUrls(repoUrl: Uri, update: Update): F[List[ReleaseRelatedUrl]] =
+        vcs
+          .possibleReleaseRelatedUrls(repoUrl, update)
+          .filterA(releaseRelatedUrl => existenceClient.exists(releaseRelatedUrl.url))
 
-  }
+    }
 }

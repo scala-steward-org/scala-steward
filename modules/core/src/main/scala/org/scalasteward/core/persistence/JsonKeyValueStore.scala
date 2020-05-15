@@ -29,8 +29,7 @@ final class JsonKeyValueStore[F[_], K, V](
     name: String,
     schemaVersion: String,
     maybePrefix: Option[String] = None
-)(
-    implicit
+)(implicit
     fileAlg: FileAlg[F],
     keyEncoder: KeyEncoder[K],
     logger: Logger[F],

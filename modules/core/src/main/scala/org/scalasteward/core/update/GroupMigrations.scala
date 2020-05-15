@@ -31,8 +31,8 @@ trait GroupMigrations {
 }
 
 object GroupMigrations {
-  def create[F[_]: MonadThrowable](
-      implicit fileAlg: FileAlg[F],
+  def create[F[_]: MonadThrowable](implicit
+      fileAlg: FileAlg[F],
       config: Config
   ): F[GroupMigrations] = {
     val migrationSources = {

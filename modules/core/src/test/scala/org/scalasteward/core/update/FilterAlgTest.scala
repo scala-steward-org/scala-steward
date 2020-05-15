@@ -243,12 +243,16 @@ class FilterAlgTest extends AnyFunSuite with Matchers {
   test("isDependencyConfigurationIgnored: false") {
     val dependency =
       Dependency(GroupId("org.typelevel"), ArtifactId("cats-effect", "cats-effect_2.12"), "1.0.0")
-    FilterAlg.isDependencyConfigurationIgnored(dependency.copy(configurations = Some("foo"))) shouldBe false
+    FilterAlg.isDependencyConfigurationIgnored(
+      dependency.copy(configurations = Some("foo"))
+    ) shouldBe false
   }
 
   test("isDependencyConfigurationIgnored: true") {
     val dependency =
       Dependency(GroupId("org.typelevel"), ArtifactId("cats-effect", "cats-effect_2.12"), "1.0.0")
-    FilterAlg.isDependencyConfigurationIgnored(dependency.copy(configurations = Some("scalafmt"))) shouldBe true
+    FilterAlg.isDependencyConfigurationIgnored(
+      dependency.copy(configurations = Some("scalafmt"))
+    ) shouldBe true
   }
 }

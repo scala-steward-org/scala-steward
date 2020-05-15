@@ -26,8 +26,7 @@ import org.scalasteward.core.vcs.data._
 final class Http4sGitHubApiAlg[F[_]](
     gitHubApiHost: Uri,
     modify: Repo => Request[F] => F[Request[F]]
-)(
-    implicit
+)(implicit
     client: HttpJsonClient[F]
 ) extends VCSApiAlg[F] {
   private val url = new Url(gitHubApiHost)

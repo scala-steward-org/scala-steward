@@ -72,7 +72,7 @@ object Cli {
       }
     }
 
-  implicit val finiteDurationArgParser: ArgParser[FiniteDuration] = {
+  implicit val finiteDurationArgParser: ArgParser[FiniteDuration] =
     ArgParser[String].xmapError(
       _.toString(),
       s =>
@@ -81,7 +81,6 @@ object Cli {
           MalformedValue("FiniteDuration", error)
         }
     )
-  }
 
   private def parseFiniteDuration(s: String): Either[Throwable, FiniteDuration] =
     Either.catchNonFatal(Duration(s)).flatMap {

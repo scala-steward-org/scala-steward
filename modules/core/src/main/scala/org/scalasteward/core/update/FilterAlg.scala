@@ -24,8 +24,7 @@ import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.update.FilterAlg._
 import org.scalasteward.core.util.Nel
 
-final class FilterAlg[F[_]](
-    implicit
+final class FilterAlg[F[_]](implicit
     logger: Logger[F],
     F: Monad[F]
 ) {
@@ -48,14 +47,15 @@ object FilterAlg {
 
   sealed trait RejectionReason {
     def update: Update.Single
-    def show: String = this match {
-      case IgnoredByConfig(_)         => "ignored by config"
-      case VersionPinnedByConfig(_)   => "version is pinned by config"
-      case NotAllowedByConfig(_)      => "not allowed by config"
-      case BadVersions(_)             => "bad versions"
-      case NoSuitableNextVersion(_)   => "no suitable next version"
-      case VersionOrderingConflict(_) => "version ordering conflict"
-    }
+    def show: String =
+      this match {
+        case IgnoredByConfig(_)         => "ignored by config"
+        case VersionPinnedByConfig(_)   => "version is pinned by config"
+        case NotAllowedByConfig(_)      => "not allowed by config"
+        case BadVersions(_)             => "bad versions"
+        case NoSuitableNextVersion(_)   => "no suitable next version"
+        case VersionOrderingConflict(_) => "version ordering conflict"
+      }
   }
 
   final case class IgnoredByConfig(update: Update.Single) extends RejectionReason

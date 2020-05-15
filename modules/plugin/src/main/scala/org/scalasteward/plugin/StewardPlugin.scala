@@ -32,48 +32,54 @@ object StewardPlugin extends AutoPlugin {
 
   import autoImport._
 
-  override def projectSettings: Seq[Def.Setting[_]] = Seq(
-    stewardDependencies := {
-      val log = streams.value.log
-      val sourcePositions = dependencyPositions.value
-      val buildRoot = baseDirectory.in(ThisBuild).value
-      val scalaBinaryVersionValue = scalaBinaryVersion.value
-      val scalaVersionValue = scalaVersion.value
-      val sbtCredentials = credentials.value
+  override def projectSettings: Seq[Def.Setting[_]] =
+    Seq(
+      stewardDependencies := {
+        val log = streams.value.log
+        val sourcePositions = dependencyPositions.value
+        val buildRoot = baseDirectory.in(ThisBuild).value
+        val scalaBinaryVersionValue = scalaBinaryVersion.value
+        val scalaVersionValue = scalaVersion.value
+        val sbtCredentials = credentials.value
 
-      val libraryDeps = libraryDependencies.value
-        .filter(isDefinedInBuildFiles(_, sourcePositions, buildRoot))
-        .map(moduleId => toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue))
+        val libraryDeps = libraryDependencies.value
+          .filter(isDefinedInBuildFiles(_, sourcePositions, buildRoot))
+          .map(moduleId => toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue))
 
-      val scalafixDeps = findScalafixDependencies.value
-        .getOrElse(Seq.empty)
-        .map(moduleId =>
-          toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue, Some("scalafix-rule"))
-        )
-      val dependencies = libraryDeps ++ scalafixDeps
+        val scalafixDeps = findScalafixDependencies.value
+          .getOrElse(Seq.empty)
+          .map(moduleId =>
+            toDependency(
+              moduleId,
+              scalaVersionValue,
+              scalaBinaryVersionValue,
+              Some("scalafix-rule")
+            )
+          )
+        val dependencies = libraryDeps ++ scalafixDeps
 
-      def getCredentials(url: URL): Option[Resolver.Credentials] =
-        Try(Credentials.forHost(sbtCredentials, url.getHost)).toOption.flatten
-          .map(c => Resolver.Credentials(c.userName, c.passwd))
+        def getCredentials(url: URL): Option[Resolver.Credentials] =
+          Try(Credentials.forHost(sbtCredentials, url.getHost)).toOption.flatten
+            .map(c => Resolver.Credentials(c.userName, c.passwd))
 
-      val resolvers = fullResolvers.value.collect {
-        case repo: MavenRepository if !repo.root.startsWith("file:") =>
-          val creds = getCredentials(new URL(repo.root))
-          Resolver.MavenRepository(repo.name, repo.root, creds)
-        case repo: URLRepository =>
-          val ivyPatterns = repo.patterns.ivyPatterns.mkString
-          val creds = getCredentials(new URL(ivyPatterns))
-          Resolver.IvyRepository(repo.name, ivyPatterns, creds)
+        val resolvers = fullResolvers.value.collect {
+          case repo: MavenRepository if !repo.root.startsWith("file:") =>
+            val creds = getCredentials(new URL(repo.root))
+            Resolver.MavenRepository(repo.name, repo.root, creds)
+          case repo: URLRepository =>
+            val ivyPatterns = repo.patterns.ivyPatterns.mkString
+            val creds = getCredentials(new URL(ivyPatterns))
+            Resolver.IvyRepository(repo.name, ivyPatterns, creds)
+        }
+
+        val sb = new StringBuilder()
+        val ls = System.lineSeparator()
+        sb.append("--- snip ---").append(ls)
+        dependencies.foreach(d => sb.append(d.asJson).append(ls))
+        resolvers.foreach(r => sb.append(r.asJson).append(ls))
+        log.info(sb.result())
       }
-
-      val sb = new StringBuilder()
-      val ls = System.lineSeparator()
-      sb.append("--- snip ---").append(ls)
-      dependencies.foreach(d => sb.append(d.asJson).append(ls))
-      resolvers.foreach(r => sb.append(r.asJson).append(ls))
-      log.info(sb.result())
-    }
-  )
+    )
 
   // Inspired by https://github.com/rtimush/sbt-updates/issues/42 and
   // https://github.com/rtimush/sbt-updates/pull/112
