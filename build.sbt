@@ -28,7 +28,7 @@ lazy val core = myCrossProject("core")
     libraryDependencies ++= Seq(
       compilerPlugin(Dependencies.betterMonadicFor),
       compilerPlugin(Dependencies.kindProjector.cross(CrossVersion.full)),
-      Dependencies.atto,
+      Dependencies.attoCore,
       Dependencies.betterFiles,
       Dependencies.caseApp,
       Dependencies.catsEffect,
@@ -240,7 +240,7 @@ runSteward := Def.taskDyn {
     Seq("--vcs-login", projectName),
     Seq("--git-ask-pass", s"$home/.github/askpass/$projectName.sh"),
     Seq("--whitelist", s"$home/.cache/coursier"),
-    Seq("--whitelist", s"$home/.coursier"),
+    Seq("--whitelist", s"$home/.cache/JNA"),
     Seq("--whitelist", s"$home/.ivy2"),
     Seq("--whitelist", s"$home/.sbt"),
     Seq("--whitelist", myJavaHome),
