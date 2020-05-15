@@ -30,39 +30,39 @@ import org.scalasteward.core.vcs.data.Repo
 trait MavenAlg[F[_]] extends BuildSystemAlg[F]
 
 object MavenAlg {
-  def create[F[_]](
-      implicit
+  def create[F[_]](implicit
       config: Config,
       fileAlg: FileAlg[F],
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F],
       F: Monad[F]
-  ): MavenAlg[F] = new MavenAlg[F] {
-    override def containsBuild(repo: Repo): F[Boolean] =
-      workspaceAlg.repoDir(repo).flatMap(repoDir => fileAlg.isRegularFile(repoDir / "pom.xml"))
+  ): MavenAlg[F] =
+    new MavenAlg[F] {
+      override def containsBuild(repo: Repo): F[Boolean] =
+        workspaceAlg.repoDir(repo).flatMap(repoDir => fileAlg.isRegularFile(repoDir / "pom.xml"))
 
-    override def getDependencies(repo: Repo): F[List[Scope.Dependencies]] =
-      for {
-        repoDir <- workspaceAlg.repoDir(repo)
-        dependenciesRaw <- exec(mvnCmd(command.listDependencies), repoDir)
-        repositoriesRaw <- exec(mvnCmd(command.listRepositories), repoDir)
-        dependencies = parser.parseDependencies(dependenciesRaw)
-        resolvers = parser.parseResolvers(repositoriesRaw)
-      } yield List(Scope(dependencies.distinct, resolvers))
+      override def getDependencies(repo: Repo): F[List[Scope.Dependencies]] =
+        for {
+          repoDir <- workspaceAlg.repoDir(repo)
+          dependenciesRaw <- exec(mvnCmd(command.listDependencies), repoDir)
+          repositoriesRaw <- exec(mvnCmd(command.listRepositories), repoDir)
+          dependencies = parser.parseDependencies(dependenciesRaw)
+          resolvers = parser.parseResolvers(repositoriesRaw)
+        } yield List(Scope(dependencies.distinct, resolvers))
 
-    override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
-      F.unit
+      override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
+        F.unit
 
-    def exec(command: Nel[String], repoDir: File): F[List[String]] =
-      maybeIgnoreOptsFiles(repoDir)(processAlg.execSandboxed(command, repoDir))
+      def exec(command: Nel[String], repoDir: File): F[List[String]] =
+        maybeIgnoreOptsFiles(repoDir)(processAlg.execSandboxed(command, repoDir))
 
-    def mvnCmd(commands: String*): Nel[String] =
-      Nel("mvn", "--batch-mode" :: commands.toList)
+      def mvnCmd(commands: String*): Nel[String] =
+        Nel("mvn", "--batch-mode" :: commands.toList)
 
-    def maybeIgnoreOptsFiles[A](dir: File)(fa: F[A]): F[A] =
-      if (config.ignoreOptsFiles) ignoreOptsFiles(dir)(fa) else fa
+      def maybeIgnoreOptsFiles[A](dir: File)(fa: F[A]): F[A] =
+        if (config.ignoreOptsFiles) ignoreOptsFiles(dir)(fa) else fa
 
-    def ignoreOptsFiles[A](dir: File)(fa: F[A]): F[A] =
-      fileAlg.removeTemporarily(dir / ".jvmopts")(fa)
-  }
+      def ignoreOptsFiles[A](dir: File)(fa: F[A]): F[A] =
+        fileAlg.removeTemporarily(dir / ".jvmopts")(fa)
+    }
 }
