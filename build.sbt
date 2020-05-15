@@ -231,6 +231,7 @@ moduleRootPkg := rootPkg
 lazy val runSteward = taskKey[Unit]("")
 runSteward := Def.taskDyn {
   val home = System.getenv("HOME")
+  val myJavaHome = System.getenv("JAVA_HOME")
   val projectDir = (LocalRootProject / baseDirectory).value
   val args = Seq(
     Seq("--workspace", s"$projectDir/workspace"),
@@ -242,7 +243,8 @@ runSteward := Def.taskDyn {
     Seq("--whitelist", s"$home/.coursier"),
     Seq("--whitelist", s"$home/.ivy2"),
     Seq("--whitelist", s"$home/.sbt"),
-    Seq("--disable-sandbox")
+    Seq("--whitelist", myJavaHome),
+    Seq("--read-only", myJavaHome)
   ).flatten.mkString(" ", " ", "")
   (core.jvm / Compile / run).toTask(args)
 }.value
