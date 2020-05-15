@@ -30,6 +30,6 @@ package object scalafmt {
   def parseScalafmtConf(s: String): Option[Version] =
     """version\s*=\s*(.+)""".r
       .findFirstMatchIn(s)
-      .map(_.group(1).replaceAllLiterally("\"", ""))
+      .map(_.group(1).replace("\"", ""))
       .map(Version.apply)
 }

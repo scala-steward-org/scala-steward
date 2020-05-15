@@ -114,7 +114,7 @@ lazy val core = myCrossProject("core")
 lazy val plugin = myCrossProject("plugin")
   .settings(noPublishSettings)
   .settings(
-    scalaVersion := "2.12.10",
+    scalaVersion := "2.12.11",
     sbtPlugin := true,
     Compile / compile / wartremoverErrors -= Wart.Equals
   )
