@@ -25,7 +25,8 @@ final case class Migration(
     groupId: GroupId,
     artifactIds: Nel[String],
     newVersion: Version,
-    rewriteRules: Nel[String]
+    rewriteRules: Nel[String],
+    doc: Option[String]
 )
 
 object Migration {
