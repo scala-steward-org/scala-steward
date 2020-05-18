@@ -1,8 +1,8 @@
 import sbt._
 
 object Dependencies {
-  val attoCore = "org.tpolecat" %% "atto-core" % "0.7.0"
-  val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.0"
+  val attoCore = "org.tpolecat" %% "atto-core" % "0.7.2"
+  val betterFiles = "com.github.pathikrit" %% "better-files" % "3.8.0"
   val betterMonadicFor = "com.olegpy" %% "better-monadic-for" % "0.3.1"
   val caseApp = "com.github.alexarchambault" %% "case-app" % "2.0.0-M16"
   val catsEffect = "org.typelevel" %% "cats-effect" % "2.1.3"
