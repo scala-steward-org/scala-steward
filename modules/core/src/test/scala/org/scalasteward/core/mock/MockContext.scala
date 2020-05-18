@@ -8,6 +8,7 @@ import org.scalasteward.core.TestInstances.ioContextShift
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.{Config, SupportedVCS}
 import org.scalasteward.core.buildsystem.BuildSystemDispatcher
+import org.scalasteward.core.buildsystem.maven.MavenAlg
 import org.scalasteward.core.buildsystem.sbt.SbtAlg
 import org.scalasteward.core.coursier.{CoursierAlg, VersionsCache}
 import org.scalasteward.core.edit.EditAlg
@@ -77,6 +78,7 @@ object MockContext {
   implicit val groupMigrations: GroupMigrations =
     GroupMigrations.create[MockEff].runA(MockState.empty).unsafeRunSync()
   implicit val updateAlg: UpdateAlg[MockEff] = new UpdateAlg[MockEff]
+  implicit val mavenAlg: MavenAlg[MockEff] = MavenAlg.create
   implicit val sbtAlg: SbtAlg[MockEff] = SbtAlg.create
   implicit val buildSystemDispatcher: BuildSystemDispatcher[MockEff] = BuildSystemDispatcher.create
   implicit val editAlg: EditAlg[MockEff] = new EditAlg[MockEff]

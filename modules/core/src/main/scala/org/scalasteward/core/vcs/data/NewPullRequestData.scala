@@ -135,16 +135,25 @@ object NewPullRequestData {
 
   def migrationNote(migrations: List[Migration]): (Option[String], Option[Details]) =
     if (migrations.isEmpty) (None, None)
-    else
+    else {
+      val ruleList =
+        migrations.flatMap(_.rewriteRules.toList).map(rule => s"* $rule").mkString("\n")
+      val docList = migrations.flatMap(_.doc).map(uri => s"* $uri").mkString("\n")
+      val docSection =
+        if (docList.isEmpty)
+          ""
+        else
+          s"\n\nDocumentation:\n\n$docList"
       (
         Some("scalafix-migrations"),
         Some(
           Details(
             "Applied Migrations",
-            migrations.flatMap(_.rewriteRules.toList).map(rule => s"* $rule").mkString("\n")
+            s"$ruleList$docSection"
           )
         )
       )
+    }
 
   def semVerLabel(update: Update): Option[String] =
     for {

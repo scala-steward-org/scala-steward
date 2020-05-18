@@ -18,6 +18,7 @@ package org.scalasteward.core.buildsystem
 
 import cats.Monad
 import cats.implicits._
+import org.scalasteward.core.buildsystem.maven.MavenAlg
 import org.scalasteward.core.buildsystem.sbt.SbtAlg
 import org.scalasteward.core.data.Scope
 import org.scalasteward.core.scalafix.Migration
@@ -28,10 +29,11 @@ trait BuildSystemDispatcher[F[_]] extends BuildSystemAlg[F]
 
 object BuildSystemDispatcher {
   def create[F[_]](implicit
+      mavenAlg: MavenAlg[F],
       sbtAlg: SbtAlg[F],
       F: Monad[F]
   ): BuildSystemDispatcher[F] = {
-    val allBuildSystems = List(sbtAlg)
+    val allBuildSystems = List(sbtAlg, mavenAlg)
     val fallbackBuildSystem = sbtAlg
 
     new BuildSystemDispatcher[F] {

@@ -99,7 +99,8 @@ class NewPullRequestDataTest extends AnyFunSuite with Matchers {
       update.groupId,
       Nel.of(update.artifactId.name),
       Version("0.7.0"),
-      Nel.of("I am a rewrite rule")
+      Nel.of("I am a rewrite rule"),
+      None
     )
     val (label, appliedMigrations) = NewPullRequestData.migrationNote(List(migration))
 
@@ -109,6 +110,31 @@ class NewPullRequestDataTest extends AnyFunSuite with Matchers {
         |<summary>Applied Migrations</summary>
         |
         |* I am a rewrite rule
+        |</details>
+      """.stripMargin.trim
+  }
+
+  test("migrationNote: when artifact has migrations with docs") {
+    val update = Update.Single("com.spotify" % "scio-core" % "0.6.0", Nel.of("0.7.0"))
+    val migration = Migration(
+      update.groupId,
+      Nel.of(update.artifactId.name),
+      Version("0.7.0"),
+      Nel.of("I am a rewrite rule"),
+      Some("https://scalacenter.github.io/scalafix/")
+    )
+    val (label, appliedMigrations) = NewPullRequestData.migrationNote(List(migration))
+
+    label shouldBe Some("scalafix-migrations")
+    appliedMigrations.fold("")(_.toHtml) shouldBe
+      """<details>
+        |<summary>Applied Migrations</summary>
+        |
+        |* I am a rewrite rule
+        |
+        |Documentation:
+        |
+        |* https://scalacenter.github.io/scalafix/
         |</details>
       """.stripMargin.trim
   }

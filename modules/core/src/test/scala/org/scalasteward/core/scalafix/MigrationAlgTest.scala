@@ -18,7 +18,8 @@ class MigrationAlgTest extends AnyFunSuite with Matchers {
          |    groupId: "org.ice.cream",
          |    artifactIds: ["yumyum-.*"],
          |    newVersion: "1.0.0",
-         |    rewriteRules: ["awesome rewrite rule"]
+         |    rewriteRules: ["awesome rewrite rule"],
+         |    doc: "https://scalacenter.github.io/scalafix/"
          |  }
          |]""".stripMargin
     val initialState = MockState.empty.add(extraFile, content)
@@ -26,12 +27,15 @@ class MigrationAlgTest extends AnyFunSuite with Matchers {
       MigrationAlg.loadMigrations[MockEff](Some(extraFile)).runA(initialState).unsafeRunSync
 
     migrations.size should be > 1
-    migrations should contain oneElementOf List(
-      Migration(
-        GroupId("org.ice.cream"),
-        Nel.of("yumyum-.*"),
-        Version("1.0.0"),
-        Nel.of("awesome rewrite rule")
+    (migrations should contain).oneElementOf(
+      List(
+        Migration(
+          GroupId("org.ice.cream"),
+          Nel.of("yumyum-.*"),
+          Version("1.0.0"),
+          Nel.of("awesome rewrite rule"),
+          Some("https://scalacenter.github.io/scalafix/")
+        )
       )
     )
   }
@@ -56,7 +60,8 @@ class MigrationAlgTest extends AnyFunSuite with Matchers {
         GroupId("org.ice.cream"),
         Nel.of("yumyum-.*"),
         Version("1.0.0"),
-        Nel.of("awesome rewrite rule")
+        Nel.of("awesome rewrite rule"),
+        None
       )
     )
   }
@@ -78,6 +83,6 @@ class MigrationAlgTest extends AnyFunSuite with Matchers {
   test("loadMigrations without extra file") {
     val migrations =
       MigrationAlg.loadMigrations[MockEff](None).runA(MockState.empty).unsafeRunSync()
-    migrations.size shouldBe 10
+    migrations.size shouldBe 11
   }
 }

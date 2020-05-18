@@ -14,22 +14,9 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.scalafix
+package org.scalasteward.core.buildsystem.maven
 
-import io.circe.Decoder
-import io.circe.generic.semiauto._
-import org.scalasteward.core.data.{GroupId, Version}
-import org.scalasteward.core.util.Nel
-
-final case class Migration(
-    groupId: GroupId,
-    artifactIds: Nel[String],
-    newVersion: Version,
-    rewriteRules: Nel[String],
-    doc: Option[String]
-)
-
-object Migration {
-  implicit val migrationDecoder: Decoder[Migration] =
-    deriveDecoder[Migration]
+object command {
+  val listDependencies = "dependency:list"
+  val listRepositories = "dependency:list-repositories"
 }

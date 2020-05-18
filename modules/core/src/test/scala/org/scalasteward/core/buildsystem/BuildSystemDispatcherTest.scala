@@ -17,6 +17,7 @@ class BuildSystemDispatcherTest extends AnyFunSuite with Matchers {
     state shouldBe initial.copy(commands =
       Vector(
         List("test", "-f", s"$repoDir/build.sbt"),
+        List("test", "-f", s"$repoDir/pom.xml"),
         List(
           "TEST_VAR=GREAT",
           "ANOTHER_TEST_VAR=ALSO_GREAT",
