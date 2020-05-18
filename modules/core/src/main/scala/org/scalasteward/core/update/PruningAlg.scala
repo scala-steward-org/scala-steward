@@ -143,7 +143,7 @@ final class PruningAlg[F[_]](implicit
       }.separate
       val isOutdated = outdatedStates.nonEmpty
       val message = if (isOutdated) {
-        val states = util.string.indentLines(outdatedStates.map(_.toString).sorted)
+        val states = util.string.indentLines(outdatedStates.map(UpdateState.show).sorted)
         s"${repo.show} is outdated:\n" + states
       } else
         s"${repo.show} is up-to-date"

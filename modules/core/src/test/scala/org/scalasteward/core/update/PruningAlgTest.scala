@@ -295,7 +295,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
         (None, "Found 1 update:\n  org.scala-lang:scala-library : 2.12.10 -> 2.12.11"),
         (
           None,
-          "fthomas/scalafix-test is outdated:\n  DependencyOutdated(CrossDependency(NonEmptyList(Dependency(org.scala-lang,ArtifactId(scala-library,None),2.12.10,None,None,None))),Single(CrossDependency(NonEmptyList(Dependency(org.scala-lang,ArtifactId(scala-library,None),2.12.10,None,None,None))),NonEmptyList(2.12.11),None))"
+          "fthomas/scalafix-test is outdated:\n  new version: org.scala-lang:scala-library : 2.12.10 -> 2.12.11"
         )
       )
     )
