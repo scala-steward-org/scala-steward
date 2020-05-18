@@ -13,3 +13,4 @@ If you want Scala Steward to keep your project up-to-date, please add it there.
 - fthomas/scala-steward
 - fthomas/singleton-ops
 - fthomas/status-page
+- scala-steward-org/test-repo-2

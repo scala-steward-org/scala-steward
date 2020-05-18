@@ -28,6 +28,7 @@ lazy val core = myCrossProject("core")
     libraryDependencies ++= Seq(
       compilerPlugin(Dependencies.betterMonadicFor),
       compilerPlugin(Dependencies.kindProjector.cross(CrossVersion.full)),
+      Dependencies.attoCore,
       Dependencies.betterFiles,
       Dependencies.caseApp,
       Dependencies.catsEffect,
@@ -185,7 +186,7 @@ lazy val dockerSettings = Def.settings(
       Cmd("USER", "root"),
       Cmd(
         "RUN",
-        s"apk --no-cache add bash git ca-certificates && wget $sbtUrl && tar -xf $sbtTgz && rm -f $sbtTgz"
+        s"apk --no-cache add bash git ca-certificates maven && wget $sbtUrl && tar -xf $sbtTgz && rm -f $sbtTgz"
       )
     )
   },
@@ -230,6 +231,7 @@ moduleRootPkg := rootPkg
 lazy val runSteward = taskKey[Unit]("")
 runSteward := Def.taskDyn {
   val home = System.getenv("HOME")
+  val myJavaHome = System.getenv("JAVA_HOME")
   val projectDir = (LocalRootProject / baseDirectory).value
   val args = Seq(
     Seq("--workspace", s"$projectDir/workspace"),
@@ -238,9 +240,11 @@ runSteward := Def.taskDyn {
     Seq("--vcs-login", projectName),
     Seq("--git-ask-pass", s"$home/.github/askpass/$projectName.sh"),
     Seq("--whitelist", s"$home/.cache/coursier"),
-    Seq("--whitelist", s"$home/.coursier"),
+    Seq("--whitelist", s"$home/.cache/JNA"),
     Seq("--whitelist", s"$home/.ivy2"),
-    Seq("--whitelist", s"$home/.sbt")
+    Seq("--whitelist", s"$home/.sbt"),
+    Seq("--whitelist", myJavaHome),
+    Seq("--read-only", myJavaHome)
   ).flatten.mkString(" ", " ", "")
   (core.jvm / Compile / run).toTask(args)
 }.value
