@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.buildsystem.maven
+package org.scalasteward.core.buildtool.maven
 
 import atto.Atto._
 import atto._

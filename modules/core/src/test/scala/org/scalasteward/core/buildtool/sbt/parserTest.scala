@@ -1,8 +1,8 @@
-package org.scalasteward.core.buildsystem.sbt
+package org.scalasteward.core.buildtool.sbt
 
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.buildsystem.sbt.data.SbtVersion
-import org.scalasteward.core.buildsystem.sbt.parser._
+import org.scalasteward.core.buildtool.sbt.data.SbtVersion
+import org.scalasteward.core.buildtool.sbt.parser._
 import org.scalasteward.core.data.Resolver.{Credentials, IvyRepository, MavenRepository}
 import org.scalasteward.core.data.{ArtifactId, Scope}
 import org.scalatest.funsuite.AnyFunSuite

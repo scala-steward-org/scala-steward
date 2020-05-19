@@ -1,4 +1,4 @@
-package org.scalasteward.core.buildsystem.maven
+package org.scalasteward.core.buildtool.maven
 
 import better.files.File
 import org.scalasteward.core.mock.MockContext._

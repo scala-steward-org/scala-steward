@@ -14,9 +14,22 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.buildsystem.maven
+package org.scalasteward.core.buildtool.sbt.data
 
-object command {
-  val listDependencies = "dependency:list"
-  val listRepositories = "dependency:list-repositories"
+import cats.Order
+import cats.implicits._
+import io.circe.Codec
+import io.circe.generic.extras.semiauto._
+import org.scalasteward.core.data.Version
+
+final case class SbtVersion(value: String) {
+  def toVersion: Version = Version(value)
+}
+
+object SbtVersion {
+  implicit val sbtVersionCodec: Codec[SbtVersion] =
+    deriveUnwrappedCodec
+
+  implicit val sbtVersionOrder: Order[SbtVersion] =
+    Order[String].contramap(_.value)
 }

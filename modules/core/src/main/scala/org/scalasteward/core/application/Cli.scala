@@ -24,7 +24,6 @@ import org.http4s.Uri
 import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Cli._
 import org.scalasteward.core.util.ApplicativeThrowable
-
 import scala.concurrent.duration._
 
 final class Cli[F[_]](implicit F: ApplicativeThrowable[F]) {

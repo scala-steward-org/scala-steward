@@ -24,7 +24,6 @@ import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.git.Author
 import org.scalasteward.core.util
 import org.scalasteward.core.vcs.data.AuthenticatedUser
-
 import scala.concurrent.duration.FiniteDuration
 import scala.sys.process.Process
 

@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.buildsystem
+package org.scalasteward.core.buildtool
 
 import cats.Functor
 import cats.implicits._
-import org.scalasteward.core.BuildInfo
+import org.scalasteward.core.buildtool.sbt.data.SbtVersion
 import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId, Version}
 import org.scalasteward.core.io.{FileAlg, FileData}
-import org.scalasteward.core.buildsystem.sbt.data.SbtVersion
 
 package object sbt {
   val defaultScalaBinaryVersion: String =
-    BuildInfo.scalaBinaryVersion
+    org.scalasteward.core.BuildInfo.scalaBinaryVersion
 
   def sbtDependency(sbtVersion: SbtVersion): Option[Dependency] =
     if (sbtVersion.toVersion >= Version("1.0.0"))

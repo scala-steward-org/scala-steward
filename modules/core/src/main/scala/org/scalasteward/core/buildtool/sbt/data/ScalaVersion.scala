@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.buildsystem.sbt.data
+package org.scalasteward.core.buildtool.sbt.data
 
 import cats.Order
 import cats.implicits._

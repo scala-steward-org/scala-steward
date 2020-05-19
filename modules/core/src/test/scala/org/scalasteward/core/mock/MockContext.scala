@@ -7,9 +7,9 @@ import org.http4s.Uri
 import org.scalasteward.core.TestInstances.ioContextShift
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.{Config, SupportedVCS}
-import org.scalasteward.core.buildsystem.BuildSystemDispatcher
-import org.scalasteward.core.buildsystem.maven.MavenAlg
-import org.scalasteward.core.buildsystem.sbt.SbtAlg
+import org.scalasteward.core.buildtool.BuildToolDispatcher
+import org.scalasteward.core.buildtool.maven.MavenAlg
+import org.scalasteward.core.buildtool.sbt.SbtAlg
 import org.scalasteward.core.coursier.{CoursierAlg, VersionsCache}
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Author, GitAlg}
@@ -80,7 +80,7 @@ object MockContext {
   implicit val updateAlg: UpdateAlg[MockEff] = new UpdateAlg[MockEff]
   implicit val mavenAlg: MavenAlg[MockEff] = MavenAlg.create
   implicit val sbtAlg: SbtAlg[MockEff] = SbtAlg.create
-  implicit val buildSystemDispatcher: BuildSystemDispatcher[MockEff] = BuildSystemDispatcher.create
+  implicit val buildToolDispatcher: BuildToolDispatcher[MockEff] = BuildToolDispatcher.create
   implicit val editAlg: EditAlg[MockEff] = new EditAlg[MockEff]
   implicit val repoConfigAlg: RepoConfigAlg[MockEff] = new RepoConfigAlg[MockEff]
   implicit val pullRequestRepository: PullRequestRepository[MockEff] =

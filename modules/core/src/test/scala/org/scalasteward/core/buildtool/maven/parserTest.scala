@@ -1,4 +1,4 @@
-package org.scalasteward.core.buildsystem.maven
+package org.scalasteward.core.buildtool.maven
 
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.ArtifactId

@@ -1,15 +1,15 @@
 package org.scalasteward.core.git
 
+import org.scalacheck.{Arbitrary, Gen}
+import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.data.Update
+import org.scalasteward.core.data.Update.Single
+import org.scalasteward.core.repoconfig.CommitsConfig
+import org.scalasteward.core.update.show
+import org.scalasteward.core.util.Nel
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalasteward.core.TestSyntax._
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import org.scalacheck.{Arbitrary, Gen}
-import org.scalasteward.core.data.Update.Single
-import org.scalasteward.core.data.Update
-import org.scalasteward.core.util.Nel
-import org.scalasteward.core.update.show
-import org.scalasteward.core.repoconfig.CommitsConfig
 
 class gitTest extends AnyFunSuite with Matchers with ScalaCheckPropertyChecks {
   implicit val updateArbitrary: Arbitrary[Update] = Arbitrary(for {

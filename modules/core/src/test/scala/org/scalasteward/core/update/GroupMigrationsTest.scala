@@ -4,10 +4,10 @@ import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.{ArtifactId, GroupId, Update}
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.update.GroupMigrations.GroupIdChange
 import org.scalasteward.core.util.Nel
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalasteward.core.update.GroupMigrations.GroupIdChange
 
 class GroupMigrationsTest extends AnyFunSuite with Matchers {
 

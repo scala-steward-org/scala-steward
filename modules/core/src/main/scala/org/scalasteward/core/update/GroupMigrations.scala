@@ -17,14 +17,13 @@
 package org.scalasteward.core.update
 
 import cats.implicits._
-import org.scalasteward.core.data._
-import org.scalasteward.core.application.Config
-import org.scalasteward.core.io.FileAlg
-import org.scalasteward.core.util.Nel
-import org.scalasteward.core.util.MonadThrowable
-import io.circe.config.parser
 import io.circe.Decoder
+import io.circe.config.parser
 import io.circe.generic.extras.{semiauto, Configuration}
+import org.scalasteward.core.application.Config
+import org.scalasteward.core.data._
+import org.scalasteward.core.io.FileAlg
+import org.scalasteward.core.util.{MonadThrowable, Nel}
 
 trait GroupMigrations {
   def findUpdateWithNewerGroupId(dependency: Dependency): Option[Update.Single]
