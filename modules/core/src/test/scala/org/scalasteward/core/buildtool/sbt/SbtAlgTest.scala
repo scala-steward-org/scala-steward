@@ -1,7 +1,7 @@
-package org.scalasteward.core.buildsystem.sbt
+package org.scalasteward.core.buildtool.sbt
 
 import cats.data.StateT
-import org.scalasteward.core.buildsystem.sbt.command._
+import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.data.{GroupId, Version}
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockState

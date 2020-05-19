@@ -14,17 +14,9 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.buildsystem
+package org.scalasteward.core.buildtool.maven
 
-import org.scalasteward.core.data.Scope
-import org.scalasteward.core.scalafix.Migration
-import org.scalasteward.core.util.Nel
-import org.scalasteward.core.vcs.data.Repo
-
-trait BuildSystemAlg[F[_]] {
-  def containsBuild(repo: Repo): F[Boolean]
-
-  def getDependencies(repo: Repo): F[List[Scope.Dependencies]]
-
-  def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit]
+object command {
+  val listDependencies = "dependency:list"
+  val listRepositories = "dependency:list-repositories"
 }

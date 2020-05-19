@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.buildsystem.sbt
+package org.scalasteward.core.buildtool.sbt
 
 import cats.implicits._
 import io.circe.Decoder
 import io.circe.parser._
-import org.scalasteward.core.buildsystem.sbt.data.SbtVersion
+import org.scalasteward.core.buildtool.sbt.data.SbtVersion
 import org.scalasteward.core.data._
 
 object parser {

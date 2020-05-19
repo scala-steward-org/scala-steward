@@ -14,41 +14,41 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.buildsystem
+package org.scalasteward.core.buildtool
 
 import cats.Monad
 import cats.implicits._
-import org.scalasteward.core.buildsystem.maven.MavenAlg
-import org.scalasteward.core.buildsystem.sbt.SbtAlg
+import org.scalasteward.core.buildtool.maven.MavenAlg
+import org.scalasteward.core.buildtool.sbt.SbtAlg
 import org.scalasteward.core.data.Scope
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
-trait BuildSystemDispatcher[F[_]] extends BuildSystemAlg[F]
+trait BuildToolDispatcher[F[_]] extends BuildToolAlg[F]
 
-object BuildSystemDispatcher {
+object BuildToolDispatcher {
   def create[F[_]](implicit
       mavenAlg: MavenAlg[F],
       sbtAlg: SbtAlg[F],
       F: Monad[F]
-  ): BuildSystemDispatcher[F] = {
-    val allBuildSystems = List(sbtAlg, mavenAlg)
-    val fallbackBuildSystem = sbtAlg
+  ): BuildToolDispatcher[F] = {
+    val allBuildTools = List(sbtAlg, mavenAlg)
+    val fallbackBuildTool = sbtAlg
 
-    new BuildSystemDispatcher[F] {
+    new BuildToolDispatcher[F] {
       override def containsBuild(repo: Repo): F[Boolean] =
-        allBuildSystems.existsM(_.containsBuild(repo))
+        allBuildTools.existsM(_.containsBuild(repo))
 
       override def getDependencies(repo: Repo): F[List[Scope.Dependencies]] =
-        foundBuildSystems(repo).flatMap(_.flatTraverse(_.getDependencies(repo)))
+        foundBuildTools(repo).flatMap(_.flatTraverse(_.getDependencies(repo)))
 
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
-        foundBuildSystems(repo).flatMap(_.traverse_(_.runMigrations(repo, migrations)))
+        foundBuildTools(repo).flatMap(_.traverse_(_.runMigrations(repo, migrations)))
 
-      private def foundBuildSystems(repo: Repo): F[List[BuildSystemAlg[F]]] =
-        allBuildSystems.filterA(_.containsBuild(repo)).map {
-          case Nil  => List(fallbackBuildSystem)
+      private def foundBuildTools(repo: Repo): F[List[BuildToolAlg[F]]] =
+        allBuildTools.filterA(_.containsBuild(repo)).map {
+          case Nil  => List(fallbackBuildTool)
           case list => list
         }
     }

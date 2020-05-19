@@ -20,7 +20,7 @@ import cats.Parallel
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.buildsystem.BuildSystemDispatcher
+import org.scalasteward.core.buildtool.BuildToolDispatcher
 import org.scalasteward.core.data.{Dependency, DependencyInfo}
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.repoconfig.RepoConfigAlg
@@ -30,7 +30,7 @@ import org.scalasteward.core.vcs.data.{Repo, RepoOut}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
 
 final class RepoCacheAlg[F[_]](implicit
-    buildSystemDispatcher: BuildSystemDispatcher[F],
+    buildToolDispatcher: BuildToolDispatcher[F],
     config: Config,
     gitAlg: GitAlg[F],
     logger: Logger[F],
@@ -78,7 +78,7 @@ final class RepoCacheAlg[F[_]](implicit
     for {
       branch <- gitAlg.currentBranch(repo)
       latestSha1 <- gitAlg.latestSha1(repo, branch)
-      dependencies <- buildSystemDispatcher.getDependencies(repo)
+      dependencies <- buildToolDispatcher.getDependencies(repo)
       dependencyInfos <-
         dependencies
           .traverse(_.traverse(_.traverse(gatherDependencyInfo(repo, _))))

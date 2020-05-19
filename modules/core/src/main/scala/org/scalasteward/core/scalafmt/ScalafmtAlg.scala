@@ -19,7 +19,7 @@ package org.scalasteward.core.scalafmt
 import cats.data.Nested
 import cats.implicits._
 import cats.{Functor, Monad}
-import org.scalasteward.core.buildsystem.sbt.defaultScalaBinaryVersion
+import org.scalasteward.core.buildtool.sbt.defaultScalaBinaryVersion
 import org.scalasteward.core.data.{Dependency, Version}
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.vcs.data.Repo

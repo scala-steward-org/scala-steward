@@ -22,8 +22,7 @@ import io.circe.{Decoder, Encoder}
 import org.http4s.Method.{GET, POST}
 import org.http4s.circe.{jsonEncoderOf, jsonOf}
 import org.http4s.client.Client
-import org.http4s.{DecodeFailure, Headers, HttpVersion, Method, Request, Response, Status, Uri}
-
+import org.http4s._
 import scala.util.control.NoStackTrace
 
 final class HttpJsonClient[F[_]: Sync](implicit

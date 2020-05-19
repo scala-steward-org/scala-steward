@@ -22,7 +22,7 @@ import cats.effect.ExitCode
 import cats.implicits._
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
-import org.scalasteward.core.buildsystem.sbt.SbtAlg
+import org.scalasteward.core.buildtool.sbt.SbtAlg
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.NurtureAlg

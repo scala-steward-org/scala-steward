@@ -14,14 +14,17 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.buildsystem.sbt
+package org.scalasteward.core.buildtool
 
-object command {
-  val setOffline = "set offline := true"
-  val stewardDependencies = "stewardDependencies"
-  val crossStewardDependencies = s"+ $stewardDependencies"
-  val reloadPlugins = "reload plugins"
-  val scalafix = "scalafix"
-  val testScalafix = "test:scalafix"
-  val scalafixEnable = "scalafixEnable"
+import org.scalasteward.core.data.Scope
+import org.scalasteward.core.scalafix.Migration
+import org.scalasteward.core.util.Nel
+import org.scalasteward.core.vcs.data.Repo
+
+trait BuildToolAlg[F[_]] {
+  def containsBuild(repo: Repo): F[Boolean]
+
+  def getDependencies(repo: Repo): F[List[Scope.Dependencies]]
+
+  def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit]
 }

@@ -16,15 +16,13 @@
 
 package org.scalasteward.core.update
 
-import cats.Monad
+import cats.{Eval, Monad}
 import cats.implicits._
 import org.scalasteward.core.coursier.VersionsCache
 import org.scalasteward.core.data._
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.Nel
 import scala.concurrent.duration.FiniteDuration
-import org.scalasteward.core.update.GroupMigrations
-import cats.Eval
 
 final class UpdateAlg[F[_]](implicit
     filterAlg: FilterAlg[F],

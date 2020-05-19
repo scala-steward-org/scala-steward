@@ -20,7 +20,6 @@ import cats.implicits._
 import io.circe.Encoder
 import io.circe.generic.semiauto._
 import org.http4s.Uri
-import org.scalasteward.core.BuildInfo
 import org.scalasteward.core.data.{GroupId, ReleaseRelatedUrl, SemVer, Update}
 import org.scalasteward.core.git
 import org.scalasteward.core.git.Branch
@@ -59,7 +58,7 @@ object NewPullRequestData {
        |
        |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.
        |
-       |Configure Scala Steward for your repository with a [`${RepoConfigAlg.repoConfigBasename}`](https://github.com/fthomas/scala-steward/blob/${BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
+       |Configure Scala Steward for your repository with a [`${RepoConfigAlg.repoConfigBasename}`](https://github.com/fthomas/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
        |
        |Have a fantastic day writing Scala!
        |

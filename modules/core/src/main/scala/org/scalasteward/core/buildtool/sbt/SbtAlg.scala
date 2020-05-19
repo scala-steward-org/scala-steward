@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.buildsystem.sbt
+package org.scalasteward.core.buildtool.sbt
 
 import better.files.File
 import cats.data.OptionT
@@ -22,9 +22,9 @@ import cats.implicits._
 import cats.{Functor, Monad}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.buildsystem.BuildSystemAlg
-import org.scalasteward.core.buildsystem.sbt.command._
-import org.scalasteward.core.buildsystem.sbt.data.SbtVersion
+import org.scalasteward.core.buildtool.BuildToolAlg
+import org.scalasteward.core.buildtool.sbt.command._
+import org.scalasteward.core.buildtool.sbt.data.SbtVersion
 import org.scalasteward.core.data.{Dependency, Resolver, Scope}
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.scalafix.Migration
@@ -32,7 +32,7 @@ import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
-trait SbtAlg[F[_]] extends BuildSystemAlg[F] {
+trait SbtAlg[F[_]] extends BuildToolAlg[F] {
   def addGlobalPluginTemporarily[A](plugin: FileData)(fa: F[A]): F[A]
 
   def addGlobalPlugins[A](fa: F[A]): F[A]

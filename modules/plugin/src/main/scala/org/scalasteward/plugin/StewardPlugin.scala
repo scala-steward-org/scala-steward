@@ -18,9 +18,8 @@ package org.scalasteward.plugin
 
 import sbt.Keys._
 import sbt._
-
-import scala.util.matching.Regex
 import scala.util.Try
+import scala.util.matching.Regex
 
 object StewardPlugin extends AutoPlugin {
   override def trigger: PluginTrigger = allRequirements

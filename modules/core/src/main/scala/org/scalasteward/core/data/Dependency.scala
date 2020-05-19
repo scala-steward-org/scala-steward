@@ -20,7 +20,7 @@ import cats.Order
 import cats.implicits._
 import io.circe.Codec
 import io.circe.generic.semiauto._
-import org.scalasteward.core.buildsystem.sbt.data.{SbtVersion, ScalaVersion}
+import org.scalasteward.core.buildtool.sbt.data.{SbtVersion, ScalaVersion}
 
 final case class Dependency(
     groupId: GroupId,

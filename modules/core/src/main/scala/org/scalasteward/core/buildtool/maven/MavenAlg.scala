@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.buildsystem.maven
+package org.scalasteward.core.buildtool.maven
 
 import better.files.File
 import cats.Monad
 import cats.implicits._
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.buildsystem.BuildSystemAlg
+import org.scalasteward.core.buildtool.BuildToolAlg
 import org.scalasteward.core.data._
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
-trait MavenAlg[F[_]] extends BuildSystemAlg[F]
+trait MavenAlg[F[_]] extends BuildToolAlg[F]
 
 object MavenAlg {
   def create[F[_]](implicit
