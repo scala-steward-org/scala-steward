@@ -106,3 +106,8 @@ docker run -v $PWD:/opt/scala-steward \
 `BITBUCKET_USERNAME=<myuser> BITBUCKET_PASSWORD=<mypass> ./run.sh`
 
 [migrations]: https://github.com/fthomas/scala-steward/blob/master/docs/scalafix-migrations.md
+
+### Running On-premise (GitHub Enterprise)
+
+There is an article on how they run Scala Steward on-premise at Avast:
+* [Running Scala Steward On-premise](https://engineering.avast.io/running-scala-steward-on-premise)
