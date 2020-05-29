@@ -39,7 +39,7 @@ object StewardPlugin extends AutoPlugin {
         val buildRoot = baseDirectory.in(ThisBuild).value
         val scalaBinaryVersionValue = scalaBinaryVersion.value
         val scalaVersionValue = scalaVersion.value
-        val sbtCredentials = credentials.value
+        val sbtCredentials = allCredentials.value
 
         val libraryDeps = libraryDependencies.value
           .filter(isDefinedInBuildFiles(_, sourcePositions, buildRoot))
