@@ -62,7 +62,7 @@ final class StewardAlg[F[_]](implicit
 
   private def readRepos(reposFile: File): F[List[Repo]] =
     fileAlg.readFile(reposFile).map { maybeContent =>
-      val regex = """-\s+(.+)/([^/]+)#([^/]+)""".r
+      val regex = """-\s+(.+)/([^#\n]+)(?:#(.+))?""".r
       val content = maybeContent.getOrElse("")
       content.linesIterator.collect {
         case regex(owner, repo)         => Repo(owner.trim, repo.trim, branch = None)
