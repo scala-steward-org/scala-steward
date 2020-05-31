@@ -34,7 +34,7 @@ final case class RepoOut(
     parent.fold(F.raiseError[RepoOut](new Throwable(s"repo $name has no parent")))(F.pure)
 
   def repo: Repo =
-    Repo(owner.login, name)
+    Repo(owner.login, name, None)
 }
 
 object RepoOut {
