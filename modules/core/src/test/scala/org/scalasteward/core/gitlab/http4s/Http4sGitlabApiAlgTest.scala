@@ -48,8 +48,8 @@ class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
     new Http4sGitLabApiAlg[IO](config.vcsApiHost, user, _ => IO.pure, doNotFork = false)
 
   val data = UpdateData(
-    Repo("foo", "bar"),
-    Repo("scala-steward", "bar"),
+    Repo("foo", "bar", None),
+    Repo("scala-steward", "bar", None),
     RepoConfig(),
     Update.Single("ch.qos.logback" % "logback-classic" % "1.2.0", Nel.of("1.2.3")),
     Branch("master"),
@@ -57,12 +57,12 @@ class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
     Branch("update/logback-classic-1.2.3")
   )
   val newPRData =
-    NewPullRequestData.from(data, "scala-steward:update/logback-classic-1.2.3")
+    NewPullRequestData.from(data, "scala-steward:master#update/logback-classic-1.2.3")
 
   test("createPullRequest") {
     val prOut =
       gitlabApiAlg
-        .createPullRequest(Repo("foo", "bar"), newPRData)
+        .createPullRequest(Repo("foo", "bar", None), newPRData)
         .unsafeRunSync()
 
     prOut shouldBe PullRequestOut(
@@ -77,7 +77,7 @@ class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
       new Http4sGitLabApiAlg[IO](config.vcsApiHost, user, _ => IO.pure, doNotFork = true)
     val prOut =
       gitlabApiAlgNoFork
-        .createPullRequest(Repo("foo", "bar"), newPRData)
+        .createPullRequest(Repo("foo", "bar", None), newPRData)
         .unsafeRunSync()
 
     prOut shouldBe PullRequestOut(

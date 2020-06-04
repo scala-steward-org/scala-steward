@@ -31,7 +31,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
   }
 
   test("getDependenciesAndResolvers") {
-    val repo = Repo("typelevel", "cats")
+    val repo = Repo("typelevel", "cats", None)
     val repoDir = config.workspace / repo.show
     val files = Map(
       repoDir / "project" / "build.properties" -> "sbt.version=1.2.6",
@@ -60,7 +60,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
   }
 
   test("runMigrations") {
-    val repo = Repo("fthomas", "scala-steward")
+    val repo = Repo("fthomas", "scala-steward", None)
     val repoDir = config.workspace / repo.show
     val migrations = Nel.of(
       Migration(

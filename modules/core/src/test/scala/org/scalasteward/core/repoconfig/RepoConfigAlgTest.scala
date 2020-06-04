@@ -13,7 +13,7 @@ import org.scalatest.matchers.should.Matchers
 
 class RepoConfigAlgTest extends AnyFunSuite with Matchers {
   test("config with all fields set") {
-    val repo = Repo("fthomas", "scala-steward")
+    val repo = Repo("fthomas", "scala-steward", None)
     val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
     val content =
       """|updates.allow  = [ { groupId = "eu.timepit"} ]
@@ -131,7 +131,7 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
   }
 
   test("malformed config") {
-    val repo = Repo("fthomas", "scala-steward")
+    val repo = Repo("fthomas", "scala-steward", None)
     val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
     val initialState = MockState.empty.add(configFile, """updates.ignore = [ "foo """)
     val (state, config) =

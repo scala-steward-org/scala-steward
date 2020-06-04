@@ -10,7 +10,7 @@ class UrlTest extends AnyFunSuite with Matchers {
   val url = new Url(uri"https://api.github.com")
   import url._
 
-  val repo = Repo("fthomas", "refined")
+  val repo = Repo("fthomas", "refined", None)
   val branch = Branch("master")
 
   test("branches") {

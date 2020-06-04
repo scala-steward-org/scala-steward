@@ -12,7 +12,7 @@ class MavenAlgTest extends AnyFunSuite with Matchers {
   val var2 = "ANOTHER_TEST_VAR=ALSO_GREAT"
 
   test("getDependencies") {
-    val repo = Repo("namespace", "repo-name")
+    val repo = Repo("namespace", "repo-name", None)
     val repoDir = config.workspace / repo.show
     val files: Map[File, String] = Map.empty
 
