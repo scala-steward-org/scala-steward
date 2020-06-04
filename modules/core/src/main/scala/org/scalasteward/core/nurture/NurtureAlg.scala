@@ -71,7 +71,11 @@ final class NurtureAlg[F[_]](implicit
       _ <-
         gitAlg
           .cloneExists(repo)
-          .ifM(F.unit, vcsRepoAlg.clone(repo, repoOut) >> vcsRepoAlg.syncFork(repo, repoOut) >> gitAlg.checkoutBranch(repo, branch))
+          .ifM(
+            F.unit,
+            vcsRepoAlg.clone(repo, repoOut) >> vcsRepoAlg.syncFork(repo, repoOut) >> gitAlg
+              .checkoutBranch(repo, branch)
+          )
     } yield (repoOut.repo, branch)
 
   def updateDependencies(
@@ -91,7 +95,15 @@ final class NurtureAlg[F[_]](implicit
         sorted,
         update =>
           processUpdate(
-            UpdateData(repo, fork, repoConfig, update, baseBranch, baseSha1, git.branchFor(update, baseBranch))
+            UpdateData(
+              repo,
+              fork,
+              repoConfig,
+              update,
+              baseBranch,
+              baseSha1,
+              git.branchFor(update, baseBranch)
+            )
           ),
         repoConfig.updates.limit
       )
