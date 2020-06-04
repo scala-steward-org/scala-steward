@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 
 class PruningAlgTest extends AnyFunSuite with Matchers {
   test("needsAttention") {
-    val repo = Repo("fthomas", "scalafix-test")
+    val repo = Repo("fthomas", "scalafix-test", None)
     val repoCacheFile =
       config.workspace / "store/repo_cache/v1/fthomas/scalafix-test/repo_cache.json"
     val repoCacheContent =
@@ -71,7 +71,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
   }
 
   test("needsAttention: 0 updates when includeScala not specified in repo config") {
-    val repo = Repo("fthomas", "scalafix-test")
+    val repo = Repo("fthomas", "scalafix-test", None)
     val repoCacheFile =
       config.workspace / "store/repo_cache/v1/fthomas/scalafix-test/repo_cache.json"
     val repoCacheContent =
@@ -178,7 +178,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
   }
 
   test("needsAttention: update scala-library when includeScala=true in repo config") {
-    val repo = Repo("fthomas", "scalafix-test")
+    val repo = Repo("fthomas", "scalafix-test", None)
     val repoCacheFile =
       config.workspace / "store/repo_cache/v1/fthomas/scalafix-test/repo_cache.json"
     val repoCacheContent =
