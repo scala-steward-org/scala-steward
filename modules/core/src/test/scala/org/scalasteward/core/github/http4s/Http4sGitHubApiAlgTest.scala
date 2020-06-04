@@ -36,6 +36,14 @@ class Http4sGitHubApiAlgTest extends AnyFunSuite with Matchers {
           } """
         )
 
+      case GET -> Root / "repos" / "fthomas" / "base.g8" / "branches" / "selected" =>
+        Ok(
+          json""" {
+            "name": "selected",
+            "commit": { "sha": "f782cf77b421b655fd2d52e88a39943d1c5b877d" }
+          } """
+        )
+
       case POST -> Root / "repos" / "fthomas" / "base.g8" / "forks" =>
         Ok(
           json""" {
@@ -61,7 +69,7 @@ class Http4sGitHubApiAlgTest extends AnyFunSuite with Matchers {
   implicit val httpJsonClient: HttpJsonClient[IO] = new HttpJsonClient[IO]
   val gitHubApiAlg = new Http4sGitHubApiAlg[IO](config.vcsApiHost, _ => IO.pure)
 
-  val repo = Repo("fthomas", "base.g8")
+  val repo = Repo("fthomas", "base.g8", None)
 
   val parent = RepoOut(
     "base.g8",
@@ -84,6 +92,11 @@ class Http4sGitHubApiAlgTest extends AnyFunSuite with Matchers {
     CommitOut(Sha1(HexString("07eb2a203e297c8340273950e98b2cab68b560c1")))
   )
 
+  val selectedBranch = BranchOut(
+    Branch("selected"),
+    CommitOut(Sha1(HexString("f782cf77b421b655fd2d52e88a39943d1c5b877d")))
+  )
+
   test("createForkOrGetRepo") {
     val repoOut =
       gitHubApiAlg.createForkOrGetRepo(config, repo).unsafeRunSync()
@@ -96,19 +109,35 @@ class Http4sGitHubApiAlgTest extends AnyFunSuite with Matchers {
     repoOut shouldBe parent
   }
 
-  test("createForkOrGetRepoWithDefaultBranch") {
+  test("createForkOrGetRepoWithBranch") {
     val (repoOut, branchOut) =
-      gitHubApiAlg.createForkOrGetRepoWithDefaultBranch(config, repo).unsafeRunSync()
+      gitHubApiAlg.createForkOrGetRepoWithBranch(config, repo).unsafeRunSync()
     repoOut shouldBe fork
     branchOut shouldBe defaultBranch
+  }
+
+  test("createForkOrGetRepoWithBranch - selected branch") {
+    val (repoOut, branchOut) =
+      gitHubApiAlg.createForkOrGetRepoWithBranch(config, repo.copy(branch = Some(selectedBranch.name))).unsafeRunSync()
+    repoOut shouldBe fork
+    branchOut shouldBe selectedBranch
   }
 
   test("createForkOrGetRepoWithDefaultBranch without forking") {
     val (repoOut, branchOut) =
       gitHubApiAlg
-        .createForkOrGetRepoWithDefaultBranch(config.copy(doNotFork = true), repo)
+        .createForkOrGetRepoWithBranch(config.copy(doNotFork = true), repo)
         .unsafeRunSync()
     repoOut shouldBe parent
     branchOut shouldBe defaultBranch
+  }
+
+  test("createForkOrGetRepoWithBranch without forking - selected branch") {
+    val (repoOut, branchOut) =
+      gitHubApiAlg
+        .createForkOrGetRepoWithBranch(config.copy(doNotFork = true), repo.copy(branch = Some(selectedBranch.name)))
+        .unsafeRunSync()
+    repoOut shouldBe parent
+    branchOut shouldBe selectedBranch
   }
 }
