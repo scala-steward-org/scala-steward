@@ -67,12 +67,12 @@ final class NurtureAlg[F[_]](implicit
     for {
       _ <- logger.info(s"Clone and synchronize ${repo.show}")
       repoOut <- vcsApiAlg.createForkOrGetRepo(config, repo)
+      branch <- repo.branch.map(F.pure).getOrElse(vcsRepoAlg.defaultBranch(repoOut))
       _ <-
         gitAlg
           .cloneExists(repo)
-          .ifM(F.unit, vcsRepoAlg.clone(repo, repoOut) >> vcsRepoAlg.syncFork(repo, repoOut))
-      defaultBranch <- vcsRepoAlg.defaultBranch(repoOut)
-    } yield (repoOut.repo, defaultBranch)
+          .ifM(F.unit, vcsRepoAlg.clone(repo, repoOut) >> vcsRepoAlg.syncFork(repo, repoOut) >> gitAlg.checkoutBranch(repo, branch))
+    } yield (repoOut.repo, branch)
 
   def updateDependencies(
       repo: Repo,
@@ -85,12 +85,13 @@ final class NurtureAlg[F[_]](implicit
       grouped = Update.groupByGroupId(updates)
       sorted = grouped.sortBy(migrationAlg.findMigrations(_).size)
       _ <- logger.info(util.logger.showUpdates(sorted))
+      _ <- gitAlg.checkoutBranch(repo, baseBranch)
       baseSha1 <- gitAlg.latestSha1(repo, baseBranch)
       _ <- NurtureAlg.processUpdates(
         sorted,
         update =>
           processUpdate(
-            UpdateData(repo, fork, repoConfig, update, baseBranch, baseSha1, git.branchFor(update))
+            UpdateData(repo, fork, repoConfig, update, baseBranch, baseSha1, git.branchFor(update, baseBranch))
           ),
         repoConfig.updates.limit
       )
@@ -99,7 +100,7 @@ final class NurtureAlg[F[_]](implicit
   def processUpdate(data: UpdateData): F[ProcessResult] =
     for {
       _ <- logger.info(s"Process update ${data.update.show}")
-      head = vcs.listingBranch(config.vcsType, data.fork, data.update)
+      head = vcs.listingBranch(config.vcsType, data.fork, data.update, data.baseBranch)
       pullRequests <- vcsApiAlg.listPullRequests(data.repo, head, data.baseBranch)
       result <- pullRequests.headOption match {
         case Some(pr) if pr.isClosed =>
@@ -160,7 +161,7 @@ final class NurtureAlg[F[_]](implicit
         existingArtifactUrlsMap
           .get(data.update.mainArtifactId)
           .traverse(vcsExtraAlg.getReleaseRelatedUrls(_, data.update))
-      branchName = vcs.createBranch(config.vcsType, data.fork, data.update)
+      branchName = vcs.createBranch(config.vcsType, data.fork, data.update, data.baseBranch)
       migrations = migrationAlg.findMigrations(data.update)
       requestData = NewPullRequestData.from(
         data,
