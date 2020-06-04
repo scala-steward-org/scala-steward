@@ -38,5 +38,5 @@ object Repo {
   }
 
   implicit val repoKeyEncoder: KeyEncoder[Repo] =
-    KeyEncoder.instance(repo => repo.owner + "/" + repo.repo)
+    KeyEncoder.instance(repo => repo.branch.map(branch => s"${repo.owner}/${repo.repo}/${branch.name}").getOrElse(s"${repo.owner}/${repo.repo}"))
 }

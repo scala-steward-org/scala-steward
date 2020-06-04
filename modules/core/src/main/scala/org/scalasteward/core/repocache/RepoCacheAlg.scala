@@ -22,7 +22,7 @@ import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.BuildToolDispatcher
 import org.scalasteward.core.data.{Dependency, DependencyInfo}
-import org.scalasteward.core.git.GitAlg
+import org.scalasteward.core.git.{Branch, GitAlg}
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.util.MonadThrowable
 import org.scalasteward.core.util.logger.LoggerOps
@@ -48,7 +48,7 @@ final class RepoCacheAlg[F[_]](implicit
         logger.info(s"Skipping due to previous error"),
         for {
           ((repoOut, branchOut), cachedSha1) <- (
-              vcsApiAlg.createForkOrGetRepoWithDefaultBranch(config, repo),
+              vcsApiAlg.createForkOrGetRepoWithBranch(config, repo),
               repoCacheRepository.findSha1(repo)
           ).parTupled
           latestSha1 = branchOut.commit.sha
@@ -76,6 +76,7 @@ final class RepoCacheAlg[F[_]](implicit
 
   private def computeCache(repo: Repo): F[RepoCache] =
     for {
+      _ <- gitAlg.checkoutBranch(repo, repo.branch.getOrElse(Branch("master")))
       branch <- gitAlg.currentBranch(repo)
       latestSha1 <- gitAlg.latestSha1(repo, branch)
       dependencies <- buildToolDispatcher.getDependencies(repo)
