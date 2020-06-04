@@ -31,12 +31,16 @@ object Repo {
   implicit val repoKeyDecoder: KeyDecoder[Repo] = {
     val regex = s"(.+)/([^#/\n]+)(?:#(.+))?".r
     KeyDecoder.instance {
-      case regex(owner, repo, null)    => Some(Repo(owner, repo, None))
-      case regex(owner, repo, branch)  => Some(Repo(owner, repo, Some(Branch(branch))))
-      case _                           => None
+      case regex(owner, repo, null)   => Some(Repo(owner, repo, None))
+      case regex(owner, repo, branch) => Some(Repo(owner, repo, Some(Branch(branch))))
+      case _                          => None
     }
   }
 
   implicit val repoKeyEncoder: KeyEncoder[Repo] =
-    KeyEncoder.instance(repo => repo.branch.map(branch => s"${repo.owner}/${repo.repo}/${branch.name}").getOrElse(s"${repo.owner}/${repo.repo}"))
+    KeyEncoder.instance(repo =>
+      repo.branch
+        .map(branch => s"${repo.owner}/${repo.repo}/${branch.name}")
+        .getOrElse(s"${repo.owner}/${repo.repo}")
+    )
 }
