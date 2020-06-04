@@ -37,6 +37,6 @@ class RepoOutTest extends AnyFunSuite with Matchers {
   }
 
   test("repo") {
-    fork.repo shouldBe Repo("scala-steward", "base.g8-1")
+    fork.repo shouldBe Repo("scala-steward", "base.g8-1", None)
   }
 }

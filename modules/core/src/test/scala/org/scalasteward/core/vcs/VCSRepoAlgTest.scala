@@ -9,7 +9,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class VCSRepoAlgTest extends AnyFunSuite with Matchers {
-  val repo: Repo = Repo("fthomas", "datapackage")
+  val repo: Repo = Repo("fthomas", "datapackage", None)
   val repoDir: String = (config.workspace / "fthomas/datapackage").toString
   val askPass = s"GIT_ASKPASS=${config.gitAskPass}"
 
