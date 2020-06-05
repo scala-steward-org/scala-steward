@@ -196,7 +196,9 @@ class Http4sBitbucketApiAlgTest extends AnyFunSuite with Matchers {
 
   test("createForkOrGetRepoWithBranch - selected branch") {
     val (_, branchOut) =
-      bitbucketApiAlg.createForkOrGetRepoWithBranch(config, repo.copy(branch = Some(selectedBranch.name))).unsafeRunSync()
+      bitbucketApiAlg
+        .createForkOrGetRepoWithBranch(config, repo.copy(branch = Some(selectedBranch.name)))
+        .unsafeRunSync()
 
     branchOut shouldBe selectedBranch
   }
@@ -213,7 +215,10 @@ class Http4sBitbucketApiAlgTest extends AnyFunSuite with Matchers {
   test("createForkOrGetRepoWithBranch without forking - selected branch") {
     val (repoOut, branchOut) =
       bitbucketApiAlg
-        .createForkOrGetRepoWithBranch(config.copy(doNotFork = true), repo.copy(branch = Some(selectedBranch.name)))
+        .createForkOrGetRepoWithBranch(
+          config.copy(doNotFork = true),
+          repo.copy(branch = Some(selectedBranch.name))
+        )
         .unsafeRunSync()
     repoOut shouldBe parent
     branchOut shouldBe selectedBranch
@@ -237,7 +242,8 @@ class Http4sBitbucketApiAlgTest extends AnyFunSuite with Matchers {
       "selected",
       Branch("selected")
     )
-    val pr = bitbucketApiAlg.createPullRequest(repo.copy(branch = Some(selected)), data).unsafeRunSync()
+    val pr =
+      bitbucketApiAlg.createPullRequest(repo.copy(branch = Some(selected)), data).unsafeRunSync()
     pr shouldBe pullRequest
   }
 

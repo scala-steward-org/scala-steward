@@ -118,7 +118,9 @@ class Http4sGitHubApiAlgTest extends AnyFunSuite with Matchers {
 
   test("createForkOrGetRepoWithBranch - selected branch") {
     val (repoOut, branchOut) =
-      gitHubApiAlg.createForkOrGetRepoWithBranch(config, repo.copy(branch = Some(selectedBranch.name))).unsafeRunSync()
+      gitHubApiAlg
+        .createForkOrGetRepoWithBranch(config, repo.copy(branch = Some(selectedBranch.name)))
+        .unsafeRunSync()
     repoOut shouldBe fork
     branchOut shouldBe selectedBranch
   }
@@ -135,7 +137,10 @@ class Http4sGitHubApiAlgTest extends AnyFunSuite with Matchers {
   test("createForkOrGetRepoWithBranch without forking - selected branch") {
     val (repoOut, branchOut) =
       gitHubApiAlg
-        .createForkOrGetRepoWithBranch(config.copy(doNotFork = true), repo.copy(branch = Some(selectedBranch.name)))
+        .createForkOrGetRepoWithBranch(
+          config.copy(doNotFork = true),
+          repo.copy(branch = Some(selectedBranch.name))
+        )
         .unsafeRunSync()
     repoOut shouldBe parent
     branchOut shouldBe selectedBranch

@@ -13,6 +13,8 @@ class RepoTest extends AnyFunSuite with Matchers {
 
   test("decode sub group") {
     repoKeyDecoder("group1/group2/project1") shouldBe Some(Repo("group1/group2", "project1", None))
-    repoKeyDecoder("group1/group2/project1#branch") shouldBe Some(Repo("group1/group2", "project1", Some(Branch("branch"))))
+    repoKeyDecoder("group1/group2/project1#branch") shouldBe Some(
+      Repo("group1/group2", "project1", Some(Branch("branch")))
+    )
   }
 }
