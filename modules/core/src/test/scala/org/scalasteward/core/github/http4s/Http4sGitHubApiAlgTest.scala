@@ -69,7 +69,7 @@ class Http4sGitHubApiAlgTest extends AnyFunSuite with Matchers {
   implicit val httpJsonClient: HttpJsonClient[IO] = new HttpJsonClient[IO]
   val gitHubApiAlg = new Http4sGitHubApiAlg[IO](config.vcsApiHost, _ => IO.pure)
 
-  val repo = Repo("fthomas", "base.g8", None)
+  val repo = Repo("fthomas", "base.g8")
 
   val parent = RepoOut(
     "base.g8",

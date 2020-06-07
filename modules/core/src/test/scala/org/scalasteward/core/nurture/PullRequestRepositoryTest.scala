@@ -14,7 +14,7 @@ import org.scalatest.matchers.should.Matchers
 
 class PullRequestRepositoryTest extends AnyFunSuite with Matchers {
   test("createOrUpdate >> findPullRequest >> lastPullRequestCreatedAt") {
-    val repo = Repo("typelevel", "cats", None)
+    val repo = Repo("typelevel", "cats")
     val url = uri"https://github.com/typelevel/cats/pull/3291"
     val sha1 = Sha1(HexString("a2ced5793c2832ada8c14ba5c77e51c4bc9656a8"))
     val update =

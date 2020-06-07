@@ -144,7 +144,7 @@ class Http4sBitbucketApiAlgTest extends AnyFunSuite with Matchers {
   )
 
   val prUrl = uri"https://api.bitbucket.org/2.0/repositories/fthomas/base.g8/pullrequests/2"
-  val repo = Repo("fthomas", "base.g8", None)
+  val repo = Repo("fthomas", "base.g8")
   val master = Branch("master")
   val selected = Branch("selected")
   val parent = RepoOut(

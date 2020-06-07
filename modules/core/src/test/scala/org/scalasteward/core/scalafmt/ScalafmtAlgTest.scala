@@ -9,7 +9,7 @@ import org.scalatest.matchers.should.Matchers
 
 class ScalafmtAlgTest extends AnyFunSuite with Matchers {
   test("getScalafmtVersion on unquoted version") {
-    val repo = Repo("fthomas", "scala-steward", None)
+    val repo = Repo("fthomas", "scala-steward")
     val repoDir = config.workspace / repo.owner / repo.repo
     val scalafmtConf = repoDir / ".scalafmt.conf"
     val initialState = MockState.empty.add(
@@ -36,7 +36,7 @@ class ScalafmtAlgTest extends AnyFunSuite with Matchers {
   }
 
   test("getScalafmtVersion on quoted version") {
-    val repo = Repo("fthomas", "scala-steward", None)
+    val repo = Repo("fthomas", "scala-steward")
     val repoDir = config.workspace / repo.owner / repo.repo
     val scalafmtConf = repoDir / ".scalafmt.conf"
     val initialState = MockState.empty.add(

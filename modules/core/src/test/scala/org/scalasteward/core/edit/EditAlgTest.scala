@@ -13,7 +13,7 @@ import org.scalatest.matchers.should.Matchers
 
 class EditAlgTest extends AnyFunSuite with Matchers {
   test("applyUpdate") {
-    val repo = Repo("fthomas", "scala-steward", None)
+    val repo = Repo("fthomas", "scala-steward")
     val repoDir = config.workspace / repo.show
     val update = Update.Single("org.typelevel" % "cats-core" % "1.2.0", Nel.of("1.3.0"))
     val file1 = repoDir / "build.sbt"
@@ -45,7 +45,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
   }
 
   test("applyUpdate with scalafmt update") {
-    val repo = Repo("fthomas", "scala-steward", None)
+    val repo = Repo("fthomas", "scala-steward")
     val repoDir = config.workspace / repo.show
     val update = Update.Single("org.scalameta" % "scalafmt-core" % "2.0.0", Nel.of("2.1.0"))
     val scalafmtConf = repoDir / ".scalafmt.conf"
@@ -103,7 +103,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
   }
 
   test("apply update to ammonite file") {
-    val repo = Repo("fthomas", "scala-steward", None)
+    val repo = Repo("fthomas", "scala-steward")
     val repoDir = config.workspace / repo.show
     val update = Update.Single("org.typelevel" % "cats-core" % "1.2.0", Nel.of("1.3.0"))
     val file1 = repoDir / "script.sc"
@@ -143,7 +143,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
     val repoDir = File.temp / "ws/owner/repo"
     val filesInRepoDir = files.map { case (file, content) => repoDir / file -> content }
     editAlg
-      .applyUpdate(Repo("owner", "repo", None), update, UpdatesConfig.defaultFileExtensions)
+      .applyUpdate(Repo("owner", "repo"), update, UpdatesConfig.defaultFileExtensions)
       .runS(MockState.empty.addFiles(filesInRepoDir))
       .map(_.files)
       .unsafeRunSync()

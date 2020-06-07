@@ -22,7 +22,7 @@ import org.scalasteward.core.git.Branch
 final case class Repo(
     owner: String,
     repo: String,
-    branch: Option[Branch]
+    branch: Option[Branch] = None
 ) {
   def show: String = branch.map(branch => s"$owner/$repo/${branch.name}").getOrElse(s"$owner/$repo")
 }

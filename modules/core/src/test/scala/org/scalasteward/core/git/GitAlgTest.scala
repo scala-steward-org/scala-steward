@@ -20,7 +20,7 @@ class GitAlgTest extends AnyFunSuite with Matchers {
   implicit val workspaceAlg: WorkspaceAlg[IO] = WorkspaceAlg.create[IO]
   val ioGitAlg: GitAlg[IO] = GitAlg.create[IO]
 
-  val repo = Repo("fthomas", "datapackage", None)
+  val repo = Repo("fthomas", "datapackage")
   val repoDir: String = (config.workspace / "fthomas/datapackage").toString
   val askPass = s"GIT_ASKPASS=${config.gitAskPass}"
 
@@ -98,7 +98,7 @@ class GitAlgTest extends AnyFunSuite with Matchers {
   }
 
   test("hasConflicts") {
-    val repo = Repo("merge", "conflict", None)
+    val repo = Repo("merge", "conflict")
     val p = for {
       repoDir <- workspaceAlg.repoDir(repo)
       _ <- GitAlgTest.createGitRepoWithConflict[IO](repoDir)
@@ -109,7 +109,7 @@ class GitAlgTest extends AnyFunSuite with Matchers {
   }
 
   test("mergeTheirs") {
-    val repo = Repo("merge", "theirs", None)
+    val repo = Repo("merge", "theirs")
     val p = for {
       repoDir <- workspaceAlg.repoDir(repo)
       _ <- GitAlgTest.createGitRepoWithConflict[IO](repoDir)

@@ -9,7 +9,7 @@ import org.scalatest.matchers.should.Matchers
 
 class BuildToolDispatcherTest extends AnyFunSuite with Matchers {
   test("getDependencies") {
-    val repo = Repo("typelevel", "cats", None)
+    val repo = Repo("typelevel", "cats")
     val repoDir = config.workspace / repo.show
     val initial = MockState.empty
     val state = buildToolDispatcher.getDependencies(repo).runS(initial).unsafeRunSync()

@@ -16,8 +16,8 @@ import org.scalatest.matchers.should.Matchers
 class NewPullRequestDataTest extends AnyFunSuite with Matchers {
   test("asJson") {
     val data = UpdateData(
-      Repo("foo", "bar", None),
-      Repo("scala-steward", "bar", None),
+      Repo("foo", "bar"),
+      Repo("scala-steward", "bar"),
       RepoConfig(),
       Update.Single("ch.qos.logback" % "logback-classic" % "1.2.0", Nel.of("1.2.3")),
       Branch("master"),

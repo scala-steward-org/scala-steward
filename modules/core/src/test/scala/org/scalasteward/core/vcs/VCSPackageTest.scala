@@ -11,7 +11,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class VCSPackageTest extends AnyFunSuite with Matchers {
-  val repo: Repo = Repo("foo", "bar", None)
+  val repo: Repo = Repo("foo", "bar")
   val update: Update.Single =
     Update.Single("ch.qos.logback" % "logback-classic" % "1.2.0", Nel.of("1.2.3"))
 
