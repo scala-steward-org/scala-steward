@@ -21,21 +21,27 @@ class gitTest extends AnyFunSuite with Matchers with ScalaCheckPropertyChecks {
 
   test("commitMsgFor should work with static message") {
     val commitsConfig = CommitsConfig(Some("Static message"))
-    forAll { update: Update => commitMsgFor(update, commitsConfig) shouldBe "Static message" }
+    forAll { update: Update =>
+      commitMsgFor(update, commitsConfig, Branch("")) shouldBe "Static message"
+    }
   }
 
   test("commitMsgFor should work with default message") {
     val commitsConfig = CommitsConfig(Some("${default}"))
     forAll { update: Update =>
-      commitMsgFor(update, commitsConfig) shouldBe s"Update ${show.oneLiner(update)} to ${update.nextVersion}"
+      commitMsgFor(update, commitsConfig, Branch("master")) shouldBe s"Update ${show.oneLiner(update)} to ${update.nextVersion} (master)"
     }
   }
 
   test("commitMsgFor should work with templated message") {
     val commitsConfig =
-      CommitsConfig(Some("Update ${artifactName} from ${currentVersion} to ${nextVersion}"))
+      CommitsConfig(
+        Some("Update ${artifactName} from ${currentVersion} to ${nextVersion} (${branchName})")
+      )
     forAll { update: Update =>
-      commitMsgFor(update, commitsConfig) shouldBe s"Update ${show.oneLiner(update)} from ${update.currentVersion} to ${update.nextVersion}"
+      commitMsgFor(update, commitsConfig, Branch("master")) shouldBe s"Update ${show.oneLiner(
+        update
+      )} from ${update.currentVersion} to ${update.nextVersion} (master)"
     }
   }
 

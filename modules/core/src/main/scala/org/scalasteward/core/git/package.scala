@@ -24,14 +24,15 @@ package object git {
   def branchFor(update: Update, baseBranch: Branch): Branch =
     Branch(s"${baseBranch.name}#update/${update.name}-${update.nextVersion}")
 
-  def commitMsgFor(update: Update, commitsConfig: CommitsConfig): String = {
+  def commitMsgFor(update: Update, commitsConfig: CommitsConfig, branch: Branch): String = {
     val artifact = show.oneLiner(update)
-    val defaultMessage = s"Update $artifact to ${update.nextVersion}"
+    val defaultMessage = s"Update $artifact to ${update.nextVersion} (${branch.name})"
     commitsConfig.messageOrDefault
       .replace("${default}", defaultMessage)
       .replace("${artifactName}", artifact)
       .replace("${currentVersion}", update.currentVersion)
       .replace("${nextVersion}", update.nextVersion)
+      .replace("${branchName}", branch.name)
   }
 
   // man 7 gitrevisions:
