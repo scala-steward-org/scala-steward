@@ -169,7 +169,7 @@ object NewPullRequestData {
       migrations: List[Migration] = List.empty
   ): NewPullRequestData =
     NewPullRequestData(
-      title = git.commitMsgFor(data.update, data.repoConfig.commits),
+      title = git.commitMsgFor(data.update, data.repoConfig.commits, data.baseBranch),
       body = bodyFor(
         data.update,
         artifactIdToUrl,

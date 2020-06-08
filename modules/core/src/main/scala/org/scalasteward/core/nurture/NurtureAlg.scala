@@ -155,7 +155,7 @@ final class NurtureAlg[F[_]](implicit
     for {
       _ <- logger.info("Commit and push changes")
       commitMsgConfig = data.repoConfig.commits
-      _ <- gitAlg.commitAll(data.repo, git.commitMsgFor(data.update, commitMsgConfig))
+      _ <- gitAlg.commitAll(data.repo, git.commitMsgFor(data.update, commitMsgConfig, data.baseBranch))
       _ <- gitAlg.push(data.repo, data.updateBranch)
     } yield Updated
 
