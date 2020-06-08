@@ -64,11 +64,24 @@ object SemVer {
     case object BuildMetadata extends Change("build-metadata")
   }
 
-  def getChange(from: SemVer, to: SemVer): Option[Change] =
-    if (from.major =!= to.major) Some(Major)
+  def getChange(from: SemVer, to: SemVer): Option[Change] = {
+    val zero = NonNegBigInt.unsafeFrom(0)
+    if (
+      from.major === zero && to.major === zero &&
+      (from.minor =!= zero ||
+      to.minor =!= zero ||
+      from.patch =!= zero ||
+      to.patch =!= zero)
+    )
+      getChange(
+        from.copy(major = from.minor, minor = from.patch, patch = zero),
+        to.copy(major = to.minor, minor = to.patch, patch = zero)
+      )
+    else if (from.major =!= to.major) Some(Major)
     else if (from.minor =!= to.minor) Some(Minor)
     else if (from.preRelease =!= to.preRelease) Some(PreRelease)
     else if (from.patch =!= to.patch) Some(Patch)
     else if (from.buildMetadata =!= to.buildMetadata) Some(BuildMetadata)
     else None
+  }
 }
