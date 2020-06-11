@@ -125,9 +125,7 @@ lazy val mill = myCrossProject("mill")
   .settings(
     /*crossScalaVersions := Seq("2.13.2", "2.12.10"),
     scalaVersion := crossScalaVersions.value.head,*/
-    libraryDependencies += "com.lihaoyi" %% "mill-scalalib" % "0.7.2" % "provided",
-    Compile / compile / wartremoverErrors -= Wart.Equals,
-    Compile / compile / wartremoverErrors -= Wart.Null
+    libraryDependencies += "com.lihaoyi" %% "mill-scalalib" % "0.7.2" % "provided"
   )
 
 /// settings
