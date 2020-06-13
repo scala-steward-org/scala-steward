@@ -61,7 +61,9 @@ object MillAlg {
             ),
             repoDir
           )
-          parsed <- F.fromEither(parser.parseModules(extracted.mkString("\n")))
+          parsed <- F.fromEither(
+            parser.parseModules(extracted.dropWhile(!_.startsWith("{")).mkString("\n"))
+          )
           _ <- fileAlg.deleteForce(predef)
 
         } yield parsed.map(module => Scope(module.dependencies, module.repositories))
