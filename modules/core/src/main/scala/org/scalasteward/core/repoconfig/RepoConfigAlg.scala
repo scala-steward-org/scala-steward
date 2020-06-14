@@ -16,6 +16,7 @@
 
 package org.scalasteward.core.repoconfig
 
+import better.files.File
 import cats.data.OptionT
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
@@ -26,6 +27,7 @@ import org.scalasteward.core.repoconfig.RepoConfigAlg._
 import org.scalasteward.core.util.MonadThrowable
 import org.scalasteward.core.vcs.data.Repo
 
+
 final class RepoConfigAlg[F[_]](implicit
     fileAlg: FileAlg[F],
     logger: Logger[F],
@@ -33,17 +35,30 @@ final class RepoConfigAlg[F[_]](implicit
     F: MonadThrowable[F]
 ) {
   def readRepoConfigOrDefault(repo: Repo): F[RepoConfig] =
-    readRepoConfig(repo).map(_.getOrElse(RepoConfig.default))
+    readRepoConfig(repo).flatMap { config =>
+      if (config.isDefined) F.pure(config.get)
+      else defaultRepoConfig
+    }
+
+  /**
+    * Default configuration will try to read .scala-steward.conf in the root
+    * If not found - fallback to [[RepoConfig.default]]
+    */
+  lazy val defaultRepoConfig: F[RepoConfig] = {
+    workspaceAlg.rootDir.flatMap(readConfiguration(_).map(_.getOrElse(RepoConfig.default)))
+  }
 
   def readRepoConfig(repo: Repo): F[Option[RepoConfig]] =
-    workspaceAlg.repoDir(repo).flatMap { dir =>
-      val configFile = dir / repoConfigBasename
-      val maybeRepoConfig = OptionT(fileAlg.readFile(configFile)).map(parseRepoConfig).flatMapF {
-        case Right(config)  => logger.info(s"Parsed $config").as(config.some)
-        case Left(errorMsg) => logger.info(errorMsg).as(none[RepoConfig])
-      }
-      maybeRepoConfig.value
+    workspaceAlg.repoDir(repo).flatMap(readConfiguration)
+
+  private def readConfiguration(projectRootDir: File): F[Option[RepoConfig]] = {
+    val configFile = projectRootDir / repoConfigBasename
+    val maybeRepoConfig = OptionT(fileAlg.readFile(configFile)).map(parseRepoConfig).flatMapF {
+      case Right(config)  => logger.info(s"Parsed $config").as(config.some)
+      case Left(errorMsg) => logger.info(errorMsg).as(none[RepoConfig])
     }
+    maybeRepoConfig.value
+  }
 }
 
 object RepoConfigAlg {

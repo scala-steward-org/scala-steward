@@ -11,6 +11,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
     val repo = Repo("fthomas", "scalafix-test")
     val repoCacheFile =
       config.workspace / "store/repo_cache/v1/fthomas/scalafix-test/repo_cache.json"
+    val repoDefaultConfigFile = config.workspace / ".scala-steward.conf"
     val repoCacheContent =
       s"""|{
          |  "sha1": "12def27a837ba6dc9e17406cbbe342fba3527c14",
@@ -60,6 +61,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
     state shouldBe initial.copy(
       commands = Vector(
         List("read", repoCacheFile.toString),
+        List("read", repoDefaultConfigFile.toString),
         List("read", pullRequestsFile.toString)
       ),
       logs = Vector(
@@ -74,6 +76,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
     val repo = Repo("fthomas", "scalafix-test")
     val repoCacheFile =
       config.workspace / "store/repo_cache/v1/fthomas/scalafix-test/repo_cache.json"
+    val repoDefaultConfigFile = config.workspace / ".scala-steward.conf"
     val repoCacheContent =
       s"""|{
          |  "sha1": "12def27a837ba6dc9e17406cbbe342fba3527c14",
@@ -167,6 +170,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
     state shouldBe initial.copy(
       commands = Vector(
         List("read", repoCacheFile.toString),
+        List("read", repoDefaultConfigFile.toString),
         List("read", pullRequestsFile.toString)
       ),
       logs = Vector(
@@ -181,6 +185,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
     val repo = Repo("fthomas", "scalafix-test")
     val repoCacheFile =
       config.workspace / "store/repo_cache/v1/fthomas/scalafix-test/repo_cache.json"
+    val repoDefaultConfigFile = config.workspace / ".scala-steward.conf"
     val repoCacheContent =
       s"""|{
          |  "sha1": "12def27a837ba6dc9e17406cbbe342fba3527c14",
@@ -284,6 +289,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
     state shouldBe initial.copy(
       commands = Vector(
         List("read", repoCacheFile.toString),
+        List("read", repoDefaultConfigFile.toString),
         List("read", versionsFile.toString),
         List("read", pullRequestsFile.toString),
         List("read", versionsFile.toString),
