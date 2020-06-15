@@ -6,7 +6,7 @@ sbt stage
 ./modules/core/.jvm/target/universal/stage/bin/scala-steward \
   --workspace  "$STEWARD_DIR/workspace" \
   --repos-file "$STEWARD_DIR/repos.md" \
-  --repos-default-conf "/opt/scala-steward/.scala-steward.conf" \
+  --repos-default-conf "$STEWARD_DIR/.scala-steward.conf" \
   --git-author-email ${EMAIL} \
   --vcs-api-host "https://api.github.com" \
   --vcs-login ${LOGIN} \
