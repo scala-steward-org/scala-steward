@@ -27,7 +27,6 @@ import org.scalasteward.core.repoconfig.RepoConfigAlg._
 import org.scalasteward.core.util.MonadThrowable
 import org.scalasteward.core.vcs.data.Repo
 
-
 final class RepoConfigAlg[F[_]](implicit
     fileAlg: FileAlg[F],
     logger: Logger[F],
@@ -44,9 +43,8 @@ final class RepoConfigAlg[F[_]](implicit
     * Default configuration will try to read .scala-steward.conf in the root
     * If not found - fallback to [[RepoConfig.default]]
     */
-  lazy val defaultRepoConfig: F[RepoConfig] = {
+  lazy val defaultRepoConfig: F[RepoConfig] =
     workspaceAlg.rootDir.flatMap(readConfiguration(_).map(_.getOrElse(RepoConfig.default)))
-  }
 
   def readRepoConfig(repo: Repo): F[Option[RepoConfig]] =
     workspaceAlg.repoDir(repo).flatMap(readConfiguration)

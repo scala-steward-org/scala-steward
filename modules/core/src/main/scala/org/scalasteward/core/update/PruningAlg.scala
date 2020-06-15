@@ -23,12 +23,17 @@ import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data._
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.repocache.{RepoCache, RepoCacheRepository}
-import org.scalasteward.core.repoconfig.{PullRequestFrequency, RepoConfig, RepoConfigAlg, UpdatesConfig}
+import org.scalasteward.core.repoconfig.{
+  PullRequestFrequency,
+  RepoConfig,
+  RepoConfigAlg,
+  UpdatesConfig
+}
 import org.scalasteward.core.update.PruningAlg._
 import org.scalasteward.core.update.data.UpdateState
 import org.scalasteward.core.update.data.UpdateState._
 import org.scalasteward.core.util
-import org.scalasteward.core.util.{DateTimeAlg, dateTime}
+import org.scalasteward.core.util.{dateTime, DateTimeAlg}
 import org.scalasteward.core.vcs.data.PullRequestState.Closed
 import org.scalasteward.core.vcs.data.Repo
 
