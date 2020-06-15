@@ -50,6 +50,7 @@ import scala.sys.process.Process
 final case class Config(
     workspace: File,
     reposFile: File,
+    reposDefaultConfigFile: File,
     gitAuthor: Author,
     vcsType: SupportedVCS,
     vcsApiHost: Uri,
@@ -85,6 +86,7 @@ object Config {
       Config(
         workspace = args.workspace.toFile,
         reposFile = args.reposFile.toFile,
+        reposDefaultConfigFile = args.reposDefaultConf.toFile,
         gitAuthor = Author(args.gitAuthorName, args.gitAuthorEmail),
         vcsType = args.vcsType,
         vcsApiHost = args.vcsApiHost,

@@ -21,6 +21,7 @@ import cats.data.OptionT
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import io.circe.config.parser
+import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.repoconfig.RepoConfigAlg._
@@ -28,6 +29,7 @@ import org.scalasteward.core.util.MonadThrowable
 import org.scalasteward.core.vcs.data.Repo
 
 final class RepoConfigAlg[F[_]](implicit
+    config: Config,
     fileAlg: FileAlg[F],
     logger: Logger[F],
     workspaceAlg: WorkspaceAlg[F],
@@ -36,21 +38,21 @@ final class RepoConfigAlg[F[_]](implicit
   def readRepoConfigOrDefault(repo: Repo): F[RepoConfig] =
     readRepoConfig(repo).flatMap { config =>
       if (config.isDefined) F.pure(config.get)
-      else defaultRepoConfig
+      else defaultRepoConfig()
     }
 
   /**
     * Default configuration will try to read .scala-steward.conf in the root
     * If not found - fallback to [[RepoConfig.default]]
+    * Note it's not lazy since we want to get config updates if you decide to change config in the middle of the process
     */
-  lazy val defaultRepoConfig: F[RepoConfig] =
-    workspaceAlg.rootDir.flatMap(readConfiguration(_).map(_.getOrElse(RepoConfig.default)))
+  def defaultRepoConfig(): F[RepoConfig] =
+    readConfiguration(config.reposDefaultConfigFile).map(_.getOrElse(RepoConfig.default))
 
   def readRepoConfig(repo: Repo): F[Option[RepoConfig]] =
-    workspaceAlg.repoDir(repo).flatMap(readConfiguration)
+    workspaceAlg.repoDir(repo).flatMap(projectRootDir => readConfiguration(projectRootDir / repoConfigBasename))
 
-  private def readConfiguration(projectRootDir: File): F[Option[RepoConfig]] = {
-    val configFile = projectRootDir / repoConfigBasename
+  private def readConfiguration(configFile: File): F[Option[RepoConfig]] = {
     val maybeRepoConfig = OptionT(fileAlg.readFile(configFile)).map(parseRepoConfig).flatMapF {
       case Right(config)  => logger.info(s"Parsed $config").as(config.some)
       case Left(errorMsg) => logger.info(errorMsg).as(none[RepoConfig])

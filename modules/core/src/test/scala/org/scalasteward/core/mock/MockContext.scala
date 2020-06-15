@@ -31,6 +31,7 @@ object MockContext {
   implicit val config: Config = Config(
     workspace = File.temp / "ws",
     reposFile = File.temp / "repos.md",
+    reposDefaultConfigFile = File.temp / ".scala-steward.conf",
     gitAuthor = Author("Bot Doe", "bot@example.org"),
     vcsType = SupportedVCS.GitHub,
     vcsApiHost = Uri(),

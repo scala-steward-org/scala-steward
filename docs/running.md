@@ -6,6 +6,7 @@ sbt stage
 ./modules/core/.jvm/target/universal/stage/bin/scala-steward \
   --workspace  "$STEWARD_DIR/workspace" \
   --repos-file "$STEWARD_DIR/repos.md" \
+  --repos-default-conf "/opt/scala-steward/.scala-steward.conf" \
   --git-author-email ${EMAIL} \
   --vcs-api-host "https://api.github.com" \
   --vcs-login ${LOGIN} \
@@ -24,6 +25,7 @@ sbt docker:publishLocal
 docker run -v $STEWARD_DIR:/opt/scala-steward -it fthomas/scala-steward:latest \
   --workspace  "/opt/scala-steward/workspace" \
   --repos-file "/opt/scala-steward/repos.md" \
+  --repos-default-conf "/opt/scala-steward/.scala-steward.conf" \
   --git-author-email ${EMAIL} \
   --vcs-api-host "https://api.github.com" \
   --vcs-login ${LOGIN} \
@@ -71,7 +73,7 @@ The file should contain a single line: `credentials += Credentials("Some Nexus R
 ```
 sbt
 project core
-run --disable-sandbox --do-not-fork --workspace "/path/workspace" --repos-file "/path/repos.md" --git-ask-pass "/path/pass.sh" --git-author-email "email@example.org" --vcs-type "gitlab" --vcs-api-host "https://gitlab.com/api/v4/" --vcs-login "gitlab.steward"
+run --disable-sandbox --do-not-fork --workspace "/path/workspace" --repos-file "/path/repos.md" --repos-default-conf "/opt/scala-steward/.scala-steward.conf" --git-ask-pass "/path/pass.sh" --git-author-email "email@example.org" --vcs-type "gitlab" --vcs-api-host "https://gitlab.com/api/v4/" --vcs-login "gitlab.steward"
 ```
 
 
@@ -93,6 +95,7 @@ docker run -v $PWD:/opt/scala-steward \
     --do-not-fork \
     --workspace "/opt/scala-steward/workspace" \
     --repos-file "/opt/scala-steward/repos.md" \
+    --repos-default-conf "/opt/scala-steward/.scala-steward.conf" \
     --git-ask-pass "/opt/scala-steward/pass.sh" \
     --git-author-email "myemail@company.xyz" \
     --vcs-type "bitbucket" \
