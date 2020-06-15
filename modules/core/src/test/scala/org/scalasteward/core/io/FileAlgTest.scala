@@ -67,7 +67,7 @@ class FileAlgTest extends AnyFunSuite with Matchers {
   }
 
   test("editFile: existent file") {
-    val file = File.root / "tmp" / "steward" / "test1.sbt"
+    val file = File.temp / "steward" / "test1.sbt"
     val (state, edited) = (for {
       _ <- fileAlg.writeFile(file, "123")
       edit = (s: String) => Some(s.replace("2", "4"))
@@ -83,6 +83,23 @@ class FileAlgTest extends AnyFunSuite with Matchers {
       files = Map(file -> "143")
     )
     edited shouldBe true
+  }
+
+  test("deleteForce removes dangling symlink in subdirectory") {
+    val dir = File.temp / "steward-symlink"
+    val sub = dir / "sub"
+    val regular = dir / "regular"
+    val symlink = sub / "symlink"
+    val p = for {
+      _ <- IO(dir.delete(swallowIOExceptions = true))
+      _ <- ioFileAlg.writeFile(regular, "I'm a regular file")
+      _ <- IO(sub.createDirectory())
+      _ <- IO(symlink.symbolicLinkTo(regular))
+      _ <- ioFileAlg.deleteForce(regular)
+      _ <- ioFileAlg.deleteForce(dir)
+      symlinkExists <- IO(symlink.exists(File.LinkOptions.noFollow))
+    } yield symlinkExists
+    p.unsafeRunSync() shouldBe false
   }
 }
 
