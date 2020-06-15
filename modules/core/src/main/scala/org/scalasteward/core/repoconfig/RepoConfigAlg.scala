@@ -50,7 +50,9 @@ final class RepoConfigAlg[F[_]](implicit
     readConfiguration(config.reposDefaultConfigFile).map(_.getOrElse(RepoConfig.default))
 
   def readRepoConfig(repo: Repo): F[Option[RepoConfig]] =
-    workspaceAlg.repoDir(repo).flatMap(projectRootDir => readConfiguration(projectRootDir / repoConfigBasename))
+    workspaceAlg
+      .repoDir(repo)
+      .flatMap(projectRootDir => readConfiguration(projectRootDir / repoConfigBasename))
 
   private def readConfiguration(configFile: File): F[Option[RepoConfig]] = {
     val maybeRepoConfig = OptionT(fileAlg.readFile(configFile)).map(parseRepoConfig).flatMapF {

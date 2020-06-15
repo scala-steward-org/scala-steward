@@ -36,7 +36,6 @@ import org.scalasteward.core.util
 import org.scalasteward.core.util.{dateTime, DateTimeAlg}
 import org.scalasteward.core.vcs.data.PullRequestState.Closed
 import org.scalasteward.core.vcs.data.Repo
-
 import scala.concurrent.duration._
 
 final class PruningAlg[F[_]](implicit
