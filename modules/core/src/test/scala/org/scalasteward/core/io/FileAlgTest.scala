@@ -2,6 +2,7 @@ package org.scalasteward.core.io
 
 import better.files.File
 import cats.effect.IO
+import org.apache.commons.io.FileUtils
 import org.scalacheck.Arbitrary
 import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
@@ -67,7 +68,7 @@ class FileAlgTest extends AnyFunSuite with Matchers {
   }
 
   test("editFile: existent file") {
-    val file = File.root / "tmp" / "steward" / "test1.sbt"
+    val file = File.temp / "steward" / "test1.sbt"
     val (state, edited) = (for {
       _ <- fileAlg.writeFile(file, "123")
       edit = (s: String) => Some(s.replace("2", "4"))
@@ -83,6 +84,21 @@ class FileAlgTest extends AnyFunSuite with Matchers {
       files = Map(file -> "143")
     )
     edited shouldBe true
+  }
+
+  test("deleteForce removes dangling symlinks") {
+    val dir = File.temp / "steward-symlink"
+    val regular = dir / "regular"
+    val symlink = dir / "symlink"
+    val p = for {
+      _ <- IO(FileUtils.cleanDirectory(dir.toJava)).attempt
+      _ <- ioFileAlg.writeFile(regular, "I'm a regular file")
+      _ <- IO(symlink.symbolicLinkTo(regular))
+      _ <- ioFileAlg.deleteForce(regular)
+      _ <- ioFileAlg.deleteForce(dir)
+      symlinkExists <- IO(symlink.exists(File.LinkOptions.noFollow))
+    } yield symlinkExists
+    p.unsafeRunSync() shouldBe false
   }
 }
 
