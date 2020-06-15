@@ -32,7 +32,7 @@ import scala.sys.process.Process
   * == [[reposDefaultConfigFile]] ==
   * Location of default repo configuration file.
   * This will be used if target repo doesn't have custom configuration.
-  * Note if this file doesn't exist, [[org.scalasteward.core.repoconfig.RepoConfig.default]] will be applied
+  * Note if this file doesn't exist, empty configuration will be applied
   *
   * == [[vcsApiHost]] ==
   * REST API v3 endpoints prefix
