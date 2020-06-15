@@ -86,7 +86,7 @@ class FileAlgTest extends AnyFunSuite with Matchers {
     edited shouldBe true
   }
 
-  test("deleteForce removes dangling symlinks") {
+  test("deleteForce removes dangling symlink") {
     val dir = File.temp / "steward-symlink"
     val regular = dir / "regular"
     val symlink = dir / "symlink"
