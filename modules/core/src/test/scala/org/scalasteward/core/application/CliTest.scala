@@ -44,6 +44,30 @@ class CliTest extends AnyFunSuite with Matchers {
     )
   }
 
+  test("parseArgs minimal version") {
+    cli.parseArgs(
+      List(
+        List("--workspace", "a"),
+        List("--repos-file", "b"),
+        List("--git-author-email", "d"),
+        List("--vcs-login", "e"),
+        List("--git-ask-pass", "f")
+      ).flatten
+    ) shouldBe Right(
+      Cli.Args(
+        workspace = "a",
+        reposFile = "b",
+        gitAuthorEmail = "d",
+        vcsLogin = "e",
+        gitAskPass = "f"
+      )
+    )
+  }
+
+  test("parseArgs fail if required option not provided") {
+    cli.parseArgs(Nil).isLeft shouldBe true
+  }
+
   test("env-var without equals sign") {
     Cli.envVarArgParser(None, "SBT_OPTS").isLeft shouldBe true
   }
