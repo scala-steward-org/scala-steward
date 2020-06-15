@@ -2,7 +2,6 @@ package org.scalasteward.core.io
 
 import better.files.File
 import cats.effect.IO
-import org.apache.commons.io.FileUtils
 import org.scalacheck.Arbitrary
 import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
@@ -86,13 +85,15 @@ class FileAlgTest extends AnyFunSuite with Matchers {
     edited shouldBe true
   }
 
-  test("deleteForce removes dangling symlink") {
+  test("deleteForce removes dangling symlink in subdirectory") {
     val dir = File.temp / "steward-symlink"
+    val sub = dir / "sub"
     val regular = dir / "regular"
-    val symlink = dir / "symlink"
+    val symlink = sub / "symlink"
     val p = for {
-      _ <- IO(FileUtils.cleanDirectory(dir.toJava)).attempt
+      _ <- IO(dir.delete(swallowIOExceptions = true))
       _ <- ioFileAlg.writeFile(regular, "I'm a regular file")
+      _ <- IO(sub.createDirectory())
       _ <- IO(symlink.symbolicLinkTo(regular))
       _ <- ioFileAlg.deleteForce(regular)
       _ <- ioFileAlg.deleteForce(dir)

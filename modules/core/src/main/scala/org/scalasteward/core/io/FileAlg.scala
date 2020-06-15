@@ -87,10 +87,7 @@ object FileAlg {
         F.bracket(writeFile(file, content))(_ => fa)(_ => deleteForce(file))
 
       override def deleteForce(file: File): F[Unit] =
-        F.delay {
-          if (file.isDirectory) FileUtils.deleteDirectory(file.toJava)
-          else if (file.exists) FileUtils.forceDelete(file.toJava)
-        }
+        F.delay(if (file.exists) FileUtils.forceDelete(file.toJava))
 
       override def ensureExists(dir: File): F[File] =
         F.delay {
