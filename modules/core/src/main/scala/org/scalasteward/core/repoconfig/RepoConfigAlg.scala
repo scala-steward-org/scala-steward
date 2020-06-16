@@ -41,8 +41,7 @@ final class RepoConfigAlg[F[_]](implicit
     }
 
   /**
-    * Default configuration will try to read [[config.reposDefaultConfigFile]] first
-    * If not found - fallback to empty configuration
+    * Default configuration will try to read file specified in config.reposDefaultConfig first; if not found - fallback to empty configuration.
     * Note it's not lazy since we want to get config updates if you decide to change config in the middle of the process
     */
   def defaultRepoConfig(): F[RepoConfig] =
