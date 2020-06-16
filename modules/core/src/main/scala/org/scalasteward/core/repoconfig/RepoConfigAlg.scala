@@ -37,8 +37,7 @@ final class RepoConfigAlg[F[_]](implicit
 ) {
   def readRepoConfigOrDefault(repo: Repo): F[RepoConfig] =
     readRepoConfig(repo).flatMap { config =>
-      if (config.isDefined) F.pure(config.get)
-      else defaultRepoConfig()
+      config.map(F.pure).getOrElse(defaultRepoConfig())
     }
 
   /**
