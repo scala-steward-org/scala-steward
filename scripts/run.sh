@@ -24,7 +24,7 @@ LOGIN="scala-steward"
 COMMON_ARGS=(
   --workspace "$STEWARD_DIR/workspace"
   --repos-file "$STEWARD_DIR/repos.md"
-  --repos-default-conf "$STEWARD_DIR/.scala-steward.conf"
+  --repos-default-conf "$STEWARD_DIR/default.scala-steward.conf"
   --git-author-email "me@$LOGIN.org"
   --vcs-login "$LOGIN"
   --ignore-opts-files

@@ -37,7 +37,7 @@ object Cli {
   final case class Args(
       workspace: String,
       reposFile: String,
-      reposDefaultConf: String = ".scala-steward.conf",
+      reposDefaultConf: String = "default.scala-steward.conf",
       gitAuthorName: String = "Scala Steward",
       gitAuthorEmail: String,
       vcsType: SupportedVCS = SupportedVCS.GitHub,

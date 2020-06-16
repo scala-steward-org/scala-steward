@@ -41,7 +41,7 @@ final class RepoConfigAlg[F[_]](implicit
     }
 
   /**
-    * Default configuration will try to read .scala-steward.conf in the root
+    * Default configuration will try to read [[config.reposDefaultConfigFile]] first
     * If not found - fallback to empty configuration
     * Note it's not lazy since we want to get config updates if you decide to change config in the middle of the process
     */
