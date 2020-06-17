@@ -14,7 +14,8 @@ class RepoConfigTest extends AnyFunSuite with Matchers {
       commits = CommitsConfig(Some("a")),
       pullRequests = PullRequestsConfig(Some(PullRequestFrequency.Asap)),
       updates = UpdatesConfig(
-        allow = List(UpdatePattern(GroupId("A"), None, None), UpdatePattern(GroupId("B"), None, None))
+        allow =
+          List(UpdatePattern(GroupId("A"), None, None), UpdatePattern(GroupId("B"), None, None))
       ),
       updatePullRequests = Some(PullRequestUpdateStrategy.Always)
     )
@@ -27,7 +28,8 @@ class RepoConfigTest extends AnyFunSuite with Matchers {
       commits = CommitsConfig(Some("b")),
       pullRequests = PullRequestsConfig(Some(PullRequestFrequency.Daily)),
       updates = UpdatesConfig(
-        allow = List(UpdatePattern(GroupId("B"), None, None), UpdatePattern(GroupId("C"), None, None))
+        allow =
+          List(UpdatePattern(GroupId("B"), None, None), UpdatePattern(GroupId("C"), None, None))
       ),
       updatePullRequests = Some(PullRequestUpdateStrategy.OnConflicts)
     )

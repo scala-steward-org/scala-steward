@@ -48,14 +48,13 @@ object RepoConfig {
       //  can't use eq due to wart remover
       if (x === default) y
       else if (y === default) x
-      else {
+      else
         RepoConfig(
           commits = x.commits |+| y.commits,
           pullRequests = x.pullRequests |+| y.pullRequests,
           updates = x.updates |+| y.updates,
-          updatePullRequests = x.updatePullRequests orElse y.updatePullRequests
+          updatePullRequests = x.updatePullRequests.orElse(y.updatePullRequests)
         )
-      }
     }
   }
 }

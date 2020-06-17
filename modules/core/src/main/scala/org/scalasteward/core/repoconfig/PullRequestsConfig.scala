@@ -36,8 +36,7 @@ object PullRequestsConfig {
     deriveConfiguredCodec
 
   implicit val semigroup: Semigroup[PullRequestsConfig] = new Semigroup[PullRequestsConfig] {
-    override def combine(x: PullRequestsConfig, y: PullRequestsConfig): PullRequestsConfig = {
-      PullRequestsConfig(x.frequency orElse y.frequency)
-    }
+    override def combine(x: PullRequestsConfig, y: PullRequestsConfig): PullRequestsConfig =
+      PullRequestsConfig(x.frequency.orElse(y.frequency))
   }
 }

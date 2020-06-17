@@ -81,7 +81,7 @@ final class NurtureAlg[F[_]](implicit
       updates: List[Update.Single]
   ): F[Unit] =
     for {
-      repoConfig <- repoConfigAlg.readRepoConfigOrDefault(repo)
+      repoConfig <- repoConfigAlg.readRepoConfigWithDefault(repo)
       grouped = Update.groupByGroupId(updates)
       sorted = grouped.sortBy(migrationAlg.findMigrations(_).size)
       _ <- logger.info(util.logger.showUpdates(sorted))

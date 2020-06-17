@@ -38,8 +38,7 @@ object CommitsConfig {
     deriveConfiguredCodec
 
   implicit val semigroup: Semigroup[CommitsConfig] = new Semigroup[CommitsConfig] {
-    override def combine(x: CommitsConfig, y: CommitsConfig): CommitsConfig = {
-      CommitsConfig(x.message orElse y.message)
-    }
+    override def combine(x: CommitsConfig, y: CommitsConfig): CommitsConfig =
+      CommitsConfig(x.message.orElse(y.message))
   }
 }

@@ -70,7 +70,7 @@ class UpdatesConfigTest extends AnyFunSuite with Matchers {
   }
 
   test("mergePin: basic checks") {
-    UpdatesConfig.mergePin(Nil, Nil) shouldBe  Nil
+    UpdatesConfig.mergePin(Nil, Nil) shouldBe Nil
     UpdatesConfig.mergePin(List(A00), Nil) shouldBe List(A00)
     UpdatesConfig.mergePin(Nil, List(B00)) shouldBe List(B00)
     UpdatesConfig.mergePin(List(A00), List(B00)) shouldBe List(A00, B00)
@@ -82,7 +82,7 @@ class UpdatesConfigTest extends AnyFunSuite with Matchers {
   }
 
   test("mergeAllow: basic checks") {
-    UpdatesConfig.mergeAllow(Nil, Nil) shouldBe  Nil
+    UpdatesConfig.mergeAllow(Nil, Nil) shouldBe Nil
     UpdatesConfig.mergeAllow(List(A00), Nil) shouldBe List(A00)
     UpdatesConfig.mergeAllow(Nil, List(A00)) shouldBe List(A00)
 
@@ -118,6 +118,9 @@ class UpdatesConfigTest extends AnyFunSuite with Matchers {
     UpdatesConfig.mergeFileExtensions(List("txt"), Nil) shouldBe List("txt")
     UpdatesConfig.mergeFileExtensions(List("txt"), List("txt")) shouldBe List("txt")
     UpdatesConfig.mergeFileExtensions(List("a", "b", "c"), List("b", "d")) shouldBe List("b")
-    UpdatesConfig.mergeFileExtensions(List("a"), List("b")) shouldBe UpdatesConfig.nonExistingFileExtension
+    UpdatesConfig.mergeFileExtensions(
+      List("a"),
+      List("b")
+    ) shouldBe UpdatesConfig.nonExistingFileExtension
   }
 }

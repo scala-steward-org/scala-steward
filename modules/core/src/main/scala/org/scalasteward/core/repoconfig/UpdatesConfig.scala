@@ -23,7 +23,12 @@ import io.circe.generic.extras.semiauto._
 import io.circe.refined._
 import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.data.{GroupId, Update}
-import org.scalasteward.core.update.FilterAlg.{FilterResult, IgnoredByConfig, NotAllowedByConfig, VersionPinnedByConfig}
+import org.scalasteward.core.update.FilterAlg.{
+  FilterResult,
+  IgnoredByConfig,
+  NotAllowedByConfig,
+  VersionPinnedByConfig
+}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.util.wart._
 
@@ -89,32 +94,38 @@ object UpdatesConfig {
     Set(".scala", ".sbt", ".sbt.shared", ".sc", ".yml", "pom.xml")
 
   private[repoconfig] val nonExistingFileExtension: List[String] = List(".non-exist")
-  private[repoconfig] val nonExistingUpdatePattern: List[UpdatePattern] = List(UpdatePattern(GroupId("non-exist"), None, None))
+  private[repoconfig] val nonExistingUpdatePattern: List[UpdatePattern] = List(
+    UpdatePattern(GroupId("non-exist"), None, None)
+  )
 
   // prevent IntelliJ from removing the import of io.circe.refined._
   locally(refinedDecoder: Decoder[PosInt])
 
   implicit val semigroup: Semigroup[UpdatesConfig] = new Semigroup[UpdatesConfig] {
-    override def combine(x: UpdatesConfig, y: UpdatesConfig): UpdatesConfig = {
+    override def combine(x: UpdatesConfig, y: UpdatesConfig): UpdatesConfig =
       UpdatesConfig(
         pin = mergePin(x.pin, y.pin),
         allow = mergeAllow(x.allow, y.allow),
         ignore = mergeIgnore(x.ignore, y.ignore),
-        limit = x.limit orElse y.limit,
-        includeScala = x.includeScala orElse y.includeScala,
+        limit = x.limit.orElse(y.limit),
+        includeScala = x.includeScala.orElse(y.includeScala),
         fileExtensions = mergeFileExtensions(x.fileExtensions, y.fileExtensions)
       )
-    }
   }
 
   //  Strategy: union with repo preference in terms of revision
-  private[repoconfig] def mergePin(x: List[UpdatePattern], y: List[UpdatePattern]): List[UpdatePattern] = {
+  private[repoconfig] def mergePin(
+      x: List[UpdatePattern],
+      y: List[UpdatePattern]
+  ): List[UpdatePattern] =
     (x ::: y).distinctBy(up => up.groupId -> up.artifactId)
-  }
 
   //  Strategy: superset
   //  Xa.Ya.Za |+| Xb.Yb.Zb
-  private[repoconfig] def mergeAllow(x: List[UpdatePattern], y: List[UpdatePattern]): List[UpdatePattern] = {
+  private[repoconfig] def mergeAllow(
+      x: List[UpdatePattern],
+      y: List[UpdatePattern]
+  ): List[UpdatePattern] =
     if (x.isEmpty) y
     else if (y.isEmpty) x
     else {
@@ -133,10 +144,12 @@ object UpdatesConfig {
       if (builder.isEmpty) nonExistingUpdatePattern
       else builder.distinct.toList
     }
-  }
 
   //  merge UpdatePattern for same group id
-  private def mergeAllowGroupId(x: List[UpdatePattern], y: List[UpdatePattern]): List[UpdatePattern] = {
+  private def mergeAllowGroupId(
+      x: List[UpdatePattern],
+      y: List[UpdatePattern]
+  ): List[UpdatePattern] =
     if (x.exists(_.isWholeGroupIdAllowed)) y
     else if (y.exists(_.isWholeGroupIdAllowed)) x
     else {
@@ -157,20 +170,23 @@ object UpdatesConfig {
       if (builder.isEmpty) nonExistingUpdatePattern
       else builder.toList
     }
-  }
 
-  private def satisfyUpdatePattern(targetUpdatePattern: UpdatePattern, comparedUpdatePatternsByArtifact: Map[Option[String], List[UpdatePattern]]): Boolean = {
+  private def satisfyUpdatePattern(
+      targetUpdatePattern: UpdatePattern,
+      comparedUpdatePatternsByArtifact: Map[Option[String], List[UpdatePattern]]
+  ): Boolean =
     comparedUpdatePatternsByArtifact.get(targetUpdatePattern.artifactId).exists { matchedVersions =>
       //  For simplicity I'm using direct equals here between versions. Feel free to make it more advanced
       matchedVersions.exists(up => up.version.isEmpty || up.version === targetUpdatePattern.version)
     }
-  }
 
   //  Strategy: union
-  private[repoconfig] def mergeIgnore(x: List[UpdatePattern], y: List[UpdatePattern]): List[UpdatePattern] = {
+  private[repoconfig] def mergeIgnore(
+      x: List[UpdatePattern],
+      y: List[UpdatePattern]
+  ): List[UpdatePattern] =
     (x ::: y).distinct
-  }
-  private[repoconfig] def mergeFileExtensions(x: List[String], y: List[String]): List[String] = {
+  private[repoconfig] def mergeFileExtensions(x: List[String], y: List[String]): List[String] =
     if (x.isEmpty) y
     else if (y.isEmpty) x
     else {
@@ -179,5 +195,4 @@ object UpdatesConfig {
       if (result.nonEmpty) result
       else nonExistingFileExtension
     }
-  }
 }

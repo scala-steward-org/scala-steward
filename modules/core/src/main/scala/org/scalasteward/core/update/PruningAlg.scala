@@ -75,7 +75,7 @@ final class PruningAlg[F[_]](implicit
     for {
       _ <- logger.info(s"Find updates for ${repo.show}")
       defaultConfig <- repoConfigAlg.defaultRepoConfig()
-      repoConfig = repoCache.maybeRepoConfig.getOrElse(defaultConfig)
+      repoConfig = repoCache.maybeRepoConfig.map(_ |+| defaultConfig).getOrElse(defaultConfig)
       updates0 <- updateAlg.findUpdates(dependencies, repoConfig, None)
       updateStates0 <- findAllUpdateStates(repo, repoCache, depsWithoutResolvers, updates0)
       outdatedDeps = collectOutdatedDependencies(updateStates0)
