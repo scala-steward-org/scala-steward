@@ -25,7 +25,9 @@ final case class UpdatePattern(
     groupId: GroupId,
     artifactId: Option[String],
     version: Option[UpdatePattern.Version]
-)
+) {
+  def isWholeGroupIdAllowed: Boolean = artifactId.isEmpty && version.isEmpty
+}
 
 object UpdatePattern {
   final case class MatchResult(

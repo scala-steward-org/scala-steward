@@ -16,6 +16,7 @@
 
 package org.scalasteward.core.repoconfig
 
+import cats.kernel.Semigroup
 import io.circe.Codec
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.deriveConfiguredCodec
@@ -33,4 +34,10 @@ object PullRequestsConfig {
 
   implicit val pullRequestsConfigCodec: Codec[PullRequestsConfig] =
     deriveConfiguredCodec
+
+  implicit val semigroup: Semigroup[PullRequestsConfig] = new Semigroup[PullRequestsConfig] {
+    override def combine(x: PullRequestsConfig, y: PullRequestsConfig): PullRequestsConfig = {
+      PullRequestsConfig(x.frequency orElse y.frequency)
+    }
+  }
 }
