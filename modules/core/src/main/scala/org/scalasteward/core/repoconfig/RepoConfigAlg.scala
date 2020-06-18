@@ -37,7 +37,7 @@ final class RepoConfigAlg[F[_]](implicit
 ) {
   def readRepoConfigOrDefault(repo: Repo): F[RepoConfig] =
     readRepoConfig(repo).flatMap { config =>
-      config.map(F.pure).getOrElse(defaultRepoConfig())
+      config.map(F.pure).getOrElse(defaultRepoConfig)
     }
 
   /**
@@ -45,7 +45,7 @@ final class RepoConfigAlg[F[_]](implicit
     * if not found - fallback to empty configuration.
     * Note it's not lazy since we want to get config updates if you decide to change config in the middle of the process
     */
-  def defaultRepoConfig(): F[RepoConfig] =
+  val defaultRepoConfig: F[RepoConfig] =
     readRepoConfigFromFile(config.defaultRepoConfigFile).map(_.getOrElse(RepoConfig.empty))
 
   def readRepoConfig(repo: Repo): F[Option[RepoConfig]] =
