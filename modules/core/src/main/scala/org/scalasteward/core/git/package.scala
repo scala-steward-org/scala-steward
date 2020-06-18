@@ -22,7 +22,7 @@ import org.scalasteward.core.update.show
 
 package object git {
   def branchFor(update: Update, baseBranch: Branch): Branch =
-    Branch(s"${baseBranch.name}#update/${update.name}-${update.nextVersion}")
+    Branch(s"update/${baseBranch.name}/${update.name}-${update.nextVersion}")
 
   def commitMsgFor(update: Update, commitsConfig: CommitsConfig, branch: Branch): String = {
     val artifact = show.oneLiner(update)
