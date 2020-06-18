@@ -31,7 +31,7 @@ class CliTest extends AnyFunSuite with Matchers {
       Cli.Args(
         workspace = "a",
         reposFile = "b",
-        reposDefaultConf = "c",
+        defaultRepoConf = "c",
         gitAuthorEmail = "d",
         vcsType = SupportedVCS.Gitlab,
         vcsApiHost = uri"http://example.com",

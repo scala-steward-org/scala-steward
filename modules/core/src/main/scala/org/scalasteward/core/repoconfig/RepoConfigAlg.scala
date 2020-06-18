@@ -41,18 +41,19 @@ final class RepoConfigAlg[F[_]](implicit
     }
 
   /**
-    * Default configuration will try to read file specified in config.reposDefaultConfig first; if not found - fallback to empty configuration.
+    * Default configuration will try to read file specified in config.reposDefaultConfig first;
+    * if not found - fallback to empty configuration.
     * Note it's not lazy since we want to get config updates if you decide to change config in the middle of the process
     */
   def defaultRepoConfig(): F[RepoConfig] =
-    readConfiguration(config.reposDefaultConfigFile).map(_.getOrElse(RepoConfig.default))
+    readRepoConfigFromFile(config.defaultRepoConfigFile).map(_.getOrElse(RepoConfig.empty))
 
   def readRepoConfig(repo: Repo): F[Option[RepoConfig]] =
     workspaceAlg
       .repoDir(repo)
-      .flatMap(projectRootDir => readConfiguration(projectRootDir / repoConfigBasename))
+      .flatMap(dir => readRepoConfigFromFile(dir / repoConfigBasename))
 
-  private def readConfiguration(configFile: File): F[Option[RepoConfig]] = {
+  private def readRepoConfigFromFile(configFile: File): F[Option[RepoConfig]] = {
     val maybeRepoConfig = OptionT(fileAlg.readFile(configFile)).map(parseRepoConfig).flatMapF {
       case Right(config)  => logger.info(s"Parsed $config").as(config.some)
       case Left(errorMsg) => logger.info(errorMsg).as(none[RepoConfig])

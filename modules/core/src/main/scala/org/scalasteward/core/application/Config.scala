@@ -29,7 +29,7 @@ import scala.sys.process.Process
 
 /** Configuration for scala-steward.
   *
-  * == [[reposDefaultConfigFile]] ==
+  * == [[defaultRepoConfigFile]] ==
   * Location of default repo configuration file.
   * This will be used if target repo doesn't have custom configuration.
   * Note if this file doesn't exist, empty configuration will be applied
@@ -54,7 +54,7 @@ import scala.sys.process.Process
 final case class Config(
     workspace: File,
     reposFile: File,
-    reposDefaultConfigFile: File,
+    defaultRepoConfigFile: File,
     gitAuthor: Author,
     vcsType: SupportedVCS,
     vcsApiHost: Uri,
@@ -90,7 +90,7 @@ object Config {
       Config(
         workspace = args.workspace.toFile,
         reposFile = args.reposFile.toFile,
-        reposDefaultConfigFile = args.reposDefaultConf.toFile,
+        defaultRepoConfigFile = args.defaultRepoConf.toFile,
         gitAuthor = Author(args.gitAuthorName, args.gitAuthorEmail),
         vcsType = args.vcsType,
         vcsApiHost = args.vcsApiHost,
