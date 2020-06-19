@@ -189,12 +189,13 @@ object UpdatesConfig {
   ): List[UpdatePattern] =
     (x ::: y).distinct
   private[repoconfig] def mergeFileExtensions(x: List[String], y: List[String]): List[String] =
-    if (x.isEmpty) y
-    else if (y.isEmpty) x
-    else {
-      val result = x.intersect(y)
-      //  Since empty result represents [*] any extension, we gonna set artificial extension instead.
-      if (result.nonEmpty) result
-      else nonExistingFileExtension
+    (x, y) match {
+      case (Nil, second) => second
+      case (first, Nil)  => first
+      case _ =>
+        val result = x.intersect(y)
+        //  Since empty result represents [*] any extension, we gonna set artificial extension instead.
+        if (result.nonEmpty) result
+        else nonExistingFileExtension
     }
 }
