@@ -21,10 +21,9 @@ curl -s -o "$REPOS_GITLAB" https://raw.githubusercontent.com/scala-steward-org/r
 
 LOGIN="scala-steward"
 
+# Used for running public Scala Steward instance, repos-file / repos-default-conf will be set later
 COMMON_ARGS=(
   --workspace "$STEWARD_DIR/workspace"
-  --repos-file "$STEWARD_DIR/repos.md"
-  --repos-default-conf "$STEWARD_DIR/default.scala-steward.conf"
   --git-author-email "me@$LOGIN.org"
   --vcs-login "$LOGIN"
   --ignore-opts-files

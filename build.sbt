@@ -236,7 +236,7 @@ runSteward := Def.taskDyn {
   val args = Seq(
     Seq("--workspace", s"$projectDir/workspace"),
     Seq("--repos-file", s"$projectDir/repos.md"),
-    Seq("--repos-default-config", s"$projectDir/default.scala-steward.conf"),
+    Seq("--default-repo-config", s"$projectDir/default.scala-steward.conf"),
     Seq("--git-author-email", s"me@$projectName.org"),
     Seq("--vcs-login", projectName),
     Seq("--git-ask-pass", s"$home/.github/askpass/$projectName.sh"),

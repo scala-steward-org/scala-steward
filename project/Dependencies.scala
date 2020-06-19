@@ -4,7 +4,7 @@ object Dependencies {
   val attoCore = "org.tpolecat" %% "atto-core" % "0.8.0"
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.1"
   val betterMonadicFor = "com.olegpy" %% "better-monadic-for" % "0.3.1"
-  val caseApp = "com.github.alexarchambault" %% "case-app" % "2.0.0"
+  val caseApp = "com.github.alexarchambault" %% "case-app" % "2.0.1"
   val catsEffect = "org.typelevel" %% "cats-effect" % "2.1.3"
   val catsKernelLaws = "org.typelevel" %% "cats-kernel-laws" % "2.1.1"
   val circeConfig = "io.circe" %% "circe-config" % "0.8.0"
@@ -25,7 +25,7 @@ object Dependencies {
   val kindProjector = "org.typelevel" % "kind-projector" % "0.11.0"
   val log4catsSlf4j = "io.chrisdavenport" %% "log4cats-slf4j" % "1.1.1"
   val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.2.3"
-  val monocleCore = "com.github.julien-truffaut" %% "monocle-core" % "2.0.4"
+  val monocleCore = "com.github.julien-truffaut" %% "monocle-core" % "2.0.5"
   val refined = "eu.timepit" %% "refined" % "0.9.14"
   val refinedCats = "eu.timepit" %% "refined-cats" % refined.revision
   val refinedScalacheck = "eu.timepit" %% "refined-scalacheck" % refined.revision
@@ -33,5 +33,5 @@ object Dependencies {
   val scalacacheCatsEffect =
     "com.github.cb372" %% "scalacache-cats-effect" % scalacacheCaffeine.revision
   val scalacheck = "org.scalacheck" %% "scalacheck" % "1.14.3"
-  val scalaTest = "org.scalatest" %% "scalatest" % "3.1.2"
+  val scalaTest = "org.scalatest" %% "scalatest" % "3.2.0"
 }
