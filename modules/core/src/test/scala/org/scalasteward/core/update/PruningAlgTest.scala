@@ -60,6 +60,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
     state shouldBe initial.copy(
       commands = Vector(
         List("read", repoCacheFile.toString),
+        List("read", config.defaultRepoConfigFile.toString),
         List("read", pullRequestsFile.toString)
       ),
       logs = Vector(
@@ -167,6 +168,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
     state shouldBe initial.copy(
       commands = Vector(
         List("read", repoCacheFile.toString),
+        List("read", config.defaultRepoConfigFile.toString),
         List("read", pullRequestsFile.toString)
       ),
       logs = Vector(
@@ -284,6 +286,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
     state shouldBe initial.copy(
       commands = Vector(
         List("read", repoCacheFile.toString),
+        List("read", config.defaultRepoConfigFile.toString),
         List("read", versionsFile.toString),
         List("read", pullRequestsFile.toString),
         List("read", versionsFile.toString),

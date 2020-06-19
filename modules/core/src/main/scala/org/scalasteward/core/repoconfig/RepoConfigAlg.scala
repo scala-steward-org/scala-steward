@@ -39,7 +39,7 @@ final class RepoConfigAlg[F[_]](implicit
   def readRepoConfigWithDefault(repo: Repo): F[RepoConfig] =
     for {
       config <- readRepoConfig(repo)
-      defaultCfg <- defaultRepoConfig()
+      defaultCfg <- defaultRepoConfig
     } yield config
       .map(_ |+| defaultCfg)
       .getOrElse(defaultCfg)

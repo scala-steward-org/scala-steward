@@ -8,7 +8,7 @@ class RepoConfigTest extends AnyFunSuite with Matchers {
   test("RepoConfig: semigroup") {
     import cats.syntax.semigroup._
 
-    RepoConfig.default |+| RepoConfig.default shouldBe RepoConfig.default
+    RepoConfig.empty |+| RepoConfig.empty shouldBe RepoConfig.empty
 
     val cfg = RepoConfig(
       commits = CommitsConfig(Some("a")),
@@ -20,8 +20,8 @@ class RepoConfigTest extends AnyFunSuite with Matchers {
       updatePullRequests = Some(PullRequestUpdateStrategy.Always)
     )
 
-    cfg |+| RepoConfig.default shouldBe cfg
-    RepoConfig.default |+| cfg shouldBe cfg
+    cfg |+| RepoConfig.empty shouldBe cfg
+    RepoConfig.empty |+| cfg shouldBe cfg
     cfg |+| cfg shouldBe cfg
 
     val cfg2 = RepoConfig(

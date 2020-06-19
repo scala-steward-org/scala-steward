@@ -46,8 +46,8 @@ object RepoConfig {
       import cats.syntax.semigroup._
 
       //  can't use eq due to wart remover
-      if (x === default) y
-      else if (y === default) x
+      if (x === empty) y
+      else if (y === empty) x
       else
         RepoConfig(
           commits = x.commits |+| y.commits,
