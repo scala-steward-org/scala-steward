@@ -126,23 +126,24 @@ object UpdatesConfig {
       x: List[UpdatePattern],
       y: List[UpdatePattern]
   ): List[UpdatePattern] =
-    if (x.isEmpty) y
-    else if (y.isEmpty) x
-    else {
-      //  remove duplicates first by calling .distinct
-      val xm: Map[GroupId, List[UpdatePattern]] = x.distinct.groupBy(_.groupId)
-      val ym: Map[GroupId, List[UpdatePattern]] = y.distinct.groupBy(_.groupId)
-      val builder = new ListBuffer[UpdatePattern]()
+    (x, y) match {
+      case (Nil, second) => second
+      case (first, Nil)  => first
+      case _             =>
+        //  remove duplicates first by calling .distinct
+        val xm: Map[GroupId, List[UpdatePattern]] = x.distinct.groupBy(_.groupId)
+        val ym: Map[GroupId, List[UpdatePattern]] = y.distinct.groupBy(_.groupId)
+        val builder = new ListBuffer[UpdatePattern]()
 
-      //  first of all, we only allow intersection (superset)
-      val keys = xm.keySet.intersect(ym.keySet)
+        //  first of all, we only allow intersection (superset)
+        val keys = xm.keySet.intersect(ym.keySet)
 
-      keys.foreach { groupId =>
-        builder ++= mergeAllowGroupId(xm(groupId), ym(groupId))
-      }
+        keys.foreach { groupId =>
+          builder ++= mergeAllowGroupId(xm(groupId), ym(groupId))
+        }
 
-      if (builder.isEmpty) nonExistingUpdatePattern
-      else builder.distinct.toList
+        if (builder.isEmpty) nonExistingUpdatePattern
+        else builder.distinct.toList
     }
 
   //  merge UpdatePattern for same group id
@@ -150,25 +151,26 @@ object UpdatesConfig {
       x: List[UpdatePattern],
       y: List[UpdatePattern]
   ): List[UpdatePattern] =
-    if (x.exists(_.isWholeGroupIdAllowed)) y
-    else if (y.exists(_.isWholeGroupIdAllowed)) x
-    else {
-      //  case with concrete artificats / versions
-      val builder = new ListBuffer[UpdatePattern]()
-      val xByArtifacts = x.groupBy(_.artifactId)
-      val yByArtifacts = y.groupBy(_.artifactId)
+    (x.exists(_.isWholeGroupIdAllowed), y.exists(_.isWholeGroupIdAllowed)) match {
+      case (true, _) => y
+      case (_, true) => x
+      case _         =>
+        //  case with concrete artifacts / versions
+        val builder = new ListBuffer[UpdatePattern]()
+        val xByArtifacts = x.groupBy(_.artifactId)
+        val yByArtifacts = y.groupBy(_.artifactId)
 
-      x.foreach { updatePattern =>
-        if (satisfyUpdatePattern(updatePattern, yByArtifacts))
-          builder += updatePattern
-      }
-      y.foreach { updatePattern =>
-        if (satisfyUpdatePattern(updatePattern, xByArtifacts))
-          builder += updatePattern
-      }
+        x.foreach { updatePattern =>
+          if (satisfyUpdatePattern(updatePattern, yByArtifacts))
+            builder += updatePattern
+        }
+        y.foreach { updatePattern =>
+          if (satisfyUpdatePattern(updatePattern, xByArtifacts))
+            builder += updatePattern
+        }
 
-      if (builder.isEmpty) nonExistingUpdatePattern
-      else builder.toList
+        if (builder.isEmpty) nonExistingUpdatePattern
+        else builder.toList
     }
 
   private def satisfyUpdatePattern(

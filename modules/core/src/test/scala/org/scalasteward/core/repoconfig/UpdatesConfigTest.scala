@@ -1,5 +1,6 @@
 package org.scalasteward.core.repoconfig
 
+import cats.syntax.semigroup._
 import eu.timepit.refined.types.numeric.PosInt
 import org.scalasteward.core.data.GroupId
 import org.scalasteward.core.repoconfig.UpdatePattern.Version
@@ -23,8 +24,6 @@ class UpdatesConfigTest extends AnyFunSuite with Matchers {
   private val B00 = UpdatePattern(groupIdB, None, None)
 
   test("semigroup: basic checks") {
-    import cats.syntax.semigroup._
-
     val emptyCfg = UpdatesConfig()
     emptyCfg |+| emptyCfg shouldBe emptyCfg
 

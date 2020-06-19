@@ -1,12 +1,11 @@
 package org.scalasteward.core.repoconfig
 
+import cats.syntax.semigroup._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class CommitsConfigTest extends AnyFunSuite with Matchers {
   test("CommitsConfig: semigroup") {
-    import cats.syntax.semigroup._
-
     val emptyCfg = CommitsConfig()
     emptyCfg |+| emptyCfg shouldBe emptyCfg
 

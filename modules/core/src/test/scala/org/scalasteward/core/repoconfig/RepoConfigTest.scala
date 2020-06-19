@@ -1,13 +1,12 @@
 package org.scalasteward.core.repoconfig
 
+import cats.syntax.semigroup._
 import org.scalasteward.core.data.GroupId
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class RepoConfigTest extends AnyFunSuite with Matchers {
   test("RepoConfig: semigroup") {
-    import cats.syntax.semigroup._
-
     RepoConfig.empty |+| RepoConfig.empty shouldBe RepoConfig.empty
 
     val cfg = RepoConfig(
