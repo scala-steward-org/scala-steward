@@ -130,7 +130,7 @@ lazy val `sbt-plugin` = myCrossProject("sbt-plugin")
 
 lazy val `mill-plugin` = myCrossProject("mill-plugin")
   .settings(
-    libraryDependencies += "com.lihaoyi" %% "mill-scalalib" % "0.7.2" % "provided"
+    libraryDependencies += "com.lihaoyi" %% "mill-scalalib" % "0.7.3" % "provided"
   )
 
 /// settings
