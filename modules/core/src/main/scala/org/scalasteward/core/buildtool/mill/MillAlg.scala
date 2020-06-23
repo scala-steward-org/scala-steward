@@ -30,7 +30,15 @@ import org.scalasteward.core.vcs.data.Repo
 trait MillAlg[F[_]] extends BuildToolAlg[F]
 
 object MillAlg {
-  val content = s"""import $$ivy.`org.scala-steward::scala-steward-mill:${BuildInfo.version}`"""
+  private val content =
+    s"""|import coursierapi.MavenRepository
+        |
+        |interp.repositories() ++= Seq(
+        |  MavenRepository
+        |    .of("https://oss.sonatype.org/content/repositories/snapshots/")
+        |)
+        |
+        |import $$ivy.`org.scala-steward::scala-steward-mill:${BuildInfo.version}`""".stripMargin
 
   def create[F[_]](implicit
       fileAlg: FileAlg[F],
