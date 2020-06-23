@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.scalasteward.plugin
+package org.scalasteward.mill.plugin
 
 import coursier.core.{Authentication, Repository}
 import coursier.ivy.IvyRepository
