@@ -10,15 +10,15 @@ val gitHubOwner = "fthomas"
 
 val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
   "core" -> List(JVMPlatform),
-  "plugin" -> List(JVMPlatform),
-  "mill" -> List(JVMPlatform)
+  "sbt-plugin" -> List(JVMPlatform),
+  "mill-plugin" -> List(JVMPlatform)
 )
 
 /// projects
 
 lazy val root = project
   .in(file("."))
-  .aggregate(core.jvm, plugin.jvm, mill.jvm)
+  .aggregate(core.jvm, `sbt-plugin`.jvm, `mill-plugin`.jvm)
   .settings(commonSettings)
   .settings(noPublishSettings)
 
@@ -81,11 +81,18 @@ lazy val core = myCrossProject("core")
       }
     },
     buildInfoKeys := Seq[BuildInfoKey](
+      organization,
       version,
       scalaVersion,
       scalaBinaryVersion,
       sbtVersion,
-      BuildInfoKey.map(git.gitHeadCommit) { case (k, v) => k -> v.getOrElse("master") }
+      BuildInfoKey.map(git.gitHeadCommit) { case (k, v) => k -> v.getOrElse("master") },
+      BuildInfoKey.map(`sbt-plugin`.jvm / moduleRootPkg) {
+        case (_, v) => "sbtPluginModuleRootPkg" -> v
+      },
+      BuildInfoKey.map(`mill-plugin`.jvm / moduleName) {
+        case (_, v) => "millPluginModuleName" -> v
+      }
     ),
     buildInfoPackage := moduleRootPkg.value,
     initialCommands += s"""
@@ -110,10 +117,10 @@ lazy val core = myCrossProject("core")
     """,
     fork in run := true,
     fork in Test := true,
-    Compile / unmanagedResourceDirectories ++= (plugin.jvm / Compile / unmanagedSourceDirectories).value
+    Compile / unmanagedResourceDirectories ++= (`sbt-plugin`.jvm / Compile / unmanagedSourceDirectories).value
   )
 
-lazy val plugin = myCrossProject("plugin")
+lazy val `sbt-plugin` = myCrossProject("sbt-plugin")
   .settings(noPublishSettings)
   .settings(
     scalaVersion := "2.12.11",
@@ -121,10 +128,8 @@ lazy val plugin = myCrossProject("plugin")
     Compile / compile / wartremoverErrors -= Wart.Equals
   )
 
-lazy val mill = myCrossProject("mill")
+lazy val `mill-plugin` = myCrossProject("mill-plugin")
   .settings(
-    /*crossScalaVersions := Seq("2.13.2", "2.12.10"),
-    scalaVersion := crossScalaVersions.value.head,*/
     libraryDependencies += "com.lihaoyi" %% "mill-scalalib" % "0.7.2" % "provided"
   )
 
@@ -137,7 +142,7 @@ def myCrossProject(name: String): CrossProject =
     .in(file(s"modules/$name"))
     .settings(
       moduleName := s"$projectName-$name",
-      moduleRootPkg := s"$rootPkg.$name"
+      moduleRootPkg := s"$rootPkg.${name.replace('-', '.')}"
     )
     .settings(commonSettings)
     // workaround for https://github.com/portable-scala/sbt-crossproject/issues/74
@@ -226,7 +231,7 @@ lazy val scaladocSettings = Def.settings(
 lazy val installPlugin = taskKey[Unit]("Copies StewardPlugin.scala into global plugins directory.")
 installPlugin := {
   val name = "StewardPlugin.scala"
-  val source = (plugin.jvm / Compile / sources).value.find(_.name == name).get
+  val source = (`sbt-plugin`.jvm / Compile / sources).value.find(_.name == name).get
   val target = file(System.getProperty("user.home")) / ".sbt" / "1.0" / "plugins" / name
   IO.copyFile(source, target)
 }

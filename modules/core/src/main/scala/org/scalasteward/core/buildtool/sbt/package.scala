@@ -18,6 +18,7 @@ package org.scalasteward.core.buildtool
 
 import cats.Functor
 import cats.implicits._
+import org.scalasteward.core.BuildInfo
 import org.scalasteward.core.buildtool.sbt.data.SbtVersion
 import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId, Version}
 import org.scalasteward.core.io.{FileAlg, FileData}
@@ -46,6 +47,8 @@ package object sbt {
 
   def stewardPlugin[F[_]](implicit fileAlg: FileAlg[F], F: Functor[F]): F[FileData] = {
     val name = "StewardPlugin.scala"
-    fileAlg.readResource(s"org/scalasteward/plugin/$name").map(FileData(name, _))
+    fileAlg
+      .readResource(s"${BuildInfo.sbtPluginModuleRootPkg.replace('.', '/')}/$name")
+      .map(FileData(name, _))
   }
 }

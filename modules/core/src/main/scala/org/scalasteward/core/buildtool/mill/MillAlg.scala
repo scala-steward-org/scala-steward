@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.buildtool
-package mill
+package org.scalasteward.core.buildtool.mill
 
 import cats.implicits._
 import cats.effect.Sync
 import org.scalasteward.core.BuildInfo
+import org.scalasteward.core.buildtool.BuildToolAlg
 import org.scalasteward.core.data.Scope
 import org.scalasteward.core.data.Scope.Dependencies
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
@@ -38,7 +38,7 @@ object MillAlg {
        |    .of("https://oss.sonatype.org/content/repositories/snapshots/")
        |)
        |
-       |import $$ivy.`org.scala-steward::scala-steward-mill:${BuildInfo.version}`""".stripMargin
+       |import $$ivy.`${BuildInfo.organization}::${BuildInfo.millPluginModuleName}:${BuildInfo.version}`""".stripMargin
 
   def create[F[_]](implicit
       fileAlg: FileAlg[F],
