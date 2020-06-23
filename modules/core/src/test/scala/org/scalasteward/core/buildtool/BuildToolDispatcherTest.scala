@@ -18,6 +18,7 @@ class BuildToolDispatcherTest extends AnyFunSuite with Matchers {
       Vector(
         List("test", "-f", s"$repoDir/build.sbt"),
         List("test", "-f", s"$repoDir/pom.xml"),
+        List("test", "-f", s"$repoDir/build.sc"),
         List(
           "TEST_VAR=GREAT",
           "ANOTHER_TEST_VAR=ALSO_GREAT",

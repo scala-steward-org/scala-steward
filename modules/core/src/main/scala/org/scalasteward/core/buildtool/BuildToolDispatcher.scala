@@ -19,6 +19,7 @@ package org.scalasteward.core.buildtool
 import cats.Monad
 import cats.implicits._
 import org.scalasteward.core.buildtool.maven.MavenAlg
+import org.scalasteward.core.buildtool.mill.MillAlg
 import org.scalasteward.core.buildtool.sbt.SbtAlg
 import org.scalasteward.core.data.Scope
 import org.scalasteward.core.scalafix.Migration
@@ -31,9 +32,10 @@ object BuildToolDispatcher {
   def create[F[_]](implicit
       mavenAlg: MavenAlg[F],
       sbtAlg: SbtAlg[F],
+      millAlg: MillAlg[F],
       F: Monad[F]
   ): BuildToolDispatcher[F] = {
-    val allBuildTools = List(sbtAlg, mavenAlg)
+    val allBuildTools = List(sbtAlg, mavenAlg, millAlg)
     val fallbackBuildTool = sbtAlg
 
     new BuildToolDispatcher[F] {

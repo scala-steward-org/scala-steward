@@ -10,14 +10,15 @@ val gitHubOwner = "fthomas"
 
 val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
   "core" -> List(JVMPlatform),
-  "plugin" -> List(JVMPlatform)
+  "plugin" -> List(JVMPlatform),
+  "mill" -> List(JVMPlatform)
 )
 
 /// projects
 
 lazy val root = project
   .in(file("."))
-  .aggregate(core.jvm, plugin.jvm)
+  .aggregate(core.jvm, plugin.jvm, mill.jvm)
   .settings(commonSettings)
   .settings(noPublishSettings)
 
@@ -118,6 +119,13 @@ lazy val plugin = myCrossProject("plugin")
     scalaVersion := "2.12.11",
     sbtPlugin := true,
     Compile / compile / wartremoverErrors -= Wart.Equals
+  )
+
+lazy val mill = myCrossProject("mill")
+  .settings(
+    /*crossScalaVersions := Seq("2.13.2", "2.12.10"),
+    scalaVersion := crossScalaVersions.value.head,*/
+    libraryDependencies += "com.lihaoyi" %% "mill-scalalib" % "0.7.2" % "provided"
   )
 
 /// settings
