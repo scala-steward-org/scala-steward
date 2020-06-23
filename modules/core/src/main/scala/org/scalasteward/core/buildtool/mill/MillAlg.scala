@@ -34,11 +34,10 @@ object MillAlg {
     s"""|import coursierapi.MavenRepository
        |
        |interp.repositories() ++= Seq(
-       |  MavenRepository
-       |    .of("https://oss.sonatype.org/content/repositories/snapshots/")
+       |  MavenRepository.of("https://oss.sonatype.org/content/repositories/snapshots/")
        |)
-       |
-       |import $$ivy.`${BuildInfo.organization}::${BuildInfo.millPluginModuleName}:${BuildInfo.version}`""".stripMargin
+       |interp.load.ivy("${BuildInfo.organization}" %% "${BuildInfo.millPluginModuleName}" % "${BuildInfo.version}")
+       |""".stripMargin
 
   def create[F[_]](implicit
       fileAlg: FileAlg[F],
