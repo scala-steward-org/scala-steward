@@ -64,7 +64,7 @@ object MillAlg {
                 "-p",
                 predef.toString(),
                 "show",
-                "org.scalasteward.plugin.StewardPlugin/extractDeps"
+                s"${BuildInfo.millPluginModuleRootPkg}.StewardPlugin/extractDeps"
               )
             ),
             repoDir

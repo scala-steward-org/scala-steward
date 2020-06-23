@@ -92,6 +92,9 @@ lazy val core = myCrossProject("core")
       },
       BuildInfoKey.map(`mill-plugin`.jvm / moduleName) {
         case (_, v) => "millPluginModuleName" -> v
+      },
+      BuildInfoKey.map(`mill-plugin`.jvm / moduleRootPkg) {
+        case (_, v) => "millPluginModuleRootPkg" -> v
       }
     ),
     buildInfoPackage := moduleRootPkg.value,
