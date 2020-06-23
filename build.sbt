@@ -18,7 +18,7 @@ val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
 
 lazy val root = project
   .in(file("."))
-  .aggregate(core.jvm, plugin.jvm)
+  .aggregate(core.jvm, plugin.jvm, mill.jvm)
   .settings(commonSettings)
   .settings(noPublishSettings)
 
