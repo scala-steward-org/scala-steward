@@ -32,13 +32,13 @@ trait MillAlg[F[_]] extends BuildToolAlg[F]
 object MillAlg {
   private val content =
     s"""|import coursierapi.MavenRepository
-        |
-        |interp.repositories() ++= Seq(
-        |  MavenRepository
-        |    .of("https://oss.sonatype.org/content/repositories/snapshots/")
-        |)
-        |
-        |import $$ivy.`org.scala-steward::scala-steward-mill:${BuildInfo.version}`""".stripMargin
+       |
+       |interp.repositories() ++= Seq(
+       |  MavenRepository
+       |    .of("https://oss.sonatype.org/content/repositories/snapshots/")
+       |)
+       |
+       |import $$ivy.`org.scala-steward::scala-steward-mill:${BuildInfo.version}`""".stripMargin
 
   def create[F[_]](implicit
       fileAlg: FileAlg[F],
