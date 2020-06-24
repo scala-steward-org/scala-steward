@@ -25,13 +25,14 @@ import mill.eval.Evaluator
 import mill.scalalib._
 import ujson._
 
-object StewardPlugin extends StewardPlugin(Evaluator.currentEvaluator.get)
+object StewardPlugin extends ExternalModule {
 
-class StewardPlugin(ev: () => Evaluator) extends ExternalModule { outer =>
+  implicit def millScoptEvaluatorReads[E]: mill.main.EvaluatorScopt[E] =
+    new mill.main.EvaluatorScopt[E]()
 
-  def extractDeps() =
+  def extractDeps(ev: Evaluator) =
     T.command {
-      val modules = T.traverse(findModules)(toModuleDep)
+      val modules = T.traverse(findModules(ev))(toModuleDep)
       T.task {
         val m = modules()
         Obj(
@@ -40,10 +41,8 @@ class StewardPlugin(ev: () => Evaluator) extends ExternalModule { outer =>
       }
     }
 
-  def findModules =
-    Option(ev())
-      .map(_.rootModule.millInternal.modules.collect { case j: JavaModule => j })
-      .getOrElse(Nil)
+  def findModules(ev: Evaluator) =
+    ev.rootModule.millInternal.modules.collect { case j: JavaModule => j }
 
   def toModuleDep(m: JavaModule) = {
     val artifactMods = m match {
@@ -68,7 +67,7 @@ class StewardPlugin(ev: () => Evaluator) extends ExternalModule { outer =>
     }
   }
 
-  lazy val millDiscover: Discover[this.type] = Discover[this.type]
+  lazy val millDiscover: Discover[StewardPlugin.this.type] = Discover[this.type]
 
   case class Dependency(
       groupId: String,

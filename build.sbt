@@ -133,7 +133,13 @@ lazy val `sbt-plugin` = myCrossProject("sbt-plugin")
 
 lazy val `mill-plugin` = myCrossProject("mill-plugin")
   .settings(
-    libraryDependencies += "com.lihaoyi" %% "mill-scalalib" % "0.7.3" % "provided"
+    //2.12.10 is important, do not change it, otherwise ammonite will fail to resolve
+    crossScalaVersions := Seq("2.13.2", "2.12.10"),
+    scalaVersion := crossScalaVersions.value.head,
+    libraryDependencies += {
+      val millVersion = if (scalaBinaryVersion.value == "2.12") "0.6.2" else "0.7.3"
+      "com.lihaoyi" %% "mill-scalalib" % millVersion % "provided"
+    }
   )
 
 /// settings
