@@ -18,7 +18,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
       .runS(MockState.empty)
       .unsafeRunSync() shouldBe MockState.empty.copy(
       commands = Vector(
-        List("read", "classpath:org/scalasteward/plugin/StewardPlugin.scala"),
+        List("read", "classpath:org/scalasteward/sbt/plugin/StewardPlugin.scala"),
         List("create", "/tmp/steward/.sbt/0.13/plugins/StewardPlugin.scala"),
         List("create", "/tmp/steward/.sbt/1.0/plugins/StewardPlugin.scala"),
         List("fa", "fa"),

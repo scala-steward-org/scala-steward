@@ -4,7 +4,7 @@ object Dependencies {
   val attoCore = "org.tpolecat" %% "atto-core" % "0.8.0"
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.1"
   val betterMonadicFor = "com.olegpy" %% "better-monadic-for" % "0.3.1"
-  val caseApp = "com.github.alexarchambault" %% "case-app" % "2.0.1"
+  val caseApp = "com.github.alexarchambault" %% "case-app" % "2.0.3"
   val catsEffect = "org.typelevel" %% "cats-effect" % "2.1.3"
   val catsKernelLaws = "org.typelevel" %% "cats-kernel-laws" % "2.1.1"
   val circeConfig = "io.circe" %% "circe-config" % "0.8.0"
@@ -19,7 +19,7 @@ object Dependencies {
   val cron4sCore = "com.github.alonsodomin.cron4s" %% "cron4s-core" % "0.6.0"
   val disciplineScalatest = "org.typelevel" %% "discipline-scalatest" % "1.0.1"
   val fs2Core = "co.fs2" %% "fs2-core" % "2.4.2"
-  val http4sAsyncHttpClient = "org.http4s" %% "http4s-async-http-client" % "0.21.4"
+  val http4sAsyncHttpClient = "org.http4s" %% "http4s-async-http-client" % "0.21.5"
   val http4sCirce = "org.http4s" %% "http4s-circe" % http4sAsyncHttpClient.revision
   val http4sDsl = "org.http4s" %% "http4s-dsl" % http4sAsyncHttpClient.revision
   val kindProjector = "org.typelevel" % "kind-projector" % "0.11.0"
