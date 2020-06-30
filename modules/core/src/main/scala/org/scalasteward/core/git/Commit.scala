@@ -16,16 +16,4 @@
 
 package org.scalasteward.core.git
 
-import io.circe.{Decoder, Encoder}
-
-final case class Branch(name: String)
-
-object Branch {
-  val head: Branch = Branch("HEAD")
-
-  implicit val branchDecoder: Decoder[Branch] =
-    Decoder[String].map(Branch.apply)
-
-  implicit val branchEncoder: Encoder[Branch] =
-    Encoder[String].contramap(_.name)
-}
+final case class Commit()

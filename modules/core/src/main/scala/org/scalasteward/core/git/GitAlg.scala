@@ -17,6 +17,7 @@
 package org.scalasteward.core.git
 
 import better.files.File
+import cats.Monad
 import cats.effect.Bracket
 import cats.implicits._
 import org.http4s.Uri
@@ -34,7 +35,7 @@ trait GitAlg[F[_]] {
 
   def cloneExists(repo: Repo): F[Boolean]
 
-  def commitAll(repo: Repo, message: String): F[Unit]
+  def commitAll(repo: Repo, message: String): F[Commit]
 
   def containsChanges(repo: Repo): F[Boolean]
 
@@ -52,7 +53,7 @@ trait GitAlg[F[_]] {
   def latestSha1(repo: Repo, branch: Branch): F[Sha1]
 
   /** Merges `branch` into the current branch using `theirs` as merge strategy option. */
-  def mergeTheirs(repo: Repo, branch: Branch): F[Unit]
+  def mergeTheirs(repo: Repo, branch: Branch): F[Option[Commit]]
 
   def push(repo: Repo, branch: Branch): F[Unit]
 
@@ -61,6 +62,9 @@ trait GitAlg[F[_]] {
   def setAuthor(repo: Repo, author: Author): F[Unit]
 
   def syncFork(repo: Repo, upstreamUrl: Uri, defaultBranch: Branch): F[Unit]
+
+  final def commitAllIfDirty(repo: Repo, message: String)(implicit F: Monad[F]): F[Option[Commit]] =
+    containsChanges(repo).ifM(commitAll(repo, message).map(Some.apply), F.pure(None))
 
   final def returnToCurrentBranch[A, E](repo: Repo)(fa: F[A])(implicit F: Bracket[F, E]): F[A] =
     F.bracket(currentBranch(repo))(_ => fa)(checkoutBranch(repo, _))
@@ -101,19 +105,17 @@ object GitAlg {
           dotGitExists <- fileAlg.isDirectory(repoDir / ".git")
         } yield dotGitExists
 
-      override def commitAll(repo: Repo, message: String): F[Unit] =
+      override def commitAll(repo: Repo, message: String): F[Commit] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
           sign = if (config.signCommits) List("--gpg-sign") else List("--no-gpg-sign")
           _ <- exec(Nel.of("commit", "--all", "-m", message) ++ sign, repoDir)
-        } yield ()
+        } yield Commit()
 
       override def containsChanges(repo: Repo): F[Boolean] =
         workspaceAlg.repoDir(repo).flatMap { repoDir =>
-          exec(
-            Nel.of("status", "--porcelain", "--untracked-files=no", "--ignore-submodules"),
-            repoDir
-          ).map(_.nonEmpty)
+          val args = Nel.of("status", "--porcelain", "--untracked-files=no", "--ignore-submodules")
+          exec(args, repoDir).map(_.nonEmpty)
         }
 
       override def createBranch(repo: Repo, branch: Branch): F[Unit] =
@@ -125,7 +127,7 @@ object GitAlg {
       override def currentBranch(repo: Repo): F[Branch] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          lines <- exec(Nel.of("rev-parse", "--abbrev-ref", "HEAD"), repoDir)
+          lines <- exec(Nel.of("rev-parse", "--abbrev-ref", Branch.head.name), repoDir)
         } yield Branch(lines.mkString.trim)
 
       override def findFilesContaining(repo: Repo, string: String): F[List[String]] =
@@ -157,12 +159,14 @@ object GitAlg {
           sha1 <- F.fromEither(Sha1.from(lines.mkString("").trim))
         } yield sha1
 
-      override def mergeTheirs(repo: Repo, branch: Branch): F[Unit] =
+      override def mergeTheirs(repo: Repo, branch: Branch): F[Option[Commit]] =
         for {
+          before <- latestSha1(repo, Branch.head)
           repoDir <- workspaceAlg.repoDir(repo)
           sign = if (config.signCommits) List("--gpg-sign") else List.empty[String]
           _ <- exec(Nel.of("merge", "--strategy-option=theirs") ++ (sign :+ branch.name), repoDir)
-        } yield ()
+          after <- latestSha1(repo, Branch.head)
+        } yield Option.when(before =!= after)(Commit())
 
       override def push(repo: Repo, branch: Branch): F[Unit] =
         for {
