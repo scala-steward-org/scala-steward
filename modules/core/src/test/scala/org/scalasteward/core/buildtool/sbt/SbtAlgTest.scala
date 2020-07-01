@@ -19,11 +19,11 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
       .unsafeRunSync() shouldBe MockState.empty.copy(
       commands = Vector(
         List("read", "classpath:org/scalasteward/sbt/plugin/StewardPlugin.scala"),
-        List("create", "/tmp/steward/.sbt/0.13/plugins/StewardPlugin.scala"),
-        List("create", "/tmp/steward/.sbt/1.0/plugins/StewardPlugin.scala"),
+        List("write", "/tmp/steward/.sbt/0.13/plugins/StewardPlugin.scala"),
+        List("write", "/tmp/steward/.sbt/1.0/plugins/StewardPlugin.scala"),
         List("fa", "fa"),
-        List("rm", "/tmp/steward/.sbt/1.0/plugins/StewardPlugin.scala"),
-        List("rm", "/tmp/steward/.sbt/0.13/plugins/StewardPlugin.scala")
+        List("rm", "-rf", "/tmp/steward/.sbt/1.0/plugins/StewardPlugin.scala"),
+        List("rm", "-rf", "/tmp/steward/.sbt/0.13/plugins/StewardPlugin.scala")
       ),
       logs = Vector((None, "Add global sbt plugins")),
       files = Map.empty
@@ -75,8 +75,8 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List("create", "/tmp/steward/.sbt/0.13/plugins/scala-steward-scalafix.sbt"),
-        List("create", "/tmp/steward/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
+        List("write", "/tmp/steward/.sbt/0.13/plugins/scala-steward-scalafix.sbt"),
+        List("write", "/tmp/steward/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
         List(
           "TEST_VAR=GREAT",
           "ANOTHER_TEST_VAR=ALSO_GREAT",
@@ -88,8 +88,8 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
           "-no-colors",
           ";scalafixEnable;scalafix github:functional-streams-for-scala/fs2/v1?sha=v1.0.5;test:scalafix github:functional-streams-for-scala/fs2/v1?sha=v1.0.5"
         ),
-        List("rm", "/tmp/steward/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
-        List("rm", "/tmp/steward/.sbt/0.13/plugins/scala-steward-scalafix.sbt")
+        List("rm", "-rf", "/tmp/steward/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
+        List("rm", "-rf", "/tmp/steward/.sbt/0.13/plugins/scala-steward-scalafix.sbt")
       )
     )
   }
