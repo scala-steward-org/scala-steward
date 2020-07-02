@@ -17,9 +17,9 @@
 package org.scalasteward.core.buildtool.sbt
 
 import better.files.File
+import cats.Functor
 import cats.data.OptionT
 import cats.implicits._
-import cats.{Functor, Monad}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.BuildToolAlg
@@ -29,7 +29,7 @@ import org.scalasteward.core.data.{Dependency, Resolver, Scope}
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.scalafmt.ScalafmtAlg
-import org.scalasteward.core.util.Nel
+import org.scalasteward.core.util.{BracketThrowable, Nel}
 import org.scalasteward.core.vcs.data.Repo
 
 trait SbtAlg[F[_]] extends BuildToolAlg[F] {
@@ -51,7 +51,7 @@ object SbtAlg {
       processAlg: ProcessAlg[F],
       scalafmtAlg: ScalafmtAlg[F],
       workspaceAlg: WorkspaceAlg[F],
-      F: Monad[F]
+      F: BracketThrowable[F]
   ): SbtAlg[F] =
     new SbtAlg[F] {
       override def addGlobalPluginTemporarily[A](plugin: FileData)(fa: F[A]): F[A] =
