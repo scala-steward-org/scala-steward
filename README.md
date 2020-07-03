@@ -70,6 +70,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [Anil Kumar Myla](https://github.com/anilkumarmyla)
 * [Arjun Dhawan](https://github.com/arjun-1)
 * [Arulselvan Madhavan](https://github.com/ArulselvanMadhavan)
+* [Barry O'Neill](https://github.com/barryoneill)
 * [Bayram Kiran](https://github.com/kiranbayram)
 * [Cédric Chantepie](https://github.com/cchantep)
 * [Christopher Davenport](https://github.com/ChristopherDavenport)

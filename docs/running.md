@@ -45,6 +45,13 @@ The [`git-ask-pass` option](https://git-scm.com/docs/gitcredentials) must specif
 You can also provide a `--scalafix-migrations` option with the path to a file containing scalafix migrations.
 More information can be found [here][migrations]
 
+### Workspace
+
+The workspace directory (specified with `--workspace`) provides a location for cache and temporary files.  
+
+It is important to persist this workspace between runs.  Without this, Scala Steward will be unable to observe 
+repo-specific preferences (such as [pullRequests.frequency](repo-specific-configuration.md)) correctly.   
+
 ### Private repositories
 
 If you run Scala Steward for your own private projects, the option `--do-not-fork` can be required, not to fork.
