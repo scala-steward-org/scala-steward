@@ -28,7 +28,6 @@ import org.scalasteward.core.buildtool.sbt.data.SbtVersion
 import org.scalasteward.core.data.{Dependency, Resolver, Scope}
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.scalafix.Migration
-import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.util.{BracketThrowable, Nel}
 import org.scalasteward.core.vcs.data.Repo
 
@@ -49,7 +48,6 @@ object SbtAlg {
       fileAlg: FileAlg[F],
       logger: Logger[F],
       processAlg: ProcessAlg[F],
-      scalafmtAlg: ScalafmtAlg[F],
       workspaceAlg: WorkspaceAlg[F],
       F: BracketThrowable[F]
   ): SbtAlg[F] =
@@ -85,14 +83,7 @@ object SbtAlg {
           lines <- exec(sbtCmd(commands), repoDir)
           dependencies = parser.parseDependencies(lines)
           additionalDependencies <- getAdditionalDependencies(repo)
-          // combine scopes with the same resolvers
-          result =
-            (dependencies ++ additionalDependencies)
-              .groupByNel(_.resolvers)
-              .values
-              .toList
-              .map(group => group.head.as(group.reduceMap(_.value).distinct.sorted))
-        } yield result
+        } yield additionalDependencies ::: dependencies
 
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
         addGlobalPluginTemporarily(scalaStewardScalafixSbt) {
@@ -127,12 +118,7 @@ object SbtAlg {
         }
 
       def getAdditionalDependencies(repo: Repo): F[List[Scope.Dependencies]] =
-        for {
-          maybeSbtDependency <- getSbtDependency(repo)
-          maybeScalafmtDependency <- scalafmtAlg.getScalafmtDependency(repo)
-        } yield Nel
-          .fromList(maybeSbtDependency.toList ++ maybeScalafmtDependency.toList)
-          .map(dependencies => Scope(dependencies.toList, List(Resolver.mavenCentral)))
-          .toList
+        getSbtDependency(repo)
+          .map(_.map(dep => Scope(List(dep), List(Resolver.mavenCentral))).toList)
     }
 }

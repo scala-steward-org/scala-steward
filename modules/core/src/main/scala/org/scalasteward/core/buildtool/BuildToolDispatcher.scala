@@ -21,8 +21,9 @@ import cats.implicits._
 import org.scalasteward.core.buildtool.maven.MavenAlg
 import org.scalasteward.core.buildtool.mill.MillAlg
 import org.scalasteward.core.buildtool.sbt.SbtAlg
-import org.scalasteward.core.data.Scope
+import org.scalasteward.core.data.{Resolver, Scope}
 import org.scalasteward.core.scalafix.Migration
+import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
@@ -31,11 +32,12 @@ trait BuildToolDispatcher[F[_]] extends BuildToolAlg[F]
 object BuildToolDispatcher {
   def create[F[_]](implicit
       mavenAlg: MavenAlg[F],
-      sbtAlg: SbtAlg[F],
       millAlg: MillAlg[F],
+      sbtAlg: SbtAlg[F],
+      scalafmtAlg: ScalafmtAlg[F],
       F: Monad[F]
   ): BuildToolDispatcher[F] = {
-    val allBuildTools = List(sbtAlg, mavenAlg, millAlg)
+    val allBuildTools = List(mavenAlg, millAlg, sbtAlg)
     val fallbackBuildTool = sbtAlg
 
     new BuildToolDispatcher[F] {
@@ -43,7 +45,10 @@ object BuildToolDispatcher {
         allBuildTools.existsM(_.containsBuild(repo))
 
       override def getDependencies(repo: Repo): F[List[Scope.Dependencies]] =
-        foundBuildTools(repo).flatMap(_.flatTraverse(_.getDependencies(repo)))
+        for {
+          dependencies <- foundBuildTools(repo).flatMap(_.flatTraverse(_.getDependencies(repo)))
+          additionalDependencies <- getAdditionalDependencies(repo)
+        } yield Scope.combineByResolvers(additionalDependencies ::: dependencies)
 
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
         foundBuildTools(repo).flatMap(_.traverse_(_.runMigrations(repo, migrations)))
@@ -53,6 +58,11 @@ object BuildToolDispatcher {
           case Nil  => List(fallbackBuildTool)
           case list => list
         }
+
+      def getAdditionalDependencies(repo: Repo): F[List[Scope.Dependencies]] =
+        scalafmtAlg
+          .getScalafmtDependency(repo)
+          .map(_.map(dep => Scope(List(dep), List(Resolver.mavenCentral))).toList)
     }
   }
 }
