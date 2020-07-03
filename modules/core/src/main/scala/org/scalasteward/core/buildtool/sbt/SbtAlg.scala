@@ -92,8 +92,7 @@ object SbtAlg {
             scalafixCmds = for {
               migration <- migrations
               rule <- migration.rewriteRules
-              cmd <- Nel.of(scalafix, testScalafix)
-            } yield s"$cmd $rule"
+            } yield s"$scalafixAll $rule"
             _ <- exec(sbtCmd(scalafixEnable :: scalafixCmds.toList), repoDir)
           } yield ()
         }

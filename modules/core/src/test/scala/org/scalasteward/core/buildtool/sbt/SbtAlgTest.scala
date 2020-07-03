@@ -81,7 +81,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
           "sbt",
           "-batch",
           "-no-colors",
-          s";$scalafixEnable;$scalafix github:functional-streams-for-scala/fs2/v1?sha=v1.0.5;$testScalafix github:functional-streams-for-scala/fs2/v1?sha=v1.0.5"
+          s";$scalafixEnable;$scalafixAll github:functional-streams-for-scala/fs2/v1?sha=v1.0.5"
         ),
         List("rm", "-rf", "/tmp/steward/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
         List("rm", "-rf", "/tmp/steward/.sbt/0.13/plugins/scala-steward-scalafix.sbt")

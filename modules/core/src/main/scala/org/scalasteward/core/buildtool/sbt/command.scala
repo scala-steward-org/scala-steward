@@ -21,7 +21,6 @@ object command {
   val stewardDependencies = "stewardDependencies"
   val crossStewardDependencies = s"+ $stewardDependencies"
   val reloadPlugins = "reload plugins"
-  val scalafix = "scalafix"
-  val testScalafix = "test:scalafix"
+  val scalafixAll = "scalafixAll"
   val scalafixEnable = "scalafixEnable"
 }
