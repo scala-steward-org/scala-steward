@@ -14,6 +14,9 @@ val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
   "mill-plugin" -> List(JVMPlatform)
 )
 
+val Scala212 = "2.12.10"
+val Scala213 = "2.13.2"
+
 /// projects
 
 lazy val root = project
@@ -126,18 +129,16 @@ lazy val core = myCrossProject("core")
 lazy val `sbt-plugin` = myCrossProject("sbt-plugin")
   .settings(noPublishSettings)
   .settings(
-    scalaVersion := "2.12.11",
+    scalaVersion := Scala212,
     sbtPlugin := true,
     Compile / compile / wartremoverErrors -= Wart.Equals
   )
 
 lazy val `mill-plugin` = myCrossProject("mill-plugin")
   .settings(
-    //2.12.10 is important, do not change it, otherwise ammonite will fail to resolve
-    crossScalaVersions := Seq("2.13.2", "2.12.10"),
-    scalaVersion := crossScalaVersions.value.head,
+    crossScalaVersions := Seq(Scala213, Scala212),
     libraryDependencies += {
-      val millVersion = if (scalaBinaryVersion.value == "2.12") "0.6.2" else "0.7.3"
+      val millVersion = if (scalaBinaryVersion.value == "2.12") "0.6.2" else "0.7.4"
       "com.lihaoyi" %% "mill-scalalib" % millVersion % "provided"
     }
   )
@@ -173,6 +174,7 @@ lazy val commonSettings = Def.settings(
 )
 
 lazy val compileSettings = Def.settings(
+  scalaVersion := Scala213,
   doctestTestFramework := DoctestTestFramework.ScalaCheck,
   wartremoverErrors ++= Seq(Wart.TraversableOps),
   Compile / compile / wartremoverErrors ++= Seq(Wart.Equals)
