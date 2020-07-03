@@ -6,6 +6,7 @@ dist: xenial
 
 scala: 
   - 2.13.2
+  - 2.12.10
 
 jdk:
   - openjdk8
