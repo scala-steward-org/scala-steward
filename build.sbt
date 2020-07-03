@@ -138,7 +138,7 @@ lazy val `mill-plugin` = myCrossProject("mill-plugin")
   .settings(
     crossScalaVersions := Seq(Scala213, Scala212),
     libraryDependencies += {
-      val millVersion = if (scalaBinaryVersion.value == "2.12") "0.6.2" else "0.7.4"
+      val millVersion = if (scalaBinaryVersion.value == "2.12") "0.6.3" else "0.7.4"
       "com.lihaoyi" %% "mill-scalalib" % millVersion % "provided"
     }
   )
