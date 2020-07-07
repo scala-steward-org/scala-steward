@@ -54,10 +54,9 @@ object MillAlg {
           repoDir <- workspaceAlg.repoDir(repo)
           predef = repoDir / "scala-steward.sc"
           _ <- fileAlg.writeFile(predef, content)
-          millcmd = if ((repoDir / "mill").exists) (repoDir / "mill").toString() else "mill"
           extracted <- processAlg.exec(
             Nel(
-              millcmd,
+              "mill",
               List(
                 "-i",
                 "-p",
