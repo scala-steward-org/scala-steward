@@ -137,10 +137,7 @@ lazy val `sbt-plugin` = myCrossProject("sbt-plugin")
 lazy val `mill-plugin` = myCrossProject("mill-plugin")
   .settings(
     crossScalaVersions := Seq(Scala213, Scala212),
-    libraryDependencies += {
-      val millVersion = if (scalaBinaryVersion.value == "2.12") "0.6.3" else "0.7.4"
-      "com.lihaoyi" %% "mill-scalalib" % millVersion % "provided"
-    }
+    libraryDependencies += Dependencies.mill.value % Provided
   )
 
 /// settings
@@ -201,16 +198,19 @@ lazy val metadataSettings = Def.settings(
 )
 
 lazy val dockerSettings = Def.settings(
-  dockerBaseImage := Option(System.getenv("DOCKER_BASE_IMAGE")).getOrElse("openjdk:8-jre-alpine"),
+  dockerBaseImage := Option(System.getenv("DOCKER_BASE_IMAGE")).getOrElse("openjdk:8-jdk-alpine"),
   dockerCommands ++= {
     val getSbtVersion = sbtVersion.value
     val sbtTgz = s"sbt-$getSbtVersion.tgz"
     val sbtUrl = s"https://github.com/sbt/sbt/releases/download/v$getSbtVersion/$sbtTgz"
+    val millVersion = Dependencies.mill.value.revision
     Seq(
       Cmd("USER", "root"),
+      Cmd("RUN", "apk --no-cache add bash git ca-certificates curl maven"),
+      Cmd("RUN", s"wget $sbtUrl && tar -xf $sbtTgz && rm -f $sbtTgz"),
       Cmd(
         "RUN",
-        s"apk --no-cache add bash git ca-certificates maven && wget $sbtUrl && tar -xf $sbtTgz && rm -f $sbtTgz"
+        s"curl -L https://github.com/lihaoyi/mill/releases/download/$millVersion/$millVersion > /usr/local/bin/mill && chmod +x /usr/local/bin/mill"
       )
     )
   },

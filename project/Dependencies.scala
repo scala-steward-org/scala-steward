@@ -1,6 +1,11 @@
 import sbt._
+import sbt.Keys._
 
 object Dependencies {
+  val mill = Def.setting {
+    val version = if (scalaBinaryVersion.value == "2.12") "0.6.3" else "0.7.4"
+    "com.lihaoyi" %% "mill-scalalib" % version
+  }
   val attoCore = "org.tpolecat" %% "atto-core" % "0.8.0"
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.1"
   val betterMonadicFor = "com.olegpy" %% "better-monadic-for" % "0.3.1"
