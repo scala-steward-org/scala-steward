@@ -131,6 +131,7 @@ Using Scala Steward in your company and don't see it listed here?
 Consider creating PR to add your company to the list and join the community.
 
 * [Adform](https://site.adform.com/)
+* [Agoda](https://agoda.com/)
 * [AutoScout24](https://www.autoscout24.de/)
 * [Avast](https://avast.com)
 * [Besedo](https://www.besedo.com/)
