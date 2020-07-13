@@ -73,6 +73,15 @@ These variables will be accessible (in sbt) to all of the projects that Scala St
 If your projects require credentials, you can also provide global credentials in the `$HOME/.sbt/1.0/credentials.sbt` file. 
 The file should contain a single line: `credentials += Credentials("Some Nexus Repository Manager", "my.artifact.repo.net", "admin", "admin123")`.
 
+#### sbt 0.13 workaround
+For sbt 0.13 builds, scala-steward [may be unable](https://gitter.im/fthomas/scala-steward?at=5f0573dac7d15f7d0f7b15ac) to extract credentials for private resolvers. Instead, you can [configure coursier directly](https://get-coursier.io/docs/other-credentials) by adding `~/.config/coursier/credentials.properties`:
+```scala
+example1.username=username
+example1.password=password
+example1.host=artifacts.example.com
+example1.realm=Example Realm
+```
+
 ### Running locally from sbt
 
 #### Sample run for Gitlab
