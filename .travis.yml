@@ -27,7 +27,7 @@ jobs:
   include:
   - stage: release
     jdk: openjdk8
-    script: docker login -u $DOCKER_USER -p $DOCKER_PASS && sbt docker:publish
+    script: docker login -u $DOCKER_USER -p $DOCKER_PASS && sbt core/docker:publish
     name: docker
   - script: sbt ci-release
     name: jar
