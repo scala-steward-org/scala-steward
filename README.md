@@ -4,7 +4,7 @@
 
 # Scala Steward
 [![Build Status](https://travis-ci.com/scala-steward-org/scala-steward.svg?branch=master)](https://travis-ci.com/scala-steward-org/scala-steward)
-[![codecov](https://codecov.io/gh/fthomas/scala-steward/branch/master/graph/badge.svg)](https://codecov.io/gh/fthomas/scala-steward)
+[![codecov](https://codecov.io/gh/scala-steward-org/scala-steward/branch/master/graph/badge.svg)](https://codecov.io/gh/scala-steward-org/scala-steward)
 [![Join the chat at https://gitter.im/fthomas/scala-steward](https://badges.gitter.im/fthomas/scala-steward.svg)](https://gitter.im/fthomas/scala-steward?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Follow @ScalaSteward on Twitter](https://img.shields.io/twitter/follow/ScalaSteward.svg?logo=twitter&style=flat&color=blue)](https://twitter.com/ScalaSteward)
 [![Typelevel project](https://img.shields.io/badge/typelevel-project-blue.svg)](https://typelevel.org/projects/#scala-steward)
