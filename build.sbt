@@ -6,7 +6,7 @@ import sbtcrossproject.{CrossProject, CrossType, Platform}
 val groupId = "org.scala-steward"
 val projectName = "scala-steward"
 val rootPkg = groupId.replace("-", "")
-val gitHubOwner = "fthomas"
+val gitHubOwner = "scala-steward-org"
 
 val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
   "core" -> List(JVMPlatform),
@@ -214,7 +214,7 @@ lazy val dockerSettings = Def.settings(
       )
     )
   },
-  Docker / packageName := s"${gitHubOwner}/${name.value}",
+  Docker / packageName := s"fthomas/${name.value}",
   dockerUpdateLatest := true,
   dockerEntrypoint += "--disable-sandbox",
   dockerEnvVars := Map("PATH" -> "/opt/docker/sbt/bin:${PATH}")
