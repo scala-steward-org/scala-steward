@@ -12,25 +12,25 @@ class UpdatesConfigTest extends AnyFunSuite with Matchers {
   private val groupIdA = GroupId("A")
   private val groupIdB = GroupId("B")
 
-  private val A00 = UpdatePattern(groupIdA, None, None)
-  private val Aa0 = UpdatePattern(groupIdA, Some("a"), None)
-  private val Ab0 = UpdatePattern(groupIdA, Some("b"), None)
-  private val Ac0 = UpdatePattern(groupIdA, Some("c"), None)
+  private val a00 = UpdatePattern(groupIdA, None, None)
+  private val aa0 = UpdatePattern(groupIdA, Some("a"), None)
+  private val ab0 = UpdatePattern(groupIdA, Some("b"), None)
+  private val ac0 = UpdatePattern(groupIdA, Some("c"), None)
 
-  private val Aa1 = UpdatePattern(groupIdA, Some("a"), Some(Version(Some("1"), None)))
-  private val Aa2 = UpdatePattern(groupIdA, Some("a"), Some(Version(Some("2"), None)))
-  private val Ac3 = UpdatePattern(groupIdA, Some("c"), Some(Version(Some("3"), None)))
+  private val aa1 = UpdatePattern(groupIdA, Some("a"), Some(Version(Some("1"), None)))
+  private val aa2 = UpdatePattern(groupIdA, Some("a"), Some(Version(Some("2"), None)))
+  private val ac3 = UpdatePattern(groupIdA, Some("c"), Some(Version(Some("3"), None)))
 
-  private val B00 = UpdatePattern(groupIdB, None, None)
+  private val b00 = UpdatePattern(groupIdB, None, None)
 
   test("semigroup: basic checks") {
     val emptyCfg = UpdatesConfig()
     emptyCfg |+| emptyCfg shouldBe emptyCfg
 
     val cfg = UpdatesConfig(
-      pin = List(Aa0),
-      allow = List(Aa0),
-      ignore = List(Aa0),
+      pin = List(aa0),
+      allow = List(aa0),
+      ignore = List(aa0),
       limit = Some(PosInt(10)),
       includeScala = Some(false),
       fileExtensions = List(".txt", ".scala", ".sbt")
@@ -41,27 +41,27 @@ class UpdatesConfigTest extends AnyFunSuite with Matchers {
     emptyCfg |+| cfg shouldBe cfg
 
     val cfg2 = UpdatesConfig(
-      pin = List(Ab0),
-      allow = List(Ab0),
-      ignore = List(Ab0),
+      pin = List(ab0),
+      allow = List(ab0),
+      ignore = List(ab0),
       limit = Some(PosInt(20)),
       includeScala = Some(true),
       fileExtensions = List(".sbt", ".scala")
     )
 
     cfg |+| cfg2 shouldBe UpdatesConfig(
-      pin = List(Aa0, Ab0),
+      pin = List(aa0, ab0),
       allow = UpdatesConfig.nonExistingUpdatePattern,
-      ignore = List(Aa0, Ab0),
+      ignore = List(aa0, ab0),
       limit = Some(PosInt(10)),
       includeScala = Some(false),
       fileExtensions = List(".scala", ".sbt")
     )
 
     cfg2 |+| cfg shouldBe UpdatesConfig(
-      pin = List(Ab0, Aa0),
+      pin = List(ab0, aa0),
       allow = UpdatesConfig.nonExistingUpdatePattern,
-      ignore = List(Ab0, Aa0),
+      ignore = List(ab0, aa0),
       limit = Some(PosInt(20)),
       includeScala = Some(true),
       fileExtensions = List(".sbt", ".scala")
@@ -70,45 +70,45 @@ class UpdatesConfigTest extends AnyFunSuite with Matchers {
 
   test("mergePin: basic checks") {
     UpdatesConfig.mergePin(Nil, Nil) shouldBe Nil
-    UpdatesConfig.mergePin(List(A00), Nil) shouldBe List(A00)
-    UpdatesConfig.mergePin(Nil, List(B00)) shouldBe List(B00)
-    UpdatesConfig.mergePin(List(A00), List(B00)) shouldBe List(A00, B00)
+    UpdatesConfig.mergePin(List(a00), Nil) shouldBe List(a00)
+    UpdatesConfig.mergePin(Nil, List(b00)) shouldBe List(b00)
+    UpdatesConfig.mergePin(List(a00), List(b00)) shouldBe List(a00, b00)
 
-    UpdatesConfig.mergePin(List(Aa1), List(Aa1, Ac3)) shouldBe List(Aa1, Ac3)
+    UpdatesConfig.mergePin(List(aa1), List(aa1, ac3)) shouldBe List(aa1, ac3)
 
-    UpdatesConfig.mergePin(List(Aa1), List(Aa2)) shouldBe List(Aa1)
-    UpdatesConfig.mergePin(List(Aa2), List(Aa1)) shouldBe List(Aa2)
+    UpdatesConfig.mergePin(List(aa1), List(aa2)) shouldBe List(aa1)
+    UpdatesConfig.mergePin(List(aa2), List(aa1)) shouldBe List(aa2)
   }
 
   test("mergeAllow: basic checks") {
     UpdatesConfig.mergeAllow(Nil, Nil) shouldBe Nil
-    UpdatesConfig.mergeAllow(List(A00), Nil) shouldBe List(A00)
-    UpdatesConfig.mergeAllow(Nil, List(A00)) shouldBe List(A00)
+    UpdatesConfig.mergeAllow(List(a00), Nil) shouldBe List(a00)
+    UpdatesConfig.mergeAllow(Nil, List(a00)) shouldBe List(a00)
 
-    UpdatesConfig.mergeAllow(List(A00), List(A00)) shouldBe List(A00)
-    UpdatesConfig.mergeAllow(List(A00), List(B00)) shouldBe UpdatesConfig.nonExistingUpdatePattern
+    UpdatesConfig.mergeAllow(List(a00), List(a00)) shouldBe List(a00)
+    UpdatesConfig.mergeAllow(List(a00), List(b00)) shouldBe UpdatesConfig.nonExistingUpdatePattern
 
-    UpdatesConfig.mergeAllow(List(A00), List(Aa1, Ab0, Ac3)) shouldBe List(Aa1, Ab0, Ac3)
-    UpdatesConfig.mergeAllow(List(Aa1, Ab0, Ac3), List(A00)) shouldBe List(Aa1, Ab0, Ac3)
+    UpdatesConfig.mergeAllow(List(a00), List(aa1, ab0, ac3)) shouldBe List(aa1, ab0, ac3)
+    UpdatesConfig.mergeAllow(List(aa1, ab0, ac3), List(a00)) shouldBe List(aa1, ab0, ac3)
 
-    UpdatesConfig.mergeAllow(List(Aa0), List(Aa1, Aa2)) shouldBe List(Aa1, Aa2)
-    UpdatesConfig.mergeAllow(List(Aa1, Aa2), List(Aa0)) shouldBe List(Aa1, Aa2)
+    UpdatesConfig.mergeAllow(List(aa0), List(aa1, aa2)) shouldBe List(aa1, aa2)
+    UpdatesConfig.mergeAllow(List(aa1, aa2), List(aa0)) shouldBe List(aa1, aa2)
 
-    UpdatesConfig.mergeAllow(List(Aa0), List(Aa0, Ab0)) shouldBe List(Aa0)
-    UpdatesConfig.mergeAllow(List(Aa0, Ab0), List(Aa0, Ab0)) shouldBe List(Aa0, Ab0)
+    UpdatesConfig.mergeAllow(List(aa0), List(aa0, ab0)) shouldBe List(aa0)
+    UpdatesConfig.mergeAllow(List(aa0, ab0), List(aa0, ab0)) shouldBe List(aa0, ab0)
 
-    UpdatesConfig.mergeAllow(List(Aa1), List(Aa1)) shouldBe List(Aa1)
-    UpdatesConfig.mergeAllow(List(Aa1), List(Aa2)) shouldBe UpdatesConfig.nonExistingUpdatePattern
-    UpdatesConfig.mergeAllow(List(Aa1, Ab0, Ac0), List(Aa2, Ac0)) shouldBe List(Ac0)
-    UpdatesConfig.mergeAllow(List(Aa1, Aa2), List(Aa1, Aa2)) shouldBe List(Aa1, Aa2)
-    UpdatesConfig.mergeAllow(List(Aa1, Aa2), List(Aa1, Ac3)) shouldBe List(Aa1)
+    UpdatesConfig.mergeAllow(List(aa1), List(aa1)) shouldBe List(aa1)
+    UpdatesConfig.mergeAllow(List(aa1), List(aa2)) shouldBe UpdatesConfig.nonExistingUpdatePattern
+    UpdatesConfig.mergeAllow(List(aa1, ab0, ac0), List(aa2, ac0)) shouldBe List(ac0)
+    UpdatesConfig.mergeAllow(List(aa1, aa2), List(aa1, aa2)) shouldBe List(aa1, aa2)
+    UpdatesConfig.mergeAllow(List(aa1, aa2), List(aa1, ac3)) shouldBe List(aa1)
   }
 
   test("mergeIgnore: basic checks") {
     UpdatesConfig.mergeIgnore(Nil, Nil) shouldBe Nil
-    UpdatesConfig.mergeIgnore(List(A00), Nil) shouldBe List(A00)
-    UpdatesConfig.mergeIgnore(Nil, List(B00)) shouldBe List(B00)
-    UpdatesConfig.mergeIgnore(List(Aa1, B00), List(Aa1, Aa2)) shouldBe List(Aa1, B00, Aa2)
+    UpdatesConfig.mergeIgnore(List(a00), Nil) shouldBe List(a00)
+    UpdatesConfig.mergeIgnore(Nil, List(b00)) shouldBe List(b00)
+    UpdatesConfig.mergeIgnore(List(aa1, b00), List(aa1, aa2)) shouldBe List(aa1, b00, aa2)
   }
 
   test("mergeFileExtensions: basic checks") {
