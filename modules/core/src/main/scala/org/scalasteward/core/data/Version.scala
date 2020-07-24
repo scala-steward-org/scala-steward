@@ -36,10 +36,10 @@ final case class Version(value: String) {
   /** Selects the next version from a list of potentially newer versions.
     *
     * Implements the scheme described in this FAQ:
-    * https://github.com/fthomas/scala-steward/blob/master/docs/faq.md#how-does-scala-steward-decide-what-version-it-is-updating-to
+    * https://github.com/scala-steward-org/scala-steward/blob/master/docs/faq.md#how-does-scala-steward-decide-what-version-it-is-updating-to
     */
   def selectNext(versions: List[Version]): Option[Version] = {
-    val cutoff = preReleaseIndex.fold(alnumComponents.size)(_.value - 1)
+    val cutoff = withoutPreRelease.alnumComponents.length - 1
     val newerVersionsByCommonPrefix =
       versions
         .filter(_ > this)
@@ -51,26 +51,18 @@ final case class Version(value: String) {
       .sortBy { case (commonPrefix, _) => commonPrefix.length }
       .flatMap {
         case (commonPrefix, vs) =>
+          val sameSeries = cutoff === commonPrefix.length
           vs.filterNot { v =>
-            // Do not select pre-release versions of a different series.
-            (v.isPreRelease && cutoff =!= commonPrefix.length) ||
-            // Do not select versions with a '+' or '-' if this is version does not
-            // contain such separator.
-            // E.g. 1.2.0 -> 1.2.0+17-7ef98061 or 3.1.0 -> 3.1.0-2156c0e.
-            (v.containsHyphen && !containsHyphen) ||
-            (v.containsPlus && !containsPlus) ||
+            // Do not select pre-releases of different series.
+            (v.isPreRelease && !sameSeries) ||
+            // Do not select pre-releases of the same series if this is not a pre-release.
+            (v.isPreRelease && !isPreRelease && sameSeries) ||
             // Don't select "versions" like %5BWARNING%5D.
             !v.startsWithLetterOrDigit
           }.sorted
       }
       .lastOption
   }
-
-  private def containsHyphen: Boolean =
-    components.contains(Version.Component.Separator('-'))
-
-  private def containsPlus: Boolean =
-    components.contains(Version.Component.Separator('+'))
 
   private def startsWithLetterOrDigit: Boolean =
     components.headOption.forall {
@@ -82,13 +74,19 @@ final case class Version(value: String) {
   private def isPreRelease: Boolean =
     preReleaseIndex.isDefined
 
-  private def preReleaseIndex: Option[NonNegInt] =
-    NonNegInt.unapply {
-      alnumComponents.indexWhere {
-        case a @ Version.Component.Alpha(_) => a.isPreReleaseIdent
-        case _                              => false
-      }
+  def withoutPreRelease: Version =
+    preReleaseIndex.map(i => Version(value.substring(0, i.value))).getOrElse(this)
+
+  private val preReleaseIndex: Option[NonNegInt] = {
+    val preReleaseIdentIndex = components.indexWhere {
+      case a @ Version.Component.Alpha(_) => a.isPreReleaseIdent
+      case _                              => false
     }
+    NonNegInt.unapply(preReleaseIdentIndex).orElse(hashIndex)
+  }
+
+  private def hashIndex: Option[NonNegInt] =
+    """[-+]\p{XDigit}{7,}""".r.findFirstMatchIn(value).flatMap(m => NonNegInt.unapply(m.start))
 }
 
 object Version {
