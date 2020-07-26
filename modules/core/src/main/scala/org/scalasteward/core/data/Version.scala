@@ -28,10 +28,7 @@ final case class Version(value: String) {
     Version.Component.parse(value)
 
   val alnumComponents: List[Version.Component] =
-    components.filterNot {
-      case Version.Component.Separator(_) => true
-      case _                              => false
-    }
+    components.filter(_.isAlphanumeric)
 
   /** Selects the next version from a list of potentially newer versions.
     *
@@ -39,7 +36,7 @@ final case class Version(value: String) {
     * https://github.com/scala-steward-org/scala-steward/blob/master/docs/faq.md#how-does-scala-steward-decide-what-version-it-is-updating-to
     */
   def selectNext(versions: List[Version]): Option[Version] = {
-    val cutoff = withoutPreRelease.alnumComponents.length - 1
+    val cutoff = alnumComponentsWithoutPreRelease.length - 1
     val newerVersionsByCommonPrefix =
       versions
         .filter(_ > this)
@@ -74,10 +71,12 @@ final case class Version(value: String) {
   private def isPreRelease: Boolean =
     preReleaseIndex.isDefined
 
-  def withoutPreRelease: Version =
-    preReleaseIndex.map(i => Version(value.substring(0, i.value))).getOrElse(this)
+  private[this] def alnumComponentsWithoutPreRelease: List[Version.Component] =
+    preReleaseIndex
+      .map(i => Version.Component.parse(value.substring(0, i.value)).filter(_.isAlphanumeric))
+      .getOrElse(alnumComponents)
 
-  private val preReleaseIndex: Option[NonNegInt] = {
+  private[this] val preReleaseIndex: Option[NonNegInt] = {
     val preReleaseIdentIndex = components.indexWhere {
       case a @ Version.Component.Alpha(_) => a.isPreReleaseIdent
       case _                              => false
@@ -85,7 +84,7 @@ final case class Version(value: String) {
     NonNegInt.unapply(preReleaseIdentIndex).orElse(hashIndex)
   }
 
-  private def hashIndex: Option[NonNegInt] =
+  private[this] def hashIndex: Option[NonNegInt] =
     """[-+]\p{XDigit}{7,}""".r.findFirstMatchIn(value).flatMap(m => NonNegInt.unapply(m.start))
 }
 
@@ -104,7 +103,14 @@ object Version {
     (l1.padTo(maxLength, elem), l2.padTo(maxLength, elem))
   }
 
-  sealed trait Component extends Product with Serializable
+  sealed trait Component extends Product with Serializable {
+    final def isAlphanumeric: Boolean =
+      this match {
+        case Component.Numeric(_) => true
+        case Component.Alpha(_)   => true
+        case _                    => false
+      }
+  }
   object Component {
     final case class Numeric(value: String) extends Component {
       def isZero: Boolean = BigInt(value) === BigInt(0)
