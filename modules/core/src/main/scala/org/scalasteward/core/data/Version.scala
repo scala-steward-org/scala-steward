@@ -28,18 +28,15 @@ final case class Version(value: String) {
     Version.Component.parse(value)
 
   val alnumComponents: List[Version.Component] =
-    components.filterNot {
-      case Version.Component.Separator(_) => true
-      case _                              => false
-    }
+    components.filter(_.isAlphanumeric)
 
   /** Selects the next version from a list of potentially newer versions.
     *
     * Implements the scheme described in this FAQ:
-    * https://github.com/fthomas/scala-steward/blob/master/docs/faq.md#how-does-scala-steward-decide-what-version-it-is-updating-to
+    * https://github.com/scala-steward-org/scala-steward/blob/master/docs/faq.md#how-does-scala-steward-decide-what-version-it-is-updating-to
     */
   def selectNext(versions: List[Version]): Option[Version] = {
-    val cutoff = preReleaseIndex.fold(alnumComponents.size)(_.value - 1)
+    val cutoff = alnumComponentsWithoutPreRelease.length - 1
     val newerVersionsByCommonPrefix =
       versions
         .filter(_ > this)
@@ -51,26 +48,18 @@ final case class Version(value: String) {
       .sortBy { case (commonPrefix, _) => commonPrefix.length }
       .flatMap {
         case (commonPrefix, vs) =>
+          val sameSeries = cutoff === commonPrefix.length
           vs.filterNot { v =>
-            // Do not select pre-release versions of a different series.
-            (v.isPreRelease && cutoff =!= commonPrefix.length) ||
-            // Do not select versions with a '+' or '-' if this is version does not
-            // contain such separator.
-            // E.g. 1.2.0 -> 1.2.0+17-7ef98061 or 3.1.0 -> 3.1.0-2156c0e.
-            (v.containsHyphen && !containsHyphen) ||
-            (v.containsPlus && !containsPlus) ||
+            // Do not select pre-releases of different series.
+            (v.isPreRelease && !sameSeries) ||
+            // Do not select pre-releases of the same series if this is not a pre-release.
+            (v.isPreRelease && !isPreRelease && sameSeries) ||
             // Don't select "versions" like %5BWARNING%5D.
             !v.startsWithLetterOrDigit
           }.sorted
       }
       .lastOption
   }
-
-  private def containsHyphen: Boolean =
-    components.contains(Version.Component.Separator('-'))
-
-  private def containsPlus: Boolean =
-    components.contains(Version.Component.Separator('+'))
 
   private def startsWithLetterOrDigit: Boolean =
     components.headOption.forall {
@@ -82,13 +71,21 @@ final case class Version(value: String) {
   private def isPreRelease: Boolean =
     preReleaseIndex.isDefined
 
-  private def preReleaseIndex: Option[NonNegInt] =
-    NonNegInt.unapply {
-      alnumComponents.indexWhere {
-        case a @ Version.Component.Alpha(_) => a.isPreReleaseIdent
-        case _                              => false
-      }
+  private[this] def alnumComponentsWithoutPreRelease: List[Version.Component] =
+    preReleaseIndex
+      .map(i => Version.Component.parse(value.substring(0, i.value)).filter(_.isAlphanumeric))
+      .getOrElse(alnumComponents)
+
+  private[this] val preReleaseIndex: Option[NonNegInt] = {
+    val preReleaseIdentIndex = components.indexWhere {
+      case a @ Version.Component.Alpha(_) => a.isPreReleaseIdent
+      case _                              => false
     }
+    NonNegInt.unapply(preReleaseIdentIndex).orElse(hashIndex)
+  }
+
+  private[this] def hashIndex: Option[NonNegInt] =
+    """[-+]\p{XDigit}{7,}""".r.findFirstMatchIn(value).flatMap(m => NonNegInt.unapply(m.start))
 }
 
 object Version {
@@ -106,7 +103,14 @@ object Version {
     (l1.padTo(maxLength, elem), l2.padTo(maxLength, elem))
   }
 
-  sealed trait Component extends Product with Serializable
+  sealed trait Component extends Product with Serializable {
+    final def isAlphanumeric: Boolean =
+      this match {
+        case Component.Numeric(_) => true
+        case Component.Alpha(_)   => true
+        case _                    => false
+      }
+  }
   object Component {
     final case class Numeric(value: String) extends Component {
       def isZero: Boolean = BigInt(value) === BigInt(0)
