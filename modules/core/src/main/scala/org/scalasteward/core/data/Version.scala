@@ -73,16 +73,16 @@ final case class Version(value: String) {
 
   private[this] def alnumComponentsWithoutPreRelease: List[Version.Component] =
     preReleaseIndex
-      .map(i => Version.Component.parse(value.substring(0, i.value + 1)).filter(_.isAlphanumeric))
+      .map(i => Version.Component.parse(value.substring(0, i.value)).filter(_.isAlphanumeric))
       .getOrElse(alnumComponents)
 
   private[this] val preReleaseIndex: Option[NonNegInt] = {
-    val preReleaseIdentIndex = components.indexWhere {
+    val preReleaseIdentIndex = NonNegInt.unapply(components.indexWhere {
       case a @ Version.Component.Alpha(_) => a.isPreReleaseIdent
       case _                              => false
-    }
-    NonNegInt
-      .unapply(components.take(preReleaseIdentIndex).map(_.length).sum - 1)
+    })
+    preReleaseIdentIndex
+      .map(i => NonNegInt.unsafeFrom(components.take(i.value).map(_.length).sum))
       .orElse(hashIndex)
   }
 
