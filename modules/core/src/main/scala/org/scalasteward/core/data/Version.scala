@@ -77,15 +77,17 @@ final case class Version(value: String) {
       .getOrElse(alnumComponents)
 
   private[this] val preReleaseIndex: Option[NonNegInt] = {
-    val preReleaseIdentIndex = components.indexWhere {
+    val preReleaseIdentIndex = NonNegInt.unapply(components.indexWhere {
       case a @ Version.Component.Alpha(_) => a.isPreReleaseIdent
       case _                              => false
-    }
-    NonNegInt.unapply(preReleaseIdentIndex).orElse(hashIndex)
+    })
+    preReleaseIdentIndex
+      .map(i => NonNegInt.unsafeFrom(components.take(i.value).foldMap(_.length)))
+      .orElse(hashIndex)
   }
 
   private[this] def hashIndex: Option[NonNegInt] =
-    """[-+]\p{XDigit}{7,}""".r.findFirstMatchIn(value).flatMap(m => NonNegInt.unapply(m.start))
+    """[-+]\p{XDigit}{6,}""".r.findFirstMatchIn(value).flatMap(m => NonNegInt.unapply(m.start))
 }
 
 object Version {
@@ -109,6 +111,14 @@ object Version {
         case Component.Numeric(_) => true
         case Component.Alpha(_)   => true
         case _                    => false
+      }
+
+    final def length: Int =
+      this match {
+        case Component.Numeric(value) => value.length
+        case Component.Alpha(value)   => value.length
+        case Component.Separator(_)   => 1
+        case Component.Empty          => 0
       }
   }
   object Component {
