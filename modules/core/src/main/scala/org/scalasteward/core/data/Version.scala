@@ -82,7 +82,7 @@ final case class Version(value: String) {
       case _                              => false
     })
     preReleaseIdentIndex
-      .map(i => NonNegInt.unsafeFrom(components.take(i.value).map(_.length).sum))
+      .map(i => NonNegInt.unsafeFrom(components.take(i.value).foldMap(_.length)))
       .orElse(hashIndex)
   }
 
