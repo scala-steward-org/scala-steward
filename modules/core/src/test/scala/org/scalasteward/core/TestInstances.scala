@@ -37,14 +37,15 @@ object TestInstances {
       (8, Gen.numChar),
       (5, Gen.const('.')),
       (3, Gen.alphaChar),
-      (2, Gen.const('-'))
+      (2, Gen.const('-')),
+      (1, Gen.const('+'))
     )
     Arbitrary(Gen.listOf(versionChar).map(_.mkString).map(Version.apply))
   }
 
   implicit val versionCogen: Cogen[Version] =
     Cogen(_.alnumComponents.map {
-      case n: Version.Component.Numeric => BigInt(n.value).toLong
+      case n: Version.Component.Numeric => n.toBigInt.toLong
       case a: Version.Component.Alpha   => a.order.toLong
       case _                            => 0L
     }.sum)

@@ -121,7 +121,8 @@ object Version {
   }
   object Component {
     final case class Numeric(value: String, startIndex: Int) extends Component {
-      def isZero: Boolean = BigInt(value) === BigInt(0)
+      def toBigInt: BigInt = BigInt(value)
+      def isZero: Boolean = toBigInt === BigInt(0)
     }
     final case class Alpha(value: String, startIndex: Int) extends Component {
       def isPreReleaseIdent: Boolean = order < 0
@@ -199,7 +200,7 @@ object Version {
     // using different pre-release identifiers.
     implicit val componentOrder: Order[Component] =
       Order.from[Component] {
-        case (n1: Numeric, n2: Numeric) => BigInt(n1.value).compare(BigInt(n2.value))
+        case (n1: Numeric, n2: Numeric) => n1.toBigInt.compare(n2.toBigInt)
         case (n: Numeric, a: Alpha)     => if (a.isPreReleaseIdent || !n.isZero) 1 else -1
         case (a: Alpha, n: Numeric)     => if (a.isPreReleaseIdent || !n.isZero) -1 else 1
         case (_: Numeric, _)            => 1
