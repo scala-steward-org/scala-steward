@@ -67,9 +67,9 @@ final case class Version(value: String) {
 
   private def startsWithLetterOrDigit: Boolean =
     components.headOption.forall {
-      case Version.Component.Numeric(_)   => true
-      case Version.Component.Alpha(value) => value.headOption.forall(_.isLetter)
-      case _                              => false
+      case _: Version.Component.Numeric => true
+      case a: Version.Component.Alpha   => a.value.headOption.forall(_.isLetter)
+      case _                            => false
     }
 
   private def isPreRelease: Boolean =
@@ -77,27 +77,21 @@ final case class Version(value: String) {
 
   private[this] def alnumComponentsWithoutPreRelease: List[Version.Component] =
     preReleaseIndex
-      .map(i => Version.Component.parse(value.substring(0, i.value)).filter(_.isAlphanumeric))
+      .map(i => alnumComponents.takeWhile(_.startIndex < i.value))
       .getOrElse(alnumComponents)
 
   private[this] val preReleaseIndex: Option[NonNegInt] = {
-    val preReleaseIdentIndex = NonNegInt.unapply(components.indexWhere {
-      case a @ Version.Component.Alpha(_) => a.isPreReleaseIdent
-      case _                              => false
-    })
-    preReleaseIdentIndex
-      .map(i => NonNegInt.unsafeFrom(components.take(i.value).foldMap(_.length)))
-      .orElse(hashIndex)
+    val preReleaseIdentIndex = alnumComponents.collectFirst {
+      case a: Version.Component.Alpha if a.isPreReleaseIdent => NonNegInt.unsafeFrom(a.startIndex)
+    }
+    preReleaseIdentIndex.orElse(hashIndex)
   }
 
   private[this] def hashIndex: Option[NonNegInt] =
     """[-+]\p{XDigit}{6,}""".r.findFirstMatchIn(value).flatMap(m => NonNegInt.unapply(m.start))
 
   private val minAlphaOrder: Int =
-    alnumComponents
-      .collect { case a @ Version.Component.Alpha(_) => a.order }
-      .minOption
-      .getOrElse(0)
+    alnumComponents.collect { case a: Version.Component.Alpha => a.order }.minOption.getOrElse(0)
 }
 
 object Version {
@@ -116,26 +110,21 @@ object Version {
   }
 
   sealed trait Component extends Product with Serializable {
+    def startIndex: Int
+
     final def isAlphanumeric: Boolean =
       this match {
-        case Component.Numeric(_) => true
-        case Component.Alpha(_)   => true
+        case _: Component.Numeric => true
+        case _: Component.Alpha   => true
         case _                    => false
-      }
-
-    final def length: Int =
-      this match {
-        case Component.Numeric(value) => value.length
-        case Component.Alpha(value)   => value.length
-        case Component.Separator(_)   => 1
-        case Component.Empty          => 0
       }
   }
   object Component {
-    final case class Numeric(value: String) extends Component {
-      def isZero: Boolean = BigInt(value) === BigInt(0)
+    final case class Numeric(value: String, startIndex: Int) extends Component {
+      def toBigInt: BigInt = BigInt(value)
+      def isZero: Boolean = toBigInt === BigInt(0)
     }
-    final case class Alpha(value: String) extends Component {
+    final case class Alpha(value: String, startIndex: Int) extends Component {
       def isPreReleaseIdent: Boolean = order < 0
       def order: Int =
         value.toUpperCase match {
@@ -147,8 +136,8 @@ object Version {
           case _                        => 0
         }
     }
-    final case class Separator(c: Char) extends Component
-    case object Empty extends Component
+    final case class Separator(c: Char, startIndex: Int) extends Component
+    case object Empty extends Component { override def startIndex: Int = -1 }
 
     def parse(str: String): List[Component] = {
       @tailrec
@@ -156,43 +145,54 @@ object Version {
           rest: List[Char],
           accN: List[Char],
           accA: List[Char],
-          acc: List[Component]
+          acc: List[Component],
+          index: Int
       ): List[Component] =
         rest match {
           case h :: t =>
             h match {
               case '.' | '-' | '_' | '+' =>
-                loop(t, List.empty, List.empty, Separator(h) :: materialize(accN, accA, acc))
+                val (newAcc, newIndex) = materialize(accN, accA, acc, index)
+                loop(t, List.empty, List.empty, Separator(h, newIndex) :: newAcc, newIndex + 1)
 
               case _ if h.isDigit && accA.nonEmpty =>
-                loop(t, h :: accN, List.empty, materialize(List.empty, accA, acc))
+                val (newAcc, newIndex) = materialize(List.empty, accA, acc, index)
+                loop(t, h :: accN, List.empty, newAcc, newIndex)
 
               case _ if h.isDigit && accA.isEmpty =>
-                loop(t, h :: accN, List.empty, acc)
+                loop(t, h :: accN, List.empty, acc, index)
 
               case _ if accN.nonEmpty =>
-                loop(t, List.empty, h :: accA, materialize(accN, List.empty, acc))
+                val (newAcc, newIndex) = materialize(accN, List.empty, acc, index)
+                loop(t, List.empty, h :: accA, newAcc, newIndex)
 
               case _ if accN.isEmpty =>
-                loop(t, List.empty, h :: accA, acc)
+                loop(t, List.empty, h :: accA, acc, index)
             }
-          case Nil => materialize(accN, accA, acc)
+          case Nil =>
+            val (newAcc, _) = materialize(accN, accA, acc, index)
+            newAcc
         }
 
-      def materialize(accN: List[Char], accA: List[Char], acc: List[Component]): List[Component] =
-        if (accN.nonEmpty) Numeric(accN.reverse.mkString) :: acc
-        else if (accA.nonEmpty) Alpha(accA.reverse.mkString) :: acc
-        else acc
+      def materialize(
+          accN: List[Char],
+          accA: List[Char],
+          acc: List[Component],
+          index: Int
+      ): (List[Component], Int) =
+        if (accN.nonEmpty) (Numeric(accN.reverse.mkString, index) :: acc, index + accN.length)
+        else if (accA.nonEmpty) (Alpha(accA.reverse.mkString, index) :: acc, index + accA.length)
+        else (acc, index)
 
-      loop(str.toList, List.empty, List.empty, List.empty).reverse
+      loop(str.toList, List.empty, List.empty, List.empty, 0).reverse
     }
 
     def render(components: List[Component]): String =
       components.map {
-        case Numeric(value) => value
-        case Alpha(value)   => value
-        case Separator(c)   => c.toString
-        case Empty          => ""
+        case n: Numeric   => n.value
+        case a: Alpha     => a.value
+        case s: Separator => s.c.toString
+        case Empty        => ""
       }.mkString
 
     // This is similar to https://get-coursier.io/docs/other-version-handling.html#ordering
@@ -200,21 +200,21 @@ object Version {
     // using different pre-release identifiers.
     implicit val componentOrder: Order[Component] =
       Order.from[Component] {
-        case (Numeric(v1), Numeric(v2))     => BigInt(v1).compare(BigInt(v2))
-        case (n @ Numeric(_), a @ Alpha(_)) => if (a.isPreReleaseIdent || !n.isZero) 1 else -1
-        case (a @ Alpha(_), n @ Numeric(_)) => if (a.isPreReleaseIdent || !n.isZero) -1 else 1
-        case (Numeric(_), _)                => 1
-        case (_, Numeric(_))                => -1
+        case (n1: Numeric, n2: Numeric) => n1.toBigInt.compare(n2.toBigInt)
+        case (n: Numeric, a: Alpha)     => if (a.isPreReleaseIdent || !n.isZero) 1 else -1
+        case (a: Alpha, n: Numeric)     => if (a.isPreReleaseIdent || !n.isZero) -1 else 1
+        case (_: Numeric, _)            => 1
+        case (_, _: Numeric)            => -1
 
-        case (a1 @ Alpha(v1), a2 @ Alpha(v2)) =>
+        case (a1: Alpha, a2: Alpha) =>
           val (o1, o2) = (a1.order, a2.order)
-          if (o1 < 0 || o2 < 0) o1.compare(o2) else v1.compare(v2)
+          if (o1 < 0 || o2 < 0) o1.compare(o2) else a1.value.compare(a2.value)
 
-        case (Alpha(_), Empty) => -1
-        case (Empty, Alpha(_)) => 1
+        case (_: Alpha, Empty) => -1
+        case (Empty, _: Alpha) => 1
 
-        case (Alpha(_), _) => 1
-        case (_, Alpha(_)) => -1
+        case (_: Alpha, _) => 1
+        case (_, _: Alpha) => -1
 
         case _ => 0
       }
