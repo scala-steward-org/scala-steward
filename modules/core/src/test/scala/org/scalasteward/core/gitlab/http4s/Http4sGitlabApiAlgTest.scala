@@ -23,6 +23,9 @@ import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
   import GitlabJsonCodec._
 
+  object MergeWhenPipelineSucceedsMatcher
+      extends QueryParamDecoderMatcher[Boolean]("merge_when_pipeline_succeeds")
+
   val routes: HttpRoutes[IO] =
     HttpRoutes.of[IO] {
       case GET -> Root / "projects" / "foo/bar" =>
@@ -32,6 +35,21 @@ class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
         Ok(getMr)
 
       case POST -> Root / "projects" / "foo/bar" / "merge_requests" =>
+        Ok(
+          getMr.deepMerge(
+            json""" { "iid": 150, "web_url": "https://gitlab.com/foo/bar/merge_requests/150" } """
+          )
+        )
+
+      case GET -> Root / "projects" / "foo/bar" / "merge_requests" / "150" =>
+        Ok(
+          getMr.deepMerge(
+            json""" { "iid": 150, "web_url": "https://gitlab.com/foo/bar/merge_requests/150" } """
+          )
+        )
+
+      case PUT -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "merge"
+          :? MergeWhenPipelineSucceedsMatcher(_) =>
         Ok(
           getMr.deepMerge(
             json""" { "iid": 150, "web_url": "https://gitlab.com/foo/bar/merge_requests/150" } """
@@ -103,6 +121,28 @@ class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
 
   test("extractProjectId") {
     decode[ProjectId](getRepo.spaces2) shouldBe Right(ProjectId(12414871L))
+  }
+
+  test("createPullRequest -- auto merge") {
+    val gitlabApiAlgNoFork =
+      new Http4sGitLabApiAlg[IO](
+        config.vcsApiHost,
+        user,
+        _ => IO.pure,
+        doNotFork = true,
+        mergeWhenPipelineSucceeds = true
+      )
+
+    val prOut =
+      gitlabApiAlgNoFork
+        .createPullRequest(Repo("foo", "bar"), newPRData)
+        .unsafeRunSync()
+
+    prOut shouldBe PullRequestOut(
+      uri"https://gitlab.com/foo/bar/merge_requests/150",
+      PullRequestState.Open,
+      "title"
+    )
   }
 
   val getMr = json"""
