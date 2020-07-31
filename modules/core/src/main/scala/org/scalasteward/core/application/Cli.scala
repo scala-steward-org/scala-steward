@@ -56,7 +56,8 @@ object Cli {
       groupMigrations: Option[String] = None,
       cacheTtl: FiniteDuration = 2.hours,
       cacheMissDelay: FiniteDuration = 0.milliseconds,
-      bitbucketServerUseDefaultReviewers: Boolean = false
+      bitbucketServerUseDefaultReviewers: Boolean = false,
+      gitlabMergeWhenPipelineSucceeds: Boolean = false
   )
 
   final case class EnvVar(name: String, value: String)
