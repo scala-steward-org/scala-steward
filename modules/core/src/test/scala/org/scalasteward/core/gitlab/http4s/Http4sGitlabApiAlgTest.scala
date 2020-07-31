@@ -18,6 +18,7 @@ import org.scalasteward.core.util.{HttpJsonClient, Nel}
 import org.scalasteward.core.vcs.data._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 
 class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
   import GitlabJsonCodec._
@@ -44,8 +45,15 @@ class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
 
   implicit val client: Client[IO] = Client.fromHttpApp(routes.orNotFound)
   implicit val httpJsonClient: HttpJsonClient[IO] = new HttpJsonClient[IO]
+  implicit val logger = Slf4jLogger.getLogger[IO]
   val gitlabApiAlg =
-    new Http4sGitLabApiAlg[IO](config.vcsApiHost, user, _ => IO.pure, doNotFork = false)
+    new Http4sGitLabApiAlg[IO](
+      config.vcsApiHost,
+      user,
+      _ => IO.pure,
+      doNotFork = false,
+      mergeWhenPipelineSucceeds = false
+    )
 
   val data = UpdateData(
     Repo("foo", "bar"),
@@ -74,7 +82,13 @@ class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
 
   test("createPullRequest -- no fork") {
     val gitlabApiAlgNoFork =
-      new Http4sGitLabApiAlg[IO](config.vcsApiHost, user, _ => IO.pure, doNotFork = true)
+      new Http4sGitLabApiAlg[IO](
+        config.vcsApiHost,
+        user,
+        _ => IO.pure,
+        doNotFork = true,
+        mergeWhenPipelineSucceeds = false
+      )
     val prOut =
       gitlabApiAlgNoFork
         .createPullRequest(Repo("foo", "bar"), newPRData)
