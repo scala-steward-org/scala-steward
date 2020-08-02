@@ -135,6 +135,7 @@ Consider creating PR to add your company to the list and join the community.
 * [Agoda](https://agoda.com/)
 * [AutoScout24](https://www.autoscout24.de/)
 * [Avast](https://avast.com)
+* [Babylon Health](https://www.babylonhealth.com/)
 * [Besedo](https://www.besedo.com/)
 * [Bitrock](http://www.bitrock.it/)
 * [Chartboost](https://www.chartboost.com/)
