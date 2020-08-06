@@ -26,34 +26,32 @@ class VCSPackageTest extends AnyFunSuite with Matchers {
   }
 
   test("possibleCompareUrls") {
-    possibleCompareUrls(uri"https://github.com/foo/bar", update)
+    possibleCompareUrls(SupportedVCS.GitHub, uri"https://github.com/foo/bar", update)
       .map(_.url.renderString) shouldBe List(
       "https://github.com/foo/bar/compare/v1.2.0...v1.2.3",
       "https://github.com/foo/bar/compare/1.2.0...1.2.3",
       "https://github.com/foo/bar/compare/release-1.2.0...release-1.2.3"
     )
     // should canonicalize (drop last slash)
-    possibleCompareUrls(uri"https://github.com/foo/bar/", update)
+    possibleCompareUrls(SupportedVCS.GitHub, uri"https://github.com/foo/bar/", update)
       .map(_.url.renderString) shouldBe List(
       "https://github.com/foo/bar/compare/v1.2.0...v1.2.3",
       "https://github.com/foo/bar/compare/1.2.0...1.2.3",
       "https://github.com/foo/bar/compare/release-1.2.0...release-1.2.3"
     )
 
-    possibleCompareUrls(uri"https://gitlab.com/foo/bar", update)
+    possibleCompareUrls(SupportedVCS.Gitlab, uri"https://gitlab.com/foo/bar", update)
       .map(_.url.renderString) shouldBe List(
       "https://gitlab.com/foo/bar/compare/v1.2.0...v1.2.3",
       "https://gitlab.com/foo/bar/compare/1.2.0...1.2.3",
       "https://gitlab.com/foo/bar/compare/release-1.2.0...release-1.2.3"
     )
-    possibleCompareUrls(uri"https://bitbucket.org/foo/bar", update)
+    possibleCompareUrls(SupportedVCS.Bitbucket, uri"https://bitbucket.org/foo/bar", update)
       .map(_.url.renderString) shouldBe List(
       "https://bitbucket.org/foo/bar/compare/v1.2.3..v1.2.0#diff",
       "https://bitbucket.org/foo/bar/compare/1.2.3..1.2.0#diff",
       "https://bitbucket.org/foo/bar/compare/release-1.2.3..release-1.2.0#diff"
     )
-
-    possibleCompareUrls(uri"https://scalacenter.github.io/scalafix/", update) shouldBe List()
   }
 
   test("possibleChangelogUrls: github.com") {
@@ -114,14 +112,5 @@ class VCSPackageTest extends AnyFunSuite with Matchers {
           "https://bitbucket.org/foo/bar/compare/1.2.3..1.2.0#diff",
           "https://bitbucket.org/foo/bar/compare/release-1.2.3..release-1.2.0#diff"
         )
-  }
-
-  test("possibleChangelogUrls: homepage") {
-    possibleReleaseRelatedUrls(
-      SupportedVCS.GitHub,
-      uri"https://scalacenter.github.io/scalafix/",
-      update
-    )
-      .map(_.url.renderString) shouldBe List()
   }
 }
