@@ -73,41 +73,49 @@ package object vcs {
     possibleFilenames(baseNames)
   }
 
-  def possibleCompareUrls(repoUrl: Uri, update: Update): List[VersionDiff] = {
-    val host = repoUrl.host.map(_.value)
+  def possibleCompareUrls(
+      vcsType: SupportedVCS,
+      repoUrl: Uri,
+      update: Update
+  ): List[VersionDiff] = {
     val from = update.currentVersion
     val to = update.nextVersion
 
-    if (host.exists(Set("github.com", "gitlab.com")))
-      possibleTags(from).zip(possibleTags(to)).map {
-        case (from1, to1) => VersionDiff(repoUrl / "compare" / s"$from1...$to1")
-      }
-    else if (host.contains_("bitbucket.org"))
-      possibleTags(from).zip(possibleTags(to)).map {
-        case (from1, to1) =>
-          VersionDiff((repoUrl / "compare" / s"$to1..$from1").withFragment("diff"))
-      }
-    else
-      List.empty
+    vcsType match {
+      case GitHub | Gitlab =>
+        possibleTags(from).zip(possibleTags(to)).map {
+          case (from1, to1) => VersionDiff(repoUrl / "compare" / s"$from1...$to1")
+        }
+      case Bitbucket | BitbucketServer =>
+        possibleTags(from).zip(possibleTags(to)).map {
+          case (from1, to1) =>
+            VersionDiff((repoUrl / "compare" / s"$to1..$from1").withFragment("diff"))
+        }
+      case _ => List.empty
+    }
   }
 
-  def possibleReleaseRelatedUrls(repoUrl: Uri, update: Update): List[ReleaseRelatedUrl] = {
-    val host = repoUrl.host.map(_.value)
-    val github =
-      if (host.contains_("github.com"))
+  def possibleReleaseRelatedUrls(
+      vcsType: SupportedVCS,
+      repoUrl: Uri,
+      update: Update
+  ): List[ReleaseRelatedUrl] = {
+    val github = vcsType match {
+      case GitHub =>
         possibleTags(update.nextVersion).map(tag =>
           ReleaseRelatedUrl.GitHubReleaseNotes(repoUrl / "releases" / "tag" / tag)
         )
-      else
-        List.empty
+      case _ => List.empty
+    }
+
     def files(fileNames: List[String]): List[Uri] = {
       val maybeSegments =
-        if (host.exists(Set("github.com", "gitlab.com")))
-          Some(List("blob", "master"))
-        else if (host.contains_("bitbucket.org"))
-          Some(List("master"))
-        else
-          None
+        vcsType match {
+          case SupportedVCS.GitHub | SupportedVCS.Gitlab             => Some(List("blob", "master"))
+          case SupportedVCS.Bitbucket | SupportedVCS.BitbucketServer => Some(List("master"))
+          case _                                                     => None
+        }
+
       maybeSegments.toList.flatMap { segments =>
         val base = segments.foldLeft(repoUrl)(_ / _)
         fileNames.map(name => base / name)
@@ -117,7 +125,7 @@ package object vcs {
     val customReleaseNotes =
       files(possibleReleaseNotesFilenames).map(ReleaseRelatedUrl.CustomReleaseNotes)
 
-    github ++ customReleaseNotes ++ customChangelog ++ possibleCompareUrls(repoUrl, update)
+    github ++ customReleaseNotes ++ customChangelog ++ possibleCompareUrls(vcsType, repoUrl, update)
   }
 
   private def possibleFilenames(baseNames: List[String]): List[String] = {

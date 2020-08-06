@@ -2,6 +2,7 @@ package org.scalasteward.core.vcs
 
 import org.http4s.syntax.literals._
 import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.application.SupportedVCS
 import org.scalasteward.core.application.SupportedVCS.{GitHub, Gitlab}
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.util.Nel
@@ -56,7 +57,7 @@ class VCSPackageTest extends AnyFunSuite with Matchers {
   }
 
   test("possibleChangelogUrls: github.com") {
-    possibleReleaseRelatedUrls(uri"https://github.com/foo/bar", update)
+    possibleReleaseRelatedUrls(SupportedVCS.GitHub, uri"https://github.com/foo/bar", update)
       .map(_.url.renderString) shouldBe List(
       "https://github.com/foo/bar/releases/tag/v1.2.3",
       "https://github.com/foo/bar/releases/tag/1.2.3",
@@ -92,7 +93,7 @@ class VCSPackageTest extends AnyFunSuite with Matchers {
   }
 
   test("possibleChangelogUrls: gitlab.com") {
-    possibleReleaseRelatedUrls(uri"https://gitlab.com/foo/bar", update)
+    possibleReleaseRelatedUrls(SupportedVCS.Gitlab, uri"https://gitlab.com/foo/bar", update)
       .map(_.url.renderString) shouldBe
       possibleReleaseNotesFilenames.map(name => s"https://gitlab.com/foo/bar/blob/master/$name") ++
         possibleChangelogFilenames.map(name => s"https://gitlab.com/foo/bar/blob/master/$name") ++
@@ -104,7 +105,7 @@ class VCSPackageTest extends AnyFunSuite with Matchers {
   }
 
   test("possibleChangelogUrls: bitbucket.org") {
-    possibleReleaseRelatedUrls(uri"https://bitbucket.org/foo/bar", update)
+    possibleReleaseRelatedUrls(SupportedVCS.Bitbucket, uri"https://bitbucket.org/foo/bar", update)
       .map(_.url.renderString) shouldBe
       possibleReleaseNotesFilenames.map(name => s"https://bitbucket.org/foo/bar/master/$name") ++
         possibleChangelogFilenames.map(name => s"https://bitbucket.org/foo/bar/master/$name") ++
@@ -116,7 +117,11 @@ class VCSPackageTest extends AnyFunSuite with Matchers {
   }
 
   test("possibleChangelogUrls: homepage") {
-    possibleReleaseRelatedUrls(uri"https://scalacenter.github.io/scalafix/", update)
+    possibleReleaseRelatedUrls(
+      SupportedVCS.GitHub,
+      uri"https://scalacenter.github.io/scalafix/",
+      update
+    )
       .map(_.url.renderString) shouldBe List()
   }
 }
