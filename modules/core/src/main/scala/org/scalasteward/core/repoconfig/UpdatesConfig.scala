@@ -30,7 +30,6 @@ import org.scalasteward.core.update.FilterAlg.{
   VersionPinnedByConfig
 }
 import org.scalasteward.core.util.Nel
-import cats.implicits._
 
 import scala.collection.mutable.ListBuffer
 
@@ -176,11 +175,14 @@ object UpdatesConfig {
   private def satisfyUpdatePattern(
       targetUpdatePattern: UpdatePattern,
       comparedUpdatePatternsByArtifact: Map[Option[String], List[UpdatePattern]]
-  ): Boolean =
+  ): Boolean = {
+    import cats.implicits._
+
     comparedUpdatePatternsByArtifact.get(targetUpdatePattern.artifactId).exists { matchedVersions =>
       //  For simplicity I'm using direct equals here between versions. Feel free to make it more advanced
       matchedVersions.exists(up => up.version.isEmpty || up.version === targetUpdatePattern.version)
     }
+  }
 
   //  Strategy: union
   private[repoconfig] def mergeIgnore(
