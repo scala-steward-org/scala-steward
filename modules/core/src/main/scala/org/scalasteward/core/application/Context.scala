@@ -24,6 +24,7 @@ import org.http4s.client.Client
 import org.http4s.client.asynchttpclient.AsyncHttpClient
 import org.scalasteward.core.buildtool.BuildToolDispatcher
 import org.scalasteward.core.buildtool.maven.MavenAlg
+import org.scalasteward.core.buildtool.mill.MillAlg
 import org.scalasteward.core.buildtool.sbt.SbtAlg
 import org.scalasteward.core.coursier.{CoursierAlg, VersionsCache}
 import org.scalasteward.core.edit.EditAlg
@@ -83,6 +84,7 @@ object Context {
       implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]
       implicit val mavenAlg: MavenAlg[F] = MavenAlg.create[F]
       implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F]
+      implicit val millAlg: MillAlg[F] = MillAlg.create[F]
       implicit val buildToolDispatcher: BuildToolDispatcher[F] = BuildToolDispatcher.create[F]
       implicit val refreshErrorAlg: RefreshErrorAlg[F] =
         new RefreshErrorAlg[F](new JsonKeyValueStore("refresh_error", "1", kvsPrefix))

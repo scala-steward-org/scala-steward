@@ -33,7 +33,7 @@ final case class RepoConfig(
 }
 
 object RepoConfig {
-  private[repoconfig] val empty: RepoConfig = RepoConfig()
+  val empty: RepoConfig = RepoConfig()
 
   implicit val customConfig: Configuration =
     Configuration.default.withDefaults

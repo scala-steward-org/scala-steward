@@ -45,6 +45,13 @@ The [`git-ask-pass` option](https://git-scm.com/docs/gitcredentials) must specif
 You can also provide a `--scalafix-migrations` option with the path to a file containing scalafix migrations.
 More information can be found [here][migrations]
 
+### Workspace
+
+The workspace directory (specified with `--workspace`) provides a location for cache and temporary files.  
+
+It is important to persist this workspace between runs.  Without this, Scala Steward will be unable to observe 
+repo-specific preferences (such as [pullRequests.frequency](repo-specific-configuration.md)) correctly.   
+
 ### Private repositories
 
 If you run Scala Steward for your own private projects, the option `--do-not-fork` can be required, not to fork.
@@ -65,6 +72,15 @@ These variables will be accessible (in sbt) to all of the projects that Scala St
 
 If your projects require credentials, you can also provide global credentials in the `$HOME/.sbt/1.0/credentials.sbt` file. 
 The file should contain a single line: `credentials += Credentials("Some Nexus Repository Manager", "my.artifact.repo.net", "admin", "admin123")`.
+
+#### sbt 0.13 workaround
+For sbt 0.13 builds, scala-steward [may be unable](https://gitter.im/fthomas/scala-steward?at=5f0573dac7d15f7d0f7b15ac) to extract credentials for private resolvers. Instead, you can [configure coursier directly](https://get-coursier.io/docs/other-credentials) by adding `~/.config/coursier/credentials.properties`:
+```scala
+example1.username=username
+example1.password=password
+example1.host=artifacts.example.com
+example1.realm=Example Realm
+```
 
 ### Running locally from sbt
 

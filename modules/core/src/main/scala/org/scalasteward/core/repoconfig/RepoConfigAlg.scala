@@ -45,24 +45,25 @@ final class RepoConfigAlg[F[_]](implicit
       .getOrElse(defaultCfg)
 
   /**
-    * Default configuration will try to read file specified in config.reposDefaultConfig first;
+    * Default configuration will try to read file specified in config.defaultRepoConfigFile first;
     * if not found - fallback to empty configuration.
     */
-  lazy val defaultRepoConfig: F[RepoConfig] =
-    readRepoConfigFromFile(config.defaultRepoConfigFile).map(_.getOrElse(RepoConfig.empty))
+  val defaultRepoConfig: F[RepoConfig] =
+    OptionT
+      .fromOption[F](config.defaultRepoConfigFile)
+      .flatMap(readRepoConfigFromFile)
+      .getOrElse(RepoConfig.empty)
 
   def readRepoConfig(repo: Repo): F[Option[RepoConfig]] =
     workspaceAlg
       .repoDir(repo)
-      .flatMap(dir => readRepoConfigFromFile(dir / repoConfigBasename))
+      .flatMap(dir => readRepoConfigFromFile(dir / repoConfigBasename).value)
 
-  private def readRepoConfigFromFile(configFile: File): F[Option[RepoConfig]] = {
-    val maybeRepoConfig = OptionT(fileAlg.readFile(configFile)).map(parseRepoConfig).flatMapF {
-      case Right(config)  => logger.info(s"Parsed $config").as(config.some)
-      case Left(errorMsg) => logger.info(errorMsg).as(none[RepoConfig])
+  private def readRepoConfigFromFile(configFile: File): OptionT[F, RepoConfig] =
+    OptionT(fileAlg.readFile(configFile)).map(parseRepoConfig).flatMapF {
+      case Right(repoConfig) => logger.info(s"Parsed $repoConfig").as(repoConfig.some)
+      case Left(errorMsg)    => logger.info(errorMsg).as(none[RepoConfig])
     }
-    maybeRepoConfig.value
-  }
 }
 
 object RepoConfigAlg {

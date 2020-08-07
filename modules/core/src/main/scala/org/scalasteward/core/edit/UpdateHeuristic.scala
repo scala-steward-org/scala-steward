@@ -34,6 +34,18 @@ final case class UpdateHeuristic(
 )
 
 object UpdateHeuristic {
+
+  /** Removes punctuation from the input and returns it as regex that allows
+    * punctuation between characters.
+    */
+  private def toFlexibleRegex(string: String): String = {
+    val punctuation = List('.', '-', '_')
+    val allowPunctuation = punctuation.mkString("[", "", "]*")
+    string.toList
+      .collect { case c if !punctuation.contains_(c) => Regex.quote(c.toString) }
+      .intercalate(allowPunctuation)
+  }
+
   private def alternation[F[_]: Foldable](strings: F[String]): String =
     strings.mkString_("(", "|", ")")
 
@@ -63,19 +75,8 @@ object UpdateHeuristic {
       getSearchTerms: Update => List[String],
       getPrefixRegex: Update => Option[String] = _ => None
   ): Update => String => Option[String] = {
-    def searchTermsToAlternation(terms: List[String]): Option[String] = {
-      val ignoreChar = ".?"
-      val ignorableStrings = List(".", "-")
-      val terms1 = terms
-        .filterNot(term => term.isEmpty || ignorableStrings.contains(term))
-        .map { term =>
-          ignorableStrings.foldLeft(term) {
-            case (term1, ignorable) => term1.replace(ignorable, ignoreChar)
-          }
-        }
-
-      if (terms1.nonEmpty) Some(alternation(terms1)) else None
-    }
+    def searchTermsToAlternation(terms: List[String]): Option[String] =
+      Nel.fromList(terms.map(toFlexibleRegex).filterNot(_.isEmpty)).map(alternation(_))
 
     def mkRegex(update: Update): Option[Regex] =
       searchTermsToAlternation(getSearchTerms(update).map(removeCommonSuffix)).map { searchTerms =>

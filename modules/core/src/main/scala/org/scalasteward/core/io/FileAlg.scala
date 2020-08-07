@@ -17,7 +17,7 @@
 package org.scalasteward.core.io
 
 import better.files.File
-import cats.effect.{Resource, Sync}
+import cats.effect.{Bracket, Resource, Sync}
 import cats.implicits._
 import cats.{Functor, Traverse}
 import fs2.Stream
@@ -27,8 +27,6 @@ import org.scalasteward.core.util.MonadThrowable
 import scala.io.Source
 
 trait FileAlg[F[_]] {
-  def createTemporarily[A](file: File, content: String)(fa: F[A]): F[A]
-
   def deleteForce(file: File): F[Unit]
 
   def ensureExists(dir: File): F[File]
@@ -49,8 +47,13 @@ trait FileAlg[F[_]] {
 
   def writeFile(file: File, content: String): F[Unit]
 
-  def containsString(file: File, string: String)(implicit F: Functor[F]): F[Boolean] =
+  final def containsString(file: File, string: String)(implicit F: Functor[F]): F[Boolean] =
     readFile(file).map(_.fold(false)(_.contains(string)))
+
+  final def createTemporarily[A, E](file: File, content: String)(
+      fa: F[A]
+  )(implicit F: Bracket[F, E]): F[A] =
+    F.bracket(writeFile(file, content))(_ => fa)(_ => deleteForce(file))
 
   final def editFile(file: File, edit: String => Option[String])(implicit
       F: MonadThrowable[F]
@@ -83,9 +86,6 @@ trait FileAlg[F[_]] {
 object FileAlg {
   def create[F[_]](implicit logger: Logger[F], F: Sync[F]): FileAlg[F] =
     new FileAlg[F] {
-      override def createTemporarily[A](file: File, content: String)(fa: F[A]): F[A] =
-        F.bracket(writeFile(file, content))(_ => fa)(_ => deleteForce(file))
-
       override def deleteForce(file: File): F[Unit] =
         F.delay {
           if (file.exists) FileUtils.forceDelete(file.toJava)

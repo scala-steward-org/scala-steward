@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package org.scalasteward.plugin
+package org.scalasteward.sbt.plugin
 
 import sbt.Keys._
 import sbt.{Def, _}
-
 import scala.util.Try
 import scala.util.matching.Regex
 

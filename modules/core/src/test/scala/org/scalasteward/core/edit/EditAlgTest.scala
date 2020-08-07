@@ -175,4 +175,20 @@ class EditAlgTest extends AnyFunSuite with Matchers {
     )
     runApplyUpdate(update, original) shouldBe expected
   }
+
+  test("keyword with extra underscore") {
+    val update = Update.Group(
+      "org.scala-js" % Nel.of("sbt-scalajs", "scalajs-compiler") % "1.1.0",
+      Nel.of("1.1.1")
+    )
+    val original = Map(
+      ".travis.yml" -> """ - SCALA_JS_VERSION=1.1.0""",
+      "project/plugins.sbt" -> """val scalaJsVersion = Option(System.getenv("SCALA_JS_VERSION")).getOrElse("1.1.0")"""
+    )
+    val expected = Map(
+      ".travis.yml" -> """ - SCALA_JS_VERSION=1.1.1""",
+      "project/plugins.sbt" -> """val scalaJsVersion = Option(System.getenv("SCALA_JS_VERSION")).getOrElse("1.1.1")"""
+    )
+    runApplyUpdate(update, original) shouldBe expected
+  }
 }

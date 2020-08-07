@@ -25,7 +25,7 @@ import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.ProcessResult.{Ignored, Updated}
 import org.scalasteward.core.data.{ProcessResult, Scope, Update}
 import org.scalasteward.core.edit.EditAlg
-import org.scalasteward.core.git.{Branch, GitAlg}
+import org.scalasteward.core.git.{Branch, Commit, GitAlg}
 import org.scalasteward.core.repocache.RepoCacheRepository
 import org.scalasteward.core.repoconfig.{PullRequestUpdateStrategy, RepoConfigAlg}
 import org.scalasteward.core.scalafix.MigrationAlg
@@ -125,26 +125,29 @@ final class NurtureAlg[F[_]](implicit
       data.repo,
       data.update,
       data.repoConfig.updates.fileExtensionsOrDefault
-    ) >> gitAlg
-      .containsChanges(data.repo)).ifM(
+    ) >> gitAlg.containsChanges(data.repo)).ifM(
       gitAlg.returnToCurrentBranch(data.repo) {
         for {
           _ <- logger.info(s"Create branch ${data.updateBranch.name}")
           _ <- gitAlg.createBranch(data.repo, data.updateBranch)
-          _ <- commitAndPush(data)
+          maybeCommit <- commitChanges(data)
+          _ <- pushCommits(data, maybeCommit.toList)
           _ <- createPullRequest(data)
         } yield Updated
       },
       logger.warn("No files were changed") >> F.pure[ProcessResult](Ignored)
     )
 
-  def commitAndPush(data: UpdateData): F[ProcessResult] =
-    for {
-      _ <- logger.info("Commit and push changes")
-      commitMsgConfig = data.repoConfig.commits
-      _ <- gitAlg.commitAll(data.repo, git.commitMsgFor(data.update, commitMsgConfig))
-      _ <- gitAlg.push(data.repo, data.updateBranch)
-    } yield Updated
+  def commitChanges(data: UpdateData): F[Option[Commit]] =
+    gitAlg.commitAllIfDirty(data.repo, git.commitMsgFor(data.update, data.repoConfig.commits))
+
+  def pushCommits(data: UpdateData, commits: List[Commit]): F[ProcessResult] =
+    if (commits.isEmpty) F.pure[ProcessResult](Ignored)
+    else
+      for {
+        _ <- logger.info(s"Push ${commits.length} commit(s)")
+        _ <- gitAlg.push(data.repo, data.updateBranch)
+      } yield Updated
 
   def createPullRequest(data: UpdateData): F[Unit] =
     for {
@@ -217,14 +220,14 @@ final class NurtureAlg[F[_]](implicit
       _ <- logger.info(
         s"Merge branch '${data.baseBranch.name}' into ${data.updateBranch.name} and apply again"
       )
-      _ <- gitAlg.mergeTheirs(data.repo, data.baseBranch)
+      maybeMergeCommit <- gitAlg.mergeTheirs(data.repo, data.baseBranch)
       _ <- editAlg.applyUpdate(
         data.repo,
         data.update,
         data.repoConfig.updates.fileExtensionsOrDefault
       )
-      containsChanges <- gitAlg.containsChanges(data.repo)
-      result <- if (containsChanges) commitAndPush(data) else F.pure[ProcessResult](Ignored)
+      maybeCommit <- commitChanges(data)
+      result <- pushCommits(data, maybeMergeCommit.toList ++ maybeCommit.toList)
     } yield result
 }
 
