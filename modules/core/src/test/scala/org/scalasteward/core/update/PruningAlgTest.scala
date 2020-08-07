@@ -7,6 +7,8 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class PruningAlgTest extends AnyFunSuite with Matchers {
+  private val defaultConf = config.defaultRepoConfigFile.map(_.toString).getOrElse("")
+
   test("needsAttention") {
     val repo = Repo("fthomas", "scalafix-test")
     val repoCacheFile =
@@ -60,7 +62,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
     state shouldBe initial.copy(
       commands = Vector(
         List("read", repoCacheFile.toString),
-        List("read", config.defaultRepoConfigFile.toString),
+        List("read", defaultConf),
         List("read", pullRequestsFile.toString)
       ),
       logs = Vector(
@@ -168,7 +170,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
     state shouldBe initial.copy(
       commands = Vector(
         List("read", repoCacheFile.toString),
-        List("read", config.defaultRepoConfigFile.toString),
+        List("read", defaultConf),
         List("read", pullRequestsFile.toString)
       ),
       logs = Vector(
@@ -286,7 +288,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
     state shouldBe initial.copy(
       commands = Vector(
         List("read", repoCacheFile.toString),
-        List("read", config.defaultRepoConfigFile.toString),
+        List("read", defaultConf),
         List("read", versionsFile.toString),
         List("read", pullRequestsFile.toString),
         List("read", versionsFile.toString),
