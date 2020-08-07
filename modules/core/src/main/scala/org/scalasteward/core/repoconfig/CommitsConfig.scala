@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.repoconfig
 
-import cats.kernel.Semigroup
+import cats.kernel.{Eq, Semigroup}
 import io.circe.Codec
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
@@ -33,6 +33,8 @@ object CommitsConfig {
 
   implicit val customConfig: Configuration =
     Configuration.default.withDefaults
+
+  implicit val eqPullRequestsConfig: Eq[CommitsConfig] = Eq.fromUniversalEquals
 
   implicit val commitsConfigCodec: Codec[CommitsConfig] =
     deriveConfiguredCodec

@@ -1,20 +1,25 @@
 package org.scalasteward.core.repoconfig
 
-import cats.syntax.semigroup._
+import cats.kernel.laws.discipline.SemigroupTests
+import org.scalacheck.{Arbitrary, Gen}
+import org.scalasteward.core.repoconfig.PullRequestFrequency.{Asap, Daily, Monthly, Weekly}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.Configuration
+import org.typelevel.discipline.scalatest.FunSuiteDiscipline
 
-class PullRequestsConfigTest extends AnyFunSuite with Matchers {
-  test("PullRequestsConfig: semigroup") {
-    val emptyCfg = PullRequestsConfig()
-    emptyCfg |+| emptyCfg shouldBe emptyCfg
+class PullRequestsConfigTest
+    extends AnyFunSuite
+    with Matchers
+    with FunSuiteDiscipline
+    with Configuration {
 
-    val cfg = PullRequestsConfig(Some(PullRequestFrequency.Asap))
-    cfg |+| emptyCfg shouldBe cfg
-    emptyCfg |+| cfg shouldBe cfg
+  implicit val pullRequestFrequencyArbitrary: Arbitrary[PullRequestFrequency] = Arbitrary(
+    Gen.oneOf(Asap, Daily, Weekly, Monthly)
+  )
+  implicit val pullRequestsConfigArbitrary: Arbitrary[PullRequestsConfig] = Arbitrary(for {
+    e <- Arbitrary.arbitrary[Option[PullRequestFrequency]]
+  } yield PullRequestsConfig(e))
 
-    val cfg2 = PullRequestsConfig(Some(PullRequestFrequency.Weekly))
-    cfg |+| cfg2 shouldBe cfg
-    cfg2 |+| cfg shouldBe cfg2
-  }
+  checkAll("Semigroup[PullRequestsConfig]", SemigroupTests[PullRequestsConfig].semigroup)
 }
