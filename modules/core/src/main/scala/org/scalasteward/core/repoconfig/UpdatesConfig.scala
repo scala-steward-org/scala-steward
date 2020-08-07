@@ -30,7 +30,7 @@ import org.scalasteward.core.update.FilterAlg.{
   VersionPinnedByConfig
 }
 import org.scalasteward.core.util.Nel
-import org.scalasteward.core.util.wart._
+import cats.implicits._
 
 import scala.collection.mutable.ListBuffer
 
