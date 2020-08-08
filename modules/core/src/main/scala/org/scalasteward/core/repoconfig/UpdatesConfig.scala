@@ -16,6 +16,7 @@
 
 package org.scalasteward.core.repoconfig
 
+import cats.implicits._
 import cats.kernel.Semigroup
 import eu.timepit.refined.types.numeric.PosInt
 import io.circe.generic.extras.Configuration
@@ -146,7 +147,7 @@ object UpdatesConfig {
     }
 
   //  merge UpdatePattern for same group id
-  private def mergeAllowGroupId(
+  private[this] def mergeAllowGroupId(
       x: List[UpdatePattern],
       y: List[UpdatePattern]
   ): List[UpdatePattern] =
@@ -172,12 +173,10 @@ object UpdatesConfig {
         else builder.toList
     }
 
-  private def satisfyUpdatePattern(
+  private[this] def satisfyUpdatePattern(
       targetUpdatePattern: UpdatePattern,
       comparedUpdatePatternsByArtifact: Map[Option[String], List[UpdatePattern]]
   ): Boolean = {
-    import cats.implicits._
-
     comparedUpdatePatternsByArtifact.get(targetUpdatePattern.artifactId).exists { matchedVersions =>
       //  For simplicity I'm using direct equals here between versions. Feel free to make it more advanced
       matchedVersions.exists(up => up.version.isEmpty || up.version === targetUpdatePattern.version)
