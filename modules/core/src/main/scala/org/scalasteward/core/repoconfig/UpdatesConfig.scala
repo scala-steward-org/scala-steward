@@ -32,8 +32,6 @@ import org.scalasteward.core.update.FilterAlg.{
 }
 import org.scalasteward.core.util.Nel
 
-import scala.collection.mutable.ListBuffer
-
 final case class UpdatesConfig(
     pin: List[UpdatePattern] = List.empty,
     allow: List[UpdatePattern] = List.empty,
@@ -133,7 +131,7 @@ object UpdatesConfig {
         //  remove duplicates first by calling .distinct
         val xm: Map[GroupId, List[UpdatePattern]] = x.distinct.groupBy(_.groupId)
         val ym: Map[GroupId, List[UpdatePattern]] = y.distinct.groupBy(_.groupId)
-        val builder = new ListBuffer[UpdatePattern]()
+        val builder = new collection.mutable.ListBuffer[UpdatePattern]()
 
         //  first of all, we only allow intersection (superset)
         val keys = xm.keySet.intersect(ym.keySet)
@@ -156,7 +154,7 @@ object UpdatesConfig {
       case (_, true) => x
       case _         =>
         //  case with concrete artifacts / versions
-        val builder = new ListBuffer[UpdatePattern]()
+        val builder = new collection.mutable.ListBuffer[UpdatePattern]()
         val xByArtifacts = x.groupBy(_.artifactId)
         val yByArtifacts = y.groupBy(_.artifactId)
 
