@@ -174,12 +174,11 @@ object UpdatesConfig {
   private[this] def satisfyUpdatePattern(
       targetUpdatePattern: UpdatePattern,
       comparedUpdatePatternsByArtifact: Map[Option[String], List[UpdatePattern]]
-  ): Boolean = {
+  ): Boolean =
     comparedUpdatePatternsByArtifact.get(targetUpdatePattern.artifactId).exists { matchedVersions =>
       //  For simplicity I'm using direct equals here between versions. Feel free to make it more advanced
       matchedVersions.exists(up => up.version.isEmpty || up.version === targetUpdatePattern.version)
     }
-  }
 
   //  Strategy: union
   private[repoconfig] def mergeIgnore(
