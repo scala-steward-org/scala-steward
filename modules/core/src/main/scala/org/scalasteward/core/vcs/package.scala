@@ -73,7 +73,7 @@ package object vcs {
     possibleFilenames(baseNames)
   }
 
-  private def getRepoVCSType(
+  private[this] def extractRepoVCSType(
       vcsType: SupportedVCS,
       vcsUri: Uri,
       repoUrl: Uri
@@ -103,7 +103,7 @@ package object vcs {
     val from = update.currentVersion
     val to = update.nextVersion
 
-    getRepoVCSType(vcsType, vcsUri, repoUrl)
+    extractRepoVCSType(vcsType, vcsUri, repoUrl)
       .map {
         case GitHub | Gitlab =>
           possibleTags(from).zip(possibleTags(to)).map {
@@ -124,7 +124,7 @@ package object vcs {
       repoUrl: Uri,
       update: Update
   ): List[ReleaseRelatedUrl] = {
-    val repoVCSType = getRepoVCSType(vcsType, vcsUri, repoUrl)
+    val repoVCSType = extractRepoVCSType(vcsType, vcsUri, repoUrl)
 
     val github = repoVCSType
       .collect {
