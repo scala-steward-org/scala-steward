@@ -33,15 +33,43 @@ class VCSExtraAlgTest extends AnyFunSuite with Matchers {
 
   test("getBranchCompareUrl") {
     vcsExtraAlg
-      .getReleaseRelatedUrls(SupportedVCS.GitHub, uri"https://github.com/foo/foo", updateFoo)
+      .getReleaseRelatedUrls(
+        SupportedVCS.Gitlab,
+        uri"https://gitlab.com/",
+        uri"https://github.com/foo/foo",
+        updateFoo
+      )
       .unsafeRunSync() shouldBe List.empty
+
     vcsExtraAlg
-      .getReleaseRelatedUrls(SupportedVCS.GitHub, uri"https://github.com/foo/bar", updateBar)
+      .getReleaseRelatedUrls(
+        SupportedVCS.Gitlab,
+        uri"https://gitlab.com/",
+        uri"https://github.com/foo/bar",
+        updateBar
+      )
       .unsafeRunSync() shouldBe List(
       ReleaseRelatedUrl.VersionDiff(uri"https://github.com/foo/bar/compare/v0.1.0...v0.2.0")
     )
+
     vcsExtraAlg
-      .getReleaseRelatedUrls(SupportedVCS.GitHub, uri"https://github.com/foo/buz", updateBuz)
+      .getReleaseRelatedUrls(
+        SupportedVCS.GitHub,
+        uri"https://github.on-prem.com/",
+        uri"https://github.on-prem.com/foo/bar",
+        updateBar
+      )
+      .unsafeRunSync() shouldBe List(
+      ReleaseRelatedUrl.VersionDiff(uri"https://github.on-prem.com/foo/bar/compare/v0.1.0...v0.2.0")
+    )
+
+    vcsExtraAlg
+      .getReleaseRelatedUrls(
+        SupportedVCS.Gitlab,
+        uri"https://gitlab.com/",
+        uri"https://github.com/foo/buz",
+        updateBuz
+      )
       .unsafeRunSync() shouldBe List.empty
   }
 }

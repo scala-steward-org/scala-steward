@@ -26,36 +26,56 @@ class VCSPackageTest extends AnyFunSuite with Matchers {
   }
 
   test("possibleCompareUrls") {
-    possibleCompareUrls(SupportedVCS.GitHub, uri"https://github.com/foo/bar", update)
+    val onPremVCS = "https://github.onprem.io/"
+    val onPremVCSUri = uri"https://github.onprem.io/"
+
+    possibleCompareUrls(SupportedVCS.GitHub, onPremVCSUri, uri"https://github.com/foo/bar", update)
       .map(_.url.renderString) shouldBe List(
       "https://github.com/foo/bar/compare/v1.2.0...v1.2.3",
       "https://github.com/foo/bar/compare/1.2.0...1.2.3",
       "https://github.com/foo/bar/compare/release-1.2.0...release-1.2.3"
     )
     // should canonicalize (drop last slash)
-    possibleCompareUrls(SupportedVCS.GitHub, uri"https://github.com/foo/bar/", update)
+    possibleCompareUrls(SupportedVCS.GitHub, onPremVCSUri, uri"https://github.com/foo/bar/", update)
       .map(_.url.renderString) shouldBe List(
       "https://github.com/foo/bar/compare/v1.2.0...v1.2.3",
       "https://github.com/foo/bar/compare/1.2.0...1.2.3",
       "https://github.com/foo/bar/compare/release-1.2.0...release-1.2.3"
     )
 
-    possibleCompareUrls(SupportedVCS.Gitlab, uri"https://gitlab.com/foo/bar", update)
+    possibleCompareUrls(SupportedVCS.GitHub, onPremVCSUri, uri"https://gitlab.com/foo/bar", update)
       .map(_.url.renderString) shouldBe List(
       "https://gitlab.com/foo/bar/compare/v1.2.0...v1.2.3",
       "https://gitlab.com/foo/bar/compare/1.2.0...1.2.3",
       "https://gitlab.com/foo/bar/compare/release-1.2.0...release-1.2.3"
     )
-    possibleCompareUrls(SupportedVCS.Bitbucket, uri"https://bitbucket.org/foo/bar", update)
+    possibleCompareUrls(
+      SupportedVCS.GitHub,
+      onPremVCSUri,
+      uri"https://bitbucket.org/foo/bar",
+      update
+    )
       .map(_.url.renderString) shouldBe List(
       "https://bitbucket.org/foo/bar/compare/v1.2.3..v1.2.0#diff",
       "https://bitbucket.org/foo/bar/compare/1.2.3..1.2.0#diff",
       "https://bitbucket.org/foo/bar/compare/release-1.2.3..release-1.2.0#diff"
     )
+
+    possibleCompareUrls(SupportedVCS.GitHub, onPremVCSUri, onPremVCSUri.addPath("/foo/bar"), update)
+      .map(_.url.renderString) shouldBe List(
+      s"${onPremVCS}foo/bar/compare/v1.2.0...v1.2.3",
+      s"${onPremVCS}foo/bar/compare/1.2.0...1.2.3",
+      s"${onPremVCS}foo/bar/compare/release-1.2.0...release-1.2.3"
+    )
   }
 
   test("possibleChangelogUrls: github.com") {
-    possibleReleaseRelatedUrls(SupportedVCS.GitHub, uri"https://github.com/foo/bar", update)
+    possibleReleaseRelatedUrls(
+      SupportedVCS.GitHub,
+      uri"https://github.com",
+      uri"https://github.com/foo/bar",
+      update
+    )
       .map(_.url.renderString) shouldBe List(
       "https://github.com/foo/bar/releases/tag/v1.2.3",
       "https://github.com/foo/bar/releases/tag/1.2.3",
@@ -91,7 +111,12 @@ class VCSPackageTest extends AnyFunSuite with Matchers {
   }
 
   test("possibleChangelogUrls: gitlab.com") {
-    possibleReleaseRelatedUrls(SupportedVCS.Gitlab, uri"https://gitlab.com/foo/bar", update)
+    possibleReleaseRelatedUrls(
+      SupportedVCS.GitHub,
+      uri"https://github.com",
+      uri"https://gitlab.com/foo/bar",
+      update
+    )
       .map(_.url.renderString) shouldBe
       possibleReleaseNotesFilenames.map(name => s"https://gitlab.com/foo/bar/blob/master/$name") ++
         possibleChangelogFilenames.map(name => s"https://gitlab.com/foo/bar/blob/master/$name") ++
@@ -102,8 +127,34 @@ class VCSPackageTest extends AnyFunSuite with Matchers {
         )
   }
 
+  test("possibleChangelogUrls: on-prem gitlab") {
+    possibleReleaseRelatedUrls(
+      SupportedVCS.Gitlab,
+      uri"https://gitlab.on-prem.net",
+      uri"https://gitlab.on-prem.net/foo/bar",
+      update
+    )
+      .map(_.url.renderString) shouldBe
+      possibleReleaseNotesFilenames.map(name =>
+        s"https://gitlab.on-prem.net/foo/bar/blob/master/$name"
+      ) ++
+        possibleChangelogFilenames.map(name =>
+          s"https://gitlab.on-prem.net/foo/bar/blob/master/$name"
+        ) ++
+        List(
+          "https://gitlab.on-prem.net/foo/bar/compare/v1.2.0...v1.2.3",
+          "https://gitlab.on-prem.net/foo/bar/compare/1.2.0...1.2.3",
+          "https://gitlab.on-prem.net/foo/bar/compare/release-1.2.0...release-1.2.3"
+        )
+  }
+
   test("possibleChangelogUrls: bitbucket.org") {
-    possibleReleaseRelatedUrls(SupportedVCS.Bitbucket, uri"https://bitbucket.org/foo/bar", update)
+    possibleReleaseRelatedUrls(
+      SupportedVCS.GitHub,
+      uri"https://github.com",
+      uri"https://bitbucket.org/foo/bar",
+      update
+    )
       .map(_.url.renderString) shouldBe
       possibleReleaseNotesFilenames.map(name => s"https://bitbucket.org/foo/bar/master/$name") ++
         possibleChangelogFilenames.map(name => s"https://bitbucket.org/foo/bar/master/$name") ++
