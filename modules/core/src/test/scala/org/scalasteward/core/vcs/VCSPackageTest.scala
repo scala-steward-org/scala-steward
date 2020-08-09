@@ -61,6 +61,13 @@ class VCSPackageTest extends AnyFunSuite with Matchers {
       "https://bitbucket.org/foo/bar/compare/release-1.2.3..release-1.2.0#diff"
     )
 
+    possibleCompareUrls(
+      SupportedVCS.GitHub,
+      onPremVCSUri,
+      uri"https://scalacenter.github.io/scalafix/",
+      update
+    ) shouldBe List.empty
+
     possibleCompareUrls(SupportedVCS.GitHub, onPremVCSUri, onPremVCSUri.addPath("/foo/bar"), update)
       .map(_.url.renderString) shouldBe List(
       s"${onPremVCS}foo/bar/compare/v1.2.0...v1.2.3",
@@ -163,5 +170,15 @@ class VCSPackageTest extends AnyFunSuite with Matchers {
           "https://bitbucket.org/foo/bar/compare/1.2.3..1.2.0#diff",
           "https://bitbucket.org/foo/bar/compare/release-1.2.3..release-1.2.0#diff"
         )
+  }
+
+  test("possibleChangelogUrls: homepage") {
+    possibleReleaseRelatedUrls(
+      SupportedVCS.GitHub,
+      uri"https://github.com",
+      uri"https://scalacenter.github.io/scalafix/",
+      update
+    )
+      .map(_.url.renderString) shouldBe List.empty
   }
 }
