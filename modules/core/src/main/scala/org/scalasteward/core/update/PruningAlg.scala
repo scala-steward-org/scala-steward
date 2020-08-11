@@ -23,7 +23,12 @@ import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data._
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.repocache.{RepoCache, RepoCacheRepository}
-import org.scalasteward.core.repoconfig.{PullRequestFrequency, RepoConfig, UpdatesConfig}
+import org.scalasteward.core.repoconfig.{
+  PullRequestFrequency,
+  RepoConfig,
+  RepoConfigAlg,
+  UpdatesConfig
+}
 import org.scalasteward.core.update.PruningAlg._
 import org.scalasteward.core.update.data.UpdateState
 import org.scalasteward.core.update.data.UpdateState._
@@ -38,6 +43,7 @@ final class PruningAlg[F[_]](implicit
     logger: Logger[F],
     pullRequestRepository: PullRequestRepository[F],
     repoCacheRepository: RepoCacheRepository[F],
+    repoConfigAlg: RepoConfigAlg[F],
     updateAlg: UpdateAlg[F],
     F: Monad[F]
 ) {
@@ -64,10 +70,12 @@ final class PruningAlg[F[_]](implicit
       repoCache: RepoCache,
       dependencies: List[Scope.Dependency]
   ): F[(Boolean, List[Update.Single])] = {
-    val repoConfig = repoCache.maybeRepoConfig.getOrElse(RepoConfig.default)
+
     val depsWithoutResolvers = dependencies.map(_.value).distinct
     for {
       _ <- logger.info(s"Find updates for ${repo.show}")
+      repoConfig <-
+        OptionT.fromOption[F](repoCache.maybeRepoConfig).getOrElseF(repoConfigAlg.defaultRepoConfig)
       updates0 <- updateAlg.findUpdates(dependencies, repoConfig, None)
       updateStates0 <- findAllUpdateStates(repo, repoCache, depsWithoutResolvers, updates0)
       outdatedDeps = collectOutdatedDependencies(updateStates0)

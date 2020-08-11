@@ -31,7 +31,7 @@ final case class RepoConfig(
 }
 
 object RepoConfig {
-  val default: RepoConfig = RepoConfig()
+  val empty: RepoConfig = RepoConfig()
 
   implicit val customConfig: Configuration =
     Configuration.default.withDefaults

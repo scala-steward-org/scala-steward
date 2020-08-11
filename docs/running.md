@@ -6,6 +6,7 @@ sbt stage
 ./modules/core/.jvm/target/universal/stage/bin/scala-steward \
   --workspace  "$STEWARD_DIR/workspace" \
   --repos-file "$STEWARD_DIR/repos.md" \
+  --default-repo-conf "$STEWARD_DIR/default.scala-steward.conf" \
   --git-author-email ${EMAIL} \
   --vcs-api-host "https://api.github.com" \
   --vcs-login ${LOGIN} \
@@ -24,6 +25,7 @@ sbt docker:publishLocal
 docker run -v $STEWARD_DIR:/opt/scala-steward -it fthomas/scala-steward:latest \
   --workspace  "/opt/scala-steward/workspace" \
   --repos-file "/opt/scala-steward/repos.md" \
+  --default-repo-conf "/opt/scala-steward/default.scala-steward.conf" \
   --git-author-email ${EMAIL} \
   --vcs-api-host "https://api.github.com" \
   --vcs-login ${LOGIN} \
@@ -42,6 +44,13 @@ The [`git-ask-pass` option](https://git-scm.com/docs/gitcredentials) must specif
 
 You can also provide a `--scalafix-migrations` option with the path to a file containing scalafix migrations.
 More information can be found [here][migrations]
+
+### Workspace
+
+The workspace directory (specified with `--workspace`) provides a location for cache and temporary files.  
+
+It is important to persist this workspace between runs.  Without this, Scala Steward will be unable to observe 
+repo-specific preferences (such as [pullRequests.frequency](repo-specific-configuration.md)) correctly.   
 
 ### Private repositories
 
@@ -64,6 +73,15 @@ These variables will be accessible (in sbt) to all of the projects that Scala St
 If your projects require credentials, you can also provide global credentials in the `$HOME/.sbt/1.0/credentials.sbt` file. 
 The file should contain a single line: `credentials += Credentials("Some Nexus Repository Manager", "my.artifact.repo.net", "admin", "admin123")`.
 
+#### sbt 0.13 workaround
+For sbt 0.13 builds, scala-steward [may be unable](https://gitter.im/fthomas/scala-steward?at=5f0573dac7d15f7d0f7b15ac) to extract credentials for private resolvers. Instead, you can [configure coursier directly](https://get-coursier.io/docs/other-credentials) by adding `~/.config/coursier/credentials.properties`:
+```scala
+example1.username=username
+example1.password=password
+example1.host=artifacts.example.com
+example1.realm=Example Realm
+```
+
 ### Running locally from sbt
 
 #### Sample run for Gitlab
@@ -71,7 +89,7 @@ The file should contain a single line: `credentials += Credentials("Some Nexus R
 ```
 sbt
 project core
-run --disable-sandbox --do-not-fork --workspace "/path/workspace" --repos-file "/path/repos.md" --git-ask-pass "/path/pass.sh" --git-author-email "email@example.org" --vcs-type "gitlab" --vcs-api-host "https://gitlab.com/api/v4/" --vcs-login "gitlab.steward"
+run --disable-sandbox --do-not-fork --workspace "/path/workspace" --repos-file "/path/repos.md" --default-repo-conf "/path/default.scala-steward.conf" --git-ask-pass "/path/pass.sh" --git-author-email "email@example.org" --vcs-type "gitlab" --vcs-api-host "https://gitlab.com/api/v4/" --vcs-login "gitlab.steward"
 ```
 
 
@@ -93,6 +111,7 @@ docker run -v $PWD:/opt/scala-steward \
     --do-not-fork \
     --workspace "/opt/scala-steward/workspace" \
     --repos-file "/opt/scala-steward/repos.md" \
+    --default-repo-conf "/opt/scala-steward/default.scala-steward.conf" \
     --git-ask-pass "/opt/scala-steward/pass.sh" \
     --git-author-email "myemail@company.xyz" \
     --vcs-type "bitbucket" \
@@ -106,3 +125,8 @@ docker run -v $PWD:/opt/scala-steward \
 `BITBUCKET_USERNAME=<myuser> BITBUCKET_PASSWORD=<mypass> ./run.sh`
 
 [migrations]: https://github.com/fthomas/scala-steward/blob/master/docs/scalafix-migrations.md
+
+### Running On-premise (GitHub Enterprise)
+
+There is an article on how they run Scala Steward on-premise at Avast:
+* [Running Scala Steward On-premise](https://engineering.avast.io/running-scala-steward-on-premise)

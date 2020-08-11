@@ -10,7 +10,7 @@ If you want Scala Steward to keep your project up-to-date, please add it there.
 - fthomas/properly
 - fthomas/refined
 - fthomas/scalafix-test
-- fthomas/scala-steward
 - fthomas/singleton-ops
 - fthomas/status-page
+- scala-steward-org/scala-steward
 - scala-steward-org/test-repo-2

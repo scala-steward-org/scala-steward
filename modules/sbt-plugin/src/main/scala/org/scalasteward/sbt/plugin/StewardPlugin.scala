@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package org.scalasteward.plugin
+package org.scalasteward.sbt.plugin
 
 import sbt.Keys._
-import sbt._
+import sbt.{Def, _}
 import scala.util.Try
 import scala.util.matching.Regex
 
@@ -39,7 +39,7 @@ object StewardPlugin extends AutoPlugin {
         val buildRoot = baseDirectory.in(ThisBuild).value
         val scalaBinaryVersionValue = scalaBinaryVersion.value
         val scalaVersionValue = scalaVersion.value
-        val sbtCredentials = credentials.value
+        val sbtCredentials = findCredentials.value
 
         val libraryDeps = libraryDependencies.value
           .filter(isDefinedInBuildFiles(_, sourcePositions, buildRoot))
@@ -128,6 +128,17 @@ object StewardPlugin extends AutoPlugin {
       }
     } catch {
       case _: ClassNotFoundException => Def.setting(None)
+    }
+  }
+
+  lazy val findCredentials: Def.Initialize[Task[Seq[Credentials]]] = Def.taskDyn {
+    try {
+      val allCredentials = TaskKey[Seq[Credentials]]("allCredentials").?
+      Def.task {
+        allCredentials.value.getOrElse(Nil)
+      }
+    } catch {
+      case _: ClassNotFoundException => Def.task(credentials.value)
     }
   }
 
