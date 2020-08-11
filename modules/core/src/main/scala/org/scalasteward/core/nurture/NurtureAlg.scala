@@ -171,7 +171,7 @@ final class NurtureAlg[F[_]](implicit
       } yield Updated
 
   private def nonDefaultBranchOrNone(repoOut: RepoOut, baseBranch: Branch): F[Option[Branch]] =
-    vcsRepoAlg.defaultBranch(repoOut).map(branch => if(branch.name === baseBranch.name) Some(branch) else None)
+    vcsRepoAlg.defaultBranch(repoOut).map(branch => if(branch.name === baseBranch.name) None else Some(branch))
 
 
   def createPullRequest(data: UpdateData): F[Unit] =
