@@ -162,14 +162,15 @@ object NewPullRequestData {
     } yield s"semver-${change.render}"
 
   def from(
-      data: UpdateData,
-      branchName: String,
-      artifactIdToUrl: Map[String, Uri] = Map.empty,
-      releaseRelatedUrls: List[ReleaseRelatedUrl] = List.empty,
-      migrations: List[Migration] = List.empty
+            data: UpdateData,
+            branchName: String,
+            artifactIdToUrl: Map[String, Uri] = Map.empty,
+            releaseRelatedUrls: List[ReleaseRelatedUrl] = List.empty,
+            migrations: List[Migration] = List.empty,
+            nonDefaultBaseBranch: Option[Branch] = None,
   ): NewPullRequestData =
     NewPullRequestData(
-      title = git.commitMsgFor(data.update, data.repoConfig.commits, data.baseBranch),
+      title = git.commitMsgFor(data.update, data.repoConfig.commits, nonDefaultBaseBranch),
       body = bodyFor(
         data.update,
         artifactIdToUrl,

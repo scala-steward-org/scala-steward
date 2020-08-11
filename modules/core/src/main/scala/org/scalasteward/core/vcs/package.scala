@@ -30,25 +30,25 @@ package object vcs {
   /** Determines the `head` (GitHub) / `source_branch` (GitLab, Bitbucket) parameter for searching
     * for already existing pull requests.
     */
-  def listingBranch(vcsType: SupportedVCS, fork: Repo, update: Update, baseBranch: Branch): String =
+  def listingBranch(vcsType: SupportedVCS, fork: Repo, update: Update, nonDefaultBaseBranch: Option[Branch] = None): String =
     vcsType match {
       case GitHub =>
-        s"${fork.show}:${git.branchFor(update, baseBranch).name}"
+        s"${fork.show}:${git.branchFor(update, nonDefaultBaseBranch).name}"
 
       case Gitlab | Bitbucket | BitbucketServer =>
-        git.branchFor(update, baseBranch).name
+        git.branchFor(update, nonDefaultBaseBranch).name
     }
 
   /** Determines the `head` (GitHub) / `source_branch` (GitLab, Bitbucket) parameter for creating
     * a new pull requests.
     */
-  def createBranch(vcsType: SupportedVCS, fork: Repo, update: Update, baseBranch: Branch): String =
+  def createBranch(vcsType: SupportedVCS, fork: Repo, update: Update, nonDefaultBaseBranch: Option[Branch] = None): String =
     vcsType match {
       case GitHub =>
-        s"${fork.owner}:${git.branchFor(update, baseBranch).name}"
+        s"${fork.owner}:${git.branchFor(update, nonDefaultBaseBranch).name}"
 
       case Gitlab | Bitbucket | BitbucketServer =>
-        git.branchFor(update, baseBranch).name
+        git.branchFor(update, nonDefaultBaseBranch).name
     }
 
   def possibleTags(version: String): List[String] =

@@ -20,14 +20,25 @@ class VCSPackageTest extends AnyFunSuite with Matchers {
       GitHub,
       repo,
       update,
-      Branch("master")
-    ) shouldBe "foo/bar:update/master/logback-classic-1.2.3"
+      Some(Branch("non-default"))
+    ) shouldBe "foo/bar:update/non-default/logback-classic-1.2.3"
     listingBranch(
       Gitlab,
       repo,
       update,
-      Branch("master")
-    ) shouldBe "update/master/logback-classic-1.2.3"
+      Some(Branch("non-default"))
+    ) shouldBe "update/non-default/logback-classic-1.2.3"
+
+    listingBranch(
+      GitHub,
+      repo,
+      update
+    ) shouldBe "foo/bar:update/logback-classic-1.2.3"
+    listingBranch(
+      Gitlab,
+      repo,
+      update
+    ) shouldBe "update/logback-classic-1.2.3"
   }
 
   test("createBranch") {
@@ -35,14 +46,25 @@ class VCSPackageTest extends AnyFunSuite with Matchers {
       GitHub,
       repo,
       update,
-      Branch("master")
-    ) shouldBe "foo:update/master/logback-classic-1.2.3"
+      Some(Branch("non-default"))
+    ) shouldBe "foo:update/non-default/logback-classic-1.2.3"
     createBranch(
       Gitlab,
       repo,
       update,
-      Branch("master")
-    ) shouldBe "update/master/logback-classic-1.2.3"
+      Some(Branch("non-default"))
+    ) shouldBe "update/non-default/logback-classic-1.2.3"
+
+    createBranch(
+      GitHub,
+      repo,
+      update
+    ) shouldBe "foo:update/logback-classic-1.2.3"
+    createBranch(
+      Gitlab,
+      repo,
+      update
+    ) shouldBe "update/logback-classic-1.2.3"
   }
 
   test("possibleCompareUrls") {
