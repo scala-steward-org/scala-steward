@@ -22,13 +22,19 @@ import org.scalasteward.core.update.show
 
 package object git {
   def branchFor(update: Update, baseBranch: Option[Branch]): Branch =
-    baseBranch.map(branch => Branch(s"update/${branch.name}/${update.name}-${update.nextVersion}"))
+    baseBranch
+      .map(branch => Branch(s"update/${branch.name}/${update.name}-${update.nextVersion}"))
       .getOrElse(Branch(s"update/${update.name}-${update.nextVersion}"))
 
-  def commitMsgFor(update: Update, commitsConfig: CommitsConfig, nonDefaultBaseBranch: Option[Branch] = None): String = {
+  def commitMsgFor(
+      update: Update,
+      commitsConfig: CommitsConfig,
+      nonDefaultBaseBranch: Option[Branch] = None
+  ): String = {
     val artifact = show.oneLiner(update)
-    val defaultMessage = nonDefaultBaseBranch.map(branch => s"Update $artifact to ${update.nextVersion} (${branch.name})")
-        .getOrElse(s"Update $artifact to ${update.nextVersion}")
+    val defaultMessage = nonDefaultBaseBranch
+      .map(branch => s"Update $artifact to ${update.nextVersion} (${branch.name})")
+      .getOrElse(s"Update $artifact to ${update.nextVersion}")
 
     commitsConfig.messageOrDefault
       .replace("${default}", defaultMessage)

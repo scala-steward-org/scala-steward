@@ -36,10 +36,17 @@ class NewPullRequestDataTest extends AnyFunSuite with Matchers {
             |  "base" : "master"
             |}""".stripMargin
 
-    val dataWithNonDefaultBranch = data.copy(baseBranch = Branch("non-default"), updateBranch = Branch("update/non-default/logback-classic-1.2.3"))
+    val dataWithNonDefaultBranch = data.copy(
+      baseBranch = Branch("non-default"),
+      updateBranch = Branch("update/non-default/logback-classic-1.2.3")
+    )
 
     NewPullRequestData
-      .from(data, "scala-steward:update/non-default/logback-classic-1.2.3", nonDefaultBaseBranch = Some(dataWithNonDefaultBranch.baseBranch))
+      .from(
+        data,
+        "scala-steward:update/non-default/logback-classic-1.2.3",
+        nonDefaultBaseBranch = Some(dataWithNonDefaultBranch.baseBranch)
+      )
       .asJson
       .spaces2 shouldBe
       raw"""|{

@@ -30,7 +30,12 @@ package object vcs {
   /** Determines the `head` (GitHub) / `source_branch` (GitLab, Bitbucket) parameter for searching
     * for already existing pull requests.
     */
-  def listingBranch(vcsType: SupportedVCS, fork: Repo, update: Update, nonDefaultBaseBranch: Option[Branch] = None): String =
+  def listingBranch(
+      vcsType: SupportedVCS,
+      fork: Repo,
+      update: Update,
+      nonDefaultBaseBranch: Option[Branch] = None
+  ): String =
     vcsType match {
       case GitHub =>
         s"${fork.show}:${git.branchFor(update, nonDefaultBaseBranch).name}"
@@ -42,7 +47,12 @@ package object vcs {
   /** Determines the `head` (GitHub) / `source_branch` (GitLab, Bitbucket) parameter for creating
     * a new pull requests.
     */
-  def createBranch(vcsType: SupportedVCS, fork: Repo, update: Update, nonDefaultBaseBranch: Option[Branch] = None): String =
+  def createBranch(
+      vcsType: SupportedVCS,
+      fork: Repo,
+      update: Update,
+      nonDefaultBaseBranch: Option[Branch] = None
+  ): String =
     vcsType match {
       case GitHub =>
         s"${fork.owner}:${git.branchFor(update, nonDefaultBaseBranch).name}"

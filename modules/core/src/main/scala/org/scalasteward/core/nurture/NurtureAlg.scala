@@ -159,8 +159,11 @@ final class NurtureAlg[F[_]](implicit
     for {
       repoOut <- vcsApiAlg.getRepo(data.repo)
       nonDefaultBranch <- nonDefaultBranchOrNone(repoOut, data.baseBranch)
-      commit <- gitAlg.commitAllIfDirty(data.repo, git.commitMsgFor(data.update, data.repoConfig.commits, nonDefaultBranch))
-  } yield commit
+      commit <- gitAlg.commitAllIfDirty(
+        data.repo,
+        git.commitMsgFor(data.update, data.repoConfig.commits, nonDefaultBranch)
+      )
+    } yield commit
 
   def pushCommits(data: UpdateData, commits: List[Commit]): F[ProcessResult] =
     if (commits.isEmpty) F.pure[ProcessResult](Ignored)
@@ -171,8 +174,9 @@ final class NurtureAlg[F[_]](implicit
       } yield Updated
 
   private def nonDefaultBranchOrNone(repoOut: RepoOut, baseBranch: Branch): F[Option[Branch]] =
-    vcsRepoAlg.defaultBranch(repoOut).map(branch => if(branch.name === baseBranch.name) None else Some(branch))
-
+    vcsRepoAlg
+      .defaultBranch(repoOut)
+      .map(branch => if (branch.name === baseBranch.name) None else Some(branch))
 
   def createPullRequest(data: UpdateData): F[Unit] =
     for {
