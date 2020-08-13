@@ -9,7 +9,7 @@ object Dependencies {
   val attoCore = "org.tpolecat" %% "atto-core" % "0.8.0"
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.1"
   val betterMonadicFor = "com.olegpy" %% "better-monadic-for" % "0.3.1"
-  val caseApp = "com.github.alexarchambault" %% "case-app" % "2.0.3"
+  val caseApp = "com.github.alexarchambault" %% "case-app" % "2.0.4"
   val catsEffect = "org.typelevel" %% "cats-effect" % "2.1.4"
   val catsLaws = "org.typelevel" %% "cats-laws" % "2.1.1"
   val circeConfig = "io.circe" %% "circe-config" % "0.8.0"
