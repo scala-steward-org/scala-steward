@@ -21,7 +21,7 @@ object Dependencies {
   val commonsIo = "commons-io" % "commons-io" % "2.7"
   val coursierCore = "io.get-coursier" %% "coursier" % "2.0.0-RC6-25"
   val coursierCatsInterop = "io.get-coursier" %% "coursier-cats-interop" % coursierCore.revision
-  val cron4sCore = "com.github.alonsodomin.cron4s" %% "cron4s-core" % "0.6.0"
+  val cron4sCore = "com.github.alonsodomin.cron4s" %% "cron4s-core" % "0.6.1"
   val disciplineScalatest = "org.typelevel" %% "discipline-scalatest" % "2.0.1"
   val fs2Core = "co.fs2" %% "fs2-core" % "2.4.4"
   val http4sAsyncHttpClient = "org.http4s" %% "http4s-async-http-client" % "0.21.7"
