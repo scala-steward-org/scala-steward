@@ -18,7 +18,6 @@ package org.scalasteward.core.buildtool.maven
 
 import atto.Atto._
 import atto._
-import cats.implicits._
 import org.scalasteward.core.data._
 
 object parser {

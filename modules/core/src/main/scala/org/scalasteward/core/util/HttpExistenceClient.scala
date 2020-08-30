@@ -17,7 +17,6 @@
 package org.scalasteward.core.util
 
 import cats.effect.{Async, Resource}
-import cats.implicits._
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.chrisdavenport.log4cats.Logger
 import org.http4s.client.Client

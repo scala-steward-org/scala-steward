@@ -15,8 +15,6 @@
  */
 
 package org.scalasteward.core.application
-
-import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.http4s.Uri
 import org.scalasteward.core.util.{HttpExistenceClient, MonadThrowable}

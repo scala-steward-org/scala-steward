@@ -17,7 +17,6 @@
 package org.scalasteward.core
 
 import better.files.File
-import cats.implicits._
 import org.scalasteward.core.data.{GroupId, Update}
 
 package object io {

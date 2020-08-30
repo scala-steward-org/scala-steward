@@ -19,7 +19,6 @@ package org.scalasteward.core.buildtool.sbt
 import better.files.File
 import cats.Functor
 import cats.data.OptionT
-import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.BuildToolAlg

@@ -17,7 +17,6 @@
 package org.scalasteward.core.scalafmt
 
 import cats.data.Nested
-import cats.implicits._
 import cats.{Functor, Monad}
 import org.scalasteward.core.data.{Dependency, Version}
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}

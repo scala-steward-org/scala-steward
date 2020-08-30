@@ -15,8 +15,6 @@
  */
 
 package org.scalasteward.core.update
-
-import cats.implicits._
 import io.circe.Decoder
 import io.circe.config.parser
 import io.circe.generic.extras.{semiauto, Configuration}

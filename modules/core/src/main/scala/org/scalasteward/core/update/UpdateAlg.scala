@@ -17,7 +17,6 @@
 package org.scalasteward.core.update
 
 import cats.{Eval, Monad}
-import cats.implicits._
 import org.scalasteward.core.coursier.VersionsCache
 import org.scalasteward.core.data._
 import org.scalasteward.core.repoconfig.RepoConfig

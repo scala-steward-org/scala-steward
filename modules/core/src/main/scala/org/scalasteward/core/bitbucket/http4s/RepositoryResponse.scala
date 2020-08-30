@@ -15,8 +15,6 @@
  */
 
 package org.scalasteward.core.bitbucket.http4s
-
-import cats.implicits._
 import io.circe.{ACursor, Decoder, DecodingFailure, Json}
 import org.http4s.Uri
 import org.scalasteward.core.git.Branch

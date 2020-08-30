@@ -17,7 +17,6 @@
 package org.scalasteward.core.data
 
 import cats.Order
-import cats.implicits._
 import eu.timepit.refined.W
 import io.circe.Codec
 import io.circe.generic.semiauto._

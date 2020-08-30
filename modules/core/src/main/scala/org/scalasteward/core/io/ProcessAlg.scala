@@ -18,7 +18,6 @@ package org.scalasteward.core.io
 
 import better.files.File
 import cats.effect.{Blocker, Concurrent, ContextShift, Timer}
-import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.Config

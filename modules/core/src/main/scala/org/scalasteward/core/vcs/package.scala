@@ -15,8 +15,6 @@
  */
 
 package org.scalasteward.core
-
-import cats.implicits._
 import org.http4s.Uri
 import org.scalasteward.core.application.SupportedVCS
 import org.scalasteward.core.application.SupportedVCS.{Bitbucket, BitbucketServer, GitHub, Gitlab}

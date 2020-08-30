@@ -19,7 +19,6 @@ package org.scalasteward.core.scalafix
 import better.files.File
 import cats.data.OptionT
 import cats.effect.Sync
-import cats.implicits._
 import io.circe.config.parser.decode
 import org.scalasteward.core.data.{Update, Version}
 import org.scalasteward.core.io.FileAlg

@@ -17,7 +17,6 @@
 package org.scalasteward.core.coursier
 
 import cats.Parallel
-import cats.implicits._
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, KeyEncoder}
 import org.scalasteward.core.coursier.VersionsCache.{Key, Value}
