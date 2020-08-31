@@ -3,7 +3,7 @@ import sbt.Keys._
 
 object Dependencies {
   val mill = Def.setting {
-    val version = if (scalaBinaryVersion.value == "2.12") "0.6.3" else "0.8.0-5-1a410f"
+    val version = if (scalaBinaryVersion.value == "2.12") "0.6.3" else "0.8.0-6-bbbf19"
     "com.lihaoyi" %% "mill-scalalib" % version
   }
   val attoCore = "org.tpolecat" %% "atto-core" % "0.8.0"
