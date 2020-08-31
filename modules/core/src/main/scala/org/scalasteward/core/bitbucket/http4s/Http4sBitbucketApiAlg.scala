@@ -17,6 +17,7 @@
 package org.scalasteward.core.bitbucket.http4s
 
 import cats.effect.Sync
+import cats.implicits._
 import org.http4s.{Request, Status, Uri}
 import org.scalasteward.core.bitbucket.Url
 import org.scalasteward.core.bitbucket.http4s.json._

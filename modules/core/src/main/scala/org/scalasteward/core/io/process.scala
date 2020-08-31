@@ -17,6 +17,7 @@
 package org.scalasteward.core.io
 
 import cats.effect._
+import cats.implicits._
 import fs2.Stream
 import java.io.{File, IOException, InputStream}
 import org.scalasteward.core.util._

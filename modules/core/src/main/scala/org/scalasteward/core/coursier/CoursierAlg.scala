@@ -17,6 +17,7 @@
 package org.scalasteward.core.coursier
 
 import cats.effect._
+import cats.implicits._
 import cats.{Applicative, Parallel}
 import coursier.cache.{CachePolicy, FileCache}
 import coursier.core.{Authentication, Project}

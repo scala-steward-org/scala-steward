@@ -15,6 +15,8 @@
  */
 
 package org.scalasteward.core
+
+import cats.implicits._
 import org.scalasteward.core.util.Change.Unchanged
 import org.scalasteward.core.util.{Change, Nel}
 import scala.collection.mutable

@@ -15,6 +15,8 @@
  */
 
 package org.scalasteward.core.update
+
+import cats.implicits._
 import cats.{Monad, TraverseFilter}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data._

@@ -15,6 +15,8 @@
  */
 
 package org.scalasteward.core.vcs.data
+
+import cats.implicits._
 import io.circe.Decoder
 import io.circe.generic.semiauto._
 import org.http4s.Uri

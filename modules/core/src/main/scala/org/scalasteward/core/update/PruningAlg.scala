@@ -18,6 +18,7 @@ package org.scalasteward.core.update
 
 import cats.Monad
 import cats.data.OptionT
+import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data._
 import org.scalasteward.core.nurture.PullRequestRepository

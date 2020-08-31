@@ -15,6 +15,8 @@
  */
 
 package org.scalasteward.core.gitlab.http4s
+
+import cats.implicits._
 import io.circe._
 import io.circe.generic.semiauto._
 import org.http4s.{Request, Status, Uri}

@@ -18,6 +18,7 @@ package org.scalasteward.core
 
 import cats._
 import cats.effect.Bracket
+import cats.implicits._
 import fs2.Pipe
 import scala.collection.mutable.ListBuffer
 

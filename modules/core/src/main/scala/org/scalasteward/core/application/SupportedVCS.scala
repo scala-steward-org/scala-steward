@@ -19,6 +19,7 @@ package org.scalasteward.core.application
 import caseapp.core.Error.MalformedValue
 import caseapp.core.argparser.ArgParser
 import cats.Eq
+import cats.implicits._
 
 sealed trait SupportedVCS {
   import SupportedVCS.{Bitbucket, BitbucketServer, GitHub, Gitlab}

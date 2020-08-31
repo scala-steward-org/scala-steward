@@ -15,6 +15,8 @@
  */
 
 package org.scalasteward.core.buildtool.mill
+
+import cats.implicits._
 import cats.effect.Sync
 import org.scalasteward.core.BuildInfo
 import org.scalasteward.core.buildtool.BuildToolAlg

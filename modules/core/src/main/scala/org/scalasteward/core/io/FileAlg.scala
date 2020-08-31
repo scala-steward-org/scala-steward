@@ -18,6 +18,7 @@ package org.scalasteward.core.io
 
 import better.files.File
 import cats.effect.{Bracket, Resource, Sync}
+import cats.implicits._
 import cats.{Functor, Traverse}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger

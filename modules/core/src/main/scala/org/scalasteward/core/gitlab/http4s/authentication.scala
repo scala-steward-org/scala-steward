@@ -17,6 +17,7 @@
 package org.scalasteward.core.gitlab.http4s
 
 import cats.Applicative
+import cats.implicits._
 import org.http4s.{Header, Request}
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 

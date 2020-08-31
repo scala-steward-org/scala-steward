@@ -15,6 +15,8 @@
  */
 
 package org.scalasteward.core.buildtool.mill
+
+import cats.implicits._
 import io.circe.{Decoder, DecodingFailure}
 import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId, Resolver}
 
