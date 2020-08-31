@@ -17,7 +17,7 @@
 package org.scalasteward.core.repoconfig
 
 import cats.Eq
-import cats.implicits._
+import cats.syntax.all._
 import cron4s.lib.javatime._
 import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.repoconfig.PullRequestFrequency._

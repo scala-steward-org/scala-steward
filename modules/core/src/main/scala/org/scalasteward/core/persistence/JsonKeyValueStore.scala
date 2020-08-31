@@ -18,7 +18,6 @@ package org.scalasteward.core.persistence
 
 import better.files.File
 import cats.Monad
-import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import io.circe.parser.decode
 import io.circe.syntax._

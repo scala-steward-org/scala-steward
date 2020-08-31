@@ -17,7 +17,6 @@
 package org.scalasteward.core.repocache
 
 import cats.Monad
-import cats.implicits._
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 import org.scalasteward.core.persistence.KeyValueStore
