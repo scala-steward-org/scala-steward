@@ -45,6 +45,11 @@ package object sbt {
       """addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.19")"""
     )
 
+  def scalaStewardScalafixOptions(scalacOptions: List[String]): FileData = {
+    val args = scalacOptions.map(s => s""""$s"""").mkString(", ")
+    FileData("scala-steward-scalafix-options.sbt", s"ThisBuild / scalacOptions ++= List($args)")
+  }
+
   def stewardPlugin[F[_]](implicit fileAlg: FileAlg[F], F: Functor[F]): F[FileData] = {
     val name = "StewardPlugin.scala"
     fileAlg

@@ -34,6 +34,7 @@ class MigrationAlgTest extends AnyFunSuite with Matchers {
           Nel.of("yumyum-.*"),
           Version("1.0.0"),
           Nel.of("awesome rewrite rule"),
+          None,
           Some("https://scalacenter.github.io/scalafix/")
         )
       )
@@ -61,6 +62,7 @@ class MigrationAlgTest extends AnyFunSuite with Matchers {
         Nel.of("yumyum-.*"),
         Version("1.0.0"),
         Nel.of("awesome rewrite rule"),
+        None,
         None
       )
     )
@@ -87,6 +89,6 @@ class MigrationAlgTest extends AnyFunSuite with Matchers {
   test("loadMigrations without extra file") {
     val migrations =
       MigrationAlg.loadMigrations[MockEff](None).runA(MockState.empty).unsafeRunSync()
-    migrations.size shouldBe 14
+    migrations.size should be > 1
   }
 }
