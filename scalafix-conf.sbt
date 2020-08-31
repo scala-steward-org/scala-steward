@@ -1,1 +1,1 @@
-ThisBuild / scalacOptions += "-P:semanticdb:synthetics:on"
+// ThisBuild / scalacOptions += "-P:semanticdb:synthetics:on"
