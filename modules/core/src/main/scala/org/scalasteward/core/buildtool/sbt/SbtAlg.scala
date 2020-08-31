@@ -89,13 +89,11 @@ object SbtAlg {
         addGlobalPluginTemporarily(scalaStewardScalafixSbt) {
           workspaceAlg.repoDir(repo).flatMap { repoDir =>
             migrations.traverse_ { migration =>
-              val withScalacOptions: F[Unit] => F[Unit] =
-                migration.scalacOptions
-                  .map { opts =>
-                    val file = scalaStewardScalafixOptions(opts.toList)
-                    fileAlg.createTemporarily[Unit, Throwable](repoDir / file.name, file.content)(_)
-                  }
-                  .getOrElse(identity)
+              val withScalacOptions =
+                migration.scalacOptions.fold[F[Unit] => F[Unit]](identity) { opts =>
+                  val file = scalaStewardScalafixOptions(opts.toList)
+                  fileAlg.createTemporarily(repoDir / file.name, file.content)(_)
+                }
 
               val scalafixCmds = migration.rewriteRules.map(rule => s"$scalafixAll $rule").toList
               withScalacOptions(exec(sbtCmd(scalafixEnable :: scalafixCmds), repoDir).void)

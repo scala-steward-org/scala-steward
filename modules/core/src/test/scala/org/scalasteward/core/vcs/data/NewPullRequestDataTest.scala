@@ -121,8 +121,8 @@ class NewPullRequestDataTest extends AnyFunSuite with Matchers {
       Nel.of(update.artifactId.name),
       Version("0.7.0"),
       Nel.of("I am a rewrite rule"),
-      None,
-      Some("https://scalacenter.github.io/scalafix/")
+      Some("https://scalacenter.github.io/scalafix/"),
+      None
     )
     val (label, appliedMigrations) = NewPullRequestData.migrationNote(List(migration))
 
