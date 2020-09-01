@@ -17,7 +17,6 @@
 package org.scalasteward.core.util
 
 import cats.effect.Sync
-import cats.implicits._
 import cats.{Functor, Monad}
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration

@@ -17,7 +17,7 @@
 package org.scalasteward.core.nurture
 
 import cats.effect.Sync
-import cats.implicits._
+import cats.syntax.all._
 import eu.timepit.refined.types.numeric.PosInt
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config

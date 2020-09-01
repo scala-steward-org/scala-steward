@@ -17,7 +17,6 @@
 package org.scalasteward.core.repocache
 
 import cats.Applicative
-import cats.implicits._
 import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.persistence.KeyValueStore
 import org.scalasteward.core.vcs.data.Repo
