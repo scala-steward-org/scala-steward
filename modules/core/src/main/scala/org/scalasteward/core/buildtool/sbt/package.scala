@@ -28,16 +28,9 @@ package object sbt {
     org.scalasteward.core.BuildInfo.scalaBinaryVersion
 
   def sbtDependency(sbtVersion: SbtVersion): Option[Dependency] =
-    if (sbtVersion.toVersion >= Version("1.0.0"))
-      Some(
-        Dependency(
-          GroupId("org.scala-sbt"),
-          ArtifactId("sbt"),
-          sbtVersion.value
-        )
-      )
-    else
-      None
+    Option.when(sbtVersion.toVersion >= Version("1.0.0")) {
+      Dependency(GroupId("org.scala-sbt"), ArtifactId("sbt"), sbtVersion.value)
+    }
 
   val scalaStewardScalafixSbt: FileData =
     FileData(
