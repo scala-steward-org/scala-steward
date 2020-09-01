@@ -35,6 +35,7 @@ lazy val core = myCrossProject("core")
       Dependencies.attoCore,
       Dependencies.betterFiles,
       Dependencies.caseApp,
+      Dependencies.catsCore,
       Dependencies.catsEffect,
       Dependencies.circeConfig,
       Dependencies.circeGeneric,
