@@ -17,7 +17,7 @@
 package org.scalasteward.core.data
 
 import cats.Order
-import cats.syntax.all._
+import cats.implicits._
 import io.circe.{Decoder, Encoder}
 
 final case class GroupId(value: String) extends AnyVal {

@@ -17,7 +17,7 @@
 package org.scalasteward.core.persistence
 
 import cats.Applicative
-import cats.syntax.all._
+import cats.implicits._
 
 trait KeyValueStore[F[_], K, V] {
   def get(key: K): F[Option[V]]

@@ -17,7 +17,7 @@
 package org.scalasteward.core.data
 
 import cats.Order
-import cats.syntax.all._
+import cats.implicits._
 import io.circe.Codec
 import io.circe.generic.extras.semiauto._
 import org.scalasteward.core.util.Nel
