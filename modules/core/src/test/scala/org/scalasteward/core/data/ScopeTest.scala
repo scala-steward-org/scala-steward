@@ -1,4 +1,6 @@
 package org.scalasteward.core.data
+
+import cats.implicits._
 import cats.kernel.laws.discipline.OrderTests
 import cats.laws.discipline.TraverseTests
 import org.scalasteward.core.TestInstances._

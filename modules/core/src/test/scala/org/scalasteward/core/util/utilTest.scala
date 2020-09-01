@@ -1,4 +1,6 @@
 package org.scalasteward.core.util
+
+import cats.implicits._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks

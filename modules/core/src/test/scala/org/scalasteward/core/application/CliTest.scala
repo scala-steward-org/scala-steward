@@ -1,4 +1,6 @@
 package org.scalasteward.core.application
+
+import cats.implicits._
 import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalatest.funsuite.AnyFunSuite

@@ -3,7 +3,7 @@ package org.scalasteward.core.git
 import better.files.File
 import cats.Monad
 import cats.effect.IO
-import cats.syntax.all._
+import cats.implicits._
 import org.http4s.syntax.literals._
 import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
