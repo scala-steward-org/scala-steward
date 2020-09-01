@@ -18,7 +18,7 @@ package org.scalasteward.core.buildtool.maven
 
 import better.files.File
 import cats.Monad
-import cats.implicits._
+import cats.syntax.all._
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.BuildToolAlg
 import org.scalasteward.core.data._

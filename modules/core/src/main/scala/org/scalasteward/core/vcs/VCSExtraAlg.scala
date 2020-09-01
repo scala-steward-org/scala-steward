@@ -17,7 +17,7 @@
 package org.scalasteward.core.vcs
 
 import cats.Monad
-import cats.implicits._
+import cats.syntax.all._
 import org.http4s.Uri
 import org.scalasteward.core.data.{ReleaseRelatedUrl, Update}
 import org.scalasteward.core.util.HttpExistenceClient

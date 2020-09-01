@@ -17,7 +17,7 @@
 package org.scalasteward.core.nurture
 
 import cats.Monad
-import cats.implicits._
+import cats.syntax.all._
 import org.http4s.Uri
 import org.scalasteward.core.data.{CrossDependency, Update}
 import org.scalasteward.core.git.Sha1

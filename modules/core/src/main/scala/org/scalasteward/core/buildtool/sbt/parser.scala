@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.buildtool.sbt
 
-import cats.implicits._
+import cats.syntax.all._
 import io.circe.Decoder
 import io.circe.parser._
 import org.scalasteward.core.buildtool.sbt.data.SbtVersion

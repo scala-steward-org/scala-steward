@@ -17,7 +17,7 @@
 package org.scalasteward.core.util
 
 import cats.Foldable
-import cats.implicits._
+import cats.syntax.all._
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.collection.MinSize
 import eu.timepit.refined.refineV

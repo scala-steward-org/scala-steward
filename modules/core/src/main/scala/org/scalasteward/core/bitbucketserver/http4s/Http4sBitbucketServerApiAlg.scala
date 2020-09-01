@@ -17,7 +17,7 @@
 package org.scalasteward.core.bitbucketserver.http4s
 
 import cats.effect.Sync
-import cats.implicits._
+import cats.syntax.all._
 import org.http4s.{Request, Uri}
 import org.scalasteward.core.bitbucketserver.http4s.Json.{Reviewer, User}
 import org.scalasteward.core.git.Branch
