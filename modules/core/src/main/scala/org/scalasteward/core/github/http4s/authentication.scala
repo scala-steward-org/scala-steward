@@ -17,7 +17,7 @@
 package org.scalasteward.core.github.http4s
 
 import cats.Applicative
-import cats.implicits._
+import cats.syntax.all._
 import org.http4s.headers.Authorization
 import org.http4s.{BasicCredentials, Request}
 import org.scalasteward.core.vcs.data.AuthenticatedUser

@@ -18,7 +18,7 @@ package org.scalasteward.core.repoconfig
 
 import better.files.File
 import cats.data.OptionT
-import cats.implicits._
+import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import io.circe.config.parser
 import org.scalasteward.core.application.Config

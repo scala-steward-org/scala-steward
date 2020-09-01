@@ -17,7 +17,7 @@
 package org.scalasteward.core.repocache
 
 import cats.Parallel
-import cats.implicits._
+import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.BuildToolDispatcher

@@ -18,7 +18,7 @@ package org.scalasteward.core.edit
 
 import better.files.File
 import cats.Traverse
-import cats.implicits._
+import cats.syntax.all._
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.buildtool.BuildToolDispatcher

@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.vcs
 
-import cats.implicits._
+import cats.syntax.all._
 import org.http4s.Uri
 import org.http4s.Uri.UserInfo
 import org.scalasteward.core.application.Config

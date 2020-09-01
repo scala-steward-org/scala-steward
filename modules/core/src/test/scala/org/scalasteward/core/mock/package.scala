@@ -3,7 +3,7 @@ package org.scalasteward.core
 import cats.Applicative
 import cats.data.StateT
 import cats.effect.IO
-import cats.implicits._
+import cats.syntax.all._
 
 package object mock {
   type MockEff[A] = StateT[IO, MockState, A]
