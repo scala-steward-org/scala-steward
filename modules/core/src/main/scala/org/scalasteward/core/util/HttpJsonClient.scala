@@ -17,7 +17,7 @@
 package org.scalasteward.core.util
 
 import cats.effect.Sync
-import cats.syntax.all._
+import cats.implicits._
 import io.circe.{Decoder, Encoder}
 import org.http4s.Method.{GET, POST}
 import org.http4s.circe.{jsonEncoderOf, jsonOf}

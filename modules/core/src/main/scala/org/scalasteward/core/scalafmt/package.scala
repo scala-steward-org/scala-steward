@@ -16,7 +16,7 @@
 
 package org.scalasteward.core
 
-import cats.syntax.all._
+import cats.implicits._
 import org.scalasteward.core.buildtool.sbt.defaultScalaBinaryVersion
 import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId, Version}
 
