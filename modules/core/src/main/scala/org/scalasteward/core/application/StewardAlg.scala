@@ -19,7 +19,7 @@ package org.scalasteward.core.application
 import better.files.File
 import cats.Monad
 import cats.effect.ExitCode
-import cats.syntax.all._
+import cats.implicits._
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.buildtool.sbt.SbtAlg

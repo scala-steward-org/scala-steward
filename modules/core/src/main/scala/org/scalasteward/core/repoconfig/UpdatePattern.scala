@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.repoconfig
 
-import cats.syntax.all._
+import cats.implicits._
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder, HCursor}
 import org.scalasteward.core.data.{GroupId, Update}

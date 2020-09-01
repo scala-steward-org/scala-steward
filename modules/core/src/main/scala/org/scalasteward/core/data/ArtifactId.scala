@@ -17,6 +17,7 @@
 package org.scalasteward.core.data
 
 import cats.Order
+import cats.implicits._
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 import org.scalasteward.core.util.Nel
