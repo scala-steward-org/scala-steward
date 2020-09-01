@@ -89,4 +89,42 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
       )
     )
   }
+
+  test("runMigrations: migration with scalacOptions") {
+    val repo = Repo("fthomas", "scala-steward")
+    val repoDir = config.workspace / repo.show
+    val migrations = Nel.of(
+      Migration(
+        GroupId("org.typelevel"),
+        Nel.of("cats-core"),
+        Version("2.2.0"),
+        Nel.of("github:cb372/cats/Cats_v2_2_0?sha=235bd7c92e431ab1902db174cf4665b05e08f2f1"),
+        None,
+        Some(Nel.of("-P:semanticdb:synthetics:on"))
+      )
+    )
+    val state = sbtAlg.runMigrations(repo, migrations).runS(MockState.empty).unsafeRunSync()
+
+    state shouldBe MockState.empty.copy(
+      commands = Vector(
+        List("write", "/tmp/steward/.sbt/0.13/plugins/scala-steward-scalafix.sbt"),
+        List("write", "/tmp/steward/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
+        List("write", s"$repoDir/scala-steward-scalafix-options.sbt"),
+        List(
+          "TEST_VAR=GREAT",
+          "ANOTHER_TEST_VAR=ALSO_GREAT",
+          repoDir.toString,
+          "firejail",
+          s"--whitelist=$repoDir",
+          "sbt",
+          "-batch",
+          "-no-colors",
+          s";$scalafixEnable;$scalafixAll github:cb372/cats/Cats_v2_2_0?sha=235bd7c92e431ab1902db174cf4665b05e08f2f1"
+        ),
+        List("rm", "-rf", s"$repoDir/scala-steward-scalafix-options.sbt"),
+        List("rm", "-rf", "/tmp/steward/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
+        List("rm", "-rf", "/tmp/steward/.sbt/0.13/plugins/scala-steward-scalafix.sbt")
+      )
+    )
+  }
 }
