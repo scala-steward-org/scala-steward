@@ -28,22 +28,20 @@ package object sbt {
     org.scalasteward.core.BuildInfo.scalaBinaryVersion
 
   def sbtDependency(sbtVersion: SbtVersion): Option[Dependency] =
-    if (sbtVersion.toVersion >= Version("1.0.0"))
-      Some(
-        Dependency(
-          GroupId("org.scala-sbt"),
-          ArtifactId("sbt"),
-          sbtVersion.value
-        )
-      )
-    else
-      None
+    Option.when(sbtVersion.toVersion >= Version("1.0.0")) {
+      Dependency(GroupId("org.scala-sbt"), ArtifactId("sbt"), sbtVersion.value)
+    }
 
   val scalaStewardScalafixSbt: FileData =
     FileData(
       "scala-steward-scalafix.sbt",
       """addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.19")"""
     )
+
+  def scalaStewardScalafixOptions(scalacOptions: List[String]): FileData = {
+    val args = scalacOptions.map(s => s""""$s"""").mkString(", ")
+    FileData("scala-steward-scalafix-options.sbt", s"ThisBuild / scalacOptions ++= List($args)")
+  }
 
   def stewardPlugin[F[_]](implicit fileAlg: FileAlg[F], F: Functor[F]): F[FileData] = {
     val name = "StewardPlugin.scala"
