@@ -17,7 +17,7 @@
 package org.scalasteward.core.buildtool
 
 import cats.Functor
-import cats.implicits._
+import cats.syntax.all._
 import org.scalasteward.core.BuildInfo
 import org.scalasteward.core.buildtool.sbt.data.SbtVersion
 import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId, Version}

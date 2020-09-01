@@ -1,6 +1,4 @@
 package org.scalasteward.core.update
-
-import cats.implicits._
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.Update.Single
 import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId}
