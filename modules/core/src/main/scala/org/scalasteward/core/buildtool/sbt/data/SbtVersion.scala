@@ -17,7 +17,7 @@
 package org.scalasteward.core.buildtool.sbt.data
 
 import cats.Order
-import cats.implicits._
+import cats.syntax.all._
 import io.circe.Codec
 import io.circe.generic.extras.semiauto._
 import org.scalasteward.core.data.Version

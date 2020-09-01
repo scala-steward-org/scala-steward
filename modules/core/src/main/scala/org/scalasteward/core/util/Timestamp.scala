@@ -17,7 +17,6 @@
 package org.scalasteward.core.util
 
 import cats.Order
-import cats.implicits._
 import io.circe.Codec
 import io.circe.generic.extras.semiauto.deriveUnwrappedCodec
 import java.time.{Instant, LocalDateTime, ZoneOffset}
