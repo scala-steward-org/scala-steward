@@ -62,7 +62,8 @@ lazy val core = myCrossProject("core")
       Dependencies.http4sDsl % Test,
       Dependencies.refinedScalacheck % Test,
       Dependencies.scalacheck % Test,
-      Dependencies.scalaTest % Test
+      Dependencies.scalaTestFunSuite % Test,
+      Dependencies.scalaTestShouldMatcher % Test
     ),
     assembly / test := {},
     assemblyMergeStrategy in assembly := {
