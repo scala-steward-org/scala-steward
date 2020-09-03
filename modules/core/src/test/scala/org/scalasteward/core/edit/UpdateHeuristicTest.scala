@@ -41,9 +41,37 @@ class UpdateHeuristicTest extends AnyFunSuite with Matchers {
       .replaceVersionIn(original) shouldBe (None -> UpdateHeuristic.all.last.name)
   }
 
+  test("all on one line") {
+    val original = """"be.doeraene" %% "scalajs-jquery"  % "0.9.3""""
+    val expected = """"be.doeraene" %% "scalajs-jquery"  % "0.9.4""""
+    Single("be.doeraene" % "scalajs-jquery" % "0.9.3", Nel.of("0.9.4"))
+      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.moduleId.name)
+  }
+
   test("ignore hyphen in artifactId") {
     val original = """val scalajsJqueryVersion = "0.9.3""""
     val expected = """val scalajsJqueryVersion = "0.9.4""""
+    Single("be.doeraene" % "scalajs-jquery" % "0.9.3", Nel.of("0.9.4"))
+      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.original.name)
+  }
+
+  test("with single quotes around val") {
+    val original = """val `scalajs-jquery-version` = "0.9.3""""
+    val expected = """val `scalajs-jquery-version` = "0.9.4""""
+    Single("be.doeraene" % "scalajs-jquery" % "0.9.3", Nel.of("0.9.4"))
+      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.relaxed.name)
+  }
+
+  test("all upper case") {
+    val original = """val SCALAJSJQUERYVERSION = "0.9.3""""
+    val expected = """val SCALAJSJQUERYVERSION = "0.9.4""""
+    Single("be.doeraene" % "scalajs-jquery" % "0.9.3", Nel.of("0.9.4"))
+      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.original.name)
+  }
+
+  test("just artifactId without version") {
+    val original = """val scalajsjquery = "0.9.3""""
+    val expected = """val scalajsjquery = "0.9.4""""
     Single("be.doeraene" % "scalajs-jquery" % "0.9.3", Nel.of("0.9.4"))
       .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.original.name)
   }
@@ -404,6 +432,21 @@ class UpdateHeuristicTest extends AnyFunSuite with Matchers {
 
     Single("org.typelevel" % "cats-core" % "1.2.0", Nel.of("1.3.0"))
       .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.moduleId.name)
+  }
+
+  test("fail on versions with line break") {
+    val original = """val scalajsJqueryVersion =
+                     |  "0.9.3"""".stripMargin
+    Single("be.doeraene" % "scalajs-jquery" % "0.9.3", Nel.of("0.9.4"))
+      .replaceVersionIn(original)
+      ._1 shouldBe None
+  }
+
+  test("fail on versions duplicated in a comment") {
+    val original = """val scalajsJqueryVersion = "0.9.3" // val scalajsJqueryVersion = "0.9.3""""
+    val expected = """val scalajsJqueryVersion = "0.9.3" // val scalajsJqueryVersion = "0.9.4""""
+    Single("be.doeraene" % "scalajs-jquery" % "0.9.3", Nel.of("0.9.4"))
+      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.original.name)
   }
 }
 
