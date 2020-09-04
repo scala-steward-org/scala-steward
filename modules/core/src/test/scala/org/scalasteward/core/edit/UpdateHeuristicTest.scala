@@ -442,6 +442,27 @@ class UpdateHeuristicTest extends AnyFunSuite with Matchers {
       ._1 shouldBe None
   }
 
+  test("cognito value for aws-java-sdk-cognitoidp artifact") {
+    val original = """val cognito       = "1.11.690" """
+    val expected = """val cognito       = "1.11.700" """
+    Single("com.amazonaws" % "aws-java-sdk-cognitoidp" % "1.11.690", Nel.of("1.11.700"))
+      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.sliding.name)
+  }
+
+  test("issue 1586 - tracing value for opentracing library") {
+    val original = """val tracing = "2.4.1" """
+    val expected = """val tracing = "2.5.0" """
+    Group(
+      "com.colisweb" % Nel.of(
+        "scala-opentracing-core",
+        "scala-opentracing-context",
+        "scala-opentracing-http4s-server-tapir"
+      ) % "2.4.1",
+      Nel.of("2.5.0")
+    )
+      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.sliding.name)
+  }
+
   test("fail on versions duplicated in a comment") {
     val original = """val scalajsJqueryVersion = "0.9.3" // val scalajsJqueryVersion = "0.9.3""""
     val expected = """val scalajsJqueryVersion = "0.9.3" // val scalajsJqueryVersion = "0.9.4""""
