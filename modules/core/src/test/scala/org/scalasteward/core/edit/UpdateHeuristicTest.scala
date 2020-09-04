@@ -452,7 +452,14 @@ class UpdateHeuristicTest extends AnyFunSuite with Matchers {
   test("issue 1586 - tracing value for opentracing library") {
     val original = """val tracing = "2.4.1" """
     val expected = """val tracing = "2.5.0" """
-    Group("com.colisweb" % Nel.of("scala-opentracing-core", "scala-opentracing-context", "scala-opentracing-http4s-server-tapir") % "2.4.1", Nel.of("2.5.0"))
+    Group(
+      "com.colisweb" % Nel.of(
+        "scala-opentracing-core",
+        "scala-opentracing-context",
+        "scala-opentracing-http4s-server-tapir"
+      ) % "2.4.1",
+      Nel.of("2.5.0")
+    )
       .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.sliding.name)
   }
 
