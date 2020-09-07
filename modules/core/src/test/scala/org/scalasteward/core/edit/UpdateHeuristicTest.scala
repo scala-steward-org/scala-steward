@@ -469,6 +469,24 @@ class UpdateHeuristicTest extends AnyFunSuite with Matchers {
     Single("be.doeraene" % "scalajs-jquery" % "0.9.3", Nel.of("0.9.4"))
       .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.original.name)
   }
+
+  test("issue 1489: ignore word: scala") {
+    val original =
+      """ val jsoniter = "2.4.0"
+        | addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.4.0")
+        |""".stripMargin
+    val expected =
+      """ val jsoniter = "2.4.1"
+        | addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.4.0")
+        |""".stripMargin
+    Update
+      .Group(
+        "com.github.plokhotnyuk.jsoniter-scala" %
+          Nel.of("jsoniter-scala-core", "jsoniter-scala-macros") % "2.4.0",
+        Nel.of("2.4.1")
+      )
+      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.relaxed.name)
+  }
 }
 
 object UpdateHeuristicTest {
