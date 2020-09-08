@@ -99,17 +99,16 @@ class VersionTest
       ("4.0RC1", "4.0.0"),
       ("1.7R5", "1.7"),
       ("1.7R5", "1.7.11")
-    ).foreach {
-      case (s1, s2) =>
-        val c1 = coursier.core.Version(s1)
-        val c2 = coursier.core.Version(s2)
-        c1 should be < c2
-        c2 should be > c1
+    ).foreach { case (s1, s2) =>
+      val c1 = coursier.core.Version(s1)
+      val c2 = coursier.core.Version(s2)
+      c1 should be < c2
+      c2 should be > c1
 
-        val v1 = Version(s1)
-        val v2 = Version(s2)
-        v1 should be < v2
-        v2 should be > v1
+      val v1 = Version(s1)
+      val v2 = Version(s2)
+      v1 should be < v2
+      v2 should be > v1
     }
   }
 
@@ -219,10 +218,9 @@ class VersionTest
       case h :: t => t.map(v => (Version(h), Version(v)))
       case Nil    => Nil
     }
-    pairs.foreach {
-      case (v1, v2) =>
-        v1 should be < v2
-        v2 should be > v1
+    pairs.foreach { case (v1, v2) =>
+      v1 should be < v2
+      v2 should be > v1
     }
   }
 }

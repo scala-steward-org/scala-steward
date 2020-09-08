@@ -299,12 +299,11 @@ class UpdateHeuristicTest extends AnyFunSuite with Matchers {
       ("""version="2.0.0"""", """version="2.0.1""""),
       ("""version = 2.0.0 """, """version = 2.0.1 """),
       ("""version=2.0.0 """, """version=2.0.1 """)
-    ).foreach {
-      case (original, expected) =>
-        Single(
-          "org.scalameta" % ArtifactId("scalafmt-core", "scalafmt-core_2.12") % "2.0.0",
-          Nel.of("2.0.1")
-        ).replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.specific.name)
+    ).foreach { case (original, expected) =>
+      Single(
+        "org.scalameta" % ArtifactId("scalafmt-core", "scalafmt-core_2.12") % "2.0.0",
+        Nel.of("2.0.1")
+      ).replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.specific.name)
     }
 
     val original = """version=2.0.0"""
