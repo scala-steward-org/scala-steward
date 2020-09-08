@@ -169,6 +169,12 @@ class Http4sGitLabApiAlg[F[_]](
             case mr =>
               logger.info(s"Unable to automatically merge ${mr.web_url}").map(_ => mr)
           }
+          .recoverWith {
+            case UnexpectedResponse(_, _, _, status, _) =>
+              logger
+                .warn(s"Unexpected gitlab response setting auto merge: $status")
+                .flatMap(_ => mergeRequest)
+          }
     updatedMergeRequest.map(_.pullRequestOut)
   }
 
