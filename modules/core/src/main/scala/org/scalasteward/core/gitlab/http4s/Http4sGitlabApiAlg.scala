@@ -17,6 +17,7 @@
 package org.scalasteward.core.gitlab.http4s
 
 import cats.syntax.all._
+import io.chrisdavenport.log4cats.Logger
 import io.circe._
 import io.circe.generic.semiauto._
 import org.http4s.{Request, Status, Uri}
@@ -26,7 +27,6 @@ import org.scalasteward.core.util.uri.uriDecoder
 import org.scalasteward.core.util.{HttpJsonClient, MonadThrowable, UnexpectedResponse}
 import org.scalasteward.core.vcs.VCSApiAlg
 import org.scalasteward.core.vcs.data._
-import io.chrisdavenport.log4cats.Logger
 
 final private[http4s] case class ForkPayload(id: String, namespace: String)
 final private[http4s] case class MergeRequestPayload(
