@@ -212,7 +212,7 @@ lazy val dockerSettings = Def.settings(
       Cmd("RUN", s"wget $sbtUrl && tar -xf $sbtTgz && rm -f $sbtTgz"),
       Cmd(
         "RUN",
-        s"curl -L https://github.com/lihaoyi/mill/releases/download/$millVersion/$millVersion > /usr/local/bin/mill && chmod +x /usr/local/bin/mill"
+        s"curl -L https://github.com/lihaoyi/mill/releases/download/${millVersion.split("-").head}/$millVersion > /usr/local/bin/mill && chmod +x /usr/local/bin/mill"
       )
     )
   },
