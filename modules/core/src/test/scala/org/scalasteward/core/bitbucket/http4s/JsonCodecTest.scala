@@ -14,9 +14,8 @@ class JsonCodecTest extends AnyFunSuite with Matchers {
       "DECLINED" -> PullRequestState.Closed
     )
 
-    mapping.foreach {
-      case (string, state) =>
-        json.pullRequestStateDecoder.decodeJson(Json.fromString(string)) shouldBe Right(state)
+    mapping.foreach { case (string, state) =>
+      json.pullRequestStateDecoder.decodeJson(Json.fromString(string)) shouldBe Right(state)
     }
   }
 }
