@@ -92,14 +92,14 @@ lazy val core = myCrossProject("core")
       scalaBinaryVersion,
       sbtVersion,
       BuildInfoKey.map(git.gitHeadCommit) { case (k, v) => k -> v.getOrElse("master") },
-      BuildInfoKey.map(`sbt-plugin`.jvm / moduleRootPkg) {
-        case (_, v) => "sbtPluginModuleRootPkg" -> v
+      BuildInfoKey.map(`sbt-plugin`.jvm / moduleRootPkg) { case (_, v) =>
+        "sbtPluginModuleRootPkg" -> v
       },
-      BuildInfoKey.map(`mill-plugin`.jvm / moduleName) {
-        case (_, v) => "millPluginModuleName" -> v
+      BuildInfoKey.map(`mill-plugin`.jvm / moduleName) { case (_, v) =>
+        "millPluginModuleName" -> v
       },
-      BuildInfoKey.map(`mill-plugin`.jvm / moduleRootPkg) {
-        case (_, v) => "millPluginModuleRootPkg" -> v
+      BuildInfoKey.map(`mill-plugin`.jvm / moduleRootPkg) { case (_, v) =>
+        "millPluginModuleRootPkg" -> v
       }
     ),
     buildInfoPackage := moduleRootPkg.value,

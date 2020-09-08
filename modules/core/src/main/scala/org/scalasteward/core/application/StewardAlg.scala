@@ -64,8 +64,8 @@ final class StewardAlg[F[_]](implicit
     fileAlg.readFile(reposFile).map { maybeContent =>
       val regex = """-\s+(.+)/([^/]+)""".r
       val content = maybeContent.getOrElse("")
-      content.linesIterator.collect {
-        case regex(owner, repo) => Repo(owner.trim, repo.trim)
+      content.linesIterator.collect { case regex(owner, repo) =>
+        Repo(owner.trim, repo.trim)
       }.toList
     }
 
