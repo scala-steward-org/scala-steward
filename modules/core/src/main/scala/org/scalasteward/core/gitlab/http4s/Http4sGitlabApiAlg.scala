@@ -44,13 +44,13 @@ private[http4s] object MergeRequestPayload {
 }
 
 final private[http4s] case class MergeRequestOut(
-    web_url: Uri,
+    webUrl: Uri,
     state: PullRequestState,
     title: String,
     iid: Int,
-    merge_status: String
+    mergeStatus: String
 ) {
-  val pullRequestOut: PullRequestOut = PullRequestOut(web_url, state, title)
+  val pullRequestOut: PullRequestOut = PullRequestOut(webUrl, state, title)
 }
 
 final private[http4s] case class CommitId(id: Sha1) {
@@ -90,9 +90,18 @@ private[http4s] object GitlabJsonCodec {
     } yield RepoOut(name, owner, parent, cloneUrl, defaultBranch)
   }
 
+  implicit val mergeRequestOutDecoder: Decoder[MergeRequestOut] = Decoder.instance { c =>
+    for {
+      webUrl <- c.downField("web_url").as[Uri]
+      state <- c.downField("state").as[PullRequestState]
+      title <- c.downField("title").as[String]
+      iid <- c.downField("iid").as[Int]
+      mergeStatus <- c.downField("merge_status").as[String]
+    } yield MergeRequestOut(webUrl, state, title, iid, mergeStatus)
+  }
+
   implicit val projectIdDecoder: Decoder[ProjectId] = deriveDecoder
   implicit val mergeRequestPayloadEncoder: Encoder[MergeRequestPayload] = deriveEncoder
-  implicit val mergeRequestOutDecoder: Decoder[MergeRequestOut] = deriveDecoder
   implicit val pullRequestOutDecoder: Decoder[PullRequestOut] =
     mergeRequestOutDecoder.map(_.pullRequestOut)
   implicit val commitOutDecoder: Decoder[CommitOut] = deriveDecoder[CommitId].map(_.commitOut)
@@ -108,7 +117,7 @@ class Http4sGitLabApiAlg[F[_]](
 )(implicit
     client: HttpJsonClient[F],
     logger: Logger[F],
-    F: MonadThrowable[F]
+    monad: MonadThrowable[F]
 ) extends VCSApiAlg[F] {
   import GitlabJsonCodec._
 
@@ -146,9 +155,9 @@ class Http4sGitLabApiAlg[F[_]](
       client
         .get[MergeRequestOut](url.existingMergeRequest(repo, internalId), modify(repo))
         .flatMap {
-          case mr if (mr.merge_status =!= GitlabMergeStatus.Checking) => F.pure(mr)
-          case _ if (retries > 0)                                     => waitForMergeRequestStatus(internalId, retries - 1)
-          case other                                                  => F.pure(other)
+          case mr if (mr.mergeStatus =!= GitlabMergeStatus.Checking) => monad.pure(mr)
+          case _ if (retries > 0)                                    => waitForMergeRequestStatus(internalId, retries - 1)
+          case other                                                 => monad.pure(other)
         }
 
     val updatedMergeRequest =
@@ -158,16 +167,16 @@ class Http4sGitLabApiAlg[F[_]](
         mergeRequest
           .flatMap(mr => waitForMergeRequestStatus(mr.iid))
           .flatMap {
-            case mr if (mr.merge_status === GitlabMergeStatus.CanBeMerged) =>
+            case mr if (mr.mergeStatus === GitlabMergeStatus.CanBeMerged) =>
               for {
-                _ <- logger.info(s"Setting ${mr.web_url} to merge when pipeline succeeds")
+                _ <- logger.info(s"Setting ${mr.webUrl} to merge when pipeline succeeds")
                 res <- client.put[MergeRequestOut](
                   url.mergeWhenPiplineSucceeds(repo, mr.iid),
                   modify(repo)
                 )
               } yield res
             case mr =>
-              logger.info(s"Unable to automatically merge ${mr.web_url}").map(_ => mr)
+              logger.info(s"Unable to automatically merge ${mr.webUrl}").map(_ => mr)
           }
           .recoverWith {
             case UnexpectedResponse(_, _, _, status, _) =>
