@@ -170,19 +170,24 @@ class Http4sGitLabApiAlg[F[_]](
             case mr if (mr.mergeStatus === GitlabMergeStatus.CanBeMerged) =>
               for {
                 _ <- logger.info(s"Setting ${mr.webUrl} to merge when pipeline succeeds")
-                res <- client.put[MergeRequestOut](
-                  url.mergeWhenPiplineSucceeds(repo, mr.iid),
-                  modify(repo)
-                )
+                res <-
+                  client
+                    .put[MergeRequestOut](
+                      url.mergeWhenPiplineSucceeds(repo, mr.iid),
+                      modify(repo)
+                    )
+                    // it's possible that our status changed from can be merged already,
+                    // so just handle it gracefully and proceed without setting auto merge.
+                    .recoverWith { case UnexpectedResponse(_, _, _, status, _) =>
+                      logger
+                        .warn(s"Unexpected gitlab response setting auto merge: $status")
+                        .flatMap(_ => mergeRequest)
+                    }
               } yield res
             case mr =>
               logger.info(s"Unable to automatically merge ${mr.webUrl}").map(_ => mr)
           }
-          .recoverWith { case UnexpectedResponse(_, _, _, status, _) =>
-            logger
-              .warn(s"Unexpected gitlab response setting auto merge: $status")
-              .flatMap(_ => mergeRequest)
-          }
+
     updatedMergeRequest.map(_.pullRequestOut)
   }
 
