@@ -181,7 +181,7 @@ class Http4sGitLabApiAlg[F[_]](
                     .recoverWith { case UnexpectedResponse(_, _, _, status, _) =>
                       logger
                         .warn(s"Unexpected gitlab response setting auto merge: $status")
-                        .flatMap(_ => mergeRequest)
+                        .as(mr)
                     }
               } yield res
             case mr =>
