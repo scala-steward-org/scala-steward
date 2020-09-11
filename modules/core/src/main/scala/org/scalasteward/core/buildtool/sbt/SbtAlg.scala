@@ -50,7 +50,7 @@ object SbtAlg {
       logger: Logger[F],
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F],
-	  repoConfigAlg: RepoConfigAlg[F],
+      repoConfigAlg: RepoConfigAlg[F],
       F: BracketThrowable[F]
   ): SbtAlg[F] =
     new SbtAlg[F] {

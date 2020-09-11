@@ -38,7 +38,7 @@ object ScalafmtAlg {
       repoConfigAlg: RepoConfigAlg[F],
       F: Monad[F]
   ): ScalafmtAlg[F] =
-	new ScalafmtAlg[F] {
+    new ScalafmtAlg[F] {
       override def getScalafmtVersion(repo: Repo): F[Option[Version]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
