@@ -1,5 +1,6 @@
 package org.scalasteward.core.scalafmt
 
+import better.files.File
 import org.scalasteward.core.data.Version
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockState
@@ -24,7 +25,11 @@ class ScalafmtAlgTest extends AnyFunSuite with Matchers {
 
     maybeUpdate shouldBe Some(Version("2.0.0-RC8"))
     state shouldBe MockState.empty.copy(
-      commands = Vector(List("read", s"$repoDir/.scalafmt.conf")),
+      commands = Vector(
+        List("read", s"$repoDir/.scala-steward.conf"),
+        List("read", s"${File.temp}/default.scala-steward.conf"),
+        List("read", s"$repoDir/.scalafmt.conf")
+      ),
       files = Map(
         scalafmtConf ->
           """maxColumn = 100

@@ -1,5 +1,6 @@
 package org.scalasteward.core.buildtool.sbt
 
+import better.files.File
 import cats.data.StateT
 import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.data.{GroupId, Version}
@@ -38,6 +39,8 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
     val state = sbtAlg.getDependencies(repo).runS(initial).unsafeRunSync()
     state shouldBe initial.copy(
       commands = Vector(
+        List("read", s"$repoDir/.scala-steward.conf"),
+        List("read", s"${File.temp}/default.scala-steward.conf"),
         List(
           "TEST_VAR=GREAT",
           "ANOTHER_TEST_VAR=ALSO_GREAT",
@@ -49,6 +52,8 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
           "-no-colors",
           s";$setOffline;$crossStewardDependencies;$reloadPlugins;$stewardDependencies"
         ),
+        List("read", s"$repoDir/.scala-steward.conf"),
+        List("read", s"${File.temp}/default.scala-steward.conf"),
         List("read", s"$repoDir/project/build.properties")
       )
     )

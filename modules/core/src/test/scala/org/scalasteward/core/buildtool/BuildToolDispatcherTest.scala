@@ -1,5 +1,6 @@
 package org.scalasteward.core.buildtool
 
+import better.files.File
 import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.buildtool.sbt.data.SbtVersion
 import org.scalasteward.core.data.{Resolver, Scope, Version}
@@ -26,6 +27,8 @@ class BuildToolDispatcherTest extends AnyFunSuite with Matchers {
         List("test", "-f", s"$repoDir/pom.xml"),
         List("test", "-f", s"$repoDir/build.sc"),
         List("test", "-f", s"$repoDir/build.sbt"),
+        List("read", s"$repoDir/.scala-steward.conf"),
+        List("read", s"${File.temp}/default.scala-steward.conf"),
         List(
           "TEST_VAR=GREAT",
           "ANOTHER_TEST_VAR=ALSO_GREAT",
@@ -37,7 +40,11 @@ class BuildToolDispatcherTest extends AnyFunSuite with Matchers {
           "-no-colors",
           s";$setOffline;$crossStewardDependencies;$reloadPlugins;$stewardDependencies"
         ),
+        List("read", s"$repoDir/.scala-steward.conf"),
+        List("read", s"${File.temp}/default.scala-steward.conf"),
         List("read", s"$repoDir/project/build.properties"),
+        List("read", s"$repoDir/.scala-steward.conf"),
+        List("read", s"${File.temp}/default.scala-steward.conf"),
         List("read", s"$repoDir/.scalafmt.conf")
       )
     )
