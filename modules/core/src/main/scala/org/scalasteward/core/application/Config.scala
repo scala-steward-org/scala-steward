@@ -72,7 +72,8 @@ final case class Config(
     groupMigrations: Option[File],
     cacheTtl: FiniteDuration,
     cacheMissDelay: FiniteDuration,
-    bitbucketServerUseDefaultReviewers: Boolean
+    bitbucketServerUseDefaultReviewers: Boolean,
+    gitlabMergeWhenPipelineSucceeds: Boolean
 ) {
   def vcsUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] = {
     val urlWithUser = util.uri.withUserInfo.set(UserInfo(vcsLogin, None))(vcsApiHost).renderString
@@ -108,7 +109,8 @@ object Config {
         groupMigrations = args.groupMigrations.map(_.toFile),
         cacheTtl = args.cacheTtl,
         cacheMissDelay = args.cacheMissDelay,
-        bitbucketServerUseDefaultReviewers = args.bitbucketServerUseDefaultReviewers
+        bitbucketServerUseDefaultReviewers = args.bitbucketServerUseDefaultReviewers,
+        gitlabMergeWhenPipelineSucceeds = args.gitlabMergeWhenPipelineSucceeds
       )
     }
 }
