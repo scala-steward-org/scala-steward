@@ -139,7 +139,7 @@ lazy val `sbt-plugin` = myCrossProject("sbt-plugin")
 lazy val `mill-plugin` = myCrossProject("mill-plugin")
   .settings(
     crossScalaVersions := Seq(Scala213, Scala212),
-    libraryDependencies += Dependencies.mill.value % Provided
+    libraryDependencies += Dependencies.millScalalib.value % Provided
   )
 
 /// settings
@@ -205,7 +205,7 @@ lazy val dockerSettings = Def.settings(
     val getSbtVersion = sbtVersion.value
     val sbtTgz = s"sbt-$getSbtVersion.tgz"
     val sbtUrl = s"https://github.com/sbt/sbt/releases/download/v$getSbtVersion/$sbtTgz"
-    val millVersion = Dependencies.mill.value.revision
+    val millVersion = Dependencies.millVersion.value
     Seq(
       Cmd("USER", "root"),
       Cmd("RUN", "apk --no-cache add bash git ca-certificates curl maven"),

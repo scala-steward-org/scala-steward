@@ -35,6 +35,13 @@ class Url(apiHost: Uri) {
   def mergeRequest(repo: Repo): Uri =
     repos(repo) / "merge_requests"
 
+  def existingMergeRequest(repo: Repo, internalId: Int): Uri =
+    mergeRequest(repo) / internalId.toString()
+
+  def mergeWhenPiplineSucceeds(repo: Repo, internalId: Int) =
+    (existingMergeRequest(repo, internalId) / "merge")
+      .withQueryParam("merge_when_pipeline_succeeds", "true")
+
   def listMergeRequests(repo: Repo, source: String, target: String): Uri =
     mergeRequest(repo)
       .withQueryParam("source_branch", source)

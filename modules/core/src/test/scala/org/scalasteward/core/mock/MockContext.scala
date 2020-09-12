@@ -54,7 +54,8 @@ object MockContext {
     groupMigrations = None,
     cacheTtl = 1.hour,
     cacheMissDelay = 0.milliseconds,
-    bitbucketServerUseDefaultReviewers = false
+    bitbucketServerUseDefaultReviewers = false,
+    gitlabMergeWhenPipelineSucceeds = false
   )
 
   implicit val mockEffBracketThrowable: BracketThrowable[MockEff] = Sync[MockEff]
