@@ -78,6 +78,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [Dale Wijnand](https://github.com/dwijnand)
 * [Daniel Pfeiffer](https://github.com/dpfeiffer)
 * [David Francoeur](https://github.com/daddykotex)
+* [Don Smith III](https://github.com/cactauz)
 * [Doug Roper](https://github.com/htmldoug)
 * [Eldar Yusupov](https://github.com/eyusupov)
 * [Erik Erlandson](https://github.com/erikerlandson)
