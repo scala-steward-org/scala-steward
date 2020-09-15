@@ -17,6 +17,11 @@ class VersionTest
     with ScalaCheckPropertyChecks {
   checkAll("Order[Version]", OrderTests[Version].order)
 
+  test("issue 1615: broken transitivity") {
+    val res = OrderTests[Version].laws.transitivity(Version(""), Version("0"), Version("X"))
+    res.lhs shouldBe res.rhs
+  }
+
   test("pairwise 1") {
     val versions = List(
       "0.1",
