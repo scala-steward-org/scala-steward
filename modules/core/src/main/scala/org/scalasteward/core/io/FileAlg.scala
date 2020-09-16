@@ -52,8 +52,10 @@ trait FileAlg[F[_]] {
 
   final def createTemporarily[A, E](file: File, content: String)(
       fa: F[A]
-  )(implicit F: Bracket[F, E]): F[A] =
-    F.bracket(writeFile(file, content))(_ => fa)(_ => deleteForce(file))
+  )(implicit F: Bracket[F, E]): F[A] = {
+    val create = writeFile(file, content).onError(_ => deleteForce(file))
+    F.bracket(create)(_ => fa)(_ => deleteForce(file))
+  }
 
   final def editFile(file: File, edit: String => Option[String])(implicit
       F: MonadThrowable[F]
