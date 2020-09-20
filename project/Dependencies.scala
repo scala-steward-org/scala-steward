@@ -32,7 +32,7 @@ object Dependencies {
   val millVersion = Def.setting(if (scalaBinaryVersion.value == "2.12") "0.6.3" else "0.8.0")
   val millScalalib = Def.setting("com.lihaoyi" %% "mill-scalalib" % millVersion.value)
   val monocleCore = "com.github.julien-truffaut" %% "monocle-core" % "2.1.0"
-  val refined = "eu.timepit" %% "refined" % "0.9.15"
+  val refined = "eu.timepit" %% "refined" % "0.9.16"
   val refinedCats = "eu.timepit" %% "refined-cats" % refined.revision
   val refinedScalacheck = "eu.timepit" %% "refined-scalacheck" % refined.revision
   val scalacacheCaffeine = "com.github.cb372" %% "scalacache-caffeine" % "0.28.0"
