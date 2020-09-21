@@ -26,6 +26,7 @@ class VersionTest
     val versions = List(
       "0.1",
       "0-20170604",
+      "1.0e",
       "1.0.0-SNAP8",
       "1.0.0-M2",
       "1.0.0",
@@ -96,6 +97,7 @@ class VersionTest
 
   test("similar ordering as Coursier") {
     List(
+      ("1.0e", "1.0.0-SNAP8"),
       ("1.0.1e", "1.0.1"),
       ("42.2.9.jre7", "42.2.9"),
       ("42.2.9.jre7", "42.2.9.jre8"),
