@@ -105,7 +105,8 @@ class VersionTest
       ("2.13.0-M2", "2.13.0-RC1"),
       ("4.0RC1", "4.0.0"),
       ("1.7R5", "1.7"),
-      ("1.7R5", "1.7.11")
+      ("1.7R5", "1.7.11"),
+      ("14.0.2.1", "16-ea+2")
     ).foreach { case (s1, s2) =>
       val c1 = coursier.core.Version(s1)
       val c2 = coursier.core.Version(s2)
