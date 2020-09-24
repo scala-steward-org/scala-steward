@@ -40,27 +40,26 @@ final case class Version(value: String) {
     val newerVersionsByCommonPrefix =
       versions
         .filter(_ > this)
-        .groupBy(_.alnumComponents.zip(alnumComponents).take(cutoff).takeWhile {
-          case (c1, c2) => c1 === c2
+        .groupBy(_.alnumComponents.zip(alnumComponents).take(cutoff).takeWhile { case (c1, c2) =>
+          c1 === c2
         })
 
     newerVersionsByCommonPrefix.toList
       .sortBy { case (commonPrefix, _) => commonPrefix.length }
-      .flatMap {
-        case (commonPrefix, vs) =>
-          val sameSeries = cutoff === commonPrefix.length
-          vs.filterNot { v =>
-            // Do not select pre-releases of different series.
-            (v.isPreRelease && !sameSeries) ||
-            // Do not select pre-releases of the same series if this is not a pre-release.
-            (v.isPreRelease && !isPreRelease && sameSeries) ||
-            // Do not select versions with pre-release identifiers whose order is smaller
-            // than the order of pre-release identifiers in this version. This, for example,
-            // prevents updates from 2.1.4.0-RC17 to 2.1.4.0-RC17+1-307f2f6c-SNAPSHOT.
-            ((minAlphaOrder < 0) && (v.minAlphaOrder < minAlphaOrder)) ||
-            // Don't select "versions" like %5BWARNING%5D.
-            !v.startsWithLetterOrDigit
-          }.sorted
+      .flatMap { case (commonPrefix, vs) =>
+        val sameSeries = cutoff === commonPrefix.length
+        vs.filterNot { v =>
+          // Do not select pre-releases of different series.
+          (v.isPreRelease && !sameSeries) ||
+          // Do not select pre-releases of the same series if this is not a pre-release.
+          (v.isPreRelease && !isPreRelease && sameSeries) ||
+          // Do not select versions with pre-release identifiers whose order is smaller
+          // than the order of pre-release identifiers in this version. This, for example,
+          // prevents updates from 2.1.4.0-RC17 to 2.1.4.0-RC17+1-307f2f6c-SNAPSHOT.
+          ((minAlphaOrder < 0) && (v.minAlphaOrder < minAlphaOrder)) ||
+          // Don't select "versions" like %5BWARNING%5D.
+          !v.startsWithLetterOrDigit
+        }.sorted
       }
       .lastOption
   }
@@ -122,7 +121,6 @@ object Version {
   object Component {
     final case class Numeric(value: String, startIndex: Int) extends Component {
       def toBigInt: BigInt = BigInt(value)
-      def isZero: Boolean = toBigInt === BigInt(0)
     }
     final case class Alpha(value: String, startIndex: Int) extends Component {
       def isPreReleaseIdent: Boolean = order < 0
@@ -201,8 +199,6 @@ object Version {
     implicit val componentOrder: Order[Component] =
       Order.from[Component] {
         case (n1: Numeric, n2: Numeric) => n1.toBigInt.compare(n2.toBigInt)
-        case (n: Numeric, a: Alpha)     => if (a.isPreReleaseIdent || !n.isZero) 1 else -1
-        case (a: Alpha, n: Numeric)     => if (a.isPreReleaseIdent || !n.isZero) -1 else 1
         case (_: Numeric, _)            => 1
         case (_, _: Numeric)            => -1
 

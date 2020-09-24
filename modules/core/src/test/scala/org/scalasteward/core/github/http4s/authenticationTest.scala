@@ -10,8 +10,8 @@ import org.scalatest.matchers.should.Matchers
 class authenticationTest extends AnyFunSuite with Matchers {
   test("addCredentials") {
     val request = authentication
-      .addCredentials(AuthenticatedUser("user", "pass"))
-      .apply(Request[Id](headers = Headers.of(Accept(MediaType.text.plain))))
+      .addCredentials[Id](AuthenticatedUser("user", "pass"))
+      .apply(Request(headers = Headers.of(Accept(MediaType.text.plain))))
 
     request.headers shouldBe
       Headers.of(Accept(MediaType.text.plain), Authorization(BasicCredentials("user", "pass")))

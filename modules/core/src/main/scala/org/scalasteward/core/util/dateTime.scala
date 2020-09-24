@@ -16,6 +16,7 @@
 
 package org.scalasteward.core.util
 
+import cats.syntax.all._
 import java.util.concurrent.TimeUnit
 import scala.annotation.tailrec
 import scala.concurrent.duration._
@@ -39,10 +40,13 @@ object dateTime {
     @tailrec
     def loop(d1: FiniteDuration, acc: List[FiniteDuration]): List[FiniteDuration] =
       nextUnitAndCap(d1.unit) match {
-        case Some((nextUnit, cap)) if d1.length > cap =>
+        case Some((nextUnit, cap)) if d1.length >= cap =>
           val next = FiniteDuration(d1.length / cap, nextUnit)
           val capped = FiniteDuration(d1.length % cap, d1.unit)
-          loop(next, capped :: acc)
+          if (capped.length === 0L)
+            loop(next, acc)
+          else
+            loop(next, capped :: acc)
         case _ => d1 :: acc
       }
 

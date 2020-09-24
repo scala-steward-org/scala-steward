@@ -15,7 +15,7 @@ val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
 )
 
 val Scala212 = "2.12.10"
-val Scala213 = "2.13.2"
+val Scala213 = "2.13.3"
 
 /// projects
 
@@ -35,6 +35,7 @@ lazy val core = myCrossProject("core")
       Dependencies.attoCore,
       Dependencies.betterFiles,
       Dependencies.caseApp,
+      Dependencies.catsCore,
       Dependencies.catsEffect,
       Dependencies.circeConfig,
       Dependencies.circeGeneric,
@@ -61,7 +62,8 @@ lazy val core = myCrossProject("core")
       Dependencies.http4sDsl % Test,
       Dependencies.refinedScalacheck % Test,
       Dependencies.scalacheck % Test,
-      Dependencies.scalaTest % Test
+      Dependencies.scalaTestFunSuite % Test,
+      Dependencies.scalaTestShouldMatcher % Test
     ),
     assembly / test := {},
     assemblyMergeStrategy in assembly := {
@@ -90,14 +92,14 @@ lazy val core = myCrossProject("core")
       scalaBinaryVersion,
       sbtVersion,
       BuildInfoKey.map(git.gitHeadCommit) { case (k, v) => k -> v.getOrElse("master") },
-      BuildInfoKey.map(`sbt-plugin`.jvm / moduleRootPkg) {
-        case (_, v) => "sbtPluginModuleRootPkg" -> v
+      BuildInfoKey.map(`sbt-plugin`.jvm / moduleRootPkg) { case (_, v) =>
+        "sbtPluginModuleRootPkg" -> v
       },
-      BuildInfoKey.map(`mill-plugin`.jvm / moduleName) {
-        case (_, v) => "millPluginModuleName" -> v
+      BuildInfoKey.map(`mill-plugin`.jvm / moduleName) { case (_, v) =>
+        "millPluginModuleName" -> v
       },
-      BuildInfoKey.map(`mill-plugin`.jvm / moduleRootPkg) {
-        case (_, v) => "millPluginModuleRootPkg" -> v
+      BuildInfoKey.map(`mill-plugin`.jvm / moduleRootPkg) { case (_, v) =>
+        "millPluginModuleRootPkg" -> v
       }
     ),
     buildInfoPackage := moduleRootPkg.value,
@@ -119,7 +121,7 @@ lazy val core = myCrossProject("core")
       implicit val ioContextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
       implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
       implicit val logger: Logger[IO] = Slf4jLogger.getLogger[IO]
-      implicit val client: Client[IO] = AsyncHttpClient.allocate[IO]().map(_._1).unsafeRunSync
+      implicit val client: Client[IO] = AsyncHttpClient.allocate[IO]().map(_._1).unsafeRunSync()
     """,
     fork in run := true,
     fork in Test := true,
@@ -137,7 +139,7 @@ lazy val `sbt-plugin` = myCrossProject("sbt-plugin")
 lazy val `mill-plugin` = myCrossProject("mill-plugin")
   .settings(
     crossScalaVersions := Seq(Scala213, Scala212),
-    libraryDependencies += Dependencies.mill.value % Provided
+    libraryDependencies += Dependencies.millScalalib.value % Provided
   )
 
 /// settings
@@ -203,14 +205,14 @@ lazy val dockerSettings = Def.settings(
     val getSbtVersion = sbtVersion.value
     val sbtTgz = s"sbt-$getSbtVersion.tgz"
     val sbtUrl = s"https://github.com/sbt/sbt/releases/download/v$getSbtVersion/$sbtTgz"
-    val millVersion = Dependencies.mill.value.revision
+    val millVersion = Dependencies.millVersion.value
     Seq(
       Cmd("USER", "root"),
       Cmd("RUN", "apk --no-cache add bash git ca-certificates curl maven"),
       Cmd("RUN", s"wget $sbtUrl && tar -xf $sbtTgz && rm -f $sbtTgz"),
       Cmd(
         "RUN",
-        s"curl -L https://github.com/lihaoyi/mill/releases/download/$millVersion/$millVersion > /usr/local/bin/mill && chmod +x /usr/local/bin/mill"
+        s"curl -L https://github.com/lihaoyi/mill/releases/download/${millVersion.split("-").head}/$millVersion > /usr/local/bin/mill && chmod +x /usr/local/bin/mill"
       )
     )
   },

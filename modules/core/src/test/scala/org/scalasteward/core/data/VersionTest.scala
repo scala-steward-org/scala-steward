@@ -17,10 +17,16 @@ class VersionTest
     with ScalaCheckPropertyChecks {
   checkAll("Order[Version]", OrderTests[Version].order)
 
+  test("issue 1615: broken transitivity") {
+    val res = OrderTests[Version].laws.transitivity(Version(""), Version("0"), Version("X"))
+    res.lhs shouldBe res.rhs
+  }
+
   test("pairwise 1") {
     val versions = List(
       "0.1",
       "0-20170604",
+      "1.0e",
       "1.0.0-SNAP8",
       "1.0.0-M2",
       "1.0.0",
@@ -91,6 +97,7 @@ class VersionTest
 
   test("similar ordering as Coursier") {
     List(
+      ("1.0e", "1.0.0-SNAP8"),
       ("1.0.1e", "1.0.1"),
       ("42.2.9.jre7", "42.2.9"),
       ("42.2.9.jre7", "42.2.9.jre8"),
@@ -98,18 +105,18 @@ class VersionTest
       ("2.13.0-M2", "2.13.0-RC1"),
       ("4.0RC1", "4.0.0"),
       ("1.7R5", "1.7"),
-      ("1.7R5", "1.7.11")
-    ).foreach {
-      case (s1, s2) =>
-        val c1 = coursier.core.Version(s1)
-        val c2 = coursier.core.Version(s2)
-        c1 should be < c2
-        c2 should be > c1
+      ("1.7R5", "1.7.11"),
+      ("14.0.2.1", "16-ea+2")
+    ).foreach { case (s1, s2) =>
+      val c1 = coursier.core.Version(s1)
+      val c2 = coursier.core.Version(s2)
+      c1 should be < c2
+      c2 should be > c1
 
-        val v1 = Version(s1)
-        val v2 = Version(s2)
-        v1 should be < v2
-        v2 should be > v1
+      val v1 = Version(s1)
+      val v2 = Version(s2)
+      v1 should be < v2
+      v2 should be > v1
     }
   }
 
@@ -219,10 +226,9 @@ class VersionTest
       case h :: t => t.map(v => (Version(h), Version(v)))
       case Nil    => Nil
     }
-    pairs.foreach {
-      case (v1, v2) =>
-        v1 should be < v2
-        v2 should be > v1
+    pairs.foreach { case (v1, v2) =>
+      v1 should be < v2
+      v2 should be > v1
     }
   }
 }

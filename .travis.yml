@@ -5,7 +5,7 @@ os: linux
 dist: xenial
 
 scala: 
-  - 2.13.2
+  - 2.13.3
   - 2.12.10
 
 jdk:

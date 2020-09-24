@@ -18,7 +18,7 @@ package org.scalasteward.core.io
 
 import better.files.File
 import cats.effect.{Bracket, Resource, Sync}
-import cats.implicits._
+import cats.syntax.all._
 import cats.{Functor, Traverse}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
@@ -52,8 +52,11 @@ trait FileAlg[F[_]] {
 
   final def createTemporarily[A, E](file: File, content: String)(
       fa: F[A]
-  )(implicit F: Bracket[F, E]): F[A] =
-    F.bracket(writeFile(file, content))(_ => fa)(_ => deleteForce(file))
+  )(implicit F: Bracket[F, E]): F[A] = {
+    val delete = deleteForce(file)
+    val create = writeFile(file, content).onError(_ => delete)
+    F.bracket(create)(_ => fa)(_ => delete)
+  }
 
   final def editFile(file: File, edit: String => Option[String])(implicit
       F: MonadThrowable[F]

@@ -33,14 +33,30 @@ object TestInstances {
     cogenT.contramap(_.value)
 
   implicit val versionArbitrary: Arbitrary[Version] = {
-    val versionChar = Gen.frequency(
-      (8, Gen.numChar),
-      (5, Gen.const('.')),
-      (3, Gen.alphaChar),
-      (2, Gen.const('-')),
-      (1, Gen.const('+'))
+    val commonStrings =
+      Gen.oneOf(
+        "SNAP",
+        "SNAPSHOT",
+        "ALPHA",
+        "PREVIEW",
+        "BETA",
+        "B",
+        "M",
+        "MILESTONE",
+        "AM",
+        "RC",
+        "build",
+        "final"
+      )
+    val versionComponent = Gen.frequency(
+      (8, Gen.numChar.map(_.toString)),
+      (5, Gen.const('.').map(_.toString)),
+      (3, Gen.alphaChar.map(_.toString)),
+      (2, Gen.const('-').map(_.toString)),
+      (1, Gen.const('+').map(_.toString)),
+      (1, commonStrings)
     )
-    Arbitrary(Gen.listOf(versionChar).map(_.mkString).map(Version.apply))
+    Arbitrary(Gen.listOf(versionComponent).map(_.mkString).map(Version.apply))
   }
 
   implicit val versionCogen: Cogen[Version] =

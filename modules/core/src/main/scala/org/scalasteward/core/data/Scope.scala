@@ -33,8 +33,8 @@ object Scope {
   type Dependencies = Scope[List[org.scalasteward.core.data.Dependency]]
 
   def combineByResolvers[A: Order](scopes: List[Scope[List[A]]]): List[Scope[List[A]]] =
-    scopes.groupByNel(_.resolvers).toList.map {
-      case (resolvers, group) => Scope(group.reduceMap(_.value).distinct.sorted, resolvers)
+    scopes.groupByNel(_.resolvers).toList.map { case (resolvers, group) =>
+      Scope(group.reduceMap(_.value).distinct.sorted, resolvers)
     }
 
   implicit def scopeTraverse: Traverse[Scope] =

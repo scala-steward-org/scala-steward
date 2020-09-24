@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.util
 
-import cats.implicits._
+import cats.syntax.all._
 import cats.{Foldable, Functor, Monad}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data.Update
@@ -39,8 +39,8 @@ object logger {
         dateTimeAlg: DateTimeAlg[F],
         F: Monad[F]
     ): F[A] =
-      dateTimeAlg.timed(fa).flatMap {
-        case (a, duration) => logger.info(msg(duration)) >> F.pure(a)
+      dateTimeAlg.timed(fa).flatMap { case (a, duration) =>
+        logger.info(msg(duration)) >> F.pure(a)
       }
 
     def infoTotalTime[A](label: String)(fa: F[A])(implicit

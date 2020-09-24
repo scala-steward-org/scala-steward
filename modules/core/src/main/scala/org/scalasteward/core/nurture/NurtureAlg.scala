@@ -56,8 +56,8 @@ final class NurtureAlg[F[_]](implicit
     val label = s"Nurture ${repo.show}"
     logger.infoTotalTime(label) {
       logger.attemptLog(util.string.lineLeftRight(label)) {
-        F.bracket(cloneAndSync(repo)) {
-          case (fork, baseBranch) => updateDependencies(repo, fork, baseBranch, updates)
+        F.bracket(cloneAndSync(repo)) { case (fork, baseBranch) =>
+          updateDependencies(repo, fork, baseBranch, updates)
         }(_ => gitAlg.removeClone(repo))
       }
     }
