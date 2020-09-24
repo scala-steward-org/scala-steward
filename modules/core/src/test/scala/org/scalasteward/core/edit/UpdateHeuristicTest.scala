@@ -41,9 +41,37 @@ class UpdateHeuristicTest extends AnyFunSuite with Matchers {
       .replaceVersionIn(original) shouldBe (None -> UpdateHeuristic.all.last.name)
   }
 
+  test("all on one line") {
+    val original = """"be.doeraene" %% "scalajs-jquery"  % "0.9.3""""
+    val expected = """"be.doeraene" %% "scalajs-jquery"  % "0.9.4""""
+    Single("be.doeraene" % "scalajs-jquery" % "0.9.3", Nel.of("0.9.4"))
+      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.moduleId.name)
+  }
+
   test("ignore hyphen in artifactId") {
     val original = """val scalajsJqueryVersion = "0.9.3""""
     val expected = """val scalajsJqueryVersion = "0.9.4""""
+    Single("be.doeraene" % "scalajs-jquery" % "0.9.3", Nel.of("0.9.4"))
+      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.original.name)
+  }
+
+  test("with single quotes around val") {
+    val original = """val `scalajs-jquery-version` = "0.9.3""""
+    val expected = """val `scalajs-jquery-version` = "0.9.4""""
+    Single("be.doeraene" % "scalajs-jquery" % "0.9.3", Nel.of("0.9.4"))
+      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.relaxed.name)
+  }
+
+  test("all upper case") {
+    val original = """val SCALAJSJQUERYVERSION = "0.9.3""""
+    val expected = """val SCALAJSJQUERYVERSION = "0.9.4""""
+    Single("be.doeraene" % "scalajs-jquery" % "0.9.3", Nel.of("0.9.4"))
+      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.original.name)
+  }
+
+  test("just artifactId without version") {
+    val original = """val scalajsjquery = "0.9.3""""
+    val expected = """val scalajsjquery = "0.9.4""""
     Single("be.doeraene" % "scalajs-jquery" % "0.9.3", Nel.of("0.9.4"))
       .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.original.name)
   }
@@ -271,12 +299,11 @@ class UpdateHeuristicTest extends AnyFunSuite with Matchers {
       ("""version="2.0.0"""", """version="2.0.1""""),
       ("""version = 2.0.0 """, """version = 2.0.1 """),
       ("""version=2.0.0 """, """version=2.0.1 """)
-    ).foreach {
-      case (original, expected) =>
-        Single(
-          "org.scalameta" % ArtifactId("scalafmt-core", "scalafmt-core_2.12") % "2.0.0",
-          Nel.of("2.0.1")
-        ).replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.specific.name)
+    ).foreach { case (original, expected) =>
+      Single(
+        "org.scalameta" % ArtifactId("scalafmt-core", "scalafmt-core_2.12") % "2.0.0",
+        Nel.of("2.0.1")
+      ).replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.specific.name)
     }
 
     val original = """version=2.0.0"""
@@ -404,6 +431,60 @@ class UpdateHeuristicTest extends AnyFunSuite with Matchers {
 
     Single("org.typelevel" % "cats-core" % "1.2.0", Nel.of("1.3.0"))
       .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.moduleId.name)
+  }
+
+  test("fail on versions with line break") {
+    val original = """val scalajsJqueryVersion =
+                     |  "0.9.3"""".stripMargin
+    Single("be.doeraene" % "scalajs-jquery" % "0.9.3", Nel.of("0.9.4"))
+      .replaceVersionIn(original)
+      ._1 shouldBe None
+  }
+
+  test("cognito value for aws-java-sdk-cognitoidp artifact") {
+    val original = """val cognito       = "1.11.690" """
+    val expected = """val cognito       = "1.11.700" """
+    Single("com.amazonaws" % "aws-java-sdk-cognitoidp" % "1.11.690", Nel.of("1.11.700"))
+      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.sliding.name)
+  }
+
+  test("issue 1586 - tracing value for opentracing library") {
+    val original = """val tracing = "2.4.1" """
+    val expected = """val tracing = "2.5.0" """
+    Group(
+      "com.colisweb" % Nel.of(
+        "scala-opentracing-core",
+        "scala-opentracing-context",
+        "scala-opentracing-http4s-server-tapir"
+      ) % "2.4.1",
+      Nel.of("2.5.0")
+    )
+      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.sliding.name)
+  }
+
+  test("fail on versions duplicated in a comment") {
+    val original = """val scalajsJqueryVersion = "0.9.3" // val scalajsJqueryVersion = "0.9.3""""
+    val expected = """val scalajsJqueryVersion = "0.9.3" // val scalajsJqueryVersion = "0.9.4""""
+    Single("be.doeraene" % "scalajs-jquery" % "0.9.3", Nel.of("0.9.4"))
+      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.original.name)
+  }
+
+  test("issue 1489: ignore word: scala") {
+    val original =
+      """ val jsoniter = "2.4.0"
+        | addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.4.0")
+        |""".stripMargin
+    val expected =
+      """ val jsoniter = "2.4.1"
+        | addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.4.0")
+        |""".stripMargin
+    Update
+      .Group(
+        "com.github.plokhotnyuk.jsoniter-scala" %
+          Nel.of("jsoniter-scala-core", "jsoniter-scala-macros") % "2.4.0",
+        Nel.of("2.4.1")
+      )
+      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.relaxed.name)
   }
 }
 

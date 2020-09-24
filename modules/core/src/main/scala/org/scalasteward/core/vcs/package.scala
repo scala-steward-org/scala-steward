@@ -16,7 +16,7 @@
 
 package org.scalasteward.core
 
-import cats.implicits._
+import cats.syntax.all._
 import org.http4s.Uri
 import org.scalasteward.core.application.SupportedVCS
 import org.scalasteward.core.application.SupportedVCS.{Bitbucket, BitbucketServer, GitHub, Gitlab}
@@ -79,13 +79,12 @@ package object vcs {
     val to = update.nextVersion
 
     if (host.exists(Set("github.com", "gitlab.com")))
-      possibleTags(from).zip(possibleTags(to)).map {
-        case (from1, to1) => VersionDiff(repoUrl / "compare" / s"$from1...$to1")
+      possibleTags(from).zip(possibleTags(to)).map { case (from1, to1) =>
+        VersionDiff(repoUrl / "compare" / s"$from1...$to1")
       }
     else if (host.contains_("bitbucket.org"))
-      possibleTags(from).zip(possibleTags(to)).map {
-        case (from1, to1) =>
-          VersionDiff((repoUrl / "compare" / s"$to1..$from1").withFragment("diff"))
+      possibleTags(from).zip(possibleTags(to)).map { case (from1, to1) =>
+        VersionDiff((repoUrl / "compare" / s"$to1..$from1").withFragment("diff"))
       }
     else
       List.empty

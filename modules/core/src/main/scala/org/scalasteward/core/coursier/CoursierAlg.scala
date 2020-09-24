@@ -137,9 +137,8 @@ object CoursierAlg {
     Authentication(credentials.user, credentials.pass)
 
   private def getParentDependency(project: Project): Option[coursier.Dependency] =
-    project.parent.map {
-      case (module, version) =>
-        coursier.Dependency(module, version).withTransitive(false)
+    project.parent.map { case (module, version) =>
+      coursier.Dependency(module, version).withTransitive(false)
     }
 
   private def getScmUrlOrHomePage(info: Info): Option[Uri] =

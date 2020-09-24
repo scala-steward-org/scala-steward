@@ -19,7 +19,7 @@ package org.scalasteward.core.application
 import better.files.File
 import cats.Monad
 import cats.effect.ExitCode
-import cats.implicits._
+import cats.syntax.all._
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.buildtool.sbt.SbtAlg
@@ -64,8 +64,8 @@ final class StewardAlg[F[_]](implicit
     fileAlg.readFile(reposFile).map { maybeContent =>
       val regex = """-\s+(.+)/([^/]+)""".r
       val content = maybeContent.getOrElse("")
-      content.linesIterator.collect {
-        case regex(owner, repo) => Repo(owner.trim, repo.trim)
+      content.linesIterator.collect { case regex(owner, repo) =>
+        Repo(owner.trim, repo.trim)
       }.toList
     }
 

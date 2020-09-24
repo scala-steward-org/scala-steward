@@ -17,7 +17,7 @@
 package org.scalasteward.core.repocache
 
 import cats.Parallel
-import cats.implicits._
+import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.BuildToolDispatcher
@@ -48,8 +48,8 @@ final class RepoCacheAlg[F[_]](implicit
         logger.info(s"Skipping due to previous error"),
         for {
           ((repoOut, branchOut), cachedSha1) <- (
-              vcsApiAlg.createForkOrGetRepoWithDefaultBranch(config, repo),
-              repoCacheRepository.findSha1(repo)
+            vcsApiAlg.createForkOrGetRepoWithDefaultBranch(config, repo),
+            repoCacheRepository.findSha1(repo)
           ).parTupled
           latestSha1 = branchOut.commit.sha
           refreshRequired = cachedSha1.forall(_ =!= latestSha1)

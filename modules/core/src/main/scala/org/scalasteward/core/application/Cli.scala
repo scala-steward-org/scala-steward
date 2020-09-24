@@ -19,7 +19,7 @@ package org.scalasteward.core.application
 import caseapp._
 import caseapp.core.Error.MalformedValue
 import caseapp.core.argparser.{ArgParser, SimpleArgParser}
-import cats.implicits._
+import cats.syntax.all._
 import org.http4s.Uri
 import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Cli._
@@ -56,7 +56,8 @@ object Cli {
       groupMigrations: Option[String] = None,
       cacheTtl: FiniteDuration = 2.hours,
       cacheMissDelay: FiniteDuration = 0.milliseconds,
-      bitbucketServerUseDefaultReviewers: Boolean = false
+      bitbucketServerUseDefaultReviewers: Boolean = false,
+      gitlabMergeWhenPipelineSucceeds: Boolean = false
   )
 
   final case class EnvVar(name: String, value: String)

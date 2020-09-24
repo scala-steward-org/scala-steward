@@ -95,24 +95,24 @@ class VCSPackageTest extends AnyFunSuite with Matchers {
     possibleReleaseRelatedUrls(uri"https://gitlab.com/foo/bar", update)
       .map(_.url.renderString) shouldBe
       possibleReleaseNotesFilenames.map(name => s"https://gitlab.com/foo/bar/blob/master/$name") ++
-        possibleChangelogFilenames.map(name => s"https://gitlab.com/foo/bar/blob/master/$name") ++
-        List(
-          "https://gitlab.com/foo/bar/compare/v1.2.0...v1.2.3",
-          "https://gitlab.com/foo/bar/compare/1.2.0...1.2.3",
-          "https://gitlab.com/foo/bar/compare/release-1.2.0...release-1.2.3"
-        )
+      possibleChangelogFilenames.map(name => s"https://gitlab.com/foo/bar/blob/master/$name") ++
+      List(
+        "https://gitlab.com/foo/bar/compare/v1.2.0...v1.2.3",
+        "https://gitlab.com/foo/bar/compare/1.2.0...1.2.3",
+        "https://gitlab.com/foo/bar/compare/release-1.2.0...release-1.2.3"
+      )
   }
 
   test("possibleChangelogUrls: bitbucket.org") {
     possibleReleaseRelatedUrls(uri"https://bitbucket.org/foo/bar", update)
       .map(_.url.renderString) shouldBe
       possibleReleaseNotesFilenames.map(name => s"https://bitbucket.org/foo/bar/master/$name") ++
-        possibleChangelogFilenames.map(name => s"https://bitbucket.org/foo/bar/master/$name") ++
-        List(
-          "https://bitbucket.org/foo/bar/compare/v1.2.3..v1.2.0#diff",
-          "https://bitbucket.org/foo/bar/compare/1.2.3..1.2.0#diff",
-          "https://bitbucket.org/foo/bar/compare/release-1.2.3..release-1.2.0#diff"
-        )
+      possibleChangelogFilenames.map(name => s"https://bitbucket.org/foo/bar/master/$name") ++
+      List(
+        "https://bitbucket.org/foo/bar/compare/v1.2.3..v1.2.0#diff",
+        "https://bitbucket.org/foo/bar/compare/1.2.3..1.2.0#diff",
+        "https://bitbucket.org/foo/bar/compare/release-1.2.3..release-1.2.0#diff"
+      )
   }
 
   test("possibleChangelogUrls: homepage") {

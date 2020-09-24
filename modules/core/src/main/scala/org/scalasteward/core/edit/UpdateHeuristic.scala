@@ -17,7 +17,7 @@
 package org.scalasteward.core.edit
 
 import cats.Foldable
-import cats.implicits._
+import cats.syntax.all._
 import org.scalasteward.core.data.{GroupId, Update}
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
@@ -120,6 +120,9 @@ object UpdateHeuristic {
   private def removeCommonSuffix(str: String): String =
     util.string.removeSuffix(str, Update.commonSuffixes)
 
+  private def isCommonWord(s: String): Boolean =
+    s === "scala"
+
   val moduleId = UpdateHeuristic(
     name = "moduleId",
     replaceVersion = update =>
@@ -164,14 +167,14 @@ object UpdateHeuristic {
   val relaxed = UpdateHeuristic(
     name = "relaxed",
     replaceVersion = defaultReplaceVersion { update =>
-      util.string.extractWords(update.mainArtifactId)
+      util.string.extractWords(update.mainArtifactId).filterNot(isCommonWord)
     }
   )
 
   val sliding = UpdateHeuristic(
     name = "sliding",
     replaceVersion = defaultReplaceVersion(
-      _.mainArtifactId.toSeq.sliding(5).map(_.unwrap).take(5).filterNot(_ === "scala").toList
+      _.mainArtifactId.toSeq.sliding(5).map(_.unwrap).filterNot(isCommonWord).toList
     )
   )
 

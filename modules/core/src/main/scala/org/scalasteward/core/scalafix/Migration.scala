@@ -26,7 +26,8 @@ final case class Migration(
     artifactIds: Nel[String],
     newVersion: Version,
     rewriteRules: Nel[String],
-    doc: Option[String]
+    doc: Option[String],
+    scalacOptions: Option[Nel[String]]
 )
 
 object Migration {

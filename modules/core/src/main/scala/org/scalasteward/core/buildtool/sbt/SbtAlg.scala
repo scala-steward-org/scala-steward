@@ -19,7 +19,7 @@ package org.scalasteward.core.buildtool.sbt
 import better.files.File
 import cats.Functor
 import cats.data.OptionT
-import cats.implicits._
+import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.BuildToolAlg
@@ -87,14 +87,18 @@ object SbtAlg {
 
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
         addGlobalPluginTemporarily(scalaStewardScalafixSbt) {
-          for {
-            repoDir <- workspaceAlg.repoDir(repo)
-            scalafixCmds = for {
-              migration <- migrations
-              rule <- migration.rewriteRules
-            } yield s"$scalafixAll $rule"
-            _ <- exec(sbtCmd(scalafixEnable :: scalafixCmds.toList), repoDir)
-          } yield ()
+          workspaceAlg.repoDir(repo).flatMap { repoDir =>
+            migrations.traverse_ { migration =>
+              val withScalacOptions =
+                migration.scalacOptions.fold[F[Unit] => F[Unit]](identity) { opts =>
+                  val file = scalaStewardScalafixOptions(opts.toList)
+                  fileAlg.createTemporarily(repoDir / file.name, file.content)(_)
+                }
+
+              val scalafixCmds = migration.rewriteRules.map(rule => s"$scalafixAll $rule").toList
+              withScalacOptions(exec(sbtCmd(scalafixEnable :: scalafixCmds), repoDir).void)
+            }
+          }
         }
 
       val sbtDir: F[File] =

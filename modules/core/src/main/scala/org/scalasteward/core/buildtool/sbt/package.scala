@@ -17,7 +17,7 @@
 package org.scalasteward.core.buildtool
 
 import cats.Functor
-import cats.implicits._
+import cats.syntax.all._
 import org.scalasteward.core.BuildInfo
 import org.scalasteward.core.buildtool.sbt.data.SbtVersion
 import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId, Version}
@@ -28,22 +28,20 @@ package object sbt {
     org.scalasteward.core.BuildInfo.scalaBinaryVersion
 
   def sbtDependency(sbtVersion: SbtVersion): Option[Dependency] =
-    if (sbtVersion.toVersion >= Version("1.0.0"))
-      Some(
-        Dependency(
-          GroupId("org.scala-sbt"),
-          ArtifactId("sbt"),
-          sbtVersion.value
-        )
-      )
-    else
-      None
+    Option.when(sbtVersion.toVersion >= Version("1.0.0")) {
+      Dependency(GroupId("org.scala-sbt"), ArtifactId("sbt"), sbtVersion.value)
+    }
 
   val scalaStewardScalafixSbt: FileData =
     FileData(
       "scala-steward-scalafix.sbt",
-      """addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.19")"""
+      """addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.21")"""
     )
+
+  def scalaStewardScalafixOptions(scalacOptions: List[String]): FileData = {
+    val args = scalacOptions.map(s => s""""$s"""").mkString(", ")
+    FileData("scala-steward-scalafix-options.sbt", s"ThisBuild / scalacOptions ++= List($args)")
+  }
 
   def stewardPlugin[F[_]](implicit fileAlg: FileAlg[F], F: Functor[F]): F[FileData] = {
     val name = "StewardPlugin.scala"
