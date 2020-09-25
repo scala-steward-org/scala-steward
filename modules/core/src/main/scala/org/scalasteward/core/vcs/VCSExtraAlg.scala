@@ -19,6 +19,7 @@ package org.scalasteward.core.vcs
 import cats.Monad
 import cats.syntax.all._
 import org.http4s.Uri
+import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.{ReleaseRelatedUrl, Update}
 import org.scalasteward.core.util.HttpExistenceClient
 import org.scalasteward.core.vcs
@@ -30,13 +31,13 @@ trait VCSExtraAlg[F[_]] {
 object VCSExtraAlg {
   def create[F[_]](implicit
       existenceClient: HttpExistenceClient[F],
+      config: Config,
       F: Monad[F]
   ): VCSExtraAlg[F] =
     new VCSExtraAlg[F] {
       override def getReleaseRelatedUrls(repoUrl: Uri, update: Update): F[List[ReleaseRelatedUrl]] =
         vcs
-          .possibleReleaseRelatedUrls(repoUrl, update)
+          .possibleReleaseRelatedUrls(config.vcsType, config.vcsApiHost, repoUrl, update)
           .filterA(releaseRelatedUrl => existenceClient.exists(releaseRelatedUrl.url))
-
     }
 }
