@@ -145,14 +145,14 @@ class VCSPackageTest extends AnyFunSuite with Matchers {
       possibleReleaseNotesFilenames.map(name =>
         s"https://gitlab.on-prem.net/foo/bar/blob/master/$name"
       ) ++
-        possibleChangelogFilenames.map(name =>
-          s"https://gitlab.on-prem.net/foo/bar/blob/master/$name"
-        ) ++
-        List(
-          "https://gitlab.on-prem.net/foo/bar/compare/v1.2.0...v1.2.3",
-          "https://gitlab.on-prem.net/foo/bar/compare/1.2.0...1.2.3",
-          "https://gitlab.on-prem.net/foo/bar/compare/release-1.2.0...release-1.2.3"
-        )
+      possibleChangelogFilenames.map(name =>
+        s"https://gitlab.on-prem.net/foo/bar/blob/master/$name"
+      ) ++
+      List(
+        "https://gitlab.on-prem.net/foo/bar/compare/v1.2.0...v1.2.3",
+        "https://gitlab.on-prem.net/foo/bar/compare/1.2.0...1.2.3",
+        "https://gitlab.on-prem.net/foo/bar/compare/release-1.2.0...release-1.2.3"
+      )
   }
 
   test("possibleChangelogUrls: bitbucket.org") {

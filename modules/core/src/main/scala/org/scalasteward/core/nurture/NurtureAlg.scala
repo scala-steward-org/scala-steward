@@ -163,7 +163,7 @@ final class NurtureAlg[F[_]](implicit
         existingArtifactUrlsMap
           .get(data.update.mainArtifactId)
           .traverse(
-            vcsExtraAlg.getReleaseRelatedUrls(config.vcsType, config.vcsApiHost, _, data.update)
+            vcsExtraAlg.getReleaseRelatedUrls(_, data.update)
           )
       branchName = vcs.createBranch(config.vcsType, data.fork, data.update)
       migrations = migrationAlg.findMigrations(data.update)

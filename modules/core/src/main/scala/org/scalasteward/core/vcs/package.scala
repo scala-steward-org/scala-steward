@@ -126,11 +126,10 @@ package object vcs {
     val repoVCSType = extractRepoVCSType(vcsType, vcsUri, repoUrl)
 
     val github = repoVCSType
-      .collect {
-        case GitHub =>
-          possibleTags(update.nextVersion).map(tag =>
-            ReleaseRelatedUrl.GitHubReleaseNotes(repoUrl / "releases" / "tag" / tag)
-          )
+      .collect { case GitHub =>
+        possibleTags(update.nextVersion).map(tag =>
+          ReleaseRelatedUrl.GitHubReleaseNotes(repoUrl / "releases" / "tag" / tag)
+        )
       }
       .getOrElse(List.empty)
 
