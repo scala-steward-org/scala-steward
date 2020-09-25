@@ -25,10 +25,7 @@ import org.scalasteward.core.util.HttpExistenceClient
 import org.scalasteward.core.vcs
 
 trait VCSExtraAlg[F[_]] {
-  def getReleaseRelatedUrls(
-      repoUrl: Uri,
-      update: Update
-  ): F[List[ReleaseRelatedUrl]]
+  def getReleaseRelatedUrls(repoUrl: Uri, update: Update): F[List[ReleaseRelatedUrl]]
 }
 
 object VCSExtraAlg {
@@ -38,10 +35,7 @@ object VCSExtraAlg {
       F: Monad[F]
   ): VCSExtraAlg[F] =
     new VCSExtraAlg[F] {
-      override def getReleaseRelatedUrls(
-          repoUrl: Uri,
-          update: Update
-      ): F[List[ReleaseRelatedUrl]] =
+      override def getReleaseRelatedUrls(repoUrl: Uri, update: Update): F[List[ReleaseRelatedUrl]] =
         vcs
           .possibleReleaseRelatedUrls(config.vcsType, config.vcsApiHost, repoUrl, update)
           .filterA(releaseRelatedUrl => existenceClient.exists(releaseRelatedUrl.url))
