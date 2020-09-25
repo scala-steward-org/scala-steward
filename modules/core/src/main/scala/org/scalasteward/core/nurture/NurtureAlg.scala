@@ -162,9 +162,7 @@ final class NurtureAlg[F[_]](implicit
       releaseRelatedUrls <-
         existingArtifactUrlsMap
           .get(data.update.mainArtifactId)
-          .traverse(
-            vcsExtraAlg.getReleaseRelatedUrls(_, data.update)
-          )
+          .traverse(vcsExtraAlg.getReleaseRelatedUrls(_, data.update))
       branchName = vcs.createBranch(config.vcsType, data.fork, data.update)
       migrations = migrationAlg.findMigrations(data.update)
       requestData = NewPullRequestData.from(
