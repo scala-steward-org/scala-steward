@@ -16,6 +16,8 @@
 
 package org.scalasteward.core.repoconfig
 
+import cats.kernel.Semigroup
+import cats.syntax.semigroup._
 import io.circe.Codec
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
@@ -38,4 +40,19 @@ object RepoConfig {
 
   implicit val repoConfigCodec: Codec[RepoConfig] =
     deriveConfiguredCodec
+
+  implicit val semigroup: Semigroup[RepoConfig] = new Semigroup[RepoConfig] {
+    override def combine(x: RepoConfig, y: RepoConfig): RepoConfig =
+      (x, y) match {
+        case (`empty`, _) => y
+        case (_, `empty`) => x
+        case _ =>
+          RepoConfig(
+            commits = x.commits |+| y.commits,
+            pullRequests = x.pullRequests |+| y.pullRequests,
+            updates = x.updates |+| y.updates,
+            updatePullRequests = x.updatePullRequests.orElse(y.updatePullRequests)
+          )
+      }
+  }
 }

@@ -35,10 +35,14 @@ final class RepoConfigAlg[F[_]](implicit
     workspaceAlg: WorkspaceAlg[F],
     F: MonadThrowable[F]
 ) {
-  def readRepoConfigOrDefault(repo: Repo): F[RepoConfig] =
-    readRepoConfig(repo).flatMap { config =>
-      config.map(F.pure).getOrElse(defaultRepoConfig)
-    }
+
+  def readRepoConfigWithDefault(repo: Repo): F[RepoConfig] =
+    for {
+      config <- readRepoConfig(repo)
+      defaultCfg <- defaultRepoConfig
+    } yield config
+      .map(_ |+| defaultCfg)
+      .getOrElse(defaultCfg)
 
   /**
     * Default configuration will try to read file specified in config.defaultRepoConfigFile first;
