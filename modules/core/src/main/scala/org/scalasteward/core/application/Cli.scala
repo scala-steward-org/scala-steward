@@ -17,7 +17,7 @@
 package org.scalasteward.core.application
 
 import caseapp._
-import caseapp.core.Error.MalformedValue
+import caseapp.core.Error.{MalformedValue, Other}
 import caseapp.core.argparser.{ArgParser, SimpleArgParser}
 import cats.syntax.all._
 import org.http4s.Uri
@@ -29,7 +29,15 @@ import scala.concurrent.duration._
 final class Cli[F[_]](implicit F: ApplicativeThrowable[F]) {
   def parseArgs(args: List[String]): F[Args] =
     F.fromEither {
-      CaseApp.parse[Args](args).bimap(e => new Throwable(e.message), { case (parsed, _) => parsed })
+      CaseApp
+        .parseWithHelp[Args](args)
+        .flatMap {
+          case (_, true, _, _)              => Left(Other(CaseApp.helpMessage[Args]))
+          case (_, _, true, _)              => Left(Other(CaseApp.usageMessage[Args]))
+          case (parsed @ Right(_), _, _, _) => parsed
+          case (e @ Left(_), _, _, _)       => e
+        }
+        .leftMap(e => new Throwable(e.message))
     }
 }
 
