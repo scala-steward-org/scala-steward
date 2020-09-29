@@ -2,17 +2,15 @@ package org.scalasteward.core.application
 
 import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Cli.EnvVar
+import org.scalasteward.core.application.Cli.ParseResult._
 import org.scalatest.EitherValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import scala.concurrent.duration._
 
 class CliTest extends AnyFunSuite with Matchers with EitherValues {
-  type Result[A] = Either[Throwable, A]
-  val cli: Cli[Result] = new Cli[Result]
-
-  test("parseArgs") {
-    cli.parseArgs(
+  test("parseArgs: example") {
+    Cli.parseArgs(
       List(
         List("--workspace", "a"),
         List("--repos-file", "b"),
@@ -27,7 +25,7 @@ class CliTest extends AnyFunSuite with Matchers with EitherValues {
         List("--env-var", "i=j"),
         List("--process-timeout", "30min")
       ).flatten
-    ) shouldBe Right(
+    ) shouldBe Success(
       Cli.Args(
         workspace = "a",
         reposFile = "b",
@@ -44,8 +42,8 @@ class CliTest extends AnyFunSuite with Matchers with EitherValues {
     )
   }
 
-  test("parseArgs minimal version") {
-    cli.parseArgs(
+  test("parseArgs: minimal example") {
+    Cli.parseArgs(
       List(
         List("--workspace", "a"),
         List("--repos-file", "b"),
@@ -53,7 +51,7 @@ class CliTest extends AnyFunSuite with Matchers with EitherValues {
         List("--vcs-login", "e"),
         List("--git-ask-pass", "f")
       ).flatten
-    ) shouldBe Right(
+    ) shouldBe Success(
       Cli.Args(
         workspace = "a",
         reposFile = "b",
@@ -64,36 +62,44 @@ class CliTest extends AnyFunSuite with Matchers with EitherValues {
     )
   }
 
-  test("parseArgs fail if required option not provided") {
-    cli.parseArgs(Nil).isLeft shouldBe true
+  test("parseArgs: fail if required option not provided") {
+    Cli.parseArgs(Nil).asInstanceOf[Error].error should startWith("Required option")
   }
 
-  test("parseArgs --help") {
-    cli.parseArgs(List("--help")).left.value.getMessage should include("--git-author-email")
+  test("parseArgs: unrecognized argument") {
+    Cli.parseArgs(List("--foo")).asInstanceOf[Error].error should startWith("Unrecognized")
   }
 
-  test("parseArgs --usage") {
-    cli.parseArgs(List("--usage")).left.value.getMessage should startWith("Usage: args")
+  test("parseArgs: --help") {
+    Cli.parseArgs(List("--help")).asInstanceOf[Help].help should include("--git-author-email")
   }
 
-  test("env-var without equals sign") {
+  test("parseArgs: --usage") {
+    Cli.parseArgs(List("--usage")).asInstanceOf[Help].help should startWith("Usage: args")
+  }
+
+  test("envVarArgParser: env-var without equals sign") {
     Cli.envVarArgParser(None, "SBT_OPTS").isLeft shouldBe true
   }
 
-  test("env-var with multiple equals signs") {
+  test("envVarArgParser: env-var with multiple equals signs") {
     val value = "-Xss8m -XX:MaxMetaspaceSize=256m"
     Cli.envVarArgParser(None, s"SBT_OPTS=$value") shouldBe Right(EnvVar("SBT_OPTS", value))
   }
 
-  test("valid timeout") {
+  test("finiteDurationArgParser: well-formed duration") {
     Cli.finiteDurationArgParser(None, "30min") shouldBe Right(30.minutes)
   }
 
-  test("malformed timeout") {
+  test("finiteDurationArgParser: malformed duration") {
     Cli.finiteDurationArgParser(None, "xyz").isLeft shouldBe true
   }
 
-  test("malformed timeout (Inf)") {
+  test("finiteDurationArgParser: malformed duration (Inf)") {
     Cli.finiteDurationArgParser(None, "Inf").isLeft shouldBe true
+  }
+
+  test("finiteDurationArgParser: previous value") {
+    Cli.finiteDurationArgParser(Some(10.seconds), "20seconds").isLeft shouldBe true
   }
 }
