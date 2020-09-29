@@ -44,12 +44,11 @@ import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg, VCSSelecti
 
 object Context {
   def create[F[_]: ConcurrentEffect: ContextShift: Parallel: Timer](
-      args: List[String]
+      args: Cli.Args
   ): Resource[F, StewardAlg[F]] =
     for {
       blocker <- Blocker[F]
-      cliArgs_ <- Resource.liftF(new Cli[F].parseArgs(args))
-      implicit0(config: Config) <- Resource.liftF(Config.create[F](cliArgs_))
+      implicit0(config: Config) <- Resource.liftF(Config.create[F](args))
       implicit0(client: Client[F]) <- AsyncHttpClient.resource[F]()
       implicit0(logger: Logger[F]) <- Resource.liftF(Slf4jLogger.create[F])
       implicit0(httpExistenceClient: HttpExistenceClient[F]) <- HttpExistenceClient.create[F]

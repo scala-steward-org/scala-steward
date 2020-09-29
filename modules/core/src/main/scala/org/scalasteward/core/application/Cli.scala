@@ -17,29 +17,12 @@
 package org.scalasteward.core.application
 
 import caseapp._
-import caseapp.core.Error.{MalformedValue, Other}
+import caseapp.core.Error.MalformedValue
 import caseapp.core.argparser.{ArgParser, SimpleArgParser}
 import cats.syntax.all._
 import org.http4s.Uri
 import org.http4s.syntax.literals._
-import org.scalasteward.core.application.Cli._
-import org.scalasteward.core.util.ApplicativeThrowable
 import scala.concurrent.duration._
-
-final class Cli[F[_]](implicit F: ApplicativeThrowable[F]) {
-  def parseArgs(args: List[String]): F[Args] =
-    F.fromEither {
-      CaseApp
-        .parseWithHelp[Args](args)
-        .flatMap {
-          case (_, true, _, _)              => Left(Other(CaseApp.helpMessage[Args]))
-          case (_, _, true, _)              => Left(Other(CaseApp.usageMessage[Args]))
-          case (parsed @ Right(_), _, _, _) => parsed
-          case (e @ Left(_), _, _, _)       => e
-        }
-        .leftMap(e => new Throwable(e.message))
-    }
-}
 
 object Cli {
   final case class Args(
@@ -69,6 +52,22 @@ object Cli {
   )
 
   final case class EnvVar(name: String, value: String)
+
+  sealed trait ParseResult extends Product with Serializable
+  object ParseResult {
+    final case class Success(args: Args) extends ParseResult
+    final case class Help(help: String) extends ParseResult
+    final case class Error(error: String) extends ParseResult
+  }
+
+  def parseArgs(args: List[String]): ParseResult =
+    CaseApp.parseWithHelp[Args](args) match {
+      case Right((_, true, _, _))        => ParseResult.Help(CaseApp.helpMessage[Args])
+      case Right((_, _, true, _))        => ParseResult.Help(CaseApp.usageMessage[Args])
+      case Right((Right(args), _, _, _)) => ParseResult.Success(args)
+      case Right((Left(error), _, _, _)) => ParseResult.Error(error.message)
+      case Left(error)                   => ParseResult.Error(error.message)
+    }
 
   implicit val envVarArgParser: SimpleArgParser[EnvVar] =
     SimpleArgParser.from[EnvVar]("env-var") { s =>

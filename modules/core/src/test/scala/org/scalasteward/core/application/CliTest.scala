@@ -2,17 +2,15 @@ package org.scalasteward.core.application
 
 import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Cli.EnvVar
+import org.scalasteward.core.application.Cli.ParseResult._
 import org.scalatest.EitherValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import scala.concurrent.duration._
 
 class CliTest extends AnyFunSuite with Matchers with EitherValues {
-  type Result[A] = Either[Throwable, A]
-  val cli: Cli[Result] = new Cli[Result]
-
   test("parseArgs") {
-    cli.parseArgs(
+    Cli.parseArgs(
       List(
         List("--workspace", "a"),
         List("--repos-file", "b"),
@@ -27,7 +25,7 @@ class CliTest extends AnyFunSuite with Matchers with EitherValues {
         List("--env-var", "i=j"),
         List("--process-timeout", "30min")
       ).flatten
-    ) shouldBe Right(
+    ) shouldBe Success(
       Cli.Args(
         workspace = "a",
         reposFile = "b",
@@ -45,7 +43,7 @@ class CliTest extends AnyFunSuite with Matchers with EitherValues {
   }
 
   test("parseArgs minimal version") {
-    cli.parseArgs(
+    Cli.parseArgs(
       List(
         List("--workspace", "a"),
         List("--repos-file", "b"),
@@ -53,7 +51,7 @@ class CliTest extends AnyFunSuite with Matchers with EitherValues {
         List("--vcs-login", "e"),
         List("--git-ask-pass", "f")
       ).flatten
-    ) shouldBe Right(
+    ) shouldBe Success(
       Cli.Args(
         workspace = "a",
         reposFile = "b",
@@ -65,15 +63,15 @@ class CliTest extends AnyFunSuite with Matchers with EitherValues {
   }
 
   test("parseArgs fail if required option not provided") {
-    cli.parseArgs(Nil).isLeft shouldBe true
+    Cli.parseArgs(Nil) shouldBe a[Error]
   }
 
   test("parseArgs --help") {
-    cli.parseArgs(List("--help")).left.value.getMessage should include("--git-author-email")
+    Cli.parseArgs(List("--help")).asInstanceOf[Help].help should include("--git-author-email")
   }
 
   test("parseArgs --usage") {
-    cli.parseArgs(List("--usage")).left.value.getMessage should startWith("Usage: args")
+    Cli.parseArgs(List("--usage")).asInstanceOf[Help].help should startWith("Usage: args")
   }
 
   test("env-var without equals sign") {
