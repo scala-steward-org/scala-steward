@@ -9,7 +9,7 @@ import org.scalatest.matchers.should.Matchers
 import scala.concurrent.duration._
 
 class CliTest extends AnyFunSuite with Matchers with EitherValues {
-  test("parseArgs") {
+  test("parseArgs: example") {
     Cli.parseArgs(
       List(
         List("--workspace", "a"),
@@ -42,7 +42,7 @@ class CliTest extends AnyFunSuite with Matchers with EitherValues {
     )
   }
 
-  test("parseArgs minimal version") {
+  test("parseArgs: minimal example") {
     Cli.parseArgs(
       List(
         List("--workspace", "a"),
@@ -62,40 +62,44 @@ class CliTest extends AnyFunSuite with Matchers with EitherValues {
     )
   }
 
-  test("parseArgs fail if required option not provided") {
+  test("parseArgs: fail if required option not provided") {
     Cli.parseArgs(Nil).asInstanceOf[Error].error should startWith("Required option")
   }
 
-  test("parseArgs unrecognized argument") {
+  test("parseArgs: unrecognized argument") {
     Cli.parseArgs(List("--foo")).asInstanceOf[Error].error should startWith("Unrecognized")
   }
 
-  test("parseArgs --help") {
+  test("parseArgs: --help") {
     Cli.parseArgs(List("--help")).asInstanceOf[Help].help should include("--git-author-email")
   }
 
-  test("parseArgs --usage") {
+  test("parseArgs: --usage") {
     Cli.parseArgs(List("--usage")).asInstanceOf[Help].help should startWith("Usage: args")
   }
 
-  test("env-var without equals sign") {
+  test("envVarArgParser: env-var without equals sign") {
     Cli.envVarArgParser(None, "SBT_OPTS").isLeft shouldBe true
   }
 
-  test("env-var with multiple equals signs") {
+  test("envVarArgParser: env-var with multiple equals signs") {
     val value = "-Xss8m -XX:MaxMetaspaceSize=256m"
     Cli.envVarArgParser(None, s"SBT_OPTS=$value") shouldBe Right(EnvVar("SBT_OPTS", value))
   }
 
-  test("valid timeout") {
+  test("finiteDurationArgParser: well-formed duration") {
     Cli.finiteDurationArgParser(None, "30min") shouldBe Right(30.minutes)
   }
 
-  test("malformed timeout") {
+  test("finiteDurationArgParser: malformed duration") {
     Cli.finiteDurationArgParser(None, "xyz").isLeft shouldBe true
   }
 
-  test("malformed timeout (Inf)") {
+  test("finiteDurationArgParser: malformed duration (Inf)") {
     Cli.finiteDurationArgParser(None, "Inf").isLeft shouldBe true
+  }
+
+  test("finiteDurationArgParser: previous value") {
+    Cli.finiteDurationArgParser(Some(10.seconds), "20seconds").isLeft shouldBe true
   }
 }
