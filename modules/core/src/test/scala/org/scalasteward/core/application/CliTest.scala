@@ -63,7 +63,11 @@ class CliTest extends AnyFunSuite with Matchers with EitherValues {
   }
 
   test("parseArgs fail if required option not provided") {
-    Cli.parseArgs(Nil) shouldBe a[Error]
+    Cli.parseArgs(Nil).asInstanceOf[Error].error should startWith("Required option")
+  }
+
+  test("parseArgs unrecognized argument") {
+    Cli.parseArgs(List("--foo")).asInstanceOf[Error].error should startWith("Unrecognized")
   }
 
   test("parseArgs --help") {
