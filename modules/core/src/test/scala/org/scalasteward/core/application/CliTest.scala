@@ -1,11 +1,13 @@
 package org.scalasteward.core.application
+
 import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Cli.EnvVar
+import org.scalatest.EitherValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import scala.concurrent.duration._
 
-class CliTest extends AnyFunSuite with Matchers {
+class CliTest extends AnyFunSuite with Matchers with EitherValues {
   type Result[A] = Either[Throwable, A]
   val cli: Cli[Result] = new Cli[Result]
 
@@ -64,6 +66,14 @@ class CliTest extends AnyFunSuite with Matchers {
 
   test("parseArgs fail if required option not provided") {
     cli.parseArgs(Nil).isLeft shouldBe true
+  }
+
+  test("parseArgs --help") {
+    cli.parseArgs(List("--help")).left.value.getMessage should include("--git-author-email")
+  }
+
+  test("parseArgs --usage") {
+    cli.parseArgs(List("--usage")).left.value.getMessage should startWith("Usage: args")
   }
 
   test("env-var without equals sign") {
