@@ -28,6 +28,13 @@ import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.{Details, Nel}
 
+final case class UpdateState(
+    state: PullRequestState
+)
+object UpdateState {
+  implicit val updateStateEncoder: Encoder[UpdateState] = deriveEncoder
+}
+
 final case class NewPullRequestData(
     title: String,
     body: String,

@@ -36,6 +36,9 @@ class Url(apiHost: Uri) {
   def pulls(repo: Repo): Uri =
     repos(repo) / "pulls"
 
+  def pull(repo: Repo, id: Int): Uri =
+    repos(repo) / "pulls" / id.toString
+
   def repos(repo: Repo): Uri =
     apiHost / "repos" / repo.owner / repo.repo
 }

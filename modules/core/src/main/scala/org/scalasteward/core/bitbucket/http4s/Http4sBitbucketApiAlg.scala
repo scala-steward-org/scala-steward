@@ -88,4 +88,11 @@ class Http4sBitbucketApiAlg[F[_]: Sync](
     client
       .get[Page[PullRequestOut]](url.listPullRequests(repo, head), modify(repo))
       .map(_.values)
+
+  override def closePullRequest(repo: Repo, id: Int): F[PullRequestOut] =
+    client.putWithBody[PullRequestOut, UpdateState](
+      url.pullRequest(repo, id),
+      UpdateState(PullRequestState.Closed),
+      modify(repo)
+    )
 }

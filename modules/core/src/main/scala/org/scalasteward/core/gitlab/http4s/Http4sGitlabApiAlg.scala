@@ -20,6 +20,7 @@ import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import io.circe._
 import io.circe.generic.semiauto._
+import io.circe.syntax._
 import org.http4s.{Request, Status, Uri}
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.gitlab._
@@ -102,6 +103,14 @@ private[http4s] object GitlabJsonCodec {
 
   implicit val projectIdDecoder: Decoder[ProjectId] = deriveDecoder
   implicit val mergeRequestPayloadEncoder: Encoder[MergeRequestPayload] = deriveEncoder
+  implicit val updateStateEncoder: Encoder[UpdateState] = Encoder.instance { newState =>
+    val encoded = newState.state match {
+      case PullRequestState.Open   => "open"
+      case PullRequestState.Closed => "close"
+    }
+    Json.obj("state_event" -> encoded.asJson)
+  }
+
   implicit val pullRequestOutDecoder: Decoder[PullRequestOut] =
     mergeRequestOutDecoder.map(_.pullRequestOut)
   implicit val commitOutDecoder: Decoder[CommitOut] = deriveDecoder[CommitId].map(_.commitOut)
@@ -190,6 +199,15 @@ class Http4sGitLabApiAlg[F[_]](
 
     updatedMergeRequest.map(_.pullRequestOut)
   }
+
+  def closePullRequest(repo: Repo, id: Int): F[PullRequestOut] =
+    client
+      .putWithBody[MergeRequestOut, UpdateState](
+        url.existingMergeRequest(repo, id),
+        UpdateState(PullRequestState.Closed),
+        modify(repo)
+      )
+      .map(_.pullRequestOut)
 
   def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
     client.get(url.getBranch(repo, branch), modify(repo))
