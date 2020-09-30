@@ -16,6 +16,8 @@
 
 package org.scalasteward.core.git
 
+import cats.Eq
+import cats.syntax.eq._
 import io.circe.{Decoder, Encoder}
 
 final case class Branch(name: String)
@@ -28,4 +30,8 @@ object Branch {
 
   implicit val branchEncoder: Encoder[Branch] =
     Encoder[String].contramap(_.name)
+
+  implicit val branchEq: Eq[Branch] = Eq.instance { (branch1, branch2) =>
+    branch1.name === branch2.name
+  }
 }
