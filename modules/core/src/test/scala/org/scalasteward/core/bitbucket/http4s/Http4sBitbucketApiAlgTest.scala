@@ -98,6 +98,7 @@ class Http4sBitbucketApiAlgTest extends AnyFunSuite with Matchers {
     case POST -> Root / "repositories" / "fthomas" / "base.g8" / "pullrequests" =>
       Ok(
         json"""{
+            "id": 1,
             "title": "scala-steward-pr",
             "state": "OPEN",
             "links": {
@@ -112,6 +113,7 @@ class Http4sBitbucketApiAlgTest extends AnyFunSuite with Matchers {
         json"""{
           "values": [
               {
+                  "id": 1,
                   "title": "scala-steward-pr",
                   "state": "OPEN",
                   "links": {
@@ -158,7 +160,7 @@ class Http4sBitbucketApiAlgTest extends AnyFunSuite with Matchers {
     CommitOut(Sha1(HexString("07eb2a203e297c8340273950e98b2cab68b560c1")))
   )
 
-  val pullRequest = PullRequestOut(prUrl, PullRequestState.Open, "scala-steward-pr")
+  val pullRequest = PullRequestOut(1, prUrl, PullRequestState.Open, "scala-steward-pr")
 
   test("createForkOrGetRepo") {
     val repoOut =

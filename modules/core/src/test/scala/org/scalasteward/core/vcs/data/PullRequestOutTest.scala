@@ -12,6 +12,7 @@ class PullRequestOutTest extends AnyFunSuite with Matchers {
     val expected =
       List(
         PullRequestOut(
+          1,
           uri"https://github.com/octocat/Hello-World/pull/1347",
           Open,
           "new-feature"

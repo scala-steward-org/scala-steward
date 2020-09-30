@@ -34,7 +34,7 @@ object Json {
 
   case class Link(href: Uri, name: Option[String])
 
-  case class PR(title: String, state: PullRequestState, links: Links)
+  case class PR(id: Int, title: String, state: PullRequestState, links: Links)
 
   case class NewPR(
       title: String,

@@ -94,6 +94,7 @@ class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
         .unsafeRunSync()
 
     prOut shouldBe PullRequestOut(
+      7115,
       uri"https://gitlab.com/foo/bar/merge_requests/7115",
       PullRequestState.Open,
       "title"
@@ -115,6 +116,7 @@ class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
         .unsafeRunSync()
 
     prOut shouldBe PullRequestOut(
+      150,
       uri"https://gitlab.com/foo/bar/merge_requests/150",
       PullRequestState.Open,
       "title"
@@ -141,6 +143,7 @@ class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
         .unsafeRunSync()
 
     prOut shouldBe PullRequestOut(
+      150,
       uri"https://gitlab.com/foo/bar/merge_requests/150",
       PullRequestState.Open,
       "title"
@@ -174,6 +177,7 @@ class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
         .unsafeRunSync()
 
     prOut shouldBe PullRequestOut(
+      150,
       uri"https://gitlab.com/foo/bar/merge_requests/150",
       PullRequestState.Open,
       "title"

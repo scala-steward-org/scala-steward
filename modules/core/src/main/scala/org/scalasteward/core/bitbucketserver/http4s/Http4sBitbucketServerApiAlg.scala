@@ -59,7 +59,7 @@ class Http4sBitbucketServerApiAlg[F[_]](
         reviewers = reviewers
       )
       pr <- client.postWithBody[Json.PR, Json.NewPR](url.pullRequests(repo), req, modify(repo))
-    } yield PullRequestOut(pr.links("self").head.href, pr.state, pr.title)
+    } yield PullRequestOut(pr.id, pr.links("self").head.href, pr.state, pr.title)
   }
 
   private def useDefaultReviewers(repo: Repo): F[List[Reviewer]] =
@@ -92,7 +92,9 @@ class Http4sBitbucketServerApiAlg[F[_]](
   override def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]] =
     client
       .get[Json.Page[Json.PR]](url.listPullRequests(repo, s"refs/heads/$head"), modify(repo))
-      .map(_.values.map(pr => PullRequestOut(pr.links("self").head.href, pr.state, pr.title)))
+      .map(
+        _.values.map(pr => PullRequestOut(pr.id, pr.links("self").head.href, pr.state, pr.title))
+      )
 
   def ni(name: String): Nothing = throw new NotImplementedError(name)
 

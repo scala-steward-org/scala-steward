@@ -24,6 +24,7 @@ import org.scalasteward.core.util.uri.uriDecoder
 import org.scalasteward.core.vcs.data.PullRequestState.Closed
 
 final case class PullRequestOut(
+    id: Int,
     html_url: Uri,
     state: PullRequestState,
     title: String

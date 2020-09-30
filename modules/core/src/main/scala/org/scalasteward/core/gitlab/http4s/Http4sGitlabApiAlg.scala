@@ -43,6 +43,11 @@ private[http4s] object MergeRequestPayload {
     MergeRequestPayload(id, data.title, data.body, projectId, data.head, data.base)
 }
 
+private[http4s] case class MergeRequestUpdatePayload(state_event: String)
+private[http4s] object MergeRequestUpdatePayload {
+  val Close: MergeRequestUpdatePayload = MergeRequestUpdatePayload("closed")
+}
+
 final private[http4s] case class MergeRequestOut(
     webUrl: Uri,
     state: PullRequestState,
@@ -50,7 +55,7 @@ final private[http4s] case class MergeRequestOut(
     iid: Int,
     mergeStatus: String
 ) {
-  val pullRequestOut: PullRequestOut = PullRequestOut(webUrl, state, title)
+  val pullRequestOut: PullRequestOut = PullRequestOut(iid, webUrl, state, title)
 }
 
 final private[http4s] case class CommitId(id: Sha1) {

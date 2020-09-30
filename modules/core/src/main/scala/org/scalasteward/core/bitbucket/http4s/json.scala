@@ -39,9 +39,10 @@ private[http4s] object json {
 
   implicit val pullRequestOutDecoder: Decoder[PullRequestOut] = Decoder.instance { c =>
     for {
+      id <- c.downField("id").as[Int]
       title <- c.downField("title").as[String]
       state <- c.downField("state").as[PullRequestState]
       html_url <- c.downField("links").downField("self").downField("href").as[Uri]
-    } yield (PullRequestOut(html_url, state, title))
+    } yield (PullRequestOut(id, html_url, state, title))
   }
 }
