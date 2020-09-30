@@ -21,8 +21,9 @@ import org.scalasteward.core.repoconfig.CommitsConfig
 import org.scalasteward.core.update.show
 
 package object git {
+  def branchPrefix(update: Update): String = s"update/${update.name}"
   def branchFor(update: Update): Branch =
-    Branch(s"update/${update.name}-${update.nextVersion}")
+    Branch(s"${branchPrefix(update)}-${update.nextVersion}")
 
   def commitMsgFor(update: Update, commitsConfig: CommitsConfig): String = {
     val artifact = show.oneLiner(update)
