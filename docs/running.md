@@ -126,7 +126,73 @@ docker run -v $PWD:/opt/scala-steward \
 
 [migrations]: https://github.com/fthomas/scala-steward/blob/master/docs/scalafix-migrations.md
 
-### Running On-premise (GitHub Enterprise)
+### Running On-premise
+
+#### GitHub Enterprise
 
 There is an article on how they run Scala Steward on-premise at Avast:
 * [Running Scala Steward On-premise](https://engineering.avast.io/running-scala-steward-on-premise)
+
+#### Gitlab
+
+The following describes a setup using Gitlab Docker runner, which you have to setup seperately.
+
+1. create a "scalasteward" user in Gitlab
+2. assign that user "Developer" permissions in every project that should be managed by Scala Steward
+3. login as that user and create a Personal Access Token with `api`, `read_repository` and `write_repository` scopes
+4. create a project and add the following Gitlab CI config
+
+```yaml
+check:
+  rules:
+    # only run when scheduled, or when pushing a commit to the default
+    # branch which changed the repos.md file
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: never
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      changes:
+        - repos.md
+      when: on_success
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+      when: on_success
+  image:
+    name: fthomas/scala-steward:latest
+    entrypoint: [""]
+  variables:
+    # change values here, if needed;
+    EMAIL: 'me@scala-steward.org'
+    LOGIN: 'scalasteward'
+  script:
+    - mkdir --parents "$CI_PROJECT_DIR/.sbt" "$CI_PROJECT_DIR/.ivy2"
+    - ln -sfT "$CI_PROJECT_DIR/.sbt"  "$HOME/.sbt"
+    - ln -sfT "$CI_PROJECT_DIR/.ivy2" "$HOME/.ivy2"
+    - >-
+      /opt/docker/bin/scala-steward
+        --disable-sandbox
+        --workspace  "$CI_PROJECT_DIR/workspace"
+        --process-timeout 30min
+        --do-not-fork
+        --repos-file "CI_PROJECT_DIR/repos.md"
+        --default-repo-conf "$CI_PROJECT_DIR/default.scala-steward.conf"
+        --git-author-email "${EMAIL}"
+        --vcs-type "gitlab"
+        --vcs-api-host "${CI_API_V4_URL}"
+        --vcs-login "${LOGIN}"
+        --git-ask-pass "$CI_PROJECT_DIR/askpass.sh"
+  cache:
+    key: scala-steward
+    paths:
+      - .ivy2/cache
+      - .sbt/boot/scala*
+      - workspace/store
+```
+5. add a masked CI variable `SCALA_STEWARD_TOKEN` in "Settings > CI / CD : Variables" for the access token
+6. add the `askpass.sh` script to the repository:
+
+```bash
+#!/usr/bin/env bash
+
+echo "${SCALA_STEWARD_TOKEN}"
+```
+7. add the `repos.md` file 
+8. (*optional*) create a new schedule to trigger the pipeline on a daily/weekly basis
