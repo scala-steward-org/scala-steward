@@ -48,7 +48,7 @@ final class RepoCacheAlg[F[_]](implicit
         logger.info(s"Skipping due to previous error"),
         for {
           ((repoOut, branchOut), cachedSha1) <- (
-            vcsApiAlg.createForkOrGetRepoWithDefaultBranch(config, repo),
+            vcsApiAlg.createForkOrGetRepoWithDefaultBranch(repo, config.doNotFork),
             repoCacheRepository.findSha1(repo)
           ).parTupled
           latestSha1 = branchOut.commit.sha

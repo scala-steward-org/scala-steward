@@ -161,29 +161,25 @@ class Http4sBitbucketApiAlgTest extends AnyFunSuite with Matchers {
   val pullRequest = PullRequestOut(prUrl, PullRequestState.Open, "scala-steward-pr")
 
   test("createForkOrGetRepo") {
-    val repoOut =
-      bitbucketApiAlg.createForkOrGetRepo(config, repo).unsafeRunSync()
+    val repoOut = bitbucketApiAlg.createForkOrGetRepo(repo, doNotFork = false).unsafeRunSync()
     repoOut shouldBe fork
   }
 
   test("createForkOrGetRepo without forking") {
-    val repoOut =
-      bitbucketApiAlg.createForkOrGetRepo(config.copy(doNotFork = true), repo).unsafeRunSync()
+    val repoOut = bitbucketApiAlg.createForkOrGetRepo(repo, doNotFork = true).unsafeRunSync()
     repoOut shouldBe parent
   }
 
   test("createForkOrGetRepoWithDefaultBranch") {
     val (repoOut, branchOut) =
-      bitbucketApiAlg.createForkOrGetRepoWithDefaultBranch(config, repo).unsafeRunSync()
+      bitbucketApiAlg.createForkOrGetRepoWithDefaultBranch(repo, doNotFork = false).unsafeRunSync()
     repoOut shouldBe fork
     branchOut shouldBe defaultBranch
   }
 
   test("createForkOrGetRepoWithDefaultBranch without forking") {
     val (repoOut, branchOut) =
-      bitbucketApiAlg
-        .createForkOrGetRepoWithDefaultBranch(config.copy(doNotFork = true), repo)
-        .unsafeRunSync()
+      bitbucketApiAlg.createForkOrGetRepoWithDefaultBranch(repo, doNotFork = true).unsafeRunSync()
     repoOut shouldBe parent
     branchOut shouldBe defaultBranch
   }
@@ -193,7 +189,7 @@ class Http4sBitbucketApiAlgTest extends AnyFunSuite with Matchers {
       "scala-steward-pr",
       "body",
       "master",
-      Branch("master")
+      master
     )
     val pr = bitbucketApiAlg.createPullRequest(repo, data).unsafeRunSync()
     pr shouldBe pullRequest

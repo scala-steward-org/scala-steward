@@ -20,15 +20,13 @@ import cats.syntax.all._
 import org.http4s.Uri
 import org.http4s.Uri.UserInfo
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.git.{Branch, GitAlg}
+import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.util
 import org.scalasteward.core.util.MonadThrowable
 import org.scalasteward.core.vcs.data.{Repo, RepoOut}
 
 trait VCSRepoAlg[F[_]] {
   def clone(repo: Repo, repoOut: RepoOut): F[Unit]
-
-  def defaultBranch(repoOut: RepoOut): F[Branch]
 
   def syncFork(repo: Repo, repoOut: RepoOut): F[Unit]
 }
@@ -41,10 +39,6 @@ object VCSRepoAlg {
           _ <- gitAlg.clone(repo, withLogin(repoOut.clone_url))
           _ <- gitAlg.setAuthor(repo, config.gitAuthor)
         } yield ()
-
-      override def defaultBranch(repoOut: RepoOut): F[Branch] =
-        if (config.doNotFork) repoOut.default_branch.pure[F]
-        else repoOut.parentOrRaise[F].map(_.default_branch)
 
       override def syncFork(repo: Repo, repoOut: RepoOut): F[Unit] =
         if (config.doNotFork) ().pure[F]
