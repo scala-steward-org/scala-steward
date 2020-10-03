@@ -60,14 +60,19 @@ object Cli {
     final case class Error(error: String) extends ParseResult
   }
 
-  def parseArgs(args: List[String]): ParseResult =
+  def parseArgs(args: List[String]): ParseResult = {
+    val help = caseapp.core.help
+      .Help[Args]
+      .withAppName("Scala Steward")
+      .withAppVersion(org.scalasteward.core.BuildInfo.version)
     CaseApp.parseWithHelp[Args](args) match {
-      case Right((_, true, _, _))        => ParseResult.Help(CaseApp.helpMessage[Args])
-      case Right((_, _, true, _))        => ParseResult.Help(CaseApp.usageMessage[Args])
+      case Right((_, true, _, _))        => ParseResult.Help(help.help)
+      case Right((_, _, true, _))        => ParseResult.Help(help.usage)
       case Right((Right(args), _, _, _)) => ParseResult.Success(args)
       case Right((Left(error), _, _, _)) => ParseResult.Error(error.message)
       case Left(error)                   => ParseResult.Error(error.message)
     }
+  }
 
   implicit val envVarArgParser: SimpleArgParser[EnvVar] =
     SimpleArgParser.from[EnvVar]("env-var") { s =>
