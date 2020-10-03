@@ -18,7 +18,7 @@ package org.scalasteward.core.io
 
 import better.files.File
 import cats.effect.{Blocker, Concurrent, ContextShift, Timer}
-import cats.implicits._
+import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.Config
@@ -34,9 +34,9 @@ object ProcessAlg {
   abstract class UsingFirejail[F[_]](config: Config) extends ProcessAlg[F] {
     override def execSandboxed(command: Nel[String], cwd: File): F[List[String]] = {
       val envVars = config.envVars.map(EnvVar.unapply(_).get)
-      if (config.disableSandbox) {
+      if (config.disableSandbox)
         exec(command, cwd, envVars: _*)
-      } else {
+      else {
         val whitelisted = (cwd.pathAsString :: config.whitelistedDirectories)
           .map(dir => s"--whitelist=$dir")
         val readOnly = config.readOnlyDirectories
@@ -46,8 +46,7 @@ object ProcessAlg {
     }
   }
 
-  def create[F[_]](blocker: Blocker)(
-      implicit
+  def create[F[_]](blocker: Blocker)(implicit
       config: Config,
       contextShift: ContextShift[F],
       logger: Logger[F],

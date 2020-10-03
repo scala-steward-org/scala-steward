@@ -17,17 +17,16 @@
 package org.scalasteward.core.util
 
 import cats.effect.Sync
-import cats.implicits._
+import cats.syntax.all._
 import io.circe.{Decoder, Encoder}
-import org.http4s.Method.{GET, POST}
+import org.http4s.Method.{GET, POST, PUT}
 import org.http4s.circe.{jsonEncoderOf, jsonOf}
 import org.http4s.client.Client
-import org.http4s.{DecodeFailure, Headers, HttpVersion, Method, Request, Response, Status, Uri}
-
+import org.http4s._
 import scala.util.control.NoStackTrace
 
-final class HttpJsonClient[F[_]: Sync](
-    implicit client: Client[F]
+final class HttpJsonClient[F[_]: Sync](implicit
+    client: Client[F]
 ) {
   type ModReq = Request[F] => F[Request[F]]
 
@@ -36,6 +35,9 @@ final class HttpJsonClient[F[_]: Sync](
 
   def post[A: Decoder](uri: Uri, modify: ModReq): F[A] =
     request[A](POST, uri, modify)
+
+  def put[A: Decoder](uri: Uri, modify: ModReq): F[A] =
+    request[A](PUT, uri, modify)
 
   def postWithBody[A: Decoder, B: Encoder](uri: Uri, body: B, modify: ModReq): F[A] =
     post[A](uri, modify.compose(_.withEntity(body)(jsonEncoderOf[F, B])))

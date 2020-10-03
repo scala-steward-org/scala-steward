@@ -31,7 +31,7 @@ which resolves those rules and edits the source code accordingly.
 See the [Scalafix Developer Guide][scalafix-dev-guide] for more information
 about writing rewrite rules or have a look at the existing
 [migration rules][migrations] for inspiration. Rules in Scala Steward must be
-accessible via the [github:][using-github] or [http:][using-http] schemes.
+accessible via the [github:][using-github], the [http:][using-http] or the [dependency:][using-dependency] schemes.
 
 ## Adding migration rules to Scala Steward
 
@@ -51,7 +51,8 @@ migrations = [
     groupId: "org.http4s",
     artifactIds: ["http4s-.*"],
     newVersion: "0.20.0",
-    rewriteRules: ["github:http4s/http4s/v0_20?sha=v0.20.11"]
+    rewriteRules: ["github:http4s/http4s/v0_20?sha=v0.20.11"],
+    doc: "https://github.com/http4s/http4s/blob/v0.20.0/docs/src/main/tut/upgrading.md"
   }
 ]
 ```
@@ -61,6 +62,7 @@ Pull requests that added migration rules can be found [here][scalafix-prs].
 [Scalafix]: https://scalacenter.github.io/scalafix/
 [migrations]: https://github.com/fthomas/scala-steward/blob/master/modules/core/src/main/resources/scalafix-migrations.conf
 [scalafix-dev-guide]: https://scalacenter.github.io/scalafix/docs/developers/setup.html
+[using-dependency]: https://scalacenter.github.io/scalafix/docs/rules/external-rules.html
 [using-github]: https://scalacenter.github.io/scalafix/docs/developers/sharing-rules.html#using-github
 [using-http]: https://scalacenter.github.io/scalafix/docs/developers/sharing-rules.html#using-http
 [scalafix-prs]: https://github.com/fthomas/scala-steward/pulls?q=label%3Ascalafix-migration

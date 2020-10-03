@@ -17,32 +17,31 @@
 package org.scalasteward.core.scalafmt
 
 import cats.data.Nested
-import cats.implicits._
+import cats.syntax.all._
 import cats.{Functor, Monad}
 import org.scalasteward.core.data.{Dependency, Version}
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
-import org.scalasteward.core.sbt.defaultScalaBinaryVersion
 import org.scalasteward.core.vcs.data.Repo
 
 trait ScalafmtAlg[F[_]] {
   def getScalafmtVersion(repo: Repo): F[Option[Version]]
 
   final def getScalafmtDependency(repo: Repo)(implicit F: Functor[F]): F[Option[Dependency]] =
-    Nested(getScalafmtVersion(repo)).map(scalafmtDependency(defaultScalaBinaryVersion)).value
+    Nested(getScalafmtVersion(repo)).map(scalafmtDependency).value
 }
 
 object ScalafmtAlg {
-  def create[F[_]](
-      implicit
+  def create[F[_]](implicit
       fileAlg: FileAlg[F],
       workspaceAlg: WorkspaceAlg[F],
       F: Monad[F]
-  ): ScalafmtAlg[F] = new ScalafmtAlg[F] {
-    override def getScalafmtVersion(repo: Repo): F[Option[Version]] =
-      for {
-        repoDir <- workspaceAlg.repoDir(repo)
-        scalafmtConfFile = repoDir / ".scalafmt.conf"
-        fileContent <- fileAlg.readFile(scalafmtConfFile)
-      } yield fileContent.flatMap(parseScalafmtConf)
-  }
+  ): ScalafmtAlg[F] =
+    new ScalafmtAlg[F] {
+      override def getScalafmtVersion(repo: Repo): F[Option[Version]] =
+        for {
+          repoDir <- workspaceAlg.repoDir(repo)
+          scalafmtConfFile = repoDir / ".scalafmt.conf"
+          fileContent <- fileAlg.readFile(scalafmtConfFile)
+        } yield fileContent.flatMap(parseScalafmtConf)
+    }
 }

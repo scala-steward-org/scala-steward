@@ -17,7 +17,7 @@
 package org.scalasteward.core.git
 
 import cats.Eq
-import cats.implicits._
+import cats.syntax.all._
 import eu.timepit.refined.W
 import eu.timepit.refined.api.{Refined, RefinedTypeOps}
 import eu.timepit.refined.boolean.{And, Or}

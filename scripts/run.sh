@@ -10,6 +10,9 @@ git pull
 sbt -no-colors ";clean ;core/assembly"
 JAR=$(find modules/ -name "scala-steward-assembly*.jar" | head -n1)
 
+# Don't start if there is not enough available disk space.
+test `df --output=avail / | tail -n1` -gt 102400
+
 # Don't start if we can't reach Maven Central.
 curl -s --head --fail https://repo1.maven.org/maven2/
 
@@ -31,7 +34,7 @@ COMMON_ARGS=(
   --cache-ttl 6hours
   --process-timeout 20min
   --whitelist $HOME/.cache/coursier
-  --whitelist $HOME/.coursier
+  --whitelist $HOME/.cache/JNA
   --whitelist $HOME/.ivy2
   --whitelist $HOME/.sbt
   --whitelist $HOME/.scio-ideaPluginIC

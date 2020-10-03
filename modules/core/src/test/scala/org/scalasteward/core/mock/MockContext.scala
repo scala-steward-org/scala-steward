@@ -7,6 +7,10 @@ import org.http4s.Uri
 import org.scalasteward.core.TestInstances.ioContextShift
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.{Config, SupportedVCS}
+import org.scalasteward.core.buildtool.BuildToolDispatcher
+import org.scalasteward.core.buildtool.maven.MavenAlg
+import org.scalasteward.core.buildtool.mill.MillAlg
+import org.scalasteward.core.buildtool.sbt.SbtAlg
 import org.scalasteward.core.coursier.{CoursierAlg, VersionsCache}
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Author, GitAlg}
@@ -15,20 +19,21 @@ import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.persistence.JsonKeyValueStore
 import org.scalasteward.core.repocache.RepoCacheRepository
 import org.scalasteward.core.repoconfig.RepoConfigAlg
-import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.scalafix.MigrationAlg
 import org.scalasteward.core.scalafmt.ScalafmtAlg
-import org.scalasteward.core.update.{FilterAlg, PruningAlg, UpdateAlg}
+import org.scalasteward.core.update.{FilterAlg, GroupMigrations, PruningAlg, UpdateAlg}
 import org.scalasteward.core.util.uri._
 import org.scalasteward.core.util.{BracketThrowable, DateTimeAlg}
 import org.scalasteward.core.vcs.VCSRepoAlg
 import org.scalasteward.core.vcs.data.AuthenticatedUser
+
 import scala.concurrent.duration._
 
 object MockContext {
   implicit val config: Config = Config(
     workspace = File.temp / "ws",
     reposFile = File.temp / "repos.md",
+    defaultRepoConfigFile = Some(File.temp / "default.scala-steward.conf"),
     gitAuthor = Author("Bot Doe", "bot@example.org"),
     vcsType = SupportedVCS.GitHub,
     vcsApiHost = Uri(),
@@ -46,9 +51,11 @@ object MockContext {
     ),
     processTimeout = 10.minutes,
     scalafixMigrations = None,
+    groupMigrations = None,
     cacheTtl = 1.hour,
     cacheMissDelay = 0.milliseconds,
-    bitbucketServerUseDefaultReviewers = false
+    bitbucketServerUseDefaultReviewers = false,
+    gitlabMergeWhenPipelineSucceeds = false
   )
 
   implicit val mockEffBracketThrowable: BracketThrowable[MockEff] = Sync[MockEff]
@@ -72,8 +79,13 @@ object MockContext {
   implicit val filterAlg: FilterAlg[MockEff] = new FilterAlg[MockEff]
   implicit val versionsCache: VersionsCache[MockEff] =
     new VersionsCache[MockEff](config.cacheTtl, new JsonKeyValueStore("versions", "1"))
+  implicit val groupMigrations: GroupMigrations =
+    GroupMigrations.create[MockEff].runA(MockState.empty).unsafeRunSync()
   implicit val updateAlg: UpdateAlg[MockEff] = new UpdateAlg[MockEff]
+  implicit val mavenAlg: MavenAlg[MockEff] = MavenAlg.create
   implicit val sbtAlg: SbtAlg[MockEff] = SbtAlg.create
+  implicit val millAlg: MillAlg[MockEff] = MillAlg.create
+  implicit val buildToolDispatcher: BuildToolDispatcher[MockEff] = BuildToolDispatcher.create
   implicit val editAlg: EditAlg[MockEff] = new EditAlg[MockEff]
   implicit val repoConfigAlg: RepoConfigAlg[MockEff] = new RepoConfigAlg[MockEff]
   implicit val pullRequestRepository: PullRequestRepository[MockEff] =

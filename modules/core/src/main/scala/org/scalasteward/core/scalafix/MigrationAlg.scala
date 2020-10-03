@@ -19,7 +19,7 @@ package org.scalasteward.core.scalafix
 import better.files.File
 import cats.data.OptionT
 import cats.effect.Sync
-import cats.implicits._
+import cats.syntax.all._
 import io.circe.config.parser.decode
 import org.scalasteward.core.data.{Update, Version}
 import org.scalasteward.core.io.FileAlg
@@ -30,8 +30,7 @@ trait MigrationAlg {
 }
 
 object MigrationAlg {
-  def create[F[_]](extraMigrations: Option[File])(
-      implicit
+  def create[F[_]](extraMigrations: Option[File])(implicit
       fileAlg: FileAlg[F],
       F: Sync[F]
   ): F[MigrationAlg] =
@@ -46,9 +45,10 @@ object MigrationAlg {
       extraMigrations: Option[File]
   )(implicit fileAlg: FileAlg[F], F: MonadThrowable[F]): F[List[Migration]] =
     for {
-      default <- fileAlg
-        .readResource("scalafix-migrations.conf")
-        .flatMap(decodeMigrations[F](_, "default"))
+      default <-
+        fileAlg
+          .readResource("scalafix-migrations.conf")
+          .flatMap(decodeMigrations[F](_, "default"))
       maybeExtra <- OptionT(extraMigrations.flatTraverse(fileAlg.readFile))
         .semiflatMap(decodeMigrations[F](_, "extra"))
         .value
@@ -59,8 +59,8 @@ object MigrationAlg {
       }
     } yield migrations
 
-  private def decodeMigrations[F[_]](content: String, tpe: String)(
-      implicit F: ApplicativeThrowable[F]
+  private def decodeMigrations[F[_]](content: String, tpe: String)(implicit
+      F: ApplicativeThrowable[F]
   ): F[ScalafixMigrations] =
     F.fromEither(decode[ScalafixMigrations](content))
       .adaptErr(new Throwable(s"Failed to load $tpe Scalafix migrations", _))

@@ -85,29 +85,25 @@ class Http4sGitHubApiAlgTest extends AnyFunSuite with Matchers {
   )
 
   test("createForkOrGetRepo") {
-    val repoOut =
-      gitHubApiAlg.createForkOrGetRepo(config, repo).unsafeRunSync()
+    val repoOut = gitHubApiAlg.createForkOrGetRepo(repo, doNotFork = false).unsafeRunSync()
     repoOut shouldBe fork
   }
 
   test("createForkOrGetRepo without forking") {
-    val repoOut =
-      gitHubApiAlg.createForkOrGetRepo(config.copy(doNotFork = true), repo).unsafeRunSync()
+    val repoOut = gitHubApiAlg.createForkOrGetRepo(repo, doNotFork = true).unsafeRunSync()
     repoOut shouldBe parent
   }
 
   test("createForkOrGetRepoWithDefaultBranch") {
     val (repoOut, branchOut) =
-      gitHubApiAlg.createForkOrGetRepoWithDefaultBranch(config, repo).unsafeRunSync()
+      gitHubApiAlg.createForkOrGetRepoWithDefaultBranch(repo, doNotFork = false).unsafeRunSync()
     repoOut shouldBe fork
     branchOut shouldBe defaultBranch
   }
 
   test("createForkOrGetRepoWithDefaultBranch without forking") {
     val (repoOut, branchOut) =
-      gitHubApiAlg
-        .createForkOrGetRepoWithDefaultBranch(config.copy(doNotFork = true), repo)
-        .unsafeRunSync()
+      gitHubApiAlg.createForkOrGetRepoWithDefaultBranch(repo, doNotFork = true).unsafeRunSync()
     repoOut shouldBe parent
     branchOut shouldBe defaultBranch
   }

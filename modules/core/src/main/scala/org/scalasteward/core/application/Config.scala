@@ -24,11 +24,15 @@ import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.git.Author
 import org.scalasteward.core.util
 import org.scalasteward.core.vcs.data.AuthenticatedUser
-
 import scala.concurrent.duration.FiniteDuration
 import scala.sys.process.Process
 
 /** Configuration for scala-steward.
+  *
+  * == [[defaultRepoConfigFile]] ==
+  * Location of default repo configuration file.
+  * This will be used if target repo doesn't have custom configuration.
+  * Note if this file doesn't exist, empty configuration will be applied
   *
   * == [[vcsApiHost]] ==
   * REST API v3 endpoints prefix
@@ -50,6 +54,7 @@ import scala.sys.process.Process
 final case class Config(
     workspace: File,
     reposFile: File,
+    defaultRepoConfigFile: Option[File],
     gitAuthor: Author,
     vcsType: SupportedVCS,
     vcsApiHost: Uri,
@@ -64,9 +69,11 @@ final case class Config(
     envVars: List[EnvVar],
     processTimeout: FiniteDuration,
     scalafixMigrations: Option[File],
+    groupMigrations: Option[File],
     cacheTtl: FiniteDuration,
     cacheMissDelay: FiniteDuration,
-    bitbucketServerUseDefaultReviewers: Boolean
+    bitbucketServerUseDefaultReviewers: Boolean,
+    gitlabMergeWhenPipelineSucceeds: Boolean
 ) {
   def vcsUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] = {
     val urlWithUser = util.uri.withUserInfo.set(UserInfo(vcsLogin, None))(vcsApiHost).renderString
@@ -84,6 +91,7 @@ object Config {
       Config(
         workspace = args.workspace.toFile,
         reposFile = args.reposFile.toFile,
+        defaultRepoConfigFile = args.defaultRepoConf.map(_.toFile),
         gitAuthor = Author(args.gitAuthorName, args.gitAuthorEmail),
         vcsType = args.vcsType,
         vcsApiHost = args.vcsApiHost,
@@ -98,9 +106,11 @@ object Config {
         envVars = args.envVar,
         processTimeout = args.processTimeout,
         scalafixMigrations = args.scalafixMigrations.map(_.toFile),
+        groupMigrations = args.groupMigrations.map(_.toFile),
         cacheTtl = args.cacheTtl,
         cacheMissDelay = args.cacheMissDelay,
-        bitbucketServerUseDefaultReviewers = args.bitbucketServerUseDefaultReviewers
+        bitbucketServerUseDefaultReviewers = args.bitbucketServerUseDefaultReviewers,
+        gitlabMergeWhenPipelineSucceeds = args.gitlabMergeWhenPipelineSucceeds
       )
     }
 }

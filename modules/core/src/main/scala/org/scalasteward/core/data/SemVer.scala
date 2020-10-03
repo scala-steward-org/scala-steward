@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.data
 
-import cats.implicits._
+import cats.syntax.all._
 import eu.timepit.refined.cats.refTypeEq
 import eu.timepit.refined.types.numeric.NonNegBigInt
 import eu.timepit.refined.types.string.NonEmptyString

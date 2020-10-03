@@ -16,6 +16,8 @@
 
 package org.scalasteward.core.repoconfig
 
+import cats.kernel.Semigroup
+import cats.syntax.semigroup._
 import io.circe.Codec
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
@@ -24,15 +26,33 @@ final case class RepoConfig(
     commits: CommitsConfig = CommitsConfig(),
     pullRequests: PullRequestsConfig = PullRequestsConfig(),
     updates: UpdatesConfig = UpdatesConfig(),
-    updatePullRequests: PullRequestUpdateStrategy = PullRequestUpdateStrategy.default
-)
+    updatePullRequests: Option[PullRequestUpdateStrategy] = None
+) {
+  def updatePullRequestsOrDefault: PullRequestUpdateStrategy =
+    updatePullRequests.getOrElse(PullRequestUpdateStrategy.default)
+}
 
 object RepoConfig {
-  val default: RepoConfig = RepoConfig()
+  val empty: RepoConfig = RepoConfig()
 
   implicit val customConfig: Configuration =
     Configuration.default.withDefaults
 
   implicit val repoConfigCodec: Codec[RepoConfig] =
     deriveConfiguredCodec
+
+  implicit val semigroup: Semigroup[RepoConfig] = new Semigroup[RepoConfig] {
+    override def combine(x: RepoConfig, y: RepoConfig): RepoConfig =
+      (x, y) match {
+        case (`empty`, _) => y
+        case (_, `empty`) => x
+        case _ =>
+          RepoConfig(
+            commits = x.commits |+| y.commits,
+            pullRequests = x.pullRequests |+| y.pullRequests,
+            updates = x.updates |+| y.updates,
+            updatePullRequests = x.updatePullRequests.orElse(y.updatePullRequests)
+          )
+      }
+  }
 }

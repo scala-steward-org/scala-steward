@@ -18,33 +18,36 @@ package org.scalasteward.core.edit
 
 import better.files.File
 import cats.Traverse
-import cats.implicits._
+import cats.syntax.all._
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
+import org.scalasteward.core.buildtool.BuildToolDispatcher
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.io.{isSourceFile, FileAlg, WorkspaceAlg}
-import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.scalafix.MigrationAlg
 import org.scalasteward.core.util._
 import org.scalasteward.core.vcs.data.Repo
 
-final class EditAlg[F[_]](
-    implicit
+final class EditAlg[F[_]](implicit
+    buildToolDispatcher: BuildToolDispatcher[F],
     fileAlg: FileAlg[F],
     logger: Logger[F],
     migrationAlg: MigrationAlg,
-    sbtAlg: SbtAlg[F],
     streamCompiler: Stream.Compiler[F, F],
     workspaceAlg: WorkspaceAlg[F],
     F: MonadThrowable[F]
 ) {
-  def applyUpdate(repo: Repo, update: Update): F[Unit] =
+  def applyUpdate(repo: Repo, update: Update, fileExtensions: Set[String]): F[Unit] =
     for {
       _ <- applyScalafixMigrations(repo, update).handleErrorWith(e =>
         logger.warn(s"Could not apply ${update.show} : $e")
       )
       repoDir <- workspaceAlg.repoDir(repo)
-      files <- fileAlg.findFilesContaining(repoDir, update.currentVersion, isSourceFile(update))
+      files <- fileAlg.findFilesContaining(
+        repoDir,
+        update.currentVersion,
+        isSourceFile(update, fileExtensions)
+      )
       noFilesFound = logger.warn("No files found that contain the current version")
       _ <- files.toNel.fold(noFilesFound)(applyUpdateTo(_, update))
     } yield ()
@@ -59,6 +62,7 @@ final class EditAlg[F[_]](
 
   def applyScalafixMigrations(repo: Repo, update: Update): F[Unit] =
     Nel.fromList(migrationAlg.findMigrations(update)).traverse_ { migrations =>
-      logger.info(s"Applying migrations: $migrations") >> sbtAlg.runMigrations(repo, migrations)
+      logger.info(s"Applying migrations: $migrations") >>
+        buildToolDispatcher.runMigrations(repo, migrations)
     }
 }

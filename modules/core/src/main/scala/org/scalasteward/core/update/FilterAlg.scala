@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.update
 
-import cats.implicits._
+import cats.syntax.all._
 import cats.{Monad, TraverseFilter}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data._
@@ -24,8 +24,7 @@ import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.update.FilterAlg._
 import org.scalasteward.core.util.Nel
 
-final class FilterAlg[F[_]](
-    implicit
+final class FilterAlg[F[_]](implicit
     logger: Logger[F],
     F: Monad[F]
 ) {
@@ -48,14 +47,15 @@ object FilterAlg {
 
   sealed trait RejectionReason {
     def update: Update.Single
-    def show: String = this match {
-      case IgnoredByConfig(_)         => "ignored by config"
-      case VersionPinnedByConfig(_)   => "version is pinned by config"
-      case NotAllowedByConfig(_)      => "not allowed by config"
-      case BadVersions(_)             => "bad versions"
-      case NoSuitableNextVersion(_)   => "no suitable next version"
-      case VersionOrderingConflict(_) => "version ordering conflict"
-    }
+    def show: String =
+      this match {
+        case IgnoredByConfig(_)         => "ignored by config"
+        case VersionPinnedByConfig(_)   => "version is pinned by config"
+        case NotAllowedByConfig(_)      => "not allowed by config"
+        case BadVersions(_)             => "bad versions"
+        case NoSuitableNextVersion(_)   => "no suitable next version"
+        case VersionOrderingConflict(_) => "version ordering conflict"
+      }
   }
 
   final case class IgnoredByConfig(update: Update.Single) extends RejectionReason
@@ -73,14 +73,21 @@ object FilterAlg {
   private def localFilter(update: Update.Single, repoConfig: RepoConfig): FilterResult =
     repoConfig.updates.keep(update).flatMap(globalFilter)
 
-  def isIgnoredGlobally(dependency: Dependency): Boolean =
-    ((dependency.groupId.value, dependency.artifactId.name) match {
+  def isScalaDependency(dependency: Dependency): Boolean =
+    (dependency.groupId.value, dependency.artifactId.name) match {
       case ("org.scala-lang", "scala-compiler") => true
       case ("org.scala-lang", "scala-library")  => true
       case ("org.scala-lang", "scala-reflect")  => true
+      case ("org.scala-lang", "scalap")         => true
       case ("org.typelevel", "scala-library")   => true
       case _                                    => false
-    }) || (dependency.configurations.fold("")(_.toLowerCase) match {
+    }
+
+  def isScalaDependencyIgnored(dependency: Dependency, ignoreScalaDependency: Boolean): Boolean =
+    ignoreScalaDependency && isScalaDependency(dependency)
+
+  def isDependencyConfigurationIgnored(dependency: Dependency): Boolean =
+    (dependency.configurations.fold("")(_.toLowerCase) match {
       case "phantom-js-jetty"    => true
       case "scalafmt"            => true
       case "scripted-sbt"        => true
@@ -118,6 +125,11 @@ object FilterAlg {
       case ("com.nequissimus", "sort-imports") =>
         List(
           // https://github.com/beautiful-scala/sbt-scalastyle/pull/13
+          "36845576"
+        ).contains
+      case ("com.nequissimus", "sort-imports_2.12") =>
+        List(
+          // https://github.com/fthomas/scala-steward/issues/1413
           "36845576"
         ).contains
       case ("commons-collections", "commons-collections") =>

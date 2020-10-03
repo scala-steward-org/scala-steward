@@ -17,7 +17,6 @@
 package org.scalasteward.core.data
 
 import cats.Order
-import cats.implicits._
 import io.circe.Codec
 import io.circe.generic.semiauto._
 import org.scalasteward.core.data.Resolver._
@@ -25,26 +24,33 @@ import org.scalasteward.core.data.Resolver._
 sealed trait Resolver extends Product with Serializable {
   val path: String = {
     val url = this match {
-      case MavenRepository(_, location) => location
-      case IvyRepository(_, pattern)    => pattern.takeWhile(!Set('[', '(')(_))
+      case MavenRepository(_, location, _) => location
+      case IvyRepository(_, pattern, _)    => pattern.takeWhile(!Set('[', '(')(_))
     }
     url.replace(":", "")
   }
 }
 
 object Resolver {
-  final case class MavenRepository(name: String, location: String) extends Resolver
-  final case class IvyRepository(name: String, pattern: String) extends Resolver
+  final case class Credentials(user: String, pass: String)
+  object Credentials {
+    implicit val credentialsCodec: Codec[Credentials] =
+      deriveCodec
+  }
+  final case class MavenRepository(name: String, location: String, credentials: Option[Credentials])
+      extends Resolver
+  final case class IvyRepository(name: String, pattern: String, credentials: Option[Credentials])
+      extends Resolver
 
   val mavenCentral: MavenRepository =
-    MavenRepository("public", "https://repo1.maven.org/maven2/")
+    MavenRepository("public", "https://repo1.maven.org/maven2/", None)
 
   implicit val resolverCodec: Codec[Resolver] =
     deriveCodec
 
   implicit val resolverOrder: Order[Resolver] =
     Order.by {
-      case MavenRepository(name, location) => (1, name, location)
-      case IvyRepository(name, pattern)    => (2, name, pattern)
+      case MavenRepository(name, location, _) => (1, name, location)
+      case IvyRepository(name, pattern, _)    => (2, name, pattern)
     }
 }

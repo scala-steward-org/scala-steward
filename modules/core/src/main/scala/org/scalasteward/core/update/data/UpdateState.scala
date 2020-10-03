@@ -50,4 +50,23 @@ object UpdateState {
       update: Update.Single,
       pullRequest: Uri
   ) extends UpdateState
+
+  def show(updateState: UpdateState): String = {
+    val groupId = updateState.crossDependency.head.groupId
+    val artifacts = updateState.crossDependency.showArtifactNames
+    val version = updateState.crossDependency.head.version
+    val gav = s"$groupId:$artifacts : $version"
+    updateState match {
+      case DependencyUpToDate(_) =>
+        s"up-to-date: $gav"
+      case DependencyOutdated(_, update) =>
+        s"new version: $gav -> ${update.newerVersions.head}"
+      case PullRequestUpToDate(_, update, pullRequest) =>
+        s"PR opened: $gav -> ${update.newerVersions.head} ($pullRequest)"
+      case PullRequestOutdated(_, update, pullRequest) =>
+        s"PR outdated: $gav -> ${update.newerVersions.head} ($pullRequest)"
+      case PullRequestClosed(_, update, pullRequest) =>
+        s"PR closed: $gav -> ${update.newerVersions.head} ($pullRequest)"
+    }
+  }
 }

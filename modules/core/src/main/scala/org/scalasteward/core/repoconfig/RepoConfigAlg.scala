@@ -16,34 +16,53 @@
 
 package org.scalasteward.core.repoconfig
 
+import better.files.File
 import cats.data.OptionT
-import cats.implicits._
+import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import io.circe.config.parser
+import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.repoconfig.RepoConfigAlg._
 import org.scalasteward.core.util.MonadThrowable
 import org.scalasteward.core.vcs.data.Repo
 
-final class RepoConfigAlg[F[_]](
-    implicit
+final class RepoConfigAlg[F[_]](implicit
+    config: Config,
     fileAlg: FileAlg[F],
     logger: Logger[F],
     workspaceAlg: WorkspaceAlg[F],
     F: MonadThrowable[F]
 ) {
-  def readRepoConfigOrDefault(repo: Repo): F[RepoConfig] =
-    readRepoConfig(repo).map(_.getOrElse(RepoConfig.default))
+
+  def readRepoConfigWithDefault(repo: Repo): F[RepoConfig] =
+    for {
+      config <- readRepoConfig(repo)
+      defaultCfg <- defaultRepoConfig
+    } yield config
+      .map(_ |+| defaultCfg)
+      .getOrElse(defaultCfg)
+
+  /**
+    * Default configuration will try to read file specified in config.defaultRepoConfigFile first;
+    * if not found - fallback to empty configuration.
+    */
+  val defaultRepoConfig: F[RepoConfig] =
+    OptionT
+      .fromOption[F](config.defaultRepoConfigFile)
+      .flatMap(readRepoConfigFromFile)
+      .getOrElse(RepoConfig.empty)
 
   def readRepoConfig(repo: Repo): F[Option[RepoConfig]] =
-    workspaceAlg.repoDir(repo).flatMap { dir =>
-      val configFile = dir / repoConfigBasename
-      val maybeRepoConfig = OptionT(fileAlg.readFile(configFile)).map(parseRepoConfig).flatMapF {
-        case Right(config)  => logger.info(s"Parsed $config").as(config.some)
-        case Left(errorMsg) => logger.info(errorMsg).as(none[RepoConfig])
-      }
-      maybeRepoConfig.value
+    workspaceAlg
+      .repoDir(repo)
+      .flatMap(dir => readRepoConfigFromFile(dir / repoConfigBasename).value)
+
+  private def readRepoConfigFromFile(configFile: File): OptionT[F, RepoConfig] =
+    OptionT(fileAlg.readFile(configFile)).map(parseRepoConfig).flatMapF {
+      case Right(repoConfig) => logger.info(s"Parsed $repoConfig").as(repoConfig.some)
+      case Left(errorMsg)    => logger.info(errorMsg).as(none[RepoConfig])
     }
 }
 

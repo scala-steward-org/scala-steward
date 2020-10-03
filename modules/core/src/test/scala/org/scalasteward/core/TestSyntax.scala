@@ -12,7 +12,8 @@ object TestSyntax {
     def withSbtPluginReleases: Scope[A] = {
       val sbtPluginReleases = IvyRepository(
         "sbt-plugin-releases",
-        "https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/[defaultPattern]"
+        "https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/[defaultPattern]",
+        None
       )
       Scope(self, List(sbtPluginReleases))
     }

@@ -17,20 +17,20 @@
 package org.scalasteward.core.repocache
 
 import cats.Parallel
-import cats.implicits._
+import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
+import org.scalasteward.core.buildtool.BuildToolDispatcher
 import org.scalasteward.core.data.{Dependency, DependencyInfo}
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.repoconfig.RepoConfigAlg
-import org.scalasteward.core.sbt.SbtAlg
 import org.scalasteward.core.util.MonadThrowable
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data.{Repo, RepoOut}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
 
-final class RepoCacheAlg[F[_]](
-    implicit
+final class RepoCacheAlg[F[_]](implicit
+    buildToolDispatcher: BuildToolDispatcher[F],
     config: Config,
     gitAlg: GitAlg[F],
     logger: Logger[F],
@@ -38,7 +38,6 @@ final class RepoCacheAlg[F[_]](
     refreshErrorAlg: RefreshErrorAlg[F],
     repoCacheRepository: RepoCacheRepository[F],
     repoConfigAlg: RepoConfigAlg[F],
-    sbtAlg: SbtAlg[F],
     vcsApiAlg: VCSApiAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
     F: MonadThrowable[F]
@@ -49,7 +48,7 @@ final class RepoCacheAlg[F[_]](
         logger.info(s"Skipping due to previous error"),
         for {
           ((repoOut, branchOut), cachedSha1) <- (
-            vcsApiAlg.createForkOrGetRepoWithDefaultBranch(config, repo),
+            vcsApiAlg.createForkOrGetRepoWithDefaultBranch(repo, config.doNotFork),
             repoCacheRepository.findSha1(repo)
           ).parTupled
           latestSha1 = branchOut.commit.sha
@@ -79,9 +78,10 @@ final class RepoCacheAlg[F[_]](
     for {
       branch <- gitAlg.currentBranch(repo)
       latestSha1 <- gitAlg.latestSha1(repo, branch)
-      dependencies <- sbtAlg.getDependencies(repo)
-      dependencyInfos <- dependencies
-        .traverse(_.traverse(_.traverse(gatherDependencyInfo(repo, _))))
+      dependencies <- buildToolDispatcher.getDependencies(repo)
+      dependencyInfos <-
+        dependencies
+          .traverse(_.traverse(_.traverse(gatherDependencyInfo(repo, _))))
       maybeRepoConfig <- repoConfigAlg.readRepoConfig(repo)
     } yield RepoCache(latestSha1, dependencyInfos, maybeRepoConfig)
 

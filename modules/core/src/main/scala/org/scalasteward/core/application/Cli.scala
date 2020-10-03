@@ -19,25 +19,16 @@ package org.scalasteward.core.application
 import caseapp._
 import caseapp.core.Error.MalformedValue
 import caseapp.core.argparser.{ArgParser, SimpleArgParser}
-import cats.implicits._
+import cats.syntax.all._
 import org.http4s.Uri
 import org.http4s.syntax.literals._
-import org.scalasteward.core.application.Cli._
-import org.scalasteward.core.util.ApplicativeThrowable
-
 import scala.concurrent.duration._
-
-final class Cli[F[_]](implicit F: ApplicativeThrowable[F]) {
-  def parseArgs(args: List[String]): F[Args] =
-    F.fromEither {
-      CaseApp.parse[Args](args).bimap(e => new Throwable(e.message), { case (parsed, _) => parsed })
-    }
-}
 
 object Cli {
   final case class Args(
       workspace: String,
       reposFile: String,
+      defaultRepoConf: Option[String] = None,
       gitAuthorName: String = "Scala Steward",
       gitAuthorEmail: String,
       vcsType: SupportedVCS = SupportedVCS.GitHub,
@@ -53,12 +44,35 @@ object Cli {
       envVar: List[EnvVar] = Nil,
       processTimeout: FiniteDuration = 10.minutes,
       scalafixMigrations: Option[String] = None,
+      groupMigrations: Option[String] = None,
       cacheTtl: FiniteDuration = 2.hours,
       cacheMissDelay: FiniteDuration = 0.milliseconds,
-      bitbucketServerUseDefaultReviewers: Boolean = false
+      bitbucketServerUseDefaultReviewers: Boolean = false,
+      gitlabMergeWhenPipelineSucceeds: Boolean = false
   )
 
   final case class EnvVar(name: String, value: String)
+
+  sealed trait ParseResult extends Product with Serializable
+  object ParseResult {
+    final case class Success(args: Args) extends ParseResult
+    final case class Help(help: String) extends ParseResult
+    final case class Error(error: String) extends ParseResult
+  }
+
+  def parseArgs(args: List[String]): ParseResult = {
+    val help = caseapp.core.help
+      .Help[Args]
+      .withAppName("Scala Steward")
+      .withAppVersion(org.scalasteward.core.BuildInfo.version)
+    CaseApp.parseWithHelp[Args](args) match {
+      case Right((_, true, _, _))        => ParseResult.Help(help.help)
+      case Right((_, _, true, _))        => ParseResult.Help(help.usage)
+      case Right((Right(args), _, _, _)) => ParseResult.Success(args)
+      case Right((Left(error), _, _, _)) => ParseResult.Error(error.message)
+      case Left(error)                   => ParseResult.Error(error.message)
+    }
+  }
 
   implicit val envVarArgParser: SimpleArgParser[EnvVar] =
     SimpleArgParser.from[EnvVar]("env-var") { s =>
@@ -71,7 +85,7 @@ object Cli {
       }
     }
 
-  implicit val finiteDurationArgParser: ArgParser[FiniteDuration] = {
+  implicit val finiteDurationArgParser: ArgParser[FiniteDuration] =
     ArgParser[String].xmapError(
       _.toString(),
       s =>
@@ -80,7 +94,6 @@ object Cli {
           MalformedValue("FiniteDuration", error)
         }
     )
-  }
 
   private def parseFiniteDuration(s: String): Either[Throwable, FiniteDuration] =
     Either.catchNonFatal(Duration(s)).flatMap {

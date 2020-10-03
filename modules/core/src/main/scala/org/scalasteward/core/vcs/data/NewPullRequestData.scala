@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.vcs.data
 
-import cats.implicits._
+import cats.syntax.all._
 import io.circe.Encoder
 import io.circe.generic.semiauto._
 import org.http4s.Uri
@@ -57,6 +57,8 @@ object NewPullRequestData {
         |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
         |
         |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.
+        |
+        |Configure Scala Steward for your repository with a [`${RepoConfigAlg.repoConfigBasename}`](https://github.com/fthomas/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
         |
         |Have a fantastic day writing Scala!
         |
@@ -132,16 +134,25 @@ object NewPullRequestData {
 
   def migrationNote(migrations: List[Migration]): (Option[String], Option[Details]) =
     if (migrations.isEmpty) (None, None)
-    else
+    else {
+      val ruleList =
+        migrations.flatMap(_.rewriteRules.toList).map(rule => s"* $rule").mkString("\n")
+      val docList = migrations.flatMap(_.doc).map(uri => s"* $uri").mkString("\n")
+      val docSection =
+        if (docList.isEmpty)
+          ""
+        else
+          s"\n\nDocumentation:\n\n$docList"
       (
         Some("scalafix-migrations"),
         Some(
           Details(
             "Applied Migrations",
-            migrations.flatMap(_.rewriteRules.toList).map(rule => s"* $rule").mkString("\n")
+            s"$ruleList$docSection"
           )
         )
       )
+    }
 
   def semVerLabel(update: Update): Option[String] =
     for {

@@ -17,7 +17,7 @@
 package org.scalasteward.core.repoconfig
 
 import cats.Eq
-import cats.implicits._
+import cats.syntax.all._
 import cron4s.lib.javatime._
 import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.repoconfig.PullRequestFrequency._
@@ -63,12 +63,14 @@ object PullRequestFrequency {
       case Weekly.render  => Right(Weekly)
       case Monthly.render => Right(Monthly)
       case other          =>
-        // cron4s supports 6 fields, but we only want to support the more
+        // cron4s requires exactly 6 fields, but we also want to support the more
         // common format with 5 fields. Therefore we're prepending the "seconds"
-        // field ourselves.
-        val errorOrCronExpr = Either.catchNonFatal(cron4s.Cron.unsafeParse("0 " + other))
-        errorOrCronExpr.leftMap(_.toString).map(CronExpr.apply)
+        // field ourselves if parsing the original string fails.
+        parseCron4s(other).orElse(parseCron4s("0 " + other)).leftMap(_.toString).map(CronExpr.apply)
     }
+
+  private def parseCron4s(s: String): Either[Throwable, cron4s.CronExpr] =
+    Either.catchNonFatal(cron4s.Cron.unsafeParse(s))
 
   implicit val pullRequestFrequencyEq: Eq[PullRequestFrequency] =
     Eq.fromUniversalEquals

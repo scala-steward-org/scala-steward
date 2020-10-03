@@ -17,6 +17,7 @@
 package org.scalasteward.core.repoconfig
 
 import cats.implicits._
+import cats.kernel.Eq
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder, HCursor}
 import org.scalasteward.core.data.{GroupId, Update}
@@ -25,7 +26,9 @@ final case class UpdatePattern(
     groupId: GroupId,
     artifactId: Option[String],
     version: Option[UpdatePattern.Version]
-)
+) {
+  def isWholeGroupIdAllowed: Boolean = artifactId.isEmpty && version.isEmpty
+}
 
 object UpdatePattern {
   final case class MatchResult(
@@ -66,6 +69,8 @@ object UpdatePattern {
           suffix <- hCursor.downField("suffix").as[Option[String]]
         } yield Version(prefix, suffix)
       )
+
+  implicit val eqVersion: Eq[Version] = Eq.fromUniversalEquals
 
   implicit val updatePatternVersionEncoder: Encoder[Version] =
     deriveEncoder
