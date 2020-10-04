@@ -16,9 +16,10 @@
 
 package org.scalasteward.core.nurture
 
-import cats.effect.Sync
+import cats.Applicative
 import cats.implicits._
 import eu.timepit.refined.types.numeric.PosInt
+import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.coursier.CoursierAlg
@@ -30,7 +31,7 @@ import org.scalasteward.core.repocache.RepoCacheRepository
 import org.scalasteward.core.repoconfig.{PullRequestUpdateStrategy, RepoConfigAlg}
 import org.scalasteward.core.scalafix.MigrationAlg
 import org.scalasteward.core.util.logger.LoggerOps
-import org.scalasteward.core.util.{DateTimeAlg, HttpExistenceClient}
+import org.scalasteward.core.util.{BracketThrowable, DateTimeAlg, HttpExistenceClient}
 import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg}
 import org.scalasteward.core.{git, util, vcs}
@@ -50,15 +51,16 @@ final class NurtureAlg[F[_]](implicit
     migrationAlg: MigrationAlg,
     pullRequestRepository: PullRequestRepository[F],
     repoCacheRepository: RepoCacheRepository[F],
-    F: Sync[F]
+    streamCompiler: Stream.Compiler[F, F],
+    F: BracketThrowable[F]
 ) {
   def nurture(repo: Repo, updates: List[Update.Single]): F[Either[Throwable, Unit]] = {
     val label = s"Nurture ${repo.show}"
     logger.infoTotalTime(label) {
       logger.attemptLog(util.string.lineLeftRight(label)) {
-        F.bracket(cloneAndSync(repo)) { case (fork, baseBranch) =>
+        cloneAndSync(repo).flatMap { case (fork, baseBranch) =>
           updateDependencies(repo, fork, baseBranch, updates)
-        }(_ => gitAlg.removeClone(repo))
+        }
       }
     }
   }
@@ -232,15 +234,15 @@ final class NurtureAlg[F[_]](implicit
 }
 
 object NurtureAlg {
-  def processUpdates[F[_]: Sync](
+  def processUpdates[F[_]](
       updates: List[Update],
       updateF: Update => F[ProcessResult],
       updatesLimit: Option[PosInt]
-  ): F[Unit] =
+  )(implicit streamCompiler: Stream.Compiler[F, F], F: Applicative[F]): F[Unit] =
     updatesLimit match {
       case None => updates.traverse_(updateF)
       case Some(limit) =>
-        fs2.Stream
+        Stream
           .emits(updates)
           .evalMap(updateF)
           .through(util.takeUntil(limit.value) {
