@@ -208,7 +208,7 @@ lazy val dockerSettings = Def.settings(
     val millVersion = Dependencies.millVersion.value
     Seq(
       Cmd("USER", "root"),
-      Cmd("RUN", "apk --no-cache add bash git ca-certificates curl maven"),
+      Cmd("RUN", "apk --no-cache add bash git ca-certificates curl maven openssh"),
       Cmd("RUN", s"wget $sbtUrl && tar -xf $sbtTgz && rm -f $sbtTgz"),
       Cmd(
         "RUN",
