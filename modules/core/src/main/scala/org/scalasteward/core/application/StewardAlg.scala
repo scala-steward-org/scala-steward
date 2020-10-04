@@ -59,13 +59,15 @@ final class StewardAlg[F[_]](implicit
     logger.info(msg)
   }
 
-  private def readRepos(reposFile: File): F[List[Repo]] =
-    fileAlg.readFile(reposFile).map { maybeContent =>
-      val regex = """-\s+(.+)/([^/]+)""".r
-      val content = maybeContent.getOrElse("")
-      content.linesIterator.collect { case regex(owner, repo) =>
-        Repo(owner.trim, repo.trim)
-      }.toList
+  private def readRepos(reposFile: File): Stream[F, Repo] =
+    Stream.evals {
+      fileAlg.readFile(reposFile).map { maybeContent =>
+        val regex = """-\s+(.+)/([^/]+)""".r
+        val content = maybeContent.getOrElse("")
+        content.linesIterator.collect { case regex(owner, repo) =>
+          Repo(owner.trim, repo.trim)
+        }.toList
+      }
     }
 
   private def steward(repo: Repo): F[Either[Throwable, Unit]] = {
@@ -90,12 +92,13 @@ final class StewardAlg[F[_]](implicit
       for {
         _ <- printBanner
         _ <- selfCheckAlg.checkAll
+        _ <- workspaceAlg.cleanWorkspace
         exitCode <- sbtAlg.addGlobalPlugins {
-          for {
-            _ <- workspaceAlg.cleanWorkspace
-            repos <- readRepos(config.reposFile)
-            result <- Stream.emits(repos).evalMap(steward).compile.foldMonoid
-          } yield result.fold(_ => ExitCode.Error, _ => ExitCode.Success)
+          readRepos(config.reposFile)
+            .evalMap(steward)
+            .compile
+            .foldMonoid
+            .map(_.fold(_ => ExitCode.Error, _ => ExitCode.Success))
         }
       } yield exitCode
     }
