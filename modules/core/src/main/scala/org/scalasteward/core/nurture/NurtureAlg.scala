@@ -30,15 +30,13 @@ import org.scalasteward.core.git.{Branch, Commit, GitAlg}
 import org.scalasteward.core.repocache.RepoCacheRepository
 import org.scalasteward.core.repoconfig.{PullRequestUpdateStrategy, RepoConfigAlg}
 import org.scalasteward.core.scalafix.MigrationAlg
-import org.scalasteward.core.util.logger.LoggerOps
-import org.scalasteward.core.util.{BracketThrowable, DateTimeAlg, HttpExistenceClient}
-import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo}
+import org.scalasteward.core.util.{BracketThrowable, HttpExistenceClient}
+import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo, RepoOut}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg}
 import org.scalasteward.core.{git, util, vcs}
 
 final class NurtureAlg[F[_]](implicit
     config: Config,
-    dateTimeAlg: DateTimeAlg[F],
     editAlg: EditAlg[F],
     repoConfigAlg: RepoConfigAlg[F],
     gitAlg: GitAlg[F],
@@ -54,27 +52,20 @@ final class NurtureAlg[F[_]](implicit
     streamCompiler: Stream.Compiler[F, F],
     F: BracketThrowable[F]
 ) {
-  def nurture(repo: Repo, updates: List[Update.Single]): F[Either[Throwable, Unit]] = {
-    val label = s"Nurture ${repo.show}"
-    logger.infoTotalTime(label) {
-      logger.attemptLog(util.string.lineLeftRight(label)) {
-        cloneAndSync(repo).flatMap { case (fork, baseBranch) =>
-          updateDependencies(repo, fork, baseBranch, updates)
-        }
-      }
-    }
-  }
+  def nurture(repo: Repo, fork: RepoOut, updates: List[Update.Single]): F[Unit] =
+    for {
+      _ <- logger.info(s"Nurture ${repo.show}")
+      baseBranch <- cloneAndSync(repo, fork)
+      _ <- updateDependencies(repo, fork.repo, baseBranch, updates)
+    } yield ()
 
-  def cloneAndSync(repo: Repo): F[(Repo, Branch)] =
+  def cloneAndSync(repo: Repo, fork: RepoOut): F[Branch] =
     for {
       _ <- logger.info(s"Clone and synchronize ${repo.show}")
-      repoOut <- vcsApiAlg.createForkOrGetRepo(repo, config.doNotFork)
-      _ <-
-        gitAlg
-          .cloneExists(repo)
-          .ifM(F.unit, vcsRepoAlg.clone(repo, repoOut) >> vcsRepoAlg.syncFork(repo, repoOut))
-      defaultBranch <- vcsApiAlg.parentOrRepo(repoOut, config.doNotFork).map(_.default_branch)
-    } yield (repoOut.repo, defaultBranch)
+      cloneAndSync = vcsRepoAlg.clone(repo, fork) >> vcsRepoAlg.syncFork(repo, fork)
+      _ <- gitAlg.cloneExists(repo).ifM(F.unit, cloneAndSync)
+      baseBranch <- vcsApiAlg.parentOrRepo(fork, config.doNotFork).map(_.default_branch)
+    } yield baseBranch
 
   def updateDependencies(
       repo: Repo,
