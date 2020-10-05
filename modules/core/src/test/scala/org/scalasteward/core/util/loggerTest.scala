@@ -8,11 +8,11 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class loggerTest extends AnyFunSuite with Matchers {
-  test("attemptLog_") {
+  test("attemptLog") {
     final case class Err(msg: String) extends Throwable(msg)
     val err = Err("hmm?")
     val state = mockLogger
-      .attemptLog_("run")(Sync[MockEff].raiseError(err))
+      .attemptLog("run")(Sync[MockEff].raiseError(err))
       .runS(MockState.empty)
       .unsafeRunSync()
 

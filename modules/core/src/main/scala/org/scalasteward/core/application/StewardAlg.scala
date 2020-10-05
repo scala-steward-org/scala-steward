@@ -73,17 +73,15 @@ final class StewardAlg[F[_]](implicit
   private def steward(repo: Repo): F[Either[Throwable, Unit]] = {
     val label = s"Steward ${repo.show}"
     logger.infoTotalTime(label) {
-      F.guarantee {
-        for {
-          _ <- logger.info(util.string.lineLeftRight(label))
-          _ <- repoCacheAlg.checkCache(repo)
-          (attentionNeeded, updates) <- pruningAlg.needsAttention(repo)
-          result <- {
-            if (attentionNeeded) nurtureAlg.nurture(repo, updates)
-            else F.pure(().asRight[Throwable])
-          }
-        } yield result
-      }(gitAlg.removeClone(repo))
+      logger.attemptLog(util.string.lineLeftRight(label), Some(label)) {
+        F.guarantee {
+          for {
+            fork <- repoCacheAlg.checkCache(repo)
+            (attentionNeeded, updates) <- pruningAlg.needsAttention(repo)
+            _ <- if (attentionNeeded) nurtureAlg.nurture(repo, fork, updates) else F.unit
+          } yield ()
+        }(gitAlg.removeClone(repo))
+      }
     }
   }
 
