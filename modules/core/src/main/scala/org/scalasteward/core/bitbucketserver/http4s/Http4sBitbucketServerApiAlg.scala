@@ -26,8 +26,7 @@ import org.scalasteward.core.vcs.VCSApiAlg
 import org.scalasteward.core.vcs.data.PullRequestState.Open
 import org.scalasteward.core.vcs.data._
 
-/**
-  * https://docs.atlassian.com/bitbucket-server/rest/6.6.1/bitbucket-rest.html
+/** https://docs.atlassian.com/bitbucket-server/rest/6.6.1/bitbucket-rest.html
   */
 class Http4sBitbucketServerApiAlg[F[_]](
     bitbucketApiHost: Uri,
