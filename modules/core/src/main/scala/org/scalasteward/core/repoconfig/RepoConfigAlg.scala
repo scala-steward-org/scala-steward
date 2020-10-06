@@ -44,8 +44,7 @@ final class RepoConfigAlg[F[_]](implicit
       .map(_ |+| defaultCfg)
       .getOrElse(defaultCfg)
 
-  /**
-    * Default configuration will try to read file specified in config.defaultRepoConfigFile first;
+  /** Default configuration will try to read file specified in config.defaultRepoConfigFile first;
     * if not found - fallback to empty configuration.
     */
   val defaultRepoConfig: F[RepoConfig] =
