@@ -173,7 +173,7 @@ object GitAlg {
                   case Some(files) => files.traverse(file => exec(Nel.of("rm", file), repoDir))
                   case None        => F.raiseError(throwable)
                 }
-                _ <- commitAll(repo, "Remove unmerged files")
+                _ <- exec(Nel.of("commit", "--all", "--no-edit") ++ sign, repoDir)
               } yield List.empty
             }
           after <- latestSha1(repo, Branch.head)
