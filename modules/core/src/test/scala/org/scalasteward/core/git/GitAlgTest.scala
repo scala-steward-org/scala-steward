@@ -124,6 +124,23 @@ class GitAlgTest extends AnyFunSuite with Matchers {
     } yield (c1, m1, c2, m2)
     p.unsafeRunSync() shouldBe ((true, false, false, true))
   }
+
+  test("mergeTheirs: CONFLICT (modify/delete)") {
+    val repo = Repo("merge", "theirs2")
+    val p = for {
+      repoDir <- workspaceAlg.repoDir(repo)
+      _ <- GitAlgTest.createGitRepoWithConflictFileRemovedOnMaster[IO](repoDir)
+      master = Branch("master")
+      branch = Branch("conflicts-yes")
+      c1 <- ioGitAlg.hasConflicts(repo, branch, master)
+      m1 <- ioGitAlg.isMerged(repo, master, branch)
+      _ <- ioGitAlg.checkoutBranch(repo, branch)
+      _ <- ioGitAlg.mergeTheirs(repo, master)
+      c2 <- ioGitAlg.hasConflicts(repo, branch, master)
+      m2 <- ioGitAlg.isMerged(repo, master, branch)
+    } yield (c1, m1, c2, m2)
+    p.unsafeRunSync() shouldBe ((true, false, false, true))
+  }
 }
 
 object GitAlgTest {
@@ -158,5 +175,32 @@ object GitAlgTest {
       _ <- fileAlg.writeFile(repoDir / "file2", "file2, line1\nfile2, line2 on master")
       _ <- processAlg.exec(Nel.of("git", "add", "file2"), repoDir)
       _ <- processAlg.exec(Nel.of("git", "commit", "-m", "Modify file2 on master"), repoDir)
+    } yield ()
+
+  def createGitRepoWithConflictFileRemovedOnMaster[F[_]](repoDir: File)(implicit
+      fileAlg: FileAlg[F],
+      processAlg: ProcessAlg[F],
+      F: Monad[F]
+  ): F[Unit] =
+    for {
+      _ <- fileAlg.deleteForce(repoDir)
+      _ <- fileAlg.ensureExists(repoDir)
+      _ <- processAlg.exec(Nel.of("git", "init", "."), repoDir)
+      // work on master
+      _ <- fileAlg.writeFile(repoDir / "file1", "file1, line1")
+      _ <- fileAlg.writeFile(repoDir / "file2", "file2, line1")
+      _ <- processAlg.exec(Nel.of("git", "add", "file1"), repoDir)
+      _ <- processAlg.exec(Nel.of("git", "add", "file2"), repoDir)
+      _ <- processAlg.exec(Nel.of("git", "commit", "-m", "Initial commit"), repoDir)
+      // work on conflicts-yes
+      _ <- processAlg.exec(Nel.of("git", "checkout", "-b", "conflicts-yes"), repoDir)
+      _ <- fileAlg.writeFile(repoDir / "file2", "file2, line1\nfile2, line2 on conflicts-yes")
+      _ <- processAlg.exec(Nel.of("git", "add", "file2"), repoDir)
+      _ <- processAlg.exec(Nel.of("git", "commit", "-m", "Modify file2 on conflicts-yes"), repoDir)
+      _ <- processAlg.exec(Nel.of("git", "checkout", "master"), repoDir)
+      // work on master
+      _ <- processAlg.exec(Nel.of("git", "rm", "file2"), repoDir)
+      _ <- processAlg.exec(Nel.of("git", "add", "-A"), repoDir)
+      _ <- processAlg.exec(Nel.of("git", "commit", "-m", "Remove file2 on master"), repoDir)
     } yield ()
 }
