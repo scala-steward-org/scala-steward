@@ -163,8 +163,19 @@ object GitAlg {
         for {
           before <- latestSha1(repo, Branch.head)
           repoDir <- workspaceAlg.repoDir(repo)
-          sign = if (config.signCommits) List("--gpg-sign") else List.empty[String]
+          sign = if (config.signCommits) List("--gpg-sign") else List.empty
           _ <- exec(Nel.of("merge", "--strategy-option=theirs") ++ (sign :+ branch.name), repoDir)
+            .handleErrorWith { throwable =>
+              // Resolve CONFLICT (modify/delete) by deleting unmerged files:
+              for {
+                unmergedFiles <- exec(Nel.of("diff", "--name-only", "--diff-filter=U"), repoDir)
+                _ <- Nel.fromList(unmergedFiles.filter(_.nonEmpty)) match {
+                  case Some(files) => files.traverse(file => exec(Nel.of("rm", file), repoDir))
+                  case None        => F.raiseError(throwable)
+                }
+                _ <- commitAll(repo, "Remove unmerged files")
+              } yield List.empty
+            }
           after <- latestSha1(repo, Branch.head)
         } yield Option.when(before =!= after)(Commit())
 

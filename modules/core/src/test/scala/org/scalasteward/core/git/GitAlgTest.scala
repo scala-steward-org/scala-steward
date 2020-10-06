@@ -125,7 +125,7 @@ class GitAlgTest extends AnyFunSuite with Matchers {
     p.unsafeRunSync() shouldBe ((true, false, false, true))
   }
 
-  test("mergeTheirs2") {
+  test("mergeTheirs: CONFLICT (modify/delete)") {
     val repo = Repo("merge", "theirs2")
     val p = for {
       repoDir <- workspaceAlg.repoDir(repo)
@@ -171,20 +171,13 @@ object GitAlgTest {
       _ <- processAlg.exec(Nel.of("git", "add", "file2"), repoDir)
       _ <- processAlg.exec(Nel.of("git", "commit", "-m", "Modify file2 on conflicts-yes"), repoDir)
       _ <- processAlg.exec(Nel.of("git", "checkout", "master"), repoDir)
-      // work on conflicts-yes (file removed on base branch)
-      _ <- processAlg.exec(Nel.of("git", "checkout", "-b", "conflicts-yes-file-removed"), repoDir)
-      _ <- fileAlg.writeFile(repoDir / "file2", "file2, line1\nfile2, line2 on conflicts-yes")
-      _ <- processAlg.exec(Nel.of("git", "add", "file2"), repoDir)
-      _ <- processAlg.exec(Nel.of("git", "commit", "-m", "Modify file2 on conflicts-yes"), repoDir)
-      _ <- processAlg.exec(Nel.of("git", "checkout", "master"), repoDir)
       // work on master
       _ <- fileAlg.writeFile(repoDir / "file2", "file2, line1\nfile2, line2 on master")
       _ <- processAlg.exec(Nel.of("git", "add", "file2"), repoDir)
       _ <- processAlg.exec(Nel.of("git", "commit", "-m", "Modify file2 on master"), repoDir)
     } yield ()
 
-  def createGitRepoWithConflictFileRemovedOnMaster[F[_]](repoDir: File)(
-      implicit
+  def createGitRepoWithConflictFileRemovedOnMaster[F[_]](repoDir: File)(implicit
       fileAlg: FileAlg[F],
       processAlg: ProcessAlg[F],
       F: Monad[F]
