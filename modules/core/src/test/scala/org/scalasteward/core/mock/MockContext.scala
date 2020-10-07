@@ -13,7 +13,7 @@ import org.scalasteward.core.buildtool.mill.MillAlg
 import org.scalasteward.core.buildtool.sbt.SbtAlg
 import org.scalasteward.core.coursier.{CoursierAlg, VersionsCache}
 import org.scalasteward.core.edit.EditAlg
-import org.scalasteward.core.git.{Author, GitAlg}
+import org.scalasteward.core.git.{Author, FileGitAlg, GitAlg}
 import org.scalasteward.core.io.{MockFileAlg, MockProcessAlg, MockWorkspaceAlg}
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.persistence.JsonKeyValueStore
@@ -26,7 +26,6 @@ import org.scalasteward.core.util.uri._
 import org.scalasteward.core.util.{BracketThrowable, DateTimeAlg}
 import org.scalasteward.core.vcs.VCSRepoAlg
 import org.scalasteward.core.vcs.data.AuthenticatedUser
-
 import scala.concurrent.duration._
 
 object MockContext {
@@ -68,7 +67,8 @@ object MockContext {
 
   implicit val coursierAlg: CoursierAlg[MockEff] = CoursierAlg.create
   implicit val dateTimeAlg: DateTimeAlg[MockEff] = DateTimeAlg.create
-  implicit val gitAlg: GitAlg[MockEff] = GitAlg.create
+  implicit val fileGitAlg: FileGitAlg[MockEff] = new FileGitAlg[MockEff]
+  implicit val gitAlg: GitAlg[MockEff] = new GitAlg[MockEff]
   implicit val user: AuthenticatedUser = AuthenticatedUser("scala-steward", "token")
   implicit val vcsRepoAlg: VCSRepoAlg[MockEff] = VCSRepoAlg.create(config, gitAlg)
   implicit val scalafmtAlg: ScalafmtAlg[MockEff] = ScalafmtAlg.create

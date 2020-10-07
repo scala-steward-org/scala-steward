@@ -28,7 +28,7 @@ import org.scalasteward.core.buildtool.mill.MillAlg
 import org.scalasteward.core.buildtool.sbt.SbtAlg
 import org.scalasteward.core.coursier.{CoursierAlg, VersionsCache}
 import org.scalasteward.core.edit.EditAlg
-import org.scalasteward.core.git.GitAlg
+import org.scalasteward.core.git.{FileGitAlg, GitAlg}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository}
 import org.scalasteward.core.persistence.JsonKeyValueStore
@@ -65,7 +65,8 @@ object Context {
       implicit val workspaceAlg: WorkspaceAlg[F] = WorkspaceAlg.create[F]
       implicit val repoConfigAlg: RepoConfigAlg[F] = new RepoConfigAlg[F]
       implicit val filterAlg: FilterAlg[F] = new FilterAlg[F]
-      implicit val gitAlg: GitAlg[F] = GitAlg.create[F]
+      implicit val fileGitAlg: FileGitAlg[F] = new FileGitAlg[F]
+      implicit val gitAlg: GitAlg[F] = new GitAlg[F]
       implicit val httpJsonClient: HttpJsonClient[F] = new HttpJsonClient[F]
       implicit val repoCacheRepository: RepoCacheRepository[F] =
         new RepoCacheRepository[F](new JsonKeyValueStore("repo_cache", "1", kvsPrefix))

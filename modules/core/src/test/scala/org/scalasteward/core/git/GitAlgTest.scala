@@ -17,8 +17,9 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class GitAlgTest extends AnyFunSuite with Matchers {
-  implicit val workspaceAlg: WorkspaceAlg[IO] = WorkspaceAlg.create[IO]
-  val ioGitAlg: GitAlg[IO] = GitAlg.create[IO]
+  implicit val ioWorkspaceAlg: WorkspaceAlg[IO] = WorkspaceAlg.create[IO]
+  implicit val ioFileGitAlg: FileGitAlg[IO] = new FileGitAlg[IO]
+  val ioGitAlg: GitAlg[IO] = new GitAlg[IO]
 
   val repo = Repo("fthomas", "datapackage")
   val repoDir: String = (config.workspace / "fthomas/datapackage").toString
@@ -100,7 +101,7 @@ class GitAlgTest extends AnyFunSuite with Matchers {
   test("hasConflicts") {
     val repo = Repo("merge", "conflict")
     val p = for {
-      repoDir <- workspaceAlg.repoDir(repo)
+      repoDir <- ioWorkspaceAlg.repoDir(repo)
       _ <- GitAlgTest.createGitRepoWithConflict[IO](repoDir)
       c1 <- ioGitAlg.hasConflicts(repo, Branch("conflicts-yes"), Branch("master"))
       c2 <- ioGitAlg.hasConflicts(repo, Branch("conflicts-no"), Branch("master"))
@@ -111,7 +112,7 @@ class GitAlgTest extends AnyFunSuite with Matchers {
   test("mergeTheirs") {
     val repo = Repo("merge", "theirs")
     val p = for {
-      repoDir <- workspaceAlg.repoDir(repo)
+      repoDir <- ioWorkspaceAlg.repoDir(repo)
       _ <- GitAlgTest.createGitRepoWithConflict[IO](repoDir)
       master = Branch("master")
       branch = Branch("conflicts-yes")
@@ -128,7 +129,7 @@ class GitAlgTest extends AnyFunSuite with Matchers {
   test("mergeTheirs: CONFLICT (modify/delete)") {
     val repo = Repo("merge", "theirs2")
     val p = for {
-      repoDir <- workspaceAlg.repoDir(repo)
+      repoDir <- ioWorkspaceAlg.repoDir(repo)
       _ <- GitAlgTest.createGitRepoWithConflictFileRemovedOnMaster[IO](repoDir)
       master = Branch("master")
       branch = Branch("conflicts-yes")
