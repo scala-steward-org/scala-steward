@@ -31,13 +31,12 @@ object process {
       cwd: Option[File],
       extraEnv: Map[String, String],
       timeout: FiniteDuration,
-      log: String => F[Unit],
-      blocker: Blocker
-  )(implicit contextShift: ContextShift[F], timer: Timer[F], F: Concurrent[F]): F[List[String]] =
+      log: String => F[Unit]
+  )(implicit F: Async[F]): F[List[String]] =
     createProcess(cmd, cwd, extraEnv).flatMap { process =>
       F.delay(new ListBuffer[String]).flatMap { buffer =>
         val readOut = {
-          val out = readInputStream[F](process.getInputStream, blocker)
+          val out = readInputStream[F](process.getInputStream)
           out.evalMap(line => F.delay(appendBounded(buffer, line, 4096)) >> log(line)).compile.drain
         }
 
@@ -55,7 +54,7 @@ object process {
           F.raiseError[List[String]](new TimeoutException(makeMessage(msg, buffer.toList)))
         }
 
-        Concurrent.timeoutTo(result, timeout, fallback)
+        F.timeoutTo(result, timeout, fallback)
       }
     }
 
@@ -73,12 +72,9 @@ object process {
       pb.start()
     }
 
-  private def readInputStream[F[_]](is: InputStream, blocker: Blocker)(implicit
-      F: Sync[F],
-      cs: ContextShift[F]
-  ): Stream[F, String] =
+  private def readInputStream[F[_]](is: InputStream)(implicit F: Sync[F]): Stream[F, String] =
     fs2.io
-      .readInputStream(F.pure(is), chunkSize = 4096, blocker)
+      .readInputStream(F.pure(is), chunkSize = 4096)
       .through(fs2.text.utf8Decode)
       .through(fs2.text.lines)
 

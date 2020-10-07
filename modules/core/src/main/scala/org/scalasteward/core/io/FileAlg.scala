@@ -17,13 +17,12 @@
 package org.scalasteward.core.io
 
 import better.files.File
-import cats.effect.{Bracket, Resource, Sync}
+import cats.effect.{Async, MonadCancel, MonadThrow, Resource}
 import cats.syntax.all._
 import cats.{Functor, Traverse}
-import fs2.Stream
+import fs2.{Compiler, Stream}
 import io.chrisdavenport.log4cats.Logger
 import org.apache.commons.io.FileUtils
-import org.scalasteward.core.util.MonadThrowable
 import scala.io.Source
 
 trait FileAlg[F[_]] {
@@ -52,27 +51,27 @@ trait FileAlg[F[_]] {
 
   final def createTemporarily[A, E](file: File, content: String)(
       fa: F[A]
-  )(implicit F: Bracket[F, E]): F[A] = {
+  )(implicit F: MonadCancel[F, E]): F[A] = {
     val delete = deleteForce(file)
     val create = writeFile(file, content).onError(_ => delete)
     F.bracket(create)(_ => fa)(_ => delete)
   }
 
   final def editFile(file: File, edit: String => Option[String])(implicit
-      F: MonadThrowable[F]
+      F: MonadThrow[F]
   ): F[Boolean] =
     readFile(file)
       .flatMap(_.flatMap(edit).fold(F.pure(false))(writeFile(file, _).as(true)))
       .adaptError { case t => new Throwable(s"failed to edit $file", t) }
 
   final def editFiles[G[_]](files: G[File], edit: String => Option[String])(implicit
-      F: MonadThrowable[F],
+      F: MonadThrow[F],
       G: Traverse[G]
   ): F[Boolean] =
     files.traverse(editFile(_, edit)).map(_.foldLeft(false)(_ || _))
 
   final def findFilesContaining(dir: File, string: String, fileFilter: File => Boolean)(implicit
-      streamCompiler: Stream.Compiler[F, F],
+      compiler: Compiler[F, F],
       F: Functor[F]
   ): F[List[File]] =
     walk(dir)
@@ -87,7 +86,7 @@ trait FileAlg[F[_]] {
 }
 
 object FileAlg {
-  def create[F[_]](implicit logger: Logger[F], F: Sync[F]): FileAlg[F] =
+  def create[F[_]](implicit logger: Logger[F], F: Async[F]): FileAlg[F] =
     new FileAlg[F] {
       override def deleteForce(file: File): F[Unit] =
         F.delay {
@@ -130,7 +129,7 @@ object FileAlg {
           .use(src => F.delay(src.mkString))
 
       override def walk(dir: File): Stream[F, File] =
-        Stream.eval(F.delay(dir.walk())).flatMap(Stream.fromIterator(_))
+        Stream.eval(F.delay(dir.walk())).flatMap(Stream.fromIterator(_, 128))
 
       override def writeFile(file: File, content: String): F[Unit] =
         logger.debug(s"Write $file") >>

@@ -16,6 +16,7 @@
 
 package org.scalasteward.core.update
 
+import cats.effect.MonadThrow
 import cats.syntax.all._
 import io.circe.Decoder
 import io.circe.config.parser
@@ -23,16 +24,17 @@ import io.circe.generic.extras.{semiauto, Configuration}
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.data._
 import org.scalasteward.core.io.FileAlg
-import org.scalasteward.core.util.{MonadThrowable, Nel}
+import org.scalasteward.core.util.Nel
 
 trait GroupMigrations {
   def findUpdateWithNewerGroupId(dependency: Dependency): Option[Update.Single]
 }
 
 object GroupMigrations {
-  def create[F[_]: MonadThrowable](implicit
+  def create[F[_]](implicit
       fileAlg: FileAlg[F],
-      config: Config
+      config: Config,
+      F: MonadThrow[F]
   ): F[GroupMigrations] = {
     val migrationSources = {
 

@@ -16,13 +16,13 @@
 
 package org.scalasteward.core.vcs
 
+import cats.effect.MonadThrow
 import cats.syntax.all._
 import org.http4s.Uri
 import org.http4s.Uri.UserInfo
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.util
-import org.scalasteward.core.util.MonadThrowable
 import org.scalasteward.core.vcs.data.{Repo, RepoOut}
 
 trait VCSRepoAlg[F[_]] {
@@ -32,7 +32,7 @@ trait VCSRepoAlg[F[_]] {
 }
 
 object VCSRepoAlg {
-  def create[F[_]: MonadThrowable](config: Config, gitAlg: GitAlg[F]): VCSRepoAlg[F] =
+  def create[F[_]: MonadThrow](config: Config, gitAlg: GitAlg[F]): VCSRepoAlg[F] =
     new VCSRepoAlg[F] {
       override def clone(repo: Repo, repoOut: RepoOut): F[Unit] =
         for {

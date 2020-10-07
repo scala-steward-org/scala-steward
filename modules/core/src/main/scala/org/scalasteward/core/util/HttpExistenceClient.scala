@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.util
 
-import cats.effect.{Async, Resource}
+import cats.effect.{Async, MonadThrow, Resource}
 import cats.syntax.all._
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.chrisdavenport.log4cats.Logger
@@ -31,7 +31,7 @@ final class HttpExistenceClient[F[_]](statusCache: Cache[Status])(implicit
     client: Client[F],
     logger: Logger[F],
     mode: Mode[F],
-    F: MonadThrowable[F]
+    F: MonadThrow[F]
 ) {
   def exists(uri: Uri): F[Boolean] =
     status(uri).map(_ === Status.Ok).handleErrorWith { throwable =>

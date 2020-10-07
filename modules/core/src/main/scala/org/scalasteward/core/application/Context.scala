@@ -43,11 +43,8 @@ import org.scalasteward.core.vcs.data.AuthenticatedUser
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg, VCSSelection}
 
 object Context {
-  def create[F[_]: ConcurrentEffect: ContextShift: Parallel: Timer](
-      args: Cli.Args
-  ): Resource[F, StewardAlg[F]] =
+  def create[F[_]: Parallel: Async](args: Cli.Args): Resource[F, StewardAlg[F]] =
     for {
-      blocker <- Blocker[F]
       implicit0(config: Config) <- Resource.liftF(Config.create[F](args))
       implicit0(client: Client[F]) <- AsyncHttpClient.resource[F]()
       implicit0(logger: Logger[F]) <- Resource.liftF(Slf4jLogger.create[F])
@@ -61,7 +58,7 @@ object Context {
     } yield {
       val kvsPrefix = Some(config.vcsType.asString)
       implicit val dateTimeAlg: DateTimeAlg[F] = DateTimeAlg.create[F]
-      implicit val processAlg: ProcessAlg[F] = ProcessAlg.create[F](blocker)
+      implicit val processAlg: ProcessAlg[F] = ProcessAlg.create[F]
       implicit val workspaceAlg: WorkspaceAlg[F] = WorkspaceAlg.create[F]
       implicit val repoConfigAlg: RepoConfigAlg[F] = new RepoConfigAlg[F]
       implicit val filterAlg: FilterAlg[F] = new FilterAlg[F]

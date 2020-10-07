@@ -17,7 +17,7 @@
 package org.scalasteward.core.io
 
 import better.files.File
-import cats.effect.{Blocker, Concurrent, ContextShift, Timer}
+import cats.effect.kernel.Async
 import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Cli.EnvVar
@@ -46,12 +46,10 @@ object ProcessAlg {
     }
   }
 
-  def create[F[_]](blocker: Blocker)(implicit
+  def create[F[_]](implicit
       config: Config,
-      contextShift: ContextShift[F],
       logger: Logger[F],
-      timer: Timer[F],
-      F: Concurrent[F]
+      F: Async[F]
   ): ProcessAlg[F] =
     new UsingFirejail[F](config) {
       override def exec(
@@ -65,8 +63,7 @@ object ProcessAlg {
             Some(cwd.toJava),
             extraEnv.toMap,
             config.processTimeout,
-            logger.trace(_),
-            blocker
+            logger.trace(_)
           )
     }
 }

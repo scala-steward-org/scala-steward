@@ -45,13 +45,12 @@ trait CoursierAlg[F[_]] {
 
 object CoursierAlg {
   def create[F[_]](implicit
-      contextShift: ContextShift[F],
       logger: Logger[F],
-      F: Sync[F]
+      F: Async[F]
   ): CoursierAlg[F] = {
     implicit val parallel: Parallel.Aux[F, F] = Parallel.identity[F]
     implicit val coursierSync: coursier.util.Sync[F] =
-      coursier.interop.cats.coursierSyncFromCats(F, parallel, contextShift)
+      coursier.interop.cats.coursierSyncFromCats(F, parallel, ???)
 
     val fetch: Fetch[F] = Fetch[F](FileCache[F]())
 

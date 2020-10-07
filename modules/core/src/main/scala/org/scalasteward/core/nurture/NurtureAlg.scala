@@ -17,9 +17,10 @@
 package org.scalasteward.core.nurture
 
 import cats.Applicative
+import cats.effect.MonadCancelThrow
 import cats.implicits._
 import eu.timepit.refined.types.numeric.PosInt
-import fs2.Stream
+import fs2.{Compiler, Stream}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.coursier.CoursierAlg
@@ -30,7 +31,7 @@ import org.scalasteward.core.git.{Branch, Commit, GitAlg}
 import org.scalasteward.core.repocache.RepoCacheRepository
 import org.scalasteward.core.repoconfig.{PullRequestUpdateStrategy, RepoConfigAlg}
 import org.scalasteward.core.scalafix.MigrationAlg
-import org.scalasteward.core.util.{BracketThrowable, HttpExistenceClient}
+import org.scalasteward.core.util.HttpExistenceClient
 import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo, RepoOut}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg}
 import org.scalasteward.core.{git, util, vcs}
@@ -40,6 +41,7 @@ final class NurtureAlg[F[_]](implicit
     editAlg: EditAlg[F],
     repoConfigAlg: RepoConfigAlg[F],
     gitAlg: GitAlg[F],
+    compiler: Compiler[F, F],
     coursierAlg: CoursierAlg[F],
     vcsApiAlg: VCSApiAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
@@ -49,8 +51,7 @@ final class NurtureAlg[F[_]](implicit
     migrationAlg: MigrationAlg,
     pullRequestRepository: PullRequestRepository[F],
     repoCacheRepository: RepoCacheRepository[F],
-    streamCompiler: Stream.Compiler[F, F],
-    F: BracketThrowable[F]
+    F: MonadCancelThrow[F]
 ) {
   def nurture(repo: Repo, fork: RepoOut, updates: List[Update.Single]): F[Unit] =
     for {
@@ -229,7 +230,7 @@ object NurtureAlg {
       updates: List[Update],
       updateF: Update => F[ProcessResult],
       updatesLimit: Option[PosInt]
-  )(implicit streamCompiler: Stream.Compiler[F, F], F: Applicative[F]): F[Unit] =
+  )(implicit compiler: Compiler[F, F], F: Applicative[F]): F[Unit] =
     updatesLimit match {
       case None => updates.traverse_(updateF)
       case Some(limit) =>

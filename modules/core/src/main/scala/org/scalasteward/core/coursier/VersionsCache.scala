@@ -17,13 +17,14 @@
 package org.scalasteward.core.coursier
 
 import cats.Parallel
+import cats.effect.MonadThrow
 import cats.implicits._
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, KeyEncoder}
 import org.scalasteward.core.coursier.VersionsCache.{Key, Value}
 import org.scalasteward.core.data.{Dependency, Resolver, Scope, Version}
 import org.scalasteward.core.persistence.KeyValueStore
-import org.scalasteward.core.util.{DateTimeAlg, MonadThrowable, Timestamp}
+import org.scalasteward.core.util.{DateTimeAlg, Timestamp}
 import scala.concurrent.duration.FiniteDuration
 
 final class VersionsCache[F[_]](
@@ -33,7 +34,7 @@ final class VersionsCache[F[_]](
     coursierAlg: CoursierAlg[F],
     dateTimeAlg: DateTimeAlg[F],
     parallel: Parallel[F],
-    F: MonadThrowable[F]
+    F: MonadThrow[F]
 ) {
   def getVersions(dependency: Scope.Dependency, maxAge: Option[FiniteDuration]): F[List[Version]] =
     dependency.resolvers

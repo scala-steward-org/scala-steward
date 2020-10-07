@@ -18,12 +18,12 @@ package org.scalasteward.core.scalafix
 
 import better.files.File
 import cats.data.OptionT
-import cats.effect.Sync
+import cats.effect.{MonadThrow, Sync}
 import cats.syntax.all._
 import io.circe.config.parser.decode
 import org.scalasteward.core.data.{Update, Version}
 import org.scalasteward.core.io.FileAlg
-import org.scalasteward.core.util.{ApplicativeThrowable, MonadThrowable}
+import org.scalasteward.core.util.ApplicativeThrow
 
 trait MigrationAlg {
   def findMigrations(update: Update): List[Migration]
@@ -43,7 +43,7 @@ object MigrationAlg {
 
   def loadMigrations[F[_]](
       extraMigrations: Option[File]
-  )(implicit fileAlg: FileAlg[F], F: MonadThrowable[F]): F[List[Migration]] =
+  )(implicit fileAlg: FileAlg[F], F: MonadThrow[F]): F[List[Migration]] =
     for {
       default <-
         fileAlg
@@ -60,7 +60,7 @@ object MigrationAlg {
     } yield migrations
 
   private def decodeMigrations[F[_]](content: String, tpe: String)(implicit
-      F: ApplicativeThrowable[F]
+      F: ApplicativeThrow[F]
   ): F[ScalafixMigrations] =
     F.fromEither(decode[ScalafixMigrations](content))
       .adaptErr(new Throwable(s"Failed to load $tpe Scalafix migrations", _))

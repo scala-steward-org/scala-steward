@@ -18,12 +18,12 @@ package org.scalasteward.core.git
 
 import better.files.File
 import cats.Monad
-import cats.effect.Bracket
+import cats.effect.{MonadCancel, MonadCancelThrow}
 import cats.syntax.all._
 import org.http4s.Uri
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.util.{BracketThrowable, Nel}
+import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
 trait GitAlg[F[_]] {
@@ -66,7 +66,7 @@ trait GitAlg[F[_]] {
   final def commitAllIfDirty(repo: Repo, message: String)(implicit F: Monad[F]): F[Option[Commit]] =
     containsChanges(repo).ifM(commitAll(repo, message).map(Some.apply), F.pure(None))
 
-  final def returnToCurrentBranch[A, E](repo: Repo)(fa: F[A])(implicit F: Bracket[F, E]): F[A] =
+  final def returnToCurrentBranch[A, E](repo: Repo)(fa: F[A])(implicit F: MonadCancel[F, E]): F[A] =
     F.bracket(currentBranch(repo))(_ => fa)(checkoutBranch(repo, _))
 }
 
@@ -76,7 +76,7 @@ object GitAlg {
       fileAlg: FileAlg[F],
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F],
-      F: BracketThrowable[F]
+      F: MonadCancelThrow[F]
   ): GitAlg[F] =
     new GitAlg[F] {
       override def branchAuthors(repo: Repo, branch: Branch, base: Branch): F[List[String]] =
@@ -140,7 +140,7 @@ object GitAlg {
           val abortMerge = git("merge", "--abort")(repoDir).void
 
           returnToCurrentBranch(repo) {
-            checkoutBranch(repo, base) >> F.guarantee(tryMerge)(abortMerge).attempt.map(_.isLeft)
+            checkoutBranch(repo, base) >> F.guarantee(tryMerge, abortMerge).attempt.map(_.isLeft)
           }
         }
 

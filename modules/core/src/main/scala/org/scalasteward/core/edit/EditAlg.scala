@@ -18,8 +18,9 @@ package org.scalasteward.core.edit
 
 import better.files.File
 import cats.Traverse
+import cats.effect.MonadThrow
 import cats.syntax.all._
-import fs2.Stream
+import fs2.Compiler
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.buildtool.BuildToolDispatcher
 import org.scalasteward.core.data.Update
@@ -30,12 +31,12 @@ import org.scalasteward.core.vcs.data.Repo
 
 final class EditAlg[F[_]](implicit
     buildToolDispatcher: BuildToolDispatcher[F],
+    compiler: Compiler[F, F],
     fileAlg: FileAlg[F],
     logger: Logger[F],
     migrationAlg: MigrationAlg,
-    streamCompiler: Stream.Compiler[F, F],
     workspaceAlg: WorkspaceAlg[F],
-    F: MonadThrowable[F]
+    F: MonadThrow[F]
 ) {
   def applyUpdate(repo: Repo, update: Update, fileExtensions: Set[String]): F[Unit] =
     for {
