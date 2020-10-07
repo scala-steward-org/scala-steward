@@ -71,7 +71,6 @@ trait GitAlg[F[_]] {
 }
 
 object GitAlg {
-  val gitCmd: String = "git"
 
   def create[F[_]](implicit
       config: Config,
@@ -81,6 +80,9 @@ object GitAlg {
       F: BracketThrowable[F]
   ): GitAlg[F] =
     new GitAlg[F] {
+      private val sign: String =
+        if (config.signCommits) "--gpg-sign" else "--no-gpg-sign"
+
       override def branchAuthors(repo: Repo, branch: Branch, base: Branch): F[List[String]] =
         workspaceAlg.repoDir(repo).flatMap { repoDir =>
           exec(Nel.of("log", "--pretty=format:'%an'", dotdot(base, branch)), repoDir)
@@ -108,8 +110,7 @@ object GitAlg {
       override def commitAll(repo: Repo, message: String): F[Commit] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          sign = if (config.signCommits) List("--gpg-sign") else List("--no-gpg-sign")
-          _ <- exec(Nel.of("commit", "--all", "-m", message) ++ sign, repoDir)
+          _ <- exec(Nel.of("commit", "--all", sign, "-m", message), repoDir)
         } yield Commit()
 
       override def containsChanges(repo: Repo): F[Boolean] =
@@ -163,8 +164,7 @@ object GitAlg {
         for {
           before <- latestSha1(repo, Branch.head)
           repoDir <- workspaceAlg.repoDir(repo)
-          sign = if (config.signCommits) List("--gpg-sign") else List.empty
-          _ <- exec(Nel.of("merge", "--strategy-option=theirs") ++ (sign :+ branch.name), repoDir)
+          _ <- exec(Nel.of("merge", "--strategy-option=theirs", sign, branch.name), repoDir)
             .handleErrorWith { throwable =>
               // Resolve CONFLICT (modify/delete) by deleting unmerged files:
               for {
@@ -173,7 +173,7 @@ object GitAlg {
                   case Some(files) => files.traverse(file => exec(Nel.of("rm", file), repoDir))
                   case None        => F.raiseError(throwable)
                 }
-                _ <- exec(Nel.of("commit", "--all", "--no-edit") ++ sign, repoDir)
+                _ <- exec(Nel.of("commit", "--all", "--no-edit", sign), repoDir)
               } yield List.empty
             }
           after <- latestSha1(repo, Branch.head)
@@ -208,7 +208,7 @@ object GitAlg {
           _ <- push(repo, defaultBranch)
         } yield ()
 
-      def exec(command: Nel[String], cwd: File): F[List[String]] =
-        processAlg.exec(gitCmd :: command, cwd, "GIT_ASKPASS" -> config.gitAskPass.pathAsString)
+      private def exec(command: Nel[String], cwd: File): F[List[String]] =
+        processAlg.exec("git" :: command, cwd, "GIT_ASKPASS" -> config.gitAskPass.pathAsString)
     }
 }
