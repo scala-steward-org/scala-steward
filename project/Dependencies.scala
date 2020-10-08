@@ -18,7 +18,6 @@ object Dependencies {
   val circeRefined = "io.circe" %% "circe-refined" % circeGeneric.revision
   val commonsIo = "commons-io" % "commons-io" % "2.8.0"
   val coursierCore = "io.get-coursier" %% "coursier" % "2.0.0"
-  val coursierCatsInterop = "io.get-coursier" %% "coursier-cats-interop" % coursierCore.revision
   val cron4sCore = "com.github.alonsodomin.cron4s" %% "cron4s-core" % "0.6.1"
   val disciplineScalatest = ("org.typelevel" %% "discipline-scalatest" % "2.0.1")
     .excludeAll(ExclusionRule().withOrganization("org.scalatest"))

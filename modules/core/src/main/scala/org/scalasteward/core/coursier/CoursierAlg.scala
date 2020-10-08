@@ -16,16 +16,18 @@
 
 package org.scalasteward.core.coursier
 
+import cats.Applicative
 import cats.effect._
 import cats.implicits._
-import cats.{Applicative, Parallel}
 import coursier.cache.{CachePolicy, FileCache}
 import coursier.core.{Authentication, Project}
 import coursier.{Fetch, Info, Module, ModuleName, Organization}
 import io.chrisdavenport.log4cats.Logger
+import java.util.concurrent.ExecutorService
 import org.http4s.Uri
 import org.scalasteward.core.data.Resolver.Credentials
 import org.scalasteward.core.data.{Dependency, Resolver, Scope, Version}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService}
 
 /** An interface to [[https://get-coursier.io Coursier]] used for
   * fetching dependency versions and metadata.
@@ -48,9 +50,7 @@ object CoursierAlg {
       logger: Logger[F],
       F: Async[F]
   ): CoursierAlg[F] = {
-    implicit val parallel: Parallel.Aux[F, F] = Parallel.identity[F]
-    implicit val coursierSync: coursier.util.Sync[F] =
-      coursier.interop.cats.coursierSyncFromCats(F, parallel, ???)
+    implicit val coursierSync: coursier.util.Sync[F] = coursierSyncFromCats
 
     val fetch: Fetch[F] = Fetch[F](FileCache[F]())
 
@@ -145,4 +145,33 @@ object CoursierAlg {
       .filterNot(url => url.isEmpty || url.startsWith("git@") || url.startsWith("git:"))
       .flatMap(Uri.fromString(_).toList.filter(_.scheme.isDefined))
       .headOption
+
+  private def coursierSyncFromCats[F[_]](implicit F: Async[F]): coursier.util.Sync[F] =
+    new coursier.util.Sync[F] {
+      override def delay[A](a: => A): F[A] =
+        F.delay(a)
+
+      override def handle[A](a: F[A])(f: PartialFunction[Throwable, A]): F[A] =
+        F.recover(a)(f)
+
+      override def fromAttempt[A](a: Either[Throwable, A]): F[A] =
+        F.fromEither(a)
+
+      override def gather[A](elems: Seq[F[A]]): F[Seq[A]] =
+        elems.toVector.sequence.map(_.toSeq)
+
+      override def schedule[A](pool: ExecutorService)(f: => A): F[A] = {
+        val ec: ExecutionContext = pool match {
+          case service: ExecutionContextExecutorService => service
+          case _                                        => ExecutionContext.fromExecutorService(pool)
+        }
+        F.evalOn(delay(f), ec)
+      }
+
+      override def point[A](a: A): F[A] =
+        F.point(a)
+
+      override def bind[A, B](elem: F[A])(f: A => F[B]): F[B] =
+        elem.flatMap(f)
+    }
 }
