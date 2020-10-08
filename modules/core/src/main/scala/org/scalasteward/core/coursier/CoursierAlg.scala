@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.coursier
 
-import cats.Applicative
+import cats.{Applicative, Parallel}
 import cats.effect._
 import cats.implicits._
 import coursier.cache.{CachePolicy, FileCache}
@@ -48,6 +48,7 @@ trait CoursierAlg[F[_]] {
 object CoursierAlg {
   def create[F[_]](implicit
       logger: Logger[F],
+      parallel: Parallel[F],
       F: Async[F]
   ): CoursierAlg[F] = {
     implicit val coursierSync: coursier.util.Sync[F] = coursierSyncFromCats
@@ -146,7 +147,10 @@ object CoursierAlg {
       .flatMap(Uri.fromString(_).toList.filter(_.scheme.isDefined))
       .headOption
 
-  private def coursierSyncFromCats[F[_]](implicit F: Async[F]): coursier.util.Sync[F] =
+  private def coursierSyncFromCats[F[_]](implicit
+      parallel: Parallel[F],
+      F: Async[F]
+  ): coursier.util.Sync[F] =
     new coursier.util.Sync[F] {
       override def delay[A](a: => A): F[A] =
         F.delay(a)
@@ -158,7 +162,7 @@ object CoursierAlg {
         F.fromEither(a)
 
       override def gather[A](elems: Seq[F[A]]): F[Seq[A]] =
-        elems.toVector.sequence.map(_.toSeq)
+        elems.toVector.parSequence.map(_.toSeq)
 
       override def schedule[A](pool: ExecutorService)(f: => A): F[A] = {
         val ec: ExecutionContext = pool match {
