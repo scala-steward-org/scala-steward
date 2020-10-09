@@ -19,7 +19,7 @@ class MavenAlgTest extends AnyFunSuite with Matchers {
     val state =
       mavenAlg.getDependencies(repo).runS(MockState.empty.copy(files = files)).unsafeRunSync()
 
-    state shouldBe MockState(
+    state shouldBe MockState.empty.copy(
       files = files,
       logs = Vector.empty,
       commands = Vector(

@@ -21,6 +21,7 @@ import cats.effect.Sync
 import org.http4s.Uri
 import org.http4s.Uri.UserInfo
 import org.scalasteward.core.application.Cli.EnvVar
+import org.scalasteward.core.application.Config.Scalafix
 import org.scalasteward.core.git.Author
 import org.scalasteward.core.util
 import org.scalasteward.core.vcs.data.AuthenticatedUser
@@ -68,7 +69,7 @@ final case class Config(
     ignoreOptsFiles: Boolean,
     envVars: List[EnvVar],
     processTimeout: FiniteDuration,
-    scalafixMigrations: Option[File],
+    scalafix: Scalafix,
     groupMigrations: Option[File],
     cacheTtl: FiniteDuration,
     cacheMissDelay: FiniteDuration,
@@ -86,6 +87,11 @@ final case class Config(
 }
 
 object Config {
+  final case class Scalafix(
+      migrations: List[Uri],
+      disableDefaults: Boolean
+  )
+
   def create[F[_]](args: Cli.Args)(implicit F: Sync[F]): F[Config] =
     F.delay {
       Config(
@@ -105,7 +111,7 @@ object Config {
         ignoreOptsFiles = args.ignoreOptsFiles,
         envVars = args.envVar,
         processTimeout = args.processTimeout,
-        scalafixMigrations = args.scalafixMigrations.map(_.toFile),
+        scalafix = Scalafix(args.scalafixMigrations, args.disableDefaultScalafixMigrations),
         groupMigrations = args.groupMigrations.map(_.toFile),
         cacheTtl = args.cacheTtl,
         cacheMissDelay = args.cacheMissDelay,

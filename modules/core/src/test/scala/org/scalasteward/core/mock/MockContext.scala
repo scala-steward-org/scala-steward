@@ -50,7 +50,7 @@ object MockContext {
       EnvVar("ANOTHER_TEST_VAR", "ALSO_GREAT")
     ),
     processTimeout = 10.minutes,
-    scalafixMigrations = None,
+    scalafix = Config.Scalafix(Nil, disableDefaults = false),
     groupMigrations = None,
     cacheTtl = 1.hour,
     cacheMissDelay = 0.milliseconds,
@@ -73,7 +73,7 @@ object MockContext {
   implicit val vcsRepoAlg: VCSRepoAlg[MockEff] = VCSRepoAlg.create(config, gitAlg)
   implicit val scalafmtAlg: ScalafmtAlg[MockEff] = ScalafmtAlg.create
   implicit val migrationAlg: MigrationAlg =
-    MigrationAlg.create[MockEff](config.scalafixMigrations).runA(MockState.empty).unsafeRunSync()
+    MigrationAlg.create[MockEff](config.scalafix).runA(MockState.empty).unsafeRunSync()
   implicit val cacheRepository: RepoCacheRepository[MockEff] =
     new RepoCacheRepository[MockEff](new JsonKeyValueStore("repo_cache", "1"))
   implicit val filterAlg: FilterAlg[MockEff] = new FilterAlg[MockEff]

@@ -23,6 +23,8 @@ import cats.{Functor, Traverse}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import org.apache.commons.io.FileUtils
+import org.http4s.Uri
+import org.http4s.implicits.http4sLiteralsSyntax
 import org.scalasteward.core.util.MonadThrowable
 import scala.io.Source
 
@@ -42,6 +44,8 @@ trait FileAlg[F[_]] {
   def readFile(file: File): F[Option[String]]
 
   def readResource(resource: String): F[String]
+
+  def readUri(uri: Uri): F[String]
 
   def walk(dir: File): Stream[F, File]
 
@@ -125,9 +129,16 @@ object FileAlg {
         F.delay(if (file.exists) Some(file.contentAsString) else None)
 
       override def readResource(resource: String): F[String] =
-        Resource
-          .fromAutoCloseable(F.delay(Source.fromResource(resource)))
-          .use(src => F.delay(src.mkString))
+        readSource(Source.fromResource(resource))
+
+      override def readUri(uri: Uri): F[String] = {
+        val scheme = uri.scheme.getOrElse(scheme"file")
+        val withScheme = uri.copy(scheme = Some(scheme))
+        readSource(Source.fromURL(withScheme.renderString))
+      }
+
+      private def readSource(source: => Source): F[String] =
+        Resource.fromAutoCloseable(F.delay(source)).use(src => F.delay(src.mkString))
 
       override def walk(dir: File): Stream[F, File] =
         Stream.eval(F.delay(dir.walk())).flatMap(Stream.fromIterator(_))

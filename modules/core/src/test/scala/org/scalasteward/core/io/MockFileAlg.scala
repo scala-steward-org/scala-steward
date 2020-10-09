@@ -4,6 +4,7 @@ import better.files.File
 import cats.data.StateT
 import cats.effect.IO
 import fs2.Stream
+import org.http4s.Uri
 import org.scalasteward.core.mock.{applyPure, MockEff, MockState}
 
 class MockFileAlg extends FileAlg[MockEff] {
@@ -41,6 +42,9 @@ class MockFileAlg extends FileAlg[MockEff] {
       _ <- StateT.modify[IO, MockState](_.exec(List("read", s"classpath:$resource")))
       content <- StateT.liftF(FileAlgTest.ioFileAlg.readResource(resource))
     } yield content
+
+  override def readUri(uri: Uri): MockEff[String] =
+    applyPure(s => (s.exec(List("read", uri.renderString)), s.uris.getOrElse(uri, "")))
 
   override def walk(dir: File): Stream[MockEff, File] = {
     val dirAsString = dir.pathAsString

@@ -16,11 +16,12 @@
 
 package org.scalasteward.core.scalafix
 
-import better.files.File
-import cats.data.OptionT
-import cats.effect.Sync
 import cats.syntax.all._
+import io.chrisdavenport.log4cats.Logger
 import io.circe.config.parser.decode
+import org.http4s.Uri
+import org.http4s.implicits.http4sLiteralsSyntax
+import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.{Update, Version}
 import org.scalasteward.core.io.FileAlg
 import org.scalasteward.core.util.{ApplicativeThrowable, MonadThrowable}
@@ -30,40 +31,46 @@ trait MigrationAlg {
 }
 
 object MigrationAlg {
-  def create[F[_]](extraMigrations: Option[File])(implicit
+  def create[F[_]](config: Config.Scalafix)(implicit
       fileAlg: FileAlg[F],
-      F: Sync[F]
+      logger: Logger[F],
+      F: MonadThrowable[F]
   ): F[MigrationAlg] =
-    loadMigrations(extraMigrations).map { migrations =>
-      new MigrationAlg {
-        override def findMigrations(update: Update): List[Migration] =
-          findMigrationsImpl(migrations, update)
+    loadMigrations(config).flatMap { migrations =>
+      logger.info(s"Loaded ${migrations.size} Scalafix migrations").as {
+        new MigrationAlg {
+          override def findMigrations(update: Update): List[Migration] =
+            findMigrationsImpl(migrations, update)
+        }
       }
     }
 
-  def loadMigrations[F[_]](
-      extraMigrations: Option[File]
-  )(implicit fileAlg: FileAlg[F], F: MonadThrowable[F]): F[List[Migration]] =
-    for {
-      default <-
-        fileAlg
-          .readResource("scalafix-migrations.conf")
-          .flatMap(decodeMigrations[F](_, "default"))
-      maybeExtra <- OptionT(extraMigrations.flatTraverse(fileAlg.readFile))
-        .semiflatMap(decodeMigrations[F](_, "extra"))
-        .value
-      migrations = maybeExtra match {
-        case Some(extra) if extra.disableDefaults => extra.migrations
-        case Some(extra)                          => default.migrations ++ extra.migrations
-        case None                                 => default.migrations
-      }
-    } yield migrations
+  val defaultScalafixMigrationsUrl: Uri =
+    uri"https://raw.githubusercontent.com/scala-steward-org/scala-steward/master/modules/core/src/main/resources/scalafix-migrations.conf"
 
-  private def decodeMigrations[F[_]](content: String, tpe: String)(implicit
+  def loadMigrations[F[_]](config: Config.Scalafix)(implicit
+      fileAlg: FileAlg[F],
+      logger: Logger[F],
+      F: MonadThrowable[F]
+  ): F[List[Migration]] = {
+    val maybeDefaultMigrationsUrl =
+      Option.unless(config.disableDefaults)(defaultScalafixMigrationsUrl)
+    (maybeDefaultMigrationsUrl.toList ++ config.migrations).flatTraverse(loadMigrationsFrom[F])
+  }
+
+  private def loadMigrationsFrom[F[_]](uri: Uri)(implicit
+      fileAlg: FileAlg[F],
+      logger: Logger[F],
+      F: MonadThrowable[F]
+  ): F[List[Migration]] =
+    logger.debug(s"Loading Scalafix migrations from $uri") >>
+      fileAlg.readUri(uri).flatMap(decodeMigrations(_, uri)).map(_.migrations)
+
+  private def decodeMigrations[F[_]](content: String, uri: Uri)(implicit
       F: ApplicativeThrowable[F]
   ): F[ScalafixMigrations] =
     F.fromEither(decode[ScalafixMigrations](content))
-      .adaptErr(new Throwable(s"Failed to load $tpe Scalafix migrations", _))
+      .adaptErr(new Throwable(s"Failed to load Scalafix migrations from ${uri.renderString}", _))
 
   private def findMigrationsImpl(
       givenMigrations: List[Migration],
