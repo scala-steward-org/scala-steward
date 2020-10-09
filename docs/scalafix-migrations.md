@@ -43,7 +43,7 @@ that pull request is merged, Scala Steward will start using this migration.
 
 When running Scala Steward you can also specify files or URLs via the
 `--scalafix-migrations` command-line option that contain additional
-migrations which are not be present in the [default list][migrations].
+migrations which are not present in the [default list][migrations].
 These files are in [HOCON][HOCON] format and should look like this:
 ```hocon
 migrations = [
