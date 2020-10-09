@@ -34,7 +34,7 @@ import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository}
 import org.scalasteward.core.persistence.JsonKeyValueStore
 import org.scalasteward.core.repocache.{RefreshErrorAlg, RepoCacheAlg, RepoCacheRepository}
 import org.scalasteward.core.repoconfig.RepoConfigAlg
-import org.scalasteward.core.scalafix.MigrationAlg
+import org.scalasteward.core.scalafix.{CreateMigrationAlg, MigrationAlg}
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.{FilterAlg, GroupMigrations, PruningAlg, UpdateAlg}
 import org.scalasteward.core.util._
@@ -55,9 +55,8 @@ object Context {
       implicit0(httpExistenceClient: HttpExistenceClient[F]) <- HttpExistenceClient.create[F]
       implicit0(user: AuthenticatedUser) <- Resource.liftF(config.vcsUser[F])
       implicit0(fileAlg: FileAlg[F]) = FileAlg.create[F]
-      implicit0(migrationAlg: MigrationAlg) <- Resource.liftF(
-        MigrationAlg.create[F](config.scalafix)
-      )
+      implicit0(migrationAlg: MigrationAlg) <-
+        Resource.liftF(new CreateMigrationAlg[F].create(config.scalafix))
       implicit0(groupMigration: GroupMigrations) <- Resource.liftF(GroupMigrations.create[F])
     } yield {
       val kvsPrefix = Some(config.vcsType.asString)

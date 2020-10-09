@@ -16,72 +16,8 @@
 
 package org.scalasteward.core.scalafix
 
-import cats.syntax.all._
-import io.chrisdavenport.log4cats.Logger
-import io.circe.config.parser.decode
-import org.http4s.Uri
-import org.http4s.implicits.http4sLiteralsSyntax
-import org.scalasteward.core.application.Config
-import org.scalasteward.core.data.{Update, Version}
-import org.scalasteward.core.io.FileAlg
-import org.scalasteward.core.util.{ApplicativeThrowable, MonadThrowable}
+import org.scalasteward.core.data.Update
 
 trait MigrationAlg {
   def findMigrations(update: Update): List[Migration]
-}
-
-object MigrationAlg {
-  def create[F[_]](config: Config.Scalafix)(implicit
-      fileAlg: FileAlg[F],
-      logger: Logger[F],
-      F: MonadThrowable[F]
-  ): F[MigrationAlg] =
-    loadMigrations(config).flatMap { migrations =>
-      logger.info(s"Loaded ${migrations.size} Scalafix migrations").as {
-        new MigrationAlg {
-          override def findMigrations(update: Update): List[Migration] =
-            findMigrationsImpl(migrations, update)
-        }
-      }
-    }
-
-  val defaultScalafixMigrationsUrl: Uri =
-    uri"https://raw.githubusercontent.com/scala-steward-org/scala-steward/master/modules/core/src/main/resources/scalafix-migrations.conf"
-
-  def loadMigrations[F[_]](config: Config.Scalafix)(implicit
-      fileAlg: FileAlg[F],
-      logger: Logger[F],
-      F: MonadThrowable[F]
-  ): F[List[Migration]] = {
-    val maybeDefaultMigrationsUrl =
-      Option.unless(config.disableDefaults)(defaultScalafixMigrationsUrl)
-    (maybeDefaultMigrationsUrl.toList ++ config.migrations).flatTraverse(loadMigrationsFrom[F])
-  }
-
-  private def loadMigrationsFrom[F[_]](uri: Uri)(implicit
-      fileAlg: FileAlg[F],
-      logger: Logger[F],
-      F: MonadThrowable[F]
-  ): F[List[Migration]] =
-    logger.debug(s"Loading Scalafix migrations from $uri") >>
-      fileAlg.readUri(uri).flatMap(decodeMigrations(_, uri)).map(_.migrations)
-
-  private def decodeMigrations[F[_]](content: String, uri: Uri)(implicit
-      F: ApplicativeThrowable[F]
-  ): F[ScalafixMigrations] =
-    F.fromEither(decode[ScalafixMigrations](content))
-      .adaptErr(new Throwable(s"Failed to load Scalafix migrations from ${uri.renderString}", _))
-
-  private def findMigrationsImpl(
-      givenMigrations: List[Migration],
-      update: Update
-  ): List[Migration] =
-    givenMigrations.filter { migration =>
-      update.groupId === migration.groupId &&
-      migration.artifactIds.exists(re =>
-        update.artifactIds.exists(artifactId => re.r.findFirstIn(artifactId.name).isDefined)
-      ) &&
-      Version(update.currentVersion) < migration.newVersion &&
-      Version(update.newerVersions.head) >= migration.newVersion
-    }
 }
