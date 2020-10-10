@@ -44,7 +44,14 @@ class MockFileAlg extends FileAlg[MockEff] {
     } yield content
 
   override def readUri(uri: Uri): MockEff[String] =
-    applyPure(s => (s.exec(List("read", uri.renderString)), s.uris.getOrElse(uri, "")))
+    for {
+      _ <- StateT.modify[IO, MockState](_.exec(List("read", uri.renderString)))
+      s <- StateT.get[IO, MockState]
+      content <- StateT.liftF[IO, MockState, String](s.uris.get(uri) match {
+        case Some(content) => IO.pure(content)
+        case None          => IO.raiseError(new Throwable("URL not found"))
+      })
+    } yield content
 
   override def walk(dir: File): Stream[MockEff, File] = {
     val dirAsString = dir.pathAsString
