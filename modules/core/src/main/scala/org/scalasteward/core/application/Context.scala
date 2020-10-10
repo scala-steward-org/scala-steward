@@ -18,6 +18,7 @@ package org.scalasteward.core.application
 
 import cats.Parallel
 import cats.effect._
+import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.client.Client
@@ -34,7 +35,7 @@ import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository}
 import org.scalasteward.core.persistence.JsonKeyValueStore
 import org.scalasteward.core.repocache.{RefreshErrorAlg, RepoCacheAlg, RepoCacheRepository}
 import org.scalasteward.core.repoconfig.RepoConfigAlg
-import org.scalasteward.core.scalafix.MigrationAlg
+import org.scalasteward.core.scalafix.{MigrationAlg, MigrationsLoader}
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.{FilterAlg, GroupMigrations, PruningAlg, UpdateAlg}
 import org.scalasteward.core.util._
@@ -48,15 +49,15 @@ object Context {
   ): Resource[F, StewardAlg[F]] =
     for {
       blocker <- Blocker[F]
+      implicit0(logger: Logger[F]) <- Resource.liftF(Slf4jLogger.create[F])
+      _ <- Resource.liftF(printBanner[F])
       implicit0(config: Config) <- Resource.liftF(Config.create[F](args))
       implicit0(client: Client[F]) <- AsyncHttpClient.resource[F]()
-      implicit0(logger: Logger[F]) <- Resource.liftF(Slf4jLogger.create[F])
       implicit0(httpExistenceClient: HttpExistenceClient[F]) <- HttpExistenceClient.create[F]
       implicit0(user: AuthenticatedUser) <- Resource.liftF(config.vcsUser[F])
       implicit0(fileAlg: FileAlg[F]) = FileAlg.create[F]
-      implicit0(migrationAlg: MigrationAlg) <- Resource.liftF(
-        MigrationAlg.create[F](config.scalafixMigrations)
-      )
+      implicit0(migrationAlg: MigrationAlg) <-
+        Resource.liftF(new MigrationsLoader[F].loadAll(config.scalafix).map(new MigrationAlg(_)))
       implicit0(groupMigration: GroupMigrations) <- Resource.liftF(GroupMigrations.create[F])
     } yield {
       val kvsPrefix = Some(config.vcsType.asString)
@@ -93,4 +94,16 @@ object Context {
       implicit val pruningAlg: PruningAlg[F] = new PruningAlg[F]
       new StewardAlg[F]
     }
+
+  private def printBanner[F[_]](implicit logger: Logger[F]): F[Unit] = {
+    val banner =
+      """|  ____            _         ____  _                             _
+         | / ___|  ___ __ _| | __ _  / ___|| |_ _____      ____ _ _ __ __| |
+         | \___ \ / __/ _` | |/ _` | \___ \| __/ _ \ \ /\ / / _` | '__/ _` |
+         |  ___) | (_| (_| | | (_| |  ___) | ||  __/\ V  V / (_| | | | (_| |
+         | |____/ \___\__,_|_|\__,_| |____/ \__\___| \_/\_/ \__,_|_|  \__,_|""".stripMargin
+    val msg = List(" ", banner, s" v${org.scalasteward.core.BuildInfo.version}", " ")
+      .mkString(System.lineSeparator())
+    logger.info(msg)
+  }
 }

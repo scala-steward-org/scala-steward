@@ -19,14 +19,13 @@ import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.persistence.JsonKeyValueStore
 import org.scalasteward.core.repocache.RepoCacheRepository
 import org.scalasteward.core.repoconfig.RepoConfigAlg
-import org.scalasteward.core.scalafix.MigrationAlg
+import org.scalasteward.core.scalafix.{MigrationAlg, MigrationsLoader, MigrationsLoaderTest}
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.{FilterAlg, GroupMigrations, PruningAlg, UpdateAlg}
 import org.scalasteward.core.util.uri._
 import org.scalasteward.core.util.{BracketThrowable, DateTimeAlg}
 import org.scalasteward.core.vcs.VCSRepoAlg
 import org.scalasteward.core.vcs.data.AuthenticatedUser
-
 import scala.concurrent.duration._
 
 object MockContext {
@@ -50,7 +49,7 @@ object MockContext {
       EnvVar("ANOTHER_TEST_VAR", "ALSO_GREAT")
     ),
     processTimeout = 10.minutes,
-    scalafixMigrations = None,
+    scalafix = Config.Scalafix(Nil, disableDefaults = false),
     groupMigrations = None,
     cacheTtl = 1.hour,
     cacheMissDelay = 0.milliseconds,
@@ -72,8 +71,12 @@ object MockContext {
   implicit val user: AuthenticatedUser = AuthenticatedUser("scala-steward", "token")
   implicit val vcsRepoAlg: VCSRepoAlg[MockEff] = VCSRepoAlg.create(config, gitAlg)
   implicit val scalafmtAlg: ScalafmtAlg[MockEff] = ScalafmtAlg.create
-  implicit val migrationAlg: MigrationAlg =
-    MigrationAlg.create[MockEff](config.scalafixMigrations).runA(MockState.empty).unsafeRunSync()
+  val migrationsLoader: MigrationsLoader[MockEff] = new MigrationsLoader[MockEff]
+  implicit val migrationAlg: MigrationAlg = migrationsLoader
+    .loadAll(config.scalafix)
+    .map(new MigrationAlg(_))
+    .runA(MigrationsLoaderTest.mockState)
+    .unsafeRunSync()
   implicit val cacheRepository: RepoCacheRepository[MockEff] =
     new RepoCacheRepository[MockEff](new JsonKeyValueStore("repo_cache", "1"))
   implicit val filterAlg: FilterAlg[MockEff] = new FilterAlg[MockEff]
