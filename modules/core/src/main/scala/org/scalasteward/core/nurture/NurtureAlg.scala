@@ -35,6 +35,8 @@ import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo, RepoOut}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg}
 import org.scalasteward.core.{git, util, vcs}
 
+import scala.util.control.NonFatal
+
 final class NurtureAlg[F[_]](implicit
     config: Config,
     editAlg: EditAlg[F],
@@ -81,10 +83,11 @@ final class NurtureAlg[F[_]](implicit
       baseSha1 <- gitAlg.latestSha1(repo, baseBranch)
       _ <- NurtureAlg.processUpdates(
         sorted,
-        update =>
-          processUpdate(
+        update => {
+          val updateData =
             UpdateData(repo, fork, repoConfig, update, baseBranch, baseSha1, git.branchFor(update))
-          ),
+          processUpdate(updateData) <* closeObsoletePullRequests(updateData)
+        },
         repoConfig.updates.limit
       )
     } yield ()
@@ -112,6 +115,40 @@ final class NurtureAlg[F[_]](implicit
         )
       }
     } yield result
+
+  def closeObsoletePullRequests(data: UpdateData): F[Unit] = {
+    val crossDependency = data.update match {
+      case Update.Single(crossDependency, _, _) =>
+        crossDependency
+      case Update.Group(crossDependencies, _) =>
+        crossDependencies.head
+    }
+    for {
+      _ <- logger.info(s"Looking to close obsolete PRs for ${data.update.name}")
+      prsToClose <- pullRequestRepository.getObsoleteOpenPullRequests(
+        data.repo,
+        crossDependency,
+        data.update.nextVersion
+      )
+      dataPerId = prsToClose.flatMap { case (url, data) =>
+        vcsExtraAlg
+          .extractPRIdFromUrls(config.vcsType, url)
+          .tupleRight(data)
+          .toList
+      }
+      _ <- dataPerId.traverse { case (id, pullRequestData) =>
+        closePR(data.repo, pullRequestData, id).handleErrorWith { case NonFatal(ex) =>
+          logger.warn(ex)(s"Failed to close obsolete PR #$id for ${data.updateBranch.name}")
+        }
+      }
+
+    } yield ()
+  }
+
+  private def closePR(repo: Repo, prUpdate: Update, id: Int): F[Unit] =
+    vcsApiAlg.closePullRequest(repo, id) *> logger.info(
+      s"Closed a PR for ${prUpdate.show}"
+    )
 
   def applyNewUpdate(data: UpdateData): F[ProcessResult] =
     (editAlg.applyUpdate(
