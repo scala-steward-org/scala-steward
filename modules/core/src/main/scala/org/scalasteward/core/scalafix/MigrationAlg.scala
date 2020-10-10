@@ -16,8 +16,17 @@
 
 package org.scalasteward.core.scalafix
 
-import org.scalasteward.core.data.Update
+import cats.syntax.all._
+import org.scalasteward.core.data.{Update, Version}
 
-trait MigrationAlg {
-  def findMigrations(update: Update): List[Migration]
+final class MigrationAlg(migrations: List[Migration]) {
+  def findMigrations(update: Update): List[Migration] =
+    migrations.filter { migration =>
+      update.groupId === migration.groupId &&
+      migration.artifactIds.exists { re =>
+        update.artifactIds.exists(artifactId => re.r.findFirstIn(artifactId.name).isDefined)
+      } &&
+      Version(update.currentVersion) < migration.newVersion &&
+      Version(update.newerVersions.head) >= migration.newVersion
+    }
 }

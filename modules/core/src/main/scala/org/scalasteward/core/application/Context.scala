@@ -18,6 +18,7 @@ package org.scalasteward.core.application
 
 import cats.Parallel
 import cats.effect._
+import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.client.Client
@@ -34,7 +35,7 @@ import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository}
 import org.scalasteward.core.persistence.JsonKeyValueStore
 import org.scalasteward.core.repocache.{RefreshErrorAlg, RepoCacheAlg, RepoCacheRepository}
 import org.scalasteward.core.repoconfig.RepoConfigAlg
-import org.scalasteward.core.scalafix.{CreateMigrationAlg, MigrationAlg}
+import org.scalasteward.core.scalafix.{MigrationAlg, MigrationsLoader}
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.{FilterAlg, GroupMigrations, PruningAlg, UpdateAlg}
 import org.scalasteward.core.util._
@@ -56,7 +57,7 @@ object Context {
       implicit0(user: AuthenticatedUser) <- Resource.liftF(config.vcsUser[F])
       implicit0(fileAlg: FileAlg[F]) = FileAlg.create[F]
       implicit0(migrationAlg: MigrationAlg) <-
-        Resource.liftF(new CreateMigrationAlg[F].create(config.scalafix))
+        Resource.liftF(new MigrationsLoader[F].loadAll(config.scalafix).map(new MigrationAlg(_)))
       implicit0(groupMigration: GroupMigrations) <- Resource.liftF(GroupMigrations.create[F])
     } yield {
       val kvsPrefix = Some(config.vcsType.asString)

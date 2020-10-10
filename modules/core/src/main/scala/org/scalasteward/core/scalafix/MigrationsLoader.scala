@@ -22,33 +22,24 @@ import io.circe.config.parser.decode
 import org.http4s.Uri
 import org.http4s.implicits.http4sLiteralsSyntax
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.data.{Update, Version}
 import org.scalasteward.core.io.FileAlg
-import org.scalasteward.core.scalafix.CreateMigrationAlg._
+import org.scalasteward.core.scalafix.MigrationsLoader._
 import org.scalasteward.core.util.MonadThrowable
 
-final class CreateMigrationAlg[F[_]](implicit
+final class MigrationsLoader[F[_]](implicit
     fileAlg: FileAlg[F],
     logger: Logger[F],
     F: MonadThrowable[F]
 ) {
-  def create(config: Config.Scalafix): F[MigrationAlg] =
-    loadMigrations(config).flatMap { migrations =>
-      logger.info(s"Loaded ${migrations.size} Scalafix migrations").as {
-        new MigrationAlg {
-          override def findMigrations(update: Update): List[Migration] =
-            filterMatchingMigrations(migrations, update)
-        }
-      }
-    }
-
-  def loadMigrations(config: Config.Scalafix): F[List[Migration]] = {
+  def loadAll(config: Config.Scalafix): F[List[Migration]] = {
     val maybeDefaultMigrationsUrl =
       Option.unless(config.disableDefaults)(defaultScalafixMigrationsUrl)
-    (maybeDefaultMigrationsUrl.toList ++ config.migrations).flatTraverse(loadMigrationsFrom)
+    (maybeDefaultMigrationsUrl.toList ++ config.migrations)
+      .flatTraverse(loadMigrations)
+      .flatTap(migrations => logger.info(s"Loaded ${migrations.size} Scalafix migrations"))
   }
 
-  private def loadMigrationsFrom(uri: Uri): F[List[Migration]] =
+  private def loadMigrations(uri: Uri): F[List[Migration]] =
     logger.debug(s"Loading Scalafix migrations from $uri") >>
       fileAlg.readUri(uri).flatMap(decodeMigrations(_, uri)).map(_.migrations)
 
@@ -57,17 +48,7 @@ final class CreateMigrationAlg[F[_]](implicit
       .adaptErr(new Throwable(s"Failed to load Scalafix migrations from ${uri.renderString}", _))
 }
 
-object CreateMigrationAlg {
+object MigrationsLoader {
   val defaultScalafixMigrationsUrl: Uri =
     uri"https://raw.githubusercontent.com/scala-steward-org/scala-steward/master/modules/core/src/main/resources/scalafix-migrations.conf"
-
-  def filterMatchingMigrations(migrations: List[Migration], update: Update): List[Migration] =
-    migrations.filter { migration =>
-      update.groupId === migration.groupId &&
-      migration.artifactIds.exists { re =>
-        update.artifactIds.exists(artifactId => re.r.findFirstIn(artifactId.name).isDefined)
-      } &&
-      Version(update.currentVersion) < migration.newVersion &&
-      Version(update.newerVersions.head) >= migration.newVersion
-    }
 }
