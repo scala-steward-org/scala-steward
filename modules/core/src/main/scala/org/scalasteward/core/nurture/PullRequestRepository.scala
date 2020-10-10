@@ -19,7 +19,7 @@ package org.scalasteward.core.nurture
 import cats.Monad
 import cats.implicits._
 import org.http4s.Uri
-import org.scalasteward.core.data.{CrossDependency, Update}
+import org.scalasteward.core.data.{CrossDependency, Update, Version}
 import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.persistence.KeyValueStore
 import org.scalasteward.core.update.UpdateAlg
@@ -54,6 +54,20 @@ final class PullRequestRepository[F[_]](
         }
       }
       .void
+
+  def getObsoleteOpenPullRequests(
+      repo: Repo,
+      crossDependency: CrossDependency,
+      newVersion: String
+  ): F[List[(Uri, Update)]] =
+    kvStore.get(repo).map {
+      _.getOrElse(Map.empty).collect {
+        case (url, data)
+            if UpdateAlg.isForSameArtifacts(data.update, crossDependency) &&
+              Version(data.update.nextVersion) < Version(newVersion) =>
+          url -> data.update
+      }.toList
+    }
 
   def findPullRequest(
       repo: Repo,

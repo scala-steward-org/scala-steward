@@ -54,6 +54,12 @@ final class UpdateAlg[F[_]](implicit
 }
 
 object UpdateAlg {
+  def isForSameArtifacts(update: Update, crossDependency: CrossDependency): Boolean =
+    crossDependency.dependencies.forall { dependency =>
+      update.groupId === dependency.groupId &&
+      update.artifactIds.contains_(dependency.artifactId)
+    }
+
   def isUpdateFor(update: Update, crossDependency: CrossDependency): Boolean =
     crossDependency.dependencies.forall { dependency =>
       update.groupId === dependency.groupId &&
