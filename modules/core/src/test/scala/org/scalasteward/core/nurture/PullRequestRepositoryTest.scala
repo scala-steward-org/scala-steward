@@ -27,7 +27,7 @@ class PullRequestRepositoryTest extends AnyFunSuite with Matchers {
     } yield (result, createdAt)
     val (state, (result, createdAt)) = p.run(MockState.empty).unsafeRunSync()
 
-    val store = config.workspace / "store/pull_requests/v1/typelevel/cats/pull_requests.json"
+    val store = config.workspace / "store/pull_requests/v2/typelevel/cats/pull_requests.json"
     result shouldBe Some((url, sha1, PullRequestState.Open))
     createdAt.isDefined shouldBe true
     state.copy(files = Map.empty) shouldBe MockState.empty.copy(
