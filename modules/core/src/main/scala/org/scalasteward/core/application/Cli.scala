@@ -87,7 +87,7 @@ object Cli {
       }
     }
 
-  implicit val fileParser: ArgParser[File] =
+  implicit val fileArgParser: ArgParser[File] =
     ArgParser[String].xmapError(
       _.toString,
       s => Either.catchNonFatal(File(s)).leftMap(t => MalformedValue("File", t.getMessage))

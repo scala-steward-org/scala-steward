@@ -103,4 +103,8 @@ class CliTest extends AnyFunSuite with Matchers with EitherValues {
   test("finiteDurationArgParser: previous value") {
     Cli.finiteDurationArgParser(Some(10.seconds), "20seconds").isLeft shouldBe true
   }
+
+  test("fileArgParser: previous value") {
+    Cli.fileArgParser(Some(File("/tmp")), "/opt").isLeft shouldBe true
+  }
 }
