@@ -92,31 +92,29 @@ object Config {
       disableDefaults: Boolean
   )
 
-  def create[F[_]](args: Cli.Args)(implicit F: Sync[F]): F[Config] =
-    F.delay {
-      Config(
-        workspace = args.workspace.toFile,
-        reposFile = args.reposFile.toFile,
-        defaultRepoConfigFile = args.defaultRepoConf.map(_.toFile),
-        gitAuthor = Author(args.gitAuthorName, args.gitAuthorEmail),
-        vcsType = args.vcsType,
-        vcsApiHost = args.vcsApiHost,
-        vcsLogin = args.vcsLogin,
-        gitAskPass = args.gitAskPass.toFile,
-        signCommits = args.signCommits,
-        whitelistedDirectories = args.whitelist,
-        readOnlyDirectories = args.readOnly,
-        disableSandbox = args.disableSandbox,
-        doNotFork = args.doNotFork,
-        ignoreOptsFiles = args.ignoreOptsFiles,
-        envVars = args.envVar,
-        processTimeout = args.processTimeout,
-        scalafix = Scalafix(args.scalafixMigrations, args.disableDefaultScalafixMigrations),
-        groupMigrations = args.groupMigrations.map(_.toFile),
-        cacheTtl = args.cacheTtl,
-        cacheMissDelay = args.cacheMissDelay,
-        bitbucketServerUseDefaultReviewers = args.bitbucketServerUseDefaultReviewers,
-        gitlabMergeWhenPipelineSucceeds = args.gitlabMergeWhenPipelineSucceeds
-      )
-    }
+  def from(args: Cli.Args): Config =
+    Config(
+      workspace = args.workspace,
+      reposFile = args.reposFile,
+      defaultRepoConfigFile = args.defaultRepoConf,
+      gitAuthor = Author(args.gitAuthorName, args.gitAuthorEmail),
+      vcsType = args.vcsType,
+      vcsApiHost = args.vcsApiHost,
+      vcsLogin = args.vcsLogin,
+      gitAskPass = args.gitAskPass,
+      signCommits = args.signCommits,
+      whitelistedDirectories = args.whitelist,
+      readOnlyDirectories = args.readOnly,
+      disableSandbox = args.disableSandbox,
+      doNotFork = args.doNotFork,
+      ignoreOptsFiles = args.ignoreOptsFiles,
+      envVars = args.envVar,
+      processTimeout = args.processTimeout,
+      scalafix = Scalafix(args.scalafixMigrations, args.disableDefaultScalafixMigrations),
+      groupMigrations = args.groupMigrations,
+      cacheTtl = args.cacheTtl,
+      cacheMissDelay = args.cacheMissDelay,
+      bitbucketServerUseDefaultReviewers = args.bitbucketServerUseDefaultReviewers,
+      gitlabMergeWhenPipelineSucceeds = args.gitlabMergeWhenPipelineSucceeds
+    )
 }

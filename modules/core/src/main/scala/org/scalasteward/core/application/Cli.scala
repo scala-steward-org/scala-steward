@@ -16,6 +16,7 @@
 
 package org.scalasteward.core.application
 
+import better.files.File
 import caseapp._
 import caseapp.core.Error.MalformedValue
 import caseapp.core.argparser.{ArgParser, SimpleArgParser}
@@ -26,15 +27,15 @@ import scala.concurrent.duration._
 
 object Cli {
   final case class Args(
-      workspace: String,
-      reposFile: String,
-      defaultRepoConf: Option[String] = None,
+      workspace: File,
+      reposFile: File,
+      defaultRepoConf: Option[File] = None,
       gitAuthorName: String = "Scala Steward",
       gitAuthorEmail: String,
       vcsType: SupportedVCS = SupportedVCS.GitHub,
       vcsApiHost: Uri = uri"https://api.github.com",
       vcsLogin: String,
-      gitAskPass: String,
+      gitAskPass: File,
       signCommits: Boolean = false,
       whitelist: List[String] = Nil,
       readOnly: List[String] = Nil,
@@ -45,7 +46,7 @@ object Cli {
       processTimeout: FiniteDuration = 10.minutes,
       scalafixMigrations: List[Uri] = Nil,
       disableDefaultScalafixMigrations: Boolean = false,
-      groupMigrations: Option[String] = None,
+      groupMigrations: Option[File] = None,
       cacheTtl: FiniteDuration = 2.hours,
       cacheMissDelay: FiniteDuration = 0.milliseconds,
       bitbucketServerUseDefaultReviewers: Boolean = false,
@@ -86,9 +87,15 @@ object Cli {
       }
     }
 
+  implicit val fileParser: ArgParser[File] =
+    ArgParser[String].xmapError(
+      _.toString,
+      s => Either.catchNonFatal(File(s)).leftMap(t => MalformedValue("File", t.getMessage))
+    )
+
   implicit val finiteDurationArgParser: ArgParser[FiniteDuration] =
     ArgParser[String].xmapError(
-      _.toString(),
+      _.toString,
       s =>
         parseFiniteDuration(s).leftMap { throwable =>
           val error = s"The value is expected in the following format: <length><unit>. ($throwable)"

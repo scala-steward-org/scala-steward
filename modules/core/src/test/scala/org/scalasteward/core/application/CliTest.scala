@@ -1,5 +1,6 @@
 package org.scalasteward.core.application
 
+import better.files.File
 import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.Cli.ParseResult._
@@ -27,14 +28,14 @@ class CliTest extends AnyFunSuite with Matchers with EitherValues {
       ).flatten
     ) shouldBe Success(
       Cli.Args(
-        workspace = "a",
-        reposFile = "b",
-        defaultRepoConf = Some("c"),
+        workspace = File("a"),
+        reposFile = File("b"),
+        defaultRepoConf = Some(File("c")),
         gitAuthorEmail = "d",
         vcsType = SupportedVCS.Gitlab,
         vcsApiHost = uri"http://example.com",
         vcsLogin = "e",
-        gitAskPass = "f",
+        gitAskPass = File("f"),
         ignoreOptsFiles = true,
         envVar = List(EnvVar("g", "h"), EnvVar("i", "j")),
         processTimeout = 30.minutes
@@ -53,11 +54,11 @@ class CliTest extends AnyFunSuite with Matchers with EitherValues {
       ).flatten
     ) shouldBe Success(
       Cli.Args(
-        workspace = "a",
-        reposFile = "b",
+        workspace = File("a"),
+        reposFile = File("b"),
         gitAuthorEmail = "d",
         vcsLogin = "e",
-        gitAskPass = "f"
+        gitAskPass = File("f")
       )
     )
   }
