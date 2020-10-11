@@ -57,12 +57,12 @@ object Context {
       implicit0(user: AuthenticatedUser) <- Resource.liftF(config.vcsUser[F])
       implicit0(fileAlg: FileAlg[F]) = FileAlg.create[F]
       implicit0(migrationAlg: MigrationAlg) <-
-        Resource.liftF(new MigrationsLoader[F].loadAll(config.scalafix).map(new MigrationAlg(_)))
+        Resource.liftF(new MigrationsLoader[F].loadAll(config.scalafixCfg).map(new MigrationAlg(_)))
       implicit0(groupMigration: GroupMigrations) <- Resource.liftF(GroupMigrations.create[F])
     } yield {
       val kvsPrefix = Some(config.vcsType.asString)
       implicit val dateTimeAlg: DateTimeAlg[F] = DateTimeAlg.create[F]
-      implicit val processAlg: ProcessAlg[F] = ProcessAlg.create[F](blocker)
+      implicit val processAlg: ProcessAlg[F] = ProcessAlg.create[F](blocker, config.processCfg)
       implicit val workspaceAlg: WorkspaceAlg[F] = WorkspaceAlg.create[F]
       implicit val repoConfigAlg: RepoConfigAlg[F] = new RepoConfigAlg[F]
       implicit val filterAlg: FilterAlg[F] = new FilterAlg[F]

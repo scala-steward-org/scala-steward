@@ -20,7 +20,7 @@ import better.files.File
 import cats.effect.{Blocker, Concurrent, ContextShift, Timer}
 import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
-import org.scalasteward.core.application.Config
+import org.scalasteward.core.application.Config.{ProcessCfg, SandboxCfg}
 import org.scalasteward.core.util.Nel
 
 trait ProcessAlg[F[_]] {
@@ -30,7 +30,7 @@ trait ProcessAlg[F[_]] {
 }
 
 object ProcessAlg {
-  abstract class UsingFirejail[F[_]](config: Config) extends ProcessAlg[F] {
+  abstract class UsingFirejail[F[_]](config: SandboxCfg) extends ProcessAlg[F] {
     override def execSandboxed(command: Nel[String], cwd: File): F[List[String]] =
       if (config.disableSandbox)
         exec(command, cwd)
@@ -43,15 +43,14 @@ object ProcessAlg {
       }
   }
 
-  def create[F[_]](blocker: Blocker)(implicit
-      config: Config,
+  def create[F[_]](blocker: Blocker, config: ProcessCfg)(implicit
       contextShift: ContextShift[F],
       logger: Logger[F],
       timer: Timer[F],
       F: Concurrent[F]
   ): ProcessAlg[F] = {
     val envVars = config.envVars.map(v => (v.name, v.value))
-    new UsingFirejail[F](config) {
+    new UsingFirejail[F](config.sandboxCfg) {
       override def exec(
           command: Nel[String],
           cwd: File,

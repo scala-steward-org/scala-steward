@@ -4,21 +4,23 @@ import better.files.File
 import cats.effect.{Blocker, IO}
 import java.util.concurrent.Executors
 import org.scalasteward.core.TestInstances._
+import org.scalasteward.core.application.Config.{ProcessCfg, SandboxCfg}
 import org.scalasteward.core.io.ProcessAlgTest.ioProcessAlg
-import org.scalasteward.core.mock.MockContext._
+import org.scalasteward.core.mock.MockContext.config
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.util.Nel
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import scala.concurrent.duration.Duration
 
 class ProcessAlgTest extends AnyFunSuite with Matchers {
-  test("exec echo") {
+  test("exec: echo") {
     ioProcessAlg
       .exec(Nel.of("echo", "-n", "hello"), File.currentWorkingDirectory)
       .unsafeRunSync() shouldBe List("hello")
   }
 
-  test("exec false") {
+  test("exec: ls --foo") {
     ioProcessAlg
       .exec(Nel.of("ls", "--foo"), File.currentWorkingDirectory)
       .attempt
@@ -26,37 +28,30 @@ class ProcessAlgTest extends AnyFunSuite with Matchers {
       .unsafeRunSync()
   }
 
-  test("respect the disableSandbox setting") {
-    val cfg = config.copy(disableSandbox = true)
-    val processAlg = new MockProcessAlg(cfg)
-
-    val state = processAlg
-      .execSandboxed(Nel.of("echo", "hello"), File.temp)
-      .runS(MockState.empty)
-      .unsafeRunSync()
-
-    state shouldBe MockState.empty.copy(
-      commands = Vector(List("VAR1=val1", "VAR2=val2", File.temp.toString, "echo", "hello"))
-    )
-  }
-
-  test("execSandboxed echo") {
-    val state = processAlg
+  test("execSandboxed: echo with disableSandbox = true") {
+    val cfg = ProcessCfg(Nil, Duration.Zero, SandboxCfg(Nil, Nil, disableSandbox = true))
+    val state = new MockProcessAlg(cfg)
       .execSandboxed(Nel.of("echo", "hello"), File.temp)
       .runS(MockState.empty)
       .unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List(
-          "VAR1=val1",
-          "VAR2=val2",
-          File.temp.toString,
-          "firejail",
-          s"--whitelist=${File.temp}",
-          "echo",
-          "hello"
-        )
+        List(File.temp.toString, "echo", "hello")
+      )
+    )
+  }
+
+  test("execSandboxed: echo with disableSandbox = false") {
+    val cfg = ProcessCfg(Nil, Duration.Zero, SandboxCfg(Nil, Nil, disableSandbox = false))
+    val state = new MockProcessAlg(cfg)
+      .execSandboxed(Nel.of("echo", "hello"), File.temp)
+      .runS(MockState.empty)
+      .unsafeRunSync()
+
+    state shouldBe MockState.empty.copy(
+      commands = Vector(
+        List(File.temp.toString, "firejail", s"--whitelist=${File.temp}", "echo", "hello")
       )
     )
   }
@@ -64,5 +59,5 @@ class ProcessAlgTest extends AnyFunSuite with Matchers {
 
 object ProcessAlgTest {
   val blocker: Blocker = Blocker.liftExecutorService(Executors.newCachedThreadPool())
-  implicit val ioProcessAlg: ProcessAlg[IO] = ProcessAlg.create[IO](blocker)
+  implicit val ioProcessAlg: ProcessAlg[IO] = ProcessAlg.create[IO](blocker, config.processCfg)
 }
