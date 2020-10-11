@@ -45,8 +45,8 @@ object MockContext {
     doNotFork = false,
     ignoreOptsFiles = false,
     envVars = List(
-      EnvVar("TEST_VAR", "GREAT"),
-      EnvVar("ANOTHER_TEST_VAR", "ALSO_GREAT")
+      EnvVar("VAR1", "val1"),
+      EnvVar("VAR2", "val2")
     ),
     processTimeout = 10.minutes,
     scalafix = Config.Scalafix(Nil, disableDefaults = false),
@@ -62,7 +62,7 @@ object MockContext {
 
   implicit val fileAlg: MockFileAlg = new MockFileAlg
   implicit val mockLogger: MockLogger = new MockLogger
-  implicit val processAlg: MockProcessAlg = new MockProcessAlg
+  implicit val processAlg: MockProcessAlg = new MockProcessAlg(config)
   implicit val workspaceAlg: MockWorkspaceAlg = new MockWorkspaceAlg
 
   implicit val coursierAlg: CoursierAlg[MockEff] = CoursierAlg.create

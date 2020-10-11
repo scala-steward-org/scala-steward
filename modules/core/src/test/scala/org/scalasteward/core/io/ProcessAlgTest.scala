@@ -28,7 +28,7 @@ class ProcessAlgTest extends AnyFunSuite with Matchers {
 
   test("respect the disableSandbox setting") {
     val cfg = config.copy(disableSandbox = true)
-    val processAlg = new MockProcessAlg()(cfg)
+    val processAlg = new MockProcessAlg(cfg)
 
     val state = processAlg
       .execSandboxed(Nel.of("echo", "hello"), File.temp)
@@ -36,9 +36,7 @@ class ProcessAlgTest extends AnyFunSuite with Matchers {
       .unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
-      commands = Vector(
-        List("TEST_VAR=GREAT", "ANOTHER_TEST_VAR=ALSO_GREAT", File.temp.toString, "echo", "hello")
-      )
+      commands = Vector(List("VAR1=val1", "VAR2=val2", File.temp.toString, "echo", "hello"))
     )
   }
 
@@ -51,8 +49,8 @@ class ProcessAlgTest extends AnyFunSuite with Matchers {
     state shouldBe MockState.empty.copy(
       commands = Vector(
         List(
-          "TEST_VAR=GREAT",
-          "ANOTHER_TEST_VAR=ALSO_GREAT",
+          "VAR1=val1",
+          "VAR2=val2",
           File.temp.toString,
           "firejail",
           s"--whitelist=${File.temp}",

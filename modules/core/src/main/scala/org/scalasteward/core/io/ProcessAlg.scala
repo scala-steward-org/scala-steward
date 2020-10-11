@@ -20,7 +20,6 @@ import better.files.File
 import cats.effect.{Blocker, Concurrent, ContextShift, Timer}
 import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
-import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.util.Nel
 
@@ -32,18 +31,16 @@ trait ProcessAlg[F[_]] {
 
 object ProcessAlg {
   abstract class UsingFirejail[F[_]](config: Config) extends ProcessAlg[F] {
-    override def execSandboxed(command: Nel[String], cwd: File): F[List[String]] = {
-      val envVars = config.envVars.map(EnvVar.unapply(_).get)
+    override def execSandboxed(command: Nel[String], cwd: File): F[List[String]] =
       if (config.disableSandbox)
-        exec(command, cwd, envVars: _*)
+        exec(command, cwd)
       else {
         val whitelisted = (cwd.pathAsString :: config.whitelistedDirectories)
           .map(dir => s"--whitelist=$dir")
         val readOnly = config.readOnlyDirectories
           .map(dir => s"--read-only=$dir")
-        exec(Nel("firejail", whitelisted ++ readOnly) ::: command, cwd, envVars: _*)
+        exec(Nel("firejail", whitelisted ++ readOnly) ::: command, cwd)
       }
-    }
   }
 
   def create[F[_]](blocker: Blocker)(implicit
@@ -52,7 +49,8 @@ object ProcessAlg {
       logger: Logger[F],
       timer: Timer[F],
       F: Concurrent[F]
-  ): ProcessAlg[F] =
+  ): ProcessAlg[F] = {
+    val envVars = config.envVars.map(v => (v.name, v.value))
     new UsingFirejail[F](config) {
       override def exec(
           command: Nel[String],
@@ -63,10 +61,11 @@ object ProcessAlg {
           process.slurp[F](
             command,
             Some(cwd.toJava),
-            extraEnv.toMap,
+            (extraEnv ++ envVars).toMap,
             config.processTimeout,
             logger.trace(_),
             blocker
           )
     }
+  }
 }
