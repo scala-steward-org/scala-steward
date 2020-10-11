@@ -6,6 +6,7 @@ import cats.effect.Sync
 import org.http4s.Uri
 import org.scalasteward.core.TestInstances.ioContextShift
 import org.scalasteward.core.application.Cli.EnvVar
+import org.scalasteward.core.application.Config.{ProcessCfg, SandboxCfg, ScalafixCfg}
 import org.scalasteward.core.application.{Config, SupportedVCS}
 import org.scalasteward.core.buildtool.BuildToolDispatcher
 import org.scalasteward.core.buildtool.maven.MavenAlg
@@ -39,17 +40,24 @@ object MockContext {
     vcsLogin = "bot-doe",
     gitAskPass = File.temp / "askpass.sh",
     signCommits = false,
-    whitelistedDirectories = Nil,
-    readOnlyDirectories = Nil,
-    disableSandbox = false,
     doNotFork = false,
     ignoreOptsFiles = false,
-    envVars = List(
-      EnvVar("VAR1", "val1"),
-      EnvVar("VAR2", "val2")
+    process = ProcessCfg(
+      envVars = List(
+        EnvVar("VAR1", "val1"),
+        EnvVar("VAR2", "val2")
+      ),
+      processTimeout = 10.minutes,
+      sandbox = SandboxCfg(
+        whitelistedDirectories = Nil,
+        readOnlyDirectories = Nil,
+        disableSandbox = false
+      )
     ),
-    processTimeout = 10.minutes,
-    scalafix = Config.Scalafix(Nil, disableDefaults = false),
+    scalafix = ScalafixCfg(
+      migrations = Nil,
+      disableDefaults = false
+    ),
     groupMigrations = None,
     cacheTtl = 1.hour,
     cacheMissDelay = 0.milliseconds,
@@ -62,7 +70,7 @@ object MockContext {
 
   implicit val fileAlg: MockFileAlg = new MockFileAlg
   implicit val mockLogger: MockLogger = new MockLogger
-  implicit val processAlg: MockProcessAlg = new MockProcessAlg(config)
+  implicit val processAlg: MockProcessAlg = new MockProcessAlg(config.process)
   implicit val workspaceAlg: MockWorkspaceAlg = new MockWorkspaceAlg
 
   implicit val coursierAlg: CoursierAlg[MockEff] = CoursierAlg.create

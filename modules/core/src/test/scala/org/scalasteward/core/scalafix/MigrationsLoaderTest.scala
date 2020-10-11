@@ -1,7 +1,7 @@
 package org.scalasteward.core.scalafix
 
 import org.http4s.Uri
-import org.scalasteward.core.application.Config
+import org.scalasteward.core.application.Config.ScalafixCfg
 import org.scalasteward.core.data.{GroupId, Version}
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
 import org.scalasteward.core.mock.MockContext._
@@ -34,7 +34,7 @@ class MigrationsLoaderTest extends AnyFunSuite with Matchers {
 
   test("loadAll: without extra file, without defaults") {
     val migrations = migrationsLoader
-      .loadAll(Config.Scalafix(Nil, disableDefaults = true))
+      .loadAll(ScalafixCfg(Nil, disableDefaults = true))
       .runA(mockState)
       .unsafeRunSync()
     migrations.size shouldBe 0
@@ -42,7 +42,7 @@ class MigrationsLoaderTest extends AnyFunSuite with Matchers {
 
   test("loadAll: without extra file, with defaults") {
     val migrations = migrationsLoader
-      .loadAll(Config.Scalafix(Nil, disableDefaults = false))
+      .loadAll(ScalafixCfg(Nil, disableDefaults = false))
       .runA(mockState)
       .unsafeRunSync()
     migrations.size should be > 0
@@ -51,7 +51,7 @@ class MigrationsLoaderTest extends AnyFunSuite with Matchers {
   test("loadAll: with extra file, without defaults") {
     val initialState = mockState.addUri(migrationsUri, migrationsContent)
     val migrations = migrationsLoader
-      .loadAll(Config.Scalafix(List(migrationsUri), disableDefaults = true))
+      .loadAll(ScalafixCfg(List(migrationsUri), disableDefaults = true))
       .runA(initialState)
       .unsafeRunSync()
     migrations shouldBe List(migration)
@@ -60,7 +60,7 @@ class MigrationsLoaderTest extends AnyFunSuite with Matchers {
   test("loadAll: with extra file, with defaults") {
     val initialState = mockState.addUri(migrationsUri, migrationsContent)
     val migrations = migrationsLoader
-      .loadAll(Config.Scalafix(List(migrationsUri), disableDefaults = false))
+      .loadAll(ScalafixCfg(List(migrationsUri), disableDefaults = false))
       .runA(initialState)
       .unsafeRunSync()
     migrations.size should be > 1
@@ -70,7 +70,7 @@ class MigrationsLoaderTest extends AnyFunSuite with Matchers {
   test("loadAll: malformed extra file") {
     val initialState = mockState.addUri(migrationsUri, """{"key": "i'm not a valid Migration}""")
     val migrations = migrationsLoader
-      .loadAll(Config.Scalafix(List(migrationsUri), disableDefaults = false))
+      .loadAll(ScalafixCfg(List(migrationsUri), disableDefaults = false))
       .runA(initialState)
       .attempt
       .unsafeRunSync()

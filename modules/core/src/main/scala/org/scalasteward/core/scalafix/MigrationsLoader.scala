@@ -21,7 +21,7 @@ import io.chrisdavenport.log4cats.Logger
 import io.circe.config.parser.decode
 import org.http4s.Uri
 import org.http4s.implicits.http4sLiteralsSyntax
-import org.scalasteward.core.application.Config
+import org.scalasteward.core.application.Config.ScalafixCfg
 import org.scalasteward.core.io.FileAlg
 import org.scalasteward.core.scalafix.MigrationsLoader._
 import org.scalasteward.core.util.MonadThrowable
@@ -31,7 +31,7 @@ final class MigrationsLoader[F[_]](implicit
     logger: Logger[F],
     F: MonadThrowable[F]
 ) {
-  def loadAll(config: Config.Scalafix): F[List[Migration]] = {
+  def loadAll(config: ScalafixCfg): F[List[Migration]] = {
     val maybeDefaultMigrationsUrl =
       Option.unless(config.disableDefaults)(defaultScalafixMigrationsUrl)
     (maybeDefaultMigrationsUrl.toList ++ config.migrations)

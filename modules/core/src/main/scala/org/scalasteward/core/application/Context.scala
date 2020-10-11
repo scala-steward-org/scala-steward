@@ -62,7 +62,7 @@ object Context {
     } yield {
       val kvsPrefix = Some(config.vcsType.asString)
       implicit val dateTimeAlg: DateTimeAlg[F] = DateTimeAlg.create[F]
-      implicit val processAlg: ProcessAlg[F] = ProcessAlg.create[F](blocker)
+      implicit val processAlg: ProcessAlg[F] = ProcessAlg.create[F](blocker, config.process)
       implicit val workspaceAlg: WorkspaceAlg[F] = WorkspaceAlg.create[F]
       implicit val repoConfigAlg: RepoConfigAlg[F] = new RepoConfigAlg[F]
       implicit val filterAlg: FilterAlg[F] = new FilterAlg[F]

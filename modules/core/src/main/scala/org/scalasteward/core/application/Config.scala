@@ -16,12 +16,12 @@
 
 package org.scalasteward.core.application
 
-import better.files._
+import better.files.File
 import cats.effect.Sync
 import org.http4s.Uri
 import org.http4s.Uri.UserInfo
 import org.scalasteward.core.application.Cli.EnvVar
-import org.scalasteward.core.application.Config.Scalafix
+import org.scalasteward.core.application.Config.{ProcessCfg, ScalafixCfg}
 import org.scalasteward.core.git.Author
 import org.scalasteward.core.util
 import org.scalasteward.core.vcs.data.AuthenticatedUser
@@ -62,14 +62,10 @@ final case class Config(
     vcsLogin: String,
     gitAskPass: File,
     signCommits: Boolean,
-    whitelistedDirectories: List[String],
-    readOnlyDirectories: List[String],
-    disableSandbox: Boolean,
     doNotFork: Boolean,
     ignoreOptsFiles: Boolean,
-    envVars: List[EnvVar],
-    processTimeout: FiniteDuration,
-    scalafix: Scalafix,
+    process: ProcessCfg,
+    scalafix: ScalafixCfg,
     groupMigrations: Option[File],
     cacheTtl: FiniteDuration,
     cacheMissDelay: FiniteDuration,
@@ -87,7 +83,19 @@ final case class Config(
 }
 
 object Config {
-  final case class Scalafix(
+  final case class ProcessCfg(
+      envVars: List[EnvVar],
+      processTimeout: FiniteDuration,
+      sandbox: SandboxCfg
+  )
+
+  final case class SandboxCfg(
+      whitelistedDirectories: List[String],
+      readOnlyDirectories: List[String],
+      disableSandbox: Boolean
+  )
+
+  final case class ScalafixCfg(
       migrations: List[Uri],
       disableDefaults: Boolean
   )
@@ -103,14 +111,21 @@ object Config {
       vcsLogin = args.vcsLogin,
       gitAskPass = args.gitAskPass,
       signCommits = args.signCommits,
-      whitelistedDirectories = args.whitelist,
-      readOnlyDirectories = args.readOnly,
-      disableSandbox = args.disableSandbox,
       doNotFork = args.doNotFork,
       ignoreOptsFiles = args.ignoreOptsFiles,
-      envVars = args.envVar,
-      processTimeout = args.processTimeout,
-      scalafix = Scalafix(args.scalafixMigrations, args.disableDefaultScalafixMigrations),
+      process = ProcessCfg(
+        envVars = args.envVar,
+        processTimeout = args.processTimeout,
+        sandbox = SandboxCfg(
+          whitelistedDirectories = args.whitelist,
+          readOnlyDirectories = args.readOnly,
+          disableSandbox = args.disableSandbox
+        )
+      ),
+      scalafix = ScalafixCfg(
+        migrations = args.scalafixMigrations,
+        disableDefaults = args.disableDefaultScalafixMigrations
+      ),
       groupMigrations = args.groupMigrations,
       cacheTtl = args.cacheTtl,
       cacheMissDelay = args.cacheMissDelay,
