@@ -42,19 +42,19 @@ object MockContext {
     signCommits = false,
     doNotFork = false,
     ignoreOptsFiles = false,
-    process = ProcessCfg(
+    processCfg = ProcessCfg(
       envVars = List(
         EnvVar("VAR1", "val1"),
         EnvVar("VAR2", "val2")
       ),
       processTimeout = 10.minutes,
-      sandbox = SandboxCfg(
+      sandboxCfg = SandboxCfg(
         whitelistedDirectories = Nil,
         readOnlyDirectories = Nil,
         disableSandbox = false
       )
     ),
-    scalafix = ScalafixCfg(
+    scalafixCfg = ScalafixCfg(
       migrations = Nil,
       disableDefaults = false
     ),
@@ -70,7 +70,7 @@ object MockContext {
 
   implicit val fileAlg: MockFileAlg = new MockFileAlg
   implicit val mockLogger: MockLogger = new MockLogger
-  implicit val processAlg: MockProcessAlg = new MockProcessAlg(config.process)
+  implicit val processAlg: MockProcessAlg = new MockProcessAlg(config.processCfg)
   implicit val workspaceAlg: MockWorkspaceAlg = new MockWorkspaceAlg
 
   implicit val coursierAlg: CoursierAlg[MockEff] = CoursierAlg.create
@@ -81,7 +81,7 @@ object MockContext {
   implicit val scalafmtAlg: ScalafmtAlg[MockEff] = ScalafmtAlg.create
   val migrationsLoader: MigrationsLoader[MockEff] = new MigrationsLoader[MockEff]
   implicit val migrationAlg: MigrationAlg = migrationsLoader
-    .loadAll(config.scalafix)
+    .loadAll(config.scalafixCfg)
     .map(new MigrationAlg(_))
     .runA(MigrationsLoaderTest.mockState)
     .unsafeRunSync()

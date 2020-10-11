@@ -50,7 +50,7 @@ object ProcessAlg {
       F: Concurrent[F]
   ): ProcessAlg[F] = {
     val envVars = config.envVars.map(v => (v.name, v.value))
-    new UsingFirejail[F](config.sandbox) {
+    new UsingFirejail[F](config.sandboxCfg) {
       override def exec(
           command: Nel[String],
           cwd: File,

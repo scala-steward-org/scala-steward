@@ -64,8 +64,8 @@ final case class Config(
     signCommits: Boolean,
     doNotFork: Boolean,
     ignoreOptsFiles: Boolean,
-    process: ProcessCfg,
-    scalafix: ScalafixCfg,
+    processCfg: ProcessCfg,
+    scalafixCfg: ScalafixCfg,
     groupMigrations: Option[File],
     cacheTtl: FiniteDuration,
     cacheMissDelay: FiniteDuration,
@@ -86,7 +86,7 @@ object Config {
   final case class ProcessCfg(
       envVars: List[EnvVar],
       processTimeout: FiniteDuration,
-      sandbox: SandboxCfg
+      sandboxCfg: SandboxCfg
   )
 
   final case class SandboxCfg(
@@ -113,16 +113,16 @@ object Config {
       signCommits = args.signCommits,
       doNotFork = args.doNotFork,
       ignoreOptsFiles = args.ignoreOptsFiles,
-      process = ProcessCfg(
+      processCfg = ProcessCfg(
         envVars = args.envVar,
         processTimeout = args.processTimeout,
-        sandbox = SandboxCfg(
+        sandboxCfg = SandboxCfg(
           whitelistedDirectories = args.whitelist,
           readOnlyDirectories = args.readOnly,
           disableSandbox = args.disableSandbox
         )
       ),
-      scalafix = ScalafixCfg(
+      scalafixCfg = ScalafixCfg(
         migrations = args.scalafixMigrations,
         disableDefaults = args.disableDefaultScalafixMigrations
       ),

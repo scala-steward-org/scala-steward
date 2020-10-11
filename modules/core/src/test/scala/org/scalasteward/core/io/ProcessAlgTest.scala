@@ -59,5 +59,5 @@ class ProcessAlgTest extends AnyFunSuite with Matchers {
 
 object ProcessAlgTest {
   val blocker: Blocker = Blocker.liftExecutorService(Executors.newCachedThreadPool())
-  implicit val ioProcessAlg: ProcessAlg[IO] = ProcessAlg.create[IO](blocker, config.process)
+  implicit val ioProcessAlg: ProcessAlg[IO] = ProcessAlg.create[IO](blocker, config.processCfg)
 }
