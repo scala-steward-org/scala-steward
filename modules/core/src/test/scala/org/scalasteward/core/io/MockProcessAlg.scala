@@ -11,9 +11,7 @@ class MockProcessAlg(config: Config) extends ProcessAlg.UsingFirejail[MockEff](c
       cwd: File,
       extraEnv: (String, String)*
   ): MockEff[List[String]] = {
-    val envVars = config.envVars.map(v => (v.name, v.value))
-    applyPure { s =>
-      (s.exec(cwd.toString :: command.toList, extraEnv ++ envVars: _*), List.empty[String])
-    }
+    val env = extraEnv ++ config.envVars.map(v => (v.name, v.value))
+    applyPure(s => (s.exec(cwd.toString :: command.toList, env: _*), List.empty[String]))
   }
 }
