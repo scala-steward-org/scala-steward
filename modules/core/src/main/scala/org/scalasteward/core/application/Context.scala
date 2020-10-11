@@ -51,7 +51,7 @@ object Context {
       blocker <- Blocker[F]
       implicit0(logger: Logger[F]) <- Resource.liftF(Slf4jLogger.create[F])
       _ <- Resource.liftF(printBanner[F])
-      implicit0(config: Config) <- Resource.liftF(Config.create[F](args))
+      implicit0(config: Config) <- Resource.pure(Config.from(args))
       implicit0(client: Client[F]) <- AsyncHttpClient.resource[F]()
       implicit0(httpExistenceClient: HttpExistenceClient[F]) <- HttpExistenceClient.create[F]
       implicit0(user: AuthenticatedUser) <- Resource.liftF(config.vcsUser[F])
