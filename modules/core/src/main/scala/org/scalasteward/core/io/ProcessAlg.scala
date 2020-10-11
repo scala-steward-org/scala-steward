@@ -49,14 +49,14 @@ object ProcessAlg {
       logger: Logger[F],
       timer: Timer[F],
       F: Concurrent[F]
-  ): ProcessAlg[F] =
+  ): ProcessAlg[F] = {
+    val envVars = config.envVars.map(v => (v.name, v.value))
     new UsingFirejail[F](config) {
       override def exec(
           command: Nel[String],
           cwd: File,
           extraEnv: (String, String)*
-      ): F[List[String]] = {
-        val envVars = config.envVars.map(v => (v.name, v.value))
+      ): F[List[String]] =
         logger.debug(s"Execute ${command.mkString_(" ")}") >>
           process.slurp[F](
             command,
@@ -66,6 +66,6 @@ object ProcessAlg {
             logger.trace(_),
             blocker
           )
-      }
     }
+  }
 }
