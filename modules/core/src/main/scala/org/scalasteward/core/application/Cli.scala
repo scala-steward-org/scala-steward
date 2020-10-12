@@ -48,7 +48,6 @@ object Cli {
       disableDefaultScalafixMigrations: Boolean = false,
       groupMigrations: Option[File] = None,
       cacheTtl: FiniteDuration = 2.hours,
-      cacheMissDelay: FiniteDuration = 0.milliseconds,
       bitbucketServerUseDefaultReviewers: Boolean = false,
       gitlabMergeWhenPipelineSucceeds: Boolean = false
   )

@@ -45,13 +45,7 @@ object MockContext {
           EnvVar("VAR1", "val1"),
           EnvVar("VAR2", "val2")
         ),
-        processTimeout = 10.minutes,
-        whitelist = Nil,
-        readOnly = Nil,
-        scalafixMigrations = Nil,
-        groupMigrations = None,
-        cacheTtl = 1.hour,
-        cacheMissDelay = 0.milliseconds
+        cacheTtl = 1.hour
       )
     )
 
