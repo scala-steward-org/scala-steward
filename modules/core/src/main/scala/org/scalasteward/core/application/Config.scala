@@ -68,7 +68,6 @@ final case class Config(
     scalafixCfg: ScalafixCfg,
     groupMigrations: Option[File],
     cacheTtl: FiniteDuration,
-    cacheMissDelay: FiniteDuration,
     bitbucketServerUseDefaultReviewers: Boolean,
     gitlabMergeWhenPipelineSucceeds: Boolean
 ) {
@@ -128,7 +127,6 @@ object Config {
       ),
       groupMigrations = args.groupMigrations,
       cacheTtl = args.cacheTtl,
-      cacheMissDelay = args.cacheMissDelay,
       bitbucketServerUseDefaultReviewers = args.bitbucketServerUseDefaultReviewers,
       gitlabMergeWhenPipelineSucceeds = args.gitlabMergeWhenPipelineSucceeds
     )
