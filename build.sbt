@@ -268,7 +268,9 @@ runSteward := Def.taskDyn {
     Seq("--git-ask-pass", s"$home/.github/askpass/$projectName.sh"),
     Seq("--whitelist", s"$home/.cache/coursier"),
     Seq("--whitelist", s"$home/.cache/JNA"),
+    Seq("--whitelist", s"$home/.cache/mill"),
     Seq("--whitelist", s"$home/.ivy2"),
+    Seq("--whitelist", s"$home/.mill"),
     Seq("--whitelist", s"$home/.sbt"),
     Seq("--whitelist", myJavaHome),
     Seq("--read-only", myJavaHome)

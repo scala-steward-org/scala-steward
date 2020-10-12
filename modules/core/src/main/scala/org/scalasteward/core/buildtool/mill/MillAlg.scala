@@ -17,14 +17,13 @@
 package org.scalasteward.core.buildtool.mill
 
 import cats.syntax.all._
-import cats.effect.Sync
 import org.scalasteward.core.BuildInfo
 import org.scalasteward.core.buildtool.BuildToolAlg
 import org.scalasteward.core.data.Scope
 import org.scalasteward.core.data.Scope.Dependencies
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.scalafix.Migration
-import org.scalasteward.core.util.Nel
+import org.scalasteward.core.util.{BracketThrow, Nel}
 import org.scalasteward.core.vcs.data.Repo
 
 trait MillAlg[F[_]] extends BuildToolAlg[F]
@@ -46,7 +45,7 @@ object MillAlg {
       fileAlg: FileAlg[F],
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F],
-      F: Sync[F]
+      F: BracketThrow[F]
   ): MillAlg[F] =
     new MillAlg[F] {
       override def containsBuild(repo: Repo): F[Boolean] =
@@ -58,7 +57,7 @@ object MillAlg {
           predef = repoDir / "scala-steward.sc"
           extracted <- fileAlg.createTemporarily(predef, content) {
             val command = Nel("mill", List("-i", "-p", predef.toString, "show", extractDeps))
-            processAlg.exec(command, repoDir)
+            processAlg.execSandboxed(command, repoDir)
           }
           parsed <- F.fromEither(
             parser.parseModules(extracted.dropWhile(!_.startsWith("{")).mkString("\n"))
