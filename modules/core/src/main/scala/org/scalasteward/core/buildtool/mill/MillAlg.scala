@@ -56,16 +56,13 @@ object MillAlg {
         for {
           repoDir <- workspaceAlg.repoDir(repo)
           predef = repoDir / "scala-steward.sc"
-          _ <- fileAlg.writeFile(predef, content)
-          extracted <- processAlg.exec(
-            Nel("mill", List("-i", "-p", predef.toString, "show", extractDeps)),
-            repoDir
-          )
+          extracted <- fileAlg.createTemporarily(predef, content) {
+            val command = Nel("mill", List("-i", "-p", predef.toString, "show", extractDeps))
+            processAlg.exec(command, repoDir)
+          }
           parsed <- F.fromEither(
             parser.parseModules(extracted.dropWhile(!_.startsWith("{")).mkString("\n"))
           )
-          _ <- fileAlg.deleteForce(predef)
-
         } yield parsed.map(module => Scope(module.dependencies, module.repositories))
 
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] = F.unit
