@@ -25,7 +25,7 @@ import scala.concurrent.duration.FiniteDuration
 object logger {
   implicit final class LoggerOps[F[_]](private val logger: Logger[F]) extends AnyVal {
     def attemptLog[A](label: String, errorLabel: Option[String] = None)(fa: F[A])(implicit
-        F: MonadThrowable[F]
+        F: MonadThrow[F]
     ): F[Either[Throwable, A]] =
       logger.info(label) >> fa.attempt.flatTap {
         case Left(t)  => logger.error(t)(s"${errorLabel.getOrElse(label)} failed")

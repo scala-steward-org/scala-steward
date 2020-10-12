@@ -20,7 +20,7 @@ import io.circe.Decoder
 import io.circe.generic.semiauto._
 import org.http4s.Uri
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.util.ApplicativeThrowable
+import org.scalasteward.core.util.ApplicativeThrow
 import org.scalasteward.core.util.uri.uriDecoder
 
 final case class RepoOut(
@@ -30,7 +30,7 @@ final case class RepoOut(
     clone_url: Uri,
     default_branch: Branch
 ) {
-  def parentOrRaise[F[_]](implicit F: ApplicativeThrowable[F]): F[RepoOut] =
+  def parentOrRaise[F[_]](implicit F: ApplicativeThrow[F]): F[RepoOut] =
     parent.fold(F.raiseError[RepoOut](new Throwable(s"repo $name has no parent")))(F.pure)
 
   def repo: Repo =

@@ -25,7 +25,7 @@ import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.repoconfig.RepoConfigAlg._
-import org.scalasteward.core.util.MonadThrowable
+import org.scalasteward.core.util.MonadThrow
 import org.scalasteward.core.vcs.data.Repo
 
 final class RepoConfigAlg[F[_]](implicit
@@ -33,7 +33,7 @@ final class RepoConfigAlg[F[_]](implicit
     fileAlg: FileAlg[F],
     logger: Logger[F],
     workspaceAlg: WorkspaceAlg[F],
-    F: MonadThrowable[F]
+    F: MonadThrow[F]
 ) {
 
   def readRepoConfigWithDefault(repo: Repo): F[RepoConfig] =

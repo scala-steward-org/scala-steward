@@ -30,7 +30,7 @@ import org.scalasteward.core.git.{Branch, Commit, GitAlg}
 import org.scalasteward.core.repocache.RepoCacheRepository
 import org.scalasteward.core.repoconfig.{PullRequestUpdateStrategy, RepoConfigAlg}
 import org.scalasteward.core.scalafix.MigrationAlg
-import org.scalasteward.core.util.{BracketThrowable, HttpExistenceClient}
+import org.scalasteward.core.util.{BracketThrow, HttpExistenceClient}
 import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo, RepoOut}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg}
 import org.scalasteward.core.{git, util, vcs}
@@ -50,7 +50,7 @@ final class NurtureAlg[F[_]](implicit
     pullRequestRepository: PullRequestRepository[F],
     repoCacheRepository: RepoCacheRepository[F],
     streamCompiler: Stream.Compiler[F, F],
-    F: BracketThrowable[F]
+    F: BracketThrow[F]
 ) {
   def nurture(repo: Repo, fork: RepoOut, updates: List[Update.Single]): F[Unit] =
     for {

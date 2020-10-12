@@ -23,7 +23,7 @@ import org.scalasteward.core.scalafix.{MigrationAlg, MigrationsLoader, Migration
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.{FilterAlg, GroupMigrations, PruningAlg, UpdateAlg}
 import org.scalasteward.core.util.uri._
-import org.scalasteward.core.util.{BracketThrowable, DateTimeAlg}
+import org.scalasteward.core.util.{BracketThrow, DateTimeAlg}
 import org.scalasteward.core.vcs.VCSRepoAlg
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 import scala.concurrent.duration._
@@ -55,7 +55,7 @@ object MockContext {
       )
     )
 
-  implicit val mockEffBracketThrowable: BracketThrowable[MockEff] = Sync[MockEff]
+  implicit val mockEffBracketThrow: BracketThrow[MockEff] = Sync[MockEff]
   implicit val mockEffParallel: Parallel[MockEff] = Parallel.identity
 
   implicit val fileAlg: MockFileAlg = new MockFileAlg

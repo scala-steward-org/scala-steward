@@ -31,7 +31,7 @@ final class HttpExistenceClient[F[_]](statusCache: Cache[Status])(implicit
     client: Client[F],
     logger: Logger[F],
     mode: Mode[F],
-    F: MonadThrowable[F]
+    F: MonadThrow[F]
 ) {
   def exists(uri: Uri): F[Boolean] =
     status(uri).map(_ === Status.Ok).handleErrorWith { throwable =>
