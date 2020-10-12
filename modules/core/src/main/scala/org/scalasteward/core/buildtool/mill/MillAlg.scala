@@ -39,6 +39,9 @@ object MillAlg {
         |interp.load.ivy("${BuildInfo.organization}" %% "${BuildInfo.millPluginModuleName}" % "${BuildInfo.version}")
         |""".stripMargin
 
+  val extractDeps: String =
+    s"${BuildInfo.millPluginModuleRootPkg}.StewardPlugin/extractDeps"
+
   def create[F[_]](implicit
       fileAlg: FileAlg[F],
       processAlg: ProcessAlg[F],
@@ -55,16 +58,7 @@ object MillAlg {
           predef = repoDir / "scala-steward.sc"
           _ <- fileAlg.writeFile(predef, content)
           extracted <- processAlg.exec(
-            Nel(
-              "mill",
-              List(
-                "-i",
-                "-p",
-                predef.toString(),
-                "show",
-                s"${BuildInfo.millPluginModuleRootPkg}.StewardPlugin/extractDeps"
-              )
-            ),
+            Nel("mill", List("-i", "-p", predef.toString, "show", extractDeps)),
             repoDir
           )
           parsed <- F.fromEither(
