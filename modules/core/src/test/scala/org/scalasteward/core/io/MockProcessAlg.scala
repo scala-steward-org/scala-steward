@@ -15,6 +15,9 @@ class MockProcessAlg(config: ProcessCfg) extends UsingFirejail[MockEff](config.s
       extraEnv: (String, String)*
   ): MockEff[List[String]] =
     applyPure { s =>
-      (s.exec(cwd.toString :: command.toList, extraEnv ++ envVars: _*), List.empty[String])
+      (
+        s.exec(cwd.toString :: command.toList, extraEnv ++ envVars: _*),
+        s.commandOutputs.getOrElse(command.toList, List.empty)
+      )
     }
 }

@@ -39,6 +39,9 @@ object MillAlg {
         |interp.load.ivy("${BuildInfo.organization}" %% "${BuildInfo.millPluginModuleName}" % "${BuildInfo.version}")
         |""".stripMargin
 
+  val extractDeps: String =
+    s"${BuildInfo.millPluginModuleRootPkg}.StewardPlugin/extractDeps"
+
   def create[F[_]](implicit
       fileAlg: FileAlg[F],
       processAlg: ProcessAlg[F],
@@ -53,25 +56,13 @@ object MillAlg {
         for {
           repoDir <- workspaceAlg.repoDir(repo)
           predef = repoDir / "scala-steward.sc"
-          _ <- fileAlg.writeFile(predef, content)
-          extracted <- processAlg.exec(
-            Nel(
-              "mill",
-              List(
-                "-i",
-                "-p",
-                predef.toString(),
-                "show",
-                s"${BuildInfo.millPluginModuleRootPkg}.StewardPlugin/extractDeps"
-              )
-            ),
-            repoDir
-          )
+          extracted <- fileAlg.createTemporarily(predef, content) {
+            val command = Nel("mill", List("-i", "-p", predef.toString, "show", extractDeps))
+            processAlg.exec(command, repoDir)
+          }
           parsed <- F.fromEither(
             parser.parseModules(extracted.dropWhile(!_.startsWith("{")).mkString("\n"))
           )
-          _ <- fileAlg.deleteForce(predef)
-
         } yield parsed.map(module => Scope(module.dependencies, module.repositories))
 
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] = F.unit

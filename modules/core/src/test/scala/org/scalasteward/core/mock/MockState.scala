@@ -5,6 +5,7 @@ import org.http4s.Uri
 
 final case class MockState(
     commands: Vector[List[String]],
+    commandOutputs: Map[List[String], List[String]],
     logs: Vector[(Option[Throwable], String)],
     files: Map[File, String],
     uris: Map[Uri, String]
@@ -30,5 +31,11 @@ final case class MockState(
 
 object MockState {
   def empty: MockState =
-    MockState(commands = Vector.empty, logs = Vector.empty, files = Map.empty, uris = Map.empty)
+    MockState(
+      commands = Vector.empty,
+      commandOutputs = Map.empty,
+      logs = Vector.empty,
+      files = Map.empty,
+      uris = Map.empty
+    )
 }

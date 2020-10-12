@@ -30,7 +30,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
     )
   }
 
-  test("getDependenciesAndResolvers") {
+  test("getDependencies") {
     val repo = Repo("typelevel", "cats")
     val repoDir = config.workspace / repo.show
     val files = Map(repoDir / "project" / "build.properties" -> "sbt.version=1.2.6")
