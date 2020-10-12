@@ -28,7 +28,7 @@ import org.scalasteward.core.buildtool.sbt.data.SbtVersion
 import org.scalasteward.core.data.{Dependency, Resolver, Scope}
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.scalafix.Migration
-import org.scalasteward.core.util.{BracketThrowable, Nel}
+import org.scalasteward.core.util.{BracketThrow, Nel}
 import org.scalasteward.core.vcs.data.Repo
 
 trait SbtAlg[F[_]] extends BuildToolAlg[F] {
@@ -49,7 +49,7 @@ object SbtAlg {
       logger: Logger[F],
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F],
-      F: BracketThrowable[F]
+      F: BracketThrow[F]
   ): SbtAlg[F] =
     new SbtAlg[F] {
       override def addGlobalPluginTemporarily[A](plugin: FileData)(fa: F[A]): F[A] =

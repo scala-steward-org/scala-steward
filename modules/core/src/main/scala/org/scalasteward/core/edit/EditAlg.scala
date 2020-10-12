@@ -35,7 +35,7 @@ final class EditAlg[F[_]](implicit
     migrationAlg: MigrationAlg,
     streamCompiler: Stream.Compiler[F, F],
     workspaceAlg: WorkspaceAlg[F],
-    F: MonadThrowable[F]
+    F: MonadThrow[F]
 ) {
   def applyUpdate(repo: Repo, update: Update, fileExtensions: Set[String]): F[Unit] =
     for {

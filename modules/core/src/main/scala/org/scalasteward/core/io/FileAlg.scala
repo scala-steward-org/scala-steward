@@ -25,7 +25,7 @@ import io.chrisdavenport.log4cats.Logger
 import org.apache.commons.io.FileUtils
 import org.http4s.Uri
 import org.http4s.implicits.http4sLiteralsSyntax
-import org.scalasteward.core.util.MonadThrowable
+import org.scalasteward.core.util.MonadThrow
 import scala.io.Source
 
 trait FileAlg[F[_]] {
@@ -63,14 +63,14 @@ trait FileAlg[F[_]] {
   }
 
   final def editFile(file: File, edit: String => Option[String])(implicit
-      F: MonadThrowable[F]
+      F: MonadThrow[F]
   ): F[Boolean] =
     readFile(file)
       .flatMap(_.flatMap(edit).fold(F.pure(false))(writeFile(file, _).as(true)))
       .adaptError { case t => new Throwable(s"failed to edit $file", t) }
 
   final def editFiles[G[_]](files: G[File], edit: String => Option[String])(implicit
-      F: MonadThrowable[F],
+      F: MonadThrow[F],
       G: Traverse[G]
   ): F[Boolean] =
     files.traverse(editFile(_, edit)).map(_.foldLeft(false)(_ || _))

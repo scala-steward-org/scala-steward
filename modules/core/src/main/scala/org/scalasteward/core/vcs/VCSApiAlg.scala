@@ -18,7 +18,7 @@ package org.scalasteward.core.vcs
 
 import cats.syntax.all._
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.util.{ApplicativeThrowable, MonadThrowable}
+import org.scalasteward.core.util.{ApplicativeThrow, MonadThrow}
 import org.scalasteward.core.vcs.data._
 
 trait VCSApiAlg[F[_]] {
@@ -36,7 +36,7 @@ trait VCSApiAlg[F[_]] {
     if (doNotFork) getRepo(repo) else createFork(repo)
 
   final def createForkOrGetRepoWithDefaultBranch(repo: Repo, doNotFork: Boolean)(implicit
-      F: MonadThrowable[F]
+      F: MonadThrow[F]
   ): F[(RepoOut, BranchOut)] =
     for {
       forkOrRepo <- createForkOrGetRepo(repo, doNotFork)
@@ -44,12 +44,12 @@ trait VCSApiAlg[F[_]] {
     } yield (forkOrRepo, defaultBranch)
 
   final def getDefaultBranchOfParentOrRepo(repoOut: RepoOut, doNotFork: Boolean)(implicit
-      F: MonadThrowable[F]
+      F: MonadThrow[F]
   ): F[BranchOut] =
     parentOrRepo(repoOut, doNotFork).flatMap(getDefaultBranch)
 
   final def parentOrRepo(repoOut: RepoOut, doNotFork: Boolean)(implicit
-      F: ApplicativeThrowable[F]
+      F: ApplicativeThrow[F]
   ): F[RepoOut] =
     if (doNotFork) F.pure(repoOut) else repoOut.parentOrRaise[F]
 

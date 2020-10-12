@@ -24,12 +24,12 @@ import org.http4s.implicits.http4sLiteralsSyntax
 import org.scalasteward.core.application.Config.ScalafixCfg
 import org.scalasteward.core.io.FileAlg
 import org.scalasteward.core.scalafix.MigrationsLoader._
-import org.scalasteward.core.util.MonadThrowable
+import org.scalasteward.core.util.MonadThrow
 
 final class MigrationsLoader[F[_]](implicit
     fileAlg: FileAlg[F],
     logger: Logger[F],
-    F: MonadThrowable[F]
+    F: MonadThrow[F]
 ) {
   def loadAll(config: ScalafixCfg): F[List[Migration]] = {
     val maybeDefaultMigrationsUrl =

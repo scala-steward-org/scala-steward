@@ -23,14 +23,14 @@ import io.circe.generic.extras.{semiauto, Configuration}
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.data._
 import org.scalasteward.core.io.FileAlg
-import org.scalasteward.core.util.{MonadThrowable, Nel}
+import org.scalasteward.core.util.{MonadThrow, Nel}
 
 trait GroupMigrations {
   def findUpdateWithNewerGroupId(dependency: Dependency): Option[Update.Single]
 }
 
 object GroupMigrations {
-  def create[F[_]: MonadThrowable](implicit
+  def create[F[_]: MonadThrow](implicit
       fileAlg: FileAlg[F],
       config: Config
   ): F[GroupMigrations] = {
