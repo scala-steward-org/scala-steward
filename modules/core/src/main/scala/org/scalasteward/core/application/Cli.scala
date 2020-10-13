@@ -23,6 +23,7 @@ import caseapp.core.argparser.{ArgParser, SimpleArgParser}
 import cats.syntax.all._
 import org.http4s.Uri
 import org.http4s.syntax.literals._
+import org.scalasteward.core.util.dateTime.parseFiniteDuration
 import scala.concurrent.duration._
 
 object Cli {
@@ -101,12 +102,6 @@ object Cli {
           MalformedValue("FiniteDuration", error)
         }
     )
-
-  private def parseFiniteDuration(s: String): Either[Throwable, FiniteDuration] =
-    Either.catchNonFatal(Duration(s)).flatMap {
-      case fd: FiniteDuration => Right(fd)
-      case d                  => Left(new Throwable(s"$d is not a FiniteDuration"))
-    }
 
   implicit val uriArgParser: ArgParser[Uri] =
     ArgParser[String].xmapError(

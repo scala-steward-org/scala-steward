@@ -22,6 +22,12 @@ import scala.annotation.tailrec
 import scala.concurrent.duration._
 
 object dateTime {
+  def parseFiniteDuration(s: String): Either[Throwable, FiniteDuration] =
+    Either.catchNonFatal(Duration(s)).flatMap {
+      case fd: FiniteDuration => Right(fd)
+      case d                  => Left(new Throwable(s"$d is not a FiniteDuration"))
+    }
+
   def showDuration(d: FiniteDuration): String = {
     def symbol(unit: TimeUnit): String =
       unit match {

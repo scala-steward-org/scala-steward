@@ -22,6 +22,11 @@ class PullRequestFrequencyTest extends AnyFunSuite with Matchers {
     freq.waitingTime(epoch, Timestamp(18.hours.toMillis)) shouldBe Some(6.hours)
   }
 
+  test("waitingTime: timespan") {
+    val Right(freq) = PullRequestFrequency.fromString("14 days")
+    freq.waitingTime(epoch, Timestamp(18.hours.toMillis)) shouldBe Some(6.hours + 13.days)
+  }
+
   test("waitingTime: cron expr") {
     val Right(freq) = PullRequestFrequency.fromString("0 1 ? * *")
     freq.waitingTime(epoch, Timestamp(20.minutes.toMillis)) shouldBe Some(40.minutes)

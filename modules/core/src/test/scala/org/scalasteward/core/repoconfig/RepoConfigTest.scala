@@ -4,6 +4,7 @@ import cats.syntax.semigroup._
 import org.scalasteward.core.data.GroupId
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import scala.concurrent.duration._
 
 class RepoConfigTest extends AnyFunSuite with Matchers {
   test("RepoConfig: semigroup") {
@@ -25,7 +26,7 @@ class RepoConfigTest extends AnyFunSuite with Matchers {
 
     val cfg2 = RepoConfig(
       commits = CommitsConfig(Some("b")),
-      pullRequests = PullRequestsConfig(Some(PullRequestFrequency.Daily)),
+      pullRequests = PullRequestsConfig(Some(PullRequestFrequency.Timespan(1.day))),
       updates = UpdatesConfig(
         allow =
           List(UpdatePattern(GroupId("B"), None, None), UpdatePattern(GroupId("C"), None, None))
