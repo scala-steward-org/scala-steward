@@ -17,6 +17,11 @@ class PullRequestFrequencyTest extends AnyFunSuite with Matchers {
     notThursday.onSchedule(epoch) shouldBe false
   }
 
+  test("waitingTime: @asap") {
+    val Right(freq) = PullRequestFrequency.fromString("@asap")
+    freq.waitingTime(epoch, Timestamp(18.hours.toMillis)) shouldBe None
+  }
+
   test("waitingTime: @daily") {
     val Right(freq) = PullRequestFrequency.fromString("@daily")
     freq.waitingTime(epoch, Timestamp(18.hours.toMillis)) shouldBe Some(6.hours)
