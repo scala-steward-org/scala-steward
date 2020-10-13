@@ -23,7 +23,7 @@ import cats.syntax.all._
 import org.http4s.Uri
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.util.Nel
+import org.scalasteward.core.util.{BracketThrow, Nel}
 import org.scalasteward.core.vcs.data.Repo
 
 trait GitAlg[F[_]] {
@@ -76,7 +76,7 @@ object GitAlg {
       fileAlg: FileAlg[F],
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F],
-      F: MonadCancelThrow[F]
+      F: BracketThrow[F]
   ): GitAlg[F] =
     new GitAlg[F] {
       override def branchAuthors(repo: Repo, branch: Branch, base: Branch): F[List[String]] =

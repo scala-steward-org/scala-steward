@@ -16,64 +16,16 @@
 
 package org.scalasteward.core.scalafix
 
-import better.files.File
-import cats.data.OptionT
-import cats.effect.{MonadThrow, Sync}
 import cats.syntax.all._
-import io.circe.config.parser.decode
 import org.scalasteward.core.data.{Update, Version}
-import org.scalasteward.core.io.FileAlg
-import org.scalasteward.core.util.ApplicativeThrow
 
-trait MigrationAlg {
-  def findMigrations(update: Update): List[Migration]
-}
-
-object MigrationAlg {
-  def create[F[_]](extraMigrations: Option[File])(implicit
-      fileAlg: FileAlg[F],
-      F: Sync[F]
-  ): F[MigrationAlg] =
-    loadMigrations(extraMigrations).map { migrations =>
-      new MigrationAlg {
-        override def findMigrations(update: Update): List[Migration] =
-          findMigrationsImpl(migrations, update)
-      }
-    }
-
-  def loadMigrations[F[_]](
-      extraMigrations: Option[File]
-  )(implicit fileAlg: FileAlg[F], F: MonadThrow[F]): F[List[Migration]] =
-    for {
-      default <-
-        fileAlg
-          .readResource("scalafix-migrations.conf")
-          .flatMap(decodeMigrations[F](_, "default"))
-      maybeExtra <- OptionT(extraMigrations.flatTraverse(fileAlg.readFile))
-        .semiflatMap(decodeMigrations[F](_, "extra"))
-        .value
-      migrations = maybeExtra match {
-        case Some(extra) if extra.disableDefaults => extra.migrations
-        case Some(extra)                          => default.migrations ++ extra.migrations
-        case None                                 => default.migrations
-      }
-    } yield migrations
-
-  private def decodeMigrations[F[_]](content: String, tpe: String)(implicit
-      F: ApplicativeThrow[F]
-  ): F[ScalafixMigrations] =
-    F.fromEither(decode[ScalafixMigrations](content))
-      .adaptErr(new Throwable(s"Failed to load $tpe Scalafix migrations", _))
-
-  private def findMigrationsImpl(
-      givenMigrations: List[Migration],
-      update: Update
-  ): List[Migration] =
-    givenMigrations.filter { migration =>
+final class MigrationAlg(migrations: List[Migration]) {
+  def findMigrations(update: Update): List[Migration] =
+    migrations.filter { migration =>
       update.groupId === migration.groupId &&
-      migration.artifactIds.exists(re =>
+      migration.artifactIds.exists { re =>
         update.artifactIds.exists(artifactId => re.r.findFirstIn(artifactId.name).isDefined)
-      ) &&
+      } &&
       Version(update.currentVersion) < migration.newVersion &&
       Version(update.newerVersions.head) >= migration.newVersion
     }

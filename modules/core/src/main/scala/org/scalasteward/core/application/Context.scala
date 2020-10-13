@@ -18,6 +18,7 @@ package org.scalasteward.core.application
 
 import cats.Parallel
 import cats.effect._
+import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.client.Client
@@ -34,7 +35,7 @@ import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository}
 import org.scalasteward.core.persistence.JsonKeyValueStore
 import org.scalasteward.core.repocache.{RefreshErrorAlg, RepoCacheAlg, RepoCacheRepository}
 import org.scalasteward.core.repoconfig.RepoConfigAlg
-import org.scalasteward.core.scalafix.MigrationAlg
+import org.scalasteward.core.scalafix.{MigrationAlg, MigrationsLoader}
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.{FilterAlg, GroupMigrations, PruningAlg, UpdateAlg}
 import org.scalasteward.core.util._
@@ -45,20 +46,21 @@ import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg, VCSSelecti
 object Context {
   def create[F[_]: Parallel: Async](args: Cli.Args): Resource[F, StewardAlg[F]] =
     for {
-      implicit0(config: Config) <- Resource.liftF(Config.create[F](args))
-      implicit0(client: Client[F]) <- AsyncHttpClient.resource[F]()
+      blocker <- Blocker[F]
       implicit0(logger: Logger[F]) <- Resource.liftF(Slf4jLogger.create[F])
+      _ <- Resource.liftF(printBanner[F])
+      implicit0(config: Config) <- Resource.pure(Config.from(args))
+      implicit0(client: Client[F]) <- AsyncHttpClient.resource[F]()
       implicit0(httpExistenceClient: HttpExistenceClient[F]) <- HttpExistenceClient.create[F]
       implicit0(user: AuthenticatedUser) <- Resource.liftF(config.vcsUser[F])
       implicit0(fileAlg: FileAlg[F]) = FileAlg.create[F]
-      implicit0(migrationAlg: MigrationAlg) <- Resource.liftF(
-        MigrationAlg.create[F](config.scalafixMigrations)
-      )
+      implicit0(migrationAlg: MigrationAlg) <-
+        Resource.liftF(new MigrationsLoader[F].loadAll(config.scalafixCfg).map(new MigrationAlg(_)))
       implicit0(groupMigration: GroupMigrations) <- Resource.liftF(GroupMigrations.create[F])
     } yield {
       val kvsPrefix = Some(config.vcsType.asString)
       implicit val dateTimeAlg: DateTimeAlg[F] = DateTimeAlg.create[F]
-      implicit val processAlg: ProcessAlg[F] = ProcessAlg.create[F]
+      implicit val processAlg: ProcessAlg[F] = ProcessAlg.create[F](blocker, config.processCfg)
       implicit val workspaceAlg: WorkspaceAlg[F] = WorkspaceAlg.create[F]
       implicit val repoConfigAlg: RepoConfigAlg[F] = new RepoConfigAlg[F]
       implicit val filterAlg: FilterAlg[F] = new FilterAlg[F]
@@ -90,4 +92,16 @@ object Context {
       implicit val pruningAlg: PruningAlg[F] = new PruningAlg[F]
       new StewardAlg[F]
     }
+
+  private def printBanner[F[_]](implicit logger: Logger[F]): F[Unit] = {
+    val banner =
+      """|  ____            _         ____  _                             _
+         | / ___|  ___ __ _| | __ _  / ___|| |_ _____      ____ _ _ __ __| |
+         | \___ \ / __/ _` | |/ _` | \___ \| __/ _ \ \ /\ / / _` | '__/ _` |
+         |  ___) | (_| (_| | | (_| |  ___) | ||  __/\ V  V / (_| | | | (_| |
+         | |____/ \___\__,_|_|\__,_| |____/ \__\___| \_/\_/ \__,_|_|  \__,_|""".stripMargin
+    val msg = List(" ", banner, s" v${org.scalasteward.core.BuildInfo.version}", " ")
+      .mkString(System.lineSeparator())
+    logger.info(msg)
+  }
 }

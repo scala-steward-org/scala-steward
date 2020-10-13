@@ -30,6 +30,7 @@ import org.scalasteward.core.update.PruningAlg
 import org.scalasteward.core.util
 import org.scalasteward.core.util.DateTimeAlg
 import org.scalasteward.core.util.logger.LoggerOps
+import org.scalasteward.core.util.{BracketThrow, DateTimeAlg}
 import org.scalasteward.core.vcs.data.Repo
 
 final class StewardAlg[F[_]](implicit
@@ -45,20 +46,8 @@ final class StewardAlg[F[_]](implicit
     sbtAlg: SbtAlg[F],
     selfCheckAlg: SelfCheckAlg[F],
     workspaceAlg: WorkspaceAlg[F],
-    F: MonadCancelThrow[F]
+    F: BracketThrow[F]
 ) {
-  private def printBanner: F[Unit] = {
-    val banner =
-      """|  ____            _         ____  _                             _
-         | / ___|  ___ __ _| | __ _  / ___|| |_ _____      ____ _ _ __ __| |
-         | \___ \ / __/ _` | |/ _` | \___ \| __/ _ \ \ /\ / / _` | '__/ _` |
-         |  ___) | (_| (_| | | (_| |  ___) | ||  __/\ V  V / (_| | | | (_| |
-         | |____/ \___\__,_|_|\__,_| |____/ \__\___| \_/\_/ \__,_|_|  \__,_|""".stripMargin
-    val msg = List(" ", banner, s" v${org.scalasteward.core.BuildInfo.version}", " ")
-      .mkString(System.lineSeparator())
-    logger.info(msg)
-  }
-
   private def readRepos(reposFile: File): Stream[F, Repo] =
     Stream.evals {
       fileAlg.readFile(reposFile).map { maybeContent =>
@@ -89,7 +78,6 @@ final class StewardAlg[F[_]](implicit
   def runF: F[ExitCode] =
     logger.infoTotalTime("run") {
       for {
-        _ <- printBanner
         _ <- selfCheckAlg.checkAll
         _ <- workspaceAlg.cleanWorkspace
         exitCode <- sbtAlg.addGlobalPlugins {

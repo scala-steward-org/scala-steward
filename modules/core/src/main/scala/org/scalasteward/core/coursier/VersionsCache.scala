@@ -24,7 +24,7 @@ import io.circe.{Codec, KeyEncoder}
 import org.scalasteward.core.coursier.VersionsCache.{Key, Value}
 import org.scalasteward.core.data.{Dependency, Resolver, Scope, Version}
 import org.scalasteward.core.persistence.KeyValueStore
-import org.scalasteward.core.util.{DateTimeAlg, Timestamp}
+import org.scalasteward.core.util.{DateTimeAlg, MonadThrow, Timestamp}
 import scala.concurrent.duration.FiniteDuration
 
 final class VersionsCache[F[_]](

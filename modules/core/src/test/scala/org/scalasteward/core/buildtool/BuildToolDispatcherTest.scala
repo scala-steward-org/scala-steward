@@ -27,8 +27,8 @@ class BuildToolDispatcherTest extends AnyFunSuite with Matchers {
         List("test", "-f", s"$repoDir/build.sc"),
         List("test", "-f", s"$repoDir/build.sbt"),
         List(
-          "TEST_VAR=GREAT",
-          "ANOTHER_TEST_VAR=ALSO_GREAT",
+          "VAR1=val1",
+          "VAR2=val2",
           repoDir.toString,
           "firejail",
           s"--whitelist=$repoDir",

@@ -35,7 +35,9 @@ COMMON_ARGS=(
   --process-timeout 20min
   --whitelist $HOME/.cache/coursier
   --whitelist $HOME/.cache/JNA
+  --whitelist $HOME/.cache/mill
   --whitelist $HOME/.ivy2
+  --whitelist $HOME/.mill
   --whitelist $HOME/.sbt
   --whitelist $HOME/.scio-ideaPluginIC
   --whitelist $HOME/.tagless-redux-ijextPluginIC

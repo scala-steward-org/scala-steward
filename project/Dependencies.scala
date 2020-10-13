@@ -17,11 +17,12 @@ object Dependencies {
   val circeParser = "io.circe" %% "circe-parser" % circeGeneric.revision
   val circeRefined = "io.circe" %% "circe-refined" % circeGeneric.revision
   val commonsIo = "commons-io" % "commons-io" % "2.8.0"
-  val coursierCore = "io.get-coursier" %% "coursier" % "2.0.1"
+  val coursierCore = "io.get-coursier" %% "coursier" % "2.0.3"
+  val coursierCatsInterop = "io.get-coursier" %% "coursier-cats-interop" % coursierCore.revision
   val cron4sCore = "com.github.alonsodomin.cron4s" %% "cron4s-core" % "0.6.1"
   val disciplineScalatest = ("org.typelevel" %% "discipline-scalatest" % "2.0.1")
     .excludeAll(ExclusionRule().withOrganization("org.scalatest"))
-  val fs2Core = "co.fs2" %% "fs2-core" % "3.0.0-M1"
+  val fs2Core = "co.fs2" %% "fs2-core" % "2.4.4"
   val fs2Io = "co.fs2" %% "fs2-io" % fs2Core.revision
   val http4sAsyncHttpClient = "org.http4s" %% "http4s-async-http-client" % "0.21.7"
   val http4sCirce = "org.http4s" %% "http4s-circe" % http4sAsyncHttpClient.revision

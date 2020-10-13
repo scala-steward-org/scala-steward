@@ -8,9 +8,6 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class MavenAlgTest extends AnyFunSuite with Matchers {
-  val var1 = "TEST_VAR=GREAT"
-  val var2 = "ANOTHER_TEST_VAR=ALSO_GREAT"
-
   test("getDependencies") {
     val repo = Repo("namespace", "repo-name")
     val repoDir = config.workspace / repo.show
@@ -19,13 +16,13 @@ class MavenAlgTest extends AnyFunSuite with Matchers {
     val state =
       mavenAlg.getDependencies(repo).runS(MockState.empty.copy(files = files)).unsafeRunSync()
 
-    state shouldBe MockState(
+    state shouldBe MockState.empty.copy(
       files = files,
       logs = Vector.empty,
       commands = Vector(
         List(
-          var1,
-          var2,
+          "VAR1=val1",
+          "VAR2=val2",
           repoDir.toString,
           "firejail",
           s"--whitelist=$repoDir",
@@ -34,8 +31,8 @@ class MavenAlgTest extends AnyFunSuite with Matchers {
           command.listDependencies
         ),
         List(
-          var1,
-          var2,
+          "VAR1=val1",
+          "VAR2=val2",
           repoDir.toString,
           "firejail",
           s"--whitelist=$repoDir",

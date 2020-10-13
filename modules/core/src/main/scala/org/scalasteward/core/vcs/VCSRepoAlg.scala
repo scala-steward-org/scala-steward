@@ -23,6 +23,7 @@ import org.http4s.Uri.UserInfo
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.util
+import org.scalasteward.core.util.MonadThrow
 import org.scalasteward.core.vcs.data.{Repo, RepoOut}
 
 trait VCSRepoAlg[F[_]] {

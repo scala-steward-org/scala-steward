@@ -20,9 +20,10 @@ class GitAlgTest extends AnyFunSuite with Matchers {
   implicit val workspaceAlg: WorkspaceAlg[IO] = WorkspaceAlg.create[IO]
   val ioGitAlg: GitAlg[IO] = GitAlg.create[IO]
 
-  val repo = Repo("fthomas", "datapackage")
+  val repo: Repo = Repo("fthomas", "datapackage")
   val repoDir: String = (config.workspace / "fthomas/datapackage").toString
   val askPass = s"GIT_ASKPASS=${config.gitAskPass}"
+  val envVars = List(askPass, "VAR1=val1", "VAR2=val2")
 
   test("clone") {
     val url = uri"https://scala-steward@github.com/fthomas/datapackage"
@@ -30,8 +31,7 @@ class GitAlgTest extends AnyFunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List(
-          askPass,
+        envVars ++ List(
           config.workspace.toString,
           "git",
           "clone",
@@ -51,7 +51,7 @@ class GitAlgTest extends AnyFunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List(askPass, repoDir, "git", "log", "--pretty=format:'%an'", "master..update/cats-1.0.0")
+        envVars ++ List(repoDir, "git", "log", "--pretty=format:'%an'", "master..update/cats-1.0.0")
       )
     )
   }
@@ -64,7 +64,7 @@ class GitAlgTest extends AnyFunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List(askPass, repoDir, "git", "commit", "--all", "--no-gpg-sign", "-m", "Initial commit")
+        envVars ++ List(repoDir, "git", "commit", "--all", "--no-gpg-sign", "-m", "Initial commit")
       )
     )
   }
@@ -80,8 +80,7 @@ class GitAlgTest extends AnyFunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List(
-          askPass,
+        envVars ++ List(
           repoDir,
           "git",
           "remote",
@@ -89,10 +88,10 @@ class GitAlgTest extends AnyFunSuite with Matchers {
           "upstream",
           "http://github.com/fthomas/datapackage"
         ),
-        List(askPass, repoDir, "git", "fetch", "--tags", "upstream", "master"),
-        List(askPass, repoDir, "git", "checkout", "-B", "master", "--track", "upstream/master"),
-        List(askPass, repoDir, "git", "merge", "upstream/master"),
-        List(askPass, repoDir, "git", "push", "--force", "--set-upstream", "origin", "master")
+        envVars ++ List(repoDir, "git", "fetch", "--tags", "upstream", "master"),
+        envVars ++ List(repoDir, "git", "checkout", "-B", "master", "--track", "upstream/master"),
+        envVars ++ List(repoDir, "git", "merge", "upstream/master"),
+        envVars ++ List(repoDir, "git", "push", "--force", "--set-upstream", "origin", "master")
       )
     )
   }
