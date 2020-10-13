@@ -23,6 +23,7 @@ object Dependencies {
   val disciplineScalatest = ("org.typelevel" %% "discipline-scalatest" % "2.0.1")
     .excludeAll(ExclusionRule().withOrganization("org.scalatest"))
   val fs2Core = "co.fs2" %% "fs2-core" % "2.4.4"
+  val fs2Io = "co.fs2" %% "fs2-io" % fs2Core.revision
   val http4sAsyncHttpClient = "org.http4s" %% "http4s-async-http-client" % "0.21.7"
   val http4sCirce = "org.http4s" %% "http4s-circe" % http4sAsyncHttpClient.revision
   val http4sDsl = "org.http4s" %% "http4s-dsl" % http4sAsyncHttpClient.revision
