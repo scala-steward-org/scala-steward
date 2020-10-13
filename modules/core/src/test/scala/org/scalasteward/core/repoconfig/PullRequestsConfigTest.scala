@@ -15,9 +15,9 @@ class PullRequestsConfigTest
     with FunSuiteDiscipline
     with Configuration {
 
-  implicit val pullRequestFrequencyArbitrary: Arbitrary[PullRequestFrequency] = Arbitrary(
-    Gen.oneOf(Asap, Timespan(1.day), Timespan(7.days), Timespan(30.days))
-  )
+  implicit val pullRequestFrequencyArbitrary: Arbitrary[PullRequestFrequency] =
+    Arbitrary(Arbitrary.arbitrary[FiniteDuration].flatMap(fd => Gen.oneOf(Asap, Timespan(fd))))
+
   implicit val pullRequestsConfigArbitrary: Arbitrary[PullRequestsConfig] = Arbitrary(for {
     e <- Arbitrary.arbitrary[Option[PullRequestFrequency]]
   } yield PullRequestsConfig(e))
