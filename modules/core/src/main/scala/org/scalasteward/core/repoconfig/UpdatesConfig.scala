@@ -49,6 +49,9 @@ final case class UpdatesConfig(
     else
       fileExtensions.toSet
 
+  def includeScalaOrDefault: Boolean =
+    includeScala.getOrElse(UpdatesConfig.defaultIncludeScala)
+
   private def isAllowed(update: Update.Single): FilterResult = {
     val m = UpdatePattern.findMatch(allow, update, include = true)
     if (m.filteredVersions.nonEmpty)
