@@ -35,23 +35,16 @@ final class RepoConfigAlg[F[_]](implicit
     workspaceAlg: WorkspaceAlg[F],
     F: MonadThrow[F]
 ) {
-
   def readRepoConfigWithDefault(repo: Repo): F[RepoConfig] =
-    for {
-      config <- readRepoConfig(repo)
-      defaultCfg <- defaultRepoConfig
-    } yield config
-      .map(_ |+| defaultCfg)
-      .getOrElse(defaultCfg)
+    readRepoConfig(repo).flatMap(mergeWithDefault)
 
-  /** Default configuration will try to read file specified in config.defaultRepoConfigFile first;
-    * if not found - fallback to empty configuration.
-    */
-  val defaultRepoConfig: F[RepoConfig] =
-    OptionT
-      .fromOption[F](config.defaultRepoConfigFile)
-      .flatMap(readRepoConfigFromFile)
-      .getOrElse(RepoConfig.empty)
+  def mergeWithDefault(maybeRepoConfig: Option[RepoConfig]): F[RepoConfig] =
+    readDefaultRepoConfig.map { maybeDefault =>
+      (maybeRepoConfig |+| maybeDefault).getOrElse(RepoConfig.empty)
+    }
+
+  private val readDefaultRepoConfig: F[Option[RepoConfig]] =
+    config.defaultRepoConfigFile.flatTraverse(readRepoConfigFromFile(_).value)
 
   def readRepoConfig(repo: Repo): F[Option[RepoConfig]] =
     workspaceAlg

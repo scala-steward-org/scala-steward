@@ -74,8 +74,7 @@ final class PruningAlg[F[_]](implicit
     val depsWithoutResolvers = dependencies.map(_.value).distinct
     for {
       _ <- logger.info(s"Find updates for ${repo.show}")
-      defaultConfig <- repoConfigAlg.defaultRepoConfig
-      repoConfig = repoCache.maybeRepoConfig.map(_ |+| defaultConfig).getOrElse(defaultConfig)
+      repoConfig <- repoConfigAlg.mergeWithDefault(repoCache.maybeRepoConfig)
       updates0 <- updateAlg.findUpdates(dependencies, repoConfig, None)
       updateStates0 <- findAllUpdateStates(repo, repoCache, depsWithoutResolvers, updates0)
       outdatedDeps = collectOutdatedDependencies(updateStates0)
