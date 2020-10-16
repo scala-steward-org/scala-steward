@@ -69,24 +69,16 @@ final class PullRequestRepository[F[_]](
   def getObsoleteOpenPullRequests(
       repo: Repo,
       updateData: Update
-  ): F[List[(Uri, Update)]] = {
-    val crossDependency = updateData match {
-      case Update.Single(crossDependency, _, _) =>
-        crossDependency
-      case Update.Group(crossDependencies, _) =>
-        crossDependencies.head
-    }
-
+  ): F[List[(Uri, Update)]] =
     kvStore.get(repo).map {
       _.getOrElse(Map.empty).collect {
         case (url, data)
-            if UpdateAlg.isForSameArtifacts(data.update, crossDependency) &&
+            if data.update.withNewerVersions(updateData.newerVersions) === updateData &&
               Version(data.update.nextVersion) < Version(updateData.nextVersion) &&
               data.state === PullRequestState.Open =>
           url -> data.update
       }.toList
     }
-  }
 
   def findPullRequest(
       repo: Repo,

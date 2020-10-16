@@ -53,6 +53,13 @@ sealed trait Update extends Product with Serializable {
     }
     s"$groupId:$artifacts : $versions"
   }
+
+  def withNewerVersions(versions: Nel[String]): Update = this match {
+    case s @ Single(_, _, _) =>
+      s.copy(newerVersions = versions)
+    case g @ Group(_, _) =>
+      g.copy(newerVersions = versions)
+  }
 }
 
 object Update {
