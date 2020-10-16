@@ -32,6 +32,17 @@ final class PullRequestRepository[F[_]](
     dateTimeAlg: DateTimeAlg[F],
     F: Monad[F]
 ) {
+  def changeState(repo: Repo, url: Uri, newState: PullRequestState): F[Unit] =
+    kvStore
+      .modifyF(repo) { maybePullRequests =>
+        val pullRequests = maybePullRequests.getOrElse(Map.empty)
+        pullRequests.get(url).traverse { found =>
+          val data = found.copy(state = newState)
+          pullRequests.updated(url, data).pure[F]
+        }
+      }
+      .void
+
   def createOrUpdate(
       repo: Repo,
       url: Uri,
@@ -57,17 +68,25 @@ final class PullRequestRepository[F[_]](
 
   def getObsoleteOpenPullRequests(
       repo: Repo,
-      crossDependency: CrossDependency,
-      newVersion: String
-  ): F[List[(Uri, Update)]] =
+      updateData: Update
+  ): F[List[(Uri, Update)]] = {
+    val crossDependency = updateData match {
+      case Update.Single(crossDependency, _, _) =>
+        crossDependency
+      case Update.Group(crossDependencies, _) =>
+        crossDependencies.head
+    }
+
     kvStore.get(repo).map {
       _.getOrElse(Map.empty).collect {
         case (url, data)
             if UpdateAlg.isForSameArtifacts(data.update, crossDependency) &&
-              Version(data.update.nextVersion) < Version(newVersion) =>
+              Version(data.update.nextVersion) < Version(updateData.nextVersion) &&
+              data.state === PullRequestState.Open =>
           url -> data.update
       }.toList
     }
+  }
 
   def findPullRequest(
       repo: Repo,

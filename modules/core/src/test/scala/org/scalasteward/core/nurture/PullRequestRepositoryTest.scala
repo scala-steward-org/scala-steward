@@ -50,19 +50,23 @@ class PullRequestRepositoryTest extends AnyFunSuite with Matchers {
       val p = for {
         emptyResult <- pullRequestRepository.getObsoleteOpenPullRequests(
           repo,
-          nextUpdate.crossDependency,
-          nextUpdate.nextVersion
+          nextUpdate
         )
         _ <- pullRequestRepository.createOrUpdate(repo, url, sha1, update, PullRequestState.Open)
         result <- pullRequestRepository.getObsoleteOpenPullRequests(
           repo,
-          nextUpdate.crossDependency,
-          nextUpdate.nextVersion
+          nextUpdate
         )
-      } yield (emptyResult, result)
-      val (state, (emptyResult, result)) = p.run(MockState.empty).unsafeRunSync()
+        _ <- pullRequestRepository.changeState(repo, url, PullRequestState.Closed)
+        closedResult <- pullRequestRepository.getObsoleteOpenPullRequests(
+          repo,
+          nextUpdate
+        )
+      } yield (emptyResult, result, closedResult)
+      val (state, (emptyResult, result, closedResult)) = p.run(MockState.empty).unsafeRunSync()
       val store = config.workspace / "store/pull_requests/v2/typelevel/cats/pull_requests.json"
       emptyResult shouldBe List.empty
+      closedResult shouldBe List.empty
       result shouldBe List(
         url -> TestData.Updates.PortableScala
       )
@@ -70,6 +74,9 @@ class PullRequestRepositoryTest extends AnyFunSuite with Matchers {
       checkCommands(
         state,
         Vector(
+          List("read", store.toString),
+          List("read", store.toString),
+          List("write", store.toString),
           List("read", store.toString),
           List("read", store.toString),
           List("write", store.toString),
@@ -84,14 +91,12 @@ class PullRequestRepositoryTest extends AnyFunSuite with Matchers {
       val p = for {
         emptyResult <- pullRequestRepository.getObsoleteOpenPullRequests(
           repo,
-          update.crossDependency,
-          update.nextVersion
+          update
         )
         _ <- pullRequestRepository.createOrUpdate(repo, url, sha1, update, PullRequestState.Open)
         result <- pullRequestRepository.getObsoleteOpenPullRequests(
           repo,
-          update.crossDependency,
-          update.nextVersion
+          update
         )
       } yield (emptyResult, result)
       val (state, (emptyResult, result)) = p.run(MockState.empty).unsafeRunSync()
@@ -110,15 +115,14 @@ class PullRequestRepositoryTest extends AnyFunSuite with Matchers {
       )
     }
 
-    test("getObsoleteOpenPullRequests for the another single update") {
+    test("getObsoleteOpenPullRequests for the another single update and ignore closed") {
       val updateInStore = TestData.Updates.PortableScala
       val newUpdate = TestData.Updates.CatsCore
 
       val p = for {
         emptyResult <- pullRequestRepository.getObsoleteOpenPullRequests(
           repo,
-          updateInStore.crossDependency,
-          updateInStore.nextVersion
+          updateInStore
         )
         _ <- pullRequestRepository.createOrUpdate(
           repo,
@@ -129,8 +133,7 @@ class PullRequestRepositoryTest extends AnyFunSuite with Matchers {
         )
         result <- pullRequestRepository.getObsoleteOpenPullRequests(
           repo,
-          newUpdate.crossDependency,
-          newUpdate.nextVersion
+          newUpdate
         )
       } yield (emptyResult, result)
       val (state, (emptyResult, result)) = p.run(MockState.empty).unsafeRunSync()
