@@ -36,6 +36,24 @@ class Http4sGitHubApiAlgTest extends AnyFunSuite with Matchers {
           } """
         )
 
+      case GET -> Root / "repos" / "fthomas" / "base.g8" / "pulls" =>
+        Ok(
+          json"""[{
+            "html_url": "https://github.com/octocat/Hello-World/pull/1347",
+            "state": "open",
+            "title": "new-feature"
+          }]"""
+        )
+
+      case PATCH -> Root / "repos" / "fthomas" / "base.g8" / "pulls" / IntVar(_) =>
+        Ok(
+          json"""{
+            "html_url": "https://github.com/octocat/Hello-World/pull/1347",
+            "state": "closed",
+            "title": "new-feature"
+          }"""
+        )
+
       case POST -> Root / "repos" / "fthomas" / "base.g8" / "forks" =>
         Ok(
           json""" {
@@ -106,5 +124,10 @@ class Http4sGitHubApiAlgTest extends AnyFunSuite with Matchers {
       gitHubApiAlg.createForkOrGetRepoWithDefaultBranch(repo, doNotFork = true).unsafeRunSync()
     repoOut shouldBe parent
     branchOut shouldBe defaultBranch
+  }
+
+  test("closePullRequest") {
+    val prOut = gitHubApiAlg.closePullRequest(repo, 1347).unsafeRunSync()
+    prOut.state shouldBe PullRequestState.Closed
   }
 }

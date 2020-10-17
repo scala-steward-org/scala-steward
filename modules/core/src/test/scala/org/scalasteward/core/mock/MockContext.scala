@@ -84,6 +84,6 @@ object MockContext {
   implicit val editAlg: EditAlg[MockEff] = new EditAlg[MockEff]
   implicit val repoConfigAlg: RepoConfigAlg[MockEff] = new RepoConfigAlg[MockEff]
   implicit val pullRequestRepository: PullRequestRepository[MockEff] =
-    new PullRequestRepository[MockEff](new JsonKeyValueStore("pull_requests", "1"))
+    new PullRequestRepository[MockEff](new JsonKeyValueStore("pull_requests", "2"))
   implicit val pruningAlg: PruningAlg[MockEff] = new PruningAlg[MockEff]
 }

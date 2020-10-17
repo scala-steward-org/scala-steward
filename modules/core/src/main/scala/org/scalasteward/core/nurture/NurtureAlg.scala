@@ -21,6 +21,7 @@ import cats.implicits._
 import eu.timepit.refined.types.numeric.PosInt
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
+import org.http4s.Uri
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.ProcessResult.{Ignored, Updated}
@@ -31,9 +32,11 @@ import org.scalasteward.core.repocache.RepoCacheRepository
 import org.scalasteward.core.repoconfig.{PullRequestUpdateStrategy, RepoConfigAlg}
 import org.scalasteward.core.scalafix.MigrationAlg
 import org.scalasteward.core.util.{BracketThrow, HttpExistenceClient}
-import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo, RepoOut}
+import org.scalasteward.core.vcs.data.{NewPullRequestData, PullRequestState, Repo, RepoOut}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg}
 import org.scalasteward.core.{git, util, vcs}
+
+import scala.util.control.NonFatal
 
 final class NurtureAlg[F[_]](implicit
     config: Config,
@@ -81,10 +84,11 @@ final class NurtureAlg[F[_]](implicit
       baseSha1 <- gitAlg.latestSha1(repo, baseBranch)
       _ <- NurtureAlg.processUpdates(
         sorted,
-        update =>
-          processUpdate(
+        update => {
+          val updateData =
             UpdateData(repo, fork, repoConfig, update, baseBranch, baseSha1, git.branchFor(update))
-          ),
+          processUpdate(updateData) <* closeObsoletePullRequests(updateData)
+        },
         repoConfig.updates.limit
       )
     } yield ()
@@ -112,6 +116,38 @@ final class NurtureAlg[F[_]](implicit
         )
       }
     } yield result
+
+  def closeObsoletePullRequests(data: UpdateData): F[Unit] = {
+
+    def closePR(repo: Repo, id: Int): F[Unit] =
+      vcsApiAlg.closePullRequest(repo, id).as(())
+
+    def close(id: Int, repo: Repo, updateData: Update, url: Uri): F[Unit] =
+      for {
+        _ <- closePR(repo, id)
+        _ <- logger.info(
+          s"Closed a PR @ ${url.renderString} for ${updateData.show}"
+        )
+        _ <- pullRequestRepository.changeState(repo, url, PullRequestState.Closed)
+      } yield ()
+
+    for {
+      _ <- logger.info(s"Looking to close obsolete PRs for ${data.update.name}")
+      prsToClose <- pullRequestRepository.getObsoleteOpenPullRequests(data.repo, data.update)
+      dataPerId = prsToClose.flatMap { case (url, data) =>
+        vcsExtraAlg
+          .extractPRIdFromUrls(config.vcsType, url)
+          .tupleRight((data, url))
+          .toList
+      }
+      _ <- dataPerId.traverse { case (id, (pullRequestData, url)) =>
+        close(id, data.repo, pullRequestData, url).handleErrorWith { case NonFatal(ex) =>
+          logger.warn(ex)(s"Failed to close obsolete PR #$id for ${data.updateBranch.name}")
+        }
+      }
+
+    } yield ()
+  }
 
   def applyNewUpdate(data: UpdateData): F[ProcessResult] =
     (editAlg.applyUpdate(
