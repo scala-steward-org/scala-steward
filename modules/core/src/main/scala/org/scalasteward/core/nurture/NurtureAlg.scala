@@ -87,7 +87,10 @@ final class NurtureAlg[F[_]](implicit
         update => {
           val updateData =
             UpdateData(repo, fork, repoConfig, update, baseBranch, baseSha1, git.branchFor(update))
-          processUpdate(updateData) <* closeObsoletePullRequests(updateData)
+          processUpdate(updateData).flatMap {
+            case result @ Updated => closeObsoletePullRequests(updateData).as(result)
+            case result @ Ignored => F.pure(result)
+          }
         },
         repoConfig.updates.limit
       )
