@@ -123,6 +123,18 @@ class Http4sBitbucketApiAlgTest extends AnyFunSuite with Matchers {
           ]
       }"""
       )
+    case PUT -> Root / "repositories" / "fthomas" / "base.g8" / "pullrequests" / IntVar(_) =>
+      Ok(
+        json"""{
+            "title": "scala-steward-pr",
+            "state": "DECLINED",
+            "links": {
+                "self": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/fthomas/base.g8/pullrequests/2"
+                }
+            }
+        }"""
+      )
   }
 
   implicit val client: Client[IO] = Client.fromHttpApp(routes.orNotFound)
@@ -198,5 +210,10 @@ class Http4sBitbucketApiAlgTest extends AnyFunSuite with Matchers {
   test("listPullRequests") {
     val prs = bitbucketApiAlg.listPullRequests(repo, "master", master).unsafeRunSync()
     (prs should contain).only(pullRequest)
+  }
+
+  test("closePullRequest") {
+    val pr = bitbucketApiAlg.closePullRequest(repo, 1).unsafeRunSync()
+    pr shouldBe pr.copy(state = PullRequestState.Closed)
   }
 }

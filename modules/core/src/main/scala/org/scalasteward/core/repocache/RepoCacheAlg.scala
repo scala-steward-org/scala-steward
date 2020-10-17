@@ -24,10 +24,10 @@ import org.scalasteward.core.buildtool.BuildToolDispatcher
 import org.scalasteward.core.data.{Dependency, DependencyInfo}
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.repoconfig.RepoConfigAlg
-import org.scalasteward.core.util.MonadThrowable
-import org.scalasteward.core.util.logger.LoggerOps
+import org.scalasteward.core.util.MonadThrow
 import org.scalasteward.core.vcs.data.{Repo, RepoOut}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
+import scala.util.control.NoStackTrace
 
 final class RepoCacheAlg[F[_]](implicit
     buildToolDispatcher: BuildToolDispatcher[F],
@@ -40,12 +40,12 @@ final class RepoCacheAlg[F[_]](implicit
     repoConfigAlg: RepoConfigAlg[F],
     vcsApiAlg: VCSApiAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
-    F: MonadThrowable[F]
+    F: MonadThrow[F]
 ) {
-  def checkCache(repo: Repo): F[Unit] =
-    logger.attemptLog_(s"Check cache of ${repo.show}") {
+  def checkCache(repo: Repo): F[RepoOut] =
+    logger.info(s"Check cache of ${repo.show}") >> {
       F.ifM(refreshErrorAlg.failedRecently(repo))(
-        logger.info(s"Skipping due to previous error"),
+        F.raiseError(new Throwable("Skipping due to previous error") with NoStackTrace),
         for {
           ((repoOut, branchOut), cachedSha1) <- (
             vcsApiAlg.createForkOrGetRepoWithDefaultBranch(repo, config.doNotFork),
@@ -54,7 +54,7 @@ final class RepoCacheAlg[F[_]](implicit
           latestSha1 = branchOut.commit.sha
           refreshRequired = cachedSha1.forall(_ =!= latestSha1)
           _ <- if (refreshRequired) cloneAndRefreshCache(repo, repoOut) else F.unit
-        } yield ()
+        } yield repoOut
       )
     }
 

@@ -50,6 +50,13 @@ class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
           )
         )
 
+      case PUT -> Root / "projects" / "foo/bar" / "merge_requests" / IntVar(_) =>
+        Ok(
+          getMr.deepMerge(
+            json""" { "state": "closed" } """
+          )
+        )
+
       case PUT -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "merge"
           :? MergeWhenPipelineSucceedsMatcher(_) =>
         Ok(
@@ -123,6 +130,19 @@ class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
 
   test("extractProjectId") {
     decode[ProjectId](getRepo.spaces2) shouldBe Right(ProjectId(12414871L))
+  }
+
+  test("closePullRequest") {
+    val prOut =
+      gitlabApiAlg
+        .closePullRequest(Repo("foo", "bar"), 7115)
+        .unsafeRunSync()
+
+    prOut shouldBe PullRequestOut(
+      uri"https://gitlab.com/foo/bar/merge_requests/7115",
+      PullRequestState.Closed,
+      "title"
+    )
   }
 
   test("createPullRequest -- auto merge") {

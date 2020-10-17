@@ -10,9 +10,10 @@ You can add `<YOUR_REPO>/.scala-steward.conf` to configure how Scala Steward upd
 #   @asap
 #     PRs are created without delay.
 #
-#   @daily | @weekly | @monthly
-#     PRs are created at least 1 day | 7 days | 30 days after the last PR.
-#
+#   <timespan>
+#     PRs are created only again after the given timespan since the last PR
+#     has passed. Example values are "36 hours", "1 day", or "14 days".
+
 #   <CRON expression>
 #     PRs are created roughly according to the given CRON expression.
 #
@@ -29,7 +30,7 @@ You can add `<YOUR_REPO>/.scala-steward.conf` to configure how Scala Steward upd
 # Default: @asap
 #
 #pullRequests.frequency = "0 0 ? * 3" # every thursday on midnight
-pullRequests.frequency = "@weekly"
+pullRequests.frequency = "7 days"
 
 # Only these dependencies which match the given patterns are updated.
 #

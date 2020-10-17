@@ -25,7 +25,7 @@ import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.repoconfig.RepoConfigAlg._
-import org.scalasteward.core.util.MonadThrowable
+import org.scalasteward.core.util.MonadThrow
 import org.scalasteward.core.vcs.data.Repo
 
 final class RepoConfigAlg[F[_]](implicit
@@ -33,26 +33,18 @@ final class RepoConfigAlg[F[_]](implicit
     fileAlg: FileAlg[F],
     logger: Logger[F],
     workspaceAlg: WorkspaceAlg[F],
-    F: MonadThrowable[F]
+    F: MonadThrow[F]
 ) {
-
   def readRepoConfigWithDefault(repo: Repo): F[RepoConfig] =
-    for {
-      config <- readRepoConfig(repo)
-      defaultCfg <- defaultRepoConfig
-    } yield config
-      .map(_ |+| defaultCfg)
-      .getOrElse(defaultCfg)
+    readRepoConfig(repo).flatMap(mergeWithDefault)
 
-  /**
-    * Default configuration will try to read file specified in config.defaultRepoConfigFile first;
-    * if not found - fallback to empty configuration.
-    */
-  val defaultRepoConfig: F[RepoConfig] =
-    OptionT
-      .fromOption[F](config.defaultRepoConfigFile)
-      .flatMap(readRepoConfigFromFile)
-      .getOrElse(RepoConfig.empty)
+  def mergeWithDefault(maybeRepoConfig: Option[RepoConfig]): F[RepoConfig] =
+    readDefaultRepoConfig.map { maybeDefault =>
+      (maybeRepoConfig |+| maybeDefault).getOrElse(RepoConfig.empty)
+    }
+
+  private val readDefaultRepoConfig: F[Option[RepoConfig]] =
+    config.defaultRepoConfigFile.flatTraverse(readRepoConfigFromFile(_).value)
 
   def readRepoConfig(repo: Repo): F[Option[RepoConfig]] =
     workspaceAlg

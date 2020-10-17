@@ -30,6 +30,9 @@ private[bitbucket] class Url(apiHost: Uri) {
   def pullRequests(rep: Repo): Uri =
     repo(rep) / "pullrequests"
 
+  def pullRequest(rep: Repo, id: Int): Uri =
+    repo(rep) / "pullrequests" / id.toString
+
   def branch(rep: Repo, branch: Branch): Uri =
     repo(rep) / "refs" / "branches" / branch.name
 

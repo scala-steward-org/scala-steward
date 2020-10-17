@@ -47,6 +47,7 @@ lazy val core = myCrossProject("core")
       Dependencies.coursierCatsInterop,
       Dependencies.cron4sCore,
       Dependencies.fs2Core,
+      Dependencies.fs2Io,
       Dependencies.http4sAsyncHttpClient,
       Dependencies.http4sCirce,
       Dependencies.log4catsSlf4j,
@@ -268,7 +269,9 @@ runSteward := Def.taskDyn {
     Seq("--git-ask-pass", s"$home/.github/askpass/$projectName.sh"),
     Seq("--whitelist", s"$home/.cache/coursier"),
     Seq("--whitelist", s"$home/.cache/JNA"),
+    Seq("--whitelist", s"$home/.cache/mill"),
     Seq("--whitelist", s"$home/.ivy2"),
+    Seq("--whitelist", s"$home/.mill"),
     Seq("--whitelist", s"$home/.sbt"),
     Seq("--whitelist", myJavaHome),
     Seq("--read-only", myJavaHome)

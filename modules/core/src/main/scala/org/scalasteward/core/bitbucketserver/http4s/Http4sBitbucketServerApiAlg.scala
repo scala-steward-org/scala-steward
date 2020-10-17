@@ -26,8 +26,7 @@ import org.scalasteward.core.vcs.VCSApiAlg
 import org.scalasteward.core.vcs.data.PullRequestState.Open
 import org.scalasteward.core.vcs.data._
 
-/**
-  * https://docs.atlassian.com/bitbucket-server/rest/6.6.1/bitbucket-rest.html
+/** https://docs.atlassian.com/bitbucket-server/rest/6.6.1/bitbucket-rest.html
   */
 class Http4sBitbucketServerApiAlg[F[_]](
     bitbucketApiHost: Uri,
@@ -96,6 +95,12 @@ class Http4sBitbucketServerApiAlg[F[_]](
 
   def ni(name: String): Nothing = throw new NotImplementedError(name)
 
+  override def closePullRequest(repo: Repo, id: Int): F[PullRequestOut] =
+    client.putWithBody[PullRequestOut, UpdateState](
+      url.pullRequest(repo, id),
+      UpdateState(PullRequestState.Closed),
+      modify(repo)
+    )
 }
 
 final class StashUrls(base: Uri) {
@@ -106,6 +111,8 @@ final class StashUrls(base: Uri) {
     api / "projects" / repo.owner / "repos" / repo.repo
 
   def pullRequests(r: Repo): Uri = repo(r) / "pull-requests"
+
+  def pullRequest(r: Repo, id: Int): Uri = repo(r) / "pull-requests" / id.toString
 
   def reviewers(repo: Repo): Uri =
     reviewerApi / "projects" / repo.owner / "repos" / repo.repo / "conditions"

@@ -17,14 +17,13 @@
 package org.scalasteward.core.buildtool.mill
 
 import cats.syntax.all._
-import cats.effect.Sync
 import org.scalasteward.core.BuildInfo
 import org.scalasteward.core.buildtool.BuildToolAlg
 import org.scalasteward.core.data.Scope
 import org.scalasteward.core.data.Scope.Dependencies
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.scalafix.Migration
-import org.scalasteward.core.util.Nel
+import org.scalasteward.core.util.{BracketThrow, Nel}
 import org.scalasteward.core.vcs.data.Repo
 
 trait MillAlg[F[_]] extends BuildToolAlg[F]
@@ -39,11 +38,14 @@ object MillAlg {
         |interp.load.ivy("${BuildInfo.organization}" %% "${BuildInfo.millPluginModuleName}" % "${BuildInfo.version}")
         |""".stripMargin
 
+  val extractDeps: String =
+    s"${BuildInfo.millPluginModuleRootPkg}.StewardPlugin/extractDeps"
+
   def create[F[_]](implicit
       fileAlg: FileAlg[F],
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F],
-      F: Sync[F]
+      F: BracketThrow[F]
   ): MillAlg[F] =
     new MillAlg[F] {
       override def containsBuild(repo: Repo): F[Boolean] =
@@ -53,25 +55,13 @@ object MillAlg {
         for {
           repoDir <- workspaceAlg.repoDir(repo)
           predef = repoDir / "scala-steward.sc"
-          _ <- fileAlg.writeFile(predef, content)
-          extracted <- processAlg.exec(
-            Nel(
-              "mill",
-              List(
-                "-i",
-                "-p",
-                predef.toString(),
-                "show",
-                s"${BuildInfo.millPluginModuleRootPkg}.StewardPlugin/extractDeps"
-              )
-            ),
-            repoDir
-          )
+          extracted <- fileAlg.createTemporarily(predef, content) {
+            val command = Nel("mill", List("-i", "-p", predef.toString, "show", extractDeps))
+            processAlg.execSandboxed(command, repoDir)
+          }
           parsed <- F.fromEither(
             parser.parseModules(extracted.dropWhile(!_.startsWith("{")).mkString("\n"))
           )
-          _ <- fileAlg.deleteForce(predef)
-
         } yield parsed.map(module => Scope(module.dependencies, module.repositories))
 
       override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] = F.unit

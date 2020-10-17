@@ -16,10 +16,12 @@
 
 package org.scalasteward.core.nurture
 
-import cats.effect.Sync
+import cats.Applicative
 import cats.implicits._
 import eu.timepit.refined.types.numeric.PosInt
+import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
+import org.http4s.Uri
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.ProcessResult.{Ignored, Updated}
@@ -29,15 +31,15 @@ import org.scalasteward.core.git.{Branch, Commit, GitAlg}
 import org.scalasteward.core.repocache.RepoCacheRepository
 import org.scalasteward.core.repoconfig.{PullRequestUpdateStrategy, RepoConfigAlg}
 import org.scalasteward.core.scalafix.MigrationAlg
-import org.scalasteward.core.util.logger.LoggerOps
-import org.scalasteward.core.util.{DateTimeAlg, HttpExistenceClient}
-import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo}
+import org.scalasteward.core.util.{BracketThrow, HttpExistenceClient}
+import org.scalasteward.core.vcs.data.{NewPullRequestData, PullRequestState, Repo, RepoOut}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg}
 import org.scalasteward.core.{git, util, vcs}
 
+import scala.util.control.NonFatal
+
 final class NurtureAlg[F[_]](implicit
     config: Config,
-    dateTimeAlg: DateTimeAlg[F],
     editAlg: EditAlg[F],
     repoConfigAlg: RepoConfigAlg[F],
     gitAlg: GitAlg[F],
@@ -50,29 +52,23 @@ final class NurtureAlg[F[_]](implicit
     migrationAlg: MigrationAlg,
     pullRequestRepository: PullRequestRepository[F],
     repoCacheRepository: RepoCacheRepository[F],
-    F: Sync[F]
+    streamCompiler: Stream.Compiler[F, F],
+    F: BracketThrow[F]
 ) {
-  def nurture(repo: Repo, updates: List[Update.Single]): F[Either[Throwable, Unit]] = {
-    val label = s"Nurture ${repo.show}"
-    logger.infoTotalTime(label) {
-      logger.attemptLog(util.string.lineLeftRight(label)) {
-        F.bracket(cloneAndSync(repo)) { case (fork, baseBranch) =>
-          updateDependencies(repo, fork, baseBranch, updates)
-        }(_ => gitAlg.removeClone(repo))
-      }
-    }
-  }
+  def nurture(repo: Repo, fork: RepoOut, updates: List[Update.Single]): F[Unit] =
+    for {
+      _ <- logger.info(s"Nurture ${repo.show}")
+      baseBranch <- cloneAndSync(repo, fork)
+      _ <- updateDependencies(repo, fork.repo, baseBranch, updates)
+    } yield ()
 
-  def cloneAndSync(repo: Repo): F[(Repo, Branch)] =
+  def cloneAndSync(repo: Repo, fork: RepoOut): F[Branch] =
     for {
       _ <- logger.info(s"Clone and synchronize ${repo.show}")
-      repoOut <- vcsApiAlg.createForkOrGetRepo(repo, config.doNotFork)
-      _ <-
-        gitAlg
-          .cloneExists(repo)
-          .ifM(F.unit, vcsRepoAlg.clone(repo, repoOut) >> vcsRepoAlg.syncFork(repo, repoOut))
-      defaultBranch <- vcsApiAlg.parentOrRepo(repoOut, config.doNotFork).map(_.default_branch)
-    } yield (repoOut.repo, defaultBranch)
+      cloneAndSync = vcsRepoAlg.clone(repo, fork) >> vcsRepoAlg.syncFork(repo, fork)
+      _ <- gitAlg.cloneExists(repo).ifM(F.unit, cloneAndSync)
+      baseBranch <- vcsApiAlg.parentOrRepo(fork, config.doNotFork).map(_.default_branch)
+    } yield baseBranch
 
   def updateDependencies(
       repo: Repo,
@@ -88,10 +84,11 @@ final class NurtureAlg[F[_]](implicit
       baseSha1 <- gitAlg.latestSha1(repo, baseBranch)
       _ <- NurtureAlg.processUpdates(
         sorted,
-        update =>
-          processUpdate(
+        update => {
+          val updateData =
             UpdateData(repo, fork, repoConfig, update, baseBranch, baseSha1, git.branchFor(update))
-          ),
+          processUpdate(updateData) <* closeObsoletePullRequests(updateData)
+        },
         repoConfig.updates.limit
       )
     } yield ()
@@ -119,6 +116,38 @@ final class NurtureAlg[F[_]](implicit
         )
       }
     } yield result
+
+  def closeObsoletePullRequests(data: UpdateData): F[Unit] = {
+
+    def closePR(repo: Repo, id: Int): F[Unit] =
+      vcsApiAlg.closePullRequest(repo, id).as(())
+
+    def close(id: Int, repo: Repo, updateData: Update, url: Uri): F[Unit] =
+      for {
+        _ <- closePR(repo, id)
+        _ <- logger.info(
+          s"Closed a PR @ ${url.renderString} for ${updateData.show}"
+        )
+        _ <- pullRequestRepository.changeState(repo, url, PullRequestState.Closed)
+      } yield ()
+
+    for {
+      _ <- logger.info(s"Looking to close obsolete PRs for ${data.update.name}")
+      prsToClose <- pullRequestRepository.getObsoleteOpenPullRequests(data.repo, data.update)
+      dataPerId = prsToClose.flatMap { case (url, data) =>
+        vcsExtraAlg
+          .extractPRIdFromUrls(config.vcsType, url)
+          .tupleRight((data, url))
+          .toList
+      }
+      _ <- dataPerId.traverse { case (id, (pullRequestData, url)) =>
+        close(id, data.repo, pullRequestData, url).handleErrorWith { case NonFatal(ex) =>
+          logger.warn(ex)(s"Failed to close obsolete PR #$id for ${data.updateBranch.name}")
+        }
+      }
+
+    } yield ()
+  }
 
   def applyNewUpdate(data: UpdateData): F[ProcessResult] =
     (editAlg.applyUpdate(
@@ -232,15 +261,15 @@ final class NurtureAlg[F[_]](implicit
 }
 
 object NurtureAlg {
-  def processUpdates[F[_]: Sync](
+  def processUpdates[F[_]](
       updates: List[Update],
       updateF: Update => F[ProcessResult],
       updatesLimit: Option[PosInt]
-  ): F[Unit] =
+  )(implicit streamCompiler: Stream.Compiler[F, F], F: Applicative[F]): F[Unit] =
     updatesLimit match {
       case None => updates.traverse_(updateF)
       case Some(limit) =>
-        fs2.Stream
+        Stream
           .emits(updates)
           .evalMap(updateF)
           .through(util.takeUntil(limit.value) {

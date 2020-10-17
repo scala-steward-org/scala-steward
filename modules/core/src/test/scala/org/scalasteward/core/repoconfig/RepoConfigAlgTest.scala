@@ -10,6 +10,7 @@ import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import scala.concurrent.duration._
 
 class RepoConfigAlgTest extends AnyFunSuite with Matchers {
   test("config with all fields set") {
@@ -34,7 +35,7 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     val config = repoConfigAlg.readRepoConfigWithDefault(repo).runA(initialState).unsafeRunSync()
 
     config shouldBe RepoConfig(
-      pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Weekly)),
+      pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(7.days))),
       updates = UpdatesConfig(
         allow = List(UpdatePattern(GroupId("eu.timepit"), None, None)),
         pin = List(
@@ -118,7 +119,9 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     val content = """pullRequests.frequency = "@daily" """
     val config = RepoConfigAlg.parseRepoConfig(content)
     config shouldBe Right(
-      RepoConfig(pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Daily)))
+      RepoConfig(pullRequests =
+        PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(1.day)))
+      )
     )
   }
 
@@ -126,7 +129,9 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     val content = """pullRequests.frequency = "@monthly" """
     val config = RepoConfigAlg.parseRepoConfig(content)
     config shouldBe Right(
-      RepoConfig(pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Monthly)))
+      RepoConfig(pullRequests =
+        PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(30.days)))
+      )
     )
   }
 
