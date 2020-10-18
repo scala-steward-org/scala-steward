@@ -53,4 +53,66 @@ class ScalafmtAlgTest extends AnyFunSuite with Matchers {
   test("editScalafmtConf") {
     // Tested in EditAlgTest
   }
+
+  test("runScalafmt: Read config when scalafmt-core is updated") {
+    val repo = Repo("fthomas", "scala-steward")
+    val rootDir = config.workspace.parent
+    val repoDir = config.workspace / repo.owner / repo.repo
+    val repoConf = repoDir / ".scala-steward.conf"
+    val initialState = MockState.empty
+      .add(repoConf, "scalafmt.runAfterUpgrading = false")
+    val mainArtifactId = "scalafmt-core"
+
+    val (state, _) = scalafmtAlg.runScalafmt(repo, mainArtifactId).run(initialState).unsafeRunSync()
+    state shouldBe MockState.empty.copy(
+      logs = state.logs, // do not care
+      commands = Vector(
+        List("read", s"$repoDir/.scala-steward.conf"),
+        List("read", s"$rootDir/default.scala-steward.conf")
+      ),
+      files = Map(
+        repoConf -> "scalafmt.runAfterUpgrading = false"
+      )
+    )
+  }
+
+  test("runScalafmt: Read config and run scalafmt when enabled") {
+    val repo = Repo("fthomas", "scala-steward")
+    val rootDir = config.workspace.parent
+    val repoDir = config.workspace / repo.owner / repo.repo
+    val repoConf = repoDir / ".scala-steward.conf"
+    val initialState = MockState.empty
+      .add(repoConf, "scalafmt.runAfterUpgrading = true")
+    val mainArtifactId = "scalafmt-core"
+
+    val (state, _) = scalafmtAlg.runScalafmt(repo, mainArtifactId).run(initialState).unsafeRunSync()
+    state shouldBe MockState.empty.copy(
+      logs = state.logs, // do not care
+      commands = Vector(
+        List("read", s"$repoDir/.scala-steward.conf"),
+        List("read", s"$rootDir/default.scala-steward.conf"),
+        List(
+          "VAR1=val1",
+          "VAR2=val2",
+          repoDir.toString,
+          "firejail",
+          s"--whitelist=$repoDir",
+          "sbt",
+          s";scalafmtAll;scalafmtSbt"
+        )
+      ),
+      files = Map(
+        repoConf -> "scalafmt.runAfterUpgrading = true"
+      )
+    )
+  }
+
+  test("runScalafmt: Do nothing when scalafmt-core is NOT updated") {
+    val repo = Repo("fthomas", "scala-steward")
+    val initialState = MockState.empty
+    val mainArtifactId = "foo-bar"
+
+    val (state, _) = scalafmtAlg.runScalafmt(repo, mainArtifactId).run(initialState).unsafeRunSync()
+    state shouldBe MockState.empty
+  }
 }

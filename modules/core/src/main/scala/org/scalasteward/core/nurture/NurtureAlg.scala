@@ -31,6 +31,7 @@ import org.scalasteward.core.git.{Branch, Commit, GitAlg}
 import org.scalasteward.core.repocache.RepoCacheRepository
 import org.scalasteward.core.repoconfig.{PullRequestUpdateStrategy, RepoConfigAlg}
 import org.scalasteward.core.scalafix.MigrationAlg
+import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.util.{BracketThrow, HttpExistenceClient}
 import org.scalasteward.core.vcs.data.{NewPullRequestData, PullRequestState, Repo, RepoOut}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg}
@@ -47,6 +48,7 @@ final class NurtureAlg[F[_]](implicit
     vcsApiAlg: VCSApiAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
     vcsExtraAlg: VCSExtraAlg[F],
+    scalafmtAlg: ScalafmtAlg[F],
     existenceClient: HttpExistenceClient[F],
     logger: Logger[F],
     migrationAlg: MigrationAlg,
@@ -163,7 +165,9 @@ final class NurtureAlg[F[_]](implicit
           _ <- logger.info(s"Create branch ${data.updateBranch.name}")
           _ <- gitAlg.createBranch(data.repo, data.updateBranch)
           maybeCommit <- commitChanges(data)
-          _ <- pushCommits(data, maybeCommit.toList)
+          _ <- scalafmtAlg.runScalafmt(data.repo, data.update.mainArtifactId)
+          maybeScalafmtCommit <- gitAlg.commitAllIfDirty(data.repo, "Apply scalafmt")
+          _ <- pushCommits(data, List(maybeCommit, maybeScalafmtCommit).flatten)
           _ <- createPullRequest(data)
         } yield Updated
       },

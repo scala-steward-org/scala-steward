@@ -26,7 +26,8 @@ final case class RepoConfig(
     commits: CommitsConfig = CommitsConfig(),
     pullRequests: PullRequestsConfig = PullRequestsConfig(),
     updates: UpdatesConfig = UpdatesConfig(),
-    updatePullRequests: Option[PullRequestUpdateStrategy] = None
+    updatePullRequests: Option[PullRequestUpdateStrategy] = None,
+    scalafmt: Option[ScalafmtConfig] = None
 ) {
   def updatePullRequestsOrDefault: PullRequestUpdateStrategy =
     updatePullRequests.getOrElse(PullRequestUpdateStrategy.default)
@@ -51,7 +52,8 @@ object RepoConfig {
             commits = x.commits |+| y.commits,
             pullRequests = x.pullRequests |+| y.pullRequests,
             updates = x.updates |+| y.updates,
-            updatePullRequests = x.updatePullRequests.orElse(y.updatePullRequests)
+            updatePullRequests = x.updatePullRequests.orElse(y.updatePullRequests),
+            scalafmt = x.scalafmt.orElse(y.scalafmt)
           )
       }
   }
