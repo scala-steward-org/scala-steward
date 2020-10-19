@@ -54,7 +54,7 @@ class ScalafmtAlgTest extends AnyFunSuite with Matchers {
     // Tested in EditAlgTest
   }
 
-  test("runScalafmt: Read config when scalafmt-core is updated") {
+  test("runScalafmt on explicit opt-out: Read config, but do not run scalafmt") {
     val repo = Repo("fthomas", "scala-steward")
     val rootDir = config.workspace.parent
     val repoDir = config.workspace / repo.owner / repo.repo
@@ -76,7 +76,7 @@ class ScalafmtAlgTest extends AnyFunSuite with Matchers {
     )
   }
 
-  test("runScalafmt: Read config and run scalafmt when enabled") {
+  test("runScalafmt on explicit opt-in: Read config and run scalafmt") {
     val repo = Repo("fthomas", "scala-steward")
     val rootDir = config.workspace.parent
     val repoDir = config.workspace / repo.owner / repo.repo
@@ -104,6 +104,33 @@ class ScalafmtAlgTest extends AnyFunSuite with Matchers {
       files = Map(
         repoConf -> "scalafmt.runAfterUpgrading = true"
       )
+    )
+  }
+
+  test("runScalafmt by default (implicitly enabled): Read config and run scalafmt") {
+    val repo = Repo("fthomas", "scala-steward")
+    val rootDir = config.workspace.parent
+    val repoDir = config.workspace / repo.owner / repo.repo
+    val initialState = MockState.empty
+    val mainArtifactId = "scalafmt-core"
+
+    val (state, _) = scalafmtAlg.runScalafmt(repo, mainArtifactId).run(initialState).unsafeRunSync()
+    state shouldBe MockState.empty.copy(
+      logs = state.logs, // do not care
+      commands = Vector(
+        List("read", s"$repoDir/.scala-steward.conf"),
+        List("read", s"$rootDir/default.scala-steward.conf"),
+        List(
+          "VAR1=val1",
+          "VAR2=val2",
+          repoDir.toString,
+          "firejail",
+          s"--whitelist=$repoDir",
+          "sbt",
+          s";scalafmtAll;scalafmtSbt"
+        )
+      ),
+      files = Map()
     )
   }
 

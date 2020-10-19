@@ -80,6 +80,12 @@ updatePullRequests = "always" | "on-conflicts" | "never"
 # Supported variables: ${artifactName}, ${currentVersion}, ${nextVersion} and ${default}
 # Default: "${default}" which is equivalent to "Update ${artifactName} to ${nextVersion}" 
 commits.message = "Update ${artifactName} from ${currentVersion} to ${nextVersion}"
+
+# If true and when upgrading version in .scalafmt.conf, Scala Steward will perform scalafmt 
+# and add a separate commit when format changed. So you don't need reformat manually and can merge PR.
+# If false, Scala Steward will not perform scalafmt, so your CI may abort when reformat needed.
+# Default: true
+scalafmt.runAfterUpgrading = false
 ```
 
 The version information given in the patterns above can be in two formats:
