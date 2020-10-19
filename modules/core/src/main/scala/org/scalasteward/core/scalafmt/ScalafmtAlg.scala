@@ -62,7 +62,7 @@ object ScalafmtAlg {
               F.pure(false)
             }
           _ <- F.whenA(shouldRunScalafmt) {
-            processAlg.execSandboxed(Nel.of("sbt", ";scalafmtAll;scalafmtSbt"), repoDir)
+            processAlg.exec(Nel.of("scalafmt"), repoDir)
           }
         } yield ()
     }

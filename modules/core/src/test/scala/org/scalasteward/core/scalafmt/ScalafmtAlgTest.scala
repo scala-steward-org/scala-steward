@@ -91,15 +91,7 @@ class ScalafmtAlgTest extends AnyFunSuite with Matchers {
       commands = Vector(
         List("read", s"$repoDir/.scala-steward.conf"),
         List("read", s"$rootDir/default.scala-steward.conf"),
-        List(
-          "VAR1=val1",
-          "VAR2=val2",
-          repoDir.toString,
-          "firejail",
-          s"--whitelist=$repoDir",
-          "sbt",
-          s";scalafmtAll;scalafmtSbt"
-        )
+        List("VAR1=val1", "VAR2=val2", repoDir.toString, "scalafmt")
       ),
       files = Map(
         repoConf -> "scalafmt.runAfterUpgrading = true"
@@ -120,15 +112,7 @@ class ScalafmtAlgTest extends AnyFunSuite with Matchers {
       commands = Vector(
         List("read", s"$repoDir/.scala-steward.conf"),
         List("read", s"$rootDir/default.scala-steward.conf"),
-        List(
-          "VAR1=val1",
-          "VAR2=val2",
-          repoDir.toString,
-          "firejail",
-          s"--whitelist=$repoDir",
-          "sbt",
-          s";scalafmtAll;scalafmtSbt"
-        )
+        List("VAR1=val1", "VAR2=val2", repoDir.toString, "scalafmt")
       ),
       files = Map()
     )
