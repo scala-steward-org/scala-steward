@@ -63,6 +63,8 @@ trait GitAlg[F[_]] {
 
   def syncFork(repo: Repo, upstreamUrl: Uri, defaultBranch: Branch): F[Unit]
 
+  def version: F[String]
+
   final def commitAllIfDirty(repo: Repo, message: String)(implicit F: Monad[F]): F[Option[Commit]] =
     containsChanges(repo).ifM(commitAll(repo, message).map(Some.apply), F.pure(None))
 
@@ -203,6 +205,9 @@ object GitAlg {
           _ <- git("merge", remoteBranch)(repoDir)
           _ <- push(repo, defaultBranch)
         } yield ()
+
+      override def version: F[String] =
+        workspaceAlg.rootDir.flatMap(git("--version")).map(_.mkString.trim)
 
       private def git(args: String*)(cwd: File): F[List[String]] = {
         val extraEnv = "GIT_ASKPASS" -> config.gitAskPass.pathAsString

@@ -19,18 +19,36 @@ package org.scalasteward.core.application
 import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import org.http4s.Uri
+import org.scalasteward.core.git.GitAlg
+import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.util.{HttpExistenceClient, MonadThrow}
 
 final class SelfCheckAlg[F[_]](implicit
+    gitAlg: GitAlg[F],
     httpExistenceClient: HttpExistenceClient[F],
     logger: Logger[F],
+    scalafmtAlg: ScalafmtAlg[F],
     F: MonadThrow[F]
 ) {
   def checkAll: F[Unit] =
     for {
       _ <- logger.info("Run self checks")
+      _ <- checkGitBinary
+      _ <- checkScalafmtBinary
       _ <- checkHttpExistenceClient
     } yield ()
+
+  private def checkGitBinary: F[Unit] =
+    gitAlg.version.attempt.flatMap {
+      case Right(output)   => logger.info(s"Using $output")
+      case Left(throwable) => logger.warn(throwable)("Failed to execute git")
+    }
+
+  private def checkScalafmtBinary: F[Unit] =
+    scalafmtAlg.version.attempt.flatMap {
+      case Right(output)   => logger.info(s"Using $output")
+      case Left(throwable) => logger.warn(throwable)("Failed to execute scalafmt")
+    }
 
   private def checkHttpExistenceClient: F[Unit] =
     for {

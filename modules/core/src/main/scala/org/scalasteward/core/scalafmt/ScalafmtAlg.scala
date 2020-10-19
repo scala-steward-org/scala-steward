@@ -30,6 +30,8 @@ trait ScalafmtAlg[F[_]] {
 
   def getScalafmtVersion(repo: Repo): F[Option[Version]]
 
+  def version: F[String]
+
   final def getScalafmtDependency(repo: Repo)(implicit F: Functor[F]): F[Option[Dependency]] =
     Nested(getScalafmtVersion(repo)).map(scalafmtDependency).value
 }
@@ -65,5 +67,10 @@ object ScalafmtAlg {
             processAlg.exec(Nel.of("scalafmt"), repoDir)
           }
         } yield ()
+
+      override def version: F[String] =
+        workspaceAlg.rootDir
+          .flatMap(processAlg.exec(Nel.of("scalafmt", "--version"), _))
+          .map(_.mkString.trim)
     }
 }
