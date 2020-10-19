@@ -70,7 +70,6 @@ object Context {
       implicit val httpJsonClient: HttpJsonClient[F] = new HttpJsonClient[F]
       implicit val repoCacheRepository: RepoCacheRepository[F] =
         new RepoCacheRepository[F](new JsonKeyValueStore("repo_cache", "1", kvsPrefix))
-      implicit val selfCheckAlg: SelfCheckAlg[F] = new SelfCheckAlg[F]
       val vcsSelection = new VCSSelection[F]
       implicit val vcsApiAlg: VCSApiAlg[F] = vcsSelection.getAlg(config)
       implicit val vcsRepoAlg: VCSRepoAlg[F] = VCSRepoAlg.create[F](config, gitAlg)
@@ -78,6 +77,7 @@ object Context {
       implicit val pullRequestRepository: PullRequestRepository[F] =
         new PullRequestRepository[F](new JsonKeyValueStore("pull_requests", "2", kvsPrefix))
       implicit val scalafmtAlg: ScalafmtAlg[F] = ScalafmtAlg.create[F]
+      implicit val selfCheckAlg: SelfCheckAlg[F] = new SelfCheckAlg[F]
       implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create[F]
       implicit val versionsCache: VersionsCache[F] =
         new VersionsCache[F](config.cacheTtl, new JsonKeyValueStore("versions", "2"))
