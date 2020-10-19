@@ -20,10 +20,14 @@ import cats.data.Nested
 import cats.syntax.all._
 import cats.{Functor, Monad}
 import org.scalasteward.core.data.{Dependency, Version}
-import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
+import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
+import org.scalasteward.core.repoconfig.RepoConfigAlg
+import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
 trait ScalafmtAlg[F[_]] {
+  def runScalafmt(repo: Repo, mainArtifactId: String): F[Unit]
+
   def getScalafmtVersion(repo: Repo): F[Option[Version]]
 
   final def getScalafmtDependency(repo: Repo)(implicit F: Functor[F]): F[Option[Dependency]] =
@@ -34,6 +38,8 @@ object ScalafmtAlg {
   def create[F[_]](implicit
       fileAlg: FileAlg[F],
       workspaceAlg: WorkspaceAlg[F],
+      repoConfigAlg: RepoConfigAlg[F],
+      processAlg: ProcessAlg[F],
       F: Monad[F]
   ): ScalafmtAlg[F] =
     new ScalafmtAlg[F] {
@@ -43,5 +49,21 @@ object ScalafmtAlg {
           scalafmtConfFile = repoDir / ".scalafmt.conf"
           fileContent <- fileAlg.readFile(scalafmtConfFile)
         } yield fileContent.flatMap(parseScalafmtConf)
+
+      override def runScalafmt(repo: Repo, mainArtifactId: String): F[Unit] =
+        for {
+          repoDir <- workspaceAlg.repoDir(repo)
+          shouldRunScalafmt <-
+            if (mainArtifactId === scalafmtArtifactId) {
+              repoConfigAlg
+                .readRepoConfigWithDefault(repo)
+                .map(_.scalafmt.forall(_.runAfterUpgrading))
+            } else {
+              F.pure(false)
+            }
+          _ <- F.whenA(shouldRunScalafmt) {
+            processAlg.exec(Nel.of("scalafmt"), repoDir)
+          }
+        } yield ()
     }
 }

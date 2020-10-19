@@ -135,6 +135,14 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     )
   }
 
+  test("config with 'scalafmt.runAfterUpgrading = true'") {
+    val content = "scalafmt.runAfterUpgrading = true"
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    config shouldBe Right(
+      RepoConfig(scalafmt = Some(ScalafmtConfig(runAfterUpgrading = true)))
+    )
+  }
+
   test("malformed config") {
     val repo = Repo("fthomas", "scala-steward")
     val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
