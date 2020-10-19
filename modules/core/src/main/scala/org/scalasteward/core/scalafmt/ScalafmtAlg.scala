@@ -62,7 +62,7 @@ object ScalafmtAlg {
               F.pure(false)
             }
           _ <- F.whenA(shouldRunScalafmt) {
-            processAlg.exec(Nel.of("scalafmt"), repoDir)
+            processAlg.exec(Nel.of("scalafmt", "--non-interactive"), repoDir)
           }
         } yield ()
     }
