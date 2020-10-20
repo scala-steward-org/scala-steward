@@ -202,7 +202,8 @@ class VersionTest
       ("0.21.0-RC5", List("0.21.6", "0.21.6+43-2c1c1172-SNAPSHOT"), Some("0.21.6")),
       ("0.21.0-RC5", List("0.21.5", "0.21.6-RC1"), Some("0.21.6-RC1")),
       ("2.1.4.0-RC17", List("2.1.4.0-RC17+1-307f2f6c-SNAPSHOT"), None),
-      ("v2-rev374-1.23.0", List("v2-rev20190917-1.30.3"), Some("v2-rev20190917-1.30.3"))
+      ("v2-rev374-1.23.0", List("v2-rev20190917-1.30.3"), Some("v2-rev20190917-1.30.3")),
+      ("0.27.0-RC1", List("0.27.0-bin-20200826-2e58a66-NIGHTLY"), None)
     )
 
     val rnd = new Random()
