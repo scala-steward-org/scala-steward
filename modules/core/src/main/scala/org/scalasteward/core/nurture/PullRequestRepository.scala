@@ -19,7 +19,7 @@ package org.scalasteward.core.nurture
 import cats.Monad
 import cats.implicits._
 import org.http4s.Uri
-import org.scalasteward.core.data.{CrossDependency, Update}
+import org.scalasteward.core.data.{CrossDependency, Update, Version}
 import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.persistence.KeyValueStore
 import org.scalasteward.core.update.UpdateAlg
@@ -28,11 +28,21 @@ import org.scalasteward.core.vcs.data.{PullRequestState, Repo}
 
 final class PullRequestRepository[F[_]](
     kvStore: KeyValueStore[F, Repo, Map[Uri, PullRequestData]]
-)(
-    implicit
+)(implicit
     dateTimeAlg: DateTimeAlg[F],
     F: Monad[F]
 ) {
+  def changeState(repo: Repo, url: Uri, newState: PullRequestState): F[Unit] =
+    kvStore
+      .modifyF(repo) { maybePullRequests =>
+        val pullRequests = maybePullRequests.getOrElse(Map.empty)
+        pullRequests.get(url).traverse { found =>
+          val data = found.copy(state = newState)
+          pullRequests.updated(url, data).pure[F]
+        }
+      }
+      .void
+
   def createOrUpdate(
       repo: Repo,
       url: Uri,
@@ -55,6 +65,20 @@ final class PullRequestRepository[F[_]](
         }
       }
       .void
+
+  def getObsoleteOpenPullRequests(
+      repo: Repo,
+      updateData: Update
+  ): F[List[(Uri, Update)]] =
+    kvStore.get(repo).map {
+      _.getOrElse(Map.empty).collect {
+        case (url, data)
+            if data.update.withNewerVersions(updateData.newerVersions) === updateData &&
+              Version(data.update.nextVersion) < Version(updateData.nextVersion) &&
+              data.state === PullRequestState.Open =>
+          url -> data.update
+      }.toList
+    }
 
   def findPullRequest(
       repo: Repo,

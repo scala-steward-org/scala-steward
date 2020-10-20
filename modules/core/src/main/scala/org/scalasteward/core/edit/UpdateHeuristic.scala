@@ -17,7 +17,7 @@
 package org.scalasteward.core.edit
 
 import cats.Foldable
-import cats.implicits._
+import cats.syntax.all._
 import org.scalasteward.core.data.{GroupId, Update}
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
@@ -34,6 +34,18 @@ final case class UpdateHeuristic(
 )
 
 object UpdateHeuristic {
+
+  /** Removes punctuation from the input and returns it as regex that allows
+    * punctuation between characters.
+    */
+  private def toFlexibleRegex(string: String): String = {
+    val punctuation = List('.', '-', '_')
+    val allowPunctuation = punctuation.mkString("[", "", "]*")
+    string.toList
+      .collect { case c if !punctuation.contains_(c) => Regex.quote(c.toString) }
+      .intercalate(allowPunctuation)
+  }
+
   private def alternation[F[_]: Foldable](strings: F[String]): String =
     strings.mkString_("(", "|", ")")
 
@@ -46,11 +58,15 @@ object UpdateHeuristic {
         val currentGroupId = Regex.quote(s.groupId.value)
         val currentArtifactId = Regex.quote(s.artifactId.name)
         val regex = s"""(?i)(.*)${currentGroupId}(.*${currentArtifactId})""".r
-        replaceSomeInAllowedParts(regex, target, match0 => {
-          val group1 = match0.group(1)
-          val group2 = match0.group(2)
-          Some(s"""$group1$newerGroupId$group2""")
-        }).someIfChanged
+        replaceSomeInAllowedParts(
+          regex,
+          target,
+          match0 => {
+            val group1 = match0.group(1)
+            val group2 = match0.group(2)
+            Some(s"""$group1$newerGroupId$group2""")
+          }
+        ).someIfChanged
       case _ => Some(target)
     }
   }
@@ -59,19 +75,8 @@ object UpdateHeuristic {
       getSearchTerms: Update => List[String],
       getPrefixRegex: Update => Option[String] = _ => None
   ): Update => String => Option[String] = {
-    def searchTermsToAlternation(terms: List[String]): Option[String] = {
-      val ignoreChar = ".?"
-      val ignorableStrings = List(".", "-")
-      val terms1 = terms
-        .filterNot(term => term.isEmpty || ignorableStrings.contains(term))
-        .map { term =>
-          ignorableStrings.foldLeft(term) {
-            case (term1, ignorable) => term1.replace(ignorable, ignoreChar)
-          }
-        }
-
-      if (terms1.nonEmpty) Some(alternation(terms1)) else None
-    }
+    def searchTermsToAlternation(terms: List[String]): Option[String] =
+      Nel.fromList(terms.map(toFlexibleRegex).filterNot(_.isEmpty)).map(alternation(_))
 
     def mkRegex(update: Update): Option[Regex] =
       searchTermsToAlternation(getSearchTerms(update).map(removeCommonSuffix)).map { searchTerms =>
@@ -114,6 +119,9 @@ object UpdateHeuristic {
 
   private def removeCommonSuffix(str: String): String =
     util.string.removeSuffix(str, Update.commonSuffixes)
+
+  private def isCommonWord(s: String): Boolean =
+    s === "scala"
 
   val moduleId = UpdateHeuristic(
     name = "moduleId",
@@ -159,14 +167,14 @@ object UpdateHeuristic {
   val relaxed = UpdateHeuristic(
     name = "relaxed",
     replaceVersion = defaultReplaceVersion { update =>
-      util.string.extractWords(update.mainArtifactId)
+      util.string.extractWords(update.mainArtifactId).filterNot(isCommonWord)
     }
   )
 
   val sliding = UpdateHeuristic(
     name = "sliding",
     replaceVersion = defaultReplaceVersion(
-      _.mainArtifactId.toSeq.sliding(5).map(_.unwrap).take(5).filterNot(_ === "scala").toList
+      _.mainArtifactId.toSeq.sliding(5).map(_.unwrap).filterNot(isCommonWord).toList
     )
   )
 

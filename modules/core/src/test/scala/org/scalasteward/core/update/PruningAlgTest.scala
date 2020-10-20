@@ -7,6 +7,8 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class PruningAlgTest extends AnyFunSuite with Matchers {
+  private val defaultConf = config.defaultRepoConfigFile.map(_.toString).getOrElse("")
+
   test("needsAttention") {
     val repo = Repo("fthomas", "scalafix-test")
     val repoCacheFile =
@@ -22,7 +24,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
           |  }
           |}""".stripMargin
     val pullRequestsFile =
-      config.workspace / "store/pull_requests/v1/fthomas/scalafix-test/pull_requests.json"
+      config.workspace / "store/pull_requests/v2/fthomas/scalafix-test/pull_requests.json"
     val pullRequestsContent =
       s"""|{
           |  "https://github.com/fthomas/scalafix-test/pull/27" : {
@@ -60,6 +62,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
     state shouldBe initial.copy(
       commands = Vector(
         List("read", repoCacheFile.toString),
+        List("read", defaultConf),
         List("read", pullRequestsFile.toString)
       ),
       logs = Vector(
@@ -114,7 +117,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
           |  }
           |}""".stripMargin
     val pullRequestsFile =
-      config.workspace / "store/pull_requests/v1/fthomas/scalafix-test/pull_requests.json"
+      config.workspace / "store/pull_requests/v2/fthomas/scalafix-test/pull_requests.json"
     val pullRequestsContent =
       s"""|{
           |  "https://github.com/fthomas/scalafix-test/pull/27" : {
@@ -167,6 +170,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
     state shouldBe initial.copy(
       commands = Vector(
         List("read", repoCacheFile.toString),
+        List("read", defaultConf),
         List("read", pullRequestsFile.toString)
       ),
       logs = Vector(
@@ -231,7 +235,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
           |  }
           |}""".stripMargin
     val pullRequestsFile =
-      config.workspace / "store/pull_requests/v1/fthomas/scalafix-test/pull_requests.json"
+      config.workspace / "store/pull_requests/v2/fthomas/scalafix-test/pull_requests.json"
     val pullRequestsContent =
       s"""|{
           |  "https://github.com/fthomas/scalafix-test/pull/27" : {
@@ -284,6 +288,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
     state shouldBe initial.copy(
       commands = Vector(
         List("read", repoCacheFile.toString),
+        List("read", defaultConf),
         List("read", versionsFile.toString),
         List("read", pullRequestsFile.toString),
         List("read", versionsFile.toString),
@@ -295,7 +300,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
         (None, "Found 1 update:\n  org.scala-lang:scala-library : 2.12.10 -> 2.12.11"),
         (
           None,
-          "fthomas/scalafix-test is outdated:\n  DependencyOutdated(CrossDependency(NonEmptyList(Dependency(org.scala-lang,ArtifactId(scala-library,None),2.12.10,None,None,None))),Single(CrossDependency(NonEmptyList(Dependency(org.scala-lang,ArtifactId(scala-library,None),2.12.10,None,None,None))),NonEmptyList(2.12.11),None))"
+          "fthomas/scalafix-test is outdated:\n  new version: org.scala-lang:scala-library : 2.12.10 -> 2.12.11"
         )
       )
     )

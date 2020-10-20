@@ -19,7 +19,7 @@ package org.scalasteward.core.application
 import caseapp.core.Error.MalformedValue
 import caseapp.core.argparser.ArgParser
 import cats.Eq
-import cats.implicits._
+import cats.syntax.all._
 
 sealed trait SupportedVCS {
   import SupportedVCS.{Bitbucket, BitbucketServer, GitHub, Gitlab}
@@ -40,13 +40,14 @@ object SupportedVCS {
   implicit val supportedVCSEq: Eq[SupportedVCS] =
     Eq.fromUniversalEquals
 
-  def parse(value: String): Either[String, SupportedVCS] = value match {
-    case "github"           => Right(GitHub)
-    case "gitlab"           => Right(Gitlab)
-    case "bitbucket"        => Right(Bitbucket)
-    case "bitbucket-server" => Right(BitbucketServer)
-    case unknown            => Left(s"Unexpected string '$unknown'")
-  }
+  def parse(value: String): Either[String, SupportedVCS] =
+    value match {
+      case "github"           => Right(GitHub)
+      case "gitlab"           => Right(Gitlab)
+      case "bitbucket"        => Right(Bitbucket)
+      case "bitbucket-server" => Right(BitbucketServer)
+      case unknown            => Left(s"Unexpected string '$unknown'")
+    }
 
   implicit val supportedVCSParser: ArgParser[SupportedVCS] =
     ArgParser[String].xmapError(

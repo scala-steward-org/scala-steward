@@ -17,7 +17,7 @@
 package org.scalasteward.core.repocache
 
 import cats.Monad
-import cats.implicits._
+import cats.syntax.all._
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 import org.scalasteward.core.persistence.KeyValueStore
@@ -26,8 +26,7 @@ import org.scalasteward.core.util.{DateTimeAlg, Timestamp}
 import org.scalasteward.core.vcs.data.Repo
 import scala.concurrent.duration._
 
-final class RefreshErrorAlg[F[_]](kvStore: KeyValueStore[F, Repo, Entry])(
-    implicit
+final class RefreshErrorAlg[F[_]](kvStore: KeyValueStore[F, Repo, Entry])(implicit
     dateTimeAlg: DateTimeAlg[F],
     F: Monad[F]
 ) {

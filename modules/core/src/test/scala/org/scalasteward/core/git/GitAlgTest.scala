@@ -3,7 +3,7 @@ package org.scalasteward.core.git
 import better.files.File
 import cats.Monad
 import cats.effect.IO
-import cats.implicits._
+import cats.syntax.all._
 import org.http4s.syntax.literals._
 import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
@@ -20,9 +20,10 @@ class GitAlgTest extends AnyFunSuite with Matchers {
   implicit val workspaceAlg: WorkspaceAlg[IO] = WorkspaceAlg.create[IO]
   val ioGitAlg: GitAlg[IO] = GitAlg.create[IO]
 
-  val repo = Repo("fthomas", "datapackage")
+  val repo: Repo = Repo("fthomas", "datapackage")
   val repoDir: String = (config.workspace / "fthomas/datapackage").toString
   val askPass = s"GIT_ASKPASS=${config.gitAskPass}"
+  val envVars = List(askPass, "VAR1=val1", "VAR2=val2")
 
   test("clone") {
     val url = uri"https://scala-steward@github.com/fthomas/datapackage"
@@ -30,8 +31,7 @@ class GitAlgTest extends AnyFunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List(
-          askPass,
+        envVars ++ List(
           config.workspace.toString,
           "git",
           "clone",
@@ -51,7 +51,7 @@ class GitAlgTest extends AnyFunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List(askPass, repoDir, "git", "log", "--pretty=format:'%an'", "master..update/cats-1.0.0")
+        envVars ++ List(repoDir, "git", "log", "--pretty=format:'%an'", "master..update/cats-1.0.0")
       )
     )
   }
@@ -64,7 +64,7 @@ class GitAlgTest extends AnyFunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List(askPass, repoDir, "git", "commit", "--all", "-m", "Initial commit", "--no-gpg-sign")
+        envVars ++ List(repoDir, "git", "commit", "--all", "--no-gpg-sign", "-m", "Initial commit")
       )
     )
   }
@@ -80,8 +80,7 @@ class GitAlgTest extends AnyFunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List(
-          askPass,
+        envVars ++ List(
           repoDir,
           "git",
           "remote",
@@ -89,10 +88,10 @@ class GitAlgTest extends AnyFunSuite with Matchers {
           "upstream",
           "http://github.com/fthomas/datapackage"
         ),
-        List(askPass, repoDir, "git", "fetch", "--tags", "upstream", "master"),
-        List(askPass, repoDir, "git", "checkout", "-B", "master", "--track", "upstream/master"),
-        List(askPass, repoDir, "git", "merge", "upstream/master"),
-        List(askPass, repoDir, "git", "push", "--force", "--set-upstream", "origin", "master")
+        envVars ++ List(repoDir, "git", "fetch", "--tags", "upstream", "master"),
+        envVars ++ List(repoDir, "git", "checkout", "-B", "master", "--track", "upstream/master"),
+        envVars ++ List(repoDir, "git", "merge", "upstream/master"),
+        envVars ++ List(repoDir, "git", "push", "--force", "--set-upstream", "origin", "master")
       )
     )
   }
@@ -124,11 +123,27 @@ class GitAlgTest extends AnyFunSuite with Matchers {
     } yield (c1, m1, c2, m2)
     p.unsafeRunSync() shouldBe ((true, false, false, true))
   }
+
+  test("mergeTheirs: CONFLICT (modify/delete)") {
+    val repo = Repo("merge", "theirs2")
+    val p = for {
+      repoDir <- workspaceAlg.repoDir(repo)
+      _ <- GitAlgTest.createGitRepoWithConflictFileRemovedOnMaster[IO](repoDir)
+      master = Branch("master")
+      branch = Branch("conflicts-yes")
+      c1 <- ioGitAlg.hasConflicts(repo, branch, master)
+      m1 <- ioGitAlg.isMerged(repo, master, branch)
+      _ <- ioGitAlg.checkoutBranch(repo, branch)
+      _ <- ioGitAlg.mergeTheirs(repo, master)
+      c2 <- ioGitAlg.hasConflicts(repo, branch, master)
+      m2 <- ioGitAlg.isMerged(repo, master, branch)
+    } yield (c1, m1, c2, m2)
+    p.unsafeRunSync() shouldBe ((true, false, false, true))
+  }
 }
 
 object GitAlgTest {
-  def createGitRepoWithConflict[F[_]](repoDir: File)(
-      implicit
+  def createGitRepoWithConflict[F[_]](repoDir: File)(implicit
       fileAlg: FileAlg[F],
       processAlg: ProcessAlg[F],
       F: Monad[F]
@@ -159,5 +174,32 @@ object GitAlgTest {
       _ <- fileAlg.writeFile(repoDir / "file2", "file2, line1\nfile2, line2 on master")
       _ <- processAlg.exec(Nel.of("git", "add", "file2"), repoDir)
       _ <- processAlg.exec(Nel.of("git", "commit", "-m", "Modify file2 on master"), repoDir)
+    } yield ()
+
+  def createGitRepoWithConflictFileRemovedOnMaster[F[_]](repoDir: File)(implicit
+      fileAlg: FileAlg[F],
+      processAlg: ProcessAlg[F],
+      F: Monad[F]
+  ): F[Unit] =
+    for {
+      _ <- fileAlg.deleteForce(repoDir)
+      _ <- fileAlg.ensureExists(repoDir)
+      _ <- processAlg.exec(Nel.of("git", "init", "."), repoDir)
+      // work on master
+      _ <- fileAlg.writeFile(repoDir / "file1", "file1, line1")
+      _ <- fileAlg.writeFile(repoDir / "file2", "file2, line1")
+      _ <- processAlg.exec(Nel.of("git", "add", "file1"), repoDir)
+      _ <- processAlg.exec(Nel.of("git", "add", "file2"), repoDir)
+      _ <- processAlg.exec(Nel.of("git", "commit", "-m", "Initial commit"), repoDir)
+      // work on conflicts-yes
+      _ <- processAlg.exec(Nel.of("git", "checkout", "-b", "conflicts-yes"), repoDir)
+      _ <- fileAlg.writeFile(repoDir / "file2", "file2, line1\nfile2, line2 on conflicts-yes")
+      _ <- processAlg.exec(Nel.of("git", "add", "file2"), repoDir)
+      _ <- processAlg.exec(Nel.of("git", "commit", "-m", "Modify file2 on conflicts-yes"), repoDir)
+      _ <- processAlg.exec(Nel.of("git", "checkout", "master"), repoDir)
+      // work on master
+      _ <- processAlg.exec(Nel.of("git", "rm", "file2"), repoDir)
+      _ <- processAlg.exec(Nel.of("git", "add", "-A"), repoDir)
+      _ <- processAlg.exec(Nel.of("git", "commit", "-m", "Remove file2 on master"), repoDir)
     } yield ()
 }

@@ -17,18 +17,18 @@
 package org.scalasteward.core.io
 
 import better.files.File
-import cats.effect.{Resource, Sync}
-import cats.implicits._
+import cats.effect.{Bracket, Resource, Sync}
+import cats.syntax.all._
 import cats.{Functor, Traverse}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import org.apache.commons.io.FileUtils
-import org.scalasteward.core.util.MonadThrowable
+import org.http4s.Uri
+import org.http4s.implicits.http4sLiteralsSyntax
+import org.scalasteward.core.util.MonadThrow
 import scala.io.Source
 
 trait FileAlg[F[_]] {
-  def createTemporarily[A](file: File, content: String)(fa: F[A]): F[A]
-
   def deleteForce(file: File): F[Unit]
 
   def ensureExists(dir: File): F[File]
@@ -45,29 +45,37 @@ trait FileAlg[F[_]] {
 
   def readResource(resource: String): F[String]
 
+  def readUri(uri: Uri): F[String]
+
   def walk(dir: File): Stream[F, File]
 
   def writeFile(file: File, content: String): F[Unit]
 
-  def containsString(file: File, string: String)(implicit F: Functor[F]): F[Boolean] =
+  final def containsString(file: File, string: String)(implicit F: Functor[F]): F[Boolean] =
     readFile(file).map(_.fold(false)(_.contains(string)))
 
-  final def editFile(file: File, edit: String => Option[String])(
-      implicit F: MonadThrowable[F]
+  final def createTemporarily[A, E](file: File, content: String)(
+      fa: F[A]
+  )(implicit F: Bracket[F, E]): F[A] = {
+    val delete = deleteForce(file)
+    val create = writeFile(file, content).onError(_ => delete)
+    F.bracket(create)(_ => fa)(_ => delete)
+  }
+
+  final def editFile(file: File, edit: String => Option[String])(implicit
+      F: MonadThrow[F]
   ): F[Boolean] =
     readFile(file)
       .flatMap(_.flatMap(edit).fold(F.pure(false))(writeFile(file, _).as(true)))
       .adaptError { case t => new Throwable(s"failed to edit $file", t) }
 
-  final def editFiles[G[_]](files: G[File], edit: String => Option[String])(
-      implicit
-      F: MonadThrowable[F],
+  final def editFiles[G[_]](files: G[File], edit: String => Option[String])(implicit
+      F: MonadThrow[F],
       G: Traverse[G]
   ): F[Boolean] =
     files.traverse(editFile(_, edit)).map(_.foldLeft(false)(_ || _))
 
-  final def findFilesContaining(dir: File, string: String, fileFilter: File => Boolean)(
-      implicit
+  final def findFilesContaining(dir: File, string: String, fileFilter: File => Boolean)(implicit
       streamCompiler: Stream.Compiler[F, F],
       F: Functor[F]
   ): F[List[File]] =
@@ -85,11 +93,11 @@ trait FileAlg[F[_]] {
 object FileAlg {
   def create[F[_]](implicit logger: Logger[F], F: Sync[F]): FileAlg[F] =
     new FileAlg[F] {
-      override def createTemporarily[A](file: File, content: String)(fa: F[A]): F[A] =
-        F.bracket(writeFile(file, content))(_ => fa)(_ => deleteForce(file))
-
       override def deleteForce(file: File): F[Unit] =
-        F.delay(if (file.exists) FileUtils.forceDelete(file.toJava))
+        F.delay {
+          if (file.exists) FileUtils.forceDelete(file.toJava)
+          if (file.exists) file.delete()
+        }
 
       override def ensureExists(dir: File): F[File] =
         F.delay {
@@ -121,9 +129,16 @@ object FileAlg {
         F.delay(if (file.exists) Some(file.contentAsString) else None)
 
       override def readResource(resource: String): F[String] =
-        Resource
-          .fromAutoCloseable(F.delay(Source.fromResource(resource)))
-          .use(src => F.delay(src.mkString))
+        readSource(Source.fromResource(resource))
+
+      override def readUri(uri: Uri): F[String] = {
+        val scheme = uri.scheme.getOrElse(scheme"file")
+        val withScheme = uri.copy(scheme = Some(scheme))
+        readSource(Source.fromURL(withScheme.renderString))
+      }
+
+      private def readSource(source: => Source): F[String] =
+        Resource.fromAutoCloseable(F.delay(source)).use(src => F.delay(src.mkString))
 
       override def walk(dir: File): Stream[F, File] =
         Stream.eval(F.delay(dir.walk())).flatMap(Stream.fromIterator(_))

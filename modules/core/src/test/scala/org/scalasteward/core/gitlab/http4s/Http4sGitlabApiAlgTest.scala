@@ -18,9 +18,15 @@ import org.scalasteward.core.util.{HttpJsonClient, Nel}
 import org.scalasteward.core.vcs.data._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import org.http4s.headers.Allow
+import cats.implicits._
 
 class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
   import GitlabJsonCodec._
+
+  object MergeWhenPipelineSucceedsMatcher
+      extends QueryParamDecoderMatcher[Boolean]("merge_when_pipeline_succeeds")
 
   val routes: HttpRoutes[IO] =
     HttpRoutes.of[IO] {
@@ -37,6 +43,28 @@ class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
           )
         )
 
+      case GET -> Root / "projects" / "foo/bar" / "merge_requests" / "150" =>
+        Ok(
+          getMr.deepMerge(
+            json""" { "iid": 150, "web_url": "https://gitlab.com/foo/bar/merge_requests/150" } """
+          )
+        )
+
+      case PUT -> Root / "projects" / "foo/bar" / "merge_requests" / IntVar(_) =>
+        Ok(
+          getMr.deepMerge(
+            json""" { "state": "closed" } """
+          )
+        )
+
+      case PUT -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "merge"
+          :? MergeWhenPipelineSucceedsMatcher(_) =>
+        Ok(
+          getMr.deepMerge(
+            json""" { "iid": 150, "web_url": "https://gitlab.com/foo/bar/merge_requests/150" } """
+          )
+        )
+
       case req =>
         println(req.toString())
         NotFound()
@@ -44,8 +72,15 @@ class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
 
   implicit val client: Client[IO] = Client.fromHttpApp(routes.orNotFound)
   implicit val httpJsonClient: HttpJsonClient[IO] = new HttpJsonClient[IO]
+  implicit val logger = Slf4jLogger.getLogger[IO]
   val gitlabApiAlg =
-    new Http4sGitLabApiAlg[IO](config.vcsApiHost, user, _ => IO.pure, doNotFork = false)
+    new Http4sGitLabApiAlg[IO](
+      config.vcsApiHost,
+      user,
+      _ => IO.pure,
+      doNotFork = false,
+      mergeWhenPipelineSucceeds = false
+    )
 
   val data = UpdateData(
     Repo("foo", "bar"),
@@ -74,7 +109,13 @@ class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
 
   test("createPullRequest -- no fork") {
     val gitlabApiAlgNoFork =
-      new Http4sGitLabApiAlg[IO](config.vcsApiHost, user, _ => IO.pure, doNotFork = true)
+      new Http4sGitLabApiAlg[IO](
+        config.vcsApiHost,
+        user,
+        _ => IO.pure,
+        doNotFork = true,
+        mergeWhenPipelineSucceeds = false
+      )
     val prOut =
       gitlabApiAlgNoFork
         .createPullRequest(Repo("foo", "bar"), newPRData)
@@ -89,6 +130,74 @@ class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
 
   test("extractProjectId") {
     decode[ProjectId](getRepo.spaces2) shouldBe Right(ProjectId(12414871L))
+  }
+
+  test("closePullRequest") {
+    val prOut =
+      gitlabApiAlg
+        .closePullRequest(Repo("foo", "bar"), 7115)
+        .unsafeRunSync()
+
+    prOut shouldBe PullRequestOut(
+      uri"https://gitlab.com/foo/bar/merge_requests/7115",
+      PullRequestState.Closed,
+      "title"
+    )
+  }
+
+  test("createPullRequest -- auto merge") {
+    val gitlabApiAlgNoFork =
+      new Http4sGitLabApiAlg[IO](
+        config.vcsApiHost,
+        user,
+        _ => IO.pure,
+        doNotFork = true,
+        mergeWhenPipelineSucceeds = true
+      )
+
+    val prOut =
+      gitlabApiAlgNoFork
+        .createPullRequest(Repo("foo", "bar"), newPRData)
+        .unsafeRunSync()
+
+    prOut shouldBe PullRequestOut(
+      uri"https://gitlab.com/foo/bar/merge_requests/150",
+      PullRequestState.Open,
+      "title"
+    )
+  }
+
+  test("createPullRequest -- don't fail on error code") {
+    val errorClient: Client[IO] =
+      Client.fromHttpApp(
+        (HttpRoutes.of[IO] {
+          case PUT -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "merge"
+              :? MergeWhenPipelineSucceedsMatcher(_) =>
+            MethodNotAllowed(Allow(OPTIONS, GET, HEAD))
+        } <+> routes).orNotFound
+      )
+    val errorJsonClient: HttpJsonClient[IO] =
+      new HttpJsonClient[IO]()(implicitly, errorClient)
+
+    val gitlabApiAlgNoFork =
+      new Http4sGitLabApiAlg[IO](
+        config.vcsApiHost,
+        user,
+        _ => IO.pure,
+        doNotFork = true,
+        mergeWhenPipelineSucceeds = true
+      )(errorJsonClient, implicitly, implicitly)
+
+    val prOut =
+      gitlabApiAlgNoFork
+        .createPullRequest(Repo("foo", "bar"), newPRData)
+        .unsafeRunSync()
+
+    prOut shouldBe PullRequestOut(
+      uri"https://gitlab.com/foo/bar/merge_requests/150",
+      PullRequestState.Open,
+      "title"
+    )
   }
 
   val getMr = json"""

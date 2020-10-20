@@ -1,30 +1,22 @@
 language: scala
+
+os: linux
+
+dist: xenial
+
+scala: 
+  - 2.13.3
+  - 2.12.10
+
 jdk:
-- openjdk8
-- openjdk11
-scala:
-- 2.13.1
+  - openjdk8
+  - openjdk11
+
 services:
-- docker
+  - docker
 
 git:
   depth: 500
-before_install:
-- git fetch --tags
-before_cache:
-  - find $HOME/.ivy2/cache -name "ivydata-*.properties" -type f -delete
-  - find $HOME/.sbt -name "*.lock" -type f -delete
-cache:
-  directories:
-  - $HOME/.cache/coursier
-  - $HOME/.ivy2/cache
-  - $HOME/.sbt
-
-install:
-- pip install --user codecov
-script: sbt ++$TRAVIS_SCALA_VERSION validate
-after_success:
-- codecov
 
 stages:
 - name: test
@@ -35,15 +27,36 @@ jobs:
   include:
   - stage: release
     jdk: openjdk8
-    script: docker login -u $DOCKER_USER -p $DOCKER_PASS && sbt docker:publish
+    script: docker login -u $DOCKER_USER -p $DOCKER_PASS && sbt core/docker:publish
     name: docker
   - script: sbt ci-release
     name: jar
 
+before_install:
+  - git fetch --tags
+
+install:
+  - pip install --user codecov
+
+script: sbt ++$TRAVIS_SCALA_VERSION validate
+
+before_cache:
+  - find $HOME/.ivy2/cache -name "ivydata-*.properties" -type f -delete
+  - find $HOME/.sbt -name "*.lock" -type f -delete
+
+cache:
+  directories:
+  - $HOME/.cache/coursier
+  - $HOME/.ivy2/cache
+  - $HOME/.sbt
+
+after_success:
+- codecov
+
 notifications:
   webhooks:
     urls:
-    - https://webhooks.gitter.im/e/0c488817d5dc313a8cc7
+    - https://webhooks.gitter.im/e/423a40e87e9aec4665dc
     on_success: change
     on_failure: always
     on_start: never

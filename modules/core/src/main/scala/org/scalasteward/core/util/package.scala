@@ -18,7 +18,7 @@ package org.scalasteward.core
 
 import cats._
 import cats.effect.Bracket
-import cats.implicits._
+import cats.syntax.all._
 import fs2.Pipe
 import scala.collection.mutable.ListBuffer
 
@@ -26,11 +26,11 @@ package object util {
   final type Nel[+A] = cats.data.NonEmptyList[A]
   final val Nel = cats.data.NonEmptyList
 
-  type ApplicativeThrowable[F[_]] = ApplicativeError[F, Throwable]
+  type ApplicativeThrow[F[_]] = ApplicativeError[F, Throwable]
 
-  type MonadThrowable[F[_]] = MonadError[F, Throwable]
+  type MonadThrow[F[_]] = MonadError[F, Throwable]
 
-  type BracketThrowable[F[_]] = Bracket[F, Throwable]
+  type BracketThrow[F[_]] = Bracket[F, Throwable]
 
   /** Appends `elem` to `buffer` such that its size does not exceed `maxSize`. */
   def appendBounded[A](buffer: ListBuffer[A], elem: A, maxSize: Int): Unit = {

@@ -2,6 +2,7 @@ package org.scalasteward.core.io
 
 import better.files.File
 import cats.effect.IO
+import org.http4s.Uri
 import org.scalacheck.Arbitrary
 import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
@@ -67,7 +68,7 @@ class FileAlgTest extends AnyFunSuite with Matchers {
   }
 
   test("editFile: existent file") {
-    val file = File.root / "tmp" / "steward" / "test1.sbt"
+    val file = File.temp / "steward" / "test1.sbt"
     val (state, edited) = (for {
       _ <- fileAlg.writeFile(file, "123")
       edit = (s: String) => Some(s.replace("2", "4"))
@@ -83,6 +84,33 @@ class FileAlgTest extends AnyFunSuite with Matchers {
       files = Map(file -> "143")
     )
     edited shouldBe true
+  }
+
+  test("deleteForce removes dangling symlink in subdirectory") {
+    val dir = File.temp / "steward-symlink"
+    val sub = dir / "sub"
+    val regular = dir / "regular"
+    val symlink = sub / "symlink"
+    val p = for {
+      _ <- IO(dir.delete(swallowIOExceptions = true))
+      _ <- ioFileAlg.writeFile(regular, "I'm a regular file")
+      _ <- IO(sub.createDirectory())
+      _ <- IO(symlink.symbolicLinkTo(regular))
+      _ <- ioFileAlg.deleteForce(regular)
+      _ <- ioFileAlg.deleteForce(dir)
+      symlinkExists <- IO(symlink.exists(File.LinkOptions.noFollow))
+    } yield symlinkExists
+    p.unsafeRunSync() shouldBe false
+  }
+
+  test("readUri: local file without scheme") {
+    val file = File.temp / "steward" / "readUri.txt"
+    val content = "42"
+    val p = for {
+      _ <- ioFileAlg.writeFile(file, content)
+      read <- ioFileAlg.readUri(Uri.unsafeFromString(file.toString))
+    } yield read
+    p.unsafeRunSync() shouldBe content
   }
 }
 

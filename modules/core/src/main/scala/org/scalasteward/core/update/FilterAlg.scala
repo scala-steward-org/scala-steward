@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.update
 
-import cats.implicits._
+import cats.syntax.all._
 import cats.{Monad, TraverseFilter}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data._
@@ -24,8 +24,7 @@ import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.update.FilterAlg._
 import org.scalasteward.core.util.Nel
 
-final class FilterAlg[F[_]](
-    implicit
+final class FilterAlg[F[_]](implicit
     logger: Logger[F],
     F: Monad[F]
 ) {
@@ -48,14 +47,15 @@ object FilterAlg {
 
   sealed trait RejectionReason {
     def update: Update.Single
-    def show: String = this match {
-      case IgnoredByConfig(_)         => "ignored by config"
-      case VersionPinnedByConfig(_)   => "version is pinned by config"
-      case NotAllowedByConfig(_)      => "not allowed by config"
-      case BadVersions(_)             => "bad versions"
-      case NoSuitableNextVersion(_)   => "no suitable next version"
-      case VersionOrderingConflict(_) => "version ordering conflict"
-    }
+    def show: String =
+      this match {
+        case IgnoredByConfig(_)         => "ignored by config"
+        case VersionPinnedByConfig(_)   => "version is pinned by config"
+        case NotAllowedByConfig(_)      => "not allowed by config"
+        case BadVersions(_)             => "bad versions"
+        case NoSuitableNextVersion(_)   => "no suitable next version"
+        case VersionOrderingConflict(_) => "version ordering conflict"
+      }
   }
 
   final case class IgnoredByConfig(update: Update.Single) extends RejectionReason
@@ -65,13 +65,13 @@ object FilterAlg {
   final case class NoSuitableNextVersion(update: Update.Single) extends RejectionReason
   final case class VersionOrderingConflict(update: Update.Single) extends RejectionReason
 
-  def globalFilter(update: Update.Single): FilterResult =
+  def localFilter(update: Update.Single, repoConfig: RepoConfig): FilterResult =
+    repoConfig.updates.keep(update).flatMap(globalFilter)
+
+  private def globalFilter(update: Update.Single): FilterResult =
     removeBadVersions(update)
       .flatMap(selectSuitableNextVersion)
       .flatMap(checkVersionOrdering)
-
-  private def localFilter(update: Update.Single, repoConfig: RepoConfig): FilterResult =
-    repoConfig.updates.keep(update).flatMap(globalFilter)
 
   def isScalaDependency(dependency: Dependency): Boolean =
     (dependency.groupId.value, dependency.artifactId.name) match {
@@ -87,14 +87,14 @@ object FilterAlg {
     ignoreScalaDependency && isScalaDependency(dependency)
 
   def isDependencyConfigurationIgnored(dependency: Dependency): Boolean =
-    (dependency.configurations.fold("")(_.toLowerCase) match {
+    dependency.configurations.fold("")(_.toLowerCase) match {
       case "phantom-js-jetty"    => true
       case "scalafmt"            => true
       case "scripted-sbt"        => true
       case "scripted-sbt-launch" => true
       case "tut"                 => true
       case _                     => false
-    })
+    }
 
   private def selectSuitableNextVersion(update: Update.Single): FilterResult = {
     val newerVersions = update.newerVersions.map(Version.apply).toList
@@ -125,6 +125,11 @@ object FilterAlg {
       case ("com.nequissimus", "sort-imports") =>
         List(
           // https://github.com/beautiful-scala/sbt-scalastyle/pull/13
+          "36845576"
+        ).contains
+      case ("com.nequissimus", "sort-imports_2.12") =>
+        List(
+          // https://github.com/fthomas/scala-steward/issues/1413
           "36845576"
         ).contains
       case ("commons-collections", "commons-collections") =>

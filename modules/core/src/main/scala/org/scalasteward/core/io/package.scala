@@ -17,7 +17,7 @@
 package org.scalasteward.core
 
 import better.files.File
-import cats.implicits._
+import cats.syntax.all._
 import org.scalasteward.core.data.{GroupId, Update}
 
 package object io {
@@ -35,10 +35,8 @@ package object io {
       case _                                 => isGenericSourceFile(file, fileExtensions)
     }
 
-  private def isGenericSourceFile(file: File, fileExtensions: Set[String]): Boolean = {
-    val name = file.name
-    fileExtensions.exists(suffix => name.endsWith(suffix) && !name.startsWith(suffix))
-  }
+  private def isGenericSourceFile(file: File, fileExtensions: Set[String]): Boolean =
+    fileExtensions.exists(file.name.endsWith)
 
   private def isSbtUpdate(update: Update): Boolean =
     update.groupId === GroupId("org.scala-sbt") &&

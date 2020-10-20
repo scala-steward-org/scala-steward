@@ -16,11 +16,10 @@
 
 package org.scalasteward.core.vcs.data
 
-import cats.implicits._
+import cats.syntax.all._
 import io.circe.Encoder
 import io.circe.generic.semiauto._
 import org.http4s.Uri
-import org.scalasteward.core.BuildInfo
 import org.scalasteward.core.data.{GroupId, ReleaseRelatedUrl, SemVer, Update}
 import org.scalasteward.core.git
 import org.scalasteward.core.git.Branch
@@ -28,6 +27,13 @@ import org.scalasteward.core.nurture.UpdateData
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.{Details, Nel}
+
+final case class UpdateState(
+    state: PullRequestState
+)
+object UpdateState {
+  implicit val updateStateEncoder: Encoder[UpdateState] = deriveEncoder
+}
 
 final case class NewPullRequestData(
     title: String,
@@ -59,7 +65,7 @@ object NewPullRequestData {
         |
         |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.
         |
-        |Configure Scala Steward for your repository with a [`${RepoConfigAlg.repoConfigBasename}`](https://github.com/fthomas/scala-steward/blob/${BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
+        |Configure Scala Steward for your repository with a [`${RepoConfigAlg.repoConfigBasename}`](https://github.com/fthomas/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
         |
         |Have a fantastic day writing Scala!
         |
@@ -135,16 +141,25 @@ object NewPullRequestData {
 
   def migrationNote(migrations: List[Migration]): (Option[String], Option[Details]) =
     if (migrations.isEmpty) (None, None)
-    else
+    else {
+      val ruleList =
+        migrations.flatMap(_.rewriteRules.toList).map(rule => s"* $rule").mkString("\n")
+      val docList = migrations.flatMap(_.doc).map(uri => s"* $uri").mkString("\n")
+      val docSection =
+        if (docList.isEmpty)
+          ""
+        else
+          s"\n\nDocumentation:\n\n$docList"
       (
         Some("scalafix-migrations"),
         Some(
           Details(
             "Applied Migrations",
-            migrations.flatMap(_.rewriteRules.toList).map(rule => s"* $rule").mkString("\n")
+            s"$ruleList$docSection"
           )
         )
       )
+    }
 
   def semVerLabel(update: Update): Option[String] =
     for {

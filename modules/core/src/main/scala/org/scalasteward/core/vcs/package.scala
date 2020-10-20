@@ -16,7 +16,7 @@
 
 package org.scalasteward.core
 
-import cats.implicits._
+import cats.syntax.all._
 import org.http4s.Uri
 import org.scalasteward.core.application.SupportedVCS
 import org.scalasteward.core.application.SupportedVCS.{Bitbucket, BitbucketServer, GitHub, Gitlab}
@@ -73,52 +73,88 @@ package object vcs {
     possibleFilenames(baseNames)
   }
 
-  def possibleCompareUrls(repoUrl: Uri, update: Update): List[VersionDiff] = {
+  private[this] def extractRepoVCSType(
+      vcsType: SupportedVCS,
+      vcsUri: Uri,
+      repoUrl: Uri
+  ): Option[SupportedVCS] = {
     val host = repoUrl.host.map(_.value)
+    if (vcsUri.host.map(_.value).contains(host.getOrElse("")))
+      Option(vcsType)
+    else
+      host
+        .collect {
+          case "github.com" => GitHub
+          case "gitlab.com" => Gitlab
+        }
+        .orElse {
+          if (host.contains_("bitbucket.org"))
+            Some(Bitbucket)
+          else None
+        }
+  }
+
+  def possibleCompareUrls(
+      vcsType: SupportedVCS,
+      vcsUri: Uri,
+      repoUrl: Uri,
+      update: Update
+  ): List[VersionDiff] = {
     val from = update.currentVersion
     val to = update.nextVersion
 
-    if (host.exists(Set("github.com", "gitlab.com")))
-      possibleTags(from).zip(possibleTags(to)).map {
-        case (from1, to1) => VersionDiff(repoUrl / "compare" / s"$from1...$to1")
+    extractRepoVCSType(vcsType, vcsUri, repoUrl)
+      .map {
+        case GitHub | Gitlab =>
+          possibleTags(from).zip(possibleTags(to)).map { case (from1, to1) =>
+            VersionDiff(repoUrl / "compare" / s"$from1...$to1")
+          }
+        case Bitbucket | BitbucketServer =>
+          possibleTags(from).zip(possibleTags(to)).map { case (from1, to1) =>
+            VersionDiff((repoUrl / "compare" / s"$to1..$from1").withFragment("diff"))
+          }
       }
-    else if (host.contains_("bitbucket.org"))
-      possibleTags(from).zip(possibleTags(to)).map {
-        case (from1, to1) =>
-          VersionDiff((repoUrl / "compare" / s"$to1..$from1").withFragment("diff"))
-      }
-    else
-      List.empty
+      .getOrElse(List.empty)
   }
 
-  def possibleReleaseRelatedUrls(repoUrl: Uri, update: Update): List[ReleaseRelatedUrl] = {
-    val host = repoUrl.host.map(_.value)
-    val github =
-      if (host.contains_("github.com"))
+  def possibleReleaseRelatedUrls(
+      vcsType: SupportedVCS,
+      vcsUri: Uri,
+      repoUrl: Uri,
+      update: Update
+  ): List[ReleaseRelatedUrl] = {
+    val repoVCSType = extractRepoVCSType(vcsType, vcsUri, repoUrl)
+
+    val github = repoVCSType
+      .collect { case GitHub =>
         possibleTags(update.nextVersion).map(tag =>
           ReleaseRelatedUrl.GitHubReleaseNotes(repoUrl / "releases" / "tag" / tag)
         )
-      else
-        List.empty
+      }
+      .getOrElse(List.empty)
+
     def files(fileNames: List[String]): List[Uri] = {
-      val maybeSegments =
-        if (host.exists(Set("github.com", "gitlab.com"))) {
-          Some(List("blob", "master"))
-        } else if (host.contains_("bitbucket.org")) {
-          Some(List("master"))
-        } else {
-          None
-        }
+      val maybeSegments = repoVCSType.map {
+        case SupportedVCS.GitHub | SupportedVCS.Gitlab             => List("blob", "master")
+        case SupportedVCS.Bitbucket | SupportedVCS.BitbucketServer => List("master")
+      }
+
       maybeSegments.toList.flatMap { segments =>
         val base = segments.foldLeft(repoUrl)(_ / _)
         fileNames.map(name => base / name)
       }
     }
+
     val customChangelog = files(possibleChangelogFilenames).map(ReleaseRelatedUrl.CustomChangelog)
     val customReleaseNotes =
       files(possibleReleaseNotesFilenames).map(ReleaseRelatedUrl.CustomReleaseNotes)
 
-    github ++ customReleaseNotes ++ customChangelog ++ possibleCompareUrls(repoUrl, update)
+    github ++ customReleaseNotes ++ customChangelog ++ possibleCompareUrls(
+      vcsType,
+      vcsUri,
+      repoUrl,
+      update
+    )
   }
 
   private def possibleFilenames(baseNames: List[String]): List[String] = {

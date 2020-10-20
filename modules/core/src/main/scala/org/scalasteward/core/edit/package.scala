@@ -38,9 +38,9 @@ package object edit {
     }
 
   private[edit] def splitByOffOnMarker(target: String): Nel[(String, Boolean)] =
-    if (!target.contains("scala-steward:off")) {
+    if (!target.contains("scala-steward:off"))
       Nel.of((target, true))
-    } else {
+    else {
       val buffer = mutable.ListBuffer.empty[(String, Boolean)]
       val on = new StringBuilder()
       val off = new StringBuilder()
@@ -51,21 +51,19 @@ package object edit {
           builder.clear()
         }
       target.linesWithSeparators.foreach { line =>
-        if (off.nonEmpty) {
+        if (off.nonEmpty)
           if (line.contains("scala-steward:on")) {
             flush(off, false)
             on.append(line)
-          } else {
+          } else
             off.append(line)
-          }
-        } else if (line.contains("scala-steward:off")) {
+        else if (line.contains("scala-steward:off")) {
           flush(on, true)
-          if (regexIgnoreMultiLinesBegins.findFirstIn(line).isDefined) {
+          if (regexIgnoreMultiLinesBegins.findFirstIn(line).isDefined)
             off.append(line)
-          } else {
+          else
             // single line off
             buffer.append((line, false))
-          }
         } else on.append(line)
       }
       flush(on, true)

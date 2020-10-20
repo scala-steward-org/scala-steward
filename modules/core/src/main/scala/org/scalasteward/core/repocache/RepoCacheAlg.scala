@@ -17,20 +17,20 @@
 package org.scalasteward.core.repocache
 
 import cats.Parallel
-import cats.implicits._
+import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
+import org.scalasteward.core.buildtool.BuildToolDispatcher
 import org.scalasteward.core.data.{Dependency, DependencyInfo}
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.repoconfig.RepoConfigAlg
-import org.scalasteward.core.sbt.SbtAlg
-import org.scalasteward.core.util.MonadThrowable
-import org.scalasteward.core.util.logger.LoggerOps
+import org.scalasteward.core.util.MonadThrow
 import org.scalasteward.core.vcs.data.{Repo, RepoOut}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
+import scala.util.control.NoStackTrace
 
-final class RepoCacheAlg[F[_]](
-    implicit
+final class RepoCacheAlg[F[_]](implicit
+    buildToolDispatcher: BuildToolDispatcher[F],
     config: Config,
     gitAlg: GitAlg[F],
     logger: Logger[F],
@@ -38,24 +38,23 @@ final class RepoCacheAlg[F[_]](
     refreshErrorAlg: RefreshErrorAlg[F],
     repoCacheRepository: RepoCacheRepository[F],
     repoConfigAlg: RepoConfigAlg[F],
-    sbtAlg: SbtAlg[F],
     vcsApiAlg: VCSApiAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
-    F: MonadThrowable[F]
+    F: MonadThrow[F]
 ) {
-  def checkCache(repo: Repo): F[Unit] =
-    logger.attemptLog_(s"Check cache of ${repo.show}") {
+  def checkCache(repo: Repo): F[RepoOut] =
+    logger.info(s"Check cache of ${repo.show}") >> {
       F.ifM(refreshErrorAlg.failedRecently(repo))(
-        logger.info(s"Skipping due to previous error"),
+        F.raiseError(new Throwable("Skipping due to previous error") with NoStackTrace),
         for {
           ((repoOut, branchOut), cachedSha1) <- (
-            vcsApiAlg.createForkOrGetRepoWithDefaultBranch(config, repo),
+            vcsApiAlg.createForkOrGetRepoWithDefaultBranch(repo, config.doNotFork),
             repoCacheRepository.findSha1(repo)
           ).parTupled
           latestSha1 = branchOut.commit.sha
           refreshRequired = cachedSha1.forall(_ =!= latestSha1)
           _ <- if (refreshRequired) cloneAndRefreshCache(repo, repoOut) else F.unit
-        } yield ()
+        } yield repoOut
       )
     }
 
@@ -79,9 +78,10 @@ final class RepoCacheAlg[F[_]](
     for {
       branch <- gitAlg.currentBranch(repo)
       latestSha1 <- gitAlg.latestSha1(repo, branch)
-      dependencies <- sbtAlg.getDependencies(repo)
-      dependencyInfos <- dependencies
-        .traverse(_.traverse(_.traverse(gatherDependencyInfo(repo, _))))
+      dependencies <- buildToolDispatcher.getDependencies(repo)
+      dependencyInfos <-
+        dependencies
+          .traverse(_.traverse(_.traverse(gatherDependencyInfo(repo, _))))
       maybeRepoConfig <- repoConfigAlg.readRepoConfig(repo)
     } yield RepoCache(latestSha1, dependencyInfos, maybeRepoConfig)
 

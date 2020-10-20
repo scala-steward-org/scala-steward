@@ -24,7 +24,11 @@ class UrlTest extends AnyFunSuite with Matchers {
   }
 
   test("listPullRequests") {
-    listPullRequests(repo, "scala-steward:update/fs2-core-1.0.0", Branch("series/0.6.x")).toString shouldBe
+    listPullRequests(
+      repo,
+      "scala-steward:update/fs2-core-1.0.0",
+      Branch("series/0.6.x")
+    ).toString shouldBe
       "https://api.github.com/repos/fthomas/refined/pulls?head=scala-steward%3Aupdate/fs2-core-1.0.0&base=series/0.6.x&state=all"
   }
 

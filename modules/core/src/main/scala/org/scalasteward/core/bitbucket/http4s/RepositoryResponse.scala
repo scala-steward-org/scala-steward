@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.bitbucket.http4s
 
-import cats.implicits._
+import cats.syntax.all._
 import io.circe.{ACursor, Decoder, DecodingFailure, Json}
 import org.http4s.Uri
 import org.scalasteward.core.git.Branch
@@ -45,29 +45,28 @@ private[http4s] object RepositoryResponse {
   implicit val decoder: Decoder[RepositoryResponse] = Decoder.instance { c =>
     for {
       name <- c.downField("name").as[String]
-      owner <- c
-        .downField("owner")
-        .downField("username")
-        .as[String]
-        .orElse(c.downField("owner").downField("nickname").as[String])
-      cloneUrl <- c
-        .downField("links")
-        .downField("clone")
-        .downAt { p =>
-          p.asObject
-            .flatMap(o => o("name"))
-            .flatMap(_.asString)
-            .contains("https")
-        }
-        .downField("href")
-        .as[Uri]
+      owner <-
+        c.downField("owner")
+          .downField("username")
+          .as[String]
+          .orElse(c.downField("owner").downField("nickname").as[String])
+      cloneUrl <-
+        c.downField("links")
+          .downField("clone")
+          .downAt { p =>
+            p.asObject
+              .flatMap(o => o("name"))
+              .flatMap(_.asString)
+              .contains("https")
+          }
+          .downField("href")
+          .as[Uri]
       defaultBranch <- c.downField("mainbranch").downField("name").as[Branch]
       maybeParent <- c.downField("parent").downField("full_name").as[Option[Repo]]
     } yield RepositoryResponse(name, defaultBranch, UserOut(owner), cloneUrl, maybeParent)
   }
 
-  /**
-    * Monkey patches the [[io.circe.ACursor]] class to get the `downAt` function back, which was removed in
+  /** Monkey patches the [[io.circe.ACursor]] class to get the `downAt` function back, which was removed in
     * version 0.12.0-M4.
     *
     * @see https://gitter.im/circe/circe?at=5d3f71eff0ff3e2bba8ece73
@@ -75,15 +74,14 @@ private[http4s] object RepositoryResponse {
     */
   implicit class RichACursor(cursor: ACursor) {
 
-    /**
-      * If the focus is a JSON array, move to the first element that satisfies the given predicate.
+    /** If the focus is a JSON array, move to the first element that satisfies the given predicate.
       */
     def downAt(p: Json => Boolean): ACursor = {
       @tailrec
       def find(c: ACursor): ACursor =
-        if (c.succeeded) {
+        if (c.succeeded)
           if (c.focus.exists(p)) c else find(c.right)
-        } else c
+        else c
 
       find(cursor.downArray)
     }

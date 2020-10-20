@@ -10,6 +10,7 @@ import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import scala.concurrent.duration._
 
 class RepoConfigAlgTest extends AnyFunSuite with Matchers {
   test("config with all fields set") {
@@ -31,10 +32,10 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
          |commits.message = "Update ${artifactName} from ${currentVersion} to ${nextVersion}"
          |""".stripMargin
     val initialState = MockState.empty.add(configFile, content)
-    val config = repoConfigAlg.readRepoConfigOrDefault(repo).runA(initialState).unsafeRunSync()
+    val config = repoConfigAlg.readRepoConfigWithDefault(repo).runA(initialState).unsafeRunSync()
 
     config shouldBe RepoConfig(
-      pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Weekly)),
+      pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(7.days))),
       updates = UpdatesConfig(
         allow = List(UpdatePattern(GroupId("eu.timepit"), None, None)),
         pin = List(
@@ -118,7 +119,9 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     val content = """pullRequests.frequency = "@daily" """
     val config = RepoConfigAlg.parseRepoConfig(content)
     config shouldBe Right(
-      RepoConfig(pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Daily)))
+      RepoConfig(pullRequests =
+        PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(1.day)))
+      )
     )
   }
 
@@ -126,7 +129,17 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     val content = """pullRequests.frequency = "@monthly" """
     val config = RepoConfigAlg.parseRepoConfig(content)
     config shouldBe Right(
-      RepoConfig(pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Monthly)))
+      RepoConfig(pullRequests =
+        PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(30.days)))
+      )
+    )
+  }
+
+  test("config with 'scalafmt.runAfterUpgrading = true'") {
+    val content = "scalafmt.runAfterUpgrading = true"
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    config shouldBe Right(
+      RepoConfig(scalafmt = Some(ScalafmtConfig(runAfterUpgrading = true)))
     )
   }
 
@@ -135,7 +148,7 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
     val initialState = MockState.empty.add(configFile, """updates.ignore = [ "foo """)
     val (state, config) =
-      repoConfigAlg.readRepoConfigOrDefault(repo).run(initialState).unsafeRunSync()
+      repoConfigAlg.readRepoConfigWithDefault(repo).run(initialState).unsafeRunSync()
 
     config shouldBe RepoConfig()
     state.logs.headOption.map { case (_, msg) => msg }.getOrElse("") should

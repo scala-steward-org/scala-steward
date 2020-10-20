@@ -16,14 +16,16 @@
 
 package org.scalasteward.core.gitlab.http4s
 
-import cats.implicits._
+import cats.syntax.all._
+import io.chrisdavenport.log4cats.Logger
 import io.circe._
 import io.circe.generic.semiauto._
+import io.circe.syntax._
 import org.http4s.{Request, Status, Uri}
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.gitlab._
 import org.scalasteward.core.util.uri.uriDecoder
-import org.scalasteward.core.util.{HttpJsonClient, MonadThrowable, UnexpectedResponse}
+import org.scalasteward.core.util.{HttpJsonClient, MonadThrow, UnexpectedResponse}
 import org.scalasteward.core.vcs.VCSApiAlg
 import org.scalasteward.core.vcs.data._
 
@@ -36,21 +38,32 @@ final private[http4s] case class MergeRequestPayload(
     source_branch: String,
     target_branch: Branch
 )
+
 private[http4s] object MergeRequestPayload {
   def apply(id: String, projectId: Long, data: NewPullRequestData): MergeRequestPayload =
     MergeRequestPayload(id, data.title, data.body, projectId, data.head, data.base)
 }
+
 final private[http4s] case class MergeRequestOut(
-    web_url: Uri,
+    webUrl: Uri,
     state: PullRequestState,
-    title: String
+    title: String,
+    iid: Int,
+    mergeStatus: String
 ) {
-  val pullRequestOut: PullRequestOut = PullRequestOut(web_url, state, title)
+  val pullRequestOut: PullRequestOut = PullRequestOut(webUrl, state, title)
 }
+
 final private[http4s] case class CommitId(id: Sha1) {
   val commitOut: CommitOut = CommitOut(id)
 }
 final private[http4s] case class ProjectId(id: Long)
+
+private[http4s] object GitlabMergeStatus {
+  val CanBeMerged = "can_be_merged"
+  val CannotBeMerged = "cannot_be_merged"
+  val Checking = "checking"
+}
 
 private[http4s] object GitlabJsonCodec {
   // prevent IntelliJ from removing the import of uriDecoder
@@ -63,37 +76,57 @@ private[http4s] object GitlabJsonCodec {
   implicit val repoOutDecoder: Decoder[RepoOut] = Decoder.instance { c =>
     for {
       name <- c.downField("path").as[String]
-      owner <- c
-        .downField("owner")
-        .as[UserOut]
-        .orElse(c.downField("namespace").downField("full_path").as[String].map(UserOut(_)))
+      owner <-
+        c.downField("owner")
+          .as[UserOut]
+          .orElse(c.downField("namespace").downField("full_path").as[String].map(UserOut(_)))
       cloneUrl <- c.downField("http_url_to_repo").as[Uri]
-      parent <- c
-        .downField("forked_from_project")
-        .as[Option[RepoOut]]
-      defaultBranch <- c
-        .downField("default_branch")
-        .as[Option[Branch]]
-        .map(_.getOrElse(Branch("master")))
+      parent <-
+        c.downField("forked_from_project")
+          .as[Option[RepoOut]]
+      defaultBranch <-
+        c.downField("default_branch")
+          .as[Option[Branch]]
+          .map(_.getOrElse(Branch("master")))
     } yield RepoOut(name, owner, parent, cloneUrl, defaultBranch)
+  }
+
+  implicit val mergeRequestOutDecoder: Decoder[MergeRequestOut] = Decoder.instance { c =>
+    for {
+      webUrl <- c.downField("web_url").as[Uri]
+      state <- c.downField("state").as[PullRequestState]
+      title <- c.downField("title").as[String]
+      iid <- c.downField("iid").as[Int]
+      mergeStatus <- c.downField("merge_status").as[String]
+    } yield MergeRequestOut(webUrl, state, title, iid, mergeStatus)
   }
 
   implicit val projectIdDecoder: Decoder[ProjectId] = deriveDecoder
   implicit val mergeRequestPayloadEncoder: Encoder[MergeRequestPayload] = deriveEncoder
-  implicit val PullRequestOutDecoder: Decoder[PullRequestOut] =
-    deriveDecoder[MergeRequestOut].map(_.pullRequestOut)
+  implicit val updateStateEncoder: Encoder[UpdateState] = Encoder.instance { newState =>
+    val encoded = newState.state match {
+      case PullRequestState.Open   => "open"
+      case PullRequestState.Closed => "close"
+    }
+    Json.obj("state_event" -> encoded.asJson)
+  }
+
+  implicit val pullRequestOutDecoder: Decoder[PullRequestOut] =
+    mergeRequestOutDecoder.map(_.pullRequestOut)
   implicit val commitOutDecoder: Decoder[CommitOut] = deriveDecoder[CommitId].map(_.commitOut)
   implicit val branchOutDecoder: Decoder[BranchOut] = deriveDecoder[BranchOut]
 }
 
-class Http4sGitLabApiAlg[F[_]: MonadThrowable](
+class Http4sGitLabApiAlg[F[_]](
     gitlabApiHost: Uri,
     user: AuthenticatedUser,
     modify: Repo => Request[F] => F[Request[F]],
-    doNotFork: Boolean
-)(
-    implicit
-    client: HttpJsonClient[F]
+    doNotFork: Boolean,
+    mergeWhenPipelineSucceeds: Boolean
+)(implicit
+    client: HttpJsonClient[F],
+    logger: Logger[F],
+    monad: MonadThrow[F]
 ) extends VCSApiAlg[F] {
   import GitlabJsonCodec._
 
@@ -117,16 +150,64 @@ class Http4sGitLabApiAlg[F[_]: MonadThrowable](
 
   def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] = {
     val targetRepo = if (doNotFork) repo else repo.copy(owner = user.login)
-    for {
+    val mergeRequest = for {
       projectId <- client.get[ProjectId](url.repos(repo), modify(repo))
       payload = MergeRequestPayload(url.encodedProjectId(targetRepo), projectId.id, data)
-      res <- client.postWithBody[PullRequestOut, MergeRequestPayload](
+      res <- client.postWithBody[MergeRequestOut, MergeRequestPayload](
         url.mergeRequest(targetRepo),
         payload,
         modify(repo)
       )
     } yield res
+
+    def waitForMergeRequestStatus(internalId: Int, retries: Int = 10): F[MergeRequestOut] =
+      client
+        .get[MergeRequestOut](url.existingMergeRequest(repo, internalId), modify(repo))
+        .flatMap {
+          case mr if (mr.mergeStatus =!= GitlabMergeStatus.Checking) => monad.pure(mr)
+          case _ if (retries > 0)                                    => waitForMergeRequestStatus(internalId, retries - 1)
+          case other                                                 => monad.pure(other)
+        }
+
+    val updatedMergeRequest =
+      if (!mergeWhenPipelineSucceeds)
+        mergeRequest
+      else
+        mergeRequest
+          .flatMap(mr => waitForMergeRequestStatus(mr.iid))
+          .flatMap {
+            case mr if (mr.mergeStatus === GitlabMergeStatus.CanBeMerged) =>
+              for {
+                _ <- logger.info(s"Setting ${mr.webUrl} to merge when pipeline succeeds")
+                res <-
+                  client
+                    .put[MergeRequestOut](
+                      url.mergeWhenPiplineSucceeds(repo, mr.iid),
+                      modify(repo)
+                    )
+                    // it's possible that our status changed from can be merged already,
+                    // so just handle it gracefully and proceed without setting auto merge.
+                    .recoverWith { case UnexpectedResponse(_, _, _, status, _) =>
+                      logger
+                        .warn(s"Unexpected gitlab response setting auto merge: $status")
+                        .as(mr)
+                    }
+              } yield res
+            case mr =>
+              logger.info(s"Unable to automatically merge ${mr.webUrl}").map(_ => mr)
+          }
+
+    updatedMergeRequest.map(_.pullRequestOut)
   }
+
+  def closePullRequest(repo: Repo, id: Int): F[PullRequestOut] =
+    client
+      .putWithBody[MergeRequestOut, UpdateState](
+        url.existingMergeRequest(repo, id),
+        UpdateState(PullRequestState.Closed),
+        modify(repo)
+      )
+      .map(_.pullRequestOut)
 
   def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
     client.get(url.getBranch(repo, branch), modify(repo))

@@ -16,19 +16,24 @@
 
 package org.scalasteward.core.application
 
-import better.files._
+import better.files.File
 import cats.effect.Sync
 import org.http4s.Uri
 import org.http4s.Uri.UserInfo
 import org.scalasteward.core.application.Cli.EnvVar
+import org.scalasteward.core.application.Config.{ProcessCfg, ScalafixCfg}
 import org.scalasteward.core.git.Author
 import org.scalasteward.core.util
 import org.scalasteward.core.vcs.data.AuthenticatedUser
-
 import scala.concurrent.duration.FiniteDuration
 import scala.sys.process.Process
 
 /** Configuration for scala-steward.
+  *
+  * == [[defaultRepoConfigFile]] ==
+  * Location of default repo configuration file.
+  * This will be used if target repo doesn't have custom configuration.
+  * Note if this file doesn't exist, empty configuration will be applied
   *
   * == [[vcsApiHost]] ==
   * REST API v3 endpoints prefix
@@ -50,24 +55,21 @@ import scala.sys.process.Process
 final case class Config(
     workspace: File,
     reposFile: File,
+    defaultRepoConfigFile: Option[File],
     gitAuthor: Author,
     vcsType: SupportedVCS,
     vcsApiHost: Uri,
     vcsLogin: String,
     gitAskPass: File,
     signCommits: Boolean,
-    whitelistedDirectories: List[String],
-    readOnlyDirectories: List[String],
-    disableSandbox: Boolean,
     doNotFork: Boolean,
     ignoreOptsFiles: Boolean,
-    envVars: List[EnvVar],
-    processTimeout: FiniteDuration,
-    scalafixMigrations: Option[File],
+    processCfg: ProcessCfg,
+    scalafixCfg: ScalafixCfg,
     groupMigrations: Option[File],
     cacheTtl: FiniteDuration,
-    cacheMissDelay: FiniteDuration,
-    bitbucketServerUseDefaultReviewers: Boolean
+    bitbucketServerUseDefaultReviewers: Boolean,
+    gitlabMergeWhenPipelineSucceeds: Boolean
 ) {
   def vcsUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] = {
     val urlWithUser = util.uri.withUserInfo.set(UserInfo(vcsLogin, None))(vcsApiHost).renderString
@@ -80,29 +82,52 @@ final case class Config(
 }
 
 object Config {
-  def create[F[_]](args: Cli.Args)(implicit F: Sync[F]): F[Config] =
-    F.delay {
-      Config(
-        workspace = args.workspace.toFile,
-        reposFile = args.reposFile.toFile,
-        gitAuthor = Author(args.gitAuthorName, args.gitAuthorEmail),
-        vcsType = args.vcsType,
-        vcsApiHost = args.vcsApiHost,
-        vcsLogin = args.vcsLogin,
-        gitAskPass = args.gitAskPass.toFile,
-        signCommits = args.signCommits,
-        whitelistedDirectories = args.whitelist,
-        readOnlyDirectories = args.readOnly,
-        disableSandbox = args.disableSandbox,
-        doNotFork = args.doNotFork,
-        ignoreOptsFiles = args.ignoreOptsFiles,
+  final case class ProcessCfg(
+      envVars: List[EnvVar],
+      processTimeout: FiniteDuration,
+      sandboxCfg: SandboxCfg
+  )
+
+  final case class SandboxCfg(
+      whitelistedDirectories: List[String],
+      readOnlyDirectories: List[String],
+      disableSandbox: Boolean
+  )
+
+  final case class ScalafixCfg(
+      migrations: List[Uri],
+      disableDefaults: Boolean
+  )
+
+  def from(args: Cli.Args): Config =
+    Config(
+      workspace = args.workspace,
+      reposFile = args.reposFile,
+      defaultRepoConfigFile = args.defaultRepoConf,
+      gitAuthor = Author(args.gitAuthorName, args.gitAuthorEmail),
+      vcsType = args.vcsType,
+      vcsApiHost = args.vcsApiHost,
+      vcsLogin = args.vcsLogin,
+      gitAskPass = args.gitAskPass,
+      signCommits = args.signCommits,
+      doNotFork = args.doNotFork,
+      ignoreOptsFiles = args.ignoreOptsFiles,
+      processCfg = ProcessCfg(
         envVars = args.envVar,
         processTimeout = args.processTimeout,
-        scalafixMigrations = args.scalafixMigrations.map(_.toFile),
-        groupMigrations = args.groupMigrations.map(_.toFile),
-        cacheTtl = args.cacheTtl,
-        cacheMissDelay = args.cacheMissDelay,
-        bitbucketServerUseDefaultReviewers = args.bitbucketServerUseDefaultReviewers
-      )
-    }
+        sandboxCfg = SandboxCfg(
+          whitelistedDirectories = args.whitelist,
+          readOnlyDirectories = args.readOnly,
+          disableSandbox = args.disableSandbox
+        )
+      ),
+      scalafixCfg = ScalafixCfg(
+        migrations = args.scalafixMigrations,
+        disableDefaults = args.disableDefaultScalafixMigrations
+      ),
+      groupMigrations = args.groupMigrations,
+      cacheTtl = args.cacheTtl,
+      bitbucketServerUseDefaultReviewers = args.bitbucketServerUseDefaultReviewers,
+      gitlabMergeWhenPipelineSucceeds = args.gitlabMergeWhenPipelineSucceeds
+    )
 }
