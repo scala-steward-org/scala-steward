@@ -160,7 +160,8 @@ class UpdateHeuristicTest extends AnyFunSuite with Matchers {
     Single(
       "org.spire-math" % "kind-projector" % "0.9.0",
       Nel.of("0.10.0"),
-      Some(GroupId("org.typelevel"))
+      Some(GroupId("org.typelevel")),
+      Some("kind-projector")
     ).replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.moduleId.name)
   }
 

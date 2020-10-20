@@ -12,3 +12,5 @@ workspace/
 .bloop/
 .metals/
 metals.sbt
+
+.bsp/

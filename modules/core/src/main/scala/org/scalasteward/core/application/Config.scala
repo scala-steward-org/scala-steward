@@ -66,7 +66,7 @@ final case class Config(
     ignoreOptsFiles: Boolean,
     processCfg: ProcessCfg,
     scalafixCfg: ScalafixCfg,
-    groupMigrations: Option[File],
+    artifactMigrations: Option[File],
     cacheTtl: FiniteDuration,
     bitbucketServerUseDefaultReviewers: Boolean,
     gitlabMergeWhenPipelineSucceeds: Boolean
@@ -125,7 +125,7 @@ object Config {
         migrations = args.scalafixMigrations,
         disableDefaults = args.disableDefaultScalafixMigrations
       ),
-      groupMigrations = args.groupMigrations,
+      artifactMigrations = args.artifactMigrations,
       cacheTtl = args.cacheTtl,
       bitbucketServerUseDefaultReviewers = args.bitbucketServerUseDefaultReviewers,
       gitlabMergeWhenPipelineSucceeds = args.gitlabMergeWhenPipelineSucceeds

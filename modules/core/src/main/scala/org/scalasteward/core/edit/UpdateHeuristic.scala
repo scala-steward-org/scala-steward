@@ -52,19 +52,19 @@ object UpdateHeuristic {
   private def shouldBeIgnored(prefix: String): Boolean =
     prefix.toLowerCase.contains("previous") || prefix.trim.startsWith("//")
 
-  private def replaceGroupF(update: Update): String => Option[String] = { target =>
+  private def replaceArtifactF(update: Update): String => Option[String] = { target =>
     update match {
-      case s @ Update.Single(_, _, Some(newerGroupId)) =>
+      case s @ Update.Single(_, _, Some(newerGroupId), Some(newerArtifactId)) =>
         val currentGroupId = Regex.quote(s.groupId.value)
         val currentArtifactId = Regex.quote(s.artifactId.name)
-        val regex = s"""(?i)(.*)${currentGroupId}(.*${currentArtifactId})""".r
+        val regex = s"""(?i)(.*)${currentGroupId}(.*)${currentArtifactId}""".r
         replaceSomeInAllowedParts(
           regex,
           target,
           match0 => {
             val group1 = match0.group(1)
             val group2 = match0.group(2)
-            Some(s"""$group1$newerGroupId$group2""")
+            Some(s"""$group1$newerGroupId$group2$newerArtifactId""")
           }
         ).someIfChanged
       case _ => Some(target)
@@ -86,7 +86,7 @@ object UpdateHeuristic {
       }
 
     def replaceF(update: Update): String => Option[String] =
-      target => replaceVersionF(update)(target) >>= replaceGroupF(update)
+      target => replaceVersionF(update)(target) >>= replaceArtifactF(update)
 
     def replaceVersionF(update: Update): String => Option[String] =
       mkRegex(update).fold((_: String) => Option.empty[String]) { regex => target =>
@@ -151,7 +151,7 @@ object UpdateHeuristic {
                 )
             }
           ).someIfChanged
-        } >>= replaceGroupF(update)
+        } >>= replaceArtifactF(update)
   )
 
   val strict = UpdateHeuristic(

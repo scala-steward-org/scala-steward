@@ -31,7 +31,9 @@ docker run -v $STEWARD_DIR:/opt/scala-steward -it fthomas/scala-steward:latest \
   --vcs-login ${LOGIN} \
   --git-ask-pass "/opt/scala-steward/.github/askpass/$LOGIN.sh" \
   --sign-commits \
-  --env-var FOO=BAR
+  --env-var FOO=BAR \ 
+  --scalafix-migrations "/opt/scala-steward/extra-scalafix-migrations.conf" \
+  --artifact-migrations "/opt/scala-steward/extra-artifact-migrations.conf" 
 ```
 
 The [`git-ask-pass` option](https://git-scm.com/docs/gitcredentials) must specify an executable file (script) that returns (on the stdout),
@@ -41,9 +43,8 @@ The [`git-ask-pass` option](https://git-scm.com/docs/gitcredentials) must specif
 
 **Note about git-ask-pass option**: The provided script must start with a valid shebang like `#!/bin/sh`, see issue [#1374](/../../issues/1374)
 
-
-You can also provide a `--scalafix-migrations` option with the path to a file containing scalafix migrations.
-More information can be found [here][migrations]
+More information about using the `--scalafix-migrations` and `--artifact-migrations` options can be found 
+[here][scalafixmigrations] and [here][artifactmigrations].
 
 ### Workspace
 
@@ -124,8 +125,6 @@ docker run -v $PWD:/opt/scala-steward \
 
 `BITBUCKET_USERNAME=<myuser> BITBUCKET_PASSWORD=<mypass> ./run.sh`
 
-[migrations]: https://github.com/fthomas/scala-steward/blob/master/docs/scalafix-migrations.md
-
 ### Running On-premise
 
 #### GitHub Enterprise
@@ -196,3 +195,7 @@ echo "${SCALA_STEWARD_TOKEN}"
 ```
 7. add the `repos.md` file 
 8. (*optional*) create a new schedule to trigger the pipeline on a daily/weekly basis
+
+
+[scalafixmigrations]: https://github.com/fthomas/scala-steward/blob/master/docs/scalafix-migrations.md
+[artifactmigrations]: https://github.com/fthomas/scala-steward/blob/master/docs/artifact-migrations.md
