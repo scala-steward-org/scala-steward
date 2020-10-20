@@ -27,8 +27,7 @@ trait ScaladexAlg[F[_]] {
 }
 
 object ScaladexAlg {
-  def create[F[_]](
-      implicit
+  def create[F[_]](implicit
       client: HttpScaladexClient[F],
       F: Sync[F]
   ): ScaladexAlg[F] =

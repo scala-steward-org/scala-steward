@@ -23,8 +23,7 @@ import org.http4s.client.Client
 
 import scala.util.matching.Regex
 
-final class HttpScaladexClient[F[_]](
-    implicit
+final class HttpScaladexClient[F[_]](implicit
     client: Client[F],
     F: Sync[F]
 ) {

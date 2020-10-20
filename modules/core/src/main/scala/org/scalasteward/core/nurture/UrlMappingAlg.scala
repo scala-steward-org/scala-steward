@@ -30,8 +30,7 @@ trait UrlMappingAlg[F[_]] {
 }
 
 object UrlMappingAlg {
-  def create[F[_]](
-      implicit
+  def create[F[_]](implicit
       coursierAlg: CoursierAlg[F],
       scaladexAlg: ScaladexAlg[F],
       logger: Logger[F],
