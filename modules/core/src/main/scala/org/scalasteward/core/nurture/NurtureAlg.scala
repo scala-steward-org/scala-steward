@@ -166,7 +166,10 @@ final class NurtureAlg[F[_]](implicit
           _ <- gitAlg.createBranch(data.repo, data.updateBranch)
           maybeCommit <- commitChanges(data)
           _ <- scalafmtAlg.runScalafmt(data.repo, data.update.mainArtifactId)
-          maybeScalafmtCommit <- gitAlg.commitAllIfDirty(data.repo, "Apply scalafmt")
+          maybeScalafmtCommit <- gitAlg.commitAllIfDirty(
+            data.repo,
+            s"Reformat with scalafmt ${data.update.nextVersion}"
+          )
           _ <- pushCommits(data, List(maybeCommit, maybeScalafmtCommit).flatten)
           _ <- createPullRequest(data)
         } yield Updated
