@@ -214,6 +214,10 @@ lazy val dockerSettings = Def.settings(
       Cmd(
         "RUN",
         s"curl -L https://github.com/lihaoyi/mill/releases/download/${millVersion.split("-").head}/$millVersion > /usr/local/bin/mill && chmod +x /usr/local/bin/mill"
+      ),
+      Cmd(
+        "RUN",
+        "curl -L https://git.io/coursier-cli > /usr/local/bin/coursier && chmod +x /usr/local/bin/coursier && coursier install scalafmt --install-dir /usr/local/bin/ && rm -rf /usr/local/bin/coursier"
       )
     )
   },
