@@ -87,7 +87,7 @@ final case class Version(value: String) {
   }
 
   private[this] def hashIndex: Option[NonNegInt] =
-    """[-+]\p{XDigit}{6,}""".r.findFirstMatchIn(value).flatMap(m => NonNegInt.unapply(m.start))
+    """[-+]g?\p{XDigit}{6,}""".r.findFirstMatchIn(value).flatMap(m => NonNegInt.unapply(m.start))
 
   private val minAlphaOrder: Int =
     alnumComponents.collect { case a: Version.Component.Alpha => a.order }.minOption.getOrElse(0)
