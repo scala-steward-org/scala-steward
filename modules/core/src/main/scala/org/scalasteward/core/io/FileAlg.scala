@@ -51,9 +51,6 @@ trait FileAlg[F[_]] {
 
   def writeFile(file: File, content: String): F[Unit]
 
-  final def containsString(file: File, string: String)(implicit F: Functor[F]): F[Boolean] =
-    readFile(file).map(_.fold(false)(_.contains(string)))
-
   final def createTemporarily[A, E](file: File, content: String)(
       fa: F[A]
   )(implicit F: Bracket[F, E]): F[A] = {
@@ -75,14 +72,18 @@ trait FileAlg[F[_]] {
   ): F[Boolean] =
     files.traverse(editFile(_, edit)).map(_.foldLeft(false)(_ || _))
 
-  final def findFilesContaining(dir: File, string: String, fileFilter: File => Boolean)(implicit
+  final def findFiles(
+      dir: File,
+      fileFilter: File => Boolean,
+      contentFilter: String => Boolean
+  )(implicit
       streamCompiler: Stream.Compiler[F, F],
       F: Functor[F]
   ): F[List[File]] =
     walk(dir)
       .evalFilter(isRegularFile)
       .filter(fileFilter)
-      .evalFilter(containsString(_, string))
+      .evalFilter(readFile(_).map(_.fold(false)(contentFilter)))
       .compile
       .toList
 

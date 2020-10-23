@@ -43,10 +43,10 @@ final class EditAlg[F[_]](implicit
         logger.warn(s"Could not apply ${update.show} : $e")
       )
       repoDir <- workspaceAlg.repoDir(repo)
-      files <- fileAlg.findFilesContaining(
+      files <- fileAlg.findFiles(
         repoDir,
-        update.currentVersion,
-        isSourceFile(update, fileExtensions)
+        isSourceFile(update, fileExtensions),
+        _.contains(update.currentVersion)
       )
       noFilesFound = logger.warn("No files found that contain the current version")
       _ <- files.toNel.fold(noFilesFound)(applyUpdateTo(_, update))
