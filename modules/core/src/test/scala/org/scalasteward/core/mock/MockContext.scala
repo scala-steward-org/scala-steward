@@ -75,7 +75,7 @@ object MockContext {
   implicit val filterAlg: FilterAlg[MockEff] = new FilterAlg[MockEff]
   implicit val versionsCache: VersionsCache[MockEff] =
     new VersionsCache[MockEff](config.cacheTtl, new JsonKeyValueStore("versions", "1"))
-  implicit val groupMigrations: ArtifactMigrations =
+  implicit val artifactMigrations: ArtifactMigrations =
     ArtifactMigrations.create[MockEff].runA(MockState.empty).unsafeRunSync()
   implicit val updateAlg: UpdateAlg[MockEff] = new UpdateAlg[MockEff]
   implicit val mavenAlg: MavenAlg[MockEff] = MavenAlg.create

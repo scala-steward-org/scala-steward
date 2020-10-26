@@ -27,7 +27,7 @@ import scala.concurrent.duration.FiniteDuration
 final class UpdateAlg[F[_]](implicit
     filterAlg: FilterAlg[F],
     versionsCache: VersionsCache[F],
-    groupMigrations: ArtifactMigrations,
+    artifactMigrations: ArtifactMigrations,
     F: Monad[F]
 ) {
   def findUpdate(
@@ -40,7 +40,7 @@ final class UpdateAlg[F[_]](implicit
       maybeNewerVersions = Nel.fromList(versions.filter(_ > current))
       maybeUpdate = maybeNewerVersions
         .map(vs => Update.Single(CrossDependency(dependency.value), vs.map(_.value)))
-        .orElse(groupMigrations.findUpdateWithRenamedArtifact(dependency.value))
+        .orElse(artifactMigrations.findUpdateWithRenamedArtifact(dependency.value))
     } yield maybeUpdate
 
   def findUpdates(

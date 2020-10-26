@@ -58,7 +58,9 @@ object Context {
       implicit0(fileAlg: FileAlg[F]) = FileAlg.create[F]
       implicit0(migrationAlg: MigrationAlg) <-
         Resource.liftF(new MigrationsLoader[F].loadAll(config.scalafixCfg).map(new MigrationAlg(_)))
-      implicit0(groupMigration: ArtifactMigrations) <- Resource.liftF(ArtifactMigrations.create[F])
+      implicit0(artifactMigration: ArtifactMigrations) <- Resource.liftF(
+        ArtifactMigrations.create[F]
+      )
     } yield {
       val kvsPrefix = Some(config.vcsType.asString)
       implicit val dateTimeAlg: DateTimeAlg[F] = DateTimeAlg.create[F]
