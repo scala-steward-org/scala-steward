@@ -28,5 +28,5 @@ The fields `groupIdBefore` and `artifactIdBefore` are optional. If just `groupId
 example, then only the group id will get renamed. If just `artifactIdBefore` is specified, then only the artifact id
 will get renamed. Specifying both `groupIdBefore` and `artifactIdBefore` will rename both.
 
-[migrations]: https://github.com/fthomas/scala-steward/blob/master/modules/core/src/main/resources/artifact-migrations.conf
+[migrations]: https://github.com/scala-steward-org/scala-steward/blob/master/modules/core/src/main/resources/artifact-migrations.conf
 [HOCON]: https://github.com/lightbend/config/blob/master/HOCON.md

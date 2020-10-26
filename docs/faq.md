@@ -59,10 +59,10 @@ a  `scm.url` or an `url` attribute.
 
 You can use [Mergify](https://mergify.io) to automatically merge Scala Steward's
 pull requests. Mergify rules that does this can be found in Scala Steward's own
-repository [here](https://github.com/fthomas/scala-steward/blob/master/.mergify.yml).
+repository [here](https://github.com/scala-steward-org/scala-steward/blob/master/.mergify.yml).
 Mergify can also be configured to only merge patch updates (in case the version
 number adheres to [Semantic Versioning](https://semver.org/)) as demonstrated
-[here](https://github.com/fthomas/refined/blob/master/.mergify.yml).
+[here](https://github.com/scala-steward-org/refined/blob/master/.mergify.yml).
 
 Other examples of Mergify rules for Scala Steward can be found via
 [GitHub's code search](https://github.com/search?p=6&q=%22author%3Dscala-steward%22+filename%3A.mergify.yml&type=Code).

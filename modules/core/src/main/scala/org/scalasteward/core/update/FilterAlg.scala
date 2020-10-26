@@ -129,7 +129,7 @@ object FilterAlg {
         ).contains
       case ("com.nequissimus", "sort-imports_2.12") =>
         List(
-          // https://github.com/fthomas/scala-steward/issues/1413
+          // https://github.com/scala-steward-org/scala-steward/issues/1413
           "36845576"
         ).contains
       case ("commons-collections", "commons-collections") =>
@@ -143,7 +143,7 @@ object FilterAlg {
         ).contains
       case ("io.monix", _) =>
         List(
-          // https://github.com/fthomas/scala-steward/issues/105
+          // https://github.com/scala-steward-org/scala-steward/issues/105
           "3.0.0-fbcb270"
         ).contains
       case ("net.sourceforge.plantuml", "plantuml") =>

@@ -195,7 +195,7 @@ lazy val metadataSettings = Def.settings(
       id = "fthomas",
       name = "Frank S. Thomas",
       email = "",
-      url(s"https://github.com/fthomas")
+      url(s"https://github.com/scala-steward-org")
     )
   )
 )
