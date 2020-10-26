@@ -37,7 +37,7 @@ import org.scalasteward.core.repocache.{RefreshErrorAlg, RepoCacheAlg, RepoCache
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.scalafix.{MigrationAlg, MigrationsLoader}
 import org.scalasteward.core.scalafmt.ScalafmtAlg
-import org.scalasteward.core.update.{FilterAlg, GroupMigrations, PruningAlg, UpdateAlg}
+import org.scalasteward.core.update.{ArtifactMigrations, FilterAlg, PruningAlg, UpdateAlg}
 import org.scalasteward.core.util._
 import org.scalasteward.core.util.uri._
 import org.scalasteward.core.vcs.data.AuthenticatedUser
@@ -58,7 +58,9 @@ object Context {
       implicit0(fileAlg: FileAlg[F]) = FileAlg.create[F]
       implicit0(migrationAlg: MigrationAlg) <-
         Resource.liftF(new MigrationsLoader[F].loadAll(config.scalafixCfg).map(new MigrationAlg(_)))
-      implicit0(groupMigration: GroupMigrations) <- Resource.liftF(GroupMigrations.create[F])
+      implicit0(artifactMigration: ArtifactMigrations) <- Resource.liftF(
+        ArtifactMigrations.create[F]
+      )
     } yield {
       val kvsPrefix = Some(config.vcsType.asString)
       implicit val dateTimeAlg: DateTimeAlg[F] = DateTimeAlg.create[F]

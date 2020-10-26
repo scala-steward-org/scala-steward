@@ -143,7 +143,7 @@ class Http4sGitLabApiAlg[F[_]](
       .recoverWith {
         case UnexpectedResponse(_, _, _, Status.Conflict, _) => getRepo(userOwnedRepo)
         // workaround for https://gitlab.com/gitlab-org/gitlab-ce/issues/65275
-        // see also https://github.com/fthomas/scala-steward/pull/761
+        // see also https://github.com/scala-steward-org/scala-steward/pull/761
         case UnexpectedResponse(_, _, _, Status.NotFound, _) => getRepo(userOwnedRepo)
       }
   }

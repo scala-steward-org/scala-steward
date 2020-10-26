@@ -65,7 +65,7 @@ object NewPullRequestData {
         |
         |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.
         |
-        |Configure Scala Steward for your repository with a [`${RepoConfigAlg.repoConfigBasename}`](https://github.com/fthomas/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
+        |Configure Scala Steward for your repository with a [`${RepoConfigAlg.repoConfigBasename}`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
         |
         |Have a fantastic day writing Scala!
         |

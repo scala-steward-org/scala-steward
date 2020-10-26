@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/fthomas/scala-steward/raw/master/data/images/scala-steward-logo-circle-0.png" height="180px">
+  <img src="https://github.com/scala-steward-org/scala-steward/raw/master/data/images/scala-steward-logo-circle-0.png" height="180px">
 </p>
 
 # Scala Steward
@@ -179,7 +179,7 @@ plugin which was used until version 0.6 to find dependency updates.
 Thanks goes also to [**@impurepics**](https://twitter.com/impurepics)
 for [**@scala-steward**][@scala-steward]'s cute profile picture and to
 the maintainers and contributors of the various
-[libraries](https://github.com/fthomas/scala-steward/blob/master/project/Dependencies.scala)
+[libraries](https://github.com/scala-steward-org/scala-steward/blob/master/project/Dependencies.scala)
 this project depends on.
 
 ## License
@@ -187,6 +187,6 @@ this project depends on.
 Scala Steward is licensed under the
 [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0).
 
-[CoC]: https://github.com/fthomas/scala-steward/blob/master/CODE_OF_CONDUCT.md
+[CoC]: https://github.com/scala-steward-org/scala-steward/blob/master/CODE_OF_CONDUCT.md
 [@scala-steward]: https://github.com/scala-steward
 [sbt-updates]: https://github.com/rtimush/sbt-updates

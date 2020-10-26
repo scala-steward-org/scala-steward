@@ -25,77 +25,92 @@ import org.scalasteward.core.data._
 import org.scalasteward.core.io.FileAlg
 import org.scalasteward.core.util.{MonadThrow, Nel}
 
-trait GroupMigrations {
-  def findUpdateWithNewerGroupId(dependency: Dependency): Option[Update.Single]
+trait ArtifactMigrations {
+  def findUpdateWithRenamedArtifact(dependency: Dependency): Option[Update.Single]
 }
 
-object GroupMigrations {
+object ArtifactMigrations {
   def create[F[_]: MonadThrow](implicit
       fileAlg: FileAlg[F],
       config: Config
-  ): F[GroupMigrations] = {
+  ): F[ArtifactMigrations] = {
     val migrationSources = {
 
       val fromParameters: F[Option[String]] =
-        config.groupMigrations.traverse(fileAlg.readFile(_)).flatMap {
+        config.artifactMigrations.traverse(fileAlg.readFile).flatMap {
           case None => none[String].pure[F]
           case Some(None) =>
-            new Throwable("Couldn't read the file with custom group migrations")
+            new Throwable("Couldn't read the file with custom artifact migrations")
               .raiseError[F, Option[String]]
           case Some(Some(text)) => text.some.pure[F]
         }
 
       List(
-        fileAlg.readResource("group-migrations.conf").map(List(_)),
+        fileAlg.readResource("artifact-migrations.conf").map(List(_)),
         fromParameters.map(_.toList)
       ).flatSequence
     }
 
-    val decodeFile: String => F[GroupIdChanges] = parser
-      .decode[GroupIdChanges](_)
+    val decodeFile: String => F[ArtifactChanges] = parser
+      .decode[ArtifactChanges](_)
       .leftMap(e => new Throwable("Couldn't decode migrations file", e))
       .liftTo[F]
 
     migrationSources
       .flatMap(_.traverse(decodeFile))
       .map(_.flatMap(_.changes))
-      .map(migrations => dependency => migrateGroupId(dependency, migrations))
+      .map(migrations => dependency => migrateArtifact(dependency, migrations))
   }
 
-  def migrateGroupId(
+  def migrateArtifact(
       dependency: Dependency,
-      migrations: List[GroupIdChange]
+      migrations: List[ArtifactChange]
   ): Option[Update.Single] =
     migrations.view
-      .filter(_.before === dependency.groupId)
-      .find(_.artifactId === dependency.artifactId.name)
+      .find { migration =>
+        (migration.groupIdBefore, migration.artifactIdBefore) match {
+          case (Some(groupId), Some(artifactId)) =>
+            groupId === dependency.groupId &&
+              artifactId === dependency.artifactId.name
+          case (Some(groupId), _) =>
+            groupId === dependency.groupId &&
+              migration.artifactIdAfter === dependency.artifactId.name
+          case (_, Some(artifactId)) =>
+            migration.groupIdAfter === dependency.groupId &&
+              artifactId === dependency.artifactId.name
+          case _ => false
+        }
+      }
       .map { migration =>
         Update.Single(
           CrossDependency(dependency),
           Nel.one(migration.initialVersion),
-          Some(migration.after)
+          Some(migration.groupIdAfter),
+          Some(migration.artifactIdAfter)
         )
       }
 
   implicit val customConfig: Configuration =
     Configuration.default.withDefaults
 
-  final case class GroupIdChanges(changes: List[GroupIdChange])
-  object GroupIdChanges {
-    implicit val decoder: Decoder[GroupIdChanges] =
+  final case class ArtifactChanges(changes: List[ArtifactChange])
+
+  object ArtifactChanges {
+    implicit val decoder: Decoder[ArtifactChanges] =
       semiauto.deriveConfiguredDecoder
   }
 
-  final case class GroupIdChange(
-      before: GroupId,
-      after: GroupId,
-      artifactId: String,
+  final case class ArtifactChange(
+      groupIdBefore: Option[GroupId],
+      groupIdAfter: GroupId,
+      artifactIdBefore: Option[String],
+      artifactIdAfter: String,
       initialVersion: String
   )
 
-  object GroupIdChange {
+  object ArtifactChange {
 
-    implicit val decoder: Decoder[GroupIdChange] =
+    implicit val decoder: Decoder[ArtifactChange] =
       semiauto.deriveConfiguredDecoder
   }
 }
