@@ -38,9 +38,9 @@ final class UpdateAlg[F[_]](implicit
       versions <- versionsCache.getVersions(dependency, maxAge)
       current = Version(dependency.value.version)
       maybeNewerVersions = Nel.fromList(versions.filter(_ > current))
-      maybeUpdate = maybeNewerVersions
-        .map(vs => Update.Single(CrossDependency(dependency.value), vs.map(_.value)))
-        .orElse(artifactMigrations.findUpdateWithRenamedArtifact(dependency.value))
+      maybeUpdate = maybeNewerVersions.map(vs =>
+        Update.Single(CrossDependency(dependency.value), vs.map(_.value))
+      )
     } yield maybeUpdate
 
   def findUpdates(
@@ -48,8 +48,12 @@ final class UpdateAlg[F[_]](implicit
       repoConfig: RepoConfig,
       maxAge: Option[FiniteDuration]
   ): F[List[Update.Single]] = {
-    val updates = dependencies.traverseFilter(findUpdate(_, maxAge))
-    updates.flatMap(filterAlg.localFilterMany(repoConfig, _))
+    val updates: F[List[Update.Single]] = dependencies.traverseFilter(findUpdate(_, maxAge))
+    val artMigrations: List[Update.Single] = dependencies.flatMap(dependency =>
+      artifactMigrations.findUpdateWithRenamedArtifact(dependency.value)
+    )
+    val updatesPlusArtMigrations: F[List[Update.Single]] = updates.map(_ ++ artMigrations)
+    updatesPlusArtMigrations.flatMap(filterAlg.localFilterMany(repoConfig, _))
   }
 }
 

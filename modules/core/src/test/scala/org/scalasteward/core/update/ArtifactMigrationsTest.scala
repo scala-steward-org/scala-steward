@@ -1,15 +1,23 @@
 package org.scalasteward.core.update
 
+import better.files.File
 import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.application.{Cli, Config}
 import org.scalasteward.core.data.{ArtifactId, GroupId, Update}
-import org.scalasteward.core.mock.MockContext._
-import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.mock.{MockContext, MockEff, MockState}
 import org.scalasteward.core.update.ArtifactMigrations.ArtifactChange
 import org.scalasteward.core.util.Nel
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import ArtifactMigrationsTest.TestMockContext
 
-class ArtifactMigrationsTest extends AnyFunSuite with Matchers {
+import scala.io.Source
+
+class ArtifactMigrationsTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
+
+  override protected def afterAll(): Unit =
+    ArtifactMigrationsTest.tempFile.delete()
 
   val standardGroupMigrations = List(
     ArtifactChange(
@@ -108,10 +116,67 @@ class ArtifactMigrationsTest extends AnyFunSuite with Matchers {
       Some(GroupId("org.typelevel")),
       Some("kind-projector")
     )
-    val actual = updateAlg
-      .findUpdate(dependency.withMavenCentral, None)
-      .runA(MockState.empty)
-      .unsafeRunSync()
+    val actual = TestMockContext.artifactMigrations.findUpdateWithRenamedArtifact(dependency)
     actual shouldBe Some(expected)
+  }
+
+  test("findUpdate: newer artifactId") {
+    val dependency =
+      "org.typelevel" % ArtifactId("fake-artifact-id", "fake-artifact-id_2.12") % "0.9.10"
+    val expected = Update.Single(
+      "org.typelevel" % ArtifactId("fake-artifact-id", "fake-artifact-id_2.12") % "0.9.10",
+      Nel.of("0.10.0"),
+      Some(GroupId("org.typelevel")),
+      Some("kind-projector")
+    )
+    val actual = TestMockContext.artifactMigrations.findUpdateWithRenamedArtifact(dependency)
+
+    actual shouldBe Some(expected)
+  }
+
+  test("findUpdate: newer groupId and artifactId") {
+    val dependency =
+      "org.fake" % ArtifactId("fake-artifact-id", "fake-artifact-id_2.12") % "0.9.10"
+    val expected = Update.Single(
+      "org.fake" % ArtifactId("fake-artifact-id", "fake-artifact-id_2.12") % "0.9.10",
+      Nel.of("0.10.0"),
+      Some(GroupId("org.typelevel")),
+      Some("kind-projector")
+    )
+    val actual = TestMockContext.artifactMigrations.findUpdateWithRenamedArtifact(dependency)
+
+    actual shouldBe Some(expected)
+  }
+}
+
+object ArtifactMigrationsTest {
+
+  private val extraArtifactMigrationsString: String =
+    Source.fromResource("extra-artifact-migrations.conf").mkString
+  private val tempFile: File = File("temp")
+  private val extraArtifactMigrationsFile: File = tempFile.overwrite(extraArtifactMigrationsString)
+
+  object TestMockContext extends MockContext {
+    implicit override val config: Config =
+      Config.from(
+        Cli.Args(
+          workspace = File.temp / "test",
+          reposFile = File.temp / "test",
+          gitAuthorEmail = "test@example.org",
+          vcsLogin = "test",
+          gitAskPass = File.temp / "test",
+          artifactMigrations = Some(extraArtifactMigrationsFile)
+        )
+      )
+    implicit override val artifactMigrations: ArtifactMigrations =
+      ArtifactMigrations
+        .create[MockEff](config)
+        .runA(
+          MockState.empty.add(
+            extraArtifactMigrationsFile,
+            extraArtifactMigrationsString
+          )
+        )
+        .unsafeRunSync()
   }
 }

@@ -29,8 +29,8 @@ import org.scalasteward.core.vcs.VCSRepoAlg
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 import scala.concurrent.duration._
 
-object MockContext {
-  val config: Config =
+trait MockContext {
+  implicit def config: Config =
     Config.from(
       Cli.Args(
         workspace = File.temp / "ws",
@@ -51,41 +51,43 @@ object MockContext {
       )
     )
 
-  implicit val mockEffBracketThrow: BracketThrow[MockEff] = Sync[MockEff]
-  implicit val mockEffParallel: Parallel[MockEff] = Parallel.identity
+  implicit def mockEffBracketThrow: BracketThrow[MockEff] = Sync[MockEff]
+  implicit def mockEffParallel: Parallel[MockEff] = Parallel.identity
 
-  implicit val fileAlg: FileAlg[MockEff] = new MockFileAlg
-  implicit val mockLogger: Logger[MockEff] = new MockLogger
-  implicit val processAlg: ProcessAlg[MockEff] = MockProcessAlg.create(config.processCfg)
-  implicit val workspaceAlg: WorkspaceAlg[MockEff] = new MockWorkspaceAlg
+  implicit def fileAlg: FileAlg[MockEff] = new MockFileAlg
+  implicit def mockLogger: Logger[MockEff] = new MockLogger
+  implicit def processAlg: ProcessAlg[MockEff] = MockProcessAlg.create(config.processCfg)
+  implicit def workspaceAlg: WorkspaceAlg[MockEff] = new MockWorkspaceAlg
 
-  implicit val coursierAlg: CoursierAlg[MockEff] = CoursierAlg.create
-  implicit val dateTimeAlg: DateTimeAlg[MockEff] = DateTimeAlg.create
-  implicit val gitAlg: GitAlg[MockEff] = GitAlg.create(config)
-  implicit val user: AuthenticatedUser = AuthenticatedUser("scala-steward", "token")
-  implicit val vcsRepoAlg: VCSRepoAlg[MockEff] = VCSRepoAlg.create(config)
-  implicit val repoConfigAlg: RepoConfigAlg[MockEff] = new RepoConfigAlg[MockEff](config)
-  implicit val scalafmtAlg: ScalafmtAlg[MockEff] = ScalafmtAlg.create
+  implicit def coursierAlg: CoursierAlg[MockEff] = CoursierAlg.create
+  implicit def dateTimeAlg: DateTimeAlg[MockEff] = DateTimeAlg.create
+  implicit def gitAlg: GitAlg[MockEff] = GitAlg.create(config)
+  implicit def user: AuthenticatedUser = AuthenticatedUser("scala-steward", "token")
+  implicit def vcsRepoAlg: VCSRepoAlg[MockEff] = VCSRepoAlg.create(config)
+  implicit def repoConfigAlg: RepoConfigAlg[MockEff] = new RepoConfigAlg[MockEff](config)
+  implicit def scalafmtAlg: ScalafmtAlg[MockEff] = ScalafmtAlg.create
   val migrationsLoader: MigrationsLoader[MockEff] = new MigrationsLoader[MockEff]
-  implicit val migrationAlg: MigrationAlg = migrationsLoader
+  implicit def migrationAlg: MigrationAlg = migrationsLoader
     .loadAll(config.scalafixCfg)
     .map(new MigrationAlg(_))
     .runA(MigrationsLoaderTest.mockState)
     .unsafeRunSync()
-  implicit val cacheRepository: RepoCacheRepository[MockEff] =
+  implicit def cacheRepository: RepoCacheRepository[MockEff] =
     new RepoCacheRepository[MockEff](new JsonKeyValueStore("repo_cache", "1"))
-  implicit val filterAlg: FilterAlg[MockEff] = new FilterAlg[MockEff]
-  implicit val versionsCache: VersionsCache[MockEff] =
+  implicit def filterAlg: FilterAlg[MockEff] = new FilterAlg[MockEff]
+  implicit def versionsCache: VersionsCache[MockEff] =
     new VersionsCache[MockEff](config.cacheTtl, new JsonKeyValueStore("versions", "1"))
-  implicit val artifactMigrations: ArtifactMigrations =
+  implicit def artifactMigrations: ArtifactMigrations =
     ArtifactMigrations.create[MockEff](config).runA(MockState.empty).unsafeRunSync()
-  implicit val updateAlg: UpdateAlg[MockEff] = new UpdateAlg[MockEff]
-  implicit val mavenAlg: MavenAlg[MockEff] = MavenAlg.create(config)
-  implicit val sbtAlg: SbtAlg[MockEff] = SbtAlg.create(config)
-  implicit val millAlg: MillAlg[MockEff] = MillAlg.create
-  implicit val buildToolDispatcher: BuildToolDispatcher[MockEff] = BuildToolDispatcher.create
-  implicit val editAlg: EditAlg[MockEff] = new EditAlg[MockEff]
-  implicit val pullRequestRepository: PullRequestRepository[MockEff] =
+  implicit def updateAlg: UpdateAlg[MockEff] = new UpdateAlg[MockEff]
+  implicit def mavenAlg: MavenAlg[MockEff] = MavenAlg.create(config)
+  implicit def sbtAlg: SbtAlg[MockEff] = SbtAlg.create(config)
+  implicit def millAlg: MillAlg[MockEff] = MillAlg.create
+  implicit def buildToolDispatcher: BuildToolDispatcher[MockEff] = BuildToolDispatcher.create
+  implicit def editAlg: EditAlg[MockEff] = new EditAlg[MockEff]
+  implicit def pullRequestRepository: PullRequestRepository[MockEff] =
     new PullRequestRepository[MockEff](new JsonKeyValueStore("pull_requests", "2"))
-  implicit val pruningAlg: PruningAlg[MockEff] = new PruningAlg[MockEff]
+  implicit def pruningAlg: PruningAlg[MockEff] = new PruningAlg[MockEff]
 }
+
+object MockContext extends MockContext
