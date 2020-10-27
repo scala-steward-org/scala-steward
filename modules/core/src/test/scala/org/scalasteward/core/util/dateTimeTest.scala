@@ -2,14 +2,27 @@ package org.scalasteward.core.util
 
 import cats.syntax.all._
 import org.scalasteward.core.util.dateTime._
+import org.scalatest.Assertion
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import scala.concurrent.duration._
 
 class dateTimeTest extends AnyFunSuite with Matchers with ScalaCheckPropertyChecks {
+  def approxEq(x: FiniteDuration, y: FiniteDuration): Assertion = {
+    val eps = 1.microsecond
+    (x - y).toNanos.abs should be <= eps.toNanos
+  }
+
+  def parseFiniteDurationRoundTrips(fd: FiniteDuration): Assertion =
+    parseFiniteDuration(fd.toString).fold(t => throw t, approxEq(_, fd))
+
   test("parseFiniteDuration") {
-    forAll((d: FiniteDuration) => parseFiniteDuration(d.toString) shouldBe Right(d))
+    forAll((d: FiniteDuration) => parseFiniteDurationRoundTrips(d))
+  }
+
+  test("parseFiniteDuration: #1693") {
+    parseFiniteDurationRoundTrips(-6340054257704093L.microseconds)
   }
 
   test("showDuration: example 1") {
