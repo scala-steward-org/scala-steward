@@ -56,6 +56,17 @@ package object util {
   def bindUntilTrue[G[_]: Foldable, F[_]: Monad](gfb: G[F[Boolean]]): F[Boolean] =
     gfb.existsM(identity)
 
+  /** Like `Semigroup[Option[A]].combine` but allows to specify how `A`s are combined. */
+  def combineOptions[A](x: Option[A], y: Option[A])(f: (A, A) => A): Option[A] =
+    x match {
+      case None => y
+      case Some(xv) =>
+        y match {
+          case None     => x
+          case Some(yv) => Some(f(xv, yv))
+        }
+    }
+
   /** Returns true if there is an element that is both in `fa` and `ga`. */
   def intersects[F[_]: UnorderedFoldable, G[_]: UnorderedFoldable, A: Eq](
       fa: F[A],
