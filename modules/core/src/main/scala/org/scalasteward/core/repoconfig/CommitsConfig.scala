@@ -31,16 +31,15 @@ final case class CommitsConfig(
 object CommitsConfig {
   val defaultMessage = "${default}"
 
-  implicit val customConfig: Configuration =
-    Configuration.default.withDefaults
+  implicit val commitsConfigEq: Eq[CommitsConfig] =
+    Eq.fromUniversalEquals
 
-  implicit val eqPullRequestsConfig: Eq[CommitsConfig] = Eq.fromUniversalEquals
+  implicit val commitsConfigConfiguration: Configuration =
+    Configuration.default.withDefaults
 
   implicit val commitsConfigCodec: Codec[CommitsConfig] =
     deriveConfiguredCodec
 
-  implicit val semigroup: Semigroup[CommitsConfig] = new Semigroup[CommitsConfig] {
-    override def combine(x: CommitsConfig, y: CommitsConfig): CommitsConfig =
-      CommitsConfig(x.message.orElse(y.message))
-  }
+  implicit val commitsConfigSemigroup: Semigroup[CommitsConfig] =
+    Semigroup.instance((x, y) => CommitsConfig(x.message.orElse(y.message)))
 }
