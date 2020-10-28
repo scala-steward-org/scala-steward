@@ -25,9 +25,9 @@ import io.circe.generic.extras.semiauto._
 final case class RepoConfig(
     commits: CommitsConfig = CommitsConfig(),
     pullRequests: PullRequestsConfig = PullRequestsConfig(),
+    scalafmt: ScalafmtConfig = ScalafmtConfig(),
     updates: UpdatesConfig = UpdatesConfig(),
-    updatePullRequests: Option[PullRequestUpdateStrategy] = None,
-    scalafmt: Option[ScalafmtConfig] = None
+    updatePullRequests: Option[PullRequestUpdateStrategy] = None
 ) {
   def updatePullRequestsOrDefault: PullRequestUpdateStrategy =
     updatePullRequests.getOrElse(PullRequestUpdateStrategy.default)
@@ -51,9 +51,9 @@ object RepoConfig {
           RepoConfig(
             commits = x.commits |+| y.commits,
             pullRequests = x.pullRequests |+| y.pullRequests,
+            scalafmt = x.scalafmt |+| y.scalafmt,
             updates = x.updates |+| y.updates,
-            updatePullRequests = x.updatePullRequests.orElse(y.updatePullRequests),
-            scalafmt = x.scalafmt.orElse(y.scalafmt)
+            updatePullRequests = x.updatePullRequests.orElse(y.updatePullRequests)
           )
       }
   }

@@ -16,20 +16,32 @@
 
 package org.scalasteward.core.repoconfig
 
-import cats.kernel.Eq
+import cats.kernel.{Eq, Semigroup}
 import io.circe.Codec
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.deriveConfiguredCodec
 
-case class ScalafmtConfig(
-    runAfterUpgrading: Boolean
-)
+final case class ScalafmtConfig(
+    runAfterUpgrading: Option[Boolean] = None
+) {
+  def runAfterUpgradingOrDefault: Boolean =
+    runAfterUpgrading.getOrElse(ScalafmtConfig.defaultRunAfterUpgrading)
+}
 
 object ScalafmtConfig {
-  implicit val scalafmtConfig: Configuration =
+  val defaultRunAfterUpgrading: Boolean = true
+
+  implicit val scalafmtConfigEq: Eq[ScalafmtConfig] =
+    Eq.fromUniversalEquals
+
+  implicit val scalafmtConfigConfiguration: Configuration =
     Configuration.default.withDefaults
 
-  implicit val eqScalafmtConfig: Eq[ScalafmtConfig] = Eq.fromUniversalEquals
+  implicit val scalafmtConfigCodec: Codec[ScalafmtConfig] =
+    deriveConfiguredCodec
 
-  implicit val scalafmtConfigCodec: Codec[ScalafmtConfig] = deriveConfiguredCodec
+  implicit val scalafmtConfigSemigroup: Semigroup[ScalafmtConfig] =
+    Semigroup.instance { (x, y) =>
+      ScalafmtConfig(runAfterUpgrading = x.runAfterUpgrading.orElse(y.runAfterUpgrading))
+    }
 }

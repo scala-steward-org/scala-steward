@@ -41,5 +41,5 @@ object PullRequestsConfig {
     deriveConfiguredCodec
 
   implicit val pullRequestsConfigSemigroup: Semigroup[PullRequestsConfig] =
-    Semigroup.instance((x, y) => PullRequestsConfig(x.frequency.orElse(y.frequency)))
+    Semigroup.instance((x, y) => PullRequestsConfig(frequency = x.frequency.orElse(y.frequency)))
 }

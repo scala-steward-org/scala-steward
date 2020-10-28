@@ -41,5 +41,5 @@ object CommitsConfig {
     deriveConfiguredCodec
 
   implicit val commitsConfigSemigroup: Semigroup[CommitsConfig] =
-    Semigroup.instance((x, y) => CommitsConfig(x.message.orElse(y.message)))
+    Semigroup.instance((x, y) => CommitsConfig(message = x.message.orElse(y.message)))
 }

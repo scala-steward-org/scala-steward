@@ -139,7 +139,7 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     val content = "scalafmt.runAfterUpgrading = true"
     val config = RepoConfigAlg.parseRepoConfig(content)
     config shouldBe Right(
-      RepoConfig(scalafmt = Some(ScalafmtConfig(runAfterUpgrading = true)))
+      RepoConfig(scalafmt = ScalafmtConfig(runAfterUpgrading = Some(true)))
     )
   }
 
