@@ -65,7 +65,7 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
         ),
         limit = Some(PosInt.unsafeFrom(4)),
         includeScala = Some(true),
-        fileExtensions = List(".txt")
+        fileExtensions = Some(List(".txt"))
       ),
       commits = CommitsConfig(
         message = Some("Update ${artifactName} from ${currentVersion} to ${nextVersion}")

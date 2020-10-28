@@ -30,7 +30,7 @@ import org.scalasteward.core.update.FilterAlg.{
   NotAllowedByConfig,
   VersionPinnedByConfig
 }
-import org.scalasteward.core.util.Nel
+import org.scalasteward.core.util.{combineOptions, Nel}
 
 final case class UpdatesConfig(
     pin: List[UpdatePattern] = List.empty,
@@ -38,16 +38,13 @@ final case class UpdatesConfig(
     ignore: List[UpdatePattern] = List.empty,
     limit: Option[PosInt] = None,
     includeScala: Option[Boolean] = None,
-    fileExtensions: List[String] = List.empty
+    fileExtensions: Option[List[String]] = None
 ) {
   def keep(update: Update.Single): FilterResult =
     isAllowed(update).flatMap(isPinned).flatMap(isIgnored)
 
   def fileExtensionsOrDefault: Set[String] =
-    if (fileExtensions.isEmpty)
-      UpdatesConfig.defaultFileExtensions
-    else
-      fileExtensions.toSet
+    fileExtensions.fold(UpdatesConfig.defaultFileExtensions)(_.toSet)
 
   def includeScalaOrDefault: Boolean =
     includeScala.getOrElse(UpdatesConfig.defaultIncludeScala)
@@ -94,7 +91,6 @@ object UpdatesConfig {
   val defaultFileExtensions: Set[String] =
     Set(".scala", ".sbt", ".sbt.shared", ".sc", ".yml", "pom.xml")
 
-  private[repoconfig] val nonExistingFileExtension: List[String] = List(".non-exist")
   private[repoconfig] val nonExistingUpdatePattern: List[UpdatePattern] = List(
     UpdatePattern(GroupId("non-exist"), None, None)
   )
@@ -189,14 +185,10 @@ object UpdatesConfig {
       y: List[UpdatePattern]
   ): List[UpdatePattern] =
     (x ::: y).distinct
-  private[repoconfig] def mergeFileExtensions(x: List[String], y: List[String]): List[String] =
-    (x, y) match {
-      case (Nil, second) => second
-      case (first, Nil)  => first
-      case _ =>
-        val result = x.intersect(y)
-        //  Since empty result represents [*] any extension, we gonna set artificial extension instead.
-        if (result.nonEmpty) result
-        else nonExistingFileExtension
-    }
+
+  private[repoconfig] def mergeFileExtensions(
+      x: Option[List[String]],
+      y: Option[List[String]]
+  ): Option[List[String]] =
+    combineOptions(x, y)(_.intersect(_))
 }
