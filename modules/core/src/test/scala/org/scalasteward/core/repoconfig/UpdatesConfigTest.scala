@@ -122,7 +122,7 @@ class UpdatesConfigTest extends AnyFunSuite with Matchers {
     UpdatesConfig.mergeFileExtensions(Some(List("a")), Some(List("b"))) shouldBe Some(List())
   }
 
-  test("fileExtensions: non-set != empty") {
+  test("fileExtensionsOrDefault: non-set != empty") {
     UpdatesConfig(fileExtensions = None).fileExtensionsOrDefault shouldNot
       be(UpdatesConfig(fileExtensions = Some(Nil)).fileExtensionsOrDefault)
   }
