@@ -171,7 +171,7 @@ check:
         --workspace  "$CI_PROJECT_DIR/workspace"
         --process-timeout 30min
         --do-not-fork
-        --repos-file "CI_PROJECT_DIR/repos.md"
+        --repos-file "$CI_PROJECT_DIR/repos.md"
         --default-repo-conf "$CI_PROJECT_DIR/default.scala-steward.conf"
         --git-author-email "${EMAIL}"
         --vcs-type "gitlab"
