@@ -22,7 +22,7 @@ import eu.timepit.refined.types.numeric.PosInt
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 import io.circe.refined._
-import io.circe.{Decoder, Encoder}
+import io.circe.{Codec, Decoder}
 import org.scalasteward.core.data.{GroupId, Update}
 import org.scalasteward.core.update.FilterAlg.{
   FilterResult,
@@ -40,14 +40,14 @@ final case class UpdatesConfig(
     includeScala: Option[Boolean] = None,
     fileExtensions: Option[List[String]] = None
 ) {
-  def keep(update: Update.Single): FilterResult =
-    isAllowed(update).flatMap(isPinned).flatMap(isIgnored)
+  def includeScalaOrDefault: Boolean =
+    includeScala.getOrElse(UpdatesConfig.defaultIncludeScala)
 
   def fileExtensionsOrDefault: Set[String] =
     fileExtensions.fold(UpdatesConfig.defaultFileExtensions)(_.toSet)
 
-  def includeScalaOrDefault: Boolean =
-    includeScala.getOrElse(UpdatesConfig.defaultIncludeScala)
+  def keep(update: Update.Single): FilterResult =
+    isAllowed(update).flatMap(isPinned).flatMap(isIgnored)
 
   private def isAllowed(update: Update.Single): FilterResult = {
     val m = UpdatePattern.findMatch(allow, update, include = true)
@@ -77,29 +77,19 @@ final case class UpdatesConfig(
 }
 
 object UpdatesConfig {
-  implicit val customConfig: Configuration =
-    Configuration.default.withDefaults
-
-  implicit val updatesConfigDecoder: Decoder[UpdatesConfig] =
-    deriveConfiguredDecoder
-
-  implicit val updatesConfigEncoder: Encoder[UpdatesConfig] =
-    deriveConfiguredEncoder
-
   val defaultIncludeScala: Boolean = false
 
   val defaultFileExtensions: Set[String] =
     Set(".scala", ".sbt", ".sbt.shared", ".sc", ".yml", "pom.xml")
 
-  private[repoconfig] val nonExistingUpdatePattern: List[UpdatePattern] = List(
-    UpdatePattern(GroupId("non-exist"), None, None)
-  )
+  implicit val updatesConfigConfiguration: Configuration =
+    Configuration.default.withDefaults
 
-  // prevent IntelliJ from removing the import of io.circe.refined._
-  locally(refinedDecoder: Decoder[PosInt])
+  implicit val updatesConfigCodec: Codec[UpdatesConfig] =
+    deriveConfiguredCodec
 
-  implicit val semigroup: Semigroup[UpdatesConfig] = new Semigroup[UpdatesConfig] {
-    override def combine(x: UpdatesConfig, y: UpdatesConfig): UpdatesConfig =
+  implicit val updatesConfigSemigroup: Semigroup[UpdatesConfig] =
+    Semigroup.instance { (x, y) =>
       UpdatesConfig(
         pin = mergePin(x.pin, y.pin),
         allow = mergeAllow(x.allow, y.allow),
@@ -108,7 +98,7 @@ object UpdatesConfig {
         includeScala = x.includeScala.orElse(y.includeScala),
         fileExtensions = mergeFileExtensions(x.fileExtensions, y.fileExtensions)
       )
-  }
+    }
 
   //  Strategy: union with repo preference in terms of revision
   private[repoconfig] def mergePin(
@@ -116,6 +106,9 @@ object UpdatesConfig {
       y: List[UpdatePattern]
   ): List[UpdatePattern] =
     (x ::: y).distinctBy(up => up.groupId -> up.artifactId)
+
+  private val nonExistingUpdatePattern: List[UpdatePattern] =
+    List(UpdatePattern(GroupId("non-exist"), None, None))
 
   //  Strategy: superset
   //  Xa.Ya.Za |+| Xb.Yb.Zb
@@ -191,4 +184,7 @@ object UpdatesConfig {
       y: Option[List[String]]
   ): Option[List[String]] =
     combineOptions(x, y)(_.intersect(_))
+
+  // prevent IntelliJ from removing the import of io.circe.refined._
+  locally(refinedDecoder: Decoder[PosInt])
 }
