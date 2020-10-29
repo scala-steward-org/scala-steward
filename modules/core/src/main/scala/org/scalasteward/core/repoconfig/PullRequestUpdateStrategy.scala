@@ -32,19 +32,21 @@ object PullRequestUpdateStrategy {
 
   def fromString(value: String): PullRequestUpdateStrategy =
     value.trim.toLowerCase match {
-      case "on-conflicts" => OnConflicts
-      case "never"        => Never
-      case "always"       => Always
-      case _              => default
+      case OnConflicts.name => OnConflicts
+      case Never.name       => Never
+      case Always.name      => Always
+      case _                => default
     }
 
   def fromBoolean(value: Boolean): PullRequestUpdateStrategy =
-    if (value) OnConflicts
-    else Never
+    if (value) OnConflicts else Never
 
-  implicit val prUpdateStrategyDecoder: Decoder[PullRequestUpdateStrategy] =
+  implicit val pullRequestUpdateStrategyDecoder: Decoder[PullRequestUpdateStrategy] =
     Decoder[Boolean].map(fromBoolean).or(Decoder[String].map(fromString))
-  implicit val prUpdateStrategyEncoder: Encoder[PullRequestUpdateStrategy] =
+
+  implicit val pullRequestUpdateStrategyEncoder: Encoder[PullRequestUpdateStrategy] =
     Encoder[String].contramap(_.name)
-  implicit val eqPRUpdateStrategy: Eq[PullRequestUpdateStrategy] = Eq.fromUniversalEquals
+
+  implicit val pullRequestUpdateStrategyEq: Eq[PullRequestUpdateStrategy] =
+    Eq.fromUniversalEquals
 }

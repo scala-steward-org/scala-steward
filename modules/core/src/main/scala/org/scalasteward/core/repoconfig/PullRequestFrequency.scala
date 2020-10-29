@@ -53,8 +53,6 @@ object PullRequestFrequency {
     val render: String = expr.toString
   }
 
-  val default: PullRequestFrequency = Asap
-
   def fromString(s: String): Either[String, PullRequestFrequency] =
     s.trim.toLowerCase match {
       case Asap.render => Right(Asap)

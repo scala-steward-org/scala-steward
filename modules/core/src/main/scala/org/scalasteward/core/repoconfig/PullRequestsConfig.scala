@@ -25,20 +25,21 @@ final case class PullRequestsConfig(
     frequency: Option[PullRequestFrequency] = None
 ) {
   def frequencyOrDefault: PullRequestFrequency =
-    frequency.getOrElse(PullRequestFrequency.default)
+    frequency.getOrElse(PullRequestsConfig.defaultFrequency)
 }
 
 object PullRequestsConfig {
-  implicit val customConfig: Configuration =
-    Configuration.default.withDefaults
+  val defaultFrequency: PullRequestFrequency = PullRequestFrequency.Asap
 
-  implicit val eqPullRequestsConfig: Eq[PullRequestsConfig] = Eq.fromUniversalEquals
+  implicit val pullRequestsConfigEq: Eq[PullRequestsConfig] =
+    Eq.fromUniversalEquals
+
+  implicit val pullRequestsConfigConfiguration: Configuration =
+    Configuration.default.withDefaults
 
   implicit val pullRequestsConfigCodec: Codec[PullRequestsConfig] =
     deriveConfiguredCodec
 
-  implicit val semigroup: Semigroup[PullRequestsConfig] = new Semigroup[PullRequestsConfig] {
-    override def combine(x: PullRequestsConfig, y: PullRequestsConfig): PullRequestsConfig =
-      PullRequestsConfig(x.frequency.orElse(y.frequency))
-  }
+  implicit val pullRequestsConfigSemigroup: Semigroup[PullRequestsConfig] =
+    Semigroup.instance((x, y) => PullRequestsConfig(frequency = x.frequency.orElse(y.frequency)))
 }

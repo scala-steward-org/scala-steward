@@ -59,7 +59,7 @@ object ScalafmtAlg {
             if (mainArtifactId === scalafmtArtifactId) {
               repoConfigAlg
                 .readRepoConfigWithDefault(repo)
-                .map(_.scalafmt.forall(_.runAfterUpgrading))
+                .map(_.scalafmt.runAfterUpgradingOrDefault)
             } else {
               F.pure(false)
             }
