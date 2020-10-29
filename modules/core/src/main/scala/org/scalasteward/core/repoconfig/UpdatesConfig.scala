@@ -107,7 +107,7 @@ object UpdatesConfig {
   ): List[UpdatePattern] =
     (x ::: y).distinctBy(up => up.groupId -> up.artifactId)
 
-  private val nonExistingUpdatePattern: List[UpdatePattern] =
+  private[repoconfig] val nonExistingUpdatePattern: List[UpdatePattern] =
     List(UpdatePattern(GroupId("non-exist"), None, None))
 
   //  Strategy: superset
@@ -137,7 +137,7 @@ object UpdatesConfig {
     }
 
   //  merge UpdatePattern for same group id
-  private[this] def mergeAllowGroupId(
+  private def mergeAllowGroupId(
       x: List[UpdatePattern],
       y: List[UpdatePattern]
   ): List[UpdatePattern] =
@@ -163,7 +163,7 @@ object UpdatesConfig {
         else builder.toList
     }
 
-  private[this] def satisfyUpdatePattern(
+  private def satisfyUpdatePattern(
       targetUpdatePattern: UpdatePattern,
       comparedUpdatePatternsByArtifact: Map[Option[String], List[UpdatePattern]]
   ): Boolean =
