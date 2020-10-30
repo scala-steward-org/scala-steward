@@ -49,22 +49,24 @@ object ProcessAlg {
       timer: Timer[F],
       F: Concurrent[F]
   ): ProcessAlg[F] = {
-    val envVars = config.envVars.map(v => (v.name, v.value))
+    val configEnv = config.envVars.map(v => (v.name, v.value))
     new UsingFirejail[F](config.sandboxCfg) {
       override def exec(
           command: Nel[String],
           cwd: File,
           extraEnv: (String, String)*
-      ): F[List[String]] =
-        logger.debug(s"Execute ${command.mkString_(" ")}") >>
+      ): F[List[String]] = {
+        val envVars = extraEnv.toList ::: configEnv
+        logger.debug(s"Execute ${process.showCmd(command, envVars)}") >>
           process.slurp[F](
             command,
             Some(cwd.toJava),
-            (extraEnv ++ envVars).toMap,
+            envVars,
             config.processTimeout,
             logger.trace(_),
             blocker
           )
+      }
     }
   }
 }

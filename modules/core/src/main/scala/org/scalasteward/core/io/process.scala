@@ -29,7 +29,7 @@ object process {
   def slurp[F[_]](
       cmd: Nel[String],
       cwd: Option[File],
-      extraEnv: Map[String, String],
+      extraEnv: List[(String, String)],
       timeout: FiniteDuration,
       log: String => F[Unit],
       blocker: Blocker
@@ -41,17 +41,16 @@ object process {
           out.evalMap(line => F.delay(appendBounded(buffer, line, 4096)) >> log(line)).compile.drain
         }
 
-        val showCmd = (extraEnv.map { case (k, v) => s"$k=$v" }.toList ++ cmd.toList).mkString_(" ")
         val result = readOut >> F.delay(process.waitFor()) >>= { exitValue =>
           if (exitValue === 0) F.pure(buffer.toList)
           else {
-            val msg = s"'$showCmd' exited with code $exitValue"
+            val msg = s"'${showCmd(cmd, extraEnv)}' exited with code $exitValue"
             F.raiseError[List[String]](new IOException(makeMessage(msg, buffer.toList)))
           }
         }
 
         val fallback = F.delay(process.destroyForcibly()) >> {
-          val msg = s"'$showCmd' timed out after ${timeout.toString}"
+          val msg = s"'${showCmd(cmd, extraEnv)}' timed out after ${timeout.toString}"
           F.raiseError[List[String]](new TimeoutException(makeMessage(msg, buffer.toList)))
         }
 
@@ -59,10 +58,13 @@ object process {
       }
     }
 
+  def showCmd(cmd: Nel[String], extraEnv: List[(String, String)]): String =
+    (extraEnv.map { case (k, v) => s"$k=$v" } ++ cmd.toList).mkString_(" ")
+
   private def createProcess[F[_]](
       cmd: Nel[String],
       cwd: Option[File],
-      extraEnv: Map[String, String]
+      extraEnv: List[(String, String)]
   )(implicit F: Sync[F]): F[Process] =
     F.delay {
       val pb = new ProcessBuilder(cmd.toList: _*)
