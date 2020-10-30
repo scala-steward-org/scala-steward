@@ -52,9 +52,7 @@ object Context {
       implicit0(logger: Logger[F]) <- Resource.liftF(Slf4jLogger.create[F])
       _ <- Resource.liftF(printBanner[F])
       implicit0(config: Config) <- Resource.pure(Config.from(args))
-      implicit0(client: Client[F]) <- OkHttpBuilder
-        .withDefaultClient[F](blocker)
-        .flatMap(_.resource)
+      implicit0(client: Client[F]) <- OkHttpBuilder.withDefaultClient[F](blocker).map(_.create)
       implicit0(httpExistenceClient: HttpExistenceClient[F]) <- HttpExistenceClient.create[F]
       implicit0(user: AuthenticatedUser) <- Resource.liftF(config.vcsUser[F])
       implicit0(fileAlg: FileAlg[F]) = FileAlg.create[F]
