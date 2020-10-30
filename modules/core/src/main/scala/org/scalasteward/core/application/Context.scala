@@ -22,7 +22,7 @@ import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.client.Client
-import org.http4s.client.asynchttpclient.AsyncHttpClient
+import org.http4s.client.okhttp.OkHttpBuilder
 import org.scalasteward.core.buildtool.BuildToolDispatcher
 import org.scalasteward.core.buildtool.maven.MavenAlg
 import org.scalasteward.core.buildtool.mill.MillAlg
@@ -52,7 +52,9 @@ object Context {
       implicit0(logger: Logger[F]) <- Resource.liftF(Slf4jLogger.create[F])
       _ <- Resource.liftF(printBanner[F])
       implicit0(config: Config) <- Resource.pure(Config.from(args))
-      implicit0(client: Client[F]) <- AsyncHttpClient.resource[F]()
+      implicit0(client: Client[F]) <- OkHttpBuilder
+        .withDefaultClient[F](blocker)
+        .flatMap(_.resource)
       implicit0(httpExistenceClient: HttpExistenceClient[F]) <- HttpExistenceClient.create[F]
       implicit0(user: AuthenticatedUser) <- Resource.liftF(config.vcsUser[F])
       implicit0(fileAlg: FileAlg[F]) = FileAlg.create[F]
