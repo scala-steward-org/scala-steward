@@ -12,14 +12,24 @@ class MillAlgTest extends AnyFunSuite with Matchers {
     val repo = Repo("lihaoyi", "fastparse")
     val repoDir = config.workspace / repo.show
     val predef = s"$repoDir/scala-steward.sc"
-    val millCmd =
-      List("firejail", s"--whitelist=$repoDir", "mill", "-i", "-p", predef, "show", extractDeps)
+    val millCmd = List(
+      "firejail",
+      s"--whitelist=$repoDir",
+      "--env=VAR1=val1",
+      "--env=VAR2=val2",
+      "mill",
+      "-i",
+      "-p",
+      predef,
+      "show",
+      extractDeps
+    )
     val initial = MockState.empty.copy(commandOutputs = Map(millCmd -> List("""{"modules":[]}""")))
     val state = millAlg.getDependencies(repo).runS(initial).unsafeRunSync()
     state shouldBe initial.copy(
       commands = Vector(
         List("write", predef),
-        List("VAR1=val1", "VAR2=val2", repoDir.toString) ++ millCmd,
+        repoDir.toString :: millCmd,
         List("rm", "-rf", predef)
       )
     )

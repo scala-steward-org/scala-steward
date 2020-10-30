@@ -3,6 +3,7 @@ package org.scalasteward.core.mock
 import better.files.File
 import cats.Parallel
 import cats.effect.Sync
+import io.chrisdavenport.log4cats.Logger
 import org.http4s.Uri
 import org.scalasteward.core.TestInstances.ioContextShift
 import org.scalasteward.core.application.Cli.EnvVar
@@ -14,7 +15,7 @@ import org.scalasteward.core.buildtool.sbt.SbtAlg
 import org.scalasteward.core.coursier.{CoursierAlg, VersionsCache}
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.GitAlg
-import org.scalasteward.core.io.{MockFileAlg, MockProcessAlg, MockWorkspaceAlg}
+import org.scalasteward.core.io._
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.persistence.JsonKeyValueStore
 import org.scalasteward.core.repocache.RepoCacheRepository
@@ -26,6 +27,7 @@ import org.scalasteward.core.util.uri._
 import org.scalasteward.core.util.{BracketThrow, DateTimeAlg}
 import org.scalasteward.core.vcs.VCSRepoAlg
 import org.scalasteward.core.vcs.data.AuthenticatedUser
+
 import scala.concurrent.duration._
 
 object MockContext {
@@ -52,10 +54,10 @@ object MockContext {
   implicit val mockEffBracketThrow: BracketThrow[MockEff] = Sync[MockEff]
   implicit val mockEffParallel: Parallel[MockEff] = Parallel.identity
 
-  implicit val fileAlg: MockFileAlg = new MockFileAlg
-  implicit val mockLogger: MockLogger = new MockLogger
-  implicit val processAlg: MockProcessAlg = new MockProcessAlg(config.processCfg)
-  implicit val workspaceAlg: MockWorkspaceAlg = new MockWorkspaceAlg
+  implicit val fileAlg: FileAlg[MockEff] = new MockFileAlg
+  implicit val mockLogger: Logger[MockEff] = new MockLogger
+  implicit val processAlg: ProcessAlg[MockEff] = MockProcessAlg.create(config.processCfg)
+  implicit val workspaceAlg: WorkspaceAlg[MockEff] = new MockWorkspaceAlg
 
   implicit val coursierAlg: CoursierAlg[MockEff] = CoursierAlg.create
   implicit val dateTimeAlg: DateTimeAlg[MockEff] = DateTimeAlg.create
