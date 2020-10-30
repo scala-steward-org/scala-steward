@@ -10,10 +10,10 @@ import scala.concurrent.duration._
 
 class processTest extends AnyFunSuite with Matchers {
   def slurp1(cmd: Nel[String]): IO[List[String]] =
-    process.slurp[IO](cmd, None, Map.empty, 1.minute, _ => IO.unit, blocker)
+    process.slurp[IO](cmd, None, List.empty, 1.minute, _ => IO.unit, blocker)
 
   def slurp2(cmd: Nel[String], timeout: FiniteDuration): IO[List[String]] =
-    process.slurp[IO](cmd, None, Map.empty, timeout, _ => IO.unit, blocker)
+    process.slurp[IO](cmd, None, List.empty, timeout, _ => IO.unit, blocker)
 
   test("echo hello") {
     slurp1(Nel.of("echo", "-n", "hello")).unsafeRunSync() shouldBe List("hello")
