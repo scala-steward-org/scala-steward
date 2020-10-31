@@ -27,11 +27,11 @@ class BuildToolDispatcherTest extends AnyFunSuite with Matchers {
         List("test", "-f", s"$repoDir/build.sc"),
         List("test", "-f", s"$repoDir/build.sbt"),
         List(
-          "VAR1=val1",
-          "VAR2=val2",
           repoDir.toString,
           "firejail",
           s"--whitelist=$repoDir",
+          "--env=VAR1=val1",
+          "--env=VAR2=val2",
           "sbt",
           "-batch",
           "-no-colors",

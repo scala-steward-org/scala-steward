@@ -20,53 +20,70 @@ import better.files.File
 import cats.effect.{Blocker, Concurrent, ContextShift, Timer}
 import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
-import org.scalasteward.core.application.Config.{ProcessCfg, SandboxCfg}
+import org.scalasteward.core.application.Config.ProcessCfg
+import org.scalasteward.core.io.process.Args
 import org.scalasteward.core.util.Nel
 
 trait ProcessAlg[F[_]] {
-  def exec(command: Nel[String], cwd: File, extraEnv: (String, String)*): F[List[String]]
+  def exec(
+      command: Nel[String],
+      workingDirectory: File,
+      extraEnv: (String, String)*
+  ): F[List[String]]
 
-  def execSandboxed(command: Nel[String], cwd: File): F[List[String]]
+  def execSandboxed(
+      command: Nel[String],
+      workingDirectory: File,
+      extraEnv: (String, String)*
+  ): F[List[String]] =
+    exec(command, workingDirectory, extraEnv: _*)
 }
 
 object ProcessAlg {
-  abstract class UsingFirejail[F[_]](config: SandboxCfg) extends ProcessAlg[F] {
-    override def execSandboxed(command: Nel[String], cwd: File): F[List[String]] =
-      if (config.disableSandbox)
-        exec(command, cwd)
-      else {
-        val whitelisted = (cwd.pathAsString :: config.whitelistedDirectories)
-          .map(dir => s"--whitelist=$dir")
-        val readOnly = config.readOnlyDirectories
-          .map(dir => s"--read-only=$dir")
-        exec(Nel("firejail", whitelisted ++ readOnly) ::: command, cwd)
-      }
+  private class NoSandbox[F[_]](config: ProcessCfg)(execImpl: Args => F[List[String]])
+      extends ProcessAlg[F] {
+    val configEnv: List[(String, String)] = config.envVars.map(v => (v.name, v.value))
+
+    override def exec(
+        command: Nel[String],
+        workingDirectory: File,
+        extraEnv: (String, String)*
+    ): F[List[String]] =
+      execImpl(Args(command, Some(workingDirectory), extraEnv.toList ++ configEnv))
   }
+
+  private class WithFirejail[F[_]](config: ProcessCfg)(execImpl: Args => F[List[String]])
+      extends NoSandbox[F](config)(execImpl) {
+    override def execSandboxed(
+        command: Nel[String],
+        workingDirectory: File,
+        extraEnv: (String, String)*
+    ): F[List[String]] = {
+      val whitelisted = (workingDirectory.toString :: config.sandboxCfg.whitelistedDirectories)
+        .map(dir => s"--whitelist=$dir")
+      val readOnly = config.sandboxCfg.readOnlyDirectories
+        .map(dir => s"--read-only=$dir")
+      val envVars = (extraEnv ++ configEnv)
+        .map { case (k, v) => s"--env=$k=$v" }
+      val firejail = Nel("firejail", whitelisted ++ readOnly ++ envVars) ::: command
+      execImpl(Args(firejail, Some(workingDirectory), clearEnv = true))
+    }
+  }
+
+  def fromExecImpl[F[_]](config: ProcessCfg)(execImpl: Args => F[List[String]]): ProcessAlg[F] =
+    if (config.sandboxCfg.disableSandbox)
+      new NoSandbox[F](config)(execImpl)
+    else
+      new WithFirejail[F](config)(execImpl)
 
   def create[F[_]](blocker: Blocker, config: ProcessCfg)(implicit
       contextShift: ContextShift[F],
       logger: Logger[F],
       timer: Timer[F],
       F: Concurrent[F]
-  ): ProcessAlg[F] = {
-    val configEnv = config.envVars.map(v => (v.name, v.value))
-    new UsingFirejail[F](config.sandboxCfg) {
-      override def exec(
-          command: Nel[String],
-          cwd: File,
-          extraEnv: (String, String)*
-      ): F[List[String]] = {
-        val envVars = extraEnv.toList ::: configEnv
-        logger.debug(s"Execute ${process.showCmd(command, envVars)}") >>
-          process.slurp[F](
-            command,
-            Some(cwd.toJava),
-            envVars,
-            config.processTimeout,
-            logger.trace(_),
-            blocker
-          )
-      }
+  ): ProcessAlg[F] =
+    fromExecImpl(config) { args =>
+      logger.debug(s"Execute ${process.showCmd(args)}") >>
+        process.slurp[F](args, config.processTimeout, logger.trace(_), blocker)
     }
-  }
 }

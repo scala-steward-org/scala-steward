@@ -39,11 +39,11 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
     state shouldBe initial.copy(
       commands = Vector(
         List(
-          "VAR1=val1",
-          "VAR2=val2",
           repoDir.toString,
           "firejail",
           s"--whitelist=$repoDir",
+          "--env=VAR1=val1",
+          "--env=VAR2=val2",
           "sbt",
           "-batch",
           "-no-colors",
@@ -74,11 +74,11 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
         List("write", "/tmp/steward/.sbt/0.13/plugins/scala-steward-scalafix.sbt"),
         List("write", "/tmp/steward/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
         List(
-          "VAR1=val1",
-          "VAR2=val2",
           repoDir.toString,
           "firejail",
           s"--whitelist=$repoDir",
+          "--env=VAR1=val1",
+          "--env=VAR2=val2",
           "sbt",
           "-batch",
           "-no-colors",
@@ -111,11 +111,11 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
         List("write", "/tmp/steward/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
         List("write", s"$repoDir/scala-steward-scalafix-options.sbt"),
         List(
-          "VAR1=val1",
-          "VAR2=val2",
           repoDir.toString,
           "firejail",
           s"--whitelist=$repoDir",
+          "--env=VAR1=val1",
+          "--env=VAR2=val2",
           "sbt",
           "-batch",
           "-no-colors",

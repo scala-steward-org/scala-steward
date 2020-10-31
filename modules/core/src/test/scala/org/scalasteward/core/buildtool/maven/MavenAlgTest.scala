@@ -21,21 +21,21 @@ class MavenAlgTest extends AnyFunSuite with Matchers {
       logs = Vector.empty,
       commands = Vector(
         List(
-          "VAR1=val1",
-          "VAR2=val2",
           repoDir.toString,
           "firejail",
           s"--whitelist=$repoDir",
+          "--env=VAR1=val1",
+          "--env=VAR2=val2",
           "mvn",
           "--batch-mode",
           command.listDependencies
         ),
         List(
-          "VAR1=val1",
-          "VAR2=val2",
           repoDir.toString,
           "firejail",
           s"--whitelist=$repoDir",
+          "--env=VAR1=val1",
+          "--env=VAR2=val2",
           "mvn",
           "--batch-mode",
           command.listRepositories
