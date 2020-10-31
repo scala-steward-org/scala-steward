@@ -5,12 +5,12 @@ import org.scalasteward.core.mock.{applyPure, MockEff}
 
 object MockProcessAlg {
   def create(config: ProcessCfg): ProcessAlg[MockEff] =
-    ProcessAlg.fromExecImpl(config) { (command, cwd, extraEnv) =>
+    ProcessAlg.fromExecImpl(config) { args =>
       applyPure { s =>
-        (
-          s.exec(cwd.toString :: command.toList, extraEnv: _*),
-          s.commandOutputs.getOrElse(command.toList, List.empty)
-        )
+        val cmd = args.workingDirectory.map(_.toString).toList ++ args.command.toList
+        val s1 = s.exec(cmd, args.extraEnv: _*)
+        val a = s.commandOutputs.getOrElse(args.command.toList, List.empty)
+        (s1, a)
       }
     }
 }

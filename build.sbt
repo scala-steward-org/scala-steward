@@ -277,6 +277,7 @@ runSteward := Def.taskDyn {
     Seq("--whitelist", s"$home/.cache/JNA"),
     Seq("--whitelist", s"$home/.cache/mill"),
     Seq("--whitelist", s"$home/.ivy2"),
+    Seq("--whitelist", s"$home/.m2"),
     Seq("--whitelist", s"$home/.mill"),
     Seq("--whitelist", s"$home/.sbt")
   ).flatten.mkString(" ", " ", "")

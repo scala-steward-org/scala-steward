@@ -16,25 +16,31 @@
 
 package org.scalasteward.core.io
 
+import better.files.File
 import cats.effect._
 import cats.syntax.all._
 import fs2.Stream
-import java.io.{File, IOException, InputStream}
+import java.io.{IOException, InputStream}
 import org.scalasteward.core.util._
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.TimeoutException
 import scala.concurrent.duration.FiniteDuration
 
 object process {
+  final case class Args(
+      command: Nel[String],
+      workingDirectory: Option[File] = None,
+      extraEnv: List[(String, String)] = Nil,
+      clearEnv: Boolean = false
+  )
+
   def slurp[F[_]](
-      cmd: Nel[String],
-      cwd: Option[File],
-      extraEnv: List[(String, String)],
+      args: Args,
       timeout: FiniteDuration,
       log: String => F[Unit],
       blocker: Blocker
   )(implicit contextShift: ContextShift[F], timer: Timer[F], F: Concurrent[F]): F[List[String]] =
-    createProcess(cmd, cwd, extraEnv).flatMap { process =>
+    createProcess(args).flatMap { process =>
       F.delay(new ListBuffer[String]).flatMap { buffer =>
         val readOut = {
           val out = readInputStream[F](process.getInputStream, blocker)
@@ -44,13 +50,13 @@ object process {
         val result = readOut >> F.delay(process.waitFor()) >>= { exitValue =>
           if (exitValue === 0) F.pure(buffer.toList)
           else {
-            val msg = s"'${showCmd(cmd, extraEnv)}' exited with code $exitValue"
+            val msg = s"'${showCmd(args)}' exited with code $exitValue"
             F.raiseError[List[String]](new IOException(makeMessage(msg, buffer.toList)))
           }
         }
 
         val fallback = F.delay(process.destroyForcibly()) >> {
-          val msg = s"'${showCmd(cmd, extraEnv)}' timed out after ${timeout.toString}"
+          val msg = s"'${showCmd(args)}' timed out after ${timeout.toString}"
           F.raiseError[List[String]](new TimeoutException(makeMessage(msg, buffer.toList)))
         }
 
@@ -58,19 +64,16 @@ object process {
       }
     }
 
-  def showCmd(cmd: Nel[String], extraEnv: List[(String, String)]): String =
-    (extraEnv.map { case (k, v) => s"$k=$v" } ++ cmd.toList).mkString_(" ")
+  def showCmd(args: Args): String =
+    (args.extraEnv.map { case (k, v) => s"$k=$v" } ++ args.command.toList).mkString_(" ")
 
-  private def createProcess[F[_]](
-      cmd: Nel[String],
-      cwd: Option[File],
-      extraEnv: List[(String, String)]
-  )(implicit F: Sync[F]): F[Process] =
+  private def createProcess[F[_]](args: Args)(implicit F: Sync[F]): F[Process] =
     F.delay {
-      val pb = new ProcessBuilder(cmd.toList: _*)
+      val pb = new ProcessBuilder(args.command.toList: _*)
+      args.workingDirectory.foreach(file => pb.directory(file.toJava))
       val env = pb.environment()
-      cwd.foreach(pb.directory)
-      extraEnv.foreach { case (key, value) => env.put(key, value) }
+      if (args.clearEnv) env.clear()
+      args.extraEnv.foreach { case (key, value) => env.put(key, value) }
       pb.redirectErrorStream(true)
       pb.start()
     }
