@@ -7,7 +7,6 @@ import org.scalasteward.core.io.process.Args
 import org.scalasteward.core.util.Nel
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-
 import scala.concurrent.duration._
 
 class processTest extends AnyFunSuite with Matchers {
