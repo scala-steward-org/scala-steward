@@ -79,8 +79,9 @@ object SbtAlg {
       override def getDependencies(repo: Repo): F[List[Scope.Dependencies]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          commands = List(setOffline, crossStewardDependencies, reloadPlugins, stewardDependencies)
-          lines <- exec(sbtCmd(commands), repoDir)
+          commands =
+            Nel.of(setOffline, crossStewardDependencies, reloadPlugins, stewardDependencies)
+          lines <- sbt(commands, repoDir)
           dependencies = parser.parseDependencies(lines)
           additionalDependencies <- getAdditionalDependencies(repo)
         } yield additionalDependencies ::: dependencies
@@ -96,7 +97,7 @@ object SbtAlg {
                 }
 
               val scalafixCmds = migration.rewriteRules.map(rule => s"$scalafixAll $rule").toList
-              withScalacOptions(exec(sbtCmd(scalafixEnable :: scalafixCmds), repoDir).void)
+              withScalacOptions(sbt(Nel(scalafixEnable, scalafixCmds), repoDir).void)
             }
           }
         }
@@ -104,11 +105,11 @@ object SbtAlg {
       val sbtDir: F[File] =
         fileAlg.home.map(_ / ".sbt")
 
-      def exec(command: Nel[String], repoDir: File): F[List[String]] =
-        maybeIgnoreOptsFiles(repoDir)(processAlg.execSandboxed(command, repoDir))
-
-      def sbtCmd(commands: List[String]): Nel[String] =
-        Nel.of("sbt", "-batch", "-no-colors", commands.mkString(";", ";", ""))
+      def sbt(sbtCommands: Nel[String], repoDir: File): F[List[String]] =
+        maybeIgnoreOptsFiles(repoDir) {
+          val command = Nel.of("sbt", sbtCommands.mkString_(";", ";", ""))
+          processAlg.execSandboxed(command, repoDir)
+        }
 
       def maybeIgnoreOptsFiles[A](dir: File)(fa: F[A]): F[A] =
         if (config.ignoreOptsFiles) ignoreOptsFiles(dir)(fa) else fa
