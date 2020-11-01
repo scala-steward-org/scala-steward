@@ -33,8 +33,6 @@ class BuildToolDispatcherTest extends AnyFunSuite with Matchers {
           "--env=VAR1=val1",
           "--env=VAR2=val2",
           "sbt",
-          "-batch",
-          "-no-colors",
           s";$setOffline;$crossStewardDependencies;$reloadPlugins;$stewardDependencies"
         ),
         List("read", s"$repoDir/project/build.properties"),
