@@ -79,8 +79,7 @@ object SbtAlg {
       override def getDependencies(repo: Repo): F[List[Scope.Dependencies]] =
         for {
           repoDir <- workspaceAlg.repoDir(repo)
-          commands =
-            Nel.of(setOffline, crossStewardDependencies, reloadPlugins, stewardDependencies)
+          commands = Nel.of(crossStewardDependencies, reloadPlugins, stewardDependencies)
           lines <- sbt(commands, repoDir)
           dependencies = parser.parseDependencies(lines)
           additionalDependencies <- getAdditionalDependencies(repo)
