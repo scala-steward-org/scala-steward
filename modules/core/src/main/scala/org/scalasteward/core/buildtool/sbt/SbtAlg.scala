@@ -104,10 +104,17 @@ object SbtAlg {
       val sbtDir: F[File] =
         fileAlg.home.map(_ / ".sbt")
 
+      private val javaOpts: (String, String) =
+        "JAVA_OPTS" -> List(
+          "-Dsbt.color=false",
+          "-Dsbt.log.noformat=true",
+          "-Dsbt.supershell=false"
+        ).mkString(" ")
+
       def sbt(sbtCommands: Nel[String], repoDir: File): F[List[String]] =
         maybeIgnoreOptsFiles(repoDir) {
           val command = Nel.of("sbt", sbtCommands.mkString_(";", ";", ""))
-          processAlg.execSandboxed(command, repoDir)
+          processAlg.execSandboxed(command, repoDir, javaOpts)
         }
 
       def maybeIgnoreOptsFiles[A](dir: File)(fa: F[A]): F[A] =

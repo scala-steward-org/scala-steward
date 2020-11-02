@@ -30,6 +30,7 @@ class BuildToolDispatcherTest extends AnyFunSuite with Matchers {
           repoDir.toString,
           "firejail",
           s"--whitelist=$repoDir",
+          "--env=JAVA_OPTS=-Dsbt.color=false -Dsbt.log.noformat=true -Dsbt.supershell=false",
           "--env=VAR1=val1",
           "--env=VAR2=val2",
           "sbt",
