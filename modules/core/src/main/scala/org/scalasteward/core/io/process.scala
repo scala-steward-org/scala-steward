@@ -75,7 +75,10 @@ object process {
       if (args.clearEnv) env.clear()
       args.extraEnv.foreach { case (key, value) => env.put(key, value) }
       pb.redirectErrorStream(true)
-      pb.start()
+      val p = pb.start()
+      // Close standard input so that the process never waits for input.
+      p.getOutputStream.close()
+      p
     }
 
   private def readInputStream[F[_]](is: InputStream, blocker: Blocker)(implicit
