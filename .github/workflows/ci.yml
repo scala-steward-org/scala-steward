@@ -80,7 +80,7 @@ jobs:
         run: sbt ++${{ matrix.scala }} githubWorkflowCheck
 
       - name: Build project
-        run: sbt ++${{ matrix.scala }} test
+        run: sbt ++${{ matrix.scala }} validate
 
       - name: Compress target directories
         run: tar cf targets.tar target modules/core/.jvm/target modules/sbt-plugin/.jvm/target modules/mill-plugin/.jvm/target project/target
