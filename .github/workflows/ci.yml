@@ -174,7 +174,7 @@ jobs:
           tar xf targets.tar
           rm targets.tar
 
-      - name: jar
+      - name: Publish JARs
         env:
           PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
           PGP_SECRET: ${{ secrets.PGP_SECRET }}
@@ -182,7 +182,7 @@ jobs:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
         run: sbt ci-release
 
-      - name: docker
+      - name: Publish Docker image
         run: |
           docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
           sbt core/docker:publish
