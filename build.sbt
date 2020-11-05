@@ -28,7 +28,7 @@ ThisBuild / githubWorkflowPublishTargetBranches := Seq(
 ThisBuild / githubWorkflowPublish := Seq(
   WorkflowStep.Run(
     List("sbt ci-release"),
-    name = Some("jar"),
+    name = Some("Publish JARs"),
     env = Map(
       "PGP_PASSPHRASE" -> "${{ secrets.PGP_PASSPHRASE }}",
       "PGP_SECRET" -> "${{ secrets.PGP_SECRET }}",
@@ -41,7 +41,7 @@ ThisBuild / githubWorkflowPublish := Seq(
       "docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}",
       "sbt core/docker:publish"
     ),
-    name = Some("docker")
+    name = Some("Publish Docker image")
   )
 )
 ThisBuild / githubWorkflowJavaVersions := Seq("adopt@1.8", "adopt@1.11")
