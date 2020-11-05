@@ -18,7 +18,7 @@ import org.scalatest.matchers.should.Matchers
 
 class GitAlgTest extends AnyFunSuite with Matchers {
   implicit val workspaceAlg: WorkspaceAlg[IO] = WorkspaceAlg.create[IO]
-  val ioGitAlg: GitAlg[IO] = GitAlg.create[IO]
+  implicit val ioGitAlg: GitAlg[IO] = GitAlg.create[IO]
 
   val repo: Repo = Repo("fthomas", "datapackage")
   val repoDir: String = (config.workspace / "fthomas/datapackage").toString
@@ -100,7 +100,7 @@ class GitAlgTest extends AnyFunSuite with Matchers {
     val repo = Repo("merge", "conflict")
     val p = for {
       repoDir <- workspaceAlg.repoDir(repo)
-      _ <- GitAlgTest.createGitRepoWithConflict[IO](repoDir)
+      _ <- GitAlgTest.createGitRepoWithConflict[IO](repo, repoDir)
       c1 <- ioGitAlg.hasConflicts(repo, Branch("conflicts-yes"), Branch("master"))
       c2 <- ioGitAlg.hasConflicts(repo, Branch("conflicts-no"), Branch("master"))
     } yield (c1, c2)
@@ -111,7 +111,7 @@ class GitAlgTest extends AnyFunSuite with Matchers {
     val repo = Repo("merge", "theirs")
     val p = for {
       repoDir <- workspaceAlg.repoDir(repo)
-      _ <- GitAlgTest.createGitRepoWithConflict[IO](repoDir)
+      _ <- GitAlgTest.createGitRepoWithConflict[IO](repo, repoDir)
       master = Branch("master")
       branch = Branch("conflicts-yes")
       c1 <- ioGitAlg.hasConflicts(repo, branch, master)
@@ -128,7 +128,7 @@ class GitAlgTest extends AnyFunSuite with Matchers {
     val repo = Repo("merge", "theirs2")
     val p = for {
       repoDir <- workspaceAlg.repoDir(repo)
-      _ <- GitAlgTest.createGitRepoWithConflictFileRemovedOnMaster[IO](repoDir)
+      _ <- GitAlgTest.createGitRepoWithConflictFileRemovedOnMaster[IO](repo, repoDir)
       master = Branch("master")
       branch = Branch("conflicts-yes")
       c1 <- ioGitAlg.hasConflicts(repo, branch, master)
@@ -143,8 +143,9 @@ class GitAlgTest extends AnyFunSuite with Matchers {
 }
 
 object GitAlgTest {
-  def createGitRepoWithConflict[F[_]](repoDir: File)(implicit
+  def createGitRepoWithConflict[F[_]](repo: Repo, repoDir: File)(implicit
       fileAlg: FileAlg[F],
+      gitAlg: GitAlg[F],
       processAlg: ProcessAlg[F],
       F: Monad[F]
   ): F[Unit] =
@@ -152,6 +153,7 @@ object GitAlgTest {
       _ <- fileAlg.deleteForce(repoDir)
       _ <- fileAlg.ensureExists(repoDir)
       _ <- processAlg.exec(Nel.of("git", "init", "."), repoDir)
+      _ <- gitAlg.setAuthor(repo, config.gitAuthor)
       // work on master
       _ <- fileAlg.writeFile(repoDir / "file1", "file1, line1")
       _ <- fileAlg.writeFile(repoDir / "file2", "file2, line1")
@@ -176,8 +178,9 @@ object GitAlgTest {
       _ <- processAlg.exec(Nel.of("git", "commit", "-m", "Modify file2 on master"), repoDir)
     } yield ()
 
-  def createGitRepoWithConflictFileRemovedOnMaster[F[_]](repoDir: File)(implicit
+  def createGitRepoWithConflictFileRemovedOnMaster[F[_]](repo: Repo, repoDir: File)(implicit
       fileAlg: FileAlg[F],
+      gitAlg: GitAlg[F],
       processAlg: ProcessAlg[F],
       F: Monad[F]
   ): F[Unit] =
@@ -185,6 +188,7 @@ object GitAlgTest {
       _ <- fileAlg.deleteForce(repoDir)
       _ <- fileAlg.ensureExists(repoDir)
       _ <- processAlg.exec(Nel.of("git", "init", "."), repoDir)
+      _ <- gitAlg.setAuthor(repo, config.gitAuthor)
       // work on master
       _ <- fileAlg.writeFile(repoDir / "file1", "file1, line1")
       _ <- fileAlg.writeFile(repoDir / "file2", "file2, line1")

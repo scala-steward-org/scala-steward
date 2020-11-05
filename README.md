@@ -3,7 +3,7 @@
 </p>
 
 # Scala Steward
-[![Build Status](https://travis-ci.com/scala-steward-org/scala-steward.svg?branch=master)](https://travis-ci.com/scala-steward-org/scala-steward)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/scala-steward-org/scala-steward/Continuous%20Integration)](https://github.com/scala-steward-org/scala-steward/actions?query=workflow%3A%22Continuous+Integration%22)
 [![codecov](https://codecov.io/gh/scala-steward-org/scala-steward/branch/master/graph/badge.svg)](https://codecov.io/gh/scala-steward-org/scala-steward)
 [![Join the chat at https://gitter.im/scala-steward-org/scala-steward](https://badges.gitter.im/scala-steward-org/scala-steward.svg)](https://gitter.im/scala-steward-org/scala-steward?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Follow @ScalaSteward on Twitter](https://img.shields.io/twitter/follow/ScalaSteward.svg?logo=twitter&style=flat&color=blue)](https://twitter.com/ScalaSteward)
