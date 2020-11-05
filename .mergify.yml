@@ -1,7 +1,7 @@
 pull_request_rules:
   - name: assign and label scala-steward's PRs
     conditions:
-      - author=scala-steward
+      - author=fthomas
     actions:
       assign:
         users: [fthomas]
@@ -9,10 +9,8 @@ pull_request_rules:
         add: [dependency-update]
   - name: merge scala-steward's PRs
     conditions:
-      - author=scala-steward
-      - status-success=Travis CI - Pull Request
-      # or, using the legacy travis-ci.org service:
-      # - status-success=continuous-integration/travis-ci/pr
+      - author=fthomas
+      - status-success=Build and Test
     actions:
       merge:
         method: squash
