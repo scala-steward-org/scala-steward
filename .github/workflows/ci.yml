@@ -171,4 +171,10 @@ jobs:
           tar xf targets.tar
           rm targets.tar
 
-      - run: sbt ++${{ matrix.scala }} ci-release
+      - name: jar
+        run: sbt ++${{ matrix.scala }} ci-release
+
+      - name: docker
+        run: |
+          docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+          sbt core/docker:publish

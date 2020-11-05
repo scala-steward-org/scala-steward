@@ -22,7 +22,16 @@ val Scala213 = "2.13.3"
 ThisBuild / crossScalaVersions := Seq(Scala212, Scala213)
 ThisBuild / githubWorkflowTargetTags ++= Seq("v*")
 ThisBuild / githubWorkflowPublishTargetBranches += RefPredicate.StartsWith(Ref.Tag("v"))
-ThisBuild / githubWorkflowPublish := Seq(WorkflowStep.Sbt(List("ci-release")))
+ThisBuild / githubWorkflowPublish := Seq(
+  WorkflowStep.Sbt(List("ci-release"), name = Some("jar")),
+  WorkflowStep.Run(
+    List(
+      "docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}",
+      "sbt core/docker:publish"
+    ),
+    name = Some("docker")
+  )
+)
 ThisBuild / githubWorkflowJavaVersions := Seq("adopt@1.8", "adopt@1.11")
 ThisBuild / githubWorkflowBuild :=
   Seq(WorkflowStep.Sbt(List("validate"), name = Some("Build project")))
