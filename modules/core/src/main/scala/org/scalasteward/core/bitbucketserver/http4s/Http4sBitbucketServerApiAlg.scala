@@ -16,12 +16,11 @@
 
 package org.scalasteward.core.bitbucketserver.http4s
 
-import cats.effect.Sync
 import cats.syntax.all._
 import org.http4s.{Request, Uri}
 import org.scalasteward.core.bitbucketserver.http4s.Json.{Reviewer, User}
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.util.HttpJsonClient
+import org.scalasteward.core.util.{HttpJsonClient, MonadThrow}
 import org.scalasteward.core.vcs.VCSApiAlg
 import org.scalasteward.core.vcs.data.PullRequestState.Open
 import org.scalasteward.core.vcs.data._
@@ -32,7 +31,7 @@ class Http4sBitbucketServerApiAlg[F[_]](
     bitbucketApiHost: Uri,
     modify: Repo => Request[F] => F[Request[F]],
     useReviewers: Boolean
-)(implicit client: HttpJsonClient[F], F: Sync[F])
+)(implicit client: HttpJsonClient[F], F: MonadThrow[F])
     extends VCSApiAlg[F] {
   val url = new StashUrls(bitbucketApiHost)
 

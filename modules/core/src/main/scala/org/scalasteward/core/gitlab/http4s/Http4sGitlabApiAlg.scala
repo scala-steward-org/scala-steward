@@ -126,7 +126,7 @@ class Http4sGitLabApiAlg[F[_]](
 )(implicit
     client: HttpJsonClient[F],
     logger: Logger[F],
-    monad: MonadThrow[F]
+    F: MonadThrow[F]
 ) extends VCSApiAlg[F] {
   import GitlabJsonCodec._
 
@@ -164,9 +164,9 @@ class Http4sGitLabApiAlg[F[_]](
       client
         .get[MergeRequestOut](url.existingMergeRequest(repo, internalId), modify(repo))
         .flatMap {
-          case mr if (mr.mergeStatus =!= GitlabMergeStatus.Checking) => monad.pure(mr)
+          case mr if (mr.mergeStatus =!= GitlabMergeStatus.Checking) => F.pure(mr)
           case _ if (retries > 0)                                    => waitForMergeRequestStatus(internalId, retries - 1)
-          case other                                                 => monad.pure(other)
+          case other                                                 => F.pure(other)
         }
 
     val updatedMergeRequest =

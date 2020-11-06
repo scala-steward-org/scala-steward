@@ -16,21 +16,21 @@
 
 package org.scalasteward.core.vcs
 
-import cats.effect.Sync
+import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.application.SupportedVCS.{Bitbucket, BitbucketServer, GitHub, Gitlab}
 import org.scalasteward.core.bitbucket.http4s.Http4sBitbucketApiAlg
 import org.scalasteward.core.bitbucketserver.http4s.Http4sBitbucketServerApiAlg
 import org.scalasteward.core.github.http4s.Http4sGitHubApiAlg
 import org.scalasteward.core.gitlab.http4s.Http4sGitLabApiAlg
-import org.scalasteward.core.util.HttpJsonClient
+import org.scalasteward.core.util.{HttpJsonClient, MonadThrow}
 import org.scalasteward.core.vcs.data.AuthenticatedUser
-import io.chrisdavenport.log4cats.Logger
 
-class VCSSelection[F[_]: Sync](implicit
+final class VCSSelection[F[_]](implicit
     client: HttpJsonClient[F],
     user: AuthenticatedUser,
-    logger: Logger[F]
+    logger: Logger[F],
+    F: MonadThrow[F]
 ) {
   private def github(config: Config): Http4sGitHubApiAlg[F] = {
     import org.scalasteward.core.github.http4s.authentication.addCredentials
