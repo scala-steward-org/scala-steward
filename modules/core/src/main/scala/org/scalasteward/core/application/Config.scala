@@ -91,7 +91,7 @@ object Config {
   final case class SandboxCfg(
       whitelistedDirectories: List[String],
       readOnlyDirectories: List[String],
-      disableSandbox: Boolean
+      enableSandbox: Boolean
   )
 
   final case class ScalafixCfg(
@@ -118,7 +118,7 @@ object Config {
         sandboxCfg = SandboxCfg(
           whitelistedDirectories = args.whitelist,
           readOnlyDirectories = args.readOnly,
-          disableSandbox = args.disableSandbox
+          enableSandbox = args.enableSandbox.getOrElse(args.disableSandbox)
         )
       ),
       scalafixCfg = ScalafixCfg(

@@ -260,7 +260,6 @@ lazy val dockerSettings = Def.settings(
   },
   Docker / packageName := s"fthomas/${name.value}",
   dockerUpdateLatest := true,
-  dockerEntrypoint += "--disable-sandbox",
   dockerEnvVars := Map("PATH" -> "/opt/docker/sbt/bin:${PATH}")
 )
 

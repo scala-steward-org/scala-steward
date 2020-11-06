@@ -28,8 +28,8 @@ class ProcessAlgTest extends AnyFunSuite with Matchers {
       .unsafeRunSync()
   }
 
-  test("execSandboxed: echo with disableSandbox = true") {
-    val cfg = ProcessCfg(Nil, Duration.Zero, SandboxCfg(Nil, Nil, disableSandbox = true))
+  test("execSandboxed: echo with enableSandbox = false") {
+    val cfg = ProcessCfg(Nil, Duration.Zero, SandboxCfg(Nil, Nil, enableSandbox = false))
     val state = MockProcessAlg
       .create(cfg)
       .execSandboxed(Nel.of("echo", "hello"), File.temp)
@@ -43,8 +43,8 @@ class ProcessAlgTest extends AnyFunSuite with Matchers {
     )
   }
 
-  test("execSandboxed: echo with disableSandbox = false") {
-    val cfg = ProcessCfg(Nil, Duration.Zero, SandboxCfg(Nil, Nil, disableSandbox = false))
+  test("execSandboxed: echo with enableSandbox = true") {
+    val cfg = ProcessCfg(Nil, Duration.Zero, SandboxCfg(Nil, Nil, enableSandbox = true))
     val state = MockProcessAlg
       .create(cfg)
       .execSandboxed(Nel.of("echo", "hello"), File.temp)
