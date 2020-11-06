@@ -71,10 +71,10 @@ object ProcessAlg {
   }
 
   def fromExecImpl[F[_]](config: ProcessCfg)(execImpl: Args => F[List[String]]): ProcessAlg[F] =
-    if (config.sandboxCfg.disableSandbox)
-      new NoSandbox[F](config)(execImpl)
-    else
+    if (config.sandboxCfg.enableSandbox)
       new WithFirejail[F](config)(execImpl)
+    else
+      new NoSandbox[F](config)(execImpl)
 
   def create[F[_]](blocker: Blocker, config: ProcessCfg)(implicit
       contextShift: ContextShift[F],

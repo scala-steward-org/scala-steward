@@ -42,6 +42,7 @@ object MockContext {
         vcsApiHost = Uri(),
         vcsLogin = "bot-doe",
         gitAskPass = File.temp / "askpass.sh",
+        enableSandbox = Some(true),
         envVar = List(
           EnvVar("VAR1", "val1"),
           EnvVar("VAR2", "val2")

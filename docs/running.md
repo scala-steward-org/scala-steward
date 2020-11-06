@@ -15,8 +15,6 @@ sbt stage
   --env-var FOO=BAR
 ```
 
-> If [Firejail](https://firejail.wordpress.com/) is not available locally, the option `--disable-sandbox` can be used (not recommended for production environment).
-
 Or as a [Docker](https://www.docker.com/) container:
 
 ```bash
@@ -90,7 +88,7 @@ example1.realm=Example Realm
 ```
 sbt
 project core
-run --disable-sandbox --do-not-fork --workspace "/path/workspace" --repos-file "/path/repos.md" --default-repo-conf "/path/default.scala-steward.conf" --git-ask-pass "/path/pass.sh" --git-author-email "email@example.org" --vcs-type "gitlab" --vcs-api-host "https://gitlab.com/api/v4/" --vcs-login "gitlab.steward"
+run --do-not-fork --workspace "/path/workspace" --repos-file "/path/repos.md" --default-repo-conf "/path/default.scala-steward.conf" --git-ask-pass "/path/pass.sh" --git-author-email "email@example.org" --vcs-type "gitlab" --vcs-api-host "https://gitlab.com/api/v4/" --vcs-login "gitlab.steward"
 ```
 
 
@@ -167,7 +165,6 @@ check:
     - ln -sfT "$CI_PROJECT_DIR/.ivy2" "$HOME/.ivy2"
     - >-
       /opt/docker/bin/scala-steward
-        --disable-sandbox
         --workspace  "$CI_PROJECT_DIR/workspace"
         --process-timeout 30min
         --do-not-fork

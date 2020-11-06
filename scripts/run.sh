@@ -29,6 +29,7 @@ COMMON_ARGS=(
   --git-author-email "me@$LOGIN.org"
   --vcs-login "$LOGIN"
   --ignore-opts-files
+  --enable-sandbox
   --env-var "SBT_OPTS=-Xmx2048m -Xss8m -XX:MaxMetaspaceSize=512m"
   --sign-commits
   --cache-ttl 6hours
