@@ -80,7 +80,7 @@ class VCSRepoAlgTest extends AnyFunSuite with Matchers {
   test("syncFork should do nothing when doNotFork = true") {
     val config = MockContext.config.copy(doNotFork = true)
     val state = VCSRepoAlg
-      .create(config, gitAlg)
+      .create(config)
       .syncFork(repo, parentRepoOut)
       .runS(MockState.empty)
       .unsafeRunSync()

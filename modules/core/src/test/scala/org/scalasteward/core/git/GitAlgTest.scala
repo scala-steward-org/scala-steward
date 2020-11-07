@@ -17,8 +17,8 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class GitAlgTest extends AnyFunSuite with Matchers {
-  implicit val workspaceAlg: WorkspaceAlg[IO] = WorkspaceAlg.create[IO]
-  implicit val ioGitAlg: GitAlg[IO] = GitAlg.create[IO]
+  implicit val workspaceAlg: WorkspaceAlg[IO] = WorkspaceAlg.create[IO](config)
+  implicit val ioGitAlg: GitAlg[IO] = GitAlg.create[IO](config)
 
   val repo: Repo = Repo("fthomas", "datapackage")
   val repoDir: String = (config.workspace / "fthomas/datapackage").toString

@@ -32,7 +32,7 @@ trait VCSRepoAlg[F[_]] {
 }
 
 object VCSRepoAlg {
-  def create[F[_]: MonadThrow](config: Config, gitAlg: GitAlg[F]): VCSRepoAlg[F] =
+  def create[F[_]](config: Config)(implicit gitAlg: GitAlg[F], F: MonadThrow[F]): VCSRepoAlg[F] =
     new VCSRepoAlg[F] {
       override def clone(repo: Repo, repoOut: RepoOut): F[Unit] =
         for {
@@ -41,7 +41,7 @@ object VCSRepoAlg {
         } yield ()
 
       override def syncFork(repo: Repo, repoOut: RepoOut): F[Unit] =
-        if (config.doNotFork) ().pure[F]
+        if (config.doNotFork) F.unit
         else
           for {
             parent <- repoOut.parentOrRaise[F]

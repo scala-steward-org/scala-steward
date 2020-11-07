@@ -43,8 +43,7 @@ trait SbtAlg[F[_]] extends BuildToolAlg[F] {
 }
 
 object SbtAlg {
-  def create[F[_]](implicit
-      config: Config,
+  def create[F[_]](config: Config)(implicit
       fileAlg: FileAlg[F],
       logger: Logger[F],
       processAlg: ProcessAlg[F],

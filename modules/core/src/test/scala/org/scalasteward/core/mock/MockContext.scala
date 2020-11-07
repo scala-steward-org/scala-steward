@@ -30,7 +30,7 @@ import org.scalasteward.core.vcs.data.AuthenticatedUser
 import scala.concurrent.duration._
 
 object MockContext {
-  implicit val config: Config =
+  val config: Config =
     Config.from(
       Cli.Args(
         workspace = File.temp / "ws",
@@ -61,10 +61,10 @@ object MockContext {
 
   implicit val coursierAlg: CoursierAlg[MockEff] = CoursierAlg.create
   implicit val dateTimeAlg: DateTimeAlg[MockEff] = DateTimeAlg.create
-  implicit val gitAlg: GitAlg[MockEff] = GitAlg.create
+  implicit val gitAlg: GitAlg[MockEff] = GitAlg.create(config)
   implicit val user: AuthenticatedUser = AuthenticatedUser("scala-steward", "token")
-  implicit val vcsRepoAlg: VCSRepoAlg[MockEff] = VCSRepoAlg.create(config, gitAlg)
-  implicit val repoConfigAlg: RepoConfigAlg[MockEff] = new RepoConfigAlg[MockEff]
+  implicit val vcsRepoAlg: VCSRepoAlg[MockEff] = VCSRepoAlg.create(config)
+  implicit val repoConfigAlg: RepoConfigAlg[MockEff] = new RepoConfigAlg[MockEff](config)
   implicit val scalafmtAlg: ScalafmtAlg[MockEff] = ScalafmtAlg.create
   val migrationsLoader: MigrationsLoader[MockEff] = new MigrationsLoader[MockEff]
   implicit val migrationAlg: MigrationAlg = migrationsLoader
@@ -78,10 +78,10 @@ object MockContext {
   implicit val versionsCache: VersionsCache[MockEff] =
     new VersionsCache[MockEff](config.cacheTtl, new JsonKeyValueStore("versions", "1"))
   implicit val artifactMigrations: ArtifactMigrations =
-    ArtifactMigrations.create[MockEff].runA(MockState.empty).unsafeRunSync()
+    ArtifactMigrations.create[MockEff](config).runA(MockState.empty).unsafeRunSync()
   implicit val updateAlg: UpdateAlg[MockEff] = new UpdateAlg[MockEff]
-  implicit val mavenAlg: MavenAlg[MockEff] = MavenAlg.create
-  implicit val sbtAlg: SbtAlg[MockEff] = SbtAlg.create
+  implicit val mavenAlg: MavenAlg[MockEff] = MavenAlg.create(config)
+  implicit val sbtAlg: SbtAlg[MockEff] = SbtAlg.create(config)
   implicit val millAlg: MillAlg[MockEff] = MillAlg.create
   implicit val buildToolDispatcher: BuildToolDispatcher[MockEff] = BuildToolDispatcher.create
   implicit val editAlg: EditAlg[MockEff] = new EditAlg[MockEff]

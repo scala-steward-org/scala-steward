@@ -30,9 +30,8 @@ trait VCSExtraAlg[F[_]] {
 }
 
 object VCSExtraAlg {
-  def create[F[_]](implicit
+  def create[F[_]](config: Config)(implicit
       existenceClient: HttpExistenceClient[F],
-      config: Config,
       F: Monad[F]
   ): VCSExtraAlg[F] =
     new VCSExtraAlg[F] {

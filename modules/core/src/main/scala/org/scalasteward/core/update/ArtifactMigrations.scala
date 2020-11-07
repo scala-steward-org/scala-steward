@@ -30,9 +30,9 @@ trait ArtifactMigrations {
 }
 
 object ArtifactMigrations {
-  def create[F[_]: MonadThrow](implicit
+  def create[F[_]](config: Config)(implicit
       fileAlg: FileAlg[F],
-      config: Config
+      F: MonadThrow[F]
   ): F[ArtifactMigrations] = {
     val migrationSources = {
 
