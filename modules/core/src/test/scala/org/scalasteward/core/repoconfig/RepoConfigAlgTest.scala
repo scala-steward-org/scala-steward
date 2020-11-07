@@ -87,13 +87,13 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     )
   }
 
-  test("config with 'updatePullRequests = always") {
+  test("config with 'updatePullRequests = always'") {
     val content = """updatePullRequests = "always" """
     val config = RepoConfigAlg.parseRepoConfig(content)
     config shouldBe Right(RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.Always)))
   }
 
-  test("config with 'updatePullRequests = on-conflicts") {
+  test("config with 'updatePullRequests = on-conflicts'") {
     val content = """updatePullRequests = "on-conflicts" """
     val config = RepoConfigAlg.parseRepoConfig(content)
     config shouldBe Right(
@@ -101,10 +101,16 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     )
   }
 
-  test("config with 'updatePullRequests = never") {
+  test("config with 'updatePullRequests = never'") {
     val content = """updatePullRequests = "never" """
     val config = RepoConfigAlg.parseRepoConfig(content)
     config shouldBe Right(RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.Never)))
+  }
+
+  test("config with 'updatePullRequests = foo'") {
+    val content = """updatePullRequests = foo """
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    config shouldBe Right(RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.default)))
   }
 
   test("config with 'pullRequests.frequency = @asap'") {
