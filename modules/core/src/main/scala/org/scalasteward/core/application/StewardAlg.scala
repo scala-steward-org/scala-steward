@@ -32,8 +32,7 @@ import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.util.{BracketThrow, DateTimeAlg}
 import org.scalasteward.core.vcs.data.Repo
 
-final class StewardAlg[F[_]](implicit
-    config: Config,
+final class StewardAlg[F[_]](config: Config)(implicit
     dateTimeAlg: DateTimeAlg[F],
     fileAlg: FileAlg[F],
     gitAlg: GitAlg[F],

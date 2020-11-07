@@ -29,9 +29,8 @@ import org.scalasteward.core.vcs.data.{Repo, RepoOut}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
 import scala.util.control.NoStackTrace
 
-final class RepoCacheAlg[F[_]](implicit
+final class RepoCacheAlg[F[_]](config: Config)(implicit
     buildToolDispatcher: BuildToolDispatcher[F],
-    config: Config,
     gitAlg: GitAlg[F],
     logger: Logger[F],
     parallel: Parallel[F],

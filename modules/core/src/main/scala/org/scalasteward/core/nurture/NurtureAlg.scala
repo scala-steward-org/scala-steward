@@ -39,8 +39,7 @@ import org.scalasteward.core.{git, util, vcs}
 
 import scala.util.control.NonFatal
 
-final class NurtureAlg[F[_]](implicit
-    config: Config,
+final class NurtureAlg[F[_]](config: Config)(implicit
     editAlg: EditAlg[F],
     repoConfigAlg: RepoConfigAlg[F],
     gitAlg: GitAlg[F],

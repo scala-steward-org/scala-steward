@@ -30,8 +30,7 @@ import org.scalasteward.core.vcs.data.Repo
 trait MavenAlg[F[_]] extends BuildToolAlg[F]
 
 object MavenAlg {
-  def create[F[_]](implicit
-      config: Config,
+  def create[F[_]](config: Config)(implicit
       fileAlg: FileAlg[F],
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F],

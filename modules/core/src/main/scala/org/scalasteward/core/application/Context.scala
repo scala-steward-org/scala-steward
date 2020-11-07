@@ -51,31 +51,31 @@ object Context {
       blocker <- Blocker[F]
       implicit0(logger: Logger[F]) <- Resource.liftF(Slf4jLogger.create[F])
       _ <- Resource.liftF(printBanner[F])
-      implicit0(config: Config) <- Resource.pure(Config.from(args))
+      config <- Resource.pure(Config.from(args))
       implicit0(client: Client[F]) <- OkHttpBuilder.withDefaultClient[F](blocker).map(_.create)
-      implicit0(httpExistenceClient: HttpExistenceClient[F]) <- HttpExistenceClient.create[F]
+      implicit0(httpExistenceClient: HttpExistenceClient[F]) <-
+        HttpExistenceClient.create[F](config)
       implicit0(user: AuthenticatedUser) <- Resource.liftF(config.vcsUser[F])
       implicit0(fileAlg: FileAlg[F]) = FileAlg.create[F]
       implicit0(migrationAlg: MigrationAlg) <-
         Resource.liftF(new MigrationsLoader[F].loadAll(config.scalafixCfg).map(new MigrationAlg(_)))
-      implicit0(artifactMigration: ArtifactMigrations) <- Resource.liftF(
-        ArtifactMigrations.create[F]
-      )
+      implicit0(artifactMigration: ArtifactMigrations) <-
+        Resource.liftF(ArtifactMigrations.create[F](config))
     } yield {
       val kvsPrefix = Some(config.vcsType.asString)
       implicit val dateTimeAlg: DateTimeAlg[F] = DateTimeAlg.create[F]
       implicit val processAlg: ProcessAlg[F] = ProcessAlg.create[F](blocker, config.processCfg)
-      implicit val workspaceAlg: WorkspaceAlg[F] = WorkspaceAlg.create[F]
-      implicit val repoConfigAlg: RepoConfigAlg[F] = new RepoConfigAlg[F]
+      implicit val workspaceAlg: WorkspaceAlg[F] = WorkspaceAlg.create[F](config)
+      implicit val repoConfigAlg: RepoConfigAlg[F] = new RepoConfigAlg[F](config)
       implicit val filterAlg: FilterAlg[F] = new FilterAlg[F]
-      implicit val gitAlg: GitAlg[F] = GitAlg.create[F]
+      implicit val gitAlg: GitAlg[F] = GitAlg.create[F](config)
       implicit val httpJsonClient: HttpJsonClient[F] = new HttpJsonClient[F]
       implicit val repoCacheRepository: RepoCacheRepository[F] =
         new RepoCacheRepository[F](new JsonKeyValueStore("repo_cache", "1", kvsPrefix))
       val vcsSelection = new VCSSelection[F]
       implicit val vcsApiAlg: VCSApiAlg[F] = vcsSelection.getAlg(config)
-      implicit val vcsRepoAlg: VCSRepoAlg[F] = VCSRepoAlg.create[F](config, gitAlg)
-      implicit val vcsExtraAlg: VCSExtraAlg[F] = VCSExtraAlg.create[F]
+      implicit val vcsRepoAlg: VCSRepoAlg[F] = VCSRepoAlg.create[F](config)
+      implicit val vcsExtraAlg: VCSExtraAlg[F] = VCSExtraAlg.create[F](config)
       implicit val pullRequestRepository: PullRequestRepository[F] =
         new PullRequestRepository[F](new JsonKeyValueStore("pull_requests", "2", kvsPrefix))
       implicit val scalafmtAlg: ScalafmtAlg[F] = ScalafmtAlg.create[F]
@@ -84,17 +84,17 @@ object Context {
       implicit val versionsCache: VersionsCache[F] =
         new VersionsCache[F](config.cacheTtl, new JsonKeyValueStore("versions", "2"))
       implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]
-      implicit val mavenAlg: MavenAlg[F] = MavenAlg.create[F]
-      implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F]
+      implicit val mavenAlg: MavenAlg[F] = MavenAlg.create[F](config)
+      implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F](config)
       implicit val millAlg: MillAlg[F] = MillAlg.create[F]
       implicit val buildToolDispatcher: BuildToolDispatcher[F] = BuildToolDispatcher.create[F]
       implicit val refreshErrorAlg: RefreshErrorAlg[F] =
         new RefreshErrorAlg[F](new JsonKeyValueStore("refresh_error", "1", kvsPrefix))
-      implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F]
+      implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F](config)
       implicit val editAlg: EditAlg[F] = new EditAlg[F]
-      implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F]
+      implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F](config)
       implicit val pruningAlg: PruningAlg[F] = new PruningAlg[F]
-      new StewardAlg[F]
+      new StewardAlg[F](config)
     }
 
   private def printBanner[F[_]](implicit logger: Logger[F]): F[Unit] = {

@@ -32,10 +32,9 @@ trait WorkspaceAlg[F[_]] {
 }
 
 object WorkspaceAlg {
-  def create[F[_]](implicit
+  def create[F[_]](config: Config)(implicit
       fileAlg: FileAlg[F],
       logger: Logger[F],
-      config: Config,
       F: FlatMap[F]
   ): WorkspaceAlg[F] =
     new WorkspaceAlg[F] {

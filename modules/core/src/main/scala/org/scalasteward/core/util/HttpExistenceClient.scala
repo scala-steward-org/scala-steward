@@ -45,8 +45,7 @@ final class HttpExistenceClient[F[_]](statusCache: Cache[Status])(implicit
 }
 
 object HttpExistenceClient {
-  def create[F[_]](implicit
-      config: Config,
+  def create[F[_]](config: Config)(implicit
       client: Client[F],
       logger: Logger[F],
       F: Async[F]
