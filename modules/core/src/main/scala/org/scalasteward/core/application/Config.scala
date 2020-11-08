@@ -118,7 +118,7 @@ object Config {
         sandboxCfg = SandboxCfg(
           whitelistedDirectories = args.whitelist,
           readOnlyDirectories = args.readOnly,
-          enableSandbox = args.enableSandbox.getOrElse(args.disableSandbox)
+          enableSandbox = args.enableSandbox.getOrElse(!args.disableSandbox)
         )
       ),
       scalafixCfg = ScalafixCfg(
