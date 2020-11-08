@@ -107,4 +107,8 @@ class CliTest extends AnyFunSuite with Matchers with EitherValues {
   test("fileArgParser: previous value") {
     Cli.fileArgParser(Some(File("/tmp")), "/opt").isLeft shouldBe true
   }
+
+  test("supportedVCSArgParser: unknown value") {
+    Cli.supportedVCSArgParser(None, "sourceforge").isLeft shouldBe true
+  }
 }

@@ -104,6 +104,12 @@ object Cli {
         }
     )
 
+  implicit val supportedVCSArgParser: ArgParser[SupportedVCS] =
+    ArgParser[String].xmapError(
+      _.asString,
+      s => SupportedVCS.parse(s).leftMap(error => MalformedValue("SupportedVCS", error))
+    )
+
   implicit val uriArgParser: ArgParser[Uri] =
     ArgParser[String].xmapError(
       _.renderString,
