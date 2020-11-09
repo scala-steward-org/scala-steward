@@ -42,7 +42,7 @@ object Dependencies {
   val scalacacheCatsEffect =
     "com.github.cb372" %% "scalacache-cats-effect" % scalacacheCaffeine.revision
   val scalacheck = "org.scalacheck" %% "scalacheck" % "1.15.1"
-  val scalaTestFunSuite = "org.scalatest" %% "scalatest-funsuite" % "3.2.2"
+  val scalaTestFunSuite = "org.scalatest" %% "scalatest-funsuite" % "3.2.3"
   val scalaTestShouldMatcher =
     "org.scalatest" %% "scalatest-shouldmatchers" % scalaTestFunSuite.revision
 }
