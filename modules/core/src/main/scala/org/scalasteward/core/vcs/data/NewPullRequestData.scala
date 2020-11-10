@@ -91,15 +91,15 @@ object NewPullRequestData {
     if (releaseRelatedUrls.isEmpty) None
     else
       releaseRelatedUrls
-        .map { url =>
-          url match {
-            case ReleaseRelatedUrl.CustomChangelog(url) => s"[Changelog](${url.renderString})"
-            case ReleaseRelatedUrl.CustomReleaseNotes(url) =>
-              s"[Release Notes](${url.renderString})"
-            case ReleaseRelatedUrl.GitHubReleaseNotes(url) =>
-              s"[GitHub Release Notes](${url.renderString})"
-            case ReleaseRelatedUrl.VersionDiff(url) => s"[Version Diff](${url.renderString})"
-          }
+        .map {
+          case ReleaseRelatedUrl.CustomChangelog(url) =>
+            s"[Changelog](${url.renderString})"
+          case ReleaseRelatedUrl.CustomReleaseNotes(url) =>
+            s"[Release Notes](${url.renderString})"
+          case ReleaseRelatedUrl.GitHubReleaseNotes(url) =>
+            s"[GitHub Release Notes](${url.renderString})"
+          case ReleaseRelatedUrl.VersionDiff(url) =>
+            s"[Version Diff](${url.renderString})"
         }
         .mkString(" - ")
         .some
