@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.vcs.github.http4s
+package org.scalasteward.core.vcs.github
 
 import cats.Applicative
 import cats.syntax.all._

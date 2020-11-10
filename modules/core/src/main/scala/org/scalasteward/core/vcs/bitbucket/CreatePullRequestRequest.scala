@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.vcs.bitbucket.http4s
+package org.scalasteward.core.vcs.bitbucket
 
 import io.circe.{Encoder, Json}
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.vcs.data.Repo
 
-private[http4s] case class CreatePullRequestRequest(
+private[bitbucket] case class CreatePullRequestRequest(
     title: String,
     sourceBranch: Branch,
     sourceRepo: Repo,
@@ -28,7 +28,7 @@ private[http4s] case class CreatePullRequestRequest(
     description: String
 )
 
-private[http4s] object CreatePullRequestRequest {
+private[bitbucket] object CreatePullRequestRequest {
   implicit val encoder: Encoder[CreatePullRequestRequest] = Encoder.instance { d =>
     Json.obj(
       ("title", Json.fromString(d.title)),

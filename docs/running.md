@@ -83,7 +83,7 @@ example1.realm=Example Realm
 
 ### Running locally from sbt
 
-#### Sample run for Gitlab
+#### Sample run for GitLab
 
 ```
 sbt
@@ -130,14 +130,14 @@ docker run -v $PWD:/opt/scala-steward \
 There is an article on how they run Scala Steward on-premise at Avast:
 * [Running Scala Steward On-premise](https://engineering.avast.io/running-scala-steward-on-premise)
 
-#### Gitlab
+#### GitLab
 
-The following describes a setup using Gitlab Docker runner, which you have to setup seperately.
+The following describes a setup using GitLab Docker runner, which you have to setup seperately.
 
-1. create a "scalasteward" user in Gitlab
+1. create a "scalasteward" user in GitLab
 2. assign that user "Developer" permissions in every project that should be managed by Scala Steward
 3. login as that user and create a Personal Access Token with `api`, `read_repository` and `write_repository` scopes
-4. create a project and add the following Gitlab CI config
+4. create a project and add the following GitLab CI config
 
 ```yaml
 check:

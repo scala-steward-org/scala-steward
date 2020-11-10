@@ -3,7 +3,7 @@ package org.scalasteward.core.vcs
 import org.http4s.syntax.literals._
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.application.SupportedVCS
-import org.scalasteward.core.application.SupportedVCS.{GitHub, Gitlab}
+import org.scalasteward.core.application.SupportedVCS.{GitHub, GitLab}
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
@@ -17,12 +17,12 @@ class VCSPackageTest extends AnyFunSuite with Matchers {
 
   test("listingBranch") {
     listingBranch(GitHub, repo, update) shouldBe "foo/bar:update/logback-classic-1.2.3"
-    listingBranch(Gitlab, repo, update) shouldBe "update/logback-classic-1.2.3"
+    listingBranch(GitLab, repo, update) shouldBe "update/logback-classic-1.2.3"
   }
 
   test("createBranch") {
     createBranch(GitHub, repo, update) shouldBe "foo:update/logback-classic-1.2.3"
-    createBranch(Gitlab, repo, update) shouldBe "update/logback-classic-1.2.3"
+    createBranch(GitLab, repo, update) shouldBe "update/logback-classic-1.2.3"
   }
 
   test("possibleCompareUrls") {
@@ -136,7 +136,7 @@ class VCSPackageTest extends AnyFunSuite with Matchers {
 
   test("possibleChangelogUrls: on-prem gitlab") {
     possibleReleaseRelatedUrls(
-      SupportedVCS.Gitlab,
+      SupportedVCS.GitLab,
       uri"https://gitlab.on-prem.net",
       uri"https://gitlab.on-prem.net/foo/bar",
       update

@@ -36,7 +36,6 @@ import org.scalasteward.core.util.{BracketThrow, HttpExistenceClient}
 import org.scalasteward.core.vcs.data.{NewPullRequestData, PullRequestState, Repo, RepoOut}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg}
 import org.scalasteward.core.{git, util, vcs}
-
 import scala.util.control.NonFatal
 
 final class NurtureAlg[F[_]](config: Config)(implicit

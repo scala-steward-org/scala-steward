@@ -14,16 +14,15 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.vcs.github.http4s
+package org.scalasteward.core.vcs.github
 
 import org.http4s.{Request, Uri}
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.HttpJsonClient
 import org.scalasteward.core.vcs.VCSApiAlg
 import org.scalasteward.core.vcs.data._
-import org.scalasteward.core.vcs.github._
 
-final class Http4sGitHubApiAlg[F[_]](
+final class GitHubApiAlg[F[_]](
     gitHubApiHost: Uri,
     modify: Repo => Request[F] => F[Request[F]]
 )(implicit

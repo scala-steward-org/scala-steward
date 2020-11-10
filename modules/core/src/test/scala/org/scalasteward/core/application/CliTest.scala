@@ -32,7 +32,7 @@ class CliTest extends AnyFunSuite with Matchers with EitherValues {
         reposFile = File("b"),
         defaultRepoConf = Some(File("c")),
         gitAuthorEmail = "d",
-        vcsType = SupportedVCS.Gitlab,
+        vcsType = SupportedVCS.GitLab,
         vcsApiHost = uri"http://example.com",
         vcsLogin = "e",
         gitAskPass = File("f"),

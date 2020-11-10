@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.vcs.bitbucket.http4s
+package org.scalasteward.core.vcs.bitbucket
 
 import cats.syntax.all._
 import io.circe.{ACursor, Decoder, DecodingFailure, Json}
@@ -24,7 +24,7 @@ import org.scalasteward.core.util.uri._
 import org.scalasteward.core.vcs.data.{Repo, UserOut}
 import scala.annotation.tailrec
 
-final private[http4s] case class RepositoryResponse(
+final private[bitbucket] case class RepositoryResponse(
     name: String,
     mainBranch: Branch,
     owner: UserOut,
@@ -32,7 +32,7 @@ final private[http4s] case class RepositoryResponse(
     parent: Option[Repo]
 )
 
-private[http4s] object RepositoryResponse {
+private[bitbucket] object RepositoryResponse {
   implicit private val repoDecoder: Decoder[Repo] = Decoder.instance { c =>
     c.as[String].map(_.split('/')).flatMap { parts =>
       parts match {

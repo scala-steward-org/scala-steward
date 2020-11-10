@@ -1,4 +1,4 @@
-package org.scalasteward.core.vcs.github.http4s
+package org.scalasteward.core.vcs.github
 
 import cats.effect.IO
 import io.circe.literal._
@@ -15,7 +15,7 @@ import org.scalasteward.core.vcs.data._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-class Http4sGitHubApiAlgTest extends AnyFunSuite with Matchers {
+class GitHubApiAlgTest extends AnyFunSuite with Matchers {
   val routes: HttpRoutes[IO] =
     HttpRoutes.of[IO] {
       case GET -> Root / "repos" / "fthomas" / "base.g8" =>
@@ -77,7 +77,7 @@ class Http4sGitHubApiAlgTest extends AnyFunSuite with Matchers {
 
   implicit val client: Client[IO] = Client.fromHttpApp(routes.orNotFound)
   implicit val httpJsonClient: HttpJsonClient[IO] = new HttpJsonClient[IO]
-  val gitHubApiAlg = new Http4sGitHubApiAlg[IO](config.vcsApiHost, _ => IO.pure)
+  val gitHubApiAlg = new GitHubApiAlg[IO](config.vcsApiHost, _ => IO.pure)
 
   val repo = Repo("fthomas", "base.g8")
 

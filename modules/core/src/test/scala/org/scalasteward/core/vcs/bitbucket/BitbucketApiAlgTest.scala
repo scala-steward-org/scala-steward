@@ -1,4 +1,4 @@
-package org.scalasteward.core.vcs.bitbucket.http4s
+package org.scalasteward.core.vcs.bitbucket
 
 import cats.effect.IO
 import io.circe.literal._
@@ -15,7 +15,7 @@ import org.scalasteward.core.vcs.data._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-class Http4sBitbucketApiAlgTest extends AnyFunSuite with Matchers {
+class BitbucketApiAlgTest extends AnyFunSuite with Matchers {
   private val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case GET -> Root / "repositories" / "fthomas" / "base.g8" =>
       Ok(
@@ -139,7 +139,7 @@ class Http4sBitbucketApiAlgTest extends AnyFunSuite with Matchers {
 
   implicit val client: Client[IO] = Client.fromHttpApp(routes.orNotFound)
   implicit val httpJsonClient: HttpJsonClient[IO] = new HttpJsonClient[IO]
-  val bitbucketApiAlg = new Http4sBitbucketApiAlg[IO](
+  val bitbucketApiAlg = new BitbucketApiAlg[IO](
     config.vcsApiHost,
     AuthenticatedUser("scala-steward", ""),
     _ => IO.pure,

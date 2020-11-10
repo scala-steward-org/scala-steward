@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.vcs.bitbucketserver.http4s
+package org.scalasteward.core.vcs.bitbucketserver
 
 import cats.data.NonEmptyList
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}

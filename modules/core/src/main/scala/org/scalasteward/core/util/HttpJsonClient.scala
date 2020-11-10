@@ -20,10 +20,9 @@ import cats.effect.Sync
 import cats.syntax.all._
 import io.circe.{Decoder, Encoder}
 import org.http4s.Method.{GET, PATCH, POST, PUT}
+import org.http4s._
 import org.http4s.circe.{jsonEncoderOf, jsonOf}
 import org.http4s.client.Client
-import org.http4s._
-
 import scala.util.control.NoStackTrace
 
 final class HttpJsonClient[F[_]: Sync](implicit

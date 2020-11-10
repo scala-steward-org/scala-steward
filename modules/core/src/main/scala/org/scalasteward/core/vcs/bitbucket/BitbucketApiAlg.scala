@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.vcs.bitbucket.http4s
+package org.scalasteward.core.vcs.bitbucket
 
 import cats.syntax.all._
 import org.http4s.{Request, Status, Uri}
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.{HttpJsonClient, MonadThrow, UnexpectedResponse}
 import org.scalasteward.core.vcs.VCSApiAlg
-import org.scalasteward.core.vcs.bitbucket.Url
-import org.scalasteward.core.vcs.bitbucket.http4s.json._
+import org.scalasteward.core.vcs.bitbucket.json._
 import org.scalasteward.core.vcs.data._
 
-class Http4sBitbucketApiAlg[F[_]](
+class BitbucketApiAlg[F[_]](
     bitbucketApiHost: Uri,
     user: AuthenticatedUser,
     modify: Repo => Request[F] => F[Request[F]],
