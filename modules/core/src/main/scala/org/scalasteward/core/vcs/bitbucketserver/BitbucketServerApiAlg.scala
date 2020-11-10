@@ -21,7 +21,7 @@ import org.http4s.{Request, Uri}
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.{HttpJsonClient, MonadThrow}
 import org.scalasteward.core.vcs.VCSApiAlg
-import Json.{Reviewer, User}
+import org.scalasteward.core.vcs.bitbucketserver.Json.{Reviewer, User}
 import org.scalasteward.core.vcs.data.PullRequestState.Open
 import org.scalasteward.core.vcs.data._
 
