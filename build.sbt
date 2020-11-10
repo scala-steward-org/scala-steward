@@ -21,6 +21,8 @@ val Scala213 = "2.13.3"
 
 ThisBuild / crossScalaVersions := Seq(Scala212, Scala213)
 ThisBuild / githubWorkflowTargetTags ++= Seq("v*")
+ThisBuild / githubWorkflowPublishPreamble +=
+  WorkflowStep.Use("olafurpg", "setup-gpg", "v2")
 ThisBuild / githubWorkflowPublishTargetBranches := Seq(
   RefPredicate.Equals(Ref.Branch("master")),
   RefPredicate.StartsWith(Ref.Tag("v"))
