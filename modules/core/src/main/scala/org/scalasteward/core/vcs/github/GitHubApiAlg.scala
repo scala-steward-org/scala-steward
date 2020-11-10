@@ -30,21 +30,27 @@ final class GitHubApiAlg[F[_]](
 ) extends VCSApiAlg[F] {
   private val url = new Url(gitHubApiHost)
 
+  /** https://developer.github.com/v3/repos/forks/#create-a-fork */
   override def createFork(repo: Repo): F[RepoOut] =
     client.post(url.forks(repo), modify(repo))
 
+  /** https://developer.github.com/v3/pulls/#create-a-pull-request */
   override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] =
     client.postWithBody(url.pulls(repo), data, modify(repo))
 
+  /** https://developer.github.com/v3/repos/branches/#get-branch */
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
     client.get(url.branches(repo, branch), modify(repo))
 
+  /** https://developer.github.com/v3/repos/#get */
   override def getRepo(repo: Repo): F[RepoOut] =
     client.get(url.repos(repo), modify(repo))
 
+  /** https://developer.github.com/v3/pulls/#list-pull-requests */
   override def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]] =
     client.get(url.listPullRequests(repo, head, base), modify(repo))
 
+  /** https://developer.github.com/v3/pulls/#update-a-pull-request */
   override def closePullRequest(repo: Repo, id: Int): F[PullRequestOut] =
     client.patchWithBody[PullRequestOut, UpdateState](
       url.pull(repo, id),
