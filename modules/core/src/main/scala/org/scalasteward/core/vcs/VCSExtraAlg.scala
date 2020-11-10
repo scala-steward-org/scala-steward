@@ -54,7 +54,7 @@ object VCSExtraAlg {
             extractIntAfter(uri.path, "pull")
           case SupportedVCS.Bitbucket | SupportedVCS.BitbucketServer =>
             extractIntAfter(uri.path, "pullrequests")
-          case SupportedVCS.Gitlab =>
+          case SupportedVCS.GitLab =>
             extractIntAfter(uri.path, "merge_requests")
         }
       }

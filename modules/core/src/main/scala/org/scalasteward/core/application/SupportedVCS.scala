@@ -25,7 +25,7 @@ sealed trait SupportedVCS {
     case Bitbucket       => "bitbucket"
     case BitbucketServer => "bitbucket-server"
     case GitHub          => "github"
-    case Gitlab          => "gitlab"
+    case GitLab          => "gitlab"
   }
 }
 
@@ -33,9 +33,9 @@ object SupportedVCS {
   case object Bitbucket extends SupportedVCS
   case object BitbucketServer extends SupportedVCS
   case object GitHub extends SupportedVCS
-  case object Gitlab extends SupportedVCS
+  case object GitLab extends SupportedVCS
 
-  val all = List(Bitbucket, BitbucketServer, GitHub, Gitlab)
+  val all = List(Bitbucket, BitbucketServer, GitHub, GitLab)
 
   def parse(s: String): Either[String, SupportedVCS] =
     all.find(_.asString === s) match {

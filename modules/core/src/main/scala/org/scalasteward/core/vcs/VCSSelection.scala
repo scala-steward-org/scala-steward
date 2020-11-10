@@ -18,7 +18,7 @@ package org.scalasteward.core.vcs
 
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.application.SupportedVCS.{Bitbucket, BitbucketServer, GitHub, Gitlab}
+import org.scalasteward.core.application.SupportedVCS.{Bitbucket, BitbucketServer, GitHub, GitLab}
 import org.scalasteward.core.util.{HttpJsonClient, MonadThrow}
 import org.scalasteward.core.vcs.bitbucket.BitbucketApiAlg
 import org.scalasteward.core.vcs.bitbucketserver.BitbucketServerApiAlg
@@ -68,7 +68,7 @@ final class VCSSelection[F[_]](implicit
   def getAlg(config: Config): VCSApiAlg[F] =
     config.vcsType match {
       case GitHub          => github(config)
-      case Gitlab          => gitlab(config)
+      case GitLab          => gitlab(config)
       case Bitbucket       => bitbucket(config)
       case BitbucketServer => bitbucketServer(config)
     }

@@ -23,7 +23,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class GitLabApiAlgTest extends AnyFunSuite with Matchers {
-  import org.scalasteward.core.vcs.gitlab.GitlabJsonCodec._
+  import org.scalasteward.core.vcs.gitlab.GitLabJsonCodec._
 
   object MergeWhenPipelineSucceedsMatcher
       extends QueryParamDecoderMatcher[Boolean]("merge_when_pipeline_succeeds")

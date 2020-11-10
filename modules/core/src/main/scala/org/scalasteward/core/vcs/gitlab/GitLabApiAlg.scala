@@ -58,13 +58,13 @@ final private[gitlab] case class CommitId(id: Sha1) {
 }
 final private[gitlab] case class ProjectId(id: Long)
 
-private[gitlab] object GitlabMergeStatus {
+private[gitlab] object GitLabMergeStatus {
   val CanBeMerged = "can_be_merged"
   val CannotBeMerged = "cannot_be_merged"
   val Checking = "checking"
 }
 
-private[gitlab] object GitlabJsonCodec {
+private[gitlab] object GitLabJsonCodec {
   // prevent IntelliJ from removing the import of uriDecoder
   locally(uriDecoder)
 
@@ -127,7 +127,7 @@ class GitLabApiAlg[F[_]](
     logger: Logger[F],
     F: MonadThrow[F]
 ) extends VCSApiAlg[F] {
-  import GitlabJsonCodec._
+  import GitLabJsonCodec._
 
   val url = new Url(gitlabApiHost)
 
@@ -163,7 +163,7 @@ class GitLabApiAlg[F[_]](
       client
         .get[MergeRequestOut](url.existingMergeRequest(repo, internalId), modify(repo))
         .flatMap {
-          case mr if (mr.mergeStatus =!= GitlabMergeStatus.Checking) => F.pure(mr)
+          case mr if (mr.mergeStatus =!= GitLabMergeStatus.Checking) => F.pure(mr)
           case _ if (retries > 0)                                    => waitForMergeRequestStatus(internalId, retries - 1)
           case other                                                 => F.pure(other)
         }
@@ -175,7 +175,7 @@ class GitLabApiAlg[F[_]](
         mergeRequest
           .flatMap(mr => waitForMergeRequestStatus(mr.iid))
           .flatMap {
-            case mr if (mr.mergeStatus === GitlabMergeStatus.CanBeMerged) =>
+            case mr if (mr.mergeStatus === GitLabMergeStatus.CanBeMerged) =>
               for {
                 _ <- logger.info(s"Setting ${mr.webUrl} to merge when pipeline succeeds")
                 res <-

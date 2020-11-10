@@ -74,7 +74,7 @@ class VCSExtraAlgTest extends AnyFunSuite with Matchers {
     SupportedVCS.Bitbucket -> uri"https://api.bitbucket.org/2.0/repositories/fthomas/base.g8/pullrequests/13",
     SupportedVCS.BitbucketServer -> uri"https://api.bitbucket.org/2.0/repositories/fthomas/base.g8/pullrequests/13",
     SupportedVCS.GitHub -> uri"https://github.com/scala-steward-org/scala-steward/pull/13",
-    SupportedVCS.Gitlab -> uri"https://gitlab.com/inkscape/inkscape/-/merge_requests/13"
+    SupportedVCS.GitLab -> uri"https://gitlab.com/inkscape/inkscape/-/merge_requests/13"
   )
   validExtractPRTestCases.foreach { case (vcs, uri) =>
     test(s"valid - extractPRIdFromUrls for ${vcs.asString}") {
@@ -87,7 +87,7 @@ class VCSExtraAlgTest extends AnyFunSuite with Matchers {
     SupportedVCS.Bitbucket -> uri"https://api.bitbucket.org/2.0/repositories/fthomas/base.g8/pullrequests/",
     SupportedVCS.BitbucketServer -> uri"https://api.bitbucket.org/2.0/repositories/fthomas/base.g8/pullrequests/",
     SupportedVCS.GitHub -> uri"https://github.com/scala-steward-org/scala-steward/pull/",
-    SupportedVCS.Gitlab -> uri"https://gitlab.com/inkscape/inkscape/-/merge_requests/"
+    SupportedVCS.GitLab -> uri"https://gitlab.com/inkscape/inkscape/-/merge_requests/"
   )
   invalidExtractPRTestCases.foreach { case (vcs, uri) =>
     test(s"invalid - extractPRIdFromUrls for ${vcs.asString}") {
