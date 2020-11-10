@@ -1,4 +1,4 @@
-package org.scalasteward.core.vcs.github.http4s
+package org.scalasteward.core.vcs.github
 
 import cats.Id
 import org.http4s.headers.{Accept, Authorization}

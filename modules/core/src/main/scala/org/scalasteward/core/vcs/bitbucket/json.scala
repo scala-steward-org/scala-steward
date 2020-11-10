@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.vcs.bitbucket.http4s
+package org.scalasteward.core.vcs.bitbucket
 
 import io.circe.Decoder
 import org.http4s.Uri
@@ -22,7 +22,7 @@ import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.util.uri.uriDecoder
 import org.scalasteward.core.vcs.data.{BranchOut, CommitOut, PullRequestOut, PullRequestState}
 
-private[http4s] object json {
+private[bitbucket] object json {
   implicit val branchOutDecoder: Decoder[BranchOut] = Decoder.instance { c =>
     for {
       branch <- c.downField("name").as[Branch]

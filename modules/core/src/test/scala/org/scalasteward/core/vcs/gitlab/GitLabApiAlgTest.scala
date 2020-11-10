@@ -1,12 +1,15 @@
-package org.scalasteward.core.vcs.gitlab.http4s
+package org.scalasteward.core.vcs.gitlab
 
 import cats.effect.IO
+import cats.implicits._
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.circe.literal._
 import io.circe.parser._
 import org.http4s.HttpRoutes
 import org.http4s.circe._
 import org.http4s.client.Client
 import org.http4s.dsl.io._
+import org.http4s.headers.Allow
 import org.http4s.implicits._
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.Update
@@ -18,12 +21,9 @@ import org.scalasteward.core.util.{HttpJsonClient, Nel}
 import org.scalasteward.core.vcs.data._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-import org.http4s.headers.Allow
-import cats.implicits._
 
-class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
-  import GitlabJsonCodec._
+class GitLabApiAlgTest extends AnyFunSuite with Matchers {
+  import org.scalasteward.core.vcs.gitlab.GitlabJsonCodec._
 
   object MergeWhenPipelineSucceedsMatcher
       extends QueryParamDecoderMatcher[Boolean]("merge_when_pipeline_succeeds")
@@ -74,7 +74,7 @@ class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
   implicit val httpJsonClient: HttpJsonClient[IO] = new HttpJsonClient[IO]
   implicit val logger = Slf4jLogger.getLogger[IO]
   val gitlabApiAlg =
-    new Http4sGitLabApiAlg[IO](
+    new GitLabApiAlg[IO](
       config.vcsApiHost,
       user,
       _ => IO.pure,
@@ -109,7 +109,7 @@ class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
 
   test("createPullRequest -- no fork") {
     val gitlabApiAlgNoFork =
-      new Http4sGitLabApiAlg[IO](
+      new GitLabApiAlg[IO](
         config.vcsApiHost,
         user,
         _ => IO.pure,
@@ -147,7 +147,7 @@ class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
 
   test("createPullRequest -- auto merge") {
     val gitlabApiAlgNoFork =
-      new Http4sGitLabApiAlg[IO](
+      new GitLabApiAlg[IO](
         config.vcsApiHost,
         user,
         _ => IO.pure,
@@ -180,7 +180,7 @@ class Http4sGitlabApiAlgTest extends AnyFunSuite with Matchers {
       new HttpJsonClient[IO]()(implicitly, errorClient)
 
     val gitlabApiAlgNoFork =
-      new Http4sGitLabApiAlg[IO](
+      new GitLabApiAlg[IO](
         config.vcsApiHost,
         user,
         _ => IO.pure,

@@ -14,20 +14,19 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.vcs.bitbucketserver.http4s
+package org.scalasteward.core.vcs.bitbucketserver
 
 import cats.syntax.all._
 import org.http4s.{Request, Uri}
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.{HttpJsonClient, MonadThrow}
 import org.scalasteward.core.vcs.VCSApiAlg
-import org.scalasteward.core.vcs.bitbucketserver.http4s.Json.{Reviewer, User}
+import Json.{Reviewer, User}
 import org.scalasteward.core.vcs.data.PullRequestState.Open
 import org.scalasteward.core.vcs.data._
 
-/** https://docs.atlassian.com/bitbucket-server/rest/6.6.1/bitbucket-rest.html
-  */
-class Http4sBitbucketServerApiAlg[F[_]](
+/** https://docs.atlassian.com/bitbucket-server/rest/6.6.1/bitbucket-rest.html */
+class BitbucketServerApiAlg[F[_]](
     bitbucketApiHost: Uri,
     modify: Repo => Request[F] => F[Request[F]],
     useReviewers: Boolean

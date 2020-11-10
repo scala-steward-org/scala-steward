@@ -1,4 +1,4 @@
-package org.scalasteward.core.vcs.bitbucket.http4s
+package org.scalasteward.core.vcs.bitbucket
 
 import io.circe.Json
 import org.scalasteward.core.vcs.data.PullRequestState

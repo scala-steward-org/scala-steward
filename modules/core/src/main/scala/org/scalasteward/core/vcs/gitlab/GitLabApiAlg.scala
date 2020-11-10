@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.vcs.gitlab.http4s
+package org.scalasteward.core.vcs.gitlab
 
 import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
@@ -27,10 +27,9 @@ import org.scalasteward.core.util.uri.uriDecoder
 import org.scalasteward.core.util.{HttpJsonClient, MonadThrow, UnexpectedResponse}
 import org.scalasteward.core.vcs.VCSApiAlg
 import org.scalasteward.core.vcs.data._
-import org.scalasteward.core.vcs.gitlab._
 
-final private[http4s] case class ForkPayload(id: String, namespace: String)
-final private[http4s] case class MergeRequestPayload(
+final private[gitlab] case class ForkPayload(id: String, namespace: String)
+final private[gitlab] case class MergeRequestPayload(
     id: String,
     title: String,
     description: String,
@@ -39,12 +38,12 @@ final private[http4s] case class MergeRequestPayload(
     target_branch: Branch
 )
 
-private[http4s] object MergeRequestPayload {
+private[gitlab] object MergeRequestPayload {
   def apply(id: String, projectId: Long, data: NewPullRequestData): MergeRequestPayload =
     MergeRequestPayload(id, data.title, data.body, projectId, data.head, data.base)
 }
 
-final private[http4s] case class MergeRequestOut(
+final private[gitlab] case class MergeRequestOut(
     webUrl: Uri,
     state: PullRequestState,
     title: String,
@@ -54,18 +53,18 @@ final private[http4s] case class MergeRequestOut(
   val pullRequestOut: PullRequestOut = PullRequestOut(webUrl, state, title)
 }
 
-final private[http4s] case class CommitId(id: Sha1) {
+final private[gitlab] case class CommitId(id: Sha1) {
   val commitOut: CommitOut = CommitOut(id)
 }
-final private[http4s] case class ProjectId(id: Long)
+final private[gitlab] case class ProjectId(id: Long)
 
-private[http4s] object GitlabMergeStatus {
+private[gitlab] object GitlabMergeStatus {
   val CanBeMerged = "can_be_merged"
   val CannotBeMerged = "cannot_be_merged"
   val Checking = "checking"
 }
 
-private[http4s] object GitlabJsonCodec {
+private[gitlab] object GitlabJsonCodec {
   // prevent IntelliJ from removing the import of uriDecoder
   locally(uriDecoder)
 
@@ -117,7 +116,7 @@ private[http4s] object GitlabJsonCodec {
   implicit val branchOutDecoder: Decoder[BranchOut] = deriveDecoder[BranchOut]
 }
 
-class Http4sGitLabApiAlg[F[_]](
+class GitLabApiAlg[F[_]](
     gitlabApiHost: Uri,
     user: AuthenticatedUser,
     modify: Repo => Request[F] => F[Request[F]],

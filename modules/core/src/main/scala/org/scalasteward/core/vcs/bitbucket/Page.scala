@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.vcs.bitbucket.http4s
+package org.scalasteward.core.vcs.bitbucket
 
-import cats.Applicative
-import cats.syntax.all._
-import org.http4s.headers.Authorization
-import org.http4s.{BasicCredentials, Request}
-import org.scalasteward.core.vcs.data.AuthenticatedUser
+import io.circe.Decoder
 
-object authentication {
-  def addCredentials[F[_]: Applicative](user: AuthenticatedUser): Request[F] => F[Request[F]] =
-    _.putHeaders(Authorization(BasicCredentials(user.login, user.accessToken))).pure[F]
+final private[bitbucket] case class Page[A](values: List[A])
+
+private[bitbucket] object Page {
+  implicit def pageDecoder[A: Decoder]: Decoder[Page[A]] =
+    Decoder.instance { c =>
+      c.downField("values").as[List[A]].map(Page(_))
+    }
 }
