@@ -189,11 +189,12 @@ final class NurtureAlg[F[_]](config: Config)(implicit
   def createPullRequest(data: UpdateData): F[Unit] =
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
+      dependenciesWithNextVersion =
+        data.update.dependencies.map(_.copy(version = data.update.nextVersion)).toList
       maybeRepoCache <- repoCacheRepository.findCache(data.repo)
       resolvers = maybeRepoCache.map(_.dependencyInfos.flatMap(_.resolvers)).getOrElse(List.empty)
-      artifactIdToUrl <- coursierAlg.getArtifactIdUrlMapping(
-        Scope(data.update.dependencies.toList, resolvers)
-      )
+      artifactIdToUrl <-
+        coursierAlg.getArtifactIdUrlMapping(Scope(dependenciesWithNextVersion, resolvers))
       existingArtifactUrlsList <- artifactIdToUrl.toList.filterA(a => existenceClient.exists(a._2))
       existingArtifactUrlsMap = existingArtifactUrlsList.toMap
       releaseRelatedUrls <-
