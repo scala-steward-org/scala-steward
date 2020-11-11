@@ -174,7 +174,7 @@ jobs:
           tar xf targets.tar
           rm targets.tar
 
-      - uses: olafurpg/setup-gpg@v2
+      - uses: olafurpg/setup-gpg@v3
 
       - name: Publish JARs
         env:
