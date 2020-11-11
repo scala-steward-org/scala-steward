@@ -2,7 +2,7 @@ package org.scalasteward.core.edit
 
 import better.files.File
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.Update
+import org.scalasteward.core.data.{GroupId, Update}
 import org.scalasteward.core.mock.MockContext.{config, editAlg}
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.repoconfig.UpdatesConfig
@@ -139,17 +139,6 @@ class EditAlgTest extends AnyFunSuite with Matchers {
     )
   }
 
-  def runApplyUpdate(update: Update, files: Map[String, String]): Map[String, String] = {
-    val repoDir = File.temp / "ws/owner/repo"
-    val filesInRepoDir = files.map { case (file, content) => repoDir / file -> content }
-    editAlg
-      .applyUpdate(Repo("owner", "repo"), update, UpdatesConfig.defaultFileExtensions)
-      .runS(MockState.empty.addFiles(filesInRepoDir))
-      .map(_.files)
-      .unsafeRunSync()
-      .map { case (file, content) => file.toString.replace(repoDir.toString + "/", "") -> content }
-  }
-
   test("reproduce https://github.com/circe/circe-config/pull/40") {
     val update = Update.Single("com.typesafe" % "config" % "1.3.3", Nel.of("1.3.4"))
     val original = Map(
@@ -190,5 +179,64 @@ class EditAlgTest extends AnyFunSuite with Matchers {
       "project/plugins.sbt" -> """val scalaJsVersion = Option(System.getenv("SCALA_JS_VERSION")).getOrElse("1.1.1")"""
     )
     runApplyUpdate(update, original) shouldBe expected
+  }
+
+  test("test updating group id and version") {
+    val update = Update.Single(
+      crossDependency = "com.github.mpilquist" % "simulacrum" % "0.19.0",
+      newerVersions = Nel.of("1.0.0"),
+      newerGroupId = Some(GroupId("org.typelevel")),
+      newerArtifactId = Some("simulacrum")
+    )
+    val original = Map(
+      "build.sbt" ->
+        """
+          |val simulacrum = "0.19.0"
+          |"com.github.mpilquist" %% "simulacrum" % simulacrum
+          |"""".stripMargin
+    )
+    val expected = Map(
+      "build.sbt" ->
+        """
+          |val simulacrum = "1.0.0"
+          |"org.typelevel" %% "simulacrum" % simulacrum
+          |"""".stripMargin // the version should have been updated here
+    )
+    runApplyUpdate(update, original) shouldBe expected
+  }
+
+  test("test updating artifact id and version") {
+    val update = Update.Single(
+      crossDependency = "com.test" % "artifact" % "1.0.0",
+      newerVersions = Nel.of("2.0.0"),
+      newerGroupId = Some(GroupId("com.test")),
+      newerArtifactId = Some("newer-artifact")
+    )
+    val original = Map(
+      "Dependencies.scala" ->
+        """
+          |private val artifactVersion = "1.0.0"
+          |val test = "com.test" %% "artifact" % testVersion 
+          |"""".stripMargin
+    )
+    val expected = Map(
+      "Dependencies.scala" ->
+        """
+          |private val artifactVersion = "2.0.0"
+          |val test = "com.test" %% "newer-artifact" % testVersion 
+          |"""".stripMargin
+    )
+    runApplyUpdate(update, original) shouldBe expected
+  }
+
+  private def runApplyUpdate(update: Update, files: Map[String, String]): Map[String, String] = {
+    val repoDir = File.temp / "ws/owner/repo"
+    val filesInRepoDir = files.map { case (file, content) => repoDir / file -> content }
+    editAlg
+      .applyUpdate(Repo("owner", "repo"), update, UpdatesConfig.defaultFileExtensions)
+      .runS(MockState.empty.addFiles(filesInRepoDir))
+      .map(_.files)
+      .unsafeRunSync()
+      .map { case (file, content) => file.toString.replace(repoDir.toString + "/", "") -> content }
   }
 }

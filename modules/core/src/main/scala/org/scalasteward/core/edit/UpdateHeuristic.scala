@@ -57,7 +57,7 @@ object UpdateHeuristic {
       case s @ Update.Single(_, _, Some(newerGroupId), Some(newerArtifactId)) =>
         val currentGroupId = Regex.quote(s.groupId.value)
         val currentArtifactId = Regex.quote(s.artifactId.name)
-        val regex = s"""(?i)(.*)${currentGroupId}(.*)${currentArtifactId}""".r
+        val regex = s"""(?i)(.*)$currentGroupId(.*)$currentArtifactId""".r
         replaceSomeInAllowedParts(
           regex,
           target,

@@ -7,6 +7,7 @@ import org.scalasteward.core.application.Cli.ParseResult._
 import org.scalatest.EitherValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+
 import scala.concurrent.duration._
 
 class CliTest extends AnyFunSuite with Matchers with EitherValues {
@@ -24,7 +25,9 @@ class CliTest extends AnyFunSuite with Matchers with EitherValues {
         List("--ignore-opts-files"),
         List("--env-var", "g=h"),
         List("--env-var", "i=j"),
-        List("--process-timeout", "30min")
+        List("--process-timeout", "30min"),
+        List("--scalafix-migrations", "/opt/scala-steward/extra-scalafix-migrations.conf"),
+        List("--artifact-migrations", "/opt/scala-steward/extra-artifact-migrations.conf")
       ).flatten
     ) shouldBe Success(
       Cli.Args(
@@ -38,7 +41,9 @@ class CliTest extends AnyFunSuite with Matchers with EitherValues {
         gitAskPass = File("f"),
         ignoreOptsFiles = true,
         envVar = List(EnvVar("g", "h"), EnvVar("i", "j")),
-        processTimeout = 30.minutes
+        processTimeout = 30.minutes,
+        scalafixMigrations = List(uri"/opt/scala-steward/extra-scalafix-migrations.conf"),
+        artifactMigrations = Some(File("/opt/scala-steward/extra-artifact-migrations.conf"))
       )
     )
   }
