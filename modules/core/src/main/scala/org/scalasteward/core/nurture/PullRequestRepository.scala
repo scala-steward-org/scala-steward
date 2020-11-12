@@ -24,7 +24,7 @@ import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.persistence.KeyValueStore
 import org.scalasteward.core.update.UpdateAlg
 import org.scalasteward.core.util.{DateTimeAlg, Timestamp}
-import org.scalasteward.core.vcs.data.{PullRequestState, Repo}
+import org.scalasteward.core.vcs.data.{PullRequestNumber, PullRequestState, Repo}
 
 final class PullRequestRepository[F[_]](
     kvStore: KeyValueStore[F, Repo, Map[Uri, PullRequestData]]
@@ -48,7 +48,8 @@ final class PullRequestRepository[F[_]](
       url: Uri,
       baseSha1: Sha1,
       update: Update,
-      state: PullRequestState
+      state: PullRequestState,
+      number: PullRequestNumber
   ): F[Unit] =
     kvStore
       .modifyF(repo) { maybePullRequests =>
@@ -59,7 +60,7 @@ final class PullRequestRepository[F[_]](
             pullRequests.updated(url, data).some.pure[F]
           case None =>
             dateTimeAlg.currentTimestamp.map { now =>
-              val data = PullRequestData(baseSha1, update, state, now)
+              val data = PullRequestData(baseSha1, update, state, now, Some(number))
               pullRequests.updated(url, data).some
             }
         }

@@ -20,7 +20,7 @@ import io.circe.Decoder
 import org.http4s.Uri
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.util.uri.uriDecoder
-import org.scalasteward.core.vcs.data.{BranchOut, CommitOut, PullRequestOut, PullRequestState}
+import org.scalasteward.core.vcs.data._
 
 private[bitbucket] object json {
   implicit val branchOutDecoder: Decoder[BranchOut] = Decoder.instance { c =>
@@ -39,9 +39,10 @@ private[bitbucket] object json {
 
   implicit val pullRequestOutDecoder: Decoder[PullRequestOut] = Decoder.instance { c =>
     for {
+      id <- c.downField("id").as[PullRequestNumber]
       title <- c.downField("title").as[String]
       state <- c.downField("state").as[PullRequestState]
       html_url <- c.downField("links").downField("self").downField("href").as[Uri]
-    } yield (PullRequestOut(html_url, state, title))
+    } yield PullRequestOut(html_url, state, id, title)
   }
 }

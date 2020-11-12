@@ -115,7 +115,8 @@ final class NurtureAlg[F[_]](config: Config)(implicit
           pr.html_url,
           data.baseSha1,
           data.update,
-          pr.state
+          pr.state,
+          pr.number
         )
       }
     } yield result
@@ -216,7 +217,8 @@ final class NurtureAlg[F[_]](config: Config)(implicit
         pr.html_url,
         data.baseSha1,
         data.update,
-        pr.state
+        pr.state,
+        pr.number
       )
       _ <- logger.info(s"Created PR ${pr.html_url}")
     } yield ()

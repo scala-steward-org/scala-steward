@@ -41,6 +41,7 @@ class GitHubApiAlgTest extends AnyFunSuite with Matchers {
           json"""[{
             "html_url": "https://github.com/octocat/Hello-World/pull/1347",
             "state": "open",
+            "number": 1347,
             "title": "new-feature"
           }]"""
         )
@@ -50,6 +51,7 @@ class GitHubApiAlgTest extends AnyFunSuite with Matchers {
           json"""{
             "html_url": "https://github.com/octocat/Hello-World/pull/1347",
             "state": "closed",
+            "number": 1347,
             "title": "new-feature"
           }"""
         )

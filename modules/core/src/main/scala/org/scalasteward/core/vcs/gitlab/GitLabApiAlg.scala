@@ -50,7 +50,7 @@ final private[gitlab] case class MergeRequestOut(
     iid: Int,
     mergeStatus: String
 ) {
-  val pullRequestOut: PullRequestOut = PullRequestOut(webUrl, state, title)
+  val pullRequestOut: PullRequestOut = PullRequestOut(webUrl, state, PullRequestNumber(iid), title)
 }
 
 final private[gitlab] case class CommitId(id: Sha1) {

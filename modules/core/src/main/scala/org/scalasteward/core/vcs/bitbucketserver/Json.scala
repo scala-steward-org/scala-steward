@@ -21,7 +21,7 @@ import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder}
 import org.http4s.Uri
 import org.scalasteward.core.git.Sha1
-import org.scalasteward.core.vcs.data.PullRequestState
+import org.scalasteward.core.vcs.data.{PullRequestNumber, PullRequestOut, PullRequestState}
 
 object Json {
   case class Page[A](values: List[A])
@@ -34,7 +34,10 @@ object Json {
 
   case class Link(href: Uri, name: Option[String])
 
-  case class PR(title: String, state: PullRequestState, links: Links)
+  case class PR(id: PullRequestNumber, title: String, state: PullRequestState, links: Links) {
+    def toPullRequestOut: PullRequestOut =
+      PullRequestOut(links("self").head.href, state, id, title)
+  }
 
   case class NewPR(
       title: String,

@@ -9,7 +9,7 @@ import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.mock.MockContext.{config, pullRequestRepository}
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.util.Nel
-import org.scalasteward.core.vcs.data.{PullRequestState, Repo}
+import org.scalasteward.core.vcs.data.{PullRequestNumber, PullRequestState, Repo}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
@@ -17,12 +17,19 @@ class PullRequestRepositoryTest extends AnyFunSuite with Matchers {
   private def checkCommands(state: MockState, commands: Vector[List[String]]) =
     state.copy(files = Map.empty) shouldBe MockState.empty.copy(commands = commands)
 
-  withStoreData { (repo, url, sha1) =>
+  withStoreData { (repo, url, sha1, number) =>
     test("createOrUpdate >> findPullRequest >> lastPullRequestCreatedAt") {
       val update = TestData.Updates.PortableScala
 
       val p = for {
-        _ <- pullRequestRepository.createOrUpdate(repo, url, sha1, update, PullRequestState.Open)
+        _ <- pullRequestRepository.createOrUpdate(
+          repo,
+          url,
+          sha1,
+          update,
+          PullRequestState.Open,
+          number
+        )
         result <- pullRequestRepository.findPullRequest(repo, update.crossDependency, "1.0.0")
         createdAt <- pullRequestRepository.lastPullRequestCreatedAt(repo)
       } yield (result, createdAt)
@@ -52,7 +59,14 @@ class PullRequestRepositoryTest extends AnyFunSuite with Matchers {
           repo,
           nextUpdate
         )
-        _ <- pullRequestRepository.createOrUpdate(repo, url, sha1, update, PullRequestState.Open)
+        _ <- pullRequestRepository.createOrUpdate(
+          repo,
+          url,
+          sha1,
+          update,
+          PullRequestState.Open,
+          number
+        )
         result <- pullRequestRepository.getObsoleteOpenPullRequests(
           repo,
           nextUpdate
@@ -93,7 +107,14 @@ class PullRequestRepositoryTest extends AnyFunSuite with Matchers {
           repo,
           update
         )
-        _ <- pullRequestRepository.createOrUpdate(repo, url, sha1, update, PullRequestState.Open)
+        _ <- pullRequestRepository.createOrUpdate(
+          repo,
+          url,
+          sha1,
+          update,
+          PullRequestState.Open,
+          number
+        )
         result <- pullRequestRepository.getObsoleteOpenPullRequests(
           repo,
           update
@@ -129,7 +150,8 @@ class PullRequestRepositoryTest extends AnyFunSuite with Matchers {
           url,
           sha1,
           updateInStore,
-          PullRequestState.Open
+          PullRequestState.Open,
+          number
         )
         result <- pullRequestRepository.getObsoleteOpenPullRequests(
           repo,
@@ -153,12 +175,13 @@ class PullRequestRepositoryTest extends AnyFunSuite with Matchers {
     }
   }
 
-  private def withStoreData(f: (Repo, Uri, Sha1) => Unit): Unit = {
+  private def withStoreData(f: (Repo, Uri, Sha1, PullRequestNumber) => Unit): Unit = {
     val repo = Repo("typelevel", "cats")
     val url = uri"https://github.com/typelevel/cats/pull/3291"
     val sha1 = Sha1(HexString("a2ced5793c2832ada8c14ba5c77e51c4bc9656a8"))
+    val number = PullRequestNumber(3291)
 
-    f(repo, url, sha1)
+    f(repo, url, sha1, number)
   }
 }
 

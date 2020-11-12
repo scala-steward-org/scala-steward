@@ -14,24 +14,14 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.nurture
+package org.scalasteward.core.vcs.data
 
 import io.circe.Codec
-import io.circe.generic.semiauto._
-import org.scalasteward.core.data.Update
-import org.scalasteward.core.git.Sha1
-import org.scalasteward.core.util.Timestamp
-import org.scalasteward.core.vcs.data.{PullRequestNumber, PullRequestState}
+import io.circe.generic.extras.semiauto.deriveUnwrappedCodec
 
-final case class PullRequestData(
-    baseSha1: Sha1,
-    update: Update,
-    state: PullRequestState,
-    entryCreatedAt: Timestamp,
-    number: Option[PullRequestNumber]
-)
+final case class PullRequestNumber(value: Int)
 
-object PullRequestData {
-  implicit val pullRequestDataCodec: Codec[PullRequestData] =
-    deriveCodec
+object PullRequestNumber {
+  implicit val pullRequestNumberCodec: Codec[PullRequestNumber] =
+    deriveUnwrappedCodec
 }
