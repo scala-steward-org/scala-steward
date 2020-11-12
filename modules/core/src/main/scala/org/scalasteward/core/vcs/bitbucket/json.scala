@@ -39,10 +39,10 @@ private[bitbucket] object json {
 
   implicit val pullRequestOutDecoder: Decoder[PullRequestOut] = Decoder.instance { c =>
     for {
-      id <- c.downField("id").as[Int]
+      id <- c.downField("id").as[PullRequestNumber]
       title <- c.downField("title").as[String]
       state <- c.downField("state").as[PullRequestState]
       html_url <- c.downField("links").downField("self").downField("href").as[Uri]
-    } yield PullRequestOut(html_url, state, PullRequestNumber(id), title)
+    } yield PullRequestOut(html_url, state, id, title)
   }
 }
