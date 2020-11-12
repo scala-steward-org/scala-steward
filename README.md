@@ -57,6 +57,7 @@ The [`docs`](docs) directory contains documentation about these topics:
 * [Scalafix Migrations](docs/scalafix-migrations.md)
 * [Frequently Asked Questions](docs/faq.md)
 * [Repository-specific configuration](docs/repo-specific-configuration.md)
+* [Artifact Migrations](docs/artifact-migrations.md)
 
 ## Contributors
 
