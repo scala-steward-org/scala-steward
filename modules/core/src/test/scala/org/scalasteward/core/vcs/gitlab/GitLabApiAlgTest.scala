@@ -103,6 +103,7 @@ class GitLabApiAlgTest extends AnyFunSuite with Matchers {
     prOut shouldBe PullRequestOut(
       uri"https://gitlab.com/foo/bar/merge_requests/7115",
       PullRequestState.Open,
+      PullRequestNumber(7115),
       "title"
     )
   }
@@ -124,6 +125,7 @@ class GitLabApiAlgTest extends AnyFunSuite with Matchers {
     prOut shouldBe PullRequestOut(
       uri"https://gitlab.com/foo/bar/merge_requests/150",
       PullRequestState.Open,
+      PullRequestNumber(150),
       "title"
     )
   }
@@ -141,6 +143,7 @@ class GitLabApiAlgTest extends AnyFunSuite with Matchers {
     prOut shouldBe PullRequestOut(
       uri"https://gitlab.com/foo/bar/merge_requests/7115",
       PullRequestState.Closed,
+      PullRequestNumber(7115),
       "title"
     )
   }
@@ -163,6 +166,7 @@ class GitLabApiAlgTest extends AnyFunSuite with Matchers {
     prOut shouldBe PullRequestOut(
       uri"https://gitlab.com/foo/bar/merge_requests/150",
       PullRequestState.Open,
+      PullRequestNumber(150),
       "title"
     )
   }
@@ -196,6 +200,7 @@ class GitLabApiAlgTest extends AnyFunSuite with Matchers {
     prOut shouldBe PullRequestOut(
       uri"https://gitlab.com/foo/bar/merge_requests/150",
       PullRequestState.Open,
+      PullRequestNumber(150),
       "title"
     )
   }

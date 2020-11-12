@@ -14,6 +14,7 @@ class PullRequestOutTest extends AnyFunSuite with Matchers {
         PullRequestOut(
           uri"https://github.com/octocat/Hello-World/pull/1347",
           Open,
+          PullRequestNumber(1347),
           "new-feature"
         )
       )
