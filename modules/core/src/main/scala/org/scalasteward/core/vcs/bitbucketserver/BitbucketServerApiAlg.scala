@@ -93,9 +93,9 @@ class BitbucketServerApiAlg[F[_]](
 
   def ni(name: String): Nothing = throw new NotImplementedError(name)
 
-  override def closePullRequest(repo: Repo, id: Int): F[PullRequestOut] =
+  override def closePullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut] =
     client.putWithBody[PullRequestOut, UpdateState](
-      url.pullRequest(repo, id),
+      url.pullRequest(repo, number),
       UpdateState(PullRequestState.Closed),
       modify(repo)
     )
@@ -110,7 +110,8 @@ final class StashUrls(base: Uri) {
 
   def pullRequests(r: Repo): Uri = repo(r) / "pull-requests"
 
-  def pullRequest(r: Repo, id: Int): Uri = repo(r) / "pull-requests" / id.toString
+  def pullRequest(r: Repo, number: PullRequestNumber): Uri =
+    repo(r) / "pull-requests" / number.toString
 
   def reviewers(repo: Repo): Uri =
     reviewerApi / "projects" / repo.owner / "repos" / repo.repo / "conditions"

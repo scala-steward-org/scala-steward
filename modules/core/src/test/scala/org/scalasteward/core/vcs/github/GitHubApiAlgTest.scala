@@ -129,7 +129,7 @@ class GitHubApiAlgTest extends AnyFunSuite with Matchers {
   }
 
   test("closePullRequest") {
-    val prOut = gitHubApiAlg.closePullRequest(repo, 1347).unsafeRunSync()
+    val prOut = gitHubApiAlg.closePullRequest(repo, PullRequestNumber(1347)).unsafeRunSync()
     prOut.state shouldBe PullRequestState.Closed
   }
 }

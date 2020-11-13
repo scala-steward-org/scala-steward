@@ -51,9 +51,9 @@ final class GitHubApiAlg[F[_]](
     client.get(url.listPullRequests(repo, head, base), modify(repo))
 
   /** https://developer.github.com/v3/pulls/#update-a-pull-request */
-  override def closePullRequest(repo: Repo, id: Int): F[PullRequestOut] =
+  override def closePullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut] =
     client.patchWithBody[PullRequestOut, UpdateState](
-      url.pull(repo, id),
+      url.pull(repo, number),
       UpdateState(PullRequestState.Closed),
       modify(repo)
     )

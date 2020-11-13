@@ -47,10 +47,10 @@ final private[gitlab] case class MergeRequestOut(
     webUrl: Uri,
     state: PullRequestState,
     title: String,
-    iid: Int,
+    iid: PullRequestNumber,
     mergeStatus: String
 ) {
-  val pullRequestOut: PullRequestOut = PullRequestOut(webUrl, state, PullRequestNumber(iid), title)
+  val pullRequestOut: PullRequestOut = PullRequestOut(webUrl, state, iid, title)
 }
 
 final private[gitlab] case class CommitId(id: Sha1) {
@@ -95,7 +95,7 @@ private[gitlab] object GitLabJsonCodec {
       webUrl <- c.downField("web_url").as[Uri]
       state <- c.downField("state").as[PullRequestState]
       title <- c.downField("title").as[String]
-      iid <- c.downField("iid").as[Int]
+      iid <- c.downField("iid").as[PullRequestNumber]
       mergeStatus <- c.downField("merge_status").as[String]
     } yield MergeRequestOut(webUrl, state, title, iid, mergeStatus)
   }
@@ -159,12 +159,15 @@ class GitLabApiAlg[F[_]](
       )
     } yield res
 
-    def waitForMergeRequestStatus(internalId: Int, retries: Int = 10): F[MergeRequestOut] =
+    def waitForMergeRequestStatus(
+        number: PullRequestNumber,
+        retries: Int = 10
+    ): F[MergeRequestOut] =
       client
-        .get[MergeRequestOut](url.existingMergeRequest(repo, internalId), modify(repo))
+        .get[MergeRequestOut](url.existingMergeRequest(repo, number), modify(repo))
         .flatMap {
           case mr if (mr.mergeStatus =!= GitLabMergeStatus.Checking) => F.pure(mr)
-          case _ if (retries > 0)                                    => waitForMergeRequestStatus(internalId, retries - 1)
+          case _ if (retries > 0)                                    => waitForMergeRequestStatus(number, retries - 1)
           case other                                                 => F.pure(other)
         }
 
@@ -199,10 +202,10 @@ class GitLabApiAlg[F[_]](
     updatedMergeRequest.map(_.pullRequestOut)
   }
 
-  def closePullRequest(repo: Repo, id: Int): F[PullRequestOut] =
+  def closePullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut] =
     client
       .putWithBody[MergeRequestOut, UpdateState](
-        url.existingMergeRequest(repo, id),
+        url.existingMergeRequest(repo, number),
         UpdateState(PullRequestState.Closed),
         modify(repo)
       )
