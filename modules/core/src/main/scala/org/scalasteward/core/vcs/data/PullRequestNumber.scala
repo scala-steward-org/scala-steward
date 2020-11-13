@@ -19,7 +19,9 @@ package org.scalasteward.core.vcs.data
 import io.circe.Codec
 import io.circe.generic.extras.semiauto.deriveUnwrappedCodec
 
-final case class PullRequestNumber(value: Int)
+final case class PullRequestNumber(value: Int) {
+  override def toString: String = value.toString
+}
 
 object PullRequestNumber {
   implicit val pullRequestNumberCodec: Codec[PullRequestNumber] =

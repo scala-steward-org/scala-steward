@@ -25,6 +25,7 @@ import org.scalasteward.core.persistence.KeyValueStore
 import org.scalasteward.core.update.UpdateAlg
 import org.scalasteward.core.util.{DateTimeAlg, Timestamp}
 import org.scalasteward.core.vcs.data.{PullRequestNumber, PullRequestState, Repo}
+import org.scalasteward.core.vcs
 
 final class PullRequestRepository[F[_]](
     kvStore: KeyValueStore[F, Repo, Map[Uri, PullRequestData]]
@@ -69,16 +70,19 @@ final class PullRequestRepository[F[_]](
 
   def getObsoleteOpenPullRequests(
       repo: Repo,
-      updateData: Update
-  ): F[List[(Uri, Update)]] =
+      update: Update
+  ): F[List[(PullRequestNumber, Uri, Update)]] =
     kvStore.get(repo).map {
-      _.getOrElse(Map.empty).collect {
-        case (url, data)
-            if data.update.withNewerVersions(updateData.newerVersions) === updateData &&
-              Version(data.update.nextVersion) < Version(updateData.nextVersion) &&
-              data.state === PullRequestState.Open =>
-          url -> data.update
-      }.toList
+      _.getOrElse(Map.empty)
+        .collect {
+          case (url, data)
+              if data.update.withNewerVersions(update.newerVersions) === update &&
+                Version(data.update.nextVersion) < Version(update.nextVersion) &&
+                data.state === PullRequestState.Open =>
+            data.number.orElse(vcs.extractPullRequestNumberFrom(url)).map((_, url, data.update))
+        }
+        .flatten
+        .toList
     }
 
   def findPullRequest(

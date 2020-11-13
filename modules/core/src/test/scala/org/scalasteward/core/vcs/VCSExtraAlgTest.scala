@@ -22,8 +22,8 @@ class VCSExtraAlgTest extends AnyFunSuite with Matchers {
       case _                                                            => NotFound()
     }
 
-  implicit val client = Client.fromHttpApp[IO](routes.orNotFound)
-  implicit val httpExistenceClient =
+  implicit val client: Client[IO] = Client.fromHttpApp[IO](routes.orNotFound)
+  implicit val httpExistenceClient: HttpExistenceClient[IO] =
     HttpExistenceClient.create[IO](MockContext.config).allocated.map(_._1).unsafeRunSync()
 
   val updateFoo = Update.Single("com.example" % "foo" % "0.1.0", Nel.of("0.2.0"))
@@ -68,31 +68,5 @@ class VCSExtraAlgTest extends AnyFunSuite with Matchers {
     githubOnPremVcsExtraAlg
       .getReleaseRelatedUrls(uri"https://github.on-prem.com/foo/buz", updateFoo)
       .unsafeRunSync() shouldBe List.empty
-  }
-
-  val validExtractPRTestCases = List(
-    SupportedVCS.Bitbucket -> uri"https://api.bitbucket.org/2.0/repositories/fthomas/base.g8/pullrequests/13",
-    SupportedVCS.BitbucketServer -> uri"https://api.bitbucket.org/2.0/repositories/fthomas/base.g8/pullrequests/13",
-    SupportedVCS.GitHub -> uri"https://github.com/scala-steward-org/scala-steward/pull/13",
-    SupportedVCS.GitLab -> uri"https://gitlab.com/inkscape/inkscape/-/merge_requests/13"
-  )
-  validExtractPRTestCases.foreach { case (vcs, uri) =>
-    test(s"valid - extractPRIdFromUrls for ${vcs.asString}") {
-      val vcsExtraAlg = VCSExtraAlg.create[IO](MockContext.config)
-      vcsExtraAlg.extractPRIdFromUrls(vcs, uri) shouldBe Some(13)
-    }
-  }
-
-  val invalidExtractPRTestCases = List(
-    SupportedVCS.Bitbucket -> uri"https://api.bitbucket.org/2.0/repositories/fthomas/base.g8/pullrequests/",
-    SupportedVCS.BitbucketServer -> uri"https://api.bitbucket.org/2.0/repositories/fthomas/base.g8/pullrequests/",
-    SupportedVCS.GitHub -> uri"https://github.com/scala-steward-org/scala-steward/pull/",
-    SupportedVCS.GitLab -> uri"https://gitlab.com/inkscape/inkscape/-/merge_requests/"
-  )
-  invalidExtractPRTestCases.foreach { case (vcs, uri) =>
-    test(s"invalid - extractPRIdFromUrls for ${vcs.asString}") {
-      val vcsExtraAlg = VCSExtraAlg.create[IO](MockContext.config)
-      vcsExtraAlg.extractPRIdFromUrls(vcs, uri) shouldBe None
-    }
   }
 }

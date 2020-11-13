@@ -18,7 +18,7 @@ package org.scalasteward.core.vcs.gitlab
 
 import org.http4s.Uri
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.vcs.data.Repo
+import org.scalasteward.core.vcs.data.{PullRequestNumber, Repo}
 
 class Url(apiHost: Uri) {
   def encodedProjectId(repo: Repo): String = s"${repo.owner}%2F${repo.repo}"
@@ -35,11 +35,11 @@ class Url(apiHost: Uri) {
   def mergeRequest(repo: Repo): Uri =
     repos(repo) / "merge_requests"
 
-  def existingMergeRequest(repo: Repo, internalId: Int): Uri =
-    mergeRequest(repo) / internalId.toString()
+  def existingMergeRequest(repo: Repo, number: PullRequestNumber): Uri =
+    mergeRequest(repo) / number.toString
 
-  def mergeWhenPiplineSucceeds(repo: Repo, internalId: Int) =
-    (existingMergeRequest(repo, internalId) / "merge")
+  def mergeWhenPiplineSucceeds(repo: Repo, number: PullRequestNumber): Uri =
+    (existingMergeRequest(repo, number) / "merge")
       .withQueryParam("merge_when_pipeline_succeeds", "true")
 
   def listMergeRequests(repo: Repo, source: String, target: String): Uri =

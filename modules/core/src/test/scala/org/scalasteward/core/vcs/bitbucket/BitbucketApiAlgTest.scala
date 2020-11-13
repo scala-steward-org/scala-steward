@@ -217,7 +217,7 @@ class BitbucketApiAlgTest extends AnyFunSuite with Matchers {
   }
 
   test("closePullRequest") {
-    val pr = bitbucketApiAlg.closePullRequest(repo, 1).unsafeRunSync()
+    val pr = bitbucketApiAlg.closePullRequest(repo, PullRequestNumber(1)).unsafeRunSync()
     pr shouldBe pr.copy(state = PullRequestState.Closed)
   }
 }

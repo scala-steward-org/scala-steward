@@ -55,10 +55,7 @@ class PullRequestRepositoryTest extends AnyFunSuite with Matchers {
       val nextUpdate = TestData.Updates.PortableScala.copy(newerVersions = Nel.of("1.0.1"))
 
       val p = for {
-        emptyResult <- pullRequestRepository.getObsoleteOpenPullRequests(
-          repo,
-          nextUpdate
-        )
+        emptyResult <- pullRequestRepository.getObsoleteOpenPullRequests(repo, nextUpdate)
         _ <- pullRequestRepository.createOrUpdate(
           repo,
           url,
@@ -67,23 +64,15 @@ class PullRequestRepositoryTest extends AnyFunSuite with Matchers {
           PullRequestState.Open,
           number
         )
-        result <- pullRequestRepository.getObsoleteOpenPullRequests(
-          repo,
-          nextUpdate
-        )
+        result <- pullRequestRepository.getObsoleteOpenPullRequests(repo, nextUpdate)
         _ <- pullRequestRepository.changeState(repo, url, PullRequestState.Closed)
-        closedResult <- pullRequestRepository.getObsoleteOpenPullRequests(
-          repo,
-          nextUpdate
-        )
+        closedResult <- pullRequestRepository.getObsoleteOpenPullRequests(repo, nextUpdate)
       } yield (emptyResult, result, closedResult)
       val (state, (emptyResult, result, closedResult)) = p.run(MockState.empty).unsafeRunSync()
       val store = config.workspace / "store/pull_requests/v2/typelevel/cats/pull_requests.json"
       emptyResult shouldBe List.empty
       closedResult shouldBe List.empty
-      result shouldBe List(
-        url -> TestData.Updates.PortableScala
-      )
+      result shouldBe List((number, url, TestData.Updates.PortableScala))
 
       checkCommands(
         state,
@@ -103,10 +92,7 @@ class PullRequestRepositoryTest extends AnyFunSuite with Matchers {
       val update = TestData.Updates.PortableScala
 
       val p = for {
-        emptyResult <- pullRequestRepository.getObsoleteOpenPullRequests(
-          repo,
-          update
-        )
+        emptyResult <- pullRequestRepository.getObsoleteOpenPullRequests(repo, update)
         _ <- pullRequestRepository.createOrUpdate(
           repo,
           url,
@@ -115,10 +101,7 @@ class PullRequestRepositoryTest extends AnyFunSuite with Matchers {
           PullRequestState.Open,
           number
         )
-        result <- pullRequestRepository.getObsoleteOpenPullRequests(
-          repo,
-          update
-        )
+        result <- pullRequestRepository.getObsoleteOpenPullRequests(repo, update)
       } yield (emptyResult, result)
       val (state, (emptyResult, result)) = p.run(MockState.empty).unsafeRunSync()
       val store = config.workspace / "store/pull_requests/v2/typelevel/cats/pull_requests.json"
@@ -141,10 +124,7 @@ class PullRequestRepositoryTest extends AnyFunSuite with Matchers {
       val newUpdate = TestData.Updates.CatsCore
 
       val p = for {
-        emptyResult <- pullRequestRepository.getObsoleteOpenPullRequests(
-          repo,
-          updateInStore
-        )
+        emptyResult <- pullRequestRepository.getObsoleteOpenPullRequests(repo, updateInStore)
         _ <- pullRequestRepository.createOrUpdate(
           repo,
           url,
@@ -153,10 +133,7 @@ class PullRequestRepositoryTest extends AnyFunSuite with Matchers {
           PullRequestState.Open,
           number
         )
-        result <- pullRequestRepository.getObsoleteOpenPullRequests(
-          repo,
-          newUpdate
-        )
+        result <- pullRequestRepository.getObsoleteOpenPullRequests(repo, newUpdate)
       } yield (emptyResult, result)
       val (state, (emptyResult, result)) = p.run(MockState.empty).unsafeRunSync()
       val store = config.workspace / "store/pull_requests/v2/typelevel/cats/pull_requests.json"

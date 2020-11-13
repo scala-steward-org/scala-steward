@@ -137,7 +137,7 @@ class GitLabApiAlgTest extends AnyFunSuite with Matchers {
   test("closePullRequest") {
     val prOut =
       gitlabApiAlg
-        .closePullRequest(Repo("foo", "bar"), 7115)
+        .closePullRequest(Repo("foo", "bar"), PullRequestNumber(7115))
         .unsafeRunSync()
 
     prOut shouldBe PullRequestOut(
