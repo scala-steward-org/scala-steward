@@ -316,7 +316,7 @@ runSteward := Def.taskDyn {
     Seq("--whitelist", s"$home/.mill"),
     Seq("--whitelist", s"$home/.sbt")
   ).flatten.mkString(" ", " ", "")
-  (core.jvm / Compile / run).toTask(args)
+  (core.jvm / run).toTask(args)
 }.value
 
 /// commands
