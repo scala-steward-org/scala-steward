@@ -14,6 +14,7 @@ import org.scalasteward.core.buildtool.mill.MillAlg
 import org.scalasteward.core.buildtool.sbt.SbtAlg
 import org.scalasteward.core.coursier.{CoursierAlg, VersionsCache}
 import org.scalasteward.core.edit.EditAlg
+import org.scalasteward.core.edit.hooks.HookExecutor
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io._
 import org.scalasteward.core.nurture.PullRequestRepository
@@ -62,6 +63,7 @@ object MockContext {
   implicit val coursierAlg: CoursierAlg[MockEff] = CoursierAlg.create
   implicit val dateTimeAlg: DateTimeAlg[MockEff] = DateTimeAlg.create
   implicit val gitAlg: GitAlg[MockEff] = GitAlg.create(config)
+  implicit val hookExecutor: HookExecutor[MockEff] = new HookExecutor[MockEff]
   implicit val user: AuthenticatedUser = AuthenticatedUser("scala-steward", "token")
   implicit val vcsRepoAlg: VCSRepoAlg[MockEff] = VCSRepoAlg.create(config)
   implicit val repoConfigAlg: RepoConfigAlg[MockEff] = new RepoConfigAlg[MockEff](config)
