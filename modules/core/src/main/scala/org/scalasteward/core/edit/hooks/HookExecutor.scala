@@ -35,24 +35,22 @@ final class HookExecutor[F[_]](implicit
   def execPostUpdateHooks(repo: Repo, repoConfig: RepoConfig, update: Update): F[List[Commit]] =
     HookExecutor.postUpdateHooks
       .filter { hook =>
+        hook.enabledByConfig(repoConfig) &&
         update.groupId === hook.groupId &&
         update.artifactIds.exists(_.name === hook.artifactId.name)
       }
-      .flatTraverse(execPostUpdateHook(repo, repoConfig, update, _))
+      .flatTraverse(execPostUpdateHook(repo, update, _))
 
   private def execPostUpdateHook(
       repo: Repo,
-      repoConfig: RepoConfig,
       update: Update,
       hook: PostUpdateHook
   ): F[List[Commit]] =
-    if (hook.enabledByConfig(repoConfig)) {
-      for {
-        repoDir <- workspaceAlg.repoDir(repo)
-        _ <- processAlg.execSandboxed(hook.command, repoDir)
-        maybeCommit <- gitAlg.commitAllIfDirty(repo, hook.commitMessage(update))
-      } yield maybeCommit.toList
-    } else F.pure(List.empty)
+    for {
+      repoDir <- workspaceAlg.repoDir(repo)
+      _ <- processAlg.execSandboxed(hook.command, repoDir)
+      maybeCommit <- gitAlg.commitAllIfDirty(repo, hook.commitMessage(update))
+    } yield maybeCommit.toList
 }
 
 object HookExecutor {
