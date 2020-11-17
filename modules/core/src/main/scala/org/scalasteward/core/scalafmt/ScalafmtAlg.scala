@@ -21,13 +21,10 @@ import cats.syntax.all._
 import cats.{Functor, Monad}
 import org.scalasteward.core.data.{Dependency, Version}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
 trait ScalafmtAlg[F[_]] {
-  def runScalafmt(repo: Repo, mainArtifactId: String): F[Unit]
-
   def getScalafmtVersion(repo: Repo): F[Option[Version]]
 
   def version: F[String]
@@ -40,7 +37,6 @@ object ScalafmtAlg {
   def create[F[_]](implicit
       fileAlg: FileAlg[F],
       workspaceAlg: WorkspaceAlg[F],
-      repoConfigAlg: RepoConfigAlg[F],
       processAlg: ProcessAlg[F],
       F: Monad[F]
   ): ScalafmtAlg[F] =
@@ -52,25 +48,9 @@ object ScalafmtAlg {
           fileContent <- fileAlg.readFile(scalafmtConfFile)
         } yield fileContent.flatMap(parseScalafmtConf)
 
-      override def runScalafmt(repo: Repo, mainArtifactId: String): F[Unit] =
-        for {
-          repoDir <- workspaceAlg.repoDir(repo)
-          shouldRunScalafmt <-
-            if (mainArtifactId === scalafmtArtifactId) {
-              repoConfigAlg
-                .readRepoConfigWithDefault(repo)
-                .map(_.scalafmt.runAfterUpgradingOrDefault)
-            } else {
-              F.pure(false)
-            }
-          _ <- F.whenA(shouldRunScalafmt) {
-            processAlg.exec(Nel.of("scalafmt", "--non-interactive"), repoDir)
-          }
-        } yield ()
-
       override def version: F[String] =
         workspaceAlg.rootDir
-          .flatMap(processAlg.exec(Nel.of("scalafmt", "--version"), _))
+          .flatMap(processAlg.exec(Nel.of(scalafmtBinary, "--version"), _))
           .map(_.mkString.trim)
     }
 }

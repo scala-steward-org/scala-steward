@@ -27,11 +27,11 @@ import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.ProcessResult.{Ignored, Updated}
 import org.scalasteward.core.data.{ProcessResult, Scope, Update}
 import org.scalasteward.core.edit.EditAlg
+import org.scalasteward.core.edit.hooks.HookExecutor
 import org.scalasteward.core.git.{Branch, Commit, GitAlg}
 import org.scalasteward.core.repocache.RepoCacheRepository
 import org.scalasteward.core.repoconfig.{PullRequestUpdateStrategy, RepoConfigAlg}
 import org.scalasteward.core.scalafix.MigrationAlg
-import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.util.{BracketThrow, HttpExistenceClient}
 import org.scalasteward.core.vcs.data._
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg}
@@ -39,19 +39,19 @@ import org.scalasteward.core.{git, util, vcs}
 import scala.util.control.NonFatal
 
 final class NurtureAlg[F[_]](config: Config)(implicit
-    editAlg: EditAlg[F],
-    repoConfigAlg: RepoConfigAlg[F],
-    gitAlg: GitAlg[F],
     coursierAlg: CoursierAlg[F],
-    vcsApiAlg: VCSApiAlg[F],
-    vcsRepoAlg: VCSRepoAlg[F],
-    vcsExtraAlg: VCSExtraAlg[F],
-    scalafmtAlg: ScalafmtAlg[F],
+    editAlg: EditAlg[F],
     existenceClient: HttpExistenceClient[F],
+    gitAlg: GitAlg[F],
+    hookExecutor: HookExecutor[F],
     logger: Logger[F],
     migrationAlg: MigrationAlg,
     pullRequestRepository: PullRequestRepository[F],
     repoCacheRepository: RepoCacheRepository[F],
+    repoConfigAlg: RepoConfigAlg[F],
+    vcsApiAlg: VCSApiAlg[F],
+    vcsExtraAlg: VCSExtraAlg[F],
+    vcsRepoAlg: VCSRepoAlg[F],
     streamCompiler: Stream.Compiler[F, F],
     F: BracketThrow[F]
 ) {
@@ -151,12 +151,12 @@ final class NurtureAlg[F[_]](config: Config)(implicit
           _ <- logger.info(s"Create branch ${data.updateBranch.name}")
           _ <- gitAlg.createBranch(data.repo, data.updateBranch)
           maybeCommit <- commitChanges(data)
-          _ <- scalafmtAlg.runScalafmt(data.repo, data.update.mainArtifactId)
-          maybeScalafmtCommit <- gitAlg.commitAllIfDirty(
+          postUpdateCommits <- hookExecutor.execPostUpdateHooks(
             data.repo,
-            s"Reformat with scalafmt ${data.update.nextVersion}"
+            data.repoConfig,
+            data.update
           )
-          _ <- pushCommits(data, List(maybeCommit, maybeScalafmtCommit).flatten)
+          _ <- pushCommits(data, maybeCommit.toList ++ postUpdateCommits)
           _ <- createPullRequest(data)
         } yield Updated
       },
