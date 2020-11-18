@@ -40,14 +40,12 @@ class HookExecutorTest extends AnyFunSuite with Matchers {
       .runS(initial)
       .unsafeRunSync()
 
-    state shouldBe initial.copy(commands =
-      Vector(
+    state shouldBe initial.copy(
+      commands = Vector(
         List(
+          "VAR1=val1",
+          "VAR2=val2",
           repoDir.toString,
-          "firejail",
-          s"--whitelist=$repoDir",
-          "--env=VAR1=val1",
-          "--env=VAR2=val2",
           "scalafmt",
           "--non-interactive"
         ),
@@ -68,7 +66,8 @@ class HookExecutorTest extends AnyFunSuite with Matchers {
           "-m",
           "Reformat with scalafmt 2.7.5"
         )
-      )
+      ),
+      logs = Vector((None, "Executing post-update hook for org.scalameta:scalafmt-core"))
     )
 
   }
@@ -93,8 +92,8 @@ class HookExecutorTest extends AnyFunSuite with Matchers {
       .runS(MockState.empty)
       .unsafeRunSync()
 
-    state shouldBe MockState.empty.copy(commands =
-      Vector(
+    state shouldBe MockState.empty.copy(
+      commands = Vector(
         List(
           repoDir.toString,
           "firejail",
@@ -112,7 +111,8 @@ class HookExecutorTest extends AnyFunSuite with Matchers {
           "--untracked-files=no",
           "--ignore-submodules"
         )
-      )
+      ),
+      logs = Vector((None, "Executing post-update hook for com.codecommit:sbt-github-actions"))
     )
   }
 }
