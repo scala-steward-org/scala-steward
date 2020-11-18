@@ -18,6 +18,7 @@ package org.scalasteward.core.edit.hooks
 
 import cats.Monad
 import cats.syntax.all._
+import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data.{ArtifactId, GroupId, Update}
 import org.scalasteward.core.git.{Commit, GitAlg}
 import org.scalasteward.core.io.{ProcessAlg, WorkspaceAlg}
@@ -28,6 +29,7 @@ import org.scalasteward.core.vcs.data.Repo
 
 final class HookExecutor[F[_]](implicit
     gitAlg: GitAlg[F],
+    logger: Logger[F],
     processAlg: ProcessAlg[F],
     workspaceAlg: WorkspaceAlg[F],
     F: Monad[F]
@@ -47,8 +49,11 @@ final class HookExecutor[F[_]](implicit
       hook: PostUpdateHook
   ): F[List[Commit]] =
     for {
+      _ <- logger.info(s"Executing post-update hook for ${hook.groupId}:${hook.artifactId.name}")
       repoDir <- workspaceAlg.repoDir(repo)
-      _ <- processAlg.execSandboxed(hook.command, repoDir)
+      _ <-
+        if (hook.useSandbox) processAlg.execSandboxed(hook.command, repoDir)
+        else processAlg.exec(hook.command, repoDir)
       maybeCommit <- gitAlg.commitAllIfDirty(repo, hook.commitMessage(update))
     } yield maybeCommit.toList
 }
@@ -60,6 +65,7 @@ object HookExecutor {
         groupId = scalafmtGroupId,
         artifactId = scalafmtArtifactId,
         command = Nel.of(scalafmtBinary, "--non-interactive"),
+        useSandbox = false,
         commitMessage = update => s"Reformat with scalafmt ${update.nextVersion}",
         enabledByConfig = _.scalafmt.runAfterUpgradingOrDefault
       ),
@@ -67,6 +73,7 @@ object HookExecutor {
         groupId = GroupId("com.codecommit"),
         artifactId = ArtifactId("sbt-github-actions"),
         command = Nel.of("sbt", "githubWorkflowGenerate"),
+        useSandbox = true,
         commitMessage =
           update => s"Regenerate workflow with sbt-github-actions ${update.nextVersion}",
         enabledByConfig = _ => true

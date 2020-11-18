@@ -24,6 +24,7 @@ final case class PostUpdateHook(
     groupId: GroupId,
     artifactId: ArtifactId,
     command: Nel[String],
+    useSandbox: Boolean,
     commitMessage: Update => String,
     enabledByConfig: RepoConfig => Boolean
 )
