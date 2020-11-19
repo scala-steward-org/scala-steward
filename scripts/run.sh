@@ -38,6 +38,7 @@ COMMON_ARGS=(
   --whitelist $HOME/.cache/JNA
   --whitelist $HOME/.cache/mill
   --whitelist $HOME/.ivy2
+  --whitelist $HOME/.m2
   --whitelist $HOME/.mill
   --whitelist $HOME/.sbt
   --whitelist $HOME/.scio-ideaPluginIC
