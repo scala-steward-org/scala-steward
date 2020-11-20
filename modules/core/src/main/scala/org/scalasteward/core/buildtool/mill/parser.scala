@@ -18,7 +18,7 @@ package org.scalasteward.core.buildtool.mill
 
 import cats.syntax.all._
 import io.circe.{Decoder, DecodingFailure}
-import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId, Resolver}
+import org.scalasteward.core.data.{Dependency, Resolver}
 
 object parser {
   sealed trait ParseError extends RuntimeException {
@@ -66,19 +66,11 @@ object MillModule {
     }
   }
 
-  val dependencyDecoder: Decoder[Dependency] = Decoder.instance { c =>
-    for {
-      groupId <- c.downField("groupId").as[GroupId]
-      artifactId <- c.downField("artifactId").as[String].map(aid => ArtifactId(aid, None))
-      version <- c.downField("version").as[String]
-    } yield Dependency(groupId, artifactId, version)
-  }
-
   implicit val decoder: Decoder[MillModule] = Decoder.instance(c =>
     for {
       name <- c.downField("name").as[String]
       resolvers <- c.downField("repositories").as(Decoder.decodeList(resolverDecoder))
-      dependencies <- c.downField("dependencies").as(Decoder.decodeList(dependencyDecoder))
+      dependencies <- c.downField("dependencies").as[List[Dependency]]
     } yield MillModule(name, resolvers, dependencies)
   )
 }
