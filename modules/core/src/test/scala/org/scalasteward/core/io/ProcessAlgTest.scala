@@ -53,7 +53,14 @@ class ProcessAlgTest extends AnyFunSuite with Matchers {
 
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List(File.temp.toString, "firejail", s"--whitelist=${File.temp}", "echo", "hello")
+        List(
+          File.temp.toString,
+          "firejail",
+          "--quiet",
+          s"--whitelist=${File.temp}",
+          "echo",
+          "hello"
+        )
       )
     )
   }
