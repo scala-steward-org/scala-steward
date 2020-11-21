@@ -30,13 +30,12 @@ COMMON_ARGS=(
   --vcs-login "$LOGIN"
   --ignore-opts-files
   --enable-sandbox
+  --env-var "HOME=$HOME"
   --env-var "SBT_OPTS=-Xmx2048m -Xss8m -XX:MaxMetaspaceSize=512m"
   --sign-commits
   --cache-ttl 6hours
   --process-timeout 20min
-  --whitelist $HOME/.cache/coursier
-  --whitelist $HOME/.cache/JNA
-  --whitelist $HOME/.cache/mill
+  --whitelist $HOME/.cache
   --whitelist $HOME/.ivy2
   --whitelist $HOME/.m2
   --whitelist $HOME/.mill
