@@ -65,7 +65,7 @@ object ProcessAlg {
         .map(dir => s"--read-only=$dir")
       val envVars = (extraEnv ++ configEnv)
         .map { case (k, v) => s"--env=$k=$v" }
-      val firejail = Nel("firejail", whitelisted ++ readOnly ++ envVars) ::: command
+      val firejail = Nel("firejail", "--quiet" :: whitelisted ++ readOnly ++ envVars) ::: command
       execImpl(Args(firejail, Some(workingDirectory), clearEnv = true))
     }
   }

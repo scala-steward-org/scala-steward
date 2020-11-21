@@ -14,6 +14,7 @@ class MillAlgTest extends AnyFunSuite with Matchers {
     val predef = s"$repoDir/scala-steward.sc"
     val millCmd = List(
       "firejail",
+      "--quiet",
       s"--whitelist=$repoDir",
       "--env=VAR1=val1",
       "--env=VAR2=val2",

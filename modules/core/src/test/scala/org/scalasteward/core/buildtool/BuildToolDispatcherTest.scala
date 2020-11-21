@@ -29,6 +29,7 @@ class BuildToolDispatcherTest extends AnyFunSuite with Matchers {
         List(
           repoDir.toString,
           "firejail",
+          "--quiet",
           s"--whitelist=$repoDir",
           "--env=VAR1=val1",
           "--env=VAR2=val2",
