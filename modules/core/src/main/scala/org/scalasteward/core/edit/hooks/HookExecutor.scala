@@ -74,8 +74,7 @@ object HookExecutor {
         artifactId = aid,
         command = Nel.of("sbt", "githubWorkflowGenerate"),
         useSandbox = true,
-        commitMessage =
-          update => s"Regenerate workflow with sbt-github-actions ${update.nextVersion}",
+        commitMessage = _ => "Regenerate workflow with sbt-github-actions",
         enabledByConfig = _ => true
       )
     }
