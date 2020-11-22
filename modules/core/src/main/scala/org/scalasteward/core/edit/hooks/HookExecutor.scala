@@ -59,8 +59,28 @@ final class HookExecutor[F[_]](implicit
 }
 
 object HookExecutor {
-  val postUpdateHooks: List[PostUpdateHook] =
-    List(
+
+  private[this] val knownGitHubActions = List(
+    (GroupId("com.codecommit"), ArtifactId("sbt-github-actions")),
+    (GroupId("com.codecommit"), ArtifactId("sbt-spiewak")),
+    (GroupId("com.codecommit"), ArtifactId("sbt-spiewak-sonatype")),
+    (GroupId("com.codecommit"), ArtifactId("sbt-spiewak-bintray"))
+  )
+
+  val postUpdateHooks: List[PostUpdateHook] = {
+    val actionsActions = knownGitHubActions.map { case (gid, aid) =>
+      PostUpdateHook(
+        groupId = gid,
+        artifactId = aid,
+        command = Nel.of("sbt", "githubWorkflowGenerate"),
+        useSandbox = true,
+        commitMessage =
+          update => s"Regenerate workflow with sbt-github-actions ${update.nextVersion}",
+        enabledByConfig = _ => true
+      )
+    }
+
+    actionsActions ++ List(
       PostUpdateHook(
         groupId = scalafmtGroupId,
         artifactId = scalafmtArtifactId,
@@ -68,15 +88,7 @@ object HookExecutor {
         useSandbox = false,
         commitMessage = update => s"Reformat with scalafmt ${update.nextVersion}",
         enabledByConfig = _.scalafmt.runAfterUpgradingOrDefault
-      ),
-      PostUpdateHook(
-        groupId = GroupId("com.codecommit"),
-        artifactId = ArtifactId("sbt-github-actions"),
-        command = Nel.of("sbt", "githubWorkflowGenerate"),
-        useSandbox = true,
-        commitMessage =
-          update => s"Regenerate workflow with sbt-github-actions ${update.nextVersion}",
-        enabledByConfig = _ => true
       )
     )
+  }
 }
