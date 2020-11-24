@@ -109,6 +109,10 @@ class FileGitAlgTest extends AnyFunSuite with Matchers {
     } yield (c1, m1, c2, m2)
     p.unsafeRunSync() shouldBe ((true, false, false, true))
   }
+
+  test("version") {
+    ioFileGitAlg.version.unsafeRunSync().nonEmpty shouldBe true
+  }
 }
 
 object FileGitAlgTest {
