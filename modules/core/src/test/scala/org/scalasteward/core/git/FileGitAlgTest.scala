@@ -19,6 +19,16 @@ class FileGitAlgTest extends AnyFunSuite with Matchers {
   private val supplement = new Supplement[IO]
   private val rootDir = File.temp / "scala-steward" / "git-tests"
 
+  test("branchAuthors") {
+    val repo = rootDir / "branchAuthors"
+    val p = for {
+      _ <- supplement.createRepo(repo)
+      _ <- supplement.createConflict(repo)
+      authors <- ioFileGitAlg.branchAuthors(repo, Branch("conflicts-no"), master)
+    } yield authors
+    p.unsafeRunSync() shouldBe List("'Bot Doe'")
+  }
+
   test("containsChanges") {
     val repo = rootDir / "containsChanges"
     val p = for {
