@@ -45,6 +45,16 @@ class FileGitAlgTest extends AnyFunSuite with Matchers {
     p.unsafeRunSync() shouldBe ((false, true, false))
   }
 
+  test("findFilesContaining") {
+    val repo = rootDir / "findFilesContaining"
+    val p = for {
+      _ <- supplement.createRepo(repo)
+      _ <- supplement.createConflict(repo)
+      files <- ioFileGitAlg.findFilesContaining(repo, "line1")
+    } yield files
+    p.unsafeRunSync() shouldBe List("file1", "file2")
+  }
+
   test("hasConflicts") {
     val repo = rootDir / "hasConflicts"
     val p = for {
