@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.git
 
-import cats.Monad
+import cats.{FlatMap, Monad}
 import cats.effect.Bracket
 import cats.syntax.all._
 import org.http4s.Uri
@@ -65,4 +65,63 @@ trait GenGitAlg[F[_], Repo] {
 
   final def returnToCurrentBranch[A, E](repo: Repo)(fa: F[A])(implicit F: Bracket[F, E]): F[A] =
     F.bracket(currentBranch(repo))(_ => fa)(checkoutBranch(repo, _))
+
+  final def contramapRepoF[A](f: A => F[Repo])(implicit F: FlatMap[F]): GenGitAlg[F, A] = {
+    val self = this
+    new GenGitAlg[F, A] {
+      override def branchAuthors(repo: A, branch: Branch, base: Branch): F[List[String]] =
+        f(repo).flatMap(self.branchAuthors(_, branch, base))
+
+      override def checkoutBranch(repo: A, branch: Branch): F[Unit] =
+        f(repo).flatMap(self.checkoutBranch(_, branch))
+
+      override def clone(repo: A, url: Uri): F[Unit] =
+        f(repo).flatMap(self.clone(_, url))
+
+      override def cloneExists(repo: A): F[Boolean] =
+        f(repo).flatMap(self.cloneExists)
+
+      override def commitAll(repo: A, message: String): F[Commit] =
+        f(repo).flatMap(self.commitAll(_, message))
+
+      override def containsChanges(repo: A): F[Boolean] =
+        f(repo).flatMap(self.containsChanges)
+
+      override def createBranch(repo: A, branch: Branch): F[Unit] =
+        f(repo).flatMap(self.createBranch(_, branch))
+
+      override def currentBranch(repo: A): F[Branch] =
+        f(repo).flatMap(self.currentBranch)
+
+      override def findFilesContaining(repo: A, string: String): F[List[String]] =
+        f(repo).flatMap(self.findFilesContaining(_, string))
+
+      override def hasConflicts(repo: A, branch: Branch, base: Branch): F[Boolean] =
+        f(repo).flatMap(self.hasConflicts(_, branch, base))
+
+      override def isMerged(repo: A, branch: Branch, base: Branch): F[Boolean] =
+        f(repo).flatMap(self.isMerged(_, branch, base))
+
+      override def latestSha1(repo: A, branch: Branch): F[Sha1] =
+        f(repo).flatMap(self.latestSha1(_, branch))
+
+      override def mergeTheirs(repo: A, branch: Branch): F[Option[Commit]] =
+        f(repo).flatMap(self.mergeTheirs(_, branch))
+
+      override def push(repo: A, branch: Branch): F[Unit] =
+        f(repo).flatMap(self.push(_, branch))
+
+      override def removeClone(repo: A): F[Unit] =
+        f(repo).flatMap(self.removeClone)
+
+      override def setAuthor(repo: A, author: Author): F[Unit] =
+        f(repo).flatMap(self.setAuthor(_, author))
+
+      override def syncFork(repo: A, upstreamUrl: Uri, defaultBranch: Branch): F[Unit] =
+        f(repo).flatMap(self.syncFork(_, upstreamUrl, defaultBranch))
+
+      override def version: F[String] =
+        self.version
+    }
+  }
 }

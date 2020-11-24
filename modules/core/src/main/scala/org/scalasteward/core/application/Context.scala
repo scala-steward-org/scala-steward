@@ -69,8 +69,8 @@ object Context {
       implicit val workspaceAlg: WorkspaceAlg[F] = WorkspaceAlg.create[F](config)
       implicit val repoConfigAlg: RepoConfigAlg[F] = new RepoConfigAlg[F](config)
       implicit val filterAlg: FilterAlg[F] = new FilterAlg[F]
-      implicit val fileGitAlg: FileGitAlg[F] = new FileGitAlg[F](config)
-      implicit val gitAlg: GitAlg[F] = new GitAlg[F]
+      implicit val gitAlg: GitAlg[F] =
+        new FileGitAlg[F](config).contramapRepoF(workspaceAlg.repoDir)
       implicit val hookExecutor: HookExecutor[F] = new HookExecutor[F]
       implicit val httpJsonClient: HttpJsonClient[F] = new HttpJsonClient[F]
       implicit val repoCacheRepository: RepoCacheRepository[F] =

@@ -63,7 +63,8 @@ object MockContext {
   implicit val coursierAlg: CoursierAlg[MockEff] = CoursierAlg.create
   implicit val dateTimeAlg: DateTimeAlg[MockEff] = DateTimeAlg.create
   implicit val fileGitAlg: FileGitAlg[MockEff] = new FileGitAlg[MockEff](config)
-  implicit val gitAlg: GitAlg[MockEff] = new GitAlg[MockEff]
+  implicit val gitAlg: GitAlg[MockEff] =
+    new FileGitAlg[MockEff](config).contramapRepoF(workspaceAlg.repoDir)
   implicit val hookExecutor: HookExecutor[MockEff] = new HookExecutor[MockEff]
   implicit val user: AuthenticatedUser = AuthenticatedUser("scala-steward", "token")
   implicit val vcsRepoAlg: VCSRepoAlg[MockEff] = VCSRepoAlg.create(config)
