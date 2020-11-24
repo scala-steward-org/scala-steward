@@ -17,29 +17,32 @@ object Dependencies {
   val circeParser = "io.circe" %% "circe-parser" % circeGeneric.revision
   val circeRefined = "io.circe" %% "circe-refined" % circeGeneric.revision
   val commonsIo = "commons-io" % "commons-io" % "2.8.0"
-  val coursierCore = "io.get-coursier" %% "coursier" % "2.0.0"
+  val coursierCore = "io.get-coursier" %% "coursier" % "2.0.7"
   val coursierCatsInterop = "io.get-coursier" %% "coursier-cats-interop" % coursierCore.revision
   val cron4sCore = "com.github.alonsodomin.cron4s" %% "cron4s-core" % "0.6.1"
-  val disciplineScalatest = ("org.typelevel" %% "discipline-scalatest" % "2.0.1")
+  val disciplineScalatest = ("org.typelevel" %% "discipline-scalatest" % "2.1.0")
     .excludeAll(ExclusionRule().withOrganization("org.scalatest"))
-  val fs2Core = "co.fs2" %% "fs2-core" % "2.4.4"
-  val http4sAsyncHttpClient = "org.http4s" %% "http4s-async-http-client" % "0.21.7"
-  val http4sCirce = "org.http4s" %% "http4s-circe" % http4sAsyncHttpClient.revision
-  val http4sDsl = "org.http4s" %% "http4s-dsl" % http4sAsyncHttpClient.revision
-  val kindProjector = "org.typelevel" % "kind-projector" % "0.11.0"
+  val fs2Core = "co.fs2" %% "fs2-core" % "2.4.5"
+  val fs2Io = "co.fs2" %% "fs2-io" % fs2Core.revision
+  val http4sCore = "org.http4s" %% "http4s-core" % "0.21.11"
+  val http4sCirce = "org.http4s" %% "http4s-circe" % http4sCore.revision
+  val http4sClient = "org.http4s" %% "http4s-client" % http4sCore.revision
+  val http4sDsl = "org.http4s" %% "http4s-dsl" % http4sCore.revision
+  val http4sOkhttpClient = "org.http4s" %% "http4s-okhttp-client" % http4sCore.revision
+  val kindProjector = "org.typelevel" % "kind-projector" % "0.11.1"
   val log4catsSlf4j = "io.chrisdavenport" %% "log4cats-slf4j" % "1.1.1"
   val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.2.3"
   val millVersion = Def.setting(if (scalaBinaryVersion.value == "2.12") "0.6.3" else "0.8.0")
   val millScalalib = Def.setting("com.lihaoyi" %% "mill-scalalib" % millVersion.value)
   val monocleCore = "com.github.julien-truffaut" %% "monocle-core" % "2.1.0"
-  val refined = "eu.timepit" %% "refined" % "0.9.17"
+  val refined = "eu.timepit" %% "refined" % "0.9.18"
   val refinedCats = "eu.timepit" %% "refined-cats" % refined.revision
   val refinedScalacheck = "eu.timepit" %% "refined-scalacheck" % refined.revision
   val scalacacheCaffeine = "com.github.cb372" %% "scalacache-caffeine" % "0.28.0"
   val scalacacheCatsEffect =
     "com.github.cb372" %% "scalacache-cats-effect" % scalacacheCaffeine.revision
-  val scalacheck = "org.scalacheck" %% "scalacheck" % "1.14.3"
-  val scalaTestFunSuite = "org.scalatest" %% "scalatest-funsuite" % "3.2.2"
+  val scalacheck = "org.scalacheck" %% "scalacheck" % "1.15.1"
+  val scalaTestFunSuite = "org.scalatest" %% "scalatest-funsuite" % "3.2.3"
   val scalaTestShouldMatcher =
     "org.scalatest" %% "scalatest-shouldmatchers" % scalaTestFunSuite.revision
 }

@@ -21,10 +21,18 @@ import org.scalasteward.core.buildtool.sbt.defaultScalaBinaryVersion
 import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId, Version}
 
 package object scalafmt {
+  val scalafmtGroupId: GroupId =
+    GroupId("org.scalameta")
+
+  val scalafmtArtifactId: ArtifactId =
+    ArtifactId("scalafmt-core", s"scalafmt-core_$defaultScalaBinaryVersion")
+
+  val scalafmtBinary: String = "scalafmt"
+
   def scalafmtDependency(scalafmtVersion: Version): Dependency =
     Dependency(
-      GroupId(if (scalafmtVersion > Version("2.0.0-RC1")) "org.scalameta" else "com.geirsson"),
-      ArtifactId("scalafmt-core", s"scalafmt-core_$defaultScalaBinaryVersion"),
+      if (scalafmtVersion > Version("2.0.0-RC1")) scalafmtGroupId else GroupId("com.geirsson"),
+      scalafmtArtifactId,
       scalafmtVersion.value
     )
 

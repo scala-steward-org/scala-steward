@@ -19,12 +19,19 @@ package org.scalasteward.core
 import cats.syntax.all._
 import org.http4s.Uri
 import org.scalasteward.core.application.SupportedVCS
-import org.scalasteward.core.application.SupportedVCS.{Bitbucket, BitbucketServer, GitHub, Gitlab}
+import org.scalasteward.core.application.SupportedVCS.{Bitbucket, BitbucketServer, GitHub, GitLab}
 import org.scalasteward.core.data.ReleaseRelatedUrl.VersionDiff
 import org.scalasteward.core.data.{ReleaseRelatedUrl, Update}
-import org.scalasteward.core.vcs.data.Repo
+import org.scalasteward.core.vcs.data.{PullRequestNumber, Repo}
 
 package object vcs {
+  def extractPullRequestNumberFrom(uri: Uri): Option[PullRequestNumber] = {
+    val regex = raw".*/(pull|pullrequests|merge_requests)/(\d+)".r
+    uri.path match {
+      case regex(_, id) => scala.util.Try(PullRequestNumber(id.toInt)).toOption
+      case _            => None
+    }
+  }
 
   /** Determines the `head` (GitHub) / `source_branch` (GitLab, Bitbucket) parameter for searching
     * for already existing pull requests.
@@ -34,7 +41,7 @@ package object vcs {
       case GitHub =>
         s"${fork.show}:${git.branchFor(update).name}"
 
-      case Gitlab | Bitbucket | BitbucketServer =>
+      case GitLab | Bitbucket | BitbucketServer =>
         git.branchFor(update).name
     }
 
@@ -46,7 +53,7 @@ package object vcs {
       case GitHub =>
         s"${fork.owner}:${git.branchFor(update).name}"
 
-      case Gitlab | Bitbucket | BitbucketServer =>
+      case GitLab | Bitbucket | BitbucketServer =>
         git.branchFor(update).name
     }
 
@@ -85,7 +92,7 @@ package object vcs {
       host
         .collect {
           case "github.com" => GitHub
-          case "gitlab.com" => Gitlab
+          case "gitlab.com" => GitLab
         }
         .orElse {
           if (host.contains_("bitbucket.org"))
@@ -105,7 +112,7 @@ package object vcs {
 
     extractRepoVCSType(vcsType, vcsUri, repoUrl)
       .map {
-        case GitHub | Gitlab =>
+        case GitHub | GitLab =>
           possibleTags(from).zip(possibleTags(to)).map { case (from1, to1) =>
             VersionDiff(repoUrl / "compare" / s"$from1...$to1")
           }
@@ -135,7 +142,7 @@ package object vcs {
 
     def files(fileNames: List[String]): List[Uri] = {
       val maybeSegments = repoVCSType.map {
-        case SupportedVCS.GitHub | SupportedVCS.Gitlab             => List("blob", "master")
+        case SupportedVCS.GitHub | SupportedVCS.GitLab             => List("blob", "master")
         case SupportedVCS.Bitbucket | SupportedVCS.BitbucketServer => List("master")
       }
 

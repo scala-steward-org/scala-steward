@@ -87,7 +87,7 @@ final case class Version(value: String) {
   }
 
   private[this] def hashIndex: Option[NonNegInt] =
-    """[-+]\p{XDigit}{6,}""".r.findFirstMatchIn(value).flatMap(m => NonNegInt.unapply(m.start))
+    """[-+]g?\p{XDigit}{6,}""".r.findFirstMatchIn(value).flatMap(m => NonNegInt.unapply(m.start))
 
   private val minAlphaOrder: Int =
     alnumComponents.collect { case a: Version.Component.Alpha => a.order }.minOption.getOrElse(0)
@@ -126,12 +126,12 @@ object Version {
       def isPreReleaseIdent: Boolean = order < 0
       def order: Int =
         value.toUpperCase match {
-          case "SNAP" | "SNAPSHOT"      => -5
-          case "ALPHA" | "PREVIEW"      => -4
-          case "BETA" | "B"             => -3
-          case "M" | "MILESTONE" | "AM" => -2
-          case "RC"                     => -1
-          case _                        => 0
+          case "SNAP" | "SNAPSHOT" | "NIGHTLY" => -5
+          case "ALPHA" | "PREVIEW"             => -4
+          case "BETA" | "B"                    => -3
+          case "M" | "MILESTONE" | "AM"        => -2
+          case "RC"                            => -1
+          case _                               => 0
         }
     }
     final case class Separator(c: Char, startIndex: Int) extends Component

@@ -17,8 +17,8 @@
 package org.scalasteward.core.git
 
 import cats.Monad
-import cats.syntax.all._
 import cats.effect.Bracket
+import cats.syntax.all._
 import org.http4s.Uri
 
 trait GenGitAlg[F[_], Repo] {
@@ -57,6 +57,8 @@ trait GenGitAlg[F[_], Repo] {
   def setAuthor(repo: Repo, author: Author): F[Unit]
 
   def syncFork(repo: Repo, upstreamUrl: Uri, defaultBranch: Branch): F[Unit]
+
+  def version: F[String]
 
   final def commitAllIfDirty(repo: Repo, message: String)(implicit F: Monad[F]): F[Option[Commit]] =
     containsChanges(repo).ifM(commitAll(repo, message).map(Some.apply), F.pure(None))

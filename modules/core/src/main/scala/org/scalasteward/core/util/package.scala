@@ -26,11 +26,11 @@ package object util {
   final type Nel[+A] = cats.data.NonEmptyList[A]
   final val Nel = cats.data.NonEmptyList
 
-  type ApplicativeThrowable[F[_]] = ApplicativeError[F, Throwable]
+  type ApplicativeThrow[F[_]] = ApplicativeError[F, Throwable]
 
-  type MonadThrowable[F[_]] = MonadError[F, Throwable]
+  type MonadThrow[F[_]] = MonadError[F, Throwable]
 
-  type BracketThrowable[F[_]] = Bracket[F, Throwable]
+  type BracketThrow[F[_]] = Bracket[F, Throwable]
 
   /** Appends `elem` to `buffer` such that its size does not exceed `maxSize`. */
   def appendBounded[A](buffer: ListBuffer[A], elem: A, maxSize: Int): Unit = {
@@ -55,6 +55,17 @@ package object util {
     */
   def bindUntilTrue[G[_]: Foldable, F[_]: Monad](gfb: G[F[Boolean]]): F[Boolean] =
     gfb.existsM(identity)
+
+  /** Like `Semigroup[Option[A]].combine` but allows to specify how `A`s are combined. */
+  def combineOptions[A](x: Option[A], y: Option[A])(f: (A, A) => A): Option[A] =
+    x match {
+      case None => y
+      case Some(xv) =>
+        y match {
+          case None     => x
+          case Some(yv) => Some(f(xv, yv))
+        }
+    }
 
   /** Returns true if there is an element that is both in `fa` and `ga`. */
   def intersects[F[_]: UnorderedFoldable, G[_]: UnorderedFoldable, A: Eq](

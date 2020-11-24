@@ -21,14 +21,13 @@ import cats.syntax.all._
 import org.http4s.Uri
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.util.{BracketThrowable, Nel}
+import org.scalasteward.core.util.{BracketThrow, Nel}
 
-final class FileGitAlg[F[_]](implicit
-    config: Config,
+final class FileGitAlg[F[_]](config: Config)(implicit
     fileAlg: FileAlg[F],
     processAlg: ProcessAlg[F],
     workspaceAlg: WorkspaceAlg[F],
-    F: BracketThrowable[F]
+    F: BracketThrow[F]
 ) extends GenGitAlg[F, File] {
   override def branchAuthors(repo: File, branch: Branch, base: Branch): F[List[String]] =
     git("log", "--pretty=format:'%an'", dotdot(base, branch))(repo)
@@ -122,7 +121,10 @@ final class FileGitAlg[F[_]](implicit
       _ <- push(repo, defaultBranch)
     } yield ()
 
-  private def git(args: String*)(repo: File): F[List[String]] =
+  override def version: F[String] =
+    workspaceAlg.rootDir.flatMap(git("--version")).map(_.mkString.trim)
+
+  def git(args: String*)(repo: File): F[List[String]] =
     processAlg.exec(Nel.of("git", args: _*), repo, "GIT_ASKPASS" -> config.gitAskPass.pathAsString)
 
   private val sign: String =

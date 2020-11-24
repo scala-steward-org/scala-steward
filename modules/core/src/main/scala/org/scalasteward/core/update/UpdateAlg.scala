@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.update
 
-import cats.{Eval, Monad}
+import cats.Monad
 import cats.syntax.all._
 import org.scalasteward.core.coursier.VersionsCache
 import org.scalasteward.core.data._
@@ -27,7 +27,7 @@ import scala.concurrent.duration.FiniteDuration
 final class UpdateAlg[F[_]](implicit
     filterAlg: FilterAlg[F],
     versionsCache: VersionsCache[F],
-    groupMigrations: GroupMigrations,
+    artifactMigrations: ArtifactMigrations,
     F: Monad[F]
 ) {
   def findUpdate(
@@ -38,12 +38,11 @@ final class UpdateAlg[F[_]](implicit
       versions <- versionsCache.getVersions(dependency, maxAge)
       current = Version(dependency.value.version)
       maybeNewerVersions = Nel.fromList(versions.filter(_ > current))
-      maybeUpdate0 = maybeNewerVersions.map { newerVersions =>
-        Update.Single(CrossDependency(dependency.value), newerVersions.map(_.value))
-      }
-      migratedUpdate = Eval.later(groupMigrations.findUpdateWithNewerGroupId(dependency.value))
-      maybeUpdate1 = maybeUpdate0.orElse(migratedUpdate.value)
-    } yield maybeUpdate1
+      maybeUpdate = maybeNewerVersions
+        .map(vs => Update.Single(CrossDependency(dependency.value), vs.map(_.value)))
+        .orElse(artifactMigrations.findUpdateWithRenamedArtifact(dependency.value))
+    } yield maybeUpdate
+
   def findUpdates(
       dependencies: List[Scope.Dependency],
       repoConfig: RepoConfig,

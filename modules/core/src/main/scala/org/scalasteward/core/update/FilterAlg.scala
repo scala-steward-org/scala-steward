@@ -65,13 +65,13 @@ object FilterAlg {
   final case class NoSuitableNextVersion(update: Update.Single) extends RejectionReason
   final case class VersionOrderingConflict(update: Update.Single) extends RejectionReason
 
-  def globalFilter(update: Update.Single): FilterResult =
+  def localFilter(update: Update.Single, repoConfig: RepoConfig): FilterResult =
+    repoConfig.updates.keep(update).flatMap(globalFilter)
+
+  private def globalFilter(update: Update.Single): FilterResult =
     removeBadVersions(update)
       .flatMap(selectSuitableNextVersion)
       .flatMap(checkVersionOrdering)
-
-  private def localFilter(update: Update.Single, repoConfig: RepoConfig): FilterResult =
-    repoConfig.updates.keep(update).flatMap(globalFilter)
 
   def isScalaDependency(dependency: Dependency): Boolean =
     (dependency.groupId.value, dependency.artifactId.name) match {
@@ -87,14 +87,14 @@ object FilterAlg {
     ignoreScalaDependency && isScalaDependency(dependency)
 
   def isDependencyConfigurationIgnored(dependency: Dependency): Boolean =
-    (dependency.configurations.fold("")(_.toLowerCase) match {
+    dependency.configurations.fold("")(_.toLowerCase) match {
       case "phantom-js-jetty"    => true
       case "scalafmt"            => true
       case "scripted-sbt"        => true
       case "scripted-sbt-launch" => true
       case "tut"                 => true
       case _                     => false
-    })
+    }
 
   private def selectSuitableNextVersion(update: Update.Single): FilterResult = {
     val newerVersions = update.newerVersions.map(Version.apply).toList
@@ -129,7 +129,7 @@ object FilterAlg {
         ).contains
       case ("com.nequissimus", "sort-imports_2.12") =>
         List(
-          // https://github.com/fthomas/scala-steward/issues/1413
+          // https://github.com/scala-steward-org/scala-steward/issues/1413
           "36845576"
         ).contains
       case ("commons-collections", "commons-collections") =>
@@ -143,7 +143,7 @@ object FilterAlg {
         ).contains
       case ("io.monix", _) =>
         List(
-          // https://github.com/fthomas/scala-steward/issues/105
+          // https://github.com/scala-steward-org/scala-steward/issues/105
           "3.0.0-fbcb270"
         ).contains
       case ("net.sourceforge.plantuml", "plantuml") =>

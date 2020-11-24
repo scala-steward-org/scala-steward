@@ -21,36 +21,39 @@ import cats.implicits._
 import eu.timepit.refined.types.numeric.PosInt
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
+import org.http4s.Uri
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.ProcessResult.{Ignored, Updated}
 import org.scalasteward.core.data.{ProcessResult, Scope, Update}
 import org.scalasteward.core.edit.EditAlg
+import org.scalasteward.core.edit.hooks.HookExecutor
 import org.scalasteward.core.git.{Branch, Commit, GitAlg}
 import org.scalasteward.core.repocache.RepoCacheRepository
 import org.scalasteward.core.repoconfig.{PullRequestUpdateStrategy, RepoConfigAlg}
 import org.scalasteward.core.scalafix.MigrationAlg
-import org.scalasteward.core.util.{BracketThrowable, HttpExistenceClient}
-import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo, RepoOut}
+import org.scalasteward.core.util.{BracketThrow, HttpExistenceClient}
+import org.scalasteward.core.vcs.data._
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg}
 import org.scalasteward.core.{git, util, vcs}
+import scala.util.control.NonFatal
 
-final class NurtureAlg[F[_]](implicit
-    config: Config,
-    editAlg: EditAlg[F],
-    repoConfigAlg: RepoConfigAlg[F],
-    gitAlg: GitAlg[F],
+final class NurtureAlg[F[_]](config: Config)(implicit
     coursierAlg: CoursierAlg[F],
-    vcsApiAlg: VCSApiAlg[F],
-    vcsRepoAlg: VCSRepoAlg[F],
-    vcsExtraAlg: VCSExtraAlg[F],
+    editAlg: EditAlg[F],
     existenceClient: HttpExistenceClient[F],
+    gitAlg: GitAlg[F],
+    hookExecutor: HookExecutor[F],
     logger: Logger[F],
     migrationAlg: MigrationAlg,
     pullRequestRepository: PullRequestRepository[F],
     repoCacheRepository: RepoCacheRepository[F],
+    repoConfigAlg: RepoConfigAlg[F],
+    vcsApiAlg: VCSApiAlg[F],
+    vcsExtraAlg: VCSExtraAlg[F],
+    vcsRepoAlg: VCSRepoAlg[F],
     streamCompiler: Stream.Compiler[F, F],
-    F: BracketThrowable[F]
+    F: BracketThrow[F]
 ) {
   def nurture(repo: Repo, fork: RepoOut, updates: List[Update.Single]): F[Unit] =
     for {
@@ -81,10 +84,14 @@ final class NurtureAlg[F[_]](implicit
       baseSha1 <- gitAlg.latestSha1(repo, baseBranch)
       _ <- NurtureAlg.processUpdates(
         sorted,
-        update =>
-          processUpdate(
+        update => {
+          val updateData =
             UpdateData(repo, fork, repoConfig, update, baseBranch, baseSha1, git.branchFor(update))
-          ),
+          processUpdate(updateData).flatMap {
+            case result @ Updated => closeObsoletePullRequests(updateData).as(result)
+            case result @ Ignored => F.pure(result)
+          }
+        },
         repoConfig.updates.limit
       )
     } yield ()
@@ -108,10 +115,30 @@ final class NurtureAlg[F[_]](implicit
           pr.html_url,
           data.baseSha1,
           data.update,
-          pr.state
+          pr.state,
+          pr.number
         )
       }
     } yield result
+
+  def closeObsoletePullRequests(data: UpdateData): F[Unit] = {
+    def close(number: PullRequestNumber, repo: Repo, update: Update, url: Uri): F[Unit] =
+      for {
+        _ <- vcsApiAlg.closePullRequest(repo, number)
+        _ <- logger.info(s"Closed a PR @ ${url.renderString} for ${update.show}")
+        _ <- pullRequestRepository.changeState(repo, url, PullRequestState.Closed)
+      } yield ()
+
+    for {
+      _ <- logger.info(s"Looking to close obsolete PRs for ${data.update.name}")
+      prsToClose <- pullRequestRepository.getObsoleteOpenPullRequests(data.repo, data.update)
+      _ <- prsToClose.traverse { case (number, url, update) =>
+        close(number, data.repo, update, url).handleErrorWith { case NonFatal(ex) =>
+          logger.warn(ex)(s"Failed to close obsolete PR #$number for ${data.updateBranch.name}")
+        }
+      }
+    } yield ()
+  }
 
   def applyNewUpdate(data: UpdateData): F[ProcessResult] =
     (editAlg.applyUpdate(
@@ -124,7 +151,12 @@ final class NurtureAlg[F[_]](implicit
           _ <- logger.info(s"Create branch ${data.updateBranch.name}")
           _ <- gitAlg.createBranch(data.repo, data.updateBranch)
           maybeCommit <- commitChanges(data)
-          _ <- pushCommits(data, maybeCommit.toList)
+          postUpdateCommits <- hookExecutor.execPostUpdateHooks(
+            data.repo,
+            data.repoConfig,
+            data.update
+          )
+          _ <- pushCommits(data, maybeCommit.toList ++ postUpdateCommits)
           _ <- createPullRequest(data)
         } yield Updated
       },
@@ -145,11 +177,12 @@ final class NurtureAlg[F[_]](implicit
   def createPullRequest(data: UpdateData): F[Unit] =
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
+      dependenciesWithNextVersion =
+        data.update.dependencies.map(_.copy(version = data.update.nextVersion)).toList
       maybeRepoCache <- repoCacheRepository.findCache(data.repo)
       resolvers = maybeRepoCache.map(_.dependencyInfos.flatMap(_.resolvers)).getOrElse(List.empty)
-      artifactIdToUrl <- coursierAlg.getArtifactIdUrlMapping(
-        Scope(data.update.dependencies.toList, resolvers)
-      )
+      artifactIdToUrl <-
+        coursierAlg.getArtifactIdUrlMapping(Scope(dependenciesWithNextVersion, resolvers))
       existingArtifactUrlsList <- artifactIdToUrl.toList.filterA(a => existenceClient.exists(a._2))
       existingArtifactUrlsMap = existingArtifactUrlsList.toMap
       releaseRelatedUrls <-
@@ -171,7 +204,8 @@ final class NurtureAlg[F[_]](implicit
         pr.html_url,
         data.baseSha1,
         data.update,
-        pr.state
+        pr.state,
+        pr.number
       )
       _ <- logger.info(s"Created PR ${pr.html_url}")
     } yield ()

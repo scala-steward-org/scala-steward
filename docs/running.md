@@ -15,8 +15,6 @@ sbt stage
   --env-var FOO=BAR
 ```
 
-> If [Firejail](https://firejail.wordpress.com/) is not available locally, the option `--disable-sandbox` can be used (not recommended for production environment).
-
 Or as a [Docker](https://www.docker.com/) container:
 
 ```bash
@@ -31,7 +29,9 @@ docker run -v $STEWARD_DIR:/opt/scala-steward -it fthomas/scala-steward:latest \
   --vcs-login ${LOGIN} \
   --git-ask-pass "/opt/scala-steward/.github/askpass/$LOGIN.sh" \
   --sign-commits \
-  --env-var FOO=BAR
+  --env-var FOO=BAR \ 
+  --scalafix-migrations "/opt/scala-steward/extra-scalafix-migrations.conf" \
+  --artifact-migrations "/opt/scala-steward/extra-artifact-migrations.conf" 
 ```
 
 The [`git-ask-pass` option](https://git-scm.com/docs/gitcredentials) must specify an executable file (script) that returns (on the stdout),
@@ -41,9 +41,8 @@ The [`git-ask-pass` option](https://git-scm.com/docs/gitcredentials) must specif
 
 **Note about git-ask-pass option**: The provided script must start with a valid shebang like `#!/bin/sh`, see issue [#1374](/../../issues/1374)
 
-
-You can also provide a `--scalafix-migrations` option with the path to a file containing scalafix migrations.
-More information can be found [here][migrations]
+More information about using the `--scalafix-migrations` and `--artifact-migrations` options can be found 
+[here][scalafixmigrations] and [here][artifactmigrations].
 
 ### Workspace
 
@@ -84,12 +83,12 @@ example1.realm=Example Realm
 
 ### Running locally from sbt
 
-#### Sample run for Gitlab
+#### Sample run for GitLab
 
 ```
 sbt
 project core
-run --disable-sandbox --do-not-fork --workspace "/path/workspace" --repos-file "/path/repos.md" --default-repo-conf "/path/default.scala-steward.conf" --git-ask-pass "/path/pass.sh" --git-author-email "email@example.org" --vcs-type "gitlab" --vcs-api-host "https://gitlab.com/api/v4/" --vcs-login "gitlab.steward"
+run --do-not-fork --workspace "/path/workspace" --repos-file "/path/repos.md" --default-repo-conf "/path/default.scala-steward.conf" --git-ask-pass "/path/pass.sh" --git-author-email "email@example.org" --vcs-type "gitlab" --vcs-api-host "https://gitlab.com/api/v4/" --vcs-login "gitlab.steward"
 ```
 
 
@@ -124,8 +123,6 @@ docker run -v $PWD:/opt/scala-steward \
 
 `BITBUCKET_USERNAME=<myuser> BITBUCKET_PASSWORD=<mypass> ./run.sh`
 
-[migrations]: https://github.com/fthomas/scala-steward/blob/master/docs/scalafix-migrations.md
-
 ### Running On-premise
 
 #### GitHub Enterprise
@@ -133,14 +130,14 @@ docker run -v $PWD:/opt/scala-steward \
 There is an article on how they run Scala Steward on-premise at Avast:
 * [Running Scala Steward On-premise](https://engineering.avast.io/running-scala-steward-on-premise)
 
-#### Gitlab
+#### GitLab
 
-The following describes a setup using Gitlab Docker runner, which you have to setup seperately.
+The following describes a setup using GitLab Docker runner, which you have to setup seperately.
 
-1. create a "scalasteward" user in Gitlab
+1. create a "scalasteward" user in GitLab
 2. assign that user "Developer" permissions in every project that should be managed by Scala Steward
 3. login as that user and create a Personal Access Token with `api`, `read_repository` and `write_repository` scopes
-4. create a project and add the following Gitlab CI config
+4. create a project and add the following GitLab CI config
 
 ```yaml
 check:
@@ -168,11 +165,10 @@ check:
     - ln -sfT "$CI_PROJECT_DIR/.ivy2" "$HOME/.ivy2"
     - >-
       /opt/docker/bin/scala-steward
-        --disable-sandbox
         --workspace  "$CI_PROJECT_DIR/workspace"
         --process-timeout 30min
         --do-not-fork
-        --repos-file "CI_PROJECT_DIR/repos.md"
+        --repos-file "$CI_PROJECT_DIR/repos.md"
         --default-repo-conf "$CI_PROJECT_DIR/default.scala-steward.conf"
         --git-author-email "${EMAIL}"
         --vcs-type "gitlab"
@@ -196,3 +192,7 @@ echo "${SCALA_STEWARD_TOKEN}"
 ```
 7. add the `repos.md` file 
 8. (*optional*) create a new schedule to trigger the pipeline on a daily/weekly basis
+
+
+[scalafixmigrations]: https://github.com/scala-steward-org/scala-steward/blob/master/docs/scalafix-migrations.md
+[artifactmigrations]: https://github.com/scala-steward-org/scala-steward/blob/master/docs/artifact-migrations.md

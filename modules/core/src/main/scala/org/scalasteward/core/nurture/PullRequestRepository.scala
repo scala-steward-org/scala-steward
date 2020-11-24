@@ -19,12 +19,13 @@ package org.scalasteward.core.nurture
 import cats.Monad
 import cats.implicits._
 import org.http4s.Uri
-import org.scalasteward.core.data.{CrossDependency, Update}
+import org.scalasteward.core.data.{CrossDependency, Update, Version}
 import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.persistence.KeyValueStore
 import org.scalasteward.core.update.UpdateAlg
 import org.scalasteward.core.util.{DateTimeAlg, Timestamp}
-import org.scalasteward.core.vcs.data.{PullRequestState, Repo}
+import org.scalasteward.core.vcs.data.{PullRequestNumber, PullRequestState, Repo}
+import org.scalasteward.core.vcs
 
 final class PullRequestRepository[F[_]](
     kvStore: KeyValueStore[F, Repo, Map[Uri, PullRequestData]]
@@ -32,12 +33,24 @@ final class PullRequestRepository[F[_]](
     dateTimeAlg: DateTimeAlg[F],
     F: Monad[F]
 ) {
+  def changeState(repo: Repo, url: Uri, newState: PullRequestState): F[Unit] =
+    kvStore
+      .modifyF(repo) { maybePullRequests =>
+        val pullRequests = maybePullRequests.getOrElse(Map.empty)
+        pullRequests.get(url).traverse { found =>
+          val data = found.copy(state = newState)
+          pullRequests.updated(url, data).pure[F]
+        }
+      }
+      .void
+
   def createOrUpdate(
       repo: Repo,
       url: Uri,
       baseSha1: Sha1,
       update: Update,
-      state: PullRequestState
+      state: PullRequestState,
+      number: PullRequestNumber
   ): F[Unit] =
     kvStore
       .modifyF(repo) { maybePullRequests =>
@@ -48,12 +61,29 @@ final class PullRequestRepository[F[_]](
             pullRequests.updated(url, data).some.pure[F]
           case None =>
             dateTimeAlg.currentTimestamp.map { now =>
-              val data = PullRequestData(baseSha1, update, state, now)
+              val data = PullRequestData(baseSha1, update, state, now, Some(number))
               pullRequests.updated(url, data).some
             }
         }
       }
       .void
+
+  def getObsoleteOpenPullRequests(
+      repo: Repo,
+      update: Update
+  ): F[List[(PullRequestNumber, Uri, Update)]] =
+    kvStore.get(repo).map {
+      _.getOrElse(Map.empty)
+        .collect {
+          case (url, data)
+              if data.update.withNewerVersions(update.newerVersions) === update &&
+                Version(data.update.nextVersion) < Version(update.nextVersion) &&
+                data.state === PullRequestState.Open =>
+            data.number.orElse(vcs.extractPullRequestNumberFrom(url)).map((_, url, data.update))
+        }
+        .flatten
+        .toList
+    }
 
   def findPullRequest(
       repo: Repo,

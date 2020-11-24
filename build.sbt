@@ -17,6 +17,42 @@ val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
 val Scala212 = "2.12.10"
 val Scala213 = "2.13.3"
 
+/// sbt-github-actions configuration
+
+ThisBuild / crossScalaVersions := Seq(Scala212, Scala213)
+ThisBuild / githubWorkflowTargetTags ++= Seq("v*")
+ThisBuild / githubWorkflowPublishPreamble +=
+  WorkflowStep.Use("olafurpg", "setup-gpg", "v3")
+ThisBuild / githubWorkflowPublishTargetBranches := Seq(
+  RefPredicate.Equals(Ref.Branch("master")),
+  RefPredicate.StartsWith(Ref.Tag("v"))
+)
+ThisBuild / githubWorkflowPublish := Seq(
+  WorkflowStep.Run(
+    List("sbt ci-release"),
+    name = Some("Publish JARs"),
+    env = Map(
+      "PGP_PASSPHRASE" -> "${{ secrets.PGP_PASSPHRASE }}",
+      "PGP_SECRET" -> "${{ secrets.PGP_SECRET }}",
+      "SONATYPE_PASSWORD" -> "${{ secrets.SONATYPE_PASSWORD }}",
+      "SONATYPE_USERNAME" -> "${{ secrets.SONATYPE_USERNAME }}"
+    )
+  ),
+  WorkflowStep.Run(
+    List(
+      "docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}",
+      "sbt core/docker:publish"
+    ),
+    name = Some("Publish Docker image")
+  )
+)
+ThisBuild / githubWorkflowJavaVersions := Seq("adopt@1.8", "adopt@1.11")
+ThisBuild / githubWorkflowBuild :=
+  Seq(
+    WorkflowStep.Sbt(List("validate"), name = Some("Build project")),
+    WorkflowStep.Use("codecov", "codecov-action", "v1", name = Some("Codecov"))
+  )
+
 /// projects
 
 lazy val root = project
@@ -47,8 +83,11 @@ lazy val core = myCrossProject("core")
       Dependencies.coursierCatsInterop,
       Dependencies.cron4sCore,
       Dependencies.fs2Core,
-      Dependencies.http4sAsyncHttpClient,
+      Dependencies.fs2Io,
       Dependencies.http4sCirce,
+      Dependencies.http4sClient,
+      Dependencies.http4sCore,
+      Dependencies.http4sOkhttpClient,
       Dependencies.log4catsSlf4j,
       Dependencies.monocleCore,
       Dependencies.refined,
@@ -206,19 +245,23 @@ lazy val dockerSettings = Def.settings(
     val sbtTgz = s"sbt-$getSbtVersion.tgz"
     val sbtUrl = s"https://github.com/sbt/sbt/releases/download/v$getSbtVersion/$sbtTgz"
     val millVersion = Dependencies.millVersion.value
+    val binDir = "/usr/local/bin/"
     Seq(
       Cmd("USER", "root"),
       Cmd("RUN", "apk --no-cache add bash git ca-certificates curl maven openssh"),
       Cmd("RUN", s"wget $sbtUrl && tar -xf $sbtTgz && rm -f $sbtTgz"),
       Cmd(
         "RUN",
-        s"curl -L https://github.com/lihaoyi/mill/releases/download/${millVersion.split("-").head}/$millVersion > /usr/local/bin/mill && chmod +x /usr/local/bin/mill"
+        s"curl -L https://github.com/lihaoyi/mill/releases/download/${millVersion.split("-").head}/$millVersion >${binDir}mill && chmod +x ${binDir}mill"
+      ),
+      Cmd(
+        "RUN",
+        s"curl -L https://git.io/coursier-cli > ${binDir}coursier && chmod +x ${binDir}coursier && coursier install scalafmt --install-dir ${binDir} && rm -rf ${binDir}coursier"
       )
     )
   },
   Docker / packageName := s"fthomas/${name.value}",
   dockerUpdateLatest := true,
-  dockerEntrypoint += "--disable-sandbox",
   dockerEnvVars := Map("PATH" -> "/opt/docker/sbt/bin:${PATH}")
 )
 
@@ -257,7 +300,6 @@ moduleRootPkg := rootPkg
 lazy val runSteward = taskKey[Unit]("")
 runSteward := Def.taskDyn {
   val home = System.getenv("HOME")
-  val myJavaHome = System.getenv("JAVA_HOME")
   val projectDir = (LocalRootProject / baseDirectory).value
   val args = Seq(
     Seq("--workspace", s"$projectDir/workspace"),
@@ -268,10 +310,11 @@ runSteward := Def.taskDyn {
     Seq("--git-ask-pass", s"$home/.github/askpass/$projectName.sh"),
     Seq("--whitelist", s"$home/.cache/coursier"),
     Seq("--whitelist", s"$home/.cache/JNA"),
+    Seq("--whitelist", s"$home/.cache/mill"),
     Seq("--whitelist", s"$home/.ivy2"),
-    Seq("--whitelist", s"$home/.sbt"),
-    Seq("--whitelist", myJavaHome),
-    Seq("--read-only", myJavaHome)
+    Seq("--whitelist", s"$home/.m2"),
+    Seq("--whitelist", s"$home/.mill"),
+    Seq("--whitelist", s"$home/.sbt")
   ).flatten.mkString(" ", " ", "")
   (core.jvm / Compile / run).toTask(args)
 }.value

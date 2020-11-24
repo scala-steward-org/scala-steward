@@ -26,6 +26,7 @@ import org.scalasteward.core.vcs.data.PullRequestState.Closed
 final case class PullRequestOut(
     html_url: Uri,
     state: PullRequestState,
+    number: PullRequestNumber,
     title: String
 ) {
   def isClosed: Boolean =

@@ -2,6 +2,7 @@ package org.scalasteward.core.io
 
 import better.files.File
 import cats.effect.IO
+import org.http4s.Uri
 import org.scalacheck.Arbitrary
 import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
@@ -100,6 +101,16 @@ class FileAlgTest extends AnyFunSuite with Matchers {
       symlinkExists <- IO(symlink.exists(File.LinkOptions.noFollow))
     } yield symlinkExists
     p.unsafeRunSync() shouldBe false
+  }
+
+  test("readUri: local file without scheme") {
+    val file = File.temp / "steward" / "readUri.txt"
+    val content = "42"
+    val p = for {
+      _ <- ioFileAlg.writeFile(file, content)
+      read <- ioFileAlg.readUri(Uri.unsafeFromString(file.toString))
+    } yield read
+    p.unsafeRunSync() shouldBe content
   }
 }
 

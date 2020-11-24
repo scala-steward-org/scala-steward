@@ -53,13 +53,21 @@ sealed trait Update extends Product with Serializable {
     }
     s"$groupId:$artifacts : $versions"
   }
+
+  def withNewerVersions(versions: Nel[String]): Update = this match {
+    case s @ Single(_, _, _, _) =>
+      s.copy(newerVersions = versions)
+    case g @ Group(_, _) =>
+      g.copy(newerVersions = versions)
+  }
 }
 
 object Update {
   final case class Single(
       crossDependency: CrossDependency,
       newerVersions: Nel[String],
-      newerGroupId: Option[GroupId] = None
+      newerGroupId: Option[GroupId] = None,
+      newerArtifactId: Option[String] = None
   ) extends Update {
     override def crossDependencies: Nel[CrossDependency] =
       Nel.one(crossDependency)

@@ -24,7 +24,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
           |  }
           |}""".stripMargin
     val pullRequestsFile =
-      config.workspace / "store/pull_requests/v1/fthomas/scalafix-test/pull_requests.json"
+      config.workspace / "store/pull_requests/v2/fthomas/scalafix-test/pull_requests.json"
     val pullRequestsContent =
       s"""|{
           |  "https://github.com/fthomas/scalafix-test/pull/27" : {
@@ -117,7 +117,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
           |  }
           |}""".stripMargin
     val pullRequestsFile =
-      config.workspace / "store/pull_requests/v1/fthomas/scalafix-test/pull_requests.json"
+      config.workspace / "store/pull_requests/v2/fthomas/scalafix-test/pull_requests.json"
     val pullRequestsContent =
       s"""|{
           |  "https://github.com/fthomas/scalafix-test/pull/27" : {
@@ -235,7 +235,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
           |  }
           |}""".stripMargin
     val pullRequestsFile =
-      config.workspace / "store/pull_requests/v1/fthomas/scalafix-test/pull_requests.json"
+      config.workspace / "store/pull_requests/v2/fthomas/scalafix-test/pull_requests.json"
     val pullRequestsContent =
       s"""|{
           |  "https://github.com/fthomas/scalafix-test/pull/27" : {

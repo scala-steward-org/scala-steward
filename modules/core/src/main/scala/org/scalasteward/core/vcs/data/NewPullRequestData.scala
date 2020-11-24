@@ -28,6 +28,13 @@ import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.{Details, Nel}
 
+final case class UpdateState(
+    state: PullRequestState
+)
+object UpdateState {
+  implicit val updateStateEncoder: Encoder[UpdateState] = deriveEncoder
+}
+
 final case class NewPullRequestData(
     title: String,
     body: String,
@@ -58,7 +65,7 @@ object NewPullRequestData {
         |
         |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.
         |
-        |Configure Scala Steward for your repository with a [`${RepoConfigAlg.repoConfigBasename}`](https://github.com/fthomas/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
+        |Configure Scala Steward for your repository with a [`${RepoConfigAlg.repoConfigBasename}`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
         |
         |Have a fantastic day writing Scala!
         |
@@ -84,15 +91,15 @@ object NewPullRequestData {
     if (releaseRelatedUrls.isEmpty) None
     else
       releaseRelatedUrls
-        .map { url =>
-          url match {
-            case ReleaseRelatedUrl.CustomChangelog(url) => s"[Changelog](${url.renderString})"
-            case ReleaseRelatedUrl.CustomReleaseNotes(url) =>
-              s"[Release Notes](${url.renderString})"
-            case ReleaseRelatedUrl.GitHubReleaseNotes(url) =>
-              s"[GitHub Release Notes](${url.renderString})"
-            case ReleaseRelatedUrl.VersionDiff(url) => s"[Version Diff](${url.renderString})"
-          }
+        .map {
+          case ReleaseRelatedUrl.CustomChangelog(url) =>
+            s"[Changelog](${url.renderString})"
+          case ReleaseRelatedUrl.CustomReleaseNotes(url) =>
+            s"[Release Notes](${url.renderString})"
+          case ReleaseRelatedUrl.GitHubReleaseNotes(url) =>
+            s"[GitHub Release Notes](${url.renderString})"
+          case ReleaseRelatedUrl.VersionDiff(url) =>
+            s"[Version Diff](${url.renderString})"
         }
         .mkString(" - ")
         .some

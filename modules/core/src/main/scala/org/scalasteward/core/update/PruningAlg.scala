@@ -23,12 +23,7 @@ import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data._
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.repocache.{RepoCache, RepoCacheRepository}
-import org.scalasteward.core.repoconfig.{
-  PullRequestFrequency,
-  RepoConfig,
-  RepoConfigAlg,
-  UpdatesConfig
-}
+import org.scalasteward.core.repoconfig.{PullRequestFrequency, RepoConfig, RepoConfigAlg}
 import org.scalasteward.core.update.PruningAlg._
 import org.scalasteward.core.update.data.UpdateState
 import org.scalasteward.core.update.data.UpdateState._
@@ -51,31 +46,29 @@ final class PruningAlg[F[_]](implicit
     repoCacheRepository.findCache(repo).flatMap {
       case None => F.pure((false, List.empty))
       case Some(repoCache) =>
-        val ignoreScalaDependency =
-          !repoCache.maybeRepoConfig
-            .flatMap(_.updates.includeScala)
-            .getOrElse(UpdatesConfig.defaultIncludeScala)
-        val dependencies = repoCache.dependencyInfos
-          .flatMap(_.sequence)
-          .collect {
-            case info if !ignoreDependency(info.value, ignoreScalaDependency) =>
-              info.map(_.dependency)
-          }
-          .sorted
-        findUpdatesNeedingAttention(repo, repoCache, dependencies)
+        repoConfigAlg.mergeWithDefault(repoCache.maybeRepoConfig).flatMap { repoConfig =>
+          val ignoreScalaDependency = !repoConfig.updates.includeScalaOrDefault
+          val dependencies = repoCache.dependencyInfos
+            .flatMap(_.sequence)
+            .collect {
+              case info if !ignoreDependency(info.value, ignoreScalaDependency) =>
+                info.map(_.dependency)
+            }
+            .sorted
+          findUpdatesNeedingAttention(repo, repoCache, repoConfig, dependencies)
+        }
     }
 
   private def findUpdatesNeedingAttention(
       repo: Repo,
       repoCache: RepoCache,
+      repoConfig: RepoConfig,
       dependencies: List[Scope.Dependency]
   ): F[(Boolean, List[Update.Single])] = {
 
     val depsWithoutResolvers = dependencies.map(_.value).distinct
     for {
       _ <- logger.info(s"Find updates for ${repo.show}")
-      defaultConfig <- repoConfigAlg.defaultRepoConfig
-      repoConfig = repoCache.maybeRepoConfig.map(_ |+| defaultConfig).getOrElse(defaultConfig)
       updates0 <- updateAlg.findUpdates(dependencies, repoConfig, None)
       updateStates0 <- findAllUpdateStates(repo, repoCache, depsWithoutResolvers, updates0)
       outdatedDeps = collectOutdatedDependencies(updateStates0)
@@ -179,7 +172,7 @@ final class PruningAlg[F[_]](implicit
 }
 
 object PruningAlg {
-  def ignoreDependency(info: DependencyInfo, ignoreScalaDependency: Boolean = true): Boolean =
+  def ignoreDependency(info: DependencyInfo, ignoreScalaDependency: Boolean): Boolean =
     info.filesContainingVersion.isEmpty ||
       FilterAlg.isScalaDependencyIgnored(info.dependency, ignoreScalaDependency) ||
       FilterAlg.isDependencyConfigurationIgnored(info.dependency)

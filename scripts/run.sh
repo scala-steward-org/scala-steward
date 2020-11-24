@@ -29,13 +29,17 @@ COMMON_ARGS=(
   --git-author-email "me@$LOGIN.org"
   --vcs-login "$LOGIN"
   --ignore-opts-files
+  --enable-sandbox
+  --env-var "COURSIER_PROGRESS=false"
+  --env-var "HOME=$HOME"
   --env-var "SBT_OPTS=-Xmx2048m -Xss8m -XX:MaxMetaspaceSize=512m"
   --sign-commits
   --cache-ttl 6hours
   --process-timeout 20min
-  --whitelist $HOME/.cache/coursier
-  --whitelist $HOME/.cache/JNA
+  --whitelist $HOME/.cache
   --whitelist $HOME/.ivy2
+  --whitelist $HOME/.m2
+  --whitelist $HOME/.mill
   --whitelist $HOME/.sbt
   --whitelist $HOME/.scio-ideaPluginIC
   --whitelist $HOME/.tagless-redux-ijextPluginIC

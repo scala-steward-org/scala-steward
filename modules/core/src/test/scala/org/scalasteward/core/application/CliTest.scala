@@ -1,11 +1,13 @@
 package org.scalasteward.core.application
 
+import better.files.File
 import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.Cli.ParseResult._
 import org.scalatest.EitherValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+
 import scala.concurrent.duration._
 
 class CliTest extends AnyFunSuite with Matchers with EitherValues {
@@ -23,21 +25,25 @@ class CliTest extends AnyFunSuite with Matchers with EitherValues {
         List("--ignore-opts-files"),
         List("--env-var", "g=h"),
         List("--env-var", "i=j"),
-        List("--process-timeout", "30min")
+        List("--process-timeout", "30min"),
+        List("--scalafix-migrations", "/opt/scala-steward/extra-scalafix-migrations.conf"),
+        List("--artifact-migrations", "/opt/scala-steward/extra-artifact-migrations.conf")
       ).flatten
     ) shouldBe Success(
       Cli.Args(
-        workspace = "a",
-        reposFile = "b",
-        defaultRepoConf = Some("c"),
+        workspace = File("a"),
+        reposFile = File("b"),
+        defaultRepoConf = Some(File("c")),
         gitAuthorEmail = "d",
-        vcsType = SupportedVCS.Gitlab,
+        vcsType = SupportedVCS.GitLab,
         vcsApiHost = uri"http://example.com",
         vcsLogin = "e",
-        gitAskPass = "f",
+        gitAskPass = File("f"),
         ignoreOptsFiles = true,
         envVar = List(EnvVar("g", "h"), EnvVar("i", "j")),
-        processTimeout = 30.minutes
+        processTimeout = 30.minutes,
+        scalafixMigrations = List(uri"/opt/scala-steward/extra-scalafix-migrations.conf"),
+        artifactMigrations = Some(File("/opt/scala-steward/extra-artifact-migrations.conf"))
       )
     )
   }
@@ -53,11 +59,11 @@ class CliTest extends AnyFunSuite with Matchers with EitherValues {
       ).flatten
     ) shouldBe Success(
       Cli.Args(
-        workspace = "a",
-        reposFile = "b",
+        workspace = File("a"),
+        reposFile = File("b"),
         gitAuthorEmail = "d",
         vcsLogin = "e",
-        gitAskPass = "f"
+        gitAskPass = File("f")
       )
     )
   }
@@ -101,5 +107,13 @@ class CliTest extends AnyFunSuite with Matchers with EitherValues {
 
   test("finiteDurationArgParser: previous value") {
     Cli.finiteDurationArgParser(Some(10.seconds), "20seconds").isLeft shouldBe true
+  }
+
+  test("fileArgParser: previous value") {
+    Cli.fileArgParser(Some(File("/tmp")), "/opt").isLeft shouldBe true
+  }
+
+  test("supportedVCSArgParser: unknown value") {
+    Cli.supportedVCSArgParser(None, "sourceforge").isLeft shouldBe true
   }
 }

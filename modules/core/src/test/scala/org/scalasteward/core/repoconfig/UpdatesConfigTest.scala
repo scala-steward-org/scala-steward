@@ -33,7 +33,7 @@ class UpdatesConfigTest extends AnyFunSuite with Matchers {
       ignore = List(aa0),
       limit = Some(PosInt(10)),
       includeScala = Some(false),
-      fileExtensions = List(".txt", ".scala", ".sbt")
+      fileExtensions = Some(List(".txt", ".scala", ".sbt"))
     )
     cfg |+| cfg shouldBe cfg
 
@@ -46,7 +46,7 @@ class UpdatesConfigTest extends AnyFunSuite with Matchers {
       ignore = List(ab0),
       limit = Some(PosInt(20)),
       includeScala = Some(true),
-      fileExtensions = List(".sbt", ".scala")
+      fileExtensions = Some(List(".sbt", ".scala"))
     )
 
     cfg |+| cfg2 shouldBe UpdatesConfig(
@@ -55,7 +55,7 @@ class UpdatesConfigTest extends AnyFunSuite with Matchers {
       ignore = List(aa0, ab0),
       limit = Some(PosInt(10)),
       includeScala = Some(false),
-      fileExtensions = List(".scala", ".sbt")
+      fileExtensions = Some(List(".scala", ".sbt"))
     )
 
     cfg2 |+| cfg shouldBe UpdatesConfig(
@@ -64,7 +64,7 @@ class UpdatesConfigTest extends AnyFunSuite with Matchers {
       ignore = List(ab0, aa0),
       limit = Some(PosInt(20)),
       includeScala = Some(true),
-      fileExtensions = List(".sbt", ".scala")
+      fileExtensions = Some(List(".sbt", ".scala"))
     )
   }
 
@@ -112,14 +112,18 @@ class UpdatesConfigTest extends AnyFunSuite with Matchers {
   }
 
   test("mergeFileExtensions: basic checks") {
-    UpdatesConfig.mergeFileExtensions(Nil, Nil) shouldBe Nil
-    UpdatesConfig.mergeFileExtensions(Nil, List("txt")) shouldBe List("txt")
-    UpdatesConfig.mergeFileExtensions(List("txt"), Nil) shouldBe List("txt")
-    UpdatesConfig.mergeFileExtensions(List("txt"), List("txt")) shouldBe List("txt")
-    UpdatesConfig.mergeFileExtensions(List("a", "b", "c"), List("b", "d")) shouldBe List("b")
-    UpdatesConfig.mergeFileExtensions(
-      List("a"),
-      List("b")
-    ) shouldBe UpdatesConfig.nonExistingFileExtension
+    UpdatesConfig.mergeFileExtensions(None, None) shouldBe None
+    UpdatesConfig.mergeFileExtensions(None, Some(List("txt"))) shouldBe Some(List("txt"))
+    UpdatesConfig.mergeFileExtensions(Some(List("txt")), None) shouldBe Some(List("txt"))
+    UpdatesConfig.mergeFileExtensions(Some(List("txt")), Some(List("txt"))) shouldBe
+      Some(List("txt"))
+    UpdatesConfig.mergeFileExtensions(Some(List("a", "b", "c")), Some(List("b", "d"))) shouldBe
+      Some(List("b"))
+    UpdatesConfig.mergeFileExtensions(Some(List("a")), Some(List("b"))) shouldBe Some(List())
+  }
+
+  test("fileExtensionsOrDefault: non-set != empty") {
+    UpdatesConfig(fileExtensions = None).fileExtensionsOrDefault shouldNot
+      be(UpdatesConfig(fileExtensions = Some(Nil)).fileExtensionsOrDefault)
   }
 }

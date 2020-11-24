@@ -3,26 +3,48 @@ package org.scalasteward.core.vcs
 import org.http4s.syntax.literals._
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.application.SupportedVCS
-import org.scalasteward.core.application.SupportedVCS.{GitHub, Gitlab}
+import org.scalasteward.core.application.SupportedVCS.{GitHub, GitLab}
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.util.Nel
-import org.scalasteward.core.vcs.data.Repo
+import org.scalasteward.core.vcs.data.{PullRequestNumber, Repo}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class VCSPackageTest extends AnyFunSuite with Matchers {
+  test(s"extractPullRequestNumberFrom: valid") {
+    val urls = List(
+      uri"https://api.bitbucket.org/2.0/repositories/fthomas/base.g8/pullrequests/13",
+      uri"https://github.com/scala-steward-org/scala-steward/pull/13",
+      uri"https://gitlab.com/inkscape/inkscape/-/merge_requests/13"
+    )
+    urls.foreach { uri =>
+      extractPullRequestNumberFrom(uri) shouldBe Some(PullRequestNumber(13))
+    }
+  }
+
+  test(s"extractPullRequestNumberFrom: invalid") {
+    val urls = List(
+      uri"https://api.bitbucket.org/2.0/repositories/fthomas/base.g8/pullrequests/",
+      uri"https://github.com/scala-steward-org/scala-steward/pull/",
+      uri"https://gitlab.com/inkscape/inkscape/-/merge_requests/"
+    )
+    urls.foreach { uri =>
+      extractPullRequestNumberFrom(uri) shouldBe None
+    }
+  }
+
   val repo: Repo = Repo("foo", "bar")
   val update: Update.Single =
     Update.Single("ch.qos.logback" % "logback-classic" % "1.2.0", Nel.of("1.2.3"))
 
   test("listingBranch") {
     listingBranch(GitHub, repo, update) shouldBe "foo/bar:update/logback-classic-1.2.3"
-    listingBranch(Gitlab, repo, update) shouldBe "update/logback-classic-1.2.3"
+    listingBranch(GitLab, repo, update) shouldBe "update/logback-classic-1.2.3"
   }
 
   test("createBranch") {
     createBranch(GitHub, repo, update) shouldBe "foo:update/logback-classic-1.2.3"
-    createBranch(Gitlab, repo, update) shouldBe "update/logback-classic-1.2.3"
+    createBranch(GitLab, repo, update) shouldBe "update/logback-classic-1.2.3"
   }
 
   test("possibleCompareUrls") {
@@ -136,7 +158,7 @@ class VCSPackageTest extends AnyFunSuite with Matchers {
 
   test("possibleChangelogUrls: on-prem gitlab") {
     possibleReleaseRelatedUrls(
-      SupportedVCS.Gitlab,
+      SupportedVCS.GitLab,
       uri"https://gitlab.on-prem.net",
       uri"https://gitlab.on-prem.net/foo/bar",
       update

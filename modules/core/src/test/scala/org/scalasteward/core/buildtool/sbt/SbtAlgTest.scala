@@ -30,7 +30,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
     )
   }
 
-  test("getDependenciesAndResolvers") {
+  test("getDependencies") {
     val repo = Repo("typelevel", "cats")
     val repoDir = config.workspace / repo.show
     val files = Map(repoDir / "project" / "build.properties" -> "sbt.version=1.2.6")
@@ -39,15 +39,17 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
     state shouldBe initial.copy(
       commands = Vector(
         List(
-          "TEST_VAR=GREAT",
-          "ANOTHER_TEST_VAR=ALSO_GREAT",
           repoDir.toString,
           "firejail",
+          "--quiet",
           s"--whitelist=$repoDir",
+          "--env=VAR1=val1",
+          "--env=VAR2=val2",
           "sbt",
-          "-batch",
-          "-no-colors",
-          s";$setOffline;$crossStewardDependencies;$reloadPlugins;$stewardDependencies"
+          "-Dsbt.color=false",
+          "-Dsbt.log.noformat=true",
+          "-Dsbt.supershell=false",
+          s";$crossStewardDependencies;$reloadPlugins;$stewardDependencies"
         ),
         List("read", s"$repoDir/project/build.properties")
       )
@@ -74,14 +76,16 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
         List("write", "/tmp/steward/.sbt/0.13/plugins/scala-steward-scalafix.sbt"),
         List("write", "/tmp/steward/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
         List(
-          "TEST_VAR=GREAT",
-          "ANOTHER_TEST_VAR=ALSO_GREAT",
           repoDir.toString,
           "firejail",
+          "--quiet",
           s"--whitelist=$repoDir",
+          "--env=VAR1=val1",
+          "--env=VAR2=val2",
           "sbt",
-          "-batch",
-          "-no-colors",
+          "-Dsbt.color=false",
+          "-Dsbt.log.noformat=true",
+          "-Dsbt.supershell=false",
           s";$scalafixEnable;$scalafixAll github:functional-streams-for-scala/fs2/v1?sha=v1.0.5"
         ),
         List("rm", "-rf", "/tmp/steward/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
@@ -111,14 +115,16 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
         List("write", "/tmp/steward/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
         List("write", s"$repoDir/scala-steward-scalafix-options.sbt"),
         List(
-          "TEST_VAR=GREAT",
-          "ANOTHER_TEST_VAR=ALSO_GREAT",
           repoDir.toString,
           "firejail",
+          "--quiet",
           s"--whitelist=$repoDir",
+          "--env=VAR1=val1",
+          "--env=VAR2=val2",
           "sbt",
-          "-batch",
-          "-no-colors",
+          "-Dsbt.color=false",
+          "-Dsbt.log.noformat=true",
+          "-Dsbt.supershell=false",
           s";$scalafixEnable;$scalafixAll github:cb372/cats/Cats_v2_2_0?sha=235bd7c92e431ab1902db174cf4665b05e08f2f1"
         ),
         List("rm", "-rf", s"$repoDir/scala-steward-scalafix-options.sbt"),

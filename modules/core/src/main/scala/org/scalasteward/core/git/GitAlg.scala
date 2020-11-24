@@ -77,4 +77,7 @@ final class GitAlg[F[_]](implicit
 
   override def syncFork(repo: Repo, upstreamUrl: Uri, defaultBranch: Branch): F[Unit] =
     workspaceAlg.repoDir(repo).flatMap(fileGitAlg.syncFork(_, upstreamUrl, defaultBranch))
+
+  override def version: F[String] =
+    fileGitAlg.version
 }

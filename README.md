@@ -1,9 +1,9 @@
 <p align="center">
-  <img src="https://github.com/fthomas/scala-steward/raw/master/data/images/scala-steward-logo-circle-0.png" height="180px">
+  <img src="https://github.com/scala-steward-org/scala-steward/raw/master/data/images/scala-steward-logo-circle-0.png" height="180px">
 </p>
 
 # Scala Steward
-[![Build Status](https://travis-ci.com/scala-steward-org/scala-steward.svg?branch=master)](https://travis-ci.com/scala-steward-org/scala-steward)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/scala-steward-org/scala-steward/Continuous%20Integration)](https://github.com/scala-steward-org/scala-steward/actions?query=workflow%3A%22Continuous+Integration%22)
 [![codecov](https://codecov.io/gh/scala-steward-org/scala-steward/branch/master/graph/badge.svg)](https://codecov.io/gh/scala-steward-org/scala-steward)
 [![Join the chat at https://gitter.im/scala-steward-org/scala-steward](https://badges.gitter.im/scala-steward-org/scala-steward.svg)](https://gitter.im/scala-steward-org/scala-steward?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Follow @ScalaSteward on Twitter](https://img.shields.io/twitter/follow/ScalaSteward.svg?logo=twitter&style=flat&color=blue)](https://twitter.com/ScalaSteward)
@@ -57,6 +57,7 @@ The [`docs`](docs) directory contains documentation about these topics:
 * [Scalafix Migrations](docs/scalafix-migrations.md)
 * [Frequently Asked Questions](docs/faq.md)
 * [Repository-specific configuration](docs/repo-specific-configuration.md)
+* [Artifact Migrations](docs/artifact-migrations.md)
 
 ## Contributors
 
@@ -78,6 +79,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [Claudio Bley](https://github.com/avdv)
 * [Dale Wijnand](https://github.com/dwijnand)
 * [Daniel Pfeiffer](https://github.com/dpfeiffer)
+* [Daniel Spiewak](https://github.com/djspiewak)
 * [David Francoeur](https://github.com/daddykotex)
 * [Don Smith III](https://github.com/cactauz)
 * [Doug Roper](https://github.com/htmldoug)
@@ -116,6 +118,8 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [Renato Cavalcanti](https://github.com/renatocaval)
 * [Rikito Taniguchi](https://github.com/tanishiking)
 * [Robert Stoll](https://github.com/robstoll)
+* [Scott Rice](https://github.com/scottrice10)
+* [solar](https://github.com/solar)
 * [Stanislav Chetvertkov](https://github.com/stanislav-chetvertkov)
 * [sullis](https://github.com/sullis)
 * [TATSUNO Yasuhiro](https://github.com/exoego)
@@ -143,6 +147,7 @@ Consider creating PR to add your company to the list and join the community.
 * [Chartboost](https://www.chartboost.com/)
 * [Colisweb](https://www.colisweb.com/)
 * [commercetools](https://docs.commercetools.com/)
+* [Dataswift.io](https://dataswift.io/)
 * [Enliven Systems](https://enliven.systems)
 * [Evolution Gaming](https://www.evolutiongaming.com/)
 * [Firstbird](https://firstbird.com)
@@ -179,7 +184,7 @@ plugin which was used until version 0.6 to find dependency updates.
 Thanks goes also to [**@impurepics**](https://twitter.com/impurepics)
 for [**@scala-steward**][@scala-steward]'s cute profile picture and to
 the maintainers and contributors of the various
-[libraries](https://github.com/fthomas/scala-steward/blob/master/project/Dependencies.scala)
+[libraries](https://github.com/scala-steward-org/scala-steward/blob/master/project/Dependencies.scala)
 this project depends on.
 
 ## License
@@ -187,6 +192,6 @@ this project depends on.
 Scala Steward is licensed under the
 [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0).
 
-[CoC]: https://github.com/fthomas/scala-steward/blob/master/CODE_OF_CONDUCT.md
+[CoC]: https://github.com/scala-steward-org/scala-steward/blob/master/CODE_OF_CONDUCT.md
 [@scala-steward]: https://github.com/scala-steward
 [sbt-updates]: https://github.com/rtimush/sbt-updates

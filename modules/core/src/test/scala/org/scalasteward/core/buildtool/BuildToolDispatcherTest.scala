@@ -27,15 +27,17 @@ class BuildToolDispatcherTest extends AnyFunSuite with Matchers {
         List("test", "-f", s"$repoDir/build.sc"),
         List("test", "-f", s"$repoDir/build.sbt"),
         List(
-          "TEST_VAR=GREAT",
-          "ANOTHER_TEST_VAR=ALSO_GREAT",
           repoDir.toString,
           "firejail",
+          "--quiet",
           s"--whitelist=$repoDir",
+          "--env=VAR1=val1",
+          "--env=VAR2=val2",
           "sbt",
-          "-batch",
-          "-no-colors",
-          s";$setOffline;$crossStewardDependencies;$reloadPlugins;$stewardDependencies"
+          "-Dsbt.color=false",
+          "-Dsbt.log.noformat=true",
+          "-Dsbt.supershell=false",
+          s";$crossStewardDependencies;$reloadPlugins;$stewardDependencies"
         ),
         List("read", s"$repoDir/project/build.properties"),
         List("read", s"$repoDir/.scalafmt.conf")

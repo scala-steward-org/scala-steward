@@ -10,9 +10,10 @@ pull_request_rules:
   - name: merge scala-steward's PRs
     conditions:
       - author=scala-steward
-      - status-success=Travis CI - Pull Request
-      # or, using the legacy travis-ci.org service:
-      # - status-success=continuous-integration/travis-ci/pr
+      - status-success=Build and Test (ubuntu-latest, 2.12.10, adopt@1.8)
+      - status-success=Build and Test (ubuntu-latest, 2.12.10, adopt@1.11)
+      - status-success=Build and Test (ubuntu-latest, 2.13.3, adopt@1.8)
+      - status-success=Build and Test (ubuntu-latest, 2.13.3, adopt@1.11)
     actions:
       merge:
         method: squash

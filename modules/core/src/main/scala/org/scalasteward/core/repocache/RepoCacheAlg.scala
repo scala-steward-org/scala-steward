@@ -24,14 +24,13 @@ import org.scalasteward.core.buildtool.BuildToolDispatcher
 import org.scalasteward.core.data.{Dependency, DependencyInfo}
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.repoconfig.RepoConfigAlg
-import org.scalasteward.core.util.MonadThrowable
+import org.scalasteward.core.util.MonadThrow
 import org.scalasteward.core.vcs.data.{Repo, RepoOut}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
 import scala.util.control.NoStackTrace
 
-final class RepoCacheAlg[F[_]](implicit
+final class RepoCacheAlg[F[_]](config: Config)(implicit
     buildToolDispatcher: BuildToolDispatcher[F],
-    config: Config,
     gitAlg: GitAlg[F],
     logger: Logger[F],
     parallel: Parallel[F],
@@ -40,7 +39,7 @@ final class RepoCacheAlg[F[_]](implicit
     repoConfigAlg: RepoConfigAlg[F],
     vcsApiAlg: VCSApiAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
-    F: MonadThrowable[F]
+    F: MonadThrow[F]
 ) {
   def checkCache(repo: Repo): F[RepoOut] =
     logger.info(s"Check cache of ${repo.show}") >> {

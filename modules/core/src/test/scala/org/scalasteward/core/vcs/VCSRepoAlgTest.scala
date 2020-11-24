@@ -12,6 +12,7 @@ class VCSRepoAlgTest extends AnyFunSuite with Matchers {
   val repo: Repo = Repo("fthomas", "datapackage")
   val repoDir: String = (config.workspace / "fthomas/datapackage").toString
   val askPass = s"GIT_ASKPASS=${config.gitAskPass}"
+  val envVars = List(askPass, "VAR1=val1", "VAR2=val2")
 
   val parentRepoOut: RepoOut = RepoOut(
     "datapackage",
@@ -33,17 +34,16 @@ class VCSRepoAlgTest extends AnyFunSuite with Matchers {
     val state = vcsRepoAlg.clone(repo, forkRepoOut).runS(MockState.empty).unsafeRunSync()
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List(
-          askPass,
+        envVars ++ List(
           config.workspace.toString,
           "git",
           "clone",
           "--recursive",
           s"https://${config.vcsLogin}@github.com/scala-steward/datapackage",
-          repoDir.toString
+          repoDir
         ),
-        List(askPass, repoDir, "git", "config", "user.email", "bot@example.org"),
-        List(askPass, repoDir, "git", "config", "user.name", "Bot Doe")
+        envVars ++ List(repoDir, "git", "config", "user.email", "bot@example.org"),
+        envVars ++ List(repoDir, "git", "config", "user.name", "Bot Doe")
       )
     )
   }
@@ -61,8 +61,7 @@ class VCSRepoAlgTest extends AnyFunSuite with Matchers {
     val state = vcsRepoAlg.syncFork(repo, forkRepoOut).runS(MockState.empty).unsafeRunSync()
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        List(
-          askPass,
+        envVars ++ List(
           repoDir,
           "git",
           "remote",
@@ -70,10 +69,10 @@ class VCSRepoAlgTest extends AnyFunSuite with Matchers {
           "upstream",
           s"https://${config.vcsLogin}@github.com/fthomas/datapackage"
         ),
-        List(askPass, repoDir, "git", "fetch", "--tags", "upstream", "master"),
-        List(askPass, repoDir, "git", "checkout", "-B", "master", "--track", "upstream/master"),
-        List(askPass, repoDir, "git", "merge", "upstream/master"),
-        List(askPass, repoDir, "git", "push", "--force", "--set-upstream", "origin", "master")
+        envVars ++ List(repoDir, "git", "fetch", "--tags", "upstream", "master"),
+        envVars ++ List(repoDir, "git", "checkout", "-B", "master", "--track", "upstream/master"),
+        envVars ++ List(repoDir, "git", "merge", "upstream/master"),
+        envVars ++ List(repoDir, "git", "push", "--force", "--set-upstream", "origin", "master")
       )
     )
   }
@@ -81,7 +80,7 @@ class VCSRepoAlgTest extends AnyFunSuite with Matchers {
   test("syncFork should do nothing when doNotFork = true") {
     val config = MockContext.config.copy(doNotFork = true)
     val state = VCSRepoAlg
-      .create(config, gitAlg)
+      .create(config)
       .syncFork(repo, parentRepoOut)
       .runS(MockState.empty)
       .unsafeRunSync()

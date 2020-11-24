@@ -23,7 +23,9 @@ import cats.{Functor, Traverse}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import org.apache.commons.io.FileUtils
-import org.scalasteward.core.util.MonadThrowable
+import org.http4s.Uri
+import org.http4s.implicits.http4sLiteralsSyntax
+import org.scalasteward.core.util.MonadThrow
 import scala.io.Source
 
 trait FileAlg[F[_]] {
@@ -43,12 +45,11 @@ trait FileAlg[F[_]] {
 
   def readResource(resource: String): F[String]
 
+  def readUri(uri: Uri): F[String]
+
   def walk(dir: File): Stream[F, File]
 
   def writeFile(file: File, content: String): F[Unit]
-
-  final def containsString(file: File, string: String)(implicit F: Functor[F]): F[Boolean] =
-    readFile(file).map(_.fold(false)(_.contains(string)))
 
   final def createTemporarily[A, E](file: File, content: String)(
       fa: F[A]
@@ -59,26 +60,30 @@ trait FileAlg[F[_]] {
   }
 
   final def editFile(file: File, edit: String => Option[String])(implicit
-      F: MonadThrowable[F]
+      F: MonadThrow[F]
   ): F[Boolean] =
     readFile(file)
       .flatMap(_.flatMap(edit).fold(F.pure(false))(writeFile(file, _).as(true)))
       .adaptError { case t => new Throwable(s"failed to edit $file", t) }
 
   final def editFiles[G[_]](files: G[File], edit: String => Option[String])(implicit
-      F: MonadThrowable[F],
+      F: MonadThrow[F],
       G: Traverse[G]
   ): F[Boolean] =
     files.traverse(editFile(_, edit)).map(_.foldLeft(false)(_ || _))
 
-  final def findFilesContaining(dir: File, string: String, fileFilter: File => Boolean)(implicit
+  final def findFiles(
+      dir: File,
+      fileFilter: File => Boolean,
+      contentFilter: String => Boolean
+  )(implicit
       streamCompiler: Stream.Compiler[F, F],
       F: Functor[F]
   ): F[List[File]] =
     walk(dir)
       .evalFilter(isRegularFile)
       .filter(fileFilter)
-      .evalFilter(containsString(_, string))
+      .evalFilter(readFile(_).map(_.fold(false)(contentFilter)))
       .compile
       .toList
 
@@ -125,9 +130,16 @@ object FileAlg {
         F.delay(if (file.exists) Some(file.contentAsString) else None)
 
       override def readResource(resource: String): F[String] =
-        Resource
-          .fromAutoCloseable(F.delay(Source.fromResource(resource)))
-          .use(src => F.delay(src.mkString))
+        readSource(Source.fromResource(resource))
+
+      override def readUri(uri: Uri): F[String] = {
+        val scheme = uri.scheme.getOrElse(scheme"file")
+        val withScheme = uri.copy(scheme = Some(scheme))
+        readSource(Source.fromURL(withScheme.renderString))
+      }
+
+      private def readSource(source: => Source): F[String] =
+        Resource.fromAutoCloseable(F.delay(source)).use(src => F.delay(src.mkString))
 
       override def walk(dir: File): Stream[F, File] =
         Stream.eval(F.delay(dir.walk())).flatMap(Stream.fromIterator(_))

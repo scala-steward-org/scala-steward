@@ -10,6 +10,7 @@ import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import scala.concurrent.duration._
 
 class RepoConfigAlgTest extends AnyFunSuite with Matchers {
   test("config with all fields set") {
@@ -34,7 +35,7 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     val config = repoConfigAlg.readRepoConfigWithDefault(repo).runA(initialState).unsafeRunSync()
 
     config shouldBe RepoConfig(
-      pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Weekly)),
+      pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(7.days))),
       updates = UpdatesConfig(
         allow = List(UpdatePattern(GroupId("eu.timepit"), None, None)),
         pin = List(
@@ -64,7 +65,7 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
         ),
         limit = Some(PosInt.unsafeFrom(4)),
         includeScala = Some(true),
-        fileExtensions = List(".txt")
+        fileExtensions = Some(List(".txt"))
       ),
       commits = CommitsConfig(
         message = Some("Update ${artifactName} from ${currentVersion} to ${nextVersion}")
@@ -86,13 +87,13 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     )
   }
 
-  test("config with 'updatePullRequests = always") {
+  test("config with 'updatePullRequests = always'") {
     val content = """updatePullRequests = "always" """
     val config = RepoConfigAlg.parseRepoConfig(content)
     config shouldBe Right(RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.Always)))
   }
 
-  test("config with 'updatePullRequests = on-conflicts") {
+  test("config with 'updatePullRequests = on-conflicts'") {
     val content = """updatePullRequests = "on-conflicts" """
     val config = RepoConfigAlg.parseRepoConfig(content)
     config shouldBe Right(
@@ -100,10 +101,16 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     )
   }
 
-  test("config with 'updatePullRequests = never") {
+  test("config with 'updatePullRequests = never'") {
     val content = """updatePullRequests = "never" """
     val config = RepoConfigAlg.parseRepoConfig(content)
     config shouldBe Right(RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.Never)))
+  }
+
+  test("config with 'updatePullRequests = foo'") {
+    val content = """updatePullRequests = foo """
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    config shouldBe Right(RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.default)))
   }
 
   test("config with 'pullRequests.frequency = @asap'") {
@@ -118,7 +125,9 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     val content = """pullRequests.frequency = "@daily" """
     val config = RepoConfigAlg.parseRepoConfig(content)
     config shouldBe Right(
-      RepoConfig(pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Daily)))
+      RepoConfig(pullRequests =
+        PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(1.day)))
+      )
     )
   }
 
@@ -126,7 +135,17 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     val content = """pullRequests.frequency = "@monthly" """
     val config = RepoConfigAlg.parseRepoConfig(content)
     config shouldBe Right(
-      RepoConfig(pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Monthly)))
+      RepoConfig(pullRequests =
+        PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(30.days)))
+      )
+    )
+  }
+
+  test("config with 'scalafmt.runAfterUpgrading = true'") {
+    val content = "scalafmt.runAfterUpgrading = true"
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    config shouldBe Right(
+      RepoConfig(scalafmt = ScalafmtConfig(runAfterUpgrading = Some(true)))
     )
   }
 

@@ -16,31 +16,31 @@
 
 package org.scalasteward.core.vcs
 
-import cats.effect.Sync
-import org.scalasteward.core.application.Config
-import org.scalasteward.core.application.SupportedVCS.{Bitbucket, BitbucketServer, GitHub, Gitlab}
-import org.scalasteward.core.bitbucket.http4s.Http4sBitbucketApiAlg
-import org.scalasteward.core.bitbucketserver.http4s.Http4sBitbucketServerApiAlg
-import org.scalasteward.core.github.http4s.Http4sGitHubApiAlg
-import org.scalasteward.core.gitlab.http4s.Http4sGitLabApiAlg
-import org.scalasteward.core.util.HttpJsonClient
-import org.scalasteward.core.vcs.data.AuthenticatedUser
 import io.chrisdavenport.log4cats.Logger
+import org.scalasteward.core.application.Config
+import org.scalasteward.core.application.SupportedVCS.{Bitbucket, BitbucketServer, GitHub, GitLab}
+import org.scalasteward.core.util.{HttpJsonClient, MonadThrow}
+import org.scalasteward.core.vcs.bitbucket.BitbucketApiAlg
+import org.scalasteward.core.vcs.bitbucketserver.BitbucketServerApiAlg
+import org.scalasteward.core.vcs.data.AuthenticatedUser
+import org.scalasteward.core.vcs.github.GitHubApiAlg
+import org.scalasteward.core.vcs.gitlab.GitLabApiAlg
 
-class VCSSelection[F[_]: Sync](implicit
+final class VCSSelection[F[_]](implicit
     client: HttpJsonClient[F],
     user: AuthenticatedUser,
-    logger: Logger[F]
+    logger: Logger[F],
+    F: MonadThrow[F]
 ) {
-  private def github(config: Config): Http4sGitHubApiAlg[F] = {
-    import org.scalasteward.core.github.http4s.authentication.addCredentials
+  private def github(config: Config): GitHubApiAlg[F] = {
+    import org.scalasteward.core.vcs.github.authentication.addCredentials
 
-    new Http4sGitHubApiAlg[F](config.vcsApiHost, _ => addCredentials(user))
+    new GitHubApiAlg[F](config.vcsApiHost, _ => addCredentials(user))
   }
 
-  private def gitlab(config: Config): Http4sGitLabApiAlg[F] = {
-    import org.scalasteward.core.gitlab.http4s.authentication.addCredentials
-    new Http4sGitLabApiAlg[F](
+  private def gitlab(config: Config): GitLabApiAlg[F] = {
+    import org.scalasteward.core.vcs.gitlab.authentication.addCredentials
+    new GitLabApiAlg[F](
       config.vcsApiHost,
       user,
       _ => addCredentials(user),
@@ -49,16 +49,16 @@ class VCSSelection[F[_]: Sync](implicit
     )
   }
 
-  private def bitbucket(config: Config): Http4sBitbucketApiAlg[F] = {
-    import org.scalasteward.core.bitbucket.http4s.authentication.addCredentials
+  private def bitbucket(config: Config): BitbucketApiAlg[F] = {
+    import org.scalasteward.core.vcs.bitbucket.authentication.addCredentials
 
-    new Http4sBitbucketApiAlg(config.vcsApiHost, user, _ => addCredentials(user), config.doNotFork)
+    new BitbucketApiAlg(config.vcsApiHost, user, _ => addCredentials(user), config.doNotFork)
   }
 
-  private def bitbucketServer(config: Config): Http4sBitbucketServerApiAlg[F] = {
-    import org.scalasteward.core.bitbucket.http4s.authentication.addCredentials
+  private def bitbucketServer(config: Config): BitbucketServerApiAlg[F] = {
+    import org.scalasteward.core.vcs.bitbucket.authentication.addCredentials
 
-    new Http4sBitbucketServerApiAlg[F](
+    new BitbucketServerApiAlg[F](
       config.vcsApiHost,
       _ => addCredentials(user),
       config.bitbucketServerUseDefaultReviewers
@@ -68,7 +68,7 @@ class VCSSelection[F[_]: Sync](implicit
   def getAlg(config: Config): VCSApiAlg[F] =
     config.vcsType match {
       case GitHub          => github(config)
-      case Gitlab          => gitlab(config)
+      case GitLab          => gitlab(config)
       case Bitbucket       => bitbucket(config)
       case BitbucketServer => bitbucketServer(config)
     }
