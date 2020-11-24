@@ -86,10 +86,9 @@ final class FileGitAlg[F[_]](config: Config)(implicit
           // Resolve CONFLICT (modify/delete) by deleting unmerged files:
           for {
             unmergedFiles <- git("diff", "--name-only", "--diff-filter=U")(repo)
-            _ <- Nel.fromList(unmergedFiles.filter(_.nonEmpty)) match {
-              case Some(files) => files.traverse(file => git("rm", file)(repo))
-              case None        => F.raiseError(throwable)
-            }
+            _ <- Nel
+              .fromList(unmergedFiles.filter(_.nonEmpty))
+              .fold(F.raiseError[Unit](throwable))(_.traverse_(file => git("rm", file)(repo)))
             _ <- git("commit", "--all", "--no-edit", sign)(repo)
           } yield ()
         }

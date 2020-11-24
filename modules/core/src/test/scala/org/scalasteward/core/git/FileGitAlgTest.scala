@@ -29,6 +29,18 @@ class FileGitAlgTest extends AnyFunSuite with Matchers {
     p.unsafeRunSync() shouldBe List("'Bot Doe'")
   }
 
+  test("cloneExists") {
+    val repo = rootDir / "cloneExists"
+    val p = for {
+      e1 <- ioFileGitAlg.cloneExists(repo)
+      _ <- supplement.createRepo(repo)
+      e2 <- ioFileGitAlg.cloneExists(repo)
+      _ <- ioFileGitAlg.removeClone(repo)
+      e3 <- ioFileGitAlg.cloneExists(repo)
+    } yield (e1, e2, e3)
+    p.unsafeRunSync() shouldBe ((false, true, false))
+  }
+
   test("containsChanges") {
     val repo = rootDir / "containsChanges"
     val p = for {
