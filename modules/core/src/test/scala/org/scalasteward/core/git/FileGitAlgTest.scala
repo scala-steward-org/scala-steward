@@ -5,7 +5,7 @@ import cats.Monad
 import cats.effect.IO
 import cats.syntax.all._
 import org.scalasteward.core.TestInstances.ioLogger
-import org.scalasteward.core.git.GitAlgTest.{master, Supplement}
+import org.scalasteward.core.git.FileGitAlgTest.{master, Supplement}
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
 import org.scalasteward.core.io.ProcessAlgTest.ioProcessAlg
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
@@ -13,8 +13,8 @@ import org.scalasteward.core.mock.MockContext._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-class GitAlgTest extends AnyFunSuite with Matchers {
-  implicit private val ioWorkspaceAlg: WorkspaceAlg[IO] = WorkspaceAlg.create[IO]
+class FileGitAlgTest extends AnyFunSuite with Matchers {
+  implicit private val ioWorkspaceAlg: WorkspaceAlg[IO] = WorkspaceAlg.create[IO](config)
   implicit private val ioFileGitAlg: FileGitAlg[IO] = new FileGitAlg[IO](config)
   private val supplement = new Supplement[IO]
   private val rootDir = File.temp / "scala-steward" / "git-tests"
@@ -79,7 +79,7 @@ class GitAlgTest extends AnyFunSuite with Matchers {
   }
 }
 
-object GitAlgTest {
+object FileGitAlgTest {
   val master: Branch = Branch("master")
 
   final class Supplement[F[_]](implicit

@@ -16,7 +16,7 @@ import org.scalasteward.core.coursier.{CoursierAlg, VersionsCache}
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.edit.hooks.HookExecutor
 import org.scalasteward.core.git.{FileGitAlg, GitAlg}
-import org.scalasteward.core.io.{MockFileAlg, MockProcessAlg, MockWorkspaceAlg, _}
+import org.scalasteward.core.io._
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.persistence.JsonKeyValueStore
 import org.scalasteward.core.repocache.RepoCacheRepository
