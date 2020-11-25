@@ -4,6 +4,7 @@ import sbt.librarymanagement.syntax.ExclusionRule
 
 object Dependencies {
   val attoCore = "org.tpolecat" %% "atto-core" % "0.8.0"
+  val bcprovJdk15to18 = "org.bouncycastle" % "bcprov-jdk15to18" % "1.67"
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.1"
   val betterMonadicFor = "com.olegpy" %% "better-monadic-for" % "0.3.1"
   val caseApp = "com.github.alexarchambault" %% "case-app" % "2.0.4"
@@ -32,6 +33,9 @@ object Dependencies {
   val kindProjector = "org.typelevel" % "kind-projector" % "0.11.1"
   val log4catsSlf4j = "io.chrisdavenport" %% "log4cats-slf4j" % "1.1.1"
   val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.2.3"
+  val jjwtApi = "io.jsonwebtoken" % "jjwt-api" % "0.11.2"
+  val jjwtImpl = "io.jsonwebtoken" % "jjwt-impl" % jjwtApi.revision
+  val jjwtJackson = "io.jsonwebtoken" % "jjwt-jackson" % jjwtApi.revision
   val millVersion = Def.setting(if (scalaBinaryVersion.value == "2.12") "0.6.3" else "0.9.3")
   val millScalalib = Def.setting("com.lihaoyi" %% "mill-scalalib" % millVersion.value)
   val monocleCore = "com.github.julien-truffaut" %% "monocle-core" % "2.1.0"

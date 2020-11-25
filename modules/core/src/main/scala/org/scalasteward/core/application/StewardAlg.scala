@@ -31,11 +31,15 @@ import org.scalasteward.core.util
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.util.{BracketThrow, DateTimeAlg}
 import org.scalasteward.core.vcs.data.Repo
+import org.scalasteward.core.vcs.github.{GitHubApp, GitHubAppApiAlg, GitHubAuthAlg}
+import scala.concurrent.duration._
 
 final class StewardAlg[F[_]](config: Config)(implicit
     dateTimeAlg: DateTimeAlg[F],
     fileAlg: FileAlg[F],
     gitAlg: GitAlg[F],
+    githubAppApiAlg: GitHubAppApiAlg[F],
+    githubAuthAlg: GitHubAuthAlg[F],
     logger: Logger[F],
     nurtureAlg: NurtureAlg[F],
     pruningAlg: PruningAlg[F],
@@ -55,6 +59,26 @@ final class StewardAlg[F[_]](config: Config)(implicit
           Repo(owner.trim, repo.trim)
         }.toList
       }
+    }
+
+  private def getGitHubAppRepos(githubApp: GitHubApp): Stream[F, Repo] =
+    Stream.evals {
+      for {
+        jwt <- githubAuthAlg.createJWT(githubApp, 2.minutes)
+        installations <- githubAppApiAlg.installations(jwt)
+        repositories <- installations.traverse { installation =>
+          githubAppApiAlg
+            .accessToken(jwt, installation.id)
+            .flatMap(token => githubAppApiAlg.repositories(token.token))
+        }
+      } yield repositories
+        .flatMap(_.repositories)
+        .map(repo =>
+          repo.full_name.split('/') match {
+            case Array(owner, name) =>
+              Repo(owner, name)
+          }
+        )
     }
 
   private def steward(repo: Repo): F[Either[Throwable, Unit]] = {
@@ -78,7 +102,8 @@ final class StewardAlg[F[_]](config: Config)(implicit
         _ <- selfCheckAlg.checkAll
         _ <- workspaceAlg.cleanWorkspace
         exitCode <- sbtAlg.addGlobalPlugins {
-          readRepos(config.reposFile)
+          (config.githubApp.map(getGitHubAppRepos).getOrElse(Stream.empty) ++
+            readRepos(config.reposFile))
             .evalMap(steward)
             .compile
             .foldMonoid

@@ -48,7 +48,9 @@ object MockContext {
           EnvVar("VAR1", "val1"),
           EnvVar("VAR2", "val2")
         ),
-        cacheTtl = 1.hour
+        cacheTtl = 1.hour,
+        githubAppId = Some(12345678),
+        githubAppKeyFile = Some(File("example_app_key"))
       )
     )
 
