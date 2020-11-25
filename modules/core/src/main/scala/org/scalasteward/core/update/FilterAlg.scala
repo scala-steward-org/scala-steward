@@ -132,6 +132,11 @@ object FilterAlg {
           // https://github.com/scala-steward-org/scala-steward/issues/1413
           "36845576"
         ).contains
+      case ("commons-codec", "commons-codec") =>
+        List(
+          // https://github.com/scala-steward-org/scala-steward/issues/1753
+          "20041127.091804"
+        ).contains
       case ("commons-collections", "commons-collections") =>
         List(
           "20030418.083655",
@@ -140,6 +145,11 @@ object FilterAlg {
           // https://github.com/albuch/sbt-dependency-check/pull/85
           "20040102.233541",
           "20040616"
+        ).contains
+      case ("commons-io", "commons-io") =>
+        List(
+          // https://github.com/scala-steward-org/scala-steward/issues/1753
+          "20030203.000550"
         ).contains
       case ("io.monix", _) =>
         List(
