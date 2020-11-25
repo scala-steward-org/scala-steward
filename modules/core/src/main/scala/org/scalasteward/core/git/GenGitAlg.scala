@@ -16,10 +16,13 @@
 
 package org.scalasteward.core.git
 
-import cats.{FlatMap, Monad}
 import cats.effect.Bracket
 import cats.syntax.all._
+import cats.{FlatMap, Monad}
 import org.http4s.Uri
+import org.scalasteward.core.application.Config
+import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
+import org.scalasteward.core.util.BracketThrow
 
 trait GenGitAlg[F[_], Repo] {
   def branchAuthors(repo: Repo, branch: Branch, base: Branch): F[List[String]]
@@ -124,4 +127,14 @@ trait GenGitAlg[F[_], Repo] {
         self.version
     }
   }
+}
+
+object GenGitAlg {
+  def create[F[_]](config: Config)(implicit
+      fileAlg: FileAlg[F],
+      processAlg: ProcessAlg[F],
+      workspaceAlg: WorkspaceAlg[F],
+      F: BracketThrow[F]
+  ): GitAlg[F] =
+    new FileGitAlg[F](config).contramapRepoF(workspaceAlg.repoDir)
 }
