@@ -123,7 +123,7 @@ final class FileGitAlg[F[_]](config: Config)(implicit
   override def version: F[String] =
     workspaceAlg.rootDir.flatMap(git("--version")).map(_.mkString.trim)
 
-  def git(args: String*)(repo: File): F[List[String]] =
+  private def git(args: String*)(repo: File): F[List[String]] =
     processAlg.exec(Nel.of("git", args: _*), repo, "GIT_ASKPASS" -> config.gitAskPass.pathAsString)
 
   private val sign: String =
