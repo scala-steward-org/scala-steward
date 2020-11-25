@@ -9,7 +9,7 @@ import org.scalasteward.core.git.FileGitAlgTest.{master, Supplement}
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
 import org.scalasteward.core.io.ProcessAlgTest.ioProcessAlg
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.mock.MockContext._
+import org.scalasteward.core.mock.MockContext.config
 import org.scalasteward.core.util.Nel
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -57,6 +57,17 @@ class FileGitAlgTest extends AnyFunSuite with Matchers {
       c3 <- ioGitAlg.containsChanges(repo)
     } yield (c1, c2, c3)
     p.unsafeRunSync() shouldBe ((false, true, false))
+  }
+
+  test("currentBranch") {
+    val repo = rootDir / "currentBranch"
+    val p = for {
+      _ <- supplement.createRepo(repo)
+      _ <- supplement.git("commit", "--allow-empty", "-m", "Initial commit")(repo)
+      branch <- ioGitAlg.currentBranch(repo)
+      _ <- ioGitAlg.latestSha1(repo, branch)
+    } yield branch
+    p.unsafeRunSync() shouldBe master
   }
 
   test("findFilesContaining") {
