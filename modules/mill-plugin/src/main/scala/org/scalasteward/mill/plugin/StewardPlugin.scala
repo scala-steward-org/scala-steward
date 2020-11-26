@@ -20,7 +20,7 @@ import coursier.core.{Authentication, Repository}
 import coursier.ivy.IvyRepository
 import coursier.maven.MavenRepository
 import mill._
-import mill.define.{Discover, ExternalModule, Task}
+import mill.define.{Discover, ExternalModule}
 import mill.eval.Evaluator
 import mill.scalalib._
 import ujson._
@@ -44,7 +44,7 @@ object StewardPlugin extends ExternalModule {
   def findModules(ev: Evaluator) =
     ev.rootModule.millInternal.modules.collect { case j: JavaModule => j }
 
-  def toModuleDep(m: JavaModule): Task[ModuleDependencies] = {
+  def toModuleDep(m: JavaModule) = {
     val artifactMods = m match {
       case scalaMod: ScalaModule =>
         T.task(
@@ -60,8 +60,9 @@ object StewardPlugin extends ExternalModule {
       ivy.iterator.toSeq.map(Dependency.fromDep(_, mod))
     }
 
-    m.repositoriesTask.zip(dependencies).map { case (repositories, deps) =>
-      val resolvers = repositories.map(Repo).filterNot(_.isLocal)
+    T.task {
+      val resolvers = m.repositories.map(Repo).filterNot(_.isLocal)
+      val deps = dependencies()
       ModuleDependencies(m.millModuleSegments.render, resolvers, deps)
     }
   }
