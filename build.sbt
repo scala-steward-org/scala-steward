@@ -178,7 +178,8 @@ lazy val `sbt-plugin` = myCrossProject("sbt-plugin")
 lazy val `mill-plugin` = myCrossProject("mill-plugin")
   .settings(
     crossScalaVersions := Seq(Scala213, Scala212),
-    libraryDependencies += Dependencies.millScalalib.value % Provided
+    libraryDependencies += Dependencies.millScalalib.value % Provided,
+    scalacOptions -= "-Xfatal-warnings"
   )
 
 /// settings
