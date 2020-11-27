@@ -53,8 +53,6 @@ ThisBuild / githubWorkflowBuild :=
     WorkflowStep.Use("codecov", "codecov-action", "v1", name = Some("Codecov"))
   )
 
-ThisBuild / githubWorkflowOSes += "macos-latest"
-
 /// projects
 
 lazy val root = project
