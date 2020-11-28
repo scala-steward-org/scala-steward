@@ -42,6 +42,7 @@ import org.scalasteward.core.update.{ArtifactMigrations, FilterAlg, PruningAlg, 
 import org.scalasteward.core.util._
 import org.scalasteward.core.util.uri._
 import org.scalasteward.core.vcs.data.AuthenticatedUser
+import org.scalasteward.core.vcs.github.{GitHubAppApiAlg, GitHubAuthAlg}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg, VCSSelection}
 
 object Context {
@@ -70,6 +71,7 @@ object Context {
       implicit val repoConfigAlg: RepoConfigAlg[F] = new RepoConfigAlg[F](config)
       implicit val filterAlg: FilterAlg[F] = new FilterAlg[F]
       implicit val gitAlg: GitAlg[F] = GenGitAlg.create[F](config)
+      implicit val gitHubAuthAlg: GitHubAuthAlg[F] = GitHubAuthAlg.create[F]
       implicit val hookExecutor: HookExecutor[F] = new HookExecutor[F]
       implicit val httpJsonClient: HttpJsonClient[F] = new HttpJsonClient[F]
       implicit val repoCacheRepository: RepoCacheRepository[F] =
@@ -96,6 +98,7 @@ object Context {
       implicit val editAlg: EditAlg[F] = new EditAlg[F]
       implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F](config)
       implicit val pruningAlg: PruningAlg[F] = new PruningAlg[F]
+      implicit val gitHubAppApiAlg: GitHubAppApiAlg[F] = new GitHubAppApiAlg[F](config.vcsApiHost)
       new StewardAlg[F](config)
     }
 

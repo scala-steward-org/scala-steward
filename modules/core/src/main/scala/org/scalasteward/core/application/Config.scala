@@ -17,6 +17,7 @@
 package org.scalasteward.core.application
 
 import better.files.File
+import cats.Apply
 import cats.effect.Sync
 import org.http4s.Uri
 import org.http4s.Uri.UserInfo
@@ -25,6 +26,7 @@ import org.scalasteward.core.application.Config.{ProcessCfg, ScalafixCfg}
 import org.scalasteward.core.git.Author
 import org.scalasteward.core.util
 import org.scalasteward.core.vcs.data.AuthenticatedUser
+import org.scalasteward.core.vcs.github.GitHubApp
 import scala.concurrent.duration.FiniteDuration
 import scala.sys.process.Process
 
@@ -69,7 +71,8 @@ final case class Config(
     artifactMigrations: Option[File],
     cacheTtl: FiniteDuration,
     bitbucketServerUseDefaultReviewers: Boolean,
-    gitlabMergeWhenPipelineSucceeds: Boolean
+    gitlabMergeWhenPipelineSucceeds: Boolean,
+    githubApp: Option[GitHubApp]
 ) {
   def vcsUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] = {
     val urlWithUser = util.uri.withUserInfo.set(UserInfo(vcsLogin, None))(vcsApiHost).renderString
@@ -128,6 +131,7 @@ object Config {
       artifactMigrations = args.artifactMigrations,
       cacheTtl = args.cacheTtl,
       bitbucketServerUseDefaultReviewers = args.bitbucketServerUseDefaultReviewers,
-      gitlabMergeWhenPipelineSucceeds = args.gitlabMergeWhenPipelineSucceeds
+      gitlabMergeWhenPipelineSucceeds = args.gitlabMergeWhenPipelineSucceeds,
+      githubApp = Apply[Option].map2(args.githubAppId, args.githubAppKeyFile)(GitHubApp)
     )
 }

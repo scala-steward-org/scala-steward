@@ -51,7 +51,9 @@ object Cli {
       artifactMigrations: Option[File] = None,
       cacheTtl: FiniteDuration = 2.hours,
       bitbucketServerUseDefaultReviewers: Boolean = false,
-      gitlabMergeWhenPipelineSucceeds: Boolean = false
+      gitlabMergeWhenPipelineSucceeds: Boolean = false,
+      githubAppKeyFile: Option[File] = None,
+      githubAppId: Option[Long] = None
   )
 
   final case class EnvVar(name: String, value: String)
