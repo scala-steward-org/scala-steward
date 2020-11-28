@@ -490,14 +490,14 @@ class UpdateHeuristicTest extends AnyFunSuite with Matchers {
   test("missing enclosing quote before") {
     val original =
       """.add("scalatestplus", version = "3.2.2.0", org = "org.scalatestplus", "scalacheck-1-14")"""
-    Single(" org.typelevel" % "cats-effect" % "2.2.0", Nel.of("2.3.0"))
+    Single("org.typelevel" % "cats-effect" % "2.2.0", Nel.of("2.3.0"))
       .replaceVersionIn(original) shouldBe (None -> UpdateHeuristic.all.last.name)
   }
 
   test("missing enclosing quote after") {
     val original =
       """.add("scalatestplus", version = "2.2.0.3", org = "org.scalatestplus", "scalacheck-1-14")"""
-    Single(" org.typelevel" % "cats-effect" % "2.2.0", Nel.of("2.3.0"))
+    Single("org.typelevel" % "cats-effect" % "2.2.0", Nel.of("2.3.0"))
       .replaceVersionIn(original) shouldBe (None -> UpdateHeuristic.all.last.name)
   }
 }
