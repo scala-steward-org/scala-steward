@@ -97,9 +97,10 @@ object UpdateHeuristic {
             val group1 = match0.group(1)
             val group2 = match0.group(2)
             val lastGroup = match0.group(match0.groupCount)
-            val versionInQuotes =
-              group2.lastOption.filter(_ === '"').fold(true)(lastGroup.headOption.contains_)
-            if (shouldBeIgnored(group1) || !versionInQuotes) None
+            if (
+              shouldBeIgnored(group1) ||
+              !enclosingCharsDelimitVersion(group2.lastOption, lastGroup.headOption)
+            ) None
             else Some(Regex.quoteReplacement(group1 + group2 + update.nextVersion + lastGroup))
           }
         ).someIfChanged
@@ -107,6 +108,14 @@ object UpdateHeuristic {
 
     replaceF
   }
+
+  private def enclosingCharsDelimitVersion(before: Option[Char], after: Option[Char]): Boolean =
+    (before, after) match {
+      case (Some('"'), c2) => c2.contains_('"')
+      case (_, Some('"'))  => false
+
+      case _ => true
+    }
 
   private def searchTerms(update: Update): List[String] = {
     val terms = update match {

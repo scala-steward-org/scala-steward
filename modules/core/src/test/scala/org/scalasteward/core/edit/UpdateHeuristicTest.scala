@@ -479,13 +479,26 @@ class UpdateHeuristicTest extends AnyFunSuite with Matchers {
       """ val jsoniter = "2.4.1"
         | addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.4.0")
         |""".stripMargin
-    Update
-      .Group(
-        "com.github.plokhotnyuk.jsoniter-scala" %
-          Nel.of("jsoniter-scala-core", "jsoniter-scala-macros") % "2.4.0",
-        Nel.of("2.4.1")
-      )
-      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.relaxed.name)
+    Group(
+      "com.github.plokhotnyuk.jsoniter-scala" %
+        Nel.of("jsoniter-scala-core", "jsoniter-scala-macros")
+        % "2.4.0",
+      Nel.of("2.4.1")
+    ).replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.relaxed.name)
+  }
+
+  test("missing enclosing quote before") {
+    val original =
+      """.add("scalatestplus", version = "3.2.2.0", org = "org.scalatestplus", "scalacheck-1-14")"""
+    Single(" org.typelevel" % "cats-effect" % "2.2.0", Nel.of("2.3.0"))
+      .replaceVersionIn(original) shouldBe (None -> UpdateHeuristic.all.last.name)
+  }
+
+  test("missing enclosing quote after") {
+    val original =
+      """.add("scalatestplus", version = "2.2.0.3", org = "org.scalatestplus", "scalacheck-1-14")"""
+    Single(" org.typelevel" % "cats-effect" % "2.2.0", Nel.of("2.3.0"))
+      .replaceVersionIn(original) shouldBe (None -> UpdateHeuristic.all.last.name)
   }
 }
 
