@@ -459,15 +459,7 @@ class UpdateHeuristicTest extends AnyFunSuite with Matchers {
         "scala-opentracing-http4s-server-tapir"
       ) % "2.4.1",
       Nel.of("2.5.0")
-    )
-      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.sliding.name)
-  }
-
-  test("fail on versions duplicated in a comment") {
-    val original = """val scalajsJqueryVersion = "0.9.3" // val scalajsJqueryVersion = "0.9.3""""
-    val expected = """val scalajsJqueryVersion = "0.9.3" // val scalajsJqueryVersion = "0.9.4""""
-    Single("be.doeraene" % "scalajs-jquery" % "0.9.3", Nel.of("0.9.4"))
-      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.original.name)
+    ).replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.sliding.name)
   }
 
   test("issue 1489: ignore word: scala") {
@@ -499,6 +491,15 @@ class UpdateHeuristicTest extends AnyFunSuite with Matchers {
       """.add("scalatestplus", version = "2.2.0.3", org = "org.scalatestplus", "scalacheck-1-14")"""
     Single("org.typelevel" % "cats-effect" % "2.2.0", Nel.of("2.3.0"))
       .replaceVersionIn(original) shouldBe (None -> UpdateHeuristic.all.last.name)
+  }
+
+  test("issue #1651: don't update in comments") {
+    val original =
+      """val scalaTest = "3.2.0"  // scalaTest 3.2.0-M2 is causing a failure on scala 2.13..."""
+    val expected =
+      """val scalaTest = "3.2.2"  // scalaTest 3.2.0-M2 is causing a failure on scala 2.13..."""
+    Single("org.scalatest" % "scalatest" % "3.2.0", Nel.of("3.2.2"))
+      .replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.original.name)
   }
 }
 
