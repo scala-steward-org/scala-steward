@@ -16,4 +16,4 @@
 
 package org.scalasteward.core.git
 
-final case class Author(name: String, email: String)
+final case class Author(name: String, email: String, signingKey: Option[String])

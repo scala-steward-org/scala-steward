@@ -105,6 +105,7 @@ final class FileGitAlg[F[_]](config: Config)(implicit
     for {
       _ <- git("config", "user.email", author.email)(repo)
       _ <- git("config", "user.name", author.name)(repo)
+      _ <- author.signingKey.traverse_(key => git("config", "user.signingKey", key)(repo))
     } yield ()
 
   override def syncFork(repo: File, upstreamUrl: Uri, defaultBranch: Branch): F[Unit] =
