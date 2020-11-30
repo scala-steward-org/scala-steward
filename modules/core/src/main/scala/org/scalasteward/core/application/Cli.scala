@@ -33,6 +33,7 @@ object Cli {
       defaultRepoConf: Option[File] = None,
       gitAuthorName: String = "Scala Steward",
       gitAuthorEmail: String,
+      gitAuthorSigningKey: Option[String] = None,
       vcsType: SupportedVCS = SupportedVCS.GitHub,
       vcsApiHost: Uri = uri"https://api.github.com",
       vcsLogin: String,

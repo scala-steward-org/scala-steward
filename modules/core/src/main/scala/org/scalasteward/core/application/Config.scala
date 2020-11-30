@@ -107,7 +107,7 @@ object Config {
       workspace = args.workspace,
       reposFile = args.reposFile,
       defaultRepoConfigFile = args.defaultRepoConf,
-      gitAuthor = Author(args.gitAuthorName, args.gitAuthorEmail),
+      gitAuthor = Author(args.gitAuthorName, args.gitAuthorEmail, args.gitAuthorSigningKey),
       vcsType = args.vcsType,
       vcsApiHost = args.vcsApiHost,
       vcsLogin = args.vcsLogin,
