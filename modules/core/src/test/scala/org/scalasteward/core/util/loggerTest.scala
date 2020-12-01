@@ -12,7 +12,7 @@ class loggerTest extends AnyFunSuite with Matchers {
     final case class Err(msg: String) extends Throwable(msg)
     val err = Err("hmm?")
     val state = mockLogger
-      .attemptLog("run")(Sync[MockEff].raiseError(err))
+      .attemptLogInfo("run")(Sync[MockEff].raiseError(err))
       .runS(MockState.empty)
       .unsafeRunSync()
 

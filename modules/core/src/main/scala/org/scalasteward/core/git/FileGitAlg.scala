@@ -18,13 +18,16 @@ package org.scalasteward.core.git
 
 import better.files.File
 import cats.syntax.all._
+import io.chrisdavenport.log4cats.Logger
 import org.http4s.Uri
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
+import org.scalasteward.core.util.logger._
 import org.scalasteward.core.util.{BracketThrow, Nel}
 
 final class FileGitAlg[F[_]](config: Config)(implicit
     fileAlg: FileAlg[F],
+    logger: Logger[F],
     processAlg: ProcessAlg[F],
     workspaceAlg: WorkspaceAlg[F],
     F: BracketThrow[F]
@@ -36,9 +39,13 @@ final class FileGitAlg[F[_]](config: Config)(implicit
     git("checkout", branch.name)(repo).void
 
   override def clone(repo: File, url: Uri): F[Unit] =
-    workspaceAlg.rootDir.flatMap { rootDir =>
-      git("clone", "--recursive", url.toString, repo.pathAsString)(rootDir).void
-    }
+    for {
+      rootDir <- workspaceAlg.rootDir
+      _ <- git("clone", url.toString, repo.pathAsString)(rootDir)
+      _ <- logger.attemptLogError("Initializing and cloning submodules failed") {
+        git("submodule", "update", "--init", "--recursive")(repo)
+      }
+    } yield ()
 
   override def cloneExists(repo: File): F[Boolean] =
     fileAlg.isDirectory(repo / ".git")

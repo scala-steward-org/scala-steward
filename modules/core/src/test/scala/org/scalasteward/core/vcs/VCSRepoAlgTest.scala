@@ -11,8 +11,7 @@ import org.scalatest.matchers.should.Matchers
 class VCSRepoAlgTest extends AnyFunSuite with Matchers {
   val repo: Repo = Repo("fthomas", "datapackage")
   val repoDir: String = (config.workspace / "fthomas/datapackage").toString
-  val askPass = s"GIT_ASKPASS=${config.gitAskPass}"
-  val envVars = List(askPass, "VAR1=val1", "VAR2=val2")
+  val envVars = List(s"GIT_ASKPASS=${config.gitAskPass}", "VAR1=val1", "VAR2=val2")
 
   val parentRepoOut: RepoOut = RepoOut(
     "datapackage",
@@ -32,16 +31,11 @@ class VCSRepoAlgTest extends AnyFunSuite with Matchers {
 
   test("clone") {
     val state = vcsRepoAlg.clone(repo, forkRepoOut).runS(MockState.empty).unsafeRunSync()
+    val url = s"https://${config.vcsLogin}@github.com/scala-steward/datapackage"
     state shouldBe MockState.empty.copy(
       commands = Vector(
-        envVars ++ List(
-          config.workspace.toString,
-          "git",
-          "clone",
-          "--recursive",
-          s"https://${config.vcsLogin}@github.com/scala-steward/datapackage",
-          repoDir
-        ),
+        envVars ++ List(config.workspace.toString, "git", "clone", url, repoDir),
+        envVars ++ List(repoDir, "git", "submodule", "update", "--init", "--recursive"),
         envVars ++ List(repoDir, "git", "config", "user.email", "bot@example.org"),
         envVars ++ List(repoDir, "git", "config", "user.name", "Bot Doe")
       )
