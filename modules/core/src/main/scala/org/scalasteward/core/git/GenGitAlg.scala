@@ -19,6 +19,7 @@ package org.scalasteward.core.git
 import cats.effect.Bracket
 import cats.syntax.all._
 import cats.{FlatMap, Monad}
+import io.chrisdavenport.log4cats.Logger
 import org.http4s.Uri
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
@@ -132,6 +133,7 @@ trait GenGitAlg[F[_], Repo] {
 object GenGitAlg {
   def create[F[_]](config: Config)(implicit
       fileAlg: FileAlg[F],
+      logger: Logger[F],
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F],
       F: BracketThrow[F]
