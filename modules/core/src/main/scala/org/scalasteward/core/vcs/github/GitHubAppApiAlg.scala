@@ -17,6 +17,7 @@
 package org.scalasteward.core.vcs.github
 
 import cats.Applicative
+import cats.syntax.functor._
 import org.http4s.{Header, Uri}
 import org.scalasteward.core.util.HttpJsonClient
 
@@ -39,14 +40,14 @@ class GitHubAppApiAlg[F[_]: Applicative](
       )
 
   /** [[https://docs.github.com/en/free-pro-team@latest/rest/reference/apps#list-installations-for-the-authenticated-app]]
-    *
-    * TODO pagination use `page` query param
     */
   def installations(jwt: String): F[List[InstallationOut]] =
-    client.get(
-      (gitHubApiHost / "app" / "installations").withQueryParam("per_page", 100),
-      addHeaders(jwt)
-    )
+    client
+      .getAll[List[InstallationOut]](
+        (gitHubApiHost / "app" / "installations").withQueryParam("per_page", 100),
+        addHeaders(jwt)
+      )
+      .map(_.flatten)
 
   /** [[https://docs.github.com/en/free-pro-team@latest/rest/reference/apps#create-an-installation-access-token-for-an-app]] */
   def accessToken(jwt: String, installationId: Long): F[TokenOut] =
@@ -56,12 +57,10 @@ class GitHubAppApiAlg[F[_]: Applicative](
     )
 
   /** [[https://docs.github.com/en/free-pro-team@latest/rest/reference/apps#list-repositories-accessible-to-the-app-installation]]
-    *
-    * TODO pagination use `page` query param
     */
   def repositories(token: String): F[RepositoriesOut] =
     client
-      .get(
+      .getAll[RepositoriesOut](
         (gitHubApiHost / "installation" / "repositories").withQueryParam("per_page", 100),
         req =>
           Applicative[F].point(
@@ -70,5 +69,10 @@ class GitHubAppApiAlg[F[_]: Applicative](
               acceptHeader
             )
           )
+      )
+      .map(values =>
+        RepositoriesOut(
+          values.flatMap(_.repositories)
+        )
       )
 }
