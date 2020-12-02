@@ -20,9 +20,11 @@ import cats.effect.Sync
 import cats.syntax.all._
 import io.circe.{Decoder, Encoder}
 import org.http4s.Method.{GET, PATCH, POST, PUT}
+import org.http4s.Status.Successful
 import org.http4s._
 import org.http4s.circe.{jsonEncoderOf, jsonOf}
 import org.http4s.client.Client
+import org.http4s.headers.Link
 import scala.util.control.NoStackTrace
 
 final class HttpJsonClient[F[_]: Sync](implicit
@@ -32,6 +34,27 @@ final class HttpJsonClient[F[_]: Sync](implicit
 
   def get[A: Decoder](uri: Uri, modify: ModReq): F[A] =
     request[A](GET, uri, modify)
+
+  def getAll[A: Decoder](uri: Uri, modify: ModReq): F[List[A]] =
+    all[A](GET, uri, modify, Nil)
+
+  private[this] def all[A: Decoder](
+      method: Method,
+      uri: Uri,
+      modify: ModReq,
+      xs: List[A]
+  ): F[List[A]] =
+    requestWithHeader[A](method, uri, modify, Link).flatMap {
+      case (res, Some(linkHeader)) =>
+        linkHeader.values.find(_.rel === Option("next")) match {
+          case Some(link) =>
+            all(method, link.uri, modify, res :: xs)
+          case None =>
+            (res :: xs).pure[F]
+        }
+      case (res, None) =>
+        (res :: xs).pure[F]
+    }
 
   def post[A: Decoder](uri: Uri, modify: ModReq): F[A] =
     request[A](POST, uri, modify)
@@ -50,6 +73,24 @@ final class HttpJsonClient[F[_]: Sync](implicit
 
   def patchWithBody[A: Decoder, B: Encoder](uri: Uri, body: B, modify: ModReq): F[A] =
     patch[A](uri, modify.compose(_.withEntity(body)(jsonEncoderOf[F, B])))
+
+  private[this] def requestWithHeader[A: Decoder](
+      method: Method,
+      uri: Uri,
+      modify: ModReq,
+      header: HeaderKey.Extractable
+  ): F[(A, Option[header.HeaderT])] = {
+    val decoder = jsonOf[F, A].transform(_.leftMap(failure => JsonParseError(uri, method, failure)))
+    modify(Request[F](method, uri))
+      .flatMap(client.run(_).use {
+        case Successful(resp) =>
+          decoder.decode(resp, strict = false).rethrowT.map {
+            _ -> resp.headers.get(header)
+          }
+        case resp =>
+          toUnexpectedResponse(uri, method, resp).flatMap(_.raiseError)
+      })
+  }
 
   private def request[A: Decoder](method: Method, uri: Uri, modify: ModReq): F[A] =
     client.expectOr[A](modify(Request[F](method, uri)))(resp =>
