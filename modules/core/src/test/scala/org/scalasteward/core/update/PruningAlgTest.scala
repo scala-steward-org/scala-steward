@@ -297,10 +297,10 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
       ),
       logs = Vector(
         (None, "Find updates for fthomas/scalafix-test"),
-        (None, "Found 1 update:\n  org.scala-lang:scala-library : 2.12.10 -> 2.12.11"),
+        (None, "Found 1 update:\n  org.scala-lang:scala-library : 2.12.12 -> 2.12.11"),
         (
           None,
-          "fthomas/scalafix-test is outdated:\n  new version: org.scala-lang:scala-library : 2.12.10 -> 2.12.11"
+          "fthomas/scalafix-test is outdated:\n  new version: org.scala-lang:scala-library : 2.12.12 -> 2.12.11"
         )
       )
     )
