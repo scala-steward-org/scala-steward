@@ -64,7 +64,8 @@ object HookExecutor {
     (GroupId("com.codecommit"), ArtifactId("sbt-github-actions")),
     (GroupId("com.codecommit"), ArtifactId("sbt-spiewak")),
     (GroupId("com.codecommit"), ArtifactId("sbt-spiewak-sonatype")),
-    (GroupId("com.codecommit"), ArtifactId("sbt-spiewak-bintray"))
+    (GroupId("com.codecommit"), ArtifactId("sbt-spiewak-bintray")),
+    (GroupId("org.http4s"), ArtifactId("sbt-http4s-org")),      
   )
 
   val postUpdateHooks: List[PostUpdateHook] = {
