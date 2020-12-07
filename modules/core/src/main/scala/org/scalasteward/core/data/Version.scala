@@ -57,6 +57,8 @@ final case class Version(value: String) {
           // than the order of pre-release identifiers in this version. This, for example,
           // prevents updates from 2.1.4.0-RC17 to 2.1.4.0-RC17+1-307f2f6c-SNAPSHOT.
           ((minAlphaOrder < 0) && (v.minAlphaOrder < minAlphaOrder)) ||
+          // Do not select versions that are identical up to the hashes.
+          v.alnumComponentsWithoutHash === alnumComponentsWithoutHash ||
           // Don't select "versions" like %5BWARNING%5D.
           !v.startsWithLetterOrDigit
         }.sorted
@@ -74,10 +76,8 @@ final case class Version(value: String) {
   private def isPreRelease: Boolean =
     preReleaseIndex.isDefined
 
-  private[this] def alnumComponentsWithoutPreRelease: List[Version.Component] =
-    preReleaseIndex
-      .map(i => alnumComponents.takeWhile(_.startIndex < i.value))
-      .getOrElse(alnumComponents)
+  private[this] val hashIndex: Option[NonNegInt] =
+    """[-+]g?\p{XDigit}{6,}""".r.findFirstMatchIn(value).flatMap(m => NonNegInt.unapply(m.start))
 
   private[this] val preReleaseIndex: Option[NonNegInt] = {
     val preReleaseIdentIndex = alnumComponents.collectFirst {
@@ -86,8 +86,15 @@ final case class Version(value: String) {
     preReleaseIdentIndex.orElse(hashIndex)
   }
 
-  private[this] def hashIndex: Option[NonNegInt] =
-    """[-+]g?\p{XDigit}{6,}""".r.findFirstMatchIn(value).flatMap(m => NonNegInt.unapply(m.start))
+  private[this] def alnumComponentsWithoutPreRelease: List[Version.Component] =
+    preReleaseIndex
+      .map(i => alnumComponents.takeWhile(_.startIndex < i.value))
+      .getOrElse(alnumComponents)
+
+  private val alnumComponentsWithoutHash: List[Version.Component] =
+    hashIndex
+      .map(i => alnumComponents.takeWhile(_.startIndex < i.value))
+      .getOrElse(alnumComponents)
 
   private val minAlphaOrder: Int =
     alnumComponents.collect { case a: Version.Component.Alpha => a.order }.minOption.getOrElse(0)
