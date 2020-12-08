@@ -16,7 +16,6 @@
 
 package org.scalasteward.core.edit.hooks
 
-import cats.Monad
 import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data.{ArtifactId, GroupId, Update}
@@ -24,7 +23,8 @@ import org.scalasteward.core.git.{Commit, GitAlg}
 import org.scalasteward.core.io.{ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtBinary, scalafmtGroupId}
-import org.scalasteward.core.util.Nel
+import org.scalasteward.core.util.logger._
+import org.scalasteward.core.util.{MonadThrow, Nel}
 import org.scalasteward.core.vcs.data.Repo
 
 final class HookExecutor[F[_]](implicit
@@ -32,7 +32,7 @@ final class HookExecutor[F[_]](implicit
     logger: Logger[F],
     processAlg: ProcessAlg[F],
     workspaceAlg: WorkspaceAlg[F],
-    F: Monad[F]
+    F: MonadThrow[F]
 ) {
   def execPostUpdateHooks(repo: Repo, repoConfig: RepoConfig, update: Update): F[List[Commit]] =
     HookExecutor.postUpdateHooks
@@ -51,9 +51,9 @@ final class HookExecutor[F[_]](implicit
     for {
       _ <- logger.info(s"Executing post-update hook for ${hook.groupId}:${hook.artifactId.name}")
       repoDir <- workspaceAlg.repoDir(repo)
-      _ <-
-        if (hook.useSandbox) processAlg.execSandboxed(hook.command, repoDir)
-        else processAlg.exec(hook.command, repoDir)
+      _ <- logger.attemptLogError("Post-update hook failed") {
+        processAlg.execMaybeSandboxed(hook.useSandbox)(hook.command, repoDir)
+      }
       maybeCommit <- gitAlg.commitAllIfDirty(repo, hook.commitMessage(update))
     } yield maybeCommit.toList
 }

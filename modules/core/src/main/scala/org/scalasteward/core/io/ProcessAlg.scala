@@ -37,6 +37,14 @@ trait ProcessAlg[F[_]] {
       extraEnv: (String, String)*
   ): F[List[String]] =
     exec(command, workingDirectory, extraEnv: _*)
+
+  final def execMaybeSandboxed(sandboxed: Boolean)(
+      command: Nel[String],
+      workingDirectory: File,
+      extraEnv: (String, String)*
+  ): F[List[String]] =
+    if (sandboxed) execSandboxed(command, workingDirectory, extraEnv: _*)
+    else exec(command, workingDirectory, extraEnv: _*)
 }
 
 object ProcessAlg {
