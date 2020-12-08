@@ -79,7 +79,11 @@ final case class Version(value: String) {
     preReleaseIndex.isDefined
 
   private val hashIndex: Option[NonNegInt] =
-    """[-+]g?\p{XDigit}{6,}""".r.findFirstMatchIn(value).flatMap(m => NonNegInt.unapply(m.start))
+    """[-+]g?\p{XDigit}{6,}""".r
+      .findAllMatchIn(value)
+      .to(Iterable)
+      .find(m => !Version.startsWithDate(m.matched.drop(1)))
+      .flatMap(m => NonNegInt.unapply(m.start))
 
   private[this] val preReleaseIndex: Option[NonNegInt] = {
     val preReleaseIdentIndex = alnumComponents.collectFirst {
@@ -116,6 +120,16 @@ object Version {
     val maxLength = math.max(l1.length, l2.length)
     (l1.padTo(maxLength, elem), l2.padTo(maxLength, elem))
   }
+
+  private def startsWithDate(s: String): Boolean =
+    """(\d{4})(\d{2})(\d{2})""".r.findPrefixMatchOf(s).exists { m =>
+      val year = m.group(1).toInt
+      val month = m.group(2).toInt
+      val day = m.group(3).toInt
+      (year >= 1900 && year <= 2100) &&
+      (month >= 1 && month <= 12) &&
+      (day >= 1 && day <= 31)
+    }
 
   sealed trait Component extends Product with Serializable {
     def startIndex: Int
