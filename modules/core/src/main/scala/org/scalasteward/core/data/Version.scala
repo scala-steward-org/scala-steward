@@ -59,6 +59,8 @@ final case class Version(value: String) {
           ((minAlphaOrder < 0) && (v.minAlphaOrder < minAlphaOrder)) ||
           // Do not select versions that are identical up to the hashes.
           v.alnumComponentsWithoutHash === alnumComponentsWithoutHash ||
+          // Do not select a version with hash if this version contains no hash.
+          (v.hashIndex.nonEmpty && hashIndex.isEmpty) ||
           // Don't select "versions" like %5BWARNING%5D.
           !v.startsWithLetterOrDigit
         }.sorted
@@ -76,7 +78,7 @@ final case class Version(value: String) {
   private def isPreRelease: Boolean =
     preReleaseIndex.isDefined
 
-  private[this] val hashIndex: Option[NonNegInt] =
+  private val hashIndex: Option[NonNegInt] =
     """[-+]g?\p{XDigit}{6,}""".r.findFirstMatchIn(value).flatMap(m => NonNegInt.unapply(m.start))
 
   private[this] val preReleaseIndex: Option[NonNegInt] = {
