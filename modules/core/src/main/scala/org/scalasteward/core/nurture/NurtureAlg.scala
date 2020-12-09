@@ -79,11 +79,10 @@ final class NurtureAlg[F[_]](config: Config)(implicit
     for {
       repoConfig <- repoConfigAlg.readRepoConfigWithDefault(repo)
       grouped = Update.groupByGroupId(updates)
-      sorted = grouped.sortBy(migrationAlg.findMigrations(_).size)
-      _ <- logger.info(util.logger.showUpdates(sorted))
+      _ <- logger.info(util.logger.showUpdates(grouped))
       baseSha1 <- gitAlg.latestSha1(repo, baseBranch)
       _ <- NurtureAlg.processUpdates(
-        sorted,
+        grouped,
         update => {
           val updateData =
             UpdateData(repo, fork, repoConfig, update, baseBranch, baseSha1, git.branchFor(update))
