@@ -85,8 +85,13 @@ final case class Version(value: String) {
       .find(m => !Version.startsWithDate(m.matched.drop(1)))
       .flatMap(m => NonNegInt.unapply(m.start))
 
+  private val alnumComponentsWithoutHash: List[Version.Component] =
+    hashIndex
+      .map(i => alnumComponents.takeWhile(_.startIndex < i.value))
+      .getOrElse(alnumComponents)
+
   private[this] val preReleaseIndex: Option[NonNegInt] = {
-    val preReleaseIdentIndex = alnumComponents.collectFirst {
+    val preReleaseIdentIndex = alnumComponentsWithoutHash.collectFirst {
       case a: Version.Component.Alpha if a.isPreReleaseIdent => NonNegInt.unsafeFrom(a.startIndex)
     }
     preReleaseIdentIndex.orElse(hashIndex)
@@ -94,11 +99,6 @@ final case class Version(value: String) {
 
   private[this] def alnumComponentsWithoutPreRelease: List[Version.Component] =
     preReleaseIndex
-      .map(i => alnumComponents.takeWhile(_.startIndex < i.value))
-      .getOrElse(alnumComponents)
-
-  private val alnumComponentsWithoutHash: List[Version.Component] =
-    hashIndex
       .map(i => alnumComponents.takeWhile(_.startIndex < i.value))
       .getOrElse(alnumComponents)
 
