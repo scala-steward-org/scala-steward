@@ -27,7 +27,6 @@ import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.ProcessResult.{Ignored, Updated}
 import org.scalasteward.core.data.{ProcessResult, Scope, Update}
 import org.scalasteward.core.edit.EditAlg
-import org.scalasteward.core.edit.hooks.HookExecutor
 import org.scalasteward.core.git.{Branch, Commit, GitAlg}
 import org.scalasteward.core.repocache.RepoCacheRepository
 import org.scalasteward.core.repoconfig.{PullRequestUpdateStrategy, RepoConfigAlg}
@@ -43,7 +42,6 @@ final class NurtureAlg[F[_]](config: Config)(implicit
     editAlg: EditAlg[F],
     existenceClient: HttpExistenceClient[F],
     gitAlg: GitAlg[F],
-    hookExecutor: HookExecutor[F],
     logger: Logger[F],
     migrationAlg: MigrationAlg,
     pullRequestRepository: PullRequestRepository[F],
@@ -140,30 +138,16 @@ final class NurtureAlg[F[_]](config: Config)(implicit
   }
 
   def applyNewUpdate(data: UpdateData): F[ProcessResult] =
-    (editAlg.applyUpdate(
-      data.repo,
-      data.update,
-      data.repoConfig.updates.fileExtensionsOrDefault
-    ) >> gitAlg.containsChanges(data.repo)).ifM(
-      gitAlg.returnToCurrentBranch(data.repo) {
-        for {
-          _ <- logger.info(s"Create branch ${data.updateBranch.name}")
-          _ <- gitAlg.createBranch(data.repo, data.updateBranch)
-          maybeCommit <- commitChanges(data)
-          postUpdateCommits <- hookExecutor.execPostUpdateHooks(
-            data.repo,
-            data.repoConfig,
-            data.update
-          )
-          _ <- pushCommits(data, maybeCommit.toList ++ postUpdateCommits)
-          _ <- createPullRequest(data)
-        } yield Updated
-      },
-      logger.warn("No files were changed") >> F.pure[ProcessResult](Ignored)
-    )
-
-  def commitChanges(data: UpdateData): F[Option[Commit]] =
-    gitAlg.commitAllIfDirty(data.repo, git.commitMsgFor(data.update, data.repoConfig.commits))
+    gitAlg.returnToCurrentBranch(data.repo) {
+      for {
+        _ <- logger.info(s"Create branch ${data.updateBranch.name}")
+        _ <- gitAlg.createBranch(data.repo, data.updateBranch)
+        editCommits <- editAlg.applyUpdate(data.repo, data.repoConfig, data.update)
+        result <-
+          if (editCommits.isEmpty) logger.warn("No commits created").as(Ignored)
+          else pushCommits(data, editCommits) >> createPullRequest(data).as(Updated)
+      } yield result
+    }
 
   def pushCommits(data: UpdateData, commits: List[Commit]): F[ProcessResult] =
     if (commits.isEmpty) F.pure[ProcessResult](Ignored)
@@ -247,13 +231,8 @@ final class NurtureAlg[F[_]](config: Config)(implicit
         s"Merge branch '${data.baseBranch.name}' into ${data.updateBranch.name} and apply again"
       )
       maybeMergeCommit <- gitAlg.mergeTheirs(data.repo, data.baseBranch)
-      _ <- editAlg.applyUpdate(
-        data.repo,
-        data.update,
-        data.repoConfig.updates.fileExtensionsOrDefault
-      )
-      maybeCommit <- commitChanges(data)
-      result <- pushCommits(data, maybeMergeCommit.toList ++ maybeCommit.toList)
+      editCommits <- editAlg.applyUpdate(data.repo, data.repoConfig, data.update)
+      result <- pushCommits(data, maybeMergeCommit.toList ++ editCommits)
     } yield result
 }
 

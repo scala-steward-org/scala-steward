@@ -5,7 +5,7 @@ import org.scalasteward.core.data.Update
 import org.scalasteward.core.mock.MockContext.{config, hookExecutor, workspaceAlg}
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.repoconfig.{RepoConfig, ScalafmtConfig}
-import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtGroupId}
+import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtBinary, scalafmtGroupId}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 import org.scalatest.funsuite.AnyFunSuite
@@ -46,7 +46,7 @@ class HookExecutorTest extends AnyFunSuite with Matchers {
           "VAR1=val1",
           "VAR2=val2",
           repoDir.toString,
-          "scalafmt",
+          scalafmtBinary,
           "--non-interactive"
         ),
         envVars ++ List(

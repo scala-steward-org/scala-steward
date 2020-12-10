@@ -5,13 +5,18 @@ import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.{GroupId, Update}
 import org.scalasteward.core.mock.MockContext.{config, editAlg}
 import org.scalasteward.core.mock.MockState
-import org.scalasteward.core.repoconfig.UpdatesConfig
+import org.scalasteward.core.repoconfig.RepoConfig
+import org.scalasteward.core.scalafmt.scalafmtBinary
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class EditAlgTest extends AnyFunSuite with Matchers {
+  private val envVars = List(s"GIT_ASKPASS=${config.gitAskPass}", "VAR1=val1", "VAR2=val2")
+  private val gitStatus =
+    List("git", "status", "--porcelain", "--untracked-files=no", "--ignore-submodules")
+
   test("applyUpdate") {
     val repo = Repo("fthomas", "scala-steward")
     val repoDir = config.workspace / repo.show
@@ -20,7 +25,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
     val file2 = repoDir / "project/Dependencies.scala"
 
     val state = editAlg
-      .applyUpdate(repo, update, UpdatesConfig.defaultFileExtensions)
+      .applyUpdate(repo, RepoConfig.empty, update)
       .runS(MockState.empty.add(file1, """val catsVersion = "1.2.0"""").add(file2, ""))
       .unsafeRunSync()
 
@@ -33,7 +38,8 @@ class EditAlgTest extends AnyFunSuite with Matchers {
         List("read", file1.pathAsString),
         List("read", file1.pathAsString),
         List("read", file1.pathAsString),
-        List("write", file1.pathAsString)
+        List("write", file1.pathAsString),
+        envVars ++ (repoDir.toString :: gitStatus)
       ),
       logs = Vector(
         (None, "Trying heuristic 'moduleId'"),
@@ -52,7 +58,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
     val buildSbt = repoDir / "build.sbt"
 
     val state = editAlg
-      .applyUpdate(repo, update, UpdatesConfig.defaultFileExtensions)
+      .applyUpdate(repo, RepoConfig.empty, update)
       .runS(
         MockState.empty
           .add(
@@ -79,7 +85,10 @@ class EditAlgTest extends AnyFunSuite with Matchers {
         List("read", scalafmtConf.pathAsString),
         List("read", scalafmtConf.pathAsString),
         List("read", scalafmtConf.pathAsString),
-        List("write", scalafmtConf.pathAsString)
+        List("write", scalafmtConf.pathAsString),
+        envVars ++ (repoDir.toString :: gitStatus),
+        List("VAR1=val1", "VAR2=val2", repoDir.toString, scalafmtBinary, "--non-interactive"),
+        envVars ++ (repoDir.toString :: gitStatus)
       ),
       logs = Vector(
         (None, "Trying heuristic 'moduleId'"),
@@ -89,7 +98,8 @@ class EditAlgTest extends AnyFunSuite with Matchers {
         (None, "Trying heuristic 'sliding'"),
         (None, "Trying heuristic 'completeGroupId'"),
         (None, "Trying heuristic 'groupId'"),
-        (None, "Trying heuristic 'specific'")
+        (None, "Trying heuristic 'specific'"),
+        (None, "Executing post-update hook for org.scalameta:scalafmt-core")
       ),
       files = Map(
         scalafmtConf ->
@@ -110,7 +120,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
     val file2 = repoDir / "build.sbt"
 
     val state = editAlg
-      .applyUpdate(repo, update, UpdatesConfig.defaultFileExtensions)
+      .applyUpdate(repo, RepoConfig.empty, update)
       .runS(
         MockState.empty
           .add(file1, """import $ivy.`org.typelevel::cats-core:1.2.0`, cats.implicits._"""")
@@ -127,7 +137,8 @@ class EditAlgTest extends AnyFunSuite with Matchers {
         List("read", file1.pathAsString),
         List("write", file1.pathAsString),
         List("read", file2.pathAsString),
-        List("write", file2.pathAsString)
+        List("write", file2.pathAsString),
+        envVars ++ (repoDir.toString :: gitStatus)
       ),
       logs = Vector(
         (None, "Trying heuristic 'moduleId'")
@@ -233,7 +244,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
     val repoDir = File.temp / "ws/owner/repo"
     val filesInRepoDir = files.map { case (file, content) => repoDir / file -> content }
     editAlg
-      .applyUpdate(Repo("owner", "repo"), update, UpdatesConfig.defaultFileExtensions)
+      .applyUpdate(Repo("owner", "repo"), RepoConfig.empty, update)
       .runS(MockState.empty.addFiles(filesInRepoDir))
       .map(_.files)
       .unsafeRunSync()

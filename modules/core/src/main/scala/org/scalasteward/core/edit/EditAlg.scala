@@ -17,13 +17,16 @@
 package org.scalasteward.core.edit
 
 import better.files.File
-import cats.Traverse
 import cats.syntax.all._
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.buildtool.BuildToolDispatcher
 import org.scalasteward.core.data.Update
+import org.scalasteward.core.edit.hooks.HookExecutor
+import org.scalasteward.core.git
+import org.scalasteward.core.git.{Commit, GitAlg}
 import org.scalasteward.core.io.{isSourceFile, FileAlg, WorkspaceAlg}
+import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafix.MigrationAlg
 import org.scalasteward.core.util._
 import org.scalasteward.core.vcs.data.Repo
@@ -31,38 +34,61 @@ import org.scalasteward.core.vcs.data.Repo
 final class EditAlg[F[_]](implicit
     buildToolDispatcher: BuildToolDispatcher[F],
     fileAlg: FileAlg[F],
+    gitAlg: GitAlg[F],
+    hookExecutor: HookExecutor[F],
     logger: Logger[F],
     migrationAlg: MigrationAlg,
     streamCompiler: Stream.Compiler[F, F],
     workspaceAlg: WorkspaceAlg[F],
     F: MonadThrow[F]
 ) {
-  def applyUpdate(repo: Repo, update: Update, fileExtensions: Set[String]): F[Unit] =
-    for {
-      _ <- applyScalafixMigrations(repo, update).handleErrorWith(e =>
-        logger.warn(s"Could not apply ${update.show} : $e")
-      )
-      repoDir <- workspaceAlg.repoDir(repo)
-      files <- fileAlg.findFiles(
-        repoDir,
-        isSourceFile(update, fileExtensions),
-        _.contains(update.currentVersion)
-      )
-      noFilesFound = logger.warn("No files found that contain the current version")
-      _ <- files.toNel.fold(noFilesFound)(applyUpdateTo(_, update))
-    } yield ()
+  def applyUpdate(repo: Repo, repoConfig: RepoConfig, update: Update): F[List[Commit]] =
+    findFilesContainingCurrentVersion(repo, repoConfig, update).flatMap {
+      case None =>
+        logger.warn("No files found that contain the current version").as(List.empty[Commit])
+      case Some(files) =>
+        List(
+          runScalafixMigrations(repo, update),
+          bumpVersion(repo, repoConfig, update, files),
+          hookExecutor.execPostUpdateHooks(repo, repoConfig, update)
+        ).flatSequence
+    }
 
-  def applyUpdateTo[G[_]: Traverse](files: G[File], update: Update): F[Unit] = {
+  private def findFilesContainingCurrentVersion(
+      repo: Repo,
+      repoConfig: RepoConfig,
+      update: Update
+  ): F[Option[Nel[File]]] =
+    workspaceAlg.repoDir(repo).flatMap { repoDir =>
+      val fileFilter = isSourceFile(update, repoConfig.updates.fileExtensionsOrDefault) _
+      fileAlg.findFiles(repoDir, fileFilter, _.contains(update.currentVersion)).map(Nel.fromList)
+    }
+
+  private def runScalafixMigrations(repo: Repo, update: Update): F[List[Commit]] =
+    migrationAlg.findMigrations(update).traverseFilter { migration =>
+      logger.info(s"Running migration $migration") >>
+        buildToolDispatcher.runMigrations(repo, Nel.one(migration)).attempt.flatMap {
+          case Right(_) =>
+            val msg = s"Run Scalafix rule(s) ${migration.rewriteRules.mkString_(", ")}"
+            gitAlg.commitAllIfDirty(repo, msg)
+          case Left(throwable) =>
+            logger.error(throwable)("Scalafix migration failed").as(Option.empty[Commit])
+        }
+    }
+
+  private def bumpVersion(
+      repo: Repo,
+      repoConfig: RepoConfig,
+      update: Update,
+      files: Nel[File]
+  ): F[List[Commit]] = {
     val actions = UpdateHeuristic.all.map { heuristic =>
       logger.info(s"Trying heuristic '${heuristic.name}'") >>
         fileAlg.editFiles(files, heuristic.replaceVersion(update))
     }
-    bindUntilTrue(actions).void
+    bindUntilTrue(actions).ifM(
+      gitAlg.commitAllIfDirty(repo, git.commitMsgFor(update, repoConfig.commits)).map(_.toList),
+      logger.warn("Unable to bump version").as(List.empty[Commit])
+    )
   }
-
-  def applyScalafixMigrations(repo: Repo, update: Update): F[Unit] =
-    Nel.fromList(migrationAlg.findMigrations(update)).traverse_ { migrations =>
-      logger.info(s"Applying migrations: $migrations") >>
-        buildToolDispatcher.runMigrations(repo, migrations)
-    }
 }
