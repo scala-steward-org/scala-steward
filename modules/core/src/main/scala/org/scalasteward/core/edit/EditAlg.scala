@@ -42,16 +42,28 @@ final class EditAlg[F[_]](implicit
     workspaceAlg: WorkspaceAlg[F],
     F: MonadThrow[F]
 ) {
-  def applyUpdate(repo: Repo, repoConfig: RepoConfig, update: Update): F[List[Commit]] =
+  def applyUpdate(
+      repo: Repo,
+      repoConfig: RepoConfig,
+      update: Update,
+      newUpdate: Boolean
+  ): F[List[Commit]] =
     findFilesContainingCurrentVersion(repo, repoConfig, update).flatMap {
-      case None =>
-        logger.warn("No files found that contain the current version").as(List.empty[Commit])
       case Some(files) =>
-        List(
-          runScalafixMigrations(repo, update),
-          bumpVersion(repo, repoConfig, update, files),
-          hookExecutor.execPostUpdateHooks(repo, repoConfig, update)
-        ).flatSequence
+        for {
+          cs1 <- runScalafixMigrations(repo, update)
+          cs2 <- bumpVersion(repo, repoConfig, update, files)
+          cs3 <-
+            if (cs2.isEmpty && newUpdate) F.pure(List.empty[Commit])
+            else hookExecutor.execPostUpdateHooks(repo, repoConfig, update)
+        } yield cs1 ++ cs2 ++ cs3
+      case None if !newUpdate =>
+        for {
+          cs1 <- runScalafixMigrations(repo, update)
+          cs3 <- hookExecutor.execPostUpdateHooks(repo, repoConfig, update)
+        } yield cs1 ++ cs3
+      case None if newUpdate =>
+        logger.warn("No files found that contain the current version").as(List.empty[Commit])
     }
 
   private def findFilesContainingCurrentVersion(

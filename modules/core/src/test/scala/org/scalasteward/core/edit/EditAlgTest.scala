@@ -6,7 +6,6 @@ import org.scalasteward.core.data.{GroupId, Update}
 import org.scalasteward.core.mock.MockContext.{config, editAlg}
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.repoconfig.RepoConfig
-import org.scalasteward.core.scalafmt.scalafmtBinary
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 import org.scalatest.funsuite.AnyFunSuite
@@ -25,7 +24,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
     val file2 = repoDir / "project/Dependencies.scala"
 
     val state = editAlg
-      .applyUpdate(repo, RepoConfig.empty, update)
+      .applyUpdate(repo, RepoConfig.empty, update, newUpdate = true)
       .runS(MockState.empty.add(file1, """val catsVersion = "1.2.0"""").add(file2, ""))
       .unsafeRunSync()
 
@@ -55,21 +54,15 @@ class EditAlgTest extends AnyFunSuite with Matchers {
     val repoDir = config.workspace / repo.show
     val update = Update.Single("org.scalameta" % "scalafmt-core" % "2.0.0", Nel.of("2.1.0"))
     val scalafmtConf = repoDir / ".scalafmt.conf"
+    val scalafmtConfContent = """maxColumn = 100
+                                |version = 2.0.0
+                                |align.openParenCallSite = false
+                                |""".stripMargin
     val buildSbt = repoDir / "build.sbt"
 
     val state = editAlg
-      .applyUpdate(repo, RepoConfig.empty, update)
-      .runS(
-        MockState.empty
-          .add(
-            scalafmtConf,
-            """maxColumn = 100
-              |version = 2.0.0
-              |align.openParenCallSite = false
-              |""".stripMargin
-          )
-          .add(buildSbt, "")
-      )
+      .applyUpdate(repo, RepoConfig.empty, update, newUpdate = true)
+      .runS(MockState.empty.add(scalafmtConf, scalafmtConfContent).add(buildSbt, ""))
       .unsafeRunSync()
 
     state shouldBe MockState.empty.copy(
@@ -86,8 +79,6 @@ class EditAlgTest extends AnyFunSuite with Matchers {
         List("read", scalafmtConf.pathAsString),
         List("read", scalafmtConf.pathAsString),
         List("write", scalafmtConf.pathAsString),
-        envVars ++ (repoDir.toString :: gitStatus),
-        List("VAR1=val1", "VAR2=val2", repoDir.toString, scalafmtBinary, "--non-interactive"),
         envVars ++ (repoDir.toString :: gitStatus)
       ),
       logs = Vector(
@@ -98,8 +89,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
         (None, "Trying heuristic 'sliding'"),
         (None, "Trying heuristic 'completeGroupId'"),
         (None, "Trying heuristic 'groupId'"),
-        (None, "Trying heuristic 'specific'"),
-        (None, "Executing post-update hook for org.scalameta:scalafmt-core")
+        (None, "Trying heuristic 'specific'")
       ),
       files = Map(
         scalafmtConf ->
@@ -120,7 +110,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
     val file2 = repoDir / "build.sbt"
 
     val state = editAlg
-      .applyUpdate(repo, RepoConfig.empty, update)
+      .applyUpdate(repo, RepoConfig.empty, update, newUpdate = true)
       .runS(
         MockState.empty
           .add(file1, """import $ivy.`org.typelevel::cats-core:1.2.0`, cats.implicits._"""")
@@ -244,7 +234,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
     val repoDir = File.temp / "ws/owner/repo"
     val filesInRepoDir = files.map { case (file, content) => repoDir / file -> content }
     editAlg
-      .applyUpdate(Repo("owner", "repo"), RepoConfig.empty, update)
+      .applyUpdate(Repo("owner", "repo"), RepoConfig.empty, update, newUpdate = true)
       .runS(MockState.empty.addFiles(filesInRepoDir))
       .map(_.files)
       .unsafeRunSync()

@@ -142,7 +142,8 @@ final class NurtureAlg[F[_]](config: Config)(implicit
       for {
         _ <- logger.info(s"Create branch ${data.updateBranch.name}")
         _ <- gitAlg.createBranch(data.repo, data.updateBranch)
-        editCommits <- editAlg.applyUpdate(data.repo, data.repoConfig, data.update)
+        editCommits <-
+          editAlg.applyUpdate(data.repo, data.repoConfig, data.update, newUpdate = true)
         result <-
           if (editCommits.isEmpty) logger.warn("No commits created").as(Ignored)
           else pushCommits(data, editCommits) >> createPullRequest(data).as(Updated)
@@ -231,7 +232,8 @@ final class NurtureAlg[F[_]](config: Config)(implicit
         s"Merge branch '${data.baseBranch.name}' into ${data.updateBranch.name} and apply again"
       )
       maybeMergeCommit <- gitAlg.mergeTheirs(data.repo, data.baseBranch)
-      editCommits <- editAlg.applyUpdate(data.repo, data.repoConfig, data.update)
+      editCommits <-
+        editAlg.applyUpdate(data.repo, data.repoConfig, data.update, newUpdate = false)
       result <- pushCommits(data, maybeMergeCommit.toList ++ editCommits)
     } yield result
 }
