@@ -153,24 +153,24 @@ object Version {
     final case class Separator(c: Char, startIndex: Int) extends Component
     case object Empty extends Component { override def startIndex: Int = -1 }
 
-    private val numeric = """^([0-9]+).*""".r
-    private val separator = """^([.\-_+]).*""".r
-    private val alpha = """^([^.\-_+0-9]+).*""".r
-    private val hash = """([-+])(g?\p{XDigit}{6,}).*""".r
+    private val numeric = """^(\d+)(.*)$""".r
+    private val separator = """^([.\-_+])(.*)$""".r
+    private val alpha = """^([^.\-_+\d]+)(.*)$""".r
+    private val hash = """([-+])(g?\p{XDigit}{6,})(.*)$""".r
 
     def parse(str: String, index: Int = 0): List[Component] =
       str match {
         case "" => List.empty
-        case hash(sep, value) if !startsWithDate(value) =>
+        case hash(sep, value, rest) if !startsWithDate(value) =>
           Separator(sep.head, index) +: Hash(value, index + 1) +:
-            parse(str.substring(value.length + 1), index + value.length + 1)
-        case numeric(value)   => Numeric(value, index) +: rest(value, str, index)
-        case alpha(value)     => Alpha(value, index) +: rest(value, str, index)
-        case separator(value) => Separator(value.head, index) +: rest(value, str, index)
+            parse(rest, index + value.length + 1)
+        case numeric(value, rest) =>
+          Numeric(value, index) +: parse(rest, index + value.length)
+        case alpha(value, rest) =>
+          Alpha(value, index) +: parse(rest, index + value.length)
+        case separator(value, rest) =>
+          Separator(value.head, index) +: parse(rest, index + value.length)
       }
-
-    private def rest(value: String, str: String, index: Int): List[Component] =
-      parse(str.substring(value.length), index + value.length)
 
     def render(components: List[Component]): String =
       components.map {
