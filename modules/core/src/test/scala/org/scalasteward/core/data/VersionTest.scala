@@ -233,6 +233,10 @@ class VersionTest
     forAll { str: String => Component.render(Component.parse(str)) shouldBe str }
   }
 
+  test("Component: round-trip using Version") {
+    forAll { v: Version => Component.render(Component.parse(v.value)) shouldBe v.value }
+  }
+
   test("Component: round-trip example") {
     val original = "1.0.0-rc.1+build.1"
     Component.render(Component.Empty :: Component.parse(original)) shouldBe original
