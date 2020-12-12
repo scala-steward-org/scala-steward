@@ -32,6 +32,14 @@ object TestInstances {
   implicit def scopeCogen[T](implicit cogenT: Cogen[T]): Cogen[Scope[T]] =
     cogenT.contramap(_.value)
 
+  private val hashGen: Gen[String] =
+    for {
+      sep <- Gen.oneOf('-', '+')
+      maybeG <- Gen.option(Gen.const('g'))
+      length <- Gen.choose(6, 8)
+      rest <- Gen.listOfN(length, Gen.hexChar)
+    } yield sep.toString + maybeG.getOrElse("") + rest.mkString
+
   implicit val versionArbitrary: Arbitrary[Version] = {
     val commonStrings =
       Gen.oneOf(
@@ -54,7 +62,8 @@ object TestInstances {
       (3, Gen.alphaChar.map(_.toString)),
       (2, Gen.const('-').map(_.toString)),
       (1, Gen.const('+').map(_.toString)),
-      (1, commonStrings)
+      (1, commonStrings),
+      (1, hashGen)
     )
     Arbitrary(Gen.listOf(versionComponent).map(_.mkString).map(Version.apply))
   }
