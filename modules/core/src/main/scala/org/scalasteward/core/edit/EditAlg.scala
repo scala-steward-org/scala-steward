@@ -42,28 +42,18 @@ final class EditAlg[F[_]](implicit
     workspaceAlg: WorkspaceAlg[F],
     F: MonadThrow[F]
 ) {
-  def applyUpdate(
-      repo: Repo,
-      repoConfig: RepoConfig,
-      update: Update,
-      newUpdate: Boolean
-  ): F[List[Commit]] =
+  def applyUpdate(repo: Repo, repoConfig: RepoConfig, update: Update): F[List[Commit]] =
     findFilesContainingCurrentVersion(repo, repoConfig, update).flatMap {
+      case None =>
+        logger.warn("No files found that contain the current version").as(Nil)
       case Some(files) =>
         for {
           cs1 <- runScalafixMigrations(repo, update)
           cs2 <- bumpVersion(repo, repoConfig, update, files)
           cs3 <-
-            if (cs2.isEmpty && newUpdate) F.pure(List.empty[Commit])
+            if (cs2.isEmpty) F.pure(Nil)
             else hookExecutor.execPostUpdateHooks(repo, repoConfig, update)
         } yield cs1 ++ cs2 ++ cs3
-      case None if !newUpdate =>
-        for {
-          cs1 <- runScalafixMigrations(repo, update)
-          cs3 <- hookExecutor.execPostUpdateHooks(repo, repoConfig, update)
-        } yield cs1 ++ cs3
-      case None if newUpdate =>
-        logger.warn("No files found that contain the current version").as(List.empty[Commit])
     }
 
   private def findFilesContainingCurrentVersion(
@@ -84,7 +74,7 @@ final class EditAlg[F[_]](implicit
             val msg = s"Run Scalafix rule(s) ${migration.rewriteRules.mkString_(", ")}"
             gitAlg.commitAllIfDirty(repo, msg)
           case Left(throwable) =>
-            logger.error(throwable)("Scalafix migration failed").as(Option.empty[Commit])
+            logger.error(throwable)("Scalafix migration failed").as(None)
         }
     }
 
@@ -100,7 +90,7 @@ final class EditAlg[F[_]](implicit
     }
     bindUntilTrue(actions).ifM(
       gitAlg.commitAllIfDirty(repo, git.commitMsgFor(update, repoConfig.commits)).map(_.toList),
-      logger.warn("Unable to bump version").as(List.empty[Commit])
+      logger.warn("Unable to bump version").as(Nil)
     )
   }
 }

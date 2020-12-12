@@ -24,7 +24,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
     val file2 = repoDir / "project/Dependencies.scala"
 
     val state = editAlg
-      .applyUpdate(repo, RepoConfig.empty, update, newUpdate = true)
+      .applyUpdate(repo, RepoConfig.empty, update)
       .runS(MockState.empty.add(file1, """val catsVersion = "1.2.0"""").add(file2, ""))
       .unsafeRunSync()
 
@@ -61,7 +61,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
     val buildSbt = repoDir / "build.sbt"
 
     val state = editAlg
-      .applyUpdate(repo, RepoConfig.empty, update, newUpdate = true)
+      .applyUpdate(repo, RepoConfig.empty, update)
       .runS(MockState.empty.add(scalafmtConf, scalafmtConfContent).add(buildSbt, ""))
       .unsafeRunSync()
 
@@ -110,7 +110,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
     val file2 = repoDir / "build.sbt"
 
     val state = editAlg
-      .applyUpdate(repo, RepoConfig.empty, update, newUpdate = true)
+      .applyUpdate(repo, RepoConfig.empty, update)
       .runS(
         MockState.empty
           .add(file1, """import $ivy.`org.typelevel::cats-core:1.2.0`, cats.implicits._"""")
@@ -234,7 +234,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
     val repoDir = File.temp / "ws/owner/repo"
     val filesInRepoDir = files.map { case (file, content) => repoDir / file -> content }
     editAlg
-      .applyUpdate(Repo("owner", "repo"), RepoConfig.empty, update, newUpdate = true)
+      .applyUpdate(Repo("owner", "repo"), RepoConfig.empty, update)
       .runS(MockState.empty.addFiles(filesInRepoDir))
       .map(_.files)
       .unsafeRunSync()
