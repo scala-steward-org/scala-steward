@@ -156,7 +156,7 @@ object Version {
     private val numeric = """^(\d+)(.*)$""".r
     private val separator = """^([.\-_+])(.*)$""".r
     private val alpha = """^([^.\-_+\d]+)(.*)$""".r
-    private val hash = """([-+])(g?\p{XDigit}{6,})(.*)$""".r
+    private val hash = """^([-+])(g?\p{XDigit}{6,})(.*)$""".r
 
     def parse(str: String, index: Int = 0): List[Component] =
       str match {
