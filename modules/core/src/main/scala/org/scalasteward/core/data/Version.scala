@@ -21,7 +21,6 @@ import cats.implicits._
 import eu.timepit.refined.types.numeric.NonNegInt
 import io.circe.Codec
 import io.circe.generic.extras.semiauto.deriveUnwrappedCodec
-import scala.annotation.tailrec
 
 final case class Version(value: String) {
   private val components: List[Version.Component] =
@@ -58,7 +57,7 @@ final case class Version(value: String) {
           // prevents updates from 2.1.4.0-RC17 to 2.1.4.0-RC17+1-307f2f6c-SNAPSHOT.
           ((minAlphaOrder < 0) && (v.minAlphaOrder < minAlphaOrder)) ||
           // Do not select versions that are identical up to the hashes.
-          v.alnumComponentsWithoutHash === alnumComponentsWithoutHash ||
+          v.alnumComponents === alnumComponents ||
           // Do not select a version with hash if this version contains no hash.
           (v.hashIndex.nonEmpty && hashIndex.isEmpty) ||
           // Don't select "versions" like %5BWARNING%5D.
@@ -79,19 +78,12 @@ final case class Version(value: String) {
     preReleaseIndex.isDefined
 
   private val hashIndex: Option[NonNegInt] =
-    """[-+]g?\p{XDigit}{6,}""".r
-      .findAllMatchIn(value)
-      .to(Iterable)
-      .find(m => !Version.startsWithDate(m.matched.drop(1)))
-      .flatMap(m => NonNegInt.unapply(m.start))
-
-  private val alnumComponentsWithoutHash: List[Version.Component] =
-    hashIndex
-      .map(i => alnumComponents.takeWhile(_.startIndex < i.value))
-      .getOrElse(alnumComponents)
+    components.collectFirst { case h: Version.Component.Hash =>
+      NonNegInt.unsafeFrom(h.startIndex)
+    }
 
   private[this] val preReleaseIndex: Option[NonNegInt] = {
-    val preReleaseIdentIndex = alnumComponentsWithoutHash.collectFirst {
+    val preReleaseIdentIndex = alnumComponents.collectFirst {
       case a: Version.Component.Alpha if a.isPreReleaseIdent => NonNegInt.unsafeFrom(a.startIndex)
     }
     preReleaseIdentIndex.orElse(hashIndex)
@@ -157,61 +149,34 @@ object Version {
           case _                               => 0
         }
     }
+    final case class Hash(value: String, startIndex: Int) extends Component
     final case class Separator(c: Char, startIndex: Int) extends Component
     case object Empty extends Component { override def startIndex: Int = -1 }
 
-    def parse(str: String): List[Component] = {
-      @tailrec
-      def loop(
-          rest: List[Char],
-          accN: List[Char],
-          accA: List[Char],
-          acc: List[Component],
-          index: Int
-      ): List[Component] =
-        rest match {
-          case h :: t =>
-            h match {
-              case '.' | '-' | '_' | '+' =>
-                val (newAcc, newIndex) = materialize(accN, accA, acc, index)
-                loop(t, List.empty, List.empty, Separator(h, newIndex) :: newAcc, newIndex + 1)
+    private val numeric = """^(\d+)(.*)$""".r
+    private val separator = """^([.\-_+])(.*)$""".r
+    private val alpha = """^([^.\-_+\d]+)(.*)$""".r
+    private val hash = """^([-+])(g?\p{XDigit}{6,})(.*)$""".r
 
-              case _ if h.isDigit && accA.nonEmpty =>
-                val (newAcc, newIndex) = materialize(List.empty, accA, acc, index)
-                loop(t, h :: accN, List.empty, newAcc, newIndex)
-
-              case _ if h.isDigit && accA.isEmpty =>
-                loop(t, h :: accN, List.empty, acc, index)
-
-              case _ if accN.nonEmpty =>
-                val (newAcc, newIndex) = materialize(accN, List.empty, acc, index)
-                loop(t, List.empty, h :: accA, newAcc, newIndex)
-
-              case _ if accN.isEmpty =>
-                loop(t, List.empty, h :: accA, acc, index)
-            }
-          case Nil =>
-            val (newAcc, _) = materialize(accN, accA, acc, index)
-            newAcc
-        }
-
-      def materialize(
-          accN: List[Char],
-          accA: List[Char],
-          acc: List[Component],
-          index: Int
-      ): (List[Component], Int) =
-        if (accN.nonEmpty) (Numeric(accN.reverse.mkString, index) :: acc, index + accN.length)
-        else if (accA.nonEmpty) (Alpha(accA.reverse.mkString, index) :: acc, index + accA.length)
-        else (acc, index)
-
-      loop(str.toList, List.empty, List.empty, List.empty, 0).reverse
-    }
+    def parse(str: String, index: Int = 0): List[Component] =
+      str match {
+        case "" => List.empty
+        case hash(sep, value, rest) if !startsWithDate(value) =>
+          Separator(sep.head, index) +: Hash(value, index + 1) +:
+            parse(rest, index + value.length + 1)
+        case numeric(value, rest) =>
+          Numeric(value, index) +: parse(rest, index + value.length)
+        case alpha(value, rest) =>
+          Alpha(value, index) +: parse(rest, index + value.length)
+        case separator(value, rest) =>
+          Separator(value.head, index) +: parse(rest, index + value.length)
+      }
 
     def render(components: List[Component]): String =
       components.map {
         case n: Numeric   => n.value
         case a: Alpha     => a.value
+        case h: Hash      => h.value
         case s: Separator => s.c.toString
         case Empty        => ""
       }.mkString
