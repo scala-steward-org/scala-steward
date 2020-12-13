@@ -69,7 +69,6 @@ final case class Version(value: String) {
   private def startsWithLetterOrDigit: Boolean =
     components.headOption.forall {
       case _: Version.Component.Numeric => true
-      case _: Version.Component.Hash    => true
       case a: Version.Component.Alpha   => a.value.headOption.forall(_.isLetter)
       case _                            => false
     }
