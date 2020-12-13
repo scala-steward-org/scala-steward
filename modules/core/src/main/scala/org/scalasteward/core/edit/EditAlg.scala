@@ -71,8 +71,9 @@ final class EditAlg[F[_]](implicit
       logger.info(s"Running migration $migration") >>
         buildToolDispatcher.runMigrations(repo, Nel.one(migration)).attempt.flatMap {
           case Right(_) =>
-            val msg = s"Run Scalafix rule(s) ${migration.rewriteRules.mkString_(", ")}"
-            gitAlg.commitAllIfDirty(repo, msg)
+            val msg1 = s"Run Scalafix rule(s) ${migration.rewriteRules.mkString_(", ")}"
+            val msg2 = migration.doc.map(url => s"See $url for details").toList
+            gitAlg.commitAllIfDirty(repo, msg1, msg2: _*)
           case Left(throwable) =>
             logger.error(throwable)("Scalafix migration failed").as(None)
         }
