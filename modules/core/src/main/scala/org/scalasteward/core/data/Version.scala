@@ -18,7 +18,6 @@ package org.scalasteward.core.data
 
 import cats.Order
 import cats.implicits._
-import eu.timepit.refined.types.numeric.NonNegInt
 import io.circe.Codec
 import io.circe.generic.extras.semiauto.deriveUnwrappedCodec
 
@@ -59,7 +58,7 @@ final case class Version(value: String) {
           // Do not select versions that are identical up to the hashes.
           v.alnumComponents === alnumComponents ||
           // Do not select a version with hash if this version contains no hash.
-          (v.hashIndex.nonEmpty && hashIndex.isEmpty) ||
+          (v.containsHash && !containsHash) ||
           // Don't select "versions" like %5BWARNING%5D.
           !v.startsWithLetterOrDigit
         }.sorted
@@ -75,24 +74,23 @@ final case class Version(value: String) {
     }
 
   private def isPreRelease: Boolean =
-    preReleaseIndex.isDefined
-
-  private val hashIndex: Option[NonNegInt] =
-    components.collectFirst { case h: Version.Component.Hash =>
-      NonNegInt.unsafeFrom(h.startIndex)
+    components.exists {
+      case a: Version.Component.Alpha => a.isPreReleaseIdent
+      case _: Version.Component.Hash  => true
+      case _                          => false
     }
 
-  private[this] val preReleaseIndex: Option[NonNegInt] = {
-    val preReleaseIdentIndex = alnumComponents.collectFirst {
-      case a: Version.Component.Alpha if a.isPreReleaseIdent => NonNegInt.unsafeFrom(a.startIndex)
+  private def containsHash: Boolean =
+    components.exists {
+      case _: Version.Component.Hash => true
+      case _                         => false
     }
-    preReleaseIdentIndex.orElse(hashIndex)
-  }
 
   private[this] def alnumComponentsWithoutPreRelease: List[Version.Component] =
-    preReleaseIndex
-      .map(i => alnumComponents.takeWhile(_.startIndex < i.value))
-      .getOrElse(alnumComponents)
+    alnumComponents.takeWhile {
+      case a: Version.Component.Alpha => !a.isPreReleaseIdent
+      case _                          => true
+    }
 
   private val minAlphaOrder: Int =
     alnumComponents.collect { case a: Version.Component.Alpha => a.order }.minOption.getOrElse(0)
@@ -124,8 +122,6 @@ object Version {
     }
 
   sealed trait Component extends Product with Serializable {
-    def startIndex: Int
-
     final def isAlphanumeric: Boolean =
       this match {
         case _: Component.Numeric => true
@@ -134,10 +130,10 @@ object Version {
       }
   }
   object Component {
-    final case class Numeric(value: String, startIndex: Int) extends Component {
+    final case class Numeric(value: String) extends Component {
       def toBigInt: BigInt = BigInt(value)
     }
-    final case class Alpha(value: String, startIndex: Int) extends Component {
+    final case class Alpha(value: String) extends Component {
       def isPreReleaseIdent: Boolean = order < 0
       def order: Int =
         value.toUpperCase match {
@@ -149,27 +145,26 @@ object Version {
           case _                               => 0
         }
     }
-    final case class Hash(value: String, startIndex: Int) extends Component
-    final case class Separator(c: Char, startIndex: Int) extends Component
-    case object Empty extends Component { override def startIndex: Int = -1 }
+    final case class Hash(value: String) extends Component
+    final case class Separator(c: Char) extends Component
+    case object Empty extends Component
 
     private val numeric = """^(\d+)(.*)$""".r
     private val separator = """^([.\-_+])(.*)$""".r
     private val alpha = """^([^.\-_+\d]+)(.*)$""".r
     private val hash = """^([-+])(g?\p{XDigit}{6,})(.*)$""".r
 
-    def parse(str: String, index: Int = 0): List[Component] =
+    def parse(str: String): List[Component] =
       str match {
         case "" => List.empty
         case hash(sep, value, rest) if !startsWithDate(value) =>
-          Separator(sep.head, index) +: Hash(value, index + 1) +:
-            parse(rest, index + value.length + 1)
+          Separator(sep.head) +: Hash(value) +: parse(rest)
         case numeric(value, rest) =>
-          Numeric(value, index) +: parse(rest, index + value.length)
+          Numeric(value) +: parse(rest)
         case alpha(value, rest) =>
-          Alpha(value, index) +: parse(rest, index + value.length)
+          Alpha(value) +: parse(rest)
         case separator(value, rest) =>
-          Separator(value.head, index) +: parse(rest, index + value.length)
+          Separator(value.head) +: parse(rest)
       }
 
     def render(components: List[Component]): String =
@@ -196,9 +191,6 @@ object Version {
 
         case (_: Alpha, Empty) => -1
         case (Empty, _: Alpha) => 1
-
-        case (_: Alpha, _) => 1
-        case (_, _: Alpha) => -1
 
         case _ => 0
       }
