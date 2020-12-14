@@ -6,6 +6,7 @@ import org.scalasteward.core.data.{GroupId, Update}
 import org.scalasteward.core.mock.MockContext.{config, editAlg}
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.repoconfig.RepoConfig
+import org.scalasteward.core.scalafmt.scalafmtBinary
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 import org.scalatest.funsuite.AnyFunSuite
@@ -79,6 +80,8 @@ class EditAlgTest extends AnyFunSuite with Matchers {
         List("read", scalafmtConf.pathAsString),
         List("read", scalafmtConf.pathAsString),
         List("write", scalafmtConf.pathAsString),
+        envVars ++ (repoDir.toString :: gitStatus),
+        List("VAR1=val1", "VAR2=val2", repoDir.toString, scalafmtBinary, "--non-interactive"),
         envVars ++ (repoDir.toString :: gitStatus)
       ),
       logs = Vector(
@@ -89,7 +92,8 @@ class EditAlgTest extends AnyFunSuite with Matchers {
         (None, "Trying heuristic 'sliding'"),
         (None, "Trying heuristic 'completeGroupId'"),
         (None, "Trying heuristic 'groupId'"),
-        (None, "Trying heuristic 'specific'")
+        (None, "Trying heuristic 'specific'"),
+        (None, "Executing post-update hook for org.scalameta:scalafmt-core")
       ),
       files = Map(
         scalafmtConf ->

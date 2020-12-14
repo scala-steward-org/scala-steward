@@ -42,6 +42,9 @@ trait GenGitAlg[F[_], Repo] {
 
   def currentBranch(repo: Repo): F[Branch]
 
+  /** Discards unstaged changes. */
+  def discardChanges(repo: Repo): F[Unit]
+
   def findFilesContaining(repo: Repo, string: String): F[List[String]]
 
   /** Returns `true` if merging `branch` into `base` results in merge conflicts. */
@@ -98,6 +101,9 @@ trait GenGitAlg[F[_], Repo] {
 
       override def currentBranch(repo: A): F[Branch] =
         f(repo).flatMap(self.currentBranch)
+
+      override def discardChanges(repo: A): F[Unit] =
+        f(repo).flatMap(self.discardChanges)
 
       override def findFilesContaining(repo: A, string: String): F[List[String]] =
         f(repo).flatMap(self.findFilesContaining(_, string))

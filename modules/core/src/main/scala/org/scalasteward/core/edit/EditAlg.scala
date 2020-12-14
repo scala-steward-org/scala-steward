@@ -27,7 +27,7 @@ import org.scalasteward.core.git
 import org.scalasteward.core.git.{Commit, GitAlg}
 import org.scalasteward.core.io.{isSourceFile, FileAlg, WorkspaceAlg}
 import org.scalasteward.core.repoconfig.RepoConfig
-import org.scalasteward.core.scalafix.MigrationAlg
+import org.scalasteward.core.scalafix.{Migration, MigrationAlg}
 import org.scalasteward.core.util._
 import org.scalasteward.core.vcs.data.Repo
 
@@ -47,13 +47,21 @@ final class EditAlg[F[_]](implicit
       case None =>
         logger.warn("No files found that contain the current version").as(Nil)
       case Some(files) =>
-        for {
-          cs1 <- runScalafixMigrations(repo, update)
-          cs2 <- bumpVersion(repo, repoConfig, update, files)
-          cs3 <-
-            if (cs2.isEmpty) F.pure(Nil)
-            else hookExecutor.execPostUpdateHooks(repo, repoConfig, update)
-        } yield cs1 ++ cs2 ++ cs3
+        bumpVersion(update, files).flatMap {
+          case false => logger.warn("Unable to bump version").as(Nil)
+          case true =>
+            val migrations = migrationAlg.findMigrations(update)
+            for {
+              cs1 <-
+                if (migrations.isEmpty) F.pure(Nil)
+                else
+                  gitAlg.discardChanges(repo) *>
+                    runScalafixMigrations(repo, migrations) <*
+                    bumpVersion(update, files)
+              cs2 <- gitAlg.commitAllIfDirty(repo, git.commitMsgFor(update, repoConfig.commits))
+              cs3 <- hookExecutor.execPostUpdateHooks(repo, repoConfig, update)
+            } yield cs1 ++ cs2 ++ cs3
+        }
     }
 
   private def findFilesContainingCurrentVersion(
@@ -66,8 +74,8 @@ final class EditAlg[F[_]](implicit
       fileAlg.findFiles(repoDir, fileFilter, _.contains(update.currentVersion)).map(Nel.fromList)
     }
 
-  private def runScalafixMigrations(repo: Repo, update: Update): F[List[Commit]] =
-    migrationAlg.findMigrations(update).traverseFilter { migration =>
+  private def runScalafixMigrations(repo: Repo, migrations: List[Migration]): F[List[Commit]] =
+    migrations.traverseFilter { migration =>
       logger.info(s"Running migration $migration") >>
         buildToolDispatcher.runMigrations(repo, Nel.one(migration)).attempt.flatMap {
           case Right(_) =>
@@ -79,19 +87,11 @@ final class EditAlg[F[_]](implicit
         }
     }
 
-  private def bumpVersion(
-      repo: Repo,
-      repoConfig: RepoConfig,
-      update: Update,
-      files: Nel[File]
-  ): F[List[Commit]] = {
+  private def bumpVersion(update: Update, files: Nel[File]): F[Boolean] = {
     val actions = UpdateHeuristic.all.map { heuristic =>
       logger.info(s"Trying heuristic '${heuristic.name}'") >>
         fileAlg.editFiles(files, heuristic.replaceVersion(update))
     }
-    bindUntilTrue(actions).ifM(
-      gitAlg.commitAllIfDirty(repo, git.commitMsgFor(update, repoConfig.commits)).map(_.toList),
-      logger.warn("Unable to bump version").as(Nil)
-    )
+    bindUntilTrue(actions)
   }
 }
