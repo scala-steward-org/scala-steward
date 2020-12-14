@@ -42,6 +42,7 @@ trait GenGitAlg[F[_], Repo] {
 
   def currentBranch(repo: Repo): F[Branch]
 
+  /** Discards unstaged changes. */
   def discardChanges(repo: Repo): F[Unit]
 
   def findFilesContaining(repo: Repo, string: String): F[List[String]]
