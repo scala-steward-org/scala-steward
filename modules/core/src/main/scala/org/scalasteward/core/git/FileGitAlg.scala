@@ -66,6 +66,9 @@ final class FileGitAlg[F[_]](config: Config)(implicit
     git("rev-parse", "--abbrev-ref", Branch.head.name)(repo)
       .map(lines => Branch(lines.mkString.trim))
 
+  override def discardChanges(repo: File): F[Unit] =
+    git("checkout", "--", ".")(repo).void
+
   override def findFilesContaining(repo: File, string: String): F[List[String]] =
     git("grep", "-I", "--fixed-strings", "--files-with-matches", string)(repo)
       .handleError(_ => List.empty[String])

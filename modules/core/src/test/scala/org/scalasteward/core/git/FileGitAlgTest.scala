@@ -70,6 +70,24 @@ class FileGitAlgTest extends AnyFunSuite with Matchers {
     p.unsafeRunSync() shouldBe master
   }
 
+  test("discardChanges") {
+    val repo = rootDir / "discardChanges"
+    val p = for {
+      _ <- supplement.createRepo(repo)
+      file = repo / "test.txt"
+      _ <- ioFileAlg.writeFile(file, "hello")
+      _ <- supplement.git("add", "test.txt")(repo)
+      _ <- ioGitAlg.commitAll(repo, "Add test.txt")
+      _ <- ioFileAlg.writeFile(file, "world")
+      before <- ioFileAlg.readFile(file)
+      _ <- ioGitAlg.discardChanges(repo)
+      after <- ioFileAlg.readFile(file)
+    } yield (before, after)
+    val (before, after) = p.unsafeRunSync()
+    before shouldBe Some("world")
+    after shouldBe Some("hello")
+  }
+
   test("findFilesContaining") {
     val repo = rootDir / "findFilesContaining"
     val p = for {
