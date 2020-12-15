@@ -41,36 +41,37 @@ final class RepoCacheAlg[F[_]](config: Config)(implicit
     vcsRepoAlg: VCSRepoAlg[F],
     F: MonadThrow[F]
 ) {
-  def checkCache(repo: Repo): F[RepoOut] =
+  def checkCache(repo: Repo): F[(RepoCache, RepoOut)] =
     logger.info(s"Check cache of ${repo.show}") >> {
       F.ifM(refreshErrorAlg.failedRecently(repo))(
         F.raiseError(new Throwable("Skipping due to previous error") with NoStackTrace),
         for {
-          ((repoOut, branchOut), cachedSha1) <- (
+          ((repoOut, branchOut), maybeCache) <- (
             vcsApiAlg.createForkOrGetRepoWithDefaultBranch(repo, config.doNotFork),
-            repoCacheRepository.findSha1(repo)
+            repoCacheRepository.findCache(repo)
           ).parTupled
           latestSha1 = branchOut.commit.sha
-          refreshRequired = cachedSha1.forall(_ =!= latestSha1)
-          _ <- if (refreshRequired) cloneAndRefreshCache(repo, repoOut) else F.unit
-        } yield repoOut
+          cache <- maybeCache
+            .filter(_.sha1 === latestSha1)
+            .fold(cloneAndRefreshCache(repo, repoOut))(F.pure)
+        } yield (cache, repoOut)
       )
     }
 
-  private def cloneAndRefreshCache(repo: Repo, repoOut: RepoOut): F[Unit] =
+  private def cloneAndRefreshCache(repo: Repo, repoOut: RepoOut): F[RepoCache] =
     for {
       _ <- logger.info(s"Refresh cache of ${repo.show}")
       _ <- vcsRepoAlg.clone(repo, repoOut)
       _ <- vcsRepoAlg.syncFork(repo, repoOut)
-      _ <- refreshCache(repo)
-    } yield ()
+      cache <- refreshCache(repo)
+    } yield cache
 
-  private def refreshCache(repo: Repo): F[Unit] =
+  private def refreshCache(repo: Repo): F[RepoCache] =
     computeCache(repo).attempt.flatMap {
       case Right(cache) =>
-        repoCacheRepository.updateCache(repo, cache)
+        repoCacheRepository.updateCache(repo, cache).as(cache)
       case Left(throwable) =>
-        refreshErrorAlg.persistError(repo, throwable) >> F.raiseError(throwable)
+        refreshErrorAlg.persistError(repo, throwable) >> F.raiseError[RepoCache](throwable)
     }
 
   private def computeCache(repo: Repo): F[RepoCache] =
