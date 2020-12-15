@@ -17,17 +17,12 @@
 package org.scalasteward.core.repocache
 
 import cats.Applicative
-import cats.syntax.all._
-import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.persistence.KeyValueStore
 import org.scalasteward.core.vcs.data.Repo
 
 final class RepoCacheRepository[F[_]: Applicative](kvStore: KeyValueStore[F, Repo, RepoCache]) {
   def findCache(repo: Repo): F[Option[RepoCache]] =
     kvStore.get(repo)
-
-  def findSha1(repo: Repo): F[Option[Sha1]] =
-    findCache(repo).map(_.map(_.sha1))
 
   def updateCache(repo: Repo, repoCache: RepoCache): F[Unit] =
     kvStore.put(repo, repoCache)

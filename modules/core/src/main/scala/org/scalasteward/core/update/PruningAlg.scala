@@ -22,7 +22,7 @@ import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data._
 import org.scalasteward.core.nurture.PullRequestRepository
-import org.scalasteward.core.repocache.{RepoCache, RepoCacheRepository}
+import org.scalasteward.core.repocache.RepoCache
 import org.scalasteward.core.repoconfig.{PullRequestFrequency, RepoConfig, RepoConfigAlg}
 import org.scalasteward.core.update.PruningAlg._
 import org.scalasteward.core.update.data.UpdateState
@@ -37,26 +37,21 @@ final class PruningAlg[F[_]](implicit
     dateTimeAlg: DateTimeAlg[F],
     logger: Logger[F],
     pullRequestRepository: PullRequestRepository[F],
-    repoCacheRepository: RepoCacheRepository[F],
     repoConfigAlg: RepoConfigAlg[F],
     updateAlg: UpdateAlg[F],
     F: Monad[F]
 ) {
-  def needsAttention(repo: Repo): F[(Boolean, List[Update.Single])] =
-    repoCacheRepository.findCache(repo).flatMap {
-      case None => F.pure((false, List.empty))
-      case Some(repoCache) =>
-        repoConfigAlg.mergeWithDefault(repoCache.maybeRepoConfig).flatMap { repoConfig =>
-          val ignoreScalaDependency = !repoConfig.updates.includeScalaOrDefault
-          val dependencies = repoCache.dependencyInfos
-            .flatMap(_.sequence)
-            .collect {
-              case info if !ignoreDependency(info.value, ignoreScalaDependency) =>
-                info.map(_.dependency)
-            }
-            .sorted
-          findUpdatesNeedingAttention(repo, repoCache, repoConfig, dependencies)
+  def needsAttention(repo: Repo, repoCache: RepoCache): F[(Boolean, List[Update.Single])] =
+    repoConfigAlg.mergeWithDefault(repoCache.maybeRepoConfig).flatMap { repoConfig =>
+      val ignoreScalaDependency = !repoConfig.updates.includeScalaOrDefault
+      val dependencies = repoCache.dependencyInfos
+        .flatMap(_.sequence)
+        .collect {
+          case info if !ignoreDependency(info.value, ignoreScalaDependency) =>
+            info.map(_.dependency)
         }
+        .sorted
+      findUpdatesNeedingAttention(repo, repoCache, repoConfig, dependencies)
     }
 
   private def findUpdatesNeedingAttention(
