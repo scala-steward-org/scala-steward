@@ -41,7 +41,7 @@ package object edit {
     val buffer = mutable.ListBuffer.empty[(String, Boolean)]
     val on = new StringBuilder()
     val off = new StringBuilder()
-    val regexIgnoreMultiLinesBegins = "^\\s*//\\s*scala-steward:off".r
+    val regexIgnoreMultiLinesBegins = """\s*\p{Punct}+\s*scala-steward:off""".r
     def flush(builder: StringBuilder, canReplace: Boolean): Unit =
       if (builder.nonEmpty) {
         buffer.append((builder.toString(), canReplace))
@@ -56,7 +56,7 @@ package object edit {
           off.append(line)
       else if (line.contains("scala-steward:off")) {
         flush(on, true)
-        if (regexIgnoreMultiLinesBegins.findFirstIn(line).isDefined)
+        if (regexIgnoreMultiLinesBegins.findPrefixOf(line).isDefined)
           off.append(line)
         else
           // single line off
