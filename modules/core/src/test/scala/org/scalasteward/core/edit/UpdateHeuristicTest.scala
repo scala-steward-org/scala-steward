@@ -409,6 +409,15 @@ class UpdateHeuristicTest extends AnyFunSuite with Matchers {
     ).replaceVersionIn(original) shouldBe (Some(expected) -> UpdateHeuristic.moduleId.name)
   }
 
+  test("hash before `off`") {
+    val original =
+      """# scala-steward:off
+        |sbt.version=1.2.8
+        |""".stripMargin
+    Single("org.scala-sbt" % "sbt" % "1.2.8", Nel.of("1.4.3"))
+      .replaceVersionIn(original) shouldBe (None -> UpdateHeuristic.all.last.name)
+  }
+
   test("similar artifactIds and same version") {
     val original =
       """ "org.typelevel" %%% "cats-core" % "2.0.0-M4",
