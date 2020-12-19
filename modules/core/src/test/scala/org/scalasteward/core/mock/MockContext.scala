@@ -2,7 +2,7 @@ package org.scalasteward.core.mock
 
 import better.files.File
 import cats.Parallel
-import cats.effect.Sync
+import cats.effect.{BracketThrow, Sync}
 import io.chrisdavenport.log4cats.Logger
 import org.http4s.Uri
 import org.scalasteward.core.TestInstances.ioContextShift
@@ -25,7 +25,7 @@ import org.scalasteward.core.scalafix.{MigrationAlg, MigrationsLoader, Migration
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.{ArtifactMigrations, FilterAlg, PruningAlg, UpdateAlg}
 import org.scalasteward.core.util.uri._
-import org.scalasteward.core.util.{BracketThrow, DateTimeAlg}
+import org.scalasteward.core.util.DateTimeAlg
 import org.scalasteward.core.vcs.VCSRepoAlg
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 import scala.concurrent.duration._
