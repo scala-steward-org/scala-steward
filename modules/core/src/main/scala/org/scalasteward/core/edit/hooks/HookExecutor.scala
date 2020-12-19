@@ -16,6 +16,7 @@
 
 package org.scalasteward.core.edit.hooks
 
+import cats.MonadThrow
 import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data.{ArtifactId, GroupId, Update}
@@ -24,7 +25,7 @@ import org.scalasteward.core.io.{ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtBinary, scalafmtGroupId}
 import org.scalasteward.core.util.logger._
-import org.scalasteward.core.util.{MonadThrow, Nel}
+import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
 final class HookExecutor[F[_]](implicit

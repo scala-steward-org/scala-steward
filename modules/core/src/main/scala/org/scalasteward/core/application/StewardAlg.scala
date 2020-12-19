@@ -17,6 +17,7 @@
 package org.scalasteward.core.application
 
 import better.files.File
+import cats.effect.BracketThrow
 import cats.effect.ExitCode
 import cats.syntax.all._
 import fs2.Stream
@@ -29,7 +30,7 @@ import org.scalasteward.core.repocache.RepoCacheAlg
 import org.scalasteward.core.update.PruningAlg
 import org.scalasteward.core.util
 import org.scalasteward.core.util.logger.LoggerOps
-import org.scalasteward.core.util.{BracketThrow, DateTimeAlg}
+import org.scalasteward.core.util.DateTimeAlg
 import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.vcs.github.{GitHubApp, GitHubAppApiAlg, GitHubAuthAlg}
 import scala.concurrent.duration._

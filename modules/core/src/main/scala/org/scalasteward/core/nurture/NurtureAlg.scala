@@ -17,6 +17,7 @@
 package org.scalasteward.core.nurture
 
 import cats.Applicative
+import cats.effect.BracketThrow
 import cats.implicits._
 import eu.timepit.refined.types.numeric.PosInt
 import fs2.Stream
@@ -31,7 +32,7 @@ import org.scalasteward.core.git.{Branch, Commit, GitAlg}
 import org.scalasteward.core.repocache.RepoCacheRepository
 import org.scalasteward.core.repoconfig.{PullRequestUpdateStrategy, RepoConfigAlg}
 import org.scalasteward.core.scalafix.MigrationAlg
-import org.scalasteward.core.util.{BracketThrow, HttpExistenceClient}
+import org.scalasteward.core.util.HttpExistenceClient
 import org.scalasteward.core.vcs.data._
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg}
 import org.scalasteward.core.{git, util, vcs}

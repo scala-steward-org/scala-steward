@@ -16,14 +16,13 @@
 
 package org.scalasteward.core.git
 
-import cats.effect.Bracket
+import cats.effect.{Bracket, BracketThrow}
 import cats.syntax.all._
 import cats.{FlatMap, Monad}
 import io.chrisdavenport.log4cats.Logger
 import org.http4s.Uri
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.util.BracketThrow
 
 trait GenGitAlg[F[_], Repo] {
   def branchAuthors(repo: Repo, branch: Branch, base: Branch): F[List[String]]
