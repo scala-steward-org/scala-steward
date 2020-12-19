@@ -2,17 +2,16 @@ package org.scalasteward.core.repoconfig
 
 import better.files.File
 import eu.timepit.refined.types.numeric.PosInt
+import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.{GroupId, Update}
 import org.scalasteward.core.mock.MockContext.repoConfigAlg
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 import scala.concurrent.duration._
 
-class RepoConfigAlgTest extends AnyFunSuite with Matchers {
+class RepoConfigAlgTest extends FunSuite {
   test("config with all fields set") {
     val repo = Repo("fthomas", "scala-steward")
     val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
@@ -34,7 +33,7 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     val initialState = MockState.empty.add(configFile, content)
     val config = repoConfigAlg.readRepoConfigWithDefault(repo).runA(initialState).unsafeRunSync()
 
-    config shouldBe RepoConfig(
+    val expected = RepoConfig(
       pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(7.days))),
       updates = UpdatesConfig(
         allow = List(UpdatePattern(GroupId("eu.timepit"), None, None)),
@@ -71,62 +70,83 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
         message = Some("Update ${artifactName} from ${currentVersion} to ${nextVersion}")
       )
     )
+    assertEquals(config, expected)
   }
 
   test("config with 'updatePullRequests = false'") {
     val content = "updatePullRequests = false"
     val config = RepoConfigAlg.parseRepoConfig(content)
-    config shouldBe Right(RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.Never)))
+    assertEquals(
+      config,
+      Right(RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.Never)))
+    )
   }
 
   test("config with 'updatePullRequests = true'") {
     val content = "updatePullRequests = true"
     val config = RepoConfigAlg.parseRepoConfig(content)
-    config shouldBe Right(
-      RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.OnConflicts))
+    assertEquals(
+      config,
+      Right(RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.OnConflicts)))
     )
   }
 
   test("config with 'updatePullRequests = always'") {
     val content = """updatePullRequests = "always" """
     val config = RepoConfigAlg.parseRepoConfig(content)
-    config shouldBe Right(RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.Always)))
+    assertEquals(
+      config,
+      Right(RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.Always)))
+    )
   }
 
   test("config with 'updatePullRequests = on-conflicts'") {
     val content = """updatePullRequests = "on-conflicts" """
     val config = RepoConfigAlg.parseRepoConfig(content)
-    config shouldBe Right(
-      RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.OnConflicts))
+    assertEquals(
+      config,
+      Right(RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.OnConflicts)))
     )
   }
 
   test("config with 'updatePullRequests = never'") {
     val content = """updatePullRequests = "never" """
     val config = RepoConfigAlg.parseRepoConfig(content)
-    config shouldBe Right(RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.Never)))
+    assertEquals(
+      config,
+      Right(RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.Never)))
+    )
   }
 
   test("config with 'updatePullRequests = foo'") {
     val content = """updatePullRequests = foo """
     val config = RepoConfigAlg.parseRepoConfig(content)
-    config shouldBe Right(RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.default)))
+    assertEquals(
+      config,
+      Right(RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.default)))
+    )
   }
 
   test("config with 'pullRequests.frequency = @asap'") {
     val content = """pullRequests.frequency = "@asap" """
     val config = RepoConfigAlg.parseRepoConfig(content)
-    config shouldBe Right(
-      RepoConfig(pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Asap)))
+    assertEquals(
+      config,
+      Right(
+        RepoConfig(pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Asap)))
+      )
     )
   }
 
   test("config with 'pullRequests.frequency = @daily'") {
     val content = """pullRequests.frequency = "@daily" """
     val config = RepoConfigAlg.parseRepoConfig(content)
-    config shouldBe Right(
-      RepoConfig(pullRequests =
-        PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(1.day)))
+    assertEquals(
+      config,
+      Right(
+        RepoConfig(pullRequests =
+          PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(1.day)))
+        )
       )
     )
   }
@@ -134,9 +154,12 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
   test("config with 'pullRequests.frequency = @monthly'") {
     val content = """pullRequests.frequency = "@monthly" """
     val config = RepoConfigAlg.parseRepoConfig(content)
-    config shouldBe Right(
-      RepoConfig(pullRequests =
-        PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(30.days)))
+    assertEquals(
+      config,
+      Right(
+        RepoConfig(pullRequests =
+          PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(30.days)))
+        )
       )
     )
   }
@@ -144,8 +167,11 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
   test("config with 'scalafmt.runAfterUpgrading = true'") {
     val content = "scalafmt.runAfterUpgrading = true"
     val config = RepoConfigAlg.parseRepoConfig(content)
-    config shouldBe Right(
-      RepoConfig(scalafmt = ScalafmtConfig(runAfterUpgrading = Some(true)))
+    assertEquals(
+      config,
+      Right(
+        RepoConfig(scalafmt = ScalafmtConfig(runAfterUpgrading = Some(true)))
+      )
     )
   }
 
@@ -156,9 +182,9 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
     val (state, config) =
       repoConfigAlg.readRepoConfigWithDefault(repo).run(initialState).unsafeRunSync()
 
-    config shouldBe RepoConfig()
-    state.logs.headOption.map { case (_, msg) => msg }.getOrElse("") should
-      startWith("Failed to parse .scala-steward.conf")
+    assertEquals(config, RepoConfig())
+    val log = state.logs.headOption.map { case (_, msg) => msg }.getOrElse("")
+    assert(clue(log).startsWith("Failed to parse .scala-steward.conf"))
   }
 
   test("configToIgnoreFurtherUpdates with single update") {
@@ -167,9 +193,10 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
       .parseRepoConfig(RepoConfigAlg.configToIgnoreFurtherUpdates(update))
       .getOrElse(RepoConfig())
 
-    repoConfig shouldBe RepoConfig(
-      updates = UpdatesConfig(
-        ignore = List(UpdatePattern(GroupId("a"), Some("b"), None))
+    assertEquals(
+      repoConfig,
+      RepoConfig(updates =
+        UpdatesConfig(ignore = List(UpdatePattern(GroupId("a"), Some("b"), None)))
       )
     )
   }
@@ -180,8 +207,9 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
       .parseRepoConfig(RepoConfigAlg.configToIgnoreFurtherUpdates(update))
       .getOrElse(RepoConfig())
 
-    repoConfig shouldBe RepoConfig(
-      updates = UpdatesConfig(ignore = List(UpdatePattern(GroupId("a"), None, None)))
+    assertEquals(
+      repoConfig,
+      RepoConfig(updates = UpdatesConfig(ignore = List(UpdatePattern(GroupId("a"), None, None))))
     )
   }
 }

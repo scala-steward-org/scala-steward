@@ -1,6 +1,7 @@
 package org.scalasteward.core.buildtool.sbt
 
 import cats.data.StateT
+import munit.FunSuite
 import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.data.{GroupId, Version}
 import org.scalasteward.core.mock.MockContext._
@@ -8,15 +9,14 @@ import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 
-class SbtAlgTest extends AnyFunSuite with Matchers {
+class SbtAlgTest extends FunSuite {
   test("addGlobalPlugins") {
-    sbtAlg
+    val obtained = sbtAlg
       .addGlobalPlugins(StateT.modify(_.exec(List("fa"))))
       .runS(MockState.empty)
-      .unsafeRunSync() shouldBe MockState.empty.copy(
+      .unsafeRunSync()
+    val expected = MockState.empty.copy(
       commands = Vector(
         List("read", "classpath:org/scalasteward/sbt/plugin/StewardPlugin.scala"),
         List("write", "/tmp/steward/.sbt/0.13/plugins/StewardPlugin.scala"),
@@ -28,6 +28,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
       logs = Vector((None, "Add global sbt plugins")),
       files = Map.empty
     )
+    assertEquals(obtained, expected)
   }
 
   test("getDependencies") {
@@ -36,7 +37,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
     val files = Map(repoDir / "project" / "build.properties" -> "sbt.version=1.2.6")
     val initial = MockState.empty.copy(files = files)
     val state = sbtAlg.getDependencies(repo).runS(initial).unsafeRunSync()
-    state shouldBe initial.copy(
+    val expected = initial.copy(
       commands = Vector(
         List(
           repoDir.toString,
@@ -54,6 +55,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
         List("read", s"$repoDir/project/build.properties")
       )
     )
+    assertEquals(state, expected)
   }
 
   test("runMigrations") {
@@ -70,8 +72,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
       )
     )
     val state = sbtAlg.runMigrations(repo, migrations).runS(MockState.empty).unsafeRunSync()
-
-    state shouldBe MockState.empty.copy(
+    val expected = MockState.empty.copy(
       commands = Vector(
         List("write", "/tmp/steward/.sbt/0.13/plugins/scala-steward-scalafix.sbt"),
         List("write", "/tmp/steward/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
@@ -92,6 +93,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
         List("rm", "-rf", "/tmp/steward/.sbt/0.13/plugins/scala-steward-scalafix.sbt")
       )
     )
+    assertEquals(state, expected)
   }
 
   test("runMigrations: migration with scalacOptions") {
@@ -108,8 +110,7 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
       )
     )
     val state = sbtAlg.runMigrations(repo, migrations).runS(MockState.empty).unsafeRunSync()
-
-    state shouldBe MockState.empty.copy(
+    val expected = MockState.empty.copy(
       commands = Vector(
         List("write", "/tmp/steward/.sbt/0.13/plugins/scala-steward-scalafix.sbt"),
         List("write", "/tmp/steward/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
@@ -132,5 +133,6 @@ class SbtAlgTest extends AnyFunSuite with Matchers {
         List("rm", "-rf", "/tmp/steward/.sbt/0.13/plugins/scala-steward-scalafix.sbt")
       )
     )
+    assertEquals(state, expected)
   }
 }

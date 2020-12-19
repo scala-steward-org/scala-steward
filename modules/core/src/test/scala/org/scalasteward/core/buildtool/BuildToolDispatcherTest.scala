@@ -1,5 +1,6 @@
 package org.scalasteward.core.buildtool
 
+import munit.FunSuite
 import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.buildtool.sbt.data.SbtVersion
 import org.scalasteward.core.data.{Resolver, Scope, Version}
@@ -7,10 +8,8 @@ import org.scalasteward.core.mock.MockContext.{buildToolDispatcher, config}
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.scalafmt
 import org.scalasteward.core.vcs.data.Repo
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 
-class BuildToolDispatcherTest extends AnyFunSuite with Matchers {
+class BuildToolDispatcherTest extends FunSuite {
   test("getDependencies") {
     val repo = Repo("typelevel", "cats")
     val repoDir = config.workspace / repo.show
@@ -21,7 +20,7 @@ class BuildToolDispatcherTest extends AnyFunSuite with Matchers {
     val initial = MockState.empty.copy(files = files)
     val (state, deps) = buildToolDispatcher.getDependencies(repo).run(initial).unsafeRunSync()
 
-    state shouldBe initial.copy(commands =
+    val expectedState = initial.copy(commands =
       Vector(
         List("test", "-f", s"$repoDir/pom.xml"),
         List("test", "-f", s"$repoDir/build.sc"),
@@ -43,7 +42,9 @@ class BuildToolDispatcherTest extends AnyFunSuite with Matchers {
         List("read", s"$repoDir/.scalafmt.conf")
       )
     )
-    deps shouldBe List(
+    assertEquals(state, expectedState)
+
+    val expectedDeps = List(
       Scope(
         List(
           sbt.sbtDependency(SbtVersion("1.2.6")).get,
@@ -52,5 +53,6 @@ class BuildToolDispatcherTest extends AnyFunSuite with Matchers {
         List(Resolver.mavenCentral)
       )
     )
+    assertEquals(deps, expectedDeps)
   }
 }

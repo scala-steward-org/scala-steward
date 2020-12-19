@@ -4,9 +4,11 @@ import _root_.io.chrisdavenport.log4cats.Logger
 import _root_.io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import cats.effect.{ContextShift, IO, Timer}
 import org.scalacheck.{Arbitrary, Cogen, Gen}
-import org.scalasteward.core.data.{Resolver, Scope, Version}
-import org.scalasteward.core.util.Change
+import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.data.Update.Single
+import org.scalasteward.core.data.{Resolver, Scope, Update, Version}
 import org.scalasteward.core.util.Change.{Changed, Unchanged}
+import org.scalasteward.core.util.{Change, Nel}
 import scala.concurrent.ExecutionContext
 
 object TestInstances {
@@ -31,6 +33,16 @@ object TestInstances {
 
   implicit def scopeCogen[T](implicit cogenT: Cogen[T]): Cogen[Scope[T]] =
     cogenT.contramap(_.value)
+
+  implicit val updateArbitrary: Arbitrary[Update] =
+    Arbitrary(
+      for {
+        groupId <- Gen.alphaStr
+        artifactId <- Gen.alphaStr
+        currentVersion <- Gen.alphaStr
+        newerVersion <- Gen.alphaStr
+      } yield Single(groupId % artifactId % currentVersion, Nel.one(newerVersion))
+    )
 
   private val hashGen: Gen[String] =
     for {

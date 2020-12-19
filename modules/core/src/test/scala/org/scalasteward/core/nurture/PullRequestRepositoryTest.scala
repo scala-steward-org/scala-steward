@@ -1,5 +1,6 @@
 package org.scalasteward.core.nurture
 
+import munit.FunSuite
 import org.http4s.Uri
 import org.http4s.syntax.literals._
 import org.scalasteward.core.TestSyntax._
@@ -10,12 +11,10 @@ import org.scalasteward.core.mock.MockContext.{config, pullRequestRepository}
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.{PullRequestNumber, PullRequestState, Repo}
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 
-class PullRequestRepositoryTest extends AnyFunSuite with Matchers {
-  private def checkCommands(state: MockState, commands: Vector[List[String]]) =
-    state.copy(files = Map.empty) shouldBe MockState.empty.copy(commands = commands)
+class PullRequestRepositoryTest extends FunSuite {
+  private def checkCommands(state: MockState, commands: Vector[List[String]]): Unit =
+    assertEquals(state.copy(files = Map.empty), MockState.empty.copy(commands = commands))
 
   withStoreData { (repo, url, sha1, number) =>
     test("createOrUpdate >> findPullRequest >> lastPullRequestCreatedAt") {
@@ -36,8 +35,8 @@ class PullRequestRepositoryTest extends AnyFunSuite with Matchers {
       val (state, (result, createdAt)) = p.run(MockState.empty).unsafeRunSync()
 
       val store = config.workspace / "store/pull_requests/v2/typelevel/cats/pull_requests.json"
-      result shouldBe Some((url, sha1, PullRequestState.Open))
-      createdAt.isDefined shouldBe true
+      assertEquals(result, Some((url, sha1, PullRequestState.Open)))
+      assert(createdAt.isDefined)
 
       checkCommands(
         state,
@@ -70,9 +69,9 @@ class PullRequestRepositoryTest extends AnyFunSuite with Matchers {
       } yield (emptyResult, result, closedResult)
       val (state, (emptyResult, result, closedResult)) = p.run(MockState.empty).unsafeRunSync()
       val store = config.workspace / "store/pull_requests/v2/typelevel/cats/pull_requests.json"
-      emptyResult shouldBe List.empty
-      closedResult shouldBe List.empty
-      result shouldBe List((number, url, TestData.Updates.PortableScala))
+      assertEquals(emptyResult, List.empty)
+      assertEquals(closedResult, List.empty)
+      assertEquals(result, List((number, url, TestData.Updates.PortableScala)))
 
       checkCommands(
         state,
@@ -105,8 +104,8 @@ class PullRequestRepositoryTest extends AnyFunSuite with Matchers {
       } yield (emptyResult, result)
       val (state, (emptyResult, result)) = p.run(MockState.empty).unsafeRunSync()
       val store = config.workspace / "store/pull_requests/v2/typelevel/cats/pull_requests.json"
-      emptyResult shouldBe List.empty
-      result shouldBe List.empty
+      assertEquals(emptyResult, List.empty)
+      assertEquals(result, List.empty)
 
       checkCommands(
         state,
@@ -137,8 +136,8 @@ class PullRequestRepositoryTest extends AnyFunSuite with Matchers {
       } yield (emptyResult, result)
       val (state, (emptyResult, result)) = p.run(MockState.empty).unsafeRunSync()
       val store = config.workspace / "store/pull_requests/v2/typelevel/cats/pull_requests.json"
-      emptyResult shouldBe List.empty
-      result shouldBe List.empty
+      assertEquals(emptyResult, List.empty)
+      assertEquals(result, List.empty)
 
       checkCommands(
         state,
@@ -155,7 +154,7 @@ class PullRequestRepositoryTest extends AnyFunSuite with Matchers {
   private def withStoreData(f: (Repo, Uri, Sha1, PullRequestNumber) => Unit): Unit = {
     val repo = Repo("typelevel", "cats")
     val url = uri"https://github.com/typelevel/cats/pull/3291"
-    val sha1 = Sha1(HexString("a2ced5793c2832ada8c14ba5c77e51c4bc9656a8"))
+    val sha1 = Sha1(HexString.unsafeFrom("a2ced5793c2832ada8c14ba5c77e51c4bc9656a8"))
     val number = PullRequestNumber(3291)
 
     f(repo, url, sha1, number)

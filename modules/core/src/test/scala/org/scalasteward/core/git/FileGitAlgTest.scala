@@ -4,6 +4,7 @@ import better.files.File
 import cats.Monad
 import cats.effect.IO
 import cats.syntax.all._
+import munit.FunSuite
 import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.git.FileGitAlgTest.{master, Supplement}
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
@@ -11,10 +12,8 @@ import org.scalasteward.core.io.ProcessAlgTest.ioProcessAlg
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.mock.MockContext.config
 import org.scalasteward.core.util.Nel
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 
-class FileGitAlgTest extends AnyFunSuite with Matchers {
+class FileGitAlgTest extends FunSuite {
   implicit private val ioWorkspaceAlg: WorkspaceAlg[IO] = WorkspaceAlg.create[IO](config)
   implicit private val ioGitAlg: GenGitAlg[IO, File] =
     new FileGitAlg[IO](config).contramapRepoF(IO.pure)
@@ -28,7 +27,7 @@ class FileGitAlgTest extends AnyFunSuite with Matchers {
       _ <- supplement.createConflict(repo)
       authors <- ioGitAlg.branchAuthors(repo, Branch("conflicts-no"), master)
     } yield authors
-    p.unsafeRunSync() shouldBe List("'Bot Doe'")
+    assertEquals(p.unsafeRunSync(), List("'Bot Doe'"))
   }
 
   test("cloneExists") {
@@ -40,7 +39,7 @@ class FileGitAlgTest extends AnyFunSuite with Matchers {
       _ <- ioGitAlg.removeClone(repo)
       e3 <- ioGitAlg.cloneExists(repo)
     } yield (e1, e2, e3)
-    p.unsafeRunSync() shouldBe ((false, true, false))
+    assertEquals(p.unsafeRunSync(), (false, true, false))
   }
 
   test("containsChanges") {
@@ -56,7 +55,7 @@ class FileGitAlgTest extends AnyFunSuite with Matchers {
       _ <- ioGitAlg.commitAllIfDirty(repo, "Modify test.txt")
       c3 <- ioGitAlg.containsChanges(repo)
     } yield (c1, c2, c3)
-    p.unsafeRunSync() shouldBe ((false, true, false))
+    assertEquals(p.unsafeRunSync(), (false, true, false))
   }
 
   test("currentBranch") {
@@ -67,7 +66,7 @@ class FileGitAlgTest extends AnyFunSuite with Matchers {
       branch <- ioGitAlg.currentBranch(repo)
       _ <- ioGitAlg.latestSha1(repo, branch)
     } yield branch
-    p.unsafeRunSync() shouldBe master
+    assertEquals(p.unsafeRunSync(), master)
   }
 
   test("discardChanges") {
@@ -84,8 +83,8 @@ class FileGitAlgTest extends AnyFunSuite with Matchers {
       after <- ioFileAlg.readFile(file)
     } yield (before, after)
     val (before, after) = p.unsafeRunSync()
-    before shouldBe Some("world")
-    after shouldBe Some("hello")
+    assertEquals(before, Some("world"))
+    assertEquals(after, Some("hello"))
   }
 
   test("findFilesContaining") {
@@ -95,7 +94,7 @@ class FileGitAlgTest extends AnyFunSuite with Matchers {
       _ <- supplement.createConflict(repo)
       files <- ioGitAlg.findFilesContaining(repo, "line1")
     } yield files
-    p.unsafeRunSync() shouldBe List("file1", "file2")
+    assertEquals(p.unsafeRunSync(), List("file1", "file2"))
   }
 
   test("hasConflicts") {
@@ -106,7 +105,7 @@ class FileGitAlgTest extends AnyFunSuite with Matchers {
       c1 <- ioGitAlg.hasConflicts(repo, Branch("conflicts-yes"), master)
       c2 <- ioGitAlg.hasConflicts(repo, Branch("conflicts-no"), master)
     } yield (c1, c2)
-    p.unsafeRunSync() shouldBe ((true, false))
+    assertEquals(p.unsafeRunSync(), (true, false))
   }
 
   test("mergeTheirs") {
@@ -122,7 +121,7 @@ class FileGitAlgTest extends AnyFunSuite with Matchers {
       c2 <- ioGitAlg.hasConflicts(repo, branch, master)
       m2 <- ioGitAlg.isMerged(repo, master, branch)
     } yield (c1, m1, c2, m2)
-    p.unsafeRunSync() shouldBe ((true, false, false, true))
+    assertEquals(p.unsafeRunSync(), (true, false, false, true))
   }
 
   test("mergeTheirs: CONFLICT (modify/delete)") {
@@ -138,11 +137,11 @@ class FileGitAlgTest extends AnyFunSuite with Matchers {
       c2 <- ioGitAlg.hasConflicts(repo, branch, master)
       m2 <- ioGitAlg.isMerged(repo, master, branch)
     } yield (c1, m1, c2, m2)
-    p.unsafeRunSync() shouldBe ((true, false, false, true))
+    assertEquals(p.unsafeRunSync(), (true, false, false, true))
   }
 
   test("version") {
-    ioGitAlg.version.unsafeRunSync().nonEmpty shouldBe true
+    assert(ioGitAlg.version.unsafeRunSync().nonEmpty)
   }
 }
 

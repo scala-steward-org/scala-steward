@@ -1,14 +1,13 @@
 package org.scalasteward.core.repoconfig
 
 import cats.syntax.semigroup._
+import munit.FunSuite
 import org.scalasteward.core.data.GroupId
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 import scala.concurrent.duration._
 
-class RepoConfigTest extends AnyFunSuite with Matchers {
+class RepoConfigTest extends FunSuite {
   test("RepoConfig: semigroup") {
-    RepoConfig.empty |+| RepoConfig.empty shouldBe RepoConfig.empty
+    assertEquals(RepoConfig.empty |+| RepoConfig.empty, RepoConfig.empty)
 
     val cfg = RepoConfig(
       commits = CommitsConfig(Some("a")),
@@ -20,9 +19,9 @@ class RepoConfigTest extends AnyFunSuite with Matchers {
       updatePullRequests = Some(PullRequestUpdateStrategy.Always)
     )
 
-    cfg |+| RepoConfig.empty shouldBe cfg
-    RepoConfig.empty |+| cfg shouldBe cfg
-    cfg |+| cfg shouldBe cfg
+    assertEquals(cfg |+| RepoConfig.empty, cfg)
+    assertEquals(RepoConfig.empty |+| cfg, cfg)
+    assertEquals(cfg |+| cfg, cfg)
 
     val cfg2 = RepoConfig(
       commits = CommitsConfig(Some("b")),
@@ -34,16 +33,14 @@ class RepoConfigTest extends AnyFunSuite with Matchers {
       updatePullRequests = Some(PullRequestUpdateStrategy.OnConflicts)
     )
 
-    cfg |+| cfg2 shouldBe cfg.copy(
-      updates = UpdatesConfig(
-        allow = List(UpdatePattern(GroupId("B"), None, None))
-      )
+    assertEquals(
+      cfg |+| cfg2,
+      cfg.copy(updates = UpdatesConfig(allow = List(UpdatePattern(GroupId("B"), None, None))))
     )
 
-    cfg2 |+| cfg shouldBe cfg2.copy(
-      updates = UpdatesConfig(
-        allow = List(UpdatePattern(GroupId("B"), None, None))
-      )
+    assertEquals(
+      cfg2 |+| cfg,
+      cfg2.copy(updates = UpdatesConfig(allow = List(UpdatePattern(GroupId("B"), None, None))))
     )
   }
 }

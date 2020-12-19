@@ -1,11 +1,10 @@
 package org.scalasteward.core.persistence
 
+import munit.FunSuite
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.{MockEff, MockState}
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 
-class JsonKeyValueStoreTest extends AnyFunSuite with Matchers {
+class JsonKeyValueStoreTest extends FunSuite {
   test("put, get") {
     val kvStore = new JsonKeyValueStore[MockEff, String, String]("test", "0")
     val p = for {
@@ -19,8 +18,8 @@ class JsonKeyValueStoreTest extends AnyFunSuite with Matchers {
     val k1File = config.workspace / "store" / "test" / "v0" / "k1" / "test.json"
     val k2File = config.workspace / "store" / "test" / "v0" / "k2" / "test.json"
     val k3File = config.workspace / "store" / "test" / "v0" / "k3" / "test.json"
-    value shouldBe (Some("v1") -> None)
-    state shouldBe MockState.empty.copy(
+    assertEquals(value, (Some("v1") -> None))
+    val expected = MockState.empty.copy(
       commands = Vector(
         List("write", k1File.toString),
         List("read", k1File.toString),
@@ -32,6 +31,7 @@ class JsonKeyValueStoreTest extends AnyFunSuite with Matchers {
         k2File -> """"v2""""
       )
     )
+    assertEquals(state, expected)
   }
 
   test("update") {
@@ -40,6 +40,6 @@ class JsonKeyValueStoreTest extends AnyFunSuite with Matchers {
       _ <- kvStore.update("k1")(_.fold("v0")(_ + "v1"))
       v1 <- kvStore.get("k1")
     } yield v1
-    p.runA(MockState.empty).unsafeRunSync() shouldBe Some("v0")
+    assertEquals(p.runA(MockState.empty).unsafeRunSync(), Some("v0"))
   }
 }

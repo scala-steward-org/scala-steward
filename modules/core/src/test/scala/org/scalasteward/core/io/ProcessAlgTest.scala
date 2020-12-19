@@ -3,29 +3,31 @@ package org.scalasteward.core.io
 import better.files.File
 import cats.effect.{Blocker, IO}
 import java.util.concurrent.Executors
+import munit.FunSuite
 import org.scalasteward.core.TestInstances._
 import org.scalasteward.core.application.Config.{ProcessCfg, SandboxCfg}
 import org.scalasteward.core.io.ProcessAlgTest.ioProcessAlg
 import org.scalasteward.core.mock.MockContext.config
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.util.Nel
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 import scala.concurrent.duration.Duration
 
-class ProcessAlgTest extends AnyFunSuite with Matchers {
+class ProcessAlgTest extends FunSuite {
   test("exec: echo") {
-    ioProcessAlg
+    val obtained = ioProcessAlg
       .exec(Nel.of("echo", "-n", "hello"), File.currentWorkingDirectory)
-      .unsafeRunSync() shouldBe List("hello")
+      .unsafeRunSync()
+    assertEquals(obtained, List("hello"))
   }
 
   test("exec: ls --foo") {
-    ioProcessAlg
-      .exec(Nel.of("ls", "--foo"), File.currentWorkingDirectory)
-      .attempt
-      .map(_.isLeft)
-      .unsafeRunSync()
+    assert(
+      ioProcessAlg
+        .exec(Nel.of("ls", "--foo"), File.currentWorkingDirectory)
+        .attempt
+        .map(_.isLeft)
+        .unsafeRunSync()
+    )
   }
 
   test("execSandboxed: echo with enableSandbox = false") {
@@ -36,11 +38,13 @@ class ProcessAlgTest extends AnyFunSuite with Matchers {
       .runS(MockState.empty)
       .unsafeRunSync()
 
-    state shouldBe MockState.empty.copy(
+    val expected = MockState.empty.copy(
       commands = Vector(
         List(File.temp.toString, "echo", "hello")
       )
     )
+
+    assertEquals(state, expected)
   }
 
   test("execSandboxed: echo with enableSandbox = true") {
@@ -51,7 +55,7 @@ class ProcessAlgTest extends AnyFunSuite with Matchers {
       .runS(MockState.empty)
       .unsafeRunSync()
 
-    state shouldBe MockState.empty.copy(
+    val expected = MockState.empty.copy(
       commands = Vector(
         List(
           File.temp.toString,
@@ -63,6 +67,8 @@ class ProcessAlgTest extends AnyFunSuite with Matchers {
         )
       )
     )
+
+    assertEquals(state, expected)
   }
 }
 

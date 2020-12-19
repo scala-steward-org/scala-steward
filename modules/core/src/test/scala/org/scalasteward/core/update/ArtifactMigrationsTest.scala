@@ -1,15 +1,14 @@
 package org.scalasteward.core.update
 
+import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.{ArtifactId, GroupId, Update}
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.update.ArtifactMigrations.ArtifactChange
 import org.scalasteward.core.util.Nel
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 
-class ArtifactMigrationsTest extends AnyFunSuite with Matchers {
+class ArtifactMigrationsTest extends FunSuite {
 
   val standardGroupMigrations = List(
     ArtifactChange(
@@ -43,12 +42,12 @@ class ArtifactMigrationsTest extends AnyFunSuite with Matchers {
 
   test("migrateArtifact: for groupId, returns empty if artifactIdAfter is not listed") {
     val original = "org.spire-math" % ArtifactId("UNKNOWN", "UNKNOWN_2.12") % "1.0.0"
-    ArtifactMigrations.migrateArtifact(original, standardGroupMigrations) shouldBe None
+    assertEquals(ArtifactMigrations.migrateArtifact(original, standardGroupMigrations), None)
   }
 
   test("migrateArtifact: for artifactId, returns empty if groupIdAfter is not listed") {
     val original = "UNKNOWN" % ArtifactId("artifact-before", "artifact-before_2.12") % "1.0.0"
-    ArtifactMigrations.migrateArtifact(original, standardArtifactMigrations) shouldBe None
+    assertEquals(ArtifactMigrations.migrateArtifact(original, standardArtifactMigrations), None)
   }
 
   test(
@@ -56,10 +55,10 @@ class ArtifactMigrationsTest extends AnyFunSuite with Matchers {
       "artifactIdBefore are not listed"
   ) {
     val original1 = "UNKNOWN" % ArtifactId("artifact-before", "artifact-before_2.12") % "1.0.0"
-    ArtifactMigrations.migrateArtifact(original1, standardBothMigrations) shouldBe None
+    assertEquals(ArtifactMigrations.migrateArtifact(original1, standardBothMigrations), None)
 
     val original2 = "org.before" % ArtifactId("UNKNOWN", "UNKNOWN_2.12") % "1.0.0"
-    ArtifactMigrations.migrateArtifact(original2, standardBothMigrations) shouldBe None
+    assertEquals(ArtifactMigrations.migrateArtifact(original2, standardBothMigrations), None)
   }
 
   test("migrateArtifact: for groupId, returns Update.Single for updating groupId") {
@@ -70,7 +69,10 @@ class ArtifactMigrationsTest extends AnyFunSuite with Matchers {
       Some(GroupId("org.typelevel")),
       Some("kind-projector")
     )
-    ArtifactMigrations.migrateArtifact(original, standardGroupMigrations) shouldBe Some(expected)
+    assertEquals(
+      ArtifactMigrations.migrateArtifact(original, standardGroupMigrations),
+      Some(expected)
+    )
   }
 
   test("migrateArtifact: for artifactId, returns Update.Single for updating artifactId") {
@@ -82,7 +84,10 @@ class ArtifactMigrationsTest extends AnyFunSuite with Matchers {
       Some(GroupId("com.nodifferent")),
       Some("artifact-after")
     )
-    ArtifactMigrations.migrateArtifact(original, standardArtifactMigrations) shouldBe Some(expected)
+    assertEquals(
+      ArtifactMigrations.migrateArtifact(original, standardArtifactMigrations),
+      Some(expected)
+    )
   }
 
   test(
@@ -96,7 +101,10 @@ class ArtifactMigrationsTest extends AnyFunSuite with Matchers {
       Some(GroupId("org.after")),
       Some("artifact-after")
     )
-    ArtifactMigrations.migrateArtifact(original, standardBothMigrations) shouldBe Some(expected)
+    assertEquals(
+      ArtifactMigrations.migrateArtifact(original, standardBothMigrations),
+      Some(expected)
+    )
   }
 
   test("findUpdate: newer groupId") {
@@ -108,10 +116,10 @@ class ArtifactMigrationsTest extends AnyFunSuite with Matchers {
       Some(GroupId("org.typelevel")),
       Some("kind-projector")
     )
-    val actual = updateAlg
+    val obtained = updateAlg
       .findUpdate(dependency.withMavenCentral, None)
       .runA(MockState.empty)
       .unsafeRunSync()
-    actual shouldBe Some(expected)
+    assertEquals(obtained, Some(expected))
   }
 }

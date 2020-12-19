@@ -1,12 +1,11 @@
 package org.scalasteward.core.buildtool.maven
 
+import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.ArtifactId
 import org.scalasteward.core.data.Resolver.MavenRepository
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 
-class parserTest extends AnyFunSuite with Matchers {
+class parserTest extends FunSuite {
   test("parseDependencies") {
     val input =
       """|[INFO] Scanning for projects...
@@ -31,12 +30,13 @@ class parserTest extends AnyFunSuite with Matchers {
          |[INFO] ------------------------------------------------------------------------
          |""".stripMargin.linesIterator.toList
     val dependencies = parser.parseDependencies(input)
-    dependencies shouldBe List(
+    val expected = List(
       "org.typelevel" % ArtifactId("cats-core", "cats-core_2.12") % "1.5.0",
       "org.hamcrest" % "hamcrest-core" % "1.3" % "test",
       "junit" % "junit" % "4.12" % "test",
       "ch.qos.logback" % "logback-core" % "1.1.11"
     )
+    assertEquals(dependencies, expected)
   }
 
   test("parseResolvers") {
@@ -60,7 +60,7 @@ class parserTest extends AnyFunSuite with Matchers {
          | releases: [enabled => false, update => daily]
          |""".stripMargin.linesIterator.toList
     val resolvers = parser.parseResolvers(input)
-    resolvers shouldBe List(
+    val expected = List(
       MavenRepository(
         "sonatype-nexus-snapshots",
         "https://oss.sonatype.org/content/repositories/snapshots",
@@ -69,5 +69,6 @@ class parserTest extends AnyFunSuite with Matchers {
       MavenRepository("bintrayakkamaven", "https://dl.bintray.com/akka/maven/", None),
       MavenRepository("apache.snapshots", "http://repository.apache.org/snapshots", None)
     )
+    assertEquals(resolvers, expected)
   }
 }

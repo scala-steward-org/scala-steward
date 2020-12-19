@@ -1,14 +1,13 @@
 package org.scalasteward.core.update
 
+import io.circe.parser.decode
+import munit.FunSuite
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.repocache.RepoCache
 import org.scalasteward.core.vcs.data.Repo
-import org.scalatest.funsuite.AnyFunSuite
-import io.circe.parser.decode
-import org.scalatest.matchers.should.Matchers
 
-class PruningAlgTest extends AnyFunSuite with Matchers {
+class PruningAlgTest extends FunSuite {
   private val defaultConf = config.defaultRepoConfigFile.map(_.toString).getOrElse("")
 
   test("needsAttention") {
@@ -58,8 +57,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
     val initial = MockState.empty
       .add(pullRequestsFile, pullRequestsContent)
     val state = pruningAlg.needsAttention(repo, repoCache).runS(initial).unsafeRunSync()
-
-    state shouldBe initial.copy(
+    val expected = initial.copy(
       commands = Vector(
         List("read", defaultConf),
         List("read", pullRequestsFile.toString)
@@ -70,6 +68,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
         (None, "fthomas/scalafix-test is up-to-date")
       )
     )
+    assertEquals(state, expected)
   }
 
   test("needsAttention: 0 updates when includeScala not specified in repo config") {
@@ -163,8 +162,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
       .add(pullRequestsFile, pullRequestsContent)
       .add(versionsFile, versionsContent)
     val state = pruningAlg.needsAttention(repo, repoCache).runS(initial).unsafeRunSync()
-
-    state shouldBe initial.copy(
+    val expected = initial.copy(
       commands = Vector(
         List("read", defaultConf),
         List("read", pullRequestsFile.toString)
@@ -175,6 +173,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
         (None, "fthomas/scalafix-test is up-to-date")
       )
     )
+    assertEquals(state, expected)
   }
 
   test("needsAttention: update scala-library when includeScala=true in repo config") {
@@ -278,8 +277,7 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
       .add(pullRequestsFile, pullRequestsContent)
       .add(versionsFile, versionsContent)
     val state = pruningAlg.needsAttention(repo, repoCache).runS(initial).unsafeRunSync()
-
-    state shouldBe initial.copy(
+    val expected = initial.copy(
       commands = Vector(
         List("read", defaultConf),
         List("read", versionsFile.toString),
@@ -297,5 +295,6 @@ class PruningAlgTest extends AnyFunSuite with Matchers {
         )
       )
     )
+    assertEquals(state, expected)
   }
 }

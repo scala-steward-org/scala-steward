@@ -1,13 +1,12 @@
 package org.scalasteward.core.buildtool.mill
 
+import munit.FunSuite
 import org.scalasteward.core.buildtool.mill.MillAlg.extractDeps
 import org.scalasteward.core.mock.MockContext.{config, millAlg}
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.vcs.data.Repo
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 
-class MillAlgTest extends AnyFunSuite with Matchers {
+class MillAlgTest extends FunSuite {
   test("getDependencies") {
     val repo = Repo("lihaoyi", "fastparse")
     val repoDir = config.workspace / repo.show
@@ -27,12 +26,13 @@ class MillAlgTest extends AnyFunSuite with Matchers {
     )
     val initial = MockState.empty.copy(commandOutputs = Map(millCmd -> List("""{"modules":[]}""")))
     val state = millAlg.getDependencies(repo).runS(initial).unsafeRunSync()
-    state shouldBe initial.copy(
+    val expected = initial.copy(
       commands = Vector(
         List("write", predef),
         repoDir.toString :: millCmd,
         List("rm", "-rf", predef)
       )
     )
+    assertEquals(state, expected)
   }
 }
