@@ -17,6 +17,7 @@
 package org.scalasteward.core.repoconfig
 
 import better.files.File
+import cats.MonadThrow
 import cats.data.OptionT
 import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
@@ -25,7 +26,6 @@ import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.repoconfig.RepoConfigAlg._
-import org.scalasteward.core.util.MonadThrow
 import org.scalasteward.core.vcs.data.Repo
 
 final class RepoConfigAlg[F[_]](config: Config)(implicit

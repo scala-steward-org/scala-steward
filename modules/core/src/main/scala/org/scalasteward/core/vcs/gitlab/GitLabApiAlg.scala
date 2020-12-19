@@ -16,6 +16,7 @@
 
 package org.scalasteward.core.vcs.gitlab
 
+import cats.MonadThrow
 import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import io.circe._
@@ -24,7 +25,7 @@ import io.circe.syntax._
 import org.http4s.{Request, Status, Uri}
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.util.uri.uriDecoder
-import org.scalasteward.core.util.{HttpJsonClient, MonadThrow, UnexpectedResponse}
+import org.scalasteward.core.util.{HttpJsonClient, UnexpectedResponse}
 import org.scalasteward.core.vcs.VCSApiAlg
 import org.scalasteward.core.vcs.data._
 

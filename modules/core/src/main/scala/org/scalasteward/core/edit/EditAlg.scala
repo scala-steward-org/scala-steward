@@ -17,6 +17,7 @@
 package org.scalasteward.core.edit
 
 import better.files.File
+import cats.effect.MonadThrow
 import cats.syntax.all._
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger

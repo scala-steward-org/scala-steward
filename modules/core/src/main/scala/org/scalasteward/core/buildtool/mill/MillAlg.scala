@@ -16,6 +16,7 @@
 
 package org.scalasteward.core.buildtool.mill
 
+import cats.effect.BracketThrow
 import cats.syntax.all._
 import org.scalasteward.core.BuildInfo
 import org.scalasteward.core.buildtool.BuildToolAlg
@@ -23,7 +24,7 @@ import org.scalasteward.core.data.Scope
 import org.scalasteward.core.data.Scope.Dependencies
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.scalafix.Migration
-import org.scalasteward.core.util.{BracketThrow, Nel}
+import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
 trait MillAlg[F[_]] extends BuildToolAlg[F]

@@ -16,9 +16,9 @@
 
 package org.scalasteward.core.vcs
 
+import cats.{ApplicativeThrow, MonadThrow}
 import cats.syntax.all._
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.util.{ApplicativeThrow, MonadThrow}
 import org.scalasteward.core.vcs.data._
 
 trait VCSApiAlg[F[_]] {

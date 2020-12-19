@@ -16,12 +16,13 @@
 
 package org.scalasteward.core.application
 
+import cats.MonadThrow
 import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import org.http4s.Uri
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.scalafmt.ScalafmtAlg
-import org.scalasteward.core.util.{HttpExistenceClient, MonadThrow}
+import org.scalasteward.core.util.HttpExistenceClient
 
 final class SelfCheckAlg[F[_]](implicit
     gitAlg: GitAlg[F],

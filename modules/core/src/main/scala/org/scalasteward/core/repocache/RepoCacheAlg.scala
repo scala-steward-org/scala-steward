@@ -16,6 +16,7 @@
 
 package org.scalasteward.core.repocache
 
+import cats.MonadThrow
 import cats.Parallel
 import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
@@ -24,7 +25,6 @@ import org.scalasteward.core.buildtool.BuildToolDispatcher
 import org.scalasteward.core.data.{Dependency, DependencyInfo}
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.repoconfig.RepoConfigAlg
-import org.scalasteward.core.util.MonadThrow
 import org.scalasteward.core.vcs.data.{Repo, RepoOut}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
 import scala.util.control.NoStackTrace

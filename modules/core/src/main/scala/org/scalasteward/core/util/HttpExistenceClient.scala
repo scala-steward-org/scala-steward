@@ -16,6 +16,7 @@
 
 package org.scalasteward.core.util
 
+import cats.MonadThrow
 import cats.effect.{Async, Resource}
 import cats.syntax.all._
 import com.github.benmanes.caffeine.cache.Caffeine

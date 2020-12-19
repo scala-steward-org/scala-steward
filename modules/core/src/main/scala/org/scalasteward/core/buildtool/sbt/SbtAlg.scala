@@ -19,6 +19,7 @@ package org.scalasteward.core.buildtool.sbt
 import better.files.File
 import cats.Functor
 import cats.data.OptionT
+import cats.effect.BracketThrow
 import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
@@ -28,7 +29,7 @@ import org.scalasteward.core.buildtool.sbt.data.SbtVersion
 import org.scalasteward.core.data.{Dependency, Resolver, Scope}
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.scalafix.Migration
-import org.scalasteward.core.util.{BracketThrow, Nel}
+import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
 trait SbtAlg[F[_]] extends BuildToolAlg[F] {

@@ -16,11 +16,11 @@
 
 package org.scalasteward.core.vcs.data
 
+import cats.ApplicativeThrow
 import io.circe.Decoder
 import io.circe.generic.semiauto._
 import org.http4s.Uri
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.util.ApplicativeThrow
 import org.scalasteward.core.util.uri.uriDecoder
 
 final case class RepoOut(

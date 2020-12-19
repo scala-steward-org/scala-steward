@@ -17,13 +17,14 @@
 package org.scalasteward.core.git
 
 import better.files.File
+import cats.effect.BracketThrow
 import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import org.http4s.Uri
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.logger._
-import org.scalasteward.core.util.{BracketThrow, Nel}
+import org.scalasteward.core.util.Nel
 
 final class FileGitAlg[F[_]](config: Config)(implicit
     fileAlg: FileAlg[F],

@@ -16,6 +16,7 @@
 
 package org.scalasteward.core.update
 
+import cats.MonadThrow
 import cats.syntax.all._
 import io.circe.Decoder
 import io.circe.config.parser
@@ -23,7 +24,7 @@ import io.circe.generic.extras.{semiauto, Configuration}
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.data._
 import org.scalasteward.core.io.FileAlg
-import org.scalasteward.core.util.{MonadThrow, Nel}
+import org.scalasteward.core.util.Nel
 
 trait ArtifactMigrations {
   def findUpdateWithRenamedArtifact(dependency: Dependency): Option[Update.Single]
