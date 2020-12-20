@@ -21,7 +21,7 @@ object Dependencies {
   val coursierCore = "io.get-coursier" %% "coursier" % "2.0.7"
   val coursierCatsInterop = "io.get-coursier" %% "coursier-cats-interop" % coursierCore.revision
   val cron4sCore = "com.github.alonsodomin.cron4s" %% "cron4s-core" % "0.6.1"
-  val disciplineScalatest = ("org.typelevel" %% "discipline-scalatest" % "2.1.0")
+  val disciplineScalatest = ("org.typelevel" %% "discipline-scalatest" % "2.1.1")
     .excludeAll(ExclusionRule().withOrganization("org.scalatest"))
   val fs2Core = "co.fs2" %% "fs2-core" % "2.4.6"
   val fs2Io = "co.fs2" %% "fs2-io" % fs2Core.revision
