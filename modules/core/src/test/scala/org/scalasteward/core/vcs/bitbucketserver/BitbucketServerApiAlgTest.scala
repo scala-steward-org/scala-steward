@@ -1,6 +1,7 @@
 package org.scalasteward.core.vcs.bitbucketserver
 
 import cats.effect.IO
+import munit.FunSuite
 import org.http4s.client.Client
 import org.http4s.dsl.io._
 import org.http4s.implicits._
@@ -9,10 +10,8 @@ import org.scalasteward.core.git.Branch
 import org.scalasteward.core.mock.MockContext.config
 import org.scalasteward.core.util.HttpJsonClient
 import org.scalasteward.core.vcs.data._
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 
-class BitbucketServerApiAlgTest extends AnyFunSuite with Matchers {
+class BitbucketServerApiAlgTest extends FunSuite {
   private val repo = Repo("scala-steward-org", "scala-steward")
   private val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case GET -> Root / "rest" / "api" / "1.0" / "projects" / repo.owner / "repos" / repo.repo / "pull-requests" =>
@@ -36,7 +35,7 @@ class BitbucketServerApiAlgTest extends AnyFunSuite with Matchers {
       .listPullRequests(repo, "update/sbt-1.4.2", Branch("main"))
       .unsafeRunSync()
 
-    pullRequests shouldBe List(
+    val expected = List(
       PullRequestOut(
         Uri.unsafeFromString("http://example.org"),
         PullRequestState.Open,
@@ -44,5 +43,7 @@ class BitbucketServerApiAlgTest extends AnyFunSuite with Matchers {
         "Update sbt to 1.4.2"
       )
     )
+
+    assertEquals(pullRequests, expected)
   }
 }

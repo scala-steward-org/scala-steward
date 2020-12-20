@@ -2,6 +2,7 @@ package org.scalasteward.core.vcs.github
 
 import cats.effect.IO
 import io.circe.literal._
+import munit.FunSuite
 import org.http4s.HttpRoutes
 import org.http4s.circe._
 import org.http4s.client.Client
@@ -12,10 +13,8 @@ import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.mock.MockContext.config
 import org.scalasteward.core.util.HttpJsonClient
 import org.scalasteward.core.vcs.data._
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 
-class GitHubApiAlgTest extends AnyFunSuite with Matchers {
+class GitHubApiAlgTest extends FunSuite {
   val routes: HttpRoutes[IO] =
     HttpRoutes.of[IO] {
       case GET -> Root / "repos" / "fthomas" / "base.g8" =>
@@ -81,9 +80,9 @@ class GitHubApiAlgTest extends AnyFunSuite with Matchers {
   implicit val httpJsonClient: HttpJsonClient[IO] = new HttpJsonClient[IO]
   val gitHubApiAlg = new GitHubApiAlg[IO](config.vcsApiHost, _ => IO.pure)
 
-  val repo = Repo("fthomas", "base.g8")
+  private val repo = Repo("fthomas", "base.g8")
 
-  val parent = RepoOut(
+  private val parent = RepoOut(
     "base.g8",
     UserOut("fthomas"),
     None,
@@ -91,7 +90,7 @@ class GitHubApiAlgTest extends AnyFunSuite with Matchers {
     Branch("master")
   )
 
-  val fork = RepoOut(
+  private val fork = RepoOut(
     "base.g8-1",
     UserOut("scala-steward"),
     Some(parent),
@@ -99,37 +98,37 @@ class GitHubApiAlgTest extends AnyFunSuite with Matchers {
     Branch("master")
   )
 
-  val defaultBranch = BranchOut(
+  private val defaultBranch = BranchOut(
     Branch("master"),
     CommitOut(Sha1(HexString("07eb2a203e297c8340273950e98b2cab68b560c1")))
   )
 
   test("createForkOrGetRepo") {
     val repoOut = gitHubApiAlg.createForkOrGetRepo(repo, doNotFork = false).unsafeRunSync()
-    repoOut shouldBe fork
+    assertEquals(repoOut, fork)
   }
 
   test("createForkOrGetRepo without forking") {
     val repoOut = gitHubApiAlg.createForkOrGetRepo(repo, doNotFork = true).unsafeRunSync()
-    repoOut shouldBe parent
+    assertEquals(repoOut, parent)
   }
 
   test("createForkOrGetRepoWithDefaultBranch") {
     val (repoOut, branchOut) =
       gitHubApiAlg.createForkOrGetRepoWithDefaultBranch(repo, doNotFork = false).unsafeRunSync()
-    repoOut shouldBe fork
-    branchOut shouldBe defaultBranch
+    assertEquals(repoOut, fork)
+    assertEquals(branchOut, defaultBranch)
   }
 
   test("createForkOrGetRepoWithDefaultBranch without forking") {
     val (repoOut, branchOut) =
       gitHubApiAlg.createForkOrGetRepoWithDefaultBranch(repo, doNotFork = true).unsafeRunSync()
-    repoOut shouldBe parent
-    branchOut shouldBe defaultBranch
+    assertEquals(repoOut, parent)
+    assertEquals(branchOut, defaultBranch)
   }
 
   test("closePullRequest") {
     val prOut = gitHubApiAlg.closePullRequest(repo, PullRequestNumber(1347)).unsafeRunSync()
-    prOut.state shouldBe PullRequestState.Closed
+    assertEquals(prOut.state, PullRequestState.Closed)
   }
 }

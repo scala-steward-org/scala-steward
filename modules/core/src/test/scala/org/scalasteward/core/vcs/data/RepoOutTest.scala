@@ -2,14 +2,13 @@ package org.scalasteward.core.vcs.data
 
 import cats.effect.IO
 import io.circe.parser
+import munit.FunSuite
 import org.http4s.syntax.literals._
 import org.scalasteward.core.git.Branch
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 import scala.io.Source
 
-class RepoOutTest extends AnyFunSuite with Matchers {
-  val parent =
+class RepoOutTest extends FunSuite {
+  private val parent =
     RepoOut(
       "base.g8",
       UserOut("ChristopherDavenport"),
@@ -18,7 +17,7 @@ class RepoOutTest extends AnyFunSuite with Matchers {
       Branch("master")
     )
 
-  val fork =
+  private val fork =
     RepoOut(
       "base.g8-1",
       UserOut("scala-steward"),
@@ -29,14 +28,14 @@ class RepoOutTest extends AnyFunSuite with Matchers {
 
   test("decode") {
     val input = Source.fromResource("create-fork.json").mkString
-    parser.decode[RepoOut](input) shouldBe Right(fork)
+    assertEquals(parser.decode[RepoOut](input), Right(fork))
   }
 
   test("parentOrRaise") {
-    fork.parentOrRaise[IO].unsafeRunSync() shouldBe parent
+    assertEquals(fork.parentOrRaise[IO].unsafeRunSync(), parent)
   }
 
   test("repo") {
-    fork.repo shouldBe Repo("scala-steward", "base.g8-1")
+    assertEquals(fork.repo, Repo("scala-steward", "base.g8-1"))
   }
 }

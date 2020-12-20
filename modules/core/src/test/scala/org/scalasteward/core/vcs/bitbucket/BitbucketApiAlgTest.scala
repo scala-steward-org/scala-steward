@@ -2,6 +2,7 @@ package org.scalasteward.core.vcs.bitbucket
 
 import cats.effect.IO
 import io.circe.literal._
+import munit.FunSuite
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.client.Client
@@ -12,10 +13,8 @@ import org.scalasteward.core.git._
 import org.scalasteward.core.mock.MockContext.config
 import org.scalasteward.core.util.HttpJsonClient
 import org.scalasteward.core.vcs.data._
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 
-class BitbucketApiAlgTest extends AnyFunSuite with Matchers {
+class BitbucketApiAlgTest extends FunSuite {
   private val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case GET -> Root / "repositories" / "fthomas" / "base.g8" =>
       Ok(
@@ -142,17 +141,17 @@ class BitbucketApiAlgTest extends AnyFunSuite with Matchers {
 
   implicit val client: Client[IO] = Client.fromHttpApp(routes.orNotFound)
   implicit val httpJsonClient: HttpJsonClient[IO] = new HttpJsonClient[IO]
-  val bitbucketApiAlg = new BitbucketApiAlg[IO](
+  private val bitbucketApiAlg = new BitbucketApiAlg[IO](
     config.vcsApiHost,
     AuthenticatedUser("scala-steward", ""),
     _ => IO.pure,
     false
   )
 
-  val prUrl = uri"https://api.bitbucket.org/2.0/repositories/fthomas/base.g8/pullrequests/2"
-  val repo = Repo("fthomas", "base.g8")
-  val master = Branch("master")
-  val parent = RepoOut(
+  private val prUrl = uri"https://api.bitbucket.org/2.0/repositories/fthomas/base.g8/pullrequests/2"
+  private val repo = Repo("fthomas", "base.g8")
+  private val master = Branch("master")
+  private val parent = RepoOut(
     "base.g8",
     UserOut("fthomas"),
     None,
@@ -160,7 +159,7 @@ class BitbucketApiAlgTest extends AnyFunSuite with Matchers {
     master
   )
 
-  val fork = RepoOut(
+  private val fork = RepoOut(
     "base.g8",
     UserOut("scala-steward"),
     Some(parent),
@@ -168,36 +167,36 @@ class BitbucketApiAlgTest extends AnyFunSuite with Matchers {
     master
   )
 
-  val defaultBranch = BranchOut(
+  private val defaultBranch = BranchOut(
     master,
-    CommitOut(Sha1(HexString("07eb2a203e297c8340273950e98b2cab68b560c1")))
+    CommitOut(Sha1(HexString.unsafeFrom("07eb2a203e297c8340273950e98b2cab68b560c1")))
   )
 
-  val pullRequest =
+  private val pullRequest =
     PullRequestOut(prUrl, PullRequestState.Open, PullRequestNumber(2), "scala-steward-pr")
 
   test("createForkOrGetRepo") {
     val repoOut = bitbucketApiAlg.createForkOrGetRepo(repo, doNotFork = false).unsafeRunSync()
-    repoOut shouldBe fork
+    assertEquals(repoOut, fork)
   }
 
   test("createForkOrGetRepo without forking") {
     val repoOut = bitbucketApiAlg.createForkOrGetRepo(repo, doNotFork = true).unsafeRunSync()
-    repoOut shouldBe parent
+    assertEquals(repoOut, parent)
   }
 
   test("createForkOrGetRepoWithDefaultBranch") {
     val (repoOut, branchOut) =
       bitbucketApiAlg.createForkOrGetRepoWithDefaultBranch(repo, doNotFork = false).unsafeRunSync()
-    repoOut shouldBe fork
-    branchOut shouldBe defaultBranch
+    assertEquals(repoOut, fork)
+    assertEquals(branchOut, defaultBranch)
   }
 
   test("createForkOrGetRepoWithDefaultBranch without forking") {
     val (repoOut, branchOut) =
       bitbucketApiAlg.createForkOrGetRepoWithDefaultBranch(repo, doNotFork = true).unsafeRunSync()
-    repoOut shouldBe parent
-    branchOut shouldBe defaultBranch
+    assertEquals(repoOut, parent)
+    assertEquals(branchOut, defaultBranch)
   }
 
   test("createPullRequest") {
@@ -208,16 +207,16 @@ class BitbucketApiAlgTest extends AnyFunSuite with Matchers {
       master
     )
     val pr = bitbucketApiAlg.createPullRequest(repo, data).unsafeRunSync()
-    pr shouldBe pullRequest
+    assertEquals(pr, pullRequest)
   }
 
   test("listPullRequests") {
     val prs = bitbucketApiAlg.listPullRequests(repo, "master", master).unsafeRunSync()
-    (prs should contain).only(pullRequest)
+    assertEquals(prs, List(pullRequest))
   }
 
   test("closePullRequest") {
     val pr = bitbucketApiAlg.closePullRequest(repo, PullRequestNumber(1)).unsafeRunSync()
-    pr shouldBe pr.copy(state = PullRequestState.Closed)
+    assertEquals(pr, pr.copy(state = PullRequestState.Closed))
   }
 }

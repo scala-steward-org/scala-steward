@@ -1,13 +1,12 @@
 package org.scalasteward.core.buildtool.maven
 
 import better.files.File
+import munit.FunSuite
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.vcs.data.Repo
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 
-class MavenAlgTest extends AnyFunSuite with Matchers {
+class MavenAlgTest extends FunSuite {
   test("getDependencies") {
     val repo = Repo("namespace", "repo-name")
     val repoDir = config.workspace / repo.show
@@ -16,7 +15,7 @@ class MavenAlgTest extends AnyFunSuite with Matchers {
     val state =
       mavenAlg.getDependencies(repo).runS(MockState.empty.copy(files = files)).unsafeRunSync()
 
-    state shouldBe MockState.empty.copy(
+    val expected = MockState.empty.copy(
       files = files,
       logs = Vector.empty,
       commands = Vector(
@@ -44,5 +43,7 @@ class MavenAlgTest extends AnyFunSuite with Matchers {
         )
       )
     )
+
+    assertEquals(state, expected)
   }
 }

@@ -1,13 +1,11 @@
 package org.scalasteward.core.update
 
+import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.{ArtifactId, Update}
 import org.scalasteward.core.util.Nel
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 
-class UpdateAlgTest extends AnyFunSuite with Matchers {
-
+class UpdateAlgTest extends FunSuite {
   test("isUpdateFor") {
     val dependency = "io.circe" % ArtifactId("circe-refined", "circe-refined_2.12") % "0.11.2"
     val update = Update.Group(
@@ -20,6 +18,6 @@ class UpdateAlgTest extends AnyFunSuite with Matchers {
       ),
       Nel.of("0.12.3")
     )
-    UpdateAlg.isUpdateFor(update, dependency) shouldBe true
+    assert(UpdateAlg.isUpdateFor(update, dependency))
   }
 }

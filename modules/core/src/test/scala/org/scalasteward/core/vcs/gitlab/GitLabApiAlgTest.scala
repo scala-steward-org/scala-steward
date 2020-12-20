@@ -2,9 +2,11 @@ package org.scalasteward.core.vcs.gitlab
 
 import cats.effect.IO
 import cats.implicits._
+import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.circe.literal._
 import io.circe.parser._
+import munit.FunSuite
 import org.http4s.HttpRoutes
 import org.http4s.circe._
 import org.http4s.client.Client
@@ -19,12 +21,9 @@ import org.scalasteward.core.nurture.UpdateData
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.{HttpJsonClient, Nel}
 import org.scalasteward.core.vcs.data._
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
+import org.scalasteward.core.vcs.gitlab.GitLabJsonCodec._
 
-class GitLabApiAlgTest extends AnyFunSuite with Matchers {
-  import org.scalasteward.core.vcs.gitlab.GitLabJsonCodec._
-
+class GitLabApiAlgTest extends FunSuite {
   object MergeWhenPipelineSucceedsMatcher
       extends QueryParamDecoderMatcher[Boolean]("merge_when_pipeline_succeeds")
 
@@ -72,7 +71,7 @@ class GitLabApiAlgTest extends AnyFunSuite with Matchers {
 
   implicit val client: Client[IO] = Client.fromHttpApp(routes.orNotFound)
   implicit val httpJsonClient: HttpJsonClient[IO] = new HttpJsonClient[IO]
-  implicit val logger = Slf4jLogger.getLogger[IO]
+  implicit val logger: Logger[IO] = Slf4jLogger.getLogger[IO]
   val gitlabApiAlg =
     new GitLabApiAlg[IO](
       config.vcsApiHost,
@@ -82,30 +81,29 @@ class GitLabApiAlgTest extends AnyFunSuite with Matchers {
       mergeWhenPipelineSucceeds = false
     )
 
-  val data = UpdateData(
+  private val data = UpdateData(
     Repo("foo", "bar"),
     Repo("scala-steward", "bar"),
     RepoConfig(),
     Update.Single("ch.qos.logback" % "logback-classic" % "1.2.0", Nel.of("1.2.3")),
     Branch("master"),
-    Sha1(Sha1.HexString("d6b6791d2ea11df1d156fe70979ab8c3a5ba3433")),
+    Sha1(Sha1.HexString.unsafeFrom("d6b6791d2ea11df1d156fe70979ab8c3a5ba3433")),
     Branch("update/logback-classic-1.2.3")
   )
-  val newPRData =
+  private val newPRData =
     NewPullRequestData.from(data, "scala-steward:update/logback-classic-1.2.3")
 
   test("createPullRequest") {
-    val prOut =
-      gitlabApiAlg
-        .createPullRequest(Repo("foo", "bar"), newPRData)
-        .unsafeRunSync()
-
-    prOut shouldBe PullRequestOut(
+    val prOut = gitlabApiAlg
+      .createPullRequest(Repo("foo", "bar"), newPRData)
+      .unsafeRunSync()
+    val expected = PullRequestOut(
       uri"https://gitlab.com/foo/bar/merge_requests/7115",
       PullRequestState.Open,
       PullRequestNumber(7115),
       "title"
     )
+    assertEquals(prOut, expected)
   }
 
   test("createPullRequest -- no fork") {
@@ -121,31 +119,30 @@ class GitLabApiAlgTest extends AnyFunSuite with Matchers {
       gitlabApiAlgNoFork
         .createPullRequest(Repo("foo", "bar"), newPRData)
         .unsafeRunSync()
-
-    prOut shouldBe PullRequestOut(
+    val expected = PullRequestOut(
       uri"https://gitlab.com/foo/bar/merge_requests/150",
       PullRequestState.Open,
       PullRequestNumber(150),
       "title"
     )
+    assertEquals(prOut, expected)
   }
 
   test("extractProjectId") {
-    decode[ProjectId](getRepo.spaces2) shouldBe Right(ProjectId(12414871L))
+    assertEquals(decode[ProjectId](getRepo.spaces2), Right(ProjectId(12414871L)))
   }
 
   test("closePullRequest") {
-    val prOut =
-      gitlabApiAlg
-        .closePullRequest(Repo("foo", "bar"), PullRequestNumber(7115))
-        .unsafeRunSync()
-
-    prOut shouldBe PullRequestOut(
+    val prOut = gitlabApiAlg
+      .closePullRequest(Repo("foo", "bar"), PullRequestNumber(7115))
+      .unsafeRunSync()
+    val expected = PullRequestOut(
       uri"https://gitlab.com/foo/bar/merge_requests/7115",
       PullRequestState.Closed,
       PullRequestNumber(7115),
       "title"
     )
+    assertEquals(prOut, expected)
   }
 
   test("createPullRequest -- auto merge") {
@@ -158,17 +155,18 @@ class GitLabApiAlgTest extends AnyFunSuite with Matchers {
         mergeWhenPipelineSucceeds = true
       )
 
-    val prOut =
-      gitlabApiAlgNoFork
-        .createPullRequest(Repo("foo", "bar"), newPRData)
-        .unsafeRunSync()
+    val prOut = gitlabApiAlgNoFork
+      .createPullRequest(Repo("foo", "bar"), newPRData)
+      .unsafeRunSync()
 
-    prOut shouldBe PullRequestOut(
+    val expected = PullRequestOut(
       uri"https://gitlab.com/foo/bar/merge_requests/150",
       PullRequestState.Open,
       PullRequestNumber(150),
       "title"
     )
+
+    assertEquals(prOut, expected)
   }
 
   test("createPullRequest -- don't fail on error code") {
@@ -197,12 +195,14 @@ class GitLabApiAlgTest extends AnyFunSuite with Matchers {
         .createPullRequest(Repo("foo", "bar"), newPRData)
         .unsafeRunSync()
 
-    prOut shouldBe PullRequestOut(
+    val expected = PullRequestOut(
       uri"https://gitlab.com/foo/bar/merge_requests/150",
       PullRequestState.Open,
       PullRequestNumber(150),
       "title"
     )
+
+    assertEquals(prOut, expected)
   }
 
   val getMr = json"""

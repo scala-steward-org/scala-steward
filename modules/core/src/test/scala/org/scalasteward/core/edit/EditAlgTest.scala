@@ -1,6 +1,7 @@
 package org.scalasteward.core.edit
 
 import better.files.File
+import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.{GroupId, Update}
 import org.scalasteward.core.mock.MockContext.{config, editAlg}
@@ -9,10 +10,8 @@ import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafmt.scalafmtBinary
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 
-class EditAlgTest extends AnyFunSuite with Matchers {
+class EditAlgTest extends FunSuite {
   private val envVars = List(s"GIT_ASKPASS=${config.gitAskPass}", "VAR1=val1", "VAR2=val2")
   private val gitStatus =
     List("git", "status", "--porcelain", "--untracked-files=no", "--ignore-submodules")
@@ -29,7 +28,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
       .runS(MockState.empty.add(file1, """val catsVersion = "1.2.0"""").add(file2, ""))
       .unsafeRunSync()
 
-    state shouldBe MockState.empty.copy(
+    val expected = MockState.empty.copy(
       commands = Vector(
         List("test", "-f", file1.pathAsString),
         List("read", file1.pathAsString),
@@ -48,6 +47,8 @@ class EditAlgTest extends AnyFunSuite with Matchers {
       ),
       files = Map(file1 -> """val catsVersion = "1.3.0"""", file2 -> "")
     )
+
+    assertEquals(state, expected)
   }
 
   test("applyUpdate with scalafmt update") {
@@ -66,7 +67,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
       .runS(MockState.empty.add(scalafmtConf, scalafmtConfContent).add(buildSbt, ""))
       .unsafeRunSync()
 
-    state shouldBe MockState.empty.copy(
+    val expected = MockState.empty.copy(
       commands = Vector(
         List("test", "-f", scalafmtConf.pathAsString),
         List("read", scalafmtConf.pathAsString),
@@ -104,6 +105,8 @@ class EditAlgTest extends AnyFunSuite with Matchers {
         buildSbt -> ""
       )
     )
+
+    assertEquals(state, expected)
   }
 
   test("apply update to ammonite file") {
@@ -122,7 +125,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
       )
       .unsafeRunSync()
 
-    state shouldBe MockState.empty.copy(
+    val expected = MockState.empty.copy(
       commands = Vector(
         List("test", "-f", file1.pathAsString),
         List("read", file1.pathAsString),
@@ -142,6 +145,8 @@ class EditAlgTest extends AnyFunSuite with Matchers {
         file2 -> """"org.typelevel" %% "cats-core" % "1.3.0""""
       )
     )
+
+    assertEquals(state, expected)
   }
 
   test("reproduce https://github.com/circe/circe-config/pull/40") {
@@ -154,7 +159,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
       "build.sbt" -> """val config = "1.3.3"""", // the version should have been updated here
       "project/plugins.sbt" -> """addSbtPlugin("com.typesafe.sbt" % "sbt-site" % "1.3.4")"""
     )
-    runApplyUpdate(update, original) shouldBe expected
+    assertEquals(runApplyUpdate(update, original), expected)
   }
 
   test("file restriction when sbt update") {
@@ -167,7 +172,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
       "build.properties" -> """sbt.version=1.2.8""",
       "project/plugins.sbt" -> """addSbtPlugin("com.jsuereth" % "sbt-pgp" % "1.1.2")"""
     )
-    runApplyUpdate(update, original) shouldBe expected
+    assertEquals(runApplyUpdate(update, original), expected)
   }
 
   test("keyword with extra underscore") {
@@ -183,7 +188,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
       ".travis.yml" -> """ - SCALA_JS_VERSION=1.1.1""",
       "project/plugins.sbt" -> """val scalaJsVersion = Option(System.getenv("SCALA_JS_VERSION")).getOrElse("1.1.1")"""
     )
-    runApplyUpdate(update, original) shouldBe expected
+    assertEquals(runApplyUpdate(update, original), expected)
   }
 
   test("test updating group id and version") {
@@ -207,7 +212,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
           |"org.typelevel" %% "simulacrum" % simulacrum
           |"""".stripMargin // the version should have been updated here
     )
-    runApplyUpdate(update, original) shouldBe expected
+    assertEquals(runApplyUpdate(update, original), expected)
   }
 
   test("test updating artifact id and version") {
@@ -231,7 +236,7 @@ class EditAlgTest extends AnyFunSuite with Matchers {
           |val test = "com.test" %% "newer-artifact" % testVersion 
           |"""".stripMargin
     )
-    runApplyUpdate(update, original) shouldBe expected
+    assertEquals(runApplyUpdate(update, original), expected)
   }
 
   private def runApplyUpdate(update: Update, files: Map[String, String]): Map[String, String] = {

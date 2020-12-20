@@ -1,5 +1,6 @@
 package org.scalasteward.core.edit.hooks
 
+import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.mock.MockContext.{config, hookExecutor, workspaceAlg}
@@ -8,10 +9,8 @@ import org.scalasteward.core.repoconfig.{RepoConfig, ScalafmtConfig}
 import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtBinary, scalafmtGroupId}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 
-class HookExecutorTest extends AnyFunSuite with Matchers {
+class HookExecutorTest extends FunSuite {
   private val repo = Repo("scala-steward-org", "scala-steward")
   private val repoDir = workspaceAlg.repoDir(repo).runA(MockState.empty).unsafeRunSync()
   private val envVars = List(s"GIT_ASKPASS=${config.gitAskPass}", "VAR1=val1", "VAR2=val2")
@@ -23,7 +22,7 @@ class HookExecutorTest extends AnyFunSuite with Matchers {
       .runS(MockState.empty)
       .unsafeRunSync()
 
-    state shouldBe MockState.empty
+    assertEquals(state, MockState.empty)
   }
 
   test("scalafmt: enabled by config") {
@@ -40,7 +39,7 @@ class HookExecutorTest extends AnyFunSuite with Matchers {
       .runS(initial)
       .unsafeRunSync()
 
-    state shouldBe initial.copy(
+    val expected = initial.copy(
       commands = Vector(
         List(
           "VAR1=val1",
@@ -70,6 +69,7 @@ class HookExecutorTest extends AnyFunSuite with Matchers {
       logs = Vector((None, "Executing post-update hook for org.scalameta:scalafmt-core"))
     )
 
+    assertEquals(state, expected)
   }
 
   test("scalafmt: disabled by config") {
@@ -82,7 +82,7 @@ class HookExecutorTest extends AnyFunSuite with Matchers {
       .runS(MockState.empty)
       .unsafeRunSync()
 
-    state shouldBe MockState.empty
+    assertEquals(state, MockState.empty)
   }
 
   test("sbt-github-actions") {
@@ -92,7 +92,7 @@ class HookExecutorTest extends AnyFunSuite with Matchers {
       .runS(MockState.empty)
       .unsafeRunSync()
 
-    state shouldBe MockState.empty.copy(
+    val expected = MockState.empty.copy(
       commands = Vector(
         List(
           repoDir.toString,
@@ -115,5 +115,7 @@ class HookExecutorTest extends AnyFunSuite with Matchers {
       ),
       logs = Vector((None, "Executing post-update hook for com.codecommit:sbt-github-actions"))
     )
+
+    assertEquals(state, expected)
   }
 }

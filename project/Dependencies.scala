@@ -21,8 +21,7 @@ object Dependencies {
   val coursierCore = "io.get-coursier" %% "coursier" % "2.0.7"
   val coursierCatsInterop = "io.get-coursier" %% "coursier-cats-interop" % coursierCore.revision
   val cron4sCore = "com.github.alonsodomin.cron4s" %% "cron4s-core" % "0.6.1"
-  val disciplineScalatest = ("org.typelevel" %% "discipline-scalatest" % "2.1.0")
-    .excludeAll(ExclusionRule().withOrganization("org.scalatest"))
+  val disciplineMunit = "org.typelevel" %% "discipline-munit" % "1.0.3"
   val fs2Core = "co.fs2" %% "fs2-core" % "2.4.6"
   val fs2Io = "co.fs2" %% "fs2-io" % fs2Core.revision
   val http4sCore = "org.http4s" %% "http4s-core" % "0.21.14"
@@ -39,6 +38,8 @@ object Dependencies {
   val millVersion = Def.setting(if (scalaBinaryVersion.value == "2.12") "0.6.3" else "0.9.3")
   val millScalalib = Def.setting("com.lihaoyi" %% "mill-scalalib" % millVersion.value)
   val monocleCore = "com.github.julien-truffaut" %% "monocle-core" % "2.1.0"
+  val munit = "org.scalameta" %% "munit" % "0.7.19"
+  val munitScalacheck = "org.scalameta" %% "munit-scalacheck" % munit.revision
   val refined = "eu.timepit" %% "refined" % "0.9.19"
   val refinedCats = "eu.timepit" %% "refined-cats" % refined.revision
   val refinedScalacheck = "eu.timepit" %% "refined-scalacheck" % refined.revision
@@ -46,7 +47,4 @@ object Dependencies {
   val scalacacheCatsEffect =
     "com.github.cb372" %% "scalacache-cats-effect" % scalacacheCaffeine.revision
   val scalacheck = "org.scalacheck" %% "scalacheck" % "1.15.2"
-  val scalaTestFunSuite = "org.scalatest" %% "scalatest-funsuite" % "3.2.3"
-  val scalaTestShouldMatcher =
-    "org.scalatest" %% "scalatest-shouldmatchers" % scalaTestFunSuite.revision
 }

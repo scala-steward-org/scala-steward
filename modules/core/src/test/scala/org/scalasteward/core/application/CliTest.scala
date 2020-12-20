@@ -1,18 +1,15 @@
 package org.scalasteward.core.application
 
 import better.files.File
+import munit.FunSuite
 import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.Cli.ParseResult._
-import org.scalatest.EitherValues
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
-
 import scala.concurrent.duration._
 
-class CliTest extends AnyFunSuite with Matchers with EitherValues {
+class CliTest extends FunSuite {
   test("parseArgs: example") {
-    Cli.parseArgs(
+    val obtained = Cli.parseArgs(
       List(
         List("--workspace", "a"),
         List("--repos-file", "b"),
@@ -31,7 +28,8 @@ class CliTest extends AnyFunSuite with Matchers with EitherValues {
         List("--github-app-id", "12345678"),
         List("--github-app-key-file", "example_app_key")
       ).flatten
-    ) shouldBe Success(
+    )
+    val expected = Success(
       Cli.Args(
         workspace = File("a"),
         reposFile = File("b"),
@@ -50,10 +48,11 @@ class CliTest extends AnyFunSuite with Matchers with EitherValues {
         githubAppKeyFile = Some(File("example_app_key"))
       )
     )
+    assertEquals(obtained, expected)
   }
 
   test("parseArgs: minimal example") {
-    Cli.parseArgs(
+    val obtained = Cli.parseArgs(
       List(
         List("--workspace", "a"),
         List("--repos-file", "b"),
@@ -61,7 +60,8 @@ class CliTest extends AnyFunSuite with Matchers with EitherValues {
         List("--vcs-login", "e"),
         List("--git-ask-pass", "f")
       ).flatten
-    ) shouldBe Success(
+    )
+    val expected = Success(
       Cli.Args(
         workspace = File("a"),
         reposFile = File("b"),
@@ -70,54 +70,57 @@ class CliTest extends AnyFunSuite with Matchers with EitherValues {
         gitAskPass = File("f")
       )
     )
+    assertEquals(obtained, expected)
   }
 
   test("parseArgs: fail if required option not provided") {
-    Cli.parseArgs(Nil).asInstanceOf[Error].error should startWith("Required option")
+    assert(clue(Cli.parseArgs(Nil).asInstanceOf[Error].error).startsWith("Required option"))
   }
 
   test("parseArgs: unrecognized argument") {
-    Cli.parseArgs(List("--foo")).asInstanceOf[Error].error should startWith("Unrecognized")
+    assert(clue(Cli.parseArgs(List("--foo")).asInstanceOf[Error].error).startsWith("Unrecognized"))
   }
 
   test("parseArgs: --help") {
-    Cli.parseArgs(List("--help")).asInstanceOf[Help].help should include("--git-author-email")
+    assert(
+      clue(Cli.parseArgs(List("--help")).asInstanceOf[Help].help).contains("--git-author-email")
+    )
   }
 
   test("parseArgs: --usage") {
-    Cli.parseArgs(List("--usage")).asInstanceOf[Help].help should startWith("Usage: args")
+    assert(clue(Cli.parseArgs(List("--usage")).asInstanceOf[Help].help).startsWith("Usage: args"))
   }
 
   test("envVarArgParser: env-var without equals sign") {
-    Cli.envVarArgParser(None, "SBT_OPTS").isLeft shouldBe true
+    assert(clue(Cli.envVarArgParser(None, "SBT_OPTS")).isLeft)
   }
 
   test("envVarArgParser: env-var with multiple equals signs") {
     val value = "-Xss8m -XX:MaxMetaspaceSize=256m"
-    Cli.envVarArgParser(None, s"SBT_OPTS=$value") shouldBe Right(EnvVar("SBT_OPTS", value))
+    assertEquals(Cli.envVarArgParser(None, s"SBT_OPTS=$value"), Right(EnvVar("SBT_OPTS", value)))
   }
 
   test("finiteDurationArgParser: well-formed duration") {
-    Cli.finiteDurationArgParser(None, "30min") shouldBe Right(30.minutes)
+    assertEquals(Cli.finiteDurationArgParser(None, "30min"), Right(30.minutes))
   }
 
   test("finiteDurationArgParser: malformed duration") {
-    Cli.finiteDurationArgParser(None, "xyz").isLeft shouldBe true
+    assert(clue(Cli.finiteDurationArgParser(None, "xyz")).isLeft)
   }
 
   test("finiteDurationArgParser: malformed duration (Inf)") {
-    Cli.finiteDurationArgParser(None, "Inf").isLeft shouldBe true
+    assert(clue(Cli.finiteDurationArgParser(None, "Inf")).isLeft)
   }
 
   test("finiteDurationArgParser: previous value") {
-    Cli.finiteDurationArgParser(Some(10.seconds), "20seconds").isLeft shouldBe true
+    assert(clue(Cli.finiteDurationArgParser(Some(10.seconds), "20seconds")).isLeft)
   }
 
   test("fileArgParser: previous value") {
-    Cli.fileArgParser(Some(File("/tmp")), "/opt").isLeft shouldBe true
+    assert(clue(Cli.fileArgParser(Some(File("/tmp")), "/opt")).isLeft)
   }
 
   test("supportedVCSArgParser: unknown value") {
-    Cli.supportedVCSArgParser(None, "sourceforge").isLeft shouldBe true
+    assert(clue(Cli.supportedVCSArgParser(None, "sourceforge")).isLeft)
   }
 }

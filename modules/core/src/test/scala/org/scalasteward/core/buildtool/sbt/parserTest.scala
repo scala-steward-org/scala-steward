@@ -1,16 +1,15 @@
 package org.scalasteward.core.buildtool.sbt
 
+import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.buildtool.sbt.data.SbtVersion
 import org.scalasteward.core.buildtool.sbt.parser._
 import org.scalasteward.core.data.Resolver.{Credentials, IvyRepository, MavenRepository}
 import org.scalasteward.core.data.{ArtifactId, Scope}
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 
-class parserTest extends AnyFunSuite with Matchers {
+class parserTest extends FunSuite {
   test("parseBuildProperties: with whitespace") {
-    parseBuildProperties("sbt.version = 1.2.8") shouldBe Some(SbtVersion("1.2.8"))
+    assertEquals(parseBuildProperties("sbt.version = 1.2.8"), Some(SbtVersion("1.2.8")))
   }
 
   test("parseDependencies") {
@@ -33,7 +32,7 @@ class parserTest extends AnyFunSuite with Matchers {
          |[info] --- snip ---
          |""".stripMargin.linesIterator.toList
     val scopes = parseDependencies(lines)
-    scopes shouldBe List(
+    val expected = List(
       Scope(
         List(
           "org.scala-lang" % "scala-library" % "2.12.7",
@@ -71,5 +70,6 @@ class parserTest extends AnyFunSuite with Matchers {
         )
       )
     )
+    assertEquals(scopes, expected)
   }
 }

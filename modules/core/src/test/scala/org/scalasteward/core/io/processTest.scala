@@ -1,15 +1,14 @@
 package org.scalasteward.core.io
 
 import cats.effect.IO
+import munit.FunSuite
 import org.scalasteward.core.TestInstances._
 import org.scalasteward.core.io.ProcessAlgTest.blocker
 import org.scalasteward.core.io.process.Args
 import org.scalasteward.core.util.Nel
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 import scala.concurrent.duration._
 
-class processTest extends AnyFunSuite with Matchers {
+class processTest extends FunSuite {
   def slurp1(cmd: Nel[String]): IO[List[String]] =
     process.slurp[IO](Args(cmd), 1.minute, _ => IO.unit, blocker)
 
@@ -17,26 +16,29 @@ class processTest extends AnyFunSuite with Matchers {
     process.slurp[IO](Args(cmd), timeout, _ => IO.unit, blocker)
 
   test("echo hello") {
-    slurp1(Nel.of("echo", "-n", "hello")).unsafeRunSync() shouldBe List("hello")
+    assertEquals(slurp1(Nel.of("echo", "-n", "hello")).unsafeRunSync(), List("hello"))
   }
 
   test("echo hello world") {
-    slurp1(Nel.of("echo", "-n", "hello\nworld")).unsafeRunSync() shouldBe List("hello", "world")
+    assertEquals(
+      slurp1(Nel.of("echo", "-n", "hello\nworld")).unsafeRunSync(),
+      List("hello", "world")
+    )
   }
 
   test("ls") {
-    slurp1(Nel.of("ls")).attempt.unsafeRunSync().isRight shouldBe true
+    assert(slurp1(Nel.of("ls")).attempt.unsafeRunSync().isRight)
   }
 
   test("ls --foo") {
-    slurp1(Nel.of("ls", "--foo")).attempt.unsafeRunSync().isLeft shouldBe true
+    assert(slurp1(Nel.of("ls", "--foo")).attempt.unsafeRunSync().isLeft)
   }
 
   test("sleep 1: ok") {
-    slurp2(Nel.of("sleep", "1"), 2.seconds).unsafeRunSync() shouldBe List()
+    assertEquals(slurp2(Nel.of("sleep", "1"), 2.seconds).unsafeRunSync(), List())
   }
 
   test("sleep 1: fail") {
-    slurp2(Nel.of("sleep", "1"), 500.milliseconds).attempt.unsafeRunSync().isLeft shouldBe true
+    assert(slurp2(Nel.of("sleep", "1"), 500.milliseconds).attempt.unsafeRunSync().isLeft)
   }
 }

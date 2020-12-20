@@ -99,13 +99,14 @@ lazy val core = myCrossProject("core")
       Dependencies.logbackClassic % Runtime,
       Dependencies.catsLaws % Test,
       Dependencies.circeLiteral % Test,
-      Dependencies.disciplineScalatest % Test,
+      Dependencies.disciplineMunit % Test,
       Dependencies.http4sDsl % Test,
+      Dependencies.munit % Test,
+      Dependencies.munitScalacheck % Test,
       Dependencies.refinedScalacheck % Test,
-      Dependencies.scalacheck % Test,
-      Dependencies.scalaTestFunSuite % Test,
-      Dependencies.scalaTestShouldMatcher % Test
+      Dependencies.scalacheck % Test
     ),
+    testFrameworks += new TestFramework("munit.Framework"),
     assembly / test := {},
     assemblyMergeStrategy in assembly := {
       val nativeSuffix = "\\.(?:dll|jnilib|so)$".r

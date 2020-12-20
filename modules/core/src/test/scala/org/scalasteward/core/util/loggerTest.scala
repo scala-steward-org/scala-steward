@@ -1,13 +1,12 @@
 package org.scalasteward.core.util
 
 import cats.effect.Sync
+import munit.FunSuite
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.{MockEff, MockState}
 import org.scalasteward.core.util.logger.LoggerOps
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 
-class loggerTest extends AnyFunSuite with Matchers {
+class loggerTest extends FunSuite {
   test("attemptLog") {
     final case class Err(msg: String) extends Throwable(msg)
     val err = Err("hmm?")
@@ -16,7 +15,7 @@ class loggerTest extends AnyFunSuite with Matchers {
       .runS(MockState.empty)
       .unsafeRunSync()
 
-    state.logs shouldBe Vector((None, "run"), (Some(err), "run failed"))
+    assertEquals(state.logs, Vector((None, "run"), (Some(err), "run failed")))
   }
 
   test("infoTimed") {
@@ -25,6 +24,6 @@ class loggerTest extends AnyFunSuite with Matchers {
       .runS(MockState.empty)
       .unsafeRunSync()
 
-    state.logs shouldBe Vector((None, "inner"), (None, "timed"))
+    assertEquals(state.logs, Vector((None, "inner"), (None, "timed")))
   }
 }

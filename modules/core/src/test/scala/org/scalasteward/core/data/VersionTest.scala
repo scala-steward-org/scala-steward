@@ -2,24 +2,18 @@ package org.scalasteward.core.data
 
 import cats.implicits._
 import cats.kernel.laws.discipline.OrderTests
+import munit.DisciplineSuite
+import org.scalacheck.Prop._
 import org.scalasteward.core.TestInstances._
 import org.scalasteward.core.data.Version.Component
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import org.typelevel.discipline.scalatest.FunSuiteDiscipline
 import scala.util.Random
 
-class VersionTest
-    extends AnyFunSuite
-    with FunSuiteDiscipline
-    with Matchers
-    with ScalaCheckPropertyChecks {
+class VersionTest extends DisciplineSuite {
   checkAll("Order[Version]", OrderTests[Version].order)
 
   test("issue 1615: broken transitivity") {
     val res = OrderTests[Version].laws.transitivity(Version(""), Version("0"), Version("X"))
-    res.lhs shouldBe res.rhs
+    assertEquals(res.lhs, res.rhs)
   }
 
   test("pairwise 1") {
@@ -110,18 +104,18 @@ class VersionTest
     ).foreach { case (s1, s2) =>
       val c1 = coursier.core.Version(s1)
       val c2 = coursier.core.Version(s2)
-      c1 should be < c2
-      c2 should be > c1
+      assert(clue(c1) < clue(c2))
+      assert(clue(c2) > clue(c1))
 
       val v1 = Version(s1)
       val v2 = Version(s2)
-      v1 should be < v2
-      v2 should be > v1
+      assert(clue(v1) < clue(v2))
+      assert(clue(v2) > clue(v1))
     }
   }
 
   test("equal") {
-    Version("3.0").compare(Version("3.0.+")) shouldBe 0
+    assertEquals(Version("3.0").compare(Version("3.0.+")), 0)
   }
 
   test("selectNext, table 1") {
@@ -129,8 +123,7 @@ class VersionTest
       List("1.0.0", "1.0.1", "1.0.2", "1.1.0", "1.2.0", "2.0.0", "3.0.0", "3.0.0.1", "3.1")
         .map(Version.apply)
 
-    val nextVersions = Table(
-      ("current", "result"),
+    val nextVersions = List(
       ("1.0.0", Some("1.0.2")),
       ("1.0.1", Some("1.0.2")),
       ("1.0.2", Some("1.2.0")),
@@ -143,14 +136,13 @@ class VersionTest
       ("4", None)
     )
 
-    forAll(nextVersions) { (current, result) =>
-      Version(current).selectNext(allVersions) shouldBe result.map(Version.apply)
+    nextVersions.foreach { case (current, result) =>
+      assertEquals(Version(current).selectNext(allVersions), result.map(Version.apply))
     }
   }
 
   test("selectNext, table 2") {
-    val nextVersions = Table(
-      ("current", "versions", "result"),
+    val nextVersions = List(
       ("1.3.0-RC3", List("1.3.0-RC4", "1.3.0-RC5"), Some("1.3.0-RC5")),
       ("1.3.0-RC3", List("1.3.0-RC4", "1.3.0-RC5", "1.3.0", "1.3.2"), Some("1.3.2")),
       ("3.0-RC3", List("3.0-RC4", "3.0-RC5", "3.0", "3.2"), Some("3.2")),
@@ -223,23 +215,23 @@ class VersionTest
     )
 
     val rnd = new Random()
-    forAll(nextVersions) { (current, versions, result) =>
-      Version(current).selectNext(rnd.shuffle(versions).map(Version.apply)) shouldBe
-        result.map(Version.apply)
+    nextVersions.foreach { case (current, versions, result) =>
+      val obtained = Version(current).selectNext(rnd.shuffle(versions).map(Version.apply))
+      assertEquals(obtained, result.map(Version.apply))
     }
   }
 
   test("Component: round-trip") {
-    forAll { str: String => Component.render(Component.parse(str)) shouldBe str }
+    forAll { str: String => assertEquals(Component.render(Component.parse(str)), str) }
   }
 
   test("Component: round-trip using Version") {
-    forAll { v: Version => Component.render(Component.parse(v.value)) shouldBe v.value }
+    forAll { v: Version => assertEquals(Component.render(Component.parse(v.value)), v.value) }
   }
 
   test("Component: round-trip example") {
     val original = "1.0.0-rc.1+build.1"
-    Component.render(Component.Empty :: Component.parse(original)) shouldBe original
+    assertEquals(Component.render(Component.Empty :: Component.parse(original)), original)
   }
 
   def checkPairwise(versions: List[String]): Unit = {
@@ -248,8 +240,8 @@ class VersionTest
       case Nil    => Nil
     }
     pairs.foreach { case (v1, v2) =>
-      v1 should be < v2
-      v2 should be > v1
+      assert(clue(v1) < clue(v2))
+      assert(clue(v2) > clue(v1))
     }
   }
 }

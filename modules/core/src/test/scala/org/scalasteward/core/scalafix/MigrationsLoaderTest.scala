@@ -1,5 +1,6 @@
 package org.scalasteward.core.scalafix
 
+import munit.FunSuite
 import org.http4s.Uri
 import org.scalasteward.core.application.Config.ScalafixCfg
 import org.scalasteward.core.data.{GroupId, Version}
@@ -8,10 +9,8 @@ import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.scalafix.MigrationsLoaderTest.mockState
 import org.scalasteward.core.util.Nel
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 
-class MigrationsLoaderTest extends AnyFunSuite with Matchers {
+class MigrationsLoaderTest extends FunSuite {
   val migrationsUri: Uri = Uri.unsafeFromString("/tmp/scala-steward/extra-migrations.conf")
   val migrationsContent: String =
     """|migrations = [
@@ -37,7 +36,7 @@ class MigrationsLoaderTest extends AnyFunSuite with Matchers {
       .loadAll(ScalafixCfg(Nil, disableDefaults = true))
       .runA(mockState)
       .unsafeRunSync()
-    migrations.size shouldBe 0
+    assertEquals(migrations.size, 0)
   }
 
   test("loadAll: without extra file, with defaults") {
@@ -45,7 +44,7 @@ class MigrationsLoaderTest extends AnyFunSuite with Matchers {
       .loadAll(ScalafixCfg(Nil, disableDefaults = false))
       .runA(mockState)
       .unsafeRunSync()
-    migrations.size should be > 0
+    assert(clue(migrations.size) > 0)
   }
 
   test("loadAll: with extra file, without defaults") {
@@ -54,7 +53,7 @@ class MigrationsLoaderTest extends AnyFunSuite with Matchers {
       .loadAll(ScalafixCfg(List(migrationsUri), disableDefaults = true))
       .runA(initialState)
       .unsafeRunSync()
-    migrations shouldBe List(migration)
+    assertEquals(migrations, List(migration))
   }
 
   test("loadAll: with extra file, with defaults") {
@@ -63,8 +62,8 @@ class MigrationsLoaderTest extends AnyFunSuite with Matchers {
       .loadAll(ScalafixCfg(List(migrationsUri), disableDefaults = false))
       .runA(initialState)
       .unsafeRunSync()
-    migrations.size should be > 1
-    migrations should contain(migration)
+    assert(clue(migrations.size) > 1)
+    assert(clue(migrations).contains(migration))
   }
 
   test("loadAll: malformed extra file") {
@@ -74,7 +73,7 @@ class MigrationsLoaderTest extends AnyFunSuite with Matchers {
       .runA(initialState)
       .attempt
       .unsafeRunSync()
-    migrations.isLeft shouldBe true
+    assert(migrations.isLeft)
   }
 }
 
