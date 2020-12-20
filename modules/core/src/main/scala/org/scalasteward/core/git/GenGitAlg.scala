@@ -19,7 +19,6 @@ package org.scalasteward.core.git
 import cats.effect.{Bracket, BracketThrow}
 import cats.syntax.all._
 import cats.{FlatMap, Monad}
-import io.chrisdavenport.log4cats.Logger
 import org.http4s.Uri
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
@@ -48,6 +47,8 @@ trait GenGitAlg[F[_], Repo] {
 
   /** Returns `true` if merging `branch` into `base` results in merge conflicts. */
   def hasConflicts(repo: Repo, branch: Branch, base: Branch): F[Boolean]
+
+  def initSubmodules(repo: Repo): F[Unit]
 
   def isMerged(repo: Repo, branch: Branch, base: Branch): F[Boolean]
 
@@ -110,6 +111,9 @@ trait GenGitAlg[F[_], Repo] {
       override def hasConflicts(repo: A, branch: Branch, base: Branch): F[Boolean] =
         f(repo).flatMap(self.hasConflicts(_, branch, base))
 
+      override def initSubmodules(repo: A): F[Unit] =
+        f(repo).flatMap(self.initSubmodules)
+
       override def isMerged(repo: A, branch: Branch, base: Branch): F[Boolean] =
         f(repo).flatMap(self.isMerged(_, branch, base))
 
@@ -140,7 +144,6 @@ trait GenGitAlg[F[_], Repo] {
 object GenGitAlg {
   def create[F[_]](config: Config)(implicit
       fileAlg: FileAlg[F],
-      logger: Logger[F],
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F],
       F: BracketThrow[F]

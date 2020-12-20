@@ -19,16 +19,13 @@ package org.scalasteward.core.git
 import better.files.File
 import cats.effect.BracketThrow
 import cats.syntax.all._
-import io.chrisdavenport.log4cats.Logger
 import org.http4s.Uri
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.util.logger._
 import org.scalasteward.core.util.Nel
 
 final class FileGitAlg[F[_]](config: Config)(implicit
     fileAlg: FileAlg[F],
-    logger: Logger[F],
     processAlg: ProcessAlg[F],
     workspaceAlg: WorkspaceAlg[F],
     F: BracketThrow[F]
@@ -43,9 +40,6 @@ final class FileGitAlg[F[_]](config: Config)(implicit
     for {
       rootDir <- workspaceAlg.rootDir
       _ <- git("clone", url.toString, repo.pathAsString)(rootDir)
-      _ <- logger.attemptLogError("Initializing and cloning submodules failed") {
-        git("submodule", "update", "--init", "--recursive")(repo)
-      }
     } yield ()
 
   override def cloneExists(repo: File): F[Boolean] =
@@ -83,6 +77,9 @@ final class FileGitAlg[F[_]](config: Config)(implicit
       checkoutBranch(repo, base) >> F.guarantee(tryMerge)(abortMerge).attempt.map(_.isLeft)
     }
   }
+
+  override def initSubmodules(repo: File): F[Unit] =
+    git("submodule", "update", "--init", "--recursive")(repo).void
 
   override def isMerged(repo: File, branch: Branch, base: Branch): F[Boolean] =
     git("log", "--pretty=format:'%h'", dotdot(base, branch))(repo).map(_.isEmpty)
