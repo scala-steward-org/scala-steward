@@ -67,7 +67,7 @@ object MockContext {
   implicit val gitAlg: GitAlg[MockEff] = GenGitAlg.create(config)
   implicit val hookExecutor: HookExecutor[MockEff] = new HookExecutor[MockEff]
   implicit val user: AuthenticatedUser = AuthenticatedUser("scala-steward", "token")
-  implicit val vcsRepoAlg: VCSRepoAlg[MockEff] = VCSRepoAlg.create(config)
+  implicit val vcsRepoAlg: VCSRepoAlg[MockEff] = new VCSRepoAlg[MockEff](config)
   implicit val repoConfigAlg: RepoConfigAlg[MockEff] = new RepoConfigAlg[MockEff](config)
   implicit val scalafmtAlg: ScalafmtAlg[MockEff] = ScalafmtAlg.create
   val migrationsLoader: MigrationsLoader[MockEff] = new MigrationsLoader[MockEff]

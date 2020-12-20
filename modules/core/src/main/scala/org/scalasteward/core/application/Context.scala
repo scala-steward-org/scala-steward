@@ -78,7 +78,7 @@ object Context {
         new RepoCacheRepository[F](new JsonKeyValueStore("repo_cache", "1", kvsPrefix))
       val vcsSelection = new VCSSelection[F]
       implicit val vcsApiAlg: VCSApiAlg[F] = vcsSelection.getAlg(config)
-      implicit val vcsRepoAlg: VCSRepoAlg[F] = VCSRepoAlg.create[F](config)
+      implicit val vcsRepoAlg: VCSRepoAlg[F] = new VCSRepoAlg[F](config)
       implicit val vcsExtraAlg: VCSExtraAlg[F] = VCSExtraAlg.create[F](config)
       implicit val pullRequestRepository: PullRequestRepository[F] =
         new PullRequestRepository[F](new JsonKeyValueStore("pull_requests", "2", kvsPrefix))

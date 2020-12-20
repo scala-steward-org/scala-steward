@@ -18,37 +18,43 @@ package org.scalasteward.core.vcs
 
 import cats.MonadThrow
 import cats.syntax.all._
+import io.chrisdavenport.log4cats.Logger
 import org.http4s.Uri
 import org.http4s.Uri.UserInfo
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.util
+import org.scalasteward.core.util.logger._
 import org.scalasteward.core.vcs.data.{Repo, RepoOut}
 
-trait VCSRepoAlg[F[_]] {
-  def clone(repo: Repo, repoOut: RepoOut): F[Unit]
+final class VCSRepoAlg[F[_]](config: Config)(implicit
+    gitAlg: GitAlg[F],
+    logger: Logger[F],
+    F: MonadThrow[F]
+) {
 
-  def syncFork(repo: Repo, repoOut: RepoOut): F[Unit]
-}
+  def cloneAndSync(repo: Repo, repoOut: RepoOut): F[Unit] =
+    for {
+      _ <- clone(repo, repoOut)
+      _ <- syncFork(repo, repoOut)
+      _ <- logger.attemptLogError("Initializing and cloning submodules failed") {
+        gitAlg.initSubmodules(repo)
+      }
+    } yield ()
 
-object VCSRepoAlg {
-  def create[F[_]](config: Config)(implicit gitAlg: GitAlg[F], F: MonadThrow[F]): VCSRepoAlg[F] =
-    new VCSRepoAlg[F] {
-      override def clone(repo: Repo, repoOut: RepoOut): F[Unit] =
-        for {
-          _ <- gitAlg.clone(repo, withLogin(repoOut.clone_url))
-          _ <- gitAlg.setAuthor(repo, config.gitAuthor)
-        } yield ()
+  private def clone(repo: Repo, repoOut: RepoOut): F[Unit] =
+    for {
+      _ <- gitAlg.clone(repo, withLogin(repoOut.clone_url))
+      _ <- gitAlg.setAuthor(repo, config.gitAuthor)
+    } yield ()
 
-      override def syncFork(repo: Repo, repoOut: RepoOut): F[Unit] =
-        if (config.doNotFork) F.unit
-        else
-          for {
-            parent <- repoOut.parentOrRaise[F]
-            _ <- gitAlg.syncFork(repo, withLogin(parent.clone_url), parent.default_branch)
-          } yield ()
+  private[vcs] def syncFork(repo: Repo, repoOut: RepoOut): F[Unit] =
+    if (config.doNotFork) F.unit
+    else
+      repoOut.parentOrRaise[F].flatMap { parent =>
+        gitAlg.syncFork(repo, withLogin(parent.clone_url), parent.default_branch)
+      }
 
-      val withLogin: Uri => Uri =
-        util.uri.withUserInfo.set(UserInfo(config.vcsLogin, None))
-    }
+  private val withLogin: Uri => Uri =
+    util.uri.withUserInfo.set(UserInfo(config.vcsLogin, None))
 }

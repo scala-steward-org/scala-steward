@@ -61,8 +61,7 @@ final class RepoCacheAlg[F[_]](config: Config)(implicit
   private def cloneAndRefreshCache(repo: Repo, repoOut: RepoOut): F[RepoCache] =
     for {
       _ <- logger.info(s"Refresh cache of ${repo.show}")
-      _ <- vcsRepoAlg.clone(repo, repoOut)
-      _ <- vcsRepoAlg.syncFork(repo, repoOut)
+      _ <- vcsRepoAlg.cloneAndSync(repo, repoOut)
       cache <- refreshCache(repo)
     } yield cache
 
