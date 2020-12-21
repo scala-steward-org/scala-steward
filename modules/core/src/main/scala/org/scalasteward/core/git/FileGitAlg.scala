@@ -21,6 +21,7 @@ import cats.effect.BracketThrow
 import cats.syntax.all._
 import org.http4s.Uri
 import org.scalasteward.core.application.Config
+import org.scalasteward.core.git.FileGitAlg.dotdot
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
 
@@ -139,4 +140,14 @@ final class FileGitAlg[F[_]](config: Config)(implicit
 
   private val sign: String =
     if (config.signCommits) "--gpg-sign" else "--no-gpg-sign"
+}
+
+object FileGitAlg {
+  // man 7 gitrevisions:
+  // When you have two commits r1 and r2 you can ask for commits that are
+  // reachable from r2 excluding those that are reachable from r1 by ^r1 r2
+  // and it can be written as
+  //   r1..r2.
+  private def dotdot(r1: Branch, r2: Branch): String =
+    s"${r1.name}..${r2.name}"
 }
