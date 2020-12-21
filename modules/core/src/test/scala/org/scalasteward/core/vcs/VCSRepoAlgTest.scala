@@ -43,7 +43,8 @@ class VCSRepoAlgTest extends FunSuite {
         envVars ++ List(repoDir, "git", "merge", "upstream/master"),
         envVars ++ List(repoDir, "git", "push", "--force", "--set-upstream", "origin", "master"),
         envVars ++ List(repoDir, "git", "submodule", "update", "--init", "--recursive")
-      )
+      ),
+      logs = Vector((None, "Clone and synchronize fthomas/datapackage"))
     )
     assertEquals(state, expected)
   }
