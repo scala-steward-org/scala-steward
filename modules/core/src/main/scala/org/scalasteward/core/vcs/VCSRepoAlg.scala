@@ -32,9 +32,11 @@ final class VCSRepoAlg[F[_]](config: Config)(implicit
     logger: Logger[F],
     F: MonadThrow[F]
 ) {
-
   def cloneAndSync(repo: Repo, repoOut: RepoOut): F[Unit] =
     for {
+      _ <-
+        if (config.doNotFork) logger.info(s"Clone ${repo.show}")
+        else logger.info(s"Clone and synchronize ${repo.show}")
       _ <- clone(repo, repoOut)
       _ <- syncFork(repo, repoOut)
       _ <- logger.attemptLogError("Initializing and cloning submodules failed") {

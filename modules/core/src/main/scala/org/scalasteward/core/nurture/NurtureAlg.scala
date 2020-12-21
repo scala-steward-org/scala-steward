@@ -63,7 +63,6 @@ final class NurtureAlg[F[_]](config: Config)(implicit
 
   def cloneAndSync(repo: Repo, fork: RepoOut): F[Branch] =
     for {
-      _ <- logger.info(s"Clone and synchronize ${repo.show}")
       _ <- gitAlg.cloneExists(repo).ifM(F.unit, vcsRepoAlg.cloneAndSync(repo, fork))
       baseBranch <- vcsApiAlg.parentOrRepo(fork, config.doNotFork).map(_.default_branch)
     } yield baseBranch
