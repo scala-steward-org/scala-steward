@@ -47,7 +47,7 @@ object Cli {
       ignoreOptsFiles: Boolean = false,
       envVar: List[EnvVar] = Nil,
       processTimeout: FiniteDuration = 10.minutes,
-      maxBufferSize: Int = 4096,
+      maxBufferSize: Int = 8192,
       scalafixMigrations: List[Uri] = Nil,
       disableDefaultScalafixMigrations: Boolean = false,
       artifactMigrations: Option[File] = None,

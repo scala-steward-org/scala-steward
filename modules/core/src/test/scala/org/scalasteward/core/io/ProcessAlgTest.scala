@@ -31,7 +31,7 @@ class ProcessAlgTest extends FunSuite {
   }
 
   test("execSandboxed: echo with enableSandbox = false") {
-    val cfg = ProcessCfg(Nil, Duration.Zero, SandboxCfg(Nil, Nil, enableSandbox = false), 4096)
+    val cfg = ProcessCfg(Nil, Duration.Zero, SandboxCfg(Nil, Nil, enableSandbox = false), 8192)
     val state = MockProcessAlg
       .create(cfg)
       .execSandboxed(Nel.of("echo", "hello"), File.temp)
@@ -48,7 +48,7 @@ class ProcessAlgTest extends FunSuite {
   }
 
   test("execSandboxed: echo with enableSandbox = true") {
-    val cfg = ProcessCfg(Nil, Duration.Zero, SandboxCfg(Nil, Nil, enableSandbox = true), 4096)
+    val cfg = ProcessCfg(Nil, Duration.Zero, SandboxCfg(Nil, Nil, enableSandbox = true), 8192)
     val state = MockProcessAlg
       .create(cfg)
       .execSandboxed(Nel.of("echo", "hello"), File.temp)
