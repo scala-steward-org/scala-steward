@@ -92,6 +92,7 @@ object ProcessAlg {
   ): ProcessAlg[F] =
     fromExecImpl(config) { args =>
       logger.debug(s"Execute ${process.showCmd(args)}") >>
-        process.slurp[F](args, config.processTimeout, config.maxBufferSize, logger.trace(_), blocker)
+        process
+          .slurp[F](args, config.processTimeout, config.maxBufferSize, logger.trace(_), blocker)
     }
 }

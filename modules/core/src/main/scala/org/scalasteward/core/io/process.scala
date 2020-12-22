@@ -45,7 +45,10 @@ object process {
       F.delay(new ListBuffer[String]).flatMap { buffer =>
         val readOut = {
           val out = readInputStream[F](process.getInputStream, blocker)
-          out.evalMap(line => F.delay(appendBounded(buffer, line, maxBufferSize)) >> log(line)).compile.drain
+          out
+            .evalMap(line => F.delay(appendBounded(buffer, line, maxBufferSize)) >> log(line))
+            .compile
+            .drain
         }
 
         val result = readOut >> F.delay(process.waitFor()) >>= { exitValue =>
