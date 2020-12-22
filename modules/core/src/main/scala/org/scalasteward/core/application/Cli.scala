@@ -47,6 +47,7 @@ object Cli {
       ignoreOptsFiles: Boolean = false,
       envVar: List[EnvVar] = Nil,
       processTimeout: FiniteDuration = 10.minutes,
+      maxBufferSize: Int = 8192,
       scalafixMigrations: List[Uri] = Nil,
       disableDefaultScalafixMigrations: Boolean = false,
       artifactMigrations: Option[File] = None,
@@ -86,7 +87,8 @@ object Cli {
         case name :: (value @ _ :: _) =>
           Right(EnvVar(name.trim, value.mkString("=").trim))
         case _ =>
-          val error = "The value is expected in the following format: NAME=VALUE."
+          val error =
+            "The value is expected in the following format: NAME=VALUE."
           Left(MalformedValue("EnvVar", error))
       }
     }
