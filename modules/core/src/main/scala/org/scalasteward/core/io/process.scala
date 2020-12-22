@@ -37,6 +37,7 @@ object process {
   def slurp[F[_]](
       args: Args,
       timeout: FiniteDuration,
+      maxBufferSize: Int,
       log: String => F[Unit],
       blocker: Blocker
   )(implicit contextShift: ContextShift[F], timer: Timer[F], F: Concurrent[F]): F[List[String]] =
@@ -44,7 +45,7 @@ object process {
       F.delay(new ListBuffer[String]).flatMap { buffer =>
         val readOut = {
           val out = readInputStream[F](process.getInputStream, blocker)
-          out.evalMap(line => F.delay(appendBounded(buffer, line, 4096)) >> log(line)).compile.drain
+          out.evalMap(line => F.delay(appendBounded(buffer, line, maxBufferSize)) >> log(line)).compile.drain
         }
 
         val result = readOut >> F.delay(process.waitFor()) >>= { exitValue =>

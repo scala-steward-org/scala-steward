@@ -88,7 +88,8 @@ object Config {
   final case class ProcessCfg(
       envVars: List[EnvVar],
       processTimeout: FiniteDuration,
-      sandboxCfg: SandboxCfg
+      sandboxCfg: SandboxCfg,
+      maxBufferSize: Int
   )
 
   final case class SandboxCfg(
@@ -118,6 +119,7 @@ object Config {
       processCfg = ProcessCfg(
         envVars = args.envVar,
         processTimeout = args.processTimeout,
+        maxBufferSize = args.maxBufferSize,
         sandboxCfg = SandboxCfg(
           whitelistedDirectories = args.whitelist,
           readOnlyDirectories = args.readOnly,
