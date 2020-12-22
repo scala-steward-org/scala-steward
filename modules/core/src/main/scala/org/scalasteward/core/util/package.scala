@@ -68,21 +68,23 @@ package object util {
     fa.exists(a => ga.exists(b => a === b))
 
   /** Adds a weight to each element and cuts the stream when the total
-    * weight is greater or equal to `limit`.
+    * weight is greater or equal to `limit`. `init` is the initial weight.
     *
     * @example {{{
-    * scala> fs2.Stream.emits("Hello, world!").through(takeUntil(3) {
+    * scala> fs2.Stream.emits("Hello, world!").through(takeUntil(0, 3) {
     *      |   case 'a' | 'e' | 'i' | 'o' | 'u' => 1
     *      |   case _                           => 0
     *      | }).toList.mkString
     * res1: String = Hello, wo
     * }}}
     */
-  def takeUntil[F[_], A, N](limit: N)(weight: A => N)(implicit N: Numeric[N]): Pipe[F, A, A] = {
-    import N._
-    _.map(a => (a, weight(a)))
-      .scan1[(A, N)] { case ((_, total), (a, i)) => (a, total + i) }
-      .takeThrough { case (_, total) => total < limit }
-      .map { case (a, _) => a }
-  }
+  def takeUntil[F[_], A, N](init: N, limit: N)(weight: A => N)(implicit
+      N: Numeric[N]
+  ): Pipe[F, A, A] =
+    if (N.gteq(init, limit))
+      _ => fs2.Stream.empty
+    else
+      _.mapAccumulate(init) { case (i, a) => (N.plus(i, weight(a)), a) }
+        .takeThrough { case (total, _) => N.lt(total, limit) }
+        .map { case (_, a) => a }
 }

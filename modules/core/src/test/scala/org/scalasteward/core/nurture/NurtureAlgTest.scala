@@ -2,7 +2,7 @@ package org.scalasteward.core.nurture
 
 import cats.data.StateT
 import cats.effect.IO
-import eu.timepit.refined.types.numeric.PosInt
+import eu.timepit.refined.types.numeric.NonNegInt
 import munit.ScalaCheckSuite
 import org.scalacheck.Prop._
 import org.scalasteward.core.TestInstances._
@@ -35,7 +35,7 @@ class NurtureAlgTest extends ScalaCheckSuite {
         .processUpdates(
           ignorableUpdates ++ appliableUpdates,
           f,
-          PosInt.unapply(appliableUpdates.size)
+          NonNegInt.unapply(appliableUpdates.size)
         )
         .runS(0)
         .unsafeRunSync()

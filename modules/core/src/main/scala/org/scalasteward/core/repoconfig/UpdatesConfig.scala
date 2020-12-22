@@ -18,7 +18,7 @@ package org.scalasteward.core.repoconfig
 
 import cats.implicits._
 import cats.kernel.Semigroup
-import eu.timepit.refined.types.numeric.PosInt
+import eu.timepit.refined.types.numeric.NonNegInt
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 import io.circe.refined._
@@ -36,7 +36,7 @@ final case class UpdatesConfig(
     pin: List[UpdatePattern] = List.empty,
     allow: List[UpdatePattern] = List.empty,
     ignore: List[UpdatePattern] = List.empty,
-    limit: Option[PosInt] = None,
+    limit: Option[NonNegInt] = None,
     includeScala: Option[Boolean] = None,
     fileExtensions: Option[List[String]] = None
 ) {
@@ -186,5 +186,5 @@ object UpdatesConfig {
     combineOptions(x, y)(_.intersect(_))
 
   // prevent IntelliJ from removing the import of io.circe.refined._
-  locally(refinedDecoder: Decoder[PosInt])
+  locally(refinedDecoder: Decoder[NonNegInt])
 }

@@ -1,9 +1,12 @@
 package org.scalasteward.core.util
 
-import munit.FunSuite
+import cats.effect.IO
+import munit.ScalaCheckSuite
+import org.scalacheck.Gen
+import org.scalacheck.Prop._
 import scala.collection.mutable.ListBuffer
 
-class utilTest extends FunSuite {
+class utilTest extends ScalaCheckSuite {
   test("appendBounded") {
     val lb = new ListBuffer[Int]
     lb.appendAll(List(1, 2, 3))
@@ -34,5 +37,14 @@ class utilTest extends FunSuite {
   test("intersects") {
     assert(!intersects(List(1, 3, 5), Vector(2, 4, 6)))
     assert(intersects(List(1, 3, 5), Vector(2, 3, 6)))
+  }
+
+  test("takeUntil") {
+    forAll(Gen.choose(0, 16)) { (n: Int) =>
+      var count = 0
+      val s = fs2.Stream.eval(IO(count += 1)).repeat.through(takeUntil(0, n)(_ => 1))
+      s.compile.drain.unsafeRunSync()
+      assertEquals(count, n)
+    }
   }
 }

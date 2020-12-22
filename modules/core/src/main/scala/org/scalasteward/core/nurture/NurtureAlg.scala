@@ -19,7 +19,7 @@ package org.scalasteward.core.nurture
 import cats.Applicative
 import cats.effect.BracketThrow
 import cats.implicits._
-import eu.timepit.refined.types.numeric.PosInt
+import eu.timepit.refined.types.numeric.NonNegInt
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import org.http4s.Uri
@@ -239,7 +239,7 @@ object NurtureAlg {
   def processUpdates[F[_]](
       updates: List[Update],
       updateF: Update => F[ProcessResult],
-      updatesLimit: Option[PosInt]
+      updatesLimit: Option[NonNegInt]
   )(implicit streamCompiler: Stream.Compiler[F, F], F: Applicative[F]): F[Unit] =
     updatesLimit match {
       case None => updates.traverse_(updateF)
@@ -247,7 +247,7 @@ object NurtureAlg {
         Stream
           .emits(updates)
           .evalMap(updateF)
-          .through(util.takeUntil(limit.value) {
+          .through(util.takeUntil(0, limit.value) {
             case Ignored => 0
             case Updated => 1
           })

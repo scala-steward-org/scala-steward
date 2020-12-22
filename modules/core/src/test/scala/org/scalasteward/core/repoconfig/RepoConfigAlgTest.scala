@@ -1,7 +1,7 @@
 package org.scalasteward.core.repoconfig
 
 import better.files.File
-import eu.timepit.refined.types.numeric.PosInt
+import eu.timepit.refined.types.numeric.NonNegInt
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.{GroupId, Update}
@@ -62,7 +62,7 @@ class RepoConfigAlgTest extends FunSuite {
         ignore = List(
           UpdatePattern(GroupId("org.acme"), None, Some(UpdatePattern.Version(Some("1.0"), None)))
         ),
-        limit = Some(PosInt.unsafeFrom(4)),
+        limit = Some(NonNegInt.unsafeFrom(4)),
         includeScala = Some(true),
         fileExtensions = Some(List(".txt"))
       ),

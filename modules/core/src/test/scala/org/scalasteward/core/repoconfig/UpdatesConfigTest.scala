@@ -1,7 +1,7 @@
 package org.scalasteward.core.repoconfig
 
 import cats.syntax.semigroup._
-import eu.timepit.refined.types.numeric.PosInt
+import eu.timepit.refined.types.numeric.NonNegInt
 import munit.FunSuite
 import org.scalasteward.core.data.GroupId
 import org.scalasteward.core.repoconfig.UpdatePattern.Version
@@ -30,7 +30,7 @@ class UpdatesConfigTest extends FunSuite {
       pin = List(aa0),
       allow = List(aa0),
       ignore = List(aa0),
-      limit = Some(PosInt.unsafeFrom(10)),
+      limit = Some(NonNegInt.unsafeFrom(10)),
       includeScala = Some(false),
       fileExtensions = Some(List(".txt", ".scala", ".sbt"))
     )
@@ -43,7 +43,7 @@ class UpdatesConfigTest extends FunSuite {
       pin = List(ab0),
       allow = List(ab0),
       ignore = List(ab0),
-      limit = Some(PosInt.unsafeFrom(20)),
+      limit = Some(NonNegInt.unsafeFrom(20)),
       includeScala = Some(true),
       fileExtensions = Some(List(".sbt", ".scala"))
     )
@@ -54,7 +54,7 @@ class UpdatesConfigTest extends FunSuite {
         pin = List(aa0, ab0),
         allow = UpdatesConfig.nonExistingUpdatePattern,
         ignore = List(aa0, ab0),
-        limit = Some(PosInt.unsafeFrom(10)),
+        limit = Some(NonNegInt.unsafeFrom(10)),
         includeScala = Some(false),
         fileExtensions = Some(List(".scala", ".sbt"))
       )
@@ -66,7 +66,7 @@ class UpdatesConfigTest extends FunSuite {
         pin = List(ab0, aa0),
         allow = UpdatesConfig.nonExistingUpdatePattern,
         ignore = List(ab0, aa0),
-        limit = Some(PosInt.unsafeFrom(20)),
+        limit = Some(NonNegInt.unsafeFrom(20)),
         includeScala = Some(true),
         fileExtensions = Some(List(".sbt", ".scala"))
       )
