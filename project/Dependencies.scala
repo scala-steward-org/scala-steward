@@ -4,7 +4,7 @@ import sbt.librarymanagement.syntax.ExclusionRule
 
 object Dependencies {
   val attoCore = "org.tpolecat" %% "atto-core" % "0.8.0"
-  val bcprovJdk15to18 = "org.bouncycastle" % "bcprov-jdk15to18" % "1.67"
+  val bcprovJdk15to18 = "org.bouncycastle" % "bcprov-jdk15to18" % "1.68"
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.1"
   val betterMonadicFor = "com.olegpy" %% "better-monadic-for" % "0.3.1"
   val caseApp = "com.github.alexarchambault" %% "case-app" % "2.0.4"
