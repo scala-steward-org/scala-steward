@@ -72,17 +72,14 @@ final class PullRequestRepository[F[_]](
       repo: Repo,
       update: Update
   ): F[List[(PullRequestNumber, Uri, Update)]] =
-    kvStore.get(repo).map {
-      _.getOrElse(Map.empty)
-        .collect {
-          case (url, data)
-              if data.update.withNewerVersions(update.newerVersions) === update &&
-                Version(data.update.nextVersion) < Version(update.nextVersion) &&
-                data.state === PullRequestState.Open =>
-            data.number.orElse(vcs.extractPullRequestNumberFrom(url)).map((_, url, data.update))
-        }
-        .flatten
-        .toList
+    kvStore.getOrElse(repo, Map.empty).map {
+      _.collect {
+        case (url, data)
+            if data.update.withNewerVersions(update.newerVersions) === update &&
+              Version(data.update.nextVersion) < Version(update.nextVersion) &&
+              data.state === PullRequestState.Open =>
+          data.number.orElse(vcs.extractPullRequestNumberFrom(url)).map((_, url, data.update))
+      }.flatten.toList
     }
 
   def findPullRequest(
@@ -90,8 +87,8 @@ final class PullRequestRepository[F[_]](
       crossDependency: CrossDependency,
       newVersion: String
   ): F[Option[(Uri, Sha1, PullRequestState)]] =
-    kvStore.get(repo).map {
-      _.getOrElse(Map.empty).collectFirst {
+    kvStore.getOrElse(repo, Map.empty).map {
+      _.collectFirst {
         case (url, data)
             if UpdateAlg.isUpdateFor(data.update, crossDependency) &&
               data.update.nextVersion === newVersion =>

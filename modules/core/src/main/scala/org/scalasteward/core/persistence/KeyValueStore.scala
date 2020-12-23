@@ -16,8 +16,8 @@
 
 package org.scalasteward.core.persistence
 
-import cats.Applicative
 import cats.syntax.all._
+import cats.{Applicative, Functor}
 
 trait KeyValueStore[F[_], K, V] {
   def get(key: K): F[Option[V]]
@@ -25,6 +25,9 @@ trait KeyValueStore[F[_], K, V] {
   def put(key: K, value: V): F[Unit]
 
   def modifyF(key: K)(f: Option[V] => F[Option[V]]): F[Option[V]]
+
+  final def getOrElse(key: K, default: => V)(implicit F: Functor[F]): F[V] =
+    get(key).map(_.getOrElse(default))
 
   final def modify(key: K)(f: Option[V] => Option[V])(implicit F: Applicative[F]): F[Option[V]] =
     modifyF(key)(f.andThen(F.pure))
