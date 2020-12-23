@@ -29,7 +29,7 @@ class PullRequestRepositoryTest extends FunSuite {
           PullRequestState.Open,
           number
         )
-        result <- pullRequestRepository.findPullRequest(repo, update.crossDependency, "1.0.0")
+        result <- pullRequestRepository.findLatestPullRequest(repo, update.crossDependency, "1.0.0")
         createdAt <- pullRequestRepository.lastPullRequestCreatedAt(repo)
       } yield (result, createdAt)
       val (state, (result, createdAt)) = p.run(MockState.empty).unsafeRunSync()
