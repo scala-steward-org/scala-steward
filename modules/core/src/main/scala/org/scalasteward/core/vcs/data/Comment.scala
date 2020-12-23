@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.data
+package org.scalasteward.core.vcs.data
 
-import org.scalasteward.core.vcs.data.PullRequestNumber
+import io.circe.Codec
+import io.circe.generic.semiauto.deriveCodec
 
-sealed trait ProcessResult extends Product with Serializable
+final case class Comment(
+    body: String
+)
 
-object ProcessResult {
-  case object Ignored extends ProcessResult
-  case object Updated extends ProcessResult
-  case class Created(prNumber: PullRequestNumber) extends ProcessResult
+object Comment {
+  implicit val commentCodec: Codec[Comment] = deriveCodec
 }

@@ -100,6 +100,19 @@ class BitbucketServerApiAlg[F[_]](
       UpdateState(PullRequestState.Closed),
       modify(repo)
     )
+
+  override def commentPullRequest(
+      repo: Repo,
+      number: PullRequestNumber,
+      comment: String
+  ): F[Comment] =
+    client
+      .postWithBody[Json.Comment, Json.Comment](
+        url.comments(repo, number),
+        Json.Comment(comment),
+        modify(repo)
+      )
+      .map((c: Json.Comment) => Comment(c.text))
 }
 
 final class StashUrls(base: Uri) {
@@ -127,4 +140,7 @@ final class StashUrls(base: Uri) {
 
   def listBranch(r: Repo, branch: Branch): Uri =
     branches(r).withQueryParam("filterText", branch.name)
+
+  def comments(repo: Repo, number: PullRequestNumber): Uri =
+    pullRequest(repo, number) / "comments"
 }

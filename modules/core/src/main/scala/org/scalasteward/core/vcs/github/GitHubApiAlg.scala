@@ -57,4 +57,14 @@ final class GitHubApiAlg[F[_]](
       UpdateState(PullRequestState.Closed),
       modify(repo)
     )
+
+  /** https://developer.github.com/v3/issues#create-an-issue-comment */
+  override def commentPullRequest(
+      repo: Repo,
+      number: PullRequestNumber,
+      comment: String
+  ): F[Comment] =
+    client
+      .postWithBody(url.comments(repo, number), Comment(comment), modify(repo))
+
 }

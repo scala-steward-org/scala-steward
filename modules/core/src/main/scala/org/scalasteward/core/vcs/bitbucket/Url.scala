@@ -38,4 +38,7 @@ private[bitbucket] class Url(apiHost: Uri) {
 
   def repo(repo: Repo): Uri =
     apiHost / "repositories" / repo.owner / repo.repo
+
+  def comments(rep: Repo, number: PullRequestNumber): Uri =
+    pullRequest(rep, number) / "comments"
 }

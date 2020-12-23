@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.data
+package org.scalasteward.core.vcs.bitbucket
 
-import org.scalasteward.core.vcs.data.PullRequestNumber
+import io.circe.Codec
+import io.circe.generic.semiauto.deriveCodec
 
-sealed trait ProcessResult extends Product with Serializable
+final private[bitbucket] case class CreateComment(content: CommentContent)
+final private[bitbucket] case class CommentContent(raw: String)
 
-object ProcessResult {
-  case object Ignored extends ProcessResult
-  case object Updated extends ProcessResult
-  case class Created(prNumber: PullRequestNumber) extends ProcessResult
+private[bitbucket] object CreateComment {
+  def apply(text: String): CreateComment =
+    CreateComment(CommentContent(text))
+
+  implicit val createCommentCodec: Codec[CreateComment] = deriveCodec
+  implicit val commentContentCodec: Codec[CommentContent] = deriveCodec
 }

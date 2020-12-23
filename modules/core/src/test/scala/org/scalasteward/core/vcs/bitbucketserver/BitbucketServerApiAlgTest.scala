@@ -23,6 +23,11 @@ class BitbucketServerApiAlgTest extends FunSuite {
            |    "links": { "self": [ { "href": "http://example.org" } ] }
            |  }
            |]}""".stripMargin)
+
+    case POST -> Root / "rest" / "api" / "1.0" / "projects" / repo.owner / "repos" / repo.repo / "pull-requests" / IntVar(
+          _
+        ) / "comments" =>
+      Created("""{ "text": "Superseded by #1234" }""")
   }
 
   implicit private val client: Client[IO] = Client.fromHttpApp(routes.orNotFound)
@@ -45,5 +50,12 @@ class BitbucketServerApiAlgTest extends FunSuite {
     )
 
     assertEquals(pullRequests, expected)
+  }
+
+  test("commentPullRequest") {
+    val comment = bitbucketServerApiAlg
+      .commentPullRequest(repo, PullRequestNumber(1347), "Superseded by #1234")
+      .unsafeRunSync()
+    assertEquals(comment, Comment("Superseded by #1234"))
   }
 }

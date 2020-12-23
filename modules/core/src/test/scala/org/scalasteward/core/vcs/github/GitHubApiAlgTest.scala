@@ -71,6 +71,11 @@ class GitHubApiAlgTest extends FunSuite {
           } """
         )
 
+      case POST -> Root / "repos" / "fthomas" / "base.g8" / "issues" / IntVar(_) / "comments" =>
+        Created(json"""  {
+            "body": "Superseded by #1234"
+          } """)
+
       case req =>
         println(req.toString())
         NotFound()
@@ -130,5 +135,12 @@ class GitHubApiAlgTest extends FunSuite {
   test("closePullRequest") {
     val prOut = gitHubApiAlg.closePullRequest(repo, PullRequestNumber(1347)).unsafeRunSync()
     assertEquals(prOut.state, PullRequestState.Closed)
+  }
+
+  test("commentPullRequest") {
+    val comment = gitHubApiAlg
+      .commentPullRequest(repo, PullRequestNumber(1347), "Superseded by #1234")
+      .unsafeRunSync()
+    assertEquals(comment, Comment("Superseded by #1234"))
   }
 }

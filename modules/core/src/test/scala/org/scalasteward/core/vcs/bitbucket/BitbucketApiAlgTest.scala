@@ -137,6 +137,13 @@ class BitbucketApiAlgTest extends FunSuite {
             }
         }"""
       )
+    case POST -> Root / "repositories" / "fthomas" / "base.g8" / "pullrequests" /
+        IntVar(_) / "comments" =>
+      Created(json"""{
+                  "content": { 
+                      "raw": "Superseded by #1234"
+                  } 
+          }""")
   }
 
   implicit val client: Client[IO] = Client.fromHttpApp(routes.orNotFound)
@@ -218,5 +225,12 @@ class BitbucketApiAlgTest extends FunSuite {
   test("closePullRequest") {
     val pr = bitbucketApiAlg.closePullRequest(repo, PullRequestNumber(1)).unsafeRunSync()
     assertEquals(pr, pr.copy(state = PullRequestState.Closed))
+  }
+
+  test("commentPullRequest") {
+    val comment = bitbucketApiAlg
+      .commentPullRequest(repo, PullRequestNumber(1), "Superseded by #1234")
+      .unsafeRunSync()
+    assertEquals(comment, Comment("Superseded by #1234"))
   }
 }

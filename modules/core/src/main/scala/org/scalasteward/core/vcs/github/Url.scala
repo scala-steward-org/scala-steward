@@ -41,4 +41,7 @@ class Url(apiHost: Uri) {
 
   def repos(repo: Repo): Uri =
     apiHost / "repos" / repo.owner / repo.repo
+
+  def comments(repo: Repo, number: PullRequestNumber): Uri =
+    repos(repo) / "issues" / number.toString / "comments"
 }

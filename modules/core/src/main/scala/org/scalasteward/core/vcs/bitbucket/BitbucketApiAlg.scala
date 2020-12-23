@@ -25,6 +25,7 @@ import org.scalasteward.core.vcs.VCSApiAlg
 import org.scalasteward.core.vcs.bitbucket.json._
 import org.scalasteward.core.vcs.data._
 
+/** https://developer.atlassian.com/bitbucket/api/2/reference/ */
 class BitbucketApiAlg[F[_]](
     bitbucketApiHost: Uri,
     user: AuthenticatedUser,
@@ -94,4 +95,17 @@ class BitbucketApiAlg[F[_]](
       UpdateState(PullRequestState.Closed),
       modify(repo)
     )
+
+  override def commentPullRequest(
+      repo: Repo,
+      number: PullRequestNumber,
+      comment: String
+  ): F[Comment] =
+    client
+      .postWithBody[CreateComment, CreateComment](
+        url.comments(repo, number),
+        CreateComment(comment),
+        modify(repo)
+      )
+      .map((cc: CreateComment) => Comment(cc.content.raw))
 }

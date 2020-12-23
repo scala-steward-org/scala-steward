@@ -25,7 +25,7 @@ import io.chrisdavenport.log4cats.Logger
 import org.http4s.Uri
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.coursier.CoursierAlg
-import org.scalasteward.core.data.ProcessResult.{Ignored, Updated}
+import org.scalasteward.core.data.ProcessResult.{Created, Ignored, Updated}
 import org.scalasteward.core.data.{ProcessResult, Scope, Update}
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Branch, Commit, GitAlg}
@@ -83,9 +83,12 @@ final class NurtureAlg[F[_]](config: Config)(implicit
         update => {
           val updateData =
             UpdateData(repo, fork, repoConfig, update, baseBranch, baseSha1, git.branchFor(update))
-          processUpdate(updateData).flatMap {
-            case result @ Updated => closeObsoletePullRequests(updateData).as(result)
-            case result @ Ignored => F.pure(result)
+          processUpdate(updateData).flatMap { p =>
+            p match {
+              case Created(newPrNumber) => closeObsoletePullRequests(updateData, newPrNumber)
+              case _                    => ()
+            }
+            F.pure(p)
           }
         },
         repoConfig.updates.limit
@@ -117,11 +120,16 @@ final class NurtureAlg[F[_]](config: Config)(implicit
       }
     } yield result
 
-  def closeObsoletePullRequests(data: UpdateData): F[Unit] = {
+  def closeObsoletePullRequests(data: UpdateData, newPrNumber: PullRequestNumber): F[Unit] = {
     def close(number: PullRequestNumber, repo: Repo, update: Update, url: Uri): F[Unit] =
       for {
+        _ <- vcsApiAlg.commentPullRequest(
+          repo,
+          number,
+          s"Superseded by #${newPrNumber.value}."
+        )
         _ <- vcsApiAlg.closePullRequest(repo, number)
-        _ <- logger.info(s"Closed a PR @ ${url.renderString} for ${update.show}")
+        _ <- logger.info(s"Closed a PR @ ${url.renderString} for ${update.show} $newPrNumber")
         _ <- pullRequestRepository.changeState(repo, url, PullRequestState.Closed)
       } yield ()
 
@@ -144,7 +152,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
         editCommits <- editAlg.applyUpdate(data.repo, data.repoConfig, data.update)
         result <-
           if (editCommits.isEmpty) logger.warn("No commits created").as(Ignored)
-          else pushCommits(data, editCommits) >> createPullRequest(data).as(Updated)
+          else pushCommits(data, editCommits) >> createPullRequest(data)
       } yield result
     }
 
@@ -156,7 +164,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
         _ <- gitAlg.push(data.repo, data.updateBranch)
       } yield Updated
 
-  def createPullRequest(data: UpdateData): F[Unit] =
+  def createPullRequest(data: UpdateData): F[ProcessResult] =
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
       dependenciesWithNextVersion =
@@ -190,7 +198,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
         pr.number
       )
       _ <- logger.info(s"Created PR ${pr.html_url}")
-    } yield ()
+    } yield Created(pr.number)
 
   def updatePullRequest(data: UpdateData): F[ProcessResult] =
     if (data.repoConfig.updatePullRequestsOrDefault =!= PullRequestUpdateStrategy.Never)
@@ -248,8 +256,9 @@ object NurtureAlg {
           .emits(updates)
           .evalMap(updateF)
           .through(util.takeUntil(0, limit.value) {
-            case Ignored => 0
-            case Updated => 1
+            case Ignored    => 0
+            case Updated    => 1
+            case Created(_) => 1
           })
           .compile
           .drain

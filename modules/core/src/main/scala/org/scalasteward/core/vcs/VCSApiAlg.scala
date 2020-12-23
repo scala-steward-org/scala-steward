@@ -34,6 +34,8 @@ trait VCSApiAlg[F[_]] {
 
   def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]]
 
+  def commentPullRequest(repo: Repo, number: PullRequestNumber, comment: String): F[Comment]
+
   final def createForkOrGetRepo(repo: Repo, doNotFork: Boolean): F[RepoOut] =
     if (doNotFork) getRepo(repo) else createFork(repo)
 

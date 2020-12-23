@@ -49,4 +49,7 @@ class Url(apiHost: Uri) {
 
   def repos(repo: Repo): Uri =
     apiHost / "projects" / s"${repo.owner}/${repo.repo}"
+
+  def comments(repo: Repo, number: PullRequestNumber): Uri =
+    existingMergeRequest(repo, number) / "notes"
 }

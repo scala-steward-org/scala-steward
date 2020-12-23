@@ -64,6 +64,11 @@ class GitLabApiAlgTest extends FunSuite {
           )
         )
 
+      case POST -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "notes" =>
+        Ok(json"""  {
+            "body": "Superseded by #1234"
+          } """)
+
       case req =>
         println(req.toString())
         NotFound()
@@ -203,6 +208,13 @@ class GitLabApiAlgTest extends FunSuite {
     )
 
     assertEquals(prOut, expected)
+  }
+
+  test("commentPullRequest") {
+    val comment = gitlabApiAlg
+      .commentPullRequest(Repo("foo", "bar"), PullRequestNumber(150), "Superseded by #1234")
+      .unsafeRunSync()
+    assertEquals(comment, Comment("Superseded by #1234"))
   }
 
   val getMr = json"""

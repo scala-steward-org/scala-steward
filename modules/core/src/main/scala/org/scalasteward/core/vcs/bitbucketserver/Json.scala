@@ -67,6 +67,8 @@ object Json {
 
   case class Branch(id: String, latestCommit: Sha1)
 
+  case class Comment(text: String)
+
   implicit def pageDecode[A: Decoder]: Decoder[Page[A]] = deriveDecoder
   implicit val repoDecode: Decoder[Repo] = deriveDecoder
   implicit val projectDecode: Decoder[Project] = deriveDecoder
@@ -79,6 +81,7 @@ object Json {
   implicit val conditionDecoder: Decoder[Condition] = deriveDecoder
   implicit val branchDecoder: Decoder[Branch] = deriveDecoder
   implicit val branchesDecoder: Decoder[Branches] = deriveDecoder
+  implicit val commentDecoder: Decoder[Comment] = deriveDecoder
 
   implicit val encodeNewPR: Encoder[NewPR] = deriveEncoder
   implicit val encodeRef: Encoder[Ref] = deriveEncoder
@@ -86,4 +89,5 @@ object Json {
   implicit val encodeProject: Encoder[Project] = deriveEncoder
   implicit val encodeReviewer: Encoder[Reviewer] = deriveEncoder
   implicit val encodeUser: Encoder[User] = deriveEncoder
+  implicit val encodeComment: Encoder[Comment] = deriveEncoder
 }
