@@ -24,8 +24,8 @@ import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.persistence.KeyValueStore
 import org.scalasteward.core.update.UpdateAlg
 import org.scalasteward.core.util.{DateTimeAlg, Timestamp}
-import org.scalasteward.core.vcs.data.{PullRequestNumber, PullRequestState, Repo}
 import org.scalasteward.core.vcs
+import org.scalasteward.core.vcs.data.{PullRequestNumber, PullRequestState, Repo}
 
 final class PullRequestRepository[F[_]](
     kvStore: KeyValueStore[F, Repo, Map[Uri, PullRequestData]]
@@ -82,18 +82,18 @@ final class PullRequestRepository[F[_]](
       }.flatten.toList
     }
 
-  def findPullRequest(
+  def findLatestPullRequest(
       repo: Repo,
       crossDependency: CrossDependency,
       newVersion: String
   ): F[Option[(Uri, Sha1, PullRequestState)]] =
     kvStore.getOrElse(repo, Map.empty).map {
-      _.collectFirst {
-        case (url, data)
-            if UpdateAlg.isUpdateFor(data.update, crossDependency) &&
-              data.update.nextVersion === newVersion =>
-          (url, data.baseSha1, data.state)
+      _.filter { case (_, data) =>
+        UpdateAlg.isUpdateFor(data.update, crossDependency) &&
+          data.update.nextVersion === newVersion
       }
+        .maxByOption { case (_, data) => data.entryCreatedAt.millis }
+        .map { case (url, data) => (url, data.baseSha1, data.state) }
     }
 
   def lastPullRequestCreatedAt(repo: Repo): F[Option[Timestamp]] =

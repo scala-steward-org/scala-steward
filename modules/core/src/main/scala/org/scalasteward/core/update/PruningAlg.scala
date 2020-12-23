@@ -115,7 +115,7 @@ final class PruningAlg[F[_]](implicit
     updates.find(UpdateAlg.isUpdateFor(_, crossDependency)) match {
       case None => F.pure(DependencyUpToDate(crossDependency))
       case Some(update) =>
-        pullRequestRepository.findPullRequest(repo, crossDependency, update.nextVersion).map {
+        pullRequestRepository.findLatestPullRequest(repo, crossDependency, update.nextVersion).map {
           case None =>
             DependencyOutdated(crossDependency, update)
           case Some((uri, _, Closed)) =>
