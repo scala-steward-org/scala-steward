@@ -1,5 +1,6 @@
 package org.scalasteward.core.persistence
 
+import cats.syntax.all._
 import munit.FunSuite
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.{MockEff, MockState}
@@ -34,10 +35,10 @@ class JsonKeyValueStoreTest extends FunSuite {
     assertEquals(state, expected)
   }
 
-  test("modify") {
+  test("modifyF") {
     val kvStore = new JsonKeyValueStore[MockEff, String, String]("test", "0")
     val p = for {
-      _ <- kvStore.modify("k1")(_ => Some("v0"))
+      _ <- kvStore.modifyF("k1")(_ => Option("v0").pure[MockEff])
       v1 <- kvStore.get("k1")
     } yield v1
     assertEquals(p.runA(MockState.empty).unsafeRunSync(), Some("v0"))

@@ -17,7 +17,7 @@
 package org.scalasteward.core.persistence
 
 import cats.syntax.all._
-import cats.{FlatMap, Functor, Monad}
+import cats.{FlatMap, Functor}
 
 trait KeyValueStore[F[_], K, V] {
   def get(key: K): F[Option[V]]
@@ -26,9 +26,6 @@ trait KeyValueStore[F[_], K, V] {
 
   final def getOrElse(key: K, default: => V)(implicit F: Functor[F]): F[V] =
     get(key).map(_.getOrElse(default))
-
-  final def modify(key: K)(f: Option[V] => Option[V])(implicit F: Monad[F]): F[Option[V]] =
-    modifyF(key)(f.andThen(F.pure))
 
   final def modifyF(key: K)(f: Option[V] => F[Option[V]])(implicit F: FlatMap[F]): F[Option[V]] =
     get(key).flatMap(maybeValue => f(maybeValue).flatTap(set(key, _)))
