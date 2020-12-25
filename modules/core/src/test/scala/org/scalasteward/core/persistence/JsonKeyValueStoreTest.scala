@@ -34,10 +34,10 @@ class JsonKeyValueStoreTest extends FunSuite {
     assertEquals(state, expected)
   }
 
-  test("update") {
+  test("modify") {
     val kvStore = new JsonKeyValueStore[MockEff, String, String]("test", "0")
     val p = for {
-      _ <- kvStore.update("k1")(_.fold("v0")(_ + "v1"))
+      _ <- kvStore.modify("k1")(_ => Some("v0"))
       v1 <- kvStore.get("k1")
     } yield v1
     assertEquals(p.runA(MockState.empty).unsafeRunSync(), Some("v0"))
