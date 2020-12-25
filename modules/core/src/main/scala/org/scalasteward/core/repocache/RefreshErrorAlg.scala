@@ -31,12 +31,13 @@ final class RefreshErrorAlg[F[_]](kvStore: KeyValueStore[F, Repo, Entry])(implic
     F: Monad[F]
 ) {
   def failedRecently(repo: Repo): F[Boolean] =
-    dateTimeAlg.currentTimestamp.flatMap { now =>
-      val maybeEntry = kvStore.modify(repo) {
-        case Some(entry) if entry.hasExpired(now) => None
-        case res                                  => res
-      }
-      maybeEntry.map(_.isDefined)
+    kvStore.get(repo).flatMap {
+      case None => F.pure(false)
+      case Some(entry) =>
+        dateTimeAlg.currentTimestamp.flatMap { now =>
+          if (entry.hasExpired(now)) kvStore.set(repo, None).as(false)
+          else F.pure(true)
+        }
     }
 
   def persistError(repo: Repo, throwable: Throwable): F[Unit] =
