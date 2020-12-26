@@ -52,7 +52,12 @@ final class JsonKeyValueStore[F[_], K, V](
     }
 
   override def set(key: K, value: Option[V]): F[Unit] =
-    jsonFile(key).flatMap(fileAlg.writeFile(_, value.asJson.toString))
+    jsonFile(key).flatMap { file =>
+      value match {
+        case Some(v) => fileAlg.writeFile(file, v.asJson.toString)
+        case None    => fileAlg.deleteForce(file)
+      }
+    }
 
   private def jsonFile(key: K): F[File] = {
     val keyPath = maybePrefix.fold("")(_ + "/") + keyEncoder(key)
