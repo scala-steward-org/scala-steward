@@ -19,7 +19,7 @@ class JsonKeyValueStoreTest extends FunSuite {
     val k1File = config.workspace / "store" / "test" / "v0" / "k1" / "test.json"
     val k2File = config.workspace / "store" / "test" / "v0" / "k2" / "test.json"
     val k3File = config.workspace / "store" / "test" / "v0" / "k3" / "test.json"
-    assertEquals(value, (Some("v1") -> None))
+    assertEquals(value, Some("v1") -> None)
     val expected = MockState.empty.copy(
       commands = Vector(
         List("write", k1File.toString),
@@ -35,12 +35,25 @@ class JsonKeyValueStoreTest extends FunSuite {
     assertEquals(state, expected)
   }
 
-  test("modifyF") {
+  test("modifyF, get, set") {
     val kvStore = new JsonKeyValueStore[MockEff, String, String]("test", "0")
     val p = for {
       _ <- kvStore.modifyF("k1")(_ => Option("v0").pure[MockEff])
       v1 <- kvStore.get("k1")
+      _ <- kvStore.set("k1", None)
     } yield v1
-    assertEquals(p.runA(MockState.empty).unsafeRunSync(), Some("v0"))
+    val (state, value) = p.run(MockState.empty).unsafeRunSync()
+    assertEquals(value, Some("v0"))
+
+    val k1File = config.workspace / "store" / "test" / "v0" / "k1" / "test.json"
+    val expected = MockState.empty.copy(
+      commands = Vector(
+        List("read", k1File.toString),
+        List("write", k1File.toString),
+        List("read", k1File.toString),
+        List("rm", "-rf", k1File.toString)
+      )
+    )
+    assertEquals(state, expected)
   }
 }
