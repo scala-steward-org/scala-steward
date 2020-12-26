@@ -127,6 +127,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
           s"Superseded by ${vcsApiAlg.referencePullRequest(newPrNumber)}."
         )
         _ <- vcsApiAlg.closePullRequest(repo, number)
+        _ <- gitAlg.removeBranch(repo, git.branchFor(update))
         _ <- logger.info(s"Closed a PR @ ${url.renderString} for ${update.show} $newPrNumber")
         _ <- pullRequestRepository.changeState(repo, url, PullRequestState.Closed)
       } yield ()

@@ -58,6 +58,11 @@ final class FileGitAlg[F[_]](config: Config)(implicit
   override def createBranch(repo: File, branch: Branch): F[Unit] =
     git("checkout", "-b", branch.name)(repo).void
 
+  override def removeBranch(repo: File, branch: Branch): F[Unit] = {
+    git("branch", "-D", branch.name)(repo).void
+    git("push", "origin", "--delete", branch.name)(repo).void
+  }
+
   override def currentBranch(repo: File): F[Branch] =
     git("rev-parse", "--abbrev-ref", Branch.head.name)(repo)
       .map(lines => Branch(lines.mkString.trim))
