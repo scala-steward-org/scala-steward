@@ -41,27 +41,21 @@ final class JsonKeyValueStore[F[_], K, V](
   override def get(key: K): F[Option[V]] =
     jsonFile(key).flatMap { file =>
       fileAlg.readFile(file).flatMap {
+        case None => F.pure(Option.empty[V])
         case Some(content) =>
           decode[Option[V]](content) match {
             case Right(maybeValue) => F.pure(maybeValue)
             case Left(error) =>
               logger.error(error)(s"Failed to parse or decode JSON from $file").as(Option.empty[V])
           }
-        case None => F.pure(Option.empty[V])
       }
     }
 
-  override def put(key: K, value: V): F[Unit] =
-    write(key, Some(value))
-
-  override def modifyF(key: K)(f: Option[V] => F[Option[V]]): F[Option[V]] =
-    get(key).flatMap(maybeValue => f(maybeValue).flatTap(write(key, _)))
+  override def set(key: K, value: Option[V]): F[Unit] =
+    jsonFile(key).flatMap(fileAlg.writeFile(_, value.asJson.toString))
 
   private def jsonFile(key: K): F[File] = {
     val keyPath = maybePrefix.fold("")(_ + "/") + keyEncoder(key)
     workspaceAlg.rootDir.map(_ / "store" / name / s"v$schemaVersion" / keyPath / s"$name.json")
   }
-
-  private def write(key: K, value: Option[V]): F[Unit] =
-    jsonFile(key).flatMap(fileAlg.writeFile(_, value.asJson.toString))
 }
