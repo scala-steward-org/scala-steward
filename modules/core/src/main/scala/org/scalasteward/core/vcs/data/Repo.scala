@@ -16,6 +16,7 @@
 
 package org.scalasteward.core.vcs.data
 
+import cats.Eq
 import io.circe.{KeyDecoder, KeyEncoder}
 
 final case class Repo(
@@ -26,6 +27,9 @@ final case class Repo(
 }
 
 object Repo {
+  implicit val repoEq: Eq[Repo] =
+    Eq.fromUniversalEquals
+
   implicit val repoKeyDecoder: KeyDecoder[Repo] = {
     val / = s"(.+)/([^/]+)".r
     KeyDecoder.instance {

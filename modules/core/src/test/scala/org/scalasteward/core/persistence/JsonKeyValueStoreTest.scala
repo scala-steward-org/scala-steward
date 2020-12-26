@@ -56,4 +56,23 @@ class JsonKeyValueStoreTest extends FunSuite {
     )
     assertEquals(state, expected)
   }
+
+  test("cached") {
+    val p = for {
+      kvStore <- CachingKeyValueStore.wrap(
+        new JsonKeyValueStore[MockEff, String, String]("test", "0")
+      )
+      _ <- kvStore.put("k1", "v1")
+      v1 <- kvStore.get("k1")
+    } yield v1
+    val (state, value) = p.run(MockState.empty).unsafeRunSync()
+    assertEquals(value, Some("v1"))
+
+    val k1File = config.workspace / "store" / "test" / "v0" / "k1" / "test.json"
+    val expected = MockState.empty.copy(
+      commands = Vector(List("write", k1File.toString)),
+      files = Map(k1File -> """"v1"""")
+    )
+    assertEquals(state, expected)
+  }
 }
