@@ -138,6 +138,11 @@ class GitHubApiAlgTest extends FunSuite {
   }
 
   test("commentPullRequest") {
+    val reference = gitHubApiAlg.referencePullRequest(PullRequestNumber(1347))
+    assertEquals(reference, "#1347")
+  }
+
+  test("commentPullRequest") {
     val comment = gitHubApiAlg
       .commentPullRequest(repo, PullRequestNumber(1347), "Superseded by #1234")
       .unsafeRunSync()

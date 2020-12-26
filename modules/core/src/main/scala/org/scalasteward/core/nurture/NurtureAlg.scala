@@ -83,12 +83,10 @@ final class NurtureAlg[F[_]](config: Config)(implicit
         update => {
           val updateData =
             UpdateData(repo, fork, repoConfig, update, baseBranch, baseSha1, git.branchFor(update))
-          processUpdate(updateData).flatMap { p =>
-            p match {
-              case Created(newPrNumber) => closeObsoletePullRequests(updateData, newPrNumber)
-              case _                    => ()
-            }
-            F.pure(p)
+          processUpdate(updateData).flatMap {
+            case result @ Created(newPrNumber) =>
+              closeObsoletePullRequests(updateData, newPrNumber).as[ProcessResult](result)
+            case result @ _ => F.pure(result)
           }
         },
         repoConfig.updates.limit
@@ -126,7 +124,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
         _ <- vcsApiAlg.commentPullRequest(
           repo,
           number,
-          s"Superseded by #${newPrNumber.value}."
+          s"Superseded by ${vcsApiAlg.referencePullRequest(newPrNumber)}."
         )
         _ <- vcsApiAlg.closePullRequest(repo, number)
         _ <- logger.info(s"Closed a PR @ ${url.renderString} for ${update.show} $newPrNumber")

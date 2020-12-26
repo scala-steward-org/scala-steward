@@ -218,6 +218,9 @@ class GitLabApiAlg[F[_]](
   def getRepo(repo: Repo): F[RepoOut] =
     client.get(url.repos(repo), modify(repo))
 
+  override def referencePullRequest(number: PullRequestNumber): String =
+    s"!${number.value}"
+
   // https://docs.gitlab.com/ee/api/notes.html#create-new-merge-request-note
   override def commentPullRequest(
       repo: Repo,

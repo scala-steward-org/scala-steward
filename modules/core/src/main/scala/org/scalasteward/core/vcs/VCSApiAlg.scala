@@ -34,6 +34,9 @@ trait VCSApiAlg[F[_]] {
 
   def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]]
 
+  def referencePullRequest(number: PullRequestNumber): String =
+    s"#${number.value}"
+
   def commentPullRequest(repo: Repo, number: PullRequestNumber, comment: String): F[Comment]
 
   final def createForkOrGetRepo(repo: Repo, doNotFork: Boolean): F[RepoOut] =
