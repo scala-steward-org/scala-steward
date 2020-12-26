@@ -15,11 +15,11 @@ class JsonKeyValueStoreTest extends FunSuite {
       v3 <- kvStore.get("k3")
     } yield (v1, v3)
     val (state, value) = p.run(MockState.empty).unsafeRunSync()
+    assertEquals(value, (Some("v1"), None))
 
     val k1File = config.workspace / "store" / "test" / "v0" / "k1" / "test.json"
     val k2File = config.workspace / "store" / "test" / "v0" / "k2" / "test.json"
     val k3File = config.workspace / "store" / "test" / "v0" / "k3" / "test.json"
-    assertEquals(value, Some("v1") -> None)
     val expected = MockState.empty.copy(
       commands = Vector(
         List("write", k1File.toString),
