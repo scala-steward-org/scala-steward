@@ -21,6 +21,7 @@ import cats.effect._
 import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import org.http4s.Uri
 import org.http4s.client.Client
 import org.http4s.client.okhttp.OkHttpBuilder
 import org.scalasteward.core.buildtool.BuildToolDispatcher
@@ -32,8 +33,8 @@ import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.edit.hooks.HookExecutor
 import org.scalasteward.core.git.{GenGitAlg, GitAlg}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository}
-import org.scalasteward.core.persistence.JsonKeyValueStore
+import org.scalasteward.core.nurture.{NurtureAlg, PullRequestData, PullRequestRepository}
+import org.scalasteward.core.persistence.{CachingKeyValueStore, JsonKeyValueStore}
 import org.scalasteward.core.repocache.{RefreshErrorAlg, RepoCacheAlg, RepoCacheRepository}
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.scalafix.{MigrationAlg, MigrationsLoader}
@@ -41,7 +42,7 @@ import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.{ArtifactMigrations, FilterAlg, PruningAlg, UpdateAlg}
 import org.scalasteward.core.util._
 import org.scalasteward.core.util.uri._
-import org.scalasteward.core.vcs.data.AuthenticatedUser
+import org.scalasteward.core.vcs.data.{AuthenticatedUser, Repo}
 import org.scalasteward.core.vcs.github.{GitHubAppApiAlg, GitHubAuthAlg}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg, VCSSelection}
 
@@ -63,11 +64,16 @@ object Context {
         Resource.liftF(new MigrationsLoader[F].loadAll(config.scalafixCfg).map(new MigrationAlg(_)))
       implicit0(artifactMigration: ArtifactMigrations) <-
         Resource.liftF(ArtifactMigrations.create[F](config))
+      implicit0(workspaceAlg: WorkspaceAlg[F]) = WorkspaceAlg.create[F](config)
+      kvsPrefix = Some(config.vcsType.asString)
+      pullRequestsStore <- Resource.liftF(
+        CachingKeyValueStore.wrap(
+          new JsonKeyValueStore[F, Repo, Map[Uri, PullRequestData]]("pull_requests", "2", kvsPrefix)
+        )
+      )
     } yield {
-      val kvsPrefix = Some(config.vcsType.asString)
       implicit val dateTimeAlg: DateTimeAlg[F] = DateTimeAlg.create[F]
       implicit val processAlg: ProcessAlg[F] = ProcessAlg.create[F](blocker, config.processCfg)
-      implicit val workspaceAlg: WorkspaceAlg[F] = WorkspaceAlg.create[F](config)
       implicit val repoConfigAlg: RepoConfigAlg[F] = new RepoConfigAlg[F](config)
       implicit val filterAlg: FilterAlg[F] = new FilterAlg[F]
       implicit val gitAlg: GitAlg[F] = GenGitAlg.create[F](config)
@@ -81,7 +87,7 @@ object Context {
       implicit val vcsRepoAlg: VCSRepoAlg[F] = new VCSRepoAlg[F](config)
       implicit val vcsExtraAlg: VCSExtraAlg[F] = VCSExtraAlg.create[F](config)
       implicit val pullRequestRepository: PullRequestRepository[F] =
-        new PullRequestRepository[F](new JsonKeyValueStore("pull_requests", "2", kvsPrefix))
+        new PullRequestRepository[F](pullRequestsStore)
       implicit val scalafmtAlg: ScalafmtAlg[F] = ScalafmtAlg.create[F]
       implicit val selfCheckAlg: SelfCheckAlg[F] = new SelfCheckAlg[F]
       implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create[F]
