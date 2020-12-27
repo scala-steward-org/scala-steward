@@ -59,10 +59,7 @@ final class FileGitAlg[F[_]](config: Config)(implicit
     git("checkout", "-b", branch.name)(repo).void
 
   override def removeBranch(repo: File, branch: Branch): F[Unit] =
-    for {
-      _ <- git("branch", "-D", branch.name)(repo).void
-      _ <- git("push", "origin", "--delete", branch.name)(repo).void
-    } yield ()
+    git("push", "origin", "--delete", branch.name)(repo).void
 
   override def currentBranch(repo: File): F[Branch] =
     git("rev-parse", "--abbrev-ref", Branch.head.name)(repo)
