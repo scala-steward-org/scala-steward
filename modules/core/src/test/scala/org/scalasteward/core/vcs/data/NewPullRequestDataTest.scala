@@ -180,4 +180,35 @@ class NewPullRequestDataTest extends FunSuite {
       "scalafix-rule-update"
     )
   }
+
+  test("oldVersionNote without files") {
+    val files = List.empty
+    val update = Update.Single("com.example" % "foo" % "0.1", Nel.of("0.2"))
+
+    assertEquals(NewPullRequestData.oldVersionNote(files, update), (None, None))
+  }
+
+  test("oldVersionNote with files") {
+    val files = List("Readme.md", "travis.yml")
+    val update = Update.Single("com.example" % "foo" % "0.1", Nel.of("0.2"))
+
+    val (label, note) = NewPullRequestData.oldVersionNote(files, update)
+
+    assertEquals(label, Some("old-version-remains"))
+    assertEquals(
+      note.fold("")(_.toHtml),
+      """<details>
+        |<summary>Files still referring to the old version number</summary>
+        |
+        |The following files still refer to the old version number (0.2).
+        |You might want to review and update them manually.
+        |```
+        |Readme.md
+        |travis.yml
+        |```
+        |
+        |</details>
+      """.stripMargin.trim
+    )
+  }
 }
