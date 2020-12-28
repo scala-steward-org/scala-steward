@@ -100,7 +100,8 @@ final class NurtureAlg[F[_]](config: Config)(implicit
       pullRequests <- vcsApiAlg.listPullRequests(data.repo, head, data.baseBranch)
       result <- pullRequests.headOption match {
         case Some(pr) if pr.isClosed =>
-          logger.info(s"PR ${pr.html_url} is closed") >> F.pure[ProcessResult](Ignored)
+          logger.info(s"PR ${pr.html_url} is closed") >>
+            gitAlg.removeBranch(data.repo, data.updateBranch).as(Ignored)
         case Some(pr) =>
           logger.info(s"Found PR ${pr.html_url}") >> updatePullRequest(data)
         case None =>
