@@ -143,7 +143,7 @@ object NewPullRequestData {
         Some(
           Details(
             "Files still referring to the old version number",
-            s"""The following files still refer to the old version number (${update.nextVersion}).
+            s"""The following files still refer to the old version number (${update.currentVersion}).
                |You might want to review and update them manually.
                |```
                |${files.mkString("\n")}
