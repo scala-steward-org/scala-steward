@@ -200,7 +200,7 @@ class NewPullRequestDataTest extends FunSuite {
       """<details>
         |<summary>Files still referring to the old version number</summary>
         |
-        |The following files still refer to the old version number (0.2).
+        |The following files still refer to the old version number (0.1).
         |You might want to review and update them manually.
         |```
         |Readme.md
