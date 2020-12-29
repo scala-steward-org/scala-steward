@@ -79,7 +79,7 @@ final class PullRequestRepository[F[_]](
               Version(data.update.nextVersion) < Version(update.nextVersion) &&
               data.state === PullRequestState.Open =>
           data.number.orElse(vcs.extractPullRequestNumberFrom(url)).map((_, url, data.update))
-      }.flatten.toList
+      }.flatten.toList.sortBy { case (number, _, _) => number.value }
     }
 
   def findLatestPullRequest(
