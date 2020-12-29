@@ -26,7 +26,7 @@ import org.scalasteward.core.git.Branch
 import org.scalasteward.core.nurture.UpdateData
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.scalafix.Migration
-import org.scalasteward.core.util.{Details, Nel}
+import org.scalasteward.core.util.Details
 
 final case class UpdateState(
     state: PullRequestState
@@ -56,17 +56,17 @@ object NewPullRequestData {
     val artifacts = artifactsWithOptionalUrl(update, artifactIdToUrl)
     val (migrationLabel, appliedMigrations) = migrationNote(migrations)
     val (oldVersionLabel, oldVersionDetails) = oldVersionNote(filesWithOldVersion, update)
-    val details = ignoreFutureUpdates(update) :: appliedMigrations.toList
-    val labels = Nel.fromList(
-      List(updateType(update)) ++
-        semVerLabel(update).toList ++
-        migrationLabel.toList ++
-        oldVersionLabel.toList
-    )
+    val details = appliedMigrations.toList ++
+      oldVersionDetails.toList ++
+      List(ignoreFutureUpdates(update))
+    val labels = List(updateType(update)) ++
+      semVerLabel(update).toList ++
+      migrationLabel.toList ++
+      oldVersionLabel.toList
 
     s"""|Updates $artifacts ${fromTo(update)}.
         |${releaseNote(releaseRelatedUrls).getOrElse("")}
-        |${oldVersionDetails.map(_.toHtml).getOrElse("")}
+        |
         |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
         |
         |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.
@@ -77,7 +77,7 @@ object NewPullRequestData {
         |
         |${details.map(_.toHtml).mkString("\n")}
         |
-        |${labels.fold("")(_.mkString_("labels: ", ", ", ""))}
+        |${labels.mkString("labels: ", ", ", "")}
         |""".stripMargin.trim
   }
 
@@ -148,7 +148,7 @@ object NewPullRequestData {
                |```
                |${files.mkString("\n")}
                |```
-               |""".stripMargin
+               |""".stripMargin.trim
           )
         )
       )
