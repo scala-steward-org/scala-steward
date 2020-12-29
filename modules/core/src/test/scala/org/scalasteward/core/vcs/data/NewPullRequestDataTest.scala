@@ -206,7 +206,6 @@ class NewPullRequestDataTest extends FunSuite {
         |Readme.md
         |travis.yml
         |```
-        |
         |</details>
       """.stripMargin.trim
     )
