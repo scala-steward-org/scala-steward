@@ -39,7 +39,7 @@ final class VCSRepoAlg[F[_]](config: Config)(implicit
         else logger.info(s"Clone and synchronize ${repo.show}")
       _ <- clone(repo, repoOut)
       _ <- syncFork(repo, repoOut)
-      _ <- logger.attemptLogWarn("Initializing and cloning submodules failed") {
+      _ <- logger.attemptLogWarn_("Initializing and cloning submodules failed") {
         gitAlg.initSubmodules(repo)
       }
     } yield ()

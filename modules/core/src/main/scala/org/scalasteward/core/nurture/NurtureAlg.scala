@@ -33,10 +33,10 @@ import org.scalasteward.core.repocache.RepoCacheRepository
 import org.scalasteward.core.repoconfig.{PullRequestUpdateStrategy, RepoConfigAlg}
 import org.scalasteward.core.scalafix.MigrationAlg
 import org.scalasteward.core.util.HttpExistenceClient
+import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data._
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg}
 import org.scalasteward.core.{git, util, vcs}
-import scala.util.control.NonFatal
 
 final class NurtureAlg[F[_]](config: Config)(implicit
     coursierAlg: CoursierAlg[F],
@@ -101,7 +101,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
       result <- pullRequests.headOption match {
         case Some(pr) if pr.isClosed =>
           logger.info(s"PR ${pr.html_url} is closed") >>
-            gitAlg.removeBranch(data.repo, data.updateBranch).as(Ignored)
+            removeRemoteBranch(data.repo, data.updateBranch).as(Ignored)
         case Some(pr) =>
           logger.info(s"Found PR ${pr.html_url}") >> updatePullRequest(data)
         case None =>
@@ -119,30 +119,35 @@ final class NurtureAlg[F[_]](config: Config)(implicit
       }
     } yield result
 
-  def closeObsoletePullRequests(data: UpdateData, newPrNumber: PullRequestNumber): F[Unit] = {
-    def close(number: PullRequestNumber, repo: Repo, update: Update, url: Uri): F[Unit] =
-      for {
-        _ <- vcsApiAlg.commentPullRequest(
-          repo,
-          number,
-          s"Superseded by ${vcsApiAlg.referencePullRequest(newPrNumber)}."
-        )
-        _ <- vcsApiAlg.closePullRequest(repo, number)
-        _ <- gitAlg.removeBranch(repo, git.branchFor(update))
-        _ <- logger.info(s"Closed a PR @ ${url.renderString} for ${update.show} $newPrNumber")
-        _ <- pullRequestRepository.changeState(repo, url, PullRequestState.Closed)
-      } yield ()
-
-    for {
-      _ <- logger.info(s"Looking to close obsolete PRs for ${data.update.name}")
-      prsToClose <- pullRequestRepository.getObsoleteOpenPullRequests(data.repo, data.update)
-      _ <- prsToClose.traverse { case (number, url, update) =>
-        close(number, data.repo, update, url).handleErrorWith { case NonFatal(ex) =>
-          logger.warn(ex)(s"Failed to close obsolete PR #$number for ${data.updateBranch.name}")
-        }
+  def closeObsoletePullRequests(data: UpdateData, newNumber: PullRequestNumber): F[Unit] =
+    pullRequestRepository.getObsoleteOpenPullRequests(data.repo, data.update).flatMap {
+      _.traverse_ { case (oldNumber, oldUrl, oldUpdate) =>
+        closeObsoletePullRequest(data.repo, oldUpdate, oldUrl, oldNumber, newNumber)
       }
-    } yield ()
-  }
+    }
+
+  private def closeObsoletePullRequest(
+      repo: Repo,
+      oldUpdate: Update,
+      oldUrl: Uri,
+      oldNumber: PullRequestNumber,
+      newNumber: PullRequestNumber
+  ): F[Unit] =
+    logger.attemptLogWarn_(s"Closing PR #$oldNumber failed") {
+      for {
+        _ <- logger.info(s"Closing obsolete PR ${oldUrl.renderString} for ${oldUpdate.show}")
+        comment = s"Superseded by ${vcsApiAlg.referencePullRequest(newNumber)}."
+        _ <- vcsApiAlg.commentPullRequest(repo, oldNumber, comment)
+        _ <- vcsApiAlg.closePullRequest(repo, oldNumber)
+        _ <- removeRemoteBranch(repo, git.branchFor(oldUpdate))
+        _ <- pullRequestRepository.changeState(repo, oldUrl, PullRequestState.Closed)
+      } yield ()
+    }
+
+  private def removeRemoteBranch(repo: Repo, branch: Branch): F[Unit] =
+    logger.attemptLogWarn_(s"Removing remote branch ${branch.name} failed") {
+      gitAlg.removeBranch(repo, branch)
+    }
 
   def applyNewUpdate(data: UpdateData): F[ProcessResult] =
     gitAlg.returnToCurrentBranch(data.repo) {

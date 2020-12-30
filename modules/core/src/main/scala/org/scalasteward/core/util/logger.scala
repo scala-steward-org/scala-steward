@@ -29,10 +29,8 @@ object logger {
     ): F[Either[Throwable, A]] =
       logger.info(label) >> attemptLogError(s"${errorLabel.getOrElse(label)} failed")(fa)
 
-    def attemptLogWarn[A](message: String)(fa: F[A])(implicit
-        F: MonadThrow[F]
-    ): F[Either[Throwable, A]] =
-      attemptLogImpl(fa, logger.warn(_)(message))
+    def attemptLogWarn_[A](message: String)(fa: F[A])(implicit F: MonadThrow[F]): F[Unit] =
+      attemptLogImpl_(fa, logger.warn(_)(message))
 
     def attemptLogError[A](message: String)(fa: F[A])(implicit
         F: MonadThrow[F]
@@ -43,6 +41,11 @@ object logger {
         F: MonadThrow[F]
     ): F[Either[Throwable, A]] =
       fa.attempt.flatTap(_.fold(log, _ => F.unit))
+
+    private def attemptLogImpl_[A](fa: F[A], log: Throwable => F[Unit])(implicit
+        F: MonadThrow[F]
+    ): F[Unit] =
+      fa.attempt.flatMap(_.fold(log, _ => F.unit))
 
     def infoTimed[A](msg: FiniteDuration => String)(fa: F[A])(implicit
         dateTimeAlg: DateTimeAlg[F],
