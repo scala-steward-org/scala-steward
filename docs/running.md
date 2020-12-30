@@ -1,5 +1,7 @@
 ## Running Scala Steward
 
+A complete list of all command line arguments can be found [here](help.md).
+
 ```bash
 sbt stage
 
