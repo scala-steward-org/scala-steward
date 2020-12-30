@@ -52,7 +52,7 @@ final class HookExecutor[F[_]](implicit
     for {
       _ <- logger.info(s"Executing post-update hook for ${hook.groupId}:${hook.artifactId.name}")
       repoDir <- workspaceAlg.repoDir(repo)
-      _ <- logger.attemptLogError("Post-update hook failed") {
+      _ <- logger.attemptLogWarn("Post-update hook failed") {
         processAlg.execMaybeSandboxed(hook.useSandbox)(hook.command, repoDir)
       }
       maybeCommit <- gitAlg.commitAllIfDirty(repo, hook.commitMessage(update))
