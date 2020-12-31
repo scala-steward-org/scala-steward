@@ -16,9 +16,8 @@
 
 package org.scalasteward.core.repocache
 
-import cats.MonadThrow
-import cats.Parallel
 import cats.syntax.all._
+import cats.{MonadThrow, Parallel}
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.BuildToolDispatcher
@@ -27,7 +26,6 @@ import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.vcs.data.{Repo, RepoOut}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
-import scala.util.control.NoStackTrace
 
 final class RepoCacheAlg[F[_]](config: Config)(implicit
     buildToolDispatcher: BuildToolDispatcher[F],
@@ -42,9 +40,8 @@ final class RepoCacheAlg[F[_]](config: Config)(implicit
     F: MonadThrow[F]
 ) {
   def checkCache(repo: Repo): F[(RepoCache, RepoOut)] =
-    logger.info(s"Check cache of ${repo.show}") >> {
-      F.ifM(refreshErrorAlg.failedRecently(repo))(
-        F.raiseError(new Throwable("Skipping due to previous error") with NoStackTrace),
+    logger.info(s"Check cache of ${repo.show}") >>
+      refreshErrorAlg.skipIfFailedRecently(repo) {
         for {
           ((repoOut, branchOut), maybeCache) <- (
             vcsApiAlg.createForkOrGetRepoWithDefaultBranch(repo, config.doNotFork),
@@ -55,23 +52,17 @@ final class RepoCacheAlg[F[_]](config: Config)(implicit
             .filter(_.sha1 === latestSha1)
             .fold(cloneAndRefreshCache(repo, repoOut))(F.pure)
         } yield (cache, repoOut)
-      )
-    }
+      }
 
   private def cloneAndRefreshCache(repo: Repo, repoOut: RepoOut): F[RepoCache] =
-    for {
-      _ <- logger.info(s"Refresh cache of ${repo.show}")
-      _ <- vcsRepoAlg.cloneAndSync(repo, repoOut)
-      cache <- refreshCache(repo)
-    } yield cache
+    vcsRepoAlg.cloneAndSync(repo, repoOut) >> refreshCache(repo)
 
   private def refreshCache(repo: Repo): F[RepoCache] =
-    computeCache(repo).attempt.flatMap {
-      case Right(cache) =>
-        repoCacheRepository.updateCache(repo, cache).as(cache)
-      case Left(throwable) =>
-        refreshErrorAlg.persistError(repo, throwable) >> F.raiseError[RepoCache](throwable)
-    }
+    for {
+      _ <- logger.info(s"Refresh cache of ${repo.show}")
+      cache <- refreshErrorAlg.persistError(repo)(computeCache(repo))
+      _ <- repoCacheRepository.updateCache(repo, cache)
+    } yield cache
 
   private def computeCache(repo: Repo): F[RepoCache] =
     for {
