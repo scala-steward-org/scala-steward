@@ -7,9 +7,17 @@ import org.scalacheck.{Arbitrary, Cogen, Gen}
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.Update.Single
 import org.scalasteward.core.data.{Resolver, Scope, Update, Version}
+import org.scalasteward.core.repoconfig.PullRequestFrequency.{Asap, Timespan}
+import org.scalasteward.core.repoconfig.{
+  CommitsConfig,
+  PullRequestFrequency,
+  PullRequestsConfig,
+  ScalafmtConfig
+}
 import org.scalasteward.core.util.Change.{Changed, Unchanged}
 import org.scalasteward.core.util.{Change, Nel}
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.FiniteDuration
 
 object TestInstances {
   implicit def changeArbitrary[T](implicit arbT: Arbitrary[T]): Arbitrary[Change[T]] =
@@ -86,4 +94,24 @@ object TestInstances {
       case a: Version.Component.Alpha   => a.order.toLong
       case _                            => 0L
     }.sum)
+
+  // repoconfig instances
+
+  implicit val commitsConfigArbitrary: Arbitrary[CommitsConfig] =
+    Arbitrary(for {
+      message <- Arbitrary.arbitrary[Option[String]]
+    } yield CommitsConfig(message))
+
+  implicit val pullRequestFrequencyArbitrary: Arbitrary[PullRequestFrequency] =
+    Arbitrary(Arbitrary.arbitrary[FiniteDuration].flatMap(fd => Gen.oneOf(Asap, Timespan(fd))))
+
+  implicit val pullRequestsConfigArbitrary: Arbitrary[PullRequestsConfig] =
+    Arbitrary(for {
+      frequency <- Arbitrary.arbitrary[Option[PullRequestFrequency]]
+    } yield PullRequestsConfig(frequency))
+
+  implicit val scalafmtConfigArbitrary: Arbitrary[ScalafmtConfig] =
+    Arbitrary(for {
+      runAfterUpgrading <- Arbitrary.arbitrary[Option[Boolean]]
+    } yield ScalafmtConfig(runAfterUpgrading))
 }
