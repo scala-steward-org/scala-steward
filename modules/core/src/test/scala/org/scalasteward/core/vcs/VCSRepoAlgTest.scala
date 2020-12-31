@@ -38,7 +38,7 @@ class VCSRepoAlgTest extends FunSuite {
         envVars ++ List(repoDir, "git", "config", "user.email", "bot@example.org"),
         envVars ++ List(repoDir, "git", "config", "user.name", "Bot Doe"),
         envVars ++ List(repoDir, "git", "remote", "add", "upstream", url0),
-        envVars ++ List(repoDir, "git", "fetch", "--tags", "upstream", "master"),
+        envVars ++ List(repoDir, "git", "fetch", "--force", "--tags", "upstream", "master"),
         envVars ++ List(repoDir, "git", "checkout", "-B", "master", "--track", "upstream/master"),
         envVars ++ List(repoDir, "git", "merge", "upstream/master"),
         envVars ++ List(repoDir, "git", "push", "--force", "--set-upstream", "origin", "master"),
