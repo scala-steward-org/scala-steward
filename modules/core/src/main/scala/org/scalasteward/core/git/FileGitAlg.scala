@@ -129,7 +129,7 @@ final class FileGitAlg[F[_]](config: Config)(implicit
       branch = defaultBranch.name
       remoteBranch = s"$remote/$branch"
       _ <- git("remote", "add", remote, upstreamUrl.toString)(repo)
-      _ <- git("fetch", "--tags", remote, branch)(repo)
+      _ <- git("fetch", "--force", "--tags", remote, branch)(repo)
       _ <- git("checkout", "-B", branch, "--track", remoteBranch)(repo)
       _ <- git("merge", remoteBranch)(repo)
       _ <- push(repo, defaultBranch)
