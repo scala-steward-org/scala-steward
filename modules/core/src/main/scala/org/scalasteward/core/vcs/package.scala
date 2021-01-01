@@ -87,18 +87,13 @@ package object vcs {
   ): Option[SupportedVCS] = {
     val host = repoUrl.host.map(_.value)
     if (vcsUri.host.map(_.value).contains(host.getOrElse("")))
-      Option(vcsType)
+      Some(vcsType)
     else
-      host
-        .collect {
-          case "github.com" => GitHub
-          case "gitlab.com" => GitLab
-        }
-        .orElse {
-          if (host.contains_("bitbucket.org"))
-            Some(Bitbucket)
-          else None
-        }
+      host.collect {
+        case "github.com"    => GitHub
+        case "gitlab.com"    => GitLab
+        case "bitbucket.org" => Bitbucket
+      }
   }
 
   def possibleCompareUrls(
