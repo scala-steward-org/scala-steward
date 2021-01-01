@@ -122,8 +122,8 @@ class RepoConfigAlgTest extends FunSuite {
     val content = """updatePullRequests = foo """
     val config = RepoConfigAlg.parseRepoConfig(content)
     assertEquals(
-      config,
-      Right(RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.default)))
+      config.map(_.updatePullRequestsOrDefault),
+      Right(PullRequestUpdateStrategy.default)
     )
   }
 
