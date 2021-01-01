@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.repoconfig
 
-import cats.kernel.{Eq, Semigroup}
+import cats.{Eq, Monoid}
 import cats.syntax.all._
 import io.circe.Codec
 import io.circe.generic.extras.Configuration
@@ -45,19 +45,21 @@ object RepoConfig {
   implicit val repoConfigCodec: Codec[RepoConfig] =
     deriveConfiguredCodec
 
-  implicit val repoConfigSemigroup: Semigroup[RepoConfig] =
-    Semigroup.instance { (x, y) =>
-      () match {
-        case _ if x === empty => y
-        case _ if y === empty => x
-        case _ =>
-          RepoConfig(
-            commits = x.commits |+| y.commits,
-            pullRequests = x.pullRequests |+| y.pullRequests,
-            scalafmt = x.scalafmt |+| y.scalafmt,
-            updates = x.updates |+| y.updates,
-            updatePullRequests = x.updatePullRequests.orElse(y.updatePullRequests)
-          )
-      }
-    }
+  implicit val repoConfigMonoid: Monoid[RepoConfig] =
+    Monoid.instance(
+      empty,
+      (x, y) =>
+        () match {
+          case _ if x === empty => y
+          case _ if y === empty => x
+          case _ =>
+            RepoConfig(
+              commits = x.commits |+| y.commits,
+              pullRequests = x.pullRequests |+| y.pullRequests,
+              scalafmt = x.scalafmt |+| y.scalafmt,
+              updates = x.updates |+| y.updates,
+              updatePullRequests = x.updatePullRequests.orElse(y.updatePullRequests)
+            )
+        }
+    )
 }

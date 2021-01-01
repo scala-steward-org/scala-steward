@@ -1,12 +1,13 @@
 package org.scalasteward.core.repoconfig
 
-import cats.syntax.semigroup._
-import eu.timepit.refined.types.numeric.NonNegInt
-import munit.FunSuite
+import cats.kernel.laws.discipline.MonoidTests
+import munit.DisciplineSuite
+import org.scalasteward.core.TestInstances._
 import org.scalasteward.core.data.GroupId
 import org.scalasteward.core.repoconfig.UpdatePattern.Version
 
-class UpdatesConfigTest extends FunSuite {
+class UpdatesConfigTest extends DisciplineSuite {
+  checkAll("Monoid[UpdatesConfig]", MonoidTests[UpdatesConfig].monoid)
 
   private val groupIdA = GroupId("A")
   private val groupIdB = GroupId("B")
@@ -21,57 +22,6 @@ class UpdatesConfigTest extends FunSuite {
   private val ac3 = UpdatePattern(groupIdA, Some("c"), Some(Version(Some("3"), None)))
 
   private val b00 = UpdatePattern(groupIdB, None, None)
-
-  test("semigroup: basic checks") {
-    val emptyCfg = UpdatesConfig()
-    assertEquals(emptyCfg |+| emptyCfg, emptyCfg)
-
-    val cfg = UpdatesConfig(
-      pin = List(aa0),
-      allow = List(aa0),
-      ignore = List(aa0),
-      limit = Some(NonNegInt.unsafeFrom(10)),
-      includeScala = Some(false),
-      fileExtensions = Some(List(".txt", ".scala", ".sbt"))
-    )
-    assertEquals(cfg |+| cfg, cfg)
-
-    assertEquals(cfg |+| emptyCfg, cfg)
-    assertEquals(emptyCfg |+| cfg, cfg)
-
-    val cfg2 = UpdatesConfig(
-      pin = List(ab0),
-      allow = List(ab0),
-      ignore = List(ab0),
-      limit = Some(NonNegInt.unsafeFrom(20)),
-      includeScala = Some(true),
-      fileExtensions = Some(List(".sbt", ".scala"))
-    )
-
-    assertEquals(
-      cfg |+| cfg2,
-      UpdatesConfig(
-        pin = List(aa0, ab0),
-        allow = UpdatesConfig.nonExistingUpdatePattern,
-        ignore = List(aa0, ab0),
-        limit = Some(NonNegInt.unsafeFrom(10)),
-        includeScala = Some(false),
-        fileExtensions = Some(List(".scala", ".sbt"))
-      )
-    )
-
-    assertEquals(
-      cfg2 |+| cfg,
-      UpdatesConfig(
-        pin = List(ab0, aa0),
-        allow = UpdatesConfig.nonExistingUpdatePattern,
-        ignore = List(ab0, aa0),
-        limit = Some(NonNegInt.unsafeFrom(20)),
-        includeScala = Some(true),
-        fileExtensions = Some(List(".sbt", ".scala"))
-      )
-    )
-  }
 
   test("mergePin: basic checks") {
     assertEquals(UpdatesConfig.mergePin(Nil, Nil), Nil)

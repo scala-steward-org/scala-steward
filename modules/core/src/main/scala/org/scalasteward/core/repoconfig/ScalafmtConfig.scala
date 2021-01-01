@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.repoconfig
 
-import cats.kernel.{Eq, Semigroup}
+import cats.{Eq, Monoid}
 import io.circe.Codec
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.deriveConfiguredCodec
@@ -40,8 +40,9 @@ object ScalafmtConfig {
   implicit val scalafmtConfigCodec: Codec[ScalafmtConfig] =
     deriveConfiguredCodec
 
-  implicit val scalafmtConfigSemigroup: Semigroup[ScalafmtConfig] =
-    Semigroup.instance { (x, y) =>
-      ScalafmtConfig(runAfterUpgrading = x.runAfterUpgrading.orElse(y.runAfterUpgrading))
-    }
+  implicit val scalafmtConfigMonoid: Monoid[ScalafmtConfig] =
+    Monoid.instance(
+      ScalafmtConfig(),
+      (x, y) => ScalafmtConfig(runAfterUpgrading = x.runAfterUpgrading.orElse(y.runAfterUpgrading))
+    )
 }

@@ -1,9 +1,9 @@
 package org.scalasteward.core.repoconfig
 
-import cats.kernel.laws.discipline.SemigroupTests
+import cats.kernel.laws.discipline.MonoidTests
 import munit.DisciplineSuite
 import org.scalasteward.core.TestInstances._
 
 class CommitsConfigTest extends DisciplineSuite {
-  checkAll("Semigroup[CommitsConfig]", SemigroupTests[CommitsConfig].semigroup)
+  checkAll("Monoid[CommitsConfig]", MonoidTests[CommitsConfig].monoid)
 }

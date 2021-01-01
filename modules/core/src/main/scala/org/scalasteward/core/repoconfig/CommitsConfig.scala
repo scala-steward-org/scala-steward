@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.repoconfig
 
-import cats.kernel.{Eq, Semigroup}
+import cats.{Eq, Monoid}
 import io.circe.Codec
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
@@ -40,6 +40,6 @@ object CommitsConfig {
   implicit val commitsConfigCodec: Codec[CommitsConfig] =
     deriveConfiguredCodec
 
-  implicit val commitsConfigSemigroup: Semigroup[CommitsConfig] =
-    Semigroup.instance((x, y) => CommitsConfig(message = x.message.orElse(y.message)))
+  implicit val commitsConfigMonoid: Monoid[CommitsConfig] =
+    Monoid.instance(CommitsConfig(), (x, y) => CommitsConfig(message = x.message.orElse(y.message)))
 }
