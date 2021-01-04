@@ -59,6 +59,9 @@ final class HttpJsonClient[F[_]: Sync](implicit
   def post[A: Decoder](uri: Uri, modify: ModReq): F[A] =
     request[A](POST, uri, modify)
 
+  def post_(uri: Uri, modify: ModReq): F[Unit] =
+    request_(POST, uri, modify)
+
   def put[A: Decoder](uri: Uri, modify: ModReq): F[A] =
     request[A](PUT, uri, modify)
 
@@ -96,6 +99,11 @@ final class HttpJsonClient[F[_]: Sync](implicit
     client.expectOr[A](modify(Request[F](method, uri)))(resp =>
       toUnexpectedResponse(uri, method, resp)
     )(jsonOf[F, A].transform(_.leftMap(failure => JsonParseError(uri, method, failure))))
+
+  private def request_(method: Method, uri: Uri, modify: ModReq): F[Unit] =
+    client.expectOr[Unit](modify(Request[F](method, uri)))(resp =>
+      toUnexpectedResponse(uri, method, resp)
+    )
 
   private def toUnexpectedResponse(
       uri: Uri,

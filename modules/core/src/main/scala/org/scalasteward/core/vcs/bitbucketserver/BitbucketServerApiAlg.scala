@@ -22,7 +22,7 @@ import org.http4s.{Request, Uri}
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.HttpJsonClient
 import org.scalasteward.core.vcs.VCSApiAlg
-import org.scalasteward.core.vcs.bitbucketserver.Json.{Reviewer, User}
+import org.scalasteward.core.vcs.bitbucketserver.Json.{PR, Reviewer, User}
 import org.scalasteward.core.vcs.data.PullRequestState.Open
 import org.scalasteward.core.vcs.data._
 
@@ -36,11 +36,10 @@ final class BitbucketServerApiAlg[F[_]](
   val url = new Url(bitbucketApiHost)
 
   override def closePullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut] =
-    client.putWithBody[PullRequestOut, UpdateState](
-      url.pullRequest(repo, number),
-      UpdateState(PullRequestState.Closed),
-      modify(repo)
-    )
+    getPullRequest(repo, number).flatMap { pr =>
+      val out = PullRequestOut(pr.htmlUrl, PullRequestState.Closed, number, pr.title)
+      declinePullRequest(repo, number, pr.version).as(out)
+    }
 
   override def commentPullRequest(
       repo: Repo,
@@ -84,6 +83,9 @@ final class BitbucketServerApiAlg[F[_]](
   private def useDefaultReviewers(repo: Repo): F[List[Reviewer]] =
     if (useReviewers) getDefaultReviewers(repo) else F.pure(List.empty[Reviewer])
 
+  def declinePullRequest(repo: Repo, number: PullRequestNumber, version: Int): F[Unit] =
+    client.post_(url.declinePullRequest(repo, number, version), modify(repo))
+
   def getDefaultReviewers(repo: Repo): F[List[Reviewer]] =
     client.get[List[Json.Condition]](url.reviewers(repo), modify(repo)).map { conditions =>
       conditions.flatMap { condition =>
@@ -95,6 +97,9 @@ final class BitbucketServerApiAlg[F[_]](
     client.get[Json.Branches](url.listBranch(repo, branch), modify(repo)).map { branches =>
       BranchOut(Branch(branches.values.head.id), CommitOut(branches.values.head.latestCommit))
     }
+
+  def getPullRequest(repo: Repo, number: PullRequestNumber): F[PR] =
+    client.get[Json.PR](url.pullRequest(repo, number), modify(repo))
 
   override def getRepo(repo: Repo): F[RepoOut] =
     for {
