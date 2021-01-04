@@ -21,6 +21,7 @@ import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder}
 import org.http4s.Uri
 import org.scalasteward.core.git.Sha1
+import org.scalasteward.core.util.uri.uriDecoder
 import org.scalasteward.core.vcs.data.{PullRequestNumber, PullRequestOut, PullRequestState}
 
 object Json {
@@ -73,7 +74,6 @@ object Json {
   implicit val repoDecode: Decoder[Repo] = deriveDecoder
   implicit val projectDecode: Decoder[Project] = deriveDecoder
   implicit val linkDecoder: Decoder[Link] = deriveDecoder
-  implicit val uriDecoder: Decoder[Uri] = Decoder.decodeString.map(Uri.unsafeFromString)
   implicit val prDecoder: Decoder[PR] = deriveDecoder
   implicit val reviewerDecoder: Decoder[Reviewer] = deriveDecoder
   implicit val userDecoder: Decoder[User] = deriveDecoder
@@ -90,4 +90,7 @@ object Json {
   implicit val encodeReviewer: Encoder[Reviewer] = deriveEncoder
   implicit val encodeUser: Encoder[User] = deriveEncoder
   implicit val encodeComment: Encoder[Comment] = deriveEncoder
+
+  // prevent IntelliJ from removing the import of uriDecoder
+  locally(uriDecoder)
 }
