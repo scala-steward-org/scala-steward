@@ -26,16 +26,37 @@ import org.scalasteward.core.vcs.bitbucketserver.Json.{Reviewer, User}
 import org.scalasteward.core.vcs.data.PullRequestState.Open
 import org.scalasteward.core.vcs.data._
 
-/** https://docs.atlassian.com/bitbucket-server/rest/6.6.1/bitbucket-rest.html */
-class BitbucketServerApiAlg[F[_]](
+/** https://docs.atlassian.com/bitbucket-server/rest/latest/bitbucket-rest.html */
+final class BitbucketServerApiAlg[F[_]](
     bitbucketApiHost: Uri,
     modify: Repo => Request[F] => F[Request[F]],
     useReviewers: Boolean
 )(implicit client: HttpJsonClient[F], F: MonadThrow[F])
     extends VCSApiAlg[F] {
-  val url = new StashUrls(bitbucketApiHost)
+  val url = new Url(bitbucketApiHost)
 
-  override def createFork(repo: Repo): F[RepoOut] = ni(s"createFork($repo)")
+  override def closePullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut] =
+    client.putWithBody[PullRequestOut, UpdateState](
+      url.pullRequest(repo, number),
+      UpdateState(PullRequestState.Closed),
+      modify(repo)
+    )
+
+  override def commentPullRequest(
+      repo: Repo,
+      number: PullRequestNumber,
+      comment: String
+  ): F[Comment] =
+    client
+      .postWithBody[Json.Comment, Json.Comment](
+        url.comments(repo, number),
+        Json.Comment(comment),
+        modify(repo)
+      )
+      .map(comment => Comment(comment.text))
+
+  override def createFork(repo: Repo): F[RepoOut] =
+    F.raiseError(new NotImplementedError(s"createFork($repo)"))
 
   override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] = {
     val fromRef =
@@ -61,29 +82,23 @@ class BitbucketServerApiAlg[F[_]](
   }
 
   private def useDefaultReviewers(repo: Repo): F[List[Reviewer]] =
-    if (useReviewers) getDefaultReviewers(repo) else F.pure(List[Reviewer]())
+    if (useReviewers) getDefaultReviewers(repo) else F.pure(List.empty[Reviewer])
 
   def getDefaultReviewers(repo: Repo): F[List[Reviewer]] =
-    client
-      .get[List[Json.Condition]](url.reviewers(repo), modify(repo))
-      .map(conditions =>
-        conditions
-          .flatMap(condition =>
-            condition.reviewers
-              .map(reviewer => Reviewer(User(reviewer.name)))
-          )
-      )
+    client.get[List[Json.Condition]](url.reviewers(repo), modify(repo)).map { conditions =>
+      conditions.flatMap { condition =>
+        condition.reviewers.map(reviewer => Reviewer(User(reviewer.name)))
+      }
+    }
 
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
-    client
-      .get[Json.Branches](url.listBranch(repo, branch), modify(repo))
-      .map((a: Json.Branches) =>
-        BranchOut(Branch(a.values.head.id), CommitOut(a.values.head.latestCommit))
-      )
+    client.get[Json.Branches](url.listBranch(repo, branch), modify(repo)).map { branches =>
+      BranchOut(Branch(branches.values.head.id), CommitOut(branches.values.head.latestCommit))
+    }
 
   override def getRepo(repo: Repo): F[RepoOut] =
     for {
-      r <- client.get[Json.Repo](url.repo(repo), modify(repo))
+      r <- client.get[Json.Repo](url.repos(repo), modify(repo))
       cloneUri = r.links("clone").find(_.name.contains("http")).get.href
     } yield RepoOut(r.name, UserOut(repo.owner), None, cloneUri, Branch("master"))
 
@@ -91,56 +106,4 @@ class BitbucketServerApiAlg[F[_]](
     client
       .get[Json.Page[Json.PR]](url.listPullRequests(repo, s"refs/heads/$head"), modify(repo))
       .map(_.values.map(_.toPullRequestOut))
-
-  def ni(name: String): Nothing = throw new NotImplementedError(name)
-
-  override def closePullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut] =
-    client.putWithBody[PullRequestOut, UpdateState](
-      url.pullRequest(repo, number),
-      UpdateState(PullRequestState.Closed),
-      modify(repo)
-    )
-
-  override def commentPullRequest(
-      repo: Repo,
-      number: PullRequestNumber,
-      comment: String
-  ): F[Comment] =
-    client
-      .postWithBody[Json.Comment, Json.Comment](
-        url.comments(repo, number),
-        Json.Comment(comment),
-        modify(repo)
-      )
-      .map((c: Json.Comment) => Comment(c.text))
-}
-
-final class StashUrls(base: Uri) {
-  val api: Uri = base / "rest" / "api" / "1.0"
-  val reviewerApi: Uri = base / "rest" / "default-reviewers" / "1.0"
-
-  def repo(repo: Repo): Uri =
-    api / "projects" / repo.owner / "repos" / repo.repo
-
-  def pullRequests(r: Repo): Uri = repo(r) / "pull-requests"
-
-  def pullRequest(r: Repo, number: PullRequestNumber): Uri =
-    repo(r) / "pull-requests" / number.toString
-
-  def reviewers(repo: Repo): Uri =
-    reviewerApi / "projects" / repo.owner / "repos" / repo.repo / "conditions"
-
-  def listPullRequests(r: Repo, head: String): Uri =
-    pullRequests(r)
-      .withQueryParam("at", head)
-      .withQueryParam("limit", "1000")
-      .withQueryParam("direction", "outgoing")
-
-  def branches(r: Repo): Uri = repo(r) / "branches"
-
-  def listBranch(r: Repo, branch: Branch): Uri =
-    branches(r).withQueryParam("filterText", branch.name)
-
-  def comments(repo: Repo, number: PullRequestNumber): Uri =
-    pullRequest(repo, number) / "comments"
 }
