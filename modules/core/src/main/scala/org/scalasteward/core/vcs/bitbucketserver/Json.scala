@@ -17,8 +17,8 @@
 package org.scalasteward.core.vcs.bitbucketserver
 
 import cats.data.NonEmptyList
-import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
-import io.circe.{Decoder, Encoder}
+import io.circe.generic.semiauto.{deriveCodec, deriveDecoder, deriveEncoder}
+import io.circe.{Codec, Decoder, Encoder}
 import org.http4s.Uri
 import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.util.uri.uriDecoder
@@ -70,26 +70,21 @@ object Json {
 
   case class Comment(text: String)
 
-  implicit def pageDecode[A: Decoder]: Decoder[Page[A]] = deriveDecoder
-  implicit val repoDecode: Decoder[Repo] = deriveDecoder
-  implicit val projectDecode: Decoder[Project] = deriveDecoder
-  implicit val linkDecoder: Decoder[Link] = deriveDecoder
-  implicit val prDecoder: Decoder[PR] = deriveDecoder
-  implicit val reviewerDecoder: Decoder[Reviewer] = deriveDecoder
-  implicit val userDecoder: Decoder[User] = deriveDecoder
-  implicit val defaultReviewerDecoder: Decoder[DefaultReviewer] = deriveDecoder
-  implicit val conditionDecoder: Decoder[Condition] = deriveDecoder
   implicit val branchDecoder: Decoder[Branch] = deriveDecoder
   implicit val branchesDecoder: Decoder[Branches] = deriveDecoder
-  implicit val commentDecoder: Decoder[Comment] = deriveDecoder
-
-  implicit val encodeNewPR: Encoder[NewPR] = deriveEncoder
-  implicit val encodeRef: Encoder[Ref] = deriveEncoder
-  implicit val encodeRepository: Encoder[Repository] = deriveEncoder
-  implicit val encodeProject: Encoder[Project] = deriveEncoder
-  implicit val encodeReviewer: Encoder[Reviewer] = deriveEncoder
-  implicit val encodeUser: Encoder[User] = deriveEncoder
-  implicit val encodeComment: Encoder[Comment] = deriveEncoder
+  implicit val commentCodec: Codec[Comment] = deriveCodec
+  implicit val conditionDecoder: Decoder[Condition] = deriveDecoder
+  implicit val defaultReviewerDecoder: Decoder[DefaultReviewer] = deriveDecoder
+  implicit val linkDecoder: Decoder[Link] = deriveDecoder
+  implicit val newPREncoder: Encoder[NewPR] = deriveEncoder
+  implicit def pageDecoder[A: Decoder]: Decoder[Page[A]] = deriveDecoder
+  implicit val prDecoder: Decoder[PR] = deriveDecoder
+  implicit val projectCodec: Codec[Project] = deriveCodec
+  implicit val refEncoder: Encoder[Ref] = deriveEncoder
+  implicit val repoDecoder: Decoder[Repo] = deriveDecoder
+  implicit val repositoryEncoder: Encoder[Repository] = deriveEncoder
+  implicit val reviewerCodec: Codec[Reviewer] = deriveCodec
+  implicit val userCodec: Codec[User] = deriveCodec
 
   // prevent IntelliJ from removing the import of uriDecoder
   locally(uriDecoder)
