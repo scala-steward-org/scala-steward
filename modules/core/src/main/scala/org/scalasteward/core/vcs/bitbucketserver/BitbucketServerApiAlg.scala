@@ -37,7 +37,7 @@ final class BitbucketServerApiAlg[F[_]](
 
   override def closePullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut] =
     getPullRequest(repo, number).flatMap { pr =>
-      val out = PullRequestOut(pr.htmlUrl, PullRequestState.Closed, number, pr.title)
+      val out = pr.toPullRequestOut.copy(state = PullRequestState.Closed)
       declinePullRequest(repo, number, pr.version).as(out)
     }
 
