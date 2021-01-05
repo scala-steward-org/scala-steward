@@ -46,7 +46,7 @@ import scala.sys.process.Process
   * For GitHub Enterprise this is "http(s)://[hostname]/api/v3", see
   * [[https://developer.github.com/enterprise/v3/]].
   *
-  * == [[gitCfg.gitAskPass]] ==
+  * == gitCfg.gitAskPass ==
   * Program that is invoked by scala-steward and git (via the `GIT_ASKPASS`
   * environment variable) to request the password for the user [[vcsLogin]].
   *
