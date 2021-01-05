@@ -33,7 +33,7 @@ final class BitbucketServerApiAlg[F[_]](
     useReviewers: Boolean
 )(implicit client: HttpJsonClient[F], F: MonadThrow[F])
     extends VCSApiAlg[F] {
-  val url = new Url(bitbucketApiHost)
+  private val url = new Url(bitbucketApiHost)
 
   override def closePullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut] =
     getPullRequest(repo, number).flatMap { pr =>
@@ -83,10 +83,10 @@ final class BitbucketServerApiAlg[F[_]](
   private def useDefaultReviewers(repo: Repo): F[List[Reviewer]] =
     if (useReviewers) getDefaultReviewers(repo) else F.pure(List.empty[Reviewer])
 
-  def declinePullRequest(repo: Repo, number: PullRequestNumber, version: Int): F[Unit] =
+  private def declinePullRequest(repo: Repo, number: PullRequestNumber, version: Int): F[Unit] =
     client.post_(url.declinePullRequest(repo, number, version), modify(repo))
 
-  def getDefaultReviewers(repo: Repo): F[List[Reviewer]] =
+  private def getDefaultReviewers(repo: Repo): F[List[Reviewer]] =
     client.get[List[Json.Condition]](url.reviewers(repo), modify(repo)).map { conditions =>
       conditions.flatMap { condition =>
         condition.reviewers.map(reviewer => Reviewer(User(reviewer.name)))
@@ -98,10 +98,10 @@ final class BitbucketServerApiAlg[F[_]](
       .get[Json.Branches](url.listBranch(repo, branch), modify(repo))
       .map(_.values.head.toBranchOut)
 
-  def getDefaultBranch(repo: Repo): F[Json.Branch] =
+  private def getDefaultBranch(repo: Repo): F[Json.Branch] =
     client.get[Json.Branch](url.defaultBranch(repo), modify(repo))
 
-  def getPullRequest(repo: Repo, number: PullRequestNumber): F[PR] =
+  private def getPullRequest(repo: Repo, number: PullRequestNumber): F[PR] =
     client.get[Json.PR](url.pullRequest(repo, number), modify(repo))
 
   override def getRepo(repo: Repo): F[RepoOut] =
