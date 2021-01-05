@@ -22,7 +22,7 @@ import cats.effect.Sync
 import org.http4s.Uri
 import org.http4s.Uri.UserInfo
 import org.scalasteward.core.application.Cli.EnvVar
-import org.scalasteward.core.application.Config.{ProcessCfg, ScalafixCfg}
+import org.scalasteward.core.application.Config._
 import org.scalasteward.core.git.Author
 import org.scalasteward.core.util
 import org.scalasteward.core.vcs.data.AuthenticatedUser
@@ -46,7 +46,7 @@ import scala.sys.process.Process
   * For GitHub Enterprise this is "http(s)://[hostname]/api/v3", see
   * [[https://developer.github.com/enterprise/v3/]].
   *
-  * == [[gitAskPass]] ==
+  * == [[gitCfg.gitAskPass]] ==
   * Program that is invoked by scala-steward and git (via the `GIT_ASKPASS`
   * environment variable) to request the password for the user [[vcsLogin]].
   *
@@ -58,33 +58,37 @@ final case class Config(
     workspace: File,
     reposFile: File,
     defaultRepoConfigFile: Option[File],
-    gitAuthor: Author,
+    gitCfg: GitCfg,
     vcsType: SupportedVCS,
     vcsApiHost: Uri,
     vcsLogin: String,
-    gitAskPass: File,
-    signCommits: Boolean,
     doNotFork: Boolean,
     ignoreOptsFiles: Boolean,
     processCfg: ProcessCfg,
     scalafixCfg: ScalafixCfg,
     artifactMigrations: Option[File],
     cacheTtl: FiniteDuration,
-    bitbucketServerUseDefaultReviewers: Boolean,
-    gitlabMergeWhenPipelineSucceeds: Boolean,
+    bitbucketServerCfg: BitbucketServerCfg,
+    gitLabCfg: GitLabCfg,
     githubApp: Option[GitHubApp]
 ) {
   def vcsUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] = {
     val urlWithUser = util.uri.withUserInfo.set(UserInfo(vcsLogin, None))(vcsApiHost).renderString
     val prompt = s"Password for '$urlWithUser': "
     F.delay {
-      val password = Process(List(gitAskPass.pathAsString, prompt)).!!.trim
+      val password = Process(List(gitCfg.gitAskPass.pathAsString, prompt)).!!.trim
       AuthenticatedUser(vcsLogin, password)
     }
   }
 }
 
 object Config {
+  final case class GitCfg(
+      gitAuthor: Author,
+      gitAskPass: File,
+      signCommits: Boolean
+  )
+
   final case class ProcessCfg(
       envVars: List[EnvVar],
       processTimeout: FiniteDuration,
@@ -103,17 +107,27 @@ object Config {
       disableDefaults: Boolean
   )
 
+  final case class BitbucketServerCfg(
+      useDefaultReviewers: Boolean
+  )
+
+  final case class GitLabCfg(
+      mergeWhenPipelineSucceeds: Boolean
+  )
+
   def from(args: Cli.Args): Config =
     Config(
       workspace = args.workspace,
       reposFile = args.reposFile,
       defaultRepoConfigFile = args.defaultRepoConf,
-      gitAuthor = Author(args.gitAuthorName, args.gitAuthorEmail, args.gitAuthorSigningKey),
+      gitCfg = GitCfg(
+        gitAuthor = Author(args.gitAuthorName, args.gitAuthorEmail, args.gitAuthorSigningKey),
+        gitAskPass = args.gitAskPass,
+        signCommits = args.signCommits
+      ),
       vcsType = args.vcsType,
       vcsApiHost = args.vcsApiHost,
       vcsLogin = args.vcsLogin,
-      gitAskPass = args.gitAskPass,
-      signCommits = args.signCommits,
       doNotFork = args.doNotFork,
       ignoreOptsFiles = args.ignoreOptsFiles,
       processCfg = ProcessCfg(
@@ -132,8 +146,12 @@ object Config {
       ),
       artifactMigrations = args.artifactMigrations,
       cacheTtl = args.cacheTtl,
-      bitbucketServerUseDefaultReviewers = args.bitbucketServerUseDefaultReviewers,
-      gitlabMergeWhenPipelineSucceeds = args.gitlabMergeWhenPipelineSucceeds,
+      bitbucketServerCfg = BitbucketServerCfg(
+        useDefaultReviewers = args.bitbucketServerUseDefaultReviewers
+      ),
+      gitLabCfg = GitLabCfg(
+        mergeWhenPipelineSucceeds = args.gitlabMergeWhenPipelineSucceeds
+      ),
       githubApp = Apply[Option].map2(args.githubAppId, args.githubAppKeyFile)(GitHubApp)
     )
 }

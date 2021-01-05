@@ -3,7 +3,7 @@ package org.scalasteward.core.edit.hooks
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.Update
-import org.scalasteward.core.mock.MockContext.{config, hookExecutor, workspaceAlg}
+import org.scalasteward.core.mock.MockContext.{envVars, hookExecutor, workspaceAlg}
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.repoconfig.{RepoConfig, ScalafmtConfig}
 import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtBinary, scalafmtGroupId}
@@ -13,7 +13,6 @@ import org.scalasteward.core.vcs.data.Repo
 class HookExecutorTest extends FunSuite {
   private val repo = Repo("scala-steward-org", "scala-steward")
   private val repoDir = workspaceAlg.repoDir(repo).runA(MockState.empty).unsafeRunSync()
-  private val envVars = List(s"GIT_ASKPASS=${config.gitAskPass}", "VAR1=val1", "VAR2=val2")
 
   test("no hook") {
     val update = Update.Single("org.typelevel" % "cats-core" % "1.2.0", Nel.of("1.3.0"))

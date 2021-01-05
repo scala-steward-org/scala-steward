@@ -14,6 +14,7 @@ import org.http4s.dsl.io._
 import org.http4s.headers.Allow
 import org.http4s.implicits._
 import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.application.Config.GitLabCfg
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.mock.MockContext.{config, user}
@@ -80,10 +81,10 @@ class GitLabApiAlgTest extends FunSuite {
   val gitlabApiAlg =
     new GitLabApiAlg[IO](
       config.vcsApiHost,
-      user,
-      _ => IO.pure,
       doNotFork = false,
-      mergeWhenPipelineSucceeds = false
+      GitLabCfg(mergeWhenPipelineSucceeds = false),
+      user,
+      _ => IO.pure
     )
 
   private val data = UpdateData(
@@ -115,10 +116,10 @@ class GitLabApiAlgTest extends FunSuite {
     val gitlabApiAlgNoFork =
       new GitLabApiAlg[IO](
         config.vcsApiHost,
-        user,
-        _ => IO.pure,
         doNotFork = true,
-        mergeWhenPipelineSucceeds = false
+        GitLabCfg(mergeWhenPipelineSucceeds = false),
+        user,
+        _ => IO.pure
       )
     val prOut =
       gitlabApiAlgNoFork
@@ -154,10 +155,10 @@ class GitLabApiAlgTest extends FunSuite {
     val gitlabApiAlgNoFork =
       new GitLabApiAlg[IO](
         config.vcsApiHost,
-        user,
-        _ => IO.pure,
         doNotFork = true,
-        mergeWhenPipelineSucceeds = true
+        GitLabCfg(mergeWhenPipelineSucceeds = true),
+        user,
+        _ => IO.pure
       )
 
     val prOut = gitlabApiAlgNoFork
@@ -189,10 +190,10 @@ class GitLabApiAlgTest extends FunSuite {
     val gitlabApiAlgNoFork =
       new GitLabApiAlg[IO](
         config.vcsApiHost,
-        user,
-        _ => IO.pure,
         doNotFork = true,
-        mergeWhenPipelineSucceeds = true
+        GitLabCfg(mergeWhenPipelineSucceeds = true),
+        user,
+        _ => IO.pure
       )(errorJsonClient, implicitly, implicitly)
 
     val prOut =

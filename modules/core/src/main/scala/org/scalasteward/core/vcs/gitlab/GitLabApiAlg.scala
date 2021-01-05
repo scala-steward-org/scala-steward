@@ -23,6 +23,7 @@ import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.syntax._
 import org.http4s.{Request, Status, Uri}
+import org.scalasteward.core.application.Config.GitLabCfg
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.util.uri.uriDecoder
 import org.scalasteward.core.util.{HttpJsonClient, UnexpectedResponse}
@@ -117,12 +118,12 @@ private[gitlab] object GitLabJsonCodec {
   implicit val branchOutDecoder: Decoder[BranchOut] = deriveDecoder[BranchOut]
 }
 
-class GitLabApiAlg[F[_]](
+final class GitLabApiAlg[F[_]](
     gitlabApiHost: Uri,
-    user: AuthenticatedUser,
-    modify: Repo => Request[F] => F[Request[F]],
     doNotFork: Boolean,
-    mergeWhenPipelineSucceeds: Boolean
+    config: GitLabCfg,
+    user: AuthenticatedUser,
+    modify: Repo => Request[F] => F[Request[F]]
 )(implicit
     client: HttpJsonClient[F],
     logger: Logger[F],
@@ -130,12 +131,12 @@ class GitLabApiAlg[F[_]](
 ) extends VCSApiAlg[F] {
   import GitLabJsonCodec._
 
-  val url = new Url(gitlabApiHost)
+  private val url = new Url(gitlabApiHost)
 
   override def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]] =
     client.get(url.listMergeRequests(repo, head, base.name), modify(repo))
 
-  def createFork(repo: Repo): F[RepoOut] = {
+  override def createFork(repo: Repo): F[RepoOut] = {
     val userOwnedRepo = repo.copy(owner = user.login)
     val data = ForkPayload(url.encodedProjectId(userOwnedRepo), user.login)
     client
@@ -148,7 +149,7 @@ class GitLabApiAlg[F[_]](
       }
   }
 
-  def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] = {
+  override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] = {
     val targetRepo = if (doNotFork) repo else repo.copy(owner = user.login)
     val mergeRequest = for {
       projectId <- client.get[ProjectId](url.repos(repo), modify(repo))
@@ -167,19 +168,19 @@ class GitLabApiAlg[F[_]](
       client
         .get[MergeRequestOut](url.existingMergeRequest(repo, number), modify(repo))
         .flatMap {
-          case mr if (mr.mergeStatus =!= GitLabMergeStatus.Checking) => F.pure(mr)
-          case _ if (retries > 0)                                    => waitForMergeRequestStatus(number, retries - 1)
-          case other                                                 => F.pure(other)
+          case mr if mr.mergeStatus =!= GitLabMergeStatus.Checking => F.pure(mr)
+          case _ if retries > 0                                    => waitForMergeRequestStatus(number, retries - 1)
+          case other                                               => F.pure(other)
         }
 
     val updatedMergeRequest =
-      if (!mergeWhenPipelineSucceeds)
+      if (!config.mergeWhenPipelineSucceeds)
         mergeRequest
       else
         mergeRequest
           .flatMap(mr => waitForMergeRequestStatus(mr.iid))
           .flatMap {
-            case mr if (mr.mergeStatus === GitLabMergeStatus.CanBeMerged) =>
+            case mr if mr.mergeStatus === GitLabMergeStatus.CanBeMerged =>
               for {
                 _ <- logger.info(s"Setting ${mr.webUrl} to merge when pipeline succeeds")
                 res <-
@@ -203,7 +204,7 @@ class GitLabApiAlg[F[_]](
     updatedMergeRequest.map(_.pullRequestOut)
   }
 
-  def closePullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut] =
+  override def closePullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut] =
     client
       .putWithBody[MergeRequestOut, UpdateState](
         url.existingMergeRequest(repo, number),
@@ -212,10 +213,10 @@ class GitLabApiAlg[F[_]](
       )
       .map(_.pullRequestOut)
 
-  def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
+  override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
     client.get(url.getBranch(repo, branch), modify(repo))
 
-  def getRepo(repo: Repo): F[RepoOut] =
+  override def getRepo(repo: Repo): F[RepoOut] =
     client.get(url.repos(repo), modify(repo))
 
   override def referencePullRequest(number: PullRequestNumber): String =

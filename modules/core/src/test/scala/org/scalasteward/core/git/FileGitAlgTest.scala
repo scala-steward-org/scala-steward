@@ -16,7 +16,7 @@ import org.scalasteward.core.util.Nel
 class FileGitAlgTest extends FunSuite {
   implicit private val ioWorkspaceAlg: WorkspaceAlg[IO] = WorkspaceAlg.create[IO](config)
   implicit private val ioGitAlg: GenGitAlg[IO, File] =
-    new FileGitAlg[IO](config).contramapRepoF(IO.pure)
+    new FileGitAlg[IO](config.gitCfg).contramapRepoF(IO.pure)
   private val supplement = new Supplement[IO]
   private val rootDir = File.temp / "scala-steward" / "git-tests"
 
@@ -162,7 +162,7 @@ object FileGitAlgTest {
         _ <- gitAlg.removeClone(repo)
         _ <- fileAlg.ensureExists(repo)
         _ <- git("init", ".")(repo)
-        _ <- gitAlg.setAuthor(repo, config.gitAuthor)
+        _ <- gitAlg.setAuthor(repo, config.gitCfg.gitAuthor)
       } yield ()
 
     def createConflict(repo: File): F[Unit] =
