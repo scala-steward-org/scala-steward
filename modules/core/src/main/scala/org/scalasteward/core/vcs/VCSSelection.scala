@@ -18,9 +18,11 @@ package org.scalasteward.core.vcs
 
 import cats.MonadThrow
 import io.chrisdavenport.log4cats.Logger
+import org.http4s.Uri
+import org.http4s.headers.Origin
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.application.SupportedVCS.{Bitbucket, BitbucketServer, GitHub, GitLab}
-import org.scalasteward.core.util.HttpJsonClient
+import org.scalasteward.core.util.{HttpJsonClient, Nel}
 import org.scalasteward.core.vcs.bitbucket.BitbucketApiAlg
 import org.scalasteward.core.vcs.bitbucketserver.BitbucketServerApiAlg
 import org.scalasteward.core.vcs.data.AuthenticatedUser
@@ -61,7 +63,22 @@ final class VCSSelection[F[_]](implicit
 
     new BitbucketServerApiAlg[F](
       config.vcsApiHost,
-      _ => addCredentials(user),
+      _ =>
+        req =>
+          addCredentials(user).apply(
+            req.putHeaders(
+              Origin.HostList(
+                Nel.one(
+                  Origin
+                    .Host(
+                      config.vcsApiHost.scheme.getOrElse(Uri.Scheme.http),
+                      config.vcsApiHost.host.getOrElse(Uri.RegName("localhost")),
+                      config.vcsApiHost.port
+                    )
+                )
+              )
+            )
+          ),
       config.bitbucketServerUseDefaultReviewers
     )
   }
