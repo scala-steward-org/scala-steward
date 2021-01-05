@@ -32,7 +32,7 @@ import org.scalasteward.core.git.{Branch, Commit, GitAlg}
 import org.scalasteward.core.repocache.RepoCacheRepository
 import org.scalasteward.core.repoconfig.{PullRequestUpdateStrategy, RepoConfigAlg}
 import org.scalasteward.core.scalafix.MigrationAlg
-import org.scalasteward.core.util.HttpExistenceClient
+import org.scalasteward.core.util.UrlChecker
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data._
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg}
@@ -41,7 +41,6 @@ import org.scalasteward.core.{git, util, vcs}
 final class NurtureAlg[F[_]](config: Config)(implicit
     coursierAlg: CoursierAlg[F],
     editAlg: EditAlg[F],
-    existenceClient: HttpExistenceClient[F],
     gitAlg: GitAlg[F],
     logger: Logger[F],
     migrationAlg: MigrationAlg,
@@ -52,6 +51,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
     vcsExtraAlg: VCSExtraAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
     streamCompiler: Stream.Compiler[F, F],
+    urlChecker: UrlChecker[F],
     F: BracketThrow[F]
 ) {
   def nurture(repo: Repo, fork: RepoOut, updates: List[Update.Single]): F[Unit] =
@@ -178,7 +178,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
       resolvers = maybeRepoCache.map(_.dependencyInfos.flatMap(_.resolvers)).getOrElse(List.empty)
       artifactIdToUrl <-
         coursierAlg.getArtifactIdUrlMapping(Scope(dependenciesWithNextVersion, resolvers))
-      existingArtifactUrlsList <- artifactIdToUrl.toList.filterA(a => existenceClient.exists(a._2))
+      existingArtifactUrlsList <- artifactIdToUrl.toList.filterA(a => urlChecker.exists(a._2))
       existingArtifactUrlsMap = existingArtifactUrlsList.toMap
       releaseRelatedUrls <-
         existingArtifactUrlsMap

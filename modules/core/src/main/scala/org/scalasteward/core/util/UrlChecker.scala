@@ -28,29 +28,29 @@ import scalacache.CatsEffect.modes._
 import scalacache.caffeine.CaffeineCache
 import scalacache.{Async => _, _}
 
-final class HttpExistenceClient[F[_]](statusCache: Cache[Status])(implicit
+final class UrlChecker[F[_]](statusCache: Cache[Status])(implicit
     client: Client[F],
     logger: Logger[F],
     mode: Mode[F],
     F: MonadThrow[F]
 ) {
-  def exists(uri: Uri): F[Boolean] =
-    status(uri).map(_ === Status.Ok).handleErrorWith { throwable =>
-      logger.debug(throwable)(s"Failed to check if $uri exists").as(false)
+  def exists(url: Uri): F[Boolean] =
+    status(url).map(_ === Status.Ok).handleErrorWith { throwable =>
+      logger.debug(throwable)(s"Failed to check if $url exists").as(false)
     }
 
-  private def status(uri: Uri): F[Status] =
-    statusCache.cachingForMemoizeF(uri.renderString)(None) {
-      client.status(Request[F](method = Method.HEAD, uri = uri))
+  private def status(url: Uri): F[Status] =
+    statusCache.cachingForMemoizeF(url.renderString)(None) {
+      client.status(Request[F](method = Method.HEAD, uri = url))
     }
 }
 
-object HttpExistenceClient {
+object UrlChecker {
   def create[F[_]](config: Config)(implicit
       client: Client[F],
       logger: Logger[F],
       F: Async[F]
-  ): Resource[F, HttpExistenceClient[F]] = {
+  ): Resource[F, UrlChecker[F]] = {
     val buildCache = F.delay {
       CaffeineCache(
         Caffeine
@@ -60,6 +60,6 @@ object HttpExistenceClient {
           .build[String, Entry[Status]]()
       )
     }
-    Resource.make(buildCache)(_.close().void).map(new HttpExistenceClient[F](_))
+    Resource.make(buildCache)(_.close().void).map(new UrlChecker[F](_))
   }
 }
