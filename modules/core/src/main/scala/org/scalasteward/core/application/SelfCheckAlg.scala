@@ -22,13 +22,13 @@ import io.chrisdavenport.log4cats.Logger
 import org.http4s.Uri
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.scalafmt.ScalafmtAlg
-import org.scalasteward.core.util.HttpExistenceClient
+import org.scalasteward.core.util.UrlChecker
 
 final class SelfCheckAlg[F[_]](implicit
     gitAlg: GitAlg[F],
-    httpExistenceClient: HttpExistenceClient[F],
     logger: Logger[F],
     scalafmtAlg: ScalafmtAlg[F],
+    urlChecker: UrlChecker[F],
     F: MonadThrow[F]
 ) {
   def checkAll: F[Unit] =
@@ -36,7 +36,7 @@ final class SelfCheckAlg[F[_]](implicit
       _ <- logger.info("Run self checks")
       _ <- checkGitBinary
       _ <- checkScalafmtBinary
-      _ <- checkHttpExistenceClient
+      _ <- checkUrlChecker
     } yield ()
 
   private def checkGitBinary: F[Unit] =
@@ -51,11 +51,11 @@ final class SelfCheckAlg[F[_]](implicit
       case Left(throwable) => logger.warn(throwable)("Failed to execute scalafmt")
     }
 
-  private def checkHttpExistenceClient: F[Unit] =
+  private def checkUrlChecker: F[Unit] =
     for {
       url <- F.fromEither(Uri.fromString("https://github.com"))
-      res <- httpExistenceClient.exists(url)
-      msg = s"Self check of HttpExistenceClient failed: checking that $url exists failed"
+      res <- urlChecker.exists(url)
+      msg = s"Self check of UrlChecker failed: checking that $url exists failed"
       _ <- if (!res) logger.warn(msg) else F.unit
     } yield ()
 }

@@ -11,7 +11,7 @@ import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.application.SupportedVCS
 import org.scalasteward.core.data.{ReleaseRelatedUrl, Update}
 import org.scalasteward.core.mock.MockContext
-import org.scalasteward.core.util.{HttpExistenceClient, Nel}
+import org.scalasteward.core.util.{Nel, UrlChecker}
 
 class VCSExtraAlgTest extends FunSuite {
   val routes: HttpRoutes[IO] =
@@ -22,8 +22,8 @@ class VCSExtraAlgTest extends FunSuite {
     }
 
   implicit val client: Client[IO] = Client.fromHttpApp[IO](routes.orNotFound)
-  implicit val httpExistenceClient: HttpExistenceClient[IO] =
-    HttpExistenceClient.create[IO](MockContext.config).allocated.map(_._1).unsafeRunSync()
+  implicit val urlChecker: UrlChecker[IO] =
+    UrlChecker.create[IO](MockContext.config).allocated.map(_._1).unsafeRunSync()
 
   private val updateFoo = Update.Single("com.example" % "foo" % "0.1.0", Nel.of("0.2.0"))
   private val updateBar = Update.Single("com.example" % "bar" % "0.1.0", Nel.of("0.2.0"))
