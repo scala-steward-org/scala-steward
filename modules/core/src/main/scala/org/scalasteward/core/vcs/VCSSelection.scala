@@ -18,6 +18,7 @@ package org.scalasteward.core.vcs
 
 import cats.MonadThrow
 import io.chrisdavenport.log4cats.Logger
+import org.http4s.Header
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.application.SupportedVCS.{Bitbucket, BitbucketServer, GitHub, GitLab}
 import org.scalasteward.core.util.HttpJsonClient
@@ -59,9 +60,13 @@ final class VCSSelection[F[_]](implicit
   private def bitbucketServer(config: Config): BitbucketServerApiAlg[F] = {
     import org.scalasteward.core.vcs.bitbucket.authentication.addCredentials
 
+    // Bypass the server-side XSRF check, see
+    // https://github.com/scala-steward-org/scala-steward/pull/1863#issuecomment-754538364
+    val xAtlassianToken = Header("X-Atlassian-Token", "no-check")
+
     new BitbucketServerApiAlg[F](
       config.vcsApiHost,
-      _ => addCredentials(user),
+      _ => req => addCredentials(user).apply(req.putHeaders(xAtlassianToken)),
       config.bitbucketServerUseDefaultReviewers
     )
   }

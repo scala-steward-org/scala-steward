@@ -18,16 +18,30 @@ class BitbucketServerApiAlgTest extends FunSuite {
       Ok("""{ "values": [
            |  {
            |    "id": 123,
+           |    "version": 1,
            |    "title": "Update sbt to 1.4.2",
            |    "state": "open",
            |    "links": { "self": [ { "href": "http://example.org" } ] }
            |  }
            |]}""".stripMargin)
 
-    case POST -> Root / "rest" / "api" / "1.0" / "projects" / repo.owner / "repos" / repo.repo / "pull-requests" / IntVar(
-          _
-        ) / "comments" =>
+    case POST -> Root / "rest" / "api" / "1.0" / "projects" / repo.owner / "repos" / repo.repo / "pull-requests" /
+        IntVar(1347) / "comments" =>
       Created("""{ "text": "Superseded by #1234" }""")
+
+    case GET -> Root / "rest" / "api" / "1.0" / "projects" / repo.owner / "repos" / repo.repo / "pull-requests" /
+        IntVar(4711) =>
+      Ok("""{
+           |  "id": 4711,
+           |  "version": 1,
+           |  "title": "Update sbt to 1.4.6",
+           |  "state": "open",
+           |  "links": { "self": [ { "href": "http://example.org" } ] }
+           |}""".stripMargin)
+
+    case POST -> Root / "rest" / "api" / "1.0" / "projects" / repo.owner / "repos" / repo.repo / "pull-requests" /
+        IntVar(4711) / "decline" =>
+      Ok()
   }
 
   implicit private val client: Client[IO] = Client.fromHttpApp(routes.orNotFound)
@@ -50,6 +64,19 @@ class BitbucketServerApiAlgTest extends FunSuite {
     )
 
     assertEquals(pullRequests, expected)
+  }
+
+  test("closePullRequest") {
+    val obtained =
+      bitbucketServerApiAlg.closePullRequest(repo, PullRequestNumber(4711)).unsafeRunSync()
+    val expected =
+      PullRequestOut(
+        Uri.unsafeFromString("http://example.org"),
+        PullRequestState.Closed,
+        PullRequestNumber(4711),
+        "Update sbt to 1.4.6"
+      )
+    assertEquals(obtained, expected)
   }
 
   test("commentPullRequest") {

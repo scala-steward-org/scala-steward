@@ -35,9 +35,18 @@ object Json {
 
   case class Link(href: Uri, name: Option[String])
 
-  case class PR(id: PullRequestNumber, title: String, state: PullRequestState, links: Links) {
+  case class PR(
+      id: PullRequestNumber,
+      version: Int,
+      title: String,
+      state: PullRequestState,
+      links: Links
+  ) {
+    def htmlUrl: Uri =
+      links("self").head.href
+
     def toPullRequestOut: PullRequestOut =
-      PullRequestOut(links("self").head.href, state, id, title)
+      PullRequestOut(htmlUrl, state, id, title)
   }
 
   case class NewPR(

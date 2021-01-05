@@ -30,6 +30,9 @@ final class Url(apiHost: Uri) {
   def comments(repo: Repo, number: PullRequestNumber): Uri =
     pullRequest(repo, number) / "comments"
 
+  def declinePullRequest(repo: Repo, number: PullRequestNumber, version: Int): Uri =
+    (pullRequest(repo, number) / "decline").withQueryParam("version", version)
+
   def listBranch(repo: Repo, branch: Branch): Uri =
     branches(repo).withQueryParam("filterText", branch.name)
 
