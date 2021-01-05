@@ -17,7 +17,7 @@
 package org.scalasteward.core.repoconfig
 
 import cats.implicits._
-import cats.kernel.Semigroup
+import cats.{Eq, Monoid}
 import eu.timepit.refined.types.numeric.NonNegInt
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
@@ -82,30 +82,37 @@ object UpdatesConfig {
   val defaultFileExtensions: Set[String] =
     Set(".scala", ".sbt", ".sbt.shared", ".sc", ".yml", "pom.xml")
 
+  implicit val updatesConfigEq: Eq[UpdatesConfig] =
+    Eq.fromUniversalEquals
+
   implicit val updatesConfigConfiguration: Configuration =
     Configuration.default.withDefaults
 
   implicit val updatesConfigCodec: Codec[UpdatesConfig] =
     deriveConfiguredCodec
 
-  implicit val updatesConfigSemigroup: Semigroup[UpdatesConfig] =
-    Semigroup.instance { (x, y) =>
-      UpdatesConfig(
-        pin = mergePin(x.pin, y.pin),
-        allow = mergeAllow(x.allow, y.allow),
-        ignore = mergeIgnore(x.ignore, y.ignore),
-        limit = x.limit.orElse(y.limit),
-        includeScala = x.includeScala.orElse(y.includeScala),
-        fileExtensions = mergeFileExtensions(x.fileExtensions, y.fileExtensions)
-      )
-    }
+  implicit val updatesConfigMonoid: Monoid[UpdatesConfig] =
+    Monoid.instance(
+      UpdatesConfig(),
+      (x, y) =>
+        UpdatesConfig(
+          pin = mergePin(x.pin, y.pin),
+          allow = mergeAllow(x.allow, y.allow),
+          ignore = mergeIgnore(x.ignore, y.ignore),
+          limit = x.limit.orElse(y.limit),
+          includeScala = x.includeScala.orElse(y.includeScala),
+          fileExtensions = mergeFileExtensions(x.fileExtensions, y.fileExtensions)
+        )
+    )
 
   //  Strategy: union with repo preference in terms of revision
   private[repoconfig] def mergePin(
       x: List[UpdatePattern],
       y: List[UpdatePattern]
   ): List[UpdatePattern] =
-    (x ::: y).distinctBy(up => up.groupId -> up.artifactId)
+    x ::: y.filterNot { p1 =>
+      x.exists(p2 => p1.groupId === p2.groupId && p1.artifactId === p2.artifactId)
+    }
 
   private[repoconfig] val nonExistingUpdatePattern: List[UpdatePattern] =
     List(UpdatePattern(GroupId("non-exist"), None, None))
@@ -177,7 +184,7 @@ object UpdatesConfig {
       x: List[UpdatePattern],
       y: List[UpdatePattern]
   ): List[UpdatePattern] =
-    (x ::: y).distinct
+    x ::: y.filterNot(x.contains)
 
   private[repoconfig] def mergeFileExtensions(
       x: Option[List[String]],

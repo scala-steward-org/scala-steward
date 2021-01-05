@@ -3,17 +3,14 @@ package org.scalasteward.core
 import _root_.io.chrisdavenport.log4cats.Logger
 import _root_.io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import cats.effect.{ContextShift, IO, Timer}
+import eu.timepit.refined.scalacheck.numeric._
+import eu.timepit.refined.types.numeric.NonNegInt
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.Update.Single
-import org.scalasteward.core.data.{Resolver, Scope, Update, Version}
+import org.scalasteward.core.data.{GroupId, Resolver, Scope, Update, Version}
 import org.scalasteward.core.repoconfig.PullRequestFrequency.{Asap, Timespan}
-import org.scalasteward.core.repoconfig.{
-  CommitsConfig,
-  PullRequestFrequency,
-  PullRequestsConfig,
-  ScalafmtConfig
-}
+import org.scalasteward.core.repoconfig._
 import org.scalasteward.core.util.Change.{Changed, Unchanged}
 import org.scalasteward.core.util.{Change, Nel}
 import scala.concurrent.ExecutionContext
@@ -110,8 +107,65 @@ object TestInstances {
       frequency <- Arbitrary.arbitrary[Option[PullRequestFrequency]]
     } yield PullRequestsConfig(frequency))
 
+  implicit val pullRequestUpdateStrategyArbitrary: Arbitrary[PullRequestUpdateStrategy] =
+    Arbitrary(
+      Gen.oneOf(
+        PullRequestUpdateStrategy.Always,
+        PullRequestUpdateStrategy.Never,
+        PullRequestUpdateStrategy.OnConflicts
+      )
+    )
+
   implicit val scalafmtConfigArbitrary: Arbitrary[ScalafmtConfig] =
     Arbitrary(for {
       runAfterUpgrading <- Arbitrary.arbitrary[Option[Boolean]]
     } yield ScalafmtConfig(runAfterUpgrading))
+
+  implicit val updatePatternArbitrary: Arbitrary[UpdatePattern] =
+    Arbitrary(for {
+      groupId <- Arbitrary.arbitrary[String].map(GroupId.apply)
+      artifactId <- Arbitrary.arbitrary[Option[String]]
+      version <- Arbitrary
+        .arbitrary[Option[String]]
+        .map(_.map(suffix => UpdatePattern.Version(Some(suffix), None)))
+    } yield UpdatePattern(groupId = groupId, artifactId = artifactId, version = version))
+
+  private def smallListOf[A](maxSize: Int, genA: Gen[A]): Gen[List[A]] =
+    Gen.choose(0, maxSize).flatMap(n => Gen.listOfN(n, genA))
+
+  implicit val updatesConfigArbitrary: Arbitrary[UpdatesConfig] =
+    Arbitrary(
+      for {
+        pin <- smallListOf(4, Arbitrary.arbitrary[UpdatePattern])
+        allow <- smallListOf(4, Arbitrary.arbitrary[UpdatePattern])
+        ignore <- smallListOf(4, Arbitrary.arbitrary[UpdatePattern])
+        limit <- Arbitrary.arbitrary[Option[NonNegInt]]
+        includeScala <- Arbitrary.arbitrary[Option[Boolean]]
+        fileExtensions <- Arbitrary.arbitrary[Option[List[String]]]
+      } yield UpdatesConfig(
+        pin = pin,
+        allow = allow,
+        ignore = ignore,
+        limit = limit,
+        includeScala = includeScala,
+        fileExtensions = fileExtensions
+      )
+    )
+
+  implicit val repoConfigArbitrary: Arbitrary[RepoConfig] =
+    Arbitrary(
+      for {
+        commits <- Arbitrary.arbitrary[CommitsConfig]
+        pullRequests <- Arbitrary.arbitrary[PullRequestsConfig]
+        scalafmt <- Arbitrary.arbitrary[ScalafmtConfig]
+        updates <- Arbitrary.arbitrary[UpdatesConfig]
+        updatePullRequests <- Arbitrary.arbitrary[Option[PullRequestUpdateStrategy]]
+      } yield RepoConfig(
+        commits = commits,
+        pullRequests = pullRequests,
+        scalafmt = scalafmt,
+        updates = updates,
+        updatePullRequests = updatePullRequests
+      )
+    )
 }

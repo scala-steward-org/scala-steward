@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.repoconfig
 
-import cats.kernel.{Eq, Semigroup}
+import cats.{Eq, Monoid}
 import io.circe.Codec
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.deriveConfiguredCodec
@@ -40,6 +40,9 @@ object PullRequestsConfig {
   implicit val pullRequestsConfigCodec: Codec[PullRequestsConfig] =
     deriveConfiguredCodec
 
-  implicit val pullRequestsConfigSemigroup: Semigroup[PullRequestsConfig] =
-    Semigroup.instance((x, y) => PullRequestsConfig(frequency = x.frequency.orElse(y.frequency)))
+  implicit val pullRequestsConfigMonoid: Monoid[PullRequestsConfig] =
+    Monoid.instance(
+      PullRequestsConfig(),
+      (x, y) => PullRequestsConfig(frequency = x.frequency.orElse(y.frequency))
+    )
 }
