@@ -33,7 +33,7 @@ final class BitbucketServerApiAlg[F[_]](
     useReviewers: Boolean
 )(implicit client: HttpJsonClient[F], F: MonadThrow[F])
     extends VCSApiAlg[F] {
-  val url = new Url(bitbucketApiHost)
+  private val url = new Url(bitbucketApiHost)
 
   override def closePullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut] =
     getPullRequest(repo, number).flatMap { pr =>
@@ -83,10 +83,10 @@ final class BitbucketServerApiAlg[F[_]](
   private def useDefaultReviewers(repo: Repo): F[List[Reviewer]] =
     if (useReviewers) getDefaultReviewers(repo) else F.pure(List.empty[Reviewer])
 
-  def declinePullRequest(repo: Repo, number: PullRequestNumber, version: Int): F[Unit] =
+  private def declinePullRequest(repo: Repo, number: PullRequestNumber, version: Int): F[Unit] =
     client.post_(url.declinePullRequest(repo, number, version), modify(repo))
 
-  def getDefaultReviewers(repo: Repo): F[List[Reviewer]] =
+  private def getDefaultReviewers(repo: Repo): F[List[Reviewer]] =
     client.get[List[Json.Condition]](url.reviewers(repo), modify(repo)).map { conditions =>
       conditions.flatMap { condition =>
         condition.reviewers.map(reviewer => Reviewer(User(reviewer.name)))
@@ -94,18 +94,22 @@ final class BitbucketServerApiAlg[F[_]](
     }
 
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
-    client.get[Json.Branches](url.listBranch(repo, branch), modify(repo)).map { branches =>
-      BranchOut(Branch(branches.values.head.id), CommitOut(branches.values.head.latestCommit))
-    }
+    client
+      .get[Json.Branches](url.listBranch(repo, branch), modify(repo))
+      .map(_.values.head.toBranchOut)
 
-  def getPullRequest(repo: Repo, number: PullRequestNumber): F[PR] =
+  private def getDefaultBranch(repo: Repo): F[Json.Branch] =
+    client.get[Json.Branch](url.defaultBranch(repo), modify(repo))
+
+  private def getPullRequest(repo: Repo, number: PullRequestNumber): F[PR] =
     client.get[Json.PR](url.pullRequest(repo, number), modify(repo))
 
   override def getRepo(repo: Repo): F[RepoOut] =
     for {
-      r <- client.get[Json.Repo](url.repos(repo), modify(repo))
-      cloneUri = r.links("clone").find(_.name.contains("http")).get.href
-    } yield RepoOut(r.name, UserOut(repo.owner), None, cloneUri, Branch("master"))
+      jRepo <- client.get[Json.Repo](url.repos(repo), modify(repo))
+      cloneUrl <- jRepo.cloneUrlOrRaise[F]
+      defaultBranch <- getDefaultBranch(repo)
+    } yield RepoOut(jRepo.slug, UserOut(repo.owner), None, cloneUrl, defaultBranch.displayId)
 
   override def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]] =
     client

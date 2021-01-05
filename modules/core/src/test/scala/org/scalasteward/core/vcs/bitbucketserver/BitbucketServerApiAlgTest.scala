@@ -14,6 +14,18 @@ import org.scalasteward.core.vcs.data._
 class BitbucketServerApiAlgTest extends FunSuite {
   private val repo = Repo("scala-steward-org", "scala-steward")
   private val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    case GET -> Root / "rest" / "api" / "1.0" / "projects" / repo.owner / "repos" / repo.repo =>
+      Ok(s"""{
+            |  "slug": "${repo.repo}",
+            |  "links": { "clone": [ { "href": "http://example.org/scala-steward.git", "name": "http" } ] }
+            |}""".stripMargin)
+
+    case GET -> Root / "rest" / "api" / "1.0" / "projects" / repo.owner / "repos" / repo.repo / "branches" / "default" =>
+      Ok(s"""{
+            |  "displayId": "main",
+            |  "latestCommit": "00213685b18016c86961a7f015793aa09e722db2"
+            |}""".stripMargin)
+
     case GET -> Root / "rest" / "api" / "1.0" / "projects" / repo.owner / "repos" / repo.repo / "pull-requests" =>
       Ok("""{ "values": [
            |  {
@@ -53,7 +65,6 @@ class BitbucketServerApiAlgTest extends FunSuite {
     val pullRequests = bitbucketServerApiAlg
       .listPullRequests(repo, "update/sbt-1.4.2", Branch("main"))
       .unsafeRunSync()
-
     val expected = List(
       PullRequestOut(
         Uri.unsafeFromString("http://example.org"),
@@ -69,13 +80,12 @@ class BitbucketServerApiAlgTest extends FunSuite {
   test("closePullRequest") {
     val obtained =
       bitbucketServerApiAlg.closePullRequest(repo, PullRequestNumber(4711)).unsafeRunSync()
-    val expected =
-      PullRequestOut(
-        Uri.unsafeFromString("http://example.org"),
-        PullRequestState.Closed,
-        PullRequestNumber(4711),
-        "Update sbt to 1.4.6"
-      )
+    val expected = PullRequestOut(
+      Uri.unsafeFromString("http://example.org"),
+      PullRequestState.Closed,
+      PullRequestNumber(4711),
+      "Update sbt to 1.4.6"
+    )
     assertEquals(obtained, expected)
   }
 
@@ -84,5 +94,17 @@ class BitbucketServerApiAlgTest extends FunSuite {
       .commentPullRequest(repo, PullRequestNumber(1347), "Superseded by #1234")
       .unsafeRunSync()
     assertEquals(comment, Comment("Superseded by #1234"))
+  }
+
+  test("getRepo") {
+    val obtained = bitbucketServerApiAlg.getRepo(repo).unsafeRunSync()
+    val expected = RepoOut(
+      "scala-steward",
+      UserOut("scala-steward-org"),
+      None,
+      Uri.unsafeFromString("http://example.org/scala-steward.git"),
+      Branch("main")
+    )
+    assertEquals(obtained, expected)
   }
 }

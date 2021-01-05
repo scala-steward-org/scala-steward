@@ -33,6 +33,9 @@ final class Url(apiHost: Uri) {
   def declinePullRequest(repo: Repo, number: PullRequestNumber, version: Int): Uri =
     (pullRequest(repo, number) / "decline").withQueryParam("version", version)
 
+  def defaultBranch(repo: Repo): Uri =
+    branches(repo) / "default"
+
   def listBranch(repo: Repo, branch: Branch): Uri =
     branches(repo).withQueryParam("filterText", branch.name)
 
