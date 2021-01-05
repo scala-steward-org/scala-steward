@@ -17,17 +17,25 @@
 package org.scalasteward.core.vcs.bitbucketserver
 
 import cats.data.NonEmptyList
+import cats.effect.ApplicativeThrow
 import io.circe.generic.semiauto.{deriveCodec, deriveDecoder, deriveEncoder}
 import io.circe.{Codec, Decoder, Encoder}
 import org.http4s.Uri
+import org.scalasteward.core.git
 import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.util.uri.uriDecoder
-import org.scalasteward.core.vcs.data.{PullRequestNumber, PullRequestOut, PullRequestState}
+import org.scalasteward.core.vcs.data._
 
 object Json {
   case class Page[A](values: List[A])
 
-  case class Repo(id: Int, name: String, forkable: Boolean, project: Project, links: Links)
+  case class Repo(slug: String, links: Links) {
+    def cloneUrlOrRaise[F[_]](implicit F: ApplicativeThrow[F]): F[Uri] =
+      links
+        .get("clone")
+        .flatMap(_.find(_.name.contains("http")).map(_.href))
+        .fold(F.raiseError[Uri](new Throwable(s"$links does not contain a clone URL")))(F.pure)
+  }
 
   case class Project(key: String)
 
@@ -75,7 +83,10 @@ object Json {
 
   case class Branches(values: NonEmptyList[Branch])
 
-  case class Branch(id: String, latestCommit: Sha1)
+  case class Branch(displayId: git.Branch, latestCommit: Sha1) {
+    def toBranchOut: BranchOut =
+      BranchOut(displayId, CommitOut(latestCommit))
+  }
 
   case class Comment(text: String)
 

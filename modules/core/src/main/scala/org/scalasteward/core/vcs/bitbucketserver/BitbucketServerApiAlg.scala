@@ -94,18 +94,22 @@ final class BitbucketServerApiAlg[F[_]](
     }
 
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
-    client.get[Json.Branches](url.listBranch(repo, branch), modify(repo)).map { branches =>
-      BranchOut(Branch(branches.values.head.id), CommitOut(branches.values.head.latestCommit))
-    }
+    client
+      .get[Json.Branches](url.listBranch(repo, branch), modify(repo))
+      .map(_.values.head.toBranchOut)
+
+  def getDefaultBranch(repo: Repo): F[Json.Branch] =
+    client.get[Json.Branch](url.defaultBranch(repo), modify(repo))
 
   def getPullRequest(repo: Repo, number: PullRequestNumber): F[PR] =
     client.get[Json.PR](url.pullRequest(repo, number), modify(repo))
 
   override def getRepo(repo: Repo): F[RepoOut] =
     for {
-      r <- client.get[Json.Repo](url.repos(repo), modify(repo))
-      cloneUri = r.links("clone").find(_.name.contains("http")).get.href
-    } yield RepoOut(r.name, UserOut(repo.owner), None, cloneUri, Branch("master"))
+      jRepo <- client.get[Json.Repo](url.repos(repo), modify(repo))
+      cloneUrl <- jRepo.cloneUrlOrRaise[F]
+      defaultBranch <- getDefaultBranch(repo)
+    } yield RepoOut(jRepo.slug, UserOut(repo.owner), None, cloneUrl, defaultBranch.displayId)
 
   override def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]] =
     client
