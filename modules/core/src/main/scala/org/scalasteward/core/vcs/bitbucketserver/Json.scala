@@ -34,7 +34,7 @@ object Json {
       links
         .get("clone")
         .flatMap(_.find(_.name.contains("http")).map(_.href))
-        .fold(F.raiseError[Uri](new Throwable(s"$links does not contain a clone URL")))(F.pure)
+        .fold(F.raiseError[Uri](new Throwable(s"$links does not contain a HTTP clone URL")))(F.pure)
   }
 
   case class Project(key: String)
