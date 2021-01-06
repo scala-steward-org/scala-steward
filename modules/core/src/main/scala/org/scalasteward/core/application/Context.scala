@@ -42,7 +42,7 @@ import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.{ArtifactMigrations, FilterAlg, PruningAlg, UpdateAlg}
 import org.scalasteward.core.util._
 import org.scalasteward.core.util.uri._
-import org.scalasteward.core.vcs.data.{AuthenticatedUser, Repo}
+import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.vcs.github.{GitHubAppApiAlg, GitHubAuthAlg}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg, VCSSelection}
 
@@ -57,7 +57,7 @@ object Context {
       config <- Resource.pure(Config.from(args))
       implicit0(client: Client[F]) <- OkHttpBuilder.withDefaultClient[F](blocker).map(_.create)
       implicit0(urlChecker: UrlChecker[F]) <- UrlChecker.create[F](config)
-      implicit0(user: AuthenticatedUser) <- Resource.liftF(config.vcsUser[F])
+      vcsUser <- Resource.liftF(config.vcsUser[F])
       implicit0(fileAlg: FileAlg[F]) = FileAlg.create[F]
       implicit0(migrationAlg: MigrationAlg) <-
         Resource.liftF(new MigrationsLoader[F].loadAll(config.scalafixCfg).map(new MigrationAlg(_)))
@@ -75,14 +75,13 @@ object Context {
       implicit val processAlg: ProcessAlg[F] = ProcessAlg.create[F](blocker, config.processCfg)
       implicit val repoConfigAlg: RepoConfigAlg[F] = new RepoConfigAlg[F](config)
       implicit val filterAlg: FilterAlg[F] = new FilterAlg[F]
-      implicit val gitAlg: GitAlg[F] = GenGitAlg.create[F](config)
+      implicit val gitAlg: GitAlg[F] = GenGitAlg.create[F](config.gitCfg)
       implicit val gitHubAuthAlg: GitHubAuthAlg[F] = GitHubAuthAlg.create[F]
       implicit val hookExecutor: HookExecutor[F] = new HookExecutor[F]
       implicit val httpJsonClient: HttpJsonClient[F] = new HttpJsonClient[F]
       implicit val repoCacheRepository: RepoCacheRepository[F] =
         new RepoCacheRepository[F](new JsonKeyValueStore("repo_cache", "1", kvsPrefix))
-      val vcsSelection = new VCSSelection[F]
-      implicit val vcsApiAlg: VCSApiAlg[F] = vcsSelection.getAlg(config)
+      implicit val vcsApiAlg: VCSApiAlg[F] = new VCSSelection[F](config, vcsUser).vcsApiAlg
       implicit val vcsRepoAlg: VCSRepoAlg[F] = new VCSRepoAlg[F](config)
       implicit val vcsExtraAlg: VCSExtraAlg[F] = VCSExtraAlg.create[F](config)
       implicit val pullRequestRepository: PullRequestRepository[F] =

@@ -54,6 +54,8 @@ object MockContext {
       )
     )
 
+  val envVars = List(s"GIT_ASKPASS=${config.gitCfg.gitAskPass}", "VAR1=val1", "VAR2=val2")
+
   implicit val mockEffBracketThrow: BracketThrow[MockEff] = Sync[MockEff]
   implicit val mockEffParallel: Parallel[MockEff] = Parallel.identity
 
@@ -64,7 +66,7 @@ object MockContext {
 
   implicit val coursierAlg: CoursierAlg[MockEff] = CoursierAlg.create
   implicit val dateTimeAlg: DateTimeAlg[MockEff] = DateTimeAlg.create
-  implicit val gitAlg: GitAlg[MockEff] = GenGitAlg.create(config)
+  implicit val gitAlg: GitAlg[MockEff] = GenGitAlg.create(config.gitCfg)
   implicit val hookExecutor: HookExecutor[MockEff] = new HookExecutor[MockEff]
   implicit val user: AuthenticatedUser = AuthenticatedUser("scala-steward", "token")
   implicit val vcsRepoAlg: VCSRepoAlg[MockEff] = new VCSRepoAlg[MockEff](config)

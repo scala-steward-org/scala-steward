@@ -20,7 +20,7 @@ import cats.effect.{Bracket, BracketThrow}
 import cats.syntax.all._
 import cats.{FlatMap, Monad}
 import org.http4s.Uri
-import org.scalasteward.core.application.Config
+import org.scalasteward.core.application.Config.GitCfg
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 
 trait GenGitAlg[F[_], Repo] {
@@ -147,7 +147,7 @@ trait GenGitAlg[F[_], Repo] {
 }
 
 object GenGitAlg {
-  def create[F[_]](config: Config)(implicit
+  def create[F[_]](config: GitCfg)(implicit
       fileAlg: FileAlg[F],
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F],

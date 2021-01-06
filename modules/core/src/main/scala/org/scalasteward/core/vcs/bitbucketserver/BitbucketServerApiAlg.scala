@@ -19,6 +19,7 @@ package org.scalasteward.core.vcs.bitbucketserver
 import cats.MonadThrow
 import cats.syntax.all._
 import org.http4s.{Request, Uri}
+import org.scalasteward.core.application.Config.BitbucketServerCfg
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.HttpJsonClient
 import org.scalasteward.core.vcs.VCSApiAlg
@@ -29,8 +30,8 @@ import org.scalasteward.core.vcs.data._
 /** https://docs.atlassian.com/bitbucket-server/rest/latest/bitbucket-rest.html */
 final class BitbucketServerApiAlg[F[_]](
     bitbucketApiHost: Uri,
-    modify: Repo => Request[F] => F[Request[F]],
-    useReviewers: Boolean
+    config: BitbucketServerCfg,
+    modify: Repo => Request[F] => F[Request[F]]
 )(implicit client: HttpJsonClient[F], F: MonadThrow[F])
     extends VCSApiAlg[F] {
   private val url = new Url(bitbucketApiHost)
@@ -81,7 +82,7 @@ final class BitbucketServerApiAlg[F[_]](
   }
 
   private def useDefaultReviewers(repo: Repo): F[List[Reviewer]] =
-    if (useReviewers) getDefaultReviewers(repo) else F.pure(List.empty[Reviewer])
+    if (config.useDefaultReviewers) getDefaultReviewers(repo) else F.pure(List.empty[Reviewer])
 
   private def declinePullRequest(repo: Repo, number: PullRequestNumber, version: Int): F[Unit] =
     client.post_(url.declinePullRequest(repo, number, version), modify(repo))
