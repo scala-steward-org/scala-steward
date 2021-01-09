@@ -56,9 +56,9 @@ final class EditAlg[F[_]](implicit
         bumpVersion(update, files).flatMap {
           case false => logger.warn("Unable to bump version").as(Nil)
           case true =>
-            val migrations = migrationAlg.findMigrations(update)
             for {
               _ <- preCommit
+              migrations = migrationAlg.findMigrations(update)
               cs1 <-
                 if (migrations.isEmpty) F.pure(Nil)
                 else
