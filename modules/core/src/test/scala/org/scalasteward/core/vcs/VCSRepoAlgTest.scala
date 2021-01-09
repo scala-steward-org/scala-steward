@@ -3,15 +3,13 @@ package org.scalasteward.core.vcs
 import munit.FunSuite
 import org.http4s.syntax.literals._
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.mock.MockContext.{config, gitAlg, mockLogger, vcsRepoAlg}
+import org.scalasteward.core.mock.MockContext.{config, envVars, gitAlg, mockLogger, vcsRepoAlg}
 import org.scalasteward.core.mock.{MockContext, MockEff, MockState}
 import org.scalasteward.core.vcs.data.{Repo, RepoOut, UserOut}
 
 class VCSRepoAlgTest extends FunSuite {
   val repo: Repo = Repo("fthomas", "datapackage")
   val repoDir: String = (config.workspace / "fthomas/datapackage").toString
-  val envVars = List(s"GIT_ASKPASS=${config.gitAskPass}", "VAR1=val1", "VAR2=val2")
-
   val parentRepoOut: RepoOut = RepoOut(
     "datapackage",
     UserOut("fthomas"),

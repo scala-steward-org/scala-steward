@@ -20,12 +20,12 @@ import better.files.File
 import cats.effect.BracketThrow
 import cats.syntax.all._
 import org.http4s.Uri
-import org.scalasteward.core.application.Config
+import org.scalasteward.core.application.Config.GitCfg
 import org.scalasteward.core.git.FileGitAlg.dotdot
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
 
-final class FileGitAlg[F[_]](config: Config)(implicit
+final class FileGitAlg[F[_]](config: GitCfg)(implicit
     fileAlg: FileAlg[F],
     processAlg: ProcessAlg[F],
     workspaceAlg: WorkspaceAlg[F],

@@ -4,7 +4,7 @@ import better.files.File
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.{GroupId, Update}
-import org.scalasteward.core.mock.MockContext.{config, editAlg}
+import org.scalasteward.core.mock.MockContext.{config, editAlg, envVars}
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafmt.scalafmtBinary
@@ -12,7 +12,6 @@ import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
 class EditAlgTest extends FunSuite {
-  private val envVars = List(s"GIT_ASKPASS=${config.gitAskPass}", "VAR1=val1", "VAR2=val2")
   private val gitStatus =
     List("git", "status", "--porcelain", "--untracked-files=no", "--ignore-submodules")
 

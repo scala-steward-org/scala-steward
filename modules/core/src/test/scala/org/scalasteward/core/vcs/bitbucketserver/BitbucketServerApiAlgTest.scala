@@ -6,6 +6,7 @@ import org.http4s.client.Client
 import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.http4s.{HttpRoutes, Uri}
+import org.scalasteward.core.application.Config.BitbucketServerCfg
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.mock.MockContext.config
 import org.scalasteward.core.util.HttpJsonClient
@@ -58,8 +59,9 @@ class BitbucketServerApiAlgTest extends FunSuite {
 
   implicit private val client: Client[IO] = Client.fromHttpApp(routes.orNotFound)
   implicit private val httpJsonClient: HttpJsonClient[IO] = new HttpJsonClient[IO]
+  private val bitbucketServerCfg = BitbucketServerCfg(useDefaultReviewers = false)
   private val bitbucketServerApiAlg: BitbucketServerApiAlg[IO] =
-    new BitbucketServerApiAlg[IO](config.vcsApiHost, _ => IO.pure, useReviewers = false)
+    new BitbucketServerApiAlg[IO](config.vcsApiHost, bitbucketServerCfg, _ => IO.pure)
 
   test("listPullRequests") {
     val pullRequests = bitbucketServerApiAlg

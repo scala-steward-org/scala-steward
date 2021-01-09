@@ -47,7 +47,7 @@ final class VCSRepoAlg[F[_]](config: Config)(implicit
   private def clone(repo: Repo, repoOut: RepoOut): F[Unit] =
     for {
       _ <- gitAlg.clone(repo, withLogin(repoOut.clone_url))
-      _ <- gitAlg.setAuthor(repo, config.gitAuthor)
+      _ <- gitAlg.setAuthor(repo, config.gitCfg.gitAuthor)
     } yield ()
 
   private[vcs] def syncFork(repo: Repo, repoOut: RepoOut): F[Unit] =
