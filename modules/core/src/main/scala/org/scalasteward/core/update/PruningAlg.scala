@@ -23,7 +23,7 @@ import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data._
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.repocache.RepoCache
-import org.scalasteward.core.repoconfig.{PullRequestFrequency, RepoConfig, RepoConfigAlg}
+import org.scalasteward.core.repoconfig.{PullRequestFrequency, RepoConfig}
 import org.scalasteward.core.update.PruningAlg._
 import org.scalasteward.core.update.data.UpdateState
 import org.scalasteward.core.update.data.UpdateState._
@@ -37,30 +37,27 @@ final class PruningAlg[F[_]](implicit
     dateTimeAlg: DateTimeAlg[F],
     logger: Logger[F],
     pullRequestRepository: PullRequestRepository[F],
-    repoConfigAlg: RepoConfigAlg[F],
     updateAlg: UpdateAlg[F],
     F: Monad[F]
 ) {
-  def needsAttention(repo: Repo, repoCache: RepoCache): F[(Boolean, List[Update.Single])] =
-    repoConfigAlg.mergeWithDefault(repoCache.maybeRepoConfig).flatMap { repoConfig =>
-      val ignoreScalaDependency = !repoConfig.updates.includeScalaOrDefault
-      val dependencies = repoCache.dependencyInfos
-        .flatMap(_.sequence)
-        .collect {
-          case info if !ignoreDependency(info.value, ignoreScalaDependency) =>
-            info.map(_.dependency)
-        }
-        .sorted
-      findUpdatesNeedingAttention(repo, repoCache, repoConfig, dependencies)
-    }
+  def needsAttention(data: RepoData): F[(Boolean, List[Update.Single])] = {
+    val ignoreScalaDependency = !data.config.updates.includeScalaOrDefault
+    val dependencies = data.cache.dependencyInfos
+      .flatMap(_.sequence)
+      .collect {
+        case info if !ignoreDependency(info.value, ignoreScalaDependency) => info.map(_.dependency)
+      }
+      .sorted
+    findUpdatesNeedingAttention(data, dependencies)
+  }
 
   private def findUpdatesNeedingAttention(
-      repo: Repo,
-      repoCache: RepoCache,
-      repoConfig: RepoConfig,
+      data: RepoData,
       dependencies: List[Scope.Dependency]
   ): F[(Boolean, List[Update.Single])] = {
-
+    val repo = data.repo
+    val repoCache = data.cache
+    val repoConfig = data.config
     val depsWithoutResolvers = dependencies.map(_.value).distinct
     for {
       _ <- logger.info(s"Find updates for ${repo.show}")

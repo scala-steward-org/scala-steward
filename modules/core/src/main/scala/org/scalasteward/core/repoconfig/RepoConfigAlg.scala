@@ -34,9 +34,6 @@ final class RepoConfigAlg[F[_]](config: Config)(implicit
     workspaceAlg: WorkspaceAlg[F],
     F: MonadThrow[F]
 ) {
-  def readRepoConfigWithDefault(repo: Repo): F[RepoConfig] =
-    readRepoConfig(repo).flatMap(mergeWithDefault)
-
   def mergeWithDefault(maybeRepoConfig: Option[RepoConfig]): F[RepoConfig] =
     readDefaultRepoConfig.map { maybeDefault =>
       (maybeRepoConfig |+| maybeDefault).getOrElse(RepoConfig.empty)

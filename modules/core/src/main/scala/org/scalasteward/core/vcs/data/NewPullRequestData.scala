@@ -20,10 +20,9 @@ import cats.syntax.all._
 import io.circe.Encoder
 import io.circe.generic.semiauto._
 import org.http4s.Uri
-import org.scalasteward.core.data.{GroupId, ReleaseRelatedUrl, SemVer, Update}
+import org.scalasteward.core.data.{GroupId, ReleaseRelatedUrl, SemVer, Update, UpdateData}
 import org.scalasteward.core.git
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.nurture.UpdateData
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Details

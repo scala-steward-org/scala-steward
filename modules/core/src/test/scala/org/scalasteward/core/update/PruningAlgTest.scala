@@ -2,14 +2,14 @@ package org.scalasteward.core.update
 
 import io.circe.parser.decode
 import munit.FunSuite
+import org.scalasteward.core.data.RepoData
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.repocache.RepoCache
+import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.vcs.data.Repo
 
 class PruningAlgTest extends FunSuite {
-  private val defaultConf = config.defaultRepoConfigFile.map(_.toString).getOrElse("")
-
   test("needsAttention") {
     val repo = Repo("fthomas", "scalafix-test")
     val Right(repoCache) = decode[RepoCache](
@@ -56,12 +56,10 @@ class PruningAlgTest extends FunSuite {
           |}""".stripMargin
     val initial = MockState.empty
       .add(pullRequestsFile, pullRequestsContent)
-    val state = pruningAlg.needsAttention(repo, repoCache).runS(initial).unsafeRunSync()
+    val data = RepoData(repo, repoCache, repoCache.maybeRepoConfig.getOrElse(RepoConfig.empty))
+    val state = pruningAlg.needsAttention(data).runS(initial).unsafeRunSync()
     val expected = initial.copy(
-      commands = Vector(
-        List("read", defaultConf),
-        List("read", pullRequestsFile.toString)
-      ),
+      commands = Vector(List("read", pullRequestsFile.toString)),
       logs = Vector(
         (None, "Find updates for fthomas/scalafix-test"),
         (None, "Found 0 updates"),
@@ -161,12 +159,10 @@ class PruningAlgTest extends FunSuite {
     val initial = MockState.empty
       .add(pullRequestsFile, pullRequestsContent)
       .add(versionsFile, versionsContent)
-    val state = pruningAlg.needsAttention(repo, repoCache).runS(initial).unsafeRunSync()
+    val data = RepoData(repo, repoCache, repoCache.maybeRepoConfig.getOrElse(RepoConfig.empty))
+    val state = pruningAlg.needsAttention(data).runS(initial).unsafeRunSync()
     val expected = initial.copy(
-      commands = Vector(
-        List("read", defaultConf),
-        List("read", pullRequestsFile.toString)
-      ),
+      commands = Vector(List("read", pullRequestsFile.toString)),
       logs = Vector(
         (None, "Find updates for fthomas/scalafix-test"),
         (None, "Found 0 updates"),
@@ -276,10 +272,10 @@ class PruningAlgTest extends FunSuite {
     val initial = MockState.empty
       .add(pullRequestsFile, pullRequestsContent)
       .add(versionsFile, versionsContent)
-    val state = pruningAlg.needsAttention(repo, repoCache).runS(initial).unsafeRunSync()
+    val data = RepoData(repo, repoCache, repoCache.maybeRepoConfig.getOrElse(RepoConfig.empty))
+    val state = pruningAlg.needsAttention(data).runS(initial).unsafeRunSync()
     val expected = initial.copy(
       commands = Vector(
-        List("read", defaultConf),
         List("read", versionsFile.toString),
         List("read", pullRequestsFile.toString),
         List("read", versionsFile.toString),

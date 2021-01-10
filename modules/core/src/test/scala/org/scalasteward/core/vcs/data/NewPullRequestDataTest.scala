@@ -3,11 +3,11 @@ package org.scalasteward.core.vcs.data
 import io.circe.syntax._
 import munit.FunSuite
 import org.http4s.syntax.literals._
+import org.scalasteward.core.TestInstances.dummyRepoCache
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.buildtool.sbt.data.SbtVersion
-import org.scalasteward.core.data.{ReleaseRelatedUrl, Update, Version}
+import org.scalasteward.core.data._
 import org.scalasteward.core.git.{Branch, Sha1}
-import org.scalasteward.core.nurture.UpdateData
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
@@ -15,9 +15,8 @@ import org.scalasteward.core.util.Nel
 class NewPullRequestDataTest extends FunSuite {
   test("asJson") {
     val data = UpdateData(
-      Repo("foo", "bar"),
+      RepoData(Repo("foo", "bar"), dummyRepoCache, RepoConfig.empty),
       Repo("scala-steward", "bar"),
-      RepoConfig(),
       Update.Single("ch.qos.logback" % "logback-classic" % "1.2.0", Nel.of("1.2.3")),
       Branch("master"),
       Sha1(Sha1.HexString.unsafeFrom("d6b6791d2ea11df1d156fe70979ab8c3a5ba3433")),

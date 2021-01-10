@@ -26,11 +26,10 @@ import org.http4s.Uri
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.ProcessResult.{Created, Ignored, Updated}
-import org.scalasteward.core.data.{ProcessResult, Scope, Update}
+import org.scalasteward.core.data._
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Branch, Commit, GitAlg}
-import org.scalasteward.core.repocache.RepoCacheRepository
-import org.scalasteward.core.repoconfig.{PullRequestUpdateStrategy, RepoConfigAlg}
+import org.scalasteward.core.repoconfig.PullRequestUpdateStrategy
 import org.scalasteward.core.scalafix.MigrationAlg
 import org.scalasteward.core.util.UrlChecker
 import org.scalasteward.core.util.logger.LoggerOps
@@ -45,8 +44,6 @@ final class NurtureAlg[F[_]](config: Config)(implicit
     logger: Logger[F],
     migrationAlg: MigrationAlg,
     pullRequestRepository: PullRequestRepository[F],
-    repoCacheRepository: RepoCacheRepository[F],
-    repoConfigAlg: RepoConfigAlg[F],
     vcsApiAlg: VCSApiAlg[F],
     vcsExtraAlg: VCSExtraAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
@@ -54,11 +51,11 @@ final class NurtureAlg[F[_]](config: Config)(implicit
     urlChecker: UrlChecker[F],
     F: BracketThrow[F]
 ) {
-  def nurture(repo: Repo, fork: RepoOut, updates: List[Update.Single]): F[Unit] =
+  def nurture(data: RepoData, fork: RepoOut, updates: List[Update.Single]): F[Unit] =
     for {
-      _ <- logger.info(s"Nurture ${repo.show}")
-      baseBranch <- cloneAndSync(repo, fork)
-      _ <- updateDependencies(repo, fork.repo, baseBranch, updates)
+      _ <- logger.info(s"Nurture ${data.repo.show}")
+      baseBranch <- cloneAndSync(data.repo, fork)
+      _ <- updateDependencies(data, fork.repo, baseBranch, updates)
     } yield ()
 
   def cloneAndSync(repo: Repo, fork: RepoOut): F[Branch] =
@@ -68,28 +65,28 @@ final class NurtureAlg[F[_]](config: Config)(implicit
     } yield baseBranch
 
   def updateDependencies(
-      repo: Repo,
+      data: RepoData,
       fork: Repo,
       baseBranch: Branch,
       updates: List[Update.Single]
   ): F[Unit] =
     for {
-      repoConfig <- repoConfigAlg.readRepoConfigWithDefault(repo)
+      _ <- F.unit
       grouped = Update.groupByGroupId(updates)
       _ <- logger.info(util.logger.showUpdates(grouped))
-      baseSha1 <- gitAlg.latestSha1(repo, baseBranch)
+      baseSha1 <- gitAlg.latestSha1(data.repo, baseBranch)
       _ <- NurtureAlg.processUpdates(
         grouped,
         update => {
           val updateData =
-            UpdateData(repo, fork, repoConfig, update, baseBranch, baseSha1, git.branchFor(update))
+            UpdateData(data, fork, update, baseBranch, baseSha1, git.branchFor(update))
           processUpdate(updateData).flatMap {
             case result @ Created(newPrNumber) =>
               closeObsoletePullRequests(updateData, newPrNumber).as[ProcessResult](result)
             case result @ _ => F.pure(result)
           }
         },
-        repoConfig.updates.limit
+        data.config.updates.limit
       )
     } yield ()
 
@@ -173,8 +170,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
       dependenciesWithNextVersion =
         data.update.dependencies.map(_.copy(version = data.update.nextVersion)).toList
-      maybeRepoCache <- repoCacheRepository.findCache(data.repo)
-      resolvers = maybeRepoCache.map(_.dependencyInfos.flatMap(_.resolvers)).getOrElse(List.empty)
+      resolvers = data.repoData.cache.dependencyInfos.flatMap(_.resolvers)
       artifactIdToUrl <-
         coursierAlg.getArtifactIdUrlMapping(Scope(dependenciesWithNextVersion, resolvers))
       existingArtifactUrlsList <- artifactIdToUrl.toList.filterA(a => urlChecker.exists(a._2))
@@ -241,7 +237,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
   def mergeAndApplyAgain(data: UpdateData): F[ProcessResult] =
     for {
       _ <- logger.info(
-        s"Merge branch '${data.baseBranch.name}' into ${data.updateBranch.name} and apply again"
+        s"Merge branch ${data.baseBranch.name} into ${data.updateBranch.name} and apply again"
       )
       maybeMergeCommit <- gitAlg.mergeTheirs(data.repo, data.baseBranch)
       editCommits <- editAlg.applyUpdate(data.repo, data.repoConfig, data.update)

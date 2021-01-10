@@ -13,12 +13,12 @@ import org.http4s.client.Client
 import org.http4s.dsl.io._
 import org.http4s.headers.Allow
 import org.http4s.implicits._
+import org.scalasteward.core.TestInstances.dummyRepoCache
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.application.Config.GitLabCfg
-import org.scalasteward.core.data.Update
+import org.scalasteward.core.data.{RepoData, Update, UpdateData}
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.mock.MockContext.{config, user}
-import org.scalasteward.core.nurture.UpdateData
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.{HttpJsonClient, Nel}
 import org.scalasteward.core.vcs.data._
@@ -88,9 +88,8 @@ class GitLabApiAlgTest extends FunSuite {
     )
 
   private val data = UpdateData(
-    Repo("foo", "bar"),
+    RepoData(Repo("foo", "bar"), dummyRepoCache, RepoConfig.empty),
     Repo("scala-steward", "bar"),
-    RepoConfig(),
     Update.Single("ch.qos.logback" % "logback-classic" % "1.2.0", Nel.of("1.2.3")),
     Branch("master"),
     Sha1(Sha1.HexString.unsafeFrom("d6b6791d2ea11df1d156fe70979ab8c3a5ba3433")),
