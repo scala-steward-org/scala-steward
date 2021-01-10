@@ -43,7 +43,12 @@ final class EditAlg[F[_]](implicit
     workspaceAlg: WorkspaceAlg[F],
     F: MonadThrow[F]
 ) {
-  def applyUpdate(repo: Repo, repoConfig: RepoConfig, update: Update): F[List[Commit]] =
+  def applyUpdate(
+      repo: Repo,
+      repoConfig: RepoConfig,
+      update: Update,
+      preCommit: F[Unit] = F.unit
+  ): F[List[Commit]] =
     findFilesContainingCurrentVersion(repo, repoConfig, update).flatMap {
       case None =>
         logger.warn("No files found that contain the current version").as(Nil)
@@ -51,8 +56,9 @@ final class EditAlg[F[_]](implicit
         bumpVersion(update, files).flatMap {
           case false => logger.warn("Unable to bump version").as(Nil)
           case true =>
-            val migrations = migrationAlg.findMigrations(update)
             for {
+              _ <- preCommit
+              migrations = migrationAlg.findMigrations(update)
               cs1 <-
                 if (migrations.isEmpty) F.pure(Nil)
                 else

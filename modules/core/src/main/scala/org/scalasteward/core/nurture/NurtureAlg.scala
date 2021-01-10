@@ -151,14 +151,13 @@ final class NurtureAlg[F[_]](config: Config)(implicit
 
   def applyNewUpdate(data: UpdateData): F[ProcessResult] =
     gitAlg.returnToCurrentBranch(data.repo) {
-      for {
-        _ <- logger.info(s"Create branch ${data.updateBranch.name}")
-        _ <- gitAlg.createBranch(data.repo, data.updateBranch)
-        editCommits <- editAlg.applyUpdate(data.repo, data.repoConfig, data.update)
-        result <-
+      val createBranch = logger.info(s"Create branch ${data.updateBranch.name}") >>
+        gitAlg.createBranch(data.repo, data.updateBranch)
+      editAlg.applyUpdate(data.repo, data.repoConfig, data.update, createBranch).flatMap {
+        editCommits =>
           if (editCommits.isEmpty) logger.warn("No commits created").as(Ignored)
           else pushCommits(data, editCommits) >> createPullRequest(data)
-      } yield result
+      }
     }
 
   def pushCommits(data: UpdateData, commits: List[Commit]): F[ProcessResult] =
