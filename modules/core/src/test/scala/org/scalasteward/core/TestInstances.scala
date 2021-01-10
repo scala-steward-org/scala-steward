@@ -9,6 +9,9 @@ import org.scalacheck.{Arbitrary, Cogen, Gen}
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.Update.Single
 import org.scalasteward.core.data.{GroupId, Resolver, Scope, Update, Version}
+import org.scalasteward.core.git.Sha1
+import org.scalasteward.core.git.Sha1.HexString
+import org.scalasteward.core.repocache.RepoCache
 import org.scalasteward.core.repoconfig.PullRequestFrequency.{Asap, Timespan}
 import org.scalasteward.core.repoconfig._
 import org.scalasteward.core.util.Change.{Changed, Unchanged}
@@ -17,6 +20,13 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 
 object TestInstances {
+  val dummyRepoCache: RepoCache =
+    RepoCache(
+      Sha1(HexString.unsafeFrom("da39a3ee5e6b4b0d3255bfef95601890afd80709")),
+      List.empty,
+      Option.empty
+    )
+
   implicit def changeArbitrary[T](implicit arbT: Arbitrary[T]): Arbitrary[Change[T]] =
     Arbitrary(arbT.arbitrary.flatMap(t => Gen.oneOf(Changed(t), Unchanged(t))))
 

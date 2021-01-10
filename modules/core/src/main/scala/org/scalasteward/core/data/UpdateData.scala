@@ -14,19 +14,20 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.nurture
+package org.scalasteward.core.data
 
-import org.scalasteward.core.data.Update
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.vcs.data.Repo
 
 final case class UpdateData(
-    repo: Repo,
+    repoData: RepoData,
     fork: Repo,
-    repoConfig: RepoConfig,
     update: Update,
     baseBranch: Branch,
     baseSha1: Sha1,
     updateBranch: Branch
-)
+) {
+  def repo: Repo = repoData.repo
+  def repoConfig: RepoConfig = repoData.config
+}
