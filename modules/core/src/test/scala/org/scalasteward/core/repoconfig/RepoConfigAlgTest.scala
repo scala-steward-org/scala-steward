@@ -31,7 +31,11 @@ class RepoConfigAlgTest extends FunSuite {
          |commits.message = "Update ${artifactName} from ${currentVersion} to ${nextVersion}"
          |""".stripMargin
     val initialState = MockState.empty.add(configFile, content)
-    val config = repoConfigAlg.readRepoConfig(repo).runA(initialState).unsafeRunSync()
+    val config = repoConfigAlg
+      .readRepoConfig(repo)
+      .flatMap(repoConfigAlg.mergeWithDefault)
+      .runA(initialState)
+      .unsafeRunSync()
 
     val expected = RepoConfig(
       pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(7.days))),
@@ -70,7 +74,7 @@ class RepoConfigAlgTest extends FunSuite {
         message = Some("Update ${artifactName} from ${currentVersion} to ${nextVersion}")
       )
     )
-    assertEquals(config, Some(expected))
+    assertEquals(config, expected)
   }
 
   test("config with 'updatePullRequests = false'") {
