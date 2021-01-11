@@ -29,6 +29,7 @@ class RepoConfigAlgTest extends FunSuite {
          |updates.fileExtensions = [ ".txt" ]
          |pullRequests.frequency = "@weekly"
          |commits.message = "Update ${artifactName} from ${currentVersion} to ${nextVersion}"
+         |buildRoots = [ ".", "subfolder/subfolder" ]
          |""".stripMargin
     val initialState = MockState.empty.add(configFile, content)
     val config = repoConfigAlg
@@ -68,11 +69,12 @@ class RepoConfigAlgTest extends FunSuite {
         ),
         limit = Some(NonNegInt.unsafeFrom(4)),
         includeScala = Some(true),
-        fileExtensions = Some(List(".txt"))
+        fileExtensions = Some(List(".txt")),
       ),
       commits = CommitsConfig(
         message = Some("Update ${artifactName} from ${currentVersion} to ${nextVersion}")
-      )
+      ),
+      buildRoots = List(BuildRootConfig("."), BuildRootConfig("subfolder/subfolder")),
     )
     assertEquals(config, expected)
   }
