@@ -90,7 +90,7 @@ scalafmt.runAfterUpgrading = false
 # It is possible to have multiple scala projects in a single repository. In that case the folders containing the projects (build.sbt folders)
 # are specified using the buildRoots property. Note that the paths used there are relative and if the repo directory itself also contains a build.sbt the dot can be used to specify it.
 # Default: ["."]
-buildRoots = [ ".", "subfolder/subfolder" ]
+buildRoots = [ ".", "subfolder/projectA" ]
 ```
 
 The version information given in the patterns above can be in two formats:
