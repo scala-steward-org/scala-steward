@@ -8,7 +8,7 @@ import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
-import org.scalasteward.core.vcs.data.Repo
+import org.scalasteward.core.vcs.data.{BuildRoot, Repo}
 
 class SbtAlgTest extends FunSuite {
   test("addGlobalPlugins") {
@@ -33,10 +33,11 @@ class SbtAlgTest extends FunSuite {
 
   test("getDependencies") {
     val repo = Repo("typelevel", "cats")
+    val buildRoot = BuildRoot(repo, ".")
     val repoDir = config.workspace / repo.show
     val files = Map(repoDir / "project" / "build.properties" -> "sbt.version=1.2.6")
     val initial = MockState.empty.copy(files = files)
-    val state = sbtAlg.getDependencies(repo).runS(initial).unsafeRunSync()
+    val state = sbtAlg.getDependencies(buildRoot).runS(initial).unsafeRunSync()
     val expected = initial.copy(
       commands = Vector(
         List(
@@ -60,6 +61,7 @@ class SbtAlgTest extends FunSuite {
 
   test("runMigrations") {
     val repo = Repo("fthomas", "scala-steward")
+    val buildRoot = BuildRoot(repo, ".")
     val repoDir = config.workspace / repo.show
     val migrations = Nel.of(
       Migration(
@@ -71,7 +73,7 @@ class SbtAlgTest extends FunSuite {
         None
       )
     )
-    val state = sbtAlg.runMigrations(repo, migrations).runS(MockState.empty).unsafeRunSync()
+    val state = sbtAlg.runMigrations(buildRoot, migrations).runS(MockState.empty).unsafeRunSync()
     val expected = MockState.empty.copy(
       commands = Vector(
         List("write", "/tmp/steward/.sbt/0.13/plugins/scala-steward-scalafix.sbt"),
@@ -98,6 +100,7 @@ class SbtAlgTest extends FunSuite {
 
   test("runMigrations: migration with scalacOptions") {
     val repo = Repo("fthomas", "scala-steward")
+    val buildRoot = BuildRoot(repo, ".")
     val repoDir = config.workspace / repo.show
     val migrations = Nel.of(
       Migration(
@@ -109,7 +112,7 @@ class SbtAlgTest extends FunSuite {
         Some(Nel.of("-P:semanticdb:synthetics:on"))
       )
     )
-    val state = sbtAlg.runMigrations(repo, migrations).runS(MockState.empty).unsafeRunSync()
+    val state = sbtAlg.runMigrations(buildRoot, migrations).runS(MockState.empty).unsafeRunSync()
     val expected = MockState.empty.copy(
       commands = Vector(
         List("write", "/tmp/steward/.sbt/0.13/plugins/scala-steward-scalafix.sbt"),

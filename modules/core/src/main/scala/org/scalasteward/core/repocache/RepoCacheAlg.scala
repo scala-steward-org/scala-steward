@@ -68,7 +68,7 @@ final class RepoCacheAlg[F[_]](config: Config)(implicit
     for {
       branch <- gitAlg.currentBranch(repo)
       latestSha1 <- gitAlg.latestSha1(repo, branch)
-      dependencies <- buildToolDispatcher.getDependencies(repo)
+      dependencies <- buildToolDispatcher.getDependenciesForAllBuildRoots(repo)
       dependencyInfos <-
         dependencies
           .traverse(_.traverse(_.traverse(gatherDependencyInfo(repo, _))))

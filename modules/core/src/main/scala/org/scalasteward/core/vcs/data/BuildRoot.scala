@@ -14,17 +14,6 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.buildtool
+package org.scalasteward.core.vcs.data
 
-import org.scalasteward.core.data.Scope
-import org.scalasteward.core.scalafix.Migration
-import org.scalasteward.core.util.Nel
-import org.scalasteward.core.vcs.data.BuildRoot
-
-trait BuildToolAlg[F[_]] {
-  def containsBuild(repo: BuildRoot): F[Boolean]
-
-  def getDependencies(repo: BuildRoot): F[List[Scope.Dependencies]]
-
-  def runMigrations(repo: BuildRoot, migrations: Nel[Migration]): F[Unit]
-}
+final case class BuildRoot(repo: Repo, relativeBuildRootPath: String)

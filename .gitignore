@@ -14,3 +14,9 @@ workspace/
 metals.sbt
 
 .bsp/
+
+
+#Workspace Tooling
+.envrc
+nix
+shell.nix

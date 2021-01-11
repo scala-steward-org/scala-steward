@@ -84,14 +84,17 @@ final class EditAlg[F[_]](implicit
   private def runScalafixMigrations(repo: Repo, migrations: List[Migration]): F[List[Commit]] =
     migrations.traverseFilter { migration =>
       logger.info(s"Running migration $migration") >>
-        buildToolDispatcher.runMigrations(repo, Nel.one(migration)).attempt.flatMap {
-          case Right(_) =>
-            val msg1 = s"Run Scalafix rule(s) ${migration.rewriteRules.mkString_(", ")}"
-            val msg2 = migration.doc.map(url => s"See $url for details").toList
-            gitAlg.commitAllIfDirty(repo, msg1, msg2: _*)
-          case Left(throwable) =>
-            logger.error(throwable)("Scalafix migration failed").as(None)
-        }
+        buildToolDispatcher
+          .runMigrationsForAllBuildRoots(repo, Nel.one(migration))
+          .attempt
+          .flatMap {
+            case Right(_) =>
+              val msg1 = s"Run Scalafix rule(s) ${migration.rewriteRules.mkString_(", ")}"
+              val msg2 = migration.doc.map(url => s"See $url for details").toList
+              gitAlg.commitAllIfDirty(repo, msg1, msg2: _*)
+            case Left(throwable) =>
+              logger.error(throwable)("Scalafix migration failed").as(None)
+          }
     }
 
   private def bumpVersion(update: Update, files: Nel[File]): F[Boolean] = {

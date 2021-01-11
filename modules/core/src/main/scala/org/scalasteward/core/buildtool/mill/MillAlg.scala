@@ -25,7 +25,7 @@ import org.scalasteward.core.data.Scope.Dependencies
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
-import org.scalasteward.core.vcs.data.Repo
+import org.scalasteward.core.vcs.data.BuildRoot
 
 trait MillAlg[F[_]] extends BuildToolAlg[F]
 
@@ -49,22 +49,26 @@ object MillAlg {
       F: BracketThrow[F]
   ): MillAlg[F] =
     new MillAlg[F] {
-      override def containsBuild(repo: Repo): F[Boolean] =
-        workspaceAlg.repoDir(repo).flatMap(repoDir => fileAlg.isRegularFile(repoDir / "build.sc"))
+      override def containsBuild(buildRoot: BuildRoot): F[Boolean] =
+        workspaceAlg
+          .repoDir(buildRoot.repo)
+          .flatMap(repoDir =>
+            fileAlg.isRegularFile(repoDir / buildRoot.relativeBuildRootPath / "build.sc")
+          )
 
-      override def getDependencies(repo: Repo): F[List[Dependencies]] =
+      override def getDependencies(buildRoot: BuildRoot): F[List[Dependencies]] =
         for {
-          repoDir <- workspaceAlg.repoDir(repo)
-          predef = repoDir / "scala-steward.sc"
+          repoDir <- workspaceAlg.repoDir(buildRoot.repo)
+          predef = repoDir / buildRoot.relativeBuildRootPath / "scala-steward.sc"
           extracted <- fileAlg.createTemporarily(predef, content) {
             val command = Nel("mill", List("-i", "-p", predef.toString, "show", extractDeps))
-            processAlg.execSandboxed(command, repoDir)
+            processAlg.execSandboxed(command, repoDir / buildRoot.relativeBuildRootPath)
           }
           parsed <- F.fromEither(
             parser.parseModules(extracted.dropWhile(!_.startsWith("{")).mkString("\n"))
           )
         } yield parsed.map(module => Scope(module.dependencies, module.repositories))
 
-      override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] = F.unit
+      override def runMigrations(buildRoot: BuildRoot, migrations: Nel[Migration]): F[Unit] = F.unit
     }
 }

@@ -18,10 +18,13 @@ class BuildToolDispatcherTest extends FunSuite {
       repoDir / ".scalafmt.conf" -> "version=2.0.0"
     )
     val initial = MockState.empty.copy(files = files)
-    val (state, deps) = buildToolDispatcher.getDependencies(repo).run(initial).unsafeRunSync()
+    val (state, deps) =
+      buildToolDispatcher.getDependenciesForAllBuildRoots(repo).run(initial).unsafeRunSync()
 
     val expectedState = initial.copy(commands =
       Vector(
+        List("read", s"$repoDir/.scala-steward.conf"),
+        List("read", s"/tmp/default.scala-steward.conf"),
         List("test", "-f", s"$repoDir/pom.xml"),
         List("test", "-f", s"$repoDir/build.sc"),
         List("test", "-f", s"$repoDir/build.sbt"),
@@ -42,6 +45,7 @@ class BuildToolDispatcherTest extends FunSuite {
         List("read", s"$repoDir/.scalafmt.conf")
       )
     )
+
     assertEquals(state, expectedState)
 
     val expectedDeps = List(
