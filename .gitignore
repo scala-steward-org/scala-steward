@@ -20,3 +20,4 @@ metals.sbt
 .envrc
 nix
 shell.nix
+
