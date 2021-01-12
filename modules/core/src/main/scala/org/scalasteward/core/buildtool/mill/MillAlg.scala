@@ -52,9 +52,7 @@ object MillAlg {
       override def containsBuild(buildRoot: BuildRoot): F[Boolean] =
         workspaceAlg
           .buildRootDir(buildRoot)
-          .flatMap(buildRootDir =>
-            fileAlg.isRegularFile(buildRootDir / "build.sc")
-          )
+          .flatMap(buildRootDir => fileAlg.isRegularFile(buildRootDir / "build.sc"))
 
       override def getDependencies(buildRoot: BuildRoot): F[List[Dependencies]] =
         for {

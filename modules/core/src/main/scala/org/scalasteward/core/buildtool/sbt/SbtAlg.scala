@@ -69,9 +69,7 @@ object SbtAlg {
       override def containsBuild(buildRoot: BuildRoot): F[Boolean] =
         workspaceAlg
           .buildRootDir(buildRoot)
-          .flatMap(buildRootDir =>
-            fileAlg.isRegularFile(buildRootDir / "build.sbt")
-          )
+          .flatMap(buildRootDir => fileAlg.isRegularFile(buildRootDir / "build.sbt"))
 
       override def getSbtVersion(buildRoot: BuildRoot): F[Option[SbtVersion]] =
         for {
@@ -105,7 +103,7 @@ object SbtAlg {
                 }
 
               val scalafixCmds = migration.rewriteRules.map(rule => s"$scalafixAll $rule").toList
-              withScalacOptions(sbt(Nel(scalafixEnable, scalafixCmds), repoDir).void)
+              withScalacOptions(sbt(Nel(scalafixEnable, scalafixCmds), buildRootDir).void)
             }
           }
         }
