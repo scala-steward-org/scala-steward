@@ -21,7 +21,7 @@ import cats.FlatMap
 import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.vcs.data.Repo
+import org.scalasteward.core.vcs.data.{BuildRoot, Repo}
 
 trait WorkspaceAlg[F[_]] {
   def cleanWorkspace: F[Unit]
@@ -29,6 +29,8 @@ trait WorkspaceAlg[F[_]] {
   def rootDir: F[File]
 
   def repoDir(repo: Repo): F[File]
+
+  def buildRootDir(buildRoot: BuildRoot): F[File]
 }
 
 object WorkspaceAlg {
@@ -39,6 +41,8 @@ object WorkspaceAlg {
   ): WorkspaceAlg[F] =
     new WorkspaceAlg[F] {
       private[this] val reposDir = config.workspace / "repos"
+
+      private[this] def repoDirUnsafe(repo: Repo) = reposDir / repo.owner / repo.repo
 
       override def cleanWorkspace: F[Unit] =
         for {
@@ -51,6 +55,9 @@ object WorkspaceAlg {
         fileAlg.ensureExists(config.workspace)
 
       override def repoDir(repo: Repo): F[File] =
-        fileAlg.ensureExists(reposDir / repo.owner / repo.repo)
+        fileAlg.ensureExists(repoDirUnsafe(repo))
+
+      override def buildRootDir(buildRoot: BuildRoot): F[File] =
+        fileAlg.ensureExists(repoDirUnsafe(buildRoot.repo) / buildRoot.relativePath)
     }
 }

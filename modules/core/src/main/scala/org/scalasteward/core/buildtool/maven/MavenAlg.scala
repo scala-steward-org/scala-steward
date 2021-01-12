@@ -39,21 +39,21 @@ object MavenAlg {
     new MavenAlg[F] {
       override def containsBuild(buildRoot: BuildRoot): F[Boolean] =
         workspaceAlg
-          .repoDir(buildRoot.repo)
-          .flatMap(repoDir =>
-            fileAlg.isRegularFile(repoDir / buildRoot.relativeBuildRootPath / "pom.xml")
+          .buildRootDir(buildRoot)
+          .flatMap(buildRootDir =>
+            fileAlg.isRegularFile(buildRootDir / "pom.xml")
           )
 
       override def getDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
         for {
-          repoDir <- workspaceAlg.repoDir(buildRoot.repo)
+          buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
           dependenciesRaw <- exec(
             mvnCmd(command.listDependencies),
-            repoDir / buildRoot.relativeBuildRootPath
+            buildRootDir
           )
           repositoriesRaw <- exec(
             mvnCmd(command.listRepositories),
-            repoDir / buildRoot.relativeBuildRootPath
+            buildRootDir
           )
           dependencies = parser.parseDependencies(dependenciesRaw).distinct
           resolvers = parser.parseResolvers(repositoriesRaw).distinct

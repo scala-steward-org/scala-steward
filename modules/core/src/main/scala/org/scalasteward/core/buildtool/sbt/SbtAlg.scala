@@ -68,38 +68,38 @@ object SbtAlg {
 
       override def containsBuild(buildRoot: BuildRoot): F[Boolean] =
         workspaceAlg
-          .repoDir(buildRoot.repo)
-          .flatMap(repoDir =>
-            fileAlg.isRegularFile(repoDir / buildRoot.relativeBuildRootPath / "build.sbt")
+          .buildRootDir(buildRoot)
+          .flatMap(buildRootDir =>
+            fileAlg.isRegularFile(buildRootDir / "build.sbt")
           )
 
       override def getSbtVersion(buildRoot: BuildRoot): F[Option[SbtVersion]] =
         for {
-          repoDir <- workspaceAlg.repoDir(buildRoot.repo)
+          buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
           maybeProperties <- fileAlg.readFile(
-            repoDir / buildRoot.relativeBuildRootPath / "project" / "build.properties"
+            buildRootDir / "project" / "build.properties"
           )
           version = maybeProperties.flatMap(parser.parseBuildProperties)
         } yield version
 
       override def getDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
         for {
-          repoDir <- workspaceAlg.repoDir(buildRoot.repo)
+          buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
           commands = Nel.of(crossStewardDependencies, reloadPlugins, stewardDependencies)
-          lines <- sbt(commands, repoDir / buildRoot.relativeBuildRootPath)
+          lines <- sbt(commands, buildRootDir)
           dependencies = parser.parseDependencies(lines)
           additionalDependencies <- getAdditionalDependencies(buildRoot)
         } yield additionalDependencies ::: dependencies
 
       override def runMigrations(buildRoot: BuildRoot, migrations: Nel[Migration]): F[Unit] =
         addGlobalPluginTemporarily(scalaStewardScalafixSbt) {
-          workspaceAlg.repoDir(buildRoot.repo).flatMap { repoDir =>
+          workspaceAlg.buildRootDir(buildRoot).flatMap { buildRootDir =>
             migrations.traverse_ { migration =>
               val withScalacOptions =
                 migration.scalacOptions.fold[F[Unit] => F[Unit]](identity) { opts =>
                   val file = scalaStewardScalafixOptions(opts.toList)
                   fileAlg.createTemporarily(
-                    repoDir / buildRoot.relativeBuildRootPath / file.name,
+                    buildRootDir / file.name,
                     file.content
                   )(_)
                 }

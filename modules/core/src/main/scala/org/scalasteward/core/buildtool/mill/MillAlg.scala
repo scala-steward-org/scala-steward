@@ -51,18 +51,18 @@ object MillAlg {
     new MillAlg[F] {
       override def containsBuild(buildRoot: BuildRoot): F[Boolean] =
         workspaceAlg
-          .repoDir(buildRoot.repo)
-          .flatMap(repoDir =>
-            fileAlg.isRegularFile(repoDir / buildRoot.relativeBuildRootPath / "build.sc")
+          .buildRootDir(buildRoot)
+          .flatMap(buildRootDir =>
+            fileAlg.isRegularFile(buildRootDir / "build.sc")
           )
 
       override def getDependencies(buildRoot: BuildRoot): F[List[Dependencies]] =
         for {
-          repoDir <- workspaceAlg.repoDir(buildRoot.repo)
-          predef = repoDir / buildRoot.relativeBuildRootPath / "scala-steward.sc"
+          buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
+          predef = buildRootDir / "scala-steward.sc"
           extracted <- fileAlg.createTemporarily(predef, content) {
             val command = Nel("mill", List("-i", "-p", predef.toString, "show", extractDeps))
-            processAlg.execSandboxed(command, repoDir / buildRoot.relativeBuildRootPath)
+            processAlg.execSandboxed(command, buildRootDir)
           }
           parsed <- F.fromEither(
             parser.parseModules(extracted.dropWhile(!_.startsWith("{")).mkString("\n"))

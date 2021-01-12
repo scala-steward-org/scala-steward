@@ -45,8 +45,8 @@ object ScalafmtAlg {
     new ScalafmtAlg[F] {
       override def getScalafmtVersion(buildRoot: BuildRoot): F[Option[Version]] =
         for {
-          repoDir <- workspaceAlg.repoDir(buildRoot.repo)
-          scalafmtConfFile = repoDir / buildRoot.relativeBuildRootPath / ".scalafmt.conf"
+          buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
+          scalafmtConfFile = buildRootDir / ".scalafmt.conf"
           fileContent <- fileAlg.readFile(scalafmtConfFile)
         } yield fileContent.flatMap(parseScalafmtConf)
 

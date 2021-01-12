@@ -16,4 +16,4 @@
 
 package org.scalasteward.core.vcs.data
 
-final case class BuildRoot(repo: Repo, relativeBuildRootPath: String)
+final case class BuildRoot(repo: Repo, relativePath: String)
