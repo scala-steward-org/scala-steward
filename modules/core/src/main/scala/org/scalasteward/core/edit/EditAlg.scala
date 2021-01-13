@@ -30,6 +30,7 @@ import org.scalasteward.core.io.{isSourceFile, FileAlg, WorkspaceAlg}
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafix.{Migration, MigrationAlg}
 import org.scalasteward.core.util._
+import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data.Repo
 
 final class EditAlg[F[_]](implicit
@@ -83,18 +84,15 @@ final class EditAlg[F[_]](implicit
 
   private def runScalafixMigrations(repo: Repo, migrations: List[Migration]): F[List[Commit]] =
     migrations.traverseFilter { migration =>
-      logger.info(s"Running migration $migration") >>
-        buildToolDispatcher
-          .runMigrationsForAllBuildRoots(repo, Nel.one(migration))
-          .attempt
-          .flatMap {
-            case Right(_) =>
-              val msg1 = s"Run Scalafix rule(s) ${migration.rewriteRules.mkString_(", ")}"
-              val msg2 = migration.doc.map(url => s"See $url for details").toList
-              gitAlg.commitAllIfDirty(repo, msg1, msg2: _*)
-            case Left(throwable) =>
-              logger.error(throwable)("Scalafix migration failed").as(None)
-          }
+      for {
+        _ <- logger.info(s"Running migration $migration")
+        _ <- logger.attemptLogWarn_("Scalafix migration failed") {
+          buildToolDispatcher.runMigrationsForAllBuildRoots(repo, Nel.one(migration))
+        }
+        msg1 = s"Run Scalafix rule(s) ${migration.rewriteRules.mkString_(", ")}"
+        msg2 = migration.doc.map(url => s"See $url for details").toList
+        maybeCommit <- gitAlg.commitAllIfDirty(repo, msg1, msg2: _*)
+      } yield maybeCommit
     }
 
   private def bumpVersion(update: Update, files: Nel[File]): F[Boolean] = {
