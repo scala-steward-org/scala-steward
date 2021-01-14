@@ -19,7 +19,7 @@ class BuildToolDispatcherTest extends FunSuite {
     )
     val initial = MockState.empty.copy(files = files)
     val (state, deps) =
-      buildToolDispatcher.getDependenciesForAllBuildRoots(repo).run(initial).unsafeRunSync()
+      buildToolDispatcher.getDependencies(repo).run(initial).unsafeRunSync()
 
     val expectedState = initial.copy(commands =
       Vector(

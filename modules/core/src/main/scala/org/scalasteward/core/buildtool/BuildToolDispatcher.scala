@@ -25,13 +25,11 @@ import org.scalasteward.core.data.{Resolver, Scope}
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.util.Nel
-import org.scalasteward.core.vcs.data.{BuildRoot, Repo}
+import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.repoconfig.RepoConfigAlg
+import org.scalasteward.core.vcs.data.BuildRoot
 
-trait BuildToolDispatcher[F[_]] extends BuildToolAlg[F] {
-  def runMigrationsForAllBuildRoots(repo: Repo, migrations: Nel[Migration]): F[Unit]
-  def getDependenciesForAllBuildRoots(repo: Repo): F[List[Scope.Dependencies]]
-}
+trait BuildToolDispatcher[F[_]] extends BuildToolAlg[F, Repo]
 
 object BuildToolDispatcher {
   def create[F[_]](implicit
@@ -47,7 +45,7 @@ object BuildToolDispatcher {
 
     new BuildToolDispatcher[F] {
 
-      private def buildRootsForRepo(repo: Repo) = for {
+      private def buildRootsForRepo(repo: Repo): F[List[BuildRoot]] = for {
         repoConfigOpt <- repoConfigAlg.readRepoConfig(repo)
         repoConfig <- repoConfigAlg.mergeWithDefault(repoConfigOpt)
         buildRoots = repoConfig.buildRoots.map(config =>
@@ -55,21 +53,32 @@ object BuildToolDispatcher {
         )
       } yield buildRoots
 
-      override def containsBuild(buildRoot: BuildRoot): F[Boolean] =
-        allBuildTools.existsM(_.containsBuild(buildRoot))
+      override def containsBuild(repo: Repo): F[Boolean] =
+        buildRootsForRepo(repo).flatMap(buildRoots =>
+          buildRoots.existsM(buildRoot => allBuildTools.existsM(_.containsBuild(buildRoot)))
+        )
 
-      override def getDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
+      override def getDependencies(repo: Repo): F[List[Scope.Dependencies]] =
         for {
-          dependencies <- foundBuildTools(buildRoot).flatMap(
-            _.flatTraverse(_.getDependencies(buildRoot))
+          buildRoots <- buildRootsForRepo(repo)
+          result <- buildRoots.flatTraverse(buildRoot =>
+            for {
+              dependencies <- foundBuildTools(buildRoot).flatMap(
+                _.flatTraverse(_.getDependencies(buildRoot))
+              )
+              additionalDependencies <- getAdditionalDependencies(buildRoot)
+            } yield Scope.combineByResolvers(additionalDependencies ::: dependencies)
           )
-          additionalDependencies <- getAdditionalDependencies(buildRoot)
-        } yield Scope.combineByResolvers(additionalDependencies ::: dependencies)
+        } yield result
 
-      override def runMigrations(buildRoot: BuildRoot, migrations: Nel[Migration]): F[Unit] =
-        foundBuildTools(buildRoot).flatMap(_.traverse_(_.runMigrations(buildRoot, migrations)))
+      override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
+        buildRootsForRepo(repo).flatMap(buildRoots =>
+          buildRoots.traverse_(buildRoot =>
+            foundBuildTools(buildRoot).flatMap(_.traverse_(_.runMigrations(buildRoot, migrations)))
+          )
+        )
 
-      private def foundBuildTools(buildRoot: BuildRoot): F[List[BuildToolAlg[F]]] =
+      private def foundBuildTools(buildRoot: BuildRoot): F[List[BuildToolAlg[F, BuildRoot]]] =
         allBuildTools.filterA(_.containsBuild(buildRoot)).map {
           case Nil  => List(fallbackBuildTool)
           case list => list
@@ -79,19 +88,6 @@ object BuildToolDispatcher {
         scalafmtAlg
           .getScalafmtDependency(buildRoot)
           .map(_.map(dep => Scope(List(dep), List(Resolver.mavenCentral))).toList)
-
-      override def runMigrationsForAllBuildRoots(
-          repo: Repo,
-          migrations: org.scalasteward.core.util.Nel[Migration]
-      ): F[Unit] = for {
-        buildRoots <- buildRootsForRepo(repo)
-        _ <- buildRoots.traverse(runMigrations(_, migrations))
-      } yield ()
-
-      override def getDependenciesForAllBuildRoots(repo: Repo): F[List[Scope.Dependencies]] = for {
-        buildRoots <- buildRootsForRepo(repo)
-        deps <- buildRoots.flatTraverse(getDependencies)
-      } yield deps
     }
   }
 }

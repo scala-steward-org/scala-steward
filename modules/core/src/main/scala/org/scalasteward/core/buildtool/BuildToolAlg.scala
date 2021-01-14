@@ -19,12 +19,11 @@ package org.scalasteward.core.buildtool
 import org.scalasteward.core.data.Scope
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
-import org.scalasteward.core.vcs.data.BuildRoot
 
-trait BuildToolAlg[F[_]] {
-  def containsBuild(repo: BuildRoot): F[Boolean]
+trait BuildToolAlg[F[_], R] {
+  def containsBuild(r: R): F[Boolean]
 
-  def getDependencies(repo: BuildRoot): F[List[Scope.Dependencies]]
+  def getDependencies(r: R): F[List[Scope.Dependencies]]
 
-  def runMigrations(repo: BuildRoot, migrations: Nel[Migration]): F[Unit]
+  def runMigrations(r: R, migrations: Nel[Migration]): F[Unit]
 }

@@ -27,7 +27,7 @@ import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.BuildRoot
 
-trait MavenAlg[F[_]] extends BuildToolAlg[F]
+trait MavenAlg[F[_]] extends BuildToolAlg[F, BuildRoot]
 
 object MavenAlg {
   def create[F[_]](config: Config)(implicit
