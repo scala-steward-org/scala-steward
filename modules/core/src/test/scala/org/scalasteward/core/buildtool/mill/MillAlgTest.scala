@@ -4,11 +4,12 @@ import munit.FunSuite
 import org.scalasteward.core.buildtool.mill.MillAlg.extractDeps
 import org.scalasteward.core.mock.MockContext.{config, millAlg}
 import org.scalasteward.core.mock.MockState
-import org.scalasteward.core.vcs.data.Repo
+import org.scalasteward.core.vcs.data.{BuildRoot, Repo}
 
 class MillAlgTest extends FunSuite {
   test("getDependencies") {
     val repo = Repo("lihaoyi", "fastparse")
+    val buildRoot = BuildRoot(repo, ".")
     val repoDir = config.workspace / repo.show
     val predef = s"$repoDir/scala-steward.sc"
     val millCmd = List(
@@ -25,7 +26,7 @@ class MillAlgTest extends FunSuite {
       extractDeps
     )
     val initial = MockState.empty.copy(commandOutputs = Map(millCmd -> List("""{"modules":[]}""")))
-    val state = millAlg.getDependencies(repo).runS(initial).unsafeRunSync()
+    val state = millAlg.getDependencies(buildRoot).runS(initial).unsafeRunSync()
     val expected = initial.copy(
       commands = Vector(
         List("write", predef),

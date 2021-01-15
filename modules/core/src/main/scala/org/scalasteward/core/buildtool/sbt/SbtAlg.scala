@@ -30,17 +30,17 @@ import org.scalasteward.core.data.{Dependency, Resolver, Scope}
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
-import org.scalasteward.core.vcs.data.Repo
+import org.scalasteward.core.vcs.data.BuildRoot
 
-trait SbtAlg[F[_]] extends BuildToolAlg[F] {
+trait SbtAlg[F[_]] extends BuildToolAlg[F, BuildRoot] {
   def addGlobalPluginTemporarily[A](plugin: FileData)(fa: F[A]): F[A]
 
   def addGlobalPlugins[A](fa: F[A]): F[A]
 
-  def getSbtVersion(repo: Repo): F[Option[SbtVersion]]
+  def getSbtVersion(buildRoot: BuildRoot): F[Option[SbtVersion]]
 
-  final def getSbtDependency(repo: Repo)(implicit F: Functor[F]): F[Option[Dependency]] =
-    OptionT(getSbtVersion(repo)).subflatMap(sbtDependency).value
+  final def getSbtDependency(buildRoot: BuildRoot)(implicit F: Functor[F]): F[Option[Dependency]] =
+    OptionT(getSbtVersion(buildRoot)).subflatMap(sbtDependency).value
 }
 
 object SbtAlg {
@@ -66,37 +66,44 @@ object SbtAlg {
         logger.info("Add global sbt plugins") >>
           stewardPlugin.flatMap(addGlobalPluginTemporarily(_)(fa))
 
-      override def containsBuild(repo: Repo): F[Boolean] =
-        workspaceAlg.repoDir(repo).flatMap(repoDir => fileAlg.isRegularFile(repoDir / "build.sbt"))
+      override def containsBuild(buildRoot: BuildRoot): F[Boolean] =
+        workspaceAlg
+          .buildRootDir(buildRoot)
+          .flatMap(buildRootDir => fileAlg.isRegularFile(buildRootDir / "build.sbt"))
 
-      override def getSbtVersion(repo: Repo): F[Option[SbtVersion]] =
+      override def getSbtVersion(buildRoot: BuildRoot): F[Option[SbtVersion]] =
         for {
-          repoDir <- workspaceAlg.repoDir(repo)
-          maybeProperties <- fileAlg.readFile(repoDir / "project" / "build.properties")
+          buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
+          maybeProperties <- fileAlg.readFile(
+            buildRootDir / "project" / "build.properties"
+          )
           version = maybeProperties.flatMap(parser.parseBuildProperties)
         } yield version
 
-      override def getDependencies(repo: Repo): F[List[Scope.Dependencies]] =
+      override def getDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
         for {
-          repoDir <- workspaceAlg.repoDir(repo)
+          buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
           commands = Nel.of(crossStewardDependencies, reloadPlugins, stewardDependencies)
-          lines <- sbt(commands, repoDir)
+          lines <- sbt(commands, buildRootDir)
           dependencies = parser.parseDependencies(lines)
-          additionalDependencies <- getAdditionalDependencies(repo)
+          additionalDependencies <- getAdditionalDependencies(buildRoot)
         } yield additionalDependencies ::: dependencies
 
-      override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
+      override def runMigrations(buildRoot: BuildRoot, migrations: Nel[Migration]): F[Unit] =
         addGlobalPluginTemporarily(scalaStewardScalafixSbt) {
-          workspaceAlg.repoDir(repo).flatMap { repoDir =>
+          workspaceAlg.buildRootDir(buildRoot).flatMap { buildRootDir =>
             migrations.traverse_ { migration =>
               val withScalacOptions =
                 migration.scalacOptions.fold[F[Unit] => F[Unit]](identity) { opts =>
                   val file = scalaStewardScalafixOptions(opts.toList)
-                  fileAlg.createTemporarily(repoDir / file.name, file.content)(_)
+                  fileAlg.createTemporarily(
+                    buildRootDir / file.name,
+                    file.content
+                  )(_)
                 }
 
               val scalafixCmds = migration.rewriteRules.map(rule => s"$scalafixAll $rule").toList
-              withScalacOptions(sbt(Nel(scalafixEnable, scalafixCmds), repoDir).void)
+              withScalacOptions(sbt(Nel(scalafixEnable, scalafixCmds), buildRootDir).void)
             }
           }
         }
@@ -127,8 +134,8 @@ object SbtAlg {
           }
         }
 
-      def getAdditionalDependencies(repo: Repo): F[List[Scope.Dependencies]] =
-        getSbtDependency(repo)
+      def getAdditionalDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
+        getSbtDependency(buildRoot)
           .map(_.map(dep => Scope(List(dep), List(Resolver.mavenCentral))).toList)
     }
 }

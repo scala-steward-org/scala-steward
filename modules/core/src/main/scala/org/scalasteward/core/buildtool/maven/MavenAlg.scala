@@ -25,9 +25,9 @@ import org.scalasteward.core.data._
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
-import org.scalasteward.core.vcs.data.Repo
+import org.scalasteward.core.vcs.data.BuildRoot
 
-trait MavenAlg[F[_]] extends BuildToolAlg[F]
+trait MavenAlg[F[_]] extends BuildToolAlg[F, BuildRoot]
 
 object MavenAlg {
   def create[F[_]](config: Config)(implicit
@@ -37,19 +37,27 @@ object MavenAlg {
       F: Monad[F]
   ): MavenAlg[F] =
     new MavenAlg[F] {
-      override def containsBuild(repo: Repo): F[Boolean] =
-        workspaceAlg.repoDir(repo).flatMap(repoDir => fileAlg.isRegularFile(repoDir / "pom.xml"))
+      override def containsBuild(buildRoot: BuildRoot): F[Boolean] =
+        workspaceAlg
+          .buildRootDir(buildRoot)
+          .flatMap(buildRootDir => fileAlg.isRegularFile(buildRootDir / "pom.xml"))
 
-      override def getDependencies(repo: Repo): F[List[Scope.Dependencies]] =
+      override def getDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
         for {
-          repoDir <- workspaceAlg.repoDir(repo)
-          dependenciesRaw <- exec(mvnCmd(command.listDependencies), repoDir)
-          repositoriesRaw <- exec(mvnCmd(command.listRepositories), repoDir)
+          buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
+          dependenciesRaw <- exec(
+            mvnCmd(command.listDependencies),
+            buildRootDir
+          )
+          repositoriesRaw <- exec(
+            mvnCmd(command.listRepositories),
+            buildRootDir
+          )
           dependencies = parser.parseDependencies(dependenciesRaw).distinct
           resolvers = parser.parseResolvers(repositoriesRaw).distinct
         } yield List(Scope(dependencies, resolvers))
 
-      override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
+      override def runMigrations(buildRoot: BuildRoot, migrations: Nel[Migration]): F[Unit] =
         F.unit
 
       def exec(command: Nel[String], repoDir: File): F[List[String]] =

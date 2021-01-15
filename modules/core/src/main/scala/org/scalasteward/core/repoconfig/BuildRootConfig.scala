@@ -14,16 +14,22 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.buildtool
+package org.scalasteward.core.repoconfig
 
-import org.scalasteward.core.data.Scope
-import org.scalasteward.core.scalafix.Migration
-import org.scalasteward.core.util.Nel
+import cats.Eq
+import io.circe.{Decoder, Encoder}
 
-trait BuildToolAlg[F[_], R] {
-  def containsBuild(r: R): F[Boolean]
+final case class BuildRootConfig(relativeBuildRootPath: String)
 
-  def getDependencies(r: R): F[List[Scope.Dependencies]]
+object BuildRootConfig {
+  val current = BuildRootConfig(".")
 
-  def runMigrations(r: R, migrations: Nel[Migration]): F[Unit]
+  implicit val buildRootConfigDecoder: Decoder[BuildRootConfig] =
+    Decoder[String].map(BuildRootConfig.apply)
+
+  implicit val buildRootConfigStrategyEncoder: Encoder[BuildRootConfig] =
+    Encoder[String].contramap(_.relativeBuildRootPath)
+
+  implicit val buildRootConfigStrategyEq: Eq[BuildRootConfig] =
+    Eq.fromUniversalEquals
 }

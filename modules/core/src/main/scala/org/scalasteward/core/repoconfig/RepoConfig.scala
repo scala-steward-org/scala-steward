@@ -27,7 +27,8 @@ final case class RepoConfig(
     pullRequests: PullRequestsConfig = PullRequestsConfig(),
     scalafmt: ScalafmtConfig = ScalafmtConfig(),
     updates: UpdatesConfig = UpdatesConfig(),
-    updatePullRequests: Option[PullRequestUpdateStrategy] = None
+    updatePullRequests: Option[PullRequestUpdateStrategy] = None,
+    buildRoots: List[BuildRootConfig] = List(BuildRootConfig.current)
 ) {
   def updatePullRequestsOrDefault: PullRequestUpdateStrategy =
     updatePullRequests.getOrElse(PullRequestUpdateStrategy.default)

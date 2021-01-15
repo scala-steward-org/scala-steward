@@ -4,16 +4,17 @@ import better.files.File
 import munit.FunSuite
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockState
-import org.scalasteward.core.vcs.data.Repo
+import org.scalasteward.core.vcs.data.{BuildRoot, Repo}
 
 class MavenAlgTest extends FunSuite {
   test("getDependencies") {
     val repo = Repo("namespace", "repo-name")
+    val buildRoot = BuildRoot(repo, ".")
     val repoDir = config.workspace / repo.show
     val files: Map[File, String] = Map.empty
 
     val state =
-      mavenAlg.getDependencies(repo).runS(MockState.empty.copy(files = files)).unsafeRunSync()
+      mavenAlg.getDependencies(buildRoot).runS(MockState.empty.copy(files = files)).unsafeRunSync()
 
     val expected = MockState.empty.copy(
       files = files,
