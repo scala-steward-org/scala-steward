@@ -74,7 +74,7 @@ class RepoConfigAlgTest extends FunSuite {
       commits = CommitsConfig(
         message = Some("Update ${artifactName} from ${currentVersion} to ${nextVersion}")
       ),
-      buildRoots = List(BuildRootConfig("."), BuildRootConfig("subfolder/subfolder"))
+      buildRoots = Some(List(BuildRootConfig.repoRoot, BuildRootConfig("subfolder/subfolder")))
     )
     assertEquals(config, expected)
   }

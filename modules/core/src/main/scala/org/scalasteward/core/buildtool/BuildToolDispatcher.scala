@@ -48,9 +48,8 @@ object BuildToolDispatcher {
       private def buildRootsForRepo(repo: Repo): F[List[BuildRoot]] = for {
         repoConfigOpt <- repoConfigAlg.readRepoConfig(repo)
         repoConfig <- repoConfigAlg.mergeWithDefault(repoConfigOpt)
-        buildRoots = repoConfig.buildRoots.map(config =>
-          BuildRoot(repo, config.relativeBuildRootPath)
-        )
+        buildRoots = repoConfig.buildRootsOrDefault
+          .map(config => BuildRoot(repo, config.relativePath))
       } yield buildRoots
 
       override def containsBuild(repo: Repo): F[Boolean] =
