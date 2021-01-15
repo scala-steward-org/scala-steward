@@ -67,6 +67,6 @@ object MillAlg {
           )
         } yield parsed.map(module => Scope(module.dependencies, module.repositories))
 
-      override def runMigrations(buildRoot: BuildRoot, migrations: Nel[Migration]): F[Unit] = F.unit
+      override def runMigration(buildRoot: BuildRoot, migration: Migration): F[Unit] = F.unit
     }
 }
