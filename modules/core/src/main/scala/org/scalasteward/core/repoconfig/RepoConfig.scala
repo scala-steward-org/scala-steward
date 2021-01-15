@@ -28,8 +28,11 @@ final case class RepoConfig(
     scalafmt: ScalafmtConfig = ScalafmtConfig(),
     updates: UpdatesConfig = UpdatesConfig(),
     updatePullRequests: Option[PullRequestUpdateStrategy] = None,
-    buildRoots: List[BuildRootConfig] = List(BuildRootConfig.current)
+    buildRoots: Option[List[BuildRootConfig]] = None
 ) {
+  def buildRootsOrDefault: List[BuildRootConfig] =
+    buildRoots.getOrElse(List(BuildRootConfig.repoRoot))
+
   def updatePullRequestsOrDefault: PullRequestUpdateStrategy =
     updatePullRequests.getOrElse(PullRequestUpdateStrategy.default)
 }
@@ -59,7 +62,8 @@ object RepoConfig {
               pullRequests = x.pullRequests |+| y.pullRequests,
               scalafmt = x.scalafmt |+| y.scalafmt,
               updates = x.updates |+| y.updates,
-              updatePullRequests = x.updatePullRequests.orElse(y.updatePullRequests)
+              updatePullRequests = x.updatePullRequests.orElse(y.updatePullRequests),
+              buildRoots = x.buildRoots |+| y.buildRoots
             )
         }
     )

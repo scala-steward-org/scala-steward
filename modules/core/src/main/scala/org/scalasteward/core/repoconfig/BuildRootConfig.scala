@@ -19,17 +19,17 @@ package org.scalasteward.core.repoconfig
 import cats.Eq
 import io.circe.{Decoder, Encoder}
 
-final case class BuildRootConfig(relativeBuildRootPath: String)
+final case class BuildRootConfig(relativePath: String)
 
 object BuildRootConfig {
-  val current = BuildRootConfig(".")
+  val repoRoot: BuildRootConfig = BuildRootConfig(".")
 
   implicit val buildRootConfigDecoder: Decoder[BuildRootConfig] =
     Decoder[String].map(BuildRootConfig.apply)
 
-  implicit val buildRootConfigStrategyEncoder: Encoder[BuildRootConfig] =
-    Encoder[String].contramap(_.relativeBuildRootPath)
+  implicit val buildRootConfigEncoder: Encoder[BuildRootConfig] =
+    Encoder[String].contramap(_.relativePath)
 
-  implicit val buildRootConfigStrategyEq: Eq[BuildRootConfig] =
+  implicit val buildRootConfigEq: Eq[BuildRootConfig] =
     Eq.fromUniversalEquals
 }
