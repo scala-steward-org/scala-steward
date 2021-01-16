@@ -24,7 +24,6 @@ import org.scalasteward.core.buildtool.sbt.SbtAlg
 import org.scalasteward.core.data.{Resolver, Scope}
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.scalafmt.ScalafmtAlg
-import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.vcs.data.BuildRoot
@@ -70,10 +69,10 @@ object BuildToolDispatcher {
           )
         } yield result
 
-      override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
+      override def runMigration(repo: Repo, migration: Migration): F[Unit] =
         buildRootsForRepo(repo).flatMap(buildRoots =>
           buildRoots.traverse_(buildRoot =>
-            foundBuildTools(buildRoot).flatMap(_.traverse_(_.runMigrations(buildRoot, migrations)))
+            foundBuildTools(buildRoot).flatMap(_.traverse_(_.runMigration(buildRoot, migration)))
           )
         )
 

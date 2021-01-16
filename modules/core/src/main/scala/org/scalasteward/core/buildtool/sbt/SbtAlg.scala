@@ -89,22 +89,16 @@ object SbtAlg {
           additionalDependencies <- getAdditionalDependencies(buildRoot)
         } yield additionalDependencies ::: dependencies
 
-      override def runMigrations(buildRoot: BuildRoot, migrations: Nel[Migration]): F[Unit] =
+      override def runMigration(buildRoot: BuildRoot, migration: Migration): F[Unit] =
         addGlobalPluginTemporarily(scalaStewardScalafixSbt) {
           workspaceAlg.buildRootDir(buildRoot).flatMap { buildRootDir =>
-            migrations.traverse_ { migration =>
-              val withScalacOptions =
-                migration.scalacOptions.fold[F[Unit] => F[Unit]](identity) { opts =>
-                  val file = scalaStewardScalafixOptions(opts.toList)
-                  fileAlg.createTemporarily(
-                    buildRootDir / file.name,
-                    file.content
-                  )(_)
-                }
-
-              val scalafixCmds = migration.rewriteRules.map(rule => s"$scalafixAll $rule").toList
-              withScalacOptions(sbt(Nel(scalafixEnable, scalafixCmds), buildRootDir).void)
-            }
+            val withScalacOptions =
+              migration.scalacOptions.fold[F[Unit] => F[Unit]](identity) { opts =>
+                val file = scalaStewardScalafixOptions(opts.toList)
+                fileAlg.createTemporarily(buildRootDir / file.name, file.content)(_)
+              }
+            val scalafixCmds = migration.rewriteRules.map(rule => s"$scalafixAll $rule").toList
+            withScalacOptions(sbt(Nel(scalafixEnable, scalafixCmds), buildRootDir).void)
           }
         }
 

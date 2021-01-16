@@ -87,7 +87,7 @@ final class EditAlg[F[_]](implicit
       for {
         _ <- logger.info(s"Running migration $migration")
         _ <- logger.attemptLogWarn_("Scalafix migration failed") {
-          buildToolDispatcher.runMigrations(repo, Nel.one(migration))
+          buildToolDispatcher.runMigration(repo, migration)
         }
         msg1 = s"Run Scalafix rule(s) ${migration.rewriteRules.mkString_(", ")}"
         msg2 = migration.doc.map(url => s"See $url for details").toList

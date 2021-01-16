@@ -57,7 +57,7 @@ object MavenAlg {
           resolvers = parser.parseResolvers(repositoriesRaw).distinct
         } yield List(Scope(dependencies, resolvers))
 
-      override def runMigrations(buildRoot: BuildRoot, migrations: Nel[Migration]): F[Unit] =
+      override def runMigration(buildRoot: BuildRoot, migration: Migration): F[Unit] =
         F.unit
 
       def exec(command: Nel[String], repoDir: File): F[List[String]] =
