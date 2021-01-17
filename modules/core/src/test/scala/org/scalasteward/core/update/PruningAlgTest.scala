@@ -4,6 +4,7 @@ import io.circe.parser.decode
 import munit.FunSuite
 import org.scalasteward.core.data.RepoData
 import org.scalasteward.core.mock.MockContext._
+import org.scalasteward.core.mock.MockContext.context.pruningAlg
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.repocache.RepoCache
 import org.scalasteward.core.repoconfig.RepoConfig
@@ -24,7 +25,7 @@ class PruningAlgTest extends FunSuite {
           |}""".stripMargin
     )
     val pullRequestsFile =
-      config.workspace / "store/pull_requests/v2/fthomas/scalafix-test/pull_requests.json"
+      config.workspace / "store/pull_requests/v2/github/fthomas/scalafix-test/pull_requests.json"
     val pullRequestsContent =
       s"""|{
           |  "https://github.com/fthomas/scalafix-test/pull/27" : {
@@ -70,7 +71,7 @@ class PruningAlgTest extends FunSuite {
   }
 
   test("needsAttention: 0 updates when includeScala not specified in repo config") {
-    val repo = Repo("fthomas", "scalafix-test")
+    val repo = Repo("pruning-test", "repo2")
     val Right(repoCache) = decode[RepoCache](
       s"""|{
           |  "sha1": "12def27a837ba6dc9e17406cbbe342fba3527c14",
@@ -112,10 +113,10 @@ class PruningAlgTest extends FunSuite {
           |}""".stripMargin
     )
     val pullRequestsFile =
-      config.workspace / "store/pull_requests/v2/fthomas/scalafix-test/pull_requests.json"
+      config.workspace / s"store/pull_requests/v2/github/${repo.show}/pull_requests.json"
     val pullRequestsContent =
       s"""|{
-          |  "https://github.com/fthomas/scalafix-test/pull/27" : {
+          |  "https://github.com/${repo.show}/pull/27" : {
           |    "baseSha1" : "12def27a837ba6dc9e17406cbbe342fba3527c14",
           |    "update" : {
           |      "Single" : {
@@ -143,7 +144,7 @@ class PruningAlgTest extends FunSuite {
           |  }
           |}""".stripMargin
     val versionsFile =
-      config.workspace / "store/versions/v1/https/foobar.org/maven2/org/scala-lang/scala-library/versions.json"
+      config.workspace / "store/versions/v2/https/foobar.org/maven2/org/scala-lang/scala-library/versions.json"
     val versionsContent =
       s"""|{
           |  "updatedAt" : 9999999999999,
@@ -164,16 +165,16 @@ class PruningAlgTest extends FunSuite {
     val expected = initial.copy(
       commands = Vector(List("read", pullRequestsFile.toString)),
       logs = Vector(
-        (None, "Find updates for fthomas/scalafix-test"),
+        (None, s"Find updates for ${repo.show}"),
         (None, "Found 0 updates"),
-        (None, "fthomas/scalafix-test is up-to-date")
+        (None, s"${repo.show} is up-to-date")
       )
     )
     assertEquals(state, expected)
   }
 
   test("needsAttention: update scala-library when includeScala=true in repo config") {
-    val repo = Repo("fthomas", "scalafix-test")
+    val repo = Repo("pruning-test", "repo3")
     val Right(repoCache) = decode[RepoCache](
       s"""|{
           |  "sha1": "12def27a837ba6dc9e17406cbbe342fba3527c14",
@@ -208,27 +209,17 @@ class PruningAlgTest extends FunSuite {
           |    }
           |  ],
           |  "maybeRepoConfig": {
-          |    "pullRequests": {
-          |      "frequency": "@daily"
-          |    },
           |    "updates" : {
-          |      "pin" : [
-          |      ],
-          |      "allow" : [
-          |      ],
-          |      "ignore" : [
-          |      ],
-          |      "limit" : null,
           |      "includeScala" : true
           |    }
           |  }
           |}""".stripMargin
     )
     val pullRequestsFile =
-      config.workspace / "store/pull_requests/v2/fthomas/scalafix-test/pull_requests.json"
+      config.workspace / s"store/pull_requests/v2/github/${repo.show}/pull_requests.json"
     val pullRequestsContent =
       s"""|{
-          |  "https://github.com/fthomas/scalafix-test/pull/27" : {
+          |  "https://github.com/${repo.show}/pull/27" : {
           |    "baseSha1" : "12def27a837ba6dc9e17406cbbe342fba3527c14",
           |    "update" : {
           |      "Single" : {
@@ -256,7 +247,7 @@ class PruningAlgTest extends FunSuite {
           |  }
           |}""".stripMargin
     val versionsFile =
-      config.workspace / "store/versions/v1/https/foobar.org/maven2/org/scala-lang/scala-library/versions.json"
+      config.workspace / "store/versions/v2/https/foobar.org/maven2/org/scala-lang/scala-library/versions.json"
     val versionsContent =
       s"""|{
           |  "updatedAt" : 9999999999999,
@@ -278,16 +269,14 @@ class PruningAlgTest extends FunSuite {
       commands = Vector(
         List("read", versionsFile.toString),
         List("read", pullRequestsFile.toString),
-        List("read", versionsFile.toString),
-        List("read", pullRequestsFile.toString),
-        List("read", pullRequestsFile.toString)
+        List("read", versionsFile.toString)
       ),
       logs = Vector(
-        (None, "Find updates for fthomas/scalafix-test"),
+        (None, s"Find updates for ${repo.show}"),
         (None, "Found 1 update:\n  org.scala-lang:scala-library : 2.12.10 -> 2.12.11"),
         (
           None,
-          "fthomas/scalafix-test is outdated:\n  new version: org.scala-lang:scala-library : 2.12.10 -> 2.12.11"
+          s"${repo.show} is outdated:\n  new version: org.scala-lang:scala-library : 2.12.10 -> 2.12.11"
         )
       )
     )

@@ -4,7 +4,8 @@ import better.files.File
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.{GroupId, Update}
-import org.scalasteward.core.mock.MockContext.{config, editAlg, envVars}
+import org.scalasteward.core.mock.MockContext.context.editAlg
+import org.scalasteward.core.mock.MockContext.{config, envVars}
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafmt.scalafmtBinary
