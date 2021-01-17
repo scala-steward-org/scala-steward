@@ -17,18 +17,19 @@
 package org.scalasteward.core.application
 
 import better.files.File
-import cats.Apply
-import cats.effect.Sync
+import cats.syntax.all._
+import cats.{Apply, Monad}
 import org.http4s.Uri
 import org.http4s.Uri.UserInfo
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.Config._
 import org.scalasteward.core.git.Author
+import org.scalasteward.core.io.{ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util
+import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 import org.scalasteward.core.vcs.github.GitHubApp
 import scala.concurrent.duration.FiniteDuration
-import scala.sys.process.Process
 
 /** Configuration for scala-steward.
   *
@@ -72,14 +73,17 @@ final case class Config(
     gitLabCfg: GitLabCfg,
     githubApp: Option[GitHubApp]
 ) {
-  def vcsUser[F[_]](implicit F: Sync[F]): F[AuthenticatedUser] = {
-    val urlWithUser = util.uri.withUserInfo.set(UserInfo(vcsLogin, None))(vcsApiHost).renderString
-    val prompt = s"Password for '$urlWithUser': "
-    F.delay {
-      val password = Process(List(gitCfg.gitAskPass.pathAsString, prompt)).!!.trim
-      AuthenticatedUser(vcsLogin, password)
-    }
-  }
+  def vcsUser[F[_]](implicit
+      processAlg: ProcessAlg[F],
+      workspaceAlg: WorkspaceAlg[F],
+      F: Monad[F]
+  ): F[AuthenticatedUser] =
+    for {
+      rootDir <- workspaceAlg.rootDir
+      urlWithUser = util.uri.withUserInfo.set(UserInfo(vcsLogin, None))(vcsApiHost).renderString
+      prompt = s"Password for '$urlWithUser': "
+      password <- processAlg.exec(Nel.of(gitCfg.gitAskPass.pathAsString, prompt), rootDir)
+    } yield AuthenticatedUser(vcsLogin, password.mkString.trim)
 }
 
 object Config {
