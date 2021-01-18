@@ -22,7 +22,7 @@ import org.scalasteward.core.application.{Cli, Context}
 object Main extends IOApp {
   override def run(args: List[String]): IO[ExitCode] =
     Cli.parseArgs(args) match {
-      case Cli.ParseResult.Success(args) => Context.create[IO](args).use(_.runF)
+      case Cli.ParseResult.Success(args) => Context.step0[IO](args).use(_.stewardAlg.runF)
       case Cli.ParseResult.Help(help)    => IO(Console.out.println(help)).as(ExitCode.Success)
       case Cli.ParseResult.Error(error)  => IO(Console.err.println(error)).as(ExitCode.Error)
     }

@@ -3,7 +3,7 @@ package org.scalasteward.core.update
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.{ArtifactId, GroupId, Update}
-import org.scalasteward.core.mock.MockContext._
+import org.scalasteward.core.mock.MockContext.context.updateAlg
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.update.ArtifactMigrations.ArtifactChange
 import org.scalasteward.core.util.Nel

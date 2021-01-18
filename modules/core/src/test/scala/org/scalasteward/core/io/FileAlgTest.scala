@@ -7,7 +7,7 @@ import org.http4s.Uri
 import org.scalacheck.Arbitrary
 import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
-import org.scalasteward.core.mock.MockContext.fileAlg
+import org.scalasteward.core.mock.MockContext.context.fileAlg
 import org.scalasteward.core.mock.MockState
 
 class FileAlgTest extends FunSuite {

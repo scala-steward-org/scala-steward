@@ -46,30 +46,68 @@ import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.vcs.github.{GitHubAppApiAlg, GitHubAuthAlg}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg, VCSSelection}
 
+final class Context[F[_]](implicit
+    val buildToolDispatcher: BuildToolDispatcher[F],
+    val coursierAlg: CoursierAlg[F],
+    val dateTimeAlg: DateTimeAlg[F],
+    val editAlg: EditAlg[F],
+    val fileAlg: FileAlg[F],
+    val filterAlg: FilterAlg[F],
+    val gitAlg: GitAlg[F],
+    val hookExecutor: HookExecutor[F],
+    val logger: Logger[F],
+    val mavenAlg: MavenAlg[F],
+    val migrationAlg: MigrationAlg,
+    val migrationsLoader: MigrationsLoader[F],
+    val millAlg: MillAlg[F],
+    val pruningAlg: PruningAlg[F],
+    val pullRequestRepository: PullRequestRepository[F],
+    val repoConfigAlg: RepoConfigAlg[F],
+    val sbtAlg: SbtAlg[F],
+    val scalafmtAlg: ScalafmtAlg[F],
+    val stewardAlg: StewardAlg[F],
+    val updateAlg: UpdateAlg[F],
+    val vcsRepoAlg: VCSRepoAlg[F],
+    val workspaceAlg: WorkspaceAlg[F]
+)
+
 object Context {
-  def create[F[_]: ConcurrentEffect: ContextShift: Parallel: Timer](
+  def step0[F[_]: ConcurrentEffect: ContextShift: Parallel: Timer](
       args: Cli.Args
-  ): Resource[F, StewardAlg[F]] =
+  ): Resource[F, Context[F]] =
     for {
       blocker <- Blocker[F]
-      implicit0(logger: Logger[F]) <- Resource.liftF(Slf4jLogger.create[F])
-      _ <- Resource.liftF(printBanner[F])
       config = Config.from(args)
+      implicit0(logger: Logger[F]) <- Resource.liftF(Slf4jLogger.create[F])
       implicit0(client: Client[F]) <- OkHttpBuilder.withDefaultClient[F](blocker).map(_.create)
-      implicit0(urlChecker: UrlChecker[F]) <- UrlChecker.create[F](config)
       implicit0(fileAlg: FileAlg[F]) = FileAlg.create[F]
       implicit0(processAlg: ProcessAlg[F]) = ProcessAlg.create[F](blocker, config.processCfg)
+      implicit0(urlChecker: UrlChecker[F]) <- UrlChecker.create[F](config)
       implicit0(workspaceAlg: WorkspaceAlg[F]) = WorkspaceAlg.create[F](config)
+      context <- Resource.liftF(step1[F](config))
+    } yield context
+
+  def step1[F[_]](config: Config)(implicit
+      client: Client[F],
+      contextShift: ContextShift[F],
+      fileAlg: FileAlg[F],
+      logger: Logger[F],
+      parallel: Parallel[F],
+      processAlg: ProcessAlg[F],
+      urlChecker: UrlChecker[F],
+      workspaceAlg: WorkspaceAlg[F],
+      F: Sync[F]
+  ): F[Context[F]] =
+    for {
+      _ <- printBanner[F]
+      vcsUser <- config.vcsUser[F]
+      implicit0(migrationsLoader: MigrationsLoader[F]) = new MigrationsLoader[F]
       implicit0(migrationAlg: MigrationAlg) <-
-        Resource.liftF(new MigrationsLoader[F].loadAll(config.scalafixCfg).map(new MigrationAlg(_)))
-      implicit0(artifactMigration: ArtifactMigrations) <-
-        Resource.liftF(ArtifactMigrations.create[F](config))
-      vcsUser <- Resource.liftF(config.vcsUser[F])
+        migrationsLoader.loadAll(config.scalafixCfg).map(new MigrationAlg(_))
+      implicit0(artifactMigration: ArtifactMigrations) <- ArtifactMigrations.create[F](config)
       kvsPrefix = Some(config.vcsType.asString)
-      pullRequestsStore <- Resource.liftF(
-        CachingKeyValueStore.wrap(
-          new JsonKeyValueStore[F, Repo, Map[Uri, PullRequestData]]("pull_requests", "2", kvsPrefix)
-        )
+      pullRequestsStore <- CachingKeyValueStore.wrap(
+        new JsonKeyValueStore[F, Repo, Map[Uri, PullRequestData]]("pull_requests", "2", kvsPrefix)
       )
     } yield {
       implicit val dateTimeAlg: DateTimeAlg[F] = DateTimeAlg.create[F]
@@ -103,7 +141,8 @@ object Context {
       implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F](config)
       implicit val pruningAlg: PruningAlg[F] = new PruningAlg[F]
       implicit val gitHubAppApiAlg: GitHubAppApiAlg[F] = new GitHubAppApiAlg[F](config.vcsApiHost)
-      new StewardAlg[F](config)
+      implicit val stewardAlg: StewardAlg[F] = new StewardAlg[F](config)
+      new Context[F]
     }
 
   private def printBanner[F[_]](implicit logger: Logger[F]): F[Unit] = {

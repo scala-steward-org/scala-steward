@@ -5,7 +5,7 @@ import eu.timepit.refined.types.numeric.NonNegInt
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.{GroupId, Update}
-import org.scalasteward.core.mock.MockContext.repoConfigAlg
+import org.scalasteward.core.mock.MockContext.context.repoConfigAlg
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
