@@ -28,9 +28,7 @@ object MockContext {
     gitAskPass = File.temp / "askpass.sh",
     enableSandbox = Some(true),
     envVar = List(EnvVar("VAR1", "val1"), EnvVar("VAR2", "val2")),
-    cacheTtl = 1.hour,
-    githubAppId = Some(12345678),
-    githubAppKeyFile = Some(File("example_app_key"))
+    cacheTtl = 1.hour
   )
   val config: Config = Config.from(args)
   val envVars = List(s"GIT_ASKPASS=${config.gitCfg.gitAskPass}", "VAR1=val1", "VAR2=val2")
