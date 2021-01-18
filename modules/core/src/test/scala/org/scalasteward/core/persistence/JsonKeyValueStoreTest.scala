@@ -2,7 +2,8 @@ package org.scalasteward.core.persistence
 
 import cats.syntax.all._
 import munit.FunSuite
-import org.scalasteward.core.mock.MockContext._
+import org.scalasteward.core.mock.MockContext.config
+import org.scalasteward.core.mock.MockContext.context._
 import org.scalasteward.core.mock.{MockEff, MockState}
 
 class JsonKeyValueStoreTest extends FunSuite {

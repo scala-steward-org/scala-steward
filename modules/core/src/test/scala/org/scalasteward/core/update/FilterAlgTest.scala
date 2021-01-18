@@ -4,7 +4,7 @@ import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.Update.Single
 import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId}
-import org.scalasteward.core.mock.MockContext.filterAlg
+import org.scalasteward.core.mock.MockContext.context.filterAlg
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.repoconfig.{RepoConfig, UpdatePattern, UpdatesConfig}
 import org.scalasteward.core.update.FilterAlg._

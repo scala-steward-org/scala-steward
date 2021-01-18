@@ -3,7 +3,8 @@ package org.scalasteward.core.vcs
 import munit.FunSuite
 import org.http4s.syntax.literals._
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.mock.MockContext.{config, envVars, gitAlg, mockLogger, vcsRepoAlg}
+import org.scalasteward.core.mock.MockContext.context.{gitAlg, logger, vcsRepoAlg}
+import org.scalasteward.core.mock.MockContext.{config, envVars}
 import org.scalasteward.core.mock.{MockContext, MockEff, MockState}
 import org.scalasteward.core.vcs.data.{Repo, RepoOut, UserOut}
 

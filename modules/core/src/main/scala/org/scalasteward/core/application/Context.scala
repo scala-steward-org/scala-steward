@@ -46,19 +46,33 @@ import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.vcs.github.{GitHubAppApiAlg, GitHubAuthAlg}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg, VCSSelection}
 
-final case class Context[F[_]](
-    buildToolDispatcher: BuildToolDispatcher[F],
-    editAlg: EditAlg[F],
-    migrationAlg: MigrationAlg,
-    migrationsLoader: MigrationsLoader[F],
-    millAlg: MillAlg[F],
-    pruningAlg: PruningAlg[F],
-    sbtAlg: SbtAlg[F],
-    stewardAlg: StewardAlg[F]
+final class Context[F[_]](implicit
+    val buildToolDispatcher: BuildToolDispatcher[F],
+    val coursierAlg: CoursierAlg[F],
+    val dateTimeAlg: DateTimeAlg[F],
+    val editAlg: EditAlg[F],
+    val fileAlg: FileAlg[F],
+    val filterAlg: FilterAlg[F],
+    val gitAlg: GitAlg[F],
+    val hookExecutor: HookExecutor[F],
+    val logger: Logger[F],
+    val mavenAlg: MavenAlg[F],
+    val migrationAlg: MigrationAlg,
+    val migrationsLoader: MigrationsLoader[F],
+    val millAlg: MillAlg[F],
+    val pruningAlg: PruningAlg[F],
+    val pullRequestRepository: PullRequestRepository[F],
+    val repoConfigAlg: RepoConfigAlg[F],
+    val sbtAlg: SbtAlg[F],
+    val scalafmtAlg: ScalafmtAlg[F],
+    val stewardAlg: StewardAlg[F],
+    val updateAlg: UpdateAlg[F],
+    val vcsRepoAlg: VCSRepoAlg[F],
+    val workspaceAlg: WorkspaceAlg[F]
 )
 
 object Context {
-  def resource[F[_]: ConcurrentEffect: ContextShift: Parallel: Timer](
+  def step0[F[_]: ConcurrentEffect: ContextShift: Parallel: Timer](
       args: Cli.Args
   ): Resource[F, Context[F]] =
     for {
@@ -70,10 +84,10 @@ object Context {
       implicit0(processAlg: ProcessAlg[F]) = ProcessAlg.create[F](blocker, config.processCfg)
       implicit0(urlChecker: UrlChecker[F]) <- UrlChecker.create[F](config)
       implicit0(workspaceAlg: WorkspaceAlg[F]) = WorkspaceAlg.create[F](config)
-      context <- Resource.liftF(effect[F](config))
+      context <- Resource.liftF(step1[F](config))
     } yield context
 
-  def effect[F[_]](config: Config)(implicit
+  def step1[F[_]](config: Config)(implicit
       client: Client[F],
       contextShift: ContextShift[F],
       fileAlg: FileAlg[F],
@@ -87,7 +101,7 @@ object Context {
     for {
       _ <- printBanner[F]
       vcsUser <- config.vcsUser[F]
-      migrationsLoader = new MigrationsLoader[F]
+      implicit0(migrationsLoader: MigrationsLoader[F]) = new MigrationsLoader[F]
       implicit0(migrationAlg: MigrationAlg) <-
         migrationsLoader.loadAll(config.scalafixCfg).map(new MigrationAlg(_))
       implicit0(artifactMigration: ArtifactMigrations) <- ArtifactMigrations.create[F](config)
@@ -128,17 +142,7 @@ object Context {
       implicit val pruningAlg: PruningAlg[F] = new PruningAlg[F]
       implicit val gitHubAppApiAlg: GitHubAppApiAlg[F] = new GitHubAppApiAlg[F](config.vcsApiHost)
       implicit val stewardAlg: StewardAlg[F] = new StewardAlg[F](config)
-
-      Context(
-        buildToolDispatcher = buildToolDispatcher,
-        editAlg = editAlg,
-        migrationAlg = migrationAlg,
-        migrationsLoader = migrationsLoader,
-        millAlg = millAlg,
-        sbtAlg = sbtAlg,
-        pruningAlg = pruningAlg,
-        stewardAlg = stewardAlg
-      )
+      new Context[F]
     }
 
   private def printBanner[F[_]](implicit logger: Logger[F]): F[Unit] = {
