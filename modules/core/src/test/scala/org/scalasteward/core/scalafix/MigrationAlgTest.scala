@@ -3,7 +3,7 @@ package org.scalasteward.core.scalafix
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.{GroupId, Update, Version}
-import org.scalasteward.core.mock.MockContext.migrationAlg
+import org.scalasteward.core.mock.MockContext.context.migrationAlg
 import org.scalasteward.core.util.Nel
 
 class MigrationAlgTest extends FunSuite {

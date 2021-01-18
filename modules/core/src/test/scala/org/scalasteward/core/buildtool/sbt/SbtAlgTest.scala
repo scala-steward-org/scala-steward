@@ -4,7 +4,8 @@ import cats.data.StateT
 import munit.FunSuite
 import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.data.{GroupId, Version}
-import org.scalasteward.core.mock.MockContext._
+import org.scalasteward.core.mock.MockContext.context.sbtAlg
+import org.scalasteward.core.mock.MockContext.config
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel

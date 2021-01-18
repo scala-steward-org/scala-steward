@@ -5,7 +5,7 @@ import org.http4s.syntax.literals._
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.buildtool.sbt.data.{SbtVersion, ScalaVersion}
 import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId}
-import org.scalasteward.core.mock.MockContext._
+import org.scalasteward.core.mock.MockContext.context.coursierAlg
 import org.scalasteward.core.mock.MockState
 
 class CoursierAlgTest extends FunSuite {

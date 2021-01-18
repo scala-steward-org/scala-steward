@@ -2,7 +2,8 @@ package org.scalasteward.core.buildtool.mill
 
 import munit.FunSuite
 import org.scalasteward.core.buildtool.mill.MillAlg.extractDeps
-import org.scalasteward.core.mock.MockContext.{config, millAlg}
+import org.scalasteward.core.mock.MockContext.config
+import org.scalasteward.core.mock.MockContext.context.millAlg
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.vcs.data.{BuildRoot, Repo}
 

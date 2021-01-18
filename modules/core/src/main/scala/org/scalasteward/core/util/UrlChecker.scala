@@ -16,8 +16,7 @@
 
 package org.scalasteward.core.util
 
-import cats.MonadThrow
-import cats.effect.{Async, Resource}
+import cats.effect.{Async, Resource, Sync}
 import cats.syntax.all._
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.chrisdavenport.log4cats.Logger
@@ -26,40 +25,39 @@ import org.http4s.{Method, Request, Status, Uri}
 import org.scalasteward.core.application.Config
 import scalacache.CatsEffect.modes._
 import scalacache.caffeine.CaffeineCache
-import scalacache.{Async => _, _}
+import scalacache.{Async => _, Sync => _, _}
 
-final class UrlChecker[F[_]](statusCache: Cache[Status])(implicit
-    client: Client[F],
-    logger: Logger[F],
-    mode: Mode[F],
-    F: MonadThrow[F]
-) {
-  def exists(url: Uri): F[Boolean] =
-    status(url).map(_ === Status.Ok).handleErrorWith { throwable =>
-      logger.debug(throwable)(s"Failed to check if $url exists").as(false)
-    }
-
-  private def status(url: Uri): F[Status] =
-    statusCache.cachingForMemoizeF(url.renderString)(None) {
-      client.status(Request[F](method = Method.HEAD, uri = url))
-    }
+trait UrlChecker[F[_]] {
+  def exists(url: Uri): F[Boolean]
 }
 
 object UrlChecker {
+  def buildCache[F[_]](config: Config)(implicit F: Sync[F]): F[CaffeineCache[Status]] =
+    F.delay {
+      val cache = Caffeine
+        .newBuilder()
+        .maximumSize(16384L)
+        .expireAfterWrite(config.cacheTtl.length, config.cacheTtl.unit)
+        .build[String, Entry[Status]]()
+      CaffeineCache(cache)
+    }
+
   def create[F[_]](config: Config)(implicit
       client: Client[F],
       logger: Logger[F],
       F: Async[F]
-  ): Resource[F, UrlChecker[F]] = {
-    val buildCache = F.delay {
-      CaffeineCache(
-        Caffeine
-          .newBuilder()
-          .maximumSize(16384L)
-          .expireAfterWrite(config.cacheTtl.length, config.cacheTtl.unit)
-          .build[String, Entry[Status]]()
-      )
+  ): Resource[F, UrlChecker[F]] =
+    Resource.make(buildCache(config))(_.close().void).map { statusCache =>
+      new UrlChecker[F] {
+        override def exists(url: Uri): F[Boolean] =
+          status(url).map(_ === Status.Ok).handleErrorWith { throwable =>
+            logger.debug(throwable)(s"Failed to check if $url exists").as(false)
+          }
+
+        private def status(url: Uri): F[Status] =
+          statusCache.cachingForMemoizeF(url.renderString)(None) {
+            client.status(Request[F](method = Method.HEAD, uri = url))
+          }
+      }
     }
-    Resource.make(buildCache)(_.close().void).map(new UrlChecker[F](_))
-  }
 }
