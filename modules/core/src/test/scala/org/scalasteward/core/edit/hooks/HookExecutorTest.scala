@@ -85,7 +85,7 @@ class HookExecutorTest extends FunSuite {
   }
 
   test("sbt-github-actions") {
-    val update = Update.Single("com.codecommit" % "sbt-github-actions" % "0.9.4", Nel.of("0.9.5"))
+    val update = Update.Single("com.codecommit" % "sbt-github-actions" % "0.9.4", Nel.of("0.10.0"))
     val state = hookExecutor
       .execPostUpdateHooks(repo, RepoConfig.empty, update)
       .runS(MockState.empty)
