@@ -212,7 +212,7 @@ lazy val commonSettings = Def.settings(
 
 lazy val compileSettings = Def.settings(
   scalaVersion := Scala213,
-  doctestTestFramework := DoctestTestFramework.ScalaCheck,
+  doctestTestFramework := DoctestTestFramework.Munit,
   wartremoverErrors ++= Seq(Wart.TraversableOps),
   Compile / compile / wartremoverErrors ++= Seq(Wart.Equals)
 )
