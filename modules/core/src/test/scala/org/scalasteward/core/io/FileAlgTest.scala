@@ -58,11 +58,8 @@ class FileAlgTest extends FunSuite {
       edited <- fileAlg.editFile(home / "does-not-exists.txt", Some.apply)
     } yield edited).run(MockState.empty).unsafeRunSync()
 
-    val expected = MockState.empty.copy(
-      commands = Vector(
-        List("read", "/tmp/steward/does-not-exists.txt")
-      )
-    )
+    val expected =
+      MockState.empty.copy(commands = Vector(List("read", "/tmp/steward/does-not-exists.txt")))
     assertEquals(state, expected)
     assert(!edited)
   }
@@ -112,6 +109,18 @@ class FileAlgTest extends FunSuite {
       read <- ioFileAlg.readUri(Uri.unsafeFromString(file.toString))
     } yield read
     assertEquals(p.unsafeRunSync(), content)
+  }
+
+  test("isRegularFile") {
+    val dir = File.temp / "steward" / "regular"
+    val file = dir / "file.txt"
+    val p = for {
+      _ <- ioFileAlg.deleteForce(dir)
+      r1 <- ioFileAlg.isRegularFile(file)
+      _ <- ioFileAlg.writeFileData(dir, FileData("file.txt", "content"))
+      r2 <- ioFileAlg.isRegularFile(file)
+    } yield (r1, r2)
+    assertEquals(p.unsafeRunSync(), (false, true))
   }
 }
 

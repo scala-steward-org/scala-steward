@@ -23,6 +23,7 @@ import org.http4s.Uri
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.util.UrlChecker
+import org.scalasteward.core.util.logger.LoggerOps
 
 final class SelfCheckAlg[F[_]](implicit
     gitAlg: GitAlg[F],
@@ -40,15 +41,13 @@ final class SelfCheckAlg[F[_]](implicit
     } yield ()
 
   private def checkGitBinary: F[Unit] =
-    gitAlg.version.attempt.flatMap {
-      case Right(output)   => logger.info(s"Using $output")
-      case Left(throwable) => logger.warn(throwable)("Failed to execute git")
+    logger.attemptLogWarn_("Failed to execute git") {
+      gitAlg.version.flatMap(output => logger.info(s"Using $output"))
     }
 
   private def checkScalafmtBinary: F[Unit] =
-    scalafmtAlg.version.attempt.flatMap {
-      case Right(output)   => logger.info(s"Using $output")
-      case Left(throwable) => logger.warn(throwable)("Failed to execute scalafmt")
+    logger.attemptLogWarn_("Failed to execute scalafmt") {
+      scalafmtAlg.version.flatMap(output => logger.info(s"Using $output"))
     }
 
   private def checkUrlChecker: F[Unit] =
