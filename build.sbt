@@ -1,6 +1,5 @@
 import com.typesafe.sbt.packager.docker._
 import sbtcrossproject.{CrossProject, CrossType, Platform}
-import sbtghactions.UseRef
 
 /// variables
 
