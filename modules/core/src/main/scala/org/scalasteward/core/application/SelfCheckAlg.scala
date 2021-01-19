@@ -41,14 +41,20 @@ final class SelfCheckAlg[F[_]](implicit
 
   private def checkGitBinary: F[Unit] =
     gitAlg.version.attempt.flatMap {
-      case Right(output)   => logger.info(s"Using $output")
-      case Left(throwable) => logger.warn(throwable)("Failed to execute git")
+      case Right(output) => logger.info(s"Using $output")
+      case Left(throwable) =>
+        logger.warn(throwable)(
+          "Failed to execute git -- make sure it is on the PATH; following the detailed exception:"
+        )
     }
 
   private def checkScalafmtBinary: F[Unit] =
     scalafmtAlg.version.attempt.flatMap {
-      case Right(output)   => logger.info(s"Using $output")
-      case Left(throwable) => logger.warn(throwable)("Failed to execute scalafmt")
+      case Right(output) => logger.info(s"Using $output")
+      case Left(throwable) =>
+        logger.warn(throwable)(
+          "Failed to execute scalafmt  -- make sure it is on the PATH; following the detailed exception:"
+        )
     }
 
   private def checkUrlChecker: F[Unit] =
