@@ -21,8 +21,9 @@ import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import org.http4s.Uri
 import org.scalasteward.core.git.GitAlg
-import org.scalasteward.core.scalafmt.ScalafmtAlg
+import org.scalasteward.core.scalafmt.{scalafmtBinary, ScalafmtAlg}
 import org.scalasteward.core.util.UrlChecker
+import org.scalasteward.core.util.logger.LoggerOps
 
 final class SelfCheckAlg[F[_]](implicit
     gitAlg: GitAlg[F],
@@ -40,22 +41,17 @@ final class SelfCheckAlg[F[_]](implicit
     } yield ()
 
   private def checkGitBinary: F[Unit] =
-    gitAlg.version.attempt.flatMap {
-      case Right(output) => logger.info(s"Using $output")
-      case Left(throwable) =>
-        logger.warn(throwable)(
-          "Failed to execute git -- make sure it is on the PATH; following the detailed exception:"
-        )
+    logger.attemptLogWarn_(execFailedMessage("git")) {
+      gitAlg.version.flatMap(output => logger.info(s"Using $output"))
     }
 
   private def checkScalafmtBinary: F[Unit] =
-    scalafmtAlg.version.attempt.flatMap {
-      case Right(output) => logger.info(s"Using $output")
-      case Left(throwable) =>
-        logger.warn(throwable)(
-          "Failed to execute scalafmt  -- make sure it is on the PATH; following the detailed exception:"
-        )
+    logger.attemptLogWarn_(execFailedMessage(scalafmtBinary)) {
+      scalafmtAlg.version.flatMap(output => logger.info(s"Using $output"))
     }
+
+  private def execFailedMessage(binary: String): String =
+    s"Failed to execute $binary  -- make sure it is on the PATH; following the detailed exception:"
 
   private def checkUrlChecker: F[Unit] =
     for {
