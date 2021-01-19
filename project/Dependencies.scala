@@ -18,7 +18,7 @@ object Dependencies {
   val circeParser = "io.circe" %% "circe-parser" % circeGeneric.revision
   val circeRefined = "io.circe" %% "circe-refined" % circeGeneric.revision
   val commonsIo = "commons-io" % "commons-io" % "2.8.0"
-  val coursierCore = "io.get-coursier" %% "coursier" % "2.0.8"
+  val coursierCore = "io.get-coursier" %% "coursier" % "2.0.9"
   val coursierCatsInterop = "io.get-coursier" %% "coursier-cats-interop" % coursierCore.revision
   val cron4sCore = "com.github.alonsodomin.cron4s" %% "cron4s-core" % "0.6.1"
   val disciplineMunit = "org.typelevel" %% "discipline-munit" % "1.0.4"
