@@ -26,7 +26,7 @@ import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.BuildToolAlg
 import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.buildtool.sbt.data.SbtVersion
-import org.scalasteward.core.data.{Dependency, Resolver, Scope}
+import org.scalasteward.core.data.{Dependency, Scope}
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
@@ -130,6 +130,6 @@ object SbtAlg {
 
       def getAdditionalDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
         getSbtDependency(buildRoot)
-          .map(_.map(dep => Scope(List(dep), List(Resolver.mavenCentral))).toList)
+          .map(_.map(dep => Scope(List(dep), List(config.defaultResolver))).toList)
     }
 }

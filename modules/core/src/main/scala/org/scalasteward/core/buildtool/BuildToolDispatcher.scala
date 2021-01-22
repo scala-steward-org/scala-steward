@@ -18,10 +18,11 @@ package org.scalasteward.core.buildtool
 
 import cats.Monad
 import cats.syntax.all._
+import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.maven.MavenAlg
 import org.scalasteward.core.buildtool.mill.MillAlg
 import org.scalasteward.core.buildtool.sbt.SbtAlg
-import org.scalasteward.core.data.{Resolver, Scope}
+import org.scalasteward.core.data.Scope
 import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.vcs.data.Repo
@@ -31,7 +32,7 @@ import org.scalasteward.core.vcs.data.BuildRoot
 trait BuildToolDispatcher[F[_]] extends BuildToolAlg[F, Repo]
 
 object BuildToolDispatcher {
-  def create[F[_]](implicit
+  def create[F[_]](config: Config)(implicit
       mavenAlg: MavenAlg[F],
       millAlg: MillAlg[F],
       sbtAlg: SbtAlg[F],
@@ -85,7 +86,7 @@ object BuildToolDispatcher {
       def getAdditionalDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
         scalafmtAlg
           .getScalafmtDependency(buildRoot)
-          .map(_.map(dep => Scope(List(dep), List(Resolver.mavenCentral))).toList)
+          .map(_.map(dep => Scope(List(dep), List(config.defaultResolver))).toList)
     }
   }
 }

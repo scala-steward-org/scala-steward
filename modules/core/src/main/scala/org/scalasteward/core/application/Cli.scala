@@ -55,7 +55,9 @@ object Cli {
       bitbucketServerUseDefaultReviewers: Boolean = false,
       gitlabMergeWhenPipelineSucceeds: Boolean = false,
       githubAppKeyFile: Option[File] = None,
-      githubAppId: Option[Long] = None
+      githubAppId: Option[Long] = None,
+      selfCheckUri: Option[Uri] = None,
+      defaultMavenRepo: Option[String] = None
   )
 
   final case class EnvVar(name: String, value: String)
