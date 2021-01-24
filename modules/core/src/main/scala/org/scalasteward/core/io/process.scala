@@ -51,7 +51,7 @@ object process {
             .drain
         }
 
-        val result = readOut >> F.delay(process.waitFor()) >>= { exitValue =>
+        val result = readOut >> blocker.delay(process.waitFor()) >>= { exitValue =>
           if (exitValue === 0) F.pure(buffer.toList)
           else {
             val msg = s"'${showCmd(args)}' exited with code $exitValue"
