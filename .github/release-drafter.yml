@@ -3,7 +3,7 @@ categories:
     label: 'enhancement'
   - title: '🐛 Bug Fixes'
     label: 'bug'
-  - title: '📜 Scalafix Migrations'
+  - title: '🔮 Scalafix Migrations'
     label: 'scalafix-migration'
   - title: '📗 Documentation'
     label: 'documentation'
