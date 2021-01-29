@@ -90,9 +90,8 @@ class BitbucketApiAlg[F[_]](
       .map(_.values)
 
   override def closePullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut] =
-    client.putWithBody[PullRequestOut, UpdateState](
-      url.pullRequest(repo, number),
-      UpdateState(PullRequestState.Closed),
+    client.post[PullRequestOut](
+      url.decline(repo, number),
       modify(repo)
     )
 
