@@ -18,10 +18,9 @@ package org.scalasteward.core
 
 import cats.syntax.all._
 import org.http4s.Uri
-import org.scalasteward.core.application.SupportedVCS
-import org.scalasteward.core.application.SupportedVCS.{Bitbucket, BitbucketServer, GitHub, GitLab}
 import org.scalasteward.core.data.ReleaseRelatedUrl.VersionDiff
 import org.scalasteward.core.data.{ReleaseRelatedUrl, Update}
+import org.scalasteward.core.vcs.VCSType.{Bitbucket, BitbucketServer, GitHub, GitLab}
 import org.scalasteward.core.vcs.data.{PullRequestNumber, Repo}
 
 package object vcs {
@@ -36,7 +35,7 @@ package object vcs {
   /** Determines the `head` (GitHub) / `source_branch` (GitLab, Bitbucket) parameter for searching
     * for already existing pull requests.
     */
-  def listingBranch(vcsType: SupportedVCS, fork: Repo, update: Update): String =
+  def listingBranch(vcsType: VCSType, fork: Repo, update: Update): String =
     vcsType match {
       case GitHub =>
         s"${fork.show}:${git.branchFor(update).name}"
@@ -48,7 +47,7 @@ package object vcs {
   /** Determines the `head` (GitHub) / `source_branch` (GitLab, Bitbucket) parameter for creating
     * a new pull requests.
     */
-  def createBranch(vcsType: SupportedVCS, fork: Repo, update: Update): String =
+  def createBranch(vcsType: VCSType, fork: Repo, update: Update): String =
     vcsType match {
       case GitHub =>
         s"${fork.owner}:${git.branchFor(update).name}"
@@ -81,10 +80,10 @@ package object vcs {
   }
 
   private[this] def extractRepoVCSType(
-      vcsType: SupportedVCS,
+      vcsType: VCSType,
       vcsUri: Uri,
       repoUrl: Uri
-  ): Option[SupportedVCS] = {
+  ): Option[VCSType] = {
     val host = repoUrl.host.map(_.value)
     if (vcsUri.host.map(_.value).contains(host.getOrElse("")))
       Some(vcsType)
@@ -97,7 +96,7 @@ package object vcs {
   }
 
   def possibleCompareUrls(
-      vcsType: SupportedVCS,
+      vcsType: VCSType,
       vcsUri: Uri,
       repoUrl: Uri,
       update: Update
@@ -120,7 +119,7 @@ package object vcs {
   }
 
   def possibleReleaseRelatedUrls(
-      vcsType: SupportedVCS,
+      vcsType: VCSType,
       vcsUri: Uri,
       repoUrl: Uri,
       update: Update
@@ -137,8 +136,8 @@ package object vcs {
 
     def files(fileNames: List[String]): List[Uri] = {
       val maybeSegments = repoVCSType.map {
-        case SupportedVCS.GitHub | SupportedVCS.GitLab             => List("blob", "master")
-        case SupportedVCS.Bitbucket | SupportedVCS.BitbucketServer => List("master")
+        case GitHub | GitLab             => List("blob", "master")
+        case Bitbucket | BitbucketServer => List("master")
       }
 
       maybeSegments.toList.flatMap { segments =>
@@ -151,12 +150,8 @@ package object vcs {
     val customReleaseNotes =
       files(possibleReleaseNotesFilenames).map(ReleaseRelatedUrl.CustomReleaseNotes)
 
-    github ++ customReleaseNotes ++ customChangelog ++ possibleCompareUrls(
-      vcsType,
-      vcsUri,
-      repoUrl,
-      update
-    )
+    github ++ customReleaseNotes ++ customChangelog ++
+      possibleCompareUrls(vcsType, vcsUri, repoUrl, update)
   }
 
   private def possibleFilenames(baseNames: List[String]): List[String] = {

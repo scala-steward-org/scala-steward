@@ -8,7 +8,6 @@ import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.application.SupportedVCS
 import org.scalasteward.core.data.{ReleaseRelatedUrl, Update}
 import org.scalasteward.core.mock.MockContext
 import org.scalasteward.core.util.{Nel, UrlChecker}
@@ -58,7 +57,7 @@ class VCSExtraAlgTest extends FunSuite {
 
   test("getBranchCompareUrl: github on prem") {
     val config = MockContext.config.copy(
-      vcsType = SupportedVCS.GitHub,
+      vcsType = VCSType.GitHub,
       vcsApiHost = uri"https://github.on-prem.com/"
     )
     val githubOnPremVcsExtraAlg = VCSExtraAlg.create[IO](config)
