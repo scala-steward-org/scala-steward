@@ -1,8 +1,8 @@
 package org.scalasteward.core.mock
 
 import better.files.File
+import cats.Parallel
 import cats.effect.{BracketThrow, Sync}
-import cats.{Applicative, Parallel}
 import io.chrisdavenport.log4cats.Logger
 import org.http4s.client.Client
 import org.http4s.{HttpApp, Uri}
@@ -11,7 +11,6 @@ import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.{Cli, Config, Context, SupportedVCS}
 import org.scalasteward.core.io._
 import org.scalasteward.core.scalafix.MigrationsLoaderTest
-import org.scalasteward.core.util.UrlChecker
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 import scala.concurrent.duration._
 
@@ -41,7 +40,6 @@ object MockContext {
   implicit private val fileAlg: FileAlg[MockEff] = new MockFileAlg
   implicit private val logger: Logger[MockEff] = new MockLogger
   implicit private val processAlg: ProcessAlg[MockEff] = MockProcessAlg.create(config.processCfg)
-  implicit private val urlChecker: UrlChecker[MockEff] = _ => Applicative[MockEff].pure(false)
   implicit private val workspaceAlg: WorkspaceAlg[MockEff] = new MockWorkspaceAlg
 
   val context: Context[MockEff] =

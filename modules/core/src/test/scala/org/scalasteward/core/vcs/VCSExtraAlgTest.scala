@@ -23,7 +23,7 @@ class VCSExtraAlgTest extends FunSuite {
 
   implicit val client: Client[IO] = Client.fromHttpApp[IO](routes.orNotFound)
   implicit val urlChecker: UrlChecker[IO] =
-    UrlChecker.create[IO](MockContext.config).allocated.map(_._1).unsafeRunSync()
+    UrlChecker.create[IO](MockContext.config).unsafeRunSync()
 
   private val updateFoo = Update.Single("com.example" % "foo" % "0.1.0", Nel.of("0.2.0"))
   private val updateBar = Update.Single("com.example" % "bar" % "0.1.0", Nel.of("0.2.0"))

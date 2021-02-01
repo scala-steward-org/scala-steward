@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.util
 
-import cats.effect.{Async, Resource, Sync}
+import cats.effect.{Async, Sync}
 import cats.syntax.all._
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.chrisdavenport.log4cats.Logger
@@ -32,7 +32,7 @@ trait UrlChecker[F[_]] {
 }
 
 object UrlChecker {
-  def buildCache[F[_]](config: Config)(implicit F: Sync[F]): F[CaffeineCache[Status]] =
+  private def buildCache[F[_]](config: Config)(implicit F: Sync[F]): F[CaffeineCache[Status]] =
     F.delay {
       val cache = Caffeine
         .newBuilder()
@@ -46,8 +46,8 @@ object UrlChecker {
       client: Client[F],
       logger: Logger[F],
       F: Async[F]
-  ): Resource[F, UrlChecker[F]] =
-    Resource.make(buildCache(config))(_.close().void).map { statusCache =>
+  ): F[UrlChecker[F]] =
+    buildCache(config).map { statusCache =>
       new UrlChecker[F] {
         override def exists(url: Uri): F[Boolean] =
           status(url).map(_ === Status.Ok).handleErrorWith { throwable =>
