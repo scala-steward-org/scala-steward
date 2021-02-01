@@ -5,6 +5,7 @@ import munit.FunSuite
 import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.Cli.ParseResult._
+import org.scalasteward.core.vcs.VCSType
 import scala.concurrent.duration._
 
 class CliTest extends FunSuite {
@@ -36,7 +37,7 @@ class CliTest extends FunSuite {
         reposFile = File("b"),
         defaultRepoConf = Some(File("c")),
         gitAuthorEmail = "d",
-        vcsType = SupportedVCS.GitLab,
+        vcsType = VCSType.GitLab,
         vcsApiHost = uri"http://example.com",
         vcsLogin = "e",
         gitAskPass = File("f"),
@@ -122,7 +123,7 @@ class CliTest extends FunSuite {
     assert(clue(Cli.fileArgParser(Some(File("/tmp")), "/opt")).isLeft)
   }
 
-  test("supportedVCSArgParser: unknown value") {
-    assert(clue(Cli.supportedVCSArgParser(None, "sourceforge")).isLeft)
+  test("vcsTypeArgParser: unknown value") {
+    assert(clue(Cli.vcsTypeArgParser(None, "sourceforge")).isLeft)
   }
 }

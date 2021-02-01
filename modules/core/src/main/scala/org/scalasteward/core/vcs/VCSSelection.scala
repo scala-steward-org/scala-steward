@@ -20,8 +20,8 @@ import cats.MonadThrow
 import io.chrisdavenport.log4cats.Logger
 import org.http4s.Header
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.application.SupportedVCS.{Bitbucket, BitbucketServer, GitHub, GitLab}
 import org.scalasteward.core.util.HttpJsonClient
+import org.scalasteward.core.vcs.VCSType.{Bitbucket, BitbucketServer, GitHub, GitLab}
 import org.scalasteward.core.vcs.bitbucket.BitbucketApiAlg
 import org.scalasteward.core.vcs.bitbucketserver.BitbucketServerApiAlg
 import org.scalasteward.core.vcs.data.AuthenticatedUser

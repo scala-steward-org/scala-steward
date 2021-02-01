@@ -8,9 +8,10 @@ import org.http4s.client.Client
 import org.http4s.{HttpApp, Uri}
 import org.scalasteward.core.TestInstances.ioContextShift
 import org.scalasteward.core.application.Cli.EnvVar
-import org.scalasteward.core.application.{Cli, Config, Context, SupportedVCS}
+import org.scalasteward.core.application.{Cli, Config, Context}
 import org.scalasteward.core.io._
 import org.scalasteward.core.scalafix.MigrationsLoaderTest
+import org.scalasteward.core.vcs.VCSType
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 import scala.concurrent.duration._
 
@@ -21,7 +22,7 @@ object MockContext {
     defaultRepoConf = Some(File.temp / "default.scala-steward.conf"),
     gitAuthorName = "Bot Doe",
     gitAuthorEmail = "bot@example.org",
-    vcsType = SupportedVCS.GitHub,
+    vcsType = VCSType.GitHub,
     vcsApiHost = Uri(),
     vcsLogin = "bot-doe",
     gitAskPass = File.temp / "askpass.sh",

@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.application
+package org.scalasteward.core.vcs
 
 import cats.Eq
 import cats.syntax.all._
-import org.scalasteward.core.application.SupportedVCS._
+import org.scalasteward.core.vcs.VCSType._
 
-sealed trait SupportedVCS {
+sealed trait VCSType {
   val asString: String = this match {
     case Bitbucket       => "bitbucket"
     case BitbucketServer => "bitbucket-server"
@@ -29,21 +29,21 @@ sealed trait SupportedVCS {
   }
 }
 
-object SupportedVCS {
-  case object Bitbucket extends SupportedVCS
-  case object BitbucketServer extends SupportedVCS
-  case object GitHub extends SupportedVCS
-  case object GitLab extends SupportedVCS
+object VCSType {
+  case object Bitbucket extends VCSType
+  case object BitbucketServer extends VCSType
+  case object GitHub extends VCSType
+  case object GitLab extends VCSType
 
   val all = List(Bitbucket, BitbucketServer, GitHub, GitLab)
 
-  def parse(s: String): Either[String, SupportedVCS] =
+  def parse(s: String): Either[String, VCSType] =
     all.find(_.asString === s) match {
       case Some(value) => Right(value)
       case None =>
         Left(s"Unexpected string '$s'. Expected one of: ${all.map(_.asString).mkString(", ")}.")
     }
 
-  implicit val supportedVCSEq: Eq[SupportedVCS] =
+  implicit val vcsTypeEq: Eq[VCSType] =
     Eq.fromUniversalEquals
 }

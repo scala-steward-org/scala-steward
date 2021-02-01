@@ -3,10 +3,9 @@ package org.scalasteward.core.vcs
 import munit.FunSuite
 import org.http4s.syntax.literals._
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.application.SupportedVCS
-import org.scalasteward.core.application.SupportedVCS.{GitHub, GitLab}
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.util.Nel
+import org.scalasteward.core.vcs.VCSType.{GitHub, GitLab}
 import org.scalasteward.core.vcs.data.{PullRequestNumber, Repo}
 
 class VCSPackageTest extends FunSuite {
@@ -52,7 +51,7 @@ class VCSPackageTest extends FunSuite {
 
     assertEquals(
       possibleCompareUrls(
-        SupportedVCS.GitHub,
+        GitHub,
         onPremVCSUri,
         uri"https://github.com/foo/bar",
         update
@@ -67,7 +66,7 @@ class VCSPackageTest extends FunSuite {
     // should canonicalize (drop last slash)
     assertEquals(
       possibleCompareUrls(
-        SupportedVCS.GitHub,
+        GitHub,
         onPremVCSUri,
         uri"https://github.com/foo/bar/",
         update
@@ -81,7 +80,7 @@ class VCSPackageTest extends FunSuite {
 
     assertEquals(
       possibleCompareUrls(
-        SupportedVCS.GitHub,
+        GitHub,
         onPremVCSUri,
         uri"https://gitlab.com/foo/bar",
         update
@@ -95,7 +94,7 @@ class VCSPackageTest extends FunSuite {
 
     assertEquals(
       possibleCompareUrls(
-        SupportedVCS.GitHub,
+        GitHub,
         onPremVCSUri,
         uri"https://bitbucket.org/foo/bar",
         update
@@ -109,7 +108,7 @@ class VCSPackageTest extends FunSuite {
 
     assertEquals(
       possibleCompareUrls(
-        SupportedVCS.GitHub,
+        GitHub,
         onPremVCSUri,
         uri"https://scalacenter.github.io/scalafix/",
         update
@@ -119,7 +118,7 @@ class VCSPackageTest extends FunSuite {
 
     assertEquals(
       possibleCompareUrls(
-        SupportedVCS.GitHub,
+        GitHub,
         onPremVCSUri,
         onPremVCSUri.addPath("/foo/bar"),
         update
@@ -134,7 +133,7 @@ class VCSPackageTest extends FunSuite {
 
   test("possibleChangelogUrls: github.com") {
     val obtained = possibleReleaseRelatedUrls(
-      SupportedVCS.GitHub,
+      GitHub,
       uri"https://github.com",
       uri"https://github.com/foo/bar",
       update
@@ -176,7 +175,7 @@ class VCSPackageTest extends FunSuite {
 
   test("possibleChangelogUrls: gitlab.com") {
     val obtained = possibleReleaseRelatedUrls(
-      SupportedVCS.GitHub,
+      GitHub,
       uri"https://github.com",
       uri"https://gitlab.com/foo/bar",
       update
@@ -194,7 +193,7 @@ class VCSPackageTest extends FunSuite {
 
   test("possibleChangelogUrls: on-prem gitlab") {
     val obtained = possibleReleaseRelatedUrls(
-      SupportedVCS.GitLab,
+      GitLab,
       uri"https://gitlab.on-prem.net",
       uri"https://gitlab.on-prem.net/foo/bar",
       update
@@ -213,7 +212,7 @@ class VCSPackageTest extends FunSuite {
 
   test("possibleChangelogUrls: bitbucket.org") {
     val obtained = possibleReleaseRelatedUrls(
-      SupportedVCS.GitHub,
+      GitHub,
       uri"https://github.com",
       uri"https://bitbucket.org/foo/bar",
       update
@@ -231,7 +230,7 @@ class VCSPackageTest extends FunSuite {
 
   test("possibleChangelogUrls: homepage") {
     val obtained = possibleReleaseRelatedUrls(
-      SupportedVCS.GitHub,
+      GitHub,
       uri"https://github.com",
       uri"https://scalacenter.github.io/scalafix/",
       update
