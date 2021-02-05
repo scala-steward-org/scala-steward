@@ -94,13 +94,13 @@ run --do-not-fork --workspace "/path/workspace" --repos-file "/path/repos.md" --
 ```
 
 
-#### Running on Docker for Bitbucket
+### Running on Docker for Bitbucket
 
 * Create a file `repos.md` that will be injected into the container as as volume.
 * Create a file `run.sh` with this content:
 
 ```
-echo "#!/bin/sh"                  >> pass.sh  
+echo "#!/bin/sh"                  >> pass.sh
 echo "echo '$BITBUCKET_PASSWORD'" >> pass.sh
 
 chmod +x pass.sh
@@ -118,12 +118,71 @@ docker run -v $PWD:/opt/scala-steward \
     --vcs-type "bitbucket" \
     --vcs-api-host "https://api.bitbucket.org/2.0" \
     --vcs-login "$BITBUCKET_USERNAME"
-    
 ```
 
 * Run it from a CI tool or manually using with this command:
 
 `BITBUCKET_USERNAME=<myuser> BITBUCKET_PASSWORD=<mypass> ./run.sh`
+
+### Running in a Bitbucket pipeline to update Bitbucket repos
+
+* Create a file `repos.md` that will be injected into the container as a volume.
+* Create a file `run.sh` with this content:
+
+```
+echo "#!/bin/sh"                  >> pass.sh
+echo "echo '$BITBUCKET_PASSWORD'" >> pass.sh
+
+chmod +x pass.sh
+
+docker run -v $PWD:/opt/scala-steward \
+    -i fthomas/scala-steward:latest \
+    --env-var LOG_LEVEL=TRACE \
+    --do-not-fork \
+    --workspace "/opt/scala-steward/workspace" \
+    --repos-file "/opt/scala-steward/repos.md" \
+    --default-repo-conf "/opt/scala-steward/default.scala-steward.conf" \
+    --git-ask-pass "/opt/scala-steward/pass.sh" \
+    --git-author-email "myemail@company.xyz" \
+    --vcs-type "bitbucket" \
+    --vcs-api-host "https://api.bitbucket.org/2.0" \
+    --vcs-login "$BITBUCKET_USERNAME"
+```
+
+NOTE: This script is slightly different to the one in the previous Bitbucket
+example, because it needs to run in a Bitbucket Pipeline. The `-t` flag has been
+removed, and we do mount `~/.sbt` as a volume.
+
+* Prepare an S3 bucket (or similar storage) to persist the Scala Steward
+  workspace between runs
+* Set some repository variables: AWS credentials, plus the S3 bucket name
+* Create a pipeline to run Scala Steward and sync the workspace to S3:
+
+```
+image:
+  name: <any Linux image with AWS CLI installed>
+
+options:
+  docker: true
+
+definitions:
+  services:
+    docker:
+      memory: 4096
+
+pipelines:
+  custom:
+    run-scala-steward:
+      - step:
+          name: Run Scala Steward
+          size: 2x
+          script:
+            - aws s3 sync s3://${WORKSPACE_BUCKET}/workspace ./workspace
+            - ./run.sh
+            - aws s3 sync ./workspace s3://${WORKSPACE_BUCKET}/workspace
+```
+
+* In the Pipelines UI, configure the pipeline to run on a schedule (e.g. daily)
 
 ### Running On-premise
 
