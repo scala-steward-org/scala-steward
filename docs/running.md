@@ -149,6 +149,10 @@ docker run -v $PWD:/opt/scala-steward \
     --vcs-login "$BITBUCKET_USERNAME"
 ```
 
+NOTE: This script is slightly different to the one in the previous Bitbucket
+example, because it needs to run in a Bitbucket Pipeline. The `-t` flag has been
+removed, and we do mount `~/.sbt` as a volume.
+
 * Prepare an S3 bucket (or similar storage) to persist the Scala Steward
   workspace between runs
 * Set some repository variables: AWS credentials, plus the S3 bucket name
