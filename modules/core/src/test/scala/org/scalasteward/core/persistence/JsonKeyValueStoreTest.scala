@@ -8,8 +8,8 @@ import org.scalasteward.core.mock.{MockEff, MockState}
 
 class JsonKeyValueStoreTest extends FunSuite {
   test("put, get") {
-    val kvStore = new JsonKeyValueStore[MockEff, String, String]("test", "0")
     val p = for {
+      kvStore <- JsonKeyValueStore.create[MockEff, String, String]("test", "0")
       _ <- kvStore.put("k1", "v1")
       v1 <- kvStore.get("k1")
       _ <- kvStore.put("k2", "v2")
@@ -37,8 +37,8 @@ class JsonKeyValueStoreTest extends FunSuite {
   }
 
   test("modifyF, get, set") {
-    val kvStore = new JsonKeyValueStore[MockEff, String, String]("test", "0")
     val p = for {
+      kvStore <- JsonKeyValueStore.create[MockEff, String, String]("test", "0")
       _ <- kvStore.modifyF("k1")(_ => Option("v0").pure[MockEff])
       v1 <- kvStore.get("k1")
       _ <- kvStore.set("k1", None)
@@ -60,9 +60,9 @@ class JsonKeyValueStoreTest extends FunSuite {
 
   test("cached") {
     val p = for {
-      kvStore <- CachingKeyValueStore.wrap(
-        new JsonKeyValueStore[MockEff, String, String]("test", "0")
-      )
+      kvStore <- JsonKeyValueStore
+        .create[MockEff, String, String]("test", "0")
+        .flatMap(CachingKeyValueStore.wrap(_))
       _ <- kvStore.put("k1", "v1")
       v1 <- kvStore.get("k1")
       v2 <- kvStore.get("k2")
