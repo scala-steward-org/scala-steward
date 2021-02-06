@@ -35,7 +35,7 @@ import org.scalasteward.core.git.{GenGitAlg, GitAlg}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.{NurtureAlg, PullRequestData, PullRequestRepository}
 import org.scalasteward.core.persistence.{CachingKeyValueStore, JsonKeyValueStore}
-import org.scalasteward.core.repocache.{RefreshErrorAlg, RepoCacheAlg, RepoCacheRepository}
+import org.scalasteward.core.repocache._
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.scalafix.{MigrationAlg, MigrationsLoader}
 import org.scalasteward.core.scalafmt.ScalafmtAlg
@@ -108,9 +108,15 @@ object Context {
         migrationsLoader.loadAll(config.scalafixCfg).map(new MigrationAlg(_))
       implicit0(urlChecker: UrlChecker[F]) <- UrlChecker.create[F](config)
       kvsPrefix = Some(config.vcsType.asString)
-      pullRequestsStore <- CachingKeyValueStore.wrap(
-        new JsonKeyValueStore[F, Repo, Map[Uri, PullRequestData]]("pull_requests", "2", kvsPrefix)
-      )
+      pullRequestsStore <- JsonKeyValueStore
+        .create[F, Repo, Map[Uri, PullRequestData]]("pull_requests", "2", kvsPrefix)
+        .flatMap(CachingKeyValueStore.wrap(_))
+      refreshErrorStore <- JsonKeyValueStore
+        .create[F, Repo, RefreshErrorAlg.Entry]("refresh_error", "1", kvsPrefix)
+      repoCacheStore <- JsonKeyValueStore
+        .create[F, Repo, RepoCache]("repo_cache", "1", kvsPrefix)
+      versionsStore <- JsonKeyValueStore
+        .create[F, VersionsCache.Key, VersionsCache.Value]("versions", "2")
     } yield {
       implicit val dateTimeAlg: DateTimeAlg[F] = DateTimeAlg.create[F]
       implicit val repoConfigAlg: RepoConfigAlg[F] = new RepoConfigAlg[F](config)
@@ -120,7 +126,7 @@ object Context {
       implicit val hookExecutor: HookExecutor[F] = new HookExecutor[F]
       implicit val httpJsonClient: HttpJsonClient[F] = new HttpJsonClient[F]
       implicit val repoCacheRepository: RepoCacheRepository[F] =
-        new RepoCacheRepository[F](new JsonKeyValueStore("repo_cache", "1", kvsPrefix))
+        new RepoCacheRepository[F](repoCacheStore)
       implicit val vcsApiAlg: VCSApiAlg[F] = new VCSSelection[F](config, vcsUser).vcsApiAlg
       implicit val vcsRepoAlg: VCSRepoAlg[F] = new VCSRepoAlg[F](config)
       implicit val vcsExtraAlg: VCSExtraAlg[F] = VCSExtraAlg.create[F](config)
@@ -130,14 +136,13 @@ object Context {
       implicit val selfCheckAlg: SelfCheckAlg[F] = new SelfCheckAlg[F]
       implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create[F]
       implicit val versionsCache: VersionsCache[F] =
-        new VersionsCache[F](config.cacheTtl, new JsonKeyValueStore("versions", "2"))
+        new VersionsCache[F](config.cacheTtl, versionsStore)
       implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]
       implicit val mavenAlg: MavenAlg[F] = MavenAlg.create[F](config)
       implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F](config)
       implicit val millAlg: MillAlg[F] = MillAlg.create[F]
       implicit val buildToolDispatcher: BuildToolDispatcher[F] = BuildToolDispatcher.create[F]
-      implicit val refreshErrorAlg: RefreshErrorAlg[F] =
-        new RefreshErrorAlg[F](new JsonKeyValueStore("refresh_error", "1", kvsPrefix))
+      implicit val refreshErrorAlg: RefreshErrorAlg[F] = new RefreshErrorAlg[F](refreshErrorStore)
       implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F](config)
       implicit val editAlg: EditAlg[F] = new EditAlg[F]
       implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F](config)
