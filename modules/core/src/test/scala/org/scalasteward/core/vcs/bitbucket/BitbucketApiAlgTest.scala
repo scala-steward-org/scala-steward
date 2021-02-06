@@ -124,7 +124,9 @@ class BitbucketApiAlgTest extends FunSuite {
           ]
       }"""
       )
-    case PUT -> Root / "repositories" / "fthomas" / "base.g8" / "pullrequests" / IntVar(_) =>
+    case POST -> Root / "repositories" / "fthomas" / "base.g8" / "pullrequests" / IntVar(
+          _
+        ) / "decline" =>
       Ok(
         json"""{
             "id": 2,

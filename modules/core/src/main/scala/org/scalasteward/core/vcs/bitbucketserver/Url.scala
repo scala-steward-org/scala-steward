@@ -44,6 +44,7 @@ final class Url(apiHost: Uri) {
       .withQueryParam("at", head)
       .withQueryParam("limit", "1000")
       .withQueryParam("direction", "outgoing")
+      .withQueryParam("state", "all")
 
   def pullRequest(repo: Repo, number: PullRequestNumber): Uri =
     pullRequests(repo) / number.toString

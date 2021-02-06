@@ -41,4 +41,7 @@ private[bitbucket] class Url(apiHost: Uri) {
 
   def comments(rep: Repo, number: PullRequestNumber): Uri =
     pullRequest(rep, number) / "comments"
+
+  def decline(rep: Repo, number: PullRequestNumber): Uri =
+    pullRequest(rep, number) / "decline"
 }

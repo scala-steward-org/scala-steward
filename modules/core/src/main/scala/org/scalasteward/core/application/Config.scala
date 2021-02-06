@@ -29,6 +29,7 @@ import org.scalasteward.core.git.Author
 import org.scalasteward.core.io.{ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
+import org.scalasteward.core.vcs.VCSType
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 import org.scalasteward.core.vcs.github.GitHubApp
 import scala.concurrent.duration.FiniteDuration
@@ -62,7 +63,7 @@ final case class Config(
     reposFile: File,
     defaultRepoConfigFile: Option[File],
     gitCfg: GitCfg,
-    vcsType: SupportedVCS,
+    vcsType: VCSType,
     vcsApiHost: Uri,
     vcsLogin: String,
     doNotFork: Boolean,

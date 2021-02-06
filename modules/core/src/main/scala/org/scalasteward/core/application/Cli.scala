@@ -24,6 +24,7 @@ import cats.syntax.all._
 import org.http4s.Uri
 import org.http4s.syntax.literals._
 import org.scalasteward.core.util.dateTime.parseFiniteDuration
+import org.scalasteward.core.vcs.VCSType
 import scala.concurrent.duration._
 
 object Cli {
@@ -34,7 +35,7 @@ object Cli {
       gitAuthorName: String = "Scala Steward",
       gitAuthorEmail: String,
       gitAuthorSigningKey: Option[String] = None,
-      vcsType: SupportedVCS = SupportedVCS.GitHub,
+      vcsType: VCSType = VCSType.GitHub,
       vcsApiHost: Uri = uri"https://api.github.com",
       vcsLogin: String,
       gitAskPass: File,
@@ -111,10 +112,10 @@ object Cli {
         }
     )
 
-  implicit val supportedVCSArgParser: ArgParser[SupportedVCS] =
+  implicit val vcsTypeArgParser: ArgParser[VCSType] =
     ArgParser[String].xmapError(
       _.asString,
-      s => SupportedVCS.parse(s).leftMap(error => MalformedValue("SupportedVCS", error))
+      s => VCSType.parse(s).leftMap(error => MalformedValue("VCSType", error))
     )
 
   implicit val uriArgParser: ArgParser[Uri] =

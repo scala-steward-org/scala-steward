@@ -25,42 +25,53 @@ import io.circe.syntax._
 import io.circe.{Decoder, Encoder, KeyEncoder}
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 
-final class JsonKeyValueStore[F[_], K, V](
-    name: String,
-    schemaVersion: String,
-    maybePrefix: Option[String] = None
-)(implicit
+final class JsonKeyValueStore[F[_], K, V](storeRoot: File, name: String)(implicit
     fileAlg: FileAlg[F],
     keyEncoder: KeyEncoder[K],
     logger: Logger[F],
     valueDecoder: Decoder[V],
     valueEncoder: Encoder[V],
-    workspaceAlg: WorkspaceAlg[F],
     F: Monad[F]
 ) extends KeyValueStore[F, K, V] {
-  override def get(key: K): F[Option[V]] =
-    jsonFile(key).flatMap { file =>
-      fileAlg.readFile(file).flatMap {
-        case None => F.pure(Option.empty[V])
-        case Some(content) =>
-          decode[Option[V]](content) match {
-            case Right(maybeValue) => F.pure(maybeValue)
-            case Left(error) =>
-              logger.error(error)(s"Failed to parse or decode JSON from $file").as(Option.empty[V])
-          }
-      }
+  override def get(key: K): F[Option[V]] = {
+    val file = jsonFile(key)
+    fileAlg.readFile(file).flatMap {
+      case None => F.pure(Option.empty[V])
+      case Some(content) =>
+        decode[Option[V]](content) match {
+          case Right(maybeValue) => F.pure(maybeValue)
+          case Left(error) =>
+            logger.error(error)(s"Failed to parse or decode JSON from $file").as(Option.empty[V])
+        }
     }
+  }
 
-  override def set(key: K, value: Option[V]): F[Unit] =
-    jsonFile(key).flatMap { file =>
-      value match {
-        case Some(v) => fileAlg.writeFile(file, v.asJson.toString)
-        case None    => fileAlg.deleteForce(file)
-      }
+  override def set(key: K, value: Option[V]): F[Unit] = {
+    val file = jsonFile(key)
+    value match {
+      case Some(v) => fileAlg.writeFile(file, v.asJson.spaces2)
+      case None    => fileAlg.deleteForce(file)
     }
+  }
 
-  private def jsonFile(key: K): F[File] = {
-    val keyPath = maybePrefix.fold("")(_ + "/") + keyEncoder(key)
-    workspaceAlg.rootDir.map(_ / "store" / name / s"v$schemaVersion" / keyPath / s"$name.json")
+  private def jsonFile(key: K): File =
+    storeRoot / keyEncoder(key) / s"$name.json"
+}
+
+object JsonKeyValueStore {
+  def create[F[_], K, V](name: String, schemaVersion: String, maybePrefix: Option[String] = None)(
+      implicit
+      fileAlg: FileAlg[F],
+      keyEncoder: KeyEncoder[K],
+      logger: Logger[F],
+      valueDecoder: Decoder[V],
+      valueEncoder: Encoder[V],
+      workspaceAlg: WorkspaceAlg[F],
+      F: Monad[F]
+  ): F[JsonKeyValueStore[F, K, V]] = {
+    val prefix = maybePrefix.fold("")("/" + _)
+    workspaceAlg.rootDir
+      .map(_ / "store" / name / s"v$schemaVersion$prefix")
+      .map(storeRoot => new JsonKeyValueStore(storeRoot, name))
   }
 }

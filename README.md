@@ -89,7 +89,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [Erik Erlandson](https://github.com/erikerlandson)
 * [Erlend Hamnaberg](https://github.com/hamnis)
 * [eugeniyk](https://github.com/eugeniyk)
-* [Fabian](https://github.com/fg-devs)
+* [Fabian Grutsch](https://github.com/fgrutsch)
 * [Felix Dietze](https://github.com/fdietze)
 * [Filipe Regadas](https://github.com/regadas)
 * [Frank S. Thomas](https://github.com/fthomas)

@@ -35,7 +35,7 @@ import org.scalasteward.core.git.{GenGitAlg, GitAlg}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.{NurtureAlg, PullRequestData, PullRequestRepository}
 import org.scalasteward.core.persistence.{CachingKeyValueStore, JsonKeyValueStore}
-import org.scalasteward.core.repocache.{RefreshErrorAlg, RepoCacheAlg, RepoCacheRepository}
+import org.scalasteward.core.repocache._
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.scalafix.{MigrationAlg, MigrationsLoader}
 import org.scalasteward.core.scalafmt.ScalafmtAlg
@@ -72,8 +72,11 @@ final class Context[F[_]](implicit
 )
 
 object Context {
-  def step0[F[_]: ConcurrentEffect: ContextShift: Parallel: Timer](
-      args: Cli.Args
+  def step0[F[_]](args: Cli.Args)(implicit
+      contextShift: ContextShift[F],
+      parallel: Parallel[F],
+      timer: Timer[F],
+      F: ConcurrentEffect[F]
   ): Resource[F, Context[F]] =
     for {
       blocker <- Blocker[F]
@@ -82,7 +85,6 @@ object Context {
       implicit0(client: Client[F]) <- OkHttpBuilder.withDefaultClient[F](blocker).map(_.create)
       implicit0(fileAlg: FileAlg[F]) = FileAlg.create[F]
       implicit0(processAlg: ProcessAlg[F]) = ProcessAlg.create[F](blocker, config.processCfg)
-      implicit0(urlChecker: UrlChecker[F]) <- UrlChecker.create[F](config)
       implicit0(workspaceAlg: WorkspaceAlg[F]) = WorkspaceAlg.create[F](config)
       context <- Resource.liftF(step1[F](config))
     } yield context
@@ -94,21 +96,27 @@ object Context {
       logger: Logger[F],
       parallel: Parallel[F],
       processAlg: ProcessAlg[F],
-      urlChecker: UrlChecker[F],
       workspaceAlg: WorkspaceAlg[F],
-      F: Sync[F]
+      F: Async[F]
   ): F[Context[F]] =
     for {
       _ <- printBanner[F]
       vcsUser <- config.vcsUser[F]
+      implicit0(artifactMigration: ArtifactMigrations) <- ArtifactMigrations.create[F](config)
       implicit0(migrationsLoader: MigrationsLoader[F]) = new MigrationsLoader[F]
       implicit0(migrationAlg: MigrationAlg) <-
         migrationsLoader.loadAll(config.scalafixCfg).map(new MigrationAlg(_))
-      implicit0(artifactMigration: ArtifactMigrations) <- ArtifactMigrations.create[F](config)
+      implicit0(urlChecker: UrlChecker[F]) <- UrlChecker.create[F](config)
       kvsPrefix = Some(config.vcsType.asString)
-      pullRequestsStore <- CachingKeyValueStore.wrap(
-        new JsonKeyValueStore[F, Repo, Map[Uri, PullRequestData]]("pull_requests", "2", kvsPrefix)
-      )
+      pullRequestsStore <- JsonKeyValueStore
+        .create[F, Repo, Map[Uri, PullRequestData]]("pull_requests", "2", kvsPrefix)
+        .flatMap(CachingKeyValueStore.wrap(_))
+      refreshErrorStore <- JsonKeyValueStore
+        .create[F, Repo, RefreshErrorAlg.Entry]("refresh_error", "1", kvsPrefix)
+      repoCacheStore <- JsonKeyValueStore
+        .create[F, Repo, RepoCache]("repo_cache", "1", kvsPrefix)
+      versionsStore <- JsonKeyValueStore
+        .create[F, VersionsCache.Key, VersionsCache.Value]("versions", "2")
     } yield {
       implicit val dateTimeAlg: DateTimeAlg[F] = DateTimeAlg.create[F]
       implicit val repoConfigAlg: RepoConfigAlg[F] = new RepoConfigAlg[F](config)
@@ -118,7 +126,7 @@ object Context {
       implicit val hookExecutor: HookExecutor[F] = new HookExecutor[F]
       implicit val httpJsonClient: HttpJsonClient[F] = new HttpJsonClient[F]
       implicit val repoCacheRepository: RepoCacheRepository[F] =
-        new RepoCacheRepository[F](new JsonKeyValueStore("repo_cache", "1", kvsPrefix))
+        new RepoCacheRepository[F](repoCacheStore)
       implicit val vcsApiAlg: VCSApiAlg[F] = new VCSSelection[F](config, vcsUser).vcsApiAlg
       implicit val vcsRepoAlg: VCSRepoAlg[F] = new VCSRepoAlg[F](config)
       implicit val vcsExtraAlg: VCSExtraAlg[F] = VCSExtraAlg.create[F](config)
@@ -128,15 +136,14 @@ object Context {
       implicit val selfCheckAlg: SelfCheckAlg[F] = new SelfCheckAlg[F](config)
       implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create[F]
       implicit val versionsCache: VersionsCache[F] =
-        new VersionsCache[F](config.cacheTtl, new JsonKeyValueStore("versions", "2"))
+        new VersionsCache[F](config.cacheTtl, versionsStore)
       implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]
       implicit val mavenAlg: MavenAlg[F] = MavenAlg.create[F](config)
       implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F](config)
       implicit val millAlg: MillAlg[F] = MillAlg.create[F]
       implicit val buildToolDispatcher: BuildToolDispatcher[F] =
         BuildToolDispatcher.create[F](config)
-      implicit val refreshErrorAlg: RefreshErrorAlg[F] =
-        new RefreshErrorAlg[F](new JsonKeyValueStore("refresh_error", "1", kvsPrefix))
+      implicit val refreshErrorAlg: RefreshErrorAlg[F] = new RefreshErrorAlg[F](refreshErrorStore)
       implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F](config)
       implicit val editAlg: EditAlg[F] = new EditAlg[F]
       implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F](config)
