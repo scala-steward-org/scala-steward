@@ -42,7 +42,7 @@ private[bitbucket] object json {
       id <- c.downField("id").as[PullRequestNumber]
       title <- c.downField("title").as[String]
       state <- c.downField("state").as[PullRequestState]
-      html_url <- c.downField("links").downField("self").downField("href").as[Uri]
+      html_url <- c.downField("links").downField("html").downField("href").as[Uri]
     } yield PullRequestOut(html_url, state, id, title)
   }
 }

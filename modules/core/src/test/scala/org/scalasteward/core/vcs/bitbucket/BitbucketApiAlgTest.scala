@@ -101,8 +101,8 @@ class BitbucketApiAlgTest extends FunSuite {
             "title": "scala-steward-pr",
             "state": "OPEN",
             "links": {
-                "self": {
-                    "href": "https://api.bitbucket.org/2.0/repositories/fthomas/base.g8/pullrequests/2"
+                "html": {
+                    "href": "https://bitbucket.org/fthomas/base.g8/pullrequests/2"
                 }
             }
           }"""
@@ -116,8 +116,8 @@ class BitbucketApiAlgTest extends FunSuite {
                   "title": "scala-steward-pr",
                   "state": "OPEN",
                   "links": {
-                      "self": {
-                          "href": "https://api.bitbucket.org/2.0/repositories/fthomas/base.g8/pullrequests/2"
+                      "html": {
+                          "href": "https://bitbucket.org/fthomas/base.g8/pullrequests/2"
                       }
                   }
               }
@@ -133,8 +133,8 @@ class BitbucketApiAlgTest extends FunSuite {
             "title": "scala-steward-pr",
             "state": "DECLINED",
             "links": {
-                "self": {
-                    "href": "https://api.bitbucket.org/2.0/repositories/fthomas/base.g8/pullrequests/2"
+                "html": {
+                    "href": "https://bitbucket.org/fthomas/base.g8/pullrequests/2"
                 }
             }
         }"""
@@ -142,9 +142,9 @@ class BitbucketApiAlgTest extends FunSuite {
     case POST -> Root / "repositories" / "fthomas" / "base.g8" / "pullrequests" /
         IntVar(_) / "comments" =>
       Created(json"""{
-                  "content": { 
+                  "content": {
                       "raw": "Superseded by #1234"
-                  } 
+                  }
           }""")
   }
 
@@ -157,7 +157,7 @@ class BitbucketApiAlgTest extends FunSuite {
     false
   )
 
-  private val prUrl = uri"https://api.bitbucket.org/2.0/repositories/fthomas/base.g8/pullrequests/2"
+  private val prUrl = uri"https://bitbucket.org/fthomas/base.g8/pullrequests/2"
   private val repo = Repo("fthomas", "base.g8")
   private val master = Branch("master")
   private val parent = RepoOut(
