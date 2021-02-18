@@ -71,11 +71,8 @@ class UpdateHeuristicTest extends FunSuite {
   test("with single quotes around val") {
     val original = """val `scalajs-jquery-version` = "0.9.3""""
     val expected = """val `scalajs-jquery-version` = "0.9.4""""
-    assertEquals(
-      Single("be.doeraene" % "scalajs-jquery" % "0.9.3", Nel.of("0.9.4"))
-        .replaceVersionIn(original),
-      Some(expected) -> UpdateHeuristic.relaxed.name
-    )
+    val update = Single("be.doeraene" % "scalajs-jquery" % "0.9.3", Nel.of("0.9.4"))
+    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.original.name)
   }
 
   test("all upper case") {

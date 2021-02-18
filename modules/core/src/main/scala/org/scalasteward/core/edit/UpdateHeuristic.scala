@@ -40,7 +40,7 @@ object UpdateHeuristic {
     */
   private def toFlexibleRegex(string: String): String = {
     val punctuation = List('.', '-', '_')
-    val allowPunctuation = punctuation.mkString("[", "", "]*")
+    val allowPunctuation = "[\\.\\-_]*"
     string.toList
       .collect { case c if !punctuation.contains_(c) => Regex.quote(c.toString) }
       .intercalate(allowPunctuation)
