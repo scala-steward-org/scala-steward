@@ -658,6 +658,17 @@ class UpdateHeuristicTest extends FunSuite {
       Some(expected) -> UpdateHeuristic.original.name
     )
   }
+
+  test("chars of search term contained in other term") {
+    val original = """val cats = "2.4.1"
+                     |val scalaReactJsTestState = "2.4.1"
+                     |""".stripMargin
+    val expected = """val cats = "2.4.2"
+                     |val scalaReactJsTestState = "2.4.1"
+                     |""".stripMargin
+    val update = Single("org.typelevel" % "cats-core" % "2.4.1", Nel.of("2.4.2"))
+    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.original.name)
+  }
 }
 
 object UpdateHeuristicTest {
