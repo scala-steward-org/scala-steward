@@ -149,15 +149,15 @@ class EditAlgTest extends FunSuite {
     assertEquals(state, expected)
   }
 
-  test("reproduce https://github.com/circe/circe-config/pull/40") {
+  test("https://github.com/circe/circe-config/pull/40") {
     val update = Update.Single("com.typesafe" % "config" % "1.3.3", Nel.of("1.3.4"))
     val original = Map(
       "build.sbt" -> """val config = "1.3.3"""",
       "project/plugins.sbt" -> """addSbtPlugin("com.typesafe.sbt" % "sbt-site" % "1.3.3")"""
     )
     val expected = Map(
-      "build.sbt" -> """val config = "1.3.3"""", // the version should have been updated here
-      "project/plugins.sbt" -> """addSbtPlugin("com.typesafe.sbt" % "sbt-site" % "1.3.4")"""
+      "build.sbt" -> """val config = "1.3.4"""",
+      "project/plugins.sbt" -> """addSbtPlugin("com.typesafe.sbt" % "sbt-site" % "1.3.3")"""
     )
     assertEquals(runApplyUpdate(update, original), expected)
   }
