@@ -457,16 +457,24 @@ class UpdateHeuristicTest extends FunSuite {
     )
   }
 
-  test("NOK: change of unrelated ModuleID") {
+  test("unrelated ModuleID with same version number") {
     val original = """ "com.geirsson" % "sbt-ci-release" % "1.2.1" """
-    val expected = """ "com.geirsson" % "sbt-ci-release" % "1.2.4" """
-    assertEquals(
-      Group(
-        "org.scala-sbt" % Nel.of("sbt-launch", "scripted-plugin", "scripted-sbt") % "1.2.1",
-        Nel.of("1.2.4")
-      ).replaceVersionIn(original),
-      Some(expected) -> UpdateHeuristic.relaxed.name
+    val update = Group(
+      "org.scala-sbt" % Nel.of("sbt-launch", "scripted-plugin", "scripted-sbt") % "1.2.1",
+      Nel.of("1.2.4")
     )
+    assertEquals(update.replaceVersionIn(original), None -> UpdateHeuristic.all.last.name)
+  }
+
+  test("issue 1314: unrelated ModuleID with same version number, 2") {
+    val original = """val scalafmt = "2.0.1"
+                     |addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.1")
+                     |""".stripMargin
+    val expected = """val scalafmt = "2.0.7"
+                     |addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.1")
+                     |""".stripMargin
+    val update = Single("org.scalameta" % "sbt-scalafmt" % "2.0.1", Nel.of("2.0.7"))
+    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.relaxed.name)
   }
 
   test("disable updates on single lines with `off` (no `on`)") {
@@ -588,7 +596,7 @@ class UpdateHeuristicTest extends FunSuite {
     )
   }
 
-  test("issue 1586 - tracing value for opentracing library") {
+  test("issue 1586: tracing value for opentracing library") {
     val original = """val tracing = "2.4.1" """
     val expected = """val tracing = "2.5.0" """
     assertEquals(
@@ -644,7 +652,7 @@ class UpdateHeuristicTest extends FunSuite {
     )
   }
 
-  test("issue #1651: don't update in comments") {
+  test("issue 1651: don't update in comments") {
     val original =
       """val scalaTest = "3.2.0"  // scalaTest 3.2.0-M2 is causing a failure on scala 2.13..."""
     val expected =
