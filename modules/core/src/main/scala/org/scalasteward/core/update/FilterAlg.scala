@@ -151,6 +151,13 @@ object FilterAlg {
           // https://github.com/scala-steward-org/scala-steward/issues/1753
           "20030203.000550"
         ).contains
+      case ("commons-net", "commons-net") =>
+        List(
+          // https://github.com/gitbucket/gitbucket/pull/2639
+          "20030805.205232",
+          "20030623.125255",
+          "20030211.160026"
+        ).contains
       case ("io.monix", _) =>
         List(
           // https://github.com/scala-steward-org/scala-steward/issues/105
