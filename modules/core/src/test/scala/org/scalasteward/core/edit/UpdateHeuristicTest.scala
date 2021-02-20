@@ -477,6 +477,14 @@ class UpdateHeuristicTest extends FunSuite {
     assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.relaxed.name)
   }
 
+  test("issue 960: unrelated ModuleID with same version number, 3") {
+    val original = """ "org.webjars.npm" % "bootstrap" % "3.4.1", // scala-steward:off
+                     | "org.webjars.npm" % "jquery" % "3.4.1",
+                     |""".stripMargin
+    val update = Single("org.webjars.npm" % "bootstrap" % "3.4.1", Nel.of("4.3.1"))
+    assertEquals(update.replaceVersionIn(original), None -> UpdateHeuristic.all.last.name)
+  }
+
   test("disable updates on single lines with `off` (no `on`)") {
     val original =
       """  "com.typesafe.akka" %% "akka-actor" % "2.4.0", // scala-steward:off
