@@ -2,11 +2,12 @@ package org.scalasteward.core.mock
 
 import better.files.File
 import org.http4s.Uri
+import org.scalasteward.core.mock.MockState.TraceEntry
+import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 
 final case class MockState(
-    commands: Vector[List[String]],
+    trace: Vector[TraceEntry],
     commandOutputs: Map[List[String], List[String]],
-    logs: Vector[(Option[Throwable], String)],
     files: Map[File, String],
     uris: Map[Uri, String]
 ) {
@@ -23,19 +24,31 @@ final case class MockState(
     copy(files = files - file)
 
   def exec(cmd: List[String], env: (String, String)*): MockState =
-    copy(commands = commands :+ (env.map { case (k, v) => s"$k=$v" }.toList ++ cmd))
+    copy(trace = trace :+ Cmd(env.map { case (k, v) => s"$k=$v" }.toList ++ cmd))
 
   def log(maybeThrowable: Option[Throwable], msg: String): MockState =
-    copy(logs = logs :+ ((maybeThrowable, msg)))
+    copy(trace = trace :+ Log((maybeThrowable, msg)))
 }
 
 object MockState {
   def empty: MockState =
     MockState(
-      commands = Vector.empty,
+      trace = Vector.empty,
       commandOutputs = Map.empty,
-      logs = Vector.empty,
       files = Map.empty,
       uris = Map.empty
     )
+
+  sealed trait TraceEntry extends Product with Serializable
+  object TraceEntry {
+    final case class Cmd(cmd: List[String]) extends TraceEntry
+    object Cmd {
+      def apply(args: String*): Cmd = apply(args.toList)
+    }
+
+    final case class Log(log: (Option[Throwable], String)) extends TraceEntry
+    object Log {
+      def apply(msg: String): Log = Log((None, msg))
+    }
+  }
 }

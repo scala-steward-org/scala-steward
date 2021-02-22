@@ -6,6 +6,7 @@ import org.scalasteward.core.data.Update
 import org.scalasteward.core.mock.MockContext.context.{hookExecutor, workspaceAlg}
 import org.scalasteward.core.mock.MockContext.envVars
 import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.repoconfig.{RepoConfig, ScalafmtConfig}
 import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtBinary, scalafmtGroupId}
 import org.scalasteward.core.util.Nel
@@ -40,33 +41,31 @@ class HookExecutorTest extends FunSuite {
       .unsafeRunSync()
 
     val expected = initial.copy(
-      commands = Vector(
-        List(
-          "VAR1=val1",
-          "VAR2=val2",
-          repoDir.toString,
-          scalafmtBinary,
-          "--non-interactive"
+      trace = Vector(
+        Log("Executing post-update hook for org.scalameta:scalafmt-core"),
+        Cmd("VAR1=val1", "VAR2=val2", repoDir.toString, scalafmtBinary, "--non-interactive"),
+        Cmd(
+          envVars ++ List(
+            repoDir.toString,
+            "git",
+            "status",
+            "--porcelain",
+            "--untracked-files=no",
+            "--ignore-submodules"
+          )
         ),
-        envVars ++ List(
-          repoDir.toString,
-          "git",
-          "status",
-          "--porcelain",
-          "--untracked-files=no",
-          "--ignore-submodules"
-        ),
-        envVars ++ List(
-          repoDir.toString,
-          "git",
-          "commit",
-          "--all",
-          "--no-gpg-sign",
-          "-m",
-          "Reformat with scalafmt 2.7.5"
+        Cmd(
+          envVars ++ List(
+            repoDir.toString,
+            "git",
+            "commit",
+            "--all",
+            "--no-gpg-sign",
+            "-m",
+            "Reformat with scalafmt 2.7.5"
+          )
         )
-      ),
-      logs = Vector((None, "Executing post-update hook for org.scalameta:scalafmt-core"))
+      )
     )
 
     assertEquals(state, expected)
@@ -93,8 +92,9 @@ class HookExecutorTest extends FunSuite {
       .unsafeRunSync()
 
     val expected = MockState.empty.copy(
-      commands = Vector(
-        List(
+      trace = Vector(
+        Log("Executing post-update hook for com.codecommit:sbt-github-actions"),
+        Cmd(
           repoDir.toString,
           "firejail",
           "--quiet",
@@ -104,16 +104,17 @@ class HookExecutorTest extends FunSuite {
           "sbt",
           "githubWorkflowGenerate"
         ),
-        envVars ++ List(
-          repoDir.toString,
-          "git",
-          "status",
-          "--porcelain",
-          "--untracked-files=no",
-          "--ignore-submodules"
+        Cmd(
+          envVars ++ List(
+            repoDir.toString,
+            "git",
+            "status",
+            "--porcelain",
+            "--untracked-files=no",
+            "--ignore-submodules"
+          )
         )
-      ),
-      logs = Vector((None, "Executing post-update hook for com.codecommit:sbt-github-actions"))
+      )
     )
 
     assertEquals(state, expected)

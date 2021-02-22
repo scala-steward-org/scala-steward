@@ -7,6 +7,7 @@ import org.scalasteward.core.data.{GroupId, Update}
 import org.scalasteward.core.mock.MockContext.context.editAlg
 import org.scalasteward.core.mock.MockContext.{config, envVars}
 import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafmt.scalafmtBinary
 import org.scalasteward.core.util.Nel
@@ -29,21 +30,19 @@ class EditAlgTest extends FunSuite {
       .unsafeRunSync()
 
     val expected = MockState.empty.copy(
-      commands = Vector(
-        List("test", "-f", file1.pathAsString),
-        List("read", file1.pathAsString),
-        List("test", "-f", file2.pathAsString),
-        List("read", file2.pathAsString),
-        List("read", file1.pathAsString),
-        List("read", file1.pathAsString),
-        List("read", file1.pathAsString),
-        List("write", file1.pathAsString),
-        envVars ++ (repoDir.toString :: gitStatus)
-      ),
-      logs = Vector(
-        (None, "Trying heuristic 'moduleId'"),
-        (None, "Trying heuristic 'strict'"),
-        (None, "Trying heuristic 'original'")
+      trace = Vector(
+        Cmd("test", "-f", file1.pathAsString),
+        Cmd("read", file1.pathAsString),
+        Cmd("test", "-f", file2.pathAsString),
+        Cmd("read", file2.pathAsString),
+        Log("Trying heuristic 'moduleId'"),
+        Cmd("read", file1.pathAsString),
+        Log("Trying heuristic 'strict'"),
+        Cmd("read", file1.pathAsString),
+        Log("Trying heuristic 'original'"),
+        Cmd("read", file1.pathAsString),
+        Cmd("write", file1.pathAsString),
+        Cmd(envVars ++ (repoDir.toString :: gitStatus))
       ),
       files = Map(file1 -> """val catsVersion = "1.3.0"""", file2 -> "")
     )
@@ -68,33 +67,31 @@ class EditAlgTest extends FunSuite {
       .unsafeRunSync()
 
     val expected = MockState.empty.copy(
-      commands = Vector(
-        List("test", "-f", scalafmtConf.pathAsString),
-        List("read", scalafmtConf.pathAsString),
-        List("test", "-f", buildSbt.pathAsString),
-        List("read", scalafmtConf.pathAsString),
-        List("read", scalafmtConf.pathAsString),
-        List("read", scalafmtConf.pathAsString),
-        List("read", scalafmtConf.pathAsString),
-        List("read", scalafmtConf.pathAsString),
-        List("read", scalafmtConf.pathAsString),
-        List("read", scalafmtConf.pathAsString),
-        List("read", scalafmtConf.pathAsString),
-        List("write", scalafmtConf.pathAsString),
-        envVars ++ (repoDir.toString :: gitStatus),
-        List("VAR1=val1", "VAR2=val2", repoDir.toString, scalafmtBinary, "--non-interactive"),
-        envVars ++ (repoDir.toString :: gitStatus)
-      ),
-      logs = Vector(
-        (None, "Trying heuristic 'moduleId'"),
-        (None, "Trying heuristic 'strict'"),
-        (None, "Trying heuristic 'original'"),
-        (None, "Trying heuristic 'relaxed'"),
-        (None, "Trying heuristic 'sliding'"),
-        (None, "Trying heuristic 'completeGroupId'"),
-        (None, "Trying heuristic 'groupId'"),
-        (None, "Trying heuristic 'specific'"),
-        (None, "Executing post-update hook for org.scalameta:scalafmt-core")
+      trace = Vector(
+        Cmd("test", "-f", scalafmtConf.pathAsString),
+        Cmd("read", scalafmtConf.pathAsString),
+        Cmd("test", "-f", buildSbt.pathAsString),
+        Log("Trying heuristic 'moduleId'"),
+        Cmd("read", scalafmtConf.pathAsString),
+        Log("Trying heuristic 'strict'"),
+        Cmd("read", scalafmtConf.pathAsString),
+        Log("Trying heuristic 'original'"),
+        Cmd("read", scalafmtConf.pathAsString),
+        Log("Trying heuristic 'relaxed'"),
+        Cmd("read", scalafmtConf.pathAsString),
+        Log("Trying heuristic 'sliding'"),
+        Cmd("read", scalafmtConf.pathAsString),
+        Log("Trying heuristic 'completeGroupId'"),
+        Cmd("read", scalafmtConf.pathAsString),
+        Log("Trying heuristic 'groupId'"),
+        Cmd("read", scalafmtConf.pathAsString),
+        Log("Trying heuristic 'specific'"),
+        Cmd("read", scalafmtConf.pathAsString),
+        Cmd("write", scalafmtConf.pathAsString),
+        Cmd(envVars ++ (repoDir.toString :: gitStatus)),
+        Log("Executing post-update hook for org.scalameta:scalafmt-core"),
+        Cmd("VAR1=val1", "VAR2=val2", repoDir.toString, scalafmtBinary, "--non-interactive"),
+        Cmd(envVars ++ (repoDir.toString :: gitStatus))
       ),
       files = Map(
         scalafmtConf ->
@@ -126,19 +123,17 @@ class EditAlgTest extends FunSuite {
       .unsafeRunSync()
 
     val expected = MockState.empty.copy(
-      commands = Vector(
-        List("test", "-f", file1.pathAsString),
-        List("read", file1.pathAsString),
-        List("test", "-f", file2.pathAsString),
-        List("read", file2.pathAsString),
-        List("read", file1.pathAsString),
-        List("write", file1.pathAsString),
-        List("read", file2.pathAsString),
-        List("write", file2.pathAsString),
-        envVars ++ (repoDir.toString :: gitStatus)
-      ),
-      logs = Vector(
-        (None, "Trying heuristic 'moduleId'")
+      trace = Vector(
+        Cmd("test", "-f", file1.pathAsString),
+        Cmd("read", file1.pathAsString),
+        Cmd("test", "-f", file2.pathAsString),
+        Cmd("read", file2.pathAsString),
+        Log("Trying heuristic 'moduleId'"),
+        Cmd("read", file1.pathAsString),
+        Cmd("write", file1.pathAsString),
+        Cmd("read", file2.pathAsString),
+        Cmd("write", file2.pathAsString),
+        Cmd(envVars ++ (repoDir.toString :: gitStatus))
       ),
       files = Map(
         file1 -> """import $ivy.`org.typelevel::cats-core:1.3.0`, cats.implicits._"""",

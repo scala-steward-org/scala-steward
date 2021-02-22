@@ -4,6 +4,7 @@ import cats.syntax.all._
 import munit.FunSuite
 import org.scalasteward.core.mock.MockContext.config
 import org.scalasteward.core.mock.MockContext.context._
+import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
 import org.scalasteward.core.mock.{MockEff, MockState}
 
 class JsonKeyValueStoreTest extends FunSuite {
@@ -22,11 +23,11 @@ class JsonKeyValueStoreTest extends FunSuite {
     val k2File = config.workspace / "store" / "test" / "v0" / "k2" / "test.json"
     val k3File = config.workspace / "store" / "test" / "v0" / "k3" / "test.json"
     val expected = MockState.empty.copy(
-      commands = Vector(
-        List("write", k1File.toString),
-        List("read", k1File.toString),
-        List("write", k2File.toString),
-        List("read", k3File.toString)
+      trace = Vector(
+        Cmd("write", k1File.toString),
+        Cmd("read", k1File.toString),
+        Cmd("write", k2File.toString),
+        Cmd("read", k3File.toString)
       ),
       files = Map(
         k1File -> """"v1"""",
@@ -48,11 +49,11 @@ class JsonKeyValueStoreTest extends FunSuite {
 
     val k1File = config.workspace / "store" / "test" / "v0" / "k1" / "test.json"
     val expected = MockState.empty.copy(
-      commands = Vector(
-        List("read", k1File.toString),
-        List("write", k1File.toString),
-        List("read", k1File.toString),
-        List("rm", "-rf", k1File.toString)
+      trace = Vector(
+        Cmd("read", k1File.toString),
+        Cmd("write", k1File.toString),
+        Cmd("read", k1File.toString),
+        Cmd("rm", "-rf", k1File.toString)
       )
     )
     assertEquals(state, expected)
@@ -73,7 +74,7 @@ class JsonKeyValueStoreTest extends FunSuite {
     val k1File = config.workspace / "store" / "test" / "v0" / "k1" / "test.json"
     val k2File = config.workspace / "store" / "test" / "v0" / "k2" / "test.json"
     val expected = MockState.empty.copy(
-      commands = Vector(List("write", k1File.toString), List("read", k2File.toString)),
+      trace = Vector(Cmd("write", k1File.toString), Cmd("read", k2File.toString)),
       files = Map(k1File -> """"v1"""")
     )
     assertEquals(state, expected)
