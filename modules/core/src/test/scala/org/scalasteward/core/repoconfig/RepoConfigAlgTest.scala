@@ -7,6 +7,7 @@ import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.{GroupId, Update}
 import org.scalasteward.core.mock.MockContext.context.repoConfigAlg
 import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.mock.MockState.TraceEntry.Log
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 import scala.concurrent.duration._
@@ -161,7 +162,7 @@ class RepoConfigAlgTest extends FunSuite {
     val (state, config) = repoConfigAlg.readRepoConfig(repo).run(initialState).unsafeRunSync()
 
     assertEquals(config, None)
-    val log = state.logs.headOption.map { case (_, msg) => msg }.getOrElse("")
+    val log = state.trace.collectFirst { case Log((_, msg)) => msg }.getOrElse("")
     assert(clue(log).startsWith("Failed to parse .scala-steward.conf"))
   }
 

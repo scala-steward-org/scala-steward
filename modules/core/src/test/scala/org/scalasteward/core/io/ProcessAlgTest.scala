@@ -9,6 +9,7 @@ import org.scalasteward.core.application.Config.{ProcessCfg, SandboxCfg}
 import org.scalasteward.core.io.ProcessAlgTest.ioProcessAlg
 import org.scalasteward.core.mock.MockContext.config
 import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
 import org.scalasteward.core.util.Nel
 import scala.concurrent.duration.Duration
 
@@ -39,9 +40,7 @@ class ProcessAlgTest extends FunSuite {
       .unsafeRunSync()
 
     val expected = MockState.empty.copy(
-      commands = Vector(
-        List(File.temp.toString, "echo", "hello")
-      )
+      trace = Vector(Cmd(File.temp.toString, "echo", "hello"))
     )
 
     assertEquals(state, expected)
@@ -56,15 +55,8 @@ class ProcessAlgTest extends FunSuite {
       .unsafeRunSync()
 
     val expected = MockState.empty.copy(
-      commands = Vector(
-        List(
-          File.temp.toString,
-          "firejail",
-          "--quiet",
-          s"--whitelist=${File.temp}",
-          "echo",
-          "hello"
-        )
+      trace = Vector(
+        Cmd(File.temp.toString, "firejail", "--quiet", s"--whitelist=${File.temp}", "echo", "hello")
       )
     )
 

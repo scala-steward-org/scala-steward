@@ -6,6 +6,7 @@ import org.scalasteward.core.data.RepoData
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockContext.context.pruningAlg
 import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.repocache.RepoCache
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.vcs.data.Repo
@@ -60,11 +61,11 @@ class PruningAlgTest extends FunSuite {
     val data = RepoData(repo, repoCache, repoCache.maybeRepoConfig.getOrElse(RepoConfig.empty))
     val state = pruningAlg.needsAttention(data).runS(initial).unsafeRunSync()
     val expected = initial.copy(
-      commands = Vector(List("read", pullRequestsFile.toString)),
-      logs = Vector(
-        (None, "Find updates for fthomas/scalafix-test"),
-        (None, "Found 0 updates"),
-        (None, "fthomas/scalafix-test is up-to-date")
+      trace = Vector(
+        Log("Find updates for fthomas/scalafix-test"),
+        Log("Found 0 updates"),
+        Cmd("read", pullRequestsFile.toString),
+        Log("fthomas/scalafix-test is up-to-date")
       )
     )
     assertEquals(state, expected)
@@ -163,11 +164,11 @@ class PruningAlgTest extends FunSuite {
     val data = RepoData(repo, repoCache, repoCache.maybeRepoConfig.getOrElse(RepoConfig.empty))
     val state = pruningAlg.needsAttention(data).runS(initial).unsafeRunSync()
     val expected = initial.copy(
-      commands = Vector(List("read", pullRequestsFile.toString)),
-      logs = Vector(
-        (None, s"Find updates for ${repo.show}"),
-        (None, "Found 0 updates"),
-        (None, s"${repo.show} is up-to-date")
+      trace = Vector(
+        Log(s"Find updates for ${repo.show}"),
+        Log("Found 0 updates"),
+        Cmd("read", pullRequestsFile.toString),
+        Log(s"${repo.show} is up-to-date")
       )
     )
     assertEquals(state, expected)
@@ -266,16 +267,13 @@ class PruningAlgTest extends FunSuite {
     val data = RepoData(repo, repoCache, repoCache.maybeRepoConfig.getOrElse(RepoConfig.empty))
     val state = pruningAlg.needsAttention(data).runS(initial).unsafeRunSync()
     val expected = initial.copy(
-      commands = Vector(
-        List("read", versionsFile.toString),
-        List("read", pullRequestsFile.toString),
-        List("read", versionsFile.toString)
-      ),
-      logs = Vector(
-        (None, s"Find updates for ${repo.show}"),
-        (None, "Found 1 update:\n  org.scala-lang:scala-library : 2.12.10 -> 2.12.11"),
-        (
-          None,
+      trace = Vector(
+        Log(s"Find updates for ${repo.show}"),
+        Cmd("read", versionsFile.toString),
+        Cmd("read", pullRequestsFile.toString),
+        Cmd("read", versionsFile.toString),
+        Log("Found 1 update:\n  org.scala-lang:scala-library : 2.12.10 -> 2.12.11"),
+        Log(
           s"${repo.show} is outdated:\n  new version: org.scala-lang:scala-library : 2.12.10 -> 2.12.11"
         )
       )

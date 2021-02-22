@@ -9,6 +9,7 @@ import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
 import org.scalasteward.core.mock.MockContext.context.fileAlg
 import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
 
 class FileAlgTest extends FunSuite {
   test("createTemporarily") {
@@ -59,7 +60,7 @@ class FileAlgTest extends FunSuite {
     } yield edited).run(MockState.empty).unsafeRunSync()
 
     val expected =
-      MockState.empty.copy(commands = Vector(List("read", "/tmp/steward/does-not-exists.txt")))
+      MockState.empty.copy(trace = Vector(Cmd("read", "/tmp/steward/does-not-exists.txt")))
     assertEquals(state, expected)
     assert(!edited)
   }
@@ -73,10 +74,10 @@ class FileAlgTest extends FunSuite {
     } yield edited).run(MockState.empty).unsafeRunSync()
 
     val expected = MockState.empty.copy(
-      commands = Vector(
-        List("write", file.pathAsString),
-        List("read", file.pathAsString),
-        List("write", file.pathAsString)
+      trace = Vector(
+        Cmd("write", file.pathAsString),
+        Cmd("read", file.pathAsString),
+        Cmd("write", file.pathAsString)
       ),
       files = Map(file -> "143")
     )
