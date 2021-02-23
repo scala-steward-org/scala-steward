@@ -35,19 +35,15 @@ class VCSRepoAlgTest extends FunSuite {
     val expected = MockState.empty.copy(
       trace = Vector(
         Log("Clone and synchronize fthomas/datapackage"),
-        Cmd(envVars ++ List(config.workspace.toString, "git", "clone", url1, repoDir)),
-        Cmd(envVars ++ List(repoDir, "git", "config", "user.email", "bot@example.org")),
-        Cmd(envVars ++ List(repoDir, "git", "config", "user.name", "Bot Doe")),
-        Cmd(envVars ++ List(repoDir, "git", "remote", "add", "upstream", url0)),
-        Cmd(envVars ++ List(repoDir, "git", "fetch", "--force", "--tags", "upstream", "master")),
-        Cmd(
-          envVars ++ List(repoDir, "git", "checkout", "-B", "master", "--track", "upstream/master")
-        ),
-        Cmd(envVars ++ List(repoDir, "git", "merge", "upstream/master")),
-        Cmd(
-          envVars ++ List(repoDir, "git", "push", "--force", "--set-upstream", "origin", "master")
-        ),
-        Cmd(envVars ++ List(repoDir, "git", "submodule", "update", "--init", "--recursive"))
+        Cmd(envVars, config.workspace.toString, "git", "clone", url1, repoDir),
+        Cmd(envVars, repoDir, "git", "config", "user.email", "bot@example.org"),
+        Cmd(envVars, repoDir, "git", "config", "user.name", "Bot Doe"),
+        Cmd(envVars, repoDir, "git", "remote", "add", "upstream", url0),
+        Cmd(envVars, repoDir, "git", "fetch", "--force", "--tags", "upstream", "master"),
+        Cmd(envVars, repoDir, "git", "checkout", "-B", "master", "--track", "upstream/master"),
+        Cmd(envVars, repoDir, "git", "merge", "upstream/master"),
+        Cmd(envVars, repoDir, "git", "push", "--force", "--set-upstream", "origin", "master"),
+        Cmd(envVars, repoDir, "git", "submodule", "update", "--init", "--recursive")
       )
     )
     assertEquals(state, expected)
