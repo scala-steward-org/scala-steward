@@ -45,25 +45,23 @@ class HookExecutorTest extends FunSuite {
         Log("Executing post-update hook for org.scalameta:scalafmt-core"),
         Cmd("VAR1=val1", "VAR2=val2", repoDir.toString, scalafmtBinary, "--non-interactive"),
         Cmd(
-          envVars ++ List(
-            repoDir.toString,
-            "git",
-            "status",
-            "--porcelain",
-            "--untracked-files=no",
-            "--ignore-submodules"
-          )
+          envVars,
+          repoDir.toString,
+          "git",
+          "status",
+          "--porcelain",
+          "--untracked-files=no",
+          "--ignore-submodules"
         ),
         Cmd(
-          envVars ++ List(
-            repoDir.toString,
-            "git",
-            "commit",
-            "--all",
-            "--no-gpg-sign",
-            "-m",
-            "Reformat with scalafmt 2.7.5"
-          )
+          envVars,
+          repoDir.toString,
+          "git",
+          "commit",
+          "--all",
+          "--no-gpg-sign",
+          "-m",
+          "Reformat with scalafmt 2.7.5"
         )
       )
     )
@@ -105,14 +103,13 @@ class HookExecutorTest extends FunSuite {
           "githubWorkflowGenerate"
         ),
         Cmd(
-          envVars ++ List(
-            repoDir.toString,
-            "git",
-            "status",
-            "--porcelain",
-            "--untracked-files=no",
-            "--ignore-submodules"
-          )
+          envVars,
+          repoDir.toString,
+          "git",
+          "status",
+          "--porcelain",
+          "--untracked-files=no",
+          "--ignore-submodules"
         )
       )
     )

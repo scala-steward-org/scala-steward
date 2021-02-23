@@ -44,6 +44,7 @@ object MockState {
     final case class Cmd(cmd: List[String]) extends TraceEntry
     object Cmd {
       def apply(args: String*): Cmd = apply(args.toList)
+      def apply(args1: List[String], args2: String*): Cmd = apply(args1 ++ args2.toList)
     }
 
     final case class Log(log: (Option[Throwable], String)) extends TraceEntry
