@@ -56,19 +56,19 @@ class PruningAlgTest extends FunSuite {
           |    "entryCreatedAt" : 1581969227183
           |  }
           |}""".stripMargin
-    val initial = MockState.empty
-      .add(pullRequestsFile, pullRequestsContent)
     val data = RepoData(repo, repoCache, repoCache.maybeRepoConfig.getOrElse(RepoConfig.empty))
-    val state = pruningAlg.needsAttention(data).runS(initial).unsafeRunSync()
-    val expected = initial.copy(
-      trace = Vector(
-        Log("Find updates for fthomas/scalafix-test"),
-        Log("Found 0 updates"),
-        Cmd("read", pullRequestsFile.toString),
-        Log("fthomas/scalafix-test is up-to-date")
+    (for {
+      initial <- MockState.empty.add(pullRequestsFile, pullRequestsContent).init
+      obtained <- pruningAlg.needsAttention(data).runS(initial)
+      expected = initial.copy(
+        trace = Vector(
+          Log("Find updates for fthomas/scalafix-test"),
+          Log("Found 0 updates"),
+          Cmd("read", pullRequestsFile.toString),
+          Log("fthomas/scalafix-test is up-to-date")
+        )
       )
-    )
-    assertEquals(state, expected)
+    } yield assertEquals(obtained, expected)).unsafeRunSync()
   }
 
   test("needsAttention: 0 updates when includeScala not specified in repo config") {
@@ -144,34 +144,19 @@ class PruningAlgTest extends FunSuite {
           |    "entryCreatedAt" : 1581969227183
           |  }
           |}""".stripMargin
-    val versionsFile =
-      config.workspace / "store/versions/v2/https/foobar.org/maven2/org/scala-lang/scala-library/versions.json"
-    val versionsContent =
-      s"""|{
-          |  "updatedAt" : 9999999999999,
-          |  "versions" : [
-          |    "2.12.9",
-          |    "2.12.10",
-          |    "2.12.11",
-          |    "2.13.0",
-          |    "2.13.1"
-          |  ]
-          |}
-          |""".stripMargin
-    val initial = MockState.empty
-      .add(pullRequestsFile, pullRequestsContent)
-      .add(versionsFile, versionsContent)
     val data = RepoData(repo, repoCache, repoCache.maybeRepoConfig.getOrElse(RepoConfig.empty))
-    val state = pruningAlg.needsAttention(data).runS(initial).unsafeRunSync()
-    val expected = initial.copy(
-      trace = Vector(
-        Log(s"Find updates for ${repo.show}"),
-        Log("Found 0 updates"),
-        Cmd("read", pullRequestsFile.toString),
-        Log(s"${repo.show} is up-to-date")
+    (for {
+      initial <- MockState.empty.add(pullRequestsFile, pullRequestsContent).init
+      obtained <- pruningAlg.needsAttention(data).runS(initial)
+      expected = initial.copy(
+        trace = Vector(
+          Log(s"Find updates for ${repo.show}"),
+          Log("Found 0 updates"),
+          Cmd("read", pullRequestsFile.toString),
+          Log(s"${repo.show} is up-to-date")
+        )
       )
-    )
-    assertEquals(state, expected)
+    } yield assertEquals(obtained, expected)).unsafeRunSync()
   }
 
   test("needsAttention: update scala-library when includeScala=true in repo config") {
@@ -261,23 +246,25 @@ class PruningAlgTest extends FunSuite {
           |  ]
           |}
           |""".stripMargin
-    val initial = MockState.empty
-      .add(pullRequestsFile, pullRequestsContent)
-      .add(versionsFile, versionsContent)
     val data = RepoData(repo, repoCache, repoCache.maybeRepoConfig.getOrElse(RepoConfig.empty))
-    val state = pruningAlg.needsAttention(data).runS(initial).unsafeRunSync()
-    val expected = initial.copy(
-      trace = Vector(
-        Log(s"Find updates for ${repo.show}"),
-        Cmd("read", versionsFile.toString),
-        Cmd("read", pullRequestsFile.toString),
-        Cmd("read", versionsFile.toString),
-        Log("Found 1 update:\n  org.scala-lang:scala-library : 2.12.10 -> 2.12.11"),
-        Log(
-          s"${repo.show} is outdated:\n  new version: org.scala-lang:scala-library : 2.12.10 -> 2.12.11"
+    (for {
+      initial <- MockState.empty
+        .add(pullRequestsFile, pullRequestsContent)
+        .add(versionsFile, versionsContent)
+        .init
+      obtained <- pruningAlg.needsAttention(data).runS(initial)
+      expected = initial.copy(
+        trace = Vector(
+          Log(s"Find updates for ${repo.show}"),
+          Cmd("read", versionsFile.toString),
+          Cmd("read", pullRequestsFile.toString),
+          Cmd("read", versionsFile.toString),
+          Log("Found 1 update:\n  org.scala-lang:scala-library : 2.12.10 -> 2.12.11"),
+          Log(
+            s"${repo.show} is outdated:\n  new version: org.scala-lang:scala-library : 2.12.10 -> 2.12.11"
+          )
         )
       )
-    )
-    assertEquals(state, expected)
+    } yield assertEquals(obtained, expected)).unsafeRunSync()
   }
 }

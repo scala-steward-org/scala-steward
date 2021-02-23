@@ -1,9 +1,12 @@
 package org.scalasteward.core.mock
 
+import cats.syntax.all._
 import better.files.File
+import cats.effect.IO
 import org.http4s.Uri
 import org.scalasteward.core.mock.MockState.TraceEntry
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
+import org.scalasteward.core.io.FileAlgTest.ioFileAlg
 
 final case class MockState(
     trace: Vector[TraceEntry],
@@ -28,6 +31,9 @@ final case class MockState(
 
   def log(maybeThrowable: Option[Throwable], msg: String): MockState =
     copy(trace = trace :+ Log((maybeThrowable, msg)))
+
+  def init: IO[MockState] =
+    files.toList.traverse_ { case (file, content) => ioFileAlg.writeFile(file, content) }.as(this)
 }
 
 object MockState {

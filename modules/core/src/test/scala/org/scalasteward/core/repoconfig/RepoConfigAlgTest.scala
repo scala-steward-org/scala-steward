@@ -32,7 +32,7 @@ class RepoConfigAlgTest extends FunSuite {
          |commits.message = "Update ${artifactName} from ${currentVersion} to ${nextVersion}"
          |buildRoots = [ ".", "subfolder/subfolder" ]
          |""".stripMargin
-    val initialState = MockState.empty.add(configFile, content)
+    val initialState = MockState.empty.add(configFile, content).init.unsafeRunSync()
     val config = repoConfigAlg
       .readRepoConfig(repo)
       .flatMap(repoConfigAlg.mergeWithDefault)
@@ -158,12 +158,14 @@ class RepoConfigAlgTest extends FunSuite {
   test("malformed config") {
     val repo = Repo("fthomas", "scala-steward")
     val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
-    val initialState = MockState.empty.add(configFile, """updates.ignore = [ "foo """)
-    val (state, config) = repoConfigAlg.readRepoConfig(repo).run(initialState).unsafeRunSync()
-
-    assertEquals(config, None)
-    val log = state.trace.collectFirst { case Log((_, msg)) => msg }.getOrElse("")
-    assert(clue(log).startsWith("Failed to parse .scala-steward.conf"))
+    (for {
+      initial <- MockState.empty.add(configFile, """updates.ignore = [ "foo """).init
+      (obtained, config) <- repoConfigAlg.readRepoConfig(repo).run(initial)
+      log = obtained.trace.collectFirst { case Log((_, msg)) => msg }.getOrElse("")
+    } yield {
+      assertEquals(config, None)
+      assert(clue(log).startsWith("Failed to parse .scala-steward.conf"))
+    }).unsafeRunSync()
   }
 
   test("configToIgnoreFurtherUpdates with single update") {

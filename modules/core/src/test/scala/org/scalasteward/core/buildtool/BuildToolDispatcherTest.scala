@@ -19,7 +19,7 @@ class BuildToolDispatcherTest extends FunSuite {
       repoDir / "project" / "build.properties" -> "sbt.version=1.2.6",
       repoDir / ".scalafmt.conf" -> "version=2.0.0"
     )
-    val initial = MockState.empty.copy(files = files)
+    val initial = MockState.empty.copy(files = files).init.unsafeRunSync()
     val (state, deps) =
       buildToolDispatcher.getDependencies(repo).run(initial).unsafeRunSync()
 

@@ -60,13 +60,13 @@ class FileAlgTest extends FunSuite {
     } yield edited).run(MockState.empty).unsafeRunSync()
 
     val expected =
-      MockState.empty.copy(trace = Vector(Cmd("read", "/tmp/steward/does-not-exists.txt")))
+      MockState.empty.copy(trace = Vector(Cmd("read", "/tmp/scala-steward/does-not-exists.txt")))
     assertEquals(state, expected)
     assert(!edited)
   }
 
   test("editFile: existent file") {
-    val file = File.temp / "steward" / "test1.sbt"
+    val file = File.temp / "scala-steward" / "test1.sbt"
     val (state, edited) = (for {
       _ <- fileAlg.writeFile(file, "123")
       edit = (s: String) => Some(s.replace("2", "4"))
@@ -103,7 +103,7 @@ class FileAlgTest extends FunSuite {
   }
 
   test("readUri: local file without scheme") {
-    val file = File.temp / "steward" / "readUri.txt"
+    val file = File.temp / "scala-steward" / "readUri.txt"
     val content = "42"
     val p = for {
       _ <- ioFileAlg.writeFile(file, content)
@@ -113,7 +113,7 @@ class FileAlgTest extends FunSuite {
   }
 
   test("isRegularFile") {
-    val dir = File.temp / "steward" / "regular"
+    val dir = File.temp / "scala-steward" / "regular"
     val file = dir / "file.txt"
     val p = for {
       _ <- ioFileAlg.deleteForce(dir)
