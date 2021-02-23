@@ -29,11 +29,11 @@ class EditAlgTest extends FunSuite {
       expected = MockState.empty.copy(
         trace = Vector(
           Cmd("test", "-f", repoDir.pathAsString),
+          Cmd("test", "-f", file1.pathAsString),
+          Cmd("read", file1.pathAsString),
           Cmd("test", "-f", (repoDir / "project").pathAsString),
           Cmd("test", "-f", file2.pathAsString),
           Cmd("read", file2.pathAsString),
-          Cmd("test", "-f", file1.pathAsString),
-          Cmd("read", file1.pathAsString),
           Log("Trying heuristic 'moduleId'"),
           Cmd("read", file1.pathAsString),
           Log("Trying heuristic 'strict'"),
@@ -65,9 +65,9 @@ class EditAlgTest extends FunSuite {
       expected = MockState.empty.copy(
         trace = Vector(
           Cmd("test", "-f", repoDir.pathAsString),
-          Cmd("test", "-f", buildSbt.pathAsString),
           Cmd("test", "-f", scalafmtConf.pathAsString),
           Cmd("read", scalafmtConf.pathAsString),
+          Cmd("test", "-f", buildSbt.pathAsString),
           Log("Trying heuristic 'moduleId'"),
           Cmd("read", scalafmtConf.pathAsString),
           Log("Trying heuristic 'strict'"),

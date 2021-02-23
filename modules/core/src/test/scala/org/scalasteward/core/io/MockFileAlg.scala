@@ -57,7 +57,11 @@ class MockFileAlg extends FileAlg[MockEff] {
     } yield content
 
   override def walk(dir: File): Stream[MockEff, File] =
-    ioFileAlg.walk(dir).translate(StateT.liftK[IO, MockState])
+    Stream.evals(
+      StateT.liftF[IO, MockState, List[File]](
+        ioFileAlg.walk(dir).compile.toList.map(_.sortBy(_.pathAsString))
+      )
+    )
 
   override def writeFile(file: File, content: String): MockEff[Unit] =
     StateT.modify[IO, MockState](_.exec(List("write", file.pathAsString)).add(file, content)) >>
