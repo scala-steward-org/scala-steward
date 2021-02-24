@@ -1,7 +1,10 @@
 package org.scalasteward.core.mock
 
 import better.files.File
+import cats.effect.IO
+import cats.syntax.all._
 import org.http4s.Uri
+import org.scalasteward.core.io.FileAlgTest.ioFileAlg
 import org.scalasteward.core.mock.MockState.TraceEntry
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 
@@ -11,17 +14,16 @@ final case class MockState(
     files: Map[File, String],
     uris: Map[Uri, String]
 ) {
-  def add(file: File, content: String): MockState =
-    copy(files = files + (file -> content))
+  def addFiles(newFiles: (File, String)*): IO[MockState] =
+    newFiles.toList
+      .traverse_ { case (file, content) => ioFileAlg.writeFile(file, content) }
+      .as(copy(files = files ++ newFiles))
 
-  def addFiles(newFiles: Map[File, String]): MockState =
-    copy(files = files ++ newFiles)
+  def addUris(newUris: (Uri, String)*): MockState =
+    copy(uris = uris ++ newUris)
 
-  def addUri(uri: Uri, content: String): MockState =
-    copy(uris = uris + (uri -> content))
-
-  def rm(file: File): MockState =
-    copy(files = files - file)
+  def rmFile(file: File): IO[MockState] =
+    ioFileAlg.deleteForce(file).as(copy(files = files - file))
 
   def exec(cmd: List[String], env: (String, String)*): MockState =
     copy(trace = trace :+ Cmd(env.map { case (k, v) => s"$k=$v" }.toList ++ cmd))

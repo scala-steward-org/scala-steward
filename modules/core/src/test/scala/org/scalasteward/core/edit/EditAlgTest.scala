@@ -18,21 +18,23 @@ class EditAlgTest extends FunSuite {
     List("git", "status", "--porcelain", "--untracked-files=no", "--ignore-submodules")
 
   test("applyUpdate") {
-    val repo = Repo("fthomas", "scala-steward")
+    val repo = Repo("edit-alg", "test-1")
     val repoDir = config.workspace / repo.show
     val update = Update.Single("org.typelevel" % "cats-core" % "1.2.0", Nel.of("1.3.0"))
     val file1 = repoDir / "build.sbt"
     val file2 = repoDir / "project/Dependencies.scala"
 
-    val state = editAlg
-      .applyUpdate(repo, RepoConfig.empty, update)
-      .runS(MockState.empty.add(file1, """val catsVersion = "1.2.0"""").add(file2, ""))
+    val state = MockState.empty
+      .addFiles(file1 -> """val catsVersion = "1.2.0"""", file2 -> "")
+      .flatMap(editAlg.applyUpdate(repo, RepoConfig.empty, update).runS)
       .unsafeRunSync()
 
     val expected = MockState.empty.copy(
       trace = Vector(
+        Cmd("test", "-f", repoDir.pathAsString),
         Cmd("test", "-f", file1.pathAsString),
         Cmd("read", file1.pathAsString),
+        Cmd("test", "-f", (repoDir / "project").pathAsString),
         Cmd("test", "-f", file2.pathAsString),
         Cmd("read", file2.pathAsString),
         Log("Trying heuristic 'moduleId'"),
@@ -51,7 +53,7 @@ class EditAlgTest extends FunSuite {
   }
 
   test("applyUpdate with scalafmt update") {
-    val repo = Repo("fthomas", "scala-steward")
+    val repo = Repo("edit-alg", "test-2")
     val repoDir = config.workspace / repo.show
     val update = Update.Single("org.scalameta" % "scalafmt-core" % "2.0.0", Nel.of("2.1.0"))
     val scalafmtConf = repoDir / ".scalafmt.conf"
@@ -61,13 +63,14 @@ class EditAlgTest extends FunSuite {
                                 |""".stripMargin
     val buildSbt = repoDir / "build.sbt"
 
-    val state = editAlg
-      .applyUpdate(repo, RepoConfig.empty, update)
-      .runS(MockState.empty.add(scalafmtConf, scalafmtConfContent).add(buildSbt, ""))
+    val state = MockState.empty
+      .addFiles(scalafmtConf -> scalafmtConfContent, buildSbt -> "")
+      .flatMap(editAlg.applyUpdate(repo, RepoConfig.empty, update).runS)
       .unsafeRunSync()
 
     val expected = MockState.empty.copy(
       trace = Vector(
+        Cmd("test", "-f", repoDir.pathAsString),
         Cmd("test", "-f", scalafmtConf.pathAsString),
         Cmd("read", scalafmtConf.pathAsString),
         Cmd("test", "-f", buildSbt.pathAsString),
@@ -107,32 +110,32 @@ class EditAlgTest extends FunSuite {
   }
 
   test("apply update to ammonite file") {
-    val repo = Repo("fthomas", "scala-steward")
+    val repo = Repo("edit-alg", "test-3")
     val repoDir = config.workspace / repo.show
     val update = Update.Single("org.typelevel" % "cats-core" % "1.2.0", Nel.of("1.3.0"))
     val file1 = repoDir / "script.sc"
     val file2 = repoDir / "build.sbt"
 
-    val state = editAlg
-      .applyUpdate(repo, RepoConfig.empty, update)
-      .runS(
-        MockState.empty
-          .add(file1, """import $ivy.`org.typelevel::cats-core:1.2.0`, cats.implicits._"""")
-          .add(file2, """"org.typelevel" %% "cats-core" % "1.2.0"""")
+    val state = MockState.empty
+      .addFiles(
+        file1 -> """import $ivy.`org.typelevel::cats-core:1.2.0`, cats.implicits._"""",
+        file2 -> """"org.typelevel" %% "cats-core" % "1.2.0""""
       )
+      .flatMap(editAlg.applyUpdate(repo, RepoConfig.empty, update).runS)
       .unsafeRunSync()
 
     val expected = MockState.empty.copy(
       trace = Vector(
-        Cmd("test", "-f", file1.pathAsString),
-        Cmd("read", file1.pathAsString),
+        Cmd("test", "-f", repoDir.pathAsString),
         Cmd("test", "-f", file2.pathAsString),
         Cmd("read", file2.pathAsString),
-        Log("Trying heuristic 'moduleId'"),
+        Cmd("test", "-f", file1.pathAsString),
         Cmd("read", file1.pathAsString),
-        Cmd("write", file1.pathAsString),
+        Log("Trying heuristic 'moduleId'"),
         Cmd("read", file2.pathAsString),
         Cmd("write", file2.pathAsString),
+        Cmd("read", file1.pathAsString),
+        Cmd("write", file1.pathAsString),
         Cmd(envVars ++ (repoDir.toString :: gitStatus))
       ),
       files = Map(
@@ -237,9 +240,9 @@ class EditAlgTest extends FunSuite {
   private def runApplyUpdate(update: Update, files: Map[String, String]): Map[String, String] = {
     val repoDir = File.temp / "ws/owner/repo"
     val filesInRepoDir = files.map { case (file, content) => repoDir / file -> content }
-    editAlg
-      .applyUpdate(Repo("owner", "repo"), RepoConfig.empty, update)
-      .runS(MockState.empty.addFiles(filesInRepoDir))
+    MockState.empty
+      .addFiles(filesInRepoDir.toSeq: _*)
+      .flatMap(editAlg.applyUpdate(Repo("owner", "repo"), RepoConfig.empty, update).runS)
       .map(_.files)
       .unsafeRunSync()
       .map { case (file, content) => file.toString.replace(repoDir.toString + "/", "") -> content }

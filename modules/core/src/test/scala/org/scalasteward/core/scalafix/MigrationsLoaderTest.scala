@@ -48,7 +48,7 @@ class MigrationsLoaderTest extends FunSuite {
   }
 
   test("loadAll: with extra file, without defaults") {
-    val initialState = mockState.addUri(migrationsUri, migrationsContent)
+    val initialState = mockState.addUris(migrationsUri -> migrationsContent)
     val migrations = migrationsLoader
       .loadAll(ScalafixCfg(List(migrationsUri), disableDefaults = true))
       .runA(initialState)
@@ -57,7 +57,7 @@ class MigrationsLoaderTest extends FunSuite {
   }
 
   test("loadAll: with extra file, with defaults") {
-    val initialState = mockState.addUri(migrationsUri, migrationsContent)
+    val initialState = mockState.addUris(migrationsUri -> migrationsContent)
     val migrations = migrationsLoader
       .loadAll(ScalafixCfg(List(migrationsUri), disableDefaults = false))
       .runA(initialState)
@@ -67,7 +67,7 @@ class MigrationsLoaderTest extends FunSuite {
   }
 
   test("loadAll: malformed extra file") {
-    val initialState = mockState.addUri(migrationsUri, """{"key": "i'm not a valid Migration}""")
+    val initialState = mockState.addUris(migrationsUri -> """{"key": "i'm not a valid Migration}""")
     val migrations = migrationsLoader
       .loadAll(ScalafixCfg(List(migrationsUri), disableDefaults = false))
       .runA(initialState)
@@ -78,8 +78,8 @@ class MigrationsLoaderTest extends FunSuite {
 }
 
 object MigrationsLoaderTest {
-  val mockState: MockState = MockState.empty.addUri(
-    MigrationsLoader.defaultScalafixMigrationsUrl,
-    ioFileAlg.readResource("scalafix-migrations.conf").unsafeRunSync()
+  val mockState: MockState = MockState.empty.addUris(
+    MigrationsLoader.defaultScalafixMigrationsUrl ->
+      ioFileAlg.readResource("scalafix-migrations.conf").unsafeRunSync()
   )
 }

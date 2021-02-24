@@ -14,13 +14,12 @@ class ScalafmtAlgTest extends FunSuite {
     val buildRoot = BuildRoot(repo, ".")
     val repoDir = config.workspace / repo.owner / repo.repo
     val scalafmtConf = repoDir / ".scalafmt.conf"
-    val initialState = MockState.empty.add(
-      scalafmtConf,
-      """maxColumn = 100
-        |version=2.0.0-RC8
-        |align.openParenCallSite = false
-        |""".stripMargin
-    )
+    val initialState = MockState.empty
+      .addFiles(scalafmtConf -> """maxColumn = 100
+                                  |version=2.0.0-RC8
+                                  |align.openParenCallSite = false
+                                  |""".stripMargin)
+      .unsafeRunSync()
     val (state, maybeVersion) =
       scalafmtAlg.getScalafmtVersion(buildRoot).run(initialState).unsafeRunSync()
     val expectedState = MockState.empty.copy(
@@ -43,13 +42,12 @@ class ScalafmtAlgTest extends FunSuite {
     val buildRoot = BuildRoot(repo, ".")
     val repoDir = config.workspace / repo.owner / repo.repo
     val scalafmtConf = repoDir / ".scalafmt.conf"
-    val initialState = MockState.empty.add(
-      scalafmtConf,
-      """maxColumn = 100
-        |version="2.0.0-RC8"
-        |align.openParenCallSite = false
-        |""".stripMargin
-    )
+    val initialState = MockState.empty
+      .addFiles(scalafmtConf -> """maxColumn = 100
+                                  |version="2.0.0-RC8"
+                                  |align.openParenCallSite = false
+                                  |""".stripMargin)
+      .unsafeRunSync()
     val (_, maybeVersion) =
       scalafmtAlg.getScalafmtVersion(buildRoot).run(initialState).unsafeRunSync()
     assertEquals(maybeVersion, Some(Version("2.0.0-RC8")))
