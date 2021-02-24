@@ -56,8 +56,7 @@ class PruningAlgTest extends FunSuite {
           |    "entryCreatedAt" : 1581969227183
           |  }
           |}""".stripMargin
-    val initial = MockState.empty
-      .add(pullRequestsFile, pullRequestsContent)
+    val initial = MockState.empty.addFiles(pullRequestsFile -> pullRequestsContent).unsafeRunSync()
     val data = RepoData(repo, repoCache, repoCache.maybeRepoConfig.getOrElse(RepoConfig.empty))
     val state = pruningAlg.needsAttention(data).runS(initial).unsafeRunSync()
     val expected = initial.copy(
@@ -159,8 +158,8 @@ class PruningAlgTest extends FunSuite {
           |}
           |""".stripMargin
     val initial = MockState.empty
-      .add(pullRequestsFile, pullRequestsContent)
-      .add(versionsFile, versionsContent)
+      .addFiles(pullRequestsFile -> pullRequestsContent, versionsFile -> versionsContent)
+      .unsafeRunSync()
     val data = RepoData(repo, repoCache, repoCache.maybeRepoConfig.getOrElse(RepoConfig.empty))
     val state = pruningAlg.needsAttention(data).runS(initial).unsafeRunSync()
     val expected = initial.copy(
@@ -262,8 +261,8 @@ class PruningAlgTest extends FunSuite {
           |}
           |""".stripMargin
     val initial = MockState.empty
-      .add(pullRequestsFile, pullRequestsContent)
-      .add(versionsFile, versionsContent)
+      .addFiles(pullRequestsFile -> pullRequestsContent, versionsFile -> versionsContent)
+      .unsafeRunSync()
     val data = RepoData(repo, repoCache, repoCache.maybeRepoConfig.getOrElse(RepoConfig.empty))
     val state = pruningAlg.needsAttention(data).runS(initial).unsafeRunSync()
     val expected = initial.copy(
