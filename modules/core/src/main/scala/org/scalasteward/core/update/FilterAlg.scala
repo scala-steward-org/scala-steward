@@ -74,7 +74,10 @@ object FilterAlg {
       .flatMap(checkVersionOrdering)
 
   def isScalaDependency(dependency: Dependency): Boolean =
-    (dependency.groupId.value, dependency.artifactId.name) match {
+    isScalaDependency(dependency.groupId.value, dependency.artifactId.name)
+
+  def isScalaDependency(groupId: String, artifactId: String): Boolean =
+    (groupId, artifactId) match {
       case ("org.scala-lang", "scala-compiler") => true
       case ("org.scala-lang", "scala-library")  => true
       case ("org.scala-lang", "scala-reflect")  => true

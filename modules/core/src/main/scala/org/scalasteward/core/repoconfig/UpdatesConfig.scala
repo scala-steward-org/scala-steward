@@ -37,11 +37,11 @@ final case class UpdatesConfig(
     allow: List[UpdatePattern] = List.empty,
     ignore: List[UpdatePattern] = List.empty,
     limit: Option[NonNegInt] = None,
-    includeScala: Option[Boolean] = None,
+    includeScala: Option[IncludeScalaStrategy] = None,
     fileExtensions: Option[List[String]] = None
 ) {
-  def includeScalaOrDefault: Boolean =
-    includeScala.getOrElse(UpdatesConfig.defaultIncludeScala)
+  def includeScalaOrDefault: IncludeScalaStrategy =
+    includeScala.getOrElse(IncludeScalaStrategy.default)
 
   def fileExtensionsOrDefault: Set[String] =
     fileExtensions.fold(UpdatesConfig.defaultFileExtensions)(_.toSet)

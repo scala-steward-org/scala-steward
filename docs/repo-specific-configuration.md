@@ -57,12 +57,13 @@ updates.ignore = [ { groupId = "org.acme", artifactId="foo", version = "1.0" } ]
 # Default: None
 updates.limit = 5
 
-# By default, Scala Steward does not update scala version since its tricky, error-prone
-# and results in bad PRs and/or failed builds
-# If set to true, Scala Steward will attempt to update the scala version
-# Since this feature is experimental, the default is set to false
-# Default: false
-updates.includeScala = true
+# If set to "yes", Scala Steward will create PR for scala updates
+# If set to "draft", Scala Steward will create draft PR for scala updates
+# If set to "no", Scala Steward will not create PR for scala updates
+# The default is set to "draft" since updating scala version is tricky and error-prone
+# and is left upto the repo maintainer to mark it ready for review and merge when satisfactory
+# Default: draft
+updates.includeScala = "yes" | "draft" | "no"
 
 # The extensions of files that should be updated.
 # Default: [".scala", ".sbt", ".sbt.shared", ".sc", ".yml", "pom.xml"]
