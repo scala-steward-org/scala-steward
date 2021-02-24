@@ -29,6 +29,11 @@ object logger {
     ): F[Either[Throwable, A]] =
       logger.info(label) >> attemptLogError(s"${errorLabel.getOrElse(label)} failed")(fa)
 
+    def attemptLogWarn[A](message: String)(fa: F[A])(implicit
+        F: MonadThrow[F]
+    ): F[Either[Throwable, A]] =
+      attemptLogImpl(fa, logger.warn(_)(message))
+
     def attemptLogWarn_[A](message: String)(fa: F[A])(implicit F: MonadThrow[F]): F[Unit] =
       attemptLogImpl_(fa, logger.warn(_)(message))
 
