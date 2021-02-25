@@ -7,7 +7,7 @@ import cats.syntax.all._
 import fs2.Stream
 import org.http4s.Uri
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
-import org.scalasteward.core.mock.{MockEff, MockState}
+import org.scalasteward.core.mock.{MockContext, MockEff, MockState}
 
 class MockFileAlg extends FileAlg[MockEff] {
   override def deleteForce(file: File): MockEff[Unit] =
@@ -18,7 +18,7 @@ class MockFileAlg extends FileAlg[MockEff] {
       StateT.liftF(ioFileAlg.ensureExists(dir))
 
   override def home: MockEff[File] =
-    StateT.pure(File.temp / "steward")
+    StateT.pure(MockContext.mockRoot)
 
   override def isDirectory(file: File): MockEff[Boolean] =
     StateT.modify[IO, MockState](_.exec(List("test", "-d", file.pathAsString))) >>

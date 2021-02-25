@@ -16,16 +16,17 @@ import org.scalasteward.core.vcs.data.AuthenticatedUser
 import scala.concurrent.duration._
 
 object MockContext {
+  val mockRoot: File = File.temp / "scala-steward"
   val args: Cli.Args = Cli.Args(
-    workspace = File.temp / "ws",
-    reposFile = File.temp / "repos.md",
-    defaultRepoConf = Some(File.temp / "default.scala-steward.conf"),
+    workspace = mockRoot / "workspace",
+    reposFile = mockRoot / "repos.md",
+    defaultRepoConf = Some(mockRoot / "default.scala-steward.conf"),
     gitAuthorName = "Bot Doe",
     gitAuthorEmail = "bot@example.org",
     vcsType = VCSType.GitHub,
     vcsApiHost = Uri(),
     vcsLogin = "bot-doe",
-    gitAskPass = File.temp / "askpass.sh",
+    gitAskPass = mockRoot / "askpass.sh",
     enableSandbox = Some(true),
     envVar = List(EnvVar("VAR1", "val1"), EnvVar("VAR2", "val2")),
     cacheTtl = 1.hour

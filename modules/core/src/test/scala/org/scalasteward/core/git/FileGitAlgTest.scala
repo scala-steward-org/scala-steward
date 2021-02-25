@@ -10,7 +10,7 @@ import org.scalasteward.core.git.FileGitAlgTest.{master, Supplement}
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
 import org.scalasteward.core.io.ProcessAlgTest.ioProcessAlg
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.mock.MockContext.config
+import org.scalasteward.core.mock.MockContext.{config, mockRoot}
 import org.scalasteward.core.util.Nel
 
 class FileGitAlgTest extends FunSuite {
@@ -18,7 +18,7 @@ class FileGitAlgTest extends FunSuite {
   implicit private val ioGitAlg: GenGitAlg[IO, File] =
     new FileGitAlg[IO](config.gitCfg).contramapRepoF(IO.pure)
   private val supplement = new Supplement[IO]
-  private val rootDir = File.temp / "scala-steward" / "git-tests"
+  private val rootDir = mockRoot / "git-tests"
 
   test("branchAuthors") {
     val repo = rootDir / "branchAuthors"

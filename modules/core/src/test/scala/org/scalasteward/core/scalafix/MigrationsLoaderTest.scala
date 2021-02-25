@@ -6,12 +6,13 @@ import org.scalasteward.core.application.Config.ScalafixCfg
 import org.scalasteward.core.data.{GroupId, Version}
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
 import org.scalasteward.core.mock.MockContext.context.migrationsLoader
+import org.scalasteward.core.mock.MockContext.mockRoot
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.scalafix.MigrationsLoaderTest.mockState
 import org.scalasteward.core.util.Nel
 
 class MigrationsLoaderTest extends FunSuite {
-  val migrationsUri: Uri = Uri.unsafeFromString("/tmp/scala-steward/extra-migrations.conf")
+  val migrationsUri: Uri = Uri.unsafeFromString(s"$mockRoot/extra-migrations.conf")
   val migrationsContent: String =
     """|migrations = [
        |  {
