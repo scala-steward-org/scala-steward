@@ -8,12 +8,13 @@ import org.scalacheck.Arbitrary
 import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
 import org.scalasteward.core.mock.MockContext.context.fileAlg
+import org.scalasteward.core.mock.MockContext.mockRoot
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
 
 class FileAlgTest extends FunSuite {
   test("createTemporarily") {
-    val file = File.temp / "test-scala-steward3.tmp"
+    val file = mockRoot / "test-scala-steward3.tmp"
     val content = Arbitrary.arbitrary[String].sample.getOrElse("")
 
     val p = for {
@@ -26,7 +27,7 @@ class FileAlgTest extends FunSuite {
   }
 
   test("writeFile *> readFile <* deleteForce") {
-    val file = File.temp / "test-scala-steward1.tmp"
+    val file = mockRoot / "test-scala-steward1.tmp"
     val content = Arbitrary.arbitrary[String].sample.getOrElse("")
     val read = ioFileAlg.writeFile(file, content) *>
       ioFileAlg.readFile(file).map(_.getOrElse("")) <*
@@ -35,7 +36,7 @@ class FileAlgTest extends FunSuite {
   }
 
   test("removeTemporarily") {
-    val file = File.temp / "test-scala-steward2.tmp"
+    val file = mockRoot / "test-scala-steward2.tmp"
     val content = Arbitrary.arbitrary[String].sample.getOrElse("")
 
     val p = for {
@@ -49,7 +50,7 @@ class FileAlgTest extends FunSuite {
   }
 
   test("removeTemporarily: nonexistent file") {
-    val file = File.temp / "does-not-exists.txt"
+    val file = mockRoot / "does-not-exists.txt"
     assertEquals(ioFileAlg.removeTemporarily(file)(IO.pure(42)).unsafeRunSync(), 42)
   }
 
@@ -60,13 +61,13 @@ class FileAlgTest extends FunSuite {
     } yield edited).run(MockState.empty).unsafeRunSync()
 
     val expected =
-      MockState.empty.copy(trace = Vector(Cmd("read", "/tmp/steward/does-not-exists.txt")))
+      MockState.empty.copy(trace = Vector(Cmd("read", s"$mockRoot/does-not-exists.txt")))
     assertEquals(state, expected)
     assert(!edited)
   }
 
   test("editFile: existent file") {
-    val file = File.temp / "steward" / "test1.sbt"
+    val file = mockRoot / "steward" / "test1.sbt"
     val (state, edited) = (for {
       _ <- fileAlg.writeFile(file, "123")
       edit = (s: String) => Some(s.replace("2", "4"))
@@ -86,7 +87,7 @@ class FileAlgTest extends FunSuite {
   }
 
   test("deleteForce removes dangling symlink in subdirectory") {
-    val dir = File.temp / "steward-symlink"
+    val dir = mockRoot / "steward-symlink"
     val sub = dir / "sub"
     val regular = dir / "regular"
     val symlink = sub / "symlink"
@@ -103,7 +104,7 @@ class FileAlgTest extends FunSuite {
   }
 
   test("readUri: local file without scheme") {
-    val file = File.temp / "steward" / "readUri.txt"
+    val file = mockRoot / "steward" / "readUri.txt"
     val content = "42"
     val p = for {
       _ <- ioFileAlg.writeFile(file, content)
@@ -113,7 +114,7 @@ class FileAlgTest extends FunSuite {
   }
 
   test("isRegularFile") {
-    val dir = File.temp / "steward" / "regular"
+    val dir = mockRoot / "steward" / "regular"
     val file = dir / "file.txt"
     val p = for {
       _ <- ioFileAlg.deleteForce(dir)

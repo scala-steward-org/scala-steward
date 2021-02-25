@@ -4,8 +4,8 @@ import munit.FunSuite
 import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.buildtool.sbt.data.SbtVersion
 import org.scalasteward.core.data.{Resolver, Scope, Version}
-import org.scalasteward.core.mock.MockContext.config
 import org.scalasteward.core.mock.MockContext.context.buildToolDispatcher
+import org.scalasteward.core.mock.MockContext.{config, mockRoot}
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
 import org.scalasteward.core.scalafmt
@@ -27,7 +27,7 @@ class BuildToolDispatcherTest extends FunSuite {
     val expectedState = initial.copy(trace =
       Vector(
         Cmd("read", s"$repoDir/.scala-steward.conf"),
-        Cmd("read", s"/tmp/default.scala-steward.conf"),
+        Cmd("read", s"$mockRoot/default.scala-steward.conf"),
         Cmd("test", "-f", s"$repoDir/pom.xml"),
         Cmd("test", "-f", s"$repoDir/build.sc"),
         Cmd("test", "-f", s"$repoDir/build.sbt"),

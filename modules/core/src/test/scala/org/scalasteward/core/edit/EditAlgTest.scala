@@ -1,6 +1,5 @@
 package org.scalasteward.core.edit
 
-import better.files.File
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.{GroupId, Update}
@@ -238,7 +237,7 @@ class EditAlgTest extends FunSuite {
   }
 
   private def runApplyUpdate(update: Update, files: Map[String, String]): Map[String, String] = {
-    val repoDir = File.temp / "ws/owner/repo"
+    val repoDir = config.workspace / "owner/repo"
     val filesInRepoDir = files.map { case (file, content) => repoDir / file -> content }
     MockState.empty
       .addFiles(filesInRepoDir.toSeq: _*)

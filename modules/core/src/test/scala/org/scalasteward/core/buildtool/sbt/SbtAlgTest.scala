@@ -5,7 +5,7 @@ import munit.FunSuite
 import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.data.{GroupId, Version}
 import org.scalasteward.core.mock.MockContext.context.sbtAlg
-import org.scalasteward.core.mock.MockContext.config
+import org.scalasteward.core.mock.MockContext.{config, mockRoot}
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.scalafix.Migration
@@ -22,11 +22,11 @@ class SbtAlgTest extends FunSuite {
       trace = Vector(
         Log("Add global sbt plugins"),
         Cmd("read", "classpath:org/scalasteward/sbt/plugin/StewardPlugin.scala"),
-        Cmd("write", "/tmp/steward/.sbt/0.13/plugins/StewardPlugin.scala"),
-        Cmd("write", "/tmp/steward/.sbt/1.0/plugins/StewardPlugin.scala"),
+        Cmd("write", s"$mockRoot/.sbt/0.13/plugins/StewardPlugin.scala"),
+        Cmd("write", s"$mockRoot/.sbt/1.0/plugins/StewardPlugin.scala"),
         Cmd("fa"),
-        Cmd("rm", "-rf", "/tmp/steward/.sbt/1.0/plugins/StewardPlugin.scala"),
-        Cmd("rm", "-rf", "/tmp/steward/.sbt/0.13/plugins/StewardPlugin.scala")
+        Cmd("rm", "-rf", s"$mockRoot/.sbt/1.0/plugins/StewardPlugin.scala"),
+        Cmd("rm", "-rf", s"$mockRoot/.sbt/0.13/plugins/StewardPlugin.scala")
       )
     )
     assertEquals(obtained, expected)
@@ -75,8 +75,8 @@ class SbtAlgTest extends FunSuite {
     val state = sbtAlg.runMigration(buildRoot, migration).runS(MockState.empty).unsafeRunSync()
     val expected = MockState.empty.copy(
       trace = Vector(
-        Cmd("write", "/tmp/steward/.sbt/0.13/plugins/scala-steward-scalafix.sbt"),
-        Cmd("write", "/tmp/steward/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
+        Cmd("write", s"$mockRoot/.sbt/0.13/plugins/scala-steward-scalafix.sbt"),
+        Cmd("write", s"$mockRoot/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
         Cmd(
           repoDir.toString,
           "firejail",
@@ -90,8 +90,8 @@ class SbtAlgTest extends FunSuite {
           "-Dsbt.supershell=false",
           s";$scalafixEnable;$scalafixAll github:functional-streams-for-scala/fs2/v1?sha=v1.0.5"
         ),
-        Cmd("rm", "-rf", "/tmp/steward/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
-        Cmd("rm", "-rf", "/tmp/steward/.sbt/0.13/plugins/scala-steward-scalafix.sbt")
+        Cmd("rm", "-rf", s"$mockRoot/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
+        Cmd("rm", "-rf", s"$mockRoot/.sbt/0.13/plugins/scala-steward-scalafix.sbt")
       )
     )
     assertEquals(state, expected)
@@ -112,8 +112,8 @@ class SbtAlgTest extends FunSuite {
     val state = sbtAlg.runMigration(buildRoot, migration).runS(MockState.empty).unsafeRunSync()
     val expected = MockState.empty.copy(
       trace = Vector(
-        Cmd("write", "/tmp/steward/.sbt/0.13/plugins/scala-steward-scalafix.sbt"),
-        Cmd("write", "/tmp/steward/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
+        Cmd("write", s"$mockRoot/.sbt/0.13/plugins/scala-steward-scalafix.sbt"),
+        Cmd("write", s"$mockRoot/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
         Cmd("write", s"$repoDir/scala-steward-scalafix-options.sbt"),
         Cmd(
           repoDir.toString,
@@ -129,8 +129,8 @@ class SbtAlgTest extends FunSuite {
           s";$scalafixEnable;$scalafixAll github:cb372/cats/Cats_v2_2_0?sha=235bd7c92e431ab1902db174cf4665b05e08f2f1"
         ),
         Cmd("rm", "-rf", s"$repoDir/scala-steward-scalafix-options.sbt"),
-        Cmd("rm", "-rf", "/tmp/steward/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
-        Cmd("rm", "-rf", "/tmp/steward/.sbt/0.13/plugins/scala-steward-scalafix.sbt")
+        Cmd("rm", "-rf", s"$mockRoot/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
+        Cmd("rm", "-rf", s"$mockRoot/.sbt/0.13/plugins/scala-steward-scalafix.sbt")
       )
     )
     assertEquals(state, expected)
