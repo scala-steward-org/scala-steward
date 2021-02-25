@@ -193,17 +193,6 @@ object NewPullRequestData {
       change <- SemVer.getChange(curr, next)
     } yield s"semver-${change.render}"
 
-  def updateHasScalaDependency(update: Update): Boolean =
-    update match {
-      case s: Update.Single =>
-        FilterAlg.isScalaDependency(s.groupId.value, s.artifactId.name)
-      case g: Update.Group =>
-        g.crossDependencies
-          .exists(crossDependency =>
-            FilterAlg.isScalaDependency(g.groupId.value, crossDependency.head.artifactId.name)
-          )
-    }
-
   def from(
       data: UpdateData,
       branchName: String,
@@ -223,7 +212,7 @@ object NewPullRequestData {
       ),
       head = branchName,
       base = data.baseBranch,
-      draft = updateHasScalaDependency(data.update) &&
+      draft = data.update.dependencies.exists(FilterAlg.isScalaDependency) &&
         (data.repoData.config.updates.includeScalaOrDefault === IncludeScalaStrategy.Draft)
     )
 }
