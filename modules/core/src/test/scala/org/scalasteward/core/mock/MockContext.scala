@@ -3,7 +3,7 @@ package org.scalasteward.core.mock
 import better.files.File
 import cats.Parallel
 import cats.effect.{BracketThrow, Sync}
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import org.http4s.client.Client
 import org.http4s.{HttpApp, Uri}
 import org.scalasteward.core.TestInstances.ioContextShift

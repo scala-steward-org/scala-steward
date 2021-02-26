@@ -20,7 +20,7 @@ import better.files.File
 import cats.effect.MonadThrow
 import cats.syntax.all._
 import fs2.Stream
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import org.scalasteward.core.buildtool.BuildToolDispatcher
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.edit.hooks.HookExecutor

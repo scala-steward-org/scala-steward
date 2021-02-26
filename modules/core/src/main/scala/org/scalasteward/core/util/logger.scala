@@ -18,7 +18,7 @@ package org.scalasteward.core.util
 
 import cats.syntax.all._
 import cats.{Foldable, Functor, Monad, MonadThrow}
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import org.scalasteward.core.data.Update
 import scala.concurrent.duration.FiniteDuration
 

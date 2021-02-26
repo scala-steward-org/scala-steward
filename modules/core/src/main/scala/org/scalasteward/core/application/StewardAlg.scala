@@ -20,7 +20,7 @@ import better.files.File
 import cats.effect.{BracketThrow, ExitCode}
 import cats.syntax.all._
 import fs2.Stream
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import org.scalasteward.core.buildtool.sbt.SbtAlg
 import org.scalasteward.core.data.RepoData
 import org.scalasteward.core.git.GitAlg

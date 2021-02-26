@@ -18,7 +18,7 @@ package org.scalasteward.core.vcs.gitlab
 
 import cats.MonadThrow
 import cats.syntax.all._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.syntax._
