@@ -23,8 +23,9 @@ import org.http4s.Uri
 import org.scalasteward.core.data.{GroupId, ReleaseRelatedUrl, SemVer, Update, UpdateData}
 import org.scalasteward.core.git
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.repoconfig.RepoConfigAlg
+import org.scalasteward.core.repoconfig.{IncludeScalaStrategy, RepoConfigAlg}
 import org.scalasteward.core.scalafix.Migration
+import org.scalasteward.core.update.FilterAlg
 import org.scalasteward.core.util.Details
 
 final case class UpdateState(
@@ -38,7 +39,8 @@ final case class NewPullRequestData(
     title: String,
     body: String,
     head: String,
-    base: Branch
+    base: Branch,
+    draft: Boolean = false
 )
 
 object NewPullRequestData {
@@ -209,6 +211,8 @@ object NewPullRequestData {
         filesWithOldVersion
       ),
       head = branchName,
-      base = data.baseBranch
+      base = data.baseBranch,
+      draft = data.update.dependencies.exists(FilterAlg.isScalaDependency) &&
+        (data.repoData.config.updates.includeScalaOrDefault === IncludeScalaStrategy.Draft)
     )
 }

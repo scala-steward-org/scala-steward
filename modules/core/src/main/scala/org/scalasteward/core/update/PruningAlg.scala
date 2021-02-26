@@ -23,7 +23,7 @@ import org.typelevel.log4cats.Logger
 import org.scalasteward.core.data._
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.repocache.RepoCache
-import org.scalasteward.core.repoconfig.{PullRequestFrequency, RepoConfig}
+import org.scalasteward.core.repoconfig.{IncludeScalaStrategy, PullRequestFrequency, RepoConfig}
 import org.scalasteward.core.update.PruningAlg._
 import org.scalasteward.core.update.data.UpdateState
 import org.scalasteward.core.update.data.UpdateState._
@@ -41,7 +41,8 @@ final class PruningAlg[F[_]](implicit
     F: Monad[F]
 ) {
   def needsAttention(data: RepoData): F[(Boolean, List[Update.Single])] = {
-    val ignoreScalaDependency = !data.config.updates.includeScalaOrDefault
+    val ignoreScalaDependency =
+      data.config.updates.includeScalaOrDefault === IncludeScalaStrategy.No
     val dependencies = data.cache.dependencyInfos
       .flatMap(_.sequence)
       .collect {
