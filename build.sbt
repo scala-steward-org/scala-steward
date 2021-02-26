@@ -41,6 +41,7 @@ ThisBuild / githubWorkflowPublish := Seq(
       "docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}",
       "sbt core/docker:publish"
     ),
+    cond = Some("${{ !github.event.repository.fork && !github.event.issue.pull_request }}"),
     name = Some("Publish Docker image")
   )
 )
