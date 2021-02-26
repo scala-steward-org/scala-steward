@@ -20,7 +20,7 @@ import better.files.File
 import cats.MonadThrow
 import cats.data.OptionT
 import cats.syntax.all._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import io.circe.config.parser
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.Update

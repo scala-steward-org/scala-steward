@@ -22,7 +22,7 @@ import cats.effect.{Bracket, Resource, Sync}
 import cats.syntax.all._
 import cats.{Functor, Traverse}
 import fs2.Stream
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import org.apache.commons.io.FileUtils
 import org.http4s.Uri
 import org.http4s.implicits.http4sLiteralsSyntax

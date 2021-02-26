@@ -19,7 +19,7 @@ package org.scalasteward.core.util
 import cats.effect.{Async, Sync}
 import cats.syntax.all._
 import com.github.benmanes.caffeine.cache.Caffeine
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import org.http4s.client.Client
 import org.http4s.{Method, Request, Status, Uri}
 import org.scalasteward.core.application.Config

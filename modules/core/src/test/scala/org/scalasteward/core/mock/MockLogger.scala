@@ -1,7 +1,7 @@
 package org.scalasteward.core.mock
 
 import cats.data.StateT
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 
 class MockLogger extends Logger[MockEff] {
   override def error(t: Throwable)(message: => String): MockEff[Unit] =

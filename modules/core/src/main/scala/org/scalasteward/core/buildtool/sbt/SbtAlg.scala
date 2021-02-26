@@ -21,7 +21,7 @@ import cats.Functor
 import cats.data.OptionT
 import cats.effect.BracketThrow
 import cats.syntax.all._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.BuildToolAlg
 import org.scalasteward.core.buildtool.sbt.command._
