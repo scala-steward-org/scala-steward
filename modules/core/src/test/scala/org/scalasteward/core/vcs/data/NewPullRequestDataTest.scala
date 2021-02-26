@@ -45,7 +45,7 @@ class NewPullRequestDataTest extends FunSuite {
         RepoConfig(updates = UpdatesConfig(includeScala = Some(IncludeScalaStrategy.Draft)))
       ),
       Repo("scala-steward", "bar"),
-      Update.Single("org.scala-lang" % "scala-library" % "2.12.10", Nel.of("2.12.11")),
+      Update.Single("org.scala-lang" % "scala-library" % "2.12.13", Nel.of("2.12.11")),
       Branch("master"),
       Sha1(Sha1.HexString.unsafeFrom("d6b6791d2ea11df1d156fe70979ab8c3a5ba3433")),
       Branch("update/scala-library-2.12.11")
