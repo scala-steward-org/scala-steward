@@ -57,7 +57,7 @@ class NewPullRequestDataTest extends FunSuite {
     val expected =
       raw"""|{
             |  "title" : "Update scala-library to 2.12.11",
-            |  "body" : "Updates org.scala-lang:scala-library from 2.12.10 to 2.12.11.\n\n\nI'll automatically update this PR to resolve conflicts as long as you don't change it yourself.\n\nIf you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.\n\nConfigure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.\n\nHave a fantastic day writing Scala!\n\n<details>\n<summary>Ignore future updates</summary>\n\nAdd this to your `.scala-steward.conf` file to ignore future updates of this dependency:\n```\nupdates.ignore = [ { groupId = \"org.scala-lang\", artifactId = \"scala-library\" } ]\n```\n</details>\n\nlabels: library-update, semver-patch",
+            |  "body" : "Updates org.scala-lang:scala-library from 2.12.13 to 2.12.11.\n\n\nI'll automatically update this PR to resolve conflicts as long as you don't change it yourself.\n\nIf you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.\n\nConfigure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.\n\nHave a fantastic day writing Scala!\n\n<details>\n<summary>Ignore future updates</summary>\n\nAdd this to your `.scala-steward.conf` file to ignore future updates of this dependency:\n```\nupdates.ignore = [ { groupId = \"org.scala-lang\", artifactId = \"scala-library\" } ]\n```\n</details>\n\nlabels: library-update, semver-patch",
             |  "head" : "scala-steward:update/scala-library-2.12.11",
             |  "base" : "master",
             |  "draft" : true
@@ -74,7 +74,7 @@ class NewPullRequestDataTest extends FunSuite {
       ),
       Repo("scala-steward", "bar"),
       Update.Group(
-        "org.scala-lang" % Nel.of("scala-library", "scala-reflect") % "2.12.10",
+        "org.scala-lang" % Nel.of("scala-library", "scala-reflect") % "2.12.13",
         Nel.of("2.12.11")
       ),
       Branch("master"),
@@ -88,7 +88,7 @@ class NewPullRequestDataTest extends FunSuite {
     val expected =
       raw"""|{
             |  "title" : "Update scala-library, scala-reflect to 2.12.11",
-            |  "body" : "Updates \n* org.scala-lang:scala-library\n* org.scala-lang:scala-reflect\n\n from 2.12.10 to 2.12.11.\n\n\nI'll automatically update this PR to resolve conflicts as long as you don't change it yourself.\n\nIf you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.\n\nConfigure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.\n\nHave a fantastic day writing Scala!\n\n<details>\n<summary>Ignore future updates</summary>\n\nAdd this to your `.scala-steward.conf` file to ignore future updates of this dependency:\n```\nupdates.ignore = [ { groupId = \"org.scala-lang\" } ]\n```\n</details>\n\nlabels: library-update, semver-patch",
+            |  "body" : "Updates \n* org.scala-lang:scala-library\n* org.scala-lang:scala-reflect\n\n from 2.12.13 to 2.12.11.\n\n\nI'll automatically update this PR to resolve conflicts as long as you don't change it yourself.\n\nIf you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.\n\nConfigure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.\n\nHave a fantastic day writing Scala!\n\n<details>\n<summary>Ignore future updates</summary>\n\nAdd this to your `.scala-steward.conf` file to ignore future updates of this dependency:\n```\nupdates.ignore = [ { groupId = \"org.scala-lang\" } ]\n```\n</details>\n\nlabels: library-update, semver-patch",
             |  "head" : "scala-steward:update/scala-library-2.12.11",
             |  "base" : "master",
             |  "draft" : true

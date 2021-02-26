@@ -274,9 +274,9 @@ class PruningAlgTest extends FunSuite {
         Cmd("read", versionsFile.toString),
         Cmd("read", pullRequestsFile.toString),
         Cmd("read", versionsFile.toString),
-        Log("Found 1 update:\n  org.scala-lang:scala-library : 2.12.10 -> 2.12.11"),
+        Log("Found 1 update:\n  org.scala-lang:scala-library : 2.12.13 -> 2.12.11"),
         Log(
-          s"${repo.show} is outdated:\n  new version: org.scala-lang:scala-library : 2.12.10 -> 2.12.11"
+          s"${repo.show} is outdated:\n  new version: org.scala-lang:scala-library : 2.12.13 -> 2.12.11"
         )
       )
     )
@@ -381,9 +381,9 @@ class PruningAlgTest extends FunSuite {
         Cmd("read", versionsFile.toString),
         Cmd("read", pullRequestsFile.toString),
         Cmd("read", versionsFile.toString),
-        Log("Found 1 update:\n  org.scala-lang:scala-library : 2.12.10 -> 2.12.11"),
+        Log("Found 1 update:\n  org.scala-lang:scala-library : 2.12.13 -> 2.12.11"),
         Log(
-          s"${repo.show} is outdated:\n  new version: org.scala-lang:scala-library : 2.12.10 -> 2.12.11"
+          s"${repo.show} is outdated:\n  new version: org.scala-lang:scala-library : 2.12.13 -> 2.12.11"
         )
       )
     )
