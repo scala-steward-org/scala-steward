@@ -24,7 +24,7 @@ You can add `<YOUR_REPO>/.scala-steward.conf` to configure how Scala Steward upd
 #     more information about the CRON expressions that are supported.
 #
 #     Note that the date parts of the CRON expression are matched exactly
-#     while the the time parts are only used to abide to the frequency of
+#     while the time parts are only used to abide to the frequency of
 #     the given expression.
 #
 # Default: @asap
