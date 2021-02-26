@@ -18,7 +18,7 @@ package org.scalasteward.core.update
 
 import cats.syntax.all._
 import cats.{Monad, TraverseFilter}
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import org.scalasteward.core.data._
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.update.FilterAlg._

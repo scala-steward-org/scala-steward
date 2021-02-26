@@ -22,7 +22,7 @@ import cats.{Applicative, Parallel}
 import coursier.cache.{CachePolicy, FileCache}
 import coursier.core.{Authentication, Project}
 import coursier.{Fetch, Info, Module, ModuleName, Organization}
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import org.http4s.Uri
 import org.scalasteward.core.data.Resolver.Credentials
 import org.scalasteward.core.data.{Dependency, Resolver, Scope, Version}

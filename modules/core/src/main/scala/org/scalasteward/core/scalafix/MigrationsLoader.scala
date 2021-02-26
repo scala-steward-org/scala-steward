@@ -18,7 +18,7 @@ package org.scalasteward.core.scalafix
 
 import cats.MonadThrow
 import cats.syntax.all._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import io.circe.config.parser.decode
 import org.http4s.Uri
 import org.http4s.implicits.http4sLiteralsSyntax

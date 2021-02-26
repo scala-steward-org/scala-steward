@@ -17,7 +17,7 @@
 package org.scalasteward.core.vcs
 
 import cats.MonadThrow
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import org.http4s.Header
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.util.HttpJsonClient

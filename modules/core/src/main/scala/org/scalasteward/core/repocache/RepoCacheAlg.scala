@@ -18,7 +18,7 @@ package org.scalasteward.core.repocache
 
 import cats.syntax.all._
 import cats.{MonadThrow, Parallel}
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.BuildToolDispatcher
 import org.scalasteward.core.data.{Dependency, DependencyInfo}

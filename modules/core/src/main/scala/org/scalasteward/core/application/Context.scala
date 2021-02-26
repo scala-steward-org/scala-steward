@@ -19,8 +19,8 @@ package org.scalasteward.core.application
 import cats.Parallel
 import cats.effect._
 import cats.syntax.all._
-import io.chrisdavenport.log4cats.Logger
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import org.http4s.Uri
 import org.http4s.client.Client
 import org.http4s.client.okhttp.OkHttpBuilder
