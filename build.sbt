@@ -108,7 +108,7 @@ lazy val core = myCrossProject("core")
     ),
     testFrameworks += new TestFramework("munit.Framework"),
     assembly / test := {},
-    assemblyMergeStrategy in assembly := {
+    assembly / assemblyMergeStrategy := {
       val nativeSuffix = "\\.(?:dll|jnilib|so)$".r
 
       {
@@ -120,7 +120,7 @@ lazy val core = myCrossProject("core")
           // https/repo1.maven.org/maven2/org/fusesource/jansi/jansi/1.18/jansi-1.18.jar:org/fusesource/hawtjni/runtime/Callback.class
           MergeStrategy.first
         case otherwise =>
-          val defaultStrategy = (assemblyMergeStrategy in assembly).value
+          val defaultStrategy = (assembly / assemblyMergeStrategy).value
           defaultStrategy(otherwise)
       }
     },
@@ -160,8 +160,8 @@ lazy val core = myCrossProject("core")
       implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
       implicit val logger: Logger[IO] = Slf4jLogger.getLogger[IO]
     """,
-    fork in run := true,
-    fork in Test := true,
+    run / fork := true,
+    Test / fork := true,
     Compile / unmanagedResourceDirectories ++= (`sbt-plugin`.jvm / Compile / unmanagedSourceDirectories).value
   )
 
@@ -265,7 +265,7 @@ lazy val dockerSettings = Def.settings(
 )
 
 lazy val noPublishSettings = Def.settings(
-  skip in publish := true
+  publish / skip := true
 )
 
 lazy val scaladocSettings = Def.settings(
