@@ -45,6 +45,7 @@ import org.scalasteward.core.util.uri._
 import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.vcs.github.{GitHubAppApiAlg, GitHubAuthAlg}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg, VCSSelection}
+import scala.annotation.nowarn
 
 final class Context[F[_]](implicit
     val buildToolDispatcher: BuildToolDispatcher[F],
@@ -72,7 +73,7 @@ final class Context[F[_]](implicit
 )
 
 object Context {
-  def step0[F[_]](args: Cli.Args)(implicit
+  @nowarn def step0[F[_]](args: Cli.Args)(implicit
       contextShift: ContextShift[F],
       parallel: Parallel[F],
       timer: Timer[F],
@@ -89,7 +90,7 @@ object Context {
       context <- Resource.liftF(step1[F](config))
     } yield context
 
-  def step1[F[_]](config: Config)(implicit
+  @nowarn def step1[F[_]](config: Config)(implicit
       client: Client[F],
       contextShift: ContextShift[F],
       fileAlg: FileAlg[F],

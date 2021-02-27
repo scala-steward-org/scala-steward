@@ -25,6 +25,7 @@ import org.scalasteward.core.git
 import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.util.uri.uriDecoder
 import org.scalasteward.core.vcs.data._
+import scala.annotation.nowarn
 
 object Json {
   case class Page[A](values: List[A])
@@ -97,7 +98,7 @@ object Json {
   implicit val defaultReviewerDecoder: Decoder[DefaultReviewer] = deriveDecoder
   implicit val linkDecoder: Decoder[Link] = deriveDecoder
   implicit val newPREncoder: Encoder[NewPR] = deriveEncoder
-  implicit def pageDecoder[A: Decoder]: Decoder[Page[A]] = deriveDecoder
+  @nowarn implicit def pageDecoder[A: Decoder]: Decoder[Page[A]] = deriveDecoder
   implicit val prDecoder: Decoder[PR] = deriveDecoder
   implicit val projectCodec: Codec[Project] = deriveCodec
   implicit val refEncoder: Encoder[Ref] = deriveEncoder
