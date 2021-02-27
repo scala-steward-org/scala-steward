@@ -16,11 +16,10 @@
 
 package org.scalasteward.core.repocache
 
-import cats.Applicative
 import org.scalasteward.core.persistence.KeyValueStore
 import org.scalasteward.core.vcs.data.Repo
 
-final class RepoCacheRepository[F[_]: Applicative](kvStore: KeyValueStore[F, Repo, RepoCache]) {
+final class RepoCacheRepository[F[_]](kvStore: KeyValueStore[F, Repo, RepoCache]) {
   def findCache(repo: Repo): F[Option[RepoCache]] =
     kvStore.get(repo)
 
