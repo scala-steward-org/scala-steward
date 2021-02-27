@@ -20,7 +20,6 @@ import cats.implicits._
 import cats.{Applicative, Eval, Order, Traverse}
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, Decoder, Encoder}
-import scala.annotation.nowarn
 
 /** A container of a value of type `A` with associated resolvers.
   *
@@ -50,7 +49,7 @@ object Scope {
         f(fa.value, lb)
     }
 
-  @nowarn implicit def scopeCodec[A: Decoder: Encoder]: Codec[Scope[A]] =
+  implicit def scopeCodec[A: Decoder: Encoder]: Codec[Scope[A]] =
     deriveCodec
 
   implicit def scopeOrder[A: Order]: Order[Scope[A]] =
