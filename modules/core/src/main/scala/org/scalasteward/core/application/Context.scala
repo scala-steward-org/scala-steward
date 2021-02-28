@@ -19,8 +19,6 @@ package org.scalasteward.core.application
 import cats.Parallel
 import cats.effect._
 import cats.syntax.all._
-import org.typelevel.log4cats.Logger
-import org.typelevel.log4cats.slf4j.Slf4jLogger
 import org.http4s.Uri
 import org.http4s.client.Client
 import org.http4s.client.okhttp.OkHttpBuilder
@@ -37,7 +35,7 @@ import org.scalasteward.core.nurture.{NurtureAlg, PullRequestData, PullRequestRe
 import org.scalasteward.core.persistence.{CachingKeyValueStore, JsonKeyValueStore}
 import org.scalasteward.core.repocache._
 import org.scalasteward.core.repoconfig.RepoConfigAlg
-import org.scalasteward.core.scalafix.{MigrationAlg, MigrationsLoader}
+import org.scalasteward.core.edit.scalafix.{ScalafixMigrationsFinder, ScalafixMigrationsLoader}
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.{ArtifactMigrations, FilterAlg, PruningAlg, UpdateAlg}
 import org.scalasteward.core.util._
@@ -45,6 +43,8 @@ import org.scalasteward.core.util.uri._
 import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.vcs.github.{GitHubAppApiAlg, GitHubAuthAlg}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg, VCSSelection}
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 final class Context[F[_]](implicit
     val buildToolDispatcher: BuildToolDispatcher[F],
@@ -57,13 +57,13 @@ final class Context[F[_]](implicit
     val hookExecutor: HookExecutor[F],
     val logger: Logger[F],
     val mavenAlg: MavenAlg[F],
-    val migrationAlg: MigrationAlg,
-    val migrationsLoader: MigrationsLoader[F],
     val millAlg: MillAlg[F],
     val pruningAlg: PruningAlg[F],
     val pullRequestRepository: PullRequestRepository[F],
     val repoConfigAlg: RepoConfigAlg[F],
     val sbtAlg: SbtAlg[F],
+    val scalafixMigrationsFinder: ScalafixMigrationsFinder,
+    val scalafixMigrationsLoader: ScalafixMigrationsLoader[F],
     val scalafmtAlg: ScalafmtAlg[F],
     val stewardAlg: StewardAlg[F],
     val updateAlg: UpdateAlg[F],
@@ -103,9 +103,10 @@ object Context {
       _ <- printBanner[F]
       vcsUser <- config.vcsUser[F]
       implicit0(artifactMigration: ArtifactMigrations) <- ArtifactMigrations.create[F](config)
-      implicit0(migrationsLoader: MigrationsLoader[F]) = new MigrationsLoader[F]
-      implicit0(migrationAlg: MigrationAlg) <-
-        migrationsLoader.loadAll(config.scalafixCfg).map(new MigrationAlg(_))
+      implicit0(scalafixMigrationsLoader: ScalafixMigrationsLoader[F]) =
+        new ScalafixMigrationsLoader[F]
+      implicit0(scalafixMigrationsFinder: ScalafixMigrationsFinder) <-
+        scalafixMigrationsLoader.createFinder(config.scalafixCfg)
       implicit0(urlChecker: UrlChecker[F]) <- UrlChecker.create[F](config)
       kvsPrefix = Some(config.vcsType.asString)
       pullRequestsStore <- JsonKeyValueStore

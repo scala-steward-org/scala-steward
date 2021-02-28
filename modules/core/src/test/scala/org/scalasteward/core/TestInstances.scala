@@ -8,7 +8,7 @@ import eu.timepit.refined.types.numeric.NonNegInt
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.Update.Single
-import org.scalasteward.core.data.{GroupId, Resolver, Scope, Update, Version}
+import org.scalasteward.core.data._
 import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.repocache.RepoCache

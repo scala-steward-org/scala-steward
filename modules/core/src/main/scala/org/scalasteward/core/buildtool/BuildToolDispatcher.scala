@@ -22,7 +22,7 @@ import org.scalasteward.core.buildtool.maven.MavenAlg
 import org.scalasteward.core.buildtool.mill.MillAlg
 import org.scalasteward.core.buildtool.sbt.SbtAlg
 import org.scalasteward.core.data.{Resolver, Scope}
-import org.scalasteward.core.scalafix.Migration
+import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.repoconfig.RepoConfigAlg
@@ -69,7 +69,7 @@ object BuildToolDispatcher {
           )
         } yield result
 
-      override def runMigration(repo: Repo, migration: Migration): F[Unit] =
+      override def runMigration(repo: Repo, migration: ScalafixMigration): F[Unit] =
         buildRootsForRepo(repo).flatMap(buildRoots =>
           buildRoots.traverse_(buildRoot =>
             foundBuildTools(buildRoot).flatMap(_.traverse_(_.runMigration(buildRoot, migration)))
