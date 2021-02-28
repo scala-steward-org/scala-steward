@@ -156,7 +156,7 @@ class EditAlgTest extends FunSuite {
       "build.sbt" -> """val config = "1.3.4"""",
       "project/plugins.sbt" -> """addSbtPlugin("com.typesafe.sbt" % "sbt-site" % "1.3.3")"""
     )
-    assertEquals(runApplyUpdate(update, original), expected)
+    assertEquals(runApplyUpdate(Repo("edit-alg", "test-4"), update, original), expected)
   }
 
   test("file restriction when sbt update") {
@@ -169,7 +169,7 @@ class EditAlgTest extends FunSuite {
       "build.properties" -> """sbt.version=1.2.8""",
       "project/plugins.sbt" -> """addSbtPlugin("com.jsuereth" % "sbt-pgp" % "1.1.2")"""
     )
-    assertEquals(runApplyUpdate(update, original), expected)
+    assertEquals(runApplyUpdate(Repo("edit-alg", "test-5"), update, original), expected)
   }
 
   test("keyword with extra underscore") {
@@ -185,7 +185,7 @@ class EditAlgTest extends FunSuite {
       ".travis.yml" -> """ - SCALA_JS_VERSION=1.1.1""",
       "project/plugins.sbt" -> """val scalaJsVersion = Option(System.getenv("SCALA_JS_VERSION")).getOrElse("1.1.1")"""
     )
-    assertEquals(runApplyUpdate(update, original), expected)
+    assertEquals(runApplyUpdate(Repo("edit-alg", "test-6"), update, original), expected)
   }
 
   test("test updating group id and version") {
@@ -196,20 +196,16 @@ class EditAlgTest extends FunSuite {
       newerArtifactId = Some("simulacrum")
     )
     val original = Map(
-      "build.sbt" ->
-        """
-          |val simulacrum = "0.19.0"
-          |"com.github.mpilquist" %% "simulacrum" % simulacrum
-          |"""".stripMargin
+      "build.sbt" -> """val simulacrum = "0.19.0"
+                       |"com.github.mpilquist" %% "simulacrum" % simulacrum
+                       |"""".stripMargin
     )
     val expected = Map(
-      "build.sbt" ->
-        """
-          |val simulacrum = "1.0.0"
-          |"org.typelevel" %% "simulacrum" % simulacrum
-          |"""".stripMargin // the version should have been updated here
+      "build.sbt" -> """val simulacrum = "1.0.0"
+                       |"org.typelevel" %% "simulacrum" % simulacrum
+                       |"""".stripMargin
     )
-    assertEquals(runApplyUpdate(update, original), expected)
+    assertEquals(runApplyUpdate(Repo("edit-alg", "test-7"), update, original), expected)
   }
 
   test("test updating artifact id and version") {
@@ -220,28 +216,46 @@ class EditAlgTest extends FunSuite {
       newerArtifactId = Some("newer-artifact")
     )
     val original = Map(
-      "Dependencies.scala" ->
-        """
-          |private val artifactVersion = "1.0.0"
-          |val test = "com.test" %% "artifact" % testVersion 
-          |"""".stripMargin
+      "Dependencies.scala" -> """val testVersion = "1.0.0"
+                                |val test = "com.test" %% "artifact" % testVersion
+                                |"""".stripMargin
     )
     val expected = Map(
-      "Dependencies.scala" ->
-        """
-          |private val artifactVersion = "2.0.0"
-          |val test = "com.test" %% "newer-artifact" % testVersion 
-          |"""".stripMargin
+      "Dependencies.scala" -> """val testVersion = "2.0.0"
+                                |val test = "com.test" %% "newer-artifact" % testVersion
+                                |"""".stripMargin
     )
-    assertEquals(runApplyUpdate(update, original), expected)
+    assertEquals(runApplyUpdate(Repo("edit-alg", "test-8"), update, original), expected)
   }
 
-  private def runApplyUpdate(update: Update, files: Map[String, String]): Map[String, String] = {
-    val repoDir = config.workspace / "owner/repo"
+  test("NOK artifact change: version and groupId/artifactId in different files") {
+    val update = Update.Single(
+      crossDependency = "io.chrisdavenport" % "log4cats" % "1.1.1",
+      newerVersions = Nel.of("1.2.0"),
+      newerGroupId = Some(GroupId("org.typelevel"))
+    )
+    val original = Map(
+      "Dependencies.scala" -> """val log4catsVersion = "1.1.1" """,
+      "build.sbt" -> """ "io.chrisdavenport" %% "log4cats" % log4catsVersion """
+    )
+    val expected = Map(
+      "Dependencies.scala" -> """val log4catsVersion = "1.2.0" """,
+      // The groupId should have been changed here.
+      "build.sbt" -> """ "io.chrisdavenport" %% "log4cats" % log4catsVersion """
+    )
+    assertEquals(runApplyUpdate(Repo("edit-alg", "test-9"), update, original), expected)
+  }
+
+  private def runApplyUpdate(
+      repo: Repo,
+      update: Update,
+      files: Map[String, String]
+  ): Map[String, String] = {
+    val repoDir = config.workspace / repo.show
     val filesInRepoDir = files.map { case (file, content) => repoDir / file -> content }
     MockState.empty
       .addFiles(filesInRepoDir.toSeq: _*)
-      .flatMap(editAlg.applyUpdate(Repo("owner", "repo"), RepoConfig.empty, update).runS)
+      .flatMap(editAlg.applyUpdate(repo, RepoConfig.empty, update).runS)
       .map(_.files)
       .unsafeRunSync()
       .map { case (file, content) => file.toString.replace(repoDir.toString + "/", "") -> content }
