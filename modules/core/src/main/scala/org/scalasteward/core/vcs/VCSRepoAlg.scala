@@ -18,7 +18,6 @@ package org.scalasteward.core.vcs
 
 import cats.MonadThrow
 import cats.syntax.all._
-import org.typelevel.log4cats.Logger
 import org.http4s.Uri
 import org.http4s.Uri.UserInfo
 import org.scalasteward.core.application.Config
@@ -26,6 +25,7 @@ import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.util
 import org.scalasteward.core.util.logger._
 import org.scalasteward.core.vcs.data.{Repo, RepoOut}
+import org.typelevel.log4cats.Logger
 
 final class VCSRepoAlg[F[_]](config: Config)(implicit
     gitAlg: GitAlg[F],

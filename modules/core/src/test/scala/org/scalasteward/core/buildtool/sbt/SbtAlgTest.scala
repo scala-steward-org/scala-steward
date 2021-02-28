@@ -4,11 +4,11 @@ import cats.data.StateT
 import munit.FunSuite
 import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.data.{GroupId, Version}
+import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.mock.MockContext.context.sbtAlg
 import org.scalasteward.core.mock.MockContext.{config, mockRoot}
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
-import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.{BuildRoot, Repo}
 
@@ -64,7 +64,7 @@ class SbtAlgTest extends FunSuite {
     val repo = Repo("fthomas", "scala-steward")
     val buildRoot = BuildRoot(repo, ".")
     val repoDir = config.workspace / repo.show
-    val migration = Migration(
+    val migration = ScalafixMigration(
       GroupId("co.fs2"),
       Nel.of("fs2-core"),
       Version("1.0.0"),
@@ -101,7 +101,7 @@ class SbtAlgTest extends FunSuite {
     val repo = Repo("fthomas", "scala-steward")
     val buildRoot = BuildRoot(repo, ".")
     val repoDir = config.workspace / repo.show
-    val migration = Migration(
+    val migration = ScalafixMigration(
       GroupId("org.typelevel"),
       Nel.of("cats-core"),
       Version("2.2.0"),

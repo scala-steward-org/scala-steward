@@ -30,7 +30,7 @@ import org.scalasteward.core.data._
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Branch, Commit, GitAlg}
 import org.scalasteward.core.repoconfig.PullRequestUpdateStrategy
-import org.scalasteward.core.scalafix.MigrationAlg
+import org.scalasteward.core.edit.scalafix.ScalafixMigrationsFinder
 import org.scalasteward.core.util.UrlChecker
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data._
@@ -42,8 +42,8 @@ final class NurtureAlg[F[_]](config: Config)(implicit
     editAlg: EditAlg[F],
     gitAlg: GitAlg[F],
     logger: Logger[F],
-    migrationAlg: MigrationAlg,
     pullRequestRepository: PullRequestRepository[F],
+    scalafixMigrationsFinder: ScalafixMigrationsFinder,
     vcsApiAlg: VCSApiAlg[F],
     vcsExtraAlg: VCSExtraAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
@@ -181,7 +181,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
           .traverse(vcsExtraAlg.getReleaseRelatedUrls(_, data.update))
       filesWithOldVersion <- gitAlg.findFilesContaining(data.repo, data.update.currentVersion)
       branchName = vcs.createBranch(config.vcsType, data.fork, data.update)
-      migrations = migrationAlg.findMigrations(data.update)
+      migrations = scalafixMigrationsFinder.findMigrations(data.update)
       requestData = NewPullRequestData.from(
         data,
         branchName,

@@ -7,9 +7,9 @@ import org.scalasteward.core.TestInstances.dummyRepoCache
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.buildtool.sbt.data.SbtVersion
 import org.scalasteward.core.data._
+import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.repoconfig.{IncludeScalaStrategy, RepoConfig, UpdatesConfig}
-import org.scalasteward.core.scalafix.Migration
 import org.scalasteward.core.util.Nel
 
 class NewPullRequestDataTest extends FunSuite {
@@ -165,7 +165,7 @@ class NewPullRequestDataTest extends FunSuite {
 
   test("migrationNote: when artifact has migrations") {
     val update = Update.Single("com.spotify" % "scio-core" % "0.6.0", Nel.of("0.7.0"))
-    val migration = Migration(
+    val migration = ScalafixMigration(
       update.groupId,
       Nel.of(update.artifactId.name),
       Version("0.7.0"),
@@ -189,7 +189,7 @@ class NewPullRequestDataTest extends FunSuite {
 
   test("migrationNote: when artifact has migrations with docs") {
     val update = Update.Single("com.spotify" % "scio-core" % "0.6.0", Nel.of("0.7.0"))
-    val migration = Migration(
+    val migration = ScalafixMigration(
       update.groupId,
       Nel.of(update.artifactId.name),
       Version("0.7.0"),

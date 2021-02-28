@@ -17,7 +17,6 @@
 package org.scalasteward.core.vcs
 
 import cats.MonadThrow
-import org.typelevel.log4cats.Logger
 import org.http4s.Header
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.util.HttpJsonClient
@@ -27,6 +26,7 @@ import org.scalasteward.core.vcs.bitbucketserver.BitbucketServerApiAlg
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 import org.scalasteward.core.vcs.github.GitHubApiAlg
 import org.scalasteward.core.vcs.gitlab.GitLabApiAlg
+import org.typelevel.log4cats.Logger
 
 final class VCSSelection[F[_]](config: Config, user: AuthenticatedUser)(implicit
     client: HttpJsonClient[F],

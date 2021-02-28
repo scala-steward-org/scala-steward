@@ -28,7 +28,7 @@ import org.scalasteward.core.git
 import org.scalasteward.core.git.{Commit, GitAlg}
 import org.scalasteward.core.io.{isSourceFile, FileAlg, WorkspaceAlg}
 import org.scalasteward.core.repoconfig.RepoConfig
-import org.scalasteward.core.scalafix.{Migration, MigrationAlg}
+import org.scalasteward.core.edit.scalafix.{ScalafixMigration, ScalafixMigrationsFinder}
 import org.scalasteward.core.util._
 import org.scalasteward.core.util.logger._
 import org.scalasteward.core.vcs.data.Repo
@@ -39,7 +39,7 @@ final class EditAlg[F[_]](implicit
     gitAlg: GitAlg[F],
     hookExecutor: HookExecutor[F],
     logger: Logger[F],
-    migrationAlg: MigrationAlg,
+    scalafixMigrationsFinder: ScalafixMigrationsFinder,
     streamCompiler: Stream.Compiler[F, F],
     workspaceAlg: WorkspaceAlg[F],
     F: MonadThrow[F]
@@ -59,7 +59,7 @@ final class EditAlg[F[_]](implicit
           case true =>
             for {
               _ <- preCommit
-              migrations = migrationAlg.findMigrations(update)
+              migrations = scalafixMigrationsFinder.findMigrations(update)
               cs1 <-
                 if (migrations.isEmpty) F.pure(Nil)
                 else
@@ -82,10 +82,13 @@ final class EditAlg[F[_]](implicit
       fileAlg.findFiles(repoDir, fileFilter, _.contains(update.currentVersion)).map(Nel.fromList)
     }
 
-  private def runScalafixMigrations(repo: Repo, migrations: List[Migration]): F[List[Commit]] =
+  private def runScalafixMigrations(
+      repo: Repo,
+      migrations: List[ScalafixMigration]
+  ): F[List[Commit]] =
     migrations.traverseFilter(runScalafixMigration(repo, _))
 
-  private def runScalafixMigration(repo: Repo, migration: Migration): F[Option[Commit]] =
+  private def runScalafixMigration(repo: Repo, migration: ScalafixMigration): F[Option[Commit]] =
     for {
       _ <- logger.info(s"Running migration $migration")
       result <- logger.attemptLogWarn("Scalafix migration failed")(

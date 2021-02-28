@@ -17,12 +17,12 @@
 package org.scalasteward.core.buildtool
 
 import org.scalasteward.core.data.Scope
-import org.scalasteward.core.scalafix.Migration
+import org.scalasteward.core.edit.scalafix.ScalafixMigration
 
 trait BuildToolAlg[F[_], R] {
   def containsBuild(r: R): F[Boolean]
 
   def getDependencies(r: R): F[List[Scope.Dependencies]]
 
-  def runMigration(r: R, migration: Migration): F[Unit]
+  def runMigration(r: R, migration: ScalafixMigration): F[Unit]
 }
