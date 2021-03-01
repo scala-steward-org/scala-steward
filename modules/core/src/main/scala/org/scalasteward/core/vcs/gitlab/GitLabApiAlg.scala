@@ -42,7 +42,14 @@ final private[gitlab] case class MergeRequestPayload(
 
 private[gitlab] object MergeRequestPayload {
   def apply(id: String, projectId: Long, data: NewPullRequestData): MergeRequestPayload =
-    MergeRequestPayload(id, data.title, data.body, projectId, data.head, data.base)
+    MergeRequestPayload(
+      id,
+      List(if (data.draft) "Draft: " else "", data.title).mkString,
+      data.body,
+      projectId,
+      data.head,
+      data.base
+    )
 }
 
 final private[gitlab] case class MergeRequestOut(
