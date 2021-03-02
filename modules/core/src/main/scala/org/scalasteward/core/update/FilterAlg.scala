@@ -132,6 +132,12 @@ object FilterAlg {
           // https://github.com/scala-steward-org/scala-steward/issues/1413
           "36845576"
         ).contains
+      case ("commons-beanutils", "commons-beanutils") =>
+        List(
+          "20020520",
+          "20021128.082114",
+          "20030211.134440"
+        ).contains
       case ("commons-codec", "commons-codec") =>
         List(
           // https://github.com/scala-steward-org/scala-steward/issues/1753
