@@ -72,6 +72,7 @@ final class PruningAlg[F[_]](implicit
         else
           for {
             freshUpdates <- ensureFreshUpdates(repoConfig, dependencies, outdatedDeps, updates0)
+              .map(removeOvertakingUpdates(depsWithoutResolvers, _))
             freshStates <- findAllUpdateStates(repo, repoCache, depsWithoutResolvers, freshUpdates)
           } yield (freshStates, freshUpdates)
       }
