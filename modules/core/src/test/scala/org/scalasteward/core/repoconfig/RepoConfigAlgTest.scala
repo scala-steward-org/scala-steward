@@ -200,6 +200,12 @@ class RepoConfigAlgTest extends FunSuite {
     assertEquals(config, Right(expected))
   }
 
+  test("build root with '..'") {
+    val content = """buildRoots = [ "../../../etc" ]"""
+    val config = RepoConfigAlg.parseRepoConfig(content).map(_.buildRootsOrDefault)
+    assertEquals(config, Right(Nil))
+  }
+
   test("malformed config") {
     val repo = Repo("fthomas", "scala-steward")
     val configFile = MockContext.config.workspace / "fthomas/scala-steward/.scala-steward.conf"
