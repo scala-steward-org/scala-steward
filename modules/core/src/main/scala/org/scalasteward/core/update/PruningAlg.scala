@@ -62,7 +62,9 @@ final class PruningAlg[F[_]](implicit
     val depsWithoutResolvers = dependencies.map(_.value).distinct
     for {
       _ <- logger.info(s"Find updates for ${repo.show}")
-      updates0 <- updateAlg.findUpdates(dependencies, repoConfig, None)
+      updates0 <- updateAlg
+        .findUpdates(dependencies, repoConfig, None)
+        .map(removeOvertakingUpdates(depsWithoutResolvers, _))
       updateStates0 <- findAllUpdateStates(repo, repoCache, depsWithoutResolvers, updates0)
       outdatedDeps = collectOutdatedDependencies(updateStates0)
       (updateStates1, updates1) <- {
@@ -169,6 +171,21 @@ object PruningAlg {
     info.filesContainingVersion.isEmpty ||
       FilterAlg.isScalaDependencyIgnored(info.dependency, ignoreScalaDependency) ||
       FilterAlg.isDependencyConfigurationIgnored(info.dependency)
+
+  def removeOvertakingUpdates(
+      dependencies: List[Dependency],
+      updates: List[Update.Single]
+  ): List[Update.Single] =
+    updates.filterNot { update =>
+      dependencies.exists { dependency =>
+        dependency.groupId === update.groupId &&
+        dependency.artifactId === update.artifactId && {
+          val dependencyVersion = Version(dependency.version)
+          dependencyVersion > Version(update.currentVersion) &&
+          dependencyVersion <= Version(update.nextVersion)
+        }
+      }
+    }
 
   def collectOutdatedDependencies(updateStates: List[UpdateState]): List[DependencyOutdated] =
     updateStates.collect { case state: DependencyOutdated => state }
