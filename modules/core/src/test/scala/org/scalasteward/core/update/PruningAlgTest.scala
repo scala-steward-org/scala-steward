@@ -2,7 +2,10 @@ package org.scalasteward.core.update
 
 import io.circe.parser.decode
 import munit.FunSuite
-import org.scalasteward.core.data.RepoData
+import org.scalasteward.core.TestInstances.dummyRepoCache
+import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.data.Resolver.MavenRepository
+import org.scalasteward.core.data.{DependencyInfo, RepoData, Scope}
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockContext.context.pruningAlg
 import org.scalasteward.core.mock.MockState
@@ -388,5 +391,36 @@ class PruningAlgTest extends FunSuite {
       )
     )
     assertEquals(state, expected)
+  }
+
+  test("needsAttention: no overtaking updates") {
+    val repo = Repo("pruning-test", "repo5")
+    val repoCache = dummyRepoCache.copy(dependencyInfos =
+      List(
+        Scope(
+          List(
+            DependencyInfo("org.scala-lang" % "scala-library" % "2.12.13", List("build.sbt")),
+            DependencyInfo("org.scala-lang" % "scala-library" % "2.13.5", List("build.sbt"))
+          ),
+          List(MavenRepository("public", "https://repo5.org/maven/", None))
+        )
+      )
+    )
+    val data = RepoData(repo, repoCache, RepoConfig.empty)
+    val versionsFile =
+      config.workspace / "store/versions/v2/https/repo5.org/maven/org/scala-lang/scala-library/versions.json"
+    val versionsContent =
+      s"""|{
+          |  "updatedAt" : 9999999999999,
+          |  "versions" : [
+          |    "2.12.13",
+          |    "2.13.5"
+          |  ]
+          |}""".stripMargin
+    (for {
+      initial <- MockState.empty.addFiles(versionsFile -> versionsContent)
+      // This should not propose an update from 2.12.13 to 2.13.5.
+      (_, updates) <- pruningAlg.needsAttention(data).runA(initial)
+    } yield assertEquals(updates, List.empty)).unsafeRunSync()
   }
 }
