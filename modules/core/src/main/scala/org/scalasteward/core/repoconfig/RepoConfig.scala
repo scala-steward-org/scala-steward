@@ -31,7 +31,9 @@ final case class RepoConfig(
     buildRoots: Option[List[BuildRootConfig]] = None
 ) {
   def buildRootsOrDefault: List[BuildRootConfig] =
-    buildRoots.getOrElse(List(BuildRootConfig.repoRoot))
+    buildRoots
+      .map(_.filterNot(_.relativePath.contains("..")))
+      .getOrElse(List(BuildRootConfig.repoRoot))
 
   def updatePullRequestsOrDefault: PullRequestUpdateStrategy =
     updatePullRequests.getOrElse(PullRequestUpdateStrategy.default)
