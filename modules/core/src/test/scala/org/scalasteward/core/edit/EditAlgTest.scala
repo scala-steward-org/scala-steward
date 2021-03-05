@@ -1,8 +1,9 @@
 package org.scalasteward.core.edit
 
 import munit.FunSuite
+import org.scalasteward.core.TestInstances.dummyRepoCache
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.{GroupId, Update}
+import org.scalasteward.core.data.{GroupId, RepoData, Update}
 import org.scalasteward.core.mock.MockContext.context.editAlg
 import org.scalasteward.core.mock.MockContext.{config, envVars}
 import org.scalasteward.core.mock.MockState
@@ -18,6 +19,7 @@ class EditAlgTest extends FunSuite {
 
   test("applyUpdate") {
     val repo = Repo("edit-alg", "test-1")
+    val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
     val repoDir = config.workspace / repo.show
     val update = Update.Single("org.typelevel" % "cats-core" % "1.2.0", Nel.of("1.3.0"))
     val file1 = repoDir / "build.sbt"
@@ -25,7 +27,7 @@ class EditAlgTest extends FunSuite {
 
     val state = MockState.empty
       .addFiles(file1 -> """val catsVersion = "1.2.0"""", file2 -> "")
-      .flatMap(editAlg.applyUpdate(repo, RepoConfig.empty, update).runS)
+      .flatMap(editAlg.applyUpdate(data, update).runS)
       .unsafeRunSync()
 
     val expected = MockState.empty.copy(
@@ -53,6 +55,7 @@ class EditAlgTest extends FunSuite {
 
   test("applyUpdate with scalafmt update") {
     val repo = Repo("edit-alg", "test-2")
+    val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
     val repoDir = config.workspace / repo.show
     val update = Update.Single("org.scalameta" % "scalafmt-core" % "2.0.0", Nel.of("2.1.0"))
     val scalafmtConf = repoDir / ".scalafmt.conf"
@@ -64,7 +67,7 @@ class EditAlgTest extends FunSuite {
 
     val state = MockState.empty
       .addFiles(scalafmtConf -> scalafmtConfContent, buildSbt -> "")
-      .flatMap(editAlg.applyUpdate(repo, RepoConfig.empty, update).runS)
+      .flatMap(editAlg.applyUpdate(data, update).runS)
       .unsafeRunSync()
 
     val expected = MockState.empty.copy(
@@ -110,6 +113,7 @@ class EditAlgTest extends FunSuite {
 
   test("apply update to ammonite file") {
     val repo = Repo("edit-alg", "test-3")
+    val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
     val repoDir = config.workspace / repo.show
     val update = Update.Single("org.typelevel" % "cats-core" % "1.2.0", Nel.of("1.3.0"))
     val file1 = repoDir / "script.sc"
@@ -120,7 +124,7 @@ class EditAlgTest extends FunSuite {
         file1 -> """import $ivy.`org.typelevel::cats-core:1.2.0`, cats.implicits._"""",
         file2 -> """"org.typelevel" %% "cats-core" % "1.2.0""""
       )
-      .flatMap(editAlg.applyUpdate(repo, RepoConfig.empty, update).runS)
+      .flatMap(editAlg.applyUpdate(data, update).runS)
       .unsafeRunSync()
 
     val expected = MockState.empty.copy(
@@ -251,11 +255,12 @@ class EditAlgTest extends FunSuite {
       update: Update,
       files: Map[String, String]
   ): Map[String, String] = {
+    val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
     val repoDir = config.workspace / repo.show
     val filesInRepoDir = files.map { case (file, content) => repoDir / file -> content }
     MockState.empty
       .addFiles(filesInRepoDir.toSeq: _*)
-      .flatMap(editAlg.applyUpdate(repo, RepoConfig.empty, update).runS)
+      .flatMap(editAlg.applyUpdate(data, update).runS)
       .map(_.files)
       .unsafeRunSync()
       .map { case (file, content) => file.toString.replace(repoDir.toString + "/", "") -> content }

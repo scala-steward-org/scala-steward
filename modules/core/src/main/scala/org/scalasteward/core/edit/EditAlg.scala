@@ -20,18 +20,23 @@ import better.files.File
 import cats.effect.MonadThrow
 import cats.syntax.all._
 import fs2.Stream
-import org.typelevel.log4cats.Logger
 import org.scalasteward.core.buildtool.BuildToolDispatcher
+import org.scalasteward.core.data.RepoData
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.edit.hooks.HookExecutor
+import org.scalasteward.core.edit.scalafix.ScalafixMigration
+import org.scalasteward.core.edit.scalafix.ScalafixMigrationsFinder
 import org.scalasteward.core.git
-import org.scalasteward.core.git.{Commit, GitAlg}
-import org.scalasteward.core.io.{isSourceFile, FileAlg, WorkspaceAlg}
+import org.scalasteward.core.git.Commit
+import org.scalasteward.core.git.GitAlg
+import org.scalasteward.core.io.FileAlg
+import org.scalasteward.core.io.WorkspaceAlg
+import org.scalasteward.core.io.isSourceFile
 import org.scalasteward.core.repoconfig.RepoConfig
-import org.scalasteward.core.edit.scalafix.{ScalafixMigration, ScalafixMigrationsFinder}
 import org.scalasteward.core.util._
 import org.scalasteward.core.util.logger._
 import org.scalasteward.core.vcs.data.Repo
+import org.typelevel.log4cats.Logger
 
 final class EditAlg[F[_]](implicit
     buildToolDispatcher: BuildToolDispatcher[F],
@@ -44,13 +49,8 @@ final class EditAlg[F[_]](implicit
     workspaceAlg: WorkspaceAlg[F],
     F: MonadThrow[F]
 ) {
-  def applyUpdate(
-      repo: Repo,
-      repoConfig: RepoConfig,
-      update: Update,
-      preCommit: F[Unit] = F.unit
-  ): F[List[Commit]] =
-    findFilesContainingCurrentVersion(repo, repoConfig, update).flatMap {
+  def applyUpdate(data: RepoData, update: Update, preCommit: F[Unit] = F.unit): F[List[Commit]] =
+    findFilesContainingCurrentVersion(data.repo, data.config, update).flatMap {
       case None =>
         logger.warn("No files found that contain the current version").as(Nil)
       case Some(files) =>
@@ -59,6 +59,7 @@ final class EditAlg[F[_]](implicit
           case true =>
             for {
               _ <- preCommit
+              repo = data.repo
               migrations = scalafixMigrationsFinder.findMigrations(update)
               cs1 <-
                 if (migrations.isEmpty) F.pure(Nil)
@@ -66,8 +67,8 @@ final class EditAlg[F[_]](implicit
                   gitAlg.discardChanges(repo) *>
                     runScalafixMigrations(repo, migrations) <*
                     bumpVersion(update, files)
-              cs2 <- gitAlg.commitAllIfDirty(repo, git.commitMsgFor(update, repoConfig.commits))
-              cs3 <- hookExecutor.execPostUpdateHooks(repo, repoConfig, update)
+              cs2 <- gitAlg.commitAllIfDirty(repo, git.commitMsgFor(update, data.config.commits))
+              cs3 <- hookExecutor.execPostUpdateHooks(data, update)
             } yield cs1 ++ cs2 ++ cs3
         }
     }
