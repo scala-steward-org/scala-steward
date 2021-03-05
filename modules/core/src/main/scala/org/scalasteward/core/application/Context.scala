@@ -134,7 +134,7 @@ object Context {
       implicit val pullRequestRepository: PullRequestRepository[F] =
         new PullRequestRepository[F](pullRequestsStore)
       implicit val scalafmtAlg: ScalafmtAlg[F] = ScalafmtAlg.create[F]
-      implicit val selfCheckAlg: SelfCheckAlg[F] = new SelfCheckAlg[F]
+      implicit val selfCheckAlg: SelfCheckAlg[F] = new SelfCheckAlg[F](config)
       implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create[F]
       implicit val versionsCache: VersionsCache[F] =
         new VersionsCache[F](config.cacheTtl, versionsStore)
@@ -142,7 +142,8 @@ object Context {
       implicit val mavenAlg: MavenAlg[F] = MavenAlg.create[F](config)
       implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F](config)
       implicit val millAlg: MillAlg[F] = MillAlg.create[F]
-      implicit val buildToolDispatcher: BuildToolDispatcher[F] = BuildToolDispatcher.create[F]
+      implicit val buildToolDispatcher: BuildToolDispatcher[F] =
+        BuildToolDispatcher.create[F](config)
       implicit val refreshErrorAlg: RefreshErrorAlg[F] = new RefreshErrorAlg[F](refreshErrorStore)
       implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F](config)
       implicit val editAlg: EditAlg[F] = new EditAlg[F]

@@ -21,8 +21,10 @@ import cats.syntax.all._
 import cats.{Apply, Monad}
 import org.http4s.Uri
 import org.http4s.Uri.UserInfo
+import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.Config._
+import org.scalasteward.core.data.Resolver
 import org.scalasteward.core.git.Author
 import org.scalasteward.core.io.{ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util
@@ -72,7 +74,9 @@ final case class Config(
     cacheTtl: FiniteDuration,
     bitbucketServerCfg: BitbucketServerCfg,
     gitLabCfg: GitLabCfg,
-    githubApp: Option[GitHubApp]
+    githubApp: Option[GitHubApp],
+    urlCheckerTestUrl: Uri,
+    defaultResolver: Resolver
 ) {
   def vcsUser[F[_]](implicit
       processAlg: ProcessAlg[F],
@@ -157,6 +161,10 @@ object Config {
       gitLabCfg = GitLabCfg(
         mergeWhenPipelineSucceeds = args.gitlabMergeWhenPipelineSucceeds
       ),
-      githubApp = Apply[Option].map2(args.githubAppId, args.githubAppKeyFile)(GitHubApp)
+      githubApp = Apply[Option].map2(args.githubAppId, args.githubAppKeyFile)(GitHubApp),
+      urlCheckerTestUrl = args.urlCheckerTestUrl.getOrElse(uri"https://github.com"),
+      defaultResolver = args.defaultMavenRepo
+        .map(url => Resolver.MavenRepository("default", url, None))
+        .getOrElse(Resolver.mavenCentral)
     )
 }
