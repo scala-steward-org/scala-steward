@@ -57,7 +57,7 @@ object Cli {
       gitlabMergeWhenPipelineSucceeds: Boolean = false,
       githubAppKeyFile: Option[File] = None,
       githubAppId: Option[Long] = None,
-      selfCheckUri: Option[Uri] = None,
+      urlCheckerTestUrl: Option[Uri] = None,
       defaultMavenRepo: Option[String] = None
   )
 

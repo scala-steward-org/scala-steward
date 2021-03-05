@@ -75,7 +75,7 @@ final case class Config(
     bitbucketServerCfg: BitbucketServerCfg,
     gitLabCfg: GitLabCfg,
     githubApp: Option[GitHubApp],
-    selfCheckUri: Uri,
+    urlCheckerTestUrl: Uri,
     defaultResolver: Resolver
 ) {
   def vcsUser[F[_]](implicit
@@ -162,7 +162,7 @@ object Config {
         mergeWhenPipelineSucceeds = args.gitlabMergeWhenPipelineSucceeds
       ),
       githubApp = Apply[Option].map2(args.githubAppId, args.githubAppKeyFile)(GitHubApp),
-      selfCheckUri = args.selfCheckUri.getOrElse(uri"https://github.com"),
+      urlCheckerTestUrl = args.urlCheckerTestUrl.getOrElse(uri"https://github.com"),
       defaultResolver = args.defaultMavenRepo
         .map(url => Resolver.MavenRepository("default", url, None))
         .getOrElse(Resolver.mavenCentral)

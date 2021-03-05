@@ -19,7 +19,6 @@ package org.scalasteward.core.application
 import cats.MonadThrow
 import cats.syntax.all._
 import org.typelevel.log4cats.Logger
-import org.http4s.Uri
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.scalafmt.{scalafmtBinary, ScalafmtAlg}
 import org.scalasteward.core.util.UrlChecker
@@ -55,8 +54,8 @@ final class SelfCheckAlg[F[_]](config: Config)(implicit
 
   private def checkUrlChecker: F[Unit] =
     for {
-      res <- urlChecker.exists(config.selfCheckUri)
-      url = config.selfCheckUri
+      res <- urlChecker.exists(config.urlCheckerTestUrl)
+      url = config.urlCheckerTestUrl
       msg = s"Self check of UrlChecker failed: checking that $url exists failed"
       _ <- if (!res) logger.warn(msg) else F.unit
     } yield ()
