@@ -43,6 +43,7 @@ final class HookExecutor[F[_]](implicit
         update.groupId === hook.groupId &&
         update.artifactIds.exists(_.name === hook.artifactId.name)
       }
+      .distinctBy(_.command)
       .flatTraverse(execPostUpdateHook(data.repo, update, _))
 
   private def execPostUpdateHook(
