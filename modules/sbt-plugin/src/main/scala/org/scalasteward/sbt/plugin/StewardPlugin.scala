@@ -33,7 +33,6 @@ object StewardPlugin extends AutoPlugin {
   override def projectSettings: Seq[Def.Setting[_]] =
     Seq(
       stewardDependencies := {
-        val log = streams.value.log
         val scalaBinaryVersionValue = scalaBinaryVersion.value
         val scalaVersionValue = scalaVersion.value
         val sbtCredentials = findCredentials.value
@@ -72,7 +71,7 @@ object StewardPlugin extends AutoPlugin {
         sb.append("--- snip ---").append(ls)
         dependencies.foreach(d => sb.append(d.asJson).append(ls))
         resolvers.foreach(r => sb.append(r.asJson).append(ls))
-        log.info(sb.result())
+        println(sb.result())
       }
     )
 
