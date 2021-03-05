@@ -19,10 +19,10 @@ package org.scalasteward.core.io
 import better.files.File
 import cats.effect.{Blocker, Concurrent, ContextShift, Timer}
 import cats.syntax.all._
-import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config.ProcessCfg
 import org.scalasteward.core.io.process.Args
 import org.scalasteward.core.util.Nel
+import org.typelevel.log4cats.Logger
 
 trait ProcessAlg[F[_]] {
   def exec(

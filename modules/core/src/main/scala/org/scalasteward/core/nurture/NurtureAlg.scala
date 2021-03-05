@@ -21,7 +21,7 @@ import cats.effect.BracketThrow
 import cats.implicits._
 import eu.timepit.refined.types.numeric.NonNegInt
 import fs2.Stream
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import org.http4s.Uri
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.coursier.CoursierAlg
@@ -30,7 +30,7 @@ import org.scalasteward.core.data._
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Branch, Commit, GitAlg}
 import org.scalasteward.core.repoconfig.PullRequestUpdateStrategy
-import org.scalasteward.core.scalafix.MigrationAlg
+import org.scalasteward.core.edit.scalafix.ScalafixMigrationsFinder
 import org.scalasteward.core.util.UrlChecker
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data._
@@ -42,8 +42,8 @@ final class NurtureAlg[F[_]](config: Config)(implicit
     editAlg: EditAlg[F],
     gitAlg: GitAlg[F],
     logger: Logger[F],
-    migrationAlg: MigrationAlg,
     pullRequestRepository: PullRequestRepository[F],
+    scalafixMigrationsFinder: ScalafixMigrationsFinder,
     vcsApiAlg: VCSApiAlg[F],
     vcsExtraAlg: VCSExtraAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
@@ -150,10 +150,9 @@ final class NurtureAlg[F[_]](config: Config)(implicit
     gitAlg.returnToCurrentBranch(data.repo) {
       val createBranch = logger.info(s"Create branch ${data.updateBranch.name}") >>
         gitAlg.createBranch(data.repo, data.updateBranch)
-      editAlg.applyUpdate(data.repo, data.repoConfig, data.update, createBranch).flatMap {
-        editCommits =>
-          if (editCommits.isEmpty) logger.warn("No commits created").as(Ignored)
-          else pushCommits(data, editCommits) >> createPullRequest(data)
+      editAlg.applyUpdate(data.repoData, data.update, createBranch).flatMap { editCommits =>
+        if (editCommits.isEmpty) logger.warn("No commits created").as(Ignored)
+        else pushCommits(data, editCommits) >> createPullRequest(data)
       }
     }
 
@@ -181,7 +180,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
           .traverse(vcsExtraAlg.getReleaseRelatedUrls(_, data.update))
       filesWithOldVersion <- gitAlg.findFilesContaining(data.repo, data.update.currentVersion)
       branchName = vcs.createBranch(config.vcsType, data.fork, data.update)
-      migrations = migrationAlg.findMigrations(data.update)
+      migrations = scalafixMigrationsFinder.findMigrations(data.update)
       requestData = NewPullRequestData.from(
         data,
         branchName,
@@ -240,7 +239,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
         s"Merge branch ${data.baseBranch.name} into ${data.updateBranch.name} and apply again"
       )
       maybeMergeCommit <- gitAlg.mergeTheirs(data.repo, data.baseBranch)
-      editCommits <- editAlg.applyUpdate(data.repo, data.repoConfig, data.update)
+      editCommits <- editAlg.applyUpdate(data.repoData, data.update)
       result <- pushCommits(data, maybeMergeCommit.toList ++ editCommits)
     } yield result
 }

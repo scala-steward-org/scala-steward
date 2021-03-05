@@ -23,7 +23,7 @@ import org.scalasteward.core.buildtool.BuildToolAlg
 import org.scalasteward.core.data.Scope
 import org.scalasteward.core.data.Scope.Dependencies
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.scalafix.Migration
+import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.BuildRoot
 
@@ -67,6 +67,7 @@ object MillAlg {
           )
         } yield parsed.map(module => Scope(module.dependencies, module.repositories))
 
-      override def runMigration(buildRoot: BuildRoot, migration: Migration): F[Unit] = F.unit
+      override def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
+        F.unit
     }
 }

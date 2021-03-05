@@ -1,14 +1,14 @@
 package org.scalasteward.core
 
-import _root_.io.chrisdavenport.log4cats.Logger
-import _root_.io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import _root_.org.typelevel.log4cats.Logger
+import _root_.org.typelevel.log4cats.slf4j.Slf4jLogger
 import cats.effect.{ContextShift, IO, Timer}
 import eu.timepit.refined.scalacheck.numeric._
 import eu.timepit.refined.types.numeric.NonNegInt
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.Update.Single
-import org.scalasteward.core.data.{GroupId, Resolver, Scope, Update, Version}
+import org.scalasteward.core.data._
 import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.repocache.RepoCache
@@ -143,6 +143,15 @@ object TestInstances {
   private def smallListOf[A](maxSize: Int, genA: Gen[A]): Gen[List[A]] =
     Gen.choose(0, maxSize).flatMap(n => Gen.listOfN(n, genA))
 
+  implicit val includeScalaStrategyArbitrary: Arbitrary[IncludeScalaStrategy] =
+    Arbitrary(
+      Gen.oneOf(
+        IncludeScalaStrategy.Yes,
+        IncludeScalaStrategy.Draft,
+        IncludeScalaStrategy.No
+      )
+    )
+
   implicit val updatesConfigArbitrary: Arbitrary[UpdatesConfig] =
     Arbitrary(
       for {
@@ -150,7 +159,7 @@ object TestInstances {
         allow <- smallListOf(4, Arbitrary.arbitrary[UpdatePattern])
         ignore <- smallListOf(4, Arbitrary.arbitrary[UpdatePattern])
         limit <- Arbitrary.arbitrary[Option[NonNegInt]]
-        includeScala <- Arbitrary.arbitrary[Option[Boolean]]
+        includeScala <- Arbitrary.arbitrary[Option[IncludeScalaStrategy]]
         fileExtensions <- Arbitrary.arbitrary[Option[List[String]]]
       } yield UpdatesConfig(
         pin = pin,

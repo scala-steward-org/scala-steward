@@ -14,20 +14,23 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.scalafix
+package org.scalasteward.core.edit.scalafix
 
 import io.circe.Decoder
-import io.circe.generic.extras.Configuration
-import io.circe.generic.extras.semiauto._
+import io.circe.generic.semiauto._
+import org.scalasteward.core.data.{GroupId, Version}
+import org.scalasteward.core.util.Nel
 
-final case class ScalafixMigrations(
-    migrations: List[Migration] = List.empty
+final case class ScalafixMigration(
+    groupId: GroupId,
+    artifactIds: Nel[String],
+    newVersion: Version,
+    rewriteRules: Nel[String],
+    doc: Option[String],
+    scalacOptions: Option[Nel[String]]
 )
 
-object ScalafixMigrations {
-  implicit val configuration: Configuration =
-    Configuration.default.withDefaults
-
-  implicit val scalafixMigrationsDecoder: Decoder[ScalafixMigrations] =
-    deriveConfiguredDecoder
+object ScalafixMigration {
+  implicit val scalafixMigrationDecoder: Decoder[ScalafixMigration] =
+    deriveDecoder[ScalafixMigration]
 }

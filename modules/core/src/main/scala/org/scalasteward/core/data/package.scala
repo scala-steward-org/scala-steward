@@ -14,15 +14,18 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.repocache
+package org.scalasteward.core
 
-import org.scalasteward.core.persistence.KeyValueStore
-import org.scalasteward.core.vcs.data.Repo
+package object data {
+  val scalaLangGroupId: GroupId = GroupId("org.scala-lang")
 
-final class RepoCacheRepository[F[_]](kvStore: KeyValueStore[F, Repo, RepoCache]) {
-  def findCache(repo: Repo): F[Option[RepoCache]] =
-    kvStore.get(repo)
-
-  def updateCache(repo: Repo, repoCache: RepoCache): F[Unit] =
-    kvStore.put(repo, repoCache)
+  val scalaLangModules: List[(GroupId, ArtifactId)] =
+    List(
+      (scalaLangGroupId, ArtifactId("scala-compiler")),
+      (scalaLangGroupId, ArtifactId("scala-library")),
+      (scalaLangGroupId, ArtifactId("scala-reflect")),
+      (scalaLangGroupId, ArtifactId("scalap")),
+      (scalaLangGroupId, ArtifactId("scala3-compiler")),
+      (scalaLangGroupId, ArtifactId("scala3-library"))
+    )
 }

@@ -17,6 +17,7 @@
 package org.scalasteward.core.edit.hooks
 
 import org.scalasteward.core.data.{ArtifactId, GroupId, Update}
+import org.scalasteward.core.repocache.RepoCache
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.Nel
 
@@ -26,5 +27,6 @@ final case class PostUpdateHook(
     command: Nel[String],
     useSandbox: Boolean,
     commitMessage: Update => String,
+    enabledByCache: RepoCache => Boolean,
     enabledByConfig: RepoConfig => Boolean
 )

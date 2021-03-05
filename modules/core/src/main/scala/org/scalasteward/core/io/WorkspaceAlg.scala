@@ -19,9 +19,9 @@ package org.scalasteward.core.io
 import better.files.File
 import cats.FlatMap
 import cats.syntax.all._
-import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.vcs.data.{BuildRoot, Repo}
+import org.typelevel.log4cats.Logger
 
 trait WorkspaceAlg[F[_]] {
   def cleanWorkspace: F[Unit]

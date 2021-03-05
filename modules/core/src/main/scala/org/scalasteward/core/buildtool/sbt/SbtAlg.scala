@@ -21,14 +21,14 @@ import cats.Functor
 import cats.data.OptionT
 import cats.effect.BracketThrow
 import cats.syntax.all._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.BuildToolAlg
 import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.buildtool.sbt.data.SbtVersion
 import org.scalasteward.core.data.{Dependency, Scope}
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.scalafix.Migration
+import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.BuildRoot
 
@@ -89,7 +89,7 @@ object SbtAlg {
           additionalDependencies <- getAdditionalDependencies(buildRoot)
         } yield additionalDependencies ::: dependencies
 
-      override def runMigration(buildRoot: BuildRoot, migration: Migration): F[Unit] =
+      override def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
         addGlobalPluginTemporarily(scalaStewardScalafixSbt) {
           workspaceAlg.buildRootDir(buildRoot).flatMap { buildRootDir =>
             val withScalacOptions =

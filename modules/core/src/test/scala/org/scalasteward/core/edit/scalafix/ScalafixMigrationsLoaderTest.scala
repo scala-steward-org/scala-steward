@@ -1,17 +1,18 @@
-package org.scalasteward.core.scalafix
+package org.scalasteward.core.edit.scalafix
 
 import munit.FunSuite
 import org.http4s.Uri
 import org.scalasteward.core.application.Config.ScalafixCfg
 import org.scalasteward.core.data.{GroupId, Version}
+import org.scalasteward.core.edit.scalafix.ScalafixMigrationsLoaderTest.mockState
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
-import org.scalasteward.core.mock.MockContext.context.migrationsLoader
+import org.scalasteward.core.mock.MockContext.context.scalafixMigrationsLoader
+import org.scalasteward.core.mock.MockContext.mockRoot
 import org.scalasteward.core.mock.MockState
-import org.scalasteward.core.scalafix.MigrationsLoaderTest.mockState
 import org.scalasteward.core.util.Nel
 
-class MigrationsLoaderTest extends FunSuite {
-  val migrationsUri: Uri = Uri.unsafeFromString("/tmp/scala-steward/extra-migrations.conf")
+class ScalafixMigrationsLoaderTest extends FunSuite {
+  val migrationsUri: Uri = Uri.unsafeFromString(s"$mockRoot/extra-migrations.conf")
   val migrationsContent: String =
     """|migrations = [
        |  {
@@ -22,7 +23,7 @@ class MigrationsLoaderTest extends FunSuite {
        |    doc: "https://scalacenter.github.io/scalafix/"
        |  }
        |]""".stripMargin
-  val migration: Migration = Migration(
+  val migration: ScalafixMigration = ScalafixMigration(
     GroupId("org.ice.cream"),
     Nel.of("yumyum-.*"),
     Version("1.0.0"),
@@ -32,7 +33,7 @@ class MigrationsLoaderTest extends FunSuite {
   )
 
   test("loadAll: without extra file, without defaults") {
-    val migrations = migrationsLoader
+    val migrations = scalafixMigrationsLoader
       .loadAll(ScalafixCfg(Nil, disableDefaults = true))
       .runA(mockState)
       .unsafeRunSync()
@@ -40,7 +41,7 @@ class MigrationsLoaderTest extends FunSuite {
   }
 
   test("loadAll: without extra file, with defaults") {
-    val migrations = migrationsLoader
+    val migrations = scalafixMigrationsLoader
       .loadAll(ScalafixCfg(Nil, disableDefaults = false))
       .runA(mockState)
       .unsafeRunSync()
@@ -48,8 +49,8 @@ class MigrationsLoaderTest extends FunSuite {
   }
 
   test("loadAll: with extra file, without defaults") {
-    val initialState = mockState.addUri(migrationsUri, migrationsContent)
-    val migrations = migrationsLoader
+    val initialState = mockState.addUris(migrationsUri -> migrationsContent)
+    val migrations = scalafixMigrationsLoader
       .loadAll(ScalafixCfg(List(migrationsUri), disableDefaults = true))
       .runA(initialState)
       .unsafeRunSync()
@@ -57,8 +58,8 @@ class MigrationsLoaderTest extends FunSuite {
   }
 
   test("loadAll: with extra file, with defaults") {
-    val initialState = mockState.addUri(migrationsUri, migrationsContent)
-    val migrations = migrationsLoader
+    val initialState = mockState.addUris(migrationsUri -> migrationsContent)
+    val migrations = scalafixMigrationsLoader
       .loadAll(ScalafixCfg(List(migrationsUri), disableDefaults = false))
       .runA(initialState)
       .unsafeRunSync()
@@ -67,8 +68,8 @@ class MigrationsLoaderTest extends FunSuite {
   }
 
   test("loadAll: malformed extra file") {
-    val initialState = mockState.addUri(migrationsUri, """{"key": "i'm not a valid Migration}""")
-    val migrations = migrationsLoader
+    val initialState = mockState.addUris(migrationsUri -> """{"key": "i'm not a valid Migration}""")
+    val migrations = scalafixMigrationsLoader
       .loadAll(ScalafixCfg(List(migrationsUri), disableDefaults = false))
       .runA(initialState)
       .attempt
@@ -77,9 +78,9 @@ class MigrationsLoaderTest extends FunSuite {
   }
 }
 
-object MigrationsLoaderTest {
-  val mockState: MockState = MockState.empty.addUri(
-    MigrationsLoader.defaultScalafixMigrationsUrl,
-    ioFileAlg.readResource("scalafix-migrations.conf").unsafeRunSync()
+object ScalafixMigrationsLoaderTest {
+  val mockState: MockState = MockState.empty.addUris(
+    ScalafixMigrationsLoader.defaultScalafixMigrationsUrl ->
+      ioFileAlg.readResource("scalafix-migrations.conf").unsafeRunSync()
   )
 }

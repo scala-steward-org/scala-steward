@@ -40,4 +40,8 @@ object uri {
 
   val withUserInfo: Optional[Uri, UserInfo] =
     authorityWithUserInfo.compose(withAuthority)
+
+  def browsableUriFromString(s: String): Option[Uri] =
+    if (s.isEmpty || s.startsWith("git@") || s.startsWith("git:")) None
+    else Uri.fromString(s).toOption.filter(_.scheme.isDefined)
 }

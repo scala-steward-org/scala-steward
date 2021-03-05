@@ -18,7 +18,7 @@ package org.scalasteward.core.util
 
 import cats.syntax.all._
 import cats.{Foldable, Functor, Monad, MonadThrow}
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import org.scalasteward.core.data.Update
 import scala.concurrent.duration.FiniteDuration
 
@@ -28,6 +28,11 @@ object logger {
         F: MonadThrow[F]
     ): F[Either[Throwable, A]] =
       logger.info(label) >> attemptLogError(s"${errorLabel.getOrElse(label)} failed")(fa)
+
+    def attemptLogWarn[A](message: String)(fa: F[A])(implicit
+        F: MonadThrow[F]
+    ): F[Either[Throwable, A]] =
+      attemptLogImpl(fa, logger.warn(_)(message))
 
     def attemptLogWarn_[A](message: String)(fa: F[A])(implicit F: MonadThrow[F]): F[Unit] =
       attemptLogImpl_(fa, logger.warn(_)(message))

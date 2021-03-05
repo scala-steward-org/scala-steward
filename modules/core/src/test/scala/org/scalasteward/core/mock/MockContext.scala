@@ -3,29 +3,30 @@ package org.scalasteward.core.mock
 import better.files.File
 import cats.Parallel
 import cats.effect.{BracketThrow, Sync}
-import io.chrisdavenport.log4cats.Logger
 import org.http4s.client.Client
 import org.http4s.{HttpApp, Uri}
 import org.scalasteward.core.TestInstances.ioContextShift
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.{Cli, Config, Context}
+import org.scalasteward.core.edit.scalafix.ScalafixMigrationsLoaderTest
 import org.scalasteward.core.io._
-import org.scalasteward.core.scalafix.MigrationsLoaderTest
 import org.scalasteward.core.vcs.VCSType
 import org.scalasteward.core.vcs.data.AuthenticatedUser
+import org.typelevel.log4cats.Logger
 import scala.concurrent.duration._
 
 object MockContext {
+  val mockRoot: File = File.temp / "scala-steward"
   val args: Cli.Args = Cli.Args(
-    workspace = File.temp / "ws",
-    reposFile = File.temp / "repos.md",
-    defaultRepoConf = Some(File.temp / "default.scala-steward.conf"),
+    workspace = mockRoot / "workspace",
+    reposFile = mockRoot / "repos.md",
+    defaultRepoConf = Some(mockRoot / "default.scala-steward.conf"),
     gitAuthorName = "Bot Doe",
     gitAuthorEmail = "bot@example.org",
     vcsType = VCSType.GitHub,
     vcsApiHost = Uri(),
     vcsLogin = "bot-doe",
-    gitAskPass = File.temp / "askpass.sh",
+    gitAskPass = mockRoot / "askpass.sh",
     enableSandbox = Some(true),
     envVar = List(EnvVar("VAR1", "val1"), EnvVar("VAR2", "val2")),
     cacheTtl = 1.hour
@@ -44,5 +45,5 @@ object MockContext {
   implicit private val workspaceAlg: WorkspaceAlg[MockEff] = new MockWorkspaceAlg
 
   val context: Context[MockEff] =
-    Context.step1[MockEff](config).runA(MigrationsLoaderTest.mockState).unsafeRunSync()
+    Context.step1[MockEff](config).runA(ScalafixMigrationsLoaderTest.mockState).unsafeRunSync()
 }

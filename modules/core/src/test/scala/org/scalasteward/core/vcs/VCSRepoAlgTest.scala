@@ -5,6 +5,7 @@ import org.http4s.syntax.literals._
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.mock.MockContext.context.{gitAlg, logger, vcsRepoAlg}
 import org.scalasteward.core.mock.MockContext.{config, envVars}
+import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.mock.{MockContext, MockEff, MockState}
 import org.scalasteward.core.vcs.data.{Repo, RepoOut, UserOut}
 
@@ -32,18 +33,18 @@ class VCSRepoAlgTest extends FunSuite {
     val url0 = s"https://${config.vcsLogin}@github.com/fthomas/datapackage"
     val url1 = s"https://${config.vcsLogin}@github.com/scala-steward/datapackage"
     val expected = MockState.empty.copy(
-      commands = Vector(
-        envVars ++ List(config.workspace.toString, "git", "clone", url1, repoDir),
-        envVars ++ List(repoDir, "git", "config", "user.email", "bot@example.org"),
-        envVars ++ List(repoDir, "git", "config", "user.name", "Bot Doe"),
-        envVars ++ List(repoDir, "git", "remote", "add", "upstream", url0),
-        envVars ++ List(repoDir, "git", "fetch", "--force", "--tags", "upstream", "master"),
-        envVars ++ List(repoDir, "git", "checkout", "-B", "master", "--track", "upstream/master"),
-        envVars ++ List(repoDir, "git", "merge", "upstream/master"),
-        envVars ++ List(repoDir, "git", "push", "--force", "--set-upstream", "origin", "master"),
-        envVars ++ List(repoDir, "git", "submodule", "update", "--init", "--recursive")
-      ),
-      logs = Vector((None, "Clone and synchronize fthomas/datapackage"))
+      trace = Vector(
+        Log("Clone and synchronize fthomas/datapackage"),
+        Cmd(envVars, config.workspace.toString, "git", "clone", url1, repoDir),
+        Cmd(envVars, repoDir, "git", "config", "user.email", "bot@example.org"),
+        Cmd(envVars, repoDir, "git", "config", "user.name", "Bot Doe"),
+        Cmd(envVars, repoDir, "git", "remote", "add", "upstream", url0),
+        Cmd(envVars, repoDir, "git", "fetch", "--force", "--tags", "upstream", "master"),
+        Cmd(envVars, repoDir, "git", "checkout", "-B", "master", "--track", "upstream/master"),
+        Cmd(envVars, repoDir, "git", "merge", "upstream/master"),
+        Cmd(envVars, repoDir, "git", "push", "--force", "--set-upstream", "origin", "master"),
+        Cmd(envVars, repoDir, "git", "submodule", "update", "--init", "--recursive")
+      )
     )
     assertEquals(state, expected)
   }

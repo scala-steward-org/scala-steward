@@ -1,12 +1,12 @@
 package org.scalasteward.core.repoconfig
 
-import better.files.File
 import eu.timepit.refined.types.numeric.NonNegInt
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.{GroupId, Update}
 import org.scalasteward.core.mock.MockContext.context.repoConfigAlg
-import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.mock.MockState.TraceEntry.Log
+import org.scalasteward.core.mock.{MockContext, MockState}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 import scala.concurrent.duration._
@@ -14,7 +14,7 @@ import scala.concurrent.duration._
 class RepoConfigAlgTest extends FunSuite {
   test("config with all fields set") {
     val repo = Repo("fthomas", "scala-steward")
-    val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
+    val configFile = MockContext.config.workspace / "fthomas/scala-steward/.scala-steward.conf"
     val content =
       """|updates.allow  = [ { groupId = "eu.timepit"} ]
          |updates.pin  = [
@@ -25,13 +25,13 @@ class RepoConfigAlgTest extends FunSuite {
          |               ]
          |updates.ignore = [ { groupId = "org.acme", version = "1.0" } ]
          |updates.limit = 4
-         |updates.includeScala = true
+         |updates.includeScala = "yes"
          |updates.fileExtensions = [ ".txt" ]
          |pullRequests.frequency = "@weekly"
          |commits.message = "Update ${artifactName} from ${currentVersion} to ${nextVersion}"
          |buildRoots = [ ".", "subfolder/subfolder" ]
          |""".stripMargin
-    val initialState = MockState.empty.add(configFile, content)
+    val initialState = MockState.empty.addFiles(configFile -> content).unsafeRunSync()
     val config = repoConfigAlg
       .readRepoConfig(repo)
       .flatMap(repoConfigAlg.mergeWithDefault)
@@ -68,7 +68,7 @@ class RepoConfigAlgTest extends FunSuite {
           UpdatePattern(GroupId("org.acme"), None, Some(UpdatePattern.Version(Some("1.0"), None)))
         ),
         limit = Some(NonNegInt.unsafeFrom(4)),
-        includeScala = Some(true),
+        includeScala = Some(IncludeScalaStrategy.Yes),
         fileExtensions = Some(List(".txt"))
       ),
       commits = CommitsConfig(
@@ -77,6 +77,52 @@ class RepoConfigAlgTest extends FunSuite {
       buildRoots = Some(List(BuildRootConfig.repoRoot, BuildRootConfig("subfolder/subfolder")))
     )
     assertEquals(config, expected)
+  }
+
+  test("config with 'updates.includeScala = false'") {
+    val content = "updates.includeScala = false"
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    val expected = RepoConfig(updates = UpdatesConfig(includeScala = Some(IncludeScalaStrategy.No)))
+    assertEquals(config, Right(expected))
+  }
+
+  test("config with 'updates.includeScala = true'") {
+    val content = "updates.includeScala = true"
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    val expected =
+      RepoConfig(updates = UpdatesConfig(includeScala = Some(IncludeScalaStrategy.Yes)))
+    assertEquals(config, Right(expected))
+  }
+
+  test("config with 'updates.includeScala = yes'") {
+    val content = """updates.includeScala = "yes""""
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    val expected =
+      RepoConfig(updates = UpdatesConfig(includeScala = Some(IncludeScalaStrategy.Yes)))
+    assertEquals(config, Right(expected))
+  }
+
+  test("config with 'updates.includeScala = no'") {
+    val content = """updates.includeScala = "no""""
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    val expected = RepoConfig(updates = UpdatesConfig(includeScala = Some(IncludeScalaStrategy.No)))
+    assertEquals(config, Right(expected))
+  }
+
+  test("config with 'updates.includeScala = draft'") {
+    val content = """updates.includeScala = "draft""""
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    val expected =
+      RepoConfig(updates = UpdatesConfig(includeScala = Some(IncludeScalaStrategy.Draft)))
+    assertEquals(config, Right(expected))
+  }
+
+  test("config with 'updates.includeScala = foo'") {
+    val content = """updates.includeScala = "foo""""
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    val expected =
+      RepoConfig(updates = UpdatesConfig(includeScala = Some(IncludeScalaStrategy.Draft)))
+    assertEquals(config, Right(expected))
   }
 
   test("config with 'updatePullRequests = false'") {
@@ -154,14 +200,21 @@ class RepoConfigAlgTest extends FunSuite {
     assertEquals(config, Right(expected))
   }
 
+  test("build root with '..'") {
+    val content = """buildRoots = [ "../../../etc" ]"""
+    val config = RepoConfigAlg.parseRepoConfig(content).map(_.buildRootsOrDefault)
+    assertEquals(config, Right(Nil))
+  }
+
   test("malformed config") {
     val repo = Repo("fthomas", "scala-steward")
-    val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
-    val initialState = MockState.empty.add(configFile, """updates.ignore = [ "foo """)
+    val configFile = MockContext.config.workspace / "fthomas/scala-steward/.scala-steward.conf"
+    val initialState =
+      MockState.empty.addFiles(configFile -> """updates.ignore = [ "foo """).unsafeRunSync()
     val (state, config) = repoConfigAlg.readRepoConfig(repo).run(initialState).unsafeRunSync()
 
     assertEquals(config, None)
-    val log = state.logs.headOption.map { case (_, msg) => msg }.getOrElse("")
+    val log = state.trace.collectFirst { case Log((_, msg)) => msg }.getOrElse("")
     assert(clue(log).startsWith("Failed to parse .scala-steward.conf"))
   }
 

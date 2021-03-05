@@ -7,8 +7,9 @@ import munit.FunSuite
 import org.scalasteward.core.TestInstances._
 import org.scalasteward.core.application.Config.{ProcessCfg, SandboxCfg}
 import org.scalasteward.core.io.ProcessAlgTest.ioProcessAlg
-import org.scalasteward.core.mock.MockContext.config
+import org.scalasteward.core.mock.MockContext.{config, mockRoot}
 import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
 import org.scalasteward.core.util.Nel
 import scala.concurrent.duration.Duration
 
@@ -34,14 +35,12 @@ class ProcessAlgTest extends FunSuite {
     val cfg = ProcessCfg(Nil, Duration.Zero, SandboxCfg(Nil, Nil, enableSandbox = false), 8192)
     val state = MockProcessAlg
       .create(cfg)
-      .execSandboxed(Nel.of("echo", "hello"), File.temp)
+      .execSandboxed(Nel.of("echo", "hello"), mockRoot)
       .runS(MockState.empty)
       .unsafeRunSync()
 
     val expected = MockState.empty.copy(
-      commands = Vector(
-        List(File.temp.toString, "echo", "hello")
-      )
+      trace = Vector(Cmd(mockRoot.toString, "echo", "hello"))
     )
 
     assertEquals(state, expected)
@@ -51,20 +50,13 @@ class ProcessAlgTest extends FunSuite {
     val cfg = ProcessCfg(Nil, Duration.Zero, SandboxCfg(Nil, Nil, enableSandbox = true), 8192)
     val state = MockProcessAlg
       .create(cfg)
-      .execSandboxed(Nel.of("echo", "hello"), File.temp)
+      .execSandboxed(Nel.of("echo", "hello"), mockRoot)
       .runS(MockState.empty)
       .unsafeRunSync()
 
     val expected = MockState.empty.copy(
-      commands = Vector(
-        List(
-          File.temp.toString,
-          "firejail",
-          "--quiet",
-          s"--whitelist=${File.temp}",
-          "echo",
-          "hello"
-        )
+      trace = Vector(
+        Cmd(mockRoot.toString, "firejail", "--quiet", s"--whitelist=$mockRoot", "echo", "hello")
       )
     )
 

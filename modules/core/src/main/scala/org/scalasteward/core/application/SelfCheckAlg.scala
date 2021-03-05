@@ -18,7 +18,8 @@ package org.scalasteward.core.application
 
 import cats.MonadThrow
 import cats.syntax.all._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
+import org.http4s.Uri
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.scalafmt.{scalafmtBinary, ScalafmtAlg}
 import org.scalasteward.core.util.UrlChecker

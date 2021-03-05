@@ -20,17 +20,23 @@ import better.files.File
 import cats.effect.MonadThrow
 import cats.syntax.all._
 import fs2.Stream
-import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.buildtool.BuildToolDispatcher
+import org.scalasteward.core.data.RepoData
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.edit.hooks.HookExecutor
+import org.scalasteward.core.edit.scalafix.ScalafixMigration
+import org.scalasteward.core.edit.scalafix.ScalafixMigrationsFinder
 import org.scalasteward.core.git
-import org.scalasteward.core.git.{Commit, GitAlg}
-import org.scalasteward.core.io.{isSourceFile, FileAlg, WorkspaceAlg}
+import org.scalasteward.core.git.Commit
+import org.scalasteward.core.git.GitAlg
+import org.scalasteward.core.io.FileAlg
+import org.scalasteward.core.io.WorkspaceAlg
+import org.scalasteward.core.io.isSourceFile
 import org.scalasteward.core.repoconfig.RepoConfig
-import org.scalasteward.core.scalafix.{Migration, MigrationAlg}
 import org.scalasteward.core.util._
+import org.scalasteward.core.util.logger._
 import org.scalasteward.core.vcs.data.Repo
+import org.typelevel.log4cats.Logger
 
 final class EditAlg[F[_]](implicit
     buildToolDispatcher: BuildToolDispatcher[F],
@@ -38,18 +44,13 @@ final class EditAlg[F[_]](implicit
     gitAlg: GitAlg[F],
     hookExecutor: HookExecutor[F],
     logger: Logger[F],
-    migrationAlg: MigrationAlg,
+    scalafixMigrationsFinder: ScalafixMigrationsFinder,
     streamCompiler: Stream.Compiler[F, F],
     workspaceAlg: WorkspaceAlg[F],
     F: MonadThrow[F]
 ) {
-  def applyUpdate(
-      repo: Repo,
-      repoConfig: RepoConfig,
-      update: Update,
-      preCommit: F[Unit] = F.unit
-  ): F[List[Commit]] =
-    findFilesContainingCurrentVersion(repo, repoConfig, update).flatMap {
+  def applyUpdate(data: RepoData, update: Update, preCommit: F[Unit] = F.unit): F[List[Commit]] =
+    findFilesContainingCurrentVersion(data.repo, data.config, update).flatMap {
       case None =>
         logger.warn("No files found that contain the current version").as(Nil)
       case Some(files) =>
@@ -58,15 +59,16 @@ final class EditAlg[F[_]](implicit
           case true =>
             for {
               _ <- preCommit
-              migrations = migrationAlg.findMigrations(update)
+              repo = data.repo
+              migrations = scalafixMigrationsFinder.findMigrations(update)
               cs1 <-
                 if (migrations.isEmpty) F.pure(Nil)
                 else
                   gitAlg.discardChanges(repo) *>
                     runScalafixMigrations(repo, migrations) <*
                     bumpVersion(update, files)
-              cs2 <- gitAlg.commitAllIfDirty(repo, git.commitMsgFor(update, repoConfig.commits))
-              cs3 <- hookExecutor.execPostUpdateHooks(repo, repoConfig, update)
+              cs2 <- gitAlg.commitAllIfDirty(repo, git.commitMsgFor(update, data.config.commits))
+              cs3 <- hookExecutor.execPostUpdateHooks(data, update)
             } yield cs1 ++ cs2 ++ cs3
         }
     }
@@ -81,21 +83,23 @@ final class EditAlg[F[_]](implicit
       fileAlg.findFiles(repoDir, fileFilter, _.contains(update.currentVersion)).map(Nel.fromList)
     }
 
-  private def runScalafixMigrations(repo: Repo, migrations: List[Migration]): F[List[Commit]] =
-    migrations.traverseFilter { migration =>
-      for {
-        _ <- logger.info(s"Running migration $migration")
-        verb <- buildToolDispatcher.runMigration(repo, migration).attempt.flatMap {
-          case Left(throwable) =>
-            logger.warn(throwable)("Scalafix migration failed").as("Failed")
-          case Right(_) =>
-            F.pure("Applied")
-        }
-        msg1 = s"$verb Scalafix rule(s) ${migration.rewriteRules.mkString_(", ")}"
-        msg2 = migration.doc.map(url => s"See $url for details").toList
-        maybeCommit <- gitAlg.commitAllIfDirty(repo, msg1, msg2: _*)
-      } yield maybeCommit
-    }
+  private def runScalafixMigrations(
+      repo: Repo,
+      migrations: List[ScalafixMigration]
+  ): F[List[Commit]] =
+    migrations.traverseFilter(runScalafixMigration(repo, _))
+
+  private def runScalafixMigration(repo: Repo, migration: ScalafixMigration): F[Option[Commit]] =
+    for {
+      _ <- logger.info(s"Running migration $migration")
+      result <- logger.attemptLogWarn("Scalafix migration failed")(
+        buildToolDispatcher.runMigration(repo, migration)
+      )
+      verb = if (result.isRight) "Applied" else "Failed"
+      msg1 = s"$verb Scalafix rule(s) ${migration.rewriteRules.mkString_(", ")}"
+      msg2 = migration.doc.map(url => s"See $url for details").toList
+      maybeCommit <- gitAlg.commitAllIfDirty(repo, msg1, msg2: _*)
+    } yield maybeCommit
 
   private def bumpVersion(update: Update, files: Nel[File]): F[Boolean] = {
     val actions = UpdateHeuristic.all.map { heuristic =>
