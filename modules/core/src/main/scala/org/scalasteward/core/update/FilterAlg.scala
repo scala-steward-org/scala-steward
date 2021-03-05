@@ -74,13 +74,8 @@ object FilterAlg {
       .flatMap(checkVersionOrdering)
 
   def isScalaDependency(dependency: Dependency): Boolean =
-    (dependency.groupId.value, dependency.artifactId.name) match {
-      case ("org.scala-lang", "scala-compiler") => true
-      case ("org.scala-lang", "scala-library")  => true
-      case ("org.scala-lang", "scala-reflect")  => true
-      case ("org.scala-lang", "scalap")         => true
-      case ("org.typelevel", "scala-library")   => true
-      case _                                    => false
+    scalaLangModules.exists { case (groupId, artifactId) =>
+      groupId === dependency.groupId && artifactId.name === dependency.artifactId.name
     }
 
   def isScalaDependencyIgnored(dependency: Dependency, ignoreScalaDependency: Boolean): Boolean =

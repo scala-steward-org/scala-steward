@@ -18,10 +18,10 @@ package org.scalasteward.core.edit.hooks
 
 import cats.MonadThrow
 import cats.syntax.all._
-import org.scalasteward.core.data.{ArtifactId, GroupId, Update}
+import org.scalasteward.core.data._
 import org.scalasteward.core.git.{Commit, GitAlg}
 import org.scalasteward.core.io.{ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.repoconfig.RepoConfig
+import org.scalasteward.core.repocache.RepoCache
 import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtBinary, scalafmtGroupId}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.util.logger._
@@ -35,14 +35,15 @@ final class HookExecutor[F[_]](implicit
     workspaceAlg: WorkspaceAlg[F],
     F: MonadThrow[F]
 ) {
-  def execPostUpdateHooks(repo: Repo, repoConfig: RepoConfig, update: Update): F[List[Commit]] =
+  def execPostUpdateHooks(data: RepoData, update: Update): F[List[Commit]] =
     HookExecutor.postUpdateHooks
       .filter { hook =>
-        hook.enabledByConfig(repoConfig) &&
+        hook.enabledByCache(data.cache) &&
+        hook.enabledByConfig(data.config) &&
         update.groupId === hook.groupId &&
         update.artifactIds.exists(_.name === hook.artifactId.name)
       }
-      .flatTraverse(execPostUpdateHook(repo, update, _))
+      .flatTraverse(execPostUpdateHook(data.repo, update, _))
 
   private def execPostUpdateHook(
       repo: Repo,
@@ -60,8 +61,7 @@ final class HookExecutor[F[_]](implicit
 }
 
 object HookExecutor {
-
-  private[this] val knownGitHubActions = List(
+  private val sbtGitHubActionsModules = List(
     (GroupId("com.codecommit"), ArtifactId("sbt-github-actions")),
     (GroupId("com.codecommit"), ArtifactId("sbt-spiewak")),
     (GroupId("com.codecommit"), ArtifactId("sbt-spiewak-sonatype")),
@@ -69,27 +69,41 @@ object HookExecutor {
     (GroupId("org.http4s"), ArtifactId("sbt-http4s-org"))
   )
 
-  val postUpdateHooks: List[PostUpdateHook] = {
-    val actionsActions = knownGitHubActions.map { case (gid, aid) =>
-      PostUpdateHook(
-        groupId = gid,
-        artifactId = aid,
-        command = Nel.of("sbt", "githubWorkflowGenerate"),
-        useSandbox = true,
-        commitMessage = _ => "Regenerate workflow with sbt-github-actions",
-        enabledByConfig = _ => true
-      )
-    }
+  private def dependsOnSbtGithubActions(cache: RepoCache): Boolean =
+    cache.dependencyInfos.exists(_.value.exists { info =>
+      val module = (info.dependency.groupId, info.dependency.artifactId)
+      sbtGitHubActionsModules.contains(module)
+    })
 
-    actionsActions ++ List(
-      PostUpdateHook(
-        groupId = scalafmtGroupId,
-        artifactId = scalafmtArtifactId,
-        command = Nel.of(scalafmtBinary, "--non-interactive"),
-        useSandbox = false,
-        commitMessage = update => s"Reformat with scalafmt ${update.nextVersion}",
-        enabledByConfig = _.scalafmt.runAfterUpgradingOrDefault
-      )
+  private def sbtGithubActionsHook(
+      groupId: GroupId,
+      artifactId: ArtifactId,
+      enabledByCache: RepoCache => Boolean
+  ): PostUpdateHook =
+    PostUpdateHook(
+      groupId = groupId,
+      artifactId = artifactId,
+      command = Nel.of("sbt", "githubWorkflowGenerate"),
+      useSandbox = true,
+      commitMessage = _ => "Regenerate workflow with sbt-github-actions",
+      enabledByCache = enabledByCache,
+      enabledByConfig = _ => true
     )
-  }
+
+  val postUpdateHooks: List[PostUpdateHook] =
+    PostUpdateHook(
+      groupId = scalafmtGroupId,
+      artifactId = scalafmtArtifactId,
+      command = Nel.of(scalafmtBinary, "--non-interactive"),
+      useSandbox = false,
+      commitMessage = update => s"Reformat with scalafmt ${update.nextVersion}",
+      enabledByCache = _ => true,
+      enabledByConfig = _.scalafmt.runAfterUpgradingOrDefault
+    ) ::
+      sbtGitHubActionsModules.map { case (gid, aid) =>
+        sbtGithubActionsHook(gid, aid, _ => true)
+      } ++
+      scalaLangModules.map { case (gid, aid) =>
+        sbtGithubActionsHook(gid, aid, dependsOnSbtGithubActions)
+      }
 }

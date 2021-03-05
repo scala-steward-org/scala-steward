@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.edit.hooks
+package org.scalasteward.core
 
-import org.scalasteward.core.data.{ArtifactId, GroupId, Update}
-import org.scalasteward.core.repocache.RepoCache
-import org.scalasteward.core.repoconfig.RepoConfig
-import org.scalasteward.core.util.Nel
+package object data {
+  val scalaLangGroupId: GroupId = GroupId("org.scala-lang")
 
-final case class PostUpdateHook(
-    groupId: GroupId,
-    artifactId: ArtifactId,
-    command: Nel[String],
-    useSandbox: Boolean,
-    commitMessage: Update => String,
-    enabledByCache: RepoCache => Boolean,
-    enabledByConfig: RepoConfig => Boolean
-)
+  val scalaLangModules: List[(GroupId, ArtifactId)] =
+    List(
+      (scalaLangGroupId, ArtifactId("scala-compiler")),
+      (scalaLangGroupId, ArtifactId("scala-library")),
+      (scalaLangGroupId, ArtifactId("scala-reflect")),
+      (scalaLangGroupId, ArtifactId("scalap")),
+      (scalaLangGroupId, ArtifactId("scala3-compiler")),
+      (scalaLangGroupId, ArtifactId("scala3-library"))
+    )
+}
