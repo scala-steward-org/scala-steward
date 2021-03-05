@@ -76,6 +76,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [Brice Jaglin](https://github.com/bjaglin)
 * [Cédric Chantepie](https://github.com/cchantep)
 * [Chris Llanwarne](https://github.com/cjllanwarne)
+* [Christoph Meier](https://github.com/meier-christoph)
 * [Christopher Davenport](https://github.com/ChristopherDavenport)
 * [Claudio Bley](https://github.com/avdv)
 * [Dale Wijnand](https://github.com/dwijnand)
