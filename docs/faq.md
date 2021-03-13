@@ -67,6 +67,10 @@ number adheres to [Semantic Versioning](https://semver.org/)) as demonstrated
 Other examples of Mergify rules for Scala Steward can be found via
 [GitHub's code search](https://github.com/search?p=6&q=%22author%3Dscala-steward%22+filename%3A.mergify.yml&type=Code).
 
+A free alternative is the [merge PR github action](https://github.com/marketplace/actions/merge-depenendecy-update-prs)
+which you can include in a GitHub workflow to automatically merge Scala Steward's 
+pull requests.
+
 ## Where can Scala Steward's PGP key be found?
 
 Scala Steward signs commits with a PGP key. The fingerprint of that key is
