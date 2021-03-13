@@ -142,8 +142,7 @@ object Context {
       implicit val mavenAlg: MavenAlg[F] = MavenAlg.create[F](config)
       implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F](config)
       implicit val millAlg: MillAlg[F] = MillAlg.create[F]
-      implicit val buildToolDispatcher: BuildToolDispatcher[F] =
-        BuildToolDispatcher.create[F](config)
+      implicit val buildToolDispatcher: BuildToolDispatcher[F] = new BuildToolDispatcher[F](config)
       implicit val refreshErrorAlg: RefreshErrorAlg[F] = new RefreshErrorAlg[F](refreshErrorStore)
       implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F](config)
       implicit val editAlg: EditAlg[F] = new EditAlg[F]

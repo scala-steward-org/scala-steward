@@ -32,7 +32,7 @@ import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.BuildRoot
 
-trait SbtAlg[F[_]] extends BuildToolAlg[F, BuildRoot] {
+trait SbtAlg[F[_]] extends BuildToolAlg[F] {
   def addGlobalPluginTemporarily[A](plugin: FileData)(fa: F[A]): F[A]
 
   def addGlobalPlugins[A](fa: F[A]): F[A]
