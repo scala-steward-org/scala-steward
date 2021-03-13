@@ -36,41 +36,38 @@ final class BuildToolDispatcher[F[_]](config: Config)(implicit
     repoConfigAlg: RepoConfigAlg[F],
     F: Monad[F]
 ) {
-  private val allBuildTools = List(mavenAlg, millAlg, sbtAlg)
-  private val fallbackBuildTool = sbtAlg
-
-  private def buildRootsForRepo(repo: Repo): F[List[BuildRoot]] = for {
-    repoConfigOpt <- repoConfigAlg.readRepoConfig(repo)
-    repoConfig <- repoConfigAlg.mergeWithDefault(repoConfigOpt)
-    buildRoots = repoConfig.buildRootsOrDefault
-      .map(config => BuildRoot(repo, config.relativePath))
-  } yield buildRoots
-
   def getDependencies(repo: Repo): F[List[Scope.Dependencies]] =
-    for {
-      buildRoots <- buildRootsForRepo(repo)
-      result <- buildRoots.flatTraverse(buildRoot =>
-        for {
-          dependencies <- foundBuildTools(buildRoot).flatMap(
-            _.flatTraverse(_.getDependencies(buildRoot))
-          )
-          additionalDependencies <- getAdditionalDependencies(buildRoot)
-        } yield Scope.combineByResolvers(additionalDependencies ::: dependencies)
-      )
-    } yield result
+    getBuildRootsAndTools(repo).flatMap(_.flatTraverse { case (buildRoot, buildTools) =>
+      for {
+        dependencies <- buildTools.flatTraverse(_.getDependencies(buildRoot))
+        additionalDependencies <- getAdditionalDependencies(buildRoot)
+      } yield Scope.combineByResolvers(additionalDependencies ::: dependencies)
+    })
 
   def runMigration(repo: Repo, migration: ScalafixMigration): F[Unit] =
-    buildRootsForRepo(repo).flatMap(buildRoots =>
-      buildRoots.traverse_(buildRoot =>
-        foundBuildTools(buildRoot).flatMap(_.traverse_(_.runMigration(buildRoot, migration)))
-      )
-    )
+    getBuildRootsAndTools(repo).flatMap(_.traverse_ { case (buildRoot, buildTools) =>
+      buildTools.traverse_(_.runMigration(buildRoot, migration))
+    })
 
-  private def foundBuildTools(buildRoot: BuildRoot): F[List[BuildToolAlg[F]]] =
+  private def getBuildRoots(repo: Repo): F[List[BuildRoot]] =
+    for {
+      repoConfigOpt <- repoConfigAlg.readRepoConfig(repo)
+      repoConfig <- repoConfigAlg.mergeWithDefault(repoConfigOpt)
+      buildRoots = repoConfig.buildRootsOrDefault
+        .map(config => BuildRoot(repo, config.relativePath))
+    } yield buildRoots
+
+  private val allBuildTools = List(mavenAlg, millAlg, sbtAlg)
+  private val fallbackBuildTool = List(sbtAlg)
+
+  private def findBuildTools(buildRoot: BuildRoot): F[(BuildRoot, List[BuildToolAlg[F]])] =
     allBuildTools.filterA(_.containsBuild(buildRoot)).map {
-      case Nil  => List(fallbackBuildTool)
-      case list => list
+      case Nil  => buildRoot -> fallbackBuildTool
+      case list => buildRoot -> list
     }
+
+  private def getBuildRootsAndTools(repo: Repo): F[List[(BuildRoot, List[BuildToolAlg[F]])]] =
+    getBuildRoots(repo).flatMap(_.traverse(findBuildTools))
 
   private def getAdditionalDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
     scalafmtAlg
