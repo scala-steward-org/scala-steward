@@ -58,11 +58,11 @@ final class BuildToolDispatcher[F[_]](config: Config)(implicit
     } yield buildRoots
 
   private val allBuildTools = List(mavenAlg, millAlg, sbtAlg)
-  private val fallbackBuildTool = sbtAlg
+  private val fallbackBuildTool = List(sbtAlg)
 
   private def findBuildTools(buildRoot: BuildRoot): F[(BuildRoot, List[BuildToolAlg[F]])] =
     allBuildTools.filterA(_.containsBuild(buildRoot)).map {
-      case Nil  => buildRoot -> List(fallbackBuildTool)
+      case Nil  => buildRoot -> fallbackBuildTool
       case list => buildRoot -> list
     }
 
