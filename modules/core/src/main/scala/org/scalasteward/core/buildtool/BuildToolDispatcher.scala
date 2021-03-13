@@ -37,21 +37,17 @@ final class BuildToolDispatcher[F[_]](config: Config)(implicit
     F: Monad[F]
 ) {
   def getDependencies(repo: Repo): F[List[Scope.Dependencies]] =
-    getBuildRootsAndTools(repo).flatMap {
-      _.flatTraverse { case (buildRoot, buildTools) =>
-        for {
-          dependencies <- buildTools.flatTraverse(_.getDependencies(buildRoot))
-          additionalDependencies <- getAdditionalDependencies(buildRoot)
-        } yield Scope.combineByResolvers(additionalDependencies ::: dependencies)
-      }
-    }
+    getBuildRootsAndTools(repo).flatMap(_.flatTraverse { case (buildRoot, buildTools) =>
+      for {
+        dependencies <- buildTools.flatTraverse(_.getDependencies(buildRoot))
+        additionalDependencies <- getAdditionalDependencies(buildRoot)
+      } yield Scope.combineByResolvers(additionalDependencies ::: dependencies)
+    })
 
   def runMigration(repo: Repo, migration: ScalafixMigration): F[Unit] =
-    getBuildRootsAndTools(repo).flatMap {
-      _.traverse_ { case (buildRoot, buildTools) =>
-        buildTools.traverse_(_.runMigration(buildRoot, migration))
-      }
-    }
+    getBuildRootsAndTools(repo).flatMap(_.traverse_ { case (buildRoot, buildTools) =>
+      buildTools.traverse_(_.runMigration(buildRoot, migration))
+    })
 
   private def getBuildRoots(repo: Repo): F[List[BuildRoot]] =
     for {
