@@ -27,7 +27,7 @@ import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.BuildRoot
 
-trait MillAlg[F[_]] extends BuildToolAlg[F, BuildRoot]
+trait MillAlg[F[_]] extends BuildToolAlg[F]
 
 object MillAlg {
   private val content =

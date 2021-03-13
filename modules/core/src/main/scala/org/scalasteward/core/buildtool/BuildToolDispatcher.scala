@@ -24,69 +24,56 @@ import org.scalasteward.core.buildtool.mill.MillAlg
 import org.scalasteward.core.buildtool.sbt.SbtAlg
 import org.scalasteward.core.data.Scope
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
-import org.scalasteward.core.scalafmt.ScalafmtAlg
-import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.repoconfig.RepoConfigAlg
-import org.scalasteward.core.vcs.data.BuildRoot
+import org.scalasteward.core.scalafmt.ScalafmtAlg
+import org.scalasteward.core.vcs.data.{BuildRoot, Repo}
 
-trait BuildToolDispatcher[F[_]] extends BuildToolAlg[F, Repo]
+final class BuildToolDispatcher[F[_]](config: Config)(implicit
+    mavenAlg: MavenAlg[F],
+    millAlg: MillAlg[F],
+    sbtAlg: SbtAlg[F],
+    scalafmtAlg: ScalafmtAlg[F],
+    repoConfigAlg: RepoConfigAlg[F],
+    F: Monad[F]
+) {
+  private val allBuildTools = List(mavenAlg, millAlg, sbtAlg)
+  private val fallbackBuildTool = sbtAlg
 
-object BuildToolDispatcher {
-  def create[F[_]](config: Config)(implicit
-      mavenAlg: MavenAlg[F],
-      millAlg: MillAlg[F],
-      sbtAlg: SbtAlg[F],
-      scalafmtAlg: ScalafmtAlg[F],
-      repoConfigAlg: RepoConfigAlg[F],
-      F: Monad[F]
-  ): BuildToolDispatcher[F] = {
-    val allBuildTools = List(mavenAlg, millAlg, sbtAlg)
-    val fallbackBuildTool = sbtAlg
+  private def buildRootsForRepo(repo: Repo): F[List[BuildRoot]] = for {
+    repoConfigOpt <- repoConfigAlg.readRepoConfig(repo)
+    repoConfig <- repoConfigAlg.mergeWithDefault(repoConfigOpt)
+    buildRoots = repoConfig.buildRootsOrDefault
+      .map(config => BuildRoot(repo, config.relativePath))
+  } yield buildRoots
 
-    new BuildToolDispatcher[F] {
-
-      private def buildRootsForRepo(repo: Repo): F[List[BuildRoot]] = for {
-        repoConfigOpt <- repoConfigAlg.readRepoConfig(repo)
-        repoConfig <- repoConfigAlg.mergeWithDefault(repoConfigOpt)
-        buildRoots = repoConfig.buildRootsOrDefault
-          .map(config => BuildRoot(repo, config.relativePath))
-      } yield buildRoots
-
-      override def containsBuild(repo: Repo): F[Boolean] =
-        buildRootsForRepo(repo).flatMap(buildRoots =>
-          buildRoots.existsM(buildRoot => allBuildTools.existsM(_.containsBuild(buildRoot)))
-        )
-
-      override def getDependencies(repo: Repo): F[List[Scope.Dependencies]] =
+  def getDependencies(repo: Repo): F[List[Scope.Dependencies]] =
+    for {
+      buildRoots <- buildRootsForRepo(repo)
+      result <- buildRoots.flatTraverse(buildRoot =>
         for {
-          buildRoots <- buildRootsForRepo(repo)
-          result <- buildRoots.flatTraverse(buildRoot =>
-            for {
-              dependencies <- foundBuildTools(buildRoot).flatMap(
-                _.flatTraverse(_.getDependencies(buildRoot))
-              )
-              additionalDependencies <- getAdditionalDependencies(buildRoot)
-            } yield Scope.combineByResolvers(additionalDependencies ::: dependencies)
+          dependencies <- foundBuildTools(buildRoot).flatMap(
+            _.flatTraverse(_.getDependencies(buildRoot))
           )
-        } yield result
+          additionalDependencies <- getAdditionalDependencies(buildRoot)
+        } yield Scope.combineByResolvers(additionalDependencies ::: dependencies)
+      )
+    } yield result
 
-      override def runMigration(repo: Repo, migration: ScalafixMigration): F[Unit] =
-        buildRootsForRepo(repo).flatMap(buildRoots =>
-          buildRoots.traverse_(buildRoot =>
-            foundBuildTools(buildRoot).flatMap(_.traverse_(_.runMigration(buildRoot, migration)))
-          )
-        )
+  def runMigration(repo: Repo, migration: ScalafixMigration): F[Unit] =
+    buildRootsForRepo(repo).flatMap(buildRoots =>
+      buildRoots.traverse_(buildRoot =>
+        foundBuildTools(buildRoot).flatMap(_.traverse_(_.runMigration(buildRoot, migration)))
+      )
+    )
 
-      private def foundBuildTools(buildRoot: BuildRoot): F[List[BuildToolAlg[F, BuildRoot]]] =
-        allBuildTools.filterA(_.containsBuild(buildRoot)).map {
-          case Nil  => List(fallbackBuildTool)
-          case list => list
-        }
-
-      def getAdditionalDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
-        scalafmtAlg
-          .getScalafmtDependency(buildRoot)
-          .map(_.map(dep => Scope(List(dep), List(config.defaultResolver))).toList)
+  private def foundBuildTools(buildRoot: BuildRoot): F[List[BuildToolAlg[F]]] =
+    allBuildTools.filterA(_.containsBuild(buildRoot)).map {
+      case Nil  => List(fallbackBuildTool)
+      case list => list
     }
-  }
+
+  private def getAdditionalDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
+    scalafmtAlg
+      .getScalafmtDependency(buildRoot)
+      .map(_.map(dep => Scope(List(dep), List(config.defaultResolver))).toList)
 }
