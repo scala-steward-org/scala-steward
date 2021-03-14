@@ -18,7 +18,6 @@ package org.scalasteward.core.buildtool
 
 import cats.Monad
 import cats.syntax.all._
-import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.maven.MavenAlg
 import org.scalasteward.core.buildtool.mill.MillAlg
 import org.scalasteward.core.buildtool.sbt.SbtAlg
@@ -28,7 +27,7 @@ import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.vcs.data.{BuildRoot, Repo}
 
-final class BuildToolDispatcher[F[_]](config: Config)(implicit
+final class BuildToolDispatcher[F[_]](implicit
     mavenAlg: MavenAlg[F],
     millAlg: MillAlg[F],
     sbtAlg: SbtAlg[F],
@@ -39,8 +38,8 @@ final class BuildToolDispatcher[F[_]](config: Config)(implicit
     getBuildRootsAndTools(repo, repoConfig).flatMap(_.flatTraverse { case (buildRoot, buildTools) =>
       for {
         dependencies <- buildTools.flatTraverse(_.getDependencies(buildRoot))
-        additionalDependencies <- getAdditionalDependencies(buildRoot)
-      } yield Scope.combineByResolvers(additionalDependencies ::: dependencies)
+        maybeScalafmtDependency <- scalafmtAlg.getScopedScalafmtDependency(buildRoot)
+      } yield Scope.combineByResolvers(maybeScalafmtDependency.toList ::: dependencies)
     })
 
   def runMigration(repo: Repo, repoConfig: RepoConfig, migration: ScalafixMigration): F[Unit] =
@@ -65,9 +64,4 @@ final class BuildToolDispatcher[F[_]](config: Config)(implicit
       repoConfig: RepoConfig
   ): F[List[(BuildRoot, List[BuildToolAlg[F]])]] =
     getBuildRoots(repo, repoConfig).traverse(findBuildTools)
-
-  private def getAdditionalDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
-    scalafmtAlg
-      .getScalafmtDependency(buildRoot)
-      .map(_.map(dep => Scope(List(dep), List(config.defaultResolver))).toList)
 }
