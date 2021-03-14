@@ -4,16 +4,18 @@ import munit.FunSuite
 import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.buildtool.sbt.data.SbtVersion
 import org.scalasteward.core.data.{Resolver, Scope, Version}
+import org.scalasteward.core.mock.MockContext.config
 import org.scalasteward.core.mock.MockContext.context.buildToolDispatcher
-import org.scalasteward.core.mock.MockContext.{config, mockRoot}
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
+import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafmt
 import org.scalasteward.core.vcs.data.Repo
 
 class BuildToolDispatcherTest extends FunSuite {
   test("getDependencies") {
     val repo = Repo("build-tool-dispatcher", "test-1")
+    val repoConfig = RepoConfig.empty
     val repoDir = config.workspace / repo.show
     val initial = MockState.empty
       .addFiles(
@@ -22,12 +24,10 @@ class BuildToolDispatcherTest extends FunSuite {
       )
       .unsafeRunSync()
     val (state, deps) =
-      buildToolDispatcher.getDependencies(repo).run(initial).unsafeRunSync()
+      buildToolDispatcher.getDependencies(repo, repoConfig).run(initial).unsafeRunSync()
 
     val expectedState = initial.copy(trace =
       Vector(
-        Cmd("read", s"$repoDir/.scala-steward.conf"),
-        Cmd("read", s"$mockRoot/default.scala-steward.conf"),
         Cmd("test", "-f", s"$repoDir/pom.xml"),
         Cmd("test", "-f", s"$repoDir/build.sc"),
         Cmd("test", "-f", s"$repoDir/build.sbt"),
