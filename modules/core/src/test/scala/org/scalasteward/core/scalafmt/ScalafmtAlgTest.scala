@@ -22,15 +22,8 @@ class ScalafmtAlgTest extends FunSuite {
       .unsafeRunSync()
     val (state, maybeVersion) =
       scalafmtAlg.getScalafmtVersion(buildRoot).run(initialState).unsafeRunSync()
-    val expectedState = MockState.empty.copy(
-      trace = Vector(Cmd("read", s"$repoDir/.scalafmt.conf")),
-      files = Map(
-        scalafmtConf ->
-          """maxColumn = 100
-            |version=2.0.0-RC8
-            |align.openParenCallSite = false
-            |""".stripMargin
-      )
+    val expectedState = initialState.copy(
+      trace = Vector(Cmd("read", s"$repoDir/.scalafmt.conf"))
     )
 
     assertEquals(maybeVersion, Some(Version("2.0.0-RC8")))

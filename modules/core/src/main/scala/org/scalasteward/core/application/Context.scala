@@ -29,13 +29,13 @@ import org.scalasteward.core.buildtool.sbt.SbtAlg
 import org.scalasteward.core.coursier.{CoursierAlg, VersionsCache}
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.edit.hooks.HookExecutor
+import org.scalasteward.core.edit.scalafix.{ScalafixMigrationsFinder, ScalafixMigrationsLoader}
 import org.scalasteward.core.git.{GenGitAlg, GitAlg}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.{NurtureAlg, PullRequestData, PullRequestRepository}
 import org.scalasteward.core.persistence.{CachingKeyValueStore, JsonKeyValueStore}
 import org.scalasteward.core.repocache._
 import org.scalasteward.core.repoconfig.RepoConfigAlg
-import org.scalasteward.core.edit.scalafix.{ScalafixMigrationsFinder, ScalafixMigrationsLoader}
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.{ArtifactMigrations, FilterAlg, PruningAlg, UpdateAlg}
 import org.scalasteward.core.util._
@@ -133,7 +133,7 @@ object Context {
       implicit val vcsExtraAlg: VCSExtraAlg[F] = VCSExtraAlg.create[F](config)
       implicit val pullRequestRepository: PullRequestRepository[F] =
         new PullRequestRepository[F](pullRequestsStore)
-      implicit val scalafmtAlg: ScalafmtAlg[F] = ScalafmtAlg.create[F]
+      implicit val scalafmtAlg: ScalafmtAlg[F] = new ScalafmtAlg[F](config)
       implicit val selfCheckAlg: SelfCheckAlg[F] = new SelfCheckAlg[F](config)
       implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create[F]
       implicit val versionsCache: VersionsCache[F] =
@@ -142,7 +142,7 @@ object Context {
       implicit val mavenAlg: MavenAlg[F] = MavenAlg.create[F](config)
       implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F](config)
       implicit val millAlg: MillAlg[F] = MillAlg.create[F]
-      implicit val buildToolDispatcher: BuildToolDispatcher[F] = new BuildToolDispatcher[F](config)
+      implicit val buildToolDispatcher: BuildToolDispatcher[F] = new BuildToolDispatcher[F]
       implicit val refreshErrorAlg: RefreshErrorAlg[F] = new RefreshErrorAlg[F](refreshErrorStore)
       implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F](config)
       implicit val editAlg: EditAlg[F] = new EditAlg[F]
