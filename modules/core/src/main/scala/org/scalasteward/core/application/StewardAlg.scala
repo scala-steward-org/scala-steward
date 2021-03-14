@@ -20,20 +20,19 @@ import better.files.File
 import cats.effect.{BracketThrow, ExitCode}
 import cats.syntax.all._
 import fs2.Stream
-import org.typelevel.log4cats.Logger
 import org.scalasteward.core.buildtool.sbt.SbtAlg
-import org.scalasteward.core.data.RepoData
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.NurtureAlg
 import org.scalasteward.core.repocache.RepoCacheAlg
-import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.update.PruningAlg
 import org.scalasteward.core.util
 import org.scalasteward.core.util.DateTimeAlg
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.vcs.github.{GitHubApp, GitHubAppApiAlg, GitHubAuthAlg}
+import org.typelevel.log4cats.Logger
+
 import scala.concurrent.duration._
 
 final class StewardAlg[F[_]](config: Config)(implicit
@@ -46,7 +45,6 @@ final class StewardAlg[F[_]](config: Config)(implicit
     nurtureAlg: NurtureAlg[F],
     pruningAlg: PruningAlg[F],
     repoCacheAlg: RepoCacheAlg[F],
-    repoConfigAlg: RepoConfigAlg[F],
     sbtAlg: SbtAlg[F],
     selfCheckAlg: SelfCheckAlg[F],
     streamCompiler: Stream.Compiler[F, F],
@@ -90,9 +88,7 @@ final class StewardAlg[F[_]](config: Config)(implicit
       logger.attemptLogLabel(util.string.lineLeftRight(label), Some(label)) {
         F.guarantee {
           for {
-            (cache, fork) <- repoCacheAlg.checkCache(repo)
-            config <- repoConfigAlg.mergeWithDefault(cache.maybeRepoConfig)
-            data = RepoData(repo, cache, config)
+            (data, fork) <- repoCacheAlg.checkCache(repo)
             (attentionNeeded, updates) <- pruningAlg.needsAttention(data)
             _ <- if (attentionNeeded) nurtureAlg.nurture(data, fork, updates) else F.unit
           } yield ()

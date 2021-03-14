@@ -65,7 +65,7 @@ final class EditAlg[F[_]](implicit
                 if (migrations.isEmpty) F.pure(Nil)
                 else
                   gitAlg.discardChanges(repo) *>
-                    runScalafixMigrations(repo, migrations) <*
+                    runScalafixMigrations(repo, data.config, migrations) <*
                     bumpVersion(update, files)
               cs2 <- gitAlg.commitAllIfDirty(repo, git.commitMsgFor(update, data.config.commits))
               cs3 <- hookExecutor.execPostUpdateHooks(data, update)
@@ -75,25 +75,30 @@ final class EditAlg[F[_]](implicit
 
   private def findFilesContainingCurrentVersion(
       repo: Repo,
-      repoConfig: RepoConfig,
+      config: RepoConfig,
       update: Update
   ): F[Option[Nel[File]]] =
     workspaceAlg.repoDir(repo).flatMap { repoDir =>
-      val fileFilter = isSourceFile(update, repoConfig.updates.fileExtensionsOrDefault) _
+      val fileFilter = isSourceFile(update, config.updates.fileExtensionsOrDefault) _
       fileAlg.findFiles(repoDir, fileFilter, _.contains(update.currentVersion)).map(Nel.fromList)
     }
 
   private def runScalafixMigrations(
       repo: Repo,
+      config: RepoConfig,
       migrations: List[ScalafixMigration]
   ): F[List[Commit]] =
-    migrations.traverseFilter(runScalafixMigration(repo, _))
+    migrations.traverseFilter(runScalafixMigration(repo, config, _))
 
-  private def runScalafixMigration(repo: Repo, migration: ScalafixMigration): F[Option[Commit]] =
+  private def runScalafixMigration(
+      repo: Repo,
+      config: RepoConfig,
+      migration: ScalafixMigration
+  ): F[Option[Commit]] =
     for {
       _ <- logger.info(s"Running migration $migration")
       result <- logger.attemptLogWarn("Scalafix migration failed")(
-        buildToolDispatcher.runMigration(repo, migration)
+        buildToolDispatcher.runMigration(repo, config, migration)
       )
       verb = if (result.isRight) "Applied" else "Failed"
       msg1 = s"$verb Scalafix rule(s) ${migration.rewriteRules.mkString_(", ")}"
