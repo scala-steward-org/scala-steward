@@ -156,7 +156,6 @@ object Version {
 
     def parse(str: String): List[Component] =
       str match {
-        case "" => List.empty
         case hash(sep, value, rest) if !startsWithDate(value) =>
           Separator(sep.head) +: Hash(value) +: parse(rest)
         case numeric(value, rest) =>
@@ -165,6 +164,7 @@ object Version {
           Alpha(value) +: parse(rest)
         case separator(value, rest) =>
           Separator(value.head) +: parse(rest)
+        case _ => List.empty
       }
 
     def render(components: List[Component]): String =

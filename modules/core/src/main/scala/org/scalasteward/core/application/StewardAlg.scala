@@ -52,7 +52,7 @@ final class StewardAlg[F[_]](config: Config)(implicit
     F: BracketThrow[F]
 ) {
   private def readRepos(reposFile: File): Stream[F, Repo] =
-    Stream.evals {
+    Stream.evals[F, List, Repo] {
       fileAlg.readFile(reposFile).map { maybeContent =>
         val regex = """-\s+(.+)/([^/]+)""".r
         val content = maybeContent.getOrElse("")
@@ -63,7 +63,7 @@ final class StewardAlg[F[_]](config: Config)(implicit
     }
 
   private def getGitHubAppRepos(githubApp: GitHubApp): Stream[F, Repo] =
-    Stream.evals {
+    Stream.evals[F, List, Repo] {
       for {
         jwt <- githubAuthAlg.createJWT(githubApp, 2.minutes)
         installations <- githubAppApiAlg.installations(jwt)
@@ -72,14 +72,13 @@ final class StewardAlg[F[_]](config: Config)(implicit
             .accessToken(jwt, installation.id)
             .flatMap(token => githubAppApiAlg.repositories(token.token))
         }
-      } yield repositories
-        .flatMap(_.repositories)
-        .map(repo =>
+        repos <- repositories.flatMap(_.repositories).flatTraverse { repo =>
           repo.full_name.split('/') match {
-            case Array(owner, name) =>
-              Repo(owner, name)
+            case Array(owner, name) => F.pure(List(Repo(owner, name)))
+            case _                  => logger.error(s"invalid repo $repo").as(List.empty[Repo])
           }
-        )
+        }
+      } yield repos
     }
 
   private def steward(repo: Repo): F[Either[Throwable, Unit]] = {
