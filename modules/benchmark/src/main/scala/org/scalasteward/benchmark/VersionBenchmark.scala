@@ -29,5 +29,6 @@ class VersionBenchmark {
     Component.parse("1.1.2-1")
     Component.parse("8.0.192-R14")
     Component.parse("1.2.0+9-4a769501")
+    Component.parse("1.0.0-20201119-091040")
   }
 }
