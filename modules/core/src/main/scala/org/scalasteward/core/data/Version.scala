@@ -18,6 +18,7 @@ package org.scalasteward.core.data
 
 import cats.Order
 import cats.implicits._
+import cats.parse.{Numbers, Parser, Rfc5234}
 import io.circe.Codec
 import io.circe.generic.extras.semiauto.deriveUnwrappedCodec
 
@@ -149,24 +150,23 @@ object Version {
     final case class Separator(c: Char) extends Component
     case object Empty extends Component
 
-    private val numeric = """^(\d+)(.*)$""".r
-    private val separator = """^([.\-_+])(.*)$""".r
-    private val alpha = """^([^.\-_+\d]+)(.*)$""".r
-    private val hash = """^([-+])(g?\p{XDigit}{6,})(.*)$""".r
+    private val componentsParser = {
+      val digits = ('0' to '9').toSet
+      val separators = Set('.', '-', '_', '+')
+
+      val numeric = Numbers.digits.map(s => List(Numeric(s)))
+      val alpha = Parser.charsWhile(c => !digits(c) && !separators(c)).map(s => List(Alpha(s)))
+      val separator = Parser.charIn(separators).map(c => List(Separator(c)))
+      val hash = (Parser.charIn('-', '+') ~
+        Parser.char('g').string.? ~
+        Rfc5234.hexdig.rep(6).string.filterNot(startsWithDate)).backtrack
+        .map { case ((s, g), h) => List(Separator(s), Hash(g.getOrElse("") + h)) }
+
+      (numeric | alpha | hash | separator).rep0.map(_.flatten)
+    }
 
     def parse(str: String): List[Component] =
-      str match {
-        case "" => List.empty
-        case numeric(value, rest) =>
-          Numeric(value) +: parse(rest)
-        case alpha(value, rest) =>
-          Alpha(value) +: parse(rest)
-        case hash(sep, value, rest) if !startsWithDate(value) =>
-          Separator(sep.head) +: Hash(value) +: parse(rest)
-        case separator(value, rest) =>
-          Separator(value.head) +: parse(rest)
-        case _ => List.empty
-      }
+      componentsParser.parseAll(str).getOrElse(List.empty)
 
     def render(components: List[Component]): String =
       components.map {

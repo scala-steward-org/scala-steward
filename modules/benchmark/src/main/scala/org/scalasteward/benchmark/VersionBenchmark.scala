@@ -17,7 +17,7 @@
 package org.scalasteward.benchmark
 
 import org.openjdk.jmh.annotations.{Benchmark, BenchmarkMode, Mode, OutputTimeUnit}
-import org.scalasteward.core.data.Version
+import org.scalasteward.core.data.Version.Component
 
 import java.util.concurrent.TimeUnit
 
@@ -25,9 +25,9 @@ import java.util.concurrent.TimeUnit
 class VersionBenchmark {
   @Benchmark
   @OutputTimeUnit(TimeUnit.MICROSECONDS)
-  def constructor: Any = {
-    Version("1.1.2-1")
-    Version("8.0.192-R14")
-    Version("1.2.0+9-4a769501")
+  def parseBench: Any = {
+    Component.parse("1.1.2-1")
+    Component.parse("8.0.192-R14")
+    Component.parse("1.2.0+9-4a769501")
   }
 }
