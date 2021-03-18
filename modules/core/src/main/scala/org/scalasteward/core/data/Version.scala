@@ -113,7 +113,7 @@ object Version {
   }
 
   private def startsWithDate(s: String): Boolean =
-    s.length >= 8 && s.take(8).forall(_.isDigit) && {
+    s.length >= 8 && s.substring(0, 8).forall(_.isDigit) && {
       val year = s.substring(0, 4).toInt
       val month = s.substring(4, 6).toInt
       val day = s.substring(6, 8).toInt
