@@ -64,6 +64,9 @@ lazy val benchmark = myCrossProject("benchmark")
   .dependsOn(core)
   .enablePlugins(JmhPlugin)
   .settings(noPublishSettings)
+  .settings(
+    unusedCompileDependencies := Set.empty
+  )
 
 lazy val core = myCrossProject("core")
   .enablePlugins(BuildInfoPlugin, JavaAppPackaging, DockerPlugin)
