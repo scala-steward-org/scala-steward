@@ -161,9 +161,9 @@ lazy val core = myCrossProject("core")
       import cats.effect.ContextShift
       import cats.effect.IO
       import cats.effect.Timer
-      import _root_.io.chrisdavenport.log4cats.Logger
-      import _root_.io.chrisdavenport.log4cats.slf4j.Slf4jLogger
       import org.http4s.client.Client
+      import org.typelevel.log4cats.Logger
+      import org.typelevel.log4cats.slf4j.Slf4jLogger
       import scala.concurrent.ExecutionContext
 
       implicit val ioContextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
