@@ -9,6 +9,7 @@ val rootPkg = groupId.replace("-", "")
 val gitHubOwner = "scala-steward-org"
 
 val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
+  "benchmark" -> List(JVMPlatform),
   "core" -> List(JVMPlatform),
   "sbt-plugin" -> List(JVMPlatform),
   "mill-plugin" -> List(JVMPlatform)
@@ -55,9 +56,18 @@ ThisBuild / githubWorkflowBuild :=
 
 lazy val root = project
   .in(file("."))
-  .aggregate(core.jvm, `sbt-plugin`.jvm, `mill-plugin`.jvm)
+  .aggregate(benchmark.jvm, core.jvm, `sbt-plugin`.jvm, `mill-plugin`.jvm)
   .settings(commonSettings)
   .settings(noPublishSettings)
+
+lazy val benchmark = myCrossProject("benchmark")
+  .dependsOn(core)
+  .enablePlugins(JmhPlugin)
+  .settings(noPublishSettings)
+  .settings(
+    coverageEnabled := false,
+    unusedCompileDependencies := Set.empty
+  )
 
 lazy val core = myCrossProject("core")
   .enablePlugins(BuildInfoPlugin, JavaAppPackaging, DockerPlugin)
