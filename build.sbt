@@ -104,7 +104,6 @@ lazy val core = myCrossProject("core")
       Dependencies.log4catsSlf4j,
       Dependencies.monocleCore,
       Dependencies.refined,
-      Dependencies.refinedCats,
       Dependencies.scalacacheCaffeine,
       Dependencies.scalacacheCatsEffect,
       Dependencies.logbackClassic % Runtime,
