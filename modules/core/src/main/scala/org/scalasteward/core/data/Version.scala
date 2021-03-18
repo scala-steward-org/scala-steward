@@ -113,10 +113,10 @@ object Version {
   }
 
   private def startsWithDate(s: String): Boolean =
-    """(\d{4})(\d{2})(\d{2})""".r.findPrefixMatchOf(s).exists { m =>
-      val year = m.group(1).toInt
-      val month = m.group(2).toInt
-      val day = m.group(3).toInt
+    s.length >= 8 && s.take(8).forall(_.isDigit) && {
+      val year = s.substring(0, 4).toInt
+      val month = s.substring(4, 6).toInt
+      val day = s.substring(6, 8).toInt
       (year >= 1900 && year <= 2100) &&
       (month >= 1 && month <= 12) &&
       (day >= 1 && day <= 31)
