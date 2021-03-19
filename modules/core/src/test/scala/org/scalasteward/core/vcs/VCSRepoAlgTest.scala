@@ -10,9 +10,9 @@ import org.scalasteward.core.mock.{MockContext, MockEff, MockState}
 import org.scalasteward.core.vcs.data.{Repo, RepoOut, UserOut}
 
 class VCSRepoAlgTest extends FunSuite {
-  val repo: Repo = Repo("fthomas", "datapackage")
-  val repoDir: String = (config.workspace / "fthomas/datapackage").toString
-  val parentRepoOut: RepoOut = RepoOut(
+  private val repo = Repo("fthomas", "datapackage")
+  private val repoDir = (config.workspace / "fthomas/datapackage").toString
+  private val parentRepoOut = RepoOut(
     "datapackage",
     UserOut("fthomas"),
     None,
@@ -20,25 +20,27 @@ class VCSRepoAlgTest extends FunSuite {
     Branch("master")
   )
 
-  val forkRepoOut: RepoOut = RepoOut(
+  private val forkRepoOut = RepoOut(
     "datapackage",
-    UserOut("scalasteward"),
+    UserOut("scala-steward"),
     Some(parentRepoOut),
     uri"https://github.com/scala-steward/datapackage",
     Branch("master")
   )
 
-  test("cloneAndSync") {
+  private val parentUrl = s"https://${config.vcsLogin}@github.com/fthomas/datapackage"
+  private val forkUrl = s"https://${config.vcsLogin}@github.com/scala-steward/datapackage"
+
+  test("cloneAndSync: doNotFork = false") {
     val state = vcsRepoAlg.cloneAndSync(repo, forkRepoOut).runS(MockState.empty).unsafeRunSync()
-    val url0 = s"https://${config.vcsLogin}@github.com/fthomas/datapackage"
-    val url1 = s"https://${config.vcsLogin}@github.com/scala-steward/datapackage"
     val expected = MockState.empty.copy(
       trace = Vector(
-        Log("Clone and synchronize fthomas/datapackage"),
-        Cmd(envVars, config.workspace.toString, "git", "clone", url1, repoDir),
+        Log("Clone scala-steward/datapackage"),
+        Cmd(envVars, config.workspace.toString, "git", "clone", forkUrl, repoDir),
         Cmd(envVars, repoDir, "git", "config", "user.email", "bot@example.org"),
         Cmd(envVars, repoDir, "git", "config", "user.name", "Bot Doe"),
-        Cmd(envVars, repoDir, "git", "remote", "add", "upstream", url0),
+        Log("Synchronize with fthomas/datapackage"),
+        Cmd(envVars, repoDir, "git", "remote", "add", "upstream", parentUrl),
         Cmd(envVars, repoDir, "git", "fetch", "--force", "--tags", "upstream", "master"),
         Cmd(envVars, repoDir, "git", "checkout", "-B", "master", "--track", "upstream/master"),
         Cmd(envVars, repoDir, "git", "merge", "upstream/master"),
@@ -49,21 +51,30 @@ class VCSRepoAlgTest extends FunSuite {
     assertEquals(state, expected)
   }
 
-  test("syncFork should throw an exception when doNotFork = false and there is no parent") {
+  test("cloneAndSync: doNotFork = true") {
+    val config = MockContext.config.copy(doNotFork = true)
+    val state = new VCSRepoAlg[MockEff](config)
+      .cloneAndSync(repo, parentRepoOut)
+      .runS(MockState.empty)
+      .unsafeRunSync()
+    val expected = MockState.empty.copy(
+      trace = Vector(
+        Log("Clone fthomas/datapackage"),
+        Cmd(envVars, config.workspace.toString, "git", "clone", parentUrl, repoDir),
+        Cmd(envVars, repoDir, "git", "config", "user.email", "bot@example.org"),
+        Cmd(envVars, repoDir, "git", "config", "user.name", "Bot Doe"),
+        Cmd(envVars, repoDir, "git", "submodule", "update", "--init", "--recursive")
+      )
+    )
+    assertEquals(state, expected)
+  }
+
+  test("cloneAndSync: doNotFork = false, no parent") {
     val result = vcsRepoAlg
-      .syncFork(repo, parentRepoOut)
+      .cloneAndSync(repo, parentRepoOut)
       .runS(MockState.empty)
       .attempt
       .unsafeRunSync()
     assert(clue(result).isLeft)
-  }
-
-  test("syncFork should do nothing when doNotFork = true") {
-    val config = MockContext.config.copy(doNotFork = true)
-    val state = new VCSRepoAlg[MockEff](config)
-      .syncFork(repo, parentRepoOut)
-      .runS(MockState.empty)
-      .unsafeRunSync()
-    assertEquals(state, MockState.empty)
   }
 }
