@@ -301,7 +301,7 @@ installPlugin := {
   IO.copyFile(source, target)
 }
 
-lazy val moduleRootPkg = settingKey[String]("")
+lazy val moduleRootPkg = settingKey[String]("").withRank(KeyRanks.Invisible)
 moduleRootPkg := rootPkg
 
 // Run Scala Steward from sbt for development and testing.
