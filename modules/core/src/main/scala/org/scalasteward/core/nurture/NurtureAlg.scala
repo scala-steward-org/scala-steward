@@ -155,6 +155,18 @@ final class NurtureAlg[F[_]](config: Config)(implicit
       gitAlg.removeBranch(repo, branch)
     }
 
+  def ensureDistinctBranch(
+      data: UpdateData,
+      seenBranches: Ref[F, List[Branch]],
+      whenDistinct: F[ProcessResult]
+  ): F[ProcessResult] =
+    seenBranches.get
+      .flatMap(_.forallM(gitAlg.diff(data.repo, _).map(_.nonEmpty)))
+      .ifM(
+        whenDistinct,
+        logger.warn("Discovered a duplicate branch, not pushing").as(Ignored)
+      )
+
   def applyNewUpdate(data: UpdateData, seenBranches: Ref[F, List[Branch]]): F[ProcessResult] =
     gitAlg.returnToCurrentBranch(data.repo) {
       val createBranch = logger.info(s"Create branch ${data.updateBranch.name}") >>
@@ -162,11 +174,10 @@ final class NurtureAlg[F[_]](config: Config)(implicit
       editAlg.applyUpdate(data.repoData, data.update, createBranch).flatMap { editCommits =>
         if (editCommits.isEmpty) logger.warn("No commits created").as(Ignored)
         else
-          NurtureAlg.ensureDistinctBranch(
+          ensureDistinctBranch(
+            data,
             seenBranches,
-            gitAlg.diff(data.repo, _).map(_.nonEmpty),
-            pushCommits(data, editCommits) >> createPullRequest(data),
-            logger.warn("Discovered a duplicate branch, not pushing").as[ProcessResult](Ignored)
+            pushCommits(data, editCommits) >> createPullRequest(data)
           )
       }
     }
@@ -256,11 +267,10 @@ final class NurtureAlg[F[_]](config: Config)(implicit
       )
       maybeMergeCommit <- gitAlg.mergeTheirs(data.repo, data.baseBranch)
       editCommits <- editAlg.applyUpdate(data.repoData, data.update)
-      result <- NurtureAlg.ensureDistinctBranch(
+      result <- ensureDistinctBranch(
+        data,
         seenBranches,
-        gitAlg.diff(data.repo, _).map(_.nonEmpty),
-        pushCommits(data, maybeMergeCommit.toList ++ editCommits),
-        logger.warn("Discovered a duplicate branch, not pushing").as[ProcessResult](Ignored)
+        pushCommits(data, maybeMergeCommit.toList ++ editCommits)
       )
     } yield result
 }
@@ -285,14 +295,4 @@ object NurtureAlg {
           .compile
           .drain
     }
-
-  def ensureDistinctBranch[F[_]: Sync: cats.FlatMap](
-      seenBranches: Ref[F, List[Branch]],
-      isDistinct: Branch => F[Boolean],
-      whenDistinct: F[ProcessResult],
-      whenDuplicate: F[ProcessResult]
-  ): F[ProcessResult] =
-    seenBranches.get
-      .flatMap(_.forallM(isDistinct))
-      .ifM(whenDistinct, whenDuplicate)
 }

@@ -9,7 +9,7 @@ import org.scalacheck.{Arbitrary, Cogen, Gen}
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.Update.Single
 import org.scalasteward.core.data._
-import org.scalasteward.core.git.{Branch, Sha1}
+import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.repocache.RepoCache
 import org.scalasteward.core.repoconfig.PullRequestFrequency.{Asap, Timespan}
@@ -57,13 +57,6 @@ object TestInstances {
         currentVersion <- Gen.alphaStr
         newerVersion <- Gen.alphaStr
       } yield Single(groupId % artifactId % currentVersion, Nel.one(newerVersion))
-    )
-
-  implicit val branchArbitrary: Arbitrary[Branch] =
-    Arbitrary(
-      for {
-        name <- Gen.alphaStr
-      } yield Branch(name)
     )
 
   private val hashGen: Gen[String] =
