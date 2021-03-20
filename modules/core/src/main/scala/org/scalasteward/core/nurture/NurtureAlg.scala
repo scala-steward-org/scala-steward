@@ -84,7 +84,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
         update => {
           val updateData =
             UpdateData(data, fork, update, baseBranch, baseSha1, git.branchFor(update))
-          processUpdate(updateData).flatMap {
+          processUpdate(updateData, seenBranches).flatMap {
             case result @ Created(newPrNumber) =>
               (for {
                 _ <- closeObsoletePullRequests(updateData, newPrNumber)
@@ -99,7 +99,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
       )
     } yield ()
 
-  def processUpdate(data: UpdateData): F[ProcessResult] =
+  def processUpdate(data: UpdateData, seenBranches: Ref[F, List[Branch]]): F[ProcessResult] =
     for {
       _ <- logger.info(s"Process update ${data.update.show}")
       head = vcs.listingBranch(config.vcsType, data.fork, data.update)
@@ -109,9 +109,9 @@ final class NurtureAlg[F[_]](config: Config)(implicit
           logger.info(s"PR ${pr.html_url} is closed") >>
             removeRemoteBranch(data.repo, data.updateBranch).as(Ignored)
         case Some(pr) =>
-          logger.info(s"Found PR ${pr.html_url}") >> updatePullRequest(data)
+          logger.info(s"Found PR ${pr.html_url}") >> updatePullRequest(data, seenBranches)
         case None =>
-          applyNewUpdate(data)
+          applyNewUpdate(data, seenBranches)
       }
       _ <- pullRequests.headOption.traverse_ { pr =>
         pullRequestRepository.createOrUpdate(
@@ -155,13 +155,30 @@ final class NurtureAlg[F[_]](config: Config)(implicit
       gitAlg.removeBranch(repo, branch)
     }
 
-  def applyNewUpdate(data: UpdateData): F[ProcessResult] =
+  def ensureDistinctBranch(
+      data: UpdateData,
+      seenBranches: Ref[F, List[Branch]],
+      whenDistinct: F[ProcessResult]
+  ): F[ProcessResult] =
+    seenBranches.get
+      .flatMap(_.forallM(gitAlg.diff(data.repo, _).map(_.nonEmpty)))
+      .ifM(
+        whenDistinct,
+        logger.warn("Discovered a duplicate branch, not pushing").as(Ignored)
+      )
+
+  def applyNewUpdate(data: UpdateData, seenBranches: Ref[F, List[Branch]]): F[ProcessResult] =
     gitAlg.returnToCurrentBranch(data.repo) {
       val createBranch = logger.info(s"Create branch ${data.updateBranch.name}") >>
         gitAlg.createBranch(data.repo, data.updateBranch)
       editAlg.applyUpdate(data.repoData, data.update, createBranch).flatMap { editCommits =>
         if (editCommits.isEmpty) logger.warn("No commits created").as(Ignored)
-        else pushCommits(data, editCommits) >> createPullRequest(data)
+        else
+          ensureDistinctBranch(
+            data,
+            seenBranches,
+            pushCommits(data, editCommits) >> createPullRequest(data)
+          )
       }
     }
 
@@ -210,13 +227,14 @@ final class NurtureAlg[F[_]](config: Config)(implicit
       _ <- logger.info(s"Created PR ${pr.html_url}")
     } yield Created(pr.number)
 
-  def updatePullRequest(data: UpdateData): F[ProcessResult] =
+  def updatePullRequest(data: UpdateData, seenBranches: Ref[F, List[Branch]]): F[ProcessResult] =
     if (data.repoConfig.updatePullRequestsOrDefault =!= PullRequestUpdateStrategy.Never)
       gitAlg.returnToCurrentBranch(data.repo) {
         for {
           _ <- gitAlg.checkoutBranch(data.repo, data.updateBranch)
           update <- shouldBeUpdated(data)
-          result <- if (update) mergeAndApplyAgain(data) else F.pure[ProcessResult](Ignored)
+          result <-
+            if (update) mergeAndApplyAgain(data, seenBranches) else F.pure[ProcessResult](Ignored)
         } yield result
       }
     else
@@ -242,14 +260,18 @@ final class NurtureAlg[F[_]](config: Config)(implicit
     result.flatMap { case (update, msg) => logger.info(msg).as(update) }
   }
 
-  def mergeAndApplyAgain(data: UpdateData): F[ProcessResult] =
+  def mergeAndApplyAgain(data: UpdateData, seenBranches: Ref[F, List[Branch]]): F[ProcessResult] =
     for {
       _ <- logger.info(
         s"Merge branch ${data.baseBranch.name} into ${data.updateBranch.name} and apply again"
       )
       maybeMergeCommit <- gitAlg.mergeTheirs(data.repo, data.baseBranch)
       editCommits <- editAlg.applyUpdate(data.repoData, data.update)
-      result <- pushCommits(data, maybeMergeCommit.toList ++ editCommits)
+      result <- ensureDistinctBranch(
+        data,
+        seenBranches,
+        pushCommits(data, maybeMergeCommit.toList ++ editCommits)
+      )
     } yield result
 }
 
