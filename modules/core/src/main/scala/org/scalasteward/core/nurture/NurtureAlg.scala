@@ -17,7 +17,8 @@
 package org.scalasteward.core.nurture
 
 import cats.Applicative
-import cats.effect.BracketThrow
+import cats.effect.{BracketThrow, Sync}
+import cats.effect.concurrent.Ref
 import cats.implicits._
 import eu.timepit.refined.types.numeric.NonNegInt
 import fs2.Stream
@@ -49,13 +50,15 @@ final class NurtureAlg[F[_]](config: Config)(implicit
     vcsRepoAlg: VCSRepoAlg[F],
     streamCompiler: Stream.Compiler[F, F],
     urlChecker: UrlChecker[F],
-    F: BracketThrow[F]
+    F: BracketThrow[F],
+    FS: Sync[F]
 ) {
   def nurture(data: RepoData, fork: RepoOut, updates: List[Update.Single]): F[Unit] =
     for {
       _ <- logger.info(s"Nurture ${data.repo.show}")
       baseBranch <- cloneAndSync(data.repo, fork)
-      _ <- updateDependencies(data, fork.repo, baseBranch, updates)
+      seenBranches <- Ref[F].of(List.empty[Branch])
+      _ <- updateDependencies(data, fork.repo, baseBranch, updates, seenBranches)
     } yield ()
 
   def cloneAndSync(repo: Repo, fork: RepoOut): F[Branch] =
@@ -68,7 +71,8 @@ final class NurtureAlg[F[_]](config: Config)(implicit
       data: RepoData,
       fork: Repo,
       baseBranch: Branch,
-      updates: List[Update.Single]
+      updates: List[Update.Single],
+      seenBranches: Ref[F, List[Branch]]
   ): F[Unit] =
     for {
       _ <- F.unit
@@ -82,8 +86,13 @@ final class NurtureAlg[F[_]](config: Config)(implicit
             UpdateData(data, fork, update, baseBranch, baseSha1, git.branchFor(update))
           processUpdate(updateData).flatMap {
             case result @ Created(newPrNumber) =>
-              closeObsoletePullRequests(updateData, newPrNumber).as[ProcessResult](result)
-            case result @ _ => F.pure(result)
+              (for {
+                _ <- closeObsoletePullRequests(updateData, newPrNumber)
+                _ <- seenBranches.update(updateData.updateBranch :: _)
+              } yield ()).as[ProcessResult](result)
+            case result @ Updated =>
+              seenBranches.update(updateData.updateBranch :: _).as[ProcessResult](result)
+            case result @ Ignored => F.pure(result)
           }
         },
         data.config.updates.limit
