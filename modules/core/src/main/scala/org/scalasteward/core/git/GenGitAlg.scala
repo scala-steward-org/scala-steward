@@ -69,6 +69,8 @@ trait GenGitAlg[F[_], Repo] {
 
   def version: F[String]
 
+  def diff(repo: Repo, branch: Branch): F[List[String]]
+
   final def commitAllIfDirty(repo: Repo, message: String, messages: String*)(implicit
       F: Monad[F]
   ): F[Option[Commit]] =
@@ -142,6 +144,9 @@ trait GenGitAlg[F[_], Repo] {
 
       override def version: F[String] =
         self.version
+
+      override def diff(repo: A, branch: Branch): F[List[String]] =
+        f(repo).flatMap(self.diff(_, branch))
     }
   }
 }
