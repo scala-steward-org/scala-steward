@@ -81,12 +81,12 @@ object Context {
     for {
       blocker <- Blocker[F]
       config = Config.from(args)
-      implicit0(logger: Logger[F]) <- Resource.liftF(Slf4jLogger.create[F])
+      implicit0(logger: Logger[F]) <- Resource.eval(Slf4jLogger.create[F])
       implicit0(client: Client[F]) <- OkHttpBuilder.withDefaultClient[F](blocker).map(_.create)
       implicit0(fileAlg: FileAlg[F]) = FileAlg.create[F]
       implicit0(processAlg: ProcessAlg[F]) = ProcessAlg.create[F](blocker, config.processCfg)
       implicit0(workspaceAlg: WorkspaceAlg[F]) = WorkspaceAlg.create[F](config)
-      context <- Resource.liftF(step1[F](config))
+      context <- Resource.eval(step1[F](config))
     } yield context
 
   def step1[F[_]](config: Config)(implicit
