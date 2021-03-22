@@ -19,11 +19,11 @@ package org.scalasteward.core.update
 import cats.Monad
 import cats.data.OptionT
 import cats.implicits._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import org.scalasteward.core.data._
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.repocache.RepoCache
-import org.scalasteward.core.repoconfig.{PullRequestFrequency, RepoConfig}
+import org.scalasteward.core.repoconfig.{IncludeScalaStrategy, PullRequestFrequency, RepoConfig}
 import org.scalasteward.core.update.PruningAlg._
 import org.scalasteward.core.update.data.UpdateState
 import org.scalasteward.core.update.data.UpdateState._
@@ -41,7 +41,8 @@ final class PruningAlg[F[_]](implicit
     F: Monad[F]
 ) {
   def needsAttention(data: RepoData): F[(Boolean, List[Update.Single])] = {
-    val ignoreScalaDependency = !data.config.updates.includeScalaOrDefault
+    val ignoreScalaDependency =
+      data.config.updates.includeScalaOrDefault === IncludeScalaStrategy.No
     val dependencies = data.cache.dependencyInfos
       .flatMap(_.sequence)
       .collect {
@@ -61,7 +62,9 @@ final class PruningAlg[F[_]](implicit
     val depsWithoutResolvers = dependencies.map(_.value).distinct
     for {
       _ <- logger.info(s"Find updates for ${repo.show}")
-      updates0 <- updateAlg.findUpdates(dependencies, repoConfig, None)
+      updates0 <- updateAlg
+        .findUpdates(dependencies, repoConfig, None)
+        .map(removeOvertakingUpdates(depsWithoutResolvers, _))
       updateStates0 <- findAllUpdateStates(repo, repoCache, depsWithoutResolvers, updates0)
       outdatedDeps = collectOutdatedDependencies(updateStates0)
       (updateStates1, updates1) <- {
@@ -69,6 +72,7 @@ final class PruningAlg[F[_]](implicit
         else
           for {
             freshUpdates <- ensureFreshUpdates(repoConfig, dependencies, outdatedDeps, updates0)
+              .map(removeOvertakingUpdates(depsWithoutResolvers, _))
             freshStates <- findAllUpdateStates(repo, repoCache, depsWithoutResolvers, freshUpdates)
           } yield (freshStates, freshUpdates)
       }
@@ -168,6 +172,21 @@ object PruningAlg {
     info.filesContainingVersion.isEmpty ||
       FilterAlg.isScalaDependencyIgnored(info.dependency, ignoreScalaDependency) ||
       FilterAlg.isDependencyConfigurationIgnored(info.dependency)
+
+  def removeOvertakingUpdates(
+      dependencies: List[Dependency],
+      updates: List[Update.Single]
+  ): List[Update.Single] =
+    updates.filterNot { update =>
+      dependencies.exists { dependency =>
+        dependency.groupId === update.groupId &&
+        dependency.artifactId === update.artifactId && {
+          val dependencyVersion = Version(dependency.version)
+          dependencyVersion > Version(update.currentVersion) &&
+          dependencyVersion <= Version(update.nextVersion)
+        }
+      }
+    }
 
   def collectOutdatedDependencies(updateStates: List[UpdateState]): List[DependencyOutdated] =
     updateStates.collect { case state: DependencyOutdated => state }

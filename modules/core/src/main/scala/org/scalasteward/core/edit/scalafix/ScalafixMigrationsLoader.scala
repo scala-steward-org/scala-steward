@@ -14,24 +14,27 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.scalafix
+package org.scalasteward.core.edit.scalafix
 
 import cats.MonadThrow
 import cats.syntax.all._
-import io.chrisdavenport.log4cats.Logger
 import io.circe.config.parser.decode
 import org.http4s.Uri
 import org.http4s.implicits.http4sLiteralsSyntax
 import org.scalasteward.core.application.Config.ScalafixCfg
+import org.scalasteward.core.edit.scalafix.ScalafixMigrationsLoader._
 import org.scalasteward.core.io.FileAlg
-import org.scalasteward.core.scalafix.MigrationsLoader._
+import org.typelevel.log4cats.Logger
 
-final class MigrationsLoader[F[_]](implicit
+final class ScalafixMigrationsLoader[F[_]](implicit
     fileAlg: FileAlg[F],
     logger: Logger[F],
     F: MonadThrow[F]
 ) {
-  def loadAll(config: ScalafixCfg): F[List[Migration]] = {
+  def createFinder(config: ScalafixCfg): F[ScalafixMigrationsFinder] =
+    loadAll(config).map(new ScalafixMigrationsFinder(_))
+
+  def loadAll(config: ScalafixCfg): F[List[ScalafixMigration]] = {
     val maybeDefaultMigrationsUrl =
       Option.unless(config.disableDefaults)(defaultScalafixMigrationsUrl)
     (maybeDefaultMigrationsUrl.toList ++ config.migrations)
@@ -39,7 +42,7 @@ final class MigrationsLoader[F[_]](implicit
       .flatTap(migrations => logger.info(s"Loaded ${migrations.size} Scalafix migrations"))
   }
 
-  private def loadMigrations(uri: Uri): F[List[Migration]] =
+  private def loadMigrations(uri: Uri): F[List[ScalafixMigration]] =
     logger.debug(s"Loading Scalafix migrations from $uri") >>
       fileAlg.readUri(uri).flatMap(decodeMigrations(_, uri)).map(_.migrations)
 
@@ -48,7 +51,7 @@ final class MigrationsLoader[F[_]](implicit
       .adaptErr(new Throwable(s"Failed to load Scalafix migrations from ${uri.renderString}", _))
 }
 
-object MigrationsLoader {
+object ScalafixMigrationsLoader {
   val defaultScalafixMigrationsUrl: Uri =
     uri"https://raw.githubusercontent.com/scala-steward-org/scala-steward/master/modules/core/src/main/resources/scalafix-migrations.conf"
 }

@@ -18,7 +18,7 @@ package org.scalasteward.core.update
 
 import cats.syntax.all._
 import cats.{Monad, TraverseFilter}
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import org.scalasteward.core.data._
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.update.FilterAlg._
@@ -74,13 +74,8 @@ object FilterAlg {
       .flatMap(checkVersionOrdering)
 
   def isScalaDependency(dependency: Dependency): Boolean =
-    (dependency.groupId.value, dependency.artifactId.name) match {
-      case ("org.scala-lang", "scala-compiler") => true
-      case ("org.scala-lang", "scala-library")  => true
-      case ("org.scala-lang", "scala-reflect")  => true
-      case ("org.scala-lang", "scalap")         => true
-      case ("org.typelevel", "scala-library")   => true
-      case _                                    => false
+    scalaLangModules.exists { case (groupId, artifactId) =>
+      groupId === dependency.groupId && artifactId.name === dependency.artifactId.name
     }
 
   def isScalaDependencyIgnored(dependency: Dependency, ignoreScalaDependency: Boolean): Boolean =
@@ -132,6 +127,12 @@ object FilterAlg {
           // https://github.com/scala-steward-org/scala-steward/issues/1413
           "36845576"
         ).contains
+      case ("commons-beanutils", "commons-beanutils") =>
+        List(
+          "20020520",
+          "20021128.082114",
+          "20030211.134440"
+        ).contains
       case ("commons-codec", "commons-codec") =>
         List(
           // https://github.com/scala-steward-org/scala-steward/issues/1753
@@ -150,6 +151,13 @@ object FilterAlg {
         List(
           // https://github.com/scala-steward-org/scala-steward/issues/1753
           "20030203.000550"
+        ).contains
+      case ("commons-net", "commons-net") =>
+        List(
+          // https://github.com/gitbucket/gitbucket/pull/2639
+          "20030805.205232",
+          "20030623.125255",
+          "20030211.160026"
         ).contains
       case ("io.monix", _) =>
         List(

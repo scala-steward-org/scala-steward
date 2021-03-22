@@ -18,7 +18,6 @@ package org.scalasteward.core.vcs.gitlab
 
 import cats.MonadThrow
 import cats.syntax.all._
-import io.chrisdavenport.log4cats.Logger
 import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.syntax._
@@ -29,6 +28,7 @@ import org.scalasteward.core.util.uri.uriDecoder
 import org.scalasteward.core.util.{HttpJsonClient, UnexpectedResponse}
 import org.scalasteward.core.vcs.VCSApiAlg
 import org.scalasteward.core.vcs.data._
+import org.typelevel.log4cats.Logger
 
 final private[gitlab] case class ForkPayload(id: String, namespace: String)
 final private[gitlab] case class MergeRequestPayload(
@@ -42,7 +42,14 @@ final private[gitlab] case class MergeRequestPayload(
 
 private[gitlab] object MergeRequestPayload {
   def apply(id: String, projectId: Long, data: NewPullRequestData): MergeRequestPayload =
-    MergeRequestPayload(id, data.title, data.body, projectId, data.head, data.base)
+    MergeRequestPayload(
+      id,
+      List(if (data.draft) "Draft: " else "", data.title).mkString,
+      data.body,
+      projectId,
+      data.head,
+      data.base
+    )
 }
 
 final private[gitlab] case class MergeRequestOut(

@@ -1,10 +1,10 @@
 package org.scalasteward.core.buildtool.maven
 
-import better.files.File
 import munit.FunSuite
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockContext.context.mavenAlg
 import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
 import org.scalasteward.core.vcs.data.{BuildRoot, Repo}
 
 class MavenAlgTest extends FunSuite {
@@ -12,16 +12,11 @@ class MavenAlgTest extends FunSuite {
     val repo = Repo("namespace", "repo-name")
     val buildRoot = BuildRoot(repo, ".")
     val repoDir = config.workspace / repo.show
-    val files: Map[File, String] = Map.empty
 
-    val state =
-      mavenAlg.getDependencies(buildRoot).runS(MockState.empty.copy(files = files)).unsafeRunSync()
-
+    val state = mavenAlg.getDependencies(buildRoot).runS(MockState.empty).unsafeRunSync()
     val expected = MockState.empty.copy(
-      files = files,
-      logs = Vector.empty,
-      commands = Vector(
-        List(
+      trace = Vector(
+        Cmd(
           repoDir.toString,
           "firejail",
           "--quiet",
@@ -32,7 +27,7 @@ class MavenAlgTest extends FunSuite {
           "--batch-mode",
           command.listDependencies
         ),
-        List(
+        Cmd(
           repoDir.toString,
           "firejail",
           "--quiet",

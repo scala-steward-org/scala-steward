@@ -20,11 +20,12 @@ import cats.syntax.all._
 import io.circe.Encoder
 import io.circe.generic.semiauto._
 import org.http4s.Uri
-import org.scalasteward.core.data.{GroupId, ReleaseRelatedUrl, SemVer, Update, UpdateData}
+import org.scalasteward.core.data._
+import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.git
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.repoconfig.RepoConfigAlg
-import org.scalasteward.core.scalafix.Migration
+import org.scalasteward.core.repoconfig.{IncludeScalaStrategy, RepoConfigAlg}
+import org.scalasteward.core.update.FilterAlg
 import org.scalasteward.core.util.Details
 
 final case class UpdateState(
@@ -38,7 +39,8 @@ final case class NewPullRequestData(
     title: String,
     body: String,
     head: String,
-    base: Branch
+    base: Branch,
+    draft: Boolean = false
 )
 
 object NewPullRequestData {
@@ -49,7 +51,7 @@ object NewPullRequestData {
       update: Update,
       artifactIdToUrl: Map[String, Uri],
       releaseRelatedUrls: List[ReleaseRelatedUrl],
-      migrations: List[Migration],
+      migrations: List[ScalafixMigration],
       filesWithOldVersion: List[String]
   ): String = {
     val artifacts = artifactsWithOptionalUrl(update, artifactIdToUrl)
@@ -162,7 +164,7 @@ object NewPullRequestData {
           |""".stripMargin.trim
     )
 
-  def migrationNote(migrations: List[Migration]): (Option[String], Option[Details]) =
+  def migrationNote(migrations: List[ScalafixMigration]): (Option[String], Option[Details]) =
     if (migrations.isEmpty) (None, None)
     else {
       val ruleList =
@@ -196,7 +198,7 @@ object NewPullRequestData {
       branchName: String,
       artifactIdToUrl: Map[String, Uri] = Map.empty,
       releaseRelatedUrls: List[ReleaseRelatedUrl] = List.empty,
-      migrations: List[Migration] = List.empty,
+      migrations: List[ScalafixMigration] = List.empty,
       filesWithOldVersion: List[String] = List.empty
   ): NewPullRequestData =
     NewPullRequestData(
@@ -209,6 +211,8 @@ object NewPullRequestData {
         filesWithOldVersion
       ),
       head = branchName,
-      base = data.baseBranch
+      base = data.baseBranch,
+      draft = data.update.dependencies.exists(FilterAlg.isScalaDependency) &&
+        (data.repoData.config.updates.includeScalaOrDefault === IncludeScalaStrategy.Draft)
     )
 }

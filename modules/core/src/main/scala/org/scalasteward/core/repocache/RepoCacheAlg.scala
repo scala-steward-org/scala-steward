@@ -18,14 +18,14 @@ package org.scalasteward.core.repocache
 
 import cats.syntax.all._
 import cats.{MonadThrow, Parallel}
-import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.BuildToolDispatcher
-import org.scalasteward.core.data.{Dependency, DependencyInfo}
+import org.scalasteward.core.data.{Dependency, DependencyInfo, RepoData}
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.vcs.data.{Repo, RepoOut}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
+import org.typelevel.log4cats.Logger
 
 final class RepoCacheAlg[F[_]](config: Config)(implicit
     buildToolDispatcher: BuildToolDispatcher[F],
@@ -39,7 +39,7 @@ final class RepoCacheAlg[F[_]](config: Config)(implicit
     vcsRepoAlg: VCSRepoAlg[F],
     F: MonadThrow[F]
 ) {
-  def checkCache(repo: Repo): F[(RepoCache, RepoOut)] =
+  def checkCache(repo: Repo): F[(RepoData, RepoOut)] =
     logger.info(s"Check cache of ${repo.show}") >>
       refreshErrorAlg.skipIfFailedRecently(repo) {
         for {
@@ -48,32 +48,38 @@ final class RepoCacheAlg[F[_]](config: Config)(implicit
             repoCacheRepository.findCache(repo)
           ).parTupled
           latestSha1 = branchOut.commit.sha
-          cache <- maybeCache
+          data <- maybeCache
             .filter(_.sha1 === latestSha1)
-            .fold(cloneAndRefreshCache(repo, repoOut))(F.pure)
-        } yield (cache, repoOut)
+            .fold(cloneAndRefreshCache(repo, repoOut))(supplementCache(repo, _))
+        } yield (data, repoOut)
       }
 
-  private def cloneAndRefreshCache(repo: Repo, repoOut: RepoOut): F[RepoCache] =
+  private def supplementCache(repo: Repo, cache: RepoCache): F[RepoData] =
+    repoConfigAlg.mergeWithDefault(cache.maybeRepoConfig).map { config =>
+      RepoData(repo, cache, config)
+    }
+
+  private def cloneAndRefreshCache(repo: Repo, repoOut: RepoOut): F[RepoData] =
     vcsRepoAlg.cloneAndSync(repo, repoOut) >> refreshCache(repo)
 
-  private def refreshCache(repo: Repo): F[RepoCache] =
+  private def refreshCache(repo: Repo): F[RepoData] =
     for {
       _ <- logger.info(s"Refresh cache of ${repo.show}")
-      cache <- refreshErrorAlg.persistError(repo)(computeCache(repo))
-      _ <- repoCacheRepository.updateCache(repo, cache)
-    } yield cache
+      data <- refreshErrorAlg.persistError(repo)(computeCache(repo))
+      _ <- repoCacheRepository.updateCache(repo, data.cache)
+    } yield data
 
-  private def computeCache(repo: Repo): F[RepoCache] =
+  private def computeCache(repo: Repo): F[RepoData] =
     for {
       branch <- gitAlg.currentBranch(repo)
       latestSha1 <- gitAlg.latestSha1(repo, branch)
-      dependencies <- buildToolDispatcher.getDependencies(repo)
+      maybeConfig <- repoConfigAlg.readRepoConfig(repo)
+      config <- repoConfigAlg.mergeWithDefault(maybeConfig)
+      dependencies <- buildToolDispatcher.getDependencies(repo, config)
       dependencyInfos <-
-        dependencies
-          .traverse(_.traverse(_.traverse(gatherDependencyInfo(repo, _))))
-      maybeRepoConfig <- repoConfigAlg.readRepoConfig(repo)
-    } yield RepoCache(latestSha1, dependencyInfos, maybeRepoConfig)
+        dependencies.traverse(_.traverse(_.traverse(gatherDependencyInfo(repo, _))))
+      cache = RepoCache(latestSha1, dependencyInfos, maybeConfig)
+    } yield RepoData(repo, cache, config)
 
   private def gatherDependencyInfo(repo: Repo, dependency: Dependency): F[DependencyInfo] =
     gitAlg.findFilesContaining(repo, dependency.version).map(DependencyInfo(dependency, _))

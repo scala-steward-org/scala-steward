@@ -17,43 +17,21 @@
 package org.scalasteward.core.data
 
 import cats.syntax.all._
-import eu.timepit.refined.cats.refTypeEq
-import eu.timepit.refined.types.numeric.NonNegBigInt
-import eu.timepit.refined.types.string.NonEmptyString
 import org.scalasteward.core.data.SemVer.Change._
-import org.scalasteward.core.util.string.parseNonNegBigInt
 
 final case class SemVer(
-    major: NonNegBigInt,
-    minor: NonNegBigInt,
-    patch: NonNegBigInt,
-    preRelease: Option[NonEmptyString],
-    buildMetadata: Option[NonEmptyString]
-) {
-  def render: String =
-    s"$major.$minor.$patch" + preRelease.fold("")("-" + _) + buildMetadata.fold("")("+" + _)
-}
+    major: String,
+    minor: String,
+    patch: String,
+    preRelease: Option[String] = None,
+    buildMetadata: Option[String] = None
+)
 
 object SemVer {
-  def parse(s: String): Option[SemVer] = {
-    def parseIdentifier(s: String): Option[NonEmptyString] =
-      Option(s).map(_.drop(1)).flatMap(NonEmptyString.unapply)
-
-    val pattern = raw"""(\d+)\.(\d+)\.(\d+)(\-[^\+]+)?(\+.+)?""".r
-    s match {
-      case pattern(majorStr, minorStr, patchStr, preReleaseStr, buildMetadataStr) =>
-        for {
-          major <- parseNonNegBigInt(majorStr)
-          minor <- parseNonNegBigInt(minorStr)
-          patch <- parseNonNegBigInt(patchStr)
-          preRelease = parseIdentifier(preReleaseStr)
-          buildMetadata = parseIdentifier(buildMetadataStr)
-          semVer = SemVer(major, minor, patch, preRelease, buildMetadata)
-          if semVer.render === s
-        } yield semVer
-      case _ => None
+  def parse(s: String): Option[SemVer] =
+    cats.parse.SemVer.semver.parseAll(s).toOption.map { v =>
+      SemVer(v.core.major, v.core.minor, v.core.patch, v.preRelease, v.buildMetadata)
     }
-  }
 
   sealed abstract class Change(val render: String)
   object Change {

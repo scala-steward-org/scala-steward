@@ -2,8 +2,6 @@ package org.scalasteward.core.vcs.gitlab
 
 import cats.effect.IO
 import cats.implicits._
-import io.chrisdavenport.log4cats.Logger
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.circe.literal._
 import io.circe.parser._
 import munit.FunSuite
@@ -23,6 +21,8 @@ import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.{HttpJsonClient, Nel}
 import org.scalasteward.core.vcs.data._
 import org.scalasteward.core.vcs.gitlab.GitLabJsonCodec._
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 class GitLabApiAlgTest extends FunSuite {
   object MergeWhenPipelineSucceedsMatcher

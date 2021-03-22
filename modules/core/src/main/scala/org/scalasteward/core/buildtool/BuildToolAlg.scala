@@ -17,12 +17,13 @@
 package org.scalasteward.core.buildtool
 
 import org.scalasteward.core.data.Scope
-import org.scalasteward.core.scalafix.Migration
+import org.scalasteward.core.edit.scalafix.ScalafixMigration
+import org.scalasteward.core.vcs.data.BuildRoot
 
-trait BuildToolAlg[F[_], R] {
-  def containsBuild(r: R): F[Boolean]
+trait BuildToolAlg[F[_]] {
+  def containsBuild(buildRoot: BuildRoot): F[Boolean]
 
-  def getDependencies(r: R): F[List[Scope.Dependencies]]
+  def getDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]]
 
-  def runMigration(r: R, migration: Migration): F[Unit]
+  def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit]
 }

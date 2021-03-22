@@ -9,12 +9,14 @@ import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.mock.MockContext.config
 import org.scalasteward.core.mock.MockContext.context.pullRequestRepository
 import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.mock.MockState.TraceEntry
+import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.{PullRequestNumber, PullRequestState, Repo}
 
 class PullRequestRepositoryTest extends FunSuite {
-  private def checkCommands(state: MockState, commands: Vector[List[String]]): Unit =
-    assertEquals(state.copy(files = Map.empty), MockState.empty.copy(commands = commands))
+  private def checkTrace(state: MockState, trace: Vector[TraceEntry]): Unit =
+    assertEquals(state.copy(files = Map.empty), MockState.empty.copy(trace = trace))
 
   private val url = uri"https://github.com/typelevel/cats/pull/3291"
   private val sha1 = Sha1(HexString.unsafeFrom("a2ced5793c2832ada8c14ba5c77e51c4bc9656a8"))
@@ -42,11 +44,11 @@ class PullRequestRepositoryTest extends FunSuite {
     assertEquals(result, Some((url, sha1, PullRequestState.Open)))
     assert(createdAt.isDefined)
 
-    checkCommands(
+    checkTrace(
       state,
       Vector(
-        List("read", store.toString),
-        List("write", store.toString)
+        Cmd("read", store.toString),
+        Cmd("write", store.toString)
       )
     )
   }
@@ -76,12 +78,12 @@ class PullRequestRepositoryTest extends FunSuite {
     assertEquals(closedResult, List.empty)
     assertEquals(result, List((number, url, TestData.Updates.PortableScala)))
 
-    checkCommands(
+    checkTrace(
       state,
       Vector(
-        List("read", store.toString),
-        List("write", store.toString),
-        List("write", store.toString)
+        Cmd("read", store.toString),
+        Cmd("write", store.toString),
+        Cmd("write", store.toString)
       )
     )
   }
@@ -107,11 +109,11 @@ class PullRequestRepositoryTest extends FunSuite {
     assertEquals(emptyResult, List.empty)
     assertEquals(result, List.empty)
 
-    checkCommands(
+    checkTrace(
       state,
       Vector(
-        List("read", store.toString),
-        List("write", store.toString)
+        Cmd("read", store.toString),
+        Cmd("write", store.toString)
       )
     )
   }
@@ -138,11 +140,11 @@ class PullRequestRepositoryTest extends FunSuite {
     assertEquals(emptyResult, List.empty)
     assertEquals(result, List.empty)
 
-    checkCommands(
+    checkTrace(
       state,
       Vector(
-        List("read", store.toString),
-        List("write", store.toString)
+        Cmd("read", store.toString),
+        Cmd("write", store.toString)
       )
     )
   }

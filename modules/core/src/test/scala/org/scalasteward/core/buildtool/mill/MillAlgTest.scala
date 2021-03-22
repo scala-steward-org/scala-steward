@@ -5,6 +5,7 @@ import org.scalasteward.core.buildtool.mill.MillAlg.extractDeps
 import org.scalasteward.core.mock.MockContext.config
 import org.scalasteward.core.mock.MockContext.context.millAlg
 import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
 import org.scalasteward.core.vcs.data.{BuildRoot, Repo}
 
 class MillAlgTest extends FunSuite {
@@ -29,10 +30,10 @@ class MillAlgTest extends FunSuite {
     val initial = MockState.empty.copy(commandOutputs = Map(millCmd -> List("""{"modules":[]}""")))
     val state = millAlg.getDependencies(buildRoot).runS(initial).unsafeRunSync()
     val expected = initial.copy(
-      commands = Vector(
-        List("write", predef),
-        repoDir.toString :: millCmd,
-        List("rm", "-rf", predef)
+      trace = Vector(
+        Cmd("write", predef),
+        Cmd(repoDir.toString :: millCmd),
+        Cmd("rm", "-rf", predef)
       )
     )
     assertEquals(state, expected)

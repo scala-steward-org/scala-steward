@@ -16,43 +16,44 @@
 
 package org.scalasteward.core.scalafmt
 
-import cats.data.Nested
+import cats.Monad
+import cats.data.OptionT
 import cats.syntax.all._
-import cats.{Functor, Monad}
-import org.scalasteward.core.data.{Dependency, Version}
+import org.scalasteward.core.application.Config
+import org.scalasteward.core.data.{Scope, Version}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
+import org.scalasteward.core.scalafmt.ScalafmtAlg.parseScalafmtConf
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.BuildRoot
 
-trait ScalafmtAlg[F[_]] {
-  def getScalafmtVersion(buildRoot: BuildRoot): F[Option[Version]]
+final class ScalafmtAlg[F[_]](config: Config)(implicit
+    fileAlg: FileAlg[F],
+    processAlg: ProcessAlg[F],
+    workspaceAlg: WorkspaceAlg[F],
+    F: Monad[F]
+) {
+  def getScalafmtVersion(buildRoot: BuildRoot): F[Option[Version]] =
+    for {
+      buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
+      scalafmtConfFile = buildRootDir / ".scalafmt.conf"
+      fileContent <- fileAlg.readFile(scalafmtConfFile)
+    } yield fileContent.flatMap(parseScalafmtConf)
 
-  def version: F[String]
+  def getScopedScalafmtDependency(buildRoot: BuildRoot): F[Option[Scope.Dependencies]] =
+    OptionT(getScalafmtVersion(buildRoot))
+      .map(version => Scope(List(scalafmtDependency(version)), List(config.defaultResolver)))
+      .value
 
-  final def getScalafmtDependency(buildRoot: BuildRoot)(implicit
-      F: Functor[F]
-  ): F[Option[Dependency]] =
-    Nested(getScalafmtVersion(buildRoot)).map(scalafmtDependency).value
+  def version: F[String] =
+    workspaceAlg.rootDir
+      .flatMap(processAlg.exec(Nel.of(scalafmtBinary, "--version"), _))
+      .map(_.mkString.trim)
 }
 
 object ScalafmtAlg {
-  def create[F[_]](implicit
-      fileAlg: FileAlg[F],
-      workspaceAlg: WorkspaceAlg[F],
-      processAlg: ProcessAlg[F],
-      F: Monad[F]
-  ): ScalafmtAlg[F] =
-    new ScalafmtAlg[F] {
-      override def getScalafmtVersion(buildRoot: BuildRoot): F[Option[Version]] =
-        for {
-          buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
-          scalafmtConfFile = buildRootDir / ".scalafmt.conf"
-          fileContent <- fileAlg.readFile(scalafmtConfFile)
-        } yield fileContent.flatMap(parseScalafmtConf)
-
-      override def version: F[String] =
-        workspaceAlg.rootDir
-          .flatMap(processAlg.exec(Nel.of(scalafmtBinary, "--version"), _))
-          .map(_.mkString.trim)
-    }
+  private def parseScalafmtConf(s: String): Option[Version] =
+    """version\s*=\s*(.+)""".r
+      .findFirstMatchIn(s)
+      .map(_.group(1).replace("\"", ""))
+      .map(Version.apply)
 }

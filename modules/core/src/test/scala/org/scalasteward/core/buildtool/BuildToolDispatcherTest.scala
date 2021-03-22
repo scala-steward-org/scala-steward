@@ -7,29 +7,31 @@ import org.scalasteward.core.data.{Resolver, Scope, Version}
 import org.scalasteward.core.mock.MockContext.config
 import org.scalasteward.core.mock.MockContext.context.buildToolDispatcher
 import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
+import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafmt
 import org.scalasteward.core.vcs.data.Repo
 
 class BuildToolDispatcherTest extends FunSuite {
   test("getDependencies") {
-    val repo = Repo("typelevel", "cats")
+    val repo = Repo("build-tool-dispatcher", "test-1")
+    val repoConfig = RepoConfig.empty
     val repoDir = config.workspace / repo.show
-    val files = Map(
-      repoDir / "project" / "build.properties" -> "sbt.version=1.2.6",
-      repoDir / ".scalafmt.conf" -> "version=2.0.0"
-    )
-    val initial = MockState.empty.copy(files = files)
+    val initial = MockState.empty
+      .addFiles(
+        repoDir / "project" / "build.properties" -> "sbt.version=1.2.6",
+        repoDir / ".scalafmt.conf" -> "version=2.0.0"
+      )
+      .unsafeRunSync()
     val (state, deps) =
-      buildToolDispatcher.getDependencies(repo).run(initial).unsafeRunSync()
+      buildToolDispatcher.getDependencies(repo, repoConfig).run(initial).unsafeRunSync()
 
-    val expectedState = initial.copy(commands =
+    val expectedState = initial.copy(trace =
       Vector(
-        List("read", s"$repoDir/.scala-steward.conf"),
-        List("read", s"/tmp/default.scala-steward.conf"),
-        List("test", "-f", s"$repoDir/pom.xml"),
-        List("test", "-f", s"$repoDir/build.sc"),
-        List("test", "-f", s"$repoDir/build.sbt"),
-        List(
+        Cmd("test", "-f", s"$repoDir/pom.xml"),
+        Cmd("test", "-f", s"$repoDir/build.sc"),
+        Cmd("test", "-f", s"$repoDir/build.sbt"),
+        Cmd(
           repoDir.toString,
           "firejail",
           "--quiet",
@@ -42,8 +44,8 @@ class BuildToolDispatcherTest extends FunSuite {
           "-Dsbt.supershell=false",
           s";$crossStewardDependencies;$reloadPlugins;$stewardDependencies"
         ),
-        List("read", s"$repoDir/project/build.properties"),
-        List("read", s"$repoDir/.scalafmt.conf")
+        Cmd("read", s"$repoDir/project/build.properties"),
+        Cmd("read", s"$repoDir/.scalafmt.conf")
       )
     )
 

@@ -7,9 +7,9 @@ import org.scalasteward.core.TestInstances.dummyRepoCache
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.buildtool.sbt.data.SbtVersion
 import org.scalasteward.core.data._
+import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.git.{Branch, Sha1}
-import org.scalasteward.core.repoconfig.RepoConfig
-import org.scalasteward.core.scalafix.Migration
+import org.scalasteward.core.repoconfig.{IncludeScalaStrategy, RepoConfig, UpdatesConfig}
 import org.scalasteward.core.util.Nel
 
 class NewPullRequestDataTest extends FunSuite {
@@ -31,7 +31,67 @@ class NewPullRequestDataTest extends FunSuite {
             |  "title" : "Update logback-classic to 1.2.3",
             |  "body" : "Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3.\n\n\nI'll automatically update this PR to resolve conflicts as long as you don't change it yourself.\n\nIf you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.\n\nConfigure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.\n\nHave a fantastic day writing Scala!\n\n<details>\n<summary>Ignore future updates</summary>\n\nAdd this to your `.scala-steward.conf` file to ignore future updates of this dependency:\n```\nupdates.ignore = [ { groupId = \"ch.qos.logback\", artifactId = \"logback-classic\" } ]\n```\n</details>\n\nlabels: library-update, semver-patch",
             |  "head" : "scala-steward:update/logback-classic-1.2.3",
-            |  "base" : "master"
+            |  "base" : "master",
+            |  "draft" : false
+            |}""".stripMargin
+    assertEquals(obtained, expected)
+  }
+
+  test("asJson for scala update with includeScalaStrategy=draft") {
+    val data = UpdateData(
+      RepoData(
+        Repo("foo", "bar"),
+        dummyRepoCache,
+        RepoConfig(updates = UpdatesConfig(includeScala = Some(IncludeScalaStrategy.Draft)))
+      ),
+      Repo("scala-steward", "bar"),
+      Update.Single("org.scala-lang" % "scala-library" % "2.12.10", Nel.of("2.12.11")),
+      Branch("master"),
+      Sha1(Sha1.HexString.unsafeFrom("d6b6791d2ea11df1d156fe70979ab8c3a5ba3433")),
+      Branch("update/scala-library-2.12.11")
+    )
+    val obtained = NewPullRequestData
+      .from(data, "scala-steward:update/scala-library-2.12.11")
+      .asJson
+      .spaces2
+    val expected =
+      raw"""|{
+            |  "title" : "Update scala-library to 2.12.11",
+            |  "body" : "Updates org.scala-lang:scala-library from 2.12.10 to 2.12.11.\n\n\nI'll automatically update this PR to resolve conflicts as long as you don't change it yourself.\n\nIf you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.\n\nConfigure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.\n\nHave a fantastic day writing Scala!\n\n<details>\n<summary>Ignore future updates</summary>\n\nAdd this to your `.scala-steward.conf` file to ignore future updates of this dependency:\n```\nupdates.ignore = [ { groupId = \"org.scala-lang\", artifactId = \"scala-library\" } ]\n```\n</details>\n\nlabels: library-update, semver-patch",
+            |  "head" : "scala-steward:update/scala-library-2.12.11",
+            |  "base" : "master",
+            |  "draft" : true
+            |}""".stripMargin
+    assertEquals(obtained, expected)
+  }
+
+  test("asJson for group scala update with includeScalaStrategy=draft") {
+    val data = UpdateData(
+      RepoData(
+        Repo("foo", "bar"),
+        dummyRepoCache,
+        RepoConfig(updates = UpdatesConfig(includeScala = Some(IncludeScalaStrategy.Draft)))
+      ),
+      Repo("scala-steward", "bar"),
+      Update.Group(
+        "org.scala-lang" % Nel.of("scala-library", "scala-reflect") % "2.12.10",
+        Nel.of("2.12.11")
+      ),
+      Branch("master"),
+      Sha1(Sha1.HexString.unsafeFrom("d6b6791d2ea11df1d156fe70979ab8c3a5ba3433")),
+      Branch("update/scala-library-2.12.11")
+    )
+    val obtained = NewPullRequestData
+      .from(data, "scala-steward:update/scala-library-2.12.11")
+      .asJson
+      .spaces2
+    val expected =
+      raw"""|{
+            |  "title" : "Update scala-library, scala-reflect to 2.12.11",
+            |  "body" : "Updates \n* org.scala-lang:scala-library\n* org.scala-lang:scala-reflect\n\n from 2.12.10 to 2.12.11.\n\n\nI'll automatically update this PR to resolve conflicts as long as you don't change it yourself.\n\nIf you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.\n\nConfigure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.\n\nHave a fantastic day writing Scala!\n\n<details>\n<summary>Ignore future updates</summary>\n\nAdd this to your `.scala-steward.conf` file to ignore future updates of this dependency:\n```\nupdates.ignore = [ { groupId = \"org.scala-lang\" } ]\n```\n</details>\n\nlabels: library-update, semver-patch",
+            |  "head" : "scala-steward:update/scala-library-2.12.11",
+            |  "base" : "master",
+            |  "draft" : true
             |}""".stripMargin
     assertEquals(obtained, expected)
   }
@@ -105,7 +165,7 @@ class NewPullRequestDataTest extends FunSuite {
 
   test("migrationNote: when artifact has migrations") {
     val update = Update.Single("com.spotify" % "scio-core" % "0.6.0", Nel.of("0.7.0"))
-    val migration = Migration(
+    val migration = ScalafixMigration(
       update.groupId,
       Nel.of(update.artifactId.name),
       Version("0.7.0"),
@@ -129,7 +189,7 @@ class NewPullRequestDataTest extends FunSuite {
 
   test("migrationNote: when artifact has migrations with docs") {
     val update = Update.Single("com.spotify" % "scio-core" % "0.6.0", Nel.of("0.7.0"))
-    val migration = Migration(
+    val migration = ScalafixMigration(
       update.groupId,
       Nel.of(update.artifactId.name),
       Version("0.7.0"),

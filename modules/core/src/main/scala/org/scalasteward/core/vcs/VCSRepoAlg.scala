@@ -18,7 +18,6 @@ package org.scalasteward.core.vcs
 
 import cats.MonadThrow
 import cats.syntax.all._
-import io.chrisdavenport.log4cats.Logger
 import org.http4s.Uri
 import org.http4s.Uri.UserInfo
 import org.scalasteward.core.application.Config
@@ -26,6 +25,7 @@ import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.util
 import org.scalasteward.core.util.logger._
 import org.scalasteward.core.vcs.data.{Repo, RepoOut}
+import org.typelevel.log4cats.Logger
 
 final class VCSRepoAlg[F[_]](config: Config)(implicit
     gitAlg: GitAlg[F],
@@ -33,29 +33,25 @@ final class VCSRepoAlg[F[_]](config: Config)(implicit
     F: MonadThrow[F]
 ) {
   def cloneAndSync(repo: Repo, repoOut: RepoOut): F[Unit] =
-    for {
-      _ <-
-        if (config.doNotFork) logger.info(s"Clone ${repo.show}")
-        else logger.info(s"Clone and synchronize ${repo.show}")
-      _ <- clone(repo, repoOut)
-      _ <- syncFork(repo, repoOut)
-      _ <- logger.attemptLogWarn_("Initializing and cloning submodules failed") {
-        gitAlg.initSubmodules(repo)
-      }
-    } yield ()
+    clone(repo, repoOut) >>
+      (if (config.doNotFork) F.unit else syncFork(repo, repoOut)) >>
+      initSubmodules(repo)
 
   private def clone(repo: Repo, repoOut: RepoOut): F[Unit] =
-    for {
-      _ <- gitAlg.clone(repo, withLogin(repoOut.clone_url))
-      _ <- gitAlg.setAuthor(repo, config.gitCfg.gitAuthor)
-    } yield ()
+    logger.info(s"Clone ${repoOut.repo.show}") >>
+      gitAlg.clone(repo, withLogin(repoOut.clone_url)) >>
+      gitAlg.setAuthor(repo, config.gitCfg.gitAuthor)
 
-  private[vcs] def syncFork(repo: Repo, repoOut: RepoOut): F[Unit] =
-    if (config.doNotFork) F.unit
-    else
-      repoOut.parentOrRaise[F].flatMap { parent =>
+  private def syncFork(repo: Repo, repoOut: RepoOut): F[Unit] =
+    repoOut.parentOrRaise[F].flatMap { parent =>
+      logger.info(s"Synchronize with ${parent.repo.show}") >>
         gitAlg.syncFork(repo, withLogin(parent.clone_url), parent.default_branch)
-      }
+    }
+
+  private def initSubmodules(repo: Repo): F[Unit] =
+    logger.attemptLogWarn_("Initializing and cloning submodules failed") {
+      gitAlg.initSubmodules(repo)
+    }
 
   private val withLogin: Uri => Uri =
     util.uri.withUserInfo.set(UserInfo(config.vcsLogin, None))

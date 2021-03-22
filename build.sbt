@@ -9,13 +9,14 @@ val rootPkg = groupId.replace("-", "")
 val gitHubOwner = "scala-steward-org"
 
 val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
+  "benchmark" -> List(JVMPlatform),
   "core" -> List(JVMPlatform),
   "sbt-plugin" -> List(JVMPlatform),
   "mill-plugin" -> List(JVMPlatform)
 )
 
 val Scala212 = "2.12.10"
-val Scala213 = "2.13.3"
+val Scala213 = "2.13.4"
 
 /// sbt-github-actions configuration
 
@@ -55,9 +56,18 @@ ThisBuild / githubWorkflowBuild :=
 
 lazy val root = project
   .in(file("."))
-  .aggregate(core.jvm, `sbt-plugin`.jvm, `mill-plugin`.jvm)
+  .aggregate(benchmark.jvm, core.jvm, `sbt-plugin`.jvm, `mill-plugin`.jvm)
   .settings(commonSettings)
   .settings(noPublishSettings)
+
+lazy val benchmark = myCrossProject("benchmark")
+  .dependsOn(core)
+  .enablePlugins(JmhPlugin)
+  .settings(noPublishSettings)
+  .settings(
+    coverageEnabled := false,
+    unusedCompileDependencies := Set.empty
+  )
 
 lazy val core = myCrossProject("core")
   .enablePlugins(BuildInfoPlugin, JavaAppPackaging, DockerPlugin)
@@ -72,6 +82,7 @@ lazy val core = myCrossProject("core")
       Dependencies.caseApp,
       Dependencies.catsCore,
       Dependencies.catsEffect,
+      Dependencies.catsParse,
       Dependencies.circeConfig,
       Dependencies.circeGeneric,
       Dependencies.circeGenericExtras,
@@ -93,7 +104,6 @@ lazy val core = myCrossProject("core")
       Dependencies.log4catsSlf4j,
       Dependencies.monocleCore,
       Dependencies.refined,
-      Dependencies.refinedCats,
       Dependencies.scalacacheCaffeine,
       Dependencies.scalacacheCatsEffect,
       Dependencies.logbackClassic % Runtime,
@@ -108,7 +118,7 @@ lazy val core = myCrossProject("core")
     ),
     testFrameworks += new TestFramework("munit.Framework"),
     assembly / test := {},
-    assemblyMergeStrategy in assembly := {
+    assembly / assemblyMergeStrategy := {
       val nativeSuffix = "\\.(?:dll|jnilib|so)$".r
 
       {
@@ -120,7 +130,7 @@ lazy val core = myCrossProject("core")
           // https/repo1.maven.org/maven2/org/fusesource/jansi/jansi/1.18/jansi-1.18.jar:org/fusesource/hawtjni/runtime/Callback.class
           MergeStrategy.first
         case otherwise =>
-          val defaultStrategy = (assemblyMergeStrategy in assembly).value
+          val defaultStrategy = (assembly / assemblyMergeStrategy).value
           defaultStrategy(otherwise)
       }
     },
@@ -151,17 +161,17 @@ lazy val core = myCrossProject("core")
       import cats.effect.ContextShift
       import cats.effect.IO
       import cats.effect.Timer
-      import _root_.io.chrisdavenport.log4cats.Logger
-      import _root_.io.chrisdavenport.log4cats.slf4j.Slf4jLogger
       import org.http4s.client.Client
+      import org.typelevel.log4cats.Logger
+      import org.typelevel.log4cats.slf4j.Slf4jLogger
       import scala.concurrent.ExecutionContext
 
       implicit val ioContextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
       implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
       implicit val logger: Logger[IO] = Slf4jLogger.getLogger[IO]
     """,
-    fork in run := true,
-    fork in Test := true,
+    run / fork := true,
+    Test / fork := true,
     Compile / unmanagedResourceDirectories ++= (`sbt-plugin`.jvm / Compile / unmanagedSourceDirectories).value
   )
 
@@ -265,7 +275,7 @@ lazy val dockerSettings = Def.settings(
 )
 
 lazy val noPublishSettings = Def.settings(
-  skip in publish := true
+  publish / skip := true
 )
 
 lazy val scaladocSettings = Def.settings(
@@ -291,7 +301,7 @@ installPlugin := {
   IO.copyFile(source, target)
 }
 
-lazy val moduleRootPkg = settingKey[String]("")
+lazy val moduleRootPkg = settingKey[String]("").withRank(KeyRanks.Invisible)
 moduleRootPkg := rootPkg
 
 // Run Scala Steward from sbt for development and testing.

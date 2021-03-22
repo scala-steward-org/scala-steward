@@ -40,7 +40,7 @@ object UpdateHeuristic {
     */
   private def toFlexibleRegex(string: String): String = {
     val punctuation = List('.', '-', '_')
-    val allowPunctuation = punctuation.mkString("[", "", "]*")
+    val allowPunctuation = "[\\.\\-_]*"
     string.toList
       .collect { case c if !punctuation.contains_(c) => Regex.quote(c.toString) }
       .intercalate(allowPunctuation)
@@ -51,6 +51,12 @@ object UpdateHeuristic {
 
   private def shouldBeIgnored(prefix: String): Boolean =
     prefix.toLowerCase.contains("previous") || prefix.trim.startsWith("//")
+
+  private def moduleIdRegex(version: String): Regex = {
+    val ident = """[^":\n]+"""
+    val v = Regex.quote(version)
+    raw"""(.*)(["|`]($ident)(?:"\s*%+\s*"|:+)($ident)(?:"\s*%\s*|:+))("?)($v)("|`)""".r
+  }
 
   private def replaceArtifactF(update: Update): String => Option[String] = { target =>
     update match {
@@ -85,28 +91,27 @@ object UpdateHeuristic {
         s"(?i)(.*)($prefix$searchTerms.*?)$currentVersion(.?)".r
       }
 
-    def replaceF(update: Update): String => Option[String] =
-      target => replaceVersionF(update)(target) >>= replaceArtifactF(update)
-
     def replaceVersionF(update: Update): String => Option[String] =
       mkRegex(update).fold((_: String) => Option.empty[String]) { regex => target =>
         replaceSomeInAllowedParts(
           regex,
           target,
           match0 => {
-            val group1 = match0.group(1)
-            val group2 = match0.group(2)
-            val lastGroup = match0.group(match0.groupCount)
-            if (
-              shouldBeIgnored(group1) ||
-              !enclosingCharsDelimitVersion(group2.lastOption, lastGroup.headOption)
-            ) None
-            else Some(Regex.quoteReplacement(group1 + group2 + update.nextVersion + lastGroup))
+            val prefix = match0.group(1)
+            val dependency = match0.group(2)
+            val versionSuffix = match0.group(match0.groupCount)
+            Option.when {
+              !shouldBeIgnored(prefix) &&
+              enclosingCharsDelimitVersion(dependency.lastOption, versionSuffix.headOption) &&
+              !moduleIdRegex(update.currentVersion).matches(match0.matched)
+            } {
+              Regex.quoteReplacement(prefix + dependency + update.nextVersion + versionSuffix)
+            }
           }
         ).someIfChanged
       }
 
-    replaceF
+    update => target => replaceVersionF(update)(target) >>= replaceArtifactF(update)
   }
 
   private def enclosingCharsDelimitVersion(before: Option[Char], after: Option[Char]): Boolean =
@@ -132,67 +137,63 @@ object UpdateHeuristic {
   private def isCommonWord(s: String): Boolean =
     s === "scala"
 
-  val moduleId = UpdateHeuristic(
+  val moduleId: UpdateHeuristic = UpdateHeuristic(
     name = "moduleId",
     replaceVersion = update =>
       target =>
-        {
-          val groupId = Regex.quote(update.groupId.value)
-          val artifactIds =
-            alternation(update.artifactIds.map(artifactId => Regex.quote(artifactId.name)))
-          val currentVersion = Regex.quote(update.currentVersion)
-          val regex =
-            raw"""(.*)(["|`]$groupId(?:"\s*%+\s*"|:+)$artifactIds(?:"\s*%\s*|:+))("?)($currentVersion)("|`)""".r
-          replaceSomeInAllowedParts(
-            regex,
-            target,
-            match0 => {
-              val precedingCharacters = match0.group(1)
-              val dependency = match0.group(2)
-              val versionPrefix = match0.group(4)
-              val versionSuffix = match0.group(6)
-              if (shouldBeIgnored(precedingCharacters)) None
-              else
-                Some(
-                  Regex.quoteReplacement(
-                    s"""$precedingCharacters$dependency$versionPrefix${update.nextVersion}$versionSuffix"""
-                  )
-                )
+        replaceSomeInAllowedParts(
+          moduleIdRegex(update.currentVersion),
+          target,
+          match0 => {
+            val prefix = match0.group(1)
+            val dependency = match0.group(2)
+            val groupId = match0.group(3)
+            val artifactId = match0.group(4)
+            val versionPrefix = match0.group(5)
+            val versionSuffix = match0.group(7)
+            Option.when {
+              !shouldBeIgnored(prefix) &&
+              update.groupId.value === groupId &&
+              update.artifactIds.exists(_.name === artifactId)
+            } {
+              Regex.quoteReplacement(
+                s"""$prefix$dependency$versionPrefix${update.nextVersion}$versionSuffix"""
+              )
             }
-          ).someIfChanged
-        } >>= replaceArtifactF(update)
+          }
+        ).someIfChanged >>= replaceArtifactF(update)
   )
 
-  val strict = UpdateHeuristic(
+  val strict: UpdateHeuristic = UpdateHeuristic(
     name = "strict",
     replaceVersion = defaultReplaceVersion(searchTerms, update => Some(s"${update.groupId}.*?"))
   )
 
-  val original = UpdateHeuristic(
+  val original: UpdateHeuristic = UpdateHeuristic(
     name = "original",
     replaceVersion = defaultReplaceVersion(searchTerms)
   )
 
-  val relaxed = UpdateHeuristic(
+  val relaxed: UpdateHeuristic = UpdateHeuristic(
     name = "relaxed",
     replaceVersion = defaultReplaceVersion { update =>
       util.string.extractWords(update.mainArtifactId).filterNot(isCommonWord)
     }
   )
 
-  val sliding = UpdateHeuristic(
+  val sliding: UpdateHeuristic = UpdateHeuristic(
     name = "sliding",
     replaceVersion = defaultReplaceVersion(
       _.mainArtifactId.toSeq.sliding(5).map(_.unwrap).filterNot(isCommonWord).toList
     )
   )
 
-  val completeGroupId = UpdateHeuristic(
+  val completeGroupId: UpdateHeuristic = UpdateHeuristic(
     name = "completeGroupId",
     replaceVersion = defaultReplaceVersion(update => List(update.groupId.value))
   )
 
-  val groupId = UpdateHeuristic(
+  val groupId: UpdateHeuristic = UpdateHeuristic(
     name = "groupId",
     replaceVersion = defaultReplaceVersion(
       _.groupId.value
@@ -204,7 +205,7 @@ object UpdateHeuristic {
     )
   )
 
-  val specific = UpdateHeuristic(
+  val specific: UpdateHeuristic = UpdateHeuristic(
     name = "specific",
     replaceVersion = defaultReplaceVersion {
       case s: Update.Single

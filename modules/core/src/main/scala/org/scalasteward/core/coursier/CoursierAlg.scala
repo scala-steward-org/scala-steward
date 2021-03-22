@@ -22,10 +22,11 @@ import cats.{Applicative, Parallel}
 import coursier.cache.{CachePolicy, FileCache}
 import coursier.core.{Authentication, Project}
 import coursier.{Fetch, Info, Module, ModuleName, Organization}
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import org.http4s.Uri
 import org.scalasteward.core.data.Resolver.Credentials
 import org.scalasteward.core.data.{Dependency, Resolver, Scope, Version}
+import org.scalasteward.core.util.uri
 
 /** An interface to [[https://get-coursier.io Coursier]] used for
   * fetching dependency versions and metadata.
@@ -142,8 +143,5 @@ object CoursierAlg {
     }
 
   private def getScmUrlOrHomePage(info: Info): Option[Uri] =
-    (info.scm.flatMap(_.url).toList :+ info.homePage)
-      .filterNot(url => url.isEmpty || url.startsWith("git@") || url.startsWith("git:"))
-      .flatMap(Uri.fromString(_).toList.filter(_.scheme.isDefined))
-      .headOption
+    (info.scm.flatMap(_.url).toList :+ info.homePage).flatMap(uri.browsableUriFromString).headOption
 }

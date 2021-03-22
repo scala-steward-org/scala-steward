@@ -14,23 +14,21 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.scalafix
+package org.scalasteward.benchmark
 
-import io.circe.Decoder
-import io.circe.generic.semiauto._
-import org.scalasteward.core.data.{GroupId, Version}
-import org.scalasteward.core.util.Nel
+import org.openjdk.jmh.annotations.{Benchmark, BenchmarkMode, Mode, OutputTimeUnit}
+import org.scalasteward.core.data.Version.Component
 
-final case class Migration(
-    groupId: GroupId,
-    artifactIds: Nel[String],
-    newVersion: Version,
-    rewriteRules: Nel[String],
-    doc: Option[String],
-    scalacOptions: Option[Nel[String]]
-)
+import java.util.concurrent.TimeUnit
 
-object Migration {
-  implicit val migrationDecoder: Decoder[Migration] =
-    deriveDecoder[Migration]
+@BenchmarkMode(Array(Mode.AverageTime))
+class VersionBenchmark {
+  @Benchmark
+  @OutputTimeUnit(TimeUnit.MICROSECONDS)
+  def parseBench: Any = {
+    Component.parse("1.1.2-1")
+    Component.parse("8.0.192-R14")
+    Component.parse("1.2.0+9-4a769501")
+    Component.parse("1.0.0-20201119-091040")
+  }
 }

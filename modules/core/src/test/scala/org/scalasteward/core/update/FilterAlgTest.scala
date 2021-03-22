@@ -6,6 +6,7 @@ import org.scalasteward.core.data.Update.Single
 import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId}
 import org.scalasteward.core.mock.MockContext.context.filterAlg
 import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.mock.MockState.TraceEntry.Log
 import org.scalasteward.core.repoconfig.{RepoConfig, UpdatePattern, UpdatesConfig}
 import org.scalasteward.core.update.FilterAlg._
 import org.scalasteward.core.util.Nel
@@ -67,9 +68,7 @@ class FilterAlgTest extends FunSuite {
 
     assertEquals(filtered, List(update1))
     val expected = initialState.copy(
-      logs = Vector(
-        (None, "Ignore eu.timepit:refined : 0.8.0 -> 0.8.1 (reason: ignored by config)")
-      )
+      trace = Vector(Log("Ignore eu.timepit:refined : 0.8.0 -> 0.8.1 (reason: ignored by config)"))
     )
     assertEquals(state, expected)
   }

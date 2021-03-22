@@ -16,14 +16,13 @@
 
 package org.scalasteward.core.vcs.github
 
-import java.io.FileReader
-import java.security.{KeyFactory, PrivateKey, Security}
-import java.security.spec.PKCS8EncodedKeySpec
-import java.util.Date
-
 import better.files.File
 import cats.effect.Sync
 import io.jsonwebtoken.{Jwts, SignatureAlgorithm}
+import java.io.FileReader
+import java.security.spec.PKCS8EncodedKeySpec
+import java.security.{KeyFactory, PrivateKey, Security}
+import java.util.Date
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.bouncycastle.util.io.pem.PemReader
 import scala.concurrent.duration.FiniteDuration

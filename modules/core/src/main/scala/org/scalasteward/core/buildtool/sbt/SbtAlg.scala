@@ -21,18 +21,18 @@ import cats.Functor
 import cats.data.OptionT
 import cats.effect.BracketThrow
 import cats.syntax.all._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.BuildToolAlg
 import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.buildtool.sbt.data.SbtVersion
-import org.scalasteward.core.data.{Dependency, Resolver, Scope}
+import org.scalasteward.core.data.{Dependency, Scope}
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.scalafix.Migration
+import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.BuildRoot
 
-trait SbtAlg[F[_]] extends BuildToolAlg[F, BuildRoot] {
+trait SbtAlg[F[_]] extends BuildToolAlg[F] {
   def addGlobalPluginTemporarily[A](plugin: FileData)(fa: F[A]): F[A]
 
   def addGlobalPlugins[A](fa: F[A]): F[A]
@@ -89,7 +89,7 @@ object SbtAlg {
           additionalDependencies <- getAdditionalDependencies(buildRoot)
         } yield additionalDependencies ::: dependencies
 
-      override def runMigration(buildRoot: BuildRoot, migration: Migration): F[Unit] =
+      override def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
         addGlobalPluginTemporarily(scalaStewardScalafixSbt) {
           workspaceAlg.buildRootDir(buildRoot).flatMap { buildRootDir =>
             val withScalacOptions =
@@ -130,6 +130,6 @@ object SbtAlg {
 
       def getAdditionalDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
         getSbtDependency(buildRoot)
-          .map(_.map(dep => Scope(List(dep), List(Resolver.mavenCentral))).toList)
+          .map(_.map(dep => Scope(List(dep), List(config.defaultResolver))).toList)
     }
 }

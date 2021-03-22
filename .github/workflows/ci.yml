@@ -23,7 +23,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        scala: [2.12.10, 2.13.3]
+        scala: [2.12.10, 2.13.4]
         java: [adopt@1.8, adopt@1.11]
     runs-on: ${{ matrix.os }}
     steps:
@@ -59,7 +59,7 @@ jobs:
         uses: codecov/codecov-action@v1
 
       - name: Compress target directories
-        run: tar cf targets.tar target modules/core/.jvm/target modules/sbt-plugin/.jvm/target modules/mill-plugin/.jvm/target project/target
+        run: tar cf targets.tar target modules/mill-plugin/.jvm/target modules/sbt-plugin/.jvm/target modules/core/.jvm/target modules/benchmark/.jvm/target project/target
 
       - name: Upload target directories
         uses: actions/upload-artifact@v2
@@ -110,12 +110,12 @@ jobs:
           tar xf targets.tar
           rm targets.tar
 
-      - name: Download target directories (2.13.3)
+      - name: Download target directories (2.13.4)
         uses: actions/download-artifact@v2
         with:
-          name: target-${{ matrix.os }}-2.13.3-${{ matrix.java }}
+          name: target-${{ matrix.os }}-2.13.4-${{ matrix.java }}
 
-      - name: Inflate target directories (2.13.3)
+      - name: Inflate target directories (2.13.4)
         run: |
           tar xf targets.tar
           rm targets.tar

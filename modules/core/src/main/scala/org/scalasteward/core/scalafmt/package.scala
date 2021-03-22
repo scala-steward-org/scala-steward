@@ -24,21 +24,16 @@ package object scalafmt {
   val scalafmtGroupId: GroupId =
     GroupId("org.scalameta")
 
-  val scalafmtArtifactId: ArtifactId =
-    ArtifactId("scalafmt-core", s"scalafmt-core_$defaultScalaBinaryVersion")
+  val scalafmtArtifactId: ArtifactId = {
+    val core = "scalafmt-core"
+    ArtifactId(core, s"${core}_$defaultScalaBinaryVersion")
+  }
+
+  private def scalafmtGroupIdBy(version: Version): GroupId =
+    if (version > Version("2.0.0-RC1")) scalafmtGroupId else GroupId("com.geirsson")
+
+  def scalafmtDependency(version: Version): Dependency =
+    Dependency(scalafmtGroupIdBy(version), scalafmtArtifactId, version.value)
 
   val scalafmtBinary: String = "scalafmt"
-
-  def scalafmtDependency(scalafmtVersion: Version): Dependency =
-    Dependency(
-      if (scalafmtVersion > Version("2.0.0-RC1")) scalafmtGroupId else GroupId("com.geirsson"),
-      scalafmtArtifactId,
-      scalafmtVersion.value
-    )
-
-  def parseScalafmtConf(s: String): Option[Version] =
-    """version\s*=\s*(.+)""".r
-      .findFirstMatchIn(s)
-      .map(_.group(1).replace("\"", ""))
-      .map(Version.apply)
 }
