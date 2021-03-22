@@ -32,7 +32,7 @@ import org.scalasteward.core.edit.hooks.HookExecutor
 import org.scalasteward.core.edit.scalafix.{ScalafixMigrationsFinder, ScalafixMigrationsLoader}
 import org.scalasteward.core.git.{GenGitAlg, GitAlg}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.nurture.{NurtureAlg, PullRequestData, PullRequestRepository}
+import org.scalasteward.core.nurture.{ApplyAlg, NurtureAlg, PullRequestData, PullRequestRepository}
 import org.scalasteward.core.persistence.{CachingKeyValueStore, JsonKeyValueStore}
 import org.scalasteward.core.repocache._
 import org.scalasteward.core.repoconfig.RepoConfigAlg
@@ -47,6 +47,7 @@ import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 final class Context[F[_]](implicit
+    val applyAlg: ApplyAlg[F],
     val buildToolDispatcher: BuildToolDispatcher[F],
     val coursierAlg: CoursierAlg[F],
     val dateTimeAlg: DateTimeAlg[F],
@@ -146,6 +147,7 @@ object Context {
       implicit val refreshErrorAlg: RefreshErrorAlg[F] = new RefreshErrorAlg[F](refreshErrorStore)
       implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F](config)
       implicit val editAlg: EditAlg[F] = new EditAlg[F]
+      implicit val applyAlg: ApplyAlg[F] = new ApplyAlg[F]
       implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F](config)
       implicit val pruningAlg: PruningAlg[F] = new PruningAlg[F]
       implicit val gitHubAppApiAlg: GitHubAppApiAlg[F] = new GitHubAppApiAlg[F](config.vcsApiHost)

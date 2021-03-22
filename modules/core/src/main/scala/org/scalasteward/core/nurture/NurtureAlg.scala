@@ -28,7 +28,6 @@ import org.scalasteward.core.application.Config
 import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.ProcessResult.{Created, Ignored, Updated}
 import org.scalasteward.core.data._
-import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Branch, Commit, GitAlg}
 import org.scalasteward.core.repoconfig.PullRequestUpdateStrategy
 import org.scalasteward.core.edit.scalafix.ScalafixMigrationsFinder
@@ -40,7 +39,6 @@ import org.scalasteward.core.{git, util, vcs}
 
 final class NurtureAlg[F[_]](config: Config)(implicit
     coursierAlg: CoursierAlg[F],
-    editAlg: EditAlg[F],
     gitAlg: GitAlg[F],
     logger: Logger[F],
     pullRequestRepository: PullRequestRepository[F],
@@ -50,6 +48,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
     vcsRepoAlg: VCSRepoAlg[F],
     streamCompiler: Stream.Compiler[F, F],
     urlChecker: UrlChecker[F],
+    applyAlg: ApplyAlg[F],
     F: BracketThrow[F],
     FS: Sync[F]
 ) {
@@ -115,7 +114,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
         case Some(pr) =>
           logger.info(s"Found PR ${pr.html_url}") >> updatePullRequest(data, seenBranches)
         case None =>
-          applyNewUpdate(data, seenBranches)
+          applyAlg.applyNewUpdate(data, seenBranches, pushCommits, createPullRequest)
       }
       _ <- pullRequests.headOption.traverse_ { pr =>
         pullRequestRepository.createOrUpdate(
@@ -157,22 +156,6 @@ final class NurtureAlg[F[_]](config: Config)(implicit
   private def removeRemoteBranch(repo: Repo, branch: Branch): F[Unit] =
     logger.attemptLogWarn_(s"Removing remote branch ${branch.name} failed") {
       gitAlg.removeBranch(repo, branch)
-    }
-
-  def applyNewUpdate(data: UpdateData, seenBranches: List[Branch]): F[ProcessResult] =
-    gitAlg.returnToCurrentBranch(data.repo) {
-      val createBranch = logger.info(s"Create branch ${data.updateBranch.name}") >>
-        gitAlg.createBranch(data.repo, data.updateBranch)
-      editAlg.applyUpdate(data.repoData, data.update, createBranch).flatMap { editCommits =>
-        if (editCommits.isEmpty) logger.warn("No commits created").as(Ignored)
-        else
-          seenBranches
-            .forallM(gitAlg.diff(data.repo, _).map(_.nonEmpty))
-            .ifM(
-              pushCommits(data, editCommits) >> createPullRequest(data),
-              logger.warn("Discovered a duplicate branch, not pushing").as[ProcessResult](Ignored)
-            )
-      }
     }
 
   def pushCommits(data: UpdateData, commits: List[Commit]): F[ProcessResult] =
@@ -227,7 +210,8 @@ final class NurtureAlg[F[_]](config: Config)(implicit
           _ <- gitAlg.checkoutBranch(data.repo, data.updateBranch)
           update <- shouldBeUpdated(data)
           result <-
-            if (update) mergeAndApplyAgain(data, seenBranches) else F.pure[ProcessResult](Ignored)
+            if (update) applyAlg.mergeAndApplyAgain(data, seenBranches, pushCommits)
+            else F.pure[ProcessResult](Ignored)
         } yield result
       }
     else
@@ -253,21 +237,6 @@ final class NurtureAlg[F[_]](config: Config)(implicit
     result.flatMap { case (update, msg) => logger.info(msg).as(update) }
   }
 
-  def mergeAndApplyAgain(data: UpdateData, seenBranches: List[Branch]): F[ProcessResult] =
-    for {
-      _ <- logger.info(
-        s"Merge branch ${data.baseBranch.name} into ${data.updateBranch.name} and apply again"
-      )
-      maybeMergeCommit <- gitAlg.mergeTheirs(data.repo, data.baseBranch)
-      editCommits <- editAlg.applyUpdate(data.repoData, data.update)
-      result <-
-        seenBranches
-          .forallM(gitAlg.diff(data.repo, _).map(_.nonEmpty))
-          .ifM(
-            pushCommits(data, maybeMergeCommit.toList ++ editCommits),
-            logger.warn("Discovered a duplicate branch, not pushing").as[ProcessResult](Ignored)
-          )
-    } yield result
 }
 
 object NurtureAlg {
