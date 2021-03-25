@@ -39,7 +39,7 @@ object Dependency {
     deriveCodec
 
   implicit val dependencyOrder: Order[Dependency] =
-    Order.by { d: Dependency =>
+    Order.by { (d: Dependency) =>
       (d.groupId, d.artifactId, d.version, d.sbtVersion, d.scalaVersion, d.configurations)
     }
 }
