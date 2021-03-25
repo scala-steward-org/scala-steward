@@ -15,6 +15,7 @@ val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
   "mill-plugin" -> List(JVMPlatform)
 )
 
+// scala version upgrades blocked by mill support
 val Scala212 = "2.12.10"
 val Scala213 = "2.13.4"
 
