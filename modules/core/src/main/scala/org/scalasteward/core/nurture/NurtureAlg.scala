@@ -98,10 +98,10 @@ final class NurtureAlg[F[_]](config: Config)(implicit
       result <- pullRequests.headOption match {
         case Some(pr) if pr.isClosed =>
           // [SCX] if PR for our branch (e.g. from last week) is closed, create a new one
-          logger.info(s"PR ${pr.html_url} is closed, creating a new one") >> createPullRequest(data)
+          logger.info(s"PR ${pr.html_url} is closed, creating a new one") >> applyNewUpdate(data)
         case Some(pr) =>
           // [SCX] adding step to push commits to existing PR
-          logger.info(s"Found PR ${pr.html_url}, adding commits") >> addCommitsToBranch(data) >> updatePullRequest(data)
+          logger.info(s"Found PR ${pr.html_url}, adding commits") >> updatePullRequest(data)
         case None => applyNewUpdate(data)
       }
       _ <- pullRequests.headOption.traverse_ { pr =>
@@ -115,15 +115,6 @@ final class NurtureAlg[F[_]](config: Config)(implicit
         )
       }
     } yield result
-
-  // [SCX] added this function to push more commits to the same branch
-  def addCommitsToBranch(data: UpdateData): F[ProcessResult] =
-    editAlg
-      .applyUpdate(data.repoData, data.update, logger.info(s"Adding commits for ${data.update.show} to branch"))
-      .flatMap { editCommits =>
-          if (editCommits.isEmpty) logger.warn("No commits created").as(Ignored)
-          else pushCommits(data, editCommits)
-        }
 
   def closeObsoletePullRequests(data: UpdateData, newNumber: PullRequestNumber): F[Unit] =
     pullRequestRepository.getObsoleteOpenPullRequests(data.repo, data.update).flatMap {
@@ -238,7 +229,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
             gitAlg.hasConflicts(data.repo, data.updateBranch, data.baseBranch).map {
               case true  => (true, s"PR has conflicts with ${data.baseBranch.name}")
               // [SCX] force a merge + update, otherwise we won't push the new commits
-              case false => (true, s"PR has no conflict with ${data.baseBranch.name}, forcing update anyways")
+              case false =>(true, s"PR has no conflict with ${data.baseBranch.name}, forcing update anyways")
             }
         }
     }
