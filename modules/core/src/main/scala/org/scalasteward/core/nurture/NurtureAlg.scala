@@ -97,12 +97,12 @@ final class NurtureAlg[F[_]](config: Config)(implicit
       pullRequests <- vcsApiAlg.listPullRequests(data.repo, head, data.baseBranch)
       result <- pullRequests.headOption match {
         case Some(pr) if pr.isClosed =>
-          logger.info(s"PR ${pr.html_url} is closed") >>
-            removeRemoteBranch(data.repo, data.updateBranch).as(Ignored)
+          // [SCX] if PR for our branch (e.g. from last week) is closed, create a new one
+          logger.info(s"PR ${pr.html_url} is closed, creating a new one") >> createPullRequest(data)
         case Some(pr) =>
-          logger.info(s"Found PR ${pr.html_url}") >> updatePullRequest(data)
-        case None =>
-          applyNewUpdate(data)
+          // [SCX] adding step to push commits to existing PR
+          logger.info(s"Found PR ${pr.html_url}, adding commits") >> addCommitsToBranch(data) >> updatePullRequest(data)
+        case None => applyNewUpdate(data)
       }
       _ <- pullRequests.headOption.traverse_ { pr =>
         pullRequestRepository.createOrUpdate(
@@ -115,6 +115,15 @@ final class NurtureAlg[F[_]](config: Config)(implicit
         )
       }
     } yield result
+
+  // [SCX] added this function to push more commits to the same branch
+  def addCommitsToBranch(data: UpdateData): F[ProcessResult] =
+    editAlg
+      .applyUpdate(data.repoData, data.update, logger.info(s"Adding commits for ${data.update.show} to branch"))
+      .flatMap { editCommits =>
+          if (editCommits.isEmpty) logger.warn("No commits created").as(Ignored)
+          else pushCommits(data, editCommits)
+        }
 
   def closeObsoletePullRequests(data: UpdateData, newNumber: PullRequestNumber): F[Unit] =
     pullRequestRepository.getObsoleteOpenPullRequests(data.repo, data.update).flatMap {
@@ -132,19 +141,21 @@ final class NurtureAlg[F[_]](config: Config)(implicit
   ): F[Unit] =
     logger.attemptLogWarn_(s"Closing PR #$oldNumber failed") {
       for {
-        _ <- logger.info(s"Closing obsolete PR ${oldUrl.renderString} for ${oldUpdate.show}")
-        comment = s"Superseded by ${vcsApiAlg.referencePullRequest(newNumber)}."
-        _ <- vcsApiAlg.commentPullRequest(repo, oldNumber, comment)
-        _ <- vcsApiAlg.closePullRequest(repo, oldNumber)
-        _ <- removeRemoteBranch(repo, git.branchFor(oldUpdate))
-        _ <- pullRequestRepository.changeState(repo, oldUrl, PullRequestState.Closed)
+        // [SCX] we only have 1 PR for all updates, so can't close it
+        _ <- logger.info(s"Skipping close obsolete PR ${oldUrl.renderString} for ${oldUpdate.show}. Repo: ${repo.repo}, newPR: ${newNumber}")
+//        comment = s"Superseded by ${vcsApiAlg.referencePullRequest(newNumber)}."
+//        _ <- vcsApiAlg.commentPullRequest(repo, oldNumber, comment)
+//        _ <- vcsApiAlg.closePullRequest(repo, oldNumber)
+//        _ <- removeRemoteBranch(repo, git.branchFor(oldUpdate))
+//        _ <- pullRequestRepository.changeState(repo, oldUrl, PullRequestState.Closed)
       } yield ()
     }
 
-  private def removeRemoteBranch(repo: Repo, branch: Branch): F[Unit] =
-    logger.attemptLogWarn_(s"Removing remote branch ${branch.name} failed") {
-      gitAlg.removeBranch(repo, branch)
-    }
+// [SCX] removed
+//  private def removeRemoteBranch(repo: Repo, branch: Branch): F[Unit] =
+//    logger.attemptLogWarn_(s"Removing remote branch ${branch.name} failed") {
+//      gitAlg.removeBranch(repo, branch)
+//    }
 
   def applyNewUpdate(data: UpdateData): F[ProcessResult] =
     gitAlg.returnToCurrentBranch(data.repo) {
@@ -226,7 +237,8 @@ final class NurtureAlg[F[_]](config: Config)(implicit
           else
             gitAlg.hasConflicts(data.repo, data.updateBranch, data.baseBranch).map {
               case true  => (true, s"PR has conflicts with ${data.baseBranch.name}")
-              case false => (false, s"PR has no conflict with ${data.baseBranch.name}")
+              // [SCX] force a merge + update, otherwise we won't push the new commits
+              case false => (true, s"PR has no conflict with ${data.baseBranch.name}, forcing update anyways")
             }
         }
     }

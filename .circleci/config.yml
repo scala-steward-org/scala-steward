@@ -1,0 +1,54 @@
+version: 2.1
+orbs:
+  scxDeploy: scx/scx-deploy@3
+
+jobs:
+  build:
+    machine: true
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v1-dependencies-
+      - run:
+          name: SBT Compile
+          command: sbt compile
+      - save_cache:
+          paths: ["~/.ivy2", "~/.sbt", "~/.cache/coursier"]
+          key: v1-dependencies-{{ checksum "build.sbt" }}-{{ checksum "project/plugins.sbt" }}-{{ checksum "project/build.properties" }}
+      - persist_to_workspace:
+          root: ..
+          paths:
+            - repo
+
+  publishDocker:
+    machine: true
+    working_directory: ~/repo
+    steps:
+      - attach_workspace:
+          at: /home/circleci
+      - restore_cache:
+          keys:
+            - v1-dependencies-
+      - setup_remote_docker
+      - scxDeploy/ecr-login
+      - run:
+          command: sbt docker:publishLocal docker:publish < /dev/null
+
+workflows:
+  build_publish:
+    jobs:
+      - build:
+          context: scx-credentials
+          filters:
+            branches:
+              only: /.*/
+      - publishDocker:
+          context: scx-credentials
+          requires:
+            - build
+          filters:
+            branches:
+              only:
+                - main

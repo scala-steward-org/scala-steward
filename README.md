@@ -2,6 +2,23 @@
   <img src="https://github.com/scala-steward-org/scala-steward/raw/master/data/images/scala-steward-logo-circle-0.png" height="180px">
 </p>
 
+# Street Contxt Changes
+This repo changes scala-steward to work off a single branch per repo. This means that if there are 10 updates, all 10 will be commits in a single PR.
+
+### Goal
+The purpose of this change is to reduce the number of PRs devs have to manually approve. This has been brought up at [https://github.com/scala-steward-org/scala-steward/issues/413](https://github.com/scala-steward-org/scala-steward/issues/413), however they do not plan on implementing it.
+
+### Code Changes
+The core change is in `git/package.scala`: when generating a branch name for an update, we use a constant.
+
+The other changes are all in `NurtureAlg.scala` and change its behaviour to work against a single branch.
+
+### Deploying
+To deploy a new version of `531111251637.dkr.ecr.us-east-1.amazonaws.com/scala-steward`, just commit to main. CircleCI will publish a new docker image to our ECR repo with tag `latest`.
+
+### Running / Testing Locally
+See [scala-steward-runner](https://github.com/street-contxt-private/scala-steward-runner) for details on how to run the docker container locally.
+
 # Scala Steward
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/scala-steward-org/scala-steward/Continuous%20Integration)](https://github.com/scala-steward-org/scala-steward/actions?query=workflow%3A%22Continuous+Integration%22)
 [![codecov](https://codecov.io/gh/scala-steward-org/scala-steward/branch/master/graph/badge.svg)](https://codecov.io/gh/scala-steward-org/scala-steward)
