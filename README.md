@@ -13,6 +13,15 @@ The core change is in `git/package.scala`: when generating a branch name for an 
 
 The other changes are all in `NurtureAlg.scala` and change its behaviour to work against a single branch.
 
+### Limitations
+- many config options are ignored as we hardcoded behaviours to work with this approach
+- PR name + body only reflects the first (or mb last) dependency that was updated
+- labels do not work as expected (minor vs major)
+
+### Ideas for Enhancements
+- commit all changes locally and push once at the end (to save Circle build time)
+- use separate branches for patch, minor, and major updates
+
 ### Deploying
 To deploy a new version of `531111251637.dkr.ecr.us-east-1.amazonaws.com/scala-steward`, just commit to main. CircleCI will publish a new docker image to our ECR repo with tag `latest`.
 
