@@ -270,7 +270,8 @@ lazy val dockerSettings = Def.settings(
       )
     )
   },
-  Docker / packageName := s"fthomas/${name.value}",
+  // [SCX] updated owner to our ECR repo
+  Docker / packageName := s"531111251637.dkr.ecr.us-east-1.amazonaws.com/${name.value}",
   dockerUpdateLatest := true,
   dockerEnvVars := Map("PATH" -> "/opt/docker/sbt/bin:${PATH}")
 )

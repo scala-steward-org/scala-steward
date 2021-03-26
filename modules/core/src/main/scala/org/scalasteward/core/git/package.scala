@@ -24,8 +24,10 @@ import org.scalasteward.core.vcs.data.Repo
 package object git {
   type GitAlg[F[_]] = GenGitAlg[F, Repo]
 
-  def branchFor(update: Update): Branch =
-    Branch(s"update/${update.name}-${update.nextVersion}")
+  def branchFor(update: Update): Branch = {
+    update.artifactIds.length // so `update` isn't unused to compiler
+    Branch(s"scala-steward/updates")
+  }
 
   def commitMsgFor(update: Update, commitsConfig: CommitsConfig): String = {
     val artifact = show.oneLiner(update)
