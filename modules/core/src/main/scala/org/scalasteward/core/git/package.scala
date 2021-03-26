@@ -16,7 +16,7 @@
 
 package org.scalasteward.core
 
-import org.scalasteward.core.data.Update
+import org.scalasteward.core.data.{SemVer, Update}
 import org.scalasteward.core.repoconfig.CommitsConfig
 import org.scalasteward.core.update.show
 import org.scalasteward.core.vcs.data.Repo
@@ -24,10 +24,21 @@ import org.scalasteward.core.vcs.data.Repo
 package object git {
   type GitAlg[F[_]] = GenGitAlg[F, Repo]
 
+  // [SCX] use one branch per change type
   def branchFor(update: Update): Branch = {
-    update.artifactIds.length // so `update` isn't unused to compiler
-    Branch(s"scala-steward/updates")
+    Branch(s"scala-steward-updates/${getSemVerChangeString(update)}")
   }
+
+  // [SCX] helper function to render the semver change type
+  def getSemVerChangeString(update: Update): String = {
+    val change = for {
+      curr <- SemVer.parse(update.currentVersion)
+      next <- SemVer.parse(update.nextVersion)
+      change <- SemVer.getChange(curr, next)
+    } yield change
+    s"${change.map(c => c.render).getOrElse("unknown-change-type")}"
+  }
+
 
   def commitMsgFor(update: Update, commitsConfig: CommitsConfig): String = {
     val artifact = show.oneLiner(update)

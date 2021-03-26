@@ -200,19 +200,19 @@ object NewPullRequestData {
       releaseRelatedUrls: List[ReleaseRelatedUrl] = List.empty,
       migrations: List[ScalafixMigration] = List.empty,
       filesWithOldVersion: List[String] = List.empty
-  ): NewPullRequestData =
+  ): NewPullRequestData = {
+    // [SCX] to prevent compiler warning about unused params
+    artifactIdToUrl.size + releaseRelatedUrls.size + migrations.size + filesWithOldVersion.size
+
+    val changeTypeStr = git.getSemVerChangeString(data.update)
     NewPullRequestData(
-      title = git.commitMsgFor(data.update, data.repoConfig.commits),
-      body = bodyFor(
-        data.update,
-        artifactIdToUrl,
-        releaseRelatedUrls,
-        migrations,
-        filesWithOldVersion
-      ),
+      // [SCX] customize title + body to make sense
+      title = s"Scala Steward Updates - $changeTypeStr",
+      body = s"Contains all $changeTypeStr updates. New updates will be committed to this branch. If the branch is merged/deleted, a new one will be created when needed.",
       head = branchName,
       base = data.baseBranch,
       draft = data.update.dependencies.exists(FilterAlg.isScalaDependency) &&
         (data.repoData.config.updates.includeScalaOrDefault === IncludeScalaStrategy.Draft)
     )
+  }
 }
