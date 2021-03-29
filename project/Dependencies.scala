@@ -22,7 +22,7 @@ object Dependencies {
   val coursierCore = "io.get-coursier" %% "coursier" % "2.0.16"
   val coursierCatsInterop = "io.get-coursier" %% "coursier-cats-interop" % coursierCore.revision
   val cron4sCore = "com.github.alonsodomin.cron4s" %% "cron4s-core" % "0.6.1"
-  val disciplineMunit = "org.typelevel" %% "discipline-munit" % "1.0.6"
+  val disciplineMunit = "org.typelevel" %% "discipline-munit" % "1.0.7"
   val fs2Core = "co.fs2" %% "fs2-core" % "2.5.3"
   val fs2Io = "co.fs2" %% "fs2-io" % fs2Core.revision
   val http4sCore = "org.http4s" %% "http4s-core" % "0.21.21"
@@ -39,7 +39,7 @@ object Dependencies {
   val millVersion = Def.setting(if (scalaBinaryVersion.value == "2.12") "0.6.3" else "0.9.5")
   val millScalalib = Def.setting("com.lihaoyi" %% "mill-scalalib" % millVersion.value)
   val monocleCore = "com.github.julien-truffaut" %% "monocle-core" % "2.1.0"
-  val munit = "org.scalameta" %% "munit" % "0.7.22"
+  val munit = "org.scalameta" %% "munit" % "0.7.23"
   val munitScalacheck = "org.scalameta" %% "munit-scalacheck" % munit.revision
   val refined = "eu.timepit" %% "refined" % "0.9.21"
   val refinedScalacheck = "eu.timepit" %% "refined-scalacheck" % refined.revision
