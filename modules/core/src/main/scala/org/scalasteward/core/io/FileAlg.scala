@@ -26,6 +26,7 @@ import org.http4s.Uri
 import org.http4s.implicits.http4sLiteralsSyntax
 import org.typelevel.log4cats.Logger
 import scala.io.Source
+import java.nio.file.attribute.PosixFilePermission
 
 trait FileAlg[F[_]] {
   def deleteForce(file: File): F[Unit]
@@ -49,6 +50,8 @@ trait FileAlg[F[_]] {
   def walk(dir: File): Stream[F, File]
 
   def writeFile(file: File, content: String): F[Unit]
+
+  def ensureExecutable(file: File): F[Unit]
 
   final def createTemporarily[A, E](file: File, content: String)(
       fa: F[A]
@@ -147,5 +150,16 @@ object FileAlg {
         logger.debug(s"Write $file") >>
           file.parentOption.fold(F.unit)(ensureExists(_).void) >>
           F.delay(file.write(content)).void
+
+      override def ensureExecutable(file: File): F[Unit] =
+        F.delay(
+          file.setPermissions(
+            file.permissions ++ Set(
+              PosixFilePermission.OWNER_EXECUTE,
+              PosixFilePermission.GROUP_EXECUTE,
+              PosixFilePermission.OTHERS_EXECUTE
+            )
+          )
+        )
     }
 }
