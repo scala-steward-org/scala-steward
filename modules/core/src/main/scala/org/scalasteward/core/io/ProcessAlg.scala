@@ -17,12 +17,13 @@
 package org.scalasteward.core.io
 
 import better.files.File
-import cats.effect.{Blocker, Concurrent, ContextShift, Timer}
+import cats.effect.Concurrent
 import cats.syntax.all._
 import org.scalasteward.core.application.Config.ProcessCfg
 import org.scalasteward.core.io.process.Args
 import org.scalasteward.core.util.Nel
 import org.typelevel.log4cats.Logger
+import cats.effect.Temporal
 
 trait ProcessAlg[F[_]] {
   def exec(
@@ -84,10 +85,9 @@ object ProcessAlg {
     else
       new NoSandbox[F](config)(execImpl)
 
-  def create[F[_]](blocker: Blocker, config: ProcessCfg)(implicit
-      contextShift: ContextShift[F],
+  def create[F[_]](config: ProcessCfg)(implicit
       logger: Logger[F],
-      timer: Timer[F],
+      timer: Temporal[F],
       F: Concurrent[F]
   ): ProcessAlg[F] =
     fromExecImpl(config) { args =>

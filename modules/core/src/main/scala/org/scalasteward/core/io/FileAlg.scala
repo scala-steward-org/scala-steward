@@ -17,7 +17,7 @@
 package org.scalasteward.core.io
 
 import better.files.File
-import cats.effect.{Bracket, Resource, Sync}
+import cats.effect.{Resource, Sync}
 import cats.syntax.all._
 import cats.{Functor, MonadThrow, Traverse}
 import fs2.Stream
@@ -26,6 +26,7 @@ import org.http4s.Uri
 import org.http4s.implicits.http4sLiteralsSyntax
 import org.typelevel.log4cats.Logger
 import scala.io.Source
+import cats.effect.MonadCancel
 
 trait FileAlg[F[_]] {
   def deleteForce(file: File): F[Unit]
@@ -52,7 +53,7 @@ trait FileAlg[F[_]] {
 
   final def createTemporarily[A, E](file: File, content: String)(
       fa: F[A]
-  )(implicit F: Bracket[F, E]): F[A] = {
+  )(implicit F: MonadCancel[F, E]): F[A] = {
     val delete = deleteForce(file)
     val create = writeFile(file, content).onError(_ => delete)
     F.bracket(create)(_ => fa)(_ => delete)

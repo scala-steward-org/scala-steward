@@ -17,7 +17,6 @@
 package org.scalasteward.core.vcs.bitbucketserver
 
 import cats.data.NonEmptyList
-import cats.effect.ApplicativeThrow
 import io.circe.generic.semiauto.{deriveCodec, deriveDecoder, deriveEncoder}
 import io.circe.{Codec, Decoder, Encoder}
 import org.http4s.Uri
@@ -25,6 +24,7 @@ import org.scalasteward.core.git
 import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.util.uri.uriDecoder
 import org.scalasteward.core.vcs.data._
+import cats.ApplicativeThrow
 
 object Json {
   case class Page[A](values: List[A])

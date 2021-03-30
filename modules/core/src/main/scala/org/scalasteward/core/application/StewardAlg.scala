@@ -17,7 +17,7 @@
 package org.scalasteward.core.application
 
 import better.files.File
-import cats.effect.{BracketThrow, ExitCode}
+import cats.effect.ExitCode
 import cats.syntax.all._
 import fs2.Stream
 import org.scalasteward.core.buildtool.sbt.SbtAlg
@@ -34,6 +34,7 @@ import org.scalasteward.core.vcs.github.{GitHubApp, GitHubAppApiAlg, GitHubAuthA
 import org.typelevel.log4cats.Logger
 
 import scala.concurrent.duration._
+import cats.effect.MonadCancelThrow
 
 final class StewardAlg[F[_]](config: Config)(implicit
     dateTimeAlg: DateTimeAlg[F],
@@ -49,7 +50,7 @@ final class StewardAlg[F[_]](config: Config)(implicit
     selfCheckAlg: SelfCheckAlg[F],
     streamCompiler: Stream.Compiler[F, F],
     workspaceAlg: WorkspaceAlg[F],
-    F: BracketThrow[F]
+    F: MonadCancelThrow[F]
 ) {
   private def readRepos(reposFile: File): Stream[F, Repo] =
     Stream.evals[F, List, Repo] {
