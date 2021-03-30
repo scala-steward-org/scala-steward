@@ -8,8 +8,8 @@ object Dependencies {
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.1"
   val betterMonadicFor = "com.olegpy" %% "better-monadic-for" % "0.3.1"
   val caseApp = "com.github.alexarchambault" %% "case-app" % "2.0.4"
-  val catsEffect = "org.typelevel" %% "cats-effect" % "3.0.0"
-  val catsCore = "org.typelevel" %% "cats-core" % "2.4.2"
+  val catsEffect = "org.typelevel" %% "cats-effect" % "2.4.1"
+  val catsCore = "org.typelevel" %% "cats-core" % "2.5.0"
   val catsLaws = "org.typelevel" %% "cats-laws" % catsCore.revision
   val catsParse = "org.typelevel" %% "cats-parse" % "0.3.1"
   val circeConfig = "io.circe" %% "circe-config" % "0.8.0"
@@ -41,7 +41,7 @@ object Dependencies {
   val monocleCore = "com.github.julien-truffaut" %% "monocle-core" % "2.1.0"
   val munit = "org.scalameta" %% "munit" % "0.7.23"
   val munitScalacheck = "org.scalameta" %% "munit-scalacheck" % munit.revision
-  val refined = "eu.timepit" %% "refined" % "0.9.21"
+  val refined = "eu.timepit" %% "refined" % "0.9.22"
   val refinedScalacheck = "eu.timepit" %% "refined-scalacheck" % refined.revision
   val scalacacheCaffeine = "com.github.cb372" %% "scalacache-caffeine" % "0.28.0"
   val scalacacheCatsEffect =
