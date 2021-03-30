@@ -45,6 +45,7 @@ import org.scalasteward.core.vcs.github.{GitHubAppApiAlg, GitHubAuthAlg}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg, VCSSelection}
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
+import cats.effect.{ Resource, Temporal }
 
 final class Context[F[_]](implicit
     val buildToolDispatcher: BuildToolDispatcher[F],
@@ -73,13 +74,12 @@ final class Context[F[_]](implicit
 
 object Context {
   def step0[F[_]](args: Cli.Args)(implicit
-      contextShift: ContextShift[F],
       parallel: Parallel[F],
-      timer: Timer[F],
+      timer: Temporal[F],
       F: ConcurrentEffect[F]
   ): Resource[F, Context[F]] =
     for {
-      blocker <- Blocker[F]
+      blocker <- Resource.unit[F]
       config = Config.from(args)
       implicit0(logger: Logger[F]) <- Resource.eval(Slf4jLogger.create[F])
       implicit0(client: Client[F]) <- OkHttpBuilder.withDefaultClient[F](blocker).map(_.create)
@@ -91,7 +91,6 @@ object Context {
 
   def step1[F[_]](config: Config)(implicit
       client: Client[F],
-      contextShift: ContextShift[F],
       fileAlg: FileAlg[F],
       logger: Logger[F],
       parallel: Parallel[F],

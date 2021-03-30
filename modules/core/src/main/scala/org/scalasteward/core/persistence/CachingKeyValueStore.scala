@@ -17,9 +17,9 @@
 package org.scalasteward.core.persistence
 
 import cats.effect.Sync
-import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import cats.{Eq, Monad}
+import cats.effect.Ref
 
 final class CachingKeyValueStore[F[_], K, V](
     underlying: KeyValueStore[F, K, V],

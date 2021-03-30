@@ -16,7 +16,6 @@
 
 package org.scalasteward.core.buildtool.mill
 
-import cats.effect.BracketThrow
 import cats.syntax.all._
 import org.scalasteward.core.BuildInfo
 import org.scalasteward.core.buildtool.BuildToolAlg
@@ -26,6 +25,7 @@ import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.BuildRoot
+import cats.effect.MonadCancelThrow
 
 trait MillAlg[F[_]] extends BuildToolAlg[F]
 
@@ -46,7 +46,7 @@ object MillAlg {
       fileAlg: FileAlg[F],
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F],
-      F: BracketThrow[F]
+      F: MonadCancelThrow[F]
   ): MillAlg[F] =
     new MillAlg[F] {
       override def containsBuild(buildRoot: BuildRoot): F[Boolean] =

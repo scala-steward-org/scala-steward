@@ -25,6 +25,7 @@ import org.scalasteward.core.util._
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.TimeoutException
 import scala.concurrent.duration.FiniteDuration
+import cats.effect.{ Sync, Temporal }
 
 object process {
   final case class Args(
@@ -38,9 +39,7 @@ object process {
       args: Args,
       timeout: FiniteDuration,
       maxBufferSize: Int,
-      log: String => F[Unit],
-      blocker: Blocker
-  )(implicit contextShift: ContextShift[F], timer: Timer[F], F: Concurrent[F]): F[List[String]] =
+      log: String => F[Unit])(implicit timer: Temporal[F], F: Concurrent[F]): F[List[String]] =
     createProcess(args).flatMap { process =>
       F.delay(new ListBuffer[String]).flatMap { buffer =>
         val readOut = {
@@ -51,7 +50,7 @@ object process {
             .drain
         }
 
-        val result = readOut >> blocker.delay(process.waitFor()) >>= { exitValue =>
+        val result = readOut >> Sync[F].blocking(process.waitFor()) >>= { exitValue =>
           if (exitValue === 0) F.pure(buffer.toList)
           else {
             val msg = s"'${showCmd(args)}' exited with code $exitValue"
@@ -85,10 +84,8 @@ object process {
       p
     }
 
-  private def readInputStream[F[_]](is: InputStream, blocker: Blocker)(implicit
-      F: Sync[F],
-      cs: ContextShift[F]
-  ): Stream[F, String] =
+  private def readInputStream[F[_]](is: InputStream)(implicit
+      F: Sync[F]): Stream[F, String] =
     fs2.io
       .readInputStream(F.pure(is), chunkSize = 4096, blocker)
       .through(fs2.text.utf8Decode)

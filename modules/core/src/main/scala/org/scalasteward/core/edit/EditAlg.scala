@@ -17,7 +17,6 @@
 package org.scalasteward.core.edit
 
 import better.files.File
-import cats.effect.MonadThrow
 import cats.syntax.all._
 import fs2.Stream
 import org.scalasteward.core.buildtool.BuildToolDispatcher
@@ -37,6 +36,7 @@ import org.scalasteward.core.util._
 import org.scalasteward.core.util.logger._
 import org.scalasteward.core.vcs.data.Repo
 import org.typelevel.log4cats.Logger
+import cats.MonadThrow
 
 final class EditAlg[F[_]](implicit
     buildToolDispatcher: BuildToolDispatcher[F],

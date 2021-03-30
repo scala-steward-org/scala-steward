@@ -1,7 +1,7 @@
 package org.scalasteward.core.io
 
 import better.files.File
-import cats.effect.{Blocker, IO}
+import cats.effect.IO
 import java.util.concurrent.Executors
 import munit.FunSuite
 import org.scalasteward.core.TestInstances._

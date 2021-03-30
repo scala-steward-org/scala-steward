@@ -2,7 +2,7 @@ package org.scalasteward.core
 
 import _root_.org.typelevel.log4cats.Logger
 import _root_.org.typelevel.log4cats.slf4j.Slf4jLogger
-import cats.effect.{ContextShift, IO, Timer}
+import cats.effect.IO
 import eu.timepit.refined.scalacheck.numeric._
 import eu.timepit.refined.types.numeric.NonNegInt
 import org.scalacheck.{Arbitrary, Cogen, Gen}
@@ -18,6 +18,7 @@ import org.scalasteward.core.util.Change.{Changed, Unchanged}
 import org.scalasteward.core.util.{Change, Nel}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
+import cats.effect.Temporal
 
 object TestInstances {
   val dummyRepoCache: RepoCache =
@@ -36,7 +37,7 @@ object TestInstances {
   implicit val ioLogger: Logger[IO] =
     Slf4jLogger.getLogger[IO]
 
-  implicit val ioTimer: Timer[IO] =
+  implicit val ioTimer: Temporal[IO] =
     IO.timer(ExecutionContext.global)
 
   implicit def scopeArbitrary[T](implicit arbT: Arbitrary[T]): Arbitrary[Scope[T]] =

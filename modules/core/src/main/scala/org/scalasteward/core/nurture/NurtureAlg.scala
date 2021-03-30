@@ -17,7 +17,6 @@
 package org.scalasteward.core.nurture
 
 import cats.Applicative
-import cats.effect.BracketThrow
 import cats.implicits._
 import eu.timepit.refined.types.numeric.NonNegInt
 import fs2.Stream
@@ -36,6 +35,7 @@ import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data._
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg}
 import org.scalasteward.core.{git, util, vcs}
+import cats.effect.MonadCancelThrow
 
 final class NurtureAlg[F[_]](config: Config)(implicit
     coursierAlg: CoursierAlg[F],
@@ -49,7 +49,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
     vcsRepoAlg: VCSRepoAlg[F],
     streamCompiler: Stream.Compiler[F, F],
     urlChecker: UrlChecker[F],
-    F: BracketThrow[F]
+    F: MonadCancelThrow[F]
 ) {
   def nurture(data: RepoData, fork: RepoOut, updates: List[Update.Single]): F[Unit] =
     for {

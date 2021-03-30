@@ -46,7 +46,6 @@ trait CoursierAlg[F[_]] {
 
 object CoursierAlg {
   def create[F[_]](implicit
-      contextShift: ContextShift[F],
       logger: Logger[F],
       F: Sync[F]
   ): CoursierAlg[F] = {
