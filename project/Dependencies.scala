@@ -8,7 +8,7 @@ object Dependencies {
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.1"
   val betterMonadicFor = "com.olegpy" %% "better-monadic-for" % "0.3.1"
   val caseApp = "com.github.alexarchambault" %% "case-app" % "2.0.4"
-  val catsEffect = "org.typelevel" %% "cats-effect" % "2.4.1"
+  val catsEffect = "org.typelevel" %% "cats-effect" % "3.0.1"
   val catsCore = "org.typelevel" %% "cats-core" % "2.5.0"
   val catsLaws = "org.typelevel" %% "cats-laws" % catsCore.revision
   val catsParse = "org.typelevel" %% "cats-parse" % "0.3.1"
