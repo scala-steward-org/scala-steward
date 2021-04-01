@@ -20,8 +20,9 @@ import better.files.File
 import cats.effect._
 import cats.syntax.all._
 import fs2.Stream
-import java.io.{IOException, InputStream}
 import org.scalasteward.core.util._
+
+import java.io.{IOException, InputStream}
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.TimeoutException
 import scala.concurrent.duration.FiniteDuration
@@ -38,20 +39,19 @@ object process {
       args: Args,
       timeout: FiniteDuration,
       maxBufferSize: Int,
-      log: String => F[Unit],
-      blocker: Blocker
-  )(implicit contextShift: ContextShift[F], timer: Timer[F], F: Concurrent[F]): F[List[String]] =
+      log: String => F[Unit]
+  )(implicit F: Async[F]): F[List[String]] =
     createProcess(args).flatMap { process =>
       F.delay(new ListBuffer[String]).flatMap { buffer =>
         val readOut = {
-          val out = readInputStream[F](process.getInputStream, blocker)
+          val out = readInputStream[F](process.getInputStream)
           out
             .evalMap(line => F.delay(appendBounded(buffer, line, maxBufferSize)) >> log(line))
             .compile
             .drain
         }
 
-        val result = readOut >> blocker.delay(process.waitFor()) >>= { exitValue =>
+        val result = readOut >> F.blocking(process.waitFor()) >>= { exitValue =>
           if (exitValue === 0) F.pure(buffer.toList)
           else {
             val msg = s"'${showCmd(args)}' exited with code $exitValue"
@@ -64,7 +64,7 @@ object process {
           F.raiseError[List[String]](new TimeoutException(makeMessage(msg, buffer.toList)))
         }
 
-        Concurrent.timeoutTo(result, timeout, fallback)
+        F.timeoutTo(result, timeout, fallback)
       }
     }
 
@@ -85,12 +85,9 @@ object process {
       p
     }
 
-  private def readInputStream[F[_]](is: InputStream, blocker: Blocker)(implicit
-      F: Sync[F],
-      cs: ContextShift[F]
-  ): Stream[F, String] =
+  private def readInputStream[F[_]](is: InputStream)(implicit F: Sync[F]): Stream[F, String] =
     fs2.io
-      .readInputStream(F.pure(is), chunkSize = 4096, blocker)
+      .readInputStream(F.pure(is), chunkSize = 4096)
       .through(fs2.text.utf8Decode)
       .through(fs2.text.lines)
 

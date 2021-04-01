@@ -1,6 +1,7 @@
 package org.scalasteward.core.buildtool.sbt
 
 import cats.data.StateT
+import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.data.{GroupId, Version}

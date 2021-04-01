@@ -26,6 +26,7 @@ import org.scalasteward.core.vcs.bitbucketserver.BitbucketServerApiAlg
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 import org.scalasteward.core.vcs.github.GitHubApiAlg
 import org.scalasteward.core.vcs.gitlab.GitLabApiAlg
+import org.typelevel.ci.CIString
 import org.typelevel.log4cats.Logger
 
 final class VCSSelection[F[_]](config: Config, user: AuthenticatedUser)(implicit
@@ -56,7 +57,7 @@ final class VCSSelection[F[_]](config: Config, user: AuthenticatedUser)(implicit
   private def bitbucketServerApiAlg: BitbucketServerApiAlg[F] = {
     // Bypass the server-side XSRF check, see
     // https://github.com/scala-steward-org/scala-steward/pull/1863#issuecomment-754538364
-    val xAtlassianToken = Header("X-Atlassian-Token", "no-check")
+    val xAtlassianToken = Header.Raw(CIString("X-Atlassian-Token"), "no-check")
 
     new BitbucketServerApiAlg[F](
       config.vcsApiHost,

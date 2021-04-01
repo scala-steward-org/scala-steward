@@ -16,8 +16,7 @@
 
 package org.scalasteward.core.persistence
 
-import cats.effect.Sync
-import cats.effect.concurrent.Ref
+import cats.effect.{Ref, Sync}
 import cats.syntax.all._
 import cats.{Eq, Monad}
 

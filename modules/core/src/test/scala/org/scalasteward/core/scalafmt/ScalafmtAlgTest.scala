@@ -1,5 +1,6 @@
 package org.scalasteward.core.scalafmt
 
+import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.data.Version
 import org.scalasteward.core.mock.MockContext._

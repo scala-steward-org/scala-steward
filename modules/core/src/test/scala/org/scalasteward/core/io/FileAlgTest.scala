@@ -2,6 +2,7 @@ package org.scalasteward.core.io
 
 import better.files.File
 import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.http4s.Uri
 import org.scalacheck.Arbitrary

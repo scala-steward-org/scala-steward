@@ -1,11 +1,10 @@
 package org.scalasteward.core.mock
 
 import better.files.File
-import cats.Parallel
-import cats.effect.{BracketThrow, Sync}
+import cats.effect.Sync
+import cats.effect.kernel.{Async, Cont, Deferred, Fiber, Poll, Ref}
 import org.http4s.client.Client
 import org.http4s.{HttpApp, Uri}
-import org.scalasteward.core.TestInstances.ioContextShift
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.{Cli, Config, Context}
 import org.scalasteward.core.edit.scalafix.ScalafixMigrationsLoaderTest
@@ -13,6 +12,10 @@ import org.scalasteward.core.io._
 import org.scalasteward.core.vcs.VCSType
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 import org.typelevel.log4cats.Logger
+import cats.effect.unsafe.implicits.global
+import cats.effect.implicits._
+
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 object MockContext {
@@ -35,8 +38,10 @@ object MockContext {
   val envVars = List(s"GIT_ASKPASS=${config.gitCfg.gitAskPass}", "VAR1=val1", "VAR2=val2")
   val user: AuthenticatedUser = AuthenticatedUser("scala-steward", "token")
 
-  implicit val mockEffBracketThrow: BracketThrow[MockEff] = Sync[MockEff]
-  implicit val mockEffParallel: Parallel[MockEff] = Parallel.identity
+  //implicit val mockEffBracketThrow: BracketThrow[MockEff] = Sync[MockEff]
+  //implicit val mockEffParallel: Parallel[MockEff] = Parallel.identity
+
+  Sync[MockEff]
 
   implicit private val client: Client[MockEff] = Client.fromHttpApp(HttpApp.notFound)
   implicit private val fileAlg: FileAlg[MockEff] = new MockFileAlg

@@ -1,6 +1,7 @@
 package org.scalasteward.core.vcs.github
 
 import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import io.circe.literal._
 import munit.FunSuite
 import org.http4s.HttpRoutes

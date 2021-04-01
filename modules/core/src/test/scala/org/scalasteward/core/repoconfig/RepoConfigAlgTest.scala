@@ -1,5 +1,6 @@
 package org.scalasteward.core.repoconfig
 
+import cats.effect.unsafe.implicits.global
 import eu.timepit.refined.types.numeric.NonNegInt
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
@@ -9,6 +10,7 @@ import org.scalasteward.core.mock.MockState.TraceEntry.Log
 import org.scalasteward.core.mock.{MockContext, MockState}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
+
 import scala.concurrent.duration._
 
 class RepoConfigAlgTest extends FunSuite {

@@ -1,5 +1,6 @@
 package org.scalasteward.core.nurture
 
+import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.http4s.syntax.literals._
 import org.scalasteward.core.TestSyntax._

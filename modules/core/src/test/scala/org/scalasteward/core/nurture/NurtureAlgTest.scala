@@ -8,6 +8,7 @@ import org.scalacheck.Prop._
 import org.scalasteward.core.TestInstances._
 import org.scalasteward.core.data.ProcessResult.{Ignored, Updated}
 import org.scalasteward.core.data.{ProcessResult, Update}
+import cats.effect.unsafe.implicits.global
 
 class NurtureAlgTest extends ScalaCheckSuite {
   test("processUpdates with No Limiting") {

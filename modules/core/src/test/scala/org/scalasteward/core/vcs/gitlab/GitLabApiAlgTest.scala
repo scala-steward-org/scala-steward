@@ -1,6 +1,7 @@
 package org.scalasteward.core.vcs.gitlab
 
 import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import cats.implicits._
 import io.circe.literal._
 import io.circe.parser._

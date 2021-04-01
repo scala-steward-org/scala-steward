@@ -1,5 +1,6 @@
 package org.scalasteward.core.update
 
+import cats.effect.unsafe.implicits.global
 import io.circe.parser.decode
 import munit.FunSuite
 import org.scalasteward.core.TestInstances.dummyRepoCache

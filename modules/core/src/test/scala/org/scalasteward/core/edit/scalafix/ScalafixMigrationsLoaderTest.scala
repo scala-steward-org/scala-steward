@@ -1,5 +1,6 @@
 package org.scalasteward.core.edit.scalafix
 
+import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.http4s.Uri
 import org.scalasteward.core.application.Config.ScalafixCfg

@@ -1,5 +1,6 @@
 package org.scalasteward.core.buildtool.maven
 
+import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.mock.MockContext._
 import org.scalasteward.core.mock.MockContext.context.mavenAlg

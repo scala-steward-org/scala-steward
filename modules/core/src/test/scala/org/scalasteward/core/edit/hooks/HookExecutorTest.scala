@@ -1,5 +1,6 @@
 package org.scalasteward.core.edit.hooks
 
+import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.TestInstances.dummyRepoCache
 import org.scalasteward.core.TestSyntax._

@@ -17,14 +17,15 @@
 package org.scalasteward.core.io
 
 import better.files.File
-import cats.effect.{Bracket, Resource, Sync}
+import cats.effect.{Concurrent, MonadCancel, Resource, Sync}
 import cats.syntax.all._
-import cats.{Functor, MonadThrow, Traverse}
+import cats.{MonadThrow, Traverse}
 import fs2.Stream
 import org.apache.commons.io.FileUtils
 import org.http4s.Uri
 import org.http4s.implicits.http4sLiteralsSyntax
 import org.typelevel.log4cats.Logger
+
 import scala.io.Source
 
 trait FileAlg[F[_]] {
@@ -52,7 +53,7 @@ trait FileAlg[F[_]] {
 
   final def createTemporarily[A, E](file: File, content: String)(
       fa: F[A]
-  )(implicit F: Bracket[F, E]): F[A] = {
+  )(implicit F: MonadCancel[F, E]): F[A] = {
     val delete = deleteForce(file)
     val create = writeFile(file, content).onError(_ => delete)
     F.bracket(create)(_ => fa)(_ => delete)
@@ -75,10 +76,7 @@ trait FileAlg[F[_]] {
       dir: File,
       fileFilter: File => Boolean,
       contentFilter: String => Boolean
-  )(implicit
-      streamCompiler: Stream.Compiler[F, F],
-      F: Functor[F]
-  ): F[List[File]] =
+  )(implicit F: Concurrent[F]): F[List[File]] =
     walk(dir)
       .evalFilter(isRegularFile)
       .filter(fileFilter)
@@ -141,7 +139,7 @@ object FileAlg {
         Resource.fromAutoCloseable(F.delay(source)).use(src => F.delay(src.mkString))
 
       override def walk(dir: File): Stream[F, File] =
-        Stream.eval(F.delay(dir.walk())).flatMap(Stream.fromIterator(_))
+        Stream.eval(F.delay(dir.walk())).flatMap(Stream.fromBlockingIterator(_, 1))
 
       override def writeFile(file: File, content: String): F[Unit] =
         logger.debug(s"Write $file") >>

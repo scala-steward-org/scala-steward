@@ -1,5 +1,6 @@
 package org.scalasteward.core.persistence
 
+import cats.effect.unsafe.implicits.global
 import cats.syntax.all._
 import munit.FunSuite
 import org.scalasteward.core.mock.MockContext.config

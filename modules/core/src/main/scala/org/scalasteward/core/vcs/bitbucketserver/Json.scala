@@ -16,8 +16,8 @@
 
 package org.scalasteward.core.vcs.bitbucketserver
 
+import cats.ApplicativeThrow
 import cats.data.NonEmptyList
-import cats.effect.ApplicativeThrow
 import io.circe.generic.semiauto.{deriveCodec, deriveDecoder, deriveEncoder}
 import io.circe.{Codec, Decoder, Encoder}
 import org.http4s.Uri
