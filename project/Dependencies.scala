@@ -31,7 +31,7 @@ object Dependencies {
   val http4sDsl = "org.http4s" %% "http4s-dsl" % http4sCore.revision
   val http4sOkhttpClient = "org.http4s" %% "http4s-okhttp-client" % http4sCore.revision
   val kindProjector = "org.typelevel" % "kind-projector" % "0.11.3"
-  val log4catsSlf4j = "org.typelevel" %% "log4cats-slf4j" % "1.2.2"
+  val log4catsSlf4j = "org.typelevel" %% "log4cats-slf4j" % "2.0.1"
   val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.2.3"
   val jjwtApi = "io.jsonwebtoken" % "jjwt-api" % "0.11.2"
   val jjwtImpl = "io.jsonwebtoken" % "jjwt-impl" % jjwtApi.revision
