@@ -21,7 +21,7 @@ See also the announcement blog post:
 
 Open a pull request that adds the GitHub repository of your Scala project
 to [repos-github.md](https://github.com/scala-steward-org/repos/blob/master/repos-github.md)
-([edit](https://github.com/scala-steward-org/repos/edit/master/repos-github.md)).
+([edit](https://github.com/scala-steward-org/repos/edit/main/repos-github.md)).
 Once that PR is merged, [**@scala-steward**][@scala-steward] will check
 periodically for updates of libraries and plugins in your project and will
 open pull requests for updates it found.
