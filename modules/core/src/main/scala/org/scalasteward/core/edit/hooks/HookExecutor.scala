@@ -18,6 +18,7 @@ package org.scalasteward.core.edit.hooks
 
 import cats.MonadThrow
 import cats.syntax.all._
+import org.scalasteward.core.buildtool.sbt.{sbtArtifactId, sbtGroupId}
 import org.scalasteward.core.data._
 import org.scalasteward.core.git.{Commit, GitAlg}
 import org.scalasteward.core.io.{ProcessAlg, WorkspaceAlg}
@@ -62,6 +63,7 @@ final class HookExecutor[F[_]](implicit
 }
 
 object HookExecutor {
+  // sbt plugins that depend on sbt-github-actions.
   private val sbtGitHubActionsModules = List(
     (GroupId("com.codecommit"), ArtifactId("sbt-github-actions")),
     (GroupId("com.codecommit"), ArtifactId("sbt-spiewak")),
@@ -69,6 +71,10 @@ object HookExecutor {
     (GroupId("com.codecommit"), ArtifactId("sbt-spiewak-bintray")),
     (GroupId("org.http4s"), ArtifactId("sbt-http4s-org"))
   )
+
+  // Modules that most likely requires the workflow to be regenerated if updated.
+  private val conditionalSbtGitHubActionsModules =
+    (sbtGroupId, sbtArtifactId) :: scalaLangModules
 
   private def dependsOnSbtGithubActions(cache: RepoCache): Boolean =
     cache.dependencyInfos.exists(_.value.exists { info =>
@@ -104,7 +110,7 @@ object HookExecutor {
       sbtGitHubActionsModules.map { case (gid, aid) =>
         sbtGithubActionsHook(gid, aid, _ => true)
       } ++
-      scalaLangModules.map { case (gid, aid) =>
+      conditionalSbtGitHubActionsModules.map { case (gid, aid) =>
         sbtGithubActionsHook(gid, aid, dependsOnSbtGithubActions)
       }
 }
