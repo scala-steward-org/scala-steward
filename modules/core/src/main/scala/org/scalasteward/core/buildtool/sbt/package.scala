@@ -18,7 +18,6 @@ package org.scalasteward.core.buildtool
 
 import cats.Functor
 import cats.syntax.all._
-import org.scalasteward.core.BuildInfo
 import org.scalasteward.core.buildtool.sbt.data.SbtVersion
 import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId, Version}
 import org.scalasteward.core.io.{FileAlg, FileData}
@@ -27,9 +26,13 @@ package object sbt {
   val defaultScalaBinaryVersion: String =
     org.scalasteward.core.BuildInfo.scalaBinaryVersion
 
+  val sbtGroupId: GroupId = GroupId("org.scala-sbt")
+
+  val sbtArtifactId: ArtifactId = ArtifactId("sbt")
+
   def sbtDependency(sbtVersion: SbtVersion): Option[Dependency] =
     Option.when(sbtVersion.toVersion >= Version("1.0.0")) {
-      Dependency(GroupId("org.scala-sbt"), ArtifactId("sbt"), sbtVersion.value)
+      Dependency(sbtGroupId, sbtArtifactId, sbtVersion.value)
     }
 
   val scalaStewardScalafixSbt: FileData =
@@ -44,9 +47,10 @@ package object sbt {
   }
 
   def stewardPlugin[F[_]](implicit fileAlg: FileAlg[F], F: Functor[F]): F[FileData] = {
+    val pkg: String = org.scalasteward.core.BuildInfo.sbtPluginModuleRootPkg
     val name = "StewardPlugin.scala"
     fileAlg
-      .readResource(s"${BuildInfo.sbtPluginModuleRootPkg.replace('.', '/')}/$name")
+      .readResource(s"${pkg.replace('.', '/')}/$name")
       .map(FileData(name, _))
   }
 }
