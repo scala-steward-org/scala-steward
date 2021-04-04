@@ -72,7 +72,7 @@ object HookExecutor {
     (GroupId("org.http4s"), ArtifactId("sbt-http4s-org"))
   )
 
-  // Modules that most likely requires the workflow to be regenerated if updated.
+  // Modules that most likely require the workflow to be regenerated if updated.
   private val conditionalSbtGitHubActionsModules =
     (sbtGroupId, sbtArtifactId) :: scalaLangModules
 
