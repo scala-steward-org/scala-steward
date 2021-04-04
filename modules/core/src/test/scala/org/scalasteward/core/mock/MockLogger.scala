@@ -1,6 +1,6 @@
 package org.scalasteward.core.mock
 
-import cats.data.StateT
+import cats.data.Kleisli
 import org.typelevel.log4cats.Logger
 
 class MockLogger extends Logger[MockEff] {
@@ -35,5 +35,5 @@ class MockLogger extends Logger[MockEff] {
     impl(None, message)
 
   def impl(maybeThrowable: Option[Throwable], message: String): MockEff[Unit] =
-    StateT.modify(_.log(maybeThrowable, message))
+    Kleisli(_.update(_.log(maybeThrowable, message)))
 }

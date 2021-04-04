@@ -9,6 +9,7 @@ import org.scalasteward.core.mock.MockState.TraceEntry.Log
 import org.scalasteward.core.mock.{MockContext, MockState}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
+
 import scala.concurrent.duration._
 
 class RepoConfigAlgTest extends FunSuite {
@@ -211,7 +212,7 @@ class RepoConfigAlgTest extends FunSuite {
     val configFile = MockContext.config.workspace / "fthomas/scala-steward/.scala-steward.conf"
     val initialState =
       MockState.empty.addFiles(configFile -> """updates.ignore = [ "foo """).unsafeRunSync()
-    val (state, config) = repoConfigAlg.readRepoConfig(repo).run(initialState).unsafeRunSync()
+    val (state, config) = repoConfigAlg.readRepoConfig(repo).runSA(initialState).unsafeRunSync()
 
     assertEquals(config, None)
     val log = state.trace.collectFirst { case Log((_, msg)) => msg }.getOrElse("")

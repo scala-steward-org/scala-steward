@@ -1,6 +1,6 @@
 package org.scalasteward.core.buildtool.sbt
 
-import cats.data.StateT
+import cats.data.Kleisli
 import munit.FunSuite
 import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.data.{GroupId, Version}
@@ -15,7 +15,7 @@ import org.scalasteward.core.vcs.data.{BuildRoot, Repo}
 class SbtAlgTest extends FunSuite {
   test("addGlobalPlugins") {
     val obtained = sbtAlg
-      .addGlobalPlugins(StateT.modify(_.exec(List("fa"))))
+      .addGlobalPlugins(Kleisli(_.update(_.exec(List("fa")))))
       .runS(MockState.empty)
       .unsafeRunSync()
     val expected = MockState.empty.copy(

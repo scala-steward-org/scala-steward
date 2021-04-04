@@ -24,7 +24,7 @@ class BuildToolDispatcherTest extends FunSuite {
       )
       .unsafeRunSync()
     val (state, deps) =
-      buildToolDispatcher.getDependencies(repo, repoConfig).run(initial).unsafeRunSync()
+      buildToolDispatcher.getDependencies(repo, repoConfig).runSA(initial).unsafeRunSync()
 
     val expectedState = initial.copy(trace =
       Vector(

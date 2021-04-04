@@ -1,8 +1,6 @@
 package org.scalasteward.core.mock
 
 import better.files.File
-import cats.Parallel
-import cats.effect.{BracketThrow, Sync}
 import org.http4s.client.Client
 import org.http4s.{HttpApp, Uri}
 import org.scalasteward.core.TestInstances.ioContextShift
@@ -13,6 +11,7 @@ import org.scalasteward.core.io._
 import org.scalasteward.core.vcs.VCSType
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 import org.typelevel.log4cats.Logger
+
 import scala.concurrent.duration._
 
 object MockContext {
@@ -35,9 +34,6 @@ object MockContext {
   val envVars = List(s"GIT_ASKPASS=${config.gitCfg.gitAskPass}", "VAR1=val1", "VAR2=val2")
   val user: AuthenticatedUser = AuthenticatedUser("scala-steward", "token")
 
-  implicit val mockEffBracketThrow: BracketThrow[MockEff] = Sync[MockEff]
-  implicit val mockEffParallel: Parallel[MockEff] = Parallel.identity
-
   implicit private val client: Client[MockEff] = Client.fromHttpApp(HttpApp.notFound)
   implicit private val fileAlg: FileAlg[MockEff] = new MockFileAlg
   implicit private val logger: Logger[MockEff] = new MockLogger
@@ -45,5 +41,5 @@ object MockContext {
   implicit private val workspaceAlg: WorkspaceAlg[MockEff] = new MockWorkspaceAlg
 
   val context: Context[MockEff] =
-    Context.step1[MockEff](config).runA(ScalafixMigrationsLoaderTest.mockState).unsafeRunSync()
+    ScalafixMigrationsLoaderTest.mockState.toRef.flatMap(Context.step1(config).run).unsafeRunSync()
 }

@@ -2,6 +2,7 @@ package org.scalasteward.core.mock
 
 import better.files.File
 import cats.effect.IO
+import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import org.http4s.Uri
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
@@ -30,6 +31,9 @@ final case class MockState(
 
   def log(maybeThrowable: Option[Throwable], msg: String): MockState =
     copy(trace = trace :+ Log((maybeThrowable, msg)))
+
+  def toRef: IO[Ref[IO, MockState]] =
+    Ref[IO].of(this)
 }
 
 object MockState {

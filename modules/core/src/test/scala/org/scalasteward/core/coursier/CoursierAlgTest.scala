@@ -14,7 +14,7 @@ class CoursierAlgTest extends FunSuite {
       Dependency(GroupId("org.typelevel"), ArtifactId("cats-effect", "cats-effect_2.12"), "1.0.0")
     val (state, result) = coursierAlg
       .getArtifactUrl(dep.withMavenCentral)
-      .run(MockState.empty)
+      .runSA(MockState.empty)
       .unsafeRunSync()
     assertEquals(state, MockState.empty)
     assertEquals(result, Some(uri"https://github.com/typelevel/cats-effect"))
@@ -28,7 +28,7 @@ class CoursierAlgTest extends FunSuite {
     )
     val (state, result) = coursierAlg
       .getArtifactUrl(dep.withMavenCentral)
-      .run(MockState.empty)
+      .runSA(MockState.empty)
       .unsafeRunSync()
     assertEquals(state, MockState.empty)
     assertEquals(result, Some(uri"https://github.com/playframework/play-ws"))
@@ -42,7 +42,7 @@ class CoursierAlgTest extends FunSuite {
     )
     val (state, result) = coursierAlg
       .getArtifactUrl(dep.withMavenCentral)
-      .run(MockState.empty)
+      .runSA(MockState.empty)
       .unsafeRunSync()
     assertEquals(state, MockState.empty)
     assertEquals(result, Some(uri"http://msgpack.org/"))
@@ -56,7 +56,7 @@ class CoursierAlgTest extends FunSuite {
     )
     val (state, result) = coursierAlg
       .getArtifactUrl(dep.withMavenCentral)
-      .run(MockState.empty)
+      .runSA(MockState.empty)
       .unsafeRunSync()
     assertEquals(state, MockState.empty)
     assertEquals(result, Some(uri"http://code.google.com/p/flying-saucer/"))
@@ -70,7 +70,7 @@ class CoursierAlgTest extends FunSuite {
     )
     val (state, result) = coursierAlg
       .getArtifactUrl(dep.withMavenCentral)
-      .run(MockState.empty)
+      .runSA(MockState.empty)
       .unsafeRunSync()
     assertEquals(state, MockState.empty)
     assertEquals(result, Some(uri"https://bytebuddy.net"))
@@ -84,7 +84,7 @@ class CoursierAlgTest extends FunSuite {
     )
     val (state, result) = coursierAlg
       .getArtifactUrl(dep.withMavenCentral)
-      .run(MockState.empty)
+      .runSA(MockState.empty)
       .unsafeRunSync()
     assertEquals(state, MockState.empty)
     assertEquals(result, None)
@@ -100,7 +100,7 @@ class CoursierAlgTest extends FunSuite {
     )
     val (state, result) = coursierAlg
       .getArtifactUrl(dep.withMavenCentral)
-      .run(MockState.empty)
+      .runSA(MockState.empty)
       .unsafeRunSync()
     assertEquals(state, MockState.empty)
     assertEquals(result, Some(uri"https://github.com/xerial/sbt-sonatype"))
@@ -115,7 +115,7 @@ class CoursierAlgTest extends FunSuite {
       Some(ScalaVersion("2.12"))
     )
     val (state, result) =
-      coursierAlg.getArtifactUrl(dep.withSbtPluginReleases).run(MockState.empty).unsafeRunSync()
+      coursierAlg.getArtifactUrl(dep.withSbtPluginReleases).runSA(MockState.empty).unsafeRunSync()
     assertEquals(state, MockState.empty)
     assertEquals(result, Some(uri"https://github.com/sbt/sbt-release"))
   }
@@ -127,7 +127,7 @@ class CoursierAlgTest extends FunSuite {
     )
     val (state, result) = coursierAlg
       .getArtifactIdUrlMapping(dependencies.withMavenCentral)
-      .run(MockState.empty)
+      .runSA(MockState.empty)
       .unsafeRunSync()
     assertEquals(state, MockState.empty)
     assertEquals(

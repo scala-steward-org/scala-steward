@@ -1,69 +1,62 @@
 package org.scalasteward.core.io
 
 import better.files.File
-import cats.data.StateT
+import cats.data.Kleisli
 import cats.effect.IO
 import cats.syntax.all._
 import fs2.Stream
 import org.http4s.Uri
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
-import org.scalasteward.core.mock.{MockContext, MockEff, MockState}
+import org.scalasteward.core.mock.{getFlatMapSet, MockContext, MockEff}
 
 class MockFileAlg extends FileAlg[MockEff] {
   override def deleteForce(file: File): MockEff[Unit] =
-    StateT.modifyF[IO, MockState](_.exec(List("rm", "-rf", file.pathAsString)).rmFile(file))
+    Kleisli(getFlatMapSet(_.exec(List("rm", "-rf", file.pathAsString)).rmFile(file)))
 
   override def ensureExists(dir: File): MockEff[File] =
-    StateT.modify[IO, MockState](_.exec(List("mkdir", "-p", dir.pathAsString))) >>
-      StateT.liftF(ioFileAlg.ensureExists(dir))
+    Kleisli(_.update(_.exec(List("mkdir", "-p", dir.pathAsString))) >> ioFileAlg.ensureExists(dir))
 
   override def home: MockEff[File] =
-    StateT.pure(MockContext.mockRoot)
+    Kleisli.pure(MockContext.mockRoot)
 
   override def isDirectory(file: File): MockEff[Boolean] =
-    StateT.modify[IO, MockState](_.exec(List("test", "-d", file.pathAsString))) >>
-      StateT.liftF(ioFileAlg.isDirectory(file))
+    Kleisli(_.update(_.exec(List("test", "-d", file.pathAsString))) >> ioFileAlg.isDirectory(file))
 
   override def isRegularFile(file: File): MockEff[Boolean] =
-    StateT.modify[IO, MockState](_.exec(List("test", "-f", file.pathAsString))) >>
-      StateT.liftF(ioFileAlg.isRegularFile(file))
+    Kleisli {
+      _.update(_.exec(List("test", "-f", file.pathAsString))) >> ioFileAlg.isRegularFile(file)
+    }
 
   override def removeTemporarily[A](file: File)(fa: MockEff[A]): MockEff[A] =
-    for {
-      _ <- StateT.modify[IO, MockState](_.exec(List("rm", file.pathAsString)))
-      s1 <- StateT.get[IO, MockState]
-      (s2, a) <- StateT.liftF(ioFileAlg.removeTemporarily(file)(fa.run(s1)))
-      _ <- StateT.set[IO, MockState](s2)
-      _ <- StateT.modify[IO, MockState](_.exec(List("restore", file.pathAsString)))
-    } yield a
+    Kleisli { ref =>
+      for {
+        _ <- ref.update(_.exec(List("rm", file.pathAsString)))
+        a <- ioFileAlg.removeTemporarily(file)(fa.run(ref))
+        _ <- ref.update(_.exec(List("restore", file.pathAsString)))
+      } yield a
+    }
 
   override def readFile(file: File): MockEff[Option[String]] =
-    StateT.modify[IO, MockState](_.exec(List("read", file.pathAsString))) >>
-      StateT.liftF(ioFileAlg.readFile(file))
+    Kleisli(_.update(_.exec(List("read", file.pathAsString))) >> ioFileAlg.readFile(file))
 
   override def readResource(resource: String): MockEff[String] =
-    StateT.modify[IO, MockState](_.exec(List("read", s"classpath:$resource"))) >>
-      StateT.liftF(ioFileAlg.readResource(resource))
+    Kleisli {
+      _.update(_.exec(List("read", s"classpath:$resource"))) >> ioFileAlg.readResource(resource)
+    }
 
   override def readUri(uri: Uri): MockEff[String] =
-    for {
-      _ <- StateT.modify[IO, MockState](_.exec(List("read", uri.renderString)))
-      s <- StateT.get[IO, MockState]
-      content <- StateT.liftF[IO, MockState, String](s.uris.get(uri) match {
-        case Some(content) => IO.pure(content)
-        case None          => IO.raiseError(new Throwable("URL not found"))
-      })
-    } yield content
+    Kleisli {
+      _.updateAndGet(_.exec(List("read", uri.renderString))).flatMap {
+        _.uris.get(uri) match {
+          case Some(content) => IO.pure(content)
+          case None          => IO.raiseError(new Throwable(s"URI $uri not found"))
+        }
+      }
+    }
 
   override def walk(dir: File): Stream[MockEff, File] =
-    Stream.evals(
-      StateT.liftF[IO, MockState, List[File]](
-        ioFileAlg.walk(dir).compile.toList.map(_.sortBy(_.pathAsString))
-      )
-    )
+    Stream.evals(Kleisli.liftF(ioFileAlg.walk(dir).compile.toList.map(_.sortBy(_.pathAsString))))
 
   override def writeFile(file: File, content: String): MockEff[Unit] =
-    StateT.modifyF[IO, MockState](
-      _.exec(List("write", file.pathAsString)).addFiles(file -> content)
-    )
+    Kleisli(getFlatMapSet(_.exec(List("write", file.pathAsString)).addFiles(file -> content)))
 }
