@@ -41,7 +41,7 @@ object Dependencies {
   val monocleCore = "com.github.julien-truffaut" %% "monocle-core" % "2.1.0"
   val munit = "org.scalameta" %% "munit" % "0.7.23"
   val munitScalacheck = "org.scalameta" %% "munit-scalacheck" % munit.revision
-  val refined = "eu.timepit" %% "refined" % "0.9.22"
+  val refined = "eu.timepit" %% "refined" % "0.9.23"
   val refinedScalacheck = "eu.timepit" %% "refined-scalacheck" % refined.revision
   val scalacacheCaffeine = "com.github.cb372" %% "scalacache-caffeine" % "0.28.0"
   val scalacacheCatsEffect =
