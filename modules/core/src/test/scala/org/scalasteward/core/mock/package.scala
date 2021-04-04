@@ -1,6 +1,6 @@
 package org.scalasteward.core
 
-import cats.Monad
+import cats.FlatMap
 import cats.data.Kleisli
 import cats.effect.IO
 import cats.effect.concurrent.Ref
@@ -20,6 +20,6 @@ package object mock {
       state.toRef.flatMap(ref => fa.run(ref).flatMap(a => ref.get.map(s => (s, a))))
   }
 
-  def getFlatMapSet[F[_], A, B](f: A => F[A])(ref: Ref[F, A])(implicit F: Monad[F]): F[Unit] =
+  def getFlatMapSet[F[_], A, B](f: A => F[A])(ref: Ref[F, A])(implicit F: FlatMap[F]): F[Unit] =
     ref.get.flatMap(f).flatMap(ref.set)
 }
