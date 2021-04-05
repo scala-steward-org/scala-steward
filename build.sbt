@@ -347,7 +347,7 @@ addCommandsAlias(
     "package",
     "packageSrc",
     "core/assembly",
-    "docker:publishLocal"
+    "Docker/publishLocal"
   )
 )
 
