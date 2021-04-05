@@ -337,9 +337,8 @@ addCommandsAlias(
   Seq(
     "clean",
     "headerCheck",
-    "scalafmtCheck",
+    "scalafmtCheckAll",
     "scalafmtSbtCheck",
-    "test:scalafmtCheck",
     "unusedCompileDependenciesTest",
     "coverage",
     "test",
@@ -356,8 +355,7 @@ addCommandsAlias(
   "fmt",
   Seq(
     "headerCreate",
-    "scalafmt",
-    "test:scalafmt",
+    "scalafmtAll",
     "scalafmtSbt"
   )
 )

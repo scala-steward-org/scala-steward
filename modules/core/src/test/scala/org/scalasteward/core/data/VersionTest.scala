@@ -6,6 +6,7 @@ import munit.DisciplineSuite
 import org.scalacheck.Prop._
 import org.scalasteward.core.TestInstances._
 import org.scalasteward.core.data.Version.Component
+
 import scala.util.Random
 
 class VersionTest extends DisciplineSuite {

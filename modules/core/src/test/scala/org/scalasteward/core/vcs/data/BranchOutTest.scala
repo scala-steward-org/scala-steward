@@ -4,6 +4,7 @@ import io.circe.parser
 import munit.FunSuite
 import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.git.{Branch, Sha1}
+
 import scala.io.Source
 
 class BranchOutTest extends FunSuite {

@@ -120,7 +120,7 @@ class VCSPackageTest extends FunSuite {
       possibleCompareUrls(
         GitHub,
         onPremVCSUri,
-        onPremVCSUri.addPath("/foo/bar"),
+        onPremVCSUri.addPath("foo/bar"),
         update
       ).map(_.url.renderString),
       List(
