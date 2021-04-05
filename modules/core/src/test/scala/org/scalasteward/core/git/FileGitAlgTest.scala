@@ -3,6 +3,7 @@ package org.scalasteward.core.git
 import better.files.File
 import cats.Monad
 import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import cats.syntax.all._
 import munit.FunSuite
 import org.scalasteward.core.TestInstances.ioLogger
@@ -10,7 +11,7 @@ import org.scalasteward.core.git.FileGitAlgTest.{master, Supplement}
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
 import org.scalasteward.core.io.ProcessAlgTest.ioProcessAlg
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.mock.MockContext.{config, mockRoot}
+import org.scalasteward.core.mock.MockConfig.{config, mockRoot}
 import org.scalasteward.core.util.Nel
 
 class FileGitAlgTest extends FunSuite {

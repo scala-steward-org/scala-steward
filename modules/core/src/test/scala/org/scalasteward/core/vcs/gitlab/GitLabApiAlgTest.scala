@@ -1,6 +1,7 @@
 package org.scalasteward.core.vcs.gitlab
 
-import cats.effect.IO
+import cats.effect.unsafe.implicits.global
+import cats.effect.{Concurrent, IO}
 import cats.implicits._
 import io.circe.literal._
 import io.circe.parser._
@@ -16,7 +17,7 @@ import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.application.Config.GitLabCfg
 import org.scalasteward.core.data.{RepoData, Update, UpdateData}
 import org.scalasteward.core.git.{Branch, Sha1}
-import org.scalasteward.core.mock.MockContext.{config, user}
+import org.scalasteward.core.mock.MockConfig.{config, user}
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.{HttpJsonClient, Nel}
 import org.scalasteward.core.vcs.data._
@@ -184,7 +185,7 @@ class GitLabApiAlgTest extends FunSuite {
         } <+> routes).orNotFound
       )
     val errorJsonClient: HttpJsonClient[IO] =
-      new HttpJsonClient[IO]()(implicitly, errorClient)
+      new HttpJsonClient[IO]()(errorClient, Concurrent[IO])
 
     val gitlabApiAlgNoFork =
       new GitLabApiAlg[IO](

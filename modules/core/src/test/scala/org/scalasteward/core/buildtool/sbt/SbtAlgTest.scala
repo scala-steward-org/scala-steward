@@ -1,12 +1,13 @@
 package org.scalasteward.core.buildtool.sbt
 
-import cats.data.StateT
+import cats.data.Kleisli
+import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.data.{GroupId, Version}
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
+import org.scalasteward.core.mock.MockConfig.{config, mockRoot}
 import org.scalasteward.core.mock.MockContext.context.sbtAlg
-import org.scalasteward.core.mock.MockContext.{config, mockRoot}
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.util.Nel
@@ -15,7 +16,7 @@ import org.scalasteward.core.vcs.data.{BuildRoot, Repo}
 class SbtAlgTest extends FunSuite {
   test("addGlobalPlugins") {
     val obtained = sbtAlg
-      .addGlobalPlugins(StateT.modify(_.exec(List("fa"))))
+      .addGlobalPlugins(Kleisli(_.update(_.exec(List("fa")))))
       .runS(MockState.empty)
       .unsafeRunSync()
     val expected = MockState.empty.copy(
