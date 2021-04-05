@@ -39,10 +39,10 @@ final class HookExecutor[F[_]](implicit
   def execPostUpdateHooks(data: RepoData, update: Update): F[List[Commit]] =
     HookExecutor.postUpdateHooks
       .filter { hook =>
-        hook.enabledByCache(data.cache) &&
-        hook.enabledByConfig(data.config) &&
         update.groupId === hook.groupId &&
-        update.artifactIds.exists(_.name === hook.artifactId.name)
+        update.artifactIds.exists(_.name === hook.artifactId.name) &&
+        hook.enabledByCache(data.cache) &&
+        hook.enabledByConfig(data.config)
       }
       .distinctBy(_.command)
       .flatTraverse(execPostUpdateHook(data.repo, update, _))
