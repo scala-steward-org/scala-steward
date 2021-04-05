@@ -138,6 +138,9 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
   override def version: F[String] =
     workspaceAlg.rootDir.flatMap(git("--version")).map(_.mkString.trim)
 
+  override def diff(repo: File, branch: Branch): F[List[String]] =
+    git("diff", branch.name)(repo)
+
   private def git(args: String*)(repo: File): F[List[String]] =
     processAlg.exec(Nel.of("git", args: _*), repo, "GIT_ASKPASS" -> config.gitAskPass.pathAsString)
 

@@ -17,7 +17,8 @@
 package org.scalasteward.core.nurture
 
 import cats.Applicative
-import cats.effect.BracketThrow
+import cats.effect.{BracketThrow, Sync}
+import cats.effect.concurrent.Ref
 import cats.implicits._
 import eu.timepit.refined.types.numeric.NonNegInt
 import fs2.Stream
@@ -27,7 +28,6 @@ import org.scalasteward.core.application.Config
 import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.ProcessResult.{Created, Ignored, Updated}
 import org.scalasteward.core.data._
-import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.git.{Branch, Commit, GitAlg}
 import org.scalasteward.core.repoconfig.PullRequestUpdateStrategy
 import org.scalasteward.core.edit.scalafix.ScalafixMigrationsFinder
@@ -39,7 +39,6 @@ import org.scalasteward.core.{git, util, vcs}
 
 final class NurtureAlg[F[_]](config: Config)(implicit
     coursierAlg: CoursierAlg[F],
-    editAlg: EditAlg[F],
     gitAlg: GitAlg[F],
     logger: Logger[F],
     pullRequestRepository: PullRequestRepository[F],
@@ -49,7 +48,9 @@ final class NurtureAlg[F[_]](config: Config)(implicit
     vcsRepoAlg: VCSRepoAlg[F],
     streamCompiler: Stream.Compiler[F, F],
     urlChecker: UrlChecker[F],
-    F: BracketThrow[F]
+    applyAlg: ApplyAlg[F],
+    F: BracketThrow[F],
+    FS: Sync[F]
 ) {
   def nurture(data: RepoData, fork: RepoOut, updates: List[Update.Single]): F[Unit] =
     for {
@@ -75,22 +76,33 @@ final class NurtureAlg[F[_]](config: Config)(implicit
       grouped = Update.groupByGroupId(updates)
       _ <- logger.info(util.logger.showUpdates(grouped))
       baseSha1 <- gitAlg.latestSha1(data.repo, baseBranch)
+      seenBranches <- Ref[F].of(List.empty[Branch])
       _ <- NurtureAlg.processUpdates(
         grouped,
         update => {
           val updateData =
             UpdateData(data, fork, update, baseBranch, baseSha1, git.branchFor(update))
-          processUpdate(updateData).flatMap {
-            case result @ Created(newPrNumber) =>
-              closeObsoletePullRequests(updateData, newPrNumber).as[ProcessResult](result)
-            case result @ _ => F.pure(result)
-          }
+          seenBranches
+            .getAndUpdate(
+              identity
+            ) // Suppress Codacity's faulty `.get` detection, https://twitter.com/blast_hardchese/status/1373376444827508737
+            .flatMap(processUpdate(updateData, _))
+            .flatMap {
+              case result @ Created(newPrNumber) =>
+                (for {
+                  _ <- closeObsoletePullRequests(updateData, newPrNumber)
+                  _ <- seenBranches.update(updateData.updateBranch :: _)
+                } yield ()).as[ProcessResult](result)
+              case result @ Updated =>
+                seenBranches.update(updateData.updateBranch :: _).as[ProcessResult](result)
+              case result @ Ignored => F.pure(result)
+            }
         },
         data.config.updates.limit
       )
     } yield ()
 
-  def processUpdate(data: UpdateData): F[ProcessResult] =
+  def processUpdate(data: UpdateData, seenBranches: List[Branch]): F[ProcessResult] =
     for {
       _ <- logger.info(s"Process update ${data.update.show}")
       head = vcs.listingBranch(config.vcsType, data.fork, data.update)
@@ -100,9 +112,9 @@ final class NurtureAlg[F[_]](config: Config)(implicit
           logger.info(s"PR ${pr.html_url} is closed") >>
             removeRemoteBranch(data.repo, data.updateBranch).as(Ignored)
         case Some(pr) =>
-          logger.info(s"Found PR ${pr.html_url}") >> updatePullRequest(data)
+          logger.info(s"Found PR ${pr.html_url}") >> updatePullRequest(data, seenBranches)
         case None =>
-          applyNewUpdate(data)
+          applyAlg.applyNewUpdate(data, seenBranches, pushCommits, createPullRequest)
       }
       _ <- pullRequests.headOption.traverse_ { pr =>
         pullRequestRepository.createOrUpdate(
@@ -144,16 +156,6 @@ final class NurtureAlg[F[_]](config: Config)(implicit
   private def removeRemoteBranch(repo: Repo, branch: Branch): F[Unit] =
     logger.attemptLogWarn_(s"Removing remote branch ${branch.name} failed") {
       gitAlg.removeBranch(repo, branch)
-    }
-
-  def applyNewUpdate(data: UpdateData): F[ProcessResult] =
-    gitAlg.returnToCurrentBranch(data.repo) {
-      val createBranch = logger.info(s"Create branch ${data.updateBranch.name}") >>
-        gitAlg.createBranch(data.repo, data.updateBranch)
-      editAlg.applyUpdate(data.repoData, data.update, createBranch).flatMap { editCommits =>
-        if (editCommits.isEmpty) logger.warn("No commits created").as(Ignored)
-        else pushCommits(data, editCommits) >> createPullRequest(data)
-      }
     }
 
   def pushCommits(data: UpdateData, commits: List[Commit]): F[ProcessResult] =
@@ -201,13 +203,15 @@ final class NurtureAlg[F[_]](config: Config)(implicit
       _ <- logger.info(s"Created PR ${pr.html_url}")
     } yield Created(pr.number)
 
-  def updatePullRequest(data: UpdateData): F[ProcessResult] =
+  def updatePullRequest(data: UpdateData, seenBranches: List[Branch]): F[ProcessResult] =
     if (data.repoConfig.updatePullRequestsOrDefault =!= PullRequestUpdateStrategy.Never)
       gitAlg.returnToCurrentBranch(data.repo) {
         for {
           _ <- gitAlg.checkoutBranch(data.repo, data.updateBranch)
           update <- shouldBeUpdated(data)
-          result <- if (update) mergeAndApplyAgain(data) else F.pure[ProcessResult](Ignored)
+          result <-
+            if (update) applyAlg.mergeAndApplyAgain(data, seenBranches, pushCommits)
+            else F.pure[ProcessResult](Ignored)
         } yield result
       }
     else
@@ -233,15 +237,6 @@ final class NurtureAlg[F[_]](config: Config)(implicit
     result.flatMap { case (update, msg) => logger.info(msg).as(update) }
   }
 
-  def mergeAndApplyAgain(data: UpdateData): F[ProcessResult] =
-    for {
-      _ <- logger.info(
-        s"Merge branch ${data.baseBranch.name} into ${data.updateBranch.name} and apply again"
-      )
-      maybeMergeCommit <- gitAlg.mergeTheirs(data.repo, data.baseBranch)
-      editCommits <- editAlg.applyUpdate(data.repoData, data.update)
-      result <- pushCommits(data, maybeMergeCommit.toList ++ editCommits)
-    } yield result
 }
 
 object NurtureAlg {

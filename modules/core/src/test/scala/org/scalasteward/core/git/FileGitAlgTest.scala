@@ -143,6 +143,23 @@ class FileGitAlgTest extends FunSuite {
   test("version") {
     assert(ioGitAlg.version.unsafeRunSync().nonEmpty)
   }
+
+  test("diff") {
+    val repo = rootDir / "diff"
+    val wip = Branch("wip")
+    val p = for {
+      _ <- supplement.createRepo(repo)
+      _ <- ioFileAlg.writeFile(repo / "test.txt", "hello")
+      _ <- supplement.git("add", "test.txt")(repo)
+      _ <- ioGitAlg.commitAll(repo, "Add test.txt")
+      // work on wip
+      _ <- ioGitAlg.createBranch(repo, wip)
+      c1 <- ioGitAlg.diff(repo, master)
+      _ <- ioFileAlg.writeFile(repo / "test.txt", "hello world")
+      c2 <- ioGitAlg.diff(repo, master)
+    } yield (c1.isEmpty, c2.isEmpty)
+    assertEquals(p.unsafeRunSync(), (true, false))
+  }
 }
 
 object FileGitAlgTest {

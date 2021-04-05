@@ -66,4 +66,9 @@ class MockFileAlg extends FileAlg[MockEff] {
     StateT.modifyF[IO, MockState](
       _.exec(List("write", file.pathAsString)).addFiles(file -> content)
     )
+
+  override def ensureExecutable(file: File): MockEff[Unit] =
+    StateT.modify[IO, MockState](
+      _.exec(List("chmod", "u+x,g+x,o+x", file.pathAsString))
+    ) >> StateT.liftF(ioFileAlg.ensureExecutable(file))
 }
