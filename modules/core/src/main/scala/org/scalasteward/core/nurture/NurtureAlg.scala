@@ -17,7 +17,6 @@
 package org.scalasteward.core.nurture
 
 import cats.effect.Concurrent
-import cats.effect.Sync
 import cats.implicits._
 import eu.timepit.refined.types.numeric.NonNegInt
 import fs2.Stream
@@ -48,7 +47,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
     vcsExtraAlg: VCSExtraAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
     urlChecker: UrlChecker[F],
-    F: Sync[F]
+    F: Concurrent[F]
 ) {
   def nurture(data: RepoData, fork: RepoOut, updates: List[Update.Single]): F[Unit] =
     for {
@@ -248,7 +247,7 @@ object NurtureAlg {
       updates: List[Update],
       updateF: Update => F[ProcessResult],
       updatesLimit: Option[NonNegInt]
-  )(implicit F: Sync[F]): F[Unit] =
+  )(implicit F: Concurrent[F]): F[Unit] =
     updatesLimit match {
       case None => updates.traverse_(updateF)
       case Some(limit) =>
