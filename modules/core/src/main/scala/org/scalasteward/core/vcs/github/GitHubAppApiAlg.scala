@@ -20,6 +20,7 @@ import cats.Applicative
 import cats.syntax.functor._
 import org.http4s.{Header, Uri}
 import org.scalasteward.core.util.HttpJsonClient
+import org.typelevel.ci._
 
 class GitHubAppApiAlg[F[_]: Applicative](
     gitHubApiHost: Uri
@@ -28,13 +29,13 @@ class GitHubAppApiAlg[F[_]: Applicative](
 ) {
 
   private[this] val acceptHeader =
-    Header("Accept", "application/vnd.github.v3+json")
+    Header.Raw(ci"Accept", "application/vnd.github.v3+json")
 
   private[this] def addHeaders(jwt: String): client.ModReq =
     req =>
       Applicative[F].point(
         req.putHeaders(
-          Header("Authorization", s"Bearer $jwt"),
+          Header.Raw(ci"Authorization", s"Bearer $jwt"),
           acceptHeader
         )
       )
@@ -65,7 +66,7 @@ class GitHubAppApiAlg[F[_]: Applicative](
         req =>
           Applicative[F].point(
             req.putHeaders(
-              Header("Authorization", s"token ${token}"),
+              Header.Raw(ci"Authorization", s"token $token"),
               acceptHeader
             )
           )

@@ -10,11 +10,11 @@ class authenticationTest extends FunSuite {
   test("addCredentials") {
     val request = authentication
       .addCredentials[Id](AuthenticatedUser("user", "pass"))
-      .apply(Request(headers = Headers.of(Accept(MediaType.text.plain))))
+      .apply(Request(headers = Headers(Accept(MediaType.text.plain))))
 
     assertEquals(
       request.headers,
-      Headers.of(Accept(MediaType.text.plain), Authorization(BasicCredentials("user", "pass")))
+      Headers(Accept(MediaType.text.plain), Authorization(BasicCredentials("user", "pass")))
     )
   }
 }

@@ -1,5 +1,6 @@
 package org.scalasteward.core.update
 
+import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.{ArtifactId, GroupId, Update}

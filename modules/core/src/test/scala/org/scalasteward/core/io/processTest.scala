@@ -1,19 +1,19 @@
 package org.scalasteward.core.io
 
 import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import munit.FunSuite
-import org.scalasteward.core.TestInstances._
-import org.scalasteward.core.io.ProcessAlgTest.blocker
 import org.scalasteward.core.io.process.Args
 import org.scalasteward.core.util.Nel
+
 import scala.concurrent.duration._
 
 class processTest extends FunSuite {
   def slurp1(cmd: Nel[String]): IO[List[String]] =
-    process.slurp[IO](Args(cmd), 1.minute, 8192, _ => IO.unit, blocker)
+    process.slurp[IO](Args(cmd), 1.minute, 8192, _ => IO.unit)
 
   def slurp2(cmd: Nel[String], timeout: FiniteDuration): IO[List[String]] =
-    process.slurp[IO](Args(cmd), timeout, 8192, _ => IO.unit, blocker)
+    process.slurp[IO](Args(cmd), timeout, 8192, _ => IO.unit)
 
   test("echo hello") {
     assertEquals(slurp1(Nel.of("echo", "-n", "hello")).unsafeRunSync(), List("hello"))

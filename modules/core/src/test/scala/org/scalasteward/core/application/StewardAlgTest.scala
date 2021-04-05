@@ -1,6 +1,7 @@
 package org.scalasteward.core.application
 
 import cats.effect.ExitCode
+import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.mock.MockContext.context.stewardAlg
 import org.scalasteward.core.mock.MockState

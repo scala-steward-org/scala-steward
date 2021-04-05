@@ -1,11 +1,12 @@
 package org.scalasteward.core.edit.hooks
 
+import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.TestInstances.dummyRepoCache
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.{RepoData, Update}
+import org.scalasteward.core.mock.MockConfig.envVars
 import org.scalasteward.core.mock.MockContext.context.{hookExecutor, workspaceAlg}
-import org.scalasteward.core.mock.MockContext.envVars
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.repoconfig.{RepoConfig, ScalafmtConfig}

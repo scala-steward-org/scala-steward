@@ -1,7 +1,7 @@
 package org.scalasteward.core.vcs.gitlab
 
-import io.circe.syntax._
 import io.circe.literal._
+import io.circe.syntax._
 import munit.FunSuite
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.vcs.data.NewPullRequestData

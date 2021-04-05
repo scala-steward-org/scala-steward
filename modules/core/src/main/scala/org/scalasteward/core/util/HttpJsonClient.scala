@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.util
 
-import cats.effect.Sync
+import cats.effect.Concurrent
 import cats.syntax.all._
 import io.circe.{Decoder, Encoder}
 import org.http4s.Method.{GET, PATCH, POST, PUT}
@@ -25,10 +25,12 @@ import org.http4s._
 import org.http4s.circe.{jsonEncoderOf, jsonOf}
 import org.http4s.client.Client
 import org.http4s.headers.Link
+
 import scala.util.control.NoStackTrace
 
-final class HttpJsonClient[F[_]: Sync](implicit
-    client: Client[F]
+final class HttpJsonClient[F[_]](implicit
+    client: Client[F],
+    F: Concurrent[F]
 ) {
   type ModReq = Request[F] => F[Request[F]]
 
@@ -44,7 +46,7 @@ final class HttpJsonClient[F[_]: Sync](implicit
       modify: ModReq,
       xs: List[A]
   ): F[List[A]] =
-    requestWithHeader[A](method, uri, modify, Link).flatMap {
+    requestWithHeader[A, Link](method, uri, modify).flatMap {
       case (res, Some(linkHeader)) =>
         linkHeader.values.find(_.rel === Option("next")) match {
           case Some(link) =>
@@ -77,19 +79,16 @@ final class HttpJsonClient[F[_]: Sync](implicit
   def patchWithBody[A: Decoder, B: Encoder](uri: Uri, body: B, modify: ModReq): F[A] =
     patch[A](uri, modify.compose(_.withEntity(body)(jsonEncoderOf[F, B])))
 
-  private[this] def requestWithHeader[A: Decoder](
+  private[this] def requestWithHeader[A, H](
       method: Method,
       uri: Uri,
-      modify: ModReq,
-      header: HeaderKey.Extractable
-  ): F[(A, Option[header.HeaderT])] = {
+      modify: ModReq
+  )(implicit d: Decoder[A], hs: Header.Select[H]): F[(A, Option[hs.F[H]])] = {
     val decoder = jsonOf[F, A].transform(_.leftMap(failure => JsonParseError(uri, method, failure)))
     modify(Request[F](method, uri))
       .flatMap(client.run(_).use {
         case Successful(resp) =>
-          decoder.decode(resp, strict = false).rethrowT.map {
-            _ -> resp.headers.get(header)
-          }
+          decoder.decode(resp, strict = false).rethrowT.map(_ -> resp.headers.get[H])
         case resp =>
           toUnexpectedResponse(uri, method, resp).flatMap(_.raiseError)
       })

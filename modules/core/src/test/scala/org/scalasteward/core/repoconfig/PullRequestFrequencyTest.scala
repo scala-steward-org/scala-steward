@@ -4,6 +4,7 @@ import io.circe.parser
 import io.circe.syntax._
 import munit.FunSuite
 import org.scalasteward.core.util.Timestamp
+
 import scala.concurrent.duration._
 
 class PullRequestFrequencyTest extends FunSuite {

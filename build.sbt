@@ -91,7 +91,6 @@ lazy val core = myCrossProject("core")
       Dependencies.circeRefined,
       Dependencies.commonsIo,
       Dependencies.coursierCore,
-      Dependencies.coursierCatsInterop,
       Dependencies.cron4sCore,
       Dependencies.fs2Core,
       Dependencies.fs2Io,
@@ -106,7 +105,6 @@ lazy val core = myCrossProject("core")
       Dependencies.monocleCore,
       Dependencies.refined,
       Dependencies.scalacacheCaffeine,
-      Dependencies.scalacacheCatsEffect,
       Dependencies.logbackClassic % Runtime,
       Dependencies.catsLaws % Test,
       Dependencies.circeLiteral % Test,
@@ -339,9 +337,8 @@ addCommandsAlias(
   Seq(
     "clean",
     "headerCheck",
-    "scalafmtCheck",
+    "scalafmtCheckAll",
     "scalafmtSbtCheck",
-    "test:scalafmtCheck",
     "unusedCompileDependenciesTest",
     "coverage",
     "test",
@@ -350,7 +347,7 @@ addCommandsAlias(
     "package",
     "packageSrc",
     "core/assembly",
-    "docker:publishLocal"
+    "Docker/publishLocal"
   )
 )
 
@@ -358,8 +355,7 @@ addCommandsAlias(
   "fmt",
   Seq(
     "headerCreate",
-    "scalafmt",
-    "test:scalafmt",
+    "scalafmtAll",
     "scalafmtSbt"
   )
 )

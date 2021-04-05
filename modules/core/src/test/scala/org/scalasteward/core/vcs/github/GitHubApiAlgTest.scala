@@ -1,6 +1,7 @@
 package org.scalasteward.core.vcs.github
 
 import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import io.circe.literal._
 import munit.FunSuite
 import org.http4s.HttpRoutes
@@ -10,7 +11,7 @@ import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.git.{Branch, Sha1}
-import org.scalasteward.core.mock.MockContext.config
+import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.util.HttpJsonClient
 import org.scalasteward.core.vcs.data._
 

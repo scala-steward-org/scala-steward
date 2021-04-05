@@ -1,11 +1,12 @@
 package org.scalasteward.core.edit
 
+import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.TestInstances.dummyRepoCache
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.{GroupId, RepoData, Update}
+import org.scalasteward.core.mock.MockConfig.{config, envVars}
 import org.scalasteward.core.mock.MockContext.context.editAlg
-import org.scalasteward.core.mock.MockContext.{config, envVars}
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.repoconfig.RepoConfig

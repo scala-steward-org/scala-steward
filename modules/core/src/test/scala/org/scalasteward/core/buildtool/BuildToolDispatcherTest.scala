@@ -1,10 +1,11 @@
 package org.scalasteward.core.buildtool
 
+import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.buildtool.sbt.data.SbtVersion
 import org.scalasteward.core.data.{Resolver, Scope, Version}
-import org.scalasteward.core.mock.MockContext.config
+import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context.buildToolDispatcher
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
@@ -24,7 +25,7 @@ class BuildToolDispatcherTest extends FunSuite {
       )
       .unsafeRunSync()
     val (state, deps) =
-      buildToolDispatcher.getDependencies(repo, repoConfig).run(initial).unsafeRunSync()
+      buildToolDispatcher.getDependencies(repo, repoConfig).runSA(initial).unsafeRunSync()
 
     val expectedState = initial.copy(trace =
       Vector(

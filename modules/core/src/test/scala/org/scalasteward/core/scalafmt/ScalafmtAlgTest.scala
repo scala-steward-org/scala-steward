@@ -1,8 +1,9 @@
 package org.scalasteward.core.scalafmt
 
+import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.data.Version
-import org.scalasteward.core.mock.MockContext._
+import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context.scalafmtAlg
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
@@ -21,7 +22,7 @@ class ScalafmtAlgTest extends FunSuite {
                                   |""".stripMargin)
       .unsafeRunSync()
     val (state, maybeVersion) =
-      scalafmtAlg.getScalafmtVersion(buildRoot).run(initialState).unsafeRunSync()
+      scalafmtAlg.getScalafmtVersion(buildRoot).runSA(initialState).unsafeRunSync()
     val expectedState = initialState.copy(
       trace = Vector(Cmd("read", s"$repoDir/.scalafmt.conf"))
     )
@@ -42,7 +43,7 @@ class ScalafmtAlgTest extends FunSuite {
                                   |""".stripMargin)
       .unsafeRunSync()
     val (_, maybeVersion) =
-      scalafmtAlg.getScalafmtVersion(buildRoot).run(initialState).unsafeRunSync()
+      scalafmtAlg.getScalafmtVersion(buildRoot).runSA(initialState).unsafeRunSync()
     assertEquals(maybeVersion, Some(Version("2.0.0-RC8")))
   }
 }

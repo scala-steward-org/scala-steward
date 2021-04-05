@@ -26,7 +26,7 @@ import org.scalasteward.core.vcs.data.{PullRequestNumber, Repo}
 package object vcs {
   def extractPullRequestNumberFrom(uri: Uri): Option[PullRequestNumber] = {
     val regex = raw".*/(pull|pullrequests|merge_requests)/(\d+)".r
-    uri.path match {
+    uri.path.toString match {
       case regex(_, id) => scala.util.Try(PullRequestNumber(id.toInt)).toOption
       case _            => None
     }

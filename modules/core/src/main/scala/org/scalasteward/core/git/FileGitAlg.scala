@@ -17,7 +17,7 @@
 package org.scalasteward.core.git
 
 import better.files.File
-import cats.effect.BracketThrow
+import cats.effect.MonadCancelThrow
 import cats.syntax.all._
 import org.http4s.Uri
 import org.scalasteward.core.application.Config.GitCfg
@@ -29,7 +29,7 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
     fileAlg: FileAlg[F],
     processAlg: ProcessAlg[F],
     workspaceAlg: WorkspaceAlg[F],
-    F: BracketThrow[F]
+    F: MonadCancelThrow[F]
 ) extends GenGitAlg[F, File] {
   override def branchAuthors(repo: File, branch: Branch, base: Branch): F[List[String]] =
     git("log", "--pretty=format:'%an'", dotdot(base, branch))(repo)
@@ -78,7 +78,7 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
     val abortMerge = git("merge", "--abort")(repo).void
 
     returnToCurrentBranch(repo) {
-      checkoutBranch(repo, base) >> F.guarantee(tryMerge)(abortMerge).attempt.map(_.isLeft)
+      checkoutBranch(repo, base) >> F.guarantee(tryMerge, abortMerge).attempt.map(_.isLeft)
     }
   }
 

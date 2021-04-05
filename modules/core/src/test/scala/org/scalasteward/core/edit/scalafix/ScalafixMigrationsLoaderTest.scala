@@ -1,13 +1,14 @@
 package org.scalasteward.core.edit.scalafix
 
+import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.http4s.Uri
 import org.scalasteward.core.application.Config.ScalafixCfg
 import org.scalasteward.core.data.{GroupId, Version}
 import org.scalasteward.core.edit.scalafix.ScalafixMigrationsLoaderTest.mockState
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
+import org.scalasteward.core.mock.MockConfig.mockRoot
 import org.scalasteward.core.mock.MockContext.context.scalafixMigrationsLoader
-import org.scalasteward.core.mock.MockContext.mockRoot
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.util.Nel
 
