@@ -2,13 +2,14 @@ package org.scalasteward.core.io
 
 import better.files.File
 import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.http4s.Uri
 import org.scalacheck.Arbitrary
 import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
+import org.scalasteward.core.mock.MockConfig.mockRoot
 import org.scalasteward.core.mock.MockContext.context.fileAlg
-import org.scalasteward.core.mock.MockContext.mockRoot
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
 
@@ -58,7 +59,7 @@ class FileAlgTest extends FunSuite {
     val (state, edited) = (for {
       home <- fileAlg.home
       edited <- fileAlg.editFile(home / "does-not-exists.txt", Some.apply)
-    } yield edited).run(MockState.empty).unsafeRunSync()
+    } yield edited).runSA(MockState.empty).unsafeRunSync()
 
     val expected =
       MockState.empty.copy(trace = Vector(Cmd("read", s"$mockRoot/does-not-exists.txt")))
@@ -72,7 +73,7 @@ class FileAlgTest extends FunSuite {
       _ <- fileAlg.writeFile(file, "123")
       edit = (s: String) => Some(s.replace("2", "4"))
       edited <- fileAlg.editFile(file, edit)
-    } yield edited).run(MockState.empty).unsafeRunSync()
+    } yield edited).runSA(MockState.empty).unsafeRunSync()
 
     val expected = MockState.empty.copy(
       trace = Vector(

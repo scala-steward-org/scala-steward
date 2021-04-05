@@ -1,5 +1,6 @@
 package org.scalasteward.core.update
 
+import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.Update.Single
@@ -64,7 +65,7 @@ class FilterAlgTest extends FunSuite {
 
     val initialState = MockState.empty
     val (state, filtered) =
-      filterAlg.localFilterMany(config, List(update1, update2)).run(initialState).unsafeRunSync()
+      filterAlg.localFilterMany(config, List(update1, update2)).runSA(initialState).unsafeRunSync()
 
     assertEquals(filtered, List(update1))
     val expected = initialState.copy(

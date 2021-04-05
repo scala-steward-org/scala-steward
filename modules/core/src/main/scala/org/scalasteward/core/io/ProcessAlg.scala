@@ -17,7 +17,7 @@
 package org.scalasteward.core.io
 
 import better.files.File
-import cats.effect.{Blocker, Concurrent, ContextShift, Timer}
+import cats.effect.Async
 import cats.syntax.all._
 import org.scalasteward.core.application.Config.ProcessCfg
 import org.scalasteward.core.io.process.Args
@@ -84,15 +84,12 @@ object ProcessAlg {
     else
       new NoSandbox[F](config)(execImpl)
 
-  def create[F[_]](blocker: Blocker, config: ProcessCfg)(implicit
-      contextShift: ContextShift[F],
+  def create[F[_]](config: ProcessCfg)(implicit
       logger: Logger[F],
-      timer: Timer[F],
-      F: Concurrent[F]
+      F: Async[F]
   ): ProcessAlg[F] =
     fromExecImpl(config) { args =>
       logger.debug(s"Execute ${process.showCmd(args)}") >>
-        process
-          .slurp[F](args, config.processTimeout, config.maxBufferSize, logger.trace(_), blocker)
+        process.slurp[F](args, config.processTimeout, config.maxBufferSize, logger.trace(_))
     }
 }

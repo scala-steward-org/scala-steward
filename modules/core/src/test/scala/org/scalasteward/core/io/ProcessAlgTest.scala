@@ -1,16 +1,17 @@
 package org.scalasteward.core.io
 
 import better.files.File
-import cats.effect.{Blocker, IO}
-import java.util.concurrent.Executors
+import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.TestInstances._
 import org.scalasteward.core.application.Config.{ProcessCfg, SandboxCfg}
 import org.scalasteward.core.io.ProcessAlgTest.ioProcessAlg
-import org.scalasteward.core.mock.MockContext.{config, mockRoot}
+import org.scalasteward.core.mock.MockConfig.{config, mockRoot}
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
 import org.scalasteward.core.util.Nel
+
 import scala.concurrent.duration.Duration
 
 class ProcessAlgTest extends FunSuite {
@@ -65,6 +66,5 @@ class ProcessAlgTest extends FunSuite {
 }
 
 object ProcessAlgTest {
-  val blocker: Blocker = Blocker.liftExecutorService(Executors.newCachedThreadPool())
-  implicit val ioProcessAlg: ProcessAlg[IO] = ProcessAlg.create[IO](blocker, config.processCfg)
+  implicit val ioProcessAlg: ProcessAlg[IO] = ProcessAlg.create[IO](config.processCfg)
 }

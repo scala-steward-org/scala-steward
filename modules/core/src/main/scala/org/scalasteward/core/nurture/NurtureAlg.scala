@@ -16,26 +16,25 @@
 
 package org.scalasteward.core.nurture
 
-import cats.Applicative
-import cats.effect.BracketThrow
+import cats.effect.Concurrent
 import cats.implicits._
 import eu.timepit.refined.types.numeric.NonNegInt
 import fs2.Stream
-import org.typelevel.log4cats.Logger
 import org.http4s.Uri
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.ProcessResult.{Created, Ignored, Updated}
 import org.scalasteward.core.data._
 import org.scalasteward.core.edit.EditAlg
+import org.scalasteward.core.edit.scalafix.ScalafixMigrationsFinder
 import org.scalasteward.core.git.{Branch, Commit, GitAlg}
 import org.scalasteward.core.repoconfig.PullRequestUpdateStrategy
-import org.scalasteward.core.edit.scalafix.ScalafixMigrationsFinder
 import org.scalasteward.core.util.UrlChecker
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data._
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg}
 import org.scalasteward.core.{git, util, vcs}
+import org.typelevel.log4cats.Logger
 
 final class NurtureAlg[F[_]](config: Config)(implicit
     coursierAlg: CoursierAlg[F],
@@ -47,9 +46,8 @@ final class NurtureAlg[F[_]](config: Config)(implicit
     vcsApiAlg: VCSApiAlg[F],
     vcsExtraAlg: VCSExtraAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
-    streamCompiler: Stream.Compiler[F, F],
     urlChecker: UrlChecker[F],
-    F: BracketThrow[F]
+    F: Concurrent[F]
 ) {
   def nurture(data: RepoData, fork: RepoOut, updates: List[Update.Single]): F[Unit] =
     for {
@@ -249,7 +247,7 @@ object NurtureAlg {
       updates: List[Update],
       updateF: Update => F[ProcessResult],
       updatesLimit: Option[NonNegInt]
-  )(implicit streamCompiler: Stream.Compiler[F, F], F: Applicative[F]): F[Unit] =
+  )(implicit F: Concurrent[F]): F[Unit] =
     updatesLimit match {
       case None => updates.traverse_(updateF)
       case Some(limit) =>

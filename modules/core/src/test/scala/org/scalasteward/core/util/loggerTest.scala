@@ -1,5 +1,6 @@
 package org.scalasteward.core.util
 
+import cats.effect.unsafe.implicits.global
 import cats.{Applicative, ApplicativeThrow}
 import munit.FunSuite
 import org.scalasteward.core.mock.MockContext.context._

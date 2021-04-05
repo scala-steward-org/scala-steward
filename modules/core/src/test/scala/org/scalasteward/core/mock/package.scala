@@ -1,13 +1,24 @@
 package org.scalasteward.core
 
-import cats.Applicative
-import cats.data.StateT
-import cats.effect.IO
+import cats.FlatMap
+import cats.data.Kleisli
+import cats.effect.{IO, Ref}
 import cats.syntax.all._
 
 package object mock {
-  type MockEff[A] = StateT[IO, MockState, A]
+  type MockEff[A] = Kleisli[IO, Ref[IO, MockState], A]
 
-  def applyPure[F[_]: Applicative, S, A](f: S => (S, A)): StateT[F, S, A] =
-    StateT.apply(s => f(s).pure[F])
+  implicit class MockEffOps[A](private val fa: MockEff[A]) extends AnyVal {
+    def runA(state: MockState): IO[A] =
+      state.toRef.flatMap(fa.run)
+
+    def runS(state: MockState): IO[MockState] =
+      state.toRef.flatMap(ref => fa.run(ref) >> ref.get)
+
+    def runSA(state: MockState): IO[(MockState, A)] =
+      state.toRef.flatMap(ref => fa.run(ref).flatMap(a => ref.get.map(s => (s, a))))
+  }
+
+  def getFlatMapSet[F[_], A, B](f: A => F[A])(ref: Ref[F, A])(implicit F: FlatMap[F]): F[Unit] =
+    ref.get.flatMap(f).flatMap(ref.set)
 }

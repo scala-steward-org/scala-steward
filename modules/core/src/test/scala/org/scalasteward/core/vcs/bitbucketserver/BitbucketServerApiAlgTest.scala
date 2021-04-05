@@ -1,6 +1,7 @@
 package org.scalasteward.core.vcs.bitbucketserver
 
 import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.http4s.client.Client
 import org.http4s.dsl.io._
@@ -8,7 +9,7 @@ import org.http4s.implicits._
 import org.http4s.{HttpRoutes, Uri}
 import org.scalasteward.core.application.Config.BitbucketServerCfg
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.mock.MockContext.config
+import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.util.HttpJsonClient
 import org.scalasteward.core.vcs.data._
 

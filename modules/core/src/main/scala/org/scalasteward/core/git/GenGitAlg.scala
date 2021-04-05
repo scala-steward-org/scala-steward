@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.git
 
-import cats.effect.{Bracket, BracketThrow}
+import cats.effect.{MonadCancel, MonadCancelThrow}
 import cats.syntax.all._
 import cats.{FlatMap, Monad}
 import org.http4s.Uri
@@ -74,7 +74,7 @@ trait GenGitAlg[F[_], Repo] {
   ): F[Option[Commit]] =
     containsChanges(repo).ifM(commitAll(repo, message, messages: _*).map(Some.apply), F.pure(None))
 
-  final def returnToCurrentBranch[A, E](repo: Repo)(fa: F[A])(implicit F: Bracket[F, E]): F[A] =
+  final def returnToCurrentBranch[A, E](repo: Repo)(fa: F[A])(implicit F: MonadCancel[F, E]): F[A] =
     F.bracket(currentBranch(repo))(_ => fa)(checkoutBranch(repo, _))
 
   final def contramapRepoF[A](f: A => F[Repo])(implicit F: FlatMap[F]): GenGitAlg[F, A] = {
@@ -151,7 +151,7 @@ object GenGitAlg {
       fileAlg: FileAlg[F],
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F],
-      F: BracketThrow[F]
+      F: MonadCancelThrow[F]
   ): GitAlg[F] =
     new FileGitAlg[F](config).contramapRepoF(workspaceAlg.repoDir)
 }

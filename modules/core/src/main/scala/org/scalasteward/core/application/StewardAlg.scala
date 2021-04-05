@@ -17,7 +17,7 @@
 package org.scalasteward.core.application
 
 import better.files.File
-import cats.effect.{BracketThrow, ExitCode}
+import cats.effect.{ExitCode, Sync}
 import cats.syntax.all._
 import fs2.Stream
 import org.scalasteward.core.buildtool.sbt.SbtAlg
@@ -47,9 +47,8 @@ final class StewardAlg[F[_]](config: Config)(implicit
     repoCacheAlg: RepoCacheAlg[F],
     sbtAlg: SbtAlg[F],
     selfCheckAlg: SelfCheckAlg[F],
-    streamCompiler: Stream.Compiler[F, F],
     workspaceAlg: WorkspaceAlg[F],
-    F: BracketThrow[F]
+    F: Sync[F]
 ) {
   private def readRepos(reposFile: File): Stream[F, Repo] =
     Stream.evals[F, List, Repo] {
@@ -85,13 +84,14 @@ final class StewardAlg[F[_]](config: Config)(implicit
     val label = s"Steward ${repo.show}"
     logger.infoTotalTime(label) {
       logger.attemptLogLabel(util.string.lineLeftRight(label), Some(label)) {
-        F.guarantee {
+        F.guarantee(
           for {
             (data, fork) <- repoCacheAlg.checkCache(repo)
             (attentionNeeded, updates) <- pruningAlg.needsAttention(data)
             _ <- if (attentionNeeded) nurtureAlg.nurture(data, fork, updates) else F.unit
-          } yield ()
-        }(gitAlg.removeClone(repo))
+          } yield (),
+          gitAlg.removeClone(repo)
+        )
       }
     }
   }

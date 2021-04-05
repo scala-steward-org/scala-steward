@@ -17,9 +17,8 @@
 package org.scalasteward.core.edit
 
 import better.files.File
-import cats.effect.MonadThrow
+import cats.effect.Concurrent
 import cats.syntax.all._
-import fs2.Stream
 import org.scalasteward.core.buildtool.BuildToolDispatcher
 import org.scalasteward.core.data.RepoData
 import org.scalasteward.core.data.Update
@@ -45,9 +44,8 @@ final class EditAlg[F[_]](implicit
     hookExecutor: HookExecutor[F],
     logger: Logger[F],
     scalafixMigrationsFinder: ScalafixMigrationsFinder,
-    streamCompiler: Stream.Compiler[F, F],
     workspaceAlg: WorkspaceAlg[F],
-    F: MonadThrow[F]
+    F: Concurrent[F]
 ) {
   def applyUpdate(data: RepoData, update: Update, preCommit: F[Unit] = F.unit): F[List[Commit]] =
     findFilesContainingCurrentVersion(data.repo, data.config, update).flatMap {

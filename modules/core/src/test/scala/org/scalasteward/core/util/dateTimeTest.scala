@@ -4,6 +4,7 @@ import cats.syntax.all._
 import munit.ScalaCheckSuite
 import org.scalacheck.Prop._
 import org.scalasteward.core.util.dateTime._
+
 import scala.concurrent.duration._
 
 class dateTimeTest extends ScalaCheckSuite {

@@ -17,14 +17,15 @@
 package org.scalasteward.core.io
 
 import better.files.File
-import cats.effect.{Bracket, Resource, Sync}
+import cats.effect.{Concurrent, MonadCancel, Resource, Sync}
 import cats.syntax.all._
-import cats.{Functor, MonadThrow, Traverse}
+import cats.{MonadThrow, Traverse}
 import fs2.Stream
 import org.apache.commons.io.FileUtils
 import org.http4s.Uri
 import org.http4s.implicits.http4sLiteralsSyntax
 import org.typelevel.log4cats.Logger
+
 import scala.io.Source
 
 trait FileAlg[F[_]] {
@@ -52,7 +53,7 @@ trait FileAlg[F[_]] {
 
   final def createTemporarily[A, E](file: File, content: String)(
       fa: F[A]
-  )(implicit F: Bracket[F, E]): F[A] = {
+  )(implicit F: MonadCancel[F, E]): F[A] = {
     val delete = deleteForce(file)
     val create = writeFile(file, content).onError(_ => delete)
     F.bracket(create)(_ => fa)(_ => delete)
@@ -75,10 +76,7 @@ trait FileAlg[F[_]] {
       dir: File,
       fileFilter: File => Boolean,
       contentFilter: String => Boolean
-  )(implicit
-      streamCompiler: Stream.Compiler[F, F],
-      F: Functor[F]
-  ): F[List[File]] =
+  )(implicit F: Concurrent[F]): F[List[File]] =
     walk(dir)
       .evalFilter(isRegularFile)
       .filter(fileFilter)
@@ -94,13 +92,13 @@ object FileAlg {
   def create[F[_]](implicit logger: Logger[F], F: Sync[F]): FileAlg[F] =
     new FileAlg[F] {
       override def deleteForce(file: File): F[Unit] =
-        F.delay {
+        F.blocking {
           if (file.exists) FileUtils.forceDelete(file.toJava)
           if (file.exists) file.delete()
         }
 
       override def ensureExists(dir: File): F[File] =
-        F.delay {
+        F.blocking {
           if (!dir.exists) dir.createDirectories()
           dir
         }
@@ -109,14 +107,14 @@ object FileAlg {
         F.delay(File.home)
 
       override def isDirectory(file: File): F[Boolean] =
-        F.delay(file.isDirectory(File.LinkOptions.noFollow))
+        F.blocking(file.isDirectory(File.LinkOptions.noFollow))
 
       override def isRegularFile(file: File): F[Boolean] =
-        F.delay(file.isRegularFile(File.LinkOptions.noFollow))
+        F.blocking(file.isRegularFile(File.LinkOptions.noFollow))
 
       override def removeTemporarily[A](file: File)(fa: F[A]): F[A] =
         F.bracket {
-          F.delay {
+          F.blocking {
             val copyOptions = File.CopyOptions(overwrite = true)
             if (file.exists) Some(file.moveTo(File.newTemporaryFile())(copyOptions)) else None
           }
@@ -126,7 +124,7 @@ object FileAlg {
         }
 
       override def readFile(file: File): F[Option[String]] =
-        F.delay(if (file.exists) Some(file.contentAsString) else None)
+        F.blocking(if (file.exists) Some(file.contentAsString) else None)
 
       override def readResource(resource: String): F[String] =
         readSource(Source.fromResource(resource))
@@ -141,11 +139,11 @@ object FileAlg {
         Resource.fromAutoCloseable(F.delay(source)).use(src => F.delay(src.mkString))
 
       override def walk(dir: File): Stream[F, File] =
-        Stream.eval(F.delay(dir.walk())).flatMap(Stream.fromIterator(_))
+        Stream.eval(F.delay(dir.walk())).flatMap(Stream.fromBlockingIterator(_, 1))
 
       override def writeFile(file: File, content: String): F[Unit] =
         logger.debug(s"Write $file") >>
           file.parentOption.fold(F.unit)(ensureExists(_).void) >>
-          F.delay(file.write(content)).void
+          F.blocking(file.write(content)).void
     }
 }

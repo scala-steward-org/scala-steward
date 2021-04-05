@@ -1,6 +1,7 @@
 package org.scalasteward.core.vcs
 
 import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.http4s.HttpRoutes
 import org.http4s.client.Client
@@ -9,7 +10,7 @@ import org.http4s.implicits._
 import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.{ReleaseRelatedUrl, Update}
-import org.scalasteward.core.mock.MockContext
+import org.scalasteward.core.mock.MockConfig
 import org.scalasteward.core.util.{Nel, UrlChecker}
 
 class VCSExtraAlgTest extends FunSuite {
@@ -22,14 +23,14 @@ class VCSExtraAlgTest extends FunSuite {
 
   implicit val client: Client[IO] = Client.fromHttpApp[IO](routes.orNotFound)
   implicit val urlChecker: UrlChecker[IO] =
-    UrlChecker.create[IO](MockContext.config).unsafeRunSync()
+    UrlChecker.create[IO](MockConfig.config).unsafeRunSync()
 
   private val updateFoo = Update.Single("com.example" % "foo" % "0.1.0", Nel.of("0.2.0"))
   private val updateBar = Update.Single("com.example" % "bar" % "0.1.0", Nel.of("0.2.0"))
   private val updateBuz = Update.Single("com.example" % "buz" % "0.1.0", Nel.of("0.2.0"))
 
   test("getBranchCompareUrl: std vsc") {
-    val vcsExtraAlg = VCSExtraAlg.create[IO](MockContext.config)
+    val vcsExtraAlg = VCSExtraAlg.create[IO](MockConfig.config)
 
     assertEquals(
       vcsExtraAlg
@@ -56,7 +57,7 @@ class VCSExtraAlgTest extends FunSuite {
   }
 
   test("getBranchCompareUrl: github on prem") {
-    val config = MockContext.config.copy(
+    val config = MockConfig.config.copy(
       vcsType = VCSType.GitHub,
       vcsApiHost = uri"https://github.on-prem.com/"
     )
