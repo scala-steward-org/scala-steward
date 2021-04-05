@@ -1,7 +1,7 @@
 package org.scalasteward.core.vcs.gitlab
 
-import cats.effect.IO
 import cats.effect.unsafe.implicits.global
+import cats.effect.{Concurrent, IO}
 import cats.implicits._
 import io.circe.literal._
 import io.circe.parser._
@@ -185,7 +185,7 @@ class GitLabApiAlgTest extends FunSuite {
         } <+> routes).orNotFound
       )
     val errorJsonClient: HttpJsonClient[IO] =
-      new HttpJsonClient[IO]()(implicitly, errorClient)
+      new HttpJsonClient[IO]()(errorClient, Concurrent[IO])
 
     val gitlabApiAlgNoFork =
       new GitLabApiAlg[IO](

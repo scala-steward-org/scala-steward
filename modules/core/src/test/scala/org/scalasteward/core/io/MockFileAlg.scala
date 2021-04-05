@@ -3,7 +3,6 @@ package org.scalasteward.core.io
 import better.files.File
 import cats.data.Kleisli
 import cats.effect.IO
-import cats.syntax.all._
 import fs2.Stream
 import org.http4s.Uri
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg

@@ -1,7 +1,6 @@
 package org.scalasteward.core.mock
 
 import better.files.File
-import cats.effect.implicits._
 import cats.effect.unsafe.implicits.global
 import org.http4s.client.Client
 import org.http4s.{HttpApp, Uri}
