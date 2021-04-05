@@ -92,13 +92,13 @@ object FileAlg {
   def create[F[_]](implicit logger: Logger[F], F: Sync[F]): FileAlg[F] =
     new FileAlg[F] {
       override def deleteForce(file: File): F[Unit] =
-        F.delay {
+        F.blocking {
           if (file.exists) FileUtils.forceDelete(file.toJava)
           if (file.exists) file.delete()
         }
 
       override def ensureExists(dir: File): F[File] =
-        F.delay {
+        F.blocking {
           if (!dir.exists) dir.createDirectories()
           dir
         }
@@ -107,14 +107,14 @@ object FileAlg {
         F.delay(File.home)
 
       override def isDirectory(file: File): F[Boolean] =
-        F.delay(file.isDirectory(File.LinkOptions.noFollow))
+        F.blocking(file.isDirectory(File.LinkOptions.noFollow))
 
       override def isRegularFile(file: File): F[Boolean] =
-        F.delay(file.isRegularFile(File.LinkOptions.noFollow))
+        F.blocking(file.isRegularFile(File.LinkOptions.noFollow))
 
       override def removeTemporarily[A](file: File)(fa: F[A]): F[A] =
         F.bracket {
-          F.delay {
+          F.blocking {
             val copyOptions = File.CopyOptions(overwrite = true)
             if (file.exists) Some(file.moveTo(File.newTemporaryFile())(copyOptions)) else None
           }
@@ -124,7 +124,7 @@ object FileAlg {
         }
 
       override def readFile(file: File): F[Option[String]] =
-        F.delay(if (file.exists) Some(file.contentAsString) else None)
+        F.blocking(if (file.exists) Some(file.contentAsString) else None)
 
       override def readResource(resource: String): F[String] =
         readSource(Source.fromResource(resource))
@@ -144,6 +144,6 @@ object FileAlg {
       override def writeFile(file: File, content: String): F[Unit] =
         logger.debug(s"Write $file") >>
           file.parentOption.fold(F.unit)(ensureExists(_).void) >>
-          F.delay(file.write(content)).void
+          F.blocking(file.write(content)).void
     }
 }
