@@ -76,12 +76,13 @@ object Context {
     for {
       _ <- Resource.unit[F]
       config = Config.from(args)
-      implicit0(logger: Logger[F]) <- Resource.eval(Slf4jLogger.create[F])
-      implicit0(client: Client[F]) <- OkHttpBuilder.withDefaultClient[F].flatMap(_.resource)
-      implicit0(fileAlg: FileAlg[F]) = FileAlg.create[F]
-      implicit0(processAlg: ProcessAlg[F]) = ProcessAlg.create[F](config.processCfg)
-      implicit0(workspaceAlg: WorkspaceAlg[F]) = WorkspaceAlg.create[F](config)
-      context <- Resource.eval(step1[F](config))
+      logger <- Resource.eval(Slf4jLogger.create[F])
+      client <- OkHttpBuilder.withDefaultClient[F].flatMap(_.resource)
+      fileAlg = FileAlg.create[F](logger, F)
+      processAlg = ProcessAlg.create[F](config.processCfg)(logger, F)
+      workspaceAlg = WorkspaceAlg.create[F](config)(fileAlg, logger, F)
+      context <-
+        Resource.eval(step1[F](config)(client, fileAlg, logger, processAlg, workspaceAlg, F))
     } yield context
 
   def step1[F[_]](config: Config)(implicit
@@ -95,12 +96,10 @@ object Context {
     for {
       _ <- printBanner[F]
       vcsUser <- config.vcsUser[F]
-      implicit0(artifactMigration: ArtifactMigrations) <- ArtifactMigrations.create[F](config)
-      implicit0(scalafixMigrationsLoader: ScalafixMigrationsLoader[F]) =
-        new ScalafixMigrationsLoader[F]
-      implicit0(scalafixMigrationsFinder: ScalafixMigrationsFinder) <-
-        scalafixMigrationsLoader.createFinder(config.scalafixCfg)
-      implicit0(urlChecker: UrlChecker[F]) <- UrlChecker.create[F](config)
+      artifactMigrations0 <- ArtifactMigrations.create[F](config)
+      scalafixMigrationsLoader0 = new ScalafixMigrationsLoader[F]
+      scalafixMigrationsFinder0 <- scalafixMigrationsLoader0.createFinder(config.scalafixCfg)
+      urlChecker0 <- UrlChecker.create[F](config)
       kvsPrefix = Some(config.vcsType.asString)
       pullRequestsStore <- JsonKeyValueStore
         .create[F, Repo, Map[Uri, PullRequestData]]("pull_requests", "2", kvsPrefix)
@@ -112,6 +111,10 @@ object Context {
       versionsStore <- JsonKeyValueStore
         .create[F, VersionsCache.Key, VersionsCache.Value]("versions", "2")
     } yield {
+      implicit val artifactMigrations: ArtifactMigrations = artifactMigrations0
+      implicit val scalafixMigrationsLoader: ScalafixMigrationsLoader[F] = scalafixMigrationsLoader0
+      implicit val scalafixMigrationsFinder: ScalafixMigrationsFinder = scalafixMigrationsFinder0
+      implicit val urlChecker: UrlChecker[F] = urlChecker0
       implicit val dateTimeAlg: DateTimeAlg[F] = DateTimeAlg.create[F]
       implicit val repoConfigAlg: RepoConfigAlg[F] = new RepoConfigAlg[F](config)
       implicit val filterAlg: FilterAlg[F] = new FilterAlg[F]
