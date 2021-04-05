@@ -16,7 +16,6 @@
 
 package org.scalasteward.core.application
 
-import cats.Parallel
 import cats.effect._
 import cats.effect.implicits._
 import cats.syntax.all._
@@ -89,10 +88,9 @@ object Context {
       client: Client[F],
       fileAlg: FileAlg[F],
       logger: Logger[F],
-      parallel: Parallel[F],
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F],
-      F: Sync[F]
+      F: Async[F]
   ): F[Context[F]] =
     for {
       _ <- printBanner[F]
@@ -120,7 +118,6 @@ object Context {
       implicit val gitAlg: GitAlg[F] = GenGitAlg.create[F](config.gitCfg)
       implicit val gitHubAuthAlg: GitHubAuthAlg[F] = GitHubAuthAlg.create[F]
       implicit val hookExecutor: HookExecutor[F] = new HookExecutor[F]
-      /// hmpf
       implicit val httpJsonClient: HttpJsonClient[F] = new HttpJsonClient[F]
       implicit val repoCacheRepository: RepoCacheRepository[F] =
         new RepoCacheRepository[F](repoCacheStore)
@@ -141,7 +138,6 @@ object Context {
       implicit val buildToolDispatcher: BuildToolDispatcher[F] = new BuildToolDispatcher[F]
       implicit val refreshErrorAlg: RefreshErrorAlg[F] = new RefreshErrorAlg[F](refreshErrorStore)
       implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F](config)
-      //ok
       implicit val editAlg: EditAlg[F] = new EditAlg[F]
       implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F](config)
       implicit val pruningAlg: PruningAlg[F] = new PruningAlg[F]
