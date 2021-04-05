@@ -2,7 +2,7 @@ package org.scalasteward.core.io
 
 import better.files.File
 import cats.data.Kleisli
-import org.scalasteward.core.mock.{MockContext, MockEff}
+import org.scalasteward.core.mock.{MockConfig, MockEff}
 import org.scalasteward.core.vcs.data.{BuildRoot, Repo}
 
 class MockWorkspaceAlg extends WorkspaceAlg[MockEff] {
@@ -10,7 +10,7 @@ class MockWorkspaceAlg extends WorkspaceAlg[MockEff] {
     Kleisli.pure(())
 
   override def rootDir: MockEff[File] =
-    Kleisli.pure(MockContext.config.workspace)
+    Kleisli.pure(MockConfig.config.workspace)
 
   override def repoDir(repo: Repo): MockEff[File] =
     rootDir.map(_ / repo.owner / repo.repo)

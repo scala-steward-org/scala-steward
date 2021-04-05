@@ -4,10 +4,10 @@ import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.http4s.syntax.literals._
 import org.scalasteward.core.git.Branch
+import org.scalasteward.core.mock.MockConfig.{config, envVars}
 import org.scalasteward.core.mock.MockContext.context.{gitAlg, logger, vcsRepoAlg}
-import org.scalasteward.core.mock.MockContext.{config, envVars}
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
-import org.scalasteward.core.mock.{MockContext, MockEff, MockState}
+import org.scalasteward.core.mock.{MockConfig, MockEff, MockState}
 import org.scalasteward.core.vcs.data.{Repo, RepoOut, UserOut}
 
 class VCSRepoAlgTest extends FunSuite {
@@ -53,7 +53,7 @@ class VCSRepoAlgTest extends FunSuite {
   }
 
   test("cloneAndSync: doNotFork = true") {
-    val config = MockContext.config.copy(doNotFork = true)
+    val config = MockConfig.config.copy(doNotFork = true)
     val state = new VCSRepoAlg[MockEff](config)
       .cloneAndSync(repo, parentRepoOut)
       .runS(MockState.empty)

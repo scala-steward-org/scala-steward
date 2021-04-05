@@ -6,7 +6,7 @@ import cats.effect.IO
 import fs2.Stream
 import org.http4s.Uri
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
-import org.scalasteward.core.mock.{getFlatMapSet, MockContext, MockEff}
+import org.scalasteward.core.mock.{getFlatMapSet, MockConfig, MockEff}
 
 class MockFileAlg extends FileAlg[MockEff] {
   override def deleteForce(file: File): MockEff[Unit] =
@@ -16,7 +16,7 @@ class MockFileAlg extends FileAlg[MockEff] {
     Kleisli(_.update(_.exec(List("mkdir", "-p", dir.pathAsString))) >> ioFileAlg.ensureExists(dir))
 
   override def home: MockEff[File] =
-    Kleisli.pure(MockContext.mockRoot)
+    Kleisli.pure(MockConfig.mockRoot)
 
   override def isDirectory(file: File): MockEff[Boolean] =
     Kleisli(_.update(_.exec(List("test", "-d", file.pathAsString))) >> ioFileAlg.isDirectory(file))

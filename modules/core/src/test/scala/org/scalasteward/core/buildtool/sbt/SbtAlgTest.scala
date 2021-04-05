@@ -6,8 +6,8 @@ import munit.FunSuite
 import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.data.{GroupId, Version}
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
+import org.scalasteward.core.mock.MockConfig.{config, mockRoot}
 import org.scalasteward.core.mock.MockContext.context.sbtAlg
-import org.scalasteward.core.mock.MockContext.{config, mockRoot}
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.util.Nel

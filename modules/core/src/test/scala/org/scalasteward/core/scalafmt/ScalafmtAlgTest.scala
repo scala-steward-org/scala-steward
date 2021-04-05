@@ -3,7 +3,7 @@ package org.scalasteward.core.scalafmt
 import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.data.Version
-import org.scalasteward.core.mock.MockContext._
+import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context.scalafmtAlg
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.Cmd

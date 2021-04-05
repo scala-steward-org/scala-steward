@@ -11,7 +11,7 @@ import org.scalasteward.core.git.FileGitAlgTest.{master, Supplement}
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
 import org.scalasteward.core.io.ProcessAlgTest.ioProcessAlg
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.mock.MockContext.{config, mockRoot}
+import org.scalasteward.core.mock.MockConfig.{config, mockRoot}
 import org.scalasteward.core.util.Nel
 
 class FileGitAlgTest extends FunSuite {

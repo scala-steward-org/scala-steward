@@ -9,7 +9,7 @@ import org.http4s.implicits._
 import org.http4s.{HttpRoutes, Uri}
 import org.scalasteward.core.application.Config.BitbucketServerCfg
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.mock.MockContext.config
+import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.util.HttpJsonClient
 import org.scalasteward.core.vcs.data._
 

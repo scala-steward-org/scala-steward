@@ -7,7 +7,7 @@ import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.git.Sha1.HexString
-import org.scalasteward.core.mock.MockContext.config
+import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context.pullRequestRepository
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry
