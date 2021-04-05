@@ -20,9 +20,9 @@ import cats.Applicative
 import cats.syntax.all._
 import org.http4s.{Header, Request}
 import org.scalasteward.core.vcs.data.AuthenticatedUser
-import org.typelevel.ci.CIString
+import org.typelevel.ci._
 
 object authentication {
   def addCredentials[F[_]: Applicative](user: AuthenticatedUser): Request[F] => F[Request[F]] =
-    _.putHeaders(Header.Raw(CIString("Private-Token"), user.accessToken)).pure[F]
+    _.putHeaders(Header.Raw(ci"Private-Token", user.accessToken)).pure[F]
 }
