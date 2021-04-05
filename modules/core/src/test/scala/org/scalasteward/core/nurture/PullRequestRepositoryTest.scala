@@ -39,7 +39,7 @@ class PullRequestRepositoryTest extends FunSuite {
       result <- pullRequestRepository.findLatestPullRequest(repo, update.crossDependency, "1.0.0")
       createdAt <- pullRequestRepository.lastPullRequestCreatedAt(repo)
     } yield (result, createdAt)
-    val (state, (result, createdAt)) = p.run(MockState.empty).unsafeRunSync()
+    val (state, (result, createdAt)) = p.runSA(MockState.empty).unsafeRunSync()
 
     val store = config.workspace / s"store/pull_requests/v2/github/${repo.show}/pull_requests.json"
     assertEquals(result, Some((url, sha1, PullRequestState.Open)))
@@ -73,7 +73,7 @@ class PullRequestRepositoryTest extends FunSuite {
       _ <- pullRequestRepository.changeState(repo, url, PullRequestState.Closed)
       closedResult <- pullRequestRepository.getObsoleteOpenPullRequests(repo, nextUpdate)
     } yield (emptyResult, result, closedResult)
-    val (state, (emptyResult, result, closedResult)) = p.run(MockState.empty).unsafeRunSync()
+    val (state, (emptyResult, result, closedResult)) = p.runSA(MockState.empty).unsafeRunSync()
     val store = config.workspace / s"store/pull_requests/v2/github/${repo.show}/pull_requests.json"
     assertEquals(emptyResult, List.empty)
     assertEquals(closedResult, List.empty)
@@ -105,7 +105,7 @@ class PullRequestRepositoryTest extends FunSuite {
       )
       result <- pullRequestRepository.getObsoleteOpenPullRequests(repo, update)
     } yield (emptyResult, result)
-    val (state, (emptyResult, result)) = p.run(MockState.empty).unsafeRunSync()
+    val (state, (emptyResult, result)) = p.runSA(MockState.empty).unsafeRunSync()
     val store = config.workspace / s"store/pull_requests/v2/github/${repo.show}/pull_requests.json"
     assertEquals(emptyResult, List.empty)
     assertEquals(result, List.empty)
@@ -136,7 +136,7 @@ class PullRequestRepositoryTest extends FunSuite {
       )
       result <- pullRequestRepository.getObsoleteOpenPullRequests(repo, newUpdate)
     } yield (emptyResult, result)
-    val (state, (emptyResult, result)) = p.run(MockState.empty).unsafeRunSync()
+    val (state, (emptyResult, result)) = p.runSA(MockState.empty).unsafeRunSync()
     val store = config.workspace / s"store/pull_requests/v2/github/${repo.show}/pull_requests.json"
     assertEquals(emptyResult, List.empty)
     assertEquals(result, List.empty)

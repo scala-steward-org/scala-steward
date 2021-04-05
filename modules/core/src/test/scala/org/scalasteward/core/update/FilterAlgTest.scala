@@ -65,7 +65,7 @@ class FilterAlgTest extends FunSuite {
 
     val initialState = MockState.empty
     val (state, filtered) =
-      filterAlg.localFilterMany(config, List(update1, update2)).run(initialState).unsafeRunSync()
+      filterAlg.localFilterMany(config, List(update1, update2)).runSA(initialState).unsafeRunSync()
 
     assertEquals(filtered, List(update1))
     val expected = initialState.copy(

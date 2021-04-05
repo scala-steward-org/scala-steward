@@ -22,7 +22,7 @@ class ScalafmtAlgTest extends FunSuite {
                                   |""".stripMargin)
       .unsafeRunSync()
     val (state, maybeVersion) =
-      scalafmtAlg.getScalafmtVersion(buildRoot).run(initialState).unsafeRunSync()
+      scalafmtAlg.getScalafmtVersion(buildRoot).runSA(initialState).unsafeRunSync()
     val expectedState = initialState.copy(
       trace = Vector(Cmd("read", s"$repoDir/.scalafmt.conf"))
     )
@@ -43,7 +43,7 @@ class ScalafmtAlgTest extends FunSuite {
                                   |""".stripMargin)
       .unsafeRunSync()
     val (_, maybeVersion) =
-      scalafmtAlg.getScalafmtVersion(buildRoot).run(initialState).unsafeRunSync()
+      scalafmtAlg.getScalafmtVersion(buildRoot).runSA(initialState).unsafeRunSync()
     assertEquals(maybeVersion, Some(Version("2.0.0-RC8")))
   }
 }

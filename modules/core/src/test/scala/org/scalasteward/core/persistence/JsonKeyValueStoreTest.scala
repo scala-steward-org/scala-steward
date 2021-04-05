@@ -17,7 +17,7 @@ class JsonKeyValueStoreTest extends FunSuite {
       _ <- kvStore.put("k2", "v2")
       v3 <- kvStore.get("k3")
     } yield (v1, v3)
-    val (state, value) = p.run(MockState.empty).unsafeRunSync()
+    val (state, value) = p.runSA(MockState.empty).unsafeRunSync()
     assertEquals(value, (Some("v1"), None))
 
     val k1File = config.workspace / "store" / "test-1" / "v0" / "k1" / "test-1.json"
@@ -45,7 +45,7 @@ class JsonKeyValueStoreTest extends FunSuite {
       v1 <- kvStore.get("k1")
       _ <- kvStore.set("k1", None)
     } yield v1
-    val (state, value) = p.run(MockState.empty).unsafeRunSync()
+    val (state, value) = p.runSA(MockState.empty).unsafeRunSync()
     assertEquals(value, Some("v0"))
 
     val k1File = config.workspace / "store" / "test-2" / "v0" / "k1" / "test-2.json"
@@ -69,7 +69,7 @@ class JsonKeyValueStoreTest extends FunSuite {
       v1 <- kvStore.get("k1")
       v2 <- kvStore.get("k2")
     } yield (v1, v2)
-    val (state, value) = p.run(MockState.empty).unsafeRunSync()
+    val (state, value) = p.runSA(MockState.empty).unsafeRunSync()
     assertEquals(value, (Some("v1"), None))
 
     val k1File = config.workspace / "store" / "test-3" / "v0" / "k1" / "test-3.json"

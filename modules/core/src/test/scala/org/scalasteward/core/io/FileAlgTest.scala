@@ -59,7 +59,7 @@ class FileAlgTest extends FunSuite {
     val (state, edited) = (for {
       home <- fileAlg.home
       edited <- fileAlg.editFile(home / "does-not-exists.txt", Some.apply)
-    } yield edited).run(MockState.empty).unsafeRunSync()
+    } yield edited).runSA(MockState.empty).unsafeRunSync()
 
     val expected =
       MockState.empty.copy(trace = Vector(Cmd("read", s"$mockRoot/does-not-exists.txt")))
@@ -73,7 +73,7 @@ class FileAlgTest extends FunSuite {
       _ <- fileAlg.writeFile(file, "123")
       edit = (s: String) => Some(s.replace("2", "4"))
       edited <- fileAlg.editFile(file, edit)
-    } yield edited).run(MockState.empty).unsafeRunSync()
+    } yield edited).runSA(MockState.empty).unsafeRunSync()
 
     val expected = MockState.empty.copy(
       trace = Vector(
