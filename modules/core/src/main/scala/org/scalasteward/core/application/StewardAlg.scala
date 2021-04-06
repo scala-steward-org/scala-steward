@@ -86,8 +86,10 @@ final class StewardAlg[F[_]](config: Config)(implicit
       logger.attemptLogLabel(util.string.lineLeftRight(label), Some(label)) {
         F.guarantee(
           for {
-            (data, fork) <- repoCacheAlg.checkCache(repo)
-            (attentionNeeded, updates) <- pruningAlg.needsAttention(data)
+            res0 <- repoCacheAlg.checkCache(repo)
+            (data, fork) = res0
+            res1 <- pruningAlg.needsAttention(data)
+            (attentionNeeded, updates) = res1
             _ <- if (attentionNeeded) nurtureAlg.nurture(data, fork, updates) else F.unit
           } yield (),
           gitAlg.removeClone(repo)

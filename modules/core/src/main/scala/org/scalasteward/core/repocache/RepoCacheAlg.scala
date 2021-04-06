@@ -43,10 +43,11 @@ final class RepoCacheAlg[F[_]](config: Config)(implicit
     logger.info(s"Check cache of ${repo.show}") >>
       refreshErrorAlg.skipIfFailedRecently(repo) {
         for {
-          ((repoOut, branchOut), maybeCache) <- (
+          res <- (
             vcsApiAlg.createForkOrGetRepoWithDefaultBranch(repo, config.doNotFork),
             repoCacheRepository.findCache(repo)
           ).parTupled
+          ((repoOut, branchOut), maybeCache) = res
           latestSha1 = branchOut.commit.sha
           data <- maybeCache
             .filter(_.sha1 === latestSha1)

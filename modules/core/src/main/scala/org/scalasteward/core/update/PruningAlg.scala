@@ -67,7 +67,7 @@ final class PruningAlg[F[_]](implicit
         .map(removeOvertakingUpdates(depsWithoutResolvers, _))
       updateStates0 <- findAllUpdateStates(repo, repoCache, depsWithoutResolvers, updates0)
       outdatedDeps = collectOutdatedDependencies(updateStates0)
-      (updateStates1, updates1) <- {
+      res <- {
         if (outdatedDeps.isEmpty) F.pure((updateStates0, updates0))
         else
           for {
@@ -76,6 +76,7 @@ final class PruningAlg[F[_]](implicit
             freshStates <- findAllUpdateStates(repo, repoCache, depsWithoutResolvers, freshUpdates)
           } yield (freshStates, freshUpdates)
       }
+      (updateStates1, updates1) = res
       _ <- logger.info(util.logger.showUpdates(updates1.widen[Update]))
       result <- checkUpdateStates(repo, repoConfig, updateStates1)
     } yield result
