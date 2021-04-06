@@ -6,7 +6,6 @@ object Dependencies {
   val attoCore = "org.tpolecat" %% "atto-core" % "0.9.3"
   val bcprovJdk15to18 = "org.bouncycastle" % "bcprov-jdk15to18" % "1.68"
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.1"
-  val betterMonadicFor = "com.olegpy" %% "better-monadic-for" % "0.3.1"
   val caseApp = "com.github.alexarchambault" %% "case-app" % "2.0.4"
   val catsEffect = "org.typelevel" %% "cats-effect" % "3.0.1"
   val catsCore = "org.typelevel" %% "cats-core" % "2.5.0"
@@ -29,7 +28,6 @@ object Dependencies {
   val http4sClient = "org.http4s" %% "http4s-client" % http4sCore.revision
   val http4sDsl = "org.http4s" %% "http4s-dsl" % http4sCore.revision
   val http4sOkhttpClient = "org.http4s" %% "http4s-okhttp-client" % http4sCore.revision
-  val kindProjector = "org.typelevel" % "kind-projector" % "0.11.3"
   val log4catsSlf4j = "org.typelevel" %% "log4cats-slf4j" % "2.0.1"
   val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.2.3"
   val jjwtApi = "io.jsonwebtoken" % "jjwt-api" % "0.11.2"
