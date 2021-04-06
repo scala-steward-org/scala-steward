@@ -16,22 +16,22 @@
 
 package org.scalasteward.core.util
 
-import cats.effect.{Async, Sync}
+import cats.effect.Sync
 import cats.syntax.all._
 import com.github.benmanes.caffeine.cache.Caffeine
 import org.http4s.client.Client
 import org.http4s.{Method, Request, Status, Uri}
 import org.scalasteward.core.application.Config
 import org.typelevel.log4cats.Logger
+import scalacache.Entry
 import scalacache.caffeine.CaffeineCache
-import scalacache.{Async => _, Sync => _, _}
 
 trait UrlChecker[F[_]] {
   def exists(url: Uri): F[Boolean]
 }
 
 object UrlChecker {
-  private def buildCache[F[_]](config: Config)(implicit F: Sync[F]): F[CaffeineCache[Status]] =
+  private def buildCache[F[_]](config: Config)(implicit F: Sync[F]): F[CaffeineCache[F, Status]] =
     F.delay {
       val cache = Caffeine
         .newBuilder()
@@ -44,7 +44,7 @@ object UrlChecker {
   def create[F[_]](config: Config)(implicit
       client: Client[F],
       logger: Logger[F],
-      F: Async[F]
+      F: Sync[F]
   ): F[UrlChecker[F]] =
     buildCache(config).map { statusCache =>
       new UrlChecker[F] {
@@ -58,35 +58,5 @@ object UrlChecker {
             client.status(Request[F](method = Method.HEAD, uri = url))
           }
       }
-    }
-
-  implicit def modeFromCatsEffectAsync[F[_]](implicit F: Async[F]): Mode[F] =
-    new Mode[F] {
-      override def M: scalacache.Async[F] =
-        new scalacache.Async[F] {
-          override def async[A](register: (Either[Throwable, A] => Unit) => Unit): F[A] =
-            F.async_(register)
-
-          override def delay[A](thunk: => A): F[A] =
-            F.delay(thunk)
-
-          override def suspend[A](thunk: => F[A]): F[A] =
-            F.defer(thunk)
-
-          override def pure[A](a: A): F[A] =
-            F.pure(a)
-
-          override def map[A, B](fa: F[A])(f: A => B): F[B] =
-            F.map(fa)(f)
-
-          override def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B] =
-            F.flatMap(fa)(f)
-
-          override def raiseError[A](t: Throwable): F[A] =
-            F.raiseError(t)
-
-          override def handleNonFatal[A](fa: => F[A])(f: Throwable => A): F[A] =
-            F.handleError(fa)(f)
-        }
     }
 }
