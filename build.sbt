@@ -75,7 +75,6 @@ lazy val core = myCrossProject("core")
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin(Dependencies.betterMonadicFor),
-      compilerPlugin(Dependencies.kindProjector.cross(CrossVersion.full)),
       Dependencies.attoCore,
       Dependencies.bcprovJdk15to18,
       Dependencies.betterFiles,
