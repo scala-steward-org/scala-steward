@@ -2,11 +2,12 @@ package org.scalasteward.core
 
 import cats.FlatMap
 import cats.data.Kleisli
-import cats.effect.{IO, Ref}
+import cats.effect.{Async, IO, Ref}
 import cats.syntax.all._
 
 package object mock {
   type MockEff[A] = Kleisli[IO, Ref[IO, MockState], A]
+  val MockEff: Async[MockEff] = Async[MockEff]
 
   implicit class MockEffOps[A](private val fa: MockEff[A]) extends AnyVal {
     def runA(state: MockState): IO[A] =

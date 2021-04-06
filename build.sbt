@@ -110,6 +110,7 @@ lazy val core = myCrossProject("core")
       Dependencies.disciplineMunit.cross(CrossVersion.for3Use2_13) % Test,
       Dependencies.http4sDsl.cross(CrossVersion.for3Use2_13) % Test,
       Dependencies.munit.cross(CrossVersion.for3Use2_13) % Test,
+      Dependencies.munitCatsEffect.cross(CrossVersion.for3Use2_13) % Test,
       Dependencies.munitScalacheck.cross(CrossVersion.for3Use2_13) % Test,
       Dependencies.refinedScalacheck.cross(CrossVersion.for3Use2_13) % Test,
       Dependencies.scalacheck.cross(CrossVersion.for3Use2_13) % Test
