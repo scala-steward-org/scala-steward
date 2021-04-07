@@ -45,7 +45,17 @@ class VCSRepoAlgTest extends FunSuite {
         Cmd(envVars, repoDir, "git", "fetch", "--force", "--tags", "upstream", "master"),
         Cmd(envVars, repoDir, "git", "checkout", "-B", "master", "--track", "upstream/master"),
         Cmd(envVars, repoDir, "git", "merge", "upstream/master"),
-        Cmd(envVars, repoDir, "git", "push", "--force", "--set-upstream", "origin", "master"),
+        Cmd(
+          envVars,
+          repoDir,
+          "git",
+          "push",
+          "--force",
+          "--no-verify",
+          "--set-upstream",
+          "origin",
+          "master"
+        ),
         Cmd(envVars, repoDir, "git", "submodule", "update", "--init", "--recursive")
       )
     )
