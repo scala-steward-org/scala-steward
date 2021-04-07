@@ -176,8 +176,7 @@ lazy val `sbt-plugin` = myCrossProject("sbt-plugin")
   .settings(noPublishSettings)
   .settings(
     scalaVersion := Scala212,
-    sbtPlugin := true,
-    Compile / compile / wartremoverErrors -= Wart.Equals
+    sbtPlugin := true
   )
 
 lazy val `mill-plugin` = myCrossProject("mill-plugin")
@@ -219,9 +218,7 @@ lazy val commonSettings = Def.settings(
 
 lazy val compileSettings = Def.settings(
   scalaVersion := Scala213,
-  doctestTestFramework := DoctestTestFramework.Munit,
-  wartremoverErrors ++= Seq(Wart.TraversableOps),
-  Compile / compile / wartremoverErrors ++= Seq(Wart.Equals)
+  doctestTestFramework := DoctestTestFramework.Munit
 )
 
 lazy val metadataSettings = Def.settings(
