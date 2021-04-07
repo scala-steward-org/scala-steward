@@ -85,11 +85,11 @@ final class StewardAlg[F[_]](config: Config)(implicit
     logger.infoTotalTime(label) {
       logger.attemptLogLabel(util.string.lineLeftRight(label), Some(label)) {
         F.guarantee(
-          for {
-            (data, fork) <- repoCacheAlg.checkCache(repo)
-            (attentionNeeded, updates) <- pruningAlg.needsAttention(data)
-            _ <- if (attentionNeeded) nurtureAlg.nurture(data, fork, updates) else F.unit
-          } yield (),
+          repoCacheAlg.checkCache(repo).flatMap { case (data, fork) =>
+            pruningAlg.needsAttention(data).flatMap { case (attentionNeeded, updates) =>
+              if (attentionNeeded) nurtureAlg.nurture(data, fork, updates) else F.unit
+            }
+          },
           gitAlg.removeClone(repo)
         )
       }
