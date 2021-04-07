@@ -42,17 +42,16 @@ final class RepoCacheAlg[F[_]](config: Config)(implicit
   def checkCache(repo: Repo): F[(RepoData, RepoOut)] =
     logger.info(s"Check cache of ${repo.show}") >>
       refreshErrorAlg.skipIfFailedRecently(repo) {
-        for {
-          res <- (
-            vcsApiAlg.createForkOrGetRepoWithDefaultBranch(repo, config.doNotFork),
-            repoCacheRepository.findCache(repo)
-          ).parTupled
-          ((repoOut, branchOut), maybeCache) = res
-          latestSha1 = branchOut.commit.sha
-          data <- maybeCache
+        (
+          vcsApiAlg.createForkOrGetRepoWithDefaultBranch(repo, config.doNotFork),
+          repoCacheRepository.findCache(repo)
+        ).parTupled.flatMap { case ((repoOut, branchOut), maybeCache) =>
+          val latestSha1 = branchOut.commit.sha
+          maybeCache
             .filter(_.sha1 === latestSha1)
             .fold(cloneAndRefreshCache(repo, repoOut))(supplementCache(repo, _))
-        } yield (data, repoOut)
+            .map(data => (data, repoOut))
+        }
       }
 
   private def supplementCache(repo: Repo, cache: RepoCache): F[RepoData] =
