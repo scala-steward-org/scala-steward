@@ -110,7 +110,7 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
     } yield Option.when(before =!= after)(Commit())
 
   override def push(repo: File, branch: Branch): F[Unit] =
-    git("push", "--force", "--set-upstream", "origin", branch.name)(repo).void
+    git("push", "--force", "--no-verify", "--set-upstream", "origin", branch.name)(repo).void
 
   override def removeClone(repo: File): F[Unit] =
     fileAlg.deleteForce(repo)
