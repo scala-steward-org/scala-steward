@@ -1,11 +1,12 @@
 package org.scalasteward.core.edit
 
+import better.files.File
 import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.TestInstances.dummyRepoCache
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.{GroupId, RepoData, Update}
-import org.scalasteward.core.mock.MockConfig.{config, envVars}
+import org.scalasteward.core.mock.MockConfig.{config, gitCmd}
 import org.scalasteward.core.mock.MockContext.context.editAlg
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
@@ -15,8 +16,8 @@ import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
 class EditAlgTest extends FunSuite {
-  private val gitStatus =
-    List("git", "status", "--porcelain", "--untracked-files=no", "--ignore-submodules")
+  private def gitStatus(repoDir: File): List[String] =
+    gitCmd(repoDir) ++ List("status", "--porcelain", "--untracked-files=no", "--ignore-submodules")
 
   test("applyUpdate") {
     val repo = Repo("edit-alg", "test-1")
@@ -46,7 +47,7 @@ class EditAlgTest extends FunSuite {
         Log("Trying heuristic 'original'"),
         Cmd("read", file1.pathAsString),
         Cmd("write", file1.pathAsString),
-        Cmd(envVars ++ (repoDir.toString :: gitStatus))
+        Cmd(gitStatus(repoDir))
       ),
       files = Map(file1 -> """val catsVersion = "1.3.0"""", file2 -> "")
     )
@@ -94,10 +95,10 @@ class EditAlgTest extends FunSuite {
         Log("Trying heuristic 'specific'"),
         Cmd("read", scalafmtConf.pathAsString),
         Cmd("write", scalafmtConf.pathAsString),
-        Cmd(envVars ++ (repoDir.toString :: gitStatus)),
+        Cmd(gitStatus(repoDir)),
         Log("Executing post-update hook for org.scalameta:scalafmt-core"),
         Cmd("VAR1=val1", "VAR2=val2", repoDir.toString, scalafmtBinary, "--non-interactive"),
-        Cmd(envVars ++ (repoDir.toString :: gitStatus))
+        Cmd(gitStatus(repoDir))
       ),
       files = Map(
         scalafmtConf ->
@@ -140,7 +141,7 @@ class EditAlgTest extends FunSuite {
         Cmd("write", file2.pathAsString),
         Cmd("read", file1.pathAsString),
         Cmd("write", file1.pathAsString),
-        Cmd(envVars ++ (repoDir.toString :: gitStatus))
+        Cmd(gitStatus(repoDir))
       ),
       files = Map(
         file1 -> """import $ivy.`org.typelevel::cats-core:1.3.0`, cats.implicits._"""",
