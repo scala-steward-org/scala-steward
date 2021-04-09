@@ -25,7 +25,6 @@ import org.apache.commons.io.FileUtils
 import org.http4s.Uri
 import org.http4s.implicits.http4sLiteralsSyntax
 import org.typelevel.log4cats.Logger
-
 import scala.io.Source
 
 trait FileAlg[F[_]] {

@@ -31,7 +31,6 @@ import org.scalasteward.core.util.{dateTime, DateTimeAlg}
 import org.scalasteward.core.vcs.data.PullRequestState.Closed
 import org.scalasteward.core.vcs.data.Repo
 import org.typelevel.log4cats.Logger
-
 import scala.concurrent.duration._
 
 final class PruningAlg[F[_]](implicit

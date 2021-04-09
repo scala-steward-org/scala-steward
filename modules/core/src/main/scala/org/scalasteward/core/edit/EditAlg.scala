@@ -20,17 +20,12 @@ import better.files.File
 import cats.effect.Concurrent
 import cats.syntax.all._
 import org.scalasteward.core.buildtool.BuildToolDispatcher
-import org.scalasteward.core.data.RepoData
-import org.scalasteward.core.data.Update
+import org.scalasteward.core.data.{RepoData, Update}
 import org.scalasteward.core.edit.hooks.HookExecutor
-import org.scalasteward.core.edit.scalafix.ScalafixMigration
-import org.scalasteward.core.edit.scalafix.ScalafixMigrationsFinder
+import org.scalasteward.core.edit.scalafix.{ScalafixMigration, ScalafixMigrationsFinder}
 import org.scalasteward.core.git
-import org.scalasteward.core.git.Commit
-import org.scalasteward.core.git.GitAlg
-import org.scalasteward.core.io.FileAlg
-import org.scalasteward.core.io.WorkspaceAlg
-import org.scalasteward.core.io.isSourceFile
+import org.scalasteward.core.git.{Commit, GitAlg}
+import org.scalasteward.core.io.{isSourceFile, FileAlg, WorkspaceAlg}
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util._
 import org.scalasteward.core.util.logger._
@@ -109,6 +104,6 @@ final class EditAlg[F[_]](implicit
       logger.info(s"Trying heuristic '${heuristic.name}'") >>
         fileAlg.editFiles(files, heuristic.replaceVersion(update))
     }
-    bindUntilTrue(actions)
+    bindUntilTrue[Nel, F](actions)
   }
 }
