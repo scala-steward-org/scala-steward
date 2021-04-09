@@ -4,7 +4,6 @@ import io.circe.parser
 import munit.FunSuite
 import org.http4s.syntax.literals._
 import org.scalasteward.core.vcs.data.PullRequestState.Open
-
 import scala.io.Source
 
 class PullRequestOutTest extends FunSuite {

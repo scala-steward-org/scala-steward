@@ -6,7 +6,6 @@ import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.Cli.ParseResult._
 import org.scalasteward.core.vcs.VCSType
-
 import scala.concurrent.duration._
 
 class CliTest extends FunSuite {

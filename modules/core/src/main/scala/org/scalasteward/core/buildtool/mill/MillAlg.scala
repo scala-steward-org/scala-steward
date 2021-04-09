@@ -18,7 +18,6 @@ package org.scalasteward.core.buildtool.mill
 
 import cats.effect.MonadCancelThrow
 import cats.syntax.all._
-import org.scalasteward.core.BuildInfo
 import org.scalasteward.core.buildtool.BuildToolAlg
 import org.scalasteward.core.data.Scope
 import org.scalasteward.core.data.Scope.Dependencies
@@ -36,11 +35,11 @@ object MillAlg {
         |interp.repositories() ++= Seq(
         |  MavenRepository.of("https://oss.sonatype.org/content/repositories/snapshots/")
         |)
-        |interp.load.ivy("${BuildInfo.organization}" %% "${BuildInfo.millPluginModuleName}" % "${BuildInfo.version}")
+        |interp.load.ivy("${org.scalasteward.core.BuildInfo.organization}" %% "${org.scalasteward.core.BuildInfo.millPluginModuleName}" % "${org.scalasteward.core.BuildInfo.version}")
         |""".stripMargin
 
   val extractDeps: String =
-    s"${BuildInfo.millPluginModuleRootPkg}.StewardPlugin/extractDeps"
+    s"${org.scalasteward.core.BuildInfo.millPluginModuleRootPkg}.StewardPlugin/extractDeps"
 
   def create[F[_]](implicit
       fileAlg: FileAlg[F],

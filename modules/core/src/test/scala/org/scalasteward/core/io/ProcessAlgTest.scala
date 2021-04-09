@@ -11,7 +11,6 @@ import org.scalasteward.core.mock.MockConfig.{config, mockRoot}
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
 import org.scalasteward.core.util.Nel
-
 import scala.concurrent.duration.Duration
 
 class ProcessAlgTest extends FunSuite {
