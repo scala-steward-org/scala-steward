@@ -18,8 +18,8 @@ package org.scalasteward.core.util
 
 import cats.syntax.all._
 import cats.{Foldable, Functor, Monad, MonadThrow}
-import org.typelevel.log4cats.Logger
 import org.scalasteward.core.data.Update
+import org.typelevel.log4cats.Logger
 import scala.concurrent.duration.FiniteDuration
 
 object logger {

@@ -5,7 +5,6 @@ import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.io.process.Args
 import org.scalasteward.core.util.Nel
-
 import scala.concurrent.duration._
 
 class processTest extends FunSuite {

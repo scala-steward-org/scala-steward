@@ -16,7 +16,6 @@ import org.scalasteward.core.repoconfig.PullRequestFrequency.{Asap, Timespan}
 import org.scalasteward.core.repoconfig._
 import org.scalasteward.core.util.Change.{Changed, Unchanged}
 import org.scalasteward.core.util.{Change, Nel}
-
 import scala.concurrent.duration.FiniteDuration
 
 object TestInstances {

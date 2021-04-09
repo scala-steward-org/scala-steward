@@ -7,7 +7,6 @@ import org.scalasteward.core.application.{Cli, Config}
 import org.scalasteward.core.git.FileGitAlg
 import org.scalasteward.core.vcs.VCSType
 import org.scalasteward.core.vcs.data.AuthenticatedUser
-
 import scala.concurrent.duration._
 
 object MockConfig {

@@ -19,7 +19,6 @@ package org.scalasteward.core
 import cats.Parallel
 import cats.effect.Sync
 import cats.syntax.all._
-
 import java.util.concurrent.ExecutorService
 
 package object coursier {

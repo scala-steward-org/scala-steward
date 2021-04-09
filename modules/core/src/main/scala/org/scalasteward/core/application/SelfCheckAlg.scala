@@ -18,11 +18,11 @@ package org.scalasteward.core.application
 
 import cats.MonadThrow
 import cats.syntax.all._
-import org.typelevel.log4cats.Logger
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.scalafmt.{scalafmtBinary, ScalafmtAlg}
 import org.scalasteward.core.util.UrlChecker
 import org.scalasteward.core.util.logger.LoggerOps
+import org.typelevel.log4cats.Logger
 
 final class SelfCheckAlg[F[_]](config: Config)(implicit
     gitAlg: GitAlg[F],

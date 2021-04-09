@@ -10,7 +10,6 @@ import org.scalasteward.core.mock.MockState.TraceEntry.Log
 import org.scalasteward.core.mock.{MockConfig, MockState}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
-
 import scala.concurrent.duration._
 
 class RepoConfigAlgTest extends FunSuite {

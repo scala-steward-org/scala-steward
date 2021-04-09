@@ -18,11 +18,11 @@ package org.scalasteward.core.update
 
 import cats.syntax.all._
 import cats.{Monad, TraverseFilter}
-import org.typelevel.log4cats.Logger
 import org.scalasteward.core.data._
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.update.FilterAlg._
 import org.scalasteward.core.util.Nel
+import org.typelevel.log4cats.Logger
 
 final class FilterAlg[F[_]](implicit
     logger: Logger[F],
