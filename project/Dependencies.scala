@@ -21,9 +21,9 @@ object Dependencies {
   val coursierCore = "io.get-coursier" %% "coursier" % "2.0.16"
   val cron4sCore = "com.github.alonsodomin.cron4s" %% "cron4s-core" % "0.6.1"
   val disciplineMunit = "org.typelevel" %% "discipline-munit" % "1.0.7"
-  val fs2Core = "co.fs2" %% "fs2-core" % "3.0.0"
+  val fs2Core = "co.fs2" %% "fs2-core" % "3.0.1"
   val fs2Io = "co.fs2" %% "fs2-io" % fs2Core.revision
-  val http4sCore = "org.http4s" %% "http4s-core" % "1.0.0-M20"
+  val http4sCore = "org.http4s" %% "http4s-core" % "1.0.0-M21"
   val http4sCirce = "org.http4s" %% "http4s-circe" % http4sCore.revision
   val http4sClient = "org.http4s" %% "http4s-client" % http4sCore.revision
   val http4sDsl = "org.http4s" %% "http4s-dsl" % http4sCore.revision
