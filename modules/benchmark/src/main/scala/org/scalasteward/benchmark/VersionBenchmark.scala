@@ -16,10 +16,9 @@
 
 package org.scalasteward.benchmark
 
+import java.util.concurrent.TimeUnit
 import org.openjdk.jmh.annotations.{Benchmark, BenchmarkMode, Mode, OutputTimeUnit}
 import org.scalasteward.core.data.Version.Component
-
-import java.util.concurrent.TimeUnit
 
 @BenchmarkMode(Array(Mode.AverageTime))
 class VersionBenchmark {

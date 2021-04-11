@@ -73,14 +73,6 @@ object FilterAlg {
       .flatMap(selectSuitableNextVersion)
       .flatMap(checkVersionOrdering)
 
-  def isScalaDependency(dependency: Dependency): Boolean =
-    scalaLangModules.exists { case (groupId, artifactId) =>
-      groupId === dependency.groupId && artifactId.name === dependency.artifactId.name
-    }
-
-  def isScalaDependencyIgnored(dependency: Dependency, ignoreScalaDependency: Boolean): Boolean =
-    ignoreScalaDependency && isScalaDependency(dependency)
-
   def isDependencyConfigurationIgnored(dependency: Dependency): Boolean =
     dependency.configurations.fold("")(_.toLowerCase) match {
       case "phantom-js-jetty"    => true
