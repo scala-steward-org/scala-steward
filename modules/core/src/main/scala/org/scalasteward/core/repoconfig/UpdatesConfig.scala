@@ -37,12 +37,8 @@ final case class UpdatesConfig(
     allow: List[UpdatePattern] = List.empty,
     ignore: List[UpdatePattern] = List.empty,
     limit: Option[NonNegInt] = None,
-    includeScala: Option[IncludeScalaStrategy] = None,
     fileExtensions: Option[List[String]] = None
 ) {
-  def includeScalaOrDefault: IncludeScalaStrategy =
-    includeScala.getOrElse(IncludeScalaStrategy.default)
-
   def fileExtensionsOrDefault: Set[String] =
     fileExtensions.fold(UpdatesConfig.defaultFileExtensions)(_.toSet)
 
@@ -77,8 +73,6 @@ final case class UpdatesConfig(
 }
 
 object UpdatesConfig {
-  val defaultIncludeScala: Boolean = false
-
   val defaultFileExtensions: Set[String] =
     Set(".scala", ".sbt", ".sbt.shared", ".sc", ".yml", "pom.xml")
 
@@ -100,7 +94,6 @@ object UpdatesConfig {
           allow = mergeAllow(x.allow, y.allow),
           ignore = mergeIgnore(x.ignore, y.ignore),
           limit = x.limit.orElse(y.limit),
-          includeScala = x.includeScala.orElse(y.includeScala),
           fileExtensions = mergeFileExtensions(x.fileExtensions, y.fileExtensions)
         )
     )
