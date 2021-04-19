@@ -20,13 +20,13 @@ import better.files.File
 import cats.MonadThrow
 import cats.data.OptionT
 import cats.syntax.all._
-import org.typelevel.log4cats.Logger
 import io.circe.config.parser
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.repoconfig.RepoConfigAlg._
 import org.scalasteward.core.vcs.data.Repo
+import org.typelevel.log4cats.Logger
 
 final class RepoConfigAlg[F[_]](config: Config)(implicit
     fileAlg: FileAlg[F],

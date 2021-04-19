@@ -194,39 +194,6 @@ class FilterAlgTest extends FunSuite {
     assertEquals(localFilter(update, config), Left(VersionPinnedByConfig(update)))
   }
 
-  test("isScalaDependency: true") {
-    val dependency = Dependency(
-      GroupId("org.scala-lang"),
-      ArtifactId("scala-compiler", "scala-compiler_2.12"),
-      "2.12.10"
-    )
-    assert(isScalaDependency(dependency))
-  }
-
-  test("isScalaDependency: false") {
-    val dependency =
-      Dependency(GroupId("org.typelevel"), ArtifactId("cats-effect", "cats-effect_2.12"), "1.0.0")
-    assert(!isScalaDependency(dependency))
-  }
-
-  test("isScalaDependencyIgnored: true") {
-    val dependency = Dependency(
-      GroupId("org.scala-lang"),
-      ArtifactId("scala-compiler", "scala-compiler_2.12"),
-      "2.12.10"
-    )
-    assert(isScalaDependencyIgnored(dependency, ignoreScalaDependency = true))
-  }
-
-  test("isScalaDependencyIgnored: false") {
-    val dependency = Dependency(
-      GroupId("org.scala-lang"),
-      ArtifactId("scala-compiler", "scala-compiler_2.12"),
-      "2.12.10"
-    )
-    assert(!isScalaDependencyIgnored(dependency, ignoreScalaDependency = false))
-  }
-
   test("isDependencyConfigurationIgnored: false") {
     val dependency =
       Dependency(GroupId("org.typelevel"), ArtifactId("cats-effect", "cats-effect_2.12"), "1.0.0")

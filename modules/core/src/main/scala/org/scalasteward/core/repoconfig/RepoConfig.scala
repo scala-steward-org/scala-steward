@@ -16,8 +16,8 @@
 
 package org.scalasteward.core.repoconfig
 
-import cats.{Eq, Monoid}
 import cats.syntax.all._
+import cats.{Eq, Monoid}
 import io.circe.Codec
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._

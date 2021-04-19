@@ -10,7 +10,6 @@ import org.scalasteward.core.mock.MockState.TraceEntry.Log
 import org.scalasteward.core.mock.{MockConfig, MockState}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
-
 import scala.concurrent.duration._
 
 class RepoConfigAlgTest extends FunSuite {
@@ -70,7 +69,6 @@ class RepoConfigAlgTest extends FunSuite {
           UpdatePattern(GroupId("org.acme"), None, Some(UpdatePattern.Version(Some("1.0"), None)))
         ),
         limit = Some(NonNegInt.unsafeFrom(4)),
-        includeScala = Some(IncludeScalaStrategy.Yes),
         fileExtensions = Some(List(".txt"))
       ),
       commits = CommitsConfig(
@@ -79,52 +77,6 @@ class RepoConfigAlgTest extends FunSuite {
       buildRoots = Some(List(BuildRootConfig.repoRoot, BuildRootConfig("subfolder/subfolder")))
     )
     assertEquals(config, expected)
-  }
-
-  test("config with 'updates.includeScala = false'") {
-    val content = "updates.includeScala = false"
-    val config = RepoConfigAlg.parseRepoConfig(content)
-    val expected = RepoConfig(updates = UpdatesConfig(includeScala = Some(IncludeScalaStrategy.No)))
-    assertEquals(config, Right(expected))
-  }
-
-  test("config with 'updates.includeScala = true'") {
-    val content = "updates.includeScala = true"
-    val config = RepoConfigAlg.parseRepoConfig(content)
-    val expected =
-      RepoConfig(updates = UpdatesConfig(includeScala = Some(IncludeScalaStrategy.Yes)))
-    assertEquals(config, Right(expected))
-  }
-
-  test("config with 'updates.includeScala = yes'") {
-    val content = """updates.includeScala = "yes""""
-    val config = RepoConfigAlg.parseRepoConfig(content)
-    val expected =
-      RepoConfig(updates = UpdatesConfig(includeScala = Some(IncludeScalaStrategy.Yes)))
-    assertEquals(config, Right(expected))
-  }
-
-  test("config with 'updates.includeScala = no'") {
-    val content = """updates.includeScala = "no""""
-    val config = RepoConfigAlg.parseRepoConfig(content)
-    val expected = RepoConfig(updates = UpdatesConfig(includeScala = Some(IncludeScalaStrategy.No)))
-    assertEquals(config, Right(expected))
-  }
-
-  test("config with 'updates.includeScala = draft'") {
-    val content = """updates.includeScala = "draft""""
-    val config = RepoConfigAlg.parseRepoConfig(content)
-    val expected =
-      RepoConfig(updates = UpdatesConfig(includeScala = Some(IncludeScalaStrategy.Draft)))
-    assertEquals(config, Right(expected))
-  }
-
-  test("config with 'updates.includeScala = foo'") {
-    val content = """updates.includeScala = "foo""""
-    val config = RepoConfigAlg.parseRepoConfig(content)
-    val expected =
-      RepoConfig(updates = UpdatesConfig(includeScala = Some(IncludeScalaStrategy.Draft)))
-    assertEquals(config, Right(expected))
   }
 
   test("config with 'updatePullRequests = false'") {

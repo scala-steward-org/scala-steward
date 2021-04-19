@@ -20,9 +20,8 @@ import better.files.File
 import cats.effect._
 import cats.syntax.all._
 import fs2.Stream
-import org.scalasteward.core.util._
-
 import java.io.{IOException, InputStream}
+import org.scalasteward.core.util._
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.TimeoutException
 import scala.concurrent.duration.FiniteDuration

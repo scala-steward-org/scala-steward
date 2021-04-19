@@ -24,8 +24,7 @@ import org.scalasteward.core.data._
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.git
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.repoconfig.{IncludeScalaStrategy, RepoConfigAlg}
-import org.scalasteward.core.update.FilterAlg
+import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.util.Details
 
 final case class UpdateState(
@@ -211,8 +210,6 @@ object NewPullRequestData {
         filesWithOldVersion
       ),
       head = branchName,
-      base = data.baseBranch,
-      draft = data.update.dependencies.exists(FilterAlg.isScalaDependency) &&
-        (data.repoData.config.updates.includeScalaOrDefault === IncludeScalaStrategy.Draft)
+      base = data.baseBranch
     )
 }

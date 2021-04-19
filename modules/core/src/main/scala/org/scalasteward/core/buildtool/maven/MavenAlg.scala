@@ -22,8 +22,8 @@ import cats.syntax.all._
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.BuildToolAlg
 import org.scalasteward.core.data._
-import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
+import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.BuildRoot
 

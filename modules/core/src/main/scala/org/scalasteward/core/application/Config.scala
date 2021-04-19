@@ -161,7 +161,7 @@ object Config {
       gitLabCfg = GitLabCfg(
         mergeWhenPipelineSucceeds = args.gitlabMergeWhenPipelineSucceeds
       ),
-      githubApp = Apply[Option].map2(args.githubAppId, args.githubAppKeyFile)(GitHubApp),
+      githubApp = Apply[Option].map2(args.githubAppId, args.githubAppKeyFile)(GitHubApp.apply),
       urlCheckerTestUrl = args.urlCheckerTestUrl.getOrElse(uri"https://github.com"),
       defaultResolver = args.defaultMavenRepo
         .map(url => Resolver.MavenRepository("default", url, None))

@@ -25,7 +25,6 @@ import org.scalasteward.core.repocache.RefreshErrorAlg.Entry
 import org.scalasteward.core.util.dateTime.showDuration
 import org.scalasteward.core.util.{DateTimeAlg, Timestamp}
 import org.scalasteward.core.vcs.data.Repo
-
 import scala.concurrent.duration._
 import scala.util.control.NoStackTrace
 

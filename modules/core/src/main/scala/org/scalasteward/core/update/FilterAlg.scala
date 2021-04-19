@@ -18,11 +18,11 @@ package org.scalasteward.core.update
 
 import cats.syntax.all._
 import cats.{Monad, TraverseFilter}
-import org.typelevel.log4cats.Logger
 import org.scalasteward.core.data._
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.update.FilterAlg._
 import org.scalasteward.core.util.Nel
+import org.typelevel.log4cats.Logger
 
 final class FilterAlg[F[_]](implicit
     logger: Logger[F],
@@ -72,14 +72,6 @@ object FilterAlg {
     removeBadVersions(update)
       .flatMap(selectSuitableNextVersion)
       .flatMap(checkVersionOrdering)
-
-  def isScalaDependency(dependency: Dependency): Boolean =
-    scalaLangModules.exists { case (groupId, artifactId) =>
-      groupId === dependency.groupId && artifactId.name === dependency.artifactId.name
-    }
-
-  def isScalaDependencyIgnored(dependency: Dependency, ignoreScalaDependency: Boolean): Boolean =
-    ignoreScalaDependency && isScalaDependency(dependency)
 
   def isDependencyConfigurationIgnored(dependency: Dependency): Boolean =
     dependency.configurations.fold("")(_.toLowerCase) match {

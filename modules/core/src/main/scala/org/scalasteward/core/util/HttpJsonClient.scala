@@ -25,7 +25,6 @@ import org.http4s._
 import org.http4s.circe.{jsonEncoderOf, jsonOf}
 import org.http4s.client.Client
 import org.http4s.headers.Link
-
 import scala.util.control.NoStackTrace
 
 final class HttpJsonClient[F[_]](implicit

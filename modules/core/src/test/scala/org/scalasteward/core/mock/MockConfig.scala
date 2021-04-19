@@ -4,9 +4,9 @@ import better.files.File
 import org.http4s.Uri
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.{Cli, Config}
+import org.scalasteward.core.git.FileGitAlg
 import org.scalasteward.core.vcs.VCSType
 import org.scalasteward.core.vcs.data.AuthenticatedUser
-
 import scala.concurrent.duration._
 
 object MockConfig {
@@ -27,5 +27,7 @@ object MockConfig {
   )
   val config: Config = Config.from(args)
   val envVars = List(s"GIT_ASKPASS=${config.gitCfg.gitAskPass}", "VAR1=val1", "VAR2=val2")
+  def gitCmd(repoDir: File): List[String] =
+    envVars ++ (repoDir.toString :: FileGitAlg.gitCmd.toList)
   val user: AuthenticatedUser = AuthenticatedUser("scala-steward", "token")
 }

@@ -21,7 +21,7 @@ import cats.effect.MonadCancelThrow
 import cats.syntax.all._
 import org.http4s.Uri
 import org.scalasteward.core.application.Config.GitCfg
-import org.scalasteward.core.git.FileGitAlg.dotdot
+import org.scalasteward.core.git.FileGitAlg.{dotdot, gitCmd}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
 
@@ -138,14 +138,18 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
   override def version: F[String] =
     workspaceAlg.rootDir.flatMap(git("--version")).map(_.mkString.trim)
 
-  private def git(args: String*)(repo: File): F[List[String]] =
-    processAlg.exec(Nel.of("git", args: _*), repo, "GIT_ASKPASS" -> config.gitAskPass.pathAsString)
+  private def git(args: String*)(repo: File): F[List[String]] = {
+    val extraEnv = "GIT_ASKPASS" -> config.gitAskPass.pathAsString
+    processAlg.exec(gitCmd ++ args.toList, repo, extraEnv)
+  }
 
   private val sign: String =
     if (config.signCommits) "--gpg-sign" else "--no-gpg-sign"
 }
 
 object FileGitAlg {
+  val gitCmd: Nel[String] = Nel.of("git", "-c", "core.hooksPath=/dev/null")
+
   // man 7 gitrevisions:
   // When you have two commits r1 and r2 you can ask for commits that are
   // reachable from r2 excluding those that are reachable from r1 by ^r1 r2

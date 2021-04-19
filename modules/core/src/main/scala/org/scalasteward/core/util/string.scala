@@ -22,9 +22,8 @@ import eu.timepit.refined.api.Refined
 import eu.timepit.refined.collection.MinSize
 import eu.timepit.refined.refineV
 import org.scalasteward.core.util.Change.{Changed, Unchanged}
-import shapeless.Witness
-
 import scala.util.matching.Regex
+import shapeless.Witness
 
 object string {
   type MinLengthString[N] = String Refined MinSize[N]

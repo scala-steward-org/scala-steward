@@ -32,7 +32,6 @@ import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.vcs.github.{GitHubApp, GitHubAppApiAlg, GitHubAuthAlg}
 import org.typelevel.log4cats.Logger
-
 import scala.concurrent.duration._
 
 final class StewardAlg[F[_]](config: Config)(implicit

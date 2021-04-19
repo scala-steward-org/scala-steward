@@ -25,7 +25,6 @@ import org.apache.commons.io.FileUtils
 import org.http4s.Uri
 import org.http4s.implicits.http4sLiteralsSyntax
 import org.typelevel.log4cats.Logger
-
 import scala.io.Source
 
 trait FileAlg[F[_]] {
@@ -119,7 +118,7 @@ object FileAlg {
             if (file.exists) Some(file.moveTo(File.newTemporaryFile())(copyOptions)) else None
           }
         }(_ => fa) {
-          case Some(tmpFile) => F.delay(tmpFile.moveTo(file)).void
+          case Some(tmpFile) => F.blocking(tmpFile.moveTo(file)).void
           case None          => F.unit
         }
 
@@ -127,16 +126,16 @@ object FileAlg {
         F.blocking(if (file.exists) Some(file.contentAsString) else None)
 
       override def readResource(resource: String): F[String] =
-        readSource(Source.fromResource(resource))
+        readSource(F.blocking(Source.fromResource(resource)))
 
       override def readUri(uri: Uri): F[String] = {
         val scheme = uri.scheme.getOrElse(scheme"file")
         val withScheme = uri.copy(scheme = Some(scheme))
-        readSource(Source.fromURL(withScheme.renderString))
+        readSource(F.blocking(Source.fromURL(withScheme.renderString)))
       }
 
-      private def readSource(source: => Source): F[String] =
-        Resource.fromAutoCloseable(F.delay(source)).use(src => F.delay(src.mkString))
+      private def readSource(source: F[Source]): F[String] =
+        Resource.fromAutoCloseable(source).use(src => F.blocking(src.mkString))
 
       override def walk(dir: File): Stream[F, File] =
         Stream.eval(F.delay(dir.walk())).flatMap(Stream.fromBlockingIterator(_, 1))
