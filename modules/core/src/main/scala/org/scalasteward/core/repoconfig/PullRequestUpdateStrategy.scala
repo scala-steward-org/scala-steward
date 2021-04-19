@@ -24,9 +24,9 @@ sealed trait PullRequestUpdateStrategy {
 }
 
 object PullRequestUpdateStrategy {
-  final case object Always extends PullRequestUpdateStrategy { val name = "always" }
-  final case object OnConflicts extends PullRequestUpdateStrategy { val name = "on-conflicts" }
-  final case object Never extends PullRequestUpdateStrategy { val name = "never" }
+  case object Always extends PullRequestUpdateStrategy { val name = "always" }
+  case object OnConflicts extends PullRequestUpdateStrategy { val name = "on-conflicts" }
+  case object Never extends PullRequestUpdateStrategy { val name = "never" }
 
   val default: PullRequestUpdateStrategy = OnConflicts
 
