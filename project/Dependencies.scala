@@ -37,7 +37,7 @@ object Dependencies {
   val millScalalib = Def.setting("com.lihaoyi" %% "mill-scalalib" % millVersion.value)
   val monocleCore = "com.github.julien-truffaut" %% "monocle-core" % "2.1.0"
   val munit = "org.scalameta" %% "munit" % "0.7.25"
-  val munitCatsEffect = "org.typelevel" %% "munit-cats-effect-3" % "1.0.1"
+  val munitCatsEffect = "org.typelevel" %% "munit-cats-effect-3" % "1.0.2"
   val munitScalacheck = "org.scalameta" %% "munit-scalacheck" % munit.revision
   val refined = "eu.timepit" %% "refined" % "0.9.24"
   val refinedScalacheck = "eu.timepit" %% "refined-scalacheck" % refined.revision
