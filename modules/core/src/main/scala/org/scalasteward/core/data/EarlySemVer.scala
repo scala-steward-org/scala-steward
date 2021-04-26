@@ -47,6 +47,7 @@ object EarlySemVer {
   @tailrec
   def getChange(from: EarlySemVer, to: EarlySemVer): Option[Change] = {
     val zero = "0"
+    // Codacy doesn't allow using `if`s, so using `match` instead
     (from.major === zero, to.major === zero) match { // work around Codacy's "Consider using case matching instead of else if blocks"
       case (true, true)
           if from.minor =!= zero ||
@@ -58,12 +59,20 @@ object EarlySemVer {
           to.copy(major = to.minor, minor = to.patch, patch = zero)
         )
       case _ =>
-        if (from.major =!= to.major) Some(Major)
-        else if (from.minor =!= to.minor) Some(Minor)
-        else if (from.preRelease =!= to.preRelease) Some(PreRelease)
-        else if (from.patch =!= to.patch) Some(Patch)
-        else if (from.buildMetadata =!= to.buildMetadata) Some(BuildMetadata)
-        else None
+        (
+          from.major =!= to.major,
+          from.minor =!= to.minor,
+          from.preRelease =!= to.preRelease,
+          from.patch =!= to.patch,
+          from.buildMetadata =!= to.buildMetadata
+        ) match {
+          case (true, _, _, _, _) => Some(Major)
+          case (_, true, _, _, _) => Some(Minor)
+          case (_, _, true, _, _) => Some(PreRelease)
+          case (_, _, _, true, _) => Some(Patch)
+          case (_, _, _, _, true) => Some(BuildMetadata)
+          case _                  => None
+        }
     }
   }
 }
