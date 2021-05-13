@@ -7,8 +7,8 @@ object Dependencies {
   val bcprovJdk15to18 = "org.bouncycastle" % "bcprov-jdk15to18" % "1.68"
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.1"
   val caseApp = "com.github.alexarchambault" %% "case-app" % "2.0.6"
-  val catsEffect = "org.typelevel" %% "cats-effect" % "3.1.1"
-  val catsCore = "org.typelevel" %% "cats-core" % "2.6.0"
+  val catsEffect = "org.typelevel" %% "cats-effect" % "3.1.0"
+  val catsCore = "org.typelevel" %% "cats-core" % "2.6.1"
   val catsLaws = "org.typelevel" %% "cats-laws" % catsCore.revision
   val catsParse = "org.typelevel" %% "cats-parse" % "0.3.3"
   val circeConfig = "io.circe" %% "circe-config" % "0.8.0"
@@ -20,7 +20,7 @@ object Dependencies {
   val commonsIo = "commons-io" % "commons-io" % "2.8.0"
   val coursierCore = "io.get-coursier" %% "coursier" % "2.0.16"
   val cron4sCore = "com.github.alonsodomin.cron4s" %% "cron4s-core" % "0.6.1"
-  val disciplineMunit = "org.typelevel" %% "discipline-munit" % "1.0.8"
+  val disciplineMunit = "org.typelevel" %% "discipline-munit" % "1.0.9"
   val fs2Core = "co.fs2" %% "fs2-core" % "3.0.2"
   val fs2Io = "co.fs2" %% "fs2-io" % fs2Core.revision
   val http4sCore = "org.http4s" %% "http4s-core" % "1.0.0-M21"
@@ -36,7 +36,7 @@ object Dependencies {
   val millVersion = Def.setting(if (scalaBinaryVersion.value == "2.12") "0.6.3" else "0.9.6")
   val millScalalib = Def.setting("com.lihaoyi" %% "mill-scalalib" % millVersion.value)
   val monocleCore = "com.github.julien-truffaut" %% "monocle-core" % "2.1.0"
-  val munit = "org.scalameta" %% "munit" % "0.7.25"
+  val munit = "org.scalameta" %% "munit" % "0.7.26"
   val munitCatsEffect = "org.typelevel" %% "munit-cats-effect-3" % "1.0.2"
   val munitScalacheck = "org.scalameta" %% "munit-scalacheck" % munit.revision
   val refined = "eu.timepit" %% "refined" % "0.9.24"
