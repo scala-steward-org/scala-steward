@@ -21,7 +21,7 @@ object Dependencies {
   val coursierCore = "io.get-coursier" %% "coursier" % "2.0.16"
   val cron4sCore = "com.github.alonsodomin.cron4s" %% "cron4s-core" % "0.6.1"
   val disciplineMunit = "org.typelevel" %% "discipline-munit" % "1.0.9"
-  val fs2Core = "co.fs2" %% "fs2-core" % "3.0.2"
+  val fs2Core = "co.fs2" %% "fs2-core" % "3.0.3"
   val fs2Io = "co.fs2" %% "fs2-io" % fs2Core.revision
   val http4sCore = "org.http4s" %% "http4s-core" % "1.0.0-M21"
   val http4sCirce = "org.http4s" %% "http4s-circe" % http4sCore.revision
@@ -33,7 +33,7 @@ object Dependencies {
   val jjwtApi = "io.jsonwebtoken" % "jjwt-api" % "0.11.2"
   val jjwtImpl = "io.jsonwebtoken" % "jjwt-impl" % jjwtApi.revision
   val jjwtJackson = "io.jsonwebtoken" % "jjwt-jackson" % jjwtApi.revision
-  val millVersion = Def.setting(if (scalaBinaryVersion.value == "2.12") "0.6.3" else "0.9.6")
+  val millVersion = Def.setting(if (scalaBinaryVersion.value == "2.12") "0.6.3" else "0.9.7")
   val millScalalib = Def.setting("com.lihaoyi" %% "mill-scalalib" % millVersion.value)
   val monocleCore = "com.github.julien-truffaut" %% "monocle-core" % "2.1.0"
   val munit = "org.scalameta" %% "munit" % "0.7.26"
