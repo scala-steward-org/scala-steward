@@ -38,7 +38,7 @@ package object sbt {
   val scalaStewardScalafixSbt: FileData =
     FileData(
       "scala-steward-scalafix.sbt",
-      """addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.27")"""
+      """addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.28")"""
     )
 
   def scalaStewardScalafixOptions(scalacOptions: List[String]): FileData = {
