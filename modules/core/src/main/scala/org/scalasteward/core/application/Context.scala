@@ -21,7 +21,7 @@ import cats.effect.implicits._
 import cats.syntax.all._
 import org.http4s.Uri
 import org.http4s.client.Client
-import org.http4s.client.okhttp.OkHttpBuilder
+import org.http4s.okhttp.client.OkHttpBuilder
 import org.scalasteward.core.buildtool.BuildToolDispatcher
 import org.scalasteward.core.buildtool.maven.MavenAlg
 import org.scalasteward.core.buildtool.mill.MillAlg
