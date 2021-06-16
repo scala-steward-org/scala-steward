@@ -241,7 +241,8 @@ lazy val metadataSettings = Def.settings(
 )
 
 lazy val dockerSettings = Def.settings(
-  dockerBaseImage := Option(System.getenv("DOCKER_BASE_IMAGE")).getOrElse("openjdk:8-jdk-alpine"),
+  dockerBaseImage := Option(System.getenv("DOCKER_BASE_IMAGE"))
+    .getOrElse("adoptopenjdk/openjdk11:alpine"),
   dockerCommands ++= {
     val getSbtVersion = sbtVersion.value
     val sbtTgz = s"sbt-$getSbtVersion.tgz"
