@@ -94,6 +94,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [Felix Dietze](https://github.com/fdietze)
 * [Filipe Regadas](https://github.com/regadas)
 * [Frank S. Thomas](https://github.com/fthomas)
+* [Frederick Roth](https://github.com/froth)
 * [Georgy Davityan](https://github.com/implmnt)
 * [Grzegorz Kocur](https://github.com/gkocur)
 * [Guillaume Martres](https://github.com/smarter)
