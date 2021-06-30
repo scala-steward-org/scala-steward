@@ -28,7 +28,10 @@ import org.scalasteward.core.vcs.data.Repo
 import scala.concurrent.duration._
 import scala.util.control.NoStackTrace
 
-final class RefreshErrorAlg[F[_]](kvStore: KeyValueStore[F, Repo, Entry], backoffPeriod: FiniteDuration)(implicit
+final class RefreshErrorAlg[F[_]](
+    kvStore: KeyValueStore[F, Repo, Entry],
+    backoffPeriod: FiniteDuration
+)(implicit
     dateTimeAlg: DateTimeAlg[F],
     F: MonadThrow[F]
 ) {

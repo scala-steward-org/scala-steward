@@ -32,7 +32,7 @@ import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.VCSType
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 import org.scalasteward.core.vcs.github.GitHubApp
-import scala.concurrent.duration.{FiniteDuration, DurationInt}
+import scala.concurrent.duration.FiniteDuration
 
 /** Configuration for scala-steward.
   *
@@ -167,6 +167,6 @@ object Config {
       defaultResolver = args.defaultMavenRepo
         .map(url => Resolver.MavenRepository("default", url, None))
         .getOrElse(Resolver.mavenCentral),
-      refreshBackoffPeriod = args.refreshBackoffPeriod.getOrElse(7.days)
+      refreshBackoffPeriod = args.refreshBackoffPeriod
     )
 }
