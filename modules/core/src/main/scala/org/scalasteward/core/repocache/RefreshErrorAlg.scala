@@ -28,7 +28,7 @@ import org.scalasteward.core.vcs.data.Repo
 import scala.concurrent.duration._
 import scala.util.control.NoStackTrace
 
-final class RefreshErrorAlg[F[_]](kvStore: KeyValueStore[F, Repo, Entry])(implicit
+final class RefreshErrorAlg[F[_]](kvStore: KeyValueStore[F, Repo, Entry], backoffPeriod: FiniteDuration)(implicit
     dateTimeAlg: DateTimeAlg[F],
     F: MonadThrow[F]
 ) {
@@ -52,7 +52,7 @@ final class RefreshErrorAlg[F[_]](kvStore: KeyValueStore[F, Repo, Entry])(implic
       case None => F.pure(None)
       case Some(entry) =>
         dateTimeAlg.currentTimestamp.flatMap { now =>
-          entry.expiresIn(now) match {
+          entry.expiresIn(now, backoffPeriod) match {
             case some @ Some(_) => F.pure(some)
             case None           => kvStore.set(repo, None).as(None)
           }
@@ -62,8 +62,8 @@ final class RefreshErrorAlg[F[_]](kvStore: KeyValueStore[F, Repo, Entry])(implic
 
 object RefreshErrorAlg {
   final case class Entry(failedAt: Timestamp, message: String) {
-    def expiresIn(now: Timestamp): Option[FiniteDuration] = {
-      val duration = 7.days - failedAt.until(now)
+    def expiresIn(now: Timestamp, backoffPeriod: FiniteDuration): Option[FiniteDuration] = {
+      val duration = backoffPeriod - failedAt.until(now)
       if (duration.length > 0L) Some(duration) else None
     }
   }

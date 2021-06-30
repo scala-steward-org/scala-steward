@@ -32,7 +32,7 @@ import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.VCSType
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 import org.scalasteward.core.vcs.github.GitHubApp
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{FiniteDuration, DurationInt}
 
 /** Configuration for scala-steward.
   *
@@ -76,7 +76,8 @@ final case class Config(
     gitLabCfg: GitLabCfg,
     githubApp: Option[GitHubApp],
     urlCheckerTestUrl: Uri,
-    defaultResolver: Resolver
+    defaultResolver: Resolver,
+    refreshBackoffPeriod: FiniteDuration
 ) {
   def vcsUser[F[_]](implicit
       processAlg: ProcessAlg[F],
@@ -165,6 +166,7 @@ object Config {
       urlCheckerTestUrl = args.urlCheckerTestUrl.getOrElse(uri"https://github.com"),
       defaultResolver = args.defaultMavenRepo
         .map(url => Resolver.MavenRepository("default", url, None))
-        .getOrElse(Resolver.mavenCentral)
+        .getOrElse(Resolver.mavenCentral),
+      refreshBackoffPeriod = args.refreshBackoffPeriod.getOrElse(7.days)
     )
 }
