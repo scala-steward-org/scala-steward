@@ -50,6 +50,14 @@ trait VCSApiAlg[F[_]] {
       defaultBranch <- getDefaultBranchOfParentOrRepo(forkOrRepo, doNotFork)
     } yield (forkOrRepo, defaultBranch)
 
+  final def applyDefaultBranch(repoOut: RepoOut, defaultBranch: Option[Branch]): RepoOut =
+    defaultBranch.fold(repoOut) { branch =>
+      repoOut.copy(
+        default_branch = branch,
+        parent = repoOut.parent.map(_.copy(default_branch = branch))
+      )
+    }
+
   final def getDefaultBranchOfParentOrRepo(repoOut: RepoOut, doNotFork: Boolean)(implicit
       F: MonadThrow[F]
   ): F[BranchOut] =
