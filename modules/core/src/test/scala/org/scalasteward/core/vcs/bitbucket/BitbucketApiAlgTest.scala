@@ -71,6 +71,15 @@ class BitbucketApiAlgTest extends FunSuite {
           }
         }"""
       )
+    case GET -> Root / "repositories" / "fthomas" / "base.g8" / "refs" / "branches" / "custom" =>
+      Ok(
+        json"""{
+          "name": "custom",
+          "target": {
+              "hash": "12ea4559063c74184861afece9eeff5ca9d33db3"
+          }
+        }"""
+      )
     case POST -> Root / "repositories" / "fthomas" / "base.g8" / "forks" =>
       Ok(
         json"""{
@@ -161,12 +170,21 @@ class BitbucketApiAlgTest extends FunSuite {
   private val prUrl = uri"https://bitbucket.org/fthomas/base.g8/pullrequests/2"
   private val repo = Repo("fthomas", "base.g8")
   private val master = Branch("master")
+  private val custom = Branch("custom")
   private val parent = RepoOut(
     "base.g8",
     UserOut("fthomas"),
     None,
     uri"https://scala-steward@bitbucket.org/fthomas/base.g8.git",
     master
+  )
+
+  private val parentWithCustomDefaultBranch = RepoOut(
+    "base.g8",
+    UserOut("fthomas"),
+    None,
+    uri"https://scala-steward@bitbucket.org/fthomas/base.g8.git",
+    custom
   )
 
   private val fork = RepoOut(
@@ -177,9 +195,22 @@ class BitbucketApiAlgTest extends FunSuite {
     master
   )
 
+  private val forkWithCustomDefaultBranch = RepoOut(
+    "base.g8",
+    UserOut("scala-steward"),
+    Some(parentWithCustomDefaultBranch),
+    uri"https://scala-steward@bitbucket.org/scala-steward/base.g8.git",
+    custom
+  )
+
   private val defaultBranch = BranchOut(
     master,
     CommitOut(Sha1(HexString.unsafeFrom("07eb2a203e297c8340273950e98b2cab68b560c1")))
+  )
+
+  private val defaultCustomBranch = BranchOut(
+    custom,
+    CommitOut(Sha1(HexString.unsafeFrom("12ea4559063c74184861afece9eeff5ca9d33db3")))
   )
 
   private val pullRequest =
@@ -197,16 +228,38 @@ class BitbucketApiAlgTest extends FunSuite {
 
   test("createForkOrGetRepoWithDefaultBranch") {
     val (repoOut, branchOut) =
-      bitbucketApiAlg.createForkOrGetRepoWithDefaultBranch(repo, doNotFork = false).unsafeRunSync()
+      bitbucketApiAlg
+        .createForkOrGetRepoWithDefaultBranch(repo, doNotFork = false, defaultBranch = None)
+        .unsafeRunSync()
     assertEquals(repoOut, fork)
     assertEquals(branchOut, defaultBranch)
   }
 
+  test("createForkOrGetRepoWithDefaultBranch with custom default branch") {
+    val (repoOut, branchOut) =
+      bitbucketApiAlg
+        .createForkOrGetRepoWithDefaultBranch(repo, doNotFork = false, defaultBranch = Some(custom))
+        .unsafeRunSync()
+    assertEquals(repoOut, forkWithCustomDefaultBranch)
+    assertEquals(branchOut, defaultCustomBranch)
+  }
+
   test("createForkOrGetRepoWithDefaultBranch without forking") {
     val (repoOut, branchOut) =
-      bitbucketApiAlg.createForkOrGetRepoWithDefaultBranch(repo, doNotFork = true).unsafeRunSync()
+      bitbucketApiAlg
+        .createForkOrGetRepoWithDefaultBranch(repo, doNotFork = true, defaultBranch = None)
+        .unsafeRunSync()
     assertEquals(repoOut, parent)
     assertEquals(branchOut, defaultBranch)
+  }
+
+  test("createForkOrGetRepoWithDefaultBranch without forking with custom default branch") {
+    val (repoOut, branchOut) =
+      bitbucketApiAlg
+        .createForkOrGetRepoWithDefaultBranch(repo, doNotFork = true, defaultBranch = Some(custom))
+        .unsafeRunSync()
+    assertEquals(repoOut, parentWithCustomDefaultBranch)
+    assertEquals(branchOut, defaultCustomBranch)
   }
 
   test("createPullRequest") {
