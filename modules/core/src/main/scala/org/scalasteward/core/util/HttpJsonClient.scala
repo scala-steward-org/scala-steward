@@ -108,7 +108,7 @@ final class HttpJsonClient[F[_]](implicit
       method: Method,
       response: Response[F]
   ): F[Throwable] = {
-    val body = response.body.through(fs2.text.utf8Decode).compile.string
+    val body = response.body.through(fs2.text.utf8.decode).compile.string
     body.map(UnexpectedResponse(uri, method, response.headers, response.status, _))
   }
 }
