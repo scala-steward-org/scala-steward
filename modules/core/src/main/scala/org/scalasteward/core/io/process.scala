@@ -87,7 +87,7 @@ object process {
   private def readInputStream[F[_]](is: InputStream)(implicit F: Sync[F]): Stream[F, String] =
     fs2.io
       .readInputStream(F.pure(is), chunkSize = 4096)
-      .through(fs2.text.utf8Decode)
+      .through(fs2.text.utf8.decode)
       .through(fs2.text.lines)
 
   private def makeMessage(prefix: String, output: List[String]): String =
