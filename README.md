@@ -175,6 +175,7 @@ Consider creating PR to add your company to the list and join the community.
 * [SoftwareMill](https://softwaremill.com)
 * [Spotify](https://www.spotify.com)
 * [SpringerNature](https://www.springernature.com)
+* [Teads](https://medium.com/teads-engineering)
 * [Tegonal GmbH](https://tegonal.com)
 * [Tupl](https://www.tupl.com)
 * [wehkamp](https://www.wehkamp.nl/)
