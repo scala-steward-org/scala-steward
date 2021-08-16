@@ -13,4 +13,4 @@ addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.1.0")
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.8.2")
 
 // This is only here so that Scala Steward updates the version in sbt/package.scala too.
-addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.29")
+addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.30")
