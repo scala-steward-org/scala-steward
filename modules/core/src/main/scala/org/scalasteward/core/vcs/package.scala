@@ -44,8 +44,8 @@ package object vcs {
         git.branchFor(update).name
     }
 
-  /** Determines the `head` (GitHub) / `source_branch` (GitLab, Bitbucket) parameter for creating
-    * a new pull requests.
+  /** Determines the `head` (GitHub) / `source_branch` (GitLab, Bitbucket) parameter for creating a
+    * new pull requests.
     */
   def createBranch(vcsType: VCSType, fork: Repo, update: Update): String =
     vcsType match {

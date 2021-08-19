@@ -24,10 +24,9 @@ import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 import scala.util.matching.Regex
 
-/** `UpdateHeuristic` is a wrapper for a function that takes an `Update` and
-  * returns a new function that replaces the current version with the next
-  * version in its input. The result type indicates whether the input was
-  * modified or not.
+/** `UpdateHeuristic` is a wrapper for a function that takes an `Update` and returns a new function
+  * that replaces the current version with the next version in its input. The result type indicates
+  * whether the input was modified or not.
   */
 final case class UpdateHeuristic(
     name: String,
@@ -36,8 +35,8 @@ final case class UpdateHeuristic(
 
 object UpdateHeuristic {
 
-  /** Removes punctuation from the input and returns it as regex that allows
-    * punctuation between characters.
+  /** Removes punctuation from the input and returns it as regex that allows punctuation between
+    * characters.
     */
   private def toFlexibleRegex(string: String): String = {
     val punctuation = List('.', '-', '_')

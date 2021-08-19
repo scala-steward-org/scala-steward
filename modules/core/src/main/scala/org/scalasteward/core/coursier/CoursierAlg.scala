@@ -28,8 +28,8 @@ import org.scalasteward.core.data.{Dependency, Resolver, Scope, Version}
 import org.scalasteward.core.util.uri
 import org.typelevel.log4cats.Logger
 
-/** An interface to [[https://get-coursier.io Coursier]] used for
-  * fetching dependency versions and metadata.
+/** An interface to [[https://get-coursier.io Coursier]] used for fetching dependency versions and
+  * metadata.
   */
 trait CoursierAlg[F[_]] {
   def getArtifactUrl(dependency: Scope.Dependency): F[Option[Uri]]
