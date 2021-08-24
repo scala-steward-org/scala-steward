@@ -11,19 +11,18 @@
 [![Scala Steward badge](https://img.shields.io/badge/Scala_Steward-helping-blue.svg?style=flat&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAQCAMAAAARSr4IAAAAVFBMVEUAAACHjojlOy5NWlrKzcYRKjGFjIbp293YycuLa3pYY2LSqql4f3pCUFTgSjNodYRmcXUsPD/NTTbjRS+2jomhgnzNc223cGvZS0HaSD0XLjbaSjElhIr+AAAAAXRSTlMAQObYZgAAAHlJREFUCNdNyosOwyAIhWHAQS1Vt7a77/3fcxxdmv0xwmckutAR1nkm4ggbyEcg/wWmlGLDAA3oL50xi6fk5ffZ3E2E3QfZDCcCN2YtbEWZt+Drc6u6rlqv7Uk0LdKqqr5rk2UCRXOk0vmQKGfc94nOJyQjouF9H/wCc9gECEYfONoAAAAASUVORK5CYII=)](https://scala-steward.org)
 [![Docker Pulls](https://img.shields.io/docker/pulls/fthomas/scala-steward.svg?style=flat&color=blue)](https://hub.docker.com/r/fthomas/scala-steward/)
 
-Scala Steward is a bot that helps you keep library dependencies
-and sbt plugins up-to-date.
+Scala Steward is a bot that helps you keep your library dependencies, sbt plugins, and Scala and sbt versions up-to-date.
 
 See also the announcement blog post:
 [*Keep your projects up-to-date with Scala Steward*](https://www.scala-lang.org/blog/2019/07/10/announcing-scala-steward.html)
 
 ## Quick start guide
 
-Open a pull request that adds the GitHub repository of your Scala project
+Open a pull request that adds the GitHub, GitLab, or Bitbucket repository of your Scala project
 to [repos-github.md](https://github.com/scala-steward-org/repos/blob/main/repos-github.md)
 ([edit](https://github.com/scala-steward-org/repos/edit/main/repos-github.md)).
 Once that PR is merged, [**@scala-steward**][@scala-steward] will check
-periodically for updates of libraries and plugins in your project and will
+periodically for version number updates in your project and will
 open pull requests for updates it found.
 
 ## Show us the pull requests!
