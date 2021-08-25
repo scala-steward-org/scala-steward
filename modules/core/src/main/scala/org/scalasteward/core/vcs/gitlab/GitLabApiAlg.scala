@@ -176,8 +176,8 @@ final class GitLabApiAlg[F[_]](
         .get[MergeRequestOut](url.existingMergeRequest(repo, number), modify(repo))
         .flatMap {
           case mr if mr.mergeStatus =!= GitLabMergeStatus.Checking => F.pure(mr)
-          case _ if retries > 0                                    => waitForMergeRequestStatus(number, retries - 1)
-          case other                                               => F.pure(other)
+          case _ if retries > 0 => waitForMergeRequestStatus(number, retries - 1)
+          case other            => F.pure(other)
         }
 
     val updatedMergeRequest =
