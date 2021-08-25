@@ -30,8 +30,8 @@ object string {
 
   /** Extracts words from a string.
     *
-    * Words are separated by '-', '_', '.', or a change from lower to upper case and are at least
-    * three characters long.
+    * Words are separated by '-', '_', '.', or a change from lower to
+    * upper case and are at least three characters long.
     */
   def extractWords(s: String): List[String] = {
     val minLength = 3
@@ -59,8 +59,8 @@ object string {
   ): Option[MinLengthString[N]] =
     refineV[MinSize[N]](xs.reduceLeft(longestCommonPrefix)).toOption
 
-  /** Like `Regex.replaceSomeIn` but indicates via the return type if there was at least one match
-    * that has been replaced.
+  /** Like `Regex.replaceSomeIn` but indicates via the return type if there
+    * was at least one match that has been replaced.
     */
   def replaceSomeInChange(
       regex: Regex,
@@ -80,8 +80,10 @@ object string {
 
   /** Returns the substring after the rightmost `.`.
     *
-    * @example
-    *   {{{ scala> string.rightmostLabel("org.scalasteward.core") res1: String = core }}}
+    * @example {{{
+    * scala> string.rightmostLabel("org.scalasteward.core")
+    * res1: String = core
+    * }}}
     */
   def rightmostLabel(s: String): String =
     s.split('.').lastOption.getOrElse(s)
@@ -93,11 +95,12 @@ object string {
 
   /** Splits a string between lower and upper case characters.
     *
-    * @example
-    *   {{{ scala> string.splitBetweenLowerAndUpperChars("javaLowerCase") res1: List[String] =
-    *   List(java, Lower, Case)
+    * @example {{{
+    * scala> string.splitBetweenLowerAndUpperChars("javaLowerCase")
+    * res1: List[String] = List(java, Lower, Case)
     *
-    * scala> string.splitBetweenLowerAndUpperChars("HikariCP") res2: List[String] = List(Hikari, CP)
+    * scala> string.splitBetweenLowerAndUpperChars("HikariCP")
+    * res2: List[String] = List(Hikari, CP)
     * }}}
     */
   def splitBetweenLowerAndUpperChars(s: String): List[String] =

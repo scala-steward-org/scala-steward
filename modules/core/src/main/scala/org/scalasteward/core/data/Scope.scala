@@ -23,8 +23,8 @@ import io.circe.{Codec, Decoder, Encoder}
 
 /** A container of a value of type `A` with associated resolvers.
   *
-  * In most cases `Scope` contains dependencies extracted from a build in which these are always
-  * defined in the context of resolvers.
+  * In most cases `Scope` contains dependencies extracted from a build
+  * in which these are always defined in the context of resolvers.
   */
 final case class Scope[A](value: A, resolvers: List[Resolver])
 

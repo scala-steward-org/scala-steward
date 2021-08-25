@@ -19,13 +19,14 @@ package org.scalasteward.core.util
 import cats.{Eq, Monoid}
 import org.scalasteward.core.util.Change.Changed
 
-/** Data type that indicates whether some value of type `T` has been changed or not via its two
-  * constructors `Changed` and `Unchanged`.
+/** Data type that indicates whether some value of type `T` has been changed
+  * or not via its two constructors `Changed` and `Unchanged`.
   *
   * It is isomorphic to `(T, Boolean)`.
   *
-  * `Change[T]` is a monoid for any monoid `T` with `Unchanged(T.empty)` as empty element and
-  * `Changed` combined with any other `Change` results in a `Changed` of the combined `T` values.
+  * `Change[T]` is a monoid for any monoid `T` with `Unchanged(T.empty)` as
+  * empty element and `Changed` combined with any other `Change` results in a
+  * `Changed` of the combined `T` values.
   */
 sealed trait Change[T] extends Product with Serializable {
   def value: T

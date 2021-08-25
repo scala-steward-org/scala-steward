@@ -259,7 +259,7 @@ lazy val dockerSettings = Def.settings(
       ),
       Cmd(
         "RUN",
-        s"curl -L https://git.io/coursier-cli > ${binDir}coursier && chmod +x ${binDir}coursier && coursier install scalafmt --install-dir $binDir && rm -rf ${binDir}coursier"
+        s"curl -L https://git.io/coursier-cli > ${binDir}coursier && chmod +x ${binDir}coursier && coursier install scalafmt --install-dir ${binDir} && rm -rf ${binDir}coursier"
       )
     )
   },
@@ -278,7 +278,7 @@ lazy val scaladocSettings = Def.settings(
     val tree = if (isSnapshot.value) git.gitHeadCommit.value.getOrElse("master") else tag
     Seq(
       "-doc-source-url",
-      s"${scmInfo.value.get.browseUrl}/blob/$tree€{FILE_PATH}.scala",
+      s"${scmInfo.value.get.browseUrl}/blob/${tree}€{FILE_PATH}.scala",
       "-sourcepath",
       (LocalRootProject / baseDirectory).value.getAbsolutePath
     )

@@ -30,8 +30,7 @@ import scala.util.Using
 
 trait GitHubAuthAlg[F[_]] {
 
-  /** [[https://docs.github.com/en/free-pro-team@latest/developers/apps/authenticating-with-github-apps#authenticating-as-a-github-app]]
-    */
+  /** [[https://docs.github.com/en/free-pro-team@latest/developers/apps/authenticating-with-github-apps#authenticating-as-a-github-app]] */
   def createJWT(app: GitHubApp, ttl: FiniteDuration): F[String]
 }
 
@@ -54,8 +53,7 @@ object GitHubAuthAlg {
         getPrivateKey(bytes)
       }
 
-      /** [[https://docs.github.com/en/free-pro-team@latest/developers/apps/authenticating-with-github-apps#authenticating-as-a-github-app]]
-        */
+      /** [[https://docs.github.com/en/free-pro-team@latest/developers/apps/authenticating-with-github-apps#authenticating-as-a-github-app]] */
       def createJWT(app: GitHubApp, ttl: FiniteDuration): F[String] = F.delay {
         Security.addProvider(new BouncyCastleProvider())
         val ttlMillis = ttl.toMillis

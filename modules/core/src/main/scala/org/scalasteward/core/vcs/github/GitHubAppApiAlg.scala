@@ -50,8 +50,7 @@ class GitHubAppApiAlg[F[_]: Applicative](
       )
       .map(_.flatten)
 
-  /** [[https://docs.github.com/en/free-pro-team@latest/rest/reference/apps#create-an-installation-access-token-for-an-app]]
-    */
+  /** [[https://docs.github.com/en/free-pro-team@latest/rest/reference/apps#create-an-installation-access-token-for-an-app]] */
   def accessToken(jwt: String, installationId: Long): F[TokenOut] =
     client.post(
       gitHubApiHost / "app" / "installations" / installationId.toString / "access_tokens",
