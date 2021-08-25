@@ -81,7 +81,7 @@ object string {
   /** Returns the substring after the rightmost `.`.
     *
     * @example
-    *   {{{scala> string.rightmostLabel("org.scalasteward.core") res1: String = core}}}
+    *   {{{ scala> string.rightmostLabel("org.scalasteward.core") res1: String = core }}}
     */
   def rightmostLabel(s: String): String =
     s.split('.').lastOption.getOrElse(s)
