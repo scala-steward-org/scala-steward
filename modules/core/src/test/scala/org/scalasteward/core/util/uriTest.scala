@@ -8,7 +8,7 @@ class uriTest extends FunSuite {
   test("withUserInfo") {
     val url = uri"https://api.github.com/repos/"
     assertEquals(
-      uri.withUserInfo.set(UserInfo("user", Some("pass")))(url).toString,
+      uri.withUserInfo.replace(UserInfo("user", Some("pass")))(url).toString,
       "https://user:pass@api.github.com/repos/"
     )
   }

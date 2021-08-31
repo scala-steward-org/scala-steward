@@ -54,5 +54,5 @@ final class VCSRepoAlg[F[_]](config: Config)(implicit
     }
 
   private val withLogin: Uri => Uri =
-    util.uri.withUserInfo.set(UserInfo(config.vcsLogin, None))
+    util.uri.withUserInfo.replace(UserInfo(config.vcsLogin, None))
 }
