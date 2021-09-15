@@ -93,7 +93,10 @@ class CliTest extends FunSuite {
   }
 
   test("parseArgs: --usage") {
-    assert(clue(Cli.parseArgs(List("--usage")).asInstanceOf[Help].help).startsWith("Usage: args"))
+    assert(
+      clue(Cli.parseArgs(List("--usage")).asInstanceOf[Help].help)
+        .startsWith("Usage: \u001b[1margs\u001b[0m")
+    )
   }
 
   test("envVarArgParser: env-var without equals sign") {
