@@ -6,7 +6,7 @@ object Dependencies {
   val attoCore = "org.tpolecat" %% "atto-core" % "0.9.5"
   val bcprovJdk15to18 = "org.bouncycastle" % "bcprov-jdk15to18" % "1.69"
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.1"
-  val caseApp = "com.github.alexarchambault" %% "case-app" % "2.0.6"
+  val caseApp = "com.github.alexarchambault" %% "case-app" % "2.1.0-M7"
   val catsEffect = "org.typelevel" %% "cats-effect" % "3.2.8"
   val catsCore = "org.typelevel" %% "cats-core" % "2.6.1"
   val catsLaws = "org.typelevel" %% "cats-laws" % catsCore.revision
@@ -39,7 +39,7 @@ object Dependencies {
   val munit = "org.scalameta" %% "munit" % "0.7.29"
   val munitCatsEffect = "org.typelevel" %% "munit-cats-effect-3" % "1.0.5"
   val munitScalacheck = "org.scalameta" %% "munit-scalacheck" % munit.revision
-  val refined = "eu.timepit" %% "refined" % "0.9.24"
+  val refined = "eu.timepit" %% "refined" % "0.9.27"
   val refinedScalacheck = "eu.timepit" %% "refined-scalacheck" % refined.revision
   val scalacacheCaffeine = "com.github.cb372" %% "scalacache-caffeine" % "1.0.0-M4"
   val scalacheck = "org.scalacheck" %% "scalacheck" % "1.15.4"
