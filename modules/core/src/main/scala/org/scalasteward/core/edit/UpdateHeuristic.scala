@@ -19,7 +19,6 @@ package org.scalasteward.core.edit
 import cats.Foldable
 import cats.syntax.all._
 import org.scalasteward.core.buildtool.mill.MillAlg
-// import org.scalasteward.core.buildtool.mill.MillAlg
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.scalafmt.isScalafmtUpdate
 import org.scalasteward.core.util
