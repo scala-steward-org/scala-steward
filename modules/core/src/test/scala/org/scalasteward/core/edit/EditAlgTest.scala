@@ -258,18 +258,10 @@ class EditAlgTest extends FunSuite {
       newerVersions = Nel.of("0.9.9")
     )
     val original = Map(
-      ".mill-version" -> """0.9.5""",
-      "build.sc" ->
-        """Deps {
-          |  val millMain = ivy"com.lihaoyi::mill-main:0.9.5" // scala-steward:off
-          |}""".stripMargin
+      ".mill-version" -> """0.9.5"""
     )
     val expected = Map(
-      ".mill-version" -> """0.9.9""",
-      "build.sc" ->
-        """Deps {
-          |  val millMain = ivy"com.lihaoyi::mill-main:0.9.5" // scala-steward:off
-          |}""".stripMargin
+      ".mill-version" -> """0.9.9"""
     )
     assertEquals(runApplyUpdate(Repo("edit-alg", "test-10"), update, original), expected)
   }
