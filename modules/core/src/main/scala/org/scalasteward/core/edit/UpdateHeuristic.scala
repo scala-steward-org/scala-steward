@@ -214,7 +214,7 @@ object UpdateHeuristic {
       case update: Update.Single if isScalafmtUpdate(update) =>
         defaultReplaceVersion(_ => List("version"))(update)
       case update: Update.Single if MillAlg.isMillMainUpdate(update) =>
-        content => if(content === update.currentVersion) Some(update.nextVersion) else None
+        content => if (content === update.currentVersion) Some(update.nextVersion) else None
       case _ =>
         _ => None
     }

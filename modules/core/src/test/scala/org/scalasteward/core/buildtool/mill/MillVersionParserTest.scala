@@ -16,7 +16,7 @@ class MillVersionParserTest extends FunSuite {
   for {
     (versionFileContent, expected) <- data
   } yield test(
-    s"parse version from .mill-version file with content '${versionFileContent}'"
+    s"parse version from .mill-version file with content '$versionFileContent'"
   ) {
     val parsed = parser.parseMillVersion(versionFileContent)
     assertEquals(parsed, expected)
