@@ -18,6 +18,7 @@ package org.scalasteward.core.edit
 
 import cats.Foldable
 import cats.syntax.all._
+import org.scalasteward.core.buildtool.mill.MillAlg
 // import org.scalasteward.core.buildtool.mill.MillAlg
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.scalafmt.isScalafmtUpdate
@@ -213,8 +214,8 @@ object UpdateHeuristic {
     replaceVersion = {
       case update: Update.Single if isScalafmtUpdate(update) =>
         defaultReplaceVersion(_ => List("version"))(update)
-//      case update: Update.Single if MillAlg.isMillMainUpdate(update) =>
-//        // TODO: fill in the missing pieces
+      case update: Update.Single if MillAlg.isMillMainUpdate(update) =>
+        content => if(content === update.currentVersion) Some(update.nextVersion) else None
       case _ =>
         _ => None
     }

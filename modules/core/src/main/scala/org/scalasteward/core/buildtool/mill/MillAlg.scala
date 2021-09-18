@@ -85,7 +85,7 @@ object MillAlg {
 
   private[this] val millMainResolver: Resolver = Resolver.mavenCentral
   private[this] val millMainGroupId = GroupId("com.lihaoyi")
-  private[this] val millMainArtifactId = ArtifactId("mill-main")
+  private[this] val millMainArtifactId = ArtifactId("mill-main", "mill-main_2.13")
 
   private def millMainArtifact(version: String): Dependency =
     Dependency(millMainGroupId, millMainArtifactId, version)
