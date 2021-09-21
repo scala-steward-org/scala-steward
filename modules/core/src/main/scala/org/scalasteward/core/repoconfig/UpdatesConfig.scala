@@ -74,7 +74,7 @@ final case class UpdatesConfig(
 
 object UpdatesConfig {
   val defaultFileExtensions: Set[String] =
-    Set(".mill-version", ".scala", ".sbt", ".sbt.shared", ".sc", ".yml", "pom.xml")
+    Set(".scala", ".sbt", ".sbt.shared", ".sc", ".yml", "pom.xml")
 
   implicit val updatesConfigEq: Eq[UpdatesConfig] =
     Eq.fromUniversalEquals
