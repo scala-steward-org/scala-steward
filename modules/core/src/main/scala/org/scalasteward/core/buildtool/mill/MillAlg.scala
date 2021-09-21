@@ -90,7 +90,9 @@ object MillAlg {
   private def millMainArtifact(version: String): Dependency =
     Dependency(millMainGroupId, millMainArtifactId, version)
 
-  def isMillMainUpdate(update: Update.Single): Boolean =
-    update.groupId === millMainGroupId && update.artifactId.name === millMainArtifactId.name
+  def isMillMainUpdate(update: Update): Boolean =
+    update.groupId === millMainGroupId && update.artifactIds.exists(
+      _.name === millMainArtifactId.name
+    )
 
 }
