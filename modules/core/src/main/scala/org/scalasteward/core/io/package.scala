@@ -19,7 +19,7 @@ package org.scalasteward.core
 import better.files.File
 import cats.syntax.all._
 import org.scalasteward.core.data.{GroupId, Update}
-import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtGroupId}
+import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtConfName, scalafmtGroupId}
 
 package object io {
   def isSourceFile(update: Update, fileExtensions: Set[String])(file: File): Boolean = {
@@ -32,7 +32,7 @@ package object io {
   ): Boolean =
     () match {
       case _ if isSbtUpdate(update)          => file.name === "build.properties"
-      case _ if isScalafmtCoreUpdate(update) => file.name === ".scalafmt.conf"
+      case _ if isScalafmtCoreUpdate(update) => file.name === scalafmtConfName
       case _                                 => isGenericSourceFile(file, fileExtensions)
     }
 

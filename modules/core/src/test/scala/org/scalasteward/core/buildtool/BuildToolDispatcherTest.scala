@@ -11,6 +11,7 @@ import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafmt
+import org.scalasteward.core.scalafmt.scalafmtConfName
 import org.scalasteward.core.vcs.data.Repo
 
 class BuildToolDispatcherTest extends FunSuite {
@@ -21,7 +22,7 @@ class BuildToolDispatcherTest extends FunSuite {
     val initial = MockState.empty
       .addFiles(
         repoDir / "project" / "build.properties" -> "sbt.version=1.2.6",
-        repoDir / ".scalafmt.conf" -> "version=2.0.0"
+        repoDir / scalafmtConfName -> "version=2.0.0"
       )
       .unsafeRunSync()
     val (state, deps) =
@@ -46,7 +47,7 @@ class BuildToolDispatcherTest extends FunSuite {
           s";$crossStewardDependencies;$reloadPlugins;$stewardDependencies"
         ),
         Cmd("read", s"$repoDir/project/build.properties"),
-        Cmd("read", s"$repoDir/.scalafmt.conf")
+        Cmd("read", s"$repoDir/$scalafmtConfName")
       )
     )
 

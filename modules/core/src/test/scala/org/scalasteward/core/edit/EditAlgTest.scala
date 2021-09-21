@@ -11,7 +11,7 @@ import org.scalasteward.core.mock.MockContext.context.editAlg
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.repoconfig.RepoConfig
-import org.scalasteward.core.scalafmt.scalafmtBinary
+import org.scalasteward.core.scalafmt.{scalafmtBinary, scalafmtConfName}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
@@ -60,7 +60,7 @@ class EditAlgTest extends FunSuite {
     val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
     val repoDir = config.workspace / repo.show
     val update = Update.Single("org.scalameta" % "scalafmt-core" % "2.0.0", Nel.of("2.1.0"))
-    val scalafmtConf = repoDir / ".scalafmt.conf"
+    val scalafmtConf = repoDir / scalafmtConfName
     val scalafmtConfContent = """maxColumn = 100
                                 |version = 2.0.0
                                 |align.openParenCallSite = false
