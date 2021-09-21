@@ -252,6 +252,20 @@ class EditAlgTest extends FunSuite {
     assertEquals(runApplyUpdate(Repo("edit-alg", "test-9"), update, original), expected)
   }
 
+  test("mill version file update") {
+    val update = Update.Single(
+      crossDependency = "com.lihaoyi" % "mill-main" % "0.9.5",
+      newerVersions = Nel.of("0.9.9")
+    )
+    val original = Map(
+      ".mill-version" -> """0.9.5"""
+    )
+    val expected = Map(
+      ".mill-version" -> """0.9.9"""
+    )
+    assertEquals(runApplyUpdate(Repo("edit-alg", "test-10"), update, original), expected)
+  }
+
   private def runApplyUpdate(
       repo: Repo,
       update: Update,
