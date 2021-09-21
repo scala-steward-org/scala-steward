@@ -18,6 +18,7 @@ package org.scalasteward.core
 
 import better.files.File
 import cats.syntax.all._
+import org.scalasteward.core.buildtool.mill.MillAlg
 import org.scalasteward.core.data.{GroupId, Update}
 import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtConfName, scalafmtGroupId}
 
@@ -31,9 +32,10 @@ package object io {
       file: File
   ): Boolean =
     () match {
-      case _ if isSbtUpdate(update)          => file.name === "build.properties"
-      case _ if isScalafmtCoreUpdate(update) => file.name === scalafmtConfName
-      case _                                 => isGenericSourceFile(file, fileExtensions)
+      case _ if isSbtUpdate(update)              => file.name === "build.properties"
+      case _ if isScalafmtCoreUpdate(update)     => file.name === scalafmtConfName
+      case _ if MillAlg.isMillMainUpdate(update) => file.name === ".mill-version"
+      case _                                     => isGenericSourceFile(file, fileExtensions)
     }
 
   private def isGenericSourceFile(file: File, fileExtensions: Set[String]): Boolean =
