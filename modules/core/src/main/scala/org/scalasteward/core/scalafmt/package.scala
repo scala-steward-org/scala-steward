@@ -39,4 +39,6 @@ package object scalafmt {
     Dependency(scalafmtGroupIdBy(version), scalafmtArtifactId, version.value)
 
   val scalafmtBinary: String = "scalafmt"
+
+  val scalafmtConfName = ".scalafmt.conf"
 }

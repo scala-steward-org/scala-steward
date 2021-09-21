@@ -35,7 +35,7 @@ final class ScalafmtAlg[F[_]](config: Config)(implicit
   def getScalafmtVersion(buildRoot: BuildRoot): F[Option[Version]] =
     for {
       buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
-      scalafmtConfFile = buildRootDir / ".scalafmt.conf"
+      scalafmtConfFile = buildRootDir / scalafmtConfName
       fileContent <- fileAlg.readFile(scalafmtConfFile)
     } yield fileContent.flatMap(parseScalafmtConf)
 

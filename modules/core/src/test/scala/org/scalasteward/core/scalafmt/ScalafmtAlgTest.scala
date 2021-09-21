@@ -14,7 +14,7 @@ class ScalafmtAlgTest extends FunSuite {
     val repo = Repo("fthomas", "scala-steward")
     val buildRoot = BuildRoot(repo, ".")
     val repoDir = config.workspace / repo.owner / repo.repo
-    val scalafmtConf = repoDir / ".scalafmt.conf"
+    val scalafmtConf = repoDir / scalafmtConfName
     val initialState = MockState.empty
       .addFiles(scalafmtConf -> """maxColumn = 100
                                   |version=2.0.0-RC8
@@ -24,7 +24,7 @@ class ScalafmtAlgTest extends FunSuite {
     val (state, maybeVersion) =
       scalafmtAlg.getScalafmtVersion(buildRoot).runSA(initialState).unsafeRunSync()
     val expectedState = initialState.copy(
-      trace = Vector(Cmd("read", s"$repoDir/.scalafmt.conf"))
+      trace = Vector(Cmd("read", scalafmtConf.toString))
     )
 
     assertEquals(maybeVersion, Some(Version("2.0.0-RC8")))
@@ -35,7 +35,7 @@ class ScalafmtAlgTest extends FunSuite {
     val repo = Repo("fthomas", "scala-steward")
     val buildRoot = BuildRoot(repo, ".")
     val repoDir = config.workspace / repo.owner / repo.repo
-    val scalafmtConf = repoDir / ".scalafmt.conf"
+    val scalafmtConf = repoDir / scalafmtConfName
     val initialState = MockState.empty
       .addFiles(scalafmtConf -> """maxColumn = 100
                                   |version="2.0.0-RC8"

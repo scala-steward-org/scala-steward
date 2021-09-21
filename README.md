@@ -133,6 +133,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [TATSUNO Yasuhiro](https://github.com/exoego)
 * [Thomas Heslin](https://github.com/tjheslin1)
 * [Thomas Kaliakos](https://github.com/thomaska)
+* [Tobias Roeser](https://github.com/lefou)
 * [Toshiyuki Takahashi](https://github.com/tototoshi)
 * [Victor Viale](https://github.com/Koroeskohr)
 * [Yan](https://github.com/yaroot)
