@@ -25,8 +25,8 @@ import org.scalasteward.core.application.Config
 import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.ProcessResult.{Created, Ignored, Updated}
 import org.scalasteward.core.data._
-import org.scalasteward.core.edit.EditAlg
-import org.scalasteward.core.edit.scalafix.ScalafixMigrationsFinder
+import org.scalasteward.core.edit.EditCommit.ScalafixCommit
+import org.scalasteward.core.edit.{EditAlg, EditCommit}
 import org.scalasteward.core.git.{Branch, Commit, GitAlg}
 import org.scalasteward.core.repoconfig.PullRequestUpdateStrategy
 import org.scalasteward.core.util.UrlChecker
@@ -42,7 +42,6 @@ final class NurtureAlg[F[_]](config: Config)(implicit
     gitAlg: GitAlg[F],
     logger: Logger[F],
     pullRequestRepository: PullRequestRepository[F],
-    scalafixMigrationsFinder: ScalafixMigrationsFinder,
     vcsApiAlg: VCSApiAlg[F],
     vcsExtraAlg: VCSExtraAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
@@ -150,7 +149,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
         gitAlg.createBranch(data.repo, data.updateBranch)
       editAlg.applyUpdate(data.repoData, data.update, createBranch).flatMap { editCommits =>
         if (editCommits.isEmpty) logger.warn("No commits created").as(Ignored)
-        else pushCommits(data, editCommits) >> createPullRequest(data)
+        else pushCommits(data, editCommits.map(_.commit)) >> createPullRequest(data, editCommits)
       }
     }
 
@@ -162,7 +161,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
         _ <- gitAlg.push(data.repo, data.updateBranch)
       } yield Updated
 
-  def createPullRequest(data: UpdateData): F[ProcessResult] =
+  def createPullRequest(data: UpdateData, editCommits: List[EditCommit]): F[ProcessResult] =
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
       dependenciesWithNextVersion =
@@ -178,7 +177,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
           .traverse(vcsExtraAlg.getReleaseRelatedUrls(_, data.update))
       filesWithOldVersion <- gitAlg.findFilesContaining(data.repo, data.update.currentVersion)
       branchName = vcs.createBranch(config.vcsType, data.fork, data.update)
-      migrations = scalafixMigrationsFinder.findMigrations(data.update)
+      migrations = editCommits.collect { case ScalafixCommit(migration, _) => migration }
       requestData = NewPullRequestData.from(
         data,
         branchName,
@@ -238,7 +237,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
       )
       maybeMergeCommit <- gitAlg.mergeTheirs(data.repo, data.baseBranch)
       editCommits <- editAlg.applyUpdate(data.repoData, data.update)
-      result <- pushCommits(data, maybeMergeCommit.toList ++ editCommits)
+      result <- pushCommits(data, maybeMergeCommit.toList ++ editCommits.map(_.commit))
     } yield result
 }
 
