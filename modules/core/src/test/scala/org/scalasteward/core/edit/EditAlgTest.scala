@@ -11,7 +11,7 @@ import org.scalasteward.core.mock.MockContext.context.editAlg
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.repoconfig.RepoConfig
-import org.scalasteward.core.scalafmt.scalafmtBinary
+import org.scalasteward.core.scalafmt.{scalafmtBinary, scalafmtConfName}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
@@ -60,7 +60,7 @@ class EditAlgTest extends FunSuite {
     val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
     val repoDir = config.workspace / repo.show
     val update = Update.Single("org.scalameta" % "scalafmt-core" % "2.0.0", Nel.of("2.1.0"))
-    val scalafmtConf = repoDir / ".scalafmt.conf"
+    val scalafmtConf = repoDir / scalafmtConfName
     val scalafmtConfContent = """maxColumn = 100
                                 |version = 2.0.0
                                 |align.openParenCallSite = false
@@ -250,6 +250,22 @@ class EditAlgTest extends FunSuite {
       "build.sbt" -> """ "io.chrisdavenport" %% "log4cats" % log4catsVersion """
     )
     assertEquals(runApplyUpdate(Repo("edit-alg", "test-9"), update, original), expected)
+  }
+
+  test("mill version file update") {
+    val update = Update.Single(
+      crossDependency = "com.lihaoyi" % "mill-main" % "0.9.5",
+      newerVersions = Nel.of("0.9.9")
+    )
+    val original = Map(
+      ".mill-version" -> """0.9.5""",
+      ".travis.yml" -> """- TEST_MILL_VERSION=0.9.5"""
+    )
+    val expected = Map(
+      ".mill-version" -> """0.9.9""",
+      ".travis.yml" -> """- TEST_MILL_VERSION=0.9.5"""
+    )
+    assertEquals(runApplyUpdate(Repo("edit-alg", "test-10"), update, original), expected)
   }
 
   private def runApplyUpdate(

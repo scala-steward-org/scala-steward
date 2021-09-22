@@ -28,7 +28,8 @@ class CliTest extends FunSuite {
         List("--scalafix-migrations", "/opt/scala-steward/extra-scalafix-migrations.conf"),
         List("--artifact-migrations", "/opt/scala-steward/extra-artifact-migrations.conf"),
         List("--github-app-id", "12345678"),
-        List("--github-app-key-file", "example_app_key")
+        List("--github-app-key-file", "example_app_key"),
+        List("--refresh-backoff-period", "1 day")
       ).flatten
     )
     val expected = Success(
@@ -48,7 +49,8 @@ class CliTest extends FunSuite {
         scalafixMigrations = List(uri"/opt/scala-steward/extra-scalafix-migrations.conf"),
         artifactMigrations = Some(File("/opt/scala-steward/extra-artifact-migrations.conf")),
         githubAppId = Some(12345678),
-        githubAppKeyFile = Some(File("example_app_key"))
+        githubAppKeyFile = Some(File("example_app_key")),
+        refreshBackoffPeriod = 1.day
       )
     )
     assertEquals(obtained, expected)
@@ -91,7 +93,10 @@ class CliTest extends FunSuite {
   }
 
   test("parseArgs: --usage") {
-    assert(clue(Cli.parseArgs(List("--usage")).asInstanceOf[Help].help).startsWith("Usage: args"))
+    assert(
+      clue(Cli.parseArgs(List("--usage")).asInstanceOf[Help].help)
+        .startsWith("Usage: \u001b[1margs\u001b[0m")
+    )
   }
 
   test("envVarArgParser: env-var without equals sign") {

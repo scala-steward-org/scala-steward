@@ -21,7 +21,7 @@ import cats.effect.implicits._
 import cats.syntax.all._
 import org.http4s.Uri
 import org.http4s.client.Client
-import org.http4s.client.okhttp.OkHttpBuilder
+import org.http4s.okhttp.client.OkHttpBuilder
 import org.scalasteward.core.buildtool.BuildToolDispatcher
 import org.scalasteward.core.buildtool.maven.MavenAlg
 import org.scalasteward.core.buildtool.mill.MillAlg
@@ -139,7 +139,8 @@ object Context {
       implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F](config)
       implicit val millAlg: MillAlg[F] = MillAlg.create[F]
       implicit val buildToolDispatcher: BuildToolDispatcher[F] = new BuildToolDispatcher[F]
-      implicit val refreshErrorAlg: RefreshErrorAlg[F] = new RefreshErrorAlg[F](refreshErrorStore)
+      implicit val refreshErrorAlg: RefreshErrorAlg[F] =
+        new RefreshErrorAlg[F](refreshErrorStore, config.refreshBackoffPeriod)
       implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F](config)
       implicit val editAlg: EditAlg[F] = new EditAlg[F]
       implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F](config)

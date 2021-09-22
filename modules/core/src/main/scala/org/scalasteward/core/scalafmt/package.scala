@@ -18,7 +18,7 @@ package org.scalasteward.core
 
 import cats.syntax.all._
 import org.scalasteward.core.buildtool.sbt.defaultScalaBinaryVersion
-import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId, Version}
+import org.scalasteward.core.data._
 
 package object scalafmt {
   val scalafmtGroupId: GroupId =
@@ -29,6 +29,9 @@ package object scalafmt {
     ArtifactId(core, s"${core}_$defaultScalaBinaryVersion")
   }
 
+  def isScalafmtUpdate(update: Update.Single): Boolean =
+    update.groupId === scalafmtGroupId && update.artifactId.name === scalafmtArtifactId.name
+
   private def scalafmtGroupIdBy(version: Version): GroupId =
     if (version > Version("2.0.0-RC1")) scalafmtGroupId else GroupId("com.geirsson")
 
@@ -36,4 +39,6 @@ package object scalafmt {
     Dependency(scalafmtGroupIdBy(version), scalafmtArtifactId, version.value)
 
   val scalafmtBinary: String = "scalafmt"
+
+  val scalafmtConfName = ".scalafmt.conf"
 }

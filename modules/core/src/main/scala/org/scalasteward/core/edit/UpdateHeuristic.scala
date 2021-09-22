@@ -18,9 +18,12 @@ package org.scalasteward.core.edit
 
 import cats.Foldable
 import cats.syntax.all._
-import org.scalasteward.core.data.{GroupId, Update}
+import org.scalasteward.core.buildtool.mill.MillAlg
+import org.scalasteward.core.data.Update
+import org.scalasteward.core.scalafmt.isScalafmtUpdate
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
+
 import scala.util.matching.Regex
 
 /** `UpdateHeuristic` is a wrapper for a function that takes an `Update` and
@@ -207,11 +210,14 @@ object UpdateHeuristic {
 
   val specific: UpdateHeuristic = UpdateHeuristic(
     name = "specific",
-    replaceVersion = defaultReplaceVersion {
-      case s: Update.Single
-          if s.groupId === GroupId("org.scalameta") && s.artifactId.name === "scalafmt-core" =>
-        List("version")
-      case _ => List.empty
+    replaceVersion = {
+      case update: Update.Single if isScalafmtUpdate(update) =>
+        defaultReplaceVersion(_ => List("version"))(update)
+      case update: Update.Single if MillAlg.isMillMainUpdate(update) =>
+        // this is intended to update the `.mill-version`
+        content => if (content === update.currentVersion) Some(update.nextVersion) else None
+      case _ =>
+        _ => None
     }
   )
 

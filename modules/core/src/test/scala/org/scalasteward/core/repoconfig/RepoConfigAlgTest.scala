@@ -26,7 +26,6 @@ class RepoConfigAlgTest extends FunSuite {
          |               ]
          |updates.ignore = [ { groupId = "org.acme", version = "1.0" } ]
          |updates.limit = 4
-         |updates.includeScala = "yes"
          |updates.fileExtensions = [ ".txt" ]
          |pullRequests.frequency = "@weekly"
          |commits.message = "Update ${artifactName} from ${currentVersion} to ${nextVersion}"

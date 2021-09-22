@@ -76,7 +76,8 @@ final case class Config(
     gitLabCfg: GitLabCfg,
     githubApp: Option[GitHubApp],
     urlCheckerTestUrl: Uri,
-    defaultResolver: Resolver
+    defaultResolver: Resolver,
+    refreshBackoffPeriod: FiniteDuration
 ) {
   def vcsUser[F[_]](implicit
       processAlg: ProcessAlg[F],
@@ -85,7 +86,7 @@ final case class Config(
   ): F[AuthenticatedUser] =
     for {
       rootDir <- workspaceAlg.rootDir
-      urlWithUser = util.uri.withUserInfo.set(UserInfo(vcsLogin, None))(vcsApiHost).renderString
+      urlWithUser = util.uri.withUserInfo.replace(UserInfo(vcsLogin, None))(vcsApiHost).renderString
       prompt = s"Password for '$urlWithUser': "
       password <- processAlg.exec(Nel.of(gitCfg.gitAskPass.pathAsString, prompt), rootDir)
     } yield AuthenticatedUser(vcsLogin, password.mkString.trim)
@@ -165,6 +166,7 @@ object Config {
       urlCheckerTestUrl = args.urlCheckerTestUrl.getOrElse(uri"https://github.com"),
       defaultResolver = args.defaultMavenRepo
         .map(url => Resolver.MavenRepository("default", url, None))
-        .getOrElse(Resolver.mavenCentral)
+        .getOrElse(Resolver.mavenCentral),
+      refreshBackoffPeriod = args.refreshBackoffPeriod
     )
 }
