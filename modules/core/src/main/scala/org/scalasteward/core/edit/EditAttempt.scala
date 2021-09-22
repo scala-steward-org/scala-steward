@@ -21,12 +21,24 @@ import org.scalasteward.core.edit.hooks.PostUpdateHook
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.git.Commit
 
-sealed trait EditCommit extends Product with Serializable {
-  def commit: Commit
+sealed trait EditAttempt extends Product with Serializable {
+  def maybeCommit: Option[Commit]
 }
 
-object EditCommit {
-  final case class UpdateCommit(update: Update, commit: Commit) extends EditCommit
-  final case class ScalafixCommit(migration: ScalafixMigration, commit: Commit) extends EditCommit
-  final case class HookCommit(hook: PostUpdateHook, commit: Commit) extends EditCommit
+object EditAttempt {
+  final case class UpdateEdit(update: Update, commit: Commit) extends EditAttempt {
+    override def maybeCommit: Some[Commit] = Some(commit)
+  }
+
+  final case class ScalafixEdit(
+      migration: ScalafixMigration,
+      result: Either[Throwable, Unit],
+      maybeCommit: Option[Commit]
+  ) extends EditAttempt
+
+  final case class HookEdit(
+      hook: PostUpdateHook,
+      result: Either[Throwable, Unit],
+      maybeCommit: Option[Commit]
+  ) extends EditAttempt
 }
