@@ -21,6 +21,8 @@ import io.circe.Encoder
 import io.circe.generic.semiauto._
 import org.http4s.Uri
 import org.scalasteward.core.data._
+import org.scalasteward.core.edit.EditAttempt
+import org.scalasteward.core.edit.EditAttempt.ScalafixEdit
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.git
 import org.scalasteward.core.git.Branch
@@ -50,10 +52,11 @@ object NewPullRequestData {
       update: Update,
       artifactIdToUrl: Map[String, Uri],
       releaseRelatedUrls: List[ReleaseRelatedUrl],
-      migrations: List[ScalafixMigration],
-      filesWithOldVersion: List[String]
+      filesWithOldVersion: List[String],
+      edits: List[EditAttempt]
   ): String = {
     val artifacts = artifactsWithOptionalUrl(update, artifactIdToUrl)
+    val migrations = edits.collect { case ScalafixEdit(migration, _, _) => migration }
     val (migrationLabel, appliedMigrations) = migrationNote(migrations)
     val (oldVersionLabel, oldVersionDetails) = oldVersionNote(filesWithOldVersion, update)
     val details = appliedMigrations.toList ++
@@ -197,18 +200,12 @@ object NewPullRequestData {
       branchName: String,
       artifactIdToUrl: Map[String, Uri] = Map.empty,
       releaseRelatedUrls: List[ReleaseRelatedUrl] = List.empty,
-      migrations: List[ScalafixMigration] = List.empty,
-      filesWithOldVersion: List[String] = List.empty
+      filesWithOldVersion: List[String] = List.empty,
+      edits: List[EditAttempt] = List.empty
   ): NewPullRequestData =
     NewPullRequestData(
       title = git.commitMsgFor(data.update, data.repoConfig.commits),
-      body = bodyFor(
-        data.update,
-        artifactIdToUrl,
-        releaseRelatedUrls,
-        migrations,
-        filesWithOldVersion
-      ),
+      body = bodyFor(data.update, artifactIdToUrl, releaseRelatedUrls, filesWithOldVersion, edits),
       head = branchName,
       base = data.baseBranch
     )

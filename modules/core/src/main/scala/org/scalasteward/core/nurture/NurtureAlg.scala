@@ -25,7 +25,6 @@ import org.scalasteward.core.application.Config
 import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.ProcessResult.{Created, Ignored, Updated}
 import org.scalasteward.core.data._
-import org.scalasteward.core.edit.EditAttempt.ScalafixEdit
 import org.scalasteward.core.edit.{EditAlg, EditAttempt}
 import org.scalasteward.core.git.{Branch, Commit, GitAlg}
 import org.scalasteward.core.repoconfig.PullRequestUpdateStrategy
@@ -178,14 +177,13 @@ final class NurtureAlg[F[_]](config: Config)(implicit
           .traverse(vcsExtraAlg.getReleaseRelatedUrls(_, data.update))
       filesWithOldVersion <- gitAlg.findFilesContaining(data.repo, data.update.currentVersion)
       branchName = vcs.createBranch(config.vcsType, data.fork, data.update)
-      migrations = edits.collect { case ScalafixEdit(migration, _, _) => migration }
       requestData = NewPullRequestData.from(
         data,
         branchName,
         existingArtifactUrlsMap,
         releaseRelatedUrls.getOrElse(List.empty),
-        migrations,
-        filesWithOldVersion
+        filesWithOldVersion,
+        edits
       )
       pr <- vcsApiAlg.createPullRequest(data.repo, requestData)
       _ <- pullRequestRepository.createOrUpdate(
