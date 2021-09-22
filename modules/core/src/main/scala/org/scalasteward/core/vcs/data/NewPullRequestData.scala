@@ -50,10 +50,10 @@ object NewPullRequestData {
 
   def bodyFor(
       update: Update,
+      edits: List[EditAttempt],
       artifactIdToUrl: Map[String, Uri],
       releaseRelatedUrls: List[ReleaseRelatedUrl],
-      filesWithOldVersion: List[String],
-      edits: List[EditAttempt]
+      filesWithOldVersion: List[String]
   ): String = {
     val artifacts = artifactsWithOptionalUrl(update, artifactIdToUrl)
     val migrations = edits.collect { case ScalafixEdit(migration, _, _) => migration }
@@ -198,14 +198,14 @@ object NewPullRequestData {
   def from(
       data: UpdateData,
       branchName: String,
+      edits: List[EditAttempt] = List.empty,
       artifactIdToUrl: Map[String, Uri] = Map.empty,
       releaseRelatedUrls: List[ReleaseRelatedUrl] = List.empty,
-      filesWithOldVersion: List[String] = List.empty,
-      edits: List[EditAttempt] = List.empty
+      filesWithOldVersion: List[String] = List.empty
   ): NewPullRequestData =
     NewPullRequestData(
       title = git.commitMsgFor(data.update, data.repoConfig.commits),
-      body = bodyFor(data.update, artifactIdToUrl, releaseRelatedUrls, filesWithOldVersion, edits),
+      body = bodyFor(data.update, edits, artifactIdToUrl, releaseRelatedUrls, filesWithOldVersion),
       head = branchName,
       base = data.baseBranch
     )

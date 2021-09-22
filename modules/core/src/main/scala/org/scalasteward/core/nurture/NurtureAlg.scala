@@ -180,10 +180,10 @@ final class NurtureAlg[F[_]](config: Config)(implicit
       requestData = NewPullRequestData.from(
         data,
         branchName,
+        edits,
         existingArtifactUrlsMap,
         releaseRelatedUrls.getOrElse(List.empty),
-        filesWithOldVersion,
-        edits
+        filesWithOldVersion
       )
       pr <- vcsApiAlg.createPullRequest(data.repo, requestData)
       _ <- pullRequestRepository.createOrUpdate(
