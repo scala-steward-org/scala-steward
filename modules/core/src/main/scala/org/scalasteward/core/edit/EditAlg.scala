@@ -59,17 +59,17 @@ final class EditAlg[F[_]](implicit
               _ <- preCommit
               repo = data.repo
               migrations = scalafixMigrationsFinder.findMigrations(update)
-              cs1 <-
+              scalafixEdits <-
                 if (migrations.isEmpty) F.pure(Nil)
                 else
                   gitAlg.discardChanges(repo) *>
                     runScalafixMigrations(repo, data.config, migrations) <*
                     bumpVersion(update, files)
-              cs2 <- gitAlg
+              updateEdit <- gitAlg
                 .commitAllIfDirty(repo, git.commitMsgFor(update, data.config.commits))
                 .map(_.map(commit => UpdateEdit(update, commit)))
-              cs3 <- hookExecutor.execPostUpdateHooks(data, update)
-            } yield cs1 ++ cs2 ++ cs3
+              hooksEdits <- hookExecutor.execPostUpdateHooks(data, update)
+            } yield scalafixEdits ++ updateEdit ++ hooksEdits
         }
     }
 
