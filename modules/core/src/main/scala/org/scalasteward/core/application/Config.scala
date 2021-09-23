@@ -70,7 +70,7 @@ final case class Config(
     ignoreOptsFiles: Boolean,
     processCfg: ProcessCfg,
     scalafixCfg: ScalafixCfg,
-    artifactMigrations: Option[File],
+    artifactMigrations: List[Uri],
     cacheTtl: FiniteDuration,
     bitbucketServerCfg: BitbucketServerCfg,
     gitLabCfg: GitLabCfg,

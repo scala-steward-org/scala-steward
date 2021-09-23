@@ -47,7 +47,7 @@ class CliTest extends FunSuite {
         processTimeout = 30.minutes,
         maxBufferSize = 8192,
         scalafixMigrations = List(uri"/opt/scala-steward/extra-scalafix-migrations.conf"),
-        artifactMigrations = Some(File("/opt/scala-steward/extra-artifact-migrations.conf")),
+        artifactMigrations = List(uri"/opt/scala-steward/extra-artifact-migrations.conf"),
         githubAppId = Some(12345678),
         githubAppKeyFile = Some(File("example_app_key")),
         refreshBackoffPeriod = 1.day
