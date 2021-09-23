@@ -131,4 +131,4 @@ jobs:
       - name: Publish Docker image
         run: |
           docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-          sbt core/docker:publish
+          sbt core/Docker/publish
