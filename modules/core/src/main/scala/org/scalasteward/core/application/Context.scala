@@ -37,7 +37,8 @@ import org.scalasteward.core.persistence.{CachingKeyValueStore, JsonKeyValueStor
 import org.scalasteward.core.repocache._
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.scalafmt.ScalafmtAlg
-import org.scalasteward.core.update.{ArtifactMigrations, FilterAlg, PruningAlg, UpdateAlg}
+import org.scalasteward.core.update.artifact.{ArtifactMigrationsFinder, ArtifactMigrationsLoader}
+import org.scalasteward.core.update.{FilterAlg, PruningAlg, UpdateAlg}
 import org.scalasteward.core.util._
 import org.scalasteward.core.util.uri._
 import org.scalasteward.core.vcs.data.Repo
@@ -96,7 +97,8 @@ object Context {
     for {
       _ <- printBanner[F]
       vcsUser <- config.vcsUser[F]
-      artifactMigrations0 <- ArtifactMigrations.create[F](config)
+      artifactMigrationsLoader0 = new ArtifactMigrationsLoader[F]
+      artifactMigrationsFinder0 <- artifactMigrationsLoader0.createFinder(config.artifactMigrations)
       scalafixMigrationsLoader0 = new ScalafixMigrationsLoader[F]
       scalafixMigrationsFinder0 <- scalafixMigrationsLoader0.createFinder(config.scalafixCfg)
       urlChecker0 <- UrlChecker.create[F](config)
@@ -111,7 +113,7 @@ object Context {
       versionsStore <- JsonKeyValueStore
         .create[F, VersionsCache.Key, VersionsCache.Value]("versions", "2")
     } yield {
-      implicit val artifactMigrations: ArtifactMigrations = artifactMigrations0
+      implicit val artifactMigrationsFinder: ArtifactMigrationsFinder = artifactMigrationsFinder0
       implicit val scalafixMigrationsLoader: ScalafixMigrationsLoader[F] = scalafixMigrationsLoader0
       implicit val scalafixMigrationsFinder: ScalafixMigrationsFinder = scalafixMigrationsFinder0
       implicit val urlChecker: UrlChecker[F] = urlChecker0

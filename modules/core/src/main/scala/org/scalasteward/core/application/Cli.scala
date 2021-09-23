@@ -51,7 +51,7 @@ object Cli {
       maxBufferSize: Int = 8192,
       scalafixMigrations: List[Uri] = Nil,
       disableDefaultScalafixMigrations: Boolean = false,
-      artifactMigrations: Option[File] = None,
+      artifactMigrations: List[Uri] = Nil,
       cacheTtl: FiniteDuration = 2.hours,
       bitbucketServerUseDefaultReviewers: Boolean = false,
       gitlabMergeWhenPipelineSucceeds: Boolean = false,
