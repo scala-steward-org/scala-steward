@@ -20,7 +20,9 @@ import cats.MonadThrow
 import cats.syntax.all._
 import org.scalasteward.core.buildtool.sbt.{sbtArtifactId, sbtGroupId}
 import org.scalasteward.core.data._
-import org.scalasteward.core.git.{Commit, GitAlg}
+import org.scalasteward.core.edit.EditAttempt
+import org.scalasteward.core.edit.EditAttempt.HookEdit
+import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io.{ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.repocache.RepoCache
 import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtBinary, scalafmtGroupId}
@@ -36,7 +38,7 @@ final class HookExecutor[F[_]](implicit
     workspaceAlg: WorkspaceAlg[F],
     F: MonadThrow[F]
 ) {
-  def execPostUpdateHooks(data: RepoData, update: Update): F[List[Commit]] =
+  def execPostUpdateHooks(data: RepoData, update: Update): F[List[EditAttempt]] =
     HookExecutor.postUpdateHooks
       .filter { hook =>
         update.groupId === hook.groupId &&
@@ -45,21 +47,17 @@ final class HookExecutor[F[_]](implicit
         hook.enabledByConfig(data.config)
       }
       .distinctBy(_.command)
-      .flatTraverse(execPostUpdateHook(data.repo, update, _))
+      .traverse(execPostUpdateHook(data.repo, update, _))
 
-  private def execPostUpdateHook(
-      repo: Repo,
-      update: Update,
-      hook: PostUpdateHook
-  ): F[List[Commit]] =
+  private def execPostUpdateHook(repo: Repo, update: Update, hook: PostUpdateHook): F[EditAttempt] =
     for {
       _ <- logger.info(s"Executing post-update hook for ${hook.groupId}:${hook.artifactId.name}")
       repoDir <- workspaceAlg.repoDir(repo)
-      _ <- logger.attemptLogWarn_("Post-update hook failed") {
+      result <- logger.attemptLogWarn("Post-update hook failed") {
         processAlg.execMaybeSandboxed(hook.useSandbox)(hook.command, repoDir)
       }
       maybeCommit <- gitAlg.commitAllIfDirty(repo, hook.commitMessage(update))
-    } yield maybeCommit.toList
+    } yield HookEdit(hook, result.void, maybeCommit)
 }
 
 object HookExecutor {
