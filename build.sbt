@@ -40,7 +40,7 @@ ThisBuild / githubWorkflowPublish := Seq(
   WorkflowStep.Run(
     List(
       "docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}",
-      "sbt core/docker:publish"
+      "sbt core/Docker/publish"
     ),
     name = Some("Publish Docker image")
   )
