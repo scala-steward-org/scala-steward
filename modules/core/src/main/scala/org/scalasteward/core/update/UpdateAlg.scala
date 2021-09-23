@@ -21,13 +21,14 @@ import cats.syntax.all._
 import org.scalasteward.core.coursier.VersionsCache
 import org.scalasteward.core.data._
 import org.scalasteward.core.repoconfig.RepoConfig
+import org.scalasteward.core.update.artifact.ArtifactMigrationsFinder
 import org.scalasteward.core.util.Nel
 import scala.concurrent.duration.FiniteDuration
 
 final class UpdateAlg[F[_]](implicit
+    artifactMigrationsFinder: ArtifactMigrationsFinder,
     filterAlg: FilterAlg[F],
     versionsCache: VersionsCache[F],
-    artifactMigrations: ArtifactMigrations,
     F: Monad[F]
 ) {
   def findUpdate(
@@ -40,7 +41,7 @@ final class UpdateAlg[F[_]](implicit
       maybeNewerVersions = Nel.fromList(versions.filter(_ > current))
       maybeUpdate = maybeNewerVersions
         .map(vs => Update.Single(CrossDependency(dependency.value), vs.map(_.value)))
-        .orElse(artifactMigrations.findUpdateWithRenamedArtifact(dependency.value))
+        .orElse(artifactMigrationsFinder.findUpdateWithRenamedArtifact(dependency.value))
     } yield maybeUpdate
 
   def findUpdates(
