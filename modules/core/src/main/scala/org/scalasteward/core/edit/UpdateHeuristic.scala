@@ -215,7 +215,7 @@ object UpdateHeuristic {
         defaultReplaceVersion(_ => List("version"))(update)
       case update: Update.Single if MillAlg.isMillMainUpdate(update) =>
         // this is intended to update the `.mill-version`
-        content => if (content === update.currentVersion) Some(update.nextVersion) else None
+        content => if (content.trim() === update.currentVersion) Some(update.nextVersion) else None
       case _ =>
         _ => None
     }
