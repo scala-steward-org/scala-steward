@@ -24,7 +24,12 @@ import scala.concurrent.duration.FiniteDuration
 
 object logger {
   implicit final class LoggerOps[F[_]](private val logger: Logger[F]) extends AnyVal {
-    def attemptLogLabel[A](label: String, errorLabel: Option[String] = None)(fa: F[A])(implicit
+    def attemptLogWarnLabel_[A](label: String, errorLabel: Option[String] = None)(fa: F[A])(implicit
+        F: MonadThrow[F]
+    ): F[Unit] =
+      logger.info(label) >> attemptLogWarn_(s"${errorLabel.getOrElse(label)} failed")(fa)
+
+    def attemptLogErrorLabel[A](label: String, errorLabel: Option[String] = None)(fa: F[A])(implicit
         F: MonadThrow[F]
     ): F[Either[Throwable, A]] =
       logger.info(label) >> attemptLogError(s"${errorLabel.getOrElse(label)} failed")(fa)

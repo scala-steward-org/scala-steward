@@ -31,6 +31,18 @@ class FileGitAlgTest extends FunSuite {
     assertEquals(p.unsafeRunSync(), List("'Bot Doe'"))
   }
 
+  test("branchExists") {
+    val repo = rootDir / "branchExists"
+    val (foo, bar) = (Branch("foo"), Branch("bar"))
+    val p = for {
+      _ <- supplement.createRepo(repo)
+      _ <- ioGitAlg.createBranch(repo, foo)
+      b1 <- ioGitAlg.branchExists(repo, foo)
+      b2 <- ioGitAlg.branchExists(repo, bar)
+    } yield (b1, b2)
+    assertEquals(p.unsafeRunSync(), (true, false))
+  }
+
   test("cloneExists") {
     val repo = rootDir / "cloneExists"
     val p = for {
@@ -63,7 +75,6 @@ class FileGitAlgTest extends FunSuite {
     val repo = rootDir / "currentBranch"
     val p = for {
       _ <- supplement.createRepo(repo)
-      _ <- supplement.git("commit", "--allow-empty", "-m", "Initial commit")(repo)
       branch <- ioGitAlg.currentBranch(repo)
       _ <- ioGitAlg.latestSha1(repo, branch)
     } yield branch
@@ -163,6 +174,7 @@ object FileGitAlgTest {
         _ <- gitAlg.removeClone(repo)
         _ <- fileAlg.ensureExists(repo)
         _ <- git("init", ".")(repo)
+        _ <- git("commit", "--allow-empty", "-m", "Initial commit")(repo)
         _ <- gitAlg.setAuthor(repo, config.gitCfg.gitAuthor)
       } yield ()
 
