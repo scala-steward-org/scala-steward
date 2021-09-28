@@ -174,8 +174,8 @@ object FileGitAlgTest {
         _ <- gitAlg.removeClone(repo)
         _ <- fileAlg.ensureExists(repo)
         _ <- git("init", ".")(repo)
-        _ <- git("commit", "--allow-empty", "-m", "Initial commit")(repo)
         _ <- gitAlg.setAuthor(repo, config.gitCfg.gitAuthor)
+        _ <- git("commit", "--allow-empty", "-m", "Initial commit")(repo)
       } yield ()
 
     def createConflict(repo: File): F[Unit] =
