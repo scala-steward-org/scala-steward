@@ -76,11 +76,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
         update => {
           val updateData =
             UpdateData(data, fork, update, baseBranch, baseSha1, git.branchFor(update))
-          processUpdate(updateData).flatMap {
-            case result @ Created(newPrNumber) =>
-              closeObsoletePullRequests(updateData, newPrNumber).as[ProcessResult](result)
-            case result @ _ => F.pure(result)
-          }
+          processUpdate(updateData)
         },
         data.config.updates.limit
       )
@@ -98,7 +94,10 @@ final class NurtureAlg[F[_]](config: Config)(implicit
         case Some(pr) =>
           logger.info(s"Found PR ${pr.html_url}") >> updatePullRequest(data)
         case None =>
-          applyNewUpdate(data)
+          applyNewUpdate(data).flatTap {
+            case Created(newPrNumber) => closeObsoletePullRequests(data, newPrNumber)
+            case _                    => F.unit
+          }
       }
       _ <- pullRequests.headOption.traverse_ { pr =>
         pullRequestRepository.createOrUpdate(
@@ -148,16 +147,11 @@ final class NurtureAlg[F[_]](config: Config)(implicit
     }
   }
 
-  private def deleteRemoteBranch(repo: Repo, branch: Branch): F[Unit] = {
-    val remoteBranch = branch.withPrefix("origin/")
-    gitAlg.branchExists(repo, remoteBranch).flatMap {
-      case false => F.unit
-      case true =>
-        logger.attemptLogWarn_(s"Deleting remote branch ${branch.name} failed") {
-          gitAlg.deleteRemoteBranch(repo, branch)
-        }
+  private def deleteRemoteBranch(repo: Repo, branch: Branch): F[Unit] =
+    logger.attemptLogWarn_(s"Deleting remote branch ${branch.name} failed") {
+      val remoteBranch = branch.withPrefix("origin/")
+      gitAlg.branchExists(repo, remoteBranch).ifM(gitAlg.deleteRemoteBranch(repo, branch), F.unit)
     }
-  }
 
   def applyNewUpdate(data: UpdateData): F[ProcessResult] =
     gitAlg.returnToCurrentBranch(data.repo) {
