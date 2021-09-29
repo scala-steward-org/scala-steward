@@ -40,12 +40,12 @@ final class SelfCheckAlg[F[_]](config: Config)(implicit
     } yield ()
 
   private def checkGitBinary: F[Unit] =
-    logger.attemptLogWarn_(execFailedMessage("git")) {
+    logger.attemptWarn.log_(execFailedMessage("git")) {
       gitAlg.version.flatMap(output => logger.info(s"Using $output"))
     }
 
   private def checkScalafmtBinary: F[Unit] =
-    logger.attemptLogWarn_(execFailedMessage(scalafmtBinary)) {
+    logger.attemptWarn.log_(execFailedMessage(scalafmtBinary)) {
       scalafmtAlg.version.flatMap(output => logger.info(s"Using $output"))
     }
 
