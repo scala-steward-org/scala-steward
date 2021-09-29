@@ -124,9 +124,10 @@ final class NurtureAlg[F[_]](config: Config)(implicit
       oldUrl: Uri,
       oldNumber: PullRequestNumber,
       newNumber: PullRequestNumber
-  ): F[Unit] = {
-    val label = s"Closing obsolete PR ${oldUrl.renderString} for ${oldUpdate.show}"
-    logger.attemptLogWarnLabel_(label) {
+  ): F[Unit] =
+    logger.attemptWarn.bracket_(
+      s"Closing obsolete PR ${oldUrl.renderString} for ${oldUpdate.show}"
+    ) {
       for {
         _ <- pullRequestRepository.changeState(data.repo, oldUrl, PullRequestState.Closed)
         comment = s"Superseded by ${vcsApiAlg.referencePullRequest(newNumber)}."
@@ -145,10 +146,9 @@ final class NurtureAlg[F[_]](config: Config)(implicit
           else F.unit
       } yield ()
     }
-  }
 
   private def deleteRemoteBranch(repo: Repo, branch: Branch): F[Unit] =
-    logger.attemptLogWarn_(s"Deleting remote branch ${branch.name} failed") {
+    logger.attemptWarn.log_(s"Deleting remote branch ${branch.name} failed") {
       val remoteBranch = branch.withPrefix("origin/")
       gitAlg.branchExists(repo, remoteBranch).ifM(gitAlg.deleteRemoteBranch(repo, branch), F.unit)
     }

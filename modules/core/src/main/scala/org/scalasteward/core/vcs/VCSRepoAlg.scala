@@ -49,7 +49,7 @@ final class VCSRepoAlg[F[_]](config: Config)(implicit
     }
 
   private def initSubmodules(repo: Repo): F[Unit] =
-    logger.attemptLogWarn_("Initializing and cloning submodules failed") {
+    logger.attemptWarn.log_("Initializing and cloning submodules failed") {
       gitAlg.initSubmodules(repo)
     }
 

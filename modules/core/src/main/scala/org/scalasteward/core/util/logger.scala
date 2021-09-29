@@ -23,39 +23,31 @@ import org.typelevel.log4cats.Logger
 import scala.concurrent.duration.FiniteDuration
 
 object logger {
+  final class AttemptLoggerOps[F[_]](
+      logger: Logger[F],
+      logThrowable: (Throwable, String) => F[Unit]
+  )(implicit F: MonadThrow[F]) {
+    def log[A](msg: String)(fa: F[A]): F[Either[Throwable, A]] =
+      fa.attempt.flatTap(_.fold(t => logThrowable(t, msg), _ => F.unit))
+
+    def log_[A](msg: String)(fa: F[A]): F[Unit] =
+      log(msg)(fa).void
+
+    def bracket[A](label: String, errorLabel: Option[String] = None)(
+        fa: F[A]
+    ): F[Either[Throwable, A]] =
+      logger.info(label) >> log(s"${errorLabel.getOrElse(label)} failed")(fa)
+
+    def bracket_[A](label: String, errorLabel: Option[String] = None)(fa: F[A]): F[Unit] =
+      bracket(label, errorLabel)(fa).void
+  }
+
   implicit final class LoggerOps[F[_]](private val logger: Logger[F]) extends AnyVal {
-    def attemptLogWarnLabel_[A](label: String, errorLabel: Option[String] = None)(fa: F[A])(implicit
-        F: MonadThrow[F]
-    ): F[Unit] =
-      logger.info(label) >> attemptLogWarn_(s"${errorLabel.getOrElse(label)} failed")(fa)
+    def attemptWarn(implicit F: MonadThrow[F]): AttemptLoggerOps[F] =
+      new AttemptLoggerOps(logger, logger.warn(_)(_))
 
-    def attemptLogErrorLabel[A](label: String, errorLabel: Option[String] = None)(fa: F[A])(implicit
-        F: MonadThrow[F]
-    ): F[Either[Throwable, A]] =
-      logger.info(label) >> attemptLogError(s"${errorLabel.getOrElse(label)} failed")(fa)
-
-    def attemptLogWarn[A](message: String)(fa: F[A])(implicit
-        F: MonadThrow[F]
-    ): F[Either[Throwable, A]] =
-      attemptLogImpl(fa, logger.warn(_)(message))
-
-    def attemptLogWarn_[A](message: String)(fa: F[A])(implicit F: MonadThrow[F]): F[Unit] =
-      attemptLogImpl_(fa, logger.warn(_)(message))
-
-    def attemptLogError[A](message: String)(fa: F[A])(implicit
-        F: MonadThrow[F]
-    ): F[Either[Throwable, A]] =
-      attemptLogImpl(fa, logger.error(_)(message))
-
-    private def attemptLogImpl[A](fa: F[A], log: Throwable => F[Unit])(implicit
-        F: MonadThrow[F]
-    ): F[Either[Throwable, A]] =
-      fa.attempt.flatTap(_.fold(log, _ => F.unit))
-
-    private def attemptLogImpl_[A](fa: F[A], log: Throwable => F[Unit])(implicit
-        F: MonadThrow[F]
-    ): F[Unit] =
-      fa.attempt.flatMap(_.fold(log, _ => F.unit))
+    def attemptError(implicit F: MonadThrow[F]): AttemptLoggerOps[F] =
+      new AttemptLoggerOps(logger, logger.error(_)(_))
 
     def infoTimed[A](msg: FiniteDuration => String)(fa: F[A])(implicit
         dateTimeAlg: DateTimeAlg[F],
