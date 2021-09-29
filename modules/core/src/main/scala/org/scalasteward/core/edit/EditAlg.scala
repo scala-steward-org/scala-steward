@@ -97,7 +97,7 @@ final class EditAlg[F[_]](implicit
   ): F[EditAttempt] =
     for {
       _ <- logger.info(s"Running migration $migration")
-      result <- logger.attemptLogWarn("Scalafix migration failed")(
+      result <- logger.attemptWarn.log("Scalafix migration failed")(
         buildToolDispatcher.runMigration(repo, config, migration)
       )
       verb = if (result.isRight) "Applied" else "Failed"

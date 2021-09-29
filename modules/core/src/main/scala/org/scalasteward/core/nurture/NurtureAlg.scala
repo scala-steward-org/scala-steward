@@ -126,19 +126,20 @@ final class NurtureAlg[F[_]](config: Config)(implicit
       oldNumber: PullRequestNumber,
       newNumber: PullRequestNumber
   ): F[Unit] =
-    logger.attemptLogWarn_(s"Closing PR #$oldNumber failed") {
+    logger.attemptWarn.bracket_(
+      s"Closing obsolete PR ${oldUrl.renderString} for ${oldUpdate.show}"
+    ) {
       for {
-        _ <- logger.info(s"Closing obsolete PR ${oldUrl.renderString} for ${oldUpdate.show}")
+        _ <- pullRequestRepository.changeState(repo, oldUrl, PullRequestState.Closed)
         comment = s"Superseded by ${vcsApiAlg.referencePullRequest(newNumber)}."
         _ <- vcsApiAlg.commentPullRequest(repo, oldNumber, comment)
         _ <- vcsApiAlg.closePullRequest(repo, oldNumber)
         _ <- removeRemoteBranch(repo, git.branchFor(oldUpdate))
-        _ <- pullRequestRepository.changeState(repo, oldUrl, PullRequestState.Closed)
       } yield ()
     }
 
   private def removeRemoteBranch(repo: Repo, branch: Branch): F[Unit] =
-    logger.attemptLogWarn_(s"Removing remote branch ${branch.name} failed") {
+    logger.attemptWarn.log_(s"Removing remote branch ${branch.name} failed") {
       gitAlg.removeBranch(repo, branch)
     }
 
