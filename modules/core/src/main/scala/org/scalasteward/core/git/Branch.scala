@@ -18,7 +18,9 @@ package org.scalasteward.core.git
 
 import io.circe.{Decoder, Encoder}
 
-final case class Branch(name: String)
+final case class Branch(name: String) {
+  def withPrefix(prefix: String): Branch = Branch(prefix + name)
+}
 
 object Branch {
   val head: Branch = Branch("HEAD")

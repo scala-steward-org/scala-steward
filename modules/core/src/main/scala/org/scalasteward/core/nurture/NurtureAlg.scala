@@ -76,11 +76,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
         update => {
           val updateData =
             UpdateData(data, fork, update, baseBranch, baseSha1, git.branchFor(update))
-          processUpdate(updateData).flatMap {
-            case result @ Created(newPrNumber) =>
-              closeObsoletePullRequests(updateData, newPrNumber).as[ProcessResult](result)
-            case result @ _ => F.pure(result)
-          }
+          processUpdate(updateData)
         },
         data.config.updates.limit
       )
@@ -94,11 +90,14 @@ final class NurtureAlg[F[_]](config: Config)(implicit
       result <- pullRequests.headOption match {
         case Some(pr) if pr.isClosed =>
           logger.info(s"PR ${pr.html_url} is closed") >>
-            removeRemoteBranch(data.repo, data.updateBranch).as(Ignored)
+            deleteRemoteBranch(data.repo, data.updateBranch).as(Ignored)
         case Some(pr) =>
           logger.info(s"Found PR ${pr.html_url}") >> updatePullRequest(data)
         case None =>
-          applyNewUpdate(data)
+          applyNewUpdate(data).flatTap {
+            case Created(newPrNumber) => closeObsoletePullRequests(data, newPrNumber)
+            case _                    => F.unit
+          }
       }
       _ <- pullRequests.headOption.traverse_ { pr =>
         pullRequestRepository.createOrUpdate(
@@ -115,12 +114,12 @@ final class NurtureAlg[F[_]](config: Config)(implicit
   def closeObsoletePullRequests(data: UpdateData, newNumber: PullRequestNumber): F[Unit] =
     pullRequestRepository.getObsoleteOpenPullRequests(data.repo, data.update).flatMap {
       _.traverse_ { case (oldNumber, oldUrl, oldUpdate) =>
-        closeObsoletePullRequest(data.repo, oldUpdate, oldUrl, oldNumber, newNumber)
+        closeObsoletePullRequest(data, oldUpdate, oldUrl, oldNumber, newNumber)
       }
     }
 
   private def closeObsoletePullRequest(
-      repo: Repo,
+      data: UpdateData,
       oldUpdate: Update,
       oldUrl: Uri,
       oldNumber: PullRequestNumber,
@@ -130,17 +129,28 @@ final class NurtureAlg[F[_]](config: Config)(implicit
       s"Closing obsolete PR ${oldUrl.renderString} for ${oldUpdate.show}"
     ) {
       for {
-        _ <- pullRequestRepository.changeState(repo, oldUrl, PullRequestState.Closed)
+        _ <- pullRequestRepository.changeState(data.repo, oldUrl, PullRequestState.Closed)
         comment = s"Superseded by ${vcsApiAlg.referencePullRequest(newNumber)}."
-        _ <- vcsApiAlg.commentPullRequest(repo, oldNumber, comment)
-        _ <- vcsApiAlg.closePullRequest(repo, oldNumber)
-        _ <- removeRemoteBranch(repo, git.branchFor(oldUpdate))
+        _ <- vcsApiAlg.commentPullRequest(data.repo, oldNumber, comment)
+        oldBranch = git.branchFor(oldUpdate)
+        oldRemoteBranch = oldBranch.withPrefix("origin/")
+        oldBranchExists <- gitAlg.branchExists(data.repo, oldRemoteBranch)
+        authors <-
+          if (oldBranchExists) gitAlg.branchAuthors(data.repo, oldRemoteBranch, data.baseBranch)
+          else List.empty.pure[F]
+        _ <-
+          if (authors.size <= 1) for {
+            _ <- vcsApiAlg.closePullRequest(data.repo, oldNumber)
+            _ <- deleteRemoteBranch(data.repo, oldBranch)
+          } yield ()
+          else F.unit
       } yield ()
     }
 
-  private def removeRemoteBranch(repo: Repo, branch: Branch): F[Unit] =
-    logger.attemptWarn.log_(s"Removing remote branch ${branch.name} failed") {
-      gitAlg.removeBranch(repo, branch)
+  private def deleteRemoteBranch(repo: Repo, branch: Branch): F[Unit] =
+    logger.attemptWarn.log_(s"Deleting remote branch ${branch.name} failed") {
+      val remoteBranch = branch.withPrefix("origin/")
+      gitAlg.branchExists(repo, remoteBranch).ifM(gitAlg.deleteRemoteBranch(repo, branch), F.unit)
     }
 
   def applyNewUpdate(data: UpdateData): F[ProcessResult] =
@@ -215,9 +225,8 @@ final class NurtureAlg[F[_]](config: Config)(implicit
       case true => (false, "PR has been merged").pure[F]
       case false =>
         gitAlg.branchAuthors(data.repo, data.updateBranch, data.baseBranch).flatMap { authors =>
-          val distinctAuthors = authors.distinct
-          if (distinctAuthors.length >= 2)
-            (false, s"PR has commits by ${distinctAuthors.mkString(", ")}").pure[F]
+          if (authors.length >= 2)
+            (false, s"PR has commits by ${authors.mkString(", ")}").pure[F]
           else if (data.repoConfig.updatePullRequestsOrDefault === PullRequestUpdateStrategy.Always)
             (true, "PR update strategy is set to always").pure[F]
           else
