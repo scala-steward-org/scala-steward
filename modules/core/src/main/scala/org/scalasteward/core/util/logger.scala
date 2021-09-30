@@ -33,13 +33,13 @@ object logger {
     def log_[A](msg: String)(fa: F[A]): F[Unit] =
       log(msg)(fa).void
 
-    def bracket[A](label: String, errorLabel: Option[String] = None)(
+    def label[A](infoLabel: String, errorLabel: Option[String] = None)(
         fa: F[A]
     ): F[Either[Throwable, A]] =
-      logger.info(label) >> log(s"${errorLabel.getOrElse(label)} failed")(fa)
+      logger.info(infoLabel) >> log(s"${errorLabel.getOrElse(infoLabel)} failed")(fa)
 
-    def bracket_[A](label: String, errorLabel: Option[String] = None)(fa: F[A]): F[Unit] =
-      bracket(label, errorLabel)(fa).void
+    def label_[A](infoLabel: String, errorLabel: Option[String] = None)(fa: F[A]): F[Unit] =
+      label(infoLabel, errorLabel)(fa).void
   }
 
   implicit final class LoggerOps[F[_]](private val logger: Logger[F]) extends AnyVal {
