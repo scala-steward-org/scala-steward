@@ -7,12 +7,11 @@ import org.scalasteward.core.mock.{MockEff, MockState}
 import org.scalasteward.core.util.logger.LoggerOps
 
 class loggerTest extends CatsEffectSuite {
-  test("attemptError.bracket_") {
+  test("attemptError.label_") {
     final case class Err(msg: String) extends Throwable(msg)
     val err = Err("hmm?")
-    logger.attemptError.bracket_("run")(MockEff.raiseError(err)).runS(MockState.empty).map {
-      state =>
-        assertEquals(state.trace, Vector(Log("run"), Log((Some(err), "run failed"))))
+    logger.attemptError.label_("run")(MockEff.raiseError(err)).runS(MockState.empty).map { state =>
+      assertEquals(state.trace, Vector(Log("run"), Log((Some(err), "run failed"))))
     }
   }
 
