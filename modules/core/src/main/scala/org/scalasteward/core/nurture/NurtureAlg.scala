@@ -125,9 +125,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
       oldNumber: PullRequestNumber,
       newNumber: PullRequestNumber
   ): F[Unit] =
-    logger.attemptWarn.bracket_(
-      s"Closing obsolete PR ${oldUrl.renderString} for ${oldUpdate.show}"
-    ) {
+    logger.attemptWarn.label_(s"Closing obsolete PR ${oldUrl.renderString} for ${oldUpdate.show}") {
       for {
         _ <- pullRequestRepository.changeState(data.repo, oldUrl, PullRequestState.Closed)
         comment = s"Superseded by ${vcsApiAlg.referencePullRequest(newNumber)}."
