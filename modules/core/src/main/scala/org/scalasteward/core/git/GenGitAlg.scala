@@ -26,6 +26,8 @@ import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 trait GenGitAlg[F[_], Repo] {
   def branchAuthors(repo: Repo, branch: Branch, base: Branch): F[List[String]]
 
+  def branchExists(repo: Repo, branch: Branch): F[Boolean]
+
   def checkoutBranch(repo: Repo, branch: Branch): F[Unit]
 
   def clone(repo: Repo, url: Uri): F[Unit]
@@ -38,9 +40,9 @@ trait GenGitAlg[F[_], Repo] {
 
   def createBranch(repo: Repo, branch: Branch): F[Unit]
 
-  def removeBranch(repo: Repo, branch: Branch): F[Unit]
-
   def currentBranch(repo: Repo): F[Branch]
+
+  def deleteRemoteBranch(repo: Repo, branch: Branch): F[Unit]
 
   /** Discards unstaged changes. */
   def discardChanges(repo: Repo): F[Unit]
@@ -83,6 +85,9 @@ trait GenGitAlg[F[_], Repo] {
       override def branchAuthors(repo: A, branch: Branch, base: Branch): F[List[String]] =
         f(repo).flatMap(self.branchAuthors(_, branch, base))
 
+      override def branchExists(repo: A, branch: Branch): F[Boolean] =
+        f(repo).flatMap(self.branchExists(_, branch))
+
       override def checkoutBranch(repo: A, branch: Branch): F[Unit] =
         f(repo).flatMap(self.checkoutBranch(_, branch))
 
@@ -101,11 +106,11 @@ trait GenGitAlg[F[_], Repo] {
       override def createBranch(repo: A, branch: Branch): F[Unit] =
         f(repo).flatMap(self.createBranch(_, branch))
 
-      override def removeBranch(repo: A, branch: Branch): F[Unit] =
-        f(repo).flatMap(self.removeBranch(_, branch))
-
       override def currentBranch(repo: A): F[Branch] =
         f(repo).flatMap(self.currentBranch)
+
+      override def deleteRemoteBranch(repo: A, branch: Branch): F[Unit] =
+        f(repo).flatMap(self.deleteRemoteBranch(_, branch))
 
       override def discardChanges(repo: A): F[Unit] =
         f(repo).flatMap(self.discardChanges)

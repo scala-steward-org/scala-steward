@@ -14,20 +14,24 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.git
+package org.scalasteward.core.update.artifact
 
-import io.circe.{Decoder, Encoder}
+import io.circe.Decoder
+import io.circe.generic.extras.{semiauto, Configuration}
+import org.scalasteward.core.data.GroupId
 
-final case class Branch(name: String) {
-  def withPrefix(prefix: String): Branch = Branch(prefix + name)
-}
+final case class ArtifactChange(
+    groupIdBefore: Option[GroupId],
+    groupIdAfter: GroupId,
+    artifactIdBefore: Option[String],
+    artifactIdAfter: String,
+    initialVersion: String
+)
 
-object Branch {
-  val head: Branch = Branch("HEAD")
+object ArtifactChange {
+  implicit val configuration: Configuration =
+    Configuration.default.withDefaults
 
-  implicit val branchDecoder: Decoder[Branch] =
-    Decoder[String].map(Branch.apply)
-
-  implicit val branchEncoder: Encoder[Branch] =
-    Encoder[String].contramap(_.name)
+  implicit val decoder: Decoder[ArtifactChange] =
+    semiauto.deriveConfiguredDecoder
 }

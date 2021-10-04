@@ -25,8 +25,7 @@ import org.scalasteward.core.application.Config
 import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.ProcessResult.{Created, Ignored, Updated}
 import org.scalasteward.core.data._
-import org.scalasteward.core.edit.EditAlg
-import org.scalasteward.core.edit.scalafix.ScalafixMigrationsFinder
+import org.scalasteward.core.edit.{EditAlg, EditAttempt}
 import org.scalasteward.core.git.{Branch, Commit, GitAlg}
 import org.scalasteward.core.repoconfig.PullRequestUpdateStrategy
 import org.scalasteward.core.util.UrlChecker
@@ -42,7 +41,6 @@ final class NurtureAlg[F[_]](config: Config)(implicit
     gitAlg: GitAlg[F],
     logger: Logger[F],
     pullRequestRepository: PullRequestRepository[F],
-    scalafixMigrationsFinder: ScalafixMigrationsFinder,
     vcsApiAlg: VCSApiAlg[F],
     vcsExtraAlg: VCSExtraAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
@@ -78,11 +76,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
         update => {
           val updateData =
             UpdateData(data, fork, update, baseBranch, baseSha1, git.branchFor(update))
-          processUpdate(updateData).flatMap {
-            case result @ Created(newPrNumber) =>
-              closeObsoletePullRequests(updateData, newPrNumber).as[ProcessResult](result)
-            case result @ _ => F.pure(result)
-          }
+          processUpdate(updateData)
         },
         data.config.updates.limit
       )
@@ -96,11 +90,14 @@ final class NurtureAlg[F[_]](config: Config)(implicit
       result <- pullRequests.headOption match {
         case Some(pr) if pr.isClosed =>
           logger.info(s"PR ${pr.html_url} is closed") >>
-            removeRemoteBranch(data.repo, data.updateBranch).as(Ignored)
+            deleteRemoteBranch(data.repo, data.updateBranch).as(Ignored)
         case Some(pr) =>
           logger.info(s"Found PR ${pr.html_url}") >> updatePullRequest(data)
         case None =>
-          applyNewUpdate(data)
+          applyNewUpdate(data).flatTap {
+            case Created(newPrNumber) => closeObsoletePullRequests(data, newPrNumber)
+            case _                    => F.unit
+          }
       }
       _ <- pullRequests.headOption.traverse_ { pr =>
         pullRequestRepository.createOrUpdate(
@@ -117,40 +114,51 @@ final class NurtureAlg[F[_]](config: Config)(implicit
   def closeObsoletePullRequests(data: UpdateData, newNumber: PullRequestNumber): F[Unit] =
     pullRequestRepository.getObsoleteOpenPullRequests(data.repo, data.update).flatMap {
       _.traverse_ { case (oldNumber, oldUrl, oldUpdate) =>
-        closeObsoletePullRequest(data.repo, oldUpdate, oldUrl, oldNumber, newNumber)
+        closeObsoletePullRequest(data, oldUpdate, oldUrl, oldNumber, newNumber)
       }
     }
 
   private def closeObsoletePullRequest(
-      repo: Repo,
+      data: UpdateData,
       oldUpdate: Update,
       oldUrl: Uri,
       oldNumber: PullRequestNumber,
       newNumber: PullRequestNumber
   ): F[Unit] =
-    logger.attemptLogWarn_(s"Closing PR #$oldNumber failed") {
+    logger.attemptWarn.label_(s"Closing obsolete PR ${oldUrl.renderString} for ${oldUpdate.show}") {
       for {
-        _ <- logger.info(s"Closing obsolete PR ${oldUrl.renderString} for ${oldUpdate.show}")
+        _ <- pullRequestRepository.changeState(data.repo, oldUrl, PullRequestState.Closed)
         comment = s"Superseded by ${vcsApiAlg.referencePullRequest(newNumber)}."
-        _ <- vcsApiAlg.commentPullRequest(repo, oldNumber, comment)
-        _ <- vcsApiAlg.closePullRequest(repo, oldNumber)
-        _ <- removeRemoteBranch(repo, git.branchFor(oldUpdate))
-        _ <- pullRequestRepository.changeState(repo, oldUrl, PullRequestState.Closed)
+        _ <- vcsApiAlg.commentPullRequest(data.repo, oldNumber, comment)
+        oldBranch = git.branchFor(oldUpdate)
+        oldRemoteBranch = oldBranch.withPrefix("origin/")
+        oldBranchExists <- gitAlg.branchExists(data.repo, oldRemoteBranch)
+        authors <-
+          if (oldBranchExists) gitAlg.branchAuthors(data.repo, oldRemoteBranch, data.baseBranch)
+          else List.empty.pure[F]
+        _ <-
+          if (authors.size <= 1) for {
+            _ <- vcsApiAlg.closePullRequest(data.repo, oldNumber)
+            _ <- deleteRemoteBranch(data.repo, oldBranch)
+          } yield ()
+          else F.unit
       } yield ()
     }
 
-  private def removeRemoteBranch(repo: Repo, branch: Branch): F[Unit] =
-    logger.attemptLogWarn_(s"Removing remote branch ${branch.name} failed") {
-      gitAlg.removeBranch(repo, branch)
+  private def deleteRemoteBranch(repo: Repo, branch: Branch): F[Unit] =
+    logger.attemptWarn.log_(s"Deleting remote branch ${branch.name} failed") {
+      val remoteBranch = branch.withPrefix("origin/")
+      gitAlg.branchExists(repo, remoteBranch).ifM(gitAlg.deleteRemoteBranch(repo, branch), F.unit)
     }
 
   def applyNewUpdate(data: UpdateData): F[ProcessResult] =
     gitAlg.returnToCurrentBranch(data.repo) {
       val createBranch = logger.info(s"Create branch ${data.updateBranch.name}") >>
         gitAlg.createBranch(data.repo, data.updateBranch)
-      editAlg.applyUpdate(data.repoData, data.update, createBranch).flatMap { editCommits =>
+      editAlg.applyUpdate(data.repoData, data.update, createBranch).flatMap { edits =>
+        val editCommits = edits.flatMap(_.maybeCommit)
         if (editCommits.isEmpty) logger.warn("No commits created").as(Ignored)
-        else pushCommits(data, editCommits) >> createPullRequest(data)
+        else pushCommits(data, editCommits) >> createPullRequest(data, edits)
       }
     }
 
@@ -162,7 +170,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
         _ <- gitAlg.push(data.repo, data.updateBranch)
       } yield Updated
 
-  def createPullRequest(data: UpdateData): F[ProcessResult] =
+  def createPullRequest(data: UpdateData, edits: List[EditAttempt]): F[ProcessResult] =
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
       dependenciesWithNextVersion =
@@ -178,13 +186,12 @@ final class NurtureAlg[F[_]](config: Config)(implicit
           .traverse(vcsExtraAlg.getReleaseRelatedUrls(_, data.update))
       filesWithOldVersion <- gitAlg.findFilesContaining(data.repo, data.update.currentVersion)
       branchName = vcs.createBranch(config.vcsType, data.fork, data.update)
-      migrations = scalafixMigrationsFinder.findMigrations(data.update)
       requestData = NewPullRequestData.from(
         data,
         branchName,
+        edits,
         existingArtifactUrlsMap,
         releaseRelatedUrls.getOrElse(List.empty),
-        migrations,
         filesWithOldVersion
       )
       pr <- vcsApiAlg.createPullRequest(data.repo, requestData)
@@ -216,9 +223,8 @@ final class NurtureAlg[F[_]](config: Config)(implicit
       case true => (false, "PR has been merged").pure[F]
       case false =>
         gitAlg.branchAuthors(data.repo, data.updateBranch, data.baseBranch).flatMap { authors =>
-          val distinctAuthors = authors.distinct
-          if (distinctAuthors.length >= 2)
-            (false, s"PR has commits by ${distinctAuthors.mkString(", ")}").pure[F]
+          if (authors.length >= 2)
+            (false, s"PR has commits by ${authors.mkString(", ")}").pure[F]
           else if (data.repoConfig.updatePullRequestsOrDefault === PullRequestUpdateStrategy.Always)
             (true, "PR update strategy is set to always").pure[F]
           else
@@ -237,7 +243,8 @@ final class NurtureAlg[F[_]](config: Config)(implicit
         s"Merge branch ${data.baseBranch.name} into ${data.updateBranch.name} and apply again"
       )
       maybeMergeCommit <- gitAlg.mergeTheirs(data.repo, data.baseBranch)
-      editCommits <- editAlg.applyUpdate(data.repoData, data.update)
+      edits <- editAlg.applyUpdate(data.repoData, data.update)
+      editCommits = edits.flatMap(_.maybeCommit)
       result <- pushCommits(data, maybeMergeCommit.toList ++ editCommits)
     } yield result
 }

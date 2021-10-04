@@ -2,13 +2,13 @@
 
 Scala Steward can look for newer versions of artifacts with different group Ids, artifact ids, or both different.
 
-## Adding artifact migration rules to Scala Steward
+## Adding artifact migrations to Scala Steward
 
-By default, scala-steward applies the artifact migrations rules defined in the [default list][migrations]. When running 
-Scala Steward you can also specify a file (via the `--artifact-migrations` command-line option) that contains 
-additional migrations.
-
-These files are in [HOCON][HOCON] format and should look like this:
+By default, Scala Steward applies the artifact migrations defined in the
+[default list][migrations]. When running Scala Steward you can also specify
+files or URLs (via the `--artifact-migrations` command-line option) that
+contain additional migrations. These files are in [HOCON][HOCON] format and
+should look like this:
 ```hocon
 changes = [
   {
@@ -28,5 +28,8 @@ The fields `groupIdBefore` and `artifactIdBefore` are optional. If just `groupId
 example, then only the group id will get renamed. If just `artifactIdBefore` is specified, then only the artifact id
 will get renamed. Specifying both `groupIdBefore` and `artifactIdBefore` will rename both.
 
+Pull requests that added artifact migrations can be found [here][migration-prs].
+
 [migrations]: https://github.com/scala-steward-org/scala-steward/blob/master/modules/core/src/main/resources/artifact-migrations.conf
+[migration-prs]: https://github.com/scala-steward-org/scala-steward/pulls?q=label%3Aartifact-migration
 [HOCON]: https://github.com/lightbend/config/blob/master/HOCON.md

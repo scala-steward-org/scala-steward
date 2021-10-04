@@ -82,7 +82,7 @@ final class StewardAlg[F[_]](config: Config)(implicit
   private def steward(repo: Repo): F[Either[Throwable, Unit]] = {
     val label = s"Steward ${repo.show}"
     logger.infoTotalTime(label) {
-      logger.attemptLogLabel(util.string.lineLeftRight(label), Some(label)) {
+      logger.attemptError.label(util.string.lineLeftRight(label), Some(label)) {
         F.guarantee(
           repoCacheAlg.checkCache(repo).flatMap { case (data, fork) =>
             pruningAlg.needsAttention(data).flatMap { case (attentionNeeded, updates) =>

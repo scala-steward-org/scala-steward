@@ -32,7 +32,10 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
     F: MonadCancelThrow[F]
 ) extends GenGitAlg[F, File] {
   override def branchAuthors(repo: File, branch: Branch, base: Branch): F[List[String]] =
-    git("log", "--pretty=format:'%an'", dotdot(base, branch))(repo)
+    git("log", "--pretty=format:'%an'", dotdot(base, branch))(repo).map(_.distinct)
+
+  override def branchExists(repo: File, branch: Branch): F[Boolean] =
+    git("branch", "--list", "--no-color", "--all", branch.name)(repo).map(_.mkString.trim.nonEmpty)
 
   override def checkoutBranch(repo: File, branch: Branch): F[Unit] =
     git("checkout", branch.name)(repo).void
@@ -58,12 +61,12 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
   override def createBranch(repo: File, branch: Branch): F[Unit] =
     git("checkout", "-b", branch.name)(repo).void
 
-  override def removeBranch(repo: File, branch: Branch): F[Unit] =
-    git("push", "origin", "--delete", branch.name)(repo).void
-
   override def currentBranch(repo: File): F[Branch] =
     git("rev-parse", "--abbrev-ref", Branch.head.name)(repo)
       .map(lines => Branch(lines.mkString.trim))
+
+  override def deleteRemoteBranch(repo: File, branch: Branch): F[Unit] =
+    git("push", "origin", "--delete", branch.name)(repo).void
 
   override def discardChanges(repo: File): F[Unit] =
     git("checkout", "--", ".")(repo).void

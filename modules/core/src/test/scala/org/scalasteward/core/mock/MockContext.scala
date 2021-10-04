@@ -4,9 +4,11 @@ import cats.effect.unsafe.implicits.global
 import org.http4s.HttpApp
 import org.http4s.client.Client
 import org.scalasteward.core.application.Context
-import org.scalasteward.core.edit.scalafix.ScalafixMigrationsLoaderTest
+import org.scalasteward.core.edit.scalafix.ScalafixMigrationsLoader
+import org.scalasteward.core.io.FileAlgTest.ioFileAlg
 import org.scalasteward.core.io._
 import org.scalasteward.core.mock.MockConfig.config
+import org.scalasteward.core.update.artifact.ArtifactMigrationsLoader
 import org.typelevel.log4cats.Logger
 
 object MockContext {
@@ -16,6 +18,12 @@ object MockContext {
   implicit private val processAlg: ProcessAlg[MockEff] = MockProcessAlg.create(config.processCfg)
   implicit private val workspaceAlg: WorkspaceAlg[MockEff] = new MockWorkspaceAlg
 
-  val context: Context[MockEff] =
-    ScalafixMigrationsLoaderTest.mockState.toRef.flatMap(Context.step1(config).run).unsafeRunSync()
+  val mockState: MockState = MockState.empty.addUris(
+    ArtifactMigrationsLoader.defaultArtifactMigrationsUrl ->
+      ioFileAlg.readResource("artifact-migrations.conf").unsafeRunSync(),
+    ScalafixMigrationsLoader.defaultScalafixMigrationsUrl ->
+      ioFileAlg.readResource("scalafix-migrations.conf").unsafeRunSync()
+  )
+
+  val context: Context[MockEff] = mockState.toRef.flatMap(Context.step1(config).run).unsafeRunSync()
 }

@@ -258,7 +258,7 @@ class EditAlgTest extends FunSuite {
       newerVersions = Nel.of("0.9.9")
     )
     val original = Map(
-      ".mill-version" -> """0.9.5""",
+      ".mill-version" -> "0.9.5 \n ",
       ".travis.yml" -> """- TEST_MILL_VERSION=0.9.5"""
     )
     val expected = Map(
