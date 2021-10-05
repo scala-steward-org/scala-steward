@@ -682,6 +682,30 @@ class UpdateHeuristicTest extends FunSuite {
     val update = Single("org.typelevel" % "cats-core" % "2.4.1", Nel.of("2.4.2"))
     assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.original.name)
   }
+
+  test("PR 2232 part 1: Do not match the several artifacts as single artifact") {
+    assertEquals(
+      Single("org.typelevel" % "kind-projector" % "0.13.0", Nel.of("0.13.2")).replaceVersionIn(
+        """addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")
+          |addSbtPlugin("com.codecommit" % "sbt-github-actions" % "0.13.0")""".stripMargin
+      ),
+      None -> UpdateHeuristic.specific.name,
+      clue = "project...0.4.3(newline)...0.13.0 should not be updated"
+    )
+  }
+
+  test("PR 2232 part 2: Do not update the part of version") {
+    assertEquals(
+      Single("org.codehaus.plexus" % "plexus-interpolation" % "1.1", Nel.of("1.26"))
+        .replaceVersionIn("""<plexus-utils.version>3.3.0</plexus-utils.version>
+                            |<groupId>org.codehaus.plexus</groupId>
+                            |<artifactId>plexus-utils</artifactId>
+                            |<version>3.1.1</version>
+                            |""".stripMargin),
+      None -> UpdateHeuristic.specific.name,
+      clue = "1.1 of 3.1.1 should not be updated"
+    )
+  }
 }
 
 object UpdateHeuristicTest {
