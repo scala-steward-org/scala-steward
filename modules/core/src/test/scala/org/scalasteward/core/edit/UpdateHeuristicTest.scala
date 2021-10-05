@@ -164,7 +164,7 @@ class UpdateHeuristicTest extends FunSuite {
     assertEquals(
       Group("com.sky" % Nel.of("akka-streams", "akka-streams-kafka") % "1.2.0", Nel.one("1.3.0"))
         .replaceVersionIn(original),
-      Some(expected) -> UpdateHeuristic.completeGroupId.name
+      Some(expected) -> UpdateHeuristic.original.name
     )
   }
 
@@ -583,14 +583,15 @@ class UpdateHeuristicTest extends FunSuite {
     )
   }
 
-  test("fail on versions with line break") {
+  test("success on versions with line break") {
     val original = """val scalajsJqueryVersion =
                      |  "0.9.3"""".stripMargin
+    val expected = """val scalajsJqueryVersion =
+                     |  "0.9.4"""".stripMargin
     assertEquals(
       Single("be.doeraene" % "scalajs-jquery" % "0.9.3", Nel.of("0.9.4"))
-        .replaceVersionIn(original)
-        ._1,
-      None
+        .replaceVersionIn(original),
+      Some(expected) -> UpdateHeuristic.original.name
     )
   }
 
