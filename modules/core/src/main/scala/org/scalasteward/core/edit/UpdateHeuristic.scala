@@ -91,7 +91,7 @@ object UpdateHeuristic {
       searchTermsToAlternation(getSearchTerms(update).map(removeCommonSuffix)).map { searchTerms =>
         val prefix = getPrefixRegex(update).getOrElse("")
         val currentVersion = Regex.quote(update.currentVersion)
-        s"(?is)(.*?)($prefix$searchTerms.*?)$currentVersion(.?)".r
+        s"(?is)(.*?)($prefix$searchTerms(?:(?!\\d\\.\\d).)*?)$currentVersion(.?)".r
       }
 
     def replaceVersionF(update: Update): String => Option[String] =
