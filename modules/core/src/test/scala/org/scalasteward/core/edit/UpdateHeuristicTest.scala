@@ -164,7 +164,7 @@ class UpdateHeuristicTest extends FunSuite {
     assertEquals(
       Group("com.sky" % Nel.of("akka-streams", "akka-streams-kafka") % "1.2.0", Nel.one("1.3.0"))
         .replaceVersionIn(original),
-      Some(expected) -> UpdateHeuristic.original.name
+      Some(expected) -> UpdateHeuristic.completeGroupId.name
     )
   }
 
@@ -583,11 +583,11 @@ class UpdateHeuristicTest extends FunSuite {
     )
   }
 
-  test("success on versions with line break") {
+  test("fail on versions with line break") {
     val original = """val scalajsJqueryVersion =
                      |  "0.9.3"""".stripMargin
     assertEquals(
-      Single("be.doeraene" % "scalajs-jquery" % "0.9.4", Nel.of("0.9.4"))
+      Single("be.doeraene" % "scalajs-jquery" % "0.9.3", Nel.of("0.9.4"))
         .replaceVersionIn(original)
         ._1,
       None
@@ -681,28 +681,6 @@ class UpdateHeuristicTest extends FunSuite {
                      |""".stripMargin
     val update = Single("org.typelevel" % "cats-core" % "2.4.1", Nel.of("2.4.2"))
     assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.original.name)
-  }
-
-  test("issue 2099: pom.xml multiline") {
-    val original =
-      """  <dependency>
-        |    <groupId>commons-io</groupId>
-        |    <artifactId>commons-io</artifactId>
-        |    <version>2.6</version>
-        |  </dependency>
-        |""".stripMargin
-    val expected =
-      """  <dependency>
-        |    <groupId>commons-io</groupId>
-        |    <artifactId>commons-io</artifactId>
-        |    <version>2.8.0</version>
-        |  </dependency>
-        |""".stripMargin
-    assertEquals(
-      Single("commons-io" % "commons-io" % "2.6", Nel.of("2.8.0"))
-        .replaceVersionIn(original),
-      Some(expected) -> UpdateHeuristic.strict.name
-    )
   }
 }
 

@@ -91,7 +91,7 @@ object UpdateHeuristic {
       searchTermsToAlternation(getSearchTerms(update).map(removeCommonSuffix)).map { searchTerms =>
         val prefix = getPrefixRegex(update).getOrElse("")
         val currentVersion = Regex.quote(update.currentVersion)
-        s"(?is)(.*?)($prefix$searchTerms.*?)$currentVersion(.?)".r
+        s"(?i)(.*)($prefix$searchTerms.*?)$currentVersion(.?)".r
       }
 
     def replaceVersionF(update: Update): String => Option[String] =
@@ -138,7 +138,7 @@ object UpdateHeuristic {
     util.string.removeSuffix(str, Update.commonSuffixes)
 
   private def isCommonWord(s: String): Boolean =
-    s === "scala" || s === "sbt"
+    s === "scala"
 
   val moduleId: UpdateHeuristic = UpdateHeuristic(
     name = "moduleId",
