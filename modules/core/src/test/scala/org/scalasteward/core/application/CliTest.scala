@@ -29,7 +29,8 @@ class CliTest extends FunSuite {
         List("--artifact-migrations", "/opt/scala-steward/extra-artifact-migrations.conf"),
         List("--github-app-id", "12345678"),
         List("--github-app-key-file", "example_app_key"),
-        List("--refresh-backoff-period", "1 day")
+        List("--refresh-backoff-period", "1 day"),
+        List("--default-branch", "1.x")
       ).flatten
     )
     val expected = Success(
@@ -50,7 +51,8 @@ class CliTest extends FunSuite {
         artifactMigrations = List(uri"/opt/scala-steward/extra-artifact-migrations.conf"),
         githubAppId = Some(12345678),
         githubAppKeyFile = Some(File("example_app_key")),
-        refreshBackoffPeriod = 1.day
+        refreshBackoffPeriod = 1.day,
+        defaultBranch = Some("1.x")
       )
     )
     assertEquals(obtained, expected)
