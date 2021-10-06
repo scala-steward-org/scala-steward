@@ -684,6 +684,28 @@ class UpdateHeuristicTest extends FunSuite {
     assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.original.name)
   }
 
+  test("issue 2099: pom.xml multiline") {
+    val original =
+      """  <dependency>
+        |    <groupId>commons-io</groupId>
+        |    <artifactId>commons-io</artifactId>
+        |    <version>2.6</version>
+        |  </dependency>
+        |""".stripMargin
+    val expected =
+      """  <dependency>
+        |    <groupId>commons-io</groupId>
+        |    <artifactId>commons-io</artifactId>
+        |    <version>2.8.0</version>
+        |  </dependency>
+        |""".stripMargin
+    assertEquals(
+      Single("commons-io" % "commons-io" % "2.6", Nel.of("2.8.0"))
+        .replaceVersionIn(original),
+      Some(expected) -> UpdateHeuristic.strict.name
+    )
+  }
+
   test("PR 2232 part 1: Do not match the several artifacts as single artifact") {
     assertEquals(
       Single("org.typelevel" % "kind-projector" % "0.13.0", Nel.of("0.13.2")).replaceVersionIn(
