@@ -708,11 +708,13 @@ class UpdateHeuristicTest extends FunSuite {
 
   test("PR 2232 part 1: Do not match the several artifacts as single artifact") {
     assertEquals(
-      Single("org.typelevel" % "kind-projector" % "0.13.0", Nel.of("0.13.2")).replaceVersionIn(
-        """addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")
-          |addSbtPlugin("com.codecommit" % "sbt-github-actions" % "0.13.0")""".stripMargin
-      ),
-      None -> UpdateHeuristic.specific.name,
+      Single("org.typelevel" % "kind-projector" % "0.13.0", Nel.of("0.13.2"))
+        .replaceVersionIn(
+          """addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")
+            |addSbtPlugin("com.codecommit" % "sbt-github-actions" % "0.13.0")""".stripMargin
+        )
+        ._1,
+      None,
       clue = "project...0.4.3(newline)...0.13.0 should not be updated"
     )
   }
@@ -724,8 +726,9 @@ class UpdateHeuristicTest extends FunSuite {
                             |<groupId>org.codehaus.plexus</groupId>
                             |<artifactId>plexus-utils</artifactId>
                             |<version>3.1.1</version>
-                            |""".stripMargin),
-      None -> UpdateHeuristic.specific.name,
+                            |""".stripMargin)
+        ._1,
+      None,
       clue = "1.1 of 3.1.1 should not be updated"
     )
   }
