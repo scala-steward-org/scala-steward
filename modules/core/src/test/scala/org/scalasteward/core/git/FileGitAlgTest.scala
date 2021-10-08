@@ -3,128 +3,122 @@ package org.scalasteward.core.git
 import better.files.File
 import cats.Monad
 import cats.effect.IO
-import cats.effect.unsafe.implicits.global
 import cats.syntax.all._
-import munit.FunSuite
+import munit.CatsEffectSuite
 import org.scalasteward.core.TestInstances.ioLogger
-import org.scalasteward.core.git.FileGitAlgTest.{master, Supplement}
+import org.scalasteward.core.git.FileGitAlgTest.{ioAuxGitAlg, ioGitAlg, master}
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
 import org.scalasteward.core.io.ProcessAlgTest.ioProcessAlg
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.mock.MockConfig.{config, mockRoot}
 import org.scalasteward.core.util.Nel
 
-class FileGitAlgTest extends FunSuite {
-  implicit private val ioWorkspaceAlg: WorkspaceAlg[IO] = WorkspaceAlg.create[IO](config)
-  implicit private val ioGitAlg: GenGitAlg[IO, File] =
-    new FileGitAlg[IO](config.gitCfg).contramapRepoF(IO.pure)
-  private val supplement = new Supplement[IO]
+class FileGitAlgTest extends CatsEffectSuite {
   private val rootDir = mockRoot / "git-tests"
 
   test("branchAuthors") {
     val repo = rootDir / "branchAuthors"
-    val p = for {
-      _ <- supplement.createRepo(repo)
-      _ <- supplement.createConflict(repo)
+    for {
+      _ <- ioAuxGitAlg.createRepo(repo)
+      _ <- ioAuxGitAlg.createConflict(repo)
       authors <- ioGitAlg.branchAuthors(repo, Branch("conflicts-no"), master)
-    } yield authors
-    assertEquals(p.unsafeRunSync(), List("'Bot Doe'"))
+      _ = assertEquals(authors, List("'Bot Doe'"))
+    } yield ()
   }
 
   test("branchExists") {
     val repo = rootDir / "branchExists"
     val (foo, bar) = (Branch("foo"), Branch("bar"))
-    val p = for {
-      _ <- supplement.createRepo(repo)
+    for {
+      _ <- ioAuxGitAlg.createRepo(repo)
       _ <- ioGitAlg.createBranch(repo, foo)
       b1 <- ioGitAlg.branchExists(repo, foo)
       b2 <- ioGitAlg.branchExists(repo, bar)
-    } yield (b1, b2)
-    assertEquals(p.unsafeRunSync(), (true, false))
+      _ = assertEquals((b1, b2), (true, false))
+    } yield ()
   }
 
   test("cloneExists") {
     val repo = rootDir / "cloneExists"
-    val p = for {
+    for {
       e1 <- ioGitAlg.cloneExists(repo)
-      _ <- supplement.createRepo(repo)
+      _ <- ioAuxGitAlg.createRepo(repo)
       e2 <- ioGitAlg.cloneExists(repo)
       _ <- ioGitAlg.removeClone(repo)
       e3 <- ioGitAlg.cloneExists(repo)
-    } yield (e1, e2, e3)
-    assertEquals(p.unsafeRunSync(), (false, true, false))
+      _ = assertEquals((e1, e2, e3), (false, true, false))
+    } yield ()
   }
 
   test("containsChanges") {
     val repo = rootDir / "containsChanges"
-    val p = for {
-      _ <- supplement.createRepo(repo)
+    for {
+      _ <- ioAuxGitAlg.createRepo(repo)
       _ <- ioFileAlg.writeFile(repo / "test.txt", "hello")
-      _ <- supplement.git("add", "test.txt")(repo)
+      _ <- ioAuxGitAlg.git("add", "test.txt")(repo)
       _ <- ioGitAlg.commitAll(repo, "Add test.txt")
       c1 <- ioGitAlg.containsChanges(repo)
       _ <- ioFileAlg.writeFile(repo / "test.txt", "hello world")
       c2 <- ioGitAlg.containsChanges(repo)
       _ <- ioGitAlg.commitAllIfDirty(repo, "Modify test.txt")
       c3 <- ioGitAlg.containsChanges(repo)
-    } yield (c1, c2, c3)
-    assertEquals(p.unsafeRunSync(), (false, true, false))
+      _ = assertEquals((c1, c2, c3), (false, true, false))
+    } yield ()
   }
 
   test("currentBranch") {
     val repo = rootDir / "currentBranch"
-    val p = for {
-      _ <- supplement.createRepo(repo)
+    for {
+      _ <- ioAuxGitAlg.createRepo(repo)
       branch <- ioGitAlg.currentBranch(repo)
       _ <- ioGitAlg.latestSha1(repo, branch)
-    } yield branch
-    assertEquals(p.unsafeRunSync(), master)
+      _ = assertEquals(branch, master)
+    } yield ()
   }
 
   test("discardChanges") {
     val repo = rootDir / "discardChanges"
-    val p = for {
-      _ <- supplement.createRepo(repo)
+    for {
+      _ <- ioAuxGitAlg.createRepo(repo)
       file = repo / "test.txt"
       _ <- ioFileAlg.writeFile(file, "hello")
-      _ <- supplement.git("add", "test.txt")(repo)
+      _ <- ioAuxGitAlg.git("add", "test.txt")(repo)
       _ <- ioGitAlg.commitAll(repo, "Add test.txt")
       _ <- ioFileAlg.writeFile(file, "world")
       before <- ioFileAlg.readFile(file)
       _ <- ioGitAlg.discardChanges(repo)
       after <- ioFileAlg.readFile(file)
-    } yield (before, after)
-    val (before, after) = p.unsafeRunSync()
-    assertEquals(before, Some("world"))
-    assertEquals(after, Some("hello"))
+      _ = assertEquals(before, Some("world"))
+      _ = assertEquals(after, Some("hello"))
+    } yield ()
   }
 
   test("findFilesContaining") {
     val repo = rootDir / "findFilesContaining"
-    val p = for {
-      _ <- supplement.createRepo(repo)
-      _ <- supplement.createConflict(repo)
+    for {
+      _ <- ioAuxGitAlg.createRepo(repo)
+      _ <- ioAuxGitAlg.createConflict(repo)
       files <- ioGitAlg.findFilesContaining(repo, "line1")
-    } yield files
-    assertEquals(p.unsafeRunSync(), List("file1", "file2"))
+      _ = assertEquals(files, List("file1", "file2"))
+    } yield ()
   }
 
   test("hasConflicts") {
     val repo = rootDir / "hasConflicts"
-    val p = for {
-      _ <- supplement.createRepo(repo)
-      _ <- supplement.createConflict(repo)
+    for {
+      _ <- ioAuxGitAlg.createRepo(repo)
+      _ <- ioAuxGitAlg.createConflict(repo)
       c1 <- ioGitAlg.hasConflicts(repo, Branch("conflicts-yes"), master)
       c2 <- ioGitAlg.hasConflicts(repo, Branch("conflicts-no"), master)
-    } yield (c1, c2)
-    assertEquals(p.unsafeRunSync(), (true, false))
+      _ = assertEquals((c1, c2), (true, false))
+    } yield ()
   }
 
   test("mergeTheirs") {
     val repo = rootDir / "mergeTheirs"
-    val p = for {
-      _ <- supplement.createRepo(repo)
-      _ <- supplement.createConflict(repo)
+    for {
+      _ <- ioAuxGitAlg.createRepo(repo)
+      _ <- ioAuxGitAlg.createConflict(repo)
       branch = Branch("conflicts-yes")
       c1 <- ioGitAlg.hasConflicts(repo, branch, master)
       m1 <- ioGitAlg.isMerged(repo, master, branch)
@@ -132,15 +126,15 @@ class FileGitAlgTest extends FunSuite {
       _ <- ioGitAlg.mergeTheirs(repo, master)
       c2 <- ioGitAlg.hasConflicts(repo, branch, master)
       m2 <- ioGitAlg.isMerged(repo, master, branch)
-    } yield (c1, m1, c2, m2)
-    assertEquals(p.unsafeRunSync(), (true, false, false, true))
+      _ = assertEquals((c1, m1, c2, m2), (true, false, false, true))
+    } yield ()
   }
 
   test("mergeTheirs: CONFLICT (modify/delete)") {
     val repo = rootDir / "mergeTheirs-modify-delete"
-    val p = for {
-      _ <- supplement.createRepo(repo)
-      _ <- supplement.createConflictFileRemovedOnMaster(repo)
+    for {
+      _ <- ioAuxGitAlg.createRepo(repo)
+      _ <- ioAuxGitAlg.createConflictFileRemovedOnMaster(repo)
       branch = Branch("conflicts-yes")
       c1 <- ioGitAlg.hasConflicts(repo, branch, master)
       m1 <- ioGitAlg.isMerged(repo, master, branch)
@@ -148,19 +142,19 @@ class FileGitAlgTest extends FunSuite {
       _ <- ioGitAlg.mergeTheirs(repo, master)
       c2 <- ioGitAlg.hasConflicts(repo, branch, master)
       m2 <- ioGitAlg.isMerged(repo, master, branch)
-    } yield (c1, m1, c2, m2)
-    assertEquals(p.unsafeRunSync(), (true, false, false, true))
+      _ = assertEquals((c1, m1, c2, m2), (true, false, false, true))
+    } yield ()
   }
 
   test("version") {
-    assert(ioGitAlg.version.unsafeRunSync().nonEmpty)
+    assertIOBoolean(ioGitAlg.version.map(_.nonEmpty))
   }
 }
 
 object FileGitAlgTest {
   val master: Branch = Branch("master")
 
-  final class Supplement[F[_]](implicit
+  final class AuxGitAlg[F[_]](implicit
       fileAlg: FileAlg[F],
       gitAlg: GenGitAlg[F, File],
       processAlg: ProcessAlg[F],
@@ -178,14 +172,17 @@ object FileGitAlgTest {
         _ <- git("commit", "--allow-empty", "-m", "Initial commit")(repo)
       } yield ()
 
+    def addFiles(repo: File, files: File*): F[Unit] =
+      files.toList.traverse_ { file =>
+        git("add", file.pathAsString)(repo) >> gitAlg.commitAll(repo, s"Add ${file.name}")
+      }
+
     def createConflict(repo: File): F[Unit] =
       for {
         // work on master
         _ <- fileAlg.writeFile(repo / "file1", "file1, line1")
         _ <- fileAlg.writeFile(repo / "file2", "file2, line1")
-        _ <- git("add", "file1")(repo)
-        _ <- git("add", "file2")(repo)
-        _ <- gitAlg.commitAll(repo, "Initial commit")
+        _ <- addFiles(repo, repo / "file1", repo / "file2")
         // work on conflicts-no
         _ <- gitAlg.createBranch(repo, Branch("conflicts-no"))
         _ <- fileAlg.writeFile(repo / "file3", "file3, line1")
@@ -209,9 +206,7 @@ object FileGitAlgTest {
         // work on master
         _ <- fileAlg.writeFile(repo / "file1", "file1, line1")
         _ <- fileAlg.writeFile(repo / "file2", "file2, line1")
-        _ <- git("add", "file1")(repo)
-        _ <- git("add", "file2")(repo)
-        _ <- gitAlg.commitAll(repo, "Initial commit")
+        _ <- addFiles(repo, repo / "file1", repo / "file2")
         // work on conflicts-yes
         _ <- gitAlg.createBranch(repo, Branch("conflicts-yes"))
         _ <- fileAlg.writeFile(repo / "file2", "file2, line1\nfile2, line2 on conflicts-yes")
@@ -224,4 +219,13 @@ object FileGitAlgTest {
         _ <- gitAlg.commitAll(repo, "Remove file2 on master")
       } yield ()
   }
+
+  implicit val ioWorkspaceAlg: WorkspaceAlg[IO] =
+    WorkspaceAlg.create[IO](config)
+
+  implicit val ioGitAlg: GenGitAlg[IO, File] =
+    new FileGitAlg[IO](config.gitCfg).contramapRepoF(IO.pure)
+
+  val ioAuxGitAlg: AuxGitAlg[IO] =
+    new AuxGitAlg[IO]
 }
