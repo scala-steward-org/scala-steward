@@ -74,7 +74,6 @@ lazy val core = myCrossProject("core")
   .settings(dockerSettings)
   .settings(
     libraryDependencies ++= Seq(
-      Dependencies.attoCore,
       Dependencies.bcprovJdk15to18,
       Dependencies.betterFiles,
       Dependencies.caseApp,
