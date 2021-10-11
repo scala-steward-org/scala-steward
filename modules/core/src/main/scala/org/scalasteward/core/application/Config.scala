@@ -71,7 +71,7 @@ final case class Config(
     ignoreOptsFiles: Boolean,
     processCfg: ProcessCfg,
     scalafixCfg: ScalafixCfg,
-    artifactMigrations: List[Uri],
+    artifactCfg: ArtifactCfg,
     cacheTtl: FiniteDuration,
     bitbucketServerCfg: BitbucketServerCfg,
     gitLabCfg: GitLabCfg,
@@ -119,6 +119,11 @@ object Config {
       disableDefaults: Boolean
   )
 
+  final case class ArtifactCfg(
+      migrations: List[Uri],
+      disableDefaults: Boolean
+  )
+
   final case class BitbucketServerCfg(
       useDefaultReviewers: Boolean
   )
@@ -156,7 +161,10 @@ object Config {
         migrations = args.scalafixMigrations,
         disableDefaults = args.disableDefaultScalafixMigrations
       ),
-      artifactMigrations = args.artifactMigrations,
+      artifactCfg = ArtifactCfg(
+        migrations = args.artifactMigrations,
+        disableDefaults = args.disableDefaultArtifactMigrations
+      ),
       cacheTtl = args.cacheTtl,
       bitbucketServerCfg = BitbucketServerCfg(
         useDefaultReviewers = args.bitbucketServerUseDefaultReviewers

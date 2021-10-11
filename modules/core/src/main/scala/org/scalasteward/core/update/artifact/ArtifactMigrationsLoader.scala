@@ -21,6 +21,7 @@ import cats.syntax.all._
 import io.circe.config.parser.decode
 import org.http4s.Uri
 import org.http4s.implicits.http4sLiteralsSyntax
+import org.scalasteward.core.application.Config.ArtifactCfg
 import org.scalasteward.core.io.FileAlg
 import org.scalasteward.core.update.artifact.ArtifactMigrationsLoader.defaultArtifactMigrationsUrl
 import org.typelevel.log4cats.Logger
@@ -30,13 +31,16 @@ final class ArtifactMigrationsLoader[F[_]](implicit
     logger: Logger[F],
     F: MonadThrow[F]
 ) {
-  def createFinder(artifactMigrations: List[Uri]): F[ArtifactMigrationsFinder] =
-    loadAll(artifactMigrations).map(new ArtifactMigrationsFinder(_))
+  def createFinder(config: ArtifactCfg): F[ArtifactMigrationsFinder] =
+    loadAll(config).map(new ArtifactMigrationsFinder(_))
 
-  def loadAll(artifactMigrations: List[Uri]): F[List[ArtifactChange]] =
-    (defaultArtifactMigrationsUrl :: artifactMigrations)
+  def loadAll(config: ArtifactCfg): F[List[ArtifactChange]] = {
+    val maybeDefaultMigrationsUrl =
+      Option.unless(config.disableDefaults)(defaultArtifactMigrationsUrl)
+    (maybeDefaultMigrationsUrl.toList ++ config.migrations)
       .flatTraverse(loadMigrations)
       .flatTap(migrations => logger.info(s"Loaded ${migrations.size} artifact migrations"))
+  }
 
   private def loadMigrations(uri: Uri): F[List[ArtifactChange]] =
     logger.debug(s"Loading artifact migrations from $uri") >>
