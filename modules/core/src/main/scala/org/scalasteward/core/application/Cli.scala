@@ -52,6 +52,7 @@ object Cli {
       scalafixMigrations: List[Uri] = Nil,
       disableDefaultScalafixMigrations: Boolean = false,
       artifactMigrations: List[Uri] = Nil,
+      disableDefaultArtifactMigrations: Boolean = false,
       cacheTtl: FiniteDuration = 2.hours,
       bitbucketServerUseDefaultReviewers: Boolean = false,
       gitlabMergeWhenPipelineSucceeds: Boolean = false,

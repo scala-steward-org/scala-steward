@@ -63,6 +63,7 @@ final class Context[F[_]](implicit
     val pullRequestRepository: PullRequestRepository[F],
     val repoConfigAlg: RepoConfigAlg[F],
     val sbtAlg: SbtAlg[F],
+    val artifactMigrationsLoader: ArtifactMigrationsLoader[F],
     val scalafixMigrationsFinder: ScalafixMigrationsFinder,
     val scalafixMigrationsLoader: ScalafixMigrationsLoader[F],
     val scalafmtAlg: ScalafmtAlg[F],
@@ -98,7 +99,7 @@ object Context {
       _ <- printBanner[F]
       vcsUser <- config.vcsUser[F]
       artifactMigrationsLoader0 = new ArtifactMigrationsLoader[F]
-      artifactMigrationsFinder0 <- artifactMigrationsLoader0.createFinder(config.artifactMigrations)
+      artifactMigrationsFinder0 <- artifactMigrationsLoader0.createFinder(config.artifactCfg)
       scalafixMigrationsLoader0 = new ScalafixMigrationsLoader[F]
       scalafixMigrationsFinder0 <- scalafixMigrationsLoader0.createFinder(config.scalafixCfg)
       urlChecker0 <- UrlChecker.create[F](config)
@@ -113,6 +114,7 @@ object Context {
       versionsStore <- JsonKeyValueStore
         .create[F, VersionsCache.Key, VersionsCache.Value]("versions", "2")
     } yield {
+      implicit val artifactMigrationsLoader: ArtifactMigrationsLoader[F] = artifactMigrationsLoader0
       implicit val artifactMigrationsFinder: ArtifactMigrationsFinder = artifactMigrationsFinder0
       implicit val scalafixMigrationsLoader: ScalafixMigrationsLoader[F] = scalafixMigrationsLoader0
       implicit val scalafixMigrationsFinder: ScalafixMigrationsFinder = scalafixMigrationsFinder0
