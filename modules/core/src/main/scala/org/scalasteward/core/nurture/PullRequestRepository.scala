@@ -56,7 +56,7 @@ final class PullRequestRepository[F[_]](
         val pullRequests = maybePullRequests.getOrElse(Map.empty)
         pullRequests.get(url) match {
           case Some(found) =>
-            val data = found.copy(baseSha1, update, state)
+            val data = found.copy(baseSha1, update, state, number = Some(number))
             pullRequests.updated(url, data).some.pure[F]
           case None =>
             dateTimeAlg.currentTimestamp.map { now =>
