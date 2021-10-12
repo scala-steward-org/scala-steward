@@ -21,16 +21,9 @@ import org.http4s.Uri
 import org.scalasteward.core.data.ReleaseRelatedUrl.VersionDiff
 import org.scalasteward.core.data.{ReleaseRelatedUrl, Update}
 import org.scalasteward.core.vcs.VCSType.{Bitbucket, BitbucketServer, GitHub, GitLab}
-import org.scalasteward.core.vcs.data.{PullRequestNumber, Repo}
+import org.scalasteward.core.vcs.data.Repo
 
 package object vcs {
-  def extractPullRequestNumberFrom(uri: Uri): Option[PullRequestNumber] = {
-    val regex = raw".*/(pull|pullrequests|merge_requests)/(\d+)".r
-    uri.path.toString match {
-      case regex(_, id) => scala.util.Try(PullRequestNumber(id.toInt)).toOption
-      case _            => None
-    }
-  }
 
   /** Determines the `head` (GitHub) / `source_branch` (GitLab, Bitbucket) parameter for searching
     * for already existing pull requests.
