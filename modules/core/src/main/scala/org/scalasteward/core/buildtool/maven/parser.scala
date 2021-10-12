@@ -28,14 +28,17 @@ object parser {
   private val underscore: Parser[Char] =
     Parser.charIn('_')
 
+  private def charsWhileNot(fn: Char => Boolean): Parser[String] =
+    Parser.charsWhile(!fn(_))
+
   private val stringNoSpace: Parser[String] =
-    Parser.charsWhile(c => !(c === ' '))
+    charsWhileNot(Set(' '))
 
   private val stringNoSpaceNoColon: Parser[String] =
-    Parser.charsWhile(c => !(c === ' ' || c === ':'))
+    charsWhileNot(Set(' ', ':'))
 
   private val stringNoSpaceNoColonNoUnderscore: Parser[String] =
-    Parser.charsWhile(c => !(c === ' ' || c === ':' || c === '_'))
+    charsWhileNot(Set(' ', ':', '_'))
 
   private val artifactId: Parser[ArtifactId] =
     for {
