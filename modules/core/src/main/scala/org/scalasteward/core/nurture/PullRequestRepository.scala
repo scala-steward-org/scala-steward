@@ -24,7 +24,6 @@ import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.persistence.KeyValueStore
 import org.scalasteward.core.update.UpdateAlg
 import org.scalasteward.core.util.{DateTimeAlg, Timestamp}
-import org.scalasteward.core.vcs
 import org.scalasteward.core.vcs.data.{PullRequestNumber, PullRequestState, Repo}
 
 final class PullRequestRepository[F[_]](
@@ -78,7 +77,7 @@ final class PullRequestRepository[F[_]](
             if data.update.withNewerVersions(update.newerVersions) === update &&
               Version(data.update.nextVersion) < Version(update.nextVersion) &&
               data.state === PullRequestState.Open =>
-          data.number.orElse(vcs.extractPullRequestNumberFrom(url)).map((_, url, data.update))
+          data.number.map((_, url, data.update))
       }.flatten.toList.sortBy { case (number, _, _) => number.value }
     }
 

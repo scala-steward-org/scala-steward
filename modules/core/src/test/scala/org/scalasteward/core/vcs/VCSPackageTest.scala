@@ -6,31 +6,9 @@ import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.VCSType.{GitHub, GitLab}
-import org.scalasteward.core.vcs.data.{PullRequestNumber, Repo}
+import org.scalasteward.core.vcs.data.Repo
 
 class VCSPackageTest extends FunSuite {
-  test(s"extractPullRequestNumberFrom: valid") {
-    val urls = List(
-      uri"https://api.bitbucket.org/2.0/repositories/fthomas/base.g8/pullrequests/13",
-      uri"https://github.com/scala-steward-org/scala-steward/pull/13",
-      uri"https://gitlab.com/inkscape/inkscape/-/merge_requests/13"
-    )
-    urls.foreach { uri =>
-      assertEquals(extractPullRequestNumberFrom(uri), Some(PullRequestNumber(13)))
-    }
-  }
-
-  test(s"extractPullRequestNumberFrom: invalid") {
-    val urls = List(
-      uri"https://api.bitbucket.org/2.0/repositories/fthomas/base.g8/pullrequests/",
-      uri"https://github.com/scala-steward-org/scala-steward/pull/",
-      uri"https://gitlab.com/inkscape/inkscape/-/merge_requests/"
-    )
-    urls.foreach { uri =>
-      assertEquals(extractPullRequestNumberFrom(uri), None)
-    }
-  }
-
   val repo: Repo = Repo("foo", "bar")
   val update: Update.Single =
     Update.Single("ch.qos.logback" % "logback-classic" % "1.2.0", Nel.of("1.2.3"))
