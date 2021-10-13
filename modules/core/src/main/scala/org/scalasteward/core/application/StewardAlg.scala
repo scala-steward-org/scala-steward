@@ -56,8 +56,9 @@ final class StewardAlg[F[_]](config: Config)(implicit
         val regex = """-\s+(.+)/([^/]+)""".r
         val regexWithBranch = """-\s+(.+)/([^/]+):([^/]+)""".r
         val content = maybeContent.getOrElse("")
-        content.linesIterator.collect { 
-          case regexWithBranch(owner, repo, branch) => Repo(owner.trim, repo.trim, Some(Branch(branch.trim)))
+        content.linesIterator.collect {
+          case regexWithBranch(owner, repo, branch) =>
+            Repo(owner.trim, repo.trim, Some(Branch(branch.trim)))
           case regex(owner, repo) => Repo(owner.trim, repo.trim)
         }.toList
       }

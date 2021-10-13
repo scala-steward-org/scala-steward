@@ -85,7 +85,7 @@ final case class Config(
       F: Monad[F]
   ): F[AuthenticatedUser] =
     for {
-      rootDir <- workspaceAlg.rootDir 
+      rootDir <- workspaceAlg.rootDir
       urlWithUser = util.uri.withUserInfo.replace(UserInfo(vcsLogin, None))(vcsApiHost).renderString
       prompt = s"Password for '$urlWithUser': "
       password <- processAlg.exec(Nel.of(gitCfg.gitAskPass.pathAsString, prompt), rootDir)
