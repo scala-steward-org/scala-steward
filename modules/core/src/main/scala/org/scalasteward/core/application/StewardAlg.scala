@@ -33,6 +33,7 @@ import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.vcs.github.{GitHubApp, GitHubAppApiAlg, GitHubAuthAlg}
 import org.typelevel.log4cats.Logger
 import scala.concurrent.duration._
+import org.scalasteward.core.git.Branch
 
 final class StewardAlg[F[_]](config: Config)(implicit
     dateTimeAlg: DateTimeAlg[F],
@@ -53,9 +54,11 @@ final class StewardAlg[F[_]](config: Config)(implicit
     Stream.evals[F, List, Repo] {
       fileAlg.readFile(reposFile).map { maybeContent =>
         val regex = """-\s+(.+)/([^/]+)""".r
+        val regexWithBranch = """-\s+(.+)/([^/]+):([^/]+)""".r
         val content = maybeContent.getOrElse("")
-        content.linesIterator.collect { case regex(owner, repo) =>
-          Repo(owner.trim, repo.trim)
+        content.linesIterator.collect { 
+          case regexWithBranch(owner, repo, branch) => Repo(owner.trim, repo.trim, Some(Branch(branch.trim)))
+          case regex(owner, repo) => Repo(owner.trim, repo.trim)
         }.toList
       }
     }
