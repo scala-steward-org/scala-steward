@@ -229,7 +229,7 @@ class BitbucketApiAlgTest extends FunSuite {
   test("createForkOrGetRepoWithDefaultBranch") {
     val (repoOut, branchOut) =
       bitbucketApiAlg
-        .createForkOrGetRepoWithDefaultBranch(repo, doNotFork = false, defaultBranch = None)
+        .createForkOrGetRepoWithDefaultBranch(repo, doNotFork = false)
         .unsafeRunSync()
     assertEquals(repoOut, fork)
     assertEquals(branchOut, defaultBranch)
@@ -238,7 +238,7 @@ class BitbucketApiAlgTest extends FunSuite {
   test("createForkOrGetRepoWithDefaultBranch with custom default branch") {
     val (repoOut, branchOut) =
       bitbucketApiAlg
-        .createForkOrGetRepoWithDefaultBranch(repo, doNotFork = false, defaultBranch = Some(custom))
+        .createForkOrGetRepoWithDefaultBranch(repo.copy(branch = Some(custom)), doNotFork = false)
         .unsafeRunSync()
     assertEquals(repoOut, forkWithCustomDefaultBranch)
     assertEquals(branchOut, defaultCustomBranch)
@@ -247,7 +247,7 @@ class BitbucketApiAlgTest extends FunSuite {
   test("createForkOrGetRepoWithDefaultBranch without forking") {
     val (repoOut, branchOut) =
       bitbucketApiAlg
-        .createForkOrGetRepoWithDefaultBranch(repo, doNotFork = true, defaultBranch = None)
+        .createForkOrGetRepoWithDefaultBranch(repo, doNotFork = true)
         .unsafeRunSync()
     assertEquals(repoOut, parent)
     assertEquals(branchOut, defaultBranch)
@@ -256,7 +256,7 @@ class BitbucketApiAlgTest extends FunSuite {
   test("createForkOrGetRepoWithDefaultBranch without forking with custom default branch") {
     val (repoOut, branchOut) =
       bitbucketApiAlg
-        .createForkOrGetRepoWithDefaultBranch(repo, doNotFork = true, defaultBranch = Some(custom))
+        .createForkOrGetRepoWithDefaultBranch(repo.copy(branch = Some(custom)), doNotFork = true)
         .unsafeRunSync()
     assertEquals(repoOut, parentWithCustomDefaultBranch)
     assertEquals(branchOut, defaultCustomBranch)

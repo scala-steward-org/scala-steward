@@ -151,7 +151,7 @@ class GitHubApiAlgTest extends FunSuite {
   test("createForkOrGetRepoWithDefaultBranch") {
     val (repoOut, branchOut) =
       gitHubApiAlg
-        .createForkOrGetRepoWithDefaultBranch(repo, doNotFork = false, defaultBranch = None)
+        .createForkOrGetRepoWithDefaultBranch(repo, doNotFork = false)
         .unsafeRunSync()
     assertEquals(repoOut, fork)
     assertEquals(branchOut, defaultBranch)
@@ -161,9 +161,8 @@ class GitHubApiAlgTest extends FunSuite {
     val (repoOut, branchOut) =
       gitHubApiAlg
         .createForkOrGetRepoWithDefaultBranch(
-          repo,
-          doNotFork = false,
-          defaultBranch = Some(Branch("custom"))
+          repo.copy(branch = Some(Branch("custom"))),
+          doNotFork = false
         )
         .unsafeRunSync()
     assertEquals(repoOut, forkWithCustomDefaultBranch)
@@ -173,7 +172,7 @@ class GitHubApiAlgTest extends FunSuite {
   test("createForkOrGetRepoWithDefaultBranch without forking") {
     val (repoOut, branchOut) =
       gitHubApiAlg
-        .createForkOrGetRepoWithDefaultBranch(repo, doNotFork = true, defaultBranch = None)
+        .createForkOrGetRepoWithDefaultBranch(repo, doNotFork = true)
         .unsafeRunSync()
     assertEquals(repoOut, parent)
     assertEquals(branchOut, defaultBranch)
@@ -183,9 +182,8 @@ class GitHubApiAlgTest extends FunSuite {
     val (repoOut, branchOut) =
       gitHubApiAlg
         .createForkOrGetRepoWithDefaultBranch(
-          repo,
-          doNotFork = true,
-          defaultBranch = Some(Branch("custom"))
+          repo.copy(branch = Some(Branch("custom"))),
+          doNotFork = true
         )
         .unsafeRunSync()
     assertEquals(repoOut, parentWithCustomDefaultBranch)

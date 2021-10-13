@@ -42,16 +42,12 @@ trait VCSApiAlg[F[_]] {
   final def createForkOrGetRepo(repo: Repo, doNotFork: Boolean): F[RepoOut] =
     if (doNotFork) getRepo(repo) else createFork(repo)
 
-  final def createForkOrGetRepoWithDefaultBranch(
-      repo: Repo,
-      doNotFork: Boolean,
-      defaultBranch: Option[Branch]
-  )(implicit
+  final def createForkOrGetRepoWithDefaultBranch(repo: Repo,doNotFork: Boolean)(implicit
       F: MonadThrow[F]
   ): F[(RepoOut, BranchOut)] =
     for {
       forkOrRepo <- createForkOrGetRepo(repo, doNotFork)
-      forkOrRepoWithDefaultBranch = applyDefaultBranch(forkOrRepo, defaultBranch)
+      forkOrRepoWithDefaultBranch = applyDefaultBranch(forkOrRepo, repo.branch)
       defaultBranch <- getDefaultBranchOfParentOrRepo(forkOrRepoWithDefaultBranch, doNotFork)
     } yield (forkOrRepoWithDefaultBranch, defaultBranch)
 

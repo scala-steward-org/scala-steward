@@ -40,7 +40,7 @@ final class VCSRepoAlg[F[_]](config: Config)(implicit
   private def clone(repo: Repo, repoOut: RepoOut): F[Unit] =
     logger.info(s"Clone ${repoOut.repo.show}") >>
       gitAlg.clone(repo, withLogin(repoOut.clone_url)) >>
-      gitAlg.setAuthor(repo, config.gitCfg.gitAuthor) >> config.defaultBranch.fold(F.unit)(
+      gitAlg.setAuthor(repo, config.gitCfg.gitAuthor) >> repo.branch.fold(F.unit)(
         gitAlg.checkoutBranch(repo, _)
       )
 
