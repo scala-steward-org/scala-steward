@@ -25,7 +25,10 @@ final case class Repo(
     repo: String,
     branch: Option[Branch] = None
 ) {
-  def show: String = s"$owner/$repo"
+  def show: String = branch match {
+    case Some(value) => s"$owner/$repo:${value.name}"
+    case None        => s"$owner/$repo"
+  }
 }
 
 object Repo {
