@@ -91,7 +91,8 @@ object CoursierAlg {
           case Right(repository) =>
             val module = toCoursierModule(dependency)
             repository.versions(module, cacheNoTtl.fetch).run.flatMap {
-              case Left(message)        => F.raiseError(new Throwable(message))
+              case Left(message) =>
+                logger.debug(message) >> F.raiseError(new Throwable(message))
               case Right((versions, _)) => F.pure(versions.available.map(Version.apply).sorted)
             }
         }
