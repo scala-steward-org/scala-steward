@@ -78,7 +78,7 @@ object Context {
     for {
       _ <- Resource.unit[F]
       config = Config.from(args)
-      logger <- Resource.eval(Slf4jLogger.fromName[F](Context.getClass.getSimpleName))
+      logger <- Resource.eval(Slf4jLogger.fromName[F]("org.scalasteward.core"))
       client <- OkHttpBuilder.withDefaultClient[F].flatMap(_.resource)
       fileAlg = FileAlg.create[F](logger, F)
       processAlg = ProcessAlg.create[F](config.processCfg)(logger, F)
