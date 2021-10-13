@@ -108,7 +108,7 @@ chmod +x pass.sh
 docker run -v $PWD:/opt/scala-steward \
     -v ~/.sbt/:/root/.sbt \
     -it fthomas/scala-steward:latest \
-    --env-var LOG_LEVEL=TRACE \
+    -DLOG_LEVEL=TRACE \
     --do-not-fork \
     --workspace "/opt/scala-steward/workspace" \
     --repos-file "/opt/scala-steward/repos.md" \
@@ -137,7 +137,7 @@ chmod +x pass.sh
 
 docker run -v $PWD:/opt/scala-steward \
     -i fthomas/scala-steward:latest \
-    --env-var LOG_LEVEL=TRACE \
+    -DLOG_LEVEL=TRACE \
     --do-not-fork \
     --workspace "/opt/scala-steward/workspace" \
     --repos-file "/opt/scala-steward/repos.md" \
