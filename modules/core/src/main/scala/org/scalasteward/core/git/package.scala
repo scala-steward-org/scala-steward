@@ -27,9 +27,12 @@ package object git {
   def branchFor(update: Update): Branch =
     Branch(s"update/${update.name}-${update.nextVersion}")
 
-  def commitMsgFor(update: Update, commitsConfig: CommitsConfig): String = {
+  def commitMsgFor(update: Update, commitsConfig: CommitsConfig, branch: Option[Branch]): String = {
     val artifact = show.oneLiner(update)
-    val defaultMessage = s"Update $artifact to ${update.nextVersion}"
+    val defaultMessage = branch match {
+      case Some(value) => s"Update $artifact to ${update.nextVersion} in ${value.name}"
+      case None        => s"Update $artifact to ${update.nextVersion}"
+    }
     commitsConfig.messageOrDefault
       .replace("${default}", defaultMessage)
       .replace("${artifactName}", artifact)
