@@ -112,6 +112,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [kenji yoshida](https://github.com/xuwei-k)
 * [Lars Hupel](https://github.com/larsrh)
 * [LaurenceWarne](https://github.com/LaurenceWarne)
+* [Leonhard Riedißer](https://github.com/L7R7)
 * [Manuel Cueto](https://github.com/manuelcueto)
 * [Marco Zühlke](https://github.com/mzuehlke) 
 * [Mark Canlas](https://github.com/mcanlas)
