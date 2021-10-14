@@ -24,6 +24,7 @@ import org.scalasteward.core.application.Config
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.util
 import org.scalasteward.core.util.logger._
+import org.scalasteward.core.vcs.VCSType.GitHub
 import org.scalasteward.core.vcs.data.{Repo, RepoOut}
 import org.typelevel.log4cats.Logger
 
@@ -33,16 +34,26 @@ final class VCSRepoAlg[F[_]](config: Config)(implicit
     F: MonadThrow[F]
 ) {
   def cloneAndSync(repo: Repo, repoOut: RepoOut): F[Unit] =
-    clone(repo, repoOut) >>
-      (if (config.doNotFork) F.unit else syncFork(repo, repoOut)) >>
-      initSubmodules(repo)
+    clone(repo, repoOut) >> maybeSyncFork(repo, repoOut) >> initSubmodules(repo)
 
   private def clone(repo: Repo, repoOut: RepoOut): F[Unit] =
     logger.info(s"Clone ${repoOut.repo.show}") >>
-      gitAlg.clone(repo, withLogin(repoOut.clone_url)) >>
-      gitAlg.setAuthor(repo, config.gitCfg.gitAuthor) >> config.defaultBranch.fold(F.unit)(
-        gitAlg.checkoutBranch(repo, _)
-      )
+      gitAlg.clone(repo, withLogin(repoOut.clone_url)).adaptErr(adaptCloneError) >>
+      gitAlg.setAuthor(repo, config.gitCfg.gitAuthor) >>
+      config.defaultBranch.fold(F.unit)(gitAlg.checkoutBranch(repo, _))
+
+  private val adaptCloneError: PartialFunction[Throwable, Throwable] = {
+    case throwable if config.vcsType === GitHub && !config.doNotFork =>
+      val message =
+        """|If cloning failed with an error like 'access denied or repository not exported'
+           |the fork might not be ready yet. This error might disappear on the next run.
+           |See https://github.com/scala-steward-org/scala-steward/issues/472 for details.
+           |""".stripMargin
+      new Throwable(message, throwable)
+  }
+
+  private def maybeSyncFork(repo: Repo, repoOut: RepoOut): F[Unit] =
+    if (config.doNotFork) F.unit else syncFork(repo, repoOut)
 
   private def syncFork(repo: Repo, repoOut: RepoOut): F[Unit] =
     repoOut.parentOrRaise[F].flatMap { parent =>
