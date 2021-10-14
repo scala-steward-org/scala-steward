@@ -17,7 +17,7 @@ import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.application.Config.GitLabCfg
 import org.scalasteward.core.data.{RepoData, Update, UpdateData}
 import org.scalasteward.core.git.{Branch, Sha1}
-import org.scalasteward.core.mock.MockConfig.{config, user}
+import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.{HttpJsonClient, Nel}
 import org.scalasteward.core.vcs.data._
@@ -34,7 +34,7 @@ class GitLabApiAlgTest extends FunSuite {
       case GET -> Root / "projects" / "foo/bar" =>
         Ok(getRepo)
 
-      case POST -> Root / "projects" / "scala-steward/bar" / "merge_requests" =>
+      case POST -> Root / "projects" / s"${config.vcsLogin}/bar" / "merge_requests" =>
         Ok(getMr)
 
       case POST -> Root / "projects" / "foo/bar" / "merge_requests" =>
@@ -84,7 +84,7 @@ class GitLabApiAlgTest extends FunSuite {
       config.vcsApiHost,
       doNotFork = false,
       GitLabCfg(mergeWhenPipelineSucceeds = false),
-      user,
+      config.vcsLogin,
       _ => IO.pure
     )
 
@@ -118,7 +118,7 @@ class GitLabApiAlgTest extends FunSuite {
         config.vcsApiHost,
         doNotFork = true,
         GitLabCfg(mergeWhenPipelineSucceeds = false),
-        user,
+        config.vcsLogin,
         _ => IO.pure
       )
     val prOut =
@@ -157,7 +157,7 @@ class GitLabApiAlgTest extends FunSuite {
         config.vcsApiHost,
         doNotFork = true,
         GitLabCfg(mergeWhenPipelineSucceeds = true),
-        user,
+        config.vcsLogin,
         _ => IO.pure
       )
 
@@ -192,7 +192,7 @@ class GitLabApiAlgTest extends FunSuite {
         config.vcsApiHost,
         doNotFork = true,
         GitLabCfg(mergeWhenPipelineSucceeds = true),
-        user,
+        config.vcsLogin,
         _ => IO.pure
       )(errorJsonClient, implicitly, implicitly)
 
