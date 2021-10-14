@@ -28,7 +28,7 @@ import org.scalasteward.core.vcs.data._
 /** https://developer.atlassian.com/bitbucket/api/2/reference/ */
 class BitbucketApiAlg[F[_]](
     bitbucketApiHost: Uri,
-    user: AuthenticatedUser,
+    vcsLogin: String,
     modify: Repo => Request[F] => F[Request[F]],
     doNotFork: Boolean
 )(implicit client: HttpJsonClient[F], F: MonadThrow[F])
@@ -39,7 +39,7 @@ class BitbucketApiAlg[F[_]](
     for {
       fork <- client.post[RepositoryResponse](url.forks(repo), modify(repo)).recoverWith {
         case UnexpectedResponse(_, _, _, Status.BadRequest, _) =>
-          client.get(url.repo(repo.copy(owner = user.login)), modify(repo))
+          client.get(url.repo(repo.copy(owner = vcsLogin)), modify(repo))
       }
       maybeParent <-
         fork.parent
@@ -60,7 +60,7 @@ class BitbucketApiAlg[F[_]](
     )
 
   override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] = {
-    val sourceBranchOwner = if (doNotFork) repo.owner else user.login
+    val sourceBranchOwner = if (doNotFork) repo.owner else vcsLogin
 
     val payload = CreatePullRequestRequest(
       data.title,

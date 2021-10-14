@@ -42,14 +42,14 @@ final class VCSSelection[F[_]](config: Config, user: AuthenticatedUser)(implicit
       config.vcsApiHost,
       config.doNotFork,
       config.gitLabCfg,
-      user,
+      config.vcsLogin,
       _ => gitlab.authentication.addCredentials(user)
     )
 
   private def bitbucketApiAlg: BitbucketApiAlg[F] =
     new BitbucketApiAlg(
       config.vcsApiHost,
-      user,
+      config.vcsLogin,
       _ => bitbucket.authentication.addCredentials(user),
       config.doNotFork
     )

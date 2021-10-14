@@ -129,7 +129,7 @@ final class GitLabApiAlg[F[_]](
     gitlabApiHost: Uri,
     doNotFork: Boolean,
     config: GitLabCfg,
-    user: AuthenticatedUser,
+    vcsLogin: String,
     modify: Repo => Request[F] => F[Request[F]]
 )(implicit
     client: HttpJsonClient[F],
@@ -144,8 +144,8 @@ final class GitLabApiAlg[F[_]](
     client.get(url.listMergeRequests(repo, head, base.name), modify(repo))
 
   override def createFork(repo: Repo): F[RepoOut] = {
-    val userOwnedRepo = repo.copy(owner = user.login)
-    val data = ForkPayload(url.encodedProjectId(userOwnedRepo), user.login)
+    val userOwnedRepo = repo.copy(owner = vcsLogin)
+    val data = ForkPayload(url.encodedProjectId(userOwnedRepo), vcsLogin)
     client
       .postWithBody[RepoOut, ForkPayload](url.createFork(repo), data, modify(repo))
       .recoverWith {
@@ -157,7 +157,7 @@ final class GitLabApiAlg[F[_]](
   }
 
   override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] = {
-    val targetRepo = if (doNotFork) repo else repo.copy(owner = user.login)
+    val targetRepo = if (doNotFork) repo else repo.copy(owner = vcsLogin)
     val mergeRequest = for {
       projectId <- client.get[ProjectId](url.repos(repo), modify(repo))
       payload = MergeRequestPayload(url.encodedProjectId(targetRepo), projectId.id, data)
