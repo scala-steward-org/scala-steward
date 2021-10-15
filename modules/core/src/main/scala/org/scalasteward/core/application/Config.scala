@@ -41,7 +41,7 @@ import scala.concurrent.duration.FiniteDuration
   * This will be used if target repo doesn't have custom configuration.
   * Note if this file doesn't exist, empty configuration will be applied
   *
-  * == [[vcsApiHost]] ==
+  * == vcsCfg.apiHost ==
   * REST API v3 endpoints prefix
   *
   * For github.com this is "https://api.github.com", see
@@ -52,7 +52,7 @@ import scala.concurrent.duration.FiniteDuration
   *
   * == gitCfg.gitAskPass ==
   * Program that is invoked by scala-steward and git (via the `GIT_ASKPASS`
-  * environment variable) to request the password for the user [[vcsLogin]].
+  * environment variable) to request the password for the user vcsCfg.vcsLogin.
   *
   * This program could just be a simple shell script that echos the password.
   *
