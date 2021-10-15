@@ -76,15 +76,14 @@ final class Context[F[_]](implicit
 object Context {
   def step0[F[_]](args: Cli.Args)(implicit F: Async[F]): Resource[F, Context[F]] =
     for {
-      _ <- Resource.unit[F]
-      config = Config.from(args)
       logger <- Resource.eval(Slf4jLogger.fromName[F]("org.scalasteward.core"))
+      _ <- Resource.eval(printBanner(logger))
+      config = Config.from(args)
       client <- OkHttpBuilder.withDefaultClient[F].flatMap(_.resource)
-      fileAlg = FileAlg.create[F](logger, F)
-      processAlg = ProcessAlg.create[F](config.processCfg)(logger, F)
-      workspaceAlg = WorkspaceAlg.create[F](config)(fileAlg, logger, F)
-      context <-
-        Resource.eval(step1[F](config)(client, fileAlg, logger, processAlg, workspaceAlg, F))
+      fileAlg = FileAlg.create(logger, F)
+      processAlg = ProcessAlg.create(config.processCfg)(logger, F)
+      workspaceAlg = WorkspaceAlg.create(config)(fileAlg, logger, F)
+      context <- Resource.eval(step1(config)(client, fileAlg, logger, processAlg, workspaceAlg, F))
     } yield context
 
   def step1[F[_]](config: Config)(implicit
@@ -96,7 +95,6 @@ object Context {
       F: Async[F]
   ): F[Context[F]] =
     for {
-      _ <- printBanner[F]
       vcsUser <- config.vcsUser[F]
       artifactMigrationsLoader0 = new ArtifactMigrationsLoader[F]
       artifactMigrationsFinder0 <- artifactMigrationsLoader0.createFinder(config.artifactCfg)
@@ -155,7 +153,7 @@ object Context {
       new Context[F]
     }
 
-  private def printBanner[F[_]](implicit logger: Logger[F]): F[Unit] = {
+  private def printBanner[F[_]](logger: Logger[F]): F[Unit] = {
     val banner =
       """|  ____            _         ____  _                             _
          | / ___|  ___ __ _| | __ _  / ___|| |_ _____      ____ _ _ __ __| |
