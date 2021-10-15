@@ -21,7 +21,7 @@ import cats.implicits._
 import eu.timepit.refined.types.numeric.NonNegInt
 import fs2.Stream
 import org.http4s.Uri
-import org.scalasteward.core.application.Config
+import org.scalasteward.core.application.Config.VCSCfg
 import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.ProcessResult.{Created, Ignored, Updated}
 import org.scalasteward.core.data._
@@ -35,7 +35,7 @@ import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg}
 import org.scalasteward.core.{git, util, vcs}
 import org.typelevel.log4cats.Logger
 
-final class NurtureAlg[F[_]](config: Config)(implicit
+final class NurtureAlg[F[_]](config: VCSCfg)(implicit
     coursierAlg: CoursierAlg[F],
     editAlg: EditAlg[F],
     gitAlg: GitAlg[F],
@@ -57,7 +57,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
   def cloneAndSync(repo: Repo, fork: RepoOut): F[Branch] =
     for {
       _ <- gitAlg.cloneExists(repo).ifM(F.unit, vcsRepoAlg.cloneAndSync(repo, fork))
-      baseBranch <- vcsApiAlg.parentOrRepo(fork, config.vcsCfg.doNotFork).map(_.default_branch)
+      baseBranch <- vcsApiAlg.parentOrRepo(fork, config.doNotFork).map(_.default_branch)
     } yield baseBranch
 
   def updateDependencies(
@@ -85,7 +85,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
   def processUpdate(data: UpdateData): F[ProcessResult] =
     for {
       _ <- logger.info(s"Process update ${data.update.show}")
-      head = vcs.listingBranch(config.vcsCfg.tpe, data.fork, data.update)
+      head = vcs.listingBranch(config.tpe, data.fork, data.update)
       pullRequests <- vcsApiAlg.listPullRequests(data.repo, head, data.baseBranch)
       result <- pullRequests.headOption match {
         case Some(pr) if pr.isClosed =>
@@ -185,7 +185,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
           .get(data.update.mainArtifactId)
           .traverse(vcsExtraAlg.getReleaseRelatedUrls(_, data.update))
       filesWithOldVersion <- gitAlg.findFilesContaining(data.repo, data.update.currentVersion)
-      branchName = vcs.createBranch(config.vcsCfg.tpe, data.fork, data.update)
+      branchName = vcs.createBranch(config.tpe, data.fork, data.update)
       requestData = NewPullRequestData.from(
         data,
         branchName,

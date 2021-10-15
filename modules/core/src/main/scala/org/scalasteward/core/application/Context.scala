@@ -147,7 +147,7 @@ object Context {
         new RefreshErrorAlg[F](refreshErrorStore, config.refreshBackoffPeriod)
       implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F](config)
       implicit val editAlg: EditAlg[F] = new EditAlg[F]
-      implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F](config)
+      implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F](config.vcsCfg)
       implicit val pruningAlg: PruningAlg[F] = new PruningAlg[F]
       implicit val gitHubAppApiAlg: GitHubAppApiAlg[F] =
         new GitHubAppApiAlg[F](config.vcsCfg.apiHost)
