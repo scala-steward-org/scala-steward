@@ -25,7 +25,7 @@ import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.Config._
 import org.scalasteward.core.data.Resolver
-import org.scalasteward.core.git.Author
+import org.scalasteward.core.git.{Author, Branch}
 import org.scalasteward.core.io.{ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
@@ -33,7 +33,6 @@ import org.scalasteward.core.vcs.VCSType
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 import org.scalasteward.core.vcs.github.GitHubApp
 import scala.concurrent.duration.FiniteDuration
-import org.scalasteward.core.git.Branch
 
 /** Configuration for scala-steward.
   *
@@ -42,7 +41,7 @@ import org.scalasteward.core.git.Branch
   * This will be used if target repo doesn't have custom configuration.
   * Note if this file doesn't exist, empty configuration will be applied
   *
-  * == [[vcsApiHost]] ==
+  * == vcsCfg.apiHost ==
   * REST API v3 endpoints prefix
   *
   * For github.com this is "https://api.github.com", see
@@ -53,7 +52,7 @@ import org.scalasteward.core.git.Branch
   *
   * == gitCfg.gitAskPass ==
   * Program that is invoked by scala-steward and git (via the `GIT_ASKPASS`
-  * environment variable) to request the password for the user [[vcsLogin]].
+  * environment variable) to request the password for the user vcsCfg.vcsLogin.
   *
   * This program could just be a simple shell script that echos the password.
   *
@@ -64,10 +63,7 @@ final case class Config(
     reposFile: File,
     defaultRepoConfigFile: Option[File],
     gitCfg: GitCfg,
-    vcsType: VCSType,
-    vcsApiHost: Uri,
-    vcsLogin: String,
-    doNotFork: Boolean,
+    vcsCfg: VCSCfg,
     ignoreOptsFiles: Boolean,
     processCfg: ProcessCfg,
     scalafixCfg: ScalafixCfg,
@@ -88,10 +84,12 @@ final case class Config(
   ): F[AuthenticatedUser] =
     for {
       rootDir <- workspaceAlg.rootDir
-      urlWithUser = util.uri.withUserInfo.replace(UserInfo(vcsLogin, None))(vcsApiHost).renderString
+      urlWithUser = util.uri.withUserInfo
+        .replace(UserInfo(vcsCfg.login, None))(vcsCfg.apiHost)
+        .renderString
       prompt = s"Password for '$urlWithUser': "
       password <- processAlg.exec(Nel.of(gitCfg.gitAskPass.pathAsString, prompt), rootDir)
-    } yield AuthenticatedUser(vcsLogin, password.mkString.trim)
+    } yield AuthenticatedUser(vcsCfg.login, password.mkString.trim)
 }
 
 object Config {
@@ -99,6 +97,13 @@ object Config {
       gitAuthor: Author,
       gitAskPass: File,
       signCommits: Boolean
+  )
+
+  final case class VCSCfg(
+      tpe: VCSType,
+      apiHost: Uri,
+      login: String,
+      doNotFork: Boolean
   )
 
   final case class ProcessCfg(
@@ -142,10 +147,12 @@ object Config {
         gitAskPass = args.gitAskPass,
         signCommits = args.signCommits
       ),
-      vcsType = args.vcsType,
-      vcsApiHost = args.vcsApiHost,
-      vcsLogin = args.vcsLogin,
-      doNotFork = args.doNotFork,
+      vcsCfg = VCSCfg(
+        tpe = args.vcsType,
+        apiHost = args.vcsApiHost,
+        login = args.vcsLogin,
+        doNotFork = args.doNotFork
+      ),
       ignoreOptsFiles = args.ignoreOptsFiles,
       processCfg = ProcessCfg(
         envVars = args.envVar,

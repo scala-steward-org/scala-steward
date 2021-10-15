@@ -45,7 +45,7 @@ final class RepoCacheAlg[F[_]](config: Config)(implicit
         (
           vcsApiAlg.createForkOrGetRepoWithDefaultBranch(
             repo,
-            config.doNotFork,
+            config.vcsCfg.doNotFork,
             config.defaultBranch
           ),
           repoCacheRepository.findCache(repo)

@@ -9,6 +9,7 @@ import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.application.Config.VCSCfg
 import org.scalasteward.core.data.{ReleaseRelatedUrl, Update}
 import org.scalasteward.core.mock.MockConfig
 import org.scalasteward.core.util.{Nel, UrlChecker}
@@ -30,7 +31,7 @@ class VCSExtraAlgTest extends FunSuite {
   private val updateBuz = Update.Single("com.example" % "buz" % "0.1.0", Nel.of("0.2.0"))
 
   test("getBranchCompareUrl: std vsc") {
-    val vcsExtraAlg = VCSExtraAlg.create[IO](MockConfig.config)
+    val vcsExtraAlg = VCSExtraAlg.create[IO](MockConfig.config.vcsCfg)
 
     assertEquals(
       vcsExtraAlg
@@ -57,10 +58,7 @@ class VCSExtraAlgTest extends FunSuite {
   }
 
   test("getBranchCompareUrl: github on prem") {
-    val config = MockConfig.config.copy(
-      vcsType = VCSType.GitHub,
-      vcsApiHost = uri"https://github.on-prem.com/"
-    )
+    val config = VCSCfg(VCSType.GitHub, uri"https://github.on-prem.com/", "", doNotFork = false)
     val githubOnPremVcsExtraAlg = VCSExtraAlg.create[IO](config)
 
     assertEquals(
