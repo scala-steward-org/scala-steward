@@ -103,7 +103,7 @@ object Context {
       scalafixMigrationsLoader0 = new ScalafixMigrationsLoader[F]
       scalafixMigrationsFinder0 <- scalafixMigrationsLoader0.createFinder(config.scalafixCfg)
       urlChecker0 <- UrlChecker.create[F](config)
-      kvsPrefix = Some(config.vcsType.asString)
+      kvsPrefix = Some(config.vcsCfg.tpe.asString)
       pullRequestsStore <- JsonKeyValueStore
         .create[F, Repo, Map[Uri, PullRequestData]]("pull_requests", "2", kvsPrefix)
         .flatMap(CachingKeyValueStore.wrap(_))
@@ -130,7 +130,7 @@ object Context {
         new RepoCacheRepository[F](repoCacheStore)
       implicit val vcsApiAlg: VCSApiAlg[F] = new VCSSelection[F](config, vcsUser).vcsApiAlg
       implicit val vcsRepoAlg: VCSRepoAlg[F] = new VCSRepoAlg[F](config)
-      implicit val vcsExtraAlg: VCSExtraAlg[F] = VCSExtraAlg.create[F](config)
+      implicit val vcsExtraAlg: VCSExtraAlg[F] = VCSExtraAlg.create[F](config.vcsCfg)
       implicit val pullRequestRepository: PullRequestRepository[F] =
         new PullRequestRepository[F](pullRequestsStore)
       implicit val scalafmtAlg: ScalafmtAlg[F] = new ScalafmtAlg[F](config)
@@ -149,7 +149,8 @@ object Context {
       implicit val editAlg: EditAlg[F] = new EditAlg[F]
       implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F](config)
       implicit val pruningAlg: PruningAlg[F] = new PruningAlg[F]
-      implicit val gitHubAppApiAlg: GitHubAppApiAlg[F] = new GitHubAppApiAlg[F](config.vcsApiHost)
+      implicit val gitHubAppApiAlg: GitHubAppApiAlg[F] =
+        new GitHubAppApiAlg[F](config.vcsCfg.apiHost)
       implicit val stewardAlg: StewardAlg[F] = new StewardAlg[F](config)
       new Context[F]
     }

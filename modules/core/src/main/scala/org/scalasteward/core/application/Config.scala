@@ -25,7 +25,7 @@ import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.Config._
 import org.scalasteward.core.data.Resolver
-import org.scalasteward.core.git.Author
+import org.scalasteward.core.git.{Author, Branch}
 import org.scalasteward.core.io.{ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
@@ -33,7 +33,6 @@ import org.scalasteward.core.vcs.VCSType
 import org.scalasteward.core.vcs.data.AuthenticatedUser
 import org.scalasteward.core.vcs.github.GitHubApp
 import scala.concurrent.duration.FiniteDuration
-import org.scalasteward.core.git.Branch
 
 /** Configuration for scala-steward.
   *
@@ -64,10 +63,7 @@ final case class Config(
     reposFile: File,
     defaultRepoConfigFile: Option[File],
     gitCfg: GitCfg,
-    vcsType: VCSType,
-    vcsApiHost: Uri,
-    vcsLogin: String,
-    doNotFork: Boolean,
+    vcsCfg: VCSCfg,
     ignoreOptsFiles: Boolean,
     processCfg: ProcessCfg,
     scalafixCfg: ScalafixCfg,
@@ -88,10 +84,12 @@ final case class Config(
   ): F[AuthenticatedUser] =
     for {
       rootDir <- workspaceAlg.rootDir
-      urlWithUser = util.uri.withUserInfo.replace(UserInfo(vcsLogin, None))(vcsApiHost).renderString
+      urlWithUser = util.uri.withUserInfo
+        .replace(UserInfo(vcsCfg.login, None))(vcsCfg.apiHost)
+        .renderString
       prompt = s"Password for '$urlWithUser': "
       password <- processAlg.exec(Nel.of(gitCfg.gitAskPass.pathAsString, prompt), rootDir)
-    } yield AuthenticatedUser(vcsLogin, password.mkString.trim)
+    } yield AuthenticatedUser(vcsCfg.login, password.mkString.trim)
 }
 
 object Config {
@@ -99,6 +97,13 @@ object Config {
       gitAuthor: Author,
       gitAskPass: File,
       signCommits: Boolean
+  )
+
+  final case class VCSCfg(
+      tpe: VCSType,
+      apiHost: Uri,
+      login: String,
+      doNotFork: Boolean
   )
 
   final case class ProcessCfg(
@@ -142,10 +147,12 @@ object Config {
         gitAskPass = args.gitAskPass,
         signCommits = args.signCommits
       ),
-      vcsType = args.vcsType,
-      vcsApiHost = args.vcsApiHost,
-      vcsLogin = args.vcsLogin,
-      doNotFork = args.doNotFork,
+      vcsCfg = VCSCfg(
+        tpe = args.vcsType,
+        apiHost = args.vcsApiHost,
+        login = args.vcsLogin,
+        doNotFork = args.doNotFork
+      ),
       ignoreOptsFiles = args.ignoreOptsFiles,
       processCfg = ProcessCfg(
         envVars = args.envVar,
