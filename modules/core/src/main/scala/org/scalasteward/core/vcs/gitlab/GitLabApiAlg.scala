@@ -22,7 +22,7 @@ import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.syntax._
 import org.http4s.{Request, Status, Uri}
-import org.scalasteward.core.application.Config.GitLabCfg
+import org.scalasteward.core.application.Config.{GitLabCfg, VCSCfg}
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.util.uri.uriDecoder
 import org.scalasteward.core.util.{HttpJsonClient, UnexpectedResponse}
@@ -126,10 +126,8 @@ private[gitlab] object GitLabJsonCodec {
 }
 
 final class GitLabApiAlg[F[_]](
-    gitlabApiHost: Uri,
-    doNotFork: Boolean,
-    config: GitLabCfg,
-    vcsLogin: String,
+    vcsCfg: VCSCfg,
+    gitLabCfg: GitLabCfg,
     modify: Repo => Request[F] => F[Request[F]]
 )(implicit
     client: HttpJsonClient[F],
@@ -138,14 +136,14 @@ final class GitLabApiAlg[F[_]](
 ) extends VCSApiAlg[F] {
   import GitLabJsonCodec._
 
-  private val url = new Url(gitlabApiHost)
+  private val url = new Url(vcsCfg.apiHost)
 
   override def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]] =
     client.get(url.listMergeRequests(repo, head, base.name), modify(repo))
 
   override def createFork(repo: Repo): F[RepoOut] = {
-    val userOwnedRepo = repo.copy(owner = vcsLogin)
-    val data = ForkPayload(url.encodedProjectId(userOwnedRepo), vcsLogin)
+    val userOwnedRepo = repo.copy(owner = vcsCfg.login)
+    val data = ForkPayload(url.encodedProjectId(userOwnedRepo), vcsCfg.login)
     client
       .postWithBody[RepoOut, ForkPayload](url.createFork(repo), data, modify(repo))
       .recoverWith {
@@ -157,7 +155,7 @@ final class GitLabApiAlg[F[_]](
   }
 
   override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] = {
-    val targetRepo = if (doNotFork) repo else repo.copy(owner = vcsLogin)
+    val targetRepo = if (vcsCfg.doNotFork) repo else repo.copy(owner = vcsCfg.login)
     val mergeRequest = for {
       projectId <- client.get[ProjectId](url.repos(repo), modify(repo))
       payload = MergeRequestPayload(url.encodedProjectId(targetRepo), projectId.id, data)
@@ -181,7 +179,7 @@ final class GitLabApiAlg[F[_]](
         }
 
     val updatedMergeRequest =
-      if (!config.mergeWhenPipelineSucceeds)
+      if (!gitLabCfg.mergeWhenPipelineSucceeds)
         mergeRequest
       else
         mergeRequest

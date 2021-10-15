@@ -43,7 +43,7 @@ final class VCSRepoAlg[F[_]](config: Config)(implicit
       config.defaultBranch.fold(F.unit)(gitAlg.checkoutBranch(repo, _))
 
   private val adaptCloneError: PartialFunction[Throwable, Throwable] = {
-    case throwable if config.vcsType === GitHub && !config.doNotFork =>
+    case throwable if config.vcsCfg.tpe === GitHub && !config.vcsCfg.doNotFork =>
       val message =
         """|If cloning failed with an error like 'access denied or repository not exported'
            |the fork might not be ready yet. This error might disappear on the next run.
@@ -53,7 +53,7 @@ final class VCSRepoAlg[F[_]](config: Config)(implicit
   }
 
   private def maybeSyncFork(repo: Repo, repoOut: RepoOut): F[Unit] =
-    if (config.doNotFork) F.unit else syncFork(repo, repoOut)
+    if (config.vcsCfg.doNotFork) F.unit else syncFork(repo, repoOut)
 
   private def syncFork(repo: Repo, repoOut: RepoOut): F[Unit] =
     repoOut.parentOrRaise[F].flatMap { parent =>
@@ -67,5 +67,5 @@ final class VCSRepoAlg[F[_]](config: Config)(implicit
     }
 
   private val withLogin: Uri => Uri =
-    util.uri.withUserInfo.replace(UserInfo(config.vcsLogin, None))
+    util.uri.withUserInfo.replace(UserInfo(config.vcsCfg.login, None))
 }
