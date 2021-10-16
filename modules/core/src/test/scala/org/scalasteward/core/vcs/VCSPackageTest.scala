@@ -16,15 +16,27 @@ class VCSPackageTest extends FunSuite {
     Update.Single("ch.qos.logback" % "logback-classic" % "1.2.0", Nel.of("1.2.3"))
 
   test("listingBranch") {
-    assertEquals(listingBranch(GitHub, repo, update, Some(branch)), "foo/bar:update/custom/logback-classic-1.2.3")
-    assertEquals(listingBranch(GitLab, repo, update, Some(branch)), "update/custom/logback-classic-1.2.3")
-    assertEquals(listingBranch(GitHub, repo, update,None), "foo/bar:update/logback-classic-1.2.3")
-    assertEquals(listingBranch(GitLab, repo, update,None), "update/logback-classic-1.2.3")
+    assertEquals(
+      listingBranch(GitHub, repo, update, Some(branch)),
+      "foo/bar:update/custom/logback-classic-1.2.3"
+    )
+    assertEquals(
+      listingBranch(GitLab, repo, update, Some(branch)),
+      "update/custom/logback-classic-1.2.3"
+    )
+    assertEquals(listingBranch(GitHub, repo, update, None), "foo/bar:update/logback-classic-1.2.3")
+    assertEquals(listingBranch(GitLab, repo, update, None), "update/logback-classic-1.2.3")
   }
 
   test("createBranch") {
-    assertEquals(createBranch(GitHub, repo, update, Some(branch)), "foo:update/custom/logback-classic-1.2.3")
-    assertEquals(createBranch(GitLab, repo, update, Some(branch)), "update/custom/logback-classic-1.2.3")
+    assertEquals(
+      createBranch(GitHub, repo, update, Some(branch)),
+      "foo:update/custom/logback-classic-1.2.3"
+    )
+    assertEquals(
+      createBranch(GitLab, repo, update, Some(branch)),
+      "update/custom/logback-classic-1.2.3"
+    )
     assertEquals(createBranch(GitHub, repo, update, None), "foo:update/logback-classic-1.2.3")
     assertEquals(createBranch(GitLab, repo, update, None), "update/logback-classic-1.2.3")
   }

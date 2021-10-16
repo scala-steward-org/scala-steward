@@ -40,14 +40,14 @@ object Repo {
     val regexWithBranch = """(.+)/([^/]+)#([^/]+)""".r
     KeyDecoder.instance {
       case regexWithBranch(owner, repo, branch) => Some(Repo(owner, repo, Some(Branch(branch))))
-      case regex(owner, repo) => Some(Repo(owner, repo))
-      case _            => None
+      case regex(owner, repo)                   => Some(Repo(owner, repo))
+      case _                                    => None
     }
   }
 
   implicit val repoKeyEncoder: KeyEncoder[Repo] =
     KeyEncoder.instance {
       case Repo(owner, repo, Some(branch)) => owner + "/" + repo + "/" + branch.name
-      case Repo(owner, repo, None) => owner + "/" + repo
+      case Repo(owner, repo, None)         => owner + "/" + repo
     }
 }

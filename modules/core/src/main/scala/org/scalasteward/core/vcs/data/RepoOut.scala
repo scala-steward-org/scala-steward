@@ -36,8 +36,9 @@ final case class RepoOut(
   def repo: Repo =
     Repo(owner.login, name)
 
-  def withBranch(branch: Branch): RepoOut = copy(default_branch = branch, parent = parent.map(_.withBranch(branch)))
-  
+  def withBranch(branch: Branch): RepoOut =
+    copy(default_branch = branch, parent = parent.map(_.withBranch(branch)))
+
 }
 
 object RepoOut {

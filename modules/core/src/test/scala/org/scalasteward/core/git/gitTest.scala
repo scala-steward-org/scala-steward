@@ -44,8 +44,12 @@ class gitTest extends ScalaCheckSuite {
 
   test("commitMsgFor should work with templated message and non-default branch") {
     val commitsConfig =
-      CommitsConfig(Some(s"Update $${artifactName} from $${currentVersion} to $${nextVersion} in $${branchName}"))
-      val branch = Branch("some-branch")
+      CommitsConfig(
+        Some(
+          s"Update $${artifactName} from $${currentVersion} to $${nextVersion} in $${branchName}"
+        )
+      )
+    val branch = Branch("some-branch")
     forAll { update: Update =>
       val expected =
         s"Update ${show.oneLiner(update)} from ${update.currentVersion} to ${update.nextVersion} in ${branch.name}"

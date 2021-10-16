@@ -27,8 +27,8 @@ package object git {
 
   def branchFor(update: Update, baseBranch: Option[Branch]): Branch =
     baseBranch
-       .map(branch => Branch(s"update/${branch.name}/${update.name}-${update.nextVersion}"))
-       .getOrElse(Branch(s"update/${update.name}-${update.nextVersion}"))
+      .map(branch => Branch(s"update/${branch.name}/${update.name}-${update.nextVersion}"))
+      .getOrElse(Branch(s"update/${update.name}-${update.nextVersion}"))
 
   def commitMsgFor(update: Update, commitsConfig: CommitsConfig, branch: Option[Branch]): String = {
     val artifact = show.oneLiner(update)
