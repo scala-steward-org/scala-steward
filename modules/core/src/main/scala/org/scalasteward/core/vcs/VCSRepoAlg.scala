@@ -34,14 +34,12 @@ final class VCSRepoAlg[F[_]](config: Config)(implicit
     F: MonadThrow[F]
 ) {
   def cloneAndSync(repo: Repo, repoOut: RepoOut): F[Unit] =
-    clone(repo, repoOut) >> maybeSyncFork(repo, repoOut) >> initSubmodules(repo)
+    clone(repo, repoOut) >> maybeCheckoutBranchOrSyncFork(repo, repoOut) >> initSubmodules(repo)
 
   private def clone(repo: Repo, repoOut: RepoOut): F[Unit] =
     logger.info(s"Clone ${repoOut.repo.show}") >>
       gitAlg.clone(repo, withLogin(repoOut.clone_url)).adaptErr(adaptCloneError) >>
-      gitAlg.setAuthor(repo, config.gitCfg.gitAuthor) >> repo.branch.fold(F.unit)(
-        gitAlg.checkoutBranch(repo, _)
-      )
+      gitAlg.setAuthor(repo, config.gitCfg.gitAuthor)
 
   private val adaptCloneError: PartialFunction[Throwable, Throwable] = {
     case throwable if config.vcsCfg.tpe === GitHub && !config.vcsCfg.doNotFork =>
@@ -53,8 +51,9 @@ final class VCSRepoAlg[F[_]](config: Config)(implicit
       new Throwable(message, throwable)
   }
 
-  private def maybeSyncFork(repo: Repo, repoOut: RepoOut): F[Unit] =
-    if (config.vcsCfg.doNotFork) F.unit else syncFork(repo, repoOut)
+  private def maybeCheckoutBranchOrSyncFork(repo: Repo, repoOut: RepoOut): F[Unit] =
+    if (config.vcsCfg.doNotFork) repo.branch.fold(F.unit)(gitAlg.checkoutBranch(repo, _))
+    else syncFork(repo, repoOut)
 
   private def syncFork(repo: Repo, repoOut: RepoOut): F[Unit] =
     repoOut.parentOrRaise[F].flatMap { parent =>
