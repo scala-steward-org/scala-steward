@@ -117,10 +117,10 @@ class PruningAlgTest extends FunSuite {
           |}""".stripMargin
     )
     val pullRequestsFile =
-      config.workspace / s"store/pull_requests/v2/github/${repo.show}/pull_requests.json"
+      config.workspace / s"store/pull_requests/v2/github/${repo.toPath}/pull_requests.json"
     val pullRequestsContent =
       s"""|{
-          |  "https://github.com/${repo.show}/pull/27" : {
+          |  "https://github.com/${repo.toPath}/pull/27" : {
           |    "baseSha1" : "12def27a837ba6dc9e17406cbbe342fba3527c14",
           |    "update" : {
           |      "Single" : {

@@ -13,7 +13,7 @@ class MillAlgTest extends FunSuite {
   test("getDependencies") {
     val repo = Repo("lihaoyi", "fastparse")
     val buildRoot = BuildRoot(repo, ".")
-    val repoDir = config.workspace / repo.show
+    val repoDir = config.workspace / repo.toPath
     val predef = s"$repoDir/scala-steward.sc"
     val millCmd = List(
       "firejail",

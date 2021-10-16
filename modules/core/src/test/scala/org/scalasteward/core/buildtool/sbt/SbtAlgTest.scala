@@ -36,7 +36,7 @@ class SbtAlgTest extends FunSuite {
   test("getDependencies") {
     val repo = Repo("typelevel", "cats")
     val buildRoot = BuildRoot(repo, ".")
-    val repoDir = config.workspace / repo.show
+    val repoDir = config.workspace / repo.toPath
     val files = Map(repoDir / "project" / "build.properties" -> "sbt.version=1.2.6")
     val initial = MockState.empty.copy(files = files)
     val state = sbtAlg.getDependencies(buildRoot).runS(initial).unsafeRunSync()
@@ -64,7 +64,7 @@ class SbtAlgTest extends FunSuite {
   test("runMigrations") {
     val repo = Repo("fthomas", "scala-steward")
     val buildRoot = BuildRoot(repo, ".")
-    val repoDir = config.workspace / repo.show
+    val repoDir = config.workspace / repo.toPath
     val migration = ScalafixMigration(
       GroupId("co.fs2"),
       Nel.of("fs2-core"),
@@ -101,7 +101,7 @@ class SbtAlgTest extends FunSuite {
   test("runMigrations: migration with scalacOptions") {
     val repo = Repo("fthomas", "scala-steward")
     val buildRoot = BuildRoot(repo, ".")
-    val repoDir = config.workspace / repo.show
+    val repoDir = config.workspace / repo.toPath
     val migration = ScalafixMigration(
       GroupId("org.typelevel"),
       Nel.of("cats-core"),
