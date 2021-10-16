@@ -25,7 +25,7 @@ import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.Config._
 import org.scalasteward.core.data.Resolver
-import org.scalasteward.core.git.{Author, Branch}
+import org.scalasteward.core.git.Author
 import org.scalasteward.core.io.{ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
