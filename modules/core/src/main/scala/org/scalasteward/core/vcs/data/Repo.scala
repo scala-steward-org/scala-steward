@@ -41,8 +41,5 @@ object Repo {
     Eq.fromUniversalEquals
 
   implicit val repoKeyEncoder: KeyEncoder[Repo] =
-    KeyEncoder.instance {
-      case Repo(owner, repo, Some(branch)) => owner + "/" + repo + "/" + branch.name
-      case Repo(owner, repo, None)         => owner + "/" + repo
-    }
+    KeyEncoder.instance(_.toPath)
 }
