@@ -18,7 +18,8 @@ package org.scalasteward.core.vcs.bitbucket
 
 import cats.MonadThrow
 import cats.syntax.all._
-import org.http4s.{Request, Status, Uri}
+import org.http4s.{Request, Status}
+import org.scalasteward.core.application.Config.VCSCfg
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.{HttpJsonClient, UnexpectedResponse}
 import org.scalasteward.core.vcs.VCSApiAlg
@@ -26,20 +27,17 @@ import org.scalasteward.core.vcs.bitbucket.json._
 import org.scalasteward.core.vcs.data._
 
 /** https://developer.atlassian.com/bitbucket/api/2/reference/ */
-class BitbucketApiAlg[F[_]](
-    bitbucketApiHost: Uri,
-    user: AuthenticatedUser,
-    modify: Repo => Request[F] => F[Request[F]],
-    doNotFork: Boolean
-)(implicit client: HttpJsonClient[F], F: MonadThrow[F])
-    extends VCSApiAlg[F] {
-  private val url = new Url(bitbucketApiHost)
+class BitbucketApiAlg[F[_]](config: VCSCfg, modify: Repo => Request[F] => F[Request[F]])(implicit
+    client: HttpJsonClient[F],
+    F: MonadThrow[F]
+) extends VCSApiAlg[F] {
+  private val url = new Url(config.apiHost)
 
   override def createFork(repo: Repo): F[RepoOut] =
     for {
       fork <- client.post[RepositoryResponse](url.forks(repo), modify(repo)).recoverWith {
         case UnexpectedResponse(_, _, _, Status.BadRequest, _) =>
-          client.get(url.repo(repo.copy(owner = user.login)), modify(repo))
+          client.get(url.repo(repo.copy(owner = config.login)), modify(repo))
       }
       maybeParent <-
         fork.parent
@@ -60,7 +58,7 @@ class BitbucketApiAlg[F[_]](
     )
 
   override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] = {
-    val sourceBranchOwner = if (doNotFork) repo.owner else user.login
+    val sourceBranchOwner = if (config.doNotFork) repo.owner else config.login
 
     val payload = CreatePullRequestRequest(
       data.title,

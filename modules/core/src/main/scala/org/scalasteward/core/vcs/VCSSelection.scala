@@ -35,24 +35,17 @@ final class VCSSelection[F[_]](config: Config, user: AuthenticatedUser)(implicit
     F: MonadThrow[F]
 ) {
   private def gitHubApiAlg: GitHubApiAlg[F] =
-    new GitHubApiAlg[F](config.vcsApiHost, _ => github.authentication.addCredentials(user))
+    new GitHubApiAlg[F](config.vcsCfg.apiHost, _ => github.authentication.addCredentials(user))
 
   private def gitLabApiAlg: GitLabApiAlg[F] =
     new GitLabApiAlg[F](
-      config.vcsApiHost,
-      config.doNotFork,
+      config.vcsCfg,
       config.gitLabCfg,
-      user,
       _ => gitlab.authentication.addCredentials(user)
     )
 
   private def bitbucketApiAlg: BitbucketApiAlg[F] =
-    new BitbucketApiAlg(
-      config.vcsApiHost,
-      user,
-      _ => bitbucket.authentication.addCredentials(user),
-      config.doNotFork
-    )
+    new BitbucketApiAlg(config.vcsCfg, _ => bitbucket.authentication.addCredentials(user))
 
   private def bitbucketServerApiAlg: BitbucketServerApiAlg[F] = {
     // Bypass the server-side XSRF check, see
@@ -60,7 +53,7 @@ final class VCSSelection[F[_]](config: Config, user: AuthenticatedUser)(implicit
     val xAtlassianToken = Header.Raw(ci"X-Atlassian-Token", "no-check")
 
     new BitbucketServerApiAlg[F](
-      config.vcsApiHost,
+      config.vcsCfg.apiHost,
       config.bitbucketServerCfg,
       _ =>
         req => bitbucket.authentication.addCredentials(user).apply(req.putHeaders(xAtlassianToken))
@@ -68,7 +61,7 @@ final class VCSSelection[F[_]](config: Config, user: AuthenticatedUser)(implicit
   }
 
   def vcsApiAlg: VCSApiAlg[F] =
-    config.vcsType match {
+    config.vcsCfg.tpe match {
       case GitHub          => gitHubApiAlg
       case GitLab          => gitLabApiAlg
       case Bitbucket       => bitbucketApiAlg

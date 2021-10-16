@@ -17,7 +17,7 @@ import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.application.Config.GitLabCfg
 import org.scalasteward.core.data.{RepoData, Update, UpdateData}
 import org.scalasteward.core.git.{Branch, Sha1}
-import org.scalasteward.core.mock.MockConfig.{config, user}
+import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.{HttpJsonClient, Nel}
 import org.scalasteward.core.vcs.data._
@@ -34,7 +34,7 @@ class GitLabApiAlgTest extends FunSuite {
       case GET -> Root / "projects" / "foo/bar" =>
         Ok(getRepo)
 
-      case POST -> Root / "projects" / "scala-steward/bar" / "merge_requests" =>
+      case POST -> Root / "projects" / s"${config.vcsCfg.login}/bar" / "merge_requests" =>
         Ok(getMr)
 
       case POST -> Root / "projects" / "foo/bar" / "merge_requests" =>
@@ -80,13 +80,7 @@ class GitLabApiAlgTest extends FunSuite {
   implicit val httpJsonClient: HttpJsonClient[IO] = new HttpJsonClient[IO]
   implicit val logger: Logger[IO] = Slf4jLogger.getLogger[IO]
   val gitlabApiAlg =
-    new GitLabApiAlg[IO](
-      config.vcsApiHost,
-      doNotFork = false,
-      GitLabCfg(mergeWhenPipelineSucceeds = false),
-      user,
-      _ => IO.pure
-    )
+    new GitLabApiAlg[IO](config.vcsCfg, GitLabCfg(mergeWhenPipelineSucceeds = false), _ => IO.pure)
 
   private val data = UpdateData(
     RepoData(Repo("foo", "bar"), dummyRepoCache, RepoConfig.empty),
@@ -113,18 +107,14 @@ class GitLabApiAlgTest extends FunSuite {
   }
 
   test("createPullRequest -- no fork") {
-    val gitlabApiAlgNoFork =
-      new GitLabApiAlg[IO](
-        config.vcsApiHost,
-        doNotFork = true,
-        GitLabCfg(mergeWhenPipelineSucceeds = false),
-        user,
-        _ => IO.pure
-      )
-    val prOut =
-      gitlabApiAlgNoFork
-        .createPullRequest(Repo("foo", "bar"), newPRData)
-        .unsafeRunSync()
+    val gitlabApiAlgNoFork = new GitLabApiAlg[IO](
+      config.vcsCfg.copy(doNotFork = true),
+      GitLabCfg(mergeWhenPipelineSucceeds = false),
+      _ => IO.pure
+    )
+    val prOut = gitlabApiAlgNoFork
+      .createPullRequest(Repo("foo", "bar"), newPRData)
+      .unsafeRunSync()
     val expected = PullRequestOut(
       uri"https://gitlab.com/foo/bar/merge_requests/150",
       PullRequestState.Open,
@@ -152,14 +142,11 @@ class GitLabApiAlgTest extends FunSuite {
   }
 
   test("createPullRequest -- auto merge") {
-    val gitlabApiAlgNoFork =
-      new GitLabApiAlg[IO](
-        config.vcsApiHost,
-        doNotFork = true,
-        GitLabCfg(mergeWhenPipelineSucceeds = true),
-        user,
-        _ => IO.pure
-      )
+    val gitlabApiAlgNoFork = new GitLabApiAlg[IO](
+      config.vcsCfg.copy(doNotFork = true),
+      GitLabCfg(mergeWhenPipelineSucceeds = true),
+      _ => IO.pure
+    )
 
     val prOut = gitlabApiAlgNoFork
       .createPullRequest(Repo("foo", "bar"), newPRData)
@@ -187,19 +174,15 @@ class GitLabApiAlgTest extends FunSuite {
     val errorJsonClient: HttpJsonClient[IO] =
       new HttpJsonClient[IO]()(errorClient, Concurrent[IO])
 
-    val gitlabApiAlgNoFork =
-      new GitLabApiAlg[IO](
-        config.vcsApiHost,
-        doNotFork = true,
-        GitLabCfg(mergeWhenPipelineSucceeds = true),
-        user,
-        _ => IO.pure
-      )(errorJsonClient, implicitly, implicitly)
+    val gitlabApiAlgNoFork = new GitLabApiAlg[IO](
+      config.vcsCfg.copy(doNotFork = true),
+      GitLabCfg(mergeWhenPipelineSucceeds = true),
+      _ => IO.pure
+    )(errorJsonClient, implicitly, implicitly)
 
-    val prOut =
-      gitlabApiAlgNoFork
-        .createPullRequest(Repo("foo", "bar"), newPRData)
-        .unsafeRunSync()
+    val prOut = gitlabApiAlgNoFork
+      .createPullRequest(Repo("foo", "bar"), newPRData)
+      .unsafeRunSync()
 
     val expected = PullRequestOut(
       uri"https://gitlab.com/foo/bar/merge_requests/150",

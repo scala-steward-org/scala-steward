@@ -21,7 +21,7 @@ import cats.implicits._
 import eu.timepit.refined.types.numeric.NonNegInt
 import fs2.Stream
 import org.http4s.Uri
-import org.scalasteward.core.application.Config
+import org.scalasteward.core.application.Config.VCSCfg
 import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.ProcessResult.{Created, Ignored, Updated}
 import org.scalasteward.core.data._
@@ -35,7 +35,7 @@ import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg}
 import org.scalasteward.core.{git, util, vcs}
 import org.typelevel.log4cats.Logger
 
-final class NurtureAlg[F[_]](config: Config)(implicit
+final class NurtureAlg[F[_]](config: VCSCfg)(implicit
     coursierAlg: CoursierAlg[F],
     editAlg: EditAlg[F],
     gitAlg: GitAlg[F],
@@ -85,7 +85,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
   def processUpdate(data: UpdateData): F[ProcessResult] =
     for {
       _ <- logger.info(s"Process update ${data.update.show}")
-      head = vcs.listingBranch(config.vcsType, data.fork, data.update, data.repo.branch)
+      head = vcs.listingBranch(config.tpe, data.fork, data.update, data.repo.branch)
       pullRequests <- vcsApiAlg.listPullRequests(data.repo, head, data.baseBranch)
       result <- pullRequests.headOption match {
         case Some(pr) if pr.isClosed =>
@@ -185,7 +185,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
           .get(data.update.mainArtifactId)
           .traverse(vcsExtraAlg.getReleaseRelatedUrls(_, data.update))
       filesWithOldVersion <- gitAlg.findFilesContaining(data.repo, data.update.currentVersion)
-      branchName = vcs.createBranch(config.vcsType, data.fork, data.update, data.repo.branch)
+      branchName = vcs.createBranch(config.tpe, data.fork, data.update, data.repo.branch)
       requestData = NewPullRequestData.from(
         data,
         branchName,

@@ -92,7 +92,7 @@ class GitHubApiAlgTest extends FunSuite {
 
   implicit val client: Client[IO] = Client.fromHttpApp(routes.orNotFound)
   implicit val httpJsonClient: HttpJsonClient[IO] = new HttpJsonClient[IO]
-  val gitHubApiAlg = new GitHubApiAlg[IO](config.vcsApiHost, _ => IO.pure)
+  val gitHubApiAlg = new GitHubApiAlg[IO](config.vcsCfg.apiHost, _ => IO.pure)
 
   private val repo = Repo("fthomas", "base.g8")
 

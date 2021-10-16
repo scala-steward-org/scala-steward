@@ -62,7 +62,7 @@ class BitbucketServerApiAlgTest extends FunSuite {
   implicit private val httpJsonClient: HttpJsonClient[IO] = new HttpJsonClient[IO]
   private val bitbucketServerCfg = BitbucketServerCfg(useDefaultReviewers = false)
   private val bitbucketServerApiAlg: BitbucketServerApiAlg[IO] =
-    new BitbucketServerApiAlg[IO](config.vcsApiHost, bitbucketServerCfg, _ => IO.pure)
+    new BitbucketServerApiAlg(config.vcsCfg.apiHost, bitbucketServerCfg, _ => IO.pure)
 
   test("listPullRequests") {
     val pullRequests = bitbucketServerApiAlg
