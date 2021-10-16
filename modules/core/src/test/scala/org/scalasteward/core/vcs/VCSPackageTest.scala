@@ -7,20 +7,26 @@ import org.scalasteward.core.data.Update
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.VCSType.{GitHub, GitLab}
 import org.scalasteward.core.vcs.data.Repo
+import org.scalasteward.core.git.Branch
 
 class VCSPackageTest extends FunSuite {
   val repo: Repo = Repo("foo", "bar")
+  val branch: Branch = Branch("custom")
   val update: Update.Single =
     Update.Single("ch.qos.logback" % "logback-classic" % "1.2.0", Nel.of("1.2.3"))
 
   test("listingBranch") {
-    assertEquals(listingBranch(GitHub, repo, update), "foo/bar:update/logback-classic-1.2.3")
-    assertEquals(listingBranch(GitLab, repo, update), "update/logback-classic-1.2.3")
+    assertEquals(listingBranch(GitHub, repo, update, Some(branch)), "foo/bar:update/custom/logback-classic-1.2.3")
+    assertEquals(listingBranch(GitLab, repo, update, Some(branch)), "update/custom/logback-classic-1.2.3")
+    assertEquals(listingBranch(GitHub, repo, update,None), "foo/bar:update/logback-classic-1.2.3")
+    assertEquals(listingBranch(GitLab, repo, update,None), "update/logback-classic-1.2.3")
   }
 
   test("createBranch") {
-    assertEquals(createBranch(GitHub, repo, update), "foo:update/logback-classic-1.2.3")
-    assertEquals(createBranch(GitLab, repo, update), "update/logback-classic-1.2.3")
+    assertEquals(createBranch(GitHub, repo, update, Some(branch)), "foo:update/custom/logback-classic-1.2.3")
+    assertEquals(createBranch(GitLab, repo, update, Some(branch)), "update/custom/logback-classic-1.2.3")
+    assertEquals(createBranch(GitHub, repo, update, None), "foo:update/logback-classic-1.2.3")
+    assertEquals(createBranch(GitLab, repo, update, None), "update/logback-classic-1.2.3")
   }
 
   test("possibleCompareUrls") {

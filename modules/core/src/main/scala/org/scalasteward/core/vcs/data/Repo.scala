@@ -26,7 +26,7 @@ final case class Repo(
     branch: Option[Branch] = None
 ) {
   def show: String = branch match {
-    case Some(value) => s"$owner/$repo:${value.name}"
+    case Some(value) => s"$owner/$repo/${value.name}"
     case None        => s"$owner/$repo"
   }
 }
@@ -36,13 +36,18 @@ object Repo {
     Eq.fromUniversalEquals
 
   implicit val repoKeyDecoder: KeyDecoder[Repo] = {
-    val / = s"(.+)/([^/]+)".r
+    val regex = """(.+)/([^/]+)""".r
+    val regexWithBranch = """(.+)/([^/]+)#([^/]+)""".r
     KeyDecoder.instance {
-      case owner / repo => Some(Repo(owner, repo))
+      case regexWithBranch(owner, repo, branch) => Some(Repo(owner, repo, Some(Branch(branch))))
+      case regex(owner, repo) => Some(Repo(owner, repo))
       case _            => None
     }
   }
 
   implicit val repoKeyEncoder: KeyEncoder[Repo] =
-    KeyEncoder.instance(repo => repo.owner + "/" + repo.repo)
+    KeyEncoder.instance {
+      case Repo(owner, repo, Some(branch)) => owner + "/" + repo + "/" + branch.name
+      case Repo(owner, repo, None) => owner + "/" + repo
+    }
 }

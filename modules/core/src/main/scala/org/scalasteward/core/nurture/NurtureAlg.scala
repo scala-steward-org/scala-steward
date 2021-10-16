@@ -75,7 +75,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
         grouped,
         update => {
           val updateData =
-            UpdateData(data, fork, update, baseBranch, baseSha1, git.branchFor(update))
+            UpdateData(data, fork, update, baseBranch, baseSha1, git.branchFor(update, data.repo.branch))
           processUpdate(updateData)
         },
         data.config.updates.limit
@@ -85,7 +85,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
   def processUpdate(data: UpdateData): F[ProcessResult] =
     for {
       _ <- logger.info(s"Process update ${data.update.show}")
-      head = vcs.listingBranch(config.vcsType, data.fork, data.update)
+      head = vcs.listingBranch(config.vcsType, data.fork, data.update, data.repo.branch)
       pullRequests <- vcsApiAlg.listPullRequests(data.repo, head, data.baseBranch)
       result <- pullRequests.headOption match {
         case Some(pr) if pr.isClosed =>
@@ -130,7 +130,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
         _ <- pullRequestRepository.changeState(data.repo, oldUrl, PullRequestState.Closed)
         comment = s"Superseded by ${vcsApiAlg.referencePullRequest(newNumber)}."
         _ <- vcsApiAlg.commentPullRequest(data.repo, oldNumber, comment)
-        oldBranch = git.branchFor(oldUpdate)
+        oldBranch = git.branchFor(oldUpdate, data.repo.branch)
         oldRemoteBranch = oldBranch.withPrefix("origin/")
         oldBranchExists <- gitAlg.branchExists(data.repo, oldRemoteBranch)
         authors <-
@@ -185,7 +185,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
           .get(data.update.mainArtifactId)
           .traverse(vcsExtraAlg.getReleaseRelatedUrls(_, data.update))
       filesWithOldVersion <- gitAlg.findFilesContaining(data.repo, data.update.currentVersion)
-      branchName = vcs.createBranch(config.vcsType, data.fork, data.update)
+      branchName = vcs.createBranch(config.vcsType, data.fork, data.update, data.repo.branch)
       requestData = NewPullRequestData.from(
         data,
         branchName,

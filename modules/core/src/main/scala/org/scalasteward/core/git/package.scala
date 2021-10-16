@@ -16,6 +16,7 @@
 
 package org.scalasteward.core
 
+import cats.syntax.all._
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.repoconfig.CommitsConfig
 import org.scalasteward.core.update.show
@@ -24,8 +25,10 @@ import org.scalasteward.core.vcs.data.Repo
 package object git {
   type GitAlg[F[_]] = GenGitAlg[F, Repo]
 
-  def branchFor(update: Update): Branch =
-    Branch(s"update/${update.name}-${update.nextVersion}")
+  def branchFor(update: Update, baseBranch: Option[Branch]): Branch =
+    baseBranch
+       .map(branch => Branch(s"update/${branch.name}/${update.name}-${update.nextVersion}"))
+       .getOrElse(Branch(s"update/${update.name}-${update.nextVersion}"))
 
   def commitMsgFor(update: Update, commitsConfig: CommitsConfig, branch: Option[Branch]): String = {
     val artifact = show.oneLiner(update)
@@ -38,5 +41,6 @@ package object git {
       .replace("${artifactName}", artifact)
       .replace("${currentVersion}", update.currentVersion)
       .replace("${nextVersion}", update.nextVersion)
+      .replace("${branchName}", branch.map(_.name).orEmpty)
   }
 }

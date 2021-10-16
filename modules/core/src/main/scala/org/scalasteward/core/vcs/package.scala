@@ -22,31 +22,32 @@ import org.scalasteward.core.data.ReleaseRelatedUrl.VersionDiff
 import org.scalasteward.core.data.{ReleaseRelatedUrl, Update}
 import org.scalasteward.core.vcs.VCSType.{Bitbucket, BitbucketServer, GitHub, GitLab}
 import org.scalasteward.core.vcs.data.Repo
+import org.scalasteward.core.git.Branch
 
 package object vcs {
 
   /** Determines the `head` (GitHub) / `source_branch` (GitLab, Bitbucket) parameter for searching
     * for already existing pull requests.
     */
-  def listingBranch(vcsType: VCSType, fork: Repo, update: Update): String =
+  def listingBranch(vcsType: VCSType, fork: Repo, update: Update, nonDefaultBaseBranch: Option[Branch]): String =
     vcsType match {
       case GitHub =>
-        s"${fork.show}:${git.branchFor(update).name}"
+        s"${fork.show}:${git.branchFor(update, nonDefaultBaseBranch).name}"
 
       case GitLab | Bitbucket | BitbucketServer =>
-        git.branchFor(update).name
+        git.branchFor(update, nonDefaultBaseBranch).name
     }
 
   /** Determines the `head` (GitHub) / `source_branch` (GitLab, Bitbucket) parameter for creating
     * a new pull requests.
     */
-  def createBranch(vcsType: VCSType, fork: Repo, update: Update): String =
+  def createBranch(vcsType: VCSType, fork: Repo, update: Update, nonDefaultBaseBranch: Option[Branch]): String =
     vcsType match {
       case GitHub =>
-        s"${fork.owner}:${git.branchFor(update).name}"
+        s"${fork.owner}:${git.branchFor(update, nonDefaultBaseBranch).name}"
 
       case GitLab | Bitbucket | BitbucketServer =>
-        git.branchFor(update).name
+        git.branchFor(update, nonDefaultBaseBranch).name
     }
 
   def possibleTags(version: String): List[String] =

@@ -37,6 +37,7 @@ private[bitbucket] object RepositoryResponse {
     c.as[String].map(_.split('/')).flatMap { parts =>
       parts match {
         case Array(owner, name) => Repo(owner, name).asRight
+        case Array(owner, name, branch) => Repo(owner, name, Some(Branch(branch))).asRight
         case _                  => DecodingFailure("Repo", c.history).asLeft
       }
     }
