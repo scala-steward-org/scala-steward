@@ -51,9 +51,12 @@ final class ScalafmtAlg[F[_]](config: Config)(implicit
 }
 
 object ScalafmtAlg {
-  private def parseScalafmtConf(s: String): Option[Version] =
-    """version\s*=\s*(.+)""".r
-      .findFirstMatchIn(s)
-      .map(_.group(1).replace("\"", ""))
+  private[scalafmt] def parseScalafmtConf(s: String): Option[Version] =
+    io.circe.config.parser
+      .parse(s)
+      .toOption
+      .flatMap(_.asObject)
+      .flatMap(_.apply("version"))
+      .flatMap(_.asString)
       .map(Version.apply)
 }

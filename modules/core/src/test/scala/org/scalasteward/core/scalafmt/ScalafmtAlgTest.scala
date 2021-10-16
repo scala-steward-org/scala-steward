@@ -46,4 +46,9 @@ class ScalafmtAlgTest extends FunSuite {
       scalafmtAlg.getScalafmtVersion(buildRoot).runSA(initialState).unsafeRunSync()
     assertEquals(maybeVersion, Some(Version("2.0.0-RC8")))
   }
+
+  test("version with comment") {
+    val obtained = ScalafmtAlg.parseScalafmtConf("version = 2.0.0 // comment")
+    assertEquals(obtained, Some(Version("2.0.0")))
+  }
 }
