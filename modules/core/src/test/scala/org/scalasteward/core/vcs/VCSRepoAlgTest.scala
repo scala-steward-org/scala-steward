@@ -11,7 +11,7 @@ import org.scalasteward.core.vcs.data.{Repo, RepoOut, UserOut}
 
 class VCSRepoAlgTest extends CatsEffectSuite {
   private val repo = Repo("fthomas", "datapackage")
-  private val repoDir = config.workspace / repo.show
+  private val repoDir = config.workspace / repo.toPath
   private val parentRepoOut = RepoOut(
     "datapackage",
     UserOut("fthomas"),

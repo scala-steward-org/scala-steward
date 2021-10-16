@@ -24,6 +24,8 @@ final case class Repo(
     repo: String
 ) {
   def show: String = s"$owner/$repo"
+
+  def toPath: String = s"$owner/$repo"
 }
 
 object Repo {
@@ -31,5 +33,5 @@ object Repo {
     Eq.fromUniversalEquals
 
   implicit val repoKeyEncoder: KeyEncoder[Repo] =
-    KeyEncoder.instance(repo => repo.owner + "/" + repo.repo)
+    KeyEncoder.instance(_.toPath)
 }

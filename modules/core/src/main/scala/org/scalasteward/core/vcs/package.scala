@@ -31,7 +31,7 @@ package object vcs {
   def listingBranch(vcsType: VCSType, fork: Repo, update: Update): String =
     vcsType match {
       case GitHub =>
-        s"${fork.show}:${git.branchFor(update).name}"
+        s"${fork.toPath}:${git.branchFor(update).name}"
 
       case GitLab | Bitbucket | BitbucketServer =>
         git.branchFor(update).name
