@@ -40,10 +40,9 @@ final class ScalafmtAlg[F[_]](config: Config)(implicit
       buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
       scalafmtConfFile = buildRootDir / scalafmtConfName
       fileContent <- fileAlg.readFile(scalafmtConfFile)
-      version <- fileContent.map(parseScalafmtConf) match {
-        case Some(Right(value)) => F.pure(value)
-        case Some(Left(error))  => logger.warn(error)(s"Failed to parse $scalafmtConfName").as(None)
-        case None               => F.pure(None)
+      version <- fileContent.map(parseScalafmtConf).fold(F.pure(Option.empty[Version])) {
+        case Left(error)    => logger.warn(error)(s"Failed to parse $scalafmtConfName").as(None)
+        case Right(version) => F.pure(version)
       }
     } yield version
 
