@@ -18,6 +18,7 @@ package org.scalasteward.core.vcs
 
 import cats.Eq
 import cats.syntax.all._
+import org.http4s.syntax.literals._
 import org.scalasteward.core.vcs.VCSType._
 
 sealed trait VCSType {
@@ -30,10 +31,10 @@ sealed trait VCSType {
 }
 
 object VCSType {
-  case object Bitbucket extends VCSType
+  case object Bitbucket extends VCSType { val publicApiHost = uri"https://api.bitbucket.org/2.0" }
   case object BitbucketServer extends VCSType
-  case object GitHub extends VCSType
-  case object GitLab extends VCSType
+  case object GitHub extends VCSType { val publicApiHost = uri"https://api.github.com" }
+  case object GitLab extends VCSType { val publicApiHost = uri"https://gitlab.com/api/v4" }
 
   val all = List(Bitbucket, BitbucketServer, GitHub, GitLab)
 
