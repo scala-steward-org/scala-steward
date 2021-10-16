@@ -49,6 +49,6 @@ class ScalafmtAlgTest extends FunSuite {
 
   test("version with comment") {
     val obtained = ScalafmtAlg.parseScalafmtConf("version = 2.0.0 // comment")
-    assertEquals(obtained, Some(Version("2.0.0")))
+    assertEquals(obtained, Right(Some(Version("2.0.0"))))
   }
 }
