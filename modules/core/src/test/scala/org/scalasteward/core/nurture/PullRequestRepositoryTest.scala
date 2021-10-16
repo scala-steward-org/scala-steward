@@ -41,7 +41,8 @@ class PullRequestRepositoryTest extends FunSuite {
     } yield (result, createdAt)
     val (state, (result, createdAt)) = p.runSA(MockState.empty).unsafeRunSync()
 
-    val store = config.workspace / s"store/pull_requests/v2/github/${repo.show}/pull_requests.json"
+    val store =
+      config.workspace / s"store/pull_requests/v2/github/${repo.toPath}/pull_requests.json"
     assertEquals(result, Some((url, sha1, PullRequestState.Open)))
     assert(createdAt.isDefined)
 
@@ -74,7 +75,8 @@ class PullRequestRepositoryTest extends FunSuite {
       closedResult <- pullRequestRepository.getObsoleteOpenPullRequests(repo, nextUpdate)
     } yield (emptyResult, result, closedResult)
     val (state, (emptyResult, result, closedResult)) = p.runSA(MockState.empty).unsafeRunSync()
-    val store = config.workspace / s"store/pull_requests/v2/github/${repo.show}/pull_requests.json"
+    val store =
+      config.workspace / s"store/pull_requests/v2/github/${repo.toPath}/pull_requests.json"
     assertEquals(emptyResult, List.empty)
     assertEquals(closedResult, List.empty)
     assertEquals(result, List((number, url, TestData.Updates.PortableScala)))
@@ -106,7 +108,8 @@ class PullRequestRepositoryTest extends FunSuite {
       result <- pullRequestRepository.getObsoleteOpenPullRequests(repo, update)
     } yield (emptyResult, result)
     val (state, (emptyResult, result)) = p.runSA(MockState.empty).unsafeRunSync()
-    val store = config.workspace / s"store/pull_requests/v2/github/${repo.show}/pull_requests.json"
+    val store =
+      config.workspace / s"store/pull_requests/v2/github/${repo.toPath}/pull_requests.json"
     assertEquals(emptyResult, List.empty)
     assertEquals(result, List.empty)
 
@@ -137,7 +140,8 @@ class PullRequestRepositoryTest extends FunSuite {
       result <- pullRequestRepository.getObsoleteOpenPullRequests(repo, newUpdate)
     } yield (emptyResult, result)
     val (state, (emptyResult, result)) = p.runSA(MockState.empty).unsafeRunSync()
-    val store = config.workspace / s"store/pull_requests/v2/github/${repo.show}/pull_requests.json"
+    val store =
+      config.workspace / s"store/pull_requests/v2/github/${repo.toPath}/pull_requests.json"
     assertEquals(emptyResult, List.empty)
     assertEquals(result, List.empty)
 

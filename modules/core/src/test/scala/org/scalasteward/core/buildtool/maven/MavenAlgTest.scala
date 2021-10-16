@@ -11,7 +11,7 @@ class MavenAlgTest extends FunSuite {
   test("getDependencies") {
     val repo = Repo("namespace", "repo-name")
     val buildRoot = BuildRoot(repo, ".")
-    val repoDir = MockConfig.config.workspace / repo.show
+    val repoDir = MockConfig.config.workspace / repo.toPath
 
     val state = mavenAlg.getDependencies(buildRoot).runS(MockState.empty).unsafeRunSync()
     val expected = MockState.empty.copy(
