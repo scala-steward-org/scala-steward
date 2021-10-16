@@ -26,11 +26,13 @@ import io.circe.{Codec, Decoder}
 import org.scalasteward.core.data.{GroupId, Update}
 import org.scalasteward.core.update.FilterAlg.{
   FilterResult,
+  RejectionReason,
   IgnoredByConfig,
   NotAllowedByConfig,
   VersionPinnedByConfig
 }
 import org.scalasteward.core.util.{combineOptions, Nel}
+import org.scalasteward.core.repoconfig.UpdatePattern.MatchResult
 
 final case class UpdatesConfig(
     pin: List[UpdatePattern] = List.empty,
@@ -43,32 +45,21 @@ final case class UpdatesConfig(
     fileExtensions.fold(UpdatesConfig.defaultFileExtensions)(_.toSet)
 
   def keep(update: Update.Single): FilterResult =
-    isAllowed(update).flatMap(isPinned).flatMap(isIgnored)
+    check(allow, NotAllowedByConfig)(update)
+      .flatMap(check(pin, VersionPinnedByConfig, noEffectWhen = _.byArtifactId.isEmpty))
+      .flatMap(check(ignore, IgnoredByConfig, include = false))
 
-  private def isAllowed(update: Update.Single): FilterResult = {
-    val m = UpdatePattern.findMatch(allow, update, include = true)
-    if (m.filteredVersions.nonEmpty)
-      Right(update.copy(newerVersions = Nel.fromListUnsafe(m.filteredVersions)))
-    else if (allow.isEmpty)
-      Right(update)
-    else Left(NotAllowedByConfig(update))
-  }
-
-  private def isPinned(update: Update.Single): FilterResult = {
-    val m = UpdatePattern.findMatch(pin, update, include = true)
-    if (m.filteredVersions.nonEmpty)
-      Right(update.copy(newerVersions = Nel.fromListUnsafe(m.filteredVersions)))
-    else if (m.byArtifactId.isEmpty)
-      Right(update)
-    else Left(VersionPinnedByConfig(update))
-  }
-
-  private def isIgnored(update: Update.Single): FilterResult = {
-    val m = UpdatePattern.findMatch(ignore, update, include = false)
-    if (m.filteredVersions.nonEmpty)
-      Right(update.copy(newerVersions = Nel.fromListUnsafe(m.filteredVersions)))
-    else
-      Left(IgnoredByConfig(update))
+  private def check(
+    patterns: List[UpdatePattern],
+    reportedReasonWhenAllRejectedFrom: Update.Single => RejectionReason,
+    include: Boolean = true,
+    noEffectWhen: MatchResult => Boolean = _ => false,
+  )(update: Update.Single): FilterResult = if (patterns.isEmpty) Right(update) else {
+    val m = UpdatePattern.findMatch(patterns, update, include)
+    Nel.fromList(m.filteredVersions)
+      .map(filteredVersions => update.copy(newerVersions = filteredVersions))
+      .orElse(Option.when(noEffectWhen(m))(update))
+      .toRight(reportedReasonWhenAllRejectedFrom(update))
   }
 }
 
