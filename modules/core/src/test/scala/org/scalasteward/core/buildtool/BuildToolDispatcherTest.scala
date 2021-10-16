@@ -18,7 +18,7 @@ class BuildToolDispatcherTest extends FunSuite {
   test("getDependencies") {
     val repo = Repo("build-tool-dispatcher", "test-1")
     val repoConfig = RepoConfig.empty
-    val repoDir = config.workspace / repo.show
+    val repoDir = config.workspace / repo.toPath
     val initial = MockState.empty
       .addFiles(
         repoDir / "project" / "build.properties" -> "sbt.version=1.2.6",

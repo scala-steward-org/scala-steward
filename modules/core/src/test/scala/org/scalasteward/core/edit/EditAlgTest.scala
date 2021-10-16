@@ -22,7 +22,7 @@ class EditAlgTest extends FunSuite {
   test("applyUpdate") {
     val repo = Repo("edit-alg", "test-1")
     val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
-    val repoDir = config.workspace / repo.show
+    val repoDir = config.workspace / repo.toPath
     val update = Update.Single("org.typelevel" % "cats-core" % "1.2.0", Nel.of("1.3.0"))
     val file1 = repoDir / "build.sbt"
     val file2 = repoDir / "project/Dependencies.scala"
@@ -58,7 +58,7 @@ class EditAlgTest extends FunSuite {
   test("applyUpdate with scalafmt update") {
     val repo = Repo("edit-alg", "test-2")
     val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
-    val repoDir = config.workspace / repo.show
+    val repoDir = config.workspace / repo.toPath
     val update = Update.Single("org.scalameta" % "scalafmt-core" % "2.0.0", Nel.of("2.1.0"))
     val scalafmtConf = repoDir / scalafmtConfName
     val scalafmtConfContent = """maxColumn = 100
@@ -116,7 +116,7 @@ class EditAlgTest extends FunSuite {
   test("apply update to ammonite file") {
     val repo = Repo("edit-alg", "test-3")
     val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
-    val repoDir = config.workspace / repo.show
+    val repoDir = config.workspace / repo.toPath
     val update = Update.Single("org.typelevel" % "cats-core" % "1.2.0", Nel.of("1.3.0"))
     val file1 = repoDir / "script.sc"
     val file2 = repoDir / "build.sbt"
@@ -274,7 +274,7 @@ class EditAlgTest extends FunSuite {
       files: Map[String, String]
   ): Map[String, String] = {
     val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
-    val repoDir = config.workspace / repo.show
+    val repoDir = config.workspace / repo.toPath
     val filesInRepoDir = files.map { case (file, content) => repoDir / file -> content }
     MockState.empty
       .addFiles(filesInRepoDir.toSeq: _*)

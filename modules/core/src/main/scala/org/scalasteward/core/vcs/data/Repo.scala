@@ -17,7 +17,7 @@
 package org.scalasteward.core.vcs.data
 
 import cats.Eq
-import io.circe.{KeyDecoder, KeyEncoder}
+import io.circe.KeyEncoder
 import org.scalasteward.core.git.Branch
 
 final case class Repo(
@@ -26,6 +26,11 @@ final case class Repo(
     branch: Option[Branch] = None
 ) {
   def show: String = branch match {
+    case Some(value) => s"$owner/$repo:${value.name}"
+    case None        => s"$owner/$repo"
+  }
+
+  def toPath: String = branch match {
     case Some(value) => s"$owner/$repo/${value.name}"
     case None        => s"$owner/$repo"
   }
@@ -34,16 +39,6 @@ final case class Repo(
 object Repo {
   implicit val repoEq: Eq[Repo] =
     Eq.fromUniversalEquals
-
-  implicit val repoKeyDecoder: KeyDecoder[Repo] = {
-    val regex = """(.+)/([^/]+)""".r
-    val regexWithBranch = """(.+)/([^/]+)#([^/]+)""".r
-    KeyDecoder.instance {
-      case regexWithBranch(owner, repo, branch) => Some(Repo(owner, repo, Some(Branch(branch))))
-      case regex(owner, repo)                   => Some(Repo(owner, repo))
-      case _                                    => None
-    }
-  }
 
   implicit val repoKeyEncoder: KeyEncoder[Repo] =
     KeyEncoder.instance {
