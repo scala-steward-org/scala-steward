@@ -26,7 +26,6 @@ import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.vcs.data.{Repo, RepoOut}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
 import org.typelevel.log4cats.Logger
-import org.scalasteward.core.git.Branch
 
 final class RepoCacheAlg[F[_]](config: Config)(implicit
     buildToolDispatcher: BuildToolDispatcher[F],
@@ -61,18 +60,17 @@ final class RepoCacheAlg[F[_]](config: Config)(implicit
     }
 
   private def cloneAndRefreshCache(repo: Repo, repoOut: RepoOut): F[RepoData] =
-    vcsRepoAlg.cloneAndSync(repo, repoOut) >> refreshCache(repo, repoOut.default_branch)
+    vcsRepoAlg.cloneAndSync(repo, repoOut) >> refreshCache(repo)
 
-  private def refreshCache(repo: Repo, branch: Branch): F[RepoData] =
+  private def refreshCache(repo: Repo): F[RepoData] =
     for {
       _ <- logger.info(s"Refresh cache of ${repo.show}")
-      data <- refreshErrorAlg.persistError(repo)(computeCache(repo, branch))
+      data <- refreshErrorAlg.persistError(repo)(computeCache(repo))
       _ <- repoCacheRepository.updateCache(repo, data.cache)
     } yield data
 
-  private def computeCache(repo: Repo, branch: Branch): F[RepoData] =
+  private def computeCache(repo: Repo): F[RepoData] =
     for {
-      _ <- gitAlg.checkoutBranch(repo, branch)
       branch <- gitAlg.currentBranch(repo)
       latestSha1 <- gitAlg.latestSha1(repo, branch)
       maybeConfig <- repoConfigAlg.readRepoConfig(repo)
