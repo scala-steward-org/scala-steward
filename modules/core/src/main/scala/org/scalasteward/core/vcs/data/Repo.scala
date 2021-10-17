@@ -25,15 +25,11 @@ final case class Repo(
     repo: String,
     branch: Option[Branch] = None
 ) {
-  def show: String = branch match {
-    case Some(value) => s"$owner/$repo:${value.name}"
-    case None        => s"$owner/$repo"
-  }
+  def show: String =
+    owner + "/" + repo + branch.fold("")(":" + _)
 
-  def toPath: String = branch match {
-    case Some(value) => s"$owner/$repo/${value.name}"
-    case None        => s"$owner/$repo"
-  }
+  def toPath: String =
+    owner + "/" + repo + branch.fold("")("/" + _)
 }
 
 object Repo {

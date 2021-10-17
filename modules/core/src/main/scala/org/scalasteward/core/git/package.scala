@@ -25,10 +25,10 @@ import org.scalasteward.core.vcs.data.Repo
 package object git {
   type GitAlg[F[_]] = GenGitAlg[F, Repo]
 
-  def branchFor(update: Update, baseBranch: Option[Branch]): Branch =
-    baseBranch
-      .map(branch => Branch(s"update/${branch.name}/${update.name}-${update.nextVersion}"))
-      .getOrElse(Branch(s"update/${update.name}-${update.nextVersion}"))
+  def branchFor(update: Update, baseBranch: Option[Branch]): Branch = {
+    val base = baseBranch.fold("")(branch => s"${branch.name}/")
+    Branch(s"update/$base${update.name}-${update.nextVersion}")
+  }
 
   def commitMsgFor(update: Update, commitsConfig: CommitsConfig, branch: Option[Branch]): String = {
     val artifact = show.oneLiner(update)
