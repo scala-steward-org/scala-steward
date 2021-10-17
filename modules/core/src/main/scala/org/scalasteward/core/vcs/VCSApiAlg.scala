@@ -47,7 +47,7 @@ trait VCSApiAlg[F[_]] {
   ): F[(RepoOut, BranchOut)] =
     for {
       forkOrRepo <- createForkOrGetRepo(repo, doNotFork)
-      forkOrRepoWithDefaultBranch = repo.branch.fold(forkOrRepo)(forkOrRepo.withBranch(_))
+      forkOrRepoWithDefaultBranch = repo.branch.fold(forkOrRepo)(forkOrRepo.withBranch)
       defaultBranch <- getDefaultBranchOfParentOrRepo(forkOrRepoWithDefaultBranch, doNotFork)
     } yield (forkOrRepoWithDefaultBranch, defaultBranch)
 

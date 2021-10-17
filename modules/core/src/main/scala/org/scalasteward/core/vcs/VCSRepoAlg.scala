@@ -58,8 +58,7 @@ final class VCSRepoAlg[F[_]](config: Config)(implicit
   private def syncFork(repo: Repo, repoOut: RepoOut): F[Unit] =
     repoOut.parentOrRaise[F].flatMap { parent =>
       logger.info(s"Synchronize with ${parent.repo.show}") >>
-        gitAlg
-          .syncFork(repo, withLogin(parent.clone_url), repo.branch.getOrElse(parent.default_branch))
+        gitAlg.syncFork(repo, withLogin(parent.clone_url), parent.default_branch)
     }
 
   private def initSubmodules(repo: Repo): F[Unit] =
