@@ -46,7 +46,6 @@ final class EditAlg[F[_]](implicit
   def applyUpdate(
       data: RepoData,
       update: Update,
-      branch: git.Branch,
       preCommit: F[Unit] = F.unit
   ): F[List[EditAttempt]] =
     findFilesContainingCurrentVersion(data.repo, data.config, update).flatMap {
@@ -69,7 +68,7 @@ final class EditAlg[F[_]](implicit
               updateEdit <- gitAlg
                 .commitAllIfDirty(
                   repo,
-                  git.commitMsgFor(update, data.config.commits, branch)
+                  git.commitMsgFor(update, data.config.commits, data.repo.branch)
                 )
                 .map(_.map(commit => UpdateEdit(update, commit)))
               hooksEdits <- hookExecutor.execPostUpdateHooks(data, update)
