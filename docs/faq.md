@@ -50,9 +50,9 @@ and a suffix with a different branch on each occurence (`owner/repo:branch`). Fo
 
 ```md
 // repos.md
-owner/repo
-owner/repo:0.1.x
-owner/repo:0.2.x
+- owner/repo
+- owner/repo:0.1.x
+- owner/repo:0.2.x
 ```
 
 This configuration will update the default branch, as well as the branches `0.1.x` and `0.2.x` in the repo `owner/repo`.
