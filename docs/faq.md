@@ -43,13 +43,27 @@ Updates for `sbt` and `scalafmt` can be controlled by using the following `group
 { groupId = "org.scalameta", artifactId = "scalafmt-core" }
 ```
 
+## Can Scala Steward update multiple branches in a repository?
+
+Yes! You can update multiple branches of a repository by adding it several times to the "repos.md" file
+and a suffix with a different branch on each occurence (`owner/repo:branch`). For example:
+
+```md
+// repos.md
+owner/repo
+owner/repo:0.1.x
+owner/repo:0.2.x
+```
+
+This configuration will update the default branch, as well as the branches `0.1.x` and `0.2.x` in the repo `owner/repo`.
+
 ## Can Scala Steward update dependencies in giter8 templates ?
 
 Scala Steward can update versions in giter8 templates if the dependencies of the template 
 are also added as dependencies of the template build.
 An example is [library.g8](https://github.com/ChristopherDavenport/library.g8) ([example PR](https://github.com/ChristopherDavenport/library.g8/pull/100/files))
 
-## Why do Scala Steward updates provide no URLs in PRs
+## Why do Scala Steward updates provide no URLs in PRs?
 
 Scala Steward updates can only provide links to release notes, diffs and changelogs if
 the `ivy.xml` file contain the `homepage` attribute or the `pom.xml` contains either
