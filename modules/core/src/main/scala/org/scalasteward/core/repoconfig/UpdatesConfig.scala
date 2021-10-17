@@ -23,15 +23,9 @@ import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 import io.circe.refined._
 import io.circe.{Codec, Decoder}
-import org.scalasteward.core.data.{GroupId, Update}
-import org.scalasteward.core.update.FilterAlg.{
-  FilterResult,
-  RejectionReason,
-  IgnoredByConfig,
-  NotAllowedByConfig,
-  VersionPinnedByConfig
-}
-import org.scalasteward.core.util.{combineOptions, Nel}
+import org.scalasteward.core.data.{Dependency, GroupId, Update}
+import org.scalasteward.core.update.FilterAlg.{FilterResult, IgnoredByConfig, NotAllowedByConfig, RejectionReason, VersionPinnedByConfig}
+import org.scalasteward.core.util.{Nel, combineOptions}
 import org.scalasteward.core.repoconfig.UpdatePattern.MatchResult
 
 final case class UpdatesConfig(
@@ -41,6 +35,11 @@ final case class UpdatesConfig(
     limit: Option[NonNegInt] = None,
     fileExtensions: Option[List[String]] = None
 ) {
+  private val allUpdatePatterns = pin ++ allow ++ ignore
+
+  def wouldLikeToKnowAgeOf(dependency: Dependency): Boolean =
+    allUpdatePatterns.exists(_.groupAndArtifactWouldMatch(dependency))
+
   def fileExtensionsOrDefault: Set[String] =
     fileExtensions.fold(UpdatesConfig.defaultFileExtensions)(_.toSet)
 

@@ -22,7 +22,8 @@ import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.BuildToolDispatcher
 import org.scalasteward.core.data.{Dependency, DependencyInfo, RepoData}
 import org.scalasteward.core.git.GitAlg
-import org.scalasteward.core.repoconfig.RepoConfigAlg
+import org.scalasteward.core.mavencentral.MavenCentralApiAlg
+import org.scalasteward.core.repoconfig.{RepoConfigAlg, UpdatesConfig}
 import org.scalasteward.core.vcs.data.{Repo, RepoOut}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
 import org.typelevel.log4cats.Logger
@@ -37,6 +38,7 @@ final class RepoCacheAlg[F[_]](config: Config)(implicit
     repoConfigAlg: RepoConfigAlg[F],
     vcsApiAlg: VCSApiAlg[F],
     vcsRepoAlg: VCSRepoAlg[F],
+    mavenCentralApiAlg: MavenCentralApiAlg[F],
     F: MonadThrow[F]
 ) {
   def checkCache(repo: Repo): F[(RepoData, RepoOut)] =
@@ -77,10 +79,15 @@ final class RepoCacheAlg[F[_]](config: Config)(implicit
       config <- repoConfigAlg.mergeWithDefault(maybeConfig)
       dependencies <- buildToolDispatcher.getDependencies(repo, config)
       dependencyInfos <-
-        dependencies.traverse(_.traverse(_.traverse(gatherDependencyInfo(repo, _))))
+        dependencies.traverse(_.traverse(_.traverse(gatherDependencyInfo(repo, config.updates, _))))
       cache = RepoCache(latestSha1, dependencyInfos, maybeConfig)
     } yield RepoData(repo, cache, config)
 
-  private def gatherDependencyInfo(repo: Repo, dependency: Dependency): F[DependencyInfo] =
-    gitAlg.findFilesContaining(repo, dependency.version).map(DependencyInfo(dependency, _))
+  private def gatherDependencyInfo(repo: Repo, config: UpdatesConfig, dependency: Dependency): F[DependencyInfo] = (
+    gitAlg.findFilesContaining(repo, dependency.version),
+    if (config.wouldLikeToKnowAgeOf(dependency)) mavenCentralApiAlg.searchForDocumentOn(dependency) else F.pure(None)
+  ).parTupled.map {
+    case (filesContainingDepVersion, docOpt) =>
+      DependencyInfo(dependency, filesContainingDepVersion, docOpt.map(_.timestamp))
+  }
 }

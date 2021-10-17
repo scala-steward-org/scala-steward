@@ -24,7 +24,10 @@ class RepoConfigAlgTest extends FunSuite {
          |                 { groupId = "eu.timepit", artifactId = "refined.3", version = { suffix="jre" } },
          |                 { groupId = "eu.timepit", artifactId = "refined.4", version = { prefix="0.8.", suffix="jre" } }
          |               ]
-         |updates.ignore = [ { groupId = "org.acme", version = "1.0" } ]
+         |updates.ignore = [
+         |                   { groupId = "org.acme", version = "1.0" },
+         |                   { groupId = "software.amazon.awssdk", artifactId = "dynamodb", untilCurrentArtifactIsAged = "14d" },
+         |                 ]
          |updates.limit = 4
          |updates.fileExtensions = [ ".txt" ]
          |pullRequests.frequency = "@weekly"

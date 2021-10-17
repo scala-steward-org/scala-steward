@@ -19,9 +19,12 @@ package org.scalasteward.core.data
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 
+import java.time.Instant
+
 final case class DependencyInfo(
     dependency: Dependency,
-    filesContainingVersion: List[String]
+    filesContainingVersion: List[String],
+    releaseTimestamp: Option[Instant] = None
 )
 
 object DependencyInfo {

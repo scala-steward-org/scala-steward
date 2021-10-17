@@ -19,15 +19,23 @@ package org.scalasteward.core.repoconfig
 import cats.Eq
 import cats.implicits._
 import io.circe.generic.semiauto._
-import io.circe.{Decoder, Encoder, HCursor}
-import org.scalasteward.core.data.{GroupId, Update}
+import io.circe.{Codec, Decoder, Encoder, HCursor}
+import org.scalasteward.core.data.{Dependency, GroupId, Update}
+
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.FiniteDuration
+import scala.util.Try
 
 final case class UpdatePattern(
     groupId: GroupId,
     artifactId: Option[String],
-    version: Option[UpdatePattern.Version]
+    version: Option[UpdatePattern.Version],
+    untilCurrentArtifactIsAged: Option[FiniteDuration] = None
 ) {
   def isWholeGroupIdAllowed: Boolean = artifactId.isEmpty && version.isEmpty
+
+  def groupAndArtifactWouldMatch(dependency: Dependency): Boolean =
+    groupId == dependency.groupId && artifactId.forall(_ == dependency.artifactId.name)
 }
 
 object UpdatePattern {
@@ -48,11 +56,29 @@ object UpdatePattern {
   ): MatchResult = {
     val byGroupId = patterns.filter(_.groupId === update.groupId)
     val byArtifactId = byGroupId.filter(_.artifactId.forall(_ === update.artifactId.name))
-    val filteredVersions = update.newerVersions.filter(newVersion =>
+
+    val minUntilCurrentArtifactIsAged = byArtifactId.flatMap(_.untilCurrentArtifactIsAged).minOption
+
+    val currentArtifactIsConsideredYoung = minUntilCurrentArtifactIsAged.exists { untilCurrentArtifactIsAged =>
+      val ageOfCurrentVersion: FiniteDuration = FiniteDuration(1, TimeUnit.DAYS) // update.currentVersion
+      untilCurrentArtifactIsAged < ageOfCurrentVersion
+    }
+
+    if (currentArtifactIsConsideredYoung) MatchResult(byArtifactId, List.empty)
+    else MatchResult(byArtifactId, update.newerVersions.filter(newVersion =>
       byArtifactId.exists(_.version.forall(_.matches(newVersion))) === include
-    )
-    MatchResult(byArtifactId, filteredVersions)
+    ))
   }
+
+  implicit val durationCodec: Codec[FiniteDuration] = Codec.from(
+    Decoder.decodeString.emapTry { str =>
+      Try {
+        val d = scala.concurrent.duration.Duration.create(str)
+        FiniteDuration(d.length, d.unit)
+      }
+    },
+    Encoder.encodeString.contramap[FiniteDuration](_.toString)
+  )
 
   implicit val updatePatternDecoder: Decoder[UpdatePattern] =
     deriveDecoder

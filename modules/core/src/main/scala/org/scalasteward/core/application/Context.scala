@@ -32,6 +32,7 @@ import org.scalasteward.core.edit.hooks.HookExecutor
 import org.scalasteward.core.edit.scalafix.{ScalafixMigrationsFinder, ScalafixMigrationsLoader}
 import org.scalasteward.core.git.{GenGitAlg, GitAlg}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
+import org.scalasteward.core.mavencentral.MavenCentralApiAlg
 import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository}
 import org.scalasteward.core.persistence.{CachingKeyValueStore, JsonKeyValueStore}
 import org.scalasteward.core.repocache._
@@ -124,6 +125,7 @@ object Context {
       implicit val gitHubAuthAlg: GitHubAuthAlg[F] = GitHubAuthAlg.create[F]
       implicit val hookExecutor: HookExecutor[F] = new HookExecutor[F]
       implicit val httpJsonClient: HttpJsonClient[F] = new HttpJsonClient[F]
+      implicit val mavenCentralApiAlg: MavenCentralApiAlg[F] = new MavenCentralApiAlg[F]()
       implicit val repoCacheRepository: RepoCacheRepository[F] =
         new RepoCacheRepository[F](repoCacheStore)
       implicit val vcsApiAlg: VCSApiAlg[F] = new VCSSelection[F](config, vcsUser).vcsApiAlg

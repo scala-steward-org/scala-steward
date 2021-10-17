@@ -68,7 +68,7 @@ class GitHubAppApiAlg[F[_]: Applicative](
             req.putHeaders(
               Header.Raw(ci"Authorization", s"token $token"),
               acceptHeader
-            )
+            ) // how does this get the next lot of Repositories?!?
           )
       )
       .map(values =>
