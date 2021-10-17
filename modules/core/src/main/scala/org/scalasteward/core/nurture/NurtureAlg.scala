@@ -92,7 +92,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
   def processUpdate(data: UpdateData): F[ProcessResult] =
     for {
       _ <- logger.info(s"Process update ${data.update.show}")
-      head = vcs.listingBranch(config.tpe, data.fork, data.update, data.repo.branch)
+      head = vcs.listingBranch(config.tpe, data.fork, data.updateBranch)
       pullRequests <- vcsApiAlg.listPullRequests(data.repo, head, data.baseBranch)
       result <- pullRequests.headOption match {
         case Some(pr) if pr.isClosed =>
@@ -192,7 +192,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
           .get(data.update.mainArtifactId)
           .traverse(vcsExtraAlg.getReleaseRelatedUrls(_, data.update))
       filesWithOldVersion <- gitAlg.findFilesContaining(data.repo, data.update.currentVersion)
-      branchName = vcs.createBranch(config.tpe, data.fork, data.update, data.repo.branch)
+      branchName = vcs.createBranch(config.tpe, data.fork, data.updateBranch)
       requestData = NewPullRequestData.from(
         data,
         branchName,
