@@ -19,15 +19,18 @@ package org.scalasteward.core.scalafmt
 import cats.Monad
 import cats.data.OptionT
 import cats.syntax.all._
+import io.circe.ParsingFailure
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.{Scope, Version}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.scalafmt.ScalafmtAlg.parseScalafmtConf
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.BuildRoot
+import org.typelevel.log4cats.Logger
 
 final class ScalafmtAlg[F[_]](config: Config)(implicit
     fileAlg: FileAlg[F],
+    logger: Logger[F],
     processAlg: ProcessAlg[F],
     workspaceAlg: WorkspaceAlg[F],
     F: Monad[F]
@@ -37,7 +40,11 @@ final class ScalafmtAlg[F[_]](config: Config)(implicit
       buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
       scalafmtConfFile = buildRootDir / scalafmtConfName
       fileContent <- fileAlg.readFile(scalafmtConfFile)
-    } yield fileContent.flatMap(parseScalafmtConf)
+      version <- fileContent.map(parseScalafmtConf).fold(F.pure(Option.empty[Version])) {
+        case Left(error)    => logger.warn(error)(s"Failed to parse $scalafmtConfName").as(None)
+        case Right(version) => F.pure(version)
+      }
+    } yield version
 
   def getScopedScalafmtDependency(buildRoot: BuildRoot): F[Option[Scope.Dependencies]] =
     OptionT(getScalafmtVersion(buildRoot))
@@ -51,9 +58,8 @@ final class ScalafmtAlg[F[_]](config: Config)(implicit
 }
 
 object ScalafmtAlg {
-  private def parseScalafmtConf(s: String): Option[Version] =
-    """version\s*=\s*(.+)""".r
-      .findFirstMatchIn(s)
-      .map(_.group(1).replace("\"", ""))
-      .map(Version.apply)
+  private[scalafmt] def parseScalafmtConf(s: String): Either[ParsingFailure, Option[Version]] =
+    io.circe.config.parser.parse(s).map {
+      _.asObject.flatMap(_.apply("version")).flatMap(_.asString).map(Version.apply)
+    }
 }
