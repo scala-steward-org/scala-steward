@@ -65,11 +65,9 @@ final class EditAlg[F[_]](implicit
                   gitAlg.discardChanges(repo) *>
                     runScalafixMigrations(repo, data.config, migrations) <*
                     bumpVersion(update, files)
+              updateCommitMsg = git.commitMsgFor(update, data.config.commits, data.repo.branch)
               updateEdit <- gitAlg
-                .commitAllIfDirty(
-                  repo,
-                  git.commitMsgFor(update, data.config.commits, data.repo.branch)
-                )
+                .commitAllIfDirty(repo, updateCommitMsg)
                 .map(_.map(commit => UpdateEdit(update, commit)))
               hooksEdits <- hookExecutor.execPostUpdateHooks(data, update)
             } yield scalafixEdits ++ updateEdit ++ hooksEdits
