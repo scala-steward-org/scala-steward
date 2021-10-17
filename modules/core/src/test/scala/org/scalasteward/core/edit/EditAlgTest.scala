@@ -14,6 +14,7 @@ import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafmt.{scalafmtBinary, scalafmtConfName}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
+import org.scalasteward.core.git.Branch
 
 class EditAlgTest extends FunSuite {
   private def gitStatus(repoDir: File): List[String] =
@@ -29,7 +30,7 @@ class EditAlgTest extends FunSuite {
 
     val state = MockState.empty
       .addFiles(file1 -> """val catsVersion = "1.2.0"""", file2 -> "")
-      .flatMap(editAlg.applyUpdate(data, update).runS)
+      .flatMap(editAlg.applyUpdate(data, update, Branch("main")).runS)
       .unsafeRunSync()
 
     val expected = MockState.empty.copy(
@@ -69,7 +70,7 @@ class EditAlgTest extends FunSuite {
 
     val state = MockState.empty
       .addFiles(scalafmtConf -> scalafmtConfContent, buildSbt -> "")
-      .flatMap(editAlg.applyUpdate(data, update).runS)
+      .flatMap(editAlg.applyUpdate(data, update, Branch("main")).runS)
       .unsafeRunSync()
 
     val expected = MockState.empty.copy(
@@ -126,7 +127,7 @@ class EditAlgTest extends FunSuite {
         file1 -> """import $ivy.`org.typelevel::cats-core:1.2.0`, cats.implicits._"""",
         file2 -> """"org.typelevel" %% "cats-core" % "1.2.0""""
       )
-      .flatMap(editAlg.applyUpdate(data, update).runS)
+      .flatMap(editAlg.applyUpdate(data, update, Branch("main")).runS)
       .unsafeRunSync()
 
     val expected = MockState.empty.copy(
@@ -275,10 +276,11 @@ class EditAlgTest extends FunSuite {
   ): Map[String, String] = {
     val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
     val repoDir = config.workspace / repo.toPath
+    val branch = Branch("main")
     val filesInRepoDir = files.map { case (file, content) => repoDir / file -> content }
     MockState.empty
       .addFiles(filesInRepoDir.toSeq: _*)
-      .flatMap(editAlg.applyUpdate(data, update).runS)
+      .flatMap(editAlg.applyUpdate(data, update, branch).runS)
       .map(_.files)
       .unsafeRunSync()
       .map { case (file, content) => file.toString.replace(repoDir.toString + "/", "") -> content }

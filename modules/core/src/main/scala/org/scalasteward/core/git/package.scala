@@ -16,7 +16,6 @@
 
 package org.scalasteward.core
 
-import cats.syntax.all._
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.repoconfig.CommitsConfig
 import org.scalasteward.core.update.show
@@ -30,17 +29,16 @@ package object git {
     Branch(s"update/$base${update.name}-${update.nextVersion}")
   }
 
-  def commitMsgFor(update: Update, commitsConfig: CommitsConfig, branch: Option[Branch]): String = {
+  def commitMsgFor(update: Update, commitsConfig: CommitsConfig, branch: Branch): String = {
     val artifact = show.oneLiner(update)
-    val defaultMessage = branch match {
-      case Some(value) => s"Update $artifact to ${update.nextVersion} in ${value.name}"
-      case None        => s"Update $artifact to ${update.nextVersion}"
-    }
+
+    val defaultMessage = s"Update $artifact to ${update.nextVersion} in ${branch.name}"
+
     commitsConfig.messageOrDefault
       .replace("${default}", defaultMessage)
       .replace("${artifactName}", artifact)
       .replace("${currentVersion}", update.currentVersion)
       .replace("${nextVersion}", update.nextVersion)
-      .replace("${branchName}", branch.map(_.name).orEmpty)
+      .replace("${branchName}", branch.name)
   }
 }

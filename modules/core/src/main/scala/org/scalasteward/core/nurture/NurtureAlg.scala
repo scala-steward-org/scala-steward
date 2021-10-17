@@ -155,10 +155,11 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
     gitAlg.returnToCurrentBranch(data.repo) {
       val createBranch = logger.info(s"Create branch ${data.updateBranch.name}") >>
         gitAlg.createBranch(data.repo, data.updateBranch)
-      editAlg.applyUpdate(data.repoData, data.update, createBranch).flatMap { edits =>
-        val editCommits = edits.flatMap(_.maybeCommit)
-        if (editCommits.isEmpty) logger.warn("No commits created").as(Ignored)
-        else pushCommits(data, editCommits) >> createPullRequest(data, edits)
+      editAlg.applyUpdate(data.repoData, data.update, data.updateBranch, createBranch).flatMap {
+        edits =>
+          val editCommits = edits.flatMap(_.maybeCommit)
+          if (editCommits.isEmpty) logger.warn("No commits created").as(Ignored)
+          else pushCommits(data, editCommits) >> createPullRequest(data, edits)
       }
     }
 
@@ -243,7 +244,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
         s"Merge branch ${data.baseBranch.name} into ${data.updateBranch.name} and apply again"
       )
       maybeMergeCommit <- gitAlg.mergeTheirs(data.repo, data.baseBranch)
-      edits <- editAlg.applyUpdate(data.repoData, data.update)
+      edits <- editAlg.applyUpdate(data.repoData, data.update, data.updateBranch)
       editCommits = edits.flatMap(_.maybeCommit)
       result <- pushCommits(data, maybeMergeCommit.toList ++ editCommits)
     } yield result

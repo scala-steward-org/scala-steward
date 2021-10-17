@@ -204,7 +204,7 @@ object NewPullRequestData {
       filesWithOldVersion: List[String] = List.empty
   ): NewPullRequestData =
     NewPullRequestData(
-      title = git.commitMsgFor(data.update, data.repoConfig.commits, data.repoData.repo.branch),
+      title = git.commitMsgFor(data.update, data.repoConfig.commits, data.baseBranch),
       body = bodyFor(data.update, edits, artifactIdToUrl, releaseRelatedUrls, filesWithOldVersion),
       head = branchName,
       base = data.baseBranch
