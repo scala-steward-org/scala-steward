@@ -74,15 +74,8 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       _ <- NurtureAlg.processUpdates(
         grouped,
         update => {
-          val updateData =
-            UpdateData(
-              data,
-              fork,
-              update,
-              baseBranch,
-              baseSha1,
-              git.branchFor(update, data.repo.branch)
-            )
+          val updateBranch = git.branchFor(update, data.repo.branch)
+          val updateData = UpdateData(data, fork, update, baseBranch, baseSha1, updateBranch)
           processUpdate(updateData)
         },
         data.config.updates.limit
