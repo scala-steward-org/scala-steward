@@ -37,7 +37,7 @@ package object vcs {
   ): String =
     vcsType match {
       case GitHub =>
-        s"${fork.toPath}:${git.branchFor(update, nonDefaultBaseBranch).name}"
+        s"${fork.owner}/${fork.repo}:${git.branchFor(update, nonDefaultBaseBranch).name}"
 
       case GitLab | Bitbucket | BitbucketServer =>
         git.branchFor(update, nonDefaultBaseBranch).name
