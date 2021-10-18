@@ -221,37 +221,37 @@ class BitbucketApiAlgTest extends FunSuite {
     assertEquals(repoOut, parent)
   }
 
-  test("createForkOrGetRepoWithDefaultBranch") {
+  test("createForkOrGetRepoWithBranch") {
     val (repoOut, branchOut) =
       bitbucketApiAlg
-        .createForkOrGetRepoWithDefaultBranch(repo, doNotFork = false, defaultBranch = None)
+        .createForkOrGetRepoWithBranch(repo, doNotFork = false)
         .unsafeRunSync()
     assertEquals(repoOut, fork)
     assertEquals(branchOut, defaultBranch)
   }
 
-  test("createForkOrGetRepoWithDefaultBranch with custom default branch") {
+  test("createForkOrGetRepoWithBranch with custom default branch") {
     val (repoOut, branchOut) =
       bitbucketApiAlg
-        .createForkOrGetRepoWithDefaultBranch(repo, doNotFork = false, defaultBranch = Some(custom))
+        .createForkOrGetRepoWithBranch(repo.copy(branch = Some(custom)), doNotFork = false)
         .unsafeRunSync()
     assertEquals(repoOut, forkWithCustomDefaultBranch)
     assertEquals(branchOut, defaultCustomBranch)
   }
 
-  test("createForkOrGetRepoWithDefaultBranch without forking") {
+  test("createForkOrGetRepoWithBranch without forking") {
     val (repoOut, branchOut) =
       bitbucketApiAlg
-        .createForkOrGetRepoWithDefaultBranch(repo, doNotFork = true, defaultBranch = None)
+        .createForkOrGetRepoWithBranch(repo, doNotFork = true)
         .unsafeRunSync()
     assertEquals(repoOut, parent)
     assertEquals(branchOut, defaultBranch)
   }
 
-  test("createForkOrGetRepoWithDefaultBranch without forking with custom default branch") {
+  test("createForkOrGetRepoWithBranch without forking with custom default branch") {
     val (repoOut, branchOut) =
       bitbucketApiAlg
-        .createForkOrGetRepoWithDefaultBranch(repo, doNotFork = true, defaultBranch = Some(custom))
+        .createForkOrGetRepoWithBranch(repo.copy(branch = Some(custom)), doNotFork = true)
         .unsafeRunSync()
     assertEquals(repoOut, parentWithCustomDefaultBranch)
     assertEquals(branchOut, defaultCustomBranch)

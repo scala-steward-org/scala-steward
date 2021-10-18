@@ -15,6 +15,9 @@ metals.sbt
 
 .bsp/
 
+#VSCode specific
+.vscode
+
 
 #Workspace Tooling
 .envrc

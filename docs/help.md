@@ -38,5 +38,4 @@ All command line arguments for the `scala-steward` application.
   --github-app-key-file  FILE                        Github application key file
   --github-app-id  ID                                Github application id
   --refresh-backoff-period DURATION                  Period of time a failed build won't be triggered again, default: "7 days"
-  --default-branch BRANCH                            A fixed branch name to use as default instead of the repository's default branch
 ```

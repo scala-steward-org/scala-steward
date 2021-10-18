@@ -35,7 +35,7 @@ object Cli {
       gitAuthorEmail: String,
       gitAuthorSigningKey: Option[String] = None,
       vcsType: VCSType = VCSType.GitHub,
-      vcsApiHost: Uri = VCSType.GitHub.publicApiHost,
+      vcsApiHost: Uri = VCSType.GitHub.publicApiBaseUrl,
       vcsLogin: String,
       gitAskPass: File,
       signCommits: Boolean = false,
@@ -59,8 +59,7 @@ object Cli {
       githubAppId: Option[Long] = None,
       urlCheckerTestUrl: Option[Uri] = None,
       defaultMavenRepo: Option[String] = None,
-      refreshBackoffPeriod: FiniteDuration = 7.days,
-      defaultBranch: Option[String] = None
+      refreshBackoffPeriod: FiniteDuration = 7.days
   )
 
   final case class EnvVar(name: String, value: String)

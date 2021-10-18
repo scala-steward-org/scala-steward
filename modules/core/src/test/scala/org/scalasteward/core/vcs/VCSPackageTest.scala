@@ -13,7 +13,7 @@ class VCSPackageTest extends FunSuite {
   private val repo = Repo("foo", "bar")
   private val update =
     Update.Single("ch.qos.logback" % "logback-classic" % "1.2.0", Nel.of("1.2.3"))
-  private val updateBranch = git.branchFor(update)
+  private val updateBranch = git.branchFor(update, None)
 
   test("listingBranch") {
     assertEquals(listingBranch(GitHub, repo, updateBranch), s"foo/bar:${updateBranch.name}")

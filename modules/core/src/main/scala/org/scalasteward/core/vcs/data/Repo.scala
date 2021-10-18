@@ -18,14 +18,18 @@ package org.scalasteward.core.vcs.data
 
 import cats.Eq
 import io.circe.KeyEncoder
+import org.scalasteward.core.git.Branch
 
 final case class Repo(
     owner: String,
-    repo: String
+    repo: String,
+    branch: Option[Branch] = None
 ) {
-  def show: String = s"$owner/$repo"
+  def show: String =
+    owner + "/" + repo + branch.fold("")(":" + _.name)
 
-  def toPath: String = s"$owner/$repo"
+  def toPath: String =
+    owner + "/" + repo + branch.fold("")("/" + _.name)
 }
 
 object Repo {
