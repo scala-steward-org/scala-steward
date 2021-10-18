@@ -36,10 +36,8 @@ object Repo {
   def parse(s: String): Option[Repo] = {
     val regex = """-\s+([^/:]+)/([^/:]+)(:(.+))?""".r
     s match {
-      case regex(owner, repo, _, null) =>
-        Some(Repo(owner.trim, repo.trim))
       case regex(owner, repo, _, branch) =>
-        Some(Repo(owner.trim, repo.trim, Some(Branch(branch.trim))))
+        Some(Repo(owner.trim, repo.trim, Option(branch).map(b => Branch(b.trim))))
       case _ =>
         None
     }
