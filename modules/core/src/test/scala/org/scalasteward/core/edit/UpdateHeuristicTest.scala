@@ -684,7 +684,7 @@ class UpdateHeuristicTest extends FunSuite {
     assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.original.name)
   }
 
-  test("issue 2099: pom.xml multiline") {
+  test("issue 2099: pom.xml multiline should be updated") {
     val original =
       """  <dependency>
         |    <groupId>commons-io</groupId>
@@ -703,6 +703,23 @@ class UpdateHeuristicTest extends FunSuite {
       Single("commons-io" % "commons-io" % "2.6", Nel.of("2.8.0"))
         .replaceVersionIn(original),
       Some(expected) -> UpdateHeuristic.strict.name
+    )
+  }
+
+  test(
+    "issue 2099: skip multiline if lines between search term and version are more than tolerance"
+  ) {
+    val original =
+      """  <dependency>
+        |    <groupId>commons-io</groupId>
+        |    <artifactId>commons-io</artifactId>
+        |
+        |    <version>2.6</version>
+        |  </dependency>
+        |""".stripMargin
+    assertEquals(
+      Single("commons-io" % "commons-io" % "2.6", Nel.of("2.8.0")).replaceVersionIn(original)._1,
+      None
     )
   }
 

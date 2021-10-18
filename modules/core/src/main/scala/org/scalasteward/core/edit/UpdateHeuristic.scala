@@ -80,6 +80,9 @@ object UpdateHeuristic {
     }
   }
 
+  private def isWithinMultilineTolerance(dependency: String): Boolean =
+    dependency.linesIterator.length <= 3
+
   private def defaultReplaceVersion(
       getSearchTerms: Update => List[String],
       getPrefixRegex: Update => Option[String] = _ => None
@@ -105,6 +108,7 @@ object UpdateHeuristic {
             val versionSuffix = match0.group(match0.groupCount)
             Option.when {
               !shouldBeIgnored(prefix) &&
+              isWithinMultilineTolerance(dependency) &&
               enclosingCharsDelimitVersion(dependency.lastOption, versionSuffix.headOption) &&
               !moduleIdRegex(update.currentVersion).matches(match0.matched)
             } {
