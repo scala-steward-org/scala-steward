@@ -35,7 +35,7 @@ object Cli {
       gitAuthorEmail: String,
       gitAuthorSigningKey: Option[String] = None,
       vcsType: VCSType = VCSType.GitHub,
-      vcsApiHost: Uri = VCSType.GitHub.publicApiHost,
+      vcsApiHost: Uri = VCSType.GitHub.publicApiBaseUrl,
       vcsLogin: String,
       gitAskPass: File,
       signCommits: Boolean = false,
