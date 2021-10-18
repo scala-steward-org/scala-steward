@@ -33,6 +33,16 @@ final case class Repo(
 }
 
 object Repo {
+  def parse(s: String): Option[Repo] = {
+    val regex = """-\s+([^/:]+)/([^/:]+)(:.+)?""".r
+    s match {
+      case regex(owner, repo, branch) =>
+        Some(Repo(owner.trim, repo.trim, Option(branch).map(b => Branch(b.tail.trim))))
+      case _ =>
+        None
+    }
+  }
+
   implicit val repoEq: Eq[Repo] =
     Eq.fromUniversalEquals
 
