@@ -77,11 +77,11 @@ package object vcs {
       vcsType: VCSType,
       vcsUri: Uri,
       repoUrl: Uri
-  ): Option[VCSType] = {
-    val host = repoUrl.host.map(_.value)
-    if (vcsUri.host.map(_.value).contains(host.getOrElse(""))) Some(vcsType)
-    else host.flatMap(VCSType.fromPublicWebHost)
-  }
+  ): Option[VCSType] =
+    repoUrl.host.flatMap { repoHost =>
+      if (vcsUri.host.contains(repoHost)) Some(vcsType)
+      else VCSType.fromPublicWebHost(repoHost.value)
+    }
 
   def possibleCompareUrls(
       vcsType: VCSType,
