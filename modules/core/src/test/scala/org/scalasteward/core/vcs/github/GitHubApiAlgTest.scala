@@ -148,44 +148,42 @@ class GitHubApiAlgTest extends FunSuite {
     assertEquals(repoOut, parent)
   }
 
-  test("createForkOrGetRepoWithDefaultBranch") {
+  test("createForkOrGetRepoWithBranch") {
     val (repoOut, branchOut) =
       gitHubApiAlg
-        .createForkOrGetRepoWithDefaultBranch(repo, doNotFork = false, defaultBranch = None)
+        .createForkOrGetRepoWithBranch(repo, doNotFork = false)
         .unsafeRunSync()
     assertEquals(repoOut, fork)
     assertEquals(branchOut, defaultBranch)
   }
 
-  test("createForkOrGetRepoWithDefaultBranch") {
+  test("createForkOrGetRepoWithBranch") {
     val (repoOut, branchOut) =
       gitHubApiAlg
-        .createForkOrGetRepoWithDefaultBranch(
-          repo,
-          doNotFork = false,
-          defaultBranch = Some(Branch("custom"))
+        .createForkOrGetRepoWithBranch(
+          repo.copy(branch = Some(Branch("custom"))),
+          doNotFork = false
         )
         .unsafeRunSync()
     assertEquals(repoOut, forkWithCustomDefaultBranch)
     assertEquals(branchOut, defaultCustomBranch)
   }
 
-  test("createForkOrGetRepoWithDefaultBranch without forking") {
+  test("createForkOrGetRepoWithBranch without forking") {
     val (repoOut, branchOut) =
       gitHubApiAlg
-        .createForkOrGetRepoWithDefaultBranch(repo, doNotFork = true, defaultBranch = None)
+        .createForkOrGetRepoWithBranch(repo, doNotFork = true)
         .unsafeRunSync()
     assertEquals(repoOut, parent)
     assertEquals(branchOut, defaultBranch)
   }
 
-  test("createForkOrGetRepoWithDefaultBranch without forking with custom default branch") {
+  test("createForkOrGetRepoWithBranch without forking with custom default branch") {
     val (repoOut, branchOut) =
       gitHubApiAlg
-        .createForkOrGetRepoWithDefaultBranch(
-          repo,
-          doNotFork = true,
-          defaultBranch = Some(Branch("custom"))
+        .createForkOrGetRepoWithBranch(
+          repo.copy(branch = Some(Branch("custom"))),
+          doNotFork = true
         )
         .unsafeRunSync()
     assertEquals(repoOut, parentWithCustomDefaultBranch)
