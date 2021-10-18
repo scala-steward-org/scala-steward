@@ -26,10 +26,10 @@ final case class Repo(
     branch: Option[Branch] = None
 ) {
   def show: String =
-    owner + "/" + repo + branch.fold("")(":" + _)
+    owner + "/" + repo + branch.fold("")(":" + _.name)
 
   def toPath: String =
-    owner + "/" + repo + branch.fold("")("/" + _)
+    owner + "/" + repo + branch.fold("")("/" + _.name)
 }
 
 object Repo {
