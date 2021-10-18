@@ -17,5 +17,8 @@ class RepoTest extends FunSuite {
       Repo.parse("- typelevel/cats-effect:series/3.x"),
       Some(Repo("typelevel", "cats-effect", Some(Branch("series/3.x"))))
     )
+
+    assertEquals(Repo.parse("typelevel/cats-effect"), None)
+    assertEquals(Repo.parse("- typelevel-cats-effect"), None)
   }
 }
