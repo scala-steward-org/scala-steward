@@ -24,17 +24,16 @@ final class ArtifactMigrationsFinder(migrations: List[ArtifactChange]) {
   def findUpdateWithRenamedArtifact(dependency: Dependency): Option[Update.Single] =
     migrations
       .find { migration =>
-        (migration.groupIdBefore, migration.artifactIdBefore) match {
-          case (Some(groupId), Some(artifactId)) =>
+        migration.before match {
+          case ArtifactBefore.Full(groupId, artifactId) =>
             groupId === dependency.groupId &&
               artifactId === dependency.artifactId.name
-          case (Some(groupId), None) =>
+          case ArtifactBefore.GroupIdOnly(groupId) =>
             groupId === dependency.groupId &&
               migration.artifactIdAfter === dependency.artifactId.name
-          case (None, Some(artifactId)) =>
+          case ArtifactBefore.ArtifactIdOnly(artifactId) =>
             migration.groupIdAfter === dependency.groupId &&
               artifactId === dependency.artifactId.name
-          case (None, None) => false
         }
       }
       .map { migration =>
