@@ -16,9 +16,11 @@
 
 package org.scalasteward.core.edit.scalafix
 
+import cats.syntax.all._
 import io.circe.Decoder
 import io.circe.generic.semiauto._
 import org.scalasteward.core.data.{GroupId, Version}
+import org.scalasteward.core.git.Author
 import org.scalasteward.core.util.Nel
 
 final case class ScalafixMigration(
@@ -26,11 +28,20 @@ final case class ScalafixMigration(
     artifactIds: Nel[String],
     newVersion: Version,
     rewriteRules: Nel[String],
-    doc: Option[String],
-    scalacOptions: Option[Nel[String]]
-)
+    doc: Option[String] = None,
+    scalacOptions: Option[Nel[String]] = None,
+    authors: Option[Nel[Author]] = None
+) {
+  def commitMessage(result: Either[Throwable, Unit]): Nel[String] = {
+    val verb = if (result.isRight) "Applied" else "Failed"
+    val msg1 = s"$verb Scalafix rule(s) ${rewriteRules.mkString_(", ")}"
+    val msg2 = doc.map(url => s"See $url for details")
+    val msg3 = authors.map(_.map(author => s"Co-authored-by: ${author.show}").mkString_("\n"))
+    Nel(msg1, msg2.toList ++ msg3.toList)
+  }
+}
 
 object ScalafixMigration {
   implicit val scalafixMigrationDecoder: Decoder[ScalafixMigration] =
-    deriveDecoder[ScalafixMigration]
+    deriveDecoder
 }

@@ -16,4 +16,13 @@
 
 package org.scalasteward.core.git
 
-final case class Author(name: String, email: String, signingKey: Option[String])
+import io.circe.Decoder
+import io.circe.generic.semiauto.deriveDecoder
+
+final case class Author(name: String, email: String, signingKey: Option[String]) {
+  def show: String = s"$name <$email>"
+}
+
+object Author {
+  implicit val authorDecoder: Decoder[Author] = deriveDecoder
+}
