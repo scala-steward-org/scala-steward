@@ -111,6 +111,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [kalejami](https://github.com/kalejami)
 * [KAWACHI Takashi](https://github.com/tkawachi)
 * [kenji yoshida](https://github.com/xuwei-k)
+* [Kilic Ali-Firat](https://github.com/alifirat)
 * [Lars Hupel](https://github.com/larsrh)
 * [LaurenceWarne](https://github.com/LaurenceWarne)
 * [Leonhard Riedißer](https://github.com/L7R7)
