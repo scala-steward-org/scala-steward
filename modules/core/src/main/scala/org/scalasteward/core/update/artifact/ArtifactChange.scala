@@ -33,7 +33,7 @@ object ArtifactChange {
     Configuration.default.withDefaults
 
   implicit val decoder: Decoder[ArtifactChange] =
-    semiauto.deriveConfiguredDecoder.flatMap { change: ArtifactChange =>
+    semiauto.deriveConfiguredDecoder[ArtifactChange].flatMap { change =>
       (change.groupIdBefore, change.artifactIdBefore) match {
         case (None, None) =>
           Decoder.failed(
