@@ -21,7 +21,7 @@ class ScalafixMigrationsLoaderTest extends FunSuite {
        |    newVersion: "1.0.0",
        |    rewriteRules: ["awesome rewrite rule"],
        |    doc: "https://scalacenter.github.io/scalafix/",
-       |    authors: [{ name: "Jane Doe", email: "jane@example.com" }]
+       |    authors: ["Jane Doe <jane@example.com>"]
        |  }
        |]""".stripMargin
   val migration: ScalafixMigration = ScalafixMigration(
@@ -30,7 +30,7 @@ class ScalafixMigrationsLoaderTest extends FunSuite {
     Version("1.0.0"),
     Nel.of("awesome rewrite rule"),
     Some("https://scalacenter.github.io/scalafix/"),
-    authors = Some(Nel.of(Author("Jane Doe", "jane@example.com", None)))
+    authors = Some(Nel.of(Author("Jane Doe", "jane@example.com")))
   )
 
   test("loadAll: without extra file, without defaults") {
