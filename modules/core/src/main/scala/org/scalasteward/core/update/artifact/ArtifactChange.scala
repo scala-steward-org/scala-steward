@@ -16,13 +16,14 @@
 
 package org.scalasteward.core.update.artifact
 
-import io.circe.Decoder
-import io.circe.generic.extras.Configuration
+import io.circe.{Decoder, DecodingFailure}
+import io.circe.generic.extras.{semiauto, Configuration}
 import org.scalasteward.core.data.GroupId
 
 final case class ArtifactChange(
-    before: ArtifactBefore,
+    groupIdBefore: Option[GroupId],
     groupIdAfter: GroupId,
+    artifactIdBefore: Option[String],
     artifactIdAfter: String,
     initialVersion: String
 )
@@ -32,44 +33,16 @@ object ArtifactChange {
     Configuration.default.withDefaults
 
   implicit val decoder: Decoder[ArtifactChange] =
-    cursor =>
-      for {
-        groupIdBefore <- cursor.downField("groupIdBefore").as[Option[GroupId]]
-        artifactIdBefore <- cursor.downField("artifactIdBefore").as[Option[String]]
-        groupIdAfter <- cursor.downField("groupIdAfter").as[GroupId]
-        artifactIdAfter <- cursor.downField("artifactIdAfter").as[String]
-        initialVersion <- cursor.downField("initialVersion").as[String]
-      } yield {
-        val before = ArtifactBefore(groupIdBefore, artifactIdBefore)
-        ArtifactChange(before, groupIdAfter, artifactIdAfter, initialVersion)
+    semiauto.deriveConfiguredDecoder.flatMap { change: ArtifactChange =>
+      (change.groupIdBefore, change.artifactIdBefore) match {
+        case (None, None) =>
+          Decoder.failed(
+            DecodingFailure(
+              "At least one of groupIdBefore and/or artifactIdBefore must be set",
+              List.empty
+            )
+          )
+        case _ => Decoder.const(change)
       }
-
-  def apply(
-      groupIdBefore: Option[GroupId],
-      groupIdAfter: GroupId,
-      artifactIdBefore: Option[String],
-      artifactIdAfter: String,
-      initialVersion: String
-  ): ArtifactChange = {
-    val before = ArtifactBefore(groupIdBefore, artifactIdBefore)
-    ArtifactChange(before, groupIdAfter, artifactIdAfter, initialVersion)
-  }
-}
-
-sealed trait ArtifactBefore
-object ArtifactBefore {
-  def apply(groupIdBefore: Option[GroupId], artifactIdBefore: Option[String]): ArtifactBefore =
-    (groupIdBefore, artifactIdBefore) match {
-      case (Some(groupId), Some(artifactId)) => ArtifactBefore.Full(groupId, artifactId)
-      case (Some(groupId), None)             => ArtifactBefore.GroupIdOnly(groupId)
-      case (None, Some(artifactId))          => ArtifactBefore.ArtifactIdOnly(artifactId)
-      case (None, None) =>
-        throw new IllegalArgumentException(
-          "At-least one of groupIdBefore and/or artifactIdBefore must be set"
-        )
     }
-
-  case class Full(groupId: GroupId, artifactId: String) extends ArtifactBefore
-  case class GroupIdOnly(groupId: GroupId) extends ArtifactBefore
-  case class ArtifactIdOnly(artifactId: String) extends ArtifactBefore
 }
