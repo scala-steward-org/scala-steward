@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.update.artifact
 
-import io.circe.{Decoder, DecodingFailure}
+import io.circe.Decoder
 import io.circe.generic.extras.{semiauto, Configuration}
 import org.scalasteward.core.data.GroupId
 
@@ -33,16 +33,10 @@ object ArtifactChange {
     Configuration.default.withDefaults
 
   implicit val decoder: Decoder[ArtifactChange] =
-    semiauto.deriveConfiguredDecoder[ArtifactChange].flatMap { change =>
-      (change.groupIdBefore, change.artifactIdBefore) match {
-        case (None, None) =>
-          Decoder.failed(
-            DecodingFailure(
-              "At least one of groupIdBefore and/or artifactIdBefore must be set",
-              List.empty
-            )
-          )
-        case _ => Decoder.const(change)
-      }
-    }
+    semiauto
+      .deriveConfiguredDecoder[ArtifactChange]
+      .ensure(
+        change => change.groupIdBefore.isDefined || change.artifactIdBefore.isDefined,
+        "At least one of groupIdBefore and/or artifactIdBefore must be set"
+      )
 }
