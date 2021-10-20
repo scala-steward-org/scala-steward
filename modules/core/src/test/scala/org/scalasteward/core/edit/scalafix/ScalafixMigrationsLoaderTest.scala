@@ -5,6 +5,7 @@ import munit.FunSuite
 import org.http4s.Uri
 import org.scalasteward.core.application.Config.ScalafixCfg
 import org.scalasteward.core.data.{GroupId, Version}
+import org.scalasteward.core.git.Author
 import org.scalasteward.core.mock.MockConfig.mockRoot
 import org.scalasteward.core.mock.MockContext.context.scalafixMigrationsLoader
 import org.scalasteward.core.mock.MockContext.mockState
@@ -19,7 +20,8 @@ class ScalafixMigrationsLoaderTest extends FunSuite {
        |    artifactIds: ["yumyum-.*"],
        |    newVersion: "1.0.0",
        |    rewriteRules: ["awesome rewrite rule"],
-       |    doc: "https://scalacenter.github.io/scalafix/"
+       |    doc: "https://scalacenter.github.io/scalafix/",
+       |    authors: ["Jane Doe <jane@example.com>"]
        |  }
        |]""".stripMargin
   val migration: ScalafixMigration = ScalafixMigration(
@@ -28,7 +30,7 @@ class ScalafixMigrationsLoaderTest extends FunSuite {
     Version("1.0.0"),
     Nel.of("awesome rewrite rule"),
     Some("https://scalacenter.github.io/scalafix/"),
-    None
+    authors = Some(Nel.of(Author("Jane Doe", "jane@example.com")))
   )
 
   test("loadAll: without extra file, without defaults") {

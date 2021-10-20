@@ -33,5 +33,10 @@ object ArtifactChange {
     Configuration.default.withDefaults
 
   implicit val decoder: Decoder[ArtifactChange] =
-    semiauto.deriveConfiguredDecoder
+    semiauto
+      .deriveConfiguredDecoder[ArtifactChange]
+      .ensure(
+        change => change.groupIdBefore.isDefined || change.artifactIdBefore.isDefined,
+        "At least one of groupIdBefore and/or artifactIdBefore must be set"
+      )
 }

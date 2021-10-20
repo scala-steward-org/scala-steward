@@ -72,4 +72,22 @@ class ArtifactMigrationsLoaderTest extends FunSuite {
       .unsafeRunSync()
     assert(migrations.isLeft)
   }
+
+  test(
+    "loadAll: issue #2238 decoding should fail if both groupIdBefore and artifactIdBefore are missing"
+  ) {
+    val initialState = mockState.addUris(migrationsUri -> """|changes = [
+                                                             |  {
+                                                             |    groupIdAfter = org.ice.cream
+                                                             |    artifactIdAfter = yumyum
+                                                             |    initialVersion = 2.0.0
+                                                             |  }
+                                                             |]""".stripMargin)
+    val migrations = artifactMigrationsLoader
+      .loadAll(ArtifactCfg(List(migrationsUri), disableDefaults = false))
+      .runA(initialState)
+      .attempt
+      .unsafeRunSync()
+    assert(migrations.isLeft)
+  }
 }
