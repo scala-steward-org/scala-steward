@@ -101,10 +101,8 @@ final class EditAlg[F[_]](implicit
       result <- logger.attemptWarn.log("Scalafix migration failed")(
         buildToolDispatcher.runMigration(repo, config, migration)
       )
-      verb = if (result.isRight) "Applied" else "Failed"
-      msg1 = s"$verb Scalafix rule(s) ${migration.rewriteRules.mkString_(", ")}"
-      msg2 = migration.doc.map(url => s"See $url for details").toList
-      maybeCommit <- gitAlg.commitAllIfDirty(repo, msg1, msg2: _*)
+      msg = migration.commitMessage(result)
+      maybeCommit <- gitAlg.commitAllIfDirty(repo, msg.head, msg.tail: _*)
     } yield ScalafixEdit(migration, result, maybeCommit)
 
   private def bumpVersion(update: Update, files: Nel[File]): F[Boolean] = {

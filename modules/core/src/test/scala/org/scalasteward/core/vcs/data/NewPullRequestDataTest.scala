@@ -110,9 +110,7 @@ class NewPullRequestDataTest extends FunSuite {
       update.groupId,
       Nel.of(update.artifactId.name),
       Version("0.7.0"),
-      Nel.of("I am a rewrite rule"),
-      None,
-      None
+      Nel.of("I am a rewrite rule")
     )
     val (label, appliedMigrations) = NewPullRequestData.migrationNote(List(migration))
 
@@ -135,8 +133,7 @@ class NewPullRequestDataTest extends FunSuite {
       Nel.of(update.artifactId.name),
       Version("0.7.0"),
       Nel.of("I am a rewrite rule"),
-      Some("https://scalacenter.github.io/scalafix/"),
-      None
+      Some("https://scalacenter.github.io/scalafix/")
     )
     val (label, appliedMigrations) = NewPullRequestData.migrationNote(List(migration))
 
