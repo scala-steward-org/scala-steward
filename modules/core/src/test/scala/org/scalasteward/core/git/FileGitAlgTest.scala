@@ -56,11 +56,11 @@ class FileGitAlgTest extends CatsEffectSuite {
       _ <- ioAuxGitAlg.createRepo(repo)
       _ <- ioFileAlg.writeFile(repo / "test.txt", "hello")
       _ <- ioAuxGitAlg.git("add", "test.txt")(repo)
-      _ <- ioGitAlg.commitAll(repo, "Add test.txt")
+      _ <- ioGitAlg.commitAll(repo, CommitMsg("Add test.txt"))
       c1 <- ioGitAlg.containsChanges(repo)
       _ <- ioFileAlg.writeFile(repo / "test.txt", "hello world")
       c2 <- ioGitAlg.containsChanges(repo)
-      _ <- ioGitAlg.commitAllIfDirty(repo, "Modify test.txt")
+      _ <- ioGitAlg.commitAllIfDirty(repo, CommitMsg("Modify test.txt"))
       c3 <- ioGitAlg.containsChanges(repo)
       _ = assertEquals((c1, c2, c3), (false, true, false))
     } yield ()
@@ -83,7 +83,7 @@ class FileGitAlgTest extends CatsEffectSuite {
       file = repo / "test.txt"
       _ <- ioFileAlg.writeFile(file, "hello")
       _ <- ioAuxGitAlg.git("add", "test.txt")(repo)
-      _ <- ioGitAlg.commitAll(repo, "Add test.txt")
+      _ <- ioGitAlg.commitAll(repo, CommitMsg("Add test.txt"))
       _ <- ioFileAlg.writeFile(file, "world")
       before <- ioFileAlg.readFile(file)
       _ <- ioGitAlg.discardChanges(repo)
@@ -174,7 +174,8 @@ object FileGitAlgTest {
 
     def addFiles(repo: File, files: File*): F[Unit] =
       files.toList.traverse_ { file =>
-        git("add", file.pathAsString)(repo) >> gitAlg.commitAll(repo, s"Add ${file.name}")
+        git("add", file.pathAsString)(repo) >>
+          gitAlg.commitAll(repo, CommitMsg(s"Add ${file.name}"))
       }
 
     def createConflict(repo: File): F[Unit] =
@@ -187,18 +188,18 @@ object FileGitAlgTest {
         _ <- gitAlg.createBranch(repo, Branch("conflicts-no"))
         _ <- fileAlg.writeFile(repo / "file3", "file3, line1")
         _ <- git("add", "file3")(repo)
-        _ <- gitAlg.commitAll(repo, "Add file3 on conflicts-no")
+        _ <- gitAlg.commitAll(repo, CommitMsg("Add file3 on conflicts-no"))
         _ <- gitAlg.checkoutBranch(repo, master)
         // work on conflicts-yes
         _ <- gitAlg.createBranch(repo, Branch("conflicts-yes"))
         _ <- fileAlg.writeFile(repo / "file2", "file2, line1\nfile2, line2 on conflicts-yes")
         _ <- git("add", "file2")(repo)
-        _ <- gitAlg.commitAll(repo, "Modify file2 on conflicts-yes")
+        _ <- gitAlg.commitAll(repo, CommitMsg("Modify file2 on conflicts-yes"))
         _ <- gitAlg.checkoutBranch(repo, master)
         // work on master
         _ <- fileAlg.writeFile(repo / "file2", "file2, line1\nfile2, line2 on master")
         _ <- git("add", "file2")(repo)
-        _ <- gitAlg.commitAll(repo, "Modify file2 on master")
+        _ <- gitAlg.commitAll(repo, CommitMsg("Modify file2 on master"))
       } yield ()
 
     def createConflictFileRemovedOnMaster(repo: File): F[Unit] =
@@ -211,12 +212,12 @@ object FileGitAlgTest {
         _ <- gitAlg.createBranch(repo, Branch("conflicts-yes"))
         _ <- fileAlg.writeFile(repo / "file2", "file2, line1\nfile2, line2 on conflicts-yes")
         _ <- git("add", "file2")(repo)
-        _ <- gitAlg.commitAll(repo, "Modify file2 on conflicts-yes")
+        _ <- gitAlg.commitAll(repo, CommitMsg("Modify file2 on conflicts-yes"))
         _ <- gitAlg.checkoutBranch(repo, master)
         // work on master
         _ <- git("rm", "file2")(repo)
         _ <- git("add", "-A")(repo)
-        _ <- gitAlg.commitAll(repo, "Remove file2 on master")
+        _ <- gitAlg.commitAll(repo, CommitMsg("Remove file2 on master"))
       } yield ()
   }
 

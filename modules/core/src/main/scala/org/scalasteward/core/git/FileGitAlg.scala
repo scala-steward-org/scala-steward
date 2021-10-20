@@ -49,9 +49,9 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
   override def cloneExists(repo: File): F[Boolean] =
     fileAlg.isDirectory(repo / ".git")
 
-  override def commitAll(repo: File, message: String, messages: String*): F[Commit] = {
-    val allMessages = (message :: messages.toList).foldMap(m => List("-m", m))
-    git("commit" :: "--all" :: sign :: allMessages: _*)(repo).as(Commit())
+  override def commitAll(repo: File, message: CommitMsg): F[Commit] = {
+    val messages = message.toNel.foldMap(m => List("-m", m))
+    git("commit" :: "--all" :: sign :: messages: _*)(repo).as(Commit())
   }
 
   override def containsChanges(repo: File): F[Boolean] =
