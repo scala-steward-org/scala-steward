@@ -81,12 +81,11 @@ class ArtifactMigrationsLoaderTest extends FunSuite {
                                                              |    initialVersion = 2.0.0
                                                              |  }
                                                              |]""".stripMargin)
-    intercept[Throwable] {
-      artifactMigrationsLoader
-        .loadAll(ArtifactCfg(List(migrationsUri), disableDefaults = false))
-        .runA(initialState)
-        .attempt
-        .unsafeRunSync()
-    }
+    val migrations = artifactMigrationsLoader
+      .loadAll(ArtifactCfg(List(migrationsUri), disableDefaults = false))
+      .runA(initialState)
+      .attempt
+      .unsafeRunSync()
+    assert(migrations.isLeft)
   }
 }
