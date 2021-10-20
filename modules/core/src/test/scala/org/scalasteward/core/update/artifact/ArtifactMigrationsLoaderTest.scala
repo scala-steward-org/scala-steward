@@ -73,7 +73,9 @@ class ArtifactMigrationsLoaderTest extends FunSuite {
     assert(migrations.isLeft)
   }
 
-  test("loadAll: issue #2238 decoding should fail if both groupIdBefore and artifactIdBefore are missing") {
+  test(
+    "loadAll: issue #2238 decoding should fail if both groupIdBefore and artifactIdBefore are missing"
+  ) {
     val initialState = mockState.addUris(migrationsUri -> """|changes = [
                                                              |  {
                                                              |    groupIdAfter = org.ice.cream
