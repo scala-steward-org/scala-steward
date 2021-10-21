@@ -32,7 +32,7 @@ import org.scalasteward.core.edit.hooks.HookExecutor
 import org.scalasteward.core.edit.scalafix.{ScalafixMigrationsFinder, ScalafixMigrationsLoader}
 import org.scalasteward.core.git.{GenGitAlg, GitAlg}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.nurture.{NurtureAlg, PullRequestData, PullRequestRepository}
+import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository}
 import org.scalasteward.core.persistence.{CachingKeyValueStore, JsonKeyValueStore}
 import org.scalasteward.core.repocache._
 import org.scalasteward.core.repoconfig.RepoConfigAlg
@@ -103,7 +103,7 @@ object Context {
       urlChecker0 <- UrlChecker.create[F](config)
       kvsPrefix = Some(config.vcsCfg.tpe.asString)
       pullRequestsStore <- JsonKeyValueStore
-        .create[F, Repo, Map[Uri, PullRequestData]]("pull_requests", "2", kvsPrefix)
+        .create[F, Repo, Map[Uri, PullRequestRepository.Entry]]("pull_requests", "2", kvsPrefix)
         .flatMap(CachingKeyValueStore.wrap(_))
       refreshErrorStore <- JsonKeyValueStore
         .create[F, Repo, RefreshErrorAlg.Entry]("refresh_error", "1", kvsPrefix)
