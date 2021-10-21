@@ -20,7 +20,7 @@ import cats.Monad
 import cats.data.OptionT
 import cats.implicits._
 import org.scalasteward.core.data._
-import org.scalasteward.core.nurture.PullRequestRepository
+import org.scalasteward.core.nurture.{PullRequestData, PullRequestRepository}
 import org.scalasteward.core.repocache.RepoCache
 import org.scalasteward.core.repoconfig.{PullRequestFrequency, RepoConfig}
 import org.scalasteward.core.update.PruningAlg._
@@ -116,12 +116,12 @@ final class PruningAlg[F[_]](implicit
         pullRequestRepository.findLatestPullRequest(repo, crossDependency, update.nextVersion).map {
           case None =>
             DependencyOutdated(crossDependency, update)
-          case Some((uri, _, Closed)) =>
-            PullRequestClosed(crossDependency, update, uri)
-          case Some((uri, baseSha1, _)) if baseSha1 === repoCache.sha1 =>
-            PullRequestUpToDate(crossDependency, update, uri)
-          case Some((uri, _, _)) =>
-            PullRequestOutdated(crossDependency, update, uri)
+          case Some(PullRequestData(url, _, _, Closed, _)) =>
+            PullRequestClosed(crossDependency, update, url)
+          case Some(PullRequestData(url, baseSha1, _, _, _)) if baseSha1 === repoCache.sha1 =>
+            PullRequestUpToDate(crossDependency, update, url)
+          case Some(PullRequestData(url, _, _, _, _)) =>
+            PullRequestOutdated(crossDependency, update, url)
         }
     }
 
