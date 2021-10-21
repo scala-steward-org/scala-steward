@@ -62,7 +62,6 @@ The [`docs`](docs) directory contains documentation about these topics:
 
 Thanks goes to these wonderful people for contributing to Scala Steward:
 
-* [Adam Fraser](https://github.com/adamgfraser)
 * [Alejandro Hernández](https://github.com/alejandrohdezma)
 * [Alessandro Buggin](https://github.com/abuggin)
 * [Alex](https://github.com/jhnsmth)
@@ -98,7 +97,6 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [Frederick Roth](https://github.com/froth)
 * [Georgy Davityan](https://github.com/implmnt)
 * [Grzegorz Kocur](https://github.com/gkocur)
-* [Guillaume Martres](https://github.com/smarter)
 * [Ikenna Darlington Ogbajie](https://github.com/idarlington)
 * [Ingar Abrahamsen](https://github.com/ingarabr)
 * [Jakub Kozłowski](https://github.com/kubukoz)
@@ -112,7 +110,6 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [KAWACHI Takashi](https://github.com/tkawachi)
 * [kenji yoshida](https://github.com/xuwei-k)
 * [Kilic Ali-Firat](https://github.com/alifirat)
-* [Lars Hupel](https://github.com/larsrh)
 * [LaurenceWarne](https://github.com/LaurenceWarne)
 * [Leonhard Riedißer](https://github.com/L7R7)
 * [Manuel Cueto](https://github.com/manuelcueto)
