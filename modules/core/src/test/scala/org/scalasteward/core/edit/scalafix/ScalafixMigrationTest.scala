@@ -17,7 +17,7 @@ class ScalafixMigrationTest extends FunSuite {
          |  authors: ["Jane Doe <jane@example.com>"]
          |}""".stripMargin
     )
-    val obtained = migration.map(_.commitMessage(Right(())))
+    val obtained = migration.map(_.commitMessage(Right(())).toNel)
     val expected = Nel.of(
       "Applied Scalafix rule(s) github:typelevel/cats/Cats_v2_2_0?sha=v2.2.0",
       "See https://github.com/typelevel/cats/blob/v2.2.0/scalafix/README.md#migration-to-cats-v220 for details",

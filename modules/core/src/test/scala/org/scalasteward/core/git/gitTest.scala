@@ -11,7 +11,7 @@ class gitTest extends ScalaCheckSuite {
   test("commitMsgFor should work with static message") {
     val commitsConfig = CommitsConfig(Some("Static message"))
     forAll { update: Update =>
-      assertEquals(commitMsgFor(update, commitsConfig, None), "Static message")
+      assertEquals(commitMsgFor(update, commitsConfig, None).title, "Static message")
     }
   }
 
@@ -20,7 +20,7 @@ class gitTest extends ScalaCheckSuite {
     val branch = Branch("some-branch")
     forAll { update: Update =>
       val expected = s"Update ${show.oneLiner(update)} to ${update.nextVersion} in ${branch.name}"
-      assertEquals(commitMsgFor(update, commitsConfig, Some(branch)), expected)
+      assertEquals(commitMsgFor(update, commitsConfig, Some(branch)).title, expected)
     }
   }
 
@@ -28,7 +28,7 @@ class gitTest extends ScalaCheckSuite {
     val commitsConfig = CommitsConfig(Some(s"$${default}"))
     forAll { update: Update =>
       val expected = s"Update ${show.oneLiner(update)} to ${update.nextVersion}"
-      assertEquals(commitMsgFor(update, commitsConfig, None), expected)
+      assertEquals(commitMsgFor(update, commitsConfig, None).title, expected)
     }
   }
 
@@ -38,7 +38,7 @@ class gitTest extends ScalaCheckSuite {
     forAll { update: Update =>
       val expected =
         s"Update ${show.oneLiner(update)} from ${update.currentVersion} to ${update.nextVersion}"
-      assertEquals(commitMsgFor(update, commitsConfig, None), expected)
+      assertEquals(commitMsgFor(update, commitsConfig, None).title, expected)
     }
   }
 
@@ -53,7 +53,7 @@ class gitTest extends ScalaCheckSuite {
     forAll { update: Update =>
       val expected =
         s"Update ${show.oneLiner(update)} from ${update.currentVersion} to ${update.nextVersion} in ${branch.name}"
-      assertEquals(commitMsgFor(update, commitsConfig, Some(branch)), expected)
+      assertEquals(commitMsgFor(update, commitsConfig, Some(branch)).title, expected)
     }
   }
 }

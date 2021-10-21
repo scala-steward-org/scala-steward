@@ -14,20 +14,21 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.edit.hooks
+package org.scalasteward.core.git
 
-import org.scalasteward.core.data.{ArtifactId, GroupId, Update}
-import org.scalasteward.core.git.CommitMsg
-import org.scalasteward.core.repocache.RepoCache
-import org.scalasteward.core.repoconfig.RepoConfig
+import cats.syntax.all._
 import org.scalasteward.core.util.Nel
 
-final case class PostUpdateHook(
-    groupId: GroupId,
-    artifactId: ArtifactId,
-    command: Nel[String],
-    useSandbox: Boolean,
-    commitMessage: Update => CommitMsg,
-    enabledByCache: RepoCache => Boolean,
-    enabledByConfig: RepoConfig => Boolean
-)
+final case class CommitMsg(
+    title: String,
+    body: List[String] = Nil,
+    coAuthoredBy: List[Author] = Nil
+) {
+  def toNel: Nel[String] =
+    Nel(title, body ++ trailers)
+
+  private def trailers: Option[String] = {
+    val lines = coAuthoredBy.map(author => s"Co-authored-by: ${author.show}")
+    Nel.fromList(lines).map(_.mkString_("\n"))
+  }
+}
