@@ -18,8 +18,15 @@ package org.scalasteward.core.vcs.data
 
 import cats.Eq
 import io.circe.{Decoder, Encoder}
+import org.scalasteward.core.vcs.data.PullRequestState.{Closed, Open}
 
-sealed trait PullRequestState
+sealed trait PullRequestState {
+  def isClosed: Boolean =
+    this match {
+      case Open   => false
+      case Closed => true
+    }
+}
 
 object PullRequestState {
   case object Open extends PullRequestState

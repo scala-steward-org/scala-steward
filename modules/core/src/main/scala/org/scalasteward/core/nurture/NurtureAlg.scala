@@ -88,7 +88,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       head = vcs.listingBranch(config.tpe, data.fork, data.updateBranch)
       pullRequests <- vcsApiAlg.listPullRequests(data.repo, head, data.baseBranch)
       result <- pullRequests.headOption match {
-        case Some(pr) if pr.isClosed =>
+        case Some(pr) if pr.state.isClosed =>
           logger.info(s"PR ${pr.html_url} is closed") >>
             deleteRemoteBranch(data.repo, data.updateBranch).as(Ignored)
         case Some(pr) =>
@@ -100,8 +100,14 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
           }
       }
       _ <- pullRequests.headOption.traverse_ { pr =>
-        val prData =
-          PullRequestData[Id](pr.html_url, data.baseSha1, data.update, pr.state, pr.number)
+        val prData = PullRequestData[Id](
+          pr.html_url,
+          data.baseSha1,
+          data.update,
+          pr.state,
+          pr.number,
+          data.updateBranch
+        )
         pullRequestRepository.createOrUpdate(data.repo, prData)
       }
     } yield result
@@ -123,8 +129,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
         _ <- pullRequestRepository.changeState(data.repo, oldPr.url, PullRequestState.Closed)
         comment = s"Superseded by ${vcsApiAlg.referencePullRequest(newNumber)}."
         _ <- vcsApiAlg.commentPullRequest(data.repo, oldPr.number, comment)
-        oldBranch = git.branchFor(oldPr.update, data.repo.branch)
-        oldRemoteBranch = oldBranch.withPrefix("origin/")
+        oldRemoteBranch = oldPr.updateBranch.withPrefix("origin/")
         oldBranchExists <- gitAlg.branchExists(data.repo, oldRemoteBranch)
         authors <-
           if (oldBranchExists) gitAlg.branchAuthors(data.repo, oldRemoteBranch, data.baseBranch)
@@ -132,7 +137,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
         _ <-
           if (authors.size <= 1) for {
             _ <- vcsApiAlg.closePullRequest(data.repo, oldPr.number)
-            _ <- deleteRemoteBranch(data.repo, oldBranch)
+            _ <- deleteRemoteBranch(data.repo, oldPr.updateBranch)
           } yield ()
           else F.unit
       } yield ()
@@ -188,7 +193,14 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
         filesWithOldVersion
       )
       pr <- vcsApiAlg.createPullRequest(data.repo, requestData)
-      prData = PullRequestData[Id](pr.html_url, data.baseSha1, data.update, pr.state, pr.number)
+      prData = PullRequestData[Id](
+        pr.html_url,
+        data.baseSha1,
+        data.update,
+        pr.state,
+        pr.number,
+        data.updateBranch
+      )
       _ <- pullRequestRepository.createOrUpdate(data.repo, prData)
       _ <- logger.info(s"Created PR ${pr.html_url}")
     } yield Created(pr.number)
