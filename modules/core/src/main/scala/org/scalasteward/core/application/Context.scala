@@ -29,11 +29,7 @@ import org.scalasteward.core.buildtool.sbt.SbtAlg
 import org.scalasteward.core.coursier.{CoursierAlg, VersionsCache}
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.edit.hooks.HookExecutor
-import org.scalasteward.core.edit.scalafix.{
-  ScalafixCli,
-  ScalafixMigrationsFinder,
-  ScalafixMigrationsLoader
-}
+import org.scalasteward.core.edit.scalafix._
 import org.scalasteward.core.git.{GenGitAlg, GitAlg}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository}

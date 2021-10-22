@@ -22,7 +22,6 @@ import org.scalasteward.core.buildtool.maven.MavenAlg
 import org.scalasteward.core.buildtool.mill.MillAlg
 import org.scalasteward.core.buildtool.sbt.SbtAlg
 import org.scalasteward.core.data.Scope
-import org.scalasteward.core.edit.scalafix.ScalafixMigration.Target
 import org.scalasteward.core.edit.scalafix.{ScalafixCli, ScalafixMigration}
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafmt.ScalafmtAlg
@@ -46,11 +45,11 @@ final class BuildToolDispatcher[F[_]](implicit
 
   def runMigration(repo: Repo, repoConfig: RepoConfig, migration: ScalafixMigration): F[Unit] =
     migration.targetOrDefault match {
-      case Target.Sources =>
+      case ScalafixMigration.Target.Sources =>
         getBuildRootsAndTools(repo, repoConfig).flatMap(_.traverse_ {
           case (buildRoot, buildTools) => buildTools.traverse_(_.runMigration(buildRoot, migration))
         })
-      case Target.Build =>
+      case ScalafixMigration.Target.Build =>
         getBuildRoots(repo, repoConfig).traverse_(scalafixCli.runMigration(_, migration))
     }
 
