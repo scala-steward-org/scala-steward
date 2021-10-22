@@ -33,12 +33,14 @@ final class ScalafixCli[F[_]](implicit
     for {
       buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
       projectDir = buildRootDir / "project"
-      files <- (
+      files0 <- (
         fileAlg.walk(buildRootDir, 1).filter(_.extension.contains(".sbt")) ++
           fileAlg.walk(projectDir, 1).filter(_.extension.contains(".scala"))
       ).map(_.pathAsString).compile.toList
       rules = migration.rewriteRules.map("--rules=" + _)
-      _ <- processAlg.exec(scalafixBinary :: rules ++ files, buildRootDir)
+      _ <- Nel.fromList(files0).fold(F.unit) { files1 =>
+        processAlg.exec(scalafixBinary :: rules ::: files1, buildRootDir).void
+      }
     } yield ()
 
   def version: F[String] =

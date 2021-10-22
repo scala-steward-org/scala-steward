@@ -42,20 +42,20 @@ final case class ScalafixMigration(
   }
 
   def targetOrDefault: Target =
-    target.getOrElse(Target.Sources)
+    target.getOrElse(Target.Project)
 }
 
 object ScalafixMigration {
   sealed trait Target
   object Target {
-    case object Sources extends Target
+    case object Project extends Target
     case object Build extends Target
 
     implicit val targetDecoder: Decoder[Target] =
       Decoder[String].emap {
-        case "sources" => Right(Sources)
+        case "project" => Right(Project)
         case "build"   => Right(Build)
-        case unknown   => Left(s"Unexpected string '$unknown'. Expected 'sources' or 'build'.")
+        case unknown   => Left(s"Unexpected string '$unknown'. Expected 'project' or 'build'.")
       }
   }
 

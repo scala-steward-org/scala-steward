@@ -45,7 +45,7 @@ final class BuildToolDispatcher[F[_]](implicit
 
   def runMigration(repo: Repo, repoConfig: RepoConfig, migration: ScalafixMigration): F[Unit] =
     migration.targetOrDefault match {
-      case ScalafixMigration.Target.Sources =>
+      case ScalafixMigration.Target.Project =>
         getBuildRootsAndTools(repo, repoConfig).flatMap(_.traverse_ {
           case (buildRoot, buildTools) => buildTools.traverse_(_.runMigration(buildRoot, migration))
         })
