@@ -90,11 +90,11 @@ object SbtAlg {
 
       override def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
         migration.targetOrDefault match {
-          case ScalafixMigration.Target.Project => runProjectMigration(buildRoot, migration)
+          case ScalafixMigration.Target.Sources => runSourcesMigration(buildRoot, migration)
           case ScalafixMigration.Target.Build   => runBuildMigration(buildRoot, migration)
         }
 
-      private def runProjectMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
+      private def runSourcesMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
         addGlobalPluginTemporarily(scalaStewardScalafixSbt) {
           workspaceAlg.buildRootDir(buildRoot).flatMap { buildRootDir =>
             val withScalacOptions =

@@ -5,7 +5,7 @@ import munit.FunSuite
 import org.http4s.Uri
 import org.scalasteward.core.application.Config.ScalafixCfg
 import org.scalasteward.core.data.{GroupId, Version}
-import org.scalasteward.core.edit.scalafix.ScalafixMigration.Target.Project
+import org.scalasteward.core.edit.scalafix.ScalafixMigration.Target.Sources
 import org.scalasteward.core.git.Author
 import org.scalasteward.core.mock.MockConfig.mockRoot
 import org.scalasteward.core.mock.MockContext.context.scalafixMigrationsLoader
@@ -23,7 +23,7 @@ class ScalafixMigrationsLoaderTest extends FunSuite {
        |    rewriteRules: ["awesome rewrite rule"],
        |    doc: "https://scalacenter.github.io/scalafix/",
        |    authors: ["Jane Doe <jane@example.com>"],
-       |    target: "project"
+       |    target: "sources"
        |  }
        |]""".stripMargin
   val migration: ScalafixMigration = ScalafixMigration(
@@ -33,7 +33,7 @@ class ScalafixMigrationsLoaderTest extends FunSuite {
     Nel.of("awesome rewrite rule"),
     Some("https://scalacenter.github.io/scalafix/"),
     authors = Some(Nel.of(Author("Jane Doe", "jane@example.com"))),
-    target = Some(Project)
+    target = Some(Sources)
   )
 
   test("loadAll: without extra file, without defaults") {
