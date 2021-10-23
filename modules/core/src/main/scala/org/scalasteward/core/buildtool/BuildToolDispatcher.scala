@@ -22,7 +22,7 @@ import org.scalasteward.core.buildtool.maven.MavenAlg
 import org.scalasteward.core.buildtool.mill.MillAlg
 import org.scalasteward.core.buildtool.sbt.SbtAlg
 import org.scalasteward.core.data.Scope
-import org.scalasteward.core.edit.scalafix.{ScalafixCli, ScalafixMigration}
+import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.vcs.data.{BuildRoot, Repo}
@@ -31,7 +31,6 @@ final class BuildToolDispatcher[F[_]](implicit
     mavenAlg: MavenAlg[F],
     millAlg: MillAlg[F],
     sbtAlg: SbtAlg[F],
-    scalafixCli: ScalafixCli[F],
     scalafmtAlg: ScalafmtAlg[F],
     F: Monad[F]
 ) {
@@ -44,14 +43,9 @@ final class BuildToolDispatcher[F[_]](implicit
     })
 
   def runMigration(repo: Repo, repoConfig: RepoConfig, migration: ScalafixMigration): F[Unit] =
-    migration.targetOrDefault match {
-      case ScalafixMigration.Target.Project =>
-        getBuildRootsAndTools(repo, repoConfig).flatMap(_.traverse_ {
-          case (buildRoot, buildTools) => buildTools.traverse_(_.runMigration(buildRoot, migration))
-        })
-      case ScalafixMigration.Target.Build =>
-        getBuildRoots(repo, repoConfig).traverse_(scalafixCli.runMigration(_, migration))
-    }
+    getBuildRootsAndTools(repo, repoConfig).flatMap(_.traverse_ { case (buildRoot, buildTools) =>
+      buildTools.traverse_(_.runMigration(buildRoot, migration))
+    })
 
   private def getBuildRoots(repo: Repo, repoConfig: RepoConfig): List[BuildRoot] =
     repoConfig.buildRootsOrDefault.map(buildRootCfg => BuildRoot(repo, buildRootCfg.relativePath))

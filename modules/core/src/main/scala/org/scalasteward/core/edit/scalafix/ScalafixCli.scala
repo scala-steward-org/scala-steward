@@ -16,32 +16,22 @@
 
 package org.scalasteward.core.edit.scalafix
 
-import cats.effect.Concurrent
+import better.files.File
+import cats.Monad
 import cats.syntax.all._
 import org.scalasteward.core.edit.scalafix.ScalafixCli.scalafixBinary
-import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
+import org.scalasteward.core.io.{ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
-import org.scalasteward.core.vcs.data.BuildRoot
 
 final class ScalafixCli[F[_]](implicit
-    fileAlg: FileAlg[F],
     processAlg: ProcessAlg[F],
     workspaceAlg: WorkspaceAlg[F],
-    F: Concurrent[F]
+    F: Monad[F]
 ) {
-  def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
-    for {
-      buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
-      projectDir = buildRootDir / "project"
-      files0 <- (
-        fileAlg.walk(buildRootDir, 1).filter(_.extension.contains(".sbt")) ++
-          fileAlg.walk(projectDir, 1).filter(_.extension.contains(".scala"))
-      ).map(_.pathAsString).compile.toList
-      rules = migration.rewriteRules.map("--rules=" + _)
-      _ <- Nel.fromList(files0).fold(F.unit) { files1 =>
-        processAlg.exec(scalafixBinary :: rules ::: files1, buildRootDir).void
-      }
-    } yield ()
+  def runMigration(workingDir: File, files: Nel[File], migration: ScalafixMigration): F[Unit] = {
+    val rules = migration.rewriteRules.map("--rules=" + _)
+    processAlg.exec(scalafixBinary :: rules ::: files.map(_.pathAsString), workingDir).void
+  }
 
   def version: F[String] =
     workspaceAlg.rootDir
