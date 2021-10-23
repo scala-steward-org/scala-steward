@@ -20,7 +20,7 @@ import cats.Monad
 import cats.data.OptionT
 import cats.implicits._
 import org.scalasteward.core.data._
-import org.scalasteward.core.nurture.{PullRequestData, PullRequestRepository}
+import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.repocache.RepoCache
 import org.scalasteward.core.repoconfig.{PullRequestFrequency, RepoConfig}
 import org.scalasteward.core.update.PruningAlg._
@@ -28,7 +28,6 @@ import org.scalasteward.core.update.data.UpdateState
 import org.scalasteward.core.update.data.UpdateState._
 import org.scalasteward.core.util
 import org.scalasteward.core.util.{dateTime, DateTimeAlg}
-import org.scalasteward.core.vcs.data.PullRequestState.Closed
 import org.scalasteward.core.vcs.data.Repo
 import org.typelevel.log4cats.Logger
 import scala.concurrent.duration._
@@ -116,12 +115,12 @@ final class PruningAlg[F[_]](implicit
         pullRequestRepository.findLatestPullRequest(repo, crossDependency, update.nextVersion).map {
           case None =>
             DependencyOutdated(crossDependency, update)
-          case Some(PullRequestData(url, _, _, Closed, _)) =>
-            PullRequestClosed(crossDependency, update, url)
-          case Some(PullRequestData(url, baseSha1, _, _, _)) if baseSha1 === repoCache.sha1 =>
-            PullRequestUpToDate(crossDependency, update, url)
-          case Some(PullRequestData(url, _, _, _, _)) =>
-            PullRequestOutdated(crossDependency, update, url)
+          case Some(pr) if pr.state.isClosed =>
+            PullRequestClosed(crossDependency, update, pr.url)
+          case Some(pr) if pr.baseSha1 === repoCache.sha1 =>
+            PullRequestUpToDate(crossDependency, update, pr.url)
+          case Some(pr) =>
+            PullRequestOutdated(crossDependency, update, pr.url)
         }
     }
 
