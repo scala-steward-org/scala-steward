@@ -12,10 +12,7 @@ class SemVerTest extends FunSuite {
 
   test("parse: with pre-release identifier") {
     assertEquals(SemVer.parse("1.0.0-SNAP5"), Some(SemVer("1", "0", "0", Some("SNAP5"))))
-    assertEquals(
-      SemVer.parse("9.10.100-0.3.7"),
-      Some(SemVer("9", "10", "100", Some("0.3.7")))
-    )
+    assertEquals(SemVer.parse("9.10.100-0.3.7"), Some(SemVer("9", "10", "100", Some("0.3.7"))))
   }
 
   test("parse: empty pre-release identifier") {
