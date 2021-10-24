@@ -188,16 +188,16 @@ object NewPullRequestData {
 
   def earlySemVerLabel(update: Update): Option[String] =
     for {
-      curr <- EarlySemVer.parse(update.currentVersion)
-      next <- EarlySemVer.parse(update.nextVersion)
-      change <- EarlySemVer.getChange(curr, next)
+      curr <- SemVer.parse(update.currentVersion)
+      next <- SemVer.parse(update.nextVersion)
+      change <- SemVer.getChangeEarly(curr, next)
     } yield s"early-semver-${change.render}"
 
   def semVerSpecLabel(update: Update): Option[String] =
     for {
-      curr <- SemVerSpec.parse(update.currentVersion)
-      next <- SemVerSpec.parse(update.nextVersion)
-      change <- SemVerSpec.getChange(curr, next)
+      curr <- SemVer.parse(update.currentVersion)
+      next <- SemVer.parse(update.nextVersion)
+      change <- SemVer.getChangeSpec(curr, next)
     } yield s"semver-spec-${change.render}"
 
   def from(

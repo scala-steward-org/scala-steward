@@ -17,9 +17,11 @@
 package org.scalasteward.core.data
 
 import cats.syntax.all._
-import org.scalasteward.core.data.SemVerSpec.Change._
+import org.scalasteward.core.data.SemVer.Change._
 
-final case class SemVerSpec(
+import scala.annotation.tailrec
+
+final case class SemVer(
     major: String,
     minor: String,
     patch: String,
@@ -27,10 +29,10 @@ final case class SemVerSpec(
     buildMetadata: Option[String] = None
 )
 
-object SemVerSpec {
-  def parse(s: String): Option[SemVerSpec] =
+object SemVer {
+  def parse(s: String): Option[SemVer] =
     cats.parse.SemVer.semver.parseAll(s).toOption.map { v =>
-      SemVerSpec(v.core.major, v.core.minor, v.core.patch, v.preRelease, v.buildMetadata)
+      SemVer(v.core.major, v.core.minor, v.core.patch, v.preRelease, v.buildMetadata)
     }
 
   sealed abstract class Change(val render: String)
@@ -42,11 +44,30 @@ object SemVerSpec {
     case object BuildMetadata extends Change("build-metadata")
   }
 
-  def getChange(from: SemVerSpec, to: SemVerSpec): Option[Change] =
+  def getChangeSpec(from: SemVer, to: SemVer): Option[Change] =
     if (from.major =!= to.major) Some(Major)
     else if (from.minor =!= to.minor) Some(Minor)
     else if (from.preRelease =!= to.preRelease) Some(PreRelease)
     else if (from.patch =!= to.patch) Some(Patch)
     else if (from.buildMetadata =!= to.buildMetadata) Some(BuildMetadata)
     else None
+
+  @tailrec
+  def getChangeEarly(from: SemVer, to: SemVer): Option[Change] = {
+    val zero = "0"
+    // Codacy doesn't allow using `if`s, so using `match` instead
+    (from.major === zero, to.major === zero) match { // work around Codacy's "Consider using case matching instead of else if blocks"
+      case (true, true)
+          if from.minor =!= zero ||
+            to.minor =!= zero ||
+            from.patch =!= zero ||
+            to.patch =!= zero =>
+        getChangeEarly(
+          from.copy(major = from.minor, minor = from.patch, patch = zero),
+          to.copy(major = to.minor, minor = to.patch, patch = zero)
+        )
+      case _ =>
+        getChangeSpec(from, to)
+    }
+  }
 }
