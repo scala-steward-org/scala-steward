@@ -19,6 +19,8 @@ package org.scalasteward.core.data
 import cats.syntax.all._
 import org.scalasteward.core.data.SemVer.Change._
 
+import scala.annotation.tailrec
+
 final case class SemVer(
     major: String,
     minor: String,
@@ -42,11 +44,30 @@ object SemVer {
     case object BuildMetadata extends Change("build-metadata")
   }
 
-  def getChange(from: SemVer, to: SemVer): Option[Change] =
+  def getChangeSpec(from: SemVer, to: SemVer): Option[Change] =
     if (from.major =!= to.major) Some(Major)
     else if (from.minor =!= to.minor) Some(Minor)
     else if (from.preRelease =!= to.preRelease) Some(PreRelease)
     else if (from.patch =!= to.patch) Some(Patch)
     else if (from.buildMetadata =!= to.buildMetadata) Some(BuildMetadata)
     else None
+
+  @tailrec
+  def getChangeEarly(from: SemVer, to: SemVer): Option[Change] = {
+    val zero = "0"
+    // Codacy doesn't allow using `if`s, so using `match` instead
+    (from.major === zero, to.major === zero) match { // work around Codacy's "Consider using case matching instead of else if blocks"
+      case (true, true)
+          if from.minor =!= zero ||
+            to.minor =!= zero ||
+            from.patch =!= zero ||
+            to.patch =!= zero =>
+        getChangeEarly(
+          from.copy(major = from.minor, minor = from.patch, patch = zero),
+          to.copy(major = to.minor, minor = to.patch, patch = zero)
+        )
+      case _ =>
+        getChangeSpec(from, to)
+    }
+  }
 }
