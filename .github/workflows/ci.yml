@@ -58,7 +58,7 @@ jobs:
       - name: Codecov
         uses: codecov/codecov-action@v2
         with:
-          directory: ./modules
+          root_dir: ./modules
 
       - name: Compress target directories
         run: tar cf targets.tar target modules/mill-plugin/.jvm/target modules/sbt-plugin/.jvm/target modules/core/.jvm/target modules/benchmark/.jvm/target project/target
