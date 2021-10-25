@@ -121,6 +121,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [Michel Daviot](https://github.com/tyrcho)
 * [miguelpuyol](https://github.com/miguelpuyol)
 * [nafg](https://github.com/nafg)
+* [Ondra Pelech](https://github.com/sideeffffect)
 * [Pavel Shapkin](https://github.com/psttf)
 * [Philippus Baalman](https://github.com/Philippus)
 * [Piotr Gabara](https://github.com/pgabara)
