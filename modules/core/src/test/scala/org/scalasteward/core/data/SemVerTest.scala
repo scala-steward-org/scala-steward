@@ -47,7 +47,7 @@ class SemVerTest extends FunSuite {
     assertEquals(SemVer.parse("0.0.01"), None)
   }
 
-  test("getChange") {
+  test("getChangeSpec") {
     List(
       (SemVer("1", "3", "4"), SemVer("2", "1", "2"), Some(Change.Major)),
       (SemVer("2", "3", "4"), SemVer("2", "5", "2"), Some(Change.Minor)),
@@ -64,7 +64,32 @@ class SemVerTest extends FunSuite {
       (SemVer("2", "3", "4", Some("M1")), SemVer("2", "3", "4", Some("M1")), None),
       (SemVer("0", "20", "0", Some("M4")), SemVer("0", "20", "3"), Some(Change.PreRelease))
     ).foreach { case (from, to, result) =>
-      assertEquals(SemVer.getChange(from, to), result)
+      assertEquals(SemVer.getChangeSpec(from, to), result)
+    }
+  }
+
+  test("getChangeEarly") {
+    List(
+      (SemVer("1", "3", "4"), SemVer("2", "1", "2"), Some(Change.Major)),
+      (SemVer("2", "3", "4"), SemVer("2", "5", "2"), Some(Change.Minor)),
+      (
+        SemVer("2", "3", "4", Some("SNAP1")),
+        SemVer("2", "3", "4", Some("SNAP2")),
+        Some(Change.PreRelease)
+      ),
+      (
+        SemVer("2", "3", "4", Some("M1"), Some("1")),
+        SemVer("2", "3", "4", Some("M1"), Some("2")),
+        Some(Change.BuildMetadata)
+      ),
+      (SemVer("2", "3", "4", Some("M1")), SemVer("2", "3", "4", Some("M1")), None),
+      (SemVer("0", "20", "0", Some("M4")), SemVer("0", "20", "3"), Some(Change.Minor)),
+      (SemVer("0", "1", "0", None, None), SemVer("0", "2", "0", None, None), Some(Change.Major)),
+      (SemVer("0", "0", "1", None, None), SemVer("0", "0", "2", None, None), Some(Change.Major)),
+      (SemVer("0", "0", "0", None, None), SemVer("0", "0", "1", None, None), Some(Change.Major)),
+      (SemVer("0", "0", "0", None, None), SemVer("0", "0", "0", None, None), None)
+    ).foreach { case (from, to, result) =>
+      assertEquals(SemVer.getChangeEarly(from, to), result)
     }
   }
 }
