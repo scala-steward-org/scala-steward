@@ -3,10 +3,9 @@ import sbt.Keys._
 import sbt.librarymanagement.syntax.ExclusionRule
 
 object Dependencies {
-  val attoCore = "org.tpolecat" %% "atto-core" % "0.9.5"
   val bcprovJdk15to18 = "org.bouncycastle" % "bcprov-jdk15to18" % "1.69"
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.1"
-  val caseApp = "com.github.alexarchambault" %% "case-app" % "2.1.0-M7"
+  val caseApp = "com.github.alexarchambault" %% "case-app" % "2.1.0-M8"
   val catsEffect = "org.typelevel" %% "cats-effect" % "3.2.9"
   val catsCore = "org.typelevel" %% "cats-core" % "2.6.1"
   val catsLaws = "org.typelevel" %% "cats-laws" % catsCore.revision
@@ -21,9 +20,9 @@ object Dependencies {
   val coursierCore = "io.get-coursier" %% "coursier" % "2.0.16"
   val cron4sCore = "com.github.alonsodomin.cron4s" %% "cron4s-core" % "0.6.1"
   val disciplineMunit = "org.typelevel" %% "discipline-munit" % "1.0.9"
-  val fs2Core = "co.fs2" %% "fs2-core" % "3.1.3"
+  val fs2Core = "co.fs2" %% "fs2-core" % "3.1.6"
   val fs2Io = "co.fs2" %% "fs2-io" % fs2Core.revision
-  val http4sCore = "org.http4s" %% "http4s-core" % "1.0.0-M27"
+  val http4sCore = "org.http4s" %% "http4s-core" % "1.0.0-M29"
   val http4sCirce = "org.http4s" %% "http4s-circe" % http4sCore.revision
   val http4sClient = "org.http4s" %% "http4s-client" % http4sCore.revision
   val http4sDsl = "org.http4s" %% "http4s-dsl" % http4sCore.revision
@@ -41,6 +40,6 @@ object Dependencies {
   val munitScalacheck = "org.scalameta" %% "munit-scalacheck" % munit.revision
   val refined = "eu.timepit" %% "refined" % "0.9.27"
   val refinedScalacheck = "eu.timepit" %% "refined-scalacheck" % refined.revision
-  val scalacacheCaffeine = "com.github.cb372" %% "scalacache-caffeine" % "1.0.0-M4"
+  val scalacacheCaffeine = "com.github.cb372" %% "scalacache-caffeine" % "1.0.0-M5"
   val scalacheck = "org.scalacheck" %% "scalacheck" % "1.15.4"
 }

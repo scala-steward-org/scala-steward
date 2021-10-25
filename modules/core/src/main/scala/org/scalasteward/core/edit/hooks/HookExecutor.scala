@@ -22,7 +22,7 @@ import org.scalasteward.core.buildtool.sbt.{sbtArtifactId, sbtGroupId}
 import org.scalasteward.core.data._
 import org.scalasteward.core.edit.EditAttempt
 import org.scalasteward.core.edit.EditAttempt.HookEdit
-import org.scalasteward.core.git.GitAlg
+import org.scalasteward.core.git.{CommitMsg, GitAlg}
 import org.scalasteward.core.io.{ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.repocache.RepoCache
 import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtBinary, scalafmtGroupId}
@@ -91,7 +91,7 @@ object HookExecutor {
       artifactId = artifactId,
       command = Nel.of("sbt", "githubWorkflowGenerate"),
       useSandbox = true,
-      commitMessage = _ => "Regenerate workflow with sbt-github-actions",
+      commitMessage = _ => CommitMsg("Regenerate workflow with sbt-github-actions"),
       enabledByCache = enabledByCache,
       enabledByConfig = _ => true
     )
@@ -102,7 +102,7 @@ object HookExecutor {
       artifactId = scalafmtArtifactId,
       command = Nel.of(scalafmtBinary, "--non-interactive"),
       useSandbox = false,
-      commitMessage = update => s"Reformat with scalafmt ${update.nextVersion}",
+      commitMessage = update => CommitMsg(s"Reformat with scalafmt ${update.nextVersion}"),
       enabledByCache = _ => true,
       enabledByConfig = _.scalafmt.runAfterUpgradingOrDefault
     ) ::

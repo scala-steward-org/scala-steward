@@ -36,6 +36,14 @@ class GitHubApiAlgTest extends FunSuite {
           } """
         )
 
+      case GET -> Root / "repos" / "fthomas" / "base.g8" / "branches" / "custom" =>
+        Ok(
+          json""" {
+            "name": "custom",
+            "commit": { "sha": "12ea4559063c74184861afece9eeff5ca9d33db3" }
+          } """
+        )
+
       case GET -> Root / "repos" / "fthomas" / "base.g8" / "pulls" =>
         Ok(
           json"""[{
@@ -84,7 +92,7 @@ class GitHubApiAlgTest extends FunSuite {
 
   implicit val client: Client[IO] = Client.fromHttpApp(routes.orNotFound)
   implicit val httpJsonClient: HttpJsonClient[IO] = new HttpJsonClient[IO]
-  val gitHubApiAlg = new GitHubApiAlg[IO](config.vcsApiHost, _ => IO.pure)
+  val gitHubApiAlg = new GitHubApiAlg[IO](config.vcsCfg.apiHost, _ => IO.pure)
 
   private val repo = Repo("fthomas", "base.g8")
 
@@ -96,6 +104,14 @@ class GitHubApiAlgTest extends FunSuite {
     Branch("master")
   )
 
+  private val parentWithCustomDefaultBranch = RepoOut(
+    "base.g8",
+    UserOut("fthomas"),
+    None,
+    uri"https://github.com/fthomas/base.g8.git",
+    Branch("custom")
+  )
+
   private val fork = RepoOut(
     "base.g8-1",
     UserOut("scala-steward"),
@@ -104,9 +120,22 @@ class GitHubApiAlgTest extends FunSuite {
     Branch("master")
   )
 
+  private val forkWithCustomDefaultBranch = RepoOut(
+    "base.g8-1",
+    UserOut("scala-steward"),
+    Some(parentWithCustomDefaultBranch),
+    uri"https://github.com/scala-steward/base.g8-1.git",
+    Branch("custom")
+  )
+
   private val defaultBranch = BranchOut(
     Branch("master"),
     CommitOut(Sha1(HexString("07eb2a203e297c8340273950e98b2cab68b560c1")))
+  )
+
+  private val defaultCustomBranch = BranchOut(
+    Branch("custom"),
+    CommitOut(Sha1(HexString("12ea4559063c74184861afece9eeff5ca9d33db3")))
   )
 
   test("createForkOrGetRepo") {
@@ -119,18 +148,46 @@ class GitHubApiAlgTest extends FunSuite {
     assertEquals(repoOut, parent)
   }
 
-  test("createForkOrGetRepoWithDefaultBranch") {
+  test("createForkOrGetRepoWithBranch") {
     val (repoOut, branchOut) =
-      gitHubApiAlg.createForkOrGetRepoWithDefaultBranch(repo, doNotFork = false).unsafeRunSync()
+      gitHubApiAlg
+        .createForkOrGetRepoWithBranch(repo, doNotFork = false)
+        .unsafeRunSync()
     assertEquals(repoOut, fork)
     assertEquals(branchOut, defaultBranch)
   }
 
-  test("createForkOrGetRepoWithDefaultBranch without forking") {
+  test("createForkOrGetRepoWithBranch") {
     val (repoOut, branchOut) =
-      gitHubApiAlg.createForkOrGetRepoWithDefaultBranch(repo, doNotFork = true).unsafeRunSync()
+      gitHubApiAlg
+        .createForkOrGetRepoWithBranch(
+          repo.copy(branch = Some(Branch("custom"))),
+          doNotFork = false
+        )
+        .unsafeRunSync()
+    assertEquals(repoOut, forkWithCustomDefaultBranch)
+    assertEquals(branchOut, defaultCustomBranch)
+  }
+
+  test("createForkOrGetRepoWithBranch without forking") {
+    val (repoOut, branchOut) =
+      gitHubApiAlg
+        .createForkOrGetRepoWithBranch(repo, doNotFork = true)
+        .unsafeRunSync()
     assertEquals(repoOut, parent)
     assertEquals(branchOut, defaultBranch)
+  }
+
+  test("createForkOrGetRepoWithBranch without forking with custom default branch") {
+    val (repoOut, branchOut) =
+      gitHubApiAlg
+        .createForkOrGetRepoWithBranch(
+          repo.copy(branch = Some(Branch("custom"))),
+          doNotFork = true
+        )
+        .unsafeRunSync()
+    assertEquals(repoOut, parentWithCustomDefaultBranch)
+    assertEquals(branchOut, defaultCustomBranch)
   }
 
   test("closePullRequest") {

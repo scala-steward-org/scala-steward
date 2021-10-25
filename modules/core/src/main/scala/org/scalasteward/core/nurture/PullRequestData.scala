@@ -16,22 +16,16 @@
 
 package org.scalasteward.core.nurture
 
-import io.circe.Codec
-import io.circe.generic.semiauto._
+import org.http4s.Uri
 import org.scalasteward.core.data.Update
-import org.scalasteward.core.git.Sha1
-import org.scalasteward.core.util.Timestamp
+import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.vcs.data.{PullRequestNumber, PullRequestState}
 
-final case class PullRequestData(
+final case class PullRequestData[F[_]](
+    url: Uri,
     baseSha1: Sha1,
     update: Update,
     state: PullRequestState,
-    entryCreatedAt: Timestamp,
-    number: Option[PullRequestNumber]
+    number: F[PullRequestNumber],
+    updateBranch: F[Branch]
 )
-
-object PullRequestData {
-  implicit val pullRequestDataCodec: Codec[PullRequestData] =
-    deriveCodec
-}

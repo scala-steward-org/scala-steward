@@ -16,12 +16,12 @@
 
 package org.scalasteward.core.nurture
 
+import cats.Id
 import cats.effect.Concurrent
 import cats.implicits._
 import eu.timepit.refined.types.numeric.NonNegInt
 import fs2.Stream
-import org.http4s.Uri
-import org.scalasteward.core.application.Config
+import org.scalasteward.core.application.Config.VCSCfg
 import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.ProcessResult.{Created, Ignored, Updated}
 import org.scalasteward.core.data._
@@ -35,7 +35,7 @@ import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg}
 import org.scalasteward.core.{git, util, vcs}
 import org.typelevel.log4cats.Logger
 
-final class NurtureAlg[F[_]](config: Config)(implicit
+final class NurtureAlg[F[_]](config: VCSCfg)(implicit
     coursierAlg: CoursierAlg[F],
     editAlg: EditAlg[F],
     gitAlg: GitAlg[F],
@@ -74,8 +74,8 @@ final class NurtureAlg[F[_]](config: Config)(implicit
       _ <- NurtureAlg.processUpdates(
         grouped,
         update => {
-          val updateData =
-            UpdateData(data, fork, update, baseBranch, baseSha1, git.branchFor(update))
+          val updateBranch = git.branchFor(update, data.repo.branch)
+          val updateData = UpdateData(data, fork, update, baseBranch, baseSha1, updateBranch)
           processUpdate(updateData)
         },
         data.config.updates.limit
@@ -85,10 +85,10 @@ final class NurtureAlg[F[_]](config: Config)(implicit
   def processUpdate(data: UpdateData): F[ProcessResult] =
     for {
       _ <- logger.info(s"Process update ${data.update.show}")
-      head = vcs.listingBranch(config.vcsType, data.fork, data.update)
+      head = vcs.listingBranch(config.tpe, data.fork, data.updateBranch)
       pullRequests <- vcsApiAlg.listPullRequests(data.repo, head, data.baseBranch)
       result <- pullRequests.headOption match {
-        case Some(pr) if pr.isClosed =>
+        case Some(pr) if pr.state.isClosed =>
           logger.info(s"PR ${pr.html_url} is closed") >>
             deleteRemoteBranch(data.repo, data.updateBranch).as(Ignored)
         case Some(pr) =>
@@ -100,46 +100,44 @@ final class NurtureAlg[F[_]](config: Config)(implicit
           }
       }
       _ <- pullRequests.headOption.traverse_ { pr =>
-        pullRequestRepository.createOrUpdate(
-          data.repo,
+        val prData = PullRequestData[Id](
           pr.html_url,
           data.baseSha1,
           data.update,
           pr.state,
-          pr.number
+          pr.number,
+          data.updateBranch
         )
+        pullRequestRepository.createOrUpdate(data.repo, prData)
       }
     } yield result
 
   def closeObsoletePullRequests(data: UpdateData, newNumber: PullRequestNumber): F[Unit] =
-    pullRequestRepository.getObsoleteOpenPullRequests(data.repo, data.update).flatMap {
-      _.traverse_ { case (oldNumber, oldUrl, oldUpdate) =>
-        closeObsoletePullRequest(data, oldUpdate, oldUrl, oldNumber, newNumber)
-      }
-    }
+    pullRequestRepository
+      .getObsoleteOpenPullRequests(data.repo, data.update)
+      .flatMap(_.traverse_(oldPr => closeObsoletePullRequest(data, newNumber, oldPr)))
 
   private def closeObsoletePullRequest(
       data: UpdateData,
-      oldUpdate: Update,
-      oldUrl: Uri,
-      oldNumber: PullRequestNumber,
-      newNumber: PullRequestNumber
+      newNumber: PullRequestNumber,
+      oldPr: PullRequestData[Id]
   ): F[Unit] =
-    logger.attemptWarn.label_(s"Closing obsolete PR ${oldUrl.renderString} for ${oldUpdate.show}") {
+    logger.attemptWarn.label_(
+      s"Closing obsolete PR ${oldPr.url.renderString} for ${oldPr.update.show}"
+    ) {
       for {
-        _ <- pullRequestRepository.changeState(data.repo, oldUrl, PullRequestState.Closed)
+        _ <- pullRequestRepository.changeState(data.repo, oldPr.url, PullRequestState.Closed)
         comment = s"Superseded by ${vcsApiAlg.referencePullRequest(newNumber)}."
-        _ <- vcsApiAlg.commentPullRequest(data.repo, oldNumber, comment)
-        oldBranch = git.branchFor(oldUpdate)
-        oldRemoteBranch = oldBranch.withPrefix("origin/")
+        _ <- vcsApiAlg.commentPullRequest(data.repo, oldPr.number, comment)
+        oldRemoteBranch = oldPr.updateBranch.withPrefix("origin/")
         oldBranchExists <- gitAlg.branchExists(data.repo, oldRemoteBranch)
         authors <-
           if (oldBranchExists) gitAlg.branchAuthors(data.repo, oldRemoteBranch, data.baseBranch)
           else List.empty.pure[F]
         _ <-
           if (authors.size <= 1) for {
-            _ <- vcsApiAlg.closePullRequest(data.repo, oldNumber)
-            _ <- deleteRemoteBranch(data.repo, oldBranch)
+            _ <- vcsApiAlg.closePullRequest(data.repo, oldPr.number)
+            _ <- deleteRemoteBranch(data.repo, oldPr.updateBranch)
           } yield ()
           else F.unit
       } yield ()
@@ -185,7 +183,7 @@ final class NurtureAlg[F[_]](config: Config)(implicit
           .get(data.update.mainArtifactId)
           .traverse(vcsExtraAlg.getReleaseRelatedUrls(_, data.update))
       filesWithOldVersion <- gitAlg.findFilesContaining(data.repo, data.update.currentVersion)
-      branchName = vcs.createBranch(config.vcsType, data.fork, data.update)
+      branchName = vcs.createBranch(config.tpe, data.fork, data.updateBranch)
       requestData = NewPullRequestData.from(
         data,
         branchName,
@@ -195,14 +193,15 @@ final class NurtureAlg[F[_]](config: Config)(implicit
         filesWithOldVersion
       )
       pr <- vcsApiAlg.createPullRequest(data.repo, requestData)
-      _ <- pullRequestRepository.createOrUpdate(
-        data.repo,
+      prData = PullRequestData[Id](
         pr.html_url,
         data.baseSha1,
         data.update,
         pr.state,
-        pr.number
+        pr.number,
+        data.updateBranch
       )
+      _ <- pullRequestRepository.createOrUpdate(data.repo, prData)
       _ <- logger.info(s"Created PR ${pr.html_url}")
     } yield Created(pr.number)
 

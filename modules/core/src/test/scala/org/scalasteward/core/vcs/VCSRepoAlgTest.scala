@@ -11,7 +11,7 @@ import org.scalasteward.core.vcs.data.{Repo, RepoOut, UserOut}
 
 class VCSRepoAlgTest extends CatsEffectSuite {
   private val repo = Repo("fthomas", "datapackage")
-  private val repoDir = config.workspace / repo.show
+  private val repoDir = config.workspace / repo.toPath
   private val parentRepoOut = RepoOut(
     "datapackage",
     UserOut("fthomas"),
@@ -28,8 +28,8 @@ class VCSRepoAlgTest extends CatsEffectSuite {
     Branch("main")
   )
 
-  private val parentUrl = s"https://${config.vcsLogin}@github.com/fthomas/datapackage"
-  private val forkUrl = s"https://${config.vcsLogin}@github.com/scala-steward/datapackage"
+  private val parentUrl = s"https://${config.vcsCfg.login}@github.com/fthomas/datapackage"
+  private val forkUrl = s"https://${config.vcsCfg.login}@github.com/scala-steward/datapackage"
 
   test("cloneAndSync: doNotFork = false") {
     val state = vcsRepoAlg.cloneAndSync(repo, forkRepoOut).runS(MockState.empty)
@@ -52,7 +52,7 @@ class VCSRepoAlgTest extends CatsEffectSuite {
   }
 
   test("cloneAndSync: doNotFork = true") {
-    val config = MockConfig.config.copy(doNotFork = true)
+    val config = MockConfig.config.copy(vcsCfg = MockConfig.config.vcsCfg.copy(doNotFork = true))
     val state = new VCSRepoAlg[MockEff](config)
       .cloneAndSync(repo, parentRepoOut)
       .runS(MockState.empty)

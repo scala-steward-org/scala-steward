@@ -19,7 +19,8 @@ package org.scalasteward.core
 import better.files.File
 import cats.syntax.all._
 import org.scalasteward.core.buildtool.mill.MillAlg
-import org.scalasteward.core.data.{GroupId, Update}
+import org.scalasteward.core.buildtool.sbt.{sbtArtifactId, sbtGroupId}
+import org.scalasteward.core.data.Update
 import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtConfName, scalafmtGroupId}
 
 package object io {
@@ -42,8 +43,8 @@ package object io {
     fileExtensions.exists(file.name.endsWith)
 
   private def isSbtUpdate(update: Update): Boolean =
-    update.groupId === GroupId("org.scala-sbt") &&
-      update.artifactIds.exists(_.name === "sbt")
+    update.groupId === sbtGroupId &&
+      update.artifactIds.exists(_.name === sbtArtifactId.name)
 
   private def isScalafmtCoreUpdate(update: Update): Boolean =
     update.groupId === scalafmtGroupId &&

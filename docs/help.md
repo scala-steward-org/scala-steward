@@ -29,8 +29,9 @@ All command line arguments for the `scala-steward` application.
   --process-timeout  DURATION                        Timeout for external process invokations, default: "10min"
   --max-buffer-size  LINES                           Size of the buffer for the output of an external process in lines, default: "8192"
   --scalafix-migrations  URI                         Additional scalafix migrations configuraton file (can be used multiple times)
-  --disable-default-scalafix-migrations  BOOLEAN     Wether to disable the default scalafix migration file
+  --disable-default-scalafix-migrations  BOOLEAN     Whether to disable the default scalafix migration file
   --artifact-migrations  FILE                        An additional file with artifact migration configurations
+  --disable-default-artifact-migrations  BOOLEAN     Whether to disable the default artifact migration file
   --cache-ttl  DURATION                              TTL for the caches, default: "2hours"
   --bitbucket-server-use-default-reviewers  BOOLEAN  Wether to assign the default reviewers to a bitbucket pull request, default: "false"
   --gitlab-merge-when-pipeline-succeeds  BOOLEAN     Wether to merge a gitlab merge request when the pipeline succeeds

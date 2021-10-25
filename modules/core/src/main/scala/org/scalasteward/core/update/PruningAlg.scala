@@ -28,7 +28,6 @@ import org.scalasteward.core.update.data.UpdateState
 import org.scalasteward.core.update.data.UpdateState._
 import org.scalasteward.core.util
 import org.scalasteward.core.util.{dateTime, DateTimeAlg}
-import org.scalasteward.core.vcs.data.PullRequestState.Closed
 import org.scalasteward.core.vcs.data.Repo
 import org.typelevel.log4cats.Logger
 import scala.concurrent.duration._
@@ -116,12 +115,12 @@ final class PruningAlg[F[_]](implicit
         pullRequestRepository.findLatestPullRequest(repo, crossDependency, update.nextVersion).map {
           case None =>
             DependencyOutdated(crossDependency, update)
-          case Some((uri, _, Closed)) =>
-            PullRequestClosed(crossDependency, update, uri)
-          case Some((uri, baseSha1, _)) if baseSha1 === repoCache.sha1 =>
-            PullRequestUpToDate(crossDependency, update, uri)
-          case Some((uri, _, _)) =>
-            PullRequestOutdated(crossDependency, update, uri)
+          case Some(pr) if pr.state.isClosed =>
+            PullRequestClosed(crossDependency, update, pr.url)
+          case Some(pr) if pr.baseSha1 === repoCache.sha1 =>
+            PullRequestUpToDate(crossDependency, update, pr.url)
+          case Some(pr) =>
+            PullRequestOutdated(crossDependency, update, pr.url)
         }
     }
 

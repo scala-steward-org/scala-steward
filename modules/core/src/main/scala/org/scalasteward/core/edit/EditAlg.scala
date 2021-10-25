@@ -65,8 +65,9 @@ final class EditAlg[F[_]](implicit
                   gitAlg.discardChanges(repo) *>
                     runScalafixMigrations(repo, data.config, migrations) <*
                     bumpVersion(update, files)
+              updateCommitMsg = git.commitMsgFor(update, data.config.commits, data.repo.branch)
               updateEdit <- gitAlg
-                .commitAllIfDirty(repo, git.commitMsgFor(update, data.config.commits))
+                .commitAllIfDirty(repo, updateCommitMsg)
                 .map(_.map(commit => UpdateEdit(update, commit)))
               hooksEdits <- hookExecutor.execPostUpdateHooks(data, update)
             } yield scalafixEdits ++ updateEdit ++ hooksEdits
@@ -100,10 +101,7 @@ final class EditAlg[F[_]](implicit
       result <- logger.attemptWarn.log("Scalafix migration failed")(
         buildToolDispatcher.runMigration(repo, config, migration)
       )
-      verb = if (result.isRight) "Applied" else "Failed"
-      msg1 = s"$verb Scalafix rule(s) ${migration.rewriteRules.mkString_(", ")}"
-      msg2 = migration.doc.map(url => s"See $url for details").toList
-      maybeCommit <- gitAlg.commitAllIfDirty(repo, msg1, msg2: _*)
+      maybeCommit <- gitAlg.commitAllIfDirty(repo, migration.commitMessage(result))
     } yield ScalafixEdit(migration, result, maybeCommit)
 
   private def bumpVersion(update: Update, files: Nel[File]): F[Boolean] = {

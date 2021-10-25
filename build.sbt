@@ -76,7 +76,6 @@ lazy val core = myCrossProject("core")
   .settings(
     crossScalaVersions := Seq(Scala213, Scala3),
     libraryDependencies ++= Seq(
-      Dependencies.attoCore,
       Dependencies.bcprovJdk15to18,
       Dependencies.betterFiles,
       Dependencies.caseApp,
@@ -157,18 +156,26 @@ lazy val core = myCrossProject("core")
       import ${moduleRootPkg.value}.util.Nel
       import ${moduleRootPkg.value}.vcs.data._
       import better.files.File
-      import cats.effect.ContextShift
       import cats.effect.IO
-      import cats.effect.Timer
       import org.http4s.client.Client
       import org.typelevel.log4cats.Logger
       import org.typelevel.log4cats.slf4j.Slf4jLogger
-      import scala.concurrent.ExecutionContext
 
-      implicit val ioContextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-      implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
       implicit val logger: Logger[IO] = Slf4jLogger.getLogger[IO]
     """,
+    // Inspired by https://stackoverflow.com/a/41978937/460387
+    Test / sourceGenerators += Def.task {
+      val file = (Test / sourceManaged).value / "InitialCommandsTest.scala"
+      val content =
+        s"""object InitialCommandsTest {
+           |  ${initialCommands.value}
+           |  // prevent warnings
+           |  locally(Client); locally(File); locally(Nel); locally(Repo);
+           |  locally(Version); locally(data.Version);
+           |}""".stripMargin
+      IO.write(file, content)
+      Seq(file)
+    }.taskValue,
     run / fork := true,
     Test / fork := true,
     Compile / unmanagedResourceDirectories ++= (`sbt-plugin`.jvm / Compile / unmanagedSourceDirectories).value

@@ -50,15 +50,10 @@ final class StewardAlg[F[_]](config: Config)(implicit
     F: Sync[F]
 ) {
   private def readRepos(reposFile: File): Stream[F, Repo] =
-    Stream.evals[F, List, Repo] {
-      fileAlg.readFile(reposFile).map { maybeContent =>
-        val regex = """-\s+(.+)/([^/]+)""".r
-        val content = maybeContent.getOrElse("")
-        content.linesIterator.collect { case regex(owner, repo) =>
-          Repo(owner.trim, repo.trim)
-        }.toList
-      }
-    }
+    Stream
+      .eval(fileAlg.readFile(reposFile).map(_.getOrElse("")))
+      .flatMap(content => Stream.fromIterator(content.linesIterator, 1024))
+      .mapFilter(Repo.parse)
 
   private def getGitHubAppRepos(githubApp: GitHubApp): Stream[F, Repo] =
     Stream.evals[F, List, Repo] {

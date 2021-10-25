@@ -22,7 +22,6 @@ import caseapp.core.Error.MalformedValue
 import caseapp.core.argparser.{ArgParser, SimpleArgParser}
 import cats.syntax.all._
 import org.http4s.Uri
-import org.http4s.syntax.literals._
 import org.scalasteward.core.util.dateTime.parseFiniteDuration
 import org.scalasteward.core.vcs.VCSType
 import scala.concurrent.duration._
@@ -36,7 +35,7 @@ object Cli {
       gitAuthorEmail: String,
       gitAuthorSigningKey: Option[String] = None,
       vcsType: VCSType = VCSType.GitHub,
-      vcsApiHost: Uri = uri"https://api.github.com",
+      vcsApiHost: Uri = VCSType.GitHub.publicApiBaseUrl,
       vcsLogin: String,
       gitAskPass: File,
       signCommits: Boolean = false,
@@ -52,6 +51,7 @@ object Cli {
       scalafixMigrations: List[Uri] = Nil,
       disableDefaultScalafixMigrations: Boolean = false,
       artifactMigrations: List[Uri] = Nil,
+      disableDefaultArtifactMigrations: Boolean = false,
       cacheTtl: FiniteDuration = 2.hours,
       bitbucketServerUseDefaultReviewers: Boolean = false,
       gitlabMergeWhenPipelineSucceeds: Boolean = false,

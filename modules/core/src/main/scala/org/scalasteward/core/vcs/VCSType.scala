@@ -18,9 +18,12 @@ package org.scalasteward.core.vcs
 
 import cats.Eq
 import cats.syntax.all._
+import org.http4s.syntax.literals._
 import org.scalasteward.core.vcs.VCSType._
 
 sealed trait VCSType {
+  def publicWebHost: Option[String]
+
   val asString: String = this match {
     case Bitbucket       => "bitbucket"
     case BitbucketServer => "bitbucket-server"
@@ -30,10 +33,24 @@ sealed trait VCSType {
 }
 
 object VCSType {
-  case object Bitbucket extends VCSType
-  case object BitbucketServer extends VCSType
-  case object GitHub extends VCSType
-  case object GitLab extends VCSType
+  case object Bitbucket extends VCSType {
+    override val publicWebHost: Some[String] = Some("bitbucket.org")
+    val publicApiBaseUrl = uri"https://api.bitbucket.org/2.0"
+  }
+
+  case object BitbucketServer extends VCSType {
+    override val publicWebHost: None.type = None
+  }
+
+  case object GitHub extends VCSType {
+    override val publicWebHost: Some[String] = Some("github.com")
+    val publicApiBaseUrl = uri"https://api.github.com"
+  }
+
+  case object GitLab extends VCSType {
+    override val publicWebHost: Some[String] = Some("gitlab.com")
+    val publicApiBaseUrl = uri"https://gitlab.com/api/v4"
+  }
 
   val all = List(Bitbucket, BitbucketServer, GitHub, GitLab)
 
@@ -43,6 +60,9 @@ object VCSType {
       case None =>
         Left(s"Unexpected string '$s'. Expected one of: ${all.map(_.asString).mkString(", ")}.")
     }
+
+  def fromPublicWebHost(host: String): Option[VCSType] =
+    all.find(_.publicWebHost.contains_(host))
 
   implicit val vcsTypeEq: Eq[VCSType] =
     Eq.fromUniversalEquals

@@ -4,45 +4,25 @@ import munit.FunSuite
 import org.http4s.syntax.literals._
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.Update
+import org.scalasteward.core.git
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.VCSType.{GitHub, GitLab}
-import org.scalasteward.core.vcs.data.{PullRequestNumber, Repo}
+import org.scalasteward.core.vcs.data.Repo
 
 class VCSPackageTest extends FunSuite {
-  test(s"extractPullRequestNumberFrom: valid") {
-    val urls = List(
-      uri"https://api.bitbucket.org/2.0/repositories/fthomas/base.g8/pullrequests/13",
-      uri"https://github.com/scala-steward-org/scala-steward/pull/13",
-      uri"https://gitlab.com/inkscape/inkscape/-/merge_requests/13"
-    )
-    urls.foreach { uri =>
-      assertEquals(extractPullRequestNumberFrom(uri), Some(PullRequestNumber(13)))
-    }
-  }
-
-  test(s"extractPullRequestNumberFrom: invalid") {
-    val urls = List(
-      uri"https://api.bitbucket.org/2.0/repositories/fthomas/base.g8/pullrequests/",
-      uri"https://github.com/scala-steward-org/scala-steward/pull/",
-      uri"https://gitlab.com/inkscape/inkscape/-/merge_requests/"
-    )
-    urls.foreach { uri =>
-      assertEquals(extractPullRequestNumberFrom(uri), None)
-    }
-  }
-
-  val repo: Repo = Repo("foo", "bar")
-  val update: Update.Single =
+  private val repo = Repo("foo", "bar")
+  private val update =
     Update.Single("ch.qos.logback" % "logback-classic" % "1.2.0", Nel.of("1.2.3"))
+  private val updateBranch = git.branchFor(update, None)
 
   test("listingBranch") {
-    assertEquals(listingBranch(GitHub, repo, update), "foo/bar:update/logback-classic-1.2.3")
-    assertEquals(listingBranch(GitLab, repo, update), "update/logback-classic-1.2.3")
+    assertEquals(listingBranch(GitHub, repo, updateBranch), s"foo/bar:${updateBranch.name}")
+    assertEquals(listingBranch(GitLab, repo, updateBranch), updateBranch.name)
   }
 
   test("createBranch") {
-    assertEquals(createBranch(GitHub, repo, update), "foo:update/logback-classic-1.2.3")
-    assertEquals(createBranch(GitLab, repo, update), "update/logback-classic-1.2.3")
+    assertEquals(createBranch(GitHub, repo, updateBranch), s"foo:${updateBranch.name}")
+    assertEquals(createBranch(GitLab, repo, updateBranch), updateBranch.name)
   }
 
   test("possibleCompareUrls") {

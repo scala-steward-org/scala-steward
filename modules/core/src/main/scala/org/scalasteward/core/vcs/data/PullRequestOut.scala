@@ -16,22 +16,17 @@
 
 package org.scalasteward.core.vcs.data
 
-import cats.syntax.all._
 import io.circe.Decoder
 import io.circe.generic.semiauto._
 import org.http4s.Uri
 import org.scalasteward.core.util.uri.uriDecoder
-import org.scalasteward.core.vcs.data.PullRequestState.Closed
 
 final case class PullRequestOut(
     html_url: Uri,
     state: PullRequestState,
     number: PullRequestNumber,
     title: String
-) {
-  def isClosed: Boolean =
-    state === Closed
-}
+)
 
 object PullRequestOut {
   implicit val pullRequestOutDecoder: Decoder[PullRequestOut] =
