@@ -187,7 +187,6 @@ lazy val docs = myCrossProject("docs")
   .enablePlugins(MdocPlugin)
   .settings(noPublishSettings)
   .settings(
-    coverageEnabled := false,
     mdocIn := baseDirectory.value / ".." / "mdoc",
     mdocOut := (LocalRootProject / baseDirectory).value / "docs",
     mdocVariables := Map(
@@ -206,7 +205,9 @@ lazy val docs = myCrossProject("docs")
           throw new Throwable(msg, t)
       }
       ()
-    }
+    },
+    coverageEnabled := false,
+    unusedCompileDependencies := Set.empty
   )
 
 lazy val `sbt-plugin` = myCrossProject("sbt-plugin")
