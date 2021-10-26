@@ -38,6 +38,22 @@ class FileGitAlgTest extends CatsEffectSuite {
     } yield ()
   }
 
+  test("branchesDiffer") {
+    val repo = rootDir / "branchesDiffer"
+    val (foo, bar) = (Branch("foo"), Branch("bar"))
+    for {
+      _ <- ioAuxGitAlg.createRepo(repo)
+      _ <- ioGitAlg.createBranch(repo, foo)
+      _ <- ioGitAlg.createBranch(repo, bar)
+      b1 <- ioGitAlg.branchesDiffer(repo, bar, foo)
+      _ <- ioFileAlg.writeFile(repo / "test.txt", "hello")
+      _ <- ioAuxGitAlg.git("add", "test.txt")(repo)
+      _ <- ioGitAlg.commitAll(repo, CommitMsg("Add test.txt"))
+      b2 <- ioGitAlg.branchesDiffer(repo, foo, bar)
+      _ = assertEquals((b1, b2), (false, true))
+    } yield ()
+  }
+
   test("cloneExists") {
     val repo = rootDir / "cloneExists"
     for {
