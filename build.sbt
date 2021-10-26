@@ -59,7 +59,7 @@ ThisBuild / githubWorkflowBuild :=
 
 lazy val root = project
   .in(file("."))
-  .aggregate(benchmark.jvm, core.jvm, `sbt-plugin`.jvm, `mill-plugin`.jvm)
+  .aggregate(benchmark.jvm, core.jvm, docs.jvm, `sbt-plugin`.jvm, `mill-plugin`.jvm)
   .settings(commonSettings)
   .settings(noPublishSettings)
 
