@@ -50,7 +50,10 @@ class FileGitAlgTest extends CatsEffectSuite {
       _ <- ioAuxGitAlg.git("add", "test.txt")(repo)
       _ <- ioGitAlg.commitAll(repo, CommitMsg("Add test.txt"))
       b2 <- ioGitAlg.branchesDiffer(repo, foo, bar)
-      _ = assertEquals((b1, b2), (false, true))
+      _ <- ioAuxGitAlg.git("rm", "test.txt")(repo)
+      _ <- ioGitAlg.commitAll(repo, CommitMsg("Remove test.txt"))
+      b3 <- ioGitAlg.branchesDiffer(repo, foo, bar)
+      _ = assertEquals((b1, b2, b3), (false, true, false))
     } yield ()
   }
 
