@@ -140,5 +140,5 @@ object CoursierAlg {
     }
 
   private def getScmUrlOrHomePage(info: Info): Option[Uri] =
-    (info.scm.flatMap(_.url).toList :+ info.homePage).flatMap(uri.browsableUriFromString).headOption
+    uri.findBrowsableUrl(info.scm.flatMap(_.url).toList :+ info.homePage)
 }
