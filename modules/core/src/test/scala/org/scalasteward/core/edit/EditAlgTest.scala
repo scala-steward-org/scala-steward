@@ -5,13 +5,14 @@ import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.TestInstances.dummyRepoCache
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.{GroupId, RepoData, Update}
+import org.scalasteward.core.data._
 import org.scalasteward.core.mock.MockConfig.{config, gitCmd}
 import org.scalasteward.core.mock.MockContext.context.editAlg
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.repoconfig.RepoConfig
-import org.scalasteward.core.scalafmt.{scalafmtBinary, scalafmtConfName}
+import org.scalasteward.core.scalafmt.ScalafmtAlg.opts
+import org.scalasteward.core.scalafmt.{scalafmtBinary, scalafmtConfName, scalafmtDependency}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
@@ -57,7 +58,10 @@ class EditAlgTest extends FunSuite {
 
   test("applyUpdate with scalafmt update") {
     val repo = Repo("edit-alg", "test-2")
-    val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
+    val cache = dummyRepoCache.copy(dependencyInfos =
+      List(List(DependencyInfo(scalafmtDependency(Version("2.0.0")), Nil)).withMavenCentral)
+    )
+    val data = RepoData(repo, cache, RepoConfig.empty)
     val repoDir = config.workspace / repo.toPath
     val update = Update.Single("org.scalameta" % "scalafmt-core" % "2.0.0", Nel.of("2.1.0"))
     val scalafmtConf = repoDir / scalafmtConfName
@@ -95,9 +99,12 @@ class EditAlgTest extends FunSuite {
         Log("Trying heuristic 'specific'"),
         Cmd("read", scalafmtConf.pathAsString),
         Cmd("write", scalafmtConf.pathAsString),
+        Cmd(
+          "VAR1=val1" :: "VAR2=val2" :: repoDir.toString :: scalafmtBinary :: opts.nonInteractive :: opts.modeChanged
+        ),
         Cmd(gitStatus(repoDir)),
         Log("Executing post-update hook for org.scalameta:scalafmt-core"),
-        Cmd("VAR1=val1", "VAR2=val2", repoDir.toString, scalafmtBinary, "--non-interactive"),
+        Cmd("VAR1=val1", "VAR2=val2", repoDir.toString, scalafmtBinary, opts.nonInteractive),
         Cmd(gitStatus(repoDir))
       ),
       files = Map(
