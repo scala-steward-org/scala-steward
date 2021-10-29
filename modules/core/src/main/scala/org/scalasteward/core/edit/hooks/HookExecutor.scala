@@ -25,6 +25,7 @@ import org.scalasteward.core.edit.EditAttempt.HookEdit
 import org.scalasteward.core.git.{CommitMsg, GitAlg}
 import org.scalasteward.core.io.{ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.repocache.RepoCache
+import org.scalasteward.core.scalafmt.ScalafmtAlg.opts
 import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtBinary, scalafmtGroupId}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.util.logger._
@@ -75,12 +76,6 @@ object HookExecutor {
   private val conditionalSbtGitHubActionsModules =
     (sbtGroupId, sbtArtifactId) :: scalaLangModules
 
-  private def dependsOnSbtGithubActions(cache: RepoCache): Boolean =
-    cache.dependencyInfos.exists(_.value.exists { info =>
-      val module = (info.dependency.groupId, info.dependency.artifactId)
-      sbtGitHubActionsModules.contains(module)
-    })
-
   private def sbtGithubActionsHook(
       groupId: GroupId,
       artifactId: ArtifactId,
@@ -100,7 +95,7 @@ object HookExecutor {
     PostUpdateHook(
       groupId = scalafmtGroupId,
       artifactId = scalafmtArtifactId,
-      command = Nel.of(scalafmtBinary, "--non-interactive"),
+      command = Nel.of(scalafmtBinary, opts.nonInteractive),
       useSandbox = false,
       commitMessage = update => CommitMsg(s"Reformat with scalafmt ${update.nextVersion}"),
       enabledByCache = _ => true,
@@ -110,6 +105,6 @@ object HookExecutor {
         sbtGithubActionsHook(gid, aid, _ => true)
       } ++
       conditionalSbtGitHubActionsModules.map { case (gid, aid) =>
-        sbtGithubActionsHook(gid, aid, dependsOnSbtGithubActions)
+        sbtGithubActionsHook(gid, aid, _.dependsOn(sbtGitHubActionsModules))
       }
 }
