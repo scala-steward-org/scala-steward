@@ -10,6 +10,7 @@ import org.scalasteward.core.mock.MockContext.context.{hookExecutor, workspaceAl
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.repoconfig.{RepoConfig, ScalafmtConfig}
+import org.scalasteward.core.scalafmt.ScalafmtAlg.opts
 import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtBinary, scalafmtGroupId}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
@@ -40,7 +41,7 @@ class HookExecutorTest extends CatsEffectSuite {
     val expected = initial.copy(
       trace = Vector(
         Log("Executing post-update hook for org.scalameta:scalafmt-core"),
-        Cmd("VAR1=val1", "VAR2=val2", repoDir.toString, scalafmtBinary, "--non-interactive"),
+        Cmd("VAR1=val1", "VAR2=val2", repoDir.toString, scalafmtBinary, opts.nonInteractive),
         Cmd(
           gitCmd(repoDir),
           "status",
