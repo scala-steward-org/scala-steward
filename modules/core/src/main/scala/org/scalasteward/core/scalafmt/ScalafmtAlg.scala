@@ -70,6 +70,9 @@ object ScalafmtAlg {
     val version = "--version"
   }
 
+  val postUpdateHookCommand: Nel[String] =
+    Nel.of(scalafmtBinary, opts.nonInteractive, opts.quiet)
+
   private[scalafmt] def parseScalafmtConf(s: String): Either[ParsingFailure, Option[Version]] =
     io.circe.config.parser.parse(s).map {
       _.asObject.flatMap(_.apply("version")).flatMap(_.asString).map(Version.apply)

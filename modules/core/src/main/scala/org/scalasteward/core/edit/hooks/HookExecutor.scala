@@ -25,8 +25,7 @@ import org.scalasteward.core.edit.EditAttempt.HookEdit
 import org.scalasteward.core.git.{CommitMsg, GitAlg}
 import org.scalasteward.core.io.{ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.repocache.RepoCache
-import org.scalasteward.core.scalafmt.ScalafmtAlg.opts
-import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtBinary, scalafmtGroupId}
+import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtGroupId, ScalafmtAlg}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.util.logger._
 import org.scalasteward.core.vcs.data.Repo
@@ -95,7 +94,7 @@ object HookExecutor {
     PostUpdateHook(
       groupId = scalafmtGroupId,
       artifactId = scalafmtArtifactId,
-      command = Nel.of(scalafmtBinary, opts.nonInteractive, opts.quiet),
+      command = ScalafmtAlg.postUpdateHookCommand,
       useSandbox = false,
       commitMessage = update => CommitMsg(s"Reformat with scalafmt ${update.nextVersion}"),
       enabledByCache = _ => true,
