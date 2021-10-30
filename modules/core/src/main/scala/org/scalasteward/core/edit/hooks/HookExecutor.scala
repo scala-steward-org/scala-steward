@@ -95,7 +95,7 @@ object HookExecutor {
     PostUpdateHook(
       groupId = scalafmtGroupId,
       artifactId = scalafmtArtifactId,
-      command = Nel.of(scalafmtBinary, opts.nonInteractive),
+      command = Nel.of(scalafmtBinary, opts.nonInteractive, opts.quiet),
       useSandbox = false,
       commitMessage = update => CommitMsg(s"Reformat with scalafmt ${update.nextVersion}"),
       enabledByCache = _ => true,
