@@ -22,7 +22,8 @@ import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 import org.http4s.Uri
 import org.scalasteward.core.data.{CrossDependency, Update, Version}
-import org.scalasteward.core.git.Sha1
+import org.scalasteward.core.git
+import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.nurture.PullRequestRepository.Entry
 import org.scalasteward.core.persistence.KeyValueStore
 import org.scalasteward.core.update.UpdateAlg
@@ -52,7 +53,14 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
           .get(data.url)
           .fold(dateTimeAlg.currentTimestamp)(_.entryCreatedAt.pure[F])
           .map { createdAt =>
-            val entry = Entry(data.baseSha1, data.update, data.state, createdAt, Some(data.number))
+            val entry = Entry(
+              data.baseSha1,
+              data.update,
+              data.state,
+              createdAt,
+              Some(data.number),
+              Some(data.updateBranch)
+            )
             pullRequests.updated(data.url, entry).some
           }
       }
@@ -65,7 +73,17 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
             if entry.state === PullRequestState.Open &&
               entry.update.withNewerVersions(update.newerVersions) === update &&
               Version(entry.update.nextVersion) < Version(update.nextVersion) =>
-          entry.number.map(PullRequestData[Id](url, entry.baseSha1, entry.update, entry.state, _))
+          for {
+            number <- entry.number
+            updateBranch = entry.updateBranch.getOrElse(git.branchFor(entry.update, repo.branch))
+          } yield PullRequestData[Id](
+            url,
+            entry.baseSha1,
+            entry.update,
+            entry.state,
+            number,
+            updateBranch
+          )
       }.flatten.toList.sortBy(_.number.value)
     }
 
@@ -81,7 +99,14 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
       }
         .maxByOption { case (_, entry) => entry.entryCreatedAt.millis }
         .map { case (url, entry) =>
-          PullRequestData(url, entry.baseSha1, entry.update, entry.state, entry.number)
+          PullRequestData(
+            url,
+            entry.baseSha1,
+            entry.update,
+            entry.state,
+            entry.number,
+            entry.updateBranch
+          )
         }
     }
 
@@ -95,7 +120,8 @@ object PullRequestRepository {
       update: Update,
       state: PullRequestState,
       entryCreatedAt: Timestamp,
-      number: Option[PullRequestNumber]
+      number: Option[PullRequestNumber],
+      updateBranch: Option[Branch]
   )
 
   object Entry {
