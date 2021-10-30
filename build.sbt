@@ -194,12 +194,12 @@ lazy val docs = myCrossProject("docs")
       "MAIN_BRANCH" -> mainBranch
     ),
     checkDocs := {
+      val inDir = mdocIn.value.getCanonicalPath
       val outDir = mdocOut.value.getCanonicalPath
       val rootDir = (LocalRootProject / baseDirectory).value
       try git.runner.value.apply("diff", "--quiet", outDir)(rootDir, streams.value.log)
       catch {
         case t: Throwable =>
-          val inDir = mdocIn.value.getCanonicalPath
           val msg = s"Docs in $inDir and $outDir are out of sync." +
             " Run 'sbt docs/mdoc' and commit the changes to fix this."
           throw new Throwable(msg, t)
