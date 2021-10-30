@@ -41,7 +41,10 @@ class HookExecutorTest extends CatsEffectSuite {
     val expected = initial.copy(
       trace = Vector(
         Log("Executing post-update hook for org.scalameta:scalafmt-core"),
-        Cmd("VAR1=val1", "VAR2=val2", repoDir.toString, scalafmtBinary, opts.nonInteractive),
+        Cmd(
+          "VAR1=val1" :: "VAR2=val2" :: repoDir.toString ::
+            scalafmtBinary :: opts.nonInteractive :: opts.quiet :: Nil
+        ),
         Cmd(
           gitCmd(repoDir),
           "status",
