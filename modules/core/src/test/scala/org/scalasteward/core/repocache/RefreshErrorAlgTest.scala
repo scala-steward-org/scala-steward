@@ -1,7 +1,7 @@
 package org.scalasteward.core.repocache
 
-import munit.CatsEffectSuite
 import cats.syntax.all._
+import munit.CatsEffectSuite
 import org.scalasteward.core.mock.MockContext.context.refreshErrorAlg
 import org.scalasteward.core.mock.{MockEff, MockState}
 import org.scalasteward.core.vcs.data.Repo
@@ -17,12 +17,11 @@ class RefreshErrorAlgTest extends CatsEffectSuite {
 
   test("skipIfFailedRecently: failed") {
     val repo = Repo("refresh-error", "test-2")
-    val error = new Throwable("zonk")
-    val p = refreshErrorAlg.persistError(repo)(MockEff.raiseError(error)).attempt >>
-      refreshErrorAlg.skipIfFailedRecently(repo)(MockEff.pure(42))
+    val p = refreshErrorAlg.persistError(repo)(MockEff.raiseError(new Throwable())).attempt >>
+      refreshErrorAlg.skipIfFailedRecently(repo)(MockEff.unit)
 
     p.runA(MockState.empty).attempt.map { obtained =>
-      assertEquals(obtained.fold(_.getMessage, _.toString), error.getMessage)
+      assert(obtained.fold(_.getMessage, _.toString).contains("Skipping due to previous error"))
     }
   }
 }
