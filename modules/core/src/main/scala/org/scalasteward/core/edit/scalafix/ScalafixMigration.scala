@@ -20,6 +20,7 @@ import cats.syntax.all._
 import io.circe.Decoder
 import io.circe.generic.semiauto._
 import org.scalasteward.core.data.{GroupId, Version}
+import org.scalasteward.core.edit.scalafix.ScalafixMigration.Target
 import org.scalasteward.core.git.{Author, CommitMsg}
 import org.scalasteward.core.util.Nel
 
@@ -30,7 +31,8 @@ final case class ScalafixMigration(
     rewriteRules: Nel[String],
     doc: Option[String] = None,
     scalacOptions: Option[Nel[String]] = None,
-    authors: Option[Nel[Author]] = None
+    authors: Option[Nel[Author]] = None,
+    target: Option[Target] = None
 ) {
   def commitMessage(result: Either[Throwable, Unit]): CommitMsg = {
     val verb = if (result.isRight) "Applied" else "Failed"
@@ -38,9 +40,25 @@ final case class ScalafixMigration(
     val body = doc.map(url => s"See $url for details")
     CommitMsg(title, body.toList, authors.foldMap(_.toList))
   }
+
+  def targetOrDefault: Target =
+    target.getOrElse(Target.Sources)
 }
 
 object ScalafixMigration {
+  sealed trait Target
+  object Target {
+    case object Sources extends Target
+    case object Build extends Target
+
+    implicit val targetDecoder: Decoder[Target] =
+      Decoder[String].emap {
+        case "sources" => Right(Sources)
+        case "build"   => Right(Build)
+        case unknown   => Left(s"Unexpected string '$unknown'. Expected 'sources' or 'build'.")
+      }
+  }
+
   implicit val scalafixMigrationDecoder: Decoder[ScalafixMigration] =
     deriveDecoder
 }

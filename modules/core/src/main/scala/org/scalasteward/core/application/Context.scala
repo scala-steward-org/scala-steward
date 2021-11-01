@@ -29,7 +29,7 @@ import org.scalasteward.core.buildtool.sbt.SbtAlg
 import org.scalasteward.core.coursier.{CoursierAlg, VersionsCache}
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.edit.hooks.HookExecutor
-import org.scalasteward.core.edit.scalafix.{ScalafixMigrationsFinder, ScalafixMigrationsLoader}
+import org.scalasteward.core.edit.scalafix._
 import org.scalasteward.core.git.{GenGitAlg, GitAlg}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository}
@@ -132,6 +132,7 @@ object Context {
       implicit val vcsExtraAlg: VCSExtraAlg[F] = VCSExtraAlg.create[F](config.vcsCfg)
       implicit val pullRequestRepository: PullRequestRepository[F] =
         new PullRequestRepository[F](pullRequestsStore)
+      implicit val scalafixCli: ScalafixCli[F] = new ScalafixCli[F]
       implicit val scalafmtAlg: ScalafmtAlg[F] = new ScalafmtAlg[F](config)
       implicit val selfCheckAlg: SelfCheckAlg[F] = new SelfCheckAlg[F](config)
       implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create[F]

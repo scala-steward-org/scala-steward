@@ -53,8 +53,10 @@ class MockFileAlg extends FileAlg[MockEff] {
       }
     }
 
-  override def walk(dir: File): Stream[MockEff, File] =
-    Stream.evals(Kleisli.liftF(ioFileAlg.walk(dir).compile.toList.map(_.sortBy(_.pathAsString))))
+  override def walk(dir: File, maxDepth: Int): Stream[MockEff, File] =
+    Stream.evals(
+      Kleisli.liftF(ioFileAlg.walk(dir, maxDepth).compile.toList.map(_.sortBy(_.pathAsString)))
+    )
 
   override def writeFile(file: File, content: String): MockEff[Unit] =
     Kleisli(getFlatMapSet(_.exec(List("write", file.pathAsString)).addFiles(file -> content)))
