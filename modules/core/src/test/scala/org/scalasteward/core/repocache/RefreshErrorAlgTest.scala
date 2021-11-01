@@ -20,8 +20,10 @@ class RefreshErrorAlgTest extends CatsEffectSuite {
     val p = refreshErrorAlg.persistError(repo)(MockEff.raiseError(new Throwable())).attempt >>
       refreshErrorAlg.skipIfFailedRecently(repo)(MockEff.unit)
 
+    val expected = "Skipping due to previous error"
     p.runA(MockState.empty).attempt.map { obtained =>
-      assert(obtained.fold(_.getMessage, _.toString).contains("Skipping due to previous error"))
+      val message = obtained.fold(_.getMessage, _.toString).take(expected.length)
+      assertEquals(message, expected)
     }
   }
 }
