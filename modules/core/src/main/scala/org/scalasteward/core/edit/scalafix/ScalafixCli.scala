@@ -30,13 +30,14 @@ final class ScalafixCli[F[_]](implicit
 ) {
   def runMigration(workingDir: File, files: Nel[File], migration: ScalafixMigration): F[Unit] = {
     val rules = migration.rewriteRules.map("--rules=" + _)
-    processAlg.exec(scalafixBinary :: rules ::: files.map(_.pathAsString), workingDir).void
+    val cmd = scalafixBinary :: rules ::: files.map(_.pathAsString)
+    processAlg.exec(cmd, workingDir).void
   }
 
-  def version: F[String] =
-    workspaceAlg.rootDir
-      .flatMap(processAlg.exec(Nel.of(scalafixBinary, "--version"), _))
-      .map(_.mkString.trim)
+  def version: F[String] = {
+    val cmd = Nel.of(scalafixBinary, "--version")
+    workspaceAlg.rootDir.flatMap(processAlg.exec(cmd, _)).map(_.mkString.trim)
+  }
 }
 
 object ScalafixCli {

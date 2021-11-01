@@ -75,7 +75,7 @@ object SbtAlg {
       override def getSbtVersion(buildRoot: BuildRoot): F[Option[SbtVersion]] =
         for {
           buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
-          maybeProperties <- fileAlg.readFile(buildRootDir / project / "build.properties")
+          maybeProperties <- fileAlg.readFile(buildRootDir / "project" / "build.properties")
           version = maybeProperties.flatMap(parser.parseBuildProperties)
         } yield version
 
@@ -110,7 +110,7 @@ object SbtAlg {
       private def runBuildMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
         for {
           buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
-          projectDir = buildRootDir / project
+          projectDir = buildRootDir / "project"
           files0 <- (
             fileAlg.walk(buildRootDir, 1).filter(_.extension.contains(".sbt")) ++
               fileAlg.walk(projectDir, 1).filter(_.extension.exists(Set(".sbt", ".scala")))
@@ -150,6 +150,4 @@ object SbtAlg {
         getSbtDependency(buildRoot)
           .map(_.map(dep => Scope(List(dep), List(config.defaultResolver))).toList)
     }
-
-  private val project: String = "project"
 }
