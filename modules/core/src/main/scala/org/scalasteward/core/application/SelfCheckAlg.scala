@@ -18,6 +18,8 @@ package org.scalasteward.core.application
 
 import cats.MonadThrow
 import cats.syntax.all._
+import org.scalasteward.core.edit.scalafix.ScalafixCli
+import org.scalasteward.core.edit.scalafix.ScalafixCli.scalafixBinary
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.scalafmt.{scalafmtBinary, ScalafmtAlg}
 import org.scalasteward.core.util.UrlChecker
@@ -27,6 +29,7 @@ import org.typelevel.log4cats.Logger
 final class SelfCheckAlg[F[_]](config: Config)(implicit
     gitAlg: GitAlg[F],
     logger: Logger[F],
+    scalafixCli: ScalafixCli[F],
     scalafmtAlg: ScalafmtAlg[F],
     urlChecker: UrlChecker[F],
     F: MonadThrow[F]
@@ -35,6 +38,7 @@ final class SelfCheckAlg[F[_]](config: Config)(implicit
     for {
       _ <- logger.info("Run self checks")
       _ <- checkGitBinary
+      _ <- checkScalafixBinary
       _ <- checkScalafmtBinary
       _ <- checkUrlChecker
     } yield ()
@@ -42,6 +46,11 @@ final class SelfCheckAlg[F[_]](config: Config)(implicit
   private def checkGitBinary: F[Unit] =
     logger.attemptWarn.log_(execFailedMessage("git")) {
       gitAlg.version.flatMap(output => logger.info(s"Using $output"))
+    }
+
+  private def checkScalafixBinary: F[Unit] =
+    logger.attemptWarn.log_(execFailedMessage(scalafixBinary)) {
+      scalafixCli.version.flatMap(output => logger.info(s"Using $scalafixBinary $output"))
     }
 
   private def checkScalafmtBinary: F[Unit] =

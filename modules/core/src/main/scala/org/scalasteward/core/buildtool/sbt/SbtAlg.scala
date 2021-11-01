@@ -19,14 +19,14 @@ package org.scalasteward.core.buildtool.sbt
 import better.files.File
 import cats.Functor
 import cats.data.OptionT
-import cats.effect.MonadCancelThrow
+import cats.effect.Concurrent
 import cats.syntax.all._
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.BuildToolAlg
 import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.buildtool.sbt.data.SbtVersion
 import org.scalasteward.core.data.{Dependency, Scope}
-import org.scalasteward.core.edit.scalafix.ScalafixMigration
+import org.scalasteward.core.edit.scalafix.{ScalafixCli, ScalafixMigration}
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.BuildRoot
@@ -48,8 +48,9 @@ object SbtAlg {
       fileAlg: FileAlg[F],
       logger: Logger[F],
       processAlg: ProcessAlg[F],
+      scalafixCli: ScalafixCli[F],
       workspaceAlg: WorkspaceAlg[F],
-      F: MonadCancelThrow[F]
+      F: Concurrent[F]
   ): SbtAlg[F] =
     new SbtAlg[F] {
       override def addGlobalPluginTemporarily[A](plugin: FileData)(fa: F[A]): F[A] =
@@ -74,9 +75,7 @@ object SbtAlg {
       override def getSbtVersion(buildRoot: BuildRoot): F[Option[SbtVersion]] =
         for {
           buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
-          maybeProperties <- fileAlg.readFile(
-            buildRootDir / "project" / "build.properties"
-          )
+          maybeProperties <- fileAlg.readFile(buildRootDir / "project" / "build.properties")
           version = maybeProperties.flatMap(parser.parseBuildProperties)
         } yield version
 
@@ -90,6 +89,12 @@ object SbtAlg {
         } yield additionalDependencies ::: dependencies
 
       override def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
+        migration.targetOrDefault match {
+          case ScalafixMigration.Target.Sources => runSourcesMigration(buildRoot, migration)
+          case ScalafixMigration.Target.Build   => runBuildMigration(buildRoot, migration)
+        }
+
+      private def runSourcesMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
         addGlobalPluginTemporarily(scalaStewardScalafixSbt) {
           workspaceAlg.buildRootDir(buildRoot).flatMap { buildRootDir =>
             val withScalacOptions =
@@ -101,6 +106,19 @@ object SbtAlg {
             withScalacOptions(sbt(Nel(scalafixEnable, scalafixCmds), buildRootDir).void)
           }
         }
+
+      private def runBuildMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
+        for {
+          buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
+          projectDir = buildRootDir / "project"
+          files0 <- (
+            fileAlg.walk(buildRootDir, 1).filter(_.extension.contains(".sbt")) ++
+              fileAlg.walk(projectDir, 1).filter(_.extension.exists(Set(".sbt", ".scala")))
+          ).compile.toList
+          _ <- Nel.fromList(files0).fold(F.unit) { files1 =>
+            scalafixCli.runMigration(buildRootDir, files1, migration)
+          }
+        } yield ()
 
       val sbtDir: F[File] =
         fileAlg.home.map(_ / ".sbt")

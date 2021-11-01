@@ -5,7 +5,9 @@ import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.TestInstances.dummyRepoCache
 import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.buildtool.sbt.{sbtArtifactId, sbtGroupId}
 import org.scalasteward.core.data._
+import org.scalasteward.core.edit.scalafix.ScalafixCli.scalafixBinary
 import org.scalasteward.core.mock.MockConfig.{config, gitCmd}
 import org.scalasteward.core.mock.MockContext.context.editAlg
 import org.scalasteward.core.mock.MockState
@@ -161,6 +163,27 @@ class EditAlgTest extends FunSuite {
     )
 
     assertEquals(state, expected)
+  }
+
+  test("applyUpdate with build Scalafix") {
+    val repo = Repo("edit-alg", "test-3-1")
+    val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
+    val repoDir = config.workspace / repo.toPath
+    val update = Update.Single(sbtGroupId.value % sbtArtifactId.name % "1.4.9", Nel.of("1.5.5"))
+
+    val state = MockState.empty
+      .addFiles(
+        repoDir / "build.sbt" -> "",
+        repoDir / "project" / "build.properties" -> """sbt.version=1.4.9"""
+      )
+      .flatMap(editAlg.applyUpdate(data, update).runS)
+      .unsafeRunSync()
+
+    assert(state.trace.exists {
+      case Cmd(cmd) =>
+        cmd.contains(scalafixBinary) && cmd.exists(_.contains("Sbt0_13BuildSyntax.scala"))
+      case Log(_) => false
+    })
   }
 
   test("https://github.com/circe/circe-config/pull/40") {
