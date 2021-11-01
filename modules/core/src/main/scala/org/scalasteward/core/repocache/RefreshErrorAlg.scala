@@ -46,7 +46,7 @@ final class RefreshErrorAlg[F[_]](
   def persistError[A](repo: Repo)(fa: F[A]): F[A] =
     fa.handleErrorWith { t =>
       dateTimeAlg.currentTimestamp.flatMap { now =>
-        kvStore.put(repo, Entry(now, t.getMessage))
+        kvStore.put(repo, Entry(now, t.toString))
       } >> F.raiseError[A](t)
     }
 
