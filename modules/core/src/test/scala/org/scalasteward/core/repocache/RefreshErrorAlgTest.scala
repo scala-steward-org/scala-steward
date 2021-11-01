@@ -18,7 +18,7 @@ class RefreshErrorAlgTest extends CatsEffectSuite {
   test("skipIfFailedRecently: failed") {
     val repo = Repo("refresh-error", "test-2")
     val error = new Throwable("zonk")
-    val p = refreshErrorAlg.persistError(repo)(MockEff.raiseError(error)) >>
+    val p = refreshErrorAlg.persistError(repo)(MockEff.raiseError(error)).attempt >>
       refreshErrorAlg.skipIfFailedRecently(repo)(MockEff.pure(42))
 
     p.runA(MockState.empty).attempt.map { obtained =>
