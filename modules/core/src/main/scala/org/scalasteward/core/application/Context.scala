@@ -61,6 +61,7 @@ final class Context[F[_]](implicit
     val millAlg: MillAlg[F],
     val pruningAlg: PruningAlg[F],
     val pullRequestRepository: PullRequestRepository[F],
+    val refreshErrorAlg: RefreshErrorAlg[F],
     val repoConfigAlg: RepoConfigAlg[F],
     val sbtAlg: SbtAlg[F],
     val artifactMigrationsLoader: ArtifactMigrationsLoader[F],
