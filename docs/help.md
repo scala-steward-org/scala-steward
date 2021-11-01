@@ -37,5 +37,5 @@ All command line arguments for the `scala-steward` application.
   --gitlab-merge-when-pipeline-succeeds  BOOLEAN     Wether to merge a gitlab merge request when the pipeline succeeds
   --github-app-key-file  FILE                        Github application key file
   --github-app-id  ID                                Github application id
-  --refresh-backoff-period DURATION                  Period of time a failed build won't be triggered again, default: "7 days"
+  --refresh-backoff-period DURATION                  Period of time a failed build won't be triggered again, default: "0 days"
 ```
