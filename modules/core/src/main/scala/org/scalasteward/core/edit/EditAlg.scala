@@ -61,20 +61,21 @@ final class EditAlg[F[_]](implicit
             for {
               _ <- preCommit
               repo = data.repo
-              migrations = scalafixMigrationsFinder.findMigrations(update)
-              scalafixEdits <-
-                if (migrations.isEmpty) F.pure(Nil)
+              (preMigrations, postMigrations) = scalafixMigrationsFinder.findMigrations(update)
+              preScalafixEdits <-
+                if (preMigrations.isEmpty) F.pure(Nil)
                 else
                   gitAlg.discardChanges(repo) *>
-                    runScalafixMigrations(repo, data.config, migrations) <*
+                    runScalafixMigrations(repo, data.config, preMigrations) <*
                     bumpVersion(update, files)
               _ <- reformatChangedFiles(repo, data.cache)
               updateCommitMsg = git.commitMsgFor(update, data.config.commits, data.repo.branch)
               updateEdit <- gitAlg
                 .commitAllIfDirty(repo, updateCommitMsg)
                 .map(_.map(commit => UpdateEdit(update, commit)))
+              postScalafixEdits <- runScalafixMigrations(repo, data.config, postMigrations)
               hooksEdits <- hookExecutor.execPostUpdateHooks(data, update)
-            } yield scalafixEdits ++ updateEdit ++ hooksEdits
+            } yield preScalafixEdits ++ updateEdit ++ postScalafixEdits ++ hooksEdits
         }
     }
 
