@@ -81,9 +81,8 @@ object Context {
       logger <- Resource.eval(Slf4jLogger.fromName[F]("org.scalasteward.core"))
       _ <- Resource.eval(printBanner(logger))
       config = Config.from(args)
-      userAgentValue = userAgentString(config.vcsCfg.login)
-      _ <- Resource.eval(F.delay(System.setProperty("http.agent", userAgentValue)))
-      userAgent <- Resource.eval(F.fromEither(`User-Agent`.parse(userAgentValue)))
+      _ <- Resource.eval(F.delay(System.setProperty("http.agent", userAgentString)))
+      userAgent <- Resource.eval(F.fromEither(`User-Agent`.parse(userAgentString)))
       client <- OkHttpBuilder
         .withDefaultClient[F]
         .flatMap(_.resource)
@@ -174,6 +173,6 @@ object Context {
     logger.info(msg)
   }
 
-  private def userAgentString(login: String): String =
-    s"Scala-Steward/${org.scalasteward.core.BuildInfo.version} (operated by $login; ${org.scalasteward.core.BuildInfo.gitHubUrl})"
+  private val userAgentString: String =
+    s"Scala-Steward/${org.scalasteward.core.BuildInfo.version} (${org.scalasteward.core.BuildInfo.gitHubUrl})"
 }
