@@ -138,6 +138,7 @@ lazy val core = myCrossProject("core")
       scalaVersion,
       scalaBinaryVersion,
       sbtVersion,
+      BuildInfoKey("gitHubUrl" -> gitHubUrl),
       BuildInfoKey("mainBranch" -> mainBranch),
       BuildInfoKey.map(git.gitHeadCommit) { case (k, v) => k -> v.getOrElse(mainBranch) },
       BuildInfoKey.map(`sbt-plugin`.jvm / moduleRootPkg) { case (_, v) =>

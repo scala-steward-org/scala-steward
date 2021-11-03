@@ -16,11 +16,13 @@
 
 package org.scalasteward.core.application
 
+import cats.ApplicativeThrow
 import cats.effect._
 import cats.effect.implicits._
 import cats.syntax.all._
 import org.http4s.Uri
 import org.http4s.client.Client
+import org.http4s.headers.`User-Agent`
 import org.http4s.okhttp.client.OkHttpBuilder
 import org.scalasteward.core.buildtool.BuildToolDispatcher
 import org.scalasteward.core.buildtool.maven.MavenAlg
@@ -80,7 +82,11 @@ object Context {
       logger <- Resource.eval(Slf4jLogger.fromName[F]("org.scalasteward.core"))
       _ <- Resource.eval(printBanner(logger))
       config = Config.from(args)
-      client <- OkHttpBuilder.withDefaultClient[F].flatMap(_.resource)
+      userAgent <- Resource.eval(mkUserAgent[F](config.vcsCfg.login))
+      client <- OkHttpBuilder
+        .withDefaultClient[F]
+        .flatMap(_.resource)
+        .map(c => Client[F](req => c.run(req.putHeaders(userAgent))))
       fileAlg = FileAlg.create(logger, F)
       processAlg = ProcessAlg.create(config.processCfg)(logger, F)
       workspaceAlg = WorkspaceAlg.create(config)(fileAlg, logger, F)
@@ -165,5 +171,11 @@ object Context {
     val msg = List(" ", banner, s" v${org.scalasteward.core.BuildInfo.version}", " ")
       .mkString(System.lineSeparator())
     logger.info(msg)
+  }
+
+  private def mkUserAgent[F[_]](login: String)(implicit F: ApplicativeThrow[F]): F[`User-Agent`] = {
+    val s = s"Scala-Steward/${org.scalasteward.core.BuildInfo.version}" +
+      s" (operated by $login; ${org.scalasteward.core.BuildInfo.gitHubUrl})"
+    F.fromEither(`User-Agent`.parse(s))
   }
 }
