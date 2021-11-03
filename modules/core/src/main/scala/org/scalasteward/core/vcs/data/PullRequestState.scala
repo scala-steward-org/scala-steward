@@ -18,6 +18,7 @@ package org.scalasteward.core.vcs.data
 
 import cats.Eq
 import io.circe.{Decoder, Encoder}
+import org.scalasteward.core.util.unexpectedString
 import org.scalasteward.core.vcs.data.PullRequestState.{Closed, Open}
 
 sealed trait PullRequestState {
@@ -40,7 +41,7 @@ object PullRequestState {
       _.toLowerCase match {
         case "open" | "opened"                => Right(Open)
         case "closed" | "merged" | "declined" => Right(Closed)
-        case unknown                          => Left(s"Unexpected string '$unknown'")
+        case s => unexpectedString(s, List("open", "opened", "closed", "merged", "declined"))
       }
     }
 

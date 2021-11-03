@@ -19,6 +19,7 @@ package org.scalasteward.core.vcs
 import cats.Eq
 import cats.syntax.all._
 import org.http4s.syntax.literals._
+import org.scalasteward.core.util.unexpectedString
 import org.scalasteward.core.vcs.VCSType._
 
 sealed trait VCSType {
@@ -57,8 +58,7 @@ object VCSType {
   def parse(s: String): Either[String, VCSType] =
     all.find(_.asString === s) match {
       case Some(value) => Right(value)
-      case None =>
-        Left(s"Unexpected string '$s'. Expected one of: ${all.map(_.asString).mkString(", ")}.")
+      case None        => unexpectedString(s, all.map(_.asString))
     }
 
   def fromPublicWebHost(host: String): Option[VCSType] =
