@@ -23,7 +23,7 @@ import io.circe.generic.semiauto._
 import org.scalasteward.core.data.{GroupId, Version}
 import org.scalasteward.core.edit.scalafix.ScalafixMigration.{ExecutionOrder, Target}
 import org.scalasteward.core.git.{Author, CommitMsg}
-import org.scalasteward.core.util.Nel
+import org.scalasteward.core.util.{unexpectedString, Nel}
 
 final case class ScalafixMigration(
     groupId: GroupId,
@@ -63,7 +63,7 @@ object ScalafixMigration {
       Decoder[String].emap {
         case "pre-update"  => Right(PreUpdate)
         case "post-update" => Right(PostUpdate)
-        case s => Left(s"Unexpected string '$s'. Expected 'pre-update' or 'post-update'.")
+        case s             => unexpectedString(s, List("pre-update", "post-update"))
       }
   }
 
@@ -76,7 +76,7 @@ object ScalafixMigration {
       Decoder[String].emap {
         case "sources" => Right(Sources)
         case "build"   => Right(Build)
-        case s         => Left(s"Unexpected string '$s'. Expected 'sources' or 'build'.")
+        case s         => unexpectedString(s, List("sources", "build"))
       }
   }
 

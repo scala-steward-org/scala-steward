@@ -87,4 +87,7 @@ package object util {
       _.mapAccumulate(init) { case (i, a) => (N.plus(i, weight(a)), a) }
         .takeThrough { case (total, _) => N.lt(total, limit) }
         .map { case (_, a) => a }
+
+  def unexpectedString(s: String, expected: List[String]): Left[String, Nothing] =
+    Left(s"Unexpected string '$s'. Expected one of: ${expected.mkString(", ")}.")
 }
