@@ -51,7 +51,6 @@ ThisBuild / githubWorkflowBuild :=
     WorkflowStep.Sbt(List("validate"), name = Some("Build project")),
     WorkflowStep.Use(
       UseRef.Public("codecov", "codecov-action", "v2"),
-      Map("root_dir" -> "./modules"),
       name = Some("Codecov")
     )
   )
