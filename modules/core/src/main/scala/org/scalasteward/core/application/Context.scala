@@ -16,7 +16,6 @@
 
 package org.scalasteward.core.application
 
-import cats.ApplicativeThrow
 import cats.effect._
 import cats.effect.implicits._
 import cats.syntax.all._
@@ -82,7 +81,9 @@ object Context {
       logger <- Resource.eval(Slf4jLogger.fromName[F]("org.scalasteward.core"))
       _ <- Resource.eval(printBanner(logger))
       config = Config.from(args)
-      userAgent <- Resource.eval(mkUserAgent[F](config.vcsCfg.login))
+      userAgentValue = userAgentString(config.vcsCfg.login)
+      _ <- Resource.eval(F.delay(System.setProperty("http.agent", userAgentValue)))
+      userAgent <- Resource.eval(F.fromEither(`User-Agent`.parse(userAgentValue)))
       client <- OkHttpBuilder
         .withDefaultClient[F]
         .flatMap(_.resource)
@@ -173,9 +174,6 @@ object Context {
     logger.info(msg)
   }
 
-  private def mkUserAgent[F[_]](login: String)(implicit F: ApplicativeThrow[F]): F[`User-Agent`] = {
-    val s = s"Scala-Steward/${org.scalasteward.core.BuildInfo.version}" +
-      s" (operated by $login; ${org.scalasteward.core.BuildInfo.gitHubUrl})"
-    F.fromEither(`User-Agent`.parse(s))
-  }
+  private def userAgentString(login: String): String =
+    s"Scala-Steward/${org.scalasteward.core.BuildInfo.version} (operated by $login; ${org.scalasteward.core.BuildInfo.gitHubUrl})"
 }
