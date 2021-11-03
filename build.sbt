@@ -7,10 +7,13 @@ val groupId = "org.scala-steward"
 val projectName = "scala-steward"
 val rootPkg = groupId.replace("-", "")
 val gitHubOwner = "scala-steward-org"
+val gitHubUrl = s"https://github.com/$gitHubOwner/$projectName"
+val mainBranch = "master"
 
 val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
   "benchmark" -> List(JVMPlatform),
   "core" -> List(JVMPlatform),
+  "docs" -> List(JVMPlatform),
   "sbt-plugin" -> List(JVMPlatform),
   "mill-plugin" -> List(JVMPlatform)
 )
@@ -23,7 +26,7 @@ val Scala213 = "2.13.5"
 ThisBuild / crossScalaVersions := Seq(Scala212, Scala213)
 ThisBuild / githubWorkflowTargetTags ++= Seq("v*")
 ThisBuild / githubWorkflowPublishTargetBranches := Seq(
-  RefPredicate.Equals(Ref.Branch("master")),
+  RefPredicate.Equals(Ref.Branch(mainBranch)),
   RefPredicate.StartsWith(Ref.Tag("v"))
 )
 ThisBuild / githubWorkflowPublish := Seq(
@@ -56,7 +59,7 @@ ThisBuild / githubWorkflowBuild :=
 
 lazy val root = project
   .in(file("."))
-  .aggregate(benchmark.jvm, core.jvm, `sbt-plugin`.jvm, `mill-plugin`.jvm)
+  .aggregate(benchmark.jvm, core.jvm, docs.jvm, `sbt-plugin`.jvm, `mill-plugin`.jvm)
   .settings(commonSettings)
   .settings(noPublishSettings)
 
@@ -135,7 +138,8 @@ lazy val core = myCrossProject("core")
       scalaVersion,
       scalaBinaryVersion,
       sbtVersion,
-      BuildInfoKey.map(git.gitHeadCommit) { case (k, v) => k -> v.getOrElse("master") },
+      BuildInfoKey("mainBranch" -> mainBranch),
+      BuildInfoKey.map(git.gitHeadCommit) { case (k, v) => k -> v.getOrElse(mainBranch) },
       BuildInfoKey.map(`sbt-plugin`.jvm / moduleRootPkg) { case (_, v) =>
         "sbtPluginModuleRootPkg" -> v
       },
@@ -176,6 +180,34 @@ lazy val core = myCrossProject("core")
     run / fork := true,
     Test / fork := true,
     Compile / unmanagedResourceDirectories ++= (`sbt-plugin`.jvm / Compile / unmanagedSourceDirectories).value
+  )
+
+lazy val docs = myCrossProject("docs")
+  .dependsOn(core)
+  .enablePlugins(MdocPlugin)
+  .settings(noPublishSettings)
+  .settings(
+    mdocIn := baseDirectory.value / ".." / "mdoc",
+    mdocOut := (LocalRootProject / baseDirectory).value / "docs",
+    mdocVariables := Map(
+      "GITHUB_URL" -> gitHubUrl,
+      "MAIN_BRANCH" -> mainBranch
+    ),
+    checkDocs := {
+      val inDir = mdocIn.value.getCanonicalPath
+      val outDir = mdocOut.value.getCanonicalPath
+      val rootDir = (LocalRootProject / baseDirectory).value
+      try git.runner.value.apply("diff", "--quiet", outDir)(rootDir, streams.value.log)
+      catch {
+        case t: Throwable =>
+          val msg = s"Docs in $inDir and $outDir are out of sync." +
+            " Run 'sbt docs/mdoc' and commit the changes to fix this."
+          throw new Throwable(msg, t)
+      }
+      ()
+    },
+    coverageEnabled := false,
+    unusedCompileDependencies := Set.empty
   )
 
 lazy val `sbt-plugin` = myCrossProject("sbt-plugin")
@@ -230,12 +262,10 @@ lazy val compileSettings = Def.settings(
 lazy val metadataSettings = Def.settings(
   name := projectName,
   organization := groupId,
-  homepage := Some(url(s"https://github.com/$gitHubOwner/$projectName")),
+  homepage := Some(url(gitHubUrl)),
   startYear := Some(2018),
   licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
-  scmInfo := Some(
-    ScmInfo(homepage.value.get, s"scm:git:https://github.com/$gitHubOwner/$projectName.git")
-  ),
+  scmInfo := Some(ScmInfo(homepage.value.get, s"scm:git:$gitHubUrl.git")),
   headerLicense := Some(HeaderLicense.ALv2("2018-2021", "Scala Steward contributors")),
   developers := List(
     Developer(
@@ -281,7 +311,7 @@ lazy val noPublishSettings = Def.settings(
 lazy val scaladocSettings = Def.settings(
   Compile / doc / scalacOptions ++= {
     val tag = s"v${version.value}"
-    val tree = if (isSnapshot.value) git.gitHeadCommit.value.getOrElse("master") else tag
+    val tree = if (isSnapshot.value) git.gitHeadCommit.value.getOrElse(mainBranch) else tag
     Seq(
       "-doc-source-url",
       s"${scmInfo.value.get.browseUrl}/blob/$tree€{FILE_PATH}.scala",
@@ -292,6 +322,8 @@ lazy val scaladocSettings = Def.settings(
 )
 
 /// setting keys
+
+lazy val checkDocs = taskKey[Unit]("")
 
 lazy val installPlugin = taskKey[Unit]("Copies StewardPlugin.scala into global plugins directory.")
 installPlugin := {
@@ -345,6 +377,8 @@ addCommandsAlias(
     "test",
     "coverageReport",
     "doc",
+    "docs/mdoc",
+    "docs/checkDocs",
     "package",
     "packageSrc",
     "core/assembly",

@@ -41,7 +41,7 @@ The [`git-ask-pass` option](https://git-scm.com/docs/gitcredentials) must specif
 - either the plain text password corresponding to the configured `${LOGIN}`,
 - or (recommended) an authentication token corresponding to `${LOGIN}` (with appropriate permissions to watch the repositories; e.g. [Create a personal access token](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line) for GitHub).
 
-**Note about git-ask-pass option**: The provided script must start with a valid shebang like `#!/bin/sh`, see issue [#1374](https://github.com/scala-steward-org/scala-steward/issues/1374)
+**Note about git-ask-pass option**: The provided script must start with a valid shebang like `#!/bin/sh`, see issue [#1374](@GITHUB_URL@/issues/1374)
 
 More information about using the `--scalafix-migrations` and `--artifact-migrations` options can be found 
 [here][scalafixmigrations] and [here][artifactmigrations].
@@ -261,5 +261,5 @@ echo "${SCALA_STEWARD_TOKEN}"
 8. (*optional*) create a new schedule to trigger the pipeline on a daily/weekly basis
 
 
-[scalafixmigrations]: https://github.com/scala-steward-org/scala-steward/blob/master/docs/scalafix-migrations.md
-[artifactmigrations]: https://github.com/scala-steward-org/scala-steward/blob/master/docs/artifact-migrations.md
+[scalafixmigrations]: @GITHUB_URL@/blob/@MAIN_BRANCH@/docs/scalafix-migrations.md
+[artifactmigrations]: @GITHUB_URL@/blob/@MAIN_BRANCH@/docs/artifact-migrations.md
