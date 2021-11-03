@@ -2,6 +2,7 @@ package org.scalasteward.core.edit.scalafix
 
 import io.circe.config.parser
 import munit.FunSuite
+import org.scalasteward.core.edit.scalafix.ScalafixMigration.{ExecutionOrder, Target}
 import org.scalasteward.core.util.Nel
 
 class ScalafixMigrationTest extends FunSuite {
@@ -24,5 +25,13 @@ class ScalafixMigrationTest extends FunSuite {
       "Co-authored-by: Jane Doe <jane@example.com>"
     )
     assertEquals(obtained, Right(expected))
+  }
+
+  test("decode unknown executionOrder") {
+    assert(io.circe.parser.decode[ExecutionOrder]("foo").isLeft)
+  }
+
+  test("decode unknown target") {
+    assert(io.circe.parser.decode[Target]("foo").isLeft)
   }
 }
