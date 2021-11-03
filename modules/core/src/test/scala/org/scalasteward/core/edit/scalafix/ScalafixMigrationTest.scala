@@ -28,10 +28,10 @@ class ScalafixMigrationTest extends FunSuite {
   }
 
   test("decode unknown executionOrder") {
-    assert(io.circe.parser.decode[ExecutionOrder]("foo").isLeft)
+    assert(io.circe.parser.decode[ExecutionOrder](""""foo"""").isLeft)
   }
 
   test("decode unknown target") {
-    assert(io.circe.parser.decode[Target]("foo").isLeft)
+    assert(io.circe.parser.decode[Target](""""foo"""").isLeft)
   }
 }
