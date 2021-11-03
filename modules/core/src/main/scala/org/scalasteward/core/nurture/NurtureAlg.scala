@@ -156,7 +156,11 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       editAlg.applyUpdate(data.repoData, data.update, createBranch).flatMap { edits =>
         val editCommits = edits.flatMap(_.maybeCommit)
         if (editCommits.isEmpty) logger.warn("No commits created").as(Ignored)
-        else pushCommits(data, editCommits) >> createPullRequest(data, edits)
+        else
+          gitAlg.branchesDiffer(data.repo, data.baseBranch, data.updateBranch).flatMap {
+            case true  => pushCommits(data, editCommits) >> createPullRequest(data, edits)
+            case false => logger.warn("No diff between base and update branch").as(Ignored)
+          }
       }
     }
 

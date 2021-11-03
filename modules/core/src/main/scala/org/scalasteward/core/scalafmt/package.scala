@@ -29,6 +29,9 @@ package object scalafmt {
     ArtifactId(core, s"${core}_$defaultScalaBinaryVersion")
   }
 
+  val scalafmtModule: (GroupId, ArtifactId) =
+    (scalafmtGroupId, scalafmtArtifactId)
+
   def isScalafmtUpdate(update: Update.Single): Boolean =
     update.groupId === scalafmtGroupId && update.artifactId.name === scalafmtArtifactId.name
 
@@ -40,5 +43,5 @@ package object scalafmt {
 
   val scalafmtBinary: String = "scalafmt"
 
-  val scalafmtConfName = ".scalafmt.conf"
+  val scalafmtConfName: String = ".scalafmt.conf"
 }

@@ -59,7 +59,7 @@ object Cli {
       githubAppId: Option[Long] = None,
       urlCheckerTestUrl: Option[Uri] = None,
       defaultMavenRepo: Option[String] = None,
-      refreshBackoffPeriod: FiniteDuration = 7.days
+      refreshBackoffPeriod: FiniteDuration = 0.days
   )
 
   final case class EnvVar(name: String, value: String)

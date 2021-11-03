@@ -46,7 +46,7 @@ trait FileAlg[F[_]] {
 
   def readUri(uri: Uri): F[String]
 
-  def walk(dir: File): Stream[F, File]
+  def walk(dir: File, maxDepth: Int = Int.MaxValue): Stream[F, File]
 
   def writeFile(file: File, content: String): F[Unit]
 
@@ -137,8 +137,8 @@ object FileAlg {
       private def readSource(source: F[Source]): F[String] =
         Resource.fromAutoCloseable(source).use(src => F.blocking(src.mkString))
 
-      override def walk(dir: File): Stream[F, File] =
-        Stream.eval(F.delay(dir.walk())).flatMap(Stream.fromBlockingIterator(_, 1))
+      override def walk(dir: File, maxDepth: Int): Stream[F, File] =
+        Stream.eval(F.delay(dir.walk(maxDepth))).flatMap(Stream.fromBlockingIterator(_, 1))
 
       override def writeFile(file: File, content: String): F[Unit] =
         logger.debug(s"Write $file") >>

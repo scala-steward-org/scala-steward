@@ -281,23 +281,22 @@ lazy val dockerSettings = Def.settings(
   dockerBaseImage := Option(System.getenv("DOCKER_BASE_IMAGE"))
     .getOrElse("adoptopenjdk/openjdk11:alpine"),
   dockerCommands ++= {
-    val getSbtVersion = sbtVersion.value
-    val sbtTgz = s"sbt-$getSbtVersion.tgz"
-    val sbtUrl = s"https://github.com/sbt/sbt/releases/download/v$getSbtVersion/$sbtTgz"
-    val millVersion = Dependencies.millVersion.value
-    val binDir = "/usr/local/bin/"
+    val binDir = "/usr/local/bin"
+    val sbtVer = sbtVersion.value
+    val sbtTgz = s"sbt-$sbtVer.tgz"
+    val sbtUrl = s"https://github.com/sbt/sbt/releases/download/v$sbtVer/$sbtTgz"
+    val millBin = s"$binDir/mill"
+    val millVer = Dependencies.millVersion.value
+    val millUrl =
+      s"https://github.com/lihaoyi/mill/releases/download/${millVer.split("-").head}/$millVer"
+    val coursierBin = s"$binDir/coursier"
     Seq(
       Cmd("USER", "root"),
       Cmd("RUN", "apk --no-cache add bash git ca-certificates curl maven openssh"),
       Cmd("RUN", s"wget $sbtUrl && tar -xf $sbtTgz && rm -f $sbtTgz"),
-      Cmd(
-        "RUN",
-        s"curl -L https://github.com/lihaoyi/mill/releases/download/${millVersion.split("-").head}/$millVersion >${binDir}mill && chmod +x ${binDir}mill"
-      ),
-      Cmd(
-        "RUN",
-        s"curl -L https://git.io/coursier-cli > ${binDir}coursier && chmod +x ${binDir}coursier && coursier install scalafmt --install-dir $binDir && rm -rf ${binDir}coursier"
-      )
+      Cmd("RUN", s"curl -L $millUrl > $millBin && chmod +x $millBin"),
+      Cmd("RUN", s"curl -L https://git.io/coursier-cli > $coursierBin && chmod +x $coursierBin"),
+      Cmd("RUN", s"$coursierBin install --install-dir $binDir scalafix scalafmt")
     )
   },
   Docker / packageName := s"fthomas/${name.value}",
