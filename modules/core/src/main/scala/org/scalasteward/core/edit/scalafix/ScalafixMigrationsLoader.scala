@@ -20,7 +20,6 @@ import cats.MonadThrow
 import cats.syntax.all._
 import io.circe.config.parser.decode
 import org.http4s.Uri
-import org.http4s.implicits.http4sLiteralsSyntax
 import org.scalasteward.core.application.Config.ScalafixCfg
 import org.scalasteward.core.edit.scalafix.ScalafixMigrationsLoader._
 import org.scalasteward.core.io.FileAlg
@@ -52,6 +51,7 @@ final class ScalafixMigrationsLoader[F[_]](implicit
 }
 
 object ScalafixMigrationsLoader {
-  val defaultScalafixMigrationsUrl: Uri =
-    uri"https://raw.githubusercontent.com/scala-steward-org/scala-steward/master/modules/core/src/main/resources/scalafix-migrations.conf"
+  val defaultScalafixMigrationsUrl: Uri = Uri.unsafeFromString(
+    s"https://raw.githubusercontent.com/scala-steward-org/scala-steward/${org.scalasteward.core.BuildInfo.mainBranch}/modules/core/src/main/resources/scalafix-migrations.conf"
+  )
 }

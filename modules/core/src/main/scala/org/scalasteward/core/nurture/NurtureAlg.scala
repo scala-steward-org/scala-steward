@@ -54,13 +54,13 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       _ <- updateDependencies(data, fork.repo, baseBranch, updates)
     } yield ()
 
-  def cloneAndSync(repo: Repo, fork: RepoOut): F[Branch] =
+  private def cloneAndSync(repo: Repo, fork: RepoOut): F[Branch] =
     for {
       _ <- gitAlg.cloneExists(repo).ifM(F.unit, vcsRepoAlg.cloneAndSync(repo, fork))
       baseBranch <- vcsApiAlg.parentOrRepo(fork, config.doNotFork).map(_.default_branch)
     } yield baseBranch
 
-  def updateDependencies(
+  private def updateDependencies(
       data: RepoData,
       fork: Repo,
       baseBranch: Branch,
@@ -82,7 +82,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       )
     } yield ()
 
-  def processUpdate(data: UpdateData): F[ProcessResult] =
+  private def processUpdate(data: UpdateData): F[ProcessResult] =
     for {
       _ <- logger.info(s"Process update ${data.update.show}")
       head = vcs.listingBranch(config.tpe, data.fork, data.updateBranch)
@@ -112,7 +112,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       }
     } yield result
 
-  def closeObsoletePullRequests(data: UpdateData, newNumber: PullRequestNumber): F[Unit] =
+  private def closeObsoletePullRequests(data: UpdateData, newNumber: PullRequestNumber): F[Unit] =
     pullRequestRepository
       .getObsoleteOpenPullRequests(data.repo, data.update)
       .flatMap(_.traverse_(oldPr => closeObsoletePullRequest(data, newNumber, oldPr)))
@@ -149,18 +149,22 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       gitAlg.branchExists(repo, remoteBranch).ifM(gitAlg.deleteRemoteBranch(repo, branch), F.unit)
     }
 
-  def applyNewUpdate(data: UpdateData): F[ProcessResult] =
+  private def applyNewUpdate(data: UpdateData): F[ProcessResult] =
     gitAlg.returnToCurrentBranch(data.repo) {
       val createBranch = logger.info(s"Create branch ${data.updateBranch.name}") >>
         gitAlg.createBranch(data.repo, data.updateBranch)
       editAlg.applyUpdate(data.repoData, data.update, createBranch).flatMap { edits =>
         val editCommits = edits.flatMap(_.maybeCommit)
         if (editCommits.isEmpty) logger.warn("No commits created").as(Ignored)
-        else pushCommits(data, editCommits) >> createPullRequest(data, edits)
+        else
+          gitAlg.branchesDiffer(data.repo, data.baseBranch, data.updateBranch).flatMap {
+            case true  => pushCommits(data, editCommits) >> createPullRequest(data, edits)
+            case false => logger.warn("No diff between base and update branch").as(Ignored)
+          }
       }
     }
 
-  def pushCommits(data: UpdateData, commits: List[Commit]): F[ProcessResult] =
+  private def pushCommits(data: UpdateData, commits: List[Commit]): F[ProcessResult] =
     if (commits.isEmpty) F.pure[ProcessResult](Ignored)
     else
       for {
@@ -168,7 +172,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
         _ <- gitAlg.push(data.repo, data.updateBranch)
       } yield Updated
 
-  def createPullRequest(data: UpdateData, edits: List[EditAttempt]): F[ProcessResult] =
+  private def createPullRequest(data: UpdateData, edits: List[EditAttempt]): F[ProcessResult] =
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
       dependenciesWithNextVersion =
@@ -205,7 +209,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       _ <- logger.info(s"Created PR ${pr.html_url}")
     } yield Created(pr.number)
 
-  def updatePullRequest(data: UpdateData): F[ProcessResult] =
+  private def updatePullRequest(data: UpdateData): F[ProcessResult] =
     if (data.repoConfig.updatePullRequestsOrDefault =!= PullRequestUpdateStrategy.Never)
       gitAlg.returnToCurrentBranch(data.repo) {
         for {
@@ -217,7 +221,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
     else
       logger.info("PR updates are disabled by flag").as(Ignored)
 
-  def shouldBeUpdated(data: UpdateData): F[Boolean] = {
+  private def shouldBeUpdated(data: UpdateData): F[Boolean] = {
     val result = gitAlg.isMerged(data.repo, data.updateBranch, data.baseBranch).flatMap {
       case true => (false, "PR has been merged").pure[F]
       case false =>
@@ -236,7 +240,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
     result.flatMap { case (update, msg) => logger.info(msg).as(update) }
   }
 
-  def mergeAndApplyAgain(data: UpdateData): F[ProcessResult] =
+  private def mergeAndApplyAgain(data: UpdateData): F[ProcessResult] =
     for {
       _ <- logger.info(
         s"Merge branch ${data.baseBranch.name} into ${data.updateBranch.name} and apply again"

@@ -20,7 +20,6 @@ import cats.MonadThrow
 import cats.syntax.all._
 import io.circe.config.parser.decode
 import org.http4s.Uri
-import org.http4s.implicits.http4sLiteralsSyntax
 import org.scalasteward.core.application.Config.ArtifactCfg
 import org.scalasteward.core.io.FileAlg
 import org.scalasteward.core.update.artifact.ArtifactMigrationsLoader.defaultArtifactMigrationsUrl
@@ -52,6 +51,7 @@ final class ArtifactMigrationsLoader[F[_]](implicit
 }
 
 object ArtifactMigrationsLoader {
-  val defaultArtifactMigrationsUrl: Uri =
-    uri"https://raw.githubusercontent.com/scala-steward-org/scala-steward/master/modules/core/src/main/resources/artifact-migrations.conf"
+  val defaultArtifactMigrationsUrl: Uri = Uri.unsafeFromString(
+    s"https://raw.githubusercontent.com/scala-steward-org/scala-steward/${org.scalasteward.core.BuildInfo.mainBranch}/modules/core/src/main/resources/artifact-migrations.conf"
+  )
 }

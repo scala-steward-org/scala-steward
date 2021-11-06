@@ -23,9 +23,9 @@ import io.circe.ParsingFailure
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.{Scope, Version}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.scalafmt.ScalafmtAlg.parseScalafmtConf
+import org.scalasteward.core.scalafmt.ScalafmtAlg.{opts, parseScalafmtConf}
 import org.scalasteward.core.util.Nel
-import org.scalasteward.core.vcs.data.BuildRoot
+import org.scalasteward.core.vcs.data.{BuildRoot, Repo}
 import org.typelevel.log4cats.Logger
 
 final class ScalafmtAlg[F[_]](config: Config)(implicit
@@ -51,13 +51,28 @@ final class ScalafmtAlg[F[_]](config: Config)(implicit
       .map(version => Scope(List(scalafmtDependency(version)), List(config.defaultResolver)))
       .value
 
-  def version: F[String] =
-    workspaceAlg.rootDir
-      .flatMap(processAlg.exec(Nel.of(scalafmtBinary, "--version"), _))
-      .map(_.mkString.trim)
+  def reformatChanged(repo: Repo): F[Unit] = {
+    val cmd = Nel.of(scalafmtBinary, opts.nonInteractive, opts.quiet) ++ opts.modeChanged
+    workspaceAlg.repoDir(repo).flatMap(processAlg.exec(cmd, _)).void
+  }
+
+  def version: F[String] = {
+    val cmd = Nel.of(scalafmtBinary, opts.version)
+    workspaceAlg.rootDir.flatMap(processAlg.exec(cmd, _)).map(_.mkString.trim)
+  }
 }
 
 object ScalafmtAlg {
+  object opts {
+    val modeChanged = List("--mode", "changed")
+    val nonInteractive = "--non-interactive"
+    val quiet = "--quiet"
+    val version = "--version"
+  }
+
+  val postUpdateHookCommand: Nel[String] =
+    Nel.of(scalafmtBinary, opts.nonInteractive, opts.quiet)
+
   private[scalafmt] def parseScalafmtConf(s: String): Either[ParsingFailure, Option[Version]] =
     io.circe.config.parser.parse(s).map {
       _.asObject.flatMap(_.apply("version")).flatMap(_.asString).map(Version.apply)

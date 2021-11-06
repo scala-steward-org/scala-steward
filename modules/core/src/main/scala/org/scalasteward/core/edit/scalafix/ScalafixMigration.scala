@@ -16,12 +16,14 @@
 
 package org.scalasteward.core.edit.scalafix
 
+import cats.Eq
 import cats.syntax.all._
 import io.circe.Decoder
 import io.circe.generic.semiauto._
 import org.scalasteward.core.data.{GroupId, Version}
+import org.scalasteward.core.edit.scalafix.ScalafixMigration.{ExecutionOrder, Target}
 import org.scalasteward.core.git.{Author, CommitMsg}
-import org.scalasteward.core.util.Nel
+import org.scalasteward.core.util.{unexpectedString, Nel}
 
 final case class ScalafixMigration(
     groupId: GroupId,
@@ -30,7 +32,9 @@ final case class ScalafixMigration(
     rewriteRules: Nel[String],
     doc: Option[String] = None,
     scalacOptions: Option[Nel[String]] = None,
-    authors: Option[Nel[Author]] = None
+    authors: Option[Nel[Author]] = None,
+    target: Option[Target] = None,
+    executionOrder: Option[ExecutionOrder] = None
 ) {
   def commitMessage(result: Either[Throwable, Unit]): CommitMsg = {
     val verb = if (result.isRight) "Applied" else "Failed"
@@ -38,9 +42,44 @@ final case class ScalafixMigration(
     val body = doc.map(url => s"See $url for details")
     CommitMsg(title, body.toList, authors.foldMap(_.toList))
   }
+
+  def executionOrderOrDefault: ExecutionOrder =
+    executionOrder.getOrElse(ExecutionOrder.PreUpdate)
+
+  def targetOrDefault: Target =
+    target.getOrElse(Target.Sources)
 }
 
 object ScalafixMigration {
+  sealed trait ExecutionOrder extends Product with Serializable
+  object ExecutionOrder {
+    case object PreUpdate extends ExecutionOrder
+    case object PostUpdate extends ExecutionOrder
+
+    implicit val executionOrderEq: Eq[ExecutionOrder] =
+      Eq.fromUniversalEquals
+
+    implicit val executionOrderDecoder: Decoder[ExecutionOrder] =
+      Decoder[String].emap {
+        case "pre-update"  => Right(PreUpdate)
+        case "post-update" => Right(PostUpdate)
+        case s             => unexpectedString(s, List("pre-update", "post-update"))
+      }
+  }
+
+  sealed trait Target extends Product with Serializable
+  object Target {
+    case object Sources extends Target
+    case object Build extends Target
+
+    implicit val targetDecoder: Decoder[Target] =
+      Decoder[String].emap {
+        case "sources" => Right(Sources)
+        case "build"   => Right(Build)
+        case s         => unexpectedString(s, List("sources", "build"))
+      }
+  }
+
   implicit val scalafixMigrationDecoder: Decoder[ScalafixMigration] =
     deriveDecoder
 }

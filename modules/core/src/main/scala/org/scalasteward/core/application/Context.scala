@@ -21,6 +21,7 @@ import cats.effect.implicits._
 import cats.syntax.all._
 import org.http4s.Uri
 import org.http4s.client.Client
+import org.http4s.headers.`User-Agent`
 import org.http4s.okhttp.client.OkHttpBuilder
 import org.scalasteward.core.buildtool.BuildToolDispatcher
 import org.scalasteward.core.buildtool.maven.MavenAlg
@@ -29,7 +30,7 @@ import org.scalasteward.core.buildtool.sbt.SbtAlg
 import org.scalasteward.core.coursier.{CoursierAlg, VersionsCache}
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.edit.hooks.HookExecutor
-import org.scalasteward.core.edit.scalafix.{ScalafixMigrationsFinder, ScalafixMigrationsLoader}
+import org.scalasteward.core.edit.scalafix._
 import org.scalasteward.core.git.{GenGitAlg, GitAlg}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository}
@@ -61,6 +62,7 @@ final class Context[F[_]](implicit
     val millAlg: MillAlg[F],
     val pruningAlg: PruningAlg[F],
     val pullRequestRepository: PullRequestRepository[F],
+    val refreshErrorAlg: RefreshErrorAlg[F],
     val repoConfigAlg: RepoConfigAlg[F],
     val sbtAlg: SbtAlg[F],
     val artifactMigrationsLoader: ArtifactMigrationsLoader[F],
@@ -79,7 +81,12 @@ object Context {
       logger <- Resource.eval(Slf4jLogger.fromName[F]("org.scalasteward.core"))
       _ <- Resource.eval(printBanner(logger))
       config = Config.from(args)
-      client <- OkHttpBuilder.withDefaultClient[F].flatMap(_.resource)
+      _ <- Resource.eval(F.delay(System.setProperty("http.agent", userAgentString)))
+      userAgent <- Resource.eval(F.fromEither(`User-Agent`.parse(userAgentString)))
+      client <- OkHttpBuilder
+        .withDefaultClient[F]
+        .flatMap(_.resource)
+        .map(c => Client[F](req => c.run(req.putHeaders(userAgent))))
       fileAlg = FileAlg.create(logger, F)
       processAlg = ProcessAlg.create(config.processCfg)(logger, F)
       workspaceAlg = WorkspaceAlg.create(config)(fileAlg, logger, F)
@@ -131,6 +138,7 @@ object Context {
       implicit val vcsExtraAlg: VCSExtraAlg[F] = VCSExtraAlg.create[F](config.vcsCfg)
       implicit val pullRequestRepository: PullRequestRepository[F] =
         new PullRequestRepository[F](pullRequestsStore)
+      implicit val scalafixCli: ScalafixCli[F] = new ScalafixCli[F]
       implicit val scalafmtAlg: ScalafmtAlg[F] = new ScalafmtAlg[F](config)
       implicit val selfCheckAlg: SelfCheckAlg[F] = new SelfCheckAlg[F](config)
       implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create[F]
@@ -164,4 +172,7 @@ object Context {
       .mkString(System.lineSeparator())
     logger.info(msg)
   }
+
+  private val userAgentString: String =
+    s"Scala-Steward/${org.scalasteward.core.BuildInfo.version} (${org.scalasteward.core.BuildInfo.gitHubUrl})"
 }

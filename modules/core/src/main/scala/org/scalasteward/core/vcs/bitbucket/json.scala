@@ -19,6 +19,7 @@ package org.scalasteward.core.vcs.bitbucket
 import io.circe.Decoder
 import org.http4s.Uri
 import org.scalasteward.core.git.{Branch, Sha1}
+import org.scalasteward.core.util.unexpectedString
 import org.scalasteward.core.util.uri.uriDecoder
 import org.scalasteward.core.vcs.data._
 
@@ -34,7 +35,7 @@ private[bitbucket] object json {
     Decoder[String].emap {
       case "OPEN"                               => Right(PullRequestState.Open)
       case "MERGED" | "SUPERSEDED" | "DECLINED" => Right(PullRequestState.Closed)
-      case unknown                              => Left(s"Unexpected string '$unknown'")
+      case s => unexpectedString(s, List("OPEN", "MERGED", "SUPERSEDED", "DECLINED"))
     }
 
   implicit val pullRequestOutDecoder: Decoder[PullRequestOut] = Decoder.instance { c =>

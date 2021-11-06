@@ -125,6 +125,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [Pavel Shapkin](https://github.com/psttf)
 * [Philippus Baalman](https://github.com/Philippus)
 * [Piotr Gabara](https://github.com/pgabara)
+* [PJ Fanning](https://github.com/pjfanning)
 * [Renato Cavalcanti](https://github.com/renatocaval)
 * [Rikito Taniguchi](https://github.com/tanishiking)
 * [Robert Stoll](https://github.com/robstoll)

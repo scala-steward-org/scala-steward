@@ -18,15 +18,18 @@ package org.scalasteward.core.edit.scalafix
 
 import cats.syntax.all._
 import org.scalasteward.core.data.{Update, Version}
+import org.scalasteward.core.edit.scalafix.ScalafixMigration.ExecutionOrder
 
 final class ScalafixMigrationsFinder(migrations: List[ScalafixMigration]) {
-  def findMigrations(update: Update): List[ScalafixMigration] =
-    migrations.filter { migration =>
-      update.groupId === migration.groupId &&
-      migration.artifactIds.exists { re =>
-        update.artifactIds.exists(artifactId => re.r.findFirstIn(artifactId.name).isDefined)
-      } &&
-      Version(update.currentVersion) < migration.newVersion &&
-      Version(update.nextVersion) >= migration.newVersion
-    }
+  def findMigrations(update: Update): (List[ScalafixMigration], List[ScalafixMigration]) =
+    migrations
+      .filter { migration =>
+        update.groupId === migration.groupId &&
+        migration.artifactIds.exists { re =>
+          update.artifactIds.exists(artifactId => re.r.findFirstIn(artifactId.name).isDefined)
+        } &&
+        Version(update.currentVersion) < migration.newVersion &&
+        Version(update.nextVersion) >= migration.newVersion
+      }
+      .partition(_.executionOrderOrDefault === ExecutionOrder.PreUpdate)
 }
