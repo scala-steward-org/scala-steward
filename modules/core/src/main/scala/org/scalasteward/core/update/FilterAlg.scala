@@ -93,43 +93,4 @@ object FilterAlg {
       (coursier.core.Version(update.currentVersion), coursier.core.Version(update.nextVersion))
     if (current > next) Left(VersionOrderingConflict(update)) else Right(update)
   }
-
-  /*
-  private def badVersions(groupId: GroupId, artifactId: ArtifactId): String => Boolean =
-    (groupId.value, artifactId.name) match {
-
-
-
-      case ("commons-collections", "commons-collections") =>
-        List(
-          "20030418.083655",
-          // https://github.com/albuch/sbt-dependency-check/pull/107
-          "20031027.000000",
-          // https://github.com/albuch/sbt-dependency-check/pull/85
-          "20040102.233541",
-          "20040616"
-        ).contains
-
-      case ("commons-net", "commons-net") =>
-        List(
-          // https://github.com/gitbucket/gitbucket/pull/2639
-          "20030805.205232",
-          "20030623.125255",
-          "20030211.160026"
-        ).contains
-
-      case ("net.sourceforge.plantuml", "plantuml") =>
-        s => {
-          val v = Version(s)
-          // https://github.com/esamson/remder/pull/5
-          (v >= Version("6055") && v <= Version("8059")) ||
-          // https://github.com/metabookmarks/sbt-plantuml-plugin/pull/21
-          // https://github.com/metabookmarks/sbt-plantuml-plugin/pull/10
-          (v >= Version("2017.08") && v <= Version("2017.11"))
-        }
-      case _ =>
-        _ => false
-    }
-
-   */
 }
