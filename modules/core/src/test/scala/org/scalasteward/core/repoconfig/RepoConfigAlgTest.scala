@@ -1,6 +1,7 @@
 package org.scalasteward.core.repoconfig
 
 import cats.effect.unsafe.implicits.global
+import cats.syntax.all._
 import eu.timepit.refined.types.numeric.NonNegInt
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
@@ -13,6 +14,16 @@ import org.scalasteward.core.vcs.data.Repo
 import scala.concurrent.duration._
 
 class RepoConfigAlgTest extends FunSuite {
+  test("default config is not empty") {
+    val config = repoConfigAlg
+      .readRepoConfig(Repo("repo-config-alg", "test-1"))
+      .map(repoConfigAlg.mergeWithGlobal)
+      .runA(MockState.empty)
+      .unsafeRunSync()
+
+    assert(config =!= RepoConfig.empty)
+  }
+
   test("config with all fields set") {
     val repo = Repo("fthomas", "scala-steward")
     val configFile = MockConfig.config.workspace / "fthomas/scala-steward/.scala-steward.conf"
