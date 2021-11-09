@@ -52,7 +52,6 @@ object FilterAlg {
         case IgnoredByConfig(_)         => "ignored by config"
         case VersionPinnedByConfig(_)   => "version is pinned by config"
         case NotAllowedByConfig(_)      => "not allowed by config"
-        case BadVersions(_)             => "bad versions"
         case NoSuitableNextVersion(_)   => "no suitable next version"
         case VersionOrderingConflict(_) => "version ordering conflict"
       }
@@ -61,7 +60,6 @@ object FilterAlg {
   final case class IgnoredByConfig(update: Update.Single) extends RejectionReason
   final case class VersionPinnedByConfig(update: Update.Single) extends RejectionReason
   final case class NotAllowedByConfig(update: Update.Single) extends RejectionReason
-  final case class BadVersions(update: Update.Single) extends RejectionReason
   final case class NoSuitableNextVersion(update: Update.Single) extends RejectionReason
   final case class VersionOrderingConflict(update: Update.Single) extends RejectionReason
 
@@ -69,9 +67,7 @@ object FilterAlg {
     repoConfig.updates.keep(update).flatMap(globalFilter)
 
   private def globalFilter(update: Update.Single): FilterResult =
-    removeBadVersions(update)
-      .flatMap(selectSuitableNextVersion)
-      .flatMap(checkVersionOrdering)
+    selectSuitableNextVersion(update).flatMap(checkVersionOrdering)
 
   def isDependencyConfigurationIgnored(dependency: Dependency): Boolean =
     dependency.configurations.fold("")(_.toLowerCase) match {
@@ -98,38 +94,25 @@ object FilterAlg {
     if (current > next) Left(VersionOrderingConflict(update)) else Right(update)
   }
 
-  private def removeBadVersions(update: Update.Single): FilterResult =
-    update.newerVersions
-      .filterNot(badVersions(update.groupId, update.artifactId))
-      .toNel
-      .map(versions => update.copy(newerVersions = versions))
-      .fold[FilterResult](Left(BadVersions(update)))(Right.apply)
-
+  /*
   private def badVersions(groupId: GroupId, artifactId: ArtifactId): String => Boolean =
     (groupId.value, artifactId.name) match {
       case ("com.google.guava", "guava") =>
         List("r03", "r05", "r06", "r07", "r08", "r09").contains
-      case ("com.nequissimus", "sort-imports") =>
-        List(
-          // https://github.com/beautiful-scala/sbt-scalastyle/pull/13
-          "36845576"
-        ).contains
+
       case ("com.nequissimus", "sort-imports_2.12") =>
         List(
           // https://github.com/scala-steward-org/scala-steward/issues/1413
           "36845576"
         ).contains
+
       case ("commons-beanutils", "commons-beanutils") =>
         List(
           "20020520",
           "20021128.082114",
           "20030211.134440"
         ).contains
-      case ("commons-codec", "commons-codec") =>
-        List(
-          // https://github.com/scala-steward-org/scala-steward/issues/1753
-          "20041127.091804"
-        ).contains
+
       case ("commons-collections", "commons-collections") =>
         List(
           "20030418.083655",
@@ -139,11 +122,7 @@ object FilterAlg {
           "20040102.233541",
           "20040616"
         ).contains
-      case ("commons-io", "commons-io") =>
-        List(
-          // https://github.com/scala-steward-org/scala-steward/issues/1753
-          "20030203.000550"
-        ).contains
+
       case ("commons-net", "commons-net") =>
         List(
           // https://github.com/gitbucket/gitbucket/pull/2639
@@ -151,11 +130,7 @@ object FilterAlg {
           "20030623.125255",
           "20030211.160026"
         ).contains
-      case ("io.monix", _) =>
-        List(
-          // https://github.com/scala-steward-org/scala-steward/issues/105
-          "3.0.0-fbcb270"
-        ).contains
+
       case ("net.sourceforge.plantuml", "plantuml") =>
         s => {
           val v = Version(s)
@@ -165,17 +140,9 @@ object FilterAlg {
           // https://github.com/metabookmarks/sbt-plantuml-plugin/pull/10
           (v >= Version("2017.08") && v <= Version("2017.11"))
         }
-      case ("org.http4s", _) =>
-        List(
-          // https://github.com/http4s/http4s/pull/2153
-          "0.19.0"
-        ).contains
-      case ("org.scala-js", _) =>
-        List(
-          // https://github.com/scala-js/scala-js/issues/3865
-          "0.6.30"
-        ).contains
       case _ =>
         _ => false
     }
+
+   */
 }

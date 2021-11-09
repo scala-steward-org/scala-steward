@@ -46,11 +46,6 @@ class FilterAlgTest extends FunSuite {
     )
   }
 
-  test("localFilter: update with only bad versions") {
-    val update = Single("org.http4s" % "http4s-dsl" % "0.18.0", Nel.of("0.19.0"))
-    assertEquals(localFilter(update, config), Left(BadVersions(update)))
-  }
-
   test("localFilter: update to pre-release of a different series") {
     val update = Single("com.jsuereth" % "sbt-pgp" % "1.1.2-1", Nel.of("2.0.1-M3"))
     assertEquals(localFilter(update, config), Left(NoSuitableNextVersion(update)))

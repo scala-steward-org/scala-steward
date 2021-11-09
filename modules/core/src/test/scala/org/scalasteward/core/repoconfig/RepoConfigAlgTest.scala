@@ -34,7 +34,7 @@ class RepoConfigAlgTest extends FunSuite {
     val initialState = MockState.empty.addFiles(configFile -> content).unsafeRunSync()
     val config = repoConfigAlg
       .readRepoConfig(repo)
-      .flatMap(repoConfigAlg.mergeWithDefault)
+      .map(_.getOrElse(RepoConfig.empty))
       .runA(initialState)
       .unsafeRunSync()
 

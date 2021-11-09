@@ -14,7 +14,6 @@ class CliTest extends FunSuite {
       List(
         List("--workspace", "a"),
         List("--repos-file", "b"),
-        List("--default-repo-conf", "c"),
         List("--git-author-email", "d"),
         List("--vcs-type", "gitlab"),
         List("--vcs-api-host", "http://example.com"),
@@ -27,6 +26,7 @@ class CliTest extends FunSuite {
         List("--max-buffer-size", "8192"),
         List("--scalafix-migrations", "/opt/scala-steward/extra-scalafix-migrations.conf"),
         List("--artifact-migrations", "/opt/scala-steward/extra-artifact-migrations.conf"),
+        List("--repo-config", "/opt/scala-steward/scala-steward.conf"),
         List("--github-app-id", "12345678"),
         List("--github-app-key-file", "example_app_key"),
         List("--refresh-backoff-period", "1 day")
@@ -36,7 +36,6 @@ class CliTest extends FunSuite {
       Cli.Args(
         workspace = File("a"),
         reposFile = File("b"),
-        defaultRepoConf = Some(File("c")),
         gitAuthorEmail = "d",
         vcsType = VCSType.GitLab,
         vcsApiHost = uri"http://example.com",
@@ -48,6 +47,7 @@ class CliTest extends FunSuite {
         maxBufferSize = 8192,
         scalafixMigrations = List(uri"/opt/scala-steward/extra-scalafix-migrations.conf"),
         artifactMigrations = List(uri"/opt/scala-steward/extra-artifact-migrations.conf"),
+        repoConfig = List(uri"/opt/scala-steward/scala-steward.conf"),
         githubAppId = Some(12345678),
         githubAppKeyFile = Some(File("example_app_key")),
         refreshBackoffPeriod = 1.day

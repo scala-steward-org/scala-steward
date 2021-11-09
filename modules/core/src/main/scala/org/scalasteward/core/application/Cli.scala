@@ -30,7 +30,6 @@ object Cli {
   final case class Args(
       workspace: File,
       reposFile: File,
-      defaultRepoConf: Option[File] = None,
       gitAuthorName: String = "Scala Steward",
       gitAuthorEmail: String,
       gitAuthorSigningKey: Option[String] = None,
@@ -48,6 +47,8 @@ object Cli {
       envVar: List[EnvVar] = Nil,
       processTimeout: FiniteDuration = 10.minutes,
       maxBufferSize: Int = 8192,
+      repoConfig: List[Uri] = Nil,
+      disableDefaultRepoConfig: Boolean = false,
       scalafixMigrations: List[Uri] = Nil,
       disableDefaultScalafixMigrations: Boolean = false,
       artifactMigrations: List[Uri] = Nil,

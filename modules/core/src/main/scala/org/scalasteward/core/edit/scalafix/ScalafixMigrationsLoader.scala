@@ -38,7 +38,7 @@ final class ScalafixMigrationsLoader[F[_]](implicit
       Option.unless(config.disableDefaults)(defaultScalafixMigrationsUrl)
     (maybeDefaultMigrationsUrl.toList ++ config.migrations)
       .flatTraverse(loadMigrations)
-      .flatTap(migrations => logger.info(s"Loaded ${migrations.size} Scalafix migrations"))
+      .flatTap(migrations => logger.info(s"Loaded ${migrations.size} Scalafix migration(s)"))
   }
 
   private def loadMigrations(uri: Uri): F[List[ScalafixMigration]] =

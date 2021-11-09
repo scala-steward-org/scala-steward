@@ -38,7 +38,7 @@ final class ArtifactMigrationsLoader[F[_]](implicit
       Option.unless(config.disableDefaults)(defaultArtifactMigrationsUrl)
     (maybeDefaultMigrationsUrl.toList ++ config.migrations)
       .flatTraverse(loadMigrations)
-      .flatTap(migrations => logger.info(s"Loaded ${migrations.size} artifact migrations"))
+      .flatTap(migrations => logger.info(s"Loaded ${migrations.size} artifact migration(s)"))
   }
 
   private def loadMigrations(uri: Uri): F[List[ArtifactChange]] =
