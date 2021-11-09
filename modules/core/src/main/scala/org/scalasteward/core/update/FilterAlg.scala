@@ -97,21 +97,8 @@ object FilterAlg {
   /*
   private def badVersions(groupId: GroupId, artifactId: ArtifactId): String => Boolean =
     (groupId.value, artifactId.name) match {
-      case ("com.google.guava", "guava") =>
-        List("r03", "r05", "r06", "r07", "r08", "r09").contains
 
-      case ("com.nequissimus", "sort-imports_2.12") =>
-        List(
-          // https://github.com/scala-steward-org/scala-steward/issues/1413
-          "36845576"
-        ).contains
 
-      case ("commons-beanutils", "commons-beanutils") =>
-        List(
-          "20020520",
-          "20021128.082114",
-          "20030211.134440"
-        ).contains
 
       case ("commons-collections", "commons-collections") =>
         List(
