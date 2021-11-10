@@ -2,6 +2,7 @@
 
 All command line arguments for the `scala-steward` application.
 
+```
 Usage: args [options]
 
 Options:
@@ -38,3 +39,4 @@ Options:
   --url-checker-test-url uri?
   --default-maven-repo string?
   --refresh-backoff-period duration         Period of time a failed build won't be triggered again, default: "0days"
+```
