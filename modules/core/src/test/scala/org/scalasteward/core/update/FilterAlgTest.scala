@@ -69,6 +69,23 @@ class FilterAlgTest extends FunSuite {
     assertEquals(state, expected)
   }
 
+  test("ignored versions are removed") {
+    val update = Single("org.scala-lang" % "scala-compiler" % "2.13.6", Nel.of("2.13.7", "2.13.8"))
+    val config = RepoConfig(updates =
+      UpdatesConfig(ignore =
+        List(
+          UpdatePattern(
+            GroupId("org.scala-lang"),
+            Some("scala-compiler"),
+            Some(UpdatePattern.Version(Some("2.13.8"), None))
+          )
+        )
+      )
+    )
+    val expected = Right(update.copy(newerVersions = Nel.of("2.13.7")))
+    assertEquals(localFilter(update, config), expected)
+  }
+
   test("ignore update via config updates.pin") {
     val update1 = Single("org.http4s" % "http4s-dsl" % "0.17.0", Nel.of("0.18.0"))
     val update2 = Single("eu.timepit" % "refined" % "0.8.0", Nel.of("0.8.1"))
