@@ -21,6 +21,7 @@ import cats.{Eq, Monoid}
 import io.circe.Codec
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
+import io.circe.syntax._
 
 final case class RepoConfig(
     commits: CommitsConfig = CommitsConfig(),
@@ -37,6 +38,9 @@ final case class RepoConfig(
 
   def updatePullRequestsOrDefault: PullRequestUpdateStrategy =
     updatePullRequests.getOrElse(PullRequestUpdateStrategy.default)
+
+  def show: String =
+    this.asJson.spaces2
 }
 
 object RepoConfig {

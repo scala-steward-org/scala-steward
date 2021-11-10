@@ -43,8 +43,10 @@ final class RepoConfigAlg[F[_]](maybeGlobalRepoConfig: Option[RepoConfig])(impli
 
   private def readRepoConfigFromFile(configFile: File): OptionT[F, RepoConfig] =
     OptionT(fileAlg.readFile(configFile)).map(parseRepoConfig).flatMapF {
-      case Right(repoConfig) => logger.info(s"Parsed $repoConfig").as(repoConfig.some)
-      case Left(errorMsg)    => logger.info(errorMsg).as(none[RepoConfig])
+      case Right(repoConfig) =>
+        logger.info(s"Parsed repo config ${repoConfig.show}").as(repoConfig.some)
+      case Left(errorMsg) =>
+        logger.info(errorMsg).as(none[RepoConfig])
     }
 }
 

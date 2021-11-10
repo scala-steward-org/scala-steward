@@ -37,7 +37,9 @@ final class RepoConfigLoader[F[_]](implicit
       .traverse(loadRepoConfig)
       .flatTap(repoConfigs => logger.info(s"Loaded ${repoConfigs.size} repo config(s)"))
       .map(_.combineAllOption)
-      .flatTap(_.fold(F.unit)(config => logger.info(s"Effective global repo config: $config")))
+      .flatTap(
+        _.fold(F.unit)(config => logger.debug(s"Effective global repo config: ${config.show}"))
+      )
   }
 
   private def loadRepoConfig(uri: Uri): F[RepoConfig] =
