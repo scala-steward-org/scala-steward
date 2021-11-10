@@ -52,6 +52,6 @@ final class ArtifactMigrationsLoader[F[_]](implicit
 
 object ArtifactMigrationsLoader {
   val defaultArtifactMigrationsUrl: Uri = Uri.unsafeFromString(
-    s"https://raw.githubusercontent.com/scala-steward-org/scala-steward/${org.scalasteward.core.BuildInfo.mainBranch}/modules/core/src/main/resources/artifact-migrations.conf"
+    s"${org.scalasteward.core.BuildInfo.gitHubUserContent}/modules/core/src/main/resources/artifact-migrations.conf"
   )
 }

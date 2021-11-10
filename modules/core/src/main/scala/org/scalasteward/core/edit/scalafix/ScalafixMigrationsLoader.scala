@@ -52,6 +52,6 @@ final class ScalafixMigrationsLoader[F[_]](implicit
 
 object ScalafixMigrationsLoader {
   val defaultScalafixMigrationsUrl: Uri = Uri.unsafeFromString(
-    s"https://raw.githubusercontent.com/scala-steward-org/scala-steward/${org.scalasteward.core.BuildInfo.mainBranch}/modules/core/src/main/resources/scalafix-migrations.conf"
+    s"${org.scalasteward.core.BuildInfo.gitHubUserContent}/modules/core/src/main/resources/scalafix-migrations.conf"
   )
 }

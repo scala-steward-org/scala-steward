@@ -9,6 +9,7 @@ val rootPkg = groupId.replace("-", "")
 val gitHubOwner = "scala-steward-org"
 val gitHubUrl = s"https://github.com/$gitHubOwner/$projectName"
 val mainBranch = "master"
+val gitHubUserContent = s"https://raw.githubusercontent.com/$gitHubOwner/$projectName/$mainBranch"
 
 val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
   "benchmark" -> List(JVMPlatform),
@@ -142,6 +143,7 @@ lazy val core = myCrossProject("core")
       scalaBinaryVersion,
       sbtVersion,
       BuildInfoKey("gitHubUrl" -> gitHubUrl),
+      BuildInfoKey("gitHubUserContent" -> gitHubUserContent),
       BuildInfoKey("mainBranch" -> mainBranch),
       BuildInfoKey.map(git.gitHeadCommit) { case (k, v) => k -> v.getOrElse(mainBranch) },
       BuildInfoKey.map(`sbt-plugin`.jvm / moduleRootPkg) { case (_, v) =>

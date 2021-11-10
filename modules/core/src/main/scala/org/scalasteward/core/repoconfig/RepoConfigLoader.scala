@@ -53,7 +53,6 @@ final class RepoConfigLoader[F[_]](implicit
 
 object RepoConfigLoader {
   val defaultRepoConfigUrl: Uri = Uri.unsafeFromString(
-    // s"https://raw.githubusercontent.com/scala-steward-org/scala-steward/${org.scalasteward.core.BuildInfo.mainBranch}/modules/core/src/main/resources/default.scala-steward.conf"
-    "/home/frank/data/code/scala-steward/core/modules/core/src/main/resources/default.scala-steward.conf"
+    s"${org.scalasteward.core.BuildInfo.gitHubUserContent}/modules/core/src/main/resources/default.scala-steward.conf"
   )
 }
