@@ -77,7 +77,7 @@ class FilterAlgTest extends FunSuite {
           UpdatePattern(
             GroupId("org.scala-lang"),
             Some("scala-compiler"),
-            Some(UpdatePattern.Version(Some("2.13.8"), None))
+            Some(UpdatePattern.Version(exact = Some("2.13.8")))
           )
         )
       )
@@ -93,11 +93,11 @@ class FilterAlgTest extends FunSuite {
     val config = RepoConfig(
       updates = UpdatesConfig(
         pin = List(
-          UpdatePattern(update1.groupId, None, Some(UpdatePattern.Version(Some("0.17"), None))),
+          UpdatePattern(update1.groupId, None, Some(UpdatePattern.Version(Some("0.17")))),
           UpdatePattern(
             update2.groupId,
             Some("refined"),
-            Some(UpdatePattern.Version(Some("0.8"), None))
+            Some(UpdatePattern.Version(Some("0.8")))
           )
         )
       )
@@ -126,7 +126,7 @@ class FilterAlgTest extends FunSuite {
     val config = RepoConfig(
       updates = UpdatesConfig(
         allow = List(
-          UpdatePattern(GroupId("org.my1"), None, Some(UpdatePattern.Version(Some("0.8"), None))),
+          UpdatePattern(GroupId("org.my1"), None, Some(UpdatePattern.Version(Some("0.8")))),
           UpdatePattern(GroupId("org.my2"), None, None),
           UpdatePattern(GroupId("org.my3"), Some("artifact"), None)
         )
@@ -153,7 +153,7 @@ class FilterAlgTest extends FunSuite {
           UpdatePattern(
             update.groupId,
             Some(update.artifactId.name),
-            Some(UpdatePattern.Version(None, Some("jre8")))
+            Some(UpdatePattern.Version(suffix = Some("jre8")))
           )
         )
       )
@@ -175,7 +175,7 @@ class FilterAlgTest extends FunSuite {
           UpdatePattern(
             update.groupId,
             Some(update.artifactId.name),
-            Some(UpdatePattern.Version(None, Some("jre11")))
+            Some(UpdatePattern.Version(suffix = Some("jre11")))
           )
         )
       )
