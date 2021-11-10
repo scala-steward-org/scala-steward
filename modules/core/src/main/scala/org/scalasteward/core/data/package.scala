@@ -26,6 +26,7 @@ package object data {
       (scalaLangGroupId, ArtifactId("scala-reflect")),
       (scalaLangGroupId, ArtifactId("scalap")),
       (scalaLangGroupId, ArtifactId("scala3-compiler")),
-      (scalaLangGroupId, ArtifactId("scala3-library"))
+      (scalaLangGroupId, ArtifactId("scala3-library")),
+      (scalaLangGroupId, ArtifactId("scala3-library_sjs1"))
     )
 }
