@@ -49,15 +49,13 @@ final class RepoCacheAlg[F[_]](config: Config)(implicit
           val latestSha1 = branchOut.commit.sha
           maybeCache
             .filter(_.sha1 === latestSha1)
-            .fold(cloneAndRefreshCache(repo, repoOut))(supplementCache(repo, _))
+            .fold(cloneAndRefreshCache(repo, repoOut))(supplementCache(repo, _).pure[F])
             .map(data => (data, repoOut))
         }
       }
 
-  private def supplementCache(repo: Repo, cache: RepoCache): F[RepoData] =
-    repoConfigAlg.mergeWithDefault(cache.maybeRepoConfig).map { config =>
-      RepoData(repo, cache, config)
-    }
+  private def supplementCache(repo: Repo, cache: RepoCache): RepoData =
+    RepoData(repo, cache, repoConfigAlg.mergeWithGlobal(cache.maybeRepoConfig))
 
   private def cloneAndRefreshCache(repo: Repo, repoOut: RepoOut): F[RepoData] =
     vcsRepoAlg.cloneAndSync(repo, repoOut) >> refreshCache(repo)
@@ -74,7 +72,7 @@ final class RepoCacheAlg[F[_]](config: Config)(implicit
       branch <- gitAlg.currentBranch(repo)
       latestSha1 <- gitAlg.latestSha1(repo, branch)
       maybeConfig <- repoConfigAlg.readRepoConfig(repo)
-      config <- repoConfigAlg.mergeWithDefault(maybeConfig)
+      config = repoConfigAlg.mergeWithGlobal(maybeConfig)
       dependencies <- buildToolDispatcher.getDependencies(repo, config)
       dependencyInfos <-
         dependencies.traverse(_.traverse(_.traverse(gatherDependencyInfo(repo, _))))

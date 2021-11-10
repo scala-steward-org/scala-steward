@@ -46,11 +46,6 @@ class FilterAlgTest extends FunSuite {
     )
   }
 
-  test("localFilter: update with only bad versions") {
-    val update = Single("org.http4s" % "http4s-dsl" % "0.18.0", Nel.of("0.19.0"))
-    assertEquals(localFilter(update, config), Left(BadVersions(update)))
-  }
-
   test("localFilter: update to pre-release of a different series") {
     val update = Single("com.jsuereth" % "sbt-pgp" % "1.1.2-1", Nel.of("2.0.1-M3"))
     assertEquals(localFilter(update, config), Left(NoSuitableNextVersion(update)))
@@ -74,6 +69,23 @@ class FilterAlgTest extends FunSuite {
     assertEquals(state, expected)
   }
 
+  test("ignored versions are removed") {
+    val update = Single("org.scala-lang" % "scala-compiler" % "2.13.6", Nel.of("2.13.7", "2.13.8"))
+    val config = RepoConfig(updates =
+      UpdatesConfig(ignore =
+        List(
+          UpdatePattern(
+            GroupId("org.scala-lang"),
+            Some("scala-compiler"),
+            Some(UpdatePattern.Version(exact = Some("2.13.8")))
+          )
+        )
+      )
+    )
+    val expected = Right(update.copy(newerVersions = Nel.of("2.13.7")))
+    assertEquals(localFilter(update, config), expected)
+  }
+
   test("ignore update via config updates.pin") {
     val update1 = Single("org.http4s" % "http4s-dsl" % "0.17.0", Nel.of("0.18.0"))
     val update2 = Single("eu.timepit" % "refined" % "0.8.0", Nel.of("0.8.1"))
@@ -81,11 +93,11 @@ class FilterAlgTest extends FunSuite {
     val config = RepoConfig(
       updates = UpdatesConfig(
         pin = List(
-          UpdatePattern(update1.groupId, None, Some(UpdatePattern.Version(Some("0.17"), None))),
+          UpdatePattern(update1.groupId, None, Some(UpdatePattern.Version(Some("0.17")))),
           UpdatePattern(
             update2.groupId,
             Some("refined"),
-            Some(UpdatePattern.Version(Some("0.8"), None))
+            Some(UpdatePattern.Version(Some("0.8")))
           )
         )
       )
@@ -114,7 +126,7 @@ class FilterAlgTest extends FunSuite {
     val config = RepoConfig(
       updates = UpdatesConfig(
         allow = List(
-          UpdatePattern(GroupId("org.my1"), None, Some(UpdatePattern.Version(Some("0.8"), None))),
+          UpdatePattern(GroupId("org.my1"), None, Some(UpdatePattern.Version(Some("0.8")))),
           UpdatePattern(GroupId("org.my2"), None, None),
           UpdatePattern(GroupId("org.my3"), Some("artifact"), None)
         )
@@ -141,7 +153,7 @@ class FilterAlgTest extends FunSuite {
           UpdatePattern(
             update.groupId,
             Some(update.artifactId.name),
-            Some(UpdatePattern.Version(None, Some("jre8")))
+            Some(UpdatePattern.Version(suffix = Some("jre8")))
           )
         )
       )
@@ -163,7 +175,7 @@ class FilterAlgTest extends FunSuite {
           UpdatePattern(
             update.groupId,
             Some(update.artifactId.name),
-            Some(UpdatePattern.Version(None, Some("jre11")))
+            Some(UpdatePattern.Version(suffix = Some("jre11")))
           )
         )
       )

@@ -8,6 +8,7 @@ import org.scalasteward.core.edit.scalafix.ScalafixMigrationsLoader
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
 import org.scalasteward.core.io._
 import org.scalasteward.core.mock.MockConfig.config
+import org.scalasteward.core.repoconfig.RepoConfigLoader
 import org.scalasteward.core.update.artifact.ArtifactMigrationsLoader
 import org.typelevel.log4cats.Logger
 
@@ -19,6 +20,8 @@ object MockContext {
   implicit private val workspaceAlg: WorkspaceAlg[MockEff] = new MockWorkspaceAlg
 
   val mockState: MockState = MockState.empty.addUris(
+    RepoConfigLoader.defaultRepoConfigUrl ->
+      ioFileAlg.readResource("default.scala-steward.conf").unsafeRunSync(),
     ArtifactMigrationsLoader.defaultArtifactMigrationsUrl ->
       ioFileAlg.readResource("artifact-migrations.conf").unsafeRunSync(),
     ScalafixMigrationsLoader.defaultScalafixMigrationsUrl ->

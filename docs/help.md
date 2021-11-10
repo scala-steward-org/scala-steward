@@ -13,7 +13,6 @@ All command line arguments for the `scala-steward` application.
 
 ### Optional arguments
 ```
-  --default-repo-conf  FILE                          A .scala-steward.conf file with default values
   --git-author-name  NAME                            Git "user.name", default: "Scala Steward"
   --git-author-signing-key  KEY                      Git "user.signingKey"
   --vcs-type  VCS_TYPE                               One of "github", "gitlab", "bitbucket" or "bitbucket-server", default: "github"
@@ -28,9 +27,11 @@ All command line arguments for the `scala-steward` application.
   --env-var VAR=VALUE                                Assigns the VALUE to the environment variable VAR (can be used multiple times)
   --process-timeout  DURATION                        Timeout for external process invokations, default: "10min"
   --max-buffer-size  LINES                           Size of the buffer for the output of an external process in lines, default: "8192"
+  --repo-config  URI                                 Additional repo config file (can be used multiple times)
+  --disable-default-repo-config  BOOLEAN             Whether to disable the default repo config file
   --scalafix-migrations  URI                         Additional scalafix migrations configuraton file (can be used multiple times)
   --disable-default-scalafix-migrations  BOOLEAN     Whether to disable the default scalafix migration file
-  --artifact-migrations  FILE                        An additional file with artifact migration configurations
+  --artifact-migrations  URI                         Additional artifact migration configuration file (can be used multiple times)
   --disable-default-artifact-migrations  BOOLEAN     Whether to disable the default artifact migration file
   --cache-ttl  DURATION                              TTL for the caches, default: "2hours"
   --bitbucket-server-use-default-reviewers  BOOLEAN  Wether to assign the default reviewers to a bitbucket pull request, default: "false"

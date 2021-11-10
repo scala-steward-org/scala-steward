@@ -36,9 +36,15 @@ object UpdatePattern {
       filteredVersions: List[String]
   )
 
-  final case class Version(prefix: Option[String], suffix: Option[String]) {
+  final case class Version(
+      prefix: Option[String] = None,
+      suffix: Option[String] = None,
+      exact: Option[String] = None
+  ) {
     def matches(version: String): Boolean =
-      suffix.forall(version.endsWith) && prefix.forall(version.startsWith)
+      prefix.forall(version.startsWith) &&
+        suffix.forall(version.endsWith) &&
+        exact.forall(_ === version)
   }
 
   def findMatch(
@@ -62,12 +68,13 @@ object UpdatePattern {
 
   implicit val updatePatternVersionDecoder: Decoder[Version] =
     Decoder[String]
-      .map(s => Version(Some(s), None))
+      .map(s => Version(prefix = Some(s)))
       .or((hCursor: HCursor) =>
         for {
           prefix <- hCursor.downField("prefix").as[Option[String]]
           suffix <- hCursor.downField("suffix").as[Option[String]]
-        } yield Version(prefix, suffix)
+          exact <- hCursor.downField("exact").as[Option[String]]
+        } yield Version(prefix, suffix, exact)
       )
 
   implicit val eqVersion: Eq[Version] = Eq.fromUniversalEquals

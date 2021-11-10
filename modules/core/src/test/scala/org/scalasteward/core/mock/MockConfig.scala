@@ -13,7 +13,6 @@ object MockConfig {
   val args: Cli.Args = Cli.Args(
     workspace = mockRoot / "workspace",
     reposFile = mockRoot / "repos.md",
-    defaultRepoConf = Some(mockRoot / "default.scala-steward.conf"),
     gitAuthorName = "Bot Doe",
     gitAuthorEmail = "bot@example.org",
     vcsType = VCSType.GitHub,

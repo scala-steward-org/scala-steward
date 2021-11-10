@@ -17,9 +17,9 @@ class UpdatesConfigTest extends DisciplineSuite {
   private val ab0 = UpdatePattern(groupIdA, Some("b"), None)
   private val ac0 = UpdatePattern(groupIdA, Some("c"), None)
 
-  private val aa1 = UpdatePattern(groupIdA, Some("a"), Some(Version(Some("1"), None)))
-  private val aa2 = UpdatePattern(groupIdA, Some("a"), Some(Version(Some("2"), None)))
-  private val ac3 = UpdatePattern(groupIdA, Some("c"), Some(Version(Some("3"), None)))
+  private val aa1 = UpdatePattern(groupIdA, Some("a"), Some(Version(Some("1"))))
+  private val aa2 = UpdatePattern(groupIdA, Some("a"), Some(Version(Some("2"))))
+  private val ac3 = UpdatePattern(groupIdA, Some("c"), Some(Version(Some("3"))))
 
   private val b00 = UpdatePattern(groupIdB, None, None)
 

@@ -9,6 +9,7 @@ val rootPkg = groupId.replace("-", "")
 val gitHubOwner = "scala-steward-org"
 val gitHubUrl = s"https://github.com/$gitHubOwner/$projectName"
 val mainBranch = "master"
+val gitHubUserContent = s"https://raw.githubusercontent.com/$gitHubOwner/$projectName/$mainBranch"
 
 val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
   "benchmark" -> List(JVMPlatform),
@@ -142,6 +143,7 @@ lazy val core = myCrossProject("core")
       scalaBinaryVersion,
       sbtVersion,
       BuildInfoKey("gitHubUrl" -> gitHubUrl),
+      BuildInfoKey("gitHubUserContent" -> gitHubUserContent),
       BuildInfoKey("mainBranch" -> mainBranch),
       BuildInfoKey.map(git.gitHeadCommit) { case (k, v) => k -> v.getOrElse(mainBranch) },
       BuildInfoKey.map(`sbt-plugin`.jvm / moduleRootPkg) { case (_, v) =>
@@ -349,7 +351,6 @@ runSteward := Def.taskDyn {
   val args = Seq(
     Seq("--workspace", s"$projectDir/workspace"),
     Seq("--repos-file", s"$projectDir/repos.md"),
-    Seq("--default-repo-conf", s"$projectDir/default.scala-steward.conf"),
     Seq("--git-author-email", s"me@$projectName.org"),
     Seq("--vcs-login", projectName),
     Seq("--git-ask-pass", s"$home/.github/askpass/$projectName.sh"),

@@ -36,11 +36,6 @@ import scala.concurrent.duration.FiniteDuration
 
 /** Configuration for scala-steward.
   *
-  * == [[defaultRepoConfigFile]] ==
-  * Location of default repo configuration file.
-  * This will be used if target repo doesn't have custom configuration.
-  * Note if this file doesn't exist, empty configuration will be applied
-  *
   * == vcsCfg.apiHost ==
   * REST API v3 endpoints prefix
   *
@@ -61,11 +56,11 @@ import scala.concurrent.duration.FiniteDuration
 final case class Config(
     workspace: File,
     reposFile: File,
-    defaultRepoConfigFile: Option[File],
     gitCfg: GitCfg,
     vcsCfg: VCSCfg,
     ignoreOptsFiles: Boolean,
     processCfg: ProcessCfg,
+    repoConfigCfg: RepoConfigCfg,
     scalafixCfg: ScalafixCfg,
     artifactCfg: ArtifactCfg,
     cacheTtl: FiniteDuration,
@@ -118,6 +113,11 @@ object Config {
       enableSandbox: Boolean
   )
 
+  final case class RepoConfigCfg(
+      repoConfigs: List[Uri],
+      disableDefault: Boolean
+  )
+
   final case class ScalafixCfg(
       migrations: List[Uri],
       disableDefaults: Boolean
@@ -140,7 +140,6 @@ object Config {
     Config(
       workspace = args.workspace,
       reposFile = args.reposFile,
-      defaultRepoConfigFile = args.defaultRepoConf,
       gitCfg = GitCfg(
         gitAuthor = Author(args.gitAuthorName, args.gitAuthorEmail, args.gitAuthorSigningKey),
         gitAskPass = args.gitAskPass,
@@ -162,6 +161,10 @@ object Config {
           readOnlyDirectories = args.readOnly,
           enableSandbox = args.enableSandbox.getOrElse(!args.disableSandbox)
         )
+      ),
+      repoConfigCfg = RepoConfigCfg(
+        repoConfigs = args.repoConfig,
+        disableDefault = args.disableDefaultRepoConfig
       ),
       scalafixCfg = ScalafixCfg(
         migrations = args.scalafixMigrations,

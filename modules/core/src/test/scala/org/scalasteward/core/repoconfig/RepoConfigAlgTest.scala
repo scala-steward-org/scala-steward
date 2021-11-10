@@ -1,6 +1,7 @@
 package org.scalasteward.core.repoconfig
 
 import cats.effect.unsafe.implicits.global
+import cats.syntax.all._
 import eu.timepit.refined.types.numeric.NonNegInt
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
@@ -13,6 +14,16 @@ import org.scalasteward.core.vcs.data.Repo
 import scala.concurrent.duration._
 
 class RepoConfigAlgTest extends FunSuite {
+  test("default config is not empty") {
+    val config = repoConfigAlg
+      .readRepoConfig(Repo("repo-config-alg", "test-1"))
+      .map(repoConfigAlg.mergeWithGlobal)
+      .runA(MockState.empty)
+      .unsafeRunSync()
+
+    assert(config =!= RepoConfig.empty)
+  }
+
   test("config with all fields set") {
     val repo = Repo("fthomas", "scala-steward")
     val configFile = MockConfig.config.workspace / "fthomas/scala-steward/.scala-steward.conf"
@@ -34,7 +45,7 @@ class RepoConfigAlgTest extends FunSuite {
     val initialState = MockState.empty.addFiles(configFile -> content).unsafeRunSync()
     val config = repoConfigAlg
       .readRepoConfig(repo)
-      .flatMap(repoConfigAlg.mergeWithDefault)
+      .map(_.getOrElse(RepoConfig.empty))
       .runA(initialState)
       .unsafeRunSync()
 
@@ -46,17 +57,17 @@ class RepoConfigAlgTest extends FunSuite {
           UpdatePattern(
             GroupId("eu.timepit"),
             Some("refined.1"),
-            Some(UpdatePattern.Version(Some("0.8."), None))
+            Some(UpdatePattern.Version(Some("0.8.")))
           ),
           UpdatePattern(
             GroupId("eu.timepit"),
             Some("refined.2"),
-            Some(UpdatePattern.Version(Some("0.8."), None))
+            Some(UpdatePattern.Version(Some("0.8.")))
           ),
           UpdatePattern(
             GroupId("eu.timepit"),
             Some("refined.3"),
-            Some(UpdatePattern.Version(None, Some("jre")))
+            Some(UpdatePattern.Version(suffix = Some("jre")))
           ),
           UpdatePattern(
             GroupId("eu.timepit"),
@@ -65,7 +76,7 @@ class RepoConfigAlgTest extends FunSuite {
           )
         ),
         ignore = List(
-          UpdatePattern(GroupId("org.acme"), None, Some(UpdatePattern.Version(Some("1.0"), None)))
+          UpdatePattern(GroupId("org.acme"), None, Some(UpdatePattern.Version(Some("1.0"))))
         ),
         limit = Some(NonNegInt.unsafeFrom(4)),
         fileExtensions = Some(List(".txt"))
