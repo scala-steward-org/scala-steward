@@ -19,7 +19,7 @@ package org.scalasteward.core.repoconfig
 import cats.Eq
 import cats.implicits._
 import io.circe.generic.semiauto._
-import io.circe.{Decoder, Encoder, HCursor}
+import io.circe.{Codec, Decoder, Encoder}
 import org.scalasteward.core.data.{GroupId, Update}
 
 final case class UpdatePattern(
@@ -60,24 +60,14 @@ object UpdatePattern {
     MatchResult(byArtifactId, filteredVersions)
   }
 
-  implicit val updatePatternDecoder: Decoder[UpdatePattern] =
-    deriveDecoder
+  implicit val updatePatternCodec: Codec[UpdatePattern] =
+    deriveCodec
 
-  implicit val updatePatternEncoder: Encoder[UpdatePattern] =
-    deriveEncoder
+  implicit val updatePatternVersionEq: Eq[Version] =
+    Eq.fromUniversalEquals
 
   implicit val updatePatternVersionDecoder: Decoder[Version] =
-    Decoder[String]
-      .map(s => Version(prefix = Some(s)))
-      .or((hCursor: HCursor) =>
-        for {
-          prefix <- hCursor.downField("prefix").as[Option[String]]
-          suffix <- hCursor.downField("suffix").as[Option[String]]
-          exact <- hCursor.downField("exact").as[Option[String]]
-        } yield Version(prefix, suffix, exact)
-      )
-
-  implicit val eqVersion: Eq[Version] = Eq.fromUniversalEquals
+    deriveDecoder[Version].or(Decoder[String].map(s => Version(prefix = Some(s))))
 
   implicit val updatePatternVersionEncoder: Encoder[Version] =
     deriveEncoder
