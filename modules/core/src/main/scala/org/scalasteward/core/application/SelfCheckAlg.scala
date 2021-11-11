@@ -63,9 +63,10 @@ final class SelfCheckAlg[F[_]](config: Config)(implicit
 
   private def checkUrlChecker: F[Unit] =
     for {
-      res <- urlChecker.exists(config.urlCheckerTestUrl)
+      _ <- F.unit
       url = config.urlCheckerTestUrl
+      urlExists <- urlChecker.exists(url)
       msg = s"Self check of UrlChecker failed: checking that $url exists failed"
-      _ <- if (!res) logger.warn(msg) else F.unit
+      _ <- F.whenA(!urlExists)(logger.warn(msg))
     } yield ()
 }

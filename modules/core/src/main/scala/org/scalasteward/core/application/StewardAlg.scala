@@ -81,7 +81,7 @@ final class StewardAlg[F[_]](config: Config)(implicit
         F.guarantee(
           repoCacheAlg.checkCache(repo).flatMap { case (data, fork) =>
             pruningAlg.needsAttention(data).flatMap { case (attentionNeeded, updates) =>
-              if (attentionNeeded) nurtureAlg.nurture(data, fork, updates) else F.unit
+              F.whenA(attentionNeeded)(nurtureAlg.nurture(data, fork, updates))
             }
           },
           gitAlg.removeClone(repo)
