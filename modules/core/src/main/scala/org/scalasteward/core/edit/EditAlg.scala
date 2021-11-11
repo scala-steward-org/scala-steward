@@ -118,9 +118,9 @@ final class EditAlg[F[_]](implicit
   }
 
   private def reformatChangedFiles(repo: Repo, cache: RepoCache): F[Unit] =
-    if (cache.dependsOn(List(scalafmtModule)))
+    F.whenA(cache.dependsOn(List(scalafmtModule))) {
       logger.attemptWarn.log_("Reformatting changed files failed") {
         scalafmtAlg.reformatChanged(repo)
       }
-    else F.unit
+    }
 }
