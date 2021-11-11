@@ -31,7 +31,9 @@ trait UrlChecker[F[_]] {
 }
 
 object UrlChecker {
-  private def buildCache[F[_]](config: Config)(implicit F: Sync[F]): F[CaffeineCache[F, Status]] =
+  private def buildCache[F[_]](config: Config)(implicit
+      F: Sync[F]
+  ): F[CaffeineCache[F, String, Status]] =
     F.delay {
       val cache = Caffeine
         .newBuilder()
@@ -54,7 +56,7 @@ object UrlChecker {
           }
 
         private def status(url: Uri): F[Status] =
-          statusCache.cachingForMemoizeF(url.renderString)(None) {
+          statusCache.cachingF(url.renderString)(None) {
             client.status(Request[F](method = Method.HEAD, uri = url))
           }
       }
