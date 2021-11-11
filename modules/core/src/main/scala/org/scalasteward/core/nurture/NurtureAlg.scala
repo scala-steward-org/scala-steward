@@ -134,12 +134,10 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
         authors <-
           if (oldBranchExists) gitAlg.branchAuthors(data.repo, oldRemoteBranch, data.baseBranch)
           else List.empty.pure[F]
-        _ <-
-          if (authors.size <= 1) for {
-            _ <- vcsApiAlg.closePullRequest(data.repo, oldPr.number)
-            _ <- deleteRemoteBranch(data.repo, oldPr.updateBranch)
-          } yield ()
-          else F.unit
+        _ <- F.whenA(authors.size <= 1) {
+          vcsApiAlg.closePullRequest(data.repo, oldPr.number) >>
+            deleteRemoteBranch(data.repo, oldPr.updateBranch)
+        }
       } yield ()
     }
 
