@@ -296,7 +296,7 @@ class EditAlgTest extends FunSuite {
       ".travis.yml" -> """- TEST_MILL_VERSION=0.9.5"""
     )
     val expected = Map(
-      ".mill-version" -> """0.9.9""",
+      ".mill-version" -> """0.9.10""",
       ".travis.yml" -> """- TEST_MILL_VERSION=0.9.5"""
     )
     assertEquals(runApplyUpdate(Repo("edit-alg", "test-10"), update, original), expected)
