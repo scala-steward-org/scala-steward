@@ -19,7 +19,7 @@ package org.scalasteward.core.buildtool.sbt
 import better.files.File
 import cats.Functor
 import cats.data.OptionT
-import cats.effect.Concurrent
+import cats.effect.{Concurrent, Resource}
 import cats.syntax.all._
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.BuildToolAlg
@@ -33,9 +33,9 @@ import org.scalasteward.core.vcs.data.BuildRoot
 import org.typelevel.log4cats.Logger
 
 trait SbtAlg[F[_]] extends BuildToolAlg[F] {
-  def addGlobalPluginTemporarily[A](plugin: FileData)(fa: F[A]): F[A]
+  def addGlobalPluginTemporarily(plugin: FileData): Resource[F, Unit]
 
-  def addGlobalPlugins[A](fa: F[A]): F[A]
+  def addGlobalPlugins: Resource[F, Unit]
 
   def getSbtVersion(buildRoot: BuildRoot): F[Option[SbtVersion]]
 
@@ -53,19 +53,16 @@ object SbtAlg {
       F: Concurrent[F]
   ): SbtAlg[F] =
     new SbtAlg[F] {
-      override def addGlobalPluginTemporarily[A](plugin: FileData)(fa: F[A]): F[A] =
-        sbtDir.flatMap { dir =>
-          val plugins = "plugins"
-          fileAlg.createTemporarily(dir / "0.13" / plugins / plugin.name, plugin.content) {
-            fileAlg.createTemporarily(dir / "1.0" / plugins / plugin.name, plugin.content) {
-              fa
-            }
+      override def addGlobalPluginTemporarily(plugin: FileData): Resource[F, Unit] =
+        Resource.eval(sbtDir).flatMap { dir =>
+          List("0.13", "1.0").traverse_ { v =>
+            fileAlg.createTemporarily(dir / v / "plugins" / plugin.name, plugin.content)
           }
         }
 
-      override def addGlobalPlugins[A](fa: F[A]): F[A] =
-        logger.info("Add global sbt plugins") >>
-          stewardPlugin.flatMap(addGlobalPluginTemporarily(_)(fa))
+      override def addGlobalPlugins: Resource[F, Unit] =
+        Resource.eval(logger.info("Add global sbt plugins")) >>
+          Resource.eval(stewardPlugin).flatMap(addGlobalPluginTemporarily)
 
       override def containsBuild(buildRoot: BuildRoot): F[Boolean] =
         workspaceAlg
@@ -95,15 +92,15 @@ object SbtAlg {
         }
 
       private def runSourcesMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
-        addGlobalPluginTemporarily(scalaStewardScalafixSbt) {
+        addGlobalPluginTemporarily(scalaStewardScalafixSbt).surround {
           workspaceAlg.buildRootDir(buildRoot).flatMap { buildRootDir =>
             val withScalacOptions =
-              migration.scalacOptions.fold[F[Unit] => F[Unit]](identity) { opts =>
+              migration.scalacOptions.fold(Resource.unit[F]) { opts =>
                 val file = scalaStewardScalafixOptions(opts.toList)
-                fileAlg.createTemporarily(buildRootDir / file.name, file.content)(_)
+                fileAlg.createTemporarily(buildRootDir / file.name, file.content)
               }
             val scalafixCmds = migration.rewriteRules.map(rule => s"$scalafixAll $rule").toList
-            withScalacOptions(sbt(Nel(scalafixEnable, scalafixCmds), buildRootDir).void)
+            withScalacOptions.surround(sbt(Nel(scalafixEnable, scalafixCmds), buildRootDir).void)
           }
         }
 
@@ -124,7 +121,7 @@ object SbtAlg {
         fileAlg.home.map(_ / ".sbt")
 
       def sbt(sbtCommands: Nel[String], repoDir: File): F[List[String]] =
-        maybeIgnoreOptsFiles(repoDir) {
+        maybeIgnoreOptsFiles(repoDir).surround {
           val command =
             Nel.of(
               "sbt",
@@ -136,15 +133,11 @@ object SbtAlg {
           processAlg.execSandboxed(command, repoDir)
         }
 
-      def maybeIgnoreOptsFiles[A](dir: File)(fa: F[A]): F[A] =
-        if (config.ignoreOptsFiles) ignoreOptsFiles(dir)(fa) else fa
+      def maybeIgnoreOptsFiles[A](dir: File): Resource[F, Unit] =
+        if (config.ignoreOptsFiles) ignoreOptsFiles(dir) else Resource.unit[F]
 
-      def ignoreOptsFiles[A](dir: File)(fa: F[A]): F[A] =
-        fileAlg.removeTemporarily(dir / ".jvmopts") {
-          fileAlg.removeTemporarily(dir / ".sbtopts") {
-            fa
-          }
-        }
+      def ignoreOptsFiles(dir: File): Resource[F, Unit] =
+        List(".jvmopts", ".sbtopts").traverse_(file => fileAlg.removeTemporarily(dir / file))
 
       def getAdditionalDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
         getSbtDependency(buildRoot)

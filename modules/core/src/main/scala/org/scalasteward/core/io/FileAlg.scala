@@ -17,9 +17,9 @@
 package org.scalasteward.core.io
 
 import better.files.File
-import cats.effect.{Concurrent, MonadCancel, Resource, Sync}
+import cats.effect.{Concurrent, Resource, Sync}
 import cats.syntax.all._
-import cats.{MonadThrow, Traverse}
+import cats.{ApplicativeError, MonadThrow, Traverse}
 import fs2.Stream
 import org.apache.commons.io.FileUtils
 import org.http4s.Uri
@@ -38,7 +38,7 @@ trait FileAlg[F[_]] {
 
   def isRegularFile(file: File): F[Boolean]
 
-  def removeTemporarily[A](file: File)(fa: F[A]): F[A]
+  def removeTemporarily(file: File): Resource[F, Unit]
 
   def readFile(file: File): F[Option[String]]
 
@@ -50,12 +50,12 @@ trait FileAlg[F[_]] {
 
   def writeFile(file: File, content: String): F[Unit]
 
-  final def createTemporarily[A, E](file: File, content: String)(
-      fa: F[A]
-  )(implicit F: MonadCancel[F, E]): F[A] = {
+  final def createTemporarily[E](file: File, content: String)(implicit
+      F: ApplicativeError[F, E]
+  ): Resource[F, Unit] = {
     val delete = deleteForce(file)
     val create = writeFile(file, content).onError(_ => delete)
-    F.bracket(create)(_ => fa)(_ => delete)
+    Resource.make(create)(_ => delete)
   }
 
   final def editFile(file: File, edit: String => Option[String])(implicit
@@ -111,16 +111,16 @@ object FileAlg {
       override def isRegularFile(file: File): F[Boolean] =
         F.blocking(file.isRegularFile(File.LinkOptions.noFollow))
 
-      override def removeTemporarily[A](file: File)(fa: F[A]): F[A] =
-        F.bracket {
+      override def removeTemporarily(file: File): Resource[F, Unit] =
+        Resource.make {
           F.blocking {
             val copyOptions = File.CopyOptions(overwrite = true)
             if (file.exists) Some(file.moveTo(File.newTemporaryFile())(copyOptions)) else None
           }
-        }(_ => fa) {
+        } {
           case Some(tmpFile) => F.blocking(tmpFile.moveTo(file)).void
           case None          => F.unit
-        }
+        }.void
 
       override def readFile(file: File): F[Option[String]] =
         F.blocking(if (file.exists) Some(file.contentAsString) else None)

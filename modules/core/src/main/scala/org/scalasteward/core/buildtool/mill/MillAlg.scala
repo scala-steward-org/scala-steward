@@ -58,7 +58,7 @@ object MillAlg {
         for {
           buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
           predef = buildRootDir / "scala-steward.sc"
-          extracted <- fileAlg.createTemporarily(predef, content) {
+          extracted <- fileAlg.createTemporarily(predef, content).surround {
             val command = Nel("mill", List("-i", "-p", predef.toString, "show", extractDeps))
             processAlg.execSandboxed(command, buildRootDir)
           }
