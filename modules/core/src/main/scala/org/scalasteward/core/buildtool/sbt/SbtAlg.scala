@@ -55,8 +55,8 @@ object SbtAlg {
     new SbtAlg[F] {
       override def addGlobalPluginTemporarily(plugin: FileData): Resource[F, Unit] =
         Resource.eval(sbtDir).flatMap { dir =>
-          List("0.13", "1.0").traverse_ { v =>
-            fileAlg.createTemporarily(dir / v / "plugins" / plugin.name, plugin.content)
+          List("0.13", "1.0").traverse_ { version =>
+            fileAlg.createTemporarily(dir / version / "plugins" / plugin.name, plugin.content)
           }
         }
 
