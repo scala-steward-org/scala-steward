@@ -95,7 +95,7 @@ final class StewardAlg[F[_]](config: Config)(implicit
       for {
         _ <- selfCheckAlg.checkAll
         _ <- workspaceAlg.cleanWorkspace
-        exitCode <- sbtAlg.addGlobalPlugins {
+        exitCode <- sbtAlg.addGlobalPlugins.surround {
           (config.githubApp.map(getGitHubAppRepos).getOrElse(Stream.empty) ++
             readRepos(config.reposFile))
             .evalMap(steward)

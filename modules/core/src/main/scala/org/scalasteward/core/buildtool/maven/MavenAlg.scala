@@ -17,7 +17,7 @@
 package org.scalasteward.core.buildtool.maven
 
 import better.files.File
-import cats.Monad
+import cats.effect.{MonadCancelThrow, Resource}
 import cats.syntax.all._
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.BuildToolAlg
@@ -34,7 +34,7 @@ object MavenAlg {
       fileAlg: FileAlg[F],
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F],
-      F: Monad[F]
+      F: MonadCancelThrow[F]
   ): MavenAlg[F] =
     new MavenAlg[F] {
       override def containsBuild(buildRoot: BuildRoot): F[Boolean] =
@@ -61,15 +61,15 @@ object MavenAlg {
         F.unit
 
       def exec(command: Nel[String], repoDir: File): F[List[String]] =
-        maybeIgnoreOptsFiles(repoDir)(processAlg.execSandboxed(command, repoDir))
+        maybeIgnoreOptsFiles(repoDir).surround(processAlg.execSandboxed(command, repoDir))
 
       def mvnCmd(commands: String*): Nel[String] =
         Nel("mvn", "--batch-mode" :: commands.toList)
 
-      def maybeIgnoreOptsFiles[A](dir: File)(fa: F[A]): F[A] =
-        if (config.ignoreOptsFiles) ignoreOptsFiles(dir)(fa) else fa
+      def maybeIgnoreOptsFiles(dir: File): Resource[F, Unit] =
+        if (config.ignoreOptsFiles) ignoreOptsFiles(dir) else Resource.unit[F]
 
-      def ignoreOptsFiles[A](dir: File)(fa: F[A]): F[A] =
-        fileAlg.removeTemporarily(dir / ".jvmopts")(fa)
+      def ignoreOptsFiles(dir: File): Resource[F, Unit] =
+        fileAlg.removeTemporarily(dir / ".jvmopts")
     }
 }

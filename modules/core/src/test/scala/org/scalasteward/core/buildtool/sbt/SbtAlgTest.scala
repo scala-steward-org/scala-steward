@@ -15,8 +15,8 @@ import org.scalasteward.core.vcs.data.{BuildRoot, Repo}
 
 class SbtAlgTest extends FunSuite {
   test("addGlobalPlugins") {
-    val obtained = sbtAlg
-      .addGlobalPlugins(Kleisli(_.update(_.exec(List("fa")))))
+    val obtained = sbtAlg.addGlobalPlugins
+      .surround(Kleisli(_.update(_.exec(List("fa")))))
       .runS(MockState.empty)
       .unsafeRunSync()
     val expected = MockState.empty.copy(
