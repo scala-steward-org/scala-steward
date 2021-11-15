@@ -133,5 +133,10 @@ final case class UnexpectedResponse(
 ) extends RuntimeException
     with NoStackTrace {
   override def getMessage: String =
-    s"uri: $uri\nmethod: $method\nstatus: $status\nheaders: $headers\nbody: $body"
+    s"""|uri: $uri
+        |method: $method
+        |status: $status
+        |headers:
+        |${headers.headers.map(h => s"  ${h.show}").mkString("\n")}
+        |body: $body""".stripMargin
 }
