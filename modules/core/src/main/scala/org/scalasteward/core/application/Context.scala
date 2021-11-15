@@ -147,9 +147,9 @@ object Context {
       implicit val versionsCache: VersionsCache[F] =
         new VersionsCache[F](config.cacheTtl, versionsStore)
       implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]
-      implicit val mavenAlg: MavenAlg[F] = MavenAlg.create[F](config)
-      implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F](config)
-      implicit val millAlg: MillAlg[F] = MillAlg.create[F]
+      implicit val mavenAlg: MavenAlg[F] = new MavenAlg[F](config)
+      implicit val sbtAlg: SbtAlg[F] = new SbtAlg[F](config)
+      implicit val millAlg: MillAlg[F] = new MillAlg[F]
       implicit val buildToolDispatcher: BuildToolDispatcher[F] = new BuildToolDispatcher[F]
       implicit val refreshErrorAlg: RefreshErrorAlg[F] =
         new RefreshErrorAlg[F](refreshErrorStore, config.refreshBackoffPeriod)

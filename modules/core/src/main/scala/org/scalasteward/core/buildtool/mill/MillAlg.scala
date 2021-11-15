@@ -20,14 +20,52 @@ import better.files.File
 import cats.effect.MonadCancelThrow
 import cats.syntax.all._
 import org.scalasteward.core.buildtool.BuildToolAlg
-import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId, Resolver, Scope, Update}
+import org.scalasteward.core.buildtool.mill.MillAlg._
 import org.scalasteward.core.data.Scope.Dependencies
+import org.scalasteward.core.data._
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.BuildRoot
 
-trait MillAlg[F[_]] extends BuildToolAlg[F]
+final class MillAlg[F[_]](implicit
+    fileAlg: FileAlg[F],
+    processAlg: ProcessAlg[F],
+    workspaceAlg: WorkspaceAlg[F],
+    F: MonadCancelThrow[F]
+) extends BuildToolAlg[F] {
+  override def containsBuild(buildRoot: BuildRoot): F[Boolean] =
+    workspaceAlg
+      .buildRootDir(buildRoot)
+      .flatMap(buildRootDir => fileAlg.isRegularFile(buildRootDir / "build.sc"))
+
+  override def getDependencies(buildRoot: BuildRoot): F[List[Dependencies]] =
+    for {
+      buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
+      predef = buildRootDir / "scala-steward.sc"
+      extracted <- fileAlg.createTemporarily(predef, content).surround {
+        val command = Nel("mill", List("-i", "-p", predef.toString, "show", extractDeps))
+        processAlg.execSandboxed(command, buildRootDir)
+      }
+      parsed <- F.fromEither(
+        parser.parseModules(extracted.dropWhile(!_.startsWith("{")).mkString("\n"))
+      )
+      dependencies = parsed.map(module => Scope(module.dependencies, module.repositories))
+      millBuildVersion <- getMillVersion(buildRootDir)
+      millBuildDeps = millBuildVersion.toSeq.map(version =>
+        Scope(List(millMainArtifact(version)), List(millMainResolver))
+      )
+    } yield dependencies ++ millBuildDeps
+
+  override def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
+    F.unit
+
+  private def getMillVersion(buildRootDir: File): F[Option[String]] =
+    for {
+      millVersionFileContent <- fileAlg.readFile(buildRootDir / ".mill-version")
+      version = millVersionFileContent.flatMap(parser.parseMillVersion)
+    } yield version
+}
 
 object MillAlg {
   private val content =
@@ -42,50 +80,9 @@ object MillAlg {
   val extractDeps: String =
     s"${org.scalasteward.core.BuildInfo.millPluginModuleRootPkg}.StewardPlugin/extractDeps"
 
-  def create[F[_]](implicit
-      fileAlg: FileAlg[F],
-      processAlg: ProcessAlg[F],
-      workspaceAlg: WorkspaceAlg[F],
-      F: MonadCancelThrow[F]
-  ): MillAlg[F] =
-    new MillAlg[F] {
-      override def containsBuild(buildRoot: BuildRoot): F[Boolean] =
-        workspaceAlg
-          .buildRootDir(buildRoot)
-          .flatMap(buildRootDir => fileAlg.isRegularFile(buildRootDir / "build.sc"))
-
-      override def getDependencies(buildRoot: BuildRoot): F[List[Dependencies]] =
-        for {
-          buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
-          predef = buildRootDir / "scala-steward.sc"
-          extracted <- fileAlg.createTemporarily(predef, content).surround {
-            val command = Nel("mill", List("-i", "-p", predef.toString, "show", extractDeps))
-            processAlg.execSandboxed(command, buildRootDir)
-          }
-          parsed <- F.fromEither(
-            parser.parseModules(extracted.dropWhile(!_.startsWith("{")).mkString("\n"))
-          )
-          dependencies = parsed.map(module => Scope(module.dependencies, module.repositories))
-          millBuildVersion <- getMillVersion(buildRootDir)
-          millBuildDeps = millBuildVersion.toSeq.map(version =>
-            Scope(List(millMainArtifact(version)), List(millMainResolver))
-          )
-        } yield dependencies ++ millBuildDeps
-
-      override def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
-        F.unit
-
-      def getMillVersion(buildRootDir: File): F[Option[String]] =
-        for {
-          millVersionFileContent <- fileAlg.readFile(buildRootDir / ".mill-version")
-          version = millVersionFileContent.flatMap(parser.parseMillVersion)
-        } yield version
-
-    }
-
-  private[this] val millMainResolver: Resolver = Resolver.mavenCentral
-  private[this] val millMainGroupId = GroupId("com.lihaoyi")
-  private[this] val millMainArtifactId = ArtifactId("mill-main", "mill-main_2.13")
+  private val millMainResolver: Resolver = Resolver.mavenCentral
+  private val millMainGroupId = GroupId("com.lihaoyi")
+  private val millMainArtifactId = ArtifactId("mill-main", "mill-main_2.13")
 
   private def millMainArtifact(version: String): Dependency =
     Dependency(millMainGroupId, millMainArtifactId, version)
@@ -94,5 +91,4 @@ object MillAlg {
     update.groupId === millMainGroupId && update.artifactIds.exists(
       _.name === millMainArtifactId.name
     )
-
 }
