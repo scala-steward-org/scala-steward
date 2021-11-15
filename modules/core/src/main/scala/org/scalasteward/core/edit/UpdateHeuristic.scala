@@ -23,7 +23,6 @@ import org.scalasteward.core.data.Update
 import org.scalasteward.core.scalafmt.isScalafmtUpdate
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
-
 import scala.util.matching.Regex
 
 /** `UpdateHeuristic` is a wrapper for a function that takes an `Update` and
