@@ -8,7 +8,7 @@ sbt stage
 ./modules/core/.jvm/target/universal/stage/bin/scala-steward \
   --workspace  "$STEWARD_DIR/workspace" \
   --repos-file "$STEWARD_DIR/repos.md" \
-  --default-repo-conf "$STEWARD_DIR/default.scala-steward.conf" \
+  --repo-config "$STEWARD_DIR/default.scala-steward.conf" \
   --git-author-email ${EMAIL} \
   --vcs-api-host "https://api.github.com" \
   --vcs-login ${LOGIN} \
@@ -25,7 +25,7 @@ sbt docker:publishLocal
 docker run -v $STEWARD_DIR:/opt/scala-steward -it fthomas/scala-steward:latest \
   --workspace  "/opt/scala-steward/workspace" \
   --repos-file "/opt/scala-steward/repos.md" \
-  --default-repo-conf "/opt/scala-steward/default.scala-steward.conf" \
+  --repo-config "/opt/scala-steward/default.scala-steward.conf" \
   --git-author-email ${EMAIL} \
   --vcs-api-host "https://api.github.com" \
   --vcs-login ${LOGIN} \
@@ -90,7 +90,7 @@ example1.realm=Example Realm
 ```
 sbt
 project core
-run --do-not-fork --workspace "/path/workspace" --repos-file "/path/repos.md" --default-repo-conf "/path/default.scala-steward.conf" --git-ask-pass "/path/pass.sh" --git-author-email "email@example.org" --vcs-type "gitlab" --vcs-api-host "https://gitlab.com/api/v4/" --vcs-login "gitlab.steward"
+run --do-not-fork --workspace "/path/workspace" --repos-file "/path/repos.md" --repo-config "/path/default.scala-steward.conf" --git-ask-pass "/path/pass.sh" --git-author-email "email@example.org" --vcs-type "gitlab" --vcs-api-host "https://gitlab.com/api/v4/" --vcs-login "gitlab.steward"
 ```
 
 
@@ -112,7 +112,7 @@ docker run -v $PWD:/opt/scala-steward \
     --do-not-fork \
     --workspace "/opt/scala-steward/workspace" \
     --repos-file "/opt/scala-steward/repos.md" \
-    --default-repo-conf "/opt/scala-steward/default.scala-steward.conf" \
+    --repo-config "/opt/scala-steward/default.scala-steward.conf" \
     --git-ask-pass "/opt/scala-steward/pass.sh" \
     --git-author-email "myemail@company.xyz" \
     --vcs-type "bitbucket" \
@@ -141,7 +141,7 @@ docker run -v $PWD:/opt/scala-steward \
     --do-not-fork \
     --workspace "/opt/scala-steward/workspace" \
     --repos-file "/opt/scala-steward/repos.md" \
-    --default-repo-conf "/opt/scala-steward/default.scala-steward.conf" \
+    --repo-config "/opt/scala-steward/default.scala-steward.conf" \
     --git-ask-pass "/opt/scala-steward/pass.sh" \
     --git-author-email "myemail@company.xyz" \
     --vcs-type "bitbucket" \
@@ -236,7 +236,7 @@ check:
         --process-timeout 30min
         --do-not-fork
         --repos-file "$CI_PROJECT_DIR/repos.md"
-        --default-repo-conf "$CI_PROJECT_DIR/default.scala-steward.conf"
+        --repo-config "$CI_PROJECT_DIR/default.scala-steward.conf"
         --git-author-email "${EMAIL}"
         --vcs-type "gitlab"
         --vcs-api-host "${CI_API_V4_URL}"
