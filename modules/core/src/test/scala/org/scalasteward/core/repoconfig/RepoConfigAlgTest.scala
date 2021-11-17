@@ -57,26 +57,26 @@ class RepoConfigAlgTest extends FunSuite {
           UpdatePattern(
             GroupId("eu.timepit"),
             Some("refined.1"),
-            Some(UpdatePattern.Version(Some("0.8.")))
+            Some(VersionPattern(Some("0.8.")))
           ),
           UpdatePattern(
             GroupId("eu.timepit"),
             Some("refined.2"),
-            Some(UpdatePattern.Version(Some("0.8.")))
+            Some(VersionPattern(Some("0.8.")))
           ),
           UpdatePattern(
             GroupId("eu.timepit"),
             Some("refined.3"),
-            Some(UpdatePattern.Version(suffix = Some("jre")))
+            Some(VersionPattern(suffix = Some("jre")))
           ),
           UpdatePattern(
             GroupId("eu.timepit"),
             Some("refined.4"),
-            Some(UpdatePattern.Version(Some("0.8."), Some("jre")))
+            Some(VersionPattern(Some("0.8."), Some("jre")))
           )
         ),
         ignore = List(
-          UpdatePattern(GroupId("org.acme"), None, Some(UpdatePattern.Version(Some("1.0"))))
+          UpdatePattern(GroupId("org.acme"), None, Some(VersionPattern(Some("1.0"))))
         ),
         limit = Some(NonNegInt.unsafeFrom(4)),
         fileExtensions = Some(List(".txt"))

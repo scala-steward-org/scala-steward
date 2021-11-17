@@ -8,7 +8,7 @@ import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId}
 import org.scalasteward.core.mock.MockContext.context.filterAlg
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.Log
-import org.scalasteward.core.repoconfig.{RepoConfig, UpdatePattern, UpdatesConfig}
+import org.scalasteward.core.repoconfig.{RepoConfig, UpdatePattern, UpdatesConfig, VersionPattern}
 import org.scalasteward.core.update.FilterAlg._
 import org.scalasteward.core.util.Nel
 
@@ -77,7 +77,7 @@ class FilterAlgTest extends FunSuite {
           UpdatePattern(
             GroupId("org.scala-lang"),
             Some("scala-compiler"),
-            Some(UpdatePattern.Version(exact = Some("2.13.8")))
+            Some(VersionPattern(exact = Some("2.13.8")))
           )
         )
       )
@@ -93,11 +93,11 @@ class FilterAlgTest extends FunSuite {
     val config = RepoConfig(
       updates = UpdatesConfig(
         pin = List(
-          UpdatePattern(update1.groupId, None, Some(UpdatePattern.Version(Some("0.17")))),
+          UpdatePattern(update1.groupId, None, Some(VersionPattern(Some("0.17")))),
           UpdatePattern(
             update2.groupId,
             Some("refined"),
-            Some(UpdatePattern.Version(Some("0.8")))
+            Some(VersionPattern(Some("0.8")))
           )
         )
       )
@@ -126,7 +126,7 @@ class FilterAlgTest extends FunSuite {
     val config = RepoConfig(
       updates = UpdatesConfig(
         allow = List(
-          UpdatePattern(GroupId("org.my1"), None, Some(UpdatePattern.Version(Some("0.8")))),
+          UpdatePattern(GroupId("org.my1"), None, Some(VersionPattern(Some("0.8")))),
           UpdatePattern(GroupId("org.my2"), None, None),
           UpdatePattern(GroupId("org.my3"), Some("artifact"), None)
         )
@@ -153,7 +153,7 @@ class FilterAlgTest extends FunSuite {
           UpdatePattern(
             update.groupId,
             Some(update.artifactId.name),
-            Some(UpdatePattern.Version(suffix = Some("jre8")))
+            Some(VersionPattern(suffix = Some("jre8")))
           )
         )
       )
@@ -175,7 +175,7 @@ class FilterAlgTest extends FunSuite {
           UpdatePattern(
             update.groupId,
             Some(update.artifactId.name),
-            Some(UpdatePattern.Version(suffix = Some("jre11")))
+            Some(VersionPattern(suffix = Some("jre11")))
           )
         )
       )
@@ -197,7 +197,7 @@ class FilterAlgTest extends FunSuite {
           UpdatePattern(
             update.groupId,
             Some(update.artifactId.name),
-            Some(UpdatePattern.Version(Some("7.2."), Some("jre8")))
+            Some(VersionPattern(Some("7.2."), Some("jre8")))
           )
         )
       )

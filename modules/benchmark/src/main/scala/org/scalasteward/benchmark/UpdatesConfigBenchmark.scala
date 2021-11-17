@@ -19,7 +19,7 @@ package org.scalasteward.benchmark
 import java.util.concurrent.TimeUnit
 import org.openjdk.jmh.annotations.{Benchmark, BenchmarkMode, Mode, OutputTimeUnit}
 import org.scalasteward.core.data._
-import org.scalasteward.core.repoconfig.{UpdatePattern, UpdatesConfig}
+import org.scalasteward.core.repoconfig.{UpdatePattern, UpdatesConfig, VersionPattern}
 import org.scalasteward.core.util.Nel
 
 @BenchmarkMode(Array(Mode.AverageTime))
@@ -37,7 +37,7 @@ class UpdatesConfigBenchmark {
     UpdatesConfig().keep(update)
     UpdatesConfig(allow = List(UpdatePattern(groupId, None, None))).keep(update)
     UpdatesConfig(allow =
-      List(UpdatePattern(groupId, None, Some(UpdatePattern.Version(prefix = Some("6.0")))))
+      List(UpdatePattern(groupId, None, Some(VersionPattern(prefix = Some("6.0")))))
     ).keep(update)
   }
 }
