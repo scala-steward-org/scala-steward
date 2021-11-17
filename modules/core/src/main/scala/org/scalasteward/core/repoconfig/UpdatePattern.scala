@@ -16,16 +16,15 @@
 
 package org.scalasteward.core.repoconfig
 
-import cats.Eq
-import cats.implicits._
+import cats.syntax.all._
+import io.circe.Codec
 import io.circe.generic.semiauto._
-import io.circe.{Codec, Decoder, Encoder}
 import org.scalasteward.core.data.{GroupId, Update}
 
 final case class UpdatePattern(
     groupId: GroupId,
     artifactId: Option[String],
-    version: Option[UpdatePattern.Version]
+    version: Option[VersionPattern]
 ) {
   def isWholeGroupIdAllowed: Boolean = artifactId.isEmpty && version.isEmpty
 }
@@ -35,17 +34,6 @@ object UpdatePattern {
       byArtifactId: List[UpdatePattern],
       filteredVersions: List[String]
   )
-
-  final case class Version(
-      prefix: Option[String] = None,
-      suffix: Option[String] = None,
-      exact: Option[String] = None
-  ) {
-    def matches(version: String): Boolean =
-      prefix.forall(version.startsWith) &&
-        suffix.forall(version.endsWith) &&
-        exact.forall(_ === version)
-  }
 
   def findMatch(
       patterns: List[UpdatePattern],
@@ -62,13 +50,4 @@ object UpdatePattern {
 
   implicit val updatePatternCodec: Codec[UpdatePattern] =
     deriveCodec
-
-  implicit val updatePatternVersionEq: Eq[Version] =
-    Eq.fromUniversalEquals
-
-  implicit val updatePatternVersionDecoder: Decoder[Version] =
-    deriveDecoder[Version].or(Decoder[String].map(s => Version(prefix = Some(s))))
-
-  implicit val updatePatternVersionEncoder: Encoder[Version] =
-    deriveEncoder
 }

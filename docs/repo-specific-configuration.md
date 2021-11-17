@@ -88,13 +88,17 @@ buildRoots = [ ".", "subfolder/projectA" ]
 
 The version information given in the patterns above can be in two formats:
 1. just a `version` field that is treated as a prefix of the version
-2. a structure consisting of `prefix` and / or `suffix` that are matched against the beginning or the end of the version
+2. a structure consisting of any of the following fields:
+   * `prefix`: is matched against the beginning of the version
+   * `suffix`: is matched against the end of the version
+   * `exact`: is matched against the whole version
 
 ```properties
 version = "1.1."
 version = { prefix = "1.1." }
 version = { suffix = "jre8" }
 version = { prefix = "1.1.", suffix = "jre8" }
+version = { exact = "1.1.2.jre8" }
 ```
 
 ## Ignore lines

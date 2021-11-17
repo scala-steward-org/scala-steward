@@ -130,7 +130,7 @@ object TestInstances {
       artifactId <- Arbitrary.arbitrary[Option[String]]
       version <- Arbitrary
         .arbitrary[Option[String]]
-        .map(_.map(prefix => UpdatePattern.Version(prefix = Some(prefix))))
+        .map(_.map(prefix => VersionPattern(prefix = Some(prefix))))
     } yield UpdatePattern(groupId = groupId, artifactId = artifactId, version = version))
 
   private def smallListOf[A](maxSize: Int, genA: Gen[A]): Gen[List[A]] =
