@@ -1,6 +1,7 @@
 package org.scalasteward.core.update
 
 import cats.effect.unsafe.implicits.global
+import cats.syntax.all._
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.Update.Single
@@ -8,7 +9,7 @@ import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId}
 import org.scalasteward.core.mock.MockContext.context.filterAlg
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.Log
-import org.scalasteward.core.repoconfig.{RepoConfig, UpdatePattern, UpdatesConfig, VersionPattern}
+import org.scalasteward.core.repoconfig._
 import org.scalasteward.core.update.FilterAlg._
 import org.scalasteward.core.util.Nel
 
@@ -204,6 +205,15 @@ class FilterAlgTest extends FunSuite {
     )
 
     assertEquals(localFilter(update, config), Left(VersionPinnedByConfig(update)))
+  }
+
+  test("ignore version with 'contains' matcher") {
+    val update = Single("sqlserver" % "mssql-jdbc" % "7.2.2", Nel.of("7.3.0.feature.1", "7.3.0"))
+    val repoConfig = RepoConfigAlg.parseRepoConfig(
+      """updates.ignore = [ { groupId = "sqlserver", version = { contains = "feature" } } ]"""
+    )
+    val obtained = repoConfig.flatMap(localFilter(update, _).leftMap(_.show))
+    assertEquals(obtained, Right(update.copy(newerVersions = Nel.of("7.3.0"))))
   }
 
   test("isDependencyConfigurationIgnored: false") {

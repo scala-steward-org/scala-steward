@@ -92,6 +92,7 @@ The version information given in the patterns above can be in two formats:
    * `prefix`: is matched against the beginning of the version
    * `suffix`: is matched against the end of the version
    * `exact`: is matched against the whole version
+   * `contains`: is matched against substrings in the version
 
 ```properties
 version = "1.1."
@@ -99,6 +100,7 @@ version = { prefix = "1.1." }
 version = { suffix = "jre8" }
 version = { prefix = "1.1.", suffix = "jre8" }
 version = { exact = "1.1.2.jre8" }
+version = { contains = "feature" }
 ```
 
 ## Ignore lines
