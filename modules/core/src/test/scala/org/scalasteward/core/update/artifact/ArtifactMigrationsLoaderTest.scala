@@ -90,4 +90,17 @@ class ArtifactMigrationsLoaderTest extends FunSuite {
       .unsafeRunSync()
     assert(migrations.isLeft)
   }
+
+  test("loadAll: check for duplicated entries in 'artifact-migrations.conf'") {
+    def versionLessArtifactChange(ac: ArtifactChange) =
+      (ac.groupIdBefore, ac.groupIdAfter, ac.artifactIdBefore, ac.artifactIdAfter)
+    val migrations = artifactMigrationsLoader
+      .loadAll(ArtifactCfg(Nil, disableDefaults = false))
+      .runA(mockState)
+      .unsafeRunSync()
+    val duplicates = migrations
+      .diff(migrations.distinctBy(versionLessArtifactChange))
+      .distinctBy(versionLessArtifactChange)
+    assert(clue(duplicates).isEmpty)
+  }
 }
