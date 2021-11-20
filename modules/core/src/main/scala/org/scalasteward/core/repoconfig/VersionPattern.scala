@@ -24,12 +24,14 @@ import io.circe.{Decoder, Encoder}
 final case class VersionPattern(
     prefix: Option[String] = None,
     suffix: Option[String] = None,
-    exact: Option[String] = None
+    exact: Option[String] = None,
+    contains: Option[String] = None
 ) {
   def matches(version: String): Boolean =
     prefix.forall(version.startsWith) &&
       suffix.forall(version.endsWith) &&
-      exact.forall(_ === version)
+      exact.forall(_ === version) &&
+      contains.forall(version.contains)
 }
 
 object VersionPattern {
