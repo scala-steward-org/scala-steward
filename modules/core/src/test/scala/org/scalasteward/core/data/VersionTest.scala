@@ -212,6 +212,7 @@ class VersionTest extends DisciplineSuite {
         Some("1.0.0-20201208-143052-2c1b1172")
       ),
       ("0.27.0-RC1", List("0.27.0-bin-20200826-2e58a66-NIGHTLY"), None),
+      ("2.0.16-200-ge888c6dea", List("2.0.16-200-ge888c6dea-14-c067d59f0-SNAPSHOT"), None),
       ("17.0.0.1", List("18-ea+4"), None)
     )
 
