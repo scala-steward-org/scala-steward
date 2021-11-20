@@ -188,7 +188,7 @@ class VersionTest extends DisciplineSuite {
       ("3.1.0", List("3.1.0-2156c0e"), None),
       ("3.1.0-2156c0e", List("3.2.0"), Some("3.2.0")),
       ("1.6.7", List("1.6.7-2-c28002d"), None),
-      ("4.10.2", List("%5BWARNING%5D"), None),
+      ("4.10.2", List("%5BWARNING%5D", ".5", ""), None),
       ("2.1.4-11-307f3d8", List("2.1.4-13-fb16e4e"), Some("2.1.4-13-fb16e4e")),
       ("2.1.4-13-fb16e4e", List("2.2.0", "2.2.0-0-fe5ed67"), Some("2.2.0")),
       ("2.2.0", List("2.2.0-0-fe5ed67", "2.2.0-4-4bd225e"), None),
