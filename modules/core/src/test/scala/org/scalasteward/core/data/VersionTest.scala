@@ -116,6 +116,8 @@ class VersionTest extends DisciplineSuite {
 
   test("equal") {
     assertEquals(Version("3.0").compare(Version("3.0.+")), 0)
+    val empty: Component = Component.Empty
+    assertEquals(empty.compare(empty), 0)
   }
 
   test("selectNext, table 1") {
