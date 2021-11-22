@@ -53,9 +53,9 @@ final case class Version(value: String) {
           // Do not select pre-releases of the same series if this is not a pre-release.
           (v.isPreRelease && !isPreRelease && sameSeries) ||
           // Do not select versions with pre-release identifiers whose order is smaller
-          // than the order of pre-release identifiers in this version. This, for example,
-          // prevents updates from 2.1.4.0-RC17 to 2.1.4.0-RC17+1-307f2f6c-SNAPSHOT.
-          ((minAlphaOrder < 0) && (v.minAlphaOrder < minAlphaOrder)) ||
+          // than the order of possible pre-release identifiers in this version. This,
+          // for example, prevents updates from 2.1.4.0-RC17 to 2.1.4.0-RC17+1-307f2f6c-SNAPSHOT.
+          v.minAlphaOrder < minAlphaOrder ||
           // Do not select versions that are identical up to the hashes.
           v.alnumComponents === alnumComponents ||
           // Do not select a version with hash if this version contains no hash.
