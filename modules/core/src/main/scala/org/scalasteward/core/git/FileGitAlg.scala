@@ -68,6 +68,9 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
     git("rev-parse", "--abbrev-ref", Branch.head.name)(repo)
       .map(lines => Branch(lines.mkString.trim))
 
+  override def deleteLocalBranch(repo: File, branch: Branch): F[Unit] =
+    git("branch", "--delete", "--force", branch.name)(repo).void
+
   override def deleteRemoteBranch(repo: File, branch: Branch): F[Unit] =
     git("push", "origin", "--delete", branch.name)(repo).void
 
