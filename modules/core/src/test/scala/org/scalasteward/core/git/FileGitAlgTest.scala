@@ -34,7 +34,10 @@ class FileGitAlgTest extends CatsEffectSuite {
       _ <- ioGitAlg.createBranch(repo, foo)
       b1 <- ioGitAlg.branchExists(repo, foo)
       b2 <- ioGitAlg.branchExists(repo, bar)
-      _ = assertEquals((b1, b2), (true, false))
+      _ <- ioGitAlg.checkoutBranch(repo, master)
+      _ <- ioGitAlg.deleteLocalBranch(repo, foo)
+      b3 <- ioGitAlg.branchExists(repo, foo)
+      _ = assertEquals((b1, b2, b3), (true, false, false))
     } yield ()
   }
 
