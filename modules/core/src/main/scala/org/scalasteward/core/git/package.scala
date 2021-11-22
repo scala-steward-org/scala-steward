@@ -25,9 +25,11 @@ import org.scalasteward.core.vcs.data.Repo
 package object git {
   type GitAlg[F[_]] = GenGitAlg[F, Repo]
 
+  val updateBranchPrefix = "update"
+
   def branchFor(update: Update, baseBranch: Option[Branch]): Branch = {
     val base = baseBranch.fold("")(branch => s"${branch.name}/")
-    Branch(s"update/$base${update.name}-${update.nextVersion}")
+    Branch(s"$updateBranchPrefix/$base${update.name}-${update.nextVersion}")
   }
 
   def commitMsgFor(

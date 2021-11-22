@@ -21,7 +21,7 @@ import cats.syntax.all._
 import org.http4s.Uri
 import org.http4s.Uri.UserInfo
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.git.GitAlg
+import org.scalasteward.core.git.{updateBranchPrefix, Branch, GitAlg}
 import org.scalasteward.core.util
 import org.scalasteward.core.util.logger._
 import org.scalasteward.core.vcs.VCSType.GitHub
@@ -58,8 +58,19 @@ final class VCSRepoAlg[F[_]](config: Config)(implicit
   private def syncFork(repo: Repo, repoOut: RepoOut): F[Unit] =
     repoOut.parentOrRaise[F].flatMap { parent =>
       logger.info(s"Synchronize with ${parent.repo.show}") >>
-        gitAlg.syncFork(repo, withLogin(parent.clone_url), parent.default_branch)
+        gitAlg.syncFork(repo, withLogin(parent.clone_url), parent.default_branch) >>
+        deleteUpdateBranch(repo)
     }
+
+  // We use "update" as prefix for our branches but Git doesn't allow branches named
+  // "update" and "update/..." in the same repo. We therefore delete the "update" branch
+  // in our fork if it exists.
+  private def deleteUpdateBranch(repo: Repo): F[Unit] = {
+    val local = Branch(updateBranchPrefix)
+    val remote = local.withPrefix("origin/")
+    gitAlg.branchExists(repo, local).ifM(gitAlg.deleteLocalBranch(repo, local), F.unit) >>
+      gitAlg.branchExists(repo, remote).ifM(gitAlg.deleteRemoteBranch(repo, remote), F.unit)
+  }
 
   private def initSubmodules(repo: Repo): F[Unit] =
     logger.attemptWarn.log_("Initializing and cloning submodules failed") {

@@ -45,6 +45,8 @@ class VCSRepoAlgTest extends CatsEffectSuite {
         Cmd(gitCmd(repoDir), "checkout", "-B", "main", "--track", "upstream/main"),
         Cmd(gitCmd(repoDir), "merge", "upstream/main"),
         Cmd(gitCmd(repoDir), "push", "--force", "--set-upstream", "origin", "main"),
+        Cmd(gitCmd(repoDir), "branch", "--list", "--no-color", "--all", "update"),
+        Cmd(gitCmd(repoDir), "branch", "--list", "--no-color", "--all", "origin/update"),
         Cmd(gitCmd(repoDir), "submodule", "update", "--init", "--recursive")
       )
     )
