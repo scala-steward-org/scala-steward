@@ -116,6 +116,8 @@ class VersionTest extends DisciplineSuite {
 
   test("equal") {
     assertEquals(Version("3.0").compare(Version("3.0.+")), 0)
+    val empty: Component = Component.Empty
+    assertEquals(empty.compare(empty), 0)
   }
 
   test("selectNext, table 1") {
@@ -188,7 +190,7 @@ class VersionTest extends DisciplineSuite {
       ("3.1.0", List("3.1.0-2156c0e"), None),
       ("3.1.0-2156c0e", List("3.2.0"), Some("3.2.0")),
       ("1.6.7", List("1.6.7-2-c28002d"), None),
-      ("4.10.2", List("%5BWARNING%5D"), None),
+      ("4.10.2", List("%5BWARNING%5D", ".5", ""), None),
       ("2.1.4-11-307f3d8", List("2.1.4-13-fb16e4e"), Some("2.1.4-13-fb16e4e")),
       ("2.1.4-13-fb16e4e", List("2.2.0", "2.2.0-0-fe5ed67"), Some("2.2.0")),
       ("2.2.0", List("2.2.0-0-fe5ed67", "2.2.0-4-4bd225e"), None),
@@ -213,7 +215,8 @@ class VersionTest extends DisciplineSuite {
       ),
       ("0.27.0-RC1", List("0.27.0-bin-20200826-2e58a66-NIGHTLY"), None),
       ("2.0.16-200-ge888c6dea", List("2.0.16-200-ge888c6dea-14-c067d59f0-SNAPSHOT"), None),
-      ("17.0.0.1", List("18-ea+4"), None)
+      ("17.0.0.1", List("18-ea+4"), None),
+      ("", List("", ".", "1", "a"), Some("1"))
     )
 
     val rnd = new Random()
