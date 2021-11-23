@@ -38,7 +38,7 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
     git("branch", "--list", "--no-color", "--all", branch.name)(repo).map(_.mkString.trim.nonEmpty)
 
   override def branchesDiffer(repo: File, b1: Branch, b2: Branch): F[Boolean] =
-    git("diff", "--name-only", b1.name, b2.name)(repo).map(_.nonEmpty)
+    git("diff", "--name-only", b1.name, b2.name, "--")(repo).map(_.nonEmpty)
 
   override def checkoutBranch(repo: File, branch: Branch): F[Unit] =
     git("checkout", branch.name)(repo).void
