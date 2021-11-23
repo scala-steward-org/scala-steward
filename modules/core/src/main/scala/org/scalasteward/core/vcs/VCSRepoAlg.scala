@@ -69,7 +69,7 @@ final class VCSRepoAlg[F[_]](config: Config)(implicit
     val local = Branch(updateBranchPrefix)
     val remote = local.withPrefix("origin/")
     gitAlg.branchExists(repo, local).ifM(gitAlg.deleteLocalBranch(repo, local), F.unit) >>
-      gitAlg.branchExists(repo, remote).ifM(gitAlg.deleteRemoteBranch(repo, remote), F.unit)
+      gitAlg.branchExists(repo, remote).ifM(gitAlg.deleteRemoteBranch(repo, local), F.unit)
   }
 
   private def initSubmodules(repo: Repo): F[Unit] =
