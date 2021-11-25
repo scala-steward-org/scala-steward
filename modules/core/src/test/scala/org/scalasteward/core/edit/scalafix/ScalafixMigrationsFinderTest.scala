@@ -2,13 +2,13 @@ package org.scalasteward.core.edit.scalafix
 
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.{GroupId, Update, Version}
+import org.scalasteward.core.data.{GroupId, Version}
 import org.scalasteward.core.mock.MockContext.context.scalafixMigrationsFinder
 import org.scalasteward.core.util.Nel
 
 class ScalafixMigrationsFinderTest extends FunSuite {
   test("findMigrations") {
-    val update = Update.Single("org.typelevel" % "cats-core" % "2.1.0", Nel.of("2.2.0"))
+    val update = ("org.typelevel".g % "cats-core".a % "2.1.0" %> "2.2.0").single
     val migrations = scalafixMigrationsFinder.findMigrations(update)
     val expected = (
       List(

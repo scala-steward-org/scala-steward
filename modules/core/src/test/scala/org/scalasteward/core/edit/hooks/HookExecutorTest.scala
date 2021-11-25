@@ -3,7 +3,7 @@ package org.scalasteward.core.edit.hooks
 import munit.CatsEffectSuite
 import org.scalasteward.core.TestInstances.dummyRepoCache
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.{RepoData, Update}
+import org.scalasteward.core.data.RepoData
 import org.scalasteward.core.git.FileGitAlg
 import org.scalasteward.core.mock.MockConfig.gitCmd
 import org.scalasteward.core.mock.MockContext.context.{hookExecutor, workspaceAlg}
@@ -12,7 +12,6 @@ import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.repoconfig.{RepoConfig, ScalafmtConfig}
 import org.scalasteward.core.scalafmt.ScalafmtAlg.opts
 import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtBinary, scalafmtGroupId}
-import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
 class HookExecutorTest extends CatsEffectSuite {
@@ -21,14 +20,13 @@ class HookExecutorTest extends CatsEffectSuite {
   private val repoDir = workspaceAlg.repoDir(repo).runA(MockState.empty).unsafeRunSync()
 
   test("no hook") {
-    val update = Update.Single("org.typelevel" % "cats-core" % "1.2.0", Nel.of("1.3.0"))
+    val update = ("org.typelevel".g % "cats-core".a % "1.2.0" %> "1.3.0").single
     val state = hookExecutor.execPostUpdateHooks(data, update).runS(MockState.empty)
     state.map(assertEquals(_, MockState.empty))
   }
 
   test("scalafmt: enabled by config") {
-    val update =
-      Update.Single(scalafmtGroupId.value % scalafmtArtifactId % "2.7.4", Nel.of("2.7.5"))
+    val update = (scalafmtGroupId % scalafmtArtifactId % "2.7.4" %> "2.7.5").single
     val initial = MockState.empty.copy(commandOutputs =
       Map(
         FileGitAlg.gitCmd.toList ++
@@ -70,15 +68,14 @@ class HookExecutorTest extends CatsEffectSuite {
     val repoConfig =
       RepoConfig.empty.copy(scalafmt = ScalafmtConfig(runAfterUpgrading = Some(false)))
     val data = RepoData(repo, dummyRepoCache, repoConfig)
-    val update =
-      Update.Single(scalafmtGroupId.value % scalafmtArtifactId % "2.7.4", Nel.of("2.7.5"))
+    val update = (scalafmtGroupId % scalafmtArtifactId % "2.7.4" %> "2.7.5").single
     val state = hookExecutor.execPostUpdateHooks(data, update).runS(MockState.empty)
 
     state.map(assertEquals(_, MockState.empty))
   }
 
   test("sbt-github-actions") {
-    val update = Update.Single("com.codecommit" % "sbt-github-actions" % "0.9.4", Nel.of("0.9.5"))
+    val update = ("com.codecommit".g % "sbt-github-actions".a % "0.9.4" %> "0.9.5").single
     val state = hookExecutor.execPostUpdateHooks(data, update).runS(MockState.empty)
 
     val expected = MockState.empty.copy(
