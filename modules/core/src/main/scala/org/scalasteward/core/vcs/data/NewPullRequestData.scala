@@ -23,11 +23,10 @@ import org.http4s.Uri
 import org.scalasteward.core.data._
 import org.scalasteward.core.edit.EditAttempt
 import org.scalasteward.core.edit.EditAttempt.ScalafixEdit
-import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.git
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.repoconfig.RepoConfigAlg
-import org.scalasteward.core.util.Details
+import org.scalasteward.core.util.{Details, Nel}
 
 final case class UpdateState(
     state: PullRequestState
@@ -56,7 +55,7 @@ object NewPullRequestData {
       filesWithOldVersion: List[String]
   ): String = {
     val artifacts = artifactsWithOptionalUrl(update, artifactIdToUrl)
-    val migrations = edits.collect { case ScalafixEdit(migration, _, _) => migration }
+    val migrations = edits.collect { case scalafixEdit: ScalafixEdit => scalafixEdit }
     val (migrationLabel, appliedMigrations) = migrationNote(migrations)
     val (oldVersionLabel, oldVersionDetails) = oldVersionNote(filesWithOldVersion, update)
     val details = appliedMigrations.toList ++
@@ -167,23 +166,31 @@ object NewPullRequestData {
           |""".stripMargin.trim
     )
 
-  def migrationNote(migrations: List[ScalafixMigration]): (Option[String], Option[Details]) =
-    if (migrations.isEmpty) (None, None)
+  def migrationNote(scalafixEdits: List[ScalafixEdit]): (Option[String], Option[Details]) =
+    if (scalafixEdits.isEmpty) (None, None)
     else {
-      val ruleList =
-        migrations.flatMap(_.rewriteRules.toList).map(rule => s"* $rule").mkString("\n")
-      val docList = migrations.flatMap(_.doc).map(uri => s"* $uri").mkString("\n")
-      val docSection =
-        if (docList.isEmpty)
-          ""
-        else
-          s"\n\nDocumentation:\n\n$docList"
+      val body = scalafixEdits
+        .map { scalafixEdit =>
+          val migration = scalafixEdit.migration
+          val listElements =
+            (migration.rewriteRules.map(rule => s"  * $rule").toList ++ migration.doc.map(uri =>
+              s"  * Documentation: $uri"
+            )).mkString("\n")
+          val artifactName = migration.artifactIds match {
+            case Nel(one, Nil) => one
+            case multiple      => multiple.toList.mkString("{", ",", "}")
+          }
+          val name = s"${migration.groupId.value}:${artifactName}:${migration.newVersion.value}"
+          val createdChange = scalafixEdit.maybeCommit.fold(" (created no change)")(_ => "")
+          s"* $name$createdChange\n$listElements"
+        }
+        .mkString("\n")
       (
         Some("scalafix-migrations"),
         Some(
           Details(
-            "Applied Migrations",
-            s"$ruleList$docSection"
+            "Applied Scalafix Migrations",
+            body
           )
         )
       )
