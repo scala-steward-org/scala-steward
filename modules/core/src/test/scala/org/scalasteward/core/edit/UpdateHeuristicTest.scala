@@ -148,8 +148,8 @@ class UpdateHeuristicTest extends FunSuite {
     val original = """ val circe = "0.10.0-M1" """
     val expected = """ val circe = "0.10.0-M2" """
     val update = ("io.circe".g %
-      Nel.of("circe-generic".a, "circe-literal".a, "circe-parser".a, "circe-testing".a)
-      % "0.10.0-M1" %> "0.10.0-M2").group
+      Nel.of("circe-generic".a, "circe-literal".a, "circe-parser".a, "circe-testing".a) %
+      "0.10.0-M1" %> "0.10.0-M2").group
     assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.original.name)
   }
 
@@ -274,8 +274,8 @@ class UpdateHeuristicTest extends FunSuite {
     val original = """val mongoVersion = "3.7.0" """
     val expected = """val mongoVersion = "3.7.1" """
     val update = ("org.mongodb".g %
-      Nel.of("mongodb-driver".a, "mongodb-driver-async".a, "mongodb-driver-core".a)
-      % "3.7.0" %> "3.7.1").group
+      Nel.of("mongodb-driver".a, "mongodb-driver-async".a, "mongodb-driver-core".a) %
+      "3.7.0" %> "3.7.1").group
     assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.sliding.name)
   }
 

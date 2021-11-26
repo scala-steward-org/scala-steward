@@ -7,14 +7,14 @@ import org.scalasteward.core.util.Nel
 class UpdateTest extends FunSuite {
   test("Group.mainArtifactId") {
     val update = ("org.http4s".g %
-      Nel.of("http4s-blaze-server".a, "http4s-circe".a, "http4s-core".a, "http4s-dsl".a) % "0.18.16"
-      %> "0.18.18").group
+      Nel.of("http4s-blaze-server".a, "http4s-circe".a, "http4s-core".a, "http4s-dsl".a) %
+      "0.18.16" %> "0.18.18").group
     assertEquals(update.mainArtifactId, "http4s-core")
   }
 
   test("Group.mainArtifactId: artifactIds contains a common suffix") {
-    val update = ("com.softwaremill.sttp".g % Nel.of("circe".a, "core".a, "monix".a) % "1.3.2"
-      %> "1.3.3").group
+    val update = ("com.softwaremill.sttp".g %
+      Nel.of("circe".a, "core".a, "monix".a) % "1.3.2" %> "1.3.3").group
     assertEquals(update.mainArtifactId, "circe")
   }
 
