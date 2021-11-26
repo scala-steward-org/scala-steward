@@ -14,4 +14,4 @@ addSbtPlugin("org.scalameta" % "sbt-mdoc" % "2.2.24")
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.9.2")
 
 // This is only here so that Scala Steward updates the version in sbt/package.scala too.
-addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.32")
+addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.33")
