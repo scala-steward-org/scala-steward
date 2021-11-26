@@ -5,7 +5,6 @@ import cats.syntax.all._
 import eu.timepit.refined.types.numeric.NonNegInt
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.{GroupId, Update}
 import org.scalasteward.core.mock.MockContext.context.repoConfigAlg
 import org.scalasteward.core.mock.MockState.TraceEntry.Log
 import org.scalasteward.core.mock.{MockConfig, MockState}
@@ -52,32 +51,22 @@ class RepoConfigAlgTest extends FunSuite {
     val expected = RepoConfig(
       pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(7.days))),
       updates = UpdatesConfig(
-        allow = List(UpdatePattern(GroupId("eu.timepit"), None, None)),
+        allow = List(UpdatePattern("eu.timepit".g, None, None)),
         pin = List(
+          UpdatePattern("eu.timepit".g, Some("refined.1"), Some(VersionPattern(Some("0.8.")))),
+          UpdatePattern("eu.timepit".g, Some("refined.2"), Some(VersionPattern(Some("0.8.")))),
           UpdatePattern(
-            GroupId("eu.timepit"),
-            Some("refined.1"),
-            Some(VersionPattern(Some("0.8.")))
-          ),
-          UpdatePattern(
-            GroupId("eu.timepit"),
-            Some("refined.2"),
-            Some(VersionPattern(Some("0.8.")))
-          ),
-          UpdatePattern(
-            GroupId("eu.timepit"),
+            "eu.timepit".g,
             Some("refined.3"),
             Some(VersionPattern(suffix = Some("jre")))
           ),
           UpdatePattern(
-            GroupId("eu.timepit"),
+            "eu.timepit".g,
             Some("refined.4"),
             Some(VersionPattern(Some("0.8."), Some("jre")))
           )
         ),
-        ignore = List(
-          UpdatePattern(GroupId("org.acme"), None, Some(VersionPattern(Some("1.0"))))
-        ),
+        ignore = List(UpdatePattern("org.acme".g, None, Some(VersionPattern(Some("1.0"))))),
         limit = Some(NonNegInt.unsafeFrom(4)),
         fileExtensions = Some(List(".txt"))
       ),
@@ -183,23 +172,22 @@ class RepoConfigAlgTest extends FunSuite {
   }
 
   test("configToIgnoreFurtherUpdates with single update") {
-    val update = Update.Single("a" % "b" % "c", Nel.of("d"))
-    val config = RepoConfigAlg
-      .parseRepoConfig(RepoConfigAlg.configToIgnoreFurtherUpdates(update))
-      .getOrElse(RepoConfig())
-    val expected = RepoConfig(updates =
-      UpdatesConfig(ignore = List(UpdatePattern(GroupId("a"), Some("b"), None)))
-    )
-    assertEquals(config, expected)
-  }
-
-  test("configToIgnoreFurtherUpdates with group update") {
-    val update = Update.Group("a" % Nel.of("b", "e") % "c", Nel.of("d"))
+    val update = ("a".g % "b".a % "c" %> "d").single
     val config = RepoConfigAlg
       .parseRepoConfig(RepoConfigAlg.configToIgnoreFurtherUpdates(update))
       .getOrElse(RepoConfig())
     val expected =
-      RepoConfig(updates = UpdatesConfig(ignore = List(UpdatePattern(GroupId("a"), None, None))))
+      RepoConfig(updates = UpdatesConfig(ignore = List(UpdatePattern("a".g, Some("b"), None))))
+    assertEquals(config, expected)
+  }
+
+  test("configToIgnoreFurtherUpdates with group update") {
+    val update = ("a".g % Nel.of("b".a, "e".a) % "c" %> "d").group
+    val config = RepoConfigAlg
+      .parseRepoConfig(RepoConfigAlg.configToIgnoreFurtherUpdates(update))
+      .getOrElse(RepoConfig())
+    val expected =
+      RepoConfig(updates = UpdatesConfig(ignore = List(UpdatePattern("a".g, None, None))))
     assertEquals(config, expected)
   }
 }

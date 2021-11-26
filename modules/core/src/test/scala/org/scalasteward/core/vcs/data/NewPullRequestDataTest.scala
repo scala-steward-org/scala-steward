@@ -18,7 +18,7 @@ class NewPullRequestDataTest extends FunSuite {
     val data = UpdateData(
       RepoData(Repo("foo", "bar"), dummyRepoCache, RepoConfig.empty),
       Repo("scala-steward", "bar"),
-      Update.Single("ch.qos.logback" % "logback-classic" % "1.2.0", Nel.of("1.2.3")),
+      ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single,
       Branch("master"),
       Sha1(Sha1.HexString.unsafeFrom("d6b6791d2ea11df1d156fe70979ab8c3a5ba3433")),
       Branch("update/logback-classic-1.2.3")
@@ -40,9 +40,7 @@ class NewPullRequestDataTest extends FunSuite {
 
   test("fromTo") {
     assertEquals(
-      NewPullRequestData.fromTo(
-        Update.Single("com.example" % "foo" % "1.2.0", Nel.of("1.2.3"))
-      ),
+      NewPullRequestData.fromTo(("com.example".g % "foo".a % "1.2.0" %> "1.2.3").single),
       "from 1.2.0 to 1.2.3"
     )
   }
@@ -80,14 +78,14 @@ class NewPullRequestDataTest extends FunSuite {
   test("showing artifacts with URL in Markdown format") {
     assertEquals(
       NewPullRequestData.artifactsWithOptionalUrl(
-        Update.Single("com.example" % "foo" % "1.2.0", Nel.of("1.2.3")),
+        ("com.example".g % "foo".a % "1.2.0" %> "1.2.3").single,
         Map("foo" -> uri"https://github.com/foo/foo")
       ),
       "[com.example:foo](https://github.com/foo/foo)"
     )
     assertEquals(
       NewPullRequestData.artifactsWithOptionalUrl(
-        Update.Group("com.example" % Nel.of("foo", "bar") % "1.2.0", Nel.of("1.2.3")),
+        ("com.example".g % Nel.of("foo".a, "bar".a) % "1.2.0" %> "1.2.3").group,
         Map("foo" -> uri"https://github.com/foo/foo", "bar" -> uri"https://github.com/bar/bar")
       ),
       """
@@ -204,40 +202,38 @@ class NewPullRequestDataTest extends FunSuite {
   }
 
   test("updateType") {
-    val dependency = "com.example" % "foo" % "0.1"
-    val single = Update.Single(dependency, Nel.of("0.2"))
-    val group = Update.Group("com.example" % Nel.of("foo", "bar") % "0.1", Nel.of("0.2"))
+    val dependency = "com.example".g % "foo".a % "0.1"
+    val single = (dependency %> "0.2").single
+    val group = ("com.example".g % Nel.of("foo".a, "bar".a) % "0.1" %> "0.2").group
     assertEquals(NewPullRequestData.updateType(single), "library-update")
     assertEquals(NewPullRequestData.updateType(group), "library-update")
 
     assertEquals(
-      NewPullRequestData.updateType(Update.Single(dependency % "test", Nel.of("0.2"))),
+      NewPullRequestData.updateType((dependency % "test" %> "0.2").single),
       "test-library-update"
     )
     assertEquals(
       NewPullRequestData.updateType(
-        Update.Single(dependency.copy(sbtVersion = Some(SbtVersion("1.0"))), Nel.of("0.2"))
+        (dependency.copy(sbtVersion = Some(SbtVersion("1.0"))) %> "0.2").single
       ),
       "sbt-plugin-update"
     )
     assertEquals(
-      NewPullRequestData.updateType(
-        Update.Single(dependency.copy(configurations = Some("scalafix-rule")), Nel.of("0.2"))
-      ),
+      NewPullRequestData.updateType((dependency % "scalafix-rule" %> "0.2").single),
       "scalafix-rule-update"
     )
   }
 
   test("oldVersionNote without files") {
     val files = List.empty
-    val update = Update.Single("com.example" % "foo" % "0.1", Nel.of("0.2"))
+    val update = ("com.example".g % "foo".a % "0.1" %> "0.2").single
 
     assertEquals(NewPullRequestData.oldVersionNote(files, update), (None, None))
   }
 
   test("oldVersionNote with files") {
     val files = List("Readme.md", "travis.yml")
-    val update = Update.Single("com.example" % "foo" % "0.1", Nel.of("0.2"))
+    val update = ("com.example".g % "foo".a % "0.1" %> "0.2").single
 
     val (label, note) = NewPullRequestData.oldVersionNote(files, update)
 

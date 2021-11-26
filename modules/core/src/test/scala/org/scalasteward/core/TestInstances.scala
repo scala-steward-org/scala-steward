@@ -1,21 +1,20 @@
 package org.scalasteward.core
 
-import _root_.org.typelevel.log4cats.Logger
-import _root_.org.typelevel.log4cats.slf4j.Slf4jLogger
 import cats.effect.IO
 import eu.timepit.refined.scalacheck.numeric._
 import eu.timepit.refined.types.numeric.NonNegInt
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.Update.Single
 import org.scalasteward.core.data._
 import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.repocache.RepoCache
 import org.scalasteward.core.repoconfig.PullRequestFrequency.{Asap, Timespan}
 import org.scalasteward.core.repoconfig._
+import org.scalasteward.core.util.Change
 import org.scalasteward.core.util.Change.{Changed, Unchanged}
-import org.scalasteward.core.util.{Change, Nel}
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import scala.concurrent.duration.FiniteDuration
 
 object TestInstances {
@@ -49,7 +48,7 @@ object TestInstances {
         artifactId <- Gen.alphaStr
         currentVersion <- Gen.alphaStr
         newerVersion <- Gen.alphaStr
-      } yield Single(groupId % artifactId % currentVersion, Nel.one(newerVersion))
+      } yield (groupId.g % artifactId.a % currentVersion %> newerVersion).single
     )
 
   private val hashGen: Gen[String] =

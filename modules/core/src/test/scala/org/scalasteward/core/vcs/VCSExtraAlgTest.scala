@@ -10,9 +10,9 @@ import org.http4s.implicits._
 import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.application.Config.VCSCfg
-import org.scalasteward.core.data.{ReleaseRelatedUrl, Update}
+import org.scalasteward.core.data.ReleaseRelatedUrl
 import org.scalasteward.core.mock.MockConfig
-import org.scalasteward.core.util.{Nel, UrlChecker}
+import org.scalasteward.core.util.UrlChecker
 
 class VCSExtraAlgTest extends FunSuite {
   val routes: HttpRoutes[IO] =
@@ -26,9 +26,9 @@ class VCSExtraAlgTest extends FunSuite {
   implicit val urlChecker: UrlChecker[IO] =
     UrlChecker.create[IO](MockConfig.config).unsafeRunSync()
 
-  private val updateFoo = Update.Single("com.example" % "foo" % "0.1.0", Nel.of("0.2.0"))
-  private val updateBar = Update.Single("com.example" % "bar" % "0.1.0", Nel.of("0.2.0"))
-  private val updateBuz = Update.Single("com.example" % "buz" % "0.1.0", Nel.of("0.2.0"))
+  private val updateFoo = ("com.example".g % "foo".a % "0.1.0" %> "0.2.0").single
+  private val updateBar = ("com.example".g % "bar".a % "0.1.0" %> "0.2.0").single
+  private val updateBuz = ("com.example".g % "buz".a % "0.1.0" %> "0.2.0").single
 
   test("getBranchCompareUrl: std vsc") {
     val vcsExtraAlg = VCSExtraAlg.create[IO](MockConfig.config.vcsCfg)
