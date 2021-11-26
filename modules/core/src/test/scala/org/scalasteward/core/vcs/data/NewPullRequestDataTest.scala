@@ -7,8 +7,9 @@ import org.scalasteward.core.TestInstances.dummyRepoCache
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.buildtool.sbt.data.SbtVersion
 import org.scalasteward.core.data._
+import org.scalasteward.core.edit.EditAttempt.ScalafixEdit
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
-import org.scalasteward.core.git.{Branch, Sha1}
+import org.scalasteward.core.git.{Branch, Commit, Sha1}
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.Nel
 
@@ -103,49 +104,98 @@ class NewPullRequestDataTest extends FunSuite {
   }
 
   test("migrationNote: when artifact has migrations") {
-    val update = ("com.spotify".g % "scio-core".a % "0.6.0" %> "0.7.0").single
-    val migration = ScalafixMigration(
-      update.groupId,
-      Nel.of(update.artifactId.name),
-      Version("0.7.0"),
-      Nel.of("I am a rewrite rule")
+    val scalafixEdit = ScalafixEdit(
+      ScalafixMigration(
+        GroupId("com.spotify"),
+        Nel.one("scio-core"),
+        Version("0.7.0"),
+        Nel.of("I am a rewrite rule")
+      ),
+      Right(()),
+      Some(Commit())
     )
-    val (label, appliedMigrations) = NewPullRequestData.migrationNote(List(migration))
+    val (label, appliedMigrations) = NewPullRequestData.migrationNote(List(scalafixEdit))
 
     assertEquals(label, Some("scalafix-migrations"))
     assertEquals(
       appliedMigrations.fold("")(_.toHtml),
       """<details>
-        |<summary>Applied Migrations</summary>
+        |<summary>Applied Scalafix Migrations</summary>
         |
-        |* I am a rewrite rule
+        |* com.spotify:scio-core:0.7.0
+        |  * I am a rewrite rule
         |</details>
       """.stripMargin.trim
     )
   }
 
   test("migrationNote: when artifact has migrations with docs") {
-    val update = ("com.spotify".g % "scio-core".a % "0.6.0" %> "0.7.0").single
-    val migration = ScalafixMigration(
-      update.groupId,
-      Nel.of(update.artifactId.name),
-      Version("0.7.0"),
-      Nel.of("I am a rewrite rule"),
-      Some("https://scalacenter.github.io/scalafix/")
+    val scalafixEdit = ScalafixEdit(
+      ScalafixMigration(
+        GroupId("com.spotify"),
+        Nel.one("scio-core"),
+        Version("0.7.0"),
+        Nel.of("I am a rewrite rule", "I am a 2nd rewrite rule"),
+        Some("https://scalacenter.github.io/scalafix/")
+      ),
+      Right(()),
+      Some(Commit())
     )
-    val (label, appliedMigrations) = NewPullRequestData.migrationNote(List(migration))
+    val (label, detail) = NewPullRequestData.migrationNote(List(scalafixEdit))
 
     assertEquals(label, Some("scalafix-migrations"))
     assertEquals(
-      appliedMigrations.fold("")(_.toHtml),
+      detail.fold("")(_.toHtml),
       """<details>
-        |<summary>Applied Migrations</summary>
+        |<summary>Applied Scalafix Migrations</summary>
         |
-        |* I am a rewrite rule
+        |* com.spotify:scio-core:0.7.0
+        |  * I am a rewrite rule
+        |  * I am a 2nd rewrite rule
+        |  * Documentation: https://scalacenter.github.io/scalafix/
+        |</details>
+      """.stripMargin.trim
+    )
+  }
+
+  test("migrationNote: with 2 migrations where one didn't produce a change") {
+    val scalafixEdit1 = ScalafixEdit(
+      ScalafixMigration(
+        GroupId("com.spotify"),
+        Nel.one("scio-core"),
+        Version("0.7.0"),
+        Nel.of("I am a rewrite rule", "I am a 2nd rewrite rule"),
+        Some("https://scalacenter.github.io/scalafix/")
+      ),
+      Right(()),
+      Some(Commit())
+    )
+
+    val scalafixEdit2 = ScalafixEdit(
+      ScalafixMigration(
+        GroupId("org.typeleve"),
+        Nel.of("cats-effect", "cats-effect-laws"),
+        Version("3.0.0"),
+        Nel.of("I am a rule without an effect"),
+        None
+      ),
+      Right(()),
+      None
+    )
+    val (label, detail) = NewPullRequestData.migrationNote(List(scalafixEdit1, scalafixEdit2))
+
+    assertEquals(label, Some("scalafix-migrations"))
+    assertEquals(
+      detail.fold("")(_.toHtml),
+      """<details>
+        |<summary>Applied Scalafix Migrations</summary>
         |
-        |Documentation:
-        |
-        |* https://scalacenter.github.io/scalafix/
+        |* com.spotify:scio-core:0.7.0
+        |  * I am a rewrite rule
+        |  * I am a 2nd rewrite rule
+        |  * Documentation: https://scalacenter.github.io/scalafix/
+        |* org.typeleve:{cats-effect,cats-effect-laws}:3.0.0 (created no change)
+        |  * I am a rule without an effect
         |</details>
       """.stripMargin.trim
     )
