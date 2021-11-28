@@ -27,7 +27,6 @@ import org.scalasteward.core.edit.scalafix.{ScalafixMigration, ScalafixMigration
 import org.scalasteward.core.git
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io.{isSourceFile, FileAlg, WorkspaceAlg}
-import org.scalasteward.core.repocache.RepoCache
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafmt.{scalafmtModule, ScalafmtAlg}
 import org.scalasteward.core.util._
@@ -68,7 +67,7 @@ final class EditAlg[F[_]](implicit
                   gitAlg.discardChanges(repo) *>
                     runScalafixMigrations(repo, data.config, preMigrations) <*
                     bumpVersion(update, files)
-              _ <- reformatChangedFiles(repo, data.cache)
+              _ <- reformatChangedFiles(data)
               updateCommitMsg = git.commitMsgFor(update, data.config.commits, data.repo.branch)
               updateEdit <- gitAlg
                 .commitAllIfDirty(repo, updateCommitMsg)
@@ -117,10 +116,13 @@ final class EditAlg[F[_]](implicit
     bindUntilTrue[Nel, F](actions)
   }
 
-  private def reformatChangedFiles(repo: Repo, cache: RepoCache): F[Unit] =
-    F.whenA(cache.dependsOn(List(scalafmtModule))) {
+  private def reformatChangedFiles(data: RepoData): F[Unit] = {
+    val reformat =
+      data.config.scalafmt.runAfterUpgradingOrDefault && data.cache.dependsOn(List(scalafmtModule))
+    F.whenA(reformat) {
       logger.attemptWarn.log_("Reformatting changed files failed") {
-        scalafmtAlg.reformatChanged(repo)
+        scalafmtAlg.reformatChanged(data.repo)
       }
     }
+  }
 }
