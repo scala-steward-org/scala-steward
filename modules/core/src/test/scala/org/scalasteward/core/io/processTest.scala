@@ -41,9 +41,9 @@ class processTest extends FunSuite {
     val timeout = 500.milliseconds
     val sleep = timeout * 2
     val p = slurp2(Nel.of("sleep", sleep.toSeconds.toInt.toString), timeout).attempt
-    val (res, fd) = DateTimeAlg.create[IO].timed(p).unsafeRunSync()
+    val (Left(t), fd) = DateTimeAlg.create[IO].timed(p).unsafeRunSync()
 
-    assert(res.isLeft)
+    assert(clue(t).toString.contains("TimeoutException"))
     assert(clue(fd) > timeout)
     assert(clue(fd) < sleep)
   }
