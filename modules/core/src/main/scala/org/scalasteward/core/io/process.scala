@@ -63,7 +63,7 @@ object process {
           F.raiseError[List[String]](new TimeoutException(makeMessage(msg, buffer.toList)))
         }
 
-        F.timeoutTo(result, timeout, fallback)
+        F.timeoutAndForget(result, timeout).recoverWith { case _: TimeoutException => fallback }
       }
     }
 
