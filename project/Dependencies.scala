@@ -3,7 +3,7 @@ import sbt.Keys._
 import sbt.librarymanagement.syntax.ExclusionRule
 
 object Dependencies {
-  val bcprovJdk15to18 = "org.bouncycastle" % "bcprov-jdk15to18" % "1.69"
+  val bcprovJdk15to18 = "org.bouncycastle" % "bcprov-jdk15to18" % "1.70"
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.1"
   val caseApp = "com.github.alexarchambault" %% "case-app" % "2.1.0-M10"
   val catsEffect = "org.typelevel" %% "cats-effect" % "3.3.0"
