@@ -208,7 +208,8 @@ object NewPullRequestData {
     val scalafixLabel = edits.collectFirst { case _: ScalafixEdit => "scalafix-migrations" }
     val oldVersionLabel = Option.when(filesWithOldVersion.nonEmpty)("old-version-remains")
 
-    updateType(update) :: commitCountLabel ::
-      List(earlySemVerLabel, semVerSpecLabel, scalafixLabel, oldVersionLabel).flatten
+    updateType(update) ::
+      List(earlySemVerLabel, semVerSpecLabel, scalafixLabel, oldVersionLabel).flatten ::
+      commitCountLabel
   }
 }
