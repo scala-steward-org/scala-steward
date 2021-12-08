@@ -209,7 +209,7 @@ object NewPullRequestData {
     val oldVersionLabel = Option.when(filesWithOldVersion.nonEmpty)("old-version-remains")
 
     updateType(update) ::
-      List(earlySemVerLabel, semVerSpecLabel, scalafixLabel, oldVersionLabel).flatten ::
-      commitCountLabel
+      List(earlySemVerLabel, semVerSpecLabel, scalafixLabel, oldVersionLabel).flatten ++
+      List(commitCountLabel)
   }
 }
