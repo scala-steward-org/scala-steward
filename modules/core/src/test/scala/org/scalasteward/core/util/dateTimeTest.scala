@@ -13,7 +13,7 @@ class dateTimeTest extends ScalaCheckSuite {
   }
 
   def parseFiniteDurationRoundTrips(fd: FiniteDuration): Unit =
-    parseFiniteDuration(fd.toString).fold(t => throw t, approxEq(_, fd))
+    parseFiniteDuration(renderFiniteDuration(fd)).fold(t => throw t, approxEq(_, fd))
 
   property("parseFiniteDuration") {
     forAll((d: FiniteDuration) => parseFiniteDurationRoundTrips(d))

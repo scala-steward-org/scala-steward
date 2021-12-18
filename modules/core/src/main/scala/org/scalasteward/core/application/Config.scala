@@ -17,11 +17,10 @@
 package org.scalasteward.core.application
 
 import better.files.File
+import cats.Monad
 import cats.syntax.all._
-import cats.{Apply, Monad}
 import org.http4s.Uri
 import org.http4s.Uri.UserInfo
-import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.Config._
 import org.scalasteward.core.data.Resolver
@@ -135,57 +134,4 @@ object Config {
   final case class GitLabCfg(
       mergeWhenPipelineSucceeds: Boolean
   )
-
-  def from(args: Cli.Args): Config =
-    Config(
-      workspace = args.workspace,
-      reposFile = args.reposFile,
-      gitCfg = GitCfg(
-        gitAuthor = Author(args.gitAuthorName, args.gitAuthorEmail, args.gitAuthorSigningKey),
-        gitAskPass = args.gitAskPass,
-        signCommits = args.signCommits
-      ),
-      vcsCfg = VCSCfg(
-        tpe = args.vcsType,
-        apiHost = args.vcsApiHost,
-        login = args.vcsLogin,
-        doNotFork = args.doNotFork
-      ),
-      ignoreOptsFiles = args.ignoreOptsFiles,
-      processCfg = ProcessCfg(
-        envVars = args.envVar,
-        processTimeout = args.processTimeout,
-        maxBufferSize = args.maxBufferSize,
-        sandboxCfg = SandboxCfg(
-          whitelistedDirectories = args.whitelist,
-          readOnlyDirectories = args.readOnly,
-          enableSandbox = args.enableSandbox.getOrElse(!args.disableSandbox)
-        )
-      ),
-      repoConfigCfg = RepoConfigCfg(
-        repoConfigs = args.repoConfig,
-        disableDefault = args.disableDefaultRepoConfig
-      ),
-      scalafixCfg = ScalafixCfg(
-        migrations = args.scalafixMigrations,
-        disableDefaults = args.disableDefaultScalafixMigrations
-      ),
-      artifactCfg = ArtifactCfg(
-        migrations = args.artifactMigrations,
-        disableDefaults = args.disableDefaultArtifactMigrations
-      ),
-      cacheTtl = args.cacheTtl,
-      bitbucketServerCfg = BitbucketServerCfg(
-        useDefaultReviewers = args.bitbucketServerUseDefaultReviewers
-      ),
-      gitLabCfg = GitLabCfg(
-        mergeWhenPipelineSucceeds = args.gitlabMergeWhenPipelineSucceeds
-      ),
-      githubApp = Apply[Option].map2(args.githubAppId, args.githubAppKeyFile)(GitHubApp.apply),
-      urlCheckerTestUrl = args.urlCheckerTestUrl.getOrElse(uri"https://github.com"),
-      defaultResolver = args.defaultMavenRepo
-        .map(url => Resolver.MavenRepository("default", url, None))
-        .getOrElse(Resolver.mavenCentral),
-      refreshBackoffPeriod = args.refreshBackoffPeriod
-    )
 }

@@ -22,7 +22,7 @@ import org.http4s.syntax.literals._
 import org.scalasteward.core.util.unexpectedString
 import org.scalasteward.core.vcs.VCSType._
 
-sealed trait VCSType {
+sealed trait VCSType extends Product with Serializable {
   def publicWebHost: Option[String]
 
   val asString: String = this match {
