@@ -134,10 +134,11 @@ object Cli {
       "Directory white listed for the sandbox (can be used multiple times)"
     ).orEmpty
 
-  private val readOnly: Opts[List[String]] = options[String](
-    "read-only",
-    "Read only directory for the sandbox (can be used multiple times)"
-  ).orEmpty
+  private val readOnly: Opts[List[String]] =
+    options[String](
+      "read-only",
+      "Read only directory for the sandbox (can be used multiple times)"
+    ).orEmpty
 
   private val enableSandbox: Opts[Boolean] =
     flag("enable-sandbox", "Whether to use the sandbox").orFalse
