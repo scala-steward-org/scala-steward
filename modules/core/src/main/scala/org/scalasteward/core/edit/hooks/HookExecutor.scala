@@ -67,6 +67,7 @@ object HookExecutor {
     (GroupId("com.codecommit"), ArtifactId("sbt-spiewak")),
     (GroupId("com.codecommit"), ArtifactId("sbt-spiewak-sonatype")),
     (GroupId("com.codecommit"), ArtifactId("sbt-spiewak-bintray")),
+    (GroupId("io.github.nafg.mergify"), ArtifactId("sbt-mergify-github-actions")),
     (GroupId("io.chrisdavenport"), ArtifactId("sbt-davenverse")),
     (GroupId("org.http4s"), ArtifactId("sbt-http4s-org"))
   )
