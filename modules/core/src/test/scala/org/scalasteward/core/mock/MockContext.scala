@@ -10,10 +10,12 @@ import org.scalasteward.core.io._
 import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.repoconfig.RepoConfigLoader
 import org.scalasteward.core.update.artifact.ArtifactMigrationsLoader
+import org.scalasteward.core.util.UrlCheckerClient
 import org.typelevel.log4cats.Logger
 
 object MockContext {
   implicit private val client: Client[MockEff] = Client.fromHttpApp(HttpApp.notFound)
+  implicit private val urlCheckerClient: UrlCheckerClient[MockEff] = UrlCheckerClient(client)
   implicit private val fileAlg: FileAlg[MockEff] = new MockFileAlg
   implicit private val logger: Logger[MockEff] = new MockLogger
   implicit private val processAlg: ProcessAlg[MockEff] = MockProcessAlg.create(config.processCfg)

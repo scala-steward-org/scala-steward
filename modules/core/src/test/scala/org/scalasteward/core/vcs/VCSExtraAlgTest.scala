@@ -12,7 +12,7 @@ import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.application.Config.VCSCfg
 import org.scalasteward.core.data.ReleaseRelatedUrl
 import org.scalasteward.core.mock.MockConfig
-import org.scalasteward.core.util.UrlChecker
+import org.scalasteward.core.util._
 
 class VCSExtraAlgTest extends FunSuite {
   val routes: HttpRoutes[IO] =
@@ -22,7 +22,8 @@ class VCSExtraAlgTest extends FunSuite {
       case _                                                            => NotFound()
     }
 
-  implicit val client: Client[IO] = Client.fromHttpApp[IO](routes.orNotFound)
+  implicit val client: UrlCheckerClient[IO] =
+    UrlCheckerClient[IO](Client.fromHttpApp[IO](routes.orNotFound))
   implicit val urlChecker: UrlChecker[IO] =
     UrlChecker.create[IO](MockConfig.config).unsafeRunSync()
 
