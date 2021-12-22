@@ -19,7 +19,6 @@ package org.scalasteward.core.nurture
 import cats.Id
 import cats.effect.Concurrent
 import cats.implicits._
-import eu.timepit.refined.types.numeric.NonNegInt
 import org.scalasteward.core.application.Config.VCSCfg
 import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.ProcessResult.{Created, Ignored, Updated}
@@ -70,15 +69,20 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       grouped = Update.groupByGroupId(updates)
       _ <- logger.info(util.logger.showUpdates(grouped))
       baseSha1 <- gitAlg.latestSha1(data.repo, baseBranch)
-      _ <- NurtureAlg.processUpdates(
-        grouped,
-        update => {
+      _ <- fs2.Stream
+        .emits(grouped)
+        .evalMap { update =>
           val updateBranch = git.branchFor(update, data.repo.branch)
           val updateData = UpdateData(data, fork, update, baseBranch, baseSha1, updateBranch)
           processUpdate(updateData)
-        },
-        data.config.updates.limit
-      )
+        }
+        .through(util.takeUntilMaybe(0, data.config.updates.limit.map(_.value)) {
+          case Ignored    => 0
+          case Updated    => 1
+          case Created(_) => 1
+        })
+        .compile
+        .drain
     } yield ()
 
   private def processUpdate(data: UpdateData): F[ProcessResult] =
@@ -247,22 +251,4 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       editCommits = edits.flatMap(_.maybeCommit)
       result <- pushCommits(data, maybeMergeCommit.toList ++ editCommits)
     } yield result
-}
-
-object NurtureAlg {
-  def processUpdates[F[_]: Concurrent](
-      updates: List[Update],
-      updateF: Update => F[ProcessResult],
-      updatesLimit: Option[NonNegInt]
-  ): F[Unit] =
-    fs2.Stream
-      .emits(updates)
-      .evalMap(updateF)
-      .through(util.takeUntilMaybe(updatesLimit.map(_.value)) {
-        case Ignored    => 0
-        case Updated    => 1
-        case Created(_) => 1
-      })
-      .compile
-      .drain
 }
