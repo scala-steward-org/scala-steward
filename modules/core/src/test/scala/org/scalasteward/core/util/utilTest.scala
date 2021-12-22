@@ -40,12 +40,20 @@ class utilTest extends ScalaCheckSuite {
     assert(intersects(List(1, 3, 5), Vector(2, 3, 6)))
   }
 
-  test("takeUntil") {
+  test("takeUntilMaybe: with limit") {
     forAll(Gen.choose(0, 16)) { (n: Int) =>
       var count = 0
-      val s = fs2.Stream.eval(IO(count += 1)).repeat.through(takeUntil(0, n)(_ => 1))
+      val s = fs2.Stream.eval(IO(count += 1)).repeat.through(takeUntilMaybe(0, Some(n))(_ => 1))
       s.compile.drain.unsafeRunSync()
       assertEquals(count, n)
     }
+  }
+
+  test("takeUntilMaybe: without limit") {
+    var count = 0
+    val n = 3L
+    val s = fs2.Stream.eval(IO(count += 1)).repeat.take(n).through(takeUntilMaybe(0, None)(_ => 0))
+    s.compile.drain.unsafeRunSync()
+    assertEquals(count, n.toInt)
   }
 }
