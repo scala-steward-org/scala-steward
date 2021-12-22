@@ -49,7 +49,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
     for {
       _ <- logger.info(s"Nurture ${data.repo.show}")
       baseBranch <- cloneAndSync(data.repo, fork)
-      _ <- updateDependencies(data, fork.repo, baseBranch, updates)
+      _ <- updateDependencies(data, fork.repo, baseBranch, Update.groupByGroupId(updates))
     } yield ()
 
   private def cloneAndSync(repo: Repo, fork: RepoOut): F[Branch] =
@@ -62,15 +62,13 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       data: RepoData,
       fork: Repo,
       baseBranch: Branch,
-      updates: List[Update.Single]
+      updates: List[Update]
   ): F[Unit] =
     for {
-      _ <- F.unit
-      grouped = Update.groupByGroupId(updates)
-      _ <- logger.info(util.logger.showUpdates(grouped))
+      _ <- logger.info(util.logger.showUpdates(updates))
       baseSha1 <- gitAlg.latestSha1(data.repo, baseBranch)
       _ <- fs2.Stream
-        .emits(grouped)
+        .emits(updates)
         .evalMap { update =>
           val updateBranch = git.branchFor(update, data.repo.branch)
           val updateData = UpdateData(data, fork, update, baseBranch, baseSha1, updateBranch)
