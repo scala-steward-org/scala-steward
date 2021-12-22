@@ -76,11 +76,10 @@ final class Context[F[_]](implicit
 )
 
 object Context {
-  def step0[F[_]](args: Cli.Args)(implicit F: Async[F]): Resource[F, Context[F]] =
+  def step0[F[_]](config: Config)(implicit F: Async[F]): Resource[F, Context[F]] =
     for {
       logger <- Resource.eval(Slf4jLogger.fromName[F]("org.scalasteward.core"))
       _ <- Resource.eval(printBanner(logger))
-      config = Config.from(args)
       _ <- Resource.eval(F.delay(System.setProperty("http.agent", userAgentString)))
       userAgent <- Resource.eval(F.fromEither(`User-Agent`.parse(userAgentString)))
       userAgentMiddleware = ClientConfiguration.setUserAgent[F](userAgent)

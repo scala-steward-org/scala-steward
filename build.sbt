@@ -84,7 +84,6 @@ lazy val core = myCrossProject("core")
     libraryDependencies ++= Seq(
       Dependencies.bcprovJdk15to18,
       Dependencies.betterFiles,
-      Dependencies.caseApp,
       Dependencies.catsCore,
       Dependencies.catsEffect,
       Dependencies.catsParse,
@@ -96,6 +95,7 @@ lazy val core = myCrossProject("core")
       Dependencies.commonsIo,
       Dependencies.coursierCore,
       Dependencies.cron4sCore,
+      Dependencies.decline,
       Dependencies.fs2Core,
       Dependencies.fs2Io,
       Dependencies.http4sCirce,
