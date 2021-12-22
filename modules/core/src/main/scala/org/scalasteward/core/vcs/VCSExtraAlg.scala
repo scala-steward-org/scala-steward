@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ package org.scalasteward.core.vcs
 import cats.Monad
 import cats.syntax.all._
 import org.http4s.Uri
-import org.scalasteward.core.application.Config
+import org.scalasteward.core.application.Config.VCSCfg
 import org.scalasteward.core.data.{ReleaseRelatedUrl, Update}
-import org.scalasteward.core.util.HttpExistenceClient
+import org.scalasteward.core.util.UrlChecker
 import org.scalasteward.core.vcs
 
 trait VCSExtraAlg[F[_]] {
@@ -29,15 +29,14 @@ trait VCSExtraAlg[F[_]] {
 }
 
 object VCSExtraAlg {
-  def create[F[_]](implicit
-      existenceClient: HttpExistenceClient[F],
-      config: Config,
+  def create[F[_]](config: VCSCfg)(implicit
+      urlChecker: UrlChecker[F],
       F: Monad[F]
   ): VCSExtraAlg[F] =
     new VCSExtraAlg[F] {
       override def getReleaseRelatedUrls(repoUrl: Uri, update: Update): F[List[ReleaseRelatedUrl]] =
         vcs
-          .possibleReleaseRelatedUrls(config.vcsType, config.vcsApiHost, repoUrl, update)
-          .filterA(releaseRelatedUrl => existenceClient.exists(releaseRelatedUrl.url))
+          .possibleReleaseRelatedUrls(config.tpe, config.apiHost, repoUrl, update)
+          .filterA(releaseRelatedUrl => urlChecker.exists(releaseRelatedUrl.url))
     }
 }

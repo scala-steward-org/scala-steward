@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,43 +17,23 @@
 package org.scalasteward.core.data
 
 import cats.syntax.all._
-import eu.timepit.refined.cats.refTypeEq
-import eu.timepit.refined.types.numeric.NonNegBigInt
-import eu.timepit.refined.types.string.NonEmptyString
 import org.scalasteward.core.data.SemVer.Change._
-import org.scalasteward.core.util.string.parseNonNegBigInt
+
+import scala.annotation.tailrec
 
 final case class SemVer(
-    major: NonNegBigInt,
-    minor: NonNegBigInt,
-    patch: NonNegBigInt,
-    preRelease: Option[NonEmptyString],
-    buildMetadata: Option[NonEmptyString]
-) {
-  def render: String =
-    s"$major.$minor.$patch" + preRelease.fold("")("-" + _) + buildMetadata.fold("")("+" + _)
-}
+    major: String,
+    minor: String,
+    patch: String,
+    preRelease: Option[String] = None,
+    buildMetadata: Option[String] = None
+)
 
 object SemVer {
-  def parse(s: String): Option[SemVer] = {
-    def parseIdentifier(s: String): Option[NonEmptyString] =
-      Option(s).map(_.drop(1)).flatMap(NonEmptyString.unapply)
-
-    val pattern = raw"""(\d+)\.(\d+)\.(\d+)(\-[^\+]+)?(\+.+)?""".r
-    s match {
-      case pattern(majorStr, minorStr, patchStr, preReleaseStr, buildMetadataStr) =>
-        for {
-          major <- parseNonNegBigInt(majorStr)
-          minor <- parseNonNegBigInt(minorStr)
-          patch <- parseNonNegBigInt(patchStr)
-          preRelease = parseIdentifier(preReleaseStr)
-          buildMetadata = parseIdentifier(buildMetadataStr)
-          semVer = SemVer(major, minor, patch, preRelease, buildMetadata)
-          if semVer.render === s
-        } yield semVer
-      case _ => None
+  def parse(s: String): Option[SemVer] =
+    cats.parse.SemVer.semver.parseAll(s).toOption.map { v =>
+      SemVer(v.core.major, v.core.minor, v.core.patch, v.preRelease, v.buildMetadata)
     }
-  }
 
   sealed abstract class Change(val render: String)
   object Change {
@@ -64,11 +44,30 @@ object SemVer {
     case object BuildMetadata extends Change("build-metadata")
   }
 
-  def getChange(from: SemVer, to: SemVer): Option[Change] =
+  def getChangeSpec(from: SemVer, to: SemVer): Option[Change] =
     if (from.major =!= to.major) Some(Major)
     else if (from.minor =!= to.minor) Some(Minor)
     else if (from.preRelease =!= to.preRelease) Some(PreRelease)
     else if (from.patch =!= to.patch) Some(Patch)
     else if (from.buildMetadata =!= to.buildMetadata) Some(BuildMetadata)
     else None
+
+  @tailrec
+  def getChangeEarly(from: SemVer, to: SemVer): Option[Change] = {
+    val zero = "0"
+    // Codacy doesn't allow using `if`s, so using `match` instead
+    (from.major === zero, to.major === zero) match { // work around Codacy's "Consider using case matching instead of else if blocks"
+      case (true, true)
+          if from.minor =!= zero ||
+            to.minor =!= zero ||
+            from.patch =!= zero ||
+            to.patch =!= zero =>
+        getChangeEarly(
+          from.copy(major = from.minor, minor = from.patch, patch = zero),
+          to.copy(major = to.minor, minor = to.patch, patch = zero)
+        )
+      case _ =>
+        getChangeSpec(from, to)
+    }
+  }
 }

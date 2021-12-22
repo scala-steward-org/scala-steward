@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ package org.scalasteward.core.io
 import better.files.File
 import cats.FlatMap
 import cats.syntax.all._
-import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.vcs.data.Repo
+import org.scalasteward.core.vcs.data.{BuildRoot, Repo}
+import org.typelevel.log4cats.Logger
 
 trait WorkspaceAlg[F[_]] {
   def cleanWorkspace: F[Unit]
@@ -29,17 +29,20 @@ trait WorkspaceAlg[F[_]] {
   def rootDir: F[File]
 
   def repoDir(repo: Repo): F[File]
+
+  def buildRootDir(buildRoot: BuildRoot): F[File]
 }
 
 object WorkspaceAlg {
-  def create[F[_]](implicit
+  def create[F[_]](config: Config)(implicit
       fileAlg: FileAlg[F],
       logger: Logger[F],
-      config: Config,
       F: FlatMap[F]
   ): WorkspaceAlg[F] =
     new WorkspaceAlg[F] {
       private[this] val reposDir = config.workspace / "repos"
+
+      private[this] def repoDirUnsafe(repo: Repo) = reposDir / repo.owner / repo.repo
 
       override def cleanWorkspace: F[Unit] =
         for {
@@ -52,6 +55,9 @@ object WorkspaceAlg {
         fileAlg.ensureExists(config.workspace)
 
       override def repoDir(repo: Repo): F[File] =
-        fileAlg.ensureExists(reposDir / repo.owner / repo.repo)
+        fileAlg.ensureExists(repoDirUnsafe(repo))
+
+      override def buildRootDir(buildRoot: BuildRoot): F[File] =
+        fileAlg.ensureExists(repoDirUnsafe(buildRoot.repo) / buildRoot.relativePath)
     }
 }

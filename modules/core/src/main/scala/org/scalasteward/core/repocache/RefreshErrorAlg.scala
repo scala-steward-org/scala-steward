@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,39 +16,59 @@
 
 package org.scalasteward.core.repocache
 
-import cats.Monad
+import cats.MonadThrow
 import cats.syntax.all._
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 import org.scalasteward.core.persistence.KeyValueStore
 import org.scalasteward.core.repocache.RefreshErrorAlg.Entry
+import org.scalasteward.core.util.dateTime.showDuration
 import org.scalasteward.core.util.{DateTimeAlg, Timestamp}
 import org.scalasteward.core.vcs.data.Repo
 import scala.concurrent.duration._
+import scala.util.control.NoStackTrace
 
-final class RefreshErrorAlg[F[_]](kvStore: KeyValueStore[F, Repo, Entry])(implicit
+final class RefreshErrorAlg[F[_]](
+    kvStore: KeyValueStore[F, Repo, Entry],
+    backoffPeriod: FiniteDuration
+)(implicit
     dateTimeAlg: DateTimeAlg[F],
-    F: Monad[F]
+    F: MonadThrow[F]
 ) {
-  def failedRecently(repo: Repo): F[Boolean] =
-    dateTimeAlg.currentTimestamp.flatMap { now =>
-      val maybeEntry = kvStore.modify(repo) {
-        case Some(entry) if entry.hasExpired(now) => None
-        case res                                  => res
-      }
-      maybeEntry.map(_.isDefined)
+  def skipIfFailedRecently[A](repo: Repo)(fa: F[A]): F[A] =
+    failedRecently(repo).flatMap {
+      case None => fa
+      case Some(fd) =>
+        val msg = s"Skipping due to previous error for ${showDuration(fd)}"
+        F.raiseError[A](new Throwable(msg) with NoStackTrace)
     }
 
-  def persistError(repo: Repo, throwable: Throwable): F[Unit] =
-    dateTimeAlg.currentTimestamp.flatMap { now =>
-      kvStore.put(repo, Entry(now, throwable.getMessage))
+  def persistError[A](repo: Repo)(fa: F[A]): F[A] =
+    fa.handleErrorWith { t =>
+      dateTimeAlg.currentTimestamp.flatMap { now =>
+        kvStore.put(repo, Entry(now, t.toString))
+      } >> F.raiseError[A](t)
+    }
+
+  private def failedRecently(repo: Repo): F[Option[FiniteDuration]] =
+    kvStore.get(repo).flatMap {
+      case None => F.pure(None)
+      case Some(entry) =>
+        dateTimeAlg.currentTimestamp.flatMap { now =>
+          entry.expiresIn(now, backoffPeriod) match {
+            case some @ Some(_) => F.pure(some)
+            case None           => kvStore.set(repo, None).as(None)
+          }
+        }
     }
 }
 
 object RefreshErrorAlg {
   final case class Entry(failedAt: Timestamp, message: String) {
-    def hasExpired(now: Timestamp): Boolean =
-      failedAt.until(now) > 7.days
+    def expiresIn(now: Timestamp, backoffPeriod: FiniteDuration): Option[FiniteDuration] = {
+      val duration = backoffPeriod - failedAt.until(now)
+      if (duration.length > 0L) Some(duration) else None
+    }
   }
 
   object Entry {

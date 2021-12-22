@@ -2,24 +2,18 @@ package org.scalasteward.core.data
 
 import cats.implicits._
 import cats.kernel.laws.discipline.OrderTests
+import munit.DisciplineSuite
+import org.scalacheck.Prop._
 import org.scalasteward.core.TestInstances._
 import org.scalasteward.core.data.Version.Component
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import org.typelevel.discipline.scalatest.FunSuiteDiscipline
 import scala.util.Random
 
-class VersionTest
-    extends AnyFunSuite
-    with FunSuiteDiscipline
-    with Matchers
-    with ScalaCheckPropertyChecks {
+class VersionTest extends DisciplineSuite {
   checkAll("Order[Version]", OrderTests[Version].order)
 
   test("issue 1615: broken transitivity") {
     val res = OrderTests[Version].laws.transitivity(Version(""), Version("0"), Version("X"))
-    res.lhs shouldBe res.rhs
+    assertEquals(res.lhs, res.rhs)
   }
 
   test("pairwise 1") {
@@ -110,18 +104,20 @@ class VersionTest
     ).foreach { case (s1, s2) =>
       val c1 = coursier.core.Version(s1)
       val c2 = coursier.core.Version(s2)
-      c1 should be < c2
-      c2 should be > c1
+      assert(clue(c1) < clue(c2))
+      assert(clue(c2) > clue(c1))
 
       val v1 = Version(s1)
       val v2 = Version(s2)
-      v1 should be < v2
-      v2 should be > v1
+      assert(clue(v1) < clue(v2))
+      assert(clue(v2) > clue(v1))
     }
   }
 
   test("equal") {
-    Version("3.0").compare(Version("3.0.+")) shouldBe 0
+    assertEquals(Version("3.0").compare(Version("3.0.+")), 0)
+    val empty: Component = Component.Empty
+    assertEquals(empty.compare(empty), 0)
   }
 
   test("selectNext, table 1") {
@@ -129,8 +125,7 @@ class VersionTest
       List("1.0.0", "1.0.1", "1.0.2", "1.1.0", "1.2.0", "2.0.0", "3.0.0", "3.0.0.1", "3.1")
         .map(Version.apply)
 
-    val nextVersions = Table(
-      ("current", "result"),
+    val nextVersions = List(
       ("1.0.0", Some("1.0.2")),
       ("1.0.1", Some("1.0.2")),
       ("1.0.2", Some("1.2.0")),
@@ -143,14 +138,13 @@ class VersionTest
       ("4", None)
     )
 
-    forAll(nextVersions) { (current, result) =>
-      Version(current).selectNext(allVersions) shouldBe result.map(Version.apply)
+    nextVersions.foreach { case (current, result) =>
+      assertEquals(Version(current).selectNext(allVersions), result.map(Version.apply))
     }
   }
 
   test("selectNext, table 2") {
-    val nextVersions = Table(
-      ("current", "versions", "result"),
+    val nextVersions = List(
       ("1.3.0-RC3", List("1.3.0-RC4", "1.3.0-RC5"), Some("1.3.0-RC5")),
       ("1.3.0-RC3", List("1.3.0-RC4", "1.3.0-RC5", "1.3.0", "1.3.2"), Some("1.3.2")),
       ("3.0-RC3", List("3.0-RC4", "3.0-RC5", "3.0", "3.2"), Some("3.2")),
@@ -182,6 +176,12 @@ class VersionTest
       ("1.2.0+9-4a7695012", List("1.2.0+17-7ef9b061"), Some("1.2.0+17-7ef9b061")),
       ("1.2.0+9-4a76950123", List("1.2.0+17-7ef91060b"), Some("1.2.0+17-7ef91060b")),
       ("1.2.0+9-4a769501234", List("1.2.0+17-7bf9106e"), Some("1.2.0+17-7bf9106e")),
+      ("0.5.1+29-8b2148d7", List("0.5.1+34-7033368d"), Some("0.5.1+34-7033368d")),
+      (
+        "0.21.6+43-2c1c1172-SNAPSHOT",
+        List("0.21.6+75-6ad94f6f-SNAPSHOT"),
+        Some("0.21.6+75-6ad94f6f-SNAPSHOT")
+      ),
       ("1.2.0", List("1.2.0+17-7ef98061"), None),
       ("1.2.0+17-7ef98061", List("1.3.0"), Some("1.3.0")),
       ("2.4.4", List("3.0.0-preview"), None),
@@ -190,35 +190,53 @@ class VersionTest
       ("3.1.0", List("3.1.0-2156c0e"), None),
       ("3.1.0-2156c0e", List("3.2.0"), Some("3.2.0")),
       ("1.6.7", List("1.6.7-2-c28002d"), None),
-      ("4.10.2", List("%5BWARNING%5D"), None),
+      ("4.10.2", List("%5BWARNING%5D", ".5", ""), None),
       ("2.1.4-11-307f3d8", List("2.1.4-13-fb16e4e"), Some("2.1.4-13-fb16e4e")),
       ("2.1.4-13-fb16e4e", List("2.2.0", "2.2.0-0-fe5ed67"), Some("2.2.0")),
       ("2.2.0", List("2.2.0-0-fe5ed67", "2.2.0-4-4bd225e"), None),
       ("0.116.0-alpha", List("0.118.1-alpha"), None),
       ("0.8.0", List("0.8.0-1-d81662"), None),
+      ("0.0.12", List("0.0.12-3-g699a2cf"), None),
       ("0.6.3", List("289f9e3aa3f5014a5c64319da8e6ab993947ade2-0-289f9e"), None),
       ("0.1-58d9629", List("0.8.0"), Some("0.8.0")),
       ("0.9-a3bf234", List("0.14-9419610"), Some("0.14-9419610")),
+      ("0.0-ec56350", List("0.0-895b434"), None),
+      ("2.0.0-M1", List("2.0-48e93de", "2.0.0-48e93de"), None),
       ("0.21.0-RC5", List("0.21.6", "0.21.6+43-2c1c1172-SNAPSHOT"), Some("0.21.6")),
       ("0.21.0-RC5", List("0.21.5", "0.21.6-RC1"), Some("0.21.6-RC1")),
       ("2.1.4.0-RC17", List("2.1.4.0-RC17+1-307f2f6c-SNAPSHOT"), None),
-      ("v2-rev374-1.23.0", List("v2-rev20190917-1.30.3"), Some("v2-rev20190917-1.30.3"))
+      ("v2-rev374-1.23.0", List("v2-rev20190917-1.30.3"), Some("v2-rev20190917-1.30.3")),
+      ("1.0.0-20201119", List("1.0.0-20201208"), Some("1.0.0-20201208")),
+      ("1.0.0-20201119-091040", List("1.0.0-20201208-143052"), Some("1.0.0-20201208-143052")),
+      (
+        "1.0.0-20201119-091040-d8b7496c",
+        List("1.0.0-20201208-143052-2c1b1172"),
+        Some("1.0.0-20201208-143052-2c1b1172")
+      ),
+      ("0.27.0-RC1", List("0.27.0-bin-20200826-2e58a66-NIGHTLY"), None),
+      ("2.0.16-200-ge888c6dea", List("2.0.16-200-ge888c6dea-14-c067d59f0-SNAPSHOT"), None),
+      ("17.0.0.1", List("18-ea+4"), None),
+      ("", List("", ".", "1", "a"), Some("1"))
     )
 
     val rnd = new Random()
-    forAll(nextVersions) { (current, versions, result) =>
-      Version(current).selectNext(rnd.shuffle(versions).map(Version.apply)) shouldBe
-        result.map(Version.apply)
+    nextVersions.foreach { case (current, versions, result) =>
+      val obtained = Version(current).selectNext(rnd.shuffle(versions).map(Version.apply))
+      assertEquals(obtained, result.map(Version.apply))
     }
   }
 
   test("Component: round-trip") {
-    forAll { str: String => Component.render(Component.parse(str)) shouldBe str }
+    forAll { str: String => assertEquals(Component.render(Component.parse(str)), str) }
+  }
+
+  test("Component: round-trip using Version") {
+    forAll { v: Version => assertEquals(Component.render(Component.parse(v.value)), v.value) }
   }
 
   test("Component: round-trip example") {
     val original = "1.0.0-rc.1+build.1"
-    Component.render(Component.Empty :: Component.parse(original)) shouldBe original
+    assertEquals(Component.render(Component.Empty :: Component.parse(original)), original)
   }
 
   def checkPairwise(versions: List[String]): Unit = {
@@ -227,8 +245,8 @@ class VersionTest
       case Nil    => Nil
     }
     pairs.foreach { case (v1, v2) =>
-      v1 should be < v2
-      v2 should be > v1
+      assert(clue(v1) < clue(v2))
+      assert(clue(v2) > clue(v1))
     }
   }
 }

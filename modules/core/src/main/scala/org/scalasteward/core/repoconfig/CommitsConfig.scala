@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.repoconfig
 
-import cats.kernel.{Eq, Semigroup}
+import cats.{Eq, Monoid}
 import io.circe.Codec
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
@@ -31,16 +31,15 @@ final case class CommitsConfig(
 object CommitsConfig {
   val defaultMessage = "${default}"
 
-  implicit val customConfig: Configuration =
-    Configuration.default.withDefaults
+  implicit val commitsConfigEq: Eq[CommitsConfig] =
+    Eq.fromUniversalEquals
 
-  implicit val eqPullRequestsConfig: Eq[CommitsConfig] = Eq.fromUniversalEquals
+  implicit val commitsConfigConfiguration: Configuration =
+    Configuration.default.withDefaults
 
   implicit val commitsConfigCodec: Codec[CommitsConfig] =
     deriveConfiguredCodec
 
-  implicit val semigroup: Semigroup[CommitsConfig] = new Semigroup[CommitsConfig] {
-    override def combine(x: CommitsConfig, y: CommitsConfig): CommitsConfig =
-      CommitsConfig(x.message.orElse(y.message))
-  }
+  implicit val commitsConfigMonoid: Monoid[CommitsConfig] =
+    Monoid.instance(CommitsConfig(), (x, y) => CommitsConfig(message = x.message.orElse(y.message)))
 }

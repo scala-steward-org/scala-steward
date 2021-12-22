@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package org.scalasteward.core.vcs
 
 import cats.syntax.all._
+import cats.{ApplicativeThrow, MonadThrow}
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.util.{ApplicativeThrowable, MonadThrowable}
 import org.scalasteward.core.vcs.data._
 
 trait VCSApiAlg[F[_]] {
@@ -26,30 +26,38 @@ trait VCSApiAlg[F[_]] {
 
   def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut]
 
+  def closePullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut]
+
   def getBranch(repo: Repo, branch: Branch): F[BranchOut]
 
   def getRepo(repo: Repo): F[RepoOut]
 
   def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]]
 
+  def referencePullRequest(number: PullRequestNumber): String =
+    s"#${number.value}"
+
+  def commentPullRequest(repo: Repo, number: PullRequestNumber, comment: String): F[Comment]
+
   final def createForkOrGetRepo(repo: Repo, doNotFork: Boolean): F[RepoOut] =
     if (doNotFork) getRepo(repo) else createFork(repo)
 
-  final def createForkOrGetRepoWithDefaultBranch(repo: Repo, doNotFork: Boolean)(implicit
-      F: MonadThrowable[F]
+  final def createForkOrGetRepoWithBranch(repo: Repo, doNotFork: Boolean)(implicit
+      F: MonadThrow[F]
   ): F[(RepoOut, BranchOut)] =
     for {
       forkOrRepo <- createForkOrGetRepo(repo, doNotFork)
-      defaultBranch <- getDefaultBranchOfParentOrRepo(forkOrRepo, doNotFork)
-    } yield (forkOrRepo, defaultBranch)
+      forkOrRepoWithDefaultBranch = repo.branch.fold(forkOrRepo)(forkOrRepo.withBranch)
+      defaultBranch <- getDefaultBranchOfParentOrRepo(forkOrRepoWithDefaultBranch, doNotFork)
+    } yield (forkOrRepoWithDefaultBranch, defaultBranch)
 
   final def getDefaultBranchOfParentOrRepo(repoOut: RepoOut, doNotFork: Boolean)(implicit
-      F: MonadThrowable[F]
+      F: MonadThrow[F]
   ): F[BranchOut] =
     parentOrRepo(repoOut, doNotFork).flatMap(getDefaultBranch)
 
   final def parentOrRepo(repoOut: RepoOut, doNotFork: Boolean)(implicit
-      F: ApplicativeThrowable[F]
+      F: ApplicativeThrow[F]
   ): F[RepoOut] =
     if (doNotFork) F.pure(repoOut) else repoOut.parentOrRaise[F]
 

@@ -1,7 +1,7 @@
 package org.scalasteward.core.mock
 
-import cats.data.StateT
-import io.chrisdavenport.log4cats.Logger
+import cats.data.Kleisli
+import org.typelevel.log4cats.Logger
 
 class MockLogger extends Logger[MockEff] {
   override def error(t: Throwable)(message: => String): MockEff[Unit] =
@@ -35,5 +35,5 @@ class MockLogger extends Logger[MockEff] {
     impl(None, message)
 
   def impl(maybeThrowable: Option[Throwable], message: String): MockEff[Unit] =
-    StateT.modify(_.log(maybeThrowable, message))
+    Kleisli(_.update(_.log(maybeThrowable, message)))
 }

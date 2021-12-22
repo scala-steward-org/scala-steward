@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,39 +16,67 @@
 
 package org.scalasteward.core.vcs
 
+import cats.MonadThrow
 import cats.syntax.all._
 import org.http4s.Uri
 import org.http4s.Uri.UserInfo
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.git.GitAlg
+import org.scalasteward.core.git.{updateBranchPrefix, Branch, GitAlg}
 import org.scalasteward.core.util
-import org.scalasteward.core.util.MonadThrowable
+import org.scalasteward.core.util.logger._
+import org.scalasteward.core.vcs.VCSType.GitHub
 import org.scalasteward.core.vcs.data.{Repo, RepoOut}
+import org.typelevel.log4cats.Logger
 
-trait VCSRepoAlg[F[_]] {
-  def clone(repo: Repo, repoOut: RepoOut): F[Unit]
+final class VCSRepoAlg[F[_]](config: Config)(implicit
+    gitAlg: GitAlg[F],
+    logger: Logger[F],
+    F: MonadThrow[F]
+) {
+  def cloneAndSync(repo: Repo, repoOut: RepoOut): F[Unit] =
+    clone(repo, repoOut) >> maybeCheckoutBranchOrSyncFork(repo, repoOut) >> initSubmodules(repo)
 
-  def syncFork(repo: Repo, repoOut: RepoOut): F[Unit]
-}
+  private def clone(repo: Repo, repoOut: RepoOut): F[Unit] =
+    logger.info(s"Clone ${repoOut.repo.show}") >>
+      gitAlg.clone(repo, withLogin(repoOut.clone_url)).adaptErr(adaptCloneError) >>
+      gitAlg.setAuthor(repo, config.gitCfg.gitAuthor)
 
-object VCSRepoAlg {
-  def create[F[_]: MonadThrowable](config: Config, gitAlg: GitAlg[F]): VCSRepoAlg[F] =
-    new VCSRepoAlg[F] {
-      override def clone(repo: Repo, repoOut: RepoOut): F[Unit] =
-        for {
-          _ <- gitAlg.clone(repo, withLogin(repoOut.clone_url))
-          _ <- gitAlg.setAuthor(repo, config.gitAuthor)
-        } yield ()
+  private val adaptCloneError: PartialFunction[Throwable, Throwable] = {
+    case throwable if config.vcsCfg.tpe === GitHub && !config.vcsCfg.doNotFork =>
+      val message =
+        """|If cloning failed with an error like 'access denied or repository not exported'
+           |the fork might not be ready yet. This error might disappear on the next run.
+           |See https://github.com/scala-steward-org/scala-steward/issues/472 for details.
+           |""".stripMargin
+      new Throwable(message, throwable)
+  }
 
-      override def syncFork(repo: Repo, repoOut: RepoOut): F[Unit] =
-        if (config.doNotFork) ().pure[F]
-        else
-          for {
-            parent <- repoOut.parentOrRaise[F]
-            _ <- gitAlg.syncFork(repo, withLogin(parent.clone_url), parent.default_branch)
-          } yield ()
+  private def maybeCheckoutBranchOrSyncFork(repo: Repo, repoOut: RepoOut): F[Unit] =
+    if (config.vcsCfg.doNotFork) repo.branch.fold(F.unit)(gitAlg.checkoutBranch(repo, _))
+    else syncFork(repo, repoOut)
 
-      val withLogin: Uri => Uri =
-        util.uri.withUserInfo.set(UserInfo(config.vcsLogin, None))
+  private def syncFork(repo: Repo, repoOut: RepoOut): F[Unit] =
+    repoOut.parentOrRaise[F].flatMap { parent =>
+      logger.info(s"Synchronize with ${parent.repo.show}") >>
+        gitAlg.syncFork(repo, withLogin(parent.clone_url), parent.default_branch) >>
+        deleteUpdateBranch(repo)
     }
+
+  // We use "update" as prefix for our branches but Git doesn't allow branches named
+  // "update" and "update/..." in the same repo. We therefore delete the "update" branch
+  // in our fork if it exists.
+  private def deleteUpdateBranch(repo: Repo): F[Unit] = {
+    val local = Branch(updateBranchPrefix)
+    val remote = local.withPrefix("origin/")
+    gitAlg.branchExists(repo, local).ifM(gitAlg.deleteLocalBranch(repo, local), F.unit) >>
+      gitAlg.branchExists(repo, remote).ifM(gitAlg.deleteRemoteBranch(repo, local), F.unit)
+  }
+
+  private def initSubmodules(repo: Repo): F[Unit] =
+    logger.attemptWarn.log_("Initializing and cloning submodules failed") {
+      gitAlg.initSubmodules(repo)
+    }
+
+  private val withLogin: Uri => Uri =
+    util.uri.withUserInfo.replace(UserInfo(config.vcsCfg.login, None))
 }

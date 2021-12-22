@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,27 +24,29 @@ sealed trait PullRequestUpdateStrategy {
 }
 
 object PullRequestUpdateStrategy {
-  final case object Always extends PullRequestUpdateStrategy { val name = "always" }
-  final case object OnConflicts extends PullRequestUpdateStrategy { val name = "on-conflicts" }
-  final case object Never extends PullRequestUpdateStrategy { val name = "never" }
+  case object Always extends PullRequestUpdateStrategy { val name = "always" }
+  case object OnConflicts extends PullRequestUpdateStrategy { val name = "on-conflicts" }
+  case object Never extends PullRequestUpdateStrategy { val name = "never" }
 
   val default: PullRequestUpdateStrategy = OnConflicts
 
   def fromString(value: String): PullRequestUpdateStrategy =
     value.trim.toLowerCase match {
-      case "on-conflicts" => OnConflicts
-      case "never"        => Never
-      case "always"       => Always
-      case _              => default
+      case OnConflicts.name => OnConflicts
+      case Never.name       => Never
+      case Always.name      => Always
+      case _                => default
     }
 
   def fromBoolean(value: Boolean): PullRequestUpdateStrategy =
-    if (value) OnConflicts
-    else Never
+    if (value) OnConflicts else Never
 
-  implicit val prUpdateStrategyDecoder: Decoder[PullRequestUpdateStrategy] =
+  implicit val pullRequestUpdateStrategyDecoder: Decoder[PullRequestUpdateStrategy] =
     Decoder[Boolean].map(fromBoolean).or(Decoder[String].map(fromString))
-  implicit val prUpdateStrategyEncoder: Encoder[PullRequestUpdateStrategy] =
+
+  implicit val pullRequestUpdateStrategyEncoder: Encoder[PullRequestUpdateStrategy] =
     Encoder[String].contramap(_.name)
-  implicit val eqPRUpdateStrategy: Eq[PullRequestUpdateStrategy] = Eq.fromUniversalEquals
+
+  implicit val pullRequestUpdateStrategyEq: Eq[PullRequestUpdateStrategy] =
+    Eq.fromUniversalEquals
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,19 +18,30 @@ package org.scalasteward.core
 
 import cats.syntax.all._
 import org.scalasteward.core.buildtool.sbt.defaultScalaBinaryVersion
-import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId, Version}
+import org.scalasteward.core.data._
 
 package object scalafmt {
-  def scalafmtDependency(scalafmtVersion: Version): Dependency =
-    Dependency(
-      GroupId(if (scalafmtVersion > Version("2.0.0-RC1")) "org.scalameta" else "com.geirsson"),
-      ArtifactId("scalafmt-core", s"scalafmt-core_$defaultScalaBinaryVersion"),
-      scalafmtVersion.value
-    )
+  val scalafmtGroupId: GroupId =
+    GroupId("org.scalameta")
 
-  def parseScalafmtConf(s: String): Option[Version] =
-    """version\s*=\s*(.+)""".r
-      .findFirstMatchIn(s)
-      .map(_.group(1).replace("\"", ""))
-      .map(Version.apply)
+  val scalafmtArtifactId: ArtifactId = {
+    val core = "scalafmt-core"
+    ArtifactId(core, s"${core}_$defaultScalaBinaryVersion")
+  }
+
+  val scalafmtModule: (GroupId, ArtifactId) =
+    (scalafmtGroupId, scalafmtArtifactId)
+
+  def isScalafmtUpdate(update: Update.Single): Boolean =
+    update.groupId === scalafmtGroupId && update.artifactId.name === scalafmtArtifactId.name
+
+  private def scalafmtGroupIdBy(version: Version): GroupId =
+    if (version > Version("2.0.0-RC1")) scalafmtGroupId else GroupId("com.geirsson")
+
+  def scalafmtDependency(version: Version): Dependency =
+    Dependency(scalafmtGroupIdBy(version), scalafmtArtifactId, version.value)
+
+  val scalafmtBinary: String = "scalafmt"
+
+  val scalafmtConfName: String = ".scalafmt.conf"
 }

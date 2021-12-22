@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ object Dependency {
     deriveCodec
 
   implicit val dependencyOrder: Order[Dependency] =
-    Order.by { d: Dependency =>
+    Order.by { (d: Dependency) =>
       (d.groupId, d.artifactId, d.version, d.sbtVersion, d.scalaVersion, d.configurations)
     }
 }

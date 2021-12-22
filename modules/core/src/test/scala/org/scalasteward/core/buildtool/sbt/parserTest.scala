@@ -1,16 +1,15 @@
 package org.scalasteward.core.buildtool.sbt
 
+import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.buildtool.sbt.data.SbtVersion
 import org.scalasteward.core.buildtool.sbt.parser._
 import org.scalasteward.core.data.Resolver.{Credentials, IvyRepository, MavenRepository}
-import org.scalasteward.core.data.{ArtifactId, Scope}
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
+import org.scalasteward.core.data.Scope
 
-class parserTest extends AnyFunSuite with Matchers {
+class parserTest extends FunSuite {
   test("parseBuildProperties: with whitespace") {
-    parseBuildProperties("sbt.version = 1.2.8") shouldBe Some(SbtVersion("1.2.8"))
+    assertEquals(parseBuildProperties("sbt.version = 1.2.8"), Some(SbtVersion("1.2.8")))
   }
 
   test("parseDependencies") {
@@ -33,12 +32,12 @@ class parserTest extends AnyFunSuite with Matchers {
          |[info] --- snip ---
          |""".stripMargin.linesIterator.toList
     val scopes = parseDependencies(lines)
-    scopes shouldBe List(
+    val expected = List(
       Scope(
         List(
-          "org.scala-lang" % "scala-library" % "2.12.7",
-          "com.github.pathikrit" % ArtifactId("better-files", "better-files_2.12") % "3.6.0",
-          "org.typelevel" % ArtifactId("cats-effect", "cats-effect_2.12") % "1.0.0"
+          "org.scala-lang".g % "scala-library".a % "2.12.7",
+          "com.github.pathikrit".g % ("better-files", "better-files_2.12").a % "3.6.0",
+          "org.typelevel".g % ("cats-effect", "cats-effect_2.12").a % "1.0.0"
         ),
         List(
           MavenRepository("bintray-ovotech-maven", "https://dl.bintray.com/ovotech/maven/", None),
@@ -51,11 +50,13 @@ class parserTest extends AnyFunSuite with Matchers {
       ),
       Scope(
         List(
-          "org.scala-lang" % "scala-library" % "2.12.6",
-          ("com.dwijnand" % "sbt-travisci" % "1.1.3").copy(sbtVersion = Some(SbtVersion("1.0"))),
-          ("com.eed3si9n" % "sbt-assembly" % "0.14.8" % "foo")
+          "org.scala-lang".g % "scala-library".a % "2.12.6",
+          ("com.dwijnand".g % "sbt-travisci".a % "1.1.3")
             .copy(sbtVersion = Some(SbtVersion("1.0"))),
-          ("com.geirsson" % "sbt-scalafmt" % "1.6.0-RC4").copy(sbtVersion = Some(SbtVersion("1.0")))
+          ("com.eed3si9n".g % "sbt-assembly".a % "0.14.8" % "foo")
+            .copy(sbtVersion = Some(SbtVersion("1.0"))),
+          ("com.geirsson".g % "sbt-scalafmt".a % "1.6.0-RC4")
+            .copy(sbtVersion = Some(SbtVersion("1.0")))
         ),
         List(
           IvyRepository(
@@ -71,5 +72,6 @@ class parserTest extends AnyFunSuite with Matchers {
         )
       )
     )
+    assertEquals(scopes, expected)
   }
 }

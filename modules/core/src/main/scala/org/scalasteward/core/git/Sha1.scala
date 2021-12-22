@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package org.scalasteward.core.git
 
 import cats.Eq
 import cats.syntax.all._
-import eu.timepit.refined.W
 import eu.timepit.refined.api.{Refined, RefinedTypeOps}
 import eu.timepit.refined.boolean.{And, Or}
 import eu.timepit.refined.char.Digit
@@ -32,8 +31,8 @@ import org.scalasteward.core.git.Sha1.HexString
 final case class Sha1(value: HexString)
 
 object Sha1 {
-  type HexDigit = Digit Or Interval.Closed[W.`'a'`.T, W.`'f'`.T]
-  type HexString = String Refined (Forall[HexDigit] And Size[Equal[W.`40`.T]])
+  type HexDigit = Digit Or Interval.Closed['a', 'f']
+  type HexString = String Refined (Forall[HexDigit] And Size[Equal[40]])
   object HexString extends RefinedTypeOps[HexString, String]
 
   def from(s: String): Either[Throwable, Sha1] =

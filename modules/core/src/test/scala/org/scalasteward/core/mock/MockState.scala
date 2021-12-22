@@ -1,29 +1,60 @@
 package org.scalasteward.core.mock
 
 import better.files.File
+import cats.effect.{IO, Ref}
+import cats.syntax.all._
+import org.http4s.Uri
+import org.scalasteward.core.io.FileAlgTest.ioFileAlg
+import org.scalasteward.core.mock.MockState.TraceEntry
+import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 
 final case class MockState(
-    commands: Vector[List[String]],
-    logs: Vector[(Option[Throwable], String)],
-    files: Map[File, String]
+    trace: Vector[TraceEntry],
+    commandOutputs: Map[List[String], List[String]],
+    files: Map[File, String],
+    uris: Map[Uri, String]
 ) {
-  def add(file: File, content: String): MockState =
-    copy(files = files + (file -> content))
+  def addFiles(newFiles: (File, String)*): IO[MockState] =
+    newFiles.toList
+      .traverse_ { case (file, content) => ioFileAlg.writeFile(file, content) }
+      .as(copy(files = files ++ newFiles))
 
-  def addFiles(newFiles: Map[File, String]): MockState =
-    copy(files = files ++ newFiles)
+  def addUris(newUris: (Uri, String)*): MockState =
+    copy(uris = uris ++ newUris)
 
-  def rm(file: File): MockState =
-    copy(files = files - file)
+  def rmFile(file: File): IO[MockState] =
+    ioFileAlg.deleteForce(file).as(copy(files = files - file))
 
   def exec(cmd: List[String], env: (String, String)*): MockState =
-    copy(commands = commands :+ (env.map { case (k, v) => s"$k=$v" }.toList ++ cmd))
+    copy(trace = trace :+ Cmd(env.map { case (k, v) => s"$k=$v" }.toList ++ cmd))
 
   def log(maybeThrowable: Option[Throwable], msg: String): MockState =
-    copy(logs = logs :+ ((maybeThrowable, msg)))
+    copy(trace = trace :+ Log((maybeThrowable, msg)))
+
+  def toRef: IO[Ref[IO, MockState]] =
+    Ref[IO].of(this)
 }
 
 object MockState {
   def empty: MockState =
-    MockState(commands = Vector.empty, logs = Vector.empty, files = Map.empty)
+    MockState(
+      trace = Vector.empty,
+      commandOutputs = Map.empty,
+      files = Map.empty,
+      uris = Map.empty
+    )
+
+  sealed trait TraceEntry extends Product with Serializable
+  object TraceEntry {
+    final case class Cmd(cmd: List[String]) extends TraceEntry
+    object Cmd {
+      def apply(args: String*): Cmd = apply(args.toList)
+      def apply(args1: List[String], args2: String*): Cmd = apply(args1 ++ args2.toList)
+    }
+
+    final case class Log(log: (Option[Throwable], String)) extends TraceEntry
+    object Log {
+      def apply(msg: String): Log = Log((None, msg))
+    }
+  }
 }

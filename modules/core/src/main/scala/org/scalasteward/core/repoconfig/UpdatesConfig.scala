@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@
 package org.scalasteward.core.repoconfig
 
 import cats.implicits._
-import cats.kernel.Semigroup
-import eu.timepit.refined.types.numeric.PosInt
+import cats.{Eq, Monoid}
+import eu.timepit.refined.types.numeric.NonNegInt
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 import io.circe.refined._
-import io.circe.{Decoder, Encoder}
+import io.circe.{Codec, Decoder}
 import org.scalasteward.core.data.{GroupId, Update}
 import org.scalasteward.core.update.FilterAlg.{
   FilterResult,
@@ -30,24 +30,20 @@ import org.scalasteward.core.update.FilterAlg.{
   NotAllowedByConfig,
   VersionPinnedByConfig
 }
-import org.scalasteward.core.util.Nel
+import org.scalasteward.core.util.{combineOptions, Nel}
 
 final case class UpdatesConfig(
     pin: List[UpdatePattern] = List.empty,
     allow: List[UpdatePattern] = List.empty,
     ignore: List[UpdatePattern] = List.empty,
-    limit: Option[PosInt] = None,
-    includeScala: Option[Boolean] = None,
-    fileExtensions: List[String] = List.empty
+    limit: Option[NonNegInt] = None,
+    fileExtensions: Option[List[String]] = None
 ) {
+  def fileExtensionsOrDefault: Set[String] =
+    fileExtensions.fold(UpdatesConfig.defaultFileExtensions)(_.toSet)
+
   def keep(update: Update.Single): FilterResult =
     isAllowed(update).flatMap(isPinned).flatMap(isIgnored)
-
-  def fileExtensionsOrDefault: Set[String] =
-    if (fileExtensions.isEmpty)
-      UpdatesConfig.defaultFileExtensions
-    else
-      fileExtensions.toSet
 
   private def isAllowed(update: Update.Single): FilterResult = {
     val m = UpdatePattern.findMatch(allow, update, include = true)
@@ -77,46 +73,42 @@ final case class UpdatesConfig(
 }
 
 object UpdatesConfig {
-  implicit val customConfig: Configuration =
-    Configuration.default.withDefaults
-
-  implicit val updatesConfigDecoder: Decoder[UpdatesConfig] =
-    deriveConfiguredDecoder
-
-  implicit val updatesConfigEncoder: Encoder[UpdatesConfig] =
-    deriveConfiguredEncoder
-
-  val defaultIncludeScala: Boolean = false
-
   val defaultFileExtensions: Set[String] =
     Set(".scala", ".sbt", ".sbt.shared", ".sc", ".yml", "pom.xml")
 
-  private[repoconfig] val nonExistingFileExtension: List[String] = List(".non-exist")
-  private[repoconfig] val nonExistingUpdatePattern: List[UpdatePattern] = List(
-    UpdatePattern(GroupId("non-exist"), None, None)
-  )
+  implicit val updatesConfigEq: Eq[UpdatesConfig] =
+    Eq.fromUniversalEquals
 
-  // prevent IntelliJ from removing the import of io.circe.refined._
-  locally(refinedDecoder: Decoder[PosInt])
+  implicit val updatesConfigConfiguration: Configuration =
+    Configuration.default.withDefaults
 
-  implicit val semigroup: Semigroup[UpdatesConfig] = new Semigroup[UpdatesConfig] {
-    override def combine(x: UpdatesConfig, y: UpdatesConfig): UpdatesConfig =
-      UpdatesConfig(
-        pin = mergePin(x.pin, y.pin),
-        allow = mergeAllow(x.allow, y.allow),
-        ignore = mergeIgnore(x.ignore, y.ignore),
-        limit = x.limit.orElse(y.limit),
-        includeScala = x.includeScala.orElse(y.includeScala),
-        fileExtensions = mergeFileExtensions(x.fileExtensions, y.fileExtensions)
-      )
-  }
+  implicit val updatesConfigCodec: Codec[UpdatesConfig] =
+    deriveConfiguredCodec
+
+  implicit val updatesConfigMonoid: Monoid[UpdatesConfig] =
+    Monoid.instance(
+      UpdatesConfig(),
+      (x, y) =>
+        UpdatesConfig(
+          pin = mergePin(x.pin, y.pin),
+          allow = mergeAllow(x.allow, y.allow),
+          ignore = mergeIgnore(x.ignore, y.ignore),
+          limit = x.limit.orElse(y.limit),
+          fileExtensions = mergeFileExtensions(x.fileExtensions, y.fileExtensions)
+        )
+    )
 
   //  Strategy: union with repo preference in terms of revision
   private[repoconfig] def mergePin(
       x: List[UpdatePattern],
       y: List[UpdatePattern]
   ): List[UpdatePattern] =
-    (x ::: y).distinctBy(up => up.groupId -> up.artifactId)
+    x ::: y.filterNot { p1 =>
+      x.exists(p2 => p1.groupId === p2.groupId && p1.artifactId === p2.artifactId)
+    }
+
+  private[repoconfig] val nonExistingUpdatePattern: List[UpdatePattern] =
+    List(UpdatePattern(GroupId("non-exist"), None, None))
 
   //  Strategy: superset
   //  Xa.Ya.Za |+| Xb.Yb.Zb
@@ -145,7 +137,7 @@ object UpdatesConfig {
     }
 
   //  merge UpdatePattern for same group id
-  private[this] def mergeAllowGroupId(
+  private def mergeAllowGroupId(
       x: List[UpdatePattern],
       y: List[UpdatePattern]
   ): List[UpdatePattern] =
@@ -171,7 +163,7 @@ object UpdatesConfig {
         else builder.toList
     }
 
-  private[this] def satisfyUpdatePattern(
+  private def satisfyUpdatePattern(
       targetUpdatePattern: UpdatePattern,
       comparedUpdatePatternsByArtifact: Map[Option[String], List[UpdatePattern]]
   ): Boolean =
@@ -185,15 +177,14 @@ object UpdatesConfig {
       x: List[UpdatePattern],
       y: List[UpdatePattern]
   ): List[UpdatePattern] =
-    (x ::: y).distinct
-  private[repoconfig] def mergeFileExtensions(x: List[String], y: List[String]): List[String] =
-    (x, y) match {
-      case (Nil, second) => second
-      case (first, Nil)  => first
-      case _ =>
-        val result = x.intersect(y)
-        //  Since empty result represents [*] any extension, we gonna set artificial extension instead.
-        if (result.nonEmpty) result
-        else nonExistingFileExtension
-    }
+    x ::: y.filterNot(x.contains)
+
+  private[repoconfig] def mergeFileExtensions(
+      x: Option[List[String]],
+      y: Option[List[String]]
+  ): Option[List[String]] =
+    combineOptions(x, y)(_.intersect(_))
+
+  // prevent IntelliJ from removing the import of io.circe.refined._
+  locally(refinedDecoder: Decoder[NonNegInt])
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,12 @@
 
 package org.scalasteward.core.data
 
+import org.scalasteward.core.vcs.data.PullRequestNumber
+
 sealed trait ProcessResult extends Product with Serializable
 
 object ProcessResult {
   case object Ignored extends ProcessResult
   case object Updated extends ProcessResult
+  case class Created(prNumber: PullRequestNumber) extends ProcessResult
 }

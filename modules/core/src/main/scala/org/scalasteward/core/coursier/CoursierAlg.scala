@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,11 @@ import cats.{Applicative, Parallel}
 import coursier.cache.{CachePolicy, FileCache}
 import coursier.core.{Authentication, Project}
 import coursier.{Fetch, Info, Module, ModuleName, Organization}
-import io.chrisdavenport.log4cats.Logger
 import org.http4s.Uri
 import org.scalasteward.core.data.Resolver.Credentials
 import org.scalasteward.core.data.{Dependency, Resolver, Scope, Version}
+import org.scalasteward.core.util.uri
+import org.typelevel.log4cats.Logger
 
 /** An interface to [[https://get-coursier.io Coursier]] used for
   * fetching dependency versions and metadata.
@@ -45,14 +46,10 @@ trait CoursierAlg[F[_]] {
 
 object CoursierAlg {
   def create[F[_]](implicit
-      contextShift: ContextShift[F],
       logger: Logger[F],
+      parallel: Parallel[F],
       F: Sync[F]
   ): CoursierAlg[F] = {
-    implicit val parallel: Parallel.Aux[F, F] = Parallel.identity[F]
-    implicit val coursierSync: coursier.util.Sync[F] =
-      coursier.interop.cats.coursierSyncFromCats(F, parallel, contextShift)
-
     val fetch: Fetch[F] = Fetch[F](FileCache[F]())
 
     val cacheNoTtl: FileCache[F] =
@@ -94,7 +91,8 @@ object CoursierAlg {
           case Right(repository) =>
             val module = toCoursierModule(dependency)
             repository.versions(module, cacheNoTtl.fetch).run.flatMap {
-              case Left(message)        => F.raiseError(new Throwable(message))
+              case Left(message) =>
+                logger.debug(message) >> F.raiseError(new Throwable(message))
               case Right((versions, _)) => F.pure(versions.available.map(Version.apply).sorted)
             }
         }
@@ -142,8 +140,5 @@ object CoursierAlg {
     }
 
   private def getScmUrlOrHomePage(info: Info): Option[Uri] =
-    (info.scm.flatMap(_.url).toList :+ info.homePage)
-      .filterNot(url => url.isEmpty || url.startsWith("git@") || url.startsWith("git:"))
-      .flatMap(Uri.fromString(_).toList.filter(_.scheme.isDefined))
-      .headOption
+    uri.findBrowsableUrl(info.scm.flatMap(_.url).toList :+ info.homePage)
 }

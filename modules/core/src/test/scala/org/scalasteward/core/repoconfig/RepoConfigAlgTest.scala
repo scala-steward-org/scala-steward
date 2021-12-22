@@ -1,20 +1,31 @@
 package org.scalasteward.core.repoconfig
 
-import better.files.File
-import eu.timepit.refined.types.numeric.PosInt
+import cats.effect.unsafe.implicits.global
+import cats.syntax.all._
+import eu.timepit.refined.types.numeric.NonNegInt
+import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.{GroupId, Update}
-import org.scalasteward.core.mock.MockContext.repoConfigAlg
-import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.mock.MockContext.context.repoConfigAlg
+import org.scalasteward.core.mock.MockState.TraceEntry.Log
+import org.scalasteward.core.mock.{MockConfig, MockState}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
+import scala.concurrent.duration._
 
-class RepoConfigAlgTest extends AnyFunSuite with Matchers {
+class RepoConfigAlgTest extends FunSuite {
+  test("default config is not empty") {
+    val config = repoConfigAlg
+      .readRepoConfig(Repo("repo-config-alg", "test-1"))
+      .map(repoConfigAlg.mergeWithGlobal)
+      .runA(MockState.empty)
+      .unsafeRunSync()
+
+    assert(config =!= RepoConfig.empty)
+  }
+
   test("config with all fields set") {
     val repo = Repo("fthomas", "scala-steward")
-    val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
+    val configFile = MockConfig.config.workspace / "fthomas/scala-steward/.scala-steward.conf"
     val content =
       """|updates.allow  = [ { groupId = "eu.timepit"} ]
          |updates.pin  = [
@@ -25,144 +36,158 @@ class RepoConfigAlgTest extends AnyFunSuite with Matchers {
          |               ]
          |updates.ignore = [ { groupId = "org.acme", version = "1.0" } ]
          |updates.limit = 4
-         |updates.includeScala = true
          |updates.fileExtensions = [ ".txt" ]
          |pullRequests.frequency = "@weekly"
          |commits.message = "Update ${artifactName} from ${currentVersion} to ${nextVersion}"
+         |buildRoots = [ ".", "subfolder/subfolder" ]
          |""".stripMargin
-    val initialState = MockState.empty.add(configFile, content)
-    val config = repoConfigAlg.readRepoConfigWithDefault(repo).runA(initialState).unsafeRunSync()
+    val initialState = MockState.empty.addFiles(configFile -> content).unsafeRunSync()
+    val config = repoConfigAlg
+      .readRepoConfig(repo)
+      .map(_.getOrElse(RepoConfig.empty))
+      .runA(initialState)
+      .unsafeRunSync()
 
-    config shouldBe RepoConfig(
-      pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Weekly)),
+    val expected = RepoConfig(
+      pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(7.days))),
       updates = UpdatesConfig(
-        allow = List(UpdatePattern(GroupId("eu.timepit"), None, None)),
+        allow = List(UpdatePattern("eu.timepit".g, None, None)),
         pin = List(
+          UpdatePattern("eu.timepit".g, Some("refined.1"), Some(VersionPattern(Some("0.8.")))),
+          UpdatePattern("eu.timepit".g, Some("refined.2"), Some(VersionPattern(Some("0.8.")))),
           UpdatePattern(
-            GroupId("eu.timepit"),
-            Some("refined.1"),
-            Some(UpdatePattern.Version(Some("0.8."), None))
-          ),
-          UpdatePattern(
-            GroupId("eu.timepit"),
-            Some("refined.2"),
-            Some(UpdatePattern.Version(Some("0.8."), None))
-          ),
-          UpdatePattern(
-            GroupId("eu.timepit"),
+            "eu.timepit".g,
             Some("refined.3"),
-            Some(UpdatePattern.Version(None, Some("jre")))
+            Some(VersionPattern(suffix = Some("jre")))
           ),
           UpdatePattern(
-            GroupId("eu.timepit"),
+            "eu.timepit".g,
             Some("refined.4"),
-            Some(UpdatePattern.Version(Some("0.8."), Some("jre")))
+            Some(VersionPattern(Some("0.8."), Some("jre")))
           )
         ),
-        ignore = List(
-          UpdatePattern(GroupId("org.acme"), None, Some(UpdatePattern.Version(Some("1.0"), None)))
-        ),
-        limit = Some(PosInt.unsafeFrom(4)),
-        includeScala = Some(true),
-        fileExtensions = List(".txt")
+        ignore = List(UpdatePattern("org.acme".g, None, Some(VersionPattern(Some("1.0"))))),
+        limit = Some(NonNegInt.unsafeFrom(4)),
+        fileExtensions = Some(List(".txt"))
       ),
       commits = CommitsConfig(
         message = Some("Update ${artifactName} from ${currentVersion} to ${nextVersion}")
-      )
+      ),
+      buildRoots = Some(List(BuildRootConfig.repoRoot, BuildRootConfig("subfolder/subfolder")))
     )
+    assertEquals(config, expected)
   }
 
   test("config with 'updatePullRequests = false'") {
     val content = "updatePullRequests = false"
     val config = RepoConfigAlg.parseRepoConfig(content)
-    config shouldBe Right(RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.Never)))
+    val expected = RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.Never))
+    assertEquals(config, Right(expected))
   }
 
   test("config with 'updatePullRequests = true'") {
     val content = "updatePullRequests = true"
     val config = RepoConfigAlg.parseRepoConfig(content)
-    config shouldBe Right(
-      RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.OnConflicts))
-    )
+    val expected = RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.OnConflicts))
+    assertEquals(config, Right(expected))
   }
 
-  test("config with 'updatePullRequests = always") {
+  test("config with 'updatePullRequests = always'") {
     val content = """updatePullRequests = "always" """
     val config = RepoConfigAlg.parseRepoConfig(content)
-    config shouldBe Right(RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.Always)))
+    val expected = RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.Always))
+    assertEquals(config, Right(expected))
   }
 
-  test("config with 'updatePullRequests = on-conflicts") {
+  test("config with 'updatePullRequests = on-conflicts'") {
     val content = """updatePullRequests = "on-conflicts" """
     val config = RepoConfigAlg.parseRepoConfig(content)
-    config shouldBe Right(
-      RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.OnConflicts))
-    )
+    val expected = RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.OnConflicts))
+    assertEquals(config, Right(expected))
   }
 
-  test("config with 'updatePullRequests = never") {
+  test("config with 'updatePullRequests = never'") {
     val content = """updatePullRequests = "never" """
     val config = RepoConfigAlg.parseRepoConfig(content)
-    config shouldBe Right(RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.Never)))
+    val expected = RepoConfig(updatePullRequests = Some(PullRequestUpdateStrategy.Never))
+    assertEquals(config, Right(expected))
+  }
+
+  test("config with 'updatePullRequests = foo'") {
+    val content = """updatePullRequests = foo """
+    val obtained = RepoConfigAlg.parseRepoConfig(content).map(_.updatePullRequestsOrDefault)
+    val expected = PullRequestUpdateStrategy.default
+    assertEquals(obtained, Right(expected))
   }
 
   test("config with 'pullRequests.frequency = @asap'") {
     val content = """pullRequests.frequency = "@asap" """
     val config = RepoConfigAlg.parseRepoConfig(content)
-    config shouldBe Right(
+    val expected =
       RepoConfig(pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Asap)))
-    )
+    assertEquals(config, Right(expected))
   }
 
   test("config with 'pullRequests.frequency = @daily'") {
     val content = """pullRequests.frequency = "@daily" """
     val config = RepoConfigAlg.parseRepoConfig(content)
-    config shouldBe Right(
-      RepoConfig(pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Daily)))
+    val expected = RepoConfig(pullRequests =
+      PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(1.day)))
     )
+    assertEquals(config, Right(expected))
   }
 
   test("config with 'pullRequests.frequency = @monthly'") {
     val content = """pullRequests.frequency = "@monthly" """
     val config = RepoConfigAlg.parseRepoConfig(content)
-    config shouldBe Right(
-      RepoConfig(pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Monthly)))
+    val expected = RepoConfig(pullRequests =
+      PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(30.days)))
     )
+    assertEquals(config, Right(expected))
+  }
+
+  test("config with 'scalafmt.runAfterUpgrading = true'") {
+    val content = "scalafmt.runAfterUpgrading = true"
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    val expected = RepoConfig(scalafmt = ScalafmtConfig(runAfterUpgrading = Some(true)))
+    assertEquals(config, Right(expected))
+  }
+
+  test("build root with '..'") {
+    val content = """buildRoots = [ "../../../etc" ]"""
+    val config = RepoConfigAlg.parseRepoConfig(content).map(_.buildRootsOrDefault)
+    assertEquals(config, Right(Nil))
   }
 
   test("malformed config") {
     val repo = Repo("fthomas", "scala-steward")
-    val configFile = File.temp / "ws/fthomas/scala-steward/.scala-steward.conf"
-    val initialState = MockState.empty.add(configFile, """updates.ignore = [ "foo """)
-    val (state, config) =
-      repoConfigAlg.readRepoConfigWithDefault(repo).run(initialState).unsafeRunSync()
+    val configFile = MockConfig.config.workspace / "fthomas/scala-steward/.scala-steward.conf"
+    val initialState =
+      MockState.empty.addFiles(configFile -> """updates.ignore = [ "foo """).unsafeRunSync()
+    val (state, config) = repoConfigAlg.readRepoConfig(repo).runSA(initialState).unsafeRunSync()
 
-    config shouldBe RepoConfig()
-    state.logs.headOption.map { case (_, msg) => msg }.getOrElse("") should
-      startWith("Failed to parse .scala-steward.conf")
+    assertEquals(config, None)
+    val log = state.trace.collectFirst { case Log((_, msg)) => msg }.getOrElse("")
+    assert(clue(log).startsWith("Failed to parse .scala-steward.conf"))
   }
 
   test("configToIgnoreFurtherUpdates with single update") {
-    val update = Update.Single("a" % "b" % "c", Nel.of("d"))
-    val repoConfig = RepoConfigAlg
+    val update = ("a".g % "b".a % "c" %> "d").single
+    val config = RepoConfigAlg
       .parseRepoConfig(RepoConfigAlg.configToIgnoreFurtherUpdates(update))
       .getOrElse(RepoConfig())
-
-    repoConfig shouldBe RepoConfig(
-      updates = UpdatesConfig(
-        ignore = List(UpdatePattern(GroupId("a"), Some("b"), None))
-      )
-    )
+    val expected =
+      RepoConfig(updates = UpdatesConfig(ignore = List(UpdatePattern("a".g, Some("b"), None))))
+    assertEquals(config, expected)
   }
 
   test("configToIgnoreFurtherUpdates with group update") {
-    val update = Update.Group("a" % Nel.of("b", "e") % "c", Nel.of("d"))
-    val repoConfig = RepoConfigAlg
+    val update = ("a".g % Nel.of("b".a, "e".a) % "c" %> "d").group
+    val config = RepoConfigAlg
       .parseRepoConfig(RepoConfigAlg.configToIgnoreFurtherUpdates(update))
       .getOrElse(RepoConfig())
-
-    repoConfig shouldBe RepoConfig(
-      updates = UpdatesConfig(ignore = List(UpdatePattern(GroupId("a"), None, None)))
-    )
+    val expected =
+      RepoConfig(updates = UpdatesConfig(ignore = List(UpdatePattern("a".g, None, None))))
+    assertEquals(config, expected)
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,40 +16,45 @@
 
 package org.scalasteward.core.buildtool.maven
 
-import atto.Atto._
-import atto._
+import cats.parse.Rfc5234.wsp
+import cats.parse.{Parser, Parser0}
 import cats.syntax.all._
 import org.scalasteward.core.data._
 
 object parser {
-  private val colon: Parser[Char] = char(':')
+  private val colon: Parser[Char] =
+    Parser.charIn(':')
 
-  private val underscore: Parser[Char] = char('_')
+  private val underscore: Parser[Char] =
+    Parser.charIn('_')
+
+  private def charsWhileNot(fn: Char => Boolean): Parser[String] =
+    Parser.charsWhile(!fn(_))
 
   private val stringNoSpace: Parser[String] =
-    many1(noneOf(" ")).map(_.mkString_(""))
+    charsWhileNot(Set(' '))
 
   private val stringNoSpaceNoColon: Parser[String] =
-    many1(noneOf(" :")).map(_.mkString_(""))
+    charsWhileNot(Set(' ', ':'))
 
   private val stringNoSpaceNoColonNoUnderscore: Parser[String] =
-    many1(noneOf(" :_")).map(_.mkString_(""))
+    charsWhileNot(Set(' ', ':', '_'))
 
   private val artifactId: Parser[ArtifactId] =
     for {
       name <- stringNoSpaceNoColonNoUnderscore
-      suffix <- opt(underscore ~ stringNoSpaceNoColon)
+      suffix <- (underscore ~ stringNoSpaceNoColon).?
     } yield ArtifactId(name, suffix.map { case (c, str) => name + c + str })
 
-  private val configurations: Parser[Option[String]] =
-    opt(stringNoSpaceNoColon).map(_.filterNot(_ === "compile"))
+  private val configurations: Parser0[Option[String]] =
+    stringNoSpaceNoColon.?.map(_.filterNot(_ === "compile"))
 
-  private val dependency: Parser[Dependency] =
+  private val dependency: Parser0[Dependency] =
     for {
-      _ <- opt(string("[INFO]") ~ many(whitespace))
-      groupId <- stringNoSpaceNoColon.map(GroupId.apply) <~ colon
-      artifactId <- artifactId <~ colon <~ string("jar") <~ colon
-      version <- stringNoSpaceNoColon <~ colon
+      _ <- Parser.string("[INFO]").? ~ wsp.rep0
+      groupId <- stringNoSpaceNoColon.map(GroupId.apply) <* colon
+      artifactId <- artifactId <* colon <* Parser.string("jar") <* colon
+      version <- stringNoSpaceNoColon <* colon
       configurations <- configurations
     } yield Dependency(
       groupId = groupId,
@@ -59,16 +64,18 @@ object parser {
     )
 
   def parseDependencies(input: List[String]): List[Dependency] =
-    input.flatMap(line => dependency.parse(line).done.option)
+    input.flatMap(line => dependency.parse(line).toOption.map { case (_, res) => res })
 
-  private val resolver: Parser[Resolver] =
+  private val resolver: Parser0[Resolver] =
     for {
-      _ <- many(whitespace) ~ string("id:") ~ whitespace
+      _ <- wsp.rep0 ~ Parser.string("id:") ~ wsp
       id <- stringNoSpace
-      _ <- many(whitespace) ~ string("url:") ~ whitespace
+      _ <- wsp.rep0 ~ Parser.string("url:") ~ wsp
       url <- stringNoSpace
     } yield Resolver.MavenRepository(id, url, None)
 
   def parseResolvers(input: List[String]): List[Resolver] =
-    input.mkString.split("""\[INFO\]""").toList.flatMap(line => resolver.parse(line).done.option)
+    input.mkString.split("""\[INFO]""").toList.flatMap { line =>
+      resolver.parse(line).toOption.map { case (_, res) => res }
+    }
 }

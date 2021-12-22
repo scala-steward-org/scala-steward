@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,52 +17,112 @@
 package org.scalasteward.core.edit
 
 import better.files.File
-import cats.Traverse
+import cats.effect.Concurrent
 import cats.syntax.all._
-import fs2.Stream
-import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.buildtool.BuildToolDispatcher
-import org.scalasteward.core.data.Update
+import org.scalasteward.core.data.{RepoData, Update}
+import org.scalasteward.core.edit.EditAttempt.{ScalafixEdit, UpdateEdit}
+import org.scalasteward.core.edit.hooks.HookExecutor
+import org.scalasteward.core.edit.scalafix.{ScalafixMigration, ScalafixMigrationsFinder}
+import org.scalasteward.core.git
+import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io.{isSourceFile, FileAlg, WorkspaceAlg}
-import org.scalasteward.core.scalafix.MigrationAlg
+import org.scalasteward.core.repoconfig.RepoConfig
+import org.scalasteward.core.scalafmt.{scalafmtModule, ScalafmtAlg}
 import org.scalasteward.core.util._
+import org.scalasteward.core.util.logger._
 import org.scalasteward.core.vcs.data.Repo
+import org.typelevel.log4cats.Logger
 
 final class EditAlg[F[_]](implicit
     buildToolDispatcher: BuildToolDispatcher[F],
     fileAlg: FileAlg[F],
+    gitAlg: GitAlg[F],
+    hookExecutor: HookExecutor[F],
     logger: Logger[F],
-    migrationAlg: MigrationAlg,
-    streamCompiler: Stream.Compiler[F, F],
+    scalafixMigrationsFinder: ScalafixMigrationsFinder,
+    scalafmtAlg: ScalafmtAlg[F],
     workspaceAlg: WorkspaceAlg[F],
-    F: MonadThrowable[F]
+    F: Concurrent[F]
 ) {
-  def applyUpdate(repo: Repo, update: Update, fileExtensions: Set[String]): F[Unit] =
-    for {
-      _ <- applyScalafixMigrations(repo, update).handleErrorWith(e =>
-        logger.warn(s"Could not apply ${update.show} : $e")
-      )
-      repoDir <- workspaceAlg.repoDir(repo)
-      files <- fileAlg.findFilesContaining(
-        repoDir,
-        update.currentVersion,
-        isSourceFile(update, fileExtensions)
-      )
-      noFilesFound = logger.warn("No files found that contain the current version")
-      _ <- files.toNel.fold(noFilesFound)(applyUpdateTo(_, update))
-    } yield ()
+  def applyUpdate(
+      data: RepoData,
+      update: Update,
+      preCommit: F[Unit] = F.unit
+  ): F[List[EditAttempt]] =
+    findFilesContainingCurrentVersion(data.repo, data.config, update).flatMap {
+      case None =>
+        logger.warn("No files found that contain the current version").as(Nil)
+      case Some(files) =>
+        bumpVersion(update, files).flatMap {
+          case false => logger.warn("Unable to bump version").as(Nil)
+          case true =>
+            for {
+              _ <- preCommit
+              repo = data.repo
+              (preMigrations, postMigrations) = scalafixMigrationsFinder.findMigrations(update)
+              preScalafixEdits <-
+                if (preMigrations.isEmpty) F.pure(Nil)
+                else
+                  gitAlg.discardChanges(repo) *>
+                    runScalafixMigrations(repo, data.config, preMigrations) <*
+                    bumpVersion(update, files)
+              _ <- reformatChangedFiles(data)
+              updateCommitMsg = git.commitMsgFor(update, data.config.commits, data.repo.branch)
+              updateEdit <- gitAlg
+                .commitAllIfDirty(repo, updateCommitMsg)
+                .map(_.map(commit => UpdateEdit(update, commit)))
+              postScalafixEdits <- runScalafixMigrations(repo, data.config, postMigrations)
+              hooksEdits <- hookExecutor.execPostUpdateHooks(data, update)
+            } yield preScalafixEdits ++ updateEdit ++ postScalafixEdits ++ hooksEdits
+        }
+    }
 
-  def applyUpdateTo[G[_]: Traverse](files: G[File], update: Update): F[Unit] = {
+  private def findFilesContainingCurrentVersion(
+      repo: Repo,
+      config: RepoConfig,
+      update: Update
+  ): F[Option[Nel[File]]] =
+    workspaceAlg.repoDir(repo).flatMap { repoDir =>
+      val fileFilter = isSourceFile(update, config.updates.fileExtensionsOrDefault) _
+      fileAlg.findFiles(repoDir, fileFilter, _.contains(update.currentVersion)).map(Nel.fromList)
+    }
+
+  private def runScalafixMigrations(
+      repo: Repo,
+      config: RepoConfig,
+      migrations: List[ScalafixMigration]
+  ): F[List[EditAttempt]] =
+    migrations.traverse(runScalafixMigration(repo, config, _))
+
+  private def runScalafixMigration(
+      repo: Repo,
+      config: RepoConfig,
+      migration: ScalafixMigration
+  ): F[EditAttempt] =
+    for {
+      _ <- logger.info(s"Running migration $migration")
+      result <- logger.attemptWarn.log("Scalafix migration failed")(
+        buildToolDispatcher.runMigration(repo, config, migration)
+      )
+      maybeCommit <- gitAlg.commitAllIfDirty(repo, migration.commitMessage(result))
+    } yield ScalafixEdit(migration, result, maybeCommit)
+
+  private def bumpVersion(update: Update, files: Nel[File]): F[Boolean] = {
     val actions = UpdateHeuristic.all.map { heuristic =>
       logger.info(s"Trying heuristic '${heuristic.name}'") >>
         fileAlg.editFiles(files, heuristic.replaceVersion(update))
     }
-    bindUntilTrue(actions).void
+    bindUntilTrue[Nel, F](actions)
   }
 
-  def applyScalafixMigrations(repo: Repo, update: Update): F[Unit] =
-    Nel.fromList(migrationAlg.findMigrations(update)).traverse_ { migrations =>
-      logger.info(s"Applying migrations: $migrations") >>
-        buildToolDispatcher.runMigrations(repo, migrations)
+  private def reformatChangedFiles(data: RepoData): F[Unit] = {
+    val reformat =
+      data.config.scalafmt.runAfterUpgradingOrDefault && data.cache.dependsOn(List(scalafmtModule))
+    F.whenA(reformat) {
+      logger.attemptWarn.log_("Reformatting changed files failed") {
+        scalafmtAlg.reformatChanged(data.repo)
+      }
     }
+  }
 }

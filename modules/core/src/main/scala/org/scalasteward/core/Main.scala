@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import org.scalasteward.core.application.{Cli, Context}
 object Main extends IOApp {
   override def run(args: List[String]): IO[ExitCode] =
     Cli.parseArgs(args) match {
-      case Cli.ParseResult.Success(args) => Context.create[IO](args).use(_.runF)
+      case Cli.ParseResult.Success(args) => Context.step0[IO](args).use(_.stewardAlg.runF)
       case Cli.ParseResult.Help(help)    => IO(Console.out.println(help)).as(ExitCode.Success)
       case Cli.ParseResult.Error(error)  => IO(Console.err.println(error)).as(ExitCode.Error)
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,25 +69,38 @@ object StewardPlugin extends ExternalModule {
 
   lazy val millDiscover: Discover[StewardPlugin.this.type] = Discover[this.type]
 
+  case class ArtifactId(
+      name: String,
+      maybeCrossName: Option[String]
+  ) {
+    def toJson =
+      Obj(
+        "name" -> Str(name),
+        "maybeCrossName" -> maybeCrossName.map(Str).getOrElse(Null)
+      )
+  }
+
   case class Dependency(
       groupId: String,
-      artifactId: String,
+      artifactId: ArtifactId,
       version: String
   ) {
     def toJson =
       Obj(
         "groupId" -> Str(groupId),
-        "artifactId" -> Str(artifactId),
+        "artifactId" -> artifactId.toJson,
         "version" -> Str(version)
       )
   }
 
   object Dependency {
     def fromDep(dep: Dep, modifiers: Option[(String, String, String)]) = {
-      val artifactId = modifiers match {
-        case Some((binary, full, platform)) => dep.artifactName(binary, full, platform)
-        case None                           => dep.dep.module.name.value
-      }
+      val artifactId = ArtifactId(
+        dep.dep.module.name.value,
+        modifiers.map { case (binary, full, platform) =>
+          dep.artifactName(binary, full, platform)
+        }
+      )
       Dependency(dep.dep.module.organization.value, artifactId, dep.dep.version)
     }
   }

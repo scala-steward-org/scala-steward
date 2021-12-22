@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,37 +37,42 @@ package object edit {
       case (part, false) => Unchanged(part)
     }
 
-  private[edit] def splitByOffOnMarker(target: String): Nel[(String, Boolean)] =
-    if (!target.contains("scala-steward:off"))
-      Nel.of((target, true))
-    else {
-      val buffer = mutable.ListBuffer.empty[(String, Boolean)]
-      val on = new StringBuilder()
-      val off = new StringBuilder()
-      val regexIgnoreMultiLinesBegins = "^\\s*//\\s*scala-steward:off".r
-      def flush(builder: StringBuilder, canReplace: Boolean): Unit =
-        if (builder.nonEmpty) {
-          buffer.append((builder.toString(), canReplace))
-          builder.clear()
-        }
-      target.linesWithSeparators.foreach { line =>
-        if (off.nonEmpty)
-          if (line.contains("scala-steward:on")) {
-            flush(off, false)
-            on.append(line)
-          } else
-            off.append(line)
-        else if (line.contains("scala-steward:off")) {
-          flush(on, true)
-          if (regexIgnoreMultiLinesBegins.findFirstIn(line).isDefined)
-            off.append(line)
-          else
-            // single line off
-            buffer.append((line, false))
-        } else on.append(line)
+  private[edit] def splitByOffOnMarker(target: String): Nel[(String, Boolean)] = {
+    val buffer = mutable.ListBuffer.empty[(String, Boolean)]
+    val on = new StringBuilder()
+    val off = new StringBuilder()
+    val regexIgnoreMultiLinesBegins = """\s*\p{Punct}+\s*scala-steward:off""".r
+    def flush(builder: StringBuilder, canReplace: Boolean): Unit =
+      if (builder.nonEmpty) {
+        buffer.append((builder.toString(), canReplace))
+        builder.clear()
       }
-      flush(on, true)
-      flush(off, false)
-      Nel.fromListUnsafe(buffer.toList)
+    target.linesWithSeparators.foreach { line =>
+      if (off.nonEmpty)
+        if (line.contains("scala-steward:on")) {
+          flush(off, false)
+          on.append(line)
+        } else
+          off.append(line)
+      else if (line.contains("scala-steward:off")) {
+        flush(on, true)
+        if (regexIgnoreMultiLinesBegins.findPrefixOf(line).isDefined)
+          off.append(line)
+        else
+          // single line off
+          buffer.append((line, false))
+      } else if (line.contains("//")) {
+        val beforeAfter = line.split("//", 2)
+        on.append(beforeAfter(0))
+        flush(on, true)
+        buffer.append(("//" + beforeAfter(1), false))
+      } else on.append(line)
     }
+    flush(on, true)
+    flush(off, false)
+    if (buffer.isEmpty)
+      Nel.of((target, true))
+    else
+      Nel.fromListUnsafe(buffer.toList)
+  }
 }

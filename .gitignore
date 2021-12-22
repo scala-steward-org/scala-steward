@@ -12,3 +12,15 @@ workspace/
 .bloop/
 .metals/
 metals.sbt
+
+.bsp/
+
+#VSCode specific
+.vscode
+
+
+#Workspace Tooling
+.envrc
+nix
+shell.nix
+

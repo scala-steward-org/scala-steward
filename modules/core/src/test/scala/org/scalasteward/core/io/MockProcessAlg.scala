@@ -1,15 +1,19 @@
 package org.scalasteward.core.io
 
-import better.files.File
-import org.scalasteward.core.application.Config
-import org.scalasteward.core.mock.{applyPure, MockEff}
-import org.scalasteward.core.util.Nel
+import cats.data.Kleisli
+import org.scalasteward.core.application.Config.ProcessCfg
+import org.scalasteward.core.mock.MockEff
 
-class MockProcessAlg(implicit config: Config) extends ProcessAlg.UsingFirejail[MockEff](config) {
-  override def exec(
-      command: Nel[String],
-      cwd: File,
-      extraEnv: (String, String)*
-  ): MockEff[List[String]] =
-    applyPure(s => (s.exec(cwd.toString :: command.toList, extraEnv: _*), List.empty[String]))
+object MockProcessAlg {
+  def create(config: ProcessCfg): ProcessAlg[MockEff] =
+    ProcessAlg.fromExecImpl(config) { args =>
+      Kleisli {
+        _.modify { s =>
+          val cmd = args.workingDirectory.map(_.toString).toList ++ args.command.toList
+          val s1 = s.exec(cmd, args.extraEnv: _*)
+          val a = s.commandOutputs.getOrElse(args.command.toList, List.empty)
+          (s1, a)
+        }
+      }
+    }
 }

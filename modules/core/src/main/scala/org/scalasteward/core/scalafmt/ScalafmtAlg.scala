@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,32 +16,65 @@
 
 package org.scalasteward.core.scalafmt
 
-import cats.data.Nested
+import cats.Monad
+import cats.data.OptionT
 import cats.syntax.all._
-import cats.{Functor, Monad}
-import org.scalasteward.core.data.{Dependency, Version}
-import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
-import org.scalasteward.core.vcs.data.Repo
+import io.circe.ParsingFailure
+import org.scalasteward.core.application.Config
+import org.scalasteward.core.data.{Scope, Version}
+import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
+import org.scalasteward.core.scalafmt.ScalafmtAlg.{opts, parseScalafmtConf}
+import org.scalasteward.core.util.Nel
+import org.scalasteward.core.vcs.data.{BuildRoot, Repo}
+import org.typelevel.log4cats.Logger
 
-trait ScalafmtAlg[F[_]] {
-  def getScalafmtVersion(repo: Repo): F[Option[Version]]
+final class ScalafmtAlg[F[_]](config: Config)(implicit
+    fileAlg: FileAlg[F],
+    logger: Logger[F],
+    processAlg: ProcessAlg[F],
+    workspaceAlg: WorkspaceAlg[F],
+    F: Monad[F]
+) {
+  def getScalafmtVersion(buildRoot: BuildRoot): F[Option[Version]] =
+    for {
+      buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
+      scalafmtConfFile = buildRootDir / scalafmtConfName
+      fileContent <- fileAlg.readFile(scalafmtConfFile)
+      version <- fileContent.map(parseScalafmtConf).fold(F.pure(Option.empty[Version])) {
+        case Left(error)    => logger.warn(error)(s"Failed to parse $scalafmtConfName").as(None)
+        case Right(version) => F.pure(version)
+      }
+    } yield version
 
-  final def getScalafmtDependency(repo: Repo)(implicit F: Functor[F]): F[Option[Dependency]] =
-    Nested(getScalafmtVersion(repo)).map(scalafmtDependency).value
+  def getScopedScalafmtDependency(buildRoot: BuildRoot): F[Option[Scope.Dependencies]] =
+    OptionT(getScalafmtVersion(buildRoot))
+      .map(version => Scope(List(scalafmtDependency(version)), List(config.defaultResolver)))
+      .value
+
+  def reformatChanged(repo: Repo): F[Unit] = {
+    val cmd = Nel.of(scalafmtBinary, opts.nonInteractive, opts.quiet) ++ opts.modeChanged
+    workspaceAlg.repoDir(repo).flatMap(processAlg.exec(cmd, _)).void
+  }
+
+  def version: F[String] = {
+    val cmd = Nel.of(scalafmtBinary, opts.version)
+    workspaceAlg.rootDir.flatMap(processAlg.exec(cmd, _)).map(_.mkString.trim)
+  }
 }
 
 object ScalafmtAlg {
-  def create[F[_]](implicit
-      fileAlg: FileAlg[F],
-      workspaceAlg: WorkspaceAlg[F],
-      F: Monad[F]
-  ): ScalafmtAlg[F] =
-    new ScalafmtAlg[F] {
-      override def getScalafmtVersion(repo: Repo): F[Option[Version]] =
-        for {
-          repoDir <- workspaceAlg.repoDir(repo)
-          scalafmtConfFile = repoDir / ".scalafmt.conf"
-          fileContent <- fileAlg.readFile(scalafmtConfFile)
-        } yield fileContent.flatMap(parseScalafmtConf)
+  object opts {
+    val modeChanged = List("--mode", "changed")
+    val nonInteractive = "--non-interactive"
+    val quiet = "--quiet"
+    val version = "--version"
+  }
+
+  val postUpdateHookCommand: Nel[String] =
+    Nel.of(scalafmtBinary, opts.nonInteractive, opts.quiet)
+
+  private[scalafmt] def parseScalafmtConf(s: String): Either[ParsingFailure, Option[Version]] =
+    io.circe.config.parser.parse(s).map {
+      _.asObject.flatMap(_.apply("version")).flatMap(_.asString).map(Version.apply)
     }
 }

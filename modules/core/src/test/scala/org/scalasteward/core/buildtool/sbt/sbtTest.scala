@@ -1,11 +1,12 @@
 package org.scalasteward.core.buildtool.sbt
 
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
+import munit.FunSuite
 
-class sbtTest extends AnyFunSuite with Matchers {
+class sbtTest extends FunSuite {
   test("scalaStewardScalafixOptions") {
-    scalaStewardScalafixOptions(List("-P:semanticdb:synthetics:on")).content shouldBe
+    assertEquals(
+      scalaStewardScalafixOptions(List("-P:semanticdb:synthetics:on")).content,
       """ThisBuild / scalacOptions ++= List("-P:semanticdb:synthetics:on")"""
+    )
   }
 }

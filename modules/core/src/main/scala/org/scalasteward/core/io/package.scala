@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,10 @@ package org.scalasteward.core
 
 import better.files.File
 import cats.syntax.all._
-import org.scalasteward.core.data.{GroupId, Update}
+import org.scalasteward.core.buildtool.mill.MillAlg
+import org.scalasteward.core.buildtool.sbt.{sbtArtifactId, sbtGroupId}
+import org.scalasteward.core.data.Update
+import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtConfName, scalafmtGroupId}
 
 package object io {
   def isSourceFile(update: Update, fileExtensions: Set[String])(file: File): Boolean = {
@@ -30,19 +33,20 @@ package object io {
       file: File
   ): Boolean =
     () match {
-      case _ if isSbtUpdate(update)          => file.name === "build.properties"
-      case _ if isScalafmtCoreUpdate(update) => file.name === ".scalafmt.conf"
-      case _                                 => isGenericSourceFile(file, fileExtensions)
+      case _ if isSbtUpdate(update)              => file.name === "build.properties"
+      case _ if isScalafmtCoreUpdate(update)     => file.name === scalafmtConfName
+      case _ if MillAlg.isMillMainUpdate(update) => file.name === ".mill-version"
+      case _                                     => isGenericSourceFile(file, fileExtensions)
     }
 
   private def isGenericSourceFile(file: File, fileExtensions: Set[String]): Boolean =
     fileExtensions.exists(file.name.endsWith)
 
   private def isSbtUpdate(update: Update): Boolean =
-    update.groupId === GroupId("org.scala-sbt") &&
-      update.artifactIds.exists(_.name === "sbt")
+    update.groupId === sbtGroupId &&
+      update.artifactIds.exists(_.name === sbtArtifactId.name)
 
   private def isScalafmtCoreUpdate(update: Update): Boolean =
-    update.groupId === GroupId("org.scalameta") &&
-      update.artifactIds.exists(_.name === "scalafmt-core")
+    update.groupId === scalafmtGroupId &&
+      update.artifactIds.exists(_.name === scalafmtArtifactId.name)
 }

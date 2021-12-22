@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,9 @@ package org.scalasteward.core.data
 
 import cats.Order
 import cats.implicits._
-import eu.timepit.refined.types.numeric.NonNegInt
+import cats.parse.{Numbers, Parser, Rfc5234}
 import io.circe.Codec
 import io.circe.generic.extras.semiauto.deriveUnwrappedCodec
-import scala.annotation.tailrec
 
 final case class Version(value: String) {
   private val components: List[Version.Component] =
@@ -54,9 +53,13 @@ final case class Version(value: String) {
           // Do not select pre-releases of the same series if this is not a pre-release.
           (v.isPreRelease && !isPreRelease && sameSeries) ||
           // Do not select versions with pre-release identifiers whose order is smaller
-          // than the order of pre-release identifiers in this version. This, for example,
-          // prevents updates from 2.1.4.0-RC17 to 2.1.4.0-RC17+1-307f2f6c-SNAPSHOT.
-          ((minAlphaOrder < 0) && (v.minAlphaOrder < minAlphaOrder)) ||
+          // than the order of possible pre-release identifiers in this version. This,
+          // for example, prevents updates from 2.1.4.0-RC17 to 2.1.4.0-RC17+1-307f2f6c-SNAPSHOT.
+          v.minAlphaOrder < minAlphaOrder ||
+          // Do not select versions that are identical up to the hashes.
+          v.alnumComponents === alnumComponents ||
+          // Do not select a version with hash if this version contains no hash.
+          (v.containsHash && !containsHash) ||
           // Don't select "versions" like %5BWARNING%5D.
           !v.startsWithLetterOrDigit
         }.sorted
@@ -72,22 +75,23 @@ final case class Version(value: String) {
     }
 
   private def isPreRelease: Boolean =
-    preReleaseIndex.isDefined
+    components.exists {
+      case a: Version.Component.Alpha => a.isPreReleaseIdent
+      case _: Version.Component.Hash  => true
+      case _                          => false
+    }
+
+  private def containsHash: Boolean =
+    components.exists {
+      case _: Version.Component.Hash => true
+      case _                         => false
+    }
 
   private[this] def alnumComponentsWithoutPreRelease: List[Version.Component] =
-    preReleaseIndex
-      .map(i => alnumComponents.takeWhile(_.startIndex < i.value))
-      .getOrElse(alnumComponents)
-
-  private[this] val preReleaseIndex: Option[NonNegInt] = {
-    val preReleaseIdentIndex = alnumComponents.collectFirst {
-      case a: Version.Component.Alpha if a.isPreReleaseIdent => NonNegInt.unsafeFrom(a.startIndex)
+    alnumComponents.takeWhile {
+      case a: Version.Component.Alpha => !a.isPreReleaseIdent
+      case _                          => true
     }
-    preReleaseIdentIndex.orElse(hashIndex)
-  }
-
-  private[this] def hashIndex: Option[NonNegInt] =
-    """[-+]\p{XDigit}{6,}""".r.findFirstMatchIn(value).flatMap(m => NonNegInt.unapply(m.start))
 
   private val minAlphaOrder: Int =
     alnumComponents.collect { case a: Version.Component.Alpha => a.order }.minOption.getOrElse(0)
@@ -108,9 +112,17 @@ object Version {
     (l1.padTo(maxLength, elem), l2.padTo(maxLength, elem))
   }
 
-  sealed trait Component extends Product with Serializable {
-    def startIndex: Int
+  private def startsWithDate(s: String): Boolean =
+    s.length >= 8 && s.substring(0, 8).forall(_.isDigit) && {
+      val year = s.substring(0, 4).toInt
+      val month = s.substring(4, 6).toInt
+      val day = s.substring(6, 8).toInt
+      (year >= 1900 && year <= 2100) &&
+      (month >= 1 && month <= 12) &&
+      (day >= 1 && day <= 31)
+    }
 
+  sealed trait Component extends Product with Serializable {
     final def isAlphanumeric: Boolean =
       this match {
         case _: Component.Numeric => true
@@ -119,76 +131,49 @@ object Version {
       }
   }
   object Component {
-    final case class Numeric(value: String, startIndex: Int) extends Component {
+    final case class Numeric(value: String) extends Component {
       def toBigInt: BigInt = BigInt(value)
     }
-    final case class Alpha(value: String, startIndex: Int) extends Component {
+    final case class Alpha(value: String) extends Component {
       def isPreReleaseIdent: Boolean = order < 0
       def order: Int =
         value.toUpperCase match {
-          case "SNAP" | "SNAPSHOT"      => -5
-          case "ALPHA" | "PREVIEW"      => -4
-          case "BETA" | "B"             => -3
-          case "M" | "MILESTONE" | "AM" => -2
-          case "RC"                     => -1
-          case _                        => 0
+          case "SNAP" | "SNAPSHOT" | "NIGHTLY" => -6
+          case "ALPHA" | "PREVIEW"             => -5
+          case "BETA" | "B"                    => -4
+          case "EA" /* early access */         => -3
+          case "M" | "MILESTONE" | "AM"        => -2
+          case "RC"                            => -1
+          case _                               => 0
         }
     }
-    final case class Separator(c: Char, startIndex: Int) extends Component
-    case object Empty extends Component { override def startIndex: Int = -1 }
+    final case class Hash(value: String) extends Component
+    final case class Separator(c: Char) extends Component
+    case object Empty extends Component
 
-    def parse(str: String): List[Component] = {
-      @tailrec
-      def loop(
-          rest: List[Char],
-          accN: List[Char],
-          accA: List[Char],
-          acc: List[Component],
-          index: Int
-      ): List[Component] =
-        rest match {
-          case h :: t =>
-            h match {
-              case '.' | '-' | '_' | '+' =>
-                val (newAcc, newIndex) = materialize(accN, accA, acc, index)
-                loop(t, List.empty, List.empty, Separator(h, newIndex) :: newAcc, newIndex + 1)
+    private val componentsParser = {
+      val digits = ('0' to '9').toSet
+      val separators = Set('.', '-', '_', '+')
 
-              case _ if h.isDigit && accA.nonEmpty =>
-                val (newAcc, newIndex) = materialize(List.empty, accA, acc, index)
-                loop(t, h :: accN, List.empty, newAcc, newIndex)
+      val numeric = Numbers.digits.map(s => List(Numeric(s)))
+      val alpha = Parser.charsWhile(c => !digits(c) && !separators(c)).map(s => List(Alpha(s)))
+      val separator = Parser.charIn(separators).map(c => List(Separator(c)))
+      val hash = (Parser.charIn('-', '+') ~
+        Parser.char('g').string.? ~
+        Rfc5234.hexdig.rep(6).string.filterNot(startsWithDate)).backtrack
+        .map { case ((s, g), h) => List(Separator(s), Hash(g.getOrElse("") + h)) }
 
-              case _ if h.isDigit && accA.isEmpty =>
-                loop(t, h :: accN, List.empty, acc, index)
-
-              case _ if accN.nonEmpty =>
-                val (newAcc, newIndex) = materialize(accN, List.empty, acc, index)
-                loop(t, List.empty, h :: accA, newAcc, newIndex)
-
-              case _ if accN.isEmpty =>
-                loop(t, List.empty, h :: accA, acc, index)
-            }
-          case Nil =>
-            val (newAcc, _) = materialize(accN, accA, acc, index)
-            newAcc
-        }
-
-      def materialize(
-          accN: List[Char],
-          accA: List[Char],
-          acc: List[Component],
-          index: Int
-      ): (List[Component], Int) =
-        if (accN.nonEmpty) (Numeric(accN.reverse.mkString, index) :: acc, index + accN.length)
-        else if (accA.nonEmpty) (Alpha(accA.reverse.mkString, index) :: acc, index + accA.length)
-        else (acc, index)
-
-      loop(str.toList, List.empty, List.empty, List.empty, 0).reverse
+      (numeric | alpha | hash | separator).rep0.map(_.flatten)
     }
+
+    def parse(str: String): List[Component] =
+      componentsParser.parseAll(str).getOrElse(List.empty)
 
     def render(components: List[Component]): String =
       components.map {
         case n: Numeric   => n.value
         case a: Alpha     => a.value
+        case h: Hash      => h.value
         case s: Separator => s.c.toString
         case Empty        => ""
       }.mkString
@@ -208,9 +193,6 @@ object Version {
 
         case (_: Alpha, Empty) => -1
         case (Empty, _: Alpha) => 1
-
-        case (_: Alpha, _) => 1
-        case (_, _: Alpha) => -1
 
         case _ => 0
       }

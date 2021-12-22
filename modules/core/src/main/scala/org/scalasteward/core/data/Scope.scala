@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,7 @@ object Scope {
         f(fa.value, lb)
     }
 
+  @annotation.nowarn("cat=unused-params")
   implicit def scopeCodec[A: Decoder: Encoder]: Codec[Scope[A]] =
     deriveCodec
 

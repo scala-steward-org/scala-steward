@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,74 +19,59 @@ package org.scalasteward.core.update
 import cats.Monad
 import cats.data.OptionT
 import cats.implicits._
-import io.chrisdavenport.log4cats.Logger
 import org.scalasteward.core.data._
 import org.scalasteward.core.nurture.PullRequestRepository
-import org.scalasteward.core.repocache.{RepoCache, RepoCacheRepository}
-import org.scalasteward.core.repoconfig.{
-  PullRequestFrequency,
-  RepoConfig,
-  RepoConfigAlg,
-  UpdatesConfig
-}
+import org.scalasteward.core.repocache.RepoCache
+import org.scalasteward.core.repoconfig.{PullRequestFrequency, RepoConfig}
 import org.scalasteward.core.update.PruningAlg._
 import org.scalasteward.core.update.data.UpdateState
 import org.scalasteward.core.update.data.UpdateState._
 import org.scalasteward.core.util
 import org.scalasteward.core.util.{dateTime, DateTimeAlg}
-import org.scalasteward.core.vcs.data.PullRequestState.Closed
 import org.scalasteward.core.vcs.data.Repo
+import org.typelevel.log4cats.Logger
 import scala.concurrent.duration._
 
 final class PruningAlg[F[_]](implicit
     dateTimeAlg: DateTimeAlg[F],
     logger: Logger[F],
     pullRequestRepository: PullRequestRepository[F],
-    repoCacheRepository: RepoCacheRepository[F],
-    repoConfigAlg: RepoConfigAlg[F],
     updateAlg: UpdateAlg[F],
     F: Monad[F]
 ) {
-  def needsAttention(repo: Repo): F[(Boolean, List[Update.Single])] =
-    repoCacheRepository.findCache(repo).flatMap {
-      case None => F.pure((false, List.empty))
-      case Some(repoCache) =>
-        val ignoreScalaDependency =
-          !repoCache.maybeRepoConfig
-            .flatMap(_.updates.includeScala)
-            .getOrElse(UpdatesConfig.defaultIncludeScala)
-        val dependencies = repoCache.dependencyInfos
-          .flatMap(_.sequence)
-          .collect {
-            case info if !ignoreDependency(info.value, ignoreScalaDependency) =>
-              info.map(_.dependency)
-          }
-          .sorted
-        findUpdatesNeedingAttention(repo, repoCache, dependencies)
-    }
+  def needsAttention(data: RepoData): F[(Boolean, List[Update.Single])] = {
+    val dependencies = data.cache.dependencyInfos
+      .flatMap(_.sequence)
+      .collect { case info if !ignoreDependency(info.value) => info.map(_.dependency) }
+      .sorted
+    findUpdatesNeedingAttention(data, dependencies)
+  }
 
   private def findUpdatesNeedingAttention(
-      repo: Repo,
-      repoCache: RepoCache,
+      data: RepoData,
       dependencies: List[Scope.Dependency]
   ): F[(Boolean, List[Update.Single])] = {
-
+    val repo = data.repo
+    val repoCache = data.cache
+    val repoConfig = data.config
     val depsWithoutResolvers = dependencies.map(_.value).distinct
     for {
       _ <- logger.info(s"Find updates for ${repo.show}")
-      defaultConfig <- repoConfigAlg.defaultRepoConfig
-      repoConfig = repoCache.maybeRepoConfig.map(_ |+| defaultConfig).getOrElse(defaultConfig)
-      updates0 <- updateAlg.findUpdates(dependencies, repoConfig, None)
+      updates0 <- updateAlg
+        .findUpdates(dependencies, repoConfig, None)
+        .map(removeOvertakingUpdates(depsWithoutResolvers, _))
       updateStates0 <- findAllUpdateStates(repo, repoCache, depsWithoutResolvers, updates0)
       outdatedDeps = collectOutdatedDependencies(updateStates0)
-      (updateStates1, updates1) <- {
+      res <- {
         if (outdatedDeps.isEmpty) F.pure((updateStates0, updates0))
         else
           for {
             freshUpdates <- ensureFreshUpdates(repoConfig, dependencies, outdatedDeps, updates0)
+              .map(removeOvertakingUpdates(depsWithoutResolvers, _))
             freshStates <- findAllUpdateStates(repo, repoCache, depsWithoutResolvers, freshUpdates)
           } yield (freshStates, freshUpdates)
       }
+      (updateStates1, updates1) = res
       _ <- logger.info(util.logger.showUpdates(updates1.widen[Update]))
       result <- checkUpdateStates(repo, repoConfig, updateStates1)
     } yield result
@@ -127,15 +112,15 @@ final class PruningAlg[F[_]](implicit
     updates.find(UpdateAlg.isUpdateFor(_, crossDependency)) match {
       case None => F.pure(DependencyUpToDate(crossDependency))
       case Some(update) =>
-        pullRequestRepository.findPullRequest(repo, crossDependency, update.nextVersion).map {
+        pullRequestRepository.findLatestPullRequest(repo, crossDependency, update.nextVersion).map {
           case None =>
             DependencyOutdated(crossDependency, update)
-          case Some((uri, _, Closed)) =>
-            PullRequestClosed(crossDependency, update, uri)
-          case Some((uri, baseSha1, _)) if baseSha1 === repoCache.sha1 =>
-            PullRequestUpToDate(crossDependency, update, uri)
-          case Some((uri, _, _)) =>
-            PullRequestOutdated(crossDependency, update, uri)
+          case Some(pr) if pr.state.isClosed =>
+            PullRequestClosed(crossDependency, update, pr.url)
+          case Some(pr) if pr.baseSha1 === repoCache.sha1 =>
+            PullRequestUpToDate(crossDependency, update, pr.url)
+          case Some(pr) =>
+            PullRequestOutdated(crossDependency, update, pr.url)
         }
     }
 
@@ -179,10 +164,24 @@ final class PruningAlg[F[_]](implicit
 }
 
 object PruningAlg {
-  def ignoreDependency(info: DependencyInfo, ignoreScalaDependency: Boolean = true): Boolean =
+  def ignoreDependency(info: DependencyInfo): Boolean =
     info.filesContainingVersion.isEmpty ||
-      FilterAlg.isScalaDependencyIgnored(info.dependency, ignoreScalaDependency) ||
       FilterAlg.isDependencyConfigurationIgnored(info.dependency)
+
+  def removeOvertakingUpdates(
+      dependencies: List[Dependency],
+      updates: List[Update.Single]
+  ): List[Update.Single] =
+    updates.filterNot { update =>
+      dependencies.exists { dependency =>
+        dependency.groupId === update.groupId &&
+        dependency.artifactId === update.artifactId && {
+          val dependencyVersion = Version(dependency.version)
+          dependencyVersion > Version(update.currentVersion) &&
+          dependencyVersion <= Version(update.nextVersion)
+        }
+      }
+    }
 
   def collectOutdatedDependencies(updateStates: List[UpdateState]): List[DependencyOutdated] =
     updateStates.collect { case state: DependencyOutdated => state }

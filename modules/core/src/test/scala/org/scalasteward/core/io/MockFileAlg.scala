@@ -1,55 +1,61 @@
 package org.scalasteward.core.io
 
 import better.files.File
-import cats.data.StateT
-import cats.effect.IO
+import cats.data.Kleisli
+import cats.effect.{IO, Resource}
 import fs2.Stream
-import org.scalasteward.core.mock.{applyPure, MockEff, MockState}
+import org.http4s.Uri
+import org.scalasteward.core.io.FileAlgTest.ioFileAlg
+import org.scalasteward.core.mock._
 
 class MockFileAlg extends FileAlg[MockEff] {
   override def deleteForce(file: File): MockEff[Unit] =
-    StateT.modify(_.exec(List("rm", "-rf", file.pathAsString)).rm(file))
+    Kleisli(getFlatMapSet(_.exec(List("rm", "-rf", file.pathAsString)).rmFile(file)))
 
   override def ensureExists(dir: File): MockEff[File] =
-    applyPure(s => (s.exec(List("mkdir", "-p", dir.pathAsString)), dir))
+    Kleisli(_.update(_.exec(List("mkdir", "-p", dir.pathAsString))) >> ioFileAlg.ensureExists(dir))
 
   override def home: MockEff[File] =
-    StateT.pure(File.root / "tmp" / "steward")
+    Kleisli.pure(MockConfig.mockRoot)
 
   override def isDirectory(file: File): MockEff[Boolean] =
-    StateT.pure(false)
+    Kleisli(_.update(_.exec(List("test", "-d", file.pathAsString))) >> ioFileAlg.isDirectory(file))
 
   override def isRegularFile(file: File): MockEff[Boolean] =
-    for {
-      _ <- StateT.modify[IO, MockState](_.exec(List("test", "-f", file.pathAsString)))
-      s <- StateT.get[IO, MockState]
-      exists = s.files.contains(file)
-    } yield exists
+    Kleisli {
+      _.update(_.exec(List("test", "-f", file.pathAsString))) >> ioFileAlg.isRegularFile(file)
+    }
 
-  override def removeTemporarily[A](file: File)(fa: MockEff[A]): MockEff[A] =
+  override def removeTemporarily(file: File): Resource[MockEff, Unit] =
     for {
-      _ <- StateT.modify[IO, MockState](_.exec(List("rm", file.pathAsString)))
-      a <- fa
-      _ <- StateT.modify[IO, MockState](_.exec(List("restore", file.pathAsString)))
-    } yield a
+      _ <- Resource.eval(Kleisli((_: MockCtx).update(_.exec(List("rm", file.pathAsString)))))
+      _ <- ioFileAlg.removeTemporarily(file).mapK(ioToMockEff)
+      _ <- Resource.eval(Kleisli((_: MockCtx).update(_.exec(List("restore", file.pathAsString)))))
+    } yield ()
 
   override def readFile(file: File): MockEff[Option[String]] =
-    applyPure(s => (s.exec(List("read", file.pathAsString)), s.files.get(file)))
+    Kleisli(_.update(_.exec(List("read", file.pathAsString))) >> ioFileAlg.readFile(file))
 
   override def readResource(resource: String): MockEff[String] =
-    for {
-      _ <- StateT.modify[IO, MockState](_.exec(List("read", s"classpath:$resource")))
-      content <- StateT.liftF(FileAlgTest.ioFileAlg.readResource(resource))
-    } yield content
-
-  override def walk(dir: File): Stream[MockEff, File] = {
-    val dirAsString = dir.pathAsString
-    val state: MockEff[List[File]] = StateT.inspect {
-      _.files.keys.filter(_.pathAsString.startsWith(dirAsString)).toList
+    Kleisli {
+      _.update(_.exec(List("read", s"classpath:$resource"))) >> ioFileAlg.readResource(resource)
     }
-    Stream.eval(state).flatMap(Stream.emits[MockEff, File])
-  }
+
+  override def readUri(uri: Uri): MockEff[String] =
+    Kleisli {
+      _.updateAndGet(_.exec(List("read", uri.renderString))).flatMap {
+        _.uris.get(uri) match {
+          case Some(content) => IO.pure(content)
+          case None          => IO.raiseError(new Throwable(s"URI $uri not found"))
+        }
+      }
+    }
+
+  override def walk(dir: File, maxDepth: Int): Stream[MockEff, File] =
+    Stream.evals(
+      Kleisli.liftF(ioFileAlg.walk(dir, maxDepth).compile.toList.map(_.sortBy(_.pathAsString)))
+    )
 
   override def writeFile(file: File, content: String): MockEff[Unit] =
-    StateT.modify(_.exec(List("write", file.pathAsString)).add(file, content))
+    Kleisli(getFlatMapSet(_.exec(List("write", file.pathAsString)).addFiles(file -> content)))
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,16 @@ package org.scalasteward.core.vcs.data
 
 import cats.Eq
 import io.circe.{Decoder, Encoder}
+import org.scalasteward.core.util.unexpectedString
+import org.scalasteward.core.vcs.data.PullRequestState.{Closed, Open}
 
-sealed trait PullRequestState
+sealed trait PullRequestState {
+  def isClosed: Boolean =
+    this match {
+      case Open   => false
+      case Closed => true
+    }
+}
 
 object PullRequestState {
   case object Open extends PullRequestState
@@ -33,7 +41,7 @@ object PullRequestState {
       _.toLowerCase match {
         case "open" | "opened"                => Right(Open)
         case "closed" | "merged" | "declined" => Right(Closed)
-        case unknown                          => Left(s"Unexpected string '$unknown'")
+        case s => unexpectedString(s, List("open", "opened", "closed", "merged", "declined"))
       }
     }
 

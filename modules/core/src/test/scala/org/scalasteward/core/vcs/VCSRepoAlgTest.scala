@@ -1,91 +1,81 @@
 package org.scalasteward.core.vcs
 
+import munit.CatsEffectSuite
 import org.http4s.syntax.literals._
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.mock.MockContext.{config, gitAlg, vcsRepoAlg}
-import org.scalasteward.core.mock.{MockContext, MockState}
+import org.scalasteward.core.mock.MockConfig.{config, gitCmd}
+import org.scalasteward.core.mock.MockContext.context.{gitAlg, logger, vcsRepoAlg}
+import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
+import org.scalasteward.core.mock.{MockConfig, MockEff, MockState}
 import org.scalasteward.core.vcs.data.{Repo, RepoOut, UserOut}
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 
-class VCSRepoAlgTest extends AnyFunSuite with Matchers {
-  val repo: Repo = Repo("fthomas", "datapackage")
-  val repoDir: String = (config.workspace / "fthomas/datapackage").toString
-  val askPass = s"GIT_ASKPASS=${config.gitAskPass}"
-
-  val parentRepoOut: RepoOut = RepoOut(
+class VCSRepoAlgTest extends CatsEffectSuite {
+  private val repo = Repo("fthomas", "datapackage")
+  private val repoDir = config.workspace / repo.toPath
+  private val parentRepoOut = RepoOut(
     "datapackage",
     UserOut("fthomas"),
     None,
     uri"https://github.com/fthomas/datapackage",
-    Branch("master")
+    Branch("main")
   )
 
-  val forkRepoOut: RepoOut = RepoOut(
+  private val forkRepoOut = RepoOut(
     "datapackage",
-    UserOut("scalasteward"),
+    UserOut("scala-steward"),
     Some(parentRepoOut),
     uri"https://github.com/scala-steward/datapackage",
-    Branch("master")
+    Branch("main")
   )
 
-  test("clone") {
-    val state = vcsRepoAlg.clone(repo, forkRepoOut).runS(MockState.empty).unsafeRunSync()
-    state shouldBe MockState.empty.copy(
-      commands = Vector(
-        List(
-          askPass,
-          config.workspace.toString,
-          "git",
-          "clone",
-          "--recursive",
-          s"https://${config.vcsLogin}@github.com/scala-steward/datapackage",
-          repoDir.toString
-        ),
-        List(askPass, repoDir, "git", "config", "user.email", "bot@example.org"),
-        List(askPass, repoDir, "git", "config", "user.name", "Bot Doe")
+  private val parentUrl = s"https://${config.vcsCfg.login}@github.com/fthomas/datapackage"
+  private val forkUrl = s"https://${config.vcsCfg.login}@github.com/scala-steward/datapackage"
+
+  test("cloneAndSync: doNotFork = false") {
+    val state = vcsRepoAlg.cloneAndSync(repo, forkRepoOut).runS(MockState.empty)
+    val expected = MockState.empty.copy(
+      trace = Vector(
+        Log("Clone scala-steward/datapackage"),
+        Cmd(gitCmd(config.workspace), "clone", forkUrl, repoDir.toString),
+        Cmd(gitCmd(repoDir), "config", "user.email", "bot@example.org"),
+        Cmd(gitCmd(repoDir), "config", "user.name", "Bot Doe"),
+        Log("Synchronize with fthomas/datapackage"),
+        Cmd(gitCmd(repoDir), "remote", "add", "upstream", parentUrl),
+        Cmd(gitCmd(repoDir), "fetch", "--force", "--tags", "upstream", "main"),
+        Cmd(gitCmd(repoDir), "checkout", "-B", "main", "--track", "upstream/main"),
+        Cmd(gitCmd(repoDir), "merge", "upstream/main"),
+        Cmd(gitCmd(repoDir), "push", "--force", "--set-upstream", "origin", "main"),
+        Cmd(gitCmd(repoDir), "branch", "--list", "--no-color", "--all", "update"),
+        Cmd(gitCmd(repoDir), "branch", "--list", "--no-color", "--all", "origin/update"),
+        Cmd(gitCmd(repoDir), "submodule", "update", "--init", "--recursive")
       )
     )
+    state.map(assertEquals(_, expected))
   }
 
-  test("syncFork should throw an exception when doNotFork = false and there is no parent") {
+  test("cloneAndSync: doNotFork = true") {
+    val config = MockConfig.config.copy(vcsCfg = MockConfig.config.vcsCfg.copy(doNotFork = true))
+    val state = new VCSRepoAlg[MockEff](config)
+      .cloneAndSync(repo, parentRepoOut)
+      .runS(MockState.empty)
+
+    val expected = MockState.empty.copy(
+      trace = Vector(
+        Log("Clone fthomas/datapackage"),
+        Cmd(gitCmd(config.workspace), "clone", parentUrl, repoDir.toString),
+        Cmd(gitCmd(repoDir), "config", "user.email", "bot@example.org"),
+        Cmd(gitCmd(repoDir), "config", "user.name", "Bot Doe"),
+        Cmd(gitCmd(repoDir), "submodule", "update", "--init", "--recursive")
+      )
+    )
+    state.map(assertEquals(_, expected))
+  }
+
+  test("cloneAndSync: doNotFork = false, no parent") {
     vcsRepoAlg
-      .syncFork(repo, parentRepoOut)
+      .cloneAndSync(repo, parentRepoOut)
       .runS(MockState.empty)
       .attempt
-      .map(_.isLeft)
-      .unsafeRunSync() shouldBe true
-  }
-
-  test("syncFork should sync when doNotFork = false and there is a parent") {
-    val state = vcsRepoAlg.syncFork(repo, forkRepoOut).runS(MockState.empty).unsafeRunSync()
-    state shouldBe MockState.empty.copy(
-      commands = Vector(
-        List(
-          askPass,
-          repoDir,
-          "git",
-          "remote",
-          "add",
-          "upstream",
-          s"https://${config.vcsLogin}@github.com/fthomas/datapackage"
-        ),
-        List(askPass, repoDir, "git", "fetch", "--tags", "upstream", "master"),
-        List(askPass, repoDir, "git", "checkout", "-B", "master", "--track", "upstream/master"),
-        List(askPass, repoDir, "git", "merge", "upstream/master"),
-        List(askPass, repoDir, "git", "push", "--force", "--set-upstream", "origin", "master")
-      )
-    )
-  }
-
-  test("syncFork should do nothing when doNotFork = true") {
-    val config = MockContext.config.copy(doNotFork = true)
-    val state = VCSRepoAlg
-      .create(config, gitAlg)
-      .syncFork(repo, parentRepoOut)
-      .runS(MockState.empty)
-      .unsafeRunSync()
-
-    state shouldBe MockState.empty
+      .map(result => assert(clue(result).isLeft))
   }
 }

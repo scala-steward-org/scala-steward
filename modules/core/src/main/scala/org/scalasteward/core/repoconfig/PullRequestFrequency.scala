@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import cron4s.lib.javatime._
 import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.repoconfig.PullRequestFrequency._
 import org.scalasteward.core.util.Timestamp
+import org.scalasteward.core.util.dateTime.parseFiniteDuration
 import scala.concurrent.duration._
 
 sealed trait PullRequestFrequency {
@@ -36,9 +37,7 @@ sealed trait PullRequestFrequency {
   def waitingTime(lastCreated: Timestamp, now: Timestamp): Option[FiniteDuration] = {
     val nextPossible = this match {
       case Asap           => None
-      case Daily          => Some(lastCreated + 1.day)
-      case Weekly         => Some(lastCreated + 7.days)
-      case Monthly        => Some(lastCreated + 30.days)
+      case Timespan(fd)   => Some(lastCreated + fd)
       case CronExpr(expr) => expr.next(lastCreated.toLocalDateTime).map(Timestamp.fromLocalDateTime)
     }
     nextPossible.map(now.until).filter(_.length > 0)
@@ -47,30 +46,30 @@ sealed trait PullRequestFrequency {
 
 object PullRequestFrequency {
   case object Asap extends PullRequestFrequency { val render = "@asap" }
-  case object Daily extends PullRequestFrequency { val render = "@daily" }
-  case object Weekly extends PullRequestFrequency { val render = "@weekly" }
-  case object Monthly extends PullRequestFrequency { val render = "@monthly" }
+  final case class Timespan(fd: FiniteDuration) extends PullRequestFrequency {
+    val render: String = fd.toString
+  }
   final case class CronExpr(expr: cron4s.CronExpr) extends PullRequestFrequency {
     val render: String = expr.toString
   }
 
-  val default: PullRequestFrequency = Asap
-
   def fromString(s: String): Either[String, PullRequestFrequency] =
     s.trim.toLowerCase match {
-      case Asap.render    => Right(Asap)
-      case Daily.render   => Right(Daily)
-      case Weekly.render  => Right(Weekly)
-      case Monthly.render => Right(Monthly)
-      case other          =>
-        // cron4s requires exactly 6 fields, but we also want to support the more
-        // common format with 5 fields. Therefore we're prepending the "seconds"
-        // field ourselves if parsing the original string fails.
-        parseCron4s(other).orElse(parseCron4s("0 " + other)).leftMap(_.toString).map(CronExpr.apply)
+      case Asap.render => Right(Asap)
+      case "@daily"    => Right(Timespan(1.day))
+      case "@weekly"   => Right(Timespan(7.day))
+      case "@monthly"  => Right(Timespan(30.day))
+      case other       => parseTimespan(other).orElse(parseCronExpr(other))
     }
 
-  private def parseCron4s(s: String): Either[Throwable, cron4s.CronExpr] =
-    Either.catchNonFatal(cron4s.Cron.unsafeParse(s))
+  private def parseTimespan(s: String): Either[String, Timespan] =
+    parseFiniteDuration(s).bimap(_.toString, Timespan.apply)
+
+  private def parseCronExpr(s: String): Either[String, CronExpr] =
+    // cron4s requires exactly 6 fields, but we also want to support the more
+    // common format with 5 fields. Therefore we're prepending the "seconds"
+    // field ourselves if parsing the original string fails.
+    cron4s.Cron.parse(s).orElse(cron4s.Cron.parse("0 " + s)).bimap(_.toString, CronExpr.apply)
 
   implicit val pullRequestFrequencyEq: Eq[PullRequestFrequency] =
     Eq.fromUniversalEquals

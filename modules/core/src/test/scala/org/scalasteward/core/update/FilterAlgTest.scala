@@ -1,86 +1,103 @@
 package org.scalasteward.core.update
+
+import cats.effect.unsafe.implicits.global
+import cats.syntax.all._
+import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.Update.Single
-import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId}
-import org.scalasteward.core.mock.MockContext.filterAlg
+import org.scalasteward.core.data.GroupId
+import org.scalasteward.core.mock.MockContext.context.filterAlg
 import org.scalasteward.core.mock.MockState
-import org.scalasteward.core.repoconfig.{RepoConfig, UpdatePattern, UpdatesConfig}
-import org.scalasteward.core.update.FilterAlg.{BadVersions, NoSuitableNextVersion}
+import org.scalasteward.core.mock.MockState.TraceEntry.Log
+import org.scalasteward.core.repoconfig._
+import org.scalasteward.core.update.FilterAlg._
 import org.scalasteward.core.util.Nel
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 
-class FilterAlgTest extends AnyFunSuite with Matchers {
-  test("globalFilter: SNAP -> SNAP") {
-    val update = Single("org.scalatest" % "scalatest" % "3.0.8-SNAP2", Nel.of("3.0.8-SNAP10"))
-    FilterAlg.globalFilter(update) shouldBe Right(update)
-  }
+class FilterAlgTest extends FunSuite {
+  private val config = RepoConfig.empty
 
-  test("globalFilter: RC -> SNAP") {
-    val update = Single("org.scalatest" % "scalatest" % "3.0.8-RC2", Nel.of("3.1.0-SNAP10"))
-    FilterAlg.globalFilter(update) shouldBe Left(NoSuitableNextVersion(update))
-  }
-
-  test("globalFilter: update without bad version") {
-    val update = Single("com.jsuereth" % "sbt-pgp" % "1.1.0", Nel.of("1.1.2", "2.0.0"))
-    FilterAlg.globalFilter(update) shouldBe Right(update.copy(newerVersions = Nel.of("1.1.2")))
-  }
-
-  test("globalFilter: update with bad version") {
-    val update = Single("com.jsuereth" % "sbt-pgp" % "1.1.2-1", Nel.of("1.1.2", "2.0.0"))
-    FilterAlg.globalFilter(update) shouldBe Right(update.copy(newerVersions = Nel.of("2.0.0")))
-  }
-
-  test("globalFilter: update with bad version 2") {
+  test("localFilter: SNAP -> SNAP") {
     val update =
-      Single(
-        "net.sourceforge.plantuml" % "plantuml" % "1.2019.11",
-        Nel.of("7726", "8020", "2017.09", "1.2019.12")
-      )
-    FilterAlg.globalFilter(update) shouldBe Right(update.copy(newerVersions = Nel.of("1.2019.12")))
+      ("org.scalatest".g % "scalatest".a % "3.0.8-SNAP2" %> Nel.of("3.0.8-SNAP10")).single
+    assertEquals(localFilter(update, config), Right(update))
   }
 
-  test("globalFilter: update with only bad versions") {
-    val update = Single("org.http4s" % "http4s-dsl" % "0.18.0", Nel.of("0.19.0"))
-    FilterAlg.globalFilter(update) shouldBe Left(BadVersions(update))
+  test("localFilter: RC -> SNAP") {
+    val update = ("org.scalatest".g % "scalatest".a % "3.0.8-RC2" %> Nel.of("3.1.0-SNAP10")).single
+    assertEquals(localFilter(update, config), Left(NoSuitableNextVersion(update)))
   }
 
-  test("globalFilter: update to pre-release of a different series") {
-    val update = Single("com.jsuereth" % "sbt-pgp" % "1.1.2-1", Nel.of("2.0.1-M3"))
-    FilterAlg.globalFilter(update) shouldBe Left(NoSuitableNextVersion(update))
+  test("localFilter: update without bad version") {
+    val update = ("com.jsuereth".g % "sbt-pgp".a % "1.1.0" %> Nel.of("1.1.2", "2.0.0")).single
+    assertEquals(localFilter(update, config), Right(update.copy(newerVersions = Nel.of("1.1.2"))))
+  }
+
+  test("localFilter: update with bad version") {
+    val update = ("com.jsuereth".g % "sbt-pgp".a % "1.1.2-1" %> Nel.of("1.1.2", "2.0.0")).single
+    assertEquals(localFilter(update, config), Right(update.copy(newerVersions = Nel.of("2.0.0"))))
+  }
+
+  test("localFilter: update with bad version 2") {
+    val update = ("net.sourceforge.plantuml".g % "plantuml".a % "1.2019.11" %>
+      Nel.of("7726", "8020", "2017.09", "1.2019.12")).single
+    assertEquals(
+      localFilter(update, config),
+      Right(update.copy(newerVersions = Nel.of("1.2019.12")))
+    )
+  }
+
+  test("localFilter: update to pre-release of a different series") {
+    val update = ("com.jsuereth".g % "sbt-pgp".a % "1.1.2-1" %> Nel.of("2.0.1-M3")).single
+    assertEquals(localFilter(update, config), Left(NoSuitableNextVersion(update)))
   }
 
   test("ignore update via config updates.ignore") {
-    val update1 = Single("org.http4s" % "http4s-dsl" % "0.17.0", Nel.of("0.18.0"))
-    val update2 = Single("eu.timepit" % "refined" % "0.8.0", Nel.of("0.8.1"))
+    val update1 = ("org.http4s".g % "http4s-dsl".a % "0.17.0" %> "0.18.0").single
+    val update2 = ("eu.timepit".g % "refined".a % "0.8.0" %> "0.8.1").single
     val config = RepoConfig(updates =
       UpdatesConfig(ignore = List(UpdatePattern(GroupId("eu.timepit"), Some("refined"), None)))
     )
 
     val initialState = MockState.empty
     val (state, filtered) =
-      filterAlg.localFilterMany(config, List(update1, update2)).run(initialState).unsafeRunSync()
+      filterAlg.localFilterMany(config, List(update1, update2)).runSA(initialState).unsafeRunSync()
 
-    filtered shouldBe List(update1)
-    state shouldBe initialState.copy(
-      logs = Vector(
-        (None, "Ignore eu.timepit:refined : 0.8.0 -> 0.8.1 (reason: ignored by config)")
+    assertEquals(filtered, List(update1))
+    val expected = initialState.copy(
+      trace = Vector(Log("Ignore eu.timepit:refined : 0.8.0 -> 0.8.1 (reason: ignored by config)"))
+    )
+    assertEquals(state, expected)
+  }
+
+  test("ignored versions are removed") {
+    val update =
+      ("org.scala-lang".g % "scala-compiler".a % "2.13.6" %> Nel.of("2.13.7", "2.13.8")).single
+    val config = RepoConfig(updates =
+      UpdatesConfig(ignore =
+        List(
+          UpdatePattern(
+            GroupId("org.scala-lang"),
+            Some("scala-compiler"),
+            Some(VersionPattern(exact = Some("2.13.8")))
+          )
+        )
       )
     )
+    val expected = Right(update.copy(newerVersions = Nel.of("2.13.7")))
+    assertEquals(localFilter(update, config), expected)
   }
 
   test("ignore update via config updates.pin") {
-    val update1 = Single("org.http4s" % "http4s-dsl" % "0.17.0", Nel.of("0.18.0"))
-    val update2 = Single("eu.timepit" % "refined" % "0.8.0", Nel.of("0.8.1"))
+    val update1 = ("org.http4s".g % "http4s-dsl".a % "0.17.0" %> "0.18.0").single
+    val update2 = ("eu.timepit".g % "refined".a % "0.8.0" %> "0.8.1").single
 
     val config = RepoConfig(
       updates = UpdatesConfig(
         pin = List(
-          UpdatePattern(update1.groupId, None, Some(UpdatePattern.Version(Some("0.17"), None))),
+          UpdatePattern(update1.groupId, None, Some(VersionPattern(Some("0.17")))),
           UpdatePattern(
             update2.groupId,
             Some("refined"),
-            Some(UpdatePattern.Version(Some("0.8"), None))
+            Some(VersionPattern(Some("0.8")))
           )
         )
       )
@@ -91,25 +108,25 @@ class FilterAlgTest extends AnyFunSuite with Matchers {
       .runA(MockState.empty)
       .unsafeRunSync()
 
-    filtered shouldBe List(update2)
+    assertEquals(filtered, List(update2))
   }
 
   test("ignore update via config updates.allow") {
     val included = List(
-      Single("org.my1" % "artifact" % "0.8.0", Nel.of("0.8.1")),
-      Single("org.my2" % "artifact" % "0.8.0", Nel.of("0.8.1")),
-      Single("org.my2" % "artifact" % "0.8.0", Nel.of("0.9.1"))
+      ("org.my1".g % "artifact".a % "0.8.0" %> "0.8.1").single,
+      ("org.my2".g % "artifact".a % "0.8.0" %> "0.8.1").single,
+      ("org.my2".g % "artifact".a % "0.8.0" %> "0.9.1").single
     )
     val notIncluded = List(
-      Single("org.http4s" % "http4s-dsl" % "0.17.0", Nel.of("0.18.0")),
-      Single("org.my1" % "artifact" % "0.8.0", Nel.of("0.9.1")),
-      Single("org.my3" % "abc" % "0.8.0", Nel.of("0.8.1"))
+      ("org.http4s".g % "http4s-dsl".a % "0.17.0" %> "0.18.0").single,
+      ("org.my1".g % "artifact".a % "0.8.0" %> "0.9.1").single,
+      ("org.my3".g % "abc".a % "0.8.0" %> "0.8.1").single
     )
 
     val config = RepoConfig(
       updates = UpdatesConfig(
         allow = List(
-          UpdatePattern(GroupId("org.my1"), None, Some(UpdatePattern.Version(Some("0.8"), None))),
+          UpdatePattern(GroupId("org.my1"), None, Some(VersionPattern(Some("0.8")))),
           UpdatePattern(GroupId("org.my2"), None, None),
           UpdatePattern(GroupId("org.my3"), Some("artifact"), None)
         )
@@ -121,15 +138,12 @@ class FilterAlgTest extends AnyFunSuite with Matchers {
       .runA(MockState.empty)
       .unsafeRunSync()
 
-    filtered shouldBe included
+    assertEquals(filtered, included)
   }
 
   test("ignore update via config updates.pin using suffix") {
-    val update =
-      Single(
-        "com.microsoft.sqlserver" % "mssql-jdbc" % "7.2.2.jre8",
-        Nel.of("7.2.2.jre11", "7.3.0.jre8", "7.3.0.jre11")
-      )
+    val update = ("com.microsoft.sqlserver".g % "mssql-jdbc".a % "7.2.2.jre8" %>
+      Nel.of("7.2.2.jre11", "7.3.0.jre8", "7.3.0.jre11")).single
 
     val config = RepoConfig(
       updates = UpdatesConfig(
@@ -137,26 +151,19 @@ class FilterAlgTest extends AnyFunSuite with Matchers {
           UpdatePattern(
             update.groupId,
             Some(update.artifactId.name),
-            Some(UpdatePattern.Version(None, Some("jre8")))
+            Some(VersionPattern(suffix = Some("jre8")))
           )
         )
       )
     )
 
-    val filtered = filterAlg
-      .localFilterMany(config, List(update))
-      .runA(MockState.empty)
-      .unsafeRunSync()
-
-    filtered shouldBe List(update.copy(newerVersions = Nel.of("7.3.0.jre8")))
+    val filtered = localFilter(update, config)
+    assertEquals(filtered, Right(update.copy(newerVersions = Nel.of("7.3.0.jre8"))))
   }
 
   test("ignore update via config updates.ignore using suffix") {
-    val update =
-      Single(
-        "com.microsoft.sqlserver" % "mssql-jdbc" % "7.2.2.jre8",
-        Nel.of("7.2.2.jre11", "7.3.0.jre8", "7.3.0.jre11")
-      )
+    val update = ("com.microsoft.sqlserver".g % "mssql-jdbc".a % "7.2.2.jre8" %>
+      Nel.of("7.2.2.jre11", "7.3.0.jre8", "7.3.0.jre11")).single
 
     val config = RepoConfig(
       updates = UpdatesConfig(
@@ -164,26 +171,19 @@ class FilterAlgTest extends AnyFunSuite with Matchers {
           UpdatePattern(
             update.groupId,
             Some(update.artifactId.name),
-            Some(UpdatePattern.Version(None, Some("jre11")))
+            Some(VersionPattern(suffix = Some("jre11")))
           )
         )
       )
     )
 
-    val filtered = filterAlg
-      .localFilterMany(config, List(update))
-      .runA(MockState.empty)
-      .unsafeRunSync()
-
-    filtered shouldBe List(update.copy(newerVersions = Nel.of("7.3.0.jre8")))
+    val filtered = localFilter(update, config)
+    assertEquals(filtered, Right(update.copy(newerVersions = Nel.of("7.3.0.jre8"))))
   }
 
   test("ignore update via config updates.pin using prefix and suffix") {
-    val update =
-      Single(
-        "com.microsoft.sqlserver" % "mssql-jdbc" % "7.2.2.jre8",
-        Nel.of("7.2.2.jre11", "7.3.0.jre8", "7.3.0.jre11")
-      )
+    val update = ("com.microsoft.sqlserver".g % "mssql-jdbc".a % "7.2.2.jre8" %>
+      Nel.of("7.2.2.jre11", "7.3.0.jre8", "7.3.0.jre11")).single
 
     val config = RepoConfig(
       updates = UpdatesConfig(
@@ -191,66 +191,32 @@ class FilterAlgTest extends AnyFunSuite with Matchers {
           UpdatePattern(
             update.groupId,
             Some(update.artifactId.name),
-            Some(UpdatePattern.Version(Some("7.2."), Some("jre8")))
+            Some(VersionPattern(Some("7.2."), Some("jre8")))
           )
         )
       )
     )
 
-    val filtered = filterAlg
-      .localFilterMany(config, List(update))
-      .runA(MockState.empty)
-      .unsafeRunSync()
-
-    filtered shouldBe List()
+    assertEquals(localFilter(update, config), Left(VersionPinnedByConfig(update)))
   }
 
-  test("isScalaDependency: true") {
-    val dependency = Dependency(
-      GroupId("org.scala-lang"),
-      ArtifactId("scala-compiler", "scala-compiler_2.12"),
-      "2.12.10"
+  test("ignore version with 'contains' matcher") {
+    val update =
+      ("sqlserver".g % "mssql-jdbc".a % "7.2.2" %> Nel.of("7.3.0.feature.1", "7.3.0")).single
+    val repoConfig = RepoConfigAlg.parseRepoConfig(
+      """updates.ignore = [ { groupId = "sqlserver", version = { contains = "feature" } } ]"""
     )
-    FilterAlg.isScalaDependency(dependency) shouldBe true
-  }
-
-  test("isScalaDependency: false") {
-    val dependency =
-      Dependency(GroupId("org.typelevel"), ArtifactId("cats-effect", "cats-effect_2.12"), "1.0.0")
-    FilterAlg.isScalaDependency(dependency) shouldBe false
-  }
-
-  test("isScalaDependencyIgnored: true") {
-    val dependency = Dependency(
-      GroupId("org.scala-lang"),
-      ArtifactId("scala-compiler", "scala-compiler_2.12"),
-      "2.12.10"
-    )
-    FilterAlg.isScalaDependencyIgnored(dependency, ignoreScalaDependency = true) shouldBe true
-  }
-
-  test("isScalaDependencyIgnored: false") {
-    val dependency = Dependency(
-      GroupId("org.scala-lang"),
-      ArtifactId("scala-compiler", "scala-compiler_2.12"),
-      "2.12.10"
-    )
-    FilterAlg.isScalaDependencyIgnored(dependency, ignoreScalaDependency = false) shouldBe false
+    val obtained = repoConfig.flatMap(localFilter(update, _).leftMap(_.show))
+    assertEquals(obtained, Right(update.copy(newerVersions = Nel.of("7.3.0"))))
   }
 
   test("isDependencyConfigurationIgnored: false") {
-    val dependency =
-      Dependency(GroupId("org.typelevel"), ArtifactId("cats-effect", "cats-effect_2.12"), "1.0.0")
-    FilterAlg.isDependencyConfigurationIgnored(
-      dependency.copy(configurations = Some("foo"))
-    ) shouldBe false
+    val dependency = "org.typelevel".g % ("cats-effect", "cats-effect_2.12").a % "1.0.0"
+    assert(!isDependencyConfigurationIgnored(dependency.copy(configurations = Some("foo"))))
   }
 
   test("isDependencyConfigurationIgnored: true") {
-    val dependency =
-      Dependency(GroupId("org.typelevel"), ArtifactId("cats-effect", "cats-effect_2.12"), "1.0.0")
-    FilterAlg.isDependencyConfigurationIgnored(
-      dependency.copy(configurations = Some("scalafmt"))
-    ) shouldBe true
+    val dependency = "org.typelevel".g % ("cats-effect", "cats-effect_2.12").a % "1.0.0"
+    assert(isDependencyConfigurationIgnored(dependency.copy(configurations = Some("scalafmt"))))
   }
 }

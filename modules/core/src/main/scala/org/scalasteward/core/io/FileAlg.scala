@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,14 @@
 package org.scalasteward.core.io
 
 import better.files.File
-import cats.effect.{Bracket, Resource, Sync}
+import cats.effect.{Concurrent, Resource, Sync}
 import cats.syntax.all._
-import cats.{Functor, Traverse}
+import cats.{ApplicativeError, MonadThrow, Traverse}
 import fs2.Stream
-import io.chrisdavenport.log4cats.Logger
 import org.apache.commons.io.FileUtils
-import org.scalasteward.core.util.MonadThrowable
+import org.http4s.Uri
+import org.http4s.implicits.http4sLiteralsSyntax
+import org.typelevel.log4cats.Logger
 import scala.io.Source
 
 trait FileAlg[F[_]] {
@@ -37,48 +38,48 @@ trait FileAlg[F[_]] {
 
   def isRegularFile(file: File): F[Boolean]
 
-  def removeTemporarily[A](file: File)(fa: F[A]): F[A]
+  def removeTemporarily(file: File): Resource[F, Unit]
 
   def readFile(file: File): F[Option[String]]
 
   def readResource(resource: String): F[String]
 
-  def walk(dir: File): Stream[F, File]
+  def readUri(uri: Uri): F[String]
+
+  def walk(dir: File, maxDepth: Int = Int.MaxValue): Stream[F, File]
 
   def writeFile(file: File, content: String): F[Unit]
 
-  final def containsString(file: File, string: String)(implicit F: Functor[F]): F[Boolean] =
-    readFile(file).map(_.fold(false)(_.contains(string)))
-
-  final def createTemporarily[A, E](file: File, content: String)(
-      fa: F[A]
-  )(implicit F: Bracket[F, E]): F[A] = {
+  final def createTemporarily[E](file: File, content: String)(implicit
+      F: ApplicativeError[F, E]
+  ): Resource[F, Unit] = {
     val delete = deleteForce(file)
     val create = writeFile(file, content).onError(_ => delete)
-    F.bracket(create)(_ => fa)(_ => delete)
+    Resource.make(create)(_ => delete)
   }
 
   final def editFile(file: File, edit: String => Option[String])(implicit
-      F: MonadThrowable[F]
+      F: MonadThrow[F]
   ): F[Boolean] =
     readFile(file)
       .flatMap(_.flatMap(edit).fold(F.pure(false))(writeFile(file, _).as(true)))
       .adaptError { case t => new Throwable(s"failed to edit $file", t) }
 
   final def editFiles[G[_]](files: G[File], edit: String => Option[String])(implicit
-      F: MonadThrowable[F],
+      F: MonadThrow[F],
       G: Traverse[G]
   ): F[Boolean] =
     files.traverse(editFile(_, edit)).map(_.foldLeft(false)(_ || _))
 
-  final def findFilesContaining(dir: File, string: String, fileFilter: File => Boolean)(implicit
-      streamCompiler: Stream.Compiler[F, F],
-      F: Functor[F]
-  ): F[List[File]] =
+  final def findFiles(
+      dir: File,
+      fileFilter: File => Boolean,
+      contentFilter: String => Boolean
+  )(implicit F: Concurrent[F]): F[List[File]] =
     walk(dir)
       .evalFilter(isRegularFile)
       .filter(fileFilter)
-      .evalFilter(containsString(_, string))
+      .evalFilter(readFile(_).map(_.fold(false)(contentFilter)))
       .compile
       .toList
 
@@ -90,13 +91,13 @@ object FileAlg {
   def create[F[_]](implicit logger: Logger[F], F: Sync[F]): FileAlg[F] =
     new FileAlg[F] {
       override def deleteForce(file: File): F[Unit] =
-        F.delay {
+        F.blocking {
           if (file.exists) FileUtils.forceDelete(file.toJava)
           if (file.exists) file.delete()
         }
 
       override def ensureExists(dir: File): F[File] =
-        F.delay {
+        F.blocking {
           if (!dir.exists) dir.createDirectories()
           dir
         }
@@ -105,36 +106,43 @@ object FileAlg {
         F.delay(File.home)
 
       override def isDirectory(file: File): F[Boolean] =
-        F.delay(file.isDirectory(File.LinkOptions.noFollow))
+        F.blocking(file.isDirectory(File.LinkOptions.noFollow))
 
       override def isRegularFile(file: File): F[Boolean] =
-        F.delay(file.isRegularFile(File.LinkOptions.noFollow))
+        F.blocking(file.isRegularFile(File.LinkOptions.noFollow))
 
-      override def removeTemporarily[A](file: File)(fa: F[A]): F[A] =
-        F.bracket {
-          F.delay {
+      override def removeTemporarily(file: File): Resource[F, Unit] =
+        Resource.make {
+          F.blocking {
             val copyOptions = File.CopyOptions(overwrite = true)
             if (file.exists) Some(file.moveTo(File.newTemporaryFile())(copyOptions)) else None
           }
-        }(_ => fa) {
-          case Some(tmpFile) => F.delay(tmpFile.moveTo(file)).void
+        } {
+          case Some(tmpFile) => F.blocking(tmpFile.moveTo(file)).void
           case None          => F.unit
-        }
+        }.void
 
       override def readFile(file: File): F[Option[String]] =
-        F.delay(if (file.exists) Some(file.contentAsString) else None)
+        F.blocking(if (file.exists) Some(file.contentAsString) else None)
 
       override def readResource(resource: String): F[String] =
-        Resource
-          .fromAutoCloseable(F.delay(Source.fromResource(resource)))
-          .use(src => F.delay(src.mkString))
+        readSource(F.blocking(Source.fromResource(resource)))
 
-      override def walk(dir: File): Stream[F, File] =
-        Stream.eval(F.delay(dir.walk())).flatMap(Stream.fromIterator(_))
+      override def readUri(uri: Uri): F[String] = {
+        val scheme = uri.scheme.getOrElse(scheme"file")
+        val withScheme = uri.copy(scheme = Some(scheme))
+        readSource(F.blocking(Source.fromURL(withScheme.renderString)))
+      }
+
+      private def readSource(source: F[Source]): F[String] =
+        Resource.fromAutoCloseable(source).use(src => F.blocking(src.mkString))
+
+      override def walk(dir: File, maxDepth: Int): Stream[F, File] =
+        Stream.eval(F.delay(dir.walk(maxDepth))).flatMap(Stream.fromBlockingIterator(_, 1))
 
       override def writeFile(file: File, content: String): F[Unit] =
         logger.debug(s"Write $file") >>
           file.parentOption.fold(F.unit)(ensureExists(_).void) >>
-          F.delay(file.write(content)).void
+          F.blocking(file.write(content)).void
     }
 }

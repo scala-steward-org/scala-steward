@@ -10,9 +10,10 @@ You can add `<YOUR_REPO>/.scala-steward.conf` to configure how Scala Steward upd
 #   @asap
 #     PRs are created without delay.
 #
-#   @daily | @weekly | @monthly
-#     PRs are created at least 1 day | 7 days | 30 days after the last PR.
-#
+#   <timespan>
+#     PRs are created only again after the given timespan since the last PR
+#     has passed. Example values are "36 hours", "1 day", or "14 days".
+
 #   <CRON expression>
 #     PRs are created roughly according to the given CRON expression.
 #
@@ -23,13 +24,13 @@ You can add `<YOUR_REPO>/.scala-steward.conf` to configure how Scala Steward upd
 #     more information about the CRON expressions that are supported.
 #
 #     Note that the date parts of the CRON expression are matched exactly
-#     while the the time parts are only used to abide to the frequency of
+#     while the time parts are only used to abide to the frequency of
 #     the given expression.
 #
 # Default: @asap
 #
 #pullRequests.frequency = "0 0 ? * 3" # every thursday on midnight
-pullRequests.frequency = "@weekly"
+pullRequests.frequency = "7 days"
 
 # Only these dependencies which match the given patterns are updated.
 #
@@ -51,17 +52,10 @@ updates.pin  = [ { groupId = "com.example", artifactId="foo", version = "1.1." }
 # Defaults to empty `[]` which mean Scala Steward will not ignore dependencies.
 updates.ignore = [ { groupId = "org.acme", artifactId="foo", version = "1.0" } ]
 
-# If set, Scala Steward will only attempt to create or update `n` PRs.
+# If set, Scala Steward will only create or update `n` PRs each time it runs (see `pullRequests.frequency` above).
 # Useful if running frequently and/or CI build are costly
 # Default: None
 updates.limit = 5
-
-# By default, Scala Steward does not update scala version since its tricky, error-prone
-# and results in bad PRs and/or failed builds
-# If set to true, Scala Steward will attempt to update the scala version
-# Since this feature is experimental, the default is set to false
-# Default: false
-updates.includeScala = true
 
 # The extensions of files that should be updated.
 # Default: [".scala", ".sbt", ".sbt.shared", ".sc", ".yml", "pom.xml"]
@@ -79,17 +73,34 @@ updatePullRequests = "always" | "on-conflicts" | "never"
 # Supported variables: ${artifactName}, ${currentVersion}, ${nextVersion} and ${default}
 # Default: "${default}" which is equivalent to "Update ${artifactName} to ${nextVersion}" 
 commits.message = "Update ${artifactName} from ${currentVersion} to ${nextVersion}"
+
+# If true and when upgrading version in .scalafmt.conf, Scala Steward will perform scalafmt 
+# and add a separate commit when format changed. So you don't need reformat manually and can merge PR.
+# If false, Scala Steward will not perform scalafmt, so your CI may abort when reformat needed.
+# Default: true
+scalafmt.runAfterUpgrading = false
+
+# It is possible to have multiple scala projects in a single repository. In that case the folders containing the projects (build.sbt folders)
+# are specified using the buildRoots property. Note that the paths used there are relative and if the repo directory itself also contains a build.sbt the dot can be used to specify it.
+# Default: ["."]
+buildRoots = [ ".", "subfolder/projectA" ]
 ```
 
 The version information given in the patterns above can be in two formats:
 1. just a `version` field that is treated as a prefix of the version
-2. a structure consisting of `prefix` and / or `suffix` that are matched against the beginning or the end of the version
+2. a structure consisting of any of the following fields:
+   * `prefix`: is matched against the beginning of the version
+   * `suffix`: is matched against the end of the version
+   * `exact`: is matched against the whole version
+   * `contains`: is matched against substrings in the version
 
 ```properties
 version = "1.1."
 version = { prefix = "1.1." }
 version = { suffix = "jre8" }
 version = { prefix = "1.1.", suffix = "jre8" }
+version = { exact = "1.1.2.jre8" }
+version = { contains = "feature" }
 ```
 
 ## Ignore lines

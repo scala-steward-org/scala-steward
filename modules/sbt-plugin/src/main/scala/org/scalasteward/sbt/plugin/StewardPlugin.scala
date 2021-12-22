@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,8 @@
 package org.scalasteward.sbt.plugin
 
 import sbt.Keys._
-import sbt.{Def, _}
+import sbt._
 import scala.util.Try
-import scala.util.matching.Regex
 
 object StewardPlugin extends AutoPlugin {
   override def trigger: PluginTrigger = allRequirements
@@ -34,15 +33,11 @@ object StewardPlugin extends AutoPlugin {
   override def projectSettings: Seq[Def.Setting[_]] =
     Seq(
       stewardDependencies := {
-        val log = streams.value.log
-        val sourcePositions = dependencyPositions.value
-        val buildRoot = baseDirectory.in(ThisBuild).value
         val scalaBinaryVersionValue = scalaBinaryVersion.value
         val scalaVersionValue = scalaVersion.value
         val sbtCredentials = findCredentials.value
 
         val libraryDeps = libraryDependencies.value
-          .filter(isDefinedInBuildFiles(_, sourcePositions, buildRoot))
           .map(moduleId => toDependency(moduleId, scalaVersionValue, scalaBinaryVersionValue))
 
         val scalafixDeps = findScalafixDependencies.value
@@ -76,47 +71,9 @@ object StewardPlugin extends AutoPlugin {
         sb.append("--- snip ---").append(ls)
         dependencies.foreach(d => sb.append(d.asJson).append(ls))
         resolvers.foreach(r => sb.append(r.asJson).append(ls))
-        log.info(sb.result())
+        println(sb.result())
       }
     )
-
-  // Inspired by https://github.com/rtimush/sbt-updates/issues/42 and
-  // https://github.com/rtimush/sbt-updates/pull/112
-  private def isDefinedInBuildFiles(
-      moduleId: ModuleID,
-      sourcePositions: Map[ModuleID, SourcePosition],
-      buildRoot: File
-  ): Boolean =
-    sourcePositions.get(moduleId) match {
-      case Some(fp: FilePosition) =>
-        val path = fp.path
-        () match {
-          case _ if path.startsWith("(sbt.Classpaths") => true
-          case _ if path.startsWith("(") =>
-            extractFileName(path).exists(fileExists(buildRoot, _))
-
-          // Compiler plugins added via addCompilerPlugin(...) have a SourcePosition
-          // like this: LinePosition(Defaults.scala,3738).
-          case _ if path.startsWith("Defaults.scala") && isCompilerPlugin(moduleId) => true
-          case _ if path.startsWith("Defaults.scala")                               => false
-          case _                                                                    => true
-        }
-      case _ => true
-    }
-
-  private def extractFileName(path: String): Option[String] = {
-    val FileNamePattern: Regex = "^\\([^\\)]+\\) (.*)$".r
-    path match {
-      case FileNamePattern(fileName) => Some(fileName)
-      case _                         => None
-    }
-  }
-
-  private def fileExists(buildRoot: File, file: String): Boolean =
-    (buildRoot / "project" / file).exists()
-
-  private def isCompilerPlugin(moduleId: ModuleID): Boolean =
-    moduleId.configurations.exists(_ == "plugin->default(compile)")
 
   // base on mdoc
   // https://github.com/scalameta/mdoc/blob/62cacfbc4c7b618228e349d4f460061916398424/mdoc-sbt/src/main/scala/mdoc/MdocPlugin.scala#L164-L182

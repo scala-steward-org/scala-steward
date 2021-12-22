@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,70 +16,75 @@
 
 package org.scalasteward.core.io
 
+import better.files.File
 import cats.effect._
 import cats.syntax.all._
 import fs2.Stream
-import java.io.{File, IOException, InputStream}
+import java.io.{IOException, InputStream}
 import org.scalasteward.core.util._
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.TimeoutException
 import scala.concurrent.duration.FiniteDuration
 
 object process {
-  def slurp[F[_]](
-      cmd: Nel[String],
-      cwd: Option[File],
-      extraEnv: Map[String, String],
-      timeout: FiniteDuration,
-      log: String => F[Unit],
-      blocker: Blocker
-  )(implicit contextShift: ContextShift[F], timer: Timer[F], F: Concurrent[F]): F[List[String]] =
-    createProcess(cmd, cwd, extraEnv).flatMap { process =>
-      F.delay(new ListBuffer[String]).flatMap { buffer =>
-        val readOut = {
-          val out = readInputStream[F](process.getInputStream, blocker)
-          out.evalMap(line => F.delay(appendBounded(buffer, line, 4096)) >> log(line)).compile.drain
-        }
+  final case class Args(
+      command: Nel[String],
+      workingDirectory: Option[File] = None,
+      extraEnv: List[(String, String)] = Nil,
+      clearEnv: Boolean = false
+  )
 
-        val showCmd = (extraEnv.map { case (k, v) => s"$k=$v" }.toList ++ cmd.toList).mkString_(" ")
-        val result = readOut >> F.delay(process.waitFor()) >>= { exitValue =>
+  def slurp[F[_]](
+      args: Args,
+      timeout: FiniteDuration,
+      maxBufferSize: Int,
+      log: String => F[Unit]
+  )(implicit F: Async[F]): F[List[String]] =
+    createProcess(args).flatMap { process =>
+      F.delay(new ListBuffer[String]).flatMap { buffer =>
+        val readOut = readInputStream[F](process.getInputStream)
+          .evalMap(line => F.delay(appendBounded(buffer, line, maxBufferSize)) >> log(line))
+          .compile
+          .drain
+
+        val result = readOut >> F.blocking(process.waitFor()) >>= { exitValue =>
           if (exitValue === 0) F.pure(buffer.toList)
           else {
-            val msg = s"'$showCmd' exited with code $exitValue"
+            val msg = s"'${showCmd(args)}' exited with code $exitValue"
             F.raiseError[List[String]](new IOException(makeMessage(msg, buffer.toList)))
           }
         }
 
         val fallback = F.delay(process.destroyForcibly()) >> {
-          val msg = s"'$showCmd' timed out after ${timeout.toString}"
+          val msg = s"'${showCmd(args)}' timed out after ${timeout.toString}"
           F.raiseError[List[String]](new TimeoutException(makeMessage(msg, buffer.toList)))
         }
 
-        Concurrent.timeoutTo(result, timeout, fallback)
+        F.timeoutAndForget(result, timeout).recoverWith { case _: TimeoutException => fallback }
       }
     }
 
-  private def createProcess[F[_]](
-      cmd: Nel[String],
-      cwd: Option[File],
-      extraEnv: Map[String, String]
-  )(implicit F: Sync[F]): F[Process] =
+  def showCmd(args: Args): String =
+    (args.extraEnv.map { case (k, v) => s"$k=$v" } ++ args.command.toList).mkString_(" ")
+
+  private def createProcess[F[_]](args: Args)(implicit F: Sync[F]): F[Process] =
     F.delay {
-      val pb = new ProcessBuilder(cmd.toList: _*)
+      val pb = new ProcessBuilder(args.command.toList: _*)
+      args.workingDirectory.foreach(file => pb.directory(file.toJava))
       val env = pb.environment()
-      cwd.foreach(pb.directory)
-      extraEnv.foreach { case (key, value) => env.put(key, value) }
+      if (args.clearEnv) env.clear()
+      args.extraEnv.foreach { case (key, value) => env.put(key, value) }
       pb.redirectErrorStream(true)
-      pb.start()
+      val p = pb.start()
+      // Close standard input so that the process never waits for input.
+      p.getOutputStream.close()
+      p
     }
 
-  private def readInputStream[F[_]](is: InputStream, blocker: Blocker)(implicit
-      F: Sync[F],
-      cs: ContextShift[F]
-  ): Stream[F, String] =
+  private def readInputStream[F[_]](is: InputStream)(implicit F: Sync[F]): Stream[F, String] =
     fs2.io
-      .readInputStream(F.pure(is), chunkSize = 4096, blocker)
-      .through(fs2.text.utf8Decode)
+      .readInputStream(F.pure(is), chunkSize = 4096)
+      .through(fs2.text.utf8.decode)
       .through(fs2.text.lines)
 
   private def makeMessage(prefix: String, output: List[String]): String =

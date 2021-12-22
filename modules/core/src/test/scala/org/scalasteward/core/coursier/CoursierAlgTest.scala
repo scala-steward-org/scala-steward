@@ -1,94 +1,56 @@
 package org.scalasteward.core.coursier
 
+import munit.CatsEffectSuite
 import org.http4s.syntax.literals._
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.buildtool.sbt.data.{SbtVersion, ScalaVersion}
 import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId}
-import org.scalasteward.core.mock.MockContext._
+import org.scalasteward.core.mock.MockContext.context.coursierAlg
 import org.scalasteward.core.mock.MockState
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 
-class CoursierAlgTest extends AnyFunSuite with Matchers {
+class CoursierAlgTest extends CatsEffectSuite {
   test("getArtifactUrl: library") {
-    val dep =
-      Dependency(GroupId("org.typelevel"), ArtifactId("cats-effect", "cats-effect_2.12"), "1.0.0")
-    val (state, result) = coursierAlg
-      .getArtifactUrl(dep.withMavenCentral)
-      .run(MockState.empty)
-      .unsafeRunSync()
-    state shouldBe MockState.empty
-    result shouldBe Some(uri"https://github.com/typelevel/cats-effect")
+    val artifactId = ArtifactId("cats-effect", "cats-effect_2.12")
+    val dep = Dependency(GroupId("org.typelevel"), artifactId, "1.0.0")
+    coursierAlg.getArtifactUrl(dep.withMavenCentral).runA(MockState.empty).map { obtained =>
+      assertEquals(obtained, Some(uri"https://github.com/typelevel/cats-effect"))
+    }
   }
 
   test("getArtifactUrl: defaults to homepage") {
-    val dep = Dependency(
-      GroupId("com.typesafe.play"),
-      ArtifactId("play-ws-standalone-json", "play-ws-standalone-json_2.12"),
-      "2.1.0-M7"
-    )
-    val (state, result) = coursierAlg
-      .getArtifactUrl(dep.withMavenCentral)
-      .run(MockState.empty)
-      .unsafeRunSync()
-    state shouldBe MockState.empty
-    result shouldBe Some(uri"https://github.com/playframework/play-ws")
+    val artifactId = ArtifactId("play-ws-standalone-json", "play-ws-standalone-json_2.12")
+    val dep = Dependency(GroupId("com.typesafe.play"), artifactId, "2.1.0-M7")
+    coursierAlg.getArtifactUrl(dep.withMavenCentral).runA(MockState.empty).map { obtained =>
+      assertEquals(obtained, Some(uri"https://github.com/playframework/play-ws"))
+    }
   }
 
   test("getArtifactUrl: URL with no or invalid scheme 1") {
-    val dep = Dependency(
-      GroupId("org.msgpack"),
-      ArtifactId("msgpack-core"),
-      "0.8.20"
-    )
-    val (state, result) = coursierAlg
-      .getArtifactUrl(dep.withMavenCentral)
-      .run(MockState.empty)
-      .unsafeRunSync()
-    state shouldBe MockState.empty
-    result shouldBe Some(uri"http://msgpack.org/")
+    val dep = Dependency(GroupId("org.msgpack"), ArtifactId("msgpack-core"), "0.8.20")
+    coursierAlg.getArtifactUrl(dep.withMavenCentral).runA(MockState.empty).map { obtained =>
+      assertEquals(obtained, Some(uri"http://msgpack.org/"))
+    }
   }
 
   test("getArtifactUrl: URL with no or invalid scheme 2") {
-    val dep = Dependency(
-      GroupId("org.xhtmlrenderer"),
-      ArtifactId("flying-saucer-parent"),
-      "9.0.1"
-    )
-    val (state, result) = coursierAlg
-      .getArtifactUrl(dep.withMavenCentral)
-      .run(MockState.empty)
-      .unsafeRunSync()
-    state shouldBe MockState.empty
-    result shouldBe Some(uri"http://code.google.com/p/flying-saucer/")
+    val dep = Dependency(GroupId("org.xhtmlrenderer"), ArtifactId("flying-saucer-parent"), "9.0.1")
+    coursierAlg.getArtifactUrl(dep.withMavenCentral).runA(MockState.empty).map { obtained =>
+      assertEquals(obtained, Some(uri"http://code.google.com/p/flying-saucer/"))
+    }
   }
 
   test("getArtifactUrl: from parent") {
-    val dep = Dependency(
-      GroupId("net.bytebuddy"),
-      ArtifactId("byte-buddy"),
-      "1.10.5"
-    )
-    val (state, result) = coursierAlg
-      .getArtifactUrl(dep.withMavenCentral)
-      .run(MockState.empty)
-      .unsafeRunSync()
-    state shouldBe MockState.empty
-    result shouldBe Some(uri"https://bytebuddy.net")
+    val dep = Dependency(GroupId("net.bytebuddy"), ArtifactId("byte-buddy"), "1.10.5")
+    coursierAlg.getArtifactUrl(dep.withMavenCentral).runA(MockState.empty).map { obtained =>
+      assertEquals(obtained, Some(uri"https://bytebuddy.net"))
+    }
   }
 
   test("getArtifactUrl: minimal pom") {
-    val dep = Dependency(
-      GroupId("altrmi"),
-      ArtifactId("altrmi-common"),
-      "0.9.6"
-    )
-    val (state, result) = coursierAlg
-      .getArtifactUrl(dep.withMavenCentral)
-      .run(MockState.empty)
-      .unsafeRunSync()
-    state shouldBe MockState.empty
-    result shouldBe None
+    val dep = Dependency(GroupId("altrmi"), ArtifactId("altrmi-common"), "0.9.6")
+    coursierAlg.getArtifactUrl(dep.withMavenCentral).runA(MockState.empty).map { obtained =>
+      assertEquals(obtained, None)
+    }
   }
 
   test("getArtifactUrl: sbt plugin on Maven Central") {
@@ -99,12 +61,9 @@ class CoursierAlgTest extends AnyFunSuite with Matchers {
       Some(SbtVersion("1.0")),
       Some(ScalaVersion("2.12"))
     )
-    val (state, result) = coursierAlg
-      .getArtifactUrl(dep.withMavenCentral)
-      .run(MockState.empty)
-      .unsafeRunSync()
-    state shouldBe MockState.empty
-    result shouldBe Some(uri"https://github.com/xerial/sbt-sonatype")
+    coursierAlg.getArtifactUrl(dep.withMavenCentral).runA(MockState.empty).map { obtained =>
+      assertEquals(obtained, Some(uri"https://github.com/xerial/sbt-sonatype"))
+    }
   }
 
   test("getArtifactUrl: sbt plugin on sbt-plugin-releases") {
@@ -115,10 +74,18 @@ class CoursierAlgTest extends AnyFunSuite with Matchers {
       Some(SbtVersion("1.0")),
       Some(ScalaVersion("2.12"))
     )
-    val (state, result) =
-      coursierAlg.getArtifactUrl(dep.withSbtPluginReleases).run(MockState.empty).unsafeRunSync()
-    state shouldBe MockState.empty
-    result shouldBe Some(uri"https://github.com/sbt/sbt-release")
+    coursierAlg.getArtifactUrl(dep.withSbtPluginReleases).runA(MockState.empty).map { obtained =>
+      assertEquals(obtained, Some(uri"https://github.com/sbt/sbt-release"))
+    }
+  }
+
+  test("getArtifactUrl: invalid scm URL but valid homepage") {
+    val groupId = GroupId("com.github.japgolly.scalajs-react")
+    val dep = Dependency(groupId, ArtifactId("core", "core_sjs1_2.13"), "2.0.0-RC5")
+
+    coursierAlg.getArtifactUrl(dep.withMavenCentral).runA(MockState.empty).map { obtained =>
+      assertEquals(obtained, Some(uri"https://github.com/japgolly/scalajs-react"))
+    }
   }
 
   test("getArtifactIdUrlMapping") {
@@ -126,14 +93,13 @@ class CoursierAlgTest extends AnyFunSuite with Matchers {
       Dependency(GroupId("org.typelevel"), ArtifactId("cats-core", "cats-core_2.12"), "1.6.0"),
       Dependency(GroupId("org.typelevel"), ArtifactId("cats-effect", "cats-effect_2.12"), "1.0.0")
     )
-    val (state, result) = coursierAlg
-      .getArtifactIdUrlMapping(dependencies.withMavenCentral)
-      .run(MockState.empty)
-      .unsafeRunSync()
-    state shouldBe MockState.empty
-    result shouldBe Map(
-      "cats-core" -> uri"https://github.com/typelevel/cats",
-      "cats-effect" -> uri"https://github.com/typelevel/cats-effect"
-    )
+    coursierAlg.getArtifactIdUrlMapping(dependencies.withMavenCentral).runA(MockState.empty).map {
+      obtained =>
+        val expected = Map(
+          "cats-core" -> uri"https://github.com/typelevel/cats",
+          "cats-effect" -> uri"https://github.com/typelevel/cats-effect"
+        )
+        assertEquals(obtained, expected)
+    }
   }
 }

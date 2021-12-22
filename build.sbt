@@ -1,5 +1,6 @@
 import com.typesafe.sbt.packager.docker._
 import sbtcrossproject.{CrossProject, CrossType, Platform}
+import sbtghactions.JavaSpec.Distribution.Adopt
 
 /// variables
 
@@ -7,36 +8,86 @@ val groupId = "org.scala-steward"
 val projectName = "scala-steward"
 val rootPkg = groupId.replace("-", "")
 val gitHubOwner = "scala-steward-org"
+val gitHubUrl = s"https://github.com/$gitHubOwner/$projectName"
+val mainBranch = "master"
+val gitHubUserContent = s"https://raw.githubusercontent.com/$gitHubOwner/$projectName/$mainBranch"
 
 val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
+  "benchmark" -> List(JVMPlatform),
   "core" -> List(JVMPlatform),
+  "docs" -> List(JVMPlatform),
   "sbt-plugin" -> List(JVMPlatform),
   "mill-plugin" -> List(JVMPlatform)
 )
 
 val Scala212 = "2.12.10"
-val Scala213 = "2.13.3"
+val Scala213 = "2.13.5"
+
+/// sbt-github-actions configuration
+
+ThisBuild / crossScalaVersions := Seq(Scala212, Scala213)
+ThisBuild / githubWorkflowTargetTags ++= Seq("v*")
+ThisBuild / githubWorkflowPublishTargetBranches := Seq(
+  RefPredicate.Equals(Ref.Branch(mainBranch)),
+  RefPredicate.StartsWith(Ref.Tag("v"))
+)
+ThisBuild / githubWorkflowPublish := Seq(
+  WorkflowStep.Run(
+    List("sbt ci-release"),
+    name = Some("Publish JARs"),
+    env = Map(
+      "PGP_PASSPHRASE" -> "${{ secrets.PGP_PASSPHRASE }}",
+      "PGP_SECRET" -> "${{ secrets.PGP_SECRET }}",
+      "SONATYPE_PASSWORD" -> "${{ secrets.SONATYPE_PASSWORD }}",
+      "SONATYPE_USERNAME" -> "${{ secrets.SONATYPE_USERNAME }}"
+    )
+  ),
+  WorkflowStep.Run(
+    List(
+      "docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}",
+      "sbt core/Docker/publish"
+    ),
+    name = Some("Publish Docker image")
+  )
+)
+ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec(Adopt, "8"), JavaSpec(Adopt, "11"))
+ThisBuild / githubWorkflowBuild :=
+  Seq(
+    WorkflowStep.Sbt(List("validate"), name = Some("Build project")),
+    WorkflowStep.Use(
+      UseRef.Public("codecov", "codecov-action", "v2"),
+      name = Some("Codecov")
+    )
+  )
 
 /// projects
 
 lazy val root = project
   .in(file("."))
-  .aggregate(core.jvm, `sbt-plugin`.jvm, `mill-plugin`.jvm)
+  .aggregate(benchmark.jvm, core.jvm, docs.jvm, `sbt-plugin`.jvm, `mill-plugin`.jvm)
   .settings(commonSettings)
   .settings(noPublishSettings)
+
+lazy val benchmark = myCrossProject("benchmark")
+  .dependsOn(core)
+  .enablePlugins(JmhPlugin)
+  .settings(noPublishSettings)
+  .settings(
+    coverageEnabled := false,
+    unusedCompileDependencies := Set.empty
+  )
 
 lazy val core = myCrossProject("core")
   .enablePlugins(BuildInfoPlugin, JavaAppPackaging, DockerPlugin)
   .settings(dockerSettings)
   .settings(
     libraryDependencies ++= Seq(
-      compilerPlugin(Dependencies.betterMonadicFor),
-      compilerPlugin(Dependencies.kindProjector.cross(CrossVersion.full)),
-      Dependencies.attoCore,
+      Dependencies.bcprovJdk15to18,
       Dependencies.betterFiles,
       Dependencies.caseApp,
       Dependencies.catsCore,
       Dependencies.catsEffect,
+      Dependencies.catsParse,
       Dependencies.circeConfig,
       Dependencies.circeGeneric,
       Dependencies.circeGenericExtras,
@@ -44,36 +95,38 @@ lazy val core = myCrossProject("core")
       Dependencies.circeRefined,
       Dependencies.commonsIo,
       Dependencies.coursierCore,
-      Dependencies.coursierCatsInterop,
       Dependencies.cron4sCore,
       Dependencies.fs2Core,
-      Dependencies.http4sAsyncHttpClient,
+      Dependencies.fs2Io,
       Dependencies.http4sCirce,
+      Dependencies.http4sClient,
+      Dependencies.http4sCore,
+      Dependencies.http4sOkhttpClient,
+      Dependencies.jjwtApi,
+      Dependencies.jjwtImpl % Runtime,
+      Dependencies.jjwtJackson % Runtime,
       Dependencies.log4catsSlf4j,
       Dependencies.monocleCore,
       Dependencies.refined,
-      Dependencies.refinedCats,
       Dependencies.scalacacheCaffeine,
-      Dependencies.scalacacheCatsEffect,
       Dependencies.logbackClassic % Runtime,
       Dependencies.catsLaws % Test,
       Dependencies.circeLiteral % Test,
-      Dependencies.disciplineScalatest % Test,
+      Dependencies.disciplineMunit % Test,
       Dependencies.http4sDsl % Test,
+      Dependencies.http4sBlazeServer % Test,
+      Dependencies.munit % Test,
+      Dependencies.munitCatsEffect % Test,
+      Dependencies.munitScalacheck % Test,
       Dependencies.refinedScalacheck % Test,
-      Dependencies.scalacheck % Test,
-      Dependencies.scalaTestFunSuite % Test,
-      Dependencies.scalaTestShouldMatcher % Test
+      Dependencies.scalacheck % Test
     ),
     assembly / test := {},
-    assemblyMergeStrategy in assembly := {
+    assembly / assemblyMergeStrategy := {
       val nativeSuffix = "\\.(?:dll|jnilib|so)$".r
 
       {
         case PathList(ps @ _*) if nativeSuffix.findFirstMatchIn(ps.last).isDefined =>
-          MergeStrategy.first
-        case PathList(ps @ _*) if ps.last == "io.netty.versions.properties" =>
-          // This is included in Netty JARs which are pulled in by http4s-async-http-client.
           MergeStrategy.first
         case PathList("org", "fusesource", _*) =>
           // (core / assembly) deduplicate: different file contents found in the following:
@@ -81,7 +134,7 @@ lazy val core = myCrossProject("core")
           // https/repo1.maven.org/maven2/org/fusesource/jansi/jansi/1.18/jansi-1.18.jar:org/fusesource/hawtjni/runtime/Callback.class
           MergeStrategy.first
         case otherwise =>
-          val defaultStrategy = (assemblyMergeStrategy in assembly).value
+          val defaultStrategy = (assembly / assemblyMergeStrategy).value
           defaultStrategy(otherwise)
       }
     },
@@ -91,7 +144,10 @@ lazy val core = myCrossProject("core")
       scalaVersion,
       scalaBinaryVersion,
       sbtVersion,
-      BuildInfoKey.map(git.gitHeadCommit) { case (k, v) => k -> v.getOrElse("master") },
+      BuildInfoKey("gitHubUrl" -> gitHubUrl),
+      BuildInfoKey("gitHubUserContent" -> gitHubUserContent),
+      BuildInfoKey("mainBranch" -> mainBranch),
+      BuildInfoKey.map(git.gitHeadCommit) { case (k, v) => k -> v.getOrElse(mainBranch) },
       BuildInfoKey.map(`sbt-plugin`.jvm / moduleRootPkg) { case (_, v) =>
         "sbtPluginModuleRootPkg" -> v
       },
@@ -109,37 +165,71 @@ lazy val core = myCrossProject("core")
       import ${moduleRootPkg.value}.util.Nel
       import ${moduleRootPkg.value}.vcs.data._
       import better.files.File
-      import cats.effect.ContextShift
       import cats.effect.IO
-      import cats.effect.Timer
-      import _root_.io.chrisdavenport.log4cats.Logger
-      import _root_.io.chrisdavenport.log4cats.slf4j.Slf4jLogger
       import org.http4s.client.Client
-      import org.http4s.client.asynchttpclient.AsyncHttpClient
-      import scala.concurrent.ExecutionContext
+      import org.typelevel.log4cats.Logger
+      import org.typelevel.log4cats.slf4j.Slf4jLogger
 
-      implicit val ioContextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-      implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
       implicit val logger: Logger[IO] = Slf4jLogger.getLogger[IO]
-      implicit val client: Client[IO] = AsyncHttpClient.allocate[IO]().map(_._1).unsafeRunSync()
     """,
-    fork in run := true,
-    fork in Test := true,
+    // Inspired by https://stackoverflow.com/a/41978937/460387
+    Test / sourceGenerators += Def.task {
+      val file = (Test / sourceManaged).value / "InitialCommandsTest.scala"
+      val content =
+        s"""object InitialCommandsTest {
+           |  ${initialCommands.value}
+           |  // prevent warnings
+           |  locally(Client); locally(File); locally(Nel); locally(Repo);
+           |  locally(Version); locally(data.Version);
+           |}""".stripMargin
+      IO.write(file, content)
+      Seq(file)
+    }.taskValue,
+    run / fork := true,
+    Test / fork := true,
     Compile / unmanagedResourceDirectories ++= (`sbt-plugin`.jvm / Compile / unmanagedSourceDirectories).value
+  )
+
+lazy val docs = myCrossProject("docs")
+  .dependsOn(core)
+  .enablePlugins(MdocPlugin)
+  .settings(noPublishSettings)
+  .settings(
+    mdocIn := baseDirectory.value / ".." / "mdoc",
+    mdocOut := (LocalRootProject / baseDirectory).value / "docs",
+    mdocVariables := Map(
+      "GITHUB_URL" -> gitHubUrl,
+      "MAIN_BRANCH" -> mainBranch
+    ),
+    checkDocs := {
+      val inDir = mdocIn.value.getCanonicalPath
+      val outDir = mdocOut.value.getCanonicalPath
+      val rootDir = (LocalRootProject / baseDirectory).value
+      try git.runner.value.apply("diff", "--quiet", outDir)(rootDir, streams.value.log)
+      catch {
+        case t: Throwable =>
+          val msg = s"Docs in $inDir and $outDir are out of sync." +
+            " Run 'sbt docs/mdoc' and commit the changes to fix this."
+          throw new Throwable(msg, t)
+      }
+      ()
+    },
+    coverageEnabled := false,
+    unusedCompileDependencies := Set.empty
   )
 
 lazy val `sbt-plugin` = myCrossProject("sbt-plugin")
   .settings(noPublishSettings)
   .settings(
     scalaVersion := Scala212,
-    sbtPlugin := true,
-    Compile / compile / wartremoverErrors -= Wart.Equals
+    sbtPlugin := true
   )
 
 lazy val `mill-plugin` = myCrossProject("mill-plugin")
   .settings(
     crossScalaVersions := Seq(Scala213, Scala212),
-    libraryDependencies += Dependencies.millScalalib.value % Provided
+    libraryDependencies += Dependencies.millScalalib.value % Provided,
+    scalacOptions -= "-Xfatal-warnings"
   )
 
 /// settings
@@ -174,21 +264,17 @@ lazy val commonSettings = Def.settings(
 
 lazy val compileSettings = Def.settings(
   scalaVersion := Scala213,
-  doctestTestFramework := DoctestTestFramework.ScalaCheck,
-  wartremoverErrors ++= Seq(Wart.TraversableOps),
-  Compile / compile / wartremoverErrors ++= Seq(Wart.Equals)
+  doctestTestFramework := DoctestTestFramework.Munit
 )
 
 lazy val metadataSettings = Def.settings(
   name := projectName,
   organization := groupId,
-  homepage := Some(url(s"https://github.com/$gitHubOwner/$projectName")),
+  homepage := Some(url(gitHubUrl)),
   startYear := Some(2018),
   licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
-  scmInfo := Some(
-    ScmInfo(homepage.value.get, s"scm:git:https://github.com/$gitHubOwner/$projectName.git")
-  ),
-  headerLicense := Some(HeaderLicense.ALv2("2018-2020", "Scala Steward contributors")),
+  scmInfo := Some(ScmInfo(homepage.value.get, s"scm:git:$gitHubUrl.git")),
+  headerLicense := Some(HeaderLicense.ALv2("2018-2021", "Scala Steward contributors")),
   developers := List(
     Developer(
       id = "fthomas",
@@ -200,39 +286,43 @@ lazy val metadataSettings = Def.settings(
 )
 
 lazy val dockerSettings = Def.settings(
-  dockerBaseImage := Option(System.getenv("DOCKER_BASE_IMAGE")).getOrElse("openjdk:8-jdk-alpine"),
+  dockerBaseImage := Option(System.getenv("DOCKER_BASE_IMAGE"))
+    .getOrElse("adoptopenjdk/openjdk11:alpine"),
   dockerCommands ++= {
-    val getSbtVersion = sbtVersion.value
-    val sbtTgz = s"sbt-$getSbtVersion.tgz"
-    val sbtUrl = s"https://github.com/sbt/sbt/releases/download/v$getSbtVersion/$sbtTgz"
-    val millVersion = Dependencies.millVersion.value
+    val binDir = "/usr/local/bin"
+    val sbtVer = sbtVersion.value
+    val sbtTgz = s"sbt-$sbtVer.tgz"
+    val sbtUrl = s"https://github.com/sbt/sbt/releases/download/v$sbtVer/$sbtTgz"
+    val millBin = s"$binDir/mill"
+    val millVer = Dependencies.millVersion.value
+    val millUrl =
+      s"https://github.com/lihaoyi/mill/releases/download/${millVer.split("-").head}/$millVer"
+    val coursierBin = s"$binDir/coursier"
     Seq(
       Cmd("USER", "root"),
-      Cmd("RUN", "apk --no-cache add bash git ca-certificates curl maven"),
+      Cmd("RUN", "apk --no-cache add bash git ca-certificates curl maven openssh"),
       Cmd("RUN", s"wget $sbtUrl && tar -xf $sbtTgz && rm -f $sbtTgz"),
-      Cmd(
-        "RUN",
-        s"curl -L https://github.com/lihaoyi/mill/releases/download/${millVersion.split("-").head}/$millVersion > /usr/local/bin/mill && chmod +x /usr/local/bin/mill"
-      )
+      Cmd("RUN", s"curl -L $millUrl > $millBin && chmod +x $millBin"),
+      Cmd("RUN", s"curl -L https://git.io/coursier-cli > $coursierBin && chmod +x $coursierBin"),
+      Cmd("RUN", s"$coursierBin install --install-dir $binDir scalafix scalafmt")
     )
   },
   Docker / packageName := s"fthomas/${name.value}",
   dockerUpdateLatest := true,
-  dockerEntrypoint += "--disable-sandbox",
   dockerEnvVars := Map("PATH" -> "/opt/docker/sbt/bin:${PATH}")
 )
 
 lazy val noPublishSettings = Def.settings(
-  skip in publish := true
+  publish / skip := true
 )
 
 lazy val scaladocSettings = Def.settings(
   Compile / doc / scalacOptions ++= {
     val tag = s"v${version.value}"
-    val tree = if (isSnapshot.value) git.gitHeadCommit.value.getOrElse("master") else tag
+    val tree = if (isSnapshot.value) git.gitHeadCommit.value.getOrElse(mainBranch) else tag
     Seq(
       "-doc-source-url",
-      s"${scmInfo.value.get.browseUrl}/blob/${tree}€{FILE_PATH}.scala",
+      s"${scmInfo.value.get.browseUrl}/blob/$tree€{FILE_PATH}.scala",
       "-sourcepath",
       (LocalRootProject / baseDirectory).value.getAbsolutePath
     )
@@ -240,6 +330,8 @@ lazy val scaladocSettings = Def.settings(
 )
 
 /// setting keys
+
+lazy val checkDocs = taskKey[Unit]("")
 
 lazy val installPlugin = taskKey[Unit]("Copies StewardPlugin.scala into global plugins directory.")
 installPlugin := {
@@ -249,7 +341,7 @@ installPlugin := {
   IO.copyFile(source, target)
 }
 
-lazy val moduleRootPkg = settingKey[String]("")
+lazy val moduleRootPkg = settingKey[String]("").withRank(KeyRanks.Invisible)
 moduleRootPkg := rootPkg
 
 // Run Scala Steward from sbt for development and testing.
@@ -257,21 +349,20 @@ moduleRootPkg := rootPkg
 lazy val runSteward = taskKey[Unit]("")
 runSteward := Def.taskDyn {
   val home = System.getenv("HOME")
-  val myJavaHome = System.getenv("JAVA_HOME")
   val projectDir = (LocalRootProject / baseDirectory).value
   val args = Seq(
     Seq("--workspace", s"$projectDir/workspace"),
     Seq("--repos-file", s"$projectDir/repos.md"),
-    Seq("--default-repo-conf", s"$projectDir/default.scala-steward.conf"),
     Seq("--git-author-email", s"me@$projectName.org"),
     Seq("--vcs-login", projectName),
     Seq("--git-ask-pass", s"$home/.github/askpass/$projectName.sh"),
     Seq("--whitelist", s"$home/.cache/coursier"),
     Seq("--whitelist", s"$home/.cache/JNA"),
+    Seq("--whitelist", s"$home/.cache/mill"),
     Seq("--whitelist", s"$home/.ivy2"),
-    Seq("--whitelist", s"$home/.sbt"),
-    Seq("--whitelist", myJavaHome),
-    Seq("--read-only", myJavaHome)
+    Seq("--whitelist", s"$home/.m2"),
+    Seq("--whitelist", s"$home/.mill"),
+    Seq("--whitelist", s"$home/.sbt")
   ).flatten.mkString(" ", " ", "")
   (core.jvm / Compile / run).toTask(args)
 }.value
@@ -286,18 +377,19 @@ addCommandsAlias(
   Seq(
     "clean",
     "headerCheck",
-    "scalafmtCheck",
+    "scalafmtCheckAll",
     "scalafmtSbtCheck",
-    "test:scalafmtCheck",
     "unusedCompileDependenciesTest",
     "coverage",
     "test",
     "coverageReport",
     "doc",
+    "docs/mdoc",
+    "docs/checkDocs",
     "package",
     "packageSrc",
     "core/assembly",
-    "docker:publishLocal"
+    "Docker/publishLocal"
   )
 )
 
@@ -305,8 +397,7 @@ addCommandsAlias(
   "fmt",
   Seq(
     "headerCreate",
-    "scalafmt",
-    "test:scalafmt",
+    "scalafmtAll",
     "scalafmtSbt"
   )
 )

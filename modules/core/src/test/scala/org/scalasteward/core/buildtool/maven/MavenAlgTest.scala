@@ -1,49 +1,46 @@
 package org.scalasteward.core.buildtool.maven
 
-import better.files.File
-import org.scalasteward.core.mock.MockContext._
-import org.scalasteward.core.mock.MockState
-import org.scalasteward.core.vcs.data.Repo
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
+import cats.effect.unsafe.implicits.global
+import munit.FunSuite
+import org.scalasteward.core.mock.MockContext.context.mavenAlg
+import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
+import org.scalasteward.core.mock.{MockConfig, MockState}
+import org.scalasteward.core.vcs.data.{BuildRoot, Repo}
 
-class MavenAlgTest extends AnyFunSuite with Matchers {
-  val var1 = "TEST_VAR=GREAT"
-  val var2 = "ANOTHER_TEST_VAR=ALSO_GREAT"
-
+class MavenAlgTest extends FunSuite {
   test("getDependencies") {
     val repo = Repo("namespace", "repo-name")
-    val repoDir = config.workspace / repo.show
-    val files: Map[File, String] = Map.empty
+    val buildRoot = BuildRoot(repo, ".")
+    val repoDir = MockConfig.config.workspace / repo.toPath
 
-    val state =
-      mavenAlg.getDependencies(repo).runS(MockState.empty.copy(files = files)).unsafeRunSync()
-
-    state shouldBe MockState(
-      files = files,
-      logs = Vector.empty,
-      commands = Vector(
-        List(
-          var1,
-          var2,
+    val state = mavenAlg.getDependencies(buildRoot).runS(MockState.empty).unsafeRunSync()
+    val expected = MockState.empty.copy(
+      trace = Vector(
+        Cmd(
           repoDir.toString,
           "firejail",
+          "--quiet",
           s"--whitelist=$repoDir",
+          "--env=VAR1=val1",
+          "--env=VAR2=val2",
           "mvn",
           "--batch-mode",
           command.listDependencies
         ),
-        List(
-          var1,
-          var2,
+        Cmd(
           repoDir.toString,
           "firejail",
+          "--quiet",
           s"--whitelist=$repoDir",
+          "--env=VAR1=val1",
+          "--env=VAR2=val2",
           "mvn",
           "--batch-mode",
           command.listRepositories
         )
       )
     )
+
+    assertEquals(state, expected)
   }
 }

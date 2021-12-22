@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,27 +16,57 @@
 
 package org.scalasteward.core.application
 
+import cats.MonadThrow
 import cats.syntax.all._
-import io.chrisdavenport.log4cats.Logger
-import org.http4s.Uri
-import org.scalasteward.core.util.{HttpExistenceClient, MonadThrowable}
+import org.scalasteward.core.edit.scalafix.ScalafixCli
+import org.scalasteward.core.edit.scalafix.ScalafixCli.scalafixBinary
+import org.scalasteward.core.git.GitAlg
+import org.scalasteward.core.scalafmt.{scalafmtBinary, ScalafmtAlg}
+import org.scalasteward.core.util.UrlChecker
+import org.scalasteward.core.util.logger.LoggerOps
+import org.typelevel.log4cats.Logger
 
-final class SelfCheckAlg[F[_]](implicit
-    httpExistenceClient: HttpExistenceClient[F],
+final class SelfCheckAlg[F[_]](config: Config)(implicit
+    gitAlg: GitAlg[F],
     logger: Logger[F],
-    F: MonadThrowable[F]
+    scalafixCli: ScalafixCli[F],
+    scalafmtAlg: ScalafmtAlg[F],
+    urlChecker: UrlChecker[F],
+    F: MonadThrow[F]
 ) {
   def checkAll: F[Unit] =
     for {
       _ <- logger.info("Run self checks")
-      _ <- checkHttpExistenceClient
+      _ <- checkGitBinary
+      _ <- checkScalafixBinary
+      _ <- checkScalafmtBinary
+      _ <- checkUrlChecker
     } yield ()
 
-  private def checkHttpExistenceClient: F[Unit] =
+  private def checkGitBinary: F[Unit] =
+    logger.attemptWarn.log_(execFailedMessage("git")) {
+      gitAlg.version.flatMap(output => logger.info(s"Using $output"))
+    }
+
+  private def checkScalafixBinary: F[Unit] =
+    logger.attemptWarn.log_(execFailedMessage(scalafixBinary)) {
+      scalafixCli.version.flatMap(output => logger.info(s"Using $scalafixBinary $output"))
+    }
+
+  private def checkScalafmtBinary: F[Unit] =
+    logger.attemptWarn.log_(execFailedMessage(scalafmtBinary)) {
+      scalafmtAlg.version.flatMap(output => logger.info(s"Using $output"))
+    }
+
+  private def execFailedMessage(binary: String): String =
+    s"Failed to execute $binary  -- make sure it is on the PATH; following the detailed exception:"
+
+  private def checkUrlChecker: F[Unit] =
     for {
-      url <- F.fromEither(Uri.fromString("https://github.com"))
-      res <- httpExistenceClient.exists(url)
-      msg = s"Self check of HttpExistenceClient failed: checking that $url exists failed"
-      _ <- if (!res) logger.warn(msg) else F.unit
+      _ <- F.unit
+      url = config.urlCheckerTestUrl
+      urlExists <- urlChecker.exists(url)
+      msg = s"Self check of UrlChecker failed: checking that $url exists failed"
+      _ <- F.whenA(!urlExists)(logger.warn(msg))
     } yield ()
 }

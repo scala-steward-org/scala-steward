@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package org.scalasteward.core.vcs.data
 
+import cats.ApplicativeThrow
 import io.circe.Decoder
 import io.circe.generic.semiauto._
 import org.http4s.Uri
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.util.ApplicativeThrowable
 import org.scalasteward.core.util.uri.uriDecoder
 
 final case class RepoOut(
@@ -30,11 +30,15 @@ final case class RepoOut(
     clone_url: Uri,
     default_branch: Branch
 ) {
-  def parentOrRaise[F[_]](implicit F: ApplicativeThrowable[F]): F[RepoOut] =
+  def parentOrRaise[F[_]](implicit F: ApplicativeThrow[F]): F[RepoOut] =
     parent.fold(F.raiseError[RepoOut](new Throwable(s"repo $name has no parent")))(F.pure)
 
   def repo: Repo =
     Repo(owner.login, name)
+
+  def withBranch(branch: Branch): RepoOut =
+    copy(default_branch = branch, parent = parent.map(_.withBranch(branch)))
+
 }
 
 object RepoOut {

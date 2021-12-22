@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,36 @@
 
 package org.scalasteward.core.vcs.data
 
-import io.circe.{KeyDecoder, KeyEncoder}
+import cats.Eq
+import io.circe.KeyEncoder
+import org.scalasteward.core.git.Branch
 
 final case class Repo(
     owner: String,
-    repo: String
+    repo: String,
+    branch: Option[Branch] = None
 ) {
-  def show: String = s"$owner/$repo"
+  def show: String =
+    owner + "/" + repo + branch.fold("")(":" + _.name)
+
+  def toPath: String =
+    owner + "/" + repo + branch.fold("")("/" + _.name)
 }
 
 object Repo {
-  implicit val repoKeyDecoder: KeyDecoder[Repo] = {
-    val / = s"(.+)/([^/]+)".r
-    KeyDecoder.instance {
-      case owner / repo => Some(Repo(owner, repo))
-      case _            => None
+  def parse(s: String): Option[Repo] = {
+    val regex = """-\s+([^:]+)/([^/:]+)(:.+)?""".r
+    s match {
+      case regex(owner, repo, branch) =>
+        Some(Repo(owner.trim, repo.trim, Option(branch).map(b => Branch(b.tail.trim))))
+      case _ =>
+        None
     }
   }
 
+  implicit val repoEq: Eq[Repo] =
+    Eq.fromUniversalEquals
+
   implicit val repoKeyEncoder: KeyEncoder[Repo] =
-    KeyEncoder.instance(repo => repo.owner + "/" + repo.repo)
+    KeyEncoder.instance(_.toPath)
 }

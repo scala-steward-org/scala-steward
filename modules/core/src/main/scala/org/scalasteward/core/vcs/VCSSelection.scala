@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,60 +16,55 @@
 
 package org.scalasteward.core.vcs
 
-import cats.effect.Sync
+import cats.MonadThrow
+import org.http4s.Header
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.application.SupportedVCS.{Bitbucket, BitbucketServer, GitHub, Gitlab}
-import org.scalasteward.core.bitbucket.http4s.Http4sBitbucketApiAlg
-import org.scalasteward.core.bitbucketserver.http4s.Http4sBitbucketServerApiAlg
-import org.scalasteward.core.github.http4s.Http4sGitHubApiAlg
-import org.scalasteward.core.gitlab.http4s.Http4sGitLabApiAlg
 import org.scalasteward.core.util.HttpJsonClient
+import org.scalasteward.core.vcs.VCSType.{Bitbucket, BitbucketServer, GitHub, GitLab}
+import org.scalasteward.core.vcs.bitbucket.BitbucketApiAlg
+import org.scalasteward.core.vcs.bitbucketserver.BitbucketServerApiAlg
 import org.scalasteward.core.vcs.data.AuthenticatedUser
-import io.chrisdavenport.log4cats.Logger
+import org.scalasteward.core.vcs.github.GitHubApiAlg
+import org.scalasteward.core.vcs.gitlab.GitLabApiAlg
+import org.typelevel.ci._
+import org.typelevel.log4cats.Logger
 
-class VCSSelection[F[_]: Sync](implicit
+final class VCSSelection[F[_]](config: Config, user: AuthenticatedUser)(implicit
     client: HttpJsonClient[F],
-    user: AuthenticatedUser,
-    logger: Logger[F]
+    logger: Logger[F],
+    F: MonadThrow[F]
 ) {
-  private def github(config: Config): Http4sGitHubApiAlg[F] = {
-    import org.scalasteward.core.github.http4s.authentication.addCredentials
+  private def gitHubApiAlg: GitHubApiAlg[F] =
+    new GitHubApiAlg[F](config.vcsCfg.apiHost, _ => github.authentication.addCredentials(user))
 
-    new Http4sGitHubApiAlg[F](config.vcsApiHost, _ => addCredentials(user))
-  }
+  private def gitLabApiAlg: GitLabApiAlg[F] =
+    new GitLabApiAlg[F](
+      config.vcsCfg,
+      config.gitLabCfg,
+      _ => gitlab.authentication.addCredentials(user)
+    )
 
-  private def gitlab(config: Config): Http4sGitLabApiAlg[F] = {
-    import org.scalasteward.core.gitlab.http4s.authentication.addCredentials
-    new Http4sGitLabApiAlg[F](
-      config.vcsApiHost,
-      user,
-      _ => addCredentials(user),
-      config.doNotFork,
-      config.gitlabMergeWhenPipelineSucceeds
+  private def bitbucketApiAlg: BitbucketApiAlg[F] =
+    new BitbucketApiAlg(config.vcsCfg, _ => bitbucket.authentication.addCredentials(user))
+
+  private def bitbucketServerApiAlg: BitbucketServerApiAlg[F] = {
+    // Bypass the server-side XSRF check, see
+    // https://github.com/scala-steward-org/scala-steward/pull/1863#issuecomment-754538364
+    val xAtlassianToken = Header.Raw(ci"X-Atlassian-Token", "no-check")
+
+    new BitbucketServerApiAlg[F](
+      config.vcsCfg.apiHost,
+      config.bitbucketServerCfg,
+      _ =>
+        req => bitbucket.authentication.addCredentials(user).apply(req.putHeaders(xAtlassianToken))
     )
   }
 
-  private def bitbucket(config: Config): Http4sBitbucketApiAlg[F] = {
-    import org.scalasteward.core.bitbucket.http4s.authentication.addCredentials
-
-    new Http4sBitbucketApiAlg(config.vcsApiHost, user, _ => addCredentials(user), config.doNotFork)
-  }
-
-  private def bitbucketServer(config: Config): Http4sBitbucketServerApiAlg[F] = {
-    import org.scalasteward.core.bitbucket.http4s.authentication.addCredentials
-
-    new Http4sBitbucketServerApiAlg[F](
-      config.vcsApiHost,
-      _ => addCredentials(user),
-      config.bitbucketServerUseDefaultReviewers
-    )
-  }
-
-  def getAlg(config: Config): VCSApiAlg[F] =
-    config.vcsType match {
-      case GitHub          => github(config)
-      case Gitlab          => gitlab(config)
-      case Bitbucket       => bitbucket(config)
-      case BitbucketServer => bitbucketServer(config)
+  def vcsApiAlg: VCSApiAlg[F] =
+    config.vcsCfg.tpe match {
+      case GitHub          => gitHubApiAlg
+      case GitLab          => gitLabApiAlg
+      case Bitbucket       => bitbucketApiAlg
+      case BitbucketServer => bitbucketServerApiAlg
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@
 
 package org.scalasteward.core.repocache
 
+import cats.syntax.all._
 import io.circe.Codec
 import io.circe.generic.semiauto._
-import org.scalasteward.core.data.{DependencyInfo, Scope}
+import org.scalasteward.core.data.{ArtifactId, DependencyInfo, GroupId, Scope}
 import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.repoconfig.RepoConfig
 
@@ -26,7 +27,15 @@ final case class RepoCache(
     sha1: Sha1,
     dependencyInfos: List[Scope[List[DependencyInfo]]],
     maybeRepoConfig: Option[RepoConfig]
-)
+) {
+  def dependsOn(modules: List[(GroupId, ArtifactId)]): Boolean =
+    dependencyInfos.exists(_.value.exists { info =>
+      modules.exists { case (groupId, artifactId) =>
+        info.dependency.groupId === groupId &&
+          info.dependency.artifactId.name === artifactId.name
+      }
+    })
+}
 
 object RepoCache {
   implicit val repoCacheCodec: Codec[RepoCache] =

@@ -5,6 +5,8 @@ categories:
     label: 'bug'
   - title: '📜 Scalafix Migrations'
     label: 'scalafix-migration'
+  - title: '📦 Artifact Migrations'
+    label: 'artifact-migration'
   - title: '📗 Documentation'
     label: 'documentation'
   - title: '🧪 Test Improvements'

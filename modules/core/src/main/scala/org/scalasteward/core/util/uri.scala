@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import cats.syntax.all._
 import io.circe.{Decoder, KeyDecoder, KeyEncoder}
 import monocle.Optional
 import org.http4s.Uri
-import org.http4s.Uri.{Authority, UserInfo}
+import org.http4s.Uri.{Authority, Scheme, UserInfo}
 
 object uri {
   implicit val uriDecoder: Decoder[Uri] =
@@ -40,4 +40,12 @@ object uri {
 
   val withUserInfo: Optional[Uri, UserInfo] =
     authorityWithUserInfo.compose(withAuthority)
+
+  private val httpSchemes: Set[Scheme] =
+    Set(Scheme.https, Scheme.http)
+
+  def findBrowsableUrl(xs: List[String]): Option[Uri] = {
+    val urls = xs.flatMap(Uri.fromString(_).toList).filter(_.scheme.isDefined)
+    urls.find(_.scheme.exists(httpSchemes)).orElse(urls.headOption)
+  }
 }

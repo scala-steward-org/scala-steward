@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,7 @@ import cats.syntax.all._
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.collection.MinSize
 import eu.timepit.refined.refineV
-import eu.timepit.refined.types.numeric.NonNegBigInt
 import org.scalasteward.core.util.Change.{Changed, Unchanged}
-import scala.util.Try
 import scala.util.matching.Regex
 import shapeless.Witness
 
@@ -94,9 +92,6 @@ object string {
     val line = "─" * 12
     s"$line $s $line"
   }
-
-  def parseNonNegBigInt(s: String): Option[NonNegBigInt] =
-    Try(BigInt(s)).toOption.flatMap(NonNegBigInt.unapply)
 
   /** Splits a string between lower and upper case characters.
     *

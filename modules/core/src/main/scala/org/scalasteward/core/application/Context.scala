@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,81 +16,181 @@
 
 package org.scalasteward.core.application
 
-import cats.Parallel
 import cats.effect._
-import io.chrisdavenport.log4cats.Logger
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import cats.effect.implicits._
+import cats.syntax.all._
+import org.http4s.Uri
 import org.http4s.client.Client
-import org.http4s.client.asynchttpclient.AsyncHttpClient
+import org.http4s.headers.`User-Agent`
 import org.scalasteward.core.buildtool.BuildToolDispatcher
 import org.scalasteward.core.buildtool.maven.MavenAlg
 import org.scalasteward.core.buildtool.mill.MillAlg
 import org.scalasteward.core.buildtool.sbt.SbtAlg
+import org.scalasteward.core.client.ClientConfiguration
 import org.scalasteward.core.coursier.{CoursierAlg, VersionsCache}
 import org.scalasteward.core.edit.EditAlg
-import org.scalasteward.core.git.GitAlg
+import org.scalasteward.core.edit.hooks.HookExecutor
+import org.scalasteward.core.edit.scalafix._
+import org.scalasteward.core.git.{GenGitAlg, GitAlg}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository}
-import org.scalasteward.core.persistence.JsonKeyValueStore
-import org.scalasteward.core.repocache.{RefreshErrorAlg, RepoCacheAlg, RepoCacheRepository}
-import org.scalasteward.core.repoconfig.RepoConfigAlg
-import org.scalasteward.core.scalafix.MigrationAlg
+import org.scalasteward.core.persistence.{CachingKeyValueStore, JsonKeyValueStore}
+import org.scalasteward.core.repocache._
+import org.scalasteward.core.repoconfig.{RepoConfigAlg, RepoConfigLoader}
 import org.scalasteward.core.scalafmt.ScalafmtAlg
-import org.scalasteward.core.update.{FilterAlg, GroupMigrations, PruningAlg, UpdateAlg}
+import org.scalasteward.core.update.artifact.{ArtifactMigrationsFinder, ArtifactMigrationsLoader}
+import org.scalasteward.core.update.{FilterAlg, PruningAlg, UpdateAlg}
 import org.scalasteward.core.util._
 import org.scalasteward.core.util.uri._
-import org.scalasteward.core.vcs.data.AuthenticatedUser
+import org.scalasteward.core.vcs.data.Repo
+import org.scalasteward.core.vcs.github.{GitHubAppApiAlg, GitHubAuthAlg}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg, VCSSelection}
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
+
+final class Context[F[_]](implicit
+    val buildToolDispatcher: BuildToolDispatcher[F],
+    val coursierAlg: CoursierAlg[F],
+    val dateTimeAlg: DateTimeAlg[F],
+    val editAlg: EditAlg[F],
+    val fileAlg: FileAlg[F],
+    val filterAlg: FilterAlg[F],
+    val gitAlg: GitAlg[F],
+    val hookExecutor: HookExecutor[F],
+    val logger: Logger[F],
+    val mavenAlg: MavenAlg[F],
+    val millAlg: MillAlg[F],
+    val pruningAlg: PruningAlg[F],
+    val pullRequestRepository: PullRequestRepository[F],
+    val refreshErrorAlg: RefreshErrorAlg[F],
+    val repoConfigAlg: RepoConfigAlg[F],
+    val sbtAlg: SbtAlg[F],
+    val artifactMigrationsLoader: ArtifactMigrationsLoader[F],
+    val scalafixMigrationsFinder: ScalafixMigrationsFinder,
+    val scalafixMigrationsLoader: ScalafixMigrationsLoader[F],
+    val scalafmtAlg: ScalafmtAlg[F],
+    val stewardAlg: StewardAlg[F],
+    val updateAlg: UpdateAlg[F],
+    val vcsRepoAlg: VCSRepoAlg[F],
+    val workspaceAlg: WorkspaceAlg[F]
+)
 
 object Context {
-  def create[F[_]: ConcurrentEffect: ContextShift: Parallel: Timer](
-      args: Cli.Args
-  ): Resource[F, StewardAlg[F]] =
+  def step0[F[_]](args: Cli.Args)(implicit F: Async[F]): Resource[F, Context[F]] =
     for {
-      blocker <- Blocker[F]
-      implicit0(config: Config) <- Resource.liftF(Config.create[F](args))
-      implicit0(client: Client[F]) <- AsyncHttpClient.resource[F]()
-      implicit0(logger: Logger[F]) <- Resource.liftF(Slf4jLogger.create[F])
-      implicit0(httpExistenceClient: HttpExistenceClient[F]) <- HttpExistenceClient.create[F]
-      implicit0(user: AuthenticatedUser) <- Resource.liftF(config.vcsUser[F])
-      implicit0(fileAlg: FileAlg[F]) = FileAlg.create[F]
-      implicit0(migrationAlg: MigrationAlg) <- Resource.liftF(
-        MigrationAlg.create[F](config.scalafixMigrations)
+      logger <- Resource.eval(Slf4jLogger.fromName[F]("org.scalasteward.core"))
+      _ <- Resource.eval(printBanner(logger))
+      config = Config.from(args)
+      _ <- Resource.eval(F.delay(System.setProperty("http.agent", userAgentString)))
+      userAgent <- Resource.eval(F.fromEither(`User-Agent`.parse(userAgentString)))
+      userAgentMiddleware = ClientConfiguration.setUserAgent[F](userAgent)
+      defaultClient <- ClientConfiguration.build(
+        ClientConfiguration.BuilderMiddleware.default,
+        userAgentMiddleware
       )
-      implicit0(groupMigration: GroupMigrations) <- Resource.liftF(GroupMigrations.create[F])
+      urlCheckerClient <- ClientConfiguration.build(
+        ClientConfiguration.disableFollowRedirect[F],
+        userAgentMiddleware
+      )
+      fileAlg = FileAlg.create(logger, F)
+      processAlg = ProcessAlg.create(config.processCfg)(logger, F)
+      workspaceAlg = WorkspaceAlg.create(config)(fileAlg, logger, F)
+      context <- Resource.eval(
+        step1(config)(
+          defaultClient,
+          UrlCheckerClient(urlCheckerClient),
+          fileAlg,
+          logger,
+          processAlg,
+          workspaceAlg,
+          F
+        )
+      )
+    } yield context
+
+  def step1[F[_]](config: Config)(implicit
+      client: Client[F],
+      urlCheckerClient: UrlCheckerClient[F],
+      fileAlg: FileAlg[F],
+      logger: Logger[F],
+      processAlg: ProcessAlg[F],
+      workspaceAlg: WorkspaceAlg[F],
+      F: Async[F]
+  ): F[Context[F]] =
+    for {
+      vcsUser <- config.vcsUser[F]
+      artifactMigrationsLoader0 = new ArtifactMigrationsLoader[F]
+      artifactMigrationsFinder0 <- artifactMigrationsLoader0.createFinder(config.artifactCfg)
+      scalafixMigrationsLoader0 = new ScalafixMigrationsLoader[F]
+      scalafixMigrationsFinder0 <- scalafixMigrationsLoader0.createFinder(config.scalafixCfg)
+      repoConfigLoader0 = new RepoConfigLoader[F]
+      maybeGlobalRepoConfig <- repoConfigLoader0.loadGlobalRepoConfig(config.repoConfigCfg)
+      urlChecker0 <- UrlChecker.create[F](config)
+      kvsPrefix = Some(config.vcsCfg.tpe.asString)
+      pullRequestsStore <- JsonKeyValueStore
+        .create[F, Repo, Map[Uri, PullRequestRepository.Entry]]("pull_requests", "2", kvsPrefix)
+        .flatMap(CachingKeyValueStore.wrap(_))
+      refreshErrorStore <- JsonKeyValueStore
+        .create[F, Repo, RefreshErrorAlg.Entry]("refresh_error", "1", kvsPrefix)
+      repoCacheStore <- JsonKeyValueStore
+        .create[F, Repo, RepoCache]("repo_cache", "1", kvsPrefix)
+      versionsStore <- JsonKeyValueStore
+        .create[F, VersionsCache.Key, VersionsCache.Value]("versions", "2")
     } yield {
-      val kvsPrefix = Some(config.vcsType.asString)
+      implicit val artifactMigrationsLoader: ArtifactMigrationsLoader[F] = artifactMigrationsLoader0
+      implicit val artifactMigrationsFinder: ArtifactMigrationsFinder = artifactMigrationsFinder0
+      implicit val scalafixMigrationsLoader: ScalafixMigrationsLoader[F] = scalafixMigrationsLoader0
+      implicit val scalafixMigrationsFinder: ScalafixMigrationsFinder = scalafixMigrationsFinder0
+      implicit val urlChecker: UrlChecker[F] = urlChecker0
       implicit val dateTimeAlg: DateTimeAlg[F] = DateTimeAlg.create[F]
-      implicit val processAlg: ProcessAlg[F] = ProcessAlg.create[F](blocker)
-      implicit val workspaceAlg: WorkspaceAlg[F] = WorkspaceAlg.create[F]
-      implicit val repoConfigAlg: RepoConfigAlg[F] = new RepoConfigAlg[F]
+      implicit val repoConfigAlg: RepoConfigAlg[F] = new RepoConfigAlg[F](maybeGlobalRepoConfig)
       implicit val filterAlg: FilterAlg[F] = new FilterAlg[F]
-      implicit val gitAlg: GitAlg[F] = GitAlg.create[F]
+      implicit val gitAlg: GitAlg[F] = GenGitAlg.create[F](config.gitCfg)
+      implicit val gitHubAuthAlg: GitHubAuthAlg[F] = GitHubAuthAlg.create[F]
+      implicit val hookExecutor: HookExecutor[F] = new HookExecutor[F]
       implicit val httpJsonClient: HttpJsonClient[F] = new HttpJsonClient[F]
       implicit val repoCacheRepository: RepoCacheRepository[F] =
-        new RepoCacheRepository[F](new JsonKeyValueStore("repo_cache", "1", kvsPrefix))
-      implicit val selfCheckAlg: SelfCheckAlg[F] = new SelfCheckAlg[F]
-      val vcsSelection = new VCSSelection[F]
-      implicit val vcsApiAlg: VCSApiAlg[F] = vcsSelection.getAlg(config)
-      implicit val vcsRepoAlg: VCSRepoAlg[F] = VCSRepoAlg.create[F](config, gitAlg)
-      implicit val vcsExtraAlg: VCSExtraAlg[F] = VCSExtraAlg.create[F]
+        new RepoCacheRepository[F](repoCacheStore)
+      implicit val vcsApiAlg: VCSApiAlg[F] = new VCSSelection[F](config, vcsUser).vcsApiAlg
+      implicit val vcsRepoAlg: VCSRepoAlg[F] = new VCSRepoAlg[F](config)
+      implicit val vcsExtraAlg: VCSExtraAlg[F] = VCSExtraAlg.create[F](config.vcsCfg)
       implicit val pullRequestRepository: PullRequestRepository[F] =
-        new PullRequestRepository[F](new JsonKeyValueStore("pull_requests", "2", kvsPrefix))
-      implicit val scalafmtAlg: ScalafmtAlg[F] = ScalafmtAlg.create[F]
+        new PullRequestRepository[F](pullRequestsStore)
+      implicit val scalafixCli: ScalafixCli[F] = new ScalafixCli[F]
+      implicit val scalafmtAlg: ScalafmtAlg[F] = new ScalafmtAlg[F](config)
+      implicit val selfCheckAlg: SelfCheckAlg[F] = new SelfCheckAlg[F](config)
       implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create[F]
       implicit val versionsCache: VersionsCache[F] =
-        new VersionsCache[F](config.cacheTtl, new JsonKeyValueStore("versions", "2"))
+        new VersionsCache[F](config.cacheTtl, versionsStore)
       implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]
-      implicit val mavenAlg: MavenAlg[F] = MavenAlg.create[F]
-      implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F]
-      implicit val millAlg: MillAlg[F] = MillAlg.create[F]
-      implicit val buildToolDispatcher: BuildToolDispatcher[F] = BuildToolDispatcher.create[F]
+      implicit val mavenAlg: MavenAlg[F] = new MavenAlg[F](config)
+      implicit val sbtAlg: SbtAlg[F] = new SbtAlg[F](config)
+      implicit val millAlg: MillAlg[F] = new MillAlg[F]
+      implicit val buildToolDispatcher: BuildToolDispatcher[F] = new BuildToolDispatcher[F]
       implicit val refreshErrorAlg: RefreshErrorAlg[F] =
-        new RefreshErrorAlg[F](new JsonKeyValueStore("refresh_error", "1", kvsPrefix))
-      implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F]
+        new RefreshErrorAlg[F](refreshErrorStore, config.refreshBackoffPeriod)
+      implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F](config)
       implicit val editAlg: EditAlg[F] = new EditAlg[F]
-      implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F]
+      implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F](config.vcsCfg)
       implicit val pruningAlg: PruningAlg[F] = new PruningAlg[F]
-      new StewardAlg[F]
+      implicit val gitHubAppApiAlg: GitHubAppApiAlg[F] =
+        new GitHubAppApiAlg[F](config.vcsCfg.apiHost)
+      implicit val stewardAlg: StewardAlg[F] = new StewardAlg[F](config)
+      new Context[F]
     }
+
+  private def printBanner[F[_]](logger: Logger[F]): F[Unit] = {
+    val banner =
+      """|  ____            _         ____  _                             _
+         | / ___|  ___ __ _| | __ _  / ___|| |_ _____      ____ _ _ __ __| |
+         | \___ \ / __/ _` | |/ _` | \___ \| __/ _ \ \ /\ / / _` | '__/ _` |
+         |  ___) | (_| (_| | | (_| |  ___) | ||  __/\ V  V / (_| | | | (_| |
+         | |____/ \___\__,_|_|\__,_| |____/ \__\___| \_/\_/ \__,_|_|  \__,_|""".stripMargin
+    val msg = List(" ", banner, s" v${org.scalasteward.core.BuildInfo.version}", " ")
+      .mkString(System.lineSeparator())
+    logger.info(msg)
+  }
+
+  private val userAgentString: String =
+    s"Scala-Steward/${org.scalasteward.core.BuildInfo.version} (${org.scalasteward.core.BuildInfo.gitHubUrl})"
 }

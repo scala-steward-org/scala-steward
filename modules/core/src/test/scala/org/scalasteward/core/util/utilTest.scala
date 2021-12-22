@@ -1,39 +1,51 @@
 package org.scalasteward.core.util
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+
+import cats.effect.IO
+import cats.effect.unsafe.implicits.global
+import munit.ScalaCheckSuite
+import org.scalacheck.Gen
+import org.scalacheck.Prop._
 import scala.collection.mutable.ListBuffer
 
-class utilTest extends AnyFunSuite with Matchers with ScalaCheckPropertyChecks {
+class utilTest extends ScalaCheckSuite {
   test("appendBounded") {
     val lb = new ListBuffer[Int]
     lb.appendAll(List(1, 2, 3))
 
     appendBounded(lb, 4, 4)
-    lb.toList shouldBe List(1, 2, 3, 4)
+    assertEquals(lb.toList, List(1, 2, 3, 4))
 
     appendBounded(lb, 5, 4)
-    lb.toList shouldBe List(3, 4, 5)
+    assertEquals(lb.toList, List(3, 4, 5))
 
     appendBounded(lb, 6, 4)
-    lb.toList shouldBe List(3, 4, 5, 6)
+    assertEquals(lb.toList, List(3, 4, 5, 6))
 
     appendBounded(lb, 7, 6)
-    lb.toList shouldBe List(3, 4, 5, 6, 7)
+    assertEquals(lb.toList, List(3, 4, 5, 6, 7))
 
     appendBounded(lb, 8, 6)
-    lb.toList shouldBe List(3, 4, 5, 6, 7, 8)
+    assertEquals(lb.toList, List(3, 4, 5, 6, 7, 8))
 
     appendBounded(lb, 9, 6)
-    lb.toList shouldBe List(6, 7, 8, 9)
+    assertEquals(lb.toList, List(6, 7, 8, 9))
   }
 
   test("bindUntilTrue: empty list") {
-    bindUntilTrue(List.empty[Option[Boolean]]) shouldBe Some(false)
+    assertEquals(bindUntilTrue(List.empty[Option[Boolean]]), Some(false))
   }
 
   test("intersects") {
-    intersects(List(1, 3, 5), Vector(2, 4, 6)) shouldBe false
-    intersects(List(1, 3, 5), Vector(2, 3, 6)) shouldBe true
+    assert(!intersects(List(1, 3, 5), Vector(2, 4, 6)))
+    assert(intersects(List(1, 3, 5), Vector(2, 3, 6)))
+  }
+
+  test("takeUntil") {
+    forAll(Gen.choose(0, 16)) { (n: Int) =>
+      var count = 0
+      val s = fs2.Stream.eval(IO(count += 1)).repeat.through(takeUntil(0, n)(_ => 1))
+      s.compile.drain.unsafeRunSync()
+      assertEquals(count, n)
+    }
   }
 }

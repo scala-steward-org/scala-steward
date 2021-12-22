@@ -1,41 +1,51 @@
 package org.scalasteward.core.io
 
 import cats.effect.IO
-import org.scalasteward.core.TestInstances._
-import org.scalasteward.core.io.ProcessAlgTest.blocker
-import org.scalasteward.core.util.Nel
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
+import cats.effect.unsafe.implicits.global
+import munit.FunSuite
+import org.scalasteward.core.io.process.Args
+import org.scalasteward.core.util.{DateTimeAlg, Nel}
+import scala.concurrent.TimeoutException
 import scala.concurrent.duration._
 
-class processTest extends AnyFunSuite with Matchers {
+class processTest extends FunSuite {
   def slurp1(cmd: Nel[String]): IO[List[String]] =
-    process.slurp[IO](cmd, None, Map.empty, 1.minute, _ => IO.unit, blocker)
+    process.slurp[IO](Args(cmd), 1.minute, 8192, _ => IO.unit)
 
   def slurp2(cmd: Nel[String], timeout: FiniteDuration): IO[List[String]] =
-    process.slurp[IO](cmd, None, Map.empty, timeout, _ => IO.unit, blocker)
+    process.slurp[IO](Args(cmd), timeout, 8192, _ => IO.unit)
 
   test("echo hello") {
-    slurp1(Nel.of("echo", "-n", "hello")).unsafeRunSync() shouldBe List("hello")
+    assertEquals(slurp1(Nel.of("echo", "-n", "hello")).unsafeRunSync(), List("hello"))
   }
 
   test("echo hello world") {
-    slurp1(Nel.of("echo", "-n", "hello\nworld")).unsafeRunSync() shouldBe List("hello", "world")
+    assertEquals(
+      slurp1(Nel.of("echo", "-n", "hello\nworld")).unsafeRunSync(),
+      List("hello", "world")
+    )
   }
 
   test("ls") {
-    slurp1(Nel.of("ls")).attempt.unsafeRunSync().isRight shouldBe true
+    assert(slurp1(Nel.of("ls")).attempt.unsafeRunSync().isRight)
   }
 
   test("ls --foo") {
-    slurp1(Nel.of("ls", "--foo")).attempt.unsafeRunSync().isLeft shouldBe true
+    assert(slurp1(Nel.of("ls", "--foo")).attempt.unsafeRunSync().isLeft)
   }
 
   test("sleep 1: ok") {
-    slurp2(Nel.of("sleep", "1"), 2.seconds).unsafeRunSync() shouldBe List()
+    assertEquals(slurp2(Nel.of("sleep", "1"), 2.seconds).unsafeRunSync(), List())
   }
 
   test("sleep 1: fail") {
-    slurp2(Nel.of("sleep", "1"), 500.milliseconds).attempt.unsafeRunSync().isLeft shouldBe true
+    val timeout = 500.milliseconds
+    val sleep = timeout * 2
+    val p = slurp2(Nel.of("sleep", sleep.toSeconds.toInt.toString), timeout).attempt
+    val (Left(t), fd) = DateTimeAlg.create[IO].timed(p).unsafeRunSync()
+
+    assert(clue(t).isInstanceOf[TimeoutException])
+    assert(clue(fd) > timeout)
+    assert(clue(fd) < sleep)
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,43 +16,61 @@
 
 package org.scalasteward.core.repoconfig
 
-import cats.kernel.Semigroup
-import cats.syntax.semigroup._
+import cats.syntax.all._
+import cats.{Eq, Monoid}
 import io.circe.Codec
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
+import io.circe.syntax._
 
 final case class RepoConfig(
     commits: CommitsConfig = CommitsConfig(),
     pullRequests: PullRequestsConfig = PullRequestsConfig(),
+    scalafmt: ScalafmtConfig = ScalafmtConfig(),
     updates: UpdatesConfig = UpdatesConfig(),
-    updatePullRequests: Option[PullRequestUpdateStrategy] = None
+    updatePullRequests: Option[PullRequestUpdateStrategy] = None,
+    buildRoots: Option[List[BuildRootConfig]] = None
 ) {
+  def buildRootsOrDefault: List[BuildRootConfig] =
+    buildRoots
+      .map(_.filterNot(_.relativePath.contains("..")))
+      .getOrElse(List(BuildRootConfig.repoRoot))
+
   def updatePullRequestsOrDefault: PullRequestUpdateStrategy =
     updatePullRequests.getOrElse(PullRequestUpdateStrategy.default)
+
+  def show: String =
+    this.asJson.spaces2
 }
 
 object RepoConfig {
   val empty: RepoConfig = RepoConfig()
 
-  implicit val customConfig: Configuration =
+  implicit val repoConfigEq: Eq[RepoConfig] =
+    Eq.fromUniversalEquals
+
+  implicit val repoConfigConfiguration: Configuration =
     Configuration.default.withDefaults
 
   implicit val repoConfigCodec: Codec[RepoConfig] =
     deriveConfiguredCodec
 
-  implicit val semigroup: Semigroup[RepoConfig] = new Semigroup[RepoConfig] {
-    override def combine(x: RepoConfig, y: RepoConfig): RepoConfig =
-      (x, y) match {
-        case (`empty`, _) => y
-        case (_, `empty`) => x
-        case _ =>
-          RepoConfig(
-            commits = x.commits |+| y.commits,
-            pullRequests = x.pullRequests |+| y.pullRequests,
-            updates = x.updates |+| y.updates,
-            updatePullRequests = x.updatePullRequests.orElse(y.updatePullRequests)
-          )
-      }
-  }
+  implicit val repoConfigMonoid: Monoid[RepoConfig] =
+    Monoid.instance(
+      empty,
+      (x, y) =>
+        () match {
+          case _ if x === empty => y
+          case _ if y === empty => x
+          case _ =>
+            RepoConfig(
+              commits = x.commits |+| y.commits,
+              pullRequests = x.pullRequests |+| y.pullRequests,
+              scalafmt = x.scalafmt |+| y.scalafmt,
+              updates = x.updates |+| y.updates,
+              updatePullRequests = x.updatePullRequests.orElse(y.updatePullRequests),
+              buildRoots = x.buildRoots |+| y.buildRoots
+            )
+        }
+    )
 }

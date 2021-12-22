@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,9 @@ package org.scalasteward.core.git
 
 import io.circe.{Decoder, Encoder}
 
-final case class Branch(name: String)
+final case class Branch(name: String) {
+  def withPrefix(prefix: String): Branch = Branch(prefix + name)
+}
 
 object Branch {
   val head: Branch = Branch("HEAD")

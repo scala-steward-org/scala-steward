@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,48 +21,47 @@ import cats.syntax.all._
 import org.scalasteward.core.buildtool.maven.MavenAlg
 import org.scalasteward.core.buildtool.mill.MillAlg
 import org.scalasteward.core.buildtool.sbt.SbtAlg
-import org.scalasteward.core.data.{Resolver, Scope}
-import org.scalasteward.core.scalafix.Migration
+import org.scalasteward.core.data.Scope
+import org.scalasteward.core.edit.scalafix.ScalafixMigration
+import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafmt.ScalafmtAlg
-import org.scalasteward.core.util.Nel
-import org.scalasteward.core.vcs.data.Repo
+import org.scalasteward.core.vcs.data.{BuildRoot, Repo}
 
-trait BuildToolDispatcher[F[_]] extends BuildToolAlg[F]
+final class BuildToolDispatcher[F[_]](implicit
+    mavenAlg: MavenAlg[F],
+    millAlg: MillAlg[F],
+    sbtAlg: SbtAlg[F],
+    scalafmtAlg: ScalafmtAlg[F],
+    F: Monad[F]
+) {
+  def getDependencies(repo: Repo, repoConfig: RepoConfig): F[List[Scope.Dependencies]] =
+    getBuildRootsAndTools(repo, repoConfig).flatMap(_.flatTraverse { case (buildRoot, buildTools) =>
+      for {
+        dependencies <- buildTools.flatTraverse(_.getDependencies(buildRoot))
+        maybeScalafmtDependency <- scalafmtAlg.getScopedScalafmtDependency(buildRoot)
+      } yield Scope.combineByResolvers(maybeScalafmtDependency.toList ::: dependencies)
+    })
 
-object BuildToolDispatcher {
-  def create[F[_]](implicit
-      mavenAlg: MavenAlg[F],
-      millAlg: MillAlg[F],
-      sbtAlg: SbtAlg[F],
-      scalafmtAlg: ScalafmtAlg[F],
-      F: Monad[F]
-  ): BuildToolDispatcher[F] = {
-    val allBuildTools = List(mavenAlg, millAlg, sbtAlg)
-    val fallbackBuildTool = sbtAlg
+  def runMigration(repo: Repo, repoConfig: RepoConfig, migration: ScalafixMigration): F[Unit] =
+    getBuildRootsAndTools(repo, repoConfig).flatMap(_.traverse_ { case (buildRoot, buildTools) =>
+      buildTools.traverse_(_.runMigration(buildRoot, migration))
+    })
 
-    new BuildToolDispatcher[F] {
-      override def containsBuild(repo: Repo): F[Boolean] =
-        allBuildTools.existsM(_.containsBuild(repo))
+  private def getBuildRoots(repo: Repo, repoConfig: RepoConfig): List[BuildRoot] =
+    repoConfig.buildRootsOrDefault.map(buildRootCfg => BuildRoot(repo, buildRootCfg.relativePath))
 
-      override def getDependencies(repo: Repo): F[List[Scope.Dependencies]] =
-        for {
-          dependencies <- foundBuildTools(repo).flatMap(_.flatTraverse(_.getDependencies(repo)))
-          additionalDependencies <- getAdditionalDependencies(repo)
-        } yield Scope.combineByResolvers(additionalDependencies ::: dependencies)
+  private val allBuildTools = List(mavenAlg, millAlg, sbtAlg)
+  private val fallbackBuildTool = List(sbtAlg)
 
-      override def runMigrations(repo: Repo, migrations: Nel[Migration]): F[Unit] =
-        foundBuildTools(repo).flatMap(_.traverse_(_.runMigrations(repo, migrations)))
-
-      private def foundBuildTools(repo: Repo): F[List[BuildToolAlg[F]]] =
-        allBuildTools.filterA(_.containsBuild(repo)).map {
-          case Nil  => List(fallbackBuildTool)
-          case list => list
-        }
-
-      def getAdditionalDependencies(repo: Repo): F[List[Scope.Dependencies]] =
-        scalafmtAlg
-          .getScalafmtDependency(repo)
-          .map(_.map(dep => Scope(List(dep), List(Resolver.mavenCentral))).toList)
+  private def findBuildTools(buildRoot: BuildRoot): F[(BuildRoot, List[BuildToolAlg[F]])] =
+    allBuildTools.filterA(_.containsBuild(buildRoot)).map {
+      case Nil  => buildRoot -> fallbackBuildTool
+      case list => buildRoot -> list
     }
-  }
+
+  private def getBuildRootsAndTools(
+      repo: Repo,
+      repoConfig: RepoConfig
+  ): F[List[(BuildRoot, List[BuildToolAlg[F]])]] =
+    getBuildRoots(repo, repoConfig).traverse(findBuildTools)
 }

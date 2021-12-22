@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,10 @@ package org.scalasteward.core
 
 import cats.syntax.all._
 import org.http4s.Uri
-import org.scalasteward.core.application.SupportedVCS
-import org.scalasteward.core.application.SupportedVCS.{Bitbucket, BitbucketServer, GitHub, Gitlab}
 import org.scalasteward.core.data.ReleaseRelatedUrl.VersionDiff
 import org.scalasteward.core.data.{ReleaseRelatedUrl, Update}
+import org.scalasteward.core.git.Branch
+import org.scalasteward.core.vcs.VCSType.{Bitbucket, BitbucketServer, GitHub, GitLab}
 import org.scalasteward.core.vcs.data.Repo
 
 package object vcs {
@@ -29,25 +29,25 @@ package object vcs {
   /** Determines the `head` (GitHub) / `source_branch` (GitLab, Bitbucket) parameter for searching
     * for already existing pull requests.
     */
-  def listingBranch(vcsType: SupportedVCS, fork: Repo, update: Update): String =
+  def listingBranch(vcsType: VCSType, fork: Repo, updateBranch: Branch): String =
     vcsType match {
       case GitHub =>
-        s"${fork.show}:${git.branchFor(update).name}"
+        s"${fork.owner}/${fork.repo}:${updateBranch.name}"
 
-      case Gitlab | Bitbucket | BitbucketServer =>
-        git.branchFor(update).name
+      case GitLab | Bitbucket | BitbucketServer =>
+        updateBranch.name
     }
 
   /** Determines the `head` (GitHub) / `source_branch` (GitLab, Bitbucket) parameter for creating
     * a new pull requests.
     */
-  def createBranch(vcsType: SupportedVCS, fork: Repo, update: Update): String =
+  def createBranch(vcsType: VCSType, fork: Repo, updateBranch: Branch): String =
     vcsType match {
       case GitHub =>
-        s"${fork.owner}:${git.branchFor(update).name}"
+        s"${fork.owner}:${updateBranch.name}"
 
-      case Gitlab | Bitbucket | BitbucketServer =>
-        git.branchFor(update).name
+      case GitLab | Bitbucket | BitbucketServer =>
+        updateBranch.name
     }
 
   def possibleTags(version: String): List[String] =
@@ -74,28 +74,17 @@ package object vcs {
   }
 
   private[this] def extractRepoVCSType(
-      vcsType: SupportedVCS,
+      vcsType: VCSType,
       vcsUri: Uri,
       repoUrl: Uri
-  ): Option[SupportedVCS] = {
-    val host = repoUrl.host.map(_.value)
-    if (vcsUri.host.map(_.value).contains(host.getOrElse("")))
-      Option(vcsType)
-    else
-      host
-        .collect {
-          case "github.com" => GitHub
-          case "gitlab.com" => Gitlab
-        }
-        .orElse {
-          if (host.contains_("bitbucket.org"))
-            Some(Bitbucket)
-          else None
-        }
-  }
+  ): Option[VCSType] =
+    repoUrl.host.flatMap { repoHost =>
+      if (vcsUri.host.contains(repoHost)) Some(vcsType)
+      else VCSType.fromPublicWebHost(repoHost.value)
+    }
 
   def possibleCompareUrls(
-      vcsType: SupportedVCS,
+      vcsType: VCSType,
       vcsUri: Uri,
       repoUrl: Uri,
       update: Update
@@ -105,7 +94,7 @@ package object vcs {
 
     extractRepoVCSType(vcsType, vcsUri, repoUrl)
       .map {
-        case GitHub | Gitlab =>
+        case GitHub | GitLab =>
           possibleTags(from).zip(possibleTags(to)).map { case (from1, to1) =>
             VersionDiff(repoUrl / "compare" / s"$from1...$to1")
           }
@@ -118,7 +107,7 @@ package object vcs {
   }
 
   def possibleReleaseRelatedUrls(
-      vcsType: SupportedVCS,
+      vcsType: VCSType,
       vcsUri: Uri,
       repoUrl: Uri,
       update: Update
@@ -135,8 +124,8 @@ package object vcs {
 
     def files(fileNames: List[String]): List[Uri] = {
       val maybeSegments = repoVCSType.map {
-        case SupportedVCS.GitHub | SupportedVCS.Gitlab             => List("blob", "master")
-        case SupportedVCS.Bitbucket | SupportedVCS.BitbucketServer => List("master")
+        case GitHub | GitLab             => List("blob", "master")
+        case Bitbucket | BitbucketServer => List("master")
       }
 
       maybeSegments.toList.flatMap { segments =>
@@ -149,12 +138,8 @@ package object vcs {
     val customReleaseNotes =
       files(possibleReleaseNotesFilenames).map(ReleaseRelatedUrl.CustomReleaseNotes)
 
-    github ++ customReleaseNotes ++ customChangelog ++ possibleCompareUrls(
-      vcsType,
-      vcsUri,
-      repoUrl,
-      update
-    )
+    github ++ customReleaseNotes ++ customChangelog ++
+      possibleCompareUrls(vcsType, vcsUri, repoUrl, update)
   }
 
   private def possibleFilenames(baseNames: List[String]): List[String] = {

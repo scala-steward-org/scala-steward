@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Scala Steward contributors
+ * Copyright 2018-2021 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package org.scalasteward.core
 
 import cats._
-import cats.effect.Bracket
 import cats.syntax.all._
 import fs2.Pipe
 import scala.collection.mutable.ListBuffer
@@ -25,12 +24,6 @@ import scala.collection.mutable.ListBuffer
 package object util {
   final type Nel[+A] = cats.data.NonEmptyList[A]
   final val Nel = cats.data.NonEmptyList
-
-  type ApplicativeThrowable[F[_]] = ApplicativeError[F, Throwable]
-
-  type MonadThrowable[F[_]] = MonadError[F, Throwable]
-
-  type BracketThrowable[F[_]] = Bracket[F, Throwable]
 
   /** Appends `elem` to `buffer` such that its size does not exceed `maxSize`. */
   def appendBounded[A](buffer: ListBuffer[A], elem: A, maxSize: Int): Unit = {
@@ -56,6 +49,17 @@ package object util {
   def bindUntilTrue[G[_]: Foldable, F[_]: Monad](gfb: G[F[Boolean]]): F[Boolean] =
     gfb.existsM(identity)
 
+  /** Like `Semigroup[Option[A]].combine` but allows to specify how `A`s are combined. */
+  def combineOptions[A](x: Option[A], y: Option[A])(f: (A, A) => A): Option[A] =
+    x match {
+      case None => y
+      case Some(xv) =>
+        y match {
+          case None     => x
+          case Some(yv) => Some(f(xv, yv))
+        }
+    }
+
   /** Returns true if there is an element that is both in `fa` and `ga`. */
   def intersects[F[_]: UnorderedFoldable, G[_]: UnorderedFoldable, A: Eq](
       fa: F[A],
@@ -64,32 +68,37 @@ package object util {
     fa.exists(a => ga.exists(b => a === b))
 
   /** Adds a weight to each element and cuts the stream when the total
-    * weight is greater or equal to `limit`.
+    * weight is greater or equal to `limit`. `init` is the initial weight.
     *
     * @example {{{
-    * scala> fs2.Stream.emits("Hello, world!").through(takeUntil(3) {
+    * scala> fs2.Stream.emits("Hello, world!").through(takeUntil(0, 3) {
     *      |   case 'a' | 'e' | 'i' | 'o' | 'u' => 1
     *      |   case _                           => 0
     *      | }).toList.mkString
     * res1: String = Hello, wo
     * }}}
     */
-  def takeUntil[F[_], A, N](limit: N)(weight: A => N)(implicit N: Numeric[N]): Pipe[F, A, A] = {
-    import N._
-    _.map(a => (a, weight(a)))
-      .scan1[(A, N)] { case ((_, total), (a, i)) => (a, total + i) }
-      .takeThrough { case (_, total) => total < limit }
-      .map { case (a, _) => a }
-  }
+  def takeUntil[F[_], A, N](init: N, limit: N)(weight: A => N)(implicit
+      N: Numeric[N]
+  ): Pipe[F, A, A] =
+    if (N.gteq(init, limit))
+      _ => fs2.Stream.empty
+    else
+      _.mapAccumulate(init) { case (i, a) => (N.plus(i, weight(a)), a) }
+        .takeThrough { case (total, _) => N.lt(total, limit) }
+        .map { case (_, a) => a }
 
   /** A variant of `takeUntil` that takes an optional limit.
     * This is the identity if `maybeLimit` is `None`.
     */
-  def takeUntilMaybe[F[_], A, N](maybeLimit: Option[N])(weight: A => N)(
-      implicit N: Numeric[N]
+  def takeUntilMaybe[F[_], A, N](init: N, maybeLimit: Option[N])(weight: A => N)(implicit
+      N: Numeric[N]
   ): Pipe[F, A, A] =
     maybeLimit match {
-      case Some(limit) => takeUntil(limit)(weight)
+      case Some(limit) => takeUntil(init, limit)(weight)
       case None        => identity
     }
+
+  def unexpectedString(s: String, expected: List[String]): Left[String, Nothing] =
+    Left(s"Unexpected string '$s'. Expected one of: ${expected.mkString(", ")}.")
 }
