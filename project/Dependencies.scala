@@ -5,7 +5,6 @@ import sbt.librarymanagement.syntax.ExclusionRule
 object Dependencies {
   val bcprovJdk15to18 = "org.bouncycastle" % "bcprov-jdk15to18" % "1.70"
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.1"
-  val caseApp = "com.github.alexarchambault" %% "case-app" % "2.1.0-M10"
   val catsEffect = "org.typelevel" %% "cats-effect" % "3.3.1"
   val catsCore = "org.typelevel" %% "cats-core" % "2.7.0"
   val catsLaws = "org.typelevel" %% "cats-laws" % catsCore.revision
@@ -19,6 +18,7 @@ object Dependencies {
   val commonsIo = "commons-io" % "commons-io" % "2.11.0"
   val coursierCore = "io.get-coursier" %% "coursier" % "2.0.16"
   val cron4sCore = "com.github.alonsodomin.cron4s" %% "cron4s-core" % "0.6.1"
+  val decline = "com.monovore" %% "decline" % "2.2.0"
   val disciplineMunit = "org.typelevel" %% "discipline-munit" % "1.0.9"
   val fs2Core = "co.fs2" %% "fs2-core" % "3.2.3"
   val fs2Io = "co.fs2" %% "fs2-io" % fs2Core.revision

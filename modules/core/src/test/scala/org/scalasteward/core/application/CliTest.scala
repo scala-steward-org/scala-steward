@@ -1,16 +1,18 @@
 package org.scalasteward.core.application
 
 import better.files.File
+import cats.data.Validated.Valid
 import munit.FunSuite
 import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.Cli.ParseResult._
 import org.scalasteward.core.vcs.VCSType
+import org.scalasteward.core.vcs.github.GitHubApp
 import scala.concurrent.duration._
 
 class CliTest extends FunSuite {
   test("parseArgs: example") {
-    val obtained = Cli.parseArgs(
+    val Success(obtained) = Cli.parseArgs(
       List(
         List("--workspace", "a"),
         List("--repos-file", "b"),
@@ -23,7 +25,7 @@ class CliTest extends FunSuite {
         List("--env-var", "g=h"),
         List("--env-var", "i=j"),
         List("--process-timeout", "30min"),
-        List("--max-buffer-size", "8192"),
+        List("--max-buffer-size", "1234"),
         List("--scalafix-migrations", "/opt/scala-steward/extra-scalafix-migrations.conf"),
         List("--artifact-migrations", "/opt/scala-steward/extra-artifact-migrations.conf"),
         List("--repo-config", "/opt/scala-steward/scala-steward.conf"),
@@ -32,32 +34,36 @@ class CliTest extends FunSuite {
         List("--refresh-backoff-period", "1 day")
       ).flatten
     )
-    val expected = Success(
-      Cli.Args(
-        workspace = File("a"),
-        reposFile = File("b"),
-        gitAuthorEmail = "d",
-        vcsType = VCSType.GitLab,
-        vcsApiHost = uri"http://example.com",
-        vcsLogin = "e",
-        gitAskPass = File("f"),
-        ignoreOptsFiles = true,
-        envVar = List(EnvVar("g", "h"), EnvVar("i", "j")),
-        processTimeout = 30.minutes,
-        maxBufferSize = 8192,
-        scalafixMigrations = List(uri"/opt/scala-steward/extra-scalafix-migrations.conf"),
-        artifactMigrations = List(uri"/opt/scala-steward/extra-artifact-migrations.conf"),
-        repoConfig = List(uri"/opt/scala-steward/scala-steward.conf"),
-        githubAppId = Some(12345678),
-        githubAppKeyFile = Some(File("example_app_key")),
-        refreshBackoffPeriod = 1.day
-      )
+
+    assertEquals(obtained.workspace, File("a"))
+    assertEquals(obtained.reposFile, File("b"))
+    assertEquals(obtained.gitCfg.gitAuthor.email, "d")
+    assertEquals(obtained.gitCfg.gitAskPass, File("f"))
+    assertEquals(obtained.vcsCfg.tpe, VCSType.GitLab)
+    assertEquals(obtained.vcsCfg.apiHost, uri"http://example.com")
+    assertEquals(obtained.vcsCfg.login, "e")
+    assertEquals(obtained.ignoreOptsFiles, true)
+    assertEquals(obtained.processCfg.envVars, List(EnvVar("g", "h"), EnvVar("i", "j")))
+    assertEquals(obtained.processCfg.processTimeout, 30.minutes)
+    assertEquals(obtained.processCfg.maxBufferSize, 1234)
+    assertEquals(
+      obtained.repoConfigCfg.repoConfigs,
+      List(uri"/opt/scala-steward/scala-steward.conf")
     )
-    assertEquals(obtained, expected)
+    assertEquals(
+      obtained.scalafixCfg.migrations,
+      List(uri"/opt/scala-steward/extra-scalafix-migrations.conf")
+    )
+    assertEquals(
+      obtained.artifactCfg.migrations,
+      List(uri"/opt/scala-steward/extra-artifact-migrations.conf")
+    )
+    assertEquals(obtained.githubApp, Some(GitHubApp(12345678L, File("example_app_key"))))
+    assertEquals(obtained.refreshBackoffPeriod, 1.day)
   }
 
   test("parseArgs: minimal example") {
-    val obtained = Cli.parseArgs(
+    val Success(obtained) = Cli.parseArgs(
       List(
         List("--workspace", "a"),
         List("--repos-file", "b"),
@@ -66,69 +72,39 @@ class CliTest extends FunSuite {
         List("--git-ask-pass", "f")
       ).flatten
     )
-    val expected = Success(
-      Cli.Args(
-        workspace = File("a"),
-        reposFile = File("b"),
-        gitAuthorEmail = "d",
-        vcsLogin = "e",
-        gitAskPass = File("f")
-      )
-    )
-    assertEquals(obtained, expected)
+
+    assertEquals(obtained.workspace, File("a"))
+    assertEquals(obtained.reposFile, File("b"))
+    assertEquals(obtained.gitCfg.gitAuthor.email, "d")
+    assertEquals(obtained.gitCfg.gitAskPass, File("f"))
+    assertEquals(obtained.vcsCfg.login, "e")
   }
 
   test("parseArgs: fail if required option not provided") {
-    assert(clue(Cli.parseArgs(Nil).asInstanceOf[Error].error).startsWith("Required option"))
+    val Error(obtained) = Cli.parseArgs(Nil)
+    assert(clue(obtained).startsWith("Missing expected"))
   }
 
   test("parseArgs: unrecognized argument") {
-    assert(clue(Cli.parseArgs(List("--foo")).asInstanceOf[Error].error).startsWith("Unrecognized"))
+    val Error(obtained) = Cli.parseArgs(List("--foo"))
+    assert(clue(obtained).startsWith("Unexpected option"))
   }
 
   test("parseArgs: --help") {
-    assert(
-      clue(Cli.parseArgs(List("--help")).asInstanceOf[Help].help).contains("--git-author-email")
-    )
+    val Help(obtained) = Cli.parseArgs(List("--help"))
+    assert(clue(obtained).startsWith("Usage"))
   }
 
-  test("parseArgs: --usage") {
-    assert(
-      clue(Cli.parseArgs(List("--usage")).asInstanceOf[Help].help)
-        .startsWith("Usage: \u001b[1margs\u001b[0m")
-    )
+  test("envVarArgument: env-var without equals sign") {
+    assert(clue(Cli.envVarArgument.read("SBT_OPTS")).isInvalid)
   }
 
-  test("envVarArgParser: env-var without equals sign") {
-    assert(clue(Cli.envVarArgParser(None, "SBT_OPTS")).isLeft)
-  }
-
-  test("envVarArgParser: env-var with multiple equals signs") {
+  test("envVarArgument: env-var with multiple equals signs") {
     val value = "-Xss8m -XX:MaxMetaspaceSize=256m"
-    assertEquals(Cli.envVarArgParser(None, s"SBT_OPTS=$value"), Right(EnvVar("SBT_OPTS", value)))
+    assertEquals(Cli.envVarArgument.read(s"SBT_OPTS=$value"), Valid(EnvVar("SBT_OPTS", value)))
   }
 
-  test("finiteDurationArgParser: well-formed duration") {
-    assertEquals(Cli.finiteDurationArgParser(None, "30min"), Right(30.minutes))
-  }
-
-  test("finiteDurationArgParser: malformed duration") {
-    assert(clue(Cli.finiteDurationArgParser(None, "xyz")).isLeft)
-  }
-
-  test("finiteDurationArgParser: malformed duration (Inf)") {
-    assert(clue(Cli.finiteDurationArgParser(None, "Inf")).isLeft)
-  }
-
-  test("finiteDurationArgParser: previous value") {
-    assert(clue(Cli.finiteDurationArgParser(Some(10.seconds), "20seconds")).isLeft)
-  }
-
-  test("fileArgParser: previous value") {
-    assert(clue(Cli.fileArgParser(Some(File("/tmp")), "/opt")).isLeft)
-  }
-
-  test("vcsTypeArgParser: unknown value") {
-    assert(clue(Cli.vcsTypeArgParser(None, "sourceforge")).isLeft)
+  test("vcsTypeArgument: unknown value") {
+    assert(clue(Cli.vcsTypeArgument.read("sourceforge")).isInvalid)
   }
 }
