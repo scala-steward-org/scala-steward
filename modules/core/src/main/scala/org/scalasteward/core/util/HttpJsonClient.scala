@@ -70,13 +70,13 @@ final class HttpJsonClient[F[_]](implicit
     request[A](PATCH, uri, modify)
 
   def postWithBody[A: Decoder, B: Encoder](uri: Uri, body: B, modify: ModReq): F[A] =
-    post[A](uri, modify.compose(_.withEntity(body)(jsonEncoderOf[F, B])))
+    post[A](uri, modify.compose(_.withEntity(body)(jsonEncoderOf[B])))
 
   def putWithBody[A: Decoder, B: Encoder](uri: Uri, body: B, modify: ModReq): F[A] =
-    put[A](uri, modify.compose(_.withEntity(body)(jsonEncoderOf[F, B])))
+    put[A](uri, modify.compose(_.withEntity(body)(jsonEncoderOf[B])))
 
   def patchWithBody[A: Decoder, B: Encoder](uri: Uri, body: B, modify: ModReq): F[A] =
-    patch[A](uri, modify.compose(_.withEntity(body)(jsonEncoderOf[F, B])))
+    patch[A](uri, modify.compose(_.withEntity(body)(jsonEncoderOf[B])))
 
   private[this] def requestWithHeader[A, H](
       method: Method,

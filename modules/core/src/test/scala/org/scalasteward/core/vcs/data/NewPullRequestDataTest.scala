@@ -6,12 +6,13 @@ import org.http4s.syntax.literals._
 import org.scalasteward.core.TestInstances.dummyRepoCache
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.buildtool.sbt.data.SbtVersion
-import org.scalasteward.core.data._
-import org.scalasteward.core.edit.EditAttempt.ScalafixEdit
+import org.scalasteward.core.data.{ReleaseRelatedUrl, RepoData, UpdateData, Version}
+import org.scalasteward.core.edit.EditAttempt.{ScalafixEdit, UpdateEdit}
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.git.{Branch, Commit, Sha1}
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.Nel
+import org.scalasteward.core.vcs.data.NewPullRequestData._
 
 class NewPullRequestDataTest extends FunSuite {
   test("asJson") {
@@ -23,14 +24,11 @@ class NewPullRequestDataTest extends FunSuite {
       Sha1(Sha1.HexString.unsafeFrom("d6b6791d2ea11df1d156fe70979ab8c3a5ba3433")),
       Branch("update/logback-classic-1.2.3")
     )
-    val obtained = NewPullRequestData
-      .from(data, "scala-steward:update/logback-classic-1.2.3")
-      .asJson
-      .spaces2
+    val obtained = from(data, "scala-steward:update/logback-classic-1.2.3").asJson.spaces2
     val expected =
       raw"""|{
             |  "title" : "Update logback-classic to 1.2.3",
-            |  "body" : "Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3.\n\n\nI'll automatically update this PR to resolve conflicts as long as you don't change it yourself.\n\nIf you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.\n\nConfigure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.\n\nHave a fantastic day writing Scala!\n\n<details>\n<summary>Ignore future updates</summary>\n\nAdd this to your `.scala-steward.conf` file to ignore future updates of this dependency:\n```\nupdates.ignore = [ { groupId = \"ch.qos.logback\", artifactId = \"logback-classic\" } ]\n```\n</details>\n\nlabels: library-update, early-semver-patch, semver-spec-patch",
+            |  "body" : "Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3.\n\n\nI'll automatically update this PR to resolve conflicts as long as you don't change it yourself.\n\nIf you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.\n\nConfigure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.\n\nHave a fantastic day writing Scala!\n\n<details>\n<summary>Ignore future updates</summary>\n\nAdd this to your `.scala-steward.conf` file to ignore future updates of this dependency:\n```\nupdates.ignore = [ { groupId = \"ch.qos.logback\", artifactId = \"logback-classic\" } ]\n```\n</details>\n\nlabels: library-update, early-semver-patch, semver-spec-patch, commit-count:0",
             |  "head" : "scala-steward:update/logback-classic-1.2.3",
             |  "base" : "master",
             |  "draft" : false
@@ -39,24 +37,22 @@ class NewPullRequestDataTest extends FunSuite {
   }
 
   test("fromTo") {
-    assertEquals(
-      NewPullRequestData.fromTo(("com.example".g % "foo".a % "1.2.0" %> "1.2.3").single),
-      "from 1.2.0 to 1.2.3"
-    )
+    val obtained = fromTo(("com.example".g % "foo".a % "1.2.0" %> "1.2.3").single)
+    assertEquals(obtained, "from 1.2.0 to 1.2.3")
   }
 
   test("links to release notes/changelog") {
-    assertEquals(NewPullRequestData.releaseNote(List.empty), None)
+    assertEquals(releaseNote(List.empty), None)
 
     assertEquals(
-      NewPullRequestData.releaseNote(
+      releaseNote(
         List(ReleaseRelatedUrl.CustomChangelog(uri"https://github.com/foo/foo/CHANGELOG.rst"))
       ),
       Some("[Changelog](https://github.com/foo/foo/CHANGELOG.rst)")
     )
 
     assertEquals(
-      NewPullRequestData.releaseNote(
+      releaseNote(
         List(
           ReleaseRelatedUrl.CustomChangelog(uri"https://github.com/foo/foo/CHANGELOG.rst"),
           ReleaseRelatedUrl.GitHubReleaseNotes(uri"https://github.com/foo/foo/releases/tag/v1.2.3"),
@@ -77,14 +73,14 @@ class NewPullRequestDataTest extends FunSuite {
 
   test("showing artifacts with URL in Markdown format") {
     assertEquals(
-      NewPullRequestData.artifactsWithOptionalUrl(
+      artifactsWithOptionalUrl(
         ("com.example".g % "foo".a % "1.2.0" %> "1.2.3").single,
         Map("foo" -> uri"https://github.com/foo/foo")
       ),
       "[com.example:foo](https://github.com/foo/foo)"
     )
     assertEquals(
-      NewPullRequestData.artifactsWithOptionalUrl(
+      artifactsWithOptionalUrl(
         ("com.example".g % Nel.of("foo".a, "bar".a) % "1.2.0" %> "1.2.3").group,
         Map("foo" -> uri"https://github.com/foo/foo", "bar" -> uri"https://github.com/bar/bar")
       ),
@@ -97,16 +93,14 @@ class NewPullRequestDataTest extends FunSuite {
   }
 
   test("migrationNote: when no migrations") {
-    val (label, appliedMigrations) = NewPullRequestData.migrationNote(List.empty)
-
-    assertEquals(label, None)
+    val appliedMigrations = migrationNote(List.empty)
     assertEquals(appliedMigrations, None)
   }
 
   test("migrationNote: when artifact has migrations") {
     val scalafixEdit = ScalafixEdit(
       ScalafixMigration(
-        GroupId("com.spotify"),
+        "com.spotify".g,
         Nel.one("scio-core"),
         Version("0.7.0"),
         Nel.of("I am a rewrite rule")
@@ -114,9 +108,12 @@ class NewPullRequestDataTest extends FunSuite {
       Right(()),
       Some(Commit())
     )
-    val (label, appliedMigrations) = NewPullRequestData.migrationNote(List(scalafixEdit))
+    val edits = List(scalafixEdit)
+    val appliedMigrations = migrationNote(edits)
+    val update = ("a".g % "b".a % "1" -> "2").single
+    val labels = labelsFor(update, edits, List.empty)
 
-    assertEquals(label, Some("scalafix-migrations"))
+    assert(labels.contains("scalafix-migrations"))
     assertEquals(
       appliedMigrations.fold("")(_.toHtml),
       """<details>
@@ -132,7 +129,7 @@ class NewPullRequestDataTest extends FunSuite {
   test("migrationNote: when artifact has migrations with docs") {
     val scalafixEdit = ScalafixEdit(
       ScalafixMigration(
-        GroupId("com.spotify"),
+        "com.spotify".g,
         Nel.one("scio-core"),
         Version("0.7.0"),
         Nel.of("I am a rewrite rule", "I am a 2nd rewrite rule"),
@@ -141,9 +138,12 @@ class NewPullRequestDataTest extends FunSuite {
       Right(()),
       Some(Commit())
     )
-    val (label, detail) = NewPullRequestData.migrationNote(List(scalafixEdit))
+    val edits = List(scalafixEdit)
+    val detail = migrationNote(edits)
+    val update = ("a".g % "b".a % "1" -> "2").single
+    val labels = labelsFor(update, edits, List.empty)
 
-    assertEquals(label, Some("scalafix-migrations"))
+    assert(labels.contains("scalafix-migrations"))
     assertEquals(
       detail.fold("")(_.toHtml),
       """<details>
@@ -161,7 +161,7 @@ class NewPullRequestDataTest extends FunSuite {
   test("migrationNote: with 2 migrations where one didn't produce a change") {
     val scalafixEdit1 = ScalafixEdit(
       ScalafixMigration(
-        GroupId("com.spotify"),
+        "com.spotify".g,
         Nel.one("scio-core"),
         Version("0.7.0"),
         Nel.of("I am a rewrite rule", "I am a 2nd rewrite rule"),
@@ -170,21 +170,22 @@ class NewPullRequestDataTest extends FunSuite {
       Right(()),
       Some(Commit())
     )
-
     val scalafixEdit2 = ScalafixEdit(
       ScalafixMigration(
-        GroupId("org.typeleve"),
+        "org.typeleve".g,
         Nel.of("cats-effect", "cats-effect-laws"),
         Version("3.0.0"),
-        Nel.of("I am a rule without an effect"),
-        None
+        Nel.of("I am a rule without an effect")
       ),
       Right(()),
       None
     )
-    val (label, detail) = NewPullRequestData.migrationNote(List(scalafixEdit1, scalafixEdit2))
+    val edits = List(scalafixEdit1, scalafixEdit2)
+    val detail = migrationNote(edits)
+    val update = ("a".g % "b".a % "1" -> "2").single
+    val labels = labelsFor(update, edits, List.empty)
 
-    assertEquals(label, Some("scalafix-migrations"))
+    assert(labels.contains("scalafix-migrations"))
     assertEquals(
       detail.fold("")(_.toHtml),
       """<details>
@@ -204,40 +205,34 @@ class NewPullRequestDataTest extends FunSuite {
   test("updateType") {
     val dependency = "com.example".g % "foo".a % "0.1"
     val single = (dependency %> "0.2").single
-    val group = ("com.example".g % Nel.of("foo".a, "bar".a) % "0.1" %> "0.2").group
-    assertEquals(NewPullRequestData.updateType(single), "library-update")
-    assertEquals(NewPullRequestData.updateType(group), "library-update")
+    assertEquals(updateType(single), "library-update")
 
-    assertEquals(
-      NewPullRequestData.updateType((dependency % "test" %> "0.2").single),
-      "test-library-update"
-    )
-    assertEquals(
-      NewPullRequestData.updateType(
-        (dependency.copy(sbtVersion = Some(SbtVersion("1.0"))) %> "0.2").single
-      ),
-      "sbt-plugin-update"
-    )
-    assertEquals(
-      NewPullRequestData.updateType((dependency % "scalafix-rule" %> "0.2").single),
-      "scalafix-rule-update"
-    )
+    val group = ("com.example".g % Nel.of("foo".a, "bar".a) % "0.1" %> "0.2").group
+    assertEquals(updateType(group), "library-update")
+
+    val testUpdate = (dependency % "test" %> "0.2").single
+    assertEquals(updateType(testUpdate), "test-library-update")
+
+    val sbtPluginUpdate = (dependency.copy(sbtVersion = Some(SbtVersion("1.0"))) %> "0.2").single
+    assertEquals(updateType(sbtPluginUpdate), "sbt-plugin-update")
+
+    val scalafixRuleUpdate = (dependency % "scalafix-rule" %> "0.2").single
+    assertEquals(updateType(scalafixRuleUpdate), "scalafix-rule-update")
   }
 
   test("oldVersionNote without files") {
     val files = List.empty
     val update = ("com.example".g % "foo".a % "0.1" %> "0.2").single
-
-    assertEquals(NewPullRequestData.oldVersionNote(files, update), (None, None))
+    assertEquals(oldVersionNote(files, update), None)
   }
 
   test("oldVersionNote with files") {
     val files = List("Readme.md", "travis.yml")
     val update = ("com.example".g % "foo".a % "0.1" %> "0.2").single
+    val note = oldVersionNote(files, update)
+    val labels = labelsFor(update, List.empty, files)
 
-    val (label, note) = NewPullRequestData.oldVersionNote(files, update)
-
-    assertEquals(label, Some("old-version-remains"))
+    assert(labels.contains("old-version-remains"))
     assertEquals(
       note.fold("")(_.toHtml),
       """<details>
@@ -252,5 +247,27 @@ class NewPullRequestDataTest extends FunSuite {
         |</details>
       """.stripMargin.trim
     )
+  }
+
+  test("commit-count label") {
+    val update = ("a".g % "b".a % "1" -> "2").single
+    val updateEdit = UpdateEdit(update, Commit())
+    val scalafixEdit = ScalafixEdit(
+      ScalafixMigration(
+        "com.spotify".g,
+        Nel.one("scio-core"),
+        Version("0.7.0"),
+        Nel.of("I am a rewrite rule", "I am a 2nd rewrite rule"),
+        Some("https://scalacenter.github.io/scalafix/")
+      ),
+      Right(()),
+      Some(Commit())
+    )
+
+    val oneEdit = labelsFor(update, List(updateEdit), List.empty)
+    assert(clue(oneEdit).contains("commit-count:1"))
+
+    val twoEdits = labelsFor(update, List(updateEdit, scalafixEdit), List.empty)
+    assert(clue(twoEdits).contains("commit-count:n:2"))
   }
 }
