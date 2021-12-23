@@ -102,14 +102,12 @@ class EditAlgTest extends FunSuite {
         Cmd("read", scalafmtConf.pathAsString),
         Cmd("write", scalafmtConf.pathAsString),
         Cmd(
-          "VAR1=val1" :: "VAR2=val2" :: repoDir.toString ::
-            scalafmtBinary :: opts.nonInteractive :: opts.quiet :: opts.modeChanged
+          "VAR1=val1" :: "VAR2=val2" :: repoDir.toString :: scalafmtBinary :: opts.nonInteractive :: opts.modeChanged
         ),
         Cmd(gitStatus(repoDir)),
         Log("Executing post-update hook for org.scalameta:scalafmt-core"),
         Cmd(
-          "VAR1=val1" :: "VAR2=val2" :: repoDir.toString ::
-            scalafmtBinary :: opts.nonInteractive :: opts.quiet :: Nil
+          "VAR1=val1" :: "VAR2=val2" :: repoDir.toString :: scalafmtBinary :: opts.nonInteractive :: Nil
         ),
         Cmd(gitStatus(repoDir))
       ),
