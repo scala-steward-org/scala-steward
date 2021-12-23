@@ -19,8 +19,6 @@ package org.scalasteward.core.nurture
 import cats.Id
 import cats.effect.Concurrent
 import cats.implicits._
-import eu.timepit.refined.types.numeric.NonNegInt
-import fs2.Stream
 import org.scalasteward.core.application.Config.VCSCfg
 import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.ProcessResult.{Created, Ignored, Updated}
@@ -51,7 +49,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
     for {
       _ <- logger.info(s"Nurture ${data.repo.show}")
       baseBranch <- cloneAndSync(data.repo, fork)
-      _ <- updateDependencies(data, fork.repo, baseBranch, updates)
+      _ <- updateDependencies(data, fork.repo, baseBranch, Update.groupByGroupId(updates))
     } yield ()
 
   private def cloneAndSync(repo: Repo, fork: RepoOut): F[Branch] =
@@ -64,22 +62,25 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       data: RepoData,
       fork: Repo,
       baseBranch: Branch,
-      updates: List[Update.Single]
+      updates: List[Update]
   ): F[Unit] =
     for {
-      _ <- F.unit
-      grouped = Update.groupByGroupId(updates)
-      _ <- logger.info(util.logger.showUpdates(grouped))
+      _ <- logger.info(util.logger.showUpdates(updates))
       baseSha1 <- gitAlg.latestSha1(data.repo, baseBranch)
-      _ <- NurtureAlg.processUpdates(
-        grouped,
-        update => {
+      _ <- fs2.Stream
+        .emits(updates)
+        .evalMap { update =>
           val updateBranch = git.branchFor(update, data.repo.branch)
           val updateData = UpdateData(data, fork, update, baseBranch, baseSha1, updateBranch)
           processUpdate(updateData)
-        },
-        data.config.updates.limit
-      )
+        }
+        .through(util.takeUntilMaybe(0, data.config.updates.limit.map(_.value)) {
+          case Ignored    => 0
+          case Updated    => 1
+          case Created(_) => 1
+        })
+        .compile
+        .drain
     } yield ()
 
   private def processUpdate(data: UpdateData): F[ProcessResult] =
@@ -248,26 +249,4 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       editCommits = edits.flatMap(_.maybeCommit)
       result <- pushCommits(data, maybeMergeCommit.toList ++ editCommits)
     } yield result
-}
-
-object NurtureAlg {
-  def processUpdates[F[_]](
-      updates: List[Update],
-      updateF: Update => F[ProcessResult],
-      updatesLimit: Option[NonNegInt]
-  )(implicit F: Concurrent[F]): F[Unit] =
-    updatesLimit match {
-      case None => updates.traverse_(updateF)
-      case Some(limit) =>
-        Stream
-          .emits(updates)
-          .evalMap(updateF)
-          .through(util.takeUntil(0, limit.value) {
-            case Ignored    => 0
-            case Updated    => 1
-            case Created(_) => 1
-          })
-          .compile
-          .drain
-    }
 }

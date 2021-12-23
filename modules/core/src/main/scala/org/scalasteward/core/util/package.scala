@@ -88,6 +88,17 @@ package object util {
         .takeThrough { case (total, _) => N.lt(total, limit) }
         .map { case (_, a) => a }
 
+  /** A variant of `takeUntil` that takes an optional limit.
+    * This is the identity if `maybeLimit` is `None`.
+    */
+  def takeUntilMaybe[F[_], A, N](init: N, maybeLimit: Option[N])(weight: A => N)(implicit
+      N: Numeric[N]
+  ): Pipe[F, A, A] =
+    maybeLimit match {
+      case Some(limit) => takeUntil(init, limit)(weight)
+      case None        => identity
+    }
+
   def unexpectedString(s: String, expected: List[String]): Left[String, Nothing] =
     Left(s"Unexpected string '$s'. Expected one of: ${expected.mkString(", ")}.")
 }
