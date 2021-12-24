@@ -208,8 +208,7 @@ class PruningAlgTest extends FunSuite {
     (for {
       initial <- MockState.empty.addFiles(versionsFile -> versionsContent)
       // This should not propose an update from 2.12.13 to 2.13.5.
-      res <- pruningAlg.needsAttention(data).runA(initial)
-      (_, updates) = res
-    } yield assertEquals(updates, List.empty)).unsafeRunSync()
+      updateStates <- pruningAlg.needsAttention(data).runA(initial)
+    } yield assertEquals(updateStates, None)).unsafeRunSync()
   }
 }
