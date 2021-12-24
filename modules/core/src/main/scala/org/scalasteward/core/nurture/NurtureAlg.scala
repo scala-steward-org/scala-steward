@@ -26,7 +26,7 @@ import org.scalasteward.core.data._
 import org.scalasteward.core.edit.{EditAlg, EditAttempt}
 import org.scalasteward.core.git.{Branch, Commit, GitAlg}
 import org.scalasteward.core.repoconfig.PullRequestUpdateStrategy
-import org.scalasteward.core.util.UrlChecker
+import org.scalasteward.core.util.{Nel, UrlChecker}
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.vcs.data._
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg}
@@ -45,11 +45,11 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
     urlChecker: UrlChecker[F],
     F: Concurrent[F]
 ) {
-  def nurture(data: RepoData, fork: RepoOut, updates: List[Update.Single]): F[Unit] =
+  def nurture(data: RepoData, fork: RepoOut, updates: Nel[Update.Single]): F[Unit] =
     for {
       _ <- logger.info(s"Nurture ${data.repo.show}")
       baseBranch <- cloneAndSync(data.repo, fork)
-      _ <- updateDependencies(data, fork.repo, baseBranch, Update.groupByGroupId(updates))
+      _ <- updateDependencies(data, fork.repo, baseBranch, Update.groupByGroupId(updates.toList))
     } yield ()
 
   private def cloneAndSync(repo: Repo, fork: RepoOut): F[Branch] =
