@@ -25,7 +25,7 @@ import org.scalasteward.core.edit.EditAttempt.HookEdit
 import org.scalasteward.core.git.{CommitMsg, GitAlg}
 import org.scalasteward.core.io.{ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.repocache.RepoCache
-import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtGroupId, ScalafmtAlg}
+import org.scalasteward.core.scalafmt.{ScalafmtAlg, scalafmtArtifactId, scalafmtGroupId}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.util.logger._
 import org.scalasteward.core.vcs.data.Repo
@@ -41,8 +41,8 @@ final class HookExecutor[F[_]](implicit
   def execPostUpdateHooks(data: RepoData, update: Update): F[List[EditAttempt]] =
     HookExecutor.postUpdateHooks
       .filter { hook =>
-        update.groupId === hook.groupId &&
-        update.artifactIds.exists(_.name === hook.artifactId.name) &&
+        hook.groupId.forall(update.groupId === _)  &&
+        hook.artifactId.forall(aid => update.artifactIds.exists(_.name === aid.name)) &&
         hook.enabledByCache(data.cache) &&
         hook.enabledByConfig(data.config)
       }
@@ -51,7 +51,7 @@ final class HookExecutor[F[_]](implicit
 
   private def execPostUpdateHook(repo: Repo, update: Update, hook: PostUpdateHook): F[EditAttempt] =
     for {
-      _ <- logger.info(s"Executing post-update hook for ${hook.groupId}:${hook.artifactId.name}")
+      _ <- logger.info(s"Executing post-update hook for ${hook.groupId}:${hook.artifactId.map(_.name)}")
       repoDir <- workspaceAlg.repoDir(repo)
       result <- logger.attemptWarn.log("Post-update hook failed") {
         processAlg.execMaybeSandboxed(hook.useSandbox)(hook.command, repoDir)
@@ -82,8 +82,8 @@ object HookExecutor {
       enabledByCache: RepoCache => Boolean
   ): PostUpdateHook =
     PostUpdateHook(
-      groupId = groupId,
-      artifactId = artifactId,
+      groupId = Some(groupId),
+      artifactId = Some(artifactId),
       command = Nel.of("sbt", "githubWorkflowGenerate"),
       useSandbox = true,
       commitMessage = _ => CommitMsg("Regenerate workflow with sbt-github-actions"),
@@ -93,8 +93,8 @@ object HookExecutor {
 
   private val scalafmtHook =
     PostUpdateHook(
-      groupId = scalafmtGroupId,
-      artifactId = scalafmtArtifactId,
+      groupId = Some(scalafmtGroupId),
+      artifactId = Some(scalafmtArtifactId),
       command = ScalafmtAlg.postUpdateHookCommand,
       useSandbox = false,
       commitMessage = update => CommitMsg(s"Reformat with scalafmt ${update.nextVersion}"),
@@ -104,8 +104,8 @@ object HookExecutor {
 
   private val sbtJavaFormatterHook =
     PostUpdateHook(
-      groupId = GroupId("com.lightbend.sbt"),
-      artifactId = ArtifactId("sbt-java-formatter"),
+      groupId = Some(GroupId("com.lightbend.sbt")),
+      artifactId = Some(ArtifactId("sbt-java-formatter")),
       command = Nel.of("sbt", "javafmtAll"),
       useSandbox = true,
       commitMessage =
