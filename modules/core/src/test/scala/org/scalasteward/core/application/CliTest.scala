@@ -73,11 +73,58 @@ class CliTest extends FunSuite {
       ).flatten
     )
 
+    assert(!obtained.processCfg.sandboxCfg.enableSandbox)
     assertEquals(obtained.workspace, File("a"))
     assertEquals(obtained.reposFile, File("b"))
     assertEquals(obtained.gitCfg.gitAuthor.email, "d")
     assertEquals(obtained.gitCfg.gitAskPass, File("f"))
     assertEquals(obtained.vcsCfg.login, "e")
+  }
+
+  test("parseArgs: enable sandbox") {
+    val Success(obtained) = Cli.parseArgs(
+      List(
+        List("--workspace", "a"),
+        List("--repos-file", "b"),
+        List("--git-author-email", "d"),
+        List("--vcs-login", "e"),
+        List("--git-ask-pass", "f"),
+        List("--enable-sandbox")
+      ).flatten
+    )
+
+    assert(obtained.processCfg.sandboxCfg.enableSandbox)
+  }
+
+  test("parseArgs: sandbox parse error") {
+    val Error(obtained) = Cli.parseArgs(
+      List(
+        List("--workspace", "a"),
+        List("--repos-file", "b"),
+        List("--git-author-email", "d"),
+        List("--vcs-login", "e"),
+        List("--git-ask-pass", "f"),
+        List("--enable-sandbox"),
+        List("--disable-sandbox")
+        ).flatten
+      )
+
+    assert(clue(obtained).startsWith("Unexpected option"))
+  }
+
+  test("parseArgs: disable sandbox") {
+    val Success(obtained) = Cli.parseArgs(
+      List(
+        List("--workspace", "a"),
+        List("--repos-file", "b"),
+        List("--git-author-email", "d"),
+        List("--vcs-login", "e"),
+        List("--git-ask-pass", "f"),
+        List("--disable-sandbox")
+      ).flatten
+    )
+
+    assert(!obtained.processCfg.sandboxCfg.enableSandbox)
   }
 
   test("parseArgs: fail if required option not provided") {
