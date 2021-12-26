@@ -28,6 +28,7 @@ final case class RepoConfig(
     pullRequests: PullRequestsConfig = PullRequestsConfig(),
     scalafmt: ScalafmtConfig = ScalafmtConfig(),
     updates: UpdatesConfig = UpdatesConfig(),
+    postUpdateHooks: List[PostUpdateHookConfig] = Nil,
     updatePullRequests: Option[PullRequestUpdateStrategy] = None,
     buildRoots: Option[List[BuildRootConfig]] = None
 ) {
