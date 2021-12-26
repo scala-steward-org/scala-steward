@@ -209,9 +209,9 @@ class RepoConfigAlgTest extends FunSuite {
           command = "sbt mySbtCommand",
           useSandbox = false,
           commitMessage = "Updated with a hook!"
-          )
         )
       )
+    )
 
     assertEquals(config, Right(expected))
   }

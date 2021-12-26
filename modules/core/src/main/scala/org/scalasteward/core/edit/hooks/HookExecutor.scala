@@ -25,7 +25,7 @@ import org.scalasteward.core.edit.EditAttempt.HookEdit
 import org.scalasteward.core.git.{CommitMsg, GitAlg}
 import org.scalasteward.core.io.{ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.repocache.RepoCache
-import org.scalasteward.core.scalafmt.{ScalafmtAlg, scalafmtArtifactId, scalafmtGroupId}
+import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtGroupId, ScalafmtAlg}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.util.logger._
 import org.scalasteward.core.vcs.data.Repo
@@ -41,7 +41,7 @@ final class HookExecutor[F[_]](implicit
   def execPostUpdateHooks(data: RepoData, update: Update): F[List[EditAttempt]] =
     (HookExecutor.postUpdateHooks ++ data.config.postUpdateHooks.map(_.toHook))
       .filter { hook =>
-        hook.groupId.forall(update.groupId === _)  &&
+        hook.groupId.forall(update.groupId === _) &&
         hook.artifactId.forall(aid => update.artifactIds.exists(_.name === aid.name)) &&
         hook.enabledByCache(data.cache) &&
         hook.enabledByConfig(data.config)
@@ -51,7 +51,9 @@ final class HookExecutor[F[_]](implicit
 
   private def execPostUpdateHook(repo: Repo, update: Update, hook: PostUpdateHook): F[EditAttempt] =
     for {
-      _ <- logger.info(s"Executing post-update hook for ${hook.groupId}:${hook.artifactId.map(_.name)}")
+      _ <- logger.info(
+        s"Executing post-update hook for ${hook.groupId}:${hook.artifactId.map(_.name)}"
+      )
       repoDir <- workspaceAlg.repoDir(repo)
       result <- logger.attemptWarn.log("Post-update hook failed") {
         processAlg.execMaybeSandboxed(hook.useSandbox)(hook.command, repoDir)
