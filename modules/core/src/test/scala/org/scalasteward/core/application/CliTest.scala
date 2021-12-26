@@ -8,6 +8,7 @@ import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.Cli.ParseResult._
 import org.scalasteward.core.vcs.VCSType
 import org.scalasteward.core.vcs.github.GitHubApp
+
 import scala.concurrent.duration._
 
 class CliTest extends FunSuite {
@@ -106,8 +107,8 @@ class CliTest extends FunSuite {
         List("--git-ask-pass", "f"),
         List("--enable-sandbox"),
         List("--disable-sandbox")
-        ).flatten
-      )
+      ).flatten
+    )
 
     assert(clue(obtained).startsWith("Unexpected option"))
   }
