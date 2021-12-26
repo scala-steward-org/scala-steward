@@ -51,9 +51,7 @@ final class HookExecutor[F[_]](implicit
 
   private def execPostUpdateHook(repo: Repo, update: Update, hook: PostUpdateHook): F[EditAttempt] =
     for {
-      _ <- logger.info(
-        s"Executing post-update hook for ${hook.groupId}:${hook.artifactId.map(_.name)}"
-      )
+      _ <- logger.info(s"Executing post-update hook for ${update.groupId}:${update.mainArtifactId}")
       repoDir <- workspaceAlg.repoDir(repo)
       result <- logger.attemptWarn.log("Post-update hook failed") {
         processAlg.execMaybeSandboxed(hook.useSandbox)(hook.command, repoDir)

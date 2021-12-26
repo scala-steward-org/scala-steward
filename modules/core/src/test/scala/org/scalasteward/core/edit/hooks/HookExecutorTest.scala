@@ -115,7 +115,7 @@ class HookExecutorTest extends CatsEffectSuite {
 
     val expected = MockState.empty.copy(
       trace = Vector(
-        Log("Executing post-update hook for None:None"),
+        Log("Executing post-update hook for com.random:cool-lib"),
         Cmd(
           repoDir.toString,
           "firejail",
