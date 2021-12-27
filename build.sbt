@@ -309,7 +309,10 @@ lazy val dockerSettings = Def.settings(
   },
   Docker / packageName := s"fthomas/${name.value}",
   dockerUpdateLatest := true,
-  dockerEnvVars := Map("PATH" -> "/opt/docker/sbt/bin:${PATH}")
+  dockerEnvVars := Map(
+    "PATH" -> "/opt/docker/sbt/bin:${PATH}",
+    "COURSIER_PROGRESS" -> "false"
+  )
 )
 
 lazy val noPublishSettings = Def.settings(
