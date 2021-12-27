@@ -30,6 +30,7 @@ import org.scalasteward.core.util.dateTime.renderFiniteDuration
 import org.scalasteward.core.vcs.VCSType
 import org.scalasteward.core.vcs.VCSType.GitHub
 import org.scalasteward.core.vcs.github.GitHubApp
+
 import scala.concurrent.duration._
 
 object Cli {
@@ -141,8 +142,10 @@ object Cli {
     ).orEmpty
 
   private val enableSandbox: Opts[Boolean] =
-    flag("enable-sandbox", "Whether to use the sandbox").orFalse
-      .orElse(flag("disable-sandbox", "Whether to not use the sandbox").orTrue.map(!_))
+    flag("enable-sandbox", "Whether to use the sandbox")
+      .map(_ => true)
+      .orElse(flag("disable-sandbox", "Whether to not use the sandbox").map(_ => false))
+      .orElse(Opts(false))
 
   private val sandboxCfg: Opts[SandboxCfg] =
     (whitelist, readOnly, enableSandbox).mapN(SandboxCfg.apply)
