@@ -38,7 +38,9 @@ class HookExecutorTest extends CatsEffectSuite {
 
     val expected = initial.copy(
       trace = Vector(
-        Log("Executing post-update hook for org.scalameta:scalafmt-core"),
+        Log(
+          "Executing post-update hook for org.scalameta:scalafmt-core with command 'scalafmt --non-interactive'"
+        ),
         Cmd(
           "VAR1=val1" :: "VAR2=val2" :: repoDir.toString :: scalafmtBinary :: opts.nonInteractive :: Nil
         ),
@@ -79,7 +81,9 @@ class HookExecutorTest extends CatsEffectSuite {
 
     val expected = MockState.empty.copy(
       trace = Vector(
-        Log("Executing post-update hook for com.codecommit:sbt-github-actions"),
+        Log(
+          "Executing post-update hook for com.codecommit:sbt-github-actions with command 'sbt githubWorkflowGenerate'"
+        ),
         Cmd(
           repoDir.toString,
           "firejail",
@@ -115,7 +119,7 @@ class HookExecutorTest extends CatsEffectSuite {
 
     val expected = MockState.empty.copy(
       trace = Vector(
-        Log("Executing post-update hook for com.random:cool-lib"),
+        Log("Executing post-update hook for com.random:cool-lib with command 'sbt mySbtCommand'"),
         Cmd(
           repoDir.toString,
           "firejail",

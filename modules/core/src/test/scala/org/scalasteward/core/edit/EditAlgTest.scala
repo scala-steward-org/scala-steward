@@ -105,7 +105,9 @@ class EditAlgTest extends FunSuite {
           "VAR1=val1" :: "VAR2=val2" :: repoDir.toString :: scalafmtBinary :: opts.nonInteractive :: opts.modeChanged
         ),
         Cmd(gitStatus(repoDir)),
-        Log("Executing post-update hook for org.scalameta:scalafmt-core"),
+        Log(
+          "Executing post-update hook for org.scalameta:scalafmt-core with command 'scalafmt --non-interactive'"
+        ),
         Cmd(
           "VAR1=val1" :: "VAR2=val2" :: repoDir.toString :: scalafmtBinary :: opts.nonInteractive :: Nil
         ),
