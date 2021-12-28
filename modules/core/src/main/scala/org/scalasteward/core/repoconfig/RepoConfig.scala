@@ -69,6 +69,7 @@ object RepoConfig {
               pullRequests = x.pullRequests |+| y.pullRequests,
               scalafmt = x.scalafmt |+| y.scalafmt,
               updates = x.updates |+| y.updates,
+              postUpdateHooks = x.postUpdateHooks ++ y.postUpdateHooks,
               updatePullRequests = x.updatePullRequests.orElse(y.updatePullRequests),
               buildRoots = x.buildRoots |+| y.buildRoots
             )
