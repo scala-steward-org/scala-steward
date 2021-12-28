@@ -9,7 +9,7 @@ import org.scalasteward.core.mock.MockConfig.gitCmd
 import org.scalasteward.core.mock.MockContext.context.{hookExecutor, workspaceAlg}
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
-import org.scalasteward.core.repoconfig.{RepoConfig, ScalafmtConfig}
+import org.scalasteward.core.repoconfig.{PostUpdateHookConfig, RepoConfig, ScalafmtConfig}
 import org.scalasteward.core.scalafmt.ScalafmtAlg.opts
 import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtBinary, scalafmtGroupId}
 import org.scalasteward.core.vcs.data.Repo
@@ -38,7 +38,9 @@ class HookExecutorTest extends CatsEffectSuite {
 
     val expected = initial.copy(
       trace = Vector(
-        Log("Executing post-update hook for org.scalameta:scalafmt-core"),
+        Log(
+          "Executing post-update hook for org.scalameta:scalafmt-core with command 'scalafmt --non-interactive'"
+        ),
         Cmd(
           "VAR1=val1" :: "VAR2=val2" :: repoDir.toString :: scalafmtBinary :: opts.nonInteractive :: Nil
         ),
@@ -79,7 +81,9 @@ class HookExecutorTest extends CatsEffectSuite {
 
     val expected = MockState.empty.copy(
       trace = Vector(
-        Log("Executing post-update hook for com.codecommit:sbt-github-actions"),
+        Log(
+          "Executing post-update hook for com.codecommit:sbt-github-actions with command 'sbt githubWorkflowGenerate'"
+        ),
         Cmd(
           repoDir.toString,
           "firejail",
@@ -89,6 +93,42 @@ class HookExecutorTest extends CatsEffectSuite {
           "--env=VAR2=val2",
           "sbt",
           "githubWorkflowGenerate"
+        ),
+        Cmd(gitCmd(repoDir), "status", "--porcelain", "--untracked-files=no", "--ignore-submodules")
+      )
+    )
+
+    state.map(assertEquals(_, expected))
+  }
+
+  test("hook from config") {
+    val update = ("com.random".g % "cool-lib".a % "1.0" %> "1.1").single
+    val config = RepoConfig(
+      postUpdateHooks = List(
+        PostUpdateHookConfig(
+          groupId = None,
+          artifactId = None,
+          command = "sbt mySbtCommand",
+          useSandbox = true,
+          commitMessage = "Updated with a hook!"
+        )
+      )
+    )
+    val data = RepoData(repo, dummyRepoCache, config)
+    val state = hookExecutor.execPostUpdateHooks(data, update).runS(MockState.empty)
+
+    val expected = MockState.empty.copy(
+      trace = Vector(
+        Log("Executing post-update hook for com.random:cool-lib with command 'sbt mySbtCommand'"),
+        Cmd(
+          repoDir.toString,
+          "firejail",
+          "--quiet",
+          s"--whitelist=$repoDir",
+          "--env=VAR1=val1",
+          "--env=VAR2=val2",
+          "sbt",
+          "mySbtCommand"
         ),
         Cmd(gitCmd(repoDir), "status", "--porcelain", "--untracked-files=no", "--ignore-submodules")
       )
