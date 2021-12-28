@@ -23,8 +23,8 @@ import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.Nel
 
 final case class PostUpdateHook(
-    groupId: GroupId,
-    artifactId: ArtifactId,
+    groupId: Option[GroupId],
+    artifactId: Option[ArtifactId],
     command: Nel[String],
     useSandbox: Boolean,
     commitMessage: Update => CommitMsg,

@@ -10,6 +10,7 @@ import org.scalasteward.core.mock.MockState.TraceEntry.Log
 import org.scalasteward.core.mock.{MockConfig, MockState}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
+
 import scala.concurrent.duration._
 
 class RepoConfigAlgTest extends FunSuite {
@@ -189,5 +190,54 @@ class RepoConfigAlgTest extends FunSuite {
     val expected =
       RepoConfig(updates = UpdatesConfig(ignore = List(UpdatePattern("a".g, None, None))))
     assertEquals(config, expected)
+  }
+
+  test("config with postUpdateHook without group and artifact id") {
+    val content =
+      """|postUpdateHooks = [{
+         |  command = "sbt mySbtCommand"
+         |  useSandbox = false,
+         |  commitMessage = "Updated with a hook!"
+         |  }]
+         |""".stripMargin
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    val expected = RepoConfig(
+      postUpdateHooks = List(
+        PostUpdateHookConfig(
+          groupId = None,
+          artifactId = None,
+          command = "sbt mySbtCommand",
+          useSandbox = false,
+          commitMessage = "Updated with a hook!"
+        )
+      )
+    )
+
+    assertEquals(config, Right(expected))
+  }
+
+  test("config with postUpdateHook with group and artifact id") {
+    val content =
+      """|postUpdateHooks = [{
+         |  groupId = "eu.timepit"
+         |  artifactId = "refined.1"
+         |  command = "sbt mySbtCommand"
+         |  useSandbox = false,
+         |  commitMessage = "Updated with a hook!"
+         |  }]
+         |""".stripMargin
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    val expected = RepoConfig(
+      postUpdateHooks = List(
+        PostUpdateHookConfig(
+          groupId = Some("eu.timepit".g),
+          artifactId = Some("refined.1"),
+          command = "sbt mySbtCommand",
+          useSandbox = false,
+          commitMessage = "Updated with a hook!"
+        )
+      )
+    )
+    assertEquals(config, Right(expected))
   }
 }
