@@ -109,7 +109,6 @@ class HookExecutorTest extends CatsEffectSuite {
           groupId = None,
           artifactId = None,
           command = "sbt mySbtCommand",
-          useSandbox = true,
           commitMessage = "Updated with a hook!"
         )
       )
