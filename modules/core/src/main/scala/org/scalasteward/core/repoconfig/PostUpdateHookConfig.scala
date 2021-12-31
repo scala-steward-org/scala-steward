@@ -28,7 +28,6 @@ final case class PostUpdateHookConfig(
     groupId: Option[GroupId],
     artifactId: Option[String],
     command: String,
-    useSandbox: Boolean,
     commitMessage: String
 ) {
   def toHook: PostUpdateHook =
@@ -41,7 +40,7 @@ final case class PostUpdateHookConfig(
           groupId,
           artifactId.map(ArtifactId(_)),
           command = cmd,
-          useSandbox = useSandbox,
+          useSandbox = true,
           commitMessage = _ => CommitMsg(commitMessage),
           enabledByCache = _ => true,
           enabledByConfig = _ => true

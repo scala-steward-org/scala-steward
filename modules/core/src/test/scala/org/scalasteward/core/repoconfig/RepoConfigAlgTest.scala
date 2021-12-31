@@ -196,7 +196,6 @@ class RepoConfigAlgTest extends FunSuite {
     val content =
       """|postUpdateHooks = [{
          |  command = "sbt mySbtCommand"
-         |  useSandbox = false,
          |  commitMessage = "Updated with a hook!"
          |  }]
          |""".stripMargin
@@ -207,7 +206,6 @@ class RepoConfigAlgTest extends FunSuite {
           groupId = None,
           artifactId = None,
           command = "sbt mySbtCommand",
-          useSandbox = false,
           commitMessage = "Updated with a hook!"
         )
       )
@@ -222,7 +220,6 @@ class RepoConfigAlgTest extends FunSuite {
          |  groupId = "eu.timepit"
          |  artifactId = "refined.1"
          |  command = "sbt mySbtCommand"
-         |  useSandbox = false,
          |  commitMessage = "Updated with a hook!"
          |  }]
          |""".stripMargin
@@ -233,7 +230,6 @@ class RepoConfigAlgTest extends FunSuite {
           groupId = Some("eu.timepit".g),
           artifactId = Some("refined.1"),
           command = "sbt mySbtCommand",
-          useSandbox = false,
           commitMessage = "Updated with a hook!"
         )
       )
