@@ -72,7 +72,9 @@ object HookExecutor {
     (GroupId("com.codecommit"), ArtifactId("sbt-spiewak-bintray")),
     (GroupId("io.github.nafg.mergify"), ArtifactId("sbt-mergify-github-actions")),
     (GroupId("io.chrisdavenport"), ArtifactId("sbt-davenverse")),
-    (GroupId("org.http4s"), ArtifactId("sbt-http4s-org"))
+    (GroupId("org.http4s"), ArtifactId("sbt-http4s-org")),
+    (GroupId("org.typelevel"), ArtifactId("sbt-typelevel")),
+    (GroupId("org.typelevel"), ArtifactId("sbt-typelevel-ci-release"))
   )
 
   // Modules that most likely require the workflow to be regenerated if updated.
