@@ -20,7 +20,7 @@ import cats.syntax.all._
 import cats.{MonadThrow, Parallel}
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.BuildToolDispatcher
-import org.scalasteward.core.data.{Dependency, DependencyInfo, RepoData}
+import org.scalasteward.core.data.{Dependency, DependencyInfo, RepoDataWithMeta}
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 import org.scalasteward.core.vcs.data.{Repo, RepoOut}
@@ -39,7 +39,7 @@ final class RepoCacheAlg[F[_]](config: Config)(implicit
     vcsRepoAlg: VCSRepoAlg[F],
     F: MonadThrow[F]
 ) {
-  def checkCache(repo: Repo): F[(RepoData, RepoOut)] =
+  def checkCache(repo: Repo): F[(RepoDataWithMeta, RepoOut)] =
     logger.info(s"Check cache of ${repo.show}") >>
       refreshErrorAlg.skipIfFailedRecently(repo) {
         (
@@ -54,30 +54,30 @@ final class RepoCacheAlg[F[_]](config: Config)(implicit
         }
       }
 
-  private def supplementCache(repo: Repo, cache: RepoCache): RepoData =
-    RepoData(repo, cache, repoConfigAlg.mergeWithGlobal(cache.maybeRepoConfig))
+  private def supplementCache(repo: Repo, cache: RepoCache): RepoDataWithMeta =
+    RepoDataWithMeta(repo, cache, repoConfigAlg.mergeWithGlobal(cache.maybeRepoConfig), None)
 
-  private def cloneAndRefreshCache(repo: Repo, repoOut: RepoOut): F[RepoData] =
+  private def cloneAndRefreshCache(repo: Repo, repoOut: RepoOut): F[RepoDataWithMeta] =
     vcsRepoAlg.cloneAndSync(repo, repoOut) >> refreshCache(repo)
 
-  private def refreshCache(repo: Repo): F[RepoData] =
+  private def refreshCache(repo: Repo): F[RepoDataWithMeta] =
     for {
       _ <- logger.info(s"Refresh cache of ${repo.show}")
       data <- refreshErrorAlg.persistError(repo)(computeCache(repo))
-      _ <- repoCacheRepository.updateCache(repo, data.cache)
+      _ <- repoCacheRepository.updateCache(repo, data.repoData.cache)
     } yield data
 
-  private def computeCache(repo: Repo): F[RepoData] =
+  private def computeCache(repo: Repo): F[RepoDataWithMeta] =
     for {
       branch <- gitAlg.currentBranch(repo)
       latestSha1 <- gitAlg.latestSha1(repo, branch)
       maybeConfig <- repoConfigAlg.readRepoConfig(repo)
-      config = repoConfigAlg.mergeWithGlobal(maybeConfig)
+      config = repoConfigAlg.mergeWithGlobal(maybeConfig.flatMap(_.toOption))
       dependencies <- buildToolDispatcher.getDependencies(repo, config)
       dependencyInfos <-
         dependencies.traverse(_.traverse(_.traverse(gatherDependencyInfo(repo, _))))
-      cache = RepoCache(latestSha1, dependencyInfos, maybeConfig)
-    } yield RepoData(repo, cache, config)
+      cache = RepoCache(latestSha1, dependencyInfos, maybeConfig.flatMap(_.toOption))
+    } yield RepoDataWithMeta(repo, cache, config, maybeConfig.flatMap(_.swap.toOption))
 
   private def gatherDependencyInfo(repo: Repo, dependency: Dependency): F[DependencyInfo] =
     gitAlg.findFilesContaining(repo, dependency.version).map(DependencyInfo(dependency, _))

@@ -45,7 +45,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
     urlChecker: UrlChecker[F],
     F: Concurrent[F]
 ) {
-  def nurture(data: RepoData, fork: RepoOut, updates: Nel[Update.Single]): F[Unit] =
+  def nurture(data: RepoDataWithMeta, fork: RepoOut, updates: Nel[Update.Single]): F[Unit] =
     for {
       _ <- logger.info(s"Nurture ${data.repo.show}")
       baseBranch <- cloneAndSync(data.repo, fork)
@@ -59,7 +59,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
     } yield baseBranch
 
   private def updateDependencies(
-      data: RepoData,
+      data: RepoDataWithMeta,
       fork: Repo,
       baseBranch: Branch,
       updates: List[Update]
@@ -152,7 +152,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
     gitAlg.returnToCurrentBranch(data.repo) {
       val createBranch = logger.info(s"Create branch ${data.updateBranch.name}") >>
         gitAlg.createBranch(data.repo, data.updateBranch)
-      editAlg.applyUpdate(data.repoData, data.update, createBranch).flatMap { edits =>
+      editAlg.applyUpdate(data.repoDataWithMeta.repoData, data.update, createBranch).flatMap { edits =>
         val editCommits = edits.flatMap(_.maybeCommit)
         if (editCommits.isEmpty) logger.warn("No commits created").as(Ignored)
         else
@@ -176,7 +176,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
       dependenciesWithNextVersion =
         data.update.dependencies.map(_.copy(version = data.update.nextVersion)).toList
-      resolvers = data.repoData.cache.dependencyInfos.flatMap(_.resolvers)
+      resolvers = data.repoDataWithMeta.cache.dependencyInfos.flatMap(_.resolvers)
       artifactIdToUrl <-
         coursierAlg.getArtifactIdUrlMapping(Scope(dependenciesWithNextVersion, resolvers))
       existingArtifactUrlsList <- artifactIdToUrl.toList.filterA(a => urlChecker.exists(a._2))
@@ -245,7 +245,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
         s"Merge branch ${data.baseBranch.name} into ${data.updateBranch.name} and apply again"
       )
       maybeMergeCommit <- gitAlg.mergeTheirs(data.repo, data.baseBranch)
-      edits <- editAlg.applyUpdate(data.repoData, data.update)
+      edits <- editAlg.applyUpdate(data.repoDataWithMeta.repoData, data.update)
       editCommits = edits.flatMap(_.maybeCommit)
       result <- pushCommits(data, maybeMergeCommit.toList ++ editCommits)
     } yield result

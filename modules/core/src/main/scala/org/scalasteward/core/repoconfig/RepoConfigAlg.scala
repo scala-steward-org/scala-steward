@@ -36,17 +36,17 @@ final class RepoConfigAlg[F[_]](maybeGlobalRepoConfig: Option[RepoConfig])(impli
   def mergeWithGlobal(maybeRepoConfig: Option[RepoConfig]): RepoConfig =
     (maybeRepoConfig |+| maybeGlobalRepoConfig).getOrElse(RepoConfig.empty)
 
-  def readRepoConfig(repo: Repo): F[Option[RepoConfig]] =
+  def readRepoConfig(repo: Repo): F[Option[Either[String, RepoConfig]]] =
     workspaceAlg
       .repoDir(repo)
       .flatMap(dir => readRepoConfigFromFile(dir / repoConfigBasename).value)
 
-  private def readRepoConfigFromFile(configFile: File): OptionT[F, RepoConfig] =
+  private def readRepoConfigFromFile(configFile: File): OptionT[F, Either[String, RepoConfig]] =
     OptionT(fileAlg.readFile(configFile)).map(parseRepoConfig).flatMapF {
       case Right(repoConfig) =>
-        logger.info(s"Parsed repo config ${repoConfig.show}").as(repoConfig.some)
+        logger.info(s"Parsed repo config ${repoConfig.show}").as(repoConfig.asRight.some)
       case Left(errorMsg) =>
-        logger.info(errorMsg).as(none[RepoConfig])
+        logger.info(errorMsg).as(errorMsg.asLeft.some)
     }
 }
 

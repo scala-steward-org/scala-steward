@@ -80,7 +80,7 @@ final class StewardAlg[F[_]](config: Config)(implicit
       logger.attemptError.label(util.string.lineLeftRight(label), Some(label)) {
         F.guarantee(
           repoCacheAlg.checkCache(repo).flatMap { case (data, fork) =>
-            pruningAlg.needsAttention(data).flatMap {
+            pruningAlg.needsAttention(data.repoData).flatMap {
               _.traverse_(states => nurtureAlg.nurture(data, fork, states.map(_.update)))
             }
           },

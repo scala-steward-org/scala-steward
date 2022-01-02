@@ -25,3 +25,20 @@ final case class RepoData(
     cache: RepoCache,
     config: RepoConfig
 )
+
+final case class RepoDataWithMeta(
+  repoData: RepoData,
+  configParsingError: Option[String]
+) {
+  def repo: Repo = repoData.repo
+  def cache: RepoCache = repoData.cache
+  def config: RepoConfig = repoData.config
+}
+
+object RepoDataWithMeta {
+  def apply(repo: Repo,
+            cache: RepoCache,
+            config: RepoConfig,
+            configParsingError: Option[String]): RepoDataWithMeta =
+    new RepoDataWithMeta(RepoData(repo, cache, config), configParsingError)
+}

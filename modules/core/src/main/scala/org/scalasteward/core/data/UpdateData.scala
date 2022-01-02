@@ -21,13 +21,13 @@ import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.vcs.data.Repo
 
 final case class UpdateData(
-    repoData: RepoData,
+    repoDataWithMeta: RepoDataWithMeta,
     fork: Repo,
     update: Update,
     baseBranch: Branch,
     baseSha1: Sha1,
     updateBranch: Branch
 ) {
-  def repo: Repo = repoData.repo
-  def repoConfig: RepoConfig = repoData.config
+  def repo: Repo = repoDataWithMeta.repo
+  def repoConfig: RepoConfig = repoDataWithMeta.config
 }
