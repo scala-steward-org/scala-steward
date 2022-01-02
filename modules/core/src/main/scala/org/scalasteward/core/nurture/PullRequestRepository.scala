@@ -95,7 +95,7 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
     kvStore.getOrElse(repo, Map.empty).map {
       _.filter { case (_, entry) =>
         UpdateAlg.isUpdateFor(entry.update, crossDependency) &&
-          entry.update.nextVersion === newVersion
+        entry.update.nextVersion === newVersion
       }
         .maxByOption { case (_, entry) => entry.entryCreatedAt.millis }
         .map { case (url, entry) =>
