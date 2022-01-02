@@ -40,12 +40,13 @@ final class RepoConfigAlg[F[_]](maybeGlobalRepoConfig: Option[RepoConfig])(impli
       .repoDir(repo)
       .flatMap(dir => readRepoConfigFromFile(dir / repoConfigBasename))
 
-  private def readRepoConfigFromFile(configFile: File): F[ConfigParsingResult] = {
+  private def readRepoConfigFromFile(configFile: File): F[ConfigParsingResult] =
     for {
       parsedConfig <- fileAlg.readFile(configFile).map(_.map(parseRepoConfig))
-      _ <- parsedConfig.fold(F.unit)(_.fold(logger.info(_), repoConfig => logger.info(s"Parsed repo config ${repoConfig.show}")))
+      _ <- parsedConfig.fold(F.unit)(
+        _.fold(logger.info(_), repoConfig => logger.info(s"Parsed repo config ${repoConfig.show}"))
+      )
     } yield parsedConfig
-  }
 }
 
 object RepoConfigAlg {

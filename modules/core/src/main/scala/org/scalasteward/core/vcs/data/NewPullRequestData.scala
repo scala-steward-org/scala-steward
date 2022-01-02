@@ -179,9 +179,17 @@ object NewPullRequestData {
       filesWithOldVersion: List[String] = List.empty
   ): NewPullRequestData =
     NewPullRequestData(
-      title =
-        git.commitMsgFor(data.update, data.repoConfig.commits, data.repoDataWithMeta.repo.branch).title,
-      body = bodyFor(data.update, edits, artifactIdToUrl, releaseRelatedUrls, filesWithOldVersion, data.repoDataWithMeta.configParsingError),
+      title = git
+        .commitMsgFor(data.update, data.repoConfig.commits, data.repoDataWithMeta.repo.branch)
+        .title,
+      body = bodyFor(
+        data.update,
+        edits,
+        artifactIdToUrl,
+        releaseRelatedUrls,
+        filesWithOldVersion,
+        data.repoDataWithMeta.configParsingError
+      ),
       head = branchName,
       base = data.baseBranch
     )

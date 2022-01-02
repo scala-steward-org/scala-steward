@@ -38,7 +38,12 @@ class NewPullRequestDataTest extends FunSuite {
 
   test("body of pull request data should contain notion about config parsing error") {
     val data = UpdateData(
-      RepoDataWithMeta(Repo("foo", "bar"), dummyRepoCache, RepoConfig.empty, Some("Failed to parse .scala-steward.conf")),
+      RepoDataWithMeta(
+        Repo("foo", "bar"),
+        dummyRepoCache,
+        RepoConfig.empty,
+        Some("Failed to parse .scala-steward.conf")
+      ),
       Repo("scala-steward", "bar"),
       ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single,
       Branch("master"),
