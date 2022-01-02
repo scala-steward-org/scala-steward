@@ -32,7 +32,7 @@ final case class RepoCache(
     dependencyInfos.exists(_.value.exists { info =>
       modules.exists { case (groupId, artifactId) =>
         info.dependency.groupId === groupId &&
-          info.dependency.artifactId.name === artifactId.name
+        info.dependency.artifactId.name === artifactId.name
       }
     })
 }
