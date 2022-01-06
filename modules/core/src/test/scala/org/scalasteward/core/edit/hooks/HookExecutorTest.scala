@@ -12,6 +12,7 @@ import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.repoconfig.{PostUpdateHookConfig, RepoConfig, ScalafmtConfig}
 import org.scalasteward.core.scalafmt.ScalafmtAlg.opts
 import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtBinary, scalafmtGroupId}
+import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
 class HookExecutorTest extends CatsEffectSuite {
@@ -108,7 +109,7 @@ class HookExecutorTest extends CatsEffectSuite {
         PostUpdateHookConfig(
           groupId = None,
           artifactId = None,
-          command = "sbt mySbtCommand",
+          command = Nel.of("sbt", "mySbtCommand"),
           commitMessage = "Updated with a hook!"
         )
       )
