@@ -88,7 +88,7 @@ buildRoots = [ ".", "subfolder/projectA" ]
 # Define commands that are executed after an update via a hook.
 # A groupId and/or artifactId can be defined to only execute after certain dependencies are updated. If neither is defined, the hook runs for every update.
 postUpdateHooks = [{
-  command = "sbt protobufGenerate",
+  command = ["sbt", "protobufGenerate"],
   commitMessage = "Regenerated protobuf files",
   groupId = "com.github.sbt",
   artifiactId = "sbt-protobuf"

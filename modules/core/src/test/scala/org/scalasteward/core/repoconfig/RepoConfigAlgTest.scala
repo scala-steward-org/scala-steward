@@ -195,7 +195,7 @@ class RepoConfigAlgTest extends FunSuite {
   test("config with postUpdateHook without group and artifact id") {
     val content =
       """|postUpdateHooks = [{
-         |  command = "sbt mySbtCommand"
+         |  command = ["sbt", "mySbtCommand"]
          |  commitMessage = "Updated with a hook!"
          |  }]
          |""".stripMargin
@@ -205,7 +205,7 @@ class RepoConfigAlgTest extends FunSuite {
         PostUpdateHookConfig(
           groupId = None,
           artifactId = None,
-          command = "sbt mySbtCommand",
+          command = Nel.of("sbt", "mySbtCommand"),
           commitMessage = "Updated with a hook!"
         )
       )
@@ -219,7 +219,7 @@ class RepoConfigAlgTest extends FunSuite {
       """|postUpdateHooks = [{
          |  groupId = "eu.timepit"
          |  artifactId = "refined.1"
-         |  command = "sbt mySbtCommand"
+         |  command = ["sbt", "mySbtCommand"]
          |  commitMessage = "Updated with a hook!"
          |  }]
          |""".stripMargin
@@ -229,7 +229,7 @@ class RepoConfigAlgTest extends FunSuite {
         PostUpdateHookConfig(
           groupId = Some("eu.timepit".g),
           artifactId = Some("refined.1"),
-          command = "sbt mySbtCommand",
+          command = Nel.of("sbt", "mySbtCommand"),
           commitMessage = "Updated with a hook!"
         )
       )
