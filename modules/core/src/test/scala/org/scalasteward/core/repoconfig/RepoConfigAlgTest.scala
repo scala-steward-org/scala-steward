@@ -208,7 +208,7 @@ class RepoConfigAlgTest extends FunSuite {
           command = Nel.of("sbt", "mySbtCommand"),
           commitMessage = "Updated with a hook!"
         )
-      )
+      ).some
     )
 
     assertEquals(config, Right(expected))
@@ -232,7 +232,7 @@ class RepoConfigAlgTest extends FunSuite {
           command = Nel.of("sbt", "mySbtCommand"),
           commitMessage = "Updated with a hook!"
         )
-      )
+      ).some
     )
     assertEquals(config, Right(expected))
   }
