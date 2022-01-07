@@ -1,5 +1,6 @@
 package org.scalasteward.core.edit.hooks
 
+import cats.syntax.all._
 import munit.CatsEffectSuite
 import org.scalasteward.core.TestInstances.dummyRepoCache
 import org.scalasteward.core.TestSyntax._
@@ -112,7 +113,7 @@ class HookExecutorTest extends CatsEffectSuite {
           command = Nel.of("sbt", "mySbtCommand"),
           commitMessage = "Updated with a hook!"
         )
-      )
+      ).some
     )
     val data = RepoData(repo, dummyRepoCache, config)
     val state = hookExecutor.execPostUpdateHooks(data, update).runS(MockState.empty)

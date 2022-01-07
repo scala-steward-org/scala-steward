@@ -39,7 +39,7 @@ final class HookExecutor[F[_]](implicit
     F: MonadThrow[F]
 ) {
   def execPostUpdateHooks(data: RepoData, update: Update): F[List[EditAttempt]] =
-    (HookExecutor.postUpdateHooks ++ data.config.postUpdateHooks.map(_.toHook))
+    (HookExecutor.postUpdateHooks ++ data.config.postUpdateHooksOrDefault)
       .filter { hook =>
         hook.groupId.forall(update.groupId === _) &&
         hook.artifactId.forall(aid => update.artifactIds.exists(_.name === aid.name)) &&
