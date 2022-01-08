@@ -6,6 +6,7 @@ import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.GroupId
 import org.scalasteward.core.mock.MockContext.context.updateAlg
 import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.update.UpdateAlg
 
 class ArtifactMigrationsFinderTest extends FunSuite {
 
@@ -113,5 +114,31 @@ class ArtifactMigrationsFinderTest extends FunSuite {
       .runA(MockState.empty)
       .unsafeRunSync()
     assertEquals(obtained, Some(expected))
+  }
+
+  test("migratedDependency: newer groupId") {
+    val dependency = "org.spire-math".g % ("kind-projector", "kind-projector_2.12").a % "0.9.10"
+    val migratedArtifact =
+      ("org.spire-math".g % (
+        "kind-projector",
+        "kind-projector_2.12"
+      ).a % "0.9.10" %> "0.10.0").single
+        .copy(newerGroupId = Some("org.typelevel".g))
+    val expected = "org.typelevel".g % ("kind-projector", "kind-projector_2.12").a % "0.10.0"
+    val obtained = UpdateAlg.migratedDependency(dependency.withMavenCentral, migratedArtifact)
+    assertEquals(obtained, expected.withMavenCentral)
+  }
+
+  test("migratedDependency: newer ArtifactId") {
+    val dependency = "org.spire-math".g % ("kind-projector", "kind-projector_2.12").a % "0.9.10"
+    val migratedArtifact =
+      ("org.spire-math".g % (
+        "kind-projector",
+        "kind-projector_2.12"
+      ).a % "0.9.10" %> "1.0.0").single
+        .copy(newerArtifactId = Some("new-projector"))
+    val expected = "org.spire-math".g % ("new-projector", "new-projector_2.12").a % "1.0.0"
+    val obtained = UpdateAlg.migratedDependency(dependency.withMavenCentral, migratedArtifact)
+    assertEquals(obtained, expected.withMavenCentral)
   }
 }
