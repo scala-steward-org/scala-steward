@@ -84,17 +84,32 @@ scalafmt.runAfterUpgrading = false
 # are specified using the buildRoots property. Note that the paths used there are relative and if the repo directory itself also contains a build.sbt the dot can be used to specify it.
 # Default: ["."]
 buildRoots = [ ".", "subfolder/projectA" ]
+
+# Define commands that are executed after an update via a hook.
+# A groupId and/or artifactId can be defined to only execute after certain dependencies are updated. If neither is defined, the hook runs for every update.
+postUpdateHooks = [{
+  command = ["sbt", "protobufGenerate"],
+  commitMessage = "Regenerated protobuf files",
+  groupId = "com.github.sbt",
+  artifiactId = "sbt-protobuf"
+}]
 ```
 
 The version information given in the patterns above can be in two formats:
 1. just a `version` field that is treated as a prefix of the version
-2. a structure consisting of `prefix` and / or `suffix` that are matched against the beginning or the end of the version
+2. a structure consisting of any of the following fields:
+   * `prefix`: is matched against the beginning of the version
+   * `suffix`: is matched against the end of the version
+   * `exact`: is matched against the whole version
+   * `contains`: is matched against substrings in the version
 
 ```properties
 version = "1.1."
 version = { prefix = "1.1." }
 version = { suffix = "jre8" }
 version = { prefix = "1.1.", suffix = "jre8" }
+version = { exact = "1.1.2.jre8" }
+version = { contains = "feature" }
 ```
 
 ## Ignore lines

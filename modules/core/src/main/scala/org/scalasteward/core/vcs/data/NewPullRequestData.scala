@@ -23,18 +23,10 @@ import org.http4s.Uri
 import org.scalasteward.core.data._
 import org.scalasteward.core.edit.EditAttempt
 import org.scalasteward.core.edit.EditAttempt.ScalafixEdit
-import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.git
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.repoconfig.RepoConfigAlg
-import org.scalasteward.core.util.Details
-
-final case class UpdateState(
-    state: PullRequestState
-)
-object UpdateState {
-  implicit val updateStateEncoder: Encoder[UpdateState] = deriveEncoder
-}
+import org.scalasteward.core.util.{Details, Nel}
 
 final case class NewPullRequestData(
     title: String,
@@ -56,17 +48,14 @@ object NewPullRequestData {
       filesWithOldVersion: List[String]
   ): String = {
     val artifacts = artifactsWithOptionalUrl(update, artifactIdToUrl)
-    val migrations = edits.collect { case ScalafixEdit(migration, _, _) => migration }
-    val (migrationLabel, appliedMigrations) = migrationNote(migrations)
-    val (oldVersionLabel, oldVersionDetails) = oldVersionNote(filesWithOldVersion, update)
-    val details = appliedMigrations.toList ++
-      oldVersionDetails.toList ++
-      List(ignoreFutureUpdates(update))
-    val labels = List(updateType(update)) ++
-      earlySemVerLabel(update).toList ++
-      semVerSpecLabel(update).toList ++
-      migrationLabel.toList ++
-      oldVersionLabel.toList
+    val migrations = edits.collect { case scalafixEdit: ScalafixEdit => scalafixEdit }
+    val appliedMigrations = migrationNote(migrations)
+    val oldVersionDetails = oldVersionNote(filesWithOldVersion, update)
+    val details = List(
+      appliedMigrations,
+      oldVersionDetails,
+      ignoreFutureUpdates(update).some
+    ).flatten
 
     s"""|Updates $artifacts ${fromTo(update)}.
         |${releaseNote(releaseRelatedUrls).getOrElse("")}
@@ -75,31 +64,18 @@ object NewPullRequestData {
         |
         |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.
         |
-        |Configure Scala Steward for your repository with a [`${RepoConfigAlg.repoConfigBasename}`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
+        |Configure Scala Steward for your repository with a [`${RepoConfigAlg.repoConfigBasename}`](${org.scalasteward.core.BuildInfo.gitHubUrl}/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
         |
         |Have a fantastic day writing Scala!
         |
         |${details.map(_.toHtml).mkString("\n")}
         |
-        |${labels.mkString("labels: ", ", ", "")}
+        |${labelsFor(update, edits, filesWithOldVersion).mkString("labels: ", ", ", "")}
         |""".stripMargin.trim
   }
 
-  def updateType(update: Update): String = {
-    val dependencies = update.dependencies
-    if (dependencies.forall(_.configurations.contains("test")))
-      "test-library-update"
-    else if (dependencies.forall(_.configurations.contains("scalafix-rule")))
-      "scalafix-rule-update"
-    else if (dependencies.forall(_.sbtVersion.isDefined))
-      "sbt-plugin-update"
-    else
-      "library-update"
-  }
-
   def releaseNote(releaseRelatedUrls: List[ReleaseRelatedUrl]): Option[String] =
-    if (releaseRelatedUrls.isEmpty) None
-    else
+    Option.when(releaseRelatedUrls.nonEmpty) {
       releaseRelatedUrls
         .map {
           case ReleaseRelatedUrl.CustomChangelog(url) =>
@@ -112,7 +88,7 @@ object NewPullRequestData {
             s"[Version Diff](${url.renderString})"
         }
         .mkString(" - ")
-        .some
+    }
 
   def fromTo(update: Update): String =
     s"from ${update.currentVersion} to ${update.nextVersion}"
@@ -139,23 +115,18 @@ object NewPullRequestData {
       case None      => s"$groupId:$artifactId"
     }
 
-  def oldVersionNote(files: List[String], update: Update): (Option[String], Option[Details]) =
-    if (files.isEmpty) (None, None)
-    else
-      (
-        Some("old-version-remains"),
-        Some(
-          Details(
-            "Files still referring to the old version number",
-            s"""The following files still refer to the old version number (${update.currentVersion}).
-               |You might want to review and update them manually.
-               |```
-               |${files.mkString("\n")}
-               |```
-               |""".stripMargin.trim
-          )
-        )
+  def oldVersionNote(files: List[String], update: Update): Option[Details] =
+    Option.when(files.nonEmpty) {
+      Details(
+        "Files still referring to the old version number",
+        s"""The following files still refer to the old version number (${update.currentVersion}).
+           |You might want to review and update them manually.
+           |```
+           |${files.mkString("\n")}
+           |```
+           |""".stripMargin.trim
       )
+    }
 
   def ignoreFutureUpdates(update: Update): Details =
     Details(
@@ -167,41 +138,26 @@ object NewPullRequestData {
           |""".stripMargin.trim
     )
 
-  def migrationNote(migrations: List[ScalafixMigration]): (Option[String], Option[Details]) =
-    if (migrations.isEmpty) (None, None)
-    else {
-      val ruleList =
-        migrations.flatMap(_.rewriteRules.toList).map(rule => s"* $rule").mkString("\n")
-      val docList = migrations.flatMap(_.doc).map(uri => s"* $uri").mkString("\n")
-      val docSection =
-        if (docList.isEmpty)
-          ""
-        else
-          s"\n\nDocumentation:\n\n$docList"
-      (
-        Some("scalafix-migrations"),
-        Some(
-          Details(
-            "Applied Migrations",
-            s"$ruleList$docSection"
-          )
-        )
-      )
+  def migrationNote(scalafixEdits: List[ScalafixEdit]): Option[Details] =
+    Option.when(scalafixEdits.nonEmpty) {
+      val body = scalafixEdits
+        .map { scalafixEdit =>
+          val migration = scalafixEdit.migration
+          val listElements =
+            (migration.rewriteRules.map(rule => s"  * $rule").toList ++ migration.doc.map(uri =>
+              s"  * Documentation: $uri"
+            )).mkString("\n")
+          val artifactName = migration.artifactIds match {
+            case Nel(one, Nil) => one
+            case multiple      => multiple.toList.mkString("{", ",", "}")
+          }
+          val name = s"${migration.groupId.value}:$artifactName:${migration.newVersion.value}"
+          val createdChange = scalafixEdit.maybeCommit.fold(" (created no change)")(_ => "")
+          s"* $name$createdChange\n$listElements"
+        }
+        .mkString("\n")
+      Details("Applied Scalafix Migrations", body)
     }
-
-  def earlySemVerLabel(update: Update): Option[String] =
-    for {
-      curr <- SemVer.parse(update.currentVersion)
-      next <- SemVer.parse(update.nextVersion)
-      change <- SemVer.getChangeEarly(curr, next)
-    } yield s"early-semver-${change.render}"
-
-  def semVerSpecLabel(update: Update): Option[String] =
-    for {
-      curr <- SemVer.parse(update.currentVersion)
-      next <- SemVer.parse(update.nextVersion)
-      change <- SemVer.getChangeSpec(curr, next)
-    } yield s"semver-spec-${change.render}"
 
   def from(
       data: UpdateData,
@@ -218,4 +174,42 @@ object NewPullRequestData {
       head = branchName,
       base = data.baseBranch
     )
+
+  def updateType(update: Update): String = {
+    val dependencies = update.dependencies
+    if (dependencies.forall(_.configurations.contains("test")))
+      "test-library-update"
+    else if (dependencies.forall(_.configurations.contains("scalafix-rule")))
+      "scalafix-rule-update"
+    else if (dependencies.forall(_.sbtVersion.isDefined))
+      "sbt-plugin-update"
+    else
+      "library-update"
+  }
+
+  def labelsFor(
+      update: Update,
+      edits: List[EditAttempt],
+      filesWithOldVersion: List[String]
+  ): List[String] = {
+    val commitCount = edits.flatMap(_.maybeCommit).size
+    val commitCountLabel = "commit-count:" + (commitCount match {
+      case n if n <= 1 => s"$n"
+      case n           => s"n:$n"
+    })
+    val semVerVersions =
+      (SemVer.parse(update.currentVersion), SemVer.parse(update.nextVersion)).tupled
+    val earlySemVerLabel = semVerVersions.flatMap { case (curr, next) =>
+      SemVer.getChangeEarly(curr, next).map(c => s"early-semver-${c.render}")
+    }
+    val semVerSpecLabel = semVerVersions.flatMap { case (curr, next) =>
+      SemVer.getChangeSpec(curr, next).map(c => s"semver-spec-${c.render}")
+    }
+    val scalafixLabel = edits.collectFirst { case _: ScalafixEdit => "scalafix-migrations" }
+    val oldVersionLabel = Option.when(filesWithOldVersion.nonEmpty)("old-version-remains")
+
+    updateType(update) ::
+      List(earlySemVerLabel, semVerSpecLabel, scalafixLabel, oldVersionLabel).flatten ++
+      List(commitCountLabel)
+  }
 }

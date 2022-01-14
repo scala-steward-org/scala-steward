@@ -22,11 +22,11 @@ import cats.syntax.all._
 import org.http4s.Uri
 import org.http4s.client.Client
 import org.http4s.headers.`User-Agent`
-import org.http4s.okhttp.client.OkHttpBuilder
 import org.scalasteward.core.buildtool.BuildToolDispatcher
 import org.scalasteward.core.buildtool.maven.MavenAlg
 import org.scalasteward.core.buildtool.mill.MillAlg
 import org.scalasteward.core.buildtool.sbt.SbtAlg
+import org.scalasteward.core.client.ClientConfiguration
 import org.scalasteward.core.coursier.{CoursierAlg, VersionsCache}
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.edit.hooks.HookExecutor
@@ -36,7 +36,7 @@ import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository}
 import org.scalasteward.core.persistence.{CachingKeyValueStore, JsonKeyValueStore}
 import org.scalasteward.core.repocache._
-import org.scalasteward.core.repoconfig.RepoConfigAlg
+import org.scalasteward.core.repoconfig.{RepoConfigAlg, RepoConfigLoader}
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.artifact.{ArtifactMigrationsFinder, ArtifactMigrationsLoader}
 import org.scalasteward.core.update.{FilterAlg, PruningAlg, UpdateAlg}
@@ -76,25 +76,40 @@ final class Context[F[_]](implicit
 )
 
 object Context {
-  def step0[F[_]](args: Cli.Args)(implicit F: Async[F]): Resource[F, Context[F]] =
+  def step0[F[_]](config: Config)(implicit F: Async[F]): Resource[F, Context[F]] =
     for {
       logger <- Resource.eval(Slf4jLogger.fromName[F]("org.scalasteward.core"))
       _ <- Resource.eval(printBanner(logger))
-      config = Config.from(args)
       _ <- Resource.eval(F.delay(System.setProperty("http.agent", userAgentString)))
       userAgent <- Resource.eval(F.fromEither(`User-Agent`.parse(userAgentString)))
-      client <- OkHttpBuilder
-        .withDefaultClient[F]
-        .flatMap(_.resource)
-        .map(c => Client[F](req => c.run(req.putHeaders(userAgent))))
+      userAgentMiddleware = ClientConfiguration.setUserAgent[F](userAgent)
+      defaultClient <- ClientConfiguration.build(
+        ClientConfiguration.BuilderMiddleware.default,
+        userAgentMiddleware
+      )
+      urlCheckerClient <- ClientConfiguration.build(
+        ClientConfiguration.disableFollowRedirect[F],
+        userAgentMiddleware
+      )
       fileAlg = FileAlg.create(logger, F)
       processAlg = ProcessAlg.create(config.processCfg)(logger, F)
       workspaceAlg = WorkspaceAlg.create(config)(fileAlg, logger, F)
-      context <- Resource.eval(step1(config)(client, fileAlg, logger, processAlg, workspaceAlg, F))
+      context <- Resource.eval(
+        step1(config)(
+          defaultClient,
+          UrlCheckerClient(urlCheckerClient),
+          fileAlg,
+          logger,
+          processAlg,
+          workspaceAlg,
+          F
+        )
+      )
     } yield context
 
   def step1[F[_]](config: Config)(implicit
       client: Client[F],
+      urlCheckerClient: UrlCheckerClient[F],
       fileAlg: FileAlg[F],
       logger: Logger[F],
       processAlg: ProcessAlg[F],
@@ -107,6 +122,8 @@ object Context {
       artifactMigrationsFinder0 <- artifactMigrationsLoader0.createFinder(config.artifactCfg)
       scalafixMigrationsLoader0 = new ScalafixMigrationsLoader[F]
       scalafixMigrationsFinder0 <- scalafixMigrationsLoader0.createFinder(config.scalafixCfg)
+      repoConfigLoader0 = new RepoConfigLoader[F]
+      maybeGlobalRepoConfig <- repoConfigLoader0.loadGlobalRepoConfig(config.repoConfigCfg)
       urlChecker0 <- UrlChecker.create[F](config)
       kvsPrefix = Some(config.vcsCfg.tpe.asString)
       pullRequestsStore <- JsonKeyValueStore
@@ -125,7 +142,7 @@ object Context {
       implicit val scalafixMigrationsFinder: ScalafixMigrationsFinder = scalafixMigrationsFinder0
       implicit val urlChecker: UrlChecker[F] = urlChecker0
       implicit val dateTimeAlg: DateTimeAlg[F] = DateTimeAlg.create[F]
-      implicit val repoConfigAlg: RepoConfigAlg[F] = new RepoConfigAlg[F](config)
+      implicit val repoConfigAlg: RepoConfigAlg[F] = new RepoConfigAlg[F](maybeGlobalRepoConfig)
       implicit val filterAlg: FilterAlg[F] = new FilterAlg[F]
       implicit val gitAlg: GitAlg[F] = GenGitAlg.create[F](config.gitCfg)
       implicit val gitHubAuthAlg: GitHubAuthAlg[F] = GitHubAuthAlg.create[F]
@@ -145,9 +162,9 @@ object Context {
       implicit val versionsCache: VersionsCache[F] =
         new VersionsCache[F](config.cacheTtl, versionsStore)
       implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]
-      implicit val mavenAlg: MavenAlg[F] = MavenAlg.create[F](config)
-      implicit val sbtAlg: SbtAlg[F] = SbtAlg.create[F](config)
-      implicit val millAlg: MillAlg[F] = MillAlg.create[F]
+      implicit val mavenAlg: MavenAlg[F] = new MavenAlg[F](config)
+      implicit val sbtAlg: SbtAlg[F] = new SbtAlg[F](config)
+      implicit val millAlg: MillAlg[F] = new MillAlg[F]
       implicit val buildToolDispatcher: BuildToolDispatcher[F] = new BuildToolDispatcher[F]
       implicit val refreshErrorAlg: RefreshErrorAlg[F] =
         new RefreshErrorAlg[F](refreshErrorStore, config.refreshBackoffPeriod)

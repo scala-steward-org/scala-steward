@@ -27,13 +27,13 @@ final class ArtifactMigrationsFinder(migrations: List[ArtifactChange]) {
         (migration.groupIdBefore, migration.artifactIdBefore) match {
           case (Some(groupId), Some(artifactId)) =>
             groupId === dependency.groupId &&
-              artifactId === dependency.artifactId.name
+            artifactId === dependency.artifactId.name
           case (Some(groupId), None) =>
             groupId === dependency.groupId &&
-              migration.artifactIdAfter === dependency.artifactId.name
+            migration.artifactIdAfter === dependency.artifactId.name
           case (None, Some(artifactId)) =>
             migration.groupIdAfter === dependency.groupId &&
-              artifactId === dependency.artifactId.name
+            artifactId === dependency.artifactId.name
           case (None, None) => false
         }
       }

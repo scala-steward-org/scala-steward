@@ -1,18 +1,29 @@
 package org.scalasteward.core.repoconfig
 
 import cats.effect.unsafe.implicits.global
+import cats.syntax.all._
 import eu.timepit.refined.types.numeric.NonNegInt
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.{GroupId, Update}
 import org.scalasteward.core.mock.MockContext.context.repoConfigAlg
 import org.scalasteward.core.mock.MockState.TraceEntry.Log
 import org.scalasteward.core.mock.{MockConfig, MockState}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
+
 import scala.concurrent.duration._
 
 class RepoConfigAlgTest extends FunSuite {
+  test("default config is not empty") {
+    val config = repoConfigAlg
+      .readRepoConfig(Repo("repo-config-alg", "test-1"))
+      .map(repoConfigAlg.mergeWithGlobal)
+      .runA(MockState.empty)
+      .unsafeRunSync()
+
+    assert(config =!= RepoConfig.empty)
+  }
+
   test("config with all fields set") {
     val repo = Repo("fthomas", "scala-steward")
     val configFile = MockConfig.config.workspace / "fthomas/scala-steward/.scala-steward.conf"
@@ -34,39 +45,29 @@ class RepoConfigAlgTest extends FunSuite {
     val initialState = MockState.empty.addFiles(configFile -> content).unsafeRunSync()
     val config = repoConfigAlg
       .readRepoConfig(repo)
-      .flatMap(repoConfigAlg.mergeWithDefault)
+      .map(_.getOrElse(RepoConfig.empty))
       .runA(initialState)
       .unsafeRunSync()
 
     val expected = RepoConfig(
       pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(7.days))),
       updates = UpdatesConfig(
-        allow = List(UpdatePattern(GroupId("eu.timepit"), None, None)),
+        allow = List(UpdatePattern("eu.timepit".g, None, None)),
         pin = List(
+          UpdatePattern("eu.timepit".g, Some("refined.1"), Some(VersionPattern(Some("0.8.")))),
+          UpdatePattern("eu.timepit".g, Some("refined.2"), Some(VersionPattern(Some("0.8.")))),
           UpdatePattern(
-            GroupId("eu.timepit"),
-            Some("refined.1"),
-            Some(UpdatePattern.Version(Some("0.8."), None))
-          ),
-          UpdatePattern(
-            GroupId("eu.timepit"),
-            Some("refined.2"),
-            Some(UpdatePattern.Version(Some("0.8."), None))
-          ),
-          UpdatePattern(
-            GroupId("eu.timepit"),
+            "eu.timepit".g,
             Some("refined.3"),
-            Some(UpdatePattern.Version(None, Some("jre")))
+            Some(VersionPattern(suffix = Some("jre")))
           ),
           UpdatePattern(
-            GroupId("eu.timepit"),
+            "eu.timepit".g,
             Some("refined.4"),
-            Some(UpdatePattern.Version(Some("0.8."), Some("jre")))
+            Some(VersionPattern(Some("0.8."), Some("jre")))
           )
         ),
-        ignore = List(
-          UpdatePattern(GroupId("org.acme"), None, Some(UpdatePattern.Version(Some("1.0"), None)))
-        ),
+        ignore = List(UpdatePattern("org.acme".g, None, Some(VersionPattern(Some("1.0"))))),
         limit = Some(NonNegInt.unsafeFrom(4)),
         fileExtensions = Some(List(".txt"))
       ),
@@ -172,23 +173,67 @@ class RepoConfigAlgTest extends FunSuite {
   }
 
   test("configToIgnoreFurtherUpdates with single update") {
-    val update = Update.Single("a" % "b" % "c", Nel.of("d"))
-    val config = RepoConfigAlg
-      .parseRepoConfig(RepoConfigAlg.configToIgnoreFurtherUpdates(update))
-      .getOrElse(RepoConfig())
-    val expected = RepoConfig(updates =
-      UpdatesConfig(ignore = List(UpdatePattern(GroupId("a"), Some("b"), None)))
-    )
-    assertEquals(config, expected)
-  }
-
-  test("configToIgnoreFurtherUpdates with group update") {
-    val update = Update.Group("a" % Nel.of("b", "e") % "c", Nel.of("d"))
+    val update = ("a".g % "b".a % "c" %> "d").single
     val config = RepoConfigAlg
       .parseRepoConfig(RepoConfigAlg.configToIgnoreFurtherUpdates(update))
       .getOrElse(RepoConfig())
     val expected =
-      RepoConfig(updates = UpdatesConfig(ignore = List(UpdatePattern(GroupId("a"), None, None))))
+      RepoConfig(updates = UpdatesConfig(ignore = List(UpdatePattern("a".g, Some("b"), None))))
     assertEquals(config, expected)
+  }
+
+  test("configToIgnoreFurtherUpdates with group update") {
+    val update = ("a".g % Nel.of("b".a, "e".a) % "c" %> "d").group
+    val config = RepoConfigAlg
+      .parseRepoConfig(RepoConfigAlg.configToIgnoreFurtherUpdates(update))
+      .getOrElse(RepoConfig())
+    val expected =
+      RepoConfig(updates = UpdatesConfig(ignore = List(UpdatePattern("a".g, None, None))))
+    assertEquals(config, expected)
+  }
+
+  test("config with postUpdateHook without group and artifact id") {
+    val content =
+      """|postUpdateHooks = [{
+         |  command = ["sbt", "mySbtCommand"]
+         |  commitMessage = "Updated with a hook!"
+         |  }]
+         |""".stripMargin
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    val expected = RepoConfig(
+      postUpdateHooks = List(
+        PostUpdateHookConfig(
+          groupId = None,
+          artifactId = None,
+          command = Nel.of("sbt", "mySbtCommand"),
+          commitMessage = "Updated with a hook!"
+        )
+      ).some
+    )
+
+    assertEquals(config, Right(expected))
+  }
+
+  test("config with postUpdateHook with group and artifact id") {
+    val content =
+      """|postUpdateHooks = [{
+         |  groupId = "eu.timepit"
+         |  artifactId = "refined.1"
+         |  command = ["sbt", "mySbtCommand"]
+         |  commitMessage = "Updated with a hook!"
+         |  }]
+         |""".stripMargin
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    val expected = RepoConfig(
+      postUpdateHooks = List(
+        PostUpdateHookConfig(
+          groupId = Some("eu.timepit".g),
+          artifactId = Some("refined.1"),
+          command = Nel.of("sbt", "mySbtCommand"),
+          commitMessage = "Updated with a hook!"
+        )
+      ).some
+    )
+    assertEquals(config, Right(expected))
   }
 }

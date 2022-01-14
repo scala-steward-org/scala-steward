@@ -42,13 +42,10 @@ object process {
   )(implicit F: Async[F]): F[List[String]] =
     createProcess(args).flatMap { process =>
       F.delay(new ListBuffer[String]).flatMap { buffer =>
-        val readOut = {
-          val out = readInputStream[F](process.getInputStream)
-          out
-            .evalMap(line => F.delay(appendBounded(buffer, line, maxBufferSize)) >> log(line))
-            .compile
-            .drain
-        }
+        val readOut = readInputStream[F](process.getInputStream)
+          .evalMap(line => F.delay(appendBounded(buffer, line, maxBufferSize)) >> log(line))
+          .compile
+          .drain
 
         val result = readOut >> F.blocking(process.waitFor()) >>= { exitValue =>
           if (exitValue === 0) F.pure(buffer.toList)
@@ -63,7 +60,7 @@ object process {
           F.raiseError[List[String]](new TimeoutException(makeMessage(msg, buffer.toList)))
         }
 
-        F.timeoutTo(result, timeout, fallback)
+        F.timeoutAndForget(result, timeout).recoverWith { case _: TimeoutException => fallback }
       }
     }
 

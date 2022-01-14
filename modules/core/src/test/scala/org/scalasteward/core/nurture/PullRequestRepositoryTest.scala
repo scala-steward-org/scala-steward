@@ -5,7 +5,6 @@ import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.http4s.syntax.literals._
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.Update
 import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.mock.MockConfig.config
@@ -22,10 +21,10 @@ class PullRequestRepositoryTest extends FunSuite {
     assertEquals(state.copy(files = Map.empty), MockState.empty.copy(trace = trace))
 
   private val portableScala =
-    Update.Single("org.portable-scala" % "sbt-scalajs-crossproject" % "0.6.1", Nel.of("1.0.0"))
+    ("org.portable-scala".g % "sbt-scalajs-crossproject".a % "0.6.1" %> "1.0.0").single
 
   private val catsCore =
-    Update.Single("org.typelevel" % "cats-core" % "1.0.0", Nel.of("1.0.1"))
+    ("org.typelevel".g % "cats-core".a % "1.0.0" %> "1.0.1").single
 
   private val url = uri"https://github.com/typelevel/cats/pull/3291"
   private val sha1 = Sha1(HexString.unsafeFrom("a2ced5793c2832ada8c14ba5c77e51c4bc9656a8"))

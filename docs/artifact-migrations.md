@@ -26,7 +26,8 @@ to the after group id and latest version.
 
 The fields `groupIdBefore` and `artifactIdBefore` are optional. If just `groupIdBefore` is specified, as in the previous
 example, then only the group id will get renamed. If just `artifactIdBefore` is specified, then only the artifact id
-will get renamed. Specifying both `groupIdBefore` and `artifactIdBefore` will rename both.
+will get renamed. Specifying both `groupIdBefore` and `artifactIdBefore` will rename both. The `initialVersion` needs
+to be greater than the latest version with the old groupId / old artifact id.
 
 Pull requests that added artifact migrations can be found [here][migration-prs].
 

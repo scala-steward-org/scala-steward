@@ -44,6 +44,8 @@ trait GenGitAlg[F[_], Repo] {
 
   def currentBranch(repo: Repo): F[Branch]
 
+  def deleteLocalBranch(repo: Repo, branch: Branch): F[Unit]
+
   def deleteRemoteBranch(repo: Repo, branch: Branch): F[Unit]
 
   /** Discards unstaged changes. */
@@ -113,6 +115,9 @@ trait GenGitAlg[F[_], Repo] {
 
       override def currentBranch(repo: A): F[Branch] =
         f(repo).flatMap(self.currentBranch)
+
+      override def deleteLocalBranch(repo: A, branch: Branch): F[Unit] =
+        f(repo).flatMap(self.deleteLocalBranch(_, branch))
 
       override def deleteRemoteBranch(repo: A, branch: Branch): F[Unit] =
         f(repo).flatMap(self.deleteRemoteBranch(_, branch))

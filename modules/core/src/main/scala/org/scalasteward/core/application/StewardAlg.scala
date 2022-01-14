@@ -80,8 +80,8 @@ final class StewardAlg[F[_]](config: Config)(implicit
       logger.attemptError.label(util.string.lineLeftRight(label), Some(label)) {
         F.guarantee(
           repoCacheAlg.checkCache(repo).flatMap { case (data, fork) =>
-            pruningAlg.needsAttention(data).flatMap { case (attentionNeeded, updates) =>
-              if (attentionNeeded) nurtureAlg.nurture(data, fork, updates) else F.unit
+            pruningAlg.needsAttention(data).flatMap {
+              _.traverse_(states => nurtureAlg.nurture(data, fork, states.map(_.update)))
             }
           },
           gitAlg.removeClone(repo)
@@ -95,7 +95,7 @@ final class StewardAlg[F[_]](config: Config)(implicit
       for {
         _ <- selfCheckAlg.checkAll
         _ <- workspaceAlg.cleanWorkspace
-        exitCode <- sbtAlg.addGlobalPlugins {
+        exitCode <- sbtAlg.addGlobalPlugins.surround {
           (config.githubApp.map(getGitHubAppRepos).getOrElse(Stream.empty) ++
             readRepos(config.reposFile))
             .evalMap(steward)

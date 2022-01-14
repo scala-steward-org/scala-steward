@@ -2,7 +2,6 @@ package org.scalasteward.core.buildtool.maven
 
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.ArtifactId
 import org.scalasteward.core.data.Resolver.MavenRepository
 
 class parserTest extends FunSuite {
@@ -31,10 +30,10 @@ class parserTest extends FunSuite {
          |""".stripMargin.linesIterator.toList
     val dependencies = parser.parseDependencies(input)
     val expected = List(
-      "org.typelevel" % ArtifactId("cats-core", "cats-core_2.12") % "1.5.0",
-      "org.hamcrest" % "hamcrest-core" % "1.3" % "test",
-      "junit" % "junit" % "4.12" % "test",
-      "ch.qos.logback" % "logback-core" % "1.1.11"
+      "org.typelevel".g % ("cats-core", "cats-core_2.12").a % "1.5.0",
+      "org.hamcrest".g % "hamcrest-core".a % "1.3" % "test",
+      "junit".g % "junit".a % "4.12" % "test",
+      "ch.qos.logback".g % "logback-core".a % "1.1.11"
     )
     assertEquals(dependencies, expected)
   }

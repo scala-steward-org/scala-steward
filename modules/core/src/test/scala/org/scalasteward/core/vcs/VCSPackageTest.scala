@@ -3,16 +3,13 @@ package org.scalasteward.core.vcs
 import munit.FunSuite
 import org.http4s.syntax.literals._
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.Update
 import org.scalasteward.core.git
-import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.VCSType.{GitHub, GitLab}
 import org.scalasteward.core.vcs.data.Repo
 
 class VCSPackageTest extends FunSuite {
   private val repo = Repo("foo", "bar")
-  private val update =
-    Update.Single("ch.qos.logback" % "logback-classic" % "1.2.0", Nel.of("1.2.3"))
+  private val update = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single
   private val updateBranch = git.branchFor(update, None)
 
   test("listingBranch") {

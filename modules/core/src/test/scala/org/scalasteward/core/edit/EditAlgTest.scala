@@ -26,7 +26,7 @@ class EditAlgTest extends FunSuite {
     val repo = Repo("edit-alg", "test-1")
     val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
     val repoDir = config.workspace / repo.toPath
-    val update = Update.Single("org.typelevel" % "cats-core" % "1.2.0", Nel.of("1.3.0"))
+    val update = ("org.typelevel".g % "cats-core".a % "1.2.0" %> "1.3.0").single
     val file1 = repoDir / "build.sbt"
     val file2 = repoDir / "project/Dependencies.scala"
 
@@ -65,7 +65,7 @@ class EditAlgTest extends FunSuite {
     )
     val data = RepoData(repo, cache, RepoConfig.empty)
     val repoDir = config.workspace / repo.toPath
-    val update = Update.Single("org.scalameta" % "scalafmt-core" % "2.0.0", Nel.of("2.1.0"))
+    val update = ("org.scalameta".g % "scalafmt-core".a % "2.0.0" %> "2.1.0").single
     val scalafmtConf = repoDir / scalafmtConfName
     val scalafmtConfContent = """maxColumn = 100
                                 |version = 2.0.0
@@ -102,14 +102,14 @@ class EditAlgTest extends FunSuite {
         Cmd("read", scalafmtConf.pathAsString),
         Cmd("write", scalafmtConf.pathAsString),
         Cmd(
-          "VAR1=val1" :: "VAR2=val2" :: repoDir.toString ::
-            scalafmtBinary :: opts.nonInteractive :: opts.quiet :: opts.modeChanged
+          "VAR1=val1" :: "VAR2=val2" :: repoDir.toString :: scalafmtBinary :: opts.nonInteractive :: opts.modeChanged
         ),
         Cmd(gitStatus(repoDir)),
-        Log("Executing post-update hook for org.scalameta:scalafmt-core"),
+        Log(
+          "Executing post-update hook for org.scalameta:scalafmt-core with command 'scalafmt --non-interactive'"
+        ),
         Cmd(
-          "VAR1=val1" :: "VAR2=val2" :: repoDir.toString ::
-            scalafmtBinary :: opts.nonInteractive :: opts.quiet :: Nil
+          "VAR1=val1" :: "VAR2=val2" :: repoDir.toString :: scalafmtBinary :: opts.nonInteractive :: Nil
         ),
         Cmd(gitStatus(repoDir))
       ),
@@ -130,7 +130,7 @@ class EditAlgTest extends FunSuite {
     val repo = Repo("edit-alg", "test-3")
     val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
     val repoDir = config.workspace / repo.toPath
-    val update = Update.Single("org.typelevel" % "cats-core" % "1.2.0", Nel.of("1.3.0"))
+    val update = ("org.typelevel".g % "cats-core".a % "1.2.0" %> "1.3.0").single
     val file1 = repoDir / "script.sc"
     val file2 = repoDir / "build.sbt"
 
@@ -169,7 +169,7 @@ class EditAlgTest extends FunSuite {
     val repo = Repo("edit-alg", "test-3-1")
     val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
     val repoDir = config.workspace / repo.toPath
-    val update = Update.Single(sbtGroupId.value % sbtArtifactId.name % "1.4.9", Nel.of("1.5.5"))
+    val update = (sbtGroupId % sbtArtifactId % "1.4.9" %> "1.5.5").single
 
     val state = MockState.empty
       .addFiles(
@@ -187,7 +187,7 @@ class EditAlgTest extends FunSuite {
   }
 
   test("https://github.com/circe/circe-config/pull/40") {
-    val update = Update.Single("com.typesafe" % "config" % "1.3.3", Nel.of("1.3.4"))
+    val update = ("com.typesafe".g % "config".a % "1.3.3" %> "1.3.4").single
     val original = Map(
       "build.sbt" -> """val config = "1.3.3"""",
       "project/plugins.sbt" -> """addSbtPlugin("com.typesafe.sbt" % "sbt-site" % "1.3.3")"""
@@ -200,7 +200,7 @@ class EditAlgTest extends FunSuite {
   }
 
   test("file restriction when sbt update") {
-    val update = Update.Single("org.scala-sbt" % "sbt" % "1.1.2", Nel.of("1.2.8"))
+    val update = ("org.scala-sbt".g % "sbt".a % "1.1.2" %> "1.2.8").single
     val original = Map(
       "build.properties" -> """sbt.version=1.1.2""",
       "project/plugins.sbt" -> """addSbtPlugin("com.jsuereth" % "sbt-pgp" % "1.1.2")"""
@@ -213,10 +213,8 @@ class EditAlgTest extends FunSuite {
   }
 
   test("keyword with extra underscore") {
-    val update = Update.Group(
-      "org.scala-js" % Nel.of("sbt-scalajs", "scalajs-compiler") % "1.1.0",
-      Nel.of("1.1.1")
-    )
+    val update =
+      ("org.scala-js".g % Nel.of("sbt-scalajs".a, "scalajs-compiler".a) % "1.1.0" %> "1.1.1").group
     val original = Map(
       ".travis.yml" -> """ - SCALA_JS_VERSION=1.1.0""",
       "project/plugins.sbt" -> """val scalaJsVersion = Option(System.getenv("SCALA_JS_VERSION")).getOrElse("1.1.0")"""
@@ -229,12 +227,8 @@ class EditAlgTest extends FunSuite {
   }
 
   test("test updating group id and version") {
-    val update = Update.Single(
-      crossDependency = "com.github.mpilquist" % "simulacrum" % "0.19.0",
-      newerVersions = Nel.of("1.0.0"),
-      newerGroupId = Some(GroupId("org.typelevel")),
-      newerArtifactId = Some("simulacrum")
-    )
+    val update = ("com.github.mpilquist".g % "simulacrum".a % "0.19.0" %> "1.0.0").single
+      .copy(newerGroupId = Some("org.typelevel".g), newerArtifactId = Some("simulacrum"))
     val original = Map(
       "build.sbt" -> """val simulacrum = "0.19.0"
                        |"com.github.mpilquist" %% "simulacrum" % simulacrum
@@ -249,12 +243,8 @@ class EditAlgTest extends FunSuite {
   }
 
   test("test updating artifact id and version") {
-    val update = Update.Single(
-      crossDependency = "com.test" % "artifact" % "1.0.0",
-      newerVersions = Nel.of("2.0.0"),
-      newerGroupId = Some(GroupId("com.test")),
-      newerArtifactId = Some("newer-artifact")
-    )
+    val update = ("com.test".g % "artifact".a % "1.0.0" %> "2.0.0").single
+      .copy(newerGroupId = Some("com.test".g), newerArtifactId = Some("newer-artifact"))
     val original = Map(
       "Dependencies.scala" -> """val testVersion = "1.0.0"
                                 |val test = "com.test" %% "artifact" % testVersion
@@ -269,11 +259,8 @@ class EditAlgTest extends FunSuite {
   }
 
   test("NOK artifact change: version and groupId/artifactId in different files") {
-    val update = Update.Single(
-      crossDependency = "io.chrisdavenport" % "log4cats" % "1.1.1",
-      newerVersions = Nel.of("1.2.0"),
-      newerGroupId = Some(GroupId("org.typelevel"))
-    )
+    val update = ("io.chrisdavenport".g % "log4cats".a % "1.1.1" %> "1.2.0").single
+      .copy(newerGroupId = Some("org.typelevel".g))
     val original = Map(
       "Dependencies.scala" -> """val log4catsVersion = "1.1.1" """,
       "build.sbt" -> """ "io.chrisdavenport" %% "log4cats" % log4catsVersion """
@@ -287,10 +274,7 @@ class EditAlgTest extends FunSuite {
   }
 
   test("mill version file update") {
-    val update = Update.Single(
-      crossDependency = "com.lihaoyi" % "mill-main" % "0.9.5",
-      newerVersions = Nel.of("0.9.9")
-    )
+    val update = ("com.lihaoyi".g % "mill-main".a % "0.9.5" %> "0.9.9").single
     val original = Map(
       ".mill-version" -> "0.9.5 \n ",
       ".travis.yml" -> """- TEST_MILL_VERSION=0.9.5"""

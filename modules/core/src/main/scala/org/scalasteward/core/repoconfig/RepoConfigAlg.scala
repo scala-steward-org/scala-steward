@@ -21,26 +21,20 @@ import cats.MonadThrow
 import cats.data.OptionT
 import cats.syntax.all._
 import io.circe.config.parser
-import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.repoconfig.RepoConfigAlg._
 import org.scalasteward.core.vcs.data.Repo
 import org.typelevel.log4cats.Logger
 
-final class RepoConfigAlg[F[_]](config: Config)(implicit
+final class RepoConfigAlg[F[_]](maybeGlobalRepoConfig: Option[RepoConfig])(implicit
     fileAlg: FileAlg[F],
     logger: Logger[F],
     workspaceAlg: WorkspaceAlg[F],
     F: MonadThrow[F]
 ) {
-  def mergeWithDefault(maybeRepoConfig: Option[RepoConfig]): F[RepoConfig] =
-    readDefaultRepoConfig.map { maybeDefault =>
-      (maybeRepoConfig |+| maybeDefault).getOrElse(RepoConfig.empty)
-    }
-
-  private val readDefaultRepoConfig: F[Option[RepoConfig]] =
-    config.defaultRepoConfigFile.flatTraverse(readRepoConfigFromFile(_).value)
+  def mergeWithGlobal(maybeRepoConfig: Option[RepoConfig]): RepoConfig =
+    (maybeRepoConfig |+| maybeGlobalRepoConfig).getOrElse(RepoConfig.empty)
 
   def readRepoConfig(repo: Repo): F[Option[RepoConfig]] =
     workspaceAlg
@@ -49,8 +43,10 @@ final class RepoConfigAlg[F[_]](config: Config)(implicit
 
   private def readRepoConfigFromFile(configFile: File): OptionT[F, RepoConfig] =
     OptionT(fileAlg.readFile(configFile)).map(parseRepoConfig).flatMapF {
-      case Right(repoConfig) => logger.info(s"Parsed $repoConfig").as(repoConfig.some)
-      case Left(errorMsg)    => logger.info(errorMsg).as(none[RepoConfig])
+      case Right(repoConfig) =>
+        logger.info(s"Parsed repo config ${repoConfig.show}").as(repoConfig.some)
+      case Left(errorMsg) =>
+        logger.info(errorMsg).as(none[RepoConfig])
     }
 }
 

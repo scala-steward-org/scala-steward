@@ -2,11 +2,11 @@ package org.scalasteward.core.io
 
 import better.files.File
 import cats.data.Kleisli
-import cats.effect.IO
+import cats.effect.{IO, Resource}
 import fs2.Stream
 import org.http4s.Uri
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
-import org.scalasteward.core.mock.{getFlatMapSet, MockConfig, MockEff}
+import org.scalasteward.core.mock._
 
 class MockFileAlg extends FileAlg[MockEff] {
   override def deleteForce(file: File): MockEff[Unit] =
@@ -26,14 +26,12 @@ class MockFileAlg extends FileAlg[MockEff] {
       _.update(_.exec(List("test", "-f", file.pathAsString))) >> ioFileAlg.isRegularFile(file)
     }
 
-  override def removeTemporarily[A](file: File)(fa: MockEff[A]): MockEff[A] =
-    Kleisli { ref =>
-      for {
-        _ <- ref.update(_.exec(List("rm", file.pathAsString)))
-        a <- ioFileAlg.removeTemporarily(file)(fa.run(ref))
-        _ <- ref.update(_.exec(List("restore", file.pathAsString)))
-      } yield a
-    }
+  override def removeTemporarily(file: File): Resource[MockEff, Unit] =
+    for {
+      _ <- Resource.eval(Kleisli((_: MockCtx).update(_.exec(List("rm", file.pathAsString)))))
+      _ <- ioFileAlg.removeTemporarily(file).mapK(ioToMockEff)
+      _ <- Resource.eval(Kleisli((_: MockCtx).update(_.exec(List("restore", file.pathAsString)))))
+    } yield ()
 
   override def readFile(file: File): MockEff[Option[String]] =
     Kleisli(_.update(_.exec(List("read", file.pathAsString))) >> ioFileAlg.readFile(file))

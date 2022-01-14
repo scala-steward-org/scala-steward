@@ -21,12 +21,15 @@ import cats.{Eq, Monoid}
 import io.circe.Codec
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
+import io.circe.syntax._
+import org.scalasteward.core.edit.hooks.PostUpdateHook
 
 final case class RepoConfig(
     commits: CommitsConfig = CommitsConfig(),
     pullRequests: PullRequestsConfig = PullRequestsConfig(),
     scalafmt: ScalafmtConfig = ScalafmtConfig(),
     updates: UpdatesConfig = UpdatesConfig(),
+    postUpdateHooks: Option[List[PostUpdateHookConfig]] = None,
     updatePullRequests: Option[PullRequestUpdateStrategy] = None,
     buildRoots: Option[List[BuildRootConfig]] = None
 ) {
@@ -35,8 +38,14 @@ final case class RepoConfig(
       .map(_.filterNot(_.relativePath.contains("..")))
       .getOrElse(List(BuildRootConfig.repoRoot))
 
+  def postUpdateHooksOrDefault: List[PostUpdateHook] =
+    postUpdateHooks.getOrElse(Nil).map(_.toHook)
+
   def updatePullRequestsOrDefault: PullRequestUpdateStrategy =
     updatePullRequests.getOrElse(PullRequestUpdateStrategy.default)
+
+  def show: String =
+    this.asJson.spaces2
 }
 
 object RepoConfig {
@@ -64,6 +73,7 @@ object RepoConfig {
               pullRequests = x.pullRequests |+| y.pullRequests,
               scalafmt = x.scalafmt |+| y.scalafmt,
               updates = x.updates |+| y.updates,
+              postUpdateHooks = x.postUpdateHooks |+| y.postUpdateHooks,
               updatePullRequests = x.updatePullRequests.orElse(y.updatePullRequests),
               buildRoots = x.buildRoots |+| y.buildRoots
             )

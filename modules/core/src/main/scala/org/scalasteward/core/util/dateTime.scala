@@ -28,6 +28,9 @@ object dateTime {
       case d                  => Left(new Throwable(s"$d is not a FiniteDuration"))
     }
 
+  def renderFiniteDuration(fd: FiniteDuration): String =
+    fd.toString.filterNot(_.isSpaceChar)
+
   def showDuration(d: FiniteDuration): String = {
     def symbol(unit: TimeUnit): String =
       unit match {

@@ -38,7 +38,7 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
     git("branch", "--list", "--no-color", "--all", branch.name)(repo).map(_.mkString.trim.nonEmpty)
 
   override def branchesDiffer(repo: File, b1: Branch, b2: Branch): F[Boolean] =
-    git("diff", "--name-only", b1.name, b2.name)(repo).map(_.nonEmpty)
+    git("diff", "--name-only", b1.name, b2.name, "--")(repo).map(_.nonEmpty)
 
   override def checkoutBranch(repo: File, branch: Branch): F[Unit] =
     git("checkout", branch.name)(repo).void
@@ -67,6 +67,9 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
   override def currentBranch(repo: File): F[Branch] =
     git("rev-parse", "--abbrev-ref", Branch.head.name)(repo)
       .map(lines => Branch(lines.mkString.trim))
+
+  override def deleteLocalBranch(repo: File, branch: Branch): F[Unit] =
+    git("branch", "--delete", "--force", branch.name)(repo).void
 
   override def deleteRemoteBranch(repo: File, branch: Branch): F[Unit] =
     git("push", "origin", "--delete", branch.name)(repo).void

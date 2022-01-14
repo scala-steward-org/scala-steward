@@ -1,5 +1,6 @@
 import com.typesafe.sbt.packager.docker._
 import sbtcrossproject.{CrossProject, CrossType, Platform}
+import sbtghactions.JavaSpec.Distribution.Adopt
 
 /// variables
 
@@ -9,6 +10,7 @@ val rootPkg = groupId.replace("-", "")
 val gitHubOwner = "scala-steward-org"
 val gitHubUrl = s"https://github.com/$gitHubOwner/$projectName"
 val mainBranch = "master"
+val gitHubUserContent = s"https://raw.githubusercontent.com/$gitHubOwner/$projectName/$mainBranch"
 
 val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
   "benchmark" -> List(JVMPlatform),
@@ -18,7 +20,7 @@ val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
   "mill-plugin" -> List(JVMPlatform)
 )
 
-val Scala212 = "2.12.10"
+val Scala212 = "2.12.15"
 val Scala213 = "2.13.5"
 val Scala3 = "3.1.0"
 
@@ -49,7 +51,7 @@ ThisBuild / githubWorkflowPublish := Seq(
     name = Some("Publish Docker image")
   )
 )
-ThisBuild / githubWorkflowJavaVersions := Seq("adopt@1.8", "adopt@1.11")
+ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec(Adopt, "8"), JavaSpec(Adopt, "11"))
 ThisBuild / githubWorkflowBuild :=
   Seq(
     WorkflowStep.Sbt(List("validate"), name = Some("Build project")),
@@ -84,7 +86,6 @@ lazy val core = myCrossProject("core")
     libraryDependencies ++= Seq(
       Dependencies.bcprovJdk15to18,
       Dependencies.betterFiles,
-      Dependencies.caseApp,
       Dependencies.catsCore,
       Dependencies.catsEffect,
       Dependencies.catsParse,
@@ -96,6 +97,7 @@ lazy val core = myCrossProject("core")
       Dependencies.commonsIo,
       Dependencies.coursierCore,
       Dependencies.cron4sCore,
+      Dependencies.decline,
       Dependencies.fs2Core,
       Dependencies.fs2Io,
       Dependencies.http4sCirce,
@@ -114,6 +116,7 @@ lazy val core = myCrossProject("core")
       Dependencies.circeLiteral % Test,
       Dependencies.disciplineMunit % Test,
       Dependencies.http4sDsl % Test,
+      Dependencies.http4sBlazeServer % Test,
       Dependencies.munit % Test,
       Dependencies.munitCatsEffect % Test,
       Dependencies.munitScalacheck % Test,
@@ -145,6 +148,7 @@ lazy val core = myCrossProject("core")
       scalaBinaryVersion,
       sbtVersion,
       BuildInfoKey("gitHubUrl" -> gitHubUrl),
+      BuildInfoKey("gitHubUserContent" -> gitHubUserContent),
       BuildInfoKey("mainBranch" -> mainBranch),
       BuildInfoKey.map(git.gitHeadCommit) { case (k, v) => k -> v.getOrElse(mainBranch) },
       BuildInfoKey.map(`sbt-plugin`.jvm / moduleRootPkg) { case (_, v) =>
@@ -308,7 +312,10 @@ lazy val dockerSettings = Def.settings(
   },
   Docker / packageName := s"fthomas/${name.value}",
   dockerUpdateLatest := true,
-  dockerEnvVars := Map("PATH" -> "/opt/docker/sbt/bin:${PATH}")
+  dockerEnvVars := Map(
+    "PATH" -> "/opt/docker/sbt/bin:${PATH}",
+    "COURSIER_PROGRESS" -> "false"
+  )
 )
 
 lazy val noPublishSettings = Def.settings(
@@ -352,7 +359,6 @@ runSteward := Def.taskDyn {
   val args = Seq(
     Seq("--workspace", s"$projectDir/workspace"),
     Seq("--repos-file", s"$projectDir/repos.md"),
-    Seq("--default-repo-conf", s"$projectDir/default.scala-steward.conf"),
     Seq("--git-author-email", s"me@$projectName.org"),
     Seq("--vcs-login", projectName),
     Seq("--git-ask-pass", s"$home/.github/askpass/$projectName.sh"),
