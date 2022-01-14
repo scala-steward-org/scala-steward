@@ -22,7 +22,7 @@ import org.scalasteward.core.coursier.VersionsCache
 import org.scalasteward.core.data._
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.update.UpdateAlg.migratedDependency
-import org.scalasteward.core.update.artifact.ArtifactMigrationsFinder
+import org.scalasteward.core.update.artifact.{ArtifactChange, ArtifactMigrationsFinder}
 import org.scalasteward.core.util.Nel
 
 import scala.concurrent.duration.FiniteDuration
@@ -38,33 +38,37 @@ final class UpdateAlg[F[_]](implicit
       maxAge: Option[FiniteDuration]
   ): F[Option[Update.Single]] =
     for {
-      versions <- versionsCache.getVersions(dependency, maxAge)
-      current = Version(dependency.value.version)
-      maybeNewerVersions = Nel.fromList(versions.filter(_ > current))
-      maybeUpdate = maybeNewerVersions
+      existingVersions <- versionsCache.getVersions(dependency, maxAge)
+      maybeUpdate = maybeNewerVersions(dependency, existingVersions)
         .map(vs => Update.Single(CrossDependency(dependency.value), vs.map(_.value)))
       maybeUpdateOrRename <- maybeUpdate match {
         case Some(update) => F.pure(Some(update))
         case None =>
           artifactMigrationsFinder.findUpdateWithRenamedArtifact(dependency.value) match {
-            case Some(migratedArtifact) => verifyVersion(dependency, migratedArtifact, maxAge)
-            case None                   => F.pure(None)
+            case Some(artifactChange) => verifyVersion(dependency, artifactChange, maxAge)
+            case None                 => F.pure(None)
           }
       }
     } yield maybeUpdateOrRename
 
   private def verifyVersion(
       dependency: Scope[Dependency],
-      migratedArtifact: Update.Single,
+      artifactChange: ArtifactChange,
       maxAge: Option[FiniteDuration]
   ): F[Option[Update.Single]] =
     versionsCache
-      .getVersions(migratedDependency(dependency, migratedArtifact), maxAge)
-      .map(existingVersions =>
-        Option.when(existingVersions.contains(Version(migratedArtifact.newerVersions.head)))(
-          migratedArtifact
-        )
-      )
+      .getVersions(migratedDependency(dependency, artifactChange), maxAge)
+      .map { existingVersions =>
+        maybeNewerVersions(dependency, existingVersions)
+          .map(newerVersions =>
+            Update.Single(
+              CrossDependency(dependency.value),
+              newerVersions.map(_.value),
+              Some(artifactChange.groupIdAfter),
+              Some(artifactChange.artifactIdAfter)
+            )
+          )
+      }
 
   def findUpdates(
       dependencies: List[Scope.Dependency],
@@ -73,6 +77,14 @@ final class UpdateAlg[F[_]](implicit
   ): F[List[Update.Single]] = {
     val updates = dependencies.traverseFilter(findUpdate(_, maxAge))
     updates.flatMap(filterAlg.localFilterMany(repoConfig, _))
+  }
+
+  private def maybeNewerVersions(
+      dependency: Scope[Dependency],
+      existingVersions: List[Version]
+  ): Option[Nel[Version]] = {
+    val current = Version(dependency.value.version)
+    Nel.fromList(existingVersions.filter(_ > current))
   }
 }
 
@@ -86,22 +98,18 @@ object UpdateAlg {
 
   def migratedDependency(
       dependency: Scope[Dependency],
-      migratedArtifact: Update.Single
+      artifactChange: ArtifactChange
   ): Scope[Dependency] = {
     val oldArtifactId = dependency.value.artifactId
-    val newGroupId = migratedArtifact.newerGroupId.getOrElse(dependency.value.groupId)
-    val newArtifactId = migratedArtifact.newerArtifactId
-      .map(newArtefactName =>
-        ArtifactId(
-          newArtefactName,
-          oldArtifactId.maybeCrossName
-            .map(_.replace(oldArtifactId.name, newArtefactName))
-        )
+    val newGroupId = artifactChange.groupIdAfter
+    val newArtifactId = ArtifactId(
+      artifactChange.artifactIdAfter,
+      oldArtifactId.maybeCrossName.map(
+        _.replace(oldArtifactId.name, artifactChange.artifactIdAfter)
       )
-      .getOrElse(oldArtifactId)
+    )
     dependency.copy(value =
       dependency.value.copy(
-        version = migratedArtifact.newerVersions.head,
         groupId = newGroupId,
         artifactId = newArtifactId
       )
