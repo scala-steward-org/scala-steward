@@ -76,6 +76,7 @@ final class RepoCacheAlg[F[_]](config: Config)(implicit
       dependencies <- buildToolDispatcher.getDependencies(repo, config)
       dependencyInfos <-
         dependencies.traverse(_.traverse(_.traverse(gatherDependencyInfo(repo, _))))
+      _ <- gitAlg.discardChanges(repo)
       cache = RepoCache(latestSha1, dependencyInfos, maybeConfig)
     } yield RepoData(repo, cache, config)
 
