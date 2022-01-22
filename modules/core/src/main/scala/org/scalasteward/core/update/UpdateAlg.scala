@@ -38,9 +38,10 @@ final class UpdateAlg[F[_]](implicit
       maxAge: Option[FiniteDuration]
   ): F[Option[Update.Single]] =
     for {
-      existingVersions <- versionsCache.getVersions(dependency, maxAge)
-      maybeUpdate = maybeNewerVersions(dependency, existingVersions)
-        .map(vs => Update.Single(CrossDependency(dependency.value), vs.map(_.value)))
+      maybeNewerVersions <- findNewerVersions(dependency, maxAge)
+      maybeUpdate = maybeNewerVersions.map(newerVersions =>
+        Update.Single(CrossDependency(dependency.value), newerVersions.map(_.value))
+      )
       maybeUpdateOrRename <- maybeUpdate match {
         case Some(update) => F.pure(Some(update))
         case None =>
@@ -56,19 +57,16 @@ final class UpdateAlg[F[_]](implicit
       artifactChange: ArtifactChange,
       maxAge: Option[FiniteDuration]
   ): F[Option[Update.Single]] =
-    versionsCache
-      .getVersions(migratedDependency(dependency, artifactChange), maxAge)
-      .map { existingVersions =>
-        maybeNewerVersions(dependency, existingVersions)
-          .map(newerVersions =>
-            Update.Single(
-              CrossDependency(dependency.value),
-              newerVersions.map(_.value),
-              Some(artifactChange.groupIdAfter),
-              Some(artifactChange.artifactIdAfter)
-            )
-          )
+    findNewerVersions(migratedDependency(dependency, artifactChange), maxAge).map {
+      _.map { newerVersions =>
+        Update.Single(
+          CrossDependency(dependency.value),
+          newerVersions.map(_.value),
+          Some(artifactChange.groupIdAfter),
+          Some(artifactChange.artifactIdAfter)
+        )
       }
+    }
 
   def findUpdates(
       dependencies: List[Scope.Dependency],
@@ -79,13 +77,14 @@ final class UpdateAlg[F[_]](implicit
     updates.flatMap(filterAlg.localFilterMany(repoConfig, _))
   }
 
-  private def maybeNewerVersions(
+  private def findNewerVersions(
       dependency: Scope[Dependency],
-      existingVersions: List[Version]
-  ): Option[Nel[Version]] = {
-    val current = Version(dependency.value.version)
-    Nel.fromList(existingVersions.filter(_ > current))
-  }
+      maxAge: Option[FiniteDuration]
+  ): F[Option[Nel[Version]]] =
+    versionsCache.getVersions(dependency, maxAge).map { versions =>
+      val current = Version(dependency.value.version)
+      Nel.fromList(versions.filter(_ > current))
+    }
 }
 
 object UpdateAlg {
