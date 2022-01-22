@@ -31,6 +31,6 @@ to be greater than the latest version with the old groupId / old artifact id.
 
 Pull requests that added artifact migrations can be found [here][migration-prs].
 
-[migrations]: @GITHUB_URL@/blob/@MAIN_BRANCH@/modules/core/src/main/resources/artifact-migrations.conf
+[migrations]: @GITHUB_URL@/blob/@MAIN_BRANCH@/modules/core/src/main/resources/artifact-migrations.v2.conf
 [migration-prs]: @GITHUB_URL@/pulls?q=label%3Aartifact-migration
 [HOCON]: https://github.com/lightbend/config/blob/master/HOCON.md
