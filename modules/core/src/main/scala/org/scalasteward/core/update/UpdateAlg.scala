@@ -21,10 +21,9 @@ import cats.syntax.all._
 import org.scalasteward.core.coursier.VersionsCache
 import org.scalasteward.core.data._
 import org.scalasteward.core.repoconfig.RepoConfig
-import org.scalasteward.core.update.UpdateAlg.migratedDependency
+import org.scalasteward.core.update.UpdateAlg.migrateDependency
 import org.scalasteward.core.update.artifact.{ArtifactChange, ArtifactMigrationsFinder}
 import org.scalasteward.core.util.Nel
-
 import scala.concurrent.duration.FiniteDuration
 
 final class UpdateAlg[F[_]](implicit
@@ -57,7 +56,7 @@ final class UpdateAlg[F[_]](implicit
       artifactChange: ArtifactChange,
       maxAge: Option[FiniteDuration]
   ): F[Option[Update.Single]] =
-    findNewerVersions(migratedDependency(dependency, artifactChange), maxAge).map {
+    findNewerVersions(dependency.map(migrateDependency(_, artifactChange)), maxAge).map {
       _.map { newerVersions =>
         Update.Single(
           CrossDependency(dependency.value),
@@ -95,23 +94,12 @@ object UpdateAlg {
       update.artifactIds.contains_(dependency.artifactId)
     }
 
-  def migratedDependency(
-      dependency: Scope[Dependency],
-      artifactChange: ArtifactChange
-  ): Scope[Dependency] = {
-    val oldArtifactId = dependency.value.artifactId
-    val newGroupId = artifactChange.groupIdAfter
-    val newArtifactId = ArtifactId(
-      artifactChange.artifactIdAfter,
-      oldArtifactId.maybeCrossName.map(
-        _.replace(oldArtifactId.name, artifactChange.artifactIdAfter)
-      )
+  private def renameArtifactId(artifactId: ArtifactId, newName: String): ArtifactId =
+    ArtifactId(newName, artifactId.maybeCrossName.map(_.replace(artifactId.name, newName)))
+
+  def migrateDependency(dependency: Dependency, change: ArtifactChange): Dependency =
+    dependency.copy(
+      groupId = change.groupIdAfter,
+      artifactId = renameArtifactId(dependency.artifactId, change.artifactIdAfter)
     )
-    dependency.copy(value =
-      dependency.value.copy(
-        groupId = newGroupId,
-        artifactId = newArtifactId
-      )
-    )
-  }
 }

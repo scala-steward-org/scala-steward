@@ -131,8 +131,8 @@ class ArtifactMigrationsFinderTest extends FunSuite {
       "kind-projector"
     )
     val expected = "org.typelevel".g % ("kind-projector", "kind-projector_2.12").a % "0.9.10"
-    val obtained = UpdateAlg.migratedDependency(dependency.withMavenCentral, artifactChange)
-    assertEquals(obtained, expected.withMavenCentral)
+    val obtained = UpdateAlg.migrateDependency(dependency, artifactChange)
+    assertEquals(obtained, expected)
   }
 
   test("migratedDependency: newer ArtifactId") {
@@ -144,7 +144,7 @@ class ArtifactMigrationsFinderTest extends FunSuite {
       "new-projector"
     )
     val expected = "org.spire-math".g % ("new-projector", "new-projector_2.12").a % "0.9.10"
-    val obtained = UpdateAlg.migratedDependency(dependency.withMavenCentral, artifactChange)
-    assertEquals(obtained, expected.withMavenCentral)
+    val obtained = UpdateAlg.migrateDependency(dependency, artifactChange)
+    assertEquals(obtained, expected)
   }
 }
