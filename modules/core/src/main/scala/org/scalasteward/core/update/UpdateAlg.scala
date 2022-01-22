@@ -44,7 +44,7 @@ final class UpdateAlg[F[_]](implicit
       maybeUpdateOrRename <- maybeUpdate match {
         case Some(update) => F.pure(Some(update))
         case None =>
-          artifactMigrationsFinder.findUpdateWithRenamedArtifact(dependency.value) match {
+          artifactMigrationsFinder.findArtifactChange(dependency.value) match {
             case Some(artifactChange) => verifyVersion(dependency, artifactChange, maxAge)
             case None                 => F.pure(None)
           }
