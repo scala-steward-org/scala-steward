@@ -5,7 +5,7 @@ import sbt.librarymanagement.syntax.ExclusionRule
 object Dependencies {
   val bcprovJdk15to18 = "org.bouncycastle" % "bcprov-jdk15to18" % "1.70"
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.1"
-  val catsEffect = "org.typelevel" %% "cats-effect" % "3.3.3"
+  val catsEffect = "org.typelevel" %% "cats-effect" % "3.3.4"
   val catsCore = "org.typelevel" %% "cats-core" % "2.7.0"
   val catsLaws = "org.typelevel" %% "cats-laws" % catsCore.revision
   val catsParse = "org.typelevel" %% "cats-parse" % "0.3.6"
@@ -28,12 +28,12 @@ object Dependencies {
   val http4sDsl = "org.http4s" %% "http4s-dsl" % http4sCore.revision
   val http4sBlazeServer = "org.http4s" %% "http4s-blaze-server" % http4sCore.revision
   val http4sOkhttpClient = "org.http4s" %% "http4s-okhttp-client" % http4sCore.revision
-  val log4catsSlf4j = "org.typelevel" %% "log4cats-slf4j" % "2.1.1"
+  val log4catsSlf4j = "org.typelevel" %% "log4cats-slf4j" % "2.2.0"
   val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.2.10"
   val jjwtApi = "io.jsonwebtoken" % "jjwt-api" % "0.11.2"
   val jjwtImpl = "io.jsonwebtoken" % "jjwt-impl" % jjwtApi.revision
   val jjwtJackson = "io.jsonwebtoken" % "jjwt-jackson" % jjwtApi.revision
-  val millVersion = Def.setting(if (scalaBinaryVersion.value == "2.12") "0.6.3" else "0.9.11")
+  val millVersion = Def.setting(if (scalaBinaryVersion.value == "2.12") "0.6.3" else "0.10.0")
   val millScalalib = Def.setting("com.lihaoyi" %% "mill-scalalib" % millVersion.value)
   val monocleCore = "dev.optics" %% "monocle-core" % "3.1.0"
   val munit = "org.scalameta" %% "munit" % "0.7.29"

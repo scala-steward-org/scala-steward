@@ -27,25 +27,19 @@ import org.scalasteward.core.util.Nel
 final case class PostUpdateHookConfig(
     groupId: Option[GroupId],
     artifactId: Option[String],
-    command: String,
+    command: Nel[String],
     commitMessage: String
 ) {
   def toHook: PostUpdateHook =
-    Nel
-      .fromList(command.split(' ').toList)
-      .fold(
-        throw new Exception("Post update hooks must have a command defined.")
-      ) { cmd =>
-        PostUpdateHook(
-          groupId,
-          artifactId.map(ArtifactId(_)),
-          command = cmd,
-          useSandbox = true,
-          commitMessage = _ => CommitMsg(commitMessage),
-          enabledByCache = _ => true,
-          enabledByConfig = _ => true
-        )
-      }
+    PostUpdateHook(
+      groupId,
+      artifactId.map(ArtifactId(_)),
+      command = command,
+      useSandbox = true,
+      commitMessage = _ => CommitMsg(commitMessage),
+      enabledByCache = _ => true,
+      enabledByConfig = _ => true
+    )
 }
 
 object PostUpdateHookConfig {

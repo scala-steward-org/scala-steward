@@ -17,11 +17,10 @@
 package org.scalasteward.core.update.artifact
 
 import cats.syntax.all._
-import org.scalasteward.core.data.{CrossDependency, Dependency, Update}
-import org.scalasteward.core.util.Nel
+import org.scalasteward.core.data.Dependency
 
 final class ArtifactMigrationsFinder(migrations: List[ArtifactChange]) {
-  def findUpdateWithRenamedArtifact(dependency: Dependency): Option[Update.Single] =
+  def findUpdateWithRenamedArtifact(dependency: Dependency): Option[ArtifactChange] =
     migrations
       .find { migration =>
         (migration.groupIdBefore, migration.artifactIdBefore) match {
@@ -36,13 +35,5 @@ final class ArtifactMigrationsFinder(migrations: List[ArtifactChange]) {
             artifactId === dependency.artifactId.name
           case (None, None) => false
         }
-      }
-      .map { migration =>
-        Update.Single(
-          CrossDependency(dependency),
-          Nel.one(migration.initialVersion),
-          Some(migration.groupIdAfter),
-          Some(migration.artifactIdAfter)
-        )
       }
 }
