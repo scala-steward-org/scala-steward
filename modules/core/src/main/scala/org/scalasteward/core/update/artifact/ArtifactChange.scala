@@ -24,8 +24,7 @@ final case class ArtifactChange(
     groupIdBefore: Option[GroupId],
     groupIdAfter: GroupId,
     artifactIdBefore: Option[String],
-    artifactIdAfter: String,
-    initialVersion: String
+    artifactIdAfter: String
 )
 
 object ArtifactChange {

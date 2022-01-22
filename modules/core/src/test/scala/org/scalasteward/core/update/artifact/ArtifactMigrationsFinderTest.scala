@@ -6,6 +6,8 @@ import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.GroupId
 import org.scalasteward.core.mock.MockContext.context.updateAlg
 import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.update.UpdateAlg
+import org.scalasteward.core.util.Nel
 
 class ArtifactMigrationsFinderTest extends FunSuite {
 
@@ -15,8 +17,7 @@ class ArtifactMigrationsFinderTest extends FunSuite {
         groupIdBefore = Some(GroupId("org.spire-math")),
         groupIdAfter = GroupId("org.typelevel"),
         artifactIdBefore = None,
-        artifactIdAfter = "kind-projector",
-        initialVersion = "0.10.0"
+        artifactIdAfter = "kind-projector"
       )
     )
   )
@@ -27,8 +28,7 @@ class ArtifactMigrationsFinderTest extends FunSuite {
         groupIdBefore = None,
         groupIdAfter = GroupId("com.nodifferent"),
         artifactIdBefore = Some("artifact-before"),
-        artifactIdAfter = "artifact-after",
-        initialVersion = "0.10.0"
+        artifactIdAfter = "artifact-after"
       )
     )
   )
@@ -39,8 +39,7 @@ class ArtifactMigrationsFinderTest extends FunSuite {
         groupIdBefore = Some(GroupId("org.before")),
         groupIdAfter = GroupId("org.after"),
         artifactIdBefore = Some("artifact-before"),
-        artifactIdAfter = "artifact-after",
-        initialVersion = "0.10.0"
+        artifactIdAfter = "artifact-after"
       )
     )
   )
@@ -77,8 +76,12 @@ class ArtifactMigrationsFinderTest extends FunSuite {
   test("findUpdateWithRenamedArtifact: for groupId, returns Update.Single for updating groupId") {
     val original = "org.spire-math".g % ("kind-projector", "kind-projector_2.12").a % "0.9.0"
     val obtained = standardGroupMigrations.findUpdateWithRenamedArtifact(original)
-    val expected = (original %> "0.10.0").single
-      .copy(newerGroupId = Some("org.typelevel".g), newerArtifactId = Some("kind-projector"))
+    val expected = ArtifactChange(
+      Some("org.spire-math".g),
+      "org.typelevel".g,
+      None,
+      "kind-projector"
+    )
     assertEquals(obtained, Some(expected))
   }
 
@@ -87,8 +90,12 @@ class ArtifactMigrationsFinderTest extends FunSuite {
   ) {
     val original = "com.nodifferent".g % ("artifact-before", "artifact-before_2.12").a % "0.9.0"
     val obtained = standardArtifactMigrations.findUpdateWithRenamedArtifact(original)
-    val expected = (original %> "0.10.0").single
-      .copy(newerGroupId = Some("com.nodifferent".g), newerArtifactId = Some("artifact-after"))
+    val expected = ArtifactChange(
+      None,
+      "com.nodifferent".g,
+      Some("artifact-before"),
+      "artifact-after"
+    )
     assertEquals(obtained, Some(expected))
   }
 
@@ -98,20 +105,50 @@ class ArtifactMigrationsFinderTest extends FunSuite {
   ) {
     val original = "org.before".g % ("artifact-before", "artifact-before_2.12").a % "0.9.0"
     val obtained = standardBothMigrations.findUpdateWithRenamedArtifact(original)
-    val expected = (original %> "0.10.0").single
-      .copy(newerGroupId = Some("org.after".g), newerArtifactId = Some("artifact-after"))
+    val expected = ArtifactChange(
+      Some("org.before".g),
+      "org.after".g,
+      Some("artifact-before"),
+      "artifact-after"
+    )
     assertEquals(obtained, Some(expected))
   }
 
   test("findUpdate: newer groupId") {
     val dependency = "org.spire-math".g % ("kind-projector", "kind-projector_2.12").a % "0.9.10"
     val expected = ("org.spire-math".g % ("kind-projector", "kind-projector_2.12").a % "0.9.10" %>
-      "0.10.0").single
+      Nel.of("0.10.0", "0.10.1", "0.10.2", "0.10.3")).single
       .copy(newerGroupId = Some("org.typelevel".g), newerArtifactId = Some("kind-projector"))
     val obtained = updateAlg
       .findUpdate(dependency.withMavenCentral, None)
       .runA(MockState.empty)
       .unsafeRunSync()
     assertEquals(obtained, Some(expected))
+  }
+
+  test("migratedDependency: newer groupId") {
+    val dependency = "org.spire-math".g % ("kind-projector", "kind-projector_2.12").a % "0.9.10"
+    val artifactChange = ArtifactChange(
+      Some("org.spire-math".g),
+      "org.typelevel".g,
+      Some("kind-projector"),
+      "kind-projector"
+    )
+    val expected = "org.typelevel".g % ("kind-projector", "kind-projector_2.12").a % "0.9.10"
+    val obtained = UpdateAlg.migratedDependency(dependency.withMavenCentral, artifactChange)
+    assertEquals(obtained, expected.withMavenCentral)
+  }
+
+  test("migratedDependency: newer ArtifactId") {
+    val dependency = "org.spire-math".g % ("kind-projector", "kind-projector_2.12").a % "0.9.10"
+    val artifactChange = ArtifactChange(
+      Some("org.spire-math".g),
+      "org.spire-math".g,
+      Some("kind-projector"),
+      "new-projector"
+    )
+    val expected = "org.spire-math".g % ("new-projector", "new-projector_2.12").a % "0.9.10"
+    val obtained = UpdateAlg.migratedDependency(dependency.withMavenCentral, artifactChange)
+    assertEquals(obtained, expected.withMavenCentral)
   }
 }
