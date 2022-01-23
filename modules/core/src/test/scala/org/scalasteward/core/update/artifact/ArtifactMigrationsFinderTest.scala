@@ -44,38 +44,34 @@ class ArtifactMigrationsFinderTest extends FunSuite {
     )
   )
 
-  test(
-    "findUpdateWithRenamedArtifact: for groupId, returns empty if artifactIdAfter is not listed"
-  ) {
+  test("findArtifactChange: for groupId, returns empty if artifactIdAfter is not listed") {
     val original = "org.spire-math".g % ("UNKNOWN", "UNKNOWN_2.12").a % "1.0.0"
-    val obtained = standardGroupMigrations.findUpdateWithRenamedArtifact(original)
+    val obtained = standardGroupMigrations.findArtifactChange(original)
     assertEquals(obtained, None)
   }
 
-  test(
-    "findUpdateWithRenamedArtifact: for artifactId, returns empty if groupIdAfter is not listed"
-  ) {
+  test("findArtifactChange: for artifactId, returns empty if groupIdAfter is not listed") {
     val original = "UNKNOWN".g % ("artifact-before", "artifact-before_2.12").a % "1.0.0"
-    val obtained = standardArtifactMigrations.findUpdateWithRenamedArtifact(original)
+    val obtained = standardArtifactMigrations.findArtifactChange(original)
     assertEquals(obtained, None)
   }
 
   test(
-    "findUpdateWithRenamedArtifact: for both groupId and artifactId, returns empty if either of groupIdBefore or " +
+    "findArtifactChange: for both groupId and artifactId, returns empty if either of groupIdBefore or " +
       "artifactIdBefore are not listed"
   ) {
     val original1 = "UNKNOWN".g % ("artifact-before", "artifact-before_2.12").a % "1.0.0"
-    val obtained1 = standardBothMigrations.findUpdateWithRenamedArtifact(original1)
+    val obtained1 = standardBothMigrations.findArtifactChange(original1)
     assertEquals(obtained1, None)
 
     val original2 = "org.before".g % ("UNKNOWN", "UNKNOWN_2.12").a % "1.0.0"
-    val obtained2 = standardBothMigrations.findUpdateWithRenamedArtifact(original2)
+    val obtained2 = standardBothMigrations.findArtifactChange(original2)
     assertEquals(obtained2, None)
   }
 
-  test("findUpdateWithRenamedArtifact: for groupId, returns Update.Single for updating groupId") {
+  test("findArtifactChange: for groupId, returns Update.Single for updating groupId") {
     val original = "org.spire-math".g % ("kind-projector", "kind-projector_2.12").a % "0.9.0"
-    val obtained = standardGroupMigrations.findUpdateWithRenamedArtifact(original)
+    val obtained = standardGroupMigrations.findArtifactChange(original)
     val expected = ArtifactChange(
       Some("org.spire-math".g),
       "org.typelevel".g,
@@ -85,11 +81,9 @@ class ArtifactMigrationsFinderTest extends FunSuite {
     assertEquals(obtained, Some(expected))
   }
 
-  test(
-    "findUpdateWithRenamedArtifact: for artifactId, returns Update.Single for updating artifactId"
-  ) {
+  test("findArtifactChange: for artifactId, returns Update.Single for updating artifactId") {
     val original = "com.nodifferent".g % ("artifact-before", "artifact-before_2.12").a % "0.9.0"
-    val obtained = standardArtifactMigrations.findUpdateWithRenamedArtifact(original)
+    val obtained = standardArtifactMigrations.findArtifactChange(original)
     val expected = ArtifactChange(
       None,
       "com.nodifferent".g,
@@ -100,11 +94,11 @@ class ArtifactMigrationsFinderTest extends FunSuite {
   }
 
   test(
-    "findUpdateWithRenamedArtifact: for both groupId and artifactId, returns Update.Single for updating both groupId " +
+    "findArtifactChange: for both groupId and artifactId, returns Update.Single for updating both groupId " +
       "and artifactId"
   ) {
     val original = "org.before".g % ("artifact-before", "artifact-before_2.12").a % "0.9.0"
-    val obtained = standardBothMigrations.findUpdateWithRenamedArtifact(original)
+    val obtained = standardBothMigrations.findArtifactChange(original)
     val expected = ArtifactChange(
       Some("org.before".g),
       "org.after".g,
@@ -126,7 +120,7 @@ class ArtifactMigrationsFinderTest extends FunSuite {
     assertEquals(obtained, Some(expected))
   }
 
-  test("migratedDependency: newer groupId") {
+  test("migrateDependency: newer groupId") {
     val dependency = "org.spire-math".g % ("kind-projector", "kind-projector_2.12").a % "0.9.10"
     val artifactChange = ArtifactChange(
       Some("org.spire-math".g),
@@ -135,11 +129,11 @@ class ArtifactMigrationsFinderTest extends FunSuite {
       "kind-projector"
     )
     val expected = "org.typelevel".g % ("kind-projector", "kind-projector_2.12").a % "0.9.10"
-    val obtained = UpdateAlg.migratedDependency(dependency.withMavenCentral, artifactChange)
-    assertEquals(obtained, expected.withMavenCentral)
+    val obtained = UpdateAlg.migrateDependency(dependency, artifactChange)
+    assertEquals(obtained, expected)
   }
 
-  test("migratedDependency: newer ArtifactId") {
+  test("migrateDependency: newer ArtifactId") {
     val dependency = "org.spire-math".g % ("kind-projector", "kind-projector_2.12").a % "0.9.10"
     val artifactChange = ArtifactChange(
       Some("org.spire-math".g),
@@ -148,7 +142,7 @@ class ArtifactMigrationsFinderTest extends FunSuite {
       "new-projector"
     )
     val expected = "org.spire-math".g % ("new-projector", "new-projector_2.12").a % "0.9.10"
-    val obtained = UpdateAlg.migratedDependency(dependency.withMavenCentral, artifactChange)
-    assertEquals(obtained, expected.withMavenCentral)
+    val obtained = UpdateAlg.migrateDependency(dependency, artifactChange)
+    assertEquals(obtained, expected)
   }
 }

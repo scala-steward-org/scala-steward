@@ -17,14 +17,14 @@
 package org.scalasteward.core.update
 
 import cats.Monad
+import cats.data.OptionT
 import cats.syntax.all._
 import org.scalasteward.core.coursier.VersionsCache
 import org.scalasteward.core.data._
 import org.scalasteward.core.repoconfig.RepoConfig
-import org.scalasteward.core.update.UpdateAlg.migratedDependency
+import org.scalasteward.core.update.UpdateAlg.migrateDependency
 import org.scalasteward.core.update.artifact.{ArtifactChange, ArtifactMigrationsFinder}
 import org.scalasteward.core.util.Nel
-
 import scala.concurrent.duration.FiniteDuration
 
 final class UpdateAlg[F[_]](implicit
@@ -37,38 +37,9 @@ final class UpdateAlg[F[_]](implicit
       dependency: Scope[Dependency],
       maxAge: Option[FiniteDuration]
   ): F[Option[Update.Single]] =
-    for {
-      existingVersions <- versionsCache.getVersions(dependency, maxAge)
-      maybeUpdate = maybeNewerVersions(dependency, existingVersions)
-        .map(vs => Update.Single(CrossDependency(dependency.value), vs.map(_.value)))
-      maybeUpdateOrRename <- maybeUpdate match {
-        case Some(update) => F.pure(Some(update))
-        case None =>
-          artifactMigrationsFinder.findUpdateWithRenamedArtifact(dependency.value) match {
-            case Some(artifactChange) => verifyVersion(dependency, artifactChange, maxAge)
-            case None                 => F.pure(None)
-          }
-      }
-    } yield maybeUpdateOrRename
-
-  private def verifyVersion(
-      dependency: Scope[Dependency],
-      artifactChange: ArtifactChange,
-      maxAge: Option[FiniteDuration]
-  ): F[Option[Update.Single]] =
-    versionsCache
-      .getVersions(migratedDependency(dependency, artifactChange), maxAge)
-      .map { existingVersions =>
-        maybeNewerVersions(dependency, existingVersions)
-          .map(newerVersions =>
-            Update.Single(
-              CrossDependency(dependency.value),
-              newerVersions.map(_.value),
-              Some(artifactChange.groupIdAfter),
-              Some(artifactChange.artifactIdAfter)
-            )
-          )
-      }
+    findUpdateWithoutMigration(dependency, maxAge)
+      .orElse(findUpdateWithMigration(dependency, maxAge))
+      .value
 
   def findUpdates(
       dependencies: List[Scope.Dependency],
@@ -79,13 +50,39 @@ final class UpdateAlg[F[_]](implicit
     updates.flatMap(filterAlg.localFilterMany(repoConfig, _))
   }
 
-  private def maybeNewerVersions(
+  private def findUpdateWithoutMigration(
       dependency: Scope[Dependency],
-      existingVersions: List[Version]
-  ): Option[Nel[Version]] = {
-    val current = Version(dependency.value.version)
-    Nel.fromList(existingVersions.filter(_ > current))
-  }
+      maxAge: Option[FiniteDuration]
+  ): OptionT[F, Update.Single] =
+    findNewerVersions(dependency, maxAge).map { newerVersions =>
+      Update.Single(CrossDependency(dependency.value), newerVersions.map(_.value))
+    }
+
+  private def findUpdateWithMigration(
+      dependency: Scope[Dependency],
+      maxAge: Option[FiniteDuration]
+  ): OptionT[F, Update.Single] =
+    OptionT.fromOption(artifactMigrationsFinder.findArtifactChange(dependency.value)).flatMap {
+      artifactChange =>
+        findNewerVersions(dependency.map(migrateDependency(_, artifactChange)), maxAge).map {
+          newerVersions =>
+            Update.Single(
+              CrossDependency(dependency.value),
+              newerVersions.map(_.value),
+              Some(artifactChange.groupIdAfter),
+              Some(artifactChange.artifactIdAfter)
+            )
+        }
+    }
+
+  private def findNewerVersions(
+      dependency: Scope[Dependency],
+      maxAge: Option[FiniteDuration]
+  ): OptionT[F, Nel[Version]] =
+    OptionT(versionsCache.getVersions(dependency, maxAge).map { versions =>
+      val current = Version(dependency.value.version)
+      Nel.fromList(versions.filter(_ > current))
+    })
 }
 
 object UpdateAlg {
@@ -96,23 +93,12 @@ object UpdateAlg {
       update.artifactIds.contains_(dependency.artifactId)
     }
 
-  def migratedDependency(
-      dependency: Scope[Dependency],
-      artifactChange: ArtifactChange
-  ): Scope[Dependency] = {
-    val oldArtifactId = dependency.value.artifactId
-    val newGroupId = artifactChange.groupIdAfter
-    val newArtifactId = ArtifactId(
-      artifactChange.artifactIdAfter,
-      oldArtifactId.maybeCrossName.map(
-        _.replace(oldArtifactId.name, artifactChange.artifactIdAfter)
-      )
+  def migrateArtifactId(artifactId: ArtifactId, newName: String): ArtifactId =
+    ArtifactId(newName, artifactId.maybeCrossName.map(_.replace(artifactId.name, newName)))
+
+  def migrateDependency(dependency: Dependency, change: ArtifactChange): Dependency =
+    dependency.copy(
+      groupId = change.groupIdAfter,
+      artifactId = migrateArtifactId(dependency.artifactId, change.artifactIdAfter)
     )
-    dependency.copy(value =
-      dependency.value.copy(
-        groupId = newGroupId,
-        artifactId = newArtifactId
-      )
-    )
-  }
 }

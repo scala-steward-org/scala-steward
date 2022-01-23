@@ -20,7 +20,7 @@ import cats.syntax.all._
 import org.scalasteward.core.data.Dependency
 
 final class ArtifactMigrationsFinder(migrations: List[ArtifactChange]) {
-  def findUpdateWithRenamedArtifact(dependency: Dependency): Option[ArtifactChange] =
+  def findArtifactChange(dependency: Dependency): Option[ArtifactChange] =
     migrations
       .find { migration =>
         (migration.groupIdBefore, migration.artifactIdBefore) match {
