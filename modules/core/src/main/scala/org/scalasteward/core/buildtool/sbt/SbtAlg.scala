@@ -24,6 +24,7 @@ import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.BuildToolAlg
 import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.buildtool.sbt.data.SbtVersion
+import org.scalasteward.core.coursier.VersionsCache
 import org.scalasteward.core.data.{Dependency, Scope}
 import org.scalasteward.core.edit.scalafix.{ScalafixCli, ScalafixMigration}
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
@@ -37,6 +38,7 @@ final class SbtAlg[F[_]](config: Config)(implicit
     processAlg: ProcessAlg[F],
     scalafixCli: ScalafixCli[F],
     workspaceAlg: WorkspaceAlg[F],
+    versionsCache: VersionsCache[F],
     F: Concurrent[F]
 ) extends BuildToolAlg[F] {
   private def getSbtDependency(buildRoot: BuildRoot): F[Option[Dependency]] =
@@ -81,17 +83,22 @@ final class SbtAlg[F[_]](config: Config)(implicit
     }
 
   private def runSourcesMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
-    addGlobalPluginTemporarily(scalaStewardScalafixSbt).surround {
-      workspaceAlg.buildRootDir(buildRoot).flatMap { buildRootDir =>
-        val withScalacOptions =
-          migration.scalacOptions.fold(Resource.unit[F]) { opts =>
-            val file = scalaStewardScalafixOptions(opts.toList)
-            fileAlg.createTemporarily(buildRootDir / file.name, file.content)
-          }
-        val scalafixCmds = migration.rewriteRules.map(rule => s"$scalafixAll $rule").toList
-        withScalacOptions.surround(sbt(Nel(scalafixEnable, scalafixCmds), buildRootDir).void)
+    sbtScalaFixPluginVersion.foreachF { pluginVersion =>
+      addGlobalPluginTemporarily(scalaStewardScalafixSbt(pluginVersion)).surround {
+        workspaceAlg.buildRootDir(buildRoot).flatMap { buildRootDir =>
+          val withScalacOptions =
+            migration.scalacOptions.fold(Resource.unit[F]) { opts =>
+              val file = scalaStewardScalafixOptions(opts.toList)
+              fileAlg.createTemporarily(buildRootDir / file.name, file.content)
+            }
+          val scalafixCmds = migration.rewriteRules.map(rule => s"$scalafixAll $rule").toList
+          withScalacOptions.surround(sbt(Nel(scalafixEnable, scalafixCmds), buildRootDir).void)
+        }
       }
     }
+
+  private def sbtScalaFixPluginVersion: OptionT[F, String] =
+    OptionT(versionsCache.getVersions(sbtScalaFixDependency, None).map(_.lastOption.map(_.value)))
 
   private def runBuildMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
     for {

@@ -74,6 +74,10 @@ class SbtAlgTest extends FunSuite {
     val state = sbtAlg.runMigration(buildRoot, migration).runS(MockState.empty).unsafeRunSync()
     val expected = MockState.empty.copy(
       trace = Vector(
+        Cmd(
+          "read",
+          s"$mockRoot/workspace/store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json"
+        ),
         Cmd("write", s"$mockRoot/.sbt/0.13/plugins/scala-steward-scalafix.sbt"),
         Cmd("write", s"$mockRoot/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
         Cmd(
@@ -110,6 +114,10 @@ class SbtAlgTest extends FunSuite {
     val state = sbtAlg.runMigration(buildRoot, migration).runS(MockState.empty).unsafeRunSync()
     val expected = MockState.empty.copy(
       trace = Vector(
+        Cmd(
+          "read",
+          s"$mockRoot/workspace/store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json"
+        ),
         Cmd("write", s"$mockRoot/.sbt/0.13/plugins/scala-steward-scalafix.sbt"),
         Cmd("write", s"$mockRoot/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
         Cmd("write", s"$repoDir/scala-steward-scalafix-options.sbt"),
