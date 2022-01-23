@@ -261,5 +261,5 @@ echo "${SCALA_STEWARD_TOKEN}"
 8. (*optional*) create a new schedule to trigger the pipeline on a daily/weekly basis
 
 
-[scalafixmigrations]: https://github.com/scala-steward-org/scala-steward/blob/master/docs/scalafix-migrations.md
-[artifactmigrations]: https://github.com/scala-steward-org/scala-steward/blob/master/docs/artifact-migrations.md
+[scalafixmigrations]: https://github.com/scala-steward-org/scala-steward/blob/main/docs/scalafix-migrations.md
+[artifactmigrations]: https://github.com/scala-steward-org/scala-steward/blob/main/docs/artifact-migrations.md
