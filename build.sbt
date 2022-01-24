@@ -60,6 +60,10 @@ ThisBuild / githubWorkflowBuild :=
     )
   )
 
+/// global build settings
+
+ThisBuild / evictionErrorLevel := Level.Info
+
 /// projects
 
 lazy val root = project
