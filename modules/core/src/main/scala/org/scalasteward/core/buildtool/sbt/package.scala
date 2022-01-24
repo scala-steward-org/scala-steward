@@ -19,7 +19,7 @@ package org.scalasteward.core.buildtool
 import cats.Functor
 import cats.syntax.all._
 import org.scalasteward.core.buildtool.sbt.data.{SbtVersion, ScalaVersion}
-import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId, Resolver, Scope, Version}
+import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId, Version}
 import org.scalasteward.core.io.{FileAlg, FileData}
 
 package object sbt {
@@ -35,16 +35,13 @@ package object sbt {
       Dependency(sbtGroupId, sbtArtifactId, sbtVersion.value)
     }
 
-  val sbtScalaFixDependency: Scope[Dependency] =
-    Scope(
-      Dependency(
-        GroupId("ch.epfl.scala"),
-        ArtifactId("sbt-scalafix"),
-        "",
-        Some(SbtVersion("1.0")),
-        Some(ScalaVersion("2.12"))
-      ),
-      List(Resolver.mavenCentral)
+  val sbtScalaFixDependency: Dependency =
+    Dependency(
+      GroupId("ch.epfl.scala"),
+      ArtifactId("sbt-scalafix"),
+      "",
+      Some(SbtVersion("1.0")),
+      Some(ScalaVersion("2.12"))
     )
 
   def scalaStewardScalafixSbt(version: String): FileData =

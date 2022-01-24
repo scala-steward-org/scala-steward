@@ -98,7 +98,11 @@ final class SbtAlg[F[_]](config: Config)(implicit
     }
 
   private def sbtScalaFixPluginVersion: OptionT[F, String] =
-    OptionT(versionsCache.getVersions(sbtScalaFixDependency, None).map(_.lastOption.map(_.value)))
+    OptionT(
+      versionsCache
+        .getVersions(Scope(sbtScalaFixDependency, List(config.defaultResolver)), None)
+        .map(_.lastOption.map(_.value))
+    )
 
   private def runBuildMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
     for {
