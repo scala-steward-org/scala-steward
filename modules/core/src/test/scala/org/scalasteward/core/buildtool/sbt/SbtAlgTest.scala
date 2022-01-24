@@ -71,9 +71,18 @@ class SbtAlgTest extends FunSuite {
       Version("1.0.0"),
       Nel.of("github:functional-streams-for-scala/fs2/v1?sha=v1.0.5")
     )
-    val state = sbtAlg.runMigration(buildRoot, migration).runS(MockState.empty).unsafeRunSync()
-    val expected = MockState.empty.copy(
+    val initialState = MockState.empty
+      .addFiles(
+        mockRoot / s"workspace/store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json" -> sbtScalafixVersionJson
+      )
+      .unsafeRunSync()
+    val state = sbtAlg.runMigration(buildRoot, migration).runS(initialState).unsafeRunSync()
+    val expected = initialState.copy(
       trace = Vector(
+        Cmd(
+          "read",
+          s"$mockRoot/workspace/store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json"
+        ),
         Cmd("write", s"$mockRoot/.sbt/0.13/plugins/scala-steward-scalafix.sbt"),
         Cmd("write", s"$mockRoot/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
         Cmd(
@@ -107,9 +116,18 @@ class SbtAlgTest extends FunSuite {
       Nel.of("github:cb372/cats/Cats_v2_2_0?sha=235bd7c92e431ab1902db174cf4665b05e08f2f1"),
       scalacOptions = Some(Nel.of("-P:semanticdb:synthetics:on"))
     )
-    val state = sbtAlg.runMigration(buildRoot, migration).runS(MockState.empty).unsafeRunSync()
-    val expected = MockState.empty.copy(
+    val initialState = MockState.empty
+      .addFiles(
+        mockRoot / s"workspace/store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json" -> sbtScalafixVersionJson
+      )
+      .unsafeRunSync()
+    val state = sbtAlg.runMigration(buildRoot, migration).runS(initialState).unsafeRunSync()
+    val expected = initialState.copy(
       trace = Vector(
+        Cmd(
+          "read",
+          s"$mockRoot/workspace/store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json"
+        ),
         Cmd("write", s"$mockRoot/.sbt/0.13/plugins/scala-steward-scalafix.sbt"),
         Cmd("write", s"$mockRoot/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
         Cmd("write", s"$repoDir/scala-steward-scalafix-options.sbt"),
@@ -133,4 +151,13 @@ class SbtAlgTest extends FunSuite {
     )
     assertEquals(state, expected)
   }
+
+  private val sbtScalafixVersionJson =
+    s"""|{
+        |  "updatedAt" : 9999999999999,
+        |  "versions" : [
+        |    "0.9.33",
+        |    "0.9.34"
+        |  ]
+        |}""".stripMargin
 }
