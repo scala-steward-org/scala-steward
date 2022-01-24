@@ -277,10 +277,22 @@ lazy val metadataSettings = Def.settings(
   headerLicense := Some(HeaderLicense.ALv2("2018-2021", "Scala Steward contributors")),
   developers := List(
     Developer(
+      id = "exoego",
+      name = "TATSUNO Yasuhiro",
+      email = "",
+      url(s"https://github.com/exoego")
+    ),
+    Developer(
       id = "fthomas",
       name = "Frank S. Thomas",
       email = "",
       url(s"https://github.com/fthomas")
+    ),
+    Developer(
+      id = "mzuehlke",
+      name = "Marco Zühlke",
+      email = "",
+      url(s"https://github.com/mzuehlke")
     )
   )
 )
