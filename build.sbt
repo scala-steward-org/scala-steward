@@ -127,20 +127,14 @@ lazy val core = myCrossProject("core")
     ),
     assembly / test := {},
     assembly / assemblyMergeStrategy := {
-      val nativeSuffix = "\\.(?:dll|jnilib|so)$".r
-
-      {
-        case PathList(ps @ _*) if nativeSuffix.findFirstMatchIn(ps.last).isDefined =>
-          MergeStrategy.first
-        case PathList("org", "fusesource", _*) =>
-          // (core / assembly) deduplicate: different file contents found in the following:
-          // https/repo1.maven.org/maven2/jline/jline/2.14.6/jline-2.14.6.jar:org/fusesource/hawtjni/runtime/Callback.class
-          // https/repo1.maven.org/maven2/org/fusesource/jansi/jansi/1.18/jansi-1.18.jar:org/fusesource/hawtjni/runtime/Callback.class
-          MergeStrategy.first
-        case otherwise =>
-          val defaultStrategy = (assembly / assemblyMergeStrategy).value
-          defaultStrategy(otherwise)
-      }
+      case PathList("META-INF", "versions", "9", "module-info.class") =>
+        // (core / assembly) deduplicate: different file contents found in the following:
+        // https/repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-stdlib/1.4.20/kotlin-stdlib-1.4.20.jar:META-INF/versions/9/module-info.class
+        // https/repo1.maven.org/maven2/org/tukaani/xz/1.9/xz-1.9.jar:META-INF/versions/9/module-info.class
+        MergeStrategy.first
+      case otherwise =>
+        val defaultStrategy = (assembly / assemblyMergeStrategy).value
+        defaultStrategy(otherwise)
     },
     buildInfoKeys := Seq[BuildInfoKey](
       organization,
