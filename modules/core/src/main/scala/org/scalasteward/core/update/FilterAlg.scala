@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,8 +89,8 @@ object FilterAlg {
   }
 
   private def checkVersionOrdering(update: Update.Single): FilterResult = {
-    val (current, next) =
-      (coursier.core.Version(update.currentVersion), coursier.core.Version(update.nextVersion))
+    val current = coursier.core.Version(update.currentVersion)
+    val next = coursier.core.Version(update.nextVersion)
     if (current > next) Left(VersionOrderingConflict(update)) else Right(update)
   }
 }

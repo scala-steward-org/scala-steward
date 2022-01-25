@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,7 +95,7 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
     kvStore.getOrElse(repo, Map.empty).map {
       _.filter { case (_, entry) =>
         UpdateAlg.isUpdateFor(entry.update, crossDependency) &&
-          entry.update.nextVersion === newVersion
+        entry.update.nextVersion === newVersion
       }
         .maxByOption { case (_, entry) => entry.entryCreatedAt.millis }
         .map { case (url, entry) =>

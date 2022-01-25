@@ -15,7 +15,7 @@ import org.http4s.implicits._
 import org.scalasteward.core.TestInstances.dummyRepoCache
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.application.Config.GitLabCfg
-import org.scalasteward.core.data.{RepoDataWithMeta, UpdateData}
+import org.scalasteward.core.data.{RepoData, UpdateData}
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.repoconfig.RepoConfig
@@ -83,7 +83,7 @@ class GitLabApiAlgTest extends FunSuite {
     new GitLabApiAlg[IO](config.vcsCfg, GitLabCfg(mergeWhenPipelineSucceeds = false), _ => IO.pure)
 
   private val data = UpdateData(
-    RepoDataWithMeta(Repo("foo", "bar"), dummyRepoCache, RepoConfig.empty, None),
+    RepoData(Repo("foo", "bar"), dummyRepoCache, RepoConfig.empty),
     Repo("scala-steward", "bar"),
     ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single,
     Branch("master"),

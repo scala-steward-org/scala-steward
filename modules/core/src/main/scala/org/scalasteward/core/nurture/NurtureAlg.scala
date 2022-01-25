@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
     urlChecker: UrlChecker[F],
     F: Concurrent[F]
 ) {
-  def nurture(data: RepoDataWithMeta, fork: RepoOut, updates: Nel[Update.Single]): F[Unit] =
+  def nurture(data: RepoData, fork: RepoOut, updates: Nel[Update.Single]): F[Unit] =
     for {
       _ <- logger.info(s"Nurture ${data.repo.show}")
       baseBranch <- cloneAndSync(data.repo, fork)
@@ -59,7 +59,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
     } yield baseBranch
 
   private def updateDependencies(
-      data: RepoDataWithMeta,
+      data: RepoData,
       fork: Repo,
       baseBranch: Branch,
       updates: List[Update]
@@ -152,7 +152,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
     gitAlg.returnToCurrentBranch(data.repo) {
       val createBranch = logger.info(s"Create branch ${data.updateBranch.name}") >>
         gitAlg.createBranch(data.repo, data.updateBranch)
-      editAlg.applyUpdate(data.repoDataWithMeta.repoData, data.update, createBranch).flatMap {
+      editAlg.applyUpdate(data.repoData, data.update, createBranch).flatMap {
         edits =>
           val editCommits = edits.flatMap(_.maybeCommit)
           if (editCommits.isEmpty) logger.warn("No commits created").as(Ignored)
@@ -177,7 +177,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
       dependenciesWithNextVersion =
         data.update.dependencies.map(_.copy(version = data.update.nextVersion)).toList
-      resolvers = data.repoDataWithMeta.cache.dependencyInfos.flatMap(_.resolvers)
+      resolvers = data.repoData.cache.dependencyInfos.flatMap(_.resolvers)
       artifactIdToUrl <-
         coursierAlg.getArtifactIdUrlMapping(Scope(dependenciesWithNextVersion, resolvers))
       existingArtifactUrlsList <- artifactIdToUrl.toList.filterA(a => urlChecker.exists(a._2))
@@ -246,7 +246,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
         s"Merge branch ${data.baseBranch.name} into ${data.updateBranch.name} and apply again"
       )
       maybeMergeCommit <- gitAlg.mergeTheirs(data.repo, data.baseBranch)
-      edits <- editAlg.applyUpdate(data.repoDataWithMeta.repoData, data.update)
+      edits <- editAlg.applyUpdate(data.repoData, data.update)
       editCommits = edits.flatMap(_.maybeCommit)
       result <- pushCommits(data, maybeMergeCommit.toList ++ editCommits)
     } yield result

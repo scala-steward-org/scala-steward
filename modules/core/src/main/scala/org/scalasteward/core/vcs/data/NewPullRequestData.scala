@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -180,7 +180,7 @@ object NewPullRequestData {
   ): NewPullRequestData =
     NewPullRequestData(
       title = git
-        .commitMsgFor(data.update, data.repoConfig.commits, data.repoDataWithMeta.repo.branch)
+        .commitMsgFor(data.update, data.repoConfig.commits, data.repoData.repo.branch)
         .title,
       body = bodyFor(
         data.update,
@@ -188,7 +188,7 @@ object NewPullRequestData {
         artifactIdToUrl,
         releaseRelatedUrls,
         filesWithOldVersion,
-        data.repoDataWithMeta.configParsingError
+        data.repoData.cache.maybeConfigParsingError
       ),
       head = branchName,
       base = data.baseBranch

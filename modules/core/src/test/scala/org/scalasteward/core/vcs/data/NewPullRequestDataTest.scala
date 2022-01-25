@@ -3,10 +3,10 @@ package org.scalasteward.core.vcs.data
 import io.circe.syntax._
 import munit.FunSuite
 import org.http4s.syntax.literals._
-import org.scalasteward.core.TestInstances.dummyRepoCache
+import org.scalasteward.core.TestInstances._
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.buildtool.sbt.data.SbtVersion
-import org.scalasteward.core.data.{ReleaseRelatedUrl, RepoDataWithMeta, UpdateData, Version}
+import org.scalasteward.core.data.{ReleaseRelatedUrl, RepoData, UpdateData, Version}
 import org.scalasteward.core.edit.EditAttempt.{ScalafixEdit, UpdateEdit}
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.git.{Branch, Commit, Sha1}
@@ -17,7 +17,7 @@ import org.scalasteward.core.vcs.data.NewPullRequestData._
 class NewPullRequestDataTest extends FunSuite {
   test("asJson") {
     val data = UpdateData(
-      RepoDataWithMeta(Repo("foo", "bar"), dummyRepoCache, RepoConfig.empty, None),
+      RepoData(Repo("foo", "bar"), dummyRepoCache, RepoConfig.empty),
       Repo("scala-steward", "bar"),
       ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single,
       Branch("master"),
@@ -38,11 +38,10 @@ class NewPullRequestDataTest extends FunSuite {
 
   test("body of pull request data should contain notion about config parsing error") {
     val data = UpdateData(
-      RepoDataWithMeta(
+      RepoData(
         Repo("foo", "bar"),
-        dummyRepoCache,
-        RepoConfig.empty,
-        Some("Failed to parse .scala-steward.conf")
+        dummyRepoCacheWithParsingError,
+        RepoConfig.empty
       ),
       Repo("scala-steward", "bar"),
       ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single,

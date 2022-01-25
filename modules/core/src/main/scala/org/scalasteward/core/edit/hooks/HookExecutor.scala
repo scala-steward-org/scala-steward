@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ final class HookExecutor[F[_]](implicit
     F: MonadThrow[F]
 ) {
   def execPostUpdateHooks(data: RepoData, update: Update): F[List[EditAttempt]] =
-    (HookExecutor.postUpdateHooks ++ data.config.postUpdateHooks.map(_.toHook))
+    (HookExecutor.postUpdateHooks ++ data.config.postUpdateHooksOrDefault)
       .filter { hook =>
         hook.groupId.forall(update.groupId === _) &&
         hook.artifactId.forall(aid => update.artifactIds.exists(_.name === aid.name)) &&
