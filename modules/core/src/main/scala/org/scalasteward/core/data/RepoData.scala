@@ -25,4 +25,3 @@ final case class RepoData(
     cache: RepoCache,
     config: RepoConfig
 )
-
