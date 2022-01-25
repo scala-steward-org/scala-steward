@@ -89,8 +89,8 @@ object FilterAlg {
   }
 
   private def checkVersionOrdering(update: Update.Single): FilterResult = {
-    val (current, next) =
-      (coursier.core.Version(update.currentVersion), coursier.core.Version(update.nextVersion))
+    val current = coursier.core.Version(update.currentVersion)
+    val next = coursier.core.Version(update.nextVersion)
     if (current > next) Left(VersionOrderingConflict(update)) else Right(update)
   }
 }
