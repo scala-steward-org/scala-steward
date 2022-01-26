@@ -18,7 +18,6 @@ package org.scalasteward.core.repoconfig
 
 import better.files.File
 import cats.MonadThrow
-import cats.data.OptionT
 import cats.syntax.all._
 import io.circe.config.parser
 import org.scalasteward.core.data.Update
@@ -36,21 +35,26 @@ final class RepoConfigAlg[F[_]](maybeGlobalRepoConfig: Option[RepoConfig])(impli
   def mergeWithGlobal(maybeRepoConfig: Option[RepoConfig]): RepoConfig =
     (maybeRepoConfig |+| maybeGlobalRepoConfig).getOrElse(RepoConfig.empty)
 
-  def readRepoConfig(repo: Repo): F[Option[RepoConfig]] =
+  def readRepoConfig(repo: Repo): F[ConfigParsingResult] =
     workspaceAlg
       .repoDir(repo)
-      .flatMap(dir => readRepoConfigFromFile(dir / repoConfigBasename).value)
+      .flatMap(dir => readRepoConfigFromFile(dir / repoConfigBasename))
 
-  private def readRepoConfigFromFile(configFile: File): OptionT[F, RepoConfig] =
-    OptionT(fileAlg.readFile(configFile)).map(parseRepoConfig).flatMapF {
-      case Right(repoConfig) =>
-        logger.info(s"Parsed repo config ${repoConfig.show}").as(repoConfig.some)
-      case Left(errorMsg) =>
-        logger.info(errorMsg).as(none[RepoConfig])
-    }
+  private def readRepoConfigFromFile(configFile: File): F[ConfigParsingResult] =
+    for {
+      parsedConfig <- fileAlg.readFile(configFile).map(_.map(parseRepoConfig))
+      _ <- parsedConfig.fold(F.unit)(
+        _.fold(logger.info(_), repoConfig => logger.info(s"Parsed repo config ${repoConfig.show}"))
+      )
+    } yield parsedConfig
 }
 
 object RepoConfigAlg {
+
+  // None stands for the non-existing config file.
+  // Otherwise, you got either a config error, either parsed config.
+  type ConfigParsingResult = Option[Either[String, RepoConfig]]
+
   val repoConfigBasename: String = ".scala-steward.conf"
 
   def parseRepoConfig(input: String): Either[String, RepoConfig] =

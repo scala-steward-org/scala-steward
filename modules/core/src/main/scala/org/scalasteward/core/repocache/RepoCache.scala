@@ -26,7 +26,8 @@ import org.scalasteward.core.repoconfig.RepoConfig
 final case class RepoCache(
     sha1: Sha1,
     dependencyInfos: List[Scope[List[DependencyInfo]]],
-    maybeRepoConfig: Option[RepoConfig]
+    maybeRepoConfig: Option[RepoConfig],
+    maybeRepoConfigParsingError: Option[String]
 ) {
   def dependsOn(modules: List[(GroupId, ArtifactId)]): Boolean =
     dependencyInfos.exists(_.value.exists { info =>

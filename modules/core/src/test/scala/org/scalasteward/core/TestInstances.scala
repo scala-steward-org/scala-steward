@@ -22,8 +22,12 @@ object TestInstances {
     RepoCache(
       Sha1(HexString.unsafeFrom("da39a3ee5e6b4b0d3255bfef95601890afd80709")),
       List.empty,
+      Option.empty,
       Option.empty
     )
+
+  val dummyRepoCacheWithParsingError: RepoCache =
+    dummyRepoCache.copy(maybeRepoConfigParsingError = Some("Failed to parse .scala-steward.conf"))
 
   implicit def changeArbitrary[T](implicit arbT: Arbitrary[T]): Arbitrary[Change[T]] =
     Arbitrary(arbT.arbitrary.flatMap(t => Gen.oneOf(Changed(t), Unchanged(t))))
