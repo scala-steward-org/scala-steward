@@ -30,16 +30,16 @@ package object sbt {
 
   val sbtArtifactId: ArtifactId = ArtifactId("sbt")
 
-  def sbtDependency(sbtVersion: SbtVersion): Option[Dependency] =
-    Option.when(sbtVersion.toVersion >= Version("1.0.0")) {
-      Dependency(sbtGroupId, sbtArtifactId, sbtVersion.value)
-    }
+  def sbtDependency(sbtVersion: SbtVersion): Option[Dependency] = {
+    val version = sbtVersion.toVersion
+    Option.when(version >= Version("1.0.0"))(Dependency(sbtGroupId, sbtArtifactId, version))
+  }
 
   val sbtScalaFixDependency: Dependency =
     Dependency(
       GroupId("ch.epfl.scala"),
       ArtifactId("sbt-scalafix"),
-      "",
+      Version(""),
       Some(SbtVersion("1.0")),
       Some(ScalaVersion("2.12"))
     )

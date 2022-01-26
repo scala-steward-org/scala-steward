@@ -39,7 +39,7 @@ package object scalafmt {
     if (version > Version("2.0.0-RC1")) scalafmtGroupId else GroupId("com.geirsson")
 
   def scalafmtDependency(version: Version): Dependency =
-    Dependency(scalafmtGroupIdBy(version), scalafmtArtifactId, version.value)
+    Dependency(scalafmtGroupIdBy(version), scalafmtArtifactId, version)
 
   val scalafmtBinary: String = "scalafmt"
 

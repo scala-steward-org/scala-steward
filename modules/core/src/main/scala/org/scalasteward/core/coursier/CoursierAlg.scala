@@ -112,8 +112,10 @@ object CoursierAlg {
     }
   }
 
-  private def toCoursierDependency(dependency: Dependency): coursier.Dependency =
-    coursier.Dependency(toCoursierModule(dependency), dependency.version).withTransitive(false)
+  private def toCoursierDependency(dependency: Dependency): coursier.Dependency = {
+    val module = toCoursierModule(dependency)
+    coursier.Dependency(module, dependency.version.value).withTransitive(false)
+  }
 
   private def toCoursierModule(dependency: Dependency): Module =
     Module(

@@ -22,6 +22,7 @@ object TestSyntax {
   implicit class StringOps(private val self: String) extends AnyVal {
     def g: GroupId = GroupId(self)
     def a: ArtifactId = ArtifactId(self)
+    def v: Version = Version(self)
   }
 
   implicit class StringTupleOps(private val self: (String, String)) extends AnyVal {
@@ -35,7 +36,7 @@ object TestSyntax {
   }
 
   implicit class GroupIdAndArtifactIdOps(private val self: (GroupId, ArtifactId)) extends AnyVal {
-    def %(version: String): Dependency = Dependency(self._1, self._2, version)
+    def %(version: String): Dependency = Dependency(self._1, self._2, version.v)
   }
 
   implicit class GroupIdAndArtifactIdsOps(
@@ -78,32 +79,33 @@ object TestSyntax {
   implicit class DependencyAndNextVersionOps(
       private val self: (Dependency, String)
   ) extends AnyVal {
-    def single: Update.Single = Update.Single(CrossDependency(self._1), Nel.of(self._2))
+    def single: Update.Single = Update.Single(CrossDependency(self._1), Nel.of(self._2.v))
   }
 
   implicit class DependencyAndNewerVersionsOps(
       private val self: (Dependency, Nel[String])
   ) extends AnyVal {
-    def single: Update.Single = Update.Single(CrossDependency(self._1), self._2)
+    def single: Update.Single = Update.Single(CrossDependency(self._1), self._2.map(_.v))
   }
 
   implicit class DependenciesAndNextVersionOps(
       private val self: (Nel[Dependency], String)
   ) extends AnyVal {
-    def single: Update.Single = Update.Single(CrossDependency(self._1), Nel.of(self._2))
+    def single: Update.Single = Update.Single(CrossDependency(self._1), Nel.of(self._2.v))
   }
 
   implicit class GroupIdAndArtifactIdsAndVersionAndNextVersionOps(
       private val self: (GroupId, Nel[ArtifactId], String, String)
   ) extends AnyVal {
     def single: Update.Single = {
-      val crossDependency = CrossDependency(self._2.map(aId => Dependency(self._1, aId, self._3)))
-      Update.Single(crossDependency, Nel.of(self._4))
+      val crossDependency = CrossDependency(self._2.map(aId => Dependency(self._1, aId, self._3.v)))
+      Update.Single(crossDependency, Nel.of(self._4.v))
     }
 
     def group: Update.Group = {
-      val crossDependencies = self._2.map(aId => CrossDependency(Dependency(self._1, aId, self._3)))
-      Update.Group(crossDependencies, Nel.of(self._4))
+      val crossDependencies =
+        self._2.map(aId => CrossDependency(Dependency(self._1, aId, self._3.v)))
+      Update.Group(crossDependencies, Nel.of(self._4.v))
     }
   }
 
@@ -112,8 +114,8 @@ object TestSyntax {
   ) extends AnyVal {
     def group: Update.Group = {
       val crossDependencies =
-        self._2.map(aIds => CrossDependency(aIds.map(aId => Dependency(self._1, aId, self._3))))
-      Update.Group(crossDependencies, Nel.of(self._4))
+        self._2.map(aIds => CrossDependency(aIds.map(aId => Dependency(self._1, aId, self._3.v))))
+      Update.Group(crossDependencies, Nel.of(self._4.v))
     }
   }
 }

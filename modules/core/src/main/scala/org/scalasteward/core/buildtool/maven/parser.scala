@@ -54,7 +54,7 @@ object parser {
       _ <- Parser.string("[INFO]").? ~ wsp.rep0
       groupId <- stringNoSpaceNoColon.map(GroupId.apply) <* colon
       artifactId <- artifactId <* colon <* Parser.string("jar") <* colon
-      version <- stringNoSpaceNoColon <* colon
+      version <- stringNoSpaceNoColon.map(Version.apply) <* colon
       configurations <- configurations
     } yield Dependency(
       groupId = groupId,

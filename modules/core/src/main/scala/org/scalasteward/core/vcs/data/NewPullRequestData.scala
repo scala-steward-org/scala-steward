@@ -217,7 +217,7 @@ object NewPullRequestData {
       case n           => s"n:$n"
     })
     val semVerVersions =
-      (SemVer.parse(update.currentVersion), SemVer.parse(update.nextVersion)).tupled
+      (SemVer.parse(update.currentVersion.value), SemVer.parse(update.nextVersion.value)).tupled
     val earlySemVerLabel = semVerVersions.flatMap { case (curr, next) =>
       SemVer.getChangeEarly(curr, next).map(c => s"early-semver-${c.render}")
     }

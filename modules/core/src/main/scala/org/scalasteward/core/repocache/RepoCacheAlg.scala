@@ -83,5 +83,5 @@ final class RepoCacheAlg[F[_]](config: Config)(implicit
     } yield RepoData(repo, cache, config)
 
   private def gatherDependencyInfo(repo: Repo, dependency: Dependency): F[DependencyInfo] =
-    gitAlg.findFilesContaining(repo, dependency.version).map(DependencyInfo(dependency, _))
+    gitAlg.findFilesContaining(repo, dependency.version.value).map(DependencyInfo(dependency, _))
 }

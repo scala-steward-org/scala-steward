@@ -24,7 +24,7 @@ import org.scalasteward.core.buildtool.sbt.data.{SbtVersion, ScalaVersion}
 final case class Dependency(
     groupId: GroupId,
     artifactId: ArtifactId,
-    version: String,
+    version: Version,
     sbtVersion: Option[SbtVersion] = None,
     scalaVersion: Option[ScalaVersion] = None,
     configurations: Option[String] = None

@@ -31,13 +31,13 @@ sealed trait Update extends Product with Serializable {
   def groupId: GroupId
   def artifactIds: Nel[ArtifactId]
   def mainArtifactId: String
-  def currentVersion: String
-  def newerVersions: Nel[String]
+  def currentVersion: Version
+  def newerVersions: Nel[Version]
 
   final def name: String =
     Update.nameOf(groupId, mainArtifactId)
 
-  final def nextVersion: String =
+  final def nextVersion: Version =
     newerVersions.head
 
   final def show: String = {
@@ -53,7 +53,7 @@ sealed trait Update extends Product with Serializable {
     s"$groupId:$artifacts : $versions"
   }
 
-  def withNewerVersions(versions: Nel[String]): Update = this match {
+  def withNewerVersions(versions: Nel[Version]): Update = this match {
     case s @ Single(_, _, _, _) =>
       s.copy(newerVersions = versions)
     case g @ Group(_, _) =>
@@ -64,7 +64,7 @@ sealed trait Update extends Product with Serializable {
 object Update {
   final case class Single(
       crossDependency: CrossDependency,
-      newerVersions: Nel[String],
+      newerVersions: Nel[Version],
       newerGroupId: Option[GroupId] = None,
       newerArtifactId: Option[String] = None
   ) extends Update {
@@ -83,7 +83,7 @@ object Update {
     override def mainArtifactId: String =
       artifactId.name
 
-    override def currentVersion: String =
+    override def currentVersion: Version =
       crossDependency.head.version
 
     def artifactId: ArtifactId =
@@ -92,7 +92,7 @@ object Update {
 
   final case class Group(
       crossDependencies: Nel[CrossDependency],
-      newerVersions: Nel[String]
+      newerVersions: Nel[Version]
   ) extends Update {
     override def dependencies: Nel[Dependency] =
       crossDependencies.flatMap(_.dependencies)
@@ -115,7 +115,7 @@ object Update {
         .getOrElse(artifactIds.head.name)
     }
 
-    override def currentVersion: String =
+    override def currentVersion: Version =
       dependencies.head.version
 
     def artifactIdsPrefix: Option[MinLengthString[3]] =
