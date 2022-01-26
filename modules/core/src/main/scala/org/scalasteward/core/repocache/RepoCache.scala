@@ -27,7 +27,7 @@ final case class RepoCache(
     sha1: Sha1,
     dependencyInfos: List[Scope[List[DependencyInfo]]],
     maybeRepoConfig: Option[RepoConfig],
-    maybeConfigParsingError: Option[String]
+    maybeRepoConfigParsingError: Option[String]
 ) {
   def dependsOn(modules: List[(GroupId, ArtifactId)]): Boolean =
     dependencyInfos.exists(_.value.exists { info =>

@@ -27,7 +27,7 @@ object TestInstances {
     )
 
   val dummyRepoCacheWithParsingError: RepoCache =
-    dummyRepoCache.copy(maybeConfigParsingError = Some("Failed to parse .scala-steward.conf"))
+    dummyRepoCache.copy(maybeRepoConfigParsingError = Some("Failed to parse .scala-steward.conf"))
 
   implicit def changeArbitrary[T](implicit arbT: Arbitrary[T]): Arbitrary[Change[T]] =
     Arbitrary(arbT.arbitrary.flatMap(t => Gen.oneOf(Changed(t), Unchanged(t))))

@@ -188,7 +188,7 @@ object NewPullRequestData {
         artifactIdToUrl,
         releaseRelatedUrls,
         filesWithOldVersion,
-        data.repoData.cache.maybeConfigParsingError
+        data.repoData.cache.maybeRepoConfigParsingError
       ),
       head = branchName,
       base = data.baseBranch
