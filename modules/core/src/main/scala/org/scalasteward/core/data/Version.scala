@@ -32,7 +32,7 @@ final case class Version(value: String) {
   /** Selects the next version from a list of potentially newer versions.
     *
     * Implements the scheme described in this FAQ:
-    * https://github.com/scala-steward-org/scala-steward/blob/master/docs/faq.md#how-does-scala-steward-decide-what-version-it-is-updating-to
+    * https://github.com/scala-steward-org/scala-steward/blob/main/docs/faq.md#how-does-scala-steward-decide-what-version-it-is-updating-to
     */
   def selectNext(versions: List[Version]): Option[Version] = {
     val cutoff = alnumComponentsWithoutPreRelease.length - 1

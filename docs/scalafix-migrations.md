@@ -60,7 +60,7 @@ migrations = [
 Pull requests that added migration rules can be found [here][scalafix-prs].
 
 [Scalafix]: https://scalacenter.github.io/scalafix/
-[migrations]: https://github.com/scala-steward-org/scala-steward/blob/master/modules/core/src/main/resources/scalafix-migrations.conf
+[migrations]: https://github.com/scala-steward-org/scala-steward/blob/main/modules/core/src/main/resources/scalafix-migrations.conf
 [scalafix-dev-guide]: https://scalacenter.github.io/scalafix/docs/developers/setup.html
 [using-dependency]: https://scalacenter.github.io/scalafix/docs/rules/external-rules.html
 [using-github]: https://scalacenter.github.io/scalafix/docs/developers/sharing-rules.html#using-github

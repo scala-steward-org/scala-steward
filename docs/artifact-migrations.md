@@ -29,6 +29,6 @@ will get renamed. Specifying both `groupIdBefore` and `artifactIdBefore` will re
 
 Pull requests that added artifact migrations can be found [here][migration-prs].
 
-[migrations]: https://github.com/scala-steward-org/scala-steward/blob/master/modules/core/src/main/resources/artifact-migrations.v2.conf
+[migrations]: https://github.com/scala-steward-org/scala-steward/blob/main/modules/core/src/main/resources/artifact-migrations.v2.conf
 [migration-prs]: https://github.com/scala-steward-org/scala-steward/pulls?q=label%3Aartifact-migration
 [HOCON]: https://github.com/lightbend/config/blob/master/HOCON.md

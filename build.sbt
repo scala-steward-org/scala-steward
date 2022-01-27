@@ -9,7 +9,7 @@ val projectName = "scala-steward"
 val rootPkg = groupId.replace("-", "")
 val gitHubOwner = "scala-steward-org"
 val gitHubUrl = s"https://github.com/$gitHubOwner/$projectName"
-val mainBranch = "master"
+val mainBranch = "main"
 val gitHubUserContent = s"https://raw.githubusercontent.com/$gitHubOwner/$projectName/$mainBranch"
 
 val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
