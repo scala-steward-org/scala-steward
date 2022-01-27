@@ -167,14 +167,14 @@ class RepoConfigAlgTest extends FunSuite {
       MockState.empty.addFiles(configFile -> """updates.ignore = [ "foo """).unsafeRunSync()
     val (state, config) = repoConfigAlg.readRepoConfig(repo).runSA(initialState).unsafeRunSync()
 
-    val startOfErrorMsg = "Failed to parse .scala-steward.conf"
+    val startOfErrorMsg = "String: 1: List should have ]"
     val expectedErrorMsg = Some(Left(startOfErrorMsg))
-    val obtainedConfig = config.map(_.leftMap(_.take(startOfErrorMsg.length)))
+    val obtainedConfig = config.map(_.leftMap(_.getMessage.take(startOfErrorMsg.length)))
 
     assertEquals(obtainedConfig, expectedErrorMsg)
 
     val log = state.trace.collectFirst { case Log((_, msg)) => msg }.getOrElse("")
-    assert(clue(log).startsWith(startOfErrorMsg))
+    assert(clue(log).contains(startOfErrorMsg))
   }
 
   test("configToIgnoreFurtherUpdates with single update") {

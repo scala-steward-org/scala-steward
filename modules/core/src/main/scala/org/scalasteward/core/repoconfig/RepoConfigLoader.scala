@@ -18,7 +18,6 @@ package org.scalasteward.core.repoconfig
 
 import cats.MonadThrow
 import cats.syntax.all._
-import io.circe.config.parser.decode
 import org.http4s.Uri
 import org.scalasteward.core.application.Config.RepoConfigCfg
 import org.scalasteward.core.io.FileAlg
@@ -47,7 +46,7 @@ final class RepoConfigLoader[F[_]](implicit
       fileAlg.readUri(uri).flatMap(decodeRepoConfig(_, uri))
 
   private def decodeRepoConfig(content: String, uri: Uri): F[RepoConfig] =
-    F.fromEither(decode[RepoConfig](content))
+    F.fromEither(RepoConfigAlg.parseRepoConfig(content))
       .adaptErr(new Throwable(s"Failed to load repo config from ${uri.renderString}", _))
 }
 

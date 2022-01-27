@@ -41,26 +41,24 @@ final class RepoConfigAlg[F[_]](maybeGlobalRepoConfig: Option[RepoConfig])(impli
       .flatMap(dir => readRepoConfigFromFile(dir / repoConfigBasename))
 
   private def readRepoConfigFromFile(configFile: File): F[ConfigParsingResult] =
-    for {
-      parsedConfig <- fileAlg.readFile(configFile).map(_.map(parseRepoConfig))
-      _ <- parsedConfig.fold(F.unit)(
-        _.fold(logger.info(_), repoConfig => logger.info(s"Parsed repo config ${repoConfig.show}"))
-      )
-    } yield parsedConfig
+    fileAlg.readFile(configFile).map(_.map(parseRepoConfig)).flatTap {
+      _.fold(F.unit) {
+        case Right(config) => logger.info(s"Parsed repo config ${config.show}")
+        case Left(error) => logger.info(s"Failed to parse $repoConfigBasename: ${error.getMessage}")
+      }
+    }
 }
 
 object RepoConfigAlg {
 
   // None stands for the non-existing config file.
   // Otherwise, you got either a config error, either parsed config.
-  type ConfigParsingResult = Option[Either[String, RepoConfig]]
+  type ConfigParsingResult = Option[Either[io.circe.Error, RepoConfig]]
 
   val repoConfigBasename: String = ".scala-steward.conf"
 
-  def parseRepoConfig(input: String): Either[String, RepoConfig] =
-    parser.decode[RepoConfig](input).leftMap { error =>
-      s"Failed to parse $repoConfigBasename: ${error.getMessage}"
-    }
+  def parseRepoConfig(input: String): Either[io.circe.Error, RepoConfig] =
+    parser.decode[RepoConfig](input)
 
   def configToIgnoreFurtherUpdates(update: Update): String =
     update match {

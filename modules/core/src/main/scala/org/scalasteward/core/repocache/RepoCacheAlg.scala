@@ -73,12 +73,12 @@ final class RepoCacheAlg[F[_]](config: Config)(implicit
       latestSha1 <- gitAlg.latestSha1(repo, branch)
       parsedConfig <- repoConfigAlg.readRepoConfig(repo)
       maybeConfig = parsedConfig.flatMap(_.toOption)
+      maybeConfigParsingError = parsedConfig.flatMap(_.left.toOption.map(_.getMessage))
       config = repoConfigAlg.mergeWithGlobal(maybeConfig)
       dependencies <- buildToolDispatcher.getDependencies(repo, config)
       dependencyInfos <-
         dependencies.traverse(_.traverse(_.traverse(gatherDependencyInfo(repo, _))))
       _ <- gitAlg.discardChanges(repo)
-      maybeConfigParsingError = parsedConfig.flatMap(_.left.toOption)
       cache = RepoCache(latestSha1, dependencyInfos, maybeConfig, maybeConfigParsingError)
     } yield RepoData(repo, cache, config)
 
