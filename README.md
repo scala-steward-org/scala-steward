@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/scala-steward-org/scala-steward/raw/master/data/images/scala-steward-logo-circle-0.png" height="180px">
+  <img src="https://github.com/scala-steward-org/scala-steward/raw/main/data/images/scala-steward-logo-circle-0.png" height="180px">
 </p>
 
 # Scala Steward
