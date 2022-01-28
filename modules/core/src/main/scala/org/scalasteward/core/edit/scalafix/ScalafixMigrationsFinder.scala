@@ -17,7 +17,7 @@
 package org.scalasteward.core.edit.scalafix
 
 import cats.syntax.all._
-import org.scalasteward.core.data.{Update, Version}
+import org.scalasteward.core.data.Update
 import org.scalasteward.core.edit.scalafix.ScalafixMigration.ExecutionOrder
 
 final class ScalafixMigrationsFinder(migrations: List[ScalafixMigration]) {
@@ -28,8 +28,8 @@ final class ScalafixMigrationsFinder(migrations: List[ScalafixMigration]) {
         migration.artifactIds.exists { re =>
           update.artifactIds.exists(artifactId => re.r.findFirstIn(artifactId.name).isDefined)
         } &&
-        Version(update.currentVersion) < migration.newVersion &&
-        Version(update.nextVersion) >= migration.newVersion
+        update.currentVersion < migration.newVersion &&
+        update.nextVersion >= migration.newVersion
       }
       .partition(_.executionOrderOrDefault === ExecutionOrder.PreUpdate)
 }

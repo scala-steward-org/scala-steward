@@ -45,8 +45,8 @@ package object git {
     val title = commitsConfig.messageOrDefault
       .replace("${default}", defaultMessage)
       .replace("${artifactName}", artifact)
-      .replace("${currentVersion}", update.currentVersion)
-      .replace("${nextVersion}", update.nextVersion)
+      .replace("${currentVersion}", update.currentVersion.value)
+      .replace("${nextVersion}", update.nextVersion.value)
       .replace("${branchName}", branch.map(_.name).orEmpty)
     CommitMsg(title)
   }

@@ -85,7 +85,8 @@ final class EditAlg[F[_]](implicit
   ): F[Option[Nel[File]]] =
     workspaceAlg.repoDir(repo).flatMap { repoDir =>
       val fileFilter = isSourceFile(update, config.updates.fileExtensionsOrDefault) _
-      fileAlg.findFiles(repoDir, fileFilter, _.contains(update.currentVersion)).map(Nel.fromList)
+      val contentFilter = (_: String).contains(update.currentVersion.value)
+      fileAlg.findFiles(repoDir, fileFilter, contentFilter).map(Nel.fromList)
     }
 
   private def runScalafixMigrations(

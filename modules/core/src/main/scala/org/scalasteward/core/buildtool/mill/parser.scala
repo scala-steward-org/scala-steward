@@ -18,7 +18,7 @@ package org.scalasteward.core.buildtool.mill
 
 import cats.syntax.all._
 import io.circe.{Decoder, DecodingFailure}
-import org.scalasteward.core.data.{Dependency, Resolver}
+import org.scalasteward.core.data.{Dependency, Resolver, Version}
 
 object parser {
   sealed trait ParseError extends RuntimeException {
@@ -40,8 +40,8 @@ object parser {
           .leftMap(CirceParseError("Failed to decode Modules", _): ParseError)
     } yield json.modules
 
-  def parseMillVersion(s: String): Option[String] =
-    Option(s.trim()).filter(_.nonEmpty)
+  def parseMillVersion(s: String): Option[Version] =
+    Option(s.trim).filter(_.nonEmpty).map(Version.apply)
 
 }
 

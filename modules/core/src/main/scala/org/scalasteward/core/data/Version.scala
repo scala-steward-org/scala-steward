@@ -23,6 +23,8 @@ import io.circe.Codec
 import io.circe.generic.extras.semiauto.deriveUnwrappedCodec
 
 final case class Version(value: String) {
+  override def toString: String = value
+
   private val components: List[Version.Component] =
     Version.Component.parse(value)
 

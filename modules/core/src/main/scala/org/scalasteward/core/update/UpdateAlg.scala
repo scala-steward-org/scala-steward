@@ -55,7 +55,7 @@ final class UpdateAlg[F[_]](implicit
       maxAge: Option[FiniteDuration]
   ): OptionT[F, Update.Single] =
     findNewerVersions(dependency, maxAge).map { newerVersions =>
-      Update.Single(CrossDependency(dependency.value), newerVersions.map(_.value))
+      Update.Single(CrossDependency(dependency.value), newerVersions)
     }
 
   private def findUpdateWithMigration(
@@ -68,7 +68,7 @@ final class UpdateAlg[F[_]](implicit
           newerVersions =>
             Update.Single(
               CrossDependency(dependency.value),
-              newerVersions.map(_.value),
+              newerVersions,
               Some(artifactChange.groupIdAfter),
               Some(artifactChange.artifactIdAfter)
             )
@@ -80,8 +80,7 @@ final class UpdateAlg[F[_]](implicit
       maxAge: Option[FiniteDuration]
   ): OptionT[F, Nel[Version]] =
     OptionT(versionsCache.getVersions(dependency, maxAge).map { versions =>
-      val current = Version(dependency.value.version)
-      Nel.fromList(versions.filter(_ > current))
+      Nel.fromList(versions.filter(_ > dependency.value.version))
     })
 }
 

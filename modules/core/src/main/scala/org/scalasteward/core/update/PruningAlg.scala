@@ -175,9 +175,8 @@ object PruningAlg {
       dependencies.exists { dependency =>
         dependency.groupId === update.groupId &&
         dependency.artifactId === update.artifactId && {
-          val dependencyVersion = Version(dependency.version)
-          dependencyVersion > Version(update.currentVersion) &&
-          dependencyVersion <= Version(update.nextVersion)
+          dependency.version > update.currentVersion &&
+          dependency.version <= update.nextVersion
         }
       }
     }

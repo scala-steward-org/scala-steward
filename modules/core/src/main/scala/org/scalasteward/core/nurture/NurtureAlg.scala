@@ -185,7 +185,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
         existingArtifactUrlsMap
           .get(data.update.mainArtifactId)
           .traverse(vcsExtraAlg.getReleaseRelatedUrls(_, data.update))
-      filesWithOldVersion <- gitAlg.findFilesContaining(data.repo, data.update.currentVersion)
+      filesWithOldVersion <- gitAlg.findFilesContaining(data.repo, data.update.currentVersion.value)
       branchName = vcs.createBranch(config.tpe, data.fork, data.updateBranch)
       requestData = NewPullRequestData.from(
         data,

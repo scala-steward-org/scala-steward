@@ -80,17 +80,17 @@ object FilterAlg {
     }
 
   private def selectSuitableNextVersion(update: Update.Single): FilterResult = {
-    val newerVersions = update.newerVersions.map(Version.apply).toList
-    val maybeNext = Version(update.currentVersion).selectNext(newerVersions)
+    val newerVersions = update.newerVersions.toList
+    val maybeNext = update.currentVersion.selectNext(newerVersions)
     maybeNext match {
-      case Some(next) => Right(update.copy(newerVersions = Nel.of(next.value)))
+      case Some(next) => Right(update.copy(newerVersions = Nel.of(next)))
       case None       => Left(NoSuitableNextVersion(update))
     }
   }
 
   private def checkVersionOrdering(update: Update.Single): FilterResult = {
-    val current = coursier.core.Version(update.currentVersion)
-    val next = coursier.core.Version(update.nextVersion)
+    val current = coursier.core.Version(update.currentVersion.value)
+    val next = coursier.core.Version(update.nextVersion.value)
     if (current > next) Left(VersionOrderingConflict(update)) else Right(update)
   }
 }

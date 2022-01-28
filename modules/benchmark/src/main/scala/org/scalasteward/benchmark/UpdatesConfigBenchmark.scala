@@ -29,9 +29,10 @@ class UpdatesConfigBenchmark {
   @OutputTimeUnit(TimeUnit.MICROSECONDS)
   def keepBench: Any = {
     val groupId = GroupId("org.example")
-    val dependency = CrossDependency(Dependency(groupId, ArtifactId("artifact"), "1.0.0"))
-    val newerVersions =
-      Nel.of("2.0.0", "2.1.0", "2.1.1", "2.2.0", "3.0.0", "3.1.0", "3.2.1", "3.3.3", "4.0", "5.0")
+    val dependency = CrossDependency(Dependency(groupId, ArtifactId("artifact"), Version("1.0.0")))
+    val newerVersions = Nel
+      .of("2.0.0", "2.1.0", "2.1.1", "2.2.0", "3.0.0", "3.1.0", "3.2.1", "3.3.3", "4.0", "5.0")
+      .map(Version.apply)
     val update = Update.Single(dependency, newerVersions)
 
     UpdatesConfig().keep(update)
