@@ -16,9 +16,9 @@
 
 package org.scalasteward.core.update
 
-import cats.Monad
 import cats.data.OptionT
 import cats.syntax.all._
+import cats.{Monad, Parallel}
 import org.scalasteward.core.coursier.VersionsCache
 import org.scalasteward.core.data._
 import org.scalasteward.core.repoconfig.RepoConfig
@@ -30,6 +30,7 @@ import scala.concurrent.duration.FiniteDuration
 final class UpdateAlg[F[_]](implicit
     artifactMigrationsFinder: ArtifactMigrationsFinder,
     filterAlg: FilterAlg[F],
+    parallel: Parallel[F],
     versionsCache: VersionsCache[F],
     F: Monad[F]
 ) {
@@ -46,7 +47,7 @@ final class UpdateAlg[F[_]](implicit
       repoConfig: RepoConfig,
       maxAge: Option[FiniteDuration]
   ): F[List[Update.Single]] = {
-    val updates = dependencies.traverseFilter(findUpdate(_, maxAge))
+    val updates = dependencies.parTraverseFilter(findUpdate(_, maxAge))
     updates.flatMap(filterAlg.localFilterMany(repoConfig, _))
   }
 
