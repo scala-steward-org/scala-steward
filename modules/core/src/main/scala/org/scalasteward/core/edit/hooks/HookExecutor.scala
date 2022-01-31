@@ -124,7 +124,7 @@ object HookExecutor {
 
   private def sbtTypelevelHook(
       groupId: GroupId,
-      artifactId: ArtifactId,
+      artifactId: ArtifactId
   ): PostUpdateHook =
     PostUpdateHook(
       groupId = Some(groupId),
