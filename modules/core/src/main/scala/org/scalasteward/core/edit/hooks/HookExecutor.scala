@@ -125,7 +125,6 @@ object HookExecutor {
   private def sbtTypelevelHook(
       groupId: GroupId,
       artifactId: ArtifactId,
-      enabledByCache: RepoCache => Boolean
   ): PostUpdateHook =
     PostUpdateHook(
       groupId = Some(groupId),
@@ -133,7 +132,7 @@ object HookExecutor {
       command = Nel.of("sbt", "tlPrePrBotHook"),
       useSandbox = true,
       commitMessage = _ => CommitMsg("Run prePR with sbt-typelevel"),
-      enabledByCache = enabledByCache,
+      enabledByCache = _ => true,
       enabledByConfig = _ => true
     )
 
@@ -146,6 +145,6 @@ object HookExecutor {
         sbtGithubActionsHook(gid, aid, _.dependsOn(sbtGitHubActionsModules ++ sbtTypelevelModules))
       } ++
       sbtTypelevelModules.map { case (gid, aid) =>
-        sbtTypelevelHook(gid, aid, _ => true)
+        sbtTypelevelHook(gid, aid)
       }
 }
