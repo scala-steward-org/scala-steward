@@ -63,10 +63,9 @@ final case class Version(value: String) {
           v.alnumComponents === alnumComponents ||
           // Do not select a version with hash if this version contains no hash.
           (v.containsHash && !containsHash) ||
+          (v.isOnlyHash && !isOnlyHash) ||
           // Don't select "versions" like %5BWARNING%5D.
-          !v.startsWithLetterOrDigit ||
-          // Don't select "versions" that are only a hash
-          v.isOnlyHash
+          !v.startsWithLetterOrDigit
         }.sorted
       }
       .lastOption
