@@ -216,7 +216,11 @@ class VersionTest extends DisciplineSuite {
       ("0.27.0-RC1", List("0.27.0-bin-20200826-2e58a66-NIGHTLY"), None),
       ("2.0.16-200-ge888c6dea", List("2.0.16-200-ge888c6dea-14-c067d59f0-SNAPSHOT"), None),
       ("17.0.0.1", List("18-ea+4"), None),
-      ("", List("", ".", "1", "a"), Some("1"))
+      ("", List("", ".", "1", "a"), Some("1")),
+      ("1.4.12", List("1032048a", "1032048a4c2"), None),
+      ("1.1", List("20000000"), None),
+      ("10000000", List("20000000"), Some("20000000")),
+      ("1032048a", List("2032048a4c2"), Some("2032048a4c2"))
     )
 
     val rnd = new Random()

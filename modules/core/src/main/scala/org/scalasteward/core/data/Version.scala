@@ -21,6 +21,7 @@ import cats.implicits._
 import cats.parse.{Numbers, Parser, Rfc5234}
 import io.circe.Codec
 import io.circe.generic.extras.semiauto.deriveUnwrappedCodec
+import org.scalasteward.core.data.Version.startsWithDate
 
 final case class Version(value: String) {
   override def toString: String = value
@@ -62,12 +63,16 @@ final case class Version(value: String) {
           v.alnumComponents === alnumComponents ||
           // Do not select a version with hash if this version contains no hash.
           (v.containsHash && !containsHash) ||
+          (v.isOnlyHash && !isOnlyHash) ||
           // Don't select "versions" like %5BWARNING%5D.
           !v.startsWithLetterOrDigit
         }.sorted
       }
       .lastOption
   }
+
+  private def isOnlyHash: Boolean =
+    Rfc5234.hexdig.rep(8).string.filterNot(startsWithDate).parseAll(value).isRight
 
   private def startsWithLetterOrDigit: Boolean =
     components.headOption.forall {
