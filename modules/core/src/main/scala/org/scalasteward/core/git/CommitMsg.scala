@@ -39,10 +39,8 @@ object CommitMsg {
   def replaceVariables(s: String)(update: Update, baseBranch: Option[Branch]): CommitMsg = {
     val artifactNameValue = show.oneLiner(update)
     val nextVersionValue = update.nextVersion.value
-    val defaultValue = baseBranch match {
-      case Some(branch) => s"Update $artifactNameValue to $nextVersionValue in ${branch.name}"
-      case None         => s"Update $artifactNameValue to $nextVersionValue"
-    }
+    val defaultValue = s"Update $artifactNameValue to $nextVersionValue" +
+      baseBranch.fold("")(branch => s" in ${branch.name}")
     CommitMsg(
       s
         .replace("${default}", defaultValue)
