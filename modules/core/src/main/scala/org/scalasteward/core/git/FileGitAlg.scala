@@ -18,6 +18,7 @@ package org.scalasteward.core.git
 
 import better.files.File
 import cats.effect.MonadCancelThrow
+import cats.effect.syntax.all._
 import cats.syntax.all._
 import org.http4s.Uri
 import org.scalasteward.core.application.Config.GitCfg
@@ -123,6 +124,19 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
 
   override def removeClone(repo: File): F[Unit] =
     fileAlg.deleteForce(repo)
+
+  override def resetBranch(repo: File, base: Branch): F[Option[Commit]] =
+    currentBranch(repo).flatMap { current =>
+      git("merge-base", base.name, current.name)(repo).map(_.find(_.trim.nonEmpty)).flatMap {
+        case None => F.pure(None)
+        case Some(mergeBase) =>
+          val patch = repo / ".scala-steward.reset-branch.patch"
+          val diff = git("diff", "--no-color", s"--output=${patch.pathAsString}", mergeBase)(repo)
+          val apply = git("apply", "--reverse", patch.pathAsString)(repo)
+          (diff >> apply).guarantee(fileAlg.deleteForce(patch)) >>
+            commitAllIfDirty(repo, CommitMsg(s"Reset branch '${current.name}'"))
+      }
+    }
 
   override def setAuthor(repo: File, author: Author): F[Unit] =
     for {
