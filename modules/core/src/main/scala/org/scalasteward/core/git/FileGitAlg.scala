@@ -126,17 +126,16 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
     fileAlg.deleteForce(repo)
 
   override def resetBranch(repo: File, base: Branch): F[Option[Commit]] =
-    currentBranch(repo).flatMap { current =>
-      git("merge-base", base.name, current.name)(repo).map(_.find(_.trim.nonEmpty)).flatMap {
-        case None => F.pure(None)
-        case Some(mergeBase) =>
-          val patch = repo / ".scala-steward.reset-branch.patch"
-          val diff = git("diff", "--no-color", s"--output=${patch.pathAsString}", mergeBase)(repo)
-          val apply = git("apply", "--reverse", patch.pathAsString)(repo)
-          (diff >> apply).guarantee(fileAlg.deleteForce(patch)) >>
-            commitAllIfDirty(repo, CommitMsg(s"Reset branch '${current.name}'"))
-      }
-    }
+    for {
+      current <- currentBranch(repo)
+      mergeBase <- git("merge-base", base.name, current.name)(repo)
+        .map(_.find(_.trim.nonEmpty).getOrElse(base.name))
+      patch = repo / ".scala-steward.reset-branch.patch"
+      diff = git("diff", "--no-color", s"--output=${patch.pathAsString}", mergeBase)(repo)
+      apply = git("apply", "--reverse", patch.pathAsString)(repo)
+      _ <- (diff >> apply).guarantee(fileAlg.deleteForce(patch))
+      maybeCommit <- commitAllIfDirty(repo, CommitMsg(s"Reset branch '${current.name}'"))
+    } yield maybeCommit
 
   override def setAuthor(repo: File, author: Author): F[Unit] =
     for {
