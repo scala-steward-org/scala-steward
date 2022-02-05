@@ -5,6 +5,7 @@ import cats.syntax.all._
 import eu.timepit.refined.types.numeric.NonNegInt
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.data.GroupId
 import org.scalasteward.core.mock.MockContext.context.repoConfigAlg
 import org.scalasteward.core.mock.MockState.TraceEntry.Log
 import org.scalasteward.core.mock.{MockConfig, MockState}
@@ -39,6 +40,10 @@ class RepoConfigAlgTest extends FunSuite {
          |updates.limit = 4
          |updates.fileExtensions = [ ".txt" ]
          |pullRequests.frequency = "@weekly"
+         |pullRequests.frequencyPerGroup = [
+         |  { frequency = "@daily", groupId = "eu.timepit" },
+         |  { frequency = "@monthly", groupId = "eu.timepit", artifactId = "refined.1" },
+         |]
          |commits.message = "Update ${artifactName} from ${currentVersion} to ${nextVersion}"
          |buildRoots = [ ".", "subfolder/subfolder" ]
          |""".stripMargin
@@ -50,7 +55,20 @@ class RepoConfigAlgTest extends FunSuite {
       .unsafeRunSync()
 
     val expected = RepoConfig(
-      pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(7.days))),
+      pullRequests = PullRequestsConfig(
+        frequency = Some(PullRequestFrequency.Timespan(7.days)),
+        frequencyPerGroup = Seq(
+          GroupPullRequestFrequency(
+            groupId = GroupId("eu.timepit"),
+            frequency = PullRequestFrequency.Timespan(1.day)
+          ),
+          GroupPullRequestFrequency(
+            groupId = GroupId("eu.timepit"),
+            artifactId = Some("refined.1"),
+            frequency = (PullRequestFrequency.Timespan(30.days))
+          )
+        )
+      ),
       updates = UpdatesConfig(
         allow = List(UpdatePattern("eu.timepit".g, None, None)),
         pin = List(

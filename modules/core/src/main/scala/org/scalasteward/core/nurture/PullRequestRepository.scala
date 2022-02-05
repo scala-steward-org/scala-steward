@@ -21,7 +21,7 @@ import cats.{Id, Monad}
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 import org.http4s.Uri
-import org.scalasteward.core.data.{CrossDependency, Update, Version}
+import org.scalasteward.core.data.{CrossDependency, GroupId, Update, Version}
 import org.scalasteward.core.git
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.nurture.PullRequestRepository.Entry
@@ -112,6 +112,17 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
 
   def lastPullRequestCreatedAt(repo: Repo): F[Option[Timestamp]] =
     kvStore.get(repo).map(_.flatMap(_.values.map(_.entryCreatedAt).maxOption))
+
+  def lastPullRequestCreatedAtByArtifact(repo: Repo): F[Map[(GroupId, String), Timestamp]] =
+    kvStore.get(repo).map {
+      case None => Map.empty
+      case Some(pullRequests) =>
+        pullRequests.values
+          .groupBy(entry => (entry.update.groupId, entry.update.mainArtifactId))
+          .view
+          .mapValues(_.map(_.entryCreatedAt).max)
+          .toMap
+    }
 }
 
 object PullRequestRepository {
