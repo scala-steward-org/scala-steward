@@ -124,14 +124,18 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
   override def removeClone(repo: File): F[Unit] =
     fileAlg.deleteForce(repo)
 
-  override def revertChanges(repo: File, base: Branch): F[Option[Commit]] =
-    for {
-      commitsWithParents <- git("log", "--pretty=format:%h %p", dotdot(base, Branch.head))(repo)
-      commits = commitsWithParents.map(_.split(' ')).takeWhile(_.length === 2).flatMap(_.headOption)
-      _ <- git("revert" :: "--no-commit" :: commits: _*)(repo)
-      msg = CommitMsg(s"Revert commit(s) " + commits.mkString(", "))
-      maybeCommit <- commitAllIfDirty(repo, msg)
-    } yield maybeCommit
+  override def revertChanges(repo: File, base: Branch): F[Option[Commit]] = {
+    val range = dotdot(base, Branch.head)
+    git("log", "--pretty=format:%h %p", range)(repo).flatMap { commitsWithParents =>
+      val commits =
+        commitsWithParents.map(_.split(' ')).takeWhile(_.length === 2).flatMap(_.headOption)
+      if (commits.isEmpty) F.pure(None)
+      else {
+        val msg = CommitMsg(s"Revert commit(s) " + commits.mkString(", "))
+        git("revert" :: "--no-commit" :: commits: _*)(repo) >> commitAllIfDirty(repo, msg)
+      }
+    }
+  }
 
   override def setAuthor(repo: File, author: Author): F[Unit] =
     for {
