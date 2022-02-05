@@ -18,7 +18,6 @@ package org.scalasteward.core.git
 
 import better.files.File
 import cats.effect.MonadCancelThrow
-import cats.effect.syntax.all._
 import cats.syntax.all._
 import org.http4s.Uri
 import org.scalasteward.core.application.Config.GitCfg
@@ -96,7 +95,7 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
     git("submodule", "update", "--init", "--recursive")(repo).void
 
   override def isMerged(repo: File, branch: Branch, base: Branch): F[Boolean] =
-    git("log", "--pretty=format:'%h'", dotdot(base, branch))(repo).map(_.isEmpty)
+    git("log", "--pretty=format:%h", dotdot(base, branch))(repo).map(_.isEmpty)
 
   override def latestSha1(repo: File, branch: Branch): F[Sha1] =
     git("rev-parse", "--verify", branch.name)(repo)
@@ -125,16 +124,13 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
   override def removeClone(repo: File): F[Unit] =
     fileAlg.deleteForce(repo)
 
-  override def resetBranch(repo: File, base: Branch): F[Option[Commit]] =
+  override def revertChanges(repo: File, base: Branch): F[Option[Commit]] =
     for {
-      current <- currentBranch(repo)
-      mergeBase <- git("merge-base", base.name, current.name)(repo)
-        .map(_.find(_.trim.nonEmpty).getOrElse(base.name))
-      patch = repo / ".scala-steward.reset-branch.patch"
-      diff = git("diff", "--no-color", s"--output=${patch.pathAsString}", mergeBase)(repo)
-      apply = git("apply", "--reverse", patch.pathAsString)(repo)
-      _ <- (diff >> apply).guarantee(fileAlg.deleteForce(patch))
-      maybeCommit <- commitAllIfDirty(repo, CommitMsg(s"Reset branch '${current.name}'"))
+      commitsWithParents <- git("log", "--pretty=format:%h %p", dotdot(base, Branch.head))(repo)
+      commits = commitsWithParents.map(_.split(' ')).takeWhile(_.length === 2).flatMap(_.headOption)
+      _ <- git("revert" :: "--no-commit" :: commits: _*)(repo)
+      msg = CommitMsg(s"Revert commit(s) " + commits.mkString(", "))
+      maybeCommit <- commitAllIfDirty(repo, msg)
     } yield maybeCommit
 
   override def setAuthor(repo: File, author: Author): F[Unit] =

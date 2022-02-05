@@ -69,7 +69,7 @@ trait GenGitAlg[F[_], Repo] {
 
   def removeClone(repo: Repo): F[Unit]
 
-  def resetBranch(repo: Repo, base: Branch): F[Option[Commit]]
+  def revertChanges(repo: Repo, base: Branch): F[Option[Commit]]
 
   def setAuthor(repo: Repo, author: Author): F[Unit]
 
@@ -151,8 +151,8 @@ trait GenGitAlg[F[_], Repo] {
       override def removeClone(repo: A): F[Unit] =
         f(repo).flatMap(self.removeClone)
 
-      override def resetBranch(repo: A, base: Branch): F[Option[Commit]] =
-        f(repo).flatMap(self.resetBranch(_, base))
+      override def revertChanges(repo: A, base: Branch): F[Option[Commit]] =
+        f(repo).flatMap(self.revertChanges(_, base))
 
       override def setAuthor(repo: A, author: Author): F[Unit] =
         f(repo).flatMap(self.setAuthor(_, author))

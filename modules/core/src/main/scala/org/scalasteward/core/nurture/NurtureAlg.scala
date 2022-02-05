@@ -244,10 +244,11 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       _ <- logger.info(
         s"Merge branch ${data.baseBranch.name} into ${data.updateBranch.name} and apply again"
       )
-      maybeResetCommit <- gitAlg.resetBranch(data.repo, data.baseBranch)
+      maybeRevertCommit <- gitAlg.revertChanges(data.repo, data.baseBranch)
       maybeMergeCommit <- gitAlg.mergeTheirs(data.repo, data.baseBranch)
       edits <- editAlg.applyUpdate(data.repoData, data.update)
       editCommits = edits.flatMap(_.maybeCommit)
-      result <- pushCommits(data, maybeResetCommit.toList ++ maybeMergeCommit.toList ++ editCommits)
+      commits = maybeRevertCommit.toList ++ maybeMergeCommit.toList ++ editCommits
+      result <- pushCommits(data, commits)
     } yield result
 }
