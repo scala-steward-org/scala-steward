@@ -127,8 +127,8 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
   override def revertChanges(repo: File, base: Branch): F[Option[Commit]] = {
     val range = dotdot(base, Branch.head)
     git("log", "--pretty=format:%h %p", range)(repo).flatMap { commitsWithParents =>
-      val commits =
-        commitsWithParents.map(_.split(' ')).takeWhile(_.length === 2).flatMap(_.headOption)
+      val commitsUntilMerge = commitsWithParents.map(_.split(' ')).takeWhile(_.length === 2)
+      val commits = commitsUntilMerge.flatMap(_.headOption)
       if (commits.isEmpty) F.pure(None)
       else {
         val msg = CommitMsg(s"Revert commit(s) " + commits.mkString(", "))
