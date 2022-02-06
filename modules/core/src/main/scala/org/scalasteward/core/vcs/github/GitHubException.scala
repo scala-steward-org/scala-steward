@@ -34,4 +34,15 @@ object GitHubException {
         RepositoryArchived(repo, response)
     }
   }
+
+  final case class SecondaryRateLimitExceeded(override val getCause: UnexpectedResponse)
+      extends GitHubException
+
+  object SecondaryRateLimitExceeded {
+    def fromThrowable: PartialFunction[Throwable, Throwable] = {
+      case response: UnexpectedResponse
+          if response.body.contains("You have exceeded a secondary rate limit") =>
+        SecondaryRateLimitExceeded(response)
+    }
+  }
 }

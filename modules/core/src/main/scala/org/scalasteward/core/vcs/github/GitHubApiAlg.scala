@@ -41,7 +41,12 @@ final class GitHubApiAlg[F[_]](
   override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] =
     client
       .postWithBody[PullRequestOut, NewPullRequestData](url.pulls(repo), data, modify(repo))
-      .adaptErr(GitHubException.RepositoryArchived.fromThrowable(repo))
+      .adaptErr(
+        List(
+          GitHubException.RepositoryArchived.fromThrowable(repo),
+          GitHubException.SecondaryRateLimitExceeded.fromThrowable
+        ).reduceLeft(_ orElse _)
+      )
 
   /** https://developer.github.com/v3/repos/branches/#get-branch */
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
