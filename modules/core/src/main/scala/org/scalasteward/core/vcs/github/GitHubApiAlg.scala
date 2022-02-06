@@ -16,6 +16,8 @@
 
 package org.scalasteward.core.vcs.github
 
+import cats.ApplicativeThrow
+import cats.syntax.all._
 import org.http4s.{Request, Uri}
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.HttpJsonClient
@@ -26,7 +28,8 @@ final class GitHubApiAlg[F[_]](
     gitHubApiHost: Uri,
     modify: Repo => Request[F] => F[Request[F]]
 )(implicit
-    client: HttpJsonClient[F]
+    client: HttpJsonClient[F],
+    F: ApplicativeThrow[F]
 ) extends VCSApiAlg[F] {
   private val url = new Url(gitHubApiHost)
 
@@ -36,7 +39,9 @@ final class GitHubApiAlg[F[_]](
 
   /** https://developer.github.com/v3/pulls/#create-a-pull-request */
   override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] =
-    client.postWithBody(url.pulls(repo), data, modify(repo))
+    client
+      .postWithBody[PullRequestOut, NewPullRequestData](url.pulls(repo), data, modify(repo))
+      .adaptErr(GitHubException.RepositoryArchived.fromThrowable(repo))
 
   /** https://developer.github.com/v3/repos/branches/#get-branch */
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
