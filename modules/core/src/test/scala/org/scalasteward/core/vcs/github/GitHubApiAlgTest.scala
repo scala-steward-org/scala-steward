@@ -24,7 +24,8 @@ class GitHubApiAlgTest extends FunSuite {
             "name": "base.g8",
             "owner": { "login": "fthomas" },
             "clone_url": "https://github.com/fthomas/base.g8.git",
-            "default_branch": "master"
+            "default_branch": "master",
+            "archived": false
           } """
         )
 
@@ -73,10 +74,12 @@ class GitHubApiAlgTest extends FunSuite {
               "name": "base.g8",
               "owner": { "login": "fthomas" },
               "clone_url": "https://github.com/fthomas/base.g8.git",
-              "default_branch": "master"
+              "default_branch": "master",
+              "archived": false
             },
             "clone_url": "https://github.com/scala-steward/base.g8-1.git",
-            "default_branch": "master"
+            "default_branch": "master",
+            "archived": false
           } """
         )
 

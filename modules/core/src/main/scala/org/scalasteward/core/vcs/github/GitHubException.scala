@@ -23,16 +23,8 @@ import scala.util.control.NoStackTrace
 sealed trait GitHubException extends RuntimeException with NoStackTrace
 
 object GitHubException {
-  final case class RepositoryArchived(repo: Repo, override val getCause: UnexpectedResponse)
-      extends GitHubException {
+  final case class RepositoryArchived(repo: Repo) extends GitHubException {
     override val getMessage: String = repo.show
-  }
-
-  object RepositoryArchived {
-    def fromThrowable(repo: Repo): PartialFunction[Throwable, Throwable] = {
-      case response: UnexpectedResponse if response.body.contains("Repository was archived") =>
-        RepositoryArchived(repo, response)
-    }
   }
 
   final case class SecondaryRateLimitExceeded(override val getCause: UnexpectedResponse)
