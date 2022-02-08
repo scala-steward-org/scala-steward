@@ -29,7 +29,6 @@ import org.scalasteward.core.util
 import org.scalasteward.core.util.{dateTime, DateTimeAlg, Nel, Timestamp}
 import org.scalasteward.core.vcs.data.Repo
 import org.typelevel.log4cats.Logger
-
 import scala.concurrent.duration._
 
 final class PruningAlg[F[_]](implicit
@@ -73,7 +72,7 @@ final class PruningAlg[F[_]](implicit
       }
       (updateStates1, updates1) = res
       _ <- logger.info(util.logger.showUpdates(updates1.widen[Update]))
-      result <- filterUpdateStates(repo, repoConfig.pullRequests, updateStates1)
+      result <- filterUpdateStates(repo, repoConfig, updateStates1)
     } yield result
   }
 
@@ -126,7 +125,7 @@ final class PruningAlg[F[_]](implicit
 
   private def filterUpdateStates(
       repo: Repo,
-      pullRequestsConfig: PullRequestsConfig,
+      repoConfig: RepoConfig,
       updateStates: List[UpdateState]
   ): F[Option[Nel[WithUpdate]]] =
     for {
@@ -142,7 +141,7 @@ final class PruningAlg[F[_]](implicit
             repoLastPrCreatedAt,
             artifactLastPrCreatedAt =
               lastPullRequestCreatedAtByArtifact.get(s.update.groupId -> s.update.mainArtifactId),
-            pullRequestsConfig
+            repoConfig.pullRequests
           ).map {
             case true  => Some(s)
             case false => None
