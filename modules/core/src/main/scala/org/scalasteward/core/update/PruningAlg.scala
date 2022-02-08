@@ -181,7 +181,7 @@ final class PruningAlg[F[_]](implicit
       lastPrCreatedAt.flatMap(frequency.waitingTime(_, now)) match {
         case None => true.pure[F]
         case Some(waitingTime) =>
-          val message = s"$ignoring for ${dateTime.showDurationShort(waitingTime)}"
+          val message = s"$ignoring for ${dateTime.showDuration(waitingTime)}"
           logger.info(message).as(false)
       }
     }
