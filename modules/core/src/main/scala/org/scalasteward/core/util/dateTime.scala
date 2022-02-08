@@ -31,25 +31,19 @@ object dateTime {
   def renderFiniteDuration(fd: FiniteDuration): String =
     fd.toString.filterNot(_.isSpaceChar)
 
-  private def symbol(unit: TimeUnit): String =
-    unit match {
-      case DAYS         => "d"
-      case HOURS        => "h"
-      case MINUTES      => "m"
-      case SECONDS      => "s"
-      case MILLISECONDS => "ms"
-      case MICROSECONDS => "µs"
-      case NANOSECONDS  => "ns"
-    }
-
-  private def showDurationList(d: FiniteDuration): List[String] =
-    splitDuration(d).map(d1 => d1.length.toString + symbol(d1.unit))
-
-  def showDuration(d: FiniteDuration): String =
-    showDurationList(d).mkString(" ")
-
-  def showDurationShort(d: FiniteDuration): String =
-    showDurationList(d).take(3).mkString(" ")
+  def showDuration(d: FiniteDuration): String = {
+    def symbol(unit: TimeUnit): String =
+      unit match {
+        case DAYS         => "d"
+        case HOURS        => "h"
+        case MINUTES      => "m"
+        case SECONDS      => "s"
+        case MILLISECONDS => "ms"
+        case MICROSECONDS => "µs"
+        case NANOSECONDS  => "ns"
+      }
+    splitDuration(d).map(d1 => d1.length.toString + symbol(d1.unit)).take(3).mkString(" ")
+  }
 
   def splitDuration(d: FiniteDuration): List[FiniteDuration] = {
     @tailrec
