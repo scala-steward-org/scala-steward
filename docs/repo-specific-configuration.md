@@ -91,7 +91,7 @@ postUpdateHooks = [{
   command = ["sbt", "protobufGenerate"],
   commitMessage = "Regenerated protobuf files",
   groupId = "com.github.sbt",
-  artifiactId = "sbt-protobuf"
+  artifactId = "sbt-protobuf"
 }]
 ```
 
