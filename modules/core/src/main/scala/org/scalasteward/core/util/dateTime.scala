@@ -42,7 +42,7 @@ object dateTime {
         case MICROSECONDS => "µs"
         case NANOSECONDS  => "ns"
       }
-    splitDuration(d).map(d1 => d1.length.toString + symbol(d1.unit)).mkString(" ")
+    splitDuration(d).map(d1 => d1.length.toString + symbol(d1.unit)).take(3).mkString(" ")
   }
 
   def splitDuration(d: FiniteDuration): List[FiniteDuration] = {
