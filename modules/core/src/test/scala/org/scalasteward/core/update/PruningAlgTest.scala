@@ -375,7 +375,6 @@ class PruningAlgTest extends FunSuite {
     )
     val pullRequestsFile =
       config.workspace / s"store/pull_requests/v2/github/${repo.toPath}/pull_requests.json"
-    val timestampNow = Instant.now().toEpochMilli
     val pullRequestsContent =
       s"""|{
           |  "https://github.com/${repo.toPath}/pull/27" : {
@@ -402,14 +401,14 @@ class PruningAlgTest extends FunSuite {
           |      }
           |    },
           |    "state" : "open",
-          |    "entryCreatedAt" : $timestampNow
+          |    "entryCreatedAt" : 1581969227183
           |  }
           |}""".stripMargin
     val versionsFile =
       config.workspace / "store/versions/v2/https/foobar.org/maven2/software/awssdk/s3/versions.json"
     val versionsContent =
       s"""|{
-          |  "updatedAt" : ${timestampNow + 1},
+          |  "updatedAt" : 9999999999999,
           |  "versions" : [
           |    "2.100.0",
           |    "2.200.0",
