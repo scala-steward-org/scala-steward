@@ -254,7 +254,7 @@ class PruningAlgTest extends FunSuite {
           |      "frequency": "@asap",
           |      "frequencyPerGroup": [
           |        {
-          |          "groupId": "software.awssdk",
+          |          "pattern": { "groupId": "software.awssdk" },
           |          "frequency": "@monthly"
           |        }
           |      ]
@@ -365,7 +365,7 @@ class PruningAlgTest extends FunSuite {
           |      "frequency": "@monthly",
           |      "frequencyPerGroup": [
           |        {
-          |          "groupId": "software.awssdk",
+          |          "pattern": { "groupId": "software.awssdk" },
           |          "frequency": "@asap"
           |        }
           |      ]

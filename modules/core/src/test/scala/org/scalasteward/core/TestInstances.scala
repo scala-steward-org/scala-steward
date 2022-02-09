@@ -111,9 +111,8 @@ object TestInstances {
   implicit val pullRequestFrequencyPerGroupArbitrary: Arbitrary[GroupPullRequestFrequency] =
     Arbitrary(for {
       frequency <- Arbitrary.arbitrary[PullRequestFrequency]
-      groupId <- Arbitrary.arbitrary[String].map(GroupId.apply)
-      artifactId <- Arbitrary.arbitrary[Option[String]]
-    } yield GroupPullRequestFrequency(frequency, groupId, artifactId))
+      pattern <- Arbitrary.arbitrary[UpdatePattern]
+    } yield GroupPullRequestFrequency(frequency, pattern))
 
   implicit val pullRequestsConfigArbitrary: Arbitrary[PullRequestsConfig] =
     Arbitrary(for {

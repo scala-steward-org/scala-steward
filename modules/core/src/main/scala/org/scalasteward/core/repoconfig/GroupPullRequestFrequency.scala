@@ -16,19 +16,13 @@
 
 package org.scalasteward.core.repoconfig
 
-import cats.implicits._
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
-import org.scalasteward.core.data.{GroupId, Update}
 
 final case class GroupPullRequestFrequency(
     frequency: PullRequestFrequency,
-    groupId: GroupId,
-    artifactId: Option[String] = None
-) {
-  def matches(update: Update.Single): Boolean =
-    this.groupId === update.groupId && this.artifactId.forall(_ === update.mainArtifactId)
-}
+    pattern: UpdatePattern
+)
 
 object GroupPullRequestFrequency {
   implicit val groupPullRequestFrequency: Codec[GroupPullRequestFrequency] =

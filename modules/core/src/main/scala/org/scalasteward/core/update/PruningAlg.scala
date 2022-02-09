@@ -21,7 +21,7 @@ import cats.implicits._
 import org.scalasteward.core.data._
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.repocache.RepoCache
-import org.scalasteward.core.repoconfig.{PullRequestsConfig, RepoConfig}
+import org.scalasteward.core.repoconfig.{PullRequestsConfig, RepoConfig, UpdatePattern}
 import org.scalasteward.core.update.PruningAlg._
 import org.scalasteward.core.update.data.UpdateState
 import org.scalasteward.core.update.data.UpdateState._
@@ -166,9 +166,14 @@ final class PruningAlg[F[_]](implicit
       pullRequestsConfig: PullRequestsConfig
   ): F[Boolean] = {
     val (frequency, lastPrCreatedAt) = pullRequestsConfig.frequencyPerGroup
-      .collectFirst {
-        case groupFrequency if groupFrequency.matches(dependencyOutdated.update) =>
-          (groupFrequency.frequency, artifactLastPrCreatedAt)
+      .collectFirstSome { groupFrequency =>
+        val matchResult = UpdatePattern
+          .findMatch(List(groupFrequency.pattern), dependencyOutdated.update, include = true)
+        if (matchResult.byArtifactId.nonEmpty && matchResult.filteredVersions.nonEmpty) {
+          Some((groupFrequency.frequency, artifactLastPrCreatedAt))
+        } else {
+          None
+        }
       }
       .getOrElse((pullRequestsConfig.frequencyOrDefault, repoLastPrCreatedAt))
 

@@ -41,8 +41,9 @@ class RepoConfigAlgTest extends FunSuite {
          |updates.fileExtensions = [ ".txt" ]
          |pullRequests.frequency = "@weekly"
          |pullRequests.frequencyPerGroup = [
-         |  { frequency = "@daily", groupId = "eu.timepit" },
-         |  { frequency = "@monthly", groupId = "eu.timepit", artifactId = "refined.1" },
+         |  { frequency = "@daily", pattern = { groupId = "eu.timepit" } },
+         |  { frequency = "@monthly", pattern = { groupId = "eu.timepit", artifactId = "refined.1" } },
+         |  { frequency = "@weekly", pattern = { groupId = "eu.timepit", artifactId = "refined.1", version = { prefix="1." } } },
          |]
          |commits.message = "Update ${artifactName} from ${currentVersion} to ${nextVersion}"
          |buildRoots = [ ".", "subfolder/subfolder" ]
@@ -59,13 +60,20 @@ class RepoConfigAlgTest extends FunSuite {
         frequency = Some(PullRequestFrequency.Timespan(7.days)),
         frequencyPerGroup = Seq(
           GroupPullRequestFrequency(
-            groupId = GroupId("eu.timepit"),
+            pattern = UpdatePattern(GroupId("eu.timepit"), None, None),
             frequency = PullRequestFrequency.Timespan(1.day)
           ),
           GroupPullRequestFrequency(
-            groupId = GroupId("eu.timepit"),
-            artifactId = Some("refined.1"),
-            frequency = (PullRequestFrequency.Timespan(30.days))
+            pattern = UpdatePattern(GroupId("eu.timepit"), Some("refined.1"), None),
+            frequency = PullRequestFrequency.Timespan(30.days)
+          ),
+          GroupPullRequestFrequency(
+            pattern = UpdatePattern(
+              GroupId("eu.timepit"),
+              Some("refined.1"),
+              Some(VersionPattern(prefix = Some("1.")))
+            ),
+            frequency = PullRequestFrequency.Timespan(7.days)
           )
         )
       ),
