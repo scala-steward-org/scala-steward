@@ -108,16 +108,16 @@ object TestInstances {
   implicit val pullRequestFrequencyArbitrary: Arbitrary[PullRequestFrequency] =
     Arbitrary(Arbitrary.arbitrary[FiniteDuration].flatMap(fd => Gen.oneOf(Asap, Timespan(fd))))
 
-  implicit val pullRequestFrequencyPerGroupArbitrary: Arbitrary[GroupPullRequestFrequency] =
+  implicit val pullRequestConfigPerGroupArbitrary: Arbitrary[GroupPullRequestConfig] =
     Arbitrary(for {
       frequency <- Arbitrary.arbitrary[PullRequestFrequency]
       pattern <- Arbitrary.arbitrary[UpdatePattern]
-    } yield GroupPullRequestFrequency(frequency, pattern))
+    } yield GroupPullRequestConfig(frequency, pattern))
 
   implicit val pullRequestsConfigArbitrary: Arbitrary[PullRequestsConfig] =
     Arbitrary(for {
       frequency <- Arbitrary.arbitrary[Option[PullRequestFrequency]]
-      perGroup <- Arbitrary.arbitrary[Seq[GroupPullRequestFrequency]]
+      perGroup <- Arbitrary.arbitrary[Seq[GroupPullRequestConfig]]
     } yield PullRequestsConfig(frequency, perGroup))
 
   implicit val pullRequestUpdateStrategyArbitrary: Arbitrary[PullRequestUpdateStrategy] =

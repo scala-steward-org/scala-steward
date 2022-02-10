@@ -40,7 +40,7 @@ class RepoConfigAlgTest extends FunSuite {
          |updates.limit = 4
          |updates.fileExtensions = [ ".txt" ]
          |pullRequests.frequency = "@weekly"
-         |pullRequests.frequencyPerGroup = [
+         |pullRequests.perGroup = [
          |  { frequency = "@daily", pattern = { groupId = "eu.timepit" } },
          |  { frequency = "@monthly", pattern = { groupId = "eu.timepit", artifactId = "refined.1" } },
          |  { frequency = "@weekly", pattern = { groupId = "eu.timepit", artifactId = "refined.1", version = { prefix="1." } } },
@@ -58,16 +58,16 @@ class RepoConfigAlgTest extends FunSuite {
     val expected = RepoConfig(
       pullRequests = PullRequestsConfig(
         frequency = Some(PullRequestFrequency.Timespan(7.days)),
-        frequencyPerGroup = Seq(
-          GroupPullRequestFrequency(
+        perGroup = Seq(
+          GroupPullRequestConfig(
             pattern = UpdatePattern(GroupId("eu.timepit"), None, None),
             frequency = PullRequestFrequency.Timespan(1.day)
           ),
-          GroupPullRequestFrequency(
+          GroupPullRequestConfig(
             pattern = UpdatePattern(GroupId("eu.timepit"), Some("refined.1"), None),
             frequency = PullRequestFrequency.Timespan(30.days)
           ),
-          GroupPullRequestFrequency(
+          GroupPullRequestConfig(
             pattern = UpdatePattern(
               GroupId("eu.timepit"),
               Some("refined.1"),

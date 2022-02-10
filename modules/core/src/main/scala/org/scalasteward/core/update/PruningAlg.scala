@@ -165,7 +165,7 @@ final class PruningAlg[F[_]](implicit
       artifactLastPrCreatedAt: Option[Timestamp],
       pullRequestsConfig: PullRequestsConfig
   ): F[Boolean] = {
-    val (frequency, lastPrCreatedAt) = pullRequestsConfig.frequencyPerGroup
+    val (frequency, lastPrCreatedAt) = pullRequestsConfig.perGroup
       .collectFirstSome { groupFrequency =>
         val matchResult = UpdatePattern
           .findMatch(List(groupFrequency.pattern), dependencyOutdated.update, include = true)

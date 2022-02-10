@@ -24,7 +24,7 @@ import io.circe.generic.extras.semiauto.deriveConfiguredCodec
 
 final case class PullRequestsConfig(
     frequency: Option[PullRequestFrequency] = None,
-    frequencyPerGroup: Seq[GroupPullRequestFrequency] = Seq.empty
+    perGroup: Seq[GroupPullRequestConfig] = Seq.empty
 ) {
   def frequencyOrDefault: PullRequestFrequency =
     frequency.getOrElse(PullRequestsConfig.defaultFrequency)
@@ -48,7 +48,7 @@ object PullRequestsConfig {
       (x, y) =>
         PullRequestsConfig(
           frequency = x.frequency.orElse(y.frequency),
-          frequencyPerGroup = x.frequencyPerGroup |+| y.frequencyPerGroup
+          perGroup = x.perGroup |+| y.perGroup
         )
     )
 }

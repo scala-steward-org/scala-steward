@@ -252,7 +252,7 @@ class PruningAlgTest extends FunSuite {
           |  "maybeRepoConfig": {
           |    "pullRequests": {
           |      "frequency": "@asap",
-          |      "frequencyPerGroup": [
+          |      "perGroup": [
           |        {
           |          "pattern": { "groupId": "software.awssdk" },
           |          "frequency": "@monthly"
@@ -363,7 +363,7 @@ class PruningAlgTest extends FunSuite {
           |  "maybeRepoConfig": {
           |    "pullRequests": {
           |      "frequency": "@monthly",
-          |      "frequencyPerGroup": [
+          |      "perGroup": [
           |        {
           |          "pattern": { "groupId": "software.awssdk" },
           |          "frequency": "@asap"
@@ -473,7 +473,7 @@ class PruningAlgTest extends FunSuite {
           |  "maybeRepoConfig": {
           |    "pullRequests": {
           |      "frequency": "@asap",
-          |      "frequencyPerGroup": [
+          |      "perGroup": [
           |        {
           |          "pattern": { "groupId": "software.awssdk", "artifactId": "ignored", "version": "2." },
           |          "frequency": "30 days"

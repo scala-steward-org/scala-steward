@@ -39,7 +39,7 @@ pullRequests.frequency = "7 days"
 # `pullRequests.frequency` is used as default frequency, if none match.
 #
 # Default: empty `[]`
-pullRequests.frequencyPerGroup = [
+pullRequests.perGroup = [
     { frequency = "30 days", pattern = { groupId = "com.example", artifactId = "foo", version = "2." } },
     { frequency = "30 days", pattern = { groupId = "com.example", artifactId = "bar" } },
     { frequency = "14 days", pattern = { groupId = "com.example" } },
