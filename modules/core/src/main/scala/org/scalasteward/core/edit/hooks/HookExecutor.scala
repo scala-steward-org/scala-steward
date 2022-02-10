@@ -77,7 +77,10 @@ object HookExecutor {
 
   private val sbtTypelevelModules = List(
     (GroupId("org.typelevel"), ArtifactId("sbt-typelevel")),
-    (GroupId("org.http4s"), ArtifactId("sbt-http4s-org"))
+    (GroupId("org.http4s"), ArtifactId("sbt-http4s-org")),
+    (GroupId("edu.gemini"), ArtifactId("sbt-lucuma")),
+    (GroupId("edu.gemini"), ArtifactId("sbt-lucuma-lib")),
+    (GroupId("edu.gemini"), ArtifactId("sbt-lucuma-app"))
   )
 
   // Modules that most likely require the workflow to be regenerated if updated.
