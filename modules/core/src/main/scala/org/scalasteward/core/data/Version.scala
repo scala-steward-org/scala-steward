@@ -63,16 +63,12 @@ final case class Version(value: String) {
           v.alnumComponents === alnumComponents ||
           // Do not select a version with hash if this version contains no hash.
           (v.containsHash && !containsHash) ||
-          (v.isOnlyHash && !isOnlyHash) ||
           // Don't select "versions" like %5BWARNING%5D.
           !v.startsWithLetterOrDigit
         }.sorted
       }
       .lastOption
   }
-
-  private def isOnlyHash: Boolean =
-    Rfc5234.hexdig.rep(8).string.filterNot(startsWithDate).parseAll(value).isRight
 
   private def startsWithLetterOrDigit: Boolean =
     components.headOption.forall {
@@ -91,7 +87,7 @@ final case class Version(value: String) {
   private def containsHash: Boolean =
     components.exists {
       case _: Version.Component.Hash => true
-      case _                         => false
+      case _ => Rfc5234.hexdig.rep(8).string.filterNot(startsWithDate).parse(value).isRight
     }
 
   private[this] def alnumComponentsWithoutPreRelease: List[Version.Component] =
