@@ -87,8 +87,8 @@ final case class Version(value: String) {
   private def containsHash: Boolean =
     components.exists {
       case _: Version.Component.Hash => true
-      case _ => Rfc5234.hexdig.rep(8).string.filterNot(startsWithDate).parse(value).isRight
-    }
+      case _                         => false
+    } || Rfc5234.hexdig.rep(8).string.filterNot(startsWithDate).parse(value).isRight
 
   private[this] def alnumComponentsWithoutPreRelease: List[Version.Component] =
     alnumComponents.takeWhile {
