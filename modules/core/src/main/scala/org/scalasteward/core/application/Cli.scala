@@ -223,6 +223,15 @@ object Cli {
   private val gitLabCfg: Opts[GitLabCfg] =
     gitlabMergeWhenPipelineSucceeds.map(GitLabCfg.apply)
 
+  private val gitHubAddLabels: Opts[Boolean] =
+    flag(
+      "github-add-labels",
+      "Whether to add labels on GitHub PRs"
+    ).orFalse
+
+  private val gitHubCfg: Opts[GitHubCfg] =
+    gitHubAddLabels.map(GitHubCfg.apply)
+
   private val githubAppId: Opts[Long] =
     option[Long]("github-app-id", "GitHub application id")
 
@@ -264,6 +273,7 @@ object Cli {
     cacheTtl,
     bitbucketServerCfg,
     gitLabCfg,
+    gitHubCfg,
     gitHubApp,
     urlCheckerTestUrl,
     defaultMavenRepo,

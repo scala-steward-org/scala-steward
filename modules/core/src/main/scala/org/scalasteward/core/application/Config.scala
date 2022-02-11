@@ -65,6 +65,7 @@ final case class Config(
     cacheTtl: FiniteDuration,
     bitbucketServerCfg: BitbucketServerCfg,
     gitLabCfg: GitLabCfg,
+    gitHubCfg: GitHubCfg,
     githubApp: Option[GitHubApp],
     urlCheckerTestUrl: Uri,
     defaultResolver: Resolver,
@@ -133,5 +134,9 @@ object Config {
 
   final case class GitLabCfg(
       mergeWhenPipelineSucceeds: Boolean
+  )
+
+  final case class GitHubCfg(
+      addLabels: Boolean
   )
 }

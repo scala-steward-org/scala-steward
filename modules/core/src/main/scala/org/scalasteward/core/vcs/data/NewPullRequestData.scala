@@ -33,6 +33,7 @@ final case class NewPullRequestData(
     body: String,
     head: String,
     base: Branch,
+    labels: List[String],
     draft: Boolean = false
 )
 
@@ -46,7 +47,8 @@ object NewPullRequestData {
       artifactIdToUrl: Map[String, Uri],
       releaseRelatedUrls: List[ReleaseRelatedUrl],
       filesWithOldVersion: List[String],
-      configParsingError: Option[String]
+      configParsingError: Option[String],
+      labels: List[String]
   ): String = {
     val artifacts = artifactsWithOptionalUrl(update, artifactIdToUrl)
     val migrations = edits.collect { case scalafixEdit: ScalafixEdit => scalafixEdit }
@@ -72,7 +74,7 @@ object NewPullRequestData {
         |
         |${details.map(_.toHtml).mkString("\n")}
         |
-        |${labelsFor(update, edits, filesWithOldVersion).mkString("labels: ", ", ", "")}
+        |${labels.mkString("labels: ", ", ", "")}
         |""".stripMargin.trim
   }
 
@@ -177,7 +179,8 @@ object NewPullRequestData {
       artifactIdToUrl: Map[String, Uri] = Map.empty,
       releaseRelatedUrls: List[ReleaseRelatedUrl] = List.empty,
       filesWithOldVersion: List[String] = List.empty
-  ): NewPullRequestData =
+  ): NewPullRequestData = {
+    val labels = labelsFor(data.update, edits, filesWithOldVersion)
     NewPullRequestData(
       title = git
         .commitMsgFor(data.update, data.repoConfig.commits, data.repoData.repo.branch)
@@ -188,11 +191,14 @@ object NewPullRequestData {
         artifactIdToUrl,
         releaseRelatedUrls,
         filesWithOldVersion,
-        data.repoData.cache.maybeRepoConfigParsingError
+        data.repoData.cache.maybeRepoConfigParsingError,
+        labels
       ),
       head = branchName,
-      base = data.baseBranch
+      base = data.baseBranch,
+      labels = labels
     )
+  }
 
   def updateType(update: Update): String = {
     val dependencies = update.dependencies
