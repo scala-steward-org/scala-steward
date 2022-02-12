@@ -108,8 +108,14 @@ object Cli {
   private val doNotFork: Opts[Boolean] =
     flag("do-not-fork", "Whether to not push the update branches to a fork; default: false").orFalse
 
+  private val addPrLabels: Opts[Boolean] =
+    flag(
+      "add-labels",
+      "Whether to add labels on pull or merge requests (if supported by git hoster)"
+    ).orFalse
+
   private val vcsCfg: Opts[VCSCfg] =
-    (vcsType, vcsApiHost, vcsLogin, doNotFork).mapN(VCSCfg.apply)
+    (vcsType, vcsApiHost, vcsLogin, doNotFork, addPrLabels).mapN(VCSCfg.apply)
 
   private val ignoreOptsFiles: Opts[Boolean] =
     flag(
@@ -223,15 +229,6 @@ object Cli {
   private val gitLabCfg: Opts[GitLabCfg] =
     gitlabMergeWhenPipelineSucceeds.map(GitLabCfg.apply)
 
-  private val gitHubAddLabels: Opts[Boolean] =
-    flag(
-      "github-add-labels",
-      "Whether to add labels on GitHub PRs"
-    ).orFalse
-
-  private val gitHubCfg: Opts[GitHubCfg] =
-    gitHubAddLabels.map(GitHubCfg.apply)
-
   private val githubAppId: Opts[Long] =
     option[Long]("github-app-id", "GitHub application id")
 
@@ -273,7 +270,6 @@ object Cli {
     cacheTtl,
     bitbucketServerCfg,
     gitLabCfg,
-    gitHubCfg,
     gitHubApp,
     urlCheckerTestUrl,
     defaultMavenRepo,

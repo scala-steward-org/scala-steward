@@ -7,6 +7,7 @@ import org.http4s.client.Client
 import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.http4s.{HttpRoutes, Uri}
+import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.application.Config.BitbucketServerCfg
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.mock.MockConfig.config

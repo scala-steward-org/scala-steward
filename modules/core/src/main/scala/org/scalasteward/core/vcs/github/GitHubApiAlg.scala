@@ -19,7 +19,6 @@ package org.scalasteward.core.vcs.github
 import cats.MonadThrow
 import cats.syntax.all._
 import org.http4s.{Request, Uri}
-import org.scalasteward.core.application.Config.GitHubCfg
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.HttpJsonClient
 import org.scalasteward.core.vcs.VCSApiAlg
@@ -28,7 +27,6 @@ import org.scalasteward.core.vcs.github.GitHubException._
 
 final class GitHubApiAlg[F[_]](
     gitHubApiHost: Uri,
-    gitHubCfg: GitHubCfg,
     modify: Repo => Request[F] => F[Request[F]]
 )(implicit
     client: HttpJsonClient[F],
@@ -42,22 +40,11 @@ final class GitHubApiAlg[F[_]](
       F.raiseWhen(repoOut.parent.exists(_.archived))(RepositoryArchived(repo))
     }
 
-  /** https://developer.github.com/v3/pulls/#create-a-pull-request and
-    * https://docs.github.com/en/rest/reference/issues#add-labels-to-an-issue */
+  /** https://developer.github.com/v3/pulls/#create-a-pull-request */
   override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] =
     client
       .postWithBody[PullRequestOut, NewPullRequestData](url.pulls(repo), data, modify(repo))
       .adaptErr(SecondaryRateLimitExceeded.fromThrowable)
-      .flatTap { out =>
-        client
-          .postWithBody[io.circe.Json, GitHubLabels](
-            url.issueLabels(repo, out.number),
-            GitHubLabels(data.labels),
-            modify(repo)
-          )
-          .adaptErr(SecondaryRateLimitExceeded.fromThrowable)
-          .whenA(gitHubCfg.addLabels)
-      }
 
   /** https://developer.github.com/v3/repos/branches/#get-branch */
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
@@ -90,4 +77,18 @@ final class GitHubApiAlg[F[_]](
     client
       .postWithBody(url.comments(repo, number), Comment(comment), modify(repo))
 
+  /** https://docs.github.com/en/rest/reference/issues#add-labels-to-an-issue */
+  override def labelPullRequest(
+      repo: Repo,
+      number: PullRequestNumber,
+      labels: List[String]
+  ): F[Unit] =
+    client
+      .postWithBody[io.circe.Json, GitHubLabels](
+        url.issueLabels(repo, number),
+        GitHubLabels(labels),
+        modify(repo)
+      )
+      .adaptErr(SecondaryRateLimitExceeded.fromThrowable)
+      .void
 }

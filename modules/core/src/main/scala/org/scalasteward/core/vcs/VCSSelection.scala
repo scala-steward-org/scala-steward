@@ -37,7 +37,6 @@ final class VCSSelection[F[_]](config: Config, user: AuthenticatedUser)(implicit
   private def gitHubApiAlg: GitHubApiAlg[F] =
     new GitHubApiAlg[F](
       config.vcsCfg.apiHost,
-      config.gitHubCfg,
       _ => github.authentication.addCredentials(user)
     )
 

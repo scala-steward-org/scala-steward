@@ -32,6 +32,8 @@ Options and flags:
         The user name for the git hoster
     --do-not-fork
         Whether to not push the update branches to a fork; default: false
+    --add-labels
+        Whether to add labels on pull or merge requests (if supported by git hoster)
     --ignore-opts-files
         Whether to remove ".jvmopts" and ".sbtopts" files before invoking the build tool
     --env-var <name=value>

@@ -65,7 +65,6 @@ final case class Config(
     cacheTtl: FiniteDuration,
     bitbucketServerCfg: BitbucketServerCfg,
     gitLabCfg: GitLabCfg,
-    gitHubCfg: GitHubCfg,
     githubApp: Option[GitHubApp],
     urlCheckerTestUrl: Uri,
     defaultResolver: Resolver,
@@ -97,7 +96,8 @@ object Config {
       tpe: VCSType,
       apiHost: Uri,
       login: String,
-      doNotFork: Boolean
+      doNotFork: Boolean,
+      addLabels: Boolean
   )
 
   final case class ProcessCfg(
@@ -134,9 +134,5 @@ object Config {
 
   final case class GitLabCfg(
       mergeWhenPipelineSucceeds: Boolean
-  )
-
-  final case class GitHubCfg(
-      addLabels: Boolean
   )
 }

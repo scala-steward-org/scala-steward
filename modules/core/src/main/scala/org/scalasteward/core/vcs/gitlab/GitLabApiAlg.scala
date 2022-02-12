@@ -235,4 +235,17 @@ final class GitLabApiAlg[F[_]](
   ): F[Comment] =
     client.postWithBody(url.comments(repo, number), Comment(comment), modify(repo))
 
+  // https://docs.gitlab.com/ee/api/merge_requests.html#update-mr
+  override def labelPullRequest(
+      repo: Repo,
+      number: PullRequestNumber,
+      labels: List[String]
+  ): F[Unit] =
+    client
+      .putWithBody[Json, Json](
+        url.existingMergeRequest(repo, number),
+        Json.obj("labels" := labels.mkString(",")),
+        modify(repo)
+      )
+      .void
 }
