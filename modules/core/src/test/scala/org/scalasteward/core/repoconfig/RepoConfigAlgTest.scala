@@ -40,10 +40,10 @@ class RepoConfigAlgTest extends FunSuite {
          |updates.limit = 4
          |updates.fileExtensions = [ ".txt" ]
          |pullRequests.frequency = "@weekly"
-         |pullRequests.perGroup = [
-         |  { frequency = "@daily", pattern = { groupId = "eu.timepit" } },
-         |  { frequency = "@monthly", pattern = { groupId = "eu.timepit", artifactId = "refined.1" } },
-         |  { frequency = "@weekly", pattern = { groupId = "eu.timepit", artifactId = "refined.1", version = { prefix="1." } } },
+         |dependencyOverrides = [
+         |  { pullRequests = { frequency = "@daily" },   pattern = { groupId = "eu.timepit" } },
+         |  { pullRequests = { frequency = "@monthly" }, pattern = { groupId = "eu.timepit", artifactId = "refined.1" } },
+         |  { pullRequests = { frequency = "@weekly" },  pattern = { groupId = "eu.timepit", artifactId = "refined.1", version = { prefix="1." } } },
          |]
          |commits.message = "Update ${artifactName} from ${currentVersion} to ${nextVersion}"
          |buildRoots = [ ".", "subfolder/subfolder" ]
@@ -57,25 +57,7 @@ class RepoConfigAlgTest extends FunSuite {
 
     val expected = RepoConfig(
       pullRequests = PullRequestsConfig(
-        frequency = Some(PullRequestFrequency.Timespan(7.days)),
-        perGroup = Seq(
-          GroupPullRequestConfig(
-            pattern = UpdatePattern(GroupId("eu.timepit"), None, None),
-            frequency = PullRequestFrequency.Timespan(1.day)
-          ),
-          GroupPullRequestConfig(
-            pattern = UpdatePattern(GroupId("eu.timepit"), Some("refined.1"), None),
-            frequency = PullRequestFrequency.Timespan(30.days)
-          ),
-          GroupPullRequestConfig(
-            pattern = UpdatePattern(
-              GroupId("eu.timepit"),
-              Some("refined.1"),
-              Some(VersionPattern(prefix = Some("1.")))
-            ),
-            frequency = PullRequestFrequency.Timespan(7.days)
-          )
-        )
+        frequency = Some(PullRequestFrequency.Timespan(7.days))
       ),
       updates = UpdatesConfig(
         allow = List(UpdatePattern("eu.timepit".g, None, None)),
@@ -100,7 +82,31 @@ class RepoConfigAlgTest extends FunSuite {
       commits = CommitsConfig(
         message = Some("Update ${artifactName} from ${currentVersion} to ${nextVersion}")
       ),
-      buildRoots = Some(List(BuildRootConfig.repoRoot, BuildRootConfig("subfolder/subfolder")))
+      buildRoots = Some(List(BuildRootConfig.repoRoot, BuildRootConfig("subfolder/subfolder"))),
+      dependencyOverrides = List(
+        GroupRepoConfig(
+          pattern = UpdatePattern(GroupId("eu.timepit"), None, None),
+          pullRequests = PullRequestsConfig(
+            frequency = Some(PullRequestFrequency.Timespan(1.day))
+          )
+        ),
+        GroupRepoConfig(
+          pattern = UpdatePattern(GroupId("eu.timepit"), Some("refined.1"), None),
+          pullRequests = PullRequestsConfig(
+            frequency = Some(PullRequestFrequency.Timespan(30.days))
+          )
+        ),
+        GroupRepoConfig(
+          pattern = UpdatePattern(
+            GroupId("eu.timepit"),
+            Some("refined.1"),
+            Some(VersionPattern(prefix = Some("1.")))
+          ),
+          pullRequests = PullRequestsConfig(
+            frequency = Some(PullRequestFrequency.Timespan(7.days))
+          )
+        )
+      )
     )
     assertEquals(config, Right(expected))
   }

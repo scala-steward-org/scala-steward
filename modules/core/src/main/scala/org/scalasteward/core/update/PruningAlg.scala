@@ -21,7 +21,7 @@ import cats.implicits._
 import org.scalasteward.core.data._
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.repocache.RepoCache
-import org.scalasteward.core.repoconfig.{PullRequestsConfig, RepoConfig, UpdatePattern}
+import org.scalasteward.core.repoconfig.{PullRequestFrequency, RepoConfig, UpdatePattern}
 import org.scalasteward.core.update.PruningAlg._
 import org.scalasteward.core.update.data.UpdateState
 import org.scalasteward.core.update.data.UpdateState._
@@ -141,7 +141,7 @@ final class PruningAlg[F[_]](implicit
             repoLastPrCreatedAt,
             artifactLastPrCreatedAt =
               lastPullRequestCreatedAtByArtifact.get(s.update.groupId -> s.update.mainArtifactId),
-            repoConfig.pullRequests
+            repoConfig
           ).map {
             case true  => Some(s)
             case false => None
@@ -163,19 +163,21 @@ final class PruningAlg[F[_]](implicit
       now: Timestamp,
       repoLastPrCreatedAt: Option[Timestamp],
       artifactLastPrCreatedAt: Option[Timestamp],
-      pullRequestsConfig: PullRequestsConfig
+      repoConfig: RepoConfig
   ): F[Boolean] = {
-    val (frequency, lastPrCreatedAt) = pullRequestsConfig.perGroup
-      .collectFirstSome { groupFrequency =>
-        val matchResult = UpdatePattern
-          .findMatch(List(groupFrequency.pattern), dependencyOutdated.update, include = true)
-        if (matchResult.byArtifactId.nonEmpty && matchResult.filteredVersions.nonEmpty) {
-          Some((groupFrequency.frequency, artifactLastPrCreatedAt))
-        } else {
-          None
+    val (frequencyz: Option[PullRequestFrequency], lastPrCreatedAt: Option[Timestamp]) =
+      repoConfig.dependencyOverrides
+        .collectFirstSome { groupRepoConfig =>
+          val matchResult = UpdatePattern
+            .findMatch(List(groupRepoConfig.pattern), dependencyOutdated.update, include = true)
+          if (matchResult.byArtifactId.nonEmpty && matchResult.filteredVersions.nonEmpty) {
+            Some((groupRepoConfig.pullRequests.frequency, artifactLastPrCreatedAt))
+          } else {
+            None
+          }
         }
-      }
-      .getOrElse((pullRequestsConfig.frequencyOrDefault, repoLastPrCreatedAt))
+        .getOrElse((repoConfig.pullRequests.frequency, repoLastPrCreatedAt))
+    val frequency = frequencyz.getOrElse(PullRequestFrequency.Asap)
 
     val dep = dependencyOutdated.crossDependency.head
     val ignoring = s"Ignoring outdated dependency ${dep.groupId}:${dep.artifactId.name}"

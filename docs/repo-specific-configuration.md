@@ -32,19 +32,6 @@ You can add `<YOUR_REPO>/.scala-steward.conf` to configure how Scala Steward upd
 #pullRequests.frequency = "0 0 ? * 3" # every thursday on midnight
 pullRequests.frequency = "7 days"
 
-# Granular control of frequency based on the given pattern.
-# Each pattern must have `groupId`, and may have `artifactId` and `version`.
-# First-matched entry is used.
-# More-specific entry should be placed before less-specific entry.
-# `pullRequests.frequency` is used as default frequency, if none match.
-#
-# Default: empty `[]`
-pullRequests.perGroup = [
-    { frequency = "30 days", pattern = { groupId = "com.example", artifactId = "foo", version = "2." } },
-    { frequency = "30 days", pattern = { groupId = "com.example", artifactId = "bar" } },
-    { frequency = "14 days", pattern = { groupId = "com.example" } },
-]
-
 # Only these dependencies which match the given patterns are updated.
 #
 # Each pattern must have `groupId`, and may have `artifactId` and `version`.
@@ -106,6 +93,28 @@ postUpdateHooks = [{
   groupId = "com.github.sbt",
   artifiactId = "sbt-protobuf"
 }]
+
+# You can override some config options for dependencies that matches the given pattern.
+# Currently, "pullRequests" can be overridden.  
+# Each pattern must have `groupId`, and may have `artifactId` and `version`.
+# First-matched entry is used.
+# More-specific entry should be placed before less-specific entry.
+#
+# Default: empty `[]`
+dependencyOverrides = [
+  {
+    pattern = { groupId = "com.example", artifactId = "foo", version = "2." },
+    pullRequests = { frequency = "1 day" },
+  },
+  {
+    pattern = { groupId = "com.example", artifactId = "foo" },
+    pullRequests = { frequency = "30 day" },
+  },
+  {
+    pattern = { groupId = "com.example" },
+    pullRequests = { frequency = "14 day" },
+  }
+]
 ```
 
 The version information given in the patterns above can be in two formats:

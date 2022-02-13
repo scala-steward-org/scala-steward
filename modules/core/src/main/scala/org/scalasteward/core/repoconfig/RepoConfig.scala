@@ -31,7 +31,8 @@ final case class RepoConfig(
     updates: UpdatesConfig = UpdatesConfig(),
     postUpdateHooks: Option[List[PostUpdateHookConfig]] = None,
     updatePullRequests: Option[PullRequestUpdateStrategy] = None,
-    buildRoots: Option[List[BuildRootConfig]] = None
+    buildRoots: Option[List[BuildRootConfig]] = None,
+    dependencyOverrides: List[GroupRepoConfig] = List.empty
 ) {
   def buildRootsOrDefault: List[BuildRootConfig] =
     buildRoots
@@ -75,7 +76,8 @@ object RepoConfig {
               updates = x.updates |+| y.updates,
               postUpdateHooks = x.postUpdateHooks |+| y.postUpdateHooks,
               updatePullRequests = x.updatePullRequests.orElse(y.updatePullRequests),
-              buildRoots = x.buildRoots |+| y.buildRoots
+              buildRoots = x.buildRoots |+| y.buildRoots,
+              dependencyOverrides = x.dependencyOverrides |+| y.dependencyOverrides
             )
         }
     )

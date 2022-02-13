@@ -17,14 +17,19 @@
 package org.scalasteward.core.repoconfig
 
 import io.circe.Codec
+import io.circe.generic.extras.Configuration
 import io.circe.generic.semiauto.deriveCodec
 
-final case class GroupPullRequestConfig(
-    frequency: PullRequestFrequency,
+final case class GroupRepoConfig(
+    pullRequests: PullRequestsConfig = PullRequestsConfig(),
     pattern: UpdatePattern
 )
 
-object GroupPullRequestConfig {
-  implicit val groupPullRequestFrequency: Codec[GroupPullRequestConfig] =
+object GroupRepoConfig {
+  implicit val groupPullConfigCodecConfig: Configuration =
+    Configuration.default.withDefaults
+
+  implicit val groupPullConfigCodec: Codec[GroupRepoConfig] =
     deriveCodec
+
 }

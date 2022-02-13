@@ -16,15 +16,13 @@
 
 package org.scalasteward.core.repoconfig
 
-import cats.implicits.catsSyntaxSemigroup
 import cats.{Eq, Monoid}
 import io.circe.Codec
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.deriveConfiguredCodec
 
 final case class PullRequestsConfig(
-    frequency: Option[PullRequestFrequency] = None,
-    perGroup: Seq[GroupPullRequestConfig] = Seq.empty
+    frequency: Option[PullRequestFrequency] = None
 ) {
   def frequencyOrDefault: PullRequestFrequency =
     frequency.getOrElse(PullRequestsConfig.defaultFrequency)
@@ -45,10 +43,6 @@ object PullRequestsConfig {
   implicit val pullRequestsConfigMonoid: Monoid[PullRequestsConfig] =
     Monoid.instance(
       PullRequestsConfig(),
-      (x, y) =>
-        PullRequestsConfig(
-          frequency = x.frequency.orElse(y.frequency),
-          perGroup = x.perGroup |+| y.perGroup
-        )
+      (x, y) => PullRequestsConfig(frequency = x.frequency.orElse(y.frequency))
     )
 }

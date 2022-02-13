@@ -250,14 +250,14 @@ class PruningAlgTest extends FunSuite {
           |    }
           |  ],
           |  "maybeRepoConfig": {
+          |    "dependencyOverrides": [
+          |      {
+          |        "pattern": { "groupId": "software.awssdk" },
+          |        "pullRequests": { "frequency": "@monthly" }
+          |      }
+          |    ],
           |    "pullRequests": {
-          |      "frequency": "@asap",
-          |      "perGroup": [
-          |        {
-          |          "pattern": { "groupId": "software.awssdk" },
-          |          "frequency": "@monthly"
-          |        }
-          |      ]
+          |      "frequency": "@asap"
           |    }
           |  }
           |}""".stripMargin
@@ -361,14 +361,14 @@ class PruningAlgTest extends FunSuite {
           |    }
           |  ],
           |  "maybeRepoConfig": {
+          |    "dependencyOverrides": [
+          |      {
+          |        "pattern": { "groupId": "software.awssdk" },
+          |        "pullRequests": { "frequency": "@asap" }
+          |      }
+          |    ],
           |    "pullRequests": {
-          |      "frequency": "@monthly",
-          |      "perGroup": [
-          |        {
-          |          "pattern": { "groupId": "software.awssdk" },
-          |          "frequency": "@asap"
-          |        }
-          |      ]
+          |      "frequency": "@monthly"
           |    }
           |  }
           |}""".stripMargin
@@ -471,18 +471,18 @@ class PruningAlgTest extends FunSuite {
           |    }
           |  ],
           |  "maybeRepoConfig": {
+          |    "dependencyOverrides": [
+          |      {
+          |        "pattern": { "groupId": "software.awssdk", "artifactId": "ignored", "version": "2." },
+          |        "pullRequests": { "frequency": "30 days" }
+          |      },
+          |      {
+          |        "pattern": { "groupId": "software.awssdk", "artifactId": "s3", "version": "1." },
+          |        "pullRequests": { "frequency": "4 days" }
+          |      }
+          |    ],
           |    "pullRequests": {
-          |      "frequency": "@asap",
-          |      "perGroup": [
-          |        {
-          |          "pattern": { "groupId": "software.awssdk", "artifactId": "ignored", "version": "2." },
-          |          "frequency": "30 days"
-          |        },
-          |        {
-          |          "pattern": { "groupId": "software.awssdk", "artifactId": "s3", "version": "1." },
-          |          "frequency": "4 days"
-          |        }
-          |      ]
+          |      "frequency": "@asap"
           |    }
           |  }
           |}""".stripMargin
