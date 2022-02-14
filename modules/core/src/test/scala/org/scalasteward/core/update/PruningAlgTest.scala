@@ -252,7 +252,7 @@ class PruningAlgTest extends FunSuite {
           |  "maybeRepoConfig": {
           |    "dependencyOverrides": [
           |      {
-          |        "pattern": { "groupId": "software.awssdk" },
+          |        "dependency": { "groupId": "software.awssdk" },
           |        "pullRequests": { "frequency": "@monthly" }
           |      }
           |    ],
@@ -363,7 +363,7 @@ class PruningAlgTest extends FunSuite {
           |  "maybeRepoConfig": {
           |    "dependencyOverrides": [
           |      {
-          |        "pattern": { "groupId": "software.awssdk" },
+          |        "dependency": { "groupId": "software.awssdk" },
           |        "pullRequests": { "frequency": "@asap" }
           |      }
           |    ],
@@ -435,7 +435,7 @@ class PruningAlgTest extends FunSuite {
     assertEquals(state, expected)
   }
 
-  test("needsAttention: group pattern can have artifactId and version") {
+  test("needsAttention: dependency can have artifactId and version") {
     val repo = Repo("pruning-test", "repo3")
     val Right(repoCache) = decode[RepoCache](
       s"""|{
@@ -473,11 +473,11 @@ class PruningAlgTest extends FunSuite {
           |  "maybeRepoConfig": {
           |    "dependencyOverrides": [
           |      {
-          |        "pattern": { "groupId": "software.awssdk", "artifactId": "ignored", "version": "2." },
+          |        "dependency": { "groupId": "software.awssdk", "artifactId": "ignored", "version": "2." },
           |        "pullRequests": { "frequency": "30 days" }
           |      },
           |      {
-          |        "pattern": { "groupId": "software.awssdk", "artifactId": "s3", "version": "1." },
+          |        "dependency": { "groupId": "software.awssdk", "artifactId": "s3", "version": "1." },
           |        "pullRequests": { "frequency": "4 days" }
           |      }
           |    ],

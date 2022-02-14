@@ -41,9 +41,9 @@ class RepoConfigAlgTest extends FunSuite {
          |updates.fileExtensions = [ ".txt" ]
          |pullRequests.frequency = "@weekly"
          |dependencyOverrides = [
-         |  { pullRequests = { frequency = "@daily" },   pattern = { groupId = "eu.timepit" } },
-         |  { pullRequests = { frequency = "@monthly" }, pattern = { groupId = "eu.timepit", artifactId = "refined.1" } },
-         |  { pullRequests = { frequency = "@weekly" },  pattern = { groupId = "eu.timepit", artifactId = "refined.1", version = { prefix="1." } } },
+         |  { pullRequests.frequency = "@daily",   dependency = { groupId = "eu.timepit" } },
+         |  { pullRequests.frequency = "@monthly", dependency = { groupId = "eu.timepit", artifactId = "refined.1" } },
+         |  { pullRequests.frequency = "@weekly",  dependency = { groupId = "eu.timepit", artifactId = "refined.1", version = { prefix="1." } } },
          |]
          |commits.message = "Update ${artifactName} from ${currentVersion} to ${nextVersion}"
          |buildRoots = [ ".", "subfolder/subfolder" ]
@@ -56,9 +56,7 @@ class RepoConfigAlgTest extends FunSuite {
       .unsafeRunSync()
 
     val expected = RepoConfig(
-      pullRequests = PullRequestsConfig(
-        frequency = Some(PullRequestFrequency.Timespan(7.days))
-      ),
+      pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(7.days))),
       updates = UpdatesConfig(
         allow = List(UpdatePattern("eu.timepit".g, None, None)),
         pin = List(
@@ -85,19 +83,19 @@ class RepoConfigAlgTest extends FunSuite {
       buildRoots = Some(List(BuildRootConfig.repoRoot, BuildRootConfig("subfolder/subfolder"))),
       dependencyOverrides = List(
         GroupRepoConfig(
-          pattern = UpdatePattern(GroupId("eu.timepit"), None, None),
+          dependency = UpdatePattern(GroupId("eu.timepit"), None, None),
           pullRequests = PullRequestsConfig(
             frequency = Some(PullRequestFrequency.Timespan(1.day))
           )
         ),
         GroupRepoConfig(
-          pattern = UpdatePattern(GroupId("eu.timepit"), Some("refined.1"), None),
+          dependency = UpdatePattern(GroupId("eu.timepit"), Some("refined.1"), None),
           pullRequests = PullRequestsConfig(
             frequency = Some(PullRequestFrequency.Timespan(30.days))
           )
         ),
         GroupRepoConfig(
-          pattern = UpdatePattern(
+          dependency = UpdatePattern(
             GroupId("eu.timepit"),
             Some("refined.1"),
             Some(VersionPattern(prefix = Some("1.")))

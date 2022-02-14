@@ -103,15 +103,15 @@ postUpdateHooks = [{
 # Default: empty `[]`
 dependencyOverrides = [
   {
-    pattern = { groupId = "com.example", artifactId = "foo", version = "2." },
+    dependency = { groupId = "com.example", artifactId = "foo", version = "2." },
     pullRequests = { frequency = "1 day" },
   },
   {
-    pattern = { groupId = "com.example", artifactId = "foo" },
+    dependency = { groupId = "com.example", artifactId = "foo" },
     pullRequests = { frequency = "30 day" },
   },
   {
-    pattern = { groupId = "com.example" },
+    dependency = { groupId = "com.example" },
     pullRequests = { frequency = "14 day" },
   }
 ]
