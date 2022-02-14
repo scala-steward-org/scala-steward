@@ -62,6 +62,10 @@ final private[gitlab] case class MergeRequestOut(
   val pullRequestOut: PullRequestOut = PullRequestOut(webUrl, state, iid, title)
 }
 
+final private[gitlab] case class MergeRequestApprovalsOut(
+    approvalsRequired: Int
+)
+
 final private[gitlab] case class CommitId(id: Sha1) {
   val commitOut: CommitOut = CommitOut(id)
 }
@@ -108,6 +112,13 @@ private[gitlab] object GitLabJsonCodec {
       mergeStatus <- c.downField("merge_status").as[String]
     } yield MergeRequestOut(webUrl, state, title, iid, mergeStatus)
   }
+
+  implicit val mergeRequestApprovalsOutDecoder: Decoder[MergeRequestApprovalsOut] =
+    Decoder.instance { c =>
+      for {
+        requiredReviewers <- c.downField("approvals_required").as[Int]
+      } yield MergeRequestApprovalsOut(requiredReviewers)
+    }
 
   implicit val projectIdDecoder: Decoder[ProjectId] = deriveDecoder
   implicit val mergeRequestPayloadEncoder: Encoder[MergeRequestPayload] = deriveEncoder
@@ -181,33 +192,62 @@ final class GitLabApiAlg[F[_]](
     val updatedMergeRequest =
       if (!gitLabCfg.mergeWhenPipelineSucceeds)
         mergeRequest
-      else
-        mergeRequest
-          .flatMap(mr => waitForMergeRequestStatus(mr.iid))
-          .flatMap {
-            case mr if mr.mergeStatus === GitLabMergeStatus.CanBeMerged =>
-              for {
-                _ <- logger.info(s"Setting ${mr.webUrl} to merge when pipeline succeeds")
-                res <-
-                  client
-                    .put[MergeRequestOut](
-                      url.mergeWhenPiplineSucceeds(repo, mr.iid),
-                      modify(repo)
-                    )
-                    // it's possible that our status changed from can be merged already,
-                    // so just handle it gracefully and proceed without setting auto merge.
-                    .recoverWith { case UnexpectedResponse(_, _, _, status, _) =>
-                      logger
-                        .warn(s"Unexpected gitlab response setting auto merge: $status")
-                        .as(mr)
-                    }
-              } yield res
-            case mr =>
-              logger.info(s"Unable to automatically merge ${mr.webUrl}").map(_ => mr)
-          }
+      else {
+        for {
+          mr <- mergeRequest
+          mrWithStatus <- waitForMergeRequestStatus(mr.iid)
+          _ <- maybeSetReviewers(repo, mrWithStatus)
+          mergedUponSuccess <- mergePipelineUponSuccess(repo, mrWithStatus)
+        } yield mergedUponSuccess
+      }
 
     updatedMergeRequest.map(_.pullRequestOut)
   }
+
+  private def mergePipelineUponSuccess(repo: Repo, mr: MergeRequestOut): F[MergeRequestOut] = mr match {
+    case mr if mr.mergeStatus === GitLabMergeStatus.CanBeMerged =>
+      for {
+        _ <- logger.info(s"Setting ${mr.webUrl} to merge when pipeline succeeds")
+        res <-
+          client
+            .put[MergeRequestOut](
+              url.mergeWhenPiplineSucceeds(repo, mr.iid),
+              modify(repo)
+            )
+            // it's possible that our status changed from can be merged already,
+            // so just handle it gracefully and proceed without setting auto merge.
+            .recoverWith { case UnexpectedResponse(_, _, _, status, _) =>
+              logger
+                .warn(s"Unexpected gitlab response setting auto merge: $status")
+                .as(mr)
+            }
+      } yield res
+    case mr =>
+      logger.info(s"Unable to automatically merge ${mr.webUrl}").map(_ => mr)
+  }
+
+  private def maybeSetReviewers(repo: Repo, mrOut: MergeRequestOut): F[MergeRequestOut] =
+    gitLabCfg.requiredReviewers match {
+      case Some(requiredReviewers) =>
+        for {
+          _ <- logger.info(
+            s"Setting number of required reviewers on ${mrOut.webUrl} to $requiredReviewers"
+          )
+          _ <-
+            client
+              .put[MergeRequestApprovalsOut](
+                url.requiredApprovals(repo, mrOut.iid, requiredReviewers),
+                modify(repo)
+              )
+              .map(_ => ())
+              .recoverWith { case UnexpectedResponse(_, _, _, status, body) =>
+                logger
+                  .warn(s"Unexpected response setting required reviewers: $status:  $body")
+                  .as(())
+              }
+        } yield mrOut
+      case None => F.pure(mrOut)
+    }
 
   override def closePullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut] =
     client
