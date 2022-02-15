@@ -21,8 +21,8 @@ import io.circe.generic.extras.Configuration
 import io.circe.generic.semiauto.deriveCodec
 
 final case class GroupRepoConfig(
-                                  pullRequests: PullRequestsConfig = PullRequestsConfig(),
-                                  dependency: UpdatePattern
+    pullRequests: PullRequestsConfig = PullRequestsConfig(),
+    dependency: UpdatePattern
 )
 
 object GroupRepoConfig {
