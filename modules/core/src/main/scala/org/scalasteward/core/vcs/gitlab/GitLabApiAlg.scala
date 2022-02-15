@@ -204,27 +204,28 @@ final class GitLabApiAlg[F[_]](
     updatedMergeRequest.map(_.pullRequestOut)
   }
 
-  private def mergePipelineUponSuccess(repo: Repo, mr: MergeRequestOut): F[MergeRequestOut] = mr match {
-    case mr if mr.mergeStatus === GitLabMergeStatus.CanBeMerged =>
-      for {
-        _ <- logger.info(s"Setting ${mr.webUrl} to merge when pipeline succeeds")
-        res <-
-          client
-            .put[MergeRequestOut](
-              url.mergeWhenPiplineSucceeds(repo, mr.iid),
-              modify(repo)
-            )
-            // it's possible that our status changed from can be merged already,
-            // so just handle it gracefully and proceed without setting auto merge.
-            .recoverWith { case UnexpectedResponse(_, _, _, status, _) =>
-              logger
-                .warn(s"Unexpected gitlab response setting auto merge: $status")
-                .as(mr)
-            }
-      } yield res
-    case mr =>
-      logger.info(s"Unable to automatically merge ${mr.webUrl}").map(_ => mr)
-  }
+  private def mergePipelineUponSuccess(repo: Repo, mr: MergeRequestOut): F[MergeRequestOut] =
+    mr match {
+      case mr if mr.mergeStatus === GitLabMergeStatus.CanBeMerged =>
+        for {
+          _ <- logger.info(s"Setting ${mr.webUrl} to merge when pipeline succeeds")
+          res <-
+            client
+              .put[MergeRequestOut](
+                url.mergeWhenPiplineSucceeds(repo, mr.iid),
+                modify(repo)
+              )
+              // it's possible that our status changed from can be merged already,
+              // so just handle it gracefully and proceed without setting auto merge.
+              .recoverWith { case UnexpectedResponse(_, _, _, status, _) =>
+                logger
+                  .warn(s"Unexpected gitlab response setting auto merge: $status")
+                  .as(mr)
+              }
+        } yield res
+      case mr =>
+        logger.info(s"Unable to automatically merge ${mr.webUrl}").map(_ => mr)
+    }
 
   private def maybeSetReviewers(repo: Repo, mrOut: MergeRequestOut): F[MergeRequestOut] =
     gitLabCfg.requiredReviewers match {

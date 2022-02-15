@@ -29,8 +29,7 @@ class GitLabApiAlgTest extends FunSuite {
   object MergeWhenPipelineSucceedsMatcher
       extends QueryParamDecoderMatcher[Boolean]("merge_when_pipeline_succeeds")
 
-  object RequiredReviewersMatcher
-      extends QueryParamDecoderMatcher[Int]("approvals_required")
+  object RequiredReviewersMatcher extends QueryParamDecoderMatcher[Int]("approvals_required")
 
   val routes: HttpRoutes[IO] =
     HttpRoutes.of[IO] {
@@ -91,7 +90,11 @@ class GitLabApiAlgTest extends FunSuite {
   implicit val httpJsonClient: HttpJsonClient[IO] = new HttpJsonClient[IO]
   implicit val logger: Logger[IO] = Slf4jLogger.getLogger[IO]
   val gitlabApiAlg =
-    new GitLabApiAlg[IO](config.vcsCfg, GitLabCfg(mergeWhenPipelineSucceeds = false, requiredReviewers = None), _ => IO.pure)
+    new GitLabApiAlg[IO](
+      config.vcsCfg,
+      GitLabCfg(mergeWhenPipelineSucceeds = false, requiredReviewers = None),
+      _ => IO.pure
+    )
 
   private val data = UpdateData(
     RepoData(Repo("foo", "bar"), dummyRepoCache, RepoConfig.empty),
@@ -231,7 +234,7 @@ class GitLabApiAlgTest extends FunSuite {
       Client.fromHttpApp(
         (HttpRoutes.of[IO] {
           case PUT -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "approvals"
-            :? RequiredReviewersMatcher(requiredReviewers) =>
+              :? RequiredReviewersMatcher(requiredReviewers) =>
             BadRequest(s"Cannot set requiredReviewers to $requiredReviewers")
         } <+> routes).orNotFound
       )

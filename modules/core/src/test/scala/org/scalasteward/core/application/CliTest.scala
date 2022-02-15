@@ -61,17 +61,22 @@ class CliTest extends FunSuite {
     )
     assertEquals(obtained.githubApp, Some(GitHubApp(12345678L, File("example_app_key"))))
     assertEquals(obtained.refreshBackoffPeriod, 1.day)
+    assert(!obtained.gitLabCfg.mergeWhenPipelineSucceeds)
+    assertEquals(obtained.gitLabCfg.requiredReviewers, None)
   }
+
+  val minimumRequiredParams = List(
+    List("--workspace", "a"),
+    List("--repos-file", "b"),
+    List("--git-author-email", "d"),
+    List("--vcs-login", "e"),
+    List("--git-ask-pass", "f"),
+    List("--disable-sandbox")
+  )
 
   test("parseArgs: minimal example") {
     val Success(obtained) = Cli.parseArgs(
-      List(
-        List("--workspace", "a"),
-        List("--repos-file", "b"),
-        List("--git-author-email", "d"),
-        List("--vcs-login", "e"),
-        List("--git-ask-pass", "f")
-      ).flatten
+      minimumRequiredParams.flatten
     )
 
     assert(!obtained.processCfg.sandboxCfg.enableSandbox)
@@ -141,6 +146,17 @@ class CliTest extends FunSuite {
   test("parseArgs: --help") {
     val Help(obtained) = Cli.parseArgs(List("--help"))
     assert(clue(obtained).startsWith("Usage"))
+  }
+
+  test("parseArgs: non-default GitLab arguments") {
+    val params = minimumRequiredParams ++ List(
+      List("--gitlab-merge-when-pipeline-succeeds"),
+      List("--gitlab-required-reviewers", "5")
+    )
+    val Success(obtained) = Cli.parseArgs(params.flatten)
+
+    assert(obtained.gitLabCfg.mergeWhenPipelineSucceeds)
+    assertEquals(obtained.gitLabCfg.requiredReviewers, Some(5))
   }
 
   test("envVarArgument: env-var without equals sign") {
