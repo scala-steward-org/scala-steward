@@ -17,7 +17,7 @@ class RepoConfigAlgTest extends FunSuite {
   test("default config is not empty") {
     val config = repoConfigAlg
       .readRepoConfig(Repo("repo-config-alg", "test-1"))
-      .map(repoConfigAlg.mergeWithGlobal)
+      .map(c => repoConfigAlg.mergeWithGlobal(c.flatMap(_.toOption)))
       .runA(MockState.empty)
       .unsafeRunSync()
 
@@ -45,7 +45,7 @@ class RepoConfigAlgTest extends FunSuite {
     val initialState = MockState.empty.addFiles(configFile -> content).unsafeRunSync()
     val config = repoConfigAlg
       .readRepoConfig(repo)
-      .map(_.getOrElse(RepoConfig.empty))
+      .map(_.getOrElse(Right(RepoConfig.empty)))
       .runA(initialState)
       .unsafeRunSync()
 
@@ -76,7 +76,7 @@ class RepoConfigAlgTest extends FunSuite {
       ),
       buildRoots = Some(List(BuildRootConfig.repoRoot, BuildRootConfig("subfolder/subfolder")))
     )
-    assertEquals(config, expected)
+    assertEquals(config, Right(expected))
   }
 
   test("config with 'updatePullRequests = false'") {
@@ -167,9 +167,14 @@ class RepoConfigAlgTest extends FunSuite {
       MockState.empty.addFiles(configFile -> """updates.ignore = [ "foo """).unsafeRunSync()
     val (state, config) = repoConfigAlg.readRepoConfig(repo).runSA(initialState).unsafeRunSync()
 
-    assertEquals(config, None)
+    val startOfErrorMsg = "String: 1: List should have ]"
+    val expectedErrorMsg = Some(Left(startOfErrorMsg))
+    val obtainedConfig = config.map(_.leftMap(_.getMessage.take(startOfErrorMsg.length)))
+
+    assertEquals(obtainedConfig, expectedErrorMsg)
+
     val log = state.trace.collectFirst { case Log((_, msg)) => msg }.getOrElse("")
-    assert(clue(log).startsWith("Failed to parse .scala-steward.conf"))
+    assert(clue(log).contains(startOfErrorMsg))
   }
 
   test("configToIgnoreFurtherUpdates with single update") {

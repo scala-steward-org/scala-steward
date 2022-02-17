@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,9 +72,15 @@ object HookExecutor {
     (GroupId("com.codecommit"), ArtifactId("sbt-spiewak-bintray")),
     (GroupId("io.github.nafg.mergify"), ArtifactId("sbt-mergify-github-actions")),
     (GroupId("io.chrisdavenport"), ArtifactId("sbt-davenverse")),
-    (GroupId("org.http4s"), ArtifactId("sbt-http4s-org")),
-    (GroupId("org.typelevel"), ArtifactId("sbt-typelevel")),
     (GroupId("org.typelevel"), ArtifactId("sbt-typelevel-ci-release"))
+  )
+
+  private val sbtTypelevelModules = List(
+    (GroupId("org.typelevel"), ArtifactId("sbt-typelevel")),
+    (GroupId("org.http4s"), ArtifactId("sbt-http4s-org")),
+    (GroupId("edu.gemini"), ArtifactId("sbt-lucuma")),
+    (GroupId("edu.gemini"), ArtifactId("sbt-lucuma-lib")),
+    (GroupId("edu.gemini"), ArtifactId("sbt-lucuma-app"))
   )
 
   // Modules that most likely require the workflow to be regenerated if updated.
@@ -119,12 +125,29 @@ object HookExecutor {
       enabledByConfig = _ => true
     )
 
+  private def sbtTypelevelHook(
+      groupId: GroupId,
+      artifactId: ArtifactId
+  ): PostUpdateHook =
+    PostUpdateHook(
+      groupId = Some(groupId),
+      artifactId = Some(artifactId),
+      command = Nel.of("sbt", "tlPrePrBotHook"),
+      useSandbox = true,
+      commitMessage = _ => CommitMsg("Run prePR with sbt-typelevel"),
+      enabledByCache = _ => true,
+      enabledByConfig = _ => true
+    )
+
   private val postUpdateHooks: List[PostUpdateHook] =
     scalafmtHook :: sbtJavaFormatterHook ::
       sbtGitHubActionsModules.map { case (gid, aid) =>
         sbtGithubActionsHook(gid, aid, _ => true)
       } ++
       conditionalSbtGitHubActionsModules.map { case (gid, aid) =>
-        sbtGithubActionsHook(gid, aid, _.dependsOn(sbtGitHubActionsModules))
+        sbtGithubActionsHook(gid, aid, _.dependsOn(sbtGitHubActionsModules ++ sbtTypelevelModules))
+      } ++
+      sbtTypelevelModules.map { case (gid, aid) =>
+        sbtTypelevelHook(gid, aid)
       }
 }

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/scala-steward-org/scala-steward/raw/master/data/images/scala-steward-logo-circle-0.png" height="180px">
+  <img src="https://github.com/scala-steward-org/scala-steward/raw/main/data/images/scala-steward-logo-circle-0.png" height="180px">
 </p>
 
 # Scala Steward
@@ -80,6 +80,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [Christopher Davenport](https://github.com/ChristopherDavenport)
 * [Claudio Bley](https://github.com/avdv)
 * [Dale Wijnand](https://github.com/dwijnand)
+* [Daniel Esik](https://github.com/danicheg)
 * [Daniel Pfeiffer](https://github.com/dpfeiffer)
 * [Daniel Spiewak](https://github.com/djspiewak)
 * [David Francoeur](https://github.com/daddykotex)

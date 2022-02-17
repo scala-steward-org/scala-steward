@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -185,7 +185,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
         existingArtifactUrlsMap
           .get(data.update.mainArtifactId)
           .traverse(vcsExtraAlg.getReleaseRelatedUrls(_, data.update))
-      filesWithOldVersion <- gitAlg.findFilesContaining(data.repo, data.update.currentVersion)
+      filesWithOldVersion <- gitAlg.findFilesContaining(data.repo, data.update.currentVersion.value)
       branchName = vcs.createBranch(config.tpe, data.fork, data.updateBranch)
       requestData = NewPullRequestData.from(
         data,
@@ -244,9 +244,11 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       _ <- logger.info(
         s"Merge branch ${data.baseBranch.name} into ${data.updateBranch.name} and apply again"
       )
+      maybeRevertCommit <- gitAlg.revertChanges(data.repo, data.baseBranch)
       maybeMergeCommit <- gitAlg.mergeTheirs(data.repo, data.baseBranch)
       edits <- editAlg.applyUpdate(data.repoData, data.update)
       editCommits = edits.flatMap(_.maybeCommit)
-      result <- pushCommits(data, maybeMergeCommit.toList ++ editCommits)
+      commits = maybeRevertCommit.toList ++ maybeMergeCommit.toList ++ editCommits
+      result <- pushCommits(data, commits)
     } yield result
 }

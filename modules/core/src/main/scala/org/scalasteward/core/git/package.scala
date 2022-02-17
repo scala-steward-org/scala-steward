@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,8 +45,8 @@ package object git {
     val title = commitsConfig.messageOrDefault
       .replace("${default}", defaultMessage)
       .replace("${artifactName}", artifact)
-      .replace("${currentVersion}", update.currentVersion)
-      .replace("${nextVersion}", update.nextVersion)
+      .replace("${currentVersion}", update.currentVersion.value)
+      .replace("${nextVersion}", update.nextVersion.value)
       .replace("${branchName}", branch.map(_.name).orEmpty)
     CommitMsg(title)
   }

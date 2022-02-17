@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,7 +72,7 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
         case (url, entry)
             if entry.state === PullRequestState.Open &&
               entry.update.withNewerVersions(update.newerVersions) === update &&
-              Version(entry.update.nextVersion) < Version(update.nextVersion) =>
+              entry.update.nextVersion < update.nextVersion =>
           for {
             number <- entry.number
             updateBranch = entry.updateBranch.getOrElse(git.branchFor(entry.update, repo.branch))
@@ -90,7 +90,7 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
   def findLatestPullRequest(
       repo: Repo,
       crossDependency: CrossDependency,
-      newVersion: String
+      newVersion: Version
   ): F[Option[PullRequestData[Option]]] =
     kvStore.getOrElse(repo, Map.empty).map {
       _.filter { case (_, entry) =>

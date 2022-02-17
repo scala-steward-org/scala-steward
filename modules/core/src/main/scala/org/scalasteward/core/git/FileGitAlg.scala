@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,7 +95,7 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
     git("submodule", "update", "--init", "--recursive")(repo).void
 
   override def isMerged(repo: File, branch: Branch, base: Branch): F[Boolean] =
-    git("log", "--pretty=format:'%h'", dotdot(base, branch))(repo).map(_.isEmpty)
+    git("log", "--pretty=format:%h", dotdot(base, branch))(repo).map(_.isEmpty)
 
   override def latestSha1(repo: File, branch: Branch): F[Sha1] =
     git("rev-parse", "--verify", branch.name)(repo)
@@ -123,6 +123,19 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
 
   override def removeClone(repo: File): F[Unit] =
     fileAlg.deleteForce(repo)
+
+  override def revertChanges(repo: File, base: Branch): F[Option[Commit]] = {
+    val range = dotdot(base, Branch.head)
+    git("log", "--pretty=format:%h %p", range)(repo).flatMap { commitsWithParents =>
+      val commitsUntilMerge = commitsWithParents.map(_.split(' ')).takeWhile(_.length === 2)
+      val commits = commitsUntilMerge.flatMap(_.headOption)
+      if (commits.isEmpty) F.pure(None)
+      else {
+        val msg = CommitMsg(s"Revert commit(s) " + commits.mkString(", "))
+        git("revert" :: "--no-commit" :: commits: _*)(repo) >> commitAllIfDirty(repo, msg)
+      }
+    }
+  }
 
   override def setAuthor(repo: File, author: Author): F[Unit] =
     for {

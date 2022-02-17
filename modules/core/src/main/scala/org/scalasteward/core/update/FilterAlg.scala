@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,17 +80,17 @@ object FilterAlg {
     }
 
   private def selectSuitableNextVersion(update: Update.Single): FilterResult = {
-    val newerVersions = update.newerVersions.map(Version.apply).toList
-    val maybeNext = Version(update.currentVersion).selectNext(newerVersions)
+    val newerVersions = update.newerVersions.toList
+    val maybeNext = update.currentVersion.selectNext(newerVersions)
     maybeNext match {
-      case Some(next) => Right(update.copy(newerVersions = Nel.of(next.value)))
+      case Some(next) => Right(update.copy(newerVersions = Nel.of(next)))
       case None       => Left(NoSuitableNextVersion(update))
     }
   }
 
   private def checkVersionOrdering(update: Update.Single): FilterResult = {
-    val (current, next) =
-      (coursier.core.Version(update.currentVersion), coursier.core.Version(update.nextVersion))
+    val current = coursier.core.Version(update.currentVersion.value)
+    val next = coursier.core.Version(update.nextVersion.value)
     if (current > next) Left(VersionOrderingConflict(update)) else Right(update)
   }
 }

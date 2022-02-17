@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,8 @@ object NewPullRequestData {
       edits: List[EditAttempt],
       artifactIdToUrl: Map[String, Uri],
       releaseRelatedUrls: List[ReleaseRelatedUrl],
-      filesWithOldVersion: List[String]
+      filesWithOldVersion: List[String],
+      configParsingError: Option[String]
   ): String = {
     val artifacts = artifactsWithOptionalUrl(update, artifactIdToUrl)
     val migrations = edits.collect { case scalafixEdit: ScalafixEdit => scalafixEdit }
@@ -54,7 +55,8 @@ object NewPullRequestData {
     val details = List(
       appliedMigrations,
       oldVersionDetails,
-      ignoreFutureUpdates(update).some
+      ignoreFutureUpdates(update).some,
+      configParsingError.map(configParsingErrorDetails)
     ).flatten
 
     s"""|Updates $artifacts ${fromTo(update)}.
@@ -138,6 +140,15 @@ object NewPullRequestData {
           |""".stripMargin.trim
     )
 
+  def configParsingErrorDetails(error: String): Details =
+    Details(
+      s"Note that the Scala Steward config file `${RepoConfigAlg.repoConfigBasename}` wasn't parsed correctly",
+      s"""|```
+          |$error
+          |```
+          |""".stripMargin.trim
+    )
+
   def migrationNote(scalafixEdits: List[ScalafixEdit]): Option[Details] =
     Option.when(scalafixEdits.nonEmpty) {
       val body = scalafixEdits
@@ -168,9 +179,17 @@ object NewPullRequestData {
       filesWithOldVersion: List[String] = List.empty
   ): NewPullRequestData =
     NewPullRequestData(
-      title =
-        git.commitMsgFor(data.update, data.repoConfig.commits, data.repoData.repo.branch).title,
-      body = bodyFor(data.update, edits, artifactIdToUrl, releaseRelatedUrls, filesWithOldVersion),
+      title = git
+        .commitMsgFor(data.update, data.repoConfig.commits, data.repoData.repo.branch)
+        .title,
+      body = bodyFor(
+        data.update,
+        edits,
+        artifactIdToUrl,
+        releaseRelatedUrls,
+        filesWithOldVersion,
+        data.repoData.cache.maybeRepoConfigParsingError
+      ),
       head = branchName,
       base = data.baseBranch
     )
@@ -198,7 +217,7 @@ object NewPullRequestData {
       case n           => s"n:$n"
     })
     val semVerVersions =
-      (SemVer.parse(update.currentVersion), SemVer.parse(update.nextVersion)).tupled
+      (SemVer.parse(update.currentVersion.value), SemVer.parse(update.nextVersion.value)).tupled
     val earlySemVerLabel = semVerVersions.flatMap { case (curr, next) =>
       SemVer.getChangeEarly(curr, next).map(c => s"early-semver-${c.render}")
     }

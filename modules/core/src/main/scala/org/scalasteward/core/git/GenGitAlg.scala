@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,6 +68,8 @@ trait GenGitAlg[F[_], Repo] {
   def push(repo: Repo, branch: Branch): F[Unit]
 
   def removeClone(repo: Repo): F[Unit]
+
+  def revertChanges(repo: Repo, base: Branch): F[Option[Commit]]
 
   def setAuthor(repo: Repo, author: Author): F[Unit]
 
@@ -148,6 +150,9 @@ trait GenGitAlg[F[_], Repo] {
 
       override def removeClone(repo: A): F[Unit] =
         f(repo).flatMap(self.removeClone)
+
+      override def revertChanges(repo: A, base: Branch): F[Option[Commit]] =
+        f(repo).flatMap(self.revertChanges(_, base))
 
       override def setAuthor(repo: A, author: Author): F[Unit] =
         f(repo).flatMap(self.setAuthor(_, author))

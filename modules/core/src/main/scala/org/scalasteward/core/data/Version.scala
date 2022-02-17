@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,11 @@ import cats.implicits._
 import cats.parse.{Numbers, Parser, Rfc5234}
 import io.circe.Codec
 import io.circe.generic.extras.semiauto.deriveUnwrappedCodec
+import org.scalasteward.core.data.Version.startsWithDate
 
 final case class Version(value: String) {
+  override def toString: String = value
+
   private val components: List[Version.Component] =
     Version.Component.parse(value)
 
@@ -32,7 +35,7 @@ final case class Version(value: String) {
   /** Selects the next version from a list of potentially newer versions.
     *
     * Implements the scheme described in this FAQ:
-    * https://github.com/scala-steward-org/scala-steward/blob/master/docs/faq.md#how-does-scala-steward-decide-what-version-it-is-updating-to
+    * https://github.com/scala-steward-org/scala-steward/blob/main/docs/faq.md#how-does-scala-steward-decide-what-version-it-is-updating-to
     */
   def selectNext(versions: List[Version]): Option[Version] = {
     val cutoff = alnumComponentsWithoutPreRelease.length - 1
@@ -85,7 +88,7 @@ final case class Version(value: String) {
     components.exists {
       case _: Version.Component.Hash => true
       case _                         => false
-    }
+    } || Rfc5234.hexdig.rep(8).string.filterNot(startsWithDate).parse(value).isRight
 
   private[this] def alnumComponentsWithoutPreRelease: List[Version.Component] =
     alnumComponents.takeWhile {

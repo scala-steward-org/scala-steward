@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,27 +16,35 @@
 
 package org.scalasteward.core.vcs.github
 
+import cats.MonadThrow
+import cats.syntax.all._
 import org.http4s.{Request, Uri}
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.HttpJsonClient
 import org.scalasteward.core.vcs.VCSApiAlg
 import org.scalasteward.core.vcs.data._
+import org.scalasteward.core.vcs.github.GitHubException._
 
 final class GitHubApiAlg[F[_]](
     gitHubApiHost: Uri,
     modify: Repo => Request[F] => F[Request[F]]
 )(implicit
-    client: HttpJsonClient[F]
+    client: HttpJsonClient[F],
+    F: MonadThrow[F]
 ) extends VCSApiAlg[F] {
   private val url = new Url(gitHubApiHost)
 
   /** https://developer.github.com/v3/repos/forks/#create-a-fork */
   override def createFork(repo: Repo): F[RepoOut] =
-    client.post(url.forks(repo), modify(repo))
+    client.post[RepoOut](url.forks(repo), modify(repo)).flatTap { repoOut =>
+      F.raiseWhen(repoOut.parent.exists(_.archived))(RepositoryArchived(repo))
+    }
 
   /** https://developer.github.com/v3/pulls/#create-a-pull-request */
   override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] =
-    client.postWithBody(url.pulls(repo), data, modify(repo))
+    client
+      .postWithBody[PullRequestOut, NewPullRequestData](url.pulls(repo), data, modify(repo))
+      .adaptErr(SecondaryRateLimitExceeded.fromThrowable)
 
   /** https://developer.github.com/v3/repos/branches/#get-branch */
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
@@ -44,7 +52,9 @@ final class GitHubApiAlg[F[_]](
 
   /** https://developer.github.com/v3/repos/#get */
   override def getRepo(repo: Repo): F[RepoOut] =
-    client.get(url.repos(repo), modify(repo))
+    client.get[RepoOut](url.repos(repo), modify(repo)).flatTap { repoOut =>
+      F.raiseWhen(repoOut.archived)(RepositoryArchived(repo))
+    }
 
   /** https://developer.github.com/v3/pulls/#list-pull-requests */
   override def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]] =

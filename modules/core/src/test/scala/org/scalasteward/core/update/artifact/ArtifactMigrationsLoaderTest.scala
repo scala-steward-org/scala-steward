@@ -17,15 +17,13 @@ class ArtifactMigrationsLoaderTest extends FunSuite {
        |    groupIdBefore = com.evilcorp
        |    groupIdAfter = org.ice.cream
        |    artifactIdAfter = yumyum
-       |    initialVersion = 2.0.0
        |  }
        |]""".stripMargin
   val migration: ArtifactChange = ArtifactChange(
     groupIdBefore = Some(GroupId("com.evilcorp")),
     groupIdAfter = GroupId("org.ice.cream"),
     artifactIdBefore = None,
-    artifactIdAfter = "yumyum",
-    initialVersion = "2.0.0"
+    artifactIdAfter = "yumyum"
   )
 
   test("loadAll: without extra file, without defaults") {
@@ -80,7 +78,6 @@ class ArtifactMigrationsLoaderTest extends FunSuite {
                                                              |  {
                                                              |    groupIdAfter = org.ice.cream
                                                              |    artifactIdAfter = yumyum
-                                                             |    initialVersion = 2.0.0
                                                              |  }
                                                              |]""".stripMargin)
     val migrations = artifactMigrationsLoader

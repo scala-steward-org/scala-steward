@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,21 @@
 
 package org.scalasteward.core.update
 
-import cats.Monad
+import cats.data.OptionT
 import cats.syntax.all._
+import cats.{Monad, Parallel}
 import org.scalasteward.core.coursier.VersionsCache
 import org.scalasteward.core.data._
 import org.scalasteward.core.repoconfig.RepoConfig
-import org.scalasteward.core.update.artifact.ArtifactMigrationsFinder
+import org.scalasteward.core.update.UpdateAlg.migrateDependency
+import org.scalasteward.core.update.artifact.{ArtifactChange, ArtifactMigrationsFinder}
 import org.scalasteward.core.util.Nel
 import scala.concurrent.duration.FiniteDuration
 
 final class UpdateAlg[F[_]](implicit
     artifactMigrationsFinder: ArtifactMigrationsFinder,
     filterAlg: FilterAlg[F],
+    parallel: Parallel[F],
     versionsCache: VersionsCache[F],
     F: Monad[F]
 ) {
@@ -35,23 +38,51 @@ final class UpdateAlg[F[_]](implicit
       dependency: Scope[Dependency],
       maxAge: Option[FiniteDuration]
   ): F[Option[Update.Single]] =
-    for {
-      versions <- versionsCache.getVersions(dependency, maxAge)
-      current = Version(dependency.value.version)
-      maybeNewerVersions = Nel.fromList(versions.filter(_ > current))
-      maybeUpdate = maybeNewerVersions
-        .map(vs => Update.Single(CrossDependency(dependency.value), vs.map(_.value)))
-        .orElse(artifactMigrationsFinder.findUpdateWithRenamedArtifact(dependency.value))
-    } yield maybeUpdate
+    findUpdateWithoutMigration(dependency, maxAge)
+      .orElse(findUpdateWithMigration(dependency, maxAge))
+      .value
 
   def findUpdates(
       dependencies: List[Scope.Dependency],
       repoConfig: RepoConfig,
       maxAge: Option[FiniteDuration]
   ): F[List[Update.Single]] = {
-    val updates = dependencies.traverseFilter(findUpdate(_, maxAge))
+    val updates = dependencies.parTraverseFilter(findUpdate(_, maxAge))
     updates.flatMap(filterAlg.localFilterMany(repoConfig, _))
   }
+
+  private def findUpdateWithoutMigration(
+      dependency: Scope[Dependency],
+      maxAge: Option[FiniteDuration]
+  ): OptionT[F, Update.Single] =
+    findNewerVersions(dependency, maxAge).map { newerVersions =>
+      Update.Single(CrossDependency(dependency.value), newerVersions)
+    }
+
+  private def findUpdateWithMigration(
+      dependency: Scope[Dependency],
+      maxAge: Option[FiniteDuration]
+  ): OptionT[F, Update.Single] =
+    OptionT.fromOption(artifactMigrationsFinder.findArtifactChange(dependency.value)).flatMap {
+      artifactChange =>
+        findNewerVersions(dependency.map(migrateDependency(_, artifactChange)), maxAge).map {
+          newerVersions =>
+            Update.Single(
+              CrossDependency(dependency.value),
+              newerVersions,
+              Some(artifactChange.groupIdAfter),
+              Some(artifactChange.artifactIdAfter)
+            )
+        }
+    }
+
+  private def findNewerVersions(
+      dependency: Scope[Dependency],
+      maxAge: Option[FiniteDuration]
+  ): OptionT[F, Nel[Version]] =
+    OptionT(versionsCache.getVersions(dependency, maxAge).map { versions =>
+      Nel.fromList(versions.filter(_ > dependency.value.version))
+    })
 }
 
 object UpdateAlg {
@@ -61,4 +92,13 @@ object UpdateAlg {
       update.currentVersion === dependency.version &&
       update.artifactIds.contains_(dependency.artifactId)
     }
+
+  def migrateArtifactId(artifactId: ArtifactId, newName: String): ArtifactId =
+    ArtifactId(newName, artifactId.maybeCrossName.map(_.replace(artifactId.name, newName)))
+
+  def migrateDependency(dependency: Dependency, change: ArtifactChange): Dependency =
+    dependency.copy(
+      groupId = change.groupIdAfter,
+      artifactId = migrateArtifactId(dependency.artifactId, change.artifactIdAfter)
+    )
 }
