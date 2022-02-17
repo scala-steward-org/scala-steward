@@ -45,6 +45,8 @@ trait CoursierAlg[F[_]] {
 }
 
 object CoursierAlg {
+  private val GitlabPrivateTokenHeaderName = "private-token"
+
   def create[F[_]](implicit
       logger: Logger[F],
       parallel: Parallel[F],
@@ -132,8 +134,10 @@ object CoursierAlg {
     }
 
   private def toCoursierAuthentication(credentials: Credentials): Authentication =
-    Authentication(credentials.user, credentials.pass)
-      .withHttpHeaders(Seq((credentials.user, credentials.pass)))
+    if (credentials.user.toLowerCase() == GitlabPrivateTokenHeaderName)
+      Authentication(Seq((credentials.user, credentials.pass)))
+    else
+      Authentication(credentials.user, credentials.pass)
 
   private def getParentDependency(project: Project): Option[coursier.Dependency] =
     project.parent.map { case (module, version) =>
