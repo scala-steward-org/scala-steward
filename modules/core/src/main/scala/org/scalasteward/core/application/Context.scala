@@ -83,13 +83,15 @@ object Context {
       _ <- Resource.eval(F.delay(System.setProperty("http.agent", userAgentString)))
       userAgent <- Resource.eval(F.fromEither(`User-Agent`.parse(userAgentString)))
       userAgentMiddleware = ClientConfiguration.setUserAgent[F](userAgent)
+      retryAfterMiddleware = ClientConfiguration.retryAfter[F]
+      middleware = userAgentMiddleware.andThen(retryAfterMiddleware)
       defaultClient <- ClientConfiguration.build(
         ClientConfiguration.BuilderMiddleware.default,
-        userAgentMiddleware
+        middleware
       )
       urlCheckerClient <- ClientConfiguration.build(
         ClientConfiguration.disableFollowRedirect[F],
-        userAgentMiddleware
+        middleware
       )
       fileAlg = FileAlg.create(logger, F)
       processAlg = ProcessAlg.create(config.processCfg)(logger, F)

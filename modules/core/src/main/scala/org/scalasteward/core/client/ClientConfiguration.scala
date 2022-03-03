@@ -16,10 +16,14 @@
 
 package org.scalasteward.core.client
 
+import cats.effect._
+import org.http4s.Response
 import org.http4s.client._
 import org.http4s.headers.`User-Agent`
-import cats.effect._
 import org.http4s.okhttp.client.OkHttpBuilder
+import org.typelevel.ci.CIString
+
+import scala.concurrent.duration._
 
 object ClientConfiguration {
   type BuilderMiddleware[F[_]] = OkHttpBuilder[F] => OkHttpBuilder[F]
@@ -35,6 +39,28 @@ object ClientConfiguration {
 
   def setUserAgent[F[_]: MonadCancelThrow](userAgent: `User-Agent`): Middleware[F] = { client =>
     Client[F](req => client.run(req.putHeaders(userAgent)))
+  }
+
+  private val RetryAfterStatuses = Set(403, 429, 503)
+
+  def retryAfter[F[_]: Temporal]: Middleware[F] = { client =>
+    Client[F] { req =>
+      def run(remainingRetries: Int): Resource[F, Response[F]] = client
+        .run(req)
+        .flatMap { response =>
+          val maybeRetried = for {
+            header <- response.headers.get(CIString("Retry-After"))
+            seconds <- header.head.value.toIntOption
+            if seconds > 0
+            duration = seconds.seconds
+            if RetryAfterStatuses.contains(response.status.code)
+            if remainingRetries > 0
+          } yield Resource.eval(Temporal[F].sleep(duration)).flatMap(_ => run(remainingRetries - 1))
+          maybeRetried.getOrElse(Resource.pure(response))
+        }
+
+      run(5) // arbitrary limit to avoid unexpected cloud provider costs
+    }
   }
 
   def disableFollowRedirect[F[_]](builder: OkHttpBuilder[F]): OkHttpBuilder[F] =
