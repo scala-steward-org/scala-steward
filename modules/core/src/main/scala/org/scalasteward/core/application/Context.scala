@@ -19,6 +19,7 @@ package org.scalasteward.core.application
 import cats.effect._
 import cats.effect.implicits._
 import cats.syntax.all._
+import eu.timepit.refined.auto._
 import org.http4s.Uri
 import org.http4s.client.Client
 import org.http4s.headers.`User-Agent`
@@ -83,7 +84,7 @@ object Context {
       _ <- Resource.eval(F.delay(System.setProperty("http.agent", userAgentString)))
       userAgent <- Resource.eval(F.fromEither(`User-Agent`.parse(userAgentString)))
       userAgentMiddleware = ClientConfiguration.setUserAgent[F](userAgent)
-      retryAfterMiddleware = ClientConfiguration.retryAfter[F]
+      retryAfterMiddleware = ClientConfiguration.retryAfter[F](maxAttempts = 5)
       middleware = userAgentMiddleware.andThen(retryAfterMiddleware)
       defaultClient <- ClientConfiguration.build(
         ClientConfiguration.BuilderMiddleware.default,

@@ -1,16 +1,18 @@
 package org.scalasteward.core.client
 
-import org.http4s.client._
-import org.http4s.headers.`User-Agent`
 import cats.effect._
 import cats.implicits._
-import org.http4s.implicits._
-import org.typelevel.ci._
 import munit.CatsEffectSuite
 import org.http4s.HttpRoutes
-import org.http4s.headers.Location
+import org.http4s.client._
+import org.http4s.headers.{`Retry-After`, `User-Agent`, Location}
+import org.http4s.implicits._
+import org.typelevel.ci._
+import eu.timepit.refined.auto._
+import eu.timepit.refined.types.numeric.PosInt
 
 class ClientConfigurationTest extends CatsEffectSuite {
+
   private val userAgentValue = "my-user-agent"
   private val dummyUserAgent =
     `User-Agent`.parse(userAgentValue).getOrElse(fail("unable to create user agent"))
@@ -35,12 +37,21 @@ class ClientConfigurationTest extends CatsEffectSuite {
 
       case GET -> Root / "redirected" =>
         BadRequest("Got redirected")
+
+      case req @ GET -> Root / "retry-after" =>
+        val maybeAttempt = req.headers.get(ci"X-Attempt").flatMap(_.head.value.toIntOption)
+        maybeAttempt match {
+          case Some(attempt) if attempt >= 2 =>
+            Ok()
+          case _ =>
+            Forbidden().map(_.putHeaders(`Retry-After`.fromLong(1)))
+        }
     }
   }
 
   test("setUserAgent add a specific user agent to requests") {
-    import org.http4s.client.dsl.io._
     import org.http4s.Method._
+    import org.http4s.client.dsl.io._
 
     val initialClient = Client.fromHttpApp[IO](routes.orNotFound)
     val setUserAgent = ClientConfiguration.setUserAgent[IO](dummyUserAgent)
@@ -58,9 +69,9 @@ class ClientConfigurationTest extends CatsEffectSuite {
   }
 
   test("disableFollowRedirect does not follow redirect") {
+    import org.http4s.Method._
     import org.http4s.blaze.server._
     import org.http4s.client.dsl.io._
-    import org.http4s.Method._
 
     val regularClient = ClientConfiguration.build[IO](
       ClientConfiguration.BuilderMiddleware.default,
@@ -82,5 +93,28 @@ class ClientConfigurationTest extends CatsEffectSuite {
         ).tupled
     }
     test.assertEquals((400, 302))
+  }
+
+  test("retries on retry-after response header") {
+    import org.http4s.Method._
+    import org.http4s.client.dsl.io._
+
+    def clientWithMaxAttempts(maxAttempts: PosInt): Client[IO] = {
+      val initialClient = Client.fromHttpApp[IO](routes.orNotFound)
+      val retryAfter = ClientConfiguration.retryAfter[IO](maxAttempts)
+      retryAfter(initialClient)
+    }
+
+    val notEnoughRetries = clientWithMaxAttempts(1)
+      .run(GET(uri"/retry-after"))
+      .use(r => r.status.code.pure[IO])
+      .assertEquals(403)
+
+    val exactlyEnoughRetries = clientWithMaxAttempts(2)
+      .run(GET(uri"/retry-after"))
+      .use(r => r.status.code.pure[IO])
+      .assertEquals(200)
+
+    notEnoughRetries.flatMap(_ => exactlyEnoughRetries)
   }
 }

@@ -17,11 +17,13 @@
 package org.scalasteward.core.client
 
 import cats.effect._
+import eu.timepit.refined.auto._
+import eu.timepit.refined.types.numeric.PosInt
 import org.http4s.Response
 import org.http4s.client._
 import org.http4s.headers.`User-Agent`
 import org.http4s.okhttp.client.OkHttpBuilder
-import org.typelevel.ci.CIString
+import org.typelevel.ci._
 
 import scala.concurrent.duration._
 
@@ -43,23 +45,27 @@ object ClientConfiguration {
 
   private val RetryAfterStatuses = Set(403, 429, 503)
 
-  def retryAfter[F[_]: Temporal]: Middleware[F] = { client =>
+  /**
+    * @param maxAttempts max number times the HTTP request should be sent
+    *                    useful to avoid unexpected cloud provider costs
+    */
+  def retryAfter[F[_]: Temporal](maxAttempts: PosInt = 5): Middleware[F] = { client =>
     Client[F] { req =>
-      def run(remainingRetries: Int): Resource[F, Response[F]] = client
-        .run(req)
+      def run(attempt: Int = 1): Resource[F, Response[F]] = client
+        .run(req.putHeaders("X-Attempt" -> attempt.toString))
         .flatMap { response =>
           val maybeRetried = for {
-            header <- response.headers.get(CIString("Retry-After"))
+            header <- response.headers.get(ci"Retry-After")
             seconds <- header.head.value.toIntOption
             if seconds > 0
             duration = seconds.seconds
             if RetryAfterStatuses.contains(response.status.code)
-            if remainingRetries > 0
-          } yield Resource.eval(Temporal[F].sleep(duration)).flatMap(_ => run(remainingRetries - 1))
+            if attempt < maxAttempts.value
+          } yield Resource.eval(Temporal[F].sleep(duration)).flatMap(_ => run(attempt + 1))
           maybeRetried.getOrElse(Resource.pure(response))
         }
 
-      run(5) // arbitrary limit to avoid unexpected cloud provider costs
+      run()
     }
   }
 
