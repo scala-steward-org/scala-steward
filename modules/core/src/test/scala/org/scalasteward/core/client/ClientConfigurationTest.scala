@@ -46,15 +46,16 @@ class ClientConfigurationTest extends CatsEffectSuite {
     val setUserAgent = ClientConfiguration.setUserAgent[IO](dummyUserAgent)
     val newClient = setUserAgent(initialClient)
 
-    newClient
-      .run(GET(uri"/user-agent"))
-      .use(r => r.status.code.pure[IO])
-      .assertEquals(200)
-
-    initialClient
-      .run(GET(uri"/user-agent"))
-      .use(r => r.status.code.pure[IO])
-      .assertEquals(400)
+    for {
+      _ <- newClient
+        .run(GET(uri"/user-agent"))
+        .use(r => r.status.code.pure[IO])
+        .assertEquals(200)
+      _ <- initialClient
+        .run(GET(uri"/user-agent"))
+        .use(r => r.status.code.pure[IO])
+        .assertEquals(400)
+    } yield ()
   }
 
   test("disableFollowRedirect does not follow redirect") {
