@@ -83,9 +83,9 @@ object Context {
       _ <- Resource.eval(printBanner(logger))
       _ <- Resource.eval(F.delay(System.setProperty("http.agent", userAgentString)))
       userAgent <- Resource.eval(F.fromEither(`User-Agent`.parse(userAgentString)))
-      userAgentMiddleware = ClientConfiguration.setUserAgent[F](userAgent)
-      retryAfterMiddleware = ClientConfiguration.retryAfter[F](maxAttempts = 5)
-      middleware = userAgentMiddleware.andThen(retryAfterMiddleware)
+      middleware = ClientConfiguration
+        .setUserAgent[F](userAgent)
+        .andThen(ClientConfiguration.retryAfter[F](maxAttempts = 5))
       defaultClient <- ClientConfiguration.build(
         ClientConfiguration.BuilderMiddleware.default,
         middleware
