@@ -42,5 +42,5 @@ object Dependencies {
   val refined = "eu.timepit" %% "refined" % "0.9.28"
   val refinedScalacheck = "eu.timepit" %% "refined-scalacheck" % refined.revision
   val scalacacheCaffeine = "com.github.cb372" %% "scalacache-caffeine" % "1.0.0-M5"
-  val scalacheck = "org.scalacheck" %% "scalacheck" % "1.15.4"
+  val scalacheck = "org.scalacheck" %% "scalacheck" % "1.16.0"
 }
