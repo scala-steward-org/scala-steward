@@ -72,7 +72,8 @@ object HookExecutor {
     (GroupId("com.codecommit"), ArtifactId("sbt-spiewak-bintray")),
     (GroupId("io.github.nafg.mergify"), ArtifactId("sbt-mergify-github-actions")),
     (GroupId("io.chrisdavenport"), ArtifactId("sbt-davenverse")),
-    (GroupId("org.typelevel"), ArtifactId("sbt-typelevel-ci-release"))
+    (GroupId("org.typelevel"), ArtifactId("sbt-typelevel-ci-release")),
+    (GroupId("org.typelevel"), ArtifactId("sbt-typelevel-mergify"))
   )
 
   private val sbtTypelevelModules = List(
