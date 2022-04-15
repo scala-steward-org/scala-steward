@@ -19,6 +19,7 @@ package org.scalasteward.core.repoconfig
 import io.circe.Codec
 import io.circe.generic.extras.Configuration
 import io.circe.generic.semiauto.deriveCodec
+import org.scalasteward.core.data.Update
 
 final case class GroupRepoConfig(
     pullRequests: PullRequestsConfig = PullRequestsConfig(),
@@ -32,4 +33,17 @@ object GroupRepoConfig {
   implicit val groupPullConfigCodec: Codec[GroupRepoConfig] =
     deriveCodec
 
+  def configToSlowDownUpdatesFrequency(update: Update): String =
+    update match {
+      case s: Update.Single =>
+        s"""dependencyOverrides = [{
+           |  pullRequest = { frequency = "@monthly" },
+           |  dependency = { groupId = "${s.groupId}", artifactId = "${s.artifactId.name}" }
+           |}]""".stripMargin
+      case g: Update.Group =>
+        s"""dependencyOverrides = [{
+           |  pullRequest = { frequency = "@monthly" },
+           |  dependency = { groupId = "${g.groupId}" }
+           |}]""".stripMargin
+    }
 }

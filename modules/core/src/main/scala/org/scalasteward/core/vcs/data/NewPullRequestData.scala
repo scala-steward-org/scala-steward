@@ -25,7 +25,7 @@ import org.scalasteward.core.edit.EditAttempt
 import org.scalasteward.core.edit.EditAttempt.ScalafixEdit
 import org.scalasteward.core.git
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.repoconfig.RepoConfigAlg
+import org.scalasteward.core.repoconfig.{GroupRepoConfig, RepoConfigAlg}
 import org.scalasteward.core.util.{Details, Nel}
 
 final case class NewPullRequestData(
@@ -55,7 +55,7 @@ object NewPullRequestData {
     val details = List(
       appliedMigrations,
       oldVersionDetails,
-      ignoreFutureUpdates(update).some,
+      adjustFutureUpdates(update).some,
       configParsingError.map(configParsingErrorDetails)
     ).flatten
 
@@ -130,12 +130,16 @@ object NewPullRequestData {
       )
     }
 
-  def ignoreFutureUpdates(update: Update): Details =
+  def adjustFutureUpdates(update: Update): Details =
     Details(
-      "Ignore future updates",
+      "Adjust future updates",
       s"""|Add this to your `${RepoConfigAlg.repoConfigBasename}` file to ignore future updates of this dependency:
           |```
           |${RepoConfigAlg.configToIgnoreFurtherUpdates(update)}
+          |```
+          |Or, add this to slow down future updates of this dependency:
+          |```
+          |${GroupRepoConfig.configToSlowDownUpdatesFrequency(update)}
           |```
           |""".stripMargin.trim
     )
