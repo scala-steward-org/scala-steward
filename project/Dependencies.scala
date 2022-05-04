@@ -30,7 +30,7 @@ object Dependencies {
   val http4sOkhttpClient = "org.http4s" %% "http4s-okhttp-client" % http4sCore.revision
   val log4catsSlf4j = "org.typelevel" %% "log4cats-slf4j" % "2.3.1"
   val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.2.11"
-  val jjwtApi = "io.jsonwebtoken" % "jjwt-api" % "0.11.3"
+  val jjwtApi = "io.jsonwebtoken" % "jjwt-api" % "0.11.5"
   val jjwtImpl = "io.jsonwebtoken" % "jjwt-impl" % jjwtApi.revision
   val jjwtJackson = "io.jsonwebtoken" % "jjwt-jackson" % jjwtApi.revision
   val millVersion = Def.setting(if (scalaBinaryVersion.value == "2.12") "0.6.3" else "0.10.3")
