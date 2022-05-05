@@ -18,21 +18,19 @@ package org.scalasteward.core.edit.hooks
 
 import cats.MonadThrow
 import cats.syntax.all._
-import org.scalasteward.core.buildtool.sbt.sbtArtifactId
-import org.scalasteward.core.buildtool.sbt.sbtGroupId
-import org.scalasteward.core.buildtool.sbt.sbtScalaFixArtifactId
-import org.scalasteward.core.buildtool.sbt.sbtScalaFixGroupId
+import org.scalasteward.core.buildtool.sbt.{
+  sbtArtifactId,
+  sbtGroupId,
+  sbtScalaFixArtifactId,
+  sbtScalaFixGroupId
+}
 import org.scalasteward.core.data._
 import org.scalasteward.core.edit.EditAttempt
 import org.scalasteward.core.edit.EditAttempt.HookEdit
-import org.scalasteward.core.git.CommitMsg
-import org.scalasteward.core.git.GitAlg
-import org.scalasteward.core.io.ProcessAlg
-import org.scalasteward.core.io.WorkspaceAlg
+import org.scalasteward.core.git.{CommitMsg, GitAlg}
+import org.scalasteward.core.io.{ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.repocache.RepoCache
-import org.scalasteward.core.scalafmt.ScalafmtAlg
-import org.scalasteward.core.scalafmt.scalafmtArtifactId
-import org.scalasteward.core.scalafmt.scalafmtGroupId
+import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtGroupId, ScalafmtAlg}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.util.logger._
 import org.scalasteward.core.vcs.data.Repo
