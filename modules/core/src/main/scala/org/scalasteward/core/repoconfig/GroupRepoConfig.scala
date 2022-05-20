@@ -37,12 +37,12 @@ object GroupRepoConfig {
     update match {
       case s: Update.Single =>
         s"""dependencyOverrides = [{
-           |  pullRequest = { frequency = "@monthly" },
+           |  pullRequests = { frequency = "@monthly" },
            |  dependency = { groupId = "${s.groupId}", artifactId = "${s.artifactId.name}" }
            |}]""".stripMargin
       case g: Update.Group =>
         s"""dependencyOverrides = [{
-           |  pullRequest = { frequency = "@monthly" },
+           |  pullRequests = { frequency = "@monthly" },
            |  dependency = { groupId = "${g.groupId}" }
            |}]""".stripMargin
     }
