@@ -18,7 +18,12 @@ package org.scalasteward.core.edit.hooks
 
 import cats.MonadThrow
 import cats.syntax.all._
-import org.scalasteward.core.buildtool.sbt.{sbtArtifactId, sbtGroupId}
+import org.scalasteward.core.buildtool.sbt.{
+  sbtArtifactId,
+  sbtGroupId,
+  sbtScalaFixArtifactId,
+  sbtScalaFixGroupId
+}
 import org.scalasteward.core.data._
 import org.scalasteward.core.edit.EditAttempt
 import org.scalasteward.core.edit.EditAttempt.HookEdit
@@ -86,7 +91,7 @@ object HookExecutor {
 
   // Modules that most likely require the workflow to be regenerated if updated.
   private val conditionalSbtGitHubActionsModules =
-    (sbtGroupId, sbtArtifactId) :: scalaLangModules
+    (sbtGroupId, sbtArtifactId) :: (sbtScalaFixGroupId, sbtScalaFixArtifactId) :: scalaLangModules
 
   private def sbtGithubActionsHook(
       groupId: GroupId,
