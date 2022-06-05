@@ -1,6 +1,7 @@
-The repos.md file for the public Scala Steward instance has been moved to
-<https://github.com/scala-steward-org/repos/blob/main/repos-github.md>.
-If you want Scala Steward to keep your project up-to-date, please add it there.
+List the repositories here you want Scala Steward to keep up-to-date.
+The format is "- $owner/$repo".
+If you want Scala Steward to keep a non-default branch up-to-date use "- $owner/$repo:$branch".
+All lines that do not start with a hyphen and space are ignored.
 
 - scala-steward-org/scala-steward
 - scala-steward-org/test-repo-2
