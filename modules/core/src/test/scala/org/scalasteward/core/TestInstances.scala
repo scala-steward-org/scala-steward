@@ -92,11 +92,15 @@ object TestInstances {
   }
 
   implicit val versionCogen: Cogen[Version] =
-    Cogen(_.alnumComponents.map {
-      case n: Version.Component.Numeric => n.toBigInt.toLong
-      case a: Version.Component.Alpha   => a.order.toLong
-      case _                            => 0L
-    }.sum)
+    Cogen(
+      _.alnumComponents
+        .map {
+          case n: Version.Component.Numeric => n.toBigInt.toLong
+          case a: Version.Component.Alpha   => a.order.toLong
+          case _                            => 0L
+        }
+        .sum
+    )
 
   // repoconfig instances
 
