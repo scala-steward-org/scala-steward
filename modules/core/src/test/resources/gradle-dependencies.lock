@@ -1,0 +1,26 @@
+{
+    "compileClasspath": {
+        "antlr:antlr": {
+            "locked": "2.7.7",
+            "transitive": [
+                "org.antlr:antlr-runtime",
+                "org.antlr:stringtemplate"
+            ]
+        }
+        "aopalliance:aopalliance": {
+            "project": true,
+            "transitive": [
+                "com.google.inject:guice"
+            ]
+        },
+    },
+    "integTestCompileClasspath": {
+        "antlr:antlr": {
+            "locked": "2.7.7",
+            "transitive": [
+                "org.antlr:antlr-runtime",
+                "org.antlr:stringtemplate"
+            ]
+        }
+    }
+}

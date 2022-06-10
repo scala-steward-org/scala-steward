@@ -26,9 +26,11 @@ import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.vcs.data.{BuildRoot, Repo}
+import org.scalasteward.core.buildtool.gradle.GradleAlg
 
 final class BuildToolDispatcher[F[_]](implicit
     mavenAlg: MavenAlg[F],
+    gradleAlg: GradleAlg[F],
     millAlg: MillAlg[F],
     sbtAlg: SbtAlg[F],
     scalafmtAlg: ScalafmtAlg[F],
@@ -50,7 +52,7 @@ final class BuildToolDispatcher[F[_]](implicit
   private def getBuildRoots(repo: Repo, repoConfig: RepoConfig): List[BuildRoot] =
     repoConfig.buildRootsOrDefault.map(buildRootCfg => BuildRoot(repo, buildRootCfg.relativePath))
 
-  private val allBuildTools = List(mavenAlg, millAlg, sbtAlg)
+  private val allBuildTools = List(mavenAlg, gradleAlg, millAlg, sbtAlg)
   private val fallbackBuildTool = List(sbtAlg)
 
   private def findBuildTools(buildRoot: BuildRoot): F[(BuildRoot, List[BuildToolAlg[F]])] =

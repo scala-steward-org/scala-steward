@@ -45,6 +45,7 @@ import org.scalasteward.core.util.uri._
 import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.vcs.github.{GitHubAppApiAlg, GitHubAuthAlg}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg, VCSSelection}
+import org.scalasteward.core.buildtool.gradle.GradleAlg
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
@@ -164,6 +165,7 @@ object Context {
       implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]
       implicit val mavenAlg: MavenAlg[F] = new MavenAlg[F](config)
       implicit val sbtAlg: SbtAlg[F] = new SbtAlg[F](config)
+      implicit val gradleAlg: GradleAlg[F] = GradleAlg[F](config)
       implicit val millAlg: MillAlg[F] = new MillAlg[F]
       implicit val buildToolDispatcher: BuildToolDispatcher[F] = new BuildToolDispatcher[F]
       implicit val refreshErrorAlg: RefreshErrorAlg[F] =

@@ -317,7 +317,7 @@ lazy val dockerSettings = Def.settings(
       Cmd("RUN", s"$coursierBin install --install-dir $binDir scalafix scalafmt")
     )
   },
-  Docker / packageName := s"fthomas/${name.value}",
+  Docker / packageName := s"jvican/${name.value}",
   dockerUpdateLatest := true,
   dockerEnvVars := Map(
     "PATH" -> "/opt/docker/sbt/bin:${PATH}",

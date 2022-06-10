@@ -31,6 +31,7 @@ class BuildToolDispatcherTest extends FunSuite {
     val expectedState = initial.copy(trace =
       Vector(
         Cmd("test", "-f", s"$repoDir/pom.xml"),
+        Cmd("test", "-f", s"$repoDir/build.gradle"),
         Cmd("test", "-f", s"$repoDir/build.sc"),
         Cmd("test", "-f", s"$repoDir/build.sbt"),
         Cmd(
