@@ -52,17 +52,22 @@ object StewardPlugin extends AutoPlugin {
           )
         val dependencies = libraryDeps ++ scalafixDeps
 
-        def getCredentials(url: URL): Option[Resolver.Credentials] =
-          Try(Credentials.forHost(sbtCredentials, url.getHost)).toOption.flatten
+        def getCredentials(url: URL, name: String): Option[Resolver.Credentials] =
+          (for {
+            allDirect <- Try(Credentials.allDirect(sbtCredentials)).toOption
+            maybeRealmAndHost = allDirect.find(c => c.realm == name && c.host == url.getHost)
+            maybeRealm = allDirect.find(_.realm == name)
+            maybeHost = allDirect.find(_.host == url.getHost)
+          } yield maybeRealmAndHost.orElse(maybeRealm).orElse(maybeHost)).flatten
             .map(c => Resolver.Credentials(c.userName, c.passwd))
 
         val resolvers = fullResolvers.value.collect {
           case repo: MavenRepository if !repo.root.startsWith("file:") =>
-            val creds = getCredentials(new URL(repo.root))
+            val creds = getCredentials(new URL(repo.root), repo.name)
             Resolver.MavenRepository(repo.name, repo.root, creds)
           case repo: URLRepository =>
             val ivyPatterns = repo.patterns.ivyPatterns.mkString
-            val creds = getCredentials(new URL(ivyPatterns))
+            val creds = getCredentials(new URL(ivyPatterns), repo.name)
             Resolver.IvyRepository(repo.name, ivyPatterns, creds)
         }
 
