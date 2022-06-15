@@ -13,7 +13,8 @@ class MergeRequestPayloadTest extends FunSuite {
     "Test MR title",
     "Test MR body",
     "source",
-    master
+    master,
+    Nil
   )
   private val id = "123"
   private val projectId = 321L

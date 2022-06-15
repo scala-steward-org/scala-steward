@@ -196,6 +196,9 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
         filesWithOldVersion
       )
       pr <- vcsApiAlg.createPullRequest(data.repo, requestData)
+      _ <- vcsApiAlg
+        .labelPullRequest(data.repo, pr.number, requestData.labels)
+        .whenA(config.addLabels && requestData.labels.nonEmpty)
       prData = PullRequestData[Id](
         pr.html_url,
         data.baseSha1,
