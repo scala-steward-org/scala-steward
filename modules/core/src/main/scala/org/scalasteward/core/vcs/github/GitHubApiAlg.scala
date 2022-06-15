@@ -77,4 +77,18 @@ final class GitHubApiAlg[F[_]](
     client
       .postWithBody(url.comments(repo, number), Comment(comment), modify(repo))
 
+  /** https://docs.github.com/en/rest/reference/issues#add-labels-to-an-issue */
+  override def labelPullRequest(
+      repo: Repo,
+      number: PullRequestNumber,
+      labels: List[String]
+  ): F[Unit] =
+    client
+      .postWithBody[io.circe.Json, GitHubLabels](
+        url.issueLabels(repo, number),
+        GitHubLabels(labels),
+        modify(repo)
+      )
+      .adaptErr(SecondaryRateLimitExceeded.fromThrowable)
+      .void
 }

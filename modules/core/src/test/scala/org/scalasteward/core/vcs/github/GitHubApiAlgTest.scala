@@ -88,6 +88,19 @@ class GitHubApiAlgTest extends FunSuite {
             "body": "Superseded by #1234"
           } """)
 
+      case POST -> Root / "repos" / "fthomas" / "base.g8" / "issues" / IntVar(_) / "labels" =>
+        // Response taken from https://docs.github.com/en/rest/reference/issues#labels, is ignored
+        Created(json"""[
+          {
+            "id": 208045946,
+            "node_id": "MDU6TGFiZWwyMDgwNDU5NDY=",
+            "url": "https://api.github.com/repos/fthomas/base.g8/labels/bug",
+            "name": "bug",
+            "description": "Something isn't working",
+            "color": "f29513",
+            "default": true
+          }]""")
+
       case req =>
         println(req.toString())
         NotFound()
@@ -208,5 +221,13 @@ class GitHubApiAlgTest extends FunSuite {
       .commentPullRequest(repo, PullRequestNumber(1347), "Superseded by #1234")
       .unsafeRunSync()
     assertEquals(comment, Comment("Superseded by #1234"))
+  }
+
+  test("labelPullRequest") {
+    val result = gitHubApiAlg
+      .labelPullRequest(repo, PullRequestNumber(1347), List("A", "B"))
+      .attempt
+      .unsafeRunSync()
+    assert(result.isRight)
   }
 }
