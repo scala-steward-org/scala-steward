@@ -100,8 +100,15 @@ final class StewardAlg[F[_]](config: Config)(implicit
             readRepos(config.reposFile))
             .evalMap(steward)
             .compile
-            .foldMonoid
-            .map(_.fold(_ => ExitCode.Error, _ => ExitCode.Success))
+            .foldSemigroup
+            .flatMap {
+              case Some(result) => result.fold(_ => ExitCode.Error, _ => ExitCode.Success).pure[F]
+              case None =>
+                val msg = "No repos specified. " +
+                  s"Check the formatting of ${config.reposFile.pathAsString}. " +
+                  s"""The format is "- $$owner/$$repo" or "- $$owner/$$repo:$$branch"."""
+                logger.warn(msg).as(ExitCode.Success)
+            }
         }
       } yield exitCode
     }

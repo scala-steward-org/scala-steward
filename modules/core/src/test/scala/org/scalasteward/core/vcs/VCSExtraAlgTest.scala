@@ -59,7 +59,13 @@ class VCSExtraAlgTest extends FunSuite {
   }
 
   test("getBranchCompareUrl: github on prem") {
-    val config = VCSCfg(VCSType.GitHub, uri"https://github.on-prem.com/", "", doNotFork = false)
+    val config = VCSCfg(
+      VCSType.GitHub,
+      uri"https://github.on-prem.com/",
+      "",
+      doNotFork = false,
+      addLabels = false
+    )
     val githubOnPremVcsExtraAlg = VCSExtraAlg.create[IO](config)
 
     assertEquals(
