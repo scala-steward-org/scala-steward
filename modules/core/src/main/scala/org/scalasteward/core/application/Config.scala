@@ -96,7 +96,8 @@ object Config {
       tpe: VCSType,
       apiHost: Uri,
       login: String,
-      doNotFork: Boolean
+      doNotFork: Boolean,
+      addLabels: Boolean
   )
 
   final case class ProcessCfg(

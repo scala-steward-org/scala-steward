@@ -110,7 +110,7 @@ final class SbtAlg[F[_]](config: Config)(implicit
       projectDir = buildRootDir / "project"
       files0 <- (
         fileAlg.walk(buildRootDir, 1).filter(_.extension.contains(".sbt")) ++
-          fileAlg.walk(projectDir, 1).filter(_.extension.exists(Set(".sbt", ".scala")))
+          fileAlg.walk(projectDir, 3).filter(_.extension.exists(Set(".sbt", ".scala")))
       ).compile.toList
       _ <- Nel.fromList(files0).fold(F.unit) { files1 =>
         scalafixCli.runMigration(buildRootDir, files1, migration)
