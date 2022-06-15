@@ -35,6 +35,7 @@ import org.scalasteward.core.util.{combineOptions, Nel}
 final case class UpdatesConfig(
     pin: List[UpdatePattern] = List.empty,
     allow: List[UpdatePattern] = List.empty,
+    allowPreReleases: List[UpdatePattern] = List.empty,
     ignore: List[UpdatePattern] = List.empty,
     limit: Option[NonNegInt] = None,
     fileExtensions: Option[List[String]] = None
@@ -44,6 +45,16 @@ final case class UpdatesConfig(
 
   def keep(update: Update.Single): FilterResult =
     isAllowed(update).flatMap(isPinned).flatMap(isIgnored)
+
+  def preRelease(update: Update.Single): FilterResult =
+    isAllowedPreReleases(update)
+
+  private def isAllowedPreReleases(update: Update.Single): FilterResult = {
+    val m = UpdatePattern.findMatch(allowPreReleases, update, include = true)
+    if (m.filteredVersions.nonEmpty)
+      Right(update)
+    else Left(NotAllowedByConfig(update))
+  }
 
   private def isAllowed(update: Update.Single): FilterResult = {
     val m = UpdatePattern.findMatch(allow, update, include = true)
@@ -92,6 +103,7 @@ object UpdatesConfig {
         UpdatesConfig(
           pin = mergePin(x.pin, y.pin),
           allow = mergeAllow(x.allow, y.allow),
+          allowPreReleases = mergeAllow(x.allowPreReleases, y.allowPreReleases),
           ignore = mergeIgnore(x.ignore, y.ignore),
           limit = x.limit.orElse(y.limit),
           fileExtensions = mergeFileExtensions(x.fileExtensions, y.fileExtensions)

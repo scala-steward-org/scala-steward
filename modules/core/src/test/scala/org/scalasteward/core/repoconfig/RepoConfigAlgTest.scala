@@ -29,7 +29,7 @@ class RepoConfigAlgTest extends FunSuite {
     val repo = Repo("fthomas", "scala-steward")
     val configFile = MockConfig.config.workspace / "fthomas/scala-steward/.scala-steward.conf"
     val content =
-      """|updates.allow  = [ { groupId = "eu.timepit"} ]
+      """|updates.allow  = [ { groupId = "eu.timepit" } ]
          |updates.pin  = [
          |                 { groupId = "eu.timepit", artifactId = "refined.1", version = "0.8." },
          |                 { groupId = "eu.timepit", artifactId = "refined.2", version = { prefix="0.8." } },
@@ -37,6 +37,7 @@ class RepoConfigAlgTest extends FunSuite {
          |                 { groupId = "eu.timepit", artifactId = "refined.4", version = { prefix="0.8.", suffix="jre" } }
          |               ]
          |updates.ignore = [ { groupId = "org.acme", version = "1.0" } ]
+         |updates.allowPreReleases = [ { groupId = "eu.timepit" } ]
          |updates.limit = 4
          |updates.fileExtensions = [ ".txt" ]
          |pullRequests.frequency = "@weekly"
@@ -74,6 +75,7 @@ class RepoConfigAlgTest extends FunSuite {
           )
         ),
         ignore = List(UpdatePattern("org.acme".g, None, Some(VersionPattern(Some("1.0"))))),
+        allowPreReleases = List(UpdatePattern("eu.timepit".g, None, None)),
         limit = Some(NonNegInt.unsafeFrom(4)),
         fileExtensions = Some(List(".txt"))
       ),
