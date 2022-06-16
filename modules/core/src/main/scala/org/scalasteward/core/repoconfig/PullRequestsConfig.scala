@@ -17,12 +17,17 @@
 package org.scalasteward.core.repoconfig
 
 import cats.{Eq, Monoid}
+import cats.implicits._
 import io.circe.Codec
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.deriveConfiguredCodec
 
+import java.util.regex.PatternSyntaxException
+import scala.util.matching.Regex
+
 final case class PullRequestsConfig(
-    frequency: Option[PullRequestFrequency] = None
+    frequency: Option[PullRequestFrequency] = None,
+    labelRegex: Option[Regex] = None
 ) {
   def frequencyOrDefault: PullRequestFrequency =
     frequency.getOrElse(PullRequestsConfig.defaultFrequency)
@@ -37,12 +42,21 @@ object PullRequestsConfig {
   implicit val pullRequestsConfigConfiguration: Configuration =
     Configuration.default.withDefaults
 
+  implicit val regexCodec: Codec[Regex] =
+    Codec
+      .from[String](implicitly, implicitly)
+      .iemap(s => Either.catchOnly[PatternSyntaxException](s.r).leftMap(_.getMessage))(_.regex)
+
   implicit val pullRequestsConfigCodec: Codec[PullRequestsConfig] =
     deriveConfiguredCodec
 
   implicit val pullRequestsConfigMonoid: Monoid[PullRequestsConfig] =
     Monoid.instance(
       PullRequestsConfig(),
-      (x, y) => PullRequestsConfig(frequency = x.frequency.orElse(y.frequency))
+      (x, y) =>
+        PullRequestsConfig(
+          frequency = x.frequency.orElse(y.frequency),
+          labelRegex = x.labelRegex.orElse(y.labelRegex)
+        )
     )
 }

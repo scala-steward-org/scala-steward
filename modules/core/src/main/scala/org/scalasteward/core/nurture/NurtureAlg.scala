@@ -193,7 +193,8 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
         edits,
         existingArtifactUrlsMap,
         releaseRelatedUrls.getOrElse(List.empty),
-        filesWithOldVersion
+        filesWithOldVersion,
+        data.repoData.config.pullRequests.labelRegex
       )
       pr <- vcsApiAlg.createPullRequest(data.repo, requestData)
       _ <- vcsApiAlg

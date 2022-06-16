@@ -28,6 +28,8 @@ import org.scalasteward.core.git.Branch
 import org.scalasteward.core.repoconfig.{GroupRepoConfig, RepoConfigAlg}
 import org.scalasteward.core.util.{Details, Nel}
 
+import scala.util.matching.Regex
+
 final case class NewPullRequestData(
     title: String,
     body: String,
@@ -182,9 +184,10 @@ object NewPullRequestData {
       edits: List[EditAttempt] = List.empty,
       artifactIdToUrl: Map[String, Uri] = Map.empty,
       releaseRelatedUrls: List[ReleaseRelatedUrl] = List.empty,
-      filesWithOldVersion: List[String] = List.empty
+      filesWithOldVersion: List[String] = List.empty,
+      labelRegex: Option[Regex] = None
   ): NewPullRequestData = {
-    val labels = labelsFor(data.update, edits, filesWithOldVersion)
+    val labels = labelsFor(data.update, edits, filesWithOldVersion, labelRegex)
     NewPullRequestData(
       title = git
         .commitMsgFor(data.update, data.repoConfig.commits, data.repoData.repo.branch)
@@ -219,7 +222,8 @@ object NewPullRequestData {
   def labelsFor(
       update: Update,
       edits: List[EditAttempt],
-      filesWithOldVersion: List[String]
+      filesWithOldVersion: List[String],
+      labelRegex: Option[Regex]
   ): List[String] = {
     val commitCount = edits.flatMap(_.maybeCommit).size
     val commitCountLabel = "commit-count:" + (commitCount match {
@@ -237,8 +241,10 @@ object NewPullRequestData {
     val scalafixLabel = edits.collectFirst { case _: ScalafixEdit => "scalafix-migrations" }
     val oldVersionLabel = Option.when(filesWithOldVersion.nonEmpty)("old-version-remains")
 
-    updateType(update) ::
+    val allLabels = updateType(update) ::
       List(earlySemVerLabel, semVerSpecLabel, scalafixLabel, oldVersionLabel).flatten ++
       List(commitCountLabel)
+
+    allLabels.filter(label => labelRegex.fold(true)(_.matches(label)))
   }
 }

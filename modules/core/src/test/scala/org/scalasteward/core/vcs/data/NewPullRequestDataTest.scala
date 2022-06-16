@@ -148,7 +148,7 @@ class NewPullRequestDataTest extends FunSuite {
     val edits = List(scalafixEdit)
     val appliedMigrations = migrationNote(edits)
     val update = ("a".g % "b".a % "1" -> "2").single
-    val labels = labelsFor(update, edits, List.empty)
+    val labels = labelsFor(update, edits, List.empty, None)
 
     assert(labels.contains("scalafix-migrations"))
     assertEquals(
@@ -178,7 +178,7 @@ class NewPullRequestDataTest extends FunSuite {
     val edits = List(scalafixEdit)
     val detail = migrationNote(edits)
     val update = ("a".g % "b".a % "1" -> "2").single
-    val labels = labelsFor(update, edits, List.empty)
+    val labels = labelsFor(update, edits, List.empty, None)
 
     assert(labels.contains("scalafix-migrations"))
     assertEquals(
@@ -220,7 +220,7 @@ class NewPullRequestDataTest extends FunSuite {
     val edits = List(scalafixEdit1, scalafixEdit2)
     val detail = migrationNote(edits)
     val update = ("a".g % "b".a % "1" -> "2").single
-    val labels = labelsFor(update, edits, List.empty)
+    val labels = labelsFor(update, edits, List.empty, None)
 
     assert(labels.contains("scalafix-migrations"))
     assertEquals(
@@ -267,7 +267,7 @@ class NewPullRequestDataTest extends FunSuite {
     val files = List("Readme.md", "travis.yml")
     val update = ("com.example".g % "foo".a % "0.1" %> "0.2").single
     val note = oldVersionNote(files, update)
-    val labels = labelsFor(update, List.empty, files)
+    val labels = labelsFor(update, List.empty, files, None)
 
     assert(labels.contains("old-version-remains"))
     assertEquals(
@@ -301,10 +301,21 @@ class NewPullRequestDataTest extends FunSuite {
       Some(Commit())
     )
 
-    val oneEdit = labelsFor(update, List(updateEdit), List.empty)
+    val oneEdit = labelsFor(update, List(updateEdit), List.empty, None)
     assert(clue(oneEdit).contains("commit-count:1"))
 
-    val twoEdits = labelsFor(update, List(updateEdit, scalafixEdit), List.empty)
+    val twoEdits = labelsFor(update, List(updateEdit, scalafixEdit), List.empty, None)
     assert(clue(twoEdits).contains("commit-count:n:2"))
+  }
+
+  test("regex label filtering") {
+    val update = ("a".g % "b".a % "1" -> "2").single
+    val updateEdit = UpdateEdit(update, Commit())
+
+    val first = labelsFor(update, List(updateEdit), List.empty, Some("library-.+".r))
+    assertEquals(clue(first), List("library-update"))
+
+    val second = labelsFor(update, List(updateEdit), List.empty, Some("(.*update.*)|(.*count.*)".r))
+    assertEquals(clue(second), List("library-update", "commit-count:1"))
   }
 }
