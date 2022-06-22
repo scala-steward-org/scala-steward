@@ -73,6 +73,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [Arulselvan Madhavan](https://github.com/ArulselvanMadhavan)
 * [Barry O'Neill](https://github.com/barryoneill)
 * [Bayram Kiran](https://github.com/kiranbayram)
+* [Ben Carter](https://github.com/bcarter97)
 * [Brice Jaglin](https://github.com/bjaglin)
 * [Cédric Chantepie](https://github.com/cchantep)
 * [Chris Llanwarne](https://github.com/cjllanwarne)
