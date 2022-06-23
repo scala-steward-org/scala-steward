@@ -325,6 +325,9 @@ lazy val dockerSettings = Def.settings(
   },
   Docker / packageName := s"fthomas/${name.value}",
   dockerUpdateLatest := true,
+  dockerAliases ++= {
+    if (!isSnapshot.value) Seq(dockerAlias.value.withTag(Option("latest-release"))) else Nil
+  },
   dockerEnvVars := Map(
     "PATH" -> "/opt/docker/sbt/bin:${PATH}",
     "COURSIER_PROGRESS" -> "false"
