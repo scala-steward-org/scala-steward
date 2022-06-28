@@ -69,14 +69,14 @@ final class HookExecutor[F[_]](implicit
 }
 
 object HookExecutor {
-  // sbt plugins that depend on sbt-github-actions.
-  private val sbtGitHubActionsModules = List(
+  // sbt plugins that provide a githubWorkflowGenerate task.
+  private val sbtGitHubWorkflowGenerateModules = List(
     (GroupId("com.codecommit"), ArtifactId("sbt-github-actions")),
     (GroupId("com.codecommit"), ArtifactId("sbt-spiewak")),
     (GroupId("com.codecommit"), ArtifactId("sbt-spiewak-sonatype")),
     (GroupId("com.codecommit"), ArtifactId("sbt-spiewak-bintray")),
-    (GroupId("io.github.nafg.mergify"), ArtifactId("sbt-mergify-github-actions")),
     (GroupId("io.chrisdavenport"), ArtifactId("sbt-davenverse")),
+    (GroupId("io.github.nafg.mergify"), ArtifactId("sbt-mergify-github-actions")),
     (GroupId("org.typelevel"), ArtifactId("sbt-typelevel-ci-release")),
     (GroupId("org.typelevel"), ArtifactId("sbt-typelevel-mergify"))
   )
@@ -90,23 +90,25 @@ object HookExecutor {
   )
 
   // Modules that most likely require the workflow to be regenerated if updated.
-  private val conditionalSbtGitHubActionsModules =
+  private val conditionalSbtGitHubWorkflowGenerateModules =
     (sbtGroupId, sbtArtifactId) :: (sbtScalaFixGroupId, sbtScalaFixArtifactId) :: scalaLangModules
 
-  private def sbtGithubActionsHook(
+  private def sbtGithubWorkflowGenerateHook(
       groupId: GroupId,
       artifactId: ArtifactId,
       enabledByCache: RepoCache => Boolean
-  ): PostUpdateHook =
+  ): PostUpdateHook = {
+    val task = "githubWorkflowGenerate"
     PostUpdateHook(
       groupId = Some(groupId),
       artifactId = Some(artifactId),
-      command = Nel.of("sbt", "githubWorkflowGenerate"),
+      command = Nel.of("sbt", task),
       useSandbox = true,
-      commitMessage = _ => CommitMsg("Regenerate workflow with sbt-github-actions"),
+      commitMessage = _ => CommitMsg(s"Regenerate workflow with 'sbt $task'"),
       enabledByCache = enabledByCache,
       enabledByConfig = _ => true
     )
+  }
 
   private val scalafmtHook =
     PostUpdateHook(
@@ -145,13 +147,16 @@ object HookExecutor {
       enabledByConfig = _ => true
     )
 
+  private def githubWorkflowGenerateExists(cache: RepoCache): Boolean =
+    cache.dependsOn(sbtGitHubWorkflowGenerateModules ++ sbtTypelevelModules)
+
   private val postUpdateHooks: List[PostUpdateHook] =
     scalafmtHook :: sbtJavaFormatterHook ::
-      sbtGitHubActionsModules.map { case (gid, aid) =>
-        sbtGithubActionsHook(gid, aid, _ => true)
+      sbtGitHubWorkflowGenerateModules.map { case (gid, aid) =>
+        sbtGithubWorkflowGenerateHook(gid, aid, _ => true)
       } ++
-      conditionalSbtGitHubActionsModules.map { case (gid, aid) =>
-        sbtGithubActionsHook(gid, aid, _.dependsOn(sbtGitHubActionsModules ++ sbtTypelevelModules))
+      conditionalSbtGitHubWorkflowGenerateModules.map { case (gid, aid) =>
+        sbtGithubWorkflowGenerateHook(gid, aid, githubWorkflowGenerateExists)
       } ++
       sbtTypelevelModules.map { case (gid, aid) =>
         sbtTypelevelHook(gid, aid)
