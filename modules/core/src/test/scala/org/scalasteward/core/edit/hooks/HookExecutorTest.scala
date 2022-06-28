@@ -2,7 +2,7 @@ package org.scalasteward.core.edit.hooks
 
 import cats.syntax.all._
 import munit.CatsEffectSuite
-import org.scalasteward.core.TestInstances.dummyRepoCache
+import org.scalasteward.core.TestInstances.{dummyRepoCache, dummySha1}
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.RepoData
 import org.scalasteward.core.git.FileGitAlg
@@ -33,7 +33,9 @@ class HookExecutorTest extends CatsEffectSuite {
       Map(
         FileGitAlg.gitCmd.toList ++
           List("status", "--porcelain", "--untracked-files=no", "--ignore-submodules") ->
-          List("build.sbt")
+          List("build.sbt"),
+        FileGitAlg.gitCmd.toList ++ List("rev-parse", "--verify", "HEAD") ->
+          List(dummySha1.value.value)
       )
     )
     val state = hookExecutor.execPostUpdateHooks(data, update).runS(initial)
@@ -60,7 +62,8 @@ class HookExecutorTest extends CatsEffectSuite {
           "--no-gpg-sign",
           "-m",
           "Reformat with scalafmt 2.7.5"
-        )
+        ),
+        Cmd(gitCmd(repoDir), "rev-parse", "--verify", "HEAD")
       )
     )
 
