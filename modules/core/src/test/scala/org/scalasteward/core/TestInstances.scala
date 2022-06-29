@@ -18,13 +18,11 @@ import org.typelevel.log4cats.slf4j.Slf4jLogger
 import scala.concurrent.duration.FiniteDuration
 
 object TestInstances {
+  val dummySha1: Sha1 =
+    Sha1(HexString.unsafeFrom("da39a3ee5e6b4b0d3255bfef95601890afd80709"))
+
   val dummyRepoCache: RepoCache =
-    RepoCache(
-      Sha1(HexString.unsafeFrom("da39a3ee5e6b4b0d3255bfef95601890afd80709")),
-      List.empty,
-      Option.empty,
-      Option.empty
-    )
+    RepoCache(dummySha1, List.empty, Option.empty, Option.empty)
 
   val dummyRepoCacheWithParsingError: RepoCache =
     dummyRepoCache.copy(maybeRepoConfigParsingError = Some("Failed to parse .scala-steward.conf"))
