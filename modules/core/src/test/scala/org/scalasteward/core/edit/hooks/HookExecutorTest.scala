@@ -83,7 +83,7 @@ class HookExecutorTest extends CatsEffectSuite {
           "--all",
           "--no-gpg-sign",
           "-m",
-          "Ignore changes from 'scalafmt --non-interactive'"
+          s"Add 'Reformat with scalafmt 2.7.5' to $gitBlameIgnoreRevsName"
         ),
         Cmd(gitCmd(repoDir), "rev-parse", "--verify", "HEAD")
       ),
@@ -92,10 +92,7 @@ class HookExecutorTest extends CatsEffectSuite {
       )
     )
 
-    state.map { obtained =>
-      assertEquals(obtained.trace, expected.trace)
-      assertEquals(obtained, expected)
-    }
+    state.map(assertEquals(_, expected))
   }
 
   test("scalafmt: disabled by config") {

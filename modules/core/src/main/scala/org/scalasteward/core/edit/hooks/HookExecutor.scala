@@ -79,16 +79,17 @@ final class HookExecutor[F[_]](implicit
       commitMsg: CommitMsg
   ): F[Option[Commit]] =
     if (hook.addToGitBlameIgnoreRevs) {
-      val file = repoDir / gitBlameIgnoreRevsName
-      val newLines = s"# Scala Steward: ${commitMsg.title}\n${commit.sha1.value.value}\n"
       for {
+        _ <- F.unit
+        file = repoDir / gitBlameIgnoreRevsName
+        newLines = s"# Scala Steward: ${commitMsg.title}\n${commit.sha1.value.value}\n"
         oldContent <- fileAlg.readFile(file)
         newContent = oldContent.fold(newLines)(_ + "\n" + newLines)
         _ <- fileAlg.writeFile(file, newContent)
         _ <- gitAlg.add(repo, file.pathAsString)
-        maybeCommit <-
-          gitAlg.commitAllIfDirty(repo, CommitMsg(s"Ignore changes from ${hook.showCommand}"))
-      } yield maybeCommit
+        blameIgnoreCommitMsg = CommitMsg(s"Add '${commitMsg.title}' to $gitBlameIgnoreRevsName")
+        maybeBlameIgnoreCommit <- gitAlg.commitAllIfDirty(repo, blameIgnoreCommitMsg)
+      } yield maybeBlameIgnoreCommit
     } else F.pure(None)
 }
 
