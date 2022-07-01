@@ -25,6 +25,8 @@ import org.scalasteward.core.vcs.data.Repo
 package object git {
   type GitAlg[F[_]] = GenGitAlg[F, Repo]
 
+  val gitBlameIgnoreRevsName = ".git-blame-ignore-revs"
+
   val updateBranchPrefix = "update"
 
   def branchFor(update: Update, baseBranch: Option[Branch]): Branch = {

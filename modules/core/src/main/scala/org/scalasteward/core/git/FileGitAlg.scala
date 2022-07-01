@@ -31,6 +31,9 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
     workspaceAlg: WorkspaceAlg[F],
     F: MonadCancelThrow[F]
 ) extends GenGitAlg[F, File] {
+  override def add(repo: File, file: String): F[Unit] =
+    git("add", file)(repo).void
+
   override def branchAuthors(repo: File, branch: Branch, base: Branch): F[List[String]] =
     git("log", "--pretty=format:'%an'", dotdot(base, branch))(repo).map(_.distinct)
 

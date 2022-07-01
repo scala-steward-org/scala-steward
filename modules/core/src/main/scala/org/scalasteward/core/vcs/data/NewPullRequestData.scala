@@ -221,7 +221,7 @@ object NewPullRequestData {
       edits: List[EditAttempt],
       filesWithOldVersion: List[String]
   ): List[String] = {
-    val commitCount = edits.flatMap(_.maybeCommit).size
+    val commitCount = edits.flatMap(_.commits).size
     val commitCountLabel = "commit-count:" + (commitCount match {
       case n if n <= 1 => s"$n"
       case n           => s"n:$n"
