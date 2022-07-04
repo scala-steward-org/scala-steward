@@ -37,7 +37,7 @@ final case class PostUpdateHookConfig(
       artifactId.map(ArtifactId(_)),
       command = command,
       useSandbox = true,
-      commitMessage = _ => CommitMsg(commitMessage),
+      commitMessage = CommitMsg.replaceVariables(commitMessage)(_, None),
       enabledByCache = _ => true,
       enabledByConfig = _ => true,
       addToGitBlameIgnoreRevs = addToGitBlameIgnoreRevs.getOrElse(false)
@@ -45,11 +45,9 @@ final case class PostUpdateHookConfig(
 }
 
 object PostUpdateHookConfig {
-
-  implicit val postUpdateHooksConfiguration: Configuration =
+  implicit val postUpdateHooksConfigConfiguration: Configuration =
     Configuration.default.withDefaults
 
   implicit val postUpdateHooksConfigCodec: Codec[PostUpdateHookConfig] =
     deriveConfiguredCodec
-
 }

@@ -146,19 +146,6 @@ object HookExecutor {
       addToGitBlameIgnoreRevs = true
     )
 
-  private val sbtJavaFormatterHook =
-    PostUpdateHook(
-      groupId = Some(GroupId("com.lightbend.sbt")),
-      artifactId = Some(ArtifactId("sbt-java-formatter")),
-      command = Nel.of("sbt", "javafmtAll"),
-      useSandbox = true,
-      commitMessage =
-        update => CommitMsg(s"Reformat with sbt-java-formatter ${update.nextVersion}"),
-      enabledByCache = _ => true,
-      enabledByConfig = _ => true,
-      addToGitBlameIgnoreRevs = true
-    )
-
   private def sbtTypelevelHook(
       groupId: GroupId,
       artifactId: ArtifactId
@@ -175,7 +162,7 @@ object HookExecutor {
     )
 
   private val postUpdateHooks: List[PostUpdateHook] =
-    scalafmtHook :: sbtJavaFormatterHook ::
+    scalafmtHook ::
       sbtGitHubActionsModules.map { case (gid, aid) =>
         sbtGithubActionsHook(gid, aid, _ => true)
       } ++
