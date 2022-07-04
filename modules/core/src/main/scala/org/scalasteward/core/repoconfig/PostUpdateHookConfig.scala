@@ -45,7 +45,7 @@ final case class PostUpdateHookConfig(
 }
 
 object PostUpdateHookConfig {
-  implicit val postUpdateHooksConfiguration: Configuration =
+  implicit val postUpdateHooksConfigConfiguration: Configuration =
     Configuration.default.withDefaults
 
   implicit val postUpdateHooksConfigCodec: Codec[PostUpdateHookConfig] =
