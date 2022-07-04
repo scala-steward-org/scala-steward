@@ -5,7 +5,8 @@ import munit.CatsEffectSuite
 import org.scalasteward.core.TestInstances.{dummyRepoCache, dummySha1}
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.RepoData
-import org.scalasteward.core.git.FileGitAlg
+import org.scalasteward.core.git.{gitBlameIgnoreRevsName, FileGitAlg}
+import org.scalasteward.core.io.FileAlgTest
 import org.scalasteward.core.mock.MockConfig.gitCmd
 import org.scalasteward.core.mock.MockContext.context.{hookExecutor, workspaceAlg}
 import org.scalasteward.core.mock.MockState
@@ -38,7 +39,9 @@ class HookExecutorTest extends CatsEffectSuite {
           List(dummySha1.value.value)
       )
     )
-    val state = hookExecutor.execPostUpdateHooks(data, update).runS(initial)
+    val gitBlameIgnoreRevs = repoDir / gitBlameIgnoreRevsName
+    val state = FileAlgTest.ioFileAlg.deleteForce(gitBlameIgnoreRevs) >>
+      hookExecutor.execPostUpdateHooks(data, update).runS(initial)
 
     val expected = initial.copy(
       trace = Vector(
@@ -63,7 +66,29 @@ class HookExecutorTest extends CatsEffectSuite {
           "-m",
           "Reformat with scalafmt 2.7.5"
         ),
+        Cmd(gitCmd(repoDir), "rev-parse", "--verify", "HEAD"),
+        Cmd("read", gitBlameIgnoreRevs.pathAsString),
+        Cmd("write", gitBlameIgnoreRevs.pathAsString),
+        Cmd(gitCmd(repoDir), "add", gitBlameIgnoreRevs.pathAsString),
+        Cmd(
+          gitCmd(repoDir),
+          "status",
+          "--porcelain",
+          "--untracked-files=no",
+          "--ignore-submodules"
+        ),
+        Cmd(
+          gitCmd(repoDir),
+          "commit",
+          "--all",
+          "--no-gpg-sign",
+          "-m",
+          s"Add 'Reformat with scalafmt 2.7.5' to $gitBlameIgnoreRevsName"
+        ),
         Cmd(gitCmd(repoDir), "rev-parse", "--verify", "HEAD")
+      ),
+      files = Map(
+        gitBlameIgnoreRevs -> s"# Scala Steward: Reformat with scalafmt 2.7.5\n${dummySha1.value.value}\n"
       )
     )
 
