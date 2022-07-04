@@ -23,14 +23,8 @@ import org.http4s.Uri
 import org.scalasteward.core.data._
 import org.scalasteward.core.edit.EditAttempt
 import org.scalasteward.core.edit.EditAttempt.ScalafixEdit
-import org.scalasteward.core.git
-<<<<<<< HEAD
 import org.scalasteward.core.git.{Branch, CommitMsg}
-import org.scalasteward.core.repoconfig.RepoConfigAlg
-=======
-import org.scalasteward.core.git.Branch
 import org.scalasteward.core.repoconfig.{GroupRepoConfig, RepoConfigAlg}
->>>>>>> main
 import org.scalasteward.core.util.{Details, Nel}
 
 final case class NewPullRequestData(
