@@ -28,7 +28,8 @@ final case class PostUpdateHookConfig(
     groupId: Option[GroupId],
     artifactId: Option[String],
     command: Nel[String],
-    commitMessage: String
+    commitMessage: String,
+    addToGitBlameIgnoreRevs: Option[Boolean] = None
 ) {
   def toHook: PostUpdateHook =
     PostUpdateHook(
@@ -38,7 +39,8 @@ final case class PostUpdateHookConfig(
       useSandbox = true,
       commitMessage = CommitMsg.replaceVariables(commitMessage)(_, None),
       enabledByCache = _ => true,
-      enabledByConfig = _ => true
+      enabledByConfig = _ => true,
+      addToGitBlameIgnoreRevs = addToGitBlameIgnoreRevs.getOrElse(false)
     )
 }
 

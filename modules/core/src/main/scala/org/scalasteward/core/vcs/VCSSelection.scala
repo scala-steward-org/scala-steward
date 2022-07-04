@@ -35,7 +35,10 @@ final class VCSSelection[F[_]](config: Config, user: AuthenticatedUser)(implicit
     F: MonadThrow[F]
 ) {
   private def gitHubApiAlg: GitHubApiAlg[F] =
-    new GitHubApiAlg[F](config.vcsCfg.apiHost, _ => github.authentication.addCredentials(user))
+    new GitHubApiAlg[F](
+      config.vcsCfg.apiHost,
+      _ => github.authentication.addCredentials(user)
+    )
 
   private def gitLabApiAlg: GitLabApiAlg[F] =
     new GitLabApiAlg[F](

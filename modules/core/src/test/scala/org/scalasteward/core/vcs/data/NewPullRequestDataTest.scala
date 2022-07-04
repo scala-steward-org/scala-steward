@@ -9,7 +9,7 @@ import org.scalasteward.core.buildtool.sbt.data.SbtVersion
 import org.scalasteward.core.data.{ReleaseRelatedUrl, RepoData, UpdateData, Version}
 import org.scalasteward.core.edit.EditAttempt.{ScalafixEdit, UpdateEdit}
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
-import org.scalasteward.core.git.{Branch, Commit, Sha1}
+import org.scalasteward.core.git.{Branch, Commit}
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.NewPullRequestData._
@@ -21,16 +21,22 @@ class NewPullRequestDataTest extends FunSuite {
       Repo("scala-steward", "bar"),
       ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single,
       Branch("master"),
-      Sha1(Sha1.HexString.unsafeFrom("d6b6791d2ea11df1d156fe70979ab8c3a5ba3433")),
+      dummySha1,
       Branch("update/logback-classic-1.2.3")
     )
     val obtained = from(data, "scala-steward:update/logback-classic-1.2.3").asJson.spaces2
     val expected =
       raw"""|{
             |  "title" : "Update logback-classic to 1.2.3",
-            |  "body" : "Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3.\n\n\nI'll automatically update this PR to resolve conflicts as long as you don't change it yourself.\n\nIf you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.\n\nConfigure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.\n\nHave a fantastic day writing Scala!\n\n<details>\n<summary>Ignore future updates</summary>\n\nAdd this to your `.scala-steward.conf` file to ignore future updates of this dependency:\n```\nupdates.ignore = [ { groupId = \"ch.qos.logback\", artifactId = \"logback-classic\" } ]\n```\n</details>\n\nlabels: library-update, early-semver-patch, semver-spec-patch, commit-count:0",
+            |  "body" : "Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3.\n\n\nI'll automatically update this PR to resolve conflicts as long as you don't change it yourself.\n\nIf you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.\n\nConfigure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.\n\nHave a fantastic day writing Scala!\n\n<details>\n<summary>Adjust future updates</summary>\n\nAdd this to your `.scala-steward.conf` file to ignore future updates of this dependency:\n```\nupdates.ignore = [ { groupId = \"ch.qos.logback\", artifactId = \"logback-classic\" } ]\n```\nOr, add this to slow down future updates of this dependency:\n```\ndependencyOverrides = [{\n  pullRequests = { frequency = \"@monthly\" },\n  dependency = { groupId = \"ch.qos.logback\", artifactId = \"logback-classic\" }\n}]\n```\n</details>\n\nlabels: library-update, early-semver-patch, semver-spec-patch, commit-count:0",
             |  "head" : "scala-steward:update/logback-classic-1.2.3",
             |  "base" : "master",
+            |  "labels" : [
+            |    "library-update",
+            |    "early-semver-patch",
+            |    "semver-spec-patch",
+            |    "commit-count:0"
+            |  ],
             |  "draft" : false
             |}""".stripMargin
     assertEquals(obtained, expected)
@@ -46,16 +52,22 @@ class NewPullRequestDataTest extends FunSuite {
       Repo("scala-steward", "bar"),
       ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single,
       Branch("master"),
-      Sha1(Sha1.HexString.unsafeFrom("d6b6791d2ea11df1d156fe70979ab8c3a5ba3433")),
+      dummySha1,
       Branch("update/logback-classic-1.2.3")
     )
     val obtained = from(data, "scala-steward:update/logback-classic-1.2.3").asJson.spaces2
     val expected =
       raw"""|{
             |  "title" : "Update logback-classic to 1.2.3",
-            |  "body" : "Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3.\n\n\nI'll automatically update this PR to resolve conflicts as long as you don't change it yourself.\n\nIf you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.\n\nConfigure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.\n\nHave a fantastic day writing Scala!\n\n<details>\n<summary>Ignore future updates</summary>\n\nAdd this to your `.scala-steward.conf` file to ignore future updates of this dependency:\n```\nupdates.ignore = [ { groupId = \"ch.qos.logback\", artifactId = \"logback-classic\" } ]\n```\n</details>\n<details>\n<summary>Note that the Scala Steward config file `.scala-steward.conf` wasn't parsed correctly</summary>\n\n```\nFailed to parse .scala-steward.conf\n```\n</details>\n\nlabels: library-update, early-semver-patch, semver-spec-patch, commit-count:0",
+            |  "body" : "Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3.\n\n\nI'll automatically update this PR to resolve conflicts as long as you don't change it yourself.\n\nIf you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.\n\nConfigure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.\n\nHave a fantastic day writing Scala!\n\n<details>\n<summary>Adjust future updates</summary>\n\nAdd this to your `.scala-steward.conf` file to ignore future updates of this dependency:\n```\nupdates.ignore = [ { groupId = \"ch.qos.logback\", artifactId = \"logback-classic\" } ]\n```\nOr, add this to slow down future updates of this dependency:\n```\ndependencyOverrides = [{\n  pullRequests = { frequency = \"@monthly\" },\n  dependency = { groupId = \"ch.qos.logback\", artifactId = \"logback-classic\" }\n}]\n```\n</details>\n<details>\n<summary>Note that the Scala Steward config file `.scala-steward.conf` wasn't parsed correctly</summary>\n\n```\nFailed to parse .scala-steward.conf\n```\n</details>\n\nlabels: library-update, early-semver-patch, semver-spec-patch, commit-count:0",
             |  "head" : "scala-steward:update/logback-classic-1.2.3",
             |  "base" : "master",
+            |  "labels" : [
+            |    "library-update",
+            |    "early-semver-patch",
+            |    "semver-spec-patch",
+            |    "commit-count:0"
+            |  ],
             |  "draft" : false
             |}""".stripMargin
     assertEquals(obtained, expected)
@@ -131,7 +143,7 @@ class NewPullRequestDataTest extends FunSuite {
         Nel.of("I am a rewrite rule")
       ),
       Right(()),
-      Some(Commit())
+      Some(Commit(dummySha1))
     )
     val edits = List(scalafixEdit)
     val appliedMigrations = migrationNote(edits)
@@ -161,7 +173,7 @@ class NewPullRequestDataTest extends FunSuite {
         Some("https://scalacenter.github.io/scalafix/")
       ),
       Right(()),
-      Some(Commit())
+      Some(Commit(dummySha1))
     )
     val edits = List(scalafixEdit)
     val detail = migrationNote(edits)
@@ -193,7 +205,7 @@ class NewPullRequestDataTest extends FunSuite {
         Some("https://scalacenter.github.io/scalafix/")
       ),
       Right(()),
-      Some(Commit())
+      Some(Commit(dummySha1))
     )
     val scalafixEdit2 = ScalafixEdit(
       ScalafixMigration(
@@ -276,7 +288,7 @@ class NewPullRequestDataTest extends FunSuite {
 
   test("commit-count label") {
     val update = ("a".g % "b".a % "1" -> "2").single
-    val updateEdit = UpdateEdit(update, Commit())
+    val updateEdit = UpdateEdit(update, Commit(dummySha1))
     val scalafixEdit = ScalafixEdit(
       ScalafixMigration(
         "com.spotify".g,
@@ -286,7 +298,7 @@ class NewPullRequestDataTest extends FunSuite {
         Some("https://scalacenter.github.io/scalafix/")
       ),
       Right(()),
-      Some(Commit())
+      Some(Commit(dummySha1))
     )
 
     val oneEdit = labelsFor(update, List(updateEdit), List.empty)

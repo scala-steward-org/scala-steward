@@ -21,6 +21,7 @@ import cats.implicits._
 import cats.parse.{Numbers, Parser, Rfc5234}
 import io.circe.Codec
 import io.circe.generic.extras.semiauto.deriveUnwrappedCodec
+import org.scalasteward.core.data.Version.startsWithDate
 
 final case class Version(value: String) {
   override def toString: String = value
@@ -87,7 +88,7 @@ final case class Version(value: String) {
     components.exists {
       case _: Version.Component.Hash => true
       case _                         => false
-    }
+    } || Rfc5234.hexdig.rep(8).string.filterNot(startsWithDate).parse(value).isRight
 
   private[this] def alnumComponentsWithoutPreRelease: List[Version.Component] =
     alnumComponents.takeWhile {

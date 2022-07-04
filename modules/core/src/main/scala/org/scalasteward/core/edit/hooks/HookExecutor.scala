@@ -16,14 +16,20 @@
 
 package org.scalasteward.core.edit.hooks
 
+import better.files.File
 import cats.MonadThrow
 import cats.syntax.all._
-import org.scalasteward.core.buildtool.sbt.{sbtArtifactId, sbtGroupId}
+import org.scalasteward.core.buildtool.sbt.{
+  sbtArtifactId,
+  sbtGroupId,
+  sbtScalaFixArtifactId,
+  sbtScalaFixGroupId
+}
 import org.scalasteward.core.data._
 import org.scalasteward.core.edit.EditAttempt
 import org.scalasteward.core.edit.EditAttempt.HookEdit
-import org.scalasteward.core.git.{CommitMsg, GitAlg}
-import org.scalasteward.core.io.{ProcessAlg, WorkspaceAlg}
+import org.scalasteward.core.git.{gitBlameIgnoreRevsName, Commit, CommitMsg, GitAlg}
+import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.repocache.RepoCache
 import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtGroupId, ScalafmtAlg}
 import org.scalasteward.core.util.Nel
@@ -32,6 +38,7 @@ import org.scalasteward.core.vcs.data.Repo
 import org.typelevel.log4cats.Logger
 
 final class HookExecutor[F[_]](implicit
+    fileAlg: FileAlg[F],
     gitAlg: GitAlg[F],
     logger: Logger[F],
     processAlg: ProcessAlg[F],
@@ -52,15 +59,38 @@ final class HookExecutor[F[_]](implicit
   private def execPostUpdateHook(repo: Repo, update: Update, hook: PostUpdateHook): F[EditAttempt] =
     for {
       _ <- logger.info(
-        s"Executing post-update hook for ${update.groupId}:${update.mainArtifactId} with command " +
-          s"${hook.command.mkString_("'", " ", "'")}"
+        s"Executing post-update hook for ${update.groupId}:${update.mainArtifactId} with command ${hook.showCommand}"
       )
       repoDir <- workspaceAlg.repoDir(repo)
       result <- logger.attemptWarn.log("Post-update hook failed") {
         processAlg.execMaybeSandboxed(hook.useSandbox)(hook.command, repoDir)
       }
-      maybeCommit <- gitAlg.commitAllIfDirty(repo, hook.commitMessage(update))
-    } yield HookEdit(hook, result.void, maybeCommit)
+      commitMessage = hook.commitMessage(update)
+      maybeHookCommit <- gitAlg.commitAllIfDirty(repo, commitMessage)
+      maybeBlameIgnoreCommit <-
+        maybeHookCommit.flatTraverse(addToGitBlameIgnoreRevs(repo, repoDir, hook, _, commitMessage))
+    } yield HookEdit(hook, result.void, maybeHookCommit.toList ++ maybeBlameIgnoreCommit.toList)
+
+  private def addToGitBlameIgnoreRevs(
+      repo: Repo,
+      repoDir: File,
+      hook: PostUpdateHook,
+      commit: Commit,
+      commitMsg: CommitMsg
+  ): F[Option[Commit]] =
+    if (hook.addToGitBlameIgnoreRevs) {
+      for {
+        _ <- F.unit
+        file = repoDir / gitBlameIgnoreRevsName
+        newLines = s"# Scala Steward: ${commitMsg.title}\n${commit.sha1.value.value}\n"
+        oldContent <- fileAlg.readFile(file)
+        newContent = oldContent.fold(newLines)(_ + "\n" + newLines)
+        _ <- fileAlg.writeFile(file, newContent)
+        _ <- gitAlg.add(repo, file.pathAsString)
+        blameIgnoreCommitMsg = CommitMsg(s"Add '${commitMsg.title}' to $gitBlameIgnoreRevsName")
+        maybeBlameIgnoreCommit <- gitAlg.commitAllIfDirty(repo, blameIgnoreCommitMsg)
+      } yield maybeBlameIgnoreCommit
+    } else F.pure(None)
 }
 
 object HookExecutor {
@@ -72,17 +102,21 @@ object HookExecutor {
     (GroupId("com.codecommit"), ArtifactId("sbt-spiewak-bintray")),
     (GroupId("io.github.nafg.mergify"), ArtifactId("sbt-mergify-github-actions")),
     (GroupId("io.chrisdavenport"), ArtifactId("sbt-davenverse")),
-    (GroupId("org.typelevel"), ArtifactId("sbt-typelevel-ci-release"))
+    (GroupId("org.typelevel"), ArtifactId("sbt-typelevel-ci-release")),
+    (GroupId("org.typelevel"), ArtifactId("sbt-typelevel-mergify"))
   )
 
   private val sbtTypelevelModules = List(
     (GroupId("org.typelevel"), ArtifactId("sbt-typelevel")),
-    (GroupId("org.http4s"), ArtifactId("sbt-http4s-org"))
+    (GroupId("org.http4s"), ArtifactId("sbt-http4s-org")),
+    (GroupId("edu.gemini"), ArtifactId("sbt-lucuma")),
+    (GroupId("edu.gemini"), ArtifactId("sbt-lucuma-lib")),
+    (GroupId("edu.gemini"), ArtifactId("sbt-lucuma-app"))
   )
 
   // Modules that most likely require the workflow to be regenerated if updated.
   private val conditionalSbtGitHubActionsModules =
-    (sbtGroupId, sbtArtifactId) :: scalaLangModules
+    (sbtGroupId, sbtArtifactId) :: (sbtScalaFixGroupId, sbtScalaFixArtifactId) :: scalaLangModules
 
   private def sbtGithubActionsHook(
       groupId: GroupId,
@@ -96,7 +130,8 @@ object HookExecutor {
       useSandbox = true,
       commitMessage = _ => CommitMsg("Regenerate workflow with sbt-github-actions"),
       enabledByCache = enabledByCache,
-      enabledByConfig = _ => true
+      enabledByConfig = _ => true,
+      addToGitBlameIgnoreRevs = false
     )
 
   private val scalafmtHook =
@@ -107,7 +142,8 @@ object HookExecutor {
       useSandbox = false,
       commitMessage = update => CommitMsg(s"Reformat with scalafmt ${update.nextVersion}"),
       enabledByCache = _ => true,
-      enabledByConfig = _.scalafmt.runAfterUpgradingOrDefault
+      enabledByConfig = _.scalafmt.runAfterUpgradingOrDefault,
+      addToGitBlameIgnoreRevs = true
     )
 
   private def sbtTypelevelHook(
@@ -121,7 +157,8 @@ object HookExecutor {
       useSandbox = true,
       commitMessage = _ => CommitMsg("Run prePR with sbt-typelevel"),
       enabledByCache = _ => true,
-      enabledByConfig = _ => true
+      enabledByConfig = _ => true,
+      addToGitBlameIgnoreRevs = false
     )
 
   private val postUpdateHooks: List[PostUpdateHook] =

@@ -25,7 +25,7 @@ object MockContext {
     RepoConfigLoader.defaultRepoConfigUrl ->
       ioFileAlg.readResource("default.scala-steward.conf").unsafeRunSync(),
     ArtifactMigrationsLoader.defaultArtifactMigrationsUrl ->
-      ioFileAlg.readResource("artifact-migrations.conf").unsafeRunSync(),
+      ioFileAlg.readResource("artifact-migrations.v2.conf").unsafeRunSync(),
     ScalafixMigrationsLoader.defaultScalafixMigrationsUrl ->
       ioFileAlg.readResource("scalafix-migrations.conf").unsafeRunSync()
   )

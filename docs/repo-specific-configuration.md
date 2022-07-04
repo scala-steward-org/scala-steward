@@ -93,6 +93,28 @@ postUpdateHooks = [{
   groupId = "com.github.sbt",
   artifactId = "sbt-protobuf"
 }]
+
+# You can override some config options for dependencies that matches the given pattern.
+# Currently, "pullRequests" can be overridden.  
+# Each pattern must have `groupId`, and may have `artifactId` and `version`.
+# First-matched entry is used.
+# More-specific entry should be placed before less-specific entry.
+#
+# Default: empty `[]`
+dependencyOverrides = [
+  {
+    dependency = { groupId = "com.example", artifactId = "foo", version = "2." },
+    pullRequests = { frequency = "1 day" },
+  },
+  {
+    dependency = { groupId = "com.example", artifactId = "foo" },
+    pullRequests = { frequency = "30 day" },
+  },
+  {
+    dependency = { groupId = "com.example" },
+    pullRequests = { frequency = "14 day" },
+  }
+]
 ```
 
 The version information given in the patterns above can be in two formats:

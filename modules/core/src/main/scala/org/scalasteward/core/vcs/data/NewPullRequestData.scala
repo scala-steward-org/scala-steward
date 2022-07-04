@@ -24,8 +24,13 @@ import org.scalasteward.core.data._
 import org.scalasteward.core.edit.EditAttempt
 import org.scalasteward.core.edit.EditAttempt.ScalafixEdit
 import org.scalasteward.core.git
+<<<<<<< HEAD
 import org.scalasteward.core.git.{Branch, CommitMsg}
 import org.scalasteward.core.repoconfig.RepoConfigAlg
+=======
+import org.scalasteward.core.git.Branch
+import org.scalasteward.core.repoconfig.{GroupRepoConfig, RepoConfigAlg}
+>>>>>>> main
 import org.scalasteward.core.util.{Details, Nel}
 
 final case class NewPullRequestData(
@@ -33,6 +38,7 @@ final case class NewPullRequestData(
     body: String,
     head: String,
     base: Branch,
+    labels: List[String],
     draft: Boolean = false
 )
 
@@ -46,7 +52,8 @@ object NewPullRequestData {
       artifactIdToUrl: Map[String, Uri],
       releaseRelatedUrls: List[ReleaseRelatedUrl],
       filesWithOldVersion: List[String],
-      configParsingError: Option[String]
+      configParsingError: Option[String],
+      labels: List[String]
   ): String = {
     val artifacts = artifactsWithOptionalUrl(update, artifactIdToUrl)
     val migrations = edits.collect { case scalafixEdit: ScalafixEdit => scalafixEdit }
@@ -55,7 +62,7 @@ object NewPullRequestData {
     val details = List(
       appliedMigrations,
       oldVersionDetails,
-      ignoreFutureUpdates(update).some,
+      adjustFutureUpdates(update).some,
       configParsingError.map(configParsingErrorDetails)
     ).flatten
 
@@ -72,7 +79,7 @@ object NewPullRequestData {
         |
         |${details.map(_.toHtml).mkString("\n")}
         |
-        |${labelsFor(update, edits, filesWithOldVersion).mkString("labels: ", ", ", "")}
+        |${labels.mkString("labels: ", ", ", "")}
         |""".stripMargin.trim
   }
 
@@ -130,12 +137,16 @@ object NewPullRequestData {
       )
     }
 
-  def ignoreFutureUpdates(update: Update): Details =
+  def adjustFutureUpdates(update: Update): Details =
     Details(
-      "Ignore future updates",
+      "Adjust future updates",
       s"""|Add this to your `${RepoConfigAlg.repoConfigBasename}` file to ignore future updates of this dependency:
           |```
           |${RepoConfigAlg.configToIgnoreFurtherUpdates(update)}
+          |```
+          |Or, add this to slow down future updates of this dependency:
+          |```
+          |${GroupRepoConfig.configToSlowDownUpdatesFrequency(update)}
           |```
           |""".stripMargin.trim
     )
@@ -177,7 +188,8 @@ object NewPullRequestData {
       artifactIdToUrl: Map[String, Uri] = Map.empty,
       releaseRelatedUrls: List[ReleaseRelatedUrl] = List.empty,
       filesWithOldVersion: List[String] = List.empty
-  ): NewPullRequestData =
+  ): NewPullRequestData = {
+    val labels = labelsFor(data.update, edits, filesWithOldVersion)
     NewPullRequestData(
       title = CommitMsg
         .replaceVariables(data.repoConfig.commits.messageOrDefault)(
@@ -191,11 +203,14 @@ object NewPullRequestData {
         artifactIdToUrl,
         releaseRelatedUrls,
         filesWithOldVersion,
-        data.repoData.cache.maybeRepoConfigParsingError
+        data.repoData.cache.maybeRepoConfigParsingError,
+        labels
       ),
       head = branchName,
-      base = data.baseBranch
+      base = data.baseBranch,
+      labels = labels
     )
+  }
 
   def updateType(update: Update): String = {
     val dependencies = update.dependencies
@@ -214,7 +229,7 @@ object NewPullRequestData {
       edits: List[EditAttempt],
       filesWithOldVersion: List[String]
   ): List[String] = {
-    val commitCount = edits.flatMap(_.maybeCommit).size
+    val commitCount = edits.flatMap(_.commits).size
     val commitCountLabel = "commit-count:" + (commitCount match {
       case n if n <= 1 => s"$n"
       case n           => s"n:$n"

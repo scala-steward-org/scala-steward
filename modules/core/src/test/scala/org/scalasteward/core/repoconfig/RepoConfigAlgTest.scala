@@ -5,6 +5,7 @@ import cats.syntax.all._
 import eu.timepit.refined.types.numeric.NonNegInt
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.data.GroupId
 import org.scalasteward.core.mock.MockContext.context.repoConfigAlg
 import org.scalasteward.core.mock.MockState.TraceEntry.Log
 import org.scalasteward.core.mock.{MockConfig, MockState}
@@ -39,6 +40,11 @@ class RepoConfigAlgTest extends FunSuite {
          |updates.limit = 4
          |updates.fileExtensions = [ ".txt" ]
          |pullRequests.frequency = "@weekly"
+         |dependencyOverrides = [
+         |  { pullRequests.frequency = "@daily",   dependency = { groupId = "eu.timepit" } },
+         |  { pullRequests.frequency = "@monthly", dependency = { groupId = "eu.timepit", artifactId = "refined.1" } },
+         |  { pullRequests.frequency = "@weekly",  dependency = { groupId = "eu.timepit", artifactId = "refined.1", version = { prefix="1." } } },
+         |]
          |commits.message = "Update ${artifactName} from ${currentVersion} to ${nextVersion}"
          |buildRoots = [ ".", "subfolder/subfolder" ]
          |""".stripMargin
@@ -74,7 +80,31 @@ class RepoConfigAlgTest extends FunSuite {
       commits = CommitsConfig(
         message = Some("Update ${artifactName} from ${currentVersion} to ${nextVersion}")
       ),
-      buildRoots = Some(List(BuildRootConfig.repoRoot, BuildRootConfig("subfolder/subfolder")))
+      buildRoots = Some(List(BuildRootConfig.repoRoot, BuildRootConfig("subfolder/subfolder"))),
+      dependencyOverrides = List(
+        GroupRepoConfig(
+          dependency = UpdatePattern(GroupId("eu.timepit"), None, None),
+          pullRequests = PullRequestsConfig(
+            frequency = Some(PullRequestFrequency.Timespan(1.day))
+          )
+        ),
+        GroupRepoConfig(
+          dependency = UpdatePattern(GroupId("eu.timepit"), Some("refined.1"), None),
+          pullRequests = PullRequestsConfig(
+            frequency = Some(PullRequestFrequency.Timespan(30.days))
+          )
+        ),
+        GroupRepoConfig(
+          dependency = UpdatePattern(
+            GroupId("eu.timepit"),
+            Some("refined.1"),
+            Some(VersionPattern(prefix = Some("1.")))
+          ),
+          pullRequests = PullRequestsConfig(
+            frequency = Some(PullRequestFrequency.Timespan(7.days))
+          )
+        )
+      )
     )
     assertEquals(config, Right(expected))
   }

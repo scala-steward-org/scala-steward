@@ -16,6 +16,7 @@
 
 package org.scalasteward.core.edit.hooks
 
+import cats.implicits._
 import org.scalasteward.core.data.{ArtifactId, GroupId, Update}
 import org.scalasteward.core.git.CommitMsg
 import org.scalasteward.core.repocache.RepoCache
@@ -29,5 +30,8 @@ final case class PostUpdateHook(
     useSandbox: Boolean,
     commitMessage: Update => CommitMsg,
     enabledByCache: RepoCache => Boolean,
-    enabledByConfig: RepoConfig => Boolean
-)
+    enabledByConfig: RepoConfig => Boolean,
+    addToGitBlameIgnoreRevs: Boolean
+) {
+  def showCommand: String = command.mkString_("'", " ", "'")
+}
