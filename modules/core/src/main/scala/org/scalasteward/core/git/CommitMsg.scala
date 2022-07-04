@@ -41,13 +41,12 @@ object CommitMsg {
     val nextVersionValue = update.nextVersion.value
     val defaultValue = s"Update $artifactNameValue to $nextVersionValue" +
       baseBranch.fold("")(branch => s" in ${branch.name}")
-    CommitMsg(
-      s
-        .replace("${default}", defaultValue)
-        .replace("${artifactName}", artifactNameValue)
-        .replace("${currentVersion}", update.currentVersion.value)
-        .replace("${nextVersion}", nextVersionValue)
-        .replace("${branchName}", baseBranch.map(_.name).orEmpty)
-    )
+    val title = s
+      .replace("${default}", defaultValue)
+      .replace("${artifactName}", artifactNameValue)
+      .replace("${currentVersion}", update.currentVersion.value)
+      .replace("${nextVersion}", nextVersionValue)
+      .replace("${branchName}", baseBranch.map(_.name).orEmpty)
+    CommitMsg(title = title)
   }
 }
