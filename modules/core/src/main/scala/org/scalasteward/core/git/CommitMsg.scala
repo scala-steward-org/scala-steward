@@ -29,6 +29,9 @@ final case class CommitMsg(
   def toNel: Nel[String] =
     Nel(title, body ++ trailers)
 
+  def withParagraph(paragraph: String): CommitMsg =
+    copy(body = body :+ paragraph)
+
   private def trailers: Option[String] = {
     val lines = coAuthoredBy.map(author => s"Co-authored-by: ${author.show}")
     Nel.fromList(lines).map(_.mkString_("\n"))

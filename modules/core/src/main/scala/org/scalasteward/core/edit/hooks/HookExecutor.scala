@@ -65,7 +65,9 @@ final class HookExecutor[F[_]](implicit
       result <- logger.attemptWarn.log("Post-update hook failed") {
         processAlg.execMaybeSandboxed(hook.useSandbox)(hook.command, repoDir)
       }
-      commitMessage = hook.commitMessage(update)
+      commitMessage = hook
+        .commitMessage(update)
+        .withParagraph(s"Executed command: ${hook.command.mkString_(" ")}")
       maybeHookCommit <- gitAlg.commitAllIfDirty(repo, commitMessage)
       maybeBlameIgnoreCommit <-
         maybeHookCommit.flatTraverse(addToGitBlameIgnoreRevs(repo, repoDir, hook, _, commitMessage))
