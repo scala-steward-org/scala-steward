@@ -64,7 +64,9 @@ class HookExecutorTest extends CatsEffectSuite {
           "--all",
           "--no-gpg-sign",
           "-m",
-          "Reformat with scalafmt 2.7.5"
+          "Reformat with scalafmt 2.7.5",
+          "-m",
+          s"Executed command: $scalafmtBinary ${opts.nonInteractive}"
         ),
         Cmd(gitCmd(repoDir), "rev-parse", "--verify", "HEAD"),
         Cmd("read", gitBlameIgnoreRevs.pathAsString),
