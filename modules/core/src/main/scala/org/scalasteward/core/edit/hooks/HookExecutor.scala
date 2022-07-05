@@ -124,19 +124,17 @@ object HookExecutor {
       groupId: GroupId,
       artifactId: ArtifactId,
       enabledByCache: RepoCache => Boolean
-  ): PostUpdateHook = {
-    val task = "githubWorkflowGenerate"
+  ): PostUpdateHook =
     PostUpdateHook(
       groupId = Some(groupId),
       artifactId = Some(artifactId),
-      command = Nel.of("sbt", task),
+      command = Nel.of("sbt", "githubWorkflowGenerate"),
       useSandbox = true,
-      commitMessage = _ => CommitMsg(s"Regenerate workflow with 'sbt $task'"),
+      commitMessage = _ => CommitMsg(s"Regenerate GitHub Actions workflow"),
       enabledByCache = enabledByCache,
       enabledByConfig = _ => true,
       addToGitBlameIgnoreRevs = false
     )
-  }
 
   private val scalafmtHook =
     PostUpdateHook(
