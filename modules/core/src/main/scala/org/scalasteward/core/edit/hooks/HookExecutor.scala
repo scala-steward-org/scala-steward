@@ -16,6 +16,7 @@
 
 package org.scalasteward.core.edit.hooks
 
+import better.files.File
 import cats.MonadThrow
 import cats.syntax.all._
 import org.scalasteward.core.buildtool.sbt.{
@@ -27,8 +28,8 @@ import org.scalasteward.core.buildtool.sbt.{
 import org.scalasteward.core.data._
 import org.scalasteward.core.edit.EditAttempt
 import org.scalasteward.core.edit.EditAttempt.HookEdit
-import org.scalasteward.core.git.{CommitMsg, GitAlg}
-import org.scalasteward.core.io.{ProcessAlg, WorkspaceAlg}
+import org.scalasteward.core.git.{gitBlameIgnoreRevsName, Commit, CommitMsg, GitAlg}
+import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.repocache.RepoCache
 import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtGroupId, ScalafmtAlg}
 import org.scalasteward.core.util.Nel
@@ -37,6 +38,7 @@ import org.scalasteward.core.vcs.data.Repo
 import org.typelevel.log4cats.Logger
 
 final class HookExecutor[F[_]](implicit
+    fileAlg: FileAlg[F],
     gitAlg: GitAlg[F],
     logger: Logger[F],
     processAlg: ProcessAlg[F],
@@ -57,15 +59,40 @@ final class HookExecutor[F[_]](implicit
   private def execPostUpdateHook(repo: Repo, update: Update, hook: PostUpdateHook): F[EditAttempt] =
     for {
       _ <- logger.info(
-        s"Executing post-update hook for ${update.groupId}:${update.mainArtifactId} with command " +
-          s"${hook.command.mkString_("'", " ", "'")}"
+        s"Executing post-update hook for ${update.groupId}:${update.mainArtifactId} with command ${hook.showCommand}"
       )
       repoDir <- workspaceAlg.repoDir(repo)
       result <- logger.attemptWarn.log("Post-update hook failed") {
         processAlg.execMaybeSandboxed(hook.useSandbox)(hook.command, repoDir)
       }
-      maybeCommit <- gitAlg.commitAllIfDirty(repo, hook.commitMessage(update))
-    } yield HookEdit(hook, result.void, maybeCommit)
+      commitMessage = hook
+        .commitMessage(update)
+        .withParagraph(s"Executed command: ${hook.command.mkString_(" ")}")
+      maybeHookCommit <- gitAlg.commitAllIfDirty(repo, commitMessage)
+      maybeBlameIgnoreCommit <-
+        maybeHookCommit.flatTraverse(addToGitBlameIgnoreRevs(repo, repoDir, hook, _, commitMessage))
+    } yield HookEdit(hook, result.void, maybeHookCommit.toList ++ maybeBlameIgnoreCommit.toList)
+
+  private def addToGitBlameIgnoreRevs(
+      repo: Repo,
+      repoDir: File,
+      hook: PostUpdateHook,
+      commit: Commit,
+      commitMsg: CommitMsg
+  ): F[Option[Commit]] =
+    if (hook.addToGitBlameIgnoreRevs) {
+      for {
+        _ <- F.unit
+        file = repoDir / gitBlameIgnoreRevsName
+        newLines = s"# Scala Steward: ${commitMsg.title}\n${commit.sha1.value.value}\n"
+        oldContent <- fileAlg.readFile(file)
+        newContent = oldContent.fold(newLines)(_ + "\n" + newLines)
+        _ <- fileAlg.writeFile(file, newContent)
+        _ <- gitAlg.add(repo, file.pathAsString)
+        blameIgnoreCommitMsg = CommitMsg(s"Add '${commitMsg.title}' to $gitBlameIgnoreRevsName")
+        maybeBlameIgnoreCommit <- gitAlg.commitAllIfDirty(repo, blameIgnoreCommitMsg)
+      } yield maybeBlameIgnoreCommit
+    } else F.pure(None)
 }
 
 object HookExecutor {
@@ -106,7 +133,8 @@ object HookExecutor {
       useSandbox = true,
       commitMessage = _ => CommitMsg(s"Regenerate workflow with 'sbt $task'"),
       enabledByCache = enabledByCache,
-      enabledByConfig = _ => true
+      enabledByConfig = _ => true,
+      addToGitBlameIgnoreRevs = false
     )
   }
 
@@ -118,19 +146,8 @@ object HookExecutor {
       useSandbox = false,
       commitMessage = update => CommitMsg(s"Reformat with scalafmt ${update.nextVersion}"),
       enabledByCache = _ => true,
-      enabledByConfig = _.scalafmt.runAfterUpgradingOrDefault
-    )
-
-  private val sbtJavaFormatterHook =
-    PostUpdateHook(
-      groupId = Some(GroupId("com.lightbend.sbt")),
-      artifactId = Some(ArtifactId("sbt-java-formatter")),
-      command = Nel.of("sbt", "javafmtAll"),
-      useSandbox = true,
-      commitMessage =
-        update => CommitMsg(s"Reformat with sbt-java-formatter ${update.nextVersion}"),
-      enabledByCache = _ => true,
-      enabledByConfig = _ => true
+      enabledByConfig = _.scalafmt.runAfterUpgradingOrDefault,
+      addToGitBlameIgnoreRevs = true
     )
 
   private def sbtTypelevelHook(
@@ -144,14 +161,15 @@ object HookExecutor {
       useSandbox = true,
       commitMessage = _ => CommitMsg("Run prePR with sbt-typelevel"),
       enabledByCache = _ => true,
-      enabledByConfig = _ => true
+      enabledByConfig = _ => true,
+      addToGitBlameIgnoreRevs = false
     )
 
   private def githubWorkflowGenerateExists(cache: RepoCache): Boolean =
     cache.dependsOn(sbtGitHubWorkflowGenerateModules ++ sbtTypelevelModules)
 
   private val postUpdateHooks: List[PostUpdateHook] =
-    scalafmtHook :: sbtJavaFormatterHook ::
+    scalafmtHook ::
       sbtGitHubWorkflowGenerateModules.map { case (gid, aid) =>
         sbtGithubWorkflowGenerateHook(gid, aid, _ => true)
       } ++

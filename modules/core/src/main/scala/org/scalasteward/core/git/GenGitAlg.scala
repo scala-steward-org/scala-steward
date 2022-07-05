@@ -24,6 +24,8 @@ import org.scalasteward.core.application.Config.GitCfg
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 
 trait GenGitAlg[F[_], Repo] {
+  def add(repo: Repo, file: String): F[Unit]
+
   def branchAuthors(repo: Repo, branch: Branch, base: Branch): F[List[String]]
 
   def branchExists(repo: Repo, branch: Branch): F[Boolean]
@@ -88,6 +90,9 @@ trait GenGitAlg[F[_], Repo] {
   final def contramapRepoF[A](f: A => F[Repo])(implicit F: FlatMap[F]): GenGitAlg[F, A] = {
     val self = this
     new GenGitAlg[F, A] {
+      override def add(repo: A, file: String): F[Unit] =
+        f(repo).flatMap(self.add(_, file))
+
       override def branchAuthors(repo: A, branch: Branch, base: Branch): F[List[String]] =
         f(repo).flatMap(self.branchAuthors(_, branch, base))
 

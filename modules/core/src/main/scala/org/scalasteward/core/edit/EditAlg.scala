@@ -24,8 +24,7 @@ import org.scalasteward.core.data.{RepoData, Update}
 import org.scalasteward.core.edit.EditAttempt.{ScalafixEdit, UpdateEdit}
 import org.scalasteward.core.edit.hooks.HookExecutor
 import org.scalasteward.core.edit.scalafix.{ScalafixMigration, ScalafixMigrationsFinder}
-import org.scalasteward.core.git
-import org.scalasteward.core.git.GitAlg
+import org.scalasteward.core.git.{CommitMsg, GitAlg}
 import org.scalasteward.core.io.{isSourceFile, FileAlg, WorkspaceAlg}
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafmt.{scalafmtModule, ScalafmtAlg}
@@ -68,10 +67,7 @@ final class EditAlg[F[_]](implicit
                     runScalafixMigrations(repo, data.config, preMigrations) <*
                     bumpVersion(update, files)
               _ <- reformatChangedFiles(data)
-              updateCommitMsg = git.commitMsgFor(update, data.config.commits, data.repo.branch)
-              updateEdit <- gitAlg
-                .commitAllIfDirty(repo, updateCommitMsg)
-                .map(_.map(commit => UpdateEdit(update, commit)))
+              updateEdit <- createUpdateEdit(repo, data.config, update)
               postScalafixEdits <- runScalafixMigrations(repo, data.config, postMigrations)
               hooksEdits <- hookExecutor.execPostUpdateHooks(data, update)
             } yield preScalafixEdits ++ updateEdit ++ postScalafixEdits ++ hooksEdits
@@ -125,5 +121,14 @@ final class EditAlg[F[_]](implicit
         scalafmtAlg.reformatChanged(data.repo)
       }
     }
+  }
+
+  private def createUpdateEdit(
+      repo: Repo,
+      config: RepoConfig,
+      update: Update
+  ): F[Option[EditAttempt]] = {
+    val commitMsg = CommitMsg.replaceVariables(config.commits.messageOrDefault)(update, repo.branch)
+    gitAlg.commitAllIfDirty(repo, commitMsg).map(_.map(commit => UpdateEdit(update, commit)))
   }
 }
