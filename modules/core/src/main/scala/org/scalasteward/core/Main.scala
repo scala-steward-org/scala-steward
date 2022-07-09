@@ -19,7 +19,7 @@ package org.scalasteward.core
 import cats.effect.std.Console
 import cats.effect.{ExitCode, IO, IOApp}
 import org.scalasteward.core.application.{Cli, Context}
-import org.scalasteward.core.repoconfig.ValidateRepoConfigAlg.ConfigValidationResult
+import org.scalasteward.core.repoconfig.ValidateRepoConfigAlg
 
 object Main extends IOApp {
   override def run(args: List[String]): IO[ExitCode] =
@@ -31,19 +31,11 @@ object Main extends IOApp {
             config.validateRepoConfig match {
               case None => ctx.stewardAlg.runF
               case Some(file) =>
-                ctx.validateRepoConfigAlg.validateConfigFile(file).flatMap {
-                  case ConfigValidationResult.Ok =>
-                    Console[IO]
-                      .println(s"Configuration file at $file is valid.")
-                      .as(ExitCode.Success)
-                  case ConfigValidationResult.FileDoesNotExist =>
-                    Console[IO]
-                      .println(s"Configuration file at $file does not exist!")
-                      .as(ExitCode.Error)
-                  case ConfigValidationResult.ConfigIsInvalid(err) =>
-                    Console[IO]
-                      .println(s"Configuration file at $file contains errors:\n  $err")
-                      .as(ExitCode.Error)
+                ctx.validateRepoConfigAlg.validateConfigFile(file).flatMap { result =>
+                  ValidateRepoConfigAlg.presentValidationResult(file)(result) match {
+                    case Left(errMsg) => Console[IO].println(errMsg).as(ExitCode.Error)
+                    case Right(okMsg) => Console[IO].println(okMsg).as(ExitCode.Success)
+                  }
                 }
             }
           )

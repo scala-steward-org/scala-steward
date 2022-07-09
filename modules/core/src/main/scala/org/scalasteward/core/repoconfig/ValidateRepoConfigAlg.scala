@@ -16,11 +16,12 @@
 
 package org.scalasteward.core.repoconfig
 
+import better.files.File
 import cats.MonadThrow
 import cats.syntax.all._
-import better.files.File
 import org.scalasteward.core.io.FileAlg
 import org.scalasteward.core.repoconfig.RepoConfigAlg
+
 import ValidateRepoConfigAlg._
 
 final class ValidateRepoConfigAlg[F[_]](implicit
@@ -48,5 +49,17 @@ object ValidateRepoConfigAlg {
     RepoConfigAlg.parseRepoConfig(content) match {
       case Left(err) => ConfigValidationResult.ConfigIsInvalid(err)
       case Right(_)  => ConfigValidationResult.Ok
+    }
+
+  def presentValidationResult(
+      configFile: File
+  )(result: ConfigValidationResult): Either[String, String] =
+    result match {
+      case ConfigValidationResult.Ok =>
+        s"Configuration file at $configFile is valid.".asRight
+      case ConfigValidationResult.FileDoesNotExist =>
+        s"Configuration file at $configFile does not exist!".asLeft
+      case ConfigValidationResult.ConfigIsInvalid(err) =>
+        s"Configuration file at $configFile contains errors:\n  $err".asLeft
     }
 }
