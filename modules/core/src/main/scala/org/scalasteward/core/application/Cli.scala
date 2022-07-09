@@ -257,6 +257,12 @@ object Cli {
       .withDefault(default)
   }
 
+  private val validateRepoConfig: Opts[Option[File]] =
+    option[File](
+      long = "validate-repo-config",
+      help = "validate the repo config file and exit, report errors if any"
+    ).orNone
+
   private val configOpts: Opts[Config] = (
     workspace,
     reposFile,
@@ -273,7 +279,8 @@ object Cli {
     gitHubApp,
     urlCheckerTestUrl,
     defaultMavenRepo,
-    refreshBackoffPeriod
+    refreshBackoffPeriod,
+    validateRepoConfig
   ).mapN(Config.apply)
 
   val command: Command[Config] =
