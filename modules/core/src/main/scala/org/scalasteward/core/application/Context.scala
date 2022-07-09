@@ -37,7 +37,7 @@ import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository}
 import org.scalasteward.core.persistence.{CachingKeyValueStore, JsonKeyValueStore}
 import org.scalasteward.core.repocache._
-import org.scalasteward.core.repoconfig.{RepoConfigAlg, RepoConfigLoader}
+import org.scalasteward.core.repoconfig.{RepoConfigAlg, RepoConfigLoader, ValidateRepoConfigAlg}
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.artifact.{ArtifactMigrationsFinder, ArtifactMigrationsLoader}
 import org.scalasteward.core.update.{FilterAlg, PruningAlg, UpdateAlg}
@@ -73,7 +73,8 @@ final class Context[F[_]](implicit
     val stewardAlg: StewardAlg[F],
     val updateAlg: UpdateAlg[F],
     val vcsRepoAlg: VCSRepoAlg[F],
-    val workspaceAlg: WorkspaceAlg[F]
+    val workspaceAlg: WorkspaceAlg[F],
+    val validateRepoConfigAlg: ValidateRepoConfigAlg[F]
 )
 
 object Context {
@@ -178,6 +179,7 @@ object Context {
       implicit val gitHubAppApiAlg: GitHubAppApiAlg[F] =
         new GitHubAppApiAlg[F](config.vcsCfg.apiHost)
       implicit val stewardAlg: StewardAlg[F] = new StewardAlg[F](config)
+      implicit val validateRepoConfigAlg: ValidateRepoConfigAlg[F] = new ValidateRepoConfigAlg[F]
       new Context[F]
     }
 

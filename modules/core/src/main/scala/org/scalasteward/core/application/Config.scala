@@ -68,7 +68,8 @@ final case class Config(
     githubApp: Option[GitHubApp],
     urlCheckerTestUrl: Uri,
     defaultResolver: Resolver,
-    refreshBackoffPeriod: FiniteDuration
+    refreshBackoffPeriod: FiniteDuration,
+    validateRepoConfig: Option[File]
 ) {
   def vcsUser[F[_]](implicit
       processAlg: ProcessAlg[F],

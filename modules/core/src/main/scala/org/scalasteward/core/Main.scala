@@ -19,12 +19,37 @@ package org.scalasteward.core
 import cats.effect.std.Console
 import cats.effect.{ExitCode, IO, IOApp}
 import org.scalasteward.core.application.{Cli, Context}
+import org.scalasteward.core.repoconfig.ValidateRepoConfigAlg.ConfigValidationResult.Ok
+import org.scalasteward.core.repoconfig.ValidateRepoConfigAlg.ConfigValidationResult.FileDoesNotExist
+import org.scalasteward.core.repoconfig.ValidateRepoConfigAlg.ConfigValidationResult.ConfigIsInvalid
 
 object Main extends IOApp {
   override def run(args: List[String]): IO[ExitCode] =
     Cli.parseArgs(args) match {
-      case Cli.ParseResult.Success(config) => Context.step0[IO](config).use(_.stewardAlg.runF)
-      case Cli.ParseResult.Help(help)      => Console[IO].println(help).as(ExitCode.Success)
-      case Cli.ParseResult.Error(error)    => Console[IO].errorln(error).as(ExitCode.Error)
+      case Cli.ParseResult.Success(config) =>
+        Context
+          .step0[IO](config)
+          .use(ctx =>
+            config.validateRepoConfig match {
+              case None => ctx.stewardAlg.runF
+              case Some(file) =>
+                ctx.validateRepoConfigAlg.validateConfigFile(file).flatMap {
+                  case Ok =>
+                    Console[IO]
+                      .println(s"Configuration file at $file is valid.")
+                      .as(ExitCode.Success)
+                  case FileDoesNotExist =>
+                    Console[IO]
+                      .println(s"Configuration file at $file does not exist!")
+                      .as(ExitCode.Error)
+                  case ConfigIsInvalid(err) =>
+                    Console[IO]
+                      .println(s"Configuration file at $file contains errors:\n  $err")
+                      .as(ExitCode.Error)
+                }
+            }
+          )
+      case Cli.ParseResult.Help(help)   => Console[IO].println(help).as(ExitCode.Success)
+      case Cli.ParseResult.Error(error) => Console[IO].errorln(error).as(ExitCode.Error)
     }
 }
