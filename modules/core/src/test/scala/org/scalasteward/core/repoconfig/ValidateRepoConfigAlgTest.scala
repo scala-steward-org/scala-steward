@@ -2,8 +2,7 @@ package org.scalasteward.core.repoconfig
 
 import better.files.File
 import cats.effect.unsafe.implicits.global
-import org.scalasteward.core.mock.MockContext
-import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.mock.{MockContext, MockState}
 import java.nio.file.Files
 import java.nio.charset.StandardCharsets
 import org.scalasteward.core.repoconfig.ValidateRepoConfigAlg.ConfigValidationResult

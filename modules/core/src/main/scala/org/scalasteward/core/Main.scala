@@ -19,9 +19,7 @@ package org.scalasteward.core
 import cats.effect.std.Console
 import cats.effect.{ExitCode, IO, IOApp}
 import org.scalasteward.core.application.{Cli, Context}
-import org.scalasteward.core.repoconfig.ValidateRepoConfigAlg.ConfigValidationResult.Ok
-import org.scalasteward.core.repoconfig.ValidateRepoConfigAlg.ConfigValidationResult.FileDoesNotExist
-import org.scalasteward.core.repoconfig.ValidateRepoConfigAlg.ConfigValidationResult.ConfigIsInvalid
+import org.scalasteward.core.repoconfig.ValidateRepoConfigAlg.ConfigValidationResult
 
 object Main extends IOApp {
   override def run(args: List[String]): IO[ExitCode] =
@@ -34,15 +32,15 @@ object Main extends IOApp {
               case None => ctx.stewardAlg.runF
               case Some(file) =>
                 ctx.validateRepoConfigAlg.validateConfigFile(file).flatMap {
-                  case Ok =>
+                  case ConfigValidationResult.Ok =>
                     Console[IO]
                       .println(s"Configuration file at $file is valid.")
                       .as(ExitCode.Success)
-                  case FileDoesNotExist =>
+                  case ConfigValidationResult.FileDoesNotExist =>
                     Console[IO]
                       .println(s"Configuration file at $file does not exist!")
                       .as(ExitCode.Error)
-                  case ConfigIsInvalid(err) =>
+                  case ConfigValidationResult.ConfigIsInvalid(err) =>
                     Console[IO]
                       .println(s"Configuration file at $file contains errors:\n  $err")
                       .as(ExitCode.Error)

@@ -32,7 +32,8 @@ class CliTest extends FunSuite {
         List("--repo-config", "/opt/scala-steward/scala-steward.conf"),
         List("--github-app-id", "12345678"),
         List("--github-app-key-file", "example_app_key"),
-        List("--refresh-backoff-period", "1 day")
+        List("--refresh-backoff-period", "1 day"),
+        List("--validate-repo-config", "config.conf")
       ).flatten
     )
 
@@ -61,6 +62,7 @@ class CliTest extends FunSuite {
     )
     assertEquals(obtained.githubApp, Some(GitHubApp(12345678L, File("example_app_key"))))
     assertEquals(obtained.refreshBackoffPeriod, 1.day)
+    assertEquals(obtained.validateRepoConfig, Some(File("config.conf")))
   }
 
   test("parseArgs: minimal example") {

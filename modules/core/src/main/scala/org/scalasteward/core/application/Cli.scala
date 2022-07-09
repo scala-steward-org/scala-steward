@@ -260,7 +260,7 @@ object Cli {
   private val validateRepoConfig: Opts[Option[File]] =
     option[File](
       long = "validate-repo-config",
-      help = "validate the repo config file and exit, report errors if any"
+      help = "Validate the repo config file and exit; report errors if any"
     ).orNone
 
   private val configOpts: Opts[Config] = (
