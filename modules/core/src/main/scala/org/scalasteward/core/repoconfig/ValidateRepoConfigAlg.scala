@@ -19,6 +19,8 @@ package org.scalasteward.core.repoconfig
 import better.files.File
 import cats.MonadThrow
 import cats.syntax.all._
+import cats.effect.ExitCode
+import org.typelevel.log4cats.Logger
 import org.scalasteward.core.io.FileAlg
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 
@@ -26,13 +28,22 @@ import ValidateRepoConfigAlg._
 
 final class ValidateRepoConfigAlg[F[_]](implicit
     fileAlg: FileAlg[F],
-    F: MonadThrow[F]
+    logger: Logger[F],
+    monadThrowF: MonadThrow[F]
 ) {
 
   def validateConfigFile(configFile: File): F[ConfigValidationResult] =
     fileAlg.readFile(configFile).map {
       case Some(content) => validateContent(content)
       case None          => ConfigValidationResult.FileDoesNotExist
+    }
+
+  def validateAndReport(configFile: File): F[ExitCode] =
+    validateConfigFile(configFile).flatMap { result =>
+      ValidateRepoConfigAlg.presentValidationResult(configFile)(result) match {
+        case Left(errMsg) => logger.error(errMsg).as(ExitCode.Error)
+        case Right(okMsg) => logger.info(okMsg).as(ExitCode.Success)
+      }
     }
 }
 

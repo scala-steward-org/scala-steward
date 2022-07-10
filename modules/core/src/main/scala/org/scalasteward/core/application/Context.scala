@@ -16,8 +16,10 @@
 
 package org.scalasteward.core.application
 
+import better.files.File
 import cats.effect._
 import cats.effect.implicits._
+import cats.MonadThrow
 import cats.syntax.all._
 import eu.timepit.refined.auto._
 import org.http4s.Uri
@@ -37,7 +39,7 @@ import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository}
 import org.scalasteward.core.persistence.{CachingKeyValueStore, JsonKeyValueStore}
 import org.scalasteward.core.repocache._
-import org.scalasteward.core.repoconfig.{RepoConfigAlg, RepoConfigLoader, ValidateRepoConfigAlg}
+import org.scalasteward.core.repoconfig.{RepoConfigAlg, RepoConfigLoader}
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.artifact.{ArtifactMigrationsFinder, ArtifactMigrationsLoader}
 import org.scalasteward.core.update.{FilterAlg, PruningAlg, UpdateAlg}
@@ -48,6 +50,8 @@ import org.scalasteward.core.vcs.github.{GitHubAppApiAlg, GitHubAuthAlg}
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg, VCSSelection}
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
+import org.scalasteward.core.application.Config.StewardUsage
+import org.scalasteward.core.repoconfig.ValidateRepoConfigAlg
 
 final class Context[F[_]](implicit
     val buildToolDispatcher: BuildToolDispatcher[F],
@@ -73,17 +77,35 @@ final class Context[F[_]](implicit
     val stewardAlg: StewardAlg[F],
     val updateAlg: UpdateAlg[F],
     val vcsRepoAlg: VCSRepoAlg[F],
-    val workspaceAlg: WorkspaceAlg[F],
-    val validateRepoConfigAlg: ValidateRepoConfigAlg[F]
+    val workspaceAlg: WorkspaceAlg[F]
 )
 
 object Context {
-  def step0[F[_]](config: Config)(implicit F: Async[F]): Resource[F, Context[F]] =
+
+  sealed trait StewardContext[F[_]] {
+    def runF: F[ExitCode]
+  }
+  object StewardContext {
+    final case class Regular[F[_]](context: Context[F]) extends StewardContext[F] {
+      override def runF: F[ExitCode] = context.stewardAlg.runF
+    }
+
+    final case class ValidateRepoConfig[F[_]](file: File)(implicit
+        val validateRepoConfigAlg: ValidateRepoConfigAlg[F],
+        val logger: Logger[F]
+    ) extends StewardContext[F] {
+      override def runF: F[ExitCode] = validateRepoConfigAlg.validateAndReport(file)
+    }
+  }
+
+  def step0[F[_]](
+      usage: Config.StewardUsage
+  )(implicit asyncF: Async[F]): Resource[F, StewardContext[F]] =
     for {
-      logger <- Resource.eval(Slf4jLogger.fromName[F]("org.scalasteward.core"))
-      _ <- Resource.eval(printBanner(logger))
-      _ <- Resource.eval(F.delay(System.setProperty("http.agent", userAgentString)))
-      userAgent <- Resource.eval(F.fromEither(`User-Agent`.parse(userAgentString)))
+      logger0 <- Resource.eval(Slf4jLogger.fromName[F]("org.scalasteward.core"))
+      _ <- Resource.eval(printBanner(logger0))
+      _ <- Resource.eval(asyncF.delay(System.setProperty("http.agent", userAgentString)))
+      userAgent <- Resource.eval(asyncF.fromEither(`User-Agent`.parse(userAgentString)))
       middleware = ClientConfiguration
         .setUserAgent[F](userAgent)
         .andThen(ClientConfiguration.retryAfter[F](maxAttempts = 5))
@@ -95,21 +117,45 @@ object Context {
         ClientConfiguration.disableFollowRedirect[F],
         middleware
       )
-      fileAlg = FileAlg.create(logger, F)
-      processAlg = ProcessAlg.create(config.processCfg)(logger, F)
-      workspaceAlg = WorkspaceAlg.create(config)(fileAlg, logger, F)
-      context <- Resource.eval(
-        step1(config)(
-          defaultClient,
-          UrlCheckerClient(urlCheckerClient),
-          fileAlg,
-          logger,
-          processAlg,
-          workspaceAlg,
-          F
-        )
-      )
+      fileAlg0 = FileAlg.create(logger0, asyncF)
+      context <- usage match {
+        case StewardUsage.Regular(config) =>
+          initRegular(config)(
+            defaultClient,
+            UrlCheckerClient(urlCheckerClient),
+            fileAlg0,
+            logger0,
+            asyncF
+          ).map(StewardContext.Regular(_))
+
+        case StewardUsage.ValidateRepoConfig(file) =>
+          implicit val fileAlg: FileAlg[F] = fileAlg0
+          implicit val logger: Logger[F] = logger0
+          Resource.pure[F, StewardContext[F]](initValidateRepoConfig(file))
+      }
+
     } yield context
+
+  def initRegular[F[_]](config: Config)(implicit
+      client: Client[F],
+      urlCheckerClient: UrlCheckerClient[F],
+      fileAlg: FileAlg[F],
+      logger: Logger[F],
+      asyncF: Async[F]
+  ): Resource[F, Context[F]] = {
+    implicit val processAlg = ProcessAlg.create(config.processCfg)
+    implicit val workspaceAlg = WorkspaceAlg.create(config)
+    Resource.eval(step1(config))
+  }
+
+  def initValidateRepoConfig[F[_]](file: File)(implicit
+      fileAlg: FileAlg[F],
+      logger: Logger[F],
+      asyncF: MonadThrow[F]
+  ): StewardContext.ValidateRepoConfig[F] = {
+    implicit val validateRepoConfigAlg = new ValidateRepoConfigAlg[F]()
+    StewardContext.ValidateRepoConfig[F](file)
+  }
 
   def step1[F[_]](config: Config)(implicit
       client: Client[F],
@@ -179,7 +225,6 @@ object Context {
       implicit val gitHubAppApiAlg: GitHubAppApiAlg[F] =
         new GitHubAppApiAlg[F](config.vcsCfg.apiHost)
       implicit val stewardAlg: StewardAlg[F] = new StewardAlg[F](config)
-      implicit val validateRepoConfigAlg: ValidateRepoConfigAlg[F] = new ValidateRepoConfigAlg[F]
       new Context[F]
     }
 

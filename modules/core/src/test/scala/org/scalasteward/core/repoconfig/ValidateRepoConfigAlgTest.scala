@@ -11,7 +11,7 @@ import java.nio.file.Files
 class ValidateRepoConfigAlgTest extends munit.FunSuite {
 
   def configFile(content: String) = FunFixture[(File, ConfigValidationResult)](
-    setup = _ => {
+    setup = { _ =>
       val tmpFile =
         File(
           Files.write(
@@ -20,7 +20,9 @@ class ValidateRepoConfigAlgTest extends munit.FunSuite {
           )
         )
 
-      val obtained = MockContext.context.validateRepoConfigAlg
+      val obtained = MockContext
+        .validateRepoConfigContext(tmpFile)
+        .validateRepoConfigAlg
         .validateConfigFile(tmpFile)
         .runA(MockState.empty)
         .unsafeRunSync()
@@ -63,9 +65,11 @@ class ValidateRepoConfigAlgTest extends munit.FunSuite {
     }
 
   test("rejects non-existent config file") {
-    // I am pretty sure this fails in Windows
-    val obtained = MockContext.context.validateRepoConfigAlg
-      .validateConfigFile(File("/", "scripts", "script"))
+    val nonExistentFile = File("/", "scripts", "script")
+    val obtained = MockContext
+      .validateRepoConfigContext(nonExistentFile)
+      .validateRepoConfigAlg
+      .validateConfigFile(nonExistentFile)
       .runA(MockState.empty)
       .unsafeRunSync()
 

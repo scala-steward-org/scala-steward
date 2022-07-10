@@ -68,8 +68,7 @@ final case class Config(
     githubApp: Option[GitHubApp],
     urlCheckerTestUrl: Uri,
     defaultResolver: Resolver,
-    refreshBackoffPeriod: FiniteDuration,
-    validateRepoConfig: Option[File]
+    refreshBackoffPeriod: FiniteDuration
 ) {
   def vcsUser[F[_]](implicit
       processAlg: ProcessAlg[F],
@@ -136,4 +135,10 @@ object Config {
   final case class GitLabCfg(
       mergeWhenPipelineSucceeds: Boolean
   )
+
+  sealed trait StewardUsage
+  object StewardUsage {
+    final case class Regular(config: Config) extends StewardUsage
+    final case class ValidateRepoConfig(file: File) extends StewardUsage
+  }
 }
