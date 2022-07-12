@@ -144,6 +144,16 @@ class CliTest extends FunSuite {
     assert(clue(obtained).startsWith("Usage"))
   }
 
+  test("parseArgs: validate-repo-config") {
+    val Success(StewardUsage.ValidateRepoConfig(file)) = Cli.parseArgs(
+      List(
+        List("validate-repo-config", "file.conf")
+      ).flatten
+    )
+
+    assertEquals(file, File("file.conf"))
+  }
+
   test("envVarArgument: env-var without equals sign") {
     assert(clue(Cli.envVarArgument.read("SBT_OPTS")).isInvalid)
   }

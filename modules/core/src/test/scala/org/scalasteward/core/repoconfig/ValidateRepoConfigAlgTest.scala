@@ -1,16 +1,16 @@
 package org.scalasteward.core.repoconfig
 
 import better.files.File
+import cats.effect.ExitCode
 import cats.effect.unsafe.implicits.global
 import org.scalasteward.core.mock.{MockContext, MockState}
-import org.scalasteward.core.repoconfig.ValidateRepoConfigAlg.ConfigValidationResult
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 
 class ValidateRepoConfigAlgTest extends munit.FunSuite {
 
-  def configFile(content: String) = FunFixture[(File, ConfigValidationResult)](
+  def configFile(content: String) = FunFixture[(File, ExitCode)](
     setup = { _ =>
       val tmpFile =
         File(
@@ -22,8 +22,7 @@ class ValidateRepoConfigAlgTest extends munit.FunSuite {
 
       val obtained = MockContext
         .validateRepoConfigContext(tmpFile)
-        .validateRepoConfigAlg
-        .validateConfigFile(tmpFile)
+        .runF
         .runA(MockState.empty)
         .unsafeRunSync()
 
@@ -41,11 +40,8 @@ class ValidateRepoConfigAlgTest extends munit.FunSuite {
        |  { groupId = "org.scala-js", artifactId="sbt-scalajs", version = "1.10." }
        |]""".stripMargin
   )
-    .test("accepts valid config") { case (file, obtained) =>
-      assertEquals(
-        ValidateRepoConfigAlg.presentValidationResult(file)(obtained),
-        Right(s"Configuration file at $file is valid.")
-      )
+    .test("accepts valid config") { case (_, obtained) =>
+      assertEquals(obtained, ExitCode.Success)
     }
 
   configFile(
@@ -55,27 +51,27 @@ class ValidateRepoConfigAlgTest extends munit.FunSuite {
        |  { groupId = "org.scala-js", artifactId="sbt-scalajs", version = "1.10." },
        |]""".stripMargin
   )
-    .test("rejects invalid config") { case (file, obtained) =>
-      val ConfigValidationResult.ConfigIsInvalid(err) = obtained
-      assertEquals(
-        ValidateRepoConfigAlg.presentValidationResult(file)(obtained),
-        Left(s"Configuration file at $file contains errors:\n  $err")
-      )
+    .test("rejects config with a parsing failure") { case (_, obtained) =>
+      assertEquals(obtained, ExitCode.Error)
+    }
 
+  configFile(
+    """|updatePullRequests = 123
+       |
+       |""".stripMargin
+  )
+    .test("rejects config with a decoding failure") { case (_, obtained) =>
+      assertEquals(obtained, ExitCode.Error)
     }
 
   test("rejects non-existent config file") {
     val nonExistentFile = File("/", "scripts", "script")
     val obtained = MockContext
       .validateRepoConfigContext(nonExistentFile)
-      .validateRepoConfigAlg
-      .validateConfigFile(nonExistentFile)
+      .runF
       .runA(MockState.empty)
       .unsafeRunSync()
 
-    assertEquals(
-      ValidateRepoConfigAlg.presentValidationResult(File("/", "scripts", "script"))(obtained),
-      Left(s"Configuration file at /scripts/script does not exist!")
-    )
+    assertEquals(obtained, ExitCode.Error)
   }
 }

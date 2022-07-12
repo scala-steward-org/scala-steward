@@ -25,8 +25,7 @@ import org.scalasteward.core.io.FileAlg
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 
 import ValidateRepoConfigAlg._
-import io.circe.{DecodingFailure, ParsingFailure}
-import io.circe.CursorOp
+import io.circe.{CursorOp, DecodingFailure, ParsingFailure}
 
 final class ValidateRepoConfigAlg[F[_]](implicit
     fileAlg: FileAlg[F],
