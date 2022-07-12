@@ -25,6 +25,8 @@ import org.scalasteward.core.io.FileAlg
 import org.scalasteward.core.repoconfig.RepoConfigAlg
 
 import ValidateRepoConfigAlg._
+import io.circe.{DecodingFailure, ParsingFailure}
+import io.circe.CursorOp
 
 final class ValidateRepoConfigAlg[F[_]](implicit
     fileAlg: FileAlg[F],
@@ -62,6 +64,24 @@ object ValidateRepoConfigAlg {
       case Right(_)  => ConfigValidationResult.Ok
     }
 
+  private def printCirceError(indent: String)(err: io.circe.Error): String =
+    err match {
+      case d: DecodingFailure =>
+        val history =
+          d.history
+            .map {
+              case CursorOp.DownField(k) => k
+              case CursorOp.Field(k)     => k
+              case other                 => other
+            }
+            .mkString(s"${indent * 3}\n")
+        s"""|${indent}Decoding failed with:
+            |${indent * 2}${d.message}:
+            |${indent * 3}${history}""".stripMargin
+      case ParsingFailure(message, _) =>
+        s"""|${indent}Parsing failed with "$message".""".stripMargin
+    }
+
   def presentValidationResult(
       configFile: File
   )(result: ConfigValidationResult): Either[String, String] =
@@ -71,6 +91,7 @@ object ValidateRepoConfigAlg {
       case ConfigValidationResult.FileDoesNotExist =>
         s"Configuration file at $configFile does not exist!".asLeft
       case ConfigValidationResult.ConfigIsInvalid(err) =>
-        s"Configuration file at $configFile contains errors:\n  $err".asLeft
+        s"""|Configuration file at $configFile contains errors:
+            |${printCirceError(" " * 2)(err)}""".stripMargin.asLeft
     }
 }
