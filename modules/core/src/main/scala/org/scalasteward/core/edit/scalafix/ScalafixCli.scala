@@ -29,7 +29,14 @@ final class ScalafixCli[F[_]](implicit
     F: Monad[F]
 ) {
   def runMigration(workingDir: File, files: Nel[File], migration: ScalafixMigration): F[Unit] = {
-    val rules = migration.rewriteRules.map("--rules=" + _)
+    val rules = migration.rewriteRules.map { r =>
+      r.split("[:@]").toList match {
+        case "dependency" :: ruleName :: depParts =>
+          s"--rules=$ruleName --tool-classpath $$(cs fetch ${depParts.mkString(":")} -p)"
+        case _ =>
+          s"--rules=$r"
+      }
+    }
     val cmd = scalafixBinary :: rules ::: files.map(_.pathAsString)
     processAlg.exec(cmd, workingDir).void
   }
