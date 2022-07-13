@@ -53,6 +53,7 @@ updates.pin  = [ { groupId = "com.example", artifactId="foo", version = "1.1." }
 updates.ignore = [ { groupId = "org.acme", artifactId="foo", version = "1.0" } ]
 
 # The dependencies which match the given patterns are allowed to be updated to pre-release from stable.
+# This also implies, that it will be allowed for snapshot versions to be updated to snapshots of different series.
 #
 # Each pattern must have `groupId`, and may have `artifactId` and `version`.
 # Defaults to empty `[]` which mean Scala Steward will ignore all stable to pre-release update options.
