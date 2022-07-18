@@ -97,6 +97,8 @@ Options and flags:
         Period of time a failed build won't be triggered again; default: 0days
     --coursier-dependencies <string>
         Additional coursier dependencies in the format <groupId>:<artifactId>:<version>, i.e. additional URL handlers. (can be used multiple times)
+    --coursier-dependencies <string>
+        Additional coursier dependencies in the format <groupId>:<artifactId>:<version>, i.e. additional URL handlers. (can be used multiple times)
 
 Subcommands:
     validate-repo-config
