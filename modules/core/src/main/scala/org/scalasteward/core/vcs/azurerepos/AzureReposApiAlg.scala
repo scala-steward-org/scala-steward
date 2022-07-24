@@ -26,6 +26,7 @@ import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.HttpJsonClient
 import org.scalasteward.core.vcs.VCSApiAlg
 import org.scalasteward.core.vcs.data._
+import JsonCodec._
 
 final class AzureReposApiAlg[F[_]](
     azureAPiHost: Uri,
@@ -33,7 +34,6 @@ final class AzureReposApiAlg[F[_]](
     modify: Repo => Request[F] => F[Request[F]]
 )(implicit client: HttpJsonClient[F], F: MonadThrow[F])
     extends VCSApiAlg[F] {
-  import JsonCodec._
 
   F.raiseWhen(config.organization.isEmpty)(
     new RuntimeException("azure-repos-organization is not defined!")
@@ -66,7 +66,7 @@ final class AzureReposApiAlg[F[_]](
 
   // https://docs.microsoft.com/en-us/rest/api/azure/devops/git/repositories/get-repository-with-parent?view=azure-devops-rest-7.1
   override def getRepo(repo: Repo): F[RepoOut] =
-    client.get[RepoOut](url.repos(repo), modify(repo))
+    client.get[RepoOut](url.getRepo(repo), modify(repo))
 
   // https://docs.microsoft.com/en-us/rest/api/azure/devops/git/pull-requests/get-pull-requests?view=azure-devops-rest-7.1
   override def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]] =
@@ -99,5 +99,4 @@ final class AzureReposApiAlg[F[_]](
         modify(repo)
       )
       .void
-
 }

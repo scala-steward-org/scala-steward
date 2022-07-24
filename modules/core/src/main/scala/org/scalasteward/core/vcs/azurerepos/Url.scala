@@ -21,19 +21,22 @@ import org.scalasteward.core.git.Branch
 import org.scalasteward.core.vcs.data.{PullRequestNumber, Repo}
 
 class Url(apiHost: Uri, organization: String) {
-  private val ApiVersion = "7.1-preview.1"
+  private val apiVersion = "7.1-preview.1"
 
   private val withoutPrefix: String => String = name => name.split("refs/heads/").last
 
-  def repos(repo: Repo): Uri =
+  private def repos(repo: Repo): Uri =
     (apiHost / organization / repo.owner / "_apis/git/repositories" / repo.repo)
-      .withQueryParams(Map("api-version" -> ApiVersion, "includeParent" -> "true"))
+      .withQueryParam("api-version", apiVersion)
 
-  def pullRequests(repo: Repo): Uri =
-    repos(repo) / "pullrequests"
+  def getRepo(repo: Repo): Uri =
+    repos(repo).withQueryParam("includeParent", "true")
 
   def getBranch(repo: Repo, branch: Branch): Uri =
     (repos(repo) / "stats/branches").withQueryParam("name", withoutPrefix(branch.name))
+
+  def pullRequests(repo: Repo): Uri =
+    repos(repo) / "pullrequests"
 
   def listPullRequests(repo: Repo, source: String, target: Branch): Uri =
     pullRequests(repo).withQueryParams(
