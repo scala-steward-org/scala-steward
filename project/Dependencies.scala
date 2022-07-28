@@ -22,11 +22,11 @@ object Dependencies {
   val disciplineMunit = "org.typelevel" %% "discipline-munit" % "1.0.9"
   val fs2Core = "co.fs2" %% "fs2-core" % "3.2.11"
   val fs2Io = "co.fs2" %% "fs2-io" % fs2Core.revision
-  val http4sCore = "org.http4s" %% "http4s-core" % "1.0.0-M34"
+  val http4sCore = "org.http4s" %% "http4s-core" % "1.0.0-M35"
   val http4sCirce = "org.http4s" %% "http4s-circe" % http4sCore.revision
   val http4sClient = "org.http4s" %% "http4s-client" % http4sCore.revision
   val http4sDsl = "org.http4s" %% "http4s-dsl" % http4sCore.revision
-  val http4sBlazeServer = "org.http4s" %% "http4s-blaze-server" % http4sCore.revision
+  val http4sBlazeServer = "org.http4s" %% "http4s-blaze-server" % "1.0.0-M34"
   val http4sOkhttpClient = "org.http4s" %% "http4s-okhttp-client" % "1.0.0-M32"
   val log4catsSlf4j = "org.typelevel" %% "log4cats-slf4j" % "2.4.0"
   val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.2.11"
