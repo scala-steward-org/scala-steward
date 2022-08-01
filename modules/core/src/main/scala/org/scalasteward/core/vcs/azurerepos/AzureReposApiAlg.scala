@@ -32,17 +32,13 @@ final class AzureReposApiAlg[F[_]](
     azureAPiHost: Uri,
     config: AzureReposConfig,
     modify: Repo => Request[F] => F[Request[F]]
-)(implicit client: HttpJsonClient[F], F: MonadThrow[F])
+)(implicit client: HttpJsonClient[F], monadErrorF: MonadThrow[F])
     extends VCSApiAlg[F] {
-
-  F.raiseWhen(config.organization.isEmpty)(
-    new RuntimeException("azure-repos-organization is not defined!")
-  )
 
   private val url = new Url(azureAPiHost, config.organization.getOrElse(""))
 
   override def createFork(repo: Repo): F[RepoOut] =
-    F.raiseError(new NotImplementedError(s"createFork($repo)"))
+    monadErrorF.raiseError(new NotImplementedError(s"createFork($repo)"))
 
   // https://docs.microsoft.com/en-us/rest/api/azure/devops/git/pull-requests/create?view=azure-devops-rest-7.1
   override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] =
