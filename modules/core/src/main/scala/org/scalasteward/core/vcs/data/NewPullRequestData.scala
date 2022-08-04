@@ -185,9 +185,9 @@ object NewPullRequestData {
       artifactIdToUrl: Map[String, Uri] = Map.empty,
       releaseRelatedUrls: List[ReleaseRelatedUrl] = List.empty,
       filesWithOldVersion: List[String] = List.empty,
-      labelRegex: Option[Regex] = None
+      includeMatchedLabels: Option[Regex] = None
   ): NewPullRequestData = {
-    val labels = labelsFor(data.update, edits, filesWithOldVersion, labelRegex)
+    val labels = labelsFor(data.update, edits, filesWithOldVersion, includeMatchedLabels)
     NewPullRequestData(
       title = git
         .commitMsgFor(data.update, data.repoConfig.commits, data.repoData.repo.branch)
@@ -223,7 +223,7 @@ object NewPullRequestData {
       update: Update,
       edits: List[EditAttempt],
       filesWithOldVersion: List[String],
-      labelRegex: Option[Regex]
+      includeMatchedLabels: Option[Regex]
   ): List[String] = {
     val commitCount = edits.flatMap(_.maybeCommit).size
     val commitCountLabel = "commit-count:" + (commitCount match {
@@ -245,6 +245,6 @@ object NewPullRequestData {
       List(earlySemVerLabel, semVerSpecLabel, scalafixLabel, oldVersionLabel).flatten ++
       List(commitCountLabel)
 
-    allLabels.filter(label => labelRegex.fold(true)(_.matches(label)))
+    allLabels.filter(label => includeMatchedLabels.fold(true)(_.matches(label)))
   }
 }
