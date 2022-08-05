@@ -310,7 +310,7 @@ class NewPullRequestDataTest extends FunSuite {
 
   test("regex label filtering") {
     val update = ("a".g % "b".a % "1" -> "2").single
-    val updateEdit = UpdateEdit(update, Commit())
+    val updateEdit = UpdateEdit(update, Commit(dummySha1))
 
     val first = labelsFor(update, List(updateEdit), List.empty, Some("library-.+".r))
     assertEquals(clue(first), List("library-update"))
