@@ -23,8 +23,7 @@ import org.http4s.Uri
 import org.scalasteward.core.data._
 import org.scalasteward.core.edit.EditAttempt
 import org.scalasteward.core.edit.EditAttempt.ScalafixEdit
-import org.scalasteward.core.git
-import org.scalasteward.core.git.Branch
+import org.scalasteward.core.git.{Branch, CommitMsg}
 import org.scalasteward.core.repoconfig.{GroupRepoConfig, RepoConfigAlg}
 import org.scalasteward.core.util.{Details, Nel}
 
@@ -189,8 +188,11 @@ object NewPullRequestData {
   ): NewPullRequestData = {
     val labels = labelsFor(data.update, edits, filesWithOldVersion, includeMatchedLabels)
     NewPullRequestData(
-      title = git
-        .commitMsgFor(data.update, data.repoConfig.commits, data.repoData.repo.branch)
+      title = CommitMsg
+        .replaceVariables(data.repoConfig.commits.messageOrDefault)(
+          data.update,
+          data.repoData.repo.branch
+        )
         .title,
       body = bodyFor(
         data.update,
@@ -225,7 +227,7 @@ object NewPullRequestData {
       filesWithOldVersion: List[String],
       includeMatchedLabels: Option[Regex]
   ): List[String] = {
-    val commitCount = edits.flatMap(_.maybeCommit).size
+    val commitCount = edits.flatMap(_.commits).size
     val commitCountLabel = "commit-count:" + (commitCount match {
       case n if n <= 1 => s"$n"
       case n           => s"n:$n"

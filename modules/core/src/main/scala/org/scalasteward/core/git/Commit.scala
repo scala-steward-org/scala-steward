@@ -16,4 +16,4 @@
 
 package org.scalasteward.core.git
 
-final case class Commit()
+final case class Commit(sha1: Sha1)

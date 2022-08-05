@@ -31,6 +31,9 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
     workspaceAlg: WorkspaceAlg[F],
     F: MonadCancelThrow[F]
 ) extends GenGitAlg[F, File] {
+  override def add(repo: File, file: String): F[Unit] =
+    git("add", file)(repo).void
+
   override def branchAuthors(repo: File, branch: Branch, base: Branch): F[List[String]] =
     git("log", "--pretty=format:'%an'", dotdot(base, branch))(repo).map(_.distinct)
 
@@ -54,7 +57,8 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
 
   override def commitAll(repo: File, message: CommitMsg): F[Commit] = {
     val messages = message.toNel.foldMap(m => List("-m", m))
-    git("commit" :: "--all" :: sign :: messages: _*)(repo).as(Commit())
+    git("commit" :: "--all" :: sign :: messages: _*)(repo) >>
+      latestSha1(repo, Branch.head).map(Commit.apply)
   }
 
   override def containsChanges(repo: File): F[Boolean] =
@@ -116,7 +120,7 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
           } yield ()
         }
       after <- latestSha1(repo, Branch.head)
-    } yield Option.when(before =!= after)(Commit())
+    } yield Option.when(before =!= after)(Commit(after))
 
   override def push(repo: File, branch: Branch): F[Unit] =
     git("push", "--force", "--set-upstream", "origin", branch.name)(repo).void

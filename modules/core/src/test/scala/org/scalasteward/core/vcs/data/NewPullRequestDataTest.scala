@@ -9,7 +9,7 @@ import org.scalasteward.core.buildtool.sbt.data.SbtVersion
 import org.scalasteward.core.data.{ReleaseRelatedUrl, RepoData, UpdateData, Version}
 import org.scalasteward.core.edit.EditAttempt.{ScalafixEdit, UpdateEdit}
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
-import org.scalasteward.core.git.{Branch, Commit, Sha1}
+import org.scalasteward.core.git.{Branch, Commit}
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.NewPullRequestData._
@@ -21,7 +21,7 @@ class NewPullRequestDataTest extends FunSuite {
       Repo("scala-steward", "bar"),
       ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single,
       Branch("master"),
-      Sha1(Sha1.HexString.unsafeFrom("d6b6791d2ea11df1d156fe70979ab8c3a5ba3433")),
+      dummySha1,
       Branch("update/logback-classic-1.2.3")
     )
     val obtained = from(data, "scala-steward:update/logback-classic-1.2.3").asJson.spaces2
@@ -52,7 +52,7 @@ class NewPullRequestDataTest extends FunSuite {
       Repo("scala-steward", "bar"),
       ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single,
       Branch("master"),
-      Sha1(Sha1.HexString.unsafeFrom("d6b6791d2ea11df1d156fe70979ab8c3a5ba3433")),
+      dummySha1,
       Branch("update/logback-classic-1.2.3")
     )
     val obtained = from(data, "scala-steward:update/logback-classic-1.2.3").asJson.spaces2
@@ -143,7 +143,7 @@ class NewPullRequestDataTest extends FunSuite {
         Nel.of("I am a rewrite rule")
       ),
       Right(()),
-      Some(Commit())
+      Some(Commit(dummySha1))
     )
     val edits = List(scalafixEdit)
     val appliedMigrations = migrationNote(edits)
@@ -173,7 +173,7 @@ class NewPullRequestDataTest extends FunSuite {
         Some("https://scalacenter.github.io/scalafix/")
       ),
       Right(()),
-      Some(Commit())
+      Some(Commit(dummySha1))
     )
     val edits = List(scalafixEdit)
     val detail = migrationNote(edits)
@@ -205,7 +205,7 @@ class NewPullRequestDataTest extends FunSuite {
         Some("https://scalacenter.github.io/scalafix/")
       ),
       Right(()),
-      Some(Commit())
+      Some(Commit(dummySha1))
     )
     val scalafixEdit2 = ScalafixEdit(
       ScalafixMigration(
@@ -288,7 +288,7 @@ class NewPullRequestDataTest extends FunSuite {
 
   test("commit-count label") {
     val update = ("a".g % "b".a % "1" -> "2").single
-    val updateEdit = UpdateEdit(update, Commit())
+    val updateEdit = UpdateEdit(update, Commit(dummySha1))
     val scalafixEdit = ScalafixEdit(
       ScalafixMigration(
         "com.spotify".g,
@@ -298,7 +298,7 @@ class NewPullRequestDataTest extends FunSuite {
         Some("https://scalacenter.github.io/scalafix/")
       ),
       Right(()),
-      Some(Commit())
+      Some(Commit(dummySha1))
     )
 
     val oneEdit = labelsFor(update, List(updateEdit), List.empty, None)

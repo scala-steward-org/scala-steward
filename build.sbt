@@ -20,7 +20,7 @@ val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
   "mill-plugin" -> List(JVMPlatform)
 )
 
-val Scala212 = "2.12.15"
+val Scala212 = "2.12.16"
 val Scala213 = "2.13.8"
 
 /// sbt-github-actions configuration
@@ -325,6 +325,9 @@ lazy val dockerSettings = Def.settings(
   },
   Docker / packageName := s"fthomas/${name.value}",
   dockerUpdateLatest := true,
+  dockerAliases ++= {
+    if (!isSnapshot.value) Seq(dockerAlias.value.withTag(Option("latest-release"))) else Nil
+  },
   dockerEnvVars := Map(
     "PATH" -> "/opt/docker/sbt/bin:${PATH}",
     "COURSIER_PROGRESS" -> "false"
