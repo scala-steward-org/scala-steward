@@ -115,6 +115,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [Manuel Cueto](https://github.com/manuelcueto)
 * [Marco Zühlke](https://github.com/mzuehlke) 
 * [Mark Canlas](https://github.com/mcanlas)
+* [Mark van der Tol](https://github.com/markvandertol)
 * [MaT1g3R](https://github.com/MaT1g3R)
 * [Mat Mannion](https://github.com/matmannion)
 * [Michael Wizner](https://github.com/mwz)

@@ -113,6 +113,13 @@ object StewardPlugin extends ExternalModule {
         case _                           => true
       }
 
+    val headerJson: Function1[(String, String), Obj] = { case ((key, value)) =>
+      Obj(
+        "key" -> key,
+        "value" -> value
+      )
+    }
+
     val authJson = (a: Authentication) =>
       Obj(
         "user" -> Str(a.user),
@@ -128,7 +135,8 @@ object StewardPlugin extends ExternalModule {
             "type" -> Str("maven"),
             "auth" -> m.authentication
               .map(authJson)
-              .getOrElse(Null)
+              .getOrElse(Null),
+            "headers" -> Arr(m.authentication.fold(Seq.empty[Obj])(_.httpHeaders.map(headerJson)))
           )
         case ivy: IvyRepository =>
           Obj(
@@ -136,7 +144,8 @@ object StewardPlugin extends ExternalModule {
             "type" -> Str("ivy"),
             "auth" -> ivy.authentication
               .map(authJson)
-              .getOrElse(Null)
+              .getOrElse(Null),
+            "headers" -> Arr(ivy.authentication.fold(Seq.empty[Obj])(_.httpHeaders.map(headerJson)))
           )
         case _ => Null
       }
