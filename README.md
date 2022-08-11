@@ -18,12 +18,10 @@ See also the announcement blog post:
 
 ## Quick start guide
 
-Open a pull request that adds the GitHub, GitLab, or Bitbucket repository of your Scala project
-to [repos-github.md](https://github.com/scala-steward-org/repos/blob/main/repos-github.md)
-([edit](https://github.com/scala-steward-org/repos/edit/main/repos-github.md)).
-Once that PR is merged, [**@scala-steward**][@scala-steward] will check
-periodically for version number updates in your project and will
-open pull requests for updates it found.
+Open a pull request that adds the GitHub repository of your project to [repos-github.md](https://github.com/VirtusLab/scala-steward-repos/blob/main/repos-github.md) ([edit](https://github.com/VirtusLab/scala-steward-repos/edit/main/repos-github.md)).
+Once that PR is merged, [**@scala-steward**][@scala-steward] will check periodically for version updates in your project and will open pull requests for updates it found.
+
+Many thanks to [VirtusLab][VirtusLab] for hosting and managing this public Scala Steward instance!
 
 ## Show us the pull requests!
 
@@ -73,6 +71,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [Arulselvan Madhavan](https://github.com/ArulselvanMadhavan)
 * [Barry O'Neill](https://github.com/barryoneill)
 * [Bayram Kiran](https://github.com/kiranbayram)
+* [Ben Carter](https://github.com/bcarter97)
 * [Brice Jaglin](https://github.com/bjaglin)
 * [Cédric Chantepie](https://github.com/cchantep)
 * [Chris Llanwarne](https://github.com/cjllanwarne)
@@ -116,6 +115,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [Manuel Cueto](https://github.com/manuelcueto)
 * [Marco Zühlke](https://github.com/mzuehlke) 
 * [Mark Canlas](https://github.com/mcanlas)
+* [Mark van der Tol](https://github.com/markvandertol)
 * [MaT1g3R](https://github.com/MaT1g3R)
 * [Mat Mannion](https://github.com/matmannion)
 * [Michael Wizner](https://github.com/mwz)
@@ -138,6 +138,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [TATSUNO Yasuhiro](https://github.com/exoego)
 * [Thomas Heslin](https://github.com/tjheslin1)
 * [Thomas Kaliakos](https://github.com/thomaska)
+* [Tim Steinbach](https://github.com/NeQuissimus)
 * [Tobias Roeser](https://github.com/lefou)
 * [Toshiyuki Takahashi](https://github.com/tototoshi)
 * [Victor Viale](https://github.com/Koroeskohr)
@@ -184,6 +185,7 @@ Consider creating PR to add your company to the list and join the community.
 * [Teads](https://medium.com/teads-engineering)
 * [Tegonal GmbH](https://tegonal.com)
 * [Tupl](https://www.tupl.com)
+* [VirtusLab](https://virtuslab.com/)
 * [wehkamp](https://www.wehkamp.nl/)
 * [Zalando](https://en.zalando.de/)
 
@@ -212,3 +214,4 @@ Scala Steward is licensed under the
 [CoC]: https://github.com/scala-steward-org/scala-steward/blob/master/CODE_OF_CONDUCT.md
 [@scala-steward]: https://github.com/scala-steward
 [sbt-updates]: https://github.com/rtimush/sbt-updates
+[VirtusLab]: https://www.virtuslab.com

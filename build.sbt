@@ -20,7 +20,7 @@ val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
   "mill-plugin" -> List(JVMPlatform)
 )
 
-val Scala212 = "2.12.15"
+val Scala212 = "2.12.16"
 val Scala213 = "2.13.8"
 
 /// sbt-github-actions configuration
@@ -132,6 +132,12 @@ lazy val core = myCrossProject("core")
         // https/repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-stdlib/1.4.20/kotlin-stdlib-1.4.20.jar:META-INF/versions/9/module-info.class
         // https/repo1.maven.org/maven2/org/tukaani/xz/1.9/xz-1.9.jar:META-INF/versions/9/module-info.class
         MergeStrategy.first
+      case PathList("module-info.class") =>
+        // (core / assembly) deduplicate: different file contents found in the following:
+        // https/repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-annotations/2.12.6/jackson-annotations-2.12.6.jar:module-info.class
+        // https/repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-core/2.12.6/jackson-core-2.12.6.jar:module-info.class
+        // https/repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.12.6.1/jackson-databind-2.12.6.1.jar:module-info.class
+        MergeStrategy.discard
       case otherwise =>
         val defaultStrategy = (assembly / assemblyMergeStrategy).value
         defaultStrategy(otherwise)
@@ -319,6 +325,9 @@ lazy val dockerSettings = Def.settings(
   },
   Docker / packageName := s"fthomas/${name.value}",
   dockerUpdateLatest := true,
+  dockerAliases ++= {
+    if (!isSnapshot.value) Seq(dockerAlias.value.withTag(Option("latest-release"))) else Nil
+  },
   dockerEnvVars := Map(
     "PATH" -> "/opt/docker/sbt/bin:${PATH}",
     "COURSIER_PROGRESS" -> "false"

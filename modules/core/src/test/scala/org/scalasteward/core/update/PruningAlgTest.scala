@@ -15,6 +15,8 @@ import org.scalasteward.core.repocache.RepoCache
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.vcs.data.Repo
 
+import java.time.Instant
+
 class PruningAlgTest extends FunSuite {
   test("needsAttention") {
     val repo = Repo("fthomas", "scalafix-test")
@@ -103,7 +105,8 @@ class PruningAlgTest extends FunSuite {
           |        {
           |          "MavenRepository" : {
           |            "name" : "public",
-          |            "location" : "https://foobar.org/maven2/"
+          |            "location" : "https://foobar.org/maven2/",
+          |            "headers" : []
           |          }
           |        }
           |      ]
@@ -190,7 +193,7 @@ class PruningAlgTest extends FunSuite {
             DependencyInfo("org.scala-lang".g % "scala-library".a % "2.12.14", List("build.sbt")),
             DependencyInfo("org.scala-lang".g % "scala-library".a % "2.13.5", List("build.sbt"))
           ),
-          List(MavenRepository("public", "https://repo5.org/maven/", None))
+          List(MavenRepository("public", "https://repo5.org/maven/", None, Nil))
         )
       )
     )
@@ -210,5 +213,344 @@ class PruningAlgTest extends FunSuite {
       // This should not propose an update from 2.12.13 to 2.13.5.
       updateStates <- pruningAlg.needsAttention(data).runA(initial)
     } yield assertEquals(updateStates, None)).unsafeRunSync()
+  }
+
+  test("needsAttention: group-specific frequency (monthly) vs repo frequency (asap)") {
+    val repo = Repo("pruning-test", "repo3")
+    val Right(repoCache) = decode[RepoCache](
+      s"""|{
+          |  "sha1": "12def27a837ba6dc9e17406cbbe342fba3527c14",
+          |  "dependencyInfos" : [
+          |    {
+          |      "value" : [
+          |        {
+          |          "dependency" : {
+          |            "groupId" : "software.awssdk",
+          |            "artifactId" : {
+          |              "name" : "s3",
+          |              "maybeCrossName" : null
+          |            },
+          |            "version" : "2.100.0",
+          |            "sbtVersion" : null,
+          |            "scalaVersion" : null,
+          |            "configurations" : null
+          |          },
+          |          "filesContainingVersion": [
+          |            "build.sbt"
+          |          ]
+          |        }
+          |      ],
+          |      "resolvers" : [
+          |        {
+          |          "MavenRepository" : {
+          |            "name" : "public",
+          |            "location" : "https://foobar.org/maven2/",
+          |            "headers" : []
+          |          }
+          |        }
+          |      ]
+          |    }
+          |  ],
+          |  "maybeRepoConfig": {
+          |    "dependencyOverrides": [
+          |      {
+          |        "dependency": { "groupId": "software.awssdk" },
+          |        "pullRequests": { "frequency": "@monthly" }
+          |      }
+          |    ],
+          |    "pullRequests": {
+          |      "frequency": "@asap"
+          |    }
+          |  }
+          |}""".stripMargin
+    )
+    val pullRequestsFile =
+      config.workspace / s"store/pull_requests/v2/github/${repo.toPath}/pull_requests.json"
+    val timestampNow = Instant.now().toEpochMilli
+    val pullRequestsContent =
+      s"""|{
+          |  "https://github.com/${repo.toPath}/pull/27" : {
+          |    "baseSha1" : "12def27a837ba6dc9e17406cbbe342fba3527c14",
+          |    "update" : {
+          |      "Single" : {
+          |        "crossDependency" : [
+          |          {
+          |            "groupId" : "software.awssdk",
+          |            "artifactId" : {
+          |              "name" : "s3",
+          |              "maybeCrossName" : null
+          |            },
+          |            "version" : "2.100.0",
+          |            "sbtVersion" : null,
+          |            "scalaVersion" : null,
+          |            "configurations" : null
+          |          }
+          |        ],
+          |        "newerVersions" : [
+          |          "2.200.0"
+          |        ],
+          |        "newerGroupId" : null
+          |      }
+          |    },
+          |    "state" : "open",
+          |    "entryCreatedAt" : $timestampNow
+          |  }
+          |}""".stripMargin
+    val versionsFile =
+      config.workspace / "store/versions/v2/https/foobar.org/maven2/software/awssdk/s3/versions.json"
+    val versionsContent =
+      s"""|{
+          |  "updatedAt" : 9999999999999,
+          |  "versions" : [
+          |    "2.100.0",
+          |    "2.200.0",
+          |    "2.300.0"
+          |  ]
+          |}
+          |""".stripMargin
+    val initial = MockState.empty
+      .addFiles(pullRequestsFile -> pullRequestsContent, versionsFile -> versionsContent)
+      .unsafeRunSync()
+    val data = RepoData(repo, repoCache, repoCache.maybeRepoConfig.getOrElse(RepoConfig.empty))
+    val state = pruningAlg.needsAttention(data).runS(initial).unsafeRunSync()
+    val expected = initial.copy(
+      trace = Vector(
+        Log(s"Find updates for ${repo.show}"),
+        Cmd("read", versionsFile.toString),
+        Cmd("read", pullRequestsFile.toString),
+        Cmd("read", versionsFile.toString),
+        Log("Found 1 update:\n  software.awssdk:s3 : 2.100.0 -> 2.300.0"),
+        Log("Ignoring outdated dependency software.awssdk:s3 for 29d 23h 59m"),
+        Log(s"${repo.show} is up-to-date")
+      )
+    )
+    assertEquals(state, expected)
+  }
+
+  test("needsAttention: group-specific frequency (asap) vs repo frequency (monthly)") {
+    val repo = Repo("pruning-test", "repo3")
+    val Right(repoCache) = decode[RepoCache](
+      s"""|{
+          |  "sha1": "12def27a837ba6dc9e17406cbbe342fba3527c14",
+          |  "dependencyInfos" : [
+          |    {
+          |      "value" : [
+          |        {
+          |          "dependency" : {
+          |            "groupId" : "software.awssdk",
+          |            "artifactId" : {
+          |              "name" : "s3",
+          |              "maybeCrossName" : null
+          |            },
+          |            "version" : "2.100.0",
+          |            "sbtVersion" : null,
+          |            "scalaVersion" : null,
+          |            "configurations" : null
+          |          },
+          |          "filesContainingVersion": [
+          |            "build.sbt"
+          |          ]
+          |        }
+          |      ],
+          |      "resolvers" : [
+          |        {
+          |          "MavenRepository" : {
+          |            "name" : "public",
+          |            "location" : "https://foobar.org/maven2/",
+          |            "headers" : []
+          |          }
+          |        }
+          |      ]
+          |    }
+          |  ],
+          |  "maybeRepoConfig": {
+          |    "dependencyOverrides": [
+          |      {
+          |        "dependency": { "groupId": "software.awssdk" },
+          |        "pullRequests": { "frequency": "@asap" }
+          |      }
+          |    ],
+          |    "pullRequests": {
+          |      "frequency": "@monthly"
+          |    }
+          |  }
+          |}""".stripMargin
+    )
+    val pullRequestsFile =
+      config.workspace / s"store/pull_requests/v2/github/${repo.toPath}/pull_requests.json"
+    val pullRequestsContent =
+      s"""|{
+          |  "https://github.com/${repo.toPath}/pull/27" : {
+          |    "baseSha1" : "12def27a837ba6dc9e17406cbbe342fba3527c14",
+          |    "update" : {
+          |      "Single" : {
+          |        "crossDependency" : [
+          |          {
+          |            "groupId" : "software.awssdk",
+          |            "artifactId" : {
+          |              "name" : "s3",
+          |              "maybeCrossName" : null
+          |            },
+          |            "version" : "2.100.0",
+          |            "sbtVersion" : null,
+          |            "scalaVersion" : null,
+          |            "configurations" : null
+          |          }
+          |        ],
+          |        "newerVersions" : [
+          |          "2.200.0"
+          |        ],
+          |        "newerGroupId" : null
+          |      }
+          |    },
+          |    "state" : "open",
+          |    "entryCreatedAt" : 1581969227183
+          |  }
+          |}""".stripMargin
+    val versionsFile =
+      config.workspace / "store/versions/v2/https/foobar.org/maven2/software/awssdk/s3/versions.json"
+    val versionsContent =
+      s"""|{
+          |  "updatedAt" : 9999999999999,
+          |  "versions" : [
+          |    "2.100.0",
+          |    "2.200.0",
+          |    "2.300.0"
+          |  ]
+          |}
+          |""".stripMargin
+    val initial = MockState.empty
+      .addFiles(pullRequestsFile -> pullRequestsContent, versionsFile -> versionsContent)
+      .unsafeRunSync()
+    val data = RepoData(repo, repoCache, repoCache.maybeRepoConfig.getOrElse(RepoConfig.empty))
+    val state = pruningAlg.needsAttention(data).runS(initial).unsafeRunSync()
+    val expected = initial.copy(
+      trace = Vector(
+        Log(s"Find updates for ${repo.show}"),
+        Cmd("read", versionsFile.toString),
+        Cmd("read", versionsFile.toString),
+        Log("Found 1 update:\n  software.awssdk:s3 : 2.100.0 -> 2.300.0"),
+        Log(
+          "pruning-test/repo3 is outdated:\n  new version: software.awssdk:s3 : 2.100.0 -> 2.300.0"
+        )
+      )
+    )
+    assertEquals(state, expected)
+  }
+
+  test("needsAttention: dependency can have artifactId and version") {
+    val repo = Repo("pruning-test", "repo3")
+    val Right(repoCache) = decode[RepoCache](
+      s"""|{
+          |  "sha1": "12def27a837ba6dc9e17406cbbe342fba3527c14",
+          |  "dependencyInfos" : [
+          |    {
+          |      "value" : [
+          |        {
+          |          "dependency" : {
+          |            "groupId" : "software.awssdk",
+          |            "artifactId" : {
+          |              "name" : "s3",
+          |              "maybeCrossName" : null
+          |            },
+          |            "version" : "2.100.0",
+          |            "sbtVersion" : null,
+          |            "scalaVersion" : null,
+          |            "configurations" : null
+          |          },
+          |          "filesContainingVersion": [
+          |            "build.sbt"
+          |          ]
+          |        }
+          |      ],
+          |      "resolvers" : [
+          |        {
+          |          "MavenRepository" : {
+          |            "name" : "public",
+          |            "location" : "https://foobar.org/maven2/",
+          |            "headers" : []
+          |          }
+          |        }
+          |      ]
+          |    }
+          |  ],
+          |  "maybeRepoConfig": {
+          |    "dependencyOverrides": [
+          |      {
+          |        "dependency": { "groupId": "software.awssdk", "artifactId": "ignored", "version": "2." },
+          |        "pullRequests": { "frequency": "30 days" }
+          |      },
+          |      {
+          |        "dependency": { "groupId": "software.awssdk", "artifactId": "s3", "version": "1." },
+          |        "pullRequests": { "frequency": "4 days" }
+          |      }
+          |    ],
+          |    "pullRequests": {
+          |      "frequency": "@asap"
+          |    }
+          |  }
+          |}""".stripMargin
+    )
+    val timestampNow = Instant.now().toEpochMilli
+    val pullRequestsFile =
+      config.workspace / s"store/pull_requests/v2/github/${repo.toPath}/pull_requests.json"
+    val pullRequestsContent =
+      s"""|{
+          |  "https://github.com/${repo.toPath}/pull/27" : {
+          |    "baseSha1" : "12def27a837ba6dc9e17406cbbe342fba3527c14",
+          |    "update" : {
+          |      "Single" : {
+          |        "crossDependency" : [
+          |          {
+          |            "groupId" : "software.awssdk",
+          |            "artifactId" : {
+          |              "name" : "s3",
+          |              "maybeCrossName" : null
+          |            },
+          |            "version" : "2.100.0",
+          |            "sbtVersion" : null,
+          |            "scalaVersion" : null,
+          |            "configurations" : null
+          |          }
+          |        ],
+          |        "newerVersions" : [
+          |          "2.200.0"
+          |        ],
+          |        "newerGroupId" : null
+          |      }
+          |    },
+          |    "state" : "open",
+          |    "entryCreatedAt" : $timestampNow
+          |  }
+          |}""".stripMargin
+    val versionsFile =
+      config.workspace / "store/versions/v2/https/foobar.org/maven2/software/awssdk/s3/versions.json"
+    val versionsContent =
+      s"""|{
+          |  "updatedAt" : 9999999999999,
+          |  "versions" : [
+          |    "2.100.0",
+          |    "2.200.0",
+          |    "2.300.0"
+          |  ]
+          |}
+          |""".stripMargin
+    val initial = MockState.empty
+      .addFiles(pullRequestsFile -> pullRequestsContent, versionsFile -> versionsContent)
+      .unsafeRunSync()
+    val data = RepoData(repo, repoCache, repoCache.maybeRepoConfig.getOrElse(RepoConfig.empty))
+    val state = pruningAlg.needsAttention(data).runS(initial).unsafeRunSync()
+    val expected = initial.copy(
+      trace = Vector(
+        Log(s"Find updates for ${repo.show}"),
+        Cmd("read", versionsFile.toString),
+        Cmd("read", versionsFile.toString),
+        Log("Found 1 update:\n  software.awssdk:s3 : 2.100.0 -> 2.300.0"),
+        Log(
+          s"${repo.show} is outdated:\n  new version: software.awssdk:s3 : 2.100.0 -> 2.300.0"
+        )
+      )
+    )
+    assertEquals(state, expected)
   }
 }

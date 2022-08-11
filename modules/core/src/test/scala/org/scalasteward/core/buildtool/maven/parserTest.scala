@@ -63,10 +63,11 @@ class parserTest extends FunSuite {
       MavenRepository(
         "sonatype-nexus-snapshots",
         "https://oss.sonatype.org/content/repositories/snapshots",
-        None
+        None,
+        Nil
       ),
-      MavenRepository("bintrayakkamaven", "https://dl.bintray.com/akka/maven/", None),
-      MavenRepository("apache.snapshots", "http://repository.apache.org/snapshots", None)
+      MavenRepository("bintrayakkamaven", "https://dl.bintray.com/akka/maven/", None, Nil),
+      MavenRepository("apache.snapshots", "http://repository.apache.org/snapshots", None, Nil)
     )
     assertEquals(resolvers, expected)
   }

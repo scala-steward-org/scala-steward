@@ -273,6 +273,14 @@ class GitLabApiAlgTest extends FunSuite {
     assertEquals(comment, Comment("Superseded by #1234"))
   }
 
+  test("labelPullRequest") {
+    val result = gitlabApiAlg
+      .labelPullRequest(Repo("foo", "bar"), PullRequestNumber(150), List("A", "B"))
+      .attempt
+      .unsafeRunSync()
+    assert(result.isRight)
+  }
+
   val getMr = json"""
     {
       "id": 26328,
@@ -320,7 +328,7 @@ class GitLabApiAlgTest extends FunSuite {
       ],
       "source_project_id": 466,
       "target_project_id": 466,
-      "labels": [],
+      "labels": ["A", "B"],
       "work_in_progress": false,
       "milestone": null,
       "merge_when_pipeline_succeeds": true,

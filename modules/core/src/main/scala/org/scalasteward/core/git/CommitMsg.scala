@@ -17,6 +17,8 @@
 package org.scalasteward.core.git
 
 import cats.syntax.all._
+import org.scalasteward.core.data.Update
+import org.scalasteward.core.update.show
 import org.scalasteward.core.util.Nel
 
 final case class CommitMsg(
@@ -27,8 +29,27 @@ final case class CommitMsg(
   def toNel: Nel[String] =
     Nel(title, body ++ trailers)
 
+  def withParagraph(paragraph: String): CommitMsg =
+    copy(body = body :+ paragraph)
+
   private def trailers: Option[String] = {
     val lines = coAuthoredBy.map(author => s"Co-authored-by: ${author.show}")
     Nel.fromList(lines).map(_.mkString_("\n"))
+  }
+}
+
+object CommitMsg {
+  def replaceVariables(s: String)(update: Update, baseBranch: Option[Branch]): CommitMsg = {
+    val artifactNameValue = show.oneLiner(update)
+    val nextVersionValue = update.nextVersion.value
+    val defaultValue = s"Update $artifactNameValue to $nextVersionValue" +
+      baseBranch.fold("")(branch => s" in ${branch.name}")
+    val title = s
+      .replace("${default}", defaultValue)
+      .replace("${artifactName}", artifactNameValue)
+      .replace("${currentVersion}", update.currentVersion.value)
+      .replace("${nextVersion}", nextVersionValue)
+      .replace("${branchName}", baseBranch.map(_.name).orEmpty)
+    CommitMsg(title = title)
   }
 }

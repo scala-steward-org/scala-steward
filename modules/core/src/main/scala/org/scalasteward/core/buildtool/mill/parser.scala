@@ -59,12 +59,14 @@ object MillModule {
         for {
           url <- c.downField("url").as[String]
           creds <- c.downField("auth").as[Option[Resolver.Credentials]]
-        } yield Resolver.MavenRepository(url, url, creds)
+          headers <- c.downField("headers").as[Option[List[Resolver.Header]]]
+        } yield Resolver.MavenRepository(url, url, creds, headers.getOrElse(Nil))
       case "ivy" =>
         for {
           url <- c.downField("pattern").as[String]
           creds <- c.downField("auth").as[Option[Resolver.Credentials]]
-        } yield Resolver.IvyRepository(url, url, creds)
+          headers <- c.downField("headers").as[Option[List[Resolver.Header]]]
+        } yield Resolver.IvyRepository(url, url, creds, headers.getOrElse(Nil))
       case typ => Left(DecodingFailure(s"Not a matching resolver type, $typ", c.history))
     }
   }

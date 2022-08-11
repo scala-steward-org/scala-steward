@@ -45,9 +45,20 @@ class FilterAlgTest extends FunSuite {
     )
   }
 
-  test("localFilter: update to pre-release of a different series") {
+  test("localFilter: update to pre-releases of a different series") {
     val update = ("com.jsuereth".g % "sbt-pgp".a % "1.1.2-1" %> Nel.of("2.0.1-M3")).single
     assertEquals(localFilter(update, config), Left(NoSuitableNextVersion(update)))
+  }
+
+  test("localFilter: allowed update to pre-releases of a different series") {
+    val update = ("com.jsuereth".g % "sbt-pgp".a % "1.1.2-1" %> Nel.of("2.0.1-M3")).single
+    val allowedPreReleases =
+      UpdatePattern("com.jsuereth".g, Some("sbt-pgp"), None) :: config.updates.allowPreReleases
+    val configWithAllowed =
+      config.copy(updates = config.updates.copy(allowPreReleases = allowedPreReleases))
+
+    val expected = Right(update.copy(newerVersions = Nel.of("2.0.1-M3".v)))
+    assertEquals(localFilter(update, configWithAllowed), expected)
   }
 
   test("ignore update via config updates.ignore") {

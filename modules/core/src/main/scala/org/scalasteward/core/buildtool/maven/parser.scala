@@ -72,7 +72,7 @@ object parser {
       id <- stringNoSpace
       _ <- wsp.rep0 ~ Parser.string("url:") ~ wsp
       url <- stringNoSpace
-    } yield Resolver.MavenRepository(id, url, None)
+    } yield Resolver.MavenRepository(id, url, None, Nil)
 
   def parseResolvers(input: List[String]): List[Resolver] =
     input.mkString.split("""\[INFO]""").toList.flatMap { line =>

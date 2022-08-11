@@ -108,8 +108,14 @@ object Cli {
   private val doNotFork: Opts[Boolean] =
     flag("do-not-fork", "Whether to not push the update branches to a fork; default: false").orFalse
 
+  private val addPrLabels: Opts[Boolean] =
+    flag(
+      "add-labels",
+      "Whether to add labels on pull or merge requests (if supported by git hoster)"
+    ).orFalse
+
   private val vcsCfg: Opts[VCSCfg] =
-    (vcsType, vcsApiHost, vcsLogin, doNotFork).mapN(VCSCfg.apply)
+    (vcsType, vcsApiHost, vcsLogin, doNotFork, addPrLabels).mapN(VCSCfg.apply)
 
   private val ignoreOptsFiles: Opts[Boolean] =
     flag(
@@ -253,7 +259,7 @@ object Cli {
   private val defaultMavenRepo: Opts[Resolver] = {
     val default = Resolver.mavenCentral
     option[String]("default-maven-repo", s"default: ${default.location}")
-      .map(location => Resolver.MavenRepository("default", location, None))
+      .map(location => Resolver.MavenRepository("default", location, None, Nil))
       .withDefault(default)
   }
 

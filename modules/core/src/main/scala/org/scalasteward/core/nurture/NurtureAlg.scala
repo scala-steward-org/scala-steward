@@ -153,7 +153,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       val createBranch = logger.info(s"Create branch ${data.updateBranch.name}") >>
         gitAlg.createBranch(data.repo, data.updateBranch)
       editAlg.applyUpdate(data.repoData, data.update, createBranch).flatMap { edits =>
-        val editCommits = edits.flatMap(_.maybeCommit)
+        val editCommits = edits.flatMap(_.commits)
         if (editCommits.isEmpty) logger.warn("No commits created").as(Ignored)
         else
           gitAlg.branchesDiffer(data.repo, data.baseBranch, data.updateBranch).flatMap {
@@ -193,9 +193,13 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
         edits,
         existingArtifactUrlsMap,
         releaseRelatedUrls.getOrElse(List.empty),
-        filesWithOldVersion
+        filesWithOldVersion,
+        data.repoData.config.pullRequests.includeMatchedLabels
       )
       pr <- vcsApiAlg.createPullRequest(data.repo, requestData)
+      _ <- vcsApiAlg
+        .labelPullRequest(data.repo, pr.number, requestData.labels)
+        .whenA(config.addLabels && requestData.labels.nonEmpty)
       prData = PullRequestData[Id](
         pr.html_url,
         data.baseSha1,
@@ -247,7 +251,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       maybeRevertCommit <- gitAlg.revertChanges(data.repo, data.baseBranch)
       maybeMergeCommit <- gitAlg.mergeTheirs(data.repo, data.baseBranch)
       edits <- editAlg.applyUpdate(data.repoData, data.update)
-      editCommits = edits.flatMap(_.maybeCommit)
+      editCommits = edits.flatMap(_.commits)
       commits = maybeRevertCommit.toList ++ maybeMergeCommit.toList ++ editCommits
       result <- pushCommits(data, commits)
     } yield result

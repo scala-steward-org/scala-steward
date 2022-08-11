@@ -52,18 +52,31 @@ object StewardPlugin extends AutoPlugin {
           )
         val dependencies = libraryDeps ++ scalafixDeps
 
-        def getCredentials(url: URL): Option[Resolver.Credentials] =
-          Try(Credentials.forHost(sbtCredentials, url.getHost)).toOption.flatten
+        def getCredentials(url: URL, name: String): Option[Resolver.Credentials] =
+          (for {
+            allDirect <- Try(Credentials.allDirect(sbtCredentials)).toOption
+            maybeRealmAndHost = allDirect.find(c => c.realm == name && c.host == url.getHost)
+            maybeRealm = allDirect.find(_.realm == name)
+            maybeHost = allDirect.find(_.host == url.getHost)
+          } yield maybeRealmAndHost.orElse(maybeRealm).orElse(maybeHost)).flatten
             .map(c => Resolver.Credentials(c.userName, c.passwd))
+
+        def getHeaders(name: String): List[Resolver.Header] =
+          for {
+            (repositoryId, authentication) <-
+              csrConfiguration.value.authenticationByRepositoryId.toList
+            if repositoryId == name
+            (headerKey, headerValue) <- authentication.headers
+          } yield Resolver.Header(headerKey, headerValue)
 
         val resolvers = fullResolvers.value.collect {
           case repo: MavenRepository if !repo.root.startsWith("file:") =>
-            val creds = getCredentials(new URL(repo.root))
-            Resolver.MavenRepository(repo.name, repo.root, creds)
+            val creds = getCredentials(new URL(repo.root), repo.name)
+            Resolver.MavenRepository(repo.name, repo.root, creds, getHeaders(repo.name))
           case repo: URLRepository =>
             val ivyPatterns = repo.patterns.ivyPatterns.mkString
-            val creds = getCredentials(new URL(ivyPatterns))
-            Resolver.IvyRepository(repo.name, ivyPatterns, creds)
+            val creds = getCredentials(new URL(ivyPatterns), repo.name)
+            Resolver.IvyRepository(repo.name, ivyPatterns, creds, getHeaders(repo.name))
         }
 
         val sb = new StringBuilder()
@@ -167,29 +180,49 @@ object StewardPlugin extends AutoPlugin {
         )
     }
 
+    final case class Header(key: String, value: String) {
+      def asJson: String =
+        objToJson(
+          List("key" -> strToJson(key), "value" -> strToJson(value))
+        )
+    }
+
     final case class MavenRepository(
         name: String,
         location: String,
-        credentials: Option[Credentials]
+        credentials: Option[Credentials],
+        headers: List[Header]
     ) extends Resolver {
       override def asJson: String =
         objToJson(
           List(
             "MavenRepository" -> objToJson(
-              List("name" -> strToJson(name), "location" -> strToJson(location)) ++
+              List(
+                "name" -> strToJson(name),
+                "location" -> strToJson(location),
+                "headers" -> arrToJson(headers.map(_.asJson))
+              ) ++
                 credentials.map(c => "credentials" -> c.asJson).toList
             )
           )
         )
     }
 
-    final case class IvyRepository(name: String, pattern: String, credentials: Option[Credentials])
-        extends Resolver {
+    final case class IvyRepository(
+        name: String,
+        pattern: String,
+        credentials: Option[Credentials],
+        headers: List[Header]
+    ) extends Resolver {
       override def asJson: String =
         objToJson(
           List(
             "IvyRepository" -> objToJson(
-              List("name" -> strToJson(name), "pattern" -> strToJson(pattern)) ++
+              List(
+                "name" -> strToJson(name),
+                "pattern" -> strToJson(pattern),
+                "headers" -> arrToJson(headers.map(_.asJson))
+              ) ++
                 credentials.map(c => "credentials" -> c.asJson).toList
             )
           )
@@ -205,4 +238,7 @@ object StewardPlugin extends AutoPlugin {
 
   private def objToJson(obj: List[(String, String)]): String =
     obj.map { case (k, v) => s""""$k": $v""" }.mkString("{ ", ", ", " }")
+
+  private def arrToJson(arr: List[String]): String =
+    arr.mkString("[ ", ", ", "]")
 }
