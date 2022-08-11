@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,7 @@ final case class ArtifactChange(
     groupIdBefore: Option[GroupId],
     groupIdAfter: GroupId,
     artifactIdBefore: Option[String],
-    artifactIdAfter: String,
-    initialVersion: String
+    artifactIdAfter: String
 )
 
 object ArtifactChange {

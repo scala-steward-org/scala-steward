@@ -38,7 +38,7 @@ class PullRequestRepositoryTest extends FunSuite {
 
     val p = for {
       _ <- pullRequestRepository.createOrUpdate(repo, data)
-      result <- pullRequestRepository.findLatestPullRequest(repo, update.crossDependency, "1.0.0")
+      result <- pullRequestRepository.findLatestPullRequest(repo, update.crossDependency, "1.0.0".v)
       createdAt <- pullRequestRepository.lastPullRequestCreatedAt(repo)
     } yield (result, createdAt)
     val (state, (result, createdAt)) = p.runSA(MockState.empty).unsafeRunSync()
@@ -60,7 +60,7 @@ class PullRequestRepositoryTest extends FunSuite {
   test("getObsoleteOpenPullRequests for single update") {
     val repo = Repo("pr-repo-test", "repo2")
     val update = portableScala
-    val nextUpdate = portableScala.copy(newerVersions = Nel.of("1.0.1"))
+    val nextUpdate = portableScala.copy(newerVersions = Nel.of("1.0.1".v))
     val data = PullRequestData[Id](url, sha1, update, Open, number, branch)
 
     val p = for {

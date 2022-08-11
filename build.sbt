@@ -9,7 +9,7 @@ val projectName = "scala-steward"
 val rootPkg = groupId.replace("-", "")
 val gitHubOwner = "scala-steward-org"
 val gitHubUrl = s"https://github.com/$gitHubOwner/$projectName"
-val mainBranch = "master"
+val mainBranch = "main"
 val gitHubUserContent = s"https://raw.githubusercontent.com/$gitHubOwner/$projectName/$mainBranch"
 
 val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
@@ -20,9 +20,9 @@ val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
   "mill-plugin" -> List(JVMPlatform)
 )
 
-val Scala212 = "2.12.15"
-val Scala213 = "2.13.5"
-val Scala3 = "3.1.0"
+val Scala212 = "2.12.16"
+val Scala213 = "2.13.8"
+val Scala3 = "3.1.3"
 
 /// sbt-github-actions configuration
 
@@ -60,6 +60,10 @@ ThisBuild / githubWorkflowBuild :=
       name = Some("Codecov")
     )
   )
+
+/// global build settings
+
+ThisBuild / evictionErrorLevel := Level.Info
 
 /// projects
 
@@ -126,20 +130,20 @@ lazy val core = myCrossProject("core")
     evictionErrorLevel := Level.Info,
     assembly / test := {},
     assembly / assemblyMergeStrategy := {
-      val nativeSuffix = "\\.(?:dll|jnilib|so)$".r
-
-      {
-        case PathList(ps @ _*) if nativeSuffix.findFirstMatchIn(ps.last).isDefined =>
-          MergeStrategy.first
-        case PathList("org", "fusesource", _*) =>
-          // (core / assembly) deduplicate: different file contents found in the following:
-          // https/repo1.maven.org/maven2/jline/jline/2.14.6/jline-2.14.6.jar:org/fusesource/hawtjni/runtime/Callback.class
-          // https/repo1.maven.org/maven2/org/fusesource/jansi/jansi/1.18/jansi-1.18.jar:org/fusesource/hawtjni/runtime/Callback.class
-          MergeStrategy.first
-        case otherwise =>
-          val defaultStrategy = (assembly / assemblyMergeStrategy).value
-          defaultStrategy(otherwise)
-      }
+      case PathList("META-INF", "versions", "9", "module-info.class") =>
+        // (core / assembly) deduplicate: different file contents found in the following:
+        // https/repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-stdlib/1.4.20/kotlin-stdlib-1.4.20.jar:META-INF/versions/9/module-info.class
+        // https/repo1.maven.org/maven2/org/tukaani/xz/1.9/xz-1.9.jar:META-INF/versions/9/module-info.class
+        MergeStrategy.first
+      case PathList("module-info.class") =>
+        // (core / assembly) deduplicate: different file contents found in the following:
+        // https/repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-annotations/2.12.6/jackson-annotations-2.12.6.jar:module-info.class
+        // https/repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-core/2.12.6/jackson-core-2.12.6.jar:module-info.class
+        // https/repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.12.6.1/jackson-databind-2.12.6.1.jar:module-info.class
+        MergeStrategy.discard
+      case otherwise =>
+        val defaultStrategy = (assembly / assemblyMergeStrategy).value
+        defaultStrategy(otherwise)
     },
     buildInfoKeys := Seq[BuildInfoKey](
       organization,
@@ -277,13 +281,25 @@ lazy val metadataSettings = Def.settings(
   startYear := Some(2018),
   licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
   scmInfo := Some(ScmInfo(homepage.value.get, s"scm:git:$gitHubUrl.git")),
-  headerLicense := Some(HeaderLicense.ALv2("2018-2021", "Scala Steward contributors")),
+  headerLicense := Some(HeaderLicense.ALv2("2018-2022", "Scala Steward contributors")),
   developers := List(
+    Developer(
+      id = "exoego",
+      name = "TATSUNO Yasuhiro",
+      email = "",
+      url(s"https://github.com/exoego")
+    ),
     Developer(
       id = "fthomas",
       name = "Frank S. Thomas",
       email = "",
       url(s"https://github.com/fthomas")
+    ),
+    Developer(
+      id = "mzuehlke",
+      name = "Marco Zühlke",
+      email = "",
+      url(s"https://github.com/mzuehlke")
     )
   )
 )
@@ -312,6 +328,9 @@ lazy val dockerSettings = Def.settings(
   },
   Docker / packageName := s"fthomas/${name.value}",
   dockerUpdateLatest := true,
+  dockerAliases ++= {
+    if (!isSnapshot.value) Seq(dockerAlias.value.withTag(Option("latest-release"))) else Nil
+  },
   dockerEnvVars := Map(
     "PATH" -> "/opt/docker/sbt/bin:${PATH}",
     "COURSIER_PROGRESS" -> "false"

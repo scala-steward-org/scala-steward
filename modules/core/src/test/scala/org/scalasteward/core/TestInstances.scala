@@ -18,12 +18,14 @@ import org.typelevel.log4cats.slf4j.Slf4jLogger
 import scala.concurrent.duration.FiniteDuration
 
 object TestInstances {
+  val dummySha1: Sha1 =
+    Sha1(HexString.unsafeFrom("da39a3ee5e6b4b0d3255bfef95601890afd80709"))
+
   val dummyRepoCache: RepoCache =
-    RepoCache(
-      Sha1(HexString.unsafeFrom("da39a3ee5e6b4b0d3255bfef95601890afd80709")),
-      List.empty,
-      Option.empty
-    )
+    RepoCache(dummySha1, List.empty, Option.empty, Option.empty)
+
+  val dummyRepoCacheWithParsingError: RepoCache =
+    dummyRepoCache.copy(maybeRepoConfigParsingError = Some("Failed to parse .scala-steward.conf"))
 
   implicit def changeArbitrary[T](implicit arbT: Arbitrary[T]): Arbitrary[Change[T]] =
     Arbitrary(arbT.arbitrary.flatMap(t => Gen.oneOf(Changed(t), Unchanged(t))))
@@ -88,11 +90,15 @@ object TestInstances {
   }
 
   implicit val versionCogen: Cogen[Version] =
-    Cogen(_.alnumComponents.map {
-      case n: Version.Component.Numeric => n.toBigInt.toLong
-      case a: Version.Component.Alpha   => a.order.toLong
-      case _                            => 0L
-    }.sum)
+    Cogen(
+      _.alnumComponents
+        .map {
+          case n: Version.Component.Numeric => n.toBigInt.toLong
+          case a: Version.Component.Alpha   => a.order.toLong
+          case _                            => 0L
+        }
+        .sum
+    )
 
   // repoconfig instances
 
@@ -103,6 +109,12 @@ object TestInstances {
 
   implicit val pullRequestFrequencyArbitrary: Arbitrary[PullRequestFrequency] =
     Arbitrary(Arbitrary.arbitrary[FiniteDuration].flatMap(fd => Gen.oneOf(Asap, Timespan(fd))))
+
+  implicit val groupRepoConfigArbitrary: Arbitrary[GroupRepoConfig] =
+    Arbitrary(for {
+      pullRequestsConfig <- Arbitrary.arbitrary[PullRequestsConfig]
+      pattern <- Arbitrary.arbitrary[UpdatePattern]
+    } yield GroupRepoConfig(pullRequestsConfig, pattern))
 
   implicit val pullRequestsConfigArbitrary: Arbitrary[PullRequestsConfig] =
     Arbitrary(for {

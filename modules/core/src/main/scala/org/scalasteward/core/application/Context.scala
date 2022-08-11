@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.scalasteward.core.application
 import cats.effect._
 import cats.effect.implicits._
 import cats.syntax.all._
+import eu.timepit.refined.auto._
 import org.http4s.Uri
 import org.http4s.client.Client
 import org.http4s.headers.`User-Agent`
@@ -82,14 +83,16 @@ object Context {
       _ <- Resource.eval(printBanner(logger))
       _ <- Resource.eval(F.delay(System.setProperty("http.agent", userAgentString)))
       userAgent <- Resource.eval(F.fromEither(`User-Agent`.parse(userAgentString)))
-      userAgentMiddleware = ClientConfiguration.setUserAgent[F](userAgent)
+      middleware = ClientConfiguration
+        .setUserAgent[F](userAgent)
+        .andThen(ClientConfiguration.retryAfter[F](maxAttempts = 5))
       defaultClient <- ClientConfiguration.build(
         ClientConfiguration.BuilderMiddleware.default,
-        userAgentMiddleware
+        middleware
       )
       urlCheckerClient <- ClientConfiguration.build(
         ClientConfiguration.disableFollowRedirect[F],
-        userAgentMiddleware
+        middleware
       )
       fileAlg = FileAlg.create(logger, F)
       processAlg = ProcessAlg.create(config.processCfg)(logger, F)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package org.scalasteward.core.repoconfig
 import cats.syntax.all._
 import io.circe.Codec
 import io.circe.generic.semiauto._
-import org.scalasteward.core.data.{GroupId, Update}
+import org.scalasteward.core.data.{GroupId, Update, Version}
 
 final case class UpdatePattern(
     groupId: GroupId,
@@ -32,7 +32,7 @@ final case class UpdatePattern(
 object UpdatePattern {
   final case class MatchResult(
       byArtifactId: List[UpdatePattern],
-      filteredVersions: List[String]
+      filteredVersions: List[Version]
   )
 
   def findMatch(
@@ -43,7 +43,7 @@ object UpdatePattern {
     val byGroupId = patterns.filter(_.groupId === update.groupId)
     val byArtifactId = byGroupId.filter(_.artifactId.forall(_ === update.artifactId.name))
     val filteredVersions = update.newerVersions.filter(newVersion =>
-      byArtifactId.exists(_.version.forall(_.matches(newVersion))) === include
+      byArtifactId.exists(_.version.forall(_.matches(newVersion.value))) === include
     )
     MatchResult(byArtifactId, filteredVersions)
   }

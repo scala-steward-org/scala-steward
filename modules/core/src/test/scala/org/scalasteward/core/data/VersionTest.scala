@@ -216,12 +216,63 @@ class VersionTest extends DisciplineSuite {
       ("0.27.0-RC1", List("0.27.0-bin-20200826-2e58a66-NIGHTLY"), None),
       ("2.0.16-200-ge888c6dea", List("2.0.16-200-ge888c6dea-14-c067d59f0-SNAPSHOT"), None),
       ("17.0.0.1", List("18-ea+4"), None),
-      ("", List("", ".", "1", "a"), Some("1"))
+      ("", List("", ".", "1", "a"), Some("1")),
+      ("1.4.12", List("1032048a", "1032048a4c2", "7d2bf0af+20171218-1522"), None),
+      ("1.1", List("20000000"), None),
+      ("10000000", List("20000000"), Some("20000000")),
+      ("1032048a", List("2032048a4c2"), Some("2032048a4c2")),
+      ("0.1.1-3dfde9d7", List("0.2.1-485fdf3b"), None),
+      ("0.1.1", List("0.2.1-485fdf3b"), None),
+      ("0.1.1-ALPHA", List("0.2.1-485fdf3b"), None),
+      ("0.1.1-ALPHA", List("0.2.1-BETA"), None),
+      ("0.1.1", List("0.2.1-BETA"), None)
     )
 
     val rnd = new Random()
     nextVersions.foreach { case (current, versions, result) =>
       val obtained = Version(current).selectNext(rnd.shuffle(versions).map(Version.apply))
+      assertEquals(obtained, result.map(Version.apply))
+    }
+  }
+
+  test("selectNext, table PreReleases") {
+    val nextVersions = List(
+      ("0.1.1-3dfde9d7", List("0.2.1-485fdf3b"), Some("0.2.1-485fdf3b")),
+      (
+        "0.21.6+75-6ad94f6f-SNAPSHOT",
+        List("0.21.6+99-a0087dd-SNAPSHOT"),
+        Some("0.21.6+99-a0087dd-SNAPSHOT")
+      ),
+      (
+        "0.21.6+75-6ad94f6f-SNAPSHOT",
+        List("0.21.7+99-a0087dd-SNAPSHOT"),
+        Some("0.21.7+99-a0087dd-SNAPSHOT")
+      ),
+      (
+        "0.21.6+75-6ad94f6f-SNAPSHOT",
+        List("0.22.0+99-a0087dd-SNAPSHOT"),
+        Some("0.22.0+99-a0087dd-SNAPSHOT")
+      ),
+      ("0.1.1", List("0.2.1-485fdf3b"), None),
+      ("0.1.1-RC1", List("0.2.1-485fdf3b"), None),
+      ("0.1.1-ALPHA", List("0.2.1-SNAPSHOT"), None),
+      ("0.21.5", List("0.21.6+75-6ad94f6f-SNAPSHOT"), None),
+      ("0.21.6", List("0.21.6+75-6ad94f6f-SNAPSHOT"), None),
+      ("0.21.7", List("0.21.6+75-6ad94f6f-SNAPSHOT"), None),
+      ("0.1.1-RC1", List("0.1.1-RC2"), Some("0.1.1-RC2")),
+      ("0.1.1-RC1", List("0.1.2-RC1"), Some("0.1.2-RC1")),
+      ("0.1.1", List("0.2.1-BETA"), Some("0.2.1-BETA")),
+      ("0.1.1", List("0.2.0-M1"), Some("0.2.0-M1")),
+      ("0.1.1-ALPHA", List("0.2.1-BETA"), Some("0.2.1-BETA")),
+      ("0.1.1-3dfde9d7", List("0.1.2"), Some("0.1.2")),
+      ("0.1.1", List("0.1.2"), Some("0.1.2")),
+      ("0.1.1-RC1", List("0.1.2"), Some("0.1.2")),
+      ("0.1.1-ALPHA", List("0.1.2"), Some("0.1.2"))
+    )
+
+    val rnd = new Random()
+    nextVersions.foreach { case (current, versions, result) =>
+      val obtained = Version(current).selectNext(rnd.shuffle(versions).map(Version.apply), true)
       assertEquals(obtained, result.map(Version.apply))
     }
   }

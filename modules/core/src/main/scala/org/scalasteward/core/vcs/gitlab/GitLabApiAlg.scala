@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -235,4 +235,17 @@ final class GitLabApiAlg[F[_]](
   ): F[Comment] =
     client.postWithBody(url.comments(repo, number), Comment(comment), modify(repo))
 
+  // https://docs.gitlab.com/ee/api/merge_requests.html#update-mr
+  override def labelPullRequest(
+      repo: Repo,
+      number: PullRequestNumber,
+      labels: List[String]
+  ): F[Unit] =
+    client
+      .putWithBody[Json, Json](
+        url.existingMergeRequest(repo, number),
+        Json.obj("labels" := labels.mkString(",")),
+        modify(repo)
+      )
+      .void
 }

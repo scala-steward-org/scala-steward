@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,11 @@ import cats.implicits._
 import cats.parse.{Numbers, Parser, Rfc5234}
 import io.circe.Codec
 import io.circe.generic.extras.semiauto.deriveUnwrappedCodec
+import org.scalasteward.core.data.Version.startsWithDate
 
 final case class Version(value: String) {
+  override def toString: String = value
+
   private val components: List[Version.Component] =
     Version.Component.parse(value)
 
@@ -32,9 +35,9 @@ final case class Version(value: String) {
   /** Selects the next version from a list of potentially newer versions.
     *
     * Implements the scheme described in this FAQ:
-    * https://github.com/scala-steward-org/scala-steward/blob/master/docs/faq.md#how-does-scala-steward-decide-what-version-it-is-updating-to
+    * https://github.com/scala-steward-org/scala-steward/blob/main/docs/faq.md#how-does-scala-steward-decide-what-version-it-is-updating-to
     */
-  def selectNext(versions: List[Version]): Option[Version] = {
+  def selectNext(versions: List[Version], allowPreReleases: Boolean = false): Option[Version] = {
     val cutoff = alnumComponentsWithoutPreRelease.length - 1
     val newerVersionsByCommonPrefix =
       versions
@@ -47,21 +50,33 @@ final case class Version(value: String) {
       .sortBy { case (commonPrefix, _) => commonPrefix.length }
       .flatMap { case (commonPrefix, vs) =>
         val sameSeries = cutoff === commonPrefix.length
-        vs.filterNot { v =>
+
+        val preReleasesFilter: Version => Boolean = v =>
+          // Do not select snapshots if we are not already on snapshot
+          v.isSnapshot && !isSnapshot
+
+        val releasesFilter: Version => Boolean = v =>
           // Do not select pre-releases of different series.
           (v.isPreRelease && !sameSeries) ||
-          // Do not select pre-releases of the same series if this is not a pre-release.
-          (v.isPreRelease && !isPreRelease && sameSeries) ||
-          // Do not select versions with pre-release identifiers whose order is smaller
-          // than the order of possible pre-release identifiers in this version. This,
-          // for example, prevents updates from 2.1.4.0-RC17 to 2.1.4.0-RC17+1-307f2f6c-SNAPSHOT.
-          v.minAlphaOrder < minAlphaOrder ||
+            // Do not select pre-releases of the same series if this is not a pre-release.
+            (v.isPreRelease && !isPreRelease && sameSeries) ||
+            // Do not select versions with pre-release identifiers whose order is smaller
+            // than the order of possible pre-release identifiers in this version. This,
+            // for example, prevents updates from 2.1.4.0-RC17 to 2.1.4.0-RC17+1-307f2f6c-SNAPSHOT.
+            (v.minAlphaOrder < minAlphaOrder) ||
+            // Do not select a version with hash if this version contains no hash.
+            (v.containsHash && !containsHash)
+
+        val commonFilter: Version => Boolean = v =>
           // Do not select versions that are identical up to the hashes.
           v.alnumComponents === alnumComponents ||
-          // Do not select a version with hash if this version contains no hash.
-          (v.containsHash && !containsHash) ||
-          // Don't select "versions" like %5BWARNING%5D.
-          !v.startsWithLetterOrDigit
+            // Don't select "versions" like %5BWARNING%5D.
+            !v.startsWithLetterOrDigit
+
+        vs.filterNot { v =>
+          commonFilter(v) ||
+          (!allowPreReleases && releasesFilter(v)) ||
+          (allowPreReleases && preReleasesFilter(v))
         }.sorted
       }
       .lastOption
@@ -81,11 +96,18 @@ final case class Version(value: String) {
       case _                          => false
     }
 
+  private def isSnapshot: Boolean =
+    components.exists {
+      case a: Version.Component.Alpha => a.isSnapshotIdent
+      case _: Version.Component.Hash  => true
+      case _                          => false
+    }
+
   private def containsHash: Boolean =
     components.exists {
       case _: Version.Component.Hash => true
       case _                         => false
-    }
+    } || Rfc5234.hexdig.rep(8).string.filterNot(startsWithDate).parse(value).isRight
 
   private[this] def alnumComponentsWithoutPreRelease: List[Version.Component] =
     alnumComponents.takeWhile {
@@ -136,6 +158,7 @@ object Version {
     }
     final case class Alpha(value: String) extends Component {
       def isPreReleaseIdent: Boolean = order < 0
+      def isSnapshotIdent: Boolean = order <= -6
       def order: Int =
         value.toUpperCase match {
           case "SNAP" | "SNAPSHOT" | "NIGHTLY" => -6

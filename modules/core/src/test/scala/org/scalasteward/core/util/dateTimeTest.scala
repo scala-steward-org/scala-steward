@@ -29,7 +29,7 @@ class dateTimeTest extends ScalaCheckSuite {
 
   test("showDuration: example 1") {
     val d = 2.days + 20.hours + 37.minutes + 3.seconds + 586.millis + 491.micros + 264.nanos
-    assertEquals(showDuration(d), "2d 20h 37m 3s 586ms 491µs 264ns")
+    assertEquals(showDuration(d), "2d 20h 37m")
   }
 
   test("showDuration: example 2") {

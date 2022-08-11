@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,8 @@ final case class PostUpdateHookConfig(
     groupId: Option[GroupId],
     artifactId: Option[String],
     command: Nel[String],
-    commitMessage: String
+    commitMessage: String,
+    addToGitBlameIgnoreRevs: Option[Boolean] = None
 ) {
   def toHook: PostUpdateHook =
     PostUpdateHook(
@@ -36,18 +37,17 @@ final case class PostUpdateHookConfig(
       artifactId.map(ArtifactId(_)),
       command = command,
       useSandbox = true,
-      commitMessage = _ => CommitMsg(commitMessage),
+      commitMessage = CommitMsg.replaceVariables(commitMessage)(_, None),
       enabledByCache = _ => true,
-      enabledByConfig = _ => true
+      enabledByConfig = _ => true,
+      addToGitBlameIgnoreRevs = addToGitBlameIgnoreRevs.getOrElse(false)
     )
 }
 
 object PostUpdateHookConfig {
-
-  implicit val postUpdateHooksConfiguration: Configuration =
+  implicit val postUpdateHooksConfigConfiguration: Configuration =
     Configuration.default.withDefaults
 
   implicit val postUpdateHooksConfigCodec: Codec[PostUpdateHookConfig] =
     deriveConfiguredCodec
-
 }

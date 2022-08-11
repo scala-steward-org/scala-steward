@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,16 +23,18 @@ import org.http4s.Uri
 import org.scalasteward.core.data._
 import org.scalasteward.core.edit.EditAttempt
 import org.scalasteward.core.edit.EditAttempt.ScalafixEdit
-import org.scalasteward.core.git
-import org.scalasteward.core.git.Branch
-import org.scalasteward.core.repoconfig.RepoConfigAlg
+import org.scalasteward.core.git.{Branch, CommitMsg}
+import org.scalasteward.core.repoconfig.{GroupRepoConfig, RepoConfigAlg}
 import org.scalasteward.core.util.{Details, Nel}
+
+import scala.util.matching.Regex
 
 final case class NewPullRequestData(
     title: String,
     body: String,
     head: String,
     base: Branch,
+    labels: List[String],
     draft: Boolean = false
 )
 
@@ -45,7 +47,9 @@ object NewPullRequestData {
       edits: List[EditAttempt],
       artifactIdToUrl: Map[String, Uri],
       releaseRelatedUrls: List[ReleaseRelatedUrl],
-      filesWithOldVersion: List[String]
+      filesWithOldVersion: List[String],
+      configParsingError: Option[String],
+      labels: List[String]
   ): String = {
     val artifacts = artifactsWithOptionalUrl(update, artifactIdToUrl)
     val migrations = edits.collect { case scalafixEdit: ScalafixEdit => scalafixEdit }
@@ -54,7 +58,8 @@ object NewPullRequestData {
     val details = List(
       appliedMigrations,
       oldVersionDetails,
-      ignoreFutureUpdates(update).some
+      adjustFutureUpdates(update).some,
+      configParsingError.map(configParsingErrorDetails)
     ).flatten
 
     s"""|Updates $artifacts ${fromTo(update)}.
@@ -70,7 +75,7 @@ object NewPullRequestData {
         |
         |${details.map(_.toHtml).mkString("\n")}
         |
-        |${labelsFor(update, edits, filesWithOldVersion).mkString("labels: ", ", ", "")}
+        |${labels.mkString("labels: ", ", ", "")}
         |""".stripMargin.trim
   }
 
@@ -128,12 +133,25 @@ object NewPullRequestData {
       )
     }
 
-  def ignoreFutureUpdates(update: Update): Details =
+  def adjustFutureUpdates(update: Update): Details =
     Details(
-      "Ignore future updates",
+      "Adjust future updates",
       s"""|Add this to your `${RepoConfigAlg.repoConfigBasename}` file to ignore future updates of this dependency:
           |```
           |${RepoConfigAlg.configToIgnoreFurtherUpdates(update)}
+          |```
+          |Or, add this to slow down future updates of this dependency:
+          |```
+          |${GroupRepoConfig.configToSlowDownUpdatesFrequency(update)}
+          |```
+          |""".stripMargin.trim
+    )
+
+  def configParsingErrorDetails(error: String): Details =
+    Details(
+      s"Note that the Scala Steward config file `${RepoConfigAlg.repoConfigBasename}` wasn't parsed correctly",
+      s"""|```
+          |$error
           |```
           |""".stripMargin.trim
     )
@@ -165,15 +183,31 @@ object NewPullRequestData {
       edits: List[EditAttempt] = List.empty,
       artifactIdToUrl: Map[String, Uri] = Map.empty,
       releaseRelatedUrls: List[ReleaseRelatedUrl] = List.empty,
-      filesWithOldVersion: List[String] = List.empty
-  ): NewPullRequestData =
+      filesWithOldVersion: List[String] = List.empty,
+      includeMatchedLabels: Option[Regex] = None
+  ): NewPullRequestData = {
+    val labels = labelsFor(data.update, edits, filesWithOldVersion, includeMatchedLabels)
     NewPullRequestData(
-      title =
-        git.commitMsgFor(data.update, data.repoConfig.commits, data.repoData.repo.branch).title,
-      body = bodyFor(data.update, edits, artifactIdToUrl, releaseRelatedUrls, filesWithOldVersion),
+      title = CommitMsg
+        .replaceVariables(data.repoConfig.commits.messageOrDefault)(
+          data.update,
+          data.repoData.repo.branch
+        )
+        .title,
+      body = bodyFor(
+        data.update,
+        edits,
+        artifactIdToUrl,
+        releaseRelatedUrls,
+        filesWithOldVersion,
+        data.repoData.cache.maybeRepoConfigParsingError,
+        labels
+      ),
       head = branchName,
-      base = data.baseBranch
+      base = data.baseBranch,
+      labels = labels
     )
+  }
 
   def updateType(update: Update): String = {
     val dependencies = update.dependencies
@@ -190,15 +224,16 @@ object NewPullRequestData {
   def labelsFor(
       update: Update,
       edits: List[EditAttempt],
-      filesWithOldVersion: List[String]
+      filesWithOldVersion: List[String],
+      includeMatchedLabels: Option[Regex]
   ): List[String] = {
-    val commitCount = edits.flatMap(_.maybeCommit).size
+    val commitCount = edits.flatMap(_.commits).size
     val commitCountLabel = "commit-count:" + (commitCount match {
       case n if n <= 1 => s"$n"
       case n           => s"n:$n"
     })
     val semVerVersions =
-      (SemVer.parse(update.currentVersion), SemVer.parse(update.nextVersion)).tupled
+      (SemVer.parse(update.currentVersion.value), SemVer.parse(update.nextVersion.value)).tupled
     val earlySemVerLabel = semVerVersions.flatMap { case (curr, next) =>
       SemVer.getChangeEarly(curr, next).map(c => s"early-semver-${c.render}")
     }
@@ -208,8 +243,10 @@ object NewPullRequestData {
     val scalafixLabel = edits.collectFirst { case _: ScalafixEdit => "scalafix-migrations" }
     val oldVersionLabel = Option.when(filesWithOldVersion.nonEmpty)("old-version-remains")
 
-    updateType(update) ::
+    val allLabels = updateType(update) ::
       List(earlySemVerLabel, semVerSpecLabel, scalafixLabel, oldVersionLabel).flatten ++
       List(commitCountLabel)
+
+    allLabels.filter(label => includeMatchedLabels.fold(true)(_.matches(label)))
   }
 }

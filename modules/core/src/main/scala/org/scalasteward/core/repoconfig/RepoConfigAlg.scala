@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package org.scalasteward.core.repoconfig
 
 import better.files.File
 import cats.MonadThrow
-import cats.data.OptionT
 import cats.syntax.all._
 import io.circe.config.parser
 import org.scalasteward.core.data.Update
@@ -36,27 +35,30 @@ final class RepoConfigAlg[F[_]](maybeGlobalRepoConfig: Option[RepoConfig])(impli
   def mergeWithGlobal(maybeRepoConfig: Option[RepoConfig]): RepoConfig =
     (maybeRepoConfig |+| maybeGlobalRepoConfig).getOrElse(RepoConfig.empty)
 
-  def readRepoConfig(repo: Repo): F[Option[RepoConfig]] =
+  def readRepoConfig(repo: Repo): F[ConfigParsingResult] =
     workspaceAlg
       .repoDir(repo)
-      .flatMap(dir => readRepoConfigFromFile(dir / repoConfigBasename).value)
+      .flatMap(dir => readRepoConfigFromFile(dir / repoConfigBasename))
 
-  private def readRepoConfigFromFile(configFile: File): OptionT[F, RepoConfig] =
-    OptionT(fileAlg.readFile(configFile)).map(parseRepoConfig).flatMapF {
-      case Right(repoConfig) =>
-        logger.info(s"Parsed repo config ${repoConfig.show}").as(repoConfig.some)
-      case Left(errorMsg) =>
-        logger.info(errorMsg).as(none[RepoConfig])
+  private def readRepoConfigFromFile(configFile: File): F[ConfigParsingResult] =
+    fileAlg.readFile(configFile).map(_.map(parseRepoConfig)).flatTap {
+      _.fold(F.unit) {
+        case Right(config) => logger.info(s"Parsed repo config ${config.show}")
+        case Left(error) => logger.info(s"Failed to parse $repoConfigBasename: ${error.getMessage}")
+      }
     }
 }
 
 object RepoConfigAlg {
+
+  // None stands for the non-existing config file.
+  // Otherwise, you got either a config error, either parsed config.
+  type ConfigParsingResult = Option[Either[io.circe.Error, RepoConfig]]
+
   val repoConfigBasename: String = ".scala-steward.conf"
 
-  def parseRepoConfig(input: String): Either[String, RepoConfig] =
-    parser.decode[RepoConfig](input).leftMap { error =>
-      s"Failed to parse $repoConfigBasename: ${error.getMessage}"
-    }
+  def parseRepoConfig(input: String): Either[io.circe.Error, RepoConfig] =
+    parser.decode[RepoConfig](input)
 
   def configToIgnoreFurtherUpdates(update: Update): String =
     update match {

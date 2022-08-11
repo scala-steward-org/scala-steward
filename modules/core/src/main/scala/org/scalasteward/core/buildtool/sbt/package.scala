@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.scalasteward.core.buildtool
 
 import cats.Functor
 import cats.syntax.all._
-import org.scalasteward.core.buildtool.sbt.data.SbtVersion
+import org.scalasteward.core.buildtool.sbt.data.{SbtVersion, ScalaVersion}
 import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId, Version}
 import org.scalasteward.core.io.{FileAlg, FileData}
 
@@ -30,15 +30,27 @@ package object sbt {
 
   val sbtArtifactId: ArtifactId = ArtifactId("sbt")
 
-  def sbtDependency(sbtVersion: SbtVersion): Option[Dependency] =
-    Option.when(sbtVersion.toVersion >= Version("1.0.0")) {
-      Dependency(sbtGroupId, sbtArtifactId, sbtVersion.value)
-    }
+  def sbtDependency(sbtVersion: SbtVersion): Option[Dependency] = {
+    val version = sbtVersion.toVersion
+    Option.when(version >= Version("1.0.0"))(Dependency(sbtGroupId, sbtArtifactId, version))
+  }
 
-  val scalaStewardScalafixSbt: FileData =
+  val sbtScalaFixGroupId = GroupId("ch.epfl.scala")
+  val sbtScalaFixArtifactId = ArtifactId("sbt-scalafix")
+
+  val sbtScalaFixDependency: Dependency =
+    Dependency(
+      sbtScalaFixGroupId,
+      sbtScalaFixArtifactId,
+      Version(""),
+      Some(SbtVersion("1.0")),
+      Some(ScalaVersion("2.12"))
+    )
+
+  def scalaStewardScalafixSbt(version: String): FileData =
     FileData(
       "scala-steward-scalafix.sbt",
-      """addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.34")"""
+      s"""addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "$version")"""
     )
 
   def scalaStewardScalafixOptions(scalacOptions: List[String]): FileData = {

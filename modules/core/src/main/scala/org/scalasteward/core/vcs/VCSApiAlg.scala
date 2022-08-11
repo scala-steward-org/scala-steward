@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,8 @@ trait VCSApiAlg[F[_]] {
     s"#${number.value}"
 
   def commentPullRequest(repo: Repo, number: PullRequestNumber, comment: String): F[Comment]
+
+  def labelPullRequest(repo: Repo, number: PullRequestNumber, labels: List[String]): F[Unit]
 
   final def createForkOrGetRepo(repo: Repo, doNotFork: Boolean): F[RepoOut] =
     if (doNotFork) getRepo(repo) else createFork(repo)

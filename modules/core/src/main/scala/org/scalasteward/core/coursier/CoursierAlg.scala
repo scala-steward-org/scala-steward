@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,8 +112,10 @@ object CoursierAlg {
     }
   }
 
-  private def toCoursierDependency(dependency: Dependency): coursier.Dependency =
-    coursier.Dependency(toCoursierModule(dependency), dependency.version).withTransitive(false)
+  private def toCoursierDependency(dependency: Dependency): coursier.Dependency = {
+    val module = toCoursierModule(dependency)
+    coursier.Dependency(module, dependency.version.value).withTransitive(false)
+  }
 
   private def toCoursierModule(dependency: Dependency): Module =
     Module(

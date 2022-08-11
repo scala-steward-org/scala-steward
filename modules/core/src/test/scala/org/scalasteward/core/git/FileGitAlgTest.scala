@@ -168,6 +168,22 @@ class FileGitAlgTest extends CatsEffectSuite {
     } yield ()
   }
 
+  test("revertChanges") {
+    val repo = rootDir / "revertChanges"
+    for {
+      _ <- ioAuxGitAlg.createRepo(repo)
+      _ <- ioAuxGitAlg.createConflict(repo)
+      branch = Branch("conflicts-yes")
+      c1 <- ioGitAlg.hasConflicts(repo, branch, master)
+      d1 <- ioGitAlg.branchesDiffer(repo, master, branch)
+      _ <- ioGitAlg.checkoutBranch(repo, branch)
+      _ <- ioGitAlg.revertChanges(repo, master)
+      c2 <- ioGitAlg.hasConflicts(repo, branch, master)
+      d2 <- ioGitAlg.branchesDiffer(repo, master, branch)
+      _ = assertEquals((c1, d1, c2, d2), (true, true, false, true))
+    } yield ()
+  }
+
   test("version") {
     assertIOBoolean(ioGitAlg.version.map(_.nonEmpty))
   }

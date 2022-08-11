@@ -5,6 +5,7 @@ import cats.syntax.all._
 import eu.timepit.refined.types.numeric.NonNegInt
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.data.GroupId
 import org.scalasteward.core.mock.MockContext.context.repoConfigAlg
 import org.scalasteward.core.mock.MockState.TraceEntry.Log
 import org.scalasteward.core.mock.{MockConfig, MockState}
@@ -17,7 +18,7 @@ class RepoConfigAlgTest extends FunSuite {
   test("default config is not empty") {
     val config = repoConfigAlg
       .readRepoConfig(Repo("repo-config-alg", "test-1"))
-      .map(repoConfigAlg.mergeWithGlobal)
+      .map(c => repoConfigAlg.mergeWithGlobal(c.flatMap(_.toOption)))
       .runA(MockState.empty)
       .unsafeRunSync()
 
@@ -28,7 +29,7 @@ class RepoConfigAlgTest extends FunSuite {
     val repo = Repo("fthomas", "scala-steward")
     val configFile = MockConfig.config.workspace / "fthomas/scala-steward/.scala-steward.conf"
     val content =
-      """|updates.allow  = [ { groupId = "eu.timepit"} ]
+      """|updates.allow  = [ { groupId = "eu.timepit" } ]
          |updates.pin  = [
          |                 { groupId = "eu.timepit", artifactId = "refined.1", version = "0.8." },
          |                 { groupId = "eu.timepit", artifactId = "refined.2", version = { prefix="0.8." } },
@@ -36,16 +37,22 @@ class RepoConfigAlgTest extends FunSuite {
          |                 { groupId = "eu.timepit", artifactId = "refined.4", version = { prefix="0.8.", suffix="jre" } }
          |               ]
          |updates.ignore = [ { groupId = "org.acme", version = "1.0" } ]
+         |updates.allowPreReleases = [ { groupId = "eu.timepit" } ]
          |updates.limit = 4
          |updates.fileExtensions = [ ".txt" ]
          |pullRequests.frequency = "@weekly"
+         |dependencyOverrides = [
+         |  { pullRequests.frequency = "@daily",   dependency = { groupId = "eu.timepit" } },
+         |  { pullRequests.frequency = "@monthly", dependency = { groupId = "eu.timepit", artifactId = "refined.1" } },
+         |  { pullRequests.frequency = "@weekly",  dependency = { groupId = "eu.timepit", artifactId = "refined.1", version = { prefix="1." } } },
+         |]
          |commits.message = "Update ${artifactName} from ${currentVersion} to ${nextVersion}"
          |buildRoots = [ ".", "subfolder/subfolder" ]
          |""".stripMargin
     val initialState = MockState.empty.addFiles(configFile -> content).unsafeRunSync()
     val config = repoConfigAlg
       .readRepoConfig(repo)
-      .map(_.getOrElse(RepoConfig.empty))
+      .map(_.getOrElse(Right(RepoConfig.empty)))
       .runA(initialState)
       .unsafeRunSync()
 
@@ -68,15 +75,40 @@ class RepoConfigAlgTest extends FunSuite {
           )
         ),
         ignore = List(UpdatePattern("org.acme".g, None, Some(VersionPattern(Some("1.0"))))),
+        allowPreReleases = List(UpdatePattern("eu.timepit".g, None, None)),
         limit = Some(NonNegInt.unsafeFrom(4)),
         fileExtensions = Some(List(".txt"))
       ),
       commits = CommitsConfig(
         message = Some("Update ${artifactName} from ${currentVersion} to ${nextVersion}")
       ),
-      buildRoots = Some(List(BuildRootConfig.repoRoot, BuildRootConfig("subfolder/subfolder")))
+      buildRoots = Some(List(BuildRootConfig.repoRoot, BuildRootConfig("subfolder/subfolder"))),
+      dependencyOverrides = List(
+        GroupRepoConfig(
+          dependency = UpdatePattern(GroupId("eu.timepit"), None, None),
+          pullRequests = PullRequestsConfig(
+            frequency = Some(PullRequestFrequency.Timespan(1.day))
+          )
+        ),
+        GroupRepoConfig(
+          dependency = UpdatePattern(GroupId("eu.timepit"), Some("refined.1"), None),
+          pullRequests = PullRequestsConfig(
+            frequency = Some(PullRequestFrequency.Timespan(30.days))
+          )
+        ),
+        GroupRepoConfig(
+          dependency = UpdatePattern(
+            GroupId("eu.timepit"),
+            Some("refined.1"),
+            Some(VersionPattern(prefix = Some("1.")))
+          ),
+          pullRequests = PullRequestsConfig(
+            frequency = Some(PullRequestFrequency.Timespan(7.days))
+          )
+        )
+      )
     )
-    assertEquals(config, expected)
+    assertEquals(config, Right(expected))
   }
 
   test("config with 'updatePullRequests = false'") {
@@ -167,9 +199,14 @@ class RepoConfigAlgTest extends FunSuite {
       MockState.empty.addFiles(configFile -> """updates.ignore = [ "foo """).unsafeRunSync()
     val (state, config) = repoConfigAlg.readRepoConfig(repo).runSA(initialState).unsafeRunSync()
 
-    assertEquals(config, None)
+    val startOfErrorMsg = "String: 1: List should have ]"
+    val expectedErrorMsg = Some(Left(startOfErrorMsg))
+    val obtainedConfig = config.map(_.leftMap(_.getMessage.take(startOfErrorMsg.length)))
+
+    assertEquals(obtainedConfig, expectedErrorMsg)
+
     val log = state.trace.collectFirst { case Log((_, msg)) => msg }.getOrElse("")
-    assert(clue(log).startsWith("Failed to parse .scala-steward.conf"))
+    assert(clue(log).contains(startOfErrorMsg))
   }
 
   test("configToIgnoreFurtherUpdates with single update") {

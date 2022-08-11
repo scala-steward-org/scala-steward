@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,12 @@ import org.scalasteward.core.util.{HttpJsonClient, UnexpectedResponse}
 import org.scalasteward.core.vcs.VCSApiAlg
 import org.scalasteward.core.vcs.bitbucket.json._
 import org.scalasteward.core.vcs.data._
+import org.typelevel.log4cats.Logger
 
 /** https://developer.atlassian.com/bitbucket/api/2/reference/ */
 class BitbucketApiAlg[F[_]](config: VCSCfg, modify: Repo => Request[F] => F[Request[F]])(implicit
     client: HttpJsonClient[F],
+    logger: Logger[F],
     F: MonadThrow[F]
 ) extends VCSApiAlg[F] {
   private val url = new Url(config.apiHost)
@@ -105,4 +107,13 @@ class BitbucketApiAlg[F[_]](config: VCSCfg, modify: Repo => Request[F] => F[Requ
         modify(repo)
       )
       .map((cc: CreateComment) => Comment(cc.content.raw))
+
+  override def labelPullRequest(
+      repo: Repo,
+      number: PullRequestNumber,
+      labels: List[String]
+  ): F[Unit] =
+    logger.warn(
+      "Bitbucket does not support PR labels, remove --add-labels to make this warning disappear"
+    )
 }

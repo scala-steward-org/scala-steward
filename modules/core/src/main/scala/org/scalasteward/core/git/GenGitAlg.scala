@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import org.scalasteward.core.application.Config.GitCfg
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 
 trait GenGitAlg[F[_], Repo] {
+  def add(repo: Repo, file: String): F[Unit]
+
   def branchAuthors(repo: Repo, branch: Branch, base: Branch): F[List[String]]
 
   def branchExists(repo: Repo, branch: Branch): F[Boolean]
@@ -69,6 +71,8 @@ trait GenGitAlg[F[_], Repo] {
 
   def removeClone(repo: Repo): F[Unit]
 
+  def revertChanges(repo: Repo, base: Branch): F[Option[Commit]]
+
   def setAuthor(repo: Repo, author: Author): F[Unit]
 
   def syncFork(repo: Repo, upstreamUrl: Uri, defaultBranch: Branch): F[Unit]
@@ -86,6 +90,9 @@ trait GenGitAlg[F[_], Repo] {
   final def contramapRepoF[A](f: A => F[Repo])(implicit F: FlatMap[F]): GenGitAlg[F, A] = {
     val self = this
     new GenGitAlg[F, A] {
+      override def add(repo: A, file: String): F[Unit] =
+        f(repo).flatMap(self.add(_, file))
+
       override def branchAuthors(repo: A, branch: Branch, base: Branch): F[List[String]] =
         f(repo).flatMap(self.branchAuthors(_, branch, base))
 
@@ -148,6 +155,9 @@ trait GenGitAlg[F[_], Repo] {
 
       override def removeClone(repo: A): F[Unit] =
         f(repo).flatMap(self.removeClone)
+
+      override def revertChanges(repo: A, base: Branch): F[Option[Commit]] =
+        f(repo).flatMap(self.revertChanges(_, base))
 
       override def setAuthor(repo: A, author: Author): F[Unit] =
         f(repo).flatMap(self.setAuthor(_, author))

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,8 @@ final case class RepoOut(
     owner: UserOut,
     parent: Option[RepoOut],
     clone_url: Uri,
-    default_branch: Branch
+    default_branch: Branch,
+    archived: Boolean = false
 ) {
   def parentOrRaise[F[_]](implicit F: ApplicativeThrow[F]): F[RepoOut] =
     parent.fold(F.raiseError[RepoOut](new Throwable(s"repo $name has no parent")))(F.pure)

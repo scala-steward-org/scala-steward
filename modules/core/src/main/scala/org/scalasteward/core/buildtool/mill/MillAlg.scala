@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ final class MillAlg[F[_]](implicit
   override def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
     F.unit
 
-  private def getMillVersion(buildRootDir: File): F[Option[String]] =
+  private def getMillVersion(buildRootDir: File): F[Option[Version]] =
     for {
       millVersionFileContent <- fileAlg.readFile(buildRootDir / ".mill-version")
       version = millVersionFileContent.flatMap(parser.parseMillVersion)
@@ -84,7 +84,7 @@ object MillAlg {
   private val millMainGroupId = GroupId("com.lihaoyi")
   private val millMainArtifactId = ArtifactId("mill-main", "mill-main_2.13")
 
-  private def millMainArtifact(version: String): Dependency =
+  private def millMainArtifact(version: Version): Dependency =
     Dependency(millMainGroupId, millMainArtifactId, version)
 
   def isMillMainUpdate(update: Update): Boolean =

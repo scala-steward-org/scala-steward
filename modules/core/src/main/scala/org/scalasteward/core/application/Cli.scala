@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -108,8 +108,14 @@ object Cli {
   private val doNotFork: Opts[Boolean] =
     flag("do-not-fork", "Whether to not push the update branches to a fork; default: false").orFalse
 
+  private val addPrLabels: Opts[Boolean] =
+    flag(
+      "add-labels",
+      "Whether to add labels on pull or merge requests (if supported by git hoster)"
+    ).orFalse
+
   private val vcsCfg: Opts[VCSCfg] =
-    (vcsType, vcsApiHost, vcsLogin, doNotFork).mapN(VCSCfg.apply)
+    (vcsType, vcsApiHost, vcsLogin, doNotFork, addPrLabels).mapN(VCSCfg.apply)
 
   private val ignoreOptsFiles: Opts[Boolean] =
     flag(
