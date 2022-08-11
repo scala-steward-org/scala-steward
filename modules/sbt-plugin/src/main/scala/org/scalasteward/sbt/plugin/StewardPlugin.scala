@@ -61,14 +61,22 @@ object StewardPlugin extends AutoPlugin {
           } yield maybeRealmAndHost.orElse(maybeRealm).orElse(maybeHost)).flatten
             .map(c => Resolver.Credentials(c.userName, c.passwd))
 
+        def getHeaders(name: String): List[Resolver.Header] =
+          for {
+            (repositoryId, authentication) <-
+              csrConfiguration.value.authenticationByRepositoryId.toList
+            if repositoryId == name
+            (headerKey, headerValue) <- authentication.headers
+          } yield Resolver.Header(headerKey, headerValue)
+
         val resolvers = fullResolvers.value.collect {
           case repo: MavenRepository if !repo.root.startsWith("file:") =>
             val creds = getCredentials(new URL(repo.root), repo.name)
-            Resolver.MavenRepository(repo.name, repo.root, creds)
+            Resolver.MavenRepository(repo.name, repo.root, creds, getHeaders(repo.name))
           case repo: URLRepository =>
             val ivyPatterns = repo.patterns.ivyPatterns.mkString
             val creds = getCredentials(new URL(ivyPatterns), repo.name)
-            Resolver.IvyRepository(repo.name, ivyPatterns, creds)
+            Resolver.IvyRepository(repo.name, ivyPatterns, creds, getHeaders(repo.name))
         }
 
         val sb = new StringBuilder()
@@ -172,29 +180,49 @@ object StewardPlugin extends AutoPlugin {
         )
     }
 
+    final case class Header(key: String, value: String) {
+      def asJson: String =
+        objToJson(
+          List("key" -> strToJson(key), "value" -> strToJson(value))
+        )
+    }
+
     final case class MavenRepository(
         name: String,
         location: String,
-        credentials: Option[Credentials]
+        credentials: Option[Credentials],
+        headers: List[Header]
     ) extends Resolver {
       override def asJson: String =
         objToJson(
           List(
             "MavenRepository" -> objToJson(
-              List("name" -> strToJson(name), "location" -> strToJson(location)) ++
+              List(
+                "name" -> strToJson(name),
+                "location" -> strToJson(location),
+                "headers" -> arrToJson(headers.map(_.asJson))
+              ) ++
                 credentials.map(c => "credentials" -> c.asJson).toList
             )
           )
         )
     }
 
-    final case class IvyRepository(name: String, pattern: String, credentials: Option[Credentials])
-        extends Resolver {
+    final case class IvyRepository(
+        name: String,
+        pattern: String,
+        credentials: Option[Credentials],
+        headers: List[Header]
+    ) extends Resolver {
       override def asJson: String =
         objToJson(
           List(
             "IvyRepository" -> objToJson(
-              List("name" -> strToJson(name), "pattern" -> strToJson(pattern)) ++
+              List(
+                "name" -> strToJson(name),
+                "pattern" -> strToJson(pattern),
+                "headers" -> arrToJson(headers.map(_.asJson))
+              ) ++
                 credentials.map(c => "credentials" -> c.asJson).toList
             )
           )
@@ -210,4 +238,7 @@ object StewardPlugin extends AutoPlugin {
 
   private def objToJson(obj: List[(String, String)]): String =
     obj.map { case (k, v) => s""""$k": $v""" }.mkString("{ ", ", ", " }")
+
+  private def arrToJson(arr: List[String]): String =
+    arr.mkString("[ ", ", ", "]")
 }
