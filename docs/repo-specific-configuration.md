@@ -32,6 +32,11 @@ You can add `<YOUR_REPO>/.scala-steward.conf` to configure how Scala Steward upd
 #pullRequests.frequency = "0 0 ? * 3" # every thursday on midnight
 pullRequests.frequency = "7 days"
 
+# pullRequests.includeMatchedLabels allows to control which labels are added to PRs 
+# via a regex check each label is checked against.
+# Defaults to no regex (all labels are added) which is equivalent to ".*".
+pullRequests.includeMatchedLabels = "(.*semver.*)|(commit-count:n:.*)"
+
 # Only these dependencies which match the given patterns are updated.
 #
 # Each pattern must have `groupId`, and may have `artifactId` and `version`.
