@@ -136,7 +136,9 @@ object StewardPlugin extends ExternalModule {
             "auth" -> m.authentication
               .map(authJson)
               .getOrElse(Null),
-            "headers" -> Arr(m.authentication.fold(Seq.empty[Obj])(_.httpHeaders.map(headerJson)))
+            "headers" -> m.authentication
+              .map(headers => Arr(headers.httpHeaders.map(headerJson)))
+              .getOrElse(Null)
           )
         case ivy: IvyRepository =>
           Obj(
@@ -145,7 +147,9 @@ object StewardPlugin extends ExternalModule {
             "auth" -> ivy.authentication
               .map(authJson)
               .getOrElse(Null),
-            "headers" -> Arr(ivy.authentication.fold(Seq.empty[Obj])(_.httpHeaders.map(headerJson)))
+            "headers" -> ivy.authentication
+              .map(headers => Arr(headers.httpHeaders.map(headerJson)))
+              .getOrElse(Null)
           )
         case _ => Null
       }
