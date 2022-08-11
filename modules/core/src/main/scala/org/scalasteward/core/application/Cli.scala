@@ -223,8 +223,8 @@ object Cli {
   private val gitlabRequiredReviewers: Opts[Option[Int]] =
     option[Int](
       "gitlab-required-reviewers",
-      "When set, the number of required reviewers for a merge request will be set to this number.  Is only used in the context of gitlab-merge-when-pipeline-succeeds being enabled, and requires that the configured access token have the appropriate privileges."
-    ).orNone
+      "When set, the number of required reviewers for a merge request will be set to this number (non-negative integer).  Is only used in the context of gitlab-merge-when-pipeline-succeeds being enabled, and requires that the configured access token have the appropriate privileges."
+    ).validate("Required reviewers must be non-negative")(_ >= 0).orNone
 
   private val gitLabCfg: Opts[GitLabCfg] =
     (gitlabMergeWhenPipelineSucceeds, gitlabRequiredReviewers).mapN(GitLabCfg.apply)

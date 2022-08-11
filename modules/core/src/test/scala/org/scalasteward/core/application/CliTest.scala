@@ -159,6 +159,16 @@ class CliTest extends FunSuite {
     assertEquals(obtained.gitLabCfg.requiredReviewers, Some(5))
   }
 
+  test("parseArgs: invalid GitLab required reviewers") {
+    val params = minimumRequiredParams ++ List(
+      List("--gitlab-merge-when-pipeline-succeeds"),
+      List("--gitlab-required-reviewers", "-3")
+    )
+    val Error(errorMsg) = Cli.parseArgs(params.flatten)
+
+    assertEquals(errorMsg, "Required reviewers must be non-negative")
+  }
+
   test("envVarArgument: env-var without equals sign") {
     assert(clue(Cli.envVarArgument.read("SBT_OPTS")).isInvalid)
   }
