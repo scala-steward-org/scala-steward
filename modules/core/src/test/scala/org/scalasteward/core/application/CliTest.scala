@@ -166,7 +166,7 @@ class CliTest extends FunSuite {
     )
     val Error(errorMsg) = Cli.parseArgs(params.flatten)
 
-    assertEquals(errorMsg, "Required reviewers must be non-negative")
+    assert(clue(errorMsg).startsWith("Required reviewers must be non-negative"))
   }
 
   test("envVarArgument: env-var without equals sign") {

@@ -69,7 +69,7 @@ Options and flags:
     --gitlab-merge-when-pipeline-succeeds
         Whether to merge a gitlab merge request when the pipeline succeeds
     --gitlab-required-reviewers <integer>
-        When set, the number of required reviewers for a merge request will be set to this number.  Is only used in the context of gitlab-merge-when-pipeline-succeeds being enabled, and requires that the configured access token have the appropriate privileges.
+        When set, the number of required reviewers for a merge request will be set to this number (non-negative integer).  Is only used in the context of gitlab-merge-when-pipeline-succeeds being enabled, and requires that the configured access token have the appropriate privileges.
     --github-app-id <integer>
         GitHub application id
     --github-app-key-file <file>
