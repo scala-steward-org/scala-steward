@@ -30,7 +30,7 @@ import io.circe.{CursorOp, DecodingFailure, ParsingFailure}
 final class ValidateRepoConfigAlg[F[_]](implicit
     fileAlg: FileAlg[F],
     logger: Logger[F],
-    monadThrowF: MonadThrow[F]
+    F: MonadThrow[F]
 ) {
 
   def validateConfigFile(configFile: File): F[ConfigValidationResult] =

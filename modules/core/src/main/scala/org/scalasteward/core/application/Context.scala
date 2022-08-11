@@ -100,12 +100,12 @@ object Context {
 
   def step0[F[_]](
       usage: Config.StewardUsage
-  )(implicit asyncF: Async[F]): Resource[F, StewardContext[F]] =
+  )(implicit F: Async[F]): Resource[F, StewardContext[F]] =
     for {
       logger0 <- Resource.eval(Slf4jLogger.fromName[F]("org.scalasteward.core"))
       _ <- Resource.eval(printBanner(logger0))
-      _ <- Resource.eval(asyncF.delay(System.setProperty("http.agent", userAgentString)))
-      userAgent <- Resource.eval(asyncF.fromEither(`User-Agent`.parse(userAgentString)))
+      _ <- Resource.eval(F.delay(System.setProperty("http.agent", userAgentString)))
+      userAgent <- Resource.eval(F.fromEither(`User-Agent`.parse(userAgentString)))
       middleware = ClientConfiguration
         .setUserAgent[F](userAgent)
         .andThen(ClientConfiguration.retryAfter[F](maxAttempts = 5))
@@ -117,7 +117,7 @@ object Context {
         ClientConfiguration.disableFollowRedirect[F],
         middleware
       )
-      fileAlg0 = FileAlg.create(logger0, asyncF)
+      fileAlg0 = FileAlg.create(logger0, F)
       context <- usage match {
         case StewardUsage.Regular(config) =>
           initRegular(config)(
@@ -125,7 +125,7 @@ object Context {
             UrlCheckerClient(urlCheckerClient),
             fileAlg0,
             logger0,
-            asyncF
+            F
           ).map(StewardContext.Regular(_))
 
         case StewardUsage.ValidateRepoConfig(file) =>
@@ -141,7 +141,7 @@ object Context {
       urlCheckerClient: UrlCheckerClient[F],
       fileAlg: FileAlg[F],
       logger: Logger[F],
-      asyncF: Async[F]
+      F: Async[F]
   ): Resource[F, Context[F]] = {
     implicit val processAlg = ProcessAlg.create(config.processCfg)
     implicit val workspaceAlg = WorkspaceAlg.create(config)
@@ -151,7 +151,7 @@ object Context {
   def initValidateRepoConfig[F[_]](file: File)(implicit
       fileAlg: FileAlg[F],
       logger: Logger[F],
-      asyncF: MonadThrow[F]
+      F: MonadThrow[F]
   ): StewardContext.ValidateRepoConfig[F] = {
     implicit val validateRepoConfigAlg = new ValidateRepoConfigAlg[F]()
     StewardContext.ValidateRepoConfig[F](file)
