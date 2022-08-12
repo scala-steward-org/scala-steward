@@ -64,10 +64,10 @@ object FilterAlg {
   final case class VersionOrderingConflict(update: Update.Single) extends RejectionReason
 
   def localFilter(update: Update.Single, repoConfig: RepoConfig): FilterResult =
-    repoConfig.updates.keep(update).flatMap(globalFilter)
+    repoConfig.updates.keep(update).flatMap(globalFilter(_, repoConfig))
 
-  private def globalFilter(update: Update.Single): FilterResult =
-    selectSuitableNextVersion(update).flatMap(checkVersionOrdering)
+  private def globalFilter(update: Update.Single, repoConfig: RepoConfig): FilterResult =
+    selectSuitableNextVersion(update, repoConfig).flatMap(checkVersionOrdering)
 
   def isDependencyConfigurationIgnored(dependency: Dependency): Boolean =
     dependency.configurations.fold("")(_.toLowerCase) match {
@@ -79,9 +79,15 @@ object FilterAlg {
       case _                     => false
     }
 
-  private def selectSuitableNextVersion(update: Update.Single): FilterResult = {
+  private def selectSuitableNextVersion(
+      update: Update.Single,
+      repoConfig: RepoConfig
+  ): FilterResult = {
     val newerVersions = update.newerVersions.toList
-    val maybeNext = update.currentVersion.selectNext(newerVersions)
+    val maybeNext = repoConfig.updates.preRelease(update) match {
+      case Left(_)  => update.currentVersion.selectNext(newerVersions)
+      case Right(_) => update.currentVersion.selectNext(newerVersions, allowPreReleases = true)
+    }
     maybeNext match {
       case Some(next) => Right(update.copy(newerVersions = Nel.of(next)))
       case None       => Left(NoSuitableNextVersion(update))

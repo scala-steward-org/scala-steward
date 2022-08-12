@@ -32,6 +32,11 @@ You can add `<YOUR_REPO>/.scala-steward.conf` to configure how Scala Steward upd
 #pullRequests.frequency = "0 0 ? * 3" # every thursday on midnight
 pullRequests.frequency = "7 days"
 
+# pullRequests.includeMatchedLabels allows to control which labels are added to PRs 
+# via a regex check each label is checked against.
+# Defaults to no regex (all labels are added) which is equivalent to ".*".
+pullRequests.includeMatchedLabels = "(.*semver.*)|(commit-count:n:.*)"
+
 # Only these dependencies which match the given patterns are updated.
 #
 # Each pattern must have `groupId`, and may have `artifactId` and `version`.
@@ -51,6 +56,13 @@ updates.pin  = [ { groupId = "com.example", artifactId="foo", version = "1.1." }
 # Each pattern must have `groupId`, and may have `artifactId` and `version`.
 # Defaults to empty `[]` which mean Scala Steward will not ignore dependencies.
 updates.ignore = [ { groupId = "org.acme", artifactId="foo", version = "1.0" } ]
+
+# The dependencies which match the given patterns are allowed to be updated to pre-release from stable.
+# This also implies, that it will be allowed for snapshot versions to be updated to snapshots of different series.
+#
+# Each pattern must have `groupId`, and may have `artifactId` and `version`.
+# Defaults to empty `[]` which mean Scala Steward will ignore all stable to pre-release update options.
+updates.allowPreReleases  = [ { groupId = "com.example", artifactId="foo" } ]
 
 # If set, Scala Steward will only create or update `n` PRs each time it runs (see `pullRequests.frequency` above).
 # Useful if running frequently and/or CI build are costly
