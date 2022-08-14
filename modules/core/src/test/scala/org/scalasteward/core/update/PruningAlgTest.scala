@@ -105,7 +105,8 @@ class PruningAlgTest extends FunSuite {
           |        {
           |          "MavenRepository" : {
           |            "name" : "public",
-          |            "location" : "https://foobar.org/maven2/"
+          |            "location" : "https://foobar.org/maven2/",
+          |            "headers" : []
           |          }
           |        }
           |      ]
@@ -192,7 +193,7 @@ class PruningAlgTest extends FunSuite {
             DependencyInfo("org.scala-lang".g % "scala-library".a % "2.12.14", List("build.sbt")),
             DependencyInfo("org.scala-lang".g % "scala-library".a % "2.13.5", List("build.sbt"))
           ),
-          List(MavenRepository("public", "https://repo5.org/maven/", None))
+          List(MavenRepository("public", "https://repo5.org/maven/", None, Nil))
         )
       )
     )
@@ -243,7 +244,8 @@ class PruningAlgTest extends FunSuite {
           |        {
           |          "MavenRepository" : {
           |            "name" : "public",
-          |            "location" : "https://foobar.org/maven2/"
+          |            "location" : "https://foobar.org/maven2/",
+          |            "headers" : []
           |          }
           |        }
           |      ]
@@ -354,7 +356,8 @@ class PruningAlgTest extends FunSuite {
           |        {
           |          "MavenRepository" : {
           |            "name" : "public",
-          |            "location" : "https://foobar.org/maven2/"
+          |            "location" : "https://foobar.org/maven2/",
+          |            "headers" : []
           |          }
           |        }
           |      ]
@@ -464,7 +467,8 @@ class PruningAlgTest extends FunSuite {
           |        {
           |          "MavenRepository" : {
           |            "name" : "public",
-          |            "location" : "https://foobar.org/maven2/"
+          |            "location" : "https://foobar.org/maven2/",
+          |            "headers" : []
           |          }
           |        }
           |      ]

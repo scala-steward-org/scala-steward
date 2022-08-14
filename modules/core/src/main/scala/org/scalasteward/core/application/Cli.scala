@@ -253,7 +253,7 @@ object Cli {
   private val defaultMavenRepo: Opts[Resolver] = {
     val default = Resolver.mavenCentral
     option[String]("default-maven-repo", s"default: ${default.location}")
-      .map(location => Resolver.MavenRepository("default", location, None))
+      .map(location => Resolver.MavenRepository("default", location, None, Nil))
       .withDefault(default)
   }
 
