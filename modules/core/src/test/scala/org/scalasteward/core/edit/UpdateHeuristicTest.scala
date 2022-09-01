@@ -533,6 +533,33 @@ class UpdateHeuristicTest extends FunSuite {
     val update = ("org.typelevel".g % "cats-core".a % "2.4.1" %> "2.4.2").single
     assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.original.name)
   }
+
+  test("basic mill") {
+    val original = """ivy"com.lihaoyi::requests:0.7.0"""".stripMargin
+    val expected = """ivy"com.lihaoyi::requests:0.7.1"""".stripMargin
+    val update = ("com.lihaoyi".g % "requests".a % "0.7.0" %> "0.7.1").single
+    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.moduleId.name)
+  }
+
+  test("mill with variable") {
+    val original = """val requests = "0.7.0"
+                     |ivy"com.lihaoyi::requests:$requests"
+                     |""".stripMargin
+    val expected = """val requests = "0.7.1"
+                     |ivy"com.lihaoyi::requests:$requests"
+                     |""".stripMargin
+    val update = ("com.lihaoyi".g % "requests".a % "0.7.0" %> "0.7.1").single
+    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.original.name)
+  }
+
+  test("mill with cross") {
+    val original = """import $ivy.`com.goyeau::mill-scalafix::0.2.9`
+                     |""".stripMargin
+    val expected = """import $ivy.`com.goyeau::mill-scalafix::0.2.10`
+                     |""".stripMargin
+    val update = ("com.goyeau".g % "mill-scalafix".a % "0.2.9" %> "0.2.10").single
+    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.moduleId.name)
+  }
 }
 
 object UpdateHeuristicTest {
