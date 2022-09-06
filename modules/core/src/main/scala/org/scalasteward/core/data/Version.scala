@@ -40,11 +40,15 @@ final case class Version(value: String) {
   def selectNext(versions: List[Version], allowPreReleases: Boolean = false): Option[Version] = {
     val cutoff = alnumComponentsWithoutPreRelease.length - 1
     val newerVersionsByCommonPrefix =
-      versions
-        .filter(_ > this)
-        .groupBy(_.alnumComponents.zip(alnumComponents).take(cutoff).takeWhile { case (c1, c2) =>
-          c1 === c2
-        })
+      if (this.isPreRelease && allowPreReleases) {
+        versions.groupBy(_ => List.empty)
+      } else {
+        versions
+          .filter(_ > this)
+          .groupBy(_.alnumComponents.zip(alnumComponents).take(cutoff).takeWhile { case (c1, c2) =>
+            c1 === c2
+          })
+      }
 
     newerVersionsByCommonPrefix.toList
       .sortBy { case (commonPrefix, _) => commonPrefix.length }
