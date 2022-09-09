@@ -253,6 +253,16 @@ class VersionTest extends DisciplineSuite {
         List("0.22.0+99-a0087dd-SNAPSHOT"),
         Some("0.22.0+99-a0087dd-SNAPSHOT")
       ),
+      (
+        "0.21.6+75-6ad94f6f-SNAPSHOT",
+        List("0.21.6+78-a0457da-SNAPSHOT", "0.21.7+81-a0ff7dd-SNAPSHOT"),
+        Some("0.21.7+81-a0ff7dd-SNAPSHOT")
+      ),
+      (
+        "0.21.6+75-6ad94f6f-SNAPSHOT",
+        List("0.21.7+81-a0ff7dd-SNAPSHOT", "0.22.0+99-a0087dd-SNAPSHOT"),
+        Some("0.22.0+99-a0087dd-SNAPSHOT")
+      ),
       ("0.1.1", List("0.2.1-485fdf3b"), None),
       ("0.1.1-RC1", List("0.2.1-485fdf3b"), None),
       ("0.1.1-ALPHA", List("0.2.1-SNAPSHOT"), None),
