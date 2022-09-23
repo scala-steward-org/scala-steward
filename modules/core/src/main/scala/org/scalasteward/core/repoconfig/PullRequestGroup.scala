@@ -20,12 +20,20 @@ import cats.Eq
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.semiauto._
 import cats.data.NonEmptyList
+import org.scalasteward.core.data.Update
 
 case class PullRequestGroup(
     name: String,
     title: Option[String] = None,
     filter: NonEmptyList[PullRequestUpdateFilter]
-)
+) {
+
+  /**
+    * Returns `true` if an update falls into this group; returns `false` otherwise.
+    */
+  def matches(update: Update): Boolean = ???
+
+}
 
 object PullRequestGroup {
 

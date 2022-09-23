@@ -20,10 +20,32 @@ import cats.Order
 import cats.implicits._
 import io.circe.Codec
 import io.circe.generic.semiauto._
-import org.scalasteward.core.data.Update.{Group, Single}
+import org.scalasteward.core.data.Update.Group
+import org.scalasteward.core.data.Update.Single
+import org.scalasteward.core.repoconfig.PullRequestGroup
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.util.string.MinLengthString
+
+import scala.annotation.nowarn
+
+final case class GroupedUpdate(name: String, title: Option[String], updates: List[Update])
+
+object GroupedUpdate {
+
+  /**
+    * Processes the provided updates using the group configuration. Each update will only be present in the
+    * first group it falls into.
+    *
+    * Updates that do not fall into any group will be returned back in the second return parameter.
+    */
+  @nowarn
+  def from(
+      groups: List[PullRequestGroup],
+      updates: List[Update.Single]
+  ): (List[GroupedUpdate], List[Update.Single]) = (Nil, updates)
+
+}
 
 sealed trait Update extends Product with Serializable {
   def crossDependencies: Nel[CrossDependency]
