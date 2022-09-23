@@ -29,7 +29,19 @@ import org.scalasteward.core.util.string.MinLengthString
 
 import scala.annotation.nowarn
 
+sealed trait AnUpdate {
+
+
+  def show: String
+
+}
+
 final case class GroupedUpdate(name: String, title: Option[String], updates: List[Update])
+    extends AnUpdate {
+
+  override def show: String = name
+
+}
 
 object GroupedUpdate {
 
@@ -47,7 +59,7 @@ object GroupedUpdate {
 
 }
 
-sealed trait Update extends Product with Serializable {
+sealed trait Update extends Product with Serializable with AnUpdate {
   def crossDependencies: Nel[CrossDependency]
   def dependencies: Nel[Dependency]
   def groupId: GroupId
@@ -62,7 +74,7 @@ sealed trait Update extends Product with Serializable {
   final def nextVersion: Version =
     newerVersions.head
 
-  final def show: String = {
+  final override def show: String = {
     val artifacts = this match {
       case s: Single => s.crossDependency.showArtifactNames
       case g: Group  => g.crossDependencies.map(_.showArtifactNames).mkString_("{", ", ", "}")
