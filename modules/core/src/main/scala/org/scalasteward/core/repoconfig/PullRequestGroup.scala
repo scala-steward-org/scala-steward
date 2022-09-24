@@ -31,7 +31,7 @@ case class PullRequestGroup(
   /**
     * Returns `true` if an update falls into this group; returns `false` otherwise.
     */
-  def matches(update: Update): Boolean = ???
+  def matches(update: Update.Single): Boolean = filter.exists(_.matches(update))
 
 }
 

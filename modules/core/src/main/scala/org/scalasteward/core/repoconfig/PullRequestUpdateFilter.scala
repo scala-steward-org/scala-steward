@@ -20,15 +20,42 @@ import cats.Eq
 import cats.syntax.all._
 import io.circe._
 import io.circe.syntax._
-import org.scalasteward.core.data.SemVer
+import org.scalasteward.core.data.{SemVer, Update}
+
+import scala.util.matching.Regex
 
 final case class PullRequestUpdateFilter private (
     group: Option[String] = None,
     artifact: Option[String] = None,
     version: Option[SemVer.Change] = None
-)
+) {
+
+  /**
+    * Returns `true` if an update falls into this filter; returns `false` otherwise.
+    */
+  def matches(update: Update.Single): Boolean =
+    groupRegex.forall(_.matches(update.groupId.value)) &&
+      artifactRegex.forall(_.matches(update.mainArtifactId)) &&
+      version.forall(isMatchedVersion(_, update))
+
+  private lazy val groupRegex = group.map(wildcardRegex)
+  private lazy val artifactRegex = artifact.map(wildcardRegex)
+
+  private def wildcardRegex(groupOrArtifact: String) = {
+    val pattern = Regex.quote(groupOrArtifact).replaceAll("\\*", "\\\\E.+\\\\Q")
+    new Regex(pattern)
+  }
+
+  private def isMatchedVersion(versionType: SemVer.Change, update: Update.Single): Boolean =
+    (SemVer.parse(update.currentVersion.value), SemVer.parse(update.nextVersion.value)).tupled
+      .flatMap { case (current, next) => SemVer.getChangeEarly(current, next) }
+      .map(_.render === versionType.render)
+      .getOrElse(false)
+
+}
 
 object PullRequestUpdateFilter {
+
   def apply(
       group: Option[String] = None,
       artifact: Option[String] = None,

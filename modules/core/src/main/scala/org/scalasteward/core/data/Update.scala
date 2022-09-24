@@ -27,8 +27,6 @@ import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.util.string.MinLengthString
 
-import scala.annotation.nowarn
-
 sealed trait AnUpdate {
 
 
@@ -51,11 +49,22 @@ object GroupedUpdate {
     *
     * Updates that do not fall into any group will be returned back in the second return parameter.
     */
-  @nowarn
+  /**
+    * Processes the provided updates using the group configuration. Each update will only be present in the
+    * first group it falls into.
+    *
+    * Updates that do not fall into any group will be returned back in the second return parameter.
+    */
   def from(
       groups: List[PullRequestGroup],
       updates: List[Update.Single]
-  ): (List[GroupedUpdate], List[Update.Single]) = (Nil, updates)
+  ): (List[GroupedUpdate], List[Update.Single]) =
+    groups.foldLeft((List.empty[GroupedUpdate], updates)) { case ((grouped, notGrouped), group) =>
+      notGrouped.partition(group.matches) match {
+        case (Nil, rest)     => (grouped, rest)
+        case (matched, rest) => (grouped :+ GroupedUpdate(group.name, group.title, matched), rest)
+      }
+    }
 
 }
 
