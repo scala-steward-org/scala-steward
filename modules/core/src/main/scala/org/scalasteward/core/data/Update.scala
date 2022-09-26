@@ -19,6 +19,7 @@ package org.scalasteward.core.data
 import cats.Order
 import cats.implicits._
 import io.circe.Codec
+import io.circe.syntax._
 import io.circe.generic.semiauto._
 import org.scalasteward.core.data.Update.Group
 import org.scalasteward.core.data.Update.Single
@@ -26,6 +27,7 @@ import org.scalasteward.core.repoconfig.PullRequestGroup
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.util.string.MinLengthString
+import io.circe.Decoder
 
 sealed trait AnUpdate {
 
@@ -35,6 +37,15 @@ sealed trait AnUpdate {
   }
 
   def show: String
+
+}
+
+object AnUpdate {
+
+  implicit val AnUpdateCodec: Codec[AnUpdate] = Codec.from(
+    Decoder[GroupedUpdate].widen[AnUpdate].or(Decoder[Update].widen[AnUpdate]),
+    _.on(_.asJson, _.asJson)
+  )
 
 }
 
@@ -69,6 +80,8 @@ object GroupedUpdate {
         case (matched, rest) => (grouped :+ GroupedUpdate(group.name, group.title, matched), rest)
       }
     }
+
+  implicit val GroupedUpdateCodec: Codec[GroupedUpdate] = deriveCodec
 
 }
 
