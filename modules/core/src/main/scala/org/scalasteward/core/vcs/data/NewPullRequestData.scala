@@ -234,7 +234,7 @@ object NewPullRequestData {
     NewPullRequestData(
       title = CommitMsg
         .replaceVariables(data.repoConfig.commits.messageOrDefault)(
-          data.oldUpdate,
+          data.update,
           data.repoData.repo.branch
         )
         .title,

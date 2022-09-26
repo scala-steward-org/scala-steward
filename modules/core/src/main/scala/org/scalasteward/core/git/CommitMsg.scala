@@ -17,7 +17,7 @@
 package org.scalasteward.core.git
 
 import cats.syntax.all._
-import org.scalasteward.core.data.Update
+import org.scalasteward.core.data.AnUpdate
 import org.scalasteward.core.update.show
 import org.scalasteward.core.util.Nel
 
@@ -39,17 +39,25 @@ final case class CommitMsg(
 }
 
 object CommitMsg {
-  def replaceVariables(s: String)(update: Update, baseBranch: Option[Branch]): CommitMsg = {
-    val artifactNameValue = show.oneLiner(update)
-    val nextVersionValue = update.nextVersion.value
-    val defaultValue = s"Update $artifactNameValue to $nextVersionValue" +
-      baseBranch.fold("")(branch => s" in ${branch.name}")
-    val title = s
-      .replace("${default}", defaultValue)
-      .replace("${artifactName}", artifactNameValue)
-      .replace("${currentVersion}", update.currentVersion.value)
-      .replace("${nextVersion}", nextVersionValue)
-      .replace("${branchName}", baseBranch.map(_.name).orEmpty)
-    CommitMsg(title = title)
-  }
+  def replaceVariables(s: String)(update: AnUpdate, baseBranch: Option[Branch]): CommitMsg =
+    update.on(
+      u => {
+        val artifactNameValue = show.oneLiner(u)
+        val nextVersionValue = u.nextVersion.value
+        val defaultValue = s"Update $artifactNameValue to $nextVersionValue" +
+          baseBranch.fold("")(branch => s" in ${branch.name}")
+        val title = s
+          .replace("${default}", defaultValue)
+          .replace("${artifactName}", artifactNameValue)
+          .replace("${currentVersion}", u.currentVersion.value)
+          .replace("${nextVersion}", nextVersionValue)
+          .replace("${branchName}", baseBranch.map(_.name).orEmpty)
+        CommitMsg(title = title)
+      },
+      g =>
+        CommitMsg(title =
+          g.title.getOrElse(s"Update for group ${g.name}") +
+            baseBranch.fold("")(branch => s" in ${branch.name}")
+        )
+    )
 }
