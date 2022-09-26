@@ -6,7 +6,7 @@ import org.http4s.syntax.literals._
 import org.scalasteward.core.TestInstances._
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.buildtool.sbt.data.SbtVersion
-import org.scalasteward.core.data.{ReleaseRelatedUrl, RepoData, UpdateData, Version}
+import org.scalasteward.core.data.{GroupedUpdate, ReleaseRelatedUrl, RepoData, UpdateData, Version}
 import org.scalasteward.core.edit.EditAttempt.{ScalafixEdit, UpdateEdit}
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.git.{Branch, Commit}
@@ -244,19 +244,19 @@ class NewPullRequestDataTest extends FunSuite {
   test("updateType") {
     val dependency = "com.example".g % "foo".a % "0.1"
     val single = (dependency %> "0.2").single
-    assertEquals(updateType(single), "library-update")
+    assertEquals(updateType(single), List("library-update"))
 
     val group = ("com.example".g % Nel.of("foo".a, "bar".a) % "0.1" %> "0.2").group
-    assertEquals(updateType(group), "library-update")
+    assertEquals(updateType(group), List("library-update"))
 
     val testUpdate = (dependency % "test" %> "0.2").single
-    assertEquals(updateType(testUpdate), "test-library-update")
+    assertEquals(updateType(testUpdate), List("test-library-update"))
 
     val sbtPluginUpdate = (dependency.copy(sbtVersion = Some(SbtVersion("1.0"))) %> "0.2").single
-    assertEquals(updateType(sbtPluginUpdate), "sbt-plugin-update")
+    assertEquals(updateType(sbtPluginUpdate), List("sbt-plugin-update"))
 
     val scalafixRuleUpdate = (dependency % "scalafix-rule" %> "0.2").single
-    assertEquals(updateType(scalafixRuleUpdate), "scalafix-rule-update")
+    assertEquals(updateType(scalafixRuleUpdate), List("scalafix-rule-update"))
   }
 
   test("oldVersionNote without files") {
@@ -320,4 +320,23 @@ class NewPullRequestDataTest extends FunSuite {
     val second = labelsFor(update, List(updateEdit), List.empty, Some("(.*update.*)|(.*count.*)".r))
     assertEquals(clue(second), List("library-update", "commit-count:1"))
   }
+
+  test("label for grouped updates add labels for all update types & version changes") {
+    val update1 = ("a".g % "b".a % "1" -> "2").single
+    val update2 = ("c".g % "d".a % "1.1.0" % "test" %> "1.2.0").single
+    val update = GroupedUpdate("my-group", None, List(update1, update2))
+
+    val labels = labelsFor(update, Nil, Nil, None)
+
+    val expected = List(
+      "library-update",
+      "test-library-update",
+      "early-semver-minor",
+      "semver-spec-minor",
+      "commit-count:0"
+    )
+
+    assertEquals(labels, expected)
+  }
+
 }

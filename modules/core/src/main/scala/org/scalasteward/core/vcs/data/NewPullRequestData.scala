@@ -186,7 +186,7 @@ object NewPullRequestData {
       filesWithOldVersion: List[String] = List.empty,
       includeMatchedLabels: Option[Regex] = None
   ): NewPullRequestData = {
-    val labels = labelsFor(data.oldUpdate, edits, filesWithOldVersion, includeMatchedLabels)
+    val labels = labelsFor(data.update, edits, filesWithOldVersion, includeMatchedLabels)
     NewPullRequestData(
       title = CommitMsg
         .replaceVariables(data.repoConfig.commits.messageOrDefault)(
@@ -209,20 +209,24 @@ object NewPullRequestData {
     )
   }
 
-  def updateType(update: Update): String = {
-    val dependencies = update.dependencies
-    if (dependencies.forall(_.configurations.contains("test")))
-      "test-library-update"
-    else if (dependencies.forall(_.configurations.contains("scalafix-rule")))
-      "scalafix-rule-update"
-    else if (dependencies.forall(_.sbtVersion.isDefined))
-      "sbt-plugin-update"
-    else
-      "library-update"
+  def updateType(anUpdate: AnUpdate): List[String] = {
+    def forUpdate(update: Update) = {
+      val dependencies = update.dependencies
+      if (dependencies.forall(_.configurations.contains("test")))
+        "test-library-update"
+      else if (dependencies.forall(_.configurations.contains("scalafix-rule")))
+        "scalafix-rule-update"
+      else if (dependencies.forall(_.sbtVersion.isDefined))
+        "sbt-plugin-update"
+      else
+        "library-update"
+    }
+
+    anUpdate.on(u => List(forUpdate(u)), _.updates.map(forUpdate).distinct)
   }
 
   def labelsFor(
-      update: Update,
+      update: AnUpdate,
       edits: List[EditAttempt],
       filesWithOldVersion: List[String],
       includeMatchedLabels: Option[Regex]
@@ -232,19 +236,26 @@ object NewPullRequestData {
       case n if n <= 1 => s"$n"
       case n           => s"n:$n"
     })
-    val semVerVersions =
-      (SemVer.parse(update.currentVersion.value), SemVer.parse(update.nextVersion.value)).tupled
-    val earlySemVerLabel = semVerVersions.flatMap { case (curr, next) =>
-      SemVer.getChangeEarly(curr, next).map(c => s"early-semver-${c.render}")
+
+    def semverForUpdate(u: Update): List[String] = {
+      val semVerVersions =
+        (SemVer.parse(u.currentVersion.value), SemVer.parse(u.nextVersion.value)).tupled
+      val earlySemVerLabel = semVerVersions.flatMap { case (curr, next) =>
+        SemVer.getChangeEarly(curr, next).map(c => s"early-semver-${c.render}")
+      }
+      val semVerSpecLabel = semVerVersions.flatMap { case (curr, next) =>
+        SemVer.getChangeSpec(curr, next).map(c => s"semver-spec-${c.render}")
+      }
+      List(earlySemVerLabel, semVerSpecLabel).flatten
     }
-    val semVerSpecLabel = semVerVersions.flatMap { case (curr, next) =>
-      SemVer.getChangeSpec(curr, next).map(c => s"semver-spec-${c.render}")
-    }
+    val semver: List[String] =
+      update.on(u => semverForUpdate(u), _.updates.flatMap(semverForUpdate(_)).distinct)
+
     val scalafixLabel = edits.collectFirst { case _: ScalafixEdit => "scalafix-migrations" }
     val oldVersionLabel = Option.when(filesWithOldVersion.nonEmpty)("old-version-remains")
 
-    val allLabels = updateType(update) ::
-      List(earlySemVerLabel, semVerSpecLabel, scalafixLabel, oldVersionLabel).flatten ++
+    val allLabels = updateType(update) ++
+      semver ++ List(scalafixLabel, oldVersionLabel).flatten ++
       List(commitCountLabel)
 
     allLabels.filter(label => includeMatchedLabels.fold(true)(_.matches(label)))
