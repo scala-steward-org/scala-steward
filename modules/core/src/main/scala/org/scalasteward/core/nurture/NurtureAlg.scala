@@ -105,7 +105,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
         val prData = PullRequestData[Id](
           pr.html_url,
           data.baseSha1,
-          data.oldUpdate,
+          data.update,
           pr.state,
           pr.number,
           data.updateBranch
@@ -207,7 +207,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       prData = PullRequestData[Id](
         pr.html_url,
         data.baseSha1,
-        data.oldUpdate,
+        data.update,
         pr.state,
         pr.number,
         data.updateBranch
