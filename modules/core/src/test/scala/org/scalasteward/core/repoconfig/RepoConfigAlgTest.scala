@@ -5,8 +5,7 @@ import cats.syntax.all._
 import eu.timepit.refined.types.numeric.NonNegInt
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.GroupId
-import org.scalasteward.core.data.SemVer
+import org.scalasteward.core.data.{GroupId, GroupedUpdate, SemVer}
 import org.scalasteward.core.mock.MockContext.context.repoConfigAlg
 import org.scalasteward.core.mock.MockState.TraceEntry.Log
 import org.scalasteward.core.mock.{MockConfig, MockState}
@@ -280,6 +279,24 @@ class RepoConfigAlgTest extends FunSuite {
       .getOrElse(RepoConfig())
     val expected =
       RepoConfig(updates = UpdatesConfig(ignore = List(UpdatePattern("a".g, None, None))))
+    assertEquals(config, expected)
+  }
+
+  test("configToIgnoreFurtherUpdates with grouped update") {
+    val update1 = ("a".g % "b".a % "1" %> "2").single
+    val update2 = ("c".g % "d".a % "1" %> "2").single
+    val update = GroupedUpdate("my-group", None, List(update1, update2))
+    val config = RepoConfigAlg
+      .parseRepoConfig(RepoConfigAlg.configToIgnoreFurtherUpdates(update))
+      .getOrElse(RepoConfig())
+    val expected = RepoConfig(updates =
+      UpdatesConfig(ignore =
+        List(
+          UpdatePattern(groupId = "a".g, artifactId = "b".some, None),
+          UpdatePattern(groupId = "c".g, artifactId = "d".some, None)
+        )
+      )
+    )
     assertEquals(config, expected)
   }
 
