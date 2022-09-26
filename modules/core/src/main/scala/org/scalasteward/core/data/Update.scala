@@ -29,6 +29,10 @@ import org.scalasteward.core.util.string.MinLengthString
 
 sealed trait AnUpdate {
 
+  def on[A](update: Update => A, grouped: GroupedUpdate => A): A = this match {
+    case g: GroupedUpdate => grouped(g)
+    case u: Update        => update(u)
+  }
 
   def show: String
 
