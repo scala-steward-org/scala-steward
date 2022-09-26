@@ -363,4 +363,41 @@ class NewPullRequestDataTest extends FunSuite {
     )
   }
 
+  test("adjustFutureUpdates for grouped udpates shows settings for each update") {
+    val update1 = ("a".g % "b".a % "1" -> "2").single
+    val update2 = ("c".g % "d".a % "1.1.0" % "test" %> "1.2.0").single
+    val update = GroupedUpdate("my-group", None, List(update1, update2))
+
+    val note = adjustFutureUpdates(update)
+
+    assertEquals(
+      note.toHtml,
+      """<details>
+        |<summary>Adjust future updates</summary>
+        |
+        |Add these to your `.scala-steward.conf` file to ignore future updates of these dependencies:
+        |```
+        |updates.ignore = [
+        |  { groupId = "a", artifactId = "b" },
+        |  { groupId = "c", artifactId = "d" }
+        |]
+        |```
+        |Or, add these to slow down future updates of these dependencies:
+        |```
+        |dependencyOverrides = [
+        |  {
+        |    pullRequests = { frequency = "@monthly" },
+        |    dependency = { groupId = "a", artifactId = "b" }
+        |  },
+        |  {
+        |    pullRequests = { frequency = "@monthly" },
+        |    dependency = { groupId = "c", artifactId = "d" }
+        |  }
+        |]
+        |```
+        |</details>
+      """.stripMargin.trim
+    )
+  }
+
 }

@@ -138,19 +138,31 @@ object NewPullRequestData {
       )
     }
 
-  def adjustFutureUpdates(update: Update): Details =
-    Details(
-      "Adjust future updates",
-      s"""|Add this to your `${RepoConfigAlg.repoConfigBasename}` file to ignore future updates of this dependency:
-          |```
-          |${RepoConfigAlg.configToIgnoreFurtherUpdates(update)}
-          |```
-          |Or, add this to slow down future updates of this dependency:
-          |```
-          |${GroupRepoConfig.configToSlowDownUpdatesFrequency(update)}
-          |```
-          |""".stripMargin.trim
+  def adjustFutureUpdates(update: AnUpdate): Details = Details(
+    "Adjust future updates",
+    update.on(
+      update = u =>
+        s"""|Add this to your `${RepoConfigAlg.repoConfigBasename}` file to ignore future updates of this dependency:
+            |```
+            |${RepoConfigAlg.configToIgnoreFurtherUpdates(u)}
+            |```
+            |Or, add this to slow down future updates of this dependency:
+            |```
+            |${GroupRepoConfig.configToSlowDownUpdatesFrequency(u)}
+            |```
+            |""".stripMargin.trim,
+      grouped = g =>
+        s"""|Add these to your `${RepoConfigAlg.repoConfigBasename}` file to ignore future updates of these dependencies:
+            |```
+            |${RepoConfigAlg.configToIgnoreFurtherUpdates(g)}
+            |```
+            |Or, add these to slow down future updates of these dependencies:
+            |```
+            |${GroupRepoConfig.configToSlowDownUpdatesFrequency(g)}
+            |```
+            |""".stripMargin.trim
     )
+  )
 
   def configParsingErrorDetails(error: String): Details =
     Details(
