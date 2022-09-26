@@ -17,8 +17,10 @@
 package org.scalasteward.core.util
 
 import cats.syntax.all._
-import cats.{Foldable, Functor, Monad, MonadThrow}
+import cats.{Monad, MonadThrow}
+import org.scalasteward.core.data.GroupedUpdate
 import org.scalasteward.core.data.Update
+import org.scalasteward.core.data.AnUpdate
 import org.typelevel.log4cats.Logger
 import scala.concurrent.duration.FiniteDuration
 
@@ -66,8 +68,13 @@ object logger {
     }
   }
 
-  def showUpdates[F[_]: Foldable: Functor](updates: F[Update]): String = {
-    val list = string.indentLines(updates.map(_.show))
+  def showUpdates(allUpdates: List[AnUpdate]): String = {
+    val updates = allUpdates.flatMap {
+      case g: GroupedUpdate => g.updates.map(_.show)
+      case u: Update        => List(u.show)
+    }
+
+    val list = string.indentLines(updates)
     updates.size match {
       case 0 => s"Found 0 updates"
       case 1 => s"Found 1 update:\n$list"
