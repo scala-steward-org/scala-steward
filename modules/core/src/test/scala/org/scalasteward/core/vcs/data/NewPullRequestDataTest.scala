@@ -339,4 +339,28 @@ class NewPullRequestDataTest extends FunSuite {
     assertEquals(labels, expected)
   }
 
+  test("oldVersionNote doesn't show version for grouped updates") {
+    val files = List("Readme.md", "travis.yml")
+    val update1 = ("a".g % "b".a % "1" -> "2").single
+    val update2 = ("c".g % "d".a % "1.1.0" % "test" %> "1.2.0").single
+    val update = GroupedUpdate("my-group", None, List(update1, update2))
+
+    val note = oldVersionNote(files, update)
+
+    assertEquals(
+      note.fold("")(_.toHtml),
+      """<details>
+        |<summary>Files still referring to the old version numbers</summary>
+        |
+        |The following files still refer to the old version numbers.
+        |You might want to review and update them manually.
+        |```
+        |Readme.md
+        |travis.yml
+        |```
+        |</details>
+      """.stripMargin.trim
+    )
+  }
+
 }

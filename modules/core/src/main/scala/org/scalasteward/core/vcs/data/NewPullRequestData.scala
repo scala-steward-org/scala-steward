@@ -120,11 +120,16 @@ object NewPullRequestData {
       case None      => s"$groupId:$artifactId"
     }
 
-  def oldVersionNote(files: List[String], update: Update): Option[Details] =
+  def oldVersionNote(files: List[String], update: AnUpdate): Option[Details] =
     Option.when(files.nonEmpty) {
+      val (number, numberWithVersion) = update.on(
+        update = u => ("number", s"number (${u.currentVersion})"),
+        grouped = _ => ("numbers", "numbers")
+      )
+
       Details(
-        "Files still referring to the old version number",
-        s"""The following files still refer to the old version number (${update.currentVersion}).
+        s"Files still referring to the old version $number",
+        s"""The following files still refer to the old version $numberWithVersion.
            |You might want to review and update them manually.
            |```
            |${files.mkString("\n")}
