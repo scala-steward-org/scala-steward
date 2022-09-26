@@ -86,7 +86,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
 
   private def processUpdate(data: UpdateData): F[ProcessResult] =
     for {
-      _ <- logger.info(s"Process update ${data.oldUpdate.show}")
+      _ <- logger.info(s"Process update ${data.update.show}")
       head = vcs.listingBranch(config.tpe, data.fork, data.updateBranch)
       pullRequests <- vcsApiAlg.listPullRequests(data.repo, head, data.baseBranch)
       result <- pullRequests.headOption match {
@@ -183,9 +183,11 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       existingArtifactUrlsList <- artifactIdToUrl.toList.filterA(a => urlChecker.exists(a._2))
       existingArtifactUrlsMap = existingArtifactUrlsList.toMap
       releaseRelatedUrls <-
-        existingArtifactUrlsMap
-          .get(data.oldUpdate.mainArtifactId)
-          .traverse(vcsExtraAlg.getReleaseRelatedUrls(_, data.oldUpdate))
+        existingArtifactUrlsList
+          .traverse { case (id, uri) =>
+            vcsExtraAlg.getReleaseRelatedUrls(uri, data.oldUpdate).tupleLeft(id)
+          }
+          .map(_.toMap)
       filesWithOldVersion <- gitAlg.findFilesContaining(
         data.repo,
         data.oldUpdate.currentVersion.value
@@ -196,7 +198,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
         branchName,
         edits,
         existingArtifactUrlsMap,
-        releaseRelatedUrls.getOrElse(List.empty),
+        releaseRelatedUrls,
         filesWithOldVersion,
         data.repoData.config.pullRequests.includeMatchedLabels
       )

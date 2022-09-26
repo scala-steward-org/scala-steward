@@ -43,15 +43,14 @@ object NewPullRequestData {
     deriveEncoder
 
   def bodyFor(
-      update: Update,
+      update: AnUpdate,
       edits: List[EditAttempt],
       artifactIdToUrl: Map[String, Uri],
-      releaseRelatedUrls: List[ReleaseRelatedUrl],
+      releaseRelatedUrls: Map[String, List[ReleaseRelatedUrl]],
       filesWithOldVersion: List[String],
       configParsingError: Option[String],
       labels: List[String]
   ): String = {
-    val artifacts = artifactsWithOptionalUrl(update, artifactIdToUrl)
     val migrations = edits.collect { case scalafixEdit: ScalafixEdit => scalafixEdit }
     val appliedMigrations = migrationNote(migrations)
     val oldVersionDetails = oldVersionNote(filesWithOldVersion, update)
@@ -62,12 +61,40 @@ object NewPullRequestData {
       configParsingError.map(configParsingErrorDetails)
     ).flatten
 
-    s"""|Updates $artifacts ${fromTo(update)}.
-        |${releaseNote(releaseRelatedUrls).getOrElse("")}
+    val updatesText = update.on(
+      update = u => {
+        val artifacts = artifactsWithOptionalUrl(u, artifactIdToUrl)
+
+        val relatedUrls = releaseRelatedUrls.get(u.mainArtifactId).getOrElse(Nil)
+
+        s"""|Updates $artifacts ${fromTo(u)}.
+            |${releaseNote(relatedUrls).getOrElse("")}""".stripMargin.trim
+      },
+      grouped = g => {
+        val artifacts = g.updates
+          .fproduct(u => releaseRelatedUrls.get(u.mainArtifactId).orEmpty)
+          .map { case (u, relatedUrls) =>
+            s"* ${artifactsWithOptionalUrl(u, artifactIdToUrl)} ${fromTo(u)}" +
+              releaseNote(relatedUrls).map(urls => s"\n  + $urls").getOrElse("")
+          }
+          .mkString_("\n", "\n", "\n")
+
+        s"""|Updates:
+            |$artifacts""".stripMargin.trim
+      }
+    )
+
+    val skipVersionMessage = update.on(
+      _ => "If you'd like to skip this version, you can just close this PR. ",
+      _ => ""
+    )
+
+    s"""|$updatesText
+        |
         |
         |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
         |
-        |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.
+        |${skipVersionMessage}If you have any feedback, just mention me in the comments below.
         |
         |Configure Scala Steward for your repository with a [`${RepoConfigAlg.repoConfigBasename}`](${org.scalasteward.core.BuildInfo.gitHubUrl}/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
         |
@@ -199,7 +226,7 @@ object NewPullRequestData {
       branchName: String,
       edits: List[EditAttempt] = List.empty,
       artifactIdToUrl: Map[String, Uri] = Map.empty,
-      releaseRelatedUrls: List[ReleaseRelatedUrl] = List.empty,
+      releaseRelatedUrls: Map[String, List[ReleaseRelatedUrl]] = Map.empty,
       filesWithOldVersion: List[String] = List.empty,
       includeMatchedLabels: Option[Regex] = None
   ): NewPullRequestData = {
@@ -212,7 +239,7 @@ object NewPullRequestData {
         )
         .title,
       body = bodyFor(
-        data.oldUpdate,
+        data.update,
         edits,
         artifactIdToUrl,
         releaseRelatedUrls,
