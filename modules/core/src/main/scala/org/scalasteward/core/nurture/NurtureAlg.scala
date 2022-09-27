@@ -50,7 +50,9 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
     for {
       _ <- logger.info(s"Nurture ${data.repo.show}")
       baseBranch <- cloneAndSync(data.repo, fork)
-      _ <- updateDependencies(data, fork.repo, baseBranch, Update.groupByGroupId(updates.toList))
+      (grouped, notGrouped) = GroupedUpdate.from(data.config.pullRequests.grouping, updates.toList)
+      finalUpdates = Update.groupByGroupId(notGrouped) ++ grouped
+      _ <- updateDependencies(data, fork.repo, baseBranch, finalUpdates)
     } yield ()
 
   private def cloneAndSync(repo: Repo, fork: RepoOut): F[Branch] =
@@ -63,7 +65,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       data: RepoData,
       fork: Repo,
       baseBranch: Branch,
-      updates: List[Update]
+      updates: List[AnUpdate]
   ): F[Unit] =
     for {
       _ <- logger.info(util.logger.showUpdates(updates))
