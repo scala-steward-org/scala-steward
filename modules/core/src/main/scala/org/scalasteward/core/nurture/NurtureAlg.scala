@@ -198,10 +198,11 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
             vcsExtraAlg.getReleaseRelatedUrls(uri, data.oldUpdate).tupleLeft(id)
           }
           .map(_.toMap)
-      filesWithOldVersion <- gitAlg.findFilesContaining(
-        data.repo,
-        data.oldUpdate.currentVersion.value
-      )
+      filesWithOldVersion <-
+        data.update
+          .on(u => List(u.currentVersion.value), _.updates.map(_.currentVersion.value))
+          .flatTraverse(gitAlg.findFilesContaining(data.repo, _))
+          .map(_.distinct)
       branchName = vcs.createBranch(config.tpe, data.fork, data.updateBranch)
       requestData = NewPullRequestData.from(
         data,
