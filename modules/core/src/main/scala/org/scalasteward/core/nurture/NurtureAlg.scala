@@ -72,8 +72,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
         .emits(updates)
         .evalMap { update =>
           val updateBranch = git.branchFor(update, data.repo.branch)
-          val updateData =
-            UpdateData(data, fork, update, update, baseBranch, baseSha1, updateBranch)
+          val updateData = UpdateData(data, fork, update, baseBranch, baseSha1, updateBranch)
           processUpdate(updateData)
         }
         .through(util.takeUntilMaybe(0, data.config.updates.limit.map(_.value)) {

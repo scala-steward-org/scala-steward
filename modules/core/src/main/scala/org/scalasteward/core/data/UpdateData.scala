@@ -23,7 +23,6 @@ import org.scalasteward.core.vcs.data.Repo
 final case class UpdateData(
     repoData: RepoData,
     fork: Repo,
-    oldUpdate: Update,
     update: AnUpdate,
     baseBranch: Branch,
     baseSha1: Sha1,
