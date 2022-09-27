@@ -90,12 +90,12 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       head = vcs.listingBranch(config.tpe, data.fork, data.updateBranch)
       pullRequests <- vcsApiAlg.listPullRequests(data.repo, head, data.baseBranch)
       result <- pullRequests.headOption match {
-        case Some(pr) if pr.state.isClosed =>
+        case Some(pr) if pr.state.isClosed && data.update.isInstanceOf[Update] =>
           logger.info(s"PR ${pr.html_url} is closed") >>
             deleteRemoteBranch(data.repo, data.updateBranch).as(Ignored)
-        case Some(pr) =>
+        case Some(pr) if !pr.state.isClosed =>
           logger.info(s"Found PR ${pr.html_url}") >> updatePullRequest(data)
-        case None =>
+        case _ =>
           applyNewUpdate(data).flatTap {
             case Created(newPrNumber) => closeObsoletePullRequests(data, newPrNumber)
             case _                    => F.unit
