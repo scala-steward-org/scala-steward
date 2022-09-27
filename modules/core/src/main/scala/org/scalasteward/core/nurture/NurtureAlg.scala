@@ -182,29 +182,39 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
         _ <- gitAlg.push(data.repo, data.updateBranch)
       } yield Updated
 
-  private def dependenciesUpdatedWithNextVersion(update: AnUpdate): List[Dependency] =
+  private def dependenciesUpdatedWithNextAndCurrentVersion(
+      update: AnUpdate
+  ): List[(Version, Dependency)] =
     update.on(
-      u => u.dependencies.map(_.copy(version = u.nextVersion)).toList,
-      _.updates.flatMap(dependenciesUpdatedWithNextVersion(_))
+      u => u.dependencies.map(_.copy(version = u.nextVersion)).tupleLeft(u.currentVersion).toList,
+      _.updates.flatMap(dependenciesUpdatedWithNextAndCurrentVersion(_))
     )
 
   private def createPullRequest(data: UpdateData, edits: List[EditAttempt]): F[ProcessResult] =
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
-      dependenciesWithNextVersion = dependenciesUpdatedWithNextVersion(data.update)
+      dependenciesWithNextVersion = dependenciesUpdatedWithNextAndCurrentVersion(data.update)
       resolvers = data.repoData.cache.dependencyInfos.flatMap(_.resolvers)
-      artifactIdToUrl <-
-        coursierAlg.getArtifactIdUrlMapping(Scope(dependenciesWithNextVersion, resolvers))
-      existingArtifactUrlsList <- artifactIdToUrl.toList.filterA(a => urlChecker.exists(a._2))
+      dependencyScope = Scope(
+        value = dependenciesWithNextVersion.map { case (_, dependency) => dependency },
+        resolvers = resolvers
+      )
+      artifactIdToUrl <- coursierAlg.getArtifactIdUrlMapping(dependencyScope)
+      existingArtifactUrlsList <- artifactIdToUrl.toList.filterA { case (_, uri) =>
+        urlChecker.exists(uri)
+      }
       existingArtifactUrlsMap = existingArtifactUrlsList.toMap
-      releaseRelatedUrls <-
-        existingArtifactUrlsList
-          .traverse { case (id, uri) =>
-            vcsExtraAlg
-              .getReleaseRelatedUrls(uri, data.oldUpdate.currentVersion, data.oldUpdate.nextVersion)
-              .tupleLeft(id)
-          }
-          .map(_.toMap)
+      releaseRelatedUrls <- dependenciesWithNextVersion.flatTraverse {
+        case (currentVersion, dependency) =>
+          existingArtifactUrlsMap
+            .get(dependency.artifactId.name)
+            .toList
+            .traverse(uri =>
+              vcsExtraAlg
+                .getReleaseRelatedUrls(uri, currentVersion, dependency.version)
+                .tupleLeft(dependency.artifactId.name)
+            )
+      }
       filesWithOldVersion <-
         data.update
           .on(u => List(u.currentVersion.value), _.updates.map(_.currentVersion.value))
@@ -216,7 +226,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
         branchName,
         edits,
         existingArtifactUrlsMap,
-        releaseRelatedUrls,
+        releaseRelatedUrls.toMap,
         filesWithOldVersion,
         data.repoData.config.pullRequests.includeMatchedLabels
       )
