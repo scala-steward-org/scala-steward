@@ -71,7 +71,8 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
         .emits(updates)
         .evalMap { update =>
           val updateBranch = git.branchFor(update, data.repo.branch)
-          val updateData = UpdateData(data, fork, update, baseBranch, baseSha1, updateBranch)
+          val updateData =
+            UpdateData(data, fork, update, update, baseBranch, baseSha1, updateBranch)
           processUpdate(updateData)
         }
         .through(util.takeUntilMaybe(0, data.config.updates.limit.map(_.value)) {
@@ -85,7 +86,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
 
   private def processUpdate(data: UpdateData): F[ProcessResult] =
     for {
-      _ <- logger.info(s"Process update ${data.update.show}")
+      _ <- logger.info(s"Process update ${data.oldUpdate.show}")
       head = vcs.listingBranch(config.tpe, data.fork, data.updateBranch)
       pullRequests <- vcsApiAlg.listPullRequests(data.repo, head, data.baseBranch)
       result <- pullRequests.headOption match {
@@ -104,7 +105,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
         val prData = PullRequestData[Id](
           pr.html_url,
           data.baseSha1,
-          data.update,
+          data.oldUpdate,
           pr.state,
           pr.number,
           data.updateBranch
@@ -115,7 +116,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
 
   private def closeObsoletePullRequests(data: UpdateData, newNumber: PullRequestNumber): F[Unit] =
     pullRequestRepository
-      .getObsoleteOpenPullRequests(data.repo, data.update)
+      .getObsoleteOpenPullRequests(data.repo, data.oldUpdate)
       .flatMap(_.traverse_(oldPr => closeObsoletePullRequest(data, newNumber, oldPr)))
 
   private def closeObsoletePullRequest(
@@ -152,7 +153,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
     gitAlg.returnToCurrentBranch(data.repo) {
       val createBranch = logger.info(s"Create branch ${data.updateBranch.name}") >>
         gitAlg.createBranch(data.repo, data.updateBranch)
-      editAlg.applyUpdate(data.repoData, data.update, createBranch).flatMap { edits =>
+      editAlg.applyUpdate(data.repoData, data.oldUpdate, createBranch).flatMap { edits =>
         val editCommits = edits.flatMap(_.commits)
         if (editCommits.isEmpty) logger.warn("No commits created").as(Ignored)
         else
@@ -175,7 +176,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
       dependenciesWithNextVersion =
-        data.update.dependencies.map(_.copy(version = data.update.nextVersion)).toList
+        data.oldUpdate.dependencies.map(_.copy(version = data.oldUpdate.nextVersion)).toList
       resolvers = data.repoData.cache.dependencyInfos.flatMap(_.resolvers)
       artifactIdToUrl <-
         coursierAlg.getArtifactIdUrlMapping(Scope(dependenciesWithNextVersion, resolvers))
@@ -183,9 +184,12 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       existingArtifactUrlsMap = existingArtifactUrlsList.toMap
       releaseRelatedUrls <-
         existingArtifactUrlsMap
-          .get(data.update.mainArtifactId)
-          .traverse(vcsExtraAlg.getReleaseRelatedUrls(_, data.update))
-      filesWithOldVersion <- gitAlg.findFilesContaining(data.repo, data.update.currentVersion.value)
+          .get(data.oldUpdate.mainArtifactId)
+          .traverse(vcsExtraAlg.getReleaseRelatedUrls(_, data.oldUpdate))
+      filesWithOldVersion <- gitAlg.findFilesContaining(
+        data.repo,
+        data.oldUpdate.currentVersion.value
+      )
       branchName = vcs.createBranch(config.tpe, data.fork, data.updateBranch)
       requestData = NewPullRequestData.from(
         data,
@@ -203,7 +207,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       prData = PullRequestData[Id](
         pr.html_url,
         data.baseSha1,
-        data.update,
+        data.oldUpdate,
         pr.state,
         pr.number,
         data.updateBranch
@@ -250,7 +254,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       )
       maybeRevertCommit <- gitAlg.revertChanges(data.repo, data.baseBranch)
       maybeMergeCommit <- gitAlg.mergeTheirs(data.repo, data.baseBranch)
-      edits <- editAlg.applyUpdate(data.repoData, data.update)
+      edits <- editAlg.applyUpdate(data.repoData, data.oldUpdate)
       editCommits = edits.flatMap(_.commits)
       commits = maybeRevertCommit.toList ++ maybeMergeCommit.toList ++ editCommits
       result <- pushCommits(data, commits)

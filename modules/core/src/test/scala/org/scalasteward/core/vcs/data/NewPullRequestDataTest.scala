@@ -20,6 +20,7 @@ class NewPullRequestDataTest extends FunSuite {
       RepoData(Repo("foo", "bar"), dummyRepoCache, RepoConfig.empty),
       Repo("scala-steward", "bar"),
       ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single,
+      ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single,
       Branch("master"),
       dummySha1,
       Branch("update/logback-classic-1.2.3")
@@ -50,6 +51,7 @@ class NewPullRequestDataTest extends FunSuite {
         RepoConfig.empty
       ),
       Repo("scala-steward", "bar"),
+      ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single,
       ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single,
       Branch("master"),
       dummySha1,

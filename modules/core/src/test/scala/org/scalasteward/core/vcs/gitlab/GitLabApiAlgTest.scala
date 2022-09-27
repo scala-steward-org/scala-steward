@@ -86,6 +86,7 @@ class GitLabApiAlgTest extends FunSuite {
     RepoData(Repo("foo", "bar"), dummyRepoCache, RepoConfig.empty),
     Repo("scala-steward", "bar"),
     ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single,
+    ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single,
     Branch("master"),
     Sha1(Sha1.HexString.unsafeFrom("d6b6791d2ea11df1d156fe70979ab8c3a5ba3433")),
     Branch("update/logback-classic-1.2.3")

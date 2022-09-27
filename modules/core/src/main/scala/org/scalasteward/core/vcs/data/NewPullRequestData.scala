@@ -186,16 +186,16 @@ object NewPullRequestData {
       filesWithOldVersion: List[String] = List.empty,
       includeMatchedLabels: Option[Regex] = None
   ): NewPullRequestData = {
-    val labels = labelsFor(data.update, edits, filesWithOldVersion, includeMatchedLabels)
+    val labels = labelsFor(data.oldUpdate, edits, filesWithOldVersion, includeMatchedLabels)
     NewPullRequestData(
       title = CommitMsg
         .replaceVariables(data.repoConfig.commits.messageOrDefault)(
-          data.update,
+          data.oldUpdate,
           data.repoData.repo.branch
         )
         .title,
       body = bodyFor(
-        data.update,
+        data.oldUpdate,
         edits,
         artifactIdToUrl,
         releaseRelatedUrls,
