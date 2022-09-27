@@ -32,6 +32,7 @@ import org.scalasteward.core.vcs.data._
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg}
 import org.scalasteward.core.{git, util, vcs}
 import org.typelevel.log4cats.Logger
+import cats.Applicative
 
 final class NurtureAlg[F[_]](config: VCSCfg)(implicit
     coursierAlg: CoursierAlg[F],
@@ -157,15 +158,20 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
     gitAlg.returnToCurrentBranch(data.repo) {
       val createBranch = logger.info(s"Create branch ${data.updateBranch.name}") >>
         gitAlg.createBranch(data.repo, data.updateBranch)
-      editAlg.applyUpdate(data.repoData, data.oldUpdate, createBranch).flatMap { edits =>
-        val editCommits = edits.flatMap(_.commits)
-        if (editCommits.isEmpty) logger.warn("No commits created").as(Ignored)
-        else
-          gitAlg.branchesDiffer(data.repo, data.baseBranch, data.updateBranch).flatMap {
-            case true  => pushCommits(data, editCommits) >> createPullRequest(data, edits)
-            case false => logger.warn("No diff between base and update branch").as(Ignored)
-          }
-      }
+      data.update
+        .on(
+          update = editAlg.applyUpdate(data.repoData, _, createBranch),
+          grouped = _.updates.flatTraverse(editAlg.applyUpdate(data.repoData, _, createBranch))
+        )
+        .flatMap { edits =>
+          val editCommits = edits.flatMap(_.commits)
+          if (editCommits.isEmpty) logger.warn("No commits created").as(Ignored)
+          else
+            gitAlg.branchesDiffer(data.repo, data.baseBranch, data.updateBranch).flatMap {
+              case true  => pushCommits(data, editCommits) >> createPullRequest(data, edits)
+              case false => logger.warn("No diff between base and update branch").as(Ignored)
+            }
+        }
     }
 
   private def pushCommits(data: UpdateData, commits: List[Commit]): F[ProcessResult] =
@@ -260,9 +266,13 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       )
       maybeRevertCommit <- gitAlg.revertChanges(data.repo, data.baseBranch)
       maybeMergeCommit <- gitAlg.mergeTheirs(data.repo, data.baseBranch)
-      edits <- editAlg.applyUpdate(data.repoData, data.oldUpdate)
+      edits <- data.update.on(
+        update = editAlg.applyUpdate(data.repoData, _),
+        grouped = _.updates.flatTraverse(editAlg.applyUpdate(data.repoData, _))
+      )
       editCommits = edits.flatMap(_.commits)
       commits = maybeRevertCommit.toList ++ maybeMergeCommit.toList ++ editCommits
       result <- pushCommits(data, commits)
     } yield result
+
 }
