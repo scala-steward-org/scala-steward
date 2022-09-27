@@ -115,9 +115,13 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
     } yield result
 
   private def closeObsoletePullRequests(data: UpdateData, newNumber: PullRequestNumber): F[Unit] =
-    pullRequestRepository
-      .getObsoleteOpenPullRequests(data.repo, data.oldUpdate)
-      .flatMap(_.traverse_(oldPr => closeObsoletePullRequest(data, newNumber, oldPr)))
+    data.update.on(
+      update = pullRequestRepository
+        .getObsoleteOpenPullRequests(data.repo, _)
+        .flatMap(_.traverse_(oldPr => closeObsoletePullRequest(data, newNumber, oldPr))),
+      // We don't support closing obsolete PRs for `GroupedUpdate`s
+      grouped = _ => Applicative[F].unit
+    )
 
   private def closeObsoletePullRequest(
       data: UpdateData,
