@@ -195,7 +195,9 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       releaseRelatedUrls <-
         existingArtifactUrlsList
           .traverse { case (id, uri) =>
-            vcsExtraAlg.getReleaseRelatedUrls(uri, data.oldUpdate).tupleLeft(id)
+            vcsExtraAlg
+              .getReleaseRelatedUrls(uri, data.oldUpdate.currentVersion, data.oldUpdate.nextVersion)
+              .tupleLeft(id)
           }
           .map(_.toMap)
       filesWithOldVersion <-

@@ -37,7 +37,8 @@ class VCSPackageTest extends FunSuite {
           GitHub,
           onPremVCSUri,
           uri"https://github.com/foo/bar",
-          update
+          update.currentVersion,
+          update.nextVersion
         ).map(_.url.renderString),
         List(
           "https://github.com/foo/bar/compare/v1.2.0...v1.2.3",
@@ -52,7 +53,8 @@ class VCSPackageTest extends FunSuite {
           GitHub,
           onPremVCSUri,
           uri"https://github.com/foo/bar/",
-          update
+          update.currentVersion,
+          update.nextVersion
         ).map(_.url.renderString),
         List(
           "https://github.com/foo/bar/compare/v1.2.0...v1.2.3",
@@ -66,7 +68,8 @@ class VCSPackageTest extends FunSuite {
           GitHub,
           onPremVCSUri,
           uri"https://gitlab.com/foo/bar",
-          update
+          update.currentVersion,
+          update.nextVersion
         ).map(_.url.renderString),
         List(
           "https://gitlab.com/foo/bar/compare/v1.2.0...v1.2.3",
@@ -80,7 +83,8 @@ class VCSPackageTest extends FunSuite {
           GitHub,
           onPremVCSUri,
           uri"https://bitbucket.org/foo/bar",
-          update
+          update.currentVersion,
+          update.nextVersion
         ).map(_.url.renderString),
         List(
           "https://bitbucket.org/foo/bar/compare/v1.2.3..v1.2.0#diff",
@@ -94,7 +98,8 @@ class VCSPackageTest extends FunSuite {
           GitHub,
           onPremVCSUri,
           uri"https://scalacenter.github.io/scalafix/",
-          update
+          update.currentVersion,
+          update.nextVersion
         ),
         List.empty
       )
@@ -104,7 +109,8 @@ class VCSPackageTest extends FunSuite {
           GitHub,
           onPremVCSUri,
           onPremVCSUri.addPath("foo/bar"),
-          update
+          update.currentVersion,
+          update.nextVersion
         ).map(_.url.renderString),
         List(
           s"${onPremVCS}foo/bar/compare/v1.2.0...v1.2.3",
@@ -119,7 +125,8 @@ class VCSPackageTest extends FunSuite {
         GitHub,
         uri"https://github.com",
         uri"https://github.com/foo/bar",
-        update
+        update.currentVersion,
+        update.nextVersion
       ).map(_.url.renderString)
       val expected = List(
         "https://github.com/foo/bar/releases/tag/v1.2.3",
@@ -161,7 +168,8 @@ class VCSPackageTest extends FunSuite {
         GitHub,
         uri"https://github.com",
         uri"https://gitlab.com/foo/bar",
-        update
+        update.currentVersion,
+        update.nextVersion
       ).map(_.url.renderString)
       val expected =
         possibleReleaseNotesFilenames.map(name =>
@@ -181,7 +189,8 @@ class VCSPackageTest extends FunSuite {
         GitLab,
         uri"https://gitlab.on-prem.net",
         uri"https://gitlab.on-prem.net/foo/bar",
-        update
+        update.currentVersion,
+        update.nextVersion
       ).map(_.url.renderString)
       val expected = possibleReleaseNotesFilenames.map(name =>
         s"https://gitlab.on-prem.net/foo/bar/blob/master/$name"
@@ -200,7 +209,8 @@ class VCSPackageTest extends FunSuite {
         GitHub,
         uri"https://github.com",
         uri"https://bitbucket.org/foo/bar",
-        update
+        update.currentVersion,
+        update.nextVersion
       ).map(_.url.renderString)
       val expected =
         possibleReleaseNotesFilenames.map(name => s"https://bitbucket.org/foo/bar/master/$name") ++
@@ -218,7 +228,8 @@ class VCSPackageTest extends FunSuite {
         GitHub,
         uri"https://github.com",
         uri"https://scalacenter.github.io/scalafix/",
-        update
+        update.currentVersion,
+        update.nextVersion
       ).map(_.url.renderString)
       assertEquals(obtained, List.empty)
     }
