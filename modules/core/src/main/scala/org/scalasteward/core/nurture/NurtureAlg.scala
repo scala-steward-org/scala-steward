@@ -182,11 +182,16 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
         _ <- gitAlg.push(data.repo, data.updateBranch)
       } yield Updated
 
+  private def dependenciesUpdatedWithNextVersion(update: AnUpdate): List[Dependency] =
+    update.on(
+      u => u.dependencies.map(_.copy(version = u.nextVersion)).toList,
+      _.updates.flatMap(dependenciesUpdatedWithNextVersion(_))
+    )
+
   private def createPullRequest(data: UpdateData, edits: List[EditAttempt]): F[ProcessResult] =
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
-      dependenciesWithNextVersion =
-        data.oldUpdate.dependencies.map(_.copy(version = data.oldUpdate.nextVersion)).toList
+      dependenciesWithNextVersion = dependenciesUpdatedWithNextVersion(data.update)
       resolvers = data.repoData.cache.dependencyInfos.flatMap(_.resolvers)
       artifactIdToUrl <-
         coursierAlg.getArtifactIdUrlMapping(Scope(dependenciesWithNextVersion, resolvers))
