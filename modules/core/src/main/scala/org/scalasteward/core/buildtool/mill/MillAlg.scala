@@ -30,6 +30,7 @@ import org.scalasteward.core.vcs.data.BuildRoot
 
 final class MillAlg[F[_]](implicit
     fileAlg: FileAlg[F],
+    logger: Logger[F],
     processAlg: ProcessAlg[F],
     workspaceAlg: WorkspaceAlg[F],
     F: MonadCancelThrow[F]
@@ -47,9 +48,14 @@ final class MillAlg[F[_]](implicit
         val command = Nel("mill", List("-i", "-p", predef.toString, "show", extractDeps))
         processAlg.execSandboxed(command, buildRootDir)
       }
-      parsed <- F.fromEither(
-        parser.parseModules(extracted.dropWhile(!_.startsWith("{")).mkString("\n"))
-      )
+      jsonString = extracted.dropWhile(!_.startsWith("{")).mkString("\n")
+      _ <- F.whenA(jsonString.isBlank) {
+        val errorMessage =
+          """|Couldn\'t extract dependencies JSON from sandboxed execution. You may need to increase the maximum
+             |buffer size using the command line argument `max-buffer-size`.""".stripMargin
+        logger.error(errorMessage) *> F.raiseError(new Throwable(errorMessage))
+      }
+      parsed <- F.fromEither(parser.parseModules(jsonString))
       dependencies = parsed.map(module => Scope(module.dependencies, module.repositories))
       millBuildVersion <- getMillVersion(buildRootDir)
       millBuildDeps = millBuildVersion.toSeq.map(version =>
