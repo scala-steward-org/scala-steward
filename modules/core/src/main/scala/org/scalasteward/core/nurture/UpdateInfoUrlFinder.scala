@@ -92,7 +92,7 @@ object UpdateInfoUrlFinder {
       nextVersion: Version
   ): List[VersionDiff] =
     forgeTypeFromRepoUrl(forgeType, forgeUrl, repoUrl).map {
-      case GitHub | GitLab =>
+      case GitHub | GitLab | Gitea =>
         possibleTags(currentVersion).zip(possibleTags(nextVersion)).map { case (from1, to1) =>
           VersionDiff(repoUrl / "compare" / s"$from1...$to1")
         }
@@ -129,6 +129,7 @@ object UpdateInfoUrlFinder {
         case GitHub | GitLab => List("blob", "master")
         case Bitbucket       => List("master")
         case BitbucketServer => List("browse")
+        case Gitea           => List("src", "branch", "master")
       }
 
       val repoFiles = maybeSegments.toList.flatMap { segments =>
