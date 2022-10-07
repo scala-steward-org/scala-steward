@@ -81,7 +81,7 @@ class FilterAlgTest extends FunSuite {
 
   test("ignored versions are removed") {
     val update =
-      ("org.scala-lang".g % "scala-compiler".a % "2.13.6" %> Nel.of("2.13.7", "2.13.9")).single
+      ("org.scala-lang".g % "scala-compiler".a % "2.13.6" %> Nel.of("2.13.7", "2.13.8")).single
     val config = RepoConfig(updates =
       UpdatesConfig(ignore =
         List(
