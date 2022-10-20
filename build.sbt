@@ -22,8 +22,8 @@ val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
   "mill-plugin" -> List(JVMPlatform)
 )
 
-val Scala212 = "2.12.16"
-val Scala213 = "2.13.8"
+val Scala212 = "2.12.17"
+val Scala213 = "2.13.10"
 
 /// sbt-github-actions configuration
 
@@ -140,6 +140,11 @@ lazy val core = myCrossProject("core")
         // https/repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-core/2.12.6/jackson-core-2.12.6.jar:module-info.class
         // https/repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.12.6.1/jackson-databind-2.12.6.1.jar:module-info.class
         MergeStrategy.discard
+      case PathList("META-INF", "sisu", "javax.inject.Named") =>
+        // (core / assembly) deduplicate: different file contents found in the following:
+        // https/repo1.maven.org/maven2/org/codehaus/plexus/plexus-archiver/4.5.0/plexus-archiver-4.5.0.jar:META-INF/sisu/javax.inject.Named
+        // https/repo1.maven.org/maven2/org/codehaus/plexus/plexus-io/3.4.0/plexus-io-3.4.0.jar:META-INF/sisu/javax.inject.Named
+        MergeStrategy.first
       case otherwise =>
         val defaultStrategy = (assembly / assemblyMergeStrategy).value
         defaultStrategy(otherwise)
