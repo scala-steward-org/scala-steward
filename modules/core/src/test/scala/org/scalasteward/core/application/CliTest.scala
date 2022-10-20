@@ -154,7 +154,7 @@ class CliTest extends FunSuite {
       List("--gitlab-merge-when-pipeline-succeeds"),
       List("--gitlab-required-reviewers", "5")
     )
-    val Success(obtained) = Cli.parseArgs(params.flatten)
+    val Success(StewardUsage.Regular(obtained)) = Cli.parseArgs(params.flatten)
 
     assert(obtained.gitLabCfg.mergeWhenPipelineSucceeds)
     assertEquals(obtained.gitLabCfg.requiredReviewers, Some(5))
