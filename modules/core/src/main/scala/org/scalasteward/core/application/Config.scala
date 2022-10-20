@@ -136,4 +136,10 @@ object Config {
       mergeWhenPipelineSucceeds: Boolean,
       requiredReviewers: Option[Int]
   )
+
+  sealed trait StewardUsage
+  object StewardUsage {
+    final case class Regular(config: Config) extends StewardUsage
+    final case class ValidateRepoConfig(file: File) extends StewardUsage
+  }
 }

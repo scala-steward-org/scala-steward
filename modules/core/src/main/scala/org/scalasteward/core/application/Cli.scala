@@ -263,6 +263,15 @@ object Cli {
       .withDefault(default)
   }
 
+  private val configFile: Opts[File] =
+    Opts.argument[File]()
+
+  private val validateConfigFile: Opts[File] =
+    Opts.subcommand(
+      name = "validate-repo-config",
+      help = "Validate the repo config file and exit; report errors if any"
+    )(configFile)
+
   private val configOpts: Opts[Config] = (
     workspace,
     reposFile,
@@ -282,12 +291,19 @@ object Cli {
     refreshBackoffPeriod
   ).mapN(Config.apply)
 
-  val command: Command[Config] =
-    Command("scala-steward", "")(configOpts)
+  val command: Command[StewardUsage] =
+    Command("scala-steward", "")(
+      validateConfigFile
+        .map(StewardUsage.ValidateRepoConfig(_))
+        .orElse(
+          configOpts
+            .map(StewardUsage.Regular(_))
+        )
+    )
 
   sealed trait ParseResult extends Product with Serializable
   object ParseResult {
-    final case class Success(config: Config) extends ParseResult
+    final case class Success(config: StewardUsage) extends ParseResult
     final case class Help(help: String) extends ParseResult
     final case class Error(error: String) extends ParseResult
   }

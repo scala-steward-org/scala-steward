@@ -23,7 +23,7 @@ import cats.{ApplicativeError, MonadThrow, Traverse}
 import fs2.Stream
 import org.apache.commons.io.FileUtils
 import org.http4s.Uri
-import org.http4s.implicits.http4sLiteralsSyntax
+import org.http4s.implicits._
 import org.typelevel.log4cats.Logger
 import scala.io.Source
 
