@@ -135,4 +135,10 @@ object Config {
   final case class GitLabCfg(
       mergeWhenPipelineSucceeds: Boolean
   )
+
+  sealed trait StewardUsage
+  object StewardUsage {
+    final case class Regular(config: Config) extends StewardUsage
+    final case class ValidateRepoConfig(file: File) extends StewardUsage
+  }
 }

@@ -8,12 +8,13 @@ import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.Cli.ParseResult._
 import org.scalasteward.core.vcs.VCSType
 import org.scalasteward.core.vcs.github.GitHubApp
+import org.scalasteward.core.application.Config.StewardUsage
 
 import scala.concurrent.duration._
 
 class CliTest extends FunSuite {
   test("parseArgs: example") {
-    val Success(obtained) = Cli.parseArgs(
+    val Success(StewardUsage.Regular(obtained)) = Cli.parseArgs(
       List(
         List("--workspace", "a"),
         List("--repos-file", "b"),
@@ -64,7 +65,7 @@ class CliTest extends FunSuite {
   }
 
   test("parseArgs: minimal example") {
-    val Success(obtained) = Cli.parseArgs(
+    val Success(StewardUsage.Regular(obtained)) = Cli.parseArgs(
       List(
         List("--workspace", "a"),
         List("--repos-file", "b"),
@@ -83,7 +84,7 @@ class CliTest extends FunSuite {
   }
 
   test("parseArgs: enable sandbox") {
-    val Success(obtained) = Cli.parseArgs(
+    val Success(StewardUsage.Regular(obtained)) = Cli.parseArgs(
       List(
         List("--workspace", "a"),
         List("--repos-file", "b"),
@@ -114,7 +115,7 @@ class CliTest extends FunSuite {
   }
 
   test("parseArgs: disable sandbox") {
-    val Success(obtained) = Cli.parseArgs(
+    val Success(StewardUsage.Regular(obtained)) = Cli.parseArgs(
       List(
         List("--workspace", "a"),
         List("--repos-file", "b"),
@@ -141,6 +142,16 @@ class CliTest extends FunSuite {
   test("parseArgs: --help") {
     val Help(obtained) = Cli.parseArgs(List("--help"))
     assert(clue(obtained).startsWith("Usage"))
+  }
+
+  test("parseArgs: validate-repo-config") {
+    val Success(StewardUsage.ValidateRepoConfig(file)) = Cli.parseArgs(
+      List(
+        List("validate-repo-config", "file.conf")
+      ).flatten
+    )
+
+    assertEquals(file, File("file.conf"))
   }
 
   test("envVarArgument: env-var without equals sign") {

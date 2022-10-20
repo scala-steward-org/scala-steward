@@ -21,7 +21,7 @@ object MockConfig {
     "--cache-ttl=1hour",
     "--refresh-backoff-period=1hour"
   )
-  val Success(config: Config) = Cli.parseArgs(args)
+  val Success(Config.StewardUsage.Regular(config)) = Cli.parseArgs(args)
   val envVars = List(s"GIT_ASKPASS=${config.gitCfg.gitAskPass}", "VAR1=val1", "VAR2=val2")
   def gitCmd(repoDir: File): List[String] =
     envVars ++ (repoDir.toString :: FileGitAlg.gitCmd.toList)
