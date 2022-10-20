@@ -53,6 +53,8 @@ pullRequests.frequency = "7 days"
 #       group = "{group}",
 #       artifact = "{artifact}"
 #    }
+#
+# For more information on the values for the `version` filter visit https://semver.org/
 # 
 # Every field in a `filter` is optional but at least one must be provided.
 #
