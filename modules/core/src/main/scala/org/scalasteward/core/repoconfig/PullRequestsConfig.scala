@@ -57,6 +57,7 @@ object PullRequestsConfig {
       (x, y) =>
         PullRequestsConfig(
           frequency = x.frequency.orElse(y.frequency),
+          grouping = x.grouping |+| y.grouping,
           includeMatchedLabels = x.includeMatchedLabels.orElse(y.includeMatchedLabels)
         )
     )
