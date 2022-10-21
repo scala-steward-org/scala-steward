@@ -20,7 +20,7 @@ import better.files.File
 import cats.MonadThrow
 import cats.syntax.all._
 import io.circe.config.parser
-import org.scalasteward.core.data.Update
+import org.scalasteward.core.data.{AnUpdate, Update}
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.repoconfig.RepoConfigAlg._
 import org.scalasteward.core.vcs.data.Repo
@@ -60,11 +60,20 @@ object RepoConfigAlg {
   def parseRepoConfig(input: String): Either[io.circe.Error, RepoConfig] =
     parser.decode[RepoConfig](input)
 
-  def configToIgnoreFurtherUpdates(update: Update): String =
-    update match {
+  def configToIgnoreFurtherUpdates(update: AnUpdate): String = {
+    val forUpdate: Update => String = {
       case s: Update.Single =>
-        s"""updates.ignore = [ { groupId = "${s.groupId}", artifactId = "${s.artifactId.name}" } ]"""
+        s"""{ groupId = "${s.groupId}", artifactId = "${s.artifactId.name}" }""".stripMargin
       case g: Update.Group =>
-        s"""updates.ignore = [ { groupId = "${g.groupId}" } ]"""
+        s"""{ groupId = "${g.groupId}" }""".stripMargin
     }
+
+    update.on(
+      update = u => s"updates.ignore = [ ${forUpdate(u)} ]",
+      grouped = g =>
+        g.updates
+          .map("  " + forUpdate(_))
+          .mkString("updates.ignore = [\n", ",\n", "\n]")
+    )
+  }
 }

@@ -1,3 +1,5 @@
+import scala.util.Properties
+import scala.reflect.io.Path
 import com.typesafe.sbt.packager.docker._
 import sbtcrossproject.{CrossProject, CrossType, Platform}
 import sbtghactions.JavaSpec.Distribution.Adopt
@@ -196,6 +198,8 @@ lazy val core = myCrossProject("core")
     }.taskValue,
     run / fork := true,
     Test / fork := true,
+    Test / testOptions +=
+      Tests.Cleanup(() => Path(file(Properties.tmpDir) / "scala-steward").deleteRecursively()),
     Compile / unmanagedResourceDirectories ++= (`sbt-plugin`.jvm / Compile / unmanagedSourceDirectories).value
   )
 

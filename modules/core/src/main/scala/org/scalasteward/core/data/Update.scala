@@ -19,13 +19,73 @@ package org.scalasteward.core.data
 import cats.Order
 import cats.implicits._
 import io.circe.Codec
+import io.circe.syntax._
 import io.circe.generic.semiauto._
-import org.scalasteward.core.data.Update.{Group, Single}
+import org.scalasteward.core.data.Update.Group
+import org.scalasteward.core.data.Update.Single
+import org.scalasteward.core.repoconfig.PullRequestGroup
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.util.string.MinLengthString
+import io.circe.Decoder
 
-sealed trait Update extends Product with Serializable {
+sealed trait AnUpdate {
+
+  def on[A](update: Update => A, grouped: GroupedUpdate => A): A = this match {
+    case g: GroupedUpdate => grouped(g)
+    case u: Update        => update(u)
+  }
+
+  def show: String
+
+}
+
+object AnUpdate {
+
+  implicit val AnUpdateCodec: Codec[AnUpdate] = Codec.from(
+    Decoder[GroupedUpdate].widen[AnUpdate].or(Decoder[Update].widen[AnUpdate]),
+    _.on(_.asJson, _.asJson)
+  )
+
+}
+
+final case class GroupedUpdate(name: String, title: Option[String], updates: List[Update])
+    extends AnUpdate {
+
+  override def show: String = name
+
+}
+
+object GroupedUpdate {
+
+  /**
+    * Processes the provided updates using the group configuration. Each update will only be present in the
+    * first group it falls into.
+    *
+    * Updates that do not fall into any group will be returned back in the second return parameter.
+    */
+  /**
+    * Processes the provided updates using the group configuration. Each update will only be present in the
+    * first group it falls into.
+    *
+    * Updates that do not fall into any group will be returned back in the second return parameter.
+    */
+  def from(
+      groups: List[PullRequestGroup],
+      updates: List[Update.Single]
+  ): (List[GroupedUpdate], List[Update.Single]) =
+    groups.foldLeft((List.empty[GroupedUpdate], updates)) { case ((grouped, notGrouped), group) =>
+      notGrouped.partition(group.matches) match {
+        case (Nil, rest)     => (grouped, rest)
+        case (matched, rest) => (grouped :+ GroupedUpdate(group.name, group.title, matched), rest)
+      }
+    }
+
+  implicit val GroupedUpdateCodec: Codec[GroupedUpdate] = deriveCodec
+
+}
+
+sealed trait Update extends Product with Serializable with AnUpdate {
   def crossDependencies: Nel[CrossDependency]
   def dependencies: Nel[Dependency]
   def groupId: GroupId
@@ -40,7 +100,7 @@ sealed trait Update extends Product with Serializable {
   final def nextVersion: Version =
     newerVersions.head
 
-  final def show: String = {
+  final override def show: String = {
     val artifacts = this match {
       case s: Single => s.crossDependency.showArtifactNames
       case g: Group  => g.crossDependencies.map(_.showArtifactNames).mkString_("{", ", ", "}")

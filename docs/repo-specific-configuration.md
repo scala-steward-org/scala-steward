@@ -32,6 +32,43 @@ You can add `<YOUR_REPO>/.scala-steward.conf` to configure how Scala Steward upd
 #pullRequests.frequency = "0 0 ? * 3" # every thursday on midnight
 pullRequests.frequency = "7 days"
 
+# pullRequests.grouping allows you to specify how Scala Steward should group
+# your updates in order to reduce the number of pull-requests.
+#
+# Updates will be placed in the first group with which they match, starting
+# from the first in the array. Those that do not match any group will follow
+# the default procedure (one PR per update).
+#
+# Each element in the array will have the following schema:
+# 
+#   - name (mandatory): the name of the group, will be used for things like naming the branch
+#   - title (optional): if provided it will be used as the title for the PR
+#   - filter (mandatory): a non-empty list containing the filters to use to know 
+#                         if an update falls into this group.
+#
+# `filter` properties would have this format:
+#   
+#    {
+#       version = "major" | "minor" | "patch" | "pre-release" | "build-metadata",
+#       group = "{group}",
+#       artifact = "{artifact}"
+#    }
+#
+# For more information on the values for the `version` filter visit https://semver.org/
+# 
+# Every field in a `filter` is optional but at least one must be provided.
+#
+# For grouping every update togeher a filter like {group = "*"} can be # provided.
+#
+# Default: []
+pullRequests.grouping = [
+  { name = "patches", "title" = "Patch updates", "filter" = [{"version" = "patch"}] },
+  { name = "minor_major", "title" = "Minor/major updates", "filter" = [{"version" = "minor"}, {"version" = "major"}] },
+  { name = "typelevel", "title" = "Typelevel updates", "filter" = [{"group" = "org.typelevel"}, {"group" = "org.http4s"}] },
+  { name = "my_libraries", "filter" = [{"artifact" = "my-library"}, {"artifact" = "my-other-library", "group" = "my-org"}] },
+  { name = "all", title = "Dependency updates", "filter" = [{"group" = "*"}] }
+]
+
 # pullRequests.includeMatchedLabels allows to control which labels are added to PRs 
 # via a regex check each label is checked against.
 # Defaults to no regex (all labels are added) which is equivalent to ".*".

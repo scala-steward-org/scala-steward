@@ -16,7 +16,7 @@
 
 package org.scalasteward.core
 
-import org.scalasteward.core.data.Update
+import org.scalasteward.core.data.{AnUpdate, GroupedUpdate, Update}
 import org.scalasteward.core.repoconfig.CommitsConfig
 import org.scalasteward.core.vcs.data.Repo
 
@@ -27,9 +27,12 @@ package object git {
 
   val updateBranchPrefix = "update"
 
-  def branchFor(update: Update, baseBranch: Option[Branch]): Branch = {
+  def branchFor(update: AnUpdate, baseBranch: Option[Branch]): Branch = {
     val base = baseBranch.fold("")(branch => s"${branch.name}/")
-    Branch(s"$updateBranchPrefix/$base${update.name}-${update.nextVersion}")
+    update match {
+      case g: GroupedUpdate => Branch(s"$updateBranchPrefix/$base${g.name}")
+      case u: Update        => Branch(s"$updateBranchPrefix/$base${u.name}-${u.nextVersion}")
+    }
   }
 
   def commitMsgFor(
