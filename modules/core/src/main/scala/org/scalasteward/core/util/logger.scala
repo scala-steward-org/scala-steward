@@ -69,9 +69,10 @@ object logger {
   }
 
   def showUpdates(allUpdates: List[AnUpdate]): String = {
-    val updates = allUpdates.flatMap {
-      case g: GroupedUpdate => g.updates.map(_.show)
-      case u: Update        => List(u.show)
+    val updates = allUpdates.map {
+      case g: GroupedUpdate =>
+        g.updates.map(_.show).mkString(s"${g.name} (group) {\n    ", "\n    ", "\n  }")
+      case u: Update => u.show
     }
 
     val list = string.indentLines(updates)
