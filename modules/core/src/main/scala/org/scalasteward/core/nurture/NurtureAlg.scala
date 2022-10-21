@@ -162,7 +162,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       data.update
         .on(
           update = editAlg.applyUpdate(data.repoData, _, createBranch),
-          grouped = _.updates.flatTraverse(editAlg.applyUpdate(data.repoData, _, createBranch))
+          grouped = createBranch >> _.updates.flatTraverse(editAlg.applyUpdate(data.repoData, _))
         )
         .flatMap { edits =>
           val editCommits = edits.flatMap(_.commits)
