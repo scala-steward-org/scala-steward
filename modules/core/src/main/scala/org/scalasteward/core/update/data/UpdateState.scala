@@ -25,7 +25,7 @@ sealed trait UpdateState extends Product with Serializable {
 
 object UpdateState {
   sealed trait WithUpdate extends UpdateState {
-    def update: Update.Single
+    def update: Update.ForArtifactId
   }
 
   sealed trait WithPullRequest extends WithUpdate {
@@ -38,24 +38,24 @@ object UpdateState {
 
   final case class DependencyOutdated(
       crossDependency: CrossDependency,
-      update: Update.Single
+      update: Update.ForArtifactId
   ) extends WithUpdate
 
   final case class PullRequestUpToDate(
       crossDependency: CrossDependency,
-      update: Update.Single,
+      update: Update.ForArtifactId,
       pullRequest: Uri
   ) extends WithPullRequest
 
   final case class PullRequestOutdated(
       crossDependency: CrossDependency,
-      update: Update.Single,
+      update: Update.ForArtifactId,
       pullRequest: Uri
   ) extends WithPullRequest
 
   final case class PullRequestClosed(
       crossDependency: CrossDependency,
-      update: Update.Single,
+      update: Update.ForArtifactId,
       pullRequest: Uri
   ) extends WithPullRequest
 

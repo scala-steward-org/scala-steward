@@ -19,7 +19,7 @@ package org.scalasteward.core.repoconfig
 import io.circe.Codec
 import io.circe.generic.extras.Configuration
 import io.circe.generic.semiauto.deriveCodec
-import org.scalasteward.core.data.{AnUpdate, Update}
+import org.scalasteward.core.data.Update
 import org.scalasteward.core.util.string.indentLines
 
 final case class GroupRepoConfig(
@@ -34,14 +34,14 @@ object GroupRepoConfig {
   implicit val groupPullConfigCodec: Codec[GroupRepoConfig] =
     deriveCodec
 
-  def configToSlowDownUpdatesFrequency(update: AnUpdate): String = {
-    val forUpdate: Update => String = {
-      case s: Update.Single =>
+  def configToSlowDownUpdatesFrequency(update: Update): String = {
+    val forUpdate: Update.Single => String = {
+      case s: Update.ForArtifactId =>
         s"""{
            |  pullRequests = { frequency = "@monthly" },
            |  dependency = { groupId = "${s.groupId}", artifactId = "${s.artifactId.name}" }
            |}""".stripMargin
-      case g: Update.Group =>
+      case g: Update.ForGroupId =>
         s"""{
            |  pullRequests = { frequency = "@monthly" },
            |  dependency = { groupId = "${g.groupId}" }

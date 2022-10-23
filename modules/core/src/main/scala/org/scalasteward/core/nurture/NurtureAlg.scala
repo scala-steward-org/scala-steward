@@ -46,11 +46,14 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
     urlChecker: UrlChecker[F],
     F: Concurrent[F]
 ) {
-  def nurture(data: RepoData, fork: RepoOut, updates: Nel[Update.Single]): F[Unit] =
+  def nurture(data: RepoData, fork: RepoOut, updates: Nel[Update.ForArtifactId]): F[Unit] =
     for {
       _ <- logger.info(s"Nurture ${data.repo.show}")
       baseBranch <- cloneAndSync(data.repo, fork)
-      (grouped, notGrouped) = GroupedUpdate.from(data.config.pullRequests.grouping, updates.toList)
+      (grouped, notGrouped) = Update.groupByPullRequestGroup(
+        data.config.pullRequests.grouping,
+        updates.toList
+      )
       finalUpdates = Update.groupByGroupId(notGrouped) ++ grouped
       _ <- updateDependencies(data, fork.repo, baseBranch, finalUpdates)
     } yield ()
@@ -65,7 +68,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       data: RepoData,
       fork: Repo,
       baseBranch: Branch,
-      updates: List[AnUpdate]
+      updates: List[Update]
   ): F[Unit] =
     for {
       _ <- logger.info(util.logger.showUpdates(updates))
@@ -92,7 +95,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       head = vcs.listingBranch(config.tpe, data.fork, data.updateBranch)
       pullRequests <- vcsApiAlg.listPullRequests(data.repo, head, data.baseBranch)
       result <- pullRequests.headOption match {
-        case Some(pr) if pr.state.isClosed && data.update.isInstanceOf[Update] =>
+        case Some(pr) if pr.state.isClosed && data.update.isInstanceOf[Update.Single] =>
           logger.info(s"PR ${pr.html_url} is closed") >>
             deleteRemoteBranch(data.repo, data.updateBranch).as(Ignored)
         case Some(pr) if !pr.state.isClosed =>
@@ -184,7 +187,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       } yield Updated
 
   private def dependenciesUpdatedWithNextAndCurrentVersion(
-      update: AnUpdate
+      update: Update
   ): List[(Version, Dependency)] =
     update.on(
       u => u.dependencies.map(_.copy(version = u.nextVersion)).tupleLeft(u.currentVersion).toList,

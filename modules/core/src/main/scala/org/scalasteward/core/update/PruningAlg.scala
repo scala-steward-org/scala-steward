@@ -71,7 +71,7 @@ final class PruningAlg[F[_]](implicit
           } yield (freshStates, freshUpdates)
       }
       (updateStates1, updates1) = res
-      _ <- logger.info(util.logger.showUpdates(updates1.widen[Update]))
+      _ <- logger.info(util.logger.showUpdates(updates1.widen[Update.Single]))
       result <- filterUpdateStates(repo, repoConfig, updateStates1)
     } yield result
   }
@@ -80,8 +80,8 @@ final class PruningAlg[F[_]](implicit
       repoConfig: RepoConfig,
       dependencies: List[Scope.Dependency],
       outdatedDeps: List[DependencyOutdated],
-      allUpdates: List[Update.Single]
-  ): F[List[Update.Single]] = {
+      allUpdates: List[Update.ForArtifactId]
+  ): F[List[Update.ForArtifactId]] = {
     val unseenUpdates = outdatedDeps.map(_.update)
     val maybeOutdatedDeps = dependencies.filter { d =>
       unseenUpdates.exists { u =>
@@ -98,14 +98,18 @@ final class PruningAlg[F[_]](implicit
       repo: Repo,
       repoCache: RepoCache,
       dependencies: List[Dependency],
-      updates: List[Update.Single]
+      updates: List[Update.ForArtifactId]
   ): F[List[UpdateState]] = {
     val groupedDependencies = CrossDependency.group(dependencies)
     val groupedUpdates = Update.groupByArtifactIdName(updates)
     groupedDependencies.traverse(findUpdateState(repo, repoCache, groupedUpdates))
   }
 
-  private def findUpdateState(repo: Repo, repoCache: RepoCache, updates: List[Update.Single])(
+  private def findUpdateState(
+      repo: Repo,
+      repoCache: RepoCache,
+      updates: List[Update.ForArtifactId]
+  )(
       crossDependency: CrossDependency
   ): F[UpdateState] =
     updates.find(UpdateAlg.isUpdateFor(_, crossDependency)) match {
@@ -201,8 +205,8 @@ object PruningAlg {
 
   def removeOvertakingUpdates(
       dependencies: List[Dependency],
-      updates: List[Update.Single]
-  ): List[Update.Single] =
+      updates: List[Update.ForArtifactId]
+  ): List[Update.ForArtifactId] =
     updates.filterNot { update =>
       dependencies.exists { dependency =>
         dependency.groupId === update.groupId &&

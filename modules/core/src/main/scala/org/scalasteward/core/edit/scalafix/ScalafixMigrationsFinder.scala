@@ -21,7 +21,7 @@ import org.scalasteward.core.data.Update
 import org.scalasteward.core.edit.scalafix.ScalafixMigration.ExecutionOrder
 
 final class ScalafixMigrationsFinder(migrations: List[ScalafixMigration]) {
-  def findMigrations(update: Update): (List[ScalafixMigration], List[ScalafixMigration]) =
+  def findMigrations(update: Update.Single): (List[ScalafixMigration], List[ScalafixMigration]) =
     migrations
       .filter { migration =>
         update.groupId === migration.groupId &&

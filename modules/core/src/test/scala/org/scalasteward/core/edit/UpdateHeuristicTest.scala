@@ -563,7 +563,7 @@ class UpdateHeuristicTest extends FunSuite {
 }
 
 object UpdateHeuristicTest {
-  implicit class UpdateOps(update: Update) {
+  implicit class UpdateOps(update: Update.Single) {
     def replaceVersionIn(target: String): (Option[String], String) =
       UpdateHeuristic.all.foldLeft((Option.empty[String], "")) {
         case ((None, _), heuristic) => (heuristic.replaceVersion(update)(target), heuristic.name)

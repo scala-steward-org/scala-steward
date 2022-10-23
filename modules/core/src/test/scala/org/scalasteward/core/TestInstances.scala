@@ -43,7 +43,7 @@ object TestInstances {
   implicit def scopeCogen[T](implicit cogenT: Cogen[T]): Cogen[Scope[T]] =
     cogenT.contramap(_.value)
 
-  implicit val updateArbitrary: Arbitrary[Update] =
+  implicit val updateArbitrary: Arbitrary[Update.Single] =
     Arbitrary(
       for {
         groupId <- Gen.alphaStr

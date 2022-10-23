@@ -7,7 +7,7 @@ import org.http4s.syntax.literals._
 import org.scalasteward.core.TestInstances._
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.buildtool.sbt.data.SbtVersion
-import org.scalasteward.core.data.{GroupedUpdate, ReleaseRelatedUrl, RepoData, UpdateData, Version}
+import org.scalasteward.core.data.{ReleaseRelatedUrl, RepoData, Update, UpdateData, Version}
 import org.scalasteward.core.edit.EditAttempt.{ScalafixEdit, UpdateEdit}
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.git.{Branch, Commit}
@@ -323,7 +323,7 @@ class NewPullRequestDataTest extends FunSuite {
   test("label for grouped updates add labels for all update types & version changes") {
     val update1 = ("a".g % "b".a % "1" -> "2").single
     val update2 = ("c".g % "d".a % "1.1.0" % "test" %> "1.2.0").single
-    val update = GroupedUpdate("my-group", None, List(update1, update2))
+    val update = Update.Grouped("my-group", None, List(update1, update2))
 
     val labels = labelsFor(update, Nil, Nil, None)
 
@@ -342,7 +342,7 @@ class NewPullRequestDataTest extends FunSuite {
     val files = List("Readme.md", "travis.yml")
     val update1 = ("a".g % "b".a % "1" -> "2").single
     val update2 = ("c".g % "d".a % "1.1.0" % "test" %> "1.2.0").single
-    val update = GroupedUpdate("my-group", None, List(update1, update2))
+    val update = Update.Grouped("my-group", None, List(update1, update2))
 
     val note = oldVersionNote(files, update)
 
@@ -365,7 +365,7 @@ class NewPullRequestDataTest extends FunSuite {
   test("adjustFutureUpdates for grouped udpates shows settings for each update") {
     val update1 = ("a".g % "b".a % "1" -> "2").single
     val update2 = ("c".g % "d".a % "1.1.0" % "test" %> "1.2.0").single
-    val update = GroupedUpdate("my-group", None, List(update1, update2))
+    val update = Update.Grouped("my-group", None, List(update1, update2))
 
     val note = adjustFutureUpdates(update)
 
@@ -402,7 +402,7 @@ class NewPullRequestDataTest extends FunSuite {
   test("NewPullRequestData.from works for `GroupedUpdate`") {
     val update1 = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single
     val update2 = ("com.example".g % "foo".a % "1.0.0" %> "2.0.0").single
-    val update = GroupedUpdate("my-group", "The PR title".some, List(update1, update2))
+    val update = Update.Grouped("my-group", "The PR title".some, List(update1, update2))
     val data = UpdateData(
       RepoData(Repo("foo", "bar"), dummyRepoCache, RepoConfig.empty),
       Repo("scala-steward", "bar"),

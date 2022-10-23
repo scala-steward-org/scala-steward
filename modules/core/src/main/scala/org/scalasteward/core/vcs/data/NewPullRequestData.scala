@@ -43,7 +43,7 @@ object NewPullRequestData {
     deriveEncoder
 
   def bodyFor(
-      update: AnUpdate,
+      update: Update,
       edits: List[EditAttempt],
       artifactIdToUrl: Map[String, Uri],
       releaseRelatedUrls: Map[String, List[ReleaseRelatedUrl]],
@@ -122,14 +122,14 @@ object NewPullRequestData {
         .mkString(" - ")
     }
 
-  def fromTo(update: Update): String =
+  def fromTo(update: Update.Single): String =
     s"from ${update.currentVersion} to ${update.nextVersion}"
 
-  def artifactsWithOptionalUrl(update: Update, artifactIdToUrl: Map[String, Uri]): String =
+  def artifactsWithOptionalUrl(update: Update.Single, artifactIdToUrl: Map[String, Uri]): String =
     update match {
-      case s: Update.Single =>
+      case s: Update.ForArtifactId =>
         artifactWithOptionalUrl(s.groupId, s.artifactId.name, artifactIdToUrl)
-      case g: Update.Group =>
+      case g: Update.ForGroupId =>
         g.crossDependencies
           .map(crossDependency =>
             s"* ${artifactWithOptionalUrl(g.groupId, crossDependency.head.artifactId.name, artifactIdToUrl)}\n"
@@ -147,7 +147,7 @@ object NewPullRequestData {
       case None      => s"$groupId:$artifactId"
     }
 
-  def oldVersionNote(files: List[String], update: AnUpdate): Option[Details] =
+  def oldVersionNote(files: List[String], update: Update): Option[Details] =
     Option.when(files.nonEmpty) {
       val (number, numberWithVersion) = update.on(
         update = u => ("number", s"number (${u.currentVersion})"),
@@ -165,7 +165,7 @@ object NewPullRequestData {
       )
     }
 
-  def adjustFutureUpdates(update: AnUpdate): Details = Details(
+  def adjustFutureUpdates(update: Update): Details = Details(
     "Adjust future updates",
     update.on(
       update = u =>
@@ -253,8 +253,8 @@ object NewPullRequestData {
     )
   }
 
-  def updateType(anUpdate: AnUpdate): List[String] = {
-    def forUpdate(update: Update) = {
+  def updateType(anUpdate: Update): List[String] = {
+    def forUpdate(update: Update.Single) = {
       val dependencies = update.dependencies
       if (dependencies.forall(_.configurations.contains("test")))
         "test-library-update"
@@ -270,7 +270,7 @@ object NewPullRequestData {
   }
 
   def labelsFor(
-      update: AnUpdate,
+      update: Update,
       edits: List[EditAttempt],
       filesWithOldVersion: List[String],
       includeMatchedLabels: Option[Regex]
@@ -281,7 +281,7 @@ object NewPullRequestData {
       case n           => s"n:$n"
     })
 
-    def semverForUpdate(u: Update): List[String] = {
+    def semverForUpdate(u: Update.Single): List[String] = {
       val semVerVersions =
         (SemVer.parse(u.currentVersion.value), SemVer.parse(u.nextVersion.value)).tupled
       val earlySemVerLabel = semVerVersions.flatMap { case (curr, next) =>

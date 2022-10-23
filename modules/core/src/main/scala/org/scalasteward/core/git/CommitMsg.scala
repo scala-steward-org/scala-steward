@@ -17,7 +17,7 @@
 package org.scalasteward.core.git
 
 import cats.syntax.all._
-import org.scalasteward.core.data.AnUpdate
+import org.scalasteward.core.data.Update
 import org.scalasteward.core.update.show
 import org.scalasteward.core.util.Nel
 
@@ -39,7 +39,7 @@ final case class CommitMsg(
 }
 
 object CommitMsg {
-  def replaceVariables(s: String)(update: AnUpdate, baseBranch: Option[Branch]): CommitMsg =
+  def replaceVariables(s: String)(update: Update, baseBranch: Option[Branch]): CommitMsg =
     update.on(
       u => {
         val artifactNameValue = show.oneLiner(u)

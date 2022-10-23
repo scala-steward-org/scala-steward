@@ -18,9 +18,7 @@ package org.scalasteward.core.util
 
 import cats.syntax.all._
 import cats.{Monad, MonadThrow}
-import org.scalasteward.core.data.GroupedUpdate
 import org.scalasteward.core.data.Update
-import org.scalasteward.core.data.AnUpdate
 import org.typelevel.log4cats.Logger
 import scala.concurrent.duration.FiniteDuration
 
@@ -68,11 +66,11 @@ object logger {
     }
   }
 
-  def showUpdates(allUpdates: List[AnUpdate]): String = {
+  def showUpdates(allUpdates: List[Update]): String = {
     val updates = allUpdates.map {
-      case g: GroupedUpdate =>
+      case g: Update.Grouped =>
         g.updates.map(_.show).mkString(s"${g.name} (group) {\n    ", "\n    ", "\n  }")
-      case u: Update => u.show
+      case u: Update.Single => u.show
     }
 
     val list = string.indentLines(updates)

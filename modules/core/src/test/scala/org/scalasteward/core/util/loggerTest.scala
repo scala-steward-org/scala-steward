@@ -7,7 +7,7 @@ import org.scalasteward.core.mock.{MockEff, MockState}
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.util.logger.showUpdates
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.GroupedUpdate
+import org.scalasteward.core.data.Update
 
 class loggerTest extends CatsEffectSuite {
   test("attemptError.label_") {
@@ -36,8 +36,8 @@ class loggerTest extends CatsEffectSuite {
     val c = ("a".g % "c".a % "1.0.0" %> "2.0.0").single
 
     val list = List(
-      GroupedUpdate("all", None, List(a, b, c)),
-      GroupedUpdate("some", None, List(a, b)),
+      Update.Grouped("all", None, List(a, b, c)),
+      Update.Grouped("some", None, List(a, b)),
       a,
       b,
       c

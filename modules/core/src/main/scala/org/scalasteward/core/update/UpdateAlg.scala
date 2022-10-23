@@ -37,7 +37,7 @@ final class UpdateAlg[F[_]](implicit
   def findUpdate(
       dependency: Scope[Dependency],
       maxAge: Option[FiniteDuration]
-  ): F[Option[Update.Single]] =
+  ): F[Option[Update.ForArtifactId]] =
     findUpdateWithoutMigration(dependency, maxAge)
       .orElse(findUpdateWithMigration(dependency, maxAge))
       .value
@@ -46,7 +46,7 @@ final class UpdateAlg[F[_]](implicit
       dependencies: List[Scope.Dependency],
       repoConfig: RepoConfig,
       maxAge: Option[FiniteDuration]
-  ): F[List[Update.Single]] = {
+  ): F[List[Update.ForArtifactId]] = {
     val updates = dependencies.parTraverseFilter(findUpdate(_, maxAge))
     updates.flatMap(filterAlg.localFilterMany(repoConfig, _))
   }
@@ -54,20 +54,20 @@ final class UpdateAlg[F[_]](implicit
   private def findUpdateWithoutMigration(
       dependency: Scope[Dependency],
       maxAge: Option[FiniteDuration]
-  ): OptionT[F, Update.Single] =
+  ): OptionT[F, Update.ForArtifactId] =
     findNewerVersions(dependency, maxAge).map { newerVersions =>
-      Update.Single(CrossDependency(dependency.value), newerVersions)
+      Update.ForArtifactId(CrossDependency(dependency.value), newerVersions)
     }
 
   private def findUpdateWithMigration(
       dependency: Scope[Dependency],
       maxAge: Option[FiniteDuration]
-  ): OptionT[F, Update.Single] =
+  ): OptionT[F, Update.ForArtifactId] =
     OptionT.fromOption(artifactMigrationsFinder.findArtifactChange(dependency.value)).flatMap {
       artifactChange =>
         findNewerVersions(dependency.map(migrateDependency(_, artifactChange)), maxAge).map {
           newerVersions =>
-            Update.Single(
+            Update.ForArtifactId(
               CrossDependency(dependency.value),
               newerVersions,
               Some(artifactChange.groupIdAfter),
@@ -86,7 +86,7 @@ final class UpdateAlg[F[_]](implicit
 }
 
 object UpdateAlg {
-  def isUpdateFor(update: Update, crossDependency: CrossDependency): Boolean =
+  def isUpdateFor(update: Update.Single, crossDependency: CrossDependency): Boolean =
     crossDependency.dependencies.forall { dependency =>
       update.groupId === dependency.groupId &&
       update.currentVersion === dependency.version &&
