@@ -226,8 +226,14 @@ object Cli {
       "Whether to merge a gitlab merge request when the pipeline succeeds"
     ).orFalse
 
+  private val gitlabRequiredReviewers: Opts[Option[Int]] =
+    option[Int](
+      "gitlab-required-reviewers",
+      "When set, the number of required reviewers for a merge request will be set to this number (non-negative integer).  Is only used in the context of gitlab-merge-when-pipeline-succeeds being enabled, and requires that the configured access token have the appropriate privileges."
+    ).validate("Required reviewers must be non-negative")(_ >= 0).orNone
+
   private val gitLabCfg: Opts[GitLabCfg] =
-    gitlabMergeWhenPipelineSucceeds.map(GitLabCfg.apply)
+    (gitlabMergeWhenPipelineSucceeds, gitlabRequiredReviewers).mapN(GitLabCfg.apply)
 
   private val githubAppId: Opts[Long] =
     option[Long]("github-app-id", "GitHub application id")

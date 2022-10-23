@@ -133,7 +133,8 @@ object Config {
   )
 
   final case class GitLabCfg(
-      mergeWhenPipelineSucceeds: Boolean
+      mergeWhenPipelineSucceeds: Boolean,
+      requiredReviewers: Option[Int]
   )
 
   sealed trait StewardUsage
