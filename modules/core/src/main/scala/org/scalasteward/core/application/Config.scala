@@ -66,7 +66,7 @@ final case class Config(
     bitbucketServerCfg: BitbucketServerCfg,
     gitLabCfg: GitLabCfg,
     githubApp: Option[GitHubApp],
-    urlCheckerTestUrl: Uri,
+    urlCheckerTestUrls: Nel[Uri],
     defaultResolver: Resolver,
     refreshBackoffPeriod: FiniteDuration
 ) {

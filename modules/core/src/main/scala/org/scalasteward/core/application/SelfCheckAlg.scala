@@ -62,11 +62,11 @@ final class SelfCheckAlg[F[_]](config: Config)(implicit
     s"Failed to execute $binary  -- make sure it is on the PATH; following the detailed exception:"
 
   private def checkUrlChecker: F[Unit] =
-    for {
-      _ <- F.unit
-      url = config.urlCheckerTestUrl
-      urlExists <- urlChecker.exists(url)
-      msg = s"Self check of UrlChecker failed: checking that $url exists failed"
-      _ <- F.whenA(!urlExists)(logger.warn(msg))
-    } yield ()
+    config.urlCheckerTestUrls.traverse_ { url =>
+      urlChecker.exists(url).flatMap {
+        case true => F.unit
+        case false =>
+          logger.warn(s"Self check of UrlChecker failed: checking that $url exists failed")
+      }
+    }
 }

@@ -5,7 +5,7 @@ All command line arguments for the `scala-steward` application.
 ```
 Usage:
     scala-steward validate-repo-config
-    scala-steward --workspace <file> --repos-file <file> [--git-author-name <string>] --git-author-email <string> [--git-author-signing-key <string>] --git-ask-pass <file> [--sign-commits] [--vcs-type <vcs-type>] [--vcs-api-host <uri>] --vcs-login <string> [--do-not-fork] [--add-labels] [--ignore-opts-files] [--env-var <name=value>]... [--process-timeout <duration>] [--whitelist <string>]... [--read-only <string>]... [--enable-sandbox | --disable-sandbox] [--max-buffer-size <integer>] [--repo-config <uri>]... [--disable-default-repo-config] [--scalafix-migrations <uri>]... [--disable-default-scalafix-migrations] [--artifact-migrations <uri>]... [--disable-default-artifact-migrations] [--cache-ttl <duration>] [--bitbucket-server-use-default-reviewers] [--gitlab-merge-when-pipeline-succeeds] [--gitlab-required-reviewers <integer>] [--github-app-id <integer> --github-app-key-file <file>] [--url-checker-test-url <uri>] [--default-maven-repo <string>] [--refresh-backoff-period <duration>]
+    scala-steward --workspace <file> --repos-file <file> [--git-author-name <string>] --git-author-email <string> [--git-author-signing-key <string>] --git-ask-pass <file> [--sign-commits] [--vcs-type <vcs-type>] [--vcs-api-host <uri>] --vcs-login <string> [--do-not-fork] [--add-labels] [--ignore-opts-files] [--env-var <name=value>]... [--process-timeout <duration>] [--whitelist <string>]... [--read-only <string>]... [--enable-sandbox | --disable-sandbox] [--max-buffer-size <integer>] [--repo-config <uri>]... [--disable-default-repo-config] [--scalafix-migrations <uri>]... [--disable-default-scalafix-migrations] [--artifact-migrations <uri>]... [--disable-default-artifact-migrations] [--cache-ttl <duration>] [--bitbucket-server-use-default-reviewers] [--gitlab-merge-when-pipeline-succeeds] [--gitlab-required-reviewers <integer>] [--github-app-id <integer> --github-app-key-file <file>] [--url-checker-test-url <uri>]... [--default-maven-repo <string>] [--refresh-backoff-period <duration>]
 
 
 
@@ -77,7 +77,7 @@ Options and flags:
     --github-app-key-file <file>
         GitHub application key file
     --url-checker-test-url <uri>
-        default: https://github.com
+        URL for testing the UrlChecker at start-up (can be used multiple times); default: https://github.com
     --default-maven-repo <string>
         default: https://repo1.maven.org/maven2/
     --refresh-backoff-period <duration>
