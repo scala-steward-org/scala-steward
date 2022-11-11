@@ -63,10 +63,9 @@ final class SelfCheckAlg[F[_]](config: Config)(implicit
 
   private def checkUrlChecker: F[Unit] =
     config.urlCheckerTestUrls.traverse_ { url =>
-      urlChecker.exists(url).flatMap {
-        case true => F.unit
-        case false =>
-          logger.warn(s"Self check of UrlChecker failed: checking that $url exists failed")
+      urlChecker.exists(url).flatMap { urlExists =>
+        val msg = s"Self check of UrlChecker failed: checking that $url exists failed"
+        F.whenA(!urlExists)(logger.warn(msg))
       }
     }
 }
