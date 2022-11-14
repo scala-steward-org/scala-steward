@@ -11,12 +11,12 @@ object Dependencies {
   val catsParse = "org.typelevel" %% "cats-parse" % "0.3.8"
   val circeConfig = "io.circe" %% "circe-config" % "0.8.0"
   val circeGeneric = "io.circe" %% "circe-generic" % "0.14.3"
-  val circeGenericExtras = "io.circe" %% "circe-generic-extras" % "0.14.2"
+  val circeGenericExtras = "io.circe" %% "circe-generic-extras" % "0.14.3"
   val circeLiteral = "io.circe" %% "circe-literal" % circeGeneric.revision
   val circeParser = "io.circe" %% "circe-parser" % circeGeneric.revision
   val circeRefined = "io.circe" %% "circe-refined" % circeGeneric.revision
   val commonsIo = "commons-io" % "commons-io" % "2.11.0"
-  val coursierCore = "io.get-coursier" %% "coursier" % "2.1.0-M7"
+  val coursierCore = "io.get-coursier" %% "coursier" % "2.1.0-RC1"
   val cron4sCore = "com.github.alonsodomin.cron4s" %% "cron4s-core" % "0.6.1"
   val decline = "com.monovore" %% "decline" % "2.3.1"
   val disciplineMunit = "org.typelevel" %% "discipline-munit" % "1.0.9"
@@ -33,7 +33,7 @@ object Dependencies {
   val jjwtApi = "io.jsonwebtoken" % "jjwt-api" % "0.11.5"
   val jjwtImpl = "io.jsonwebtoken" % "jjwt-impl" % jjwtApi.revision
   val jjwtJackson = "io.jsonwebtoken" % "jjwt-jackson" % jjwtApi.revision
-  val millVersion = Def.setting(if (scalaBinaryVersion.value == "2.12") "0.6.3" else "0.10.7")
+  val millVersion = Def.setting(if (scalaBinaryVersion.value == "2.12") "0.6.3" else "0.10.9")
   val millScalalib = Def.setting("com.lihaoyi" %% "mill-scalalib" % millVersion.value)
   val monocleCore = "dev.optics" %% "monocle-core" % "3.1.0"
   val munit = "org.scalameta" %% "munit" % "0.7.29"
