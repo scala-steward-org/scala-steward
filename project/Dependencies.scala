@@ -18,7 +18,7 @@ object Dependencies {
   val commonsIo = "commons-io" % "commons-io" % "2.11.0"
   val coursierCore = "io.get-coursier" %% "coursier" % "2.1.0-RC2"
   val cron4sCore = "com.github.alonsodomin.cron4s" %% "cron4s-core" % "0.6.1"
-  val decline = "com.monovore" %% "decline" % "2.3.1"
+  val decline = "com.monovore" %% "decline" % "2.4.0"
   val disciplineMunit = "org.typelevel" %% "discipline-munit" % "1.0.9"
   val fs2Core = "co.fs2" %% "fs2-core" % "3.3.0"
   val fs2Io = "co.fs2" %% "fs2-io" % fs2Core.revision
