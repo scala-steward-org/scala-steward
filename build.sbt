@@ -57,7 +57,7 @@ ThisBuild / githubWorkflowBuild :=
   Seq(
     WorkflowStep.Sbt(List("validate"), name = Some("Build project")),
     WorkflowStep.Use(
-      UseRef.Public("codecov", "codecov-action", "v2"),
+      UseRef.Public("codecov", "codecov-action", "v3"),
       name = Some("Codecov")
     )
   )
