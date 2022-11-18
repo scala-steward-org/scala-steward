@@ -26,11 +26,11 @@ import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Config._
 import org.scalasteward.core.data.Resolver
 import org.scalasteward.core.git.Author
+import org.scalasteward.core.util.Nel
 import org.scalasteward.core.util.dateTime.renderFiniteDuration
 import org.scalasteward.core.vcs.VCSType
 import org.scalasteward.core.vcs.VCSType.GitHub
 import org.scalasteward.core.vcs.github.GitHubApp
-
 import scala.concurrent.duration._
 
 object Cli {
@@ -61,6 +61,8 @@ object Cli {
     Argument.from("vcs-type") { s =>
       Validated.fromEither(VCSType.parse(s)).toValidatedNel
     }
+
+  private val multiple = "(can be used multiple times)"
 
   private val workspace: Opts[File] =
     option[File]("workspace", "Location for cache and temporary files")
@@ -124,7 +126,7 @@ object Cli {
     ).orFalse
 
   private val envVar: Opts[List[EnvVar]] = {
-    val help = "Assigns the value to the environment variable name (can be used multiple times)"
+    val help = s"Assigns the value to the environment variable name $multiple"
     options[EnvVar]("env-var", help).orEmpty
   }
 
@@ -138,13 +140,13 @@ object Cli {
   private val whitelist: Opts[List[String]] =
     options[String](
       "whitelist",
-      "Directory white listed for the sandbox (can be used multiple times)"
+      s"Directory white listed for the sandbox $multiple"
     ).orEmpty
 
   private val readOnly: Opts[List[String]] =
     options[String](
       "read-only",
-      "Read only directory for the sandbox (can be used multiple times)"
+      s"Read only directory for the sandbox $multiple"
     ).orEmpty
 
   private val enableSandbox: Opts[Boolean] =
@@ -167,7 +169,7 @@ object Cli {
     (envVar, processTimeout, sandboxCfg, maxBufferSize).mapN(ProcessCfg.apply)
 
   private val repoConfig: Opts[List[Uri]] =
-    options[Uri]("repo-config", "Additional repo config file (can be used multiple times)").orEmpty
+    options[Uri]("repo-config", s"Additional repo config file $multiple").orEmpty
 
   private val disableDefaultRepoConfig: Opts[Boolean] =
     flag("disable-default-repo-config", "Whether to disable the default repo config file").orFalse
@@ -178,7 +180,7 @@ object Cli {
   private val scalafixMigrations: Opts[List[Uri]] =
     options[Uri](
       "scalafix-migrations",
-      "Additional scalafix migrations configuration file (can be used multiple times)"
+      s"Additional scalafix migrations configuration file $multiple"
     ).orEmpty
 
   private val disableDefaultScalafixMigrations: Opts[Boolean] =
@@ -193,7 +195,7 @@ object Cli {
   private val artifactMigrations: Opts[List[Uri]] =
     options[Uri](
       "artifact-migrations",
-      "Additional artifact migration configuration file (can be used multiple times)"
+      s"Additional artifact migration configuration file $multiple"
     ).orEmpty
 
   private val disableDefaultArtifactMigrations: Opts[Boolean] =
@@ -251,9 +253,12 @@ object Cli {
     option[FiniteDuration]("refresh-backoff-period", help).withDefault(default)
   }
 
-  private val urlCheckerTestUrl: Opts[Uri] = {
+  private val urlCheckerTestUrls: Opts[Nel[Uri]] = {
     val default = uri"https://github.com"
-    option[Uri]("url-checker-test-url", s"default: $default").withDefault(default)
+    options[Uri](
+      "url-checker-test-url",
+      s"URL for testing the UrlChecker at start-up $multiple; default: $default"
+    ).withDefault(Nel.one(default))
   }
 
   private val defaultMavenRepo: Opts[Resolver] = {
@@ -286,7 +291,7 @@ object Cli {
     bitbucketServerCfg,
     gitLabCfg,
     gitHubApp,
-    urlCheckerTestUrl,
+    urlCheckerTestUrls,
     defaultMavenRepo,
     refreshBackoffPeriod
   ).mapN(Config.apply)
