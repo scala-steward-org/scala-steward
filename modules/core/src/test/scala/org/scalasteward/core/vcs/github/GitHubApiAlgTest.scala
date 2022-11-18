@@ -88,6 +88,14 @@ class GitHubApiAlgTest extends FunSuite {
             "body": "Superseded by #1234"
           } """)
 
+      case POST -> Root / "repos" / "fthomas" / "base.g8" / "pulls" =>
+        Created(json"""  {
+            "html_url": "https://github.com/octocat/Hello-World/pull/1347",
+            "state": "open",
+            "number": 1347,
+            "title": "new-feature"
+            } """)
+
       case POST -> Root / "repos" / "fthomas" / "base.g8" / "issues" / IntVar(_) / "labels" =>
         // Response taken from https://docs.github.com/en/rest/reference/issues#labels, is ignored
         Created(json"""[
@@ -111,6 +119,14 @@ class GitHubApiAlgTest extends FunSuite {
   val gitHubApiAlg = new GitHubApiAlg[IO](config.vcsCfg.apiHost, _ => IO.pure)
 
   private val repo = Repo("fthomas", "base.g8")
+
+  private val pullRequest =
+    PullRequestOut(
+      uri"https://github.com/octocat/Hello-World/pull/1347",
+      PullRequestState.Open,
+      PullRequestNumber(1347),
+      "new-feature"
+    )
 
   private val parent = RepoOut(
     "base.g8",
@@ -204,6 +220,23 @@ class GitHubApiAlgTest extends FunSuite {
         .unsafeRunSync()
     assertEquals(repoOut, parentWithCustomDefaultBranch)
     assertEquals(branchOut, defaultCustomBranch)
+  }
+
+  test("createPullRequest") {
+    val data = NewPullRequestData(
+      "new-feature",
+      "body",
+      "aaa",
+      Branch("master"),
+      Nil
+    )
+    val pr = gitHubApiAlg.createPullRequest(repo, data).unsafeRunSync()
+    assertEquals(pr, pullRequest)
+  }
+
+  test("listPullRequests") {
+    val prs = gitHubApiAlg.listPullRequests(repo, "master", Branch("master")).unsafeRunSync()
+    assertEquals(prs, List(pullRequest))
   }
 
   test("closePullRequest") {
