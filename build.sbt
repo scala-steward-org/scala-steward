@@ -52,7 +52,7 @@ ThisBuild / githubWorkflowPublish := Seq(
     name = Some("Publish Docker image")
   )
 )
-ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec(Adopt, "8"), JavaSpec(Adopt, "11"))
+ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec(Adopt, "17"), JavaSpec(Adopt, "11"))
 ThisBuild / githubWorkflowBuild :=
   Seq(
     WorkflowStep.Sbt(List("validate"), name = Some("Build project")),
