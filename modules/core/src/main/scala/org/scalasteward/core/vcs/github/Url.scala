@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,9 @@ class Url(apiHost: Uri) {
 
   def pull(repo: Repo, number: PullRequestNumber): Uri =
     repos(repo) / "pulls" / number.toString
+
+  def issueLabels(repo: Repo, number: PullRequestNumber): Uri =
+    repos(repo) / "issues" / number.toString / "labels"
 
   def repos(repo: Repo): Uri =
     apiHost / "repos" / repo.owner / repo.repo

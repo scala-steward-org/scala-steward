@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,16 @@
 package org.scalasteward.core.update
 
 import cats.Monad
-import cats.data.OptionT
 import cats.implicits._
 import org.scalasteward.core.data._
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.repocache.RepoCache
-import org.scalasteward.core.repoconfig.{PullRequestFrequency, RepoConfig}
+import org.scalasteward.core.repoconfig.{PullRequestFrequency, RepoConfig, UpdatePattern}
 import org.scalasteward.core.update.PruningAlg._
 import org.scalasteward.core.update.data.UpdateState
 import org.scalasteward.core.update.data.UpdateState._
 import org.scalasteward.core.util
-import org.scalasteward.core.util.{dateTime, DateTimeAlg}
+import org.scalasteward.core.util.{dateTime, DateTimeAlg, Nel, Timestamp}
 import org.scalasteward.core.vcs.data.Repo
 import org.typelevel.log4cats.Logger
 import scala.concurrent.duration._
@@ -39,7 +38,7 @@ final class PruningAlg[F[_]](implicit
     updateAlg: UpdateAlg[F],
     F: Monad[F]
 ) {
-  def needsAttention(data: RepoData): F[(Boolean, List[Update.Single])] = {
+  def needsAttention(data: RepoData): F[Option[Nel[WithUpdate]]] = {
     val dependencies = data.cache.dependencyInfos
       .flatMap(_.sequence)
       .collect { case info if !ignoreDependency(info.value) => info.map(_.dependency) }
@@ -50,7 +49,7 @@ final class PruningAlg[F[_]](implicit
   private def findUpdatesNeedingAttention(
       data: RepoData,
       dependencies: List[Scope.Dependency]
-  ): F[(Boolean, List[Update.Single])] = {
+  ): F[Option[Nel[WithUpdate]]] = {
     val repo = data.repo
     val repoCache = data.cache
     val repoConfig = data.config
@@ -73,7 +72,7 @@ final class PruningAlg[F[_]](implicit
       }
       (updateStates1, updates1) = res
       _ <- logger.info(util.logger.showUpdates(updates1.widen[Update]))
-      result <- checkUpdateStates(repo, repoConfig, updateStates1)
+      result <- filterUpdateStates(repo, repoConfig, updateStates1)
     } yield result
   }
 
@@ -124,43 +123,75 @@ final class PruningAlg[F[_]](implicit
         }
     }
 
-  private def checkUpdateStates(
+  private def filterUpdateStates(
       repo: Repo,
       repoConfig: RepoConfig,
       updateStates: List[UpdateState]
-  ): F[(Boolean, List[Update.Single])] =
-    newPullRequestsAllowed(repo, repoConfig.pullRequests.frequencyOrDefault).flatMap { allowed =>
-      val (outdatedStates, updates) = updateStates.collect {
-        case s: DependencyOutdated if allowed => (s, s.update)
-        case s: PullRequestOutdated           => (s, s.update)
-      }.separate
-      val isOutdated = outdatedStates.nonEmpty
-      val message = if (isOutdated) {
-        val states = util.string.indentLines(outdatedStates.map(UpdateState.show).sorted)
-        s"${repo.show} is outdated:\n" + states
-      } else
-        s"${repo.show} is up-to-date"
-      logger.info(message).as((isOutdated, updates))
-    }
+  ): F[Option[Nel[WithUpdate]]] =
+    for {
+      now <- dateTimeAlg.currentTimestamp
+      repoLastPrCreatedAt <- pullRequestRepository.lastPullRequestCreatedAt(repo)
+      lastPullRequestCreatedAtByArtifact <- pullRequestRepository
+        .lastPullRequestCreatedAtByArtifact(repo)
+      states <- updateStates.traverseFilter[F, WithUpdate] {
+        case s: DependencyOutdated =>
+          newPullRequestsAllowed(
+            s,
+            now,
+            repoLastPrCreatedAt,
+            artifactLastPrCreatedAt =
+              lastPullRequestCreatedAtByArtifact.get(s.update.groupId -> s.update.mainArtifactId),
+            repoConfig
+          ).map {
+            case true  => Some(s)
+            case false => None
+          }
+        case s: PullRequestOutdated => Option[WithUpdate](s).pure[F]
+        case _                      => F.pure(None)
+      }
+      result <- Nel.fromList(states) match {
+        case some @ Some(states) =>
+          val lines = util.string.indentLines(states.map(UpdateState.show).sorted)
+          logger.info(s"${repo.show} is outdated:\n" + lines).as(some)
+        case None =>
+          logger.info(s"${repo.show} is up-to-date").as(None)
+      }
+    } yield result
 
-  private def newPullRequestsAllowed(repo: Repo, frequency: PullRequestFrequency): F[Boolean] =
-    if (frequency === PullRequestFrequency.Asap) true.pure[F]
-    else
-      dateTimeAlg.currentTimestamp.flatMap { now =>
-        val ignoring = "Ignoring outdated dependencies"
-        if (!frequency.onSchedule(now))
-          logger.info(s"$ignoring according to $frequency").as(false)
-        else {
-          val maybeWaitingTime = OptionT(pullRequestRepository.lastPullRequestCreatedAt(repo))
-            .subflatMap(frequency.waitingTime(_, now))
-          maybeWaitingTime.value.flatMap {
-            case None => true.pure[F]
-            case Some(waitingTime) =>
-              val message = s"$ignoring for ${dateTime.showDuration(waitingTime)}"
-              logger.info(message).as(false)
+  private def newPullRequestsAllowed(
+      dependencyOutdated: DependencyOutdated,
+      now: Timestamp,
+      repoLastPrCreatedAt: Option[Timestamp],
+      artifactLastPrCreatedAt: Option[Timestamp],
+      repoConfig: RepoConfig
+  ): F[Boolean] = {
+    val (frequencyz: Option[PullRequestFrequency], lastPrCreatedAt: Option[Timestamp]) =
+      repoConfig.dependencyOverrides
+        .collectFirstSome { groupRepoConfig =>
+          val matchResult = UpdatePattern
+            .findMatch(List(groupRepoConfig.dependency), dependencyOutdated.update, include = true)
+          if (matchResult.byArtifactId.nonEmpty && matchResult.filteredVersions.nonEmpty) {
+            Some((groupRepoConfig.pullRequests.frequency, artifactLastPrCreatedAt))
+          } else {
+            None
           }
         }
+        .getOrElse((repoConfig.pullRequests.frequency, repoLastPrCreatedAt))
+    val frequency = frequencyz.getOrElse(PullRequestFrequency.Asap)
+
+    val dep = dependencyOutdated.crossDependency.head
+    val ignoring = s"Ignoring outdated dependency ${dep.groupId}:${dep.artifactId.name}"
+    if (!frequency.onSchedule(now))
+      logger.info(s"$ignoring according to $frequency").as(false)
+    else {
+      lastPrCreatedAt.flatMap(frequency.waitingTime(_, now)) match {
+        case None => true.pure[F]
+        case Some(waitingTime) =>
+          val message = s"$ignoring for ${dateTime.showDuration(waitingTime)}"
+          logger.info(message).as(false)
       }
+    }
+  }
 }
 
 object PruningAlg {
@@ -176,9 +207,8 @@ object PruningAlg {
       dependencies.exists { dependency =>
         dependency.groupId === update.groupId &&
         dependency.artifactId === update.artifactId && {
-          val dependencyVersion = Version(dependency.version)
-          dependencyVersion > Version(update.currentVersion) &&
-          dependencyVersion <= Version(update.nextVersion)
+          dependency.version > update.currentVersion &&
+          dependency.version <= update.nextVersion
         }
       }
     }

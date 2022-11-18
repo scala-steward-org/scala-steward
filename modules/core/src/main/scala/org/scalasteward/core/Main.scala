@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,15 @@
 
 package org.scalasteward.core
 
+import cats.effect.std.Console
 import cats.effect.{ExitCode, IO, IOApp}
 import org.scalasteward.core.application.{Cli, Context}
 
 object Main extends IOApp {
   override def run(args: List[String]): IO[ExitCode] =
     Cli.parseArgs(args) match {
-      case Cli.ParseResult.Success(args) => Context.step0[IO](args).use(_.stewardAlg.runF)
-      case Cli.ParseResult.Help(help)    => IO(Console.out.println(help)).as(ExitCode.Success)
-      case Cli.ParseResult.Error(error)  => IO(Console.err.println(error)).as(ExitCode.Error)
+      case Cli.ParseResult.Success(config) => Context.step0[IO](config).use(_.runF)
+      case Cli.ParseResult.Help(help)      => Console[IO].println(help).as(ExitCode.Success)
+      case Cli.ParseResult.Error(error)    => Console[IO].errorln(error).as(ExitCode.Error)
     }
 }

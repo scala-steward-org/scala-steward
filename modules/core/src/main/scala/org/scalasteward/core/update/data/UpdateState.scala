@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,14 @@ sealed trait UpdateState extends Product with Serializable {
 }
 
 object UpdateState {
+  sealed trait WithUpdate extends UpdateState {
+    def update: Update.Single
+  }
+
+  sealed trait WithPullRequest extends WithUpdate {
+    def pullRequest: Uri
+  }
+
   final case class DependencyUpToDate(
       crossDependency: CrossDependency
   ) extends UpdateState
@@ -31,25 +39,25 @@ object UpdateState {
   final case class DependencyOutdated(
       crossDependency: CrossDependency,
       update: Update.Single
-  ) extends UpdateState
+  ) extends WithUpdate
 
   final case class PullRequestUpToDate(
       crossDependency: CrossDependency,
       update: Update.Single,
       pullRequest: Uri
-  ) extends UpdateState
+  ) extends WithPullRequest
 
   final case class PullRequestOutdated(
       crossDependency: CrossDependency,
       update: Update.Single,
       pullRequest: Uri
-  ) extends UpdateState
+  ) extends WithPullRequest
 
   final case class PullRequestClosed(
       crossDependency: CrossDependency,
       update: Update.Single,
       pullRequest: Uri
-  ) extends UpdateState
+  ) extends WithPullRequest
 
   def show(updateState: UpdateState): String = {
     val groupId = updateState.crossDependency.head.groupId

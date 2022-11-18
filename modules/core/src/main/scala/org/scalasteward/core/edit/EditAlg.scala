@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,10 +24,8 @@ import org.scalasteward.core.data.{RepoData, Update}
 import org.scalasteward.core.edit.EditAttempt.{ScalafixEdit, UpdateEdit}
 import org.scalasteward.core.edit.hooks.HookExecutor
 import org.scalasteward.core.edit.scalafix.{ScalafixMigration, ScalafixMigrationsFinder}
-import org.scalasteward.core.git
-import org.scalasteward.core.git.GitAlg
+import org.scalasteward.core.git.{CommitMsg, GitAlg}
 import org.scalasteward.core.io.{isSourceFile, FileAlg, WorkspaceAlg}
-import org.scalasteward.core.repocache.RepoCache
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafmt.{scalafmtModule, ScalafmtAlg}
 import org.scalasteward.core.util._
@@ -68,11 +66,8 @@ final class EditAlg[F[_]](implicit
                   gitAlg.discardChanges(repo) *>
                     runScalafixMigrations(repo, data.config, preMigrations) <*
                     bumpVersion(update, files)
-              _ <- reformatChangedFiles(repo, data.cache)
-              updateCommitMsg = git.commitMsgFor(update, data.config.commits, data.repo.branch)
-              updateEdit <- gitAlg
-                .commitAllIfDirty(repo, updateCommitMsg)
-                .map(_.map(commit => UpdateEdit(update, commit)))
+              _ <- reformatChangedFiles(data)
+              updateEdit <- createUpdateEdit(repo, data.config, update)
               postScalafixEdits <- runScalafixMigrations(repo, data.config, postMigrations)
               hooksEdits <- hookExecutor.execPostUpdateHooks(data, update)
             } yield preScalafixEdits ++ updateEdit ++ postScalafixEdits ++ hooksEdits
@@ -86,7 +81,8 @@ final class EditAlg[F[_]](implicit
   ): F[Option[Nel[File]]] =
     workspaceAlg.repoDir(repo).flatMap { repoDir =>
       val fileFilter = isSourceFile(update, config.updates.fileExtensionsOrDefault) _
-      fileAlg.findFiles(repoDir, fileFilter, _.contains(update.currentVersion)).map(Nel.fromList)
+      val contentFilter = (_: String).contains(update.currentVersion.value)
+      fileAlg.findFiles(repoDir, fileFilter, contentFilter).map(Nel.fromList)
     }
 
   private def runScalafixMigrations(
@@ -117,10 +113,22 @@ final class EditAlg[F[_]](implicit
     bindUntilTrue[Nel, F](actions)
   }
 
-  private def reformatChangedFiles(repo: Repo, cache: RepoCache): F[Unit] =
-    if (cache.dependsOn(List(scalafmtModule)))
+  private def reformatChangedFiles(data: RepoData): F[Unit] = {
+    val reformat =
+      data.config.scalafmt.runAfterUpgradingOrDefault && data.cache.dependsOn(List(scalafmtModule))
+    F.whenA(reformat) {
       logger.attemptWarn.log_("Reformatting changed files failed") {
-        scalafmtAlg.reformatChanged(repo)
+        scalafmtAlg.reformatChanged(data.repo)
       }
-    else F.unit
+    }
+  }
+
+  private def createUpdateEdit(
+      repo: Repo,
+      config: RepoConfig,
+      update: Update
+  ): F[Option[EditAttempt]] = {
+    val commitMsg = CommitMsg.replaceVariables(config.commits.messageOrDefault)(update, repo.branch)
+    gitAlg.commitAllIfDirty(repo, commitMsg).map(_.map(commit => UpdateEdit(update, commit)))
+  }
 }

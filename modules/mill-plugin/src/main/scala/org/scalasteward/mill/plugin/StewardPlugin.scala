@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -113,6 +113,13 @@ object StewardPlugin extends ExternalModule {
         case _                           => true
       }
 
+    val headerJson: Function1[(String, String), Obj] = { case ((key, value)) =>
+      Obj(
+        "key" -> key,
+        "value" -> value
+      )
+    }
+
     val authJson = (a: Authentication) =>
       Obj(
         "user" -> Str(a.user),
@@ -128,6 +135,9 @@ object StewardPlugin extends ExternalModule {
             "type" -> Str("maven"),
             "auth" -> m.authentication
               .map(authJson)
+              .getOrElse(Null),
+            "headers" -> m.authentication
+              .map(headers => Arr(headers.httpHeaders.map(headerJson)))
               .getOrElse(Null)
           )
         case ivy: IvyRepository =>
@@ -136,6 +146,9 @@ object StewardPlugin extends ExternalModule {
             "type" -> Str("ivy"),
             "auth" -> ivy.authentication
               .map(authJson)
+              .getOrElse(Null),
+            "headers" -> ivy.authentication
+              .map(headers => Arr(headers.httpHeaders.map(headerJson)))
               .getOrElse(Null)
           )
         case _ => Null

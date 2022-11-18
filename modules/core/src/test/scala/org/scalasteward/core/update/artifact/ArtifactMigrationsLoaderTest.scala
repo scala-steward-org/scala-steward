@@ -17,15 +17,13 @@ class ArtifactMigrationsLoaderTest extends FunSuite {
        |    groupIdBefore = com.evilcorp
        |    groupIdAfter = org.ice.cream
        |    artifactIdAfter = yumyum
-       |    initialVersion = 2.0.0
        |  }
        |]""".stripMargin
   val migration: ArtifactChange = ArtifactChange(
     groupIdBefore = Some(GroupId("com.evilcorp")),
     groupIdAfter = GroupId("org.ice.cream"),
     artifactIdBefore = None,
-    artifactIdAfter = "yumyum",
-    initialVersion = "2.0.0"
+    artifactIdAfter = "yumyum"
   )
 
   test("loadAll: without extra file, without defaults") {
@@ -80,7 +78,6 @@ class ArtifactMigrationsLoaderTest extends FunSuite {
                                                              |  {
                                                              |    groupIdAfter = org.ice.cream
                                                              |    artifactIdAfter = yumyum
-                                                             |    initialVersion = 2.0.0
                                                              |  }
                                                              |]""".stripMargin)
     val migrations = artifactMigrationsLoader
@@ -89,5 +86,18 @@ class ArtifactMigrationsLoaderTest extends FunSuite {
       .attempt
       .unsafeRunSync()
     assert(migrations.isLeft)
+  }
+
+  test("loadAll: check for duplicated entries in 'artifact-migrations.conf'") {
+    def versionLessArtifactChange(ac: ArtifactChange) =
+      (ac.groupIdBefore, ac.groupIdAfter, ac.artifactIdBefore, ac.artifactIdAfter)
+    val migrations = artifactMigrationsLoader
+      .loadAll(ArtifactCfg(Nil, disableDefaults = false))
+      .runA(mockState)
+      .unsafeRunSync()
+    val duplicates = migrations
+      .diff(migrations.distinctBy(versionLessArtifactChange))
+      .distinctBy(versionLessArtifactChange)
+    assert(clue(duplicates).isEmpty)
   }
 }

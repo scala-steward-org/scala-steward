@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,15 @@
 
 package org.scalasteward.core.repoconfig
 
-import cats.Eq
-import cats.implicits._
+import cats.syntax.all._
+import io.circe.Codec
 import io.circe.generic.semiauto._
-import io.circe.{Decoder, Encoder, HCursor}
-import org.scalasteward.core.data.{GroupId, Update}
+import org.scalasteward.core.data.{GroupId, Update, Version}
 
 final case class UpdatePattern(
     groupId: GroupId,
     artifactId: Option[String],
-    version: Option[UpdatePattern.Version]
+    version: Option[VersionPattern]
 ) {
   def isWholeGroupIdAllowed: Boolean = artifactId.isEmpty && version.isEmpty
 }
@@ -33,19 +32,8 @@ final case class UpdatePattern(
 object UpdatePattern {
   final case class MatchResult(
       byArtifactId: List[UpdatePattern],
-      filteredVersions: List[String]
+      filteredVersions: List[Version]
   )
-
-  final case class Version(
-      prefix: Option[String] = None,
-      suffix: Option[String] = None,
-      exact: Option[String] = None
-  ) {
-    def matches(version: String): Boolean =
-      prefix.forall(version.startsWith) &&
-        suffix.forall(version.endsWith) &&
-        exact.forall(_ === version)
-  }
 
   def findMatch(
       patterns: List[UpdatePattern],
@@ -55,30 +43,11 @@ object UpdatePattern {
     val byGroupId = patterns.filter(_.groupId === update.groupId)
     val byArtifactId = byGroupId.filter(_.artifactId.forall(_ === update.artifactId.name))
     val filteredVersions = update.newerVersions.filter(newVersion =>
-      byArtifactId.exists(_.version.forall(_.matches(newVersion))) === include
+      byArtifactId.exists(_.version.forall(_.matches(newVersion.value))) === include
     )
     MatchResult(byArtifactId, filteredVersions)
   }
 
-  implicit val updatePatternDecoder: Decoder[UpdatePattern] =
-    deriveDecoder
-
-  implicit val updatePatternEncoder: Encoder[UpdatePattern] =
-    deriveEncoder
-
-  implicit val updatePatternVersionDecoder: Decoder[Version] =
-    Decoder[String]
-      .map(s => Version(prefix = Some(s)))
-      .or((hCursor: HCursor) =>
-        for {
-          prefix <- hCursor.downField("prefix").as[Option[String]]
-          suffix <- hCursor.downField("suffix").as[Option[String]]
-          exact <- hCursor.downField("exact").as[Option[String]]
-        } yield Version(prefix, suffix, exact)
-      )
-
-  implicit val eqVersion: Eq[Version] = Eq.fromUniversalEquals
-
-  implicit val updatePatternVersionEncoder: Encoder[Version] =
-    deriveEncoder
+  implicit val updatePatternCodec: Codec[UpdatePattern] =
+    deriveCodec
 }

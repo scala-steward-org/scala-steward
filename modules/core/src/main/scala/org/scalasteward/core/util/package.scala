@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,6 +87,17 @@ package object util {
       _.mapAccumulate(init) { case (i, a) => (N.plus(i, weight(a)), a) }
         .takeThrough { case (total, _) => N.lt(total, limit) }
         .map { case (_, a) => a }
+
+  /** A variant of `takeUntil` that takes an optional limit.
+    * This is the identity if `maybeLimit` is `None`.
+    */
+  def takeUntilMaybe[F[_], A, N](init: N, maybeLimit: Option[N])(weight: A => N)(implicit
+      N: Numeric[N]
+  ): Pipe[F, A, A] =
+    maybeLimit match {
+      case Some(limit) => takeUntil(init, limit)(weight)
+      case None        => identity
+    }
 
   def unexpectedString(s: String, expected: List[String]): Left[String, Nothing] =
     Left(s"Unexpected string '$s'. Expected one of: ${expected.mkString(", ")}.")

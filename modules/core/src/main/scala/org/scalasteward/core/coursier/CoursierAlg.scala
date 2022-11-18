@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,8 +112,10 @@ object CoursierAlg {
     }
   }
 
-  private def toCoursierDependency(dependency: Dependency): coursier.Dependency =
-    coursier.Dependency(toCoursierModule(dependency), dependency.version).withTransitive(false)
+  private def toCoursierDependency(dependency: Dependency): coursier.Dependency = {
+    val module = toCoursierModule(dependency)
+    coursier.Dependency(module, dependency.version.value).withTransitive(false)
+  }
 
   private def toCoursierModule(dependency: Dependency): Module =
     Module(
@@ -124,15 +126,35 @@ object CoursierAlg {
 
   private def toCoursierRepository(resolver: Resolver): Either[String, coursier.Repository] =
     resolver match {
-      case Resolver.MavenRepository(_, location, creds) =>
-        Right(coursier.maven.MavenRepository.apply(location, creds.map(toCoursierAuthentication)))
-      case Resolver.IvyRepository(_, pattern, creds) =>
+      case Resolver.MavenRepository(_, location, creds, headers) =>
+        Right(
+          coursier.maven.MavenRepository
+            .apply(location, toCoursierAuthentication(creds, headers))
+        )
+      case Resolver.IvyRepository(_, pattern, creds, headers) =>
         coursier.ivy.IvyRepository
-          .parse(pattern, authentication = creds.map(toCoursierAuthentication))
+          .parse(pattern, authentication = toCoursierAuthentication(creds, headers))
     }
 
-  private def toCoursierAuthentication(credentials: Credentials): Authentication =
-    Authentication(credentials.user, credentials.pass)
+  private def toCoursierAuthentication(
+      credentials: Option[Credentials],
+      headers: List[Resolver.Header]
+  ): Option[Authentication] =
+    if (credentials.isEmpty && headers.isEmpty) {
+      None
+    } else {
+      Some(
+        new Authentication(
+          credentials.fold("")(_.user),
+          credentials.map(_.pass),
+          headers.map(h => (h.key, h.value)),
+          optional = false,
+          None,
+          httpsOnly = true,
+          passOnRedirect = false
+        )
+      )
+    }
 
   private def getParentDependency(project: Project): Option[coursier.Dependency] =
     project.parent.map { case (module, version) =>

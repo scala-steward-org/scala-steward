@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,19 +22,25 @@ import io.circe.Codec
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 import io.circe.syntax._
+import org.scalasteward.core.edit.hooks.PostUpdateHook
 
 final case class RepoConfig(
     commits: CommitsConfig = CommitsConfig(),
     pullRequests: PullRequestsConfig = PullRequestsConfig(),
     scalafmt: ScalafmtConfig = ScalafmtConfig(),
     updates: UpdatesConfig = UpdatesConfig(),
+    postUpdateHooks: Option[List[PostUpdateHookConfig]] = None,
     updatePullRequests: Option[PullRequestUpdateStrategy] = None,
-    buildRoots: Option[List[BuildRootConfig]] = None
+    buildRoots: Option[List[BuildRootConfig]] = None,
+    dependencyOverrides: List[GroupRepoConfig] = List.empty
 ) {
   def buildRootsOrDefault: List[BuildRootConfig] =
     buildRoots
       .map(_.filterNot(_.relativePath.contains("..")))
       .getOrElse(List(BuildRootConfig.repoRoot))
+
+  def postUpdateHooksOrDefault: List[PostUpdateHook] =
+    postUpdateHooks.getOrElse(Nil).map(_.toHook)
 
   def updatePullRequestsOrDefault: PullRequestUpdateStrategy =
     updatePullRequests.getOrElse(PullRequestUpdateStrategy.default)
@@ -68,8 +74,10 @@ object RepoConfig {
               pullRequests = x.pullRequests |+| y.pullRequests,
               scalafmt = x.scalafmt |+| y.scalafmt,
               updates = x.updates |+| y.updates,
+              postUpdateHooks = x.postUpdateHooks |+| y.postUpdateHooks,
               updatePullRequests = x.updatePullRequests.orElse(y.updatePullRequests),
-              buildRoots = x.buildRoots |+| y.buildRoots
+              buildRoots = x.buildRoots |+| y.buildRoots,
+              dependencyOverrides = x.dependencyOverrides |+| y.dependencyOverrides
             )
         }
     )

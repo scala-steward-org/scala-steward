@@ -15,11 +15,11 @@ import org.http4s.implicits._
 import org.scalasteward.core.TestInstances.dummyRepoCache
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.application.Config.GitLabCfg
-import org.scalasteward.core.data.{RepoData, Update, UpdateData}
+import org.scalasteward.core.data.{RepoData, UpdateData}
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.repoconfig.RepoConfig
-import org.scalasteward.core.util.{HttpJsonClient, Nel}
+import org.scalasteward.core.util.HttpJsonClient
 import org.scalasteward.core.vcs.data._
 import org.scalasteward.core.vcs.gitlab.GitLabJsonCodec._
 import org.typelevel.log4cats.Logger
@@ -28,6 +28,8 @@ import org.typelevel.log4cats.slf4j.Slf4jLogger
 class GitLabApiAlgTest extends FunSuite {
   object MergeWhenPipelineSucceedsMatcher
       extends QueryParamDecoderMatcher[Boolean]("merge_when_pipeline_succeeds")
+
+  object RequiredReviewersMatcher extends QueryParamDecoderMatcher[Int]("approvals_required")
 
   val routes: HttpRoutes[IO] =
     HttpRoutes.of[IO] {
@@ -66,6 +68,14 @@ class GitLabApiAlgTest extends FunSuite {
           )
         )
 
+      case PUT -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "approvals"
+          :? RequiredReviewersMatcher(requiredApprovers) =>
+        Ok(
+          putMrApprovals.deepMerge(
+            json""" { "iid": 150, "approvals_required": $requiredApprovers, "web_url": "https://gitlab.com/foo/bar/merge_requests/150" } """
+          )
+        )
+
       case POST -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "notes" =>
         Ok(json"""  {
             "body": "Superseded by #1234"
@@ -80,12 +90,16 @@ class GitLabApiAlgTest extends FunSuite {
   implicit val httpJsonClient: HttpJsonClient[IO] = new HttpJsonClient[IO]
   implicit val logger: Logger[IO] = Slf4jLogger.getLogger[IO]
   val gitlabApiAlg =
-    new GitLabApiAlg[IO](config.vcsCfg, GitLabCfg(mergeWhenPipelineSucceeds = false), _ => IO.pure)
+    new GitLabApiAlg[IO](
+      config.vcsCfg,
+      GitLabCfg(mergeWhenPipelineSucceeds = false, requiredReviewers = None),
+      _ => IO.pure
+    )
 
   private val data = UpdateData(
     RepoData(Repo("foo", "bar"), dummyRepoCache, RepoConfig.empty),
     Repo("scala-steward", "bar"),
-    Update.Single("ch.qos.logback" % "logback-classic" % "1.2.0", Nel.of("1.2.3")),
+    ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single,
     Branch("master"),
     Sha1(Sha1.HexString.unsafeFrom("d6b6791d2ea11df1d156fe70979ab8c3a5ba3433")),
     Branch("update/logback-classic-1.2.3")
@@ -109,7 +123,7 @@ class GitLabApiAlgTest extends FunSuite {
   test("createPullRequest -- no fork") {
     val gitlabApiAlgNoFork = new GitLabApiAlg[IO](
       config.vcsCfg.copy(doNotFork = true),
-      GitLabCfg(mergeWhenPipelineSucceeds = false),
+      GitLabCfg(mergeWhenPipelineSucceeds = false, requiredReviewers = None),
       _ => IO.pure
     )
     val prOut = gitlabApiAlgNoFork
@@ -144,7 +158,7 @@ class GitLabApiAlgTest extends FunSuite {
   test("createPullRequest -- auto merge") {
     val gitlabApiAlgNoFork = new GitLabApiAlg[IO](
       config.vcsCfg.copy(doNotFork = true),
-      GitLabCfg(mergeWhenPipelineSucceeds = true),
+      GitLabCfg(mergeWhenPipelineSucceeds = true, requiredReviewers = None),
       _ => IO.pure
     )
 
@@ -176,11 +190,64 @@ class GitLabApiAlgTest extends FunSuite {
 
     val gitlabApiAlgNoFork = new GitLabApiAlg[IO](
       config.vcsCfg.copy(doNotFork = true),
-      GitLabCfg(mergeWhenPipelineSucceeds = true),
+      GitLabCfg(mergeWhenPipelineSucceeds = true, requiredReviewers = None),
       _ => IO.pure
     )(errorJsonClient, implicitly, implicitly)
 
     val prOut = gitlabApiAlgNoFork
+      .createPullRequest(Repo("foo", "bar"), newPRData)
+      .unsafeRunSync()
+
+    val expected = PullRequestOut(
+      uri"https://gitlab.com/foo/bar/merge_requests/150",
+      PullRequestState.Open,
+      PullRequestNumber(150),
+      "title"
+    )
+
+    assertEquals(prOut, expected)
+  }
+
+  test("createPullRequest -- reduce required reviewers") {
+    val gitlabApiAlgLessReviewersRequired = new GitLabApiAlg[IO](
+      config.vcsCfg.copy(doNotFork = true),
+      GitLabCfg(mergeWhenPipelineSucceeds = true, requiredReviewers = Some(0)),
+      _ => IO.pure
+    )
+
+    val prOut = gitlabApiAlgLessReviewersRequired
+      .createPullRequest(Repo("foo", "bar"), newPRData)
+      .unsafeRunSync()
+
+    val expected = PullRequestOut(
+      uri"https://gitlab.com/foo/bar/merge_requests/150",
+      PullRequestState.Open,
+      PullRequestNumber(150),
+      "title"
+    )
+
+    assertEquals(prOut, expected)
+  }
+
+  test("createPullRequest -- no fail upon required reviewers error") {
+    val errorClient: Client[IO] =
+      Client.fromHttpApp(
+        (HttpRoutes.of[IO] {
+          case PUT -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "approvals"
+              :? RequiredReviewersMatcher(requiredReviewers) =>
+            BadRequest(s"Cannot set requiredReviewers to $requiredReviewers")
+        } <+> routes).orNotFound
+      )
+    val errorJsonClient: HttpJsonClient[IO] =
+      new HttpJsonClient[IO]()(errorClient, Concurrent[IO])
+
+    val gitlabApiAlgLessReviewersRequiredNoError = new GitLabApiAlg[IO](
+      config.vcsCfg.copy(doNotFork = true),
+      GitLabCfg(mergeWhenPipelineSucceeds = true, requiredReviewers = Some(0)),
+      _ => IO.pure
+    )(errorJsonClient, implicitly, implicitly)
+
+    val prOut = gitlabApiAlgLessReviewersRequiredNoError
       .createPullRequest(Repo("foo", "bar"), newPRData)
       .unsafeRunSync()
 
@@ -204,6 +271,14 @@ class GitLabApiAlgTest extends FunSuite {
       .commentPullRequest(Repo("foo", "bar"), PullRequestNumber(150), "Superseded by #1234")
       .unsafeRunSync()
     assertEquals(comment, Comment("Superseded by #1234"))
+  }
+
+  test("labelPullRequest") {
+    val result = gitlabApiAlg
+      .labelPullRequest(Repo("foo", "bar"), PullRequestNumber(150), List("A", "B"))
+      .attempt
+      .unsafeRunSync()
+    assert(result.isRight)
   }
 
   val getMr = json"""
@@ -253,7 +328,7 @@ class GitLabApiAlgTest extends FunSuite {
       ],
       "source_project_id": 466,
       "target_project_id": 466,
-      "labels": [],
+      "labels": ["A", "B"],
       "work_in_progress": false,
       "milestone": null,
       "merge_when_pipeline_succeeds": true,
@@ -357,4 +432,33 @@ class GitLabApiAlgTest extends FunSuite {
         "packages_enabled": true
       }
     """
+
+  val putMrApprovals =
+    json"""
+      {
+        "id": 138691106,
+        "iid": 4,
+        "project_id": 466,
+        "title": "Standard ScalaSteward configured MR title",
+        "description": "Standard ScalaSteward configured MR description",
+        "state": "opened",
+        "created_at": "2022-02-04T17:43:57.363Z",
+        "updated_at": "2022-02-11T22:38:28.645Z",
+        "merge_status": "can_be_merged",
+        "approved": true,
+        "approvals_required": 0,
+        "approvals_left": 0,
+        "require_password_to_approve": false,
+        "approved_by": [],
+        "suggested_approvers": [],
+        "approvers": [],
+        "approver_groups": [],
+        "user_has_approved": false,
+        "user_can_approve": true,
+        "approval_rules_left": [],
+        "has_approval_rules": true,
+        "merge_request_approvers_available": true,
+        "multiple_approval_rules_available": true
+     }
+     """
 }

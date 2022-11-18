@@ -1,30 +1,31 @@
 package org.scalasteward.core
 
-import _root_.org.typelevel.log4cats.Logger
-import _root_.org.typelevel.log4cats.slf4j.Slf4jLogger
 import cats.effect.IO
 import eu.timepit.refined.scalacheck.numeric._
 import eu.timepit.refined.types.numeric.NonNegInt
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.Update.Single
 import org.scalasteward.core.data._
 import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.repocache.RepoCache
 import org.scalasteward.core.repoconfig.PullRequestFrequency.{Asap, Timespan}
 import org.scalasteward.core.repoconfig._
+import org.scalasteward.core.util.Change
 import org.scalasteward.core.util.Change.{Changed, Unchanged}
-import org.scalasteward.core.util.{Change, Nel}
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import scala.concurrent.duration.FiniteDuration
 
 object TestInstances {
+  val dummySha1: Sha1 =
+    Sha1(HexString.unsafeFrom("da39a3ee5e6b4b0d3255bfef95601890afd80709"))
+
   val dummyRepoCache: RepoCache =
-    RepoCache(
-      Sha1(HexString.unsafeFrom("da39a3ee5e6b4b0d3255bfef95601890afd80709")),
-      List.empty,
-      Option.empty
-    )
+    RepoCache(dummySha1, List.empty, Option.empty, Option.empty)
+
+  val dummyRepoCacheWithParsingError: RepoCache =
+    dummyRepoCache.copy(maybeRepoConfigParsingError = Some("Failed to parse .scala-steward.conf"))
 
   implicit def changeArbitrary[T](implicit arbT: Arbitrary[T]): Arbitrary[Change[T]] =
     Arbitrary(arbT.arbitrary.flatMap(t => Gen.oneOf(Changed(t), Unchanged(t))))
@@ -49,7 +50,7 @@ object TestInstances {
         artifactId <- Gen.alphaStr
         currentVersion <- Gen.alphaStr
         newerVersion <- Gen.alphaStr
-      } yield Single(groupId % artifactId % currentVersion, Nel.one(newerVersion))
+      } yield (groupId.g % artifactId.a % currentVersion %> newerVersion).single
     )
 
   private val hashGen: Gen[String] =
@@ -89,11 +90,15 @@ object TestInstances {
   }
 
   implicit val versionCogen: Cogen[Version] =
-    Cogen(_.alnumComponents.map {
-      case n: Version.Component.Numeric => n.toBigInt.toLong
-      case a: Version.Component.Alpha   => a.order.toLong
-      case _                            => 0L
-    }.sum)
+    Cogen(
+      _.alnumComponents
+        .map {
+          case n: Version.Component.Numeric => n.toBigInt.toLong
+          case a: Version.Component.Alpha   => a.order.toLong
+          case _                            => 0L
+        }
+        .sum
+    )
 
   // repoconfig instances
 
@@ -104,6 +109,12 @@ object TestInstances {
 
   implicit val pullRequestFrequencyArbitrary: Arbitrary[PullRequestFrequency] =
     Arbitrary(Arbitrary.arbitrary[FiniteDuration].flatMap(fd => Gen.oneOf(Asap, Timespan(fd))))
+
+  implicit val groupRepoConfigArbitrary: Arbitrary[GroupRepoConfig] =
+    Arbitrary(for {
+      pullRequestsConfig <- Arbitrary.arbitrary[PullRequestsConfig]
+      pattern <- Arbitrary.arbitrary[UpdatePattern]
+    } yield GroupRepoConfig(pullRequestsConfig, pattern))
 
   implicit val pullRequestsConfigArbitrary: Arbitrary[PullRequestsConfig] =
     Arbitrary(for {
@@ -130,7 +141,7 @@ object TestInstances {
       artifactId <- Arbitrary.arbitrary[Option[String]]
       version <- Arbitrary
         .arbitrary[Option[String]]
-        .map(_.map(prefix => UpdatePattern.Version(prefix = Some(prefix))))
+        .map(_.map(prefix => VersionPattern(prefix = Some(prefix))))
     } yield UpdatePattern(groupId = groupId, artifactId = artifactId, version = version))
 
   private def smallListOf[A](maxSize: Int, genA: Gen[A]): Gen[List[A]] =

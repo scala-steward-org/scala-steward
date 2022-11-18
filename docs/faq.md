@@ -16,6 +16,8 @@ and 3.0.0.
 * If your version is 1.0.2 or 1.1.0, Scala Steward would create a PR updating it to 1.2.0
 * If your version is 1.2.0 or 2.0.0, Scala Steward would create a PR updating it to 3.0.0
 
+(This can be verified with [this Scastie](https://scastie.scala-lang.org/6cTFqY3dTmGbZIIEgM6lyQ).)
+
 Of course, once you merge a Scala Steward PR, you've updated your version,
 which can result in Scala Steward sending another PR making the next update.
 
@@ -73,7 +75,7 @@ a  `scm.url` or an `url` attribute.
 
 You can use [Mergify](https://mergify.io) to automatically merge Scala Steward's
 pull requests. Mergify rules that does this can be found in Scala Steward's own
-repository [here](https://github.com/scala-steward-org/scala-steward/blob/master/.mergify.yml).
+repository [here](https://github.com/scala-steward-org/scala-steward/blob/main/.mergify.yml).
 Mergify can also be configured to only merge patch updates (in case the version
 number adheres to [Semantic Versioning](https://semver.org/)) as demonstrated
 [here](https://github.com/fthomas/refined/blob/master/.mergify.yml).

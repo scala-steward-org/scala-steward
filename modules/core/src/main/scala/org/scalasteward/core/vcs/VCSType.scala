@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import org.http4s.syntax.literals._
 import org.scalasteward.core.util.unexpectedString
 import org.scalasteward.core.vcs.VCSType._
 
-sealed trait VCSType {
+sealed trait VCSType extends Product with Serializable {
   def publicWebHost: Option[String]
 
   val asString: String = this match {

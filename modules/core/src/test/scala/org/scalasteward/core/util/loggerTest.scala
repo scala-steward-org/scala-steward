@@ -5,6 +5,9 @@ import org.scalasteward.core.mock.MockContext.context._
 import org.scalasteward.core.mock.MockState.TraceEntry.Log
 import org.scalasteward.core.mock.{MockEff, MockState}
 import org.scalasteward.core.util.logger.LoggerOps
+import org.scalasteward.core.util.logger.showUpdates
+import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.data.GroupedUpdate
 
 class loggerTest extends CatsEffectSuite {
   test("attemptError.label_") {
@@ -26,4 +29,37 @@ class loggerTest extends CatsEffectSuite {
       assertEquals(state.trace.size, 1)
     }
   }
+
+  test("showUpdates") {
+    val a = ("a".g % "a".a % "1.0.0" %> "1.0.1").single
+    val b = ("a".g % "b".a % "1.0.0" %> "1.1.0").single
+    val c = ("a".g % "c".a % "1.0.0" %> "2.0.0").single
+
+    val list = List(
+      GroupedUpdate("all", None, List(a, b, c)),
+      GroupedUpdate("some", None, List(a, b)),
+      a,
+      b,
+      c
+    )
+
+    val result = showUpdates(list)
+
+    val expected = """Found 5 updates:
+                     |  all (group) {
+                     |    a:a : 1.0.0 -> 1.0.1
+                     |    a:b : 1.0.0 -> 1.1.0
+                     |    a:c : 1.0.0 -> 2.0.0
+                     |  }
+                     |  some (group) {
+                     |    a:a : 1.0.0 -> 1.0.1
+                     |    a:b : 1.0.0 -> 1.1.0
+                     |  }
+                     |  a:a : 1.0.0 -> 1.0.1
+                     |  a:b : 1.0.0 -> 1.1.0
+                     |  a:c : 1.0.0 -> 2.0.0""".stripMargin
+
+    assertEquals(result, expected)
+  }
+
 }

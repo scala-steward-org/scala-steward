@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,14 +71,17 @@ final class RepoCacheAlg[F[_]](config: Config)(implicit
     for {
       branch <- gitAlg.currentBranch(repo)
       latestSha1 <- gitAlg.latestSha1(repo, branch)
-      maybeConfig <- repoConfigAlg.readRepoConfig(repo)
+      parsedConfig <- repoConfigAlg.readRepoConfig(repo)
+      maybeConfig = parsedConfig.flatMap(_.toOption)
+      maybeConfigParsingError = parsedConfig.flatMap(_.left.toOption.map(_.getMessage))
       config = repoConfigAlg.mergeWithGlobal(maybeConfig)
       dependencies <- buildToolDispatcher.getDependencies(repo, config)
       dependencyInfos <-
         dependencies.traverse(_.traverse(_.traverse(gatherDependencyInfo(repo, _))))
-      cache = RepoCache(latestSha1, dependencyInfos, maybeConfig)
+      _ <- gitAlg.discardChanges(repo)
+      cache = RepoCache(latestSha1, dependencyInfos, maybeConfig, maybeConfigParsingError)
     } yield RepoData(repo, cache, config)
 
   private def gatherDependencyInfo(repo: Repo, dependency: Dependency): F[DependencyInfo] =
-    gitAlg.findFilesContaining(repo, dependency.version).map(DependencyInfo(dependency, _))
+    gitAlg.findFilesContaining(repo, dependency.version.value).map(DependencyInfo(dependency, _))
 }

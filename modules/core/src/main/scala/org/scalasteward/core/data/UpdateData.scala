@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import org.scalasteward.core.vcs.data.Repo
 final case class UpdateData(
     repoData: RepoData,
     fork: Repo,
-    update: Update,
+    update: AnUpdate,
     baseBranch: Branch,
     baseSha1: Sha1,
     updateBranch: Branch

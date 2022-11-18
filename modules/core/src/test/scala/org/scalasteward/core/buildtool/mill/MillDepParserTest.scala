@@ -1,7 +1,7 @@
 package org.scalasteward.core.buildtool.mill
 
 import munit.FunSuite
-import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId}
+import org.scalasteward.core.TestSyntax._
 
 class MillDepParserTest extends FunSuite {
   test("parse dependencies from https://github.com/lihaoyi/requests-scala") {
@@ -129,15 +129,11 @@ class MillDepParserTest extends FunSuite {
         |""".stripMargin
     val Right(result) = parser.parseModules(data)
 
-    val dep12 = List(
-      Dependency(GroupId("com.lihaoyi"), ArtifactId("geny", Some("geny_2.12")), "0.6.0")
-    )
+    val dep12 = List("com.lihaoyi".g % ("geny", "geny_2.12").a % "0.6.0")
 
     assertEquals(result.headOption.map(_.dependencies), Some(dep12))
 
-    val dep13 = List(
-      Dependency(GroupId("com.lihaoyi"), ArtifactId("geny", Some("geny_2.13")), "0.6.0")
-    )
+    val dep13 = List("com.lihaoyi".g % ("geny", "geny_2.13").a % "0.6.0")
 
     assertEquals(result.find(_.name == "requests[2.13.0]").map(_.dependencies), Some(dep13))
   }

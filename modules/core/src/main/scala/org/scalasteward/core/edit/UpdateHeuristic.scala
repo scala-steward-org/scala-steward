@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,10 @@ package org.scalasteward.core.edit
 import cats.Foldable
 import cats.syntax.all._
 import org.scalasteward.core.buildtool.mill.MillAlg
-import org.scalasteward.core.data.Update
+import org.scalasteward.core.data.{Update, Version}
 import org.scalasteward.core.scalafmt.isScalafmtUpdate
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
-
 import scala.util.matching.Regex
 
 /** `UpdateHeuristic` is a wrapper for a function that takes an `Update` and
@@ -55,9 +54,9 @@ object UpdateHeuristic {
   private def shouldBeIgnored(prefix: String): Boolean =
     prefix.toLowerCase.contains("previous") || prefix.trim.startsWith("//")
 
-  private def moduleIdRegex(version: String): Regex = {
+  private def moduleIdRegex(version: Version): Regex = {
     val ident = """[^":\n]+"""
-    val v = Regex.quote(version)
+    val v = Regex.quote(version.value)
     raw"""(.*)(["|`]($ident)(?:"\s*%+\s*"|:+)($ident)(?:"\s*%\s*|:+))("?)($v)("|`)""".r
   }
 
@@ -90,7 +89,7 @@ object UpdateHeuristic {
     def mkRegex(update: Update): Option[Regex] =
       searchTermsToAlternation(getSearchTerms(update).map(removeCommonSuffix)).map { searchTerms =>
         val prefix = getPrefixRegex(update).getOrElse("")
-        val currentVersion = Regex.quote(update.currentVersion)
+        val currentVersion = Regex.quote(update.currentVersion.value)
         s"(?i)(.*)($prefix$searchTerms.*?)$currentVersion(.?)".r
       }
 
@@ -215,7 +214,8 @@ object UpdateHeuristic {
         defaultReplaceVersion(_ => List("version"))(update)
       case update: Update.Single if MillAlg.isMillMainUpdate(update) =>
         // this is intended to update the `.mill-version`
-        content => if (content.trim() === update.currentVersion) Some(update.nextVersion) else None
+        content =>
+          Option.when(content.trim === update.currentVersion.value)(update.nextVersion.value)
       case _ =>
         _ => None
     }

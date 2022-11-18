@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.scalasteward.core.edit.hooks
 
+import cats.implicits._
 import org.scalasteward.core.data.{ArtifactId, GroupId, Update}
 import org.scalasteward.core.git.CommitMsg
 import org.scalasteward.core.repocache.RepoCache
@@ -23,11 +24,14 @@ import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.Nel
 
 final case class PostUpdateHook(
-    groupId: GroupId,
-    artifactId: ArtifactId,
+    groupId: Option[GroupId],
+    artifactId: Option[ArtifactId],
     command: Nel[String],
     useSandbox: Boolean,
     commitMessage: Update => CommitMsg,
     enabledByCache: RepoCache => Boolean,
-    enabledByConfig: RepoConfig => Boolean
-)
+    enabledByConfig: RepoConfig => Boolean,
+    addToGitBlameIgnoreRevs: Boolean
+) {
+  def showCommand: String = command.mkString_("'", " ", "'")
+}

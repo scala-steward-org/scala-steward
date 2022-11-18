@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,10 @@ class Url(apiHost: Uri) {
   def mergeWhenPiplineSucceeds(repo: Repo, number: PullRequestNumber): Uri =
     (existingMergeRequest(repo, number) / "merge")
       .withQueryParam("merge_when_pipeline_succeeds", "true")
+
+  def requiredApprovals(repo: Repo, number: PullRequestNumber, approvalsRequired: Int): Uri =
+    (existingMergeRequest(repo, number) / "approvals")
+      .withQueryParam("approvals_required", approvalsRequired)
 
   def listMergeRequests(repo: Repo, source: String, target: String): Uri =
     mergeRequest(repo)

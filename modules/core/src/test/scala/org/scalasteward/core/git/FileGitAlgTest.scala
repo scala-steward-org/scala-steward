@@ -34,7 +34,10 @@ class FileGitAlgTest extends CatsEffectSuite {
       _ <- ioGitAlg.createBranch(repo, foo)
       b1 <- ioGitAlg.branchExists(repo, foo)
       b2 <- ioGitAlg.branchExists(repo, bar)
-      _ = assertEquals((b1, b2), (true, false))
+      _ <- ioGitAlg.checkoutBranch(repo, master)
+      _ <- ioGitAlg.deleteLocalBranch(repo, foo)
+      b3 <- ioGitAlg.branchExists(repo, foo)
+      _ = assertEquals((b1, b2, b3), (true, false, false))
     } yield ()
   }
 
@@ -165,6 +168,22 @@ class FileGitAlgTest extends CatsEffectSuite {
     } yield ()
   }
 
+  test("revertChanges") {
+    val repo = rootDir / "revertChanges"
+    for {
+      _ <- ioAuxGitAlg.createRepo(repo)
+      _ <- ioAuxGitAlg.createConflict(repo)
+      branch = Branch("conflicts-yes")
+      c1 <- ioGitAlg.hasConflicts(repo, branch, master)
+      d1 <- ioGitAlg.branchesDiffer(repo, master, branch)
+      _ <- ioGitAlg.checkoutBranch(repo, branch)
+      _ <- ioGitAlg.revertChanges(repo, master)
+      c2 <- ioGitAlg.hasConflicts(repo, branch, master)
+      d2 <- ioGitAlg.branchesDiffer(repo, master, branch)
+      _ = assertEquals((c1, d1, c2, d2), (true, true, false, true))
+    } yield ()
+  }
+
   test("version") {
     assertIOBoolean(ioGitAlg.version.map(_.nonEmpty))
   }
@@ -186,7 +205,7 @@ object FileGitAlgTest {
       for {
         _ <- gitAlg.removeClone(repo)
         _ <- fileAlg.ensureExists(repo)
-        _ <- git("init", ".")(repo)
+        _ <- git("init", ".", "--initial-branch", "master")(repo)
         _ <- gitAlg.setAuthor(repo, config.gitCfg.gitAuthor)
         _ <- git("commit", "--allow-empty", "-m", "Initial commit")(repo)
       } yield ()

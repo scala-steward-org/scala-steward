@@ -10,9 +10,9 @@ import org.http4s.implicits._
 import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.application.Config.VCSCfg
-import org.scalasteward.core.data.{ReleaseRelatedUrl, Update}
+import org.scalasteward.core.data.ReleaseRelatedUrl
 import org.scalasteward.core.mock.MockConfig
-import org.scalasteward.core.util.{Nel, UrlChecker}
+import org.scalasteward.core.util._
 
 class VCSExtraAlgTest extends FunSuite {
   val routes: HttpRoutes[IO] =
@@ -22,27 +22,36 @@ class VCSExtraAlgTest extends FunSuite {
       case _                                                            => NotFound()
     }
 
-  implicit val client: Client[IO] = Client.fromHttpApp[IO](routes.orNotFound)
+  implicit val client: UrlCheckerClient[IO] =
+    UrlCheckerClient[IO](Client.fromHttpApp[IO](routes.orNotFound))
   implicit val urlChecker: UrlChecker[IO] =
     UrlChecker.create[IO](MockConfig.config).unsafeRunSync()
 
-  private val updateFoo = Update.Single("com.example" % "foo" % "0.1.0", Nel.of("0.2.0"))
-  private val updateBar = Update.Single("com.example" % "bar" % "0.1.0", Nel.of("0.2.0"))
-  private val updateBuz = Update.Single("com.example" % "buz" % "0.1.0", Nel.of("0.2.0"))
+  private val updateFoo = ("com.example".g % "foo".a % "0.1.0" %> "0.2.0").single
+  private val updateBar = ("com.example".g % "bar".a % "0.1.0" %> "0.2.0").single
+  private val updateBuz = ("com.example".g % "buz".a % "0.1.0" %> "0.2.0").single
 
   test("getBranchCompareUrl: std vsc") {
     val vcsExtraAlg = VCSExtraAlg.create[IO](MockConfig.config.vcsCfg)
 
     assertEquals(
       vcsExtraAlg
-        .getReleaseRelatedUrls(uri"https://github.com/foo/foo", updateFoo)
+        .getReleaseRelatedUrls(
+          repoUrl = uri"https://github.com/foo/foo",
+          currentVersion = updateFoo.currentVersion,
+          nextVersion = updateFoo.nextVersion
+        )
         .unsafeRunSync(),
       List.empty
     )
 
     assertEquals(
       vcsExtraAlg
-        .getReleaseRelatedUrls(uri"https://github.com/foo/bar", updateBar)
+        .getReleaseRelatedUrls(
+          repoUrl = uri"https://github.com/foo/bar",
+          currentVersion = updateBar.currentVersion,
+          nextVersion = updateBar.nextVersion
+        )
         .unsafeRunSync(),
       List(
         ReleaseRelatedUrl.VersionDiff(uri"https://github.com/foo/bar/compare/v0.1.0...v0.2.0")
@@ -51,26 +60,44 @@ class VCSExtraAlgTest extends FunSuite {
 
     assertEquals(
       vcsExtraAlg
-        .getReleaseRelatedUrls(uri"https://github.com/foo/buz", updateBuz)
+        .getReleaseRelatedUrls(
+          repoUrl = uri"https://github.com/foo/buz",
+          currentVersion = updateBuz.currentVersion,
+          nextVersion = updateBuz.nextVersion
+        )
         .unsafeRunSync(),
       List.empty
     )
   }
 
   test("getBranchCompareUrl: github on prem") {
-    val config = VCSCfg(VCSType.GitHub, uri"https://github.on-prem.com/", "", doNotFork = false)
+    val config = VCSCfg(
+      VCSType.GitHub,
+      uri"https://github.on-prem.com/",
+      "",
+      doNotFork = false,
+      addLabels = false
+    )
     val githubOnPremVcsExtraAlg = VCSExtraAlg.create[IO](config)
 
     assertEquals(
       githubOnPremVcsExtraAlg
-        .getReleaseRelatedUrls(uri"https://github.on-prem.com/foo/foo", updateFoo)
+        .getReleaseRelatedUrls(
+          repoUrl = uri"https://github.on-prem.com/foo/foo",
+          currentVersion = updateFoo.currentVersion,
+          nextVersion = updateFoo.nextVersion
+        )
         .unsafeRunSync(),
       List.empty
     )
 
     assertEquals(
       githubOnPremVcsExtraAlg
-        .getReleaseRelatedUrls(uri"https://github.on-prem.com/foo/bar", updateBar)
+        .getReleaseRelatedUrls(
+          repoUrl = uri"https://github.on-prem.com/foo/bar",
+          currentVersion = updateBar.currentVersion,
+          nextVersion = updateBar.nextVersion
+        )
         .unsafeRunSync(),
       List(
         ReleaseRelatedUrl.VersionDiff(
@@ -81,7 +108,11 @@ class VCSExtraAlgTest extends FunSuite {
 
     assertEquals(
       githubOnPremVcsExtraAlg
-        .getReleaseRelatedUrls(uri"https://github.on-prem.com/foo/buz", updateFoo)
+        .getReleaseRelatedUrls(
+          repoUrl = uri"https://github.on-prem.com/foo/buz",
+          currentVersion = updateFoo.currentVersion,
+          nextVersion = updateFoo.nextVersion
+        )
         .unsafeRunSync(),
       List.empty
     )

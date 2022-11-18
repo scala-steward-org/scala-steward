@@ -8,7 +8,7 @@ sbt stage
 ./modules/core/.jvm/target/universal/stage/bin/scala-steward \
   --workspace  "$STEWARD_DIR/workspace" \
   --repos-file "$STEWARD_DIR/repos.md" \
-  --default-repo-conf "$STEWARD_DIR/default.scala-steward.conf" \
+  --repo-config "$STEWARD_DIR/default.scala-steward.conf" \
   --git-author-email ${EMAIL} \
   --vcs-api-host "https://api.github.com" \
   --vcs-login ${LOGIN} \
@@ -25,7 +25,7 @@ sbt docker:publishLocal
 docker run -v $STEWARD_DIR:/opt/scala-steward -it fthomas/scala-steward:latest \
   --workspace  "/opt/scala-steward/workspace" \
   --repos-file "/opt/scala-steward/repos.md" \
-  --default-repo-conf "/opt/scala-steward/default.scala-steward.conf" \
+  --repo-config "/opt/scala-steward/default.scala-steward.conf" \
   --git-author-email ${EMAIL} \
   --vcs-api-host "https://api.github.com" \
   --vcs-login ${LOGIN} \
@@ -90,7 +90,7 @@ example1.realm=Example Realm
 ```
 sbt
 project core
-run --do-not-fork --workspace "/path/workspace" --repos-file "/path/repos.md" --default-repo-conf "/path/default.scala-steward.conf" --git-ask-pass "/path/pass.sh" --git-author-email "email@example.org" --vcs-type "gitlab" --vcs-api-host "https://gitlab.com/api/v4/" --vcs-login "gitlab.steward"
+run --do-not-fork --workspace "/path/workspace" --repos-file "/path/repos.md" --repo-config "/path/default.scala-steward.conf" --git-ask-pass "/path/pass.sh" --git-author-email "email@example.org" --vcs-type "gitlab" --vcs-api-host "https://gitlab.com/api/v4/" --vcs-login "gitlab.steward"
 ```
 
 
@@ -112,7 +112,7 @@ docker run -v $PWD:/opt/scala-steward \
     --do-not-fork \
     --workspace "/opt/scala-steward/workspace" \
     --repos-file "/opt/scala-steward/repos.md" \
-    --default-repo-conf "/opt/scala-steward/default.scala-steward.conf" \
+    --repo-config "/opt/scala-steward/default.scala-steward.conf" \
     --git-ask-pass "/opt/scala-steward/pass.sh" \
     --git-author-email "myemail@company.xyz" \
     --vcs-type "bitbucket" \
@@ -141,7 +141,7 @@ docker run -v $PWD:/opt/scala-steward \
     --do-not-fork \
     --workspace "/opt/scala-steward/workspace" \
     --repos-file "/opt/scala-steward/repos.md" \
-    --default-repo-conf "/opt/scala-steward/default.scala-steward.conf" \
+    --repo-config "/opt/scala-steward/default.scala-steward.conf" \
     --git-ask-pass "/opt/scala-steward/pass.sh" \
     --git-author-email "myemail@company.xyz" \
     --vcs-type "bitbucket" \
@@ -199,7 +199,7 @@ There is multiple articles on how to run Scala Steward on-premise:
   
 #### GitLab
 
-The following describes a setup using GitLab Docker runner, which you have to setup seperately.
+The following describes a setup using GitLab Docker runner, which you have to set up separately.
 
 1. create a "scalasteward" user in GitLab
 2. assign that user "Developer" permissions in every project that should be managed by Scala Steward
@@ -236,7 +236,7 @@ check:
         --process-timeout 30min
         --do-not-fork
         --repos-file "$CI_PROJECT_DIR/repos.md"
-        --default-repo-conf "$CI_PROJECT_DIR/default.scala-steward.conf"
+        --repo-config "$CI_PROJECT_DIR/default.scala-steward.conf"
         --git-author-email "${EMAIL}"
         --vcs-type "gitlab"
         --vcs-api-host "${CI_API_V4_URL}"
@@ -260,6 +260,33 @@ echo "${SCALA_STEWARD_TOKEN}"
 7. add the `repos.md` file 
 8. (*optional*) create a new schedule to trigger the pipeline on a daily/weekly basis
 
+Scala Steward is compatible with Coursier authentication using headers. To authenticate
+using the [Gitlab CI/CD job token](https://docs.gitlab.com/ee/ci/jobs/ci_job_token.html), while also supporting your own private token when performing
+local development, use the following snippet:
+```scala
+import lmcoursier.CoursierConfiguration
+import lmcoursier.definitions.Authentication
+
+lazy val gitlabToken: Option[(String, String)] = {
+  //The Gitlab runner sets CI_JOB_TOKEN automatically as part of running inside a build job
+  val jobToken = sys.env.get("CI_JOB_TOKEN").map(t => ("Job-Token", t)) 
+  //When running on your local machine, set the environment variable GITLAB_PRIVATE_TOKEN
+  val privateToken = sys.env.get("GITLAB_PRIVATE_TOKEN").map(t => ("Private-Token", t))
+
+  jobToken.orElse(privateToken)
+}
+
+def addGitlabToken(current: CoursierConfiguration): CoursierConfiguration = {
+  gitlabToken.fold(current) { token =>
+    current.addRepositoryAuthentication("gitlab-repo", Authentication(Seq(token)))
+  }
+}
+
+resolvers += "gitlab-repo" at s"https://gitlab.example.com/api/v4/groups/1/-/packages/maven"
+csrConfiguration ~= addGitlabToken
+updateClassifiers / csrConfiguration ~= addGitlabToken
+updateSbtClassifiers / csrConfiguration ~= addGitlabToken
+```
 
 [scalafixmigrations]: @GITHUB_URL@/blob/@MAIN_BRANCH@/docs/scalafix-migrations.md
 [artifactmigrations]: @GITHUB_URL@/blob/@MAIN_BRANCH@/docs/artifact-migrations.md

@@ -20,7 +20,7 @@ class FileAlgTest extends FunSuite {
 
     val p = for {
       before <- ioFileAlg.readFile(file)
-      during <- ioFileAlg.createTemporarily(file, content)(ioFileAlg.readFile(file))
+      during <- ioFileAlg.createTemporarily(file, content).surround(ioFileAlg.readFile(file))
       after <- ioFileAlg.readFile(file)
     } yield (before, during, after)
 
@@ -43,7 +43,7 @@ class FileAlgTest extends FunSuite {
     val p = for {
       _ <- ioFileAlg.writeFile(file, content)
       before <- ioFileAlg.readFile(file)
-      during <- ioFileAlg.removeTemporarily(file)(ioFileAlg.readFile(file))
+      during <- ioFileAlg.removeTemporarily(file).surround(ioFileAlg.readFile(file))
       after <- ioFileAlg.readFile(file)
     } yield (before, during, after)
 
@@ -52,7 +52,7 @@ class FileAlgTest extends FunSuite {
 
   test("removeTemporarily: nonexistent file") {
     val file = mockRoot / "does-not-exists.txt"
-    assertEquals(ioFileAlg.removeTemporarily(file)(IO.pure(42)).unsafeRunSync(), 42)
+    assertEquals(ioFileAlg.removeTemporarily(file).surround(IO.pure(42)).unsafeRunSync(), 42)
   }
 
   test("editFile: nonexistent file") {

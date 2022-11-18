@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,8 +80,8 @@ final class StewardAlg[F[_]](config: Config)(implicit
       logger.attemptError.label(util.string.lineLeftRight(label), Some(label)) {
         F.guarantee(
           repoCacheAlg.checkCache(repo).flatMap { case (data, fork) =>
-            pruningAlg.needsAttention(data).flatMap { case (attentionNeeded, updates) =>
-              if (attentionNeeded) nurtureAlg.nurture(data, fork, updates) else F.unit
+            pruningAlg.needsAttention(data).flatMap {
+              _.traverse_(states => nurtureAlg.nurture(data, fork, states.map(_.update)))
             }
           },
           gitAlg.removeClone(repo)
@@ -95,13 +95,20 @@ final class StewardAlg[F[_]](config: Config)(implicit
       for {
         _ <- selfCheckAlg.checkAll
         _ <- workspaceAlg.cleanWorkspace
-        exitCode <- sbtAlg.addGlobalPlugins {
+        exitCode <- sbtAlg.addGlobalPlugins.surround {
           (config.githubApp.map(getGitHubAppRepos).getOrElse(Stream.empty) ++
             readRepos(config.reposFile))
             .evalMap(steward)
             .compile
-            .foldMonoid
-            .map(_.fold(_ => ExitCode.Error, _ => ExitCode.Success))
+            .foldSemigroup
+            .flatMap {
+              case Some(result) => result.fold(_ => ExitCode.Error, _ => ExitCode.Success).pure[F]
+              case None =>
+                val msg = "No repos specified. " +
+                  s"Check the formatting of ${config.reposFile.pathAsString}. " +
+                  s"""The format is "- $$owner/$$repo" or "- $$owner/$$repo:$$branch"."""
+                logger.warn(msg).as(ExitCode.Success)
+            }
         }
       } yield exitCode
     }

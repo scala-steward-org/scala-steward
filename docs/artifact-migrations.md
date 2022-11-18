@@ -15,13 +15,12 @@ changes = [
     groupIdBefore = com.geirsson
     groupIdAfter = org.scalameta
     artifactIdAfter = sbt-scalafmt
-    initialVersion = 2.0.0
   }
 ]
 ```
 In this example, scala-steward will look in the project for dependencies with the before group id, "com.geirsson", and 
 artifact id "sbt-scalafmt". If found, scala-steward will search for updates using the after group id, "org.scalameta", 
-artifact id "sbt-scalafmt", and version greater than the initial version, 2.0.0. If found, scala-steward will update
+artifact id "sbt-scalafmt", and version greater than the current version of the old artifact. If found, scala-steward will update
 to the after group id and latest version.
 
 The fields `groupIdBefore` and `artifactIdBefore` are optional. If just `groupIdBefore` is specified, as in the previous
@@ -30,6 +29,6 @@ will get renamed. Specifying both `groupIdBefore` and `artifactIdBefore` will re
 
 Pull requests that added artifact migrations can be found [here][migration-prs].
 
-[migrations]: https://github.com/scala-steward-org/scala-steward/blob/master/modules/core/src/main/resources/artifact-migrations.conf
+[migrations]: https://github.com/scala-steward-org/scala-steward/blob/main/modules/core/src/main/resources/artifact-migrations.v2.conf
 [migration-prs]: https://github.com/scala-steward-org/scala-steward/pulls?q=label%3Aartifact-migration
 [HOCON]: https://github.com/lightbend/config/blob/master/HOCON.md

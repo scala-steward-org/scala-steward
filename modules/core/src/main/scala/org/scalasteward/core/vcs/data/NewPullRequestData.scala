@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,24 +23,18 @@ import org.http4s.Uri
 import org.scalasteward.core.data._
 import org.scalasteward.core.edit.EditAttempt
 import org.scalasteward.core.edit.EditAttempt.ScalafixEdit
-import org.scalasteward.core.edit.scalafix.ScalafixMigration
-import org.scalasteward.core.git
-import org.scalasteward.core.git.Branch
-import org.scalasteward.core.repoconfig.RepoConfigAlg
-import org.scalasteward.core.util.Details
+import org.scalasteward.core.git.{Branch, CommitMsg}
+import org.scalasteward.core.repoconfig.{GroupRepoConfig, RepoConfigAlg}
+import org.scalasteward.core.util.{Details, Nel}
 
-final case class UpdateState(
-    state: PullRequestState
-)
-object UpdateState {
-  implicit val updateStateEncoder: Encoder[UpdateState] = deriveEncoder
-}
+import scala.util.matching.Regex
 
 final case class NewPullRequestData(
     title: String,
     body: String,
     head: String,
     base: Branch,
+    labels: List[String],
     draft: Boolean = false
 )
 
@@ -49,33 +43,60 @@ object NewPullRequestData {
     deriveEncoder
 
   def bodyFor(
-      update: Update,
+      update: AnUpdate,
       edits: List[EditAttempt],
       artifactIdToUrl: Map[String, Uri],
-      releaseRelatedUrls: List[ReleaseRelatedUrl],
-      filesWithOldVersion: List[String]
+      releaseRelatedUrls: Map[String, List[ReleaseRelatedUrl]],
+      filesWithOldVersion: List[String],
+      configParsingError: Option[String],
+      labels: List[String]
   ): String = {
-    val artifacts = artifactsWithOptionalUrl(update, artifactIdToUrl)
-    val migrations = edits.collect { case ScalafixEdit(migration, _, _) => migration }
-    val (migrationLabel, appliedMigrations) = migrationNote(migrations)
-    val (oldVersionLabel, oldVersionDetails) = oldVersionNote(filesWithOldVersion, update)
-    val details = appliedMigrations.toList ++
-      oldVersionDetails.toList ++
-      List(ignoreFutureUpdates(update))
-    val labels = List(updateType(update)) ++
-      earlySemVerLabel(update).toList ++
-      semVerSpecLabel(update).toList ++
-      migrationLabel.toList ++
-      oldVersionLabel.toList
+    val migrations = edits.collect { case scalafixEdit: ScalafixEdit => scalafixEdit }
+    val appliedMigrations = migrationNote(migrations)
+    val oldVersionDetails = oldVersionNote(filesWithOldVersion, update)
+    val details = List(
+      appliedMigrations,
+      oldVersionDetails,
+      adjustFutureUpdates(update).some,
+      configParsingError.map(configParsingErrorDetails)
+    ).flatten
 
-    s"""|Updates $artifacts ${fromTo(update)}.
-        |${releaseNote(releaseRelatedUrls).getOrElse("")}
+    val updatesText = update.on(
+      update = u => {
+        val artifacts = artifactsWithOptionalUrl(u, artifactIdToUrl)
+
+        val relatedUrls = releaseRelatedUrls.get(u.mainArtifactId).getOrElse(Nil)
+
+        s"""|Updates $artifacts ${fromTo(u)}.
+            |${releaseNote(relatedUrls).getOrElse("")}""".stripMargin.trim
+      },
+      grouped = g => {
+        val artifacts = g.updates
+          .fproduct(u => releaseRelatedUrls.get(u.mainArtifactId).orEmpty)
+          .map { case (u, relatedUrls) =>
+            s"* ${artifactsWithOptionalUrl(u, artifactIdToUrl)} ${fromTo(u)}" +
+              releaseNote(relatedUrls).map(urls => s"\n  + $urls").getOrElse("")
+          }
+          .mkString_("\n", "\n", "\n")
+
+        s"""|Updates:
+            |$artifacts""".stripMargin.trim
+      }
+    )
+
+    val skipVersionMessage = update.on(
+      _ => "If you'd like to skip this version, you can just close this PR. ",
+      _ => ""
+    )
+
+    s"""|$updatesText
+        |
         |
         |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
         |
-        |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.
+        |${skipVersionMessage}If you have any feedback, just mention me in the comments below.
         |
-        |Configure Scala Steward for your repository with a [`${RepoConfigAlg.repoConfigBasename}`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
+        |Configure Scala Steward for your repository with a [`${RepoConfigAlg.repoConfigBasename}`](${org.scalasteward.core.BuildInfo.gitHubUrl}/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
         |
         |Have a fantastic day writing Scala!
         |
@@ -85,21 +106,8 @@ object NewPullRequestData {
         |""".stripMargin.trim
   }
 
-  def updateType(update: Update): String = {
-    val dependencies = update.dependencies
-    if (dependencies.forall(_.configurations.contains("test")))
-      "test-library-update"
-    else if (dependencies.forall(_.configurations.contains("scalafix-rule")))
-      "scalafix-rule-update"
-    else if (dependencies.forall(_.sbtVersion.isDefined))
-      "sbt-plugin-update"
-    else
-      "library-update"
-  }
-
   def releaseNote(releaseRelatedUrls: List[ReleaseRelatedUrl]): Option[String] =
-    if (releaseRelatedUrls.isEmpty) None
-    else
+    Option.when(releaseRelatedUrls.nonEmpty) {
       releaseRelatedUrls
         .map {
           case ReleaseRelatedUrl.CustomChangelog(url) =>
@@ -112,7 +120,7 @@ object NewPullRequestData {
             s"[Version Diff](${url.renderString})"
         }
         .mkString(" - ")
-        .some
+    }
 
   def fromTo(update: Update): String =
     s"from ${update.currentVersion} to ${update.nextVersion}"
@@ -139,83 +147,161 @@ object NewPullRequestData {
       case None      => s"$groupId:$artifactId"
     }
 
-  def oldVersionNote(files: List[String], update: Update): (Option[String], Option[Details]) =
-    if (files.isEmpty) (None, None)
-    else
-      (
-        Some("old-version-remains"),
-        Some(
-          Details(
-            "Files still referring to the old version number",
-            s"""The following files still refer to the old version number (${update.currentVersion}).
-               |You might want to review and update them manually.
-               |```
-               |${files.mkString("\n")}
-               |```
-               |""".stripMargin.trim
-          )
-        )
+  def oldVersionNote(files: List[String], update: AnUpdate): Option[Details] =
+    Option.when(files.nonEmpty) {
+      val (number, numberWithVersion) = update.on(
+        update = u => ("number", s"number (${u.currentVersion})"),
+        grouped = _ => ("numbers", "numbers")
       )
 
-  def ignoreFutureUpdates(update: Update): Details =
+      Details(
+        s"Files still referring to the old version $number",
+        s"""The following files still refer to the old version $numberWithVersion.
+           |You might want to review and update them manually.
+           |```
+           |${files.mkString("\n")}
+           |```
+           |""".stripMargin.trim
+      )
+    }
+
+  def adjustFutureUpdates(update: AnUpdate): Details = Details(
+    "Adjust future updates",
+    update.on(
+      update = u =>
+        s"""|Add this to your `${RepoConfigAlg.repoConfigBasename}` file to ignore future updates of this dependency:
+            |```
+            |${RepoConfigAlg.configToIgnoreFurtherUpdates(u)}
+            |```
+            |Or, add this to slow down future updates of this dependency:
+            |```
+            |${GroupRepoConfig.configToSlowDownUpdatesFrequency(u)}
+            |```
+            |""".stripMargin.trim,
+      grouped = g =>
+        s"""|Add these to your `${RepoConfigAlg.repoConfigBasename}` file to ignore future updates of these dependencies:
+            |```
+            |${RepoConfigAlg.configToIgnoreFurtherUpdates(g)}
+            |```
+            |Or, add these to slow down future updates of these dependencies:
+            |```
+            |${GroupRepoConfig.configToSlowDownUpdatesFrequency(g)}
+            |```
+            |""".stripMargin.trim
+    )
+  )
+
+  def configParsingErrorDetails(error: String): Details =
     Details(
-      "Ignore future updates",
-      s"""|Add this to your `${RepoConfigAlg.repoConfigBasename}` file to ignore future updates of this dependency:
-          |```
-          |${RepoConfigAlg.configToIgnoreFurtherUpdates(update)}
+      s"Note that the Scala Steward config file `${RepoConfigAlg.repoConfigBasename}` wasn't parsed correctly",
+      s"""|```
+          |$error
           |```
           |""".stripMargin.trim
     )
 
-  def migrationNote(migrations: List[ScalafixMigration]): (Option[String], Option[Details]) =
-    if (migrations.isEmpty) (None, None)
-    else {
-      val ruleList =
-        migrations.flatMap(_.rewriteRules.toList).map(rule => s"* $rule").mkString("\n")
-      val docList = migrations.flatMap(_.doc).map(uri => s"* $uri").mkString("\n")
-      val docSection =
-        if (docList.isEmpty)
-          ""
-        else
-          s"\n\nDocumentation:\n\n$docList"
-      (
-        Some("scalafix-migrations"),
-        Some(
-          Details(
-            "Applied Migrations",
-            s"$ruleList$docSection"
-          )
-        )
-      )
+  def migrationNote(scalafixEdits: List[ScalafixEdit]): Option[Details] =
+    Option.when(scalafixEdits.nonEmpty) {
+      val body = scalafixEdits
+        .map { scalafixEdit =>
+          val migration = scalafixEdit.migration
+          val listElements =
+            (migration.rewriteRules.map(rule => s"  * $rule").toList ++ migration.doc.map(uri =>
+              s"  * Documentation: $uri"
+            )).mkString("\n")
+          val artifactName = migration.artifactIds match {
+            case Nel(one, Nil) => one
+            case multiple      => multiple.toList.mkString("{", ",", "}")
+          }
+          val name = s"${migration.groupId.value}:$artifactName:${migration.newVersion.value}"
+          val createdChange = scalafixEdit.maybeCommit.fold(" (created no change)")(_ => "")
+          s"* $name$createdChange\n$listElements"
+        }
+        .mkString("\n")
+      Details("Applied Scalafix Migrations", body)
     }
-
-  def earlySemVerLabel(update: Update): Option[String] =
-    for {
-      curr <- SemVer.parse(update.currentVersion)
-      next <- SemVer.parse(update.nextVersion)
-      change <- SemVer.getChangeEarly(curr, next)
-    } yield s"early-semver-${change.render}"
-
-  def semVerSpecLabel(update: Update): Option[String] =
-    for {
-      curr <- SemVer.parse(update.currentVersion)
-      next <- SemVer.parse(update.nextVersion)
-      change <- SemVer.getChangeSpec(curr, next)
-    } yield s"semver-spec-${change.render}"
 
   def from(
       data: UpdateData,
       branchName: String,
       edits: List[EditAttempt] = List.empty,
       artifactIdToUrl: Map[String, Uri] = Map.empty,
-      releaseRelatedUrls: List[ReleaseRelatedUrl] = List.empty,
-      filesWithOldVersion: List[String] = List.empty
-  ): NewPullRequestData =
+      releaseRelatedUrls: Map[String, List[ReleaseRelatedUrl]] = Map.empty,
+      filesWithOldVersion: List[String] = List.empty,
+      includeMatchedLabels: Option[Regex] = None
+  ): NewPullRequestData = {
+    val labels = labelsFor(data.update, edits, filesWithOldVersion, includeMatchedLabels)
     NewPullRequestData(
-      title =
-        git.commitMsgFor(data.update, data.repoConfig.commits, data.repoData.repo.branch).title,
-      body = bodyFor(data.update, edits, artifactIdToUrl, releaseRelatedUrls, filesWithOldVersion),
+      title = CommitMsg
+        .replaceVariables(data.repoConfig.commits.messageOrDefault)(
+          data.update,
+          data.repoData.repo.branch
+        )
+        .title,
+      body = bodyFor(
+        data.update,
+        edits,
+        artifactIdToUrl,
+        releaseRelatedUrls,
+        filesWithOldVersion,
+        data.repoData.cache.maybeRepoConfigParsingError,
+        labels
+      ),
       head = branchName,
-      base = data.baseBranch
+      base = data.baseBranch,
+      labels = labels
     )
+  }
+
+  def updateType(anUpdate: AnUpdate): List[String] = {
+    def forUpdate(update: Update) = {
+      val dependencies = update.dependencies
+      if (dependencies.forall(_.configurations.contains("test")))
+        "test-library-update"
+      else if (dependencies.forall(_.configurations.contains("scalafix-rule")))
+        "scalafix-rule-update"
+      else if (dependencies.forall(_.sbtVersion.isDefined))
+        "sbt-plugin-update"
+      else
+        "library-update"
+    }
+
+    anUpdate.on(u => List(forUpdate(u)), _.updates.map(forUpdate).distinct)
+  }
+
+  def labelsFor(
+      update: AnUpdate,
+      edits: List[EditAttempt],
+      filesWithOldVersion: List[String],
+      includeMatchedLabels: Option[Regex]
+  ): List[String] = {
+    val commitCount = edits.flatMap(_.commits).size
+    val commitCountLabel = "commit-count:" + (commitCount match {
+      case n if n <= 1 => s"$n"
+      case n           => s"n:$n"
+    })
+
+    def semverForUpdate(u: Update): List[String] = {
+      val semVerVersions =
+        (SemVer.parse(u.currentVersion.value), SemVer.parse(u.nextVersion.value)).tupled
+      val earlySemVerLabel = semVerVersions.flatMap { case (curr, next) =>
+        SemVer.getChangeEarly(curr, next).map(c => s"early-semver-${c.render}")
+      }
+      val semVerSpecLabel = semVerVersions.flatMap { case (curr, next) =>
+        SemVer.getChangeSpec(curr, next).map(c => s"semver-spec-${c.render}")
+      }
+      List(earlySemVerLabel, semVerSpecLabel).flatten
+    }
+    val semver: List[String] =
+      update.on(u => semverForUpdate(u), _.updates.flatMap(semverForUpdate(_)).distinct)
+
+    val scalafixLabel = edits.collectFirst { case _: ScalafixEdit => "scalafix-migrations" }
+    val oldVersionLabel = Option.when(filesWithOldVersion.nonEmpty)("old-version-remains")
+
+    val allLabels = updateType(update) ++
+      semver ++ List(scalafixLabel, oldVersionLabel).flatten ++
+      List(commitCountLabel)
+
+    allLabels.filter(label => includeMatchedLabels.fold(true)(_.matches(label)))
+  }
 }

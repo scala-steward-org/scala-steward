@@ -5,19 +5,21 @@ import cats.syntax.all._
 import eu.timepit.refined.types.numeric.NonNegInt
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.{GroupId, Update}
+import org.scalasteward.core.data.{GroupId, GroupedUpdate, SemVer}
 import org.scalasteward.core.mock.MockContext.context.repoConfigAlg
 import org.scalasteward.core.mock.MockState.TraceEntry.Log
 import org.scalasteward.core.mock.{MockConfig, MockState}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
+
 import scala.concurrent.duration._
+import cats.data.NonEmptyList
 
 class RepoConfigAlgTest extends FunSuite {
   test("default config is not empty") {
     val config = repoConfigAlg
       .readRepoConfig(Repo("repo-config-alg", "test-1"))
-      .map(repoConfigAlg.mergeWithGlobal)
+      .map(c => repoConfigAlg.mergeWithGlobal(c.flatMap(_.toOption)))
       .runA(MockState.empty)
       .unsafeRunSync()
 
@@ -28,7 +30,7 @@ class RepoConfigAlgTest extends FunSuite {
     val repo = Repo("fthomas", "scala-steward")
     val configFile = MockConfig.config.workspace / "fthomas/scala-steward/.scala-steward.conf"
     val content =
-      """|updates.allow  = [ { groupId = "eu.timepit"} ]
+      """|updates.allow  = [ { groupId = "eu.timepit" } ]
          |updates.pin  = [
          |                 { groupId = "eu.timepit", artifactId = "refined.1", version = "0.8." },
          |                 { groupId = "eu.timepit", artifactId = "refined.2", version = { prefix="0.8." } },
@@ -36,57 +38,130 @@ class RepoConfigAlgTest extends FunSuite {
          |                 { groupId = "eu.timepit", artifactId = "refined.4", version = { prefix="0.8.", suffix="jre" } }
          |               ]
          |updates.ignore = [ { groupId = "org.acme", version = "1.0" } ]
+         |updates.allowPreReleases = [ { groupId = "eu.timepit" } ]
          |updates.limit = 4
          |updates.fileExtensions = [ ".txt" ]
          |pullRequests.frequency = "@weekly"
+         |pullRequests.grouping = [
+         |  { name = "patches", "title" = "Patch updates", "filter" = [{"version" = "patch"}] },
+         |  { name = "minor_major", "title" = "Minor/major updates", "filter" = [{"version" = "minor"}, {"version" = "major"}] },
+         |  { name = "typelevel", "title" = "Typelevel updates", "filter" = [{"group" = "org.typelevel"}, {"group" = "org.http4s"}] },
+         |  { name = "my_libraries", "filter" = [{"artifact" = "my-library"}, {"artifact" = "my-other-library", "group" = "my-org"}] },
+         |  { name = "all", "filter" = [{"group" = "*"}] }
+         |]
+         |dependencyOverrides = [
+         |  { pullRequests.frequency = "@daily",   dependency = { groupId = "eu.timepit" } },
+         |  { pullRequests.frequency = "@monthly", dependency = { groupId = "eu.timepit", artifactId = "refined.1" } },
+         |  { pullRequests.frequency = "@weekly",  dependency = { groupId = "eu.timepit", artifactId = "refined.1", version = { prefix="1." } } },
+         |]
          |commits.message = "Update ${artifactName} from ${currentVersion} to ${nextVersion}"
          |buildRoots = [ ".", "subfolder/subfolder" ]
          |""".stripMargin
     val initialState = MockState.empty.addFiles(configFile -> content).unsafeRunSync()
     val config = repoConfigAlg
       .readRepoConfig(repo)
-      .map(_.getOrElse(RepoConfig.empty))
+      .map(_.getOrElse(Right(RepoConfig.empty)))
       .runA(initialState)
       .unsafeRunSync()
 
     val expected = RepoConfig(
-      pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(7.days))),
+      pullRequests = PullRequestsConfig(
+        frequency = Some(PullRequestFrequency.Timespan(7.days)),
+        grouping = List(
+          PullRequestGroup(
+            name = "patches",
+            title = "Patch updates".some,
+            filter = NonEmptyList.of(
+              PullRequestUpdateFilter(None, None, SemVer.Change.Patch.some)
+                .getOrElse(fail("Should not be called"))
+            )
+          ),
+          PullRequestGroup(
+            name = "minor_major",
+            title = "Minor/major updates".some,
+            filter = NonEmptyList.of(
+              PullRequestUpdateFilter(None, None, SemVer.Change.Minor.some)
+                .getOrElse(fail("Should not be called")),
+              PullRequestUpdateFilter(None, None, SemVer.Change.Major.some)
+                .getOrElse(fail("Should not be called"))
+            )
+          ),
+          PullRequestGroup(
+            name = "typelevel",
+            title = "Typelevel updates".some,
+            filter = NonEmptyList.of(
+              PullRequestUpdateFilter("org.typelevel".some).getOrElse(fail("Should not be called")),
+              PullRequestUpdateFilter("org.http4s".some).getOrElse(fail("Should not be called"))
+            )
+          ),
+          PullRequestGroup(
+            name = "my_libraries",
+            filter = NonEmptyList.of(
+              PullRequestUpdateFilter(None, "my-library".some)
+                .getOrElse(fail("Should not be called")),
+              PullRequestUpdateFilter("my-org".some, "my-other-library".some)
+                .getOrElse(fail("Should not be called"))
+            )
+          ),
+          PullRequestGroup(
+            name = "all",
+            filter = NonEmptyList.of(
+              PullRequestUpdateFilter("*".some).getOrElse(fail("Should not be called"))
+            )
+          )
+        )
+      ),
       updates = UpdatesConfig(
-        allow = List(UpdatePattern(GroupId("eu.timepit"), None, None)),
+        allow = List(UpdatePattern("eu.timepit".g, None, None)),
         pin = List(
+          UpdatePattern("eu.timepit".g, Some("refined.1"), Some(VersionPattern(Some("0.8.")))),
+          UpdatePattern("eu.timepit".g, Some("refined.2"), Some(VersionPattern(Some("0.8.")))),
           UpdatePattern(
-            GroupId("eu.timepit"),
-            Some("refined.1"),
-            Some(UpdatePattern.Version(Some("0.8.")))
-          ),
-          UpdatePattern(
-            GroupId("eu.timepit"),
-            Some("refined.2"),
-            Some(UpdatePattern.Version(Some("0.8.")))
-          ),
-          UpdatePattern(
-            GroupId("eu.timepit"),
+            "eu.timepit".g,
             Some("refined.3"),
-            Some(UpdatePattern.Version(suffix = Some("jre")))
+            Some(VersionPattern(suffix = Some("jre")))
           ),
           UpdatePattern(
-            GroupId("eu.timepit"),
+            "eu.timepit".g,
             Some("refined.4"),
-            Some(UpdatePattern.Version(Some("0.8."), Some("jre")))
+            Some(VersionPattern(Some("0.8."), Some("jre")))
           )
         ),
-        ignore = List(
-          UpdatePattern(GroupId("org.acme"), None, Some(UpdatePattern.Version(Some("1.0"))))
-        ),
+        ignore = List(UpdatePattern("org.acme".g, None, Some(VersionPattern(Some("1.0"))))),
+        allowPreReleases = List(UpdatePattern("eu.timepit".g, None, None)),
         limit = Some(NonNegInt.unsafeFrom(4)),
         fileExtensions = Some(List(".txt"))
       ),
       commits = CommitsConfig(
         message = Some("Update ${artifactName} from ${currentVersion} to ${nextVersion}")
       ),
-      buildRoots = Some(List(BuildRootConfig.repoRoot, BuildRootConfig("subfolder/subfolder")))
+      buildRoots = Some(List(BuildRootConfig.repoRoot, BuildRootConfig("subfolder/subfolder"))),
+      dependencyOverrides = List(
+        GroupRepoConfig(
+          dependency = UpdatePattern(GroupId("eu.timepit"), None, None),
+          pullRequests = PullRequestsConfig(
+            frequency = Some(PullRequestFrequency.Timespan(1.day))
+          )
+        ),
+        GroupRepoConfig(
+          dependency = UpdatePattern(GroupId("eu.timepit"), Some("refined.1"), None),
+          pullRequests = PullRequestsConfig(
+            frequency = Some(PullRequestFrequency.Timespan(30.days))
+          )
+        ),
+        GroupRepoConfig(
+          dependency = UpdatePattern(
+            GroupId("eu.timepit"),
+            Some("refined.1"),
+            Some(VersionPattern(prefix = Some("1.")))
+          ),
+          pullRequests = PullRequestsConfig(
+            frequency = Some(PullRequestFrequency.Timespan(7.days))
+          )
+        )
+      )
     )
-    assertEquals(config, expected)
+    assertEquals(config, Right(expected))
   }
 
   test("config with 'updatePullRequests = false'") {
@@ -177,29 +252,96 @@ class RepoConfigAlgTest extends FunSuite {
       MockState.empty.addFiles(configFile -> """updates.ignore = [ "foo """).unsafeRunSync()
     val (state, config) = repoConfigAlg.readRepoConfig(repo).runSA(initialState).unsafeRunSync()
 
-    assertEquals(config, None)
+    val startOfErrorMsg = "String: 1: List should have ]"
+    val expectedErrorMsg = Some(Left(startOfErrorMsg))
+    val obtainedConfig = config.map(_.leftMap(_.getMessage.take(startOfErrorMsg.length)))
+
+    assertEquals(obtainedConfig, expectedErrorMsg)
+
     val log = state.trace.collectFirst { case Log((_, msg)) => msg }.getOrElse("")
-    assert(clue(log).startsWith("Failed to parse .scala-steward.conf"))
+    assert(clue(log).contains(startOfErrorMsg))
   }
 
   test("configToIgnoreFurtherUpdates with single update") {
-    val update = Update.Single("a" % "b" % "c", Nel.of("d"))
-    val config = RepoConfigAlg
-      .parseRepoConfig(RepoConfigAlg.configToIgnoreFurtherUpdates(update))
-      .getOrElse(RepoConfig())
-    val expected = RepoConfig(updates =
-      UpdatesConfig(ignore = List(UpdatePattern(GroupId("a"), Some("b"), None)))
-    )
-    assertEquals(config, expected)
-  }
-
-  test("configToIgnoreFurtherUpdates with group update") {
-    val update = Update.Group("a" % Nel.of("b", "e") % "c", Nel.of("d"))
+    val update = ("a".g % "b".a % "c" %> "d").single
     val config = RepoConfigAlg
       .parseRepoConfig(RepoConfigAlg.configToIgnoreFurtherUpdates(update))
       .getOrElse(RepoConfig())
     val expected =
-      RepoConfig(updates = UpdatesConfig(ignore = List(UpdatePattern(GroupId("a"), None, None))))
+      RepoConfig(updates = UpdatesConfig(ignore = List(UpdatePattern("a".g, Some("b"), None))))
     assertEquals(config, expected)
+  }
+
+  test("configToIgnoreFurtherUpdates with group update") {
+    val update = ("a".g % Nel.of("b".a, "e".a) % "c" %> "d").group
+    val config = RepoConfigAlg
+      .parseRepoConfig(RepoConfigAlg.configToIgnoreFurtherUpdates(update))
+      .getOrElse(RepoConfig())
+    val expected =
+      RepoConfig(updates = UpdatesConfig(ignore = List(UpdatePattern("a".g, None, None))))
+    assertEquals(config, expected)
+  }
+
+  test("configToIgnoreFurtherUpdates with grouped update") {
+    val update1 = ("a".g % "b".a % "1" %> "2").single
+    val update2 = ("c".g % "d".a % "1" %> "2").single
+    val update = GroupedUpdate("my-group", None, List(update1, update2))
+    val config = RepoConfigAlg
+      .parseRepoConfig(RepoConfigAlg.configToIgnoreFurtherUpdates(update))
+      .getOrElse(RepoConfig())
+    val expected = RepoConfig(updates =
+      UpdatesConfig(ignore =
+        List(
+          UpdatePattern(groupId = "a".g, artifactId = "b".some, None),
+          UpdatePattern(groupId = "c".g, artifactId = "d".some, None)
+        )
+      )
+    )
+    assertEquals(config, expected)
+  }
+
+  test("config with postUpdateHook without group and artifact id") {
+    val content =
+      """|postUpdateHooks = [{
+         |  command = ["sbt", "mySbtCommand"]
+         |  commitMessage = "Updated with a hook!"
+         |  }]
+         |""".stripMargin
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    val expected = RepoConfig(
+      postUpdateHooks = List(
+        PostUpdateHookConfig(
+          groupId = None,
+          artifactId = None,
+          command = Nel.of("sbt", "mySbtCommand"),
+          commitMessage = "Updated with a hook!"
+        )
+      ).some
+    )
+
+    assertEquals(config, Right(expected))
+  }
+
+  test("config with postUpdateHook with group and artifact id") {
+    val content =
+      """|postUpdateHooks = [{
+         |  groupId = "eu.timepit"
+         |  artifactId = "refined.1"
+         |  command = ["sbt", "mySbtCommand"]
+         |  commitMessage = "Updated with a hook!"
+         |  }]
+         |""".stripMargin
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    val expected = RepoConfig(
+      postUpdateHooks = List(
+        PostUpdateHookConfig(
+          groupId = Some("eu.timepit".g),
+          artifactId = Some("refined.1"),
+          command = Nel.of("sbt", "mySbtCommand"),
+          commitMessage = "Updated with a hook!"
+        )
+      ).some
+    )
+    assertEquals(config, Right(expected))
   }
 }

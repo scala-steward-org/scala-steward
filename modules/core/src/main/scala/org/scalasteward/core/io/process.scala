@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,13 +42,10 @@ object process {
   )(implicit F: Async[F]): F[List[String]] =
     createProcess(args).flatMap { process =>
       F.delay(new ListBuffer[String]).flatMap { buffer =>
-        val readOut = {
-          val out = readInputStream[F](process.getInputStream)
-          out
-            .evalMap(line => F.delay(appendBounded(buffer, line, maxBufferSize)) >> log(line))
-            .compile
-            .drain
-        }
+        val readOut = readInputStream[F](process.getInputStream)
+          .evalMap(line => F.delay(appendBounded(buffer, line, maxBufferSize)) >> log(line))
+          .compile
+          .drain
 
         val result = readOut >> F.blocking(process.waitFor()) >>= { exitValue =>
           if (exitValue === 0) F.pure(buffer.toList)
@@ -63,7 +60,7 @@ object process {
           F.raiseError[List[String]](new TimeoutException(makeMessage(msg, buffer.toList)))
         }
 
-        F.timeoutTo(result, timeout, fallback)
+        F.timeoutAndForget(result, timeout).recoverWith { case _: TimeoutException => fallback }
       }
     }
 

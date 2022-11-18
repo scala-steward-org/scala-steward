@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ final class ScalafmtAlg[F[_]](config: Config)(implicit
       .value
 
   def reformatChanged(repo: Repo): F[Unit] = {
-    val cmd = Nel.of(scalafmtBinary, opts.nonInteractive, opts.quiet) ++ opts.modeChanged
+    val cmd = Nel.of(scalafmtBinary, opts.nonInteractive) ++ opts.modeChanged
     workspaceAlg.repoDir(repo).flatMap(processAlg.exec(cmd, _)).void
   }
 
@@ -66,12 +66,11 @@ object ScalafmtAlg {
   object opts {
     val modeChanged = List("--mode", "changed")
     val nonInteractive = "--non-interactive"
-    val quiet = "--quiet"
     val version = "--version"
   }
 
   val postUpdateHookCommand: Nel[String] =
-    Nel.of(scalafmtBinary, opts.nonInteractive, opts.quiet)
+    Nel.of(scalafmtBinary, opts.nonInteractive)
 
   private[scalafmt] def parseScalafmtConf(s: String): Either[ParsingFailure, Option[Version]] =
     io.circe.config.parser.parse(s).map {

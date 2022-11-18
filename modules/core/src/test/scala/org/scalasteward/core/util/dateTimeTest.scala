@@ -13,7 +13,7 @@ class dateTimeTest extends ScalaCheckSuite {
   }
 
   def parseFiniteDurationRoundTrips(fd: FiniteDuration): Unit =
-    parseFiniteDuration(fd.toString).fold(t => throw t, approxEq(_, fd))
+    parseFiniteDuration(renderFiniteDuration(fd)).fold(t => throw t, approxEq(_, fd))
 
   property("parseFiniteDuration") {
     forAll((d: FiniteDuration) => parseFiniteDurationRoundTrips(d))
@@ -23,9 +23,13 @@ class dateTimeTest extends ScalaCheckSuite {
     parseFiniteDurationRoundTrips(-6340054257704093L.microseconds)
   }
 
+  test("parseFiniteDuration: invalid input") {
+    assert(clue(parseFiniteDuration("Inf").isLeft))
+  }
+
   test("showDuration: example 1") {
     val d = 2.days + 20.hours + 37.minutes + 3.seconds + 586.millis + 491.micros + 264.nanos
-    assertEquals(showDuration(d), "2d 20h 37m 3s 586ms 491µs 264ns")
+    assertEquals(showDuration(d), "2d 20h 37m")
   }
 
   test("showDuration: example 2") {

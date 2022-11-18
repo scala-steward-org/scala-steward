@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,36 +16,29 @@
 
 package org.scalasteward.core
 
-import cats.syntax.all._
-import org.scalasteward.core.data.Update
+import org.scalasteward.core.data.{AnUpdate, GroupedUpdate, Update}
 import org.scalasteward.core.repoconfig.CommitsConfig
-import org.scalasteward.core.update.show
 import org.scalasteward.core.vcs.data.Repo
 
 package object git {
   type GitAlg[F[_]] = GenGitAlg[F, Repo]
 
-  def branchFor(update: Update, baseBranch: Option[Branch]): Branch = {
+  val gitBlameIgnoreRevsName = ".git-blame-ignore-revs"
+
+  val updateBranchPrefix = "update"
+
+  def branchFor(update: AnUpdate, baseBranch: Option[Branch]): Branch = {
     val base = baseBranch.fold("")(branch => s"${branch.name}/")
-    Branch(s"update/$base${update.name}-${update.nextVersion}")
+    update match {
+      case g: GroupedUpdate => Branch(s"$updateBranchPrefix/$base${g.name}")
+      case u: Update        => Branch(s"$updateBranchPrefix/$base${u.name}-${u.nextVersion}")
+    }
   }
 
   def commitMsgFor(
       update: Update,
       commitsConfig: CommitsConfig,
       branch: Option[Branch]
-  ): CommitMsg = {
-    val artifact = show.oneLiner(update)
-    val defaultMessage = branch match {
-      case Some(value) => s"Update $artifact to ${update.nextVersion} in ${value.name}"
-      case None        => s"Update $artifact to ${update.nextVersion}"
-    }
-    val title = commitsConfig.messageOrDefault
-      .replace("${default}", defaultMessage)
-      .replace("${artifactName}", artifact)
-      .replace("${currentVersion}", update.currentVersion)
-      .replace("${nextVersion}", update.nextVersion)
-      .replace("${branchName}", branch.map(_.name).orEmpty)
-    CommitMsg(title)
-  }
+  ): CommitMsg =
+    CommitMsg.replaceVariables(commitsConfig.messageOrDefault)(update, branch)
 }

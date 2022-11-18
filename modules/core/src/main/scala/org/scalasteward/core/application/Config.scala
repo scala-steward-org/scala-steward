@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,10 @@
 package org.scalasteward.core.application
 
 import better.files.File
+import cats.Monad
 import cats.syntax.all._
-import cats.{Apply, Monad}
 import org.http4s.Uri
 import org.http4s.Uri.UserInfo
-import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.Config._
 import org.scalasteward.core.data.Resolver
@@ -67,7 +66,7 @@ final case class Config(
     bitbucketServerCfg: BitbucketServerCfg,
     gitLabCfg: GitLabCfg,
     githubApp: Option[GitHubApp],
-    urlCheckerTestUrl: Uri,
+    urlCheckerTestUrls: Nel[Uri],
     defaultResolver: Resolver,
     refreshBackoffPeriod: FiniteDuration
 ) {
@@ -97,7 +96,8 @@ object Config {
       tpe: VCSType,
       apiHost: Uri,
       login: String,
-      doNotFork: Boolean
+      doNotFork: Boolean,
+      addLabels: Boolean
   )
 
   final case class ProcessCfg(
@@ -133,59 +133,13 @@ object Config {
   )
 
   final case class GitLabCfg(
-      mergeWhenPipelineSucceeds: Boolean
+      mergeWhenPipelineSucceeds: Boolean,
+      requiredReviewers: Option[Int]
   )
 
-  def from(args: Cli.Args): Config =
-    Config(
-      workspace = args.workspace,
-      reposFile = args.reposFile,
-      gitCfg = GitCfg(
-        gitAuthor = Author(args.gitAuthorName, args.gitAuthorEmail, args.gitAuthorSigningKey),
-        gitAskPass = args.gitAskPass,
-        signCommits = args.signCommits
-      ),
-      vcsCfg = VCSCfg(
-        tpe = args.vcsType,
-        apiHost = args.vcsApiHost,
-        login = args.vcsLogin,
-        doNotFork = args.doNotFork
-      ),
-      ignoreOptsFiles = args.ignoreOptsFiles,
-      processCfg = ProcessCfg(
-        envVars = args.envVar,
-        processTimeout = args.processTimeout,
-        maxBufferSize = args.maxBufferSize,
-        sandboxCfg = SandboxCfg(
-          whitelistedDirectories = args.whitelist,
-          readOnlyDirectories = args.readOnly,
-          enableSandbox = args.enableSandbox.getOrElse(!args.disableSandbox)
-        )
-      ),
-      repoConfigCfg = RepoConfigCfg(
-        repoConfigs = args.repoConfig,
-        disableDefault = args.disableDefaultRepoConfig
-      ),
-      scalafixCfg = ScalafixCfg(
-        migrations = args.scalafixMigrations,
-        disableDefaults = args.disableDefaultScalafixMigrations
-      ),
-      artifactCfg = ArtifactCfg(
-        migrations = args.artifactMigrations,
-        disableDefaults = args.disableDefaultArtifactMigrations
-      ),
-      cacheTtl = args.cacheTtl,
-      bitbucketServerCfg = BitbucketServerCfg(
-        useDefaultReviewers = args.bitbucketServerUseDefaultReviewers
-      ),
-      gitLabCfg = GitLabCfg(
-        mergeWhenPipelineSucceeds = args.gitlabMergeWhenPipelineSucceeds
-      ),
-      githubApp = Apply[Option].map2(args.githubAppId, args.githubAppKeyFile)(GitHubApp.apply),
-      urlCheckerTestUrl = args.urlCheckerTestUrl.getOrElse(uri"https://github.com"),
-      defaultResolver = args.defaultMavenRepo
-        .map(url => Resolver.MavenRepository("default", url, None))
-        .getOrElse(Resolver.mavenCentral),
-      refreshBackoffPeriod = args.refreshBackoffPeriod
-    )
+  sealed trait StewardUsage
+  object StewardUsage {
+    final case class Regular(config: Config) extends StewardUsage
+    final case class ValidateRepoConfig(file: File) extends StewardUsage
+  }
 }

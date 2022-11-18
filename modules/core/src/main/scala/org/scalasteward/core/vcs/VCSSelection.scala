@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,10 @@ final class VCSSelection[F[_]](config: Config, user: AuthenticatedUser)(implicit
     F: MonadThrow[F]
 ) {
   private def gitHubApiAlg: GitHubApiAlg[F] =
-    new GitHubApiAlg[F](config.vcsCfg.apiHost, _ => github.authentication.addCredentials(user))
+    new GitHubApiAlg[F](
+      config.vcsCfg.apiHost,
+      _ => github.authentication.addCredentials(user)
+    )
 
   private def gitLabApiAlg: GitLabApiAlg[F] =
     new GitLabApiAlg[F](

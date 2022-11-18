@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,10 +62,10 @@ final class SelfCheckAlg[F[_]](config: Config)(implicit
     s"Failed to execute $binary  -- make sure it is on the PATH; following the detailed exception:"
 
   private def checkUrlChecker: F[Unit] =
-    for {
-      res <- urlChecker.exists(config.urlCheckerTestUrl)
-      url = config.urlCheckerTestUrl
-      msg = s"Self check of UrlChecker failed: checking that $url exists failed"
-      _ <- if (!res) logger.warn(msg) else F.unit
-    } yield ()
+    config.urlCheckerTestUrls.traverse_ { url =>
+      urlChecker.exists(url).flatMap { urlExists =>
+        val msg = s"Self check of UrlChecker failed: checking that $url exists failed"
+        F.whenA(!urlExists)(logger.warn(msg))
+      }
+    }
 }

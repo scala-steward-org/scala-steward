@@ -9,6 +9,7 @@ import org.http4s.circe._
 import org.http4s.client.Client
 import org.http4s.dsl.io._
 import org.http4s.implicits._
+import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.git._
 import org.scalasteward.core.mock.MockConfig.config
@@ -262,7 +263,8 @@ class BitbucketApiAlgTest extends FunSuite {
       "scala-steward-pr",
       "body",
       "master",
-      master
+      master,
+      Nil
     )
     val pr = bitbucketApiAlg.createPullRequest(repo, data).unsafeRunSync()
     assertEquals(pr, pullRequest)

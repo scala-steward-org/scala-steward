@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import cats.{Id, Monad}
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 import org.http4s.Uri
-import org.scalasteward.core.data.{CrossDependency, Update, Version}
+import org.scalasteward.core.data.{AnUpdate, CrossDependency, GroupId, Update, Version}
 import org.scalasteward.core.git
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.nurture.PullRequestRepository.Entry
@@ -69,33 +69,27 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
   def getObsoleteOpenPullRequests(repo: Repo, update: Update): F[List[PullRequestData[Id]]] =
     kvStore.getOrElse(repo, Map.empty).map {
       _.collect {
-        case (url, entry)
-            if entry.state === PullRequestState.Open &&
-              entry.update.withNewerVersions(update.newerVersions) === update &&
-              Version(entry.update.nextVersion) < Version(update.nextVersion) =>
+        case (url, Entry(baseSha1, u: Update, state, _, number, updateBranch))
+            if state === PullRequestState.Open &&
+              u.withNewerVersions(update.newerVersions) === update &&
+              u.nextVersion < update.nextVersion =>
           for {
-            number <- entry.number
-            updateBranch = entry.updateBranch.getOrElse(git.branchFor(entry.update, repo.branch))
-          } yield PullRequestData[Id](
-            url,
-            entry.baseSha1,
-            entry.update,
-            entry.state,
-            number,
-            updateBranch
-          )
+            number <- number
+            branch = updateBranch.getOrElse(git.branchFor(u, repo.branch))
+          } yield PullRequestData[Id](url, baseSha1, u, state, number, branch)
       }.flatten.toList.sortBy(_.number.value)
     }
 
   def findLatestPullRequest(
       repo: Repo,
       crossDependency: CrossDependency,
-      newVersion: String
+      newVersion: Version
   ): F[Option[PullRequestData[Option]]] =
     kvStore.getOrElse(repo, Map.empty).map {
-      _.filter { case (_, entry) =>
-        UpdateAlg.isUpdateFor(entry.update, crossDependency) &&
-          entry.update.nextVersion === newVersion
+      _.filter {
+        case (_, Entry(_, u: Update, _, _, _, _)) =>
+          UpdateAlg.isUpdateFor(u, crossDependency) && u.nextVersion === newVersion
+        case _ => false
       }
         .maxByOption { case (_, entry) => entry.entryCreatedAt.millis }
         .map { case (url, entry) =>
@@ -112,12 +106,26 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
 
   def lastPullRequestCreatedAt(repo: Repo): F[Option[Timestamp]] =
     kvStore.get(repo).map(_.flatMap(_.values.map(_.entryCreatedAt).maxOption))
+
+  def lastPullRequestCreatedAtByArtifact(repo: Repo): F[Map[(GroupId, String), Timestamp]] =
+    kvStore.get(repo).map {
+      case None => Map.empty
+      case Some(pullRequests) =>
+        pullRequests.values
+          .collect { case Entry(_, u: Update, _, entryCreatedAt, _, _) =>
+            (u.groupId, u.mainArtifactId, entryCreatedAt)
+          }
+          .groupBy { case (groupId, mainArtifactId, _) => (groupId, mainArtifactId) }
+          .view
+          .mapValues(_.map { case (_, _, createdAt) => createdAt }.max)
+          .toMap
+    }
 }
 
 object PullRequestRepository {
   final case class Entry(
       baseSha1: Sha1,
-      update: Update,
+      update: AnUpdate,
       state: PullRequestState,
       entryCreatedAt: Timestamp,
       number: Option[PullRequestNumber],

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 Scala Steward contributors
+ * Copyright 2018-2022 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,8 @@ trait UrlChecker[F[_]] {
   def exists(url: Uri): F[Boolean]
 }
 
+final case class UrlCheckerClient[F[_]](client: Client[F]) extends AnyVal
+
 object UrlChecker {
   private def buildCache[F[_]](config: Config)(implicit
       F: Sync[F]
@@ -44,7 +46,7 @@ object UrlChecker {
     }
 
   def create[F[_]](config: Config)(implicit
-      client: Client[F],
+      urlCheckerClient: UrlCheckerClient[F],
       logger: Logger[F],
       F: Sync[F]
   ): F[UrlChecker[F]] =
@@ -57,7 +59,7 @@ object UrlChecker {
 
         private def status(url: Uri): F[Status] =
           statusCache.cachingF(url.renderString)(None) {
-            client.status(Request[F](method = Method.HEAD, uri = url))
+            urlCheckerClient.client.status(Request[F](method = Method.HEAD, uri = url))
           }
       }
     }
