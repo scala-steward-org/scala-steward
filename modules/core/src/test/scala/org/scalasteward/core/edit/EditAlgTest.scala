@@ -286,6 +286,26 @@ class EditAlgTest extends FunSuite {
     assertEquals(runApplyUpdate(Repo("edit-alg", "test-10"), update, original), expected)
   }
 
+  test("Files under .github yml should be updated") {
+    val update = ("org.scala-lang".g % "scala-library".a % "3.1.3-RC2" %> "3.1.3-RC3").single
+
+    val original = Map(
+      ".github/workflows/ci.yml" ->
+        """tests:
+          |    with:
+          |      scala: 2.12.15, 2.13.8, 3.1.3-RC2
+          |"""".stripMargin
+    )
+    val expected = Map(
+      ".github/workflows/ci.yml" ->
+        """tests:
+          |    with:
+          |      scala: 2.12.15, 2.13.8, 3.1.3-RC3
+          |"""".stripMargin
+    )
+    assertEquals(runApplyUpdate(Repo("edit-alg", "test-8"), update, original), expected)
+  }
+
   private def runApplyUpdate(
       repo: Repo,
       update: Update,
