@@ -65,7 +65,7 @@ jobs:
         run: sbt ++${{ matrix.scala }} validate
 
       - name: Codecov
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
 
       - name: Compress target directories
         run: tar cf targets.tar target modules/docs/.jvm/target modules/mill-plugin/.jvm/target modules/sbt-plugin/.jvm/target modules/core/.jvm/target modules/benchmark/.jvm/target project/target
