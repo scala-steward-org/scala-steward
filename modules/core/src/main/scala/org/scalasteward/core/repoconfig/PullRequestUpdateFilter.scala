@@ -33,7 +33,7 @@ final case class PullRequestUpdateFilter private (
   /**
     * Returns `true` if an update falls into this filter; returns `false` otherwise.
     */
-  def matches(update: Update.Single): Boolean =
+  def matches(update: Update.ForArtifactId): Boolean =
     groupRegex.forall(_.matches(update.groupId.value)) &&
       artifactRegex.forall(_.matches(update.mainArtifactId)) &&
       version.forall(isMatchedVersion(_, update))
@@ -46,7 +46,7 @@ final case class PullRequestUpdateFilter private (
     new Regex(pattern)
   }
 
-  private def isMatchedVersion(versionType: SemVer.Change, update: Update.Single): Boolean =
+  private def isMatchedVersion(versionType: SemVer.Change, update: Update.ForArtifactId): Boolean =
     (SemVer.parse(update.currentVersion.value), SemVer.parse(update.nextVersion.value)).tupled
       .flatMap { case (current, next) => SemVer.getChangeEarly(current, next) }
       .map(_.render === versionType.render)

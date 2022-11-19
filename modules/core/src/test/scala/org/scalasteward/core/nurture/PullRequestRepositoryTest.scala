@@ -5,7 +5,7 @@ import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.http4s.syntax.literals._
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.GroupedUpdate
+import org.scalasteward.core.data.Update
 import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.mock.MockConfig.config
@@ -142,7 +142,7 @@ class PullRequestRepositoryTest extends FunSuite {
   test("findLatestPullRequest ignores grouped updates") {
     val repo = Repo("pr-repo-test", "repo5")
     val update = portableScala
-    val grouped = GroupedUpdate("group", None, List(update))
+    val grouped = Update.Grouped("group", None, List(update))
     val data = PullRequestData[Id](url, sha1, grouped, Open, number, branch)
 
     val p = for {
@@ -168,7 +168,7 @@ class PullRequestRepositoryTest extends FunSuite {
   test("lastPullRequestCreatedAt returns timestamp for grouped updates") {
     val repo = Repo("pr-repo-test", "repo7")
     val update = catsCore
-    val grouped = GroupedUpdate("group", None, List(update))
+    val grouped = Update.Grouped("group", None, List(update))
     val data = PullRequestData[Id](url, sha1, grouped, Open, number, branch)
 
     val p = for {

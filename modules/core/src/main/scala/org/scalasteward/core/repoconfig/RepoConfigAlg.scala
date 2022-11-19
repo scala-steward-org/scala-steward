@@ -20,7 +20,7 @@ import better.files.File
 import cats.MonadThrow
 import cats.syntax.all._
 import io.circe.config.parser
-import org.scalasteward.core.data.{AnUpdate, Update}
+import org.scalasteward.core.data.Update
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.repoconfig.RepoConfigAlg._
 import org.scalasteward.core.vcs.data.Repo
@@ -60,11 +60,11 @@ object RepoConfigAlg {
   def parseRepoConfig(input: String): Either[io.circe.Error, RepoConfig] =
     parser.decode[RepoConfig](input)
 
-  def configToIgnoreFurtherUpdates(update: AnUpdate): String = {
-    val forUpdate: Update => String = {
-      case s: Update.Single =>
+  def configToIgnoreFurtherUpdates(update: Update): String = {
+    val forUpdate: Update.Single => String = {
+      case s: Update.ForArtifactId =>
         s"""{ groupId = "${s.groupId}", artifactId = "${s.artifactId.name}" }""".stripMargin
-      case g: Update.Group =>
+      case g: Update.ForGroupId =>
         s"""{ groupId = "${g.groupId}" }""".stripMargin
     }
 

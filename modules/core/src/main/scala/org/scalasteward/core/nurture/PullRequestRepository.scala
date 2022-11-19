@@ -21,7 +21,7 @@ import cats.{Id, Monad}
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 import org.http4s.Uri
-import org.scalasteward.core.data.{AnUpdate, CrossDependency, GroupId, Update, Version}
+import org.scalasteward.core.data.{CrossDependency, GroupId, Update, Version}
 import org.scalasteward.core.git
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.nurture.PullRequestRepository.Entry
@@ -66,10 +66,10 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
       }
       .void
 
-  def getObsoleteOpenPullRequests(repo: Repo, update: Update): F[List[PullRequestData[Id]]] =
+  def getObsoleteOpenPullRequests(repo: Repo, update: Update.Single): F[List[PullRequestData[Id]]] =
     kvStore.getOrElse(repo, Map.empty).map {
       _.collect {
-        case (url, Entry(baseSha1, u: Update, state, _, number, updateBranch))
+        case (url, Entry(baseSha1, u: Update.Single, state, _, number, updateBranch))
             if state === PullRequestState.Open &&
               u.withNewerVersions(update.newerVersions) === update &&
               u.nextVersion < update.nextVersion =>
@@ -87,7 +87,7 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
   ): F[Option[PullRequestData[Option]]] =
     kvStore.getOrElse(repo, Map.empty).map {
       _.filter {
-        case (_, Entry(_, u: Update, _, _, _, _)) =>
+        case (_, Entry(_, u: Update.Single, _, _, _, _)) =>
           UpdateAlg.isUpdateFor(u, crossDependency) && u.nextVersion === newVersion
         case _ => false
       }
@@ -112,7 +112,7 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
       case None => Map.empty
       case Some(pullRequests) =>
         pullRequests.values
-          .collect { case Entry(_, u: Update, _, entryCreatedAt, _, _) =>
+          .collect { case Entry(_, u: Update.Single, _, entryCreatedAt, _, _) =>
             (u.groupId, u.mainArtifactId, entryCreatedAt)
           }
           .groupBy { case (groupId, mainArtifactId, _) => (groupId, mainArtifactId) }
@@ -125,7 +125,7 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
 object PullRequestRepository {
   final case class Entry(
       baseSha1: Sha1,
-      update: AnUpdate,
+      update: Update,
       state: PullRequestState,
       entryCreatedAt: Timestamp,
       number: Option[PullRequestNumber],

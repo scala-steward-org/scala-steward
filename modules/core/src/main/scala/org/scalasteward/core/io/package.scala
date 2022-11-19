@@ -24,12 +24,12 @@ import org.scalasteward.core.data.Update
 import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtConfName, scalafmtGroupId}
 
 package object io {
-  def isSourceFile(update: Update, fileExtensions: Set[String])(file: File): Boolean = {
+  def isSourceFile(update: Update.Single, fileExtensions: Set[String])(file: File): Boolean = {
     val notInGitDir = !file.pathAsString.contains(".git/")
     notInGitDir && isSpecificOrGenericSourceFile(update, fileExtensions)(file)
   }
 
-  private def isSpecificOrGenericSourceFile(update: Update, fileExtensions: Set[String])(
+  private def isSpecificOrGenericSourceFile(update: Update.Single, fileExtensions: Set[String])(
       file: File
   ): Boolean =
     () match {
@@ -42,11 +42,11 @@ package object io {
   private def isGenericSourceFile(file: File, fileExtensions: Set[String]): Boolean =
     fileExtensions.exists(file.name.endsWith)
 
-  private def isSbtUpdate(update: Update): Boolean =
+  private def isSbtUpdate(update: Update.Single): Boolean =
     update.groupId === sbtGroupId &&
       update.artifactIds.exists(_.name === sbtArtifactId.name)
 
-  private def isScalafmtCoreUpdate(update: Update): Boolean =
+  private def isScalafmtCoreUpdate(update: Update.Single): Boolean =
     update.groupId === scalafmtGroupId &&
       update.artifactIds.exists(_.name === scalafmtArtifactId.name)
 }

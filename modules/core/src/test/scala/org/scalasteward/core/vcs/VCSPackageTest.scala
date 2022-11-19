@@ -5,7 +5,7 @@ import org.http4s.syntax.literals._
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.git
 import org.scalasteward.core.vcs.VCSType.{GitHub, GitLab}
-import org.scalasteward.core.data.GroupedUpdate
+import org.scalasteward.core.data.Update
 import org.scalasteward.core.vcs.data.Repo
 
 class VCSPackageTest extends FunSuite {
@@ -240,7 +240,7 @@ class VCSPackageTest extends FunSuite {
 
   {
 
-    val update = GroupedUpdate(
+    val update = Update.Grouped(
       name = "my-group",
       title = None,
       updates = List(("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single)
