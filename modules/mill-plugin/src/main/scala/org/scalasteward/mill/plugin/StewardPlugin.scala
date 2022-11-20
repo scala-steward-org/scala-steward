@@ -61,7 +61,7 @@ object StewardPlugin extends ExternalModule {
     }
 
     T.task {
-      val resolvers = m.repositories.map(Repo).filterNot(_.isLocal)
+      val resolvers = m.repositoriesTask().map(Repo).filterNot(_.isLocal)
       val deps = dependencies()
       ModuleDependencies(m.millModuleSegments.render, resolvers, deps)
     }
