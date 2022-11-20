@@ -59,9 +59,9 @@ object StewardPlugin extends ExternalModule {
       val mod = artifactMods()
       ivy.iterator.toSeq.map(Dependency.fromDep(_, mod))
     }
-
+    val repositories = m.repositoriesTask
     T.task {
-      val resolvers = m.repositories.map(Repo).filterNot(_.isLocal)
+      val resolvers = repositories().map(Repo).filterNot(_.isLocal)
       val deps = dependencies()
       ModuleDependencies(m.millModuleSegments.render, resolvers, deps)
     }
