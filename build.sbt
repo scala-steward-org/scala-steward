@@ -197,6 +197,8 @@ lazy val core = myCrossProject("core")
       Seq(file)
     }.taskValue,
     run / fork := true,
+    // Uncomment for remote debugging:
+    // run / javaOptions += "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005",
     Test / fork := true,
     Test / testOptions +=
       Tests.Cleanup(() => Path(file(Properties.tmpDir) / "scala-steward").deleteRecursively()),
