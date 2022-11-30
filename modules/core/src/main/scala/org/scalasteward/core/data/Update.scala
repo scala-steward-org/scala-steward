@@ -18,13 +18,15 @@ package org.scalasteward.core.data
 
 import cats.Order
 import cats.implicits._
+import io.circe.Decoder
+import io.circe.Encoder
+import io.circe.Json
 import io.circe.generic.semiauto._
+import io.circe.syntax._
 import org.scalasteward.core.repoconfig.PullRequestGroup
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.util.string.MinLengthString
-import io.circe.Decoder
-import io.circe.Encoder
 
 sealed trait Update {
 
@@ -193,7 +195,11 @@ object Update {
   // Partially manually implemented so we don't fail reading old caches (those
   // still using `Single`/`Group`)
 
-  implicit val ForArtifactIdEncoder: Encoder[ForArtifactId] = deriveEncoder
+  implicit val ForArtifactIdEncoder: Encoder[ForArtifactId] = {
+    val derived = deriveEncoder[ForArtifactId]
+
+    derived.mapJson(json => Json.obj("ForArtifactId" -> json))
+  }
 
   implicit val ForArtifactIdDecoder: Decoder[ForArtifactId] = {
     val derived = deriveDecoder[ForArtifactId]
@@ -202,7 +208,11 @@ object Update {
       .or(derived.prepare(_.downField("Single")))
   }
 
-  implicit val ForGroupIdEncoder: Encoder[ForGroupId] = deriveEncoder
+  implicit val ForGroupIdEncoder: Encoder[ForGroupId] = {
+    val derived = deriveEncoder[ForGroupId]
+
+    derived.mapJson(json => Json.obj("ForGroupId" -> json))
+  }
 
   implicit val ForGroupIdDecoder: Decoder[ForGroupId] = {
     val derived = deriveDecoder[ForGroupId]
@@ -211,7 +221,11 @@ object Update {
       .or(derived.prepare(_.downField("Group")))
   }
 
-  implicit val GroupedEncoder: Encoder[Grouped] = deriveEncoder
+  implicit val GroupedEncoder: Encoder[Grouped] = {
+    val derived = deriveEncoder[Grouped]
+
+    derived.mapJson(json => Json.obj("Grouped" -> json))
+  }
 
   implicit val GroupedDecoder: Decoder[Grouped] =
     deriveDecoder[Grouped].prepare(_.downField("Grouped"))
@@ -219,7 +233,11 @@ object Update {
   implicit val SingleOrder: Order[Single] =
     Order.by((u: Single) => (u.crossDependencies, u.newerVersions))
 
-  implicit val UpdateEncoder: Encoder[Update] = deriveEncoder
+  implicit val UpdateEncoder: Encoder[Update] = {
+    case update: Grouped       => update.asJson
+    case update: ForArtifactId => update.asJson
+    case update: ForGroupId    => update.asJson
+  }
 
   implicit val UpdateDecoder: Decoder[Update] =
     ForArtifactIdDecoder
