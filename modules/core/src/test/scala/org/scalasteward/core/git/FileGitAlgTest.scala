@@ -205,7 +205,7 @@ object FileGitAlgTest {
       for {
         _ <- gitAlg.removeClone(repo)
         _ <- fileAlg.ensureExists(repo)
-        _ <- git("-c", s"init.defaultBranch=$master", "init", ".")(repo)
+        _ <- git("-c", s"init.defaultBranch=${master.name}", "init", ".")(repo)
         _ <- gitAlg.setAuthor(repo, config.gitCfg.gitAuthor)
         _ <- git("commit", "--allow-empty", "-m", "Initial commit")(repo)
       } yield ()
