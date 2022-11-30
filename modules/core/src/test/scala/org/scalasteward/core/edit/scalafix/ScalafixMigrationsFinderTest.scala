@@ -9,7 +9,7 @@ import org.scalasteward.core.util.Nel
 class ScalafixMigrationsFinderTest extends FunSuite {
   test("findMigrations") {
     val update = ("org.typelevel".g % "cats-core".a % "2.1.0" %> "2.2.0").single
-    val migrations = scalafixMigrationsFinder.findMigrations(update)
+    val obtained = scalafixMigrationsFinder.findMigrations(update)
     val expected = (
       List(
         ScalafixMigration(
@@ -25,6 +25,13 @@ class ScalafixMigrationsFinderTest extends FunSuite {
       ),
       List()
     )
-    assertEquals(migrations, expected)
+    assertEquals(obtained, expected)
+  }
+
+  test("findMigrations: pattern must match whole artifactId") {
+    val update = ("org.typelevel".g % "log4cats-core".a % "2.1.1" %> "2.4.0").single
+    val obtained = scalafixMigrationsFinder.findMigrations(update)
+    val expected = (List(), List())
+    assertEquals(obtained, expected)
   }
 }
