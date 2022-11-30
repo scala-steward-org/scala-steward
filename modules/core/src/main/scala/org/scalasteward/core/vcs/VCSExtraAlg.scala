@@ -20,12 +20,16 @@ import cats.Monad
 import cats.syntax.all._
 import org.http4s.Uri
 import org.scalasteward.core.application.Config.VCSCfg
-import org.scalasteward.core.data.{ReleaseRelatedUrl, Update}
+import org.scalasteward.core.data.{ReleaseRelatedUrl, Version}
 import org.scalasteward.core.util.UrlChecker
 import org.scalasteward.core.vcs
 
 trait VCSExtraAlg[F[_]] {
-  def getReleaseRelatedUrls(repoUrl: Uri, update: Update): F[List[ReleaseRelatedUrl]]
+  def getReleaseRelatedUrls(
+      repoUrl: Uri,
+      currentVersion: Version,
+      nextVersion: Version
+  ): F[List[ReleaseRelatedUrl]]
 }
 
 object VCSExtraAlg {
@@ -34,9 +38,19 @@ object VCSExtraAlg {
       F: Monad[F]
   ): VCSExtraAlg[F] =
     new VCSExtraAlg[F] {
-      override def getReleaseRelatedUrls(repoUrl: Uri, update: Update): F[List[ReleaseRelatedUrl]] =
+      override def getReleaseRelatedUrls(
+          repoUrl: Uri,
+          currentVersion: Version,
+          nextVersion: Version
+      ): F[List[ReleaseRelatedUrl]] =
         vcs
-          .possibleReleaseRelatedUrls(config.tpe, config.apiHost, repoUrl, update)
+          .possibleReleaseRelatedUrls(
+            config.tpe,
+            config.apiHost,
+            repoUrl,
+            currentVersion,
+            nextVersion
+          )
           .filterA(releaseRelatedUrl => urlChecker.exists(releaseRelatedUrl.url))
     }
 }

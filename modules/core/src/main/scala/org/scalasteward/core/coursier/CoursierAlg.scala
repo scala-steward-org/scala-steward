@@ -126,15 +126,35 @@ object CoursierAlg {
 
   private def toCoursierRepository(resolver: Resolver): Either[String, coursier.Repository] =
     resolver match {
-      case Resolver.MavenRepository(_, location, creds) =>
-        Right(coursier.maven.MavenRepository.apply(location, creds.map(toCoursierAuthentication)))
-      case Resolver.IvyRepository(_, pattern, creds) =>
+      case Resolver.MavenRepository(_, location, creds, headers) =>
+        Right(
+          coursier.maven.MavenRepository
+            .apply(location, toCoursierAuthentication(creds, headers))
+        )
+      case Resolver.IvyRepository(_, pattern, creds, headers) =>
         coursier.ivy.IvyRepository
-          .parse(pattern, authentication = creds.map(toCoursierAuthentication))
+          .parse(pattern, authentication = toCoursierAuthentication(creds, headers))
     }
 
-  private def toCoursierAuthentication(credentials: Credentials): Authentication =
-    Authentication(credentials.user, credentials.pass)
+  private def toCoursierAuthentication(
+      credentials: Option[Credentials],
+      headers: List[Resolver.Header]
+  ): Option[Authentication] =
+    if (credentials.isEmpty && headers.isEmpty) {
+      None
+    } else {
+      Some(
+        new Authentication(
+          credentials.fold("")(_.user),
+          credentials.map(_.pass),
+          headers.map(h => (h.key, h.value)),
+          optional = false,
+          None,
+          httpsOnly = true,
+          passOnRedirect = false
+        )
+      )
+    }
 
   private def getParentDependency(project: Project): Option[coursier.Dependency] =
     project.parent.map { case (module, version) =>

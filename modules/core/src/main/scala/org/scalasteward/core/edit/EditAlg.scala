@@ -46,7 +46,7 @@ final class EditAlg[F[_]](implicit
 ) {
   def applyUpdate(
       data: RepoData,
-      update: Update,
+      update: Update.Single,
       preCommit: F[Unit] = F.unit
   ): F[List[EditAttempt]] =
     findFilesContainingCurrentVersion(data.repo, data.config, update).flatMap {
@@ -77,7 +77,7 @@ final class EditAlg[F[_]](implicit
   private def findFilesContainingCurrentVersion(
       repo: Repo,
       config: RepoConfig,
-      update: Update
+      update: Update.Single
   ): F[Option[Nel[File]]] =
     workspaceAlg.repoDir(repo).flatMap { repoDir =>
       val fileFilter = isSourceFile(update, config.updates.fileExtensionsOrDefault) _
@@ -105,7 +105,7 @@ final class EditAlg[F[_]](implicit
       maybeCommit <- gitAlg.commitAllIfDirty(repo, migration.commitMessage(result))
     } yield ScalafixEdit(migration, result, maybeCommit)
 
-  private def bumpVersion(update: Update, files: Nel[File]): F[Boolean] = {
+  private def bumpVersion(update: Update.Single, files: Nel[File]): F[Boolean] = {
     val actions = UpdateHeuristic.all.map { heuristic =>
       logger.info(s"Trying heuristic '${heuristic.name}'") >>
         fileAlg.editFiles(files, heuristic.replaceVersion(update))
@@ -126,7 +126,7 @@ final class EditAlg[F[_]](implicit
   private def createUpdateEdit(
       repo: Repo,
       config: RepoConfig,
-      update: Update
+      update: Update.Single
   ): F[Option[EditAttempt]] = {
     val commitMsg = CommitMsg.replaceVariables(config.commits.messageOrDefault)(update, repo.branch)
     gitAlg.commitAllIfDirty(repo, commitMsg).map(_.map(commit => UpdateEdit(update, commit)))

@@ -66,7 +66,7 @@ final case class Config(
     bitbucketServerCfg: BitbucketServerCfg,
     gitLabCfg: GitLabCfg,
     githubApp: Option[GitHubApp],
-    urlCheckerTestUrl: Uri,
+    urlCheckerTestUrls: Nel[Uri],
     defaultResolver: Resolver,
     refreshBackoffPeriod: FiniteDuration
 ) {
@@ -133,6 +133,13 @@ object Config {
   )
 
   final case class GitLabCfg(
-      mergeWhenPipelineSucceeds: Boolean
+      mergeWhenPipelineSucceeds: Boolean,
+      requiredReviewers: Option[Int]
   )
+
+  sealed trait StewardUsage
+  object StewardUsage {
+    final case class Regular(config: Config) extends StewardUsage
+    final case class ValidateRepoConfig(file: File) extends StewardUsage
+  }
 }

@@ -57,7 +57,7 @@ class UpdateTest extends FunSuite {
     assertEquals(Update.groupByArtifactIdName(List(update0, update1, update2)), expected)
   }
 
-  test("Single.show") {
+  test("Update.show") {
     val update = ("org.specs2".g % "specs2-core".a % "3.9.4" % "test" %> "3.9.5").single
     assertEquals(update.show, "org.specs2:specs2-core : 3.9.4 -> 3.9.5")
   }

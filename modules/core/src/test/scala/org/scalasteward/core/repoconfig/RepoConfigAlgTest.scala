@@ -5,7 +5,7 @@ import cats.syntax.all._
 import eu.timepit.refined.types.numeric.NonNegInt
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.GroupId
+import org.scalasteward.core.data.{GroupId, SemVer, Update}
 import org.scalasteward.core.mock.MockContext.context.repoConfigAlg
 import org.scalasteward.core.mock.MockState.TraceEntry.Log
 import org.scalasteward.core.mock.{MockConfig, MockState}
@@ -13,6 +13,7 @@ import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
 import scala.concurrent.duration._
+import cats.data.NonEmptyList
 
 class RepoConfigAlgTest extends FunSuite {
   test("default config is not empty") {
@@ -41,6 +42,13 @@ class RepoConfigAlgTest extends FunSuite {
          |updates.limit = 4
          |updates.fileExtensions = [ ".txt" ]
          |pullRequests.frequency = "@weekly"
+         |pullRequests.grouping = [
+         |  { name = "patches", "title" = "Patch updates", "filter" = [{"version" = "patch"}] },
+         |  { name = "minor_major", "title" = "Minor/major updates", "filter" = [{"version" = "minor"}, {"version" = "major"}] },
+         |  { name = "typelevel", "title" = "Typelevel updates", "filter" = [{"group" = "org.typelevel"}, {"group" = "org.http4s"}] },
+         |  { name = "my_libraries", "filter" = [{"artifact" = "my-library"}, {"artifact" = "my-other-library", "group" = "my-org"}] },
+         |  { name = "all", "filter" = [{"group" = "*"}] }
+         |]
          |dependencyOverrides = [
          |  { pullRequests.frequency = "@daily",   dependency = { groupId = "eu.timepit" } },
          |  { pullRequests.frequency = "@monthly", dependency = { groupId = "eu.timepit", artifactId = "refined.1" } },
@@ -57,7 +65,52 @@ class RepoConfigAlgTest extends FunSuite {
       .unsafeRunSync()
 
     val expected = RepoConfig(
-      pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(7.days))),
+      pullRequests = PullRequestsConfig(
+        frequency = Some(PullRequestFrequency.Timespan(7.days)),
+        grouping = List(
+          PullRequestGroup(
+            name = "patches",
+            title = "Patch updates".some,
+            filter = NonEmptyList.of(
+              PullRequestUpdateFilter(None, None, SemVer.Change.Patch.some)
+                .getOrElse(fail("Should not be called"))
+            )
+          ),
+          PullRequestGroup(
+            name = "minor_major",
+            title = "Minor/major updates".some,
+            filter = NonEmptyList.of(
+              PullRequestUpdateFilter(None, None, SemVer.Change.Minor.some)
+                .getOrElse(fail("Should not be called")),
+              PullRequestUpdateFilter(None, None, SemVer.Change.Major.some)
+                .getOrElse(fail("Should not be called"))
+            )
+          ),
+          PullRequestGroup(
+            name = "typelevel",
+            title = "Typelevel updates".some,
+            filter = NonEmptyList.of(
+              PullRequestUpdateFilter("org.typelevel".some).getOrElse(fail("Should not be called")),
+              PullRequestUpdateFilter("org.http4s".some).getOrElse(fail("Should not be called"))
+            )
+          ),
+          PullRequestGroup(
+            name = "my_libraries",
+            filter = NonEmptyList.of(
+              PullRequestUpdateFilter(None, "my-library".some)
+                .getOrElse(fail("Should not be called")),
+              PullRequestUpdateFilter("my-org".some, "my-other-library".some)
+                .getOrElse(fail("Should not be called"))
+            )
+          ),
+          PullRequestGroup(
+            name = "all",
+            filter = NonEmptyList.of(
+              PullRequestUpdateFilter("*".some).getOrElse(fail("Should not be called"))
+            )
+          )
+        )
+      ),
       updates = UpdatesConfig(
         allow = List(UpdatePattern("eu.timepit".g, None, None)),
         pin = List(
@@ -226,6 +279,24 @@ class RepoConfigAlgTest extends FunSuite {
       .getOrElse(RepoConfig())
     val expected =
       RepoConfig(updates = UpdatesConfig(ignore = List(UpdatePattern("a".g, None, None))))
+    assertEquals(config, expected)
+  }
+
+  test("configToIgnoreFurtherUpdates with grouped update") {
+    val update1 = ("a".g % "b".a % "1" %> "2").single
+    val update2 = ("c".g % "d".a % "1" %> "2").single
+    val update = Update.Grouped("my-group", None, List(update1, update2))
+    val config = RepoConfigAlg
+      .parseRepoConfig(RepoConfigAlg.configToIgnoreFurtherUpdates(update))
+      .getOrElse(RepoConfig())
+    val expected = RepoConfig(updates =
+      UpdatesConfig(ignore =
+        List(
+          UpdatePattern(groupId = "a".g, artifactId = "b".some, None),
+          UpdatePattern(groupId = "c".g, artifactId = "d".some, None)
+        )
+      )
+    )
     assertEquals(config, expected)
   }
 

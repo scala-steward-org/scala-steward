@@ -17,16 +17,18 @@
 package org.scalasteward.core.edit.scalafix
 
 import cats.syntax.all._
+import java.util.regex.Pattern
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.edit.scalafix.ScalafixMigration.ExecutionOrder
 
 final class ScalafixMigrationsFinder(migrations: List[ScalafixMigration]) {
-  def findMigrations(update: Update): (List[ScalafixMigration], List[ScalafixMigration]) =
+  def findMigrations(update: Update.Single): (List[ScalafixMigration], List[ScalafixMigration]) =
     migrations
       .filter { migration =>
         update.groupId === migration.groupId &&
         migration.artifactIds.exists { re =>
-          update.artifactIds.exists(artifactId => re.r.findFirstIn(artifactId.name).isDefined)
+          val pattern = Pattern.compile(re)
+          update.artifactIds.exists(artifactId => pattern.matcher(artifactId.name).matches())
         } &&
         update.currentVersion < migration.newVersion &&
         update.nextVersion >= migration.newVersion

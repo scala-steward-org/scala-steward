@@ -29,11 +29,14 @@ package object git {
 
   def branchFor(update: Update, baseBranch: Option[Branch]): Branch = {
     val base = baseBranch.fold("")(branch => s"${branch.name}/")
-    Branch(s"$updateBranchPrefix/$base${update.name}-${update.nextVersion}")
+    update.on(
+      update = u => Branch(s"$updateBranchPrefix/$base${u.name}-${u.nextVersion}"),
+      grouped = g => Branch(s"$updateBranchPrefix/$base${g.name}")
+    )
   }
 
   def commitMsgFor(
-      update: Update,
+      update: Update.Single,
       commitsConfig: CommitsConfig,
       branch: Option[Branch]
   ): CommitMsg =

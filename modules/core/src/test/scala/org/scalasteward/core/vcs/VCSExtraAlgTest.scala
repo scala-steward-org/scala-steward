@@ -36,14 +36,22 @@ class VCSExtraAlgTest extends FunSuite {
 
     assertEquals(
       vcsExtraAlg
-        .getReleaseRelatedUrls(uri"https://github.com/foo/foo", updateFoo)
+        .getReleaseRelatedUrls(
+          repoUrl = uri"https://github.com/foo/foo",
+          currentVersion = updateFoo.currentVersion,
+          nextVersion = updateFoo.nextVersion
+        )
         .unsafeRunSync(),
       List.empty
     )
 
     assertEquals(
       vcsExtraAlg
-        .getReleaseRelatedUrls(uri"https://github.com/foo/bar", updateBar)
+        .getReleaseRelatedUrls(
+          repoUrl = uri"https://github.com/foo/bar",
+          currentVersion = updateBar.currentVersion,
+          nextVersion = updateBar.nextVersion
+        )
         .unsafeRunSync(),
       List(
         ReleaseRelatedUrl.VersionDiff(uri"https://github.com/foo/bar/compare/v0.1.0...v0.2.0")
@@ -52,7 +60,11 @@ class VCSExtraAlgTest extends FunSuite {
 
     assertEquals(
       vcsExtraAlg
-        .getReleaseRelatedUrls(uri"https://github.com/foo/buz", updateBuz)
+        .getReleaseRelatedUrls(
+          repoUrl = uri"https://github.com/foo/buz",
+          currentVersion = updateBuz.currentVersion,
+          nextVersion = updateBuz.nextVersion
+        )
         .unsafeRunSync(),
       List.empty
     )
@@ -70,14 +82,22 @@ class VCSExtraAlgTest extends FunSuite {
 
     assertEquals(
       githubOnPremVcsExtraAlg
-        .getReleaseRelatedUrls(uri"https://github.on-prem.com/foo/foo", updateFoo)
+        .getReleaseRelatedUrls(
+          repoUrl = uri"https://github.on-prem.com/foo/foo",
+          currentVersion = updateFoo.currentVersion,
+          nextVersion = updateFoo.nextVersion
+        )
         .unsafeRunSync(),
       List.empty
     )
 
     assertEquals(
       githubOnPremVcsExtraAlg
-        .getReleaseRelatedUrls(uri"https://github.on-prem.com/foo/bar", updateBar)
+        .getReleaseRelatedUrls(
+          repoUrl = uri"https://github.on-prem.com/foo/bar",
+          currentVersion = updateBar.currentVersion,
+          nextVersion = updateBar.nextVersion
+        )
         .unsafeRunSync(),
       List(
         ReleaseRelatedUrl.VersionDiff(
@@ -88,7 +108,11 @@ class VCSExtraAlgTest extends FunSuite {
 
     assertEquals(
       githubOnPremVcsExtraAlg
-        .getReleaseRelatedUrls(uri"https://github.on-prem.com/foo/buz", updateFoo)
+        .getReleaseRelatedUrls(
+          repoUrl = uri"https://github.on-prem.com/foo/buz",
+          currentVersion = updateFoo.currentVersion,
+          nextVersion = updateFoo.nextVersion
+        )
         .unsafeRunSync(),
       List.empty
     )

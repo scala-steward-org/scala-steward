@@ -18,14 +18,16 @@ package org.scalasteward.core.data
 
 import cats.Order
 import io.circe.Codec
+import io.circe.generic.extras.Configuration
+import io.circe.generic.extras.semiauto.deriveConfiguredCodec
 import io.circe.generic.semiauto._
 import org.scalasteward.core.data.Resolver._
 
 sealed trait Resolver extends Product with Serializable {
   val path: String = {
     val url = this match {
-      case MavenRepository(_, location, _) => location
-      case IvyRepository(_, pattern, _)    => pattern.takeWhile(!Set('[', '(')(_))
+      case MavenRepository(_, location, _, _) => location
+      case IvyRepository(_, pattern, _, _)    => pattern.takeWhile(!Set('[', '(')(_))
     }
     url.replace(":", "")
   }
@@ -37,20 +39,35 @@ object Resolver {
     implicit val credentialsCodec: Codec[Credentials] =
       deriveCodec
   }
-  final case class MavenRepository(name: String, location: String, credentials: Option[Credentials])
-      extends Resolver
-  final case class IvyRepository(name: String, pattern: String, credentials: Option[Credentials])
-      extends Resolver
+  final case class Header(key: String, value: String)
+  object Header {
+    implicit val headerCodec: Codec[Header] = deriveCodec
+  }
+  final case class MavenRepository(
+      name: String,
+      location: String,
+      credentials: Option[Credentials],
+      headers: List[Header] = Nil
+  ) extends Resolver
+  final case class IvyRepository(
+      name: String,
+      pattern: String,
+      credentials: Option[Credentials],
+      headers: List[Header] = Nil
+  ) extends Resolver
 
   val mavenCentral: MavenRepository =
-    MavenRepository("public", "https://repo1.maven.org/maven2/", None)
+    MavenRepository("public", "https://repo1.maven.org/maven2/", None, Nil)
 
-  implicit val resolverCodec: Codec[Resolver] =
-    deriveCodec
+  @annotation.nowarn("cat=unused-locals")
+  implicit val resolverCodec: Codec[Resolver] = {
+    implicit val customConfig: Configuration = Configuration.default.withDefaults
+    deriveConfiguredCodec
+  }
 
   implicit val resolverOrder: Order[Resolver] =
     Order.by {
-      case MavenRepository(name, location, _) => (1, name, location)
-      case IvyRepository(name, pattern, _)    => (2, name, pattern)
+      case MavenRepository(name, location, _, _) => (1, name, location)
+      case IvyRepository(name, pattern, _, _)    => (2, name, pattern)
     }
 }

@@ -1,12 +1,13 @@
 package org.scalasteward.core.vcs.data
 
+import cats.syntax.all._
 import io.circe.syntax._
 import munit.FunSuite
 import org.http4s.syntax.literals._
 import org.scalasteward.core.TestInstances._
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.buildtool.sbt.data.SbtVersion
-import org.scalasteward.core.data.{ReleaseRelatedUrl, RepoData, UpdateData, Version}
+import org.scalasteward.core.data.{ReleaseRelatedUrl, RepoData, Update, UpdateData, Version}
 import org.scalasteward.core.edit.EditAttempt.{ScalafixEdit, UpdateEdit}
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.git.{Branch, Commit}
@@ -242,19 +243,19 @@ class NewPullRequestDataTest extends FunSuite {
   test("updateType") {
     val dependency = "com.example".g % "foo".a % "0.1"
     val single = (dependency %> "0.2").single
-    assertEquals(updateType(single), "library-update")
+    assertEquals(updateType(single), List("library-update"))
 
     val group = ("com.example".g % Nel.of("foo".a, "bar".a) % "0.1" %> "0.2").group
-    assertEquals(updateType(group), "library-update")
+    assertEquals(updateType(group), List("library-update"))
 
     val testUpdate = (dependency % "test" %> "0.2").single
-    assertEquals(updateType(testUpdate), "test-library-update")
+    assertEquals(updateType(testUpdate), List("test-library-update"))
 
     val sbtPluginUpdate = (dependency.copy(sbtVersion = Some(SbtVersion("1.0"))) %> "0.2").single
-    assertEquals(updateType(sbtPluginUpdate), "sbt-plugin-update")
+    assertEquals(updateType(sbtPluginUpdate), List("sbt-plugin-update"))
 
     val scalafixRuleUpdate = (dependency % "scalafix-rule" %> "0.2").single
-    assertEquals(updateType(scalafixRuleUpdate), "scalafix-rule-update")
+    assertEquals(updateType(scalafixRuleUpdate), List("scalafix-rule-update"))
   }
 
   test("oldVersionNote without files") {
@@ -318,4 +319,161 @@ class NewPullRequestDataTest extends FunSuite {
     val second = labelsFor(update, List(updateEdit), List.empty, Some("(.*update.*)|(.*count.*)".r))
     assertEquals(clue(second), List("library-update", "commit-count:1"))
   }
+
+  test("label for grouped updates add labels for all update types & version changes") {
+    val update1 = ("a".g % "b".a % "1" -> "2").single
+    val update2 = ("c".g % "d".a % "1.1.0" % "test" %> "1.2.0").single
+    val update = Update.Grouped("my-group", None, List(update1, update2))
+
+    val labels = labelsFor(update, Nil, Nil, None)
+
+    val expected = List(
+      "library-update",
+      "test-library-update",
+      "early-semver-minor",
+      "semver-spec-minor",
+      "commit-count:0"
+    )
+
+    assertEquals(labels, expected)
+  }
+
+  test("oldVersionNote doesn't show version for grouped updates") {
+    val files = List("Readme.md", "travis.yml")
+    val update1 = ("a".g % "b".a % "1" -> "2").single
+    val update2 = ("c".g % "d".a % "1.1.0" % "test" %> "1.2.0").single
+    val update = Update.Grouped("my-group", None, List(update1, update2))
+
+    val note = oldVersionNote(files, update)
+
+    assertEquals(
+      note.fold("")(_.toHtml),
+      """<details>
+        |<summary>Files still referring to the old version numbers</summary>
+        |
+        |The following files still refer to the old version numbers.
+        |You might want to review and update them manually.
+        |```
+        |Readme.md
+        |travis.yml
+        |```
+        |</details>
+      """.stripMargin.trim
+    )
+  }
+
+  test("adjustFutureUpdates for grouped udpates shows settings for each update") {
+    val update1 = ("a".g % "b".a % "1" -> "2").single
+    val update2 = ("c".g % "d".a % "1.1.0" % "test" %> "1.2.0").single
+    val update = Update.Grouped("my-group", None, List(update1, update2))
+
+    val note = adjustFutureUpdates(update)
+
+    assertEquals(
+      note.toHtml,
+      """<details>
+        |<summary>Adjust future updates</summary>
+        |
+        |Add these to your `.scala-steward.conf` file to ignore future updates of these dependencies:
+        |```
+        |updates.ignore = [
+        |  { groupId = "a", artifactId = "b" },
+        |  { groupId = "c", artifactId = "d" }
+        |]
+        |```
+        |Or, add these to slow down future updates of these dependencies:
+        |```
+        |dependencyOverrides = [
+        |  {
+        |    pullRequests = { frequency = "@monthly" },
+        |    dependency = { groupId = "a", artifactId = "b" }
+        |  },
+        |  {
+        |    pullRequests = { frequency = "@monthly" },
+        |    dependency = { groupId = "c", artifactId = "d" }
+        |  }
+        |]
+        |```
+        |</details>
+      """.stripMargin.trim
+    )
+  }
+
+  test("NewPullRequestData.from works for `GroupedUpdate`") {
+    val update1 = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single
+    val update2 = ("com.example".g % "foo".a % "1.0.0" %> "2.0.0").single
+    val update = Update.Grouped("my-group", "The PR title".some, List(update1, update2))
+    val data = UpdateData(
+      RepoData(Repo("foo", "bar"), dummyRepoCache, RepoConfig.empty),
+      Repo("scala-steward", "bar"),
+      update,
+      Branch("master"),
+      dummySha1,
+      Branch("update/logback-classic-1.2.3")
+    )
+
+    val obtained = from(data, "scala-steward:update/logback-classic-1.2.3").asJson.spaces2
+
+    val body =
+      raw"""Updates:
+           |
+           |* ch.qos.logback:logback-classic from 1.2.0 to 1.2.3
+           |* com.example:foo from 1.0.0 to 2.0.0
+           |
+           |
+           |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
+           |
+           |If you have any feedback, just mention me in the comments below.
+           |
+           |Configure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
+           |
+           |Have a fantastic day writing Scala!
+           |
+           |<details>
+           |<summary>Adjust future updates</summary>
+           |
+           |Add these to your `.scala-steward.conf` file to ignore future updates of these dependencies:
+           |```
+           |updates.ignore = [
+           |  { groupId = \"ch.qos.logback\", artifactId = \"logback-classic\" },
+           |  { groupId = \"com.example\", artifactId = \"foo\" }
+           |]
+           |```
+           |Or, add these to slow down future updates of these dependencies:
+           |```
+           |dependencyOverrides = [
+           |  {
+           |    pullRequests = { frequency = \"@monthly\" },
+           |    dependency = { groupId = \"ch.qos.logback\", artifactId = \"logback-classic\" }
+           |  },
+           |  {
+           |    pullRequests = { frequency = \"@monthly\" },
+           |    dependency = { groupId = \"com.example\", artifactId = \"foo\" }
+           |  }
+           |]
+           |```
+           |</details>
+           |
+           |labels: library-update, early-semver-patch, semver-spec-patch, early-semver-major, semver-spec-major, commit-count:0""".stripMargin
+
+    val expected =
+      raw"""|{
+            |  "title" : "The PR title",
+            |  "body" : "${body.replace("\n", "\\n")}",
+            |  "head" : "scala-steward:update/logback-classic-1.2.3",
+            |  "base" : "master",
+            |  "labels" : [
+            |    "library-update",
+            |    "early-semver-patch",
+            |    "semver-spec-patch",
+            |    "early-semver-major",
+            |    "semver-spec-major",
+            |    "commit-count:0"
+            |  ],
+            |  "draft" : false
+            |}""".stripMargin
+
+    assertNoDiff(obtained, expected)
+  }
+
 }

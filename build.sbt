@@ -1,3 +1,5 @@
+import scala.util.Properties
+import scala.reflect.io.Path
 import com.typesafe.sbt.packager.docker._
 import sbtcrossproject.{CrossProject, CrossType, Platform}
 import sbtghactions.JavaSpec.Distribution.Adopt
@@ -20,8 +22,8 @@ val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
   "mill-plugin" -> List(JVMPlatform)
 )
 
-val Scala212 = "2.12.16"
-val Scala213 = "2.13.8"
+val Scala212 = "2.12.17"
+val Scala213 = "2.13.10"
 val Scala3 = "3.2.1"
 
 /// sbt-github-actions configuration
@@ -51,12 +53,12 @@ ThisBuild / githubWorkflowPublish := Seq(
     name = Some("Publish Docker image")
   )
 )
-ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec(Adopt, "8"), JavaSpec(Adopt, "11"))
+ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec(Adopt, "17"), JavaSpec(Adopt, "11"))
 ThisBuild / githubWorkflowBuild :=
   Seq(
     WorkflowStep.Sbt(List("validate"), name = Some("Build project")),
     WorkflowStep.Use(
-      UseRef.Public("codecov", "codecov-action", "v2"),
+      UseRef.Public("codecov", "codecov-action", "v3"),
       name = Some("Codecov")
     )
   )
@@ -141,6 +143,11 @@ lazy val core = myCrossProject("core")
         // https/repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-core/2.12.6/jackson-core-2.12.6.jar:module-info.class
         // https/repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.12.6.1/jackson-databind-2.12.6.1.jar:module-info.class
         MergeStrategy.discard
+      case PathList("META-INF", "sisu", "javax.inject.Named") =>
+        // (core / assembly) deduplicate: different file contents found in the following:
+        // https/repo1.maven.org/maven2/org/codehaus/plexus/plexus-archiver/4.5.0/plexus-archiver-4.5.0.jar:META-INF/sisu/javax.inject.Named
+        // https/repo1.maven.org/maven2/org/codehaus/plexus/plexus-io/3.4.0/plexus-io-3.4.0.jar:META-INF/sisu/javax.inject.Named
+        MergeStrategy.first
       case otherwise =>
         val defaultStrategy = (assembly / assemblyMergeStrategy).value
         defaultStrategy(otherwise)
@@ -193,7 +200,11 @@ lazy val core = myCrossProject("core")
       Seq(file)
     }.taskValue,
     run / fork := true,
+    // Uncomment for remote debugging:
+    // run / javaOptions += "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005",
     Test / fork := true,
+    Test / testOptions +=
+      Tests.Cleanup(() => Path(file(Properties.tmpDir) / "scala-steward").deleteRecursively()),
     Compile / unmanagedResourceDirectories ++= (`sbt-plugin`.jvm / Compile / unmanagedSourceDirectories).value
   )
 

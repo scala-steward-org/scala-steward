@@ -13,7 +13,8 @@ object TestSyntax {
       val sbtPluginReleases = IvyRepository(
         "sbt-plugin-releases",
         "https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/[defaultPattern]",
-        None
+        None,
+        Nil
       )
       Scope(self, List(sbtPluginReleases))
     }
@@ -79,43 +80,46 @@ object TestSyntax {
   implicit class DependencyAndNextVersionOps(
       private val self: (Dependency, String)
   ) extends AnyVal {
-    def single: Update.Single = Update.Single(CrossDependency(self._1), Nel.of(self._2.v))
+    def single: Update.ForArtifactId =
+      Update.ForArtifactId(CrossDependency(self._1), Nel.of(self._2.v))
   }
 
   implicit class DependencyAndNewerVersionsOps(
       private val self: (Dependency, Nel[String])
   ) extends AnyVal {
-    def single: Update.Single = Update.Single(CrossDependency(self._1), self._2.map(_.v))
+    def single: Update.ForArtifactId =
+      Update.ForArtifactId(CrossDependency(self._1), self._2.map(_.v))
   }
 
   implicit class DependenciesAndNextVersionOps(
       private val self: (Nel[Dependency], String)
   ) extends AnyVal {
-    def single: Update.Single = Update.Single(CrossDependency(self._1), Nel.of(self._2.v))
+    def single: Update.ForArtifactId =
+      Update.ForArtifactId(CrossDependency(self._1), Nel.of(self._2.v))
   }
 
   implicit class GroupIdAndArtifactIdsAndVersionAndNextVersionOps(
       private val self: (GroupId, Nel[ArtifactId], String, String)
   ) extends AnyVal {
-    def single: Update.Single = {
+    def single: Update.ForArtifactId = {
       val crossDependency = CrossDependency(self._2.map(aId => Dependency(self._1, aId, self._3.v)))
-      Update.Single(crossDependency, Nel.of(self._4.v))
+      Update.ForArtifactId(crossDependency, Nel.of(self._4.v))
     }
 
-    def group: Update.Group = {
+    def group: Update.ForGroupId = {
       val crossDependencies =
         self._2.map(aId => CrossDependency(Dependency(self._1, aId, self._3.v)))
-      Update.Group(crossDependencies, Nel.of(self._4.v))
+      Update.ForGroupId(crossDependencies, Nel.of(self._4.v))
     }
   }
 
   implicit class GroupIdAndManyArtifactIdsAndVersionAndNextVersionOps(
       private val self: (GroupId, Nel[Nel[ArtifactId]], String, String)
   ) extends AnyVal {
-    def group: Update.Group = {
+    def group: Update.ForGroupId = {
       val crossDependencies =
         self._2.map(aIds => CrossDependency(aIds.map(aId => Dependency(self._1, aId, self._3.v))))
-      Update.Group(crossDependencies, Nel.of(self._4.v))
+      Update.ForGroupId(crossDependencies, Nel.of(self._4.v))
     }
   }
 }

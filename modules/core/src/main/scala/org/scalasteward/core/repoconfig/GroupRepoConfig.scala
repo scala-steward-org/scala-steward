@@ -20,6 +20,7 @@ import io.circe.Codec
 import io.circe.generic.extras.Configuration
 import io.circe.generic.semiauto.deriveCodec
 import org.scalasteward.core.data.Update
+import org.scalasteward.core.util.string.indentLines
 
 final case class GroupRepoConfig(
     pullRequests: PullRequestsConfig = PullRequestsConfig(),
@@ -33,17 +34,27 @@ object GroupRepoConfig {
   implicit val groupPullConfigCodec: Codec[GroupRepoConfig] =
     deriveCodec
 
-  def configToSlowDownUpdatesFrequency(update: Update): String =
-    update match {
-      case s: Update.Single =>
-        s"""dependencyOverrides = [{
+  def configToSlowDownUpdatesFrequency(update: Update): String = {
+    val forUpdate: Update.Single => String = {
+      case s: Update.ForArtifactId =>
+        s"""{
            |  pullRequests = { frequency = "@monthly" },
            |  dependency = { groupId = "${s.groupId}", artifactId = "${s.artifactId.name}" }
-           |}]""".stripMargin
-      case g: Update.Group =>
-        s"""dependencyOverrides = [{
+           |}""".stripMargin
+      case g: Update.ForGroupId =>
+        s"""{
            |  pullRequests = { frequency = "@monthly" },
            |  dependency = { groupId = "${g.groupId}" }
-           |}]""".stripMargin
+           |}""".stripMargin
     }
+
+    update.on(
+      update = u => s"dependencyOverrides = [${forUpdate(u)}]",
+      grouped = _.updates
+        .map(forUpdate(_))
+        .map(_.linesIterator.toList)
+        .map(indentLines(_))
+        .mkString("dependencyOverrides = [\n", ",\n", "\n]")
+    )
+  }
 }

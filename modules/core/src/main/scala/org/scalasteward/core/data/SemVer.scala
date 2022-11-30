@@ -17,6 +17,7 @@
 package org.scalasteward.core.data
 
 import cats.syntax.all._
+import io.circe.{Codec, Decoder, Encoder}
 import org.scalasteward.core.data.SemVer.Change._
 
 import scala.annotation.tailrec
@@ -42,6 +43,22 @@ object SemVer {
     case object Patch extends Change("patch")
     case object PreRelease extends Change("pre-release")
     case object BuildMetadata extends Change("build-metadata")
+
+    final private val allowed = List(Major, Minor, Patch, PreRelease, BuildMetadata)
+      .map(change => s"`${change.render}`")
+      .mkString(", ")
+
+    implicit val ChangeCodec: Codec[Change] =
+      Codec.from(Decoder[String].emap(from), Encoder[String].contramap(_.render))
+
+    def from(string: String): Either[String, Change] = string match {
+      case Major.`render`         => Right(Major)
+      case Minor.`render`         => Right(Minor)
+      case Patch.`render`         => Right(Patch)
+      case PreRelease.`render`    => Right(PreRelease)
+      case BuildMetadata.`render` => Right(BuildMetadata)
+      case other => Left(s"Invalid value for version change: $other. Allowed values are: $allowed")
+    }
   }
 
   def getChangeSpec(from: SemVer, to: SemVer): Option[Change] =

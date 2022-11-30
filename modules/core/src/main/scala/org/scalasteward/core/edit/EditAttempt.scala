@@ -26,7 +26,7 @@ sealed trait EditAttempt extends Product with Serializable {
 }
 
 object EditAttempt {
-  final case class UpdateEdit(update: Update, commit: Commit) extends EditAttempt {
+  final case class UpdateEdit(update: Update.Single, commit: Commit) extends EditAttempt {
     override def commits: List[Commit] = List(commit)
   }
 

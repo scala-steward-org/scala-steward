@@ -46,12 +46,11 @@ object NewPullRequestData {
       update: Update,
       edits: List[EditAttempt],
       artifactIdToUrl: Map[String, Uri],
-      releaseRelatedUrls: List[ReleaseRelatedUrl],
+      releaseRelatedUrls: Map[String, List[ReleaseRelatedUrl]],
       filesWithOldVersion: List[String],
       configParsingError: Option[String],
       labels: List[String]
   ): String = {
-    val artifacts = artifactsWithOptionalUrl(update, artifactIdToUrl)
     val migrations = edits.collect { case scalafixEdit: ScalafixEdit => scalafixEdit }
     val appliedMigrations = migrationNote(migrations)
     val oldVersionDetails = oldVersionNote(filesWithOldVersion, update)
@@ -62,12 +61,40 @@ object NewPullRequestData {
       configParsingError.map(configParsingErrorDetails)
     ).flatten
 
-    s"""|Updates $artifacts ${fromTo(update)}.
-        |${releaseNote(releaseRelatedUrls).getOrElse("")}
+    val updatesText = update.on(
+      update = u => {
+        val artifacts = artifactsWithOptionalUrl(u, artifactIdToUrl)
+
+        val relatedUrls = releaseRelatedUrls.get(u.mainArtifactId).getOrElse(Nil)
+
+        s"""|Updates $artifacts ${fromTo(u)}.
+            |${releaseNote(relatedUrls).getOrElse("")}""".stripMargin.trim
+      },
+      grouped = g => {
+        val artifacts = g.updates
+          .fproduct(u => releaseRelatedUrls.get(u.mainArtifactId).orEmpty)
+          .map { case (u, relatedUrls) =>
+            s"* ${artifactsWithOptionalUrl(u, artifactIdToUrl)} ${fromTo(u)}" +
+              releaseNote(relatedUrls).map(urls => s"\n  + $urls").getOrElse("")
+          }
+          .mkString_("\n", "\n", "\n")
+
+        s"""|Updates:
+            |$artifacts""".stripMargin.trim
+      }
+    )
+
+    val skipVersionMessage = update.on(
+      _ => "If you'd like to skip this version, you can just close this PR. ",
+      _ => ""
+    )
+
+    s"""|$updatesText
+        |
         |
         |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
         |
-        |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.
+        |${skipVersionMessage}If you have any feedback, just mention me in the comments below.
         |
         |Configure Scala Steward for your repository with a [`${RepoConfigAlg.repoConfigBasename}`](${org.scalasteward.core.BuildInfo.gitHubUrl}/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
         |
@@ -95,14 +122,14 @@ object NewPullRequestData {
         .mkString(" - ")
     }
 
-  def fromTo(update: Update): String =
+  def fromTo(update: Update.Single): String =
     s"from ${update.currentVersion} to ${update.nextVersion}"
 
-  def artifactsWithOptionalUrl(update: Update, artifactIdToUrl: Map[String, Uri]): String =
+  def artifactsWithOptionalUrl(update: Update.Single, artifactIdToUrl: Map[String, Uri]): String =
     update match {
-      case s: Update.Single =>
+      case s: Update.ForArtifactId =>
         artifactWithOptionalUrl(s.groupId, s.artifactId.name, artifactIdToUrl)
-      case g: Update.Group =>
+      case g: Update.ForGroupId =>
         g.crossDependencies
           .map(crossDependency =>
             s"* ${artifactWithOptionalUrl(g.groupId, crossDependency.head.artifactId.name, artifactIdToUrl)}\n"
@@ -122,9 +149,14 @@ object NewPullRequestData {
 
   def oldVersionNote(files: List[String], update: Update): Option[Details] =
     Option.when(files.nonEmpty) {
+      val (number, numberWithVersion) = update.on(
+        update = u => ("number", s"number (${u.currentVersion})"),
+        grouped = _ => ("numbers", "numbers")
+      )
+
       Details(
-        "Files still referring to the old version number",
-        s"""The following files still refer to the old version number (${update.currentVersion}).
+        s"Files still referring to the old version $number",
+        s"""The following files still refer to the old version $numberWithVersion.
            |You might want to review and update them manually.
            |```
            |${files.mkString("\n")}
@@ -133,19 +165,31 @@ object NewPullRequestData {
       )
     }
 
-  def adjustFutureUpdates(update: Update): Details =
-    Details(
-      "Adjust future updates",
-      s"""|Add this to your `${RepoConfigAlg.repoConfigBasename}` file to ignore future updates of this dependency:
-          |```
-          |${RepoConfigAlg.configToIgnoreFurtherUpdates(update)}
-          |```
-          |Or, add this to slow down future updates of this dependency:
-          |```
-          |${GroupRepoConfig.configToSlowDownUpdatesFrequency(update)}
-          |```
-          |""".stripMargin.trim
+  def adjustFutureUpdates(update: Update): Details = Details(
+    "Adjust future updates",
+    update.on(
+      update = u =>
+        s"""|Add this to your `${RepoConfigAlg.repoConfigBasename}` file to ignore future updates of this dependency:
+            |```
+            |${RepoConfigAlg.configToIgnoreFurtherUpdates(u)}
+            |```
+            |Or, add this to slow down future updates of this dependency:
+            |```
+            |${GroupRepoConfig.configToSlowDownUpdatesFrequency(u)}
+            |```
+            |""".stripMargin.trim,
+      grouped = g =>
+        s"""|Add these to your `${RepoConfigAlg.repoConfigBasename}` file to ignore future updates of these dependencies:
+            |```
+            |${RepoConfigAlg.configToIgnoreFurtherUpdates(g)}
+            |```
+            |Or, add these to slow down future updates of these dependencies:
+            |```
+            |${GroupRepoConfig.configToSlowDownUpdatesFrequency(g)}
+            |```
+            |""".stripMargin.trim
     )
+  )
 
   def configParsingErrorDetails(error: String): Details =
     Details(
@@ -182,7 +226,7 @@ object NewPullRequestData {
       branchName: String,
       edits: List[EditAttempt] = List.empty,
       artifactIdToUrl: Map[String, Uri] = Map.empty,
-      releaseRelatedUrls: List[ReleaseRelatedUrl] = List.empty,
+      releaseRelatedUrls: Map[String, List[ReleaseRelatedUrl]] = Map.empty,
       filesWithOldVersion: List[String] = List.empty,
       includeMatchedLabels: Option[Regex] = None
   ): NewPullRequestData = {
@@ -209,16 +253,20 @@ object NewPullRequestData {
     )
   }
 
-  def updateType(update: Update): String = {
-    val dependencies = update.dependencies
-    if (dependencies.forall(_.configurations.contains("test")))
-      "test-library-update"
-    else if (dependencies.forall(_.configurations.contains("scalafix-rule")))
-      "scalafix-rule-update"
-    else if (dependencies.forall(_.sbtVersion.isDefined))
-      "sbt-plugin-update"
-    else
-      "library-update"
+  def updateType(anUpdate: Update): List[String] = {
+    def forUpdate(update: Update.Single) = {
+      val dependencies = update.dependencies
+      if (dependencies.forall(_.configurations.contains("test")))
+        "test-library-update"
+      else if (dependencies.forall(_.configurations.contains("scalafix-rule")))
+        "scalafix-rule-update"
+      else if (dependencies.forall(_.sbtVersion.isDefined))
+        "sbt-plugin-update"
+      else
+        "library-update"
+    }
+
+    anUpdate.on(u => List(forUpdate(u)), _.updates.map(forUpdate).distinct)
   }
 
   def labelsFor(
@@ -232,19 +280,26 @@ object NewPullRequestData {
       case n if n <= 1 => s"$n"
       case n           => s"n:$n"
     })
-    val semVerVersions =
-      (SemVer.parse(update.currentVersion.value), SemVer.parse(update.nextVersion.value)).tupled
-    val earlySemVerLabel = semVerVersions.flatMap { case (curr, next) =>
-      SemVer.getChangeEarly(curr, next).map(c => s"early-semver-${c.render}")
+
+    def semverForUpdate(u: Update.Single): List[String] = {
+      val semVerVersions =
+        (SemVer.parse(u.currentVersion.value), SemVer.parse(u.nextVersion.value)).tupled
+      val earlySemVerLabel = semVerVersions.flatMap { case (curr, next) =>
+        SemVer.getChangeEarly(curr, next).map(c => s"early-semver-${c.render}")
+      }
+      val semVerSpecLabel = semVerVersions.flatMap { case (curr, next) =>
+        SemVer.getChangeSpec(curr, next).map(c => s"semver-spec-${c.render}")
+      }
+      List(earlySemVerLabel, semVerSpecLabel).flatten
     }
-    val semVerSpecLabel = semVerVersions.flatMap { case (curr, next) =>
-      SemVer.getChangeSpec(curr, next).map(c => s"semver-spec-${c.render}")
-    }
+    val semver: List[String] =
+      update.on(u => semverForUpdate(u), _.updates.flatMap(semverForUpdate(_)).distinct)
+
     val scalafixLabel = edits.collectFirst { case _: ScalafixEdit => "scalafix-migrations" }
     val oldVersionLabel = Option.when(filesWithOldVersion.nonEmpty)("old-version-remains")
 
-    val allLabels = updateType(update) ::
-      List(earlySemVerLabel, semVerSpecLabel, scalafixLabel, oldVersionLabel).flatten ++
+    val allLabels = updateType(update) ++
+      semver ++ List(scalafixLabel, oldVersionLabel).flatten ++
       List(commitCountLabel)
 
     allLabels.filter(label => includeMatchedLabels.fold(true)(_.matches(label)))

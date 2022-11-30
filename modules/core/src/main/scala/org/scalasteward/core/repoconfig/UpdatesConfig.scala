@@ -43,20 +43,20 @@ final case class UpdatesConfig(
   def fileExtensionsOrDefault: Set[String] =
     fileExtensions.fold(UpdatesConfig.defaultFileExtensions)(_.toSet)
 
-  def keep(update: Update.Single): FilterResult =
+  def keep(update: Update.ForArtifactId): FilterResult =
     isAllowed(update).flatMap(isPinned).flatMap(isIgnored)
 
-  def preRelease(update: Update.Single): FilterResult =
+  def preRelease(update: Update.ForArtifactId): FilterResult =
     isAllowedPreReleases(update)
 
-  private def isAllowedPreReleases(update: Update.Single): FilterResult = {
+  private def isAllowedPreReleases(update: Update.ForArtifactId): FilterResult = {
     val m = UpdatePattern.findMatch(allowPreReleases, update, include = true)
     if (m.filteredVersions.nonEmpty)
       Right(update)
     else Left(NotAllowedByConfig(update))
   }
 
-  private def isAllowed(update: Update.Single): FilterResult = {
+  private def isAllowed(update: Update.ForArtifactId): FilterResult = {
     val m = UpdatePattern.findMatch(allow, update, include = true)
     if (m.filteredVersions.nonEmpty)
       Right(update.copy(newerVersions = Nel.fromListUnsafe(m.filteredVersions)))
@@ -65,7 +65,7 @@ final case class UpdatesConfig(
     else Left(NotAllowedByConfig(update))
   }
 
-  private def isPinned(update: Update.Single): FilterResult = {
+  private def isPinned(update: Update.ForArtifactId): FilterResult = {
     val m = UpdatePattern.findMatch(pin, update, include = true)
     if (m.filteredVersions.nonEmpty)
       Right(update.copy(newerVersions = Nel.fromListUnsafe(m.filteredVersions)))
@@ -74,7 +74,7 @@ final case class UpdatesConfig(
     else Left(VersionPinnedByConfig(update))
   }
 
-  private def isIgnored(update: Update.Single): FilterResult = {
+  private def isIgnored(update: Update.ForArtifactId): FilterResult = {
     val m = UpdatePattern.findMatch(ignore, update, include = false)
     if (m.filteredVersions.nonEmpty)
       Right(update.copy(newerVersions = Nel.fromListUnsafe(m.filteredVersions)))

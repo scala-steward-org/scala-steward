@@ -55,7 +55,11 @@ final class MillAlg[F[_]](implicit
       millBuildDeps = millBuildVersion.toSeq.map(version =>
         Scope(List(millMainArtifact(version)), List(millMainResolver))
       )
-    } yield dependencies ++ millBuildDeps
+      millPluginDeps <- millBuildVersion match {
+        case None        => F.pure(Seq.empty[Scope[List[Dependency]]])
+        case Some(value) => getMillPluginDeps(value, buildRootDir)
+      }
+    } yield dependencies ++ millBuildDeps ++ millPluginDeps
 
   override def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
     F.unit
@@ -65,6 +69,17 @@ final class MillAlg[F[_]](implicit
       millVersionFileContent <- fileAlg.readFile(buildRootDir / ".mill-version")
       version = millVersionFileContent.flatMap(parser.parseMillVersion)
     } yield version
+
+  private def getMillPluginDeps(
+      millVersion: Version,
+      buildRootDir: File
+  ): F[Seq[Scope[List[Dependency]]]] =
+    for {
+      buildConent <- fileAlg.readFile(buildRootDir / "build.sc")
+      deps = buildConent.toList.map(content =>
+        Scope(parser.parseMillPluginDeps(content, millVersion), List(millMainResolver))
+      )
+    } yield deps
 }
 
 object MillAlg {
@@ -87,7 +102,7 @@ object MillAlg {
   private def millMainArtifact(version: Version): Dependency =
     Dependency(millMainGroupId, millMainArtifactId, version)
 
-  def isMillMainUpdate(update: Update): Boolean =
+  def isMillMainUpdate(update: Update.Single): Boolean =
     update.groupId === millMainGroupId && update.artifactIds.exists(
       _.name === millMainArtifactId.name
     )

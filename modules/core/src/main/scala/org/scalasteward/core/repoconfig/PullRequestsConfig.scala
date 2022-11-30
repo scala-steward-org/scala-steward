@@ -27,6 +27,7 @@ import scala.util.matching.Regex
 
 final case class PullRequestsConfig(
     frequency: Option[PullRequestFrequency] = None,
+    grouping: List[PullRequestGroup] = Nil,
     includeMatchedLabels: Option[Regex] = None
 ) {
   def frequencyOrDefault: PullRequestFrequency =
@@ -56,6 +57,7 @@ object PullRequestsConfig {
       (x, y) =>
         PullRequestsConfig(
           frequency = x.frequency.orElse(y.frequency),
+          grouping = x.grouping |+| y.grouping,
           includeMatchedLabels = x.includeMatchedLabels.orElse(y.includeMatchedLabels)
         )
     )
