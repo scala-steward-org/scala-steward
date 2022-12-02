@@ -64,10 +64,11 @@ object VersionScanner {
 
   private def findUnclassified(dependency: Dependency, content: String): Iterator[Unclassified] = {
     val v = Regex.quote(dependency.version.value)
-    val regex = raw"""$v""".r
+    val regex = raw"""(.*)$v""".r
     regex.findAllIn(content).matchData.map { m =>
       val filePosition = filePositionFrom(m, dependency.version)
-      Unclassified(filePosition)
+      val before = m.group(1)
+      Unclassified(filePosition, before)
     }
   }
 

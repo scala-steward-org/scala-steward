@@ -67,7 +67,7 @@ class VersionScannerTest extends FunSuite {
     val d = "org.scala-sbt".g % "sbt".a % "1.2.8"
     val content = s"""sbt.version=${d.version}"""
     val obtained = VersionScanner.findVersionPositions(d, content)
-    val expected = List(Unclassified(FilePosition(12, 17, 1, 13)))
+    val expected = List(Unclassified(FilePosition(12, 17, 1, 13), "sbt.version="))
     assertEquals(obtained, expected)
   }
 
@@ -76,8 +76,10 @@ class VersionScannerTest extends FunSuite {
     val content = s"""scalaVersion := "${d.version}"
                      |.target/scala-${d.version}/""".stripMargin
     val obtained = VersionScanner.findVersionPositions(d, content)
-    val expected =
-      List(Unclassified(FilePosition(17, 26, 1, 18)), Unclassified(FilePosition(42, 51, 2, 15)))
+    val expected = List(
+      Unclassified(FilePosition(17, 26, 1, 18), "scalaVersion := \""),
+      Unclassified(FilePosition(42, 51, 2, 15), ".target/scala-")
+    )
     assertEquals(obtained, expected)
   }
 }

@@ -33,7 +33,8 @@ object VersionPosition {
     def isCommented: Boolean = before.contains("//")
   }
 
-  final case class Unclassified(filePosition: FilePosition) extends VersionPosition {
+  final case class Unclassified(filePosition: FilePosition, before: String)
+      extends VersionPosition {
     def isCommented: Boolean = false
   }
 
