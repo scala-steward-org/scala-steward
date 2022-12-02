@@ -60,10 +60,19 @@ class Test extends FunSuite {
     assertEquals(obtained, expected)
   }
 
+  test("sbt version") {
+    val d = "org.scala-sbt".g % "sbt".a % "1.2.8"
+    val content = s"""sbt.version=${d.version}"""
+
+    val obtained = scanner.findVersionPositions(d)(content)
+    val expected = List(Unclassified(FilePosition(12, 1, 13)))
+    assertEquals(obtained, expected)
+  }
+
   test("unclassified 1") {
     val d = "org.scala-lang".g % "scala-compiler".a % "3.2.1-RC4"
-    val content = s"""scalaVersion := "${d.version.value}"
-                     |.target/scala-${d.version.value}/""".stripMargin
+    val content = s"""scalaVersion := "${d.version}"
+                     |.target/scala-${d.version}/""".stripMargin
 
     val obtained = scanner.findVersionPositions(d)(content)
     val expected =

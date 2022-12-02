@@ -26,10 +26,12 @@ object scanner {
 
   // support scala-steward:on,off
 
-  def findVersionPositions(dependency: Dependency)(content: String): List[VersionPosition] =
-    (findSbtModuleId(dependency)(content) ++
+  def findVersionPositions(dependency: Dependency)(content: String): List[VersionPosition] = {
+    val it = findSbtModuleId(dependency)(content) ++
       findScalaVal(dependency)(content) ++
-      findUnclassified(dependency)(content)).distinctBy(_.filePosition.index).toList
+      findUnclassified(dependency)(content)
+    it.distinctBy(_.filePosition.index).toList
+  }
 
   private def findSbtModuleId(dependency: Dependency)(content: String): Iterator[SbtModuleId] =
     sbtModuleIdRegex(dependency).findAllIn(content).matchData.map { m =>
