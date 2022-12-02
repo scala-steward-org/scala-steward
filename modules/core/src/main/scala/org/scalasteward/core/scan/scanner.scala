@@ -36,8 +36,7 @@ object scanner {
   private def findSbtModuleId(dependency: Dependency)(content: String): Iterator[SbtModuleId] =
     sbtModuleIdRegex(dependency).findAllIn(content).matchData.map { m =>
       val index = m.start + m.matched.indexOf(dependency.version.value)
-      val (line, column) = lineAndColumnOfIndex(content, index)
-      val filePosition = FilePosition(index, line, column)
+      val filePosition = filePositionFrom(content, index)
       SbtModuleId(filePosition)
     }
 
@@ -51,8 +50,7 @@ object scanner {
   private def findScalaVal(dependency: Dependency)(content: String): Iterator[ScalaVal] =
     scalaValRegex(dependency).findAllIn(content).matchData.map { m =>
       val index = m.start + m.matched.indexOf(dependency.version.value)
-      val (line, column) = lineAndColumnOfIndex(content, index)
-      val filePosition = FilePosition(index, line, column)
+      val filePosition = filePositionFrom(content, index)
       val name = m.group(2)
       val before = m.group(1)
       ScalaVal(filePosition, name, before)
@@ -69,13 +67,12 @@ object scanner {
     val regex = raw"""$v""".r
     regex.findAllIn(content).matchData.map { m =>
       val index = m.start + m.matched.indexOf(dependency.version.value)
-      val (line, column) = lineAndColumnOfIndex(content, index)
-      val filePosition = FilePosition(index, line, column)
+      val filePosition = filePositionFrom(content, index)
       Unclassified(filePosition)
     }
   }
 
-  private def lineAndColumnOfIndex(s: String, index: Int): (Int, Int) = {
+  private def filePositionFrom(s: String, index: Int): FilePosition = {
     var c = 0
     var line = 1
     var column = 0
@@ -88,6 +85,6 @@ object scanner {
       }
       c = c + 1
     }
-    (line, column)
+    FilePosition(index, line, column)
   }
 }
