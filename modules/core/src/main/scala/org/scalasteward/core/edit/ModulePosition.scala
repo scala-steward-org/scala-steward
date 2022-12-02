@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.io
+package org.scalasteward.core.edit
 
-final case class FilePosition(start: Int, end: Int, line: Int, column: Int) {
-  def replaceIn(source: String, replacement: String): String =
-    source.substring(0, start) + replacement + source.substring(end)
-}
+sealed trait ModulePosition extends Product with Serializable {}

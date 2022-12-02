@@ -7,13 +7,6 @@ import org.scalasteward.core.edit.UpdateHeuristicTest.UpdateOps
 import org.scalasteward.core.util.Nel
 
 class UpdateHeuristicTest extends FunSuite {
-  test("sbt: build.properties") {
-    val original = """sbt.version=1.3.0-RC1"""
-    val expected = """sbt.version=1.3.0"""
-    val update = ("org.scala-sbt".g % "sbt".a % "1.3.0-RC1" %> "1.3.0").single
-    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.original.name)
-  }
-
   test("sbt plugins") {
     val original =
       """addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.3.3")
@@ -74,19 +67,6 @@ class UpdateHeuristicTest extends FunSuite {
     assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.original.name)
   }
 
-  test("commented val") {
-    val original =
-      """// val scalajsJqueryVersion = "0.9.3
-        |val scalajsJqueryVersion = "0.9.3" //bla
-        |"""".stripMargin.trim
-    val expected =
-      """// val scalajsJqueryVersion = "0.9.3
-        |val scalajsJqueryVersion = "0.9.4" //bla
-        |"""".stripMargin.trim
-    val update = ("be.doeraene".g % "scalajs-jquery".a % "0.9.3" %> "0.9.4").single
-    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.original.name)
-  }
-
   test("commented ModuleIDs") {
     val original =
       """ "be.doeraene" %% "scalajs-jquery"  % "0.9.3"
@@ -135,13 +115,6 @@ class UpdateHeuristicTest extends FunSuite {
       update.replaceVersionIn(original),
       Some(expected) -> UpdateHeuristic.completeGroupId.name
     )
-  }
-
-  test("version range") {
-    val original = """Seq("org.specs2" %% "specs2-core" % "3.+" % "test")"""
-    val expected = """Seq("org.specs2" %% "specs2-core" % "4.3.4" % "test")"""
-    val update = ("org.specs2".g % "specs2-core".a % "3.+" %> "4.3.4").single
-    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.moduleId.name)
   }
 
   test("group with prefix val") {

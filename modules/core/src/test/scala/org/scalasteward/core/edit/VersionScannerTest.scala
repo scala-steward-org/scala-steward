@@ -1,29 +1,26 @@
-package org.scalasteward.core
+package org.scalasteward.core.edit
 
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.edit.VersionPosition.{SbtModuleId, ScalaVal, Unclassified}
 import org.scalasteward.core.io.FilePosition
-import org.scalasteward.core.scan.scanner
 
-class Test extends FunSuite {
+class VersionScannerTest extends FunSuite {
   test("sbt module with newlines") {
     val d = "org.typelevel".g % "cats-core".a % "2.9.0"
     val content = s"""libraryDependencies += "${d.groupId}" %%
                      |  "${d.artifactId.name}" %
                      |  "${d.version}"""".stripMargin
-
-    val obtained = scanner.findVersionPositions(d)(content)
-    val expected = List(SbtModuleId(FilePosition(61, 3, 4)))
+    val obtained = VersionScanner.findVersionPositions(d, content)
+    val expected = List(SbtModuleId(FilePosition(61, 66, 3, 4), "libraryDependencies += "))
     assertEquals(obtained, expected)
   }
 
   test("sbt plugins 1") {
     val d = "org.scala-js".g % "sbt-scalajs".a % "0.6.23"
     val content = s"""addSbtPlugin("${d.groupId}" % "${d.artifactId.name}" % "${d.version}")"""
-
-    val obtained = scanner.findVersionPositions(d)(content)
-    val expected = List(SbtModuleId(FilePosition(47, 1, 48)))
+    val obtained = VersionScanner.findVersionPositions(d, content)
+    val expected = List(SbtModuleId(FilePosition(47, 53, 1, 48), "addSbtPlugin("))
     assertEquals(obtained, expected)
   }
 
@@ -32,9 +29,8 @@ class Test extends FunSuite {
     val content = s"""addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.5.0")
                      |addSbtPlugin("${d.groupId}" % "${d.artifactId.name}" % "${d.version}")
                      |addSbtPlugin("org.scoverage" % "sbt-scoverage" % "2.0.6")""".stripMargin
-
-    val obtained = scanner.findVersionPositions(d)(content)
-    val expected = List(SbtModuleId(FilePosition(104, 2, 48)))
+    val obtained = VersionScanner.findVersionPositions(d, content)
+    val expected = List(SbtModuleId(FilePosition(104, 110, 2, 48), "addSbtPlugin("))
     assertEquals(obtained, expected)
   }
 
@@ -43,9 +39,8 @@ class Test extends FunSuite {
     val content = s"""object Versions {
                      |  val cats = "${d.version}"
                      |}""".stripMargin
-
-    val obtained = scanner.findVersionPositions(d)(content)
-    val expected = List(ScalaVal(FilePosition(32, 2, 15), "cats", "  "))
+    val obtained = VersionScanner.findVersionPositions(d, content)
+    val expected = List(ScalaVal(FilePosition(32, 37, 2, 15), "cats", "  "))
     assertEquals(obtained, expected)
   }
 
@@ -55,17 +50,24 @@ class Test extends FunSuite {
                      |  // val cats = "${d.version}"
                      |}""".stripMargin
 
-    val obtained = scanner.findVersionPositions(d)(content)
-    val expected = List(ScalaVal(FilePosition(35, 2, 18), "cats", "  // "))
+    val obtained = VersionScanner.findVersionPositions(d, content)
+    val expected = List(ScalaVal(FilePosition(35, 40, 2, 18), "cats", "  // "))
+    assertEquals(obtained, expected)
+  }
+
+  test("val with backticks") {
+    val d = "org.webjars.bower".g % "plotly.js".a % "1.41.3"
+    val content = s""" val `plotly.js` = "${d.version}" """
+    val obtained = VersionScanner.findVersionPositions(d, content)
+    val expected = List(ScalaVal(FilePosition(20, 26, 1, 21), "`plotly.js`", " "))
     assertEquals(obtained, expected)
   }
 
   test("sbt version") {
     val d = "org.scala-sbt".g % "sbt".a % "1.2.8"
     val content = s"""sbt.version=${d.version}"""
-
-    val obtained = scanner.findVersionPositions(d)(content)
-    val expected = List(Unclassified(FilePosition(12, 1, 13)))
+    val obtained = VersionScanner.findVersionPositions(d, content)
+    val expected = List(Unclassified(FilePosition(12, 17, 1, 13)))
     assertEquals(obtained, expected)
   }
 
@@ -73,10 +75,9 @@ class Test extends FunSuite {
     val d = "org.scala-lang".g % "scala-compiler".a % "3.2.1-RC4"
     val content = s"""scalaVersion := "${d.version}"
                      |.target/scala-${d.version}/""".stripMargin
-
-    val obtained = scanner.findVersionPositions(d)(content)
+    val obtained = VersionScanner.findVersionPositions(d, content)
     val expected =
-      List(Unclassified(FilePosition(17, 1, 18)), Unclassified(FilePosition(42, 2, 15)))
+      List(Unclassified(FilePosition(17, 26, 1, 18)), Unclassified(FilePosition(42, 51, 2, 15)))
     assertEquals(obtained, expected)
   }
 }

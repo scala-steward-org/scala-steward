@@ -126,45 +126,6 @@ class EditAlgTest extends FunSuite {
     assertEquals(state, expected)
   }
 
-  test("apply update to ammonite file") {
-    val repo = Repo("edit-alg", "test-3")
-    val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
-    val repoDir = config.workspace / repo.toPath
-    val update = ("org.typelevel".g % "cats-core".a % "1.2.0" %> "1.3.0").single
-    val file1 = repoDir / "script.sc"
-    val file2 = repoDir / "build.sbt"
-
-    val state = MockState.empty
-      .addFiles(
-        file1 -> """import $ivy.`org.typelevel::cats-core:1.2.0`, cats.implicits._"""",
-        file2 -> """"org.typelevel" %% "cats-core" % "1.2.0""""
-      )
-      .flatMap(editAlg.applyUpdate(data, update).runS)
-      .unsafeRunSync()
-
-    val expected = MockState.empty.copy(
-      trace = Vector(
-        Cmd("test", "-f", repoDir.pathAsString),
-        Cmd("test", "-f", file2.pathAsString),
-        Cmd("read", file2.pathAsString),
-        Cmd("test", "-f", file1.pathAsString),
-        Cmd("read", file1.pathAsString),
-        Log("Trying heuristic 'moduleId'"),
-        Cmd("read", file2.pathAsString),
-        Cmd("write", file2.pathAsString),
-        Cmd("read", file1.pathAsString),
-        Cmd("write", file1.pathAsString),
-        Cmd(gitStatus(repoDir))
-      ),
-      files = Map(
-        file1 -> """import $ivy.`org.typelevel::cats-core:1.3.0`, cats.implicits._"""",
-        file2 -> """"org.typelevel" %% "cats-core" % "1.3.0""""
-      )
-    )
-
-    assertEquals(state, expected)
-  }
-
   test("applyUpdate with build Scalafix") {
     val repo = Repo("edit-alg", "test-3-1")
     val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)

@@ -18,24 +18,27 @@ package org.scalasteward.core.edit
 
 import org.scalasteward.core.io.FilePosition
 
-sealed trait ModulePosition
-
 sealed trait VersionPosition extends Product with Serializable {
   def filePosition: FilePosition
+  def isCommented: Boolean
 }
 
 object VersionPosition {
-  final case class SbtModuleId(filePosition: FilePosition) extends VersionPosition {
-    def isCommented: Boolean = ???
-  }
-
-  final case class ScalaVal(
-      filePosition: FilePosition,
-      name: String,
-      before: String
-  ) extends VersionPosition {
+  final case class SbtModuleId(filePosition: FilePosition, before: String) extends VersionPosition {
     def isCommented: Boolean = before.contains("//")
   }
 
-  final case class Unclassified(filePosition: FilePosition) extends VersionPosition
+  final case class ScalaVal(filePosition: FilePosition, name: String, before: String)
+      extends VersionPosition {
+    def isCommented: Boolean = before.contains("//")
+  }
+
+  final case class Unclassified(filePosition: FilePosition) extends VersionPosition {
+    def isCommented: Boolean = false
+  }
+
+  // TODO:
+  // - add Variable
+  // - add MavenDependency
+
 }
