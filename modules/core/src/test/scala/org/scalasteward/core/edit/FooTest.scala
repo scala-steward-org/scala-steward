@@ -48,6 +48,10 @@ class FooTest extends FunSuite {
   }
 
   def bar(update: Update.Single, input: List[(String, String)]): List[(String, String)] = {
+    // find all VersionPosition  <- done
+    // select VersionPosition that should be changed
+    // apply the selected changes
+
     val dependencies = update.on(_.dependencies.toList, _.updates.flatMap(_.dependencies.toList))
     val next = update.on(_.nextVersion, _.updates.head.nextVersion)
     input.map { case (path, content) =>

@@ -75,23 +75,6 @@ object VersionScanner {
   private def filePositionFrom(m: Match, version: Version): FilePosition = {
     val start = m.start + m.matched.indexOf(version.value)
     val end = start + version.value.length
-    val (line, column) = lineAndColumnOfIndex(m.source, start)
-    FilePosition(start, end, line, column)
-  }
-
-  private def lineAndColumnOfIndex(s: CharSequence, index: Int): (Int, Int) = {
-    var c = 0
-    var line = 1
-    var column = 0
-    while (c <= index) {
-      if (s.charAt(c) == '\n') {
-        line = line + 1
-        column = 0
-      } else {
-        column = column + 1
-      }
-      c = c + 1
-    }
-    (line, column)
+    FilePosition(start, end)
   }
 }

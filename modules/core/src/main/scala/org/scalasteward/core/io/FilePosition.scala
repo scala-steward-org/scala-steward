@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.io
 
-final case class FilePosition(start: Int, end: Int, line: Int, column: Int) {
+final case class FilePosition(start: Int, end: Int) {
   def replaceIn(source: String, replacement: String): String =
     source.substring(0, start) + replacement + source.substring(end)
 }
