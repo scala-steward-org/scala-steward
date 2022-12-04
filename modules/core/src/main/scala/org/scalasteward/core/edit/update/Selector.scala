@@ -14,9 +14,15 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.io
+package org.scalasteward.core.edit.update
 
-final case class FilePosition(start: Int, end: Int) {
-  def replaceIn(source: String, replacement: String): String =
-    source.substring(0, start) + replacement + source.substring(end)
+import org.scalasteward.core.edit.update.data.UpdatePositions
+
+object Selector {
+  def select(positions: UpdatePositions): UpdatePositions = {
+    val versionsPositions = positions.versionPositions.map { case (path, positions) =>
+      path -> positions.filterNot(_.isCommented)
+    }
+    UpdatePositions(versionsPositions, List.empty)
+  }
 }

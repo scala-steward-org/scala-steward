@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.edit
-
-import org.scalasteward.core.io.FilePosition
+package org.scalasteward.core.edit.update.data
 
 sealed trait VersionPosition extends Product with Serializable {
   def filePosition: FilePosition

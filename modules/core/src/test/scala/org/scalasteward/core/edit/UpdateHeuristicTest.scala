@@ -39,13 +39,6 @@ class UpdateHeuristicTest extends FunSuite {
     assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.moduleId.name)
   }
 
-  test("ignore hyphen in artifactId") {
-    val original = """val scalajsJqueryVersion = "0.9.3""""
-    val expected = """val scalajsJqueryVersion = "0.9.4""""
-    val update = ("be.doeraene".g % "scalajs-jquery".a % "0.9.3" %> "0.9.4").single
-    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.original.name)
-  }
-
   test("with single quotes around val") {
     val original = """val `scalajs-jquery-version` = "0.9.3""""
     val expected = """val `scalajs-jquery-version` = "0.9.4""""

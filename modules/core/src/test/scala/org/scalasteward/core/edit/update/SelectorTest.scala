@@ -1,15 +1,16 @@
-package org.scalasteward.core.edit
+package org.scalasteward.core.edit.update
 
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.Update
+import org.scalasteward.core.edit.update.data.UpdatePositions
 
-class FooTest extends FunSuite {
+class SelectorTest extends FunSuite {
   test("sbt: build.properties") {
     val update = ("org.scala-sbt".g % "sbt".a % "1.3.0-RC1" %> "1.3.0").single
     val original = List("build.properties" -> """sbt.version=1.3.0-RC1""")
     val expected = List("build.properties" -> """sbt.version=1.3.0""")
-    val obtained = bar(update, original)
+    val obtained = rewrite(update, original)
     assertEquals(obtained, expected)
   }
 
@@ -23,7 +24,7 @@ class FooTest extends FunSuite {
       "script.sc" -> """import $ivy.`org.typelevel::cats-core:1.3.0`, cats.implicits._""",
       "build.sbt" -> """"org.typelevel" %% "cats-core" % "1.3.0""""
     )
-    val obtained = bar(update, original)
+    val obtained = rewrite(update, original)
     assertEquals(obtained, expected)
   }
 
@@ -31,7 +32,7 @@ class FooTest extends FunSuite {
     val update = ("org.specs2".g % "specs2-core".a % "3.+" %> "4.3.4").single
     val original = List("build.sbt" -> """Seq("org.specs2" %% "specs2-core" % "3.+" % "test")""")
     val expected = List("build.sbt" -> """Seq("org.specs2" %% "specs2-core" % "4.3.4" % "test")""")
-    val obtained = bar(update, original)
+    val obtained = rewrite(update, original)
     assertEquals(obtained, expected)
   }
 
@@ -43,24 +44,43 @@ class FooTest extends FunSuite {
     val expected = List("Versions.scala" -> """// val scalajsJqueryVersion = "0.9.3"
                                               |val scalajsJqueryVersion = "0.9.4" //bla
                                               |"""".stripMargin.trim)
-    val obtained = bar(update, original)
+    val obtained = rewrite(update, original)
     assertEquals(obtained, expected)
   }
 
-  def bar(update: Update.Single, input: List[(String, String)]): List[(String, String)] = {
-    // find all VersionPosition  <- done
-    // select VersionPosition that should be changed
-    // apply the selected changes
-
-    val dependencies = update.on(_.dependencies.toList, _.updates.flatMap(_.dependencies.toList))
-    val next = update.on(_.nextVersion, _.updates.head.nextVersion)
-    input.map { case (path, content) =>
-      val xs = dependencies
-        .flatMap(d => VersionScanner.findVersionPositions(d, content))
-        .filterNot(_.isCommented)
-
-      path -> xs.headOption.fold(content)(p => p.filePosition.replaceIn(content, next.value))
-    }
+  test("ignore hyphen in artifactId") {
+    val update = ("be.doeraene".g % "scalajs-jquery".a % "0.9.3" %> "0.9.4").single
+    val original = List("Version.scala" -> """val scalajsJqueryVersion = "0.9.3"""")
+    val expected = List("Version.scala" -> """val scalajsJqueryVersion = "0.9.4"""")
+    val obtained = rewrite(update, original)
+    assertEquals(obtained, expected)
   }
 
+  private def rewrite(
+      update: Update.Single,
+      input: List[(String, String)]
+  ): List[(String, String)] = {
+    // scan
+    val versionPositions = input.map { case (path, content) =>
+      path -> Scanner.findVersionPositions(update.dependencies, content)
+    }
+
+    // select
+    val updatePositions = Selector.select(UpdatePositions(versionPositions, List.empty))
+
+    // write
+    input.map { case (path, content) =>
+      val versionPositions = updatePositions.versionPositions
+        .find { case (p, _) => p == path }
+        .map { case (_, ps) => ps }
+        .getOrElse(List.empty)
+        .sortBy(_.filePosition.start)
+        .reverse
+
+      val updated = versionPositions.foldLeft(content) { (c, pos) =>
+        pos.filePosition.replaceIn(c, update.nextVersion.value)
+      }
+      path -> updated
+    }
+  }
 }

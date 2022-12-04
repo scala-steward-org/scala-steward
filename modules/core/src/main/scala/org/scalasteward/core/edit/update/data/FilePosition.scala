@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.edit
+package org.scalasteward.core.edit.update.data
 
-sealed trait ModulePosition extends Product with Serializable {}
+final case class FilePosition(start: Int, end: Int) {
+  def replaceIn(source: String, replacement: String): String =
+    source.substring(0, start) + replacement + source.substring(end)
+}
