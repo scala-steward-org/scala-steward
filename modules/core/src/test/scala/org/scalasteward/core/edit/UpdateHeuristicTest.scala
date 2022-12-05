@@ -7,16 +7,6 @@ import org.scalasteward.core.edit.UpdateHeuristicTest.UpdateOps
 import org.scalasteward.core.util.Nel
 
 class UpdateHeuristicTest extends FunSuite {
-  test("sbt plugins: missing version") {
-    val original =
-      """addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.3.3")
-        |addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.23")
-        |addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.4.0")
-      """.stripMargin.trim
-    val update = ("org.scala-js".g % "sbt-scalajs".a % "0.6.24" %> "0.6.25").single
-    assertEquals(update.replaceVersionIn(original), None -> UpdateHeuristic.all.last.name)
-  }
-
   test("all on one line") {
     val original = """"be.doeraene" %% "scalajs-jquery"  % "0.9.3""""
     val expected = """"be.doeraene" %% "scalajs-jquery"  % "0.9.4""""
@@ -123,22 +113,6 @@ class UpdateHeuristicTest extends FunSuite {
       """.stripMargin.trim
     val update =
       ("com.pepegar".g % Nel.of("hammock-core".a, "hammock-circe".a) % "0.8.1" %> "0.8.5").group
-    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.moduleId.name)
-  }
-
-  test("same version, same artifact prefix, different groupId") {
-    val original =
-      """ "org.http4s" %% "jawn-fs2" % "0.14.0"
-        | "org.typelevel" %% "jawn-json4s"  % "0.14.0",
-        | "org.typelevel" %% "jawn-play" % "0.14.0"
-      """.stripMargin.trim
-    val expected =
-      """ "org.http4s" %% "jawn-fs2" % "0.14.0"
-        | "org.typelevel" %% "jawn-json4s"  % "0.14.1",
-        | "org.typelevel" %% "jawn-play" % "0.14.1"
-      """.stripMargin.trim
-    val update =
-      ("org.typelevel".g % Nel.of("jawn-json4s".a, "jawn-play".a) % "0.14.0" %> "0.14.1").group
     assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.moduleId.name)
   }
 
@@ -291,13 +265,6 @@ class UpdateHeuristicTest extends FunSuite {
     assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.strict.name)
   }
 
-  test("unrelated ModuleID with same version number") {
-    val original = """ "com.geirsson" % "sbt-ci-release" % "1.2.1" """
-    val update = ("org.scala-sbt".g %
-      Nel.of("sbt-launch".a, "scripted-plugin".a, "scripted-sbt".a) % "1.2.1" %> "1.2.4").group
-    assertEquals(update.replaceVersionIn(original), None -> UpdateHeuristic.all.last.name)
-  }
-
   test("issue 960: unrelated ModuleID with same version number, 3") {
     val original = """ "org.webjars.npm" % "bootstrap" % "3.4.1", // scala-steward:off
                      | "org.webjars.npm" % "jquery" % "3.4.1",
@@ -377,13 +344,6 @@ class UpdateHeuristicTest extends FunSuite {
         |""".stripMargin
     val update =
       ("org.typelevel".g % Nel.of("cats-core".a, "cats-laws".a) % "2.0.0-M4" %> "2.0.0-RC1").group
-    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.moduleId.name)
-  }
-
-  test("ammonite script syntax") {
-    val original = " import $ivy.`org.typelevel::cats-core:1.2.0` ".stripMargin
-    val expected = " import $ivy.`org.typelevel::cats-core:1.3.0` ".stripMargin
-    val update = ("org.typelevel".g % "cats-core".a % "1.2.0" %> "1.3.0").single
     assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.moduleId.name)
   }
 

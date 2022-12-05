@@ -25,6 +25,19 @@ class SelectorTest extends FunSuite {
     assertEquals(obtained, expected)
   }
 
+  test("sbt plugins: missing version") {
+    val update = ("org.scala-js".g % "sbt-scalajs".a % "0.6.24" %> "0.6.25").single
+    val original = List(
+      "plugins.sbt" -> """addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.3.3")
+                         |addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.23")
+                         |addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.4.0")
+                         |""".stripMargin.trim
+    )
+    val expected = original
+    val obtained = rewrite(update, original)
+    assertEquals(obtained, expected)
+  }
+
   test("sbt: build.properties") {
     val update = ("org.scala-sbt".g % "sbt".a % "1.3.0-RC1" %> "1.3.0").single
     val original = List("build.properties" -> """sbt.version=1.3.0-RC1""")
@@ -37,6 +50,14 @@ class SelectorTest extends FunSuite {
     val update = ("com.lihaoyi".g % "requests".a % "0.7.0" %> "0.7.1").single
     val original = List("build.sc" -> """ivy"com.lihaoyi::requests:0.7.0"""")
     val expected = List("build.sc" -> """ivy"com.lihaoyi::requests:0.7.1"""")
+    val obtained = rewrite(update, original)
+    assertEquals(obtained, expected)
+  }
+
+  test("$ivy import") {
+    val update = ("org.typelevel".g % "cats-core".a % "1.2.0" %> "1.3.0").single
+    val original = List("build.sc" -> " import $ivy.`org.typelevel::cats-core:1.2.0` ")
+    val expected = List("build.sc" -> " import $ivy.`org.typelevel::cats-core:1.3.0` ")
     val obtained = rewrite(update, original)
     assertEquals(obtained, expected)
   }
@@ -83,6 +104,15 @@ class SelectorTest extends FunSuite {
     assertEquals(obtained, expected)
   }
 
+  test("unrelated ModuleID with same version number") {
+    val update = ("org.scala-sbt".g %
+      Nel.of("sbt-launch".a, "scripted-plugin".a, "scripted-sbt".a) % "1.2.1" %> "1.2.4").group
+    val original = List("plugins.sbt" -> """ "com.geirsson" % "sbt-ci-release" % "1.2.1" """)
+    val expected = original
+    val obtained = rewrite(update, original)
+    assertEquals(obtained, expected)
+  }
+
   test("issue 1314: unrelated ModuleID with same version number, 2") {
     val update = ("org.scalameta".g % "sbt-scalafmt".a % "2.0.1" %> "2.0.7").single
     val original = List("plugins.sbt" -> """val scalafmt = "2.0.1"
@@ -104,6 +134,21 @@ class SelectorTest extends FunSuite {
     val expected = List("build.sbt" -> """val circeVersion = "0.10.1"
                                          |val previousCirceIterateeVersion = "0.10.0"
                                          |""".stripMargin)
+    val obtained = rewrite(update, original)
+    assertEquals(obtained, expected)
+  }
+
+  test("same version, same artifact prefix, different groupId") {
+    val update =
+      ("org.typelevel".g % Nel.of("jawn-json4s".a, "jawn-play".a) % "0.14.0" %> "0.14.1").group
+    val original =
+      List("build.sbt" -> """ "org.http4s" %% "jawn-fs2" % "0.14.0"
+                            | "org.typelevel" %% "jawn-json4s"  % "0.14.0",
+                            | "org.typelevel" %% "jawn-play" % "0.14.0" """.stripMargin.trim)
+    val expected =
+      List("build.sbt" -> """ "org.http4s" %% "jawn-fs2" % "0.14.0"
+                            | "org.typelevel" %% "jawn-json4s"  % "0.14.1",
+                            | "org.typelevel" %% "jawn-play" % "0.14.1" """.stripMargin.trim)
     val obtained = rewrite(update, original)
     assertEquals(obtained, expected)
   }
