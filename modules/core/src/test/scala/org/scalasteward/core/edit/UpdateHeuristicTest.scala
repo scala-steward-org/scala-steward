@@ -475,13 +475,6 @@ class UpdateHeuristicTest extends FunSuite {
     assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.original.name)
   }
 
-  test("basic mill") {
-    val original = """ivy"com.lihaoyi::requests:0.7.0"""".stripMargin
-    val expected = """ivy"com.lihaoyi::requests:0.7.1"""".stripMargin
-    val update = ("com.lihaoyi".g % "requests".a % "0.7.0" %> "0.7.1").single
-    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.moduleId.name)
-  }
-
   test("mill with variable") {
     val original = """val requests = "0.7.0"
                      |ivy"com.lihaoyi::requests:$requests"

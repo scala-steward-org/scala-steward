@@ -16,60 +16,48 @@
 
 package org.scalasteward.core.edit.update
 
-import org.scalasteward.core.data.{Dependency, Version}
+import org.scalasteward.core.data.Version
 import org.scalasteward.core.edit.update.data.VersionPosition._
 import org.scalasteward.core.edit.update.data.{FilePosition, VersionPosition}
-import org.scalasteward.core.util.Nel
 import scala.util.matching.Regex
 import scala.util.matching.Regex.Match
 
 object Scanner {
-  def findVersionPositions(
-      dependencies: Nel[Dependency],
-      content: String
-  ): List[VersionPosition] = {
-    val version = dependencies.head.version
-    val it = dependencies.toList.iterator.flatMap { d =>
-      findSbtModuleId(d, content) ++
-        findMillDependency(d, content)
-    } ++
+  def findVersionPositions(version: Version, content: String): List[VersionPosition] = {
+    val it = findSbtModuleId(version, content) ++
+      findMillDependency(version, content) ++
       findScalaVal(version, content) ++
       findUnclassified(version, content)
     it.distinctBy(_.filePosition).toList
   }
 
-  def findVersionPositions(dependency: Dependency, content: String): List[VersionPosition] =
-    findVersionPositions(Nel.one(dependency), content)
-
-  private def findSbtModuleId(dependency: Dependency, content: String): Iterator[SbtModuleId] =
-    sbtModuleIdRegex(dependency).findAllIn(content).matchData.map { m =>
-      val filePosition = filePositionFrom(m, dependency.version)
+  private def findSbtModuleId(version: Version, content: String): Iterator[SbtModuleId] =
+    sbtModuleIdRegex(version).findAllIn(content).matchData.map { m =>
+      val filePosition = filePositionFrom(m, version)
       val before = m.group(1)
-      SbtModuleId(filePosition, before)
+      val groupId = m.group(2)
+      val artifactId = m.group(3)
+      SbtModuleId(filePosition, before, groupId, artifactId)
     }
 
-  private def sbtModuleIdRegex(dependency: Dependency): Regex = {
-    val g = Regex.quote(dependency.groupId.value)
-    val a = Regex.quote(dependency.artifactId.name)
-    val v = Regex.quote(dependency.version.value)
-    raw"""(.*)"$g"\s*%{1,3}\s*"$a"\s*%\s*"$v"""".r
+  private def sbtModuleIdRegex(version: Version): Regex = {
+    val v = Regex.quote(version.value)
+    raw"""(.*)"(.*)"\s*%{1,3}\s*"(.*)"\s*%\s*"$v"""".r
   }
 
-  private def findMillDependency(
-      dependency: Dependency,
-      content: String
-  ): Iterator[MillDependency] =
-    millDependencyRegex(dependency).findAllIn(content).matchData.map { m =>
-      val filePosition = filePositionFrom(m, dependency.version)
+  private def findMillDependency(version: Version, content: String): Iterator[MillDependency] =
+    millDependencyRegex(version).findAllIn(content).matchData.map { m =>
+      val filePosition = filePositionFrom(m, version)
       val before = m.group(1)
-      MillDependency(filePosition, before)
+      val groupId = m.group(2)
+      val artifactId = m.group(3)
+      MillDependency(filePosition, before, groupId, artifactId)
     }
 
-  private def millDependencyRegex(dependency: Dependency): Regex = {
-    val g = Regex.quote(dependency.groupId.value)
-    val a = Regex.quote(dependency.artifactId.name)
-    val v = Regex.quote(dependency.version.value)
-    raw"""(.*)["`]$g:{1,3}$a:$v["`;]""".r
+  private def millDependencyRegex(version: Version): Regex = {
+    val ident = """[^:]*"""
+    val v = Regex.quote(version.value)
+    raw"""(.*)["`]($ident):{1,3}($ident):$v["`;]""".r
   }
 
   private def findScalaVal(version: Version, content: String): Iterator[ScalaVal] =

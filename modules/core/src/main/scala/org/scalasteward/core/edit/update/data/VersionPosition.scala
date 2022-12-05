@@ -21,12 +21,26 @@ sealed trait VersionPosition extends Product with Serializable {
 }
 
 object VersionPosition {
-  final case class SbtModuleId(filePosition: FilePosition, before: String) extends VersionPosition {
+  sealed trait DependencyDef extends VersionPosition {
+    def groupId: String
+    def artifactId: String
+  }
+
+  final case class SbtModuleId(
+      filePosition: FilePosition,
+      before: String,
+      groupId: String,
+      artifactId: String
+  ) extends DependencyDef {
     def isCommented: Boolean = before.contains("//")
   }
 
-  final case class MillDependency(filePosition: FilePosition, before: String)
-      extends VersionPosition {
+  final case class MillDependency(
+      filePosition: FilePosition,
+      before: String,
+      groupId: String,
+      artifactId: String
+  ) extends DependencyDef {
     def isCommented: Boolean = before.contains("//")
   }
 

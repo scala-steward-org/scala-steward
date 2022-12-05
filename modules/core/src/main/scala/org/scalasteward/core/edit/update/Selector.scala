@@ -16,14 +16,17 @@
 
 package org.scalasteward.core.edit.update
 
+import cats.syntax.all._
+import org.scalasteward.core.data.{Dependency, Update}
 import org.scalasteward.core.edit.update.data.VersionPosition._
 import org.scalasteward.core.edit.update.data.{PathList, UpdatePositions, VersionPosition}
+import org.scalasteward.core.util.Nel
 
 object Selector {
-  def select(positions: UpdatePositions): UpdatePositions =
+  def select(update: Update.Single, positions: UpdatePositions): UpdatePositions =
     UpdatePositions(
       versionPositions = firstNonEmpty(
-        dependencyDefPositions(positions.versionPositions),
+        dependencyDefPositions(update.dependencies, positions.versionPositions),
         scalaValPositions(positions.versionPositions),
         unclassifiedPositions(positions.versionPositions)
       ),
@@ -34,14 +37,21 @@ object Selector {
     lists.find(_.nonEmpty).getOrElse(List.empty)
 
   private def dependencyDefPositions(
+      dependencies: Nel[Dependency],
       positionsByPath: PathList[List[VersionPosition]]
-  ): PathList[List[VersionPosition]] =
+  ): PathList[List[DependencyDef]] =
     positionsByPath
       .map { case (path, positions) =>
-        path -> positions.collect {
-          case p: SbtModuleId if !p.isCommented    => p
-          case p: MillDependency if !p.isCommented => p
-        }
+        path -> positions
+          .collect {
+            case p: SbtModuleId if !p.isCommented    => p
+            case p: MillDependency if !p.isCommented => p
+          }
+          .filter { p =>
+            dependencies.exists { d =>
+              d.groupId.value === p.groupId && d.artifactId.name === p.artifactId
+            }
+          }
       }
       .filter { case (_, positions) => positions.nonEmpty }
 

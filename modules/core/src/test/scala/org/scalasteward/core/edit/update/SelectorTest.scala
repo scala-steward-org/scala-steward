@@ -15,6 +15,14 @@ class SelectorTest extends FunSuite {
     assertEquals(obtained, expected)
   }
 
+  test("basic mill") {
+    val update = ("com.lihaoyi".g % "requests".a % "0.7.0" %> "0.7.1").single
+    val original = List("build.sc" -> """ivy"com.lihaoyi::requests:0.7.0"""")
+    val expected = List("build.sc" -> """ivy"com.lihaoyi::requests:0.7.1"""")
+    val obtained = rewrite(update, original)
+    assertEquals(obtained, expected)
+  }
+
   test("$ivy import and sbt ModuleID") {
     val update = ("org.typelevel".g % "cats-core".a % "1.2.0" %> "1.3.0").single
     val original = List(
@@ -88,11 +96,12 @@ class SelectorTest extends FunSuite {
   ): List[(String, String)] = {
     // scan
     val versionPositions = input.map { case (path, content) =>
-      path -> Scanner.findVersionPositions(update.dependencies, content)
+      path -> Scanner.findVersionPositions(update.currentVersion, content)
     }
 
     // select
-    val updatePositions = Selector.select(UpdatePositions(versionPositions, List.empty))
+    val updatePositions = Selector.select(update, UpdatePositions(versionPositions, List.empty))
+    // println(updatePositions)
 
     // write
     input.map { case (path, content) =>
