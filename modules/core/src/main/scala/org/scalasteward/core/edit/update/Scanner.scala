@@ -76,11 +76,16 @@ object Scanner {
 
   private def findUnclassified(version: Version, content: String): Iterator[Unclassified] = {
     val v = Regex.quote(version.value)
-    val regex = raw"""(.*)$v""".r
-    regex.findAllIn(content).matchData.map { m =>
+    val regex = raw"""(.*)$v(.?)""".r
+    regex.findAllIn(content).matchData.flatMap { m =>
       val filePosition = filePositionFrom(m, version)
       val before = m.group(1)
-      Unclassified(filePosition, before)
+      val after = Option(m.group(2))
+      val leadingCharIsNoLetterOrDigit = !before.lastOption.exists(_.isLetterOrDigit)
+      val trailingCharIsNoLetterOrDigit = !after.flatMap(_.headOption).exists(_.isLetterOrDigit)
+      Option.when(leadingCharIsNoLetterOrDigit && trailingCharIsNoLetterOrDigit) {
+        Unclassified(filePosition, before)
+      }
     }
   }
 

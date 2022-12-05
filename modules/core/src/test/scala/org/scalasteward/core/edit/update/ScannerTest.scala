@@ -2,6 +2,7 @@ package org.scalasteward.core.edit.update
 
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.data.Version
 import org.scalasteward.core.edit.update.data.FilePosition
 import org.scalasteward.core.edit.update.data.VersionPosition._
 
@@ -99,6 +100,14 @@ class ScannerTest extends FunSuite {
       Unclassified(FilePosition(17, 26), "scalaVersion := \""),
       Unclassified(FilePosition(42, 51), ".target/scala-")
     )
+    assertEquals(obtained, expected)
+  }
+
+  test("#1870: unclassified with leading and trailing letters") {
+    val version = Version("349")
+    val content = "6Eo349l6P"
+    val obtained = Scanner.findVersionPositions(version, content)
+    val expected = List()
     assertEquals(obtained, expected)
   }
 }
