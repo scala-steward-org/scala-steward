@@ -171,20 +171,6 @@ class UpdateHeuristicTest extends FunSuite {
     assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.original.name)
   }
 
-  test("ignore 'previous' prefix") {
-    val original =
-      """val circeVersion = "0.10.0"
-        |val previousCirceIterateeVersion = "0.10.0"
-      """.stripMargin
-    val expected =
-      """val circeVersion = "0.10.1"
-        |val previousCirceIterateeVersion = "0.10.0"
-      """.stripMargin
-    val update =
-      ("io.circe".g % Nel.of("circe-jawn".a, "circe-testing".a) % "0.10.0" %> "0.10.1").group
-    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.original.name)
-  }
-
   test("ignore mimaPreviousArtifacts") {
     val original =
       """"io.dropwizard.metrics" % "metrics-core" % "4.0.1"
@@ -325,17 +311,6 @@ class UpdateHeuristicTest extends FunSuite {
     val update = ("org.scala-sbt".g %
       Nel.of("sbt-launch".a, "scripted-plugin".a, "scripted-sbt".a) % "1.2.1" %> "1.2.4").group
     assertEquals(update.replaceVersionIn(original), None -> UpdateHeuristic.all.last.name)
-  }
-
-  test("issue 1314: unrelated ModuleID with same version number, 2") {
-    val original = """val scalafmt = "2.0.1"
-                     |addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.1")
-                     |""".stripMargin
-    val expected = """val scalafmt = "2.0.7"
-                     |addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.1")
-                     |""".stripMargin
-    val update = ("org.scalameta".g % "sbt-scalafmt".a % "2.0.1" %> "2.0.7").single
-    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.relaxed.name)
   }
 
   test("issue 960: unrelated ModuleID with same version number, 3") {

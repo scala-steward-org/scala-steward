@@ -17,6 +17,6 @@
 package org.scalasteward.core.edit.update.data
 
 final case class UpdatePositions(
-    versionPositions: List[(String, List[VersionPosition])],
-    modulePositions: List[(String, List[ModulePosition])]
+    versionPositions: PathList[List[VersionPosition]],
+    modulePositions: PathList[List[ModulePosition]]
 )

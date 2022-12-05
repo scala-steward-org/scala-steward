@@ -16,13 +16,52 @@
 
 package org.scalasteward.core.edit.update
 
-import org.scalasteward.core.edit.update.data.UpdatePositions
+import org.scalasteward.core.edit.update.data.VersionPosition._
+import org.scalasteward.core.edit.update.data.{PathList, UpdatePositions, VersionPosition}
 
 object Selector {
-  def select(positions: UpdatePositions): UpdatePositions = {
-    val versionsPositions = positions.versionPositions.map { case (path, positions) =>
-      path -> positions.filterNot(_.isCommented)
-    }
-    UpdatePositions(versionsPositions, List.empty)
-  }
+  def select(positions: UpdatePositions): UpdatePositions =
+    UpdatePositions(
+      versionPositions = firstNonEmpty(
+        dependencyDefPositions(positions.versionPositions),
+        scalaValPositions(positions.versionPositions),
+        unclassifiedPositions(positions.versionPositions)
+      ),
+      modulePositions = List.empty
+    )
+
+  private def firstNonEmpty[A](lists: List[A]*): List[A] =
+    lists.find(_.nonEmpty).getOrElse(List.empty)
+
+  private def dependencyDefPositions(
+      positionsByPath: PathList[List[VersionPosition]]
+  ): PathList[List[VersionPosition]] =
+    positionsByPath
+      .map { case (path, positions) =>
+        path -> positions.collect {
+          case p: SbtModuleId if !p.isCommented    => p
+          case p: MillDependency if !p.isCommented => p
+        }
+      }
+      .filter { case (_, positions) => positions.nonEmpty }
+
+  private def scalaValPositions(
+      positionsByPath: PathList[List[VersionPosition]]
+  ): PathList[List[ScalaVal]] =
+    positionsByPath
+      .map { case (path, positions) =>
+        path -> positions.collect {
+          case p: ScalaVal if !p.isCommented && !p.name.startsWith("previous") => p
+        }
+      }
+      .filter { case (_, positions) => positions.nonEmpty }
+
+  private def unclassifiedPositions(
+      positionsByPath: PathList[List[VersionPosition]]
+  ): PathList[List[Unclassified]] =
+    positionsByPath
+      .map { case (path, positions) =>
+        path -> positions.collect { case p: Unclassified => p }
+      }
+      .filter { case (_, positions) => positions.nonEmpty }
 }

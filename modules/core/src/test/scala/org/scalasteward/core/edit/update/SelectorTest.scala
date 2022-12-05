@@ -4,6 +4,7 @@ import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.edit.update.data.UpdatePositions
+import org.scalasteward.core.util.Nel
 
 class SelectorTest extends FunSuite {
   test("sbt: build.properties") {
@@ -52,6 +53,31 @@ class SelectorTest extends FunSuite {
     val update = ("be.doeraene".g % "scalajs-jquery".a % "0.9.3" %> "0.9.4").single
     val original = List("Version.scala" -> """val scalajsJqueryVersion = "0.9.3"""")
     val expected = List("Version.scala" -> """val scalajsJqueryVersion = "0.9.4"""")
+    val obtained = rewrite(update, original)
+    assertEquals(obtained, expected)
+  }
+
+  test("issue 1314: unrelated ModuleID with same version number, 2") {
+    val update = ("org.scalameta".g % "sbt-scalafmt".a % "2.0.1" %> "2.0.7").single
+    val original = List("plugins.sbt" -> """val scalafmt = "2.0.1"
+                                           |addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.1")
+                                           |""".stripMargin)
+    val expected = List("plugins.sbt" -> """val scalafmt = "2.0.7"
+                                           |addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.1")
+                                           |""".stripMargin)
+    val obtained = rewrite(update, original)
+    assertEquals(obtained, expected)
+  }
+
+  test("ignore 'previous' prefix") {
+    val update =
+      ("io.circe".g % Nel.of("circe-jawn".a, "circe-testing".a) % "0.10.0" %> "0.10.1").group
+    val original = List("build.sbt" -> """val circeVersion = "0.10.0"
+                                         |val previousCirceIterateeVersion = "0.10.0"
+                                         |""".stripMargin)
+    val expected = List("build.sbt" -> """val circeVersion = "0.10.1"
+                                         |val previousCirceIterateeVersion = "0.10.0"
+                                         |""".stripMargin)
     val obtained = rewrite(update, original)
     assertEquals(obtained, expected)
   }

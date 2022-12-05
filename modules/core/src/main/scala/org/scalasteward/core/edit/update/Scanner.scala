@@ -16,48 +16,23 @@
 
 package org.scalasteward.core.edit.update
 
-import cats.Monad
-import cats.syntax.all._
-import org.scalasteward.core.data.{Dependency, Update, Version}
-import org.scalasteward.core.edit.update.Scanner.findVersionPositions
-import org.scalasteward.core.edit.update.data.VersionPosition.{SbtModuleId, ScalaVal, Unclassified}
+import org.scalasteward.core.data.{Dependency, Version}
+import org.scalasteward.core.edit.update.data.VersionPosition._
 import org.scalasteward.core.edit.update.data.{FilePosition, VersionPosition}
-import org.scalasteward.core.git.GitAlg
-import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
-import org.scalasteward.core.vcs.data.Repo
 import scala.util.matching.Regex
 import scala.util.matching.Regex.Match
 
-final class Scanner[F[_]](implicit
-    fileAlg: FileAlg[F],
-    gitAlg: GitAlg[F],
-    workspaceAlg: WorkspaceAlg[F],
-    F: Monad[F]
-) {
-  def foo(repo: Repo, update: Update.Single) =
-    gitAlg.findFilesContaining(repo, update.currentVersion.value).flatMap {
-      _.traverse { file =>
-        for {
-          repoDir <- workspaceAlg.repoDir(repo)
-          maybeContent <- fileAlg.readFile(repoDir / file)
-          positions = maybeContent.toList.flatMap(findVersionPositions(update.dependencies, _))
-        } yield file -> positions
-      }
-    }
-}
-
 object Scanner {
-
-  // TODO:
-  // - support scala-steward:on off
-
   def findVersionPositions(
       dependencies: Nel[Dependency],
       content: String
   ): List[VersionPosition] = {
     val version = dependencies.head.version
-    val it = dependencies.toList.iterator.flatMap(findSbtModuleId(_, content)) ++
+    val it = dependencies.toList.iterator.flatMap { d =>
+      findSbtModuleId(d, content) ++
+        findMillDependency(d, content)
+    } ++
       findScalaVal(version, content) ++
       findUnclassified(version, content)
     it.distinctBy(_.filePosition).toList
@@ -78,6 +53,23 @@ object Scanner {
     val a = Regex.quote(dependency.artifactId.name)
     val v = Regex.quote(dependency.version.value)
     raw"""(.*)"$g"\s*%{1,3}\s*"$a"\s*%\s*"$v"""".r
+  }
+
+  private def findMillDependency(
+      dependency: Dependency,
+      content: String
+  ): Iterator[MillDependency] =
+    millDependencyRegex(dependency).findAllIn(content).matchData.map { m =>
+      val filePosition = filePositionFrom(m, dependency.version)
+      val before = m.group(1)
+      MillDependency(filePosition, before)
+    }
+
+  private def millDependencyRegex(dependency: Dependency): Regex = {
+    val g = Regex.quote(dependency.groupId.value)
+    val a = Regex.quote(dependency.artifactId.name)
+    val v = Regex.quote(dependency.version.value)
+    raw"""(.*)["`]$g:{1,3}$a:$v["`;]""".r
   }
 
   private def findScalaVal(version: Version, content: String): Iterator[ScalaVal] =
