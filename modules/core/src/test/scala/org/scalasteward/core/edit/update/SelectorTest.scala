@@ -7,6 +7,24 @@ import org.scalasteward.core.edit.update.data.UpdatePositions
 import org.scalasteward.core.util.Nel
 
 class SelectorTest extends FunSuite {
+  test("sbt plugins") {
+    val update = ("org.scala-js".g % "sbt-scalajs".a % "0.6.24" %> "0.6.25").single
+    val original = List(
+      "plugins.sbt" -> """addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.3.3")
+                         |addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.24")
+                         |addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.4.0")
+                         |""".stripMargin.trim
+    )
+    val expected = List(
+      "plugins.sbt" -> """addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.3.3")
+                         |addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.25")
+                         |addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.4.0")
+                         |""".stripMargin.trim
+    )
+    val obtained = rewrite(update, original)
+    assertEquals(obtained, expected)
+  }
+
   test("sbt: build.properties") {
     val update = ("org.scala-sbt".g % "sbt".a % "1.3.0-RC1" %> "1.3.0").single
     val original = List("build.properties" -> """sbt.version=1.3.0-RC1""")

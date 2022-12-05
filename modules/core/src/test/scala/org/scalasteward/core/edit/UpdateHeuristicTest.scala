@@ -7,21 +7,6 @@ import org.scalasteward.core.edit.UpdateHeuristicTest.UpdateOps
 import org.scalasteward.core.util.Nel
 
 class UpdateHeuristicTest extends FunSuite {
-  test("sbt plugins") {
-    val original =
-      """addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.3.3")
-        |addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.24")
-        |addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.4.0")
-      """.stripMargin.trim
-    val expected =
-      """addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.3.3")
-        |addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.25")
-        |addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.4.0")
-      """.stripMargin.trim
-    val update = ("org.scala-js".g % "sbt-scalajs".a % "0.6.24" %> "0.6.25").single
-    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.moduleId.name)
-  }
-
   test("sbt plugins: missing version") {
     val original =
       """addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.3.3")
