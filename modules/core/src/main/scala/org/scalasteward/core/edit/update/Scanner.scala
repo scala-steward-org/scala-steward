@@ -42,7 +42,7 @@ object Scanner {
 
   private def sbtModuleIdRegex(version: Version): Regex = {
     val v = Regex.quote(version.value)
-    raw"""(.*)"(.*)"\s*%{1,3}\s*"(.*)"\s*%\s*"$v"""".r
+    raw"""(.*)"(.*)"\s*%+\s*"(.*)"\s*%+\s*"$v"""".r
   }
 
   private def findMillDependency(version: Version, content: String): Iterator[MillDependency] =
@@ -57,7 +57,7 @@ object Scanner {
   private def millDependencyRegex(version: Version): Regex = {
     val ident = """[^:]*"""
     val v = Regex.quote(version.value)
-    raw"""(.*)["`]($ident):{1,3}($ident):$v["`;]""".r
+    raw"""(.*)["`]($ident):+($ident):+$v["`;]""".r
   }
 
   private def findScalaVal(version: Version, content: String): Iterator[ScalaVal] =

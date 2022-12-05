@@ -329,31 +329,6 @@ class UpdateHeuristicTest extends FunSuite {
     assertEquals(update.replaceVersionIn(original), None -> UpdateHeuristic.all.last.name)
   }
 
-  test("similar artifactIds and same version") {
-    val original =
-      """ "org.typelevel" %%% "cats-core" % "2.0.0-M4",
-        | "org.typelevel" %%% "cats-laws" % "2.0.0-M4" % "test",
-        | "org.typelevel" %%% "cats-effect" % "2.0.0-M4",
-        | "org.typelevel" %%% "cats-effect-laws" % "2.0.0-M4" % "test",
-        |""".stripMargin
-    val expected =
-      """ "org.typelevel" %%% "cats-core" % "2.0.0-RC1",
-        | "org.typelevel" %%% "cats-laws" % "2.0.0-RC1" % "test",
-        | "org.typelevel" %%% "cats-effect" % "2.0.0-M4",
-        | "org.typelevel" %%% "cats-effect-laws" % "2.0.0-M4" % "test",
-        |""".stripMargin
-    val update =
-      ("org.typelevel".g % Nel.of("cats-core".a, "cats-laws".a) % "2.0.0-M4" %> "2.0.0-RC1").group
-    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.moduleId.name)
-  }
-
-  test("fail on versions with line break") {
-    val original = """val scalajsJqueryVersion =
-                     |  "0.9.3"""".stripMargin
-    val update = ("be.doeraene".g % "scalajs-jquery".a % "0.9.3" %> "0.9.4").single
-    assertEquals(update.replaceVersionIn(original)._1, None)
-  }
-
   test("cognito value for aws-java-sdk-cognitoidp artifact") {
     val original = """val cognito       = "1.11.690" """
     val expected = """val cognito       = "1.11.700" """
@@ -429,15 +404,6 @@ class UpdateHeuristicTest extends FunSuite {
                      |""".stripMargin
     val update = ("com.lihaoyi".g % "requests".a % "0.7.0" %> "0.7.1").single
     assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.original.name)
-  }
-
-  test("mill with cross") {
-    val original = """import $ivy.`com.goyeau::mill-scalafix::0.2.9`
-                     |""".stripMargin
-    val expected = """import $ivy.`com.goyeau::mill-scalafix::0.2.10`
-                     |""".stripMargin
-    val update = ("com.goyeau".g % "mill-scalafix".a % "0.2.9" %> "0.2.10").single
-    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.moduleId.name)
   }
 }
 

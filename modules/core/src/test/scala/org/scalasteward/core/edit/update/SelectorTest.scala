@@ -54,6 +54,14 @@ class SelectorTest extends FunSuite {
     assertEquals(obtained, expected)
   }
 
+  test("mill with cross") {
+    val update = ("com.goyeau".g % "mill-scalafix".a % "0.2.9" %> "0.2.10").single
+    val original = List("build.sc" -> """import $ivy.`com.goyeau::mill-scalafix::0.2.9`""")
+    val expected = List("build.sc" -> """import $ivy.`com.goyeau::mill-scalafix::0.2.10`""")
+    val obtained = rewrite(update, original)
+    assertEquals(obtained, expected)
+  }
+
   test("$ivy import") {
     val update = ("org.typelevel".g % "cats-core".a % "1.2.0" %> "1.3.0").single
     val original = List("build.sc" -> " import $ivy.`org.typelevel::cats-core:1.2.0` ")
@@ -100,6 +108,35 @@ class SelectorTest extends FunSuite {
     val update = ("be.doeraene".g % "scalajs-jquery".a % "0.9.3" %> "0.9.4").single
     val original = List("Version.scala" -> """val scalajsJqueryVersion = "0.9.3"""")
     val expected = List("Version.scala" -> """val scalajsJqueryVersion = "0.9.4"""")
+    val obtained = rewrite(update, original)
+    assertEquals(obtained, expected)
+  }
+
+  test("similar artifactIds and same version") {
+    val update =
+      ("org.typelevel".g % Nel.of("cats-core".a, "cats-laws".a) % "2.0.0-M4" %> "2.0.0-RC1").group
+    val original =
+      List("build.sbt" -> """ "org.typelevel" %%% "cats-core" % "2.0.0-M4",
+                            | "org.typelevel" %%% "cats-laws" % "2.0.0-M4" % "test",
+                            | "org.typelevel" %%% "cats-effect" % "2.0.0-M4",
+                            | "org.typelevel" %%% "cats-effect-laws" % "2.0.0-M4" % "test",
+                            |""".stripMargin)
+    val expected =
+      List("build.sbt" -> """ "org.typelevel" %%% "cats-core" % "2.0.0-RC1",
+                            | "org.typelevel" %%% "cats-laws" % "2.0.0-RC1" % "test",
+                            | "org.typelevel" %%% "cats-effect" % "2.0.0-M4",
+                            | "org.typelevel" %%% "cats-effect-laws" % "2.0.0-M4" % "test",
+                            |""".stripMargin)
+    val obtained = rewrite(update, original)
+    assertEquals(obtained, expected)
+  }
+
+  test("version val with line break") {
+    val update = ("be.doeraene".g % "scalajs-jquery".a % "0.9.3" %> "0.9.4").single
+    val original = List("Versions.scala" -> """val scalajsJqueryVersion =
+                                              |  "0.9.3"""".stripMargin)
+    val expected = List("Versions.scala" -> """val scalajsJqueryVersion =
+                                              |  "0.9.4"""".stripMargin)
     val obtained = rewrite(update, original)
     assertEquals(obtained, expected)
   }
