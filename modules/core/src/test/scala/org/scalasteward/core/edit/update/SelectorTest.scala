@@ -261,6 +261,24 @@ class SelectorTest extends FunSuite {
     assertEquals(obtained, expected)
   }
 
+  // https://github.com/scala-steward-org/scala-steward/issues/502
+  test("version that contains the current version as proper substring") {
+    val update = ("com.thoughtworks.dsl".g % Nel.of(
+      "keywords-each".a,
+      "keywords-using".a
+    ) % "1.2.0" %> "1.3.0").group
+    val original =
+      List("build.sbt" -> """"com.thoughtworks.dsl" %%% "keywords-using" % "1.2.0"
+                            |"com.thoughtworks.dsl" %%% "keywords-each"  % "1.2.0+14-7a373cbd"
+                            |""".stripMargin)
+    val expected =
+      List("build.sbt" -> """"com.thoughtworks.dsl" %%% "keywords-using" % "1.3.0"
+                            |"com.thoughtworks.dsl" %%% "keywords-each"  % "1.2.0+14-7a373cbd"
+                            |""".stripMargin)
+    val obtained = rewrite(update, original)
+    assertEquals(obtained, expected)
+  }
+
   private def rewrite(
       update: Update.Single,
       input: List[(String, String)]
