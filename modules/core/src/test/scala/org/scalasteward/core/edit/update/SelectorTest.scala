@@ -1,5 +1,6 @@
 package org.scalasteward.core.edit.update
 
+import cats.syntax.all._
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.Update
@@ -7,6 +8,14 @@ import org.scalasteward.core.edit.update.data.UpdatePositions
 import org.scalasteward.core.util.Nel
 
 class SelectorTest extends FunSuite {
+  test("all on one line") {
+    val update = ("be.doeraene".g % "scalajs-jquery".a % "0.9.3" %> "0.9.4").single
+    val original = List("build.sbt" -> """"be.doeraene" %% "scalajs-jquery"  % "0.9.3"""")
+    val expected = List("build.sbt" -> """"be.doeraene" %% "scalajs-jquery"  % "0.9.4"""")
+    val obtained = rewrite(update, original)
+    assertEquals(obtained, expected)
+  }
+
   test("sbt plugins") {
     val update = ("org.scala-js".g % "sbt-scalajs".a % "0.6.24" %> "0.6.25").single
     val original = List(
@@ -92,6 +101,26 @@ class SelectorTest extends FunSuite {
     assertEquals(obtained, expected)
   }
 
+  test("commented ModuleIDs") {
+    val update = ("be.doeraene".g % "scalajs-jquery".a % "0.9.3" %> "0.9.4").single
+    val original = List(
+      "build.sbt" -> """ "be.doeraene" %% "scalajs-jquery"  % "0.9.3"
+                       | // "be.doeraene" %% "scalajs-jquery"  % "0.9.3"
+                       |   addSbtPlugin("be.doeraene" %% "scalajs-jquery"  % "0.9.3")
+                       |   //addSbtPlugin("be.doeraene" %% "scalajs-jquery"  % "0.9.3")
+                       |"""".stripMargin
+    )
+    val expected = List(
+      "build.sbt" -> """ "be.doeraene" %% "scalajs-jquery"  % "0.9.4"
+                       | // "be.doeraene" %% "scalajs-jquery"  % "0.9.3"
+                       |   addSbtPlugin("be.doeraene" %% "scalajs-jquery"  % "0.9.4")
+                       |   //addSbtPlugin("be.doeraene" %% "scalajs-jquery"  % "0.9.3")
+                       |"""".stripMargin
+    )
+    val obtained = rewrite(update, original)
+    assertEquals(obtained, expected)
+  }
+
   test("commented val") {
     val update = ("be.doeraene".g % "scalajs-jquery".a % "0.9.3" %> "0.9.4").single
     val original = List("Versions.scala" -> """// val scalajsJqueryVersion = "0.9.3"
@@ -150,7 +179,8 @@ class SelectorTest extends FunSuite {
     assertEquals(obtained, expected)
   }
 
-  test("issue 1314: unrelated ModuleID with same version number, 2") {
+  // https://github.com/scala-steward-org/scala-steward/issues/1314
+  test("unrelated ModuleID with same version number, 2") {
     val update = ("org.scalameta".g % "sbt-scalafmt".a % "2.0.1" %> "2.0.7").single
     val original = List("plugins.sbt" -> """val scalafmt = "2.0.1"
                                            |addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.1")
@@ -190,23 +220,68 @@ class SelectorTest extends FunSuite {
     assertEquals(obtained, expected)
   }
 
+  test("val with similar name") {
+    val update = ("org.typelevel".g % "cats-core".a % "2.0.0" %> "2.1.0").single
+    val original = List(
+      "Dependencies.scala" ->
+        """val cats = "2.0.0"
+          |val catsEffect2 = "2.0.0"
+          |"org.typelevel" %% "cats-core" % cats
+          |"org.typelevel" %% "cats-effect" % catsEffect2
+          |""".stripMargin
+    )
+    val expected = List(
+      "Dependencies.scala" ->
+        """val cats = "2.1.0"
+          |val catsEffect2 = "2.0.0"
+          |"org.typelevel" %% "cats-core" % cats
+          |"org.typelevel" %% "cats-effect" % catsEffect2
+          |""".stripMargin
+    )
+    val obtained = rewrite(update, original)
+    assertEquals(obtained, expected)
+  }
+
+  // https://github.com/scala-steward-org/scala-steward/issues/1184
+  test("qualified val with similar name") {
+    val update = ("org.typelevel".g % "cats-core".a % "2.0.0" %> "2.1.0").single
+    val original =
+      List("Dependencies.scala" -> """val cats = "2.0.0"
+                                     |val catsEffect2 = "2.0.0"
+                                     |"org.typelevel" %% "cats-core" % Version.cats
+                                     |"org.typelevel" %% "cats-effect" % Version.catsEffect2
+                                     |""".stripMargin)
+    val expected =
+      List("Dependencies.scala" -> """val cats = "2.1.0"
+                                     |val catsEffect2 = "2.0.0"
+                                     |"org.typelevel" %% "cats-core" % Version.cats
+                                     |"org.typelevel" %% "cats-effect" % Version.catsEffect2
+                                     |""".stripMargin)
+    val obtained = rewrite(update, original)
+    assertEquals(obtained, expected)
+  }
+
   private def rewrite(
       update: Update.Single,
       input: List[(String, String)]
   ): List[(String, String)] = {
     // scan
     val versionPositions = input.map { case (path, content) =>
-      path -> Scanner.findVersionPositions(update.currentVersion, content)
+      path -> VersionScanner.findVersionPositions(update.currentVersion, content)
+    }
+    val modulePositions = input.map { case (path, content) =>
+      path -> update.dependencies.toList.flatMap(ModuleScanner.findModulePositions(_, content))
     }
 
     // select
-    val updatePositions = Selector.select(update, UpdatePositions(versionPositions, List.empty))
+    val updatePositions =
+      Selector.select(update, UpdatePositions(versionPositions, modulePositions))
     // println(updatePositions)
 
     // write
     input.map { case (path, content) =>
       val versionPositions = updatePositions.versionPositions
-        .find { case (p, _) => p == path }
+        .find { case (p, _) => p === path }
         .map { case (_, ps) => ps }
         .getOrElse(List.empty)
         .sortBy(_.filePosition.start)

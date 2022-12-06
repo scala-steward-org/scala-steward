@@ -19,14 +19,15 @@ package org.scalasteward.core.edit.update
 import cats.syntax.all._
 import org.scalasteward.core.data.{Dependency, Update}
 import org.scalasteward.core.edit.update.data.VersionPosition._
-import org.scalasteward.core.edit.update.data.{PathList, UpdatePositions, VersionPosition}
+import org.scalasteward.core.edit.update.data._
 import org.scalasteward.core.util.Nel
 
 object Selector {
   def select(update: Update.Single, positions: UpdatePositions): UpdatePositions =
     UpdatePositions(
       versionPositions = firstNonEmpty(
-        dependencyDefPositions(update.dependencies, positions.versionPositions),
+        dependencyDefPositions(update.dependencies, positions.versionPositions) ++
+          scalaValInDependencyDefPositions(positions.versionPositions, positions.modulePositions),
         scalaValPositions(positions.versionPositions),
         unclassifiedPositions(positions.versionPositions)
       ),
@@ -38,40 +39,50 @@ object Selector {
 
   private def dependencyDefPositions(
       dependencies: Nel[Dependency],
-      positionsByPath: PathList[List[VersionPosition]]
+      versionPositions: PathList[List[VersionPosition]]
   ): PathList[List[DependencyDef]] =
-    positionsByPath
-      .map { case (path, positions) =>
-        path -> positions
-          .collect {
-            case p: SbtModuleId if !p.isCommented    => p
-            case p: MillDependency if !p.isCommented => p
+    mapFilterNonEmpty(versionPositions) { case (_, positions) =>
+      positions
+        .collect { case p: DependencyDef if !p.isCommented => p }
+        .filter { p =>
+          dependencies.exists { d =>
+            d.groupId.value === p.groupId && d.artifactId.name === p.artifactId
           }
-          .filter { p =>
-            dependencies.exists { d =>
-              d.groupId.value === p.groupId && d.artifactId.name === p.artifactId
-            }
-          }
-      }
-      .filter { case (_, positions) => positions.nonEmpty }
+        }
+    }
 
-  private def scalaValPositions(
-      positionsByPath: PathList[List[VersionPosition]]
+  private def scalaValInDependencyDefPositions(
+      versionPositions: PathList[List[VersionPosition]],
+      modulePositions: PathList[List[ModulePosition]]
   ): PathList[List[ScalaVal]] =
-    positionsByPath
-      .map { case (path, positions) =>
-        path -> positions.collect {
-          case p: ScalaVal if !p.isCommented && !p.name.startsWith("previous") => p
+    mapFilterNonEmpty(scalaValPositions(versionPositions)) { case (path, positions) =>
+      positions.filter { p =>
+        modulePositions.exists { case (path2, positions2) =>
+          path === path2 && positions2.exists { p2 =>
+            p2.version.value === p.name || p2.version.value.endsWith("." + p.name)
+          }
         }
       }
-      .filter { case (_, positions) => positions.nonEmpty }
+    }
+
+  private def scalaValPositions(
+      versionPositions: PathList[List[VersionPosition]]
+  ): PathList[List[ScalaVal]] =
+    mapFilterNonEmpty(versionPositions) { case (_, positions) =>
+      positions.collect {
+        case p: ScalaVal if !p.isCommented && !p.name.startsWith("previous") => p
+      }
+    }
 
   private def unclassifiedPositions(
-      positionsByPath: PathList[List[VersionPosition]]
+      versionPositions: PathList[List[VersionPosition]]
   ): PathList[List[Unclassified]] =
-    positionsByPath
-      .map { case (path, positions) =>
-        path -> positions.collect { case p: Unclassified => p }
-      }
-      .filter { case (_, positions) => positions.nonEmpty }
+    mapFilterNonEmpty(versionPositions) { case (_, positions) =>
+      positions.collect { case p: Unclassified => p }
+    }
+
+  private def mapFilterNonEmpty[A, B](pathList: PathList[List[A]])(
+      f: (String, List[A]) => List[B]
+  ): PathList[List[B]] =
+    pathList.map { case (path, as) => path -> f(path, as) }.filter { case (_, bs) => bs.nonEmpty }
 }

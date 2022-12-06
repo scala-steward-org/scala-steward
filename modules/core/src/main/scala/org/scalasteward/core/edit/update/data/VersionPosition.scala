@@ -18,6 +18,7 @@ package org.scalasteward.core.edit.update.data
 
 sealed trait VersionPosition extends Product with Serializable {
   def filePosition: FilePosition
+  def isCommented: Boolean
 }
 
 object VersionPosition {
@@ -44,10 +45,18 @@ object VersionPosition {
     def isCommented: Boolean = before.contains("//")
   }
 
-  final case class ScalaVal(filePosition: FilePosition, name: String, before: String)
-      extends VersionPosition {
+  final case class ScalaVal(
+      filePosition: FilePosition,
+      before: String,
+      name: String
+  ) extends VersionPosition {
     def isCommented: Boolean = before.contains("//")
   }
 
-  final case class Unclassified(filePosition: FilePosition, before: String) extends VersionPosition
+  final case class Unclassified(
+      filePosition: FilePosition,
+      before: String
+  ) extends VersionPosition {
+    override def isCommented: Boolean = false
+  }
 }

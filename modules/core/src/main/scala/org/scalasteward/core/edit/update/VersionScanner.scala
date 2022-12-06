@@ -20,20 +20,19 @@ import org.scalasteward.core.data.Version
 import org.scalasteward.core.edit.update.data.VersionPosition._
 import org.scalasteward.core.edit.update.data.{FilePosition, VersionPosition}
 import scala.util.matching.Regex
-import scala.util.matching.Regex.Match
 
-object Scanner {
+object VersionScanner {
   def findVersionPositions(version: Version, content: String): List[VersionPosition] = {
     val it = findSbtModuleId(version, content) ++
       findMillDependency(version, content) ++
       findScalaVal(version, content) ++
       findUnclassified(version, content)
-    it.distinctBy(_.filePosition).toList
+    it.distinctBy(_.filePosition.start).toList
   }
 
   private def findSbtModuleId(version: Version, content: String): Iterator[SbtModuleId] =
     sbtModuleIdRegex(version).findAllIn(content).matchData.map { m =>
-      val filePosition = filePositionFrom(m, version)
+      val filePosition = FilePosition.fromMatch(m, version.value)
       val before = m.group(1)
       val groupId = m.group(2)
       val artifactId = m.group(3)
@@ -47,7 +46,7 @@ object Scanner {
 
   private def findMillDependency(version: Version, content: String): Iterator[MillDependency] =
     millDependencyRegex(version).findAllIn(content).matchData.map { m =>
-      val filePosition = filePositionFrom(m, version)
+      val filePosition = FilePosition.fromMatch(m, version.value)
       val before = m.group(1)
       val groupId = m.group(2)
       val artifactId = m.group(3)
@@ -62,10 +61,10 @@ object Scanner {
 
   private def findScalaVal(version: Version, content: String): Iterator[ScalaVal] =
     scalaValRegex(version).findAllIn(content).matchData.map { m =>
-      val filePosition = filePositionFrom(m, version)
-      val name = m.group(2)
+      val filePosition = FilePosition.fromMatch(m, version.value)
       val before = m.group(1)
-      ScalaVal(filePosition, name, before)
+      val name = m.group(2)
+      ScalaVal(filePosition, before, name)
     }
 
   private def scalaValRegex(version: Version): Regex = {
@@ -78,7 +77,7 @@ object Scanner {
     val v = Regex.quote(version.value)
     val regex = raw"""(.*)$v(.?)""".r
     regex.findAllIn(content).matchData.flatMap { m =>
-      val filePosition = filePositionFrom(m, version)
+      val filePosition = FilePosition.fromMatch(m, version.value)
       val before = m.group(1)
       val after = Option(m.group(2))
       val leadingCharIsNoLetterOrDigit = !before.lastOption.exists(_.isLetterOrDigit)
@@ -87,11 +86,5 @@ object Scanner {
         Unclassified(filePosition, before)
       }
     }
-  }
-
-  private def filePositionFrom(m: Match, version: Version): FilePosition = {
-    val start = m.start + m.matched.indexOf(version.value)
-    val end = start + version.value.length
-    FilePosition(start, end)
   }
 }

@@ -7,13 +7,6 @@ import org.scalasteward.core.edit.UpdateHeuristicTest.UpdateOps
 import org.scalasteward.core.util.Nel
 
 class UpdateHeuristicTest extends FunSuite {
-  test("all on one line") {
-    val original = """"be.doeraene" %% "scalajs-jquery"  % "0.9.3""""
-    val expected = """"be.doeraene" %% "scalajs-jquery"  % "0.9.4""""
-    val update = ("be.doeraene".g % "scalajs-jquery".a % "0.9.3" %> "0.9.4").single
-    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.moduleId.name)
-  }
-
   test("with single quotes around val") {
     val original = """val `scalajs-jquery-version` = "0.9.3""""
     val expected = """val `scalajs-jquery-version` = "0.9.4""""
@@ -33,23 +26,6 @@ class UpdateHeuristicTest extends FunSuite {
     val expected = """val scalajsjquery = "0.9.4""""
     val update = ("be.doeraene".g % "scalajs-jquery".a % "0.9.3" %> "0.9.4").single
     assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.original.name)
-  }
-
-  test("commented ModuleIDs") {
-    val original =
-      """ "be.doeraene" %% "scalajs-jquery"  % "0.9.3"
-        | // "be.doeraene" %% "scalajs-jquery"  % "0.9.3"
-        |   addSbtPlugin("be.doeraene" %% "scalajs-jquery"  % "0.9.3")
-        |   //addSbtPlugin("be.doeraene" %% "scalajs-jquery"  % "0.9.3")
-        |"""".stripMargin.trim
-    val expected =
-      """ "be.doeraene" %% "scalajs-jquery"  % "0.9.4"
-        | // "be.doeraene" %% "scalajs-jquery"  % "0.9.3"
-        |   addSbtPlugin("be.doeraene" %% "scalajs-jquery"  % "0.9.4")
-        |   //addSbtPlugin("be.doeraene" %% "scalajs-jquery"  % "0.9.3")
-        |"""".stripMargin.trim
-    val update = ("be.doeraene".g % "scalajs-jquery".a % "0.9.3" %> "0.9.4").single
-    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.moduleId.name)
   }
 
   test("ignore '-core' suffix") {

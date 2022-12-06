@@ -16,12 +16,14 @@
 
 package org.scalasteward.core.edit.update.data
 
-sealed trait ModulePosition extends Product with Serializable
+sealed trait ModulePosition extends Product with Serializable {
+  def version: FilePosition
+}
 
 object ModulePosition {
   final case class SbtModuleId(
-      groupIdPosition: FilePosition,
-      artifactIdPosition: FilePosition,
-      versionPosition: FilePosition
+      groupId: FilePosition,
+      artifactId: FilePosition,
+      version: FilePosition
   ) extends ModulePosition
 }
