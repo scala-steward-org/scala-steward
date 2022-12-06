@@ -222,22 +222,18 @@ class SelectorTest extends FunSuite {
 
   test("val with similar name") {
     val update = ("org.typelevel".g % "cats-core".a % "2.0.0" %> "2.1.0").single
-    val original = List(
-      "Dependencies.scala" ->
-        """val cats = "2.0.0"
-          |val catsEffect2 = "2.0.0"
-          |"org.typelevel" %% "cats-core" % cats
-          |"org.typelevel" %% "cats-effect" % catsEffect2
-          |""".stripMargin
-    )
-    val expected = List(
-      "Dependencies.scala" ->
-        """val cats = "2.1.0"
-          |val catsEffect2 = "2.0.0"
-          |"org.typelevel" %% "cats-core" % cats
-          |"org.typelevel" %% "cats-effect" % catsEffect2
-          |""".stripMargin
-    )
+    val original =
+      List("Dependencies.scala" -> """val cats = "2.0.0"
+                                     |val catsEffect2 = "2.0.0"
+                                     |"org.typelevel" %% "cats-core" % cats
+                                     |"org.typelevel" %% "cats-effect" % catsEffect2
+                                     |""".stripMargin)
+    val expected =
+      List("Dependencies.scala" -> """val cats = "2.1.0"
+                                     |val catsEffect2 = "2.0.0"
+                                     |"org.typelevel" %% "cats-core" % cats
+                                     |"org.typelevel" %% "cats-effect" % catsEffect2
+                                     |""".stripMargin)
     val obtained = rewrite(update, original)
     assertEquals(obtained, expected)
   }
