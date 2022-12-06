@@ -161,7 +161,8 @@ class BitbucketApiAlgTest extends FunSuite {
 
   implicit val client: Client[IO] = Client.fromHttpApp(routes.orNotFound)
   implicit val httpJsonClient: HttpJsonClient[IO] = new HttpJsonClient[IO]
-  private val bitbucketApiAlg = new BitbucketApiAlg[IO](config.vcsCfg, _ => IO.pure)
+  private val bitbucketApiAlg =
+    new BitbucketApiAlg[IO](config.vcsCfg, config.bitbucketCfg, _ => IO.pure)
 
   private val prUrl = uri"https://bitbucket.org/fthomas/base.g8/pullrequests/2"
   private val repo = Repo("fthomas", "base.g8")
