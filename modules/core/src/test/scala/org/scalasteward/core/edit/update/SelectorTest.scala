@@ -141,6 +141,7 @@ class SelectorTest extends FunSuite {
     assertEquals(obtained, expected)
   }
 
+  // https://github.com/scala-steward-org/scala-steward/pull/793
   test("similar artifactIds and same version") {
     val update =
       ("org.typelevel".g % Nel.of("cats-core".a, "cats-laws".a) % "2.0.0-M4" %> "2.0.0-RC1").group
@@ -192,6 +193,7 @@ class SelectorTest extends FunSuite {
     assertEquals(obtained, expected)
   }
 
+  // https://github.com/scala-steward-org/scala-steward/issues/128
   test("ignore 'previous' prefix") {
     val update =
       ("io.circe".g % Nel.of("circe-jawn".a, "circe-testing".a) % "0.10.0" %> "0.10.1").group
@@ -205,6 +207,7 @@ class SelectorTest extends FunSuite {
     assertEquals(obtained, expected)
   }
 
+  // https://github.com/scala-steward-org/scala-steward/issues/236
   test("same version, same artifact prefix, different groupId") {
     val update =
       ("org.typelevel".g % Nel.of("jawn-json4s".a, "jawn-play".a) % "0.14.0" %> "0.14.1").group
