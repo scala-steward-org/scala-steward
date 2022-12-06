@@ -63,6 +63,7 @@ final case class Config(
     scalafixCfg: ScalafixCfg,
     artifactCfg: ArtifactCfg,
     cacheTtl: FiniteDuration,
+    bitbucketCfg: BitbucketCfg,
     bitbucketServerCfg: BitbucketServerCfg,
     gitLabCfg: GitLabCfg,
     githubApp: Option[GitHubApp],
@@ -129,6 +130,10 @@ object Config {
   )
 
   final case class BitbucketServerCfg(
+      useDefaultReviewers: Boolean
+  )
+
+  final case class BitbucketCfg(
       useDefaultReviewers: Boolean
   )
 

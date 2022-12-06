@@ -66,8 +66,10 @@ Options and flags:
         Whether to disable the default artifact migration file
     --cache-ttl <duration>
         TTL for the caches; default: 2hours
-    --bitbucket-server-use-default-reviewers
+    --bitbucket-use-default-reviewers
         Whether to assign the default reviewers to a bitbucket pull request; default: false
+    --bitbucket-server-use-default-reviewers
+        Whether to assign the default reviewers to a bitbucket server pull request; default: false
     --gitlab-merge-when-pipeline-succeeds
         Whether to merge a gitlab merge request when the pipeline succeeds
     --gitlab-required-reviewers <integer>

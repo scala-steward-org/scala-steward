@@ -26,9 +26,14 @@ import org.scalasteward.core.vcs.VCSApiAlg
 import org.scalasteward.core.vcs.bitbucket.json._
 import org.scalasteward.core.vcs.data._
 import org.typelevel.log4cats.Logger
+import org.scalasteward.core.application.Config.BitbucketCfg
 
 /** https://developer.atlassian.com/bitbucket/api/2/reference/ */
-class BitbucketApiAlg[F[_]](config: VCSCfg, modify: Repo => Request[F] => F[Request[F]])(implicit
+class BitbucketApiAlg[F[_]](
+    config: VCSCfg,
+    bitbucketCfg: BitbucketCfg,
+    modify: Repo => Request[F] => F[Request[F]]
+)(implicit
     client: HttpJsonClient[F],
     logger: Logger[F],
     F: MonadThrow[F]
@@ -59,17 +64,29 @@ class BitbucketApiAlg[F[_]](config: VCSCfg, modify: Repo => Request[F] => F[Requ
       repo.mainBranch
     )
 
+  private def getDefaultReviewers(repo: Repo): F[List[Reviewer]] =
+    client.get[DefaultReviewers](url.defaultReviewers(repo), modify(repo)).map(_.values)
+
   override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] = {
     val sourceBranchOwner = if (config.doNotFork) repo.owner else config.login
+    val defaultReviewers =
+      if (bitbucketCfg.useDefaultReviewers) getDefaultReviewers(repo)
+      else F.pure(List.empty[Reviewer])
 
-    val payload = CreatePullRequestRequest(
-      data.title,
-      Branch(data.head),
-      Repo(sourceBranchOwner, repo.repo, repo.branch),
-      data.base,
-      data.body
-    )
-    client.postWithBody(url.pullRequests(repo), payload, modify(repo))
+    defaultReviewers
+      .map(reviewers =>
+        CreatePullRequestRequest(
+          data.title,
+          Branch(data.head),
+          Repo(sourceBranchOwner, repo.repo, repo.branch),
+          data.base,
+          data.body,
+          reviewers
+        )
+      )
+      .flatMap { payload =>
+        client.postWithBody(url.pullRequests(repo), payload, modify(repo))
+      }
   }
 
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
