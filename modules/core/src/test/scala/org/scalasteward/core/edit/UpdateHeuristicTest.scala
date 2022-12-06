@@ -7,20 +7,6 @@ import org.scalasteward.core.edit.UpdateHeuristicTest.UpdateOps
 import org.scalasteward.core.util.Nel
 
 class UpdateHeuristicTest extends FunSuite {
-  test("with single quotes around val") {
-    val original = """val `scalajs-jquery-version` = "0.9.3""""
-    val expected = """val `scalajs-jquery-version` = "0.9.4""""
-    val update = ("be.doeraene".g % "scalajs-jquery".a % "0.9.3" %> "0.9.4").single
-    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.original.name)
-  }
-
-  test("all upper case") {
-    val original = """val SCALAJSJQUERYVERSION = "0.9.3""""
-    val expected = """val SCALAJSJQUERYVERSION = "0.9.4""""
-    val update = ("be.doeraene".g % "scalajs-jquery".a % "0.9.3" %> "0.9.4").single
-    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.original.name)
-  }
-
   test("just artifactId without version") {
     val original = """val scalajsjquery = "0.9.3""""
     val expected = """val scalajsjquery = "0.9.4""""
