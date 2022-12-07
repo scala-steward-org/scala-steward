@@ -17,13 +17,14 @@
 package org.scalasteward.core.edit.update
 
 import org.scalasteward.core.data.Dependency
-import org.scalasteward.core.edit.update.data.ModulePosition.SbtModuleId
+import org.scalasteward.core.edit.update.data.ModulePosition.{MillDependency, SbtModuleId}
 import org.scalasteward.core.edit.update.data.{ModulePosition, SubstringPosition}
 import scala.util.matching.Regex
 
 object ModuleScanner {
   def findPositions(dependency: Dependency, content: String): List[ModulePosition] = {
-    val it = findSbtModuleId(dependency, content)
+    val it = findSbtModuleId(dependency, content) ++
+      findMillDependency(dependency, content)
     it.distinctBy(_.groupId.start).toList
   }
 
@@ -39,5 +40,22 @@ object ModuleScanner {
     val g = Regex.quote(dependency.groupId.value)
     val a = Regex.quote(dependency.artifactId.name)
     raw""""$g"\s*%+\s*"$a"\s*%+\s*(.*)""".r
+  }
+
+  private def findMillDependency(
+      dependency: Dependency,
+      content: String
+  ): Iterator[MillDependency] =
+    millDependencyRegex(dependency).findAllIn(content).matchData.map { m =>
+      val groupId = SubstringPosition.fromMatch(m, dependency.groupId.value)
+      val artifactId = SubstringPosition.fromMatch(m, dependency.artifactId.name)
+      val version = SubstringPosition.fromMatch(m, m.group(1))
+      MillDependency(groupId, artifactId, version)
+    }
+
+  private def millDependencyRegex(dependency: Dependency): Regex = {
+    val g = Regex.quote(dependency.groupId.value)
+    val a = Regex.quote(dependency.artifactId.name)
+    raw"""["`]$g:+$a:+(.*)["`;]""".r
   }
 }

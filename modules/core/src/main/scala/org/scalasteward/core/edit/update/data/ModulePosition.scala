@@ -28,4 +28,10 @@ object ModulePosition {
       artifactId: SubstringPosition,
       version: SubstringPosition
   ) extends ModulePosition
+
+  final case class MillDependency(
+      groupId: SubstringPosition,
+      artifactId: SubstringPosition,
+      version: SubstringPosition
+  ) extends ModulePosition
 }

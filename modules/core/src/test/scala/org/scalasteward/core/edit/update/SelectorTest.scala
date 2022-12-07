@@ -310,10 +310,8 @@ class SelectorTest extends FunSuite {
 
   // https://github.com/scala-steward-org/scala-steward/issues/502
   test("version that contains the current version as proper substring") {
-    val update = ("com.thoughtworks.dsl".g % Nel.of(
-      "keywords-each".a,
-      "keywords-using".a
-    ) % "1.2.0" %> "1.3.0").group
+    val artifactIds = Nel.of("keywords-each".a, "keywords-using".a)
+    val update = ("com.thoughtworks.dsl".g % artifactIds % "1.2.0" %> "1.3.0").group
     val original =
       List("build.sbt" -> """"com.thoughtworks.dsl" %%% "keywords-using" % "1.2.0"
                             |"com.thoughtworks.dsl" %%% "keywords-each"  % "1.2.0+14-7a373cbd"
@@ -340,11 +338,20 @@ class SelectorTest extends FunSuite {
     assertEquals(obtained, expected)
   }
 
-  test("update under different groupId") {
+  test("artifact change with sbt ModuleID") {
     val update = ("org.spire-math".g % "kind-projector".a % "0.9.0" %> "0.10.0").single
       .copy(newerGroupId = Some("org.typelevel".g), newerArtifactId = Some("kind-projector"))
     val original = List("build.sbt" -> """ "org.spire-math" %% "kind-projector" % "0.9.0" """)
     val expected = List("build.sbt" -> """ "org.typelevel" %% "kind-projector" % "0.10.0" """)
+    val obtained = rewrite(update, original)
+    assertEquals(obtained, expected)
+  }
+
+  test("artifact change with Mill dependency") {
+    val update = ("org.spire-math".g % "kind-projector".a % "0.9.0" %> "0.10.0").single
+      .copy(newerGroupId = Some("org.typelevel".g), newerArtifactId = Some("kind-projector"))
+    val original = List("build.sc" -> """ "org.spire-math::kind-projector:0.9.0" """)
+    val expected = List("build.sc" -> """ "org.typelevel::kind-projector:0.10.0" """)
     val obtained = rewrite(update, original)
     assertEquals(obtained, expected)
   }
