@@ -18,20 +18,20 @@ package org.scalasteward.core.edit.update
 
 import org.scalasteward.core.data.Dependency
 import org.scalasteward.core.edit.update.data.ModulePosition.SbtModuleId
-import org.scalasteward.core.edit.update.data.{FilePosition, ModulePosition}
+import org.scalasteward.core.edit.update.data.{ModulePosition, SubstringPosition}
 import scala.util.matching.Regex
 
 object ModuleScanner {
-  def findModulePositions(dependency: Dependency, content: String): List[ModulePosition] = {
+  def findPositions(dependency: Dependency, content: String): List[ModulePosition] = {
     val it = findSbtModuleId(dependency, content)
     it.distinctBy(_.groupId.start).toList
   }
 
   private def findSbtModuleId(dependency: Dependency, content: String): Iterator[SbtModuleId] =
     sbtModuleIdRegex(dependency).findAllIn(content).matchData.map { m =>
-      val groupId = FilePosition.fromMatch(m, dependency.groupId.value)
-      val artifactId = FilePosition.fromMatch(m, dependency.artifactId.name)
-      val version = FilePosition.fromMatch(m, m.group(1))
+      val groupId = SubstringPosition.fromMatch(m, dependency.groupId.value)
+      val artifactId = SubstringPosition.fromMatch(m, dependency.artifactId.name)
+      val version = SubstringPosition.fromMatch(m, m.group(1))
       SbtModuleId(groupId, artifactId, version)
     }
 

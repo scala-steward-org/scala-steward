@@ -16,7 +16,16 @@
 
 package org.scalasteward.core.edit.update.data
 
-final case class UpdatePositions(
-    versionPositions: PathList[List[VersionPosition]],
-    modulePositions: PathList[List[ModulePosition]]
-)
+import scala.util.matching.Regex.Match
+
+final case class SubstringPosition(start: Int, value: String) {
+  def replaceWith(replacement: String): SubstringReplacement =
+    SubstringReplacement(this, replacement)
+}
+
+object SubstringPosition {
+  def fromMatch(m: Match, value: String): SubstringPosition = {
+    val start = m.start + m.matched.indexOf(value)
+    SubstringPosition(start, value)
+  }
+}

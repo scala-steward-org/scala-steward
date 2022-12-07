@@ -17,7 +17,7 @@
 package org.scalasteward.core.edit.update.data
 
 sealed trait VersionPosition extends Product with Serializable {
-  def filePosition: FilePosition
+  def version: SubstringPosition
   def isCommented: Boolean
 }
 
@@ -28,7 +28,7 @@ object VersionPosition {
   }
 
   final case class SbtModuleId(
-      filePosition: FilePosition,
+      version: SubstringPosition,
       before: String,
       groupId: String,
       artifactId: String
@@ -37,7 +37,7 @@ object VersionPosition {
   }
 
   final case class MillDependency(
-      filePosition: FilePosition,
+      version: SubstringPosition,
       before: String,
       groupId: String,
       artifactId: String
@@ -46,7 +46,7 @@ object VersionPosition {
   }
 
   final case class ScalaVal(
-      filePosition: FilePosition,
+      version: SubstringPosition,
       before: String,
       name: String
   ) extends VersionPosition {
@@ -54,7 +54,7 @@ object VersionPosition {
   }
 
   final case class Unclassified(
-      filePosition: FilePosition,
+      version: SubstringPosition,
       before: String
   ) extends VersionPosition {
     override def isCommented: Boolean = false

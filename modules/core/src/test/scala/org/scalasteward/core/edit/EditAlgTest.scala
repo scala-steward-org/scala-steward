@@ -187,53 +187,6 @@ class EditAlgTest extends FunSuite {
     assertEquals(runApplyUpdate(Repo("edit-alg", "test-6"), update, original), expected)
   }
 
-  test("test updating group id and version") {
-    val update = ("com.github.mpilquist".g % "simulacrum".a % "0.19.0" %> "1.0.0").single
-      .copy(newerGroupId = Some("org.typelevel".g), newerArtifactId = Some("simulacrum"))
-    val original = Map(
-      "build.sbt" -> """val simulacrum = "0.19.0"
-                       |"com.github.mpilquist" %% "simulacrum" % simulacrum
-                       |"""".stripMargin
-    )
-    val expected = Map(
-      "build.sbt" -> """val simulacrum = "1.0.0"
-                       |"org.typelevel" %% "simulacrum" % simulacrum
-                       |"""".stripMargin
-    )
-    assertEquals(runApplyUpdate(Repo("edit-alg", "test-7"), update, original), expected)
-  }
-
-  test("test updating artifact id and version") {
-    val update = ("com.test".g % "artifact".a % "1.0.0" %> "2.0.0").single
-      .copy(newerGroupId = Some("com.test".g), newerArtifactId = Some("newer-artifact"))
-    val original = Map(
-      "Dependencies.scala" -> """val testVersion = "1.0.0"
-                                |val test = "com.test" %% "artifact" % testVersion
-                                |"""".stripMargin
-    )
-    val expected = Map(
-      "Dependencies.scala" -> """val testVersion = "2.0.0"
-                                |val test = "com.test" %% "newer-artifact" % testVersion
-                                |"""".stripMargin
-    )
-    assertEquals(runApplyUpdate(Repo("edit-alg", "test-8"), update, original), expected)
-  }
-
-  test("NOK artifact change: version and groupId/artifactId in different files") {
-    val update = ("io.chrisdavenport".g % "log4cats".a % "1.1.1" %> "1.2.0").single
-      .copy(newerGroupId = Some("org.typelevel".g))
-    val original = Map(
-      "Dependencies.scala" -> """val log4catsVersion = "1.1.1" """,
-      "build.sbt" -> """ "io.chrisdavenport" %% "log4cats" % log4catsVersion """
-    )
-    val expected = Map(
-      "Dependencies.scala" -> """val log4catsVersion = "1.2.0" """,
-      // The groupId should have been changed here.
-      "build.sbt" -> """ "io.chrisdavenport" %% "log4cats" % log4catsVersion """
-    )
-    assertEquals(runApplyUpdate(Repo("edit-alg", "test-9"), update, original), expected)
-  }
-
   test("mill version file update") {
     val update = ("com.lihaoyi".g % "mill-main".a % "0.9.5" %> "0.9.9").single
     val original = Map(

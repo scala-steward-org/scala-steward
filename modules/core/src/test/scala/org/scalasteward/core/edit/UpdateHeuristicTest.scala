@@ -56,14 +56,6 @@ class UpdateHeuristicTest extends FunSuite {
     assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.original.name)
   }
 
-  test("update under different group id") {
-    val original = """ "org.spire-math" %% "kind-projector" % "0.9.0""""
-    val expected = """ "org.typelevel" %% "kind-projector" % "0.10.0""""
-    val update = ("org.spire-math".g % "kind-projector".a % "0.9.0" %> "0.10.0").single
-      .copy(newerGroupId = Some("org.typelevel".g), newerArtifactId = Some("kind-projector"))
-    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.moduleId.name)
-  }
-
   test("group with repeated version") {
     val original =
       """ "com.pepegar" %% "hammock-core"  % "0.8.1",

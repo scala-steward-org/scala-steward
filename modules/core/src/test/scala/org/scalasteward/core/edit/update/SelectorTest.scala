@@ -4,7 +4,6 @@ import cats.syntax.all._
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.Update
-import org.scalasteward.core.edit.update.data.UpdatePositions
 import org.scalasteward.core.util.Nel
 
 class SelectorTest extends FunSuite {
@@ -306,36 +305,90 @@ class SelectorTest extends FunSuite {
     assertEquals(obtained, expected)
   }
 
+  test("update under different groupId") {
+    val update = ("org.spire-math".g % "kind-projector".a % "0.9.0" %> "0.10.0").single
+      .copy(newerGroupId = Some("org.typelevel".g), newerArtifactId = Some("kind-projector"))
+    val original = List("build.sbt" -> """ "org.spire-math" %% "kind-projector" % "0.9.0" """)
+    val expected = List("build.sbt" -> """ "org.typelevel" %% "kind-projector" % "0.10.0" """)
+    val obtained = rewrite(update, original)
+    assertEquals(obtained, expected)
+  }
+
+  test("test updating group id and version") {
+    val update = ("com.github.mpilquist".g % "simulacrum".a % "0.19.0" %> "1.0.0").single
+      .copy(newerGroupId = Some("org.typelevel".g), newerArtifactId = Some("simulacrum"))
+    val original = List("build.sbt" -> """val simulacrum = "0.19.0"
+                                         |"com.github.mpilquist" %% "simulacrum" % simulacrum
+                                         |"""".stripMargin)
+    val expected = List("build.sbt" -> """val simulacrum = "1.0.0"
+                                         |"org.typelevel" %% "simulacrum" % simulacrum
+                                         |"""".stripMargin)
+    val obtained = rewrite(update, original)
+    assertEquals(obtained, expected)
+  }
+
+  test("test updating artifact id and version") {
+    val update = ("com.test".g % "artifact".a % "1.0.0" %> "2.0.0").single
+      .copy(newerGroupId = Some("com.test".g), newerArtifactId = Some("newer-artifact"))
+    val original =
+      List("Dependencies.scala" -> """val testVersion = "1.0.0"
+                                     |val test = "com.test" %% "artifact" % testVersion
+                                     |"""".stripMargin)
+    val expected =
+      List("Dependencies.scala" -> """val testVersion = "2.0.0"
+                                     |val test = "com.test" %% "newer-artifact" % testVersion
+                                     |"""".stripMargin)
+    val obtained = rewrite(update, original)
+    assertEquals(obtained, expected)
+  }
+
+  // https://github.com/scala-steward-org/scala-steward/issues/1977
+  test("artifact change: version and groupId/artifactId in different files") {
+    val update = ("io.chrisdavenport".g % "log4cats".a % "1.1.1" %> "1.2.0").single
+      .copy(newerGroupId = Some("org.typelevel".g))
+    val original = List(
+      "Dependencies.scala" -> """val log4catsVersion = "1.1.1" """,
+      "build.sbt" -> """ "io.chrisdavenport" %% "log4cats" % log4catsVersion """
+    )
+    val expected = List(
+      "Dependencies.scala" -> """val log4catsVersion = "1.2.0" """,
+      "build.sbt" -> """ "org.typelevel" %% "log4cats" % log4catsVersion """
+    )
+    val obtained = rewrite(update, original)
+    assertEquals(obtained, expected)
+  }
+
   private def rewrite(
       update: Update.Single,
       input: List[(String, String)]
   ): List[(String, String)] = {
     // scan
     val versionPositions = input.map { case (path, content) =>
-      path -> VersionScanner.findVersionPositions(update.currentVersion, content)
+      path -> VersionScanner.findPositions(update.currentVersion, content)
     }
     val modulePositions = input.map { case (path, content) =>
-      path -> update.dependencies.toList.flatMap(ModuleScanner.findModulePositions(_, content))
+      path -> update.dependencies.toList.flatMap(ModuleScanner.findPositions(_, content))
     }
 
     // select
-    val updatePositions =
-      Selector.select(update, UpdatePositions(versionPositions, modulePositions))
-    // println(updatePositions)
+    val replacements = Selector.select(update, versionPositions, modulePositions)
+    // println(replacements)
 
     // write
     input.map { case (path, content) =>
-      val versionPositions = updatePositions.versionPositions
-        .find { case (p, _) => p === path }
-        .map { case (_, ps) => ps }
-        .getOrElse(List.empty)
-        .sortBy(_.filePosition.start)
+      val matchingReplacements = replacements
+        .collect { case (p, ps) if p === path => ps }
+        .flatten
+        .sortBy(_.position.start)
         .reverse
 
-      val updated = versionPositions.foldLeft(content) { (c, pos) =>
-        pos.filePosition.replaceIn(c, update.nextVersion.value)
-      }
+      val updated = matchingReplacements.foldLeft(content)((c, r) => r.replaceIn(c))
       path -> updated
     }
   }
 }
+
+// com.lihaoyi:mill-scalalib from 0.10.9 to 0.10.10
+// val millVersion = Def.setting(if (scalaBinaryVersion.value == "2.12") "0.6.3" else "0.10.10")
+// val millVersion = Def.setting(if (scalaBinaryVersion.value == "2.12") "0.6.3" else "0.10.9")
+// val millScalalib = Def.setting("com.lihaoyi" %% "mill-scalalib" % millVersion.value)

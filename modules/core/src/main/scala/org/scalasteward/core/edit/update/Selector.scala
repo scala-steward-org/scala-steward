@@ -23,19 +23,22 @@ import org.scalasteward.core.edit.update.data._
 import org.scalasteward.core.util.Nel
 
 object Selector {
-  def select(update: Update.Single, positions: UpdatePositions): UpdatePositions =
-    UpdatePositions(
-      versionPositions = firstNonEmpty(
-        dependencyDefPositions(update.dependencies, positions.versionPositions) ++
-          scalaValInDependencyDefPositions(positions.versionPositions, positions.modulePositions),
-        scalaValPositions(positions.versionPositions),
-        unclassifiedPositions(positions.versionPositions)
-      ),
-      modulePositions = List.empty
-    )
+  def select(
+      update: Update.Single,
+      versionPositions: PathList[List[VersionPosition]],
+      modulePositions: PathList[List[ModulePosition]]
+  ): PathList[List[SubstringReplacement]] = {
+    val versionReplacements = firstNonEmpty(
+      dependencyDefPositions(update.dependencies, versionPositions) ++
+        scalaValInDependencyDefPositions(versionPositions, modulePositions),
+      scalaValPositions(versionPositions),
+      unclassifiedPositions(versionPositions)
+    ).map { case (path, positions) =>
+      path -> positions.map(_.version.replaceWith(update.nextVersion.value))
+    }
 
-  private def firstNonEmpty[A](lists: List[A]*): List[A] =
-    lists.find(_.nonEmpty).getOrElse(List.empty)
+    versionReplacements ++ moduleReplacements(update, modulePositions)
+  }
 
   private def dependencyDefPositions(
       dependencies: Nel[Dependency],
@@ -80,6 +83,35 @@ object Selector {
     mapFilterNonEmpty(versionPositions) { case (_, positions) =>
       positions.collect { case p: Unclassified => p }
     }
+
+  private def moduleReplacements(
+      update: Update.Single,
+      modulePositions: PathList[List[ModulePosition]]
+  ): PathList[List[SubstringReplacement]] = {
+    val (newerGroupId, newerArtifactId) = update match {
+      case u: Update.ForArtifactId => (u.newerGroupId, u.newerArtifactId)
+      case _: Update.ForGroupId    => (None, None)
+    }
+    if (newerGroupId.isEmpty && newerArtifactId.isEmpty) List.empty
+    else {
+      val currentGroupId = update.groupId
+      val currentArtifactId = update.artifactIds.head
+      mapFilterNonEmpty(modulePositions) { case (_, positions) =>
+        positions
+          .filter { p =>
+            p.groupId.value === currentGroupId.value &&
+            p.artifactId.value === currentArtifactId.name
+          }
+          .flatMap { p =>
+            newerGroupId.map(g => p.groupId.replaceWith(g.value)).toList ++
+              newerArtifactId.map(a => p.artifactId.replaceWith(a)).toList
+          }
+      }
+    }
+  }
+
+  private def firstNonEmpty[A](lists: List[A]*): List[A] =
+    lists.find(_.nonEmpty).getOrElse(List.empty)
 
   private def mapFilterNonEmpty[A, B](pathList: PathList[List[A]])(
       f: (String, List[A]) => List[B]

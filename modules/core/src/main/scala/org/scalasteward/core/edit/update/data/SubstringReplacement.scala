@@ -16,16 +16,10 @@
 
 package org.scalasteward.core.edit.update.data
 
-import scala.util.matching.Regex.Match
-
-final case class FilePosition(start: Int, value: String) {
-  def replaceIn(source: String, replacement: String): String =
-    source.substring(0, start) + replacement + source.substring(start + value.length)
-}
-
-object FilePosition {
-  def fromMatch(m: Match, value: String): FilePosition = {
-    val start = m.start + m.matched.indexOf(value)
-    FilePosition(start, value)
+final case class SubstringReplacement(position: SubstringPosition, replacement: String) {
+  def replaceIn(source: String): String = {
+    val before = source.substring(0, position.start)
+    val after = source.substring(position.start + position.value.length)
+    before + replacement + after
   }
 }
