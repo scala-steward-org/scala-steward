@@ -34,4 +34,10 @@ object ModulePosition {
       artifactId: SubstringPosition,
       version: SubstringPosition
   ) extends ModulePosition
+
+  final case class MavenDependency(
+      groupId: SubstringPosition,
+      artifactId: SubstringPosition,
+      version: SubstringPosition
+  ) extends ModulePosition
 }

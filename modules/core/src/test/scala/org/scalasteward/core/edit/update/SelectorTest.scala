@@ -400,6 +400,19 @@ class SelectorTest extends FunSuite {
     assertEquals(obtained, expected)
   }
 
+  test("groupId and version change of Maven dependency") {
+    val update = ("io.chrisdavenport".g % "log4cats".a % "1.1.1" %> "1.2.0").single
+      .copy(newerGroupId = Some("org.typelevel".g))
+    val original = List("pom.xml" -> """<groupId>io.chrisdavenport</groupId>
+                                       |<artifactId>log4cats</artifactId>
+                                       |<version>1.1.1</version>""".stripMargin)
+    val expected = List("pom.xml" -> """<groupId>org.typelevel</groupId>
+                                       |<artifactId>log4cats</artifactId>
+                                       |<version>1.2.0</version>""".stripMargin)
+    val obtained = rewrite(update, original)
+    assertEquals(obtained, expected)
+  }
+
   private def rewrite(
       update: Update.Single,
       input: List[(String, String)]
