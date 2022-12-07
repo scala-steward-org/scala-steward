@@ -39,6 +39,14 @@ class SelectorTest extends FunSuite {
     assertEquals(obtained, expected)
   }
 
+  test("just artifactId without version") {
+    val update = ("be.doeraene".g % "scalajs-jquery".a % "0.9.3" %> "0.9.4").single
+    val original = List("build.sbt" -> """val scalajsjquery = "0.9.3"""")
+    val expected = List("build.sbt" -> """val scalajsjquery = "0.9.4"""")
+    val obtained = rewrite(update, original)
+    assertEquals(obtained, expected)
+  }
+
   test("version val with line break") {
     val update = ("be.doeraene".g % "scalajs-jquery".a % "0.9.3" %> "0.9.4").single
     val original = List("Versions.scala" -> """val scalajsJqueryVersion =
@@ -60,6 +68,19 @@ class SelectorTest extends FunSuite {
     assertEquals(obtained, expected)
   }
    */
+
+  test("group with repeated version") {
+    val update =
+      ("com.pepegar".g % Nel.of("hammock-core".a, "hammock-circe".a) % "0.8.1" %> "0.8.5").group
+    val original = List("build.sbt" -> """ "com.pepegar" %% "hammock-core"  % "0.8.1",
+                                         | "com.pepegar" %% "hammock-circe" % "0.8.1"
+                                         |""".stripMargin.trim)
+    val expected = List("build.sbt" -> """ "com.pepegar" %% "hammock-core"  % "0.8.5",
+                                         | "com.pepegar" %% "hammock-circe" % "0.8.5"
+                                         |""".stripMargin.trim)
+    val obtained = rewrite(update, original)
+    assertEquals(obtained, expected)
+  }
 
   test("sbt plugins") {
     val update = ("org.scala-js".g % "sbt-scalajs".a % "0.6.24" %> "0.6.25").single

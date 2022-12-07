@@ -7,13 +7,6 @@ import org.scalasteward.core.edit.UpdateHeuristicTest.UpdateOps
 import org.scalasteward.core.util.Nel
 
 class UpdateHeuristicTest extends FunSuite {
-  test("just artifactId without version") {
-    val original = """val scalajsjquery = "0.9.3""""
-    val expected = """val scalajsjquery = "0.9.4""""
-    val update = ("be.doeraene".g % "scalajs-jquery".a % "0.9.3" %> "0.9.4").single
-    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.original.name)
-  }
-
   test("ignore '-core' suffix") {
     val original = """val specs2Version = "4.2.0""""
     val expected = """val specs2Version = "4.3.4""""
@@ -54,20 +47,6 @@ class UpdateHeuristicTest extends FunSuite {
       Nel.of("circe-generic".a, "circe-literal".a, "circe-parser".a, "circe-testing".a) %
       "0.10.0-M1" %> "0.10.0-M2").group
     assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.original.name)
-  }
-
-  test("group with repeated version") {
-    val original =
-      """ "com.pepegar" %% "hammock-core"  % "0.8.1",
-        | "com.pepegar" %% "hammock-circe" % "0.8.1"
-      """.stripMargin.trim
-    val expected =
-      """ "com.pepegar" %% "hammock-core"  % "0.8.5",
-        | "com.pepegar" %% "hammock-circe" % "0.8.5"
-      """.stripMargin.trim
-    val update =
-      ("com.pepegar".g % Nel.of("hammock-core".a, "hammock-circe".a) % "0.8.1" %> "0.8.5").group
-    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.moduleId.name)
   }
 
   test("artifactIds are common suffixes") {
