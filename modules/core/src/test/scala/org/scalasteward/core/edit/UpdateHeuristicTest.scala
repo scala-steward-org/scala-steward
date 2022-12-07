@@ -195,14 +195,6 @@ class UpdateHeuristicTest extends FunSuite {
     assertEquals(update.replaceVersionIn(original), None -> UpdateHeuristic.all.last.name)
   }
 
-  test("prevent exception: named capturing group is missing trailing '}'") {
-    val original = """ "org.nd4j" % s"nd4j-""" + "$" + """{nd4jRuntime.value}-platform" % "0.8.0""""
-    val expected = """ "org.nd4j" % s"nd4j-""" + "$" + """{nd4jRuntime.value}-platform" % "0.9.1""""
-    val update =
-      ("org.nd4j".g % Nel.of("nd4j-api".a, "nd4j-native-platform".a) % "0.8.0" %> "0.9.1").group
-    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.strict.name)
-  }
-
   test("issue 960: unrelated ModuleID with same version number, 3") {
     val original = """ "org.webjars.npm" % "bootstrap" % "3.4.1", // scala-steward:off
                      | "org.webjars.npm" % "jquery" % "3.4.1",

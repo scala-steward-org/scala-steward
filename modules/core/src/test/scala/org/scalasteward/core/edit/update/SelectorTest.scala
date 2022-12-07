@@ -305,6 +305,20 @@ class SelectorTest extends FunSuite {
     assertEquals(obtained, expected)
   }
 
+  // https://github.com/scala-steward-org/scala-steward/pull/566
+  test("prevent exception: named capturing group is missing trailing '}'") {
+    val update =
+      ("org.nd4j".g % Nel.of("nd4j-api".a, "nd4j-native-platform".a) % "0.8.0" %> "0.9.1").group
+    val original = List(
+      "build.sbt" -> (""""org.nd4j" % s"nd4j-""" + "$" + """{nd4jRuntime.value}-platform" % "0.8.0"""")
+    )
+    val expected = List(
+      "build.sbt" -> (""""org.nd4j" % s"nd4j-""" + "$" + """{nd4jRuntime.value}-platform" % "0.9.1"""")
+    )
+    val obtained = rewrite(update, original)
+    assertEquals(obtained, expected)
+  }
+
   test("update under different groupId") {
     val update = ("org.spire-math".g % "kind-projector".a % "0.9.0" %> "0.10.0").single
       .copy(newerGroupId = Some("org.typelevel".g), newerArtifactId = Some("kind-projector"))
