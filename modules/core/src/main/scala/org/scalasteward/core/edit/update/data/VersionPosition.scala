@@ -27,7 +27,7 @@ object VersionPosition {
     def artifactId: String
   }
 
-  final case class SbtModuleId(
+  final case class SbtDependency(
       version: SubstringPosition,
       before: String,
       groupId: String,
@@ -43,6 +43,14 @@ object VersionPosition {
       artifactId: String
   ) extends DependencyDef {
     def isCommented: Boolean = before.contains("//")
+  }
+
+  final case class MavenDependency(
+      version: SubstringPosition,
+      groupId: String,
+      artifactId: String
+  ) extends DependencyDef {
+    override def isCommented: Boolean = false
   }
 
   final case class ScalaVal(

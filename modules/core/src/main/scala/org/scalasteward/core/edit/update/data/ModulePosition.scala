@@ -23,7 +23,7 @@ sealed trait ModulePosition extends Product with Serializable {
 }
 
 object ModulePosition {
-  final case class SbtModuleId(
+  final case class SbtDependency(
       groupId: SubstringPosition,
       artifactId: SubstringPosition,
       version: SubstringPosition

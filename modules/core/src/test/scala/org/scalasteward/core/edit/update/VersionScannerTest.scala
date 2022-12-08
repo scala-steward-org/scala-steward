@@ -14,7 +14,7 @@ class VersionScannerTest extends FunSuite {
                      |  "${d.version}"""".stripMargin
     val obtained = VersionScanner.findPositions(d.version, content)
     val expected = List(
-      SbtModuleId(
+      SbtDependency(
         SubstringPosition(61, d.version.value),
         "libraryDependencies += ",
         d.groupId.value,
@@ -47,7 +47,7 @@ class VersionScannerTest extends FunSuite {
     val obtained = VersionScanner.findPositions(d.version, content)
     val expected =
       List(
-        SbtModuleId(
+        SbtDependency(
           SubstringPosition(47, d.version.value),
           "addSbtPlugin(",
           d.groupId.value,
@@ -65,7 +65,7 @@ class VersionScannerTest extends FunSuite {
     val obtained = VersionScanner.findPositions(d.version, content)
     val expected =
       List(
-        SbtModuleId(
+        SbtDependency(
           SubstringPosition(104, d.version.value),
           "addSbtPlugin(",
           d.groupId.value,

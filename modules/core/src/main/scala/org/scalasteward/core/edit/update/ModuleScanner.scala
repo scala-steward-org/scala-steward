@@ -23,18 +23,18 @@ import scala.util.matching.Regex
 
 object ModuleScanner {
   def findPositions(dependency: Dependency, content: String): List[ModulePosition] = {
-    val it = findSbtModuleId(dependency, content) ++
+    val it = findSbtDependency(dependency, content) ++
       findMillDependency(dependency, content) ++
       findMavenDependency(dependency, content)
     it.distinctBy(_.groupId.start).toList
   }
 
-  private def findSbtModuleId(dependency: Dependency, content: String): Iterator[SbtModuleId] =
+  private def findSbtDependency(dependency: Dependency, content: String): Iterator[SbtDependency] =
     sbtModuleIdRegex(dependency).findAllIn(content).matchData.map { m =>
       val groupId = SubstringPosition.fromMatch(m, dependency.groupId.value)
       val artifactId = SubstringPosition.fromMatch(m, dependency.artifactId.name)
       val version = SubstringPosition.fromMatch(m, m.group(1))
-      SbtModuleId(groupId, artifactId, version)
+      SbtDependency(groupId, artifactId, version)
     }
 
   private def sbtModuleIdRegex(dependency: Dependency): Regex = {

@@ -23,20 +23,21 @@ import scala.util.matching.Regex
 
 object VersionScanner {
   def findPositions(version: Version, content: String): List[VersionPosition] = {
-    val it = findSbtModuleId(version, content) ++
+    val it = findSbtDependency(version, content) ++
       findMillDependency(version, content) ++
+      findMavenDependency(version, content) ++
       findScalaVal(version, content) ++
       findUnclassified(version, content)
     it.distinctBy(_.version.start).toList
   }
 
-  private def findSbtModuleId(version: Version, content: String): Iterator[SbtModuleId] =
+  private def findSbtDependency(version: Version, content: String): Iterator[SbtDependency] =
     sbtModuleIdRegex(version).findAllIn(content).matchData.map { m =>
       val versionPos = SubstringPosition.fromMatch(m, version.value)
       val before = m.group(1)
       val groupId = m.group(2)
       val artifactId = m.group(3)
-      SbtModuleId(versionPos, before, groupId, artifactId)
+      SbtDependency(versionPos, before, groupId, artifactId)
     }
 
   private def sbtModuleIdRegex(version: Version): Regex = {
@@ -57,6 +58,20 @@ object VersionScanner {
     val ident = """[^:]*"""
     val v = Regex.quote(version.value)
     raw"""(.*)["`]($ident):+($ident):+$v["`;]""".r
+  }
+
+  private def findMavenDependency(version: Version, content: String): Iterator[MavenDependency] =
+    mavenDependencyRegex(version).findAllIn(content).matchData.map { m =>
+      val versionPos = SubstringPosition.fromMatch(m, version.value)
+      val groupId = m.group(1)
+      val artifactId = m.group(2)
+      MavenDependency(versionPos, groupId, artifactId)
+    }
+
+  private def mavenDependencyRegex(version: Version): Regex = {
+    val ident = """[^<]*"""
+    val v = Regex.quote(version.value)
+    raw"""<groupId>($ident)</groupId>\s*<artifactId>($ident)</artifactId>\s*<version>$v</version>""".r
   }
 
   private def findScalaVal(version: Version, content: String): Iterator[ScalaVal] =
