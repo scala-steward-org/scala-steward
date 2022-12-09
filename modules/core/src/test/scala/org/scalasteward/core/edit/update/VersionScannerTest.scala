@@ -29,15 +29,14 @@ class VersionScannerTest extends FunSuite {
     val content =
       s"""import $$ivy.`${d.groupId}::${d.artifactId.name}:${d.version}`, cats.implicits._"""
     val obtained = VersionScanner.findPositions(d.version, content)
-    val expected =
-      List(
-        MillDependency(
-          SubstringPosition(38, d.version.value),
-          "import $ivy.",
-          d.groupId.value,
-          d.artifactId.name
-        )
+    val expected = List(
+      MillDependency(
+        SubstringPosition(38, d.version.value),
+        "import $ivy.",
+        d.groupId.value,
+        d.artifactId.name
       )
+    )
     assertEquals(obtained, expected)
   }
 
@@ -45,15 +44,14 @@ class VersionScannerTest extends FunSuite {
     val d = "org.scala-js".g % "sbt-scalajs".a % "0.6.23"
     val content = s"""addSbtPlugin("${d.groupId}" % "${d.artifactId.name}" % "${d.version}")"""
     val obtained = VersionScanner.findPositions(d.version, content)
-    val expected =
-      List(
-        SbtDependency(
-          SubstringPosition(47, d.version.value),
-          "addSbtPlugin(",
-          d.groupId.value,
-          d.artifactId.name
-        )
+    val expected = List(
+      SbtDependency(
+        SubstringPosition(47, d.version.value),
+        "addSbtPlugin(",
+        d.groupId.value,
+        d.artifactId.name
       )
+    )
     assertEquals(obtained, expected)
   }
 
@@ -63,15 +61,14 @@ class VersionScannerTest extends FunSuite {
                      |addSbtPlugin("${d.groupId}" % "${d.artifactId.name}" % "${d.version}")
                      |addSbtPlugin("org.scoverage" % "sbt-scoverage" % "2.0.6")""".stripMargin
     val obtained = VersionScanner.findPositions(d.version, content)
-    val expected =
-      List(
-        SbtDependency(
-          SubstringPosition(104, d.version.value),
-          "addSbtPlugin(",
-          d.groupId.value,
-          d.artifactId.name
-        )
+    val expected = List(
+      SbtDependency(
+        SubstringPosition(104, d.version.value),
+        "addSbtPlugin(",
+        d.groupId.value,
+        d.artifactId.name
       )
+    )
     assertEquals(obtained, expected)
   }
 
