@@ -5,24 +5,6 @@ import munit.FunSuite
 class UpdateHeuristicTest extends FunSuite {
 
   /*
-  test("ignore '-core' suffix") {
-    val original = """val specs2Version = "4.2.0""""
-    val expected = """val specs2Version = "4.3.4""""
-    val update = ("org.specs2".g % "specs2-core".a % "4.2.0" %> "4.3.4").single
-    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.original.name)
-  }
-   */
-
-  /*
-  test("use groupId if artifactId is 'core'") {
-    val original = """lazy val sttpVersion = "1.3.2""""
-    val expected = """lazy val sttpVersion = "1.3.3""""
-    val update = ("com.softwaremill.sttp".g % "core".a % "1.3.2" %> "1.3.3").single
-    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.original.name)
-  }
-   */
-
-  /*
   test("short groupIds") {
     val original = """|private val mapCommonsDeps = Seq(
                       |    "akka-streams",
@@ -103,15 +85,6 @@ class UpdateHeuristicTest extends FunSuite {
     assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.relaxed.name)
   }
 
-  test("artifactId with underscore") {
-    val original = """val scShapelessV = "1.1.6""""
-    val expected = """val scShapelessV = "1.1.8""""
-    val update =
-      ("com.github.alexarchambault".g % "scalacheck-shapeless_1.13".a % "1.1.6" %> "1.1.8").single
-    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.relaxed.name)
-  }
-
-
   test("artifactId with common suffix") {
     val original = """case _ => "1.0.2" """
     val update = ("co.fs2".g % "fs2-core".a % "1.0.2" %> "1.0.4").single
@@ -175,20 +148,6 @@ class UpdateHeuristicTest extends FunSuite {
     assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.sliding.name)
   }
 
-  test("issue 1489: ignore word: scala") {
-    val original =
-      """ val jsoniter = "2.4.0"
-        | addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.4.0")
-        |""".stripMargin
-    val expected =
-      """ val jsoniter = "2.4.1"
-        | addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.4.0")
-        |""".stripMargin
-    val update = ("com.github.plokhotnyuk.jsoniter-scala".g %
-      Nel.of("jsoniter-scala-core".a, "jsoniter-scala-macros".a) % "2.4.0" %> "2.4.1").group
-    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.relaxed.name)
-  }
-
   test("missing enclosing quote before") {
     val original =
       """.add("scalatestplus", version = "3.2.2.0", org = "org.scalatestplus", "scalacheck-1-14")"""
@@ -222,17 +181,6 @@ class UpdateHeuristicTest extends FunSuite {
                      |val scalaReactJsTestState = "2.4.1"
                      |""".stripMargin
     val update = ("org.typelevel".g % "cats-core".a % "2.4.1" %> "2.4.2").single
-    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.original.name)
-  }
-
-  test("mill with variable") {
-    val original = """val requests = "0.7.0"
-                     |ivy"com.lihaoyi::requests:$requests"
-                     |""".stripMargin
-    val expected = """val requests = "0.7.1"
-                     |ivy"com.lihaoyi::requests:$requests"
-                     |""".stripMargin
-    val update = ("com.lihaoyi".g % "requests".a % "0.7.0" %> "0.7.1").single
     assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.original.name)
   }
    */

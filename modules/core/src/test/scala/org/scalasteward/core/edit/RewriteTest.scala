@@ -191,6 +191,17 @@ class RewriteTest extends FunSuite {
     runApplyUpdate(update, original, expected)
   }
 
+  test("mill with variable") {
+    val update = ("com.lihaoyi".g % "requests".a % "0.7.0" %> "0.7.1").single
+    val original = Map("build.sc" -> """val requests = "0.7.0"
+                                       |ivy"com.lihaoyi::requests:$requests"
+                                       |""".stripMargin)
+    val expected = Map("build.sc" -> """val requests = "0.7.1"
+                                       |ivy"com.lihaoyi::requests:$requests"
+                                       |""".stripMargin)
+    runApplyUpdate(update, original, expected)
+  }
+
   /*
   test("mill version file update") {
     val update = ("com.lihaoyi".g % "mill-main".a % "0.9.5" %> "0.9.9").single
@@ -519,6 +530,41 @@ class RewriteTest extends FunSuite {
       Map("build.sbt" -> """"com.thoughtworks.dsl" %%% "keywords-using" % "1.3.0"
                            |"com.thoughtworks.dsl" %%% "keywords-each"  % "1.2.0+14-7a373cbd"
                            |""".stripMargin)
+    runApplyUpdate(update, original, expected)
+  }
+
+  test("ignore '-core' suffix") {
+    val update = ("org.specs2".g % "specs2-core".a % "4.2.0" %> "4.3.4").single
+    val original = Map("build.sbt" -> """val specs2Version = "4.2.0"""")
+    val expected = Map("build.sbt" -> """val specs2Version = "4.3.4"""")
+    runApplyUpdate(update, original, expected)
+  }
+
+  test("use groupId if artifactId is 'core'") {
+    val update = ("com.softwaremill.sttp".g % "core".a % "1.3.2" %> "1.3.3").single
+    val original = Map("build.sbt" -> """lazy val sttpVersion = "1.3.2"""")
+    val expected = Map("build.sbt" -> """lazy val sttpVersion = "1.3.3"""")
+    runApplyUpdate(update, original, expected)
+  }
+
+  test("artifactId with underscore") {
+    val update =
+      ("com.github.alexarchambault".g % "scalacheck-shapeless_1.13".a % "1.1.6" %> "1.1.8").single
+    val original = Map("build.sbt" -> """val scShapelessV = "1.1.6"""")
+    val expected = Map("build.sbt" -> """val scShapelessV = "1.1.8"""")
+    runApplyUpdate(update, original, expected)
+  }
+
+  // https://github.com/scala-steward-org/scala-steward/issues/1489
+  test("ignore word: scala") {
+    val update = ("com.github.plokhotnyuk.jsoniter-scala".g %
+      Nel.of("jsoniter-scala-core".a, "jsoniter-scala-macros".a) % "2.4.0" %> "2.4.1").group
+    val original = Map("build.sbt" -> """ val jsoniter = "2.4.0"
+                                        | addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.4.0")
+                                        |""".stripMargin)
+    val expected = Map("build.sbt" -> """ val jsoniter = "2.4.1"
+                                        | addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.4.0")
+                                        |""".stripMargin)
     runApplyUpdate(update, original, expected)
   }
 
