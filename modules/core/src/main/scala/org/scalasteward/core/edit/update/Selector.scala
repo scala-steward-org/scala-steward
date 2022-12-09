@@ -37,7 +37,11 @@ object Selector {
       path -> positions.map(_.version.replaceWith(update.nextVersion.value))
     }
 
-    versionReplacements ++ moduleReplacements(update, modulePositions)
+    (versionReplacements ++ moduleReplacements(update, modulePositions))
+      .groupMap(_._1)(_._2)
+      .view
+      .mapValues(_.flatten)
+      .toList
   }
 
   private def dependencyDefPositions(
