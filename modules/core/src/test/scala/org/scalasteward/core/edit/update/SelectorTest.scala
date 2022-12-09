@@ -4,6 +4,7 @@ import cats.syntax.all._
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.Update
+import org.scalasteward.core.edit.update.data.SubstringReplacement
 import org.scalasteward.core.util.Nel
 
 class SelectorTest extends FunSuite {
@@ -431,13 +432,8 @@ class SelectorTest extends FunSuite {
 
     // write
     input.map { case (path, content) =>
-      val matchingReplacements = replacements
-        .collect { case (p, ps) if p === path => ps }
-        .flatten
-        .sortBy(_.position.start)
-        .reverse
-
-      val updated = matchingReplacements.foldLeft(content)((c, r) => r.replaceIn(c))
+      val matchingReplacements = replacements.collect { case (p, ps) if p === path => ps }.flatten
+      val updated = SubstringReplacement.applyAll(matchingReplacements, content)
       path -> updated
     }
   }

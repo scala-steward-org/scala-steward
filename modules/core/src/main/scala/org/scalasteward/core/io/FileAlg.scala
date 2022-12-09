@@ -17,9 +17,9 @@
 package org.scalasteward.core.io
 
 import better.files.File
-import cats.effect.{Concurrent, Resource, Sync}
+import cats.effect.{Resource, Sync}
 import cats.syntax.all._
-import cats.{ApplicativeError, MonadThrow, Traverse}
+import cats.{ApplicativeError, Functor, MonadThrow}
 import fs2.Stream
 import org.apache.commons.io.FileUtils
 import org.http4s.Uri
@@ -65,23 +65,13 @@ trait FileAlg[F[_]] {
       .flatMap(_.flatMap(edit).fold(F.pure(false))(writeFile(file, _).as(true)))
       .adaptError { case t => new Throwable(s"failed to edit $file", t) }
 
-  final def editFiles[G[_]](files: G[File], edit: String => Option[String])(implicit
-      F: MonadThrow[F],
-      G: Traverse[G]
-  ): F[Boolean] =
-    files.traverse(editFile(_, edit)).map(_.foldLeft(false)(_ || _))
-
-  final def findFiles(
-      dir: File,
-      fileFilter: File => Boolean,
-      contentFilter: String => Boolean
-  )(implicit F: Concurrent[F]): F[List[File]] =
+  final def findFiles(dir: File, fileFilter: File => Boolean, contentFilter: String => Boolean)(
+      implicit F: Functor[F]
+  ): Stream[F, (File, String)] =
     walk(dir)
       .evalFilter(isRegularFile)
       .filter(fileFilter)
-      .evalFilter(readFile(_).map(_.fold(false)(contentFilter)))
-      .compile
-      .toList
+      .evalMapFilter(file => readFile(file).map(_.filter(contentFilter).map(file -> _)))
 
   final def writeFileData(dir: File, fileData: FileData): F[Unit] =
     writeFile(dir / fileData.name, fileData.content)
