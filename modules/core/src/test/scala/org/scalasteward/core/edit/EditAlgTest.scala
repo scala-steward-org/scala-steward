@@ -251,11 +251,29 @@ class EditAlgTest extends FunSuite {
     assertEquals(runApplyUpdate(update, original), expected)
   }
 
+  test("match artifactId cross name in Maven dependency") {
+    val update =
+      ("io.chrisdavenport".g % ("log4cats", "log4cats_2.13").a % "1.1.1" %> "1.2.0").single
+    val original = Map("pom.xml" -> """<groupId>io.chrisdavenport</groupId>
+                                      |<artifactId>log4cats_2.13</artifactId>
+                                      |<version>1.1.1</version>""".stripMargin)
+    val expected = Map("pom.xml" -> """<groupId>io.chrisdavenport</groupId>
+                                      |<artifactId>log4cats_2.13</artifactId>
+                                      |<version>1.2.0</version>""".stripMargin)
+    assertEquals(runApplyUpdate(update, original), expected)
+  }
+
+  private var counter = 0
+  private def nextInt(): Int = {
+    counter = counter + 1
+    counter
+  }
+
   private def runApplyUpdate(
       update: Update.Single,
       files: Map[String, String]
   ): Map[String, String] = {
-    val repo = Repo("edit-alg", s"runApplyUpdate")
+    val repo = Repo("edit-alg", s"runApplyUpdate-${nextInt()}")
     val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
     val repoDir = config.workspace / repo.toPath
     val filesInRepoDir = files.map { case (file, content) => repoDir / file -> content }

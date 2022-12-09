@@ -49,7 +49,7 @@ object Selector {
         .collect { case p: DependencyDef if !p.isCommented => p }
         .filter { p =>
           dependencies.exists { d =>
-            d.groupId.value === p.groupId && d.artifactId.name === p.artifactId
+            d.groupId.value === p.groupId && d.artifactId.names.contains_(p.artifactId)
           }
         }
     }
@@ -100,7 +100,7 @@ object Selector {
         positions
           .filter { p =>
             p.groupId.value === currentGroupId.value &&
-            p.artifactId.value === currentArtifactId.name
+            currentArtifactId.names.contains_(p.artifactId.value)
           }
           .flatMap { p =>
             newerGroupId.map(g => p.groupId.replaceWith(g.value)).toList ++
