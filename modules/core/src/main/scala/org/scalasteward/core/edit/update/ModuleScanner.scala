@@ -23,10 +23,11 @@ import scala.util.matching.Regex
 
 object ModuleScanner {
   def findPositions(dependency: Dependency, content: String): List[ModulePosition] = {
+    val offRegions = findOffRegions(content)
     val it = findSbtDependency(dependency, content) ++
       findMillDependency(dependency, content) ++
       findMavenDependency(dependency, content)
-    it.distinctBy(_.groupId.start).toList
+    it.filterNot(p => isInside(p.version.start, offRegions)).distinctBy(_.groupId.start).toList
   }
 
   private def findSbtDependency(dependency: Dependency, content: String): Iterator[SbtDependency] =

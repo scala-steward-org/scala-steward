@@ -23,12 +23,13 @@ import scala.util.matching.Regex
 
 object VersionScanner {
   def findPositions(version: Version, content: String): List[VersionPosition] = {
+    val offRegions = findOffRegions(content)
     val it = findSbtDependency(version, content) ++
       findMillDependency(version, content) ++
       findMavenDependency(version, content) ++
       findScalaVal(version, content) ++
       findUnclassified(version, content)
-    it.distinctBy(_.version.start).toList
+    it.filterNot(p => isInside(p.version.start, offRegions)).distinctBy(_.version.start).toList
   }
 
   private def findSbtDependency(version: Version, content: String): Iterator[SbtDependency] =

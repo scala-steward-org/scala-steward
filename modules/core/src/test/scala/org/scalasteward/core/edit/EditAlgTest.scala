@@ -55,6 +55,7 @@ class EditAlgTest extends FunSuite {
       ),
       files = Map(file1 -> """val catsVersion = "1.3.0"""", file2 -> "")
     )
+
     assertEquals(state, expected)
   }
 
@@ -149,7 +150,7 @@ class EditAlgTest extends FunSuite {
       "build.sbt" -> """val config = "1.3.4"""",
       "project/plugins.sbt" -> """addSbtPlugin("com.typesafe.sbt" % "sbt-site" % "1.3.3")"""
     )
-    assertEquals(runApplyUpdate(4, update, original), expected)
+    assertEquals(runApplyUpdate(update, original), expected)
   }
 
   test("file restriction when sbt update") {
@@ -162,7 +163,7 @@ class EditAlgTest extends FunSuite {
       "build.properties" -> """sbt.version=1.2.8""",
       "project/plugins.sbt" -> """addSbtPlugin("com.jsuereth" % "sbt-pgp" % "1.1.2")"""
     )
-    assertEquals(runApplyUpdate(5, update, original), expected)
+    assertEquals(runApplyUpdate(update, original), expected)
   }
 
   test("keyword with extra underscore") {
@@ -176,7 +177,7 @@ class EditAlgTest extends FunSuite {
       ".travis.yml" -> """ - SCALA_JS_VERSION=1.1.1""",
       "project/plugins.sbt" -> """val scalaJsVersion = Option(System.getenv("SCALA_JS_VERSION")).getOrElse("1.1.1")"""
     )
-    assertEquals(runApplyUpdate(6, update, original), expected)
+    assertEquals(runApplyUpdate(update, original), expected)
   }
 
   /*
@@ -194,12 +195,45 @@ class EditAlgTest extends FunSuite {
   }
    */
 
+  test("disable updates on single lines with 'off' (no 'on')") {
+    val update =
+      ("com.typesafe.akka".g % Nel.of("akka-actor".a, "akka-testkit".a) % "2.4.0" %> "2.5.0").group
+    val original =
+      Map("build.sbt" -> """ "com.typesafe.akka" %% "akka-actor" % "2.4.0", // scala-steward:off
+                           | "com.typesafe.akka" %% "akka-testkit" % "2.4.0",
+                           | """.stripMargin)
+    val expected =
+      Map("build.sbt" -> """ "com.typesafe.akka" %% "akka-actor" % "2.4.0", // scala-steward:off
+                           | "com.typesafe.akka" %% "akka-testkit" % "2.5.0",
+                           | """.stripMargin)
+    assertEquals(runApplyUpdate(update, original), expected)
+  }
+
+  test("disable updates on multiple lines after 'off' (no 'on')") {
+    val update =
+      ("com.typesafe.akka".g % Nel.of("akka-actor".a, "akka-testkit".a) % "2.4.0" %> "2.5.0").group
+    val original = Map("build.sbt" -> """ // scala-steward:off
+                                        | "com.typesafe.akka" %% "akka-actor" % "2.4.0",
+                                        | "com.typesafe.akka" %% "akka-testkit" % "2.4.0",
+                                        | """.stripMargin)
+    val expected = original
+    assertEquals(runApplyUpdate(update, original), expected)
+  }
+
+  test("hash before 'off'") {
+    val update = ("org.scala-sbt".g % "sbt".a % "1.2.8" %> "1.4.3").single
+    val original = Map("build.properties" -> """# scala-steward:off
+                                               |sbt.version=1.2.8
+                                               |""".stripMargin)
+    val expected = original
+    assertEquals(runApplyUpdate(update, original), expected)
+  }
+
   private def runApplyUpdate(
-      number: Int,
       update: Update.Single,
       files: Map[String, String]
   ): Map[String, String] = {
-    val repo = Repo("edit-alg", s"runApplyUpdate-$number")
+    val repo = Repo("edit-alg", s"runApplyUpdate")
     val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
     val repoDir = config.workspace / repo.toPath
     val filesInRepoDir = files.map { case (file, content) => repoDir / file -> content }
