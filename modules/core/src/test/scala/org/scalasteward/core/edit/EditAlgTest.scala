@@ -263,10 +263,20 @@ class EditAlgTest extends FunSuite {
     assertEquals(runApplyUpdate(update, original), expected)
   }
 
-  private var counter = 0
-  private def nextInt(): Int = {
-    counter = counter + 1
-    counter
+  test("camel case artifactId") {
+    val update = ("com.zaxxer".g % "HikariCP".a % "3.3.0" %> "3.4.0").single
+    val original = Map("Versions.scala" -> """val hikariVersion = "3.3.0" """)
+    val expected = Map("Versions.scala" -> """val hikariVersion = "3.4.0" """)
+    assertEquals(runApplyUpdate(update, original), expected)
+  }
+
+  test("substring of artifactId prefix") {
+    val update = ("org.mongodb".g %
+      Nel.of("mongodb-driver".a, "mongodb-driver-async".a, "mongodb-driver-core".a) %
+      "3.7.0" %> "3.7.1").group
+    val original = Map("build.sbt" -> """val mongoVersion = "3.7.0" """)
+    val expected = Map("build.sbt" -> """val mongoVersion = "3.7.1" """)
+    assertEquals(runApplyUpdate(update, original), expected)
   }
 
   private def runApplyUpdate(
@@ -283,5 +293,11 @@ class EditAlgTest extends FunSuite {
       .map(_.files)
       .unsafeRunSync()
       .map { case (file, content) => file.toString.replace(repoDir.toString + "/", "") -> content }
+  }
+
+  private var counter = 0
+  private def nextInt(): Int = {
+    counter = counter + 1
+    counter
   }
 }

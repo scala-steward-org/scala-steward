@@ -111,21 +111,6 @@ class UpdateHeuristicTest extends FunSuite {
     assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.relaxed.name)
   }
 
-  test("camel case artifactId") {
-    val original = """val hikariVersion = "3.3.0" """
-    val expected = """val hikariVersion = "3.4.0" """
-    val update = ("com.zaxxer".g % "HikariCP".a % "3.3.0" %> "3.4.0").single
-    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.relaxed.name)
-  }
-
-  test("mongo from mongodb") {
-    val original = """val mongoVersion = "3.7.0" """
-    val expected = """val mongoVersion = "3.7.1" """
-    val update = ("org.mongodb".g %
-      Nel.of("mongodb-driver".a, "mongodb-driver-async".a, "mongodb-driver-core".a) %
-      "3.7.0" %> "3.7.1").group
-    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.sliding.name)
-  }
 
   test("artifactId with common suffix") {
     val original = """case _ => "1.0.2" """
