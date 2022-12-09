@@ -229,6 +229,28 @@ class EditAlgTest extends FunSuite {
     assertEquals(runApplyUpdate(update, original), expected)
   }
 
+  test("update multiple lines between 'on' and 'off'") {
+    val update = ("com.typesafe.akka".g %
+      Nel.of("akka-actor".a, "akka-testkit".a, "akka-slf4j".a) % "2.4.20" %> "2.5.0").group
+    val original =
+      Map("build.sbt" -> """  // scala-steward:off
+                           |  "com.typesafe.akka" %% "akka-actor" % "2.4.20",
+                           |  // scala-steward:on
+                           |  "com.typesafe.akka" %% "akka-slf4j" % "2.4.20" % "test"
+                           |  // scala-steward:off
+                           |  "com.typesafe.akka" %% "akka-testkit" % "2.4.20" % "test"
+                           |  """.stripMargin.trim)
+    val expected =
+      Map("build.sbt" -> """  // scala-steward:off
+                           |  "com.typesafe.akka" %% "akka-actor" % "2.4.20",
+                           |  // scala-steward:on
+                           |  "com.typesafe.akka" %% "akka-slf4j" % "2.5.0" % "test"
+                           |  // scala-steward:off
+                           |  "com.typesafe.akka" %% "akka-testkit" % "2.4.20" % "test"
+                           |  """.stripMargin.trim)
+    assertEquals(runApplyUpdate(update, original), expected)
+  }
+
   private def runApplyUpdate(
       update: Update.Single,
       files: Map[String, String]

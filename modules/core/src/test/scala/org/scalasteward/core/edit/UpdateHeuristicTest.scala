@@ -170,28 +170,6 @@ class UpdateHeuristicTest extends FunSuite {
     assertEquals(update.replaceVersionIn(original), None -> UpdateHeuristic.all.last.name)
   }
 
-  test("update multiple lines between `on` and `off`") {
-    val original =
-      """  // scala-steward:off
-        |  "com.typesafe.akka" %% "akka-actor" % "2.4.20",
-        |  // scala-steward:on
-        |  "com.typesafe.akka" %% "akka-slf4j" % "2.4.20" % "test"
-        |  // scala-steward:off
-        |  "com.typesafe.akka" %% "akka-testkit" % "2.4.20" % "test"
-        |  """.stripMargin.trim
-    val expected =
-      """  // scala-steward:off
-        |  "com.typesafe.akka" %% "akka-actor" % "2.4.20",
-        |  // scala-steward:on
-        |  "com.typesafe.akka" %% "akka-slf4j" % "2.5.0" % "test"
-        |  // scala-steward:off
-        |  "com.typesafe.akka" %% "akka-testkit" % "2.4.20" % "test"
-        |  """.stripMargin.trim
-    val update = ("com.typesafe.akka".g %
-      Nel.of("akka-actor".a, "akka-testkit".a, "akka-slf4j".a) % "2.4.20" %> "2.5.0").group
-    assertEquals(update.replaceVersionIn(original), Some(expected) -> UpdateHeuristic.moduleId.name)
-  }
-
   test("cognito value for aws-java-sdk-cognitoidp artifact") {
     val original = """val cognito       = "1.11.690" """
     val expected = """val cognito       = "1.11.700" """
