@@ -18,7 +18,7 @@ package org.scalasteward.core.edit.update
 
 import org.scalasteward.core.data.Dependency
 import org.scalasteward.core.edit.update.data.ModulePosition._
-import org.scalasteward.core.edit.update.data.{ModulePosition, SubstringPosition}
+import org.scalasteward.core.edit.update.data.{ModulePosition, Substring}
 import scala.util.matching.Regex
 
 object ModuleScanner {
@@ -32,9 +32,9 @@ object ModuleScanner {
 
   private def findSbtDependency(dependency: Dependency, content: String): Iterator[SbtDependency] =
     sbtModuleIdRegex(dependency).findAllIn(content).matchData.map { m =>
-      val groupId = SubstringPosition.fromMatch(m, dependency.groupId.value)
-      val artifactId = SubstringPosition.fromMatch(m, dependency.artifactId.name)
-      val version = SubstringPosition.fromMatch(m, m.group(1))
+      val groupId = Substring.Position.fromMatch(m, dependency.groupId.value)
+      val artifactId = Substring.Position.fromMatch(m, dependency.artifactId.name)
+      val version = Substring.Position.fromMatch(m, m.group(1))
       SbtDependency(groupId, artifactId, version)
     }
 
@@ -49,9 +49,9 @@ object ModuleScanner {
       content: String
   ): Iterator[MillDependency] =
     millDependencyRegex(dependency).findAllIn(content).matchData.map { m =>
-      val groupId = SubstringPosition.fromMatch(m, dependency.groupId.value)
-      val artifactId = SubstringPosition.fromMatch(m, dependency.artifactId.name)
-      val version = SubstringPosition.fromMatch(m, m.group(1))
+      val groupId = Substring.Position.fromMatch(m, dependency.groupId.value)
+      val artifactId = Substring.Position.fromMatch(m, dependency.artifactId.name)
+      val version = Substring.Position.fromMatch(m, m.group(1))
       MillDependency(groupId, artifactId, version)
     }
 
@@ -66,9 +66,9 @@ object ModuleScanner {
       content: String
   ): Iterator[MavenDependency] =
     mavenDependencyRegex(dependency).findAllIn(content).matchData.map { m =>
-      val groupId = SubstringPosition.fromMatch(m, dependency.groupId.value)
-      val artifactId = SubstringPosition.fromMatch(m, dependency.artifactId.name)
-      val version = SubstringPosition.fromMatch(m, m.group(1))
+      val groupId = Substring.Position.fromMatch(m, dependency.groupId.value)
+      val artifactId = Substring.Position.fromMatch(m, dependency.artifactId.name)
+      val version = Substring.Position.fromMatch(m, m.group(1))
       MavenDependency(groupId, artifactId, version)
     }
 

@@ -17,27 +17,27 @@
 package org.scalasteward.core.edit.update.data
 
 sealed trait ModulePosition extends Product with Serializable {
-  def groupId: SubstringPosition
-  def artifactId: SubstringPosition
-  def version: SubstringPosition
+  def groupId: Substring.Position
+  def artifactId: Substring.Position
+  def version: Substring.Position
 }
 
 object ModulePosition {
   final case class SbtDependency(
-      groupId: SubstringPosition,
-      artifactId: SubstringPosition,
-      version: SubstringPosition
+      groupId: Substring.Position,
+      artifactId: Substring.Position,
+      version: Substring.Position
   ) extends ModulePosition
 
   final case class MillDependency(
-      groupId: SubstringPosition,
-      artifactId: SubstringPosition,
-      version: SubstringPosition
+      groupId: Substring.Position,
+      artifactId: Substring.Position,
+      version: Substring.Position
   ) extends ModulePosition
 
   final case class MavenDependency(
-      groupId: SubstringPosition,
-      artifactId: SubstringPosition,
-      version: SubstringPosition
+      groupId: Substring.Position,
+      artifactId: Substring.Position,
+      version: Substring.Position
   ) extends ModulePosition
 }

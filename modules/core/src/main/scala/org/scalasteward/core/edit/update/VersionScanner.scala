@@ -18,7 +18,7 @@ package org.scalasteward.core.edit.update
 
 import org.scalasteward.core.data.Version
 import org.scalasteward.core.edit.update.data.VersionPosition._
-import org.scalasteward.core.edit.update.data.{SubstringPosition, VersionPosition}
+import org.scalasteward.core.edit.update.data.{Substring, VersionPosition}
 import scala.util.matching.Regex
 
 object VersionScanner {
@@ -34,7 +34,7 @@ object VersionScanner {
 
   private def findSbtDependency(version: Version, content: String): Iterator[SbtDependency] =
     sbtModuleIdRegex(version).findAllIn(content).matchData.map { m =>
-      val versionPos = SubstringPosition.fromMatch(m, version.value)
+      val versionPos = Substring.Position.fromMatch(m, version.value)
       val before = m.group(1)
       val groupId = m.group(2)
       val artifactId = m.group(3)
@@ -48,7 +48,7 @@ object VersionScanner {
 
   private def findMillDependency(version: Version, content: String): Iterator[MillDependency] =
     millDependencyRegex(version).findAllIn(content).matchData.map { m =>
-      val versionPos = SubstringPosition.fromMatch(m, version.value)
+      val versionPos = Substring.Position.fromMatch(m, version.value)
       val before = m.group(1)
       val groupId = m.group(2)
       val artifactId = m.group(3)
@@ -63,7 +63,7 @@ object VersionScanner {
 
   private def findMavenDependency(version: Version, content: String): Iterator[MavenDependency] =
     mavenDependencyRegex(version).findAllIn(content).matchData.map { m =>
-      val versionPos = SubstringPosition.fromMatch(m, version.value)
+      val versionPos = Substring.Position.fromMatch(m, version.value)
       val groupId = m.group(1)
       val artifactId = m.group(2)
       MavenDependency(versionPos, groupId, artifactId)
@@ -77,7 +77,7 @@ object VersionScanner {
 
   private def findScalaVal(version: Version, content: String): Iterator[ScalaVal] =
     scalaValRegex(version).findAllIn(content).matchData.map { m =>
-      val versionPos = SubstringPosition.fromMatch(m, version.value)
+      val versionPos = Substring.Position.fromMatch(m, version.value)
       val before = m.group(1)
       val name = m.group(2)
       ScalaVal(versionPos, before, name)
@@ -93,7 +93,7 @@ object VersionScanner {
     val v = Regex.quote(version.value)
     val regex = raw"""(.*)$v(.?)""".r
     regex.findAllIn(content).matchData.flatMap { m =>
-      val versionPos = SubstringPosition.fromMatch(m, version.value)
+      val versionPos = Substring.Position.fromMatch(m, version.value)
       val before = m.group(1)
       val after = Option(m.group(2))
       val leadingCharIsNoLetterOrDigit = !before.lastOption.exists(_.isLetterOrDigit)

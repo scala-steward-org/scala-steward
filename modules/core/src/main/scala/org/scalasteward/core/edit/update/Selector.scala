@@ -27,7 +27,7 @@ object Selector {
       update: Update.Single,
       versionPositions: PathList[List[VersionPosition]],
       modulePositions: PathList[List[ModulePosition]]
-  ): PathList[List[SubstringReplacement]] = {
+  ): PathList[List[Substring.Replacement]] = {
     val versionReplacements = firstNonEmpty(
       dependencyDefPositions(update.dependencies, versionPositions) ++
         scalaValInDependencyDefPositions(versionPositions, modulePositions),
@@ -91,7 +91,7 @@ object Selector {
   private def moduleReplacements(
       update: Update.Single,
       modulePositions: PathList[List[ModulePosition]]
-  ): PathList[List[SubstringReplacement]] = {
+  ): PathList[List[Substring.Replacement]] = {
     val (newerGroupId, newerArtifactId) = update match {
       case u: Update.ForArtifactId => (u.newerGroupId, u.newerArtifactId)
       case _: Update.ForGroupId    => (None, None)

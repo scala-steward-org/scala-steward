@@ -3,7 +3,7 @@ package org.scalasteward.core.edit.update
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.Version
-import org.scalasteward.core.edit.update.data.SubstringPosition
+import org.scalasteward.core.edit.update.data.Substring
 import org.scalasteward.core.edit.update.data.VersionPosition._
 
 class VersionScannerTest extends FunSuite {
@@ -15,7 +15,7 @@ class VersionScannerTest extends FunSuite {
     val obtained = VersionScanner.findPositions(d.version, content)
     val expected = List(
       SbtDependency(
-        SubstringPosition(61, d.version.value),
+        Substring.Position(61, d.version.value),
         "libraryDependencies += ",
         d.groupId.value,
         d.artifactId.name
@@ -31,7 +31,7 @@ class VersionScannerTest extends FunSuite {
     val obtained = VersionScanner.findPositions(d.version, content)
     val expected = List(
       MillDependency(
-        SubstringPosition(38, d.version.value),
+        Substring.Position(38, d.version.value),
         "import $ivy.",
         d.groupId.value,
         d.artifactId.name
@@ -46,7 +46,7 @@ class VersionScannerTest extends FunSuite {
     val obtained = VersionScanner.findPositions(d.version, content)
     val expected = List(
       SbtDependency(
-        SubstringPosition(47, d.version.value),
+        Substring.Position(47, d.version.value),
         "addSbtPlugin(",
         d.groupId.value,
         d.artifactId.name
@@ -63,7 +63,7 @@ class VersionScannerTest extends FunSuite {
     val obtained = VersionScanner.findPositions(d.version, content)
     val expected = List(
       SbtDependency(
-        SubstringPosition(104, d.version.value),
+        Substring.Position(104, d.version.value),
         "addSbtPlugin(",
         d.groupId.value,
         d.artifactId.name
@@ -78,7 +78,7 @@ class VersionScannerTest extends FunSuite {
                      |  val cats = "${d.version}"
                      |}""".stripMargin
     val obtained = VersionScanner.findPositions(d.version, content)
-    val expected = List(ScalaVal(SubstringPosition(32, d.version.value), "  ", "cats"))
+    val expected = List(ScalaVal(Substring.Position(32, d.version.value), "  ", "cats"))
     assertEquals(obtained, expected)
   }
 
@@ -89,7 +89,7 @@ class VersionScannerTest extends FunSuite {
                      |}""".stripMargin
 
     val obtained = VersionScanner.findPositions(d.version, content)
-    val expected = List(ScalaVal(SubstringPosition(35, d.version.value), "  // ", "cats"))
+    val expected = List(ScalaVal(Substring.Position(35, d.version.value), "  // ", "cats"))
     assertEquals(obtained, expected)
   }
 
@@ -97,7 +97,7 @@ class VersionScannerTest extends FunSuite {
     val d = "org.webjars.bower".g % "plotly.js".a % "1.41.3"
     val content = s""" val `plotly.js` = "${d.version}" """
     val obtained = VersionScanner.findPositions(d.version, content)
-    val expected = List(ScalaVal(SubstringPosition(20, d.version.value), " ", "`plotly.js`"))
+    val expected = List(ScalaVal(Substring.Position(20, d.version.value), " ", "`plotly.js`"))
     assertEquals(obtained, expected)
   }
 
@@ -105,7 +105,7 @@ class VersionScannerTest extends FunSuite {
     val d = "org.scala-sbt".g % "sbt".a % "1.2.8"
     val content = s"""sbt.version=${d.version}"""
     val obtained = VersionScanner.findPositions(d.version, content)
-    val expected = List(Unclassified(SubstringPosition(12, d.version.value), "sbt.version="))
+    val expected = List(Unclassified(Substring.Position(12, d.version.value), "sbt.version="))
     assertEquals(obtained, expected)
   }
 
@@ -115,8 +115,8 @@ class VersionScannerTest extends FunSuite {
                      |.target/scala-${d.version}/""".stripMargin
     val obtained = VersionScanner.findPositions(d.version, content)
     val expected = List(
-      Unclassified(SubstringPosition(17, d.version.value), "scalaVersion := \""),
-      Unclassified(SubstringPosition(42, d.version.value), ".target/scala-")
+      Unclassified(Substring.Position(17, d.version.value), "scalaVersion := \""),
+      Unclassified(Substring.Position(42, d.version.value), ".target/scala-")
     )
     assertEquals(obtained, expected)
   }

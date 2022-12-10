@@ -2,8 +2,8 @@ package org.scalasteward.core.edit.update
 
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.edit.update.data.SubstringPosition
 import org.scalasteward.core.edit.update.data.ModulePosition.SbtDependency
+import org.scalasteward.core.edit.update.data.Substring
 
 class ModuleScannerTest extends FunSuite {
   test("sbt module") {
@@ -12,9 +12,9 @@ class ModuleScannerTest extends FunSuite {
     val obtained = ModuleScanner.findPositions(d, content)
     val expected = List(
       SbtDependency(
-        SubstringPosition(1, d.groupId.value),
-        SubstringPosition(20, d.artifactId.name),
-        SubstringPosition(33, s"\"${d.version}\"")
+        Substring.Position(1, d.groupId.value),
+        Substring.Position(20, d.artifactId.name),
+        Substring.Position(33, s"\"${d.version}\"")
       )
     )
     assertEquals(obtained, expected)
@@ -26,9 +26,9 @@ class ModuleScannerTest extends FunSuite {
     val obtained = ModuleScanner.findPositions(d, content)
     val expected = List(
       SbtDependency(
-        SubstringPosition(1, d.groupId.value),
-        SubstringPosition(20, d.artifactId.name),
-        SubstringPosition(33, "catsVersion")
+        Substring.Position(1, d.groupId.value),
+        Substring.Position(20, d.artifactId.name),
+        Substring.Position(33, "catsVersion")
       )
     )
     assertEquals(obtained, expected)
