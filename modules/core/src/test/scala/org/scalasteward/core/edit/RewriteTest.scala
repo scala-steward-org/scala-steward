@@ -202,7 +202,7 @@ class RewriteTest extends FunSuite {
     runApplyUpdate(update, original, expected)
   }
 
-  /*
+  /* TODO
   test("mill version file update") {
     val update = ("com.lihaoyi".g % "mill-main".a % "0.9.5" %> "0.9.9").single
     val original = Map(
@@ -567,6 +567,89 @@ class RewriteTest extends FunSuite {
                                         |""".stripMargin)
     runApplyUpdate(update, original, expected)
   }
+
+  /* TODO
+  test("chars of search term contained in other term") {
+    val update = ("org.typelevel".g % "cats-core".a % "2.4.1" %> "2.4.2").single
+    val original = Map("build.sbt" -> """val cats = "2.4.1"
+                                        |val scalaReactJsTestState = "2.4.1"
+                                        |""".stripMargin)
+    val expected = Map("build.sbt" -> """val cats = "2.4.2"
+                                        |val scalaReactJsTestState = "2.4.1"
+                                        |""".stripMargin)
+    runApplyUpdate(update, original, expected)
+  }
+   */
+
+  test("group with prefix val") {
+    val update = ("io.circe".g %
+      Nel.of("circe-generic".a, "circe-literal".a, "circe-parser".a, "circe-testing".a) %
+      "0.10.0-M1" %> "0.10.0-M2").group
+    val original = Map("build.sbt" -> """ val circe = "0.10.0-M1" """)
+    val expected = Map("build.sbt" -> """ val circe = "0.10.0-M2" """)
+    runApplyUpdate(update, original, expected)
+  }
+
+  test("short groupIds") {
+    val update =
+      ("com.sky".g % Nel.of("akka-streams".a, "akka-streams-kafka".a) % "1.2.0" %> "1.3.0").group
+    val original = Map("build.sbt" -> """|private val mapCommonsDeps = Seq(
+                                         |    "akka-streams",
+                                         |    "akka-streams-kafka"
+                                         |  ).map("com.sky" %% _ % "1.2.0")
+                                         |""".stripMargin)
+    val expected = Map("build.sbt" -> """|private val mapCommonsDeps = Seq(
+                                         |    "akka-streams",
+                                         |    "akka-streams-kafka"
+                                         |  ).map("com.sky" %% _ % "1.3.0")
+                                         |""".stripMargin)
+    runApplyUpdate(update, original, expected)
+  }
+
+  test("artifactId with dot") {
+    val update = ("org.webjars.bower".g % "plotly.js".a % "1.41.3" %> "1.43.2").single
+    val original = Map("build.sbt" -> """ def plotlyJs = "1.41.3" """)
+    val expected = Map("build.sbt" -> """ def plotlyJs = "1.43.2" """)
+    runApplyUpdate(update, original, expected)
+  }
+
+  test("val with backticks") {
+    val update = ("org.webjars.bower".g % "plotly.js".a % "1.41.3" %> "1.43.2").single
+    val original = Map("build.sbt" -> """ val `plotly.js` = "1.41.3" """)
+    val expected = Map("build.sbt" -> """ val `plotly.js` = "1.43.2" """)
+    runApplyUpdate(update, original, expected)
+  }
+
+  test("word from artifactId") {
+    val update =
+      ("io.circe".g % ("circe-generic", "circe-generic_2.12").a % "0.9.3" %> "0.11.1").single
+    val original = Map("build.sbt" -> """lazy val circeVersion = "0.9.3"""")
+    val expected = Map("build.sbt" -> """lazy val circeVersion = "0.11.1"""")
+    runApplyUpdate(update, original, expected)
+  }
+
+  /* TODO
+  test("artifactIds are common suffixes") {
+    val update = ("com.github.japgolly.scalajs-react".g %
+      Nel.of("core".a, "extra".a) % "1.2.3" %> "1.3.1").group
+    val original = Map("build.sbt" -> """lazy val scalajsReactVersion = "1.2.3"
+                                        |lazy val logbackVersion = "1.2.3"
+      """.stripMargin)
+    val expected = Map("build.sbt" -> """lazy val scalajsReactVersion = "1.3.1"
+                                        |lazy val logbackVersion = "1.2.3"
+      """.stripMargin)
+    runApplyUpdate(update, original, expected)
+  }
+   */
+
+  /* TODO
+  test("artifactId with common suffix") {
+    val update = ("co.fs2".g % "fs2-core".a % "1.0.2" %> "1.0.4").single
+    val original = Map("build.sbt" -> """case _ => "1.0.2" """)
+    val expected = original
+    runApplyUpdate(update, original, expected)
+  }
+   */
 
   private def runApplyUpdate(
       update: Update.Single,
