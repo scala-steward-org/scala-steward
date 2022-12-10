@@ -273,6 +273,17 @@ class RewriteTest extends FunSuite {
     runApplyUpdate(update, original, expected)
   }
 
+  // https://github.com/scala-steward-org/scala-steward/issues/960
+  test("issue 960: unrelated ModuleID with same version number, 3") {
+    val update = ("org.webjars.npm".g % "bootstrap".a % "3.4.1" %> "4.3.1").single
+    val original =
+      Map("build.sbt" -> """ "org.webjars.npm" % "bootstrap" % "3.4.1", // scala-steward:off
+                           | "org.webjars.npm" % "jquery" % "3.4.1",
+                           |""".stripMargin)
+    val expected = original
+    runApplyUpdate(update, original, expected)
+  }
+
   test("match artifactId cross name in Maven dependency") {
     val update =
       ("io.chrisdavenport".g % ("log4cats", "log4cats_2.13").a % "1.1.1" %> "1.2.0").single
@@ -628,6 +639,13 @@ class RewriteTest extends FunSuite {
     runApplyUpdate(update, original, expected)
   }
 
+  test("word from groupId") {
+    val update = ("org.eu.acolyte".g % "jdbc-driver".a % "1.0.49" %> "1.0.51").single
+    val original = Map("build.sbt" -> """val acolyteVersion = "1.0.49" """)
+    val expected = Map("build.sbt" -> """val acolyteVersion = "1.0.51" """)
+    runApplyUpdate(update, original, expected)
+  }
+
   /* TODO
   test("artifactIds are common suffixes") {
     val update = ("com.github.japgolly.scalajs-react".g %
@@ -650,6 +668,62 @@ class RewriteTest extends FunSuite {
     runApplyUpdate(update, original, expected)
   }
    */
+
+  test("ignore TLD") {
+    val update = ("com.slamdata".g % "fs2-gzip".a % "1.0.1" %> "1.1.1").single
+    val original = Map("build.sbt" -> """ "com.propensive" %% "contextual" % "1.0.1" """)
+    val expected = original
+    runApplyUpdate(update, original, expected)
+  }
+
+  /* TODO
+  test("ignore 'scala' substring") {
+    val update = ("org.scalactic".g % "scalactic".a % "3.0.7" %> "3.0.8").single
+    val original = Map("build.sbt" -> """ val scalaTestVersion = "3.0.7" """)
+    val expected = original
+    runApplyUpdate(update, original, expected)
+  }
+   */
+
+  /* TODO
+  test("ignore short words") {
+    val update = ("org.scala-sbt".g % "scripted-plugin".a % "1.2.7" %> "1.2.8").single
+    val original = Map(".travis.yml" -> "SBT_VERSION=1.2.7")
+    val expected = original
+    runApplyUpdate(update, original, expected)
+  }
+   */
+
+  // https://github.com/scala-steward-org/scala-steward/issues/1586
+  test("tracing value for opentracing library") {
+    val update = ("com.colisweb".g % Nel.of(
+      "scala-opentracing-core".a,
+      "scala-opentracing-context".a,
+      "scala-opentracing-http4s-server-tapir".a
+    ) % "2.4.1" %> "2.5.0").group
+    val original = Map("build.sbt" -> """val tracing = "2.4.1" """)
+    val expected = Map("build.sbt" -> """val tracing = "2.5.0" """)
+    runApplyUpdate(update, original, expected)
+  }
+
+  // https://github.com/scala-steward-org/scala-steward/issues/1651
+  test("don't update in comments") {
+    val update = ("org.scalatest".g % "scalatest".a % "3.2.0" %> "3.2.2").single
+    val original = Map(
+      "build.sbt" -> """val scalaTest = "3.2.0"  // scalaTest 3.2.0 is causing a failure on scala 2.13..."""
+    )
+    val expected = Map(
+      "build.sbt" -> """val scalaTest = "3.2.2"  // scalaTest 3.2.0 is causing a failure on scala 2.13..."""
+    )
+    runApplyUpdate(update, original, expected)
+  }
+
+  test("cognito value for aws-java-sdk-cognitoidp artifact") {
+    val update = ("com.amazonaws".g % "aws-java-sdk-cognitoidp".a % "1.11.690" %> "1.11.700").single
+    val original = Map("build.sbt" -> """val cognito       = "1.11.690" """)
+    val expected = Map("build.sbt" -> """val cognito       = "1.11.700" """)
+    runApplyUpdate(update, original, expected)
+  }
 
   private def runApplyUpdate(
       update: Update.Single,
