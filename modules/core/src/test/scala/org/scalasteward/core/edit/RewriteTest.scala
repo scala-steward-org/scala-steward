@@ -481,6 +481,24 @@ class RewriteTest extends FunSuite {
     runApplyUpdate(update, original, expected)
   }
 
+  /* TODO
+  test("ignore mimaPreviousArtifacts") {
+    val update = ("io.dropwizard.metrics".g %
+      Nel.of("metrics-core".a, "metrics-healthchecks".a) % "4.0.1" %> "4.0.3").group
+    val original = Map(
+      "build.sbt" -> """"io.dropwizard.metrics" % "metrics-core" % "4.0.1"
+                       |mimaPreviousArtifacts := Set("io.dropwizard.metrics" %% "metrics-core" % "4.0.1")
+                       |""".stripMargin
+    )
+    val expected = Map(
+      "build.sbt" -> """"io.dropwizard.metrics" % "metrics-core" % "4.0.3"
+                       |mimaPreviousArtifacts := Set("io.dropwizard.metrics" %% "metrics-core" % "4.0.1")
+                       |""".stripMargin
+    )
+    runApplyUpdate(update, original, expected)
+  }
+   */
+
   // https://github.com/scala-steward-org/scala-steward/issues/236
   test("same version, same artifact prefix, different groupId") {
     val update =
@@ -725,6 +743,43 @@ class RewriteTest extends FunSuite {
     runApplyUpdate(update, original, expected)
   }
 
+  /* TODO
+  test("missing enclosing quote before") {
+    val update = ("org.typelevel".g % "cats-effect".a % "2.2.0" %> "2.3.0").single
+    val original = Map(
+      "build.sbt" -> """.add("scalatestplus", version = "3.2.2.0", org = "org.scalatestplus", "scalacheck-1-14")"""
+    )
+    val expected = original
+    runApplyUpdate(update, original, expected)
+  }
+   */
+
+  /* TODO
+  test("missing enclosing quote after") {
+    val update = ("org.typelevel".g % "cats-effect".a % "2.2.0" %> "2.3.0").single
+    val original = Map(
+      "build.sbt" -> """.add("scalatestplus", version = "2.2.0.3", org = "org.scalatestplus", "scalacheck-1-14")"""
+    )
+    val expected = original
+    runApplyUpdate(update, original, expected)
+  }
+   */
+
+  test("version val with if/else") {
+    val update = ("com.lihaoyi".g % "mill-scalalib".a % "0.10.9" %> "0.10.10").single
+    val original = Map(
+      "Dependencies.scala" -> """val millVersion = Def.setting(if (scalaBinaryVersion.value == "2.12") "0.6.3" else "0.10.9")
+                                |val millScalalib = Def.setting("com.lihaoyi" %% "mill-scalalib" % millVersion.value)
+                                |""".stripMargin
+    )
+    val expected = Map(
+      "Dependencies.scala" -> """val millVersion = Def.setting(if (scalaBinaryVersion.value == "2.12") "0.6.3" else "0.10.10")
+                                |val millScalalib = Def.setting("com.lihaoyi" %% "mill-scalalib" % millVersion.value)
+                                |""".stripMargin
+    )
+    runApplyUpdate(update, original, expected)
+  }
+
   private def runApplyUpdate(
       update: Update.Single,
       files: Map[String, String],
@@ -750,8 +805,3 @@ class RewriteTest extends FunSuite {
     counter
   }
 }
-
-// com.lihaoyi:mill-scalalib from 0.10.9 to 0.10.10
-// val millVersion = Def.setting(if (scalaBinaryVersion.value == "2.12") "0.6.3" else "0.10.10")
-// val millVersion = Def.setting(if (scalaBinaryVersion.value == "2.12") "0.6.3" else "0.10.9")
-// val millScalalib = Def.setting("com.lihaoyi" %% "mill-scalalib" % millVersion.value)
