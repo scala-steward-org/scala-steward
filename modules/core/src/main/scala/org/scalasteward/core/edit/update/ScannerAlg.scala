@@ -67,12 +67,11 @@ final class ScannerAlg[F[_]](implicit
       string: String
   ): Stream[F, (String, String)] =
     Stream.eval(workspaceAlg.repoDir(repo)).flatMap { repoDir =>
-      def pathOf(file: File) = repoDir.relativize(file).toString
-      val fileFilter =
-        (file: File) => {
-          val path = pathOf(file)
-          config.updates.fileExtensionsOrDefault.exists(path.endsWith)
-        }
+      def pathOf(file: File): String = repoDir.relativize(file).toString
+      val fileFilter = (file: File) => {
+        val path = pathOf(file)
+        config.updates.fileExtensionsOrDefault.exists(path.endsWith)
+      }
       fileAlg
         .findFiles(repoDir, fileFilter, _.contains(string))
         .map { case (file, content) => (pathOf(file), content) }
