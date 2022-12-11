@@ -20,6 +20,9 @@ sealed trait ModulePosition extends Product with Serializable {
   def groupId: Substring.Position
   def artifactId: Substring.Position
   def version: Substring.Position
+
+  final def unwrappedVersion: String =
+    version.value.dropWhile(Set('"', '$', '{')).reverse.dropWhile(Set('"', '}')).reverse
 }
 
 object ModulePosition {

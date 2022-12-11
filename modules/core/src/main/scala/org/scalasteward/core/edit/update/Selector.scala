@@ -85,8 +85,8 @@ object Selector {
       positions.filter { p =>
         modulePositions.exists { case (path2, positions2) =>
           path === path2 && positions2.exists { p2 =>
-            List(p.name, "$" + p.name).contains(p2.version.value) ||
-            p2.version.value.endsWith("." + p.name)
+            val unwrapped = p2.unwrappedVersion
+            unwrapped === p.name || unwrapped.endsWith("." + p.name)
           }
         }
       }
