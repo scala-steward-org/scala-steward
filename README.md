@@ -130,6 +130,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [Renato Cavalcanti](https://github.com/renatocaval)
 * [Rikito Taniguchi](https://github.com/tanishiking)
 * [Robert Stoll](https://github.com/robstoll)
+* [Roman Langolf](https://github.com/rolang)
 * [Scott Rice](https://github.com/scottrice10)
 * [solar](https://github.com/solar)
 * [Stanislav Chetvertkov](https://github.com/stanislav-chetvertkov)
