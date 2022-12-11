@@ -542,6 +542,27 @@ class RewriteTest extends FunSuite {
     runApplyUpdate(update, original, expected)
   }
 
+  // https://github.com/scala-steward-org/scala-steward/issues/2675
+  test("qualified val with similar name 2") {
+    val update =
+      ("org.http4s".g % Nel.of("http4s-circe".a, "http4s-dsl".a) % "0.23.11" %> "0.23.12").group
+    val original =
+      Map("build.sbt" -> """val http4s = "0.23.11"
+                           |val http4sOkHttp = "0.23.11"
+                           |"org.http4s" %% "http4s-dsl"           % Versions.http4s
+                           |"org.http4s" %% "http4s-okhttp-client" % Versions.http4sOkHttp
+                           |"org.http4s" %% "http4s-circe"         % Versions.http4s
+                           |""".stripMargin)
+    val expected =
+      Map("build.sbt" -> """val http4s = "0.23.12"
+                           |val http4sOkHttp = "0.23.11"
+                           |"org.http4s" %% "http4s-dsl"           % Versions.http4s
+                           |"org.http4s" %% "http4s-okhttp-client" % Versions.http4sOkHttp
+                           |"org.http4s" %% "http4s-circe"         % Versions.http4s
+                           |""".stripMargin)
+    runApplyUpdate(update, original, expected)
+  }
+
   // https://github.com/scala-steward-org/scala-steward/issues/502
   test("version that contains the current version as proper substring") {
     val artifactIds = Nel.of("keywords-each".a, "keywords-using".a)
