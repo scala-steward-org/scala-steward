@@ -58,11 +58,9 @@ trait FileAlg[F[_]] {
     Resource.make(create)(_ => delete)
   }
 
-  final def editFile(file: File, edit: String => Option[String])(implicit
-      F: MonadThrow[F]
-  ): F[Boolean] =
+  final def editFile(file: File, edit: String => String)(implicit F: MonadThrow[F]): F[Unit] =
     readFile(file)
-      .flatMap(_.flatMap(edit).fold(F.pure(false))(writeFile(file, _).as(true)))
+      .flatMap(_.fold(F.unit)(content => writeFile(file, edit(content))))
       .adaptError { case t => new Throwable(s"failed to edit $file", t) }
 
   final def findFiles(dir: File, fileFilter: File => Boolean, contentFilter: String => Boolean)(

@@ -101,7 +101,7 @@ final class EditAlg[F[_]](implicit
     for {
       repoDir <- workspaceAlg.repoDir(data.repo)
       _ <- updateReplacements.traverse_ { case (path, replacements) =>
-        fileAlg.editFile(repoDir / path, Substring.Replacement.applyAll(replacements, _).some)
+        fileAlg.editFile(repoDir / path, Substring.Replacement.applyAll(replacements))
       }
       _ <- reformatChangedFiles(data)
       msgTemplate = data.config.commits.messageOrDefault

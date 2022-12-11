@@ -40,7 +40,7 @@ object Substring {
   }
 
   object Replacement {
-    def applyAll(replacements: List[Replacement], source: String): String =
+    def applyAll(replacements: List[Replacement])(source: String): String =
       replacements
         .sortBy(_.position.start)(Ordering.Int.reverse)
         .foldLeft(source)((s, r) => r.replaceIn(s))
