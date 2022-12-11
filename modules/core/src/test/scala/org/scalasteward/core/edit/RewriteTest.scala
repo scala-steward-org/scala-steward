@@ -201,6 +201,18 @@ class RewriteTest extends FunSuite {
     runApplyUpdate(update, original, expected)
   }
 
+  // https://github.com/scala-steward-org/scala-steward/issues/2664
+  test("mill with generic variable") {
+    val update = ("io.circe".g % Nel.of("circe-core".a) % "0.14.1" %> "0.14.2").group
+    val original = Map("build.sc" -> """|val version = "0.14.1"
+                                        |val core    = ivy"io.circe::circe-core:$version"
+                                        |""".stripMargin)
+    val expected = Map("build.sc" -> """|val version = "0.14.2"
+                                        |val core    = ivy"io.circe::circe-core:$version"
+                                        |""".stripMargin)
+    runApplyUpdate(update, original, expected)
+  }
+
   test("mill version file update") {
     val update = ("com.lihaoyi".g % "mill-main".a % "0.9.5" %> "0.9.9").single
     val original = Map(
