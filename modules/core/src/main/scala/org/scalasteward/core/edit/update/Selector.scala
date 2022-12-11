@@ -16,11 +16,15 @@
 
 package org.scalasteward.core.edit.update
 
+import cats.Foldable
 import cats.syntax.all._
+import java.util.regex.Pattern
 import org.scalasteward.core.data.{Dependency, Update}
 import org.scalasteward.core.edit.update.data.VersionPosition._
 import org.scalasteward.core.edit.update.data._
+import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
+import scala.util.matching.Regex
 
 object Selector {
   def select(
@@ -31,8 +35,11 @@ object Selector {
     val versionReplacements = firstNonEmpty(
       dependencyDefPositions(update.dependencies, versionPositions) ++
         scalaValInDependencyDefPositions(versionPositions, modulePositions),
-      scalaValPositions(versionPositions),
-      unclassifiedPositions(versionPositions)
+      scalaValAndUnclassified(heuristic1SearchTerms(update), versionPositions),
+      scalaValAndUnclassified(heuristic2SearchTerms(update), versionPositions),
+      scalaValAndUnclassified(heuristic3SearchTerms(update), versionPositions),
+      scalaValAndUnclassified(heuristic4SearchTerms(update), versionPositions),
+      scalaValAndUnclassified(heuristic5SearchTerms(update), versionPositions)
     ).map { case (path, positions) =>
       path -> positions.map(_.version.replaceWith(update.nextVersion.value))
     }
@@ -77,16 +84,78 @@ object Selector {
   ): PathList[List[ScalaVal]] =
     mapFilterNonEmpty(versionPositions) { case (_, positions) =>
       positions.collect {
-        case p: ScalaVal if !p.isCommented && !p.name.startsWith("previous") => p
+        case p: ScalaVal if genericScalaValFilter(p) => p
       }
     }
 
-  private def unclassifiedPositions(
+  private def genericScalaValFilter(p: ScalaVal): Boolean =
+    !p.isCommented && !p.name.startsWith("previous")
+
+  def scalaValAndUnclassified(
+      searchTerms: List[String],
       versionPositions: PathList[List[VersionPosition]]
-  ): PathList[List[Unclassified]] =
-    mapFilterNonEmpty(versionPositions) { case (_, positions) =>
-      positions.collect { case p: Unclassified => p }
+  ): PathList[List[VersionPosition]] =
+    searchTermsAsRegex(searchTerms)
+      .map { pattern =>
+        mapFilterNonEmpty(versionPositions) { case (_, positions) =>
+          positions.collect {
+            case p: ScalaVal if genericScalaValFilter(p) && pattern.matcher(p.name).find() => p
+            case p: Unclassified if pattern.matcher(p.before).find()                       => p
+          }
+        }
+      }
+      .getOrElse(List.empty)
+
+  private def heuristic1SearchTerms(update: Update.Single): List[String] = {
+    val terms = update match {
+      case s: Update.ForArtifactId => List(s.artifactId.name)
+      case g: Update.ForGroupId =>
+        g.artifactIds.map(_.name).toList ++ g.artifactIdsPrefix.map(_.value).toList
     }
+    terms.map(Update.nameOf(update.groupId, _))
+  }
+
+  private def heuristic2SearchTerms(update: Update.Single): List[String] =
+    util.string.extractWords(update.mainArtifactId).filterNot(isCommonWord)
+
+  private def heuristic3SearchTerms(update: Update.Single): List[String] =
+    update.mainArtifactId.toSeq.sliding(5).map(_.unwrap).filterNot(isCommonWord).toList
+
+  private def heuristic4SearchTerms(update: Update.Single): List[String] =
+    List(update.groupId.value)
+
+  private def heuristic5SearchTerms(update: Update.Single): List[String] =
+    update.groupId.value
+      .split('.')
+      .toList
+      .drop(1)
+      .flatMap(util.string.extractWords)
+      .filter(_.length > 3)
+
+  private def searchTermsAsRegex(terms: List[String]): Option[Pattern] =
+    Nel
+      .fromList(terms.map(removeCommonSuffix).map(toFlexibleRegex).filter(_.nonEmpty))
+      .map(ts => Pattern.compile("(?i)" + alternation(ts)))
+
+  private def removeCommonSuffix(str: String): String =
+    util.string.removeSuffix(str, Update.commonSuffixes)
+
+  /** Removes punctuation from the input and returns it as regex that allows
+    * punctuation between characters.
+    */
+  private def toFlexibleRegex(string: String): String = {
+    val punctuation = List('.', '-', '_')
+    val allowPunctuation = "[\\.\\-_]*"
+    string.toList
+      .collect { case c if !punctuation.contains_(c) => Regex.quote(c.toString) }
+      .intercalate(allowPunctuation)
+  }
+
+  private def alternation[F[_]: Foldable](strings: F[String]): String =
+    strings.mkString_("(", "|", ")")
+
+  private def isCommonWord(s: String): Boolean =
+    s === "scala"
 
   private def moduleReplacements(
       update: Update.Single,

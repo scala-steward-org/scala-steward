@@ -71,16 +71,14 @@ class RewriteTest extends FunSuite {
     runApplyUpdate(update, original, expected)
   }
 
-  /* TODO
   test("unrelated val with the same version") {
     val update = ("be.doeraene".g % "scalajs-jquery".a % "0.9.3" %> "0.9.4").single
     val original = Map("Versions.scala" -> """val scalajsJqueryVersion = "0.9.3"
-                                              |val fooVersion = "0.9.3"""".stripMargin)
+                                             |val fooVersion = "0.9.3"""".stripMargin)
     val expected = Map("Versions.scala" -> """val scalajsJqueryVersion = "0.9.4"
-                                              |val fooVersion = "0.9.3"""".stripMargin)
+                                             |val fooVersion = "0.9.3"""".stripMargin)
     runApplyUpdate(update, original, expected)
   }
-   */
 
   test("group with repeated version") {
     val update =
@@ -597,7 +595,6 @@ class RewriteTest extends FunSuite {
     runApplyUpdate(update, original, expected)
   }
 
-  /* TODO
   test("chars of search term contained in other term") {
     val update = ("org.typelevel".g % "cats-core".a % "2.4.1" %> "2.4.2").single
     val original = Map("build.sbt" -> """val cats = "2.4.1"
@@ -608,7 +605,6 @@ class RewriteTest extends FunSuite {
                                         |""".stripMargin)
     runApplyUpdate(update, original, expected)
   }
-   */
 
   test("group with prefix val") {
     val update = ("io.circe".g %
@@ -664,28 +660,24 @@ class RewriteTest extends FunSuite {
     runApplyUpdate(update, original, expected)
   }
 
-  /* TODO
   test("artifactIds are common suffixes") {
     val update = ("com.github.japgolly.scalajs-react".g %
       Nel.of("core".a, "extra".a) % "1.2.3" %> "1.3.1").group
     val original = Map("build.sbt" -> """lazy val scalajsReactVersion = "1.2.3"
                                         |lazy val logbackVersion = "1.2.3"
-      """.stripMargin)
+                                        |""".stripMargin)
     val expected = Map("build.sbt" -> """lazy val scalajsReactVersion = "1.3.1"
                                         |lazy val logbackVersion = "1.2.3"
-      """.stripMargin)
+                                        |""".stripMargin)
     runApplyUpdate(update, original, expected)
   }
-   */
 
-  /* TODO
   test("artifactId with common suffix") {
     val update = ("co.fs2".g % "fs2-core".a % "1.0.2" %> "1.0.4").single
     val original = Map("build.sbt" -> """case _ => "1.0.2" """)
     val expected = original
     runApplyUpdate(update, original, expected)
   }
-   */
 
   test("ignore TLD") {
     val update = ("com.slamdata".g % "fs2-gzip".a % "1.0.1" %> "1.1.1").single
@@ -694,23 +686,19 @@ class RewriteTest extends FunSuite {
     runApplyUpdate(update, original, expected)
   }
 
-  /* TODO
   test("ignore 'scala' substring") {
     val update = ("org.scalactic".g % "scalactic".a % "3.0.7" %> "3.0.8").single
     val original = Map("build.sbt" -> """ val scalaTestVersion = "3.0.7" """)
     val expected = original
     runApplyUpdate(update, original, expected)
   }
-   */
 
-  /* TODO
   test("ignore short words") {
     val update = ("org.scala-sbt".g % "scripted-plugin".a % "1.2.7" %> "1.2.8").single
     val original = Map(".travis.yml" -> "SBT_VERSION=1.2.7")
     val expected = original
     runApplyUpdate(update, original, expected)
   }
-   */
 
   // https://github.com/scala-steward-org/scala-steward/issues/1586
   test("tracing value for opentracing library") {
@@ -743,7 +731,6 @@ class RewriteTest extends FunSuite {
     runApplyUpdate(update, original, expected)
   }
 
-  /* TODO
   test("missing enclosing quote before") {
     val update = ("org.typelevel".g % "cats-effect".a % "2.2.0" %> "2.3.0").single
     val original = Map(
@@ -752,9 +739,7 @@ class RewriteTest extends FunSuite {
     val expected = original
     runApplyUpdate(update, original, expected)
   }
-   */
 
-  /* TODO
   test("missing enclosing quote after") {
     val update = ("org.typelevel".g % "cats-effect".a % "2.2.0" %> "2.3.0").single
     val original = Map(
@@ -763,7 +748,6 @@ class RewriteTest extends FunSuite {
     val expected = original
     runApplyUpdate(update, original, expected)
   }
-   */
 
   test("version val with if/else") {
     val update = ("com.lihaoyi".g % "mill-scalalib".a % "0.10.9" %> "0.10.10").single

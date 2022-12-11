@@ -79,14 +79,14 @@ object VersionScanner {
     scalaValRegex(version).findAllIn(content).matchData.map { m =>
       val versionPos = Substring.Position.fromMatch(m, version.value)
       val before = m.group(1)
-      val name = m.group(2)
+      val name = m.group(3)
       ScalaVal(versionPos, before, name)
     }
 
   private def scalaValRegex(version: Version): Regex = {
     val ident = """[^=]+?"""
     val v = Regex.quote(version.value)
-    raw"""(.*)val\s+($ident)\s*=\s*"$v"""".r
+    raw"""(.*)(def|val)\s+($ident)\s*=\s*"$v"""".r
   }
 
   private def findUnclassified(version: Version, content: String): Iterator[Unclassified] = {
