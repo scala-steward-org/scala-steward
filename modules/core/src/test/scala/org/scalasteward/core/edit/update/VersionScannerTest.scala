@@ -129,4 +129,13 @@ class VersionScannerTest extends FunSuite {
     val expected = List()
     assertEquals(obtained, expected)
   }
+
+  // https://github.com/scala-steward-org/scala-steward/issues/2412
+  test("unclassified with trailing hyphen") {
+    val version = Version("1.3.0")
+    val content = "1.3.0-1"
+    val obtained = VersionScanner.findPositions(version, content)
+    val expected = List()
+    assertEquals(obtained, expected)
+  }
 }

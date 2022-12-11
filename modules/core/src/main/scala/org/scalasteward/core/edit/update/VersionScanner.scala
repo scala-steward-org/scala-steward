@@ -96,9 +96,13 @@ object VersionScanner {
       val versionPos = Substring.Position.fromMatch(m, version.value)
       val before = m.group(1)
       val after = Option(m.group(2))
-      val leadingCharIsNoLetterOrDigit = !before.lastOption.exists(_.isLetterOrDigit)
-      val trailingCharIsNoLetterOrDigit = !after.flatMap(_.headOption).exists(_.isLetterOrDigit)
-      Option.when(leadingCharIsNoLetterOrDigit && trailingCharIsNoLetterOrDigit) {
+      val leadingChar = before.lastOption
+      val trailingChar = after.flatMap(_.headOption)
+      Option.when(
+        !leadingChar.exists(_.isLetterOrDigit) &&
+          !trailingChar.exists(_.isLetterOrDigit) &&
+          !trailingChar.exists(Set('-', '+'))
+      ) {
         Unclassified(versionPos, before)
       }
     }

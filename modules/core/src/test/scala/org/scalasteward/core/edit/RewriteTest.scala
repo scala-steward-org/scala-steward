@@ -283,7 +283,7 @@ class RewriteTest extends FunSuite {
   }
 
   // https://github.com/scala-steward-org/scala-steward/issues/960
-  test("issue 960: unrelated ModuleID with same version number, 3") {
+  test("unrelated ModuleID with same version number, 3") {
     val update = ("org.webjars.npm".g % "bootstrap".a % "3.4.1" %> "4.3.1").single
     val original =
       Map("build.sbt" -> """ "org.webjars.npm" % "bootstrap" % "3.4.1", // scala-steward:off
@@ -555,7 +555,7 @@ class RewriteTest extends FunSuite {
   }
 
   // https://github.com/scala-steward-org/scala-steward/issues/2675
-  test("qualified val with similar name 2") {
+  test("qualified val with similar name, 2") {
     val update =
       ("org.http4s".g % Nel.of("http4s-circe".a, "http4s-dsl".a) % "0.23.11" %> "0.23.12").group
     val original =
