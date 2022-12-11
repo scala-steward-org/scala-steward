@@ -31,18 +31,19 @@ object Substring {
     }
   }
 
-  final case class Replacement(position: Position, replacement: String) {
-    private def replaceIn(source: String): String = {
-      val before = source.substring(0, position.start)
-      val after = source.substring(position.start + position.value.length)
-      before + replacement + after
-    }
-  }
+  final case class Replacement(position: Position, replacement: String)
 
   object Replacement {
-    def applyAll(replacements: List[Replacement])(source: String): String =
-      replacements
-        .sortBy(_.position.start)(Ordering.Int.reverse)
-        .foldLeft(source)((s, r) => r.replaceIn(s))
+    def applyAll(replacements: List[Replacement])(source: String): String = {
+      var start = 0
+      val sb = new java.lang.StringBuilder(source.length)
+      replacements.sortBy(_.position.start).foreach { r =>
+        val before = source.substring(start, r.position.start)
+        start = r.position.start + r.position.value.length
+        sb.append(before).append(r.replacement)
+      }
+      sb.append(source.substring(start))
+      sb.toString
+    }
   }
 }
