@@ -9,6 +9,7 @@ import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context.editAlg
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.repoconfig.RepoConfig
+import org.scalasteward.core.scalafmt.scalafmtConfName
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
@@ -200,7 +201,6 @@ class RewriteTest extends FunSuite {
     runApplyUpdate(update, original, expected)
   }
 
-  /* TODO
   test("mill version file update") {
     val update = ("com.lihaoyi".g % "mill-main".a % "0.9.5" %> "0.9.9").single
     val original = Map(
@@ -213,7 +213,6 @@ class RewriteTest extends FunSuite {
     )
     runApplyUpdate(update, original, expected)
   }
-   */
 
   test("disable updates on single lines with 'off' (no 'on')") {
     val update =
@@ -479,7 +478,6 @@ class RewriteTest extends FunSuite {
     runApplyUpdate(update, original, expected)
   }
 
-  /* TODO
   test("ignore mimaPreviousArtifacts") {
     val update = ("io.dropwizard.metrics".g %
       Nel.of("metrics-core".a, "metrics-healthchecks".a) % "4.0.1" %> "4.0.3").group
@@ -495,7 +493,6 @@ class RewriteTest extends FunSuite {
     )
     runApplyUpdate(update, original, expected)
   }
-   */
 
   // https://github.com/scala-steward-org/scala-steward/issues/236
   test("same version, same artifact prefix, different groupId") {
@@ -761,6 +758,21 @@ class RewriteTest extends FunSuite {
                                 |val millScalalib = Def.setting("com.lihaoyi" %% "mill-scalalib" % millVersion.value)
                                 |""".stripMargin
     )
+    runApplyUpdate(update, original, expected)
+  }
+
+  test("specific to scalafmt: should be Scala version agnostic") {
+    val update =
+      ("org.scalameta".g % ("scalafmt-core", "scalafmt-core_2.12").a % "2.0.0" %> "2.0.1").single
+    val original = Map(scalafmtConfName -> """version = "2.0.0" """)
+    val expected = Map(scalafmtConfName -> """version = "2.0.1" """)
+    runApplyUpdate(update, original, expected)
+  }
+
+  test("scalafmt.conf and other scalameta update") {
+    val update = ("org.scalameta".g % "other-artifact".a % "2.0.0" %> "2.0.1").single
+    val original = Map(scalafmtConfName -> """version=2.0.0""")
+    val expected = original
     runApplyUpdate(update, original, expected)
   }
 

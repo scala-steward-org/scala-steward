@@ -66,7 +66,7 @@ final class MillAlg[F[_]](implicit
 
   private def getMillVersion(buildRootDir: File): F[Option[Version]] =
     for {
-      millVersionFileContent <- fileAlg.readFile(buildRootDir / ".mill-version")
+      millVersionFileContent <- fileAlg.readFile(buildRootDir / millVersionName)
       version = millVersionFileContent.flatMap(parser.parseMillVersion)
     } yield version
 
@@ -103,7 +103,8 @@ object MillAlg {
     Dependency(millMainGroupId, millMainArtifactId, version)
 
   def isMillMainUpdate(update: Update.Single): Boolean =
-    update.groupId === millMainGroupId && update.artifactIds.exists(
-      _.name === millMainArtifactId.name
-    )
+    update.groupId === millMainGroupId &&
+      update.artifactIds.exists(_.name === millMainArtifactId.name)
+
+  val millVersionName = ".mill-version"
 }

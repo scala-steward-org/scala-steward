@@ -19,9 +19,12 @@ package org.scalasteward.core.edit.update
 import cats.Foldable
 import cats.syntax.all._
 import java.util.regex.Pattern
+import org.scalasteward.core.buildtool.mill.MillAlg.{isMillMainUpdate, millVersionName}
+import org.scalasteward.core.buildtool.sbt.{buildPropertiesName, isSbtUpdate}
 import org.scalasteward.core.data.{Dependency, Update}
 import org.scalasteward.core.edit.update.data.VersionPosition._
 import org.scalasteward.core.edit.update.data._
+import org.scalasteward.core.scalafmt.{isScalafmtCoreUpdate, scalafmtConfName}
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 import scala.util.matching.Regex
@@ -33,13 +36,18 @@ object Selector {
       modulePositions: PathList[List[ModulePosition]]
   ): PathList[List[Substring.Replacement]] = {
     val versionReplacements = firstNonEmpty(
-      dependencyDefPositions(update.dependencies, versionPositions) ++
+      List(
+        dependencyDefPositions(update.dependencies, versionPositions),
         scalaValInDependencyDefPositions(versionPositions, modulePositions),
-      scalaValAndUnclassified(heuristic1SearchTerms(update), versionPositions),
-      scalaValAndUnclassified(heuristic2SearchTerms(update), versionPositions),
-      scalaValAndUnclassified(heuristic3SearchTerms(update), versionPositions),
-      scalaValAndUnclassified(heuristic4SearchTerms(update), versionPositions),
-      scalaValAndUnclassified(heuristic5SearchTerms(update), versionPositions)
+        millVersionPositions(update, versionPositions),
+        sbtVersionPositions(update, versionPositions),
+        scalafmtVersionPositions(update, versionPositions)
+      ).flatten,
+      matchingSearchTerms(heuristic1SearchTerms(update), versionPositions),
+      matchingSearchTerms(heuristic2SearchTerms(update), versionPositions),
+      matchingSearchTerms(heuristic3SearchTerms(update), versionPositions),
+      matchingSearchTerms(heuristic4SearchTerms(update), versionPositions),
+      matchingSearchTerms(heuristic5SearchTerms(update), versionPositions)
     ).map { case (path, positions) =>
       path -> positions.map(_.version.replaceWith(update.nextVersion.value))
     }
@@ -58,6 +66,10 @@ object Selector {
     mapFilterNonEmpty(versionPositions) { case (_, positions) =>
       positions
         .collect { case p: DependencyDef if !p.isCommented => p }
+        .filterNot {
+          case p: SbtDependency => p.before.toLowerCase.contains("previous")
+          case _                => false
+        }
         .filter { p =>
           dependencies.exists { d =>
             d.groupId.value === p.groupId && d.artifactId.names.contains_(p.artifactId)
@@ -89,9 +101,9 @@ object Selector {
     }
 
   private def genericScalaValFilter(p: ScalaVal): Boolean =
-    !p.isCommented && !p.name.startsWith("previous")
+    !p.isCommented && !p.name.toLowerCase.startsWith("previous")
 
-  def scalaValAndUnclassified(
+  private def matchingSearchTerms(
       searchTerms: List[String],
       versionPositions: PathList[List[VersionPosition]]
   ): PathList[List[VersionPosition]] =
@@ -156,6 +168,36 @@ object Selector {
 
   private def isCommonWord(s: String): Boolean =
     s === "scala"
+
+  private def millVersionPositions(
+      update: Update.Single,
+      versionPositions: PathList[List[VersionPosition]]
+  ): PathList[List[VersionPosition]] =
+    if (isMillMainUpdate(update))
+      mapFilterNonEmpty(versionPositions) { case (path, positions) =>
+        if (path === millVersionName) positions else List.empty
+      }
+    else List.empty
+
+  private def sbtVersionPositions(
+      update: Update.Single,
+      versionPositions: PathList[List[VersionPosition]]
+  ): PathList[List[VersionPosition]] =
+    if (isSbtUpdate(update))
+      mapFilterNonEmpty(matchingSearchTerms(List("sbt.version"), versionPositions)) {
+        case (path, positions) => if (path.endsWith(buildPropertiesName)) positions else List.empty
+      }
+    else List.empty
+
+  private def scalafmtVersionPositions(
+      update: Update.Single,
+      versionPositions: PathList[List[VersionPosition]]
+  ): PathList[List[VersionPosition]] =
+    if (isScalafmtCoreUpdate(update))
+      mapFilterNonEmpty(matchingSearchTerms(List("version"), versionPositions)) {
+        case (path, positions) => if (path === scalafmtConfName) positions else List.empty
+      }
+    else List.empty
 
   private def moduleReplacements(
       update: Update.Single,

@@ -23,6 +23,8 @@ import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 import io.circe.refined._
 import io.circe.{Codec, Decoder}
+import org.scalasteward.core.buildtool.mill.MillAlg.millVersionName
+import org.scalasteward.core.buildtool.sbt.buildPropertiesName
 import org.scalasteward.core.data.{GroupId, Update}
 import org.scalasteward.core.scalafmt.scalafmtConfName
 import org.scalasteward.core.update.FilterAlg.{
@@ -87,14 +89,14 @@ final case class UpdatesConfig(
 object UpdatesConfig {
   private val defaultFileExtensions: Set[String] =
     Set(
-      ".mill-version",
+      millVersionName,
       ".sbt",
       ".sbt.shared",
       ".sc",
       ".scala",
       scalafmtConfName,
       ".yml",
-      "build.properties",
+      buildPropertiesName,
       "pom.xml"
     )
 
