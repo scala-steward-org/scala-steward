@@ -70,7 +70,7 @@ final class ScannerAlg[F[_]](implicit
       def pathOf(file: File): String = repoDir.relativize(file).toString
       val fileFilter = (file: File) => {
         val path = pathOf(file)
-        config.updates.fileExtensionsOrDefault.exists(path.endsWith)
+        !path.startsWith(".git/") && config.updates.fileExtensionsOrDefault.exists(path.endsWith)
       }
       fileAlg
         .findFiles(repoDir, fileFilter, _.contains(string))

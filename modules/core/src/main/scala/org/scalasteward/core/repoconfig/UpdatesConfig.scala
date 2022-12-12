@@ -23,6 +23,7 @@ import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 import io.circe.refined._
 import io.circe.{Codec, Decoder}
+import org.scalasteward.core.buildtool.maven.pomXmlName
 import org.scalasteward.core.buildtool.mill.MillAlg.millVersionName
 import org.scalasteward.core.buildtool.sbt.buildPropertiesName
 import org.scalasteward.core.data.{GroupId, Update}
@@ -97,7 +98,7 @@ object UpdatesConfig {
       scalafmtConfName,
       ".yml",
       buildPropertiesName,
-      "pom.xml"
+      pomXmlName
     )
 
   implicit val updatesConfigEq: Eq[UpdatesConfig] =
