@@ -101,7 +101,7 @@ object VersionScanner {
       Option.when(
         !leadingChar.exists(_.isLetterOrDigit) &&
           !trailingChar.exists(_.isLetterOrDigit) &&
-          !trailingChar.exists(Set('-', '+'))
+          !trailingChar.exists(Set('.', '-', '+'))
       ) {
         Unclassified(versionPos, before)
       }
