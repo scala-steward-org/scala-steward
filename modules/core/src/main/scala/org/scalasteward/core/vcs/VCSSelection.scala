@@ -48,7 +48,11 @@ final class VCSSelection[F[_]](config: Config, user: AuthenticatedUser)(implicit
     )
 
   private def bitbucketApiAlg: BitbucketApiAlg[F] =
-    new BitbucketApiAlg(config.vcsCfg, _ => bitbucket.authentication.addCredentials(user))
+    new BitbucketApiAlg(
+      config.vcsCfg,
+      config.bitbucketCfg,
+      _ => bitbucket.authentication.addCredentials(user)
+    )
 
   private def bitbucketServerApiAlg: BitbucketServerApiAlg[F] = {
     // Bypass the server-side XSRF check, see

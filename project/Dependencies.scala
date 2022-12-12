@@ -5,7 +5,7 @@ import sbt.librarymanagement.syntax.ExclusionRule
 object Dependencies {
   val bcprovJdk15to18 = "org.bouncycastle" % "bcprov-jdk15to18" % "1.72"
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.1"
-  val catsEffect = "org.typelevel" %% "cats-effect" % "3.4.1"
+  val catsEffect = "org.typelevel" %% "cats-effect" % "3.4.2"
   val catsCore = "org.typelevel" %% "cats-core" % "2.9.0"
   val catsLaws = "org.typelevel" %% "cats-laws" % catsCore.revision
   val catsParse = "org.typelevel" %% "cats-parse" % "0.3.8"
@@ -29,11 +29,11 @@ object Dependencies {
   val http4sBlazeServer = "org.http4s" %% "http4s-blaze-server" % "1.0.0-M36"
   val http4sOkhttpClient = "org.http4s" %% "http4s-okhttp-client" % "1.0.0-M32"
   val log4catsSlf4j = "org.typelevel" %% "log4cats-slf4j" % "2.5.0"
-  val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.3.5"
+  val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.4.5"
   val jjwtApi = "io.jsonwebtoken" % "jjwt-api" % "0.11.5"
   val jjwtImpl = "io.jsonwebtoken" % "jjwt-impl" % jjwtApi.revision
   val jjwtJackson = "io.jsonwebtoken" % "jjwt-jackson" % jjwtApi.revision
-  val millVersion = Def.setting(if (scalaBinaryVersion.value == "2.12") "0.6.3" else "0.10.9")
+  val millVersion = Def.setting(if (scalaBinaryVersion.value == "2.12") "0.6.3" else "0.10.10")
   val millScalalib = Def.setting("com.lihaoyi" %% "mill-scalalib" % millVersion.value)
   val monocleCore = "dev.optics" %% "monocle-core" % "3.1.0"
   val munit = "org.scalameta" %% "munit" % "0.7.29"

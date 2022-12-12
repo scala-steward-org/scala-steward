@@ -216,11 +216,20 @@ object Cli {
   private val bitbucketServerUseDefaultReviewers: Opts[Boolean] =
     flag(
       "bitbucket-server-use-default-reviewers",
+      "Whether to assign the default reviewers to a bitbucket server pull request; default: false"
+    ).orFalse
+
+  private val bitbucketUseDefaultReviewers: Opts[Boolean] =
+    flag(
+      "bitbucket-use-default-reviewers",
       "Whether to assign the default reviewers to a bitbucket pull request; default: false"
     ).orFalse
 
   private val bitbucketServerCfg: Opts[BitbucketServerCfg] =
     bitbucketServerUseDefaultReviewers.map(BitbucketServerCfg.apply)
+
+  private val bitbucketCfg: Opts[BitbucketCfg] =
+    bitbucketUseDefaultReviewers.map(BitbucketCfg.apply)
 
   private val gitlabMergeWhenPipelineSucceeds: Opts[Boolean] =
     flag(
@@ -288,6 +297,7 @@ object Cli {
     scalafixCfg,
     artifactCfg,
     cacheTtl,
+    bitbucketCfg,
     bitbucketServerCfg,
     gitLabCfg,
     gitHubApp,

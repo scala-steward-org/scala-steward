@@ -33,7 +33,8 @@ class CliTest extends FunSuite {
         List("--repo-config", "/opt/scala-steward/scala-steward.conf"),
         List("--github-app-id", "12345678"),
         List("--github-app-key-file", "example_app_key"),
-        List("--refresh-backoff-period", "1 day")
+        List("--refresh-backoff-period", "1 day"),
+        List("--bitbucket-use-default-reviewers")
       ).flatten
     )
 
@@ -64,6 +65,8 @@ class CliTest extends FunSuite {
     assertEquals(obtained.refreshBackoffPeriod, 1.day)
     assert(!obtained.gitLabCfg.mergeWhenPipelineSucceeds)
     assertEquals(obtained.gitLabCfg.requiredReviewers, None)
+    assert(obtained.bitbucketCfg.useDefaultReviewers)
+    assert(!obtained.bitbucketServerCfg.useDefaultReviewers)
   }
 
   val minimumRequiredParams = List(

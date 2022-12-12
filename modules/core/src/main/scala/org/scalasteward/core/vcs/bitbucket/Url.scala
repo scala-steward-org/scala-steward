@@ -44,4 +44,7 @@ private[bitbucket] class Url(apiHost: Uri) {
 
   def decline(rep: Repo, number: PullRequestNumber): Uri =
     pullRequest(rep, number) / "decline"
+
+  def defaultReviewers(rep: Repo): Uri =
+    repo(rep) / "default-reviewers"
 }
