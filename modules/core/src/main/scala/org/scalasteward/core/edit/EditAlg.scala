@@ -57,7 +57,12 @@ final class EditAlg[F[_]](implicit
           _ <- preCommit
           (preMigrations, postMigrations) = scalafixMigrationsFinder.findMigrations(update)
           preScalafixEdits <- runScalafixMigrations(data.repo, data.config, preMigrations)
-          updateEdit <- applyUpdateReplacements(data, update, updateReplacements)
+          // PreUpdate migrations could invalidate previously found replacements,
+          // so we find them again if the migrations produced any changes.
+          freshReplacements <-
+            if (preScalafixEdits.flatMap(_.commits).isEmpty) F.pure(updateReplacements)
+            else findUpdateReplacements(data.repo, data.config, update)
+          updateEdit <- applyUpdateReplacements(data, update, freshReplacements)
           postScalafixEdits <- runScalafixMigrations(data.repo, data.config, postMigrations)
           hooksEdits <- hookExecutor.execPostUpdateHooks(data, update)
         } yield preScalafixEdits ++ updateEdit ++ postScalafixEdits ++ hooksEdits
