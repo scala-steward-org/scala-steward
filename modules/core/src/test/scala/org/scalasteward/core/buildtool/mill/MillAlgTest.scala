@@ -3,6 +3,7 @@ package org.scalasteward.core.buildtool.mill
 import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.buildtool.mill.MillAlg.extractDeps
+import org.scalasteward.core.data.Version
 import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context.millAlg
 import org.scalasteward.core.mock.MockState
@@ -32,12 +33,20 @@ class MillAlgTest extends FunSuite {
     val state = millAlg.getDependencies(buildRoot).runS(initial).unsafeRunSync()
     val expected = initial.copy(
       trace = Vector(
+        Cmd("read", s"$repoDir/.mill-version"),
         Cmd("write", predef),
         Cmd(repoDir.toString :: millCmd),
-        Cmd("rm", "-rf", predef),
-        Cmd("read", s"$repoDir/.mill-version")
+        Cmd("rm", "-rf", predef)
       )
     )
     assertEquals(state, expected)
+  }
+  test("predef-content") {
+    assert(MillAlg.content(None).contains("_mill$$MILL_BIN_PLATFORM"))
+    assert(MillAlg.content(Some(Version("0.6.1"))).contains("_mill0.6"))
+    assert(MillAlg.content(Some(Version("0.7.0"))).contains("_mill0.7"))
+    assert(MillAlg.content(Some(Version("0.8.0"))).contains("_mill0.7"))
+    assert(MillAlg.content(Some(Version("0.9.14"))).contains("_mill0.9"))
+    assert(MillAlg.content(Some(Version("0.10.0"))).contains("_mill$$MILL_BIN_PLATFORM"))
   }
 }

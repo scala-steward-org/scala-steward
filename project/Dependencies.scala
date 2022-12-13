@@ -33,8 +33,9 @@ object Dependencies {
   val jjwtApi = "io.jsonwebtoken" % "jjwt-api" % "0.11.5"
   val jjwtImpl = "io.jsonwebtoken" % "jjwt-impl" % jjwtApi.revision
   val jjwtJackson = "io.jsonwebtoken" % "jjwt-jackson" % jjwtApi.revision
-  val millVersion = Def.setting(if (scalaBinaryVersion.value == "2.12") "0.6.3" else "0.10.10")
-  val millScalalib = Def.setting("com.lihaoyi" %% "mill-scalalib" % millVersion.value)
+  val millVersion = "0.10.10"
+  val scalaStewardMillPluginArtifactName = "scala-steward-mill-plugin"
+  val scalaStewardMillPlugin: ModuleID = "org.scalasteward" % s"${scalaStewardMillPlugin}_mill10_2.13" % "0.17.0"
   val monocleCore = "dev.optics" %% "monocle-core" % "3.1.0"
   val munit = "org.scalameta" %% "munit" % "0.7.29"
   val munitCatsEffect = "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
