@@ -73,6 +73,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [Ben Carter](https://github.com/bcarter97)
 * [Brice Jaglin](https://github.com/bjaglin)
 * [Cédric Chantepie](https://github.com/cchantep)
+* [Chris Kipp](https://github.com/ckipp01)
 * [Chris Llanwarne](https://github.com/cjllanwarne)
 * [Christoph Meier](https://github.com/meier-christoph)
 * [Christopher Davenport](https://github.com/ChristopherDavenport)
