@@ -20,3 +20,7 @@ object command {
   val listDependencies = "dependency:list"
   val listRepositories = "dependency:list-repositories"
 }
+
+object args {
+  val excludeTransitive = "-DexcludeTransitive=true"
+}

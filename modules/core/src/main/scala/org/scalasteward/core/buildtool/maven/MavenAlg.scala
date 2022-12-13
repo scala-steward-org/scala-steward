@@ -42,7 +42,7 @@ final class MavenAlg[F[_]](config: Config)(implicit
     for {
       buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
       dependenciesRaw <- exec(
-        mvnCmd(command.listDependencies),
+        mvnCmd(command.listDependencies, args.excludeTransitive),
         buildRootDir
       )
       repositoriesRaw <- exec(
