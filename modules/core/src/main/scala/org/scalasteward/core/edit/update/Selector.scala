@@ -65,13 +65,11 @@ object Selector {
   ): PathList[List[DependencyDef]] =
     mapFilterNonEmpty(versionPositions) { case (_, positions) =>
       positions
-        .collect {
-          case p: MillDependency if scalaCliUsingLib.matcher(p.before).matches() => p
-          case p: DependencyDef if !p.isCommented                                => p
-        }
-        .filterNot {
-          case p: SbtDependency => p.before.toLowerCase.contains("previous")
-          case _                => false
+        .collect { case p: DependencyDef => p }
+        .filter {
+          case p: MillDependency => scalaCliUsingLib.matcher(p.before).matches() || !p.isCommented
+          case p: SbtDependency  => !p.isCommented && !p.before.toLowerCase.contains("previous")
+          case _                 => true
         }
         .filter { p =>
           dependencies.exists { d =>
