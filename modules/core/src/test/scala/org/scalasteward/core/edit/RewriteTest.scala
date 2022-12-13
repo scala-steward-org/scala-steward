@@ -820,6 +820,13 @@ class RewriteTest extends FunSuite {
     runApplyUpdate(update, original, expected)
   }
 
+  test("scala-cli using lib directive") {
+    val update = ("org.scalameta".g % "munit".a % "0.7.29" %> "0.8.0").single
+    val original = Map("Hello.scala" -> """//> using lib "org.scalameta::munit:0.7.29"""")
+    val expected = Map("Hello.scala" -> """//> using lib "org.scalameta::munit:0.8.0"""")
+    runApplyUpdate(update, original, expected)
+  }
+
   private def runApplyUpdate(
       update: Update.Single,
       files: Map[String, String],
