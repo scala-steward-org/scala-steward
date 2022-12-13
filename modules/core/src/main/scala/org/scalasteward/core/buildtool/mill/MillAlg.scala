@@ -94,14 +94,14 @@ object MillAlg {
           |""".stripMargin
 
     millVersion match {
-      case None => rawContent("$$MILL_BIN_PLATFORM")
+      case None => rawContent("$MILL_BIN_PLATFORM")
       case Some(millVersion) =>
         millVersion.value.trim.split("[.]", 3).take(2) match {
           // We support these platform, but we can't take the $$MILL_BIN_PLATFORM support for granted
           case Array("0", "6")       => rawContent("0.6")
           case Array("0", "7" | "8") => rawContent("0.7")
           case Array("0", "9")       => rawContent("0.9")
-          case _                     => rawContent("$$MILL_BIN_PLATFORM")
+          case _                     => rawContent("$MILL_BIN_PLATFORM")
         }
     }
   }

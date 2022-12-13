@@ -42,11 +42,11 @@ class MillAlgTest extends FunSuite {
     assertEquals(state, expected)
   }
   test("predef-content") {
-    assert(MillAlg.content(None).contains("_mill$$MILL_BIN_PLATFORM"))
+    assert(MillAlg.content(None).contains("_mill$MILL_BIN_PLATFORM"))
     assert(MillAlg.content(Some(Version("0.6.1"))).contains("_mill0.6"))
     assert(MillAlg.content(Some(Version("0.7.0"))).contains("_mill0.7"))
     assert(MillAlg.content(Some(Version("0.8.0"))).contains("_mill0.7"))
     assert(MillAlg.content(Some(Version("0.9.14"))).contains("_mill0.9"))
-    assert(MillAlg.content(Some(Version("0.10.0"))).contains("_mill$$MILL_BIN_PLATFORM"))
+    assert(MillAlg.content(Some(Version("0.10.0"))).contains("_mill$MILL_BIN_PLATFORM"))
   }
 }
