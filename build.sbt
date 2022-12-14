@@ -163,8 +163,7 @@ lazy val core = myCrossProject("core")
         "sbtPluginModuleRootPkg" -> v
       },
       BuildInfoKey("millPluginArtifactName" -> Dependencies.scalaStewardMillPluginArtifactName),
-      BuildInfoKey("millPluginVersion" -> Dependencies.scalaStewardMillPlugin.revision),
-      BuildInfoKey("millPluginModuleRootPkg" -> "org.scalasteward.mill.plugin")
+      BuildInfoKey("millPluginVersion" -> Dependencies.scalaStewardMillPlugin.revision)
     ),
     buildInfoPackage := moduleRootPkg.value,
     initialCommands += s"""

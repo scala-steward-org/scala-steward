@@ -1,6 +1,4 @@
 import sbt._
-import sbt.Keys._
-import sbt.librarymanagement.syntax.ExclusionRule
 
 object Dependencies {
   val bcprovJdk15to18 = "org.bouncycastle" % "bcprov-jdk15to18" % "1.72"
@@ -35,8 +33,8 @@ object Dependencies {
   val jjwtJackson = "io.jsonwebtoken" % "jjwt-jackson" % jjwtApi.revision
   val millVersion = "0.10.10"
   val scalaStewardMillPluginArtifactName = "scala-steward-mill-plugin"
-  val scalaStewardMillPlugin: ModuleID =
-    "org.scalasteward" % s"${scalaStewardMillPlugin}_mill10_2.13" % "0.17.0"
+  val scalaStewardMillPlugin =
+    "org.scalasteward" % s"${scalaStewardMillPluginArtifactName}_mill10_2.13" % "0.17.0"
   val monocleCore = "dev.optics" %% "monocle-core" % "3.1.0"
   val munit = "org.scalameta" %% "munit" % "0.7.29"
   val munitCatsEffect = "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
