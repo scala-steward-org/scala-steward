@@ -85,7 +85,7 @@ final class MillAlg[F[_]](implicit
 object MillAlg {
   private[mill] def content(millVersion: Option[Version]) = {
     def rawContent(millBinPlatform: String) =
-      s"""|import $ivy.`${org.scalasteward.core.BuildInfo.organization}::${org.scalasteward.core.BuildInfo.millPluginArtifactName}_mill${millBinPlatform}:${org.scalasteward.core.BuildInfo.millPluginVersion}`
+      s"""|import $$ivy.`${org.scalasteward.core.BuildInfo.organization}::${org.scalasteward.core.BuildInfo.millPluginArtifactName}_mill${millBinPlatform}:${org.scalasteward.core.BuildInfo.millPluginVersion}`
           |""".stripMargin
 
     millVersion match {
