@@ -70,7 +70,7 @@ ThisBuild / evictionErrorLevel := Level.Info
 
 lazy val root = project
   .in(file("."))
-  .aggregate(benchmark.jvm, core.jvm, docs.jvm, `sbt-plugin`.jvm, `mill-plugin`.jvm)
+  .aggregate(benchmark.jvm, core.jvm, docs.jvm, `sbt-plugin`.jvm)
   .settings(commonSettings)
   .settings(noPublishSettings)
 
@@ -162,12 +162,9 @@ lazy val core = myCrossProject("core")
       BuildInfoKey.map(`sbt-plugin`.jvm / moduleRootPkg) { case (_, v) =>
         "sbtPluginModuleRootPkg" -> v
       },
-      BuildInfoKey.map(`mill-plugin`.jvm / moduleName) { case (_, v) =>
-        "millPluginModuleName" -> v
-      },
-      BuildInfoKey.map(`mill-plugin`.jvm / moduleRootPkg) { case (_, v) =>
-        "millPluginModuleRootPkg" -> v
-      }
+      BuildInfoKey("millPluginArtifactName" -> Dependencies.scalaStewardMillPluginArtifactName),
+      BuildInfoKey("millPluginVersion" -> Dependencies.scalaStewardMillPlugin.revision),
+      BuildInfoKey("millPluginModuleRootPkg" -> "org.scalasteward.mill.plugin")
     ),
     buildInfoPackage := moduleRootPkg.value,
     initialCommands += s"""
@@ -238,13 +235,6 @@ lazy val `sbt-plugin` = myCrossProject("sbt-plugin")
   .settings(
     scalaVersion := Scala212,
     sbtPlugin := true
-  )
-
-lazy val `mill-plugin` = myCrossProject("mill-plugin")
-  .settings(
-    crossScalaVersions := Seq(Scala213, Scala212),
-    libraryDependencies += Dependencies.millScalalib.value % Provided,
-    scalacOptions -= "-Xfatal-warnings"
   )
 
 /// settings
@@ -321,7 +311,7 @@ lazy val dockerSettings = Def.settings(
     val sbtTgz = s"sbt-$sbtVer.tgz"
     val sbtUrl = s"https://github.com/sbt/sbt/releases/download/v$sbtVer/$sbtTgz"
     val millBin = s"$binDir/mill"
-    val millVer = Dependencies.millVersion.value
+    val millVer = Dependencies.millVersion
     val millUrl =
       s"https://github.com/lihaoyi/mill/releases/download/${millVer.split("-").head}/$millVer"
     val coursierBin = s"$binDir/coursier"
