@@ -32,9 +32,7 @@ object Dependencies {
   val jjwtImpl = "io.jsonwebtoken" % "jjwt-impl" % jjwtApi.revision
   val jjwtJackson = "io.jsonwebtoken" % "jjwt-jackson" % jjwtApi.revision
   val millVersion = "0.10.10"
-  val scalaStewardMillPluginArtifactName = "scala-steward-mill-plugin"
-  val scalaStewardMillPlugin =
-    "org.scalasteward" % s"${scalaStewardMillPluginArtifactName}_mill10_2.13" % "0.17.0"
+  val millMain = "com.lihaoyi" % "mill-main_2.13" % millVersion
   val monocleCore = "dev.optics" %% "monocle-core" % "3.1.0"
   val munit = "org.scalameta" %% "munit" % "0.7.29"
   val munitCatsEffect = "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
@@ -43,4 +41,7 @@ object Dependencies {
   val refinedScalacheck = "eu.timepit" %% "refined-scalacheck" % refined.revision
   val scalacacheCaffeine = "com.github.cb372" %% "scalacache-caffeine" % "1.0.0-M6"
   val scalacheck = "org.scalacheck" %% "scalacheck" % "1.17.0"
+  val scalaStewardMillPluginArtifactName = "scala-steward-mill-plugin"
+  val scalaStewardMillPlugin =
+    "org.scala-steward" % s"${scalaStewardMillPluginArtifactName}_mill0.10_2.13" % "0.17.0"
 }

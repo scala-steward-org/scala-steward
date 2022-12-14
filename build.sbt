@@ -18,8 +18,7 @@ val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
   "benchmark" -> List(JVMPlatform),
   "core" -> List(JVMPlatform),
   "docs" -> List(JVMPlatform),
-  "sbt-plugin" -> List(JVMPlatform),
-  "mill-plugin" -> List(JVMPlatform)
+  "sbt-plugin" -> List(JVMPlatform)
 )
 
 val Scala212 = "2.12.17"
@@ -70,7 +69,7 @@ ThisBuild / evictionErrorLevel := Level.Info
 
 lazy val root = project
   .in(file("."))
-  .aggregate(benchmark.jvm, core.jvm, docs.jvm, `sbt-plugin`.jvm)
+  .aggregate(benchmark.jvm, core.jvm, docs.jvm, dummy, `sbt-plugin`.jvm)
   .settings(commonSettings)
   .settings(noPublishSettings)
 
@@ -227,6 +226,19 @@ lazy val docs = myCrossProject("docs")
     },
     coverageEnabled := false,
     unusedCompileDependencies := Set.empty
+  )
+
+// Dummy project to receive updates from @scala-steward for this project's
+// libraryDependencies.
+lazy val dummy = project
+  .disablePlugins(ExplicitDepsPlugin)
+  .settings(commonSettings)
+  .settings(noPublishSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      Dependencies.millMain,
+      Dependencies.scalaStewardMillPlugin
+    )
   )
 
 lazy val `sbt-plugin` = myCrossProject("sbt-plugin")
