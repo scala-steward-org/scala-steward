@@ -68,7 +68,7 @@ jobs:
         uses: codecov/codecov-action@v3
 
       - name: Compress target directories
-        run: tar cf targets.tar target modules/docs/.jvm/target dummy/target modules/sbt-plugin/.jvm/target modules/core/.jvm/target modules/benchmark/.jvm/target project/target
+        run: tar cf targets.tar target modules/docs/.jvm/target modules/dummy/.jvm/target modules/sbt-plugin/.jvm/target modules/core/.jvm/target modules/benchmark/.jvm/target project/target
 
       - name: Upload target directories
         uses: actions/upload-artifact@v2
