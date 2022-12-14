@@ -18,6 +18,7 @@ val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
   "benchmark" -> List(JVMPlatform),
   "core" -> List(JVMPlatform),
   "docs" -> List(JVMPlatform),
+  "dummy" -> List(JVMPlatform),
   "sbt-plugin" -> List(JVMPlatform)
 )
 
@@ -69,7 +70,7 @@ ThisBuild / evictionErrorLevel := Level.Info
 
 lazy val root = project
   .in(file("."))
-  .aggregate(benchmark.jvm, core.jvm, docs.jvm, dummy, `sbt-plugin`.jvm)
+  .aggregate(benchmark.jvm, core.jvm, docs.jvm, dummy.jvm, `sbt-plugin`.jvm)
   .settings(commonSettings)
   .settings(noPublishSettings)
 
@@ -230,9 +231,8 @@ lazy val docs = myCrossProject("docs")
 
 // Dummy project to receive updates from @scala-steward for this project's
 // libraryDependencies.
-lazy val dummy = project
+lazy val dummy = myCrossProject("dummy")
   .disablePlugins(ExplicitDepsPlugin)
-  .settings(commonSettings)
   .settings(noPublishSettings)
   .settings(
     libraryDependencies ++= Seq(
