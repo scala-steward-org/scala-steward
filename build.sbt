@@ -235,6 +235,7 @@ lazy val dummy = project
   .settings(noPublishSettings)
   .settings(
     libraryDependencies ++= Seq(
+      Dependencies.millMain,
       Dependencies.scalaStewardMillPlugin
     )
   )

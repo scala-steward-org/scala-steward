@@ -32,6 +32,7 @@ object Dependencies {
   val jjwtImpl = "io.jsonwebtoken" % "jjwt-impl" % jjwtApi.revision
   val jjwtJackson = "io.jsonwebtoken" % "jjwt-jackson" % jjwtApi.revision
   val millVersion = "0.10.10"
+  val millMain = "com.lihaoyi" % "mill-main_2.13" % millVersion
   val scalaStewardMillPluginArtifactName = "scala-steward-mill-plugin"
   val scalaStewardMillPlugin =
     "org.scala-steward" % s"${scalaStewardMillPluginArtifactName}_mill0.10_2.13" % "0.17.0"
