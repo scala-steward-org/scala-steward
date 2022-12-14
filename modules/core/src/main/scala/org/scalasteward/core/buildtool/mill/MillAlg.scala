@@ -101,8 +101,7 @@ object MillAlg {
     }
   }
 
-  val extractDeps: String =
-    s"${org.scalasteward.core.BuildInfo.millPluginModuleRootPkg}.StewardPlugin/extractDeps"
+  val extractDeps: String = "org.scalasteward.mill.plugin.StewardPlugin/extractDeps"
 
   private val millMainResolver: Resolver = Resolver.mavenCentral
   private val millMainGroupId = GroupId("com.lihaoyi")
