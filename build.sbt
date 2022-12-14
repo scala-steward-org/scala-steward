@@ -231,6 +231,7 @@ lazy val docs = myCrossProject("docs")
 // Dummy project to receive updates from @scala-steward for this project's
 // libraryDependencies.
 lazy val dummy = project
+  .disablePlugins(ExplicitDepsPlugin)
   .settings(commonSettings)
   .settings(noPublishSettings)
   .settings(
