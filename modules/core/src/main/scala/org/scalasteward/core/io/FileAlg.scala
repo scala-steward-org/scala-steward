@@ -82,9 +82,6 @@ trait FileAlg[F[_]] {
       .evalFilter(readFile(_).map(_.fold(false)(contentFilter)))
       .compile
       .toList
-
-  final def writeFileData(dir: File, fileData: FileData): F[Unit] =
-    writeFile(dir / fileData.name, fileData.content)
 }
 
 object FileAlg {
