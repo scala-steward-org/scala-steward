@@ -76,9 +76,6 @@ trait FileAlg[F[_]] {
           case None    => F.pure(Option.empty[(A, String)])
         }
       }
-
-  final def writeFileData(dir: File, fileData: FileData): F[Unit] =
-    writeFile(dir / fileData.path, fileData.content)
 }
 
 object FileAlg {

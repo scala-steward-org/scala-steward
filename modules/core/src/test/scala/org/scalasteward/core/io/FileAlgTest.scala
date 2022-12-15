@@ -117,7 +117,7 @@ class FileAlgTest extends FunSuite {
     val p = for {
       _ <- ioFileAlg.deleteForce(dir)
       r1 <- ioFileAlg.isRegularFile(file)
-      _ <- ioFileAlg.writeFileData(dir, FileData("file.txt", "content"))
+      _ <- ioFileAlg.writeFile(file, "content")
       r2 <- ioFileAlg.isRegularFile(file)
     } yield (r1, r2)
     assertEquals(p.unsafeRunSync(), (false, true))
