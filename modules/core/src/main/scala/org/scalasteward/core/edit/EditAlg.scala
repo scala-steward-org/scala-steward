@@ -23,7 +23,7 @@ import org.scalasteward.core.data.{RepoData, Update}
 import org.scalasteward.core.edit.EditAttempt.{ScalafixEdit, UpdateEdit}
 import org.scalasteward.core.edit.hooks.HookExecutor
 import org.scalasteward.core.edit.scalafix.{ScalafixMigration, ScalafixMigrationsFinder}
-import org.scalasteward.core.edit.update.data.{PathList, Substring}
+import org.scalasteward.core.edit.update.data.Substring
 import org.scalasteward.core.edit.update.{ScannerAlg, Selector}
 import org.scalasteward.core.git.{CommitMsg, GitAlg}
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
@@ -72,7 +72,7 @@ final class EditAlg[F[_]](implicit
       repo: Repo,
       config: RepoConfig,
       update: Update.Single
-  ): F[PathList[List[Substring.Replacement]]] =
+  ): F[List[Substring.Replacement]] =
     for {
       versionPositions <- scannerAlg.findVersionPositions(repo, config, update.currentVersion)
       modulePositions <- scannerAlg.findModulePositions(repo, config, update.dependencies)
@@ -101,11 +101,12 @@ final class EditAlg[F[_]](implicit
   private def applyUpdateReplacements(
       data: RepoData,
       update: Update.Single,
-      updateReplacements: List[(String, List[Substring.Replacement])]
+      updateReplacements: List[Substring.Replacement]
   ): F[Option[EditAttempt]] =
     for {
       repoDir <- workspaceAlg.repoDir(data.repo)
-      _ <- updateReplacements.traverse_ { case (path, replacements) =>
+      replacementsByPath = updateReplacements.groupBy(_.position.path).toList
+      _ <- replacementsByPath.traverse { case (path, replacements) =>
         fileAlg.editFile(repoDir / path, Substring.Replacement.applyAll(replacements))
       }
       _ <- reformatChangedFiles(data)

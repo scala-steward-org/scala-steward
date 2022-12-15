@@ -32,9 +32,9 @@ import scala.util.matching.Regex
 object Selector {
   def select(
       update: Update.Single,
-      versionPositions: PathList[List[VersionPosition]],
-      modulePositions: PathList[List[ModulePosition]]
-  ): PathList[List[Substring.Replacement]] = {
+      versionPositions: List[VersionPosition],
+      modulePositions: List[ModulePosition]
+  ): List[Substring.Replacement] = {
     val versionReplacements = firstNonEmpty(
       List(
         dependencyDefPositions(update.dependencies, versionPositions),
@@ -48,61 +48,45 @@ object Selector {
       matchingSearchTerms(heuristic3SearchTerms(update), versionPositions),
       matchingSearchTerms(heuristic4SearchTerms(update), versionPositions),
       matchingSearchTerms(heuristic5SearchTerms(update), versionPositions)
-    ).map { case (path, positions) =>
-      path -> positions.map(_.version.replaceWith(update.nextVersion.value))
-    }
+    ).map(_.version.replaceWith(update.nextVersion.value))
 
-    (versionReplacements ++ moduleReplacements(update, modulePositions))
-      .groupMap(_._1)(_._2)
-      .view
-      .mapValues(_.flatten)
-      .toList
+    versionReplacements ++ moduleReplacements(update, modulePositions)
   }
 
   private def dependencyDefPositions(
       dependencies: Nel[Dependency],
-      versionPositions: PathList[List[VersionPosition]]
-  ): PathList[List[DependencyDef]] =
-    mapFilterNonEmpty(versionPositions) { case (_, positions) =>
-      positions
-        .collect { case p: DependencyDef => p }
-        .filter {
-          case p: MillDependency => scalaCliUsingLib.matcher(p.before).matches() || !p.isCommented
-          case p: SbtDependency  => !p.isCommented && !p.before.toLowerCase.contains("previous")
-          case _                 => true
+      versionPositions: List[VersionPosition]
+  ): List[DependencyDef] =
+    versionPositions
+      .collect { case p: DependencyDef => p }
+      .filter {
+        case p: MillDependency => scalaCliUsingLib.matcher(p.before).matches() || !p.isCommented
+        case p: SbtDependency  => !p.isCommented && !p.before.toLowerCase.contains("previous")
+        case _                 => true
+      }
+      .filter { p =>
+        dependencies.exists { d =>
+          d.groupId.value === p.groupId && d.artifactId.names.contains_(p.artifactId)
         }
-        .filter { p =>
-          dependencies.exists { d =>
-            d.groupId.value === p.groupId && d.artifactId.names.contains_(p.artifactId)
-          }
-        }
-    }
+      }
 
   private def scalaCliUsingLib: Pattern =
     Pattern.compile("""//>\s+using\s+lib\s+""")
 
   private def scalaValInDependencyDefPositions(
-      versionPositions: PathList[List[VersionPosition]],
-      modulePositions: PathList[List[ModulePosition]]
-  ): PathList[List[ScalaVal]] =
-    mapFilterNonEmpty(scalaValPositions(versionPositions)) { case (path, positions) =>
-      positions.filter { p =>
-        modulePositions.exists { case (path2, positions2) =>
-          path === path2 && positions2.exists { p2 =>
-            val unwrapped = p2.unwrappedVersion
-            unwrapped === p.name || unwrapped.endsWith("." + p.name)
-          }
-        }
+      versionPositions: List[VersionPosition],
+      modulePositions: List[ModulePosition]
+  ): List[ScalaVal] =
+    scalaValPositions(versionPositions).filter { vp =>
+      modulePositions.exists { mp =>
+        val unwrapped = mp.unwrappedVersion
+        unwrapped === vp.name || unwrapped.endsWith("." + vp.name)
       }
     }
 
-  private def scalaValPositions(
-      versionPositions: PathList[List[VersionPosition]]
-  ): PathList[List[ScalaVal]] =
-    mapFilterNonEmpty(versionPositions) { case (_, positions) =>
-      positions.collect {
-        case p: ScalaVal if genericScalaValFilter(p) => p
-      }
+  private def scalaValPositions(versionPositions: List[VersionPosition]): List[ScalaVal] =
+    versionPositions.collect {
+      case p: ScalaVal if genericScalaValFilter(p) => p
     }
 
   private def genericScalaValFilter(p: ScalaVal): Boolean =
@@ -110,18 +94,14 @@ object Selector {
 
   private def matchingSearchTerms(
       searchTerms: List[String],
-      versionPositions: PathList[List[VersionPosition]]
-  ): PathList[List[VersionPosition]] =
-    searchTermsAsRegex(searchTerms)
-      .map { pattern =>
-        mapFilterNonEmpty(versionPositions) { case (_, positions) =>
-          positions.collect {
-            case p: ScalaVal if genericScalaValFilter(p) && pattern.matcher(p.name).find() => p
-            case p: Unclassified if pattern.matcher(p.before).find()                       => p
-          }
-        }
+      versionPositions: List[VersionPosition]
+  ): List[VersionPosition] =
+    searchTermsAsRegex(searchTerms).fold(List.empty[VersionPosition]) { pattern =>
+      versionPositions.collect {
+        case p: ScalaVal if genericScalaValFilter(p) && pattern.matcher(p.name).find() => p
+        case p: Unclassified if pattern.matcher(p.before).find()                       => p
       }
-      .getOrElse(List.empty)
+    }
 
   private def heuristic1SearchTerms(update: Update.Single): List[String] = {
     val terms = update match {
@@ -176,38 +156,34 @@ object Selector {
 
   private def millVersionPositions(
       update: Update.Single,
-      versionPositions: PathList[List[VersionPosition]]
-  ): PathList[List[VersionPosition]] =
+      versionPositions: List[VersionPosition]
+  ): List[VersionPosition] =
     if (isMillMainUpdate(update))
-      mapFilterNonEmpty(versionPositions) { case (path, positions) =>
-        if (path === millVersionName) positions else List.empty
-      }
+      versionPositions.filter(_.version.path === millVersionName)
     else List.empty
 
   private def sbtVersionPositions(
       update: Update.Single,
-      versionPositions: PathList[List[VersionPosition]]
-  ): PathList[List[VersionPosition]] =
+      versionPositions: List[VersionPosition]
+  ): List[VersionPosition] =
     if (isSbtUpdate(update))
-      mapFilterNonEmpty(matchingSearchTerms(List("sbt.version"), versionPositions)) {
-        case (path, positions) => if (path.endsWith(buildPropertiesName)) positions else List.empty
-      }
+      matchingSearchTerms(List("sbt.version"), versionPositions)
+        .filter(_.version.path.endsWith(buildPropertiesName))
     else List.empty
 
   private def scalafmtVersionPositions(
       update: Update.Single,
-      versionPositions: PathList[List[VersionPosition]]
-  ): PathList[List[VersionPosition]] =
+      versionPositions: List[VersionPosition]
+  ): List[VersionPosition] =
     if (isScalafmtCoreUpdate(update))
-      mapFilterNonEmpty(matchingSearchTerms(List("version"), versionPositions)) {
-        case (path, positions) => if (path === scalafmtConfName) positions else List.empty
-      }
+      matchingSearchTerms(List("version"), versionPositions)
+        .filter(_.version.path === scalafmtConfName)
     else List.empty
 
   private def moduleReplacements(
       update: Update.Single,
-      modulePositions: PathList[List[ModulePosition]]
-  ): PathList[List[Substring.Replacement]] = {
+      modulePositions: List[ModulePosition]
+  ): List[Substring.Replacement] = {
     val (newerGroupId, newerArtifactId) = update match {
       case u: Update.ForArtifactId => (u.newerGroupId, u.newerArtifactId)
       case _: Update.ForGroupId    => (None, None)
@@ -216,25 +192,18 @@ object Selector {
     else {
       val currentGroupId = update.groupId
       val currentArtifactId = update.artifactIds.head
-      mapFilterNonEmpty(modulePositions) { case (_, positions) =>
-        positions
-          .filter { p =>
-            p.groupId.value === currentGroupId.value &&
-            currentArtifactId.names.contains_(p.artifactId.value)
-          }
-          .flatMap { p =>
-            newerGroupId.map(g => p.groupId.replaceWith(g.value)).toList ++
-              newerArtifactId.map(a => p.artifactId.replaceWith(a)).toList
-          }
-      }
+      modulePositions
+        .filter { p =>
+          p.groupId.value === currentGroupId.value &&
+          currentArtifactId.names.contains_(p.artifactId.value)
+        }
+        .flatMap { p =>
+          newerGroupId.map(g => p.groupId.replaceWith(g.value)).toList ++
+            newerArtifactId.map(a => p.artifactId.replaceWith(a)).toList
+        }
     }
   }
 
   private def firstNonEmpty[A](lists: List[A]*): List[A] =
     lists.find(_.nonEmpty).getOrElse(List.empty)
-
-  private def mapFilterNonEmpty[A, B](pathList: PathList[List[A]])(
-      f: (String, List[A]) => List[B]
-  ): PathList[List[B]] =
-    pathList.map { case (path, as) => path -> f(path, as) }.filter { case (_, bs) => bs.nonEmpty }
 }

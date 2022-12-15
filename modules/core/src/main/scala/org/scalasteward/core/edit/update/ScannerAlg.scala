@@ -17,12 +17,11 @@
 package org.scalasteward.core.edit.update
 
 import better.files.File
-import cats.effect.kernel.Concurrent
-import cats.syntax.all._
+import cats.effect.Concurrent
 import fs2.Stream
 import org.scalasteward.core.data.{Dependency, Version}
-import org.scalasteward.core.edit.update.data.{ModulePosition, PathList, VersionPosition}
-import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
+import org.scalasteward.core.edit.update.data.{ModulePosition, VersionPosition}
+import org.scalasteward.core.io.{FileAlg, FileData, WorkspaceAlg}
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
@@ -36,44 +35,39 @@ final class ScannerAlg[F[_]](implicit
       repo: Repo,
       config: RepoConfig,
       version: Version
-  ): F[PathList[List[VersionPosition]]] =
+  ): F[List[VersionPosition]] =
     findPathsContaining(repo, config, version.value)
-      .mapFilter { case (path, content) =>
-        val positions = VersionScanner.findPositions(version, content)
-        Option.when(positions.nonEmpty)(path -> positions)
-      }
+      .map(VersionScanner.findPositions(version, _))
       .compile
-      .toList
+      .foldMonoid
 
   def findModulePositions(
       repo: Repo,
       config: RepoConfig,
       dependencies: Nel[Dependency]
-  ): F[PathList[List[ModulePosition]]] =
+  ): F[List[ModulePosition]] =
     findPathsContaining(repo, config, dependencies.head.groupId.value)
-      .mapFilter { case (path, content) =>
-        val positions = dependencies.toList.flatMap { dependency =>
-          if (!content.contains(dependency.artifactId.name)) List.empty
-          else ModuleScanner.findPositions(dependency, content)
+      .map { fileData =>
+        dependencies.toList.flatMap { dependency =>
+          if (!fileData.content.contains(dependency.artifactId.name)) List.empty
+          else ModuleScanner.findPositions(dependency, fileData)
         }
-        Option.when(positions.nonEmpty)(path -> positions)
       }
       .compile
-      .toList
+      .foldMonoid
 
   private def findPathsContaining(
       repo: Repo,
       config: RepoConfig,
       string: String
-  ): Stream[F, (String, String)] =
+  ): Stream[F, FileData] =
     Stream.eval(workspaceAlg.repoDir(repo)).flatMap { repoDir =>
-      def pathOf(file: File): String = repoDir.relativize(file).toString
       val fileFilter = (file: File) => {
-        val path = pathOf(file)
-        !path.startsWith(".git/") && config.updates.fileExtensionsOrDefault.exists(path.endsWith)
+        val path = repoDir.relativize(file).toString
+        val cond = !path.startsWith(".git/") &&
+          config.updates.fileExtensionsOrDefault.exists(path.endsWith)
+        Option.when(cond)(path)
       }
-      fileAlg
-        .findFiles(repoDir, fileFilter, _.contains(string))
-        .map { case (file, content) => (pathOf(file), content) }
+      fileAlg.findFiles(repoDir, fileFilter, _.contains(string)).map(FileData.tupled)
     }
 }

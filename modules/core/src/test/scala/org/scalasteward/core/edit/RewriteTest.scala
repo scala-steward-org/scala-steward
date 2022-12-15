@@ -586,6 +586,19 @@ class RewriteTest extends FunSuite {
     runApplyUpdate(update, original, expected)
   }
 
+  test("version val and dependency definition in different files") {
+    val update = ("org.typelevel".g % "cats-core".a % "2.0.0" %> "2.1.0").single
+    val original = Map(
+      "Versions.scala" -> """val foo = "2.0.0"""",
+      "Build.sbt" -> """"org.typelevel" %% "cats-core" % Version.foo"""
+    )
+    val expected = Map(
+      "Versions.scala" -> """val foo = "2.1.0"""",
+      "Build.sbt" -> """"org.typelevel" %% "cats-core" % Version.foo"""
+    )
+    runApplyUpdate(update, original, expected)
+  }
+
   // https://github.com/scala-steward-org/scala-steward/issues/502
   test("version that contains the current version as proper substring") {
     val artifactIds = Nel.of("keywords-each".a, "keywords-using".a)

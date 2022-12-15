@@ -19,15 +19,15 @@ package org.scalasteward.core.edit.update.data
 import scala.util.matching.Regex.Match
 
 object Substring {
-  final case class Position(start: Int, value: String) {
+  final case class Position(path: String, start: Int, value: String) {
     def replaceWith(replacement: String): Replacement =
       Replacement(this, replacement)
   }
 
   object Position {
-    def fromMatch(m: Match, value: String): Position = {
+    def fromMatch(path: String, m: Match, value: String): Position = {
       val start = m.start + m.matched.indexOf(value)
-      Position(start, value)
+      Position(path, start, value)
     }
   }
 

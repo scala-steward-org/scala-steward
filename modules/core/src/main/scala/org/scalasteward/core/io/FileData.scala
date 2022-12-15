@@ -17,6 +17,6 @@
 package org.scalasteward.core.io
 
 final case class FileData(
-    name: String,
+    path: String,
     content: String
 )

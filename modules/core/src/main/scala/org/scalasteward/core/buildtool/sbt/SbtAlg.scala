@@ -47,7 +47,7 @@ final class SbtAlg[F[_]](config: Config)(implicit
   private def addGlobalPluginTemporarily(plugin: FileData): Resource[F, Unit] =
     Resource.eval(sbtDir).flatMap { dir =>
       List("0.13", "1.0").traverse_ { version =>
-        fileAlg.createTemporarily(dir / version / "plugins" / plugin.name, plugin.content)
+        fileAlg.createTemporarily(dir / version / "plugins" / plugin.path, plugin.content)
       }
     }
 
@@ -89,7 +89,7 @@ final class SbtAlg[F[_]](config: Config)(implicit
           val withScalacOptions =
             migration.scalacOptions.fold(Resource.unit[F]) { opts =>
               val file = scalaStewardScalafixOptions(opts.toList)
-              fileAlg.createTemporarily(buildRootDir / file.name, file.content)
+              fileAlg.createTemporarily(buildRootDir / file.path, file.content)
             }
           val scalafixCmds = migration.rewriteRules.map(rule => s"$scalafixAll $rule").toList
           withScalacOptions.surround(sbt(Nel(scalafixEnable, scalafixCmds), buildRootDir).void)
