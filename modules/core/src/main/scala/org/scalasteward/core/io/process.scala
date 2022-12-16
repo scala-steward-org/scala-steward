@@ -55,7 +55,7 @@ object process {
           }
         }
 
-        val fallback = F.delay(process.destroyForcibly()) >> {
+        val fallback = F.blocking(process.destroyForcibly()) >> {
           val msg = s"'${showCmd(args)}' timed out after ${timeout.toString}"
           F.raiseError[List[String]](new TimeoutException(makeMessage(msg, buffer.toList)))
         }
@@ -68,17 +68,21 @@ object process {
     (args.extraEnv.map { case (k, v) => s"$k=$v" } ++ args.command.toList).mkString_(" ")
 
   private def createProcess[F[_]](args: Args)(implicit F: Sync[F]): F[Process] =
-    F.delay {
+    F.blocking {
       val pb = new ProcessBuilder(args.command.toList: _*)
       args.workingDirectory.foreach(file => pb.directory(file.toJava))
       val env = pb.environment()
       if (args.clearEnv) env.clear()
       args.extraEnv.foreach { case (key, value) => env.put(key, value) }
       pb.redirectErrorStream(true)
-      val p = pb.start()
-      // Close standard input so that the process never waits for input.
-      p.getOutputStream.close()
-      p
+      pb
+    }.flatMap { pb =>
+      F.blocking {
+        val p = pb.start()
+        // Close standard input so that the process never waits for input.
+        p.getOutputStream.close()
+        p
+      }
     }
 
   private def readInputStream[F[_]](is: InputStream)(implicit F: Sync[F]): Stream[F, String] =
