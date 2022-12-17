@@ -287,21 +287,15 @@ class EditAlgTest extends FunSuite {
   }
 
   test("Files under .github yml should be updated") {
-    val update = ("org.scala-lang".g % "scala-library".a % "3.1.3-RC2" %> "3.1.3-RC3").single
-
+    val artifactIds = Nel.of("scala3-compiler".a, "scala3-library".a, "scala3-library_sjs1".a)
+    val update = ("org.scala-lang".g % artifactIds % "3.1.3-RC2" %> "3.1.3-RC3").group
     val original = Map(
-      ".github/workflows/ci.yml" ->
-        """tests:
-          |    with:
-          |      scala: 2.12.15, 2.13.8, 3.1.3-RC2
-          |"""".stripMargin
+      "project/Dependencies.scala" -> """val Scala3 = "3.1.3-RC2" """,
+      ".github/workflows/ci.yml" -> """scala: 2.12.15, 2.13.8, 3.1.3-RC2"""
     )
     val expected = Map(
-      ".github/workflows/ci.yml" ->
-        """tests:
-          |    with:
-          |      scala: 2.12.15, 2.13.8, 3.1.3-RC3
-          |"""".stripMargin
+      "project/Dependencies.scala" -> """val Scala3 = "3.1.3-RC3" """,
+      ".github/workflows/ci.yml" -> """scala: 2.12.15, 2.13.8, 3.1.3-RC3"""
     )
     assertEquals(runApplyUpdate(Repo("edit-alg", "test-8"), update, original), expected)
   }
