@@ -259,6 +259,8 @@ object Cli {
     option[String](
       "azure-repos-organization",
       "The Azure organization (required when vcs type is azure-repos)"
+    ).validate("required when vcs type is azure-repos")(organization =>
+      if (vcsTypeArgument.toString() === "azure-repos") organization.nonEmpty else true
     ).orNone
 
   private val azureReposConfig: Opts[AzureReposConfig] =
@@ -319,10 +321,10 @@ object Cli {
   val command: Command[StewardUsage] =
     Command("scala-steward", "")(
       validateConfigFile
-        .map(StewardUsage.ValidateRepoConfig(_))
+        .map(StewardUsage.ValidateRepoConfig)
         .orElse(
           configOpts
-            .map(StewardUsage.Regular(_))
+            .map(StewardUsage.Regular)
         )
     )
 
