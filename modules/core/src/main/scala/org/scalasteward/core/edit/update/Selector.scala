@@ -35,20 +35,25 @@ object Selector {
       versionPositions: List[VersionPosition],
       modulePositions: List[ModulePosition]
   ): List[Substring.Replacement] = {
-    val versionReplacements = firstNonEmpty(
+    val matchingVersionPositions =
       List(
         dependencyDefPositions(update.dependencies, versionPositions),
         scalaValInDependencyDefPositions(versionPositions, modulePositions),
         millVersionPositions(update, versionPositions),
         sbtVersionPositions(update, versionPositions),
         scalafmtVersionPositions(update, versionPositions)
-      ).flatten,
-      matchingSearchTerms(heuristic1SearchTerms(update), versionPositions),
-      matchingSearchTerms(heuristic2SearchTerms(update), versionPositions),
-      matchingSearchTerms(heuristic3SearchTerms(update), versionPositions),
-      matchingSearchTerms(heuristic4SearchTerms(update), versionPositions),
-      matchingSearchTerms(heuristic5SearchTerms(update), versionPositions)
-    ).map(_.version.replaceWith(update.nextVersion.value))
+      ).flatten #::
+        matchingSearchTerms(heuristic1SearchTerms(update), versionPositions) #::
+        matchingSearchTerms(heuristic2SearchTerms(update), versionPositions) #::
+        matchingSearchTerms(heuristic3SearchTerms(update), versionPositions) #::
+        matchingSearchTerms(heuristic4SearchTerms(update), versionPositions) #::
+        matchingSearchTerms(heuristic5SearchTerms(update), versionPositions) #::
+        LazyList.empty
+
+    val versionReplacements = matchingVersionPositions
+      .find(_.nonEmpty)
+      .getOrElse(List.empty)
+      .map(_.version.replaceWith(update.nextVersion.value))
 
     versionReplacements ++ moduleReplacements(update, modulePositions)
   }
@@ -203,7 +208,4 @@ object Selector {
         }
     }
   }
-
-  private def firstNonEmpty[A](lists: List[A]*): List[A] =
-    lists.find(_.nonEmpty).getOrElse(List.empty)
 }
