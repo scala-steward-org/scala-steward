@@ -15,6 +15,7 @@ import org.scalasteward.core.git._
 import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.util.HttpJsonClient
 import org.scalasteward.core.vcs.data._
+import org.scalasteward.core.application.Config.BitbucketCfg
 
 class BitbucketApiAlgTest extends FunSuite {
   private val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
@@ -118,6 +119,19 @@ class BitbucketApiAlgTest extends FunSuite {
             }
           }"""
       )
+    case GET -> Root / "repositories" / "fthomas" / "base.g8" / "default-reviewers" =>
+      Ok(
+        json"""{
+          "values": [
+            {
+                "uuid": "{874fbd19-d98a-4f32-860c-476b9288b1b1}"
+            },
+            {
+                "uuid": "{af922393-90eb-4d59-a4f8-222f7bd45495}"
+            }
+          ]
+        }"""
+      )
     case GET -> Root / "repositories" / "fthomas" / "base.g8" / "pullrequests" =>
       Ok(
         json"""{
@@ -161,7 +175,9 @@ class BitbucketApiAlgTest extends FunSuite {
 
   implicit val client: Client[IO] = Client.fromHttpApp(routes.orNotFound)
   implicit val httpJsonClient: HttpJsonClient[IO] = new HttpJsonClient[IO]
-  private val bitbucketApiAlg = new BitbucketApiAlg[IO](config.vcsCfg, _ => IO.pure)
+  private val bitbucketCfg = BitbucketCfg(useDefaultReviewers = true)
+  private val bitbucketApiAlg =
+    new BitbucketApiAlg[IO](config.vcsCfg, bitbucketCfg, _ => IO.pure)
 
   private val prUrl = uri"https://bitbucket.org/fthomas/base.g8/pullrequests/2"
   private val repo = Repo("fthomas", "base.g8")

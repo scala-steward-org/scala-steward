@@ -199,7 +199,7 @@ There is multiple articles on how to run Scala Steward on-premise:
   
 #### GitLab
 
-The following describes a setup using GitLab Docker runner, which you have to setup seperately.
+The following describes a setup using GitLab Docker runner, which you have to set up separately.
 
 1. create a "scalasteward" user in GitLab
 2. assign that user "Developer" permissions in every project that should be managed by Scala Steward
@@ -259,6 +259,34 @@ echo "${SCALA_STEWARD_TOKEN}"
 ```
 7. add the `repos.md` file 
 8. (*optional*) create a new schedule to trigger the pipeline on a daily/weekly basis
+
+Scala Steward is compatible with Coursier authentication using headers. To authenticate
+using the [Gitlab CI/CD job token](https://docs.gitlab.com/ee/ci/jobs/ci_job_token.html), while also supporting your own private token when performing
+local development, use the following snippet:
+```scala
+import lmcoursier.CoursierConfiguration
+import lmcoursier.definitions.Authentication
+
+lazy val gitlabToken: Option[(String, String)] = {
+  //The Gitlab runner sets CI_JOB_TOKEN automatically as part of running inside a build job
+  val jobToken = sys.env.get("CI_JOB_TOKEN").map(t => ("Job-Token", t)) 
+  //When running on your local machine, set the environment variable GITLAB_PRIVATE_TOKEN
+  val privateToken = sys.env.get("GITLAB_PRIVATE_TOKEN").map(t => ("Private-Token", t))
+
+  jobToken.orElse(privateToken)
+}
+
+def addGitlabToken(current: CoursierConfiguration): CoursierConfiguration = {
+  gitlabToken.fold(current) { token =>
+    current.addRepositoryAuthentication("gitlab-repo", Authentication(Seq(token)))
+  }
+}
+
+resolvers += "gitlab-repo" at s"https://gitlab.example.com/api/v4/groups/1/-/packages/maven"
+csrConfiguration ~= addGitlabToken
+updateClassifiers / csrConfiguration ~= addGitlabToken
+updateSbtClassifiers / csrConfiguration ~= addGitlabToken
+```
 
 #### Azure Repos
 

@@ -8,12 +8,13 @@ import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.Cli.ParseResult._
 import org.scalasteward.core.vcs.VCSType
 import org.scalasteward.core.vcs.github.GitHubApp
+import org.scalasteward.core.application.Config.StewardUsage
 
 import scala.concurrent.duration._
 
 class CliTest extends FunSuite {
   test("parseArgs: example") {
-    val Success(obtained) = Cli.parseArgs(
+    val Success(StewardUsage.Regular(obtained)) = Cli.parseArgs(
       List(
         List("--workspace", "a"),
         List("--repos-file", "b"),
@@ -32,7 +33,8 @@ class CliTest extends FunSuite {
         List("--repo-config", "/opt/scala-steward/scala-steward.conf"),
         List("--github-app-id", "12345678"),
         List("--github-app-key-file", "example_app_key"),
-        List("--refresh-backoff-period", "1 day")
+        List("--refresh-backoff-period", "1 day"),
+        List("--bitbucket-use-default-reviewers")
       ).flatten
     )
 
@@ -61,17 +63,24 @@ class CliTest extends FunSuite {
     )
     assertEquals(obtained.githubApp, Some(GitHubApp(12345678L, File("example_app_key"))))
     assertEquals(obtained.refreshBackoffPeriod, 1.day)
+    assert(!obtained.gitLabCfg.mergeWhenPipelineSucceeds)
+    assertEquals(obtained.gitLabCfg.requiredReviewers, None)
+    assert(obtained.bitbucketCfg.useDefaultReviewers)
+    assert(!obtained.bitbucketServerCfg.useDefaultReviewers)
   }
 
+  val minimumRequiredParams = List(
+    List("--workspace", "a"),
+    List("--repos-file", "b"),
+    List("--git-author-email", "d"),
+    List("--vcs-login", "e"),
+    List("--git-ask-pass", "f"),
+    List("--disable-sandbox")
+  )
+
   test("parseArgs: minimal example") {
-    val Success(obtained) = Cli.parseArgs(
-      List(
-        List("--workspace", "a"),
-        List("--repos-file", "b"),
-        List("--git-author-email", "d"),
-        List("--vcs-login", "e"),
-        List("--git-ask-pass", "f")
-      ).flatten
+    val Success(StewardUsage.Regular(obtained)) = Cli.parseArgs(
+      minimumRequiredParams.flatten
     )
 
     assert(!obtained.processCfg.sandboxCfg.enableSandbox)
@@ -83,7 +92,7 @@ class CliTest extends FunSuite {
   }
 
   test("parseArgs: enable sandbox") {
-    val Success(obtained) = Cli.parseArgs(
+    val Success(StewardUsage.Regular(obtained)) = Cli.parseArgs(
       List(
         List("--workspace", "a"),
         List("--repos-file", "b"),
@@ -114,7 +123,7 @@ class CliTest extends FunSuite {
   }
 
   test("parseArgs: disable sandbox") {
-    val Success(obtained) = Cli.parseArgs(
+    val Success(StewardUsage.Regular(obtained)) = Cli.parseArgs(
       List(
         List("--workspace", "a"),
         List("--repos-file", "b"),
@@ -141,6 +150,37 @@ class CliTest extends FunSuite {
   test("parseArgs: --help") {
     val Help(obtained) = Cli.parseArgs(List("--help"))
     assert(clue(obtained).startsWith("Usage"))
+  }
+
+  test("parseArgs: non-default GitLab arguments") {
+    val params = minimumRequiredParams ++ List(
+      List("--gitlab-merge-when-pipeline-succeeds"),
+      List("--gitlab-required-reviewers", "5")
+    )
+    val Success(StewardUsage.Regular(obtained)) = Cli.parseArgs(params.flatten)
+
+    assert(obtained.gitLabCfg.mergeWhenPipelineSucceeds)
+    assertEquals(obtained.gitLabCfg.requiredReviewers, Some(5))
+  }
+
+  test("parseArgs: invalid GitLab required reviewers") {
+    val params = minimumRequiredParams ++ List(
+      List("--gitlab-merge-when-pipeline-succeeds"),
+      List("--gitlab-required-reviewers", "-3")
+    )
+    val Error(errorMsg) = Cli.parseArgs(params.flatten)
+
+    assert(clue(errorMsg).startsWith("Required reviewers must be non-negative"))
+  }
+
+  test("parseArgs: validate-repo-config") {
+    val Success(StewardUsage.ValidateRepoConfig(file)) = Cli.parseArgs(
+      List(
+        List("validate-repo-config", "file.conf")
+      ).flatten
+    )
+
+    assertEquals(file, File("file.conf"))
   }
 
   test("envVarArgument: env-var without equals sign") {

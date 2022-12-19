@@ -288,7 +288,7 @@ class EditAlgTest extends FunSuite {
 
   private def runApplyUpdate(
       repo: Repo,
-      update: Update,
+      update: Update.Single,
       files: Map[String, String]
   ): Map[String, String] = {
     val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)

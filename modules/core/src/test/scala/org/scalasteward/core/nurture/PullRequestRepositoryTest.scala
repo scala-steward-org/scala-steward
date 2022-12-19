@@ -5,6 +5,7 @@ import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.http4s.syntax.literals._
 import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.data.Update
 import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.mock.MockConfig.config
@@ -137,4 +138,58 @@ class PullRequestRepositoryTest extends FunSuite {
       )
     )
   }
+
+  test("findLatestPullRequest ignores grouped updates") {
+    val repo = Repo("pr-repo-test", "repo5")
+    val update = portableScala
+    val grouped = Update.Grouped("group", None, List(update))
+    val data = PullRequestData[Id](url, sha1, grouped, Open, number, branch)
+
+    val p = for {
+      _ <- pullRequestRepository.createOrUpdate(repo, data)
+      result <- pullRequestRepository.findLatestPullRequest(repo, update.crossDependency, "1.0.0".v)
+    } yield result
+
+    val (state, result) = p.runSA(MockState.empty).unsafeRunSync()
+
+    val store =
+      config.workspace / s"store/pull_requests/v2/github/${repo.toPath}/pull_requests.json"
+    assert(result.isEmpty)
+
+    checkTrace(
+      state,
+      Vector(
+        Cmd("read", store.toString),
+        Cmd("write", store.toString)
+      )
+    )
+  }
+
+  test("lastPullRequestCreatedAt returns timestamp for grouped updates") {
+    val repo = Repo("pr-repo-test", "repo7")
+    val update = catsCore
+    val grouped = Update.Grouped("group", None, List(update))
+    val data = PullRequestData[Id](url, sha1, grouped, Open, number, branch)
+
+    val p = for {
+      emptyCreatedAt <- pullRequestRepository.lastPullRequestCreatedAt(repo)
+      _ <- pullRequestRepository.createOrUpdate(repo, data)
+      createdAt <- pullRequestRepository.lastPullRequestCreatedAt(repo)
+    } yield (emptyCreatedAt, createdAt)
+    val (state, (emptyCreatedAt, createdAt)) = p.runSA(MockState.empty).unsafeRunSync()
+
+    val store =
+      config.workspace / s"store/pull_requests/v2/github/${repo.toPath}/pull_requests.json"
+    assert(emptyCreatedAt.isEmpty)
+    assert(createdAt.isDefined)
+
+    checkTrace(
+      state,
+      Vector(
+        Cmd("read", store.toString),
+        Cmd("write", store.toString)
+      )
+    )
+  }
+
 }

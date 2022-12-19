@@ -66,24 +66,17 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
       }
       .void
 
-  def getObsoleteOpenPullRequests(repo: Repo, update: Update): F[List[PullRequestData[Id]]] =
+  def getObsoleteOpenPullRequests(repo: Repo, update: Update.Single): F[List[PullRequestData[Id]]] =
     kvStore.getOrElse(repo, Map.empty).map {
       _.collect {
-        case (url, entry)
-            if entry.state === PullRequestState.Open &&
-              entry.update.withNewerVersions(update.newerVersions) === update &&
-              entry.update.nextVersion < update.nextVersion =>
+        case (url, Entry(baseSha1, u: Update.Single, state, _, number, updateBranch))
+            if state === PullRequestState.Open &&
+              u.withNewerVersions(update.newerVersions) === update &&
+              u.nextVersion < update.nextVersion =>
           for {
-            number <- entry.number
-            updateBranch = entry.updateBranch.getOrElse(git.branchFor(entry.update, repo.branch))
-          } yield PullRequestData[Id](
-            url,
-            entry.baseSha1,
-            entry.update,
-            entry.state,
-            number,
-            updateBranch
-          )
+            number <- number
+            branch = updateBranch.getOrElse(git.branchFor(u, repo.branch))
+          } yield PullRequestData[Id](url, baseSha1, u, state, number, branch)
       }.flatten.toList.sortBy(_.number.value)
     }
 
@@ -93,9 +86,10 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
       newVersion: Version
   ): F[Option[PullRequestData[Option]]] =
     kvStore.getOrElse(repo, Map.empty).map {
-      _.filter { case (_, entry) =>
-        UpdateAlg.isUpdateFor(entry.update, crossDependency) &&
-        entry.update.nextVersion === newVersion
+      _.filter {
+        case (_, Entry(_, u: Update.Single, _, _, _, _)) =>
+          UpdateAlg.isUpdateFor(u, crossDependency) && u.nextVersion === newVersion
+        case _ => false
       }
         .maxByOption { case (_, entry) => entry.entryCreatedAt.millis }
         .map { case (url, entry) =>
@@ -118,9 +112,12 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
       case None => Map.empty
       case Some(pullRequests) =>
         pullRequests.values
-          .groupBy(entry => (entry.update.groupId, entry.update.mainArtifactId))
+          .collect { case Entry(_, u: Update.Single, _, entryCreatedAt, _, _) =>
+            (u.groupId, u.mainArtifactId, entryCreatedAt)
+          }
+          .groupBy { case (groupId, mainArtifactId, _) => (groupId, mainArtifactId) }
           .view
-          .mapValues(_.map(_.entryCreatedAt).max)
+          .mapValues(_.map { case (_, _, createdAt) => createdAt }.max)
           .toMap
     }
 }

@@ -63,11 +63,12 @@ final case class Config(
     scalafixCfg: ScalafixCfg,
     artifactCfg: ArtifactCfg,
     cacheTtl: FiniteDuration,
+    bitbucketCfg: BitbucketCfg,
     bitbucketServerCfg: BitbucketServerCfg,
     gitLabCfg: GitLabCfg,
     azureReposConfig: AzureReposConfig,
     githubApp: Option[GitHubApp],
-    urlCheckerTestUrl: Uri,
+    urlCheckerTestUrls: Nel[Uri],
     defaultResolver: Resolver,
     refreshBackoffPeriod: FiniteDuration
 ) {
@@ -133,12 +134,22 @@ object Config {
       useDefaultReviewers: Boolean
   )
 
+  final case class BitbucketCfg(
+      useDefaultReviewers: Boolean
+  )
+
   final case class GitLabCfg(
-      mergeWhenPipelineSucceeds: Boolean
+      mergeWhenPipelineSucceeds: Boolean,
+      requiredReviewers: Option[Int]
   )
 
   final case class AzureReposConfig(
       organization: Option[String]
   )
 
+  sealed trait StewardUsage
+  object StewardUsage {
+    final case class Regular(config: Config) extends StewardUsage
+    final case class ValidateRepoConfig(file: File) extends StewardUsage
+  }
 }

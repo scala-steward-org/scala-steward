@@ -19,7 +19,7 @@ package org.scalasteward.core
 import cats.syntax.all._
 import org.http4s.Uri
 import org.scalasteward.core.data.ReleaseRelatedUrl.VersionDiff
-import org.scalasteward.core.data.{ReleaseRelatedUrl, Update, Version}
+import org.scalasteward.core.data.{ReleaseRelatedUrl, Version}
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.vcs.VCSType.{AzureRepos, Bitbucket, BitbucketServer, GitHub, GitLab}
 import org.scalasteward.core.vcs.data.Repo
@@ -87,43 +87,39 @@ package object vcs {
       vcsType: VCSType,
       vcsUri: Uri,
       repoUrl: Uri,
-      update: Update
-  ): List[VersionDiff] = {
-    val from = update.currentVersion
-    val to = update.nextVersion
-
-    extractRepoVCSType(vcsType, vcsUri, repoUrl)
-      .map {
-        case GitHub | GitLab =>
-          possibleTags(from).zip(possibleTags(to)).map { case (from1, to1) =>
-            VersionDiff(repoUrl / "compare" / s"$from1...$to1")
-          }
-        case Bitbucket | BitbucketServer =>
-          possibleTags(from).zip(possibleTags(to)).map { case (from1, to1) =>
-            VersionDiff((repoUrl / "compare" / s"$to1..$from1").withFragment("diff"))
-          }
-        case AzureRepos =>
-          possibleTags(from).zip(possibleTags(to)).map { case (from1, to1) =>
-            VersionDiff(
-              (repoUrl / "branchCompare")
-                .withQueryParams(Map("baseVersion" -> from1, "targetVersion" -> to1))
-            )
-          }
-      }
-      .getOrElse(List.empty)
-  }
+      currentVersion: Version,
+      nextVersion: Version
+  ): List[VersionDiff] =
+    extractRepoVCSType(vcsType, vcsUri, repoUrl).map {
+      case GitHub | GitLab =>
+        possibleTags(currentVersion).zip(possibleTags(nextVersion)).map { case (from1, to1) =>
+          VersionDiff(repoUrl / "compare" / s"$from1...$to1")
+        }
+      case Bitbucket | BitbucketServer =>
+        possibleTags(currentVersion).zip(possibleTags(nextVersion)).map { case (from1, to1) =>
+          VersionDiff((repoUrl / "compare" / s"$to1..$from1").withFragment("diff"))
+        }
+      case AzureRepos =>
+        possibleTags(currentVersion).zip(possibleTags(nextVersion)).map { case (from1, to1) =>
+          VersionDiff(
+            (repoUrl / "branchCompare")
+              .withQueryParams(Map("baseVersion" -> from1, "targetVersion" -> to1))
+          )
+        }
+    }.orEmpty
 
   def possibleReleaseRelatedUrls(
       vcsType: VCSType,
       vcsUri: Uri,
       repoUrl: Uri,
-      update: Update
+      currentVersion: Version,
+      nextVersion: Version
   ): List[ReleaseRelatedUrl] = {
     val repoVCSType = extractRepoVCSType(vcsType, vcsUri, repoUrl)
 
     val github = repoVCSType
       .collect { case GitHub =>
-        possibleTags(update.nextVersion).map(tag =>
+        possibleTags(nextVersion).map(tag =>
           ReleaseRelatedUrl.GitHubReleaseNotes(repoUrl / "releases" / "tag" / tag)
         )
       }
@@ -156,7 +152,7 @@ package object vcs {
       files(possibleReleaseNotesFilenames).map(ReleaseRelatedUrl.CustomReleaseNotes)
 
     github ++ customReleaseNotes ++ customChangelog ++
-      possibleCompareUrls(vcsType, vcsUri, repoUrl, update)
+      possibleCompareUrls(vcsType, vcsUri, repoUrl, currentVersion, nextVersion)
   }
 
   private def possibleFilenames(baseNames: List[String]): List[String] = {

@@ -1,3 +1,5 @@
+import scala.util.Properties
+import scala.reflect.io.Path
 import com.typesafe.sbt.packager.docker._
 import sbtcrossproject.{CrossProject, CrossType, Platform}
 import sbtghactions.JavaSpec.Distribution.Adopt
@@ -16,12 +18,12 @@ val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
   "benchmark" -> List(JVMPlatform),
   "core" -> List(JVMPlatform),
   "docs" -> List(JVMPlatform),
-  "sbt-plugin" -> List(JVMPlatform),
-  "mill-plugin" -> List(JVMPlatform)
+  "dummy" -> List(JVMPlatform),
+  "sbt-plugin" -> List(JVMPlatform)
 )
 
-val Scala212 = "2.12.16"
-val Scala213 = "2.13.8"
+val Scala212 = "2.12.17"
+val Scala213 = "2.13.10"
 
 /// sbt-github-actions configuration
 
@@ -50,12 +52,12 @@ ThisBuild / githubWorkflowPublish := Seq(
     name = Some("Publish Docker image")
   )
 )
-ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec(Adopt, "8"), JavaSpec(Adopt, "11"))
+ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec(Adopt, "17"), JavaSpec(Adopt, "11"))
 ThisBuild / githubWorkflowBuild :=
   Seq(
     WorkflowStep.Sbt(List("validate"), name = Some("Build project")),
     WorkflowStep.Use(
-      UseRef.Public("codecov", "codecov-action", "v2"),
+      UseRef.Public("codecov", "codecov-action", "v3"),
       name = Some("Codecov")
     )
   )
@@ -68,7 +70,7 @@ ThisBuild / evictionErrorLevel := Level.Info
 
 lazy val root = project
   .in(file("."))
-  .aggregate(benchmark.jvm, core.jvm, docs.jvm, `sbt-plugin`.jvm, `mill-plugin`.jvm)
+  .aggregate(benchmark.jvm, core.jvm, docs.jvm, dummy.jvm, `sbt-plugin`.jvm)
   .settings(commonSettings)
   .settings(noPublishSettings)
 
@@ -138,6 +140,11 @@ lazy val core = myCrossProject("core")
         // https/repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-core/2.12.6/jackson-core-2.12.6.jar:module-info.class
         // https/repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.12.6.1/jackson-databind-2.12.6.1.jar:module-info.class
         MergeStrategy.discard
+      case PathList("META-INF", "sisu", "javax.inject.Named") =>
+        // (core / assembly) deduplicate: different file contents found in the following:
+        // https/repo1.maven.org/maven2/org/codehaus/plexus/plexus-archiver/4.5.0/plexus-archiver-4.5.0.jar:META-INF/sisu/javax.inject.Named
+        // https/repo1.maven.org/maven2/org/codehaus/plexus/plexus-io/3.4.0/plexus-io-3.4.0.jar:META-INF/sisu/javax.inject.Named
+        MergeStrategy.first
       case otherwise =>
         val defaultStrategy = (assembly / assemblyMergeStrategy).value
         defaultStrategy(otherwise)
@@ -155,12 +162,8 @@ lazy val core = myCrossProject("core")
       BuildInfoKey.map(`sbt-plugin`.jvm / moduleRootPkg) { case (_, v) =>
         "sbtPluginModuleRootPkg" -> v
       },
-      BuildInfoKey.map(`mill-plugin`.jvm / moduleName) { case (_, v) =>
-        "millPluginModuleName" -> v
-      },
-      BuildInfoKey.map(`mill-plugin`.jvm / moduleRootPkg) { case (_, v) =>
-        "millPluginModuleRootPkg" -> v
-      }
+      BuildInfoKey("millPluginArtifactName" -> Dependencies.scalaStewardMillPluginArtifactName),
+      BuildInfoKey("millPluginVersion" -> Dependencies.scalaStewardMillPlugin.revision)
     ),
     buildInfoPackage := moduleRootPkg.value,
     initialCommands += s"""
@@ -190,7 +193,11 @@ lazy val core = myCrossProject("core")
       Seq(file)
     }.taskValue,
     run / fork := true,
+    // Uncomment for remote debugging:
+    // run / javaOptions += "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005",
     Test / fork := true,
+    Test / testOptions +=
+      Tests.Cleanup(() => Path(file(Properties.tmpDir) / "scala-steward").deleteRecursively()),
     Compile / unmanagedResourceDirectories ++= (`sbt-plugin`.jvm / Compile / unmanagedSourceDirectories).value
   )
 
@@ -222,18 +229,23 @@ lazy val docs = myCrossProject("docs")
     unusedCompileDependencies := Set.empty
   )
 
+// Dummy project to receive updates from @scala-steward for this project's
+// libraryDependencies.
+lazy val dummy = myCrossProject("dummy")
+  .disablePlugins(ExplicitDepsPlugin)
+  .settings(noPublishSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      Dependencies.millMain,
+      Dependencies.scalaStewardMillPlugin
+    )
+  )
+
 lazy val `sbt-plugin` = myCrossProject("sbt-plugin")
   .settings(noPublishSettings)
   .settings(
     scalaVersion := Scala212,
     sbtPlugin := true
-  )
-
-lazy val `mill-plugin` = myCrossProject("mill-plugin")
-  .settings(
-    crossScalaVersions := Seq(Scala213, Scala212),
-    libraryDependencies += Dependencies.millScalalib.value % Provided,
-    scalacOptions -= "-Xfatal-warnings"
   )
 
 /// settings
@@ -281,22 +293,28 @@ lazy val metadataSettings = Def.settings(
   headerLicense := Some(HeaderLicense.ALv2("2018-2022", "Scala Steward contributors")),
   developers := List(
     Developer(
+      id = "alejandrohdezma",
+      name = "Alejandro Hernández",
+      email = "",
+      url = url("https://github.com/alejandrohdezma")
+    ),
+    Developer(
       id = "exoego",
       name = "TATSUNO Yasuhiro",
       email = "",
-      url(s"https://github.com/exoego")
+      url = url("https://github.com/exoego")
     ),
     Developer(
       id = "fthomas",
       name = "Frank S. Thomas",
       email = "",
-      url(s"https://github.com/fthomas")
+      url = url("https://github.com/fthomas")
     ),
     Developer(
       id = "mzuehlke",
       name = "Marco Zühlke",
       email = "",
-      url(s"https://github.com/mzuehlke")
+      url = url("https://github.com/mzuehlke")
     )
   )
 )
@@ -310,7 +328,7 @@ lazy val dockerSettings = Def.settings(
     val sbtTgz = s"sbt-$sbtVer.tgz"
     val sbtUrl = s"https://github.com/sbt/sbt/releases/download/v$sbtVer/$sbtTgz"
     val millBin = s"$binDir/mill"
-    val millVer = Dependencies.millVersion.value
+    val millVer = Dependencies.millVersion
     val millUrl =
       s"https://github.com/lihaoyi/mill/releases/download/${millVer.split("-").head}/$millVer"
     val coursierBin = s"$binDir/coursier"

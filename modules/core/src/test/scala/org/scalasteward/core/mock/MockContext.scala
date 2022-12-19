@@ -1,9 +1,11 @@
 package org.scalasteward.core.mock
 
+import better.files.File
 import cats.effect.unsafe.implicits.global
 import org.http4s.HttpApp
 import org.http4s.client.Client
 import org.scalasteward.core.application.Context
+import org.scalasteward.core.application.Context.StewardContext
 import org.scalasteward.core.edit.scalafix.ScalafixMigrationsLoader
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
 import org.scalasteward.core.io._
@@ -31,4 +33,6 @@ object MockContext {
   )
 
   val context: Context[MockEff] = mockState.toRef.flatMap(Context.step1(config).run).unsafeRunSync()
+  def validateRepoConfigContext(file: File): StewardContext.ValidateRepoConfig[MockEff] =
+    Context.initValidateRepoConfig(file)
 }

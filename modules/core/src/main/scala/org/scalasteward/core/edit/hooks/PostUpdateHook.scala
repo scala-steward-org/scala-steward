@@ -28,7 +28,7 @@ final case class PostUpdateHook(
     artifactId: Option[ArtifactId],
     command: Nel[String],
     useSandbox: Boolean,
-    commitMessage: Update => CommitMsg,
+    commitMessage: Update.Single => CommitMsg,
     enabledByCache: RepoCache => Boolean,
     enabledByConfig: RepoConfig => Boolean,
     addToGitBlameIgnoreRevs: Boolean

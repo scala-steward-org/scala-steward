@@ -43,7 +43,8 @@ final class MillAlg[F[_]](implicit
     for {
       buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
       predef = buildRootDir / "scala-steward.sc"
-      extracted <- fileAlg.createTemporarily(predef, content).surround {
+      millBuildVersion <- getMillVersion(buildRootDir)
+      extracted <- fileAlg.createTemporarily(predef, content(millBuildVersion)).surround {
         val command = Nel("mill", List("-i", "-p", predef.toString, "show", extractDeps))
         processAlg.execSandboxed(command, buildRootDir)
       }
@@ -51,11 +52,14 @@ final class MillAlg[F[_]](implicit
         parser.parseModules(extracted.dropWhile(!_.startsWith("{")).mkString("\n"))
       )
       dependencies = parsed.map(module => Scope(module.dependencies, module.repositories))
-      millBuildVersion <- getMillVersion(buildRootDir)
       millBuildDeps = millBuildVersion.toSeq.map(version =>
         Scope(List(millMainArtifact(version)), List(millMainResolver))
       )
-    } yield dependencies ++ millBuildDeps
+      millPluginDeps <- millBuildVersion match {
+        case None        => F.pure(Seq.empty[Scope[List[Dependency]]])
+        case Some(value) => getMillPluginDeps(value, buildRootDir)
+      }
+    } yield dependencies ++ millBuildDeps ++ millPluginDeps
 
   override def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
     F.unit
@@ -65,20 +69,39 @@ final class MillAlg[F[_]](implicit
       millVersionFileContent <- fileAlg.readFile(buildRootDir / ".mill-version")
       version = millVersionFileContent.flatMap(parser.parseMillVersion)
     } yield version
+
+  private def getMillPluginDeps(
+      millVersion: Version,
+      buildRootDir: File
+  ): F[Seq[Scope[List[Dependency]]]] =
+    for {
+      buildConent <- fileAlg.readFile(buildRootDir / "build.sc")
+      deps = buildConent.toList.map(content =>
+        Scope(parser.parseMillPluginDeps(content, millVersion), List(millMainResolver))
+      )
+    } yield deps
 }
 
 object MillAlg {
-  private val content =
-    s"""|import coursierapi.MavenRepository
-        |
-        |interp.repositories() ++= Seq(
-        |  MavenRepository.of("https://oss.sonatype.org/content/repositories/snapshots/")
-        |)
-        |interp.load.ivy("${org.scalasteward.core.BuildInfo.organization}" %% "${org.scalasteward.core.BuildInfo.millPluginModuleName}" % "${org.scalasteward.core.BuildInfo.version}")
-        |""".stripMargin
+  private[mill] def content(millVersion: Option[Version]) = {
+    def rawContent(millBinPlatform: String) =
+      s"""|import $$ivy.`${org.scalasteward.core.BuildInfo.organization}::${org.scalasteward.core.BuildInfo.millPluginArtifactName}_mill${millBinPlatform}:${org.scalasteward.core.BuildInfo.millPluginVersion}`
+          |""".stripMargin
 
-  val extractDeps: String =
-    s"${org.scalasteward.core.BuildInfo.millPluginModuleRootPkg}.StewardPlugin/extractDeps"
+    millVersion match {
+      case None => rawContent("$MILL_BIN_PLATFORM")
+      case Some(millVersion) =>
+        millVersion.value.trim.split("[.]", 3).take(2) match {
+          // We support these platforms, but we can't take the $MILL_BIN_PLATFORM support for granted
+          case Array("0", "6")       => rawContent("0.6")
+          case Array("0", "7" | "8") => rawContent("0.7")
+          case Array("0", "9")       => rawContent("0.9")
+          case _                     => rawContent("$MILL_BIN_PLATFORM")
+        }
+    }
+  }
+
+  val extractDeps: String = "org.scalasteward.mill.plugin.StewardPlugin/extractDeps"
 
   private val millMainResolver: Resolver = Resolver.mavenCentral
   private val millMainGroupId = GroupId("com.lihaoyi")
@@ -87,7 +110,7 @@ object MillAlg {
   private def millMainArtifact(version: Version): Dependency =
     Dependency(millMainGroupId, millMainArtifactId, version)
 
-  def isMillMainUpdate(update: Update): Boolean =
+  def isMillMainUpdate(update: Update.Single): Boolean =
     update.groupId === millMainGroupId && update.artifactIds.exists(
       _.name === millMainArtifactId.name
     )

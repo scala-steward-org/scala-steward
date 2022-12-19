@@ -35,6 +35,7 @@ import org.scalasteward.core.util.{combineOptions, Nel}
 final case class UpdatesConfig(
     pin: List[UpdatePattern] = List.empty,
     allow: List[UpdatePattern] = List.empty,
+    allowPreReleases: List[UpdatePattern] = List.empty,
     ignore: List[UpdatePattern] = List.empty,
     limit: Option[NonNegInt] = None,
     fileExtensions: Option[List[String]] = None
@@ -42,10 +43,20 @@ final case class UpdatesConfig(
   def fileExtensionsOrDefault: Set[String] =
     fileExtensions.fold(UpdatesConfig.defaultFileExtensions)(_.toSet)
 
-  def keep(update: Update.Single): FilterResult =
+  def keep(update: Update.ForArtifactId): FilterResult =
     isAllowed(update).flatMap(isPinned).flatMap(isIgnored)
 
-  private def isAllowed(update: Update.Single): FilterResult = {
+  def preRelease(update: Update.ForArtifactId): FilterResult =
+    isAllowedPreReleases(update)
+
+  private def isAllowedPreReleases(update: Update.ForArtifactId): FilterResult = {
+    val m = UpdatePattern.findMatch(allowPreReleases, update, include = true)
+    if (m.filteredVersions.nonEmpty)
+      Right(update)
+    else Left(NotAllowedByConfig(update))
+  }
+
+  private def isAllowed(update: Update.ForArtifactId): FilterResult = {
     val m = UpdatePattern.findMatch(allow, update, include = true)
     if (m.filteredVersions.nonEmpty)
       Right(update.copy(newerVersions = Nel.fromListUnsafe(m.filteredVersions)))
@@ -54,7 +65,7 @@ final case class UpdatesConfig(
     else Left(NotAllowedByConfig(update))
   }
 
-  private def isPinned(update: Update.Single): FilterResult = {
+  private def isPinned(update: Update.ForArtifactId): FilterResult = {
     val m = UpdatePattern.findMatch(pin, update, include = true)
     if (m.filteredVersions.nonEmpty)
       Right(update.copy(newerVersions = Nel.fromListUnsafe(m.filteredVersions)))
@@ -63,7 +74,7 @@ final case class UpdatesConfig(
     else Left(VersionPinnedByConfig(update))
   }
 
-  private def isIgnored(update: Update.Single): FilterResult = {
+  private def isIgnored(update: Update.ForArtifactId): FilterResult = {
     val m = UpdatePattern.findMatch(ignore, update, include = false)
     if (m.filteredVersions.nonEmpty)
       Right(update.copy(newerVersions = Nel.fromListUnsafe(m.filteredVersions)))
@@ -92,6 +103,7 @@ object UpdatesConfig {
         UpdatesConfig(
           pin = mergePin(x.pin, y.pin),
           allow = mergeAllow(x.allow, y.allow),
+          allowPreReleases = mergeAllow(x.allowPreReleases, y.allowPreReleases),
           ignore = mergeIgnore(x.ignore, y.ignore),
           limit = x.limit.orElse(y.limit),
           fileExtensions = mergeFileExtensions(x.fileExtensions, y.fileExtensions)

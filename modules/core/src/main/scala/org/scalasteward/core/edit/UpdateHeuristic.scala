@@ -32,7 +32,7 @@ import scala.util.matching.Regex
   */
 final case class UpdateHeuristic(
     name: String,
-    replaceVersion: Update => String => Option[String]
+    replaceVersion: Update.Single => String => Option[String]
 )
 
 object UpdateHeuristic {
@@ -60,9 +60,9 @@ object UpdateHeuristic {
     raw"""(.*)(["|`]($ident)(?:"\s*%+\s*"|:+)($ident)(?:"\s*%\s*|:+))("?)($v)("|`)""".r
   }
 
-  private def replaceArtifactF(update: Update): String => Option[String] = { target =>
+  private def replaceArtifactF(update: Update.Single): String => Option[String] = { target =>
     update match {
-      case s @ Update.Single(_, _, Some(newerGroupId), Some(newerArtifactId)) =>
+      case s @ Update.ForArtifactId(_, _, Some(newerGroupId), Some(newerArtifactId)) =>
         val currentGroupId = Regex.quote(s.groupId.value)
         val currentArtifactId = Regex.quote(s.artifactId.name)
         val regex = s"""(?i)(.*)$currentGroupId(.*)$currentArtifactId""".r
@@ -80,20 +80,20 @@ object UpdateHeuristic {
   }
 
   private def defaultReplaceVersion(
-      getSearchTerms: Update => List[String],
-      getPrefixRegex: Update => Option[String] = _ => None
-  ): Update => String => Option[String] = {
+      getSearchTerms: Update.Single => List[String],
+      getPrefixRegex: Update.Single => Option[String] = _ => None
+  ): Update.Single => String => Option[String] = {
     def searchTermsToAlternation(terms: List[String]): Option[String] =
       Nel.fromList(terms.map(toFlexibleRegex).filterNot(_.isEmpty)).map(alternation(_))
 
-    def mkRegex(update: Update): Option[Regex] =
+    def mkRegex(update: Update.Single): Option[Regex] =
       searchTermsToAlternation(getSearchTerms(update).map(removeCommonSuffix)).map { searchTerms =>
         val prefix = getPrefixRegex(update).getOrElse("")
         val currentVersion = Regex.quote(update.currentVersion.value)
         s"(?i)(.*)($prefix$searchTerms.*?)$currentVersion(.?)".r
       }
 
-    def replaceVersionF(update: Update): String => Option[String] =
+    def replaceVersionF(update: Update.Single): String => Option[String] =
       mkRegex(update).fold((_: String) => Option.empty[String]) { regex => target =>
         replaceSomeInAllowedParts(
           regex,
@@ -124,10 +124,10 @@ object UpdateHeuristic {
       case _ => true
     }
 
-  private def searchTerms(update: Update): List[String] = {
+  private def searchTerms(update: Update.Single): List[String] = {
     val terms = update match {
-      case s: Update.Single => Nel.one(s.artifactId.name)
-      case g: Update.Group =>
+      case s: Update.ForArtifactId => Nel.one(s.artifactId.name)
+      case g: Update.ForGroupId =>
         g.artifactIds.map(_.name).concat(g.artifactIdsPrefix.map(_.value).toList)
     }
     terms.map(Update.nameOf(update.groupId, _)).toList
@@ -210,9 +210,9 @@ object UpdateHeuristic {
   val specific: UpdateHeuristic = UpdateHeuristic(
     name = "specific",
     replaceVersion = {
-      case update: Update.Single if isScalafmtUpdate(update) =>
+      case update: Update.ForArtifactId if isScalafmtUpdate(update) =>
         defaultReplaceVersion(_ => List("version"))(update)
-      case update: Update.Single if MillAlg.isMillMainUpdate(update) =>
+      case update: Update.ForArtifactId if MillAlg.isMillMainUpdate(update) =>
         // this is intended to update the `.mill-version`
         content =>
           Option.when(content.trim === update.currentVersion.value)(update.nextVersion.value)

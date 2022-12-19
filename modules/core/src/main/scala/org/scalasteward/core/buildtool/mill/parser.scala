@@ -19,6 +19,11 @@ package org.scalasteward.core.buildtool.mill
 import cats.syntax.all._
 import io.circe.{Decoder, DecodingFailure}
 import org.scalasteward.core.data.{Dependency, Resolver, Version}
+import cats.parse.Parser
+import cats.parse.Rfc5234.sp
+import org.scalasteward.core.data.GroupId
+import org.scalasteward.core.data.ArtifactId
+import scala.util.Try
 
 object parser {
   sealed trait ParseError extends RuntimeException {
@@ -43,6 +48,67 @@ object parser {
   def parseMillVersion(s: String): Option[Version] =
     Option(s.trim).filter(_.nonEmpty).map(Version.apply)
 
+  /**
+    * Used to correctly format the Mill plugin artifacts will when included look like:
+    * - import $ivy.`com.goyeau::mill-scalafix::0.2.10`
+    * However for the actual artifact if the user is on 0.10.x will look like:
+    * - mill-scalafix_mill0.10_.2.13
+    *
+    * @param artifactName name of the artifact parsed from the build file
+    * @param millVerion the current Mill version being used
+    * @return the newly put together ArtifactId
+    */
+  private def millPluginArtifact(artifactName: String, millVersion: Version): ArtifactId = {
+    def format(major: String, minor: String) = s"${major}.${minor}_2.13"
+    val millSuffix = millVersion.value.split('.') match {
+      // Basically for right now we only accept "0.9.12", which is when this syntax for Mill plugins
+      // was introduced, and all other pre v1 versions. Once it's for sure verified that v1 will also
+      // follow this pattern we can include that.
+      case Array(major, minor, patch) if major == "0" && minor == "9" && patch == "12" =>
+        format(major, minor)
+      case Array(major, minor, _) if major == "0" && Try(minor.toInt).map(_ > 9).getOrElse(false) =>
+        format(major, minor)
+      case _ => ""
+    }
+
+    ArtifactId(artifactName, Some(s"${artifactName}_mill${millSuffix}"))
+  }
+
+  def parseMillPluginDeps(s: String, millVersion: Version): List[Dependency] = {
+
+    val importParser = Parser.string("import")
+    val ivyParser = Parser.string("$ivy")
+    val backtickParser = Parser.char('`')
+    val doubleColonParser = Parser.string("::")
+    val dotParser = Parser.char('.')
+    val grabUntilColonParser = Parser.until(doubleColonParser)
+    val grabntilBacktickParser = Parser.until(backtickParser)
+
+    val parser =
+      (importParser ~
+        sp.rep ~
+        ivyParser ~
+        dotParser ~
+        backtickParser) *>
+        (grabUntilColonParser.string <*
+          doubleColonParser) ~
+        grabUntilColonParser.string ~
+        (doubleColonParser *>
+          grabntilBacktickParser.string <*
+          backtickParser)
+
+    val pluginDependencies = s
+      .split("\n")
+      .toList
+      .map { line =>
+        parser.parse(line)
+      }
+      .collect { case Right((_, ((org, artifact), version))) =>
+        Dependency(GroupId(org), millPluginArtifact(artifact, millVersion), Version(version))
+      }
+
+    pluginDependencies
+  }
 }
 
 case class Modules(modules: List[MillModule])
@@ -59,12 +125,14 @@ object MillModule {
         for {
           url <- c.downField("url").as[String]
           creds <- c.downField("auth").as[Option[Resolver.Credentials]]
-        } yield Resolver.MavenRepository(url, url, creds)
+          headers <- c.downField("headers").as[Option[List[Resolver.Header]]]
+        } yield Resolver.MavenRepository(url, url, creds, headers.getOrElse(Nil))
       case "ivy" =>
         for {
           url <- c.downField("pattern").as[String]
           creds <- c.downField("auth").as[Option[Resolver.Credentials]]
-        } yield Resolver.IvyRepository(url, url, creds)
+          headers <- c.downField("headers").as[Option[List[Resolver.Header]]]
+        } yield Resolver.IvyRepository(url, url, creds, headers.getOrElse(Nil))
       case typ => Left(DecodingFailure(s"Not a matching resolver type, $typ", c.history))
     }
   }

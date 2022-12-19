@@ -45,7 +45,7 @@ final class HookExecutor[F[_]](implicit
     workspaceAlg: WorkspaceAlg[F],
     F: MonadThrow[F]
 ) {
-  def execPostUpdateHooks(data: RepoData, update: Update): F[List[EditAttempt]] =
+  def execPostUpdateHooks(data: RepoData, update: Update.Single): F[List[EditAttempt]] =
     (HookExecutor.postUpdateHooks ++ data.config.postUpdateHooksOrDefault)
       .filter { hook =>
         hook.groupId.forall(update.groupId === _) &&
@@ -56,7 +56,11 @@ final class HookExecutor[F[_]](implicit
       .distinctBy(_.command)
       .traverse(execPostUpdateHook(data.repo, update, _))
 
-  private def execPostUpdateHook(repo: Repo, update: Update, hook: PostUpdateHook): F[EditAttempt] =
+  private def execPostUpdateHook(
+      repo: Repo,
+      update: Update.Single,
+      hook: PostUpdateHook
+  ): F[EditAttempt] =
     for {
       _ <- logger.info(
         s"Executing post-update hook for ${update.groupId}:${update.mainArtifactId} with command ${hook.showCommand}"
@@ -105,6 +109,7 @@ object HookExecutor {
     (GroupId("io.chrisdavenport"), ArtifactId("sbt-davenverse")),
     (GroupId("io.github.nafg.mergify"), ArtifactId("sbt-mergify-github-actions")),
     (GroupId("org.typelevel"), ArtifactId("sbt-typelevel-ci-release")),
+    (GroupId("org.typelevel"), ArtifactId("sbt-typelevel-github-actions")),
     (GroupId("org.typelevel"), ArtifactId("sbt-typelevel-mergify"))
   )
 

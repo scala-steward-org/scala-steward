@@ -60,11 +60,20 @@ object RepoConfigAlg {
   def parseRepoConfig(input: String): Either[io.circe.Error, RepoConfig] =
     parser.decode[RepoConfig](input)
 
-  def configToIgnoreFurtherUpdates(update: Update): String =
-    update match {
-      case s: Update.Single =>
-        s"""updates.ignore = [ { groupId = "${s.groupId}", artifactId = "${s.artifactId.name}" } ]"""
-      case g: Update.Group =>
-        s"""updates.ignore = [ { groupId = "${g.groupId}" } ]"""
+  def configToIgnoreFurtherUpdates(update: Update): String = {
+    val forUpdate: Update.Single => String = {
+      case s: Update.ForArtifactId =>
+        s"""{ groupId = "${s.groupId}", artifactId = "${s.artifactId.name}" }""".stripMargin
+      case g: Update.ForGroupId =>
+        s"""{ groupId = "${g.groupId}" }""".stripMargin
     }
+
+    update.on(
+      update = u => s"updates.ignore = [ ${forUpdate(u)} ]",
+      grouped = g =>
+        g.updates
+          .map("  " + forUpdate(_))
+          .mkString("updates.ignore = [\n", ",\n", "\n]")
+    )
+  }
 }
