@@ -31,7 +31,7 @@ In this example, Scala Steward will change `com.geirsson:sbt-scalafmt` to `org.s
 The fields `groupIdBefore` and `artifactIdBefore` are optional while `groupIdAfter` and `artifactIdAfter` are mandatory.
 If just `groupIdBefore` is specified, as in the example above, only the groupId will be changed.
 If just `artifactIdBefore` is specified, only the artifactId will be changed.
-Specifying both `groupIdBefore` and `artifactIdBefore` will change both.
+If `groupIdBefore` and `artifactIdBefore` are specified, both, groupId and artifactId, are changed.
 
 Pull requests that added artifact migrations can be found [here][migration-prs].
 
