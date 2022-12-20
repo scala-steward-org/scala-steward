@@ -39,7 +39,8 @@ accessible via the [github:][using-github], the [http:][using-http] or the
 After you have written a new migration rule for a new version of your project,
 Scala Steward needs to be made aware of it. Creating a pull request that adds
 the new rule to the list of [migrations][migrations] is enough for that. Once
-that pull request is merged, Scala Steward will start using this migration.
+that pull request is merged, all Scala Steward instances will start using this
+migration.
 
 When running Scala Steward you can also specify files or URLs (via the
 `--scalafix-migrations` command-line option) that contain additional
