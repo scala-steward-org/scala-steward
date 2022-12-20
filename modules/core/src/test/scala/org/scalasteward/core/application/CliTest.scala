@@ -195,4 +195,14 @@ class CliTest extends FunSuite {
   test("vcsTypeArgument: unknown value") {
     assert(clue(Cli.vcsTypeArgument.read("sourceforge")).isInvalid)
   }
+
+  test("azure-repos validation") {
+    val Error(error) = Cli.parseArgs(
+      (minimumRequiredParams ++ List(
+        List("--vcs-type", "azure-repos"),
+        List("--azure-repos-organization")
+      )).flatten
+    )
+    assert(error.startsWith("Missing value for option: --azure-repos-organization"))
+  }
 }
