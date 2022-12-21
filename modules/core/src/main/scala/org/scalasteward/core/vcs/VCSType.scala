@@ -26,6 +26,7 @@ sealed trait VCSType extends Product with Serializable {
   def publicWebHost: Option[String]
 
   val asString: String = this match {
+    case AzureRepos      => "azure-repos"
     case Bitbucket       => "bitbucket"
     case BitbucketServer => "bitbucket-server"
     case GitHub          => "github"
@@ -34,6 +35,10 @@ sealed trait VCSType extends Product with Serializable {
 }
 
 object VCSType {
+  case object AzureRepos extends VCSType {
+    override val publicWebHost: Option[String] = Some("dev.azure.com")
+  }
+
   case object Bitbucket extends VCSType {
     override val publicWebHost: Some[String] = Some("bitbucket.org")
     val publicApiBaseUrl = uri"https://api.bitbucket.org/2.0"
@@ -53,7 +58,7 @@ object VCSType {
     val publicApiBaseUrl = uri"https://gitlab.com/api/v4"
   }
 
-  val all = List(Bitbucket, BitbucketServer, GitHub, GitLab)
+  val all = List(AzureRepos, Bitbucket, BitbucketServer, GitHub, GitLab)
 
   def parse(s: String): Either[String, VCSType] =
     all.find(_.asString === s) match {

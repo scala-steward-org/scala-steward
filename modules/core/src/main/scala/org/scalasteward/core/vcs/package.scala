@@ -21,7 +21,7 @@ import org.http4s.Uri
 import org.scalasteward.core.data.ReleaseRelatedUrl.VersionDiff
 import org.scalasteward.core.data.{ReleaseRelatedUrl, Version}
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.vcs.VCSType.{Bitbucket, BitbucketServer, GitHub, GitLab}
+import org.scalasteward.core.vcs.VCSType.{AzureRepos, Bitbucket, BitbucketServer, GitHub, GitLab}
 import org.scalasteward.core.vcs.data.Repo
 
 package object vcs {
@@ -34,7 +34,7 @@ package object vcs {
       case GitHub =>
         s"${fork.owner}/${fork.repo}:${updateBranch.name}"
 
-      case GitLab | Bitbucket | BitbucketServer =>
+      case GitLab | Bitbucket | BitbucketServer | AzureRepos =>
         updateBranch.name
     }
 
@@ -46,7 +46,7 @@ package object vcs {
       case GitHub =>
         s"${fork.owner}:${updateBranch.name}"
 
-      case GitLab | Bitbucket | BitbucketServer =>
+      case GitLab | Bitbucket | BitbucketServer | AzureRepos =>
         updateBranch.name
     }
 
@@ -99,6 +99,13 @@ package object vcs {
         possibleTags(currentVersion).zip(possibleTags(nextVersion)).map { case (from1, to1) =>
           VersionDiff((repoUrl / "compare" / s"$to1..$from1").withFragment("diff"))
         }
+      case AzureRepos =>
+        possibleTags(currentVersion).zip(possibleTags(nextVersion)).map { case (from1, to1) =>
+          VersionDiff(
+            (repoUrl / "branchCompare")
+              .withQueryParams(Map("baseVersion" -> from1, "targetVersion" -> to1))
+          )
+        }
     }.orEmpty
 
   def possibleReleaseRelatedUrls(
@@ -119,15 +126,25 @@ package object vcs {
       .getOrElse(List.empty)
 
     def files(fileNames: List[String]): List[Uri] = {
-      val maybeSegments = repoVCSType.map {
-        case GitHub | GitLab             => List("blob", "master")
-        case Bitbucket | BitbucketServer => List("master")
+      val maybeSegments = repoVCSType.collect {
+        case GitHub | GitLab => List("blob", "master")
+        case Bitbucket       => List("master")
+        case BitbucketServer => List("browse")
       }
 
-      maybeSegments.toList.flatMap { segments =>
+      val repoFiles = maybeSegments.toList.flatMap { segments =>
         val base = segments.foldLeft(repoUrl)(_ / _)
         fileNames.map(name => base / name)
       }
+
+      val azureRepoFiles = repoVCSType
+        .collect { case AzureRepos =>
+          fileNames.map(name => repoUrl.withQueryParam("path", name))
+        }
+        .toList
+        .flatten
+
+      repoFiles ++ azureRepoFiles
     }
 
     val customChangelog = files(possibleChangelogFilenames).map(ReleaseRelatedUrl.CustomChangelog)

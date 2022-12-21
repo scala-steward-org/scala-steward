@@ -66,6 +66,7 @@ final case class Config(
     bitbucketCfg: BitbucketCfg,
     bitbucketServerCfg: BitbucketServerCfg,
     gitLabCfg: GitLabCfg,
+    azureReposConfig: AzureReposConfig,
     githubApp: Option[GitHubApp],
     urlCheckerTestUrls: Nel[Uri],
     defaultResolver: Resolver,
@@ -140,6 +141,10 @@ object Config {
   final case class GitLabCfg(
       mergeWhenPipelineSucceeds: Boolean,
       requiredReviewers: Option[Int]
+  )
+
+  final case class AzureReposConfig(
+      organization: Option[String]
   )
 
   sealed trait StewardUsage

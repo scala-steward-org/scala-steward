@@ -3,7 +3,7 @@
 </p>
 
 # Scala Steward
-[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/scala-steward-org/scala-steward/Continuous%20Integration)](https://github.com/scala-steward-org/scala-steward/actions?query=workflow%3A%22Continuous+Integration%22)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/scala-steward-org/scala-steward/ci.yml?branch=main)](https://github.com/scala-steward-org/scala-steward/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/scala-steward-org/scala-steward/branch/master/graph/badge.svg)](https://codecov.io/gh/scala-steward-org/scala-steward)
 [![Join the chat at https://gitter.im/scala-steward-org/scala-steward](https://badges.gitter.im/scala-steward-org/scala-steward.svg)](https://gitter.im/scala-steward-org/scala-steward?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Typelevel project](https://img.shields.io/badge/typelevel-project-blue.svg)](https://typelevel.org/projects/#scala-steward)
@@ -67,6 +67,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [Andrea Mistretta](https://github.com/andreami)
 * [Anil Kumar Myla](https://github.com/anilkumarmyla)
 * [Arjun Dhawan](https://github.com/arjun-1)
+* [Arnold Farkas](https://github.com/sapka12)
 * [Arulselvan Madhavan](https://github.com/ArulselvanMadhavan)
 * [Barry O'Neill](https://github.com/barryoneill)
 * [Bayram Kiran](https://github.com/kiranbayram)
@@ -132,6 +133,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [Rikito Taniguchi](https://github.com/tanishiking)
 * [Robert Stoll](https://github.com/robstoll)
 * [Roman Langolf](https://github.com/rolang)
+* [Robin Raju](https://github.com/robinraju)
 * [Scott Rice](https://github.com/scottrice10)
 * [solar](https://github.com/solar)
 * [Stanislav Chetvertkov](https://github.com/stanislav-chetvertkov)

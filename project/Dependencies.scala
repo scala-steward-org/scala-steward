@@ -14,9 +14,9 @@ object Dependencies {
   val circeParser = "io.circe" %% "circe-parser" % circeGeneric.revision
   val circeRefined = "io.circe" %% "circe-refined" % circeGeneric.revision
   val commonsIo = "commons-io" % "commons-io" % "2.11.0"
-  val coursierCore = "io.get-coursier" %% "coursier" % "2.1.0-RC3"
+  val coursierCore = "io.get-coursier" %% "coursier" % "2.1.0-RC3-1"
   val cron4sCore = "com.github.alonsodomin.cron4s" %% "cron4s-core" % "0.6.1"
-  val decline = "com.monovore" %% "decline" % "2.4.0"
+  val decline = "com.monovore" %% "decline" % "2.4.1"
   val disciplineMunit = "org.typelevel" %% "discipline-munit" % "1.0.9"
   val fs2Core = "co.fs2" %% "fs2-core" % "3.4.0"
   val fs2Io = "co.fs2" %% "fs2-io" % fs2Core.revision
@@ -24,7 +24,7 @@ object Dependencies {
   val http4sCirce = "org.http4s" %% "http4s-circe" % http4sCore.revision
   val http4sClient = "org.http4s" %% "http4s-client" % http4sCore.revision
   val http4sDsl = "org.http4s" %% "http4s-dsl" % http4sCore.revision
-  val http4sBlazeServer = "org.http4s" %% "http4s-blaze-server" % "1.0.0-M36"
+  val http4sBlazeServer = "org.http4s" %% "http4s-blaze-server" % "1.0.0-M37"
   val http4sOkhttpClient = "org.http4s" %% "http4s-okhttp-client" % "1.0.0-M32"
   val log4catsSlf4j = "org.typelevel" %% "log4cats-slf4j" % "2.5.0"
   val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.4.5"

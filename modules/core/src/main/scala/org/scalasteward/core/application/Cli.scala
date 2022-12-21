@@ -255,6 +255,15 @@ object Cli {
   private val gitHubApp: Opts[Option[GitHubApp]] =
     (githubAppId, githubAppKeyFile).mapN(GitHubApp.apply).orNone
 
+  private val azureReposOrganization: Opts[Option[String]] =
+    option[String](
+      "azure-repos-organization",
+      "The Azure organization (required when vcs type is azure-repos)"
+    ).orNone
+
+  private val azureReposConfig: Opts[AzureReposConfig] =
+    azureReposOrganization.map(AzureReposConfig.apply)
+
   private val refreshBackoffPeriod: Opts[FiniteDuration] = {
     val default = 0.days
     val help = "Period of time a failed build won't be triggered again" +
@@ -300,6 +309,7 @@ object Cli {
     bitbucketCfg,
     bitbucketServerCfg,
     gitLabCfg,
+    azureReposConfig,
     gitHubApp,
     urlCheckerTestUrls,
     defaultMavenRepo,
@@ -309,10 +319,10 @@ object Cli {
   val command: Command[StewardUsage] =
     Command("scala-steward", "")(
       validateConfigFile
-        .map(StewardUsage.ValidateRepoConfig(_))
+        .map(StewardUsage.ValidateRepoConfig)
         .orElse(
           configOpts
-            .map(StewardUsage.Regular(_))
+            .map(StewardUsage.Regular)
         )
     )
 
