@@ -34,7 +34,7 @@ final class UpdateAlg[F[_]](implicit
     versionsCache: VersionsCache[F],
     F: Monad[F]
 ) {
-  def findUpdate(
+  private def findUpdate(
       dependency: Scope[Dependency],
       maxAge: Option[FiniteDuration]
   ): F[Option[Update.ForArtifactId]] =
@@ -93,7 +93,7 @@ object UpdateAlg {
       update.artifactIds.contains_(dependency.artifactId)
     }
 
-  def migrateArtifactId(artifactId: ArtifactId, newName: String): ArtifactId =
+  private def migrateArtifactId(artifactId: ArtifactId, newName: String): ArtifactId =
     ArtifactId(newName, artifactId.maybeCrossName.map(_.replace(artifactId.name, newName)))
 
   def migrateDependency(dependency: Dependency, change: ArtifactChange): Dependency =
