@@ -39,7 +39,7 @@ docker run -v $STEWARD_DIR:/opt/scala-steward -it fthomas/scala-steward:latest \
 The [`git-ask-pass` option](https://git-scm.com/docs/gitcredentials) must specify an executable file (script) that returns (on the stdout),
 
 - either the plain text password corresponding to the configured `${LOGIN}`,
-- or (recommended) an authentication token corresponding to `${LOGIN}` (with appropriate permissions to watch the repositories; e.g. [Create a personal access token](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line) for GitHub).
+- or (recommended) an authentication token corresponding to `${LOGIN}` (with appropriate permissions to watch the repositories; e.g. [Create a personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) for GitHub).
 
 **Note about git-ask-pass option**: The provided script must start with a valid shebang like `#!/bin/sh`, see issue [#1374](@GITHUB_URL@/issues/1374)
 
@@ -75,7 +75,7 @@ If your projects require credentials, you can also provide global credentials in
 The file should contain a single line: `credentials += Credentials("Some Nexus Repository Manager", "my.artifact.repo.net", "admin", "admin123")`.
 
 #### sbt 0.13 workaround
-For sbt 0.13 builds, scala-steward [may be unable](https://gitter.im/fthomas/scala-steward?at=5f0573dac7d15f7d0f7b15ac) to extract credentials for private resolvers. Instead, you can [configure coursier directly](https://get-coursier.io/docs/other-credentials) by adding `~/.config/coursier/credentials.properties`:
+For sbt 0.13 builds, scala-steward [may be unable](https://gitter.im/scala-steward-org/scala-steward?at=5f0573dac7d15f7d0f7b15ac) to extract credentials for private resolvers. Instead, you can [configure coursier directly](https://get-coursier.io/docs/other-credentials) by adding `~/.config/coursier/credentials.properties`:
 ```scala
 example1.username=username
 example1.password=password
@@ -191,7 +191,6 @@ pipelines:
 There is multiple articles on how to run Scala Steward on-premise:
 
 * [Running Scala Steward On-premise](https://engineering.avast.io/running-scala-steward-on-premise)
-* [Running scala-steward periodically on AWS Fargate](https://medium.com/@tanishiking/running-scala-steward-periodically-on-aws-fargate-3d3d202f0f7)
 * [Scala StewardとGitHub Actionsで依存ライブラリの更新を自動化する](https://scalapedia.com/articles/145/Scala+Steward%E3%81%A8GitHub+Actions%E3%81%A7%E4%BE%9D%E5%AD%98%E3%83%A9%E3%82%A4%E3%83%96%E3%83%A9%E3%83%AA%E3%81%AE%E6%9B%B4%E6%96%B0%E3%82%92%E8%87%AA%E5%8B%95%E5%8C%96%E3%81%99%E3%82%8B)
 * [Centralized Scala Steward with GitHub Actions](https://hector.dev/2020/11/18/centralized-scala-steward-with-github-actions)
 * [Big Timesavers for Busy Scala Developers](https://speakerdeck.com/exoego/big-timesavers-for-busy-scala-developers)
