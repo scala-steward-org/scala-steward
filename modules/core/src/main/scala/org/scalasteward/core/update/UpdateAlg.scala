@@ -65,14 +65,14 @@ final class UpdateAlg[F[_]](implicit
   ): OptionT[F, Update.ForArtifactId] =
     OptionT.fromOption(artifactMigrationsFinder.findArtifactChange(dependency.value)).flatMap {
       artifactChange =>
-        findNewerVersions(dependency.map(migrateDependency(_, artifactChange)), maxAge).map {
-          newerVersions =>
-            Update.ForArtifactId(
-              CrossDependency(dependency.value),
-              newerVersions,
-              Some(artifactChange.groupIdAfter),
-              Some(artifactChange.artifactIdAfter)
-            )
+        val migratedDependency = migrateDependency(dependency.value, artifactChange)
+        findNewerVersions(dependency.as(migratedDependency), maxAge).map { newerVersions =>
+          Update.ForArtifactId(
+            CrossDependency(dependency.value),
+            newerVersions,
+            Some(artifactChange.groupIdAfter),
+            Some(artifactChange.artifactIdAfter)
+          )
         }
     }
 
