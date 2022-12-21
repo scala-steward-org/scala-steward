@@ -37,11 +37,12 @@ class SbtAlgTest extends FunSuite {
     val repo = Repo("typelevel", "cats")
     val buildRoot = BuildRoot(repo, ".")
     val repoDir = config.workspace / repo.toPath
-    val files = Map(repoDir / "project" / "build.properties" -> "sbt.version=1.2.6")
+    val files = Map(repoDir / "project" / "build.properties" -> "sbt.version=1.3.6")
     val initial = MockState.empty.copy(files = files)
     val state = sbtAlg.getDependencies(buildRoot).runS(initial).unsafeRunSync()
     val expected = initial.copy(
       trace = Vector(
+        Cmd("read", s"$repoDir/project/build.properties"),
         Cmd(
           repoDir.toString,
           "firejail",

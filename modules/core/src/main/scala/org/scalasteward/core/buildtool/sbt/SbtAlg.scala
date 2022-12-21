@@ -25,7 +25,7 @@ import org.scalasteward.core.buildtool.BuildToolAlg
 import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.buildtool.sbt.data.SbtVersion
 import org.scalasteward.core.coursier.VersionsCache
-import org.scalasteward.core.data.{Dependency, Scope}
+import org.scalasteward.core.data.{Dependency, Scope, Version}
 import org.scalasteward.core.edit.scalafix.{ScalafixCli, ScalafixMigration}
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
@@ -68,13 +68,20 @@ final class SbtAlg[F[_]](config: Config)(implicit
     } yield version
 
   override def getDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
-    for {
-      buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
-      commands = Nel.of(crossStewardDependencies, reloadPlugins, stewardDependencies)
-      lines <- sbt(commands, buildRootDir)
-      dependencies = parser.parseDependencies(lines)
-      additionalDependencies <- getAdditionalDependencies(buildRoot)
-    } yield additionalDependencies ::: dependencies
+    getSbtVersion(buildRoot).flatMap {
+      case Some(sbtVersion) if sbtVersion.toVersion < Version("1.3.0") =>
+        val msg = "Scala Steward cannot retrieve dependencies from builds that use sbt < 1.3.0," +
+          " see https://github.com/scala-steward-org/scala-steward/issues/2847 for details"
+        logger.error(msg).as(List.empty)
+      case _ =>
+        for {
+          buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
+          commands = Nel.of(crossStewardDependencies, reloadPlugins, stewardDependencies)
+          lines <- sbt(commands, buildRootDir)
+          dependencies = parser.parseDependencies(lines)
+          additionalDependencies <- getAdditionalDependencies(buildRoot)
+        } yield additionalDependencies ::: dependencies
+    }
 
   override def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
     migration.targetOrDefault match {

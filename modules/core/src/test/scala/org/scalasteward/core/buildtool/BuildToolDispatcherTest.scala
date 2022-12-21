@@ -21,7 +21,7 @@ class BuildToolDispatcherTest extends FunSuite {
     val repoDir = config.workspace / repo.toPath
     val initial = MockState.empty
       .addFiles(
-        repoDir / "project" / "build.properties" -> "sbt.version=1.2.6",
+        repoDir / "project" / "build.properties" -> "sbt.version=1.3.0",
         repoDir / scalafmtConfName -> "version=2.0.0"
       )
       .unsafeRunSync()
@@ -33,6 +33,7 @@ class BuildToolDispatcherTest extends FunSuite {
         Cmd("test", "-f", s"$repoDir/pom.xml"),
         Cmd("test", "-f", s"$repoDir/build.sc"),
         Cmd("test", "-f", s"$repoDir/build.sbt"),
+        Cmd("read", s"$repoDir/project/build.properties"),
         Cmd(
           repoDir.toString,
           "firejail",
@@ -56,7 +57,7 @@ class BuildToolDispatcherTest extends FunSuite {
     val expectedDeps = List(
       Scope(
         List(
-          sbt.sbtDependency(SbtVersion("1.2.6")).get,
+          sbt.sbtDependency(SbtVersion("1.3.0")).get,
           scalafmt.scalafmtDependency(Version("2.0.0"))
         ),
         List(Resolver.mavenCentral)
