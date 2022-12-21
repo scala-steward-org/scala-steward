@@ -12,8 +12,8 @@ jobs:
           fetch-depth: 0
       - uses: gaurav-nelson/github-action-markdown-link-check@v1
         with:
-          config-file: 'mlc_config.json'
           folder-path: 'docs' # comma separated
+          file-path: 'README.md,CODE_OF_CONDUCT.md' # comma separated
           max-depth: 2
           check-modified-files-only: ${{ github.ref_name == 'main' && 'no' || 'yes' }}
           base-branch: main
