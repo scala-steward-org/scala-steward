@@ -142,8 +142,8 @@ object Selector {
   private def removeCommonSuffix(str: String): String =
     util.string.removeSuffix(str, Update.commonSuffixes)
 
-  /** Removes punctuation from the input and returns it as regex that allows
-    * punctuation between characters.
+  /** Removes punctuation from the input and returns it as regex that allows punctuation between
+    * characters.
     */
   private def toFlexibleRegex(string: String): String = {
     val punctuation = List('.', '-', '_')
