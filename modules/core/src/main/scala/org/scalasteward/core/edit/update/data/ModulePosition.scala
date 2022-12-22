@@ -16,31 +16,11 @@
 
 package org.scalasteward.core.edit.update.data
 
-sealed trait ModulePosition extends Product with Serializable {
-  def groupId: Substring.Position
-  def artifactId: Substring.Position
-  def version: Substring.Position
-
-  final def unwrappedVersion: String =
+final case class ModulePosition(
+    groupId: Substring.Position,
+    artifactId: Substring.Position,
+    version: Substring.Position
+) {
+  def unwrappedVersion: String =
     version.value.dropWhile(Set('"', '$', '{')).reverse.dropWhile(Set('"', '}')).reverse
-}
-
-object ModulePosition {
-  final case class SbtDependency(
-      groupId: Substring.Position,
-      artifactId: Substring.Position,
-      version: Substring.Position
-  ) extends ModulePosition
-
-  final case class MillDependency(
-      groupId: Substring.Position,
-      artifactId: Substring.Position,
-      version: Substring.Position
-  ) extends ModulePosition
-
-  final case class MavenDependency(
-      groupId: Substring.Position,
-      artifactId: Substring.Position,
-      version: Substring.Position
-  ) extends ModulePosition
 }
