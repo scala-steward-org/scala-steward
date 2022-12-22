@@ -16,6 +16,13 @@
 
 package org.scalasteward.core.edit.update.data
 
+/** The positions of a groupId, artifactId, and version.
+  *
+  * The version is not necessarily the literal version string but could also be a reference to a
+  * variable. This class is used in [[org.scalasteward.core.edit.update.Selector]] to find the
+  * corresponding version position if a `val` is used for the version and to change the groupId
+  * and/or artifactId for artifact migrations.
+  */
 final case class ModulePosition(
     groupId: Substring.Position,
     artifactId: Substring.Position,

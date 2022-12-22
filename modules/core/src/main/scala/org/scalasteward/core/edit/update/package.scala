@@ -22,6 +22,9 @@ package object update {
   def isInside(index: Int, regions: List[(Int, Int)]): Boolean =
     regions.exists { case (start, end) => start <= index && index <= end }
 
+  /** Find index regions in the string `s` that are surrounded by scala-steward:off and
+    * scala-steward:on markers.
+    */
   def findOffRegions(s: String): List[(Int, Int)] = {
     var off = false
     var start = 0

@@ -19,6 +19,8 @@ package org.scalasteward.core.edit.update.data
 import scala.util.matching.Regex.Match
 
 object Substring {
+
+  /** The starting index (`start`) of a string (`value`) in a file (denoted by `path`). */
   final case class Position(path: String, start: Int, value: String) {
     def replaceWith(replacement: String): Replacement =
       Replacement(this, replacement)
@@ -31,6 +33,11 @@ object Substring {
     }
   }
 
+  /** A position paired with a replacement string.
+    *
+    * The purpose of this class is to be able to replace `position.value` by `replacement` if the
+    * content of `position.path` is given.
+    */
   final case class Replacement(position: Position, replacement: String)
 
   object Replacement {
