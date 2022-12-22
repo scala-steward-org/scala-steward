@@ -18,9 +18,8 @@ package org.scalasteward.core.edit.update.data
 
 /** A position of a version in a file.
   *
-  * The purpose of this trait is to be able classify different version positions (e.g. if they are
-  * part of a dependency definition or the right hand side of a `val`) and to retain some
-  * surrounding context.
+  * This trait is used to classify different version positions (e.g. if they are part of a
+  * dependency definition or the right hand side of a `val`) and to retain some surrounding context.
   *
   * The classification and context is used in [[org.scalasteward.core.edit.update.Selector]] to
   * decide if it should be updated or not.
