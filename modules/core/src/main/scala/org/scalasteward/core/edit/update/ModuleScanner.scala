@@ -21,7 +21,7 @@ import org.scalasteward.core.edit.update.data.{ModulePosition, Substring}
 import org.scalasteward.core.io.FileData
 import scala.util.matching.Regex
 
-/** Finds all [[ModulePosition]]s for a given [[Dependency]] in a file. */
+/** Finds all module positions for a given dependency in a file. */
 object ModuleScanner {
   def findPositions(dependency: Dependency, fileData: FileData): List[ModulePosition] = {
     val offRegions = findOffRegions(fileData.content)

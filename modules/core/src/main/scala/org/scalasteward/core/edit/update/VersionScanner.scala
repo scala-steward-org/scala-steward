@@ -22,7 +22,7 @@ import org.scalasteward.core.edit.update.data.{Substring, VersionPosition}
 import org.scalasteward.core.io.FileData
 import scala.util.matching.Regex
 
-/** Finds all [[VersionPosition]]s for a given [[Version]] in a file. */
+/** Finds all version positions for a given version in a file. */
 object VersionScanner {
   def findPositions(version: Version, fileData: FileData): List[VersionPosition] = {
     val offRegions = findOffRegions(fileData.content)

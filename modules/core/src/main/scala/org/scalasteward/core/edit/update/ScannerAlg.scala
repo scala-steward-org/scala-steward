@@ -26,7 +26,7 @@ import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
-/** Scans all suitable files for [[VersionPosition]]s and [[ModulePosition]]s. */
+/** Scans all files that Scala Steward is allowed to edit for version and module positions. */
 final class ScannerAlg[F[_]](implicit
     fileAlg: FileAlg[F],
     workspaceAlg: WorkspaceAlg[F],
