@@ -26,6 +26,7 @@ import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 
+/** Scans all suitable files for [[VersionPosition]]s and [[ModulePosition]]s. */
 final class ScannerAlg[F[_]](implicit
     fileAlg: FileAlg[F],
     workspaceAlg: WorkspaceAlg[F],

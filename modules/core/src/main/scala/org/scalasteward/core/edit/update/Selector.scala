@@ -29,6 +29,11 @@ import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 import scala.util.matching.Regex
 
+/** This object is responsible for selecting the "correct" version positions where the version
+  * should be updated and module positions where the groupId and/or artifactId should be updated in
+  * case of artifact migrations. These positions are then turned into [[Substring.Replacement]] that
+  * are used in [[org.scalasteward.core.edit.EditAlg]] to actually edit files in the repo.
+  */
 object Selector {
   def select(
       update: Update.Single,
