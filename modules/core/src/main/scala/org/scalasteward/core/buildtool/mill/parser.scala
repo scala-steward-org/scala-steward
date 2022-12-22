@@ -48,15 +48,18 @@ object parser {
   def parseMillVersion(s: String): Option[Version] =
     Option(s.trim).filter(_.nonEmpty).map(Version.apply)
 
-  /**
-    * Used to correctly format the Mill plugin artifacts will when included look like:
-    * - import $ivy.`com.goyeau::mill-scalafix::0.2.10`
-    * However for the actual artifact if the user is on 0.10.x will look like:
-    * - mill-scalafix_mill0.10_.2.13
+  /** Used to correctly format the Mill plugin artifacts will when included look like:
+    *   - import $ivy.`com.goyeau::mill-scalafix::0.2.10`
     *
-    * @param artifactName name of the artifact parsed from the build file
-    * @param millVerion the current Mill version being used
-    * @return the newly put together ArtifactId
+    * However for the actual artifact if the user is on 0.10.x will look like:
+    *   - mill-scalafix_mill0.10_.2.13
+    *
+    * @param artifactName
+    *   name of the artifact parsed from the build file
+    * @param millVerion
+    *   the current Mill version being used
+    * @return
+    *   the newly put together ArtifactId
     */
   private def millPluginArtifact(artifactName: String, millVersion: Version): ArtifactId = {
     def format(major: String, minor: String) = s"${major}.${minor}_2.13"
