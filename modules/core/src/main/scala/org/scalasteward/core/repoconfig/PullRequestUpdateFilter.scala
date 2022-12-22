@@ -30,8 +30,7 @@ final case class PullRequestUpdateFilter private (
     version: Option[SemVer.Change] = None
 ) {
 
-  /**
-    * Returns `true` if an update falls into this filter; returns `false` otherwise.
+  /** Returns `true` if an update falls into this filter; returns `false` otherwise.
     */
   def matches(update: Update.ForArtifactId): Boolean =
     groupRegex.forall(_.matches(update.groupId.value)) &&

@@ -45,9 +45,9 @@ object ClientConfiguration {
 
   private val RetryAfterStatuses = Set(403, 429, 503)
 
-  /**
-    * @param maxAttempts max number times the HTTP request should be sent
-    *                    useful to avoid unexpected cloud provider costs
+  /** @param maxAttempts
+    *   max number times the HTTP request should be sent useful to avoid unexpected cloud provider
+    *   costs
     */
   def retryAfter[F[_]: Temporal](maxAttempts: PosInt = 5): Middleware[F] = { client =>
     Client[F] { req =>

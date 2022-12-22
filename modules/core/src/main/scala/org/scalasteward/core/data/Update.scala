@@ -174,9 +174,8 @@ object Update {
     groups1.toList.distinct.sorted
   }
 
-  /**
-    * Processes the provided updates using the group configuration. Each update will only be present in the
-    * first group it falls into.
+  /** Processes the provided updates using the group configuration. Each update will only be present
+    * in the first group it falls into.
     *
     * Updates that do not fall into any group will be returned back in the second return parameter.
     */

@@ -31,20 +31,19 @@ package object util {
     buffer.append(elem)
   }
 
-  /** Binds the elements of `gfb` until the first `F[Boolean]` that
-    * evaluates to `true`.
+  /** Binds the elements of `gfb` until the first `F[Boolean]` that evaluates to `true`.
     *
-    * @example {{{
-    * scala> import cats.data.State
-    *
-    * scala> bindUntilTrue(Nel.of(
-    *      |   State((l: List[Int]) => (l :+ 1, false)),
-    *      |   State((l: List[Int]) => (l :+ 2, true )),
-    *      |   State((l: List[Int]) => (l :+ 3, false)),
-    *      |   State((l: List[Int]) => (l :+ 4, true ))
-    *      | )).runS(List(0)).value
-    * res1: List[Int] = List(0, 1, 2)
-    * }}}
+    * @example
+    *   {{{
+    *   scala> import cats.data.State
+    *   scala> bindUntilTrue(Nel.of(
+    *        |   State((l: List[Int]) => (l :+ 1, false)),
+    *        |   State((l: List[Int]) => (l :+ 2, true )),
+    *        |   State((l: List[Int]) => (l :+ 3, false)),
+    *        |   State((l: List[Int]) => (l :+ 4, true ))
+    *        | )).runS(List(0)).value
+    *   res1: List[Int] = List(0, 1, 2)
+    *   }}}
     */
   def bindUntilTrue[G[_]: Foldable, F[_]: Monad](gfb: G[F[Boolean]]): F[Boolean] =
     gfb.existsM(identity)
@@ -67,16 +66,17 @@ package object util {
   ): Boolean =
     fa.exists(a => ga.exists(b => a === b))
 
-  /** Adds a weight to each element and cuts the stream when the total
-    * weight is greater or equal to `limit`. `init` is the initial weight.
+  /** Adds a weight to each element and cuts the stream when the total weight is greater or equal to
+    * `limit`. `init` is the initial weight.
     *
-    * @example {{{
-    * scala> fs2.Stream.emits("Hello, world!").through(takeUntil(0, 3) {
-    *      |   case 'a' | 'e' | 'i' | 'o' | 'u' => 1
-    *      |   case _                           => 0
-    *      | }).toList.mkString
-    * res1: String = Hello, wo
-    * }}}
+    * @example
+    *   {{{
+    *   scala> fs2.Stream.emits("Hello, world!").through(takeUntil(0, 3) {
+    *        |   case 'a' | 'e' | 'i' | 'o' | 'u' => 1
+    *        |   case _                           => 0
+    *        | }).toList.mkString
+    *   res1: String = Hello, wo
+    *   }}}
     */
   def takeUntil[F[_], A, N](init: N, limit: N)(weight: A => N)(implicit
       N: Numeric[N]
@@ -88,8 +88,8 @@ package object util {
         .takeThrough { case (total, _) => N.lt(total, limit) }
         .map { case (_, a) => a }
 
-  /** A variant of `takeUntil` that takes an optional limit.
-    * This is the identity if `maybeLimit` is `None`.
+  /** A variant of `takeUntil` that takes an optional limit. This is the identity if `maybeLimit` is
+    * `None`.
     */
   def takeUntilMaybe[F[_], A, N](init: N, maybeLimit: Option[N])(weight: A => N)(implicit
       N: Numeric[N]

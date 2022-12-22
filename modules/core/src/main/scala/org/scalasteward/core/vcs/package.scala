@@ -38,8 +38,8 @@ package object vcs {
         updateBranch.name
     }
 
-  /** Determines the `head` (GitHub) / `source_branch` (GitLab, Bitbucket) parameter for creating
-    * a new pull requests.
+  /** Determines the `head` (GitHub) / `source_branch` (GitLab, Bitbucket) parameter for creating a
+    * new pull requests.
     */
   def createBranch(vcsType: VCSType, fork: Repo, updateBranch: Branch): String =
     vcsType match {
