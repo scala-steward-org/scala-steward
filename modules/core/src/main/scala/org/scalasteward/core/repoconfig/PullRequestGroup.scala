@@ -28,8 +28,7 @@ case class PullRequestGroup(
     filter: NonEmptyList[PullRequestUpdateFilter]
 ) {
 
-  /**
-    * Returns `true` if an update falls into this group; returns `false` otherwise.
+  /** Returns `true` if an update falls into this group; returns `false` otherwise.
     */
   def matches(update: Update.ForArtifactId): Boolean = filter.exists(_.matches(update))
 
