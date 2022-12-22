@@ -192,6 +192,7 @@ Consider creating PR to add your company to the list and join the community.
 * [Tupl](https://www.tupl.com)
 * [VirtusLab](https://virtuslab.com/)
 * [wehkamp](https://www.wehkamp.nl/)
+* [Wiringbits](https://wiringbits.net)
 * [Zalando](https://en.zalando.de/)
 
 ## Participation
