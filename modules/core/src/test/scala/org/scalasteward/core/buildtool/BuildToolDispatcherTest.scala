@@ -4,12 +4,12 @@ import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.buildtool.sbt.data.SbtVersion
-import org.scalasteward.core.data.{Resolver, Scope, Version}
+import org.scalasteward.core.data.{Dependency, Resolver, Scope, Version}
 import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context.buildToolDispatcher
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
-import org.scalasteward.core.repoconfig.RepoConfig
+import org.scalasteward.core.repoconfig.{BuildRootConfig, RepoConfig}
 import org.scalasteward.core.scalafmt
 import org.scalasteward.core.scalafmt.scalafmtConfName
 import org.scalasteward.core.vcs.data.Repo
@@ -17,11 +17,15 @@ import org.scalasteward.core.vcs.data.Repo
 class BuildToolDispatcherTest extends FunSuite {
   test("getDependencies") {
     val repo = Repo("build-tool-dispatcher", "test-1")
-    val repoConfig = RepoConfig.empty
+    val repoConfig = RepoConfig.empty.copy(buildRoots =
+      Some(List(BuildRootConfig("."), BuildRootConfig("mvn-build")))
+    )
     val repoDir = config.workspace / repo.toPath
     val initial = MockState.empty
       .addFiles(
+        repoDir / "mvn-build" / "pom.xml" -> "",
         repoDir / "project" / "build.properties" -> "sbt.version=1.2.6",
+        repoDir / "build.sbt" -> "",
         repoDir / scalafmtConfName -> "version=2.0.0"
       )
       .unsafeRunSync()
@@ -33,6 +37,9 @@ class BuildToolDispatcherTest extends FunSuite {
         Cmd("test", "-f", s"$repoDir/pom.xml"),
         Cmd("test", "-f", s"$repoDir/build.sc"),
         Cmd("test", "-f", s"$repoDir/build.sbt"),
+        Cmd("test", "-f", s"$repoDir/mvn-build/pom.xml"),
+        Cmd("test", "-f", s"$repoDir/mvn-build/build.sc"),
+        Cmd("test", "-f", s"$repoDir/mvn-build/build.sbt"),
         Log("Get dependencies in . from sbt"),
         Cmd("read", "classpath:org/scalasteward/sbt/plugin/StewardPlugin.scala"),
         Cmd("write", s"$repoDir/project/scala-steward-StewardPlugin.scala"),
@@ -53,7 +60,32 @@ class BuildToolDispatcherTest extends FunSuite {
         Cmd("read", s"$repoDir/project/build.properties"),
         Cmd("rm", "-rf", s"$repoDir/project/project/scala-steward-StewardPlugin.scala"),
         Cmd("rm", "-rf", s"$repoDir/project/scala-steward-StewardPlugin.scala"),
-        Cmd("read", s"$repoDir/$scalafmtConfName")
+        Cmd("read", s"$repoDir/$scalafmtConfName"),
+        Log("Get dependencies in mvn-build from Maven"),
+        Cmd(
+          s"$repoDir/mvn-build",
+          "firejail",
+          "--quiet",
+          s"--whitelist=$repoDir/mvn-build",
+          "--env=VAR1=val1",
+          "--env=VAR2=val2",
+          "mvn",
+          maven.args.batchMode,
+          maven.command.listDependencies,
+          maven.args.excludeTransitive
+        ),
+        Cmd(
+          s"$repoDir/mvn-build",
+          "firejail",
+          "--quiet",
+          s"--whitelist=$repoDir/mvn-build",
+          "--env=VAR1=val1",
+          "--env=VAR2=val2",
+          "mvn",
+          maven.args.batchMode,
+          maven.command.listRepositories
+        ),
+        Cmd("read", s"$repoDir/mvn-build/$scalafmtConfName")
       )
     )
 
@@ -66,7 +98,8 @@ class BuildToolDispatcherTest extends FunSuite {
           scalafmt.scalafmtDependency(Version("2.0.0"))
         ),
         List(Resolver.mavenCentral)
-      )
+      ),
+      Scope(List.empty[Dependency], Nil)
     )
     assertEquals(deps, expectedDeps)
   }
