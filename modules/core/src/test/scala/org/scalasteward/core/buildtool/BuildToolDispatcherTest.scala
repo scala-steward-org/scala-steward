@@ -25,7 +25,6 @@ class BuildToolDispatcherTest extends FunSuite {
       .addFiles(
         repoDir / "mvn-build" / "pom.xml" -> "",
         repoDir / "project" / "build.properties" -> "sbt.version=1.2.6",
-        repoDir / "build.sbt" -> "",
         repoDir / scalafmtConfName -> "version=2.0.0"
       )
       .unsafeRunSync()
