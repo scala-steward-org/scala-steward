@@ -32,8 +32,6 @@ trait FileAlg[F[_]] {
 
   def ensureExists(dir: File): F[File]
 
-  def home: F[File]
-
   def isDirectory(file: File): F[Boolean]
 
   def isRegularFile(file: File): F[Boolean]
@@ -57,6 +55,11 @@ trait FileAlg[F[_]] {
     val create = writeFile(file, content).onError(_ => delete)
     Resource.make(create)(_ => delete)
   }
+
+  final def createTemporarily[E](dir: File, data: FileData)(implicit
+      F: ApplicativeError[F, E]
+  ): Resource[F, Unit] =
+    createTemporarily(dir / data.name, data.content)
 
   final def editFile(file: File, edit: String => Option[String])(implicit
       F: MonadThrow[F]
@@ -98,9 +101,6 @@ object FileAlg {
           if (!dir.exists) dir.createDirectories()
           dir
         }
-
-      override def home: F[File] =
-        F.delay(File.home)
 
       override def isDirectory(file: File): F[Boolean] =
         F.blocking(file.isDirectory(File.LinkOptions.noFollow))

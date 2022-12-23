@@ -35,23 +35,24 @@ package object sbt {
     Option.when(version >= Version("1.0.0"))(Dependency(sbtGroupId, sbtArtifactId, version))
   }
 
-  val sbtScalaFixGroupId = GroupId("ch.epfl.scala")
-  val sbtScalaFixArtifactId = ArtifactId("sbt-scalafix")
+  val sbtScalafixGroupId: GroupId = GroupId("ch.epfl.scala")
 
-  val sbtScalaFixDependency: Dependency =
+  val sbtScalafixArtifactId: ArtifactId = ArtifactId("sbt-scalafix")
+
+  val sbtScalafixDependency: Dependency =
     Dependency(
-      sbtScalaFixGroupId,
-      sbtScalaFixArtifactId,
+      sbtScalafixGroupId,
+      sbtScalafixArtifactId,
       Version(""),
       Some(SbtVersion("1.0")),
       Some(ScalaVersion("2.12"))
     )
 
-  def scalaStewardScalafixSbt(version: String): FileData =
-    FileData(
-      "scala-steward-scalafix.sbt",
-      s"""addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "$version")"""
-    )
+  def scalaStewardSbtScalafix(version: Version): FileData = {
+    val content =
+      s"""addSbtPlugin("${sbtScalafixGroupId.value}" % "${sbtScalafixArtifactId.name}" % "$version")"""
+    FileData("scala-steward-sbt-scalafix.sbt", content)
+  }
 
   def scalaStewardScalafixOptions(scalacOptions: List[String]): FileData = {
     val args = scalacOptions.map(s => s""""$s"""").mkString(", ")
@@ -63,6 +64,6 @@ package object sbt {
     val name = "StewardPlugin.scala"
     fileAlg
       .readResource(s"${pkg.replace('.', '/')}/$name")
-      .map(FileData(name, _))
+      .map(FileData(s"scala-steward-$name", _))
   }
 }

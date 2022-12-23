@@ -1,6 +1,5 @@
 package org.scalasteward.core.buildtool.sbt
 
-import cats.data.Kleisli
 import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.buildtool.sbt.command._
@@ -9,30 +8,11 @@ import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.mock.MockConfig.{config, mockRoot}
 import org.scalasteward.core.mock.MockContext.context.sbtAlg
 import org.scalasteward.core.mock.MockState
-import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
+import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.{BuildRoot, Repo}
 
 class SbtAlgTest extends FunSuite {
-  test("addGlobalPlugins") {
-    val obtained = sbtAlg.addGlobalPlugins
-      .surround(Kleisli(_.update(_.exec(List("fa")))))
-      .runS(MockState.empty)
-      .unsafeRunSync()
-    val expected = MockState.empty.copy(
-      trace = Vector(
-        Log("Add global sbt plugins"),
-        Cmd("read", "classpath:org/scalasteward/sbt/plugin/StewardPlugin.scala"),
-        Cmd("write", s"$mockRoot/.sbt/0.13/plugins/StewardPlugin.scala"),
-        Cmd("write", s"$mockRoot/.sbt/1.0/plugins/StewardPlugin.scala"),
-        Cmd("fa"),
-        Cmd("rm", "-rf", s"$mockRoot/.sbt/1.0/plugins/StewardPlugin.scala"),
-        Cmd("rm", "-rf", s"$mockRoot/.sbt/0.13/plugins/StewardPlugin.scala")
-      )
-    )
-    assertEquals(obtained, expected)
-  }
-
   test("getDependencies") {
     val repo = Repo("typelevel", "cats")
     val buildRoot = BuildRoot(repo, ".")
@@ -42,6 +22,9 @@ class SbtAlgTest extends FunSuite {
     val state = sbtAlg.getDependencies(buildRoot).runS(initial).unsafeRunSync()
     val expected = initial.copy(
       trace = Vector(
+        Cmd("read", "classpath:org/scalasteward/sbt/plugin/StewardPlugin.scala"),
+        Cmd("write", s"$repoDir/project/scala-steward-StewardPlugin.scala"),
+        Cmd("write", s"$repoDir/project/project/scala-steward-StewardPlugin.scala"),
         Cmd(
           repoDir.toString,
           "firejail",
@@ -55,7 +38,9 @@ class SbtAlgTest extends FunSuite {
           "-Dsbt.supershell=false",
           s";$crossStewardDependencies;$reloadPlugins;$stewardDependencies"
         ),
-        Cmd("read", s"$repoDir/project/build.properties")
+        Cmd("read", s"$repoDir/project/build.properties"),
+        Cmd("rm", "-rf", s"$repoDir/project/project/scala-steward-StewardPlugin.scala"),
+        Cmd("rm", "-rf", s"$repoDir/project/scala-steward-StewardPlugin.scala")
       )
     )
     assertEquals(state, expected)
@@ -83,8 +68,7 @@ class SbtAlgTest extends FunSuite {
           "read",
           s"$mockRoot/workspace/store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json"
         ),
-        Cmd("write", s"$mockRoot/.sbt/0.13/plugins/scala-steward-scalafix.sbt"),
-        Cmd("write", s"$mockRoot/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
+        Cmd("write", s"$repoDir/project/scala-steward-sbt-scalafix.sbt"),
         Cmd(
           repoDir.toString,
           "firejail",
@@ -98,8 +82,7 @@ class SbtAlgTest extends FunSuite {
           "-Dsbt.supershell=false",
           s";$scalafixEnable;$scalafixAll github:functional-streams-for-scala/fs2/v1?sha=v1.0.5"
         ),
-        Cmd("rm", "-rf", s"$mockRoot/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
-        Cmd("rm", "-rf", s"$mockRoot/.sbt/0.13/plugins/scala-steward-scalafix.sbt")
+        Cmd("rm", "-rf", s"$repoDir/project/scala-steward-sbt-scalafix.sbt")
       )
     )
     assertEquals(state, expected)
@@ -128,8 +111,7 @@ class SbtAlgTest extends FunSuite {
           "read",
           s"$mockRoot/workspace/store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json"
         ),
-        Cmd("write", s"$mockRoot/.sbt/0.13/plugins/scala-steward-scalafix.sbt"),
-        Cmd("write", s"$mockRoot/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
+        Cmd("write", s"$repoDir/project/scala-steward-sbt-scalafix.sbt"),
         Cmd("write", s"$repoDir/scala-steward-scalafix-options.sbt"),
         Cmd(
           repoDir.toString,
@@ -145,14 +127,13 @@ class SbtAlgTest extends FunSuite {
           s";$scalafixEnable;$scalafixAll github:cb372/cats/Cats_v2_2_0?sha=235bd7c92e431ab1902db174cf4665b05e08f2f1"
         ),
         Cmd("rm", "-rf", s"$repoDir/scala-steward-scalafix-options.sbt"),
-        Cmd("rm", "-rf", s"$mockRoot/.sbt/1.0/plugins/scala-steward-scalafix.sbt"),
-        Cmd("rm", "-rf", s"$mockRoot/.sbt/0.13/plugins/scala-steward-scalafix.sbt")
+        Cmd("rm", "-rf", s"$repoDir/project/scala-steward-sbt-scalafix.sbt")
       )
     )
     assertEquals(state, expected)
   }
 
-  private val sbtScalafixVersionJson =
+  private def sbtScalafixVersionJson =
     s"""|{
         |  "updatedAt" : 9999999999999,
         |  "versions" : [
