@@ -39,30 +39,32 @@ final class RepoConfigAlg[F[_]](maybeGlobalRepoConfig: Option[RepoConfig])(impli
     for {
       repoDir <- workspaceAlg.repoDir(repo)
       configParsingResult <- readRepoConfigFromFile(repoDir / repoConfigBasename)
-      _ <- configParsingResult match {
-        case ConfigParsingResult.FileDoesNotExist =>
-          F.unit
-        case ConfigParsingResult.ConfigIsInvalid(error) =>
-          logger.info(s"Failed to parse $repoConfigBasename: ${error.getMessage}")
-        case ConfigParsingResult.Ok(repoConfig) =>
-          logger.info(s"Parsed repo config ${repoConfig.show}")
-      }
+      _ <- configParsingResult.fold(
+        F.unit,
+        error => logger.info(s"Failed to parse $repoConfigBasename: ${error.getMessage}"),
+        repoConfig => logger.info(s"Parsed repo config ${repoConfig.show}")
+      )
     } yield configParsingResult
 }
 
 object RepoConfigAlg {
   sealed trait ConfigParsingResult {
-    final def maybeRepoConfig: Option[RepoConfig] =
+    final def fold[A](
+        onFileDoesNotExist: => A,
+        onConfigIsInvalid: io.circe.Error => A,
+        onOk: RepoConfig => A
+    ): A =
       this match {
-        case ConfigParsingResult.Ok(repoConfig) => Some(repoConfig)
-        case _                                  => None
+        case ConfigParsingResult.FileDoesNotExist       => onFileDoesNotExist
+        case ConfigParsingResult.ConfigIsInvalid(error) => onConfigIsInvalid(error)
+        case ConfigParsingResult.Ok(repoConfig)         => onOk(repoConfig)
       }
 
+    final def maybeRepoConfig: Option[RepoConfig] =
+      fold(None, _ => None, Some.apply)
+
     final def maybeParsingError: Option[io.circe.Error] =
-      this match {
-        case ConfigParsingResult.ConfigIsInvalid(error) => Some(error)
-        case _                                          => None
-      }
+      fold(None, Some.apply, _ => None)
   }
 
   object ConfigParsingResult {
