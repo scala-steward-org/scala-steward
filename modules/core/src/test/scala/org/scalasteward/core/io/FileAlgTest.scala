@@ -51,18 +51,18 @@ class FileAlgTest extends FunSuite {
   }
 
   test("removeTemporarily: nonexistent file") {
-    val file = mockRoot / "does-not-exists.txt"
+    val file = mockRoot / "does-not-exist.txt"
     assertEquals(ioFileAlg.removeTemporarily(file).surround(IO.pure(42)).unsafeRunSync(), 42)
   }
 
   test("editFile: nonexistent file") {
-    val state = (for {
-      home <- fileAlg.home
-      _ <- fileAlg.editFile(home / "does-not-exists.txt", identity)
-    } yield ()).runS(MockState.empty).unsafeRunSync()
+    val state = fileAlg
+      .editFile(mockRoot / "does-not-exist.txt", identity)
+      .runS(MockState.empty)
+      .unsafeRunSync()
 
     val expected =
-      MockState.empty.copy(trace = Vector(Cmd("read", s"$mockRoot/does-not-exists.txt")))
+      MockState.empty.copy(trace = Vector(Cmd("read", s"$mockRoot/does-not-exist.txt")))
     assertEquals(state, expected)
   }
 

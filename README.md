@@ -63,6 +63,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [Alessandro Buggin](https://github.com/abuggin)
 * [Alex](https://github.com/jhnsmth)
 * [Alex Klibisz](https://github.com/alexklibisz)
+* [Alexis Hernandez](https://github.com/AlexITC)
 * [Andrea](https://github.com/Andrea)
 * [Andrea Mistretta](https://github.com/andreami)
 * [Anil Kumar Myla](https://github.com/anilkumarmyla)
@@ -192,6 +193,7 @@ Consider creating PR to add your company to the list and join the community.
 * [Tupl](https://www.tupl.com)
 * [VirtusLab](https://virtuslab.com/)
 * [wehkamp](https://www.wehkamp.nl/)
+* [Wiringbits](https://wiringbits.net)
 * [Zalando](https://en.zalando.de/)
 
 ## Participation

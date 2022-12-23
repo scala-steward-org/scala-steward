@@ -33,6 +33,9 @@ class BuildToolDispatcherTest extends FunSuite {
         Cmd("test", "-f", s"$repoDir/pom.xml"),
         Cmd("test", "-f", s"$repoDir/build.sc"),
         Cmd("test", "-f", s"$repoDir/build.sbt"),
+        Cmd("read", "classpath:org/scalasteward/sbt/plugin/StewardPlugin.scala"),
+        Cmd("write", s"$repoDir/project/scala-steward-StewardPlugin.scala"),
+        Cmd("write", s"$repoDir/project/project/scala-steward-StewardPlugin.scala"),
         Cmd(
           repoDir.toString,
           "firejail",
@@ -47,6 +50,8 @@ class BuildToolDispatcherTest extends FunSuite {
           s";$crossStewardDependencies;$reloadPlugins;$stewardDependencies"
         ),
         Cmd("read", s"$repoDir/project/build.properties"),
+        Cmd("rm", "-rf", s"$repoDir/project/project/scala-steward-StewardPlugin.scala"),
+        Cmd("rm", "-rf", s"$repoDir/project/scala-steward-StewardPlugin.scala"),
         Cmd("read", s"$repoDir/$scalafmtConfName")
       )
     )
