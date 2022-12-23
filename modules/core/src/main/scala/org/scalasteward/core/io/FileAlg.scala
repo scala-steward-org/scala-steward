@@ -32,8 +32,6 @@ trait FileAlg[F[_]] {
 
   def ensureExists(dir: File): F[File]
 
-  def home: F[File]
-
   def isDirectory(file: File): F[Boolean]
 
   def isRegularFile(file: File): F[Boolean]
@@ -98,9 +96,6 @@ object FileAlg {
           if (!dir.exists) dir.createDirectories()
           dir
         }
-
-      override def home: F[File] =
-        F.delay(File.home)
 
       override def isDirectory(file: File): F[Boolean] =
         F.blocking(file.isDirectory(File.LinkOptions.noFollow))
