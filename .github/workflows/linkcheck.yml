@@ -1,6 +1,10 @@
 name: Link checker
 
-on: push
+on:
+  pull_request:
+    # On every pull request
+  schedule:
+    - cron: '00 0 * * 1' # Every monday
 
 jobs:
   link-check:
