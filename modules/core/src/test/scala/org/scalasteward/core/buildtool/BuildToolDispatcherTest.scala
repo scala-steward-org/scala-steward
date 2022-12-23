@@ -8,7 +8,7 @@ import org.scalasteward.core.data.{Resolver, Scope, Version}
 import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context.buildToolDispatcher
 import org.scalasteward.core.mock.MockState
-import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
+import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafmt
 import org.scalasteward.core.scalafmt.scalafmtConfName
@@ -33,6 +33,7 @@ class BuildToolDispatcherTest extends FunSuite {
         Cmd("test", "-f", s"$repoDir/pom.xml"),
         Cmd("test", "-f", s"$repoDir/build.sc"),
         Cmd("test", "-f", s"$repoDir/build.sbt"),
+        Log("Get dependencies in . from sbt"),
         Cmd("read", "classpath:org/scalasteward/sbt/plugin/StewardPlugin.scala"),
         Cmd("write", s"$repoDir/project/scala-steward-StewardPlugin.scala"),
         Cmd("write", s"$repoDir/project/project/scala-steward-StewardPlugin.scala"),
