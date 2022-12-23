@@ -1,5 +1,6 @@
 package org.scalasteward.core.repoconfig
 
+import cats.data.NonEmptyList
 import cats.effect.unsafe.implicits.global
 import cats.syntax.all._
 import eu.timepit.refined.types.numeric.NonNegInt
@@ -11,15 +12,14 @@ import org.scalasteward.core.mock.MockState.TraceEntry.Log
 import org.scalasteward.core.mock.{MockConfig, MockState}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
-
 import scala.concurrent.duration._
-import cats.data.NonEmptyList
 
 class RepoConfigAlgTest extends FunSuite {
   test("default config is not empty") {
     val config = repoConfigAlg
       .readRepoConfig(Repo("repo-config-alg", "test-1"))
-      .map(c => repoConfigAlg.mergeWithGlobal(c.flatMap(_.toOption)))
+      .map(_.maybeRepoConfig)
+      .map(repoConfigAlg.mergeWithGlobal)
       .runA(MockState.empty)
       .unsafeRunSync()
 
@@ -58,9 +58,9 @@ class RepoConfigAlgTest extends FunSuite {
          |buildRoots = [ ".", "subfolder/subfolder" ]
          |""".stripMargin
     val initialState = MockState.empty.addFiles(configFile -> content).unsafeRunSync()
-    val config = repoConfigAlg
+    val obtained = repoConfigAlg
       .readRepoConfig(repo)
-      .map(_.getOrElse(Right(RepoConfig.empty)))
+      .map(_.maybeRepoConfig.getOrElse(RepoConfig.empty))
       .runA(initialState)
       .unsafeRunSync()
 
@@ -161,7 +161,7 @@ class RepoConfigAlgTest extends FunSuite {
         )
       )
     )
-    assertEquals(config, Right(expected))
+    assertEquals(obtained, expected)
   }
 
   test("config with 'updatePullRequests = false'") {
@@ -253,10 +253,8 @@ class RepoConfigAlgTest extends FunSuite {
     val (state, config) = repoConfigAlg.readRepoConfig(repo).runSA(initialState).unsafeRunSync()
 
     val startOfErrorMsg = "String: 1: List should have ]"
-    val expectedErrorMsg = Some(Left(startOfErrorMsg))
-    val obtainedConfig = config.map(_.leftMap(_.getMessage.take(startOfErrorMsg.length)))
-
-    assertEquals(obtainedConfig, expectedErrorMsg)
+    val obtainedErrorMsg = config.maybeParsingError.map(_.getMessage.take(startOfErrorMsg.length))
+    assertEquals(obtainedErrorMsg, Some(startOfErrorMsg))
 
     val log = state.trace.collectFirst { case Log((_, msg)) => msg }.getOrElse("")
     assert(clue(log).contains(startOfErrorMsg))
