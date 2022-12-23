@@ -69,8 +69,8 @@ final class SbtAlg[F[_]](config: Config)(implicit
     for {
       buildRootDir <- Resource.eval(workspaceAlg.buildRootDir(buildRoot))
       plugin <- Resource.eval(stewardPlugin[F])
-      _ <- fileAlg.createTemporarily(buildRootDir / project / plugin.name, plugin.content)
-      _ <- fileAlg.createTemporarily(buildRootDir / project / project / plugin.name, plugin.content)
+      _ <- fileAlg.createTemporarily(buildRootDir / project, plugin)
+      _ <- fileAlg.createTemporarily(buildRootDir / project / project, plugin)
     } yield ()
 
   override def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
@@ -83,10 +83,10 @@ final class SbtAlg[F[_]](config: Config)(implicit
     OptionT(latestSbtScalafixVersion).foreachF { pluginVersion =>
       workspaceAlg.buildRootDir(buildRoot).flatMap { buildRootDir =>
         val plugin = scalaStewardSbtScalafix(pluginVersion)
-        fileAlg.createTemporarily(buildRootDir / project / plugin.name, plugin.content).surround {
+        fileAlg.createTemporarily(buildRootDir / project, plugin).surround {
           val withScalacOptions = migration.scalacOptions.fold(Resource.unit[F]) { opts =>
             val options = scalaStewardScalafixOptions(opts.toList)
-            fileAlg.createTemporarily(buildRootDir / options.name, options.content)
+            fileAlg.createTemporarily(buildRootDir, options)
           }
           val scalafixCmds = migration.rewriteRules.map(rule => s"$scalafixAll $rule").toList
           withScalacOptions.surround(sbt(Nel(scalafixEnable, scalafixCmds), buildRootDir).void)
