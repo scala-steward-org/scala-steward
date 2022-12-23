@@ -21,6 +21,8 @@ import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.vcs.data.BuildRoot
 
 trait BuildToolAlg[F[_]] {
+  def name: String
+
   def containsBuild(buildRoot: BuildRoot): F[Boolean]
 
   def getDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]]

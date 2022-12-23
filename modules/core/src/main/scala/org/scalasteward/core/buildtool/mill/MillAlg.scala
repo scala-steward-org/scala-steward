@@ -36,6 +36,8 @@ final class MillAlg[F[_]](implicit
     workspaceAlg: WorkspaceAlg[F],
     F: MonadCancelThrow[F]
 ) extends BuildToolAlg[F] {
+  override def name: String = "Mill"
+
   override def containsBuild(buildRoot: BuildRoot): F[Boolean] =
     workspaceAlg
       .buildRootDir(buildRoot)

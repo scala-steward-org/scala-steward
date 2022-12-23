@@ -26,8 +26,10 @@ import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.vcs.data.{BuildRoot, Repo}
+import org.typelevel.log4cats.Logger
 
 final class BuildToolDispatcher[F[_]](implicit
+    logger: Logger[F],
     mavenAlg: MavenAlg[F],
     millAlg: MillAlg[F],
     sbtAlg: SbtAlg[F],
@@ -37,7 +39,10 @@ final class BuildToolDispatcher[F[_]](implicit
   def getDependencies(repo: Repo, repoConfig: RepoConfig): F[List[Scope.Dependencies]] =
     getBuildRootsAndTools(repo, repoConfig).flatMap(_.flatTraverse { case (buildRoot, buildTools) =>
       for {
-        dependencies <- buildTools.flatTraverse(_.getDependencies(buildRoot))
+        dependencies <- buildTools.flatTraverse { buildTool =>
+          logger.info(s"Get dependencies in ${buildRoot.relativePath} from ${buildTool.name}") >>
+            buildTool.getDependencies(buildRoot)
+        }
         maybeScalafmtDependency <- scalafmtAlg.getScopedScalafmtDependency(buildRoot)
       } yield Scope.combineByResolvers(maybeScalafmtDependency.toList ::: dependencies)
     })
