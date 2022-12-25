@@ -40,7 +40,7 @@ final class MavenAlg[F[_]](config: Config)(implicit
   override def containsBuild(buildRoot: BuildRoot): F[Boolean] =
     workspaceAlg
       .buildRootDir(buildRoot)
-      .flatMap(buildRootDir => fileAlg.isRegularFile(buildRootDir / "pom.xml"))
+      .flatMap(buildRootDir => fileAlg.isRegularFile(buildRootDir / pomXmlName))
 
   override def getDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
     for {

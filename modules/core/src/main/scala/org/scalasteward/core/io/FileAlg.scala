@@ -59,7 +59,7 @@ trait FileAlg[F[_]] {
   final def createTemporarily[E](dir: File, data: FileData)(implicit
       F: ApplicativeError[F, E]
   ): Resource[F, Unit] =
-    createTemporarily(dir / data.name, data.content)
+    createTemporarily(dir / data.path, data.content)
 
   final def editFile(file: File, edit: String => Option[String])(implicit
       F: MonadThrow[F]

@@ -52,7 +52,7 @@ final class SbtAlg[F[_]](config: Config)(implicit
   private def getSbtVersion(buildRoot: BuildRoot): F[Option[SbtVersion]] =
     for {
       buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
-      maybeProperties <- fileAlg.readFile(buildRootDir / project / "build.properties")
+      maybeProperties <- fileAlg.readFile(buildRootDir / project / buildPropertiesName)
       version = maybeProperties.flatMap(parser.parseBuildProperties)
     } yield version
 

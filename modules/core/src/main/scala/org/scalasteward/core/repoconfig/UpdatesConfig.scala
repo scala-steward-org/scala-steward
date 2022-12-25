@@ -23,6 +23,7 @@ import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 import io.circe.refined._
 import io.circe.{Codec, Decoder}
+import org.scalasteward.core.buildtool.maven.pomXmlName
 import org.scalasteward.core.data.{GroupId, Update}
 import org.scalasteward.core.update.FilterAlg.{
   FilterResult,
@@ -85,7 +86,14 @@ final case class UpdatesConfig(
 
 object UpdatesConfig {
   val defaultFileExtensions: Set[String] =
-    Set(".scala", ".sbt", ".sbt.shared", ".sc", ".yml", "pom.xml")
+    Set(
+      ".scala",
+      ".sbt",
+      ".sbt.shared",
+      ".sc",
+      ".yml",
+      pomXmlName
+    )
 
   implicit val updatesConfigEq: Eq[UpdatesConfig] =
     Eq.fromUniversalEquals
