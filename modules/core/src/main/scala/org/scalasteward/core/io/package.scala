@@ -19,9 +19,10 @@ package org.scalasteward.core
 import better.files.File
 import cats.syntax.all._
 import org.scalasteward.core.buildtool.mill.MillAlg
-import org.scalasteward.core.buildtool.sbt.{sbtArtifactId, sbtGroupId}
+import org.scalasteward.core.buildtool.mill.MillAlg.millVersionName
+import org.scalasteward.core.buildtool.sbt.{buildPropertiesName, isSbtUpdate}
 import org.scalasteward.core.data.Update
-import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtConfName, scalafmtGroupId}
+import org.scalasteward.core.scalafmt.{isScalafmtCoreUpdate, scalafmtConfName}
 
 package object io {
   def isSourceFile(update: Update.Single, fileExtensions: Set[String])(file: File): Boolean = {
@@ -33,20 +34,12 @@ package object io {
       file: File
   ): Boolean =
     () match {
-      case _ if isSbtUpdate(update)              => file.name === "build.properties"
+      case _ if isSbtUpdate(update)              => file.name === buildPropertiesName
       case _ if isScalafmtCoreUpdate(update)     => file.name === scalafmtConfName
-      case _ if MillAlg.isMillMainUpdate(update) => file.name === ".mill-version"
+      case _ if MillAlg.isMillMainUpdate(update) => file.name === millVersionName
       case _                                     => isGenericSourceFile(file, fileExtensions)
     }
 
   private def isGenericSourceFile(file: File, fileExtensions: Set[String]): Boolean =
     fileExtensions.exists(file.name.endsWith)
-
-  private def isSbtUpdate(update: Update.Single): Boolean =
-    update.groupId === sbtGroupId &&
-      update.artifactIds.exists(_.name === sbtArtifactId.name)
-
-  private def isScalafmtCoreUpdate(update: Update.Single): Boolean =
-    update.groupId === scalafmtGroupId &&
-      update.artifactIds.exists(_.name === scalafmtArtifactId.name)
 }

@@ -22,5 +22,6 @@ object command {
 }
 
 object args {
+  val batchMode = "--batch-mode"
   val excludeTransitive = "-DexcludeTransitive=true"
 }

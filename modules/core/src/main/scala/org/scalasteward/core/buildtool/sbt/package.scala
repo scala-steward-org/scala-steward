@@ -19,7 +19,7 @@ package org.scalasteward.core.buildtool
 import cats.Functor
 import cats.syntax.all._
 import org.scalasteward.core.buildtool.sbt.data.{SbtVersion, ScalaVersion}
-import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId, Version}
+import org.scalasteward.core.data._
 import org.scalasteward.core.io.{FileAlg, FileData}
 
 package object sbt {
@@ -29,6 +29,12 @@ package object sbt {
   val sbtGroupId: GroupId = GroupId("org.scala-sbt")
 
   val sbtArtifactId: ArtifactId = ArtifactId("sbt")
+
+  val buildPropertiesName = "build.properties"
+
+  def isSbtUpdate(update: Update.Single): Boolean =
+    update.groupId === sbtGroupId &&
+      update.artifactIds.exists(_.name === sbtArtifactId.name)
 
   def sbtDependency(sbtVersion: SbtVersion): Option[Dependency] = {
     val version = sbtVersion.toVersion

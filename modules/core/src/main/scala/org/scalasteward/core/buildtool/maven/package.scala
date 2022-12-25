@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.io
+package org.scalasteward.core.buildtool
 
-final case class FileData(
-    path: String,
-    content: String
-)
+package object maven {
+  val pomXmlName = "pom.xml"
+}
