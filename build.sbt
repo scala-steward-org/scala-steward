@@ -245,7 +245,8 @@ lazy val `sbt-plugin` = myCrossProject("sbt-plugin")
   .settings(noPublishSettings)
   .settings(
     scalaVersion := Scala212,
-    sbtPlugin := true
+    sbtPlugin := true,
+    pluginCrossBuild / sbtVersion := "1.3.10"
   )
 
 /// settings
