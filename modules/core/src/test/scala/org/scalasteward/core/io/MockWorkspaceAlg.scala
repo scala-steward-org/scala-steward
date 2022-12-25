@@ -16,5 +16,5 @@ class MockWorkspaceAlg extends WorkspaceAlg[MockEff] {
     rootDir.map(_ / repo.owner / repo.repo)
 
   override def buildRootDir(buildRoot: BuildRoot): MockEff[File] =
-    repoDir(buildRoot.repo)
+    repoDir(buildRoot.repo).map(_ / buildRoot.relativePath)
 }

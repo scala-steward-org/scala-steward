@@ -39,6 +39,8 @@ final class SbtAlg[F[_]](config: Config)(implicit
     versionsCache: VersionsCache[F],
     F: Concurrent[F]
 ) extends BuildToolAlg[F] {
+  override def name: String = "sbt"
+
   private def getSbtDependency(buildRoot: BuildRoot): F[Option[Dependency]] =
     OptionT(getSbtVersion(buildRoot)).subflatMap(sbtDependency).value
 
