@@ -99,9 +99,9 @@ final class EditAlg[F[_]](implicit
   ): F[EditAttempt] =
     for {
       _ <- logger.info(s"Running migration $migration")
-      result <- logger.attemptWarn.log("Scalafix migration failed")(
+      result <- logger.attemptWarn.log("Scalafix migration failed") {
         buildToolDispatcher.runMigration(repo, config, migration)
-      )
+      }
       maybeCommit <- gitAlg.commitAllIfDirty(repo, migration.commitMessage(result))
     } yield ScalafixEdit(migration, result, maybeCommit)
 

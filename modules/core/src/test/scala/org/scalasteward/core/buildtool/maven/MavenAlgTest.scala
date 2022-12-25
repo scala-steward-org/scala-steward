@@ -24,7 +24,7 @@ class MavenAlgTest extends FunSuite {
           "--env=VAR1=val1",
           "--env=VAR2=val2",
           "mvn",
-          "--batch-mode",
+          args.batchMode,
           command.listDependencies,
           args.excludeTransitive
         ),
@@ -36,7 +36,7 @@ class MavenAlgTest extends FunSuite {
           "--env=VAR1=val1",
           "--env=VAR2=val2",
           "mvn",
-          "--batch-mode",
+          args.batchMode,
           command.listRepositories
         )
       )
