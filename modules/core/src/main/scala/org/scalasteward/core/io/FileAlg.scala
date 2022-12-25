@@ -66,19 +66,16 @@ trait FileAlg[F[_]] {
       .flatMap(_.fold(F.unit)(content => writeFile(file, edit(content))))
       .adaptError { case t => new Throwable(s"failed to edit $file", t) }
 
-  final def findFiles[A](
+  final def findFiles[A, B](
       dir: File,
       fileFilter: File => Option[A],
-      contentFilter: String => Boolean
-  )(implicit F: Applicative[F]): Stream[F, (A, String)] =
-    walk(dir)
-      .evalFilter(isRegularFile)
-      .evalMapFilter { file =>
-        fileFilter(file) match {
-          case Some(a) => readFile(file).map(_.filter(contentFilter).map(a -> _))
-          case None    => F.pure(Option.empty[(A, String)])
-        }
+      contentFilter: String => Option[B]
+  )(implicit F: Applicative[F]): Stream[F, (A, B)] =
+    walk(dir).evalFilter(isRegularFile).evalMapFilter { file =>
+      fileFilter(file).fold(Option.empty[(A, B)].pure[F]) { a =>
+        readFile(file).map(_.flatMap(contentFilter).map(b => (a, b)))
       }
+    }
 }
 
 object FileAlg {

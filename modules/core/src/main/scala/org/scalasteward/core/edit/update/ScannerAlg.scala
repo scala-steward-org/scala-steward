@@ -69,6 +69,7 @@ final class ScannerAlg[F[_]](implicit
           config.updates.fileExtensionsOrDefault.exists(path.endsWith)
         Option.when(cond)(path)
       }
-      fileAlg.findFiles(repoDir, fileFilter, _.contains(string)).map(FileData.tupled)
+      val contentFilter = (content: String) => Some(content).filter(_.contains(string))
+      fileAlg.findFiles(repoDir, fileFilter, contentFilter).map(FileData.tupled)
     }
 }
