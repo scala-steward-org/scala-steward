@@ -35,6 +35,8 @@ final class MavenAlg[F[_]](config: Config)(implicit
     workspaceAlg: WorkspaceAlg[F],
     F: MonadCancelThrow[F]
 ) extends BuildToolAlg[F] {
+  override def name: String = "Maven"
+
   override def containsBuild(buildRoot: BuildRoot): F[Boolean] =
     workspaceAlg
       .buildRootDir(buildRoot)
