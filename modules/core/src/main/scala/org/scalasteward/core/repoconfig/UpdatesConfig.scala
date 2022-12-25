@@ -24,11 +24,8 @@ import io.circe.generic.extras.semiauto._
 import io.circe.refined._
 import io.circe.{Codec, Decoder}
 import org.scalasteward.core.buildtool.maven.pomXmlName
-<<<<<<< HEAD
 import org.scalasteward.core.buildtool.mill.MillAlg.millVersionName
 import org.scalasteward.core.buildtool.sbt.buildPropertiesName
-=======
->>>>>>> main
 import org.scalasteward.core.data.{GroupId, Update}
 import org.scalasteward.core.scalafmt.scalafmtConfName
 import org.scalasteward.core.update.FilterAlg.{
