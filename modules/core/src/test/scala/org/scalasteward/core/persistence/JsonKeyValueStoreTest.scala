@@ -80,4 +80,16 @@ class JsonKeyValueStoreTest extends FunSuite {
     )
     assertEquals(state, expected)
   }
+
+  test("get with malformed JSON") {
+    val p = for {
+      kvStore <- JsonKeyValueStore.create[MockEff, String, String]("test-4", "0")
+      v1 <- kvStore.get("k1")
+    } yield v1
+
+    val k1File = config.workspace / "store" / "test-4" / "v0" / "k1" / "test-4.json"
+    val k1Mapping = k1File -> """ "v1 """
+    val value = MockState.empty.addFiles(k1Mapping).flatMap(p.runA).unsafeRunSync()
+    assertEquals(value, None)
+  }
 }

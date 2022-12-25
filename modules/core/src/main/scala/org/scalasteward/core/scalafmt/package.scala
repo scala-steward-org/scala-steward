@@ -36,6 +36,10 @@ package object scalafmt {
     update.groupId === scalafmtGroupId &&
       update.artifactIds.exists(_.name === scalafmtArtifactId.name)
 
+  def isScalafmtCoreUpdate(update: Update.Single): Boolean =
+    update.groupId === scalafmtGroupId &&
+      update.artifactIds.exists(_.name === scalafmtArtifactId.name)
+
   private def scalafmtGroupIdBy(version: Version): GroupId =
     if (version > Version("2.0.0-RC1")) scalafmtGroupId else GroupId("com.geirsson")
 

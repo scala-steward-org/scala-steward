@@ -64,7 +64,7 @@ final class MavenAlg[F[_]](config: Config)(implicit
     maybeIgnoreOptsFiles(repoDir).surround(processAlg.execSandboxed(command, repoDir))
 
   private def mvnCmd(commands: String*): Nel[String] =
-    Nel("mvn", "--batch-mode" :: commands.toList)
+    Nel("mvn", args.batchMode :: commands.toList)
 
   private def maybeIgnoreOptsFiles(dir: File): Resource[F, Unit] =
     if (config.ignoreOptsFiles) ignoreOptsFiles(dir) else Resource.unit[F]

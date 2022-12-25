@@ -19,7 +19,7 @@ package org.scalasteward.core.buildtool
 import cats.Functor
 import cats.syntax.all._
 import org.scalasteward.core.buildtool.sbt.data.{SbtVersion, ScalaVersion}
-import org.scalasteward.core.data.{ArtifactId, Dependency, GroupId, Update, Version}
+import org.scalasteward.core.data._
 import org.scalasteward.core.io.{FileAlg, FileData}
 
 package object sbt {
