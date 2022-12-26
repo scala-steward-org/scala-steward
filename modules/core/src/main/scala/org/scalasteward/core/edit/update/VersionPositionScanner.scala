@@ -23,7 +23,7 @@ import org.scalasteward.core.io.FileData
 import scala.util.matching.Regex
 
 /** Finds all version positions for a given version in a file. */
-object VersionScanner {
+object VersionPositionScanner {
   def findPositions(version: Version, fileData: FileData): List[VersionPosition] = {
     val offRegions = findOffRegions(fileData.content)
     val it = findSbtDependency(version, fileData) ++

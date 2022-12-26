@@ -38,7 +38,7 @@ final class ScannerAlg[F[_]](implicit
       version: Version
   ): F[List[VersionPosition]] =
     findPathsContaining(repo, config, version.value)
-      .map(VersionScanner.findPositions(version, _))
+      .map(VersionPositionScanner.findPositions(version, _))
       .compile
       .foldMonoid
 
@@ -51,7 +51,7 @@ final class ScannerAlg[F[_]](implicit
       .map { fileData =>
         dependencies.toList.flatMap { dependency =>
           if (!fileData.content.contains(dependency.artifactId.name)) List.empty
-          else ModuleScanner.findPositions(dependency, fileData)
+          else ModulePositionScanner.findPositions(dependency, fileData)
         }
       }
       .compile

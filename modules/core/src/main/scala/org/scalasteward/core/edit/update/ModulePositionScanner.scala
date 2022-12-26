@@ -22,7 +22,7 @@ import org.scalasteward.core.io.FileData
 import scala.util.matching.Regex
 
 /** Finds all module positions for a given dependency in a file. */
-object ModuleScanner {
+object ModulePositionScanner {
   def findPositions(dependency: Dependency, fileData: FileData): List[ModulePosition] = {
     val offRegions = findOffRegions(fileData.content)
     val it = findSbtDependency(dependency, fileData) ++
