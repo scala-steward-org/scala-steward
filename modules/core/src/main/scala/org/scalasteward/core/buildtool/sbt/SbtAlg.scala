@@ -71,7 +71,7 @@ final class SbtAlg[F[_]](config: Config)(implicit
     for {
       plugin <- maybeSbtVersion.map(_.toVersion) match {
         case Some(v) if v < Version("1.3.11") => Resource.eval(stewardPlugin_1_0_0[F])
-        case _                                => Resource.eval(stewardPlugin[F])
+        case _                                => Resource.eval(stewardPlugin_1_3_11[F])
       }
       _ <- fileAlg.createTemporarily(buildRootDir / project, plugin)
       _ <- fileAlg.createTemporarily(buildRootDir / project / project, plugin)

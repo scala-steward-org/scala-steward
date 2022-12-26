@@ -23,9 +23,9 @@ class SbtAlgTest extends FunSuite {
     val expected = initial.copy(
       trace = Vector(
         Cmd("read", s"$repoDir/project/build.properties"),
-        Cmd("read", "classpath:org/scalasteward/sbt/plugin/StewardPlugin.scala"),
-        Cmd("write", s"$repoDir/project/scala-steward-StewardPlugin.scala"),
-        Cmd("write", s"$repoDir/project/project/scala-steward-StewardPlugin.scala"),
+        Cmd("read", "classpath:org/scalasteward/sbt/plugin/StewardPlugin_1_3_11.scala"),
+        Cmd("write", s"$repoDir/project/scala-steward-StewardPlugin_1_3_11.scala"),
+        Cmd("write", s"$repoDir/project/project/scala-steward-StewardPlugin_1_3_11.scala"),
         Cmd(
           repoDir.toString,
           "firejail",
@@ -39,8 +39,8 @@ class SbtAlgTest extends FunSuite {
           "-Dsbt.supershell=false",
           s";$crossStewardDependencies;$reloadPlugins;$stewardDependencies"
         ),
-        Cmd("rm", "-rf", s"$repoDir/project/project/scala-steward-StewardPlugin.scala"),
-        Cmd("rm", "-rf", s"$repoDir/project/scala-steward-StewardPlugin.scala")
+        Cmd("rm", "-rf", s"$repoDir/project/project/scala-steward-StewardPlugin_1_3_11.scala"),
+        Cmd("rm", "-rf", s"$repoDir/project/scala-steward-StewardPlugin_1_3_11.scala")
       )
     )
     assertEquals(state, expected)

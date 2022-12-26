@@ -19,7 +19,7 @@ val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
   "core" -> List(JVMPlatform),
   "docs" -> List(JVMPlatform),
   "dummy" -> List(JVMPlatform),
-  "sbt-plugin" -> List(JVMPlatform),
+  "sbt-plugin-1_3_11" -> List(JVMPlatform),
   "sbt-plugin-1_0_0" -> List(JVMPlatform)
 )
 
@@ -71,7 +71,14 @@ ThisBuild / evictionErrorLevel := Level.Info
 
 lazy val root = project
   .in(file("."))
-  .aggregate(benchmark.jvm, core.jvm, docs.jvm, dummy.jvm, `sbt-plugin`.jvm, `sbt-plugin-1_0_0`.jvm)
+  .aggregate(
+    benchmark.jvm,
+    core.jvm,
+    docs.jvm,
+    dummy.jvm,
+    `sbt-plugin-1_3_11`.jvm,
+    `sbt-plugin-1_0_0`.jvm
+  )
   .settings(commonSettings)
   .settings(noPublishSettings)
 
@@ -160,9 +167,6 @@ lazy val core = myCrossProject("core")
       BuildInfoKey("gitHubUserContent" -> gitHubUserContent),
       BuildInfoKey("mainBranch" -> mainBranch),
       BuildInfoKey.map(git.gitHeadCommit) { case (k, v) => k -> v.getOrElse(mainBranch) },
-      BuildInfoKey.map(`sbt-plugin`.jvm / moduleRootPkg) { case (_, v) =>
-        "sbtPluginModuleRootPkg" -> v
-      },
       BuildInfoKey("millPluginArtifactName" -> Dependencies.scalaStewardMillPluginArtifactName),
       BuildInfoKey("millPluginVersion" -> Dependencies.scalaStewardMillPlugin.revision)
     ),
@@ -200,7 +204,7 @@ lazy val core = myCrossProject("core")
     Test / testOptions +=
       Tests.Cleanup(() => Path(file(Properties.tmpDir) / "scala-steward").deleteRecursively()),
     Compile / unmanagedResourceDirectories ++=
-      (`sbt-plugin`.jvm / Compile / unmanagedSourceDirectories).value ++
+      (`sbt-plugin-1_3_11`.jvm / Compile / unmanagedSourceDirectories).value ++
         (`sbt-plugin-1_0_0`.jvm / Compile / unmanagedSourceDirectories).value
   )
 
@@ -244,7 +248,7 @@ lazy val dummy = myCrossProject("dummy")
     )
   )
 
-lazy val `sbt-plugin` = myCrossProject("sbt-plugin")
+lazy val `sbt-plugin-1_3_11` = myCrossProject("sbt-plugin-1_3_11")
   .settings(noPublishSettings)
   .settings(
     scalaVersion := Scala212,
@@ -385,14 +389,6 @@ lazy val scaladocSettings = Def.settings(
 /// setting keys
 
 lazy val checkDocs = taskKey[Unit]("")
-
-lazy val installPlugin = taskKey[Unit]("Copies StewardPlugin.scala into global plugins directory.")
-installPlugin := {
-  val name = "StewardPlugin.scala"
-  val source = (`sbt-plugin`.jvm / Compile / sources).value.find(_.name == name).get
-  val target = file(System.getProperty("user.home")) / ".sbt" / "1.0" / "plugins" / name
-  IO.copyFile(source, target)
-}
 
 lazy val moduleRootPkg = settingKey[String]("").withRank(KeyRanks.Invisible)
 moduleRootPkg := rootPkg
