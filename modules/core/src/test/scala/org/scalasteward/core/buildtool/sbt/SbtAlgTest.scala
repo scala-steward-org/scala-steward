@@ -17,14 +17,15 @@ class SbtAlgTest extends FunSuite {
     val repo = Repo("typelevel", "cats")
     val buildRoot = BuildRoot(repo, ".")
     val repoDir = config.workspace / repo.toPath
-    val files = Map(repoDir / "project" / "build.properties" -> "sbt.version=1.2.6")
+    val files = Map(repoDir / "project" / "build.properties" -> "sbt.version=1.3.6")
     val initial = MockState.empty.copy(files = files)
     val state = sbtAlg.getDependencies(buildRoot).runS(initial).unsafeRunSync()
     val expected = initial.copy(
       trace = Vector(
-        Cmd("read", "classpath:org/scalasteward/sbt/plugin/StewardPlugin.scala"),
-        Cmd("write", s"$repoDir/project/scala-steward-StewardPlugin.scala"),
-        Cmd("write", s"$repoDir/project/project/scala-steward-StewardPlugin.scala"),
+        Cmd("read", s"$repoDir/project/build.properties"),
+        Cmd("read", "classpath:org/scalasteward/sbt/plugin/StewardPlugin_1_3_11.scala"),
+        Cmd("write", s"$repoDir/project/scala-steward-StewardPlugin_1_3_11.scala"),
+        Cmd("write", s"$repoDir/project/project/scala-steward-StewardPlugin_1_3_11.scala"),
         Cmd(
           repoDir.toString,
           "firejail",
@@ -38,9 +39,8 @@ class SbtAlgTest extends FunSuite {
           "-Dsbt.supershell=false",
           s";$crossStewardDependencies;$reloadPlugins;$stewardDependencies"
         ),
-        Cmd("read", s"$repoDir/project/build.properties"),
-        Cmd("rm", "-rf", s"$repoDir/project/project/scala-steward-StewardPlugin.scala"),
-        Cmd("rm", "-rf", s"$repoDir/project/scala-steward-StewardPlugin.scala")
+        Cmd("rm", "-rf", s"$repoDir/project/project/scala-steward-StewardPlugin_1_3_11.scala"),
+        Cmd("rm", "-rf", s"$repoDir/project/scala-steward-StewardPlugin_1_3_11.scala")
       )
     )
     assertEquals(state, expected)

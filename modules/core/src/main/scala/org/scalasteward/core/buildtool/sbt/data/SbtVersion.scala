@@ -20,11 +20,8 @@ import cats.Order
 import cats.syntax.all._
 import io.circe.Codec
 import io.circe.generic.extras.semiauto._
-import org.scalasteward.core.data.Version
 
-final case class SbtVersion(value: String) {
-  def toVersion: Version = Version(value)
-}
+final case class SbtVersion(value: String)
 
 object SbtVersion {
   implicit val sbtVersionCodec: Codec[SbtVersion] =

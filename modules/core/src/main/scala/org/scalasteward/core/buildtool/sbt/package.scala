@@ -16,11 +16,10 @@
 
 package org.scalasteward.core.buildtool
 
-import cats.Functor
 import cats.syntax.all._
 import org.scalasteward.core.buildtool.sbt.data.{SbtVersion, ScalaVersion}
 import org.scalasteward.core.data._
-import org.scalasteward.core.io.{FileAlg, FileData}
+import org.scalasteward.core.io.FileData
 
 package object sbt {
   val defaultScalaBinaryVersion: String =
@@ -36,10 +35,8 @@ package object sbt {
     update.groupId === sbtGroupId &&
       update.artifactIds.exists(_.name === sbtArtifactId.name)
 
-  def sbtDependency(sbtVersion: SbtVersion): Option[Dependency] = {
-    val version = sbtVersion.toVersion
+  def sbtDependency(version: Version): Option[Dependency] =
     Option.when(version >= Version("1.0.0"))(Dependency(sbtGroupId, sbtArtifactId, version))
-  }
 
   val sbtScalafixGroupId: GroupId = GroupId("ch.epfl.scala")
 
@@ -63,13 +60,5 @@ package object sbt {
   def scalaStewardScalafixOptions(scalacOptions: List[String]): FileData = {
     val args = scalacOptions.map(s => s""""$s"""").mkString(", ")
     FileData("scala-steward-scalafix-options.sbt", s"ThisBuild / scalacOptions ++= List($args)")
-  }
-
-  def stewardPlugin[F[_]](implicit fileAlg: FileAlg[F], F: Functor[F]): F[FileData] = {
-    val pkg: String = org.scalasteward.core.BuildInfo.sbtPluginModuleRootPkg
-    val name = "StewardPlugin.scala"
-    fileAlg
-      .readResource(s"${pkg.replace('.', '/')}/$name")
-      .map(FileData(s"scala-steward-$name", _))
   }
 }

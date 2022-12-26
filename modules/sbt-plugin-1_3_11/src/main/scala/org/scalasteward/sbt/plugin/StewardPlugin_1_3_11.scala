@@ -20,7 +20,7 @@ import sbt.Keys._
 import sbt._
 import scala.util.Try
 
-object StewardPlugin extends AutoPlugin {
+object StewardPlugin_1_3_11 extends AutoPlugin {
   override def trigger: PluginTrigger = allRequirements
 
   object autoImport {
