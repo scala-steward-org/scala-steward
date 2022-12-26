@@ -3,7 +3,6 @@ package org.scalasteward.core.buildtool
 import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.buildtool.sbt.command._
-import org.scalasteward.core.buildtool.sbt.data.SbtVersion
 import org.scalasteward.core.data.{Dependency, Resolver, Scope, Version}
 import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context.buildToolDispatcher
@@ -40,9 +39,10 @@ class BuildToolDispatcherTest extends FunSuite {
         Cmd("test", "-f", s"$repoDir/mvn-build/build.sc"),
         Cmd("test", "-f", s"$repoDir/mvn-build/build.sbt"),
         Log("Get dependencies in . from sbt"),
-        Cmd("read", "classpath:org/scalasteward/sbt/plugin/StewardPlugin.scala"),
-        Cmd("write", s"$repoDir/project/scala-steward-StewardPlugin.scala"),
-        Cmd("write", s"$repoDir/project/project/scala-steward-StewardPlugin.scala"),
+        Cmd("read", s"$repoDir/project/build.properties"),
+        Cmd("read", "classpath:org/scalasteward/sbt/plugin/StewardPlugin_1_0_0.scala"),
+        Cmd("write", s"$repoDir/project/scala-steward-StewardPlugin_1_0_0.scala"),
+        Cmd("write", s"$repoDir/project/project/scala-steward-StewardPlugin_1_0_0.scala"),
         Cmd(
           repoDir.toString,
           "firejail",
@@ -56,9 +56,8 @@ class BuildToolDispatcherTest extends FunSuite {
           "-Dsbt.supershell=false",
           s";$crossStewardDependencies;$reloadPlugins;$stewardDependencies"
         ),
-        Cmd("read", s"$repoDir/project/build.properties"),
-        Cmd("rm", "-rf", s"$repoDir/project/project/scala-steward-StewardPlugin.scala"),
-        Cmd("rm", "-rf", s"$repoDir/project/scala-steward-StewardPlugin.scala"),
+        Cmd("rm", "-rf", s"$repoDir/project/project/scala-steward-StewardPlugin_1_0_0.scala"),
+        Cmd("rm", "-rf", s"$repoDir/project/scala-steward-StewardPlugin_1_0_0.scala"),
         Cmd("read", s"$repoDir/$scalafmtConfName"),
         Log("Get dependencies in mvn-build from Maven"),
         Cmd(
@@ -93,7 +92,7 @@ class BuildToolDispatcherTest extends FunSuite {
     val expectedDeps = List(
       Scope(
         List(
-          sbt.sbtDependency(SbtVersion("1.2.6")).get,
+          sbt.sbtDependency(Version("1.2.6")).get,
           scalafmt.scalafmtDependency(Version("2.0.0"))
         ),
         List(Resolver.mavenCentral)
