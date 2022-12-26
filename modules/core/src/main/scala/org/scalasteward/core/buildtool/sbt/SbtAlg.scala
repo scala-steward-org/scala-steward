@@ -23,11 +23,10 @@ import cats.syntax.all._
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.BuildToolAlg
 import org.scalasteward.core.buildtool.sbt.command._
-import org.scalasteward.core.buildtool.sbt.data.SbtVersion
 import org.scalasteward.core.coursier.VersionsCache
 import org.scalasteward.core.data.{Dependency, Scope, Version}
 import org.scalasteward.core.edit.scalafix.{ScalafixCli, ScalafixMigration}
-import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
+import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.BuildRoot
 
@@ -46,7 +45,7 @@ final class SbtAlg[F[_]](config: Config)(implicit
       .buildRootDir(buildRoot)
       .flatMap(buildRootDir => fileAlg.isRegularFile(buildRootDir / "build.sbt"))
 
-  private def getSbtVersion(buildRootDir: File): F[Option[SbtVersion]] =
+  private def getSbtVersion(buildRootDir: File): F[Option[Version]] =
     for {
       maybeProperties <- fileAlg.readFile(buildRootDir / project / buildPropertiesName)
       version = maybeProperties.flatMap(parser.parseBuildProperties)
@@ -66,18 +65,28 @@ final class SbtAlg[F[_]](config: Config)(implicit
 
   private def addStewardPluginTemporarily(
       buildRootDir: File,
-      maybeSbtVersion: Option[SbtVersion]
+      maybeSbtVersion: Option[Version]
   ): Resource[F, Unit] =
     for {
-      plugin <- maybeSbtVersion.map(_.toVersion) match {
-        case Some(v) if v < Version("1.3.11") => Resource.eval(stewardPlugin_1_0_0[F])
-        case _                                => Resource.eval(stewardPlugin_1_3_11[F])
+      _ <- Resource.unit[F]
+      pluginVersion = maybeSbtVersion match {
+        case Some(v) if v < Version("1.3.11") => "1_0_0"
+        case _                                => "1_3_11"
       }
+      plugin <- Resource.eval(stewardPlugin(pluginVersion))
       _ <- fileAlg.createTemporarily(buildRootDir / project, plugin)
       _ <- fileAlg.createTemporarily(buildRootDir / project / project, plugin)
     } yield ()
 
-  private def scopedSbtDependency(sbtVersion: SbtVersion): Option[Scope[Dependency]] =
+  private def stewardPlugin(version: String): F[FileData] = {
+    val pkg = "org.scalasteward.sbt.plugin"
+    val name = s"StewardPlugin_$version.scala"
+    fileAlg
+      .readResource(s"${pkg.replace('.', '/')}/$name")
+      .map(FileData(s"scala-steward-$name", _))
+  }
+
+  private def scopedSbtDependency(sbtVersion: Version): Option[Scope[Dependency]] =
     sbtDependency(sbtVersion).map(dep => Scope(dep, List(config.defaultResolver)))
 
   override def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =

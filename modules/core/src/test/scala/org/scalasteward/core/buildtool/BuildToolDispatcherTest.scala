@@ -3,7 +3,6 @@ package org.scalasteward.core.buildtool
 import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.buildtool.sbt.command._
-import org.scalasteward.core.buildtool.sbt.data.SbtVersion
 import org.scalasteward.core.data.{Dependency, Resolver, Scope, Version}
 import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context.buildToolDispatcher
@@ -93,7 +92,7 @@ class BuildToolDispatcherTest extends FunSuite {
     val expectedDeps = List(
       Scope(
         List(
-          sbt.sbtDependency(SbtVersion("1.2.6")).get,
+          sbt.sbtDependency(Version("1.2.6")).get,
           scalafmt.scalafmtDependency(Version("2.0.0"))
         ),
         List(Resolver.mavenCentral)
