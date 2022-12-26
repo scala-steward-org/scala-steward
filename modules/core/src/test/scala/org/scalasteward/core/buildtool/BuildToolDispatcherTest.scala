@@ -40,9 +40,10 @@ class BuildToolDispatcherTest extends FunSuite {
         Cmd("test", "-f", s"$repoDir/mvn-build/build.sc"),
         Cmd("test", "-f", s"$repoDir/mvn-build/build.sbt"),
         Log("Get dependencies in . from sbt"),
-        Cmd("read", "classpath:org/scalasteward/sbt/plugin/StewardPlugin.scala"),
-        Cmd("write", s"$repoDir/project/scala-steward-StewardPlugin.scala"),
-        Cmd("write", s"$repoDir/project/project/scala-steward-StewardPlugin.scala"),
+        Cmd("read", s"$repoDir/project/build.properties"),
+        Cmd("read", "classpath:org/scalasteward/sbt/plugin/StewardPlugin_1_0_0.scala"),
+        Cmd("write", s"$repoDir/project/scala-steward-StewardPlugin_1_0_0.scala"),
+        Cmd("write", s"$repoDir/project/project/scala-steward-StewardPlugin_1_0_0.scala"),
         Cmd(
           repoDir.toString,
           "firejail",
@@ -56,9 +57,8 @@ class BuildToolDispatcherTest extends FunSuite {
           "-Dsbt.supershell=false",
           s";$crossStewardDependencies;$reloadPlugins;$stewardDependencies"
         ),
-        Cmd("read", s"$repoDir/project/build.properties"),
-        Cmd("rm", "-rf", s"$repoDir/project/project/scala-steward-StewardPlugin.scala"),
-        Cmd("rm", "-rf", s"$repoDir/project/scala-steward-StewardPlugin.scala"),
+        Cmd("rm", "-rf", s"$repoDir/project/project/scala-steward-StewardPlugin_1_0_0.scala"),
+        Cmd("rm", "-rf", s"$repoDir/project/scala-steward-StewardPlugin_1_0_0.scala"),
         Cmd("read", s"$repoDir/$scalafmtConfName"),
         Log("Get dependencies in mvn-build from Maven"),
         Cmd(

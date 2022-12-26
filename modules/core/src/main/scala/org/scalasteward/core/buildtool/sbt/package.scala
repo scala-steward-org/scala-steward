@@ -72,4 +72,12 @@ package object sbt {
       .readResource(s"${pkg.replace('.', '/')}/$name")
       .map(FileData(s"scala-steward-$name", _))
   }
+
+  def stewardPlugin_1_0_0[F[_]](implicit fileAlg: FileAlg[F], F: Functor[F]): F[FileData] = {
+    val pkg: String = org.scalasteward.core.BuildInfo.sbtPluginModuleRootPkg
+    val name = "StewardPlugin_1_0_0.scala"
+    fileAlg
+      .readResource(s"${pkg.replace('.', '/')}/$name")
+      .map(FileData(s"scala-steward-$name", _))
+  }
 }

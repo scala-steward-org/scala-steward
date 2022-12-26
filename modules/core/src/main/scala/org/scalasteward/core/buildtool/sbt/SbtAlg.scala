@@ -41,39 +41,44 @@ final class SbtAlg[F[_]](config: Config)(implicit
 ) extends BuildToolAlg[F] {
   override def name: String = "sbt"
 
-  private def getSbtDependency(buildRoot: BuildRoot): F[Option[Dependency]] =
-    OptionT(getSbtVersion(buildRoot)).subflatMap(sbtDependency).value
-
   override def containsBuild(buildRoot: BuildRoot): F[Boolean] =
     workspaceAlg
       .buildRootDir(buildRoot)
       .flatMap(buildRootDir => fileAlg.isRegularFile(buildRootDir / "build.sbt"))
 
-  private def getSbtVersion(buildRoot: BuildRoot): F[Option[SbtVersion]] =
+  private def getSbtVersion(buildRootDir: File): F[Option[SbtVersion]] =
     for {
-      buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
       maybeProperties <- fileAlg.readFile(buildRootDir / project / buildPropertiesName)
       version = maybeProperties.flatMap(parser.parseBuildProperties)
     } yield version
 
   override def getDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
-    addStewardPluginTemporarily(buildRoot).surround {
-      for {
-        buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
-        commands = Nel.of(crossStewardDependencies, reloadPlugins, stewardDependencies)
-        lines <- sbt(commands, buildRootDir)
-        dependencies = parser.parseDependencies(lines)
-        additionalDependencies <- getAdditionalDependencies(buildRoot)
-      } yield additionalDependencies ::: dependencies
-    }
-
-  private def addStewardPluginTemporarily(buildRoot: BuildRoot): Resource[F, Unit] =
     for {
-      buildRootDir <- Resource.eval(workspaceAlg.buildRootDir(buildRoot))
-      plugin <- Resource.eval(stewardPlugin[F])
+      buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
+      maybeSbtVersion <- getSbtVersion(buildRootDir)
+      lines <- addStewardPluginTemporarily(buildRootDir, maybeSbtVersion).surround {
+        val commands = Nel.of(crossStewardDependencies, reloadPlugins, stewardDependencies)
+        sbt(commands, buildRootDir)
+      }
+      dependencies = parser.parseDependencies(lines)
+      maybeSbtDependency = maybeSbtVersion.flatMap(scopedSbtDependency).map(_.map(List(_))).toList
+    } yield maybeSbtDependency ::: dependencies
+
+  private def addStewardPluginTemporarily(
+      buildRootDir: File,
+      maybeSbtVersion: Option[SbtVersion]
+  ): Resource[F, Unit] =
+    for {
+      plugin <- maybeSbtVersion.map(_.toVersion) match {
+        case Some(v) if v < Version("1.3.11") => Resource.eval(stewardPlugin_1_0_0[F])
+        case _                                => Resource.eval(stewardPlugin[F])
+      }
       _ <- fileAlg.createTemporarily(buildRootDir / project, plugin)
       _ <- fileAlg.createTemporarily(buildRootDir / project / project, plugin)
     } yield ()
+
+  private def scopedSbtDependency(sbtVersion: SbtVersion): Option[Scope[Dependency]] =
+    sbtDependency(sbtVersion).map(dep => Scope(dep, List(config.defaultResolver)))
 
   override def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
     migration.targetOrDefault match {
@@ -132,10 +137,6 @@ final class SbtAlg[F[_]](config: Config)(implicit
 
   private def ignoreOptsFiles(dir: File): Resource[F, Unit] =
     List(".jvmopts", ".sbtopts").traverse_(file => fileAlg.removeTemporarily(dir / file))
-
-  private def getAdditionalDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
-    getSbtDependency(buildRoot)
-      .map(_.map(dep => Scope(List(dep), List(config.defaultResolver))).toList)
 
   private val project = "project"
 }
