@@ -79,11 +79,8 @@ final class SbtAlg[F[_]](config: Config)(implicit
     } yield ()
 
   private def stewardPlugin(version: String): F[FileData] = {
-    val pkg = "org.scalasteward.sbt.plugin"
     val name = s"StewardPlugin_$version.scala"
-    fileAlg
-      .readResource(s"${pkg.replace('.', '/')}/$name")
-      .map(FileData(s"scala-steward-$name", _))
+    fileAlg.readResource(name).map(FileData(s"scala-steward-$name", _))
   }
 
   private def scopedSbtDependency(sbtVersion: Version): Option[Scope[Dependency]] =
