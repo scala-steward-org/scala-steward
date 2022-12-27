@@ -18,17 +18,14 @@ val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
   "benchmark" -> List(JVMPlatform),
   "core" -> List(JVMPlatform),
   "docs" -> List(JVMPlatform),
-  "dummy" -> List(JVMPlatform),
-  "sbt-plugin-1_3_11" -> List(JVMPlatform),
-  "sbt-plugin-1_0_0" -> List(JVMPlatform)
+  "dummy" -> List(JVMPlatform)
 )
 
-val Scala212 = "2.12.17"
 val Scala213 = "2.13.10"
 
 /// sbt-github-actions configuration
 
-ThisBuild / crossScalaVersions := Seq(Scala212, Scala213)
+ThisBuild / crossScalaVersions := Seq(Scala213)
 ThisBuild / githubWorkflowTargetTags ++= Seq("v*")
 ThisBuild / githubWorkflowPublishTargetBranches := Seq(
   RefPredicate.Equals(Ref.Branch(mainBranch)),
@@ -71,14 +68,7 @@ ThisBuild / evictionErrorLevel := Level.Info
 
 lazy val root = project
   .in(file("."))
-  .aggregate(
-    benchmark.jvm,
-    core.jvm,
-    docs.jvm,
-    dummy.jvm,
-    `sbt-plugin-1_3_11`.jvm,
-    `sbt-plugin-1_0_0`.jvm
-  )
+  .aggregate(benchmark.jvm, core.jvm, docs.jvm, dummy.jvm)
   .settings(commonSettings)
   .settings(noPublishSettings)
 
@@ -203,9 +193,20 @@ lazy val core = myCrossProject("core")
     Test / fork := true,
     Test / testOptions +=
       Tests.Cleanup(() => Path(file(Properties.tmpDir) / "scala-steward").deleteRecursively()),
-    Compile / unmanagedResourceDirectories ++=
-      (`sbt-plugin-1_3_11`.jvm / Compile / unmanagedSourceDirectories).value ++
-        (`sbt-plugin-1_0_0`.jvm / Compile / unmanagedSourceDirectories).value
+    Compile / resourceGenerators += Def.task {
+      val outDir = (Compile / resourceManaged).value
+      def downloadPlugin(v: String): File = {
+        val outFile = outDir / s"StewardPlugin_$v.scala"
+        if (!outFile.exists()) {
+          val u =
+            s"https://raw.githubusercontent.com/scala-steward-org/sbt-plugin/main/modules/sbt-plugin-$v/src/main/scala/org/scalasteward/sbt/plugin/StewardPlugin_$v.scala"
+          val content = scala.util.Using(scala.io.Source.fromURL(u))(_.mkString).get
+          IO.write(outFile, content)
+        }
+        outFile
+      }
+      Seq(downloadPlugin("1_0_0"), downloadPlugin("1_3_11"))
+    }.taskValue
   )
 
 lazy val docs = myCrossProject("docs")
@@ -246,22 +247,6 @@ lazy val dummy = myCrossProject("dummy")
       Dependencies.millMain,
       Dependencies.scalaStewardMillPlugin
     )
-  )
-
-lazy val `sbt-plugin-1_3_11` = myCrossProject("sbt-plugin-1_3_11")
-  .settings(noPublishSettings)
-  .settings(
-    scalaVersion := Scala212,
-    sbtPlugin := true,
-    pluginCrossBuild / sbtVersion := "1.3.11"
-  )
-
-lazy val `sbt-plugin-1_0_0` = myCrossProject("sbt-plugin-1_0_0")
-  .settings(noPublishSettings)
-  .settings(
-    scalaVersion := Scala212,
-    sbtPlugin := true,
-    pluginCrossBuild / sbtVersion := "1.0.0"
   )
 
 /// settings

@@ -23,7 +23,7 @@ class SbtAlgTest extends FunSuite {
     val expected = initial.copy(
       trace = Vector(
         Cmd("read", s"$repoDir/project/build.properties"),
-        Cmd("read", "classpath:org/scalasteward/sbt/plugin/StewardPlugin_1_3_11.scala"),
+        Cmd("read", "classpath:StewardPlugin_1_3_11.scala"),
         Cmd("write", s"$repoDir/project/scala-steward-StewardPlugin_1_3_11.scala"),
         Cmd("write", s"$repoDir/project/project/scala-steward-StewardPlugin_1_3_11.scala"),
         Cmd(
