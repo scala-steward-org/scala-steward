@@ -100,4 +100,11 @@ class CoursierAlgTest extends CatsEffectSuite {
     )
     assertIO(obtained, expected)
   }
+
+  test("getMetadata: no resolvers") {
+    val dep = "org.example".g % "foo".a % "1.0.0"
+    val obtained = coursierAlg.getMetadata(dep, List.empty).runA(MockState.empty)
+    val expected = None
+    assertIO(obtained, expected)
+  }
 }
