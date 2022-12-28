@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.nurture
 
-import cats.Id
+import cats.{Applicative, Id}
 import cats.effect.Concurrent
 import cats.implicits._
 import org.scalasteward.core.application.Config.VCSCfg
@@ -26,13 +26,12 @@ import org.scalasteward.core.data._
 import org.scalasteward.core.edit.{EditAlg, EditAttempt}
 import org.scalasteward.core.git.{Branch, Commit, GitAlg}
 import org.scalasteward.core.repoconfig.PullRequestUpdateStrategy
-import org.scalasteward.core.util.{Nel, UrlChecker}
 import org.scalasteward.core.util.logger.LoggerOps
+import org.scalasteward.core.util.{Nel, UrlChecker}
 import org.scalasteward.core.vcs.data._
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg}
 import org.scalasteward.core.{git, util, vcs}
 import org.typelevel.log4cats.Logger
-import cats.Applicative
 
 final class NurtureAlg[F[_]](config: VCSCfg)(implicit
     coursierAlg: CoursierAlg[F],
@@ -199,25 +198,31 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
       dependenciesWithNextVersion = dependenciesUpdatedWithNextAndCurrentVersion(data.update)
       resolvers = data.repoData.cache.dependencyInfos.flatMap(_.resolvers)
-      dependencyScope = Scope(
-        value = dependenciesWithNextVersion.map { case (_, dependency) => dependency },
-        resolvers = resolvers
-      )
-      artifactIdToUrl <- coursierAlg.getArtifactIdUrlMapping(dependencyScope)
-      existingArtifactUrlsList <- artifactIdToUrl.toList.filterA { case (_, uri) =>
-        urlChecker.exists(uri)
-      }
-      existingArtifactUrlsMap = existingArtifactUrlsList.toMap
+      dependencyToMetadata <- dependenciesWithNextVersion
+        .traverseFilter { case (_, dependency) =>
+          coursierAlg
+            .getMetadata(dependency, resolvers)
+            .flatMap(_.traverse(_.filterUrls(urlChecker.exists)))
+            .map(_.tupleLeft(dependency))
+        }
+        .map(_.toMap)
+      artifactIdToUrl = dependencyToMetadata.toList.mapFilter { case (dependency, metadata) =>
+        metadata.repoUrl.tupleLeft(dependency.artifactId.name)
+      }.toMap
       releaseRelatedUrls <- dependenciesWithNextVersion.flatTraverse {
         case (currentVersion, dependency) =>
-          existingArtifactUrlsMap
-            .get(dependency.artifactId.name)
-            .toList
-            .traverse(uri =>
+          dependencyToMetadata.get(dependency).toList.flatTraverse { metadata =>
+            metadata.repoUrl.toList.traverse { uri =>
               vcsExtraAlg
-                .getReleaseRelatedUrls(uri, currentVersion, dependency.version)
+                .getReleaseRelatedUrls(
+                  uri,
+                  metadata.releaseNotesUrl,
+                  currentVersion,
+                  dependency.version
+                )
                 .tupleLeft(dependency.artifactId.name)
-            )
+            }
+          }
       }
       filesWithOldVersion <-
         data.update
@@ -229,7 +234,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
         data,
         branchName,
         edits,
-        existingArtifactUrlsMap,
+        artifactIdToUrl,
         releaseRelatedUrls.toMap,
         filesWithOldVersion,
         data.repoData.config.pullRequests.includeMatchedLabels

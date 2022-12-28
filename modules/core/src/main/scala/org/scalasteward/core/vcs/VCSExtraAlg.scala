@@ -27,6 +27,7 @@ import org.scalasteward.core.vcs
 trait VCSExtraAlg[F[_]] {
   def getReleaseRelatedUrls(
       repoUrl: Uri,
+      releaseNotesUrl: Option[Uri],
       currentVersion: Version,
       nextVersion: Version
   ): F[List[ReleaseRelatedUrl]]
@@ -40,17 +41,18 @@ object VCSExtraAlg {
     new VCSExtraAlg[F] {
       override def getReleaseRelatedUrls(
           repoUrl: Uri,
+          releaseNotesUrl: Option[Uri],
           currentVersion: Version,
           nextVersion: Version
       ): F[List[ReleaseRelatedUrl]] =
-        vcs
-          .possibleReleaseRelatedUrls(
+        (releaseNotesUrl.toList.map(ReleaseRelatedUrl.CustomReleaseNotes.apply) ++
+          vcs.possibleReleaseRelatedUrls(
             config.tpe,
             config.apiHost,
             repoUrl,
             currentVersion,
             nextVersion
-          )
+          ))
           .filterA(releaseRelatedUrl => urlChecker.exists(releaseRelatedUrl.url))
     }
 }

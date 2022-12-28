@@ -11,6 +11,7 @@ import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.application.Config.VCSCfg
 import org.scalasteward.core.data.ReleaseRelatedUrl
+import org.scalasteward.core.data.ReleaseRelatedUrl.CustomReleaseNotes
 import org.scalasteward.core.mock.MockConfig
 import org.scalasteward.core.util._
 
@@ -19,6 +20,7 @@ class VCSExtraAlgTest extends FunSuite {
     HttpRoutes.of[IO] {
       case HEAD -> Root / "foo" / "bar" / "compare" / "v0.1.0...v0.2.0" => Ok("exist")
       case HEAD -> Root / "foo" / "buz" / "compare" / "v0.1.0...v0.2.0" => PermanentRedirect()
+      case HEAD -> Root / "foo" / "buz" / "README.md"                   => Ok("exist")
       case _                                                            => NotFound()
     }
 
@@ -38,6 +40,7 @@ class VCSExtraAlgTest extends FunSuite {
       vcsExtraAlg
         .getReleaseRelatedUrls(
           repoUrl = uri"https://github.com/foo/foo",
+          releaseNotesUrl = None,
           currentVersion = updateFoo.currentVersion,
           nextVersion = updateFoo.nextVersion
         )
@@ -49,6 +52,7 @@ class VCSExtraAlgTest extends FunSuite {
       vcsExtraAlg
         .getReleaseRelatedUrls(
           repoUrl = uri"https://github.com/foo/bar",
+          releaseNotesUrl = None,
           currentVersion = updateBar.currentVersion,
           nextVersion = updateBar.nextVersion
         )
@@ -62,11 +66,24 @@ class VCSExtraAlgTest extends FunSuite {
       vcsExtraAlg
         .getReleaseRelatedUrls(
           repoUrl = uri"https://github.com/foo/buz",
+          releaseNotesUrl = None,
           currentVersion = updateBuz.currentVersion,
           nextVersion = updateBuz.nextVersion
         )
         .unsafeRunSync(),
       List.empty
+    )
+
+    assertEquals(
+      vcsExtraAlg
+        .getReleaseRelatedUrls(
+          repoUrl = uri"https://github.com/foo/buz",
+          releaseNotesUrl = Some(uri"https://github.com/foo/buz/README.md#changelog"),
+          currentVersion = updateBuz.currentVersion,
+          nextVersion = updateBuz.nextVersion
+        )
+        .unsafeRunSync(),
+      List(CustomReleaseNotes(uri"https://github.com/foo/buz/README.md#changelog"))
     )
   }
 
@@ -84,6 +101,7 @@ class VCSExtraAlgTest extends FunSuite {
       githubOnPremVcsExtraAlg
         .getReleaseRelatedUrls(
           repoUrl = uri"https://github.on-prem.com/foo/foo",
+          releaseNotesUrl = None,
           currentVersion = updateFoo.currentVersion,
           nextVersion = updateFoo.nextVersion
         )
@@ -95,6 +113,7 @@ class VCSExtraAlgTest extends FunSuite {
       githubOnPremVcsExtraAlg
         .getReleaseRelatedUrls(
           repoUrl = uri"https://github.on-prem.com/foo/bar",
+          releaseNotesUrl = None,
           currentVersion = updateBar.currentVersion,
           nextVersion = updateBar.nextVersion
         )
@@ -110,6 +129,7 @@ class VCSExtraAlgTest extends FunSuite {
       githubOnPremVcsExtraAlg
         .getReleaseRelatedUrls(
           repoUrl = uri"https://github.on-prem.com/foo/buz",
+          releaseNotesUrl = None,
           currentVersion = updateFoo.currentVersion,
           nextVersion = updateFoo.nextVersion
         )

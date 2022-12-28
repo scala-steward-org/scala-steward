@@ -41,11 +41,9 @@ object uri {
   val withUserInfo: Optional[Uri, UserInfo] =
     authorityWithUserInfo.compose(withAuthority)
 
-  private val httpSchemes: Set[Scheme] =
-    Set(Scheme.https, Scheme.http)
+  def fromStringWithScheme(s: String): Option[Uri] =
+    Uri.fromString(s).toOption.filter(_.scheme.isDefined)
 
-  def findBrowsableUrl(xs: List[String]): Option[Uri] = {
-    val urls = xs.flatMap(Uri.fromString(_).toList).filter(_.scheme.isDefined)
-    urls.find(_.scheme.exists(httpSchemes)).orElse(urls.headOption)
-  }
+  val httpSchemes: Set[Scheme] =
+    Set(Scheme.https, Scheme.http)
 }
