@@ -9,8 +9,7 @@ object TestSyntax {
     IvyRepository(
       "sbt-plugin-releases",
       "https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/[defaultPattern]",
-      None,
-      Nil
+      None
     )
 
   implicit class GenericOps[A](val self: A) extends AnyVal {
