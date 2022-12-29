@@ -51,6 +51,7 @@ import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg, VCSSelecti
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import org.scalasteward.core.application.Config.StewardUsage
+import org.scalasteward.core.edit.update.ScannerAlg
 import org.scalasteward.core.repoconfig.ValidateRepoConfigAlg
 
 final class Context[F[_]](implicit
@@ -219,6 +220,7 @@ object Context {
       implicit val refreshErrorAlg: RefreshErrorAlg[F] =
         new RefreshErrorAlg[F](refreshErrorStore, config.refreshBackoffPeriod)
       implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F](config)
+      implicit val scannerAlg: ScannerAlg[F] = new ScannerAlg[F]
       implicit val editAlg: EditAlg[F] = new EditAlg[F]
       implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F](config.vcsCfg)
       implicit val pruningAlg: PruningAlg[F] = new PruningAlg[F]

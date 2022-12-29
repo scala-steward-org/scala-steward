@@ -17,9 +17,9 @@
 package org.scalasteward.core.io
 
 import better.files.File
-import cats.effect.{Concurrent, Resource, Sync}
+import cats.effect.{Resource, Sync}
 import cats.syntax.all._
-import cats.{ApplicativeError, MonadThrow, Traverse}
+import cats.{Applicative, ApplicativeError, MonadThrow}
 import fs2.Stream
 import org.apache.commons.io.FileUtils
 import org.http4s.Uri
@@ -61,30 +61,21 @@ trait FileAlg[F[_]] {
   ): Resource[F, Unit] =
     createTemporarily(dir / data.path, data.content)
 
-  final def editFile(file: File, edit: String => Option[String])(implicit
-      F: MonadThrow[F]
-  ): F[Boolean] =
+  final def editFile(file: File, edit: String => String)(implicit F: MonadThrow[F]): F[Unit] =
     readFile(file)
-      .flatMap(_.flatMap(edit).fold(F.pure(false))(writeFile(file, _).as(true)))
+      .flatMap(_.fold(F.unit)(content => writeFile(file, edit(content))))
       .adaptError { case t => new Throwable(s"failed to edit $file", t) }
 
-  final def editFiles[G[_]](files: G[File], edit: String => Option[String])(implicit
-      F: MonadThrow[F],
-      G: Traverse[G]
-  ): F[Boolean] =
-    files.traverse(editFile(_, edit)).map(_.foldLeft(false)(_ || _))
-
-  final def findFiles(
+  final def findFiles[A, B](
       dir: File,
-      fileFilter: File => Boolean,
-      contentFilter: String => Boolean
-  )(implicit F: Concurrent[F]): F[List[File]] =
-    walk(dir)
-      .evalFilter(isRegularFile)
-      .filter(fileFilter)
-      .evalFilter(readFile(_).map(_.fold(false)(contentFilter)))
-      .compile
-      .toList
+      fileFilter: File => Option[A],
+      contentFilter: String => Option[B]
+  )(implicit F: Applicative[F]): Stream[F, (A, B)] =
+    walk(dir).evalFilter(isRegularFile).evalMapFilter { file =>
+      fileFilter(file).fold(Option.empty[(A, B)].pure[F]) { a =>
+        readFile(file).map(_.flatMap(contentFilter).map(b => (a, b)))
+      }
+    }
 }
 
 object FileAlg {

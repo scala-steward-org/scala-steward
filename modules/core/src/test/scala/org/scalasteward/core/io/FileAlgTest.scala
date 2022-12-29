@@ -56,24 +56,22 @@ class FileAlgTest extends FunSuite {
   }
 
   test("editFile: nonexistent file") {
-    val (state, edited) = fileAlg
-      .editFile(mockRoot / "does-not-exist.txt", Some.apply)
-      .runSA(MockState.empty)
+    val state = fileAlg
+      .editFile(mockRoot / "does-not-exist.txt", identity)
+      .runS(MockState.empty)
       .unsafeRunSync()
 
     val expected =
       MockState.empty.copy(trace = Vector(Cmd("read", s"$mockRoot/does-not-exist.txt")))
     assertEquals(state, expected)
-    assert(!edited)
   }
 
   test("editFile: existent file") {
     val file = mockRoot / "steward" / "test1.sbt"
-    val (state, edited) = (for {
+    val state = (for {
       _ <- fileAlg.writeFile(file, "123")
-      edit = (s: String) => Some(s.replace("2", "4"))
-      edited <- fileAlg.editFile(file, edit)
-    } yield edited).runSA(MockState.empty).unsafeRunSync()
+      _ <- fileAlg.editFile(file, _.replace("2", "4"))
+    } yield ()).runS(MockState.empty).unsafeRunSync()
 
     val expected = MockState.empty.copy(
       trace = Vector(
@@ -84,7 +82,6 @@ class FileAlgTest extends FunSuite {
       files = Map(file -> "143")
     )
     assertEquals(state, expected)
-    assert(edited)
   }
 
   test("deleteForce removes dangling symlink in subdirectory") {

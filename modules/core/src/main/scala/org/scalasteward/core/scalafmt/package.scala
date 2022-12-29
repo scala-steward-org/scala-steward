@@ -32,9 +32,6 @@ package object scalafmt {
   val scalafmtModule: (GroupId, ArtifactId) =
     (scalafmtGroupId, scalafmtArtifactId)
 
-  def isScalafmtUpdate(update: Update.ForArtifactId): Boolean =
-    update.groupId === scalafmtGroupId && update.artifactId.name === scalafmtArtifactId.name
-
   def isScalafmtCoreUpdate(update: Update.Single): Boolean =
     update.groupId === scalafmtGroupId &&
       update.artifactIds.exists(_.name === scalafmtArtifactId.name)

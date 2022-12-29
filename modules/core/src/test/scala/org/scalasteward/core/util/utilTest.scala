@@ -31,10 +31,6 @@ class utilTest extends ScalaCheckSuite {
     assertEquals(lb.toList, List(6, 7, 8, 9))
   }
 
-  test("bindUntilTrue: empty list") {
-    assertEquals(bindUntilTrue(List.empty[Option[Boolean]]), Some(false))
-  }
-
   test("intersects") {
     assert(!intersects(List(1, 3, 5), Vector(2, 4, 6)))
     assert(intersects(List(1, 3, 5), Vector(2, 3, 6)))
