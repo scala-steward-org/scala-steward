@@ -21,7 +21,6 @@ import cats.syntax.all._
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.collection.MinSize
 import eu.timepit.refined.refineV
-import org.scalasteward.core.util.Change.{Changed, Unchanged}
 import scala.util.matching.Regex
 import shapeless.Witness
 
@@ -58,20 +57,6 @@ object string {
       xs: Nel[String]
   ): Option[MinLengthString[N]] =
     refineV[MinSize[N]](xs.reduceLeft(longestCommonPrefix)).toOption
-
-  /** Like `Regex.replaceSomeIn` but indicates via the return type if there was at least one match
-    * that has been replaced.
-    */
-  def replaceSomeInChange(
-      regex: Regex,
-      target: CharSequence,
-      replacer: Regex.Match => Option[String]
-  ): Change[String] = {
-    var changed = false
-    val replacer1 = replacer.andThen(_.map { r => changed = true; r })
-    val result = regex.replaceSomeIn(target, replacer1)
-    if (changed) Changed(result) else Unchanged(result)
-  }
 
   def removeSuffix(target: String, suffixes: List[String]): String =
     suffixes
