@@ -117,7 +117,14 @@ object Cli {
     ).orFalse
 
   private val vcsCfg: Opts[VCSCfg] =
-    (vcsType, vcsApiHost, vcsLogin, doNotFork, addPrLabels).mapN(VCSCfg.apply)
+    (vcsType, vcsApiHost, vcsLogin, doNotFork, addPrLabels)
+      .mapN(VCSCfg.apply)
+      .validate(
+        s"${VCSType.allNot(_.supportsForking)} do not support fork mode"
+      )(cfg => cfg.tpe.supportsForking || cfg.doNotFork)
+      .validate(
+        s"${VCSType.allNot(_.supportsLabels)} do not support pull request labels"
+      )(cfg => cfg.tpe.supportsLabels || !cfg.addLabels)
 
   private val ignoreOptsFiles: Opts[Boolean] =
     flag(

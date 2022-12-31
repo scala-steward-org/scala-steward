@@ -24,6 +24,8 @@ import org.scalasteward.core.vcs.VCSType._
 
 sealed trait VCSType extends Product with Serializable {
   def publicWebHost: Option[String]
+  def supportsForking: Boolean = true
+  def supportsLabels: Boolean = true
 
   val asString: String = this match {
     case AzureRepos      => "azure-repos"
@@ -37,15 +39,19 @@ sealed trait VCSType extends Product with Serializable {
 object VCSType {
   case object AzureRepos extends VCSType {
     override val publicWebHost: Option[String] = Some("dev.azure.com")
+    override def supportsForking: Boolean = false
   }
 
   case object Bitbucket extends VCSType {
     override val publicWebHost: Some[String] = Some("bitbucket.org")
+    override def supportsLabels: Boolean = false
     val publicApiBaseUrl = uri"https://api.bitbucket.org/2.0"
   }
 
   case object BitbucketServer extends VCSType {
     override val publicWebHost: None.type = None
+    override def supportsForking: Boolean = false
+    override def supportsLabels: Boolean = false
   }
 
   case object GitHub extends VCSType {
@@ -59,6 +65,9 @@ object VCSType {
   }
 
   val all = List(AzureRepos, Bitbucket, BitbucketServer, GitHub, GitLab)
+
+  def allNot(f: VCSType => Boolean): String =
+    VCSType.all.filterNot(f).map(_.asString).mkString(", ")
 
   def parse(s: String): Either[String, VCSType] =
     all.find(_.asString === s) match {

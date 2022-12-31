@@ -183,6 +183,42 @@ class CliTest extends FunSuite {
     assertEquals(file, File("file.conf"))
   }
 
+  test("parseArgs: validate fork mode disabled") {
+    val params = minimumRequiredParams ++ List(
+      List("--vcs-type", "azure-repos"),
+      List("--do-not-fork")
+    )
+    val Success(StewardUsage.Regular(obtained)) = Cli.parseArgs(params.flatten)
+    assert(obtained.vcsCfg.doNotFork)
+  }
+
+  test("parseArgs: validate fork mode enabled") {
+    val params = minimumRequiredParams ++ List(
+      List("--vcs-type", "azure-repos")
+    )
+    val Error(errorMsg) = Cli.parseArgs(params.flatten)
+    assert(clue(errorMsg).startsWith("azure-repos, bitbucket-server do not support fork mode"))
+  }
+
+  test("parseArgs: validate pull request labeling disabled") {
+    val params = minimumRequiredParams ++ List(
+      List("--vcs-type", "bitbucket")
+    )
+    val Success(StewardUsage.Regular(obtained)) = Cli.parseArgs(params.flatten)
+    assert(!obtained.vcsCfg.addLabels)
+  }
+
+  test("parseArgs: validate pull request labeling enabled") {
+    val params = minimumRequiredParams ++ List(
+      List("--vcs-type", "bitbucket"),
+      List("--add-labels")
+    )
+    val Error(errorMsg) = Cli.parseArgs(params.flatten)
+    assert(
+      clue(errorMsg).startsWith("bitbucket, bitbucket-server do not support pull request labels")
+    )
+  }
+
   test("envVarArgument: env-var without equals sign") {
     assert(clue(Cli.envVarArgument.read("SBT_OPTS")).isInvalid)
   }
