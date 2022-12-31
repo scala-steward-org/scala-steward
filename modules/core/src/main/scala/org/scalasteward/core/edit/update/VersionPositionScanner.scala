@@ -44,8 +44,9 @@ object VersionPositionScanner {
     }
 
   private def sbtModuleIdRegex(version: Version): Regex = {
+    val ident = """[^\s]+"""
     val v = Regex.quote(version.value)
-    raw"""(.*)"(.*)"\s*%+\s*"(.*)"\s*%+\s*"$v"""".r
+    raw"""(.*)"($ident)"\s*%+\s*"($ident)"\s*%+\s*"$v"""".r
   }
 
   private def findMillDependency(version: Version, fileData: FileData): Iterator[MillDependency] =
@@ -58,7 +59,7 @@ object VersionPositionScanner {
     }
 
   private def millDependencyRegex(version: Version): Regex = {
-    val ident = """[^:]*"""
+    val ident = """[^:\s]+"""
     val v = Regex.quote(version.value)
     raw"""(.*)["`]($ident):+($ident):+$v["`;]""".r
   }
@@ -72,7 +73,7 @@ object VersionPositionScanner {
     }
 
   private def mavenDependencyRegex(version: Version): Regex = {
-    val ident = """[^<]*"""
+    val ident = """[^<]+"""
     val v = Regex.quote(version.value)
     raw"""<groupId>($ident)</groupId>\s*<artifactId>($ident)</artifactId>\s*<version>$v</version>""".r
   }
