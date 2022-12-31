@@ -17,7 +17,7 @@
 package org.scalasteward.core.coursier
 
 import cats.Parallel
-import cats.effect._
+import cats.effect.Async
 import cats.implicits._
 import coursier.cache.{CachePolicy, FileCache}
 import coursier.core.{Authentication, Project}
@@ -40,7 +40,7 @@ object CoursierAlg {
   def create[F[_]](implicit
       logger: Logger[F],
       parallel: Parallel[F],
-      F: Sync[F]
+      F: Async[F]
   ): CoursierAlg[F] = {
     val fetch: Fetch[F] =
       Fetch[F](FileCache[F]())

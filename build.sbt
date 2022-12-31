@@ -281,6 +281,8 @@ lazy val commonSettings = Def.settings(
 
 lazy val compileSettings = Def.settings(
   scalaVersion := Scala213,
+  // Uncomment for local development:
+  // scalacOptions -= "-Xfatal-warnings",
   doctestTestFramework := DoctestTestFramework.Munit
 )
 

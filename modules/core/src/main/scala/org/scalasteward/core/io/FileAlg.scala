@@ -19,7 +19,7 @@ package org.scalasteward.core.io
 import better.files.File
 import cats.effect.{Resource, Sync}
 import cats.syntax.all._
-import cats.{Applicative, ApplicativeError, MonadThrow}
+import cats.{ApplicativeError, Monad, MonadThrow}
 import fs2.Stream
 import org.apache.commons.io.FileUtils
 import org.http4s.Uri
@@ -70,12 +70,17 @@ trait FileAlg[F[_]] {
       dir: File,
       fileFilter: File => Option[A],
       contentFilter: String => Option[B]
-  )(implicit F: Applicative[F]): Stream[F, (A, B)] =
-    walk(dir).evalFilter(isRegularFile).evalMapFilter { file =>
-      fileFilter(file).fold(Option.empty[(A, B)].pure[F]) { a =>
-        readFile(file).map(_.flatMap(contentFilter).map(b => (a, b)))
-      }
+  )(implicit F: Monad[F]): Stream[F, (A, B)] = {
+    val none = Option.empty[(A, B)].pure[F]
+    walk(dir).evalMapFilter { file =>
+      isRegularFile(file).ifM(
+        fileFilter(file).fold(none) { a =>
+          readFile(file).map(_.flatMap(contentFilter).tupleLeft(a))
+        },
+        none
+      )
     }
+  }
 }
 
 object FileAlg {
