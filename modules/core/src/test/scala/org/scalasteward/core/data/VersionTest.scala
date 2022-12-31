@@ -228,7 +228,7 @@ class VersionTest extends DisciplineSuite {
       ("0.1.1", List("0.2.1-BETA"), None),
       ("0.1.1", List("0.2.0-FEAT"), None),
       ("0.1.1-FEAT", List("0.2.0"), Some("0.2.0")),
-      ("0.1.1-FEAT+3dfde9d7", List("0.2.0"), Some("0.2.0")),
+      ("0.1.1-FEAT+3dfde9d7", List("0.2.0"), Some("0.2.0"))
     )
 
     val rnd = new Random()
