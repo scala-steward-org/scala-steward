@@ -3,7 +3,7 @@ package org.scalasteward.core.mock
 import better.files.File
 import cats.effect.{IO, Ref}
 import cats.syntax.all._
-import org.http4s.Uri
+import org.http4s.{HttpApp, Uri}
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
 import org.scalasteward.core.mock.MockState.TraceEntry
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
@@ -12,7 +12,8 @@ final case class MockState(
     trace: Vector[TraceEntry],
     commandOutputs: Map[List[String], List[String]],
     files: Map[File, String],
-    uris: Map[Uri, String]
+    uris: Map[Uri, String],
+    clientResponses: HttpApp[IO]
 ) {
   def addFiles(newFiles: (File, String)*): IO[MockState] =
     newFiles.toList
@@ -41,7 +42,8 @@ object MockState {
       trace = Vector.empty,
       commandOutputs = Map.empty,
       files = Map.empty,
-      uris = Map.empty
+      uris = Map.empty,
+      clientResponses = HttpApp.notFound
     )
 
   sealed trait TraceEntry extends Product with Serializable

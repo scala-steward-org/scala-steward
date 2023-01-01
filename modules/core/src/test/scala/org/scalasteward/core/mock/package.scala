@@ -14,6 +14,10 @@ package object mock {
     override def apply[A](fa: IO[A]): MockEff[A] = Kleisli(_ => fa)
   }
 
+  def mockEffToIo(ctx: MockCtx): ~>[MockEff, IO] = new ~>[MockEff, IO] {
+    override def apply[A](fa: MockEff[A]): IO[A] = fa.run(ctx)
+  }
+
   implicit class MockEffOps[A](private val fa: MockEff[A]) extends AnyVal {
     def runA(state: MockState): IO[A] =
       state.toRef.flatMap(fa.run)
