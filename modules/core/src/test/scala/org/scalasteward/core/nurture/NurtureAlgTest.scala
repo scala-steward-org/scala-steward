@@ -28,14 +28,17 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     val updateData = UpdateData(repoData, fork, update, baseBranch, dummySha1, updateBranch)
     val edits = List(UpdateEdit(update, Commit(dummySha1)))
     val state = MockState.empty.copy(clientResponses = HttpApp {
-      case HEAD -> Root / "typelevel" / "cats-effect" => Ok()
-      case _                                          => NotFound()
+      case HEAD -> Root / "typelevel" / "cats-effect"                                 => Ok()
+      case HEAD -> Root / "typelevel" / "cats-effect" / "releases" / "tag" / "v3.4.0" => Ok()
+      case HEAD -> Root / "typelevel" / "cats-effect" / "compare" / "v3.3.0...v3.4.0" => Ok()
+      case _                                                                          => NotFound()
     })
     val obtained = nurtureAlg.preparePullRequest(updateData, edits).runA(state)
     val expected = NewPullRequestData(
       title = "Update cats-effect to 3.4.0",
       body =
         raw"""Updates [org.typelevel:cats-effect](https://github.com/typelevel/cats-effect) from 3.3.0 to 3.4.0.
+             |[GitHub Release Notes](https://github.com/typelevel/cats-effect/releases/tag/v3.4.0) - [Version Diff](https://github.com/typelevel/cats-effect/compare/v3.3.0...v3.4.0)
              |
              |
              |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
