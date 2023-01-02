@@ -81,7 +81,7 @@ object CoursierAlg {
                 val current = metadataFrom(project)
                 acc.fold(current)(_.enrichWith(current))
               }
-              if (metadata.homePage.isEmpty || metadata.scmUrl.isEmpty) {
+              if (metadata.repoUrl.isEmpty) {
                 parentOf(project) match {
                   case Some(parent) => getMetadataImpl(parent, repositories, Some(metadata))
                   case None         => F.pure(Some(metadata))
