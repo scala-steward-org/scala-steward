@@ -193,9 +193,12 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       _.updates.flatMap(dependenciesUpdatedWithNextAndCurrentVersion(_))
     )
 
-  private def createPullRequest(data: UpdateData, edits: List[EditAttempt]): F[ProcessResult] =
+  private[nurture] def preparePullRequest(
+      data: UpdateData,
+      edits: List[EditAttempt]
+  ): F[NewPullRequestData] =
     for {
-      _ <- logger.info(s"Create PR ${data.updateBranch.name}")
+      _ <- F.unit
       dependenciesWithNextVersion = dependenciesUpdatedWithNextAndCurrentVersion(data.update)
       resolvers = data.repoData.cache.dependencyInfos.flatMap(_.resolvers)
       dependencyToMetadata <- dependenciesWithNextVersion
@@ -239,6 +242,12 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
         filesWithOldVersion,
         data.repoData.config.pullRequests.includeMatchedLabels
       )
+    } yield requestData
+
+  private def createPullRequest(data: UpdateData, edits: List[EditAttempt]): F[ProcessResult] =
+    for {
+      _ <- logger.info(s"Create PR ${data.updateBranch.name}")
+      requestData <- preparePullRequest(data, edits)
       pr <- vcsApiAlg.createPullRequest(data.repo, requestData)
       _ <- vcsApiAlg
         .labelPullRequest(data.repo, pr.number, requestData.labels)

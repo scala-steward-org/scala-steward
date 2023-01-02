@@ -66,6 +66,7 @@ final class Context[F[_]](implicit
     val logger: Logger[F],
     val mavenAlg: MavenAlg[F],
     val millAlg: MillAlg[F],
+    val nurtureAlg: NurtureAlg[F],
     val pruningAlg: PruningAlg[F],
     val pullRequestRepository: PullRequestRepository[F],
     val refreshErrorAlg: RefreshErrorAlg[F],
