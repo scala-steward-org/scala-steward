@@ -13,7 +13,7 @@ final case class MockState(
     commandOutputs: Map[List[String], List[String]],
     files: Map[File, String],
     uris: Map[Uri, String],
-    clientResponses: HttpApp[IO]
+    clientResponses: HttpApp[MockEff]
 ) {
   def addFiles(newFiles: (File, String)*): IO[MockState] =
     newFiles.toList

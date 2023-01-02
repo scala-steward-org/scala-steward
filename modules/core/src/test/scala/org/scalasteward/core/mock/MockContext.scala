@@ -18,13 +18,11 @@ import org.typelevel.log4cats.Logger
 
 object MockContext {
   implicit private val client: Client[MockEff] =
-    Client[MockEff] { mockRequest =>
+    Client[MockEff] { request =>
       Resource.eval {
         Kleisli { mockCtx =>
           mockCtx.get.flatMap { mockState =>
-            val ioRequest = mockRequest.mapK(mockEffToIo(mockCtx))
-            val ioResponse = mockState.clientResponses.run(ioRequest)
-            ioResponse.map(_.mapK(ioToMockEff))
+            mockState.clientResponses.run(request).run(mockCtx)
           }
         }
       }

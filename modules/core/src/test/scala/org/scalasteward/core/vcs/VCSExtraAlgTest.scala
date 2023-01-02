@@ -1,9 +1,8 @@
 package org.scalasteward.core.vcs
 
-import cats.effect.IO
 import munit.CatsEffectSuite
 import org.http4s.HttpApp
-import org.http4s.dsl.io._
+import org.http4s.dsl.Http4sDsl
 import org.http4s.implicits._
 import org.scalasteward.core.application.Config.VCSCfg
 import org.scalasteward.core.data.ReleaseRelatedUrl._
@@ -11,8 +10,8 @@ import org.scalasteward.core.data.Version
 import org.scalasteward.core.mock.MockContext.context._
 import org.scalasteward.core.mock.{MockEff, MockState}
 
-class VCSExtraAlgTest extends CatsEffectSuite {
-  private val state = MockState.empty.copy(clientResponses = HttpApp[IO] {
+class VCSExtraAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
+  private val state = MockState.empty.copy(clientResponses = HttpApp {
     case HEAD -> Root / "foo" / "bar" / "compare" / "v0.1.0...v0.2.0" => Ok("exist")
     case HEAD -> Root / "foo" / "buz" / "compare" / "v0.1.0...v0.2.0" => PermanentRedirect()
     case _                                                            => NotFound()
