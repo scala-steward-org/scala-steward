@@ -3,6 +3,7 @@ package org.scalasteward.core.vcs.gitlab
 import cats.effect.unsafe.implicits.global
 import cats.effect.{Concurrent, IO}
 import cats.implicits._
+import io.circe.Json
 import io.circe.literal._
 import io.circe.parser._
 import munit.FunSuite
@@ -16,6 +17,7 @@ import org.scalasteward.core.TestInstances.dummyRepoCache
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.application.Config.GitLabCfg
 import org.scalasteward.core.data.{RepoData, UpdateData}
+import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.repoconfig.RepoConfig
@@ -33,11 +35,25 @@ class GitLabApiAlgTest extends FunSuite {
 
   val routes: HttpRoutes[IO] =
     HttpRoutes.of[IO] {
+      case POST -> Root / "projects" / "foo/bar" / "fork" =>
+        Ok(getRepo)
+
       case GET -> Root / "projects" / "foo/bar" =>
         Ok(getRepo)
 
+      case GET -> Root / "projects" / "foo/bar" / "repository" / "branches" / "master" =>
+        Ok(json"""{
+                    "name": "master",
+                    "commit": {
+                      "id": "07eb2a203e297c8340273950e98b2cab68b560c1"
+                    }
+                  }""")
+
       case POST -> Root / "projects" / s"${config.vcsCfg.login}/bar" / "merge_requests" =>
         Ok(getMr)
+
+      case GET -> Root / "projects" / "foo/bar" / "merge_requests" =>
+        Ok(Json.arr(getMr))
 
       case POST -> Root / "projects" / "foo/bar" / "merge_requests" =>
         Ok(
@@ -106,6 +122,39 @@ class GitLabApiAlgTest extends FunSuite {
   )
   private val newPRData =
     NewPullRequestData.from(data, "scala-steward:update/logback-classic-1.2.3")
+
+  test("createFork") {
+    val repoOut = gitlabApiAlg.createFork(Repo("foo", "bar")).unsafeRunSync()
+    val expected = RepoOut(
+      name = "bar",
+      owner = UserOut("foo"),
+      parent = None,
+      clone_url = uri"https://gitlab.com/foo/bar.git",
+      default_branch = Branch("master")
+    )
+    assertEquals(repoOut, expected)
+  }
+
+  test("getRepo") {
+    val repoOut = gitlabApiAlg.getRepo(Repo("foo", "bar")).unsafeRunSync()
+    val expected = RepoOut(
+      name = "bar",
+      owner = UserOut("foo"),
+      parent = None,
+      clone_url = uri"https://gitlab.com/foo/bar.git",
+      default_branch = Branch("master")
+    )
+    assertEquals(repoOut, expected)
+  }
+
+  test("getBranch") {
+    val branchOut = gitlabApiAlg.getBranch(Repo("foo", "bar"), Branch("master")).unsafeRunSync()
+    val expected = BranchOut(
+      Branch("master"),
+      CommitOut(Sha1(HexString("07eb2a203e297c8340273950e98b2cab68b560c1")))
+    )
+    assertEquals(branchOut, expected)
+  }
 
   test("createPullRequest") {
     val prOut = gitlabApiAlg
@@ -261,7 +310,7 @@ class GitLabApiAlgTest extends FunSuite {
     assertEquals(prOut, expected)
   }
 
-  test("commentPullRequest") {
+  test("referencePullRequest") {
     val reference = gitlabApiAlg.referencePullRequest(PullRequestNumber(1347))
     assertEquals(reference, "!1347")
   }
@@ -271,6 +320,23 @@ class GitLabApiAlgTest extends FunSuite {
       .commentPullRequest(Repo("foo", "bar"), PullRequestNumber(150), "Superseded by #1234")
       .unsafeRunSync()
     assertEquals(comment, Comment("Superseded by #1234"))
+  }
+
+  test("listPullRequests") {
+
+    val prs =
+      gitlabApiAlg.listPullRequests(Repo("foo", "bar"), "head", Branch("pr-123")).unsafeRunSync()
+    assertEquals(
+      prs,
+      List(
+        PullRequestOut(
+          uri"https://gitlab.com/foo/bar/merge_requests/7115",
+          PullRequestState.Open,
+          PullRequestNumber(7115),
+          "title"
+        )
+      )
+    )
   }
 
   test("labelPullRequest") {

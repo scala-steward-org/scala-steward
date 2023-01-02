@@ -9,14 +9,28 @@ import org.http4s.implicits._
 import org.http4s.{HttpRoutes, Uri}
 import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.application.Config.BitbucketServerCfg
-import org.scalasteward.core.git.Branch
+import org.scalasteward.core.git.Sha1.HexString
+import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.util.HttpJsonClient
 import org.scalasteward.core.vcs.data._
 
 class BitbucketServerApiAlgTest extends FunSuite {
+  object FilterTextMatcher extends QueryParamDecoderMatcher[String]("filterText")
+
   private val repo = Repo("scala-steward-org", "scala-steward")
+  private val main = Branch("main")
+
   private val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    case GET -> Root / "rest" / "default-reviewers" / "1.0" / "projects" / repo.owner / "repos" / repo.repo / "conditions" =>
+      Ok(s"""[
+            |  {
+            |    "reviewers": [
+            |      {"name": "joe"}
+            |    ]
+            |  }
+            |]""".stripMargin)
+
     case GET -> Root / "rest" / "api" / "1.0" / "projects" / repo.owner / "repos" / repo.repo =>
       Ok(s"""{
             |  "slug": "${repo.repo}",
@@ -29,6 +43,17 @@ class BitbucketServerApiAlgTest extends FunSuite {
             |  "latestCommit": "00213685b18016c86961a7f015793aa09e722db2"
             |}""".stripMargin)
 
+    case GET -> Root / "rest" / "api" / "1.0" / "projects" / repo.owner / "repos" / repo.repo / "branches" :?
+        FilterTextMatcher("main") =>
+      Ok(s"""{
+            |    "values": [
+            |        {
+            |            "displayId": "main",
+            |            "latestCommit": "8d51122def5632836d1cb1026e879069e10a1e13"
+            |        }
+            |    ]
+            |}""".stripMargin)
+
     case GET -> Root / "rest" / "api" / "1.0" / "projects" / repo.owner / "repos" / repo.repo / "pull-requests" =>
       Ok("""{ "values": [
            |  {
@@ -39,6 +64,21 @@ class BitbucketServerApiAlgTest extends FunSuite {
            |    "links": { "self": [ { "href": "http://example.org" } ] }
            |  }
            |]}""".stripMargin)
+
+    case POST -> Root / "rest" / "api" / "1.0" / "projects" / repo.owner / "repos" / repo.repo / "pull-requests" =>
+      Created(s"""{
+                 |    "id": 2,
+                 |    "version": 1,
+                 |    "title": "scala-steward-pr-title",
+                 |    "state": "OPEN",
+                 |    "links": {
+                 |        "self": [
+                 |            {
+                 |                "href": "https://example.org/fthomas/base.g8/pullrequests/2"
+                 |            }
+                 |        ]
+                 |    }
+                 |}""".stripMargin)
 
     case POST -> Root / "rest" / "api" / "1.0" / "projects" / repo.owner / "repos" / repo.repo / "pull-requests" /
         IntVar(1347) / "comments" =>
@@ -65,9 +105,51 @@ class BitbucketServerApiAlgTest extends FunSuite {
   private val bitbucketServerApiAlg: BitbucketServerApiAlg[IO] =
     new BitbucketServerApiAlg(config.vcsCfg.apiHost, bitbucketServerCfg, _ => IO.pure)
 
+  test("createPullRequest") {
+    val data = NewPullRequestData(
+      title = "scala-steward-pr-title",
+      body = "body",
+      head = "main",
+      base = main,
+      labels = Nil
+    )
+    val pr = bitbucketServerApiAlg.createPullRequest(repo, data).unsafeRunSync()
+    val expected =
+      PullRequestOut(
+        html_url = uri"https://example.org/fthomas/base.g8/pullrequests/2",
+        state = PullRequestState.Open,
+        number = PullRequestNumber(2),
+        title = "scala-steward-pr-title"
+      )
+    assertEquals(pr, expected)
+  }
+
+  test("createPullRequest - default reviewers") {
+    val data = NewPullRequestData(
+      title = "scala-steward-pr-title",
+      body = "body",
+      head = "main",
+      base = main,
+      labels = Nil
+    )
+    val pr = new BitbucketServerApiAlg[IO](
+      config.vcsCfg.apiHost,
+      BitbucketServerCfg(useDefaultReviewers = true),
+      _ => IO.pure
+    ).createPullRequest(repo, data).unsafeRunSync()
+    val expected =
+      PullRequestOut(
+        html_url = uri"https://example.org/fthomas/base.g8/pullrequests/2",
+        state = PullRequestState.Open,
+        number = PullRequestNumber(2),
+        title = "scala-steward-pr-title"
+      )
+    assertEquals(pr, expected)
+  }
+
   test("listPullRequests") {
     val pullRequests = bitbucketServerApiAlg
-      .listPullRequests(repo, "update/sbt-1.4.2", Branch("main"))
+      .listPullRequests(repo, "update/sbt-1.4.2", main)
       .unsafeRunSync()
     val expected = List(
       PullRequestOut(
@@ -108,6 +190,15 @@ class BitbucketServerApiAlgTest extends FunSuite {
       None,
       Uri.unsafeFromString("http://example.org/scala-steward.git"),
       Branch("main")
+    )
+    assertEquals(obtained, expected)
+  }
+
+  test("getBranch") {
+    val obtained = bitbucketServerApiAlg.getBranch(repo, main).unsafeRunSync()
+    val expected = BranchOut(
+      main,
+      CommitOut(Sha1(HexString.unsafeFrom("8d51122def5632836d1cb1026e879069e10a1e13")))
     )
     assertEquals(obtained, expected)
   }
