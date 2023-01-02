@@ -155,7 +155,7 @@ object CoursierAlg {
       homePage = uri.fromStringWithScheme(project.info.homePage),
       scmUrl = project.info.scm.flatMap(_.url).flatMap(uri.fromStringWithScheme),
       releaseNotesUrl = project.properties
-        .collectFirst { case (key, value) if key.equalsIgnoreCase("releaseNotesURL") => value }
+        .collectFirst { case (key, value) if key.equalsIgnoreCase("info.releaseNotesUrl") => value }
         .flatMap(uri.fromStringWithScheme)
     )
 
