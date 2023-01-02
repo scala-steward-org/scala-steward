@@ -150,16 +150,14 @@ object CoursierAlg {
       )
     }
 
-  private def metadataFrom(project: Project): DependencyMetadata = {
-    val releaseNotesUrlKey = "releaseNotesURL".toLowerCase
+  private def metadataFrom(project: Project): DependencyMetadata =
     DependencyMetadata(
       homePage = uri.fromStringWithScheme(project.info.homePage),
       scmUrl = project.info.scm.flatMap(_.url).flatMap(uri.fromStringWithScheme),
       releaseNotesUrl = project.properties
-        .collectFirst { case (key, value) if key.toLowerCase === releaseNotesUrlKey => value }
+        .collectFirst { case (key, value) if key.equalsIgnoreCase("releaseNotesURL") => value }
         .flatMap(uri.fromStringWithScheme)
     )
-  }
 
   private def parentOf(project: Project): Option[coursier.Dependency] =
     project.parent.map { case (module, version) =>
