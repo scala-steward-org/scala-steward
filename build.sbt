@@ -261,15 +261,6 @@ def myCrossProject(name: String): CrossProject =
       moduleRootPkg := s"$rootPkg.${name.replace('-', '.')}"
     )
     .settings(commonSettings)
-    // workaround for https://github.com/portable-scala/sbt-crossproject/issues/74
-    .settings(Seq(Compile, Test).flatMap(inConfig(_) {
-      unmanagedResourceDirectories ++= {
-        unmanagedSourceDirectories.value
-          .map(src => (src / ".." / "resources").getCanonicalFile)
-          .filterNot(unmanagedResourceDirectories.value.contains)
-          .distinct
-      }
-    }))
 
 ThisBuild / dynverSeparator := "-"
 
