@@ -1,140 +1,86 @@
 package org.scalasteward.core.vcs
 
-import cats.effect.IO
-import cats.effect.unsafe.implicits.global
-import munit.FunSuite
-import org.http4s.HttpRoutes
-import org.http4s.client.Client
-import org.http4s.dsl.io._
+import munit.CatsEffectSuite
+import org.http4s.HttpApp
+import org.http4s.dsl.Http4sDsl
 import org.http4s.implicits._
-import org.scalasteward.core.TestInstances.ioLogger
-import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.application.Config.VCSCfg
-import org.scalasteward.core.data.ReleaseRelatedUrl
-import org.scalasteward.core.data.ReleaseRelatedUrl.CustomReleaseNotes
-import org.scalasteward.core.mock.MockConfig
-import org.scalasteward.core.util._
+import org.scalasteward.core.data.ReleaseRelatedUrl.{CustomReleaseNotes, VersionDiff}
+import org.scalasteward.core.data.Version
+import org.scalasteward.core.mock.MockContext.context._
+import org.scalasteward.core.mock.{MockEff, MockState}
 
-class VCSExtraAlgTest extends FunSuite {
-  val routes: HttpRoutes[IO] =
-    HttpRoutes.of[IO] {
-      case HEAD -> Root / "foo" / "bar" / "compare" / "v0.1.0...v0.2.0" => Ok("exist")
-      case HEAD -> Root / "foo" / "buz" / "compare" / "v0.1.0...v0.2.0" => PermanentRedirect()
-      case HEAD -> Root / "foo" / "buz" / "README.md"                   => Ok("exist")
-      case _                                                            => NotFound()
-    }
+class VCSExtraAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
+  private val state = MockState.empty.copy(clientResponses = HttpApp {
+    case HEAD -> Root / "foo" / "bar" / "README.md"                   => Ok()
+    case HEAD -> Root / "foo" / "bar" / "compare" / "v0.1.0...v0.2.0" => Ok()
+    case HEAD -> Root / "foo" / "buz" / "compare" / "v0.1.0...v0.2.0" => PermanentRedirect()
+    case _                                                            => NotFound()
+  })
 
-  implicit val client: UrlCheckerClient[IO] =
-    UrlCheckerClient[IO](Client.fromHttpApp[IO](routes.orNotFound))
-  implicit val urlChecker: UrlChecker[IO] =
-    UrlChecker.create[IO](MockConfig.config).unsafeRunSync()
+  private val v1 = Version("0.1.0")
+  private val v2 = Version("0.2.0")
 
-  private val updateFoo = ("com.example".g % "foo".a % "0.1.0" %> "0.2.0").single
-  private val updateBar = ("com.example".g % "bar".a % "0.1.0" %> "0.2.0").single
-  private val updateBuz = ("com.example".g % "buz".a % "0.1.0" %> "0.2.0").single
-
-  test("getBranchCompareUrl: std vsc") {
-    val vcsExtraAlg = VCSExtraAlg.create[IO](MockConfig.config.vcsCfg)
-
-    assertEquals(
-      vcsExtraAlg
-        .getReleaseRelatedUrls(
-          repoUrl = uri"https://github.com/foo/foo",
-          releaseNotesUrl = None,
-          currentVersion = updateFoo.currentVersion,
-          nextVersion = updateFoo.nextVersion
-        )
-        .unsafeRunSync(),
-      List.empty
-    )
-
-    assertEquals(
-      vcsExtraAlg
-        .getReleaseRelatedUrls(
-          repoUrl = uri"https://github.com/foo/bar",
-          releaseNotesUrl = None,
-          currentVersion = updateBar.currentVersion,
-          nextVersion = updateBar.nextVersion
-        )
-        .unsafeRunSync(),
-      List(
-        ReleaseRelatedUrl.VersionDiff(uri"https://github.com/foo/bar/compare/v0.1.0...v0.2.0")
-      )
-    )
-
-    assertEquals(
-      vcsExtraAlg
-        .getReleaseRelatedUrls(
-          repoUrl = uri"https://github.com/foo/buz",
-          releaseNotesUrl = None,
-          currentVersion = updateBuz.currentVersion,
-          nextVersion = updateBuz.nextVersion
-        )
-        .unsafeRunSync(),
-      List.empty
-    )
-
-    assertEquals(
-      vcsExtraAlg
-        .getReleaseRelatedUrls(
-          repoUrl = uri"https://github.com/foo/buz",
-          releaseNotesUrl = Some(uri"https://github.com/foo/buz/README.md#changelog"),
-          currentVersion = updateBuz.currentVersion,
-          nextVersion = updateBuz.nextVersion
-        )
-        .unsafeRunSync(),
-      List(CustomReleaseNotes(uri"https://github.com/foo/buz/README.md#changelog"))
-    )
+  test("getReleaseRelatedUrls: repoUrl not found") {
+    val obtained =
+      vcsExtraAlg.getReleaseRelatedUrls(uri"https://github.com/foo/foo", None, v1, v2).runA(state)
+    assertIO(obtained, List.empty)
   }
 
-  test("getBranchCompareUrl: github on prem") {
-    val config = VCSCfg(
-      VCSType.GitHub,
-      uri"https://github.on-prem.com/",
-      "",
-      doNotFork = false,
-      addLabels = false
-    )
-    val githubOnPremVcsExtraAlg = VCSExtraAlg.create[IO](config)
+  test("getReleaseRelatedUrls: repoUrl ok") {
+    val obtained =
+      vcsExtraAlg.getReleaseRelatedUrls(uri"https://github.com/foo/bar", None, v1, v2).runA(state)
+    val expected = List(VersionDiff(uri"https://github.com/foo/bar/compare/v0.1.0...v0.2.0"))
+    assertIO(obtained, expected)
+  }
 
-    assertEquals(
-      githubOnPremVcsExtraAlg
-        .getReleaseRelatedUrls(
-          repoUrl = uri"https://github.on-prem.com/foo/foo",
-          releaseNotesUrl = None,
-          currentVersion = updateFoo.currentVersion,
-          nextVersion = updateFoo.nextVersion
-        )
-        .unsafeRunSync(),
-      List.empty
+  test("getReleaseRelatedUrls: repoUrl and releaseNotesUrl ok") {
+    val releaseNotesUrl = uri"https://github.com/foo/bar/README.md#changelog"
+    val obtained = vcsExtraAlg
+      .getReleaseRelatedUrls(uri"https://github.com/foo/bar", Some(releaseNotesUrl), v1, v2)
+      .runA(state)
+    val expected = List(
+      CustomReleaseNotes(releaseNotesUrl),
+      VersionDiff(uri"https://github.com/foo/bar/compare/v0.1.0...v0.2.0")
     )
+    assertIO(obtained, expected)
+  }
 
-    assertEquals(
-      githubOnPremVcsExtraAlg
-        .getReleaseRelatedUrls(
-          repoUrl = uri"https://github.on-prem.com/foo/bar",
-          releaseNotesUrl = None,
-          currentVersion = updateBar.currentVersion,
-          nextVersion = updateBar.nextVersion
-        )
-        .unsafeRunSync(),
-      List(
-        ReleaseRelatedUrl.VersionDiff(
-          uri"https://github.on-prem.com/foo/bar/compare/v0.1.0...v0.2.0"
-        )
-      )
-    )
+  test("getReleaseRelatedUrls: repoUrl permanent redirect") {
+    val obtained =
+      vcsExtraAlg.getReleaseRelatedUrls(uri"https://github.com/foo/buz", None, v1, v2).runA(state)
+    assertIO(obtained, List.empty)
+  }
 
-    assertEquals(
-      githubOnPremVcsExtraAlg
-        .getReleaseRelatedUrls(
-          repoUrl = uri"https://github.on-prem.com/foo/buz",
-          releaseNotesUrl = None,
-          currentVersion = updateFoo.currentVersion,
-          nextVersion = updateFoo.nextVersion
-        )
-        .unsafeRunSync(),
-      List.empty
-    )
+  private val config = VCSCfg(
+    VCSType.GitHub,
+    uri"https://github.on-prem.com/",
+    "",
+    doNotFork = false,
+    addLabels = false
+  )
+  private val githubOnPremVcsExtraAlg = VCSExtraAlg.create[MockEff](config)
+
+  test("getReleaseRelatedUrls: on-prem, repoUrl not found") {
+    val obtained = githubOnPremVcsExtraAlg
+      .getReleaseRelatedUrls(uri"https://github.on-prem.com/foo/foo", None, v1, v2)
+      .runA(state)
+    assertIO(obtained, List.empty)
+  }
+
+  test("getReleaseRelatedUrls: on-prem, repoUrl ok") {
+    val obtained = githubOnPremVcsExtraAlg
+      .getReleaseRelatedUrls(uri"https://github.on-prem.com/foo/bar", None, v1, v2)
+      .runA(state)
+    val expected =
+      List(VersionDiff(uri"https://github.on-prem.com/foo/bar/compare/v0.1.0...v0.2.0"))
+    assertIO(obtained, expected)
+  }
+
+  test("getReleaseRelatedUrls: on-prem, repoUrl permanent redirect") {
+    val obtained = githubOnPremVcsExtraAlg
+      .getReleaseRelatedUrls(uri"https://github.on-prem.com/foo/buz", None, v1, v2)
+      .runA(state)
+    assertIO(obtained, List.empty)
   }
 }

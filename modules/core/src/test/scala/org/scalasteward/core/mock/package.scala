@@ -25,6 +25,6 @@ package object mock {
       state.toRef.flatMap(ref => fa.run(ref).flatMap(a => ref.get.map(s => (s, a))))
   }
 
-  def getFlatMapSet[F[_], A, B](f: A => F[A])(ref: Ref[F, A])(implicit F: FlatMap[F]): F[Unit] =
+  def getFlatMapSet[F[_], A](f: A => F[A])(ref: Ref[F, A])(implicit F: FlatMap[F]): F[Unit] =
     ref.get.flatMap(f).flatMap(ref.set)
 }

@@ -77,6 +77,8 @@ final class Context[F[_]](implicit
     val scalafmtAlg: ScalafmtAlg[F],
     val stewardAlg: StewardAlg[F],
     val updateAlg: UpdateAlg[F],
+    val urlChecker: UrlChecker[F],
+    val vcsExtraAlg: VCSExtraAlg[F],
     val vcsRepoAlg: VCSRepoAlg[F],
     val workspaceAlg: WorkspaceAlg[F]
 )
