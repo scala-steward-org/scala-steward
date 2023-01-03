@@ -1,5 +1,6 @@
 package org.scalasteward.core.vcs.bitbucket
 
+import cats.syntax.semigroupk._
 import io.circe.literal._
 import munit.CatsEffectSuite
 import org.http4s._
@@ -19,15 +20,16 @@ import org.scalasteward.core.vcs.{VCSSelection, VCSType}
 
 class BitbucketApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
-  private def hasAuthHeader(req: Request[MockEff], authorization: Authorization): Boolean =
-    req.headers.get[Authorization].contains(authorization)
-
   private val user = AuthenticatedUser("user", "pass")
-  private val basicAuth = Authorization(BasicCredentials(user.login, user.accessToken))
 
-  private val state = MockState.empty.copy(clientResponses = HttpApp {
-    case req @ GET -> Root / "repositories" / "fthomas" / "base.g8"
-        if hasAuthHeader(req, basicAuth) =>
+  private val basicAuth = Authorization(BasicCredentials(user.login, user.accessToken))
+  private val auth = HttpApp[MockEff] { request =>
+    (request: @unchecked) match {
+      case _ if !request.headers.get[Authorization].contains(basicAuth) => Forbidden()
+    }
+  }
+  private val httpApp = HttpApp[MockEff] {
+    case GET -> Root / "repositories" / "fthomas" / "base.g8" =>
       Ok(
         json"""{
           "name": "base.g8",
@@ -48,8 +50,7 @@ class BitbucketApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
           }
         }"""
       )
-    case req @ GET -> Root / "repositories" / "scala-steward" / "base.g8"
-        if hasAuthHeader(req, basicAuth) =>
+    case GET -> Root / "repositories" / "scala-steward" / "base.g8" =>
       Ok(
         json"""{
           "name": "base.g8",
@@ -73,8 +74,7 @@ class BitbucketApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
           }
         }"""
       )
-    case req @ GET -> Root / "repositories" / "fthomas" / "base.g8" / "refs" / "branches" / "master"
-        if hasAuthHeader(req, basicAuth) =>
+    case GET -> Root / "repositories" / "fthomas" / "base.g8" / "refs" / "branches" / "master" =>
       Ok(
         json"""{
           "name": "master",
@@ -83,8 +83,7 @@ class BitbucketApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
           }
         }"""
       )
-    case req @ GET -> Root / "repositories" / "fthomas" / "base.g8" / "refs" / "branches" / "custom"
-        if hasAuthHeader(req, basicAuth) =>
+    case GET -> Root / "repositories" / "fthomas" / "base.g8" / "refs" / "branches" / "custom" =>
       Ok(
         json"""{
           "name": "custom",
@@ -93,8 +92,7 @@ class BitbucketApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
           }
         }"""
       )
-    case req @ POST -> Root / "repositories" / "fthomas" / "base.g8" / "forks"
-        if hasAuthHeader(req, basicAuth) =>
+    case POST -> Root / "repositories" / "fthomas" / "base.g8" / "forks" =>
       Ok(
         json"""{
           "name": "base.g8",
@@ -118,8 +116,7 @@ class BitbucketApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
           }
         }"""
       )
-    case req @ POST -> Root / "repositories" / "fthomas" / "base.g8" / "pullrequests"
-        if hasAuthHeader(req, basicAuth) =>
+    case POST -> Root / "repositories" / "fthomas" / "base.g8" / "pullrequests" =>
       Ok(
         json"""{
             "id": 2,
@@ -132,8 +129,7 @@ class BitbucketApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
             }
           }"""
       )
-    case req @ GET -> Root / "repositories" / "fthomas" / "base.g8" / "default-reviewers"
-        if hasAuthHeader(req, basicAuth) =>
+    case GET -> Root / "repositories" / "fthomas" / "base.g8" / "default-reviewers" =>
       Ok(
         json"""{
           "values": [
@@ -146,8 +142,7 @@ class BitbucketApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
           ]
         }"""
       )
-    case req @ GET -> Root / "repositories" / "fthomas" / "base.g8" / "pullrequests"
-        if hasAuthHeader(req, basicAuth) =>
+    case GET -> Root / "repositories" / "fthomas" / "base.g8" / "pullrequests" =>
       Ok(
         json"""{
           "values": [
@@ -164,9 +159,9 @@ class BitbucketApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
           ]
       }"""
       )
-    case req @ POST -> Root / "repositories" / "fthomas" / "base.g8" / "pullrequests" / IntVar(
+    case POST -> Root / "repositories" / "fthomas" / "base.g8" / "pullrequests" / IntVar(
           _
-        ) / "decline" if hasAuthHeader(req, basicAuth) =>
+        ) / "decline" =>
       Ok(
         json"""{
             "id": 2,
@@ -179,15 +174,16 @@ class BitbucketApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
             }
         }"""
       )
-    case req @ POST -> Root / "repositories" / "fthomas" / "base.g8" / "pullrequests" /
-        IntVar(_) / "comments" if hasAuthHeader(req, basicAuth) =>
+    case POST -> Root / "repositories" / "fthomas" / "base.g8" / "pullrequests" /
+        IntVar(_) / "comments" =>
       Created(json"""{
                   "content": {
                       "raw": "Superseded by #1234"
                   }
           }""")
     case _ => NotFound()
-  })
+  }
+  private val state = MockState.empty.copy(clientResponses = auth <+> httpApp)
 
   private val bitbucketApiAlg = new VCSSelection[MockEff](
     config.copy(

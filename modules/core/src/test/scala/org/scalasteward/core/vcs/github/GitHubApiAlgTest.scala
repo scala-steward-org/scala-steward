@@ -1,12 +1,13 @@
 package org.scalasteward.core.vcs.github
 
+import cats.syntax.semigroupk._
 import io.circe.literal._
 import munit.CatsEffectSuite
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.headers.Authorization
 import org.http4s.implicits._
-import org.http4s.{BasicCredentials, HttpApp, Request}
+import org.http4s.{BasicCredentials, HttpApp}
 import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.git.{Branch, Sha1}
@@ -20,13 +21,14 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
   private val user = AuthenticatedUser("user", "pass")
 
-  private def hasAuthHeader(req: Request[MockEff], authorization: Authorization): Boolean =
-    req.headers.get[Authorization].contains(authorization)
-
   private val basicAuth = Authorization(BasicCredentials(user.login, user.accessToken))
-
-  private val state = MockState.empty.copy(clientResponses = HttpApp {
-    case req @ GET -> Root / "repos" / "fthomas" / "base.g8" if hasAuthHeader(req, basicAuth) =>
+  private val auth = HttpApp[MockEff] { request =>
+    (request: @unchecked) match {
+      case _ if !request.headers.get[Authorization].contains(basicAuth) => Forbidden()
+    }
+  }
+  private val httpApp = HttpApp[MockEff] {
+    case GET -> Root / "repos" / "fthomas" / "base.g8" =>
       Ok(
         json""" {
             "name": "base.g8",
@@ -37,8 +39,7 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
           } """
       )
 
-    case req @ GET -> Root / "repos" / "fthomas" / "base.g8" / "branches" / "master"
-        if hasAuthHeader(req, basicAuth) =>
+    case GET -> Root / "repos" / "fthomas" / "base.g8" / "branches" / "master" =>
       Ok(
         json""" {
             "name": "master",
@@ -46,8 +47,7 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
           } """
       )
 
-    case req @ GET -> Root / "repos" / "fthomas" / "base.g8" / "branches" / "custom"
-        if hasAuthHeader(req, basicAuth) =>
+    case GET -> Root / "repos" / "fthomas" / "base.g8" / "branches" / "custom" =>
       Ok(
         json""" {
             "name": "custom",
@@ -55,8 +55,7 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
           } """
       )
 
-    case req @ GET -> Root / "repos" / "fthomas" / "base.g8" / "pulls"
-        if hasAuthHeader(req, basicAuth) =>
+    case GET -> Root / "repos" / "fthomas" / "base.g8" / "pulls" =>
       Ok(
         json"""[{
             "html_url": "https://github.com/octocat/Hello-World/pull/1347",
@@ -66,8 +65,7 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
           }]"""
       )
 
-    case req @ PATCH -> Root / "repos" / "fthomas" / "base.g8" / "pulls" / IntVar(_)
-        if hasAuthHeader(req, basicAuth) =>
+    case PATCH -> Root / "repos" / "fthomas" / "base.g8" / "pulls" / IntVar(_) =>
       Ok(
         json"""{
             "html_url": "https://github.com/octocat/Hello-World/pull/1347",
@@ -77,8 +75,7 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
           }"""
       )
 
-    case req @ POST -> Root / "repos" / "fthomas" / "base.g8" / "forks"
-        if hasAuthHeader(req, basicAuth) =>
+    case POST -> Root / "repos" / "fthomas" / "base.g8" / "forks" =>
       Ok(
         json""" {
             "name": "base.g8-1",
@@ -96,14 +93,12 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
           } """
       )
 
-    case req @ POST -> Root / "repos" / "fthomas" / "base.g8" / "issues" / IntVar(_) / "comments"
-        if hasAuthHeader(req, basicAuth) =>
+    case POST -> Root / "repos" / "fthomas" / "base.g8" / "issues" / IntVar(_) / "comments" =>
       Created(json"""  {
             "body": "Superseded by #1234"
           } """)
 
-    case req @ POST -> Root / "repos" / "fthomas" / "base.g8" / "pulls"
-        if hasAuthHeader(req, basicAuth) =>
+    case POST -> Root / "repos" / "fthomas" / "base.g8" / "pulls" =>
       Created(json"""  {
             "html_url": "https://github.com/octocat/Hello-World/pull/1347",
             "state": "open",
@@ -111,8 +106,7 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
             "title": "new-feature"
             } """)
 
-    case req @ POST -> Root / "repos" / "fthomas" / "base.g8" / "issues" / IntVar(_) / "labels"
-        if hasAuthHeader(req, basicAuth) =>
+    case POST -> Root / "repos" / "fthomas" / "base.g8" / "issues" / IntVar(_) / "labels" =>
       // Response taken from https://docs.github.com/en/rest/reference/issues#labels, is ignored
       Created(json"""[
           {
@@ -126,7 +120,8 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
           }]""")
 
     case _ => NotFound()
-  })
+  }
+  private val state = MockState.empty.copy(clientResponses = auth <+> httpApp)
 
   private val gitHubApiAlg = new VCSSelection[MockEff](
     config.copy(vcsCfg = config.vcsCfg.copy(tpe = VCSType.GitHub)),

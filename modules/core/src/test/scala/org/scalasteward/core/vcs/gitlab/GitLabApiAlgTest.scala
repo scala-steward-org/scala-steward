@@ -1,14 +1,15 @@
 package org.scalasteward.core.vcs.gitlab
 
+import cats.syntax.semigroupk._
 import io.circe.Json
 import io.circe.literal._
 import io.circe.parser._
 import munit.CatsEffectSuite
+import org.http4s.HttpApp
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.headers.Allow
 import org.http4s.implicits._
-import org.http4s.{HttpApp, Request}
 import org.scalasteward.core.TestInstances.{dummyRepoCache, ioLogger}
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.application.Config.GitLabCfg
@@ -26,9 +27,6 @@ import org.typelevel.ci.CIStringSyntax
 
 class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
-  private def hasAuthHeader(req: Request[MockEff], value: String): Boolean =
-    req.headers.get(ci"Private-Token").exists(nel => nel.head.value == value)
-
   private val user = AuthenticatedUser("user", "pass")
 
   object MergeWhenPipelineSucceedsMatcher
@@ -36,16 +34,24 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
   object RequiredReviewersMatcher extends QueryParamDecoderMatcher[Int]("approvals_required")
 
-  private val state = MockState.empty.copy(clientResponses = HttpApp {
-    case req @ POST -> Root / "projects" / "foo/bar" / "fork"
-        if hasAuthHeader(req, user.accessToken) =>
+  private val auth = HttpApp[MockEff] { request =>
+    (request: @unchecked) match {
+      case _
+          if !request.headers
+            .get(ci"Private-Token")
+            .exists(nel => nel.head.value == user.accessToken) =>
+        Forbidden()
+    }
+  }
+  private val httpApp = HttpApp[MockEff] {
+
+    case POST -> Root / "projects" / "foo/bar" / "fork" =>
       Ok(getRepo)
 
-    case req @ GET -> Root / "projects" / "foo/bar" if hasAuthHeader(req, user.accessToken) =>
+    case GET -> Root / "projects" / "foo/bar" =>
       Ok(getRepo)
 
-    case req @ GET -> Root / "projects" / "foo/bar" / "repository" / "branches" / "master"
-        if hasAuthHeader(req, user.accessToken) =>
+    case GET -> Root / "projects" / "foo/bar" / "repository" / "branches" / "master" =>
       Ok(json"""{
                     "name": "master",
                     "commit": {
@@ -53,63 +59,58 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
                     }
                   }""")
 
-    case req @ POST -> Root / "projects" / s"${config.vcsCfg.login}/bar" / "merge_requests"
-        if hasAuthHeader(req, user.accessToken) =>
+    case POST -> Root / "projects" / s"${config.vcsCfg.login}/bar" / "merge_requests" =>
       Ok(getMr)
 
-    case req @ GET -> Root / "projects" / "foo/bar" / "merge_requests"
-        if hasAuthHeader(req, user.accessToken) =>
+    case GET -> Root / "projects" / "foo/bar" / "merge_requests" =>
       Ok(Json.arr(getMr))
 
-    case req @ POST -> Root / "projects" / "foo/bar" / "merge_requests"
-        if hasAuthHeader(req, user.accessToken) =>
+    case POST -> Root / "projects" / "foo/bar" / "merge_requests" =>
       Ok(
         getMr.deepMerge(
           json""" { "iid": 150, "web_url": "https://gitlab.com/foo/bar/merge_requests/150" } """
         )
       )
 
-    case req @ GET -> Root / "projects" / "foo/bar" / "merge_requests" / "150"
-        if hasAuthHeader(req, user.accessToken) =>
+    case GET -> Root / "projects" / "foo/bar" / "merge_requests" / "150" =>
       Ok(
         getMr.deepMerge(
           json""" { "iid": 150, "web_url": "https://gitlab.com/foo/bar/merge_requests/150" } """
         )
       )
 
-    case req @ PUT -> Root / "projects" / "foo/bar" / "merge_requests" / IntVar(_)
-        if hasAuthHeader(req, user.accessToken) =>
+    case PUT -> Root / "projects" / "foo/bar" / "merge_requests" / IntVar(_) =>
       Ok(
         getMr.deepMerge(
           json""" { "state": "closed" } """
         )
       )
 
-    case req @ PUT -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "merge"
-        :? MergeWhenPipelineSucceedsMatcher(_) if hasAuthHeader(req, user.accessToken) =>
+    case PUT -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "merge"
+        :? MergeWhenPipelineSucceedsMatcher(_) =>
       Ok(
         getMr.deepMerge(
           json""" { "iid": 150, "web_url": "https://gitlab.com/foo/bar/merge_requests/150" } """
         )
       )
 
-    case req @ PUT -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "approvals"
-        :? RequiredReviewersMatcher(requiredApprovers) if hasAuthHeader(req, user.accessToken) =>
+    case PUT -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "approvals"
+        :? RequiredReviewersMatcher(requiredApprovers) =>
       Ok(
         putMrApprovals.deepMerge(
           json""" { "iid": 150, "approvals_required": $requiredApprovers, "web_url": "https://gitlab.com/foo/bar/merge_requests/150" } """
         )
       )
 
-    case req @ POST -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "notes"
-        if hasAuthHeader(req, user.accessToken) =>
+    case POST -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "notes" =>
       Ok(json"""  {
             "body": "Superseded by #1234"
           } """)
 
     case _ =>
       NotFound()
-  })
+  }
+  private val state = MockState.empty.copy(clientResponses = auth <+> httpApp)
 
   private val gitlabApiAlg = new VCSSelection[MockEff](
     config.copy(
@@ -238,15 +239,14 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   }
 
   test("createPullRequest -- don't fail on error code") {
-    import cats.syntax.semigroupk._
-    val moreResponses = HttpApp[MockEff] { req =>
+    val localApp = HttpApp[MockEff] { req =>
       (req: @unchecked) match {
         case PUT -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "merge"
             :? MergeWhenPipelineSucceedsMatcher(_) =>
           MethodNotAllowed(Allow(OPTIONS, GET, HEAD))
       }
-    } <+> state.clientResponses
-    val localState = MockState.empty.copy(clientResponses = moreResponses)
+    }
+    val localState = MockState.empty.copy(clientResponses = auth <+> localApp <+> httpApp)
 
     val prOut = gitlabApiAlgNoFork
       .createPullRequest(Repo("foo", "bar"), newPRData)
@@ -278,15 +278,14 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   }
 
   test("createPullRequest -- no fail upon required reviewers error") {
-    import cats.syntax.semigroupk._
-    val moreResponses = HttpApp[MockEff] { req =>
+    val localApp = HttpApp[MockEff] { req =>
       (req: @unchecked) match {
         case PUT -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "approvals"
             :? RequiredReviewersMatcher(requiredReviewers) =>
           BadRequest(s"Cannot set requiredReviewers to $requiredReviewers")
       }
-    } <+> state.clientResponses
-    val localState = MockState.empty.copy(clientResponses = moreResponses)
+    }
+    val localState = MockState.empty.copy(clientResponses = auth <+> localApp <+> httpApp)
 
     val prOut = gitlabApiAlgLessReviewersRequired
       .createPullRequest(Repo("foo", "bar"), newPRData)

@@ -1,10 +1,11 @@
 package org.scalasteward.core.vcs.bitbucketserver
 
+import cats.syntax.semigroupk._
 import munit.CatsEffectSuite
 import org.http4s.dsl.Http4sDsl
 import org.http4s.headers.Authorization
 import org.http4s.implicits._
-import org.http4s.{BasicCredentials, HttpApp, Request, Uri}
+import org.http4s.{BasicCredentials, HttpApp, Uri}
 import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.application.Config.BitbucketServerCfg
 import org.scalasteward.core.git.Sha1.HexString
@@ -22,14 +23,14 @@ class BitbucketServerApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] 
   private val main = Branch("main")
   private val user = AuthenticatedUser("user", "pass")
 
-  private def hasAuthHeader(req: Request[MockEff], authorization: Authorization): Boolean =
-    req.headers.get[Authorization].contains(authorization)
-
   private val basicAuth = Authorization(BasicCredentials(user.login, user.accessToken))
-
-  private val state = MockState.empty.copy(clientResponses = HttpApp {
-    case req @ GET -> Root / "rest" / "default-reviewers" / "1.0" / "projects" / repo.owner / "repos" / repo.repo / "conditions"
-        if hasAuthHeader(req, basicAuth) =>
+  private val auth = HttpApp[MockEff] { request =>
+    (request: @unchecked) match {
+      case _ if !request.headers.get[Authorization].contains(basicAuth) => Forbidden()
+    }
+  }
+  private val httpApp = HttpApp[MockEff] {
+    case GET -> Root / "rest" / "default-reviewers" / "1.0" / "projects" / repo.owner / "repos" / repo.repo / "conditions" =>
       Ok(s"""[
             |  {
             |    "reviewers": [
@@ -38,22 +39,20 @@ class BitbucketServerApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] 
             |  }
             |]""".stripMargin)
 
-    case req @ GET -> Root / "rest" / "api" / "1.0" / "projects" / repo.owner / "repos" / repo.repo
-        if hasAuthHeader(req, basicAuth) =>
+    case GET -> Root / "rest" / "api" / "1.0" / "projects" / repo.owner / "repos" / repo.repo =>
       Ok(s"""{
             |  "slug": "${repo.repo}",
             |  "links": { "clone": [ { "href": "http://example.org/scala-steward.git", "name": "http" } ] }
             |}""".stripMargin)
 
-    case req @ GET -> Root / "rest" / "api" / "1.0" / "projects" / repo.owner / "repos" / repo.repo / "branches" / "default"
-        if hasAuthHeader(req, basicAuth) =>
+    case GET -> Root / "rest" / "api" / "1.0" / "projects" / repo.owner / "repos" / repo.repo / "branches" / "default" =>
       Ok(s"""{
             |  "displayId": "main",
             |  "latestCommit": "00213685b18016c86961a7f015793aa09e722db2"
             |}""".stripMargin)
 
-    case req @ GET -> Root / "rest" / "api" / "1.0" / "projects" / repo.owner / "repos" / repo.repo / "branches" :?
-        FilterTextMatcher("main") if hasAuthHeader(req, basicAuth) =>
+    case GET -> Root / "rest" / "api" / "1.0" / "projects" / repo.owner / "repos" / repo.repo / "branches" :?
+        FilterTextMatcher("main") =>
       Ok(s"""{
             |    "values": [
             |        {
@@ -63,8 +62,7 @@ class BitbucketServerApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] 
             |    ]
             |}""".stripMargin)
 
-    case req @ GET -> Root / "rest" / "api" / "1.0" / "projects" / repo.owner / "repos" / repo.repo / "pull-requests"
-        if hasAuthHeader(req, basicAuth) =>
+    case GET -> Root / "rest" / "api" / "1.0" / "projects" / repo.owner / "repos" / repo.repo / "pull-requests" =>
       Ok("""{ "values": [
            |  {
            |    "id": 123,
@@ -75,8 +73,7 @@ class BitbucketServerApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] 
            |  }
            |]}""".stripMargin)
 
-    case req @ POST -> Root / "rest" / "api" / "1.0" / "projects" / repo.owner / "repos" / repo.repo / "pull-requests"
-        if hasAuthHeader(req, basicAuth) =>
+    case POST -> Root / "rest" / "api" / "1.0" / "projects" / repo.owner / "repos" / repo.repo / "pull-requests" =>
       Created(s"""{
                  |    "id": 2,
                  |    "version": 1,
@@ -91,12 +88,12 @@ class BitbucketServerApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] 
                  |    }
                  |}""".stripMargin)
 
-    case req @ POST -> Root / "rest" / "api" / "1.0" / "projects" / repo.owner / "repos" / repo.repo / "pull-requests" /
-        IntVar(1347) / "comments" if hasAuthHeader(req, basicAuth) =>
+    case POST -> Root / "rest" / "api" / "1.0" / "projects" / repo.owner / "repos" / repo.repo / "pull-requests" /
+        IntVar(1347) / "comments" =>
       Created("""{ "text": "Superseded by #1234" }""")
 
-    case req @ GET -> Root / "rest" / "api" / "1.0" / "projects" / repo.owner / "repos" / repo.repo / "pull-requests" /
-        IntVar(4711) if hasAuthHeader(req, basicAuth) =>
+    case GET -> Root / "rest" / "api" / "1.0" / "projects" / repo.owner / "repos" / repo.repo / "pull-requests" /
+        IntVar(4711) =>
       Ok("""{
            |  "id": 4711,
            |  "version": 1,
@@ -105,12 +102,13 @@ class BitbucketServerApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] 
            |  "links": { "self": [ { "href": "http://example.org" } ] }
            |}""".stripMargin)
 
-    case req @ POST -> Root / "rest" / "api" / "1.0" / "projects" / repo.owner / "repos" / repo.repo / "pull-requests" /
-        IntVar(4711) / "decline" if hasAuthHeader(req, basicAuth) =>
+    case POST -> Root / "rest" / "api" / "1.0" / "projects" / repo.owner / "repos" / repo.repo / "pull-requests" /
+        IntVar(4711) / "decline" =>
       Ok()
 
     case _ => NotFound()
-  })
+  }
+  private val state = MockState.empty.copy(clientResponses = auth <+> httpApp)
 
   private val bitbucketServerApiAlg = new VCSSelection[MockEff](
     config.copy(
