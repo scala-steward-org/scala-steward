@@ -1,21 +1,29 @@
 package org.scalasteward.core.vcs.azurerepos
 
-import cats.effect.IO
-import cats.effect.unsafe.implicits.global
-import munit.FunSuite
-import org.http4s.client.Client
-import org.http4s.dsl.io._
+import munit.CatsEffectSuite
+import org.http4s.dsl.Http4sDsl
+import org.http4s.headers.Authorization
 import org.http4s.implicits._
-import org.http4s.{HttpRoutes, Uri}
+import org.http4s.{BasicCredentials, HttpApp, Request, Uri}
+import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.application.Config.AzureReposConfig
 import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.git.{Branch, Sha1}
-import org.scalasteward.core.util.HttpJsonClient
+import org.scalasteward.core.mock.MockConfig.config
+import org.scalasteward.core.mock.MockContext.context.httpJsonClient
+import org.scalasteward.core.mock.{MockEff, MockState}
 import org.scalasteward.core.vcs.data._
+import org.scalasteward.core.vcs.{VCSSelection, VCSType}
 
-class AzureReposApiAlgTest extends FunSuite {
+class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
+  private val user = AuthenticatedUser("user", "pass")
   private val repo = Repo("scala-steward-org", "scala-steward")
   private val apiHost = uri"https://dev.azure.com"
+
+  private def hasAuthHeader(req: Request[MockEff], authorization: Authorization): Boolean =
+    req.headers.get[Authorization].contains(authorization)
+
+  private val basicAuth = Authorization(BasicCredentials(user.login, user.accessToken))
 
   object branchNameMatcher extends QueryParamDecoderMatcher[String]("name")
   object sourceRefNameMatcher
@@ -23,8 +31,9 @@ class AzureReposApiAlgTest extends FunSuite {
   object targetRefNameMatcher
       extends QueryParamDecoderMatcher[String]("searchCriteria.targetRefName")
 
-  private val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
-    case GET -> Root / "azure-org" / repo.owner / "_apis/git/repositories" / repo.repo =>
+  private val state = MockState.empty.copy(clientResponses = HttpApp {
+    case req @ GET -> Root / "azure-org" / repo.owner / "_apis/git/repositories" / repo.repo
+        if hasAuthHeader(req, basicAuth) =>
       Ok("""
            |{
            |    "id": "3846fbbd-71a0-402b-8352-6b1b9b2088aa",
@@ -40,8 +49,8 @@ class AzureReposApiAlgTest extends FunSuite {
            |    "isDisabled": false
            |}""".stripMargin)
 
-    case GET -> Root / "azure-org" / repo.owner / "_apis/git/repositories" / repo.repo / "stats/branches"
-        :? branchNameMatcher("main") =>
+    case req @ GET -> Root / "azure-org" / repo.owner / "_apis/git/repositories" / repo.repo / "stats/branches"
+        :? branchNameMatcher("main") if hasAuthHeader(req, basicAuth) =>
       Ok("""
            |{
            |    "commit": {
@@ -53,7 +62,8 @@ class AzureReposApiAlgTest extends FunSuite {
            |    "isBaseVersion": true
            |}""".stripMargin)
 
-    case POST -> Root / "azure-org" / repo.owner / "_apis/git/repositories" / repo.repo / "pullrequests" =>
+    case req @ POST -> Root / "azure-org" / repo.owner / "_apis/git/repositories" / repo.repo / "pullrequests"
+        if hasAuthHeader(req, basicAuth) =>
       Created(
         """
           |{
@@ -79,9 +89,9 @@ class AzureReposApiAlgTest extends FunSuite {
           |}""".stripMargin
       )
 
-    case GET -> Root / "azure-org" / repo.owner / "_apis/git/repositories" / repo.repo / "pullrequests" :?
+    case req @ GET -> Root / "azure-org" / repo.owner / "_apis/git/repositories" / repo.repo / "pullrequests" :?
         sourceRefNameMatcher("refs/heads/update/cats-effect-3.3.14")
-        +& targetRefNameMatcher("refs/heads/main") =>
+        +& targetRefNameMatcher("refs/heads/main") if hasAuthHeader(req, basicAuth) =>
       Ok("""
            |{
            |   "value":[
@@ -106,7 +116,8 @@ class AzureReposApiAlgTest extends FunSuite {
            |   "count":1
            |}""".stripMargin)
 
-    case PATCH -> Root / "azure-org" / repo.owner / "_apis/git/repositories" / repo.repo / "pullrequests" / "26" =>
+    case req @ PATCH -> Root / "azure-org" / repo.owner / "_apis/git/repositories" / repo.repo / "pullrequests" / "26"
+        if hasAuthHeader(req, basicAuth) =>
       Ok("""
            |{
            |  "repository": {
@@ -130,7 +141,8 @@ class AzureReposApiAlgTest extends FunSuite {
            |  "supportsIterations": true
            |}""".stripMargin)
 
-    case POST -> Root / "azure-org" / repo.owner / "_apis/git/repositories" / repo.repo / "pullrequests" / "26" / "threads" =>
+    case req @ POST -> Root / "azure-org" / repo.owner / "_apis/git/repositories" / repo.repo / "pullrequests" / "26" / "threads"
+        if hasAuthHeader(req, basicAuth) =>
       Ok("""
            |{
            |   "id":17,
@@ -149,7 +161,8 @@ class AzureReposApiAlgTest extends FunSuite {
            |   "status":"active"
            |}""".stripMargin)
 
-    case POST -> Root / "azure-org" / repo.owner / "_apis/git/repositories" / repo.repo / "pullrequests" / "26" / "labels" =>
+    case req @ POST -> Root / "azure-org" / repo.owner / "_apis/git/repositories" / repo.repo / "pullrequests" / "26" / "labels"
+        if hasAuthHeader(req, basicAuth) =>
       Ok("""
            |{
            |    "id": "921dbff4-9c00-49d6-9262-ab0d6e4a13f1",
@@ -158,21 +171,20 @@ class AzureReposApiAlgTest extends FunSuite {
            |    "url": "https://dev.azure.com/azure-org/scala-steward-org/_apis/git/repositories/scala-steward/pullRequests/26/labels/921dbff4-9c00-49d6-9262-ab0d6e4a13f1"
            |}""".stripMargin)
 
-  }
+    case _ => NotFound()
+  })
 
-  implicit private val client: Client[IO] = Client.fromHttpApp(routes.orNotFound)
-  implicit private val httpJsonClient: HttpJsonClient[IO] = new HttpJsonClient[IO]
   private val azureRepoCfg = AzureReposConfig(organization = Some("azure-org"))
-
-  private val azureReposApiAlg: AzureReposApiAlg[IO] =
-    new AzureReposApiAlg[IO](
-      apiHost,
-      azureRepoCfg,
-      _ => IO.pure
-    )
+  private val azureReposApiAlg = new VCSSelection[MockEff](
+    config.copy(
+      vcsCfg = config.vcsCfg.copy(apiHost = apiHost, tpe = VCSType.AzureRepos),
+      azureReposConfig = azureRepoCfg
+    ),
+    user
+  ).vcsApiAlg
 
   test("getRepo") {
-    val obtained = azureReposApiAlg.getRepo(repo).unsafeRunSync()
+    val obtained = azureReposApiAlg.getRepo(repo).runA(state)
     val expected = RepoOut(
       "scala-steward",
       UserOut("scala-steward-org"),
@@ -182,16 +194,16 @@ class AzureReposApiAlgTest extends FunSuite {
       ),
       Branch("refs/heads/main")
     )
-    assertEquals(obtained, expected)
+    assertIO(obtained, expected)
   }
 
   test("getBranch") {
-    val obtained = azureReposApiAlg.getBranch(repo, Branch("refs/heads/main")).unsafeRunSync()
+    val obtained = azureReposApiAlg.getBranch(repo, Branch("refs/heads/main")).runA(state)
     val expected = BranchOut(
       Branch("main"),
       CommitOut(Sha1(HexString.unsafeFrom("f55c9900528e548511fbba6874c873d44c5d714c")))
     )
-    assertEquals(obtained, expected)
+    assertIO(obtained, expected)
   }
 
   test("createPullRequest") {
@@ -206,7 +218,7 @@ class AzureReposApiAlgTest extends FunSuite {
           labels = List.empty
         )
       )
-      .unsafeRunSync()
+      .runA(state)
 
     val expected = PullRequestOut(
       uri"https://dev.azure.com/azure-org/scala-steward-org/_apis/git/repositories/scala-steward/pullRequests/22",
@@ -214,7 +226,7 @@ class AzureReposApiAlgTest extends FunSuite {
       PullRequestNumber(22),
       "Update cats-effect to 3.3.14"
     )
-    assertEquals(obtained, expected)
+    assertIO(obtained, expected)
   }
 
   test("listPullRequests") {
@@ -224,7 +236,7 @@ class AzureReposApiAlgTest extends FunSuite {
         "refs/heads/update/cats-effect-3.3.14",
         Branch("refs/heads/main")
       )
-      .unsafeRunSync()
+      .runA(state)
 
     val expected = List(
       PullRequestOut(
@@ -234,11 +246,11 @@ class AzureReposApiAlgTest extends FunSuite {
         "Update cats-effect to 3.3.14"
       )
     )
-    assertEquals(obtained, expected)
+    assertIO(obtained, expected)
   }
 
   test("closePullRequest") {
-    val obtained = azureReposApiAlg.closePullRequest(repo, PullRequestNumber(26)).unsafeRunSync()
+    val obtained = azureReposApiAlg.closePullRequest(repo, PullRequestNumber(26)).runA(state)
     val expected = PullRequestOut(
       uri"https://dev.azure.com/azure-org/scala-steward-org/_apis/git/repositories/scala-steward/pullRequests/26",
       PullRequestState.Closed,
@@ -246,24 +258,22 @@ class AzureReposApiAlgTest extends FunSuite {
       "Update cats-effect to 3.3.14"
     )
 
-    assertEquals(obtained, expected)
+    assertIO(obtained, expected)
   }
 
   test("commentPullRequest") {
     val obtained = azureReposApiAlg
       .commentPullRequest(repo, PullRequestNumber(26), "Test comment")
-      .unsafeRunSync()
+      .runA(state)
     val expected = Comment("Test comment")
 
-    assertEquals(obtained, expected)
+    assertIO(obtained, expected)
   }
 
   test("labelPullRequest") {
-    val obtained =
-      azureReposApiAlg
-        .labelPullRequest(repo, PullRequestNumber(26), List("dependency-updates"))
-        .attempt
-        .unsafeRunSync()
-    assert(obtained.isRight)
+    azureReposApiAlg
+      .labelPullRequest(repo, PullRequestNumber(26), List("dependency-updates"))
+      .runA(state)
+      .assert
   }
 }

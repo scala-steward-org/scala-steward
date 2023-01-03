@@ -1,116 +1,139 @@
 package org.scalasteward.core.vcs.gitlab
 
-import cats.effect.unsafe.implicits.global
-import cats.effect.{Concurrent, IO}
-import cats.implicits._
 import io.circe.Json
 import io.circe.literal._
 import io.circe.parser._
-import munit.FunSuite
-import org.http4s.HttpRoutes
+import munit.CatsEffectSuite
 import org.http4s.circe._
-import org.http4s.client.Client
-import org.http4s.dsl.io._
+import org.http4s.dsl.Http4sDsl
 import org.http4s.headers.Allow
 import org.http4s.implicits._
-import org.scalasteward.core.TestInstances.dummyRepoCache
+import org.http4s.{HttpApp, Request}
+import org.scalasteward.core.TestInstances.{dummyRepoCache, ioLogger}
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.application.Config.GitLabCfg
 import org.scalasteward.core.data.{RepoData, UpdateData}
 import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.mock.MockConfig.config
+import org.scalasteward.core.mock.MockContext.context.httpJsonClient
+import org.scalasteward.core.mock.{MockEff, MockState}
 import org.scalasteward.core.repoconfig.RepoConfig
-import org.scalasteward.core.util.HttpJsonClient
 import org.scalasteward.core.vcs.data._
 import org.scalasteward.core.vcs.gitlab.GitLabJsonCodec._
-import org.typelevel.log4cats.Logger
-import org.typelevel.log4cats.slf4j.Slf4jLogger
+import org.scalasteward.core.vcs.{VCSSelection, VCSType}
+import org.typelevel.ci.CIStringSyntax
 
-class GitLabApiAlgTest extends FunSuite {
+class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
+
+  private def hasAuthHeader(req: Request[MockEff], value: String): Boolean =
+    req.headers.get(ci"Private-Token").exists(nel => nel.head.value == value)
+
+  private val user = AuthenticatedUser("user", "pass")
+
   object MergeWhenPipelineSucceedsMatcher
       extends QueryParamDecoderMatcher[Boolean]("merge_when_pipeline_succeeds")
 
   object RequiredReviewersMatcher extends QueryParamDecoderMatcher[Int]("approvals_required")
 
-  val routes: HttpRoutes[IO] =
-    HttpRoutes.of[IO] {
-      case POST -> Root / "projects" / "foo/bar" / "fork" =>
-        Ok(getRepo)
+  private val state = MockState.empty.copy(clientResponses = HttpApp {
+    case req @ POST -> Root / "projects" / "foo/bar" / "fork"
+        if hasAuthHeader(req, user.accessToken) =>
+      Ok(getRepo)
 
-      case GET -> Root / "projects" / "foo/bar" =>
-        Ok(getRepo)
+    case req @ GET -> Root / "projects" / "foo/bar" if hasAuthHeader(req, user.accessToken) =>
+      Ok(getRepo)
 
-      case GET -> Root / "projects" / "foo/bar" / "repository" / "branches" / "master" =>
-        Ok(json"""{
+    case req @ GET -> Root / "projects" / "foo/bar" / "repository" / "branches" / "master"
+        if hasAuthHeader(req, user.accessToken) =>
+      Ok(json"""{
                     "name": "master",
                     "commit": {
                       "id": "07eb2a203e297c8340273950e98b2cab68b560c1"
                     }
                   }""")
 
-      case POST -> Root / "projects" / s"${config.vcsCfg.login}/bar" / "merge_requests" =>
-        Ok(getMr)
+    case req @ POST -> Root / "projects" / s"${config.vcsCfg.login}/bar" / "merge_requests"
+        if hasAuthHeader(req, user.accessToken) =>
+      Ok(getMr)
 
-      case GET -> Root / "projects" / "foo/bar" / "merge_requests" =>
-        Ok(Json.arr(getMr))
+    case req @ GET -> Root / "projects" / "foo/bar" / "merge_requests"
+        if hasAuthHeader(req, user.accessToken) =>
+      Ok(Json.arr(getMr))
 
-      case POST -> Root / "projects" / "foo/bar" / "merge_requests" =>
-        Ok(
-          getMr.deepMerge(
-            json""" { "iid": 150, "web_url": "https://gitlab.com/foo/bar/merge_requests/150" } """
-          )
+    case req @ POST -> Root / "projects" / "foo/bar" / "merge_requests"
+        if hasAuthHeader(req, user.accessToken) =>
+      Ok(
+        getMr.deepMerge(
+          json""" { "iid": 150, "web_url": "https://gitlab.com/foo/bar/merge_requests/150" } """
         )
+      )
 
-      case GET -> Root / "projects" / "foo/bar" / "merge_requests" / "150" =>
-        Ok(
-          getMr.deepMerge(
-            json""" { "iid": 150, "web_url": "https://gitlab.com/foo/bar/merge_requests/150" } """
-          )
+    case req @ GET -> Root / "projects" / "foo/bar" / "merge_requests" / "150"
+        if hasAuthHeader(req, user.accessToken) =>
+      Ok(
+        getMr.deepMerge(
+          json""" { "iid": 150, "web_url": "https://gitlab.com/foo/bar/merge_requests/150" } """
         )
+      )
 
-      case PUT -> Root / "projects" / "foo/bar" / "merge_requests" / IntVar(_) =>
-        Ok(
-          getMr.deepMerge(
-            json""" { "state": "closed" } """
-          )
+    case req @ PUT -> Root / "projects" / "foo/bar" / "merge_requests" / IntVar(_)
+        if hasAuthHeader(req, user.accessToken) =>
+      Ok(
+        getMr.deepMerge(
+          json""" { "state": "closed" } """
         )
+      )
 
-      case PUT -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "merge"
-          :? MergeWhenPipelineSucceedsMatcher(_) =>
-        Ok(
-          getMr.deepMerge(
-            json""" { "iid": 150, "web_url": "https://gitlab.com/foo/bar/merge_requests/150" } """
-          )
+    case req @ PUT -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "merge"
+        :? MergeWhenPipelineSucceedsMatcher(_) if hasAuthHeader(req, user.accessToken) =>
+      Ok(
+        getMr.deepMerge(
+          json""" { "iid": 150, "web_url": "https://gitlab.com/foo/bar/merge_requests/150" } """
         )
+      )
 
-      case PUT -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "approvals"
-          :? RequiredReviewersMatcher(requiredApprovers) =>
-        Ok(
-          putMrApprovals.deepMerge(
-            json""" { "iid": 150, "approvals_required": $requiredApprovers, "web_url": "https://gitlab.com/foo/bar/merge_requests/150" } """
-          )
+    case req @ PUT -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "approvals"
+        :? RequiredReviewersMatcher(requiredApprovers) if hasAuthHeader(req, user.accessToken) =>
+      Ok(
+        putMrApprovals.deepMerge(
+          json""" { "iid": 150, "approvals_required": $requiredApprovers, "web_url": "https://gitlab.com/foo/bar/merge_requests/150" } """
         )
+      )
 
-      case POST -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "notes" =>
-        Ok(json"""  {
+    case req @ POST -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "notes"
+        if hasAuthHeader(req, user.accessToken) =>
+      Ok(json"""  {
             "body": "Superseded by #1234"
           } """)
 
-      case req =>
-        println(req.toString())
-        NotFound()
-    }
+    case _ =>
+      NotFound()
+  })
 
-  implicit val client: Client[IO] = Client.fromHttpApp(routes.orNotFound)
-  implicit val httpJsonClient: HttpJsonClient[IO] = new HttpJsonClient[IO]
-  implicit val logger: Logger[IO] = Slf4jLogger.getLogger[IO]
-  val gitlabApiAlg =
-    new GitLabApiAlg[IO](
-      config.vcsCfg,
-      GitLabCfg(mergeWhenPipelineSucceeds = false, requiredReviewers = None),
-      _ => IO.pure
-    )
+  private val gitlabApiAlg = new VCSSelection[MockEff](
+    config.copy(
+      vcsCfg = config.vcsCfg.copy(tpe = VCSType.GitLab),
+      gitLabCfg = GitLabCfg(mergeWhenPipelineSucceeds = false, requiredReviewers = None)
+    ),
+    user
+  ).vcsApiAlg
+
+  private val gitlabApiAlgNoFork = new VCSSelection[MockEff](
+    config.copy(
+      vcsCfg = config.vcsCfg.copy(tpe = VCSType.GitLab, doNotFork = true),
+      gitLabCfg = GitLabCfg(mergeWhenPipelineSucceeds = false, requiredReviewers = None)
+    ),
+    user
+  ).vcsApiAlg
+
+  private val gitlabApiAlgLessReviewersRequired = new VCSSelection[MockEff](
+    config.copy(
+      vcsCfg = config.vcsCfg.copy(tpe = VCSType.GitLab, doNotFork = true),
+      gitLabCfg = GitLabCfg(mergeWhenPipelineSucceeds = true, requiredReviewers = Some(0))
+    ),
+    user
+  ).vcsApiAlg
 
   private val data = UpdateData(
     RepoData(Repo("foo", "bar"), dummyRepoCache, RepoConfig.empty),
@@ -124,7 +147,7 @@ class GitLabApiAlgTest extends FunSuite {
     NewPullRequestData.from(data, "scala-steward:update/logback-classic-1.2.3")
 
   test("createFork") {
-    val repoOut = gitlabApiAlg.createFork(Repo("foo", "bar")).unsafeRunSync()
+    val repoOut = gitlabApiAlg.createFork(Repo("foo", "bar")).runA(state)
     val expected = RepoOut(
       name = "bar",
       owner = UserOut("foo"),
@@ -132,11 +155,11 @@ class GitLabApiAlgTest extends FunSuite {
       clone_url = uri"https://gitlab.com/foo/bar.git",
       default_branch = Branch("master")
     )
-    assertEquals(repoOut, expected)
+    assertIO(repoOut, expected)
   }
 
   test("getRepo") {
-    val repoOut = gitlabApiAlg.getRepo(Repo("foo", "bar")).unsafeRunSync()
+    val repoOut = gitlabApiAlg.getRepo(Repo("foo", "bar")).runA(state)
     val expected = RepoOut(
       name = "bar",
       owner = UserOut("foo"),
@@ -144,47 +167,42 @@ class GitLabApiAlgTest extends FunSuite {
       clone_url = uri"https://gitlab.com/foo/bar.git",
       default_branch = Branch("master")
     )
-    assertEquals(repoOut, expected)
+    assertIO(repoOut, expected)
   }
 
   test("getBranch") {
-    val branchOut = gitlabApiAlg.getBranch(Repo("foo", "bar"), Branch("master")).unsafeRunSync()
+    val branchOut = gitlabApiAlg.getBranch(Repo("foo", "bar"), Branch("master")).runA(state)
     val expected = BranchOut(
       Branch("master"),
       CommitOut(Sha1(HexString("07eb2a203e297c8340273950e98b2cab68b560c1")))
     )
-    assertEquals(branchOut, expected)
+    assertIO(branchOut, expected)
   }
 
   test("createPullRequest") {
     val prOut = gitlabApiAlg
       .createPullRequest(Repo("foo", "bar"), newPRData)
-      .unsafeRunSync()
+      .runA(state)
     val expected = PullRequestOut(
       uri"https://gitlab.com/foo/bar/merge_requests/7115",
       PullRequestState.Open,
       PullRequestNumber(7115),
       "title"
     )
-    assertEquals(prOut, expected)
+    assertIO(prOut, expected)
   }
 
   test("createPullRequest -- no fork") {
-    val gitlabApiAlgNoFork = new GitLabApiAlg[IO](
-      config.vcsCfg.copy(doNotFork = true),
-      GitLabCfg(mergeWhenPipelineSucceeds = false, requiredReviewers = None),
-      _ => IO.pure
-    )
     val prOut = gitlabApiAlgNoFork
       .createPullRequest(Repo("foo", "bar"), newPRData)
-      .unsafeRunSync()
+      .runA(state)
     val expected = PullRequestOut(
       uri"https://gitlab.com/foo/bar/merge_requests/150",
       PullRequestState.Open,
       PullRequestNumber(150),
       "title"
     )
-    assertEquals(prOut, expected)
+    assertIO(prOut, expected)
   }
 
   test("extractProjectId") {
@@ -194,26 +212,20 @@ class GitLabApiAlgTest extends FunSuite {
   test("closePullRequest") {
     val prOut = gitlabApiAlg
       .closePullRequest(Repo("foo", "bar"), PullRequestNumber(7115))
-      .unsafeRunSync()
+      .runA(state)
     val expected = PullRequestOut(
       uri"https://gitlab.com/foo/bar/merge_requests/7115",
       PullRequestState.Closed,
       PullRequestNumber(7115),
       "title"
     )
-    assertEquals(prOut, expected)
+    assertIO(prOut, expected)
   }
 
   test("createPullRequest -- auto merge") {
-    val gitlabApiAlgNoFork = new GitLabApiAlg[IO](
-      config.vcsCfg.copy(doNotFork = true),
-      GitLabCfg(mergeWhenPipelineSucceeds = true, requiredReviewers = None),
-      _ => IO.pure
-    )
-
     val prOut = gitlabApiAlgNoFork
       .createPullRequest(Repo("foo", "bar"), newPRData)
-      .unsafeRunSync()
+      .runA(state)
 
     val expected = PullRequestOut(
       uri"https://gitlab.com/foo/bar/merge_requests/150",
@@ -222,30 +234,23 @@ class GitLabApiAlgTest extends FunSuite {
       "title"
     )
 
-    assertEquals(prOut, expected)
+    assertIO(prOut, expected)
   }
 
   test("createPullRequest -- don't fail on error code") {
-    val errorClient: Client[IO] =
-      Client.fromHttpApp(
-        (HttpRoutes.of[IO] {
-          case PUT -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "merge"
-              :? MergeWhenPipelineSucceedsMatcher(_) =>
-            MethodNotAllowed(Allow(OPTIONS, GET, HEAD))
-        } <+> routes).orNotFound
-      )
-    val errorJsonClient: HttpJsonClient[IO] =
-      new HttpJsonClient[IO]()(errorClient, Concurrent[IO])
-
-    val gitlabApiAlgNoFork = new GitLabApiAlg[IO](
-      config.vcsCfg.copy(doNotFork = true),
-      GitLabCfg(mergeWhenPipelineSucceeds = true, requiredReviewers = None),
-      _ => IO.pure
-    )(errorJsonClient, implicitly, implicitly)
+    import cats.syntax.semigroupk._
+    val moreResponses = HttpApp[MockEff] { req =>
+      (req: @unchecked) match {
+        case PUT -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "merge"
+            :? MergeWhenPipelineSucceedsMatcher(_) =>
+          MethodNotAllowed(Allow(OPTIONS, GET, HEAD))
+      }
+    } <+> state.clientResponses
+    val localState = MockState.empty.copy(clientResponses = moreResponses)
 
     val prOut = gitlabApiAlgNoFork
       .createPullRequest(Repo("foo", "bar"), newPRData)
-      .unsafeRunSync()
+      .runA(localState)
 
     val expected = PullRequestOut(
       uri"https://gitlab.com/foo/bar/merge_requests/150",
@@ -254,19 +259,13 @@ class GitLabApiAlgTest extends FunSuite {
       "title"
     )
 
-    assertEquals(prOut, expected)
+    assertIO(prOut, expected)
   }
 
   test("createPullRequest -- reduce required reviewers") {
-    val gitlabApiAlgLessReviewersRequired = new GitLabApiAlg[IO](
-      config.vcsCfg.copy(doNotFork = true),
-      GitLabCfg(mergeWhenPipelineSucceeds = true, requiredReviewers = Some(0)),
-      _ => IO.pure
-    )
-
     val prOut = gitlabApiAlgLessReviewersRequired
       .createPullRequest(Repo("foo", "bar"), newPRData)
-      .unsafeRunSync()
+      .runA(state)
 
     val expected = PullRequestOut(
       uri"https://gitlab.com/foo/bar/merge_requests/150",
@@ -275,30 +274,23 @@ class GitLabApiAlgTest extends FunSuite {
       "title"
     )
 
-    assertEquals(prOut, expected)
+    assertIO(prOut, expected)
   }
 
   test("createPullRequest -- no fail upon required reviewers error") {
-    val errorClient: Client[IO] =
-      Client.fromHttpApp(
-        (HttpRoutes.of[IO] {
-          case PUT -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "approvals"
-              :? RequiredReviewersMatcher(requiredReviewers) =>
-            BadRequest(s"Cannot set requiredReviewers to $requiredReviewers")
-        } <+> routes).orNotFound
-      )
-    val errorJsonClient: HttpJsonClient[IO] =
-      new HttpJsonClient[IO]()(errorClient, Concurrent[IO])
+    import cats.syntax.semigroupk._
+    val moreResponses = HttpApp[MockEff] { req =>
+      (req: @unchecked) match {
+        case PUT -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "approvals"
+            :? RequiredReviewersMatcher(requiredReviewers) =>
+          BadRequest(s"Cannot set requiredReviewers to $requiredReviewers")
+      }
+    } <+> state.clientResponses
+    val localState = MockState.empty.copy(clientResponses = moreResponses)
 
-    val gitlabApiAlgLessReviewersRequiredNoError = new GitLabApiAlg[IO](
-      config.vcsCfg.copy(doNotFork = true),
-      GitLabCfg(mergeWhenPipelineSucceeds = true, requiredReviewers = Some(0)),
-      _ => IO.pure
-    )(errorJsonClient, implicitly, implicitly)
-
-    val prOut = gitlabApiAlgLessReviewersRequiredNoError
+    val prOut = gitlabApiAlgLessReviewersRequired
       .createPullRequest(Repo("foo", "bar"), newPRData)
-      .unsafeRunSync()
+      .runA(localState)
 
     val expected = PullRequestOut(
       uri"https://gitlab.com/foo/bar/merge_requests/150",
@@ -307,7 +299,7 @@ class GitLabApiAlgTest extends FunSuite {
       "title"
     )
 
-    assertEquals(prOut, expected)
+    assertIO(prOut, expected)
   }
 
   test("referencePullRequest") {
@@ -318,15 +310,15 @@ class GitLabApiAlgTest extends FunSuite {
   test("commentPullRequest") {
     val comment = gitlabApiAlg
       .commentPullRequest(Repo("foo", "bar"), PullRequestNumber(150), "Superseded by #1234")
-      .unsafeRunSync()
-    assertEquals(comment, Comment("Superseded by #1234"))
+      .runA(state)
+    assertIO(comment, Comment("Superseded by #1234"))
   }
 
   test("listPullRequests") {
 
     val prs =
-      gitlabApiAlg.listPullRequests(Repo("foo", "bar"), "head", Branch("pr-123")).unsafeRunSync()
-    assertEquals(
+      gitlabApiAlg.listPullRequests(Repo("foo", "bar"), "head", Branch("pr-123")).runA(state)
+    assertIO(
       prs,
       List(
         PullRequestOut(
@@ -340,14 +332,13 @@ class GitLabApiAlgTest extends FunSuite {
   }
 
   test("labelPullRequest") {
-    val result = gitlabApiAlg
+    gitlabApiAlg
       .labelPullRequest(Repo("foo", "bar"), PullRequestNumber(150), List("A", "B"))
-      .attempt
-      .unsafeRunSync()
-    assert(result.isRight)
+      .runA(state)
+      .assert
   }
 
-  val getMr = json"""
+  private val getMr = json"""
     {
       "id": 26328,
       "iid": 7115,
@@ -420,7 +411,7 @@ class GitLabApiAlgTest extends FunSuite {
     }
   """
 
-  val getRepo = json"""
+  private val getRepo = json"""
     {
         "id": 12414871,
         "description": "",
@@ -499,7 +490,7 @@ class GitLabApiAlgTest extends FunSuite {
       }
     """
 
-  val putMrApprovals =
+  private val putMrApprovals =
     json"""
       {
         "id": 138691106,

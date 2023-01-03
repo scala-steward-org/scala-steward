@@ -1,73 +1,86 @@
 package org.scalasteward.core.vcs.github
 
-import cats.effect.IO
-import cats.effect.unsafe.implicits.global
 import io.circe.literal._
-import munit.FunSuite
-import org.http4s.HttpRoutes
+import munit.CatsEffectSuite
 import org.http4s.circe._
-import org.http4s.client.Client
-import org.http4s.dsl.io._
+import org.http4s.dsl.Http4sDsl
+import org.http4s.headers.Authorization
 import org.http4s.implicits._
+import org.http4s.{BasicCredentials, HttpApp, Request}
+import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.mock.MockConfig.config
-import org.scalasteward.core.util.HttpJsonClient
+import org.scalasteward.core.mock.MockContext.context.httpJsonClient
+import org.scalasteward.core.mock.{MockEff, MockState}
 import org.scalasteward.core.vcs.data._
+import org.scalasteward.core.vcs.{VCSSelection, VCSType}
 
-class GitHubApiAlgTest extends FunSuite {
-  val routes: HttpRoutes[IO] =
-    HttpRoutes.of[IO] {
-      case GET -> Root / "repos" / "fthomas" / "base.g8" =>
-        Ok(
-          json""" {
+class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
+
+  private val user = AuthenticatedUser("user", "pass")
+
+  private def hasAuthHeader(req: Request[MockEff], authorization: Authorization): Boolean =
+    req.headers.get[Authorization].contains(authorization)
+
+  private val basicAuth = Authorization(BasicCredentials(user.login, user.accessToken))
+
+  private val state = MockState.empty.copy(clientResponses = HttpApp {
+    case req @ GET -> Root / "repos" / "fthomas" / "base.g8" if hasAuthHeader(req, basicAuth) =>
+      Ok(
+        json""" {
             "name": "base.g8",
             "owner": { "login": "fthomas" },
             "clone_url": "https://github.com/fthomas/base.g8.git",
             "default_branch": "master",
             "archived": false
           } """
-        )
+      )
 
-      case GET -> Root / "repos" / "fthomas" / "base.g8" / "branches" / "master" =>
-        Ok(
-          json""" {
+    case req @ GET -> Root / "repos" / "fthomas" / "base.g8" / "branches" / "master"
+        if hasAuthHeader(req, basicAuth) =>
+      Ok(
+        json""" {
             "name": "master",
             "commit": { "sha": "07eb2a203e297c8340273950e98b2cab68b560c1" }
           } """
-        )
+      )
 
-      case GET -> Root / "repos" / "fthomas" / "base.g8" / "branches" / "custom" =>
-        Ok(
-          json""" {
+    case req @ GET -> Root / "repos" / "fthomas" / "base.g8" / "branches" / "custom"
+        if hasAuthHeader(req, basicAuth) =>
+      Ok(
+        json""" {
             "name": "custom",
             "commit": { "sha": "12ea4559063c74184861afece9eeff5ca9d33db3" }
           } """
-        )
+      )
 
-      case GET -> Root / "repos" / "fthomas" / "base.g8" / "pulls" =>
-        Ok(
-          json"""[{
+    case req @ GET -> Root / "repos" / "fthomas" / "base.g8" / "pulls"
+        if hasAuthHeader(req, basicAuth) =>
+      Ok(
+        json"""[{
             "html_url": "https://github.com/octocat/Hello-World/pull/1347",
             "state": "open",
             "number": 1347,
             "title": "new-feature"
           }]"""
-        )
+      )
 
-      case PATCH -> Root / "repos" / "fthomas" / "base.g8" / "pulls" / IntVar(_) =>
-        Ok(
-          json"""{
+    case req @ PATCH -> Root / "repos" / "fthomas" / "base.g8" / "pulls" / IntVar(_)
+        if hasAuthHeader(req, basicAuth) =>
+      Ok(
+        json"""{
             "html_url": "https://github.com/octocat/Hello-World/pull/1347",
             "state": "closed",
             "number": 1347,
             "title": "new-feature"
           }"""
-        )
+      )
 
-      case POST -> Root / "repos" / "fthomas" / "base.g8" / "forks" =>
-        Ok(
-          json""" {
+    case req @ POST -> Root / "repos" / "fthomas" / "base.g8" / "forks"
+        if hasAuthHeader(req, basicAuth) =>
+      Ok(
+        json""" {
             "name": "base.g8-1",
             "owner": { "login": "scala-steward" },
             "parent": {
@@ -81,24 +94,27 @@ class GitHubApiAlgTest extends FunSuite {
             "default_branch": "master",
             "archived": false
           } """
-        )
+      )
 
-      case POST -> Root / "repos" / "fthomas" / "base.g8" / "issues" / IntVar(_) / "comments" =>
-        Created(json"""  {
+    case req @ POST -> Root / "repos" / "fthomas" / "base.g8" / "issues" / IntVar(_) / "comments"
+        if hasAuthHeader(req, basicAuth) =>
+      Created(json"""  {
             "body": "Superseded by #1234"
           } """)
 
-      case POST -> Root / "repos" / "fthomas" / "base.g8" / "pulls" =>
-        Created(json"""  {
+    case req @ POST -> Root / "repos" / "fthomas" / "base.g8" / "pulls"
+        if hasAuthHeader(req, basicAuth) =>
+      Created(json"""  {
             "html_url": "https://github.com/octocat/Hello-World/pull/1347",
             "state": "open",
             "number": 1347,
             "title": "new-feature"
             } """)
 
-      case POST -> Root / "repos" / "fthomas" / "base.g8" / "issues" / IntVar(_) / "labels" =>
-        // Response taken from https://docs.github.com/en/rest/reference/issues#labels, is ignored
-        Created(json"""[
+    case req @ POST -> Root / "repos" / "fthomas" / "base.g8" / "issues" / IntVar(_) / "labels"
+        if hasAuthHeader(req, basicAuth) =>
+      // Response taken from https://docs.github.com/en/rest/reference/issues#labels, is ignored
+      Created(json"""[
           {
             "id": 208045946,
             "node_id": "MDU6TGFiZWwyMDgwNDU5NDY=",
@@ -109,14 +125,13 @@ class GitHubApiAlgTest extends FunSuite {
             "default": true
           }]""")
 
-      case req =>
-        println(req.toString())
-        NotFound()
-    }
+    case _ => NotFound()
+  })
 
-  implicit val client: Client[IO] = Client.fromHttpApp(routes.orNotFound)
-  implicit val httpJsonClient: HttpJsonClient[IO] = new HttpJsonClient[IO]
-  val gitHubApiAlg = new GitHubApiAlg[IO](config.vcsCfg.apiHost, _ => IO.pure)
+  private val gitHubApiAlg = new VCSSelection[MockEff](
+    config.copy(vcsCfg = config.vcsCfg.copy(tpe = VCSType.GitHub)),
+    user
+  ).vcsApiAlg
 
   private val repo = Repo("fthomas", "base.g8")
 
@@ -171,55 +186,59 @@ class GitHubApiAlgTest extends FunSuite {
   )
 
   test("createForkOrGetRepo") {
-    val repoOut = gitHubApiAlg.createForkOrGetRepo(repo, doNotFork = false).unsafeRunSync()
-    assertEquals(repoOut, fork)
+    val repoOut = gitHubApiAlg.createForkOrGetRepo(repo, doNotFork = false).runA(state)
+    assertIO(repoOut, fork)
   }
 
   test("createForkOrGetRepo without forking") {
-    val repoOut = gitHubApiAlg.createForkOrGetRepo(repo, doNotFork = true).unsafeRunSync()
-    assertEquals(repoOut, parent)
+    val repoOut = gitHubApiAlg.createForkOrGetRepo(repo, doNotFork = true).runA(state)
+    assertIO(repoOut, parent)
   }
 
   test("createForkOrGetRepoWithBranch") {
-    val (repoOut, branchOut) =
-      gitHubApiAlg
-        .createForkOrGetRepoWithBranch(repo, doNotFork = false)
-        .unsafeRunSync()
-    assertEquals(repoOut, fork)
-    assertEquals(branchOut, defaultBranch)
+    gitHubApiAlg
+      .createForkOrGetRepoWithBranch(repo, doNotFork = false)
+      .runA(state)
+      .map { case (repoOut, branchOut) =>
+        assertEquals(repoOut, fork)
+        assertEquals(branchOut, defaultBranch)
+      }
   }
 
   test("createForkOrGetRepoWithBranch") {
-    val (repoOut, branchOut) =
-      gitHubApiAlg
-        .createForkOrGetRepoWithBranch(
-          repo.copy(branch = Some(Branch("custom"))),
-          doNotFork = false
-        )
-        .unsafeRunSync()
-    assertEquals(repoOut, forkWithCustomDefaultBranch)
-    assertEquals(branchOut, defaultCustomBranch)
+    gitHubApiAlg
+      .createForkOrGetRepoWithBranch(
+        repo.copy(branch = Some(Branch("custom"))),
+        doNotFork = false
+      )
+      .runA(state)
+      .map { case (repoOut, branchOut) =>
+        assertEquals(repoOut, forkWithCustomDefaultBranch)
+        assertEquals(branchOut, defaultCustomBranch)
+      }
   }
 
   test("createForkOrGetRepoWithBranch without forking") {
-    val (repoOut, branchOut) =
-      gitHubApiAlg
-        .createForkOrGetRepoWithBranch(repo, doNotFork = true)
-        .unsafeRunSync()
-    assertEquals(repoOut, parent)
-    assertEquals(branchOut, defaultBranch)
+    gitHubApiAlg
+      .createForkOrGetRepoWithBranch(repo, doNotFork = true)
+      .runA(state)
+      .map { case (repoOut, branchOut) =>
+        assertEquals(repoOut, parent)
+        assertEquals(branchOut, defaultBranch)
+      }
   }
 
   test("createForkOrGetRepoWithBranch without forking with custom default branch") {
-    val (repoOut, branchOut) =
-      gitHubApiAlg
-        .createForkOrGetRepoWithBranch(
-          repo.copy(branch = Some(Branch("custom"))),
-          doNotFork = true
-        )
-        .unsafeRunSync()
-    assertEquals(repoOut, parentWithCustomDefaultBranch)
-    assertEquals(branchOut, defaultCustomBranch)
+    gitHubApiAlg
+      .createForkOrGetRepoWithBranch(
+        repo.copy(branch = Some(Branch("custom"))),
+        doNotFork = true
+      )
+      .runA(state)
+      .map { case (repoOut, branchOut) =>
+        assertEquals(repoOut, parentWithCustomDefaultBranch)
+        assertEquals(branchOut, defaultCustomBranch)
+      }
   }
 
   test("createPullRequest") {
@@ -230,18 +249,18 @@ class GitHubApiAlgTest extends FunSuite {
       Branch("master"),
       Nil
     )
-    val pr = gitHubApiAlg.createPullRequest(repo, data).unsafeRunSync()
-    assertEquals(pr, pullRequest)
+    val pr = gitHubApiAlg.createPullRequest(repo, data).runA(state)
+    assertIO(pr, pullRequest)
   }
 
   test("listPullRequests") {
-    val prs = gitHubApiAlg.listPullRequests(repo, "master", Branch("master")).unsafeRunSync()
-    assertEquals(prs, List(pullRequest))
+    val prs = gitHubApiAlg.listPullRequests(repo, "master", Branch("master")).runA(state)
+    assertIO(prs, List(pullRequest))
   }
 
   test("closePullRequest") {
-    val prOut = gitHubApiAlg.closePullRequest(repo, PullRequestNumber(1347)).unsafeRunSync()
-    assertEquals(prOut.state, PullRequestState.Closed)
+    val prOut = gitHubApiAlg.closePullRequest(repo, PullRequestNumber(1347)).runA(state)
+    assertIO(prOut.map(_.state), PullRequestState.Closed)
   }
 
   test("commentPullRequest") {
@@ -252,15 +271,14 @@ class GitHubApiAlgTest extends FunSuite {
   test("commentPullRequest") {
     val comment = gitHubApiAlg
       .commentPullRequest(repo, PullRequestNumber(1347), "Superseded by #1234")
-      .unsafeRunSync()
-    assertEquals(comment, Comment("Superseded by #1234"))
+      .runA(state)
+    assertIO(comment, Comment("Superseded by #1234"))
   }
 
   test("labelPullRequest") {
-    val result = gitHubApiAlg
+    gitHubApiAlg
       .labelPullRequest(repo, PullRequestNumber(1347), List("A", "B"))
-      .attempt
-      .unsafeRunSync()
-    assert(result.isRight)
+      .runA(state)
+      .assert
   }
 }

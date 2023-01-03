@@ -1,25 +1,33 @@
 package org.scalasteward.core.vcs.bitbucket
 
-import cats.effect.IO
-import cats.effect.unsafe.implicits.global
 import io.circe.literal._
-import munit.FunSuite
+import munit.CatsEffectSuite
 import org.http4s._
 import org.http4s.circe._
-import org.http4s.client.Client
-import org.http4s.dsl.io._
+import org.http4s.dsl.Http4sDsl
+import org.http4s.headers.Authorization
 import org.http4s.implicits._
 import org.scalasteward.core.TestInstances.ioLogger
+import org.scalasteward.core.application.Config.BitbucketCfg
 import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.git._
 import org.scalasteward.core.mock.MockConfig.config
-import org.scalasteward.core.util.HttpJsonClient
+import org.scalasteward.core.mock.MockContext.context.httpJsonClient
+import org.scalasteward.core.mock.{MockEff, MockState}
 import org.scalasteward.core.vcs.data._
-import org.scalasteward.core.application.Config.BitbucketCfg
+import org.scalasteward.core.vcs.{VCSSelection, VCSType}
 
-class BitbucketApiAlgTest extends FunSuite {
-  private val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
-    case GET -> Root / "repositories" / "fthomas" / "base.g8" =>
+class BitbucketApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
+
+  private def hasAuthHeader(req: Request[MockEff], authorization: Authorization): Boolean =
+    req.headers.get[Authorization].contains(authorization)
+
+  private val user = AuthenticatedUser("user", "pass")
+  private val basicAuth = Authorization(BasicCredentials(user.login, user.accessToken))
+
+  private val state = MockState.empty.copy(clientResponses = HttpApp {
+    case req @ GET -> Root / "repositories" / "fthomas" / "base.g8"
+        if hasAuthHeader(req, basicAuth) =>
       Ok(
         json"""{
           "name": "base.g8",
@@ -40,7 +48,8 @@ class BitbucketApiAlgTest extends FunSuite {
           }
         }"""
       )
-    case GET -> Root / "repositories" / "scala-steward" / "base.g8" =>
+    case req @ GET -> Root / "repositories" / "scala-steward" / "base.g8"
+        if hasAuthHeader(req, basicAuth) =>
       Ok(
         json"""{
           "name": "base.g8",
@@ -64,7 +73,8 @@ class BitbucketApiAlgTest extends FunSuite {
           }
         }"""
       )
-    case GET -> Root / "repositories" / "fthomas" / "base.g8" / "refs" / "branches" / "master" =>
+    case req @ GET -> Root / "repositories" / "fthomas" / "base.g8" / "refs" / "branches" / "master"
+        if hasAuthHeader(req, basicAuth) =>
       Ok(
         json"""{
           "name": "master",
@@ -73,7 +83,8 @@ class BitbucketApiAlgTest extends FunSuite {
           }
         }"""
       )
-    case GET -> Root / "repositories" / "fthomas" / "base.g8" / "refs" / "branches" / "custom" =>
+    case req @ GET -> Root / "repositories" / "fthomas" / "base.g8" / "refs" / "branches" / "custom"
+        if hasAuthHeader(req, basicAuth) =>
       Ok(
         json"""{
           "name": "custom",
@@ -82,7 +93,8 @@ class BitbucketApiAlgTest extends FunSuite {
           }
         }"""
       )
-    case POST -> Root / "repositories" / "fthomas" / "base.g8" / "forks" =>
+    case req @ POST -> Root / "repositories" / "fthomas" / "base.g8" / "forks"
+        if hasAuthHeader(req, basicAuth) =>
       Ok(
         json"""{
           "name": "base.g8",
@@ -106,7 +118,8 @@ class BitbucketApiAlgTest extends FunSuite {
           }
         }"""
       )
-    case POST -> Root / "repositories" / "fthomas" / "base.g8" / "pullrequests" =>
+    case req @ POST -> Root / "repositories" / "fthomas" / "base.g8" / "pullrequests"
+        if hasAuthHeader(req, basicAuth) =>
       Ok(
         json"""{
             "id": 2,
@@ -119,7 +132,8 @@ class BitbucketApiAlgTest extends FunSuite {
             }
           }"""
       )
-    case GET -> Root / "repositories" / "fthomas" / "base.g8" / "default-reviewers" =>
+    case req @ GET -> Root / "repositories" / "fthomas" / "base.g8" / "default-reviewers"
+        if hasAuthHeader(req, basicAuth) =>
       Ok(
         json"""{
           "values": [
@@ -132,7 +146,8 @@ class BitbucketApiAlgTest extends FunSuite {
           ]
         }"""
       )
-    case GET -> Root / "repositories" / "fthomas" / "base.g8" / "pullrequests" =>
+    case req @ GET -> Root / "repositories" / "fthomas" / "base.g8" / "pullrequests"
+        if hasAuthHeader(req, basicAuth) =>
       Ok(
         json"""{
           "values": [
@@ -149,9 +164,9 @@ class BitbucketApiAlgTest extends FunSuite {
           ]
       }"""
       )
-    case POST -> Root / "repositories" / "fthomas" / "base.g8" / "pullrequests" / IntVar(
+    case req @ POST -> Root / "repositories" / "fthomas" / "base.g8" / "pullrequests" / IntVar(
           _
-        ) / "decline" =>
+        ) / "decline" if hasAuthHeader(req, basicAuth) =>
       Ok(
         json"""{
             "id": 2,
@@ -164,20 +179,23 @@ class BitbucketApiAlgTest extends FunSuite {
             }
         }"""
       )
-    case POST -> Root / "repositories" / "fthomas" / "base.g8" / "pullrequests" /
-        IntVar(_) / "comments" =>
+    case req @ POST -> Root / "repositories" / "fthomas" / "base.g8" / "pullrequests" /
+        IntVar(_) / "comments" if hasAuthHeader(req, basicAuth) =>
       Created(json"""{
                   "content": {
                       "raw": "Superseded by #1234"
                   }
           }""")
-  }
+    case _ => NotFound()
+  })
 
-  implicit val client: Client[IO] = Client.fromHttpApp(routes.orNotFound)
-  implicit val httpJsonClient: HttpJsonClient[IO] = new HttpJsonClient[IO]
-  private val bitbucketCfg = BitbucketCfg(useDefaultReviewers = true)
-  private val bitbucketApiAlg =
-    new BitbucketApiAlg[IO](config.vcsCfg, bitbucketCfg, _ => IO.pure)
+  private val bitbucketApiAlg = new VCSSelection[MockEff](
+    config.copy(
+      vcsCfg = config.vcsCfg.copy(tpe = VCSType.Bitbucket),
+      bitbucketCfg = BitbucketCfg(useDefaultReviewers = true)
+    ),
+    user
+  ).vcsApiAlg
 
   private val prUrl = uri"https://bitbucket.org/fthomas/base.g8/pullrequests/2"
   private val repo = Repo("fthomas", "base.g8")
@@ -229,49 +247,53 @@ class BitbucketApiAlgTest extends FunSuite {
     PullRequestOut(prUrl, PullRequestState.Open, PullRequestNumber(2), "scala-steward-pr")
 
   test("createForkOrGetRepo") {
-    val repoOut = bitbucketApiAlg.createForkOrGetRepo(repo, doNotFork = false).unsafeRunSync()
-    assertEquals(repoOut, fork)
+    val repoOut = bitbucketApiAlg.createForkOrGetRepo(repo, doNotFork = false).runA(state)
+    assertIO(repoOut, fork)
   }
 
   test("createForkOrGetRepo without forking") {
-    val repoOut = bitbucketApiAlg.createForkOrGetRepo(repo, doNotFork = true).unsafeRunSync()
-    assertEquals(repoOut, parent)
+    val repoOut = bitbucketApiAlg.createForkOrGetRepo(repo, doNotFork = true).runA(state)
+    assertIO(repoOut, parent)
   }
 
   test("createForkOrGetRepoWithBranch") {
-    val (repoOut, branchOut) =
-      bitbucketApiAlg
-        .createForkOrGetRepoWithBranch(repo, doNotFork = false)
-        .unsafeRunSync()
-    assertEquals(repoOut, fork)
-    assertEquals(branchOut, defaultBranch)
+    bitbucketApiAlg
+      .createForkOrGetRepoWithBranch(repo, doNotFork = false)
+      .runA(state)
+      .map { case (repoOut, branchOut) =>
+        assertEquals(repoOut, fork)
+        assertEquals(branchOut, defaultBranch)
+      }
   }
 
   test("createForkOrGetRepoWithBranch with custom default branch") {
-    val (repoOut, branchOut) =
-      bitbucketApiAlg
-        .createForkOrGetRepoWithBranch(repo.copy(branch = Some(custom)), doNotFork = false)
-        .unsafeRunSync()
-    assertEquals(repoOut, forkWithCustomDefaultBranch)
-    assertEquals(branchOut, defaultCustomBranch)
+    bitbucketApiAlg
+      .createForkOrGetRepoWithBranch(repo.copy(branch = Some(custom)), doNotFork = false)
+      .runA(state)
+      .map { case (repoOut, branchOut) =>
+        assertEquals(repoOut, forkWithCustomDefaultBranch)
+        assertEquals(branchOut, defaultCustomBranch)
+      }
   }
 
   test("createForkOrGetRepoWithBranch without forking") {
-    val (repoOut, branchOut) =
-      bitbucketApiAlg
-        .createForkOrGetRepoWithBranch(repo, doNotFork = true)
-        .unsafeRunSync()
-    assertEquals(repoOut, parent)
-    assertEquals(branchOut, defaultBranch)
+    bitbucketApiAlg
+      .createForkOrGetRepoWithBranch(repo, doNotFork = true)
+      .runA(state)
+      .map { case (repoOut, branchOut) =>
+        assertEquals(repoOut, parent)
+        assertEquals(branchOut, defaultBranch)
+      }
   }
 
   test("createForkOrGetRepoWithBranch without forking with custom default branch") {
-    val (repoOut, branchOut) =
-      bitbucketApiAlg
-        .createForkOrGetRepoWithBranch(repo.copy(branch = Some(custom)), doNotFork = true)
-        .unsafeRunSync()
-    assertEquals(repoOut, parentWithCustomDefaultBranch)
-    assertEquals(branchOut, defaultCustomBranch)
+    bitbucketApiAlg
+      .createForkOrGetRepoWithBranch(repo.copy(branch = Some(custom)), doNotFork = true)
+      .runA(state)
+      .map { case (repoOut, branchOut) =>
+        assertEquals(repoOut, parentWithCustomDefaultBranch)
+        assertEquals(branchOut, defaultCustomBranch)
+      }
   }
 
   test("createPullRequest") {
@@ -282,24 +304,26 @@ class BitbucketApiAlgTest extends FunSuite {
       master,
       Nil
     )
-    val pr = bitbucketApiAlg.createPullRequest(repo, data).unsafeRunSync()
-    assertEquals(pr, pullRequest)
+    val pr = bitbucketApiAlg.createPullRequest(repo, data).runA(state)
+    assertIO(pr, pullRequest)
   }
 
   test("listPullRequests") {
-    val prs = bitbucketApiAlg.listPullRequests(repo, "master", master).unsafeRunSync()
-    assertEquals(prs, List(pullRequest))
+    val prs = bitbucketApiAlg.listPullRequests(repo, "master", master).runA(state)
+    assertIO(prs, List(pullRequest))
   }
 
   test("closePullRequest") {
-    val pr = bitbucketApiAlg.closePullRequest(repo, PullRequestNumber(1)).unsafeRunSync()
-    assertEquals(pr, pr.copy(state = PullRequestState.Closed))
+    bitbucketApiAlg
+      .closePullRequest(repo, PullRequestNumber(1))
+      .runA(state)
+      .map(pr => assertEquals(pr, pr.copy(state = PullRequestState.Closed)))
   }
 
   test("commentPullRequest") {
     val comment = bitbucketApiAlg
       .commentPullRequest(repo, PullRequestNumber(1), "Superseded by #1234")
-      .unsafeRunSync()
-    assertEquals(comment, Comment("Superseded by #1234"))
+      .runA(state)
+    assertIO(comment, Comment("Superseded by #1234"))
   }
 }
