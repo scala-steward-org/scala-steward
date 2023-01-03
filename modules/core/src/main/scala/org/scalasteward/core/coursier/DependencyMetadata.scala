@@ -45,3 +45,8 @@ final case class DependencyMetadata(
     urls.find(_.scheme.exists(uri.httpSchemes)).orElse(urls.headOption)
   }
 }
+
+object DependencyMetadata {
+  val empty: DependencyMetadata =
+    DependencyMetadata(None, None, None)
+}

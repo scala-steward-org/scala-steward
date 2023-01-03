@@ -31,7 +31,7 @@ import org.typelevel.log4cats.Logger
   * metadata.
   */
 trait CoursierAlg[F[_]] {
-  def getMetadata(dependency: Dependency, resolvers: List[Resolver]): F[Option[DependencyMetadata]]
+  def getMetadata(dependency: Dependency, resolvers: List[Resolver]): F[DependencyMetadata]
 
   def getVersions(dependency: Dependency, resolver: Resolver): F[List[Version]]
 }
@@ -52,18 +52,18 @@ object CoursierAlg {
       override def getMetadata(
           dependency: Dependency,
           resolvers: List[Resolver]
-      ): F[Option[DependencyMetadata]] =
+      ): F[DependencyMetadata] =
         resolvers.traverseFilter(convertResolver(_).attempt.map(_.toOption)).flatMap {
           repositories =>
             val csrDependency = toCoursierDependency(dependency)
-            getMetadataImpl(csrDependency, repositories, None)
+            getMetadataImpl(csrDependency, repositories, DependencyMetadata.empty)
         }
 
       private def getMetadataImpl(
           dependency: coursier.Dependency,
           repositories: List[coursier.Repository],
-          acc: Option[DependencyMetadata]
-      ): F[Option[DependencyMetadata]] = {
+          acc: DependencyMetadata
+      ): F[DependencyMetadata] = {
         val fetchArtifacts = fetch
           .withArtifactTypes(Set(coursier.Type.pom, coursier.Type.ivy))
           .withDependencies(List(dependency))
@@ -76,17 +76,13 @@ object CoursierAlg {
             val maybeProject = result.resolution.projectCache
               .get(dependency.moduleVersion)
               .map { case (_, project) => project }
-            maybeProject.traverseFilter { project =>
-              val metadata = {
-                val current = metadataFrom(project)
-                acc.fold(current)(_.enrichWith(current))
+
+            maybeProject.fold(F.pure(acc)) { project =>
+              val metadata = acc.enrichWith(metadataFrom(project))
+              val recurse = Option.when(metadata.repoUrl.isEmpty)(())
+              (recurse >> parentOf(project)).fold(F.pure(metadata)) { parent =>
+                getMetadataImpl(parent, repositories, metadata)
               }
-              if (metadata.repoUrl.isEmpty) {
-                parentOf(project) match {
-                  case Some(parent) => getMetadataImpl(parent, repositories, Some(metadata))
-                  case None         => F.pure(Some(metadata))
-                }
-              } else F.pure(Some(metadata))
             }
         }
       }

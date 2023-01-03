@@ -202,11 +202,11 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       dependenciesWithNextVersion = dependenciesUpdatedWithNextAndCurrentVersion(data.update)
       resolvers = data.repoData.cache.dependencyInfos.flatMap(_.resolvers)
       dependencyToMetadata <- dependenciesWithNextVersion
-        .traverseFilter { case (_, dependency) =>
+        .traverse { case (_, dependency) =>
           coursierAlg
             .getMetadata(dependency, resolvers)
-            .flatMap(_.traverse(_.filterUrls(urlChecker.exists)))
-            .map(_.tupleLeft(dependency))
+            .flatMap(_.filterUrls(urlChecker.exists))
+            .tupleLeft(dependency)
         }
         .map(_.toMap)
       artifactIdToUrl = dependencyToMetadata.toList.mapFilter { case (dependency, metadata) =>

@@ -11,16 +11,14 @@ import org.scalasteward.core.mock.MockState
 class CoursierAlgTest extends CatsEffectSuite {
   private val resolvers = List(Resolver.mavenCentral)
 
-  private val emptyMetadata = DependencyMetadata(None, None, None)
+  private val emptyMetadata = DependencyMetadata.empty
 
   test("getMetadata: with homePage and scmUrl") {
     val dep = "org.typelevel".g % ("cats-effect", "cats-effect_2.12").a % "1.0.0"
     val obtained = coursierAlg.getMetadata(dep, resolvers).runA(MockState.empty)
-    val expected = Some(
-      emptyMetadata.copy(
-        homePage = Some(uri"https://typelevel.org/cats-effect/"),
-        scmUrl = Some(uri"https://github.com/typelevel/cats-effect")
-      )
+    val expected = emptyMetadata.copy(
+      homePage = Some(uri"https://typelevel.org/cats-effect/"),
+      scmUrl = Some(uri"https://github.com/typelevel/cats-effect")
     )
     assertIO(obtained, expected)
   }
@@ -30,25 +28,23 @@ class CoursierAlgTest extends CatsEffectSuite {
     val dep = "com.typesafe.play".g % artifactId % "2.1.0-M7"
     val obtained = coursierAlg.getMetadata(dep, resolvers).runA(MockState.empty)
     val expected =
-      Some(emptyMetadata.copy(homePage = Some(uri"https://github.com/playframework/play-ws")))
+      emptyMetadata.copy(homePage = Some(uri"https://github.com/playframework/play-ws"))
     assertIO(obtained, expected)
   }
 
   test("getMetadata: scmUrl without scheme") {
     val dep = "org.msgpack".g % "msgpack-core".a % "0.8.20"
     val obtained = coursierAlg.getMetadata(dep, resolvers).runA(MockState.empty)
-    val expected = Some(emptyMetadata.copy(homePage = Some(uri"http://msgpack.org/")))
+    val expected = emptyMetadata.copy(homePage = Some(uri"http://msgpack.org/"))
     assertIO(obtained, expected)
   }
 
   test("getMetadata: scmUrl with git scheme") {
     val dep = "org.xhtmlrenderer".g % "flying-saucer-parent".a % "9.0.1"
     val obtained = coursierAlg.getMetadata(dep, resolvers).runA(MockState.empty)
-    val expected = Some(
-      emptyMetadata.copy(
-        homePage = Some(uri"http://code.google.com/p/flying-saucer/"),
-        scmUrl = Some(uri"git://github.com/flyingsaucerproject/flyingsaucer.git")
-      )
+    val expected = emptyMetadata.copy(
+      homePage = Some(uri"http://code.google.com/p/flying-saucer/"),
+      scmUrl = Some(uri"git://github.com/flyingsaucerproject/flyingsaucer.git")
     )
     assertIO(obtained, expected)
   }
@@ -56,14 +52,14 @@ class CoursierAlgTest extends CatsEffectSuite {
   test("getMetadata: homePage from parent") {
     val dep = "net.bytebuddy".g % "byte-buddy".a % "1.10.5"
     val obtained = coursierAlg.getMetadata(dep, resolvers).runA(MockState.empty)
-    val expected = Some(emptyMetadata.copy(homePage = Some(uri"https://bytebuddy.net")))
+    val expected = emptyMetadata.copy(homePage = Some(uri"https://bytebuddy.net"))
     assertIO(obtained, expected)
   }
 
   test("getMetadata: minimal POM") {
     val dep = "altrmi".g % "altrmi-common".a % "0.9.6"
     val obtained = coursierAlg.getMetadata(dep, resolvers).runA(MockState.empty)
-    val expected = Some(emptyMetadata)
+    val expected = emptyMetadata
     assertIO(obtained, expected)
   }
 
@@ -71,11 +67,9 @@ class CoursierAlgTest extends CatsEffectSuite {
     val dep = ("org.xerial.sbt".g % "sbt-sonatype".a % "3.8")
       .copy(sbtVersion = Some(SbtVersion("1.0")), scalaVersion = Some(ScalaVersion("2.12")))
     val obtained = coursierAlg.getMetadata(dep, resolvers).runA(MockState.empty)
-    val expected = Some(
-      emptyMetadata.copy(
-        homePage = Some(uri"https://github.com/xerial/sbt-sonatype"),
-        scmUrl = Some(uri"https://github.com/xerial/sbt-sonatype")
-      )
+    val expected = emptyMetadata.copy(
+      homePage = Some(uri"https://github.com/xerial/sbt-sonatype"),
+      scmUrl = Some(uri"https://github.com/xerial/sbt-sonatype")
     )
     assertIO(obtained, expected)
   }
@@ -84,19 +78,16 @@ class CoursierAlgTest extends CatsEffectSuite {
     val dep = ("com.github.gseitz".g % "sbt-release".a % "1.0.12")
       .copy(sbtVersion = Some(SbtVersion("1.0")), scalaVersion = Some(ScalaVersion("2.12")))
     val obtained = coursierAlg.getMetadata(dep, List(sbtPluginReleases)).runA(MockState.empty)
-    val expected =
-      Some(emptyMetadata.copy(homePage = Some(uri"https://github.com/sbt/sbt-release")))
+    val expected = emptyMetadata.copy(homePage = Some(uri"https://github.com/sbt/sbt-release"))
     assertIO(obtained, expected)
   }
 
   test("getMetadata: scmUrl with github scheme") {
     val dep = "com.github.japgolly.scalajs-react".g % ("core", "core_sjs1_2.13").a % "2.0.0-RC5"
     val obtained = coursierAlg.getMetadata(dep, resolvers).runA(MockState.empty)
-    val expected = Some(
-      emptyMetadata.copy(
-        homePage = Some(uri"https://github.com/japgolly/scalajs-react"),
-        scmUrl = Some(uri"github.com:japgolly/scalajs-react.git")
-      )
+    val expected = emptyMetadata.copy(
+      homePage = Some(uri"https://github.com/japgolly/scalajs-react"),
+      scmUrl = Some(uri"github.com:japgolly/scalajs-react.git")
     )
     assertIO(obtained, expected)
   }
@@ -104,7 +95,7 @@ class CoursierAlgTest extends CatsEffectSuite {
   test("getMetadata: no resolvers") {
     val dep = "org.example".g % "foo".a % "1.0.0"
     val obtained = coursierAlg.getMetadata(dep, List.empty).runA(MockState.empty)
-    val expected = None
+    val expected = emptyMetadata
     assertIO(obtained, expected)
   }
 
@@ -112,7 +103,8 @@ class CoursierAlgTest extends CatsEffectSuite {
     val dep = "org.typelevel".g % ("cats-effect", "cats-effect_2.12").a % "1.0.0"
     val resolvers =
       List(Resolver.mavenCentral.copy(headers = List(Resolver.Header("X-Foo", "bar"))))
-    val obtained = coursierAlg.getMetadata(dep, resolvers).runA(MockState.empty).map(_.isDefined)
+    val obtained =
+      coursierAlg.getMetadata(dep, resolvers).runA(MockState.empty).map(_.repoUrl.isDefined)
     assertIOBoolean(obtained)
   }
 }
