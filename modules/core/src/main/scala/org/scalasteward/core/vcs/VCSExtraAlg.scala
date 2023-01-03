@@ -44,15 +44,19 @@ object VCSExtraAlg {
           releaseNotesUrl: Option[Uri],
           currentVersion: Version,
           nextVersion: Version
-      ): F[List[ReleaseRelatedUrl]] =
-        (releaseNotesUrl.toList.map(ReleaseRelatedUrl.CustomReleaseNotes.apply) ++
-          vcs.possibleReleaseRelatedUrls(
-            config.tpe,
-            config.apiHost,
-            repoUrl,
-            currentVersion,
-            nextVersion
-          ))
+      ): F[List[ReleaseRelatedUrl]] = {
+        val releaseRelatedUrls =
+          releaseNotesUrl.toList.map(ReleaseRelatedUrl.CustomReleaseNotes.apply) ++
+            vcs.possibleReleaseRelatedUrls(
+              config.tpe,
+              config.apiHost,
+              repoUrl,
+              currentVersion,
+              nextVersion
+            )
+        releaseRelatedUrls
+          .distinctBy(_.url)
           .filterA(releaseRelatedUrl => urlChecker.exists(releaseRelatedUrl.url))
+      }
     }
 }

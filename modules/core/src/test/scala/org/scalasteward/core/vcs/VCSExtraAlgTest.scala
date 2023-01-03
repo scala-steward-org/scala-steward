@@ -12,10 +12,11 @@ import org.scalasteward.core.mock.{MockEff, MockState}
 
 class VCSExtraAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   private val state = MockState.empty.copy(clientResponses = HttpApp {
-    case HEAD -> Root / "foo" / "bar" / "README.md"                   => Ok()
-    case HEAD -> Root / "foo" / "bar" / "compare" / "v0.1.0...v0.2.0" => Ok()
-    case HEAD -> Root / "foo" / "buz" / "compare" / "v0.1.0...v0.2.0" => PermanentRedirect()
-    case _                                                            => NotFound()
+    case HEAD -> Root / "foo" / "bar" / "README.md"                        => Ok()
+    case HEAD -> Root / "foo" / "bar" / "compare" / "v0.1.0...v0.2.0"      => Ok()
+    case HEAD -> Root / "foo" / "bar1" / "blob" / "master" / "RELEASES.md" => Ok()
+    case HEAD -> Root / "foo" / "buz" / "compare" / "v0.1.0...v0.2.0"      => PermanentRedirect()
+    case _                                                                 => NotFound()
   })
 
   private val v1 = Version("0.1.0")
@@ -43,6 +44,15 @@ class VCSExtraAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       CustomReleaseNotes(releaseNotesUrl),
       VersionDiff(uri"https://github.com/foo/bar/compare/v0.1.0...v0.2.0")
     )
+    assertIO(obtained, expected)
+  }
+
+  test("getReleaseRelatedUrls: releaseNotesUrl is in possibleReleaseRelatedUrls") {
+    val releaseNotesUrl = uri"https://github.com/foo/bar1/blob/master/RELEASES.md"
+    val obtained = vcsExtraAlg
+      .getReleaseRelatedUrls(uri"https://github.com/foo/bar1", Some(releaseNotesUrl), v1, v2)
+      .runA(state)
+    val expected = List(CustomReleaseNotes(releaseNotesUrl))
     assertIO(obtained, expected)
   }
 
