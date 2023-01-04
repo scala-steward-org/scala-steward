@@ -92,7 +92,7 @@ final class StewardAlg[F[_]](config: Config)(implicit
     logger.infoTotalTime("run") {
       for {
         _ <- selfCheckAlg.checkAll
-        _ <- workspaceAlg.cleanWorkspace
+        _ <- workspaceAlg.cleanReposDir
         exitCode <-
           (config.githubApp.map(getGitHubAppRepos).getOrElse(Stream.empty) ++
             readRepos(config.reposFile))
