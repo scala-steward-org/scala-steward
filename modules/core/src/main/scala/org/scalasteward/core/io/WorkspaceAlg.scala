@@ -43,8 +43,11 @@ object WorkspaceAlg {
       private val reposDir: File =
         config.workspace / "repos"
 
-      private def mkRepoDir(repo: Repo): File =
+      private def toFile(repo: Repo): File =
         reposDir / repo.owner / repo.repo
+
+      private def toFile(buildRoot: BuildRoot): File =
+        toFile(buildRoot.repo) / buildRoot.relativePath
 
       override def cleanReposDir: F[Unit] =
         logger.info(s"Clean $reposDir") >> fileAlg.deleteForce(reposDir)
@@ -53,9 +56,9 @@ object WorkspaceAlg {
         fileAlg.ensureExists(config.workspace)
 
       override def repoDir(repo: Repo): F[File] =
-        fileAlg.ensureExists(mkRepoDir(repo))
+        fileAlg.ensureExists(toFile(repo))
 
       override def buildRootDir(buildRoot: BuildRoot): F[File] =
-        fileAlg.ensureExists(mkRepoDir(buildRoot.repo) / buildRoot.relativePath)
+        fileAlg.ensureExists(toFile(buildRoot))
     }
 }
