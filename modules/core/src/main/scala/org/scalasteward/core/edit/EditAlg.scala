@@ -51,7 +51,7 @@ final class EditAlg[F[_]](implicit
       preCommit: F[Unit] = F.unit
   ): F[List[EditAttempt]] =
     findUpdateReplacements(data.repo, data.config, update).flatMap {
-      case Nil => logger.warn("Unable to bump version").as(Nil)
+      case Nil => logger.warn(s"Unable to bump version for update ${update.show}").as(Nil)
       case updateReplacements =>
         for {
           _ <- preCommit
