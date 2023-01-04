@@ -62,6 +62,7 @@ final class Context[F[_]](implicit
     val fileAlg: FileAlg[F],
     val filterAlg: FilterAlg[F],
     val gitAlg: GitAlg[F],
+    val httpJsonClient: HttpJsonClient[F],
     val hookExecutor: HookExecutor[F],
     val logger: Logger[F],
     val mavenAlg: MavenAlg[F],

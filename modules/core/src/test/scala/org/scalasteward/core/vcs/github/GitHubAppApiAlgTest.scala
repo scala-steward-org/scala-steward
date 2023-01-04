@@ -1,27 +1,31 @@
 package org.scalasteward.core.vcs.github
 
-import cats.effect.IO
-import cats.effect.unsafe.implicits.global
 import io.circe.literal._
-import munit.FunSuite
+import munit.CatsEffectSuite
 import org.http4s._
 import org.http4s.circe._
-import org.http4s.client.Client
-import org.http4s.dsl.io._
+import org.http4s.dsl.Http4sDsl
+import org.http4s.headers.Authorization
 import org.scalasteward.core.mock.MockConfig.config
-import org.scalasteward.core.util.HttpJsonClient
+import org.scalasteward.core.mock.MockContext.context.httpJsonClient
+import org.scalasteward.core.mock.{MockEff, MockState}
 import org.typelevel.ci.CIStringSyntax
 
-class GitHubAppApiAlgTest extends FunSuite {
+class GitHubAppApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
   object PerPageMatcher extends QueryParamDecoderMatcher[Int]("per_page")
 
-  private def hasAuthHeader(req: Request[IO], value: String): Boolean =
-    req.headers.headers.contains(Header.Raw(ci"Authorization", value))
+  private def hasAuthHeader(req: Request[MockEff], authorization: Authorization): Boolean =
+    req.headers.get[Authorization].contains(authorization)
 
-  private val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
+  private val jwtToken = "jwt-token-abc123"
+  private val ghsToken = "ghs_16C7e42F292c6912E7710c838347Ae178B4a"
+  private val jwtAuth = Authorization(Credentials.Token(AuthScheme.Bearer, jwtToken))
+  private val tokenAuth = Authorization(Credentials.Token(ci"token", ghsToken))
+
+  private val state = MockState.empty.copy(clientResponses = HttpApp {
     case req @ GET -> Root / "app" / "installations" :? PerPageMatcher(100)
-        if hasAuthHeader(req, "Bearer jwt-token") =>
+        if hasAuthHeader(req, jwtAuth) =>
       Ok(json"""[
           {
             "id": 1
@@ -31,13 +35,13 @@ class GitHubAppApiAlgTest extends FunSuite {
           }
         ]""")
     case req @ POST -> Root / "app" / "installations" / "1" / "access_tokens"
-        if hasAuthHeader(req, "Bearer jwt-token") =>
+        if hasAuthHeader(req, jwtAuth) =>
       Ok(json"""{
-              "token": "ghs_16C7e42F292c6912E7710c838347Ae178B4a"
+              "token": ${ghsToken}
             }""")
 
     case req @ GET -> Root / "installation" / "repositories" :? PerPageMatcher(100)
-        if hasAuthHeader(req, "token ghs_16C7e42F292c6912E7710c838347Ae178B4a") =>
+        if hasAuthHeader(req, tokenAuth) =>
       Ok(json"""{
           "repositories": [
             {
@@ -48,26 +52,24 @@ class GitHubAppApiAlgTest extends FunSuite {
             }
          ]
         }""")
-  }
+    case _ => NotFound()
+  })
 
-  implicit private val client: Client[IO] = Client.fromHttpApp(routes.orNotFound)
-  implicit private val httpJsonClient: HttpJsonClient[IO] = new HttpJsonClient[IO]
-  private val gitHubAppApiAlg = new GitHubAppApiAlg[IO](config.vcsCfg.apiHost)
+  private val gitHubAppApiAlg = new GitHubAppApiAlg[MockEff](config.vcsCfg.apiHost)
 
   test("installations") {
-    val installations = gitHubAppApiAlg.installations("jwt-token").unsafeRunSync()
-    assertEquals(installations, List(InstallationOut(1), InstallationOut(2)))
+    val installations = gitHubAppApiAlg.installations(jwtToken).runA(state)
+    assertIO(installations, List(InstallationOut(1), InstallationOut(2)))
   }
 
   test("accessToken") {
-    val token = gitHubAppApiAlg.accessToken("jwt-token", 1).unsafeRunSync()
-    assertEquals(token, TokenOut("ghs_16C7e42F292c6912E7710c838347Ae178B4a"))
+    val token = gitHubAppApiAlg.accessToken(jwtToken, 1).runA(state)
+    assertIO(token, TokenOut(ghsToken))
   }
 
   test("repositories") {
-    val repositories =
-      gitHubAppApiAlg.repositories("ghs_16C7e42F292c6912E7710c838347Ae178B4a").unsafeRunSync()
-    assertEquals(
+    val repositories = gitHubAppApiAlg.repositories(ghsToken).runA(state)
+    assertIO(
       repositories,
       RepositoriesOut(List(Repository("fthomas/base.g8"), Repository("octocat/Hello-World")))
     )

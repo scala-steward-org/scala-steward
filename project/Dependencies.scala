@@ -6,7 +6,7 @@ object Dependencies {
   val catsEffect = "org.typelevel" %% "cats-effect" % "3.4.4"
   val catsCore = "org.typelevel" %% "cats-core" % "2.9.0"
   val catsLaws = "org.typelevel" %% "cats-laws" % catsCore.revision
-  val catsParse = "org.typelevel" %% "cats-parse" % "0.3.8"
+  val catsParse = "org.typelevel" %% "cats-parse" % "0.3.9"
   val circeConfig = "io.circe" %% "circe-config" % "0.8.0"
   val circeGeneric = "io.circe" %% "circe-generic" % "0.14.3"
   val circeGenericExtras = "io.circe" %% "circe-generic-extras" % "0.14.3"
@@ -33,7 +33,7 @@ object Dependencies {
   val jjwtJackson = "io.jsonwebtoken" % "jjwt-jackson" % jjwtApi.revision
   val millVersion = "0.10.10"
   val millMain = "com.lihaoyi" % "mill-main_2.13" % millVersion
-  val monocleCore = "dev.optics" %% "monocle-core" % "3.1.0"
+  val monocleCore = "dev.optics" %% "monocle-core" % "3.2.0"
   val munit = "org.scalameta" %% "munit" % "0.7.29"
   val munitCatsEffect = "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
   val munitScalacheck = "org.scalameta" %% "munit-scalacheck" % munit.revision
