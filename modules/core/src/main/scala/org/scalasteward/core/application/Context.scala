@@ -110,7 +110,7 @@ object Context {
       logger0 <- Resource.eval(Slf4jLogger.fromName[F]("org.scalasteward.core"))
       _ <- Resource.eval(printBanner(logger0))
       _ <- Resource.eval(F.delay(System.setProperty("http.agent", userAgentString)))
-      userAgent <- Resource.eval(F.fromEither(`User-Agent`.parse(userAgentString)))
+      userAgent <- Resource.eval(F.fromEither(`User-Agent`.parse(1)(userAgentString)))
       middleware = ClientConfiguration
         .setUserAgent[F](userAgent)
         .andThen(ClientConfiguration.retryAfter[F](maxAttempts = 5))
