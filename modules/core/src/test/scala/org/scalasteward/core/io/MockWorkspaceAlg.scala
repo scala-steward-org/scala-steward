@@ -6,7 +6,7 @@ import org.scalasteward.core.mock.{MockConfig, MockEff}
 import org.scalasteward.core.vcs.data.{BuildRoot, Repo}
 
 class MockWorkspaceAlg extends WorkspaceAlg[MockEff] {
-  override def cleanWorkspace: MockEff[Unit] =
+  override def cleanReposDir: MockEff[Unit] =
     Kleisli.pure(())
 
   override def rootDir: MockEff[File] =

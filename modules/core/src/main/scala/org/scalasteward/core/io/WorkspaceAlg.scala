@@ -24,7 +24,7 @@ import org.scalasteward.core.vcs.data.{BuildRoot, Repo}
 import org.typelevel.log4cats.Logger
 
 trait WorkspaceAlg[F[_]] {
-  def cleanWorkspace: F[Unit]
+  def cleanReposDir: F[Unit]
 
   def rootDir: F[File]
 
@@ -40,24 +40,22 @@ object WorkspaceAlg {
       F: FlatMap[F]
   ): WorkspaceAlg[F] =
     new WorkspaceAlg[F] {
-      private[this] val reposDir = config.workspace / "repos"
+      private val reposDir: File =
+        config.workspace / "repos"
 
-      private[this] def repoDirUnsafe(repo: Repo) = reposDir / repo.owner / repo.repo
+      private def mkRepoDir(repo: Repo): File =
+        reposDir / repo.owner / repo.repo
 
-      override def cleanWorkspace: F[Unit] =
-        for {
-          _ <- logger.info(s"Clean workspace ${config.workspace}")
-          _ <- fileAlg.deleteForce(reposDir)
-          _ <- rootDir
-        } yield ()
+      override def cleanReposDir: F[Unit] =
+        logger.info(s"Clean $reposDir") >> fileAlg.deleteForce(reposDir)
 
       override def rootDir: F[File] =
         fileAlg.ensureExists(config.workspace)
 
       override def repoDir(repo: Repo): F[File] =
-        fileAlg.ensureExists(repoDirUnsafe(repo))
+        fileAlg.ensureExists(mkRepoDir(repo))
 
       override def buildRootDir(buildRoot: BuildRoot): F[File] =
-        fileAlg.ensureExists(repoDirUnsafe(buildRoot.repo) / buildRoot.relativePath)
+        fileAlg.ensureExists(mkRepoDir(buildRoot.repo) / buildRoot.relativePath)
     }
 }
