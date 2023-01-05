@@ -840,6 +840,31 @@ class RewriteTest extends FunSuite {
     runApplyUpdate(update, original, expected)
   }
 
+  test("issue-2877: sbt using same version in a val and a literal".fail) {
+    val update = ("org.scalatest".g % "scalatest".a % "3.2.13" %> "3.2.14").single
+    val original = Map(
+      "build.sbt" ->
+        """
+          |val ScalaTestVersion = "3.2.13"
+          |libraryDependencies ++= Seq(
+          |  "org.scalatest" %% "scalatest" % ScalaTestVersion,
+          |  "org.scalatest" %% "scalactic" % "3.2.13"
+          |)
+          |""".stripMargin
+    )
+    val expected = Map(
+      "build.sbt" ->
+        """
+          |val ScalaTestVersion = "3.2.14"
+          |libraryDependencies ++= Seq(
+          |  "org.scalatest" %% "scalatest" % ScalaTestVersion,
+          |  "org.scalatest" %% "scalactic" % "3.2.14"
+          |)
+          |""".stripMargin
+    )
+    runApplyUpdate(update, original, expected)
+  }
+
   private def runApplyUpdate(
       update: Update.Single,
       files: Map[String, String],
