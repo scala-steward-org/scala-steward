@@ -103,7 +103,7 @@ When a new version of a dependency is found and the PR for older version still e
 will be able to close the old PR.
 
 If you don't observe such behaviour and new version PRs pile up alongside old ones,
-make sure that the [workspace](https://github.com/scala-steward-org/scala-steward/blob/main/modules/docs/mdoc/running.md#workspace) 
+make sure that the [workspace](running.md#workspace) 
 folder is persisted between different runs. 
 
 That's where Steward holds intermediate state about dependency versions and created PRs which ultimately
