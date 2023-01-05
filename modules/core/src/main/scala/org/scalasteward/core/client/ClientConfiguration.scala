@@ -39,7 +39,7 @@ object ClientConfiguration {
 
   def build[F[_]: Async](bmw: BuilderMiddleware, cmw: Middleware[F]): Resource[F, Client[F]] =
     Resource
-      .make(defaultHttpClient[F](bmw).map(JdkHttpClient[F](_)))(_ => Async[F].unit)
+      .eval(defaultHttpClient[F](bmw).map(JdkHttpClient[F](_)))
       .map(cmw)
 
   private def defaultHttpClient[F[_]: Async](bmw: BuilderMiddleware): F[HttpClient] =
