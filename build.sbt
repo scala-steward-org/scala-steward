@@ -105,7 +105,7 @@ lazy val core = myCrossProject("core")
       Dependencies.http4sCirce,
       Dependencies.http4sClient,
       Dependencies.http4sCore,
-      Dependencies.http4sOkhttpClient,
+      Dependencies.http4sJdkhttpClient,
       Dependencies.jjwtApi,
       Dependencies.jjwtImpl % Runtime,
       Dependencies.jjwtJackson % Runtime,

@@ -119,7 +119,7 @@ object Context {
         middleware
       )
       urlCheckerClient <- ClientConfiguration.build(
-        ClientConfiguration.disableFollowRedirect[F],
+        ClientConfiguration.disableFollowRedirect,
         middleware
       )
       fileAlg0 = FileAlg.create(logger0, F)

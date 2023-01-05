@@ -17,27 +17,49 @@
 package org.scalasteward.core.client
 
 import cats.effect._
+import cats.syntax.all._
 import eu.timepit.refined.auto._
 import eu.timepit.refined.types.numeric.PosInt
 import org.http4s.Response
 import org.http4s.client._
 import org.http4s.headers.`User-Agent`
-import org.http4s.okhttp.client.OkHttpBuilder
+import org.http4s.jdkhttpclient.JdkHttpClient
+import java.net.http.HttpClient
+import java.net.http.HttpClient.Builder
 import org.typelevel.ci._
 
 import scala.concurrent.duration._
 
 object ClientConfiguration {
-  type BuilderMiddleware[F[_]] = OkHttpBuilder[F] => OkHttpBuilder[F]
+  type BuilderMiddleware = Builder => Builder
+
   object BuilderMiddleware {
-    def default[F[_]]: BuilderMiddleware[F] = bmw => bmw
+    def default: BuilderMiddleware = _.followRedirects(HttpClient.Redirect.ALWAYS)
   }
-  def build[F[_]: Async](bmw: BuilderMiddleware[F], cmw: Middleware[F]): Resource[F, Client[F]] =
-    OkHttpBuilder
-      .withDefaultClient[F]
-      .map(bmw)
-      .flatMap(_.resource)
+
+  def build[F[_]: Async](bmw: BuilderMiddleware, cmw: Middleware[F]): Resource[F, Client[F]] =
+    Resource
+      .make(defaultHttpClient[F](bmw).map(JdkHttpClient[F](_)))(_ => Async[F].unit)
       .map(cmw)
+
+  private def defaultHttpClient[F[_]: Async](bmw: BuilderMiddleware): F[HttpClient] =
+    Async[F].executor.flatMap { exec =>
+      Async[F].delay {
+        val builder = HttpClient.newBuilder()
+
+        if (Runtime.version().feature() == 11) {
+          val params = javax.net.ssl.SSLContext.getDefault().getDefaultSSLParameters()
+          params.setProtocols(params.getProtocols().filter(_ != "TLSv1.3"))
+          builder.sslParameters(params)
+        }
+
+        builder.executor(exec)
+
+        bmw(builder)
+
+        builder.build()
+      }
+    }
 
   def setUserAgent[F[_]: MonadCancelThrow](userAgent: `User-Agent`): Middleware[F] = { client =>
     Client[F](req => client.run(req.putHeaders(userAgent)))
@@ -69,8 +91,5 @@ object ClientConfiguration {
     }
   }
 
-  def disableFollowRedirect[F[_]](builder: OkHttpBuilder[F]): OkHttpBuilder[F] =
-    builder.withOkHttpClient(
-      builder.okHttpClient.newBuilder().followRedirects(false).build()
-    )
+  def disableFollowRedirect: BuilderMiddleware = _.followRedirects(HttpClient.Redirect.NEVER)
 }
