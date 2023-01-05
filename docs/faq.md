@@ -96,3 +96,15 @@ https://keys.openpgp.org/search?q=me@scala-steward.org.
 ## How can I change log levels?
 
 If you want to switch from the standard INFO log level you can call scala steward with `-DLOG_LEVEL=DEBUG` for example: `scala-steward -DLOG_LEVEL=DEBUG  --workspace  "$STEWARD_DIR/workspace" ...` 
+
+## Why doesn't self-hosted Scala Steward close obsolete PRs?
+
+When a new version of a dependency is found and the PR for older version still exists, Scala Steward 
+will be able to close the old PR.
+
+If you don't observe such behaviour and new version PRs pile up alongside old ones,
+make sure that the [workspace](https://github.com/scala-steward-org/scala-steward/blob/main/modules/docs/mdoc/running.md#workspace) 
+folder is persisted between different runs. 
+
+That's where Steward holds intermediate state about dependency versions and created PRs which ultimately
+helps it make decisions about which PRs to close and which ones to keep open.
