@@ -5,7 +5,6 @@ import munit.CatsEffectSuite
 import org.http4s.HttpApp
 import org.http4s.dsl.Http4sDsl
 import org.http4s.implicits._
-import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.application.Config.VCSCfg
 import org.scalasteward.core.coursier.DependencyMetadata
 import org.scalasteward.core.data.Version
@@ -102,70 +101,48 @@ class UpdateInfoUrlFinderTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     assertIO(obtained, List.empty)
   }
 
-  private val update = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single
-
   test("possibleVersionDiffs") {
     val onPremVCS = "https://github.onprem.io/"
     val onPremVCSUri = uri"https://github.onprem.io/"
 
     assertEquals(
-      possibleVersionDiffs(
-        GitHub,
-        onPremVCSUri,
-        uri"https://github.com/foo/bar",
-        update.currentVersion,
-        update.nextVersion
-      ).map(_.url.renderString),
+      possibleVersionDiffs(GitHub, onPremVCSUri, uri"https://github.com/foo/bar", v1, v2)
+        .map(_.url.renderString),
       List(
-        "https://github.com/foo/bar/compare/v1.2.0...v1.2.3",
-        "https://github.com/foo/bar/compare/1.2.0...1.2.3",
-        "https://github.com/foo/bar/compare/release-1.2.0...release-1.2.3"
+        s"https://github.com/foo/bar/compare/v$v1...v$v2",
+        s"https://github.com/foo/bar/compare/$v1...$v2",
+        s"https://github.com/foo/bar/compare/release-$v1...release-$v2"
       )
     )
 
     // should canonicalize (drop last slash)
     assertEquals(
-      possibleVersionDiffs(
-        GitHub,
-        onPremVCSUri,
-        uri"https://github.com/foo/bar/",
-        update.currentVersion,
-        update.nextVersion
-      ).map(_.url.renderString),
+      possibleVersionDiffs(GitHub, onPremVCSUri, uri"https://github.com/foo/bar/", v1, v2)
+        .map(_.url.renderString),
       List(
-        "https://github.com/foo/bar/compare/v1.2.0...v1.2.3",
-        "https://github.com/foo/bar/compare/1.2.0...1.2.3",
-        "https://github.com/foo/bar/compare/release-1.2.0...release-1.2.3"
+        s"https://github.com/foo/bar/compare/v$v1...v$v2",
+        s"https://github.com/foo/bar/compare/$v1...$v2",
+        s"https://github.com/foo/bar/compare/release-$v1...release-$v2"
       )
     )
 
     assertEquals(
-      possibleVersionDiffs(
-        GitHub,
-        onPremVCSUri,
-        uri"https://gitlab.com/foo/bar",
-        update.currentVersion,
-        update.nextVersion
-      ).map(_.url.renderString),
+      possibleVersionDiffs(GitHub, onPremVCSUri, uri"https://gitlab.com/foo/bar", v1, v2)
+        .map(_.url.renderString),
       List(
-        "https://gitlab.com/foo/bar/compare/v1.2.0...v1.2.3",
-        "https://gitlab.com/foo/bar/compare/1.2.0...1.2.3",
-        "https://gitlab.com/foo/bar/compare/release-1.2.0...release-1.2.3"
+        s"https://gitlab.com/foo/bar/compare/v$v1...v$v2",
+        s"https://gitlab.com/foo/bar/compare/$v1...$v2",
+        s"https://gitlab.com/foo/bar/compare/release-$v1...release-$v2"
       )
     )
 
     assertEquals(
-      possibleVersionDiffs(
-        GitHub,
-        onPremVCSUri,
-        uri"https://bitbucket.org/foo/bar",
-        update.currentVersion,
-        update.nextVersion
-      ).map(_.url.renderString),
+      possibleVersionDiffs(GitHub, onPremVCSUri, uri"https://bitbucket.org/foo/bar", v1, v2)
+        .map(_.url.renderString),
       List(
-        "https://bitbucket.org/foo/bar/compare/v1.2.3..v1.2.0#diff",
-        "https://bitbucket.org/foo/bar/compare/1.2.3..1.2.0#diff",
-        "https://bitbucket.org/foo/bar/compare/release-1.2.3..release-1.2.0#diff"
+        s"https://bitbucket.org/foo/bar/compare/v$v2..v$v1#diff",
+        s"https://bitbucket.org/foo/bar/compare/$v2..$v1#diff",
+        s"https://bitbucket.org/foo/bar/compare/release-$v2..release-$v1#diff"
       )
     )
 
@@ -174,24 +151,29 @@ class UpdateInfoUrlFinderTest extends CatsEffectSuite with Http4sDsl[MockEff] {
         GitHub,
         onPremVCSUri,
         uri"https://scalacenter.github.io/scalafix/",
-        update.currentVersion,
-        update.nextVersion
+        v1,
+        v2
       ),
       List.empty
     )
 
     assertEquals(
-      possibleVersionDiffs(
-        GitHub,
-        onPremVCSUri,
-        onPremVCSUri.addPath("foo/bar"),
-        update.currentVersion,
-        update.nextVersion
-      ).map(_.url.renderString),
+      possibleVersionDiffs(GitHub, onPremVCSUri, onPremVCSUri.addPath("foo/bar"), v1, v2)
+        .map(_.url.renderString),
       List(
-        s"${onPremVCS}foo/bar/compare/v1.2.0...v1.2.3",
-        s"${onPremVCS}foo/bar/compare/1.2.0...1.2.3",
-        s"${onPremVCS}foo/bar/compare/release-1.2.0...release-1.2.3"
+        s"${onPremVCS}foo/bar/compare/v$v1...v$v2",
+        s"${onPremVCS}foo/bar/compare/$v1...$v2",
+        s"${onPremVCS}foo/bar/compare/release-$v1...release-$v2"
+      )
+    )
+
+    assertEquals(
+      possibleVersionDiffs(AzureRepos, onPremVCSUri, onPremVCSUri.addPath("foo/bar"), v1, v2)
+        .map(_.url.renderString),
+      List(
+        s"${onPremVCS}foo/bar/branchCompare?baseVersion=v$v1&targetVersion=v$v2",
+        s"${onPremVCS}foo/bar/branchCompare?baseVersion=$v1&targetVersion=$v2",
+        s"${onPremVCS}foo/bar/branchCompare?baseVersion=release-$v1&targetVersion=release-$v2"
       )
     )
   }
@@ -201,13 +183,13 @@ class UpdateInfoUrlFinderTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       GitHub,
       uri"https://github.com",
       uri"https://github.com/foo/bar",
-      update.currentVersion,
-      update.nextVersion
+      v1,
+      v2
     ).map(_.url.renderString)
     val expected = List(
-      "https://github.com/foo/bar/releases/tag/v1.2.3",
-      "https://github.com/foo/bar/releases/tag/1.2.3",
-      "https://github.com/foo/bar/releases/tag/release-1.2.3",
+      s"https://github.com/foo/bar/releases/tag/v$v2",
+      s"https://github.com/foo/bar/releases/tag/$v2",
+      s"https://github.com/foo/bar/releases/tag/release-$v2",
       "https://github.com/foo/bar/blob/master/ReleaseNotes.md",
       "https://github.com/foo/bar/blob/master/ReleaseNotes.markdown",
       "https://github.com/foo/bar/blob/master/ReleaseNotes.rst",
@@ -232,9 +214,9 @@ class UpdateInfoUrlFinderTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       "https://github.com/foo/bar/blob/master/CHANGES.md",
       "https://github.com/foo/bar/blob/master/CHANGES.markdown",
       "https://github.com/foo/bar/blob/master/CHANGES.rst",
-      "https://github.com/foo/bar/compare/v1.2.0...v1.2.3",
-      "https://github.com/foo/bar/compare/1.2.0...1.2.3",
-      "https://github.com/foo/bar/compare/release-1.2.0...release-1.2.3"
+      s"https://github.com/foo/bar/compare/v$v1...v$v2",
+      s"https://github.com/foo/bar/compare/$v1...$v2",
+      s"https://github.com/foo/bar/compare/release-$v1...release-$v2"
     )
     assertEquals(obtained, expected)
   }
@@ -244,16 +226,16 @@ class UpdateInfoUrlFinderTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       GitHub,
       uri"https://github.com",
       uri"https://gitlab.com/foo/bar",
-      update.currentVersion,
-      update.nextVersion
+      v1,
+      v2
     ).map(_.url.renderString)
     val expected =
       possibleReleaseNotesFilenames.map(name => s"https://gitlab.com/foo/bar/blob/master/$name") ++
         possibleChangelogFilenames.map(name => s"https://gitlab.com/foo/bar/blob/master/$name") ++
         List(
-          "https://gitlab.com/foo/bar/compare/v1.2.0...v1.2.3",
-          "https://gitlab.com/foo/bar/compare/1.2.0...1.2.3",
-          "https://gitlab.com/foo/bar/compare/release-1.2.0...release-1.2.3"
+          s"https://gitlab.com/foo/bar/compare/v$v1...v$v2",
+          s"https://gitlab.com/foo/bar/compare/$v1...$v2",
+          s"https://gitlab.com/foo/bar/compare/release-$v1...release-$v2"
         )
     assertEquals(obtained, expected)
   }
@@ -263,17 +245,17 @@ class UpdateInfoUrlFinderTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       GitLab,
       uri"https://gitlab.on-prem.net",
       uri"https://gitlab.on-prem.net/foo/bar",
-      update.currentVersion,
-      update.nextVersion
+      v1,
+      v2
     ).map(_.url.renderString)
     val expected = possibleReleaseNotesFilenames.map(name =>
       s"https://gitlab.on-prem.net/foo/bar/blob/master/$name"
     ) ++ possibleChangelogFilenames.map(name =>
       s"https://gitlab.on-prem.net/foo/bar/blob/master/$name"
     ) ++ List(
-      "https://gitlab.on-prem.net/foo/bar/compare/v1.2.0...v1.2.3",
-      "https://gitlab.on-prem.net/foo/bar/compare/1.2.0...1.2.3",
-      "https://gitlab.on-prem.net/foo/bar/compare/release-1.2.0...release-1.2.3"
+      s"https://gitlab.on-prem.net/foo/bar/compare/v$v1...v$v2",
+      s"https://gitlab.on-prem.net/foo/bar/compare/$v1...$v2",
+      s"https://gitlab.on-prem.net/foo/bar/compare/release-$v1...release-$v2"
     )
     assertEquals(obtained, expected)
   }
@@ -283,16 +265,16 @@ class UpdateInfoUrlFinderTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       GitHub,
       uri"https://github.com",
       uri"https://bitbucket.org/foo/bar",
-      update.currentVersion,
-      update.nextVersion
+      v1,
+      v2
     ).map(_.url.renderString)
     val expected =
       possibleReleaseNotesFilenames.map(name => s"https://bitbucket.org/foo/bar/master/$name") ++
         possibleChangelogFilenames.map(name => s"https://bitbucket.org/foo/bar/master/$name") ++
         List(
-          "https://bitbucket.org/foo/bar/compare/v1.2.3..v1.2.0#diff",
-          "https://bitbucket.org/foo/bar/compare/1.2.3..1.2.0#diff",
-          "https://bitbucket.org/foo/bar/compare/release-1.2.3..release-1.2.0#diff"
+          s"https://bitbucket.org/foo/bar/compare/v$v2..v$v1#diff",
+          s"https://bitbucket.org/foo/bar/compare/$v2..$v1#diff",
+          s"https://bitbucket.org/foo/bar/compare/release-$v2..release-$v1#diff"
         )
     assertEquals(obtained, expected)
   }
@@ -302,8 +284,8 @@ class UpdateInfoUrlFinderTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       GitHub,
       uri"https://github.com",
       uri"https://scalacenter.github.io/scalafix/",
-      update.currentVersion,
-      update.nextVersion
+      v1,
+      v2
     ).map(_.url.renderString)
     assertEquals(obtained, List.empty)
   }
