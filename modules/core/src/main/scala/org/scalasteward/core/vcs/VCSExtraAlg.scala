@@ -18,16 +18,15 @@ package org.scalasteward.core.vcs
 
 import cats.Monad
 import cats.syntax.all._
-import org.http4s.Uri
 import org.scalasteward.core.application.Config.VCSCfg
+import org.scalasteward.core.coursier.DependencyMetadata
 import org.scalasteward.core.data.{ReleaseRelatedUrl, Version}
 import org.scalasteward.core.util.UrlChecker
 import org.scalasteward.core.vcs
 
 trait VCSExtraAlg[F[_]] {
   def getReleaseRelatedUrls(
-      repoUrl: Uri,
-      releaseNotesUrl: Option[Uri],
+      metadata: DependencyMetadata,
       currentVersion: Version,
       nextVersion: Version
   ): F[List[ReleaseRelatedUrl]]
@@ -40,20 +39,22 @@ object VCSExtraAlg {
   ): VCSExtraAlg[F] =
     new VCSExtraAlg[F] {
       override def getReleaseRelatedUrls(
-          repoUrl: Uri,
-          releaseNotesUrl: Option[Uri],
+          metadata: DependencyMetadata,
           currentVersion: Version,
           nextVersion: Version
       ): F[List[ReleaseRelatedUrl]] = {
         val releaseRelatedUrls =
-          releaseNotesUrl.toList.map(ReleaseRelatedUrl.CustomReleaseNotes.apply) ++
-            vcs.possibleReleaseRelatedUrls(
-              config.tpe,
-              config.apiHost,
-              repoUrl,
-              currentVersion,
-              nextVersion
+          metadata.releaseNotesUrl.toList.map(ReleaseRelatedUrl.CustomReleaseNotes.apply) ++
+            metadata.repoUrl.toList.flatMap(repoUrl =>
+              vcs.possibleReleaseRelatedUrls(
+                config.tpe,
+                config.apiHost,
+                repoUrl,
+                currentVersion,
+                nextVersion
+              )
             )
+
         releaseRelatedUrls
           .distinctBy(_.url)
           .filterA(releaseRelatedUrl => urlChecker.exists(releaseRelatedUrl.url))

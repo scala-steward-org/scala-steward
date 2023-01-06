@@ -214,17 +214,10 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       }.toMap
       releaseRelatedUrls <- dependenciesWithNextVersion.flatTraverse {
         case (currentVersion, dependency) =>
-          dependencyToMetadata.get(dependency).toList.flatTraverse { metadata =>
-            metadata.repoUrl.toList.traverse { uri =>
-              vcsExtraAlg
-                .getReleaseRelatedUrls(
-                  uri,
-                  metadata.releaseNotesUrl,
-                  currentVersion,
-                  dependency.version
-                )
-                .tupleLeft(dependency.artifactId.name)
-            }
+          dependencyToMetadata.get(dependency).toList.traverse { metadata =>
+            vcsExtraAlg
+              .getReleaseRelatedUrls(metadata, currentVersion, dependency.version)
+              .tupleLeft(dependency.artifactId.name)
           }
       }
       filesWithOldVersion <-
