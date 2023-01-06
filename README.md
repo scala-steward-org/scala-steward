@@ -67,6 +67,8 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [Andrea](https://github.com/Andrea)
 * [Andrea Mistretta](https://github.com/andreami)
 * [Anil Kumar Myla](https://github.com/anilkumarmyla)
+* [Anton Sviridov](https://github.com/keynmol)
+* [Antonio Gelameris](https://github.com/TonioGela)
 * [Arjun Dhawan](https://github.com/arjun-1)
 * [Arnold Farkas](https://github.com/sapka12)
 * [Arulselvan Madhavan](https://github.com/ArulselvanMadhavan)
