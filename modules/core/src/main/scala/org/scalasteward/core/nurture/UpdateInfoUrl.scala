@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.data
+package org.scalasteward.core.nurture
 
 import org.http4s.Uri
 
-sealed trait ReleaseRelatedUrl {
+/** A URL of a resource that provides additional information for an update. */
+sealed trait UpdateInfoUrl {
   def url: Uri
 }
 
-object ReleaseRelatedUrl {
-  final case class CustomChangelog(url: Uri) extends ReleaseRelatedUrl
-  final case class CustomReleaseNotes(url: Uri) extends ReleaseRelatedUrl
-  final case class GitHubReleaseNotes(url: Uri) extends ReleaseRelatedUrl
-  final case class VersionDiff(url: Uri) extends ReleaseRelatedUrl
+object UpdateInfoUrl {
+  final case class CustomChangelog(url: Uri) extends UpdateInfoUrl
+  final case class CustomReleaseNotes(url: Uri) extends UpdateInfoUrl
+  final case class GitHubReleaseNotes(url: Uri) extends UpdateInfoUrl
+  final case class VersionDiff(url: Uri) extends UpdateInfoUrl
 }
