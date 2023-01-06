@@ -29,5 +29,5 @@ final case class ModulePosition(
     version: Substring.Position
 ) {
   def unwrappedVersion: String =
-    version.value.dropWhile(Set('"', '$', '{')).reverse.dropWhile(Set('"', '}')).reverse
+    version.value.dropWhile(Set('"', '$', '{')).reverse.dropWhile(Set('"', '}', ',')).reverse
 }

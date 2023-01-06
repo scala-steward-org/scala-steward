@@ -840,7 +840,7 @@ class RewriteTest extends FunSuite {
     runApplyUpdate(update, original, expected)
   }
 
-  test("issue-2877: sbt using same version in a val and a literal using a Seq addition".fail) {
+  test("issue-2877: sbt using same version in a val and a literal using a Seq addition") {
     val update = ("org.scalatest".g % Nel.of(
       "scalatest".a,
       "scalactic".a
