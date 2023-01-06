@@ -24,9 +24,10 @@ import org.scalasteward.core.data._
 import org.scalasteward.core.edit.EditAttempt
 import org.scalasteward.core.edit.EditAttempt.ScalafixEdit
 import org.scalasteward.core.git.{Branch, CommitMsg}
+import org.scalasteward.core.nurture.UpdateInfoUrl
+import org.scalasteward.core.nurture.UpdateInfoUrl._
 import org.scalasteward.core.repoconfig.{GroupRepoConfig, RepoConfigAlg}
 import org.scalasteward.core.util.{Details, Nel}
-
 import scala.util.matching.Regex
 
 final case class NewPullRequestData(
@@ -46,7 +47,7 @@ object NewPullRequestData {
       update: Update,
       edits: List[EditAttempt],
       artifactIdToUrl: Map[String, Uri],
-      releaseRelatedUrls: Map[String, List[ReleaseRelatedUrl]],
+      artifactIdToUpdateInfoUrls: Map[String, List[UpdateInfoUrl]],
       filesWithOldVersion: List[String],
       configParsingError: Option[String],
       labels: List[String]
@@ -65,17 +66,17 @@ object NewPullRequestData {
       update = u => {
         val artifacts = artifactsWithOptionalUrl(u, artifactIdToUrl)
 
-        val relatedUrls = releaseRelatedUrls.get(u.mainArtifactId).getOrElse(Nil)
+        val updateInfoUrls = artifactIdToUpdateInfoUrls.getOrElse(u.mainArtifactId, Nil)
 
         s"""|Updates $artifacts ${fromTo(u)}.
-            |${releaseNote(relatedUrls).getOrElse("")}""".stripMargin.trim
+            |${renderUpdateInfoUrls(updateInfoUrls).getOrElse("")}""".stripMargin.trim
       },
       grouped = g => {
         val artifacts = g.updates
-          .fproduct(u => releaseRelatedUrls.get(u.mainArtifactId).orEmpty)
-          .map { case (u, relatedUrls) =>
+          .fproduct(u => artifactIdToUpdateInfoUrls.get(u.mainArtifactId).orEmpty)
+          .map { case (u, updateInfoUrls) =>
             s"* ${artifactsWithOptionalUrl(u, artifactIdToUrl)} ${fromTo(u)}" +
-              releaseNote(relatedUrls).map(urls => s"\n  + $urls").getOrElse("")
+              renderUpdateInfoUrls(updateInfoUrls).map(urls => s"\n  + $urls").getOrElse("")
           }
           .mkString_("\n", "\n", "\n")
 
@@ -106,18 +107,14 @@ object NewPullRequestData {
         |""".stripMargin.trim
   }
 
-  def releaseNote(releaseRelatedUrls: List[ReleaseRelatedUrl]): Option[String] =
-    Option.when(releaseRelatedUrls.nonEmpty) {
-      releaseRelatedUrls
+  def renderUpdateInfoUrls(updateInfoUrls: List[UpdateInfoUrl]): Option[String] =
+    Option.when(updateInfoUrls.nonEmpty) {
+      updateInfoUrls
         .map {
-          case ReleaseRelatedUrl.CustomChangelog(url) =>
-            s"[Changelog](${url.renderString})"
-          case ReleaseRelatedUrl.CustomReleaseNotes(url) =>
-            s"[Release Notes](${url.renderString})"
-          case ReleaseRelatedUrl.GitHubReleaseNotes(url) =>
-            s"[GitHub Release Notes](${url.renderString})"
-          case ReleaseRelatedUrl.VersionDiff(url) =>
-            s"[Version Diff](${url.renderString})"
+          case CustomChangelog(url)    => s"[Changelog](${url.renderString})"
+          case CustomReleaseNotes(url) => s"[Release Notes](${url.renderString})"
+          case GitHubReleaseNotes(url) => s"[GitHub Release Notes](${url.renderString})"
+          case VersionDiff(url)        => s"[Version Diff](${url.renderString})"
         }
         .mkString(" - ")
     }
@@ -226,7 +223,7 @@ object NewPullRequestData {
       branchName: String,
       edits: List[EditAttempt] = List.empty,
       artifactIdToUrl: Map[String, Uri] = Map.empty,
-      releaseRelatedUrls: Map[String, List[ReleaseRelatedUrl]] = Map.empty,
+      artifactIdToUpdateInfoUrls: Map[String, List[UpdateInfoUrl]] = Map.empty,
       filesWithOldVersion: List[String] = List.empty,
       includeMatchedLabels: Option[Regex] = None
   ): NewPullRequestData = {
@@ -242,7 +239,7 @@ object NewPullRequestData {
         data.update,
         edits,
         artifactIdToUrl,
-        releaseRelatedUrls,
+        artifactIdToUpdateInfoUrls,
         filesWithOldVersion,
         data.repoData.cache.maybeRepoConfigParsingError,
         labels
