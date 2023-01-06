@@ -841,7 +841,10 @@ class RewriteTest extends FunSuite {
   }
 
   test("issue-2877: sbt using same version in a val and a literal".fail) {
-    val update = ("org.scalatest".g % "scalatest".a % "3.2.13" %> "3.2.14").single
+    val update = ("org.scalatest".g % Nel.of(
+      "scalatest".a,
+      "scalactic".a
+    ) % "3.2.13" %> "3.2.14").group
     val original = Map(
       "build.sbt" ->
         """
