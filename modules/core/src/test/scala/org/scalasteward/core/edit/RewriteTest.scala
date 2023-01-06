@@ -840,7 +840,7 @@ class RewriteTest extends FunSuite {
     runApplyUpdate(update, original, expected)
   }
 
-  test("issue-2877: sbt using same version in a val and a literal".fail) {
+  test("issue-2877: sbt using same version in a val and a literal using a Seq addition".fail) {
     val update = ("org.scalatest".g % Nel.of(
       "scalatest".a,
       "scalactic".a
@@ -863,6 +863,30 @@ class RewriteTest extends FunSuite {
           |  "org.scalatest" %% "scalatest" % ScalaTestVersion,
           |  "org.scalatest" %% "scalactic" % "3.2.14"
           |)
+          |""".stripMargin
+    )
+    runApplyUpdate(update, original, expected)
+  }
+
+  test("issue-2877: sbt using same version in a val and a literal using individual additions") {
+    val update = ("org.scalatest".g % Nel.of(
+      "scalatest".a,
+      "scalactic".a
+    ) % "3.2.13" %> "3.2.14").group
+    val original = Map(
+      "build.sbt" ->
+        """
+          |val ScalaTestVersion = "3.2.13"
+          |libraryDependencies += "org.scalatest" %% "scalatest" % ScalaTestVersion
+          |libraryDependencies += "org.scalatest" %% "scalactic" % "3.2.13"
+          |""".stripMargin
+    )
+    val expected = Map(
+      "build.sbt" ->
+        """
+          |val ScalaTestVersion = "3.2.14"
+          |libraryDependencies += "org.scalatest" %% "scalatest" % ScalaTestVersion
+          |libraryDependencies += "org.scalatest" %% "scalactic" % "3.2.14"
           |""".stripMargin
     )
     runApplyUpdate(update, original, expected)
