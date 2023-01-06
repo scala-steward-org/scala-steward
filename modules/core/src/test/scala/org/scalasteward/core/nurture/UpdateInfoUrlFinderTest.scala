@@ -279,14 +279,17 @@ class UpdateInfoUrlFinderTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     assertEquals(obtained, expected)
   }
 
-  test("possibleUpdateInfoUrls: homepage") {
-    val obtained = possibleUpdateInfoUrls(
-      GitHub,
-      uri"https://github.com",
-      uri"https://scalacenter.github.io/scalafix/",
-      v1,
-      v2
-    ).map(_.url.renderString)
+  test("possibleUpdateInfoUrls: on-prem Bitbucket Server") {
+    val vcsUrl = uri"https://bitbucket-server.on-prem.com"
+    val repoUrl = vcsUrl / "foo" / "bar"
+    val obtained = possibleUpdateInfoUrls(BitbucketServer, vcsUrl, repoUrl, v1, v2).map(_.url)
+    val expected = repoUrl / "browse" / "ReleaseNotes.md"
+    assert(clue(obtained).contains(expected))
+  }
+
+  test("possibleUpdateInfoUrls: repoUrl is a home page") {
+    val repoUrl = uri"https://scalacenter.github.io/scalafix/"
+    val obtained = possibleUpdateInfoUrls(GitHub, uri"https://github.com", repoUrl, v1, v2)
     assertEquals(obtained, List.empty)
   }
 }

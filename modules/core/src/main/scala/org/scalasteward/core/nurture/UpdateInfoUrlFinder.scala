@@ -104,12 +104,12 @@ object UpdateInfoUrlFinder {
 
   private[nurture] def possibleUpdateInfoUrls(
       vcsType: VCSType,
-      vcsUri: Uri,
+      vcsUrl: Uri,
       repoUrl: Uri,
       currentVersion: Version,
       nextVersion: Version
   ): List[UpdateInfoUrl] = {
-    val repoVCSType = extractRepoVCSType(vcsType, vcsUri, repoUrl)
+    val repoVCSType = extractRepoVCSType(vcsType, vcsUrl, repoUrl)
 
     val githubReleaseNotes = repoVCSType
       .collect { case GitHub =>
@@ -141,7 +141,7 @@ object UpdateInfoUrlFinder {
     val customReleaseNotes = files(possibleReleaseNotesFilenames).map(CustomReleaseNotes)
 
     githubReleaseNotes ++ customReleaseNotes ++ customChangelog ++
-      possibleVersionDiffs(vcsType, vcsUri, repoUrl, currentVersion, nextVersion)
+      possibleVersionDiffs(vcsType, vcsUrl, repoUrl, currentVersion, nextVersion)
   }
 
   private def possibleFilenames(baseNames: List[String]): List[String] = {
