@@ -26,7 +26,7 @@ val Scala3 = "3.2.1"
 
 /// sbt-github-actions configuration
 
-ThisBuild / crossScalaVersions := Seq( Scala213, Scala3)
+ThisBuild / crossScalaVersions := Seq(Scala213, Scala3)
 ThisBuild / githubWorkflowTargetTags ++= Seq("v*")
 ThisBuild / githubWorkflowPublishTargetBranches := Seq(
   RefPredicate.Equals(Ref.Branch(mainBranch)),
