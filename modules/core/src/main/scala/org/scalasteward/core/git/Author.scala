@@ -23,13 +23,13 @@ final case class Author(name: String, email: String, signingKey: Option[String] 
 }
 
 object Author {
-  def parse(s: String): Either[String, Author] = {
-    val regex = """(.*)\s+<(.*)>\s*""".r
+  private val regex = """(.*)\s+<(.*)>\s*""".r
+
+  def parse(s: String): Either[String, Author] =
     s match {
       case regex(name, email) => Right(Author(name.trim, email.trim))
       case _ => Left(s"Could not parse '$s' as Author. Expected format is: $$name <$$email>")
     }
-  }
 
   implicit val authorDecoder: Decoder[Author] =
     Decoder[String].emap(parse)
