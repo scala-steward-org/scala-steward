@@ -5,11 +5,11 @@ import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.buildtool.sbt.data.{SbtVersion, ScalaVersion}
 import org.scalasteward.core.buildtool.sbt.parser._
 import org.scalasteward.core.data.Resolver.{Credentials, IvyRepository, MavenRepository}
-import org.scalasteward.core.data.{Resolver, Scope}
+import org.scalasteward.core.data.{Resolver, Scope, Version}
 
 class parserTest extends FunSuite {
   test("parseBuildProperties: with whitespace") {
-    assertEquals(parseBuildProperties("sbt.version = 1.2.8"), Some(SbtVersion("1.2.8")))
+    assertEquals(parseBuildProperties("sbt.version = 1.2.8 "), Some(Version("1.2.8")))
   }
 
   test("parseDependencies") {

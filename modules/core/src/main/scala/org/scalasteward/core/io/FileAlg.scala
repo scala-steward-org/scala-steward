@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2022 Scala Steward contributors
+ * Copyright 2018-2023 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@
 package org.scalasteward.core.io
 
 import better.files.File
-import cats.effect.{Concurrent, Resource, Sync}
+import cats.effect.{Resource, Sync}
 import cats.syntax.all._
-import cats.{ApplicativeError, MonadThrow, Traverse}
+import cats.{ApplicativeError, Monad, MonadThrow}
 import fs2.Stream
 import org.apache.commons.io.FileUtils
 import org.http4s.Uri
@@ -31,8 +31,6 @@ trait FileAlg[F[_]] {
   def deleteForce(file: File): F[Unit]
 
   def ensureExists(dir: File): F[File]
-
-  def home: F[File]
 
   def isDirectory(file: File): F[Boolean]
 
@@ -58,33 +56,31 @@ trait FileAlg[F[_]] {
     Resource.make(create)(_ => delete)
   }
 
-  final def editFile(file: File, edit: String => Option[String])(implicit
-      F: MonadThrow[F]
-  ): F[Boolean] =
+  final def createTemporarily[E](dir: File, data: FileData)(implicit
+      F: ApplicativeError[F, E]
+  ): Resource[F, Unit] =
+    createTemporarily(dir / data.path, data.content)
+
+  final def editFile(file: File, edit: String => String)(implicit F: MonadThrow[F]): F[Unit] =
     readFile(file)
-      .flatMap(_.flatMap(edit).fold(F.pure(false))(writeFile(file, _).as(true)))
+      .flatMap(_.fold(F.unit)(content => writeFile(file, edit(content))))
       .adaptError { case t => new Throwable(s"failed to edit $file", t) }
 
-  final def editFiles[G[_]](files: G[File], edit: String => Option[String])(implicit
-      F: MonadThrow[F],
-      G: Traverse[G]
-  ): F[Boolean] =
-    files.traverse(editFile(_, edit)).map(_.foldLeft(false)(_ || _))
-
-  final def findFiles(
+  final def findFiles[A, B](
       dir: File,
-      fileFilter: File => Boolean,
-      contentFilter: String => Boolean
-  )(implicit F: Concurrent[F]): F[List[File]] =
-    walk(dir)
-      .evalFilter(isRegularFile)
-      .filter(fileFilter)
-      .evalFilter(readFile(_).map(_.fold(false)(contentFilter)))
-      .compile
-      .toList
-
-  final def writeFileData(dir: File, fileData: FileData): F[Unit] =
-    writeFile(dir / fileData.name, fileData.content)
+      fileFilter: File => Option[A],
+      contentFilter: String => Option[B]
+  )(implicit F: Monad[F]): Stream[F, (A, B)] = {
+    val none = Option.empty[(A, B)].pure[F]
+    walk(dir).evalMapFilter { file =>
+      isRegularFile(file).ifM(
+        fileFilter(file).fold(none) { a =>
+          readFile(file).map(_.flatMap(contentFilter).tupleLeft(a))
+        },
+        none
+      )
+    }
+  }
 }
 
 object FileAlg {
@@ -101,9 +97,6 @@ object FileAlg {
           if (!dir.exists) dir.createDirectories()
           dir
         }
-
-      override def home: F[File] =
-        F.delay(File.home)
 
       override def isDirectory(file: File): F[Boolean] =
         F.blocking(file.isDirectory(File.LinkOptions.noFollow))

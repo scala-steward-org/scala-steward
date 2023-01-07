@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2022 Scala Steward contributors
+ * Copyright 2018-2023 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,18 +35,17 @@ import scala.concurrent.duration.FiniteDuration
 
 /** Configuration for scala-steward.
   *
-  * == vcsCfg.apiHost ==
+  * ==vcsCfg.apiHost==
   * REST API v3 endpoints prefix
   *
-  * For github.com this is "https://api.github.com", see
-  * [[https://developer.github.com/v3/]].
+  * For github.com this is "https://api.github.com", see [[https://developer.github.com/v3/]].
   *
   * For GitHub Enterprise this is "http(s)://[hostname]/api/v3", see
   * [[https://developer.github.com/enterprise/v3/]].
   *
-  * == gitCfg.gitAskPass ==
-  * Program that is invoked by scala-steward and git (via the `GIT_ASKPASS`
-  * environment variable) to request the password for the user vcsCfg.vcsLogin.
+  * ==gitCfg.gitAskPass==
+  * Program that is invoked by scala-steward and git (via the `GIT_ASKPASS` environment variable) to
+  * request the password for the user vcsCfg.vcsLogin.
   *
   * This program could just be a simple shell script that echos the password.
   *
@@ -63,8 +62,10 @@ final case class Config(
     scalafixCfg: ScalafixCfg,
     artifactCfg: ArtifactCfg,
     cacheTtl: FiniteDuration,
+    bitbucketCfg: BitbucketCfg,
     bitbucketServerCfg: BitbucketServerCfg,
     gitLabCfg: GitLabCfg,
+    azureReposConfig: AzureReposConfig,
     githubApp: Option[GitHubApp],
     urlCheckerTestUrls: Nel[Uri],
     defaultResolver: Resolver,
@@ -132,9 +133,17 @@ object Config {
       useDefaultReviewers: Boolean
   )
 
+  final case class BitbucketCfg(
+      useDefaultReviewers: Boolean
+  )
+
   final case class GitLabCfg(
       mergeWhenPipelineSucceeds: Boolean,
       requiredReviewers: Option[Int]
+  )
+
+  final case class AzureReposConfig(
+      organization: Option[String]
   )
 
   sealed trait StewardUsage

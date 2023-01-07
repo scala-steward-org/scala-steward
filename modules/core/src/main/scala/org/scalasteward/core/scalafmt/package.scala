@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2022 Scala Steward contributors
+ * Copyright 2018-2023 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,9 @@ package object scalafmt {
   val scalafmtModule: (GroupId, ArtifactId) =
     (scalafmtGroupId, scalafmtArtifactId)
 
-  def isScalafmtUpdate(update: Update.ForArtifactId): Boolean =
-    update.groupId === scalafmtGroupId && update.artifactId.name === scalafmtArtifactId.name
+  def isScalafmtCoreUpdate(update: Update.Single): Boolean =
+    update.groupId === scalafmtGroupId &&
+      update.artifactIds.exists(_.name === scalafmtArtifactId.name)
 
   private def scalafmtGroupIdBy(version: Version): GroupId =
     if (version > Version("2.0.0-RC1")) scalafmtGroupId else GroupId("com.geirsson")

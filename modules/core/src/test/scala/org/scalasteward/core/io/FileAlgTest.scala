@@ -51,29 +51,27 @@ class FileAlgTest extends FunSuite {
   }
 
   test("removeTemporarily: nonexistent file") {
-    val file = mockRoot / "does-not-exists.txt"
+    val file = mockRoot / "does-not-exist.txt"
     assertEquals(ioFileAlg.removeTemporarily(file).surround(IO.pure(42)).unsafeRunSync(), 42)
   }
 
   test("editFile: nonexistent file") {
-    val (state, edited) = (for {
-      home <- fileAlg.home
-      edited <- fileAlg.editFile(home / "does-not-exists.txt", Some.apply)
-    } yield edited).runSA(MockState.empty).unsafeRunSync()
+    val state = fileAlg
+      .editFile(mockRoot / "does-not-exist.txt", identity)
+      .runS(MockState.empty)
+      .unsafeRunSync()
 
     val expected =
-      MockState.empty.copy(trace = Vector(Cmd("read", s"$mockRoot/does-not-exists.txt")))
+      MockState.empty.copy(trace = Vector(Cmd("read", s"$mockRoot/does-not-exist.txt")))
     assertEquals(state, expected)
-    assert(!edited)
   }
 
   test("editFile: existent file") {
     val file = mockRoot / "steward" / "test1.sbt"
-    val (state, edited) = (for {
+    val state = (for {
       _ <- fileAlg.writeFile(file, "123")
-      edit = (s: String) => Some(s.replace("2", "4"))
-      edited <- fileAlg.editFile(file, edit)
-    } yield edited).runSA(MockState.empty).unsafeRunSync()
+      _ <- fileAlg.editFile(file, _.replace("2", "4"))
+    } yield ()).runS(MockState.empty).unsafeRunSync()
 
     val expected = MockState.empty.copy(
       trace = Vector(
@@ -84,7 +82,6 @@ class FileAlgTest extends FunSuite {
       files = Map(file -> "143")
     )
     assertEquals(state, expected)
-    assert(edited)
   }
 
   test("deleteForce removes dangling symlink in subdirectory") {
@@ -120,7 +117,7 @@ class FileAlgTest extends FunSuite {
     val p = for {
       _ <- ioFileAlg.deleteForce(dir)
       r1 <- ioFileAlg.isRegularFile(file)
-      _ <- ioFileAlg.writeFileData(dir, FileData("file.txt", "content"))
+      _ <- ioFileAlg.writeFile(file, "content")
       r2 <- ioFileAlg.isRegularFile(file)
     } yield (r1, r2)
     assertEquals(p.unsafeRunSync(), (false, true))

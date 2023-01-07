@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2022 Scala Steward contributors
+ * Copyright 2018-2023 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -162,10 +162,11 @@ object Version {
     }
     final case class Alpha(value: String) extends Component {
       def isPreReleaseIdent: Boolean = order < 0
-      def isSnapshotIdent: Boolean = order <= -6
+      def isSnapshotIdent: Boolean = order <= -7
       def order: Int =
         value.toUpperCase match {
-          case "SNAP" | "SNAPSHOT" | "NIGHTLY" => -6
+          case "SNAP" | "SNAPSHOT" | "NIGHTLY" => -7
+          case "FEAT" | "FEATURE"              => -6
           case "ALPHA" | "PREVIEW"             => -5
           case "BETA" | "B"                    => -4
           case "EA" /* early access */         => -3

@@ -288,5 +288,32 @@ updateClassifiers / csrConfiguration ~= addGitlabToken
 updateSbtClassifiers / csrConfiguration ~= addGitlabToken
 ```
 
+#### Azure Repos
+
+* Create a file `repos.md` that will be injected into the container as a volume.
+* Create a file `run.sh` with this content:
+
+```
+echo "#!/bin/sh"                  >> pass.sh
+echo "echo '$AZURE_REPO_ACCESS_TOKEN'" >> pass.sh
+
+chmod +x pass.sh
+
+docker run -v $PWD:/opt/scala-steward \
+    -it fthomas/scala-steward:latest \
+    -DLOG_LEVEL=TRACE \
+    --do-not-fork \
+    --workspace "/opt/scala-steward/workspace" \
+    --repos-file "/opt/scala-steward/repos.md" \
+    --git-author-email "email@mycompany.com" \
+    --vcs-type "azure-repos" \
+    --vcs-api-host "https://dev.azure.com" \
+    --vcs-login "email@mycompany.com" \
+    --azure-repos-organization "mycompany" \
+    --git-ask-pass "/opt/scala-steward/pass.sh"
+```
+
+Note: `AZURE_REPO_ACCESS_TOKEN` is a personal access token created with Read, write, & manage permissions to your repositories.
+
 [scalafixmigrations]: https://github.com/scala-steward-org/scala-steward/blob/main/docs/scalafix-migrations.md
 [artifactmigrations]: https://github.com/scala-steward-org/scala-steward/blob/main/docs/artifact-migrations.md

@@ -5,7 +5,7 @@ All command line arguments for the `scala-steward` application.
 ```
 Usage:
     scala-steward validate-repo-config
-    scala-steward --workspace <file> --repos-file <file> [--git-author-name <string>] --git-author-email <string> [--git-author-signing-key <string>] --git-ask-pass <file> [--sign-commits] [--vcs-type <vcs-type>] [--vcs-api-host <uri>] --vcs-login <string> [--do-not-fork] [--add-labels] [--ignore-opts-files] [--env-var <name=value>]... [--process-timeout <duration>] [--whitelist <string>]... [--read-only <string>]... [--enable-sandbox | --disable-sandbox] [--max-buffer-size <integer>] [--repo-config <uri>]... [--disable-default-repo-config] [--scalafix-migrations <uri>]... [--disable-default-scalafix-migrations] [--artifact-migrations <uri>]... [--disable-default-artifact-migrations] [--cache-ttl <duration>] [--bitbucket-server-use-default-reviewers] [--gitlab-merge-when-pipeline-succeeds] [--gitlab-required-reviewers <integer>] [--github-app-id <integer> --github-app-key-file <file>] [--url-checker-test-url <uri>]... [--default-maven-repo <string>] [--refresh-backoff-period <duration>]
+    scala-steward --workspace <file> --repos-file <file> [--git-author-name <string>] --git-author-email <string> [--git-author-signing-key <string>] --git-ask-pass <file> [--sign-commits] [--vcs-type <vcs-type>] [--vcs-api-host <uri>] --vcs-login <string> [--do-not-fork] [--add-labels] [--ignore-opts-files] [--env-var <name=value>]... [--process-timeout <duration>] [--whitelist <string>]... [--read-only <string>]... [--enable-sandbox | --disable-sandbox] [--max-buffer-size <integer>] [--repo-config <uri>]... [--disable-default-repo-config] [--scalafix-migrations <uri>]... [--disable-default-scalafix-migrations] [--artifact-migrations <uri>]... [--disable-default-artifact-migrations] [--cache-ttl <duration>] [--bitbucket-use-default-reviewers] [--bitbucket-server-use-default-reviewers] [--gitlab-merge-when-pipeline-succeeds] [--gitlab-required-reviewers <integer>] [--azure-repos-organization <string>] [--github-app-id <integer> --github-app-key-file <file>] [--url-checker-test-url <uri>]... [--default-maven-repo <string>] [--refresh-backoff-period <duration>]
 
 
 
@@ -27,7 +27,7 @@ Options and flags:
     --sign-commits
         Whether to sign commits; default: false
     --vcs-type <vcs-type>
-        One of bitbucket, bitbucket-server, github, gitlab; default: github
+        One of azure-repos, bitbucket, bitbucket-server, github, gitlab; default: github
     --vcs-api-host <uri>
         API URL of the git hoster; default: https://api.github.com
     --vcs-login <string>
@@ -66,12 +66,16 @@ Options and flags:
         Whether to disable the default artifact migration file
     --cache-ttl <duration>
         TTL for the caches; default: 2hours
-    --bitbucket-server-use-default-reviewers
+    --bitbucket-use-default-reviewers
         Whether to assign the default reviewers to a bitbucket pull request; default: false
+    --bitbucket-server-use-default-reviewers
+        Whether to assign the default reviewers to a bitbucket server pull request; default: false
     --gitlab-merge-when-pipeline-succeeds
         Whether to merge a gitlab merge request when the pipeline succeeds
     --gitlab-required-reviewers <integer>
         When set, the number of required reviewers for a merge request will be set to this number (non-negative integer).  Is only used in the context of gitlab-merge-when-pipeline-succeeds being enabled, and requires that the configured access token have the appropriate privileges.  Also requires a Gitlab Premium subscription.
+    --azure-repos-organization <string>
+        The Azure organization (required when vcs type is azure-repos)
     --github-app-id <integer>
         GitHub application id
     --github-app-key-file <file>

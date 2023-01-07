@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2022 Scala Steward contributors
+ * Copyright 2018-2023 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,15 @@
 package org.scalasteward.core
 
 import cats.Parallel
-import cats.effect.Sync
+import cats.effect.Async
 import cats.syntax.all._
 import java.util.concurrent.ExecutorService
+import scala.concurrent.ExecutionContext
 
 package object coursier {
   implicit def coursierSyncFromCatsEffectSync[F[_]](implicit
       parallel: Parallel[F],
-      F: Sync[F]
+      F: Async[F]
   ): _root_.coursier.util.Sync[F] =
     new _root_.coursier.util.Sync[F] {
       override def delay[A](a: => A): F[A] =
@@ -46,6 +47,6 @@ package object coursier {
         F.flatMap(elem)(f)
 
       override def schedule[A](pool: ExecutorService)(f: => A): F[A] =
-        F.blocking(f)
+        F.evalOn(F.delay(f), ExecutionContext.fromExecutorService(pool))
     }
 }

@@ -23,8 +23,11 @@ package object mock {
 
     def runSA(state: MockState): IO[(MockState, A)] =
       state.toRef.flatMap(ref => fa.run(ref).flatMap(a => ref.get.map(s => (s, a))))
+
+    def unsafeRunSync(): A =
+      runA(MockState.empty).unsafeRunSync()(cats.effect.unsafe.implicits.global)
   }
 
-  def getFlatMapSet[F[_], A, B](f: A => F[A])(ref: Ref[F, A])(implicit F: FlatMap[F]): F[Unit] =
+  def getFlatMapSet[F[_], A](f: A => F[A])(ref: Ref[F, A])(implicit F: FlatMap[F]): F[Unit] =
     ref.get.flatMap(f).flatMap(ref.set)
 }

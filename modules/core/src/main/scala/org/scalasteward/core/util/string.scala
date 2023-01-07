@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2022 Scala Steward contributors
+ * Copyright 2018-2023 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import cats.syntax.all._
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.collection.MinSize
 import eu.timepit.refined.refineV
-import org.scalasteward.core.util.Change.{Changed, Unchanged}
 import scala.util.matching.Regex
 import shapeless.Witness
 
@@ -30,8 +29,8 @@ object string {
 
   /** Extracts words from a string.
     *
-    * Words are separated by '-', '_', '.', or a change from lower to
-    * upper case and are at least three characters long.
+    * Words are separated by '-', '_', '.', or a change from lower to upper case and are at least
+    * three characters long.
     */
   def extractWords(s: String): List[String] = {
     val minLength = 3
@@ -59,20 +58,6 @@ object string {
   ): Option[MinLengthString[N]] =
     refineV[MinSize[N]](xs.reduceLeft(longestCommonPrefix)).toOption
 
-  /** Like `Regex.replaceSomeIn` but indicates via the return type if there
-    * was at least one match that has been replaced.
-    */
-  def replaceSomeInChange(
-      regex: Regex,
-      target: CharSequence,
-      replacer: Regex.Match => Option[String]
-  ): Change[String] = {
-    var changed = false
-    val replacer1 = replacer.andThen(_.map { r => changed = true; r })
-    val result = regex.replaceSomeIn(target, replacer1)
-    if (changed) Changed(result) else Unchanged(result)
-  }
-
   def removeSuffix(target: String, suffixes: List[String]): String =
     suffixes
       .find(suffix => target.endsWith(suffix))
@@ -80,10 +65,11 @@ object string {
 
   /** Returns the substring after the rightmost `.`.
     *
-    * @example {{{
-    * scala> string.rightmostLabel("org.scalasteward.core")
-    * res1: String = core
-    * }}}
+    * @example
+    *   {{{
+    *   scala> string.rightmostLabel("org.scalasteward.core")
+    *   res1: String = core
+    *   }}}
     */
   def rightmostLabel(s: String): String =
     s.split('.').lastOption.getOrElse(s)
@@ -95,13 +81,14 @@ object string {
 
   /** Splits a string between lower and upper case characters.
     *
-    * @example {{{
-    * scala> string.splitBetweenLowerAndUpperChars("javaLowerCase")
-    * res1: List[String] = List(java, Lower, Case)
+    * @example
+    *   {{{
+    *   scala> string.splitBetweenLowerAndUpperChars("javaLowerCase")
+    *   res1: List[String] = List(java, Lower, Case)
     *
-    * scala> string.splitBetweenLowerAndUpperChars("HikariCP")
-    * res2: List[String] = List(Hikari, CP)
-    * }}}
+    *   scala> string.splitBetweenLowerAndUpperChars("HikariCP")
+    *   res2: List[String] = List(Hikari, CP)
+    *   }}}
     */
   def splitBetweenLowerAndUpperChars(s: String): List[String] =
     splitBetween2CharMatches("\\p{javaLowerCase}\\p{javaUpperCase}".r)(s)

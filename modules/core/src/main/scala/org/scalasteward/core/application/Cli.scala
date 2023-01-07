@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2022 Scala Steward contributors
+ * Copyright 2018-2023 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -117,7 +117,14 @@ object Cli {
     ).orFalse
 
   private val vcsCfg: Opts[VCSCfg] =
-    (vcsType, vcsApiHost, vcsLogin, doNotFork, addPrLabels).mapN(VCSCfg.apply)
+    (vcsType, vcsApiHost, vcsLogin, doNotFork, addPrLabels)
+      .mapN(VCSCfg.apply)
+      .validate(
+        s"${VCSType.allNot(_.supportsForking)} do not support fork mode"
+      )(cfg => cfg.tpe.supportsForking || cfg.doNotFork)
+      .validate(
+        s"${VCSType.allNot(_.supportsLabels)} do not support pull request labels"
+      )(cfg => cfg.tpe.supportsLabels || !cfg.addLabels)
 
   private val ignoreOptsFiles: Opts[Boolean] =
     flag(
@@ -216,11 +223,20 @@ object Cli {
   private val bitbucketServerUseDefaultReviewers: Opts[Boolean] =
     flag(
       "bitbucket-server-use-default-reviewers",
+      "Whether to assign the default reviewers to a bitbucket server pull request; default: false"
+    ).orFalse
+
+  private val bitbucketUseDefaultReviewers: Opts[Boolean] =
+    flag(
+      "bitbucket-use-default-reviewers",
       "Whether to assign the default reviewers to a bitbucket pull request; default: false"
     ).orFalse
 
   private val bitbucketServerCfg: Opts[BitbucketServerCfg] =
     bitbucketServerUseDefaultReviewers.map(BitbucketServerCfg.apply)
+
+  private val bitbucketCfg: Opts[BitbucketCfg] =
+    bitbucketUseDefaultReviewers.map(BitbucketCfg.apply)
 
   private val gitlabMergeWhenPipelineSucceeds: Opts[Boolean] =
     flag(
@@ -245,6 +261,15 @@ object Cli {
 
   private val gitHubApp: Opts[Option[GitHubApp]] =
     (githubAppId, githubAppKeyFile).mapN(GitHubApp.apply).orNone
+
+  private val azureReposOrganization: Opts[Option[String]] =
+    option[String](
+      "azure-repos-organization",
+      "The Azure organization (required when vcs type is azure-repos)"
+    ).orNone
+
+  private val azureReposConfig: Opts[AzureReposConfig] =
+    azureReposOrganization.map(AzureReposConfig.apply)
 
   private val refreshBackoffPeriod: Opts[FiniteDuration] = {
     val default = 0.days
@@ -288,8 +313,10 @@ object Cli {
     scalafixCfg,
     artifactCfg,
     cacheTtl,
+    bitbucketCfg,
     bitbucketServerCfg,
     gitLabCfg,
+    azureReposConfig,
     gitHubApp,
     urlCheckerTestUrls,
     defaultMavenRepo,
@@ -299,10 +326,10 @@ object Cli {
   val command: Command[StewardUsage] =
     Command("scala-steward", "")(
       validateConfigFile
-        .map(StewardUsage.ValidateRepoConfig(_))
+        .map(StewardUsage.ValidateRepoConfig)
         .orElse(
           configOpts
-            .map(StewardUsage.Regular(_))
+            .map(StewardUsage.Regular)
         )
     )
 

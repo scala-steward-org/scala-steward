@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2022 Scala Steward contributors
+ * Copyright 2018-2023 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import cats.syntax.all._
 import org.scalasteward.core.buildtool.sbt.{
   sbtArtifactId,
   sbtGroupId,
-  sbtScalaFixArtifactId,
-  sbtScalaFixGroupId
+  sbtScalafixArtifactId,
+  sbtScalafixGroupId
 }
 import org.scalasteward.core.data._
 import org.scalasteward.core.edit.EditAttempt
@@ -123,7 +123,7 @@ object HookExecutor {
 
   // Modules that most likely require the workflow to be regenerated if updated.
   private val conditionalSbtGitHubWorkflowGenerateModules =
-    (sbtGroupId, sbtArtifactId) :: (sbtScalaFixGroupId, sbtScalaFixArtifactId) :: scalaLangModules
+    (sbtGroupId, sbtArtifactId) :: (sbtScalafixGroupId, sbtScalafixArtifactId) :: scalaLangModules
 
   private def sbtGithubWorkflowGenerateHook(
       groupId: GroupId,

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2022 Scala Steward contributors
+ * Copyright 2018-2023 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,9 +71,9 @@ final class RepoCacheAlg[F[_]](config: Config)(implicit
     for {
       branch <- gitAlg.currentBranch(repo)
       latestSha1 <- gitAlg.latestSha1(repo, branch)
-      parsedConfig <- repoConfigAlg.readRepoConfig(repo)
-      maybeConfig = parsedConfig.flatMap(_.toOption)
-      maybeConfigParsingError = parsedConfig.flatMap(_.left.toOption.map(_.getMessage))
+      configParsingResult <- repoConfigAlg.readRepoConfig(repo)
+      maybeConfig = configParsingResult.maybeRepoConfig
+      maybeConfigParsingError = configParsingResult.maybeParsingError.map(_.getMessage)
       config = repoConfigAlg.mergeWithGlobal(maybeConfig)
       dependencies <- buildToolDispatcher.getDependencies(repo, config)
       dependencyInfos <-

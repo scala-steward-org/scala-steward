@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2022 Scala Steward contributors
+ * Copyright 2018-2023 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,8 @@ class GitHubAppApiAlg[F[_]: Applicative](
       )
       .map(_.flatten)
 
-  /** [[https://docs.github.com/en/free-pro-team@latest/rest/reference/apps#create-an-installation-access-token-for-an-app]] */
+  /** [[https://docs.github.com/en/free-pro-team@latest/rest/reference/apps#create-an-installation-access-token-for-an-app]]
+    */
   def accessToken(jwt: String, installationId: Long): F[TokenOut] =
     client.post(
       gitHubApiHost / "app" / "installations" / installationId.toString / "access_tokens",

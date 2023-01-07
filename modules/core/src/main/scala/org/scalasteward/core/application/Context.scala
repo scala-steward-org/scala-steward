@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2022 Scala Steward contributors
+ * Copyright 2018-2023 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,15 @@
 package org.scalasteward.core.application
 
 import better.files.File
+import cats.MonadThrow
 import cats.effect._
 import cats.effect.implicits._
-import cats.MonadThrow
 import cats.syntax.all._
 import eu.timepit.refined.auto._
 import org.http4s.Uri
 import org.http4s.client.Client
 import org.http4s.headers.`User-Agent`
+import org.scalasteward.core.application.Config.StewardUsage
 import org.scalasteward.core.buildtool.BuildToolDispatcher
 import org.scalasteward.core.buildtool.maven.MavenAlg
 import org.scalasteward.core.buildtool.mill.MillAlg
@@ -34,12 +35,13 @@ import org.scalasteward.core.coursier.{CoursierAlg, VersionsCache}
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.edit.hooks.HookExecutor
 import org.scalasteward.core.edit.scalafix._
+import org.scalasteward.core.edit.update.ScannerAlg
 import org.scalasteward.core.git.{GenGitAlg, GitAlg}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository}
+import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository, UpdateInfoUrlFinder}
 import org.scalasteward.core.persistence.{CachingKeyValueStore, JsonKeyValueStore}
 import org.scalasteward.core.repocache._
-import org.scalasteward.core.repoconfig.{RepoConfigAlg, RepoConfigLoader}
+import org.scalasteward.core.repoconfig.{RepoConfigAlg, RepoConfigLoader, ValidateRepoConfigAlg}
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.artifact.{ArtifactMigrationsFinder, ArtifactMigrationsLoader}
 import org.scalasteward.core.update.{FilterAlg, PruningAlg, UpdateAlg}
@@ -47,11 +49,9 @@ import org.scalasteward.core.util._
 import org.scalasteward.core.util.uri._
 import org.scalasteward.core.vcs.data.Repo
 import org.scalasteward.core.vcs.github.{GitHubAppApiAlg, GitHubAuthAlg}
-import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg, VCSSelection}
+import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg, VCSSelection}
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
-import org.scalasteward.core.application.Config.StewardUsage
-import org.scalasteward.core.repoconfig.ValidateRepoConfigAlg
 
 final class Context[F[_]](implicit
     val buildToolDispatcher: BuildToolDispatcher[F],
@@ -61,10 +61,12 @@ final class Context[F[_]](implicit
     val fileAlg: FileAlg[F],
     val filterAlg: FilterAlg[F],
     val gitAlg: GitAlg[F],
+    val httpJsonClient: HttpJsonClient[F],
     val hookExecutor: HookExecutor[F],
     val logger: Logger[F],
     val mavenAlg: MavenAlg[F],
     val millAlg: MillAlg[F],
+    val nurtureAlg: NurtureAlg[F],
     val pruningAlg: PruningAlg[F],
     val pullRequestRepository: PullRequestRepository[F],
     val refreshErrorAlg: RefreshErrorAlg[F],
@@ -76,6 +78,8 @@ final class Context[F[_]](implicit
     val scalafmtAlg: ScalafmtAlg[F],
     val stewardAlg: StewardAlg[F],
     val updateAlg: UpdateAlg[F],
+    val updateInfoUrlFinder: UpdateInfoUrlFinder[F],
+    val urlChecker: UrlChecker[F],
     val vcsRepoAlg: VCSRepoAlg[F],
     val workspaceAlg: WorkspaceAlg[F]
 )
@@ -105,7 +109,7 @@ object Context {
       logger0 <- Resource.eval(Slf4jLogger.fromName[F]("org.scalasteward.core"))
       _ <- Resource.eval(printBanner(logger0))
       _ <- Resource.eval(F.delay(System.setProperty("http.agent", userAgentString)))
-      userAgent <- Resource.eval(F.fromEither(`User-Agent`.parse(userAgentString)))
+      userAgent <- Resource.eval(F.fromEither(`User-Agent`.parse(1)(userAgentString)))
       middleware = ClientConfiguration
         .setUserAgent[F](userAgent)
         .andThen(ClientConfiguration.retryAfter[F](maxAttempts = 5))
@@ -114,7 +118,7 @@ object Context {
         middleware
       )
       urlCheckerClient <- ClientConfiguration.build(
-        ClientConfiguration.disableFollowRedirect[F],
+        ClientConfiguration.disableFollowRedirect,
         middleware
       )
       fileAlg0 = FileAlg.create(logger0, F)
@@ -202,7 +206,8 @@ object Context {
         new RepoCacheRepository[F](repoCacheStore)
       implicit val vcsApiAlg: VCSApiAlg[F] = new VCSSelection[F](config, vcsUser).vcsApiAlg
       implicit val vcsRepoAlg: VCSRepoAlg[F] = new VCSRepoAlg[F](config)
-      implicit val vcsExtraAlg: VCSExtraAlg[F] = VCSExtraAlg.create[F](config.vcsCfg)
+      implicit val updateInfoUrlFinder: UpdateInfoUrlFinder[F] =
+        new UpdateInfoUrlFinder[F](config.vcsCfg)
       implicit val pullRequestRepository: PullRequestRepository[F] =
         new PullRequestRepository[F](pullRequestsStore)
       implicit val scalafixCli: ScalafixCli[F] = new ScalafixCli[F]
@@ -219,6 +224,7 @@ object Context {
       implicit val refreshErrorAlg: RefreshErrorAlg[F] =
         new RefreshErrorAlg[F](refreshErrorStore, config.refreshBackoffPeriod)
       implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F](config)
+      implicit val scannerAlg: ScannerAlg[F] = new ScannerAlg[F]
       implicit val editAlg: EditAlg[F] = new EditAlg[F]
       implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F](config.vcsCfg)
       implicit val pruningAlg: PruningAlg[F] = new PruningAlg[F]

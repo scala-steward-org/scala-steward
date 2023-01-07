@@ -15,7 +15,7 @@ class ClientConfigurationTest extends CatsEffectSuite {
 
   private val userAgentValue = "my-user-agent"
   private val dummyUserAgent =
-    `User-Agent`.parse(userAgentValue).getOrElse(fail("unable to create user agent"))
+    `User-Agent`.parse(1)(userAgentValue).getOrElse(fail("unable to create user agent"))
 
   private val routes: HttpRoutes[IO] = {
     import org.http4s.dsl.io._

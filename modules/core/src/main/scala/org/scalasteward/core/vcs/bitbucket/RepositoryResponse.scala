@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2022 Scala Steward contributors
+ * Copyright 2018-2023 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,11 +67,13 @@ private[bitbucket] object RepositoryResponse {
     } yield RepositoryResponse(name, defaultBranch, UserOut(owner), cloneUrl, maybeParent)
   }
 
-  /** Monkey patches the [[io.circe.ACursor]] class to get the `downAt` function back, which was removed in
-    * version 0.12.0-M4.
+  /** Monkey patches the [[io.circe.ACursor]] class to get the `downAt` function back, which was
+    * removed in version 0.12.0-M4.
     *
-    * @see https://gitter.im/circe/circe?at=5d3f71eff0ff3e2bba8ece73
-    * @param cursor The cursor to patch.
+    * @see
+    *   https://gitter.im/circe/circe?at=5d3f71eff0ff3e2bba8ece73
+    * @param cursor
+    *   The cursor to patch.
     */
   implicit class RichACursor(cursor: ACursor) {
 

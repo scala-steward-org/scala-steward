@@ -18,17 +18,15 @@ val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
   "benchmark" -> List(JVMPlatform),
   "core" -> List(JVMPlatform),
   "docs" -> List(JVMPlatform),
-  "sbt-plugin" -> List(JVMPlatform),
-  "mill-plugin" -> List(JVMPlatform)
+  "dummy" -> List(JVMPlatform)
 )
 
-val Scala212 = "2.12.17"
 val Scala213 = "2.13.10"
 val Scala3 = "3.2.1"
 
 /// sbt-github-actions configuration
 
-ThisBuild / crossScalaVersions := Seq(Scala212, Scala213, Scala3)
+ThisBuild / crossScalaVersions := Seq( Scala213, Scala3)
 ThisBuild / githubWorkflowTargetTags ++= Seq("v*")
 ThisBuild / githubWorkflowPublishTargetBranches := Seq(
   RefPredicate.Equals(Ref.Branch(mainBranch)),
@@ -71,7 +69,7 @@ ThisBuild / evictionErrorLevel := Level.Info
 
 lazy val root = project
   .in(file("."))
-  .aggregate(benchmark.jvm, core.jvm, docs.jvm, `sbt-plugin`.jvm, `mill-plugin`.jvm)
+  .aggregate(benchmark.jvm, core.jvm, docs.jvm, dummy.jvm)
   .settings(commonSettings)
   .settings(noPublishSettings)
 
@@ -109,7 +107,7 @@ lazy val core = myCrossProject("core")
       Dependencies.http4sCirce,
       Dependencies.http4sClient,
       Dependencies.http4sCore,
-      Dependencies.http4sOkhttpClient,
+      Dependencies.http4sJdkhttpClient,
       Dependencies.jjwtApi,
       Dependencies.jjwtImpl % Runtime,
       Dependencies.jjwtJackson % Runtime,
@@ -162,15 +160,8 @@ lazy val core = myCrossProject("core")
       BuildInfoKey("gitHubUserContent" -> gitHubUserContent),
       BuildInfoKey("mainBranch" -> mainBranch),
       BuildInfoKey.map(git.gitHeadCommit) { case (k, v) => k -> v.getOrElse(mainBranch) },
-      BuildInfoKey.map(`sbt-plugin`.jvm / moduleRootPkg) { case (_, v) =>
-        "sbtPluginModuleRootPkg" -> v
-      },
-      BuildInfoKey.map(`mill-plugin`.jvm / moduleName) { case (_, v) =>
-        "millPluginModuleName" -> v
-      },
-      BuildInfoKey.map(`mill-plugin`.jvm / moduleRootPkg) { case (_, v) =>
-        "millPluginModuleRootPkg" -> v
-      }
+      BuildInfoKey("millPluginArtifactName" -> Dependencies.scalaStewardMillPluginArtifactName),
+      BuildInfoKey("millPluginVersion" -> Dependencies.scalaStewardMillPlugin.revision)
     ),
     buildInfoPackage := moduleRootPkg.value,
     initialCommands += s"""
@@ -205,7 +196,20 @@ lazy val core = myCrossProject("core")
     Test / fork := true,
     Test / testOptions +=
       Tests.Cleanup(() => Path(file(Properties.tmpDir) / "scala-steward").deleteRecursively()),
-    Compile / unmanagedResourceDirectories ++= (`sbt-plugin`.jvm / Compile / unmanagedSourceDirectories).value
+    Compile / resourceGenerators += Def.task {
+      val outDir = (Compile / resourceManaged).value
+      def downloadPlugin(v: String): File = {
+        val outFile = outDir / s"StewardPlugin_$v.scala"
+        if (!outFile.exists()) {
+          val u =
+            s"https://raw.githubusercontent.com/scala-steward-org/sbt-plugin/main/modules/sbt-plugin-$v/src/main/scala/org/scalasteward/sbt/plugin/StewardPlugin_$v.scala"
+          val content = scala.util.Using(scala.io.Source.fromURL(u))(_.mkString).get
+          IO.write(outFile, content)
+        }
+        outFile
+      }
+      Seq(downloadPlugin("1_0_0"), downloadPlugin("1_3_11"))
+    }.taskValue
   )
 
 lazy val docs = myCrossProject("docs")
@@ -236,18 +240,16 @@ lazy val docs = myCrossProject("docs")
     unusedCompileDependencies := Set.empty
   )
 
-lazy val `sbt-plugin` = myCrossProject("sbt-plugin")
+// Dummy project to receive updates from @scala-steward for this project's
+// libraryDependencies.
+lazy val dummy = myCrossProject("dummy")
+  .disablePlugins(ExplicitDepsPlugin)
   .settings(noPublishSettings)
   .settings(
-    scalaVersion := Scala212,
-    sbtPlugin := true
-  )
-
-lazy val `mill-plugin` = myCrossProject("mill-plugin")
-  .settings(
-    crossScalaVersions := Seq(Scala213, Scala212),
-    libraryDependencies += Dependencies.millScalalib.value % Provided,
-    scalacOptions -= "-Xfatal-warnings"
+    libraryDependencies ++= Seq(
+      Dependencies.millMain,
+      Dependencies.scalaStewardMillPlugin
+    )
   )
 
 /// settings
@@ -262,15 +264,6 @@ def myCrossProject(name: String): CrossProject =
       moduleRootPkg := s"$rootPkg.${name.replace('-', '.')}"
     )
     .settings(commonSettings)
-    // workaround for https://github.com/portable-scala/sbt-crossproject/issues/74
-    .settings(Seq(Compile, Test).flatMap(inConfig(_) {
-      unmanagedResourceDirectories ++= {
-        unmanagedSourceDirectories.value
-          .map(src => (src / ".." / "resources").getCanonicalFile)
-          .filterNot(unmanagedResourceDirectories.value.contains)
-          .distinct
-      }
-    }))
 
 ThisBuild / dynverSeparator := "-"
 
@@ -282,6 +275,8 @@ lazy val commonSettings = Def.settings(
 
 lazy val compileSettings = Def.settings(
   scalaVersion := Scala213,
+  // Uncomment for local development:
+  // scalacOptions -= "-Xfatal-warnings",
   doctestTestFramework := DoctestTestFramework.Munit
 )
 
@@ -292,25 +287,31 @@ lazy val metadataSettings = Def.settings(
   startYear := Some(2018),
   licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
   scmInfo := Some(ScmInfo(homepage.value.get, s"scm:git:$gitHubUrl.git")),
-  headerLicense := Some(HeaderLicense.ALv2("2018-2022", "Scala Steward contributors")),
+  headerLicense := Some(HeaderLicense.ALv2("2018-2023", "Scala Steward contributors")),
   developers := List(
+    Developer(
+      id = "alejandrohdezma",
+      name = "Alejandro Hernández",
+      email = "",
+      url = url("https://github.com/alejandrohdezma")
+    ),
     Developer(
       id = "exoego",
       name = "TATSUNO Yasuhiro",
       email = "",
-      url(s"https://github.com/exoego")
+      url = url("https://github.com/exoego")
     ),
     Developer(
       id = "fthomas",
       name = "Frank S. Thomas",
       email = "",
-      url(s"https://github.com/fthomas")
+      url = url("https://github.com/fthomas")
     ),
     Developer(
       id = "mzuehlke",
       name = "Marco Zühlke",
       email = "",
-      url(s"https://github.com/mzuehlke")
+      url = url("https://github.com/mzuehlke")
     )
   )
 )
@@ -324,17 +325,18 @@ lazy val dockerSettings = Def.settings(
     val sbtTgz = s"sbt-$sbtVer.tgz"
     val sbtUrl = s"https://github.com/sbt/sbt/releases/download/v$sbtVer/$sbtTgz"
     val millBin = s"$binDir/mill"
-    val millVer = Dependencies.millVersion.value
+    val millVer = Dependencies.millVersion
     val millUrl =
       s"https://github.com/lihaoyi/mill/releases/download/${millVer.split("-").head}/$millVer"
     val coursierBin = s"$binDir/coursier"
     Seq(
       Cmd("USER", "root"),
-      Cmd("RUN", "apk --no-cache add bash git ca-certificates curl maven openssh"),
+      Cmd("RUN", "apk --no-cache add bash git ca-certificates curl maven openssh nodejs npm"),
       Cmd("RUN", s"wget $sbtUrl && tar -xf $sbtTgz && rm -f $sbtTgz"),
       Cmd("RUN", s"curl -L $millUrl > $millBin && chmod +x $millBin"),
       Cmd("RUN", s"curl -L https://git.io/coursier-cli > $coursierBin && chmod +x $coursierBin"),
-      Cmd("RUN", s"$coursierBin install --install-dir $binDir scalafix scalafmt")
+      Cmd("RUN", s"$coursierBin install --install-dir $binDir scalafix scalafmt"),
+      Cmd("RUN", "npm install --global yarn")
     )
   },
   Docker / packageName := s"fthomas/${name.value}",
@@ -368,14 +370,6 @@ lazy val scaladocSettings = Def.settings(
 /// setting keys
 
 lazy val checkDocs = taskKey[Unit]("")
-
-lazy val installPlugin = taskKey[Unit]("Copies StewardPlugin.scala into global plugins directory.")
-installPlugin := {
-  val name = "StewardPlugin.scala"
-  val source = (`sbt-plugin`.jvm / Compile / sources).value.find(_.name == name).get
-  val target = file(System.getProperty("user.home")) / ".sbt" / "1.0" / "plugins" / name
-  IO.copyFile(source, target)
-}
 
 lazy val moduleRootPkg = settingKey[String]("").withRank(KeyRanks.Invisible)
 moduleRootPkg := rootPkg

@@ -7,10 +7,11 @@ import org.http4s.syntax.literals._
 import org.scalasteward.core.TestInstances._
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.buildtool.sbt.data.SbtVersion
-import org.scalasteward.core.data.{ReleaseRelatedUrl, RepoData, Update, UpdateData, Version}
+import org.scalasteward.core.data.{RepoData, Update, UpdateData, Version}
 import org.scalasteward.core.edit.EditAttempt.{ScalafixEdit, UpdateEdit}
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.git.{Branch, Commit}
+import org.scalasteward.core.nurture.UpdateInfoUrl
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.NewPullRequestData._
@@ -80,27 +81,25 @@ class NewPullRequestDataTest extends FunSuite {
   }
 
   test("links to release notes/changelog") {
-    assertEquals(releaseNote(List.empty), None)
+    assertEquals(renderUpdateInfoUrls(List.empty), None)
 
     assertEquals(
-      releaseNote(
-        List(ReleaseRelatedUrl.CustomChangelog(uri"https://github.com/foo/foo/CHANGELOG.rst"))
+      renderUpdateInfoUrls(
+        List(UpdateInfoUrl.CustomChangelog(uri"https://github.com/foo/foo/CHANGELOG.rst"))
       ),
       Some("[Changelog](https://github.com/foo/foo/CHANGELOG.rst)")
     )
 
     assertEquals(
-      releaseNote(
+      renderUpdateInfoUrls(
         List(
-          ReleaseRelatedUrl.CustomChangelog(uri"https://github.com/foo/foo/CHANGELOG.rst"),
-          ReleaseRelatedUrl.GitHubReleaseNotes(uri"https://github.com/foo/foo/releases/tag/v1.2.3"),
-          ReleaseRelatedUrl.CustomReleaseNotes(
+          UpdateInfoUrl.CustomChangelog(uri"https://github.com/foo/foo/CHANGELOG.rst"),
+          UpdateInfoUrl.GitHubReleaseNotes(uri"https://github.com/foo/foo/releases/tag/v1.2.3"),
+          UpdateInfoUrl.CustomReleaseNotes(
             uri"https://github.com/foo/bar/blob/master/ReleaseNotes.md"
           ),
-          ReleaseRelatedUrl.CustomReleaseNotes(
-            uri"https://github.com/foo/bar/blob/master/Releases.md"
-          ),
-          ReleaseRelatedUrl.VersionDiff(uri"https://github.com/foo/foo/compare/v1.2.0...v1.2.3")
+          UpdateInfoUrl.CustomReleaseNotes(uri"https://github.com/foo/bar/blob/master/Releases.md"),
+          UpdateInfoUrl.VersionDiff(uri"https://github.com/foo/foo/compare/v1.2.0...v1.2.3")
         )
       ),
       Some(

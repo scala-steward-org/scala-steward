@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2022 Scala Steward contributors
+ * Copyright 2018-2023 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,29 +18,20 @@ package org.scalasteward.core.repoconfig
 
 import better.files.File
 import cats.MonadThrow
-import cats.syntax.all._
 import cats.effect.ExitCode
-import org.typelevel.log4cats.Logger
-import org.scalasteward.core.io.FileAlg
-import org.scalasteward.core.repoconfig.RepoConfigAlg
-
-import ValidateRepoConfigAlg._
+import cats.syntax.all._
 import io.circe.{CursorOp, DecodingFailure, ParsingFailure}
+import org.scalasteward.core.io.FileAlg
+import org.scalasteward.core.repoconfig.RepoConfigAlg.ConfigParsingResult
+import org.typelevel.log4cats.Logger
 
 final class ValidateRepoConfigAlg[F[_]](implicit
     fileAlg: FileAlg[F],
     logger: Logger[F],
     F: MonadThrow[F]
 ) {
-
-  def validateConfigFile(configFile: File): F[ConfigValidationResult] =
-    fileAlg.readFile(configFile).map {
-      case Some(content) => validateContent(content)
-      case None          => ConfigValidationResult.FileDoesNotExist
-    }
-
   def validateAndReport(configFile: File): F[ExitCode] =
-    validateConfigFile(configFile).flatMap { result =>
+    RepoConfigAlg.readRepoConfigFromFile(configFile).flatMap { result =>
       ValidateRepoConfigAlg.presentValidationResult(configFile)(result) match {
         case Left(errMsg) => logger.error(errMsg).as(ExitCode.Error)
         case Right(okMsg) => logger.info(okMsg).as(ExitCode.Success)
@@ -49,20 +40,6 @@ final class ValidateRepoConfigAlg[F[_]](implicit
 }
 
 object ValidateRepoConfigAlg {
-  sealed trait ConfigValidationResult
-
-  object ConfigValidationResult {
-    case object FileDoesNotExist extends ConfigValidationResult
-    case class ConfigIsInvalid(err: io.circe.Error) extends ConfigValidationResult
-    case object Ok extends ConfigValidationResult
-  }
-
-  def validateContent(content: String): ConfigValidationResult =
-    RepoConfigAlg.parseRepoConfig(content) match {
-      case Left(err) => ConfigValidationResult.ConfigIsInvalid(err)
-      case Right(_)  => ConfigValidationResult.Ok
-    }
-
   private def printCirceError(indent: String)(err: io.circe.Error): String =
     err match {
       case d: DecodingFailure =>
@@ -81,15 +58,15 @@ object ValidateRepoConfigAlg {
         s"""|${indent}Parsing failed with "$message".""".stripMargin
     }
 
-  def presentValidationResult(
+  private def presentValidationResult(
       configFile: File
-  )(result: ConfigValidationResult): Either[String, String] =
+  )(result: ConfigParsingResult): Either[String, String] =
     result match {
-      case ConfigValidationResult.Ok =>
+      case ConfigParsingResult.Ok(_) =>
         s"Configuration file at $configFile is valid.".asRight
-      case ConfigValidationResult.FileDoesNotExist =>
+      case ConfigParsingResult.FileDoesNotExist =>
         s"Configuration file at $configFile does not exist!".asLeft
-      case ConfigValidationResult.ConfigIsInvalid(err) =>
+      case ConfigParsingResult.ConfigIsInvalid(err) =>
         s"""|Configuration file at $configFile contains errors:
             |${printCirceError(" " * 2)(err)}""".stripMargin.asLeft
     }

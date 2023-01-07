@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2022 Scala Steward contributors
+ * Copyright 2018-2023 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,7 @@ case class PullRequestGroup(
     filter: NonEmptyList[PullRequestUpdateFilter]
 ) {
 
-  /**
-    * Returns `true` if an update falls into this group; returns `false` otherwise.
+  /** Returns `true` if an update falls into this group; returns `false` otherwise.
     */
   def matches(update: Update.ForArtifactId): Boolean = filter.exists(_.matches(update))
 

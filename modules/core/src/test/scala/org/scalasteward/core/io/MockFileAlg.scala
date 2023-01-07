@@ -15,9 +15,6 @@ class MockFileAlg extends FileAlg[MockEff] {
   override def ensureExists(dir: File): MockEff[File] =
     Kleisli(_.update(_.exec(List("mkdir", "-p", dir.pathAsString))) >> ioFileAlg.ensureExists(dir))
 
-  override def home: MockEff[File] =
-    Kleisli.pure(MockConfig.mockRoot)
-
   override def isDirectory(file: File): MockEff[Boolean] =
     Kleisli(_.update(_.exec(List("test", "-d", file.pathAsString))) >> ioFileAlg.isDirectory(file))
 

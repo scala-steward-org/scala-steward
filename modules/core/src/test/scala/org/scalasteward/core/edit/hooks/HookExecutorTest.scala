@@ -20,7 +20,7 @@ import org.scalasteward.core.vcs.data.Repo
 class HookExecutorTest extends CatsEffectSuite {
   private val repo = Repo("scala-steward-org", "scala-steward")
   private val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
-  private val repoDir = workspaceAlg.repoDir(repo).runA(MockState.empty).unsafeRunSync()
+  private val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
 
   test("no hook") {
     val update = ("org.typelevel".g % "cats-core".a % "1.2.0" %> "1.3.0").single

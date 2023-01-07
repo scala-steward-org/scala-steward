@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2022 Scala Steward contributors
+ * Copyright 2018-2023 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import better.files.File
 import cats.effect.{ExitCode, Sync}
 import cats.syntax.all._
 import fs2.Stream
-import org.scalasteward.core.buildtool.sbt.SbtAlg
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.NurtureAlg
@@ -44,7 +43,6 @@ final class StewardAlg[F[_]](config: Config)(implicit
     nurtureAlg: NurtureAlg[F],
     pruningAlg: PruningAlg[F],
     repoCacheAlg: RepoCacheAlg[F],
-    sbtAlg: SbtAlg[F],
     selfCheckAlg: SelfCheckAlg[F],
     workspaceAlg: WorkspaceAlg[F],
     F: Sync[F]
@@ -94,8 +92,8 @@ final class StewardAlg[F[_]](config: Config)(implicit
     logger.infoTotalTime("run") {
       for {
         _ <- selfCheckAlg.checkAll
-        _ <- workspaceAlg.cleanWorkspace
-        exitCode <- sbtAlg.addGlobalPlugins.surround {
+        _ <- workspaceAlg.cleanReposDir
+        exitCode <-
           (config.githubApp.map(getGitHubAppRepos).getOrElse(Stream.empty) ++
             readRepos(config.reposFile))
             .evalMap(steward)
@@ -109,7 +107,6 @@ final class StewardAlg[F[_]](config: Config)(implicit
                   s"""The format is "- $$owner/$$repo" or "- $$owner/$$repo:$$branch"."""
                 logger.warn(msg).as(ExitCode.Success)
             }
-        }
       } yield exitCode
     }
 }

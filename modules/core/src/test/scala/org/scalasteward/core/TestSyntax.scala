@@ -5,19 +5,14 @@ import org.scalasteward.core.data._
 import org.scalasteward.core.util.Nel
 
 object TestSyntax {
+  val sbtPluginReleases: IvyRepository = {
+    val pattern = "https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/[defaultPattern]"
+    IvyRepository("sbt-plugin-releases", pattern, None)
+  }
+
   implicit class GenericOps[A](val self: A) extends AnyVal {
     def withMavenCentral: Scope[A] =
       Scope(self, List(Resolver.mavenCentral))
-
-    def withSbtPluginReleases: Scope[A] = {
-      val sbtPluginReleases = IvyRepository(
-        "sbt-plugin-releases",
-        "https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/[defaultPattern]",
-        None,
-        Nil
-      )
-      Scope(self, List(sbtPluginReleases))
-    }
   }
 
   implicit class StringOps(private val self: String) extends AnyVal {

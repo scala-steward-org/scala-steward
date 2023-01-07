@@ -33,7 +33,8 @@ class CliTest extends FunSuite {
         List("--repo-config", "/opt/scala-steward/scala-steward.conf"),
         List("--github-app-id", "12345678"),
         List("--github-app-key-file", "example_app_key"),
-        List("--refresh-backoff-period", "1 day")
+        List("--refresh-backoff-period", "1 day"),
+        List("--bitbucket-use-default-reviewers")
       ).flatten
     )
 
@@ -64,6 +65,8 @@ class CliTest extends FunSuite {
     assertEquals(obtained.refreshBackoffPeriod, 1.day)
     assert(!obtained.gitLabCfg.mergeWhenPipelineSucceeds)
     assertEquals(obtained.gitLabCfg.requiredReviewers, None)
+    assert(obtained.bitbucketCfg.useDefaultReviewers)
+    assert(!obtained.bitbucketServerCfg.useDefaultReviewers)
   }
 
   val minimumRequiredParams = List(
@@ -180,6 +183,42 @@ class CliTest extends FunSuite {
     assertEquals(file, File("file.conf"))
   }
 
+  test("parseArgs: validate fork mode disabled") {
+    val params = minimumRequiredParams ++ List(
+      List("--vcs-type", "azure-repos"),
+      List("--do-not-fork")
+    )
+    val Success(StewardUsage.Regular(obtained)) = Cli.parseArgs(params.flatten)
+    assert(obtained.vcsCfg.doNotFork)
+  }
+
+  test("parseArgs: validate fork mode enabled") {
+    val params = minimumRequiredParams ++ List(
+      List("--vcs-type", "azure-repos")
+    )
+    val Error(errorMsg) = Cli.parseArgs(params.flatten)
+    assert(clue(errorMsg).startsWith("azure-repos, bitbucket-server do not support fork mode"))
+  }
+
+  test("parseArgs: validate pull request labeling disabled") {
+    val params = minimumRequiredParams ++ List(
+      List("--vcs-type", "bitbucket")
+    )
+    val Success(StewardUsage.Regular(obtained)) = Cli.parseArgs(params.flatten)
+    assert(!obtained.vcsCfg.addLabels)
+  }
+
+  test("parseArgs: validate pull request labeling enabled") {
+    val params = minimumRequiredParams ++ List(
+      List("--vcs-type", "bitbucket"),
+      List("--add-labels")
+    )
+    val Error(errorMsg) = Cli.parseArgs(params.flatten)
+    assert(
+      clue(errorMsg).startsWith("bitbucket, bitbucket-server do not support pull request labels")
+    )
+  }
+
   test("envVarArgument: env-var without equals sign") {
     assert(clue(Cli.envVarArgument.read("SBT_OPTS")).isInvalid)
   }
@@ -191,5 +230,15 @@ class CliTest extends FunSuite {
 
   test("vcsTypeArgument: unknown value") {
     assert(clue(Cli.vcsTypeArgument.read("sourceforge")).isInvalid)
+  }
+
+  test("azure-repos validation") {
+    val Error(error) = Cli.parseArgs(
+      (minimumRequiredParams ++ List(
+        List("--vcs-type", "azure-repos"),
+        List("--azure-repos-organization")
+      )).flatten
+    )
+    assert(error.startsWith("Missing value for option: --azure-repos-organization"))
   }
 }

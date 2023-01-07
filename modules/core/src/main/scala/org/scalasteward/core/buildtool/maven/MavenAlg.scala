@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2022 Scala Steward contributors
+ * Copyright 2018-2023 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,23 +26,27 @@ import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.BuildRoot
+import org.typelevel.log4cats.Logger
 
 final class MavenAlg[F[_]](config: Config)(implicit
     fileAlg: FileAlg[F],
+    logger: Logger[F],
     processAlg: ProcessAlg[F],
     workspaceAlg: WorkspaceAlg[F],
     F: MonadCancelThrow[F]
 ) extends BuildToolAlg[F] {
+  override def name: String = "Maven"
+
   override def containsBuild(buildRoot: BuildRoot): F[Boolean] =
     workspaceAlg
       .buildRootDir(buildRoot)
-      .flatMap(buildRootDir => fileAlg.isRegularFile(buildRootDir / "pom.xml"))
+      .flatMap(buildRootDir => fileAlg.isRegularFile(buildRootDir / pomXmlName))
 
   override def getDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
     for {
       buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
       dependenciesRaw <- exec(
-        mvnCmd(command.listDependencies),
+        mvnCmd(command.listDependencies, args.excludeTransitive),
         buildRootDir
       )
       repositoriesRaw <- exec(
@@ -54,13 +58,15 @@ final class MavenAlg[F[_]](config: Config)(implicit
     } yield List(Scope(dependencies, resolvers))
 
   override def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
-    F.unit
+    logger.warn(
+      "Scalafix migrations are currently not supported in Maven projects, see https://github.com/scala-steward-org/scala-steward/issues/2839 for details"
+    )
 
   private def exec(command: Nel[String], repoDir: File): F[List[String]] =
     maybeIgnoreOptsFiles(repoDir).surround(processAlg.execSandboxed(command, repoDir))
 
   private def mvnCmd(commands: String*): Nel[String] =
-    Nel("mvn", "--batch-mode" :: commands.toList)
+    Nel("mvn", args.batchMode :: commands.toList)
 
   private def maybeIgnoreOptsFiles(dir: File): Resource[F, Unit] =
     if (config.ignoreOptsFiles) ignoreOptsFiles(dir) else Resource.unit[F]

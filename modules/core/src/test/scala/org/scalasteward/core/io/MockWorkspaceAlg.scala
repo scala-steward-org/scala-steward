@@ -6,7 +6,7 @@ import org.scalasteward.core.mock.{MockConfig, MockEff}
 import org.scalasteward.core.vcs.data.{BuildRoot, Repo}
 
 class MockWorkspaceAlg extends WorkspaceAlg[MockEff] {
-  override def cleanWorkspace: MockEff[Unit] =
+  override def cleanReposDir: MockEff[Unit] =
     Kleisli.pure(())
 
   override def rootDir: MockEff[File] =
@@ -16,5 +16,5 @@ class MockWorkspaceAlg extends WorkspaceAlg[MockEff] {
     rootDir.map(_ / repo.owner / repo.repo)
 
   override def buildRootDir(buildRoot: BuildRoot): MockEff[File] =
-    repoDir(buildRoot.repo)
+    repoDir(buildRoot.repo).map(_ / buildRoot.relativePath)
 }

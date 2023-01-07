@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2022 Scala Steward contributors
+ * Copyright 2018-2023 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.vcs.data.BuildRoot
 
 trait BuildToolAlg[F[_]] {
+  def name: String
+
   def containsBuild(buildRoot: BuildRoot): F[Boolean]
 
   def getDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]]
