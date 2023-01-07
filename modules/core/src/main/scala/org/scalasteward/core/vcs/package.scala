@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2022 Scala Steward contributors
+ * Copyright 2018-2023 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,8 @@
 
 package org.scalasteward.core
 
-import cats.syntax.all._
-import org.http4s.Uri
-import org.scalasteward.core.data.ReleaseRelatedUrl.VersionDiff
-import org.scalasteward.core.data.{ReleaseRelatedUrl, Version}
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.vcs.VCSType.{AzureRepos, Bitbucket, BitbucketServer, GitHub, GitLab}
+import org.scalasteward.core.vcs.VCSType._
 import org.scalasteward.core.vcs.data.Repo
 
 package object vcs {
@@ -49,114 +45,4 @@ package object vcs {
       case GitLab | Bitbucket | BitbucketServer | AzureRepos =>
         updateBranch.name
     }
-
-  def possibleTags(version: Version): List[String] =
-    List(s"v$version", version.value, s"release-$version")
-
-  val possibleChangelogFilenames: List[String] = {
-    val baseNames = List(
-      "CHANGELOG",
-      "Changelog",
-      "changelog",
-      "CHANGES"
-    )
-    possibleFilenames(baseNames)
-  }
-
-  val possibleReleaseNotesFilenames: List[String] = {
-    val baseNames = List(
-      "ReleaseNotes",
-      "RELEASES",
-      "Releases",
-      "releases"
-    )
-    possibleFilenames(baseNames)
-  }
-
-  private[this] def extractRepoVCSType(
-      vcsType: VCSType,
-      vcsUri: Uri,
-      repoUrl: Uri
-  ): Option[VCSType] =
-    repoUrl.host.flatMap { repoHost =>
-      if (vcsUri.host.contains(repoHost)) Some(vcsType)
-      else VCSType.fromPublicWebHost(repoHost.value)
-    }
-
-  def possibleCompareUrls(
-      vcsType: VCSType,
-      vcsUri: Uri,
-      repoUrl: Uri,
-      currentVersion: Version,
-      nextVersion: Version
-  ): List[VersionDiff] =
-    extractRepoVCSType(vcsType, vcsUri, repoUrl).map {
-      case GitHub | GitLab =>
-        possibleTags(currentVersion).zip(possibleTags(nextVersion)).map { case (from1, to1) =>
-          VersionDiff(repoUrl / "compare" / s"$from1...$to1")
-        }
-      case Bitbucket | BitbucketServer =>
-        possibleTags(currentVersion).zip(possibleTags(nextVersion)).map { case (from1, to1) =>
-          VersionDiff((repoUrl / "compare" / s"$to1..$from1").withFragment("diff"))
-        }
-      case AzureRepos =>
-        possibleTags(currentVersion).zip(possibleTags(nextVersion)).map { case (from1, to1) =>
-          VersionDiff(
-            (repoUrl / "branchCompare")
-              .withQueryParams(Map("baseVersion" -> from1, "targetVersion" -> to1))
-          )
-        }
-    }.orEmpty
-
-  def possibleReleaseRelatedUrls(
-      vcsType: VCSType,
-      vcsUri: Uri,
-      repoUrl: Uri,
-      currentVersion: Version,
-      nextVersion: Version
-  ): List[ReleaseRelatedUrl] = {
-    val repoVCSType = extractRepoVCSType(vcsType, vcsUri, repoUrl)
-
-    val github = repoVCSType
-      .collect { case GitHub =>
-        possibleTags(nextVersion).map(tag =>
-          ReleaseRelatedUrl.GitHubReleaseNotes(repoUrl / "releases" / "tag" / tag)
-        )
-      }
-      .getOrElse(List.empty)
-
-    def files(fileNames: List[String]): List[Uri] = {
-      val maybeSegments = repoVCSType.collect {
-        case GitHub | GitLab => List("blob", "master")
-        case Bitbucket       => List("master")
-        case BitbucketServer => List("browse")
-      }
-
-      val repoFiles = maybeSegments.toList.flatMap { segments =>
-        val base = segments.foldLeft(repoUrl)(_ / _)
-        fileNames.map(name => base / name)
-      }
-
-      val azureRepoFiles = repoVCSType
-        .collect { case AzureRepos =>
-          fileNames.map(name => repoUrl.withQueryParam("path", name))
-        }
-        .toList
-        .flatten
-
-      repoFiles ++ azureRepoFiles
-    }
-
-    val customChangelog = files(possibleChangelogFilenames).map(ReleaseRelatedUrl.CustomChangelog)
-    val customReleaseNotes =
-      files(possibleReleaseNotesFilenames).map(ReleaseRelatedUrl.CustomReleaseNotes)
-
-    github ++ customReleaseNotes ++ customChangelog ++
-      possibleCompareUrls(vcsType, vcsUri, repoUrl, currentVersion, nextVersion)
-  }
-
-  private def possibleFilenames(baseNames: List[String]): List[String] = {
-    val extensions = List("md", "markdown", "rst")
-    (baseNames, extensions).mapN { case (base, ext) => s"$base.$ext" }
-  }
 }

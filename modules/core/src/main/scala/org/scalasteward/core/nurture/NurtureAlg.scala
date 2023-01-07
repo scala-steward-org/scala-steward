@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2022 Scala Steward contributors
+ * Copyright 2018-2023 Scala Steward contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package org.scalasteward.core.nurture
 
-import cats.{Applicative, Id}
 import cats.effect.Concurrent
 import cats.implicits._
+import cats.{Applicative, Id}
 import org.scalasteward.core.application.Config.VCSCfg
 import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.ProcessResult.{Created, Ignored, Updated}
@@ -29,7 +29,7 @@ import org.scalasteward.core.repoconfig.PullRequestUpdateStrategy
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.util.{Nel, UrlChecker}
 import org.scalasteward.core.vcs.data._
-import org.scalasteward.core.vcs.{VCSApiAlg, VCSExtraAlg, VCSRepoAlg}
+import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
 import org.scalasteward.core.{git, util, vcs}
 import org.typelevel.log4cats.Logger
 
@@ -39,10 +39,10 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
     gitAlg: GitAlg[F],
     logger: Logger[F],
     pullRequestRepository: PullRequestRepository[F],
-    vcsApiAlg: VCSApiAlg[F],
-    vcsExtraAlg: VCSExtraAlg[F],
-    vcsRepoAlg: VCSRepoAlg[F],
+    updateInfoUrlFinder: UpdateInfoUrlFinder[F],
     urlChecker: UrlChecker[F],
+    vcsApiAlg: VCSApiAlg[F],
+    vcsRepoAlg: VCSRepoAlg[F],
     F: Concurrent[F]
 ) {
   def nurture(data: RepoData, fork: RepoOut, updates: Nel[Update.ForArtifactId]): F[Unit] =
@@ -212,11 +212,11 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       artifactIdToUrl = dependencyToMetadata.toList.mapFilter { case (dependency, metadata) =>
         metadata.repoUrl.tupleLeft(dependency.artifactId.name)
       }.toMap
-      releaseRelatedUrls <- dependenciesWithNextVersion.flatTraverse {
+      artifactIdToUpdateInfoUrls <- dependenciesWithNextVersion.flatTraverse {
         case (currentVersion, dependency) =>
           dependencyToMetadata.get(dependency).toList.traverse { metadata =>
-            vcsExtraAlg
-              .getReleaseRelatedUrls(metadata, currentVersion, dependency.version)
+            updateInfoUrlFinder
+              .findUpdateInfoUrls(metadata, currentVersion, dependency.version)
               .tupleLeft(dependency.artifactId.name)
           }
       }
@@ -231,7 +231,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
         branchName,
         edits,
         artifactIdToUrl,
-        releaseRelatedUrls.toMap,
+        artifactIdToUpdateInfoUrls.toMap,
         filesWithOldVersion,
         data.repoData.config.pullRequests.includeMatchedLabels
       )
