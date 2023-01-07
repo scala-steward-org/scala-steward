@@ -5,6 +5,48 @@ import org.scalacheck.Gen
 import org.scalacheck.Prop._
 
 class stringTest extends ScalaCheckSuite {
+  test("extractWords") {
+    assertEquals(string.extractWords(""), List.empty)
+    assertEquals(string.extractWords("abc"), List("abc"))
+    assertEquals(string.extractWords("abcDEF"), List("abc", "DEF"))
+    assertEquals(string.extractWords("abc-def"), List("abc", "def"))
+    assertEquals(string.extractWords("abc_def"), List("abc", "def"))
+    assertEquals(string.extractWords("abc.def"), List("abc", "def"))
+    assertEquals(string.extractWords("abc.de"), List("abc"))
+    assertEquals(string.extractWords("abc.defGHI"), List("abc", "def", "GHI"))
+    assertEquals(string.extractWords("abDEF-xy.GHI"), List("DEF", "GHI"))
+  }
+
+  test("indentLines") {
+    assertEquals(string.indentLines(List.empty[String]), "  ")
+    assertEquals(string.indentLines(List("abc", "def", "ghi")), "  abc\n  def\n  ghi")
+  }
+
+  test("longestCommonPrefix") {
+    assertEquals(string.longestCommonPrefix("", ""), "")
+    assertEquals(string.longestCommonPrefix("abc", ""), "")
+    assertEquals(string.longestCommonPrefix("abc", "abd"), "ab")
+    assertEquals(string.longestCommonPrefix("abc", "zabc"), "")
+    assertEquals(string.longestCommonPrefix("abc", "def"), "")
+  }
+
+  test("longestCommonPrefixGreater") {
+    assertEquals(string.longestCommonPrefixGreater[1](Nel.of("abcde", "abchk")).get.value, "abc")
+    assertEquals(string.longestCommonPrefixGreater[3](Nel.of("abcde", "abchk")).get.value, "abc")
+    assertEquals(string.longestCommonPrefixGreater[3](Nel.of("abcde", "abhk")), None)
+  }
+
+  test("rightmostLabel") {
+    assertEquals(string.rightmostLabel("org.scalasteward.core"), "core")
+    assertEquals(string.rightmostLabel("core"), "core")
+    assertEquals(string.rightmostLabel(""), "")
+  }
+
+  test("lineLeftRight") {
+    assertEquals(string.lineLeftRight("foo"), "──────────── foo ────────────")
+    assertEquals(string.lineLeftRight(""), "────────────  ────────────")
+  }
+
   property("splitBetweenLowerAndUpperChars(s).mkString == s") {
     forAll(Gen.asciiStr) { s: String =>
       assertEquals(string.splitBetweenLowerAndUpperChars(s).mkString, s)
