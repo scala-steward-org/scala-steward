@@ -4,14 +4,14 @@ import munit.CatsEffectSuite
 import org.http4s.syntax.literals._
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.mock.MockConfig.{config, gitCmd}
-import org.scalasteward.core.mock.MockContext.context.{gitAlg, logger, vcsRepoAlg}
+import org.scalasteward.core.mock.MockContext.context._
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.mock.{MockConfig, MockEff, MockState}
 import org.scalasteward.core.vcs.data.{Repo, RepoOut, UserOut}
 
 class VCSRepoAlgTest extends CatsEffectSuite {
   private val repo = Repo("fthomas", "datapackage")
-  private val repoDir = config.workspace / repo.toPath
+  private val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
   private val parentRepoOut = RepoOut(
     "datapackage",
     UserOut("fthomas"),

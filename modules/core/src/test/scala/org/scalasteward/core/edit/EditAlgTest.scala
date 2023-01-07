@@ -8,8 +8,8 @@ import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.buildtool.sbt.{sbtArtifactId, sbtGroupId}
 import org.scalasteward.core.data._
 import org.scalasteward.core.edit.scalafix.ScalafixCli.scalafixBinary
-import org.scalasteward.core.mock.MockConfig.{config, gitCmd}
-import org.scalasteward.core.mock.MockContext.context.editAlg
+import org.scalasteward.core.mock.MockConfig.gitCmd
+import org.scalasteward.core.mock.MockContext.context._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.repoconfig.RepoConfig
@@ -24,7 +24,7 @@ class EditAlgTest extends FunSuite {
   test("applyUpdate") {
     val repo = Repo("edit-alg", "test-1")
     val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
-    val repoDir = config.workspace / repo.toPath
+    val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
     val update = ("org.typelevel".g % "cats-core".a % "1.2.0" %> "1.3.0").single
     val file1 = repoDir / "build.sbt"
     val file2 = repoDir / "project/Dependencies.scala"
@@ -64,7 +64,7 @@ class EditAlgTest extends FunSuite {
       List(List(DependencyInfo(scalafmtDependency(Version("2.0.0")), Nil)).withMavenCentral)
     )
     val data = RepoData(repo, cache, RepoConfig.empty)
-    val repoDir = config.workspace / repo.toPath
+    val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
     val update = ("org.scalameta".g % "scalafmt-core".a % "2.0.0" %> "2.1.0").single
     val scalafmtConf = repoDir / scalafmtConfName
     val scalafmtConfContent = """maxColumn = 100
@@ -120,7 +120,7 @@ class EditAlgTest extends FunSuite {
   test("applyUpdate with build Scalafix") {
     val repo = Repo("edit-alg", "test-3-1")
     val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
-    val repoDir = config.workspace / repo.toPath
+    val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
     val update = (sbtGroupId % sbtArtifactId % "1.4.9" %> "1.5.5").single
 
     val state = MockState.empty

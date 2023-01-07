@@ -4,8 +4,7 @@ import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.data.{Dependency, Resolver, Scope, Version}
-import org.scalasteward.core.mock.MockConfig.config
-import org.scalasteward.core.mock.MockContext.context.buildToolDispatcher
+import org.scalasteward.core.mock.MockContext.context._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.repoconfig.{BuildRootConfig, RepoConfig}
@@ -19,7 +18,7 @@ class BuildToolDispatcherTest extends FunSuite {
     val repoConfig = RepoConfig.empty.copy(buildRoots =
       Some(List(BuildRootConfig("."), BuildRootConfig("mvn-build")))
     )
-    val repoDir = config.workspace / repo.toPath
+    val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
     val initial = MockState.empty
       .addFiles(
         repoDir / "mvn-build" / "pom.xml" -> "",

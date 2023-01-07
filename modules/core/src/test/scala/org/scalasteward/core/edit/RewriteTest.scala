@@ -5,8 +5,7 @@ import munit.FunSuite
 import org.scalasteward.core.TestInstances.dummyRepoCache
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.{RepoData, Update}
-import org.scalasteward.core.mock.MockConfig.config
-import org.scalasteward.core.mock.MockContext.context.editAlg
+import org.scalasteward.core.mock.MockContext.context._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafmt.scalafmtConfName
@@ -847,7 +846,7 @@ class RewriteTest extends FunSuite {
   ): Unit = {
     val repo = Repo("edit-alg", s"runApplyUpdate-${nextInt()}")
     val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
-    val repoDir = config.workspace / repo.toPath
+    val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
     val filesInRepoDir = files.map { case (file, content) => repoDir / file -> content }
     val obtained = MockState.empty
       .addFiles(filesInRepoDir.toSeq: _*)

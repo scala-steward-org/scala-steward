@@ -7,9 +7,9 @@ import eu.timepit.refined.types.numeric.NonNegInt
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.{GroupId, SemVer, Update}
-import org.scalasteward.core.mock.MockContext.context.repoConfigAlg
+import org.scalasteward.core.mock.MockContext.context._
+import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.Log
-import org.scalasteward.core.mock.{MockConfig, MockState}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.Repo
 import scala.concurrent.duration._
@@ -28,7 +28,7 @@ class RepoConfigAlgTest extends FunSuite {
 
   test("config with all fields set") {
     val repo = Repo("fthomas", "scala-steward")
-    val configFile = MockConfig.config.workspace / "fthomas/scala-steward/.scala-steward.conf"
+    val configFile = workspaceAlg.repoDir(repo).unsafeRunSync() / ".scala-steward.conf"
     val content =
       """|updates.allow  = [ { groupId = "eu.timepit" } ]
          |updates.pin  = [
@@ -247,7 +247,7 @@ class RepoConfigAlgTest extends FunSuite {
 
   test("malformed config") {
     val repo = Repo("fthomas", "scala-steward")
-    val configFile = MockConfig.config.workspace / "fthomas/scala-steward/.scala-steward.conf"
+    val configFile = workspaceAlg.repoDir(repo).unsafeRunSync() / ".scala-steward.conf"
     val initialState =
       MockState.empty.addFiles(configFile -> """updates.ignore = [ "foo """).unsafeRunSync()
     val (state, config) = repoConfigAlg.readRepoConfig(repo).runSA(initialState).unsafeRunSync()
