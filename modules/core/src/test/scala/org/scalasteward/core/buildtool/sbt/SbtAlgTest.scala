@@ -5,18 +5,19 @@ import munit.FunSuite
 import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.data.{GroupId, Version}
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
-import org.scalasteward.core.mock.MockConfig.{config, mockRoot}
-import org.scalasteward.core.mock.MockContext.context.sbtAlg
+import org.scalasteward.core.mock.MockContext.context._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.vcs.data.{BuildRoot, Repo}
 
 class SbtAlgTest extends FunSuite {
+  private val workspace = workspaceAlg.rootDir.unsafeRunSync()
+
   test("getDependencies") {
     val repo = Repo("typelevel", "cats")
     val buildRoot = BuildRoot(repo, ".")
-    val repoDir = config.workspace / repo.toPath
+    val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
     val files = Map(repoDir / "project" / "build.properties" -> "sbt.version=1.3.6")
     val initial = MockState.empty.copy(files = files)
     val state = sbtAlg.getDependencies(buildRoot).runS(initial).unsafeRunSync()
@@ -49,7 +50,7 @@ class SbtAlgTest extends FunSuite {
   test("runMigrations") {
     val repo = Repo("fthomas", "scala-steward")
     val buildRoot = BuildRoot(repo, ".")
-    val repoDir = config.workspace / repo.toPath
+    val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
     val migration = ScalafixMigration(
       GroupId("co.fs2"),
       Nel.of("fs2-core"),
@@ -58,7 +59,7 @@ class SbtAlgTest extends FunSuite {
     )
     val initialState = MockState.empty
       .addFiles(
-        mockRoot / s"workspace/store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json" -> sbtScalafixVersionJson
+        workspace / s"store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json" -> sbtScalafixVersionJson
       )
       .unsafeRunSync()
     val state = sbtAlg.runMigration(buildRoot, migration).runS(initialState).unsafeRunSync()
@@ -66,7 +67,7 @@ class SbtAlgTest extends FunSuite {
       trace = Vector(
         Cmd(
           "read",
-          s"$mockRoot/workspace/store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json"
+          s"$workspace/store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json"
         ),
         Cmd("write", s"$repoDir/project/scala-steward-sbt-scalafix.sbt"),
         Cmd(
@@ -91,7 +92,7 @@ class SbtAlgTest extends FunSuite {
   test("runMigrations: migration with scalacOptions") {
     val repo = Repo("fthomas", "scala-steward")
     val buildRoot = BuildRoot(repo, ".")
-    val repoDir = config.workspace / repo.toPath
+    val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
     val migration = ScalafixMigration(
       GroupId("org.typelevel"),
       Nel.of("cats-core"),
@@ -101,7 +102,7 @@ class SbtAlgTest extends FunSuite {
     )
     val initialState = MockState.empty
       .addFiles(
-        mockRoot / s"workspace/store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json" -> sbtScalafixVersionJson
+        workspace / s"store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json" -> sbtScalafixVersionJson
       )
       .unsafeRunSync()
     val state = sbtAlg.runMigration(buildRoot, migration).runS(initialState).unsafeRunSync()
@@ -109,7 +110,7 @@ class SbtAlgTest extends FunSuite {
       trace = Vector(
         Cmd(
           "read",
-          s"$mockRoot/workspace/store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json"
+          s"$workspace/store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json"
         ),
         Cmd("write", s"$repoDir/project/scala-steward-sbt-scalafix.sbt"),
         Cmd("write", s"$repoDir/scala-steward-scalafix-options.sbt"),
