@@ -22,8 +22,10 @@ import io.circe.parser._
 import org.scalasteward.core.data._
 
 object parser {
+  private val regex = """sbt.version\s*=\s*(\S+)""".r
+
   def parseBuildProperties(s: String): Option[Version] =
-    """sbt.version\s*=\s*(\S+)""".r.findFirstMatchIn(s).map(_.group(1)).map(Version.apply)
+    regex.findFirstMatchIn(s).map(_.group(1)).map(Version.apply)
 
   /** Parses the output of our own `stewardDependencies` task. */
   def parseDependencies(lines: List[String]): List[Scope.Dependencies] = {

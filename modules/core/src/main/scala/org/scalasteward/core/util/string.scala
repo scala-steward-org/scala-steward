@@ -79,6 +79,8 @@ object string {
     s"$line $s $line"
   }
 
+  private val lowerUpperRegex = "\\p{javaLowerCase}\\p{javaUpperCase}".r
+
   /** Splits a string between lower and upper case characters.
     *
     * @example
@@ -91,7 +93,7 @@ object string {
     *   }}}
     */
   def splitBetweenLowerAndUpperChars(s: String): List[String] =
-    splitBetween2CharMatches("\\p{javaLowerCase}\\p{javaUpperCase}".r)(s)
+    splitBetween2CharMatches(lowerUpperRegex)(s)
 
   private def splitBetween2CharMatches(regex: Regex)(s: String): List[String] = {
     val bounds = regex.findAllIn(s).matchData.map(_.start + 1).toList
