@@ -2,7 +2,7 @@ import scala.util.Properties
 import scala.reflect.io.Path
 import com.typesafe.sbt.packager.docker._
 import sbtcrossproject.{CrossProject, CrossType, Platform}
-import sbtghactions.JavaSpec.Distribution.Adopt
+import org.typelevel.sbt.gha.JavaSpec.Distribution.Temurin
 
 /// variables
 
@@ -23,7 +23,7 @@ val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
 
 val Scala213 = "2.13.10"
 
-/// sbt-github-actions configuration
+/// sbt-typelevel configuration
 
 ThisBuild / crossScalaVersions := Seq(Scala213)
 ThisBuild / githubWorkflowTargetTags ++= Seq("v*")
@@ -50,7 +50,7 @@ ThisBuild / githubWorkflowPublish := Seq(
     name = Some("Publish Docker image")
   )
 )
-ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec(Adopt, "17"), JavaSpec(Adopt, "11"))
+ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec(Temurin, "17"), JavaSpec(Temurin, "11"))
 ThisBuild / githubWorkflowBuild :=
   Seq(
     WorkflowStep.Sbt(List("validate"), name = Some("Build project")),
@@ -60,7 +60,25 @@ ThisBuild / githubWorkflowBuild :=
     )
   )
 
+ThisBuild / mergifyPrRules := {
+  val authorCondition = MergifyCondition.Custom("author=scala-steward")
+  Seq(
+    MergifyPrRule(
+      "label scala-steward's PRs",
+      List(authorCondition),
+      List(MergifyAction.Label(List("dependency-update")))
+    ),
+    MergifyPrRule(
+      "merge scala-steward's PRs",
+      List(authorCondition) ++ mergifySuccessConditions.value,
+      List(MergifyAction.Merge(Some("squash")))
+    )
+  )
+}
+
 /// global build settings
+
+ThisBuild / dynverSeparator := "-"
 
 ThisBuild / evictionErrorLevel := Level.Info
 
@@ -263,8 +281,6 @@ def myCrossProject(name: String): CrossProject =
       moduleRootPkg := s"$rootPkg.${name.replace('-', '.')}"
     )
     .settings(commonSettings)
-
-ThisBuild / dynverSeparator := "-"
 
 lazy val commonSettings = Def.settings(
   compileSettings,
