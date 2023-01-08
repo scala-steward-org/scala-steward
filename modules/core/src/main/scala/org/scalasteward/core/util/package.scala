@@ -84,4 +84,6 @@ package object util {
 
   def unexpectedString(s: String, expected: List[String]): Left[String, Nothing] =
     Left(s"Unexpected string '$s'. Expected one of: ${expected.mkString(", ")}.")
+
+  def intellijThisImportIsUsed[A](a: A): Unit = ()
 }

@@ -77,6 +77,7 @@ lazy val benchmark = myCrossProject("benchmark")
   .enablePlugins(JmhPlugin)
   .settings(noPublishSettings)
   .settings(
+    scalacOptions -= "-Wnonunit-statement",
     coverageEnabled := false,
     unusedCompileDependencies := Set.empty
   )
@@ -164,7 +165,7 @@ lazy val core = myCrossProject("core")
     initialCommands += s"""
       import ${moduleRootPkg.value}._
       import ${moduleRootPkg.value}.data._
-      import ${moduleRootPkg.value}.util.Nel
+      import ${moduleRootPkg.value}.util._
       import ${moduleRootPkg.value}.vcs.data._
       import better.files.File
       import cats.effect.IO
@@ -181,8 +182,9 @@ lazy val core = myCrossProject("core")
         s"""object InitialCommandsTest {
            |  ${initialCommands.value}
            |  // prevent warnings
-           |  locally(Client); locally(File); locally(Nel); locally(Repo);
-           |  locally(Version); locally(data.Version);
+           |  intellijThisImportIsUsed(Client); intellijThisImportIsUsed(File);
+           |  intellijThisImportIsUsed(Nel); intellijThisImportIsUsed(Repo);
+           |  intellijThisImportIsUsed(Version); intellijThisImportIsUsed(data.Version);
            |}""".stripMargin
       IO.write(file, content)
       Seq(file)

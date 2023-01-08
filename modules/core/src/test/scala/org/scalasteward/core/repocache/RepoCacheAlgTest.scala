@@ -13,11 +13,11 @@ import org.scalasteward.core.data.RepoData
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.mock.MockContext.context._
 import org.scalasteward.core.mock.{MockEff, MockState}
+import org.scalasteward.core.util.intellijThisImportIsUsed
 import org.scalasteward.core.vcs.data.{Repo, RepoOut, UserOut}
 
 class RepoCacheAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
-  // prevent IntelliJ from removing the import of org.http4s.circe._
-  locally(encodeUri)
+  intellijThisImportIsUsed(encodeUri)
 
   implicit val userOutEncoder: Encoder[UserOut] =
     semiauto.deriveEncoder
