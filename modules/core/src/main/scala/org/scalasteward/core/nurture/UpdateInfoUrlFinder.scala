@@ -43,7 +43,10 @@ final class UpdateInfoUrlFinder[F[_]](config: VCSCfg)(implicit
           possibleUpdateInfoUrls(config.tpe, config.apiHost, repoUrl, currentVersion, nextVersion)
         }
 
-    updateInfoUrls.distinctBy(_.url).filterA(updateInfoUrl => urlChecker.exists(updateInfoUrl.url))
+    updateInfoUrls
+      .sorted(UpdateInfoUrl.updateInfoUrlOrder.toOrdering)
+      .distinctBy(_.url)
+      .filterA(updateInfoUrl => urlChecker.exists(updateInfoUrl.url))
   }
 }
 
