@@ -21,6 +21,7 @@ class UpdateInfoUrlFinderTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     case HEAD -> Root / "foo" / "bar" / "compare" / "v0.1.0...v0.2.0"      => Ok()
     case HEAD -> Root / "foo" / "bar1" / "blob" / "master" / "RELEASES.md" => Ok()
     case HEAD -> Root / "foo" / "buz" / "compare" / "v0.1.0...v0.2.0"      => PermanentRedirect()
+    case HEAD -> Root / "foo" / "bar2" / "releases" / "tag" / "v0.2.0"     => Ok()
     case _                                                                 => NotFound()
   })
 
@@ -50,6 +51,16 @@ class UpdateInfoUrlFinderTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       CustomReleaseNotes(metadata.releaseNotesUrl.get),
       VersionDiff(uri"https://github.com/foo/bar/compare/v0.1.0...v0.2.0")
     )
+    assertIO(obtained, expected)
+  }
+
+  test("findUpdateInfoUrls: GitHubReleaseNotes and CustomReleaseNotes with the same URL".fail) {
+    val metadata = DependencyMetadata.empty.copy(
+      scmUrl = uri"https://github.com/foo/bar2".some,
+      releaseNotesUrl = uri"https://github.com/foo/bar2/releases/tag/v0.2.0".some
+    )
+    val obtained = updateInfoUrlFinder.findUpdateInfoUrls(metadata, v1, v2).runA(state)
+    val expected = List(GitHubReleaseNotes(metadata.releaseNotesUrl.get))
     assertIO(obtained, expected)
   }
 
