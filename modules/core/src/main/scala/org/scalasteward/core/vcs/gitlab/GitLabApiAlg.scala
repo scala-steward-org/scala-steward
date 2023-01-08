@@ -25,7 +25,7 @@ import org.http4s.{Request, Status, Uri}
 import org.scalasteward.core.application.Config.{GitLabCfg, VCSCfg}
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.util.uri.uriDecoder
-import org.scalasteward.core.util.{HttpJsonClient, UnexpectedResponse}
+import org.scalasteward.core.util.{intellijThisImportIsUsed, HttpJsonClient, UnexpectedResponse}
 import org.scalasteward.core.vcs.VCSApiAlg
 import org.scalasteward.core.vcs.data._
 import org.typelevel.log4cats.Logger
@@ -78,8 +78,7 @@ private[gitlab] object GitLabMergeStatus {
 }
 
 private[gitlab] object GitLabJsonCodec {
-  // prevent IntelliJ from removing the import of uriDecoder
-  locally(uriDecoder)
+  intellijThisImportIsUsed(uriDecoder)
 
   implicit val forkPayloadEncoder: Encoder[ForkPayload] = deriveEncoder
   implicit val userOutDecoder: Decoder[UserOut] = Decoder.instance {

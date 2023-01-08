@@ -23,6 +23,7 @@ import io.circe.{Codec, Decoder, Encoder}
 import org.http4s.Uri
 import org.scalasteward.core.git
 import org.scalasteward.core.git.Sha1
+import org.scalasteward.core.util.intellijThisImportIsUsed
 import org.scalasteward.core.util.uri.uriDecoder
 import org.scalasteward.core.vcs.data._
 
@@ -107,6 +108,5 @@ object Json {
   implicit val reviewerCodec: Codec[Reviewer] = deriveCodec
   implicit val userCodec: Codec[User] = deriveCodec
 
-  // prevent IntelliJ from removing the import of uriDecoder
-  locally(uriDecoder)
+  intellijThisImportIsUsed(uriDecoder)
 }

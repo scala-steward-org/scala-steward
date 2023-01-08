@@ -21,6 +21,7 @@ import io.circe.Decoder
 import io.circe.generic.semiauto._
 import org.http4s.Uri
 import org.scalasteward.core.git.Branch
+import org.scalasteward.core.util.intellijThisImportIsUsed
 import org.scalasteward.core.util.uri.uriDecoder
 
 final case class RepoOut(
@@ -46,6 +47,5 @@ object RepoOut {
   implicit val repoOutDecoder: Decoder[RepoOut] =
     deriveDecoder
 
-  // prevent IntelliJ from removing the import of uriDecoder
-  locally(uriDecoder)
+  intellijThisImportIsUsed(uriDecoder)
 }
