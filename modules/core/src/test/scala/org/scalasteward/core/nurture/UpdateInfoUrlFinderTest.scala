@@ -54,7 +54,7 @@ class UpdateInfoUrlFinderTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     assertIO(obtained, expected)
   }
 
-  test("findUpdateInfoUrls: GitHubReleaseNotes and CustomReleaseNotes with the same URL".fail) {
+  test("findUpdateInfoUrls: GitHubReleaseNotes and CustomReleaseNotes with the same URL") {
     val metadata = DependencyMetadata.empty.copy(
       scmUrl = uri"https://github.com/foo/bar2".some,
       releaseNotesUrl = uri"https://github.com/foo/bar2/releases/tag/v0.2.0".some

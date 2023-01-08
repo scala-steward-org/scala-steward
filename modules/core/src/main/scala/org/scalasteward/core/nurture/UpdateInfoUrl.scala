@@ -16,6 +16,7 @@
 
 package org.scalasteward.core.nurture
 
+import cats.Order
 import org.http4s.Uri
 
 /** A URL of a resource that provides additional information for an update. */
@@ -28,4 +29,12 @@ object UpdateInfoUrl {
   final case class CustomReleaseNotes(url: Uri) extends UpdateInfoUrl
   final case class GitHubReleaseNotes(url: Uri) extends UpdateInfoUrl
   final case class VersionDiff(url: Uri) extends UpdateInfoUrl
+
+  implicit val updateInfoUrlOrder: Order[UpdateInfoUrl] =
+    Order.by {
+      case GitHubReleaseNotes(url) => (0, url)
+      case CustomReleaseNotes(url) => (1, url)
+      case CustomChangelog(url)    => (2, url)
+      case VersionDiff(url)        => (3, url)
+    }
 }
