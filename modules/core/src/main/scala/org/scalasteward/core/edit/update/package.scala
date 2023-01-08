@@ -22,6 +22,10 @@ package object update {
   def isInside(index: Int, regions: List[(Int, Int)]): Boolean =
     regions.exists { case (start, end) => start <= index && index <= end }
 
+  private val offMarker = "scala-steward:off"
+  private val onMarker = "scala-steward:on"
+  private val regexIgnoreMultiLinesBegins = raw"""\s*\p{Punct}+\s*$offMarker""".r
+
   /** Find index regions in the string `s` that are surrounded by scala-steward:off and
     * scala-steward:on markers.
     */
@@ -30,9 +34,6 @@ package object update {
     var start = 0
     var end = 0
     val buffer = mutable.ListBuffer.empty[(Int, Int)]
-    val offMarker = "scala-steward:off"
-    val onMarker = "scala-steward:on"
-    val regexIgnoreMultiLinesBegins = raw"""\s*\p{Punct}+\s*$offMarker""".r
     s.linesWithSeparators.foreach { line =>
       if (off) {
         if (line.contains(onMarker)) {

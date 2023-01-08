@@ -54,6 +54,7 @@ import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 final class Context[F[_]](implicit
+    val artifactMigrationsLoader: ArtifactMigrationsLoader[F],
     val buildToolDispatcher: BuildToolDispatcher[F],
     val coursierAlg: CoursierAlg[F],
     val dateTimeAlg: DateTimeAlg[F],
@@ -61,8 +62,8 @@ final class Context[F[_]](implicit
     val fileAlg: FileAlg[F],
     val filterAlg: FilterAlg[F],
     val gitAlg: GitAlg[F],
-    val httpJsonClient: HttpJsonClient[F],
     val hookExecutor: HookExecutor[F],
+    val httpJsonClient: HttpJsonClient[F],
     val logger: Logger[F],
     val mavenAlg: MavenAlg[F],
     val millAlg: MillAlg[F],
@@ -70,9 +71,9 @@ final class Context[F[_]](implicit
     val pruningAlg: PruningAlg[F],
     val pullRequestRepository: PullRequestRepository[F],
     val refreshErrorAlg: RefreshErrorAlg[F],
+    val repoCacheAlg: RepoCacheAlg[F],
     val repoConfigAlg: RepoConfigAlg[F],
     val sbtAlg: SbtAlg[F],
-    val artifactMigrationsLoader: ArtifactMigrationsLoader[F],
     val scalafixMigrationsFinder: ScalafixMigrationsFinder,
     val scalafixMigrationsLoader: ScalafixMigrationsLoader[F],
     val scalafmtAlg: ScalafmtAlg[F],
