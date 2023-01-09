@@ -1,10 +1,10 @@
 package org.scalasteward.core.data
 
+import io.circe.Json
+import io.circe.syntax._
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.util.Nel
-import io.circe.syntax._
-import io.circe.Json
 
 class UpdateTest extends FunSuite {
   test("Group.mainArtifactId") {
@@ -110,7 +110,7 @@ class UpdateTest extends FunSuite {
     val update2: Update.ForGroupId =
       ("org.scala-sbt".g % Nel.of("sbt-launch".a, "scripted-plugin".a) % "1.2.1" %> "1.2.4").group
 
-    val expected = Json.obj(
+    val oldJson = Json.obj(
       "ForGroupId" := Json.obj(
         "crossDependencies" := Json.arr(
           Json.arr(
@@ -144,7 +144,56 @@ class UpdateTest extends FunSuite {
       )
     )
 
-    assertEquals(update1.asJson, expected)
+    val newJson = Json.obj(
+      "ForGroupId" := Json.obj(
+        "forArtifactIds" := Json.arr(
+          Json.obj(
+            "ForArtifactId" := Json.obj(
+              "crossDependency" := Json.arr(
+                Json.obj(
+                  "groupId" := "org.scala-sbt",
+                  "artifactId" := Json.obj(
+                    "name" := "sbt-launch",
+                    "maybeCrossName" := None
+                  ),
+                  "version" := "1.2.1",
+                  "sbtVersion" := None,
+                  "scalaVersion" := None,
+                  "configurations" := None
+                )
+              ),
+              "newerVersions" := List("1.2.4"),
+              "newerGroupId" := None,
+              "newerArtifactId" := None
+            )
+          ),
+          Json.obj(
+            "ForArtifactId" := Json.obj(
+              "crossDependency" := Json.arr(
+                Json.obj(
+                  "groupId" := "org.scala-sbt",
+                  "artifactId" := Json.obj(
+                    "name" := "scripted-plugin",
+                    "maybeCrossName" := None
+                  ),
+                  "version" := "1.2.1",
+                  "sbtVersion" := None,
+                  "scalaVersion" := None,
+                  "configurations" := None
+                )
+              ),
+              "newerVersions" := List("1.2.4"),
+              "newerGroupId" := None,
+              "newerArtifactId" := None
+            )
+          )
+        )
+      )
+    )
+
+    assertEquals(oldJson.as[Update.ForGroupId], Right(update2))
+    assertEquals(newJson.as[Update.ForGroupId], Right(update2))
+    assertEquals(update1.asJson, newJson)
     assertEquals(update1.asJson, update2.asJson)
     assertEquals(update1.asJson.as[Update], update2.asJson.as[Update])
     assertEquals(update1.asJson.as[Update.ForGroupId], update2.asJson.as[Update.ForGroupId])
