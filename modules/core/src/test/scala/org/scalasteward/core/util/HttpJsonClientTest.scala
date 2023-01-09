@@ -15,7 +15,7 @@ class HttpJsonClientTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     val url2 = uri"https://example.org/2"
     val state = MockState.empty.copy(clientResponses = HttpApp {
       case GET -> Root / "1" => Ok("1", Link(LinkValue(url2, Some("next"))))
-      case GET -> Root / "2" => Ok("2")
+      case GET -> Root / "2" => Ok("2", Link(LinkValue(url1, Some("prev"))))
       case _                 => NotFound()
     })
     val obtained = httpJsonClient.getAll[Int](url1, _.pure[MockEff]).runA(state)
