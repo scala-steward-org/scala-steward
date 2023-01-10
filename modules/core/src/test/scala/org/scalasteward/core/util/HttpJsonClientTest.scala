@@ -2,10 +2,10 @@ package org.scalasteward.core.util
 
 import cats.syntax.all._
 import munit.CatsEffectSuite
-import org.http4s.HttpApp
 import org.http4s.dsl.Http4sDsl
 import org.http4s.headers.{Link, LinkValue}
 import org.http4s.syntax.all._
+import org.http4s.{HttpApp, HttpVersion, Status}
 import org.scalasteward.core.mock.MockContext.context._
 import org.scalasteward.core.mock.{MockEff, MockState}
 
@@ -46,11 +46,9 @@ class HttpJsonClientTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     val obtained = httpJsonClient
       .get[String](uri"https://example.org", _.pure[MockEff])
       .runA(state)
-      .attempt
-      .map(_.leftMap(_.getMessage))
-    val expected = Left("""uri: https://example.org
-                          |method: GET
-                          |message: Invalid message body: Could not decode JSON: 1""".stripMargin)
+      .attemptNarrow[DecodeFailureWithContext]
+      .map(_.leftMap(_.toHttpResponse(HttpVersion.`HTTP/1.1`).status))
+    val expected = Left(Status.UnprocessableEntity)
     assertIO(obtained, expected)
   }
 }
