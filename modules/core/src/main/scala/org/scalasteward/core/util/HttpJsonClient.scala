@@ -82,26 +82,28 @@ final class HttpJsonClient[F[_]](implicit
       method: Method,
       uri: Uri,
       modify: ModReq
-  )(implicit d: Decoder[A], hs: Header.Select[H]): F[(A, Option[hs.F[H]])] = {
-    val decoder = jsonOf[F, A].transform(_.leftMap(failure => JsonParseError(uri, method, failure)))
+  )(implicit d: Decoder[A], hs: Header.Select[H]): F[(A, Option[hs.F[H]])] =
     modify(Request[F](method, uri))
       .flatMap(client.run(_).use {
         case Successful(resp) =>
+          val decoder = ourJsonOf[A](uri, method)
           decoder.decode(resp, strict = false).rethrowT.map(_ -> resp.headers.get[H])
         case resp =>
           toUnexpectedResponse(uri, method, resp).flatMap(_.raiseError)
       })
-  }
 
   private def request[A: Decoder](method: Method, uri: Uri, modify: ModReq): F[A] =
     client.expectOr[A](modify(Request[F](method, uri)))(resp =>
       toUnexpectedResponse(uri, method, resp)
-    )(jsonOf[F, A].transform(_.leftMap(failure => JsonParseError(uri, method, failure))))
+    )(ourJsonOf(uri, method))
 
   private def request_(method: Method, uri: Uri, modify: ModReq): F[Unit] =
     client.expectOr[Unit](modify(Request[F](method, uri)))(resp =>
       toUnexpectedResponse(uri, method, resp)
     )
+
+  private def ourJsonOf[A](uri: Uri, method: Method)(implicit d: Decoder[A]): EntityDecoder[F, A] =
+    jsonOf[F, A].transform(_.leftMap(failure => DecodeFailureWithContext(uri, method, failure)))
 
   private def toUnexpectedResponse(
       uri: Uri,
@@ -113,17 +115,29 @@ final class HttpJsonClient[F[_]](implicit
   }
 }
 
-final case class JsonParseError(
+/** A wrapper of a [[org.http4s.DecodeFailure]] that contains additional context for easier
+  * debugging.
+  */
+final case class DecodeFailureWithContext(
     uri: Uri,
     method: Method,
     underlying: DecodeFailure
 ) extends DecodeFailure {
-  val message = s"uri: $uri\nmethod: $method\nmessage: ${underlying.message}"
-  override def cause: Option[Throwable] = underlying.some
+  override val message: String =
+    s"""|uri: $uri
+        |method: $method
+        |message: ${underlying.message}""".stripMargin
+
+  override def cause: Option[Throwable] =
+    underlying.some
+
   override def toHttpResponse[F[_]](httpVersion: HttpVersion): Response[F] =
     underlying.toHttpResponse(httpVersion)
 }
 
+/** Like [[org.http4s.client.UnexpectedStatus]] but contains additional context for easier
+  * debugging.
+  */
 final case class UnexpectedResponse(
     uri: Uri,
     method: Method,
