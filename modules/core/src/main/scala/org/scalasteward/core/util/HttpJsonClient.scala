@@ -84,10 +84,9 @@ final class HttpJsonClient[F[_]](implicit
       d: EntityDecoder[F, A]
   ): F[(A, Headers)] =
     modify(Request[F](method, uri)).flatMap { req =>
-      val r = if (d.consumes.nonEmpty) {
-        val m = d.consumes.toList.map(MediaRangeAndQValue(_))
-        req.addHeader(Accept(Nel.fromListUnsafe(m)))
-      } else req
+      val r = Nel
+        .fromList(d.consumes.toList.map(MediaRangeAndQValue(_)))
+        .fold(req)(m => req.addHeader(Accept(m)))
 
       client.run(r).use {
         case Successful(resp) =>
