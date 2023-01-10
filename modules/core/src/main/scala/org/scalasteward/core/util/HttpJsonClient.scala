@@ -92,7 +92,7 @@ final class HttpJsonClient[F[_]](implicit
         case Successful(resp) =>
           d.decode(resp, strict = false).value.flatMap {
             case Right(a)      => F.pure((a, resp.headers))
-            case Left(failure) => F.raiseError(DecodeFailureWithContext(uri, method, failure))
+            case Left(failure) => F.raiseError(DecodeFailureWithContext(uri, method, Some(failure)))
           }
         case resp => toUnexpectedResponse(uri, method, resp).flatMap(_.raiseError)
       }
@@ -112,19 +112,16 @@ final class HttpJsonClient[F[_]](implicit
 final case class DecodeFailureWithContext(
     uri: Uri,
     method: Method,
-    underlying: DecodeFailure
+    cause: Some[DecodeFailure]
 ) extends DecodeFailure
     with NoStackTrace {
   override val message: String =
     s"""|uri: $uri
         |method: $method
-        |message: ${underlying.message}""".stripMargin
-
-  override def cause: Option[Throwable] =
-    underlying.some
+        |message: ${cause.value.message}""".stripMargin
 
   override def toHttpResponse[F[_]](httpVersion: HttpVersion): Response[F] =
-    underlying.toHttpResponse(httpVersion)
+    cause.value.toHttpResponse(httpVersion)
 }
 
 /** Like `org.http4s.client.UnexpectedStatus` but contains additional context to ease debugging. */
