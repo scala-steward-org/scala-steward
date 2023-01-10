@@ -115,9 +115,7 @@ final class HttpJsonClient[F[_]](implicit
   }
 }
 
-/** A wrapper of a [[org.http4s.DecodeFailure]] that contains additional context for easier
-  * debugging.
-  */
+/** A wrapper of a `org.http4s.DecodeFailure` that contains additional context to ease debugging. */
 final case class DecodeFailureWithContext(
     uri: Uri,
     method: Method,
@@ -135,9 +133,7 @@ final case class DecodeFailureWithContext(
     underlying.toHttpResponse(httpVersion)
 }
 
-/** Like [[org.http4s.client.UnexpectedStatus]] but contains additional context for easier
-  * debugging.
-  */
+/** Like `org.http4s.client.UnexpectedStatus` but contains additional context to ease debugging. */
 final case class UnexpectedResponse(
     uri: Uri,
     method: Method,
