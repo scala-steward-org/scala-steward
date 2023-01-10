@@ -24,7 +24,7 @@ import org.http4s.Status.Successful
 import org.http4s._
 import org.http4s.circe.{jsonEncoderOf, jsonOf}
 import org.http4s.client.Client
-import org.http4s.headers.Link
+import org.http4s.headers.{Accept, Link, MediaRangeAndQValue}
 import scala.util.control.NoStackTrace
 
 final class HttpJsonClient[F[_]](implicit
@@ -39,22 +39,17 @@ final class HttpJsonClient[F[_]](implicit
   def getAll[A: Decoder](uri: Uri, modify: ModReq): F[List[A]] =
     all[A](GET, uri, modify, Nil)
 
-  private[this] def all[A: Decoder](
+  private def all[A: Decoder](
       method: Method,
       uri: Uri,
       modify: ModReq,
       xs: List[A]
   ): F[List[A]] =
-    requestWithHeader[A, Link](method, uri, modify).flatMap {
-      case (res, Some(linkHeader)) =>
-        linkHeader.values.find(_.rel === Option("next")) match {
-          case Some(link) =>
-            all(method, link.uri, modify, res :: xs)
-          case None =>
-            (res :: xs).pure[F]
-        }
-      case (res, None) =>
-        (res :: xs).pure[F]
+    requestWithHeaders[A](method, uri, modify)(jsonOf).flatMap { case (a, headers) =>
+      headers.get[Link].flatMap(_.values.find(_.rel.contains("next"))) match {
+        case Some(linkValue) => all(method, linkValue.uri, modify, a :: xs)
+        case None            => F.pure(a :: xs)
+      }
     }
 
   def post[A: Decoder](uri: Uri, modify: ModReq): F[A] =
@@ -78,32 +73,31 @@ final class HttpJsonClient[F[_]](implicit
   def patchWithBody[A: Decoder, B: Encoder](uri: Uri, body: B, modify: ModReq): F[A] =
     patch[A](uri, modify.compose(_.withEntity(body)(jsonEncoderOf[B])))
 
-  private[this] def requestWithHeader[A, H](
-      method: Method,
-      uri: Uri,
-      modify: ModReq
-  )(implicit d: Decoder[A], hs: Header.Select[H]): F[(A, Option[hs.F[H]])] =
-    modify(Request[F](method, uri))
-      .flatMap(client.run(_).use {
-        case Successful(resp) =>
-          val decoder = ourJsonOf[A](uri, method)
-          decoder.decode(resp, strict = false).rethrowT.map(_ -> resp.headers.get[H])
-        case resp =>
-          toUnexpectedResponse(uri, method, resp).flatMap(_.raiseError)
-      })
-
   private def request[A: Decoder](method: Method, uri: Uri, modify: ModReq): F[A] =
-    client.expectOr[A](modify(Request[F](method, uri)))(resp =>
-      toUnexpectedResponse(uri, method, resp)
-    )(ourJsonOf(uri, method))
+    requestWithHeaders[A](method, uri, modify)(jsonOf).map { case (a, _) => a }
 
   private def request_(method: Method, uri: Uri, modify: ModReq): F[Unit] =
-    client.expectOr[Unit](modify(Request[F](method, uri)))(resp =>
-      toUnexpectedResponse(uri, method, resp)
-    )
+    requestWithHeaders[Unit](method, uri, modify).void
 
-  private def ourJsonOf[A](uri: Uri, method: Method)(implicit d: Decoder[A]): EntityDecoder[F, A] =
-    jsonOf[F, A].transform(_.leftMap(failure => DecodeFailureWithContext(uri, method, failure)))
+  // adapted from https://github.com/http4s/http4s/blob/c89ebc2d844c5c93dcc1307e5b9361a2c38bfd00/client/shared/src/main/scala/org/http4s/client/DefaultClient.scala#L91-L105
+  private def requestWithHeaders[A](method: Method, uri: Uri, modify: ModReq)(implicit
+      d: EntityDecoder[F, A]
+  ): F[(A, Headers)] =
+    modify(Request[F](method, uri)).flatMap { req =>
+      val r = if (d.consumes.nonEmpty) {
+        val m = d.consumes.toList.map(MediaRangeAndQValue(_))
+        req.addHeader(Accept(Nel.fromListUnsafe(m)))
+      } else req
+
+      client.run(r).use {
+        case Successful(resp) =>
+          d.decode(resp, strict = false).value.flatMap {
+            case Right(a)      => F.pure((a, resp.headers))
+            case Left(failure) => F.raiseError(DecodeFailureWithContext(uri, method, failure))
+          }
+        case resp => toUnexpectedResponse(uri, method, resp).flatMap(_.raiseError)
+      }
+    }
 
   private def toUnexpectedResponse(
       uri: Uri,
@@ -120,7 +114,8 @@ final case class DecodeFailureWithContext(
     uri: Uri,
     method: Method,
     underlying: DecodeFailure
-) extends DecodeFailure {
+) extends DecodeFailure
+    with NoStackTrace {
   override val message: String =
     s"""|uri: $uri
         |method: $method
