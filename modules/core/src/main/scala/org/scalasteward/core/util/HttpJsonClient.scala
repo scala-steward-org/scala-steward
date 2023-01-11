@@ -91,34 +91,36 @@ final class HttpJsonClient[F[_]](implicit
       client.run(r).use {
         case Successful(resp) =>
           d.decode(resp, strict = false).value.flatMap {
-            case Right(a)      => F.pure((a, resp.headers))
-            case Left(failure) => F.raiseError(DecodeFailureWithContext(uri, method, Some(failure)))
+            case Right(a) => F.pure((a, resp.headers))
+            case Left(failure) =>
+              bodyToString(resp.body)
+                .map(DecodeFailureWithContext(uri, method, _, Some(failure)))
+                .flatMap(_.raiseError)
           }
-        case resp => toUnexpectedResponse(uri, method, resp).flatMap(_.raiseError)
+        case resp =>
+          bodyToString(resp.body)
+            .map(UnexpectedResponse(uri, method, resp.headers, resp.status, _))
+            .flatMap(_.raiseError)
       }
     }
 
-  private def toUnexpectedResponse(
-      uri: Uri,
-      method: Method,
-      response: Response[F]
-  ): F[Throwable] = {
-    val body = response.body.through(fs2.text.utf8.decode).compile.string
-    body.map(UnexpectedResponse(uri, method, response.headers, response.status, _))
-  }
+  private def bodyToString(body: EntityBody[F]): F[String] =
+    body.through(fs2.text.utf8.decode).compile.string.handleError(_ => "<unknown>")
 }
 
 /** A wrapper of a `org.http4s.DecodeFailure` that contains additional context to ease debugging. */
 final case class DecodeFailureWithContext(
     uri: Uri,
     method: Method,
+    body: String,
     cause: Some[DecodeFailure]
 ) extends DecodeFailure
     with NoStackTrace {
   override val message: String =
     s"""|uri: $uri
         |method: $method
-        |message: ${cause.value.message}""".stripMargin
+        |message: ${cause.value.message}
+        |body: $body""".stripMargin
 
   override def toHttpResponse[F[_]](httpVersion: HttpVersion): Response[F] =
     cause.value.toHttpResponse(httpVersion)

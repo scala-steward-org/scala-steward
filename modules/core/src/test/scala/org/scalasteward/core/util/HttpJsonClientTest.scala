@@ -34,7 +34,8 @@ class HttpJsonClientTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       .map(_.leftMap(_.getMessage))
     val expected = Left("""uri: https://example.org
                           |method: GET
-                          |message: Malformed message body: Invalid JSON""".stripMargin)
+                          |message: Malformed message body: Invalid JSON
+                          |body:  "1 """.stripMargin)
     assertIO(obtained, expected)
   }
 
