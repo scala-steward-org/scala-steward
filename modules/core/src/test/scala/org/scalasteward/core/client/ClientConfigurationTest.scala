@@ -11,6 +11,8 @@ import org.typelevel.ci._
 import eu.timepit.refined.auto._
 import eu.timepit.refined.types.numeric.PosInt
 
+import scala.concurrent.duration._
+
 class ClientConfigurationTest extends CatsEffectSuite {
 
   private val userAgentValue = "my-user-agent"
@@ -83,7 +85,11 @@ class ClientConfigurationTest extends CatsEffectSuite {
       ClientConfiguration.setUserAgent(dummyUserAgent)
     )
     val getServer =
-      EmberServerBuilder.default[IO].withHttpApp(routes.orNotFound).build
+      EmberServerBuilder
+        .default[IO]
+        .withShutdownTimeout(1.second)
+        .withHttpApp(routes.orNotFound)
+        .build
 
     val test = (regularClient, disabledClient, getServer).tupled.use {
       case (regClient, disClient, s) =>
