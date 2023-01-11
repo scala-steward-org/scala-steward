@@ -24,18 +24,18 @@ import org.http4s.Uri.UserInfo
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.Config._
 import org.scalasteward.core.data.Resolver
+import org.scalasteward.core.forge.ForgeType
+import org.scalasteward.core.forge.data.AuthenticatedUser
+import org.scalasteward.core.forge.github.GitHubApp
 import org.scalasteward.core.git.Author
 import org.scalasteward.core.io.{ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
-import org.scalasteward.core.vcs.VCSType
-import org.scalasteward.core.vcs.data.AuthenticatedUser
-import org.scalasteward.core.vcs.github.GitHubApp
 import scala.concurrent.duration.FiniteDuration
 
 /** Configuration for scala-steward.
   *
-  * ==vcsCfg.apiHost==
+  * ==forgeCfg.apiHost==
   * REST API v3 endpoints prefix
   *
   * For github.com this is "https://api.github.com", see [[https://developer.github.com/v3/]].
@@ -45,7 +45,7 @@ import scala.concurrent.duration.FiniteDuration
   *
   * ==gitCfg.gitAskPass==
   * Program that is invoked by scala-steward and git (via the `GIT_ASKPASS` environment variable) to
-  * request the password for the user vcsCfg.vcsLogin.
+  * request the password for the user forgeCfg.forgeLogin.
   *
   * This program could just be a simple shell script that echos the password.
   *
@@ -55,7 +55,7 @@ final case class Config(
     workspace: File,
     reposFile: File,
     gitCfg: GitCfg,
-    vcsCfg: VCSCfg,
+    forgeCfg: ForgeCfg,
     ignoreOptsFiles: Boolean,
     processCfg: ProcessCfg,
     repoConfigCfg: RepoConfigCfg,
@@ -71,7 +71,7 @@ final case class Config(
     defaultResolver: Resolver,
     refreshBackoffPeriod: FiniteDuration
 ) {
-  def vcsUser[F[_]](implicit
+  def forgeUser[F[_]](implicit
       processAlg: ProcessAlg[F],
       workspaceAlg: WorkspaceAlg[F],
       F: Monad[F]
@@ -79,11 +79,11 @@ final case class Config(
     for {
       rootDir <- workspaceAlg.rootDir
       urlWithUser = util.uri.withUserInfo
-        .replace(UserInfo(vcsCfg.login, None))(vcsCfg.apiHost)
+        .replace(UserInfo(forgeCfg.login, None))(forgeCfg.apiHost)
         .renderString
       prompt = s"Password for '$urlWithUser': "
       password <- processAlg.exec(Nel.of(gitCfg.gitAskPass.pathAsString, prompt), rootDir)
-    } yield AuthenticatedUser(vcsCfg.login, password.mkString.trim)
+    } yield AuthenticatedUser(forgeCfg.login, password.mkString.trim)
 }
 
 object Config {
@@ -93,8 +93,8 @@ object Config {
       signCommits: Boolean
   )
 
-  final case class VCSCfg(
-      tpe: VCSType,
+  final case class ForgeCfg(
+      tpe: ForgeType,
       apiHost: Uri,
       login: String,
       doNotFork: Boolean,

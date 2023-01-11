@@ -8,6 +8,7 @@ import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.buildtool.sbt.{sbtArtifactId, sbtGroupId}
 import org.scalasteward.core.data._
 import org.scalasteward.core.edit.scalafix.ScalafixCli.scalafixBinary
+import org.scalasteward.core.forge.data.Repo
 import org.scalasteward.core.mock.MockConfig.gitCmd
 import org.scalasteward.core.mock.MockContext.context._
 import org.scalasteward.core.mock.MockState
@@ -15,7 +16,6 @@ import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafmt.ScalafmtAlg.opts
 import org.scalasteward.core.scalafmt.{scalafmtBinary, scalafmtConfName, scalafmtDependency}
-import org.scalasteward.core.vcs.data.Repo
 
 class EditAlgTest extends FunSuite {
   private def gitStatus(repoDir: File): List[String] =

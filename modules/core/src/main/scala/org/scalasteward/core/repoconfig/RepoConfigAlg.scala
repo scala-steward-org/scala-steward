@@ -21,9 +21,9 @@ import cats.syntax.all._
 import cats.{Functor, MonadThrow}
 import io.circe.config.parser
 import org.scalasteward.core.data.Update
+import org.scalasteward.core.forge.data.Repo
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.repoconfig.RepoConfigAlg._
-import org.scalasteward.core.vcs.data.Repo
 import org.typelevel.log4cats.Logger
 
 final class RepoConfigAlg[F[_]](maybeGlobalRepoConfig: Option[RepoConfig])(implicit

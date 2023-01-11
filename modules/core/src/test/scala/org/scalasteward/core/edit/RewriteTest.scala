@@ -5,12 +5,12 @@ import munit.FunSuite
 import org.scalasteward.core.TestInstances.dummyRepoCache
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.{RepoData, Update}
+import org.scalasteward.core.forge.data.Repo
 import org.scalasteward.core.mock.MockContext.context._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafmt.scalafmtConfName
 import org.scalasteward.core.util.Nel
-import org.scalasteward.core.vcs.data.Repo
 
 class RewriteTest extends FunSuite {
   test("all on one line") {

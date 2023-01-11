@@ -21,10 +21,10 @@ import cats.effect.Concurrent
 import fs2.Stream
 import org.scalasteward.core.data.{Dependency, Version}
 import org.scalasteward.core.edit.update.data.{ModulePosition, VersionPosition}
+import org.scalasteward.core.forge.data.Repo
 import org.scalasteward.core.io.{FileAlg, FileData, WorkspaceAlg}
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.Nel
-import org.scalasteward.core.vcs.data.Repo
 
 /** Scans all files that Scala Steward is allowed to edit for version and module positions. */
 final class ScannerAlg[F[_]](implicit

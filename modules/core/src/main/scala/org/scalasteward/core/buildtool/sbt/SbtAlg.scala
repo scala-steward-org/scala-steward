@@ -26,9 +26,9 @@ import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.coursier.VersionsCache
 import org.scalasteward.core.data.{Dependency, Scope, Version}
 import org.scalasteward.core.edit.scalafix.{ScalafixCli, ScalafixMigration}
+import org.scalasteward.core.forge.data.BuildRoot
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
-import org.scalasteward.core.vcs.data.BuildRoot
 
 final class SbtAlg[F[_]](config: Config)(implicit
     fileAlg: FileAlg[F],

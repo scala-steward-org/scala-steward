@@ -20,6 +20,8 @@ import better.files.File
 import cats.effect.{ExitCode, Sync}
 import cats.syntax.all._
 import fs2.Stream
+import org.scalasteward.core.forge.data.Repo
+import org.scalasteward.core.forge.github.{GitHubApp, GitHubAppApiAlg, GitHubAuthAlg}
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.NurtureAlg
@@ -28,8 +30,6 @@ import org.scalasteward.core.update.PruningAlg
 import org.scalasteward.core.util
 import org.scalasteward.core.util.DateTimeAlg
 import org.scalasteward.core.util.logger.LoggerOps
-import org.scalasteward.core.vcs.data.Repo
-import org.scalasteward.core.vcs.github.{GitHubApp, GitHubAppApiAlg, GitHubAuthAlg}
 import org.typelevel.log4cats.Logger
 import scala.concurrent.duration._
 

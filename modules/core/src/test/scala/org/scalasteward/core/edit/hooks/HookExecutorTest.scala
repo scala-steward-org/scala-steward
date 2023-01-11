@@ -5,6 +5,7 @@ import munit.CatsEffectSuite
 import org.scalasteward.core.TestInstances.{dummyRepoCache, dummySha1}
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.RepoData
+import org.scalasteward.core.forge.data.Repo
 import org.scalasteward.core.git.{gitBlameIgnoreRevsName, FileGitAlg}
 import org.scalasteward.core.io.FileAlgTest
 import org.scalasteward.core.mock.MockConfig.gitCmd
@@ -15,7 +16,6 @@ import org.scalasteward.core.repoconfig.{PostUpdateHookConfig, RepoConfig, Scala
 import org.scalasteward.core.scalafmt.ScalafmtAlg.opts
 import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtBinary, scalafmtGroupId}
 import org.scalasteward.core.util.Nel
-import org.scalasteward.core.vcs.data.Repo
 
 class HookExecutorTest extends CatsEffectSuite {
   private val repo = Repo("scala-steward-org", "scala-steward")

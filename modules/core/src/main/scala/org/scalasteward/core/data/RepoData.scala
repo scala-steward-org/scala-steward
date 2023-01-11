@@ -16,9 +16,9 @@
 
 package org.scalasteward.core.data
 
+import org.scalasteward.core.forge.data.Repo
 import org.scalasteward.core.repocache.RepoCache
 import org.scalasteward.core.repoconfig.RepoConfig
-import org.scalasteward.core.vcs.data.Repo
 
 final case class RepoData(
     repo: Repo,

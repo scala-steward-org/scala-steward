@@ -4,13 +4,13 @@ import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.data.{Dependency, Resolver, Scope, Version}
+import org.scalasteward.core.forge.data.Repo
 import org.scalasteward.core.mock.MockContext.context._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.repoconfig.{BuildRootConfig, RepoConfig}
 import org.scalasteward.core.scalafmt
 import org.scalasteward.core.scalafmt.scalafmtConfName
-import org.scalasteward.core.vcs.data.Repo
 
 class BuildToolDispatcherTest extends FunSuite {
   test("getDependencies") {

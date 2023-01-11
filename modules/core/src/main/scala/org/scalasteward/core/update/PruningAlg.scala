@@ -19,6 +19,7 @@ package org.scalasteward.core.update
 import cats.Monad
 import cats.implicits._
 import org.scalasteward.core.data._
+import org.scalasteward.core.forge.data.Repo
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.repocache.RepoCache
 import org.scalasteward.core.repoconfig.{PullRequestFrequency, RepoConfig, UpdatePattern}
@@ -27,7 +28,6 @@ import org.scalasteward.core.update.data.UpdateState
 import org.scalasteward.core.update.data.UpdateState._
 import org.scalasteward.core.util
 import org.scalasteward.core.util.{dateTime, DateTimeAlg, Nel, Timestamp}
-import org.scalasteward.core.vcs.data.Repo
 import org.typelevel.log4cats.Logger
 import scala.concurrent.duration._
 

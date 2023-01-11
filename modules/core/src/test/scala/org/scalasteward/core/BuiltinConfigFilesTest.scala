@@ -14,7 +14,6 @@ import org.scalasteward.core.mock.MockContext.context.{
 import org.scalasteward.core.mock.MockContext.mockState
 import org.scalasteward.core.repoconfig.RepoConfigLoader
 import org.scalasteward.core.update.artifact.ArtifactMigrationsLoader
-
 import scala.util.{Failure, Success, Try}
 
 class BuiltinConfigFilesTest extends FunSuite {

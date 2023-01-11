@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.data
 
-import org.scalasteward.core.vcs.data.PullRequestNumber
+import org.scalasteward.core.forge.data.PullRequestNumber
 
 sealed trait ProcessResult extends Product with Serializable
 
