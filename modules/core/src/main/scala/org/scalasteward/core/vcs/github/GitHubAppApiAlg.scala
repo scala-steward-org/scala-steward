@@ -16,16 +16,17 @@
 
 package org.scalasteward.core.vcs.github
 
-import cats.Applicative
-import cats.syntax.functor._
+import cats.effect.Concurrent
+import cats.syntax.all._
 import org.http4s.{Header, Uri}
 import org.scalasteward.core.util.HttpJsonClient
 import org.typelevel.ci._
 
-class GitHubAppApiAlg[F[_]: Applicative](
+class GitHubAppApiAlg[F[_]](
     gitHubApiHost: Uri
 )(implicit
-    client: HttpJsonClient[F]
+    client: HttpJsonClient[F],
+    F: Concurrent[F]
 ) {
 
   private[this] val acceptHeader =
@@ -33,7 +34,7 @@ class GitHubAppApiAlg[F[_]: Applicative](
 
   private[this] def addHeaders(jwt: String): client.ModReq =
     req =>
-      Applicative[F].point(
+      F.point(
         req.putHeaders(
           Header.Raw(ci"Authorization", s"Bearer $jwt"),
           acceptHeader
@@ -48,7 +49,8 @@ class GitHubAppApiAlg[F[_]: Applicative](
         (gitHubApiHost / "app" / "installations").withQueryParam("per_page", 100),
         addHeaders(jwt)
       )
-      .map(_.flatten)
+      .compile
+      .foldMonoid
 
   /** [[https://docs.github.com/en/free-pro-team@latest/rest/reference/apps#create-an-installation-access-token-for-an-app]]
     */
@@ -65,13 +67,15 @@ class GitHubAppApiAlg[F[_]: Applicative](
       .getAll[RepositoriesOut](
         (gitHubApiHost / "installation" / "repositories").withQueryParam("per_page", 100),
         req =>
-          Applicative[F].point(
+          F.point(
             req.putHeaders(
               Header.Raw(ci"Authorization", s"token $token"),
               acceptHeader
             )
           )
       )
+      .compile
+      .toList
       .map(values =>
         RepositoriesOut(
           values.flatMap(_.repositories)
