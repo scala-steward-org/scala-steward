@@ -93,19 +93,20 @@ final class HttpJsonClient[F[_]](implicit
           d.decode(resp, strict = false).value.flatMap {
             case Right(a) => F.pure((a, resp.headers))
             case Left(failure) =>
-              bodyToString(resp.body)
-                .map(DecodeFailureWithContext(uri, method, _, Some(failure)))
-                .flatMap(_.raiseError)
+              handleFailure(resp)(DecodeFailureWithContext(uri, method, _, Some(failure)))
           }
         case resp =>
-          bodyToString(resp.body)
-            .map(UnexpectedResponse(uri, method, resp.headers, resp.status, _))
-            .flatMap(_.raiseError)
+          handleFailure(resp)(UnexpectedResponse(uri, method, resp.headers, resp.status, _))
       }
     }
 
-  private def bodyToString(body: EntityBody[F]): F[String] =
-    body.through(fs2.text.utf8.decode).compile.string.handleError(_ => "<unknown>")
+  private def handleFailure[A](resp: Response[F])(fromBody: String => Throwable): F[A] =
+    bodyToString(resp.body).map(fromBody).flatMap(F.raiseError[A])
+
+  private def bodyToString(body: EntityBody[F]): F[String] = {
+    val s = body.through(fs2.text.utf8.decode).compile.string
+    s.handleError(t => s"<body not available (${t.getMessage})>")
+  }
 }
 
 /** A wrapper of a `org.http4s.DecodeFailure` that contains additional context to ease debugging. */
