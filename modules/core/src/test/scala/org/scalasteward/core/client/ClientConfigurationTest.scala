@@ -71,7 +71,7 @@ class ClientConfigurationTest extends CatsEffectSuite {
 
   test("disableFollowRedirect does not follow redirect") {
     import org.http4s.Method._
-    import org.http4s.blaze.server._
+    import org.http4s.ember.server._
     import org.http4s.client.dsl.io._
 
     val regularClient = ClientConfiguration.build[IO](
@@ -83,7 +83,7 @@ class ClientConfigurationTest extends CatsEffectSuite {
       ClientConfiguration.setUserAgent(dummyUserAgent)
     )
     val getServer =
-      BlazeServerBuilder[IO].bindAny("localhost").withHttpApp(routes.orNotFound).resource
+      EmberServerBuilder.default[IO].withHttpApp(routes.orNotFound).build
 
     val test = (regularClient, disabledClient, getServer).tupled.use {
       case (regClient, disClient, s) =>
