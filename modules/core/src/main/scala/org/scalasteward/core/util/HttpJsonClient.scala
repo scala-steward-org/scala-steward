@@ -43,12 +43,11 @@ final class HttpJsonClient[F[_]](implicit
     *   [[https://docs.github.com/en/rest/guides/using-pagination-in-the-rest-api]]
     */
   def getAll[A: Decoder](uri: Uri, modify: ModReq): Stream[F, A] =
-    Stream.eval(requestWithHeaders[A](GET, uri, modify)(jsonOf)).flatMap { case (a, headers) =>
-      val next = headers.get[Link].flatMap(_.values.find(_.rel.contains("next"))) match {
-        case Some(linkValue) => getAll(linkValue.uri, modify)
-        case None            => Stream.empty
+    Stream.unfoldLoopEval(uri) { curr =>
+      requestWithHeaders[A](GET, curr, modify)(jsonOf).map { case (a, headers) =>
+        val next = headers.get[Link].flatMap(_.values.find(_.rel.contains("next"))).map(_.uri)
+        (a, next)
       }
-      Stream.emit(a) ++ next
     }
 
   def post[A: Decoder](uri: Uri, modify: ModReq): F[A] =
