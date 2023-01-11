@@ -137,7 +137,7 @@ lazy val core = myCrossProject("core")
       Dependencies.circeLiteral % Test,
       Dependencies.disciplineMunit % Test,
       Dependencies.http4sDsl % Test,
-      Dependencies.http4sBlazeServer % Test,
+      Dependencies.http4sEmberServer % Test,
       Dependencies.munit % Test,
       Dependencies.munitCatsEffect % Test,
       Dependencies.munitScalacheck % Test,
