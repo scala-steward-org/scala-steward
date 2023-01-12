@@ -20,6 +20,7 @@ import cats.MonadThrow
 import cats.syntax.all._
 import org.http4s.{Request, Uri}
 import org.scalasteward.core.application.Config.BitbucketServerCfg
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.ForgeApiAlg
 import org.scalasteward.core.forge.bitbucketserver.Json.{PR, Reviewer, User}
 import org.scalasteward.core.forge.data.PullRequestState.Open

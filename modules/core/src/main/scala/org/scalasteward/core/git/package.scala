@@ -16,8 +16,7 @@
 
 package org.scalasteward.core
 
-import org.scalasteward.core.data.Update
-import org.scalasteward.core.forge.data.Repo
+import org.scalasteward.core.data.{Repo, Update}
 import org.scalasteward.core.repoconfig.CommitsConfig
 
 package object git {

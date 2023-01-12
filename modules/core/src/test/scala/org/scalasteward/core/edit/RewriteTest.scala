@@ -4,8 +4,7 @@ import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.TestInstances.dummyRepoCache
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.{RepoData, Update}
-import org.scalasteward.core.forge.data.Repo
+import org.scalasteward.core.data.{Repo, RepoData, Update}
 import org.scalasteward.core.mock.MockContext.context._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.repoconfig.RepoConfig

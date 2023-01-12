@@ -202,7 +202,7 @@ lazy val core = myCrossProject("core")
            |  // prevent warnings
            |  intellijThisImportIsUsed(Client); intellijThisImportIsUsed(File);
            |  intellijThisImportIsUsed(Nel); intellijThisImportIsUsed(Repo);
-           |  intellijThisImportIsUsed(Version); intellijThisImportIsUsed(data.Version);
+           |  intellijThisImportIsUsed(Main);
            |}""".stripMargin
       IO.write(file, content)
       Seq(file)

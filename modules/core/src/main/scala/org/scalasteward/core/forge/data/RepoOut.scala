@@ -20,6 +20,7 @@ import cats.ApplicativeThrow
 import io.circe.Decoder
 import io.circe.generic.semiauto._
 import org.http4s.Uri
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.intellijThisImportIsUsed
 import org.scalasteward.core.util.uri.uriDecoder

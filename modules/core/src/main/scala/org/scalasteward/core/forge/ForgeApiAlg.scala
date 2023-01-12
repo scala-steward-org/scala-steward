@@ -18,6 +18,7 @@ package org.scalasteward.core.forge
 
 import cats.syntax.all._
 import cats.{ApplicativeThrow, MonadThrow}
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.data._
 import org.scalasteward.core.git.Branch
 

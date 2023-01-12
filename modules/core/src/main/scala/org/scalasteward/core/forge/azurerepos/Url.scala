@@ -17,7 +17,8 @@
 package org.scalasteward.core.forge.azurerepos
 
 import org.http4s.Uri
-import org.scalasteward.core.forge.data.{PullRequestNumber, Repo}
+import org.scalasteward.core.data.Repo
+import org.scalasteward.core.forge.data.PullRequestNumber
 import org.scalasteward.core.git.Branch
 
 class Url(apiHost: Uri, organization: String) {

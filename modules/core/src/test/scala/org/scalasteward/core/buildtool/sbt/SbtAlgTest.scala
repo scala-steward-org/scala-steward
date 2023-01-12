@@ -2,8 +2,9 @@ package org.scalasteward.core.buildtool.sbt
 
 import cats.effect.unsafe.implicits.global
 import munit.FunSuite
+import org.scalasteward.core.buildtool.BuildRoot
 import org.scalasteward.core.buildtool.sbt.command._
-import org.scalasteward.core.data.{GroupId, Version}
+import org.scalasteward.core.data.{GroupId, Repo, Version}
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.forge.data.{BuildRoot, Repo}
 import org.scalasteward.core.mock.MockContext.context._

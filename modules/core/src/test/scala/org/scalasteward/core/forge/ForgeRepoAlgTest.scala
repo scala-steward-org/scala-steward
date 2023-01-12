@@ -2,7 +2,8 @@ package org.scalasteward.core.forge
 
 import munit.CatsEffectSuite
 import org.http4s.syntax.literals._
-import org.scalasteward.core.forge.data.{Repo, RepoOut, UserOut}
+import org.scalasteward.core.data.Repo
+import org.scalasteward.core.forge.data.{RepoOut, UserOut}
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.mock.MockConfig.{config, gitCmd}
 import org.scalasteward.core.mock.MockContext.context._

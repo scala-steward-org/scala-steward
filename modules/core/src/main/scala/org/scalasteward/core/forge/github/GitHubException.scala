@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.forge.github
 
-import org.scalasteward.core.forge.data.Repo
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.util.UnexpectedResponse
 import scala.util.control.NoStackTrace
 

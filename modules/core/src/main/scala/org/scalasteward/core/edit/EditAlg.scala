@@ -19,7 +19,7 @@ package org.scalasteward.core.edit
 import cats.MonadThrow
 import cats.syntax.all._
 import org.scalasteward.core.buildtool.BuildToolDispatcher
-import org.scalasteward.core.data.{RepoData, Update}
+import org.scalasteward.core.data.{Repo, RepoData, Update}
 import org.scalasteward.core.edit.EditAttempt.{ScalafixEdit, UpdateEdit}
 import org.scalasteward.core.edit.hooks.HookExecutor
 import org.scalasteward.core.edit.scalafix.{ScalafixMigration, ScalafixMigrationsFinder}

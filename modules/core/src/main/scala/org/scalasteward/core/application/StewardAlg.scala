@@ -20,7 +20,7 @@ import better.files.File
 import cats.effect.{ExitCode, Sync}
 import cats.syntax.all._
 import fs2.Stream
-import org.scalasteward.core.forge.data.Repo
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.github.{GitHubApp, GitHubAppApiAlg, GitHubAuthAlg}
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}

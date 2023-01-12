@@ -2,7 +2,7 @@ package org.scalasteward.core.forge.github
 
 import munit.FunSuite
 import org.http4s.syntax.literals._
-import org.scalasteward.core.forge.data.Repo
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.git.Branch
 
 class UrlTest extends FunSuite {

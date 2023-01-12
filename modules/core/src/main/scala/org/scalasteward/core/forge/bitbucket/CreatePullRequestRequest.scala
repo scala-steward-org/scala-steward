@@ -17,7 +17,7 @@
 package org.scalasteward.core.forge.bitbucket
 
 import io.circe.{Encoder, Json}
-import org.scalasteward.core.forge.data.Repo
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.git.Branch
 
 private[bitbucket] case class CreatePullRequestRequest(

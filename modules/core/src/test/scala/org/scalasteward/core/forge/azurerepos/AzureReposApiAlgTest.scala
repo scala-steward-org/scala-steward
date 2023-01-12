@@ -8,6 +8,7 @@ import org.http4s.implicits._
 import org.http4s.{BasicCredentials, HttpApp, Uri}
 import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.application.Config.AzureReposConfig
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.data._
 import org.scalasteward.core.forge.{ForgeSelection, ForgeType}
 import org.scalasteward.core.git.Sha1.HexString

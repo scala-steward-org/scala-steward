@@ -2,7 +2,8 @@ package org.scalasteward.core.io
 
 import better.files.File
 import cats.data.Kleisli
-import org.scalasteward.core.forge.data.{BuildRoot, Repo}
+import org.scalasteward.core.buildtool.BuildRoot
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.mock.{MockConfig, MockEff}
 
 class MockWorkspaceAlg extends WorkspaceAlg[MockEff] {

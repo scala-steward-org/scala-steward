@@ -19,7 +19,8 @@ package org.scalasteward.core.forge.bitbucket
 import cats.syntax.all._
 import io.circe.{ACursor, Decoder, DecodingFailure, Json}
 import org.http4s.Uri
-import org.scalasteward.core.forge.data.{Repo, UserOut}
+import org.scalasteward.core.data.Repo
+import org.scalasteward.core.forge.data.UserOut
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.uri._
 import scala.annotation.tailrec

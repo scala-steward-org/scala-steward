@@ -5,6 +5,7 @@ import cats.effect.unsafe.implicits.global
 import io.circe.parser
 import munit.FunSuite
 import org.http4s.syntax.literals._
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.git.Branch
 import scala.io.Source
 

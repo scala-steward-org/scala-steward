@@ -21,8 +21,8 @@ import cats.data.OptionT
 import cats.syntax.all._
 import io.circe.ParsingFailure
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.data.{Scope, Version}
-import org.scalasteward.core.forge.data.{BuildRoot, Repo}
+import org.scalasteward.core.buildtool.BuildRoot
+import org.scalasteward.core.data.{Repo, Scope, Version}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.scalafmt.ScalafmtAlg.{opts, parseScalafmtConf}
 import org.scalasteward.core.util.Nel

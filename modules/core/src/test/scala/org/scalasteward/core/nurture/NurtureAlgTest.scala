@@ -5,9 +5,9 @@ import org.http4s.HttpApp
 import org.http4s.dsl.Http4sDsl
 import org.scalasteward.core.TestInstances._
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.{DependencyInfo, RepoData, UpdateData}
+import org.scalasteward.core.data.{DependencyInfo, Repo, RepoData, UpdateData}
 import org.scalasteward.core.edit.EditAttempt.UpdateEdit
-import org.scalasteward.core.forge.data.{NewPullRequestData, Repo}
+import org.scalasteward.core.forge.data.NewPullRequestData
 import org.scalasteward.core.git.{Branch, Commit}
 import org.scalasteward.core.mock.MockContext.context.nurtureAlg
 import org.scalasteward.core.mock.{MockEff, MockState}

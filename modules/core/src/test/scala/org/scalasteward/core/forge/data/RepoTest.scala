@@ -1,6 +1,7 @@
 package org.scalasteward.core.forge.data
 
 import munit.FunSuite
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.git.Branch
 
 class RepoTest extends FunSuite {

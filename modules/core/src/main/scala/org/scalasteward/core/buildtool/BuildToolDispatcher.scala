@@ -21,7 +21,7 @@ import cats.syntax.all._
 import org.scalasteward.core.buildtool.maven.MavenAlg
 import org.scalasteward.core.buildtool.mill.MillAlg
 import org.scalasteward.core.buildtool.sbt.SbtAlg
-import org.scalasteward.core.data.Scope
+import org.scalasteward.core.data.{Repo, Scope}
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.forge.data.{BuildRoot, Repo}
 import org.scalasteward.core.repoconfig.RepoConfig

@@ -20,8 +20,7 @@ import better.files.File
 import cats.syntax.all._
 import cats.{Functor, MonadThrow}
 import io.circe.config.parser
-import org.scalasteward.core.data.Update
-import org.scalasteward.core.forge.data.Repo
+import org.scalasteward.core.data.{Repo, Update}
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.repoconfig.RepoConfigAlg._
 import org.typelevel.log4cats.Logger

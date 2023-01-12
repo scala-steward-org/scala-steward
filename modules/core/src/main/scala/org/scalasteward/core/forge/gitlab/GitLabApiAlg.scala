@@ -23,11 +23,12 @@ import io.circe.generic.semiauto._
 import io.circe.syntax._
 import org.http4s.{Request, Status, Uri}
 import org.scalasteward.core.application.Config.{ForgeCfg, GitLabCfg}
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.ForgeApiAlg
 import org.scalasteward.core.forge.data._
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.util.uri.uriDecoder
-import org.scalasteward.core.util.{intellijThisImportIsUsed, HttpJsonClient, UnexpectedResponse}
+import org.scalasteward.core.util.{HttpJsonClient, UnexpectedResponse, intellijThisImportIsUsed}
 import org.typelevel.log4cats.Logger
 
 final private[gitlab] case class ForkPayload(id: String, namespace: String)

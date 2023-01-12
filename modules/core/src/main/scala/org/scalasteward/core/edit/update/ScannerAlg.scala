@@ -19,7 +19,7 @@ package org.scalasteward.core.edit.update
 import better.files.File
 import cats.effect.Concurrent
 import fs2.Stream
-import org.scalasteward.core.data.{Dependency, Version}
+import org.scalasteward.core.data.{Dependency, Repo, Version}
 import org.scalasteward.core.edit.update.data.{ModulePosition, VersionPosition}
 import org.scalasteward.core.forge.data.Repo
 import org.scalasteward.core.io.{FileAlg, FileData, WorkspaceAlg}

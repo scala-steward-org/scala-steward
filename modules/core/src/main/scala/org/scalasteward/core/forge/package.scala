@@ -16,8 +16,8 @@
 
 package org.scalasteward.core
 
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.ForgeType._
-import org.scalasteward.core.forge.data.Repo
 import org.scalasteward.core.git.Branch
 
 package object forge {

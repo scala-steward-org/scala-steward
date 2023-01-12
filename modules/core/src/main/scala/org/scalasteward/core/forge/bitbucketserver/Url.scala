@@ -17,7 +17,8 @@
 package org.scalasteward.core.forge.bitbucketserver
 
 import org.http4s.Uri
-import org.scalasteward.core.forge.data.{PullRequestNumber, Repo}
+import org.scalasteward.core.data.Repo
+import org.scalasteward.core.forge.data.PullRequestNumber
 import org.scalasteward.core.git.Branch
 
 final class Url(apiHost: Uri) {

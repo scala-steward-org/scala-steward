@@ -20,7 +20,7 @@ import better.files.File
 import cats.effect.{MonadCancelThrow, Resource}
 import cats.syntax.all._
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.buildtool.BuildToolAlg
+import org.scalasteward.core.buildtool.{BuildRoot, BuildToolAlg}
 import org.scalasteward.core.data._
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.forge.data.BuildRoot

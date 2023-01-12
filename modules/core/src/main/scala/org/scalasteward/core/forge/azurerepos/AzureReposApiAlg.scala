@@ -22,6 +22,7 @@ import io.circe.Json
 import io.circe.syntax.KeyOps
 import org.http4s.{Request, Uri}
 import org.scalasteward.core.application.Config.AzureReposConfig
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.ForgeApiAlg
 import org.scalasteward.core.forge.azurerepos.JsonCodec._
 import org.scalasteward.core.forge.data._

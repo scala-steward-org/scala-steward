@@ -19,6 +19,7 @@ package org.scalasteward.core.forge.github
 import cats.MonadThrow
 import cats.syntax.all._
 import org.http4s.{Request, Uri}
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.ForgeApiAlg
 import org.scalasteward.core.forge.data._
 import org.scalasteward.core.forge.github.GitHubException._

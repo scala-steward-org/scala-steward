@@ -21,8 +21,8 @@ import cats.{Id, Monad}
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 import org.http4s.Uri
-import org.scalasteward.core.data.{CrossDependency, GroupId, Update, Version}
-import org.scalasteward.core.forge.data.{PullRequestNumber, PullRequestState, Repo}
+import org.scalasteward.core.data._
+import org.scalasteward.core.forge.data.{PullRequestNumber, PullRequestState}
 import org.scalasteward.core.git
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.nurture.PullRequestRepository.Entry

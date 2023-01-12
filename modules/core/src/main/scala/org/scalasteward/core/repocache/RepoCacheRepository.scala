@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.repocache
 
-import org.scalasteward.core.forge.data.Repo
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.persistence.KeyValueStore
 
 final class RepoCacheRepository[F[_]](kvStore: KeyValueStore[F, Repo, RepoCache]) {

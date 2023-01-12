@@ -21,8 +21,9 @@ import cats.syntax.all._
 import org.http4s.Uri
 import org.http4s.Uri.UserInfo
 import org.scalasteward.core.application.Config
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.ForgeType.GitHub
-import org.scalasteward.core.forge.data.{Repo, RepoOut}
+import org.scalasteward.core.forge.data.RepoOut
 import org.scalasteward.core.git.{updateBranchPrefix, Branch, GitAlg}
 import org.scalasteward.core.util
 import org.scalasteward.core.util.logger._

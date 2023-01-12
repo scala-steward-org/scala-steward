@@ -4,8 +4,7 @@ import cats.syntax.all._
 import munit.CatsEffectSuite
 import org.scalasteward.core.TestInstances.{dummyRepoCache, dummySha1}
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.RepoData
-import org.scalasteward.core.forge.data.Repo
+import org.scalasteward.core.data.{Repo, RepoData}
 import org.scalasteward.core.git.{gitBlameIgnoreRevsName, FileGitAlg}
 import org.scalasteward.core.io.FileAlgTest
 import org.scalasteward.core.mock.MockConfig.gitCmd
