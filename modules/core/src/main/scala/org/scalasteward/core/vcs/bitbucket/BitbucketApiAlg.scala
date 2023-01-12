@@ -19,14 +19,14 @@ package org.scalasteward.core.vcs.bitbucket
 import cats.MonadThrow
 import cats.syntax.all._
 import org.http4s.{Request, Status}
-import org.scalasteward.core.application.Config.VCSCfg
+import org.scalasteward.core.application.Config.{BitbucketCfg, VCSCfg}
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.{HttpJsonClient, UnexpectedResponse}
 import org.scalasteward.core.vcs.VCSApiAlg
 import org.scalasteward.core.vcs.bitbucket.json._
 import org.scalasteward.core.vcs.data._
 import org.typelevel.log4cats.Logger
-import org.scalasteward.core.application.Config.BitbucketCfg
 
 /** https://developer.atlassian.com/bitbucket/api/2/reference/ */
 class BitbucketApiAlg[F[_]](

@@ -2,15 +2,14 @@ package org.scalasteward.core.client
 
 import cats.effect._
 import cats.implicits._
+import eu.timepit.refined.auto._
+import eu.timepit.refined.types.numeric.PosInt
 import munit.CatsEffectSuite
 import org.http4s.HttpRoutes
 import org.http4s.client._
 import org.http4s.headers.{`Retry-After`, `User-Agent`, Location}
 import org.http4s.implicits._
 import org.typelevel.ci._
-import eu.timepit.refined.auto._
-import eu.timepit.refined.types.numeric.PosInt
-
 import scala.concurrent.duration._
 
 class ClientConfigurationTest extends CatsEffectSuite {

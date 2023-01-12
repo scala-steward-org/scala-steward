@@ -18,6 +18,7 @@ package org.scalasteward.core.vcs
 
 import cats.syntax.all._
 import cats.{ApplicativeThrow, MonadThrow}
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.vcs.data._
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.vcs.data
+package org.scalasteward.core.data
 
 import cats.Eq
 import io.circe.KeyEncoder

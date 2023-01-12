@@ -16,8 +16,8 @@
 
 package org.scalasteward.core.vcs.github
 
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.util.UnexpectedResponse
-import org.scalasteward.core.vcs.data.Repo
 import scala.util.control.NoStackTrace
 
 sealed trait GitHubException extends RuntimeException with NoStackTrace

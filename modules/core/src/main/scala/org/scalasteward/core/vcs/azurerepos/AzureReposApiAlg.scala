@@ -22,11 +22,12 @@ import io.circe.Json
 import io.circe.syntax.KeyOps
 import org.http4s.{Request, Uri}
 import org.scalasteward.core.application.Config.AzureReposConfig
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.HttpJsonClient
 import org.scalasteward.core.vcs.VCSApiAlg
+import org.scalasteward.core.vcs.azurerepos.JsonCodec._
 import org.scalasteward.core.vcs.data._
-import JsonCodec._
 
 final class AzureReposApiAlg[F[_]](
     azureAPiHost: Uri,

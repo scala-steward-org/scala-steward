@@ -16,9 +16,9 @@
 
 package org.scalasteward.core
 
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.vcs.VCSType._
-import org.scalasteward.core.vcs.data.Repo
 
 package object vcs {
 

@@ -16,9 +16,8 @@
 
 package org.scalasteward.core
 
-import org.scalasteward.core.data.Update
+import org.scalasteward.core.data.{Repo, Update}
 import org.scalasteward.core.repoconfig.CommitsConfig
-import org.scalasteward.core.vcs.data.Repo
 
 package object git {
   type GitAlg[F[_]] = GenGitAlg[F, Repo]

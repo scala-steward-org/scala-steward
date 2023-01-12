@@ -21,7 +21,7 @@ import cats.FlatMap
 import cats.syntax.all._
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.BuildRoot
-import org.scalasteward.core.vcs.data.Repo
+import org.scalasteward.core.data.Repo
 import org.typelevel.log4cats.Logger
 
 trait WorkspaceAlg[F[_]] {

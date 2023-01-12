@@ -19,9 +19,10 @@ package org.scalasteward.core.vcs.bitbucket
 import cats.syntax.all._
 import io.circe.{ACursor, Decoder, DecodingFailure, Json}
 import org.http4s.Uri
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.uri._
-import org.scalasteward.core.vcs.data.{Repo, UserOut}
+import org.scalasteward.core.vcs.data.UserOut
 import scala.annotation.tailrec
 
 final private[bitbucket] case class RepositoryResponse(

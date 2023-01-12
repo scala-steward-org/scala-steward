@@ -19,7 +19,7 @@ package org.scalasteward.core.edit
 import cats.MonadThrow
 import cats.syntax.all._
 import org.scalasteward.core.buildtool.BuildToolDispatcher
-import org.scalasteward.core.data.{RepoData, Update}
+import org.scalasteward.core.data.{Repo, RepoData, Update}
 import org.scalasteward.core.edit.EditAttempt.{ScalafixEdit, UpdateEdit}
 import org.scalasteward.core.edit.hooks.HookExecutor
 import org.scalasteward.core.edit.scalafix.{ScalafixMigration, ScalafixMigrationsFinder}
@@ -30,7 +30,6 @@ import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafmt.{scalafmtModule, ScalafmtAlg}
 import org.scalasteward.core.util.logger._
-import org.scalasteward.core.vcs.data.Repo
 import org.typelevel.log4cats.Logger
 
 final class EditAlg[F[_]](implicit

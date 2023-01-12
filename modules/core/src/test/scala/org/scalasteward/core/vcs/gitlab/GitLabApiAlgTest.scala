@@ -13,7 +13,7 @@ import org.http4s.implicits._
 import org.scalasteward.core.TestInstances.{dummyRepoCache, ioLogger}
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.application.Config.GitLabCfg
-import org.scalasteward.core.data.{RepoData, UpdateData}
+import org.scalasteward.core.data.{Repo, RepoData, UpdateData}
 import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.mock.MockConfig.config

@@ -17,8 +17,9 @@
 package org.scalasteward.core.vcs.gitlab
 
 import org.http4s.Uri
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.vcs.data.{PullRequestNumber, Repo}
+import org.scalasteward.core.vcs.data.PullRequestNumber
 
 class Url(apiHost: Uri) {
   def encodedProjectId(repo: Repo): String = s"${repo.owner}%2F${repo.repo}"

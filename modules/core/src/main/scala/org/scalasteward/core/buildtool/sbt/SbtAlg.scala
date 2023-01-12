@@ -21,8 +21,8 @@ import cats.data.OptionT
 import cats.effect.{Concurrent, Resource}
 import cats.syntax.all._
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.buildtool.{BuildRoot, BuildToolAlg}
 import org.scalasteward.core.buildtool.sbt.command._
+import org.scalasteward.core.buildtool.{BuildRoot, BuildToolAlg}
 import org.scalasteward.core.coursier.VersionsCache
 import org.scalasteward.core.data.{Dependency, Scope, Version}
 import org.scalasteward.core.edit.scalafix.{ScalafixCli, ScalafixMigration}

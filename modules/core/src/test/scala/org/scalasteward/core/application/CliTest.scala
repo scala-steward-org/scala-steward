@@ -6,10 +6,9 @@ import munit.FunSuite
 import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.Cli.ParseResult._
+import org.scalasteward.core.application.Config.StewardUsage
 import org.scalasteward.core.vcs.VCSType
 import org.scalasteward.core.vcs.github.GitHubApp
-import org.scalasteward.core.application.Config.StewardUsage
-
 import scala.concurrent.duration._
 
 class CliTest extends FunSuite {

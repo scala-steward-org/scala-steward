@@ -3,8 +3,8 @@ package org.scalasteward.core.io
 import better.files.File
 import cats.data.Kleisli
 import org.scalasteward.core.buildtool.BuildRoot
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.mock.{MockConfig, MockEff}
-import org.scalasteward.core.vcs.data.Repo
 
 class MockWorkspaceAlg extends WorkspaceAlg[MockEff] {
   override def cleanReposDir: MockEff[Unit] =

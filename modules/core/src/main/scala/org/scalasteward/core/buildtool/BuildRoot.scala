@@ -16,6 +16,6 @@
 
 package org.scalasteward.core.buildtool
 
-import org.scalasteward.core.vcs.data.Repo
+import org.scalasteward.core.data.Repo
 
 final case class BuildRoot(repo: Repo, relativePath: String)

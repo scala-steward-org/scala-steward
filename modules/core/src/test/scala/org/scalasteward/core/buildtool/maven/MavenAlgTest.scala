@@ -3,10 +3,10 @@ package org.scalasteward.core.buildtool.maven
 import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.buildtool.BuildRoot
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.mock.MockContext.context._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
-import org.scalasteward.core.vcs.data.Repo
 
 class MavenAlgTest extends FunSuite {
   test("getDependencies") {
