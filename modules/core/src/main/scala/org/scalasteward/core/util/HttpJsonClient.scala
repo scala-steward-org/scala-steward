@@ -18,6 +18,7 @@ package org.scalasteward.core.util
 
 import cats.effect.Concurrent
 import cats.syntax.all._
+import fs2.Stream
 import io.circe.{Decoder, Encoder}
 import org.http4s.Method.{GET, PATCH, POST, PUT}
 import org.http4s.Status.Successful
@@ -36,19 +37,16 @@ final class HttpJsonClient[F[_]](implicit
   def get[A: Decoder](uri: Uri, modify: ModReq): F[A] =
     request[A](GET, uri, modify)
 
-  def getAll[A: Decoder](uri: Uri, modify: ModReq): F[List[A]] =
-    all[A](GET, uri, modify, Nil)
-
-  private def all[A: Decoder](
-      method: Method,
-      uri: Uri,
-      modify: ModReq,
-      xs: List[A]
-  ): F[List[A]] =
-    requestWithHeaders[A](method, uri, modify)(jsonOf).flatMap { case (a, headers) =>
-      headers.get[Link].flatMap(_.values.find(_.rel.contains("next"))) match {
-        case Some(linkValue) => all(method, linkValue.uri, modify, a :: xs)
-        case None            => F.pure(a :: xs)
+  /** Retrieves all values via pagination.
+    * @see
+    *   [[https://tools.ietf.org/html/rfc8288]]
+    *   [[https://docs.github.com/en/rest/guides/using-pagination-in-the-rest-api]]
+    */
+  def getAll[A: Decoder](uri: Uri, modify: ModReq): Stream[F, A] =
+    Stream.unfoldLoopEval(uri) { curr =>
+      requestWithHeaders[A](GET, curr, modify)(jsonOf).map { case (a, headers) =>
+        val next = headers.get[Link].flatMap(_.values.find(_.rel.contains("next"))).map(_.uri)
+        (a, next)
       }
     }
 

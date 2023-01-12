@@ -18,8 +18,8 @@ class HttpJsonClientTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       case GET -> Root / "2" => Ok("2", Link(LinkValue(url1, Some("prev"))))
       case _                 => NotFound()
     })
-    val obtained = httpJsonClient.getAll[Int](url1, _.pure[MockEff]).runA(state)
-    assertIO(obtained, List(2, 1))
+    val obtained = httpJsonClient.getAll[Int](url1, _.pure[MockEff]).compile.toList.runA(state)
+    assertIO(obtained, List(1, 2))
   }
 
   test("get with malformed JSON") {
