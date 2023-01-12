@@ -2,8 +2,8 @@ package org.scalasteward.core.vcs.github
 
 import munit.FunSuite
 import org.http4s.syntax.literals._
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.vcs.data.Repo
 
 class UrlTest extends FunSuite {
   private val url = new Url(uri"https://api.github.com")

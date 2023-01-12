@@ -2,10 +2,9 @@ package org.scalasteward.core.vcs
 
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.Update
+import org.scalasteward.core.data.{Repo, Update}
 import org.scalasteward.core.git
 import org.scalasteward.core.vcs.VCSType.{GitHub, GitLab}
-import org.scalasteward.core.vcs.data.Repo
 
 class VCSPackageTest extends FunSuite {
   private val repo = Repo("foo", "bar")

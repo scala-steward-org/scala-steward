@@ -34,7 +34,6 @@ import org.scalasteward.core.repocache.RepoCache
 import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtGroupId, ScalafmtAlg}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.util.logger._
-import org.scalasteward.core.vcs.data.Repo
 import org.typelevel.log4cats.Logger
 
 final class HookExecutor[F[_]](implicit

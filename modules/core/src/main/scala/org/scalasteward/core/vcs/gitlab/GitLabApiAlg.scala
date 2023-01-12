@@ -23,6 +23,7 @@ import io.circe.generic.semiauto._
 import io.circe.syntax._
 import org.http4s.{Request, Status, Uri}
 import org.scalasteward.core.application.Config.{GitLabCfg, VCSCfg}
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.util.uri.uriDecoder
 import org.scalasteward.core.util.{intellijThisImportIsUsed, HttpJsonClient, UnexpectedResponse}

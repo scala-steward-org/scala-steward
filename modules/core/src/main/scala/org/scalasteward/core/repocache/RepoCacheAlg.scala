@@ -20,10 +20,10 @@ import cats.syntax.all._
 import cats.{MonadThrow, Parallel}
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.BuildToolDispatcher
-import org.scalasteward.core.data.{Dependency, DependencyInfo, RepoData}
+import org.scalasteward.core.data.{Dependency, DependencyInfo, Repo, RepoData}
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.repoconfig.RepoConfigAlg
-import org.scalasteward.core.vcs.data.{Repo, RepoOut}
+import org.scalasteward.core.vcs.data.RepoOut
 import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
 import org.typelevel.log4cats.Logger
 

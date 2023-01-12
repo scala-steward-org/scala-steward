@@ -19,6 +19,7 @@ package org.scalasteward.core.vcs.github
 import cats.MonadThrow
 import cats.syntax.all._
 import org.http4s.{Request, Uri}
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.HttpJsonClient
 import org.scalasteward.core.vcs.VCSApiAlg

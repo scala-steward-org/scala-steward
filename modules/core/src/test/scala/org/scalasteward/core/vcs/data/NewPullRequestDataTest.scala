@@ -7,7 +7,7 @@ import org.http4s.syntax.literals._
 import org.scalasteward.core.TestInstances._
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.buildtool.sbt.data.SbtVersion
-import org.scalasteward.core.data.{RepoData, Update, UpdateData, Version}
+import org.scalasteward.core.data._
 import org.scalasteward.core.edit.EditAttempt.{ScalafixEdit, UpdateEdit}
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.git.{Branch, Commit}

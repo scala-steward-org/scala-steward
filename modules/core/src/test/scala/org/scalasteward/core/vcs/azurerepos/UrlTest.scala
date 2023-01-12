@@ -1,9 +1,10 @@
 package org.scalasteward.core.vcs.azurerepos
 
-import org.http4s.syntax.literals._
 import munit.FunSuite
+import org.http4s.syntax.literals._
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.vcs.data.{PullRequestNumber, Repo}
+import org.scalasteward.core.vcs.data.PullRequestNumber
 
 class UrlTest extends FunSuite {
   private val url = new Url(uri"https://dev.azure.com", "my-azure-org")

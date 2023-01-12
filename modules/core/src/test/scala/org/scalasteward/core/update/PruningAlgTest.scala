@@ -2,20 +2,18 @@ package org.scalasteward.core.update
 
 import cats.effect.unsafe.implicits.global
 import io.circe.parser.decode
+import java.time.Instant
 import munit.FunSuite
 import org.scalasteward.core.TestInstances.dummyRepoCache
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.Resolver.MavenRepository
-import org.scalasteward.core.data.{DependencyInfo, RepoData, Scope}
+import org.scalasteward.core.data.{DependencyInfo, Repo, RepoData, Scope}
 import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context.pruningAlg
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.repocache.RepoCache
 import org.scalasteward.core.repoconfig.RepoConfig
-import org.scalasteward.core.vcs.data.Repo
-
-import java.time.Instant
 
 class PruningAlgTest extends FunSuite {
   test("needsAttention") {

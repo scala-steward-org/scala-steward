@@ -17,8 +17,9 @@
 package org.scalasteward.core.vcs.bitbucketserver
 
 import org.http4s.Uri
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.vcs.data.{PullRequestNumber, Repo}
+import org.scalasteward.core.vcs.data.PullRequestNumber
 
 final class Url(apiHost: Uri) {
   private val api: Uri = apiHost / "rest" / "api" / "1.0"

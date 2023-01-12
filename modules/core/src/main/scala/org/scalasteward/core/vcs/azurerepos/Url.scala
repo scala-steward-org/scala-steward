@@ -17,8 +17,9 @@
 package org.scalasteward.core.vcs.azurerepos
 
 import org.http4s.Uri
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.vcs.data.{PullRequestNumber, Repo}
+import org.scalasteward.core.vcs.data.PullRequestNumber
 
 class Url(apiHost: Uri, organization: String) {
   private val apiVersion = "7.1-preview.1"

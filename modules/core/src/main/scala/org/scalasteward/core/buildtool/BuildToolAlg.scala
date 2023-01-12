@@ -18,7 +18,6 @@ package org.scalasteward.core.buildtool
 
 import org.scalasteward.core.data.Scope
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
-import org.scalasteward.core.vcs.data.BuildRoot
 
 trait BuildToolAlg[F[_]] {
   def name: String

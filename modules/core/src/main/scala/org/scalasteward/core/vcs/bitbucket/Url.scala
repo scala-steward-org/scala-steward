@@ -17,8 +17,9 @@
 package org.scalasteward.core.vcs.bitbucket
 
 import org.http4s.Uri
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.vcs.data.{PullRequestNumber, Repo}
+import org.scalasteward.core.vcs.data.PullRequestNumber
 
 private[bitbucket] class Url(apiHost: Uri) {
   def forks(rep: Repo): Uri =
