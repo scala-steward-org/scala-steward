@@ -2,6 +2,7 @@ package org.scalasteward.core.buildtool.sbt
 
 import cats.effect.unsafe.implicits.global
 import munit.FunSuite
+import org.scalasteward.core.buildtool.BuildRoot
 import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.data.{GroupId, Version}
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
@@ -9,7 +10,7 @@ import org.scalasteward.core.mock.MockContext.context._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
 import org.scalasteward.core.util.Nel
-import org.scalasteward.core.vcs.data.{BuildRoot, Repo}
+import org.scalasteward.core.vcs.data.Repo
 
 class SbtAlgTest extends FunSuite {
   private val workspace = workspaceAlg.rootDir.unsafeRunSync()

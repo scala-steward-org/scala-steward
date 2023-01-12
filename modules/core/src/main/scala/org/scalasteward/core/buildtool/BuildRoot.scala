@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.vcs.data
+package org.scalasteward.core.buildtool
+
+import org.scalasteward.core.vcs.data.Repo
 
 final case class BuildRoot(repo: Repo, relativePath: String)
