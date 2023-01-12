@@ -72,6 +72,7 @@ class ClientConfigurationTest extends CatsEffectSuite {
 
   test("disableFollowRedirect does not follow redirect") {
     import org.http4s.Method._
+    import org.http4s.ember.server._
     import org.http4s.client.dsl.io._
 
     val regularClient = ClientConfiguration.build[IO](

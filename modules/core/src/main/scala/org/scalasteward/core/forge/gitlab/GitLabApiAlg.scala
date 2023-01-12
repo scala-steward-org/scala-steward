@@ -28,7 +28,7 @@ import org.scalasteward.core.forge.ForgeApiAlg
 import org.scalasteward.core.forge.data._
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.util.uri.uriDecoder
-import org.scalasteward.core.util.{HttpJsonClient, UnexpectedResponse, intellijThisImportIsUsed}
+import org.scalasteward.core.util.{intellijThisImportIsUsed, HttpJsonClient, UnexpectedResponse}
 import org.typelevel.log4cats.Logger
 
 final private[gitlab] case class ForkPayload(id: String, namespace: String)

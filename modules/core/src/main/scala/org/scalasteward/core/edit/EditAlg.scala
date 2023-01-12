@@ -25,7 +25,6 @@ import org.scalasteward.core.edit.hooks.HookExecutor
 import org.scalasteward.core.edit.scalafix.{ScalafixMigration, ScalafixMigrationsFinder}
 import org.scalasteward.core.edit.update.data.Substring
 import org.scalasteward.core.edit.update.{ScannerAlg, Selector}
-import org.scalasteward.core.forge.data.Repo
 import org.scalasteward.core.git.{CommitMsg, GitAlg}
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.repoconfig.RepoConfig

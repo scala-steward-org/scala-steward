@@ -21,7 +21,6 @@ import cats.effect.Concurrent
 import fs2.Stream
 import org.scalasteward.core.data.{Dependency, Repo, Version}
 import org.scalasteward.core.edit.update.data.{ModulePosition, VersionPosition}
-import org.scalasteward.core.forge.data.Repo
 import org.scalasteward.core.io.{FileAlg, FileData, WorkspaceAlg}
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.Nel

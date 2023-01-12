@@ -24,7 +24,6 @@ import org.scalasteward.core.buildtool.{BuildRoot, BuildToolAlg}
 import org.scalasteward.core.data.Scope.Dependencies
 import org.scalasteward.core.data._
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
-import org.scalasteward.core.forge.data.BuildRoot
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
 import org.typelevel.log4cats.Logger

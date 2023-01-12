@@ -16,7 +16,6 @@
 
 package org.scalasteward.core.data
 
-import org.scalasteward.core.forge.data.Repo
 import org.scalasteward.core.repocache.RepoCache
 import org.scalasteward.core.repoconfig.RepoConfig
 

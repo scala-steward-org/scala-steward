@@ -183,7 +183,6 @@ lazy val core = myCrossProject("core")
     initialCommands += s"""
       import ${moduleRootPkg.value}._
       import ${moduleRootPkg.value}.data._
-      import ${moduleRootPkg.value}.forge.data._
       import ${moduleRootPkg.value}.util._
       import better.files.File
       import cats.effect.IO

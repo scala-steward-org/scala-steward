@@ -19,7 +19,6 @@ package org.scalasteward.core.update
 import cats.Monad
 import cats.implicits._
 import org.scalasteward.core.data._
-import org.scalasteward.core.forge.data.Repo
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.repocache.RepoCache
 import org.scalasteward.core.repoconfig.{PullRequestFrequency, RepoConfig, UpdatePattern}
