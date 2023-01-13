@@ -21,19 +21,11 @@ import org.scalasteward.core.data.Dependency
 
 final class ArtifactMigrationsFinder(migrations: List[ArtifactChange]) {
   def findArtifactChange(dependency: Dependency): Option[ArtifactChange] =
-    migrations
-      .find { migration =>
-        (migration.groupIdBefore, migration.artifactIdBefore) match {
-          case (Some(groupId), Some(artifactId)) =>
-            groupId === dependency.groupId &&
-            artifactId === dependency.artifactId.name
-          case (Some(groupId), None) =>
-            groupId === dependency.groupId &&
-            migration.artifactIdAfter === dependency.artifactId.name
-          case (None, Some(artifactId)) =>
-            migration.groupIdAfter === dependency.groupId &&
-            artifactId === dependency.artifactId.name
-          case (None, None) => false
-        }
+    migrations.find { migration =>
+      val groupId = migration.groupIdBefore.getOrElse(migration.groupIdAfter)
+      groupId === dependency.groupId && {
+        val artifactId = migration.artifactIdBefore.getOrElse(migration.artifactIdAfter)
+        artifactId === dependency.artifactId.name
       }
+    }
 }
