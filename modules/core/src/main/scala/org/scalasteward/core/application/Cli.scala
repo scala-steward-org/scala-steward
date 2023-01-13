@@ -25,12 +25,12 @@ import org.http4s.Uri
 import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Config._
 import org.scalasteward.core.data.Resolver
+import org.scalasteward.core.forge.ForgeType
+import org.scalasteward.core.forge.ForgeType.GitHub
+import org.scalasteward.core.forge.github.GitHubApp
 import org.scalasteward.core.git.Author
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.util.dateTime.renderFiniteDuration
-import org.scalasteward.core.vcs.VCSType
-import org.scalasteward.core.vcs.VCSType.GitHub
-import org.scalasteward.core.vcs.github.GitHubApp
 import scala.concurrent.duration._
 
 object Cli {
@@ -57,9 +57,9 @@ object Cli {
       Validated.fromEither(Uri.fromString(s).leftMap(_.message)).toValidatedNel
     }
 
-  implicit val vcsTypeArgument: Argument[VCSType] =
-    Argument.from("vcs-type") { s =>
-      Validated.fromEither(VCSType.parse(s)).toValidatedNel
+  implicit val forgeTypeArgument: Argument[ForgeType] =
+    Argument.from("forge-type") { s =>
+      Validated.fromEither(ForgeType.parse(s)).toValidatedNel
     }
 
   private val multiple = "(can be used multiple times)"
@@ -94,18 +94,40 @@ object Cli {
   private val gitCfg: Opts[GitCfg] =
     (gitAuthor, gitAskPass, signCommits).mapN(GitCfg.apply)
 
-  private val vcsType = {
-    val help = VCSType.all.map(_.asString).mkString("One of ", ", ", "") +
+  private val vcsType =
+    option[ForgeType](
+      "vcs-type",
+      "deprecated in favor of --forge-type",
+      visibility = Visibility.Partial
+    )
+
+  private val forgeType = {
+    val help = ForgeType.all.map(_.asString).mkString("One of ", ", ", "") +
       s"; default: ${GitHub.asString}"
-    option[VCSType]("vcs-type", help).withDefault(GitHub)
+    option[ForgeType]("forge-type", help).orElse(vcsType).withDefault(GitHub)
   }
 
-  private val vcsApiHost: Opts[Uri] =
-    option[Uri]("vcs-api-host", s"API URL of the git hoster; default: ${GitHub.publicApiBaseUrl}")
+  private val vcsApiHost =
+    option[Uri](
+      "vcs-api-host",
+      "deprecated in favor of --forge-api-host",
+      visibility = Visibility.Partial
+    )
+
+  private val forgeApiHost: Opts[Uri] =
+    option[Uri]("forge-api-host", s"API URL of the forge; default: ${GitHub.publicApiBaseUrl}")
+      .orElse(vcsApiHost)
       .withDefault(GitHub.publicApiBaseUrl)
 
-  private val vcsLogin: Opts[String] =
-    option[String]("vcs-login", "The user name for the git hoster")
+  private val vcsLogin =
+    option[String](
+      "vcs-login",
+      "deprecated in favor of --forge-login",
+      visibility = Visibility.Partial
+    )
+
+  private val forgeLogin: Opts[String] =
+    option[String]("forge-login", "The user name for the forge").orElse(vcsLogin)
 
   private val doNotFork: Opts[Boolean] =
     flag("do-not-fork", "Whether to not push the update branches to a fork; default: false").orFalse
@@ -113,17 +135,17 @@ object Cli {
   private val addPrLabels: Opts[Boolean] =
     flag(
       "add-labels",
-      "Whether to add labels on pull or merge requests (if supported by git hoster)"
+      "Whether to add labels on pull or merge requests (if supported by the forge)"
     ).orFalse
 
-  private val vcsCfg: Opts[VCSCfg] =
-    (vcsType, vcsApiHost, vcsLogin, doNotFork, addPrLabels)
-      .mapN(VCSCfg.apply)
+  private val forgeCfg: Opts[ForgeCfg] =
+    (forgeType, forgeApiHost, forgeLogin, doNotFork, addPrLabels)
+      .mapN(ForgeCfg.apply)
       .validate(
-        s"${VCSType.allNot(_.supportsForking)} do not support fork mode"
+        s"${ForgeType.allNot(_.supportsForking)} do not support fork mode"
       )(cfg => cfg.tpe.supportsForking || cfg.doNotFork)
       .validate(
-        s"${VCSType.allNot(_.supportsLabels)} do not support pull request labels"
+        s"${ForgeType.allNot(_.supportsLabels)} do not support pull request labels"
       )(cfg => cfg.tpe.supportsLabels || !cfg.addLabels)
 
   private val ignoreOptsFiles: Opts[Boolean] =
@@ -265,7 +287,7 @@ object Cli {
   private val azureReposOrganization: Opts[Option[String]] =
     option[String](
       "azure-repos-organization",
-      "The Azure organization (required when vcs type is azure-repos)"
+      "The Azure organization (required when --forge-type is azure-repos)"
     ).orNone
 
   private val azureReposConfig: Opts[AzureReposConfig] =
@@ -306,7 +328,7 @@ object Cli {
     workspace,
     reposFile,
     gitCfg,
-    vcsCfg,
+    forgeCfg,
     ignoreOptsFiles,
     processCfg,
     repoConfigCfg,

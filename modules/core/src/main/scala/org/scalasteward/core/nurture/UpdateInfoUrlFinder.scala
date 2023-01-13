@@ -19,16 +19,16 @@ package org.scalasteward.core.nurture
 import cats.Monad
 import cats.syntax.all._
 import org.http4s.Uri
-import org.scalasteward.core.application.Config.VCSCfg
+import org.scalasteward.core.application.Config.ForgeCfg
 import org.scalasteward.core.coursier.DependencyMetadata
 import org.scalasteward.core.data.Version
+import org.scalasteward.core.forge.ForgeType
+import org.scalasteward.core.forge.ForgeType._
 import org.scalasteward.core.nurture.UpdateInfoUrl._
 import org.scalasteward.core.nurture.UpdateInfoUrlFinder.possibleUpdateInfoUrls
 import org.scalasteward.core.util.UrlChecker
-import org.scalasteward.core.vcs.VCSType
-import org.scalasteward.core.vcs.VCSType._
 
-final class UpdateInfoUrlFinder[F[_]](config: VCSCfg)(implicit
+final class UpdateInfoUrlFinder[F[_]](config: ForgeCfg)(implicit
     urlChecker: UrlChecker[F],
     F: Monad[F]
 ) {
@@ -74,20 +74,24 @@ object UpdateInfoUrlFinder {
     possibleFilenames(baseNames)
   }
 
-  private def extractRepoVCSType(vcsType: VCSType, vcsUri: Uri, repoUrl: Uri): Option[VCSType] =
+  private def forgeTypeFromRepoUrl(
+      forgeType: ForgeType,
+      forgeUrl: Uri,
+      repoUrl: Uri
+  ): Option[ForgeType] =
     repoUrl.host.flatMap { repoHost =>
-      if (vcsUri.host.contains(repoHost)) Some(vcsType)
-      else VCSType.fromPublicWebHost(repoHost.value)
+      if (forgeUrl.host.contains(repoHost)) Some(forgeType)
+      else ForgeType.fromPublicWebHost(repoHost.value)
     }
 
   private[nurture] def possibleVersionDiffs(
-      vcsType: VCSType,
-      vcsUri: Uri,
+      forgeType: ForgeType,
+      forgeUrl: Uri,
       repoUrl: Uri,
       currentVersion: Version,
       nextVersion: Version
   ): List[VersionDiff] =
-    extractRepoVCSType(vcsType, vcsUri, repoUrl).map {
+    forgeTypeFromRepoUrl(forgeType, forgeUrl, repoUrl).map {
       case GitHub | GitLab =>
         possibleTags(currentVersion).zip(possibleTags(nextVersion)).map { case (from1, to1) =>
           VersionDiff(repoUrl / "compare" / s"$from1...$to1")
@@ -106,22 +110,22 @@ object UpdateInfoUrlFinder {
     }.orEmpty
 
   private[nurture] def possibleUpdateInfoUrls(
-      vcsType: VCSType,
-      vcsUrl: Uri,
+      forgeType: ForgeType,
+      forgeUrl: Uri,
       repoUrl: Uri,
       currentVersion: Version,
       nextVersion: Version
   ): List[UpdateInfoUrl] = {
-    val repoVCSType = extractRepoVCSType(vcsType, vcsUrl, repoUrl)
+    val repoForgeType = forgeTypeFromRepoUrl(forgeType, forgeUrl, repoUrl)
 
-    val githubReleaseNotes = repoVCSType
+    val githubReleaseNotes = repoForgeType
       .collect { case GitHub =>
         possibleTags(nextVersion).map(tag => GitHubReleaseNotes(repoUrl / "releases" / "tag" / tag))
       }
       .getOrElse(List.empty)
 
     def files(fileNames: List[String]): List[Uri] = {
-      val maybeSegments = repoVCSType.collect {
+      val maybeSegments = repoForgeType.collect {
         case GitHub | GitLab => List("blob", "master")
         case Bitbucket       => List("master")
         case BitbucketServer => List("browse")
@@ -132,7 +136,7 @@ object UpdateInfoUrlFinder {
         fileNames.map(name => base / name)
       }
 
-      val azureRepoFiles = repoVCSType
+      val azureRepoFiles = repoForgeType
         .collect { case AzureRepos => fileNames.map(name => repoUrl.withQueryParam("path", name)) }
         .toList
         .flatten
@@ -144,7 +148,7 @@ object UpdateInfoUrlFinder {
     val customReleaseNotes = files(possibleReleaseNotesFilenames).map(CustomReleaseNotes)
 
     githubReleaseNotes ++ customReleaseNotes ++ customChangelog ++
-      possibleVersionDiffs(vcsType, vcsUrl, repoUrl, currentVersion, nextVersion)
+      possibleVersionDiffs(forgeType, forgeUrl, repoUrl, currentVersion, nextVersion)
   }
 
   private def possibleFilenames(baseNames: List[String]): List[String] = {

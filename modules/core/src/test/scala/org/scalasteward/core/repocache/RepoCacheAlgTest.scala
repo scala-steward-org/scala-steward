@@ -10,11 +10,11 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.syntax.all._
 import org.scalasteward.core.TestInstances.dummySha1
 import org.scalasteward.core.data.{Repo, RepoData}
+import org.scalasteward.core.forge.data.{RepoOut, UserOut}
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.mock.MockContext.context._
 import org.scalasteward.core.mock.{MockEff, MockState}
 import org.scalasteward.core.util.intellijThisImportIsUsed
-import org.scalasteward.core.vcs.data.{RepoOut, UserOut}
 
 class RepoCacheAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   intellijThisImportIsUsed(encodeUri)
