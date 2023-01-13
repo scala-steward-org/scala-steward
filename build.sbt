@@ -398,7 +398,7 @@ runSteward := Def.taskDyn {
     Seq("--workspace", s"$projectDir/workspace"),
     Seq("--repos-file", s"$projectDir/repos.md"),
     Seq("--git-author-email", s"me@$projectName.org"),
-    Seq("--vcs-login", projectName),
+    Seq("--forge-login", projectName),
     Seq("--git-ask-pass", s"$home/.github/askpass/$projectName.sh"),
     Seq("--whitelist", s"$home/.cache/coursier"),
     Seq("--whitelist", s"$home/.cache/JNA"),
