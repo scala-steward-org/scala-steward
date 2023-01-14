@@ -205,8 +205,7 @@ object Context {
       implicit val httpJsonClient: HttpJsonClient[F] = new HttpJsonClient[F]
       implicit val repoCacheRepository: RepoCacheRepository[F] =
         new RepoCacheRepository[F](repoCacheStore)
-      implicit val forgeApiAlg: ForgeApiAlg[F] =
-        new ForgeSelection[F](config, forgeUser).forgeApiAlg
+      implicit val forgeApiAlg: ForgeApiAlg[F] = ForgeSelection.forgeApiAlg[F](config, forgeUser)
       implicit val forgeRepoAlg: ForgeRepoAlg[F] = new ForgeRepoAlg[F](config)
       implicit val updateInfoUrlFinder: UpdateInfoUrlFinder[F] =
         new UpdateInfoUrlFinder[F](config.forgeCfg)

@@ -16,8 +16,10 @@
 
 package org.scalasteward.core.forge
 
-import cats.MonadThrow
-import org.http4s.Header
+import cats.syntax.all._
+import cats.{Applicative, MonadThrow}
+import org.http4s.headers.Authorization
+import org.http4s.{BasicCredentials, Header, Request}
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.forge.ForgeType._
 import org.scalasteward.core.forge.azurerepos.AzureReposApiAlg
@@ -30,57 +32,43 @@ import org.scalasteward.core.util.HttpJsonClient
 import org.typelevel.ci._
 import org.typelevel.log4cats.Logger
 
-final class ForgeSelection[F[_]](config: Config, user: AuthenticatedUser)(implicit
-    client: HttpJsonClient[F],
-    logger: Logger[F],
-    F: MonadThrow[F]
-) {
-  private def gitHubApiAlg: GitHubApiAlg[F] =
-    new GitHubApiAlg[F](
-      config.forgeCfg.apiHost,
-      _ => github.authentication.addCredentials(user)
-    )
-
-  private def gitLabApiAlg: GitLabApiAlg[F] =
-    new GitLabApiAlg[F](
-      config.forgeCfg,
-      config.gitLabCfg,
-      _ => gitlab.authentication.addCredentials(user)
-    )
-
-  private def bitbucketApiAlg: BitbucketApiAlg[F] =
-    new BitbucketApiAlg(
-      config.forgeCfg,
-      config.bitbucketCfg,
-      _ => bitbucket.authentication.addCredentials(user)
-    )
-
-  private def bitbucketServerApiAlg: BitbucketServerApiAlg[F] = {
-    // Bypass the server-side XSRF check, see
-    // https://github.com/scala-steward-org/scala-steward/pull/1863#issuecomment-754538364
-    val xAtlassianToken = Header.Raw(ci"X-Atlassian-Token", "no-check")
-
-    new BitbucketServerApiAlg[F](
-      config.forgeCfg.apiHost,
-      config.bitbucketServerCfg,
-      _ =>
-        req => bitbucket.authentication.addCredentials(user).apply(req.putHeaders(xAtlassianToken))
-    )
+object ForgeSelection {
+  def forgeApiAlg[F[_]](config: Config, user: AuthenticatedUser)(implicit
+      httpJsonClient: HttpJsonClient[F],
+      logger: Logger[F],
+      F: MonadThrow[F]
+  ): ForgeApiAlg[F] = {
+    val auth = (_: Any) => authenticate(config.forgeCfg.tpe, user)
+    config.forgeCfg.tpe match {
+      case AzureRepos =>
+        new AzureReposApiAlg[F](config.forgeCfg.apiHost, config.azureReposConfig, auth)
+      case Bitbucket =>
+        new BitbucketApiAlg(config.forgeCfg, config.bitbucketCfg, auth)
+      case BitbucketServer =>
+        new BitbucketServerApiAlg[F](config.forgeCfg.apiHost, config.bitbucketServerCfg, auth)
+      case GitHub =>
+        new GitHubApiAlg[F](config.forgeCfg.apiHost, auth)
+      case GitLab =>
+        new GitLabApiAlg[F](config.forgeCfg, config.gitLabCfg, auth)
+    }
   }
 
-  private def azureReposApiAlg: AzureReposApiAlg[F] =
-    new AzureReposApiAlg[F](
-      config.forgeCfg.apiHost,
-      config.azureReposConfig,
-      _ => azurerepos.authentication.addCredentials(user)
-    )
-
-  def forgeApiAlg: ForgeApiAlg[F] =
-    config.forgeCfg.tpe match {
-      case GitHub          => gitHubApiAlg
-      case GitLab          => gitLabApiAlg
-      case Bitbucket       => bitbucketApiAlg
-      case BitbucketServer => bitbucketServerApiAlg
-      case AzureRepos      => azureReposApiAlg
+  def authenticate[F[_]](
+      forgeType: ForgeType,
+      user: AuthenticatedUser
+  )(implicit F: Applicative[F]): Request[F] => F[Request[F]] =
+    forgeType match {
+      case AzureRepos      => _.putHeaders(basicAuth(user)).pure[F]
+      case Bitbucket       => _.putHeaders(basicAuth(user)).pure[F]
+      case BitbucketServer =>
+        // Bypass the server-side XSRF check, see
+        // https://github.com/scala-steward-org/scala-steward/pull/1863#issuecomment-754538364
+        val xAtlassianToken = Header.Raw(ci"X-Atlassian-Token", "no-check")
+        _.putHeaders(basicAuth(user), xAtlassianToken).pure[F]
+      case GitHub => _.putHeaders(basicAuth(user)).pure[F]
+      case GitLab => _.putHeaders(Header.Raw(ci"Private-Token", user.accessToken)).pure[F]
     }
+
+  private def basicAuth(user: AuthenticatedUser): Authorization =
+    Authorization(BasicCredentials(user.login, user.accessToken))
 }

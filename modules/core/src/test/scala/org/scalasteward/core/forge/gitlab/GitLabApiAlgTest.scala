@@ -112,29 +112,29 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   }
   private val state = MockState.empty.copy(clientResponses = auth <+> httpApp)
 
-  private val gitlabApiAlg = new ForgeSelection[MockEff](
+  private val gitlabApiAlg = ForgeSelection.forgeApiAlg[MockEff](
     config.copy(
       forgeCfg = config.forgeCfg.copy(tpe = ForgeType.GitLab),
       gitLabCfg = GitLabCfg(mergeWhenPipelineSucceeds = false, requiredReviewers = None)
     ),
     user
-  ).forgeApiAlg
+  )
 
-  private val gitlabApiAlgNoFork = new ForgeSelection[MockEff](
+  private val gitlabApiAlgNoFork = ForgeSelection.forgeApiAlg[MockEff](
     config.copy(
       forgeCfg = config.forgeCfg.copy(tpe = ForgeType.GitLab, doNotFork = true),
       gitLabCfg = GitLabCfg(mergeWhenPipelineSucceeds = false, requiredReviewers = None)
     ),
     user
-  ).forgeApiAlg
+  )
 
-  private val gitlabApiAlgLessReviewersRequired = new ForgeSelection[MockEff](
+  private val gitlabApiAlgLessReviewersRequired = ForgeSelection.forgeApiAlg[MockEff](
     config.copy(
       forgeCfg = config.forgeCfg.copy(tpe = ForgeType.GitLab, doNotFork = true),
       gitLabCfg = GitLabCfg(mergeWhenPipelineSucceeds = true, requiredReviewers = Some(0))
     ),
     user
-  ).forgeApiAlg
+  )
 
   private val data = UpdateData(
     RepoData(Repo("foo", "bar"), dummyRepoCache, RepoConfig.empty),
