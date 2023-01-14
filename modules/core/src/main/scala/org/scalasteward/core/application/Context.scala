@@ -179,7 +179,8 @@ object Context {
       scalafixMigrationsFinder0 <- scalafixMigrationsLoader0.createFinder(config.scalafixCfg)
       repoConfigLoader0 = new RepoConfigLoader[F]
       maybeGlobalRepoConfig <- repoConfigLoader0.loadGlobalRepoConfig(config.repoConfigCfg)
-      urlChecker0 <- UrlChecker.create[F](config)
+      urlChecker0 <- UrlChecker
+        .create[F](config, ForgeSelection.authenticateIfApiHost(config.forgeCfg, forgeUser))
       kvsPrefix = Some(config.forgeCfg.tpe.asString)
       pullRequestsStore <- JsonKeyValueStore
         .create[F, Repo, Map[Uri, PullRequestRepository.Entry]]("pull_requests", "2", kvsPrefix)

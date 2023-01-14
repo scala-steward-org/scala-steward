@@ -21,6 +21,7 @@ import cats.{Applicative, MonadThrow}
 import org.http4s.headers.Authorization
 import org.http4s.{BasicCredentials, Header, Request}
 import org.scalasteward.core.application.Config
+import org.scalasteward.core.application.Config.ForgeCfg
 import org.scalasteward.core.forge.ForgeType._
 import org.scalasteward.core.forge.azurerepos.AzureReposApiAlg
 import org.scalasteward.core.forge.bitbucket.BitbucketApiAlg
@@ -60,15 +61,26 @@ object ForgeSelection {
     forgeType match {
       case AzureRepos      => _.putHeaders(basicAuth(user)).pure[F]
       case Bitbucket       => _.putHeaders(basicAuth(user)).pure[F]
-      case BitbucketServer =>
-        // Bypass the server-side XSRF check, see
-        // https://github.com/scala-steward-org/scala-steward/pull/1863#issuecomment-754538364
-        val xAtlassianToken = Header.Raw(ci"X-Atlassian-Token", "no-check")
-        _.putHeaders(basicAuth(user), xAtlassianToken).pure[F]
-      case GitHub => _.putHeaders(basicAuth(user)).pure[F]
-      case GitLab => _.putHeaders(Header.Raw(ci"Private-Token", user.accessToken)).pure[F]
+      case BitbucketServer => _.putHeaders(basicAuth(user), xAtlassianToken).pure[F]
+      case GitHub          => _.putHeaders(basicAuth(user)).pure[F]
+      case GitLab          => _.putHeaders(Header.Raw(ci"Private-Token", user.accessToken)).pure[F]
     }
 
   private def basicAuth(user: AuthenticatedUser): Authorization =
     Authorization(BasicCredentials(user.login, user.accessToken))
+
+  // Bypass the server-side XSRF check, see
+  // https://github.com/scala-steward-org/scala-steward/pull/1863#issuecomment-754538364
+  private val xAtlassianToken = Header.Raw(ci"X-Atlassian-Token", "no-check")
+
+  def authenticateIfApiHost[F[_]](
+      forgeCfg: ForgeCfg,
+      user: AuthenticatedUser
+  )(implicit F: Applicative[F]): Request[F] => F[Request[F]] =
+    req => {
+      val sameScheme = req.uri.scheme === forgeCfg.apiHost.scheme
+      val sameHost = req.uri.host === forgeCfg.apiHost.host
+      if (sameScheme && sameHost) authenticate(forgeCfg.tpe, user)(F)(req)
+      else req.pure[F]
+    }
 }
