@@ -113,26 +113,20 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   private val state = MockState.empty.copy(clientResponses = auth <+> httpApp)
 
   private val gitlabApiAlg = ForgeSelection.forgeApiAlg[MockEff](
-    config.copy(
-      forgeCfg = config.forgeCfg.copy(tpe = ForgeType.GitLab),
-      gitLabCfg = GitLabCfg(mergeWhenPipelineSucceeds = false, requiredReviewers = None)
-    ),
+    config.forgeCfg.copy(tpe = ForgeType.GitLab),
+    GitLabCfg(mergeWhenPipelineSucceeds = false, requiredReviewers = None),
     user
   )
 
   private val gitlabApiAlgNoFork = ForgeSelection.forgeApiAlg[MockEff](
-    config.copy(
-      forgeCfg = config.forgeCfg.copy(tpe = ForgeType.GitLab, doNotFork = true),
-      gitLabCfg = GitLabCfg(mergeWhenPipelineSucceeds = false, requiredReviewers = None)
-    ),
+    config.forgeCfg.copy(tpe = ForgeType.GitLab, doNotFork = true),
+    GitLabCfg(mergeWhenPipelineSucceeds = false, requiredReviewers = None),
     user
   )
 
   private val gitlabApiAlgLessReviewersRequired = ForgeSelection.forgeApiAlg[MockEff](
-    config.copy(
-      forgeCfg = config.forgeCfg.copy(tpe = ForgeType.GitLab, doNotFork = true),
-      gitLabCfg = GitLabCfg(mergeWhenPipelineSucceeds = true, requiredReviewers = Some(0))
-    ),
+    config.forgeCfg.copy(tpe = ForgeType.GitLab, doNotFork = true),
+    GitLabCfg(mergeWhenPipelineSucceeds = true, requiredReviewers = Some(0)),
     user
   )
 

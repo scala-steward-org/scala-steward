@@ -112,10 +112,8 @@ class BitbucketServerApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] 
   private val state = MockState.empty.copy(clientResponses = auth <+> httpApp)
 
   private val bitbucketServerApiAlg = ForgeSelection.forgeApiAlg[MockEff](
-    config.copy(
-      forgeCfg = config.forgeCfg.copy(tpe = ForgeType.BitbucketServer),
-      bitbucketServerCfg = BitbucketServerCfg(useDefaultReviewers = false)
-    ),
+    config.forgeCfg.copy(tpe = ForgeType.BitbucketServer),
+    BitbucketServerCfg(useDefaultReviewers = false),
     user
   )
 
@@ -148,10 +146,8 @@ class BitbucketServerApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] 
     )
     val pr = ForgeSelection
       .forgeApiAlg[MockEff](
-        config.copy(
-          forgeCfg = config.forgeCfg.copy(tpe = ForgeType.BitbucketServer),
-          bitbucketServerCfg = BitbucketServerCfg(useDefaultReviewers = false)
-        ),
+        config.forgeCfg.copy(tpe = ForgeType.BitbucketServer),
+        BitbucketServerCfg(useDefaultReviewers = false),
         user
       )
       .createPullRequest(repo, data)

@@ -290,8 +290,8 @@ object Cli {
       "The Azure organization (required when --forge-type is azure-repos)"
     ).orNone
 
-  private val azureReposConfig: Opts[AzureReposConfig] =
-    azureReposOrganization.map(AzureReposConfig.apply)
+  private val azureReposCfg: Opts[AzureReposCfg] =
+    azureReposOrganization.map(AzureReposCfg.apply)
 
   private val refreshBackoffPeriod: Opts[FiniteDuration] = {
     val default = 0.days
@@ -338,7 +338,7 @@ object Cli {
     bitbucketCfg,
     bitbucketServerCfg,
     gitLabCfg,
-    azureReposConfig,
+    azureReposCfg,
     gitHubApp,
     urlCheckerTestUrls,
     defaultMavenRepo,

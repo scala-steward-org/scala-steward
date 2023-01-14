@@ -9,6 +9,7 @@ import org.http4s.headers.Authorization
 import org.http4s.implicits._
 import org.http4s.{BasicCredentials, HttpApp}
 import org.scalasteward.core.TestInstances.ioLogger
+import org.scalasteward.core.application.Config.GitHubCfg
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.data._
 import org.scalasteward.core.forge.{ForgeSelection, ForgeType}
@@ -125,7 +126,8 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   private val state = MockState.empty.copy(clientResponses = auth <+> httpApp)
 
   private val gitHubApiAlg = ForgeSelection.forgeApiAlg[MockEff](
-    config.copy(forgeCfg = config.forgeCfg.copy(tpe = ForgeType.GitHub)),
+    config.forgeCfg.copy(tpe = ForgeType.GitHub),
+    GitHubCfg(),
     user
   )
 

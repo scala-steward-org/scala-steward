@@ -187,10 +187,8 @@ class BitbucketApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   private val state = MockState.empty.copy(clientResponses = auth <+> httpApp)
 
   private val bitbucketApiAlg = ForgeSelection.forgeApiAlg[MockEff](
-    config.copy(
-      forgeCfg = config.forgeCfg.copy(tpe = ForgeType.Bitbucket),
-      bitbucketCfg = BitbucketCfg(useDefaultReviewers = true)
-    ),
+    config.forgeCfg.copy(tpe = ForgeType.Bitbucket),
+    BitbucketCfg(useDefaultReviewers = true),
     user
   )
 

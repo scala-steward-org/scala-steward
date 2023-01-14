@@ -21,7 +21,7 @@ import cats.{Applicative, MonadThrow}
 import org.http4s.headers.Authorization
 import org.http4s.{BasicCredentials, Header, Request}
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.application.Config.ForgeCfg
+import org.scalasteward.core.application.Config.{ForgeCfg, ForgeSpecificCfg}
 import org.scalasteward.core.forge.ForgeType._
 import org.scalasteward.core.forge.azurerepos.AzureReposApiAlg
 import org.scalasteward.core.forge.bitbucket.BitbucketApiAlg
@@ -34,23 +34,27 @@ import org.typelevel.ci._
 import org.typelevel.log4cats.Logger
 
 object ForgeSelection {
-  def forgeApiAlg[F[_]](config: Config, user: AuthenticatedUser)(implicit
+  def forgeApiAlg[F[_]](
+      forgeCfg: ForgeCfg,
+      forgeSpecificCfg: ForgeSpecificCfg,
+      user: AuthenticatedUser
+  )(implicit
       httpJsonClient: HttpJsonClient[F],
       logger: Logger[F],
       F: MonadThrow[F]
   ): ForgeApiAlg[F] = {
-    val auth = (_: Any) => authenticate(config.forgeCfg.tpe, user)
-    config.forgeCfg.tpe match {
-      case AzureRepos =>
-        new AzureReposApiAlg[F](config.forgeCfg.apiHost, config.azureReposConfig, auth)
-      case Bitbucket =>
-        new BitbucketApiAlg(config.forgeCfg, config.bitbucketCfg, auth)
-      case BitbucketServer =>
-        new BitbucketServerApiAlg[F](config.forgeCfg.apiHost, config.bitbucketServerCfg, auth)
-      case GitHub =>
-        new GitHubApiAlg[F](config.forgeCfg.apiHost, auth)
-      case GitLab =>
-        new GitLabApiAlg[F](config.forgeCfg, config.gitLabCfg, auth)
+    val auth = (_: Any) => authenticate(forgeCfg.tpe, user)
+    forgeSpecificCfg match {
+      case specificCfg: Config.AzureReposCfg =>
+        new AzureReposApiAlg[F](forgeCfg.apiHost, specificCfg, auth)
+      case specificCfg: Config.BitbucketCfg =>
+        new BitbucketApiAlg(forgeCfg, specificCfg, auth)
+      case specificCfg: Config.BitbucketServerCfg =>
+        new BitbucketServerApiAlg[F](forgeCfg.apiHost, specificCfg, auth)
+      case _: Config.GitHubCfg =>
+        new GitHubApiAlg[F](forgeCfg.apiHost, auth)
+      case specificCfg: Config.GitLabCfg =>
+        new GitLabApiAlg[F](forgeCfg, specificCfg, auth)
     }
   }
 
