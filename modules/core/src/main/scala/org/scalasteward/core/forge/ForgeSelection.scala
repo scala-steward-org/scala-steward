@@ -21,6 +21,7 @@ import cats.{Applicative, MonadThrow}
 import org.http4s.headers.Authorization
 import org.http4s.{BasicCredentials, Header, Request}
 import org.scalasteward.core.application.Config
+import org.scalasteward.core.application.Config.ForgeCfg
 import org.scalasteward.core.forge.ForgeType._
 import org.scalasteward.core.forge.azurerepos.AzureReposApiAlg
 import org.scalasteward.core.forge.bitbucket.BitbucketApiAlg
@@ -67,6 +68,17 @@ object ForgeSelection {
         _.putHeaders(basicAuth(user), xAtlassianToken).pure[F]
       case GitHub => _.putHeaders(basicAuth(user)).pure[F]
       case GitLab => _.putHeaders(Header.Raw(ci"Private-Token", user.accessToken)).pure[F]
+    }
+
+  def authenticateIfApiHost[F[_]](
+      forgeCfg: ForgeCfg,
+      user: AuthenticatedUser
+  )(implicit F: Applicative[F]): Request[F] => F[Request[F]] =
+    req => {
+      val sameScheme = req.uri.scheme === forgeCfg.apiHost.scheme
+      val sameHost = req.uri.host === forgeCfg.apiHost.host
+      if (sameScheme && sameHost) authenticate(forgeCfg.tpe, user)(F)(req)
+      else req.pure[F]
     }
 
   private def basicAuth(user: AuthenticatedUser): Authorization =
