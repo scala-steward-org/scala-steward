@@ -37,11 +37,24 @@ final class SelfCheckAlg[F[_]](config: Config)(implicit
   def checkAll: F[Unit] =
     for {
       _ <- logger.info("Run self checks")
+      _ <- checkWorkspaceDirectory
       _ <- checkGitBinary
       _ <- checkScalafixBinary
       _ <- checkScalafmtBinary
       _ <- checkUrlChecker
     } yield ()
+
+  private def checkWorkspaceDirectory: F[Unit] =
+    F.whenA(!config.workspace.exists)(
+      logger.warn(
+        """
+          |The workspace is empty.
+          |This is expected if this is your first Scala Steward run.
+          |Make sure to preserve the workspace between runs for all features to work as expected.
+          |https://github.com/scala-steward-org/scala-steward/blob/main/docs/faq.md#why-doesnt-self-hosted-scala-steward-close-obsolete-prs
+          |""".stripMargin
+      )
+    )
 
   private def checkGitBinary: F[Unit] =
     logger.attemptWarn.log_(execFailedMessage("git")) {
