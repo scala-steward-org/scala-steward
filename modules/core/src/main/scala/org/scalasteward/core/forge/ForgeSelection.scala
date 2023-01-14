@@ -61,14 +61,14 @@ object ForgeSelection {
     forgeType match {
       case AzureRepos      => _.putHeaders(basicAuth(user)).pure[F]
       case Bitbucket       => _.putHeaders(basicAuth(user)).pure[F]
-      case BitbucketServer =>
-        // Bypass the server-side XSRF check, see
-        // https://github.com/scala-steward-org/scala-steward/pull/1863#issuecomment-754538364
-        val xAtlassianToken = Header.Raw(ci"X-Atlassian-Token", "no-check")
-        _.putHeaders(basicAuth(user), xAtlassianToken).pure[F]
-      case GitHub => _.putHeaders(basicAuth(user)).pure[F]
-      case GitLab => _.putHeaders(Header.Raw(ci"Private-Token", user.accessToken)).pure[F]
+      case BitbucketServer => _.putHeaders(basicAuth(user), xAtlassianToken).pure[F]
+      case GitHub          => _.putHeaders(basicAuth(user)).pure[F]
+      case GitLab          => _.putHeaders(Header.Raw(ci"Private-Token", user.accessToken)).pure[F]
     }
+
+  // Bypass the server-side XSRF check, see
+  // https://github.com/scala-steward-org/scala-steward/pull/1863#issuecomment-754538364
+  private val xAtlassianToken = Header.Raw(ci"X-Atlassian-Token", "no-check")
 
   def authenticateIfApiHost[F[_]](
       forgeCfg: ForgeCfg,
