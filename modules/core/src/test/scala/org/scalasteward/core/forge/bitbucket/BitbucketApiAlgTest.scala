@@ -186,13 +186,13 @@ class BitbucketApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   }
   private val state = MockState.empty.copy(clientResponses = auth <+> httpApp)
 
-  private val bitbucketApiAlg = new ForgeSelection[MockEff](
+  private val bitbucketApiAlg = ForgeSelection.forgeApiAlg[MockEff](
     config.copy(
       forgeCfg = config.forgeCfg.copy(tpe = ForgeType.Bitbucket),
       bitbucketCfg = BitbucketCfg(useDefaultReviewers = true)
     ),
     user
-  ).forgeApiAlg
+  )
 
   private val prUrl = uri"https://bitbucket.org/fthomas/base.g8/pullrequests/2"
   private val repo = Repo("fthomas", "base.g8")
