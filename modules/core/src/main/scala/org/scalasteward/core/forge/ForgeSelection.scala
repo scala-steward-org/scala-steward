@@ -66,6 +66,9 @@ object ForgeSelection {
       case GitLab          => _.putHeaders(Header.Raw(ci"Private-Token", user.accessToken)).pure[F]
     }
 
+  private def basicAuth(user: AuthenticatedUser): Authorization =
+    Authorization(BasicCredentials(user.login, user.accessToken))
+
   // Bypass the server-side XSRF check, see
   // https://github.com/scala-steward-org/scala-steward/pull/1863#issuecomment-754538364
   private val xAtlassianToken = Header.Raw(ci"X-Atlassian-Token", "no-check")
@@ -80,7 +83,4 @@ object ForgeSelection {
       if (sameScheme && sameHost) authenticate(forgeCfg.tpe, user)(F)(req)
       else req.pure[F]
     }
-
-  private def basicAuth(user: AuthenticatedUser): Authorization =
-    Authorization(BasicCredentials(user.login, user.accessToken))
 }
