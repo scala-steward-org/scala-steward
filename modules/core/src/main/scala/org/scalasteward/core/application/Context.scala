@@ -108,7 +108,7 @@ object Context {
   )(implicit F: Async[F]): Resource[F, StewardContext[F]] =
     for {
       logger0 <- Resource.eval(Slf4jLogger.fromName[F]("org.scalasteward.core"))
-      _ <- Resource.eval(printBanner(logger0))
+      _ <- Resource.eval(logger0.info(banner))
       _ <- Resource.eval(F.delay(System.setProperty("http.agent", userAgentString)))
       userAgent <- Resource.eval(F.fromEither(`User-Agent`.parse(1)(userAgentString)))
       middleware = ClientConfiguration
@@ -235,16 +235,15 @@ object Context {
       new Context[F]
     }
 
-  private def printBanner[F[_]](logger: Logger[F]): F[Unit] = {
+  private val banner: String = {
     val banner =
       """|  ____            _         ____  _                             _
          | / ___|  ___ __ _| | __ _  / ___|| |_ _____      ____ _ _ __ __| |
          | \___ \ / __/ _` | |/ _` | \___ \| __/ _ \ \ /\ / / _` | '__/ _` |
          |  ___) | (_| (_| | | (_| |  ___) | ||  __/\ V  V / (_| | | | (_| |
          | |____/ \___\__,_|_|\__,_| |____/ \__\___| \_/\_/ \__,_|_|  \__,_|""".stripMargin
-    val msg = List(" ", banner, s" v${org.scalasteward.core.BuildInfo.version}", " ")
+    List(" ", banner, s" v${org.scalasteward.core.BuildInfo.version}", " ")
       .mkString(System.lineSeparator())
-    logger.info(msg)
   }
 
   private val userAgentString: String =
