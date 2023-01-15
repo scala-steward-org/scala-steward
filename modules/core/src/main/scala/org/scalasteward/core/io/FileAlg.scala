@@ -34,6 +34,8 @@ trait FileAlg[F[_]] {
 
   def isDirectory(file: File): F[Boolean]
 
+  def isNonEmptyDirectory(dir: File): F[Boolean]
+
   def isRegularFile(file: File): F[Boolean]
 
   def removeTemporarily(file: File): Resource[F, Unit]
@@ -100,6 +102,9 @@ object FileAlg {
 
       override def isDirectory(file: File): F[Boolean] =
         F.blocking(file.isDirectory(File.LinkOptions.noFollow))
+
+      override def isNonEmptyDirectory(dir: File): F[Boolean] =
+        F.blocking(dir.isDirectory(File.LinkOptions.noFollow) && dir.nonEmpty)
 
       override def isRegularFile(file: File): F[Boolean] =
         F.blocking(file.isRegularFile(File.LinkOptions.noFollow))

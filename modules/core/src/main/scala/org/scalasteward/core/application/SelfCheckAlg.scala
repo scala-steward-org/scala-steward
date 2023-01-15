@@ -21,12 +21,14 @@ import cats.syntax.all._
 import org.scalasteward.core.edit.scalafix.ScalafixCli
 import org.scalasteward.core.edit.scalafix.ScalafixCli.scalafixBinary
 import org.scalasteward.core.git.GitAlg
+import org.scalasteward.core.io.FileAlg
 import org.scalasteward.core.scalafmt.{scalafmtBinary, ScalafmtAlg}
 import org.scalasteward.core.util.UrlChecker
 import org.scalasteward.core.util.logger.LoggerOps
 import org.typelevel.log4cats.Logger
 
 final class SelfCheckAlg[F[_]](config: Config)(implicit
+    fileAlg: FileAlg[F],
     gitAlg: GitAlg[F],
     logger: Logger[F],
     scalafixCli: ScalafixCli[F],
@@ -45,16 +47,19 @@ final class SelfCheckAlg[F[_]](config: Config)(implicit
     } yield ()
 
   private def checkWorkspaceDirectory: F[Unit] =
-    F.whenA(!config.workspace.exists)(
-      logger.warn(
-        """
-          |The workspace is empty.
-          |This is expected if this is your first Scala Steward run.
-          |Make sure to preserve the workspace between runs for all features to work as expected.
-          |https://github.com/scala-steward-org/scala-steward/blob/main/docs/faq.md#why-doesnt-self-hosted-scala-steward-close-obsolete-prs
-          |""".stripMargin
+    fileAlg
+      .isNonEmptyDirectory(config.workspace)
+      .ifM(
+        F.unit,
+        logger.warn(
+          """
+            |The workspace is empty.
+            |This is expected if this is your first Scala Steward run.
+            |Make sure to preserve the workspace between runs for all features to work as expected.
+            |https://github.com/scala-steward-org/scala-steward/blob/main/docs/faq.md#why-doesnt-self-hosted-scala-steward-close-obsolete-prs
+            |""".stripMargin
+        )
       )
-    )
 
   private def checkGitBinary: F[Unit] =
     logger.attemptWarn.log_(execFailedMessage("git")) {
