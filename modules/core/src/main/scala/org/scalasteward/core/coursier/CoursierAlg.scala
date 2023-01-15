@@ -152,7 +152,9 @@ object CoursierAlg {
       scmUrl = project.info.scm.flatMap(_.url).flatMap(uri.fromStringWithScheme),
       releaseNotesUrl = project.properties
         .collectFirst { case (key, value) if key.equalsIgnoreCase("info.releaseNotesUrl") => value }
-        .flatMap(uri.fromStringWithScheme)
+        .flatMap(uri.fromStringWithScheme),
+      versionScheme = project.properties
+        .collectFirst { case (key, value) if key.equalsIgnoreCase("info.versionScheme") => value }
     )
 
   private def parentOf(project: Project): Option[coursier.Dependency] =

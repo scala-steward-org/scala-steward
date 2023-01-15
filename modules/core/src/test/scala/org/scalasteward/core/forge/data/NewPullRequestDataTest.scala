@@ -26,7 +26,11 @@ class NewPullRequestDataTest extends FunSuite {
       dummySha1,
       Branch("update/logback-classic-1.2.3")
     )
-    val obtained = from(data, "scala-steward:update/logback-classic-1.2.3").asJson.spaces2
+    val obtained = from(
+      data,
+      "scala-steward:update/logback-classic-1.2.3",
+      labels = labelsFor(data.update)
+    ).asJson.spaces2
     val expected =
       raw"""|{
             |  "title" : "Update logback-classic to 1.2.3",
@@ -57,7 +61,11 @@ class NewPullRequestDataTest extends FunSuite {
       dummySha1,
       Branch("update/logback-classic-1.2.3")
     )
-    val obtained = from(data, "scala-steward:update/logback-classic-1.2.3").asJson.spaces2
+    val obtained = from(
+      data,
+      "scala-steward:update/logback-classic-1.2.3",
+      labels = labelsFor(data.update)
+    ).asJson.spaces2
     val expected =
       raw"""|{
             |  "title" : "Update logback-classic to 1.2.3",
@@ -148,7 +156,7 @@ class NewPullRequestDataTest extends FunSuite {
     val edits = List(scalafixEdit)
     val appliedMigrations = migrationNote(edits)
     val update = ("a".g % "b".a % "1" -> "2").single
-    val labels = labelsFor(update, edits, List.empty, None)
+    val labels = labelsFor(update, edits, List.empty)
 
     assert(labels.contains("scalafix-migrations"))
     assertEquals(
@@ -178,7 +186,7 @@ class NewPullRequestDataTest extends FunSuite {
     val edits = List(scalafixEdit)
     val detail = migrationNote(edits)
     val update = ("a".g % "b".a % "1" -> "2").single
-    val labels = labelsFor(update, edits, List.empty, None)
+    val labels = labelsFor(update, edits, List.empty)
 
     assert(labels.contains("scalafix-migrations"))
     assertEquals(
@@ -220,7 +228,7 @@ class NewPullRequestDataTest extends FunSuite {
     val edits = List(scalafixEdit1, scalafixEdit2)
     val detail = migrationNote(edits)
     val update = ("a".g % "b".a % "1" -> "2").single
-    val labels = labelsFor(update, edits, List.empty, None)
+    val labels = labelsFor(update, edits, List.empty)
 
     assert(labels.contains("scalafix-migrations"))
     assertEquals(
@@ -242,19 +250,19 @@ class NewPullRequestDataTest extends FunSuite {
   test("updateType") {
     val dependency = "com.example".g % "foo".a % "0.1"
     val single = (dependency %> "0.2").single
-    assertEquals(updateType(single), List("library-update"))
+    assertEquals(updateTypeLabels(single), List("library-update"))
 
     val group = ("com.example".g % Nel.of("foo".a, "bar".a) % "0.1" %> "0.2").group
-    assertEquals(updateType(group), List("library-update"))
+    assertEquals(updateTypeLabels(group), List("library-update"))
 
     val testUpdate = (dependency % "test" %> "0.2").single
-    assertEquals(updateType(testUpdate), List("test-library-update"))
+    assertEquals(updateTypeLabels(testUpdate), List("test-library-update"))
 
     val sbtPluginUpdate = (dependency.copy(sbtVersion = Some(SbtVersion("1.0"))) %> "0.2").single
-    assertEquals(updateType(sbtPluginUpdate), List("sbt-plugin-update"))
+    assertEquals(updateTypeLabels(sbtPluginUpdate), List("sbt-plugin-update"))
 
     val scalafixRuleUpdate = (dependency % "scalafix-rule" %> "0.2").single
-    assertEquals(updateType(scalafixRuleUpdate), List("scalafix-rule-update"))
+    assertEquals(updateTypeLabels(scalafixRuleUpdate), List("scalafix-rule-update"))
   }
 
   test("oldVersionNote without files") {
@@ -267,7 +275,7 @@ class NewPullRequestDataTest extends FunSuite {
     val files = List("Readme.md", "travis.yml")
     val update = ("com.example".g % "foo".a % "0.1" %> "0.2").single
     val note = oldVersionNote(files, update)
-    val labels = labelsFor(update, List.empty, files, None)
+    val labels = labelsFor(update, List.empty, files)
 
     assert(labels.contains("old-version-remains"))
     assertEquals(
@@ -301,21 +309,22 @@ class NewPullRequestDataTest extends FunSuite {
       Some(Commit(dummySha1))
     )
 
-    val oneEdit = labelsFor(update, List(updateEdit), List.empty, None)
+    val oneEdit = labelsFor(update, List(updateEdit), List.empty)
     assert(clue(oneEdit).contains("commit-count:1"))
 
-    val twoEdits = labelsFor(update, List(updateEdit, scalafixEdit), List.empty, None)
+    val twoEdits = labelsFor(update, List(updateEdit, scalafixEdit), List.empty)
     assert(clue(twoEdits).contains("commit-count:n:2"))
   }
 
   test("regex label filtering") {
     val update = ("a".g % "b".a % "1" -> "2").single
     val updateEdit = UpdateEdit(update, Commit(dummySha1))
+    val allLabels = labelsFor(update, List(updateEdit), List.empty)
 
-    val first = labelsFor(update, List(updateEdit), List.empty, Some("library-.+".r))
+    val first = filterLabels(allLabels, Some("library-.+".r))
     assertEquals(clue(first), List("library-update"))
 
-    val second = labelsFor(update, List(updateEdit), List.empty, Some("(.*update.*)|(.*count.*)".r))
+    val second = filterLabels(allLabels, Some("(.*update.*)|(.*count.*)".r))
     assertEquals(clue(second), List("library-update", "commit-count:1"))
   }
 
@@ -324,7 +333,7 @@ class NewPullRequestDataTest extends FunSuite {
     val update2 = ("c".g % "d".a % "1.1.0" % "test" %> "1.2.0").single
     val update = Update.Grouped("my-group", None, List(update1, update2))
 
-    val labels = labelsFor(update, Nil, Nil, None)
+    val labels = labelsFor(update, Nil, Nil)
 
     val expected = List(
       "library-update",
@@ -411,7 +420,11 @@ class NewPullRequestDataTest extends FunSuite {
       Branch("update/logback-classic-1.2.3")
     )
 
-    val obtained = from(data, "scala-steward:update/logback-classic-1.2.3").asJson.spaces2
+    val obtained = from(
+      data,
+      "scala-steward:update/logback-classic-1.2.3",
+      labels = labelsFor(update)
+    ).asJson.spaces2
 
     val body =
       raw"""Updates:

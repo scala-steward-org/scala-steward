@@ -28,6 +28,7 @@ import org.scalasteward.core.nurture.UpdateInfoUrl
 import org.scalasteward.core.nurture.UpdateInfoUrl._
 import org.scalasteward.core.repoconfig.{GroupRepoConfig, RepoConfigAlg}
 import org.scalasteward.core.util.{Details, Nel}
+
 import scala.util.matching.Regex
 
 final case class NewPullRequestData(
@@ -225,9 +226,8 @@ object NewPullRequestData {
       artifactIdToUrl: Map[String, Uri] = Map.empty,
       artifactIdToUpdateInfoUrls: Map[String, List[UpdateInfoUrl]] = Map.empty,
       filesWithOldVersion: List[String] = List.empty,
-      includeMatchedLabels: Option[Regex] = None
-  ): NewPullRequestData = {
-    val labels = labelsFor(data.update, edits, filesWithOldVersion, includeMatchedLabels)
+      labels: List[String] = List.empty
+  ): NewPullRequestData =
     NewPullRequestData(
       title = CommitMsg
         .replaceVariables(data.repoConfig.commits.messageOrDefault)(
@@ -248,9 +248,8 @@ object NewPullRequestData {
       base = data.baseBranch,
       labels = labels
     )
-  }
 
-  def updateType(anUpdate: Update): List[String] = {
+  def updateTypeLabels(anUpdate: Update): List[String] = {
     def forUpdate(update: Update.Single) = {
       val dependencies = update.dependencies
       if (dependencies.forall(_.configurations.contains("test")))
@@ -268,9 +267,9 @@ object NewPullRequestData {
 
   def labelsFor(
       update: Update,
-      edits: List[EditAttempt],
-      filesWithOldVersion: List[String],
-      includeMatchedLabels: Option[Regex]
+      edits: List[EditAttempt] = List.empty,
+      filesWithOldVersion: List[String] = List.empty,
+      artifactIdToVersionScheme: Map[String, String] = Map.empty
   ): List[String] = {
     val commitCount = edits.flatMap(_.commits).size
     val commitCountLabel = "commit-count:" + (commitCount match {
@@ -287,18 +286,22 @@ object NewPullRequestData {
       val semVerSpecLabel = semVerVersions.flatMap { case (curr, next) =>
         SemVer.getChangeSpec(curr, next).map(c => s"semver-spec-${c.render}")
       }
-      List(earlySemVerLabel, semVerSpecLabel).flatten
+      val versionSchemeLabel =
+        artifactIdToVersionScheme.get(u.mainArtifactId).map(vs => s"version-scheme-$vs")
+      List(earlySemVerLabel, semVerSpecLabel, versionSchemeLabel).flatten
     }
-    val semver: List[String] =
+    val semverLabels =
       update.on(u => semverForUpdate(u), _.updates.flatMap(semverForUpdate(_)).distinct)
 
     val scalafixLabel = edits.collectFirst { case _: ScalafixEdit => "scalafix-migrations" }
     val oldVersionLabel = Option.when(filesWithOldVersion.nonEmpty)("old-version-remains")
 
-    val allLabels = updateType(update) ++
-      semver ++ List(scalafixLabel, oldVersionLabel).flatten ++
+    updateTypeLabels(update) ++
+      semverLabels ++ List(scalafixLabel, oldVersionLabel).flatten ++
       List(commitCountLabel)
-
-    allLabels.filter(label => includeMatchedLabels.fold(true)(_.matches(label)))
   }
+
+  def filterLabels(labels: List[String], includeMatchedLabels: Option[Regex]): List[String] =
+    labels.filter(label => includeMatchedLabels.fold(true)(_.matches(label)))
+
 }
