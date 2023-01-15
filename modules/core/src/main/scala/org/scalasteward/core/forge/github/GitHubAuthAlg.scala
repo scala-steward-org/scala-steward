@@ -32,7 +32,11 @@ trait GitHubAuthAlg[F[_]] {
 
   /** [[https://docs.github.com/en/free-pro-team@latest/developers/apps/authenticating-with-github-apps#authenticating-as-a-github-app]]
     */
-  def createJWT(app: GitHubApp, ttl: FiniteDuration): F[String]
+  def createJWT(
+      app: GitHubApp,
+      ttl: FiniteDuration,
+      nowMillis: Long = System.currentTimeMillis()
+  ): F[String]
 }
 
 object GitHubAuthAlg {
@@ -56,10 +60,13 @@ object GitHubAuthAlg {
 
       /** [[https://docs.github.com/en/free-pro-team@latest/developers/apps/authenticating-with-github-apps#authenticating-as-a-github-app]]
         */
-      def createJWT(app: GitHubApp, ttl: FiniteDuration): F[String] = F.delay {
+      def createJWT(
+          app: GitHubApp,
+          ttl: FiniteDuration,
+          nowMillis: Long = System.currentTimeMillis()
+      ): F[String] = F.delay {
         Security.addProvider(new BouncyCastleProvider())
         val ttlMillis = ttl.toMillis
-        val nowMillis = System.currentTimeMillis()
         val now = new Date(nowMillis)
         val signingKey = readPrivateKey(app.keyFile)
         val builder = Jwts
