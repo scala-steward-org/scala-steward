@@ -18,6 +18,12 @@ class MockFileAlg extends FileAlg[MockEff] {
   override def isDirectory(file: File): MockEff[Boolean] =
     Kleisli(_.update(_.exec(List("test", "-d", file.pathAsString))) >> ioFileAlg.isDirectory(file))
 
+  override def isNonEmptyDirectory(dir: File): MockEff[Boolean] =
+    Kleisli(
+      _.update(_.exec(List("find", dir.pathAsString, "-type", "d", "-not", "-empty"))) >> ioFileAlg
+        .isNonEmptyDirectory(dir)
+    )
+
   override def isRegularFile(file: File): MockEff[Boolean] =
     Kleisli {
       _.update(_.exec(List("test", "-f", file.pathAsString))) >> ioFileAlg.isRegularFile(file)
