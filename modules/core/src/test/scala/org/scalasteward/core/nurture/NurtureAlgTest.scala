@@ -59,7 +59,7 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
              |Or, add this to slow down future updates of this dependency:
              |```
              |dependencyOverrides = [{
-             |  pullRequests = { frequency = "@monthly" },
+             |  pullRequests = { frequency = "30 days" },
              |  dependency = { groupId = "org.typelevel", artifactId = "cats-effect" }
              |}]
              |```

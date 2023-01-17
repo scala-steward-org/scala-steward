@@ -38,12 +38,12 @@ object GroupRepoConfig {
     val forUpdate: Update.Single => String = {
       case s: Update.ForArtifactId =>
         s"""{
-           |  pullRequests = { frequency = "@monthly" },
+           |  pullRequests = { frequency = "30 days" },
            |  dependency = { groupId = "${s.groupId}", artifactId = "${s.artifactId.name}" }
            |}""".stripMargin
       case g: Update.ForGroupId =>
         s"""{
-           |  pullRequests = { frequency = "@monthly" },
+           |  pullRequests = { frequency = "30 days" },
            |  dependency = { groupId = "${g.groupId}" }
            |}""".stripMargin
     }

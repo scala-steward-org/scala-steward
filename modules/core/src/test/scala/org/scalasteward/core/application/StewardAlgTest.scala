@@ -8,6 +8,6 @@ import org.scalasteward.core.mock.MockState
 class StewardAlgTest extends CatsEffectSuite {
   test("runF") {
     val exitCode = stewardAlg.runF.runA(MockState.empty)
-    exitCode.map(assertEquals(_, ExitCode.Success))
+    assertIO(exitCode, ExitCode.Success)
   }
 }
