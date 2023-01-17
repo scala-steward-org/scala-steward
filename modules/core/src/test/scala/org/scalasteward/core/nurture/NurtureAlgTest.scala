@@ -65,7 +65,7 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
              |```
              |</details>
              |
-             |labels: library-update, early-semver-minor, semver-spec-minor, version-scheme-early-semver, commit-count:1
+             |labels: library-update, early-semver-minor, semver-spec-minor, version-scheme:early-semver, commit-count:1
              |""".stripMargin.trim,
       head = "scala-steward:update/cats-effect-3.4.0",
       base = baseBranch,
@@ -73,7 +73,7 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
         "library-update",
         "early-semver-minor",
         "semver-spec-minor",
-        "version-scheme-early-semver",
+        "version-scheme:early-semver",
         "commit-count:1"
       )
     )

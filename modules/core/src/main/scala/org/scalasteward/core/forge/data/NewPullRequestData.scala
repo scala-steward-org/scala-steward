@@ -287,7 +287,7 @@ object NewPullRequestData {
         SemVer.getChangeSpec(curr, next).map(c => s"semver-spec-${c.render}")
       }
       val versionSchemeLabel =
-        artifactIdToVersionScheme.get(u.mainArtifactId).map(vs => s"version-scheme-$vs")
+        artifactIdToVersionScheme.get(u.mainArtifactId).map(vs => s"version-scheme:$vs")
       List(earlySemVerLabel, semVerSpecLabel, versionSchemeLabel).flatten
     }
     val semverLabels =
