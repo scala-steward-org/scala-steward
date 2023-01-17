@@ -30,7 +30,7 @@ class NewPullRequestDataTest extends FunSuite {
     val expected =
       raw"""|{
             |  "title" : "Update logback-classic to 1.2.3",
-            |  "body" : "Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3.\n\n\nI'll automatically update this PR to resolve conflicts as long as you don't change it yourself.\n\nIf you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.\n\nConfigure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.\n\nHave a fantastic day writing Scala!\n\n<details>\n<summary>Adjust future updates</summary>\n\nAdd this to your `.scala-steward.conf` file to ignore future updates of this dependency:\n```\nupdates.ignore = [ { groupId = \"ch.qos.logback\", artifactId = \"logback-classic\" } ]\n```\nOr, add this to slow down future updates of this dependency:\n```\ndependencyOverrides = [{\n  pullRequests = { frequency = \"@monthly\" },\n  dependency = { groupId = \"ch.qos.logback\", artifactId = \"logback-classic\" }\n}]\n```\n</details>\n\nlabels: library-update, early-semver-patch, semver-spec-patch, commit-count:0",
+            |  "body" : "Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3.\n\n\nI'll automatically update this PR to resolve conflicts as long as you don't change it yourself.\n\nIf you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.\n\nConfigure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.\n\nHave a fantastic day writing Scala!\n\n<details>\n<summary>Adjust future updates</summary>\n\nAdd this to your `.scala-steward.conf` file to ignore future updates of this dependency:\n```\nupdates.ignore = [ { groupId = \"ch.qos.logback\", artifactId = \"logback-classic\" } ]\n```\nOr, add this to slow down future updates of this dependency:\n```\ndependencyOverrides = [{\n  pullRequests = { frequency = \"30 days\" },\n  dependency = { groupId = \"ch.qos.logback\", artifactId = \"logback-classic\" }\n}]\n```\n</details>\n\nlabels: library-update, early-semver-patch, semver-spec-patch, commit-count:0",
             |  "head" : "scala-steward:update/logback-classic-1.2.3",
             |  "base" : "master",
             |  "labels" : [
@@ -61,7 +61,7 @@ class NewPullRequestDataTest extends FunSuite {
     val expected =
       raw"""|{
             |  "title" : "Update logback-classic to 1.2.3",
-            |  "body" : "Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3.\n\n\nI'll automatically update this PR to resolve conflicts as long as you don't change it yourself.\n\nIf you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.\n\nConfigure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.\n\nHave a fantastic day writing Scala!\n\n<details>\n<summary>Adjust future updates</summary>\n\nAdd this to your `.scala-steward.conf` file to ignore future updates of this dependency:\n```\nupdates.ignore = [ { groupId = \"ch.qos.logback\", artifactId = \"logback-classic\" } ]\n```\nOr, add this to slow down future updates of this dependency:\n```\ndependencyOverrides = [{\n  pullRequests = { frequency = \"@monthly\" },\n  dependency = { groupId = \"ch.qos.logback\", artifactId = \"logback-classic\" }\n}]\n```\n</details>\n<details>\n<summary>Note that the Scala Steward config file `.scala-steward.conf` wasn't parsed correctly</summary>\n\n```\nFailed to parse .scala-steward.conf\n```\n</details>\n\nlabels: library-update, early-semver-patch, semver-spec-patch, commit-count:0",
+            |  "body" : "Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3.\n\n\nI'll automatically update this PR to resolve conflicts as long as you don't change it yourself.\n\nIf you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.\n\nConfigure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.\n\nHave a fantastic day writing Scala!\n\n<details>\n<summary>Adjust future updates</summary>\n\nAdd this to your `.scala-steward.conf` file to ignore future updates of this dependency:\n```\nupdates.ignore = [ { groupId = \"ch.qos.logback\", artifactId = \"logback-classic\" } ]\n```\nOr, add this to slow down future updates of this dependency:\n```\ndependencyOverrides = [{\n  pullRequests = { frequency = \"30 days\" },\n  dependency = { groupId = \"ch.qos.logback\", artifactId = \"logback-classic\" }\n}]\n```\n</details>\n<details>\n<summary>Note that the Scala Steward config file `.scala-steward.conf` wasn't parsed correctly</summary>\n\n```\nFailed to parse .scala-steward.conf\n```\n</details>\n\nlabels: library-update, early-semver-patch, semver-spec-patch, commit-count:0",
             |  "head" : "scala-steward:update/logback-classic-1.2.3",
             |  "base" : "master",
             |  "labels" : [
@@ -384,11 +384,11 @@ class NewPullRequestDataTest extends FunSuite {
         |```
         |dependencyOverrides = [
         |  {
-        |    pullRequests = { frequency = "@monthly" },
+        |    pullRequests = { frequency = "30 days" },
         |    dependency = { groupId = "a", artifactId = "b" }
         |  },
         |  {
-        |    pullRequests = { frequency = "@monthly" },
+        |    pullRequests = { frequency = "30 days" },
         |    dependency = { groupId = "c", artifactId = "d" }
         |  }
         |]
@@ -442,11 +442,11 @@ class NewPullRequestDataTest extends FunSuite {
            |```
            |dependencyOverrides = [
            |  {
-           |    pullRequests = { frequency = \"@monthly\" },
+           |    pullRequests = { frequency = \"30 days\" },
            |    dependency = { groupId = \"ch.qos.logback\", artifactId = \"logback-classic\" }
            |  },
            |  {
-           |    pullRequests = { frequency = \"@monthly\" },
+           |    pullRequests = { frequency = \"30 days\" },
            |    dependency = { groupId = \"com.example\", artifactId = \"foo\" }
            |  }
            |]
