@@ -25,9 +25,11 @@ import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io.{ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
+import org.typelevel.log4cats.Logger
 
 final class ScalaCliAlg[F[_]](implicit
     gitAlg: GitAlg[F],
+    logger: Logger[F],
     processAlg: ProcessAlg[F],
     sbtAlg: SbtAlg[F],
     workspaceAlg: WorkspaceAlg[F],
@@ -56,5 +58,7 @@ final class ScalaCliAlg[F[_]](implicit
     } yield dependencies
 
   override def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
-    F.unit
+    logger.warn(
+      s"Scalafix migrations are currently not supported in $name projects"
+    )
 }

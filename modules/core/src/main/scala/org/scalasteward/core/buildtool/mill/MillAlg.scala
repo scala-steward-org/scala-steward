@@ -66,7 +66,7 @@ final class MillAlg[F[_]](implicit
 
   override def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
     logger.warn(
-      "Scalafix migrations are currently not supported in Mill projects, see https://github.com/scala-steward-org/scala-steward/issues/2838 for details"
+      s"Scalafix migrations are currently not supported in $name projects, see https://github.com/scala-steward-org/scala-steward/issues/2838 for details"
     )
 
   private def getMillVersion(buildRootDir: File): F[Option[Version]] =
