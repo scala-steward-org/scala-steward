@@ -23,11 +23,12 @@ import org.scalasteward.core.buildtool.{BuildRoot, BuildToolAlg}
 import org.scalasteward.core.data.Scope
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.git.GitAlg
-import org.scalasteward.core.io.{ProcessAlg, WorkspaceAlg}
+import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
 import org.typelevel.log4cats.Logger
 
 final class ScalaCliAlg[F[_]](implicit
+    fileAlg: FileAlg[F],
     gitAlg: GitAlg[F],
     logger: Logger[F],
     processAlg: ProcessAlg[F],
@@ -55,6 +56,7 @@ final class ScalaCliAlg[F[_]](implicit
       _ <- processAlg.execSandboxed(exportCmd, buildRootDir)
       exportBuildRoot = buildRoot.copy(relativePath = buildRoot.relativePath + s"/$exportDir")
       dependencies <- sbtAlg.getDependencies(exportBuildRoot)
+      _ <- fileAlg.deleteForce(buildRootDir / exportDir)
     } yield dependencies
 
   override def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
