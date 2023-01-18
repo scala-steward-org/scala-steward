@@ -38,8 +38,12 @@ final class ScalaCliAlg[F[_]](implicit
 ) extends BuildToolAlg[F] {
   override def name: String = "Scala CLI"
 
-  override def containsBuild(buildRoot: BuildRoot): F[Boolean] =
-    gitAlg.findFilesContaining(buildRoot.repo, "//> using lib ").map(_.nonEmpty)
+  override def containsBuild(buildRoot: BuildRoot): F[Boolean] = {
+    val buildRootPath = buildRoot.relativePath.dropWhile(Set('.', '/'))
+    gitAlg
+      .findFilesContaining(buildRoot.repo, "//> using lib ")
+      .map(_.exists(_.startsWith(buildRootPath)))
+  }
 
   override def getDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
     for {
