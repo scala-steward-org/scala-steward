@@ -3,10 +3,12 @@ package org.scalasteward.core.buildtool.scalacli
 import munit.CatsEffectSuite
 import org.scalasteward.core.buildtool.BuildRoot
 import org.scalasteward.core.buildtool.sbt.command._
-import org.scalasteward.core.data.Repo
+import org.scalasteward.core.data.{GroupId, Repo, Version}
+import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.mock.MockContext.context._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
+import org.scalasteward.core.util.Nel
 
 class ScalaCliAlgTest extends CatsEffectSuite {
   test("getDependencies") {
@@ -56,5 +58,18 @@ class ScalaCliAlgTest extends CatsEffectSuite {
     )
 
     assertIO(obtained, expected)
+  }
+
+  test("runMigration") {
+    val repo = Repo("user", "repo")
+    val buildRoot = BuildRoot(repo, ".")
+    val migration = ScalafixMigration(
+      GroupId("co.fs2"),
+      Nel.of("fs2-core"),
+      Version("1.0.0"),
+      Nel.of("github:functional-streams-for-scala/fs2/v1?sha=v1.0.5")
+    )
+    val obtained = scalaCliAlg.runMigration(buildRoot, migration).runS(MockState.empty)
+    assertIOBoolean(obtained.map(_.trace.nonEmpty))
   }
 }
