@@ -76,6 +76,7 @@ final class Context[F[_]](implicit
     val repoCacheAlg: RepoCacheAlg[F],
     val repoConfigAlg: RepoConfigAlg[F],
     val sbtAlg: SbtAlg[F],
+    val scalaCliAlg: ScalaCliAlg[F],
     val scalafixMigrationsFinder: ScalafixMigrationsFinder,
     val scalafixMigrationsLoader: ScalafixMigrationsLoader[F],
     val scalafmtAlg: ScalafmtAlg[F],
