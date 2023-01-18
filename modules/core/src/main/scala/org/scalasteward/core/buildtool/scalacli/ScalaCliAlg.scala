@@ -45,14 +45,8 @@ final class ScalaCliAlg[F[_]](implicit
     for {
       buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
       exportDir = "tmp-sbt-build-for-scala-steward"
-      exportCmd = Nel.of(
-        "scala-cli",
-        "export",
-        "--sbt",
-        "--output",
-        exportDir,
-        buildRootDir.pathAsString
-      )
+      exportCmd =
+        Nel.of("scala-cli", "export", "--sbt", "--output", exportDir, buildRootDir.pathAsString)
       _ <- processAlg.execSandboxed(exportCmd, buildRootDir)
       exportBuildRoot = buildRoot.copy(relativePath = buildRoot.relativePath + s"/$exportDir")
       dependencies <- sbtAlg.getDependencies(exportBuildRoot)
