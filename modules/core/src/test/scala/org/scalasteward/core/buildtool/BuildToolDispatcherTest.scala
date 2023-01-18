@@ -4,6 +4,7 @@ import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.data._
+import org.scalasteward.core.mock.MockConfig.gitCmd
 import org.scalasteward.core.mock.MockContext.context._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
@@ -33,9 +34,25 @@ class BuildToolDispatcherTest extends FunSuite {
         Cmd("test", "-f", s"$repoDir/pom.xml"),
         Cmd("test", "-f", s"$repoDir/build.sc"),
         Cmd("test", "-f", s"$repoDir/build.sbt"),
+        Cmd(
+          gitCmd(repoDir),
+          "grep",
+          "-I",
+          "--fixed-strings",
+          "--files-with-matches",
+          "//> using lib"
+        ),
         Cmd("test", "-f", s"$repoDir/mvn-build/pom.xml"),
         Cmd("test", "-f", s"$repoDir/mvn-build/build.sc"),
         Cmd("test", "-f", s"$repoDir/mvn-build/build.sbt"),
+        Cmd(
+          gitCmd(repoDir),
+          "grep",
+          "-I",
+          "--fixed-strings",
+          "--files-with-matches",
+          "//> using lib"
+        ),
         Log("Get dependencies in . from sbt"),
         Cmd("read", s"$repoDir/project/build.properties"),
         Cmd("read", "classpath:StewardPlugin_1_0_0.scala"),
