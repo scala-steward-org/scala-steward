@@ -39,7 +39,7 @@ final class ScalaCliAlg[F[_]](implicit
   override def name: String = "Scala CLI"
 
   override def containsBuild(buildRoot: BuildRoot): F[Boolean] =
-    gitAlg.findFilesContaining(buildRoot.repo, "//> using lib").map(_.nonEmpty)
+    gitAlg.findFilesContaining(buildRoot.repo, "//> using lib ").map(_.nonEmpty)
 
   override def getDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
     for {

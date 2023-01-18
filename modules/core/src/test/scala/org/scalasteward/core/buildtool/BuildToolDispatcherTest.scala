@@ -40,7 +40,7 @@ class BuildToolDispatcherTest extends FunSuite {
           "-I",
           "--fixed-strings",
           "--files-with-matches",
-          "//> using lib"
+          "//> using lib "
         ),
         Cmd("test", "-f", s"$repoDir/mvn-build/pom.xml"),
         Cmd("test", "-f", s"$repoDir/mvn-build/build.sc"),
@@ -51,7 +51,7 @@ class BuildToolDispatcherTest extends FunSuite {
           "-I",
           "--fixed-strings",
           "--files-with-matches",
-          "//> using lib"
+          "//> using lib "
         ),
         Log("Get dependencies in . from sbt"),
         Cmd("read", s"$repoDir/project/build.properties"),
