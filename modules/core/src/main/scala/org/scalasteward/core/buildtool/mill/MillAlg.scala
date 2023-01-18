@@ -42,7 +42,7 @@ final class MillAlg[F[_]](implicit
       .buildRootDir(buildRoot)
       .flatMap(buildRootDir => fileAlg.isRegularFile(buildRootDir / "build.sc"))
 
-  override def getDependencies(buildRoot: BuildRoot): F[List[Dependencies]] =
+  override def getDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
     for {
       buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
       predef = buildRootDir / "scala-steward.sc"

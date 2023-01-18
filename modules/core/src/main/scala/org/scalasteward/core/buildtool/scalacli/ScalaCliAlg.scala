@@ -20,7 +20,7 @@ import cats.Monad
 import cats.syntax.all._
 import org.scalasteward.core.buildtool.sbt.SbtAlg
 import org.scalasteward.core.buildtool.{BuildRoot, BuildToolAlg}
-import org.scalasteward.core.data.Scope.Dependencies
+import org.scalasteward.core.data.Scope
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io.{ProcessAlg, WorkspaceAlg}
@@ -40,7 +40,7 @@ final class ScalaCliAlg[F[_]](implicit
   override def containsBuild(buildRoot: BuildRoot): F[Boolean] =
     gitAlg.findFilesContaining(buildRoot.repo, "//> using lib").map(_.nonEmpty)
 
-  override def getDependencies(buildRoot: BuildRoot): F[List[Dependencies]] =
+  override def getDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
     for {
       buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
       exportDir = "tmp-sbt-build-for-scala-steward"
