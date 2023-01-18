@@ -75,8 +75,9 @@ object Selector {
         case _                 => true
       }
       .filter { p =>
+        val artifactIdNames = Set(p.artifactId, p.artifactId.takeWhile(_ =!= '_'))
         dependencies.exists { d =>
-          d.groupId.value === p.groupId && d.artifactId.names.contains_(p.artifactId)
+          d.groupId.value === p.groupId && d.artifactId.names.exists(artifactIdNames)
         }
       }
 

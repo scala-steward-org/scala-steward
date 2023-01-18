@@ -419,6 +419,18 @@ class RewriteTest extends FunSuite {
     runApplyUpdate(update, original, expected)
   }
 
+  test("artifactId and version change of Maven dependency with binary suffix") {
+    val update = ("org.foo".g % ("log4cats", "log4cats_2.13").a % "1.1.1" %> "1.2.0").single
+      .copy(newerArtifactId = Some("log4dogs"))
+    val original = Map("pom.xml" -> s"""<groupId>org.foo</groupId>
+                                       |<artifactId>log4cats_$${scala.binary.version}</artifactId>
+                                       |<version>1.1.1</version>""".stripMargin)
+    val expected = Map("pom.xml" -> s"""<groupId>org.foo</groupId>
+                                       |<artifactId>log4dogs_$${scala.binary.version}</artifactId>
+                                       |<version>1.2.0</version>""".stripMargin)
+    runApplyUpdate(update, original, expected)
+  }
+
   // https://github.com/scala-steward-org/scala-steward/pull/566
   test("prevent exception: named capturing group is missing trailing '}'") {
     val update =
