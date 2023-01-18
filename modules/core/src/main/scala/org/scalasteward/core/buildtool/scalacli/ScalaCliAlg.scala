@@ -59,6 +59,6 @@ final class ScalaCliAlg[F[_]](implicit
 
   override def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
     logger.warn(
-      s"Scalafix migrations are currently not supported in $name projects"
+      s"Scalafix migrations are currently not supported in $name projects, see https://github.com/VirtusLab/scala-cli/issues/647 for details"
     )
 }
