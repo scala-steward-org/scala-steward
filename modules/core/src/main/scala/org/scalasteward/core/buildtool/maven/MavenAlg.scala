@@ -58,7 +58,7 @@ final class MavenAlg[F[_]](config: Config)(implicit
 
   override def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
     logger.warn(
-      "Scalafix migrations are currently not supported in Maven projects, see https://github.com/scala-steward-org/scala-steward/issues/2839 for details"
+      s"Scalafix migrations are currently not supported in $name projects, see https://github.com/scala-steward-org/scala-steward/issues/2839 for details"
     )
 
   private def exec(command: Nel[String], repoDir: File): F[List[String]] =

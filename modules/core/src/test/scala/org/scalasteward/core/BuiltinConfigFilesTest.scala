@@ -1,6 +1,6 @@
 package org.scalasteward.core
 
-import better.files._
+import better.files.File
 import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.application.Config.{ArtifactCfg, RepoConfigCfg, ScalafixCfg}
