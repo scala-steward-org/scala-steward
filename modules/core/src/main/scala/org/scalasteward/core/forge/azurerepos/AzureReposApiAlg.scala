@@ -21,7 +21,7 @@ import cats.syntax.all._
 import io.circe.Json
 import io.circe.syntax.KeyOps
 import org.http4s.{Request, Uri}
-import org.scalasteward.core.application.Config.AzureReposConfig
+import org.scalasteward.core.application.Config.AzureReposCfg
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.ForgeApiAlg
 import org.scalasteward.core.forge.azurerepos.JsonCodec._
@@ -31,7 +31,7 @@ import org.scalasteward.core.util.HttpJsonClient
 
 final class AzureReposApiAlg[F[_]](
     azureAPiHost: Uri,
-    config: AzureReposConfig,
+    config: AzureReposCfg,
     modify: Repo => Request[F] => F[Request[F]]
 )(implicit client: HttpJsonClient[F], monadErrorF: MonadThrow[F])
     extends ForgeApiAlg[F] {

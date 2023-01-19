@@ -30,6 +30,7 @@ import org.scalasteward.core.buildtool.BuildToolDispatcher
 import org.scalasteward.core.buildtool.maven.MavenAlg
 import org.scalasteward.core.buildtool.mill.MillAlg
 import org.scalasteward.core.buildtool.sbt.SbtAlg
+import org.scalasteward.core.buildtool.scalacli.ScalaCliAlg
 import org.scalasteward.core.client.ClientConfiguration
 import org.scalasteward.core.coursier.{CoursierAlg, VersionsCache}
 import org.scalasteward.core.data.Repo
@@ -75,6 +76,7 @@ final class Context[F[_]](implicit
     val repoCacheAlg: RepoCacheAlg[F],
     val repoConfigAlg: RepoConfigAlg[F],
     val sbtAlg: SbtAlg[F],
+    val scalaCliAlg: ScalaCliAlg[F],
     val scalafixMigrationsFinder: ScalafixMigrationsFinder,
     val scalafixMigrationsLoader: ScalafixMigrationsLoader[F],
     val scalafmtAlg: ScalafmtAlg[F],
@@ -206,7 +208,8 @@ object Context {
       implicit val httpJsonClient: HttpJsonClient[F] = new HttpJsonClient[F]
       implicit val repoCacheRepository: RepoCacheRepository[F] =
         new RepoCacheRepository[F](repoCacheStore)
-      implicit val forgeApiAlg: ForgeApiAlg[F] = ForgeSelection.forgeApiAlg[F](config, forgeUser)
+      implicit val forgeApiAlg: ForgeApiAlg[F] =
+        ForgeSelection.forgeApiAlg[F](config.forgeCfg, config.forgeSpecificCfg, forgeUser)
       implicit val forgeRepoAlg: ForgeRepoAlg[F] = new ForgeRepoAlg[F](config)
       implicit val updateInfoUrlFinder: UpdateInfoUrlFinder[F] =
         new UpdateInfoUrlFinder[F](config.forgeCfg)
@@ -221,6 +224,7 @@ object Context {
       implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]
       implicit val mavenAlg: MavenAlg[F] = new MavenAlg[F](config)
       implicit val sbtAlg: SbtAlg[F] = new SbtAlg[F](config)
+      implicit val scalaCliAlg: ScalaCliAlg[F] = new ScalaCliAlg[F]
       implicit val millAlg: MillAlg[F] = new MillAlg[F]
       implicit val buildToolDispatcher: BuildToolDispatcher[F] = new BuildToolDispatcher[F]
       implicit val refreshErrorAlg: RefreshErrorAlg[F] =

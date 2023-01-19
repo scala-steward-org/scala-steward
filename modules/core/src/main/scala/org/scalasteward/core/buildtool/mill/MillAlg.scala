@@ -21,7 +21,6 @@ import cats.effect.MonadCancelThrow
 import cats.syntax.all._
 import org.scalasteward.core.buildtool.mill.MillAlg._
 import org.scalasteward.core.buildtool.{BuildRoot, BuildToolAlg}
-import org.scalasteward.core.data.Scope.Dependencies
 import org.scalasteward.core.data._
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
@@ -42,7 +41,7 @@ final class MillAlg[F[_]](implicit
       .buildRootDir(buildRoot)
       .flatMap(buildRootDir => fileAlg.isRegularFile(buildRootDir / "build.sc"))
 
-  override def getDependencies(buildRoot: BuildRoot): F[List[Dependencies]] =
+  override def getDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
     for {
       buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
       predef = buildRootDir / "scala-steward.sc"
@@ -66,7 +65,7 @@ final class MillAlg[F[_]](implicit
 
   override def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
     logger.warn(
-      "Scalafix migrations are currently not supported in Mill projects, see https://github.com/scala-steward-org/scala-steward/issues/2838 for details"
+      s"Scalafix migrations are currently not supported in $name projects, see https://github.com/scala-steward-org/scala-steward/issues/2838 for details"
     )
 
   private def getMillVersion(buildRootDir: File): F[Option[Version]] =
