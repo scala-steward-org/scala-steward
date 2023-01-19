@@ -65,7 +65,7 @@ final case class Config(
     bitbucketCfg: BitbucketCfg,
     bitbucketServerCfg: BitbucketServerCfg,
     gitLabCfg: GitLabCfg,
-    azureReposConfig: AzureReposConfig,
+    azureReposCfg: AzureReposCfg,
     githubApp: Option[GitHubApp],
     urlCheckerTestUrls: Nel[Uri],
     defaultResolver: Resolver,
@@ -84,6 +84,15 @@ final case class Config(
       prompt = s"Password for '$urlWithUser': "
       password <- processAlg.exec(Nel.of(gitCfg.gitAskPass.pathAsString, prompt), rootDir)
     } yield AuthenticatedUser(forgeCfg.login, password.mkString.trim)
+
+  def forgeSpecificCfg: ForgeSpecificCfg =
+    forgeCfg.tpe match {
+      case ForgeType.AzureRepos      => azureReposCfg
+      case ForgeType.Bitbucket       => bitbucketCfg
+      case ForgeType.BitbucketServer => bitbucketServerCfg
+      case ForgeType.GitHub          => GitHubCfg()
+      case ForgeType.GitLab          => gitLabCfg
+    }
 }
 
 object Config {
@@ -129,22 +138,27 @@ object Config {
       disableDefaults: Boolean
   )
 
-  final case class BitbucketServerCfg(
-      useDefaultReviewers: Boolean
-  )
+  sealed trait ForgeSpecificCfg extends Product with Serializable
+
+  final case class AzureReposCfg(
+      organization: Option[String]
+  ) extends ForgeSpecificCfg
 
   final case class BitbucketCfg(
       useDefaultReviewers: Boolean
-  )
+  ) extends ForgeSpecificCfg
+
+  final case class BitbucketServerCfg(
+      useDefaultReviewers: Boolean
+  ) extends ForgeSpecificCfg
+
+  final case class GitHubCfg(
+  ) extends ForgeSpecificCfg
 
   final case class GitLabCfg(
       mergeWhenPipelineSucceeds: Boolean,
       requiredReviewers: Option[Int]
-  )
-
-  final case class AzureReposConfig(
-      organization: Option[String]
-  )
+  ) extends ForgeSpecificCfg
 
   sealed trait StewardUsage
   object StewardUsage {
