@@ -46,15 +46,15 @@ object ForgeSelection {
     val auth = (_: Any) => authenticate(forgeCfg.tpe, user)
     forgeSpecificCfg match {
       case specificCfg: Config.AzureReposCfg =>
-        new AzureReposApiAlg[F](forgeCfg.apiHost, specificCfg, auth)
+        new AzureReposApiAlg(forgeCfg.apiHost, specificCfg, auth)
       case specificCfg: Config.BitbucketCfg =>
         new BitbucketApiAlg(forgeCfg, specificCfg, auth)
       case specificCfg: Config.BitbucketServerCfg =>
-        new BitbucketServerApiAlg[F](forgeCfg.apiHost, specificCfg, auth)
+        new BitbucketServerApiAlg(forgeCfg.apiHost, specificCfg, auth)
       case _: Config.GitHubCfg =>
-        new GitHubApiAlg[F](forgeCfg.apiHost, auth)
+        new GitHubApiAlg(forgeCfg.apiHost, auth)
       case specificCfg: Config.GitLabCfg =>
-        new GitLabApiAlg[F](forgeCfg, specificCfg, auth)
+        new GitLabApiAlg(forgeCfg, specificCfg, auth)
     }
   }
 

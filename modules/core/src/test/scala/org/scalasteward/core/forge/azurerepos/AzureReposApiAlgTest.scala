@@ -174,12 +174,9 @@ class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
   private val state = MockState.empty.copy(clientResponses = auth <+> httpApp)
 
-  private val azureRepoCfg = AzureReposCfg(organization = Some("azure-org"))
-  private val azureReposApiAlg = ForgeSelection.forgeApiAlg[MockEff](
-    config.forgeCfg.copy(apiHost = apiHost, tpe = ForgeType.AzureRepos),
-    azureRepoCfg,
-    user
-  )
+  private val forgeCfg = config.forgeCfg.copy(apiHost = apiHost, tpe = ForgeType.AzureRepos)
+  private val azureReposCfg = AzureReposCfg(organization = Some("azure-org"))
+  private val azureReposApiAlg = ForgeSelection.forgeApiAlg[MockEff](forgeCfg, azureReposCfg, user)
 
   test("getRepo") {
     val obtained = azureReposApiAlg.getRepo(repo).runA(state)

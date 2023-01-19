@@ -111,11 +111,9 @@ class BitbucketServerApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] 
   }
   private val state = MockState.empty.copy(clientResponses = auth <+> httpApp)
 
-  private val bitbucketServerApiAlg = ForgeSelection.forgeApiAlg[MockEff](
-    config.forgeCfg.copy(tpe = ForgeType.BitbucketServer),
-    BitbucketServerCfg(useDefaultReviewers = false),
-    user
-  )
+  private val forgeCfg = config.forgeCfg.copy(tpe = ForgeType.BitbucketServer)
+  private val bitbucketServerApiAlg = ForgeSelection
+    .forgeApiAlg[MockEff](forgeCfg, BitbucketServerCfg(useDefaultReviewers = false), user)
 
   test("createPullRequest") {
     val data = NewPullRequestData(
@@ -144,14 +142,9 @@ class BitbucketServerApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] 
       base = main,
       labels = Nil
     )
-    val pr = ForgeSelection
-      .forgeApiAlg[MockEff](
-        config.forgeCfg.copy(tpe = ForgeType.BitbucketServer),
-        BitbucketServerCfg(useDefaultReviewers = false),
-        user
-      )
-      .createPullRequest(repo, data)
-      .runA(state)
+    val apiAlg = ForgeSelection
+      .forgeApiAlg[MockEff](forgeCfg, BitbucketServerCfg(useDefaultReviewers = true), user)
+    val pr = apiAlg.createPullRequest(repo, data).runA(state)
     val expected =
       PullRequestOut(
         html_url = uri"https://example.org/fthomas/base.g8/pullrequests/2",

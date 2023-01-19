@@ -125,11 +125,8 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   }
   private val state = MockState.empty.copy(clientResponses = auth <+> httpApp)
 
-  private val gitHubApiAlg = ForgeSelection.forgeApiAlg[MockEff](
-    config.forgeCfg.copy(tpe = ForgeType.GitHub),
-    GitHubCfg(),
-    user
-  )
+  private val forgeCfg = config.forgeCfg.copy(tpe = ForgeType.GitHub)
+  private val gitHubApiAlg = ForgeSelection.forgeApiAlg[MockEff](forgeCfg, GitHubCfg(), user)
 
   private val repo = Repo("fthomas", "base.g8")
 
