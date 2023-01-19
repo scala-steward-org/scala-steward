@@ -7,7 +7,7 @@ import org.scalasteward.core.data.{GroupId, Repo, Version}
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.mock.MockContext.context._
 import org.scalasteward.core.mock.MockState
-import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
+import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.util.Nel
 
 class ScalaCliAlgTest extends CatsEffectSuite {
@@ -70,6 +70,6 @@ class ScalaCliAlgTest extends CatsEffectSuite {
       Nel.of("github:functional-streams-for-scala/fs2/v1?sha=v1.0.5")
     )
     val obtained = scalaCliAlg.runMigration(buildRoot, migration).runS(MockState.empty)
-    assertIOBoolean(obtained.map(_.trace.nonEmpty))
+    assertIO(obtained.map(_.trace.collect { case Log(_) => () }.size), 1)
   }
 }
