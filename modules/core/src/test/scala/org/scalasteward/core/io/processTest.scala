@@ -17,7 +17,7 @@ class processTest extends FunSuite {
   def slurp3(
       cmd: Nel[String],
       maxBufferSize: Int,
-      slurpOptions: Set[SlurpOption]
+      slurpOptions: SlurpOptions
   ): IO[List[String]] =
     slurp[IO](Args(cmd, slurpOptions = slurpOptions), 1.minute, maxBufferSize, _ => IO.unit)
 

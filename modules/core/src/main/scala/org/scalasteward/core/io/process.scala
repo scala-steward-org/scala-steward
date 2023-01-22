@@ -32,7 +32,7 @@ object process {
       command: Nel[String],
       workingDirectory: Option[File] = None,
       extraEnv: List[(String, String)] = Nil,
-      slurpOptions: Set[SlurpOption] = Set.empty
+      slurpOptions: SlurpOptions = Set.empty
   )
 
   sealed trait SlurpOption extends Product with Serializable
@@ -48,8 +48,9 @@ object process {
     case object IgnoreBufferOverflow extends SlurpOption
   }
 
+  type SlurpOptions = Set[SlurpOption]
   object SlurpOptions {
-    val ignoreBufferOverflow: Set[SlurpOption] = Set(SlurpOption.IgnoreBufferOverflow)
+    val ignoreBufferOverflow: SlurpOptions = Set(SlurpOption.IgnoreBufferOverflow)
   }
 
   def slurp[F[_]](

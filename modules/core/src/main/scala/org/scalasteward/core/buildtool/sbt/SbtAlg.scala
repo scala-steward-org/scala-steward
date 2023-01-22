@@ -26,7 +26,7 @@ import org.scalasteward.core.buildtool.{BuildRoot, BuildToolAlg}
 import org.scalasteward.core.coursier.VersionsCache
 import org.scalasteward.core.data.{Dependency, Scope, Version}
 import org.scalasteward.core.edit.scalafix.{ScalafixCli, ScalafixMigration}
-import org.scalasteward.core.io.process.{SlurpOption, SlurpOptions}
+import org.scalasteward.core.io.process.SlurpOptions
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
 
@@ -131,7 +131,7 @@ final class SbtAlg[F[_]](config: Config)(implicit
   private def sbt(
       sbtCommands: Nel[String],
       repoDir: File,
-      slurpOptions: Set[SlurpOption] = Set.empty
+      slurpOptions: SlurpOptions = Set.empty
   ): F[List[String]] =
     maybeIgnoreOptsFiles(repoDir).surround {
       val command =

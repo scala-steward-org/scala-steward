@@ -20,7 +20,7 @@ import better.files.File
 import cats.effect.Async
 import cats.syntax.all._
 import org.scalasteward.core.application.Config.ProcessCfg
-import org.scalasteward.core.io.process.{Args, SlurpOption}
+import org.scalasteward.core.io.process.{Args, SlurpOption, SlurpOptions}
 import org.scalasteward.core.util.Nel
 import org.typelevel.log4cats.Logger
 
@@ -29,14 +29,14 @@ trait ProcessAlg[F[_]] {
       command: Nel[String],
       workingDirectory: File,
       extraEnv: List[(String, String)] = Nil,
-      slurpOptions: Set[SlurpOption] = Set.empty
+      slurpOptions: SlurpOptions = Set.empty
   ): F[List[String]]
 
   def execSandboxed(
       command: Nel[String],
       workingDirectory: File,
       extraEnv: List[(String, String)] = Nil,
-      slurpOptions: Set[SlurpOption] = Set.empty
+      slurpOptions: SlurpOptions = Set.empty
   ): F[List[String]] =
     exec(command, workingDirectory, extraEnv, slurpOptions)
 
@@ -44,7 +44,7 @@ trait ProcessAlg[F[_]] {
       command: Nel[String],
       workingDirectory: File,
       extraEnv: List[(String, String)] = Nil,
-      slurpOptions: Set[SlurpOption] = Set.empty
+      slurpOptions: SlurpOptions = Set.empty
   ): F[List[String]] =
     if (sandboxed) execSandboxed(command, workingDirectory, extraEnv, slurpOptions)
     else exec(command, workingDirectory, extraEnv, slurpOptions)
@@ -59,7 +59,7 @@ object ProcessAlg {
         command: Nel[String],
         workingDirectory: File,
         extraEnv: List[(String, String)],
-        slurpOptions: Set[SlurpOption]
+        slurpOptions: SlurpOptions
     ): F[List[String]] =
       execImpl(Args(command, Some(workingDirectory), extraEnv ++ configEnv, slurpOptions))
   }
@@ -70,7 +70,7 @@ object ProcessAlg {
         command: Nel[String],
         workingDirectory: File,
         extraEnv: List[(String, String)],
-        slurpOptions: Set[SlurpOption]
+        slurpOptions: SlurpOptions
     ): F[List[String]] = {
       val whitelisted = (workingDirectory.toString :: config.sandboxCfg.whitelistedDirectories)
         .map(dir => s"--whitelist=$dir")
