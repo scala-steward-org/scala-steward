@@ -20,7 +20,7 @@ import better.files.File
 import cats.effect.Async
 import cats.syntax.all._
 import org.scalasteward.core.application.Config.ProcessCfg
-import org.scalasteward.core.io.process.Args
+import org.scalasteward.core.io.process.{Args, SlurpOption}
 import org.scalasteward.core.util.Nel
 import org.typelevel.log4cats.Logger
 
@@ -28,23 +28,26 @@ trait ProcessAlg[F[_]] {
   def exec(
       command: Nel[String],
       workingDirectory: File,
-      extraEnv: (String, String)*
+      extraEnv: List[(String, String)] = Nil,
+      slurpOptions: Set[SlurpOption] = Set.empty
   ): F[List[String]]
 
   def execSandboxed(
       command: Nel[String],
       workingDirectory: File,
-      extraEnv: (String, String)*
+      extraEnv: List[(String, String)] = Nil,
+      slurpOptions: Set[SlurpOption] = Set.empty
   ): F[List[String]] =
-    exec(command, workingDirectory, extraEnv: _*)
+    exec(command, workingDirectory, extraEnv, slurpOptions)
 
   final def execMaybeSandboxed(sandboxed: Boolean)(
       command: Nel[String],
       workingDirectory: File,
-      extraEnv: (String, String)*
+      extraEnv: List[(String, String)] = Nil,
+      slurpOptions: Set[SlurpOption] = Set.empty
   ): F[List[String]] =
-    if (sandboxed) execSandboxed(command, workingDirectory, extraEnv: _*)
-    else exec(command, workingDirectory, extraEnv: _*)
+    if (sandboxed) execSandboxed(command, workingDirectory, extraEnv, slurpOptions)
+    else exec(command, workingDirectory, extraEnv, slurpOptions)
 }
 
 object ProcessAlg {
@@ -55,9 +58,10 @@ object ProcessAlg {
     override def exec(
         command: Nel[String],
         workingDirectory: File,
-        extraEnv: (String, String)*
+        extraEnv: List[(String, String)],
+        slurpOptions: Set[SlurpOption]
     ): F[List[String]] =
-      execImpl(Args(command, Some(workingDirectory), extraEnv.toList ++ configEnv))
+      execImpl(Args(command, Some(workingDirectory), extraEnv ++ configEnv, slurpOptions))
   }
 
   private class WithFirejail[F[_]](config: ProcessCfg)(execImpl: Args => F[List[String]])
@@ -65,7 +69,8 @@ object ProcessAlg {
     override def execSandboxed(
         command: Nel[String],
         workingDirectory: File,
-        extraEnv: (String, String)*
+        extraEnv: List[(String, String)],
+        slurpOptions: Set[SlurpOption]
     ): F[List[String]] = {
       val whitelisted = (workingDirectory.toString :: config.sandboxCfg.whitelistedDirectories)
         .map(dir => s"--whitelist=$dir")
@@ -74,7 +79,12 @@ object ProcessAlg {
       val envVars = (extraEnv ++ configEnv)
         .map { case (k, v) => s"--env=$k=$v" }
       val firejail = Nel("firejail", "--quiet" :: whitelisted ++ readOnly ++ envVars) ::: command
-      execImpl(Args(firejail, Some(workingDirectory), clearEnv = true))
+      val args = Args(
+        command = firejail,
+        workingDirectory = Some(workingDirectory),
+        slurpOptions = slurpOptions ++ Set(SlurpOption.ClearEnvironment)
+      )
+      execImpl(args)
     }
   }
 
@@ -90,6 +100,6 @@ object ProcessAlg {
   ): ProcessAlg[F] =
     fromExecImpl(config) { args =>
       logger.debug(s"Execute ${process.showCmd(args)}") >>
-        process.slurp[F](args, config.processTimeout, config.maxBufferSize, logger.trace(_))
+        process.slurp(args, config.processTimeout, config.maxBufferSize, logger.trace(_))
     }
 }

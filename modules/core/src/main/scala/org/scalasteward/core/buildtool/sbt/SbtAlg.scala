@@ -26,6 +26,7 @@ import org.scalasteward.core.buildtool.{BuildRoot, BuildToolAlg}
 import org.scalasteward.core.coursier.VersionsCache
 import org.scalasteward.core.data.{Dependency, Scope, Version}
 import org.scalasteward.core.edit.scalafix.{ScalafixCli, ScalafixMigration}
+import org.scalasteward.core.io.process.SlurpOption
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
 
@@ -100,8 +101,11 @@ final class SbtAlg[F[_]](config: Config)(implicit
             val options = scalaStewardScalafixOptions(opts.toList)
             fileAlg.createTemporarily(buildRootDir, options)
           }
-          val scalafixCmds = migration.rewriteRules.map(rule => s"$scalafixAll $rule").toList
-          withScalacOptions.surround(sbt(Nel(scalafixEnable, scalafixCmds), buildRootDir).void)
+          withScalacOptions.surround {
+            val scalafixCmds = migration.rewriteRules.map(rule => s"$scalafixAll $rule").toList
+            val slurpOptions: Set[SlurpOption] = Set(SlurpOption.IgnoreBufferOverflow)
+            sbt(Nel(scalafixEnable, scalafixCmds), buildRootDir, slurpOptions).void
+          }
         }
       }
     }
@@ -124,7 +128,11 @@ final class SbtAlg[F[_]](config: Config)(implicit
       }
     } yield ()
 
-  private def sbt(sbtCommands: Nel[String], repoDir: File): F[List[String]] =
+  private def sbt(
+      sbtCommands: Nel[String],
+      repoDir: File,
+      slurpOptions: Set[SlurpOption] = Set.empty
+  ): F[List[String]] =
     maybeIgnoreOptsFiles(repoDir).surround {
       val command =
         Nel.of(
@@ -134,7 +142,7 @@ final class SbtAlg[F[_]](config: Config)(implicit
           "-Dsbt.supershell=false",
           sbtCommands.mkString_(";", ";", "")
         )
-      processAlg.execSandboxed(command, repoDir)
+      processAlg.execSandboxed(command, repoDir, slurpOptions = slurpOptions)
     }
 
   private def maybeIgnoreOptsFiles(dir: File): Resource[F, Unit] =

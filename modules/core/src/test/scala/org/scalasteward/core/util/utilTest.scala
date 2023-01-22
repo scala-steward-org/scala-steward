@@ -12,22 +12,22 @@ class utilTest extends ScalaCheckSuite {
     val lb = new ListBuffer[Int]
     lb.appendAll(List(1, 2, 3))
 
-    appendBounded(lb, 4, 4)
+    assert(!appendBounded(lb, 4, 4))
     assertEquals(lb.toList, List(1, 2, 3, 4))
 
-    appendBounded(lb, 5, 4)
+    assert(appendBounded(lb, 5, 4))
     assertEquals(lb.toList, List(3, 4, 5))
 
-    appendBounded(lb, 6, 4)
+    assert(!appendBounded(lb, 6, 4))
     assertEquals(lb.toList, List(3, 4, 5, 6))
 
-    appendBounded(lb, 7, 6)
+    assert(!appendBounded(lb, 7, 6))
     assertEquals(lb.toList, List(3, 4, 5, 6, 7))
 
-    appendBounded(lb, 8, 6)
+    assert(!appendBounded(lb, 8, 6))
     assertEquals(lb.toList, List(3, 4, 5, 6, 7, 8))
 
-    appendBounded(lb, 9, 6)
+    assert(appendBounded(lb, 9, 6))
     assertEquals(lb.toList, List(6, 7, 8, 9))
   }
 
