@@ -48,6 +48,10 @@ object process {
     case object IgnoreBufferOverflow extends SlurpOption
   }
 
+  object SlurpOptions {
+    val ignoreBufferOverflow: Set[SlurpOption] = Set(SlurpOption.IgnoreBufferOverflow)
+  }
+
   def slurp[F[_]](
       args: Args,
       timeout: FiniteDuration,

@@ -23,7 +23,7 @@ import io.circe.ParsingFailure
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.BuildRoot
 import org.scalasteward.core.data.{Repo, Scope, Version}
-import org.scalasteward.core.io.process.SlurpOption
+import org.scalasteward.core.io.process.SlurpOptions
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.scalafmt.ScalafmtAlg.{opts, parseScalafmtConf}
 import org.scalasteward.core.util.Nel
@@ -56,7 +56,7 @@ final class ScalafmtAlg[F[_]](config: Config)(implicit
     for {
       repoDir <- workspaceAlg.repoDir(repo)
       cmd = Nel.of(scalafmtBinary, opts.nonInteractive) ++ opts.modeChanged
-      _ <- processAlg.exec(cmd, repoDir, slurpOptions = Set(SlurpOption.IgnoreBufferOverflow))
+      _ <- processAlg.exec(cmd, repoDir, slurpOptions = SlurpOptions.ignoreBufferOverflow)
     } yield ()
 
   def version: F[String] = {

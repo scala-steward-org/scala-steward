@@ -26,7 +26,7 @@ import org.scalasteward.core.buildtool.{BuildRoot, BuildToolAlg}
 import org.scalasteward.core.coursier.VersionsCache
 import org.scalasteward.core.data.{Dependency, Scope, Version}
 import org.scalasteward.core.edit.scalafix.{ScalafixCli, ScalafixMigration}
-import org.scalasteward.core.io.process.SlurpOption
+import org.scalasteward.core.io.process.{SlurpOption, SlurpOptions}
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
 
@@ -103,7 +103,7 @@ final class SbtAlg[F[_]](config: Config)(implicit
           }
           withScalacOptions.surround {
             val scalafixCmds = migration.rewriteRules.map(rule => s"$scalafixAll $rule").toList
-            val slurpOptions: Set[SlurpOption] = Set(SlurpOption.IgnoreBufferOverflow)
+            val slurpOptions = SlurpOptions.ignoreBufferOverflow
             sbt(Nel(scalafixEnable, scalafixCmds), buildRootDir, slurpOptions).void
           }
         }

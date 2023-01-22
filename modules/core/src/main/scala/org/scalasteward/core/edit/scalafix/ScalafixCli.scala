@@ -20,7 +20,7 @@ import better.files.File
 import cats.Monad
 import cats.syntax.all._
 import org.scalasteward.core.edit.scalafix.ScalafixCli.scalafixBinary
-import org.scalasteward.core.io.process.SlurpOption
+import org.scalasteward.core.io.process.SlurpOptions
 import org.scalasteward.core.io.{ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
 
@@ -32,7 +32,7 @@ final class ScalafixCli[F[_]](implicit
   def runMigration(workingDir: File, files: Nel[File], migration: ScalafixMigration): F[Unit] = {
     val rules = migration.rewriteRules.map("--rules=" + _)
     val cmd = scalafixBinary :: rules ::: files.map(_.pathAsString)
-    processAlg.exec(cmd, workingDir, slurpOptions = Set(SlurpOption.IgnoreBufferOverflow)).void
+    processAlg.exec(cmd, workingDir, slurpOptions = SlurpOptions.ignoreBufferOverflow).void
   }
 
   def version: F[String] = {

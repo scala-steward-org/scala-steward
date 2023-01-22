@@ -23,7 +23,7 @@ import org.scalasteward.core.buildtool.{BuildRoot, BuildToolAlg}
 import org.scalasteward.core.data.Scope
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.git.GitAlg
-import org.scalasteward.core.io.process.SlurpOption
+import org.scalasteward.core.io.process.SlurpOptions
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
 import org.typelevel.log4cats.Logger
@@ -52,7 +52,7 @@ final class ScalaCliAlg[F[_]](implicit
       exportDir = "tmp-sbt-build-for-scala-steward"
       exportCmd =
         Nel.of("scala-cli", "export", "--sbt", "--output", exportDir, buildRootDir.pathAsString)
-      slurpOptions = Set(SlurpOption.IgnoreBufferOverflow): Set[SlurpOption]
+      slurpOptions = SlurpOptions.ignoreBufferOverflow
       _ <- processAlg.execSandboxed(exportCmd, buildRootDir, slurpOptions = slurpOptions)
       exportBuildRoot = buildRoot.copy(relativePath = buildRoot.relativePath + s"/$exportDir")
       dependencies <- sbtAlg.getDependencies(exportBuildRoot)

@@ -22,7 +22,7 @@ import cats.syntax.all._
 import org.http4s.Uri
 import org.scalasteward.core.application.Config.GitCfg
 import org.scalasteward.core.git.FileGitAlg.{dotdot, gitCmd}
-import org.scalasteward.core.io.process.SlurpOption
+import org.scalasteward.core.io.process.{SlurpOption, SlurpOptions}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
 
@@ -174,7 +174,7 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
   }
 
   private def git_(args: String*)(repo: File): F[List[String]] =
-    git(args: _*)(repo, Set(SlurpOption.IgnoreBufferOverflow))
+    git(args: _*)(repo, SlurpOptions.ignoreBufferOverflow)
 
   private val sign: String =
     if (config.signCommits) "--gpg-sign" else "--no-gpg-sign"

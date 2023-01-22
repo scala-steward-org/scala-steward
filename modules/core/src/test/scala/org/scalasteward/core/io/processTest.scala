@@ -3,7 +3,6 @@ package org.scalasteward.core.io
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import munit.FunSuite
-import org.scalasteward.core.io.process.SlurpOption.IgnoreBufferOverflow
 import org.scalasteward.core.io.process._
 import org.scalasteward.core.util.{DateTimeAlg, Nel}
 import scala.concurrent.duration._
@@ -33,7 +32,8 @@ class processTest extends FunSuite {
 
   test("echo: ok, buffer size exceeded") {
     val obtained =
-      slurp3(Nel.of("echo", "-n", "1\n2\n3\n4\n5\n6"), 4, Set(IgnoreBufferOverflow)).unsafeRunSync()
+      slurp3(Nel.of("echo", "-n", "1\n2\n3\n4\n5\n6"), 4, SlurpOptions.ignoreBufferOverflow)
+        .unsafeRunSync()
     assertEquals(obtained, List("3", "4", "5", "6"))
   }
 
