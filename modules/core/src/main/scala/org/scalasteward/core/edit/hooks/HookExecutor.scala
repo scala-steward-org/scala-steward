@@ -29,6 +29,7 @@ import org.scalasteward.core.data._
 import org.scalasteward.core.edit.EditAttempt
 import org.scalasteward.core.edit.EditAttempt.HookEdit
 import org.scalasteward.core.git.{gitBlameIgnoreRevsName, Commit, CommitMsg, GitAlg}
+import org.scalasteward.core.io.process.SlurpOptions
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.repocache.RepoCache
 import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtGroupId, ScalafmtAlg}
@@ -66,7 +67,10 @@ final class HookExecutor[F[_]](implicit
       )
       repoDir <- workspaceAlg.repoDir(repo)
       result <- logger.attemptWarn.log("Post-update hook failed") {
-        processAlg.execMaybeSandboxed(hook.useSandbox)(hook.command, repoDir)
+        val slurpOptions = SlurpOptions.ignoreBufferOverflow
+        processAlg
+          .execMaybeSandboxed(hook.useSandbox)(hook.command, repoDir, slurpOptions = slurpOptions)
+          .void
       }
       commitMessage = hook
         .commitMessage(update)
@@ -74,7 +78,7 @@ final class HookExecutor[F[_]](implicit
       maybeHookCommit <- gitAlg.commitAllIfDirty(repo, commitMessage)
       maybeBlameIgnoreCommit <-
         maybeHookCommit.flatTraverse(addToGitBlameIgnoreRevs(repo, repoDir, hook, _, commitMessage))
-    } yield HookEdit(hook, result.void, maybeHookCommit.toList ++ maybeBlameIgnoreCommit.toList)
+    } yield HookEdit(hook, result, maybeHookCommit.toList ++ maybeBlameIgnoreCommit.toList)
 
   private def addToGitBlameIgnoreRevs(
       repo: Repo,

@@ -26,9 +26,11 @@ package object util {
   final val Nel = cats.data.NonEmptyList
 
   /** Appends `elem` to `buffer` such that its size does not exceed `maxSize`. */
-  def appendBounded[A](buffer: ListBuffer[A], elem: A, maxSize: Int): Unit = {
-    if (buffer.size >= maxSize) buffer.remove(0, maxSize / 2)
+  def appendBounded[A](buffer: ListBuffer[A], elem: A, maxSize: Int): Boolean = {
+    val maxSizeExceeded = buffer.size >= maxSize
+    if (maxSizeExceeded) buffer.remove(0, maxSize / 2)
     buffer.append(elem)
+    maxSizeExceeded
   }
 
   /** Like `Semigroup[Option[A]].combine` but allows to specify how `A`s are combined. */

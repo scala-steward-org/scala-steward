@@ -23,6 +23,7 @@ import io.circe.ParsingFailure
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.BuildRoot
 import org.scalasteward.core.data.{Repo, Scope, Version}
+import org.scalasteward.core.io.process.SlurpOptions
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.scalafmt.ScalafmtAlg.{opts, parseScalafmtConf}
 import org.scalasteward.core.util.Nel
@@ -51,10 +52,12 @@ final class ScalafmtAlg[F[_]](config: Config)(implicit
       .map(version => Scope(List(scalafmtDependency(version)), List(config.defaultResolver)))
       .value
 
-  def reformatChanged(repo: Repo): F[Unit] = {
-    val cmd = Nel.of(scalafmtBinary, opts.nonInteractive) ++ opts.modeChanged
-    workspaceAlg.repoDir(repo).flatMap(processAlg.exec(cmd, _)).void
-  }
+  def reformatChanged(repo: Repo): F[Unit] =
+    for {
+      repoDir <- workspaceAlg.repoDir(repo)
+      cmd = Nel.of(scalafmtBinary, opts.nonInteractive) ++ opts.modeChanged
+      _ <- processAlg.exec(cmd, repoDir, slurpOptions = SlurpOptions.ignoreBufferOverflow)
+    } yield ()
 
   def version: F[String] = {
     val cmd = Nel.of(scalafmtBinary, opts.version)
@@ -64,7 +67,7 @@ final class ScalafmtAlg[F[_]](config: Config)(implicit
 
 object ScalafmtAlg {
   object opts {
-    val modeChanged = List("--mode", "changed")
+    val modeChanged: List[String] = List("--mode", "changed")
     val nonInteractive = "--non-interactive"
     val version = "--version"
   }

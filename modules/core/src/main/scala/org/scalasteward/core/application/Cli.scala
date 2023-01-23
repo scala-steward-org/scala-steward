@@ -26,7 +26,7 @@ import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Config._
 import org.scalasteward.core.data.Resolver
 import org.scalasteward.core.forge.ForgeType
-import org.scalasteward.core.forge.ForgeType.GitHub
+import org.scalasteward.core.forge.ForgeType.{AzureRepos, GitHub}
 import org.scalasteward.core.forge.github.GitHubApp
 import org.scalasteward.core.git.Author
 import org.scalasteward.core.util.Nel
@@ -35,6 +35,14 @@ import scala.concurrent.duration._
 
 object Cli {
   final case class EnvVar(name: String, value: String)
+
+  object name {
+    val forgeApiHost = "forge-api-host"
+    val forgeLogin = "forge-login"
+    val forgeType = "forge-type"
+    val maxBufferSize = "max-buffer-size"
+    val processTimeout = "process-timeout"
+  }
 
   implicit val envVarArgument: Argument[EnvVar] =
     Argument.from("name=value") { s =>
@@ -58,7 +66,7 @@ object Cli {
     }
 
   implicit val forgeTypeArgument: Argument[ForgeType] =
-    Argument.from("forge-type") { s =>
+    Argument.from(name.forgeType) { s =>
       Validated.fromEither(ForgeType.parse(s)).toValidatedNel
     }
 
@@ -97,37 +105,37 @@ object Cli {
   private val vcsType =
     option[ForgeType](
       "vcs-type",
-      "deprecated in favor of --forge-type",
+      s"deprecated in favor of --${name.forgeType}",
       visibility = Visibility.Partial
     )
 
   private val forgeType = {
     val help = ForgeType.all.map(_.asString).mkString("One of ", ", ", "") +
       s"; default: ${GitHub.asString}"
-    option[ForgeType]("forge-type", help).orElse(vcsType).withDefault(GitHub)
+    option[ForgeType](name.forgeType, help).orElse(vcsType).withDefault(GitHub)
   }
 
   private val vcsApiHost =
     option[Uri](
       "vcs-api-host",
-      "deprecated in favor of --forge-api-host",
+      s"deprecated in favor of --${name.forgeApiHost}",
       visibility = Visibility.Partial
     )
 
   private val forgeApiHost: Opts[Uri] =
-    option[Uri]("forge-api-host", s"API URL of the forge; default: ${GitHub.publicApiBaseUrl}")
+    option[Uri](name.forgeApiHost, s"API URL of the forge; default: ${GitHub.publicApiBaseUrl}")
       .orElse(vcsApiHost)
       .withDefault(GitHub.publicApiBaseUrl)
 
   private val vcsLogin =
     option[String](
       "vcs-login",
-      "deprecated in favor of --forge-login",
+      s"deprecated in favor of --${name.forgeLogin}",
       visibility = Visibility.Partial
     )
 
   private val forgeLogin: Opts[String] =
-    option[String]("forge-login", "The user name for the forge").orElse(vcsLogin)
+    option[String](name.forgeLogin, "The user name for the forge").orElse(vcsLogin)
 
   private val doNotFork: Opts[Boolean] =
     flag("do-not-fork", "Whether to not push the update branches to a fork; default: false").orFalse
@@ -163,7 +171,7 @@ object Cli {
     val default = 10.minutes
     val help =
       s"Timeout for external process invocations; default: ${renderFiniteDuration(default)}"
-    option[FiniteDuration]("process-timeout", help).withDefault(default)
+    option[FiniteDuration](name.processTimeout, help).withDefault(default)
   }
 
   private val whitelist: Opts[List[String]] =
@@ -188,10 +196,10 @@ object Cli {
     (whitelist, readOnly, enableSandbox).mapN(SandboxCfg.apply)
 
   private val maxBufferSize: Opts[Int] = {
-    val default = 8192
+    val default = 16384
     val help =
       s"Size of the buffer for the output of an external process in lines; default: $default"
-    option[Int]("max-buffer-size", help).withDefault(default)
+    option[Int](name.maxBufferSize, help).withDefault(default)
   }
 
   private val processCfg: Opts[ProcessCfg] =
@@ -287,7 +295,7 @@ object Cli {
   private val azureReposOrganization: Opts[Option[String]] =
     option[String](
       "azure-repos-organization",
-      "The Azure organization (required when --forge-type is azure-repos)"
+      s"The Azure organization (required when --${name.forgeType} is ${AzureRepos.asString})"
     ).orNone
 
   private val azureReposCfg: Opts[AzureReposCfg] =
