@@ -19,6 +19,7 @@ package org.scalasteward.core.buildtool.mill
 import better.files.File
 import cats.effect.MonadCancelThrow
 import cats.syntax.all._
+import org.scalasteward.core.buildtool.bsp.{BspExtractor, BspServerType}
 import org.scalasteward.core.buildtool.mill.MillAlg._
 import org.scalasteward.core.buildtool.{BuildRoot, BuildToolAlg}
 import org.scalasteward.core.data._
@@ -28,6 +29,7 @@ import org.scalasteward.core.util.Nel
 import org.typelevel.log4cats.Logger
 
 final class MillAlg[F[_]](implicit
+    bspExtractor: BspExtractor[F],
     fileAlg: FileAlg[F],
     logger: Logger[F],
     processAlg: ProcessAlg[F],
@@ -44,16 +46,8 @@ final class MillAlg[F[_]](implicit
   override def getDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
     for {
       buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
-      predef = buildRootDir / "scala-steward.sc"
       millBuildVersion <- getMillVersion(buildRootDir)
-      extracted <- fileAlg.createTemporarily(predef, content(millBuildVersion)).surround {
-        val command = Nel("mill", List("-i", "-p", predef.toString, "show", extractDeps))
-        processAlg.execSandboxed(command, buildRootDir)
-      }
-      parsed <- F.fromEither(
-        parser.parseModules(extracted.dropWhile(!_.startsWith("{")).mkString("\n"))
-      )
-      dependencies = parsed.map(module => Scope(module.dependencies, module.repositories))
+      dependencies <- getBuildDependencies(buildRoot, buildRootDir, millBuildVersion)
       millBuildDeps = millBuildVersion.toSeq.map(version =>
         Scope(List(millMainArtifact(version)), List(millMainResolver))
       )
@@ -62,6 +56,28 @@ final class MillAlg[F[_]](implicit
         case Some(value) => getMillPluginDeps(value, buildRootDir)
       }
     } yield dependencies ++ millBuildDeps ++ millPluginDeps
+
+  private def getBuildDependencies(
+      buildRoot: BuildRoot,
+      buildRootDir: File,
+      millBuildVersion: Option[Version]
+  ): F[List[Scope.Dependencies]] = {
+    val useBsp = false
+    if (useBsp) bspExtractor.getDependencies(BspServerType.Mill, buildRoot)
+    else {
+      for {
+        _ <- F.unit
+        predef = buildRootDir / "scala-steward.sc"
+        extracted <- fileAlg.createTemporarily(predef, content(millBuildVersion)).surround {
+          val command = Nel("mill", List("-i", "-p", predef.toString, "show", extractDeps))
+          processAlg.execSandboxed(command, buildRootDir)
+        }
+        parsed <-
+          F.fromEither(parser.parseModules(extracted.dropWhile(!_.startsWith("{")).mkString("\n")))
+        dependencies = parsed.map(module => Scope(module.dependencies, module.repositories))
+      } yield dependencies
+    }
+  }
 
   override def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
     logger.warn(
