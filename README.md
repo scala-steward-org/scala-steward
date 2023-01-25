@@ -117,6 +117,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [Kilic Ali-Firat](https://github.com/alifirat)
 * [LaurenceWarne](https://github.com/LaurenceWarne)
 * [Leonhard Riedißer](https://github.com/L7R7)
+* [Maksym Ochenashko](https://github.com/iRevive)
 * [Manuel Cueto](https://github.com/manuelcueto)
 * [Marco Zühlke](https://github.com/mzuehlke) 
 * [Mark Canlas](https://github.com/mcanlas)
