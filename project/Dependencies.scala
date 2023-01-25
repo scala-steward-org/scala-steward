@@ -31,7 +31,7 @@ object Dependencies {
   val jjwtApi = "io.jsonwebtoken" % "jjwt-api" % "0.11.5"
   val jjwtImpl = "io.jsonwebtoken" % "jjwt-impl" % jjwtApi.revision
   val jjwtJackson = "io.jsonwebtoken" % "jjwt-jackson" % jjwtApi.revision
-  val millVersion = "0.10.10"
+  val millVersion = "0.10.11"
   val millMain = "com.lihaoyi" % "mill-main_2.13" % millVersion
   val monocleCore = "dev.optics" %% "monocle-core" % "3.2.0"
   val munit = "org.scalameta" %% "munit" % "0.7.29"
