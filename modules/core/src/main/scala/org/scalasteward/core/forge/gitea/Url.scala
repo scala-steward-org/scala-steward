@@ -25,9 +25,6 @@ class Url(apiHost: Uri) {
   def repoBranch(repo: Repo, branch: Branch): Uri =
     repos(repo) / "branches" / branch.name
 
-  def createFork(repo: Repo): Uri =
-    repos(repo) / "forks"
-
   def forks(repo: Repo): Uri =
     repos(repo) / "forks"
 
