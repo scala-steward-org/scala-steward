@@ -18,6 +18,7 @@ package org.scalasteward.core.buildtool.bsp
 
 import better.files.File
 import cats.effect.Async
+import cats.effect.syntax.all._
 import cats.syntax.all._
 import ch.epfl.scala.bsp4j.{
   BuildClientCapabilities,
@@ -81,14 +82,22 @@ final class BspExtractor[F[_]](defaultResolver: Resolver)(implicit
         buildRootDir.uri.toString,
         new BuildClientCapabilities(Collections.emptyList())
       )
-      for {
-        _ <- lift(p.buildInitialize(initBuildParams).thenAccept(_ => p.onBuildInitialized()))
-        targets <- lift(p.workspaceBuildTargets())
+      (for {
+        initBuildResult <- lift(p.buildInitialize(initBuildParams))
+        _ <- F.blocking(p.onBuildInitialized())
+        isDependencyModulesProvider =
+          Option(initBuildResult.getCapabilities.getDependencyModulesProvider)
+            .exists(_.booleanValue())
+        _ <- F.raiseWhen(!isDependencyModulesProvider) {
+          new Throwable(s"${initBuildResult.getDisplayName} is not a dependency modules provider")
+        }
+        buildTargetsResult <- lift(p.workspaceBuildTargets())
         dependencyModulesParams =
-          new DependencyModulesParams(targets.getTargets.asScala.map(_.getId).asJava)
+          new DependencyModulesParams(buildTargetsResult.getTargets.asScala.map(_.getId).asJava)
         dependencyModulesResult <- lift(p.buildTargetDependencyModules(dependencyModulesParams))
-        _ <- lift(p.buildShutdown().thenAccept(_ => p.onBuildExit()))
-      } yield dependencyModulesResult
+      } yield dependencyModulesResult).guarantee {
+        lift(p.buildShutdown()) >> F.blocking(p.onBuildExit())
+      }
     }
 
   private def lift[A](fut: => CompletableFuture[A]): F[A] =

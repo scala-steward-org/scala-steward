@@ -38,8 +38,8 @@ object BspProcess {
         val pb = new ProcessBuilder(command.toList: _*)
         pb.directory(workingDirectory.toJava)
         pb.start()
-      })(process => F.blocking(process.waitFor()).void)
-      ec <- Resource.eval(F.executionContext)
+      })(process => F.blocking(process.waitFor(1L, TimeUnit.SECONDS)).void)
+      ec <- Resource.executionContext
       launcher <- Resource.eval(F.blocking {
         new Launcher.Builder[BuildServer]()
           .setOutput(process.getOutputStream)
