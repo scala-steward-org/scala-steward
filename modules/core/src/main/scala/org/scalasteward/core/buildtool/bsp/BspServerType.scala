@@ -24,6 +24,20 @@ sealed abstract class BspServerType(
 )
 
 object BspServerType {
+  // https://github.com/JetBrains/bazel-bsp#easy-way-coursier
+  case object Bazel
+      extends BspServerType(
+        connectionDetailsCommand = Nel.of(
+          "cs",
+          "launch",
+          "org.jetbrains.bsp:bazel-bsp:2.4.0",
+          "-M",
+          "org.jetbrains.bsp.bazel.install.Install"
+        ),
+        connectionDetailsName = "bazelbsp.json"
+      )
+
+  // https://com-lihaoyi.github.io/mill/mill/Plugin_BSP.html
   case object Mill
       extends BspServerType(
         connectionDetailsCommand = Nel.of("mill", "mill.bsp.BSP/install"),
