@@ -49,4 +49,10 @@ object BspServerType {
         connectionDetailsCommand = Nel.of("sbt", "bspConfig"),
         connectionDetailsName = "sbt.json"
       )
+
+  case object ScalaCli
+      extends BspServerType(
+        connectionDetailsCommand = Nel.of("scala-cli", "setup-ide", "."),
+        connectionDetailsName = "scala-cli.json"
+      )
 }
