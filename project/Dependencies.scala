@@ -1,6 +1,7 @@
 import sbt._
 
 object Dependencies {
+  val bazelBsp = "org.jetbrains.bsp" % "bazel-bsp" % "2.4.0"
   val bcprovJdk15to18 = "org.bouncycastle" % "bcprov-jdk15to18" % "1.72"
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.1"
   val bsp4j = "ch.epfl.scala" % "bsp4j" % "2.1.0-M4"

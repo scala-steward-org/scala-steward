@@ -30,7 +30,7 @@ object BspServerType {
         connectionDetailsCommand = Nel.of(
           "cs",
           "launch",
-          "org.jetbrains.bsp:bazel-bsp:2.4.0",
+          org.scalasteward.core.BuildInfo.bazelBsp,
           "-M",
           "org.jetbrains.bsp.bazel.install.Install"
         ),
