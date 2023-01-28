@@ -50,6 +50,7 @@ object BspServerType {
         connectionDetailsName = "sbt.json"
       )
 
+  // https://scala-cli.virtuslab.org/docs/commands/setup-ide#ide-support-internals
   case object ScalaCli
       extends BspServerType(
         connectionDetailsCommand = Nel.of("scala-cli", "setup-ide", "."),

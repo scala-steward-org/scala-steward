@@ -47,24 +47,8 @@ final class BspExtractor[F[_]](defaultResolver: Resolver)(implicit
       buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
       connectionDetails <- createConnectionDetailsFile(bspServerType, buildRoot)
       details <- readConnectionDetailsFile(connectionDetails)
-      initBuildParams = new InitializeBuildParams(
-        "Scala Steward",
-        org.scalasteward.core.BuildInfo.version,
-        org.scalasteward.core.BuildInfo.bsp4jVersion,
-        buildRootDir.uri.toString,
-        new BuildClientCapabilities(Collections.emptyList())
-      )
-      bspDependencies <- BspProcess.run(details.argv, buildRootDir).use { p =>
-        for {
-          _ <- lift(p.buildInitialize(initBuildParams).thenAccept(_ => p.onBuildInitialized()))
-          targets <- lift(p.workspaceBuildTargets())
-          dependencyModulesParams =
-            new DependencyModulesParams(targets.getTargets.asScala.map(_.getId).asJava)
-          dependencyModulesResult <- lift(p.buildTargetDependencyModules(dependencyModulesParams))
-          _ <- lift(p.buildShutdown().thenAccept(_ => p.onBuildExit()))
-        } yield dependencyModulesResult
-      }
-    } yield dependenciesFrom(bspDependencies)
+      bspDependencies <- getBspDependencies(buildRootDir, details)
+    } yield transform(bspDependencies)
 
   private def createConnectionDetailsFile(
       bspServerType: BspServerType,
@@ -85,10 +69,32 @@ final class BspExtractor[F[_]](defaultResolver: Resolver)(implicit
       case None => F.raiseError(new Throwable)
     }
 
+  private def getBspDependencies(
+      buildRootDir: File,
+      details: BspConnectionDetails
+  ): F[DependencyModulesResult] =
+    BspProcess.run(details.argv, buildRootDir).use { p =>
+      val initBuildParams = new InitializeBuildParams(
+        "Scala Steward",
+        org.scalasteward.core.BuildInfo.version,
+        org.scalasteward.core.BuildInfo.bsp4jVersion,
+        buildRootDir.uri.toString,
+        new BuildClientCapabilities(Collections.emptyList())
+      )
+      for {
+        _ <- lift(p.buildInitialize(initBuildParams).thenAccept(_ => p.onBuildInitialized()))
+        targets <- lift(p.workspaceBuildTargets())
+        dependencyModulesParams =
+          new DependencyModulesParams(targets.getTargets.asScala.map(_.getId).asJava)
+        dependencyModulesResult <- lift(p.buildTargetDependencyModules(dependencyModulesParams))
+        _ <- lift(p.buildShutdown().thenAccept(_ => p.onBuildExit()))
+      } yield dependencyModulesResult
+    }
+
   private def lift[A](fut: => CompletableFuture[A]): F[A] =
     F.fromCompletableFuture(F.blocking(fut))
 
-  private def dependenciesFrom(bspDependencies: DependencyModulesResult): List[Scope.Dependencies] =
+  private def transform(bspDependencies: DependencyModulesResult): List[Scope.Dependencies] =
     bspDependencies.getItems.asScala.toList.map { item =>
       val dependencies = item.getModules.asScala.toList.mapFilter { module =>
         module.getName.split(':') match {
