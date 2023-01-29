@@ -33,6 +33,13 @@ object ArtifactId {
   def apply(name: String, crossName: String): ArtifactId =
     ArtifactId(name, Some(crossName))
 
+  def from(maybeCrossName: String): ArtifactId =
+    maybeCrossName.split('_').toList match {
+      case Nil           => ArtifactId(maybeCrossName)
+      case _ :: Nil      => ArtifactId(maybeCrossName)
+      case list @ x :: _ => ArtifactId(list.find(_.nonEmpty).getOrElse(x), maybeCrossName)
+    }
+
   implicit val artifactIdCodec: Codec[ArtifactId] =
     deriveCodec
 

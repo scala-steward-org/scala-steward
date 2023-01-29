@@ -108,7 +108,10 @@ final class BspExtractor[F[_]](defaultResolver: Resolver)(implicit
       val dependencies = item.getModules.asScala.toList.mapFilter { module =>
         module.getName.split(':') match {
           case Array(groupId, artifactId) =>
-            Dependency(GroupId(groupId), ArtifactId(artifactId), Version(module.getVersion)).some
+            val g = GroupId(groupId)
+            val a = ArtifactId.from(artifactId)
+            val v = Version(module.getVersion)
+            Dependency(g, a, v).some
           case _ => None
         }
       }
