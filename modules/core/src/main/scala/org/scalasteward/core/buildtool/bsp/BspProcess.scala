@@ -44,7 +44,7 @@ object BspProcess {
         new Launcher.Builder[BuildServer]()
           .setOutput(process.getOutputStream)
           .setInput(process.getInputStream)
-          .setExecutorService(fromExecutionContext(ec))
+          .setExecutorService(executorServiceFrom(ec))
           .setLocalService(new BspClient)
           .setRemoteInterface(classOf[BuildServer])
           .create()
@@ -52,7 +52,7 @@ object BspProcess {
       _ <- F.blocking(launcher.startListening()).background
     } yield launcher.getRemoteProxy
 
-  private def fromExecutionContext(ec: ExecutionContext): ExecutorService =
+  private def executorServiceFrom(ec: ExecutionContext): ExecutorService =
     new AbstractExecutorService {
       override def shutdown(): Unit = ()
       override def shutdownNow(): util.List[Runnable] = Collections.emptyList()
