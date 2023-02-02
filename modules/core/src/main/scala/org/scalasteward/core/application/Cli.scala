@@ -323,6 +323,19 @@ object Cli {
       .withDefault(default)
   }
 
+  private val prThrottleSkip = {
+    val help = "" // TODO
+    option[FiniteDuration]("pr-throttle-skip", help).orNone
+  }
+
+  private val prThrottleWait = {
+    val help = "" // TODO
+    option[FiniteDuration]("pr-throttle-wait", help).orNone
+  }
+
+  private val pullRequestThrottleCfg: Opts[PullRequestThrottleCfg] =
+    (prThrottleSkip, prThrottleWait).mapN(PullRequestThrottleCfg.apply)
+
   private val configFile: Opts[File] =
     Opts.argument[File]()
 
@@ -350,7 +363,8 @@ object Cli {
     gitHubApp,
     urlCheckerTestUrls,
     defaultMavenRepo,
-    refreshBackoffPeriod
+    refreshBackoffPeriod,
+    pullRequestThrottleCfg
   ).mapN(Config.apply)
 
   val command: Command[StewardUsage] =

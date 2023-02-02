@@ -24,7 +24,7 @@ import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.github.{GitHubApp, GitHubAppApiAlg, GitHubAuthAlg}
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
-import org.scalasteward.core.nurture.NurtureAlg
+import org.scalasteward.core.nurture.{NurtureAlg, PullRequestThrottle}
 import org.scalasteward.core.repocache.RepoCacheAlg
 import org.scalasteward.core.update.PruningAlg
 import org.scalasteward.core.util
@@ -42,6 +42,7 @@ final class StewardAlg[F[_]](config: Config)(implicit
     logger: Logger[F],
     nurtureAlg: NurtureAlg[F],
     pruningAlg: PruningAlg[F],
+    pullRequestThrottle: PullRequestThrottle[F],
     repoCacheAlg: RepoCacheAlg[F],
     selfCheckAlg: SelfCheckAlg[F],
     workspaceAlg: WorkspaceAlg[F],
@@ -79,7 +80,9 @@ final class StewardAlg[F[_]](config: Config)(implicit
         F.guarantee(
           repoCacheAlg.checkCache(repo).flatMap { case (data, fork) =>
             pruningAlg.needsAttention(data).flatMap {
-              _.traverse_(states => nurtureAlg.nurture(data, fork, states.map(_.update)))
+              _.traverse_ { states =>
+                pullRequestThrottle.throttle(nurtureAlg.nurture(data, fork, states.map(_.update)))
+              }
             }
           },
           gitAlg.removeClone(repo)

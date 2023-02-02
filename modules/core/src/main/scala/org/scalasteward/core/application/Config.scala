@@ -69,7 +69,8 @@ final case class Config(
     githubApp: Option[GitHubApp],
     urlCheckerTestUrls: Nel[Uri],
     defaultResolver: Resolver,
-    refreshBackoffPeriod: FiniteDuration
+    refreshBackoffPeriod: FiniteDuration,
+    pullRequestThrottleCfg: PullRequestThrottleCfg
 ) {
   def forgeUser[F[_]](implicit
       processAlg: ProcessAlg[F],
@@ -137,6 +138,11 @@ object Config {
   final case class ArtifactCfg(
       migrations: List[Uri],
       disableDefaults: Boolean
+  )
+
+  final case class PullRequestThrottleCfg(
+      skipFor: Option[FiniteDuration],
+      waitFor: Option[FiniteDuration]
   )
 
   sealed trait ForgeSpecificCfg extends Product with Serializable
