@@ -170,7 +170,7 @@ object Selector {
       versionPositions: List[VersionPosition]
   ): List[VersionPosition] =
     if (isMillMainUpdate(update))
-      versionPositions.filter(_.version.path === millVersionName)
+      versionPositions.filter(_.version.path.endsWith(millVersionName))
     else List.empty
 
   private def sbtVersionPositions(
@@ -188,7 +188,7 @@ object Selector {
   ): List[VersionPosition] =
     if (isScalafmtCoreUpdate(update))
       matchingSearchTerms(List("version"), versionPositions)
-        .filter(_.version.path === scalafmtConfName)
+        .filter(_.version.path.endsWith(scalafmtConfName))
     else List.empty
 
   private def moduleReplacements(
