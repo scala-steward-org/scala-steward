@@ -145,7 +145,6 @@ lazy val core = myCrossProject("core")
       Dependencies.refinedScalacheck % Test,
       Dependencies.scalacheck % Test
     ),
-    evictionErrorLevel := Level.Info,
     assembly / test := {},
     assembly / assemblyMergeStrategy := {
       case PathList("META-INF", "versions", "9", "module-info.class") =>
