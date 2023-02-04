@@ -87,7 +87,8 @@ class CoursierAlgTest extends CatsEffectSuite {
     val obtained = coursierAlg.getMetadata(dep, resolvers).runA(MockState.empty)
     val expected = emptyMetadata.copy(
       homePage = Some(uri"https://github.com/japgolly/scalajs-react"),
-      scmUrl = Some(uri"github.com:japgolly/scalajs-react.git")
+      scmUrl = Some(uri"github.com:japgolly/scalajs-react.git"),
+      versionScheme = Some("early-semver")
     )
     assertIO(obtained, expected)
   }

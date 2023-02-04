@@ -20,14 +20,13 @@ import cats.effect._
 import cats.syntax.all._
 import eu.timepit.refined.auto._
 import eu.timepit.refined.types.numeric.PosInt
+import java.net.http.HttpClient
+import java.net.http.HttpClient.Builder
 import org.http4s.Response
 import org.http4s.client._
 import org.http4s.headers.`User-Agent`
 import org.http4s.jdkhttpclient.JdkHttpClient
-import java.net.http.HttpClient
-import java.net.http.HttpClient.Builder
 import org.typelevel.ci._
-
 import scala.concurrent.duration._
 
 object ClientConfiguration {
@@ -41,6 +40,7 @@ object ClientConfiguration {
     Resource
       .eval(defaultHttpClient[F](bmw).map(JdkHttpClient[F](_)))
       .map(cmw)
+
   // Copied from https://github.com/http4s/http4s-jdk-http-client/blob/b9655b90549319fbe999069e7c95ab1752efecb9/core/src/main/scala/org/http4s/jdkhttpclient/JdkHttpClient.scala#L257-L275 to support BuilderMiddleware
   private def defaultHttpClient[F[_]: Async](bmw: BuilderMiddleware): F[HttpClient] =
     Async[F].executor.flatMap { exec =>
@@ -55,9 +55,7 @@ object ClientConfiguration {
 
         builder.executor(exec)
 
-        bmw(builder)
-
-        builder.build()
+        bmw(builder).build()
       }
     }
 

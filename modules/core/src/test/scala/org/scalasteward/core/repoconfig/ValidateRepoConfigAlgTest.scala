@@ -3,10 +3,9 @@ package org.scalasteward.core.repoconfig
 import better.files.File
 import cats.effect.ExitCode
 import cats.effect.unsafe.implicits.global
-import org.scalasteward.core.mock.{MockContext, MockState}
-
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
+import org.scalasteward.core.mock.{MockContext, MockState}
 
 class ValidateRepoConfigAlgTest extends munit.FunSuite {
 

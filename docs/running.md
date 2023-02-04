@@ -10,8 +10,8 @@ sbt stage
   --repos-file "$STEWARD_DIR/repos.md" \
   --repo-config "$STEWARD_DIR/default.scala-steward.conf" \
   --git-author-email ${EMAIL} \
-  --vcs-api-host "https://api.github.com" \
-  --vcs-login ${LOGIN} \
+  --forge-api-host "https://api.github.com" \
+  --forge-login ${LOGIN} \
   --git-ask-pass "$STEWARD_DIR/.github/askpass/$LOGIN.sh" \
   --sign-commits \
   --env-var FOO=BAR
@@ -27,8 +27,8 @@ docker run -v $STEWARD_DIR:/opt/scala-steward -it fthomas/scala-steward:latest \
   --repos-file "/opt/scala-steward/repos.md" \
   --repo-config "/opt/scala-steward/default.scala-steward.conf" \
   --git-author-email ${EMAIL} \
-  --vcs-api-host "https://api.github.com" \
-  --vcs-login ${LOGIN} \
+  --forge-api-host "https://api.github.com" \
+  --forge-login ${LOGIN} \
   --git-ask-pass "/opt/scala-steward/.github/askpass/$LOGIN.sh" \
   --sign-commits \
   --env-var FOO=BAR \ 
@@ -90,7 +90,7 @@ example1.realm=Example Realm
 ```
 sbt
 project core
-run --do-not-fork --workspace "/path/workspace" --repos-file "/path/repos.md" --repo-config "/path/default.scala-steward.conf" --git-ask-pass "/path/pass.sh" --git-author-email "email@example.org" --vcs-type "gitlab" --vcs-api-host "https://gitlab.com/api/v4/" --vcs-login "gitlab.steward"
+run --do-not-fork --workspace "/path/workspace" --repos-file "/path/repos.md" --repo-config "/path/default.scala-steward.conf" --git-ask-pass "/path/pass.sh" --git-author-email "email@example.org" --forge-type "gitlab" --forge-api-host "https://gitlab.com/api/v4/" --forge-login "gitlab.steward"
 ```
 
 
@@ -115,9 +115,9 @@ docker run -v $PWD:/opt/scala-steward \
     --repo-config "/opt/scala-steward/default.scala-steward.conf" \
     --git-ask-pass "/opt/scala-steward/pass.sh" \
     --git-author-email "myemail@company.xyz" \
-    --vcs-type "bitbucket" \
-    --vcs-api-host "https://api.bitbucket.org/2.0" \
-    --vcs-login "$BITBUCKET_USERNAME"
+    --forge-type "bitbucket" \
+    --forge-api-host "https://api.bitbucket.org/2.0" \
+    --forge-login "$BITBUCKET_USERNAME"
 ```
 
 * Run it from a CI tool or manually using with this command:
@@ -144,9 +144,9 @@ docker run -v $PWD:/opt/scala-steward \
     --repo-config "/opt/scala-steward/default.scala-steward.conf" \
     --git-ask-pass "/opt/scala-steward/pass.sh" \
     --git-author-email "myemail@company.xyz" \
-    --vcs-type "bitbucket" \
-    --vcs-api-host "https://api.bitbucket.org/2.0" \
-    --vcs-login "$BITBUCKET_USERNAME"
+    --forge-type "bitbucket" \
+    --forge-api-host "https://api.bitbucket.org/2.0" \
+    --forge-login "$BITBUCKET_USERNAME"
 ```
 
 NOTE: This script is slightly different to the one in the previous Bitbucket
@@ -230,17 +230,18 @@ check:
     - mkdir --parents "$CI_PROJECT_DIR/.sbt" "$CI_PROJECT_DIR/.ivy2"
     - ln -sfT "$CI_PROJECT_DIR/.sbt"  "$HOME/.sbt"
     - ln -sfT "$CI_PROJECT_DIR/.ivy2" "$HOME/.ivy2"
-    - >-
-      /opt/docker/bin/scala-steward
-        --workspace  "$CI_PROJECT_DIR/workspace"
-        --process-timeout 30min
-        --do-not-fork
-        --repos-file "$CI_PROJECT_DIR/repos.md"
-        --repo-config "$CI_PROJECT_DIR/default.scala-steward.conf"
-        --git-author-email "${EMAIL}"
-        --vcs-type "gitlab"
-        --vcs-api-host "${CI_API_V4_URL}"
-        --vcs-login "${LOGIN}"
+    - chmod +x "$CI_PROJECT_DIR/askpass.sh"
+    - >
+      /opt/docker/bin/scala-steward \
+        --workspace "$CI_PROJECT_DIR/workspace" \
+        --process-timeout "30min" \
+        --do-not-fork \
+        --repos-file "$CI_PROJECT_DIR/repos.md" \
+        --repo-config "$CI_PROJECT_DIR/default.scala-steward.conf" \
+        --git-author-email "${EMAIL}" \
+        --forge-type "gitlab" \
+        --forge-api-host "${CI_API_V4_URL}" \
+        --forge-login "${LOGIN}" \
         --git-ask-pass "$CI_PROJECT_DIR/askpass.sh"
   cache:
     key: scala-steward
@@ -306,9 +307,9 @@ docker run -v $PWD:/opt/scala-steward \
     --workspace "/opt/scala-steward/workspace" \
     --repos-file "/opt/scala-steward/repos.md" \
     --git-author-email "email@mycompany.com" \
-    --vcs-type "azure-repos" \
-    --vcs-api-host "https://dev.azure.com" \
-    --vcs-login "email@mycompany.com" \
+    --forge-type "azure-repos" \
+    --forge-api-host "https://dev.azure.com" \
+    --forge-login "email@mycompany.com" \
     --azure-repos-organization "mycompany" \
     --git-ask-pass "/opt/scala-steward/pass.sh"
 ```

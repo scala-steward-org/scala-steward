@@ -75,8 +75,9 @@ object Selector {
         case _                 => true
       }
       .filter { p =>
+        val artifactIdNames = Set(p.artifactId, p.artifactId.takeWhile(_ =!= '_'))
         dependencies.exists { d =>
-          d.groupId.value === p.groupId && d.artifactId.names.contains_(p.artifactId)
+          d.groupId.value === p.groupId && d.artifactId.names.exists(artifactIdNames)
         }
       }
 
@@ -169,7 +170,7 @@ object Selector {
       versionPositions: List[VersionPosition]
   ): List[VersionPosition] =
     if (isMillMainUpdate(update))
-      versionPositions.filter(_.version.path === millVersionName)
+      versionPositions.filter(_.version.path.endsWith(millVersionName))
     else List.empty
 
   private def sbtVersionPositions(
@@ -187,30 +188,29 @@ object Selector {
   ): List[VersionPosition] =
     if (isScalafmtCoreUpdate(update))
       matchingSearchTerms(List("version"), versionPositions)
-        .filter(_.version.path === scalafmtConfName)
+        .filter(_.version.path.endsWith(scalafmtConfName))
     else List.empty
 
   private def moduleReplacements(
       update: Update.Single,
       modulePositions: List[ModulePosition]
-  ): List[Substring.Replacement] = {
-    val (newerGroupId, newerArtifactId) = update match {
-      case u: Update.ForArtifactId => (u.newerGroupId, u.newerArtifactId)
-      case _: Update.ForGroupId    => (None, None)
+  ): List[Substring.Replacement] =
+    update.forArtifactIds.toList.flatMap { forArtifactId =>
+      val newerGroupId = forArtifactId.newerGroupId
+      val newerArtifactId = forArtifactId.newerArtifactId
+      if (newerGroupId.isEmpty && newerArtifactId.isEmpty) List.empty
+      else {
+        val currentGroupId = forArtifactId.groupId
+        val currentArtifactId = forArtifactId.artifactIds.head
+        modulePositions
+          .filter { p =>
+            p.groupId.value === currentGroupId.value &&
+            currentArtifactId.names.contains_(p.artifactId.value)
+          }
+          .flatMap { p =>
+            newerGroupId.map(g => p.groupId.replaceWith(g.value)).toList ++
+              newerArtifactId.map(a => p.artifactId.replaceWith(a)).toList
+          }
+      }
     }
-    if (newerGroupId.isEmpty && newerArtifactId.isEmpty) List.empty
-    else {
-      val currentGroupId = update.groupId
-      val currentArtifactId = update.artifactIds.head
-      modulePositions
-        .filter { p =>
-          p.groupId.value === currentGroupId.value &&
-          currentArtifactId.names.contains_(p.artifactId.value)
-        }
-        .flatMap { p =>
-          newerGroupId.map(g => p.groupId.replaceWith(g.value)).toList ++
-            newerArtifactId.map(a => p.artifactId.replaceWith(a)).toList
-        }
-    }
-  }
 }

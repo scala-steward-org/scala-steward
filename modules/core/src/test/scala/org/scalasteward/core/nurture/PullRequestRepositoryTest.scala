@@ -5,7 +5,9 @@ import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.http4s.syntax.literals._
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.Update
+import org.scalasteward.core.data.{Repo, Update}
+import org.scalasteward.core.forge.data.PullRequestState.Open
+import org.scalasteward.core.forge.data.{PullRequestNumber, PullRequestState}
 import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.mock.MockConfig.config
@@ -14,8 +16,6 @@ import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry
 import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
 import org.scalasteward.core.util.Nel
-import org.scalasteward.core.vcs.data.PullRequestState.Open
-import org.scalasteward.core.vcs.data.{PullRequestNumber, PullRequestState, Repo}
 
 class PullRequestRepositoryTest extends FunSuite {
   private def checkTrace(state: MockState, trace: Vector[TraceEntry]): Unit =

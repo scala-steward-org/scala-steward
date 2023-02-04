@@ -13,8 +13,8 @@ object MockConfig {
     "--git-author-name=Bot Doe",
     "--git-author-email=bot@example.org",
     s"--git-ask-pass=$mockRoot/askpass.sh",
-    "--vcs-api-host=http://example.com",
-    "--vcs-login=bot-doe",
+    "--forge-api-host=http://example.com",
+    "--forge-login=bot-doe",
     "--enable-sandbox",
     "--env-var=VAR1=val1",
     "--env-var=VAR2=val2",
@@ -22,7 +22,8 @@ object MockConfig {
     "--refresh-backoff-period=1hour"
   )
   val Success(Config.StewardUsage.Regular(config)) = Cli.parseArgs(args)
-  val envVars = List(s"GIT_ASKPASS=${config.gitCfg.gitAskPass}", "VAR1=val1", "VAR2=val2")
+  val envVars: List[String] =
+    List(s"GIT_ASKPASS=${config.gitCfg.gitAskPass}", "VAR1=val1", "VAR2=val2")
   def gitCmd(repoDir: File): List[String] =
     envVars ++ (repoDir.toString :: FileGitAlg.gitCmd.toList)
 }

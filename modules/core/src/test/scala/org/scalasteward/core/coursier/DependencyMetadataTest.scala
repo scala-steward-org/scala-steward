@@ -10,7 +10,8 @@ class DependencyMetadataTest extends FunSuite {
     val metadata = DependencyMetadata(
       homePage = Some(uri"https://github.com/japgolly/scalajs-react"),
       scmUrl = Some(uri"github.com:japgolly/scalajs-react.git"),
-      releaseNotesUrl = None
+      releaseNotesUrl = None,
+      versionScheme = Some("early-semver")
     )
     val obtained = metadata.filterUrls(_.renderString.startsWith("http").pure[Id])
     assertEquals(obtained, metadata.copy(scmUrl = None))

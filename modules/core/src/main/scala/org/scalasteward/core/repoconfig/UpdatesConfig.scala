@@ -34,7 +34,7 @@ import org.scalasteward.core.update.FilterAlg.{
   NotAllowedByConfig,
   VersionPinnedByConfig
 }
-import org.scalasteward.core.util.{combineOptions, Nel}
+import org.scalasteward.core.util.{combineOptions, intellijThisImportIsUsed, Nel}
 
 final case class UpdatesConfig(
     pin: List[UpdatePattern] = List.empty,
@@ -211,6 +211,5 @@ object UpdatesConfig {
   ): Option[List[String]] =
     combineOptions(x, y)(_.intersect(_))
 
-  // prevent IntelliJ from removing the import of io.circe.refined._
-  locally(refinedDecoder: Decoder[NonNegInt])
+  intellijThisImportIsUsed(refinedDecoder: Decoder[NonNegInt])
 }

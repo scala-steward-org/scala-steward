@@ -16,13 +16,11 @@
 
 package org.scalasteward.core.buildtool.mill
 
-import cats.syntax.all._
-import io.circe.{Decoder, DecodingFailure}
-import org.scalasteward.core.data.{Dependency, Resolver, Version}
 import cats.parse.Parser
 import cats.parse.Rfc5234.sp
-import org.scalasteward.core.data.GroupId
-import org.scalasteward.core.data.ArtifactId
+import cats.syntax.all._
+import io.circe.{Decoder, DecodingFailure}
+import org.scalasteward.core.data._
 import scala.util.Try
 
 object parser {

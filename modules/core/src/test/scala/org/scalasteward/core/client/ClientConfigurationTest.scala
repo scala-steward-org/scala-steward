@@ -2,14 +2,15 @@ package org.scalasteward.core.client
 
 import cats.effect._
 import cats.implicits._
+import eu.timepit.refined.auto._
+import eu.timepit.refined.types.numeric.PosInt
 import munit.CatsEffectSuite
 import org.http4s.HttpRoutes
 import org.http4s.client._
 import org.http4s.headers.{`Retry-After`, `User-Agent`, Location}
 import org.http4s.implicits._
 import org.typelevel.ci._
-import eu.timepit.refined.auto._
-import eu.timepit.refined.types.numeric.PosInt
+import scala.concurrent.duration._
 
 class ClientConfigurationTest extends CatsEffectSuite {
 
@@ -71,7 +72,7 @@ class ClientConfigurationTest extends CatsEffectSuite {
 
   test("disableFollowRedirect does not follow redirect") {
     import org.http4s.Method._
-    import org.http4s.blaze.server._
+    import org.http4s.ember.server._
     import org.http4s.client.dsl.io._
 
     val regularClient = ClientConfiguration.build[IO](
@@ -83,7 +84,11 @@ class ClientConfigurationTest extends CatsEffectSuite {
       ClientConfiguration.setUserAgent(dummyUserAgent)
     )
     val getServer =
-      BlazeServerBuilder[IO].bindAny("localhost").withHttpApp(routes.orNotFound).resource
+      EmberServerBuilder
+        .default[IO]
+        .withShutdownTimeout(1.second)
+        .withHttpApp(routes.orNotFound)
+        .build
 
     val test = (regularClient, disabledClient, getServer).tupled.use {
       case (regClient, disClient, s) =>

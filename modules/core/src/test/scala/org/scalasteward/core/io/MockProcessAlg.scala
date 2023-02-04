@@ -6,7 +6,7 @@ import org.scalasteward.core.mock.MockEff
 
 object MockProcessAlg {
   def create(config: ProcessCfg): ProcessAlg[MockEff] =
-    ProcessAlg.fromExecImpl(config) { args =>
+    new ProcessAlg(config)({ args =>
       Kleisli {
         _.modify { s =>
           val cmd = args.workingDirectory.map(_.toString).toList ++ args.command.toList
@@ -15,5 +15,5 @@ object MockProcessAlg {
           (s1, a)
         }
       }
-    }
+    })
 }

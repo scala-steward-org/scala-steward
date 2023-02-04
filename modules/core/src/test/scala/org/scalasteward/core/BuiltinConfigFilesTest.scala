@@ -1,6 +1,6 @@
 package org.scalasteward.core
 
-import better.files._
+import better.files.File
 import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.application.Config.{ArtifactCfg, RepoConfigCfg, ScalafixCfg}
@@ -14,7 +14,6 @@ import org.scalasteward.core.mock.MockContext.context.{
 import org.scalasteward.core.mock.MockContext.mockState
 import org.scalasteward.core.repoconfig.RepoConfigLoader
 import org.scalasteward.core.update.artifact.ArtifactMigrationsLoader
-
 import scala.util.{Failure, Success, Try}
 
 class BuiltinConfigFilesTest extends FunSuite {

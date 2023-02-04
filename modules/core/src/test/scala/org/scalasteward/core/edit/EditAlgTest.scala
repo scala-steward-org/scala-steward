@@ -15,7 +15,6 @@ import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafmt.ScalafmtAlg.opts
 import org.scalasteward.core.scalafmt.{scalafmtBinary, scalafmtConfName, scalafmtDependency}
-import org.scalasteward.core.vcs.data.Repo
 
 class EditAlgTest extends FunSuite {
   private def gitStatus(repoDir: File): List[String] =

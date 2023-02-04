@@ -18,11 +18,9 @@ package org.scalasteward.core.data
 
 import cats.Order
 import cats.implicits._
-import io.circe.Decoder
-import io.circe.Encoder
-import io.circe.Json
 import io.circe.generic.semiauto._
 import io.circe.syntax._
+import io.circe.{Decoder, Encoder, HCursor, Json}
 import org.scalasteward.core.repoconfig.PullRequestGroup
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
@@ -52,6 +50,7 @@ object Update {
   }
 
   sealed trait Single extends Product with Serializable with Update {
+    def forArtifactIds: Nel[ForArtifactId]
     def crossDependencies: Nel[CrossDependency]
     def dependencies: Nel[Dependency]
     def groupId: GroupId
@@ -80,8 +79,8 @@ object Update {
     def withNewerVersions(versions: Nel[Version]): Update.Single = this match {
       case s @ ForArtifactId(_, _, _, _) =>
         s.copy(newerVersions = versions)
-      case g @ ForGroupId(_, _) =>
-        g.copy(newerVersions = versions)
+      case ForGroupId(forArtifactIds) =>
+        ForGroupId(forArtifactIds.map(_.copy(newerVersions = versions)))
     }
   }
 
@@ -91,6 +90,9 @@ object Update {
       newerGroupId: Option[GroupId] = None,
       newerArtifactId: Option[String] = None
   ) extends Single {
+    override def forArtifactIds: Nel[ForArtifactId] =
+      Nel.one(this)
+
     override def crossDependencies: Nel[CrossDependency] =
       Nel.one(crossDependency)
 
@@ -114,9 +116,11 @@ object Update {
   }
 
   final case class ForGroupId(
-      crossDependencies: Nel[CrossDependency],
-      newerVersions: Nel[Version]
+      forArtifactIds: Nel[ForArtifactId]
   ) extends Single {
+    override def crossDependencies: Nel[CrossDependency] =
+      forArtifactIds.map(_.crossDependency)
+
     override def dependencies: Nel[Dependency] =
       crossDependencies.flatMap(_.dependencies)
 
@@ -140,6 +144,9 @@ object Update {
 
     override def currentVersion: Version =
       dependencies.head.version
+
+    override def newerVersions: Nel[Version] =
+      forArtifactIds.head.newerVersions
 
     def artifactIdsPrefix: Option[MinLengthString[3]] =
       util.string.longestCommonPrefixGreater[3](artifactIds.map(_.name))
@@ -168,8 +175,7 @@ object Update {
     val groups0 =
       updates.groupByNel(s => (s.groupId, s.currentVersion, s.newerVersions))
     val groups1 = groups0.values.map { group =>
-      if (group.tail.isEmpty) group.head
-      else ForGroupId(group.map(_.crossDependency), group.head.newerVersions)
+      if (group.tail.isEmpty) group.head else ForGroupId(group)
     }
     groups1.toList.distinct.sorted
   }
@@ -213,12 +219,20 @@ object Update {
     derived.mapJson(json => Json.obj("ForGroupId" -> json))
   }
 
-  implicit val ForGroupIdDecoder: Decoder[ForGroupId] = {
-    val derived = deriveDecoder[ForGroupId]
-    derived
+  private val oldForGroupIdDecoder: Decoder[ForGroupId] =
+    (c: HCursor) =>
+      for {
+        crossDependencies <- c.downField("crossDependencies").as[Nel[CrossDependency]]
+        newerVersions <- c.downField("newerVersions").as[Nel[Version]]
+        forArtifactIds = crossDependencies
+          .map(crossDependency => ForArtifactId(crossDependency, newerVersions))
+      } yield ForGroupId(forArtifactIds)
+
+  implicit val ForGroupIdDecoder: Decoder[ForGroupId] =
+    deriveDecoder[ForGroupId]
       .prepare(_.downField("ForGroupId"))
-      .or(derived.prepare(_.downField("Group")))
-  }
+      .or(oldForGroupIdDecoder.prepare(_.downField("ForGroupId")))
+      .or(oldForGroupIdDecoder.prepare(_.downField("Group")))
 
   implicit val GroupedEncoder: Encoder[Grouped] = {
     val derived = deriveEncoder[Grouped]

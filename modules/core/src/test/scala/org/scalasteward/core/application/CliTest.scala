@@ -6,10 +6,9 @@ import munit.FunSuite
 import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.Cli.ParseResult._
-import org.scalasteward.core.vcs.VCSType
-import org.scalasteward.core.vcs.github.GitHubApp
 import org.scalasteward.core.application.Config.StewardUsage
-
+import org.scalasteward.core.forge.ForgeType
+import org.scalasteward.core.forge.github.GitHubApp
 import scala.concurrent.duration._
 
 class CliTest extends FunSuite {
@@ -19,9 +18,9 @@ class CliTest extends FunSuite {
         List("--workspace", "a"),
         List("--repos-file", "b"),
         List("--git-author-email", "d"),
-        List("--vcs-type", "gitlab"),
-        List("--vcs-api-host", "http://example.com"),
-        List("--vcs-login", "e"),
+        List("--forge-type", "gitlab"),
+        List("--forge-api-host", "http://example.com"),
+        List("--forge-login", "e"),
         List("--git-ask-pass", "f"),
         List("--ignore-opts-files"),
         List("--env-var", "g=h"),
@@ -42,9 +41,9 @@ class CliTest extends FunSuite {
     assertEquals(obtained.reposFile, File("b"))
     assertEquals(obtained.gitCfg.gitAuthor.email, "d")
     assertEquals(obtained.gitCfg.gitAskPass, File("f"))
-    assertEquals(obtained.vcsCfg.tpe, VCSType.GitLab)
-    assertEquals(obtained.vcsCfg.apiHost, uri"http://example.com")
-    assertEquals(obtained.vcsCfg.login, "e")
+    assertEquals(obtained.forgeCfg.tpe, ForgeType.GitLab)
+    assertEquals(obtained.forgeCfg.apiHost, uri"http://example.com")
+    assertEquals(obtained.forgeCfg.login, "e")
     assertEquals(obtained.ignoreOptsFiles, true)
     assertEquals(obtained.processCfg.envVars, List(EnvVar("g", "h"), EnvVar("i", "j")))
     assertEquals(obtained.processCfg.processTimeout, 30.minutes)
@@ -73,7 +72,7 @@ class CliTest extends FunSuite {
     List("--workspace", "a"),
     List("--repos-file", "b"),
     List("--git-author-email", "d"),
-    List("--vcs-login", "e"),
+    List("--forge-login", "e"),
     List("--git-ask-pass", "f"),
     List("--disable-sandbox")
   )
@@ -88,7 +87,7 @@ class CliTest extends FunSuite {
     assertEquals(obtained.reposFile, File("b"))
     assertEquals(obtained.gitCfg.gitAuthor.email, "d")
     assertEquals(obtained.gitCfg.gitAskPass, File("f"))
-    assertEquals(obtained.vcsCfg.login, "e")
+    assertEquals(obtained.forgeCfg.login, "e")
   }
 
   test("parseArgs: enable sandbox") {
@@ -97,7 +96,7 @@ class CliTest extends FunSuite {
         List("--workspace", "a"),
         List("--repos-file", "b"),
         List("--git-author-email", "d"),
-        List("--vcs-login", "e"),
+        List("--forge-login", "e"),
         List("--git-ask-pass", "f"),
         List("--enable-sandbox")
       ).flatten
@@ -112,7 +111,7 @@ class CliTest extends FunSuite {
         List("--workspace", "a"),
         List("--repos-file", "b"),
         List("--git-author-email", "d"),
-        List("--vcs-login", "e"),
+        List("--forge-login", "e"),
         List("--git-ask-pass", "f"),
         List("--enable-sandbox"),
         List("--disable-sandbox")
@@ -128,7 +127,7 @@ class CliTest extends FunSuite {
         List("--workspace", "a"),
         List("--repos-file", "b"),
         List("--git-author-email", "d"),
-        List("--vcs-login", "e"),
+        List("--forge-login", "e"),
         List("--git-ask-pass", "f"),
         List("--disable-sandbox")
       ).flatten
@@ -185,16 +184,16 @@ class CliTest extends FunSuite {
 
   test("parseArgs: validate fork mode disabled") {
     val params = minimumRequiredParams ++ List(
-      List("--vcs-type", "azure-repos"),
+      List("--forge-type", "azure-repos"),
       List("--do-not-fork")
     )
     val Success(StewardUsage.Regular(obtained)) = Cli.parseArgs(params.flatten)
-    assert(obtained.vcsCfg.doNotFork)
+    assert(obtained.forgeCfg.doNotFork)
   }
 
   test("parseArgs: validate fork mode enabled") {
     val params = minimumRequiredParams ++ List(
-      List("--vcs-type", "azure-repos")
+      List("--forge-type", "azure-repos")
     )
     val Error(errorMsg) = Cli.parseArgs(params.flatten)
     assert(clue(errorMsg).startsWith("azure-repos, bitbucket-server do not support fork mode"))
@@ -202,15 +201,15 @@ class CliTest extends FunSuite {
 
   test("parseArgs: validate pull request labeling disabled") {
     val params = minimumRequiredParams ++ List(
-      List("--vcs-type", "bitbucket")
+      List("--forge-type", "bitbucket")
     )
     val Success(StewardUsage.Regular(obtained)) = Cli.parseArgs(params.flatten)
-    assert(!obtained.vcsCfg.addLabels)
+    assert(!obtained.forgeCfg.addLabels)
   }
 
   test("parseArgs: validate pull request labeling enabled") {
     val params = minimumRequiredParams ++ List(
-      List("--vcs-type", "bitbucket"),
+      List("--forge-type", "bitbucket"),
       List("--add-labels")
     )
     val Error(errorMsg) = Cli.parseArgs(params.flatten)
@@ -228,14 +227,14 @@ class CliTest extends FunSuite {
     assertEquals(Cli.envVarArgument.read(s"SBT_OPTS=$value"), Valid(EnvVar("SBT_OPTS", value)))
   }
 
-  test("vcsTypeArgument: unknown value") {
-    assert(clue(Cli.vcsTypeArgument.read("sourceforge")).isInvalid)
+  test("forgeTypeArgument: unknown value") {
+    assert(clue(Cli.forgeTypeArgument.read("sourceforge")).isInvalid)
   }
 
   test("azure-repos validation") {
     val Error(error) = Cli.parseArgs(
       (minimumRequiredParams ++ List(
-        List("--vcs-type", "azure-repos"),
+        List("--forge-type", "azure-repos"),
         List("--azure-repos-organization")
       )).flatten
     )

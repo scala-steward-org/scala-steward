@@ -2,7 +2,7 @@ import scala.util.Properties
 import scala.reflect.io.Path
 import com.typesafe.sbt.packager.docker._
 import sbtcrossproject.{CrossProject, CrossType, Platform}
-import sbtghactions.JavaSpec.Distribution.Adopt
+import org.typelevel.sbt.gha.JavaSpec.Distribution.Temurin
 
 /// variables
 
@@ -24,7 +24,7 @@ val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
 val Scala213 = "2.13.10"
 val Scala3 = "3.2.1"
 
-/// sbt-github-actions configuration
+/// sbt-typelevel configuration
 
 ThisBuild / crossScalaVersions := Seq(Scala213, Scala3)
 ThisBuild / githubWorkflowTargetTags ++= Seq("v*")
@@ -51,7 +51,7 @@ ThisBuild / githubWorkflowPublish := Seq(
     name = Some("Publish Docker image")
   )
 )
-ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec(Adopt, "17"), JavaSpec(Adopt, "11"))
+ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec(Temurin, "17"), JavaSpec(Temurin, "11"))
 ThisBuild / githubWorkflowBuild :=
   Seq(
     WorkflowStep.Sbt(List("validate"), name = Some("Build project")),
@@ -61,7 +61,25 @@ ThisBuild / githubWorkflowBuild :=
     )
   )
 
+ThisBuild / mergifyPrRules := {
+  val authorCondition = MergifyCondition.Custom("author=scala-steward")
+  Seq(
+    MergifyPrRule(
+      "label scala-steward's PRs",
+      List(authorCondition),
+      List(MergifyAction.Label(List("dependency-update")))
+    ),
+    MergifyPrRule(
+      "merge scala-steward's PRs",
+      List(authorCondition) ++ mergifySuccessConditions.value,
+      List(MergifyAction.Merge(Some("squash")))
+    )
+  )
+}
+
 /// global build settings
+
+ThisBuild / dynverSeparator := "-"
 
 ThisBuild / evictionErrorLevel := Level.Info
 
@@ -78,6 +96,7 @@ lazy val benchmark = myCrossProject("benchmark")
   .enablePlugins(JmhPlugin)
   .settings(noPublishSettings)
   .settings(
+    scalacOptions -= "-Wnonunit-statement",
     coverageEnabled := false,
     unusedCompileDependencies := Set.empty
   )
@@ -119,7 +138,7 @@ lazy val core = myCrossProject("core")
       Dependencies.circeLiteral % Test,
       Dependencies.disciplineMunit % Test,
       Dependencies.http4sDsl % Test,
-      Dependencies.http4sBlazeServer % Test,
+      Dependencies.http4sEmberServer % Test,
       Dependencies.munit % Test,
       Dependencies.munitCatsEffect % Test,
       Dependencies.munitScalacheck % Test,
@@ -166,8 +185,7 @@ lazy val core = myCrossProject("core")
     initialCommands += s"""
       import ${moduleRootPkg.value}._
       import ${moduleRootPkg.value}.data._
-      import ${moduleRootPkg.value}.util.Nel
-      import ${moduleRootPkg.value}.vcs.data._
+      import ${moduleRootPkg.value}.util._
       import better.files.File
       import cats.effect.IO
       import org.http4s.client.Client
@@ -183,8 +201,9 @@ lazy val core = myCrossProject("core")
         s"""object InitialCommandsTest {
            |  ${initialCommands.value}
            |  // prevent warnings
-           |  locally(Client); locally(File); locally(Nel); locally(Repo);
-           |  locally(Version); locally(data.Version);
+           |  intellijThisImportIsUsed(Client); intellijThisImportIsUsed(File);
+           |  intellijThisImportIsUsed(Nel); intellijThisImportIsUsed(Repo);
+           |  intellijThisImportIsUsed(Main);
            |}""".stripMargin
       IO.write(file, content)
       Seq(file)
@@ -264,8 +283,6 @@ def myCrossProject(name: String): CrossProject =
     )
     .settings(commonSettings)
 
-ThisBuild / dynverSeparator := "-"
-
 lazy val commonSettings = Def.settings(
   compileSettings,
   metadataSettings,
@@ -333,6 +350,7 @@ lazy val dockerSettings = Def.settings(
       Cmd("RUN", "apk --no-cache add bash git ca-certificates curl maven openssh nodejs npm"),
       Cmd("RUN", s"wget $sbtUrl && tar -xf $sbtTgz && rm -f $sbtTgz"),
       Cmd("RUN", s"curl -L $millUrl > $millBin && chmod +x $millBin"),
+      Cmd("RUN", "curl -sSLf https://virtuslab.github.io/scala-cli-packages/scala-setup.sh | sh"),
       Cmd("RUN", s"curl -L https://git.io/coursier-cli > $coursierBin && chmod +x $coursierBin"),
       Cmd("RUN", s"$coursierBin install --install-dir $binDir scalafix scalafmt"),
       Cmd("RUN", "npm install --global yarn")
@@ -383,7 +401,7 @@ runSteward := Def.taskDyn {
     Seq("--workspace", s"$projectDir/workspace"),
     Seq("--repos-file", s"$projectDir/repos.md"),
     Seq("--git-author-email", s"me@$projectName.org"),
-    Seq("--vcs-login", projectName),
+    Seq("--forge-login", projectName),
     Seq("--git-ask-pass", s"$home/.github/askpass/$projectName.sh"),
     Seq("--whitelist", s"$home/.cache/coursier"),
     Seq("--whitelist", s"$home/.cache/JNA"),

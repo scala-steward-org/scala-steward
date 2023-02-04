@@ -4,13 +4,12 @@ import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.TestInstances.dummyRepoCache
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.{RepoData, Update}
+import org.scalasteward.core.data.{Repo, RepoData, Update}
 import org.scalasteward.core.mock.MockContext.context._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafmt.scalafmtConfName
 import org.scalasteward.core.util.Nel
-import org.scalasteward.core.vcs.data.Repo
 
 class RewriteTest extends FunSuite {
   test("all on one line") {
@@ -388,6 +387,26 @@ class RewriteTest extends FunSuite {
     runApplyUpdate(update, original, expected)
   }
 
+  // https://github.com/scala-steward-org/scala-steward/issues/1974
+  test("artifact change: group update") {
+    val update1 = ("io.chrisdavenport".g % "log4cats-core".a % "1.2.1" %> "1.3.0").single
+      .copy(newerGroupId = Some("org.typelevel".g))
+    val update2 = ("io.chrisdavenport".g % "log4cats-slf4j".a % "1.2.1" %> "1.3.0").single
+      .copy(newerGroupId = Some("org.typelevel".g))
+    val update = Update.groupByGroupId(List(update1, update2)).head
+    val original = Map(
+      "Dependencies.scala" -> """val log4catsVersion = "1.2.1" """,
+      "build.sbt" -> """ "io.chrisdavenport" %% "log4cats-core" % log4catsVersion
+                       | "io.chrisdavenport" %% "log4cats-slf4j" % log4catsVersion """.stripMargin
+    )
+    val expected = Map(
+      "Dependencies.scala" -> """val log4catsVersion = "1.3.0" """,
+      "build.sbt" -> """ "org.typelevel" %% "log4cats-core" % log4catsVersion
+                       | "org.typelevel" %% "log4cats-slf4j" % log4catsVersion """.stripMargin
+    )
+    runApplyUpdate(update, original, expected)
+  }
+
   test("groupId and version change of Maven dependency") {
     val update = ("io.chrisdavenport".g % "log4cats".a % "1.1.1" %> "1.2.0").single
       .copy(newerGroupId = Some("org.typelevel".g))
@@ -397,6 +416,18 @@ class RewriteTest extends FunSuite {
     val expected = Map("pom.xml" -> """<groupId>org.typelevel</groupId>
                                       |<artifactId>log4cats</artifactId>
                                       |<version>1.2.0</version>""".stripMargin)
+    runApplyUpdate(update, original, expected)
+  }
+
+  test("artifactId and version change of Maven dependency with binary suffix") {
+    val update = ("org.foo".g % ("log4cats", "log4cats_2.13").a % "1.1.1" %> "1.2.0").single
+      .copy(newerArtifactId = Some("log4dogs"))
+    val original = Map("pom.xml" -> s"""<groupId>org.foo</groupId>
+                                       |<artifactId>log4cats_$${scala.binary.version}</artifactId>
+                                       |<version>1.1.1</version>""".stripMargin)
+    val expected = Map("pom.xml" -> s"""<groupId>org.foo</groupId>
+                                       |<artifactId>log4dogs_$${scala.binary.version}</artifactId>
+                                       |<version>1.2.0</version>""".stripMargin)
     runApplyUpdate(update, original, expected)
   }
 
@@ -825,6 +856,15 @@ class RewriteTest extends FunSuite {
     runApplyUpdate(update, original, expected)
   }
 
+  // https://github.com/scala-steward-org/scala-steward/issues/2947
+  test(".scalafmt.conf in a subdirectory") {
+    val update =
+      ("org.scalameta".g % ("scalafmt-core", "scalafmt-core_2.12").a % "2.0.0" %> "2.0.1").single
+    val original = Map(s"foo/$scalafmtConfName" -> """version = "2.0.0" """)
+    val expected = Map(s"foo/$scalafmtConfName" -> """version = "2.0.1" """)
+    runApplyUpdate(update, original, expected)
+  }
+
   test("scalafmt.conf and other scalameta update") {
     val update = ("org.scalameta".g % "other-artifact".a % "2.0.0" %> "2.0.1").single
     val original = Map(scalafmtConfName -> """version=2.0.0""")
@@ -900,11 +940,11 @@ class RewriteTest extends FunSuite {
     val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
     val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
     val filesInRepoDir = files.map { case (file, content) => repoDir / file -> content }
-    val obtained = MockState.empty
+    val state = MockState.empty
       .addFiles(filesInRepoDir.toSeq: _*)
       .flatMap(editAlg.applyUpdate(data, update).runS)
-      .map(_.files)
       .unsafeRunSync()
+    val obtained = state.files
       .map { case (file, content) => file.toString.replace(repoDir.toString + "/", "") -> content }
     assertEquals(obtained, expected)
   }

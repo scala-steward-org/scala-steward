@@ -18,7 +18,6 @@ package org.scalasteward.core.data
 
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.repoconfig.RepoConfig
-import org.scalasteward.core.vcs.data.Repo
 
 final case class UpdateData(
     repoData: RepoData,

@@ -2,49 +2,74 @@ package org.scalasteward.core.io
 
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
+import fs2.text.LineTooLongException
 import munit.FunSuite
-import org.scalasteward.core.io.process.Args
+import org.scalasteward.core.io.process._
 import org.scalasteward.core.util.{DateTimeAlg, Nel}
-import scala.concurrent.TimeoutException
 import scala.concurrent.duration._
 
 class processTest extends FunSuite {
   def slurp1(cmd: Nel[String]): IO[List[String]] =
-    process.slurp[IO](Args(cmd), 1.minute, 8192, _ => IO.unit)
+    slurp[IO](Args(cmd), 1.minute, 8192, _ => IO.unit)
 
   def slurp2(cmd: Nel[String], timeout: FiniteDuration): IO[List[String]] =
-    process.slurp[IO](Args(cmd), timeout, 8192, _ => IO.unit)
+    slurp[IO](Args(cmd), timeout, 8192, _ => IO.unit)
 
-  test("echo hello") {
+  def slurp3(
+      cmd: Nel[String],
+      maxBufferSize: Int,
+      slurpOptions: SlurpOptions
+  ): IO[List[String]] =
+    slurp[IO](Args(cmd, slurpOptions = slurpOptions), 1.minute, maxBufferSize, _ => IO.unit)
+
+  test("echo: ok, one line") {
     assertEquals(slurp1(Nel.of("echo", "-n", "hello")).unsafeRunSync(), List("hello"))
   }
 
-  test("echo hello world") {
-    assertEquals(
-      slurp1(Nel.of("echo", "-n", "hello\nworld")).unsafeRunSync(),
-      List("hello", "world")
-    )
+  test("echo: ok, two lines") {
+    val obtained = slurp1(Nel.of("echo", "-n", "hello\nworld")).unsafeRunSync()
+    assertEquals(obtained, List("hello", "world"))
   }
 
-  test("ls") {
+  test("echo: ok, buffer size exceeded") {
+    val obtained =
+      slurp3(Nel.of("echo", "-n", "1\n2\n3\n4\n5\n6"), 4, SlurpOptions.ignoreBufferOverflow)
+        .unsafeRunSync()
+    assertEquals(obtained, List("3", "4", "5", "6"))
+  }
+
+  test("echo: fail, buffer size exceeded") {
+    val Left(t) =
+      slurp3(Nel.of("echo", "-n", "1\n2\n3\n4\n5\n6"), 4, Set.empty).attempt.unsafeRunSync()
+    assert(clue(t).isInstanceOf[ProcessBufferOverflowException])
+  }
+
+  test("echo: fail, line length > buffer size") {
+    val Left(t) =
+      slurp3(Nel.of("echo", "-n", "123456"), 4, Set.empty).attempt.unsafeRunSync()
+    assert(clue(t).isInstanceOf[LineTooLongException])
+  }
+
+  test("ls: ok") {
     assert(slurp1(Nel.of("ls")).attempt.unsafeRunSync().isRight)
   }
 
-  test("ls --foo") {
-    assert(slurp1(Nel.of("ls", "--foo")).attempt.unsafeRunSync().isLeft)
+  test("ls: fail, non-zero exit code") {
+    val Left(t) = slurp1(Nel.of("ls", "--foo")).attempt.unsafeRunSync()
+    assert(clue(t).isInstanceOf[ProcessFailedException])
   }
 
   test("sleep 1: ok") {
     assertEquals(slurp2(Nel.of("sleep", "1"), 2.seconds).unsafeRunSync(), List())
   }
 
-  test("sleep 1: fail") {
+  test("sleep 1: fail, timeout") {
     val timeout = 500.milliseconds
     val sleep = timeout * 2
     val p = slurp2(Nel.of("sleep", sleep.toSeconds.toInt.toString), timeout).attempt
     val (Left(t), fd) = DateTimeAlg.create[IO].timed(p).unsafeRunSync()
 
-    assert(clue(t).isInstanceOf[TimeoutException])
+    assert(clue(t).isInstanceOf[ProcessTimedOutException])
     assert(clue(fd) > timeout)
     assert(clue(fd) < sleep)
   }

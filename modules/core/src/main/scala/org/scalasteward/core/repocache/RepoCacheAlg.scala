@@ -20,30 +20,30 @@ import cats.syntax.all._
 import cats.{MonadThrow, Parallel}
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.BuildToolDispatcher
-import org.scalasteward.core.data.{Dependency, DependencyInfo, RepoData}
+import org.scalasteward.core.data.{Dependency, DependencyInfo, Repo, RepoData}
+import org.scalasteward.core.forge.data.RepoOut
+import org.scalasteward.core.forge.{ForgeApiAlg, ForgeRepoAlg}
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.repoconfig.RepoConfigAlg
-import org.scalasteward.core.vcs.data.{Repo, RepoOut}
-import org.scalasteward.core.vcs.{VCSApiAlg, VCSRepoAlg}
 import org.typelevel.log4cats.Logger
 
 final class RepoCacheAlg[F[_]](config: Config)(implicit
     buildToolDispatcher: BuildToolDispatcher[F],
+    forgeApiAlg: ForgeApiAlg[F],
+    forgeRepoAlg: ForgeRepoAlg[F],
     gitAlg: GitAlg[F],
     logger: Logger[F],
     parallel: Parallel[F],
     refreshErrorAlg: RefreshErrorAlg[F],
     repoCacheRepository: RepoCacheRepository[F],
     repoConfigAlg: RepoConfigAlg[F],
-    vcsApiAlg: VCSApiAlg[F],
-    vcsRepoAlg: VCSRepoAlg[F],
     F: MonadThrow[F]
 ) {
   def checkCache(repo: Repo): F[(RepoData, RepoOut)] =
     logger.info(s"Check cache of ${repo.show}") >>
       refreshErrorAlg.skipIfFailedRecently(repo) {
         (
-          vcsApiAlg.createForkOrGetRepoWithBranch(repo, config.vcsCfg.doNotFork),
+          forgeApiAlg.createForkOrGetRepoWithBranch(repo, config.forgeCfg.doNotFork),
           repoCacheRepository.findCache(repo)
         ).parTupled.flatMap { case ((repoOut, branchOut), maybeCache) =>
           val latestSha1 = branchOut.commit.sha
@@ -58,7 +58,7 @@ final class RepoCacheAlg[F[_]](config: Config)(implicit
     RepoData(repo, cache, repoConfigAlg.mergeWithGlobal(cache.maybeRepoConfig))
 
   private def cloneAndRefreshCache(repo: Repo, repoOut: RepoOut): F[RepoData] =
-    vcsRepoAlg.cloneAndSync(repo, repoOut) >> refreshCache(repo)
+    forgeRepoAlg.cloneAndSync(repo, repoOut) >> refreshCache(repo)
 
   private def refreshCache(repo: Repo): F[RepoData] =
     for {

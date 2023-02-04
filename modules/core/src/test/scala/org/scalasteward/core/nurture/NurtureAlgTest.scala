@@ -5,13 +5,13 @@ import org.http4s.HttpApp
 import org.http4s.dsl.Http4sDsl
 import org.scalasteward.core.TestInstances._
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.{DependencyInfo, RepoData, UpdateData}
+import org.scalasteward.core.data.{DependencyInfo, Repo, RepoData, UpdateData}
 import org.scalasteward.core.edit.EditAttempt.UpdateEdit
+import org.scalasteward.core.forge.data.NewPullRequestData
 import org.scalasteward.core.git.{Branch, Commit}
 import org.scalasteward.core.mock.MockContext.context.nurtureAlg
 import org.scalasteward.core.mock.{MockEff, MockState}
 import org.scalasteward.core.repoconfig.RepoConfig
-import org.scalasteward.core.vcs.data.{NewPullRequestData, Repo}
 
 class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   test("preparePullRequest") {
@@ -59,17 +59,23 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
              |Or, add this to slow down future updates of this dependency:
              |```
              |dependencyOverrides = [{
-             |  pullRequests = { frequency = "@monthly" },
+             |  pullRequests = { frequency = "30 days" },
              |  dependency = { groupId = "org.typelevel", artifactId = "cats-effect" }
              |}]
              |```
              |</details>
              |
-             |labels: library-update, early-semver-minor, semver-spec-minor, commit-count:1
+             |labels: library-update, early-semver-minor, semver-spec-minor, version-scheme:early-semver, commit-count:1
              |""".stripMargin.trim,
       head = "scala-steward:update/cats-effect-3.4.0",
       base = baseBranch,
-      labels = List("library-update", "early-semver-minor", "semver-spec-minor", "commit-count:1")
+      labels = List(
+        "library-update",
+        "early-semver-minor",
+        "semver-spec-minor",
+        "version-scheme:early-semver",
+        "commit-count:1"
+      )
     )
     assertIO(obtained, expected)
   }

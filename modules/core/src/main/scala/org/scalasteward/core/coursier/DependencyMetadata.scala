@@ -24,13 +24,15 @@ import org.scalasteward.core.util.uri
 final case class DependencyMetadata(
     homePage: Option[Uri],
     scmUrl: Option[Uri],
-    releaseNotesUrl: Option[Uri]
+    releaseNotesUrl: Option[Uri],
+    versionScheme: Option[String] = None
 ) {
   def enrichWith(other: DependencyMetadata): DependencyMetadata =
     DependencyMetadata(
       homePage = homePage.orElse(other.homePage),
       scmUrl = scmUrl.orElse(other.scmUrl),
-      releaseNotesUrl = releaseNotesUrl.orElse(other.releaseNotesUrl)
+      releaseNotesUrl = releaseNotesUrl.orElse(other.releaseNotesUrl),
+      versionScheme = versionScheme.orElse(other.versionScheme)
     )
 
   def filterUrls[F[_]](f: Uri => F[Boolean])(implicit F: Monad[F]): F[DependencyMetadata] =
@@ -38,7 +40,7 @@ final case class DependencyMetadata(
       homePage <- homePage.filterA(f)
       scmUrl <- scmUrl.filterA(f)
       releaseNotesUrl <- releaseNotesUrl.filterA(f)
-    } yield DependencyMetadata(homePage, scmUrl, releaseNotesUrl)
+    } yield DependencyMetadata(homePage, scmUrl, releaseNotesUrl, versionScheme)
 
   def repoUrl: Option[Uri] = {
     val urls = scmUrl.toList ++ homePage.toList
@@ -48,5 +50,5 @@ final case class DependencyMetadata(
 
 object DependencyMetadata {
   val empty: DependencyMetadata =
-    DependencyMetadata(None, None, None)
+    DependencyMetadata(None, None, None, None)
 }

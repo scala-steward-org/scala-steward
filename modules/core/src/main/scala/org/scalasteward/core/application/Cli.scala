@@ -25,16 +25,24 @@ import org.http4s.Uri
 import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Config._
 import org.scalasteward.core.data.Resolver
+import org.scalasteward.core.forge.ForgeType
+import org.scalasteward.core.forge.ForgeType.{AzureRepos, GitHub}
+import org.scalasteward.core.forge.github.GitHubApp
 import org.scalasteward.core.git.Author
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.util.dateTime.renderFiniteDuration
-import org.scalasteward.core.vcs.VCSType
-import org.scalasteward.core.vcs.VCSType.GitHub
-import org.scalasteward.core.vcs.github.GitHubApp
 import scala.concurrent.duration._
 
 object Cli {
   final case class EnvVar(name: String, value: String)
+
+  object name {
+    val forgeApiHost = "forge-api-host"
+    val forgeLogin = "forge-login"
+    val forgeType = "forge-type"
+    val maxBufferSize = "max-buffer-size"
+    val processTimeout = "process-timeout"
+  }
 
   implicit val envVarArgument: Argument[EnvVar] =
     Argument.from("name=value") { s =>
@@ -57,9 +65,9 @@ object Cli {
       Validated.fromEither(Uri.fromString(s).leftMap(_.message)).toValidatedNel
     }
 
-  implicit val vcsTypeArgument: Argument[VCSType] =
-    Argument.from("vcs-type") { s =>
-      Validated.fromEither(VCSType.parse(s)).toValidatedNel
+  implicit val forgeTypeArgument: Argument[ForgeType] =
+    Argument.from(name.forgeType) { s =>
+      Validated.fromEither(ForgeType.parse(s)).toValidatedNel
     }
 
   private val multiple = "(can be used multiple times)"
@@ -94,18 +102,40 @@ object Cli {
   private val gitCfg: Opts[GitCfg] =
     (gitAuthor, gitAskPass, signCommits).mapN(GitCfg.apply)
 
-  private val vcsType = {
-    val help = VCSType.all.map(_.asString).mkString("One of ", ", ", "") +
+  private val vcsType =
+    option[ForgeType](
+      "vcs-type",
+      s"deprecated in favor of --${name.forgeType}",
+      visibility = Visibility.Partial
+    )
+
+  private val forgeType = {
+    val help = ForgeType.all.map(_.asString).mkString("One of ", ", ", "") +
       s"; default: ${GitHub.asString}"
-    option[VCSType]("vcs-type", help).withDefault(GitHub)
+    option[ForgeType](name.forgeType, help).orElse(vcsType).withDefault(GitHub)
   }
 
-  private val vcsApiHost: Opts[Uri] =
-    option[Uri]("vcs-api-host", s"API URL of the git hoster; default: ${GitHub.publicApiBaseUrl}")
+  private val vcsApiHost =
+    option[Uri](
+      "vcs-api-host",
+      s"deprecated in favor of --${name.forgeApiHost}",
+      visibility = Visibility.Partial
+    )
+
+  private val forgeApiHost: Opts[Uri] =
+    option[Uri](name.forgeApiHost, s"API URL of the forge; default: ${GitHub.publicApiBaseUrl}")
+      .orElse(vcsApiHost)
       .withDefault(GitHub.publicApiBaseUrl)
 
-  private val vcsLogin: Opts[String] =
-    option[String]("vcs-login", "The user name for the git hoster")
+  private val vcsLogin =
+    option[String](
+      "vcs-login",
+      s"deprecated in favor of --${name.forgeLogin}",
+      visibility = Visibility.Partial
+    )
+
+  private val forgeLogin: Opts[String] =
+    option[String](name.forgeLogin, "The user name for the forge").orElse(vcsLogin)
 
   private val doNotFork: Opts[Boolean] =
     flag("do-not-fork", "Whether to not push the update branches to a fork; default: false").orFalse
@@ -113,17 +143,17 @@ object Cli {
   private val addPrLabels: Opts[Boolean] =
     flag(
       "add-labels",
-      "Whether to add labels on pull or merge requests (if supported by git hoster)"
+      "Whether to add labels on pull or merge requests (if supported by the forge)"
     ).orFalse
 
-  private val vcsCfg: Opts[VCSCfg] =
-    (vcsType, vcsApiHost, vcsLogin, doNotFork, addPrLabels)
-      .mapN(VCSCfg.apply)
+  private val forgeCfg: Opts[ForgeCfg] =
+    (forgeType, forgeApiHost, forgeLogin, doNotFork, addPrLabels)
+      .mapN(ForgeCfg.apply)
       .validate(
-        s"${VCSType.allNot(_.supportsForking)} do not support fork mode"
+        s"${ForgeType.allNot(_.supportsForking)} do not support fork mode"
       )(cfg => cfg.tpe.supportsForking || cfg.doNotFork)
       .validate(
-        s"${VCSType.allNot(_.supportsLabels)} do not support pull request labels"
+        s"${ForgeType.allNot(_.supportsLabels)} do not support pull request labels"
       )(cfg => cfg.tpe.supportsLabels || !cfg.addLabels)
 
   private val ignoreOptsFiles: Opts[Boolean] =
@@ -141,7 +171,7 @@ object Cli {
     val default = 10.minutes
     val help =
       s"Timeout for external process invocations; default: ${renderFiniteDuration(default)}"
-    option[FiniteDuration]("process-timeout", help).withDefault(default)
+    option[FiniteDuration](name.processTimeout, help).withDefault(default)
   }
 
   private val whitelist: Opts[List[String]] =
@@ -166,10 +196,10 @@ object Cli {
     (whitelist, readOnly, enableSandbox).mapN(SandboxCfg.apply)
 
   private val maxBufferSize: Opts[Int] = {
-    val default = 8192
+    val default = 16384
     val help =
       s"Size of the buffer for the output of an external process in lines; default: $default"
-    option[Int]("max-buffer-size", help).withDefault(default)
+    option[Int](name.maxBufferSize, help).withDefault(default)
   }
 
   private val processCfg: Opts[ProcessCfg] =
@@ -265,11 +295,11 @@ object Cli {
   private val azureReposOrganization: Opts[Option[String]] =
     option[String](
       "azure-repos-organization",
-      "The Azure organization (required when vcs type is azure-repos)"
+      s"The Azure organization (required when --${name.forgeType} is ${AzureRepos.asString})"
     ).orNone
 
-  private val azureReposConfig: Opts[AzureReposConfig] =
-    azureReposOrganization.map(AzureReposConfig.apply)
+  private val azureReposCfg: Opts[AzureReposCfg] =
+    azureReposOrganization.map(AzureReposCfg.apply)
 
   private val refreshBackoffPeriod: Opts[FiniteDuration] = {
     val default = 0.days
@@ -306,7 +336,7 @@ object Cli {
     workspace,
     reposFile,
     gitCfg,
-    vcsCfg,
+    forgeCfg,
     ignoreOptsFiles,
     processCfg,
     repoConfigCfg,
@@ -316,7 +346,7 @@ object Cli {
     bitbucketCfg,
     bitbucketServerCfg,
     gitLabCfg,
-    azureReposConfig,
+    azureReposCfg,
     gitHubApp,
     urlCheckerTestUrls,
     defaultMavenRepo,

@@ -21,7 +21,6 @@ import cats.syntax.all._
 import io.circe._
 import io.circe.syntax._
 import org.scalasteward.core.data.{SemVer, Update}
-
 import scala.util.matching.Regex
 
 final case class PullRequestUpdateFilter private (
