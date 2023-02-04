@@ -8,7 +8,7 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.headers.Authorization
 import org.http4s.implicits._
 import org.http4s.{BasicCredentials, HttpApp}
-import org.scalasteward.core.TestInstances.ioLogger
+import org.scalasteward.core.TestInstances._
 import org.scalasteward.core.application.Config.GitHubCfg
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.data._
@@ -108,6 +108,14 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
             "title": "new-feature"
             } """)
 
+    case POST -> Root / "repos" / "fthomas" / "cant-assign-reviewers" / "pulls" =>
+      Created(json"""  {
+            "html_url": "https://github.com/octocat/Hello-World/pull/14",
+            "state": "open",
+            "number": 14,
+            "title": "new-feature"
+            } """)
+
     case POST -> Root / "repos" / "fthomas" / "base.g8" / "issues" / IntVar(_) / "labels" =>
       // Response taken from https://docs.github.com/en/rest/reference/issues#labels, is ignored
       Created(json"""[
@@ -120,6 +128,22 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
             "color": "f29513",
             "default": true
           }]""")
+
+    case POST -> Root / "repos" / "fthomas" / "base.g8" / "issues" / IntVar(_) / "assignees" =>
+      Created(json"{}")
+
+    case POST ->
+        Root / "repos" / "fthomas" / "base.g8" / "pulls" / IntVar(_) / "requested_reviewers" =>
+      Created(json"{}")
+
+    case POST -> Root / "repos" / "fthomas" / "cant-assign-reviewers"
+        / "issues" / IntVar(_) / "assignees" =>
+      BadRequest()
+
+    case POST ->
+        Root / "repos" / "fthomas" / "cant-assign-reviewers"
+        / "pulls" / IntVar(_) / "requested_reviewers" =>
+      BadRequest()
 
     case _ => NotFound()
   }
@@ -238,14 +262,44 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
   test("createPullRequest") {
     val data = NewPullRequestData(
-      "new-feature",
-      "body",
-      "aaa",
-      Branch("master"),
-      Nil
+      title = "new-feature",
+      body = "body",
+      head = "aaa",
+      base = Branch("master"),
+      labels = Nil,
+      assignees = Nil,
+      reviewers = Nil
     )
     val pr = gitHubApiAlg.createPullRequest(repo, data).runA(state)
     assertIO(pr, pullRequest)
+  }
+
+  test("createPullRequest with assignees and reviewers") {
+    val data = NewPullRequestData(
+      title = "new-feature",
+      body = "body",
+      head = "aaa",
+      base = Branch("master"),
+      labels = Nil,
+      assignees = List("foo"),
+      reviewers = List("bar")
+    )
+    val pr = gitHubApiAlg.createPullRequest(repo, data).runA(state)
+    assertIO(pr, pullRequest)
+  }
+
+  test("createPullRequest with assignees and reviewers should not fail if can't assign") {
+    val data = NewPullRequestData(
+      title = "new-feature",
+      body = "body",
+      head = "aaa",
+      base = Branch("master"),
+      labels = Nil,
+      assignees = List("foo"),
+      reviewers = List("bar")
+    )
+
+    gitHubApiAlg.createPullRequest(repo.copy(repo = "cant-assign-reviewers"), data).runA(state)
   }
 
   test("listPullRequests") {
@@ -270,10 +324,4 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     assertIO(comment, Comment("Superseded by #1234"))
   }
 
-  test("labelPullRequest") {
-    gitHubApiAlg
-      .labelPullRequest(repo, PullRequestNumber(1347), List("A", "B"))
-      .runA(state)
-      .assert
-  }
 }

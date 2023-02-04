@@ -8,7 +8,7 @@ import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.headers.Authorization
 import org.http4s.implicits._
-import org.scalasteward.core.TestInstances.ioLogger
+import org.scalasteward.core.TestInstances._
 import org.scalasteward.core.application.Config.BitbucketCfg
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.data._
@@ -291,11 +291,13 @@ class BitbucketApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
   test("createPullRequest") {
     val data = NewPullRequestData(
-      "scala-steward-pr",
-      "body",
-      "master",
-      master,
-      Nil
+      title = "scala-steward-pr",
+      body = "body",
+      head = "master",
+      base = master,
+      labels = Nil,
+      assignees = Nil,
+      reviewers = Nil
     )
     val pr = bitbucketApiAlg.createPullRequest(repo, data).runA(state)
     assertIO(pr, pullRequest)

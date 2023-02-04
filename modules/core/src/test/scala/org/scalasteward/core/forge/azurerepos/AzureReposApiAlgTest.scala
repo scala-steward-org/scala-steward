@@ -6,7 +6,7 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.headers.Authorization
 import org.http4s.implicits._
 import org.http4s.{BasicCredentials, HttpApp, Uri}
-import org.scalasteward.core.TestInstances.ioLogger
+import org.scalasteward.core.TestInstances._
 import org.scalasteward.core.application.Config.AzureReposCfg
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.data._
@@ -210,7 +210,9 @@ class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
           body = "Updates org.typelevel:cats-effect  from 3.3.13 to 3.3.14.",
           head = "refs/heads/update/cats-effect-3.3.14",
           base = Branch("refs/heads/main"),
-          labels = List.empty
+          labels = List.empty,
+          assignees = List.empty,
+          reviewers = List.empty
         )
       )
       .runA(state)
@@ -265,10 +267,4 @@ class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     assertIO(obtained, expected)
   }
 
-  test("labelPullRequest") {
-    azureReposApiAlg
-      .labelPullRequest(repo, PullRequestNumber(26), List("dependency-updates"))
-      .runA(state)
-      .assert
-  }
 }

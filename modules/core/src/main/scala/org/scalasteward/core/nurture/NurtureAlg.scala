@@ -240,7 +240,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
         artifactIdToUrl,
         artifactIdToUpdateInfoUrls.toMap,
         filesWithOldVersion,
-        labels
+        if (config.addLabels) labels else List.empty
       )
     } yield requestData
 
@@ -249,9 +249,6 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
       requestData <- preparePullRequest(data, edits)
       pr <- forgeApiAlg.createPullRequest(data.repo, requestData)
-      _ <- forgeApiAlg
-        .labelPullRequest(data.repo, pr.number, requestData.labels)
-        .whenA(config.addLabels && requestData.labels.nonEmpty)
       prData = PullRequestData[Id](
         pr.html_url,
         data.baseSha1,

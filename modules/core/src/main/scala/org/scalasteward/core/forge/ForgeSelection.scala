@@ -32,6 +32,7 @@ import org.scalasteward.core.forge.gitlab.GitLabApiAlg
 import org.scalasteward.core.util.HttpJsonClient
 import org.typelevel.ci._
 import org.typelevel.log4cats.Logger
+import org.scalasteward.core.persistence.KeyValueStore
 
 object ForgeSelection {
   def forgeApiAlg[F[_]](
@@ -40,6 +41,7 @@ object ForgeSelection {
       user: AuthenticatedUser
   )(implicit
       httpJsonClient: HttpJsonClient[F],
+      gitlabUserIdsCache: KeyValueStore[F, String, Int],
       logger: Logger[F],
       F: MonadThrow[F]
   ): ForgeApiAlg[F] = {

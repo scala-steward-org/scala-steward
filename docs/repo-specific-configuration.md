@@ -164,6 +164,14 @@ dependencyOverrides = [
     pullRequests = { frequency = "14 day" },
   }
 ]
+
+# Assign people from the list to the pull request or request a review.
+# Currently supported only for GitLab and GitHub.
+# GitLab users - free version of GitLab only supports one assignee and one reviewer, others will be ignored.
+# Please note that only accounts with write access to the repository (Developer role for GitLab) are able
+# to add assignees or request reviews. Consequently, it won't work for public @scala-steward instance on GitHub.
+assignees = [ "username1", "username2" ]
+reviewers = [ "username1", "username2" ]
 ```
 
 The version information given in the patterns above can be in two formats:

@@ -28,6 +28,7 @@ final private[azurerepos] case class PullRequestPayload(
     sourceRefName: String,
     targetRefName: String,
     title: String,
+    labels: Option[List[String]],
     description: String
 )
 
@@ -39,6 +40,7 @@ private[azurerepos] object PullRequestPayload {
       sourceRefName = withPrefix(data.head),
       targetRefName = data.base.name,
       title = data.title,
+      labels = if (data.labels.nonEmpty) Some(data.labels) else None,
       description = data.body
     )
 }
@@ -115,7 +117,8 @@ private[azurerepos] object JsonCodec {
     c.downField("comments").downN(0).downField("content").as[String].map(Comment(_))
   }
 
-  implicit val pullRequestPayloadEncoder: Encoder[PullRequestPayload] = deriveEncoder
+  implicit val pullRequestPayloadEncoder: Encoder[PullRequestPayload] =
+    deriveEncoder[PullRequestPayload].mapJson(_.dropNullValues)
   implicit val closePullRequestPayloadEncoder: Encoder[ClosePullRequestPayload] = deriveEncoder
   implicit val pullRequestCommentEncoder: Encoder[AzureComment] = deriveEncoder
   implicit val pullRequestCommentPayloadEncoder: Encoder[PullRequestCommentPayload] = deriveEncoder

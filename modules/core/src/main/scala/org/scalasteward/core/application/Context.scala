@@ -53,6 +53,7 @@ import org.scalasteward.core.util._
 import org.scalasteward.core.util.uri._
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
+import org.scalasteward.core.persistence.KeyValueStore
 
 final class Context[F[_]](implicit
     val artifactMigrationsLoader: ArtifactMigrationsLoader[F],
@@ -193,6 +194,9 @@ object Context {
         .create[F, Repo, RepoCache]("repo_cache", "1", kvsPrefix)
       versionsStore <- JsonKeyValueStore
         .create[F, VersionsCache.Key, VersionsCache.Value]("versions", "2")
+      gitlabUserIdCacheStore <- JsonKeyValueStore
+        .create[F, String, Int]("gitlab_user_id_cache", "1", kvsPrefix)
+        .flatMap(CachingKeyValueStore.wrap(_))
     } yield {
       implicit val artifactMigrationsLoader: ArtifactMigrationsLoader[F] = artifactMigrationsLoader0
       implicit val artifactMigrationsFinder: ArtifactMigrationsFinder = artifactMigrationsFinder0
@@ -208,6 +212,7 @@ object Context {
       implicit val httpJsonClient: HttpJsonClient[F] = new HttpJsonClient[F]
       implicit val repoCacheRepository: RepoCacheRepository[F] =
         new RepoCacheRepository[F](repoCacheStore)
+      implicit val gitlabUserIdCache: KeyValueStore[F, String, Int] = gitlabUserIdCacheStore
       implicit val forgeApiAlg: ForgeApiAlg[F] =
         ForgeSelection.forgeApiAlg[F](config.forgeCfg, config.forgeSpecificCfg, forgeUser)
       implicit val forgeRepoAlg: ForgeRepoAlg[F] = new ForgeRepoAlg[F](config)
