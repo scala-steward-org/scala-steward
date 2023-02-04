@@ -3,7 +3,7 @@ import sbt._
 object Dependencies {
   val bcprovJdk15to18 = "org.bouncycastle" % "bcprov-jdk15to18" % "1.72"
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.1"
-  val catsEffect = "org.typelevel" %% "cats-effect" % "3.4.5"
+  val catsEffect = "org.typelevel" %% "cats-effect" % "3.4.6"
   val catsCore = "org.typelevel" %% "cats-core" % "2.9.0"
   val catsLaws = "org.typelevel" %% "cats-laws" % catsCore.revision
   val catsParse = "org.typelevel" %% "cats-parse" % "0.3.9"
