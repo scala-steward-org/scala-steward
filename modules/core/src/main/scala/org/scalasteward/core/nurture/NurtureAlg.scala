@@ -234,13 +234,14 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       allLabels = labelsFor(data.update, edits, filesWithOldVersion, artifactIdToVersionScheme)
       labels = filterLabels(allLabels, data.repoData.config.pullRequests.includeMatchedLabels)
       requestData = NewPullRequestData.from(
-        data,
-        branchName,
-        edits,
-        artifactIdToUrl,
-        artifactIdToUpdateInfoUrls.toMap,
-        filesWithOldVersion,
-        if (config.addLabels) labels else List.empty
+        data = data,
+        branchName = branchName,
+        edits = edits,
+        artifactIdToUrl = artifactIdToUrl,
+        artifactIdToUpdateInfoUrls = artifactIdToUpdateInfoUrls.toMap,
+        filesWithOldVersion = filesWithOldVersion,
+        addLabels = config.addLabels,
+        labels = labels
       )
     } yield requestData
 
