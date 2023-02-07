@@ -37,6 +37,8 @@ object GiteaApiAlg {
   import org.scalasteward.core.util.uri._
   implicit val uriEncoder: Encoder[Uri] = Encoder[String].contramap[Uri](_.renderString)
 
+  val DefaultLabelColor = "#e01060"
+
   case class CreateForkOption(
       name: Option[String], // name of the forked repository
       organization: Option[String] // organization name, if forking into an organization
@@ -104,6 +106,15 @@ object GiteaApiAlg {
       id: Long
   )
   implicit val commentRespCodec: Codec[CommentResp] = deriveCodec
+
+  case class Label(id: Int, name: String)
+  implicit val labelCodec: Codec[Label] = deriveCodec
+
+  case class CreateLabelReq(name: String, color: String)
+  implicit val createLabelReqCodec: Codec[CreateLabelReq] = deriveCodec
+
+  case class AttachLabelReq(labels: Vector[Int])
+  implicit val attachLabelReqCodec: Codec[AttachLabelReq] = deriveCodec
 }
 
 final class GiteaApiAlg[F[_]: MonadThrow: HttpJsonClient](
@@ -243,6 +254,51 @@ final class GiteaApiAlg[F[_]: MonadThrow: HttpJsonClient](
       repo: Repo,
       number: PullRequestNumber,
       labels: List[String]
-  ): F[Unit] = ().pure[F] // TODO
+  ): F[Unit] = {
+    def attachLabels(labels: Vector[Int]): F[Unit] =
+      if (labels.nonEmpty)
+        client
+          .postWithBody[Vector[Label], AttachLabelReq](
+            url.pullRequestLabels(repo, number),
+            AttachLabelReq(labels),
+            modify(repo)
+          )
+          .void
+      else ().pure[F]
 
+    getOrCreateLabel(repo, labels.toVector) >>= attachLabels
+  }
+
+  def getOrCreateLabel(repo: Repo, labels: Vector[String]): F[Vector[Int]] =
+    listLabels(repo).flatMap { repoLabels =>
+      val existing = repoLabels.filter(label => labels.contains(label.name))
+      val creates =
+        labels
+          .filter(name => existing.exists(_.name == name))
+          .traverse(createLabel(repo, _))
+
+      creates.map(_ ++ existing).map(_.map(_.id))
+    }
+
+  def createLabel(repo: Repo, name: String): F[Label] =
+    client.postWithBody[Label, CreateLabelReq](
+      url.labels(repo),
+      CreateLabelReq(name, DefaultLabelColor),
+      modify(repo)
+    )
+
+  def listLabels(repo: Repo): F[Vector[Label]] = {
+    def paging(page: Int) =
+      client.get[Vector[Label]](
+        url.labels(repo).withQueryParam("page", page),
+        modify(repo)
+      )
+
+    def go(page: Int, accu: Vector[Label]): F[Vector[Label]] =
+      paging(page).flatMap {
+        case Vector() => accu.pure[F]
+        case labels   => go(page + 1, accu ++ labels)
+      }
+    go(1, Vector.empty)
+  }
 }

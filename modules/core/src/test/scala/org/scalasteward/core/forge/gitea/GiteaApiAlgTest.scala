@@ -37,14 +37,15 @@ class GiteaApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     case GET -> Root / "api" / "v1" / "repos" / repo.owner / repo.repo / "branches" / "main" =>
       Ok(getBranch)
     case GET -> Root / "api" / "v1" / "repos" / repo.owner / repo.repo / "pulls" :? PageQ(page) =>
-      if (page == 1) Ok(listPulls)
-      else Ok(json"[]")
+      if (page == 1) Ok(listPulls) else Ok(json"[]")
     case PATCH -> Root / "api" / "v1" / "repos" / repo.owner / repo.repo / "pulls" / "1" =>
       Ok(closePull1)
     case POST -> Root / "api" / "v1" / "repos" / repo.owner / repo.repo / "issues" / "1" / "comments" =>
       Created(commentPR1)
     case POST -> Root / "api" / "v1" / "repos" / repo.owner / repo.repo / "pulls" =>
       Created(createPR2)
+    case GET -> Root / "api" / "v1" / "repos" / repo.owner / repo.repo / "labels" :? PageQ(page) =>
+      if (page == 1) Ok(listLabels) else Ok(json"[]")
     case _ => NotFound()
   }
 
@@ -151,6 +152,21 @@ class GiteaApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
             state = PullRequestState.Open,
             number = PullRequestNumber(2),
             title = "pr test"
+          )
+        )
+      }
+  }
+
+  test("list labels") {
+    giteaAlg
+      .asInstanceOf[GiteaApiAlg[MockEff]]
+      .listLabels(repo)
+      .runA(state)
+      .map { labels =>
+        assertEquals(
+          labels,
+          Vector(
+            GiteaApiAlg.Label(2, "label1")
           )
         )
       }
@@ -1014,4 +1030,17 @@ class GiteaApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       "updated_at": "2023-02-07T17:59:49+09:00",
       "closed_at": null
     } """
+
+  def listLabels =
+    json"""
+       [
+        {
+          "id": 2,
+          "name": "label1",
+          "color": "e01060",
+          "description": "",
+          "url": "https://git.example.com/api/v1/repos/foo/baz/labels/2"
+        }
+      ]
+        """
 }
