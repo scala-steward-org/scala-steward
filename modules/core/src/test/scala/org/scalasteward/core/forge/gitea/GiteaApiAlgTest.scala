@@ -46,6 +46,10 @@ class GiteaApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       Created(createPR2)
     case GET -> Root / "api" / "v1" / "repos" / repo.owner / repo.repo / "labels" :? PageQ(page) =>
       if (page == 1) Ok(listLabels) else Ok(json"[]")
+    case POST -> Root / "api" / "v1" / "repos" / repo.owner / repo.repo / "labels" =>
+      Created(createLabel)
+    case POST -> Root / "api" / "v1" / "repos" / repo.owner / repo.repo / "issues" / "2" / "labels" =>
+      Ok(listLabels)
     case _ => NotFound()
   }
 
@@ -170,6 +174,25 @@ class GiteaApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
           )
         )
       }
+  }
+
+  test("create label") {
+    giteaAlg
+      .asInstanceOf[GiteaApiAlg[MockEff]]
+      .createLabel(repo, "label1")
+      .runA(state)
+      .map { label =>
+        assertEquals(
+          label,
+          GiteaApiAlg.Label(2, "label1")
+        )
+      }
+  }
+
+  test("label pr") {
+    giteaAlg
+      .labelPullRequest(repo, PullRequestNumber(2), List("label1"))
+      .runA(state)
   }
 
   // doesn't work
@@ -1042,5 +1065,16 @@ class GiteaApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
           "url": "https://git.example.com/api/v1/repos/foo/baz/labels/2"
         }
       ]
+        """
+
+  def createLabel =
+    json"""
+        {
+          "id": 2,
+          "name": "label1",
+          "color": "e01060",
+          "description": "",
+          "url": "https://git.example.com/api/v1/repos/foo/baz/labels/2"
+        }
         """
 }

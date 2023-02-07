@@ -160,26 +160,27 @@ final class GiteaApiAlg[F[_]: MonadThrow: HttpJsonClient](
       )
       .map(repoOut(_))
 
-  override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] = {
-    val create = CreatePullRequestOption(
-      assignee = none,
-      assignees = none,
-      base = data.base.name.some,
-      body = data.body.some,
-      due_date = none,
-      head = data.head.some,
-      labels = none, // TODO
-      milestone = none,
-      title = data.title.some
-    )
-    client
-      .postWithBody[PullRequestResp, CreatePullRequestOption](
-        url.pulls(repo),
-        create,
-        modify(repo)
+  override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] =
+    for {
+      labels <- getOrCreateLabel(repo, data.labels.toVector)
+      create = CreatePullRequestOption(
+        assignee = none,
+        assignees = none,
+        base = data.base.name.some,
+        body = data.body.some,
+        due_date = none,
+        head = data.head.some,
+        labels = labels.some,
+        milestone = none,
+        title = data.title.some
       )
-      .map(pullRequestOut(_))
-  }
+      resp <- client
+        .postWithBody[PullRequestResp, CreatePullRequestOption](
+          url.pulls(repo),
+          create,
+          modify(repo)
+        )
+    } yield pullRequestOut(resp)
 
   override def closePullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut] = {
     val edit = EditPullRequestOption(state = "closed")
