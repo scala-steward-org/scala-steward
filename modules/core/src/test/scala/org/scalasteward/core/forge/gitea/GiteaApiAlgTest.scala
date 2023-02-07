@@ -39,6 +39,10 @@ class GiteaApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     case GET -> Root / "api" / "v1" / "repos" / repo.owner / repo.repo / "pulls" :? PageQ(page) =>
       if (page == 1) Ok(listPulls)
       else Ok(json"[]")
+    case PATCH -> Root / "api" / "v1" / "repos" / repo.owner / repo.repo / "pulls" / "1" =>
+      Ok(closePull1)
+    case POST -> Root / "api" / "v1" / "repos" / repo.owner / repo.repo / "issues" / "1" / "comments" =>
+      Created(commentPR1)
     case _ => NotFound()
   }
 
@@ -97,6 +101,30 @@ class GiteaApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
             )
           )
         )
+      }
+  }
+
+  test("closePullRequest") {
+    giteaAlg
+      .closePullRequest(repo, PullRequestNumber(1))
+      .runA(state)
+      .map { pull =>
+        val out = PullRequestOut(
+          html_url = uri"https://git.example.com/foo/baz/pulls/1",
+          state = PullRequestState.Closed,
+          number = PullRequestNumber(1),
+          title = "update README"
+        )
+        assertEquals(pull, out)
+      }
+  }
+
+  test("commentPR") {
+    giteaAlg
+      .commentPullRequest(repo, PullRequestNumber(1), "hi")
+      .runA(state)
+      .map { comment =>
+        assertEquals(comment, Comment("hi"))
       }
   }
 
@@ -446,4 +474,265 @@ class GiteaApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
               "closed_at": null
             }
           ] """
+
+  def closePull1 =
+    json""" {
+            "id": 1,
+            "url": "https://git.example.com/foo/baz/pulls/1",
+            "number": 1,
+            "user": {
+              "id": 2,
+              "login": "foo",
+              "login_name": "",
+              "full_name": "",
+              "email": "foo@example.com",
+              "avatar_url": "https://secure.gravatar.com/avatar/b48def645758b95537d4424c84d1a9ff?d=identicon",
+              "language": "",
+              "is_admin": false,
+              "last_login": "0001-01-01T00:00:00Z",
+              "created": "2023-01-25T21:48:28+09:00",
+              "restricted": false,
+              "active": false,
+              "prohibit_login": false,
+              "location": "",
+              "website": "",
+              "description": "",
+              "visibility": "private",
+              "followers_count": 0,
+              "following_count": 0,
+              "starred_repos_count": 0,
+              "username": "foo"
+            },
+            "title": "update README",
+            "body": "",
+            "labels": [],
+            "milestone": null,
+            "assignee": null,
+            "assignees": null,
+            "state": "closed",
+            "is_locked": false,
+            "comments": 0,
+            "html_url": "https://git.example.com/foo/baz/pulls/1",
+            "diff_url": "https://git.example.com/foo/baz/pulls/1.diff",
+            "patch_url": "https://git.example.com/foo/baz/pulls/1.patch",
+            "mergeable": true,
+            "merged": false,
+            "merged_at": null,
+            "merge_commit_sha": null,
+            "merged_by": null,
+            "allow_maintainer_edit": false,
+            "base": {
+              "label": "main",
+              "ref": "main",
+              "sha": "6b5ec7e2b6eaf45ecb654a9187e1f5874210fca3",
+              "repo_id": 5,
+              "repo": {
+                "id": 5,
+                "owner": {
+                  "id": 2,
+                  "login": "foo",
+                  "login_name": "",
+                  "full_name": "",
+                  "email": "foo@example.com",
+                  "avatar_url": "https://secure.gravatar.com/avatar/b48def645758b95537d4424c84d1a9ff?d=identicon",
+                  "language": "",
+                  "is_admin": false,
+                  "last_login": "0001-01-01T00:00:00Z",
+                  "created": "2023-01-25T21:48:28+09:00",
+                  "restricted": false,
+                  "active": false,
+                  "prohibit_login": false,
+                  "location": "",
+                  "website": "",
+                  "description": "",
+                  "visibility": "private",
+                  "followers_count": 0,
+                  "following_count": 0,
+                  "starred_repos_count": 0,
+                  "username": "foo"
+                },
+                "name": "baz",
+                "full_name": "foo/baz",
+                "description": "",
+                "empty": false,
+                "private": false,
+                "fork": false,
+                "template": false,
+                "parent": null,
+                "mirror": false,
+                "size": 105,
+                "language": "",
+                "languages_url": "https://git.example.com/api/v1/repos/foo/baz/languages",
+                "html_url": "https://git.example.com/foo/baz",
+                "ssh_url": "forgejo@git.example.com:foo/baz.git",
+                "clone_url": "https://git.example.com/foo/baz.git",
+                "original_url": "",
+                "website": "",
+                "stars_count": 0,
+                "forks_count": 0,
+                "watchers_count": 1,
+                "open_issues_count": 0,
+                "open_pr_counter": 0,
+                "release_counter": 0,
+                "default_branch": "main",
+                "archived": false,
+                "created_at": "2023-02-07T16:52:32+09:00",
+                "updated_at": "2023-02-07T16:58:43+09:00",
+                "permissions": {
+                  "admin": true,
+                  "push": true,
+                  "pull": true
+                },
+                "has_issues": true,
+                "internal_tracker": {
+                  "enable_time_tracker": true,
+                  "allow_only_contributors_to_track_time": true,
+                  "enable_issue_dependencies": true
+                },
+                "has_wiki": true,
+                "has_pull_requests": true,
+                "has_projects": true,
+                "ignore_whitespace_conflicts": false,
+                "allow_merge_commits": true,
+                "allow_rebase": true,
+                "allow_rebase_explicit": true,
+                "allow_squash_merge": true,
+                "allow_rebase_update": true,
+                "default_delete_branch_after_merge": false,
+                "default_merge_style": "merge",
+                "avatar_url": "",
+                "internal": true,
+                "mirror_interval": "",
+                "mirror_updated": "0001-01-01T00:00:00Z",
+                "repo_transfer": null
+              }
+            },
+            "head": {
+              "label": "qux",
+              "ref": "qux",
+              "sha": "291355f22ea6e0179f85ee5ace4af67ab61e0adb",
+              "repo_id": 5,
+              "repo": {
+                "id": 5,
+                "owner": {
+                  "id": 2,
+                  "login": "foo",
+                  "login_name": "",
+                  "full_name": "",
+                  "email": "foo@example.com",
+                  "avatar_url": "https://secure.gravatar.com/avatar/b48def645758b95537d4424c84d1a9ff?d=identicon",
+                  "language": "",
+                  "is_admin": false,
+                  "last_login": "0001-01-01T00:00:00Z",
+                  "created": "2023-01-25T21:48:28+09:00",
+                  "restricted": false,
+                  "active": false,
+                  "prohibit_login": false,
+                  "location": "",
+                  "website": "",
+                  "description": "",
+                  "visibility": "private",
+                  "followers_count": 0,
+                  "following_count": 0,
+                  "starred_repos_count": 0,
+                  "username": "foo"
+                },
+                "name": "baz",
+                "full_name": "foo/baz",
+                "description": "",
+                "empty": false,
+                "private": false,
+                "fork": false,
+                "template": false,
+                "parent": null,
+                "mirror": false,
+                "size": 105,
+                "language": "",
+                "languages_url": "https://git.example.com/api/v1/repos/foo/baz/languages",
+                "html_url": "https://git.example.com/foo/baz",
+                "ssh_url": "forgejo@git.example.com:foo/baz.git",
+                "clone_url": "https://git.example.com/foo/baz.git",
+                "original_url": "",
+                "website": "",
+                "stars_count": 0,
+                "forks_count": 0,
+                "watchers_count": 1,
+                "open_issues_count": 0,
+                "open_pr_counter": 0,
+                "release_counter": 0,
+                "default_branch": "main",
+                "archived": false,
+                "created_at": "2023-02-07T16:52:32+09:00",
+                "updated_at": "2023-02-07T16:58:43+09:00",
+                "permissions": {
+                  "admin": true,
+                  "push": true,
+                  "pull": true
+                },
+                "has_issues": true,
+                "internal_tracker": {
+                  "enable_time_tracker": true,
+                  "allow_only_contributors_to_track_time": true,
+                  "enable_issue_dependencies": true
+                },
+                "has_wiki": true,
+                "has_pull_requests": true,
+                "has_projects": true,
+                "ignore_whitespace_conflicts": false,
+                "allow_merge_commits": true,
+                "allow_rebase": true,
+                "allow_rebase_explicit": true,
+                "allow_squash_merge": true,
+                "allow_rebase_update": true,
+                "default_delete_branch_after_merge": false,
+                "default_merge_style": "merge",
+                "avatar_url": "",
+                "internal": true,
+                "mirror_interval": "",
+                "mirror_updated": "0001-01-01T00:00:00Z",
+                "repo_transfer": null
+              }
+            },
+            "merge_base": "6b5ec7e2b6eaf45ecb654a9187e1f5874210fca3",
+            "due_date": null,
+            "created_at": "2023-02-07T16:59:26+09:00",
+            "updated_at": "2023-02-07T17:11:22+09:00",
+            "closed_at": null
+          } """
+
+  def commentPR1 =
+    json""" {
+            "id": 138,
+            "html_url": "https://git.example.com/foo/baz/pulls/1#issuecomment-138",
+            "pull_request_url": "https://git.example.com/foo/baz/pulls/1",
+            "issue_url": "",
+            "user": {
+              "id": 2,
+              "login": "foo",
+              "login_name": "",
+              "full_name": "",
+              "email": "foo@example.com",
+              "avatar_url": "https://secure.gravatar.com/avatar/b48def645758b95537d4424c84d1a9ff?d=identicon",
+              "language": "",
+              "is_admin": false,
+              "last_login": "0001-01-01T00:00:00Z",
+              "created": "2023-01-25T21:48:28+09:00",
+              "restricted": false,
+              "active": false,
+              "prohibit_login": false,
+              "location": "",
+              "website": "",
+              "description": "",
+              "visibility": "private",
+              "followers_count": 0,
+              "following_count": 0,
+              "starred_repos_count": 0,
+              "username": "foo"
+            },
+            "original_author": "",
+            "original_author_id": 0,
+            "body": "hi",
+            "created_at": "2023-02-07T17:20:57+09:00",
+            "updated_at": "2023-02-07T17:20:57+09:00"
+          } """
 }
