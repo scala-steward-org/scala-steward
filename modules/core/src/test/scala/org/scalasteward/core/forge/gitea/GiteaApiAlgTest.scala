@@ -128,6 +128,32 @@ class GiteaApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       }
   }
 
+  // doesn't work
+  //  test("create fork ") {
+  //    giteaAlg
+  //      .createFork(repo)
+  //      .runA(state)
+  //      .map { repoOut =>
+  //        val parent = RepoOut(
+  //          name = "baz",
+  //          owner = UserOut("foo"),
+  //          parent = None,
+  //          clone_url = uri"https://git.example.com/foo/baz.git",
+  //          default_branch = Branch("main")
+  //        )
+  //        assertEquals(
+  //          repoOut,
+  //          RepoOut(
+  //            name = "baz",
+  //            owner = UserOut("bar"),
+  //            parent = Some(parent),
+  //            clone_url = uri"https://git.example.com/bar/baz.git",
+  //            default_branch = Branch("main")
+  //          )
+  //        )
+  //      }
+  //  }
+
   def getRepo =
     json""" {
             "id": 5,

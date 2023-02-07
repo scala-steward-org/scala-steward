@@ -68,6 +68,7 @@ object ForgeType {
   case object Gitea extends ForgeType {
     override val publicWebHost: Option[String] = None
     override val supportsLabels: Boolean = false
+    override def supportsForking: Boolean = false
   }
 
   val all: List[ForgeType] = List(AzureRepos, Bitbucket, BitbucketServer, GitHub, GitLab, Gitea)
