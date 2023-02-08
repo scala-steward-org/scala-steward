@@ -50,6 +50,8 @@ class GiteaApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       Created(createLabel)
     case POST -> Root / "api" / "v1" / "repos" / repo.owner / repo.repo / "issues" / "2" / "labels" =>
       Ok(listLabels)
+    case POST -> Root / "api" / "v1" / "repos" / repo.owner / repo.repo / "forks" =>
+      Ok(forkRepo)
     case _ => NotFound()
   }
 
@@ -195,31 +197,30 @@ class GiteaApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       .runA(state)
   }
 
-  // doesn't work
-  //  test("create fork ") {
-  //    giteaAlg
-  //      .createFork(repo)
-  //      .runA(state)
-  //      .map { repoOut =>
-  //        val parent = RepoOut(
-  //          name = "baz",
-  //          owner = UserOut("foo"),
-  //          parent = None,
-  //          clone_url = uri"https://git.example.com/foo/baz.git",
-  //          default_branch = Branch("main")
-  //        )
-  //        assertEquals(
-  //          repoOut,
-  //          RepoOut(
-  //            name = "baz",
-  //            owner = UserOut("bar"),
-  //            parent = Some(parent),
-  //            clone_url = uri"https://git.example.com/bar/baz.git",
-  //            default_branch = Branch("main")
-  //          )
-  //        )
-  //      }
-  //  }
+  test("create fork") {
+    giteaAlg
+      .createFork(repo)
+      .runA(state)
+      .map { repoOut =>
+        val parent = RepoOut(
+          name = "baz",
+          owner = UserOut("foo"),
+          parent = None,
+          clone_url = uri"https://git.example.com/foo/baz.git",
+          default_branch = Branch("main")
+        )
+        assertEquals(
+          repoOut,
+          RepoOut(
+            name = "baz",
+            owner = UserOut("bar"),
+            parent = Some(parent),
+            clone_url = uri"https://git.example.com/bar/baz.git",
+            default_branch = Branch("main")
+          )
+        )
+      }
+  }
 
   def getRepo =
     json""" {
@@ -1077,4 +1078,166 @@ class GiteaApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
           "url": "https://git.example.com/api/v1/repos/foo/baz/labels/2"
         }
         """
+
+  def forkRepo =
+    json"""
+          {
+      "id": 3,
+      "owner": {
+        "id": 3,
+        "login": "bar",
+        "login_name": "",
+        "full_name": "",
+        "email": "bar@example.com",
+        "avatar_url": "https://git.example.com/avatars/7b12520feeef7972fc17e137111da1e7",
+        "language": "",
+        "is_admin": false,
+        "last_login": "0001-01-01T00:00:00Z",
+        "created": "2023-02-08T02:19:35Z",
+        "restricted": false,
+        "active": false,
+        "prohibit_login": false,
+        "location": "",
+        "website": "",
+        "description": "",
+        "visibility": "public",
+        "followers_count": 0,
+        "following_count": 0,
+        "starred_repos_count": 0,
+        "username": "bar"
+      },
+      "name": "baz",
+      "full_name": "bar/baz",
+      "description": "",
+      "empty": false,
+      "private": false,
+      "fork": true,
+      "template": false,
+      "parent": {
+        "id": 1,
+        "owner": {
+          "id": 2,
+          "login": "foo",
+          "login_name": "",
+          "full_name": "",
+          "email": "foo@example.local",
+          "avatar_url": "https://git.example.com/avatars/dc366aecd29705111fcea5d94b393388",
+          "language": "",
+          "is_admin": false,
+          "last_login": "0001-01-01T00:00:00Z",
+          "created": "2023-02-08T02:19:26Z",
+          "restricted": false,
+          "active": false,
+          "prohibit_login": false,
+          "location": "",
+          "website": "",
+          "description": "",
+          "visibility": "public",
+          "followers_count": 0,
+          "following_count": 0,
+          "starred_repos_count": 0,
+          "username": "foo"
+        },
+        "name": "baz",
+        "full_name": "foo/baz",
+        "description": "",
+        "empty": false,
+        "private": false,
+        "fork": false,
+        "template": false,
+        "parent": null,
+        "mirror": false,
+        "size": 25,
+        "language": "",
+        "languages_url": "https://git.example.com/api/v1/repos/foo/baz/languages",
+        "html_url": "https://git.example.com/foo/baz",
+        "ssh_url": "gitea@git.example.com:foo/baz.git",
+        "clone_url": "https://git.example.com/foo/baz.git",
+        "original_url": "",
+        "website": "",
+        "stars_count": 0,
+        "forks_count": 1,
+        "watchers_count": 1,
+        "open_issues_count": 0,
+        "open_pr_counter": 0,
+        "release_counter": 0,
+        "default_branch": "main",
+        "archived": false,
+        "created_at": "2023-02-08T02:20:02Z",
+        "updated_at": "2023-02-08T02:22:05Z",
+        "permissions": {
+          "admin": true,
+          "push": true,
+          "pull": true
+        },
+        "has_issues": true,
+        "internal_tracker": {
+          "enable_time_tracker": true,
+          "allow_only_contributors_to_track_time": true,
+          "enable_issue_dependencies": true
+        },
+        "has_wiki": true,
+        "has_pull_requests": true,
+        "has_projects": true,
+        "ignore_whitespace_conflicts": false,
+        "allow_merge_commits": true,
+        "allow_rebase": true,
+        "allow_rebase_explicit": true,
+        "allow_squash_merge": true,
+        "allow_rebase_update": true,
+        "default_delete_branch_after_merge": false,
+        "default_merge_style": "merge",
+        "avatar_url": "",
+        "internal": false,
+        "mirror_interval": "",
+        "mirror_updated": "0001-01-01T00:00:00Z",
+        "repo_transfer": null
+      },
+      "mirror": false,
+      "size": 0,
+      "language": "",
+      "languages_url": "https://git.example.com/api/v1/repos/bar/baz/languages",
+      "html_url": "https://git.example.com/bar/baz",
+      "ssh_url": "gitea@git.example.com:bar/baz.git",
+      "clone_url": "https://git.example.com/bar/baz.git",
+      "original_url": "",
+      "website": "",
+      "stars_count": 0,
+      "forks_count": 0,
+      "watchers_count": 0,
+      "open_issues_count": 0,
+      "open_pr_counter": 0,
+      "release_counter": 0,
+      "default_branch": "main",
+      "archived": false,
+      "created_at": "2023-02-08T02:23:28Z",
+      "updated_at": "2023-02-08T02:23:28Z",
+      "permissions": {
+        "admin": true,
+        "push": true,
+        "pull": true
+      },
+      "has_issues": true,
+      "internal_tracker": {
+        "enable_time_tracker": true,
+        "allow_only_contributors_to_track_time": true,
+        "enable_issue_dependencies": true
+      },
+      "has_wiki": true,
+      "has_pull_requests": true,
+      "has_projects": true,
+      "ignore_whitespace_conflicts": false,
+      "allow_merge_commits": true,
+      "allow_rebase": true,
+      "allow_rebase_explicit": true,
+      "allow_squash_merge": true,
+      "allow_rebase_update": true,
+      "default_delete_branch_after_merge": false,
+      "default_merge_style": "merge",
+      "avatar_url": "",
+      "internal": false,
+      "mirror_interval": "",
+      "mirror_updated": "0001-01-01T00:00:00Z",
+      "repo_transfer": null
+    } """
 }
