@@ -2,12 +2,12 @@ import sbt._
 
 object Dependencies {
   val bcprovJdk15to18 = "org.bouncycastle" % "bcprov-jdk15to18" % "1.72"
-  val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.1"
+  val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.2"
   val catsEffect = "org.typelevel" %% "cats-effect" % "3.4.6"
   val catsCore = "org.typelevel" %% "cats-core" % "2.9.0"
   val catsLaws = "org.typelevel" %% "cats-laws" % catsCore.revision
   val catsParse = "org.typelevel" %% "cats-parse" % "0.3.9"
-  val circeConfig = "io.circe" %% "circe-config" % "0.8.0"
+  val circeConfig = "io.circe" %% "circe-config" % "0.10.0"
   val circeGeneric = "io.circe" %% "circe-generic" % "0.14.3"
   val circeGenericExtras = "io.circe" %% "circe-generic-extras" % "0.14.3"
   val circeLiteral = "io.circe" %% "circe-literal" % circeGeneric.revision

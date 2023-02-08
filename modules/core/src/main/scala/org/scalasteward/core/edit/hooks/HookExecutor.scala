@@ -117,6 +117,7 @@ object HookExecutor {
   )
 
   private val sbtTypelevelModules = List(
+    (GroupId("io.circe"), ArtifactId("sbt-circe-org")),
     (GroupId("org.typelevel"), ArtifactId("sbt-typelevel")),
     (GroupId("org.http4s"), ArtifactId("sbt-http4s-org")),
     (GroupId("edu.gemini"), ArtifactId("sbt-lucuma")),
