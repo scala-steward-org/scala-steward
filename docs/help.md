@@ -27,7 +27,7 @@ Options and flags:
     --sign-commits
         Whether to sign commits; default: false
     --forge-type <forge-type>
-        One of azure-repos, bitbucket, bitbucket-server, github, gitlab; default: github
+        One of azure-repos, bitbucket, bitbucket-server, github, gitlab, gitea; default: github
     --vcs-type <forge-type>
         deprecated in favor of --forge-type
     --forge-api-host <uri>
