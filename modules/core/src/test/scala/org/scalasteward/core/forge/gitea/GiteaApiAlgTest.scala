@@ -83,9 +83,7 @@ class GiteaApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
   test("getBranch") {
     val branch = Branch("main")
-    val sha1 = Sha1
-      .from("6b5ec7e2b6eaf45ecb654a9187e1f5874210fca3")
-      .getOrElse(throw new RuntimeException("impossible"))
+    val sha1 = Sha1.unsafeFrom("6b5ec7e2b6eaf45ecb654a9187e1f5874210fca3")
     giteaAlg
       .getBranch(repo, branch)
       .runA(state)

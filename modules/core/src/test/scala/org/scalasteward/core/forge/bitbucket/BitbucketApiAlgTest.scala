@@ -13,7 +13,6 @@ import org.scalasteward.core.application.Config.BitbucketCfg
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.data._
 import org.scalasteward.core.forge.{ForgeSelection, ForgeType}
-import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.git._
 import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context.httpJsonClient
@@ -228,12 +227,12 @@ class BitbucketApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
   private val defaultBranch = BranchOut(
     master,
-    CommitOut(Sha1(HexString.unsafeFrom("07eb2a203e297c8340273950e98b2cab68b560c1")))
+    CommitOut(Sha1.unsafeFrom("07eb2a203e297c8340273950e98b2cab68b560c1"))
   )
 
   private val defaultCustomBranch = BranchOut(
     custom,
-    CommitOut(Sha1(HexString.unsafeFrom("12ea4559063c74184861afece9eeff5ca9d33db3")))
+    CommitOut(Sha1.unsafeFrom("12ea4559063c74184861afece9eeff5ca9d33db3"))
   )
 
   private val pullRequest =

@@ -13,7 +13,6 @@ import org.scalasteward.core.application.Config.GitHubCfg
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.data._
 import org.scalasteward.core.forge.{ForgeSelection, ForgeType}
-import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context.httpJsonClient
@@ -172,12 +171,12 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
   private val defaultBranch = BranchOut(
     Branch("master"),
-    CommitOut(Sha1(HexString("07eb2a203e297c8340273950e98b2cab68b560c1")))
+    CommitOut(Sha1.unsafeFrom("07eb2a203e297c8340273950e98b2cab68b560c1"))
   )
 
   private val defaultCustomBranch = BranchOut(
     Branch("custom"),
-    CommitOut(Sha1(HexString("12ea4559063c74184861afece9eeff5ca9d33db3")))
+    CommitOut(Sha1.unsafeFrom("12ea4559063c74184861afece9eeff5ca9d33db3"))
   )
 
   test("createForkOrGetRepo") {
