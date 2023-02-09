@@ -8,7 +8,6 @@ import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.{Repo, Update}
 import org.scalasteward.core.forge.data.PullRequestState.Open
 import org.scalasteward.core.forge.data.{PullRequestNumber, PullRequestState}
-import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context.pullRequestRepository
@@ -28,7 +27,7 @@ class PullRequestRepositoryTest extends FunSuite {
     ("org.typelevel".g % "cats-core".a % "1.0.0" %> "1.0.1").single
 
   private val url = uri"https://github.com/typelevel/cats/pull/3291"
-  private val sha1 = Sha1(HexString.unsafeFrom("a2ced5793c2832ada8c14ba5c77e51c4bc9656a8"))
+  private val sha1 = Sha1.unsafeFrom("a2ced5793c2832ada8c14ba5c77e51c4bc9656a8")
   private val number = PullRequestNumber(3291)
   private val branch = Branch("update")
 

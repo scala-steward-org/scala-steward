@@ -38,6 +38,9 @@ object Sha1 {
   def from(s: String): Either[Throwable, Sha1] =
     HexString.from(s).bimap(new Throwable(_), Sha1.apply)
 
+  def unsafeFrom(s: String): Sha1 =
+    from(s).fold(throw _, identity)
+
   implicit val sha1Eq: Eq[Sha1] =
     Eq.by(_.value.value)
 
