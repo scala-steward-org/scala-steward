@@ -11,7 +11,6 @@ import org.scalasteward.core.application.Config.AzureReposCfg
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.data._
 import org.scalasteward.core.forge.{ForgeSelection, ForgeType}
-import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context.httpJsonClient
@@ -196,7 +195,7 @@ class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     val obtained = azureReposApiAlg.getBranch(repo, Branch("refs/heads/main")).runA(state)
     val expected = BranchOut(
       Branch("main"),
-      CommitOut(Sha1(HexString.unsafeFrom("f55c9900528e548511fbba6874c873d44c5d714c")))
+      CommitOut(Sha1.unsafeFrom("f55c9900528e548511fbba6874c873d44c5d714c"))
     )
     assertIO(obtained, expected)
   }

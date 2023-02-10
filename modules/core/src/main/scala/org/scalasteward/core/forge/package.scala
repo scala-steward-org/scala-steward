@@ -30,7 +30,7 @@ package object forge {
       case GitHub =>
         s"${fork.owner}/${fork.repo}:${updateBranch.name}"
 
-      case GitLab | Bitbucket | BitbucketServer | AzureRepos =>
+      case GitLab | Bitbucket | BitbucketServer | AzureRepos | Gitea =>
         updateBranch.name
     }
 
@@ -42,7 +42,7 @@ package object forge {
       case GitHub =>
         s"${fork.owner}:${updateBranch.name}"
 
-      case GitLab | Bitbucket | BitbucketServer | AzureRepos =>
+      case GitLab | Bitbucket | BitbucketServer | AzureRepos | Gitea =>
         updateBranch.name
     }
 }

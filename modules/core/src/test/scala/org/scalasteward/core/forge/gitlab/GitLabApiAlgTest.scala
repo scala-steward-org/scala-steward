@@ -17,7 +17,6 @@ import org.scalasteward.core.data.{Repo, RepoData, UpdateData}
 import org.scalasteward.core.forge.data._
 import org.scalasteward.core.forge.gitlab.GitLabJsonCodec._
 import org.scalasteward.core.forge.{ForgeSelection, ForgeType}
-import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context.httpJsonClient
@@ -150,7 +149,7 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     Repo("scala-steward", "bar"),
     ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single,
     Branch("master"),
-    Sha1(Sha1.HexString.unsafeFrom("d6b6791d2ea11df1d156fe70979ab8c3a5ba3433")),
+    Sha1.unsafeFrom("d6b6791d2ea11df1d156fe70979ab8c3a5ba3433"),
     Branch("update/logback-classic-1.2.3")
   )
   private val newPRData =
@@ -184,7 +183,7 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     val branchOut = gitlabApiAlg.getBranch(Repo("foo", "bar"), Branch("master")).runA(state)
     val expected = BranchOut(
       Branch("master"),
-      CommitOut(Sha1(HexString("07eb2a203e297c8340273950e98b2cab68b560c1")))
+      CommitOut(Sha1.unsafeFrom("07eb2a203e297c8340273950e98b2cab68b560c1"))
     )
     assertIO(branchOut, expected)
   }

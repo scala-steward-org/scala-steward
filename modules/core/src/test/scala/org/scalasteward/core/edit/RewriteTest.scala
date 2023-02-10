@@ -856,6 +856,15 @@ class RewriteTest extends FunSuite {
     runApplyUpdate(update, original, expected)
   }
 
+  // https://github.com/scala-steward-org/scala-steward/issues/2947
+  test(".scalafmt.conf in a subdirectory") {
+    val update =
+      ("org.scalameta".g % ("scalafmt-core", "scalafmt-core_2.12").a % "2.0.0" %> "2.0.1").single
+    val original = Map(s"foo/$scalafmtConfName" -> """version = "2.0.0" """)
+    val expected = Map(s"foo/$scalafmtConfName" -> """version = "2.0.1" """)
+    runApplyUpdate(update, original, expected)
+  }
+
   test("scalafmt.conf and other scalameta update") {
     val update = ("org.scalameta".g % "other-artifact".a % "2.0.0" %> "2.0.1").single
     val original = Map(scalafmtConfName -> """version=2.0.0""")

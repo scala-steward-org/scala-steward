@@ -27,6 +27,7 @@ import org.scalasteward.core.forge.azurerepos.AzureReposApiAlg
 import org.scalasteward.core.forge.bitbucket.BitbucketApiAlg
 import org.scalasteward.core.forge.bitbucketserver.BitbucketServerApiAlg
 import org.scalasteward.core.forge.data.AuthenticatedUser
+import org.scalasteward.core.forge.gitea.GiteaApiAlg
 import org.scalasteward.core.forge.github.GitHubApiAlg
 import org.scalasteward.core.forge.gitlab.GitLabApiAlg
 import org.scalasteward.core.util.HttpJsonClient
@@ -57,6 +58,8 @@ object ForgeSelection {
         new GitHubApiAlg(forgeCfg.apiHost, auth)
       case specificCfg: Config.GitLabCfg =>
         new GitLabApiAlg(forgeCfg, specificCfg, auth)
+      case _: Config.GiteaCfg =>
+        new GiteaApiAlg(forgeCfg, auth)
     }
   }
 
@@ -70,6 +73,7 @@ object ForgeSelection {
       case BitbucketServer => _.putHeaders(basicAuth(user), xAtlassianToken).pure[F]
       case GitHub          => _.putHeaders(basicAuth(user)).pure[F]
       case GitLab          => _.putHeaders(Header.Raw(ci"Private-Token", user.accessToken)).pure[F]
+      case Gitea           => _.putHeaders(basicAuth(user)).pure[F]
     }
 
   private def basicAuth(user: AuthenticatedUser): Authorization =

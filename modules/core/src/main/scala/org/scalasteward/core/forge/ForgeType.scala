@@ -33,6 +33,7 @@ sealed trait ForgeType extends Product with Serializable {
     case BitbucketServer => "bitbucket-server"
     case GitHub          => "github"
     case GitLab          => "gitlab"
+    case Gitea           => "gitea"
   }
 }
 
@@ -64,7 +65,11 @@ object ForgeType {
     val publicApiBaseUrl = uri"https://gitlab.com/api/v4"
   }
 
-  val all: List[ForgeType] = List(AzureRepos, Bitbucket, BitbucketServer, GitHub, GitLab)
+  case object Gitea extends ForgeType {
+    override val publicWebHost: Option[String] = None
+  }
+
+  val all: List[ForgeType] = List(AzureRepos, Bitbucket, BitbucketServer, GitHub, GitLab, Gitea)
 
   def allNot(f: ForgeType => Boolean): String =
     ForgeType.all.filterNot(f).map(_.asString).mkString(", ")
