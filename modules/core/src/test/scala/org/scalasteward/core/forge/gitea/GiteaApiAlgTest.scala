@@ -8,7 +8,7 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.headers.Authorization
 import org.http4s.implicits._
 import org.http4s.{BasicCredentials, HttpApp}
-import org.scalasteward.core.TestInstances.ioLogger
+import org.scalasteward.core.TestInstances._
 import org.scalasteward.core.application.Config.GiteaCfg
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.data._
@@ -144,7 +144,9 @@ class GiteaApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
           body = "hi",
           head = "pr2",
           base = Branch("main"),
-          labels = Nil
+          labels = Nil,
+          assignees = Nil,
+          reviewers = Nil
         )
       )
       .runA(state)
@@ -187,12 +189,6 @@ class GiteaApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
           GiteaApiAlg.Label(2, "label1")
         )
       }
-  }
-
-  test("label pr") {
-    giteaAlg
-      .labelPullRequest(repo, PullRequestNumber(2), List("label1"))
-      .runA(state)
   }
 
   test("create fork") {
