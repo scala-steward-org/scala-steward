@@ -17,6 +17,8 @@
 package org.scalasteward.core.forge.data
 
 import cats.syntax.all._
+import io.circe.Encoder
+import io.circe.generic.semiauto._
 import org.http4s.Uri
 import org.scalasteward.core.data._
 import org.scalasteward.core.edit.EditAttempt
@@ -41,6 +43,9 @@ final case class NewPullRequestData(
 )
 
 object NewPullRequestData {
+  implicit val newPullRequestDataEncoder: Encoder[NewPullRequestData] =
+    deriveEncoder
+
   def bodyFor(
       update: Update,
       edits: List[EditAttempt],
