@@ -37,7 +37,6 @@ final private[gitlab] case class MergeRequestPayload(
     id: String,
     title: String,
     description: String,
-    labels: Option[List[String]],
     assignee_ids: Option[List[Int]],
     reviewer_ids: Option[List[Int]],
     target_project_id: Long,
@@ -58,7 +57,6 @@ private[gitlab] object MergeRequestPayload {
       id = id,
       title = List(if (data.draft) "Draft: " else "", data.title).mkString,
       description = data.body,
-      labels = if (data.labels.nonEmpty) Some(data.labels) else None,
       assignee_ids = if (assignees.nonEmpty) Some(assignees) else None,
       reviewer_ids = if (reviewers.nonEmpty) Some(reviewers) else None,
       target_project_id = projectId,
@@ -340,4 +338,17 @@ final class GitLabApiAlg[F[_]](
   ): F[Comment] =
     client.postWithBody(url.comments(repo, number), Comment(comment), modify(repo))
 
+  // https://docs.gitlab.com/ee/api/merge_requests.html#update-mr
+  override def labelPullRequest(
+      repo: Repo,
+      number: PullRequestNumber,
+      labels: List[String]
+  ): F[Unit] =
+    client
+      .putWithBody[Json, Json](
+        url.existingMergeRequest(repo, number),
+        Json.obj("labels" := labels.mkString(",")),
+        modify(repo)
+      )
+      .void
 }

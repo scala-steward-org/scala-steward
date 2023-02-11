@@ -68,7 +68,6 @@ final class BitbucketServerApiAlg[F[_]](
 
     for {
       reviewers <- useDefaultReviewers(repo)
-      _ <- if (data.labels.nonEmpty) warnIfLabelsAreUsed() else F.unit
       _ <- if (data.assignees.nonEmpty) warnIfAssigneesAreUsed() else F.unit
       _ <- if (data.reviewers.nonEmpty) warnIfReviewersAreUsed() else F.unit
       req = Json.NewPR(
@@ -122,7 +121,11 @@ final class BitbucketServerApiAlg[F[_]](
       .get[Json.Page[Json.PR]](url.listPullRequests(repo, s"refs/heads/$head"), modify(repo))
       .map(_.values.map(_.toPullRequestOut))
 
-  private def warnIfLabelsAreUsed(): F[Unit] =
+  override def labelPullRequest(
+      repo: Repo,
+      number: PullRequestNumber,
+      labels: List[String]
+  ): F[Unit] =
     logger.warn(
       "Bitbucket does not support PR labels, remove --add-labels to make this warning disappear"
     )

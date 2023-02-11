@@ -49,4 +49,7 @@ class Url(apiHost: Uri, organization: String) {
 
   def commentPullRequest(repo: Repo, number: PullRequestNumber): Uri =
     pullRequests(repo) / number.value / "threads"
+
+  def labelPullRequest(repo: Repo, number: PullRequestNumber): Uri =
+    pullRequests(repo) / number.value / "labels"
 }

@@ -90,7 +90,6 @@ class BitbucketApiAlg[F[_]](
         }
 
     for {
-      _ <- if (data.labels.nonEmpty) warnIfLabelsAreUsed() else F.unit
       _ <- if (data.assignees.nonEmpty) warnIfAssigneesAreUsed() else F.unit
       _ <- if (data.reviewers.nonEmpty) warnIfReviewersAreUsed() else F.unit
       created <- create
@@ -133,7 +132,11 @@ class BitbucketApiAlg[F[_]](
       )
       .map((cc: CreateComment) => Comment(cc.content.raw))
 
-  private def warnIfLabelsAreUsed() =
+  override def labelPullRequest(
+      repo: Repo,
+      number: PullRequestNumber,
+      labels: List[String]
+  ): F[Unit] =
     logger.warn(
       "Bitbucket does not support PR labels, remove --add-labels to make this warning disappear"
     )

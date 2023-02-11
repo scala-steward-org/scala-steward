@@ -323,4 +323,10 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     assertIO(comment, Comment("Superseded by #1234"))
   }
 
+  test("labelPullRequest") {
+    gitHubApiAlg
+      .labelPullRequest(repo, PullRequestNumber(1347), List("A", "B"))
+      .runA(state)
+      .assert
+  }
 }

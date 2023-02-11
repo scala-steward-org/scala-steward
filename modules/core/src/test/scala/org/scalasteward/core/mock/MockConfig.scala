@@ -19,7 +19,6 @@ object MockConfig {
     "--env-var=VAR1=val1",
     "--env-var=VAR2=val2",
     "--cache-ttl=1hour",
-    "--add-labels",
     "--refresh-backoff-period=1hour"
   )
   val Success(Config.StewardUsage.Regular(config)) = Cli.parseArgs(args)

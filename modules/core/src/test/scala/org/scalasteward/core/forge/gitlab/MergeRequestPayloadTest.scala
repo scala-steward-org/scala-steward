@@ -49,22 +49,6 @@ class MergeRequestPayloadTest extends FunSuite {
     assertEquals(obtained, expected)
   }
 
-  test("asJson with labels") {
-    val obtained =
-      MergeRequestPayload(id, projectId, data.copy(labels = List("foo", "bar")), Map.empty).asJson
-    val expected =
-      json"""{
-               "id" : "123",
-               "title" : "Test MR title",
-               "description" : "Test MR body",
-               "labels" : [ "foo", "bar" ],
-               "target_project_id" : 321,
-               "source_branch" : "source",
-               "target_branch" : "master"
-             }"""
-    assertEquals(obtained, expected)
-  }
-
   test("asJson with assignees and reviewers") {
     val obtained = MergeRequestPayload(
       id = id,

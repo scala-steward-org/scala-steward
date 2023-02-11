@@ -374,6 +374,13 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     )
   }
 
+  test("labelPullRequest") {
+    gitlabApiAlg
+      .labelPullRequest(Repo("foo", "bar"), PullRequestNumber(150), List("A", "B"))
+      .runA(state)
+      .assert
+  }
+
   private val getMr = json"""
     {
       "id": 26328,

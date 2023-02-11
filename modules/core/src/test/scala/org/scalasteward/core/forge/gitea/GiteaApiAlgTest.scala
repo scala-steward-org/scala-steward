@@ -191,6 +191,12 @@ class GiteaApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       }
   }
 
+  test("label pr") {
+    giteaAlg
+      .labelPullRequest(repo, PullRequestNumber(2), List("label1"))
+      .runA(state)
+  }
+
   test("create fork") {
     giteaAlg
       .createFork(repo)
