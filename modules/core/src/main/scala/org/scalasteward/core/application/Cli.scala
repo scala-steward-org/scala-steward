@@ -324,12 +324,12 @@ object Cli {
   }
 
   private val prThrottleSkip = {
-    val help = "" // TODO
+    val help = "Skips creating PRs for the given duration after the last PR"
     option[FiniteDuration]("pr-throttle-skip", help).orNone
   }
 
   private val prThrottleWait = {
-    val help = "" // TODO
+    val help = "Waits for the given duration between creating two consequent PRs"
     option[FiniteDuration]("pr-throttle-wait", help).orNone
   }
 
