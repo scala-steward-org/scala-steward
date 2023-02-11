@@ -41,9 +41,10 @@ final class ScalaCliAlg[F[_]](implicit
 
   override def containsBuild(buildRoot: BuildRoot): F[Boolean] = {
     val buildRootPath = buildRoot.relativePath.dropWhile(Set('.', '/'))
+    val extensions = Set(".sc", ".scala")
     gitAlg
       .findFilesContaining(buildRoot.repo, "//> using lib ")
-      .map(_.exists(_.startsWith(buildRootPath)))
+      .map(_.exists(path => path.startsWith(buildRootPath) && extensions.exists(path.endsWith)))
   }
 
   override def getDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
