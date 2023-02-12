@@ -50,22 +50,27 @@ final class EditAlg[F[_]](implicit
       update: Update.Single,
       preCommit: F[Unit] = F.unit
   ): F[List[EditAttempt]] =
-    findUpdateReplacements(data.repo, data.config, update).flatMap {
-      case Nil => logger.warn(s"Unable to bump version for update ${update.show}").as(Nil)
-      case updateReplacements =>
-        for {
-          _ <- preCommit
-          (preMigrations, postMigrations) = scalafixMigrationsFinder.findMigrations(update)
-          preScalafixEdits <- runScalafixMigrations(data.repo, data.config, preMigrations)
-          // PreUpdate migrations could invalidate previously found replacements,
-          // so we find them again if the migrations produced any changes.
-          freshReplacements <-
-            if (preScalafixEdits.flatMap(_.commits).isEmpty) F.pure(updateReplacements)
-            else findUpdateReplacements(data.repo, data.config, update)
-          updateEdit <- applyUpdateReplacements(data, update, freshReplacements)
-          postScalafixEdits <- runScalafixMigrations(data.repo, data.config, postMigrations)
-          hooksEdits <- hookExecutor.execPostUpdateHooks(data, update)
-        } yield preScalafixEdits ++ updateEdit ++ postScalafixEdits ++ hooksEdits
+    {
+      findUpdateReplacements(data.repo, data.config, update).flatMap {
+        case Nil =>
+          logger.warn(s"Unable to bump version for update ${update.show}").as(Nil)
+        case updateReplacements =>
+          for {
+            _ <- preCommit
+            (preMigrations, postMigrations) = scalafixMigrationsFinder.findMigrations(update)
+            preScalafixEdits <- runScalafixMigrations(data.repo, data.config, preMigrations)
+            // PreUpdate migrations could invalidate previously found replacements,
+            // so we find them again if the migrations produced any changes.
+            freshReplacements <-
+              if (preScalafixEdits.flatMap(_.commits).isEmpty) F.pure(updateReplacements)
+              else findUpdateReplacements(data.repo, data.config, update)
+            updateEdit <- applyUpdateReplacements(data, update, freshReplacements)
+            postScalafixEdits <- runScalafixMigrations(data.repo, data.config, postMigrations)
+            hooksEdits <- hookExecutor.execPostUpdateHooks(data, update)
+          } yield {
+            preScalafixEdits ++ updateEdit ++ postScalafixEdits ++ hooksEdits
+          }
+      }
     }
 
   private def findUpdateReplacements(
@@ -73,10 +78,16 @@ final class EditAlg[F[_]](implicit
       config: RepoConfig,
       update: Update.Single
   ): F[List[Substring.Replacement]] =
-    for {
-      versionPositions <- scannerAlg.findVersionPositions(repo, config, update.currentVersion)
-      modulePositions <- scannerAlg.findModulePositions(repo, config, update.dependencies)
-    } yield Selector.select(update, versionPositions, modulePositions)
+    {
+      println("findUpdateReplacements")
+      println(s"  update = $update")
+      for {
+        versionPositions <- scannerAlg.findVersionPositions(repo, config, update.currentVersion)
+        _ = println(s"  versionPositions = ${versionPositions}")
+        modulePositions <- scannerAlg.findModulePositions(repo, config, update.dependencies)
+        _ = println(s"  modulePositions = ${modulePositions}")
+      } yield Selector.select(update, versionPositions, modulePositions)
+    }
 
   private def runScalafixMigrations(
       repo: Repo,
@@ -103,17 +114,23 @@ final class EditAlg[F[_]](implicit
       update: Update.Single,
       updateReplacements: List[Substring.Replacement]
   ): F[Option[EditAttempt]] =
-    for {
-      repoDir <- workspaceAlg.repoDir(data.repo)
-      replacementsByPath = updateReplacements.groupBy(_.position.path).toList
-      _ <- replacementsByPath.traverse { case (path, replacements) =>
-        fileAlg.editFile(repoDir / path, Substring.Replacement.applyAll(replacements))
-      }
-      _ <- reformatChangedFiles(data)
-      msgTemplate = data.config.commits.messageOrDefault
-      commitMsg = CommitMsg.replaceVariables(msgTemplate)(update, data.repo.branch)
-      maybeCommit <- gitAlg.commitAllIfDirty(data.repo, commitMsg)
-    } yield maybeCommit.map(UpdateEdit(update, _))
+    {
+      println("applyUpdateReplacements")
+      println(s"  data = ${data}")
+      println(s"  update = ${update}")
+      println(s"  updateReplacements = ${updateReplacements}")
+      for {
+        repoDir <- workspaceAlg.repoDir(data.repo)
+        replacementsByPath = updateReplacements.groupBy(_.position.path).toList
+        _ <- replacementsByPath.traverse { case (path, replacements) =>
+          fileAlg.editFile(repoDir / path, Substring.Replacement.applyAll(replacements))
+        }
+        _ <- reformatChangedFiles(data)
+        msgTemplate = data.config.commits.messageOrDefault
+        commitMsg = CommitMsg.replaceVariables(msgTemplate)(update, data.repo.branch)
+        maybeCommit <- gitAlg.commitAllIfDirty(data.repo, commitMsg)
+      } yield maybeCommit.map(UpdateEdit(update, _))
+    }
 
   private def reformatChangedFiles(data: RepoData): F[Unit] = {
     val reformat =

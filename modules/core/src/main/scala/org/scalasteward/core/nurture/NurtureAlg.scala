@@ -93,6 +93,7 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       _ <- logger.info(s"Process update ${data.update.show}")
       head = vcs.listingBranch(config.tpe, data.fork, data.updateBranch)
       pullRequests <- vcsApiAlg.listPullRequests(data.repo, head, data.baseBranch)
+        .map(_.take(0)) // Debug
       result <- pullRequests.headOption match {
         case Some(pr) if pr.state.isClosed && data.update.isInstanceOf[Update.Single] =>
           logger.info(s"PR ${pr.html_url} is closed") >>
