@@ -7,6 +7,7 @@ import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.{Repo, RepoData, Update}
 import org.scalasteward.core.mock.MockContext.context._
 import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.mock.MockState.TraceEntry
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafmt.scalafmtConfName
 import org.scalasteward.core.util.Nel
@@ -931,6 +932,46 @@ class RewriteTest extends FunSuite {
     runApplyUpdate(update, original, expected)
   }
 
+  // Sketchy placeholder bI'm not sure how else to assert on the presence/absence of a log.
+  private val terribleMutableLogBufferDoNotMergeThis =
+    scala.collection.mutable.ListBuffer.empty[String]
+
+  test("issue ...") {
+    val update1 = ("com.foo".g % "library-1".a % "1.2.3" %> "1.3.0").single
+    val update2 = ("com.foo".g % "library-2".a % "1.2.3" %> "1.3.0").single
+    val original = Map(
+      "build.sbt" ->
+        """
+          |val FooLibraryVersion = "1.2.3"
+          |libraryDependencies ++= Seq(
+          |  "com.foo" %% "library-1" % FooLibraryVersion,
+          |  "com.foo" %% "library-2" % FooLibraryVersion
+          |)
+          |""".stripMargin
+    )
+    val expected = Map(
+      "build.sbt" ->
+        """
+          |val FooLibraryVersion = "1.3.0"
+          |libraryDependencies ++= Seq(
+          |  "com.foo" %% "library-1" % FooLibraryVersion,
+          |  "com.foo" %% "library-2" % FooLibraryVersion
+          |)
+          |""".stripMargin
+    )
+
+    runApplyUpdate(update1, original, expected)
+    require(
+      !terribleMutableLogBufferDoNotMergeThis.exists(_.startsWith("Unable to bump version"))
+    )
+
+    // The second update prints a misleading warning.
+    runApplyUpdate(update2, expected, expected)
+    require(
+      terribleMutableLogBufferDoNotMergeThis.last == "Unable to bump version for update com.foo:library-2 : 1.2.3 -> 1.3.0"
+    )
+  }
+
   private def runApplyUpdate(
       update: Update.Single,
       files: Map[String, String],
@@ -944,6 +985,12 @@ class RewriteTest extends FunSuite {
       .addFiles(filesInRepoDir.toSeq: _*)
       .flatMap(editAlg.applyUpdate(data, update).runS)
       .unsafeRunSync()
+    terribleMutableLogBufferDoNotMergeThis.clear()
+    state.trace.foreach {
+      case l: TraceEntry.Log =>
+        terribleMutableLogBufferDoNotMergeThis += l.log._2
+      case _ => ()
+    }
     val obtained = state.files
       .map { case (file, content) => file.toString.replace(repoDir.toString + "/", "") -> content }
     assertEquals(obtained, expected)
