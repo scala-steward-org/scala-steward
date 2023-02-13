@@ -22,5 +22,5 @@ import io.circe.generic.semiauto.deriveEncoder
 case class GitHubReviewers(reviewers: List[String])
 
 object GitHubReviewers {
-  implicit val encoder: Encoder[GitHubReviewers] = deriveEncoder
+  implicit val gitHubReviewersEncoder: Encoder[GitHubReviewers] = deriveEncoder
 }

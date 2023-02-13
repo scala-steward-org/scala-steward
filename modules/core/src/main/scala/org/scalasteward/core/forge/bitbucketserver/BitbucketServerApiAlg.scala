@@ -68,8 +68,8 @@ final class BitbucketServerApiAlg[F[_]](
 
     for {
       reviewers <- useDefaultReviewers(repo)
-      _ <- if (data.assignees.nonEmpty) warnIfAssigneesAreUsed() else F.unit
-      _ <- if (data.reviewers.nonEmpty) warnIfReviewersAreUsed() else F.unit
+      _ <- F.whenA(data.assignees.nonEmpty)(warnIfAssigneesAreUsed)
+      _ <- F.whenA(data.reviewers.nonEmpty)(warnIfReviewersAreUsed)
       req = Json.NewPR(
         title = data.title,
         description = data.body,
@@ -130,9 +130,9 @@ final class BitbucketServerApiAlg[F[_]](
       "Bitbucket does not support PR labels, remove --add-labels to make this warning disappear"
     )
 
-  private def warnIfAssigneesAreUsed() =
+  private def warnIfAssigneesAreUsed =
     logger.warn("assignees are not supported by Bitbucket")
 
-  private def warnIfReviewersAreUsed() =
+  private def warnIfReviewersAreUsed =
     logger.warn("reviewers are not implemented yet for Bitbucket")
 }

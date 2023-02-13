@@ -121,7 +121,7 @@ object GiteaApiAlg {
 final class GiteaApiAlg[F[_]: HttpJsonClient](
     vcs: ForgeCfg,
     modify: Repo => Request[F] => F[Request[F]]
-)(implicit F: MonadThrow[F], logger: Logger[F])
+)(implicit logger: Logger[F], F: MonadThrow[F])
     extends ForgeApiAlg[F] {
   import GiteaApiAlg._
 
@@ -164,8 +164,8 @@ final class GiteaApiAlg[F[_]: HttpJsonClient](
 
   override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] =
     for {
-      _ <- if (data.assignees.nonEmpty) warnIfAssigneesAreUsed() else F.unit
-      _ <- if (data.reviewers.nonEmpty) warnIfReviewersAreUsed() else F.unit
+      _ <- F.whenA(data.assignees.nonEmpty)(warnIfAssigneesAreUsed)
+      _ <- F.whenA(data.reviewers.nonEmpty)(warnIfReviewersAreUsed)
       labels <- getOrCreateLabel(repo, data.labels.toVector)
       create = CreatePullRequestOption(
         assignee = none,
@@ -307,9 +307,9 @@ final class GiteaApiAlg[F[_]: HttpJsonClient](
     go(1, Vector.empty)
   }
 
-  private def warnIfAssigneesAreUsed() =
+  private def warnIfAssigneesAreUsed =
     logger.warn("assignees are not implemented yet for Gitea")
 
-  private def warnIfReviewersAreUsed() =
+  private def warnIfReviewersAreUsed =
     logger.warn("reviewers are not implemented yet for Gitea")
 }

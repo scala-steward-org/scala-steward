@@ -90,10 +90,10 @@ class BitbucketApiAlg[F[_]](
         }
 
     for {
-      _ <- if (data.assignees.nonEmpty) warnIfAssigneesAreUsed() else F.unit
-      _ <- if (data.reviewers.nonEmpty) warnIfReviewersAreUsed() else F.unit
-      created <- create
-    } yield created
+      _ <- F.whenA(data.assignees.nonEmpty)(warnIfAssigneesAreUsed)
+      _ <- F.whenA(data.reviewers.nonEmpty)(warnIfReviewersAreUsed)
+      pullRequestOut <- create
+    } yield pullRequestOut
   }
 
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
@@ -141,9 +141,9 @@ class BitbucketApiAlg[F[_]](
       "Bitbucket does not support PR labels, remove --add-labels to make this warning disappear"
     )
 
-  private def warnIfAssigneesAreUsed() =
+  private def warnIfAssigneesAreUsed =
     logger.warn("assignees are not supported by Bitbucket")
 
-  private def warnIfReviewersAreUsed() =
+  private def warnIfReviewersAreUsed =
     logger.warn("reviewers are not implemented yet for Bitbucket")
 }

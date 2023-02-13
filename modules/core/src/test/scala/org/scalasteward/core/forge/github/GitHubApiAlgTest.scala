@@ -297,8 +297,17 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       assignees = List("foo"),
       reviewers = List("bar")
     )
+    val expectedPullRequestOut =
+      PullRequestOut(
+        uri"https://github.com/octocat/Hello-World/pull/14",
+        PullRequestState.Open,
+        PullRequestNumber(14),
+        "new-feature"
+      )
 
-    gitHubApiAlg.createPullRequest(repo.copy(repo = "cant-assign-reviewers"), data).runA(state)
+    val pullRequestOut =
+      gitHubApiAlg.createPullRequest(repo.copy(repo = "cant-assign-reviewers"), data).runA(state)
+    assertIO(pullRequestOut, expectedPullRequestOut)
   }
 
   test("listPullRequests") {

@@ -57,8 +57,8 @@ private[gitlab] object MergeRequestPayload {
       id = id,
       title = List(if (data.draft) "Draft: " else "", data.title).mkString,
       description = data.body,
-      assignee_ids = if (assignees.nonEmpty) Some(assignees) else None,
-      reviewer_ids = if (reviewers.nonEmpty) Some(reviewers) else None,
+      assignee_ids = Option.when(assignees.nonEmpty)(assignees),
+      reviewer_ids = Option.when(reviewers.nonEmpty)(reviewers),
       target_project_id = projectId,
       source_branch = data.head,
       target_branch = data.base

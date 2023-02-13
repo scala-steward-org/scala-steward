@@ -46,17 +46,17 @@ final class GitHubApiAlg[F[_]](
 
   /** https://developer.github.com/v3/pulls/#create-a-pull-request */
   override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] = {
-    val createPullRequest = client
+    val create = client
       .postWithBody[PullRequestOut, NewPullRequestData](url.pulls(repo), data, modify(repo))
       .adaptErr(SecondaryRateLimitExceeded.fromThrowable)
 
     for {
-      created <- createPullRequest
+      pullRequestOut <- create
       _ <-
-        if (data.assignees.nonEmpty) addAssignees(repo, created.number, data.assignees) else F.unit
+        F.whenA(data.assignees.nonEmpty)(addAssignees(repo, pullRequestOut.number, data.assignees))
       _ <-
-        if (data.reviewers.nonEmpty) addReviewers(repo, created.number, data.reviewers) else F.unit
-    } yield created
+        F.whenA(data.reviewers.nonEmpty)(addReviewers(repo, pullRequestOut.number, data.reviewers))
+    } yield pullRequestOut
   }
 
   /** https://developer.github.com/v3/repos/branches/#get-branch */

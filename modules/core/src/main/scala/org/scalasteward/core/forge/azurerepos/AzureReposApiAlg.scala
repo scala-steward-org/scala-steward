@@ -34,7 +34,7 @@ final class AzureReposApiAlg[F[_]](
     azureAPiHost: Uri,
     config: AzureReposCfg,
     modify: Repo => Request[F] => F[Request[F]]
-)(implicit client: HttpJsonClient[F], F: MonadThrow[F], logger: Logger[F])
+)(implicit client: HttpJsonClient[F], logger: Logger[F], F: MonadThrow[F])
     extends ForgeApiAlg[F] {
 
   private val url = new Url(azureAPiHost, config.organization.getOrElse(""))
@@ -50,10 +50,10 @@ final class AzureReposApiAlg[F[_]](
       modify(repo)
     )
     for {
-      _ <- if (data.assignees.nonEmpty) warnIfAssigneesAreUsed() else F.unit
-      _ <- if (data.reviewers.nonEmpty) warnIfReviewersAreUsed() else F.unit
-      created <- create
-    } yield created
+      _ <- F.whenA(data.assignees.nonEmpty)(warnIfAssigneesAreUsed)
+      _ <- F.whenA(data.reviewers.nonEmpty)(warnIfReviewersAreUsed)
+      pullRequestOut <- create
+    } yield pullRequestOut
   }
 
   // https://docs.microsoft.com/en-us/rest/api/azure/devops/git/pull-requests/update?view=azure-devops-rest-7.1
@@ -104,10 +104,10 @@ final class AzureReposApiAlg[F[_]](
       )
       .void
 
-  private def warnIfAssigneesAreUsed() =
+  private def warnIfAssigneesAreUsed =
     logger.warn("assignees are not supported by AzureRepos")
 
-  private def warnIfReviewersAreUsed() =
+  private def warnIfReviewersAreUsed =
     logger.warn("reviewers are not implemented yet for AzureRepos")
 
 }
