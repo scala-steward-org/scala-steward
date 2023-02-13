@@ -332,7 +332,7 @@ lazy val metadataSettings = Def.settings(
 
 lazy val dockerSettings = Def.settings(
   dockerBaseImage := Option(System.getenv("DOCKER_BASE_IMAGE"))
-    .getOrElse("adoptopenjdk/openjdk11:alpine"),
+    .getOrElse("eclipse-temurin:11-alpine"),
   dockerCommands ++= {
     val binDir = "/usr/local/bin"
     val sbtVer = sbtVersion.value
