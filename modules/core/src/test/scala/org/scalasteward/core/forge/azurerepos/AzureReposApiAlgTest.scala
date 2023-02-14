@@ -6,7 +6,7 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.headers.Authorization
 import org.http4s.implicits._
 import org.http4s.{BasicCredentials, HttpApp, Uri}
-import org.scalasteward.core.TestInstances._
+import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.application.Config.AzureReposCfg
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.data._

@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.forge.gitlab
 
-import cats.MonadThrow
+import cats.{MonadThrow, Parallel}
 import cats.syntax.all._
 import io.circe._
 import io.circe.generic.semiauto._
@@ -30,7 +30,6 @@ import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.util.uri.uriDecoder
 import org.scalasteward.core.util.{intellijThisImportIsUsed, HttpJsonClient, UnexpectedResponse}
 import org.typelevel.log4cats.Logger
-import org.scalasteward.core.persistence.KeyValueStore
 
 final private[gitlab] case class ForkPayload(id: String, namespace: String)
 final private[gitlab] case class MergeRequestPayload(
@@ -150,13 +149,12 @@ private[gitlab] object GitLabJsonCodec {
   implicit val branchOutDecoder: Decoder[BranchOut] = deriveDecoder[BranchOut]
 }
 
-final class GitLabApiAlg[F[_]](
+final class GitLabApiAlg[F[_]: Parallel](
     forgeCfg: ForgeCfg,
     gitLabCfg: GitLabCfg,
     modify: Repo => Request[F] => F[Request[F]]
 )(implicit
     client: HttpJsonClient[F],
-    userIdsStore: KeyValueStore[F, String, Int],
     logger: Logger[F],
     F: MonadThrow[F]
 ) extends ForgeApiAlg[F] {
@@ -273,15 +271,9 @@ final class GitLabApiAlg[F[_]](
 
   private def getUsernameToUserIdsMapping(repo: Repo, usernames: Set[String]): F[Map[String, Int]] =
     usernames.toList
-      .traverse { username =>
-        userIdsStore.get(username).flatMap {
-          case Some(cachedUserId) => F.pure(Option((username, cachedUserId)))
-          case None =>
-            getUserIdForUsername(repo, username).flatMap {
-              case Some(userIdFromApi) =>
-                userIdsStore.put(username, userIdFromApi).as(Option((username, userIdFromApi)))
-              case None => F.pure(none[(String, Int)])
-            }
+      .parTraverse { username =>
+        getUserIdForUsername(repo, username).map { userIdOpt =>
+          userIdOpt.map(userId => (username, userId))
         }
       }
       .map(_.flatten.toMap)

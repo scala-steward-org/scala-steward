@@ -1,6 +1,6 @@
 package org.scalasteward.core
 
-import cats.effect.{IO, Sync}
+import cats.effect.IO
 import eu.timepit.refined.scalacheck.numeric._
 import eu.timepit.refined.types.numeric.NonNegInt
 import org.scalacheck.{Arbitrary, Cogen, Gen}
@@ -13,7 +13,6 @@ import org.scalasteward.core.repoconfig._
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import scala.concurrent.duration.FiniteDuration
-import org.scalasteward.core.persistence.{KeyValueStore, MockKeyValueStore}
 
 object TestInstances {
   val dummySha1: Sha1 =
@@ -24,9 +23,6 @@ object TestInstances {
 
   val dummyRepoCacheWithParsingError: RepoCache =
     dummyRepoCache.copy(maybeRepoConfigParsingError = Some("Failed to parse .scala-steward.conf"))
-
-  implicit def gitlabUserIdCache[F[_]: Sync]: KeyValueStore[F, String, Int] =
-    new MockKeyValueStore
 
   implicit val ioLogger: Logger[IO] =
     Slf4jLogger.getLogger[IO]
