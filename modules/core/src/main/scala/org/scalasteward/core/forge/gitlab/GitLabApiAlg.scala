@@ -133,8 +133,7 @@ private[gitlab] object GitLabJsonCodec {
     }
 
   implicit val projectIdDecoder: Decoder[ProjectId] = deriveDecoder
-  implicit val mergeRequestPayloadEncoder: Encoder[MergeRequestPayload] =
-    deriveEncoder[MergeRequestPayload].mapJson(_.dropNullValues)
+  implicit val mergeRequestPayloadEncoder: Encoder[MergeRequestPayload] = deriveEncoder
   implicit val updateStateEncoder: Encoder[UpdateState] = Encoder.instance { newState =>
     val encoded = newState.state match {
       case PullRequestState.Open   => "open"

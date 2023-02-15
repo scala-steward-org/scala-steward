@@ -28,6 +28,8 @@ class MergeRequestPayloadTest extends FunSuite {
                "id" : "123",
                "title" : "Test MR title",
                "description" : "Test MR body",
+               "assignee_ids" : null,
+               "reviewer_ids" : null,
                "target_project_id" : 321,
                "source_branch" : "source",
                "target_branch" : "master"
@@ -42,6 +44,8 @@ class MergeRequestPayloadTest extends FunSuite {
                "id" : "123",
                "title" : "Draft: Test MR title",
                "description" : "Test MR body",
+               "assignee_ids" : null,
+               "reviewer_ids" : null,
                "target_project_id" : 321,
                "source_branch" : "source",
                "target_branch" : "master"
