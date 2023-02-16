@@ -168,6 +168,8 @@ dependencyOverrides = [
 # Assign people from the list to the pull request or request a review.
 # Currently supported only for GitLab and GitHub.
 # GitLab users - free version of GitLab only supports one assignee and one reviewer, others will be ignored.
+# GitHub users - to request review from a team inside your organisation it should be specified
+# like "yourOrg/yourTeam" in `reviewers` config below.
 # Please note that only accounts with write access to the repository (Developer role for GitLab) are able
 # to add assignees or request reviews. Consequently, it won't work for public @scala-steward instance on GitHub.
 assignees = [ "username1", "username2" ]

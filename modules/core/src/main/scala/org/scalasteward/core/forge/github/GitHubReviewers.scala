@@ -17,10 +17,23 @@
 package org.scalasteward.core.forge.github
 
 import io.circe.Encoder
-import io.circe.generic.semiauto.deriveEncoder
 
-case class GitHubReviewers(reviewers: List[String])
+class GitHubReviewers private (
+    val reviewers: List[String],
+    val teamReviewers: List[String]
+)
 
 object GitHubReviewers {
-  implicit val gitHubReviewersEncoder: Encoder[GitHubReviewers] = deriveEncoder
+  def apply(reviewersFromConfig: List[String]): GitHubReviewers = {
+    val (simpleReviewers, teamReviewers) = reviewersFromConfig.partitionMap {
+      case s"$_/$team" => Right(team)
+      case user        => Left(user)
+    }
+    new GitHubReviewers(simpleReviewers, teamReviewers)
+  }
+
+  implicit val gitHubReviewersEncoder: Encoder[GitHubReviewers] =
+    Encoder.forProduct2("reviewers", "team_reviewers")(gitHubReviewers =>
+      (gitHubReviewers.reviewers, gitHubReviewers.teamReviewers)
+    )
 }

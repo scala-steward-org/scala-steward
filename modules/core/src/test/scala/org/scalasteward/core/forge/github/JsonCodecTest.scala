@@ -19,7 +19,19 @@ class JsonCodecTest extends FunSuite {
     val reviewers = GitHubReviewers(List("foo", "bar")).asJson
     val expected =
       json"""{
-        "reviewers": [ "foo", "bar" ]
+        "reviewers": [ "foo", "bar" ],
+        "team_reviewers": []
+      }"""
+
+    assertEquals(reviewers, expected)
+  }
+
+  test("GitHubReviewers with team reviewers") {
+    val reviewers = GitHubReviewers(List("foo", "bar", "scala-steward-org/scala-steward")).asJson
+    val expected =
+      json"""{
+        "reviewers": [ "foo", "bar" ],
+        "team_reviewers": [ "scala-steward" ]
       }"""
 
     assertEquals(reviewers, expected)
