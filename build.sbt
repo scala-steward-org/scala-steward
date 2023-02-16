@@ -344,7 +344,7 @@ lazy val dockerSettings = Def.settings(
       s"https://github.com/lihaoyi/mill/releases/download/${millVer.split("-").head}/$millVer"
     val coursierBin = s"$binDir/coursier"
     val installScalaCliStep = Seq(
-      "wget -q -O scala-cli.gz  https://github.com/Virtuslab/scala-cli/releases/latest/download/scala-cli-x86_64-pc-linux-static.gz",
+      "wget -q -O scala-cli.gz https://github.com/Virtuslab/scala-cli/releases/latest/download/scala-cli-x86_64-pc-linux-static.gz",
       "gunzip scala-cli.gz",
       "chmod +x scala-cli",
       "mv scala-cli /usr/bin/"
