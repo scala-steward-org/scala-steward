@@ -348,7 +348,10 @@ lazy val dockerSettings = Def.settings(
       Cmd("RUN", "apk --no-cache add bash git ca-certificates curl maven openssh nodejs npm"),
       Cmd("RUN", s"wget $sbtUrl && tar -xf $sbtTgz && rm -f $sbtTgz"),
       Cmd("RUN", s"curl -L $millUrl > $millBin && chmod +x $millBin"),
-      Cmd("COPY", "--from=debian:stable-slim /lib/x86_64-linux-gnu/libz.so.1 /lib/x86_64-linux-gnu/libz.so.1"),
+      Cmd(
+        "COPY",
+        "--from=debian:stable-slim /lib/x86_64-linux-gnu/libz.so.1 /lib/x86_64-linux-gnu/libz.so.1"
+      ),
       Cmd("RUN", "curl -sSLf https://virtuslab.github.io/scala-cli-packages/scala-setup.sh | sh"),
       Cmd("RUN", s"curl -L https://git.io/coursier-cli > $coursierBin && chmod +x $coursierBin"),
       Cmd("RUN", s"$coursierBin install --install-dir $binDir scalafix scalafmt"),
