@@ -83,6 +83,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [Christoph Meier](https://github.com/meier-christoph)
 * [Christopher Davenport](https://github.com/ChristopherDavenport)
 * [Claudio Bley](https://github.com/avdv)
+* [cwholmes](https://github.com/cwholmes)
 * [Dale Wijnand](https://github.com/dwijnand)
 * [Daniel Esik](https://github.com/danicheg)
 * [Daniel Pfeiffer](https://github.com/dpfeiffer)
