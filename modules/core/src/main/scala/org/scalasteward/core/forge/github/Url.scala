@@ -48,4 +48,10 @@ class Url(apiHost: Uri) {
 
   def comments(repo: Repo, number: PullRequestNumber): Uri =
     repos(repo) / "issues" / number.toString / "comments"
+
+  def assignees(repo: Repo, number: PullRequestNumber): Uri =
+    repos(repo) / "issues" / number.toString / "assignees"
+
+  def reviewers(repo: Repo, number: PullRequestNumber): Uri =
+    repos(repo) / "pulls" / number.toString / "requested_reviewers"
 }

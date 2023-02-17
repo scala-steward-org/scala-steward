@@ -57,4 +57,7 @@ class Url(apiHost: Uri) {
 
   def comments(repo: Repo, number: PullRequestNumber): Uri =
     existingMergeRequest(repo, number) / "notes"
+
+  def users: Uri =
+    apiHost / "users"
 }

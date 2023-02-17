@@ -17,7 +17,7 @@
 package org.scalasteward.core.forge
 
 import cats.syntax.all._
-import cats.{Applicative, MonadThrow}
+import cats.{Applicative, MonadThrow, Parallel}
 import org.http4s.headers.Authorization
 import org.http4s.{BasicCredentials, Header, Request}
 import org.scalasteward.core.application.Config
@@ -35,7 +35,7 @@ import org.typelevel.ci._
 import org.typelevel.log4cats.Logger
 
 object ForgeSelection {
-  def forgeApiAlg[F[_]](
+  def forgeApiAlg[F[_]: Parallel](
       forgeCfg: ForgeCfg,
       forgeSpecificCfg: ForgeSpecificCfg,
       user: AuthenticatedUser

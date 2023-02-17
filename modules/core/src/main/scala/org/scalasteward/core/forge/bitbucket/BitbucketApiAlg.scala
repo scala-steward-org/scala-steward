@@ -73,20 +73,27 @@ class BitbucketApiAlg[F[_]](
       if (bitbucketCfg.useDefaultReviewers) getDefaultReviewers(repo)
       else F.pure(List.empty[Reviewer])
 
-    defaultReviewers
-      .map(reviewers =>
-        CreatePullRequestRequest(
-          data.title,
-          Branch(data.head),
-          Repo(sourceBranchOwner, repo.repo, repo.branch),
-          data.base,
-          data.body,
-          reviewers
+    val create: F[PullRequestOut] =
+      defaultReviewers
+        .map(reviewers =>
+          CreatePullRequestRequest(
+            data.title,
+            Branch(data.head),
+            Repo(sourceBranchOwner, repo.repo, repo.branch),
+            data.base,
+            data.body,
+            reviewers
+          )
         )
-      )
-      .flatMap { payload =>
-        client.postWithBody(url.pullRequests(repo), payload, modify(repo))
-      }
+        .flatMap { payload =>
+          client.postWithBody(url.pullRequests(repo), payload, modify(repo))
+        }
+
+    for {
+      _ <- F.whenA(data.assignees.nonEmpty)(warnIfAssigneesAreUsed)
+      _ <- F.whenA(data.reviewers.nonEmpty)(warnIfReviewersAreUsed)
+      pullRequestOut <- create
+    } yield pullRequestOut
   }
 
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
@@ -133,4 +140,10 @@ class BitbucketApiAlg[F[_]](
     logger.warn(
       "Bitbucket does not support PR labels, remove --add-labels to make this warning disappear"
     )
+
+  private def warnIfAssigneesAreUsed =
+    logger.warn("assignees are not supported by Bitbucket")
+
+  private def warnIfReviewersAreUsed =
+    logger.warn("reviewers are not implemented yet for Bitbucket")
 }

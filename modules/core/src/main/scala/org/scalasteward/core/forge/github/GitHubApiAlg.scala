@@ -25,12 +25,15 @@ import org.scalasteward.core.forge.data._
 import org.scalasteward.core.forge.github.GitHubException._
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.HttpJsonClient
+import org.typelevel.log4cats.Logger
+import io.circe.Json
 
 final class GitHubApiAlg[F[_]](
     gitHubApiHost: Uri,
     modify: Repo => Request[F] => F[Request[F]]
 )(implicit
     client: HttpJsonClient[F],
+    logger: Logger[F],
     F: MonadThrow[F]
 ) extends ForgeApiAlg[F] {
   private val url = new Url(gitHubApiHost)
@@ -42,10 +45,19 @@ final class GitHubApiAlg[F[_]](
     }
 
   /** https://developer.github.com/v3/pulls/#create-a-pull-request */
-  override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] =
-    client
+  override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] = {
+    val create = client
       .postWithBody[PullRequestOut, NewPullRequestData](url.pulls(repo), data, modify(repo))
       .adaptErr(SecondaryRateLimitExceeded.fromThrowable)
+
+    for {
+      pullRequestOut <- create
+      _ <-
+        F.whenA(data.assignees.nonEmpty)(addAssignees(repo, pullRequestOut.number, data.assignees))
+      _ <-
+        F.whenA(data.reviewers.nonEmpty)(addReviewers(repo, pullRequestOut.number, data.reviewers))
+    } yield pullRequestOut
+  }
 
   /** https://developer.github.com/v3/repos/branches/#get-branch */
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
@@ -92,4 +104,39 @@ final class GitHubApiAlg[F[_]](
       )
       .adaptErr(SecondaryRateLimitExceeded.fromThrowable)
       .void
+
+  private def addAssignees(
+      repo: Repo,
+      number: PullRequestNumber,
+      assignees: List[String]
+  ): F[Unit] =
+    client
+      .postWithBody[Json, GitHubAssignees](
+        url.assignees(repo, number),
+        GitHubAssignees(assignees),
+        modify(repo)
+      )
+      .void
+      .handleErrorWith { error =>
+        logger.error(error)(s"cannot add assignees '${assignees.mkString(",")}' to PR '$number'")
+      }
+
+  private def addReviewers(
+      repo: Repo,
+      number: PullRequestNumber,
+      reviewers: List[String]
+  ): F[Unit] =
+    client
+      .postWithBody[Json, GitHubReviewers](
+        url.reviewers(repo, number),
+        GitHubReviewers(reviewers),
+        modify(repo)
+      )
+      .void
+      .handleErrorWith { error =>
+        logger.error(error)(
+          s"cannot request review from '${reviewers.mkString(",")}' for PR '$number'"
+        )
+      }
+
 }

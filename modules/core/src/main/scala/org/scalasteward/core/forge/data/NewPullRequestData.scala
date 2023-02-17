@@ -37,6 +37,8 @@ final case class NewPullRequestData(
     head: String,
     base: Branch,
     labels: List[String],
+    assignees: List[String],
+    reviewers: List[String],
     draft: Boolean = false
 )
 
@@ -246,7 +248,9 @@ object NewPullRequestData {
       ),
       head = branchName,
       base = data.baseBranch,
-      labels = labels
+      labels = labels,
+      assignees = data.repoConfig.assignees,
+      reviewers = data.repoConfig.reviewers
     )
 
   def updateTypeLabels(anUpdate: Update): List[String] = {

@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.forge.gitlab
 
-import cats.MonadThrow
+import cats.{MonadThrow, Parallel}
 import cats.syntax.all._
 import io.circe._
 import io.circe.generic.semiauto._
@@ -36,21 +36,33 @@ final private[gitlab] case class MergeRequestPayload(
     id: String,
     title: String,
     description: String,
+    assignee_ids: Option[List[Int]],
+    reviewer_ids: Option[List[Int]],
     target_project_id: Long,
     source_branch: String,
     target_branch: Branch
 )
 
 private[gitlab] object MergeRequestPayload {
-  def apply(id: String, projectId: Long, data: NewPullRequestData): MergeRequestPayload =
+  def apply(
+      id: String,
+      projectId: Long,
+      data: NewPullRequestData,
+      usernamesToUserIdsMapping: Map[String, Int]
+  ): MergeRequestPayload = {
+    val assignees = data.assignees.flatMap(usernamesToUserIdsMapping.get)
+    val reviewers = data.reviewers.flatMap(usernamesToUserIdsMapping.get)
     MergeRequestPayload(
-      id,
-      List(if (data.draft) "Draft: " else "", data.title).mkString,
-      data.body,
-      projectId,
-      data.head,
-      data.base
+      id = id,
+      title = List(if (data.draft) "Draft: " else "", data.title).mkString,
+      description = data.body,
+      assignee_ids = Option.when(assignees.nonEmpty)(assignees),
+      reviewer_ids = Option.when(reviewers.nonEmpty)(reviewers),
+      target_project_id = projectId,
+      source_branch = data.head,
+      target_branch = data.base
     )
+  }
 }
 
 final private[gitlab] case class MergeRequestOut(
@@ -136,7 +148,7 @@ private[gitlab] object GitLabJsonCodec {
   implicit val branchOutDecoder: Decoder[BranchOut] = deriveDecoder[BranchOut]
 }
 
-final class GitLabApiAlg[F[_]](
+final class GitLabApiAlg[F[_]: Parallel](
     forgeCfg: ForgeCfg,
     gitLabCfg: GitLabCfg,
     modify: Repo => Request[F] => F[Request[F]]
@@ -169,11 +181,17 @@ final class GitLabApiAlg[F[_]](
     val targetRepo = if (forgeCfg.doNotFork) repo else repo.copy(owner = forgeCfg.login)
     val mergeRequest = for {
       projectId <- client.get[ProjectId](url.repos(repo), modify(repo))
-      payload = MergeRequestPayload(url.encodedProjectId(targetRepo), projectId.id, data)
+      usernameMapping <- getUsernameToUserIdsMapping(repo, (data.assignees ++ data.reviewers).toSet)
+      payload = MergeRequestPayload(
+        id = url.encodedProjectId(targetRepo),
+        projectId = projectId.id,
+        data = data,
+        usernamesToUserIdsMapping = usernameMapping
+      )
       res <- client.postWithBody[MergeRequestOut, MergeRequestPayload](
-        url.mergeRequest(targetRepo),
-        payload,
-        modify(repo)
+        uri = url.mergeRequest(targetRepo),
+        body = payload,
+        modify = modify(repo)
       )
     } yield res
 
@@ -249,6 +267,41 @@ final class GitLabApiAlg[F[_]](
         } yield mrOut
       case None => F.pure(mrOut)
     }
+
+  private def getUsernameToUserIdsMapping(repo: Repo, usernames: Set[String]): F[Map[String, Int]] =
+    usernames.toList
+      .parTraverse { username =>
+        getUserIdForUsername(repo, username).map { userIdOpt =>
+          userIdOpt.map(userId => (username, userId))
+        }
+      }
+      .map(_.flatten.toMap)
+
+  private def getUserIdForUsername(repo: Repo, username: String): F[Option[Int]] = {
+    val userIdOrError: F[Decoder.Result[Int]] = client
+      .get[Json](url.users.withQueryParam("username", username), modify(repo))
+      .flatMap { usersReponse =>
+        usersReponse.hcursor.values match {
+          case Some(users) =>
+            users.headOption match {
+              case Some(user) => F.pure(user.hcursor.get[Int]("id"))
+              case None       => F.raiseError(new RuntimeException("user not found"))
+            }
+          case None =>
+            F.raiseError(
+              new RuntimeException(
+                s"unexpected response from api, Json array expected: $usersReponse"
+              )
+            )
+        }
+      }
+
+    F.rethrow(userIdOrError)
+      .map(Option(_))
+      .handleErrorWith { error =>
+        logger.error(error)(s"failed to get mappings for user '$username'").as(none[Int])
+      }
+  }
 
   override def closePullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut] =
     client
