@@ -33,6 +33,8 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
   object RequiredReviewersMatcher extends QueryParamDecoderMatcher[Int]("approvals_required")
 
+  object UsernameMatcher extends QueryParamDecoderMatcher[String]("username")
+
   private val auth = HttpApp[MockEff] { request =>
     (request: @unchecked) match {
       case _
@@ -106,6 +108,13 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
             "body": "Superseded by #1234"
           } """)
 
+    case GET -> Root / "users" :? UsernameMatcher(username) =>
+      Ok {
+        if (username == "user1") json""" [ { "id": 1 } ] """
+        else if (username == "user2") json""" [ { "id": 2 } ] """
+        else json""" [] """
+      }
+
     case _ =>
       NotFound()
   }
@@ -124,6 +133,12 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   )
 
   private val gitlabApiAlgLessReviewersRequired = ForgeSelection.forgeApiAlg[MockEff](
+    config.forgeCfg.copy(tpe = ForgeType.GitLab, doNotFork = true),
+    GitLabCfg(mergeWhenPipelineSucceeds = true, requiredReviewers = Some(0)),
+    user
+  )
+
+  private val gitlabApiAlgWithAssigneeAndReviewers = ForgeSelection.forgeApiAlg[MockEff](
     config.forgeCfg.copy(tpe = ForgeType.GitLab, doNotFork = true),
     GitLabCfg(mergeWhenPipelineSucceeds = true, requiredReviewers = Some(0)),
     user
@@ -283,6 +298,42 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     val prOut = gitlabApiAlgLessReviewersRequired
       .createPullRequest(Repo("foo", "bar"), newPRData)
       .runA(localState)
+
+    val expected = PullRequestOut(
+      uri"https://gitlab.com/foo/bar/merge_requests/150",
+      PullRequestState.Open,
+      PullRequestNumber(150),
+      "title"
+    )
+
+    assertIO(prOut, expected)
+  }
+
+  test("createPullRequest -- with reviewers and assignees") {
+    val prOut = gitlabApiAlgWithAssigneeAndReviewers
+      .createPullRequest(
+        Repo("foo", "bar"),
+        newPRData.copy(assignees = List("user1"), reviewers = List("user2"))
+      )
+      .runA(state)
+
+    val expected = PullRequestOut(
+      uri"https://gitlab.com/foo/bar/merge_requests/150",
+      PullRequestState.Open,
+      PullRequestNumber(150),
+      "title"
+    )
+
+    assertIO(prOut, expected)
+  }
+
+  test("createPullRequest -- with non-existent user as reviewer") {
+    val prOut = gitlabApiAlgWithAssigneeAndReviewers
+      .createPullRequest(
+        Repo("foo", "bar"),
+        newPRData.copy(assignees = List("user1"), reviewers = List("foobar"))
+      )
+      .runA(state)
 
     val expected = PullRequestOut(
       uri"https://gitlab.com/foo/bar/merge_requests/150",

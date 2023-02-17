@@ -144,7 +144,9 @@ class GiteaApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
           body = "hi",
           head = "pr2",
           base = Branch("main"),
-          labels = Nil
+          labels = Nil,
+          assignees = Nil,
+          reviewers = Nil
         )
       )
       .runA(state)

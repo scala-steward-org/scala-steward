@@ -43,6 +43,10 @@ class NewPullRequestDataTest extends FunSuite {
             |    "semver-spec-patch",
             |    "commit-count:0"
             |  ],
+            |  "assignees" : [
+            |  ],
+            |  "reviewers" : [
+            |  ],
             |  "draft" : false
             |}""".stripMargin
     assertEquals(obtained, expected)
@@ -77,6 +81,10 @@ class NewPullRequestDataTest extends FunSuite {
             |    "early-semver-patch",
             |    "semver-spec-patch",
             |    "commit-count:0"
+            |  ],
+            |  "assignees" : [
+            |  ],
+            |  "reviewers" : [
             |  ],
             |  "draft" : false
             |}""".stripMargin
@@ -481,6 +489,10 @@ class NewPullRequestDataTest extends FunSuite {
             |    "early-semver-major",
             |    "semver-spec-major",
             |    "commit-count:0"
+            |  ],
+            |  "assignees" : [
+            |  ],
+            |  "reviewers" : [
             |  ],
             |  "draft" : false
             |}""".stripMargin
