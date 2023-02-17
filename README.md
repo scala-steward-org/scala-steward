@@ -88,6 +88,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [Daniel Esik](https://github.com/danicheg)
 * [Daniel Pfeiffer](https://github.com/dpfeiffer)
 * [Daniel Spiewak](https://github.com/djspiewak)
+* [Daniil Leontiev](https://github.com/danielleontiev)
 * [David Francoeur](https://github.com/daddykotex)
 * [Dominic Egger](https://github.com/GrafBlutwurst)
 * [Don Smith III](https://github.com/cactauz)
