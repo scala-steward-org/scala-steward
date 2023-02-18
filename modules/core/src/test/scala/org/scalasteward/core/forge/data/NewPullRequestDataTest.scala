@@ -1,7 +1,5 @@
 package org.scalasteward.core.forge.data
 
-import cats.syntax.all._
-import io.circe.syntax._
 import munit.FunSuite
 import org.http4s.syntax.literals._
 import org.scalasteward.core.TestInstances._
@@ -13,82 +11,225 @@ import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.forge.data.NewPullRequestData._
 import org.scalasteward.core.git.{Branch, Commit}
 import org.scalasteward.core.nurture.UpdateInfoUrl
-import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.Nel
+import org.scalasteward.core.repoconfig.RepoConfig
 
 class NewPullRequestDataTest extends FunSuite {
-  test("asJson") {
-    val data = UpdateData(
-      RepoData(Repo("foo", "bar"), dummyRepoCache, RepoConfig.empty),
-      Repo("scala-steward", "bar"),
-      ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single,
-      Branch("master"),
-      dummySha1,
-      Branch("update/logback-classic-1.2.3")
+  test("bodyFor()") {
+    val update = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single
+
+    val body = bodyFor(
+      update = update,
+      edits = List.empty,
+      artifactIdToUrl = Map.empty,
+      artifactIdToUpdateInfoUrls = Map.empty,
+      filesWithOldVersion = List.empty,
+      configParsingError = None,
+      labels = List("library-update")
     )
-    val obtained = from(
-      data,
-      "scala-steward:update/logback-classic-1.2.3",
-      labels = labelsFor(data.update)
-    ).asJson.spaces2
     val expected =
-      raw"""|{
-            |  "title" : "Update logback-classic to 1.2.3",
-            |  "body" : "Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3.\n\n\nI'll automatically update this PR to resolve conflicts as long as you don't change it yourself.\n\nIf you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.\n\nConfigure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.\n\nHave a fantastic day writing Scala!\n\n<details>\n<summary>Adjust future updates</summary>\n\nAdd this to your `.scala-steward.conf` file to ignore future updates of this dependency:\n```\nupdates.ignore = [ { groupId = \"ch.qos.logback\", artifactId = \"logback-classic\" } ]\n```\nOr, add this to slow down future updates of this dependency:\n```\ndependencyOverrides = [{\n  pullRequests = { frequency = \"30 days\" },\n  dependency = { groupId = \"ch.qos.logback\", artifactId = \"logback-classic\" }\n}]\n```\n</details>\n\nlabels: library-update, early-semver-patch, semver-spec-patch, commit-count:0",
-            |  "head" : "scala-steward:update/logback-classic-1.2.3",
-            |  "base" : "master",
-            |  "labels" : [
-            |    "library-update",
-            |    "early-semver-patch",
-            |    "semver-spec-patch",
-            |    "commit-count:0"
-            |  ],
-            |  "assignees" : [
-            |  ],
-            |  "reviewers" : [
-            |  ],
-            |  "draft" : false
-            |}""".stripMargin
-    assertEquals(obtained, expected)
+      s"""|Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3.
+          |
+          |
+          |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
+          |
+          |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.
+          |
+          |Configure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
+          |
+          |Have a fantastic day writing Scala!
+          |
+          |<details>
+          |<summary>Adjust future updates</summary>
+          |
+          |Add this to your `.scala-steward.conf` file to ignore future updates of this dependency:
+          |```
+          |updates.ignore = [ { groupId = "ch.qos.logback", artifactId = "logback-classic" } ]
+          |```
+          |Or, add this to slow down future updates of this dependency:
+          |```
+          |dependencyOverrides = [{
+          |  pullRequests = { frequency = "30 days" },
+          |  dependency = { groupId = "ch.qos.logback", artifactId = "logback-classic" }
+          |}]
+          |```
+          |</details>
+          |
+          |labels: library-update""".stripMargin
+
+    assertEquals(body, expected)
   }
 
-  test("body of pull request data should contain notion about config parsing error") {
-    val data = UpdateData(
-      RepoData(
-        Repo("foo", "bar"),
-        dummyRepoCacheWithParsingError,
-        RepoConfig.empty
+  test("bodyFor() with scalafix edit") {
+    val update = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single
+    val scalafixEdit = ScalafixEdit(
+      migration = ScalafixMigration(
+        groupId = "com.spotify".g,
+        artifactIds = Nel.one("scio-core"),
+        newVersion = Version("0.7.0"),
+        rewriteRules = Nel.of("I am a rewrite rule")
       ),
-      Repo("scala-steward", "bar"),
-      ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single,
-      Branch("master"),
-      dummySha1,
-      Branch("update/logback-classic-1.2.3")
+      result = Right(()),
+      maybeCommit = Some(Commit(dummySha1))
     )
-    val obtained = from(
-      data,
-      "scala-steward:update/logback-classic-1.2.3",
-      labels = labelsFor(data.update)
-    ).asJson.spaces2
+
+    val body = bodyFor(
+      update = update,
+      edits = List(scalafixEdit),
+      artifactIdToUrl = Map.empty,
+      artifactIdToUpdateInfoUrls = Map.empty,
+      filesWithOldVersion = List.empty,
+      configParsingError = None,
+      labels = List("library-update")
+    )
     val expected =
-      raw"""|{
-            |  "title" : "Update logback-classic to 1.2.3",
-            |  "body" : "Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3.\n\n\nI'll automatically update this PR to resolve conflicts as long as you don't change it yourself.\n\nIf you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.\n\nConfigure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.\n\nHave a fantastic day writing Scala!\n\n<details>\n<summary>Adjust future updates</summary>\n\nAdd this to your `.scala-steward.conf` file to ignore future updates of this dependency:\n```\nupdates.ignore = [ { groupId = \"ch.qos.logback\", artifactId = \"logback-classic\" } ]\n```\nOr, add this to slow down future updates of this dependency:\n```\ndependencyOverrides = [{\n  pullRequests = { frequency = \"30 days\" },\n  dependency = { groupId = \"ch.qos.logback\", artifactId = \"logback-classic\" }\n}]\n```\n</details>\n<details>\n<summary>Note that the Scala Steward config file `.scala-steward.conf` wasn't parsed correctly</summary>\n\n```\nFailed to parse .scala-steward.conf\n```\n</details>\n\nlabels: library-update, early-semver-patch, semver-spec-patch, commit-count:0",
-            |  "head" : "scala-steward:update/logback-classic-1.2.3",
-            |  "base" : "master",
-            |  "labels" : [
-            |    "library-update",
-            |    "early-semver-patch",
-            |    "semver-spec-patch",
-            |    "commit-count:0"
-            |  ],
-            |  "assignees" : [
-            |  ],
-            |  "reviewers" : [
-            |  ],
-            |  "draft" : false
-            |}""".stripMargin
-    assertEquals(obtained, expected)
+      s"""|Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3.
+          |
+          |
+          |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
+          |
+          |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.
+          |
+          |Configure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
+          |
+          |Have a fantastic day writing Scala!
+          |
+          |<details>
+          |<summary>Applied Scalafix Migrations</summary>
+          |
+          |* com.spotify:scio-core:0.7.0
+          |  * I am a rewrite rule
+          |</details>
+          |<details>
+          |<summary>Adjust future updates</summary>
+          |
+          |Add this to your `.scala-steward.conf` file to ignore future updates of this dependency:
+          |```
+          |updates.ignore = [ { groupId = "ch.qos.logback", artifactId = "logback-classic" } ]
+          |```
+          |Or, add this to slow down future updates of this dependency:
+          |```
+          |dependencyOverrides = [{
+          |  pullRequests = { frequency = "30 days" },
+          |  dependency = { groupId = "ch.qos.logback", artifactId = "logback-classic" }
+          |}]
+          |```
+          |</details>
+          |
+          |labels: library-update""".stripMargin
+
+    assertEquals(body, expected)
+  }
+
+  test("bodyFor() groupped update") {
+    val update1 = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single
+    val update2 = ("com.example".g % "foo".a % "1.0.0" %> "2.0.0").single
+    val update = Update.Grouped("my-group", Some("The PR title"), List(update1, update2))
+
+    val body = bodyFor(
+      update = update,
+      edits = List.empty,
+      artifactIdToUrl = Map.empty,
+      artifactIdToUpdateInfoUrls = Map.empty,
+      filesWithOldVersion = List.empty,
+      configParsingError = None,
+      labels = List("library-update")
+    )
+    val expected =
+      s"""|Updates:
+          |
+          |* ch.qos.logback:logback-classic from 1.2.0 to 1.2.3
+          |* com.example:foo from 1.0.0 to 2.0.0
+          |
+          |
+          |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
+          |
+          |If you have any feedback, just mention me in the comments below.
+          |
+          |Configure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
+          |
+          |Have a fantastic day writing Scala!
+          |
+          |<details>
+          |<summary>Adjust future updates</summary>
+          |
+          |Add these to your `.scala-steward.conf` file to ignore future updates of these dependencies:
+          |```
+          |updates.ignore = [
+          |  { groupId = "ch.qos.logback", artifactId = "logback-classic" },
+          |  { groupId = "com.example", artifactId = "foo" }
+          |]
+          |```
+          |Or, add these to slow down future updates of these dependencies:
+          |```
+          |dependencyOverrides = [
+          |  {
+          |    pullRequests = { frequency = "30 days" },
+          |    dependency = { groupId = "ch.qos.logback", artifactId = "logback-classic" }
+          |  },
+          |  {
+          |    pullRequests = { frequency = "30 days" },
+          |    dependency = { groupId = "com.example", artifactId = "foo" }
+          |  }
+          |]
+          |```
+          |</details>
+          |
+          |labels: library-update""".stripMargin
+
+    assertEquals(body, expected)
+  }
+
+  test("bodyFor() output should contain notion about config parsing error") {
+    val update = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single
+
+    val body = bodyFor(
+      update = update,
+      edits = List.empty,
+      artifactIdToUrl = Map.empty,
+      artifactIdToUpdateInfoUrls = Map.empty,
+      filesWithOldVersion = List.empty,
+      configParsingError = Some("parsing error"),
+      labels = List("library-update")
+    )
+    val expected =
+      s"""|Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3.
+          |
+          |
+          |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
+          |
+          |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.
+          |
+          |Configure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
+          |
+          |Have a fantastic day writing Scala!
+          |
+          |<details>
+          |<summary>Adjust future updates</summary>
+          |
+          |Add this to your `.scala-steward.conf` file to ignore future updates of this dependency:
+          |```
+          |updates.ignore = [ { groupId = "ch.qos.logback", artifactId = "logback-classic" } ]
+          |```
+          |Or, add this to slow down future updates of this dependency:
+          |```
+          |dependencyOverrides = [{
+          |  pullRequests = { frequency = "30 days" },
+          |  dependency = { groupId = "ch.qos.logback", artifactId = "logback-classic" }
+          |}]
+          |```
+          |</details>
+          |<details>
+          |<summary>Note that the Scala Steward config file `.scala-steward.conf` wasn't parsed correctly</summary>
+          |
+          |```
+          |parsing error
+          |```
+          |</details>
+          |
+          |labels: library-update""".stripMargin
+
+    assertEquals(body, expected)
   }
 
   test("fromTo") {
@@ -415,89 +556,70 @@ class NewPullRequestDataTest extends FunSuite {
     )
   }
 
-  test("NewPullRequestData.from works for `GroupedUpdate`") {
-    val update1 = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single
-    val update2 = ("com.example".g % "foo".a % "1.0.0" %> "2.0.0").single
-    val update = Update.Grouped("my-group", "The PR title".some, List(update1, update2))
+  test("from() should construct NewPullRequestData") {
     val data = UpdateData(
-      RepoData(Repo("foo", "bar"), dummyRepoCache, RepoConfig.empty),
-      Repo("scala-steward", "bar"),
-      update,
-      Branch("master"),
-      dummySha1,
-      Branch("update/logback-classic-1.2.3")
+      repoData = RepoData(
+        repo = Repo("foo", "bar"),
+        cache = dummyRepoCache,
+        config = RepoConfig(assignees = List("foo"), reviewers = List("bar"))
+      ),
+      fork = Repo("scala-steward", "bar"),
+      update = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single,
+      baseBranch = Branch("main"),
+      baseSha1 = dummySha1,
+      updateBranch = Branch("update/logback-classic-1.2.3")
     )
-
     val obtained = from(
       data,
       "scala-steward:update/logback-classic-1.2.3",
-      labels = labelsFor(update)
-    ).asJson.spaces2
+      labels = labelsFor(data.update)
+    )
 
-    val body =
-      raw"""Updates:
-           |
-           |* ch.qos.logback:logback-classic from 1.2.0 to 1.2.3
-           |* com.example:foo from 1.0.0 to 2.0.0
-           |
-           |
-           |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
-           |
-           |If you have any feedback, just mention me in the comments below.
-           |
-           |Configure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
-           |
-           |Have a fantastic day writing Scala!
-           |
-           |<details>
-           |<summary>Adjust future updates</summary>
-           |
-           |Add these to your `.scala-steward.conf` file to ignore future updates of these dependencies:
-           |```
-           |updates.ignore = [
-           |  { groupId = \"ch.qos.logback\", artifactId = \"logback-classic\" },
-           |  { groupId = \"com.example\", artifactId = \"foo\" }
-           |]
-           |```
-           |Or, add these to slow down future updates of these dependencies:
-           |```
-           |dependencyOverrides = [
-           |  {
-           |    pullRequests = { frequency = \"30 days\" },
-           |    dependency = { groupId = \"ch.qos.logback\", artifactId = \"logback-classic\" }
-           |  },
-           |  {
-           |    pullRequests = { frequency = \"30 days\" },
-           |    dependency = { groupId = \"com.example\", artifactId = \"foo\" }
-           |  }
-           |]
-           |```
-           |</details>
-           |
-           |labels: library-update, early-semver-patch, semver-spec-patch, early-semver-major, semver-spec-major, commit-count:0""".stripMargin
+    val expectedBody =
+      s"""|Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3.
+          |
+          |
+          |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
+          |
+          |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.
+          |
+          |Configure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
+          |
+          |Have a fantastic day writing Scala!
+          |
+          |<details>
+          |<summary>Adjust future updates</summary>
+          |
+          |Add this to your `.scala-steward.conf` file to ignore future updates of this dependency:
+          |```
+          |updates.ignore = [ { groupId = "ch.qos.logback", artifactId = "logback-classic" } ]
+          |```
+          |Or, add this to slow down future updates of this dependency:
+          |```
+          |dependencyOverrides = [{
+          |  pullRequests = { frequency = "30 days" },
+          |  dependency = { groupId = "ch.qos.logback", artifactId = "logback-classic" }
+          |}]
+          |```
+          |</details>
+          |
+          |labels: library-update, early-semver-patch, semver-spec-patch, commit-count:0""".stripMargin
 
-    val expected =
-      raw"""|{
-            |  "title" : "The PR title",
-            |  "body" : "${body.replace("\n", "\\n")}",
-            |  "head" : "scala-steward:update/logback-classic-1.2.3",
-            |  "base" : "master",
-            |  "labels" : [
-            |    "library-update",
-            |    "early-semver-patch",
-            |    "semver-spec-patch",
-            |    "early-semver-major",
-            |    "semver-spec-major",
-            |    "commit-count:0"
-            |  ],
-            |  "assignees" : [
-            |  ],
-            |  "reviewers" : [
-            |  ],
-            |  "draft" : false
-            |}""".stripMargin
+    val expected = NewPullRequestData(
+      title = "Update logback-classic to 1.2.3",
+      body = expectedBody,
+      head = "scala-steward:update/logback-classic-1.2.3",
+      base = Branch("main"),
+      labels = List(
+        "library-update",
+        "early-semver-patch",
+        "semver-spec-patch",
+        "commit-count:0"
+      ),
+      assignees = List("foo"),
+      reviewers = List("bar")
+    )
 
-    assertNoDiff(obtained, expected)
+    assertEquals(obtained, expected)
   }
-
 }

@@ -3,6 +3,7 @@ package org.scalasteward.core.forge.github
 import munit.FunSuite
 import io.circe.literal._
 import io.circe.syntax._
+import org.scalasteward.core.git.Branch
 
 class JsonCodecTest extends FunSuite {
   test("GitHubAssignees") {
@@ -35,5 +36,24 @@ class JsonCodecTest extends FunSuite {
       }"""
 
     assertEquals(reviewers, expected)
+  }
+
+  test("PullRequestPayload") {
+    val payload = PullRequestPayload(
+      title = "Update logback-classic to 1.2.3",
+      body = "Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3",
+      head = "scala-steward:update/logback-classic-1.2.3",
+      base = Branch("main"),
+      draft = false
+    ).asJson
+    val expected =
+      json"""{
+        "title" : "Update logback-classic to 1.2.3",
+        "body" : "Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3",
+        "head" : "scala-steward:update/logback-classic-1.2.3",
+        "base" : "main",
+        "draft" : false
+      }"""
+    assertEquals(payload, expected)
   }
 }
