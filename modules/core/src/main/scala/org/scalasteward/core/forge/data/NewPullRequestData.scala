@@ -30,14 +30,13 @@ import org.scalasteward.core.util.{Details, Nel}
 import scala.util.matching.Regex
 
 final case class NewPullRequestData(
-    title: String,
-    body: String,
-    head: String,
-    base: Branch,
-    labels: List[String],
-    assignees: List[String],
-    reviewers: List[String],
-    draft: Boolean = false
+    data: UpdateData,
+    branchName: String,
+    edits: List[EditAttempt] = List.empty,
+    artifactIdToUrl: Map[String, Uri] = Map.empty,
+    artifactIdToUpdateInfoUrls: Map[String, List[UpdateInfoUrl]] = Map.empty,
+    filesWithOldVersion: List[String] = List.empty,
+    labels: List[String] = List.empty
 )
 
 object NewPullRequestData {
