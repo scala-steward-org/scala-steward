@@ -22,57 +22,59 @@ import org.scalasteward.core.data._
 import org.scalasteward.core.edit.EditAttempt
 import org.scalasteward.core.edit.EditAttempt.ScalafixEdit
 import org.scalasteward.core.git.{Branch, CommitMsg}
-import org.scalasteward.core.nurture.UpdateInfoUrl
+import org.scalasteward.core.nurture.{ArtifactsMetadata, UpdateInfoUrl}
 import org.scalasteward.core.nurture.UpdateInfoUrl._
 import org.scalasteward.core.repoconfig.{GroupRepoConfig, RepoConfigAlg}
 import org.scalasteward.core.util.{Details, Nel}
 
-import scala.util.matching.Regex
-
 final case class NewPullRequestData(
     data: UpdateData,
-    branchName: String,
+    head: String,
     edits: List[EditAttempt] = List.empty,
-    artifactIdToUrl: Map[String, Uri] = Map.empty,
-    artifactIdToUpdateInfoUrls: Map[String, List[UpdateInfoUrl]] = Map.empty,
-    filesWithOldVersion: List[String] = List.empty,
-    labels: List[String] = List.empty
-)
+    artifactsMetadata: ArtifactsMetadata = ArtifactsMetadata.empty,
+    filesWithOldVersion: List[String] = List.empty
+) {
+  import NewPullRequestData._
 
-object NewPullRequestData {
-  def bodyFor(
-      update: Update,
-      edits: List[EditAttempt],
-      artifactIdToUrl: Map[String, Uri],
-      artifactIdToUpdateInfoUrls: Map[String, List[UpdateInfoUrl]],
-      filesWithOldVersion: List[String],
-      configParsingError: Option[String],
-      labels: List[String]
-  ): String = {
-    val migrations = edits.collect { case scalafixEdit: ScalafixEdit => scalafixEdit }
-    val appliedMigrations = migrationNote(migrations)
-    val oldVersionDetails = oldVersionNote(filesWithOldVersion, update)
+  def title: String =
+    CommitMsg
+      .replaceVariables(data.repoConfig.commits.messageOrDefault)(
+        data.update,
+        data.repoData.repo.branch
+      )
+      .title
+
+  def base: Branch = data.baseBranch
+
+  def assignees: List[String] = data.repoConfig.assignees
+
+  def reviewers: List[String] = data.repoConfig.reviewers
+
+  def draft: Boolean = false // never true 🤔?
+
+  def body: String = {
     val details = List(
-      appliedMigrations,
-      oldVersionDetails,
-      adjustFutureUpdates(update).some,
-      configParsingError.map(configParsingErrorDetails)
+      migrationNote,
+      oldVersionNote,
+      adjustFutureUpdates.some,
+      configParsingErrorDetails
     ).flatten
 
-    val updatesText = update.on(
+    val updatesText = data.update.on(
       update = u => {
-        val artifacts = artifactsWithOptionalUrl(u, artifactIdToUrl)
+        val artifacts = artifactsWithOptionalUrl(u, artifactsMetadata.artifactIdToUrl)
 
-        val updateInfoUrls = artifactIdToUpdateInfoUrls.getOrElse(u.mainArtifactId, Nil)
+        val updateInfoUrls =
+          artifactsMetadata.artifactIdToUpdateInfoUrls.getOrElse(u.mainArtifactId, Nil)
 
         s"""|Updates $artifacts ${fromTo(u)}.
             |${renderUpdateInfoUrls(updateInfoUrls).getOrElse("")}""".stripMargin.trim
       },
       grouped = g => {
         val artifacts = g.updates
-          .fproduct(u => artifactIdToUpdateInfoUrls.get(u.mainArtifactId).orEmpty)
+          .fproduct(u => artifactsMetadata.artifactIdToUpdateInfoUrls.get(u.mainArtifactId).orEmpty)
           .map { case (u, updateInfoUrls) =>
-            s"* ${artifactsWithOptionalUrl(u, artifactIdToUrl)} ${fromTo(u)}" +
+            s"* ${artifactsWithOptionalUrl(u, artifactsMetadata.artifactIdToUrl)} ${fromTo(u)}" +
               renderUpdateInfoUrls(updateInfoUrls).map(urls => s"\n  + $urls").getOrElse("")
           }
           .mkString_("\n", "\n", "\n")
@@ -82,7 +84,7 @@ object NewPullRequestData {
       }
     )
 
-    val skipVersionMessage = update.on(
+    val skipVersionMessage = data.update.on(
       _ => "If you'd like to skip this version, you can just close this PR. ",
       _ => ""
     )
@@ -104,46 +106,9 @@ object NewPullRequestData {
         |""".stripMargin.trim
   }
 
-  def renderUpdateInfoUrls(updateInfoUrls: List[UpdateInfoUrl]): Option[String] =
-    Option.when(updateInfoUrls.nonEmpty) {
-      updateInfoUrls
-        .map {
-          case CustomChangelog(url)    => s"[Changelog](${url.renderString})"
-          case CustomReleaseNotes(url) => s"[Release Notes](${url.renderString})"
-          case GitHubReleaseNotes(url) => s"[GitHub Release Notes](${url.renderString})"
-          case VersionDiff(url)        => s"[Version Diff](${url.renderString})"
-        }
-        .mkString(" - ")
-    }
-
-  def fromTo(update: Update.Single): String =
-    s"from ${update.currentVersion} to ${update.nextVersion}"
-
-  def artifactsWithOptionalUrl(update: Update.Single, artifactIdToUrl: Map[String, Uri]): String =
-    update match {
-      case s: Update.ForArtifactId =>
-        artifactWithOptionalUrl(s.groupId, s.artifactId.name, artifactIdToUrl)
-      case g: Update.ForGroupId =>
-        g.crossDependencies
-          .map(crossDependency =>
-            s"* ${artifactWithOptionalUrl(g.groupId, crossDependency.head.artifactId.name, artifactIdToUrl)}\n"
-          )
-          .mkString_("\n", "", "\n")
-    }
-
-  def artifactWithOptionalUrl(
-      groupId: GroupId,
-      artifactId: String,
-      artifactId2Url: Map[String, Uri]
-  ): String =
-    artifactId2Url.get(artifactId) match {
-      case Some(url) => s"[$groupId:$artifactId](${url.renderString})"
-      case None      => s"$groupId:$artifactId"
-    }
-
-  def oldVersionNote(files: List[String], update: Update): Option[Details] =
-    Option.when(files.nonEmpty) {
-      val (number, numberWithVersion) = update.on(
+  private[data] def oldVersionNote: Option[Details] =
+    Option.when(filesWithOldVersion.nonEmpty) {
+      val (number, numberWithVersion) = data.update.on(
         update = u => ("number", s"number (${u.currentVersion})"),
         grouped = _ => ("numbers", "numbers")
       )
@@ -153,15 +118,15 @@ object NewPullRequestData {
         s"""The following files still refer to the old version $numberWithVersion.
            |You might want to review and update them manually.
            |```
-           |${files.mkString("\n")}
+           |${filesWithOldVersion.mkString("\n")}
            |```
            |""".stripMargin.trim
       )
     }
 
-  def adjustFutureUpdates(update: Update): Details = Details(
+  private[data] def adjustFutureUpdates: Details = Details(
     "Adjust future updates",
-    update.on(
+    data.update.on(
       update = u =>
         s"""|Add this to your `${RepoConfigAlg.repoConfigBasename}` file to ignore future updates of this dependency:
             |```
@@ -185,16 +150,20 @@ object NewPullRequestData {
     )
   )
 
-  def configParsingErrorDetails(error: String): Details =
-    Details(
-      s"Note that the Scala Steward config file `${RepoConfigAlg.repoConfigBasename}` wasn't parsed correctly",
-      s"""|```
-          |$error
-          |```
-          |""".stripMargin.trim
-    )
+  private def configParsingErrorDetails: Option[Details] =
+    data.repoData.cache.maybeRepoConfigParsingError.map { error =>
+      Details(
+        s"Note that the Scala Steward config file `${RepoConfigAlg.repoConfigBasename}` wasn't parsed correctly",
+        s"""|```
+            |$error
+            |```
+            |""".stripMargin.trim
+      )
+    }
 
-  def migrationNote(scalafixEdits: List[ScalafixEdit]): Option[Details] =
+  private[data] def migrationNote: Option[Details] = {
+    val scalafixEdits = edits.collect { case scalafixEdit: ScalafixEdit => scalafixEdit }
+
     Option.when(scalafixEdits.nonEmpty) {
       val body = scalafixEdits
         .map { scalafixEdit =>
@@ -214,40 +183,9 @@ object NewPullRequestData {
         .mkString("\n")
       Details("Applied Scalafix Migrations", body)
     }
+  }
 
-  def from(
-      data: UpdateData,
-      branchName: String,
-      edits: List[EditAttempt] = List.empty,
-      artifactIdToUrl: Map[String, Uri] = Map.empty,
-      artifactIdToUpdateInfoUrls: Map[String, List[UpdateInfoUrl]] = Map.empty,
-      filesWithOldVersion: List[String] = List.empty,
-      labels: List[String] = List.empty
-  ): NewPullRequestData =
-    NewPullRequestData(
-      title = CommitMsg
-        .replaceVariables(data.repoConfig.commits.messageOrDefault)(
-          data.update,
-          data.repoData.repo.branch
-        )
-        .title,
-      body = bodyFor(
-        data.update,
-        edits,
-        artifactIdToUrl,
-        artifactIdToUpdateInfoUrls,
-        filesWithOldVersion,
-        data.repoData.cache.maybeRepoConfigParsingError,
-        labels
-      ),
-      head = branchName,
-      base = data.baseBranch,
-      labels = labels,
-      assignees = data.repoConfig.assignees,
-      reviewers = data.repoConfig.reviewers
-    )
-
-  def updateTypeLabels(anUpdate: Update): List[String] = {
+  private[data] def updateTypeLabels: List[String] = {
     def forUpdate(update: Update.Single) = {
       val dependencies = update.dependencies
       if (dependencies.forall(_.configurations.contains("test")))
@@ -260,15 +198,10 @@ object NewPullRequestData {
         "library-update"
     }
 
-    anUpdate.on(u => List(forUpdate(u)), _.updates.map(forUpdate).distinct)
+    data.update.on(u => List(forUpdate(u)), _.updates.map(forUpdate).distinct)
   }
 
-  def labelsFor(
-      update: Update,
-      edits: List[EditAttempt] = List.empty,
-      filesWithOldVersion: List[String] = List.empty,
-      artifactIdToVersionScheme: Map[String, String] = Map.empty
-  ): List[String] = {
+  def labels: List[String] = {
     val commitCount = edits.flatMap(_.commits).size
     val commitCountLabel = "commit-count:" + (commitCount match {
       case n if n <= 1 => s"$n"
@@ -285,21 +218,65 @@ object NewPullRequestData {
         SemVer.getChangeSpec(curr, next).map(c => s"semver-spec-${c.render}")
       }
       val versionSchemeLabel =
-        artifactIdToVersionScheme.get(u.mainArtifactId).map(vs => s"version-scheme:$vs")
+        artifactsMetadata.artifactIdToVersionScheme
+          .get(u.mainArtifactId)
+          .map(vs => s"version-scheme:$vs")
       List(earlySemVerLabel, semVerSpecLabel, versionSchemeLabel).flatten
     }
     val semverLabels =
-      update.on(u => semverForUpdate(u), _.updates.flatMap(semverForUpdate(_)).distinct)
+      data.update.on(u => semverForUpdate(u), _.updates.flatMap(semverForUpdate(_)).distinct)
 
     val scalafixLabel = edits.collectFirst { case _: ScalafixEdit => "scalafix-migrations" }
     val oldVersionLabel = Option.when(filesWithOldVersion.nonEmpty)("old-version-remains")
 
-    updateTypeLabels(update) ++
+    val allLabels = updateTypeLabels ++
       semverLabels ++ List(scalafixLabel, oldVersionLabel).flatten ++
       List(commitCountLabel)
+
+    val includeMatchedLabels = data.repoData.config.pullRequests.includeMatchedLabels
+    allLabels.filter(label => includeMatchedLabels.fold(true)(_.matches(label)))
   }
 
-  def filterLabels(labels: List[String], includeMatchedLabels: Option[Regex]): List[String] =
-    labels.filter(label => includeMatchedLabels.fold(true)(_.matches(label)))
+}
 
+object NewPullRequestData {
+  private[data] def fromTo(update: Update.Single): String =
+    s"from ${update.currentVersion} to ${update.nextVersion}"
+
+  private[data] def renderUpdateInfoUrls(updateInfoUrls: List[UpdateInfoUrl]): Option[String] =
+    Option.when(updateInfoUrls.nonEmpty) {
+      updateInfoUrls
+        .map {
+          case CustomChangelog(url)    => s"[Changelog](${url.renderString})"
+          case CustomReleaseNotes(url) => s"[Release Notes](${url.renderString})"
+          case GitHubReleaseNotes(url) => s"[GitHub Release Notes](${url.renderString})"
+          case VersionDiff(url)        => s"[Version Diff](${url.renderString})"
+        }
+        .mkString(" - ")
+    }
+
+  private[data] def artifactsWithOptionalUrl(
+      update: Update.Single,
+      artifactIdToUrl: Map[String, Uri]
+  ): String = {
+    def artifactWithOptionalUrl(
+        groupId: GroupId,
+        artifactId: String
+    ): String =
+      artifactIdToUrl.get(artifactId) match {
+        case Some(url) => s"[$groupId:$artifactId](${url.renderString})"
+        case None      => s"$groupId:$artifactId"
+      }
+
+    update match {
+      case s: Update.ForArtifactId =>
+        artifactWithOptionalUrl(s.groupId, s.artifactId.name)
+      case g: Update.ForGroupId =>
+        g.crossDependencies
+          .map(crossDependency =>
+            s"* ${artifactWithOptionalUrl(g.groupId, crossDependency.head.artifactId.name)}\n"
+          )
+          .mkString_("\n", "", "\n")
+    }
+  }
 }

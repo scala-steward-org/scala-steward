@@ -24,7 +24,6 @@ import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.ProcessResult.{Created, Ignored, Updated}
 import org.scalasteward.core.data._
 import org.scalasteward.core.edit.{EditAlg, EditAttempt}
-import org.scalasteward.core.forge.data.NewPullRequestData.{filterLabels, labelsFor}
 import org.scalasteward.core.forge.data._
 import org.scalasteward.core.forge.{ForgeApiAlg, ForgeRepoAlg}
 import org.scalasteward.core.git.{Branch, Commit, GitAlg}
@@ -199,9 +198,22 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       edits: List[EditAttempt]
   ): F[NewPullRequestData] =
     for {
-      _ <- F.unit
-      dependenciesWithNextVersion = dependenciesUpdatedWithNextAndCurrentVersion(data.update)
-      resolvers = data.repoData.cache.dependencyInfos.flatMap(_.resolvers)
+      artifactsMetadata <- computeArtifactsMetadata(data)
+      filesWithOldVersion <- findFilesWithOldVersion(data)
+      branchName = forge.createBranch(config.tpe, data.fork, data.updateBranch)
+      requestData = NewPullRequestData(
+        data = data,
+        head = branchName,
+        edits = edits,
+        artifactsMetadata = artifactsMetadata,
+        filesWithOldVersion = filesWithOldVersion
+      )
+    } yield requestData
+
+  private def computeArtifactsMetadata(data: UpdateData): F[ArtifactsMetadata] = {
+    val dependenciesWithNextVersion = dependenciesUpdatedWithNextAndCurrentVersion(data.update)
+    val resolvers = data.repoData.cache.dependencyInfos.flatMap(_.resolvers)
+    for {
       dependencyToMetadata <- dependenciesWithNextVersion
         .traverse { case (_, dependency) =>
           coursierAlg
@@ -225,24 +237,18 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
         case (dependency, metadata) =>
           metadata.versionScheme.tupleLeft(dependency.artifactId.name)
       }.toMap
-      filesWithOldVersion <-
-        data.update
-          .on(u => List(u.currentVersion.value), _.updates.map(_.currentVersion.value))
-          .flatTraverse(gitAlg.findFilesContaining(data.repo, _))
-          .map(_.distinct)
-      branchName = forge.createBranch(config.tpe, data.fork, data.updateBranch)
-      allLabels = labelsFor(data.update, edits, filesWithOldVersion, artifactIdToVersionScheme)
-      labels = filterLabels(allLabels, data.repoData.config.pullRequests.includeMatchedLabels)
-      requestData = NewPullRequestData.from(
-        data,
-        branchName,
-        edits,
-        artifactIdToUrl,
-        artifactIdToUpdateInfoUrls.toMap,
-        filesWithOldVersion,
-        labels
-      )
-    } yield requestData
+    } yield ArtifactsMetadata(
+      artifactIdToUrl,
+      artifactIdToUpdateInfoUrls.toMap,
+      artifactIdToVersionScheme
+    )
+  }
+
+  private def findFilesWithOldVersion(data: UpdateData): F[List[String]] =
+    data.update
+      .on(u => List(u.currentVersion.value), _.updates.map(_.currentVersion.value))
+      .flatTraverse(gitAlg.findFilesContaining(data.repo, _))
+      .map(_.distinct)
 
   private def createPullRequest(data: UpdateData, edits: List[EditAttempt]): F[ProcessResult] =
     for {

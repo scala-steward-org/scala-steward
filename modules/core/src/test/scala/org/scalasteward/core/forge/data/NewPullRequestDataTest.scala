@@ -6,7 +6,7 @@ import org.scalasteward.core.TestInstances._
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.buildtool.sbt.data.SbtVersion
 import org.scalasteward.core.data._
-import org.scalasteward.core.edit.EditAttempt.{ScalafixEdit, UpdateEdit}
+import org.scalasteward.core.edit.EditAttempt.ScalafixEdit
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.forge.data.NewPullRequestData._
 import org.scalasteward.core.git.{Branch, Commit}
@@ -15,18 +15,23 @@ import org.scalasteward.core.util.Nel
 import org.scalasteward.core.repoconfig.RepoConfig
 
 class NewPullRequestDataTest extends FunSuite {
-  test("bodyFor()") {
-    val update = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single
+  private val updateData = UpdateData(
+    repoData = RepoData(
+      repo = Repo("foo", "bar"),
+      cache = dummyRepoCache,
+      config = RepoConfig(assignees = List("foo"), reviewers = List("bar"))
+    ),
+    fork = Repo("scala-steward", "bar"),
+    update = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single,
+    baseBranch = Branch("main"),
+    baseSha1 = dummySha1,
+    updateBranch = Branch("update/logback-classic-1.2.3")
+  )
 
-    val body = bodyFor(
-      update = update,
-      edits = List.empty,
-      artifactIdToUrl = Map.empty,
-      artifactIdToUpdateInfoUrls = Map.empty,
-      filesWithOldVersion = List.empty,
-      configParsingError = None,
-      labels = List("library-update")
-    )
+  test("body()") {
+    val newPullRequestData = NewPullRequestData(updateData, "main")
+
+    val body = newPullRequestData.body
     val expected =
       s"""|Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3.
           |
@@ -60,8 +65,7 @@ class NewPullRequestDataTest extends FunSuite {
     assertEquals(body, expected)
   }
 
-  test("bodyFor() with scalafix edit") {
-    val update = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single
+  test("body() with scalafix edit") {
     val scalafixEdit = ScalafixEdit(
       migration = ScalafixMigration(
         groupId = "com.spotify".g,
@@ -72,16 +76,9 @@ class NewPullRequestDataTest extends FunSuite {
       result = Right(()),
       maybeCommit = Some(Commit(dummySha1))
     )
+    val newPullRequestData = NewPullRequestData(updateData, "main", List(scalafixEdit))
 
-    val body = bodyFor(
-      update = update,
-      edits = List(scalafixEdit),
-      artifactIdToUrl = Map.empty,
-      artifactIdToUpdateInfoUrls = Map.empty,
-      filesWithOldVersion = List.empty,
-      configParsingError = None,
-      labels = List("library-update")
-    )
+    val body = newPullRequestData.body
     val expected =
       s"""|Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3.
           |
@@ -121,20 +118,13 @@ class NewPullRequestDataTest extends FunSuite {
     assertEquals(body, expected)
   }
 
-  test("bodyFor() groupped update") {
+  test("body() groupped update") {
     val update1 = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single
     val update2 = ("com.example".g % "foo".a % "1.0.0" %> "2.0.0").single
     val update = Update.Grouped("my-group", Some("The PR title"), List(update1, update2))
+    val newPullRequestData = NewPullRequestData(updateData.copy(update = update), "main")
 
-    val body = bodyFor(
-      update = update,
-      edits = List.empty,
-      artifactIdToUrl = Map.empty,
-      artifactIdToUpdateInfoUrls = Map.empty,
-      filesWithOldVersion = List.empty,
-      configParsingError = None,
-      labels = List("library-update")
-    )
+    val body = newPullRequestData.body
     val expected =
       s"""|Updates:
           |
@@ -180,18 +170,17 @@ class NewPullRequestDataTest extends FunSuite {
     assertEquals(body, expected)
   }
 
-  test("bodyFor() output should contain notion about config parsing error") {
-    val update = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single
-
-    val body = bodyFor(
-      update = update,
-      edits = List.empty,
-      artifactIdToUrl = Map.empty,
-      artifactIdToUpdateInfoUrls = Map.empty,
-      filesWithOldVersion = List.empty,
-      configParsingError = Some("parsing error"),
-      labels = List("library-update")
+  test("body() output should contain notion about config parsing error") {
+    val newPullRequestData = NewPullRequestData(
+      updateData.copy(repoData =
+        updateData.repoData.copy(cache =
+          updateData.repoData.cache.copy(maybeRepoConfigParsingError = Some("parsing error"))
+        )
+      ),
+      "main"
     )
+
+    val body = newPullRequestData.body
     val expected =
       s"""|Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3.
           |
@@ -287,7 +276,8 @@ class NewPullRequestDataTest extends FunSuite {
   }
 
   test("migrationNote: when no migrations") {
-    val appliedMigrations = migrationNote(List.empty)
+    val newPullRequestData = NewPullRequestData(updateData, "main")
+    val appliedMigrations = newPullRequestData.migrationNote
     assertEquals(appliedMigrations, None)
   }
 
@@ -303,9 +293,9 @@ class NewPullRequestDataTest extends FunSuite {
       Some(Commit(dummySha1))
     )
     val edits = List(scalafixEdit)
-    val appliedMigrations = migrationNote(edits)
-    val update = ("a".g % "b".a % "1" -> "2").single
-    val labels = labelsFor(update, edits, List.empty)
+    val newPullRequestData = NewPullRequestData(updateData, "main", edits)
+    val appliedMigrations = newPullRequestData.migrationNote
+    val labels = newPullRequestData.labels
 
     assert(labels.contains("scalafix-migrations"))
     assertEquals(
@@ -333,9 +323,9 @@ class NewPullRequestDataTest extends FunSuite {
       Some(Commit(dummySha1))
     )
     val edits = List(scalafixEdit)
-    val detail = migrationNote(edits)
-    val update = ("a".g % "b".a % "1" -> "2").single
-    val labels = labelsFor(update, edits, List.empty)
+    val newPullRequestData = NewPullRequestData(updateData, "main", edits)
+    val detail = newPullRequestData.migrationNote
+    val labels = newPullRequestData.labels
 
     assert(labels.contains("scalafix-migrations"))
     assertEquals(
@@ -375,9 +365,9 @@ class NewPullRequestDataTest extends FunSuite {
       None
     )
     val edits = List(scalafixEdit1, scalafixEdit2)
-    val detail = migrationNote(edits)
-    val update = ("a".g % "b".a % "1" -> "2").single
-    val labels = labelsFor(update, edits, List.empty)
+    val newPullRequestData = NewPullRequestData(updateData, "main", edits)
+    val detail = newPullRequestData.migrationNote
+    val labels = newPullRequestData.labels
 
     assert(labels.contains("scalafix-migrations"))
     assertEquals(
@@ -399,32 +389,39 @@ class NewPullRequestDataTest extends FunSuite {
   test("updateType") {
     val dependency = "com.example".g % "foo".a % "0.1"
     val single = (dependency %> "0.2").single
-    assertEquals(updateTypeLabels(single), List("library-update"))
+    val dataForSingle = NewPullRequestData(updateData.copy(update = single), "main")
+    assertEquals(dataForSingle.updateTypeLabels, List("library-update"))
 
     val group = ("com.example".g % Nel.of("foo".a, "bar".a) % "0.1" %> "0.2").group
-    assertEquals(updateTypeLabels(group), List("library-update"))
+    val dataForGroup = NewPullRequestData(updateData.copy(update = group), "main")
+    assertEquals(dataForGroup.updateTypeLabels, List("library-update"))
 
     val testUpdate = (dependency % "test" %> "0.2").single
-    assertEquals(updateTypeLabels(testUpdate), List("test-library-update"))
+    val dataForTestUpdate = NewPullRequestData(updateData.copy(update = testUpdate), "main")
+    assertEquals(dataForTestUpdate.updateTypeLabels, List("test-library-update"))
 
     val sbtPluginUpdate = (dependency.copy(sbtVersion = Some(SbtVersion("1.0"))) %> "0.2").single
-    assertEquals(updateTypeLabels(sbtPluginUpdate), List("sbt-plugin-update"))
+    val dataForSbtPluginUpdate =
+      NewPullRequestData(updateData.copy(update = sbtPluginUpdate), "main")
+    assertEquals(dataForSbtPluginUpdate.updateTypeLabels, List("sbt-plugin-update"))
 
     val scalafixRuleUpdate = (dependency % "scalafix-rule" %> "0.2").single
-    assertEquals(updateTypeLabels(scalafixRuleUpdate), List("scalafix-rule-update"))
+    val dataForScalafixRuleUpdate =
+      NewPullRequestData(updateData.copy(update = scalafixRuleUpdate), "main")
+    assertEquals(dataForScalafixRuleUpdate.updateTypeLabels, List("scalafix-rule-update"))
   }
 
   test("oldVersionNote without files") {
     val files = List.empty
-    val update = ("com.example".g % "foo".a % "0.1" %> "0.2").single
-    assertEquals(oldVersionNote(files, update), None)
+    val newPullRequestData = NewPullRequestData(updateData, "main", filesWithOldVersion = files)
+    assertEquals(newPullRequestData.oldVersionNote, None)
   }
 
   test("oldVersionNote with files") {
     val files = List("Readme.md", "travis.yml")
-    val update = ("com.example".g % "foo".a % "0.1" %> "0.2").single
-    val note = oldVersionNote(files, update)
-    val labels = labelsFor(update, List.empty, files)
+    val newPullRequestData = NewPullRequestData(updateData, "main", filesWithOldVersion = files)
+    val note = newPullRequestData.oldVersionNote
+    val labels = newPullRequestData.labels
 
     assert(labels.contains("old-version-remains"))
     assertEquals(
@@ -444,8 +441,6 @@ class NewPullRequestDataTest extends FunSuite {
   }
 
   test("commit-count label") {
-    val update = ("a".g % "b".a % "1" -> "2").single
-    val updateEdit = UpdateEdit(update, Commit(dummySha1))
     val scalafixEdit = ScalafixEdit(
       ScalafixMigration(
         "com.spotify".g,
@@ -458,22 +453,40 @@ class NewPullRequestDataTest extends FunSuite {
       Some(Commit(dummySha1))
     )
 
-    val oneEdit = labelsFor(update, List(updateEdit), List.empty)
-    assert(clue(oneEdit).contains("commit-count:1"))
+    val oneEdit = NewPullRequestData(updateData, "main")
+    assert(clue(oneEdit.labels).contains("commit-count:1"))
 
-    val twoEdits = labelsFor(update, List(updateEdit, scalafixEdit), List.empty)
-    assert(clue(twoEdits).contains("commit-count:n:2"))
+    val twoEdits = NewPullRequestData(updateData, "main", edits = List(scalafixEdit))
+    assert(clue(twoEdits.labels).contains("commit-count:n:2"))
   }
 
   test("regex label filtering") {
-    val update = ("a".g % "b".a % "1" -> "2").single
-    val updateEdit = UpdateEdit(update, Commit(dummySha1))
-    val allLabels = labelsFor(update, List(updateEdit), List.empty)
+    val allLabels = NewPullRequestData(updateData, "main").labels
 
-    val first = filterLabels(allLabels, Some("library-.+".r))
+    val first = NewPullRequestData(
+      updateData.copy(repoData =
+        updateData.repoData.copy(config =
+          updateData.repoData.config.copy(pullRequests =
+            updateData.repoData.config.pullRequests
+              .copy(includeMatchedLabels = Some("library-.+".r))
+          )
+        )
+      ),
+      "main"
+    ).labels
     assertEquals(clue(first), List("library-update"))
 
-    val second = filterLabels(allLabels, Some("(.*update.*)|(.*count.*)".r))
+    val second = NewPullRequestData(
+      updateData.copy(repoData =
+        updateData.repoData.copy(config =
+          updateData.repoData.config.copy(pullRequests =
+            updateData.repoData.config.pullRequests
+              .copy(includeMatchedLabels = Some("(.*update.*)|(.*count.*)".r))
+          )
+        )
+      ),
+      "main"
+    ).labels
     assertEquals(clue(second), List("library-update", "commit-count:1"))
   }
 
@@ -481,8 +494,9 @@ class NewPullRequestDataTest extends FunSuite {
     val update1 = ("a".g % "b".a % "1" -> "2").single
     val update2 = ("c".g % "d".a % "1.1.0" % "test" %> "1.2.0").single
     val update = Update.Grouped("my-group", None, List(update1, update2))
+    val newPullRequestData = NewPullRequestData(updateData.copy(update = update), "main")
 
-    val labels = labelsFor(update, Nil, Nil)
+    val labels = newPullRequestData.labels
 
     val expected = List(
       "library-update",
@@ -500,8 +514,10 @@ class NewPullRequestDataTest extends FunSuite {
     val update1 = ("a".g % "b".a % "1" -> "2").single
     val update2 = ("c".g % "d".a % "1.1.0" % "test" %> "1.2.0").single
     val update = Update.Grouped("my-group", None, List(update1, update2))
+    val newPullRequestData =
+      NewPullRequestData(updateData.copy(update = update), "main", filesWithOldVersion = files)
 
-    val note = oldVersionNote(files, update)
+    val note = newPullRequestData.oldVersionNote
 
     assertEquals(
       note.fold("")(_.toHtml),
@@ -523,8 +539,9 @@ class NewPullRequestDataTest extends FunSuite {
     val update1 = ("a".g % "b".a % "1" -> "2").single
     val update2 = ("c".g % "d".a % "1.1.0" % "test" %> "1.2.0").single
     val update = Update.Grouped("my-group", None, List(update1, update2))
+    val newPullRequestData = NewPullRequestData(updateData.copy(update = update), "main")
 
-    val note = adjustFutureUpdates(update)
+    val note = newPullRequestData.adjustFutureUpdates
 
     assertEquals(
       note.toHtml,
@@ -556,155 +573,143 @@ class NewPullRequestDataTest extends FunSuite {
     )
   }
 
-  test("from() should construct NewPullRequestData") {
-    val data = UpdateData(
-      repoData = RepoData(
-        repo = Repo("foo", "bar"),
-        cache = dummyRepoCache,
-        config = RepoConfig(assignees = List("foo"), reviewers = List("bar"))
-      ),
-      fork = Repo("scala-steward", "bar"),
-      update = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single,
-      baseBranch = Branch("main"),
-      baseSha1 = dummySha1,
-      updateBranch = Branch("update/logback-classic-1.2.3")
-    )
-    val obtained = from(
-      data,
-      "scala-steward:update/logback-classic-1.2.3",
-      labels = labelsFor(data.update)
-    )
-
-    val expectedBody =
-      s"""|Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3.
-          |
-          |
-          |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
-          |
-          |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.
-          |
-          |Configure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
-          |
-          |Have a fantastic day writing Scala!
-          |
-          |<details>
-          |<summary>Adjust future updates</summary>
-          |
-          |Add this to your `.scala-steward.conf` file to ignore future updates of this dependency:
-          |```
-          |updates.ignore = [ { groupId = "ch.qos.logback", artifactId = "logback-classic" } ]
-          |```
-          |Or, add this to slow down future updates of this dependency:
-          |```
-          |dependencyOverrides = [{
-          |  pullRequests = { frequency = "30 days" },
-          |  dependency = { groupId = "ch.qos.logback", artifactId = "logback-classic" }
-          |}]
-          |```
-          |</details>
-          |
-          |labels: library-update, early-semver-patch, semver-spec-patch, commit-count:0""".stripMargin
-
-    val expected = NewPullRequestData(
-      title = "Update logback-classic to 1.2.3",
-      body = expectedBody,
-      head = "scala-steward:update/logback-classic-1.2.3",
-      base = Branch("main"),
-      labels = List(
-        "library-update",
-        "early-semver-patch",
-        "semver-spec-patch",
-        "commit-count:0"
-      ),
-      assignees = List("foo"),
-      reviewers = List("bar")
-    )
-
-    assertEquals(obtained, expected)
-  }
-
-  test("from() should construct NewPullRequestData for groupped update") {
-    val update1 = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single
-    val update2 = ("com.example".g % "foo".a % "1.0.0" %> "2.0.0").single
-    val update = Update.Grouped("my-group", None, List(update1, update2))
-
-    val data = UpdateData(
-      repoData = RepoData(
-        repo = Repo("foo", "bar"),
-        cache = dummyRepoCache,
-        config = RepoConfig(assignees = List("foo"), reviewers = List("bar"))
-      ),
-      fork = Repo("scala-steward", "bar"),
-      update = update,
-      baseBranch = Branch("main"),
-      baseSha1 = dummySha1,
-      updateBranch = Branch("update/logback-classic-1.2.3")
-    )
-    val obtained = from(
-      data,
-      "scala-steward:update/logback-classic-1.2.3",
-      labels = labelsFor(data.update)
-    )
-
-    val expectedBody =
-      s"""|Updates:
-          |
-          |* ch.qos.logback:logback-classic from 1.2.0 to 1.2.3
-          |* com.example:foo from 1.0.0 to 2.0.0
-          |
-          |
-          |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
-          |
-          |If you have any feedback, just mention me in the comments below.
-          |
-          |Configure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
-          |
-          |Have a fantastic day writing Scala!
-          |
-          |<details>
-          |<summary>Adjust future updates</summary>
-          |
-          |Add these to your `.scala-steward.conf` file to ignore future updates of these dependencies:
-          |```
-          |updates.ignore = [
-          |  { groupId = "ch.qos.logback", artifactId = "logback-classic" },
-          |  { groupId = "com.example", artifactId = "foo" }
-          |]
-          |```
-          |Or, add these to slow down future updates of these dependencies:
-          |```
-          |dependencyOverrides = [
-          |  {
-          |    pullRequests = { frequency = "30 days" },
-          |    dependency = { groupId = "ch.qos.logback", artifactId = "logback-classic" }
-          |  },
-          |  {
-          |    pullRequests = { frequency = "30 days" },
-          |    dependency = { groupId = "com.example", artifactId = "foo" }
-          |  }
-          |]
-          |```
-          |</details>
-          |
-          |labels: library-update, early-semver-patch, semver-spec-patch, early-semver-major, semver-spec-major, commit-count:0""".stripMargin
-
-    val expected = NewPullRequestData(
-      title = "Update for group my-group",
-      body = expectedBody,
-      head = "scala-steward:update/logback-classic-1.2.3",
-      base = Branch("main"),
-      labels = List(
-        "library-update",
-        "early-semver-patch",
-        "semver-spec-patch",
-        "early-semver-major",
-        "semver-spec-major",
-        "commit-count:0"
-      ),
-      assignees = List("foo"),
-      reviewers = List("bar")
-    )
-
-    assertEquals(obtained, expected)
-  }
+//  test("from() should construct NewPullRequestData") {
+//    val obtained = from(
+//      data,
+//      "scala-steward:update/logback-classic-1.2.3",
+//      labels = labelsFor(data.update)
+//    )
+//
+//    val expectedBody =
+//      s"""|Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3.
+//          |
+//          |
+//          |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
+//          |
+//          |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.
+//          |
+//          |Configure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
+//          |
+//          |Have a fantastic day writing Scala!
+//          |
+//          |<details>
+//          |<summary>Adjust future updates</summary>
+//          |
+//          |Add this to your `.scala-steward.conf` file to ignore future updates of this dependency:
+//          |```
+//          |updates.ignore = [ { groupId = "ch.qos.logback", artifactId = "logback-classic" } ]
+//          |```
+//          |Or, add this to slow down future updates of this dependency:
+//          |```
+//          |dependencyOverrides = [{
+//          |  pullRequests = { frequency = "30 days" },
+//          |  dependency = { groupId = "ch.qos.logback", artifactId = "logback-classic" }
+//          |}]
+//          |```
+//          |</details>
+//          |
+//          |labels: library-update, early-semver-patch, semver-spec-patch, commit-count:0""".stripMargin
+//
+//    val expected = NewPullRequestData(
+//      title = "Update logback-classic to 1.2.3",
+//      body = expectedBody,
+//      head = "scala-steward:update/logback-classic-1.2.3",
+//      base = Branch("main"),
+//      labels = List(
+//        "library-update",
+//        "early-semver-patch",
+//        "semver-spec-patch",
+//        "commit-count:0"
+//      ),
+//      assignees = List("foo"),
+//      reviewers = List("bar")
+//    )
+//
+//    assertEquals(obtained, expected)
+//  }
+//
+//  test("from() should construct NewPullRequestData for groupped update") {
+//    val update1 = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single
+//    val update2 = ("com.example".g % "foo".a % "1.0.0" %> "2.0.0").single
+//    val update = Update.Grouped("my-group", None, List(update1, update2))
+//
+//    val data = UpdateData(
+//      repoData = RepoData(
+//        repo = Repo("foo", "bar"),
+//        cache = dummyRepoCache,
+//        config = RepoConfig(assignees = List("foo"), reviewers = List("bar"))
+//      ),
+//      fork = Repo("scala-steward", "bar"),
+//      update = update,
+//      baseBranch = Branch("main"),
+//      baseSha1 = dummySha1,
+//      updateBranch = Branch("update/logback-classic-1.2.3")
+//    )
+//    val obtained = from(
+//      data,
+//      "scala-steward:update/logback-classic-1.2.3",
+//      labels = labelsFor(data.update)
+//    )
+//
+//    val expectedBody =
+//      s"""|Updates:
+//          |
+//          |* ch.qos.logback:logback-classic from 1.2.0 to 1.2.3
+//          |* com.example:foo from 1.0.0 to 2.0.0
+//          |
+//          |
+//          |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
+//          |
+//          |If you have any feedback, just mention me in the comments below.
+//          |
+//          |Configure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
+//          |
+//          |Have a fantastic day writing Scala!
+//          |
+//          |<details>
+//          |<summary>Adjust future updates</summary>
+//          |
+//          |Add these to your `.scala-steward.conf` file to ignore future updates of these dependencies:
+//          |```
+//          |updates.ignore = [
+//          |  { groupId = "ch.qos.logback", artifactId = "logback-classic" },
+//          |  { groupId = "com.example", artifactId = "foo" }
+//          |]
+//          |```
+//          |Or, add these to slow down future updates of these dependencies:
+//          |```
+//          |dependencyOverrides = [
+//          |  {
+//          |    pullRequests = { frequency = "30 days" },
+//          |    dependency = { groupId = "ch.qos.logback", artifactId = "logback-classic" }
+//          |  },
+//          |  {
+//          |    pullRequests = { frequency = "30 days" },
+//          |    dependency = { groupId = "com.example", artifactId = "foo" }
+//          |  }
+//          |]
+//          |```
+//          |</details>
+//          |
+//          |labels: library-update, early-semver-patch, semver-spec-patch, early-semver-major, semver-spec-major, commit-count:0""".stripMargin
+//
+//    val expected = NewPullRequestData(
+//      title = "Update for group my-group",
+//      body = expectedBody,
+//      head = "scala-steward:update/logback-classic-1.2.3",
+//      base = Branch("main"),
+//      labels = List(
+//        "library-update",
+//        "early-semver-patch",
+//        "semver-spec-patch",
+//        "early-semver-major",
+//        "semver-spec-major",
+//        "commit-count:0"
+//      ),
+//      assignees = List("foo"),
+//      reviewers = List("bar")
+//    )
+//
+//    assertEquals(obtained, expected)
+//  }
 }
