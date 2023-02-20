@@ -34,6 +34,8 @@ trait GenGitAlg[F[_], Repo] {
 
   def checkoutBranch(repo: Repo, branch: Branch): F[Unit]
 
+  def checkIgnore(repo: Repo, file: String): F[Boolean]
+
   def clone(repo: Repo, url: Uri): F[Unit]
 
   def cloneExists(repo: Repo): F[Boolean]
@@ -104,6 +106,9 @@ trait GenGitAlg[F[_], Repo] {
 
       override def checkoutBranch(repo: A, branch: Branch): F[Unit] =
         f(repo).flatMap(self.checkoutBranch(_, branch))
+
+      override def checkIgnore(repo: A, file: String): F[Boolean] =
+        f(repo).flatMap(self.checkIgnore(_, file))
 
       override def clone(repo: A, url: Uri): F[Unit] =
         f(repo).flatMap(self.clone(_, url))
