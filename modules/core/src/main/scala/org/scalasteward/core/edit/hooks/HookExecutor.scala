@@ -96,14 +96,20 @@ final class HookExecutor[F[_]](implicit
         newContent = oldContent.fold(newLines)(_ + "\n" + newLines)
         _ <- fileAlg.writeFile(file, newContent)
         pathAsString = file.pathAsString
-        _ <- gitAlg
+
+        addAndCommit = gitAlg.add(repo, pathAsString).flatMap { _ =>
+          val blameIgnoreCommitMsg =
+            CommitMsg(s"Add '${commitMsg.title}' to $gitBlameIgnoreRevsName")
+          gitAlg.commitAllIfDirty(repo, blameIgnoreCommitMsg)
+        }
+        maybeBlameIgnoreCommit <- gitAlg
           .checkIgnore(repo, pathAsString)
           .ifM(
-            logger.warn(s"Impossible to add '$pathAsString' because it is git ignored."),
-            gitAlg.add(repo, pathAsString)
+            logger
+              .warn(s"Impossible to add '$pathAsString' because it is git ignored.")
+              .as(Option.empty[Commit]),
+            addAndCommit
           )
-        blameIgnoreCommitMsg = CommitMsg(s"Add '${commitMsg.title}' to $gitBlameIgnoreRevsName")
-        maybeBlameIgnoreCommit <- gitAlg.commitAllIfDirty(repo, blameIgnoreCommitMsg)
       } yield maybeBlameIgnoreCommit
     } else F.pure(None)
 }

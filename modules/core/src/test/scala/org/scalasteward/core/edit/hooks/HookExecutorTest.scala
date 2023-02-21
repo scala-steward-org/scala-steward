@@ -1,5 +1,6 @@
 package org.scalasteward.core.edit.hooks
 
+import cats.data.NonEmptyList
 import cats.syntax.all._
 import munit.CatsEffectSuite
 import org.scalasteward.core.TestInstances.{dummyRepoCache, dummySha1}
@@ -15,6 +16,9 @@ import org.scalasteward.core.repoconfig.{PostUpdateHookConfig, RepoConfig, Scala
 import org.scalasteward.core.scalafmt.ScalafmtAlg.opts
 import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtBinary, scalafmtGroupId}
 import org.scalasteward.core.util.Nel
+import org.scalasteward.core.io.process.ProcessFailedException
+import org.scalasteward.core.io.process
+import scala.collection.mutable.ListBuffer
 
 class HookExecutorTest extends CatsEffectSuite {
   private val repo = Repo("scala-steward-org", "scala-steward")
@@ -28,17 +32,19 @@ class HookExecutorTest extends CatsEffectSuite {
   }
 
   test("scalafmt: enabled by config") {
+    val gitBlameIgnoreRevs = repoDir / gitBlameIgnoreRevsName
     val update = (scalafmtGroupId % scalafmtArtifactId % "2.7.4" %> "2.7.5").single
     val initial = MockState.empty.copy(commandOutputs =
       Map(
         FileGitAlg.gitCmd.toList ++
           List("status", "--porcelain", "--untracked-files=no", "--ignore-submodules") ->
-          List("build.sbt"),
+          Right(List("build.sbt")),
         FileGitAlg.gitCmd.toList ++ List("rev-parse", "--verify", "HEAD") ->
-          List(dummySha1.value.value)
+          Right(List(dummySha1.value.value)),
+        FileGitAlg.gitCmd.toList ++ List("check-ignore", gitBlameIgnoreRevs.pathAsString) ->
+          Left(dummyProcessError)
       )
     )
-    val gitBlameIgnoreRevs = repoDir / gitBlameIgnoreRevsName
     val state = FileAlgTest.ioFileAlg.deleteForce(gitBlameIgnoreRevs) >>
       hookExecutor.execPostUpdateHooks(data, update).runS(initial)
 
@@ -70,6 +76,7 @@ class HookExecutorTest extends CatsEffectSuite {
         Cmd(gitCmd(repoDir), "rev-parse", "--verify", "HEAD"),
         Cmd("read", gitBlameIgnoreRevs.pathAsString),
         Cmd("write", gitBlameIgnoreRevs.pathAsString),
+        Cmd(gitCmd(repoDir), "check-ignore", gitBlameIgnoreRevs.pathAsString),
         Cmd(gitCmd(repoDir), "add", gitBlameIgnoreRevs.pathAsString),
         Cmd(
           gitCmd(repoDir),
@@ -166,4 +173,7 @@ class HookExecutorTest extends CatsEffectSuite {
 
     state.map(assertEquals(_, expected))
   }
+
+  private val dummyProcessError =
+    new ProcessFailedException(process.Args(NonEmptyList.of("cmd")), ListBuffer.empty, 1)
 }
