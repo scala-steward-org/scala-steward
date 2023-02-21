@@ -31,25 +31,51 @@ class HookExecutorTest extends CatsEffectSuite {
     state.map(assertEquals(_, MockState.empty))
   }
 
-  test("scalafmt: enabled by config") {
-    val gitBlameIgnoreRevs = repoDir / gitBlameIgnoreRevsName
-    val update = (scalafmtGroupId % scalafmtArtifactId % "2.7.4" %> "2.7.5").single
-    val initial = MockState.empty.copy(commandOutputs =
-      Map(
-        FileGitAlg.gitCmd.toList ++
-          List("status", "--porcelain", "--untracked-files=no", "--ignore-submodules") ->
-          Right(List("build.sbt")),
-        FileGitAlg.gitCmd.toList ++ List("rev-parse", "--verify", "HEAD") ->
-          Right(List(dummySha1.value.value)),
-        FileGitAlg.gitCmd.toList ++ List("check-ignore", gitBlameIgnoreRevs.pathAsString) ->
-          Left(dummyProcessError)
-      )
-    )
-    val state = FileAlgTest.ioFileAlg.deleteForce(gitBlameIgnoreRevs) >>
-      hookExecutor.execPostUpdateHooks(data, update).runS(initial)
+  Seq(true, false).foreach { case blameRevIgnored =>
+    val isIgnored = if (blameRevIgnored) "ignored" else "not ignored"
 
-    val expected = initial.copy(
-      trace = Vector(
+    test(s"scalafmt: enabled by config / $gitBlameIgnoreRevsName $isIgnored") {
+      val gitBlameIgnoreRevs = repoDir / gitBlameIgnoreRevsName
+      val update = (scalafmtGroupId % scalafmtArtifactId % "2.7.4" %> "2.7.5").single
+      val initial = MockState.empty.copy(commandOutputs =
+        Map(
+          FileGitAlg.gitCmd.toList ++
+            List("status", "--porcelain", "--untracked-files=no", "--ignore-submodules") ->
+            Right(List("build.sbt")),
+          FileGitAlg.gitCmd.toList ++ List("rev-parse", "--verify", "HEAD") ->
+            Right(List(dummySha1.value.value)),
+          FileGitAlg.gitCmd.toList ++ List("check-ignore", gitBlameIgnoreRevs.pathAsString) ->
+            (if (blameRevIgnored) Right(List.empty) else Left(dummyProcessError))
+        )
+      )
+      val state = FileAlgTest.ioFileAlg.deleteForce(gitBlameIgnoreRevs) >>
+        hookExecutor.execPostUpdateHooks(data, update).runS(initial)
+
+      val logIfIgnored =
+        if (blameRevIgnored)
+          Vector(Log(s"Impossible to add '$gitBlameIgnoreRevs' because it is git ignored."))
+        else
+          Vector(
+            Cmd(gitCmd(repoDir), "add", gitBlameIgnoreRevs.pathAsString),
+            Cmd(
+              gitCmd(repoDir),
+              "status",
+              "--porcelain",
+              "--untracked-files=no",
+              "--ignore-submodules"
+            ),
+            Cmd(
+              gitCmd(repoDir),
+              "commit",
+              "--all",
+              "--no-gpg-sign",
+              "-m",
+              s"Add 'Reformat with scalafmt 2.7.5' to $gitBlameIgnoreRevsName"
+            ),
+            Cmd(gitCmd(repoDir), "rev-parse", "--verify", "HEAD")
+          )
+
+      val traces = Vector(
         Log(
           "Executing post-update hook for org.scalameta:scalafmt-core with command 'scalafmt --non-interactive'"
         ),
@@ -76,31 +102,19 @@ class HookExecutorTest extends CatsEffectSuite {
         Cmd(gitCmd(repoDir), "rev-parse", "--verify", "HEAD"),
         Cmd("read", gitBlameIgnoreRevs.pathAsString),
         Cmd("write", gitBlameIgnoreRevs.pathAsString),
-        Cmd(gitCmd(repoDir), "check-ignore", gitBlameIgnoreRevs.pathAsString),
-        Cmd(gitCmd(repoDir), "add", gitBlameIgnoreRevs.pathAsString),
-        Cmd(
-          gitCmd(repoDir),
-          "status",
-          "--porcelain",
-          "--untracked-files=no",
-          "--ignore-submodules"
-        ),
-        Cmd(
-          gitCmd(repoDir),
-          "commit",
-          "--all",
-          "--no-gpg-sign",
-          "-m",
-          s"Add 'Reformat with scalafmt 2.7.5' to $gitBlameIgnoreRevsName"
-        ),
-        Cmd(gitCmd(repoDir), "rev-parse", "--verify", "HEAD")
-      ),
-      files = Map(
-        gitBlameIgnoreRevs -> s"# Scala Steward: Reformat with scalafmt 2.7.5\n${dummySha1.value.value}\n"
+        Cmd(gitCmd(repoDir), "check-ignore", gitBlameIgnoreRevs.pathAsString)
+      ) ++
+        logIfIgnored ++ Vector(
+        )
+      val expected = initial.copy(
+        trace = traces,
+        files = Map(
+          gitBlameIgnoreRevs -> s"# Scala Steward: Reformat with scalafmt 2.7.5\n${dummySha1.value.value}\n"
+        )
       )
-    )
 
-    state.map(assertEquals(_, expected))
+      state.map(assertEquals(_, expected))
+    }
   }
 
   test("scalafmt: disabled by config") {
