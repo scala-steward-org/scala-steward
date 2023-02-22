@@ -162,6 +162,8 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
     gitAlg.returnToCurrentBranch(data.repo) {
       val createBranch = logger.info(s"Create branch ${data.updateBranch.name}") >>
         gitAlg.createBranch(data.repo, data.updateBranch)
+      println("applyNewUpdate")
+      println(s"  data.update = ${data.update}")
       data.update
         .on(
           update = editAlg.applyUpdate(data.repoData, _, createBranch),
@@ -296,6 +298,8 @@ final class NurtureAlg[F[_]](config: VCSCfg)(implicit
       )
       maybeRevertCommit <- gitAlg.revertChanges(data.repo, data.baseBranch)
       maybeMergeCommit <- gitAlg.mergeTheirs(data.repo, data.baseBranch)
+      _ = println("mergeAndApplyAgain")
+      _ = println(s"  data.update = ${data.update}")
       edits <- data.update.on(
         update = editAlg.applyUpdate(data.repoData, _),
         grouped = _.updates.flatTraverse(editAlg.applyUpdate(data.repoData, _))

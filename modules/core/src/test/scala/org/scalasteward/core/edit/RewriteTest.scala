@@ -1,10 +1,12 @@
 package org.scalasteward.core.edit
 
+import cats.data.NonEmptyList
 import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.TestInstances.dummyRepoCache
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.{RepoData, Update}
+import org.scalasteward.core.data.Update.ForArtifactId
+import org.scalasteward.core.data.{ArtifactId, CrossDependency, Dependency, GroupId, RepoData, Update, Version}
 import org.scalasteward.core.mock.MockContext.context._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry
@@ -912,13 +914,7 @@ class RewriteTest extends FunSuite {
     runApplyUpdate(update, original, expected)
   }
 
-  // Sketchy placeholder bI'm not sure how else to assert on the presence/absence of a log.
-  private val terribleMutableLogBufferDoNotMergeThis =
-    scala.collection.mutable.ListBuffer.empty[String]
-
-  test("issue ...") {
-    val update1 = ("com.foo".g % "library-1".a % "1.2.3" %> "1.3.0").single
-    val update2 = ("com.foo".g % "library-2".a % "1.2.3" %> "1.3.0").single
+  test("issue 2906") {
     val original = Map(
       "build.sbt" ->
         """
@@ -940,23 +936,64 @@ class RewriteTest extends FunSuite {
           |""".stripMargin
     )
 
-    runApplyUpdate(update1, original, expected)
-    require(
-      !terribleMutableLogBufferDoNotMergeThis.exists(_.startsWith("Unable to bump version"))
-    )
+    val update = ForArtifactId(
+      crossDependency = CrossDependency(
+        dependencies =
+          NonEmptyList(Dependency(GroupId("com.foo"), ArtifactId("library-1"), Version("1.2.3")), List.empty)
+        ),
+      newerVersions = NonEmptyList(Version("1.3.0"), List.empty))
 
-    // The second update prints a misleading warning.
-    runApplyUpdate(update2, expected, expected)
-    require(
-      terribleMutableLogBufferDoNotMergeThis.last == "Unable to bump version for update com.foo:library-2 : 1.2.3 -> 1.3.0"
-    )
+    val trace = runApplyUpdate(update, original, expected)
+    trace.foreach(println)
   }
+
+//  test("issue ...") {
+//    val update1: Update.ForArtifactId = ("com.foo".g % "library-1".a % "1.2.3" %> "1.3.0").single
+//    val update2: Update.ForArtifactId = ("com.foo".g % "library-2".a % "1.2.3" %> "1.3.0").single
+//    val update3 = Update.ForGroupId(NonEmptyList(update1, List(update2)))
+//    val original = Map(
+//      "build.sbt" ->
+//        """
+//          |val FooLibraryVersion = "1.2.3"
+//          |libraryDependencies ++= Seq(
+//          |  "com.foo" %% "library-1" % FooLibraryVersion,
+//          |  "com.foo" %% "library-2" % FooLibraryVersion
+//          |)
+//          |""".stripMargin
+//    )
+//    val expected = Map(
+//      "build.sbt" ->
+//        """
+//          |val FooLibraryVersion = "1.3.0"
+//          |libraryDependencies ++= Seq(
+//          |  "com.foo" %% "library-1" % FooLibraryVersion,
+//          |  "com.foo" %% "library-2" % FooLibraryVersion
+//          |)
+//          |""".stripMargin
+//    )
+//
+//    println("update1")
+//    runApplyUpdate(update1, original, expected)
+//    require(
+//      !terribleMutableLogBufferDoNotMergeThis.exists(_.startsWith("Unable to bump version"))
+//    )
+//
+//    // The second update prints a misleading warning.
+//    println("update2")
+//    runApplyUpdate(update2, expected, expected)
+//    require(
+//      terribleMutableLogBufferDoNotMergeThis.last == "Unable to bump version for update com.foo:library-2 : 1.2.3 -> 1.3.0"
+//    )
+//
+//    println("update3")
+//    runApplyUpdate(update3, original, expected)
+//  }
 
   private def runApplyUpdate(
       update: Update.Single,
       files: Map[String, String],
       expected: Map[String, String]
-  ): Unit = {
+  ): Vector[TraceEntry] = {
     val repo = Repo("edit-alg", s"runApplyUpdate-${nextInt()}")
     val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
     val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
@@ -965,15 +1002,10 @@ class RewriteTest extends FunSuite {
       .addFiles(filesInRepoDir.toSeq: _*)
       .flatMap(editAlg.applyUpdate(data, update).runS)
       .unsafeRunSync()
-    terribleMutableLogBufferDoNotMergeThis.clear()
-    state.trace.foreach {
-      case l: TraceEntry.Log =>
-        terribleMutableLogBufferDoNotMergeThis += l.log._2
-      case _ => ()
-    }
     val obtained = state.files
       .map { case (file, content) => file.toString.replace(repoDir.toString + "/", "") -> content }
     assertEquals(obtained, expected)
+    state.trace
   }
 
   private var counter = 0
