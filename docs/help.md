@@ -83,9 +83,9 @@ Options and flags:
     --azure-repos-organization <string>
         The Azure organization (required when --forge-type is azure-repos)
     --github-app-id <integer>
-        GitHub application id. Used to retrieve a list of repos for running scala-steward. This is used instead of repos.md, but git-ask-pass is still required.
+        GitHub application id. Repos accessible by this app are added to the repos in repos.md. git-ask-pass is still required.
     --github-app-key-file <file>
-        GitHub application key file. Used to retrieve a list of repos for running scala-steward. This is used instead of repos.md, but git-ask-pass is still required.
+        GitHub application key file. Repos accessible by this app are added to the repos in repos.md. git-ask-pass is still required.
     --url-checker-test-url <uri>
         URL for testing the UrlChecker at start-up (can be used multiple times); default: https://github.com
     --default-maven-repo <string>
