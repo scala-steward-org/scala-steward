@@ -28,7 +28,8 @@ class NewPullRequestDataTest extends FunSuite {
       labels = List("library-update")
     )
     val expected =
-      s"""|Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3.
+      s"""|## Update _ch.qos.logback:logback-classic_
+          |:package: updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3
           |
           |
           |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
@@ -37,10 +38,10 @@ class NewPullRequestDataTest extends FunSuite {
           |
           |Configure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
           |
-          |Have a fantastic day writing Scala!
+          |_Have a fantastic day writing Scala!_
           |
           |<details>
-          |<summary>Adjust future updates</summary>
+          |<summary>:wrench: Adjust future updates</summary>
           |
           |Add this to your `.scala-steward.conf` file to ignore future updates of this dependency:
           |```
@@ -55,7 +56,9 @@ class NewPullRequestDataTest extends FunSuite {
           |```
           |</details>
           |
-          |labels: library-update""".stripMargin
+          |<sup>
+          |labels: library-update
+          |</sup>""".stripMargin
 
     assertEquals(body, expected)
   }
@@ -83,7 +86,8 @@ class NewPullRequestDataTest extends FunSuite {
       labels = List("library-update")
     )
     val expected =
-      s"""|Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3.
+      s"""|## Update _ch.qos.logback:logback-classic_
+          |:package: updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3
           |
           |
           |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
@@ -92,16 +96,16 @@ class NewPullRequestDataTest extends FunSuite {
           |
           |Configure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
           |
-          |Have a fantastic day writing Scala!
+          |_Have a fantastic day writing Scala!_
           |
           |<details>
-          |<summary>Applied Scalafix Migrations</summary>
+          |<summary>:bulb: Applied Scalafix Migrations</summary>
           |
           |* com.spotify:scio-core:0.7.0
           |  * I am a rewrite rule
           |</details>
           |<details>
-          |<summary>Adjust future updates</summary>
+          |<summary>:wrench: Adjust future updates</summary>
           |
           |Add this to your `.scala-steward.conf` file to ignore future updates of this dependency:
           |```
@@ -116,7 +120,9 @@ class NewPullRequestDataTest extends FunSuite {
           |```
           |</details>
           |
-          |labels: library-update""".stripMargin
+          |<sup>
+          |labels: library-update
+          |</sup>""".stripMargin
 
     assertEquals(body, expected)
   }
@@ -136,10 +142,10 @@ class NewPullRequestDataTest extends FunSuite {
       labels = List("library-update")
     )
     val expected =
-      s"""|Updates:
+      s"""|## Updates:
           |
-          |* ch.qos.logback:logback-classic from 1.2.0 to 1.2.3
-          |* com.example:foo from 1.0.0 to 2.0.0
+          |* :package: ch.qos.logback:logback-classic from 1.2.0 to 1.2.3
+          |* :package: com.example:foo from 1.0.0 to 2.0.0 :warning:
           |
           |
           |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
@@ -148,10 +154,10 @@ class NewPullRequestDataTest extends FunSuite {
           |
           |Configure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
           |
-          |Have a fantastic day writing Scala!
+          |_Have a fantastic day writing Scala!_
           |
           |<details>
-          |<summary>Adjust future updates</summary>
+          |<summary>:wrench: Adjust future updates</summary>
           |
           |Add these to your `.scala-steward.conf` file to ignore future updates of these dependencies:
           |```
@@ -175,7 +181,9 @@ class NewPullRequestDataTest extends FunSuite {
           |```
           |</details>
           |
-          |labels: library-update""".stripMargin
+          |<sup>
+          |labels: library-update
+          |</sup>""".stripMargin
 
     assertEquals(body, expected)
   }
@@ -193,7 +201,8 @@ class NewPullRequestDataTest extends FunSuite {
       labels = List("library-update")
     )
     val expected =
-      s"""|Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3.
+      s"""|## Update _ch.qos.logback:logback-classic_
+          |:package: updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3
           |
           |
           |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
@@ -202,10 +211,10 @@ class NewPullRequestDataTest extends FunSuite {
           |
           |Configure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
           |
-          |Have a fantastic day writing Scala!
+          |_Have a fantastic day writing Scala!_
           |
           |<details>
-          |<summary>Adjust future updates</summary>
+          |<summary>:wrench: Adjust future updates</summary>
           |
           |Add this to your `.scala-steward.conf` file to ignore future updates of this dependency:
           |```
@@ -220,14 +229,16 @@ class NewPullRequestDataTest extends FunSuite {
           |```
           |</details>
           |<details>
-          |<summary>Note that the Scala Steward config file `.scala-steward.conf` wasn't parsed correctly</summary>
+          |<summary>:warning: Note that the Scala Steward config file `.scala-steward.conf` wasn't parsed correctly</summary>
           |
           |```
           |parsing error
           |```
           |</details>
           |
-          |labels: library-update""".stripMargin
+          |<sup>
+          |labels: library-update
+          |</sup>""".stripMargin
 
     assertEquals(body, expected)
   }
@@ -311,7 +322,7 @@ class NewPullRequestDataTest extends FunSuite {
     assertEquals(
       appliedMigrations.fold("")(_.toHtml),
       """<details>
-        |<summary>Applied Scalafix Migrations</summary>
+        |<summary>:bulb: Applied Scalafix Migrations</summary>
         |
         |* com.spotify:scio-core:0.7.0
         |  * I am a rewrite rule
@@ -341,7 +352,7 @@ class NewPullRequestDataTest extends FunSuite {
     assertEquals(
       detail.fold("")(_.toHtml),
       """<details>
-        |<summary>Applied Scalafix Migrations</summary>
+        |<summary>:bulb: Applied Scalafix Migrations</summary>
         |
         |* com.spotify:scio-core:0.7.0
         |  * I am a rewrite rule
@@ -383,7 +394,7 @@ class NewPullRequestDataTest extends FunSuite {
     assertEquals(
       detail.fold("")(_.toHtml),
       """<details>
-        |<summary>Applied Scalafix Migrations</summary>
+        |<summary>:bulb: Applied Scalafix Migrations</summary>
         |
         |* com.spotify:scio-core:0.7.0
         |  * I am a rewrite rule
@@ -430,7 +441,7 @@ class NewPullRequestDataTest extends FunSuite {
     assertEquals(
       note.fold("")(_.toHtml),
       """<details>
-        |<summary>Files still referring to the old version number</summary>
+        |<summary>:mag: Files still referring to the old version number</summary>
         |
         |The following files still refer to the old version number (0.1).
         |You might want to review and update them manually.
@@ -506,7 +517,7 @@ class NewPullRequestDataTest extends FunSuite {
     assertEquals(
       note.fold("")(_.toHtml),
       """<details>
-        |<summary>Files still referring to the old version numbers</summary>
+        |<summary>:mag: Files still referring to the old version numbers</summary>
         |
         |The following files still refer to the old version numbers.
         |You might want to review and update them manually.
@@ -529,7 +540,7 @@ class NewPullRequestDataTest extends FunSuite {
     assertEquals(
       note.toHtml,
       """<details>
-        |<summary>Adjust future updates</summary>
+        |<summary>:wrench: Adjust future updates</summary>
         |
         |Add these to your `.scala-steward.conf` file to ignore future updates of these dependencies:
         |```
@@ -576,7 +587,8 @@ class NewPullRequestDataTest extends FunSuite {
     )
 
     val expectedBody =
-      s"""|Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3.
+      s"""|## Update _ch.qos.logback:logback-classic_
+          |:package: updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3
           |
           |
           |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
@@ -585,10 +597,10 @@ class NewPullRequestDataTest extends FunSuite {
           |
           |Configure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
           |
-          |Have a fantastic day writing Scala!
+          |_Have a fantastic day writing Scala!_
           |
           |<details>
-          |<summary>Adjust future updates</summary>
+          |<summary>:wrench: Adjust future updates</summary>
           |
           |Add this to your `.scala-steward.conf` file to ignore future updates of this dependency:
           |```
@@ -603,7 +615,9 @@ class NewPullRequestDataTest extends FunSuite {
           |```
           |</details>
           |
-          |labels: library-update, early-semver-patch, semver-spec-patch, commit-count:0""".stripMargin
+          |<sup>
+          |labels: library-update, early-semver-patch, semver-spec-patch, commit-count:0
+          |</sup>""".stripMargin
 
     val expected = NewPullRequestData(
       title = "Update logback-classic to 1.2.3",
@@ -647,10 +661,10 @@ class NewPullRequestDataTest extends FunSuite {
     )
 
     val expectedBody =
-      s"""|Updates:
+      s"""|## Updates:
           |
-          |* ch.qos.logback:logback-classic from 1.2.0 to 1.2.3
-          |* com.example:foo from 1.0.0 to 2.0.0
+          |* :package: ch.qos.logback:logback-classic from 1.2.0 to 1.2.3
+          |* :package: com.example:foo from 1.0.0 to 2.0.0 :warning:
           |
           |
           |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
@@ -659,10 +673,10 @@ class NewPullRequestDataTest extends FunSuite {
           |
           |Configure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
           |
-          |Have a fantastic day writing Scala!
+          |_Have a fantastic day writing Scala!_
           |
           |<details>
-          |<summary>Adjust future updates</summary>
+          |<summary>:wrench: Adjust future updates</summary>
           |
           |Add these to your `.scala-steward.conf` file to ignore future updates of these dependencies:
           |```
@@ -686,7 +700,9 @@ class NewPullRequestDataTest extends FunSuite {
           |```
           |</details>
           |
-          |labels: library-update, early-semver-patch, semver-spec-patch, early-semver-major, semver-spec-major, commit-count:0""".stripMargin
+          |<sup>
+          |labels: library-update, early-semver-patch, semver-spec-patch, early-semver-major, semver-spec-major, commit-count:0
+          |</sup>""".stripMargin
 
     val expected = NewPullRequestData(
       title = "Update for group my-group",

@@ -66,19 +66,24 @@ object NewPullRequestData {
 
         val updateInfoUrls = artifactIdToUpdateInfoUrls.getOrElse(u.mainArtifactId, Nil)
 
-        s"""|Updates $artifacts ${fromTo(u)}.
-            |${renderUpdateInfoUrls(updateInfoUrls).getOrElse("")}""".stripMargin.trim
+        s"""|## Update _${artifacts}_
+            |:package: updates $artifacts ${fromTo(u)}${showMajorUpgradeWarning(u)}
+            |${renderUpdateInfoUrls(updateInfoUrls)
+             .map(urls => s":scroll: $urls")
+             .getOrElse("")}""".stripMargin.trim
       },
       grouped = g => {
         val artifacts = g.updates
           .fproduct(u => artifactIdToUpdateInfoUrls.get(u.mainArtifactId).orEmpty)
           .map { case (u, updateInfoUrls) =>
-            s"* ${artifactsWithOptionalUrl(u, artifactIdToUrl)} ${fromTo(u)}" +
-              renderUpdateInfoUrls(updateInfoUrls).map(urls => s"\n  + $urls").getOrElse("")
+            s"* :package: ${artifactsWithOptionalUrl(u, artifactIdToUrl)} ${fromTo(u)}${showMajorUpgradeWarning(u)}" +
+              renderUpdateInfoUrls(updateInfoUrls)
+                .map(urls => s"\n  + :scroll: $urls")
+                .getOrElse("")
           }
           .mkString_("\n", "\n", "\n")
 
-        s"""|Updates:
+        s"""|## Updates:
             |$artifacts""".stripMargin.trim
       }
     )
@@ -97,11 +102,13 @@ object NewPullRequestData {
         |
         |Configure Scala Steward for your repository with a [`${RepoConfigAlg.repoConfigBasename}`](${org.scalasteward.core.BuildInfo.gitHubUrl}/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
         |
-        |Have a fantastic day writing Scala!
+        |_Have a fantastic day writing Scala!_
         |
         |${details.map(_.toHtml).mkString("\n")}
         |
+        |<sup>
         |${labels.mkString("labels: ", ", ", "")}
+        |</sup>
         |""".stripMargin.trim
   }
 
@@ -119,6 +126,17 @@ object NewPullRequestData {
 
   def fromTo(update: Update.Single): String =
     s"from ${update.currentVersion} to ${update.nextVersion}"
+
+  def showMajorUpgradeWarning(u: Update.Single): String = {
+    val semVerVersions =
+      (SemVer.parse(u.currentVersion.value), SemVer.parse(u.nextVersion.value)).tupled
+    val semVerLabel = semVerVersions.flatMap { case (curr, next) =>
+      SemVer.getChangeEarly(curr, next).map(c => c.render)
+    }
+    if (semVerLabel == Some("major"))
+      s" :warning:"
+    else s""
+  }
 
   def artifactsWithOptionalUrl(update: Update.Single, artifactIdToUrl: Map[String, Uri]): String =
     update match {
@@ -150,7 +168,7 @@ object NewPullRequestData {
       )
 
       Details(
-        s"Files still referring to the old version $number",
+        s":mag: Files still referring to the old version $number",
         s"""The following files still refer to the old version $numberWithVersion.
            |You might want to review and update them manually.
            |```
@@ -161,7 +179,7 @@ object NewPullRequestData {
     }
 
   def adjustFutureUpdates(update: Update): Details = Details(
-    "Adjust future updates",
+    ":wrench: Adjust future updates",
     update.on(
       update = u =>
         s"""|Add this to your `${RepoConfigAlg.repoConfigBasename}` file to ignore future updates of this dependency:
@@ -188,7 +206,7 @@ object NewPullRequestData {
 
   def configParsingErrorDetails(error: String): Details =
     Details(
-      s"Note that the Scala Steward config file `${RepoConfigAlg.repoConfigBasename}` wasn't parsed correctly",
+      s":warning: Note that the Scala Steward config file `${RepoConfigAlg.repoConfigBasename}` wasn't parsed correctly",
       s"""|```
           |$error
           |```
@@ -213,7 +231,7 @@ object NewPullRequestData {
           s"* $name$createdChange\n$listElements"
         }
         .mkString("\n")
-      Details("Applied Scalafix Migrations", body)
+      Details(":bulb: Applied Scalafix Migrations", body)
     }
 
   def from(

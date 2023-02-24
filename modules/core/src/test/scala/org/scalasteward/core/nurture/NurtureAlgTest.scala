@@ -38,8 +38,9 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     val expected = NewPullRequestData(
       title = "Update cats-effect to 3.4.0",
       body =
-        raw"""Updates [org.typelevel:cats-effect](https://github.com/typelevel/cats-effect) from 3.3.0 to 3.4.0.
-             |[GitHub Release Notes](https://github.com/typelevel/cats-effect/releases/tag/v3.4.0) - [Version Diff](https://github.com/typelevel/cats-effect/compare/v3.3.0...v3.4.0)
+        raw"""## Update _[org.typelevel:cats-effect](https://github.com/typelevel/cats-effect)_
+             |:package: updates [org.typelevel:cats-effect](https://github.com/typelevel/cats-effect) from 3.3.0 to 3.4.0
+             |:scroll: [GitHub Release Notes](https://github.com/typelevel/cats-effect/releases/tag/v3.4.0) - [Version Diff](https://github.com/typelevel/cats-effect/compare/v3.3.0...v3.4.0)
              |
              |
              |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
@@ -48,10 +49,10 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
              |
              |Configure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
              |
-             |Have a fantastic day writing Scala!
+             |_Have a fantastic day writing Scala!_
              |
              |<details>
-             |<summary>Adjust future updates</summary>
+             |<summary>:wrench: Adjust future updates</summary>
              |
              |Add this to your `.scala-steward.conf` file to ignore future updates of this dependency:
              |```
@@ -66,8 +67,9 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
              |```
              |</details>
              |
+             |<sup>
              |labels: library-update, early-semver-minor, semver-spec-minor, version-scheme:early-semver, commit-count:1
-             |""".stripMargin.trim,
+             |</sup>""".stripMargin.trim,
       head = "scala-steward:update/cats-effect-3.4.0",
       base = baseBranch,
       labels = List(
