@@ -73,4 +73,10 @@ class processTest extends FunSuite {
     assert(clue(fd) > timeout)
     assert(clue(fd) < sleep)
   }
+
+  test("do not wait for user input") {
+    // This would time out if standard input is not closed.
+    val obtained = slurp2(Nel.of("dd", "count=1"), 1.second).attempt.unsafeRunSync()
+    assert(clue(obtained).isRight)
+  }
 }
