@@ -10,7 +10,7 @@ import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 
 final case class MockState(
     trace: Vector[TraceEntry],
-    commandOutputs: Map[List[String], List[String]],
+    commandOutputs: Map[List[String], Either[Throwable, List[String]]],
     files: Map[File, String],
     uris: Map[Uri, String],
     clientResponses: HttpApp[MockEff]
