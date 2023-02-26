@@ -27,7 +27,7 @@ import org.scalasteward.core.buildtool.maven.pomXmlName
 import org.scalasteward.core.buildtool.mill.MillAlg
 import org.scalasteward.core.buildtool.sbt.buildPropertiesName
 import org.scalasteward.core.data.{GroupId, Update}
-import org.scalasteward.core.scalafmt
+import org.scalasteward.core.scalafmt.scalafmtConfName
 import org.scalasteward.core.update.FilterAlg.{
   FilterResult,
   IgnoredByConfig,
@@ -96,7 +96,7 @@ object UpdatesConfig {
       ".sbt.shared",
       ".sc",
       ".scala",
-      scalafmt.scalafmtConfName,
+      scalafmtConfName,
       ".yml",
       buildPropertiesName,
       pomXmlName
