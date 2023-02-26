@@ -171,8 +171,8 @@ object Selector {
   ): List[VersionPosition] =
     if (MillAlg.isMillMainUpdate(update))
       versionPositions.filter(f =>
-        f.version.path.endsWith(MillAlg.millVersionName) ||
-          f.version.path.endsWith(MillAlg.millVersionNameInConfig)
+        f.version.path.endsWith(MillAlg.millVersionNameInConfig) ||
+          f.version.path.endsWith(MillAlg.millVersionName)
       )
     else List.empty
 
