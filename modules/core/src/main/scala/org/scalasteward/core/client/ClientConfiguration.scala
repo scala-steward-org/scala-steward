@@ -81,7 +81,9 @@ object ClientConfiguration {
             duration = seconds.seconds
             if RetryAfterStatuses.contains(response.status.code)
             if attempt < maxAttempts.value
-          } yield Resource.eval(Temporal[F].sleep(duration)).flatMap(_ => run(attempt + 1))
+          } yield Resource
+            .eval(response.as[Unit].voidError *> Temporal[F].sleep(duration))
+            .flatMap(_ => run(attempt + 1))
           maybeRetried.getOrElse(Resource.pure(response))
         }
 
