@@ -22,7 +22,7 @@ import cats.syntax.all._
 import org.http4s.Uri
 import org.scalasteward.core.application.Config.GitCfg
 import org.scalasteward.core.git.FileGitAlg.{dotdot, gitCmd}
-import org.scalasteward.core.io.process.SlurpOptions
+import org.scalasteward.core.io.process.{ProcessFailedException, SlurpOptions}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
 
@@ -46,6 +46,11 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
 
   override def checkoutBranch(repo: File, branch: Branch): F[Unit] =
     git_("checkout", branch.name)(repo).void
+
+  override def checkIgnore(repo: File, file: String): F[Boolean] =
+    git_("check-ignore", file)(repo)
+      .as(true)
+      .recover { case ex: ProcessFailedException if ex.exitValue === 1 => false }
 
   override def clone(repo: File, url: Uri): F[Unit] =
     for {
