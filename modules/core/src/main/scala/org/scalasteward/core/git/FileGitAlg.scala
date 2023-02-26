@@ -50,7 +50,7 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
   override def checkIgnore(repo: File, file: String): F[Boolean] =
     git_("check-ignore", file)(repo)
       .as(true)
-      .recover { case _: ProcessFailedException => false }
+      .recover { case ex: ProcessFailedException if ex.exitValue === 1 => false }
 
   override def clone(repo: File, url: Uri): F[Unit] =
     for {
