@@ -39,8 +39,8 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       title = "Update cats-effect to 3.4.0",
       body =
         raw"""## Update _[org.typelevel:cats-effect](https://github.com/typelevel/cats-effect)_
-             |:package: updates [org.typelevel:cats-effect](https://github.com/typelevel/cats-effect) from 3.3.0 to 3.4.0
-             |:scroll: [GitHub Release Notes](https://github.com/typelevel/cats-effect/releases/tag/v3.4.0) - [Version Diff](https://github.com/typelevel/cats-effect/compare/v3.3.0...v3.4.0)
+             |📦 updates [org.typelevel:cats-effect](https://github.com/typelevel/cats-effect) from 3.3.0 to 3.4.0
+             |📜 [GitHub Release Notes](https://github.com/typelevel/cats-effect/releases/tag/v3.4.0) - [Version Diff](https://github.com/typelevel/cats-effect/compare/v3.3.0...v3.4.0)
              |
              |
              |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
@@ -52,7 +52,7 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
              |_Have a fantastic day writing Scala!_
              |
              |<details>
-             |<summary>:wrench: Adjust future updates</summary>
+             |<summary>⚙ Adjust future updates</summary>
              |
              |Add this to your `.scala-steward.conf` file to ignore future updates of this dependency:
              |```

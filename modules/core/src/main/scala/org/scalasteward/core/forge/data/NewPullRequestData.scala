@@ -67,18 +67,18 @@ object NewPullRequestData {
         val updateInfoUrls = artifactIdToUpdateInfoUrls.getOrElse(u.mainArtifactId, Nil)
 
         s"""|## Update _${artifacts}_
-            |:package: updates $artifacts ${fromTo(u)}${showMajorUpgradeWarning(u)}
+            |📦 updates $artifacts ${fromTo(u)}${showMajorUpgradeWarning(u)}
             |${renderUpdateInfoUrls(updateInfoUrls)
-             .map(urls => s":scroll: $urls")
+             .map(urls => s"📜 $urls")
              .getOrElse("")}""".stripMargin.trim
       },
       grouped = g => {
         val artifacts = g.updates
           .fproduct(u => artifactIdToUpdateInfoUrls.get(u.mainArtifactId).orEmpty)
           .map { case (u, updateInfoUrls) =>
-            s"* :package: ${artifactsWithOptionalUrl(u, artifactIdToUrl)} ${fromTo(u)}${showMajorUpgradeWarning(u)}" +
+            s"* 📦 ${artifactsWithOptionalUrl(u, artifactIdToUrl)} ${fromTo(u)}${showMajorUpgradeWarning(u)}" +
               renderUpdateInfoUrls(updateInfoUrls)
-                .map(urls => s"\n  + :scroll: $urls")
+                .map(urls => s"\n  + 📜 $urls")
                 .getOrElse("")
           }
           .mkString_("\n", "\n", "\n")
@@ -134,7 +134,7 @@ object NewPullRequestData {
       SemVer.getChangeEarly(curr, next).map(c => c.render)
     }
     if (semVerLabel == Some("major"))
-      s" :warning:"
+      s" ⚠"
     else s""
   }
 
@@ -168,7 +168,7 @@ object NewPullRequestData {
       )
 
       Details(
-        s":mag: Files still referring to the old version $number",
+        s"🔍 Files still referring to the old version $number",
         s"""The following files still refer to the old version $numberWithVersion.
            |You might want to review and update them manually.
            |```
@@ -179,7 +179,7 @@ object NewPullRequestData {
     }
 
   def adjustFutureUpdates(update: Update): Details = Details(
-    ":wrench: Adjust future updates",
+    "⚙ Adjust future updates",
     update.on(
       update = u =>
         s"""|Add this to your `${RepoConfigAlg.repoConfigBasename}` file to ignore future updates of this dependency:
@@ -206,7 +206,7 @@ object NewPullRequestData {
 
   def configParsingErrorDetails(error: String): Details =
     Details(
-      s":warning: Note that the Scala Steward config file `${RepoConfigAlg.repoConfigBasename}` wasn't parsed correctly",
+      s"❗ Note that the Scala Steward config file `${RepoConfigAlg.repoConfigBasename}` wasn't parsed correctly",
       s"""|```
           |$error
           |```
@@ -231,7 +231,7 @@ object NewPullRequestData {
           s"* $name$createdChange\n$listElements"
         }
         .mkString("\n")
-      Details(":bulb: Applied Scalafix Migrations", body)
+      Details("💡 Applied Scalafix Migrations", body)
     }
 
   def from(
