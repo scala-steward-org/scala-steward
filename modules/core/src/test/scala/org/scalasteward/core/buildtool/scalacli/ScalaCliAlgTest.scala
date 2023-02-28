@@ -18,7 +18,8 @@ class ScalaCliAlgTest extends CatsEffectSuite {
     val fileWithUsingLib = "test.md" // this test fails if the extension is .scala or .sc
     val grepCmd = FileGitAlg.gitCmd.toList ++
       List("grep", "-I", "--fixed-strings", "--files-with-matches", "//> using lib ")
-    val initial = MockState.empty.copy(commandOutputs = Map(grepCmd -> List(fileWithUsingLib)))
+    val initial =
+      MockState.empty.copy(commandOutputs = Map(grepCmd -> Right(List(fileWithUsingLib))))
     val obtained = scalaCliAlg.containsBuild(buildRoot).runA(initial)
     assertIO(obtained, false)
   }
