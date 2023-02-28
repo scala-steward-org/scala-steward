@@ -55,8 +55,17 @@ final class SbtAlg[F[_]](config: Config)(implicit
     for {
       buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
       maybeSbtVersion <- getSbtVersion(buildRootDir)
-      lines <- addStewardPluginTemporarily(buildRootDir, maybeSbtVersion).surround {
-        val commands = Nel.of(crossStewardDependencies, reloadPlugins, stewardDependencies)
+      metaBuilds = Math.max(
+        LazyList
+          .iterate(buildRootDir / project)(_ / project)
+          .takeWhile(p => p.exists && p.isDirectory)
+          .size,
+        1 // There is always at least one meta build, even if there is no project folder
+      )
+      lines <- addStewardPluginTemporarily(buildRootDir, maybeSbtVersion, metaBuilds).surround {
+        val commands = Nel.of(crossStewardDependencies) ++ List
+          .fill(metaBuilds)(List(reloadPlugins, stewardDependencies))
+          .flatten
         sbt(commands, buildRootDir)
       }
       dependencies = parser.parseDependencies(lines)
@@ -65,7 +74,8 @@ final class SbtAlg[F[_]](config: Config)(implicit
 
   private def addStewardPluginTemporarily(
       buildRootDir: File,
-      maybeSbtVersion: Option[Version]
+      maybeSbtVersion: Option[Version],
+      metaBuilds: Int
   ): Resource[F, Unit] =
     for {
       _ <- Resource.unit[F]
@@ -74,8 +84,9 @@ final class SbtAlg[F[_]](config: Config)(implicit
         case _                                => "1_3_11"
       }
       plugin <- Resource.eval(stewardPlugin(pluginVersion))
-      _ <- fileAlg.createTemporarily(buildRootDir / project, plugin)
-      _ <- fileAlg.createTemporarily(buildRootDir / project / project, plugin)
+      _ <- List
+        .iterate(buildRootDir / project, metaBuilds + 1)(_ / project)
+        .collectFold(fileAlg.createTemporarily(_, plugin))
     } yield ()
 
   private def stewardPlugin(version: String): F[FileData] = {
