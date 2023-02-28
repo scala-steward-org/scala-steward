@@ -71,7 +71,12 @@ final class MillAlg[F[_]](implicit
   private def getMillVersion(buildRootDir: File): F[Option[Version]] =
     for {
       millVersionFileContent <- fileAlg.readFile(buildRootDir / millVersionName)
-      version = millVersionFileContent.flatMap(parser.parseMillVersion)
+      millVersionFileInConfigContent <- fileAlg.readFile(
+        buildRootDir / ".config" / millVersionNameInConfig
+      )
+      version = millVersionFileContent
+        .orElse(millVersionFileInConfigContent)
+        .flatMap(parser.parseMillVersion)
     } yield version
 
   private def getMillPluginDeps(
@@ -119,4 +124,5 @@ object MillAlg {
       update.artifactIds.exists(_.name === millMainArtifactId.name)
 
   val millVersionName = ".mill-version"
+  val millVersionNameInConfig = "mill-version"
 }
