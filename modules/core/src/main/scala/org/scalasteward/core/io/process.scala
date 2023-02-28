@@ -148,7 +148,7 @@ object process {
   final class ProcessFailedException(
       args: Args,
       buffer: ListBuffer[String],
-      exitValue: Int
+      val exitValue: Int
   ) extends IOException(makeMessage(args, buffer)(s"exited with code $exitValue."))
 
   final class ProcessTimedOutException(

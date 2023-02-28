@@ -55,6 +55,8 @@ class RepoConfigAlgTest extends FunSuite {
          |]
          |commits.message = "Update ${artifactName} from ${currentVersion} to ${nextVersion}"
          |buildRoots = [ ".", "subfolder/subfolder" ]
+         |assignees = [ "scala.steward" ]
+         |reviewers = [ "scala.steward" ]
          |""".stripMargin
     val initialState = MockState.empty.addFiles(configFile -> content).unsafeRunSync()
     val obtained = repoConfigAlg
@@ -158,7 +160,9 @@ class RepoConfigAlgTest extends FunSuite {
             frequency = Some(PullRequestFrequency.Timespan(7.days))
           )
         )
-      )
+      ),
+      assignees = List("scala.steward"),
+      reviewers = List("scala.steward")
     )
     assertEquals(obtained, expected)
   }

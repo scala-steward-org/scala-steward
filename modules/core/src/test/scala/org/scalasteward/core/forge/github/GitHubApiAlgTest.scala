@@ -107,6 +107,14 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
             "title": "new-feature"
             } """)
 
+    case POST -> Root / "repos" / "fthomas" / "cant-assign-reviewers" / "pulls" =>
+      Created(json"""  {
+            "html_url": "https://github.com/octocat/Hello-World/pull/14",
+            "state": "open",
+            "number": 14,
+            "title": "new-feature"
+            } """)
+
     case POST -> Root / "repos" / "fthomas" / "base.g8" / "issues" / IntVar(_) / "labels" =>
       // Response taken from https://docs.github.com/en/rest/reference/issues#labels, is ignored
       Created(json"""[
@@ -119,6 +127,22 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
             "color": "f29513",
             "default": true
           }]""")
+
+    case POST -> Root / "repos" / "fthomas" / "base.g8" / "issues" / IntVar(_) / "assignees" =>
+      Created(json"{}")
+
+    case POST ->
+        Root / "repos" / "fthomas" / "base.g8" / "pulls" / IntVar(_) / "requested_reviewers" =>
+      Created(json"{}")
+
+    case POST -> Root / "repos" / "fthomas" / "cant-assign-reviewers"
+        / "issues" / IntVar(_) / "assignees" =>
+      BadRequest()
+
+    case POST ->
+        Root / "repos" / "fthomas" / "cant-assign-reviewers"
+        / "pulls" / IntVar(_) / "requested_reviewers" =>
+      BadRequest()
 
     case _ => NotFound()
   }
@@ -237,14 +261,53 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
   test("createPullRequest") {
     val data = NewPullRequestData(
-      "new-feature",
-      "body",
-      "aaa",
-      Branch("master"),
-      Nil
+      title = "new-feature",
+      body = "body",
+      head = "aaa",
+      base = Branch("master"),
+      labels = Nil,
+      assignees = Nil,
+      reviewers = Nil
     )
     val pr = gitHubApiAlg.createPullRequest(repo, data).runA(state)
     assertIO(pr, pullRequest)
+  }
+
+  test("createPullRequest with assignees and reviewers") {
+    val data = NewPullRequestData(
+      title = "new-feature",
+      body = "body",
+      head = "aaa",
+      base = Branch("master"),
+      labels = Nil,
+      assignees = List("foo"),
+      reviewers = List("bar")
+    )
+    val pr = gitHubApiAlg.createPullRequest(repo, data).runA(state)
+    assertIO(pr, pullRequest)
+  }
+
+  test("createPullRequest with assignees and reviewers should not fail if can't assign") {
+    val data = NewPullRequestData(
+      title = "new-feature",
+      body = "body",
+      head = "aaa",
+      base = Branch("master"),
+      labels = Nil,
+      assignees = List("foo"),
+      reviewers = List("bar")
+    )
+    val expectedPullRequestOut =
+      PullRequestOut(
+        uri"https://github.com/octocat/Hello-World/pull/14",
+        PullRequestState.Open,
+        PullRequestNumber(14),
+        "new-feature"
+      )
+
+    val pullRequestOut =
+      gitHubApiAlg.createPullRequest(repo.copy(repo = "cant-assign-reviewers"), data).runA(state)
+    assertIO(pullRequestOut, expectedPullRequestOut)
   }
 
   test("listPullRequests") {

@@ -284,10 +284,16 @@ object Cli {
     (gitlabMergeWhenPipelineSucceeds, gitlabRequiredReviewers).mapN(GitLabCfg.apply)
 
   private val githubAppId: Opts[Long] =
-    option[Long]("github-app-id", "GitHub application id")
+    option[Long](
+      "github-app-id",
+      "GitHub application id. Repos accessible by this app are added to the repos in repos.md. git-ask-pass is still required."
+    )
 
   private val githubAppKeyFile: Opts[File] =
-    option[File]("github-app-key-file", "GitHub application key file")
+    option[File](
+      "github-app-key-file",
+      "GitHub application key file. Repos accessible by this app are added to the repos in repos.md. git-ask-pass is still required."
+    )
 
   private val gitHubApp: Opts[Option[GitHubApp]] =
     (githubAppId, githubAppKeyFile).mapN(GitHubApp.apply).orNone

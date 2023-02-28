@@ -16,6 +16,32 @@ import org.scalasteward.core.util.Nel
 class FileGitAlgTest extends CatsEffectSuite {
   private val rootDir = mockRoot / "git-tests"
 
+  test("add with .gitignore") {
+    val repo = rootDir / "branchgitignpreAuthors"
+    for {
+      _ <- ioAuxGitAlg.createRepo(repo)
+
+      gitIgnoreFile = repo / ".gitignore"
+      _ <- ioFileAlg.writeFile(gitIgnoreFile, "ignored.txt")
+      _ <- ioAuxGitAlg.addFiles(repo, gitIgnoreFile)
+
+      ignoredFile = repo / "ignored.txt"
+      _ <- ioFileAlg.writeFile(ignoredFile, "irrelevant")
+      ignoredFileCheck <- ioGitAlg.checkIgnore(repo, ignoredFile.pathAsString)
+
+      notIgnoredFile = repo / "not-ignored.txt"
+      _ <- ioFileAlg.writeFile(notIgnoredFile, "irrelevant")
+      notIgnoredFileCheck <- ioGitAlg.checkIgnore(repo, notIgnoredFile.pathAsString)
+
+    } yield {
+      assert(ignoredFileCheck, "The file is in .gitignore, checkIgnore should return true.")
+      assert(
+        !notIgnoredFileCheck,
+        "The file is not in .gitignore, checkIgnore should return false."
+      )
+    }
+  }
+
   test("branchAuthors") {
     val repo = rootDir / "branchAuthors"
     for {

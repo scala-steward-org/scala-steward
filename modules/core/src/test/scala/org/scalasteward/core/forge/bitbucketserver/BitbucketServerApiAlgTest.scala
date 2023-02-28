@@ -120,7 +120,9 @@ class BitbucketServerApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] 
       body = "body",
       head = "main",
       base = main,
-      labels = Nil
+      labels = Nil,
+      assignees = Nil,
+      reviewers = Nil
     )
     val pr = bitbucketServerApiAlg.createPullRequest(repo, data).runA(state)
     val expected =
@@ -139,7 +141,9 @@ class BitbucketServerApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] 
       body = "body",
       head = "main",
       base = main,
-      labels = Nil
+      labels = Nil,
+      assignees = Nil,
+      reviewers = Nil
     )
     val apiAlg = ForgeSelection
       .forgeApiAlg[MockEff](forgeCfg, BitbucketServerCfg(useDefaultReviewers = true), user)

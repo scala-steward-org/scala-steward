@@ -28,11 +28,13 @@ class MillAlgTest extends FunSuite {
       "show",
       extractDeps
     )
-    val initial = MockState.empty.copy(commandOutputs = Map(millCmd -> List("""{"modules":[]}""")))
+    val initial =
+      MockState.empty.copy(commandOutputs = Map(millCmd -> Right(List("""{"modules":[]}"""))))
     val state = millAlg.getDependencies(buildRoot).runS(initial).unsafeRunSync()
     val expected = initial.copy(
       trace = Vector(
         Cmd("read", s"$repoDir/.mill-version"),
+        Cmd("read", s"$repoDir/.config/mill-version"),
         Cmd("write", predef),
         Cmd(repoDir.toString :: millCmd),
         Cmd("rm", "-rf", predef)

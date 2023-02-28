@@ -290,11 +290,13 @@ class BitbucketApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
   test("createPullRequest") {
     val data = NewPullRequestData(
-      "scala-steward-pr",
-      "body",
-      "master",
-      master,
-      Nil
+      title = "scala-steward-pr",
+      body = "body",
+      head = "master",
+      base = master,
+      labels = Nil,
+      assignees = Nil,
+      reviewers = Nil
     )
     val pr = bitbucketApiAlg.createPullRequest(repo, data).runA(state)
     assertIO(pr, pullRequest)

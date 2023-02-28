@@ -26,6 +26,7 @@ import org.scalasteward.core.application.Config.ForgeCfg
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.ForgeApiAlg
 import org.scalasteward.core.forge.data._
+import org.typelevel.log4cats.Logger
 
 // docs
 // - https://docs.gitea.io/en-us/api-usage/
@@ -117,10 +118,11 @@ object GiteaApiAlg {
   implicit val attachLabelReqCodec: Codec[AttachLabelReq] = deriveCodec
 }
 
-final class GiteaApiAlg[F[_]: MonadThrow: HttpJsonClient](
+final class GiteaApiAlg[F[_]: HttpJsonClient](
     vcs: ForgeCfg,
     modify: Repo => Request[F] => F[Request[F]]
-) extends ForgeApiAlg[F] {
+)(implicit logger: Logger[F], F: MonadThrow[F])
+    extends ForgeApiAlg[F] {
   import GiteaApiAlg._
 
   def client: HttpJsonClient[F] = implicitly
@@ -162,6 +164,8 @@ final class GiteaApiAlg[F[_]: MonadThrow: HttpJsonClient](
 
   override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] =
     for {
+      _ <- F.whenA(data.assignees.nonEmpty)(warnIfAssigneesAreUsed)
+      _ <- F.whenA(data.reviewers.nonEmpty)(warnIfReviewersAreUsed)
       labels <- getOrCreateLabel(repo, data.labels.toVector)
       create = CreatePullRequestOption(
         assignee = none,
@@ -302,4 +306,10 @@ final class GiteaApiAlg[F[_]: MonadThrow: HttpJsonClient](
       }
     go(1, Vector.empty)
   }
+
+  private def warnIfAssigneesAreUsed =
+    logger.warn("assignees are not implemented yet for Gitea")
+
+  private def warnIfReviewersAreUsed =
+    logger.warn("reviewers are not implemented yet for Gitea")
 }
