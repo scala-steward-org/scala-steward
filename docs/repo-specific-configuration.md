@@ -66,7 +66,7 @@ pullRequests.grouping = [
   { name = "minor_major", "title" = "Minor/major updates", "filter" = [{"version" = "minor"}, {"version" = "major"}] },
   { name = "typelevel", "title" = "Typelevel updates", "filter" = [{"group" = "org.typelevel"}, {"group" = "org.http4s"}] },
   { name = "my_libraries", "filter" = [{"artifact" = "my-library"}, {"artifact" = "my-other-library", "group" = "my-org"}] },
-  { name = "all", title = "Dependency updates", "filter" = [{"group" = "*"}] }
+  { name = "all", "title" = "Dependency updates", "filter" = [{"group" = "*"}] }
 ]
 
 # pullRequests.includeMatchedLabels allows to control which labels are added to PRs 
