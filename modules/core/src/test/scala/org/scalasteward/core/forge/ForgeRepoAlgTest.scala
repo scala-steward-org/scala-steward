@@ -37,7 +37,14 @@ class ForgeRepoAlgTest extends CatsEffectSuite {
     val expected = MockState.empty.copy(
       trace = Vector(
         Log("Clone scala-steward/datapackage"),
-        Cmd(gitCmd(config.workspace), "clone", forkUrl, repoDir.toString),
+        Cmd(
+          gitCmd(config.workspace),
+          "clone",
+          "-c",
+          "clone.defaultRemoteName=origin",
+          forkUrl,
+          repoDir.toString
+        ),
         Cmd(gitCmd(repoDir), "config", "user.email", "bot@example.org"),
         Cmd(gitCmd(repoDir), "config", "user.name", "Bot Doe"),
         Log("Synchronize with fthomas/datapackage"),
@@ -64,7 +71,14 @@ class ForgeRepoAlgTest extends CatsEffectSuite {
     val expected = MockState.empty.copy(
       trace = Vector(
         Log("Clone fthomas/datapackage"),
-        Cmd(gitCmd(config.workspace), "clone", parentUrl, repoDir.toString),
+        Cmd(
+          gitCmd(config.workspace),
+          "clone",
+          "-c",
+          "clone.defaultRemoteName=origin",
+          parentUrl,
+          repoDir.toString
+        ),
         Cmd(gitCmd(repoDir), "config", "user.email", "bot@example.org"),
         Cmd(gitCmd(repoDir), "config", "user.name", "Bot Doe"),
         Cmd(gitCmd(repoDir), "submodule", "update", "--init", "--recursive")
