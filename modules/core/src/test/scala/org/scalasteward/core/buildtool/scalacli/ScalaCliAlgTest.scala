@@ -41,6 +41,7 @@ class ScalaCliAlgTest extends CatsEffectSuite {
           "--env=VAR1=val1",
           "--env=VAR2=val2",
           "scala-cli",
+          "--power",
           "export",
           "--sbt",
           "--output",
