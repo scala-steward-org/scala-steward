@@ -77,9 +77,17 @@ class EditAlgTest extends FunSuite {
                                 |align.openParenCallSite = false
                                 |""".stripMargin
     val buildSbt = repoDir / "build.sbt"
+    val target = repoDir / "target"
+    // this file should not be read because it's under target which is git ignored
+    val targetScalaFile = target / "SomeFile.scala"
 
     val state = MockState.empty
-      .addFiles(scalafmtConf -> scalafmtConfContent, buildSbt -> "", gitignore -> "")
+      .addFiles(
+        scalafmtConf -> scalafmtConfContent,
+        buildSbt -> "",
+        gitignore -> "target/",
+        targetScalaFile -> ""
+      )
       .flatMap(editAlg.applyUpdate(data, update).runS)
       .unsafeRunSync()
 
@@ -92,6 +100,8 @@ class EditAlgTest extends FunSuite {
         Cmd("read", scalafmtConf.pathAsString),
         Cmd("test", "-f", buildSbt.pathAsString),
         Cmd("read", buildSbt.pathAsString),
+        Cmd("test", "-f", target.pathAsString),
+        Cmd("test", "-f", targetScalaFile.pathAsString),
         Cmd("read", gitignore.pathAsString),
         Cmd("test", "-f", repoDir.pathAsString),
         Cmd("test", "-f", gitignore.pathAsString),
@@ -99,6 +109,8 @@ class EditAlgTest extends FunSuite {
         Cmd("read", scalafmtConf.pathAsString),
         Cmd("test", "-f", buildSbt.pathAsString),
         Cmd("read", buildSbt.pathAsString),
+        Cmd("test", "-f", target.pathAsString),
+        Cmd("test", "-f", targetScalaFile.pathAsString),
         Cmd("read", scalafmtConf.pathAsString),
         Cmd("write", scalafmtConf.pathAsString),
         Cmd(
@@ -120,7 +132,8 @@ class EditAlgTest extends FunSuite {
             |align.openParenCallSite = false
             |""".stripMargin,
         buildSbt -> "",
-        gitignore -> ""
+        gitignore -> "target/",
+        targetScalaFile -> ""
       )
     )
 
