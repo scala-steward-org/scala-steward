@@ -55,7 +55,9 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
   override def clone(repo: File, url: Uri): F[Unit] =
     for {
       rootDir <- workspaceAlg.rootDir
-      _ <- git_("clone", url.toString, repo.pathAsString)(rootDir)
+      _ <- git_("clone", "-c", "clone.defaultRemoteName=origin", url.toString, repo.pathAsString)(
+        rootDir
+      )
     } yield ()
 
   override def cloneExists(repo: File): F[Boolean] =

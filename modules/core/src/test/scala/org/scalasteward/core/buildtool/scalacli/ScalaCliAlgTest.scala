@@ -5,12 +5,25 @@ import org.scalasteward.core.buildtool.BuildRoot
 import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.data.{GroupId, Repo, Version}
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
+import org.scalasteward.core.git.FileGitAlg
 import org.scalasteward.core.mock.MockContext.context._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.util.Nel
 
 class ScalaCliAlgTest extends CatsEffectSuite {
+  test("containsBuild: directive in non-source file") {
+    val repo = Repo("user", "repo")
+    val buildRoot = BuildRoot(repo, ".")
+    val fileWithUsingLib = "test.md" // this test fails if the extension is .scala or .sc
+    val grepCmd = FileGitAlg.gitCmd.toList ++
+      List("grep", "-I", "--fixed-strings", "--files-with-matches", "//> using lib ")
+    val initial =
+      MockState.empty.copy(commandOutputs = Map(grepCmd -> Right(List(fileWithUsingLib))))
+    val obtained = scalaCliAlg.containsBuild(buildRoot).runA(initial)
+    assertIO(obtained, false)
+  }
+
   test("getDependencies") {
     val repo = Repo("user", "repo")
     val buildRoot = BuildRoot(repo, ".")
@@ -28,6 +41,7 @@ class ScalaCliAlgTest extends CatsEffectSuite {
           "--env=VAR1=val1",
           "--env=VAR2=val2",
           "scala-cli",
+          "--power",
           "export",
           "--sbt",
           "--output",
