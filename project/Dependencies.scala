@@ -8,7 +8,7 @@ object Dependencies {
   val catsLaws = "org.typelevel" %% "cats-laws" % catsCore.revision
   val catsParse = "org.typelevel" %% "cats-parse" % "0.3.9"
   val circeConfig = "io.circe" %% "circe-config" % "0.10.0"
-  val circeGeneric = "io.circe" %% "circe-generic" % "0.14.4"
+  val circeGeneric = "io.circe" %% "circe-generic" % "0.14.5"
   val circeGenericExtras = "io.circe" %% "circe-generic-extras" % "0.14.3"
   val circeLiteral = "io.circe" %% "circe-literal" % circeGeneric.revision
   val circeParser = "io.circe" %% "circe-parser" % circeGeneric.revision
@@ -37,7 +37,7 @@ object Dependencies {
   val munit = "org.scalameta" %% "munit" % "0.7.29"
   val munitCatsEffect = "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
   val munitScalacheck = "org.scalameta" %% "munit-scalacheck" % munit.revision
-  val refined = "eu.timepit" %% "refined" % "0.10.1"
+  val refined = "eu.timepit" %% "refined" % "0.10.2"
   val refinedScalacheck = "eu.timepit" %% "refined-scalacheck" % refined.revision
   val scalacacheCaffeine = "com.github.cb372" %% "scalacache-caffeine" % "1.0.0-M6"
   val scalacheck = "org.scalacheck" %% "scalacheck" % "1.17.0"
