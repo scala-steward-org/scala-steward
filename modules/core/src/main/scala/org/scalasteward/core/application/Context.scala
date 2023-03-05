@@ -42,7 +42,12 @@ import org.scalasteward.core.forge.github.{GitHubAppApiAlg, GitHubAuthAlg}
 import org.scalasteward.core.forge.{ForgeApiAlg, ForgeRepoAlg, ForgeSelection}
 import org.scalasteward.core.git.{GenGitAlg, GitAlg}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository, UpdateInfoUrlFinder}
+import org.scalasteward.core.nurture.{
+  NurtureAlg,
+  PullRequestRepository,
+  PullRequestThrottle,
+  UpdateInfoUrlFinder
+}
 import org.scalasteward.core.persistence.{CachingKeyValueStore, JsonKeyValueStore}
 import org.scalasteward.core.repocache._
 import org.scalasteward.core.repoconfig.{RepoConfigAlg, RepoConfigLoader, ValidateRepoConfigAlg}
@@ -193,13 +198,16 @@ object Context {
         .create[F, Repo, RepoCache]("repo_cache", "1", kvsPrefix)
       versionsStore <- JsonKeyValueStore
         .create[F, VersionsCache.Key, VersionsCache.Value]("versions", "2")
+      dateTimeAlg0 = DateTimeAlg.create[F]
+      pullRequestThrottle0 <- PullRequestThrottle
+        .create[F](config.pullRequestThrottleCfg)(dateTimeAlg0, logger, F)
     } yield {
       implicit val artifactMigrationsLoader: ArtifactMigrationsLoader[F] = artifactMigrationsLoader0
       implicit val artifactMigrationsFinder: ArtifactMigrationsFinder = artifactMigrationsFinder0
       implicit val scalafixMigrationsLoader: ScalafixMigrationsLoader[F] = scalafixMigrationsLoader0
       implicit val scalafixMigrationsFinder: ScalafixMigrationsFinder = scalafixMigrationsFinder0
       implicit val urlChecker: UrlChecker[F] = urlChecker0
-      implicit val dateTimeAlg: DateTimeAlg[F] = DateTimeAlg.create[F]
+      implicit val dateTimeAlg: DateTimeAlg[F] = dateTimeAlg0
       implicit val repoConfigAlg: RepoConfigAlg[F] = new RepoConfigAlg[F](maybeGlobalRepoConfig)
       implicit val filterAlg: FilterAlg[F] = new FilterAlg[F]
       implicit val gitAlg: GitAlg[F] = GenGitAlg.create[F](config.gitCfg)
@@ -232,6 +240,7 @@ object Context {
       implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F](config)
       implicit val scannerAlg: ScannerAlg[F] = new ScannerAlg[F]
       implicit val editAlg: EditAlg[F] = new EditAlg[F]
+      implicit val pullRequestThrottle: PullRequestThrottle[F] = pullRequestThrottle0
       implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F](config.forgeCfg)
       implicit val pruningAlg: PruningAlg[F] = new PruningAlg[F]
       implicit val gitHubAppApiAlg: GitHubAppApiAlg[F] =

@@ -42,6 +42,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
     gitAlg: GitAlg[F],
     logger: Logger[F],
     pullRequestRepository: PullRequestRepository[F],
+    pullRequestThrottle: PullRequestThrottle[F],
     updateInfoUrlFinder: UpdateInfoUrlFinder[F],
     urlChecker: UrlChecker[F],
     F: Concurrent[F]
@@ -252,6 +253,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       _ <- forgeApiAlg
         .labelPullRequest(data.repo, pr.number, requestData.labels)
         .whenA(config.addLabels && requestData.labels.nonEmpty)
+      _ <- pullRequestThrottle.hit
       prData = PullRequestData[Id](
         pr.html_url,
         data.baseSha1,
