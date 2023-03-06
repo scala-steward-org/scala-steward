@@ -280,8 +280,16 @@ object Cli {
       "When set, the number of required reviewers for a merge request will be set to this number (non-negative integer).  Is only used in the context of gitlab-merge-when-pipeline-succeeds being enabled, and requires that the configured access token have the appropriate privileges.  Also requires a Gitlab Premium subscription."
     ).validate("Required reviewers must be non-negative")(_ >= 0).orNone
 
+  private val gitlabRemoveSourceBranch: Opts[Boolean] =
+    flag(
+      "gitlab-remove-source-branch",
+      "Flag indicating if a merge request should remove the source branch when merging."
+    ).orFalse
+
   private val gitLabCfg: Opts[GitLabCfg] =
-    (gitlabMergeWhenPipelineSucceeds, gitlabRequiredReviewers).mapN(GitLabCfg.apply)
+    (gitlabMergeWhenPipelineSucceeds, gitlabRequiredReviewers, gitlabRemoveSourceBranch).mapN(
+      GitLabCfg.apply
+    )
 
   private val githubAppId: Opts[Long] =
     option[Long](

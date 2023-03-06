@@ -40,6 +40,7 @@ final private[gitlab] case class MergeRequestPayload(
     assignee_ids: Option[List[Int]],
     reviewer_ids: Option[List[Int]],
     target_project_id: Long,
+    remove_source_branch: Boolean,
     source_branch: String,
     target_branch: Branch
 )
@@ -49,7 +50,8 @@ private[gitlab] object MergeRequestPayload {
       id: String,
       projectId: Long,
       data: NewPullRequestData,
-      usernamesToUserIdsMapping: Map[String, Int]
+      usernamesToUserIdsMapping: Map[String, Int],
+      removeSourceBranch: Boolean
   ): MergeRequestPayload = {
     val assignees = data.assignees.flatMap(usernamesToUserIdsMapping.get)
     val reviewers = data.reviewers.flatMap(usernamesToUserIdsMapping.get)
@@ -61,6 +63,7 @@ private[gitlab] object MergeRequestPayload {
       reviewer_ids = Option.when(reviewers.nonEmpty)(reviewers),
       labels = Option.when(data.labels.nonEmpty)(data.labels),
       target_project_id = projectId,
+      remove_source_branch = removeSourceBranch,
       source_branch = data.head,
       target_branch = data.base
     )
@@ -188,7 +191,8 @@ final class GitLabApiAlg[F[_]: Parallel](
         id = url.encodedProjectId(targetRepo),
         projectId = projectId.id,
         data = data,
-        usernamesToUserIdsMapping = usernameMapping
+        usernamesToUserIdsMapping = usernameMapping,
+        removeSourceBranch = gitLabCfg.removeSourceBranch
       )
       res <- client.postWithBody[MergeRequestOut, MergeRequestPayload](
         uri = url.mergeRequest(targetRepo),

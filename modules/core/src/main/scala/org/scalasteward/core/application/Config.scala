@@ -158,7 +158,8 @@ object Config {
 
   final case class GitLabCfg(
       mergeWhenPipelineSucceeds: Boolean,
-      requiredReviewers: Option[Int]
+      requiredReviewers: Option[Int],
+      removeSourceBranch: Boolean
   ) extends ForgeSpecificCfg
 
   final case class GiteaCfg(
