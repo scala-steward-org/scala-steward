@@ -234,13 +234,14 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       allLabels = labelsFor(data.update, edits, filesWithOldVersion, artifactIdToVersionScheme)
       labels = filterLabels(allLabels, data.repoData.config.pullRequests.includeMatchedLabels)
       requestData = NewPullRequestData.from(
-        data,
-        branchName,
-        edits,
-        artifactIdToUrl,
-        artifactIdToUpdateInfoUrls.toMap,
-        filesWithOldVersion,
-        labels
+        data = data,
+        branchName = branchName,
+        edits = edits,
+        artifactIdToUrl = artifactIdToUrl,
+        artifactIdToUpdateInfoUrls = artifactIdToUpdateInfoUrls.toMap,
+        filesWithOldVersion = filesWithOldVersion,
+        addLabels = config.addLabels,
+        labels = labels
       )
     } yield requestData
 
@@ -249,9 +250,6 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
       requestData <- preparePullRequest(data, edits)
       pr <- forgeApiAlg.createPullRequest(data.repo, requestData)
-      _ <- forgeApiAlg
-        .labelPullRequest(data.repo, pr.number, requestData.labels)
-        .whenA(config.addLabels && requestData.labels.nonEmpty)
       prData = PullRequestData[Id](
         pr.html_url,
         data.baseSha1,

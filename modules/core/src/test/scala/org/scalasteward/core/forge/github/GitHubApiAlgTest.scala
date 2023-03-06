@@ -115,6 +115,14 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
             "title": "new-feature"
             } """)
 
+    case POST -> Root / "repos" / "fthomas" / "cant-add-labels" / "pulls" =>
+      Created(json"""  {
+            "html_url": "https://github.com/octocat/Hello-World/pull/13",
+            "state": "open",
+            "number": 13,
+            "title": "can't add labels to me"
+            } """)
+
     case POST -> Root / "repos" / "fthomas" / "base.g8" / "issues" / IntVar(_) / "labels" =>
       // Response taken from https://docs.github.com/en/rest/reference/issues#labels, is ignored
       Created(json"""[
@@ -127,6 +135,9 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
             "color": "f29513",
             "default": true
           }]""")
+
+    case POST -> Root / "repos" / "fthomas" / "cant-add-labels" / "issues" / "13" / "labels" =>
+      BadRequest("can't add labels")
 
     case POST -> Root / "repos" / "fthomas" / "base.g8" / "issues" / IntVar(_) / "assignees" =>
       Created(json"{}")
@@ -310,6 +321,47 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     assertIO(pullRequestOut, expectedPullRequestOut)
   }
 
+  test("createPullRequest with labels") {
+    val data = NewPullRequestData(
+      title = "new-feature",
+      body = "body",
+      head = "aaa",
+      base = Branch("master"),
+      labels = List("foo", "bar"),
+      assignees = Nil,
+      reviewers = Nil
+    )
+    val pr = gitHubApiAlg.createPullRequest(repo, data).runA(state)
+    assertIO(pr, pullRequest)
+  }
+
+  test("createPullRequest should fail when can't add labels") {
+    val data = NewPullRequestData(
+      title = "new-feature",
+      body = "body",
+      head = "aaa",
+      base = Branch("master"),
+      labels = List("foo", "bar"),
+      assignees = Nil,
+      reviewers = Nil
+    )
+    val error =
+      gitHubApiAlg
+        .createPullRequest(repo.copy(repo = "cant-add-labels"), data)
+        .runA(state)
+        .attempt
+        .map(_.swap.map(_.getMessage))
+    val expectedError =
+      """|uri: http://example.com/repos/fthomas/cant-add-labels/issues/13/labels
+         |method: POST
+         |status: 400 Bad Request
+         |headers:
+         |  Content-Type: text/plain; charset=UTF-8
+         |  Content-Length: 16
+         |body: can't add labels""".stripMargin
+    assertIO(error, Right(expectedError))
+  }
+
   test("listPullRequests") {
     val prs = gitHubApiAlg.listPullRequests(repo, "master", Branch("master")).runA(state)
     assertIO(prs, List(pullRequest))
@@ -332,10 +384,4 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     assertIO(comment, Comment("Superseded by #1234"))
   }
 
-  test("labelPullRequest") {
-    gitHubApiAlg
-      .labelPullRequest(repo, PullRequestNumber(1347), List("A", "B"))
-      .runA(state)
-      .assert
-  }
 }

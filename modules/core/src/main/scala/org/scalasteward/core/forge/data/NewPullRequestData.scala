@@ -223,6 +223,7 @@ object NewPullRequestData {
       artifactIdToUrl: Map[String, Uri] = Map.empty,
       artifactIdToUpdateInfoUrls: Map[String, List[UpdateInfoUrl]] = Map.empty,
       filesWithOldVersion: List[String] = List.empty,
+      addLabels: Boolean = false,
       labels: List[String] = List.empty
   ): NewPullRequestData =
     NewPullRequestData(
@@ -243,7 +244,7 @@ object NewPullRequestData {
       ),
       head = branchName,
       base = data.baseBranch,
-      labels = labels,
+      labels = if (addLabels) labels else List.empty,
       assignees = data.repoConfig.assignees,
       reviewers = data.repoConfig.reviewers
     )
