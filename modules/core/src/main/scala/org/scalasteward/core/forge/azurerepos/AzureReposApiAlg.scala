@@ -18,8 +18,6 @@ package org.scalasteward.core.forge.azurerepos
 
 import cats.MonadThrow
 import cats.syntax.all._
-import io.circe.Json
-import io.circe.syntax.KeyOps
 import org.http4s.{Request, Uri}
 import org.scalasteward.core.application.Config.AzureReposCfg
 import org.scalasteward.core.data.Repo
@@ -89,20 +87,6 @@ final class AzureReposApiAlg[F[_]](
       PullRequestCommentPayload.createComment(comment),
       modify(repo)
     )
-
-  // https://docs.microsoft.com/en-us/rest/api/azure/devops/git/pull-request-labels/create?view=azure-devops-rest-7.1
-  override def labelPullRequest(
-      repo: Repo,
-      number: PullRequestNumber,
-      labels: List[String]
-  ): F[Unit] =
-    client
-      .postWithBody[Json, Json](
-        url.labelPullRequest(repo, number),
-        Json.obj("name" := labels.mkString("-")),
-        modify(repo)
-      )
-      .void
 
   private def warnIfAssigneesAreUsed =
     logger.warn("assignees are not supported by AzureRepos")

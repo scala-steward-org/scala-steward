@@ -15,6 +15,7 @@ import org.scalasteward.core.repoconfig.RepoConfigLoader
 import org.scalasteward.core.update.artifact.ArtifactMigrationsLoader
 import org.scalasteward.core.util.UrlCheckerClient
 import org.typelevel.log4cats.Logger
+import org.scalasteward.core.application.Config
 
 object MockContext {
   implicit private val client: Client[MockEff] =
@@ -43,7 +44,9 @@ object MockContext {
       ioFileAlg.readResource("scalafix-migrations.conf").unsafeRunSync()
   )
 
-  val context: Context[MockEff] = mockState.toRef.flatMap(Context.step1(config).run).unsafeRunSync()
+  val context: Context[MockEff] = context(config)
+  def context(stewardConfig: Config): Context[MockEff] =
+    mockState.toRef.flatMap(Context.step1(stewardConfig).run).unsafeRunSync()
   def validateRepoConfigContext(file: File): StewardContext.ValidateRepoConfig[MockEff] =
     Context.initValidateRepoConfig(file)
 }

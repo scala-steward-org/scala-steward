@@ -255,25 +255,6 @@ final class GiteaApiAlg[F[_]: HttpJsonClient](
       }
   }
 
-  override def labelPullRequest(
-      repo: Repo,
-      number: PullRequestNumber,
-      labels: List[String]
-  ): F[Unit] = {
-    def attachLabels(labels: Vector[Int]): F[Unit] =
-      if (labels.nonEmpty)
-        client
-          .postWithBody[Vector[Label], AttachLabelReq](
-            url.pullRequestLabels(repo, number),
-            AttachLabelReq(labels),
-            modify(repo)
-          )
-          .void
-      else ().pure[F]
-
-    getOrCreateLabel(repo, labels.toVector) >>= attachLabels
-  }
-
   def getOrCreateLabel(repo: Repo, labels: Vector[String]): F[Vector[Int]] =
     listLabels(repo).flatMap { repoLabels =>
       val existing = repoLabels.filter(label => labels.contains(label.name))

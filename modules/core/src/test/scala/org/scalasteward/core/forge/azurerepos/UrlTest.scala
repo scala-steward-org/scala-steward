@@ -60,11 +60,4 @@ class UrlTest extends FunSuite {
     )
   }
 
-  test("labelPullRequest") {
-    assertEquals(
-      url.labelPullRequest(repo, PullRequestNumber(42)).toString,
-      "https://dev.azure.com/my-azure-org/scala-steward-org/" +
-        "_apis%2Fgit%2Frepositories/scala-steward/pullrequests/42/labels?api-version=7.1-preview.1"
-    )
-  }
 }
