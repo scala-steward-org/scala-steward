@@ -238,7 +238,7 @@ final class GitLabApiAlg[F[_]: Parallel](
           res <-
             client
               .put[MergeRequestOut](
-                url.mergeWhenPiplineSucceeds(repo, mr.iid),
+                url.mergeWhenPiplineSucceeds(repo, mr.iid, gitLabCfg.removeSourceBranch),
                 modify(repo)
               )
               // it's possible that our status changed from can be merged already,
