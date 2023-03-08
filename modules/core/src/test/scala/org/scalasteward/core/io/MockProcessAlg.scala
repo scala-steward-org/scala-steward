@@ -8,18 +8,16 @@ import org.scalasteward.core.mock.MockEff
 object MockProcessAlg {
   def create(config: ProcessCfg): ProcessAlg[MockEff] =
     new ProcessAlg(config)({ args =>
-      Kleisli { x =>
+      Kleisli { ctx =>
         for {
-          state <- x.get
+          state <- ctx.get
           cmd = args.workingDirectory.map(_.toString).toList ++ args.command.toList
-          newState = state.exec(cmd, args.extraEnv: _*)
-          res <- x
-            .set(newState)
-            .flatMap { _ =>
-              state.commandOutputs
-                .getOrElse(args.command.toList, Right(List.empty))
-                .fold(err => IO.raiseError(err), a => IO.pure(a))
-            }
+          _ <- ctx.set(state.exec(cmd, args.extraEnv: _*))
+          res <- state.commandOutputs.get(args.command.toList) match {
+            case Some(output)               => IO.fromEither(output)
+            case None if state.execCommands => ProcessAlgTest.ioProcessAlg.execImpl(args)
+            case None                       => IO.pure(List.empty)
+          }
         } yield res
       }
     })
