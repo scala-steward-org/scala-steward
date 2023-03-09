@@ -39,17 +39,9 @@ class Url(apiHost: Uri) {
   def existingMergeRequest(repo: Repo, number: PullRequestNumber): Uri =
     mergeRequest(repo) / number.toString
 
-  def mergeWhenPiplineSucceeds(
-      repo: Repo,
-      number: PullRequestNumber,
-      removeSourceBranch: Boolean
-  ): Uri =
+  def mergeWhenPiplineSucceeds(repo: Repo, number: PullRequestNumber): Uri =
     (existingMergeRequest(repo, number) / "merge")
       .withQueryParam("merge_when_pipeline_succeeds", "true")
-      .withOptionQueryParam(
-        "should_remove_source_branch",
-        Option.when(removeSourceBranch)(removeSourceBranch)
-      )
 
   def requiredApprovals(repo: Repo, number: PullRequestNumber, approvalsRequired: Int): Uri =
     (existingMergeRequest(repo, number) / "approvals")

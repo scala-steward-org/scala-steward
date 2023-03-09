@@ -31,9 +31,6 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   object MergeWhenPipelineSucceedsMatcher
       extends QueryParamDecoderMatcher[Boolean]("merge_when_pipeline_succeeds")
 
-  object ShouldRemoveSourceBranchMatcher
-      extends QueryParamDecoderMatcher[Boolean]("should_remove_source_branch")
-
   object RequiredReviewersMatcher extends QueryParamDecoderMatcher[Int]("approvals_required")
 
   object UsernameMatcher extends QueryParamDecoderMatcher[String]("username")
@@ -91,7 +88,7 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       )
 
     case PUT -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "merge"
-        :? MergeWhenPipelineSucceedsMatcher(_) +& ShouldRemoveSourceBranchMatcher(_) =>
+        :? MergeWhenPipelineSucceedsMatcher(_) =>
       Ok(
         getMr.deepMerge(
           json""" { "iid": 150, "web_url": "https://gitlab.com/foo/bar/merge_requests/150" } """
@@ -143,12 +140,12 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     user
   )
 
-  private val gitlabApiAlgAutoMergeAndRemoveSourceBranch = ForgeSelection.forgeApiAlg[MockEff](
+  private val gitlabApiAlgAutoMerge = ForgeSelection.forgeApiAlg[MockEff](
     config.forgeCfg.copy(tpe = ForgeType.GitLab, doNotFork = true),
     GitLabCfg(
       mergeWhenPipelineSucceeds = true,
       requiredReviewers = None,
-      removeSourceBranch = true
+      removeSourceBranch = false
     ),
     user
   )
@@ -270,8 +267,8 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     assertIO(prOut, expected)
   }
 
-  test("createPullRequest -- auto merge and remove source branch") {
-    val prOut = gitlabApiAlgAutoMergeAndRemoveSourceBranch
+  test("createPullRequest -- auto merge") {
+    val prOut = gitlabApiAlgAutoMerge
       .createPullRequest(Repo("foo", "bar"), newPRData)
       .runA(state)
 
