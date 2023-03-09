@@ -121,6 +121,7 @@ lazy val core = myCrossProject("core")
       Dependencies.decline,
       Dependencies.fs2Core,
       Dependencies.fs2Io,
+      Dependencies.gitignore,
       Dependencies.http4sCirce,
       Dependencies.http4sClient,
       Dependencies.http4sCore,
