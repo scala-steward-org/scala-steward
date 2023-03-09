@@ -51,21 +51,24 @@ final class SbtAlg[F[_]](config: Config)(implicit
       version = maybeProperties.flatMap(parser.parseBuildProperties)
     } yield version
 
+  private def metaBuildsCount(buildRootDir: File): F[Int] =
+    fs2.Stream
+      .iterate(buildRootDir / project)(_ / project)
+      .take(5L) // Use an upper bound for the meta-builds count to prevent DOS attacks.
+      .evalMap(fileAlg.isDirectory)
+      .takeWhile(identity)
+      .compile
+      .count
+      .map(_.toInt)
+
   override def getDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
     for {
       buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
       maybeSbtVersion <- getSbtVersion(buildRootDir)
-      metaBuilds = Math.max(
-        LazyList
-          .iterate(buildRootDir / project)(_ / project)
-          .takeWhile(p => p.exists && p.isDirectory)
-          .size,
-        1 // There is always at least one meta build, even if there is no project folder
-      )
+      metaBuilds <- metaBuildsCount(buildRootDir)
       lines <- addStewardPluginTemporarily(buildRootDir, maybeSbtVersion, metaBuilds).surround {
-        val commands = Nel.of(crossStewardDependencies) ++ List
-          .fill(metaBuilds)(List(reloadPlugins, stewardDependencies))
-          .flatten
+        val commands = Nel.of(crossStewardDependencies) ++
+          List.fill(metaBuilds)(List(reloadPlugins, stewardDependencies)).flatten
         sbt(commands, buildRootDir)
       }
       dependencies = parser.parseDependencies(lines)
