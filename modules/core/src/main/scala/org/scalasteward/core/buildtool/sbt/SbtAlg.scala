@@ -54,7 +54,7 @@ final class SbtAlg[F[_]](config: Config)(implicit
   private def metaBuildsCount(buildRootDir: File): F[Int] =
     fs2.Stream
       .iterate(buildRootDir / project)(_ / project)
-      .take(5L) // Use an upper bound for the meta-builds count to prevent DOS attacks.
+      .take(5L) // Use an upper bound for the meta-builds count to prevent DoS attacks.
       .evalMap(fileAlg.isDirectory)
       .takeWhile(identity)
       .compile
