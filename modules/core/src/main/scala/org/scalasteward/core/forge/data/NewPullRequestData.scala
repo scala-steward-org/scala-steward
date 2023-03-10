@@ -66,8 +66,8 @@ object NewPullRequestData {
 
         val updateInfoUrls = artifactIdToUpdateInfoUrls.getOrElse(u.mainArtifactId, Nil)
 
-        s"""|## Update _${artifacts}_
-            |📦 updates $artifacts ${fromTo(u)}${showMajorUpgradeWarning(u)}
+        s"""|## _About this PR_
+            |📦 Updates $artifacts ${fromTo(u)}${showMajorUpgradeWarning(u)}
             |${renderUpdateInfoUrls(updateInfoUrls)
              .map(urls => s"📜 $urls")
              .getOrElse("")}""".stripMargin.trim
@@ -83,7 +83,8 @@ object NewPullRequestData {
           }
           .mkString_("\n", "\n", "\n")
 
-        s"""|## Updates:
+        s"""|## _About this PR_
+            |Updates:
             |$artifacts""".stripMargin.trim
       }
     )
