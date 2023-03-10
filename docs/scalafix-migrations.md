@@ -13,7 +13,7 @@ Here are two pull requests that demonstrate this feature:
 And here are all pull requests where Scala Steward applied Scalafix
 migrations:
 
-<!-- These links exists but returns 404 often so skip check -->
+<!-- These links returns 404 unless user is logged into GitHub. So let's skip -->
 <!-- markdown-link-check-disable -->
 * [Created pull requests](https://github.com/search?q=author%3Ascala-steward+is%3Apr+scalafix-migrations)
   ([compact](             https://github.com/pulls?q=author%3Ascala-steward+is%3Apr+scalafix-migrations))
