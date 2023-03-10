@@ -49,9 +49,9 @@ class ScalaCliAlgTest extends CatsEffectSuite {
           repoDir.toString
         ),
         Cmd("read", s"$sbtBuildDir/project/build.properties"),
+        Cmd("test", "-d", s"$sbtBuildDir/project"),
         Cmd("read", "classpath:StewardPlugin_1_3_11.scala"),
         Cmd("write", s"$sbtBuildDir/project/scala-steward-StewardPlugin_1_3_11.scala"),
-        Cmd("write", s"$sbtBuildDir/project/project/scala-steward-StewardPlugin_1_3_11.scala"),
         Cmd(
           sbtBuildDir.toString,
           "firejail",
@@ -63,9 +63,8 @@ class ScalaCliAlgTest extends CatsEffectSuite {
           "-Dsbt.color=false",
           "-Dsbt.log.noformat=true",
           "-Dsbt.supershell=false",
-          s";$crossStewardDependencies;$reloadPlugins;$stewardDependencies"
+          s";$crossStewardDependencies"
         ),
-        Cmd("rm", "-rf", s"$sbtBuildDir/project/project/scala-steward-StewardPlugin_1_3_11.scala"),
         Cmd("rm", "-rf", s"$sbtBuildDir/project/scala-steward-StewardPlugin_1_3_11.scala"),
         Cmd("rm", "-rf", s"$sbtBuildDir")
       )

@@ -55,6 +55,8 @@ class BuildToolDispatcherTest extends FunSuite {
         ),
         Log("Get dependencies in . from sbt"),
         Cmd("read", s"$repoDir/project/build.properties"),
+        Cmd("test", "-d", s"$repoDir/project"),
+        Cmd("test", "-d", s"$repoDir/project/project"),
         Cmd("read", "classpath:StewardPlugin_1_0_0.scala"),
         Cmd("write", s"$repoDir/project/scala-steward-StewardPlugin_1_0_0.scala"),
         Cmd("write", s"$repoDir/project/project/scala-steward-StewardPlugin_1_0_0.scala"),
