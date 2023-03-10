@@ -55,6 +55,7 @@ final class ScalaCliAlg[F[_]](implicit
         "scala-cli",
         "--power",
         "export",
+        "--power",
         "--sbt",
         "--output",
         exportDir,

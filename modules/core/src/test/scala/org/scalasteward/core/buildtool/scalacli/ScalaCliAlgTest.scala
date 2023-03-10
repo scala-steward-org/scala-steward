@@ -43,6 +43,7 @@ class ScalaCliAlgTest extends CatsEffectSuite {
           "scala-cli",
           "--power",
           "export",
+          "--power",
           "--sbt",
           "--output",
           "tmp-sbt-build-for-scala-steward",
