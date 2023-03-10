@@ -43,6 +43,8 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
              |
              |📜 [GitHub Release Notes](https://github.com/typelevel/cats-effect/releases/tag/v3.4.0) - [Version Diff](https://github.com/typelevel/cats-effect/compare/v3.3.0...v3.4.0)
              |
+             |## _Usage_
+             |✅ **Please merge!**
              |
              |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
              |

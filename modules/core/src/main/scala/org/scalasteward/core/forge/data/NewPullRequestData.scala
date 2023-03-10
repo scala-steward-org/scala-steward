@@ -96,6 +96,8 @@ object NewPullRequestData {
 
     s"""|$updatesText
         |
+        |## _Usage_
+        |✅ **Please merge!**
         |
         |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
         |
