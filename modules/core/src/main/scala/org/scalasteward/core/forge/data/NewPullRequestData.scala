@@ -69,7 +69,7 @@ object NewPullRequestData {
         s"""|## _About this PR_
             |📦 Updates $artifacts ${fromTo(u)}${showMajorUpgradeWarning(u)}
             |${renderUpdateInfoUrls(updateInfoUrls)
-             .map(urls => s"📜 $urls")
+             .map(urls => s"\n📜 $urls")
              .getOrElse("")}""".stripMargin.trim
       },
       grouped = g => {
