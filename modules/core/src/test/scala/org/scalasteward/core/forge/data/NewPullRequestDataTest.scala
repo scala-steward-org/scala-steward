@@ -737,4 +737,113 @@ class NewPullRequestDataTest extends FunSuite {
 
     assertEquals(obtained, expected)
   }
+
+  test("should show major upgrade warning sign") {
+    val update = ("org.typelevel".g % "cats-effect".a % "2.5.5" %> "3.4.2").single
+
+    val body = bodyFor(
+      update = update,
+      edits = List.empty,
+      artifactIdToUrl = Map.empty,
+      artifactIdToUpdateInfoUrls = Map.empty,
+      filesWithOldVersion = List.empty,
+      configParsingError = None,
+      labels = List(
+        "library-update",
+        "early-semver-major",
+        "semver-spec-minor",
+        "commit-count:1"
+      )
+    )
+    val expected =
+      s"""|## About this PR
+          |📦 Updates org.typelevel:cats-effect from 2.5.5 to 3.4.2 ⚠
+          |
+          |## Usage
+          |✅ **Please merge!**
+          |
+          |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
+          |
+          |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.
+          |
+          |Configure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
+          |
+          |_Have a fantastic day writing Scala!_
+          |
+          |<details>
+          |<summary>⚙ Adjust future updates</summary>
+          |
+          |Add this to your `.scala-steward.conf` file to ignore future updates of this dependency:
+          |```
+          |updates.ignore = [ { groupId = "org.typelevel", artifactId = "cats-effect" } ]
+          |```
+          |Or, add this to slow down future updates of this dependency:
+          |```
+          |dependencyOverrides = [{
+          |  pullRequests = { frequency = "30 days" },
+          |  dependency = { groupId = "org.typelevel", artifactId = "cats-effect" }
+          |}]
+          |```
+          |</details>
+          |
+          |<sup>
+          |labels: library-update, early-semver-major, semver-spec-minor, commit-count:1
+          |</sup>""".stripMargin
+
+    assertEquals(body, expected)
+  }
+  test("should not show major upgrade warning sign on a minor update") {
+    val update = ("com.lihaoyi".g % "os-lib".a % "0.7.8" %> "0.9.1").single
+
+    val body = bodyFor(
+      update = update,
+      edits = List.empty,
+      artifactIdToUrl = Map.empty,
+      artifactIdToUpdateInfoUrls = Map.empty,
+      filesWithOldVersion = List.empty,
+      configParsingError = None,
+      labels = List(
+        "library-update",
+        "early-semver-major",
+        "semver-spec-minor",
+        "commit-count:1"
+      )
+    )
+    val expected =
+      s"""|## About this PR
+          |📦 Updates com.lihaoyi:os-lib from 0.7.8 to 0.9.1
+          |
+          |## Usage
+          |✅ **Please merge!**
+          |
+          |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
+          |
+          |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.
+          |
+          |Configure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
+          |
+          |_Have a fantastic day writing Scala!_
+          |
+          |<details>
+          |<summary>⚙ Adjust future updates</summary>
+          |
+          |Add this to your `.scala-steward.conf` file to ignore future updates of this dependency:
+          |```
+          |updates.ignore = [ { groupId = "com.lihaoyi", artifactId = "os-lib" } ]
+          |```
+          |Or, add this to slow down future updates of this dependency:
+          |```
+          |dependencyOverrides = [{
+          |  pullRequests = { frequency = "30 days" },
+          |  dependency = { groupId = "com.lihaoyi", artifactId = "os-lib" }
+          |}]
+          |```
+          |</details>
+          |
+          |<sup>
+          |labels: library-update, early-semver-major, semver-spec-minor, commit-count:1
+          |</sup>""".stripMargin
+
+    assertEquals(body, expected)
+  }
 }
