@@ -29,7 +29,7 @@ class NewPullRequestDataTest extends FunSuite {
     )
     val expected =
       s"""|## About this PR
-          |📦 Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3
+          |📦 Updates ch.qos.logback:logback-classic from `1.2.0` to `1.2.3`
           |
           |## Usage
           |✅ **Please merge!**
@@ -89,7 +89,7 @@ class NewPullRequestDataTest extends FunSuite {
     )
     val expected =
       s"""|## About this PR
-          |📦 Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3
+          |📦 Updates ch.qos.logback:logback-classic from `1.2.0` to `1.2.3`
           |
           |## Usage
           |✅ **Please merge!**
@@ -149,8 +149,8 @@ class NewPullRequestDataTest extends FunSuite {
       s"""|## About this PR
           |Updates:
           |
-          |* 📦 ch.qos.logback:logback-classic from 1.2.0 to 1.2.3
-          |* 📦 com.example:foo from 1.0.0 to 2.0.0 ⚠
+          |* 📦 ch.qos.logback:logback-classic from `1.2.0` to `1.2.3`
+          |* 📦 com.example:foo from `1.0.0` to `2.0.0` ⚠
           |
           |## Usage
           |✅ **Please merge!**
@@ -209,7 +209,7 @@ class NewPullRequestDataTest extends FunSuite {
     )
     val expected =
       s"""|## About this PR
-          |📦 Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3
+          |📦 Updates ch.qos.logback:logback-classic from `1.2.0` to `1.2.3`
           |
           |## Usage
           |✅ **Please merge!**
@@ -254,7 +254,7 @@ class NewPullRequestDataTest extends FunSuite {
 
   test("fromTo") {
     val obtained = fromTo(("com.example".g % "foo".a % "1.2.0" %> "1.2.3").single)
-    assertEquals(obtained, "from 1.2.0 to 1.2.3")
+    assertEquals(obtained, "from `1.2.0` to `1.2.3`")
   }
 
   test("links to release notes/changelog") {
@@ -598,7 +598,7 @@ class NewPullRequestDataTest extends FunSuite {
 
     val expectedBody =
       s"""|## About this PR
-          |📦 Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3
+          |📦 Updates ch.qos.logback:logback-classic from `1.2.0` to `1.2.3`
           |
           |## Usage
           |✅ **Please merge!**
@@ -677,8 +677,8 @@ class NewPullRequestDataTest extends FunSuite {
       s"""|## About this PR
           |Updates:
           |
-          |* 📦 ch.qos.logback:logback-classic from 1.2.0 to 1.2.3
-          |* 📦 com.example:foo from 1.0.0 to 2.0.0 ⚠
+          |* 📦 ch.qos.logback:logback-classic from `1.2.0` to `1.2.3`
+          |* 📦 com.example:foo from `1.0.0` to `2.0.0` ⚠
           |
           |## Usage
           |✅ **Please merge!**
@@ -759,7 +759,7 @@ class NewPullRequestDataTest extends FunSuite {
     )
     val expected =
       s"""|## About this PR
-          |📦 Updates org.typelevel:cats-effect from 2.5.5 to 3.4.2 ⚠
+          |📦 Updates org.typelevel:cats-effect from `2.5.5` to `3.4.2` ⚠
           |
           |## Usage
           |✅ **Please merge!**
@@ -813,7 +813,7 @@ class NewPullRequestDataTest extends FunSuite {
     )
     val expected =
       s"""|## About this PR
-          |📦 Updates com.lihaoyi:os-lib from 0.7.8 to 0.9.1
+          |📦 Updates com.lihaoyi:os-lib from `0.7.8` to `0.9.1`
           |
           |## Usage
           |✅ **Please merge!**

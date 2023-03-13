@@ -128,7 +128,7 @@ object NewPullRequestData {
     }
 
   def fromTo(update: Update.Single): String =
-    s"from ${update.currentVersion} to ${update.nextVersion}"
+    s"from `${update.currentVersion}` to `${update.nextVersion}`"
 
   def showMajorUpgradeWarning(u: Update.Single): String = {
     val semVerVersions =
