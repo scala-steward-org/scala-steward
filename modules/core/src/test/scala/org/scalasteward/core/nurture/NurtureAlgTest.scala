@@ -38,12 +38,12 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     val expected = NewPullRequestData(
       title = "Update cats-effect to 3.4.0",
       body =
-        raw"""## _About this PR_
+        raw"""## About this PR
              |📦 Updates [org.typelevel:cats-effect](https://github.com/typelevel/cats-effect) from 3.3.0 to 3.4.0
              |
              |📜 [GitHub Release Notes](https://github.com/typelevel/cats-effect/releases/tag/v3.4.0) - [Version Diff](https://github.com/typelevel/cats-effect/compare/v3.3.0...v3.4.0)
              |
-             |## _Usage_
+             |## Usage
              |✅ **Please merge!**
              |
              |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.

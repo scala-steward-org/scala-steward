@@ -66,7 +66,7 @@ object NewPullRequestData {
 
         val updateInfoUrls = artifactIdToUpdateInfoUrls.getOrElse(u.mainArtifactId, Nil)
 
-        s"""|## _About this PR_
+        s"""|## About this PR
             |📦 Updates $artifacts ${fromTo(u)}${showMajorUpgradeWarning(u)}
             |${renderUpdateInfoUrls(updateInfoUrls)
              .map(urls => s"\n📜 $urls")
@@ -83,7 +83,7 @@ object NewPullRequestData {
           }
           .mkString_("\n", "\n", "\n")
 
-        s"""|## _About this PR_
+        s"""|## About this PR
             |Updates:
             |$artifacts""".stripMargin.trim
       }
@@ -96,7 +96,7 @@ object NewPullRequestData {
 
     s"""|$updatesText
         |
-        |## _Usage_
+        |## Usage
         |✅ **Please merge!**
         |
         |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.

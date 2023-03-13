@@ -28,10 +28,10 @@ class NewPullRequestDataTest extends FunSuite {
       labels = List("library-update")
     )
     val expected =
-      s"""|## _About this PR_
+      s"""|## About this PR
           |📦 Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3
           |
-          |## _Usage_
+          |## Usage
           |✅ **Please merge!**
           |
           |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
@@ -88,10 +88,10 @@ class NewPullRequestDataTest extends FunSuite {
       labels = List("library-update")
     )
     val expected =
-      s"""|## _About this PR_
+      s"""|## About this PR
           |📦 Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3
           |
-          |## _Usage_
+          |## Usage
           |✅ **Please merge!**
           |
           |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
@@ -146,13 +146,13 @@ class NewPullRequestDataTest extends FunSuite {
       labels = List("library-update")
     )
     val expected =
-      s"""|## _About this PR_
+      s"""|## About this PR
           |Updates:
           |
           |* 📦 ch.qos.logback:logback-classic from 1.2.0 to 1.2.3
           |* 📦 com.example:foo from 1.0.0 to 2.0.0 ⚠
           |
-          |## _Usage_
+          |## Usage
           |✅ **Please merge!**
           |
           |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
@@ -208,10 +208,10 @@ class NewPullRequestDataTest extends FunSuite {
       labels = List("library-update")
     )
     val expected =
-      s"""|## _About this PR_
+      s"""|## About this PR
           |📦 Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3
           |
-          |## _Usage_
+          |## Usage
           |✅ **Please merge!**
           |
           |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
@@ -596,10 +596,10 @@ class NewPullRequestDataTest extends FunSuite {
     )
 
     val expectedBody =
-      s"""|## _About this PR_
+      s"""|## About this PR
           |📦 Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3
           |
-          |## _Usage_
+          |## Usage
           |✅ **Please merge!**
           |
           |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
@@ -672,13 +672,13 @@ class NewPullRequestDataTest extends FunSuite {
     )
 
     val expectedBody =
-      s"""|## _About this PR_
+      s"""|## About this PR
           |Updates:
           |
           |* 📦 ch.qos.logback:logback-classic from 1.2.0 to 1.2.3
           |* 📦 com.example:foo from 1.0.0 to 2.0.0 ⚠
           |
-          |## _Usage_
+          |## Usage
           |✅ **Please merge!**
           |
           |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
