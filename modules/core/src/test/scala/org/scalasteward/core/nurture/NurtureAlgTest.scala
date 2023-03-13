@@ -90,6 +90,8 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   }
 
   test("preparePullRequest should not set labels if ForgeConfig.addLabels = false") {
+    def nextToLast(L: Array[String]) = L(L.size - 2)
+
     val config =
       MockConfig.config.copy(forgeCfg = MockConfig.config.forgeCfg.copy(addLabels = false))
     val nurtureAlg = context(config).nurtureAlg
@@ -114,9 +116,9 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     })
     nurtureAlg.preparePullRequest(updateData, edits).runA(state).map { obtained =>
       assert(obtained.labels.isEmpty)
-      val lastLine = obtained.body.split("\n").last
+      val nextToLastLine = nextToLast(obtained.body.split("\n"))
       assertEquals(
-        lastLine,
+        nextToLastLine,
         "labels: library-update, early-semver-minor, semver-spec-minor, version-scheme:early-semver, commit-count:1"
       )
     }
