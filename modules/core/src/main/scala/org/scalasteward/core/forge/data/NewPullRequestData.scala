@@ -134,7 +134,7 @@ object NewPullRequestData {
     val semVerVersions =
       (SemVer.parse(u.currentVersion.value), SemVer.parse(u.nextVersion.value)).tupled
     val semVerLabel = semVerVersions.flatMap { case (curr, next) =>
-      SemVer.getChangeEarly(curr, next).map(c => c.render)
+      SemVer.getChangeSpec(curr, next).map(c => c.render)
     }
     if (semVerLabel == Some("major"))
       s" ⚠"
