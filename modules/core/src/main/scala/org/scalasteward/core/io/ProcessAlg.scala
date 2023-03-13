@@ -24,7 +24,9 @@ import org.scalasteward.core.io.process.{Args, SlurpOption, SlurpOptions}
 import org.scalasteward.core.util.Nel
 import org.typelevel.log4cats.Logger
 
-final class ProcessAlg[F[_]](config: ProcessCfg)(execImpl: Args => F[List[String]]) {
+final class ProcessAlg[F[_]](config: ProcessCfg)(
+    private[io] val execImpl: Args => F[List[String]]
+) {
   def exec(
       command: Nel[String],
       workingDirectory: File,

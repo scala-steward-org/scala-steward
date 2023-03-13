@@ -122,25 +122,61 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
   private val gitlabApiAlg = ForgeSelection.forgeApiAlg[MockEff](
     config.forgeCfg.copy(tpe = ForgeType.GitLab),
-    GitLabCfg(mergeWhenPipelineSucceeds = false, requiredReviewers = None),
+    GitLabCfg(
+      mergeWhenPipelineSucceeds = false,
+      requiredReviewers = None,
+      removeSourceBranch = false
+    ),
     user
   )
 
   private val gitlabApiAlgNoFork = ForgeSelection.forgeApiAlg[MockEff](
     config.forgeCfg.copy(tpe = ForgeType.GitLab, doNotFork = true),
-    GitLabCfg(mergeWhenPipelineSucceeds = false, requiredReviewers = None),
+    GitLabCfg(
+      mergeWhenPipelineSucceeds = false,
+      requiredReviewers = None,
+      removeSourceBranch = false
+    ),
+    user
+  )
+
+  private val gitlabApiAlgAutoMerge = ForgeSelection.forgeApiAlg[MockEff](
+    config.forgeCfg.copy(tpe = ForgeType.GitLab, doNotFork = true),
+    GitLabCfg(
+      mergeWhenPipelineSucceeds = true,
+      requiredReviewers = None,
+      removeSourceBranch = false
+    ),
+    user
+  )
+
+  private val gitlabApiAlgRemoveSourceBranch = ForgeSelection.forgeApiAlg[MockEff](
+    config.forgeCfg.copy(tpe = ForgeType.GitLab, doNotFork = true),
+    GitLabCfg(
+      mergeWhenPipelineSucceeds = false,
+      requiredReviewers = None,
+      removeSourceBranch = true
+    ),
     user
   )
 
   private val gitlabApiAlgLessReviewersRequired = ForgeSelection.forgeApiAlg[MockEff](
     config.forgeCfg.copy(tpe = ForgeType.GitLab, doNotFork = true),
-    GitLabCfg(mergeWhenPipelineSucceeds = true, requiredReviewers = Some(0)),
+    GitLabCfg(
+      mergeWhenPipelineSucceeds = true,
+      requiredReviewers = Some(0),
+      removeSourceBranch = false
+    ),
     user
   )
 
   private val gitlabApiAlgWithAssigneeAndReviewers = ForgeSelection.forgeApiAlg[MockEff](
     config.forgeCfg.copy(tpe = ForgeType.GitLab, doNotFork = true),
-    GitLabCfg(mergeWhenPipelineSucceeds = true, requiredReviewers = Some(0)),
+    GitLabCfg(
+      mergeWhenPipelineSucceeds = true,
+      requiredReviewers = Some(0),
+      removeSourceBranch = false
+    ),
     user
   )
 
@@ -232,7 +268,7 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   }
 
   test("createPullRequest -- auto merge") {
-    val prOut = gitlabApiAlgNoFork
+    val prOut = gitlabApiAlgAutoMerge
       .createPullRequest(Repo("foo", "bar"), newPRData)
       .runA(state)
 
@@ -345,6 +381,21 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     assertIO(prOut, expected)
   }
 
+  test("createPullRequest -- remove source branch") {
+    val prOut = gitlabApiAlgRemoveSourceBranch
+      .createPullRequest(Repo("foo", "bar"), newPRData)
+      .runA(state)
+
+    val expected = PullRequestOut(
+      uri"https://gitlab.com/foo/bar/merge_requests/150",
+      PullRequestState.Open,
+      PullRequestNumber(150),
+      "title"
+    )
+
+    assertIO(prOut, expected)
+  }
+
   test("referencePullRequest") {
     val reference = gitlabApiAlg.referencePullRequest(PullRequestNumber(1347))
     assertEquals(reference, "!1347")
@@ -372,13 +423,6 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
         )
       )
     )
-  }
-
-  test("labelPullRequest") {
-    gitlabApiAlg
-      .labelPullRequest(Repo("foo", "bar"), PullRequestNumber(150), List("A", "B"))
-      .runA(state)
-      .assert
   }
 
   private val getMr = json"""

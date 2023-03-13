@@ -266,10 +266,4 @@ class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     assertIO(obtained, expected)
   }
 
-  test("labelPullRequest") {
-    azureReposApiAlg
-      .labelPullRequest(repo, PullRequestNumber(26), List("dependency-updates"))
-      .runA(state)
-      .assert
-  }
 }

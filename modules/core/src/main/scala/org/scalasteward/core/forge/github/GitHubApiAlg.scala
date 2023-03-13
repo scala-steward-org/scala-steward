@@ -53,6 +53,7 @@ final class GitHubApiAlg[F[_]](
 
     for {
       pullRequestOut <- create
+      _ <- F.whenA(data.labels.nonEmpty)(labelPullRequest(repo, pullRequestOut.number, data.labels))
       _ <-
         F.whenA(data.assignees.nonEmpty)(addAssignees(repo, pullRequestOut.number, data.assignees))
       _ <-
@@ -92,7 +93,7 @@ final class GitHubApiAlg[F[_]](
       .postWithBody(url.comments(repo, number), Comment(comment), modify(repo))
 
   /** https://docs.github.com/en/rest/reference/issues#add-labels-to-an-issue */
-  override def labelPullRequest(
+  private def labelPullRequest(
       repo: Repo,
       number: PullRequestNumber,
       labels: List[String]

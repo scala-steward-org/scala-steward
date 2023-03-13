@@ -15,15 +15,18 @@ class SbtAlgTest extends FunSuite {
   private val workspace = workspaceAlg.rootDir.unsafeRunSync()
 
   test("getDependencies") {
-    val repo = Repo("typelevel", "cats")
+    val repo = Repo("sbt-alg", "test-1")
     val buildRoot = BuildRoot(repo, ".")
     val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
-    val files = Map(repoDir / "project" / "build.properties" -> "sbt.version=1.3.6")
-    val initial = MockState.empty.copy(files = files)
+    val initial = MockState.empty
+      .addFiles(repoDir / "project" / "build.properties" -> "sbt.version=1.3.11")
+      .unsafeRunSync()
     val state = sbtAlg.getDependencies(buildRoot).runS(initial).unsafeRunSync()
     val expected = initial.copy(
       trace = Vector(
         Cmd("read", s"$repoDir/project/build.properties"),
+        Cmd("test", "-d", s"$repoDir/project"),
+        Cmd("test", "-d", s"$repoDir/project/project"),
         Cmd("read", "classpath:StewardPlugin_1_3_11.scala"),
         Cmd("write", s"$repoDir/project/scala-steward-StewardPlugin_1_3_11.scala"),
         Cmd("write", s"$repoDir/project/project/scala-steward-StewardPlugin_1_3_11.scala"),

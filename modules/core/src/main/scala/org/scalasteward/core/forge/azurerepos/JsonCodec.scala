@@ -28,6 +28,7 @@ final private[azurerepos] case class PullRequestPayload(
     sourceRefName: String,
     targetRefName: String,
     title: String,
+    labels: Option[List[String]],
     description: String
 )
 
@@ -39,6 +40,7 @@ private[azurerepos] object PullRequestPayload {
       sourceRefName = withPrefix(data.head),
       targetRefName = data.base.name,
       title = data.title,
+      labels = Option.when(data.labels.nonEmpty)(data.labels),
       description = data.body
     )
 }

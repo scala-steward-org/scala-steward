@@ -592,6 +592,7 @@ class NewPullRequestDataTest extends FunSuite {
     val obtained = from(
       data,
       "scala-steward:update/logback-classic-1.2.3",
+      addLabels = true,
       labels = labelsFor(data.update)
     )
 
@@ -668,6 +669,7 @@ class NewPullRequestDataTest extends FunSuite {
     val obtained = from(
       data,
       "scala-steward:update/logback-classic-1.2.3",
+      addLabels = true,
       labels = labelsFor(data.update)
     )
 

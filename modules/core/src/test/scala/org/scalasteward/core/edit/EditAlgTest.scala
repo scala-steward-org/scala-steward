@@ -27,21 +27,26 @@ class EditAlgTest extends FunSuite {
     val update = ("org.typelevel".g % "cats-core".a % "1.2.0" %> "1.3.0").single
     val file1 = repoDir / "build.sbt"
     val file2 = repoDir / "project/Dependencies.scala"
+    val gitignore = repoDir / ".gitignore"
 
     val state = MockState.empty
-      .addFiles(file1 -> """val catsVersion = "1.2.0"""", file2 -> "")
+      .addFiles(file1 -> """val catsVersion = "1.2.0"""", file2 -> "", gitignore -> "")
       .flatMap(editAlg.applyUpdate(data, update).runS)
       .unsafeRunSync()
 
     val expected = MockState.empty.copy(
       trace = Vector(
+        Cmd("read", gitignore.pathAsString),
         Cmd("test", "-f", repoDir.pathAsString),
+        Cmd("test", "-f", gitignore.pathAsString),
         Cmd("test", "-f", file1.pathAsString),
         Cmd("read", file1.pathAsString),
         Cmd("test", "-f", (repoDir / "project").pathAsString),
         Cmd("test", "-f", file2.pathAsString),
         Cmd("read", file2.pathAsString),
+        Cmd("read", gitignore.pathAsString),
         Cmd("test", "-f", repoDir.pathAsString),
+        Cmd("test", "-f", gitignore.pathAsString),
         Cmd("test", "-f", file1.pathAsString),
         Cmd("read", file1.pathAsString),
         Cmd("test", "-f", (repoDir / "project").pathAsString),
@@ -51,7 +56,7 @@ class EditAlgTest extends FunSuite {
         Cmd("write", file1.pathAsString),
         Cmd(gitStatus(repoDir))
       ),
-      files = Map(file1 -> """val catsVersion = "1.3.0"""", file2 -> "")
+      files = Map(file1 -> """val catsVersion = "1.3.0"""", file2 -> "", gitignore -> "")
     )
 
     assertEquals(state, expected)
@@ -65,30 +70,47 @@ class EditAlgTest extends FunSuite {
     val data = RepoData(repo, cache, RepoConfig.empty)
     val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
     val update = ("org.scalameta".g % "scalafmt-core".a % "2.0.0" %> "2.1.0").single
+    val gitignore = repoDir / ".gitignore"
     val scalafmtConf = repoDir / scalafmtConfName
     val scalafmtConfContent = """maxColumn = 100
                                 |version = 2.0.0
                                 |align.openParenCallSite = false
                                 |""".stripMargin
     val buildSbt = repoDir / "build.sbt"
+    val target = repoDir / "target"
+    // this file should not be read because it's under target which is git ignored
+    val targetScalaFile = target / "SomeFile.scala"
 
     val state = MockState.empty
-      .addFiles(scalafmtConf -> scalafmtConfContent, buildSbt -> "")
+      .addFiles(
+        scalafmtConf -> scalafmtConfContent,
+        buildSbt -> "",
+        gitignore -> "target/",
+        targetScalaFile -> ""
+      )
       .flatMap(editAlg.applyUpdate(data, update).runS)
       .unsafeRunSync()
 
     val expected = MockState.empty.copy(
       trace = Vector(
+        Cmd("read", gitignore.pathAsString),
         Cmd("test", "-f", repoDir.pathAsString),
+        Cmd("test", "-f", gitignore.pathAsString),
         Cmd("test", "-f", scalafmtConf.pathAsString),
         Cmd("read", scalafmtConf.pathAsString),
         Cmd("test", "-f", buildSbt.pathAsString),
         Cmd("read", buildSbt.pathAsString),
+        Cmd("test", "-f", target.pathAsString),
+        Cmd("test", "-f", targetScalaFile.pathAsString),
+        Cmd("read", gitignore.pathAsString),
         Cmd("test", "-f", repoDir.pathAsString),
+        Cmd("test", "-f", gitignore.pathAsString),
         Cmd("test", "-f", scalafmtConf.pathAsString),
         Cmd("read", scalafmtConf.pathAsString),
         Cmd("test", "-f", buildSbt.pathAsString),
         Cmd("read", buildSbt.pathAsString),
+        Cmd("test", "-f", target.pathAsString),
+        Cmd("test", "-f", targetScalaFile.pathAsString),
         Cmd("read", scalafmtConf.pathAsString),
         Cmd("write", scalafmtConf.pathAsString),
         Cmd(
@@ -109,7 +131,9 @@ class EditAlgTest extends FunSuite {
             |version = 2.1.0
             |align.openParenCallSite = false
             |""".stripMargin,
-        buildSbt -> ""
+        buildSbt -> "",
+        gitignore -> "target/",
+        targetScalaFile -> ""
       )
     )
 
