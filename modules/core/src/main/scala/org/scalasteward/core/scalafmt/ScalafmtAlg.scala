@@ -54,9 +54,9 @@ final class ScalafmtAlg[F[_]](config: Config)(implicit
 
   def reformatChanged(buildRoot: BuildRoot): F[Unit] =
     for {
-      repoDir <- workspaceAlg.buildRootDir(buildRoot)
+      buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
       cmd = Nel.of(scalafmtBinary, opts.nonInteractive) ++ opts.modeChanged
-      _ <- processAlg.exec(cmd, repoDir, slurpOptions = SlurpOptions.ignoreBufferOverflow)
+      _ <- processAlg.exec(cmd, buildRootDir, slurpOptions = SlurpOptions.ignoreBufferOverflow)
     } yield ()
 
   def version: F[String] = {
