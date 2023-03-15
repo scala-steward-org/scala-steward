@@ -22,6 +22,8 @@ import io.circe.Codec
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 import io.circe.syntax._
+import org.scalasteward.core.buildtool.BuildRoot
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.edit.hooks.PostUpdateHook
 
 final case class RepoConfig(
@@ -36,10 +38,11 @@ final case class RepoConfig(
     reviewers: List[String] = List.empty,
     dependencyOverrides: List[GroupRepoConfig] = List.empty
 ) {
-  def buildRootsOrDefault: List[BuildRootConfig] =
+  def buildRootsOrDefault(repo: Repo): List[BuildRoot] =
     buildRoots
       .map(_.filterNot(_.relativePath.contains("..")))
       .getOrElse(List(BuildRootConfig.repoRoot))
+      .map(cfg => BuildRoot(repo, cfg.relativePath))
 
   def postUpdateHooksOrDefault: List[PostUpdateHook] =
     postUpdateHooks.getOrElse(Nil).map(_.toHook)
