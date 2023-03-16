@@ -218,7 +218,10 @@ final class GitLabApiAlg[F[_]: Parallel](
         .flatMap {
           case mr if mr.mergeStatus =!= GitLabMergeStatus.Checking => F.pure(mr)
           case _ if retries > 0 =>
-            temporal.sleep(initialDelay) >> waitForMergeRequestStatus(
+            logger.info(
+              s"Merge request is still in '${GitLabMergeStatus.Checking}' state. We will check merge request status in $initialDelay again. " +
+                s"Remaining retries count is $retries"
+            ) >> temporal.sleep(initialDelay) >> waitForMergeRequestStatus(
               number,
               retries - 1,
               initialDelay * backoffMultiplier
@@ -226,7 +229,7 @@ final class GitLabApiAlg[F[_]: Parallel](
           case other =>
             logger
               .warn(
-                s"Exhausted all retires while waiting for merge request status. Last known status is ${other.mergeStatus}"
+                s"Exhausted all retires while waiting for merge request status. Last known status is '${other.mergeStatus}'"
               )
               .as(other)
         }
