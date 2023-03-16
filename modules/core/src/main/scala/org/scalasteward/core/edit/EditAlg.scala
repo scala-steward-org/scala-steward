@@ -118,8 +118,10 @@ final class EditAlg[F[_]](implicit
     val reformat =
       data.config.scalafmt.runAfterUpgradingOrDefault && data.cache.dependsOn(List(scalafmtModule))
     F.whenA(reformat) {
-      logger.attemptWarn.log_("Reformatting changed files failed") {
-        scalafmtAlg.reformatChanged(data.repo)
+      data.config.buildRootsOrDefault(data.repo).traverse_ { buildRoot =>
+        logger.attemptWarn.log_(s"Reformatting changed files failed in ${buildRoot.relativePath}") {
+          scalafmtAlg.reformatChanged(buildRoot)
+        }
       }
     }
   }

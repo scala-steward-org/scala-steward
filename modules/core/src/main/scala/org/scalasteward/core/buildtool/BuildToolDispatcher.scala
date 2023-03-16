@@ -53,9 +53,6 @@ final class BuildToolDispatcher[F[_]](implicit
       buildTools.traverse_(_.runMigration(buildRoot, migration))
     })
 
-  private def getBuildRoots(repo: Repo, repoConfig: RepoConfig): List[BuildRoot] =
-    repoConfig.buildRootsOrDefault.map(buildRootCfg => BuildRoot(repo, buildRootCfg.relativePath))
-
   private val allBuildTools = List(mavenAlg, millAlg, sbtAlg, scalaCliAlg)
   private val fallbackBuildTool = List(sbtAlg)
 
@@ -69,5 +66,5 @@ final class BuildToolDispatcher[F[_]](implicit
       repo: Repo,
       repoConfig: RepoConfig
   ): F[List[(BuildRoot, List[BuildToolAlg[F]])]] =
-    getBuildRoots(repo, repoConfig).traverse(findBuildTools)
+    repoConfig.buildRootsOrDefault(repo).traverse(findBuildTools)
 }

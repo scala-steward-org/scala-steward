@@ -243,8 +243,9 @@ class RepoConfigAlgTest extends FunSuite {
   }
 
   test("build root with '..'") {
+    val repo = Repo("typelevel", "cats")
     val content = """buildRoots = [ "../../../etc" ]"""
-    val config = RepoConfigAlg.parseRepoConfig(content).map(_.buildRootsOrDefault)
+    val config = RepoConfigAlg.parseRepoConfig(content).map(_.buildRootsOrDefault(repo))
     assertEquals(config, Right(Nil))
   }
 
