@@ -16,6 +16,7 @@
 
 package org.scalasteward.core.forge.gitlab
 
+import cats.effect.Temporal
 import cats.{MonadThrow, Parallel}
 import cats.syntax.all._
 import io.circe._
@@ -30,6 +31,8 @@ import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.util.uri.uriDecoder
 import org.scalasteward.core.util.{intellijThisImportIsUsed, HttpJsonClient, UnexpectedResponse}
 import org.typelevel.log4cats.Logger
+
+import scala.concurrent.duration.{Duration, DurationInt}
 
 final private[gitlab] case class ForkPayload(id: String, namespace: String)
 final private[gitlab] case class MergeRequestPayload(
@@ -162,7 +165,8 @@ final class GitLabApiAlg[F[_]: Parallel](
 )(implicit
     client: HttpJsonClient[F],
     logger: Logger[F],
-    F: MonadThrow[F]
+    F: MonadThrow[F],
+    temporal: Temporal[F]
 ) extends ForgeApiAlg[F] {
   import GitLabJsonCodec._
 
@@ -205,14 +209,26 @@ final class GitLabApiAlg[F[_]: Parallel](
 
     def waitForMergeRequestStatus(
         number: PullRequestNumber,
-        retries: Int = 10
+        retries: Int = 10,
+        initialDelay: Duration = 100.milliseconds,
+        backoffMultiplier: Double = 2.0
     ): F[MergeRequestOut] =
       client
         .get[MergeRequestOut](url.existingMergeRequest(repo, number), modify(repo))
         .flatMap {
           case mr if mr.mergeStatus =!= GitLabMergeStatus.Checking => F.pure(mr)
-          case _ if retries > 0 => waitForMergeRequestStatus(number, retries - 1)
-          case other            => F.pure(other)
+          case _ if retries > 0 =>
+            temporal.sleep(initialDelay) >> waitForMergeRequestStatus(
+              number,
+              retries - 1,
+              initialDelay * backoffMultiplier
+            )
+          case other =>
+            logger
+              .warn(
+                s"Exhausted all retires while waiting for merge request status. Last known status is ${other.mergeStatus}"
+              )
+              .as(other)
         }
 
     val updatedMergeRequest =

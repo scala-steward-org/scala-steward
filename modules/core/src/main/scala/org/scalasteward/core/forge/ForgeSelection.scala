@@ -16,8 +16,9 @@
 
 package org.scalasteward.core.forge
 
+import cats.effect.Temporal
 import cats.syntax.all._
-import cats.{Applicative, MonadThrow, Parallel}
+import cats.{Applicative, Parallel}
 import org.http4s.headers.Authorization
 import org.http4s.{BasicCredentials, Header, Request}
 import org.scalasteward.core.application.Config
@@ -42,7 +43,7 @@ object ForgeSelection {
   )(implicit
       httpJsonClient: HttpJsonClient[F],
       logger: Logger[F],
-      F: MonadThrow[F]
+      temporal: Temporal[F]
   ): ForgeApiAlg[F] = {
     val auth = (_: Any) => authenticate(forgeCfg.tpe, user)
     forgeSpecificCfg match {
