@@ -156,9 +156,11 @@ object Config {
   final case class GitHubCfg(
   ) extends ForgeSpecificCfg
 
+  final case class MergeRequestApprovalsConfig(approvalRuleName: String, requiredApproves: Int)
+
   final case class GitLabCfg(
       mergeWhenPipelineSucceeds: Boolean,
-      requiredReviewers: Option[Int],
+      requiredReviewers: Option[Either[Int, Nel[MergeRequestApprovalsConfig]]],
       removeSourceBranch: Boolean
   ) extends ForgeSpecificCfg
 

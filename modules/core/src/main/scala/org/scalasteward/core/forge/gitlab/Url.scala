@@ -17,6 +17,7 @@
 package org.scalasteward.core.forge.gitlab
 
 import org.http4s.Uri
+import org.scalasteward.core.application.Config.MergeRequestApprovalsConfig
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.data.PullRequestNumber
 import org.scalasteward.core.git.Branch
@@ -46,6 +47,15 @@ class Url(apiHost: Uri) {
   def requiredApprovals(repo: Repo, number: PullRequestNumber, approvalsRequired: Int): Uri =
     (existingMergeRequest(repo, number) / "approvals")
       .withQueryParam("approvals_required", approvalsRequired)
+
+  def listMergeRequestLevelApprovalRules(repo: Repo, number: PullRequestNumber): Uri =
+    existingMergeRequest(repo, number) / "approval_rules"
+
+  def updateMergeRequestLevelApprovalRule(
+      repo: Repo,
+      number: PullRequestNumber,
+      approvalRuleId: Int
+  ): Uri = existingMergeRequest(repo, number) / "approval_rules" / approvalRuleId
 
   def listMergeRequests(repo: Repo, source: String, target: String): Uri =
     mergeRequest(repo)

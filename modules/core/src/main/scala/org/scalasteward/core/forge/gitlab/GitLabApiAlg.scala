@@ -23,13 +23,18 @@ import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.syntax._
 import org.http4s.{Request, Status, Uri}
-import org.scalasteward.core.application.Config.{ForgeCfg, GitLabCfg}
+import org.scalasteward.core.application.Config.{ForgeCfg, GitLabCfg, MergeRequestApprovalsConfig}
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.ForgeApiAlg
 import org.scalasteward.core.forge.data._
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.util.uri.uriDecoder
-import org.scalasteward.core.util.{intellijThisImportIsUsed, HttpJsonClient, UnexpectedResponse}
+import org.scalasteward.core.util.{
+  intellijThisImportIsUsed,
+  HttpJsonClient,
+  Nel,
+  UnexpectedResponse
+}
 import org.typelevel.log4cats.Logger
 
 import scala.concurrent.duration.{Duration, DurationInt}
@@ -47,6 +52,8 @@ final private[gitlab] case class MergeRequestPayload(
     source_branch: String,
     target_branch: Branch
 )
+
+final private[gitlab] case class UpdateMergeRequestLevelApprovalRulePayload(approvals_required: Int)
 
 private[gitlab] object MergeRequestPayload {
   def apply(
@@ -87,6 +94,11 @@ final private[gitlab] case class MergeRequestApprovalsOut(
     approvalsRequired: Int
 )
 
+final private[gitlab] case class MergeRequestLevelApprovalRuleOut(
+    id: Int,
+    name: String
+)
+
 final private[gitlab] case class CommitId(id: Sha1) {
   val commitOut: CommitOut = CommitOut(id)
 }
@@ -102,6 +114,8 @@ private[gitlab] object GitLabJsonCodec {
   intellijThisImportIsUsed(uriDecoder)
 
   implicit val forkPayloadEncoder: Encoder[ForkPayload] = deriveEncoder
+  implicit val updateMergeRequestLevelApprovalRulePayloadEncoder
+      : Encoder[UpdateMergeRequestLevelApprovalRulePayload] = deriveEncoder
   implicit val userOutDecoder: Decoder[UserOut] = Decoder.instance {
     _.downField("username").as[String].map(UserOut(_))
   }
@@ -138,6 +152,14 @@ private[gitlab] object GitLabJsonCodec {
       for {
         requiredReviewers <- c.downField("approvals_required").as[Int]
       } yield MergeRequestApprovalsOut(requiredReviewers)
+    }
+
+  implicit val mergeRequestLevelApprovalRuleOutDecoder: Decoder[MergeRequestLevelApprovalRuleOut] =
+    Decoder.instance { c =>
+      for {
+        id <- c.downField("id").as[Int]
+        name <- c.downField("string").as[String]
+      } yield MergeRequestLevelApprovalRuleOut(id, name)
     }
 
   implicit val projectIdDecoder: Decoder[ProjectId] = deriveDecoder
@@ -240,7 +262,13 @@ final class GitLabApiAlg[F[_]: Parallel](
         for {
           mr <- mergeRequest
           mrWithStatus <- waitForMergeRequestStatus(mr.iid)
-          _ <- maybeSetReviewers(repo, mrWithStatus)
+          _ <- gitLabCfg.requiredReviewers match {
+            case Some(Right(approvalRules)) =>
+              setApprovalRules(repo, mrWithStatus, approvalRules)
+            case Some(Left(requiredReviewers)) =>
+              setReviewers(repo, mrWithStatus, requiredReviewers)
+            case None => F.unit
+          }
           mergedUponSuccess <- mergePipelineUponSuccess(repo, mrWithStatus)
         } yield mergedUponSuccess
       }
@@ -270,29 +298,74 @@ final class GitLabApiAlg[F[_]: Parallel](
       case mr =>
         logger.info(s"Unable to automatically merge ${mr.webUrl}").map(_ => mr)
     }
+  import cats.implicits._
 
-  private def maybeSetReviewers(repo: Repo, mrOut: MergeRequestOut): F[MergeRequestOut] =
-    gitLabCfg.requiredReviewers match {
-      case Some(requiredReviewers) =>
-        for {
-          _ <- logger.info(
-            s"Setting number of required reviewers on ${mrOut.webUrl} to $requiredReviewers"
+  private def setReviewers(
+      repo: Repo,
+      mrOut: MergeRequestOut,
+      requiredReviewers: Int
+  ): F[MergeRequestOut] =
+    for {
+      _ <- logger.info(
+        s"Setting number of required reviewers on ${mrOut.webUrl} to $requiredReviewers"
+      )
+      _ <-
+        client
+          .put[MergeRequestApprovalsOut](
+            url.requiredApprovals(repo, mrOut.iid, requiredReviewers),
+            modify(repo)
           )
-          _ <-
-            client
-              .put[MergeRequestApprovalsOut](
-                url.requiredApprovals(repo, mrOut.iid, requiredReviewers),
-                modify(repo)
-              )
-              .map(_ => ())
-              .recoverWith { case UnexpectedResponse(_, _, _, status, body) =>
-                logger
-                  .warn(s"Unexpected response setting required reviewers: $status:  $body")
-                  .as(())
-              }
-        } yield mrOut
-      case None => F.pure(mrOut)
-    }
+          .map(_ => ())
+          .recoverWith { case UnexpectedResponse(_, _, _, status, body) =>
+            logger
+              .warn(s"Unexpected response setting required reviewers: $status:  $body")
+              .as(())
+          }
+    } yield mrOut
+
+  private def setApprovalRules(
+      repo: Repo,
+      mrOut: MergeRequestOut,
+      approvalsConfig: Nel[MergeRequestApprovalsConfig]
+  ): F[MergeRequestOut] =
+    for {
+      _ <- logger.info(
+        s"Adjusting merge request approvals rules on ${mrOut.webUrl} with following config: $approvalsConfig"
+      )
+      activeApprovalRules <-
+        client
+          .get[List[MergeRequestLevelApprovalRuleOut]](
+            url.listMergeRequestLevelApprovalRules(repo, mrOut.iid),
+            modify(repo)
+          )
+          .recoverWith { case UnexpectedResponse(_, _, _, status, body) =>
+            // ToDo better log
+            logger
+              .warn(s"Unexpected response setting required reviewers: $status:  $body")
+              .as(List.empty)
+          }
+      approvalRuleNamesFromConfig = approvalsConfig.map(_.approvalRuleName)
+      approvalRulesToUpdate = activeApprovalRules.intersect(approvalRuleNamesFromConfig.toList)
+      _ <-
+        approvalRulesToUpdate.map { mergeRequestApprovalConfig =>
+          client
+            .putWithBody[Unit, UpdateMergeRequestLevelApprovalRulePayload](
+              url.updateMergeRequestLevelApprovalRule(
+                repo,
+                mrOut.iid,
+                mergeRequestApprovalConfig.id
+              ),
+              UpdateMergeRequestLevelApprovalRulePayload(mergeRequestApprovalConfig.id),
+              modify(repo)
+            )
+            .recoverWith { case UnexpectedResponse(_, _, _, status, body) =>
+              // ToDo better log
+              logger
+                .warn(s"Unexpected response setting required reviewers: $status:  $body")
+                .as(List.empty)
+            }
+        }.sequence
+    } yield mrOut
 
   private def getUsernameToUserIdsMapping(repo: Repo, usernames: Set[String]): F[Map[String, Int]] =
     usernames.toList
