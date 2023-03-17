@@ -105,6 +105,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [Frederick Roth](https://github.com/froth)
 * [Georgy Davityan](https://github.com/implmnt)
 * [Grzegorz Kocur](https://github.com/gkocur)
+* [Harm Weites](https://github.com/harmw)
 * [Ikenna Darlington Ogbajie](https://github.com/idarlington)
 * [Ingar Abrahamsen](https://github.com/ingarabr)
 * [Jakub Kozłowski](https://github.com/kubukoz)
