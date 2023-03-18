@@ -17,7 +17,6 @@
 package org.scalasteward.core.forge.gitlab
 
 import org.http4s.Uri
-import org.scalasteward.core.application.Config.MergeRequestApprovalsConfig
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.data.PullRequestNumber
 import org.scalasteward.core.git.Branch

@@ -1,5 +1,6 @@
 package org.scalasteward.core.forge.gitlab
 
+import cats.syntax.either._
 import cats.syntax.semigroupk._
 import io.circe.Json
 import io.circe.literal._
@@ -12,7 +13,7 @@ import org.http4s.headers.Allow
 import org.http4s.implicits._
 import org.scalasteward.core.TestInstances.{dummyRepoCache, ioLogger}
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.application.Config.GitLabCfg
+import org.scalasteward.core.application.Config.{GitLabCfg, MergeRequestApprovalRulesCfg}
 import org.scalasteward.core.data.{Repo, RepoData, UpdateData}
 import org.scalasteward.core.forge.data._
 import org.scalasteward.core.forge.gitlab.GitLabJsonCodec._
@@ -22,6 +23,7 @@ import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context.httpJsonClient
 import org.scalasteward.core.mock.{MockEff, MockState}
 import org.scalasteward.core.repoconfig.RepoConfig
+import org.scalasteward.core.util.Nel
 import org.typelevel.ci.CIStringSyntax
 
 class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
@@ -103,6 +105,16 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
         )
       )
 
+    case GET -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "approval_rules" =>
+      Ok(getMrApprovalRules)
+
+    case PUT -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "approval_rules" / "101" =>
+      Ok(
+        updateMrApprovalRule.deepMerge(
+          json""" { "id": 101, "approvals_required": 0 } """
+        )
+      )
+
     case POST -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "notes" =>
       Ok(json"""  {
             "body": "Superseded by #1234"
@@ -124,7 +136,7 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     config.forgeCfg.copy(tpe = ForgeType.GitLab),
     GitLabCfg(
       mergeWhenPipelineSucceeds = false,
-      requiredReviewers = None,
+      requiredApprovals = None,
       removeSourceBranch = false
     ),
     user
@@ -134,7 +146,7 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     config.forgeCfg.copy(tpe = ForgeType.GitLab, doNotFork = true),
     GitLabCfg(
       mergeWhenPipelineSucceeds = false,
-      requiredReviewers = None,
+      requiredApprovals = None,
       removeSourceBranch = false
     ),
     user
@@ -144,7 +156,7 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     config.forgeCfg.copy(tpe = ForgeType.GitLab, doNotFork = true),
     GitLabCfg(
       mergeWhenPipelineSucceeds = true,
-      requiredReviewers = None,
+      requiredApprovals = None,
       removeSourceBranch = false
     ),
     user
@@ -154,7 +166,7 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     config.forgeCfg.copy(tpe = ForgeType.GitLab, doNotFork = true),
     GitLabCfg(
       mergeWhenPipelineSucceeds = false,
-      requiredReviewers = None,
+      requiredApprovals = None,
       removeSourceBranch = true
     ),
     user
@@ -164,7 +176,7 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     config.forgeCfg.copy(tpe = ForgeType.GitLab, doNotFork = true),
     GitLabCfg(
       mergeWhenPipelineSucceeds = true,
-      requiredReviewers = Some(0),
+      requiredApprovals = Some(0.asLeft),
       removeSourceBranch = false
     ),
     user
@@ -174,7 +186,18 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     config.forgeCfg.copy(tpe = ForgeType.GitLab, doNotFork = true),
     GitLabCfg(
       mergeWhenPipelineSucceeds = true,
-      requiredReviewers = Some(0),
+      requiredApprovals = Some(0.asLeft),
+      removeSourceBranch = false
+    ),
+    user
+  )
+
+  private val gitlabApiAlgWithApprovalRules = ForgeSelection.forgeApiAlg[MockEff](
+    config.forgeCfg.copy(tpe = ForgeType.GitLab, doNotFork = true),
+    GitLabCfg(
+      mergeWhenPipelineSucceeds = true,
+      requiredApprovals =
+        Some(Nel.one(MergeRequestApprovalRulesCfg("All eligible users", 0)).asRight),
       removeSourceBranch = false
     ),
     user
@@ -352,6 +375,51 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
         newPRData.copy(assignees = List("user1"), reviewers = List("user2"))
       )
       .runA(state)
+
+    val expected = PullRequestOut(
+      uri"https://gitlab.com/foo/bar/merge_requests/150",
+      PullRequestState.Open,
+      PullRequestNumber(150),
+      "title"
+    )
+
+    assertIO(prOut, expected)
+  }
+
+  test("createPullRequest -- with approval rules") {
+    val prOut = gitlabApiAlgWithApprovalRules
+      .createPullRequest(
+        Repo("foo", "bar"),
+        newPRData
+      )
+      .runA(state)
+
+    val expected = PullRequestOut(
+      uri"https://gitlab.com/foo/bar/merge_requests/150",
+      PullRequestState.Open,
+      PullRequestNumber(150),
+      "title"
+    )
+
+    assertIO(prOut, expected)
+  }
+
+  test("createPullRequest -- no fail upon update approval rule error") {
+    val localApp = HttpApp[MockEff] { req =>
+      (req: @unchecked) match {
+        case PUT -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "approval_rules" / "101" =>
+          BadRequest(s"Cannot update merge requests approval rules")
+      }
+    }
+
+    val localState = MockState.empty.copy(clientResponses = auth <+> localApp <+> httpApp)
+
+    val prOut = gitlabApiAlgWithApprovalRules
+      .createPullRequest(
+        Repo("foo", "bar"),
+        newPRData
+      )
+      .runA(localState)
 
     val expected = PullRequestOut(
       uri"https://gitlab.com/foo/bar/merge_requests/150",
@@ -605,4 +673,68 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
         "multiple_approval_rules_available": true
      }
      """
+
+  private val updateMrApprovalRule =
+    json"""
+      {
+        "id": 1021,
+        "name": "scala-steward",
+        "rule_type": "regular",
+        "eligible_approvers": [
+          {
+             "id": 1,
+             "username": "scala-steward",
+             "name": "Scala Steward",
+             "state": "active",
+             "avatar_url": "https://secure.gravatar.com/avatar/5286ca631fff30960bfc2b337144556f?s=800&d=identicon",
+             "web_url": "https://gitlab.com/scala-steward"
+          }
+        ],
+        "approvals_required": 0,
+        "users": [],
+        "groups": [],
+        "contains_hidden_groups": false,
+        "section": null,
+        "source_rule": {
+            "approvals_required": 3
+        },
+        "overridden": true
+      }
+      """
+
+  private val getMrApprovalRules =
+    json"""
+      [
+        {
+            "id": 101,
+            "name": "All eligible users",
+            "rule_type": "any_approver",
+            "eligible_approvers": [],
+            "approvals_required": 2,
+            "users": [],
+            "groups": [],
+            "contains_hidden_groups": false,
+            "section": null,
+            "source_rule": {
+                "approvals_required": 0
+            },
+            "overridden": true
+        },
+        {
+            "id": 102,
+            "name": "scala-steward-test",
+            "rule_type": "regular",
+            "eligible_approvers": [],
+            "approvals_required": 2,
+            "users": [],
+            "groups": [],
+            "contains_hidden_groups": false,
+            "section": null,
+            "source_rule": {
+                "approvals_required": 3
+            },
+            "overridden": true
+        }
+    ]
+    """
 }

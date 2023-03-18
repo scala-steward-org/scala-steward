@@ -23,7 +23,6 @@ import com.monovore.decline.Opts.{flag, option, options}
 import com.monovore.decline._
 import org.http4s.Uri
 import org.http4s.syntax.literals._
-import org.scalasteward.core.application.Cli.gitlabMergeRequestApprovalsConfig
 import org.scalasteward.core.application.Config._
 import org.scalasteward.core.data.Resolver
 import org.scalasteward.core.forge.ForgeType
@@ -47,7 +46,7 @@ object Cli {
     val processTimeout = "process-timeout"
   }
 
-  implicit val mergeRequestApprovalsConfigArgument: Argument[MergeRequestApprovalsConfig] =
+  implicit val mergeRequestApprovalsConfigArgument: Argument[MergeRequestApprovalRulesCfg] =
     Argument.from("approvals_rule_name=required_approvals") { s =>
       s.split(":").toList match {
         case approvalRuleName :: requiredApprovalsAsString :: Nil =>
@@ -55,7 +54,7 @@ object Cli {
             case Failure(_) =>
               s"[$requiredApprovalsAsString] is not a valid Integer".invalidNel
             case Success(requiredApprovals) =>
-              new MergeRequestApprovalsConfig(approvalRuleName.trim, requiredApprovals).validNel
+              MergeRequestApprovalRulesCfg(approvalRuleName.trim, requiredApprovals).validNel
           }
         case _ =>
           s"The value is expected in the following format: APPROVALS_RULE_NAME:REQUIRED_APPROVALS.".invalidNel
@@ -294,7 +293,7 @@ object Cli {
 
   private val gitlabRequiredReviewers: Opts[Option[Int]] =
     option[Int](
-      "gitlabRequiredReviewers",
+      "gitlab-required-reviewers",
       "When set, the number of required reviewers for a merge request will be set to this number (non-negative integer).  Is only used in the context of gitlab-merge-when-pipeline-succeeds being enabled, and requires that the configured access token have the appropriate privileges.  Also requires a Gitlab Premium subscription."
     ).validate("Required reviewers must be non-negative")(_ >= 0).orNone
 
@@ -304,24 +303,25 @@ object Cli {
       "Flag indicating if a merge request should remove the source branch when merging."
     ).orFalse
 
-  private val gitlabMergeRequestApprovalsConfig: Opts[Option[Nel[MergeRequestApprovalsConfig]]] =
-    options[MergeRequestApprovalsConfig](
+  private val gitlabMergeRequestApprovalsConfig: Opts[Option[Nel[MergeRequestApprovalRulesCfg]]] =
+    options[MergeRequestApprovalRulesCfg](
       "merge-request-level-approval-rule",
       s"Additional repo config file $multiple"
     )
-      // ToDo better message
-      .validate("")(_.forall(_.requiredApproves >= 0) == true)
+      .validate("Merge request level required approvals must be non-negative")(
+        _.forall(_.requiredApprovals >= 0) == true
+      )
       .orNone
 
   private val gitlabReviewersAndApprovalsConfig
-      : Opts[Option[Either[Int, Nel[MergeRequestApprovalsConfig]]]] =
+      : Opts[Option[Either[Int, Nel[MergeRequestApprovalRulesCfg]]]] =
     ((gitlabRequiredReviewers, gitlabMergeRequestApprovalsConfig).tupled.mapValidated {
       case (None, None) => None.validNel
       case (None, Some(gitlabMergeRequestApprovalsConfig)) =>
         Some(gitlabMergeRequestApprovalsConfig.asRight[Int]).validNel
       case (Some(requiredReviewers), None) => Some(Left(requiredReviewers)).validNel
       case (Some(_), Some(_)) =>
-        s"You can't use both --gitlabRequiredReviewers and --merge-request-level-approval-rule at the same time".invalidNel
+        s"You can't use both --gitlab-required-reviewers and --merge-request-level-approval-rule at the same time".invalidNel
     })
 
   private val gitLabCfg: Opts[GitLabCfg] =

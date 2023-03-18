@@ -23,7 +23,7 @@ import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.syntax._
 import org.http4s.{Request, Status, Uri}
-import org.scalasteward.core.application.Config.{ForgeCfg, GitLabCfg, MergeRequestApprovalsConfig}
+import org.scalasteward.core.application.Config.{ForgeCfg, GitLabCfg, MergeRequestApprovalRulesCfg}
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.ForgeApiAlg
 import org.scalasteward.core.forge.data._
@@ -158,7 +158,7 @@ private[gitlab] object GitLabJsonCodec {
     Decoder.instance { c =>
       for {
         id <- c.downField("id").as[Int]
-        name <- c.downField("string").as[String]
+        name <- c.downField("name").as[String]
       } yield MergeRequestLevelApprovalRuleOut(id, name)
     }
 
@@ -262,7 +262,7 @@ final class GitLabApiAlg[F[_]: Parallel](
         for {
           mr <- mergeRequest
           mrWithStatus <- waitForMergeRequestStatus(mr.iid)
-          _ <- gitLabCfg.requiredReviewers match {
+          _ <- gitLabCfg.requiredApprovals match {
             case Some(Right(approvalRules)) =>
               setApprovalRules(repo, mrWithStatus, approvalRules)
             case Some(Left(requiredReviewers)) =>
@@ -326,11 +326,11 @@ final class GitLabApiAlg[F[_]: Parallel](
   private def setApprovalRules(
       repo: Repo,
       mrOut: MergeRequestOut,
-      approvalsConfig: Nel[MergeRequestApprovalsConfig]
+      approvalRulesCfg: Nel[MergeRequestApprovalRulesCfg]
   ): F[MergeRequestOut] =
     for {
       _ <- logger.info(
-        s"Adjusting merge request approvals rules on ${mrOut.webUrl} with following config: $approvalsConfig"
+        s"Adjusting merge request approvals rules on ${mrOut.webUrl} with following config: $approvalRulesCfg"
       )
       activeApprovalRules <-
         client
@@ -339,33 +339,46 @@ final class GitLabApiAlg[F[_]: Parallel](
             modify(repo)
           )
           .recoverWith { case UnexpectedResponse(_, _, _, status, body) =>
-            // ToDo better log
             logger
-              .warn(s"Unexpected response setting required reviewers: $status:  $body")
+              .warn(s"Unexpected response getting merge request approval rules: $status:  $body")
               .as(List.empty)
           }
-      approvalRuleNamesFromConfig = approvalsConfig.map(_.approvalRuleName)
-      approvalRulesToUpdate = activeApprovalRules.intersect(approvalRuleNamesFromConfig.toList)
+      approvalRulesToUpdate = calculateRulesToUpdate(activeApprovalRules, approvalRulesCfg)
       _ <-
-        approvalRulesToUpdate.map { mergeRequestApprovalConfig =>
-          client
-            .putWithBody[Unit, UpdateMergeRequestLevelApprovalRulePayload](
-              url.updateMergeRequestLevelApprovalRule(
-                repo,
-                mrOut.iid,
-                mergeRequestApprovalConfig.id
-              ),
-              UpdateMergeRequestLevelApprovalRulePayload(mergeRequestApprovalConfig.id),
-              modify(repo)
-            )
-            .recoverWith { case UnexpectedResponse(_, _, _, status, body) =>
-              // ToDo better log
-              logger
-                .warn(s"Unexpected response setting required reviewers: $status:  $body")
-                .as(List.empty)
-            }
+        approvalRulesToUpdate.map { case (approvalRuleCfg, activeRule) =>
+          logger.info(
+            s"Setting required approval count to ${approvalRuleCfg.requiredApprovals} for merge request approval rule '${approvalRuleCfg.approvalRuleName}' on ${mrOut.webUrl}"
+          ) >>
+            client
+              .putWithBody[
+                MergeRequestLevelApprovalRuleOut,
+                UpdateMergeRequestLevelApprovalRulePayload
+              ](
+                url.updateMergeRequestLevelApprovalRule(
+                  repo,
+                  mrOut.iid,
+                  activeRule.id
+                ),
+                UpdateMergeRequestLevelApprovalRulePayload(approvalRuleCfg.requiredApprovals),
+                modify(repo)
+              )
+              .as(())
+              .recoverWith { case UnexpectedResponse(_, _, _, status, body) =>
+                logger
+                  .warn(s"Unexpected response setting required approvals: $status:  $body")
+              }
         }.sequence
     } yield mrOut
+
+  private[gitlab] def calculateRulesToUpdate(
+      activeApprovalRules: List[MergeRequestLevelApprovalRuleOut],
+      approvalRulesCfg: Nel[MergeRequestApprovalRulesCfg]
+  ): List[(MergeRequestApprovalRulesCfg, MergeRequestLevelApprovalRuleOut)] =
+    activeApprovalRules.flatMap { activeRule =>
+      approvalRulesCfg
+        .find(_.approvalRuleName == activeRule.name)
+        .map(_ -> activeRule)
+    }
 
   private def getUsernameToUserIdsMapping(repo: Repo, usernames: Set[String]): F[Map[String, Int]] =
     usernames.toList
