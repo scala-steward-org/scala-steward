@@ -157,22 +157,26 @@ class CliTest extends FunSuite {
   test("parseArgs: non-default GitLab arguments and required reviewers") {
     val params = minimumRequiredParams ++ List(
       List("--gitlab-merge-when-pipeline-succeeds"),
+      List("--gitlab-remove-source-branch"),
       List("--gitlab-required-reviewers", "5")
     )
     val Success(StewardUsage.Regular(obtained)) = Cli.parseArgs(params.flatten)
 
     assert(obtained.gitLabCfg.mergeWhenPipelineSucceeds)
+    assert(obtained.gitLabCfg.removeSourceBranch)
     assertEquals(obtained.gitLabCfg.requiredApprovals, Some(5.asLeft))
   }
 
   test("parseArgs: non-default GitLab arguments and merge request level approval rule") {
     val params = minimumRequiredParams ++ List(
       List("--gitlab-merge-when-pipeline-succeeds"),
+      List("--gitlab-remove-source-branch"),
       List("--merge-request-level-approval-rule", "All eligible users:0")
     )
     val Success(StewardUsage.Regular(obtained)) = Cli.parseArgs(params.flatten)
 
     assert(obtained.gitLabCfg.mergeWhenPipelineSucceeds)
+    assert(obtained.gitLabCfg.removeSourceBranch)
     assertEquals(
       obtained.gitLabCfg.requiredApprovals,
       Some(Nel.one(MergeRequestApprovalRulesCfg("All eligible users", 0)).asRight)
