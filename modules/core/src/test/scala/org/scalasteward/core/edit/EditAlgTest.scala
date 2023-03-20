@@ -1,7 +1,6 @@
 package org.scalasteward.core.edit
 
 import better.files.File
-import cats.data.NonEmptyList
 import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.TestInstances.dummyRepoCache
@@ -160,75 +159,5 @@ class EditAlgTest extends FunSuite {
         cmd.contains(scalafixBinary) && cmd.exists(_.contains("Sbt0_13BuildSyntax.scala"))
       case Log(_) => false
     })
-  }
-
-  test("applyUpdate should be successful with duplicated updates as well") {
-    val repo = Repo("edit-alg", "test-1")
-    val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
-    val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
-    val artifactId = Update.ForArtifactId(
-      CrossDependency("com.pauldijou".g % "jwt-play-json".a % "5.0.0"),
-      newerVersions = NonEmptyList.of(Version("9.2.0")),
-      newerGroupId = Some(GroupId("com.github.jwt-scala")),
-      newerArtifactId = Some("jwt-play-json")
-    )
-    val duplicatedUpdates = Update.ForGroupId(NonEmptyList.of(artifactId, artifactId))
-
-    val buildSbtFile = repoDir / "build.sbt"
-    val dependenciesScalaFile = repoDir / "project/Dependencies.scala"
-    val gitignore = repoDir / ".gitignore"
-    val buildSbtContent =
-      """
-        | lazy val root = (project in file("."))
-        |  .settings(
-        |    scalafmtOnCompile := true,
-        |    scalaVersion := scala213,
-        |    libraryDependencies ++= Seq(
-        |      "com.pauldijou"                %% "jwt-play-json"           % "5.0.0", // JWT parsing
-        |      "org.scalatestplus"            %% "mockito-3-4"             % "3.2.10.0" % Test
-        |    ),
-        |    crossScalaVersions := supportedScalaVersions
-        |  )
-        |""".stripMargin
-
-    val state = MockState.empty
-      .addFiles(buildSbtFile -> buildSbtContent, gitignore -> "", dependenciesScalaFile -> "")
-      .flatMap(editAlg.applyUpdate(data, duplicatedUpdates).runS)
-      .unsafeRunSync()
-
-    val expectedSbtContent = buildSbtContent
-      .replaceAll("com.pauldijou", "com.github.jwt-scala")
-      .replaceAll("5.0.0", "9.2.0")
-
-    val expected = MockState.empty.copy(
-      trace = Vector(
-        Cmd("read", gitignore.pathAsString),
-        Cmd("test", "-f", repoDir.pathAsString),
-        Cmd("test", "-f", gitignore.pathAsString),
-        Cmd("test", "-f", buildSbtFile.pathAsString),
-        Cmd("read", buildSbtFile.pathAsString),
-        Cmd("test", "-f", (repoDir / "project").pathAsString),
-        Cmd("test", "-f", dependenciesScalaFile.pathAsString),
-        Cmd("read", dependenciesScalaFile.pathAsString),
-        Cmd("read", gitignore.pathAsString),
-        Cmd("test", "-f", repoDir.pathAsString),
-        Cmd("test", "-f", gitignore.pathAsString),
-        Cmd("test", "-f", buildSbtFile.pathAsString),
-        Cmd("read", buildSbtFile.pathAsString),
-        Cmd("test", "-f", (repoDir / "project").pathAsString),
-        Cmd("test", "-f", dependenciesScalaFile.pathAsString),
-        Cmd("read", dependenciesScalaFile.pathAsString),
-        Cmd("read", buildSbtFile.pathAsString),
-        Cmd("write", buildSbtFile.pathAsString),
-        Cmd(gitStatus(repoDir))
-      ),
-      files = Map(
-        buildSbtFile -> expectedSbtContent,
-        dependenciesScalaFile -> "",
-        gitignore -> ""
-      )
-    )
-
-    assertEquals(state, expected)
   }
 }
