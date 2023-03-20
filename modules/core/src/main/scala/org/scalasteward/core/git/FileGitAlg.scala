@@ -64,8 +64,9 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
     fileAlg.isDirectory(repo / ".git")
 
   override def commitAll(repo: File, message: CommitMsg): F[Commit] = {
-    val messages = message.toNel.foldMap(m => List("-m", m))
-    git_("commit" :: "--all" :: sign :: messages: _*)(repo) >>
+    val messages = message.paragraphs.foldMap(m => List("-m", m))
+    val trailers = message.trailers.foldMap { case (k, v) => List("--trailer", s"$k=$v") }
+    git_("commit" :: "--all" :: sign :: messages ++ trailers: _*)(repo) >>
       latestSha1(repo, Branch.head).map(Commit.apply)
   }
 

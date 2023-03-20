@@ -108,7 +108,10 @@ class FileGitAlgTest extends CatsEffectSuite {
       c1 <- ioGitAlg.containsChanges(repo)
       _ <- ioFileAlg.writeFile(repo / "test.txt", "hello world")
       c2 <- ioGitAlg.containsChanges(repo)
-      _ <- ioGitAlg.commitAllIfDirty(repo, CommitMsg("Modify test.txt"))
+      _ <- ioGitAlg.commitAllIfDirty(
+        repo,
+        CommitMsg("Modify test.txt", coAuthoredBy = List(Author("name", "email")))
+      )
       c3 <- ioGitAlg.containsChanges(repo)
       _ = assertEquals((c1, c2, c3), (false, true, false))
     } yield ()
