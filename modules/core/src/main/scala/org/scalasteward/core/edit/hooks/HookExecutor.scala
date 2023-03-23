@@ -74,7 +74,7 @@ final class HookExecutor[F[_]](implicit
       }
       commitMessage = hook
         .commitMessage(update)
-        .withParagraph(s"Executed command: ${hook.command.mkString_(" ")}")
+        .appendParagraph(s"Executed command: ${hook.command.mkString_(" ")}")
       maybeHookCommit <- gitAlg.commitAllIfDirty(repo, commitMessage)
       maybeBlameIgnoreCommit <-
         maybeHookCommit.flatTraverse(addToGitBlameIgnoreRevs(repo, repoDir, hook, _, commitMessage))
