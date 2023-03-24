@@ -117,6 +117,7 @@ lazy val core = myCrossProject("core")
       Dependencies.circeRefined,
       Dependencies.commonsIo,
       Dependencies.coursierCore,
+      Dependencies.coursierSbtMaven,
       Dependencies.cron4sCore,
       Dependencies.decline,
       Dependencies.fs2Core,
