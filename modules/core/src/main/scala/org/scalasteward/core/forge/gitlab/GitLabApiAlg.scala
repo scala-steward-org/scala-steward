@@ -17,7 +17,7 @@
 package org.scalasteward.core.forge.gitlab
 
 import cats.effect.Temporal
-import cats.{MonadThrow, Parallel}
+import cats.Parallel
 import cats.syntax.all._
 import io.circe._
 import io.circe.generic.semiauto._
@@ -165,8 +165,7 @@ final class GitLabApiAlg[F[_]: Parallel](
 )(implicit
     client: HttpJsonClient[F],
     logger: Logger[F],
-    F: MonadThrow[F],
-    temporal: Temporal[F]
+    F: Temporal[F]
 ) extends ForgeApiAlg[F] {
   import GitLabJsonCodec._
 
@@ -217,21 +216,21 @@ final class GitLabApiAlg[F[_]: Parallel](
         .get[MergeRequestOut](url.existingMergeRequest(repo, number), modify(repo))
         .flatMap {
           case mr if mr.mergeStatus =!= GitLabMergeStatus.Checking => F.pure(mr)
-          case _ if retries > 0 =>
+          case mr if retries > 0 =>
             logger.info(
-              s"Merge request is still in '${GitLabMergeStatus.Checking}' state. We will check merge request status in $initialDelay again. " +
+              s"Merge request is still in '${mr.mergeStatus}' state. We will check merge request status in $initialDelay again. " +
                 s"Remaining retries count is $retries"
-            ) >> temporal.sleep(initialDelay) >> waitForMergeRequestStatus(
+            ) >> F.sleep(initialDelay) >> waitForMergeRequestStatus(
               number,
               retries - 1,
               initialDelay * backoffMultiplier
             )
-          case other =>
+          case mr =>
             logger
               .warn(
-                s"Exhausted all retires while waiting for merge request status. Last known status is '${other.mergeStatus}'"
+                s"Exhausted all retries while waiting for merge request status. Last known status is '${mr.mergeStatus}'"
               )
-              .as(other)
+              .as(mr)
         }
 
     val updatedMergeRequest =

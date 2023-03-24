@@ -43,7 +43,7 @@ object ForgeSelection {
   )(implicit
       httpJsonClient: HttpJsonClient[F],
       logger: Logger[F],
-      temporal: Temporal[F]
+      F: Temporal[F]
   ): ForgeApiAlg[F] = {
     val auth = (_: Any) => authenticate(forgeCfg.tpe, user)
     forgeSpecificCfg match {
