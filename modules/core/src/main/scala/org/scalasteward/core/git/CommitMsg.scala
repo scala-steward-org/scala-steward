@@ -26,16 +26,14 @@ final case class CommitMsg(
     body: List[String] = Nil,
     coAuthoredBy: List[Author] = Nil
 ) {
-  def toNel: Nel[String] =
-    Nel(title, body ++ trailers)
+  def paragraphs: Nel[String] =
+    Nel(title, body)
 
-  def withParagraph(paragraph: String): CommitMsg =
+  def appendParagraph(paragraph: String): CommitMsg =
     copy(body = body :+ paragraph)
 
-  private def trailers: Option[String] = {
-    val lines = coAuthoredBy.map(author => s"Co-authored-by: ${author.show}")
-    Nel.fromList(lines).map(_.mkString_("\n"))
-  }
+  def trailers: List[(String, String)] =
+    coAuthoredBy.map(author => ("Co-authored-by", author.show))
 }
 
 object CommitMsg {

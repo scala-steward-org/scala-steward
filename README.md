@@ -146,6 +146,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [Roman Langolf](https://github.com/rolang)
 * [Ropiteaux Théo](https://github.com/ropiteaux)
 * [Scott Rice](https://github.com/scottrice10)
+* [Seeta Ramayya](https://github.com/Seetaramayya)
 * [solar](https://github.com/solar)
 * [Stanislav Chetvertkov](https://github.com/stanislav-chetvertkov)
 * [sullis](https://github.com/sullis)

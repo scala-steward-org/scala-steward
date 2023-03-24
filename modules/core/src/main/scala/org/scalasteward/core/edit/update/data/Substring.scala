@@ -44,7 +44,7 @@ object Substring {
     def applyAll(replacements: List[Replacement])(source: String): String = {
       var start = 0
       val sb = new java.lang.StringBuilder(source.length)
-      replacements.sortBy(_.position.start).foreach { r =>
+      replacements.distinctBy(_.position.start).sortBy(_.position.start).foreach { r =>
         val before = source.substring(start, r.position.start)
         start = r.position.start + r.position.value.length
         sb.append(before).append(r.replacement)
