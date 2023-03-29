@@ -16,7 +16,8 @@
 
 package org.scalasteward.core.forge.gitlab
 
-import cats.{MonadThrow, Parallel}
+import cats.effect.Temporal
+import cats.Parallel
 import cats.syntax.all._
 import io.circe._
 import io.circe.generic.semiauto._
@@ -30,6 +31,8 @@ import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.util.uri.uriDecoder
 import org.scalasteward.core.util.{intellijThisImportIsUsed, HttpJsonClient, UnexpectedResponse}
 import org.typelevel.log4cats.Logger
+
+import scala.concurrent.duration.{Duration, DurationInt}
 
 final private[gitlab] case class ForkPayload(id: String, namespace: String)
 final private[gitlab] case class MergeRequestPayload(
@@ -162,7 +165,7 @@ final class GitLabApiAlg[F[_]: Parallel](
 )(implicit
     client: HttpJsonClient[F],
     logger: Logger[F],
-    F: MonadThrow[F]
+    F: Temporal[F]
 ) extends ForgeApiAlg[F] {
   import GitLabJsonCodec._
 
@@ -205,14 +208,29 @@ final class GitLabApiAlg[F[_]: Parallel](
 
     def waitForMergeRequestStatus(
         number: PullRequestNumber,
-        retries: Int = 10
+        retries: Int = 10,
+        initialDelay: Duration = 100.milliseconds,
+        backoffMultiplier: Double = 2.0
     ): F[MergeRequestOut] =
       client
         .get[MergeRequestOut](url.existingMergeRequest(repo, number), modify(repo))
         .flatMap {
           case mr if mr.mergeStatus =!= GitLabMergeStatus.Checking => F.pure(mr)
-          case _ if retries > 0 => waitForMergeRequestStatus(number, retries - 1)
-          case other            => F.pure(other)
+          case mr if retries > 0 =>
+            logger.info(
+              s"Merge request is still in '${mr.mergeStatus}' state. We will check merge request status in $initialDelay again. " +
+                s"Remaining retries count is $retries"
+            ) >> F.sleep(initialDelay) >> waitForMergeRequestStatus(
+              number,
+              retries - 1,
+              initialDelay * backoffMultiplier
+            )
+          case mr =>
+            logger
+              .warn(
+                s"Exhausted all retries while waiting for merge request status. Last known status is '${mr.mergeStatus}'"
+              )
+              .as(mr)
         }
 
     val updatedMergeRequest =
