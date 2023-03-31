@@ -404,11 +404,38 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     assertIO(prOut, expected)
   }
 
+  test("createPullRequest -- no fail upon list approval rules error") {
+    val localApp = HttpApp[MockEff] { req =>
+      (req: @unchecked) match {
+        case GET -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "approval_rules" =>
+          BadRequest(s"Cannot get merge request approval rules")
+      }
+    }
+
+    val localState = MockState.empty.copy(clientResponses = auth <+> localApp <+> httpApp)
+
+    val prOut = gitlabApiAlgWithApprovalRules
+      .createPullRequest(
+        Repo("foo", "bar"),
+        newPRData
+      )
+      .runA(localState)
+
+    val expected = PullRequestOut(
+      uri"https://gitlab.com/foo/bar/merge_requests/150",
+      PullRequestState.Open,
+      PullRequestNumber(150),
+      "title"
+    )
+
+    assertIO(prOut, expected)
+  }
+
   test("createPullRequest -- no fail upon update approval rule error") {
     val localApp = HttpApp[MockEff] { req =>
       (req: @unchecked) match {
         case PUT -> Root / "projects" / "foo/bar" / "merge_requests" / "150" / "approval_rules" / "101" =>
-          BadRequest(s"Cannot update merge requests approval rules")
+          BadRequest(s"Cannot update merge request approval rule")
       }
     }
 

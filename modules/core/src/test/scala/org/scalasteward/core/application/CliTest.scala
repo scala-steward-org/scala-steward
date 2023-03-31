@@ -1,6 +1,7 @@
 package org.scalasteward.core.application
 
 import better.files.File
+import cats.data.Validated
 import cats.data.Validated.Valid
 import munit.FunSuite
 import org.http4s.syntax.literals._
@@ -171,7 +172,7 @@ class CliTest extends FunSuite {
     val params = minimumRequiredParams ++ List(
       List("--gitlab-merge-when-pipeline-succeeds"),
       List("--gitlab-remove-source-branch"),
-      List("--merge-request-level-approval-rule", "All eligible users:0")
+      List("--merge-request-level-approval-rule", "All eligible users=0")
     )
     val Success(StewardUsage.Regular(obtained)) = Cli.parseArgs(params.flatten)
 
@@ -185,8 +186,8 @@ class CliTest extends FunSuite {
 
   test("parseArgs: multiple Gitlab merge request level approval rule") {
     val params = minimumRequiredParams ++ List(
-      List("--merge-request-level-approval-rule", "All eligible users:1"),
-      List("--merge-request-level-approval-rule", "Only Main:2")
+      List("--merge-request-level-approval-rule", "All eligible users=1"),
+      List("--merge-request-level-approval-rule", "Only Main=2")
     )
     val Success(StewardUsage.Regular(obtained)) = Cli.parseArgs(params.flatten)
 
@@ -205,7 +206,7 @@ class CliTest extends FunSuite {
 
   test("parseArgs: only allow one way to define Gitlab required approvals arguments") {
     val params = minimumRequiredParams ++ List(
-      List("--merge-request-level-approval-rule", "All eligible users:0"),
+      List("--merge-request-level-approval-rule", "All eligible users=0"),
       List("--gitlab-required-reviewers", "5")
     )
     val Error(errorMsg) = Cli.parseArgs(params.flatten)
@@ -229,7 +230,7 @@ class CliTest extends FunSuite {
 
   test("parseArgs: invalid GitLab merge request level approval rule") {
     val params = minimumRequiredParams ++ List(
-      List("--merge-request-level-approval-rule", "All eligible users:-3")
+      List("--merge-request-level-approval-rule", "All eligible users=-3")
     )
     val Error(errorMsg) = Cli.parseArgs(params.flatten)
 
@@ -303,5 +304,22 @@ class CliTest extends FunSuite {
       )).flatten
     )
     assert(error.startsWith("Missing value for option: --azure-repos-organization"))
+  }
+
+  test("mergeRequestApprovalsConfigArgument: without equals sign") {
+    assertEquals(
+      Cli.mergeRequestApprovalsCfgArgument.read("only-main"),
+      Validated.invalidNel(
+        s"The value is expected in the following format: APPROVALS_RULE_NAME=REQUIRED_APPROVALS"
+      )
+    )
+  }
+
+  test("mergeRequestApprovalsConfigArgument: non-integer required approvals") {
+    val nonIntegerRequiredApprovals = "two"
+    assertEquals(
+      Cli.mergeRequestApprovalsCfgArgument.read(s"only-main=$nonIntegerRequiredApprovals"),
+      Validated.invalidNel(s"[$nonIntegerRequiredApprovals] is not a valid Integer")
+    )
   }
 }

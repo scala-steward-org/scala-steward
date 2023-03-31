@@ -46,18 +46,22 @@ object Cli {
     val processTimeout = "process-timeout"
   }
 
-  implicit val mergeRequestApprovalsConfigArgument: Argument[MergeRequestApprovalRulesCfg] =
+  implicit val mergeRequestApprovalsCfgArgument: Argument[MergeRequestApprovalRulesCfg] =
     Argument.from("approvals_rule_name=required_approvals") { s =>
-      s.split(":").toList match {
+      s.trim.split("=").toList match {
         case approvalRuleName :: requiredApprovalsAsString :: Nil =>
           Try(requiredApprovalsAsString.trim.toInt) match {
             case Failure(_) =>
-              s"[$requiredApprovalsAsString] is not a valid Integer".invalidNel
+              Validated.invalidNel(s"[$requiredApprovalsAsString] is not a valid Integer")
             case Success(requiredApprovals) =>
-              MergeRequestApprovalRulesCfg(approvalRuleName.trim, requiredApprovals).validNel
+              Validated.valid(
+                MergeRequestApprovalRulesCfg(approvalRuleName.trim, requiredApprovals)
+              )
           }
         case _ =>
-          s"The value is expected in the following format: APPROVALS_RULE_NAME:REQUIRED_APPROVALS.".invalidNel
+          Validated.invalidNel(
+            "The value is expected in the following format: APPROVALS_RULE_NAME=REQUIRED_APPROVALS"
+          )
       }
     }
 
