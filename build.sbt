@@ -358,7 +358,7 @@ lazy val dockerSettings = Def.settings(
       Cmd("RUN", s"wget $sbtUrl && tar -xf $sbtTgz && rm -f $sbtTgz"),
       Cmd("RUN", s"curl -fL $millUrl > $millBin && chmod +x $millBin"),
       Cmd("RUN", installScalaCliStep),
-      Cmd("RUN", s"curl -fL $coursierUrl | gzip -d > $coursierBin && chmod +x $coursierBin"),
+      Cmd("RUN", s"curl -fL $coursierUrl | gzip -cd > $coursierBin && chmod +x $coursierBin"),
       Cmd("RUN", s"$coursierBin install --install-dir $binDir scalafix scalafmt"),
       Cmd("RUN", "npm install --global yarn")
     )
