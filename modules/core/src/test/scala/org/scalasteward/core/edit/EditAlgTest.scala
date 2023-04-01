@@ -8,7 +8,6 @@ import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.buildtool.sbt.{sbtArtifactId, sbtGroupId}
 import org.scalasteward.core.data._
 import org.scalasteward.core.edit.scalafix.ScalafixCli.scalafixBinary
-import org.scalasteward.core.mock.MockConfig.gitCmd
 import org.scalasteward.core.mock.MockContext.context._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
@@ -17,8 +16,8 @@ import org.scalasteward.core.scalafmt.ScalafmtAlg.opts
 import org.scalasteward.core.scalafmt.{scalafmtBinary, scalafmtConfName, scalafmtDependency}
 
 class EditAlgTest extends FunSuite {
-  private def gitStatus(repoDir: File): List[String] =
-    gitCmd(repoDir) ++ List("status", "--porcelain", "--untracked-files=no", "--ignore-submodules")
+  private def gitStatus(repoDir: File): Cmd =
+    Cmd.git(repoDir, "status", "--porcelain", "--untracked-files=no", "--ignore-submodules")
 
   test("applyUpdate") {
     val repo = Repo("edit-alg", "test-1")
@@ -54,7 +53,7 @@ class EditAlgTest extends FunSuite {
         Cmd("read", file2.pathAsString),
         Cmd("read", file1.pathAsString),
         Cmd("write", file1.pathAsString),
-        Cmd(gitStatus(repoDir))
+        gitStatus(repoDir)
       ),
       files = Map(file1 -> """val catsVersion = "1.3.0"""", file2 -> "", gitignore -> "")
     )
@@ -113,17 +112,13 @@ class EditAlgTest extends FunSuite {
         Cmd("test", "-f", targetScalaFile.pathAsString),
         Cmd("read", scalafmtConf.pathAsString),
         Cmd("write", scalafmtConf.pathAsString),
-        Cmd(
-          "VAR1=val1" :: "VAR2=val2" :: repoDir.toString :: scalafmtBinary :: opts.nonInteractive :: opts.modeChanged
-        ),
-        Cmd(gitStatus(repoDir)),
+        Cmd.exec(repoDir, scalafmtBinary :: opts.nonInteractive :: opts.modeChanged: _*),
+        gitStatus(repoDir),
         Log(
           "Executing post-update hook for org.scalameta:scalafmt-core with command 'scalafmt --non-interactive'"
         ),
-        Cmd(
-          "VAR1=val1" :: "VAR2=val2" :: repoDir.toString :: scalafmtBinary :: opts.nonInteractive :: Nil
-        ),
-        Cmd(gitStatus(repoDir))
+        Cmd.exec(repoDir, scalafmtBinary, opts.nonInteractive),
+        gitStatus(repoDir)
       ),
       files = Map(
         scalafmtConf ->

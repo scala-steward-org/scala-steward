@@ -6,9 +6,9 @@ import munit.CatsEffectSuite
 import org.scalasteward.core.TestInstances.{dummyRepoCache, dummySha1}
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.{Repo, RepoData}
-import org.scalasteward.core.git.{gitBlameIgnoreRevsName, FileGitAlg}
-import org.scalasteward.core.io.FileAlgTest
-import org.scalasteward.core.mock.MockConfig.gitCmd
+import org.scalasteward.core.git.gitBlameIgnoreRevsName
+import org.scalasteward.core.io.process.ProcessFailedException
+import org.scalasteward.core.io.{process, FileAlgTest}
 import org.scalasteward.core.mock.MockContext.context.{hookExecutor, workspaceAlg}
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
@@ -16,8 +16,6 @@ import org.scalasteward.core.repoconfig.{PostUpdateHookConfig, RepoConfig, Scala
 import org.scalasteward.core.scalafmt.ScalafmtAlg.opts
 import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtBinary, scalafmtGroupId}
 import org.scalasteward.core.util.Nel
-import org.scalasteward.core.io.process.ProcessFailedException
-import org.scalasteward.core.io.process
 import scala.collection.mutable.ListBuffer
 
 class HookExecutorTest extends CatsEffectSuite {
@@ -39,12 +37,12 @@ class HookExecutorTest extends CatsEffectSuite {
       val update = (scalafmtGroupId % scalafmtArtifactId % "2.7.4" %> "2.7.5").single
       val initial = MockState.empty.copy(commandOutputs =
         Map(
-          FileGitAlg.gitCmd.toList ++
-            List("status", "--porcelain", "--untracked-files=no", "--ignore-submodules") ->
+          Cmd
+            .git(repoDir, "status", "--porcelain", "--untracked-files=no", "--ignore-submodules") ->
             Right(List("build.sbt")),
-          FileGitAlg.gitCmd.toList ++ List("rev-parse", "--verify", "HEAD") ->
+          Cmd.git(repoDir, "rev-parse", "--verify", "HEAD") ->
             Right(List(dummySha1.value.value)),
-          FileGitAlg.gitCmd.toList ++ List("check-ignore", gitBlameIgnoreRevs.pathAsString) ->
+          Cmd.git(repoDir, "check-ignore", gitBlameIgnoreRevs.pathAsString) ->
             (if (blameRevIgnored) Right(List.empty) else Left(dummyProcessError))
         )
       )
@@ -56,23 +54,23 @@ class HookExecutorTest extends CatsEffectSuite {
           Vector(Log(s"Impossible to add '$gitBlameIgnoreRevs' because it is git ignored."))
         else
           Vector(
-            Cmd(gitCmd(repoDir), "add", gitBlameIgnoreRevs.pathAsString),
-            Cmd(
-              gitCmd(repoDir),
+            Cmd.git(repoDir, "add", gitBlameIgnoreRevs.pathAsString),
+            Cmd.git(
+              repoDir,
               "status",
               "--porcelain",
               "--untracked-files=no",
               "--ignore-submodules"
             ),
-            Cmd(
-              gitCmd(repoDir),
+            Cmd.git(
+              repoDir,
               "commit",
               "--all",
               "--no-gpg-sign",
               "-m",
               s"Add 'Reformat with scalafmt 2.7.5' to $gitBlameIgnoreRevsName"
             ),
-            Cmd(gitCmd(repoDir), "rev-parse", "--verify", "HEAD")
+            Cmd.git(repoDir, "rev-parse", "--verify", "HEAD")
           )
 
       val traces = Vector(
@@ -82,15 +80,15 @@ class HookExecutorTest extends CatsEffectSuite {
         Cmd(
           "VAR1=val1" :: "VAR2=val2" :: repoDir.toString :: scalafmtBinary :: opts.nonInteractive :: Nil
         ),
-        Cmd(
-          gitCmd(repoDir),
+        Cmd.git(
+          repoDir,
           "status",
           "--porcelain",
           "--untracked-files=no",
           "--ignore-submodules"
         ),
-        Cmd(
-          gitCmd(repoDir),
+        Cmd.git(
+          repoDir,
           "commit",
           "--all",
           "--no-gpg-sign",
@@ -99,10 +97,10 @@ class HookExecutorTest extends CatsEffectSuite {
           "-m",
           s"Executed command: $scalafmtBinary ${opts.nonInteractive}"
         ),
-        Cmd(gitCmd(repoDir), "rev-parse", "--verify", "HEAD"),
+        Cmd.git(repoDir, "rev-parse", "--verify", "HEAD"),
         Cmd("read", gitBlameIgnoreRevs.pathAsString),
         Cmd("write", gitBlameIgnoreRevs.pathAsString),
-        Cmd(gitCmd(repoDir), "check-ignore", gitBlameIgnoreRevs.pathAsString)
+        Cmd.git(repoDir, "check-ignore", gitBlameIgnoreRevs.pathAsString)
       ) ++
         logIfIgnored ++ Vector(
         )
@@ -136,17 +134,8 @@ class HookExecutorTest extends CatsEffectSuite {
         Log(
           "Executing post-update hook for com.codecommit:sbt-github-actions with command 'sbt githubWorkflowGenerate'"
         ),
-        Cmd(
-          repoDir.toString,
-          "firejail",
-          "--quiet",
-          s"--whitelist=$repoDir",
-          "--env=VAR1=val1",
-          "--env=VAR2=val2",
-          "sbt",
-          "githubWorkflowGenerate"
-        ),
-        Cmd(gitCmd(repoDir), "status", "--porcelain", "--untracked-files=no", "--ignore-submodules")
+        Cmd.execSandboxed(repoDir, "sbt", "githubWorkflowGenerate"),
+        Cmd.git(repoDir, "status", "--porcelain", "--untracked-files=no", "--ignore-submodules")
       )
     )
 
@@ -171,17 +160,8 @@ class HookExecutorTest extends CatsEffectSuite {
     val expected = MockState.empty.copy(
       trace = Vector(
         Log("Executing post-update hook for com.random:cool-lib with command 'sbt mySbtCommand'"),
-        Cmd(
-          repoDir.toString,
-          "firejail",
-          "--quiet",
-          s"--whitelist=$repoDir",
-          "--env=VAR1=val1",
-          "--env=VAR2=val2",
-          "sbt",
-          "mySbtCommand"
-        ),
-        Cmd(gitCmd(repoDir), "status", "--porcelain", "--untracked-files=no", "--ignore-submodules")
+        Cmd.execSandboxed(repoDir, "sbt", "mySbtCommand"),
+        Cmd.git(repoDir, "status", "--porcelain", "--untracked-files=no", "--ignore-submodules")
       )
     )
 

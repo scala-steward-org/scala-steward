@@ -4,7 +4,6 @@ import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.data._
-import org.scalasteward.core.mock.MockConfig.gitCmd
 import org.scalasteward.core.mock.MockContext.context._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
@@ -34,8 +33,8 @@ class BuildToolDispatcherTest extends FunSuite {
         Cmd("test", "-f", s"$repoDir/pom.xml"),
         Cmd("test", "-f", s"$repoDir/build.sc"),
         Cmd("test", "-f", s"$repoDir/build.sbt"),
-        Cmd(
-          gitCmd(repoDir),
+        Cmd.git(
+          repoDir,
           "grep",
           "-I",
           "--fixed-strings",
@@ -45,8 +44,8 @@ class BuildToolDispatcherTest extends FunSuite {
         Cmd("test", "-f", s"$repoDir/mvn-build/pom.xml"),
         Cmd("test", "-f", s"$repoDir/mvn-build/build.sc"),
         Cmd("test", "-f", s"$repoDir/mvn-build/build.sbt"),
-        Cmd(
-          gitCmd(repoDir),
+        Cmd.git(
+          repoDir,
           "grep",
           "-I",
           "--fixed-strings",
@@ -60,13 +59,8 @@ class BuildToolDispatcherTest extends FunSuite {
         Cmd("read", "classpath:StewardPlugin_1_0_0.scala"),
         Cmd("write", s"$repoDir/project/scala-steward-StewardPlugin_1_0_0.scala"),
         Cmd("write", s"$repoDir/project/project/scala-steward-StewardPlugin_1_0_0.scala"),
-        Cmd(
-          repoDir.toString,
-          "firejail",
-          "--quiet",
-          s"--whitelist=$repoDir",
-          "--env=VAR1=val1",
-          "--env=VAR2=val2",
+        Cmd.execSandboxed(
+          repoDir,
           "sbt",
           "-Dsbt.color=false",
           "-Dsbt.log.noformat=true",
@@ -77,25 +71,15 @@ class BuildToolDispatcherTest extends FunSuite {
         Cmd("rm", "-rf", s"$repoDir/project/scala-steward-StewardPlugin_1_0_0.scala"),
         Cmd("read", s"$repoDir/$scalafmtConfName"),
         Log("Get dependencies in mvn-build from Maven"),
-        Cmd(
-          s"$repoDir/mvn-build",
-          "firejail",
-          "--quiet",
-          s"--whitelist=$repoDir/mvn-build",
-          "--env=VAR1=val1",
-          "--env=VAR2=val2",
+        Cmd.execSandboxed(
+          repoDir / "mvn-build",
           "mvn",
           maven.args.batchMode,
           maven.command.listDependencies,
           maven.args.excludeTransitive
         ),
-        Cmd(
-          s"$repoDir/mvn-build",
-          "firejail",
-          "--quiet",
-          s"--whitelist=$repoDir/mvn-build",
-          "--env=VAR1=val1",
-          "--env=VAR2=val2",
+        Cmd.execSandboxed(
+          repoDir / "mvn-build",
           "mvn",
           maven.args.batchMode,
           maven.command.listRepositories
