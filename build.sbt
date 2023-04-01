@@ -351,11 +351,11 @@ lazy val dockerSettings = Def.settings(
       s"$curl $millBin https://github.com/lihaoyi/mill/releases/download/${millVer.split("-").head}/$millVer",
       s"chmod +x $millBin"
     ).mkString(" && ")
-    val coursierBin = s"$binDir/coursier"
+    val csBin = s"$binDir/cs"
     val installCoursier = Seq(
-      s"$curl $coursierBin.gz https://github.com/coursier/coursier/releases/download/v${Dependencies.coursierCore.revision}/cs-x86_64-pc-linux-static.gz",
-      s"gunzip $coursierBin.gz",
-      s"chmod +x $coursierBin"
+      s"$curl $csBin.gz https://github.com/coursier/coursier/releases/download/v${Dependencies.coursierCore.revision}/cs-x86_64-pc-linux-static.gz",
+      s"gunzip $csBin.gz",
+      s"chmod +x $csBin"
     ).mkString(" && ")
     val scalaCliBin = s"$binDir/scala-cli"
     val installScalaCli = Seq(
@@ -370,7 +370,7 @@ lazy val dockerSettings = Def.settings(
       Cmd("RUN", installMill),
       Cmd("RUN", installCoursier),
       Cmd("RUN", installScalaCli),
-      Cmd("RUN", s"$coursierBin install --install-dir $binDir scalafix scalafmt"),
+      Cmd("RUN", s"$csBin install --install-dir $binDir scalafix scalafmt"),
       Cmd("RUN", "npm install --global yarn"),
       // Ensure binaries are in PATH
       Cmd("RUN", "echo $PATH"),
