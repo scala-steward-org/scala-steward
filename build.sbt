@@ -336,32 +336,37 @@ lazy val dockerSettings = Def.settings(
   dockerBaseImage := Option(System.getenv("DOCKER_BASE_IMAGE"))
     .getOrElse("eclipse-temurin:11-alpine"),
   dockerCommands ++= {
+    val curl = "curl -fL --no-progress-meter --output"
     val binDir = "/usr/local/bin"
     val sbtVer = sbtVersion.value
     val sbtTgz = s"sbt-$sbtVer.tgz"
-    val sbtUrl = s"https://github.com/sbt/sbt/releases/download/v$sbtVer/$sbtTgz"
+    val installSbt = Seq(
+      s"$curl $sbtTgz https://github.com/sbt/sbt/releases/download/v$sbtVer/$sbtTgz",
+      s"tar -xf $sbtTgz",
+      s"rm -f $sbtTgz"
+    ).mkString(" && ")
     val millVer = Dependencies.millVersion
     val millBin = s"$binDir/mill"
     val installMill = Seq(
-      s"curl -fL --output $millBin https://github.com/lihaoyi/mill/releases/download/${millVer.split("-").head}/$millVer",
+      s"$curl $millBin https://github.com/lihaoyi/mill/releases/download/${millVer.split("-").head}/$millVer",
       s"chmod +x $millBin"
     ).mkString(" && ")
     val coursierBin = s"$binDir/coursier"
     val installCoursier = Seq(
-      s"curl -fL --output $coursierBin.gz https://github.com/coursier/launchers/raw/master/cs-x86_64-pc-linux-static.gz",
+      s"$curl $coursierBin.gz https://github.com/coursier/launchers/raw/master/cs-x86_64-pc-linux-static.gz",
       s"gunzip $coursierBin.gz",
       s"chmod +x $coursierBin"
     ).mkString(" && ")
     val scalaCliBin = s"$binDir/scala-cli"
     val installScalaCli = Seq(
-      s"curl -fL --output $scalaCliBin.gz https://github.com/Virtuslab/scala-cli/releases/latest/download/scala-cli-x86_64-pc-linux-static.gz",
+      s"$curl $scalaCliBin.gz https://github.com/Virtuslab/scala-cli/releases/latest/download/scala-cli-x86_64-pc-linux-static.gz",
       s"gunzip $scalaCliBin.gz",
       s"chmod +x $scalaCliBin"
     ).mkString(" && ")
     Seq(
       Cmd("USER", "root"),
       Cmd("RUN", "apk --no-cache add bash git ca-certificates curl maven openssh nodejs npm"),
-      Cmd("RUN", s"wget $sbtUrl && tar -xf $sbtTgz && rm -f $sbtTgz"),
+      Cmd("RUN", installSbt),
       Cmd("RUN", installMill),
       Cmd("RUN", installCoursier),
       Cmd("RUN", installScalaCli),
