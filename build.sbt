@@ -374,7 +374,7 @@ lazy val dockerSettings = Def.settings(
       Cmd("RUN", "npm install --global yarn"),
       // Ensure binaries are in PATH
       Cmd("RUN", "echo $PATH"),
-      Cmd("RUN", "which coursier mill mvn node npm sbt scala-cli scalafix scalafmt yarn")
+      Cmd("RUN", "which cs mill mvn node npm sbt scala-cli scalafix scalafmt yarn")
     )
   },
   Docker / packageName := s"fthomas/${name.value}",
