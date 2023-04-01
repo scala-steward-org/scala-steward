@@ -340,18 +340,20 @@ lazy val dockerSettings = Def.settings(
     val sbtVer = sbtVersion.value
     val sbtTgz = s"sbt-$sbtVer.tgz"
     val sbtUrl = s"https://github.com/sbt/sbt/releases/download/v$sbtVer/$sbtTgz"
-    val millBin = s"$binDir/mill"
     val millVer = Dependencies.millVersion
-    val millUrl =
-      s"https://github.com/lihaoyi/mill/releases/download/${millVer.split("-").head}/$millVer"
+    val millBin = s"$binDir/mill"
+    val installMill = Seq(
+      s"curl -fL --output $millBin https://github.com/lihaoyi/mill/releases/download/${millVer.split("-").head}/$millVer",
+      s"chmod +x $millBin"
+    ).mkString(" && ")
     val coursierBin = s"$binDir/coursier"
-    val installCoursierStep = Seq(
+    val installCoursier = Seq(
       s"curl -fL --output $coursierBin.gz https://github.com/coursier/launchers/raw/master/cs-x86_64-pc-linux-static.gz",
       s"gunzip $coursierBin.gz",
       s"chmod +x $coursierBin"
     ).mkString(" && ")
     val scalaCliBin = s"$binDir/scala-cli"
-    val installScalaCliStep = Seq(
+    val installScalaCli = Seq(
       s"curl -fL --output $scalaCliBin.gz https://github.com/Virtuslab/scala-cli/releases/latest/download/scala-cli-x86_64-pc-linux-static.gz",
       s"gunzip $scalaCliBin.gz",
       s"chmod +x $scalaCliBin"
@@ -360,11 +362,13 @@ lazy val dockerSettings = Def.settings(
       Cmd("USER", "root"),
       Cmd("RUN", "apk --no-cache add bash git ca-certificates curl maven openssh nodejs npm"),
       Cmd("RUN", s"wget $sbtUrl && tar -xf $sbtTgz && rm -f $sbtTgz"),
-      Cmd("RUN", s"curl -fL $millUrl > $millBin && chmod +x $millBin"),
-      Cmd("RUN", installCoursierStep),
-      Cmd("RUN", installScalaCliStep),
+      Cmd("RUN", installMill),
+      Cmd("RUN", installCoursier),
+      Cmd("RUN", installScalaCli),
       Cmd("RUN", s"$coursierBin install --install-dir $binDir scalafix scalafmt"),
-      Cmd("RUN", "npm install --global yarn")
+      Cmd("RUN", "npm install --global yarn"),
+      // Ensure binaries are in PATH
+      Cmd("RUN", "which coursier maven mill node npm sbt scala-cli scalafix scalafmt yarn")
     )
   },
   Docker / packageName := s"fthomas/${name.value}",
