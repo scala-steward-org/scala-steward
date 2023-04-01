@@ -353,7 +353,7 @@ lazy val dockerSettings = Def.settings(
     ).mkString(" && ")
     val coursierBin = s"$binDir/coursier"
     val installCoursier = Seq(
-      s"$curl $coursierBin.gz https://github.com/coursier/launchers/raw/master/cs-x86_64-pc-linux-static.gz",
+      s"$curl $coursierBin.gz https://github.com/coursier/coursier/releases/download/v${Dependencies.coursierCore.revision}/cs-x86_64-pc-linux-static.gz",
       s"gunzip $coursierBin.gz",
       s"chmod +x $coursierBin"
     ).mkString(" && ")
