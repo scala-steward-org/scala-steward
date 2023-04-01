@@ -348,7 +348,9 @@ lazy val dockerSettings = Def.settings(
     val installCoursierStep = Seq(
       s"curl -fL --output $coursierBin.gz https://github.com/coursier/launchers/raw/master/cs-x86_64-pc-linux.gz",
       s"gunzip $coursierBin.gz",
-      s"chmod +x $coursierBin"
+      s"chmod +x $coursierBin",
+      s"ls -la $coursierBin",
+      s"tail -n 30 $coursierBin"
     ).mkString(" && ")
     val scalaCliBin = s"$binDir/scala-cli"
     val installScalaCliStep = Seq(
