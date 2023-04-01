@@ -345,6 +345,7 @@ lazy val dockerSettings = Def.settings(
     val millUrl =
       s"https://github.com/lihaoyi/mill/releases/download/${millVer.split("-").head}/$millVer"
     val coursierBin = s"$binDir/coursier"
+    val coursierUrl = "https://github.com/coursier/launchers/raw/master/cs-x86_64-pc-linux.gz"
     val installScalaCliStep = Seq(
       "wget -q -O scala-cli.gz https://github.com/Virtuslab/scala-cli/releases/latest/download/scala-cli-x86_64-pc-linux-static.gz",
       "gunzip scala-cli.gz",
@@ -355,9 +356,9 @@ lazy val dockerSettings = Def.settings(
       Cmd("USER", "root"),
       Cmd("RUN", "apk --no-cache add bash git ca-certificates curl maven openssh nodejs npm"),
       Cmd("RUN", s"wget $sbtUrl && tar -xf $sbtTgz && rm -f $sbtTgz"),
-      Cmd("RUN", s"curl -L $millUrl > $millBin && chmod +x $millBin"),
+      Cmd("RUN", s"curl -fL $millUrl > $millBin && chmod +x $millBin"),
       Cmd("RUN", installScalaCliStep),
-      Cmd("RUN", s"curl -L https://git.io/coursier-cli > $coursierBin && chmod +x $coursierBin"),
+      Cmd("RUN", s"curl -fL $coursierUrl | gzip -d > $coursierBin && chmod +x $coursierBin"),
       Cmd("RUN", s"$coursierBin install --install-dir $binDir scalafix scalafmt"),
       Cmd("RUN", "npm install --global yarn")
     )
