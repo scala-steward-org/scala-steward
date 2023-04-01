@@ -15,19 +15,7 @@ class MillAlgTest extends FunSuite {
     val buildRoot = BuildRoot(repo, ".")
     val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
     val predef = s"$repoDir/scala-steward.sc"
-    val millCmd = List(
-      "firejail",
-      "--quiet",
-      s"--whitelist=$repoDir",
-      "--env=VAR1=val1",
-      "--env=VAR2=val2",
-      "mill",
-      "-i",
-      "-p",
-      predef,
-      "show",
-      extractDeps
-    )
+    val millCmd = Cmd.execSandboxed(repoDir, "mill", "-i", "-p", predef, "show", extractDeps)
     val initial =
       MockState.empty.copy(commandOutputs = Map(millCmd -> Right(List("""{"modules":[]}"""))))
     val state = millAlg.getDependencies(buildRoot).runS(initial).unsafeRunSync()
@@ -36,7 +24,7 @@ class MillAlgTest extends FunSuite {
         Cmd("read", s"$repoDir/.mill-version"),
         Cmd("read", s"$repoDir/.config/mill-version"),
         Cmd("write", predef),
-        Cmd(repoDir.toString :: millCmd),
+        millCmd,
         Cmd("rm", "-rf", predef)
       )
     )

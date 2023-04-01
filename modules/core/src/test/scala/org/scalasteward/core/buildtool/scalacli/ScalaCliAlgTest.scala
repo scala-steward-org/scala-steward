@@ -5,7 +5,6 @@ import org.scalasteward.core.buildtool.BuildRoot
 import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.data.{GroupId, Repo, Version}
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
-import org.scalasteward.core.git.FileGitAlg
 import org.scalasteward.core.mock.MockContext.context._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
@@ -15,9 +14,10 @@ class ScalaCliAlgTest extends CatsEffectSuite {
   test("containsBuild: directive in non-source file") {
     val repo = Repo("user", "repo")
     val buildRoot = BuildRoot(repo, ".")
+    val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
     val fileWithUsingLib = "test.md" // this test fails if the extension is .scala or .sc
-    val grepCmd = FileGitAlg.gitCmd.toList ++
-      List("grep", "-I", "--fixed-strings", "--files-with-matches", "//> using lib ")
+    val grepCmd =
+      Cmd.git(repoDir, "grep", "-I", "--fixed-strings", "--files-with-matches", "//> using lib ")
     val initial =
       MockState.empty.copy(commandOutputs = Map(grepCmd -> Right(List(fileWithUsingLib))))
     val obtained = scalaCliAlg.containsBuild(buildRoot).runA(initial)
@@ -33,13 +33,8 @@ class ScalaCliAlgTest extends CatsEffectSuite {
     val obtained = scalaCliAlg.getDependencies(buildRoot).runS(MockState.empty)
     val expected = MockState.empty.copy(trace =
       Vector(
-        Cmd(
-          repoDir.toString,
-          "firejail",
-          "--quiet",
-          s"--whitelist=$repoDir",
-          "--env=VAR1=val1",
-          "--env=VAR2=val2",
+        Cmd.execSandboxed(
+          repoDir,
           "scala-cli",
           "--power",
           "export",
@@ -52,13 +47,8 @@ class ScalaCliAlgTest extends CatsEffectSuite {
         Cmd("test", "-d", s"$sbtBuildDir/project"),
         Cmd("read", "classpath:StewardPlugin_1_3_11.scala"),
         Cmd("write", s"$sbtBuildDir/project/scala-steward-StewardPlugin_1_3_11.scala"),
-        Cmd(
-          sbtBuildDir.toString,
-          "firejail",
-          "--quiet",
-          s"--whitelist=$sbtBuildDir",
-          "--env=VAR1=val1",
-          "--env=VAR2=val2",
+        Cmd.execSandboxed(
+          sbtBuildDir,
           "sbt",
           "-Dsbt.color=false",
           "-Dsbt.log.noformat=true",

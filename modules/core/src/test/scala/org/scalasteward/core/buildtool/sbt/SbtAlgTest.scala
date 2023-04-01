@@ -30,13 +30,8 @@ class SbtAlgTest extends FunSuite {
         Cmd("read", "classpath:StewardPlugin_1_3_11.scala"),
         Cmd("write", s"$repoDir/project/scala-steward-StewardPlugin_1_3_11.scala"),
         Cmd("write", s"$repoDir/project/project/scala-steward-StewardPlugin_1_3_11.scala"),
-        Cmd(
-          repoDir.toString,
-          "firejail",
-          "--quiet",
-          s"--whitelist=$repoDir",
-          "--env=VAR1=val1",
-          "--env=VAR2=val2",
+        Cmd.execSandboxed(
+          repoDir,
           "sbt",
           "-Dsbt.color=false",
           "-Dsbt.log.noformat=true",
@@ -73,13 +68,8 @@ class SbtAlgTest extends FunSuite {
           s"$workspace/store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json"
         ),
         Cmd("write", s"$repoDir/project/scala-steward-sbt-scalafix.sbt"),
-        Cmd(
-          repoDir.toString,
-          "firejail",
-          "--quiet",
-          s"--whitelist=$repoDir",
-          "--env=VAR1=val1",
-          "--env=VAR2=val2",
+        Cmd.execSandboxed(
+          repoDir,
           "sbt",
           "-Dsbt.color=false",
           "-Dsbt.log.noformat=true",
@@ -117,13 +107,8 @@ class SbtAlgTest extends FunSuite {
         ),
         Cmd("write", s"$repoDir/project/scala-steward-sbt-scalafix.sbt"),
         Cmd("write", s"$repoDir/scala-steward-scalafix-options.sbt"),
-        Cmd(
-          repoDir.toString,
-          "firejail",
-          "--quiet",
-          s"--whitelist=$repoDir",
-          "--env=VAR1=val1",
-          "--env=VAR2=val2",
+        Cmd.execSandboxed(
+          repoDir,
           "sbt",
           "-Dsbt.color=false",
           "-Dsbt.log.noformat=true",
