@@ -336,7 +336,7 @@ lazy val dockerSettings = Def.settings(
   dockerBaseImage := Option(System.getenv("DOCKER_BASE_IMAGE"))
     .getOrElse("eclipse-temurin:11-alpine"),
   dockerCommands ++= {
-    val curl = "curl -fL --no-progress-meter --output"
+    val curl = "curl -fL --output"
     val binDir = "/usr/local/bin"
     val sbtVer = sbtVersion.value
     val sbtTgz = s"sbt-$sbtVer.tgz"
