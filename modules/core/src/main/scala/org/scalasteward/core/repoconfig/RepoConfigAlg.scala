@@ -88,11 +88,7 @@ object RepoConfigAlg {
     val configFileCandidates: F[List[File]] = repoConfigFileSearchPath
       .map(_ :+ repoConfigBasename)
       .map(path => path.foldLeft(repoDir)(_ / _))
-      .traverse(file => fileAlg.isRegularFile(file).map {
-        case true => Some(file)
-        case false => None
-      })
-      .map(_.flatten)
+      .filterA(fileAlg.isRegularFile)
 
     configFileCandidates.flatMap {
       case Nil => F.pure(None)
