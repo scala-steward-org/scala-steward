@@ -306,7 +306,7 @@ class RepoConfigAlgTest extends FunSuite {
     assert(config.maybeRepoConfig.isDefined)
 
     val log = state.trace.collectFirst { case Log((_, msg)) => msg }.getOrElse("")
-    assert(clue(log).contains("""Config file ".config/.scala-steward.conf" ignored"""))
+    assert(clue(log).contains("Ignored config file"))
   }
 
   test("configToIgnoreFurtherUpdates with single update") {
