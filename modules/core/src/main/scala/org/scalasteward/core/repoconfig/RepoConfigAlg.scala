@@ -80,10 +80,11 @@ object RepoConfigAlg {
   def parseRepoConfig(input: String): Either[io.circe.Error, RepoConfig] =
     parser.decode[RepoConfig](input)
 
-  private val repoConfigFileSearchPath: List[List[String]] = List(List.empty, List(".github"), List(".config"))
+  private val repoConfigFileSearchPath: List[List[String]] =
+    List(List.empty, List(".github"), List(".config"))
 
   private def activeConfigFile[F[_]](
-    repoDir: File
+      repoDir: File
   )(implicit fileAlg: FileAlg[F], logger: Logger[F], F: Monad[F]): F[Option[File]] = {
     val configFileCandidates: F[List[File]] = repoConfigFileSearchPath
       .map(_ :+ repoConfigBasename)
@@ -92,8 +93,13 @@ object RepoConfigAlg {
 
     configFileCandidates.flatMap {
       case Nil => F.pure(None)
-      case active :: remaining => F.pure(active.some)
-        .productL(remaining.traverse_(file => logger.warn(s"""Ignored config file "${file.pathAsString}"""")))
+      case active :: remaining =>
+        F.pure(active.some)
+          .productL(
+            remaining.traverse_(file =>
+              logger.warn(s"""Ignored config file "${file.pathAsString}"""")
+            )
+          )
     }
   }
 

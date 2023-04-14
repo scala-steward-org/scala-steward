@@ -297,7 +297,8 @@ class RepoConfigAlgTest extends FunSuite {
     val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
     val rootConfigFile = repoDir / ".scala-steward.conf"
     val dotConfigConfigFile = repoDir / ".config" / ".scala-steward.conf"
-    val initialState = MockState.empty.addFiles(rootConfigFile -> "", dotConfigConfigFile -> "").unsafeRunSync()
+    val initialState =
+      MockState.empty.addFiles(rootConfigFile -> "", dotConfigConfigFile -> "").unsafeRunSync()
     val (state, config) = repoConfigAlg.readRepoConfig(repo).runSA(initialState).unsafeRunSync()
 
     assert(fileAlg.isRegularFile(rootConfigFile).unsafeRunSync())
