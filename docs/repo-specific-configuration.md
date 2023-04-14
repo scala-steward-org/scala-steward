@@ -1,6 +1,8 @@
 # Repository-specific configuration
 
-You can add `<YOUR_REPO>/.scala-steward.conf` to configure how Scala Steward updates your repository.
+You can add a configuration file `.scala-steward.conf` to configure how Scala Steward updates your repository.
+The `.scala-steward.conf` configuration file can be located in the root of your repository, in `.github` directory or in `.config` directory (searched in this order).
+If a configuration file exists in more than one location, only the first found file is taken into account.
 
 ```properties
 # pullRequests.frequency allows to control how often or when Scala Steward
@@ -40,14 +42,14 @@ pullRequests.frequency = "7 days"
 # the default procedure (one PR per update).
 #
 # Each element in the array will have the following schema:
-# 
+#
 #   - name (mandatory): the name of the group, will be used for things like naming the branch
 #   - title (optional): if provided it will be used as the title for the PR
-#   - filter (mandatory): a non-empty list containing the filters to use to know 
+#   - filter (mandatory): a non-empty list containing the filters to use to know
 #                         if an update falls into this group.
 #
 # `filter` properties would have this format:
-#   
+#
 #    {
 #       version = "major" | "minor" | "patch" | "pre-release" | "build-metadata",
 #       group = "{group}",
@@ -55,7 +57,7 @@ pullRequests.frequency = "7 days"
 #    }
 #
 # For more information on the values for the `version` filter visit https://semver.org/
-# 
+#
 # Every field in a `filter` is optional but at least one must be provided.
 #
 # For grouping every update togeher a filter like {group = "*"} can be # provided.
@@ -69,7 +71,7 @@ pullRequests.grouping = [
   { name = "all", "title" = "Dependency updates", "filter" = [{"group" = "*"}] }
 ]
 
-# pullRequests.includeMatchedLabels allows to control which labels are added to PRs 
+# pullRequests.includeMatchedLabels allows to control which labels are added to PRs
 # via a regex check each label is checked against.
 # Defaults to no regex (all labels are added) which is equivalent to ".*".
 pullRequests.includeMatchedLabels = "(.*semver.*)|(commit-count:n:.*)"
@@ -120,10 +122,10 @@ updatePullRequests = "always" | "on-conflicts" | "never"
 
 # If set, Scala Steward will use this message template for the commit messages and PR titles.
 # Supported variables: ${artifactName}, ${currentVersion}, ${nextVersion} and ${default}
-# Default: "${default}" which is equivalent to "Update ${artifactName} to ${nextVersion}" 
+# Default: "${default}" which is equivalent to "Update ${artifactName} to ${nextVersion}"
 commits.message = "Update ${artifactName} from ${currentVersion} to ${nextVersion}"
 
-# If true and when upgrading version in .scalafmt.conf, Scala Steward will perform scalafmt 
+# If true and when upgrading version in .scalafmt.conf, Scala Steward will perform scalafmt
 # and add a separate commit when format changed. So you don't need reformat manually and can merge PR.
 # If false, Scala Steward will not perform scalafmt, so your CI may abort when reformat needed.
 # Default: true
@@ -144,7 +146,7 @@ postUpdateHooks = [{
 }]
 
 # You can override some config options for dependencies that matches the given pattern.
-# Currently, "pullRequests" can be overridden.  
+# Currently, "pullRequests" can be overridden.
 # Each pattern must have `groupId`, and may have `artifactId` and `version`.
 # First-matched entry is used.
 # More-specific entry should be placed before less-specific entry.
@@ -204,7 +206,7 @@ libraryDependencies ++= Seq(
   // scala-steward:off
   "com.github.pathikrit" %% "better-files" % "3.8.0",
   "com.olegpy" %% "better-monadic-for" % "0.3.1",
-  // scala-steward:on 
+  // scala-steward:on
   "org.typelevel" %% "cats-effect" % "1.3.1",  // This and subsequent will get updated
   "org.typelevel" %% "cats-kernel-laws" % "1.6.1"
 )
