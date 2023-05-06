@@ -3,7 +3,8 @@ package org.scalasteward.core.update.artifact
 import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data.GroupId
+import org.scalasteward.core.buildtool.sbt.data.{SbtVersion, ScalaVersion}
+import org.scalasteward.core.data.{GroupId, Resolver, Scope}
 import org.scalasteward.core.mock.MockContext.context.updateAlg
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.repoconfig.RepoConfig
@@ -145,5 +146,22 @@ class ArtifactMigrationsFinderTest extends FunSuite {
     val expected = "org.spire-math".g % ("new-projector", "new-projector_2.12").a % "0.9.10"
     val obtained = UpdateAlg.migrateDependency(dependency, artifactChange)
     assertEquals(obtained, expected)
+  }
+
+  test("migrateDependency: sbt-dynver with migration") {
+    val dependency = ("com.dwijnand".g % "sbt-dynver".a % "4.1.1")
+      .copy(sbtVersion = Some(SbtVersion("1.0")), scalaVersion = Some(ScalaVersion("2.12")))
+    val expected = (dependency %> Nel.of("5.0.1")).single
+      .copy(newerGroupId = Some("com.github.sbt".g), newerArtifactId = Some("sbt-dynver"))
+    val obtained = updateAlg
+      .findUpdates(
+        List(Scope(dependency, List(sbtPluginReleases, Resolver.mavenCentral))),
+        RepoConfig.empty,
+        None
+      )
+      .runA(MockState.empty)
+      .unsafeRunSync()
+
+    assertEquals(obtained, List(expected))
   }
 }
