@@ -36,20 +36,21 @@ final class UpdateAlg[F[_]](implicit
 ) {
   private def findUpdate(
       dependency: Scope[Dependency],
+      repoConfig: RepoConfig,
       maxAge: Option[FiniteDuration]
   ): F[Option[Update.ForArtifactId]] =
     findUpdateWithoutMigration(dependency, maxAge)
+      .flatMapF(filterAlg.localFilterSingle(repoConfig, _))
       .orElse(findUpdateWithMigration(dependency, maxAge))
+      .flatMapF(filterAlg.localFilterSingle(repoConfig, _))
       .value
 
   def findUpdates(
       dependencies: List[Scope.Dependency],
       repoConfig: RepoConfig,
       maxAge: Option[FiniteDuration]
-  ): F[List[Update.ForArtifactId]] = {
-    val updates = dependencies.parTraverseFilter(findUpdate(_, maxAge))
-    updates.flatMap(filterAlg.localFilterMany(repoConfig, _))
-  }
+  ): F[List[Update.ForArtifactId]] =
+    dependencies.parTraverseFilter(findUpdate(_, repoConfig, maxAge))
 
   private def findUpdateWithoutMigration(
       dependency: Scope[Dependency],

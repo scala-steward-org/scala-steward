@@ -62,17 +62,16 @@ class FilterAlgTest extends FunSuite {
   }
 
   test("ignore update via config updates.ignore") {
-    val update1 = ("org.http4s".g % "http4s-dsl".a % "0.17.0" %> "0.18.0").single
-    val update2 = ("eu.timepit".g % "refined".a % "0.8.0" %> "0.8.1").single
+    val update = ("eu.timepit".g % "refined".a % "0.8.0" %> "0.8.1").single
     val config = RepoConfig(updates =
       UpdatesConfig(ignore = List(UpdatePattern(GroupId("eu.timepit"), Some("refined"), None)))
     )
 
     val initialState = MockState.empty
     val (state, filtered) =
-      filterAlg.localFilterMany(config, List(update1, update2)).runSA(initialState).unsafeRunSync()
+      filterAlg.localFilterSingle(config, update).runSA(initialState).unsafeRunSync()
 
-    assertEquals(filtered, List(update1))
+    assertEquals(filtered, None)
     val expected = initialState.copy(
       trace = Vector(Log("Ignore eu.timepit:refined : 0.8.0 -> 0.8.1 (reason: ignored by config)"))
     )
@@ -114,12 +113,19 @@ class FilterAlgTest extends FunSuite {
       )
     )
 
-    val filtered = filterAlg
-      .localFilterMany(config, List(update1, update2))
+    val filtered1 = filterAlg
+      .localFilterSingle(config, update1)
       .runA(MockState.empty)
       .unsafeRunSync()
 
-    assertEquals(filtered, List(update2))
+    assertEquals(filtered1, None)
+
+    val filtered2 = filterAlg
+      .localFilterSingle(config, update2)
+      .runA(MockState.empty)
+      .unsafeRunSync()
+
+    assertEquals(filtered2, Some(update2))
   }
 
   test("ignore update via config updates.allow") {
@@ -144,12 +150,22 @@ class FilterAlgTest extends FunSuite {
       )
     )
 
-    val filtered = filterAlg
-      .localFilterMany(config, included ++ notIncluded)
-      .runA(MockState.empty)
-      .unsafeRunSync()
+    included.foreach { update =>
+      val filtered = filterAlg
+        .localFilterSingle(config, update)
+        .runA(MockState.empty)
+        .unsafeRunSync()
 
-    assertEquals(filtered, included)
+      assertEquals(filtered, Some(update))
+    }
+    notIncluded.foreach { update =>
+      val filtered = filterAlg
+        .localFilterSingle(config, update)
+        .runA(MockState.empty)
+        .unsafeRunSync()
+
+      assertEquals(filtered, None)
+    }
   }
 
   test("ignore update via config updates.pin using suffix") {

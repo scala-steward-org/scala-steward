@@ -17,7 +17,7 @@
 package org.scalasteward.core.update
 
 import cats.syntax.all._
-import cats.{Monad, TraverseFilter}
+import cats.Monad
 import org.scalasteward.core.data._
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.update.FilterAlg._
@@ -28,11 +28,11 @@ final class FilterAlg[F[_]](implicit
     logger: Logger[F],
     F: Monad[F]
 ) {
-  def localFilterMany[G[_]: TraverseFilter](
+  def localFilterSingle(
       config: RepoConfig,
-      updates: G[Update.ForArtifactId]
-  ): F[G[Update.ForArtifactId]] =
-    updates.traverseFilter(update => logIfRejected(localFilter(update, config)))
+      update: Update.ForArtifactId
+  ): F[Option[Update.ForArtifactId]] =
+    logIfRejected(localFilter(update, config))
 
   private def logIfRejected(result: FilterResult): F[Option[Update.ForArtifactId]] =
     result match {
