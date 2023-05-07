@@ -18,7 +18,7 @@ package org.scalasteward.core.repoconfig
 
 import better.files.File
 import cats.syntax.all._
-import cats.{Functor, MonadThrow}
+import cats.{Functor, Monad, MonadThrow}
 import io.circe.config.parser
 import org.scalasteward.core.data.{Repo, Update}
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
@@ -37,7 +37,10 @@ final class RepoConfigAlg[F[_]](maybeGlobalRepoConfig: Option[RepoConfig])(impli
   def readRepoConfig(repo: Repo): F[ConfigParsingResult] =
     for {
       repoDir <- workspaceAlg.repoDir(repo)
-      configParsingResult <- readRepoConfigFromFile(repoDir / repoConfigBasename)
+      activeConfigFile <- activeConfigFile(repoDir)
+      configParsingResult <- activeConfigFile.fold(
+        F.pure[ConfigParsingResult](ConfigParsingResult.FileDoesNotExist)
+      )(readRepoConfigFromFile(_))
       _ <- configParsingResult.fold(
         F.unit,
         error => logger.info(s"Failed to parse $repoConfigBasename: ${error.getMessage}"),
@@ -76,6 +79,29 @@ object RepoConfigAlg {
 
   def parseRepoConfig(input: String): Either[io.circe.Error, RepoConfig] =
     parser.decode[RepoConfig](input)
+
+  private val repoConfigFileSearchPath: List[List[String]] =
+    List(List.empty, List(".github"), List(".config"))
+
+  private def activeConfigFile[F[_]](
+      repoDir: File
+  )(implicit fileAlg: FileAlg[F], logger: Logger[F], F: Monad[F]): F[Option[File]] = {
+    val configFileCandidates: F[List[File]] = repoConfigFileSearchPath
+      .map(_ :+ repoConfigBasename)
+      .map(path => path.foldLeft(repoDir)(_ / _))
+      .filterA(fileAlg.isRegularFile)
+
+    configFileCandidates.flatMap {
+      case Nil => F.pure(None)
+      case active :: remaining =>
+        F.pure(active.some)
+          .productL(
+            remaining.traverse_(file =>
+              logger.warn(s"""Ignored config file "${file.pathAsString}"""")
+            )
+          )
+    }
+  }
 
   def readRepoConfigFromFile[F[_]](
       configFile: File
