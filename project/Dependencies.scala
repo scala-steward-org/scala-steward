@@ -3,7 +3,7 @@ import sbt._
 object Dependencies {
   val bcprovJdk15to18 = "org.bouncycastle" % "bcprov-jdk15to18" % "1.73"
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.2"
-  val catsEffect = "org.typelevel" %% "cats-effect" % "3.4.11"
+  val catsEffect = "org.typelevel" %% "cats-effect" % "3.5.0"
   val catsCore = "org.typelevel" %% "cats-core" % "2.9.0"
   val catsLaws = "org.typelevel" %% "cats-laws" % catsCore.revision
   val catsParse = "org.typelevel" %% "cats-parse" % "0.3.9"
@@ -20,7 +20,7 @@ object Dependencies {
   val cron4sCore = "com.github.alonsodomin.cron4s" %% "cron4s-core" % "0.6.1"
   val decline = "com.monovore" %% "decline" % "2.4.1"
   val disciplineMunit = "org.typelevel" %% "discipline-munit" % "1.0.9"
-  val fs2Core = "co.fs2" %% "fs2-core" % "3.6.1"
+  val fs2Core = "co.fs2" %% "fs2-core" % "3.7.0"
   val fs2Io = "co.fs2" %% "fs2-io" % fs2Core.revision
   val gitignore = "com.github.arturopala" %% "gitignore" % "0.4.0"
   val http4sCore = "org.http4s" %% "http4s-core" % "1.0.0-M39"
