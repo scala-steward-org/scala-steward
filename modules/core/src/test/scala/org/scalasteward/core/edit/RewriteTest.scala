@@ -809,12 +809,12 @@ class RewriteTest extends FunSuite {
 
   // https://github.com/scala-steward-org/scala-steward/issues/1651
   test("don't update in comments") {
-    val update = ("org.scalatest".g % "scalatest".a % "3.2.0" %> "3.2.2").single
+    val update = ("org.scalatest".g % "scalatest".a % "3.2.0" %> "3.3.0").single
     val original = Map(
       "build.sbt" -> """val scalaTest = "3.2.0"  // scalaTest 3.2.0 is causing a failure on scala 2.13..."""
     )
     val expected = Map(
-      "build.sbt" -> """val scalaTest = "3.2.2"  // scalaTest 3.2.0 is causing a failure on scala 2.13..."""
+      "build.sbt" -> """val scalaTest = "3.3.0"  // scalaTest 3.2.0 is causing a failure on scala 2.13..."""
     )
     runApplyUpdate(update, original, expected)
   }
