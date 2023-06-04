@@ -23,6 +23,13 @@ final case class MockState(
       .traverse_ { case (file, content) => ioFileAlg.writeFile(file, content) }
       .as(copy(files = files ++ newFiles))
 
+  def appendToFile(file: File, content: String): IO[MockState] =
+    ioFileAlg
+      .appendToFile(file, content)
+      .as(copy(files = files.updatedWith(file) { existingContentOpt =>
+        Some(existingContentOpt.mkString.concat(content))
+      }))
+
   def addUris(newUris: (Uri, String)*): MockState =
     copy(uris = uris ++ newUris)
 

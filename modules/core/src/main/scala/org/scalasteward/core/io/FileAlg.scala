@@ -50,6 +50,8 @@ trait FileAlg[F[_]] {
 
   def writeFile(file: File, content: String): F[Unit]
 
+  def appendToFile(file: File, content: String): F[Unit]
+
   final def createTemporarily[E](file: File, content: String)(implicit
       F: ApplicativeError[F, E]
   ): Resource[F, Unit] = {
@@ -139,8 +141,14 @@ object FileAlg {
         Stream.eval(F.delay(dir.walk(maxDepth))).flatMap(Stream.fromBlockingIterator(_, 1))
 
       override def writeFile(file: File, content: String): F[Unit] =
-        logger.debug(s"Write $file") >>
+        ensureParentExistsThen("Write", file)(_.write(content))
+
+      override def appendToFile(file: File, content: String): F[Unit] =
+        ensureParentExistsThen("Append to", file)(_.append(content))
+
+      private def ensureParentExistsThen(logPrefix: String, file: File)(f: File => File): F[Unit] =
+        logger.debug(s"$logPrefix $file") >>
           file.parentOption.fold(F.unit)(ensureExists(_).void) >>
-          F.blocking(file.write(content)).void
+          F.blocking(f(file)).void
     }
 }

@@ -21,7 +21,12 @@ import cats.effect.{ExitCode, Sync}
 import cats.syntax.all._
 import fs2.Stream
 import org.scalasteward.core.data.Repo
-import org.scalasteward.core.forge.github.{GitHubApp, GitHubAppApiAlg, GitHubAuthAlg}
+import org.scalasteward.core.forge.github.{
+  GitHubApp,
+  GitHubAppApiAlg,
+  GitHubAuthAlg,
+  GitHubStepSummaryAlg
+}
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.NurtureAlg
@@ -39,6 +44,7 @@ final class StewardAlg[F[_]](config: Config)(implicit
     gitAlg: GitAlg[F],
     githubAppApiAlg: GitHubAppApiAlg[F],
     githubAuthAlg: GitHubAuthAlg[F],
+    githubStepSummaryAlgOpt: Option[GitHubStepSummaryAlg[F]],
     logger: Logger[F],
     nurtureAlg: NurtureAlg[F],
     pruningAlg: PruningAlg[F],
@@ -96,16 +102,20 @@ final class StewardAlg[F[_]](config: Config)(implicit
         exitCode <-
           (config.githubApp.map(getGitHubAppRepos).getOrElse(Stream.empty) ++
             readRepos(config.reposFile))
-            .evalMap(steward)
+            .evalMap(repo => steward(repo).map(_.bimap(repo -> _, _ => repo)))
             .compile
-            .foldSemigroup
+            .toList
             .flatMap {
-              case Some(result) => result.fold(_ => ExitCode.Error, _ => ExitCode.Success).pure[F]
-              case None =>
+              case Nil =>
                 val msg = "No repos specified. " +
                   s"Check the formatting of ${config.reposFile.pathAsString}. " +
                   s"""The format is "- $$owner/$$repo" or "- $$owner/$$repo:$$branch"."""
                 logger.warn(msg).as(ExitCode.Success)
+              case results =>
+                val runResults = RunResults(results)
+                for {
+                  _ <- githubStepSummaryAlgOpt.traverse(_.appendSummary(runResults.markdownSummary))
+                } yield runResults.exitCode
             }
       } yield exitCode
     }

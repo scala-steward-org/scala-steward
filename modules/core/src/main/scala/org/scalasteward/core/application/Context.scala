@@ -38,7 +38,7 @@ import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.edit.hooks.HookExecutor
 import org.scalasteward.core.edit.scalafix._
 import org.scalasteward.core.edit.update.ScannerAlg
-import org.scalasteward.core.forge.github.{GitHubAppApiAlg, GitHubAuthAlg}
+import org.scalasteward.core.forge.github.{GitHubAppApiAlg, GitHubAuthAlg, GitHubStepSummaryAlg}
 import org.scalasteward.core.forge.{ForgeApiAlg, ForgeRepoAlg, ForgeSelection}
 import org.scalasteward.core.git.{GenGitAlg, GitAlg}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
@@ -204,6 +204,8 @@ object Context {
       implicit val filterAlg: FilterAlg[F] = new FilterAlg[F]
       implicit val gitAlg: GitAlg[F] = GenGitAlg.create[F](config.gitCfg)
       implicit val gitHubAuthAlg: GitHubAuthAlg[F] = GitHubAuthAlg.create[F]
+      implicit val gitHubStepSummaryAlgOpt: Option[GitHubStepSummaryAlg[F]] =
+        GitHubStepSummaryAlg.create[F]
       implicit val hookExecutor: HookExecutor[F] = new HookExecutor[F]
       implicit val httpJsonClient: HttpJsonClient[F] = new HttpJsonClient[F]
       implicit val repoCacheRepository: RepoCacheRepository[F] =

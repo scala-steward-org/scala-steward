@@ -35,6 +35,16 @@ class FileAlgTest extends CatsEffectSuite {
     assertIO(obtained, content)
   }
 
+  test("deleteForce *> appendFile *> appendFile *> readFile") {
+    val file = mockRoot / "test-scala-steward4.tmp"
+    val content1 = Arbitrary.arbitrary[String].sample.getOrElse("")
+    val content2 = Arbitrary.arbitrary[String].sample.getOrElse("")
+    val obtained = ioFileAlg.deleteForce(file) *> ioFileAlg.appendToFile(file, content1) *>
+      ioFileAlg.appendToFile(file, content2) *>
+      ioFileAlg.readFile(file).map(_.getOrElse(""))
+    assertIO(obtained, content1 + content2)
+  }
+
   test("removeTemporarily") {
     val file = mockRoot / "test-scala-steward2.tmp"
     val content = Arbitrary.arbitrary[String].sample.getOrElse("")
