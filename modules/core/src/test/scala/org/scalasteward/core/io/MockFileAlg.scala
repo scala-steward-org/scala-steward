@@ -59,7 +59,4 @@ class MockFileAlg extends FileAlg[MockEff] {
 
   override def writeFile(file: File, content: String): MockEff[Unit] =
     Kleisli(getFlatMapSet(_.exec("write", file.pathAsString).addFiles(file -> content)))
-
-  override def appendToFile(file: File, content: String): MockEff[Unit] =
-    Kleisli(getFlatMapSet(_.exec("append", file.pathAsString).appendToFile(file, content)))
 }

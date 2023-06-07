@@ -21,12 +21,7 @@ import cats.effect.{ExitCode, Sync}
 import cats.syntax.all._
 import fs2.Stream
 import org.scalasteward.core.data.Repo
-import org.scalasteward.core.forge.github.{
-  GitHubApp,
-  GitHubAppApiAlg,
-  GitHubAuthAlg,
-  GitHubStepSummaryAlg
-}
+import org.scalasteward.core.forge.github.{GitHubApp, GitHubAppApiAlg, GitHubAuthAlg}
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.NurtureAlg
@@ -44,7 +39,6 @@ final class StewardAlg[F[_]](config: Config)(implicit
     gitAlg: GitAlg[F],
     githubAppApiAlg: GitHubAppApiAlg[F],
     githubAuthAlg: GitHubAuthAlg[F],
-    githubStepSummaryAlgOpt: Option[GitHubStepSummaryAlg[F]],
     logger: Logger[F],
     nurtureAlg: NurtureAlg[F],
     pruningAlg: PruningAlg[F],
@@ -114,7 +108,8 @@ final class StewardAlg[F[_]](config: Config)(implicit
               case results =>
                 val runResults = RunResults(results)
                 for {
-                  _ <- githubStepSummaryAlgOpt.traverse(_.appendSummary(runResults.markdownSummary))
+                  summaryFile <- workspaceAlg.rootDir.map(_ / "run-summary.md")
+                  _ <- fileAlg.writeFile(summaryFile, runResults.markdownSummary)
                 } yield runResults.exitCode
             }
       } yield exitCode
