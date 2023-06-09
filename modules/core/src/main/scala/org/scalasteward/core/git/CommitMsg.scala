@@ -52,10 +52,21 @@ object CommitMsg {
           .replace("${branchName}", baseBranch.map(_.name).orEmpty)
         CommitMsg(title = title)
       },
-      g =>
-        CommitMsg(title =
-          g.title.getOrElse(s"Update for group ${g.name}") +
-            baseBranch.fold("")(branch => s" in ${branch.name}")
-        )
+      g => {
+        val artifactsWithVersions = g.updates
+          .groupBy(_.nextVersion)
+          .map { case (version, updates) =>
+            s"${updates.map(u => s"${u.artifactId.name}").mkString(", ")} to ${version.value}"
+          }
+          .mkString(" - ")
+
+        val defaultTitle =
+          s"Update for group ${g.name} ${baseBranch.fold("")(branch => s"in ${branch.name} ")}$${artifactVersions}"
+
+        val title = g.title
+          .getOrElse(defaultTitle)
+          .replace("${artifactVersions}", artifactsWithVersions)
+        CommitMsg(title = title)
+      }
     )
 }

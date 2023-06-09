@@ -30,7 +30,10 @@ package object git {
     val base = baseBranch.fold("")(branch => s"${branch.name}/")
     update.on(
       update = u => Branch(s"$updateBranchPrefix/$base${u.name}-${u.nextVersion}"),
-      grouped = g => Branch(s"$updateBranchPrefix/$base${g.name}")
+      grouped = g => {
+        val uniqueness = Math.abs(g.updates.map(_.nextVersion).sortBy(_.value).hashCode())
+        Branch(s"$updateBranchPrefix/$base${g.name}-${uniqueness}")
+      }
     )
   }
 

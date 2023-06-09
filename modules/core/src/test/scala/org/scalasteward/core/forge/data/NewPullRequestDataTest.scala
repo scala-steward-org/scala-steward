@@ -721,7 +721,7 @@ class NewPullRequestDataTest extends FunSuite {
           |</sup>""".stripMargin
 
     val expected = NewPullRequestData(
-      title = "Update for group my-group",
+      title = "Update for group my-group foo to 2.0.0 - logback-classic to 1.2.3",
       body = expectedBody,
       head = "scala-steward:update/logback-classic-1.2.3",
       base = Branch("main"),

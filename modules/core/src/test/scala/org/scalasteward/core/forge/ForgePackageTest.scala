@@ -41,12 +41,12 @@ class ForgePackageTest extends FunSuite {
     val updateBranch = git.branchFor(update, None)
 
     test("listingBranch (grouped)") {
-      assertEquals(listingBranch(GitHub, repo, updateBranch), s"foo/bar:update/my-group")
+      assertEquals(listingBranch(GitHub, repo, updateBranch), s"foo/bar:update/my-group-1164623676")
       assertEquals(listingBranch(GitLab, repo, updateBranch), updateBranch.name)
     }
 
     test("createBranch (grouped)") {
-      assertEquals(createBranch(GitHub, repo, updateBranch), s"foo:update/my-group")
+      assertEquals(createBranch(GitHub, repo, updateBranch), s"foo:update/my-group-1164623676")
       assertEquals(createBranch(GitLab, repo, updateBranch), updateBranch.name)
     }
 
