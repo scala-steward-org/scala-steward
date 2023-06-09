@@ -60,14 +60,16 @@ pullRequests.frequency = "7 days"
 #
 # Every field in a `filter` is optional but at least one must be provided.
 #
-# For grouping every update togeher a filter like {group = "*"} can be # provided.
+# For grouping every update together a filter like {group = "*"} can be # provided.
 #
+# To create a new PR for each unique combination of artifact-versions, include ${hash} in the name.
+# 
 # Default: []
 pullRequests.grouping = [
   { name = "patches", "title" = "Patch updates", "filter" = [{"version" = "patch"}] },
   { name = "minor_major", "title" = "Minor/major updates", "filter" = [{"version" = "minor"}, {"version" = "major"}] },
   { name = "typelevel", "title" = "Typelevel updates", "filter" = [{"group" = "org.typelevel"}, {"group" = "org.http4s"}] },
-  { name = "my_libraries", "filter" = [{"artifact" = "my-library"}, {"artifact" = "my-other-library", "group" = "my-org"}] },
+  { name = "my_libraries_${hash}", "filter" = [{"artifact" = "my-library"}, {"artifact" = "my-other-library", "group" = "my-org"}] },
   { name = "all", "title" = "Dependency updates", "filter" = [{"group" = "*"}] }
 ]
 
