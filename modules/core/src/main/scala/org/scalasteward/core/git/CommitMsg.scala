@@ -61,7 +61,7 @@ object CommitMsg {
           .mkString(" - ")
 
         val defaultTitle =
-          s"Update for group ${g.name} ${baseBranch.fold("")(branch => s"in ${branch.name} ")}$${artifactVersions}"
+          s"Update for group ${g.name}${baseBranch.fold("")(branch => s" in ${branch.name}")}: $${artifactVersions}"
 
         val title = g.title
           .getOrElse(defaultTitle)
