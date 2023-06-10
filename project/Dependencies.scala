@@ -13,7 +13,7 @@ object Dependencies {
   val circeLiteral = "io.circe" %% "circe-literal" % circeGeneric.revision
   val circeParser = "io.circe" %% "circe-parser" % circeGeneric.revision
   val circeRefined = "io.circe" %% "circe-refined" % circeGeneric.revision
-  val commonsIo = "commons-io" % "commons-io" % "2.12.0"
+  val commonsIo = "commons-io" % "commons-io" % "2.13.0"
   val coursierCore = "io.get-coursier" %% "coursier" % "2.1.4"
   val coursierSbtMaven =
     "io.get-coursier" %% "coursier-sbt-maven-repository" % coursierCore.revision
@@ -34,7 +34,7 @@ object Dependencies {
   val jjwtApi = "io.jsonwebtoken" % "jjwt-api" % "0.11.5"
   val jjwtImpl = "io.jsonwebtoken" % "jjwt-impl" % jjwtApi.revision
   val jjwtJackson = "io.jsonwebtoken" % "jjwt-jackson" % jjwtApi.revision
-  val millVersion = "0.10.12"
+  val millVersion = "0.11.0"
   val millMain = "com.lihaoyi" % "mill-main_2.13" % millVersion
   val monocleCore = "dev.optics" %% "monocle-core" % "3.2.0"
   val munit = "org.scalameta" %% "munit" % "0.7.29"
@@ -46,5 +46,5 @@ object Dependencies {
   val scalacheck = "org.scalacheck" %% "scalacheck" % "1.17.0"
   val scalaStewardMillPluginArtifactName = "scala-steward-mill-plugin"
   val scalaStewardMillPlugin =
-    "org.scala-steward" % s"${scalaStewardMillPluginArtifactName}_mill0.10_2.13" % "0.17.1"
+    "org.scala-steward" % s"${scalaStewardMillPluginArtifactName}_mill0.10_2.13" % "0.18.0"
 }
