@@ -21,7 +21,7 @@ val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
   "dummy" -> List(JVMPlatform)
 )
 
-val Scala213 = "2.13.10"
+val Scala213 = "2.13.11"
 
 /// sbt-typelevel configuration
 
