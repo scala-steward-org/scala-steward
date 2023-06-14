@@ -52,9 +52,7 @@ object CommitMsg {
           .replace("${branchName}", baseBranch.map(_.name).orEmpty)
         CommitMsg(title = title)
       },
-      g => {
-        CommitMsg(title = groupMessage(group = g, baseBranch))
-      }
+      g => CommitMsg(title = groupMessage(group = g, baseBranch))
     )
 
   def groupMessage(group: Update.Grouped, baseBranch: Option[Branch]): String = {
