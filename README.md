@@ -151,6 +151,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [Stanislav Chetvertkov](https://github.com/stanislav-chetvertkov)
 * [sullis](https://github.com/sullis)
 * [TATSUNO Yasuhiro](https://github.com/exoego)
+* [Terry Hendrix](https://github.com/terryhendrix1990)
 * [Thomas Heslin](https://github.com/tjheslin1)
 * [Thomas Kaliakos](https://github.com/thomaska)
 * [Tim Steinbach](https://github.com/NeQuissimus)

@@ -649,7 +649,7 @@ class NewPullRequestDataTest extends FunSuite {
     assertEquals(obtained, expected)
   }
 
-  test("from() should construct NewPullRequestData for groupped update") {
+  test("from() should construct NewPullRequestData for grouped update") {
     val update1 = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single
     val update2 = ("com.example".g % "foo".a % "1.0.0" %> "2.0.0").single
     val update = Update.Grouped("my-group", None, List(update1, update2))

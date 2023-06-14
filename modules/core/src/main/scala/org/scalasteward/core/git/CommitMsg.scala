@@ -52,10 +52,40 @@ object CommitMsg {
           .replace("${branchName}", baseBranch.map(_.name).orEmpty)
         CommitMsg(title = title)
       },
-      g =>
-        CommitMsg(title =
-          g.title.getOrElse(s"Update for group ${g.name}") +
-            baseBranch.fold("")(branch => s" in ${branch.name}")
-        )
+      g => CommitMsg(title = groupMessage(group = g, baseBranch))
     )
+
+  def groupMessage(group: Update.Grouped, baseBranch: Option[Branch]): String = {
+    def innerGroupMessage(shortNotation: Boolean) = {
+      val artifactsWithVersions = group.updates
+        .groupBy(_.nextVersion)
+        .map {
+          case (version, List(update)) =>
+            s"${update.artifactId.name} to ${version.value}"
+
+          case (version, updates) if shortNotation =>
+            val firstArtifactName = updates.headOption.map(_.artifactId.name).getOrElse("")
+            s"$firstArtifactName and ${updates.size - 1} more to ${version.value}"
+
+          case (version, updates) =>
+            s"${updates.map(_.artifactId.name).mkString(", ")} to ${version.value}"
+        }
+        .mkString(" - ")
+
+      val defaultTitle = group.title.getOrElse(s"Update for group ${group.name}") +
+        baseBranch.fold("")(branch => s" in ${branch.name}")
+
+      group.title
+        .getOrElse(defaultTitle)
+        .replace("${artifactVersions}", artifactsWithVersions)
+    }
+
+    val title = innerGroupMessage(shortNotation = false)
+
+    if (title.sizeIs <= 200) {
+      title
+    } else {
+      innerGroupMessage(true)
+    }
+  }
 }
