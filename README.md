@@ -142,6 +142,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [Renato Cavalcanti](https://github.com/renatocaval)
 * [Rikito Taniguchi](https://github.com/tanishiking)
 * [Robert Stoll](https://github.com/robstoll)
+* [Roberto Tyley](https://github.com/rtyley)
 * [Robin Raju](https://github.com/robinraju)
 * [Roman Langolf](https://github.com/rolang)
 * [Ropiteaux Théo](https://github.com/ropiteaux)
