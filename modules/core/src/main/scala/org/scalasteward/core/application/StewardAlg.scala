@@ -92,7 +92,7 @@ final class StewardAlg[F[_]](config: Config)(implicit
     logger.infoTotalTime("run") {
       for {
         _ <- selfCheckAlg.checkAll
-        _ <- workspaceAlg.cleanReposDir
+        _ <- workspaceAlg.removeAnyRunSpecificFiles
         exitCode <-
           (config.githubApp.map(getGitHubAppRepos).getOrElse(Stream.empty) ++
             readRepos(config.reposFile))
@@ -108,7 +108,7 @@ final class StewardAlg[F[_]](config: Config)(implicit
               case results =>
                 val runResults = RunResults(results)
                 for {
-                  summaryFile <- workspaceAlg.rootDir.map(_ / "run-summary.md")
+                  summaryFile <- workspaceAlg.runSummary
                   _ <- fileAlg.writeFile(summaryFile, runResults.markdownSummary)
                 } yield runResults.exitCode
             }
