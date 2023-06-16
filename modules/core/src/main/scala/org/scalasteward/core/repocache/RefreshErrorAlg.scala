@@ -67,7 +67,7 @@ object RefreshErrorAlg {
   final case class Entry(failedAt: Timestamp, message: String) {
     def expiresIn(now: Timestamp, backoffPeriod: FiniteDuration): Option[FiniteDuration] = {
       val duration = backoffPeriod - failedAt.until(now)
-      if (duration.length > 0L) Some(duration) else None
+      Option.when(duration.length > 0L)(duration)
     }
   }
 
