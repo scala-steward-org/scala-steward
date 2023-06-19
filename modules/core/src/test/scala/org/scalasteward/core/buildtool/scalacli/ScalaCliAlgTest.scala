@@ -53,6 +53,7 @@ class ScalaCliAlgTest extends CatsEffectSuite {
           "-Dsbt.color=false",
           "-Dsbt.log.noformat=true",
           "-Dsbt.supershell=false",
+          "-Dsbt.server.forcestart=true",
           s";$crossStewardDependencies"
         ),
         Cmd("rm", "-rf", s"$sbtBuildDir/project/scala-steward-StewardPlugin_1_3_11.scala"),
