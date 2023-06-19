@@ -29,7 +29,7 @@ trait WorkspaceAlg[F[_]] {
 
   def rootDir: F[File]
 
-  def runSummary: F[File]
+  def runSummaryFile: F[File]
 
   def repoDir(repo: Repo): F[File]
 
@@ -49,13 +49,13 @@ object WorkspaceAlg {
       private val reposDir: File =
         config.workspace / "repos"
 
-      private val _runSummary: File =
+      private val runSummary: File =
         config.workspace / RunSummaryFileName
 
       /* We don't want the `ensureExists()` side-effect for these files - here, we only want to delete them,
        * not accidentally re-create them while trying to delete them.
        */
-      private val runSpecificFiles: Seq[File] = Seq(_runSummary, reposDir)
+      private val runSpecificFiles: Seq[File] = Seq(runSummary, reposDir)
 
       private def toFile(repo: Repo): File =
         reposDir / repo.owner / repo.repo
@@ -71,8 +71,8 @@ object WorkspaceAlg {
       override def rootDir: F[File] =
         fileAlg.ensureExists(config.workspace)
 
-      override def runSummary: F[File] =
-        fileAlg.ensureExists(_runSummary.parent).map(_ => _runSummary)
+      override def runSummaryFile: F[File] =
+        fileAlg.ensureExists(runSummary.parent).map(_ => runSummary)
 
       override def repoDir(repo: Repo): F[File] =
         fileAlg.ensureExists(toFile(repo))

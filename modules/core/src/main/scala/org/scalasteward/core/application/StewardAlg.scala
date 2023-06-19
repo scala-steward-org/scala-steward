@@ -108,7 +108,7 @@ final class StewardAlg[F[_]](config: Config)(implicit
               case results =>
                 val runResults = RunResults(results)
                 for {
-                  summaryFile <- workspaceAlg.runSummary
+                  summaryFile <- workspaceAlg.runSummaryFile
                   _ <- fileAlg.writeFile(summaryFile, runResults.markdownSummary)
                 } yield runResults.exitCode
             }
