@@ -20,5 +20,5 @@ class MockWorkspaceAlg extends WorkspaceAlg[MockEff] {
   override def buildRootDir(buildRoot: BuildRoot): MockEff[File] =
     repoDir(buildRoot.repo).map(_ / buildRoot.relativePath)
 
-  def runSummary: MockEff[File] = rootDir.map(_ / RunSummaryFileName)
+  def runSummaryFile: MockEff[File] = rootDir.map(_ / RunSummaryFileName)
 }
