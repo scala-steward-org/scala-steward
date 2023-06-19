@@ -65,6 +65,7 @@ class BuildToolDispatcherTest extends FunSuite {
           "-Dsbt.color=false",
           "-Dsbt.log.noformat=true",
           "-Dsbt.supershell=false",
+          "-Dsbt.server.forcestart=true",
           s";$crossStewardDependencies;$reloadPlugins;$stewardDependencies"
         ),
         Cmd("rm", "-rf", s"$repoDir/project/project/scala-steward-StewardPlugin_1_0_0.scala"),

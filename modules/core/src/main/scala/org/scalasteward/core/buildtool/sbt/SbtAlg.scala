@@ -154,6 +154,7 @@ final class SbtAlg[F[_]](config: Config)(implicit
           "-Dsbt.color=false",
           "-Dsbt.log.noformat=true",
           "-Dsbt.supershell=false",
+          "-Dsbt.server.forcestart=true",
           sbtCommands.mkString_(";", ";", "")
         )
       processAlg.execSandboxed(command, repoDir, slurpOptions = slurpOptions)
