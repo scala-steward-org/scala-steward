@@ -41,15 +41,26 @@ final class MillAlg[F[_]](implicit
       .buildRootDir(buildRoot)
       .flatMap(buildRootDir => fileAlg.isRegularFile(buildRootDir / "build.sc"))
 
+  private def runMill(buildRootDir: File) = {
+    val command = Nel("mill", List("-i", "--import", cliPluginCoordinate, "show", extractDeps))
+    processAlg.execSandboxed(command, buildRootDir)
+  }
+  private def runMillUnder011(buildRootDir: File, millBuildVersion: Option[Version]) = {
+    val predef = buildRootDir / "scala-steward.sc"
+    val predefContent = content(millBuildVersion)
+    val command = Nel("mill", List("-i", "-p", predef.toString, "show", extractDeps))
+    fileAlg.createTemporarily(predef, predefContent).surround {
+      processAlg.execSandboxed(command, buildRootDir)
+    }
+  }
+
   override def getDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
     for {
       buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
-      predef = buildRootDir / "scala-steward.sc"
       millBuildVersion <- getMillVersion(buildRootDir)
-      extracted <- fileAlg.createTemporarily(predef, content(millBuildVersion)).surround {
-        val command = Nel("mill", List("-i", "-p", predef.toString, "show", extractDeps))
-        processAlg.execSandboxed(command, buildRootDir)
-      }
+      extracted <-
+        if (isMillVersionGreaterOrEqual011(millBuildVersion)) runMill(buildRootDir)
+        else runMillUnder011(buildRootDir, millBuildVersion)
       parsed <- F.fromEither(
         parser.parseModules(extracted.dropWhile(!_.startsWith("{")).mkString("\n"))
       )
@@ -92,21 +103,27 @@ final class MillAlg[F[_]](implicit
 }
 
 object MillAlg {
+  private[mill] def isMillVersionGreaterOrEqual011(millVersion: Option[Version]): Boolean =
+    millMinVersion(millVersion).flatMap(_.toIntOption).exists(_ >= 11)
+
+  private[mill] def millMinVersion(millVersion: Option[Version]): Option[String] =
+    millVersion.flatMap(_.value.trim.split("[.]", 3).take(2).lastOption)
+
+  private[mill] val cliPluginCoordinate: String =
+    s"ivy:${org.scalasteward.core.BuildInfo.organization}::${org.scalasteward.core.BuildInfo.millPluginArtifactName}::${org.scalasteward.core.BuildInfo.millPluginVersion}"
+
   private[mill] def content(millVersion: Option[Version]) = {
     def rawContent(millBinPlatform: String) =
       s"""|import $$ivy.`${org.scalasteward.core.BuildInfo.organization}::${org.scalasteward.core.BuildInfo.millPluginArtifactName}_mill${millBinPlatform}:${org.scalasteward.core.BuildInfo.millPluginVersion}`
           |""".stripMargin
 
-    millVersion match {
+    millMinVersion(millVersion) match {
       case None => rawContent("$MILL_BIN_PLATFORM")
-      case Some(millVersion) =>
-        millVersion.value.trim.split("[.]", 3).take(2) match {
-          // We support these platforms, but we can't take the $MILL_BIN_PLATFORM support for granted
-          case Array("0", "6")       => rawContent("0.6")
-          case Array("0", "7" | "8") => rawContent("0.7")
-          case Array("0", "9")       => rawContent("0.9")
-          case _                     => rawContent("$MILL_BIN_PLATFORM")
-        }
+      // We support these platforms, but we can't take the $MILL_BIN_PLATFORM support for granted
+      case Some("6")             => rawContent("0.6")
+      case Some("7") | Some("8") => rawContent("0.7")
+      case Some("9")             => rawContent("0.9")
+      case _                     => rawContent("$MILL_BIN_PLATFORM")
     }
   }
 
