@@ -11,7 +11,7 @@ import org.scalasteward.core.forge.data.NewPullRequestData
 import org.scalasteward.core.git.{Branch, Commit}
 import org.scalasteward.core.mock.MockContext.context
 import org.scalasteward.core.mock.{MockConfig, MockEff, MockState}
-import org.scalasteward.core.repoconfig.RepoConfig
+import org.scalasteward.core.repoconfig.{PullRequestsConfig, RepoConfig}
 
 class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   test("preparePullRequest") {
@@ -120,6 +120,56 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       assertEquals(
         nextToLastLine,
         "labels: library-update, early-semver-minor, semver-spec-minor, version-scheme:early-semver, commit-count:1"
+      )
+    }
+  }
+
+  test(
+    "preparePullRequest should set custom labels if PullRequestsConfig.customLabels is provided"
+  ) {
+    def nextToLast(L: Array[String]) = L(L.size - 2)
+
+    val nurtureAlg = context.nurtureAlg
+    val dependency = "org.typelevel".g % ("cats-effect", "cats-effect_2.13").a % "3.3.0"
+    val customLabels = List("custom-label-1", "custom-label-2")
+    val repoData =
+      RepoData(
+        repo = Repo("scala-steward-org", "scala-steward"),
+        cache = dummyRepoCache,
+        config = RepoConfig(
+          pullRequests = PullRequestsConfig(
+            customLabels = customLabels
+          )
+        )
+      )
+    val update = (dependency %> "3.4.0").single
+    val baseBranch = Branch("main")
+    val updateBranch = Branch("update/cats-effect-3.4.0")
+    val updateData =
+      UpdateData(repoData, repoData.repo, update, baseBranch, dummySha1, updateBranch)
+    val edits = List(UpdateEdit(update, Commit(dummySha1)))
+    val state = MockState.empty.copy(clientResponses = HttpApp {
+      case HEAD -> Root / "typelevel" / "cats-effect"                                 => Ok()
+      case HEAD -> Root / "typelevel" / "cats-effect" / "releases" / "tag" / "v3.4.0" => Ok()
+      case HEAD -> Root / "typelevel" / "cats-effect" / "compare" / "v3.3.0...v3.4.0" => Ok()
+      case _                                                                          => NotFound()
+    })
+    nurtureAlg.preparePullRequest(updateData, edits).runA(state).map { obtained =>
+      assertEquals(
+        obtained.labels,
+        customLabels ++ List(
+          "library-update",
+          "early-semver-minor",
+          "semver-spec-minor",
+          "commit-count:1"
+        )
+      )
+
+      val nextToLastLine = nextToLast(obtained.body.split("\n"))
+
+      assertEquals(
+        nextToLastLine,
+        "labels: custom-label-1, custom-label-2, library-update, early-semver-minor, semver-spec-minor, commit-count:1"
       )
     }
   }

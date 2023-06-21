@@ -15,7 +15,6 @@ If a configuration file exists in more than one location, only the first found f
 #   <timespan>
 #     PRs are created only again after the given timespan since the last PR
 #     has passed. Example values are "36 hours", "1 day", or "14 days".
-
 #   <CRON expression>
 #     PRs are created roughly according to the given CRON expression.
 #
@@ -32,8 +31,7 @@ If a configuration file exists in more than one location, only the first found f
 # Default: @asap
 #
 #pullRequests.frequency = "0 0 ? * 3" # every thursday on midnight
-pullRequests.frequency = "7 days"
-
+pullRequests.frequency="7 days"
 # pullRequests.grouping allows you to specify how Scala Steward should group
 # your updates in order to reduce the number of pull-requests.
 #
@@ -65,88 +63,80 @@ pullRequests.frequency = "7 days"
 # To create a new PR for each unique combination of artifact-versions, include ${hash} in the name.
 # 
 # Default: []
-pullRequests.grouping = [
-  { name = "patches", "title" = "Patch updates", "filter" = [{"version" = "patch"}] },
-  { name = "minor_major", "title" = "Minor/major updates", "filter" = [{"version" = "minor"}, {"version" = "major"}] },
-  { name = "typelevel", "title" = "Typelevel updates", "filter" = [{"group" = "org.typelevel"}, {"group" = "org.http4s"}] },
-  { name = "my_libraries_${hash}", "filter" = [{"artifact" = "my-library"}, {"artifact" = "my-other-library", "group" = "my-org"}] },
-  { name = "all", "title" = "Dependency updates", "filter" = [{"group" = "*"}] }
+pullRequests.grouping=[
+{ name = "patches", "title" = "Patch updates", "filter" = [{"version" = "patch"}] },
+{ name = "minor_major", "title" = "Minor/major updates", "filter" = [{"version" = "minor"}, {"version" = "major"}] },
+{ name = "typelevel", "title" = "Typelevel updates", "filter" = [{"group" = "org.typelevel"}, {"group" = "org.http4s"}] },
+{ name = "my_libraries_${hash}", "filter" = [{"artifact" = "my-library"}, {"artifact" = "my-other-library", "group" = "my-org"}] },
+{ name = "all", "title" = "Dependency updates", "filter" = [{"group" = "*"}] }
 ]
-
-# pullRequests.includeMatchedLabels allows to control which labels are added to PRs
+# pullRequests.includeMatchedLabels allows to control which generated labels are added to PRs
 # via a regex check each label is checked against.
+# This setting has no effect on custom labels (see below).
 # Defaults to no regex (all labels are added) which is equivalent to ".*".
-pullRequests.includeMatchedLabels = "(.*semver.*)|(commit-count:n:.*)"
-
+pullRequests.includeMatchedLabels="(.*semver.*)|(commit-count:n:.*)"
+# pullRequests.customLabels allows to add custom labels to PRs.
+# This is useful if you want to use the labels for automation (project board for example).
+# Defaults to no labels (no labels are added).
+pullRequests.customLabels=[ "dependencies", "scala" ]
 # Only these dependencies which match the given patterns are updated.
 #
 # Each pattern must have `groupId`, and may have `artifactId` and `version`.
 # Defaults to empty `[]` which mean Scala Steward will update all dependencies.
-updates.allow  = [ { groupId = "com.example" } ]
-
+updates.allow=[ { groupId = "com.example" } ]
 # The dependencies which match the given version pattern are updated.
 # Dependencies that are not listed will be updated.
 #
 # Each pattern must have `groupId`, `version` and optional `artifactId`.
 # Defaults to empty `[]` which mean Scala Steward will update all dependencies.
 # the following example will allow to update foo when version is 1.1.x
-updates.pin  = [ { groupId = "com.example", artifactId="foo", version = "1.1." } ]
-
+updates.pin=[ { groupId = "com.example", artifactId="foo", version = "1.1." } ]
 # The dependencies which match the given pattern are NOT updated.
 #
 # Each pattern must have `groupId`, and may have `artifactId` and `version`.
 # Defaults to empty `[]` which mean Scala Steward will not ignore dependencies.
-updates.ignore = [ { groupId = "org.acme", artifactId="foo", version = "1.0" } ]
-
+updates.ignore=[ { groupId = "org.acme", artifactId="foo", version = "1.0" } ]
 # The dependencies which match the given patterns are allowed to be updated to pre-release from stable.
 # This also implies, that it will be allowed for snapshot versions to be updated to snapshots of different series.
 #
 # Each pattern must have `groupId`, and may have `artifactId` and `version`.
 # Defaults to empty `[]` which mean Scala Steward will ignore all stable to pre-release update options.
-updates.allowPreReleases  = [ { groupId = "com.example", artifactId="foo" } ]
-
+updates.allowPreReleases=[ { groupId = "com.example", artifactId="foo" } ]
 # If set, Scala Steward will only create or update `n` PRs each time it runs (see `pullRequests.frequency` above).
 # Useful if running frequently and/or CI build are costly
 # Default: None
-updates.limit = 5
-
+updates.limit=5
 # The extensions of files that should be updated.
 # Default: [".scala", ".sbt", ".sbt.shared", ".sc", ".yml", "pom.xml"]
-updates.fileExtensions = [".scala", ".sbt", ".sbt.shared", ".sc", ".yml", ".md", ".markdown", ".txt"]
-
+updates.fileExtensions=[".scala", ".sbt", ".sbt.shared", ".sc", ".yml", ".md", ".markdown", ".txt"]
 # If "on-conflicts", Scala Steward will update the PR it created to resolve conflicts as
 # long as you don't change it yourself.
 # If "always", Scala Steward will always update the PR it created as long as
 # you don't change it yourself.
 # If "never", Scala Steward will never update the PR
 # Default: "on-conflicts"
-updatePullRequests = "always" | "on-conflicts" | "never"
-
+updatePullRequests="always" | "on-conflicts" | "never"
 # If set, Scala Steward will use this message template for the commit messages and PR titles.
 # Supported variables: ${artifactName}, ${currentVersion}, ${nextVersion} and ${default}
 # Default: "${default}" which is equivalent to "Update ${artifactName} to ${nextVersion}"
-commits.message = "Update ${artifactName} from ${currentVersion} to ${nextVersion}"
-
+commits.message="Update ${artifactName} from ${currentVersion} to ${nextVersion}"
 # If true and when upgrading version in .scalafmt.conf, Scala Steward will perform scalafmt
 # and add a separate commit when format changed. So you don't need reformat manually and can merge PR.
 # If false, Scala Steward will not perform scalafmt, so your CI may abort when reformat needed.
 # Default: true
-scalafmt.runAfterUpgrading = false
-
+scalafmt.runAfterUpgrading=false
 # It is possible to have multiple scala projects in a single repository. In that case the folders containing the projects (build.sbt folders)
 # are specified using the buildRoots property. Note that the paths used there are relative and if the repo directory itself also contains a build.sbt the dot can be used to specify it.
 # Default: ["."]
-buildRoots = [ ".", "subfolder/projectA" ]
-
+buildRoots=[ ".", "subfolder/projectA" ]
 # Define commands that are executed after an update via a hook.
 # A groupId and/or artifactId can be defined to only execute after certain dependencies are updated. If neither is defined, the hook runs for every update.
-postUpdateHooks = [{
-  command = ["sbt", "protobufGenerate"],
-  commitMessage = "Regenerated protobuf files",
-  groupId = "com.github.sbt",
-  artifactId = "sbt-protobuf"
+postUpdateHooks=[{
+command=["sbt", "protobufGenerate"],
+commitMessage="Regenerated protobuf files",
+groupId="com.github.sbt",
+artifactId="sbt-protobuf"
 }]
-
 # You can override some config options for dependencies that matches the given pattern.
 # Currently, "pullRequests" can be overridden.
 # Each pattern must have `groupId`, and may have `artifactId` and `version`.
@@ -154,21 +144,20 @@ postUpdateHooks = [{
 # More-specific entry should be placed before less-specific entry.
 #
 # Default: empty `[]`
-dependencyOverrides = [
-  {
-    dependency = { groupId = "com.example", artifactId = "foo", version = "2." },
-    pullRequests = { frequency = "1 day" },
-  },
-  {
-    dependency = { groupId = "com.example", artifactId = "foo" },
-    pullRequests = { frequency = "30 day" },
-  },
-  {
-    dependency = { groupId = "com.example" },
-    pullRequests = { frequency = "14 day" },
-  }
+dependencyOverrides=[
+{
+dependency={ groupId = "com.example", artifactId = "foo", version = "2." },
+pullRequests={ frequency = "1 day" },
+},
+{
+dependency={ groupId = "com.example", artifactId = "foo" },
+pullRequests={ frequency = "30 day" },
+},
+{
+dependency={ groupId = "com.example" },
+pullRequests={ frequency = "14 day" },
+}
 ]
-
 # Assign people from the list to the pull request or request a review.
 # Currently supported only for GitLab and GitHub.
 # GitLab users - free version of GitLab only supports one assignee and one reviewer, others will be ignored.
@@ -176,8 +165,8 @@ dependencyOverrides = [
 # like "yourOrg/yourTeam" in `reviewers` config below.
 # Please note that only accounts with write access to the repository (Developer role for GitLab) are able
 # to add assignees or request reviews. Consequently, it won't work for public @scala-steward instance on GitHub.
-assignees = [ "username1", "username2" ]
-reviewers = [ "username1", "username2" ]
+assignees=[ "username1", "username2" ]
+reviewers=[ "username1", "username2" ]
 ```
 
 The version information given in the patterns above can be in two formats:
