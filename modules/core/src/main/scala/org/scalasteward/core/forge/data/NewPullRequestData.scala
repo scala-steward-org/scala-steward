@@ -37,8 +37,7 @@ final case class NewPullRequestData(
     labels: List[String],
     assignees: List[String],
     reviewers: List[String],
-    draft: Boolean = false,
-    autoMerge: Boolean = false
+    draft: Boolean = false
 )
 
 object NewPullRequestData {
