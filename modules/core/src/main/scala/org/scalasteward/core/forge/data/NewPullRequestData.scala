@@ -317,9 +317,13 @@ object NewPullRequestData {
     val scalafixLabel = edits.collectFirst { case _: ScalafixEdit => "scalafix-migrations" }
     val oldVersionLabel = Option.when(filesWithOldVersion.nonEmpty)("old-version-remains")
 
-    updateTypeLabels(update) ++
-      semverLabels ++ List(scalafixLabel, oldVersionLabel).flatten ++
+    List.concat(
+      updateTypeLabels(update),
+      semverLabels,
+      scalafixLabel,
+      oldVersionLabel,
       List(commitCountLabel)
+    )
   }
 
   def filterLabels(labels: List[String], includeMatchedLabels: Option[Regex]): List[String] =

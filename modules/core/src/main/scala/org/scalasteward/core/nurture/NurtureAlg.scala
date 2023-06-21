@@ -241,7 +241,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
         artifactIdToUpdateInfoUrls = artifactIdToUpdateInfoUrls.toMap,
         filesWithOldVersion = filesWithOldVersion,
         addLabels = config.addLabels,
-        labels = labels
+        labels = data.repoData.config.pullRequests.customLabels ++ labels
       )
     } yield requestData
 
