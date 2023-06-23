@@ -6,6 +6,7 @@ import org.scalasteward.core.application.{Cli, Config}
 
 object MockConfig {
   val mockRoot: File = File.temp / "scala-steward"
+  mockRoot.delete(true) // Ensure folder is cleared of previous test files
   private val args: List[String] = List(
     s"--workspace=$mockRoot/workspace",
     s"--repos-file=$mockRoot/repos.md",
