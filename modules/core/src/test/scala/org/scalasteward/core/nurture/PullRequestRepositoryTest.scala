@@ -138,4 +138,12 @@ class PullRequestRepositoryTest extends FunSuite {
     assert(after.isDefined)
   }
 
+  test("lastPullRequestCreatedAtByArtifact for grouped updates") {
+    val (before, after) =
+      beforeAndAfterPRCreation(groupedUpdate(catsCore))(
+        pullRequestRepository.lastPullRequestCreatedAtByArtifact
+      )
+    assert(before.isEmpty)
+    assert(after.contains(catsCore.groupAndMainArtifactId))
+  }
 }
