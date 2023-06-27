@@ -4,7 +4,13 @@ You can add a configuration file `.scala-steward.conf` to configure how Scala St
 The `.scala-steward.conf` configuration file can be located in the root of your repository, in `.github` directory or in `.config` directory (searched in this order).
 If a configuration file exists in more than one location, only the first found file is taken into account.
 
-```properties
+```scala mdoc:passthrough
+import io.circe.refined._
+import io.circe.syntax._
+import org.scalasteward.core.repoconfig._
+
+print("```properties")
+print(s"""
 # pullRequests.frequency allows to control how often or when Scala Steward
 # is allowed to create pull requests.
 #
@@ -29,7 +35,7 @@ If a configuration file exists in more than one location, only the first found f
 #     while the time parts are only used to abide to the frequency of
 #     the given expression.
 #
-# Default: "@asap"
+# Default: ${PullRequestsConfig.defaultFrequency.asJson.noSpaces}
 #
 #pullRequests.frequency = "0 0 ? * 3" # every thursday on midnight
 pullRequests.frequency = "7 days"
@@ -62,14 +68,14 @@ pullRequests.frequency = "7 days"
 #
 # For grouping every update together a filter like {group = "*"} can be # provided.
 #
-# To create a new PR for each unique combination of artifact-versions, include ${hash} in the name.
+# To create a new PR for each unique combination of artifact-versions, include $${hash} in the name.
 #
 # Default: []
 pullRequests.grouping = [
   { name = "patches", "title" = "Patch updates", "filter" = [{"version" = "patch"}] },
   { name = "minor_major", "title" = "Minor/major updates", "filter" = [{"version" = "minor"}, {"version" = "major"}] },
   { name = "typelevel", "title" = "Typelevel updates", "filter" = [{"group" = "org.typelevel"}, {"group" = "org.http4s"}] },
-  { name = "my_libraries_${hash}", "filter" = [{"artifact" = "my-library"}, {"artifact" = "my-other-library", "group" = "my-org"}] },
+  { name = "my_libraries_$${hash}", "filter" = [{"artifact" = "my-library"}, {"artifact" = "my-other-library", "group" = "my-org"}] },
   { name = "all", "title" = "Dependency updates", "filter" = [{"group" = "*"}] }
 ]
 
@@ -113,11 +119,11 @@ updates.allowPreReleases  = [ { groupId = "com.example", artifactId="foo" } ]
 
 # If set, Scala Steward will only create or update `n` PRs each time it runs (see `pullRequests.frequency` above).
 # Useful if running frequently and/or CI build are costly
-# Default: null
+# Default: ${UpdatesConfig.defaultLimit.asJson.noSpaces}
 updates.limit = 5
 
 # The extensions of files that should be updated.
-# Default: [".mill-version",".sbt",".sbt.shared",".sc",".scala",".scalafmt.conf",".yml","build.properties","mill-version","pom.xml"]
+# Default: ${UpdatesConfig.defaultFileExtensions.toList.sorted.asJson.noSpaces}
 updates.fileExtensions = [".scala", ".sbt", ".sbt.shared", ".sc", ".yml", ".md", ".markdown", ".txt"]
 
 # If "on-conflicts", Scala Steward will update the PR it created to resolve conflicts as
@@ -125,23 +131,23 @@ updates.fileExtensions = [".scala", ".sbt", ".sbt.shared", ".sc", ".yml", ".md",
 # If "always", Scala Steward will always update the PR it created as long as
 # you don't change it yourself.
 # If "never", Scala Steward will never update the PR
-# Default: "on-conflicts"
+# Default: ${PullRequestUpdateStrategy.default.asJson.noSpaces}
 updatePullRequests = "always" | "on-conflicts" | "never"
 
 # If set, Scala Steward will use this message template for the commit messages and PR titles.
-# Supported variables: ${artifactName}, ${currentVersion}, ${nextVersion} and ${default}
-# Default: "${default}" which is equivalent to "Update ${artifactName} to ${nextVersion}"
-commits.message = "Update ${artifactName} from ${currentVersion} to ${nextVersion}"
+# Supported variables: $${artifactName}, $${currentVersion}, $${nextVersion} and $${default}
+# Default: "$${default}" which is equivalent to "Update $${artifactName} to $${nextVersion}"
+commits.message = "Update $${artifactName} from $${currentVersion} to $${nextVersion}"
 
 # If true and when upgrading version in .scalafmt.conf, Scala Steward will perform scalafmt
 # and add a separate commit when format changed. So you don't need reformat manually and can merge PR.
 # If false, Scala Steward will not perform scalafmt, so your CI may abort when reformat needed.
-# Default: true
+# Default: ${ScalafmtConfig.defaultRunAfterUpgrading.asJson.noSpaces}
 scalafmt.runAfterUpgrading = false
 
 # It is possible to have multiple scala projects in a single repository. In that case the folders containing the projects (build.sbt folders)
 # are specified using the buildRoots property. Note that the paths used there are relative and if the repo directory itself also contains a build.sbt the dot can be used to specify it.
-# Default: ["."]
+# Default: ${RepoConfig.defaultBuildRoots.asJson.noSpaces}
 buildRoots = [ ".", "subfolder/projectA" ]
 
 # Define commands that are executed after an update via a hook.
@@ -184,6 +190,8 @@ dependencyOverrides = [
 # to add assignees or request reviews. Consequently, it won't work for public @scala-steward instance on GitHub.
 assignees = [ "username1", "username2" ]
 reviewers = [ "username1", "username2" ]
+""")
+println("```")
 ```
 
 The version information given in the patterns above can be in two formats:
