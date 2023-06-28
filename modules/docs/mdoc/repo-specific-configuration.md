@@ -136,7 +136,7 @@ updatePullRequests = "always" | "on-conflicts" | "never"
 
 # If set, Scala Steward will use this message template for the commit messages and PR titles.
 # Supported variables: $${artifactName}, $${currentVersion}, $${nextVersion} and $${default}
-# Default: "$${default}" which is equivalent to "Update $${artifactName} to $${nextVersion}"
+# Default: ${CommitsConfig.defaultMessage.asJson.noSpaces} which is equivalent to "Update $${artifactName} to $${nextVersion}"
 commits.message = "Update $${artifactName} from $${currentVersion} to $${nextVersion}"
 
 # If true and when upgrading version in .scalafmt.conf, Scala Steward will perform scalafmt
