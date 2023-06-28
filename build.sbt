@@ -248,8 +248,12 @@ lazy val docs = myCrossProject("docs")
       try git.runner.value.apply("diff", "--quiet", outDir)(rootDir, streams.value.log)
       catch {
         case t: Throwable =>
-          val msg = s"Docs in $inDir and $outDir are out of sync." +
-            " Run 'sbt docs/mdoc' and commit the changes to fix this."
+          val diff = git.runner.value.apply("diff", outDir)(rootDir, streams.value.log)
+          val msg = s"""|Docs in $inDir and $outDir are out of sync.
+                        |Run 'sbt docs/mdoc' and commit the changes to fix this.
+                        |The diff is:
+                        |$diff
+                        |""".stripMargin
           throw new Throwable(msg, t)
       }
       ()

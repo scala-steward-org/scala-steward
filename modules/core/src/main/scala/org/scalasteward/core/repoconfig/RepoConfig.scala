@@ -25,6 +25,7 @@ import io.circe.syntax._
 import org.scalasteward.core.buildtool.BuildRoot
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.edit.hooks.PostUpdateHook
+import org.scalasteward.core.repoconfig.RepoConfig.defaultBuildRoots
 
 final case class RepoConfig(
     commits: CommitsConfig = CommitsConfig(),
@@ -41,7 +42,7 @@ final case class RepoConfig(
   def buildRootsOrDefault(repo: Repo): List[BuildRoot] =
     buildRoots
       .map(_.filterNot(_.relativePath.contains("..")))
-      .getOrElse(List(BuildRootConfig.repoRoot))
+      .getOrElse(defaultBuildRoots)
       .map(cfg => BuildRoot(repo, cfg.relativePath))
 
   def postUpdateHooksOrDefault: List[PostUpdateHook] =
@@ -56,6 +57,9 @@ final case class RepoConfig(
 
 object RepoConfig {
   val empty: RepoConfig = RepoConfig()
+
+  val defaultBuildRoots: List[BuildRootConfig] =
+    List(BuildRootConfig.repoRoot)
 
   implicit val repoConfigEq: Eq[RepoConfig] =
     Eq.fromUniversalEquals
