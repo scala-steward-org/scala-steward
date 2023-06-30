@@ -212,8 +212,6 @@ lazy val core = myCrossProject("core")
     // Uncomment for remote debugging:
     // run / javaOptions += "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005",
     Test / fork := true,
-    Test / testOptions +=
-      Tests.Cleanup(() => Path(file(Properties.tmpDir) / "scala-steward").deleteRecursively()),
     Compile / resourceGenerators += Def.task {
       val outDir = (Compile / resourceManaged).value
       def downloadPlugin(v: String): File = {
