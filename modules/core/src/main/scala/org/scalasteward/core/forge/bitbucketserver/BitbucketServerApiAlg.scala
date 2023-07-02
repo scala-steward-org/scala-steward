@@ -86,6 +86,13 @@ final class BitbucketServerApiAlg[F[_]](
     } yield pr.toPullRequestOut
   }
 
+  override def updatePullRequest(
+      number: PullRequestNumber,
+      repo: Repo,
+      data: NewPullRequestData
+  ): F[PullRequestOut] =
+    F.raiseError(new NotImplementedError(s"updatePullRequest($number, $repo, $data)"))
+
   private def useDefaultReviewers(repo: Repo): F[List[Reviewer]] =
     if (config.useDefaultReviewers) getDefaultReviewers(repo) else F.pure(List.empty[Reviewer])
 

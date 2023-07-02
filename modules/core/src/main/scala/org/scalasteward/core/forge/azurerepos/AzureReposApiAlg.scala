@@ -54,6 +54,13 @@ final class AzureReposApiAlg[F[_]](
     } yield pullRequestOut
   }
 
+  override def updatePullRequest(
+      number: PullRequestNumber,
+      repo: Repo,
+      data: NewPullRequestData
+  ): F[PullRequestOut] =
+    F.raiseError(new NotImplementedError(s"updatePullRequest($number, $repo, $data)"))
+
   // https://docs.microsoft.com/en-us/rest/api/azure/devops/git/pull-requests/update?view=azure-devops-rest-7.1
   override def closePullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut] =
     client.patchWithBody[PullRequestOut, ClosePullRequestPayload](

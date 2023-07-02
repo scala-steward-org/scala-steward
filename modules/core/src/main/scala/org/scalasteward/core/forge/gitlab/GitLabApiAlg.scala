@@ -248,6 +248,13 @@ final class GitLabApiAlg[F[_]: Parallel](
     updatedMergeRequest.map(_.pullRequestOut)
   }
 
+  override def updatePullRequest(
+      number: PullRequestNumber,
+      repo: Repo,
+      data: NewPullRequestData
+  ): F[PullRequestOut] =
+    F.raiseError(new NotImplementedError(s"updatePullRequest($number, $repo, $data)"))
+
   private def mergePipelineUponSuccess(repo: Repo, mr: MergeRequestOut): F[MergeRequestOut] =
     mr match {
       case mr if mr.mergeStatus === GitLabMergeStatus.CanBeMerged =>

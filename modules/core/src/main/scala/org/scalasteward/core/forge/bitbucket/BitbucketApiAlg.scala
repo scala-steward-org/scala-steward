@@ -97,6 +97,13 @@ class BitbucketApiAlg[F[_]](
     } yield pullRequestOut
   }
 
+  override def updatePullRequest(
+      number: PullRequestNumber,
+      repo: Repo,
+      data: NewPullRequestData
+  ): F[PullRequestOut] =
+    F.raiseError(new NotImplementedError(s"updatePullRequest($number, $repo, $data)"))
+
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
     client.get(url.branch(repo, branch), modify(repo))
 

@@ -61,6 +61,13 @@ final class GitHubApiAlg[F[_]](
     } yield pullRequestOut
   }
 
+  override def updatePullRequest(
+      number: PullRequestNumber,
+      repo: Repo,
+      data: NewPullRequestData
+  ): F[PullRequestOut] =
+    F.raiseError(new NotImplementedError(s"updatePullRequest($number, $repo, $data)"))
+
   /** https://developer.github.com/v3/repos/branches/#get-branch */
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
     client.get(url.branches(repo, branch), modify(repo))
