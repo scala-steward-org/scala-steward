@@ -38,13 +38,13 @@ final class GitHubApiAlg[F[_]](
 ) extends ForgeApiAlg[F] {
   private val url = new Url(gitHubApiHost)
 
-  /** https://developer.github.com/v3/repos/forks/#create-a-fork */
+  /** https://docs.github.com/en/rest/repos/forks?apiVersion=2022-11-28#create-a-fork */
   override def createFork(repo: Repo): F[RepoOut] =
     client.post[RepoOut](url.forks(repo), modify(repo)).flatTap { repoOut =>
       F.raiseWhen(repoOut.parent.exists(_.archived))(RepositoryArchived(repo))
     }
 
-  /** https://developer.github.com/v3/pulls/#create-a-pull-request */
+  /** https://docs.github.com/en/rest/pulls?apiVersion=2022-11-28#create-a-pull-request */
   override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] = {
     val payload = CreatePullRequestPayload.from(data)
     val create = client
@@ -65,6 +65,7 @@ final class GitHubApiAlg[F[_]](
     } yield pullRequestOut
   }
 
+  /** https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#update-a-pull-request */
   override def updatePullRequest(
       number: PullRequestNumber,
       repo: Repo,
@@ -88,21 +89,21 @@ final class GitHubApiAlg[F[_]](
     } yield pullRequestOut
   }
 
-  /** https://developer.github.com/v3/repos/branches/#get-branch */
+  /** https://docs.github.com/en/rest/repos/branches?apiVersion=2022-11-28#get-branch */
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
     client.get(url.branches(repo, branch), modify(repo))
 
-  /** https://developer.github.com/v3/repos/#get */
+  /** https://docs.github.com/en/rest/repos?apiVersion=2022-11-28#get */
   override def getRepo(repo: Repo): F[RepoOut] =
     client.get[RepoOut](url.repos(repo), modify(repo)).flatTap { repoOut =>
       F.raiseWhen(repoOut.archived)(RepositoryArchived(repo))
     }
 
-  /** https://developer.github.com/v3/pulls/#list-pull-requests */
+  /** https://docs.github.com/en/rest/pulls?apiVersion=2022-11-28#list-pull-requests */
   override def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]] =
     client.get(url.listPullRequests(repo, head, base), modify(repo))
 
-  /** https://developer.github.com/v3/pulls/#update-a-pull-request */
+  /** https://docs.github.com/en/rest/pulls?apiVersion=2022-11-28#update-a-pull-request */
   override def closePullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut] =
     client.patchWithBody[PullRequestOut, UpdateState](
       url.pull(repo, number),
@@ -110,7 +111,7 @@ final class GitHubApiAlg[F[_]](
       modify(repo)
     )
 
-  /** https://developer.github.com/v3/issues#create-an-issue-comment */
+  /** https://docs.github.com/en/rest/issues?apiVersion=2022-11-28#create-an-issue-comment */
   override def commentPullRequest(
       repo: Repo,
       number: PullRequestNumber,
@@ -119,7 +120,8 @@ final class GitHubApiAlg[F[_]](
     client
       .postWithBody(url.comments(repo, number), Comment(comment), modify(repo))
 
-  /** https://docs.github.com/en/rest/reference/issues#add-labels-to-an-issue */
+  /** https://docs.github.com/en/rest/reference/issues?apiVersion=2022-11-28#add-labels-to-an-issue
+    */
   private def labelPullRequest(
       repo: Repo,
       number: PullRequestNumber,
