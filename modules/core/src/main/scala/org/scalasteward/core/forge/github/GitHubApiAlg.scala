@@ -69,8 +69,24 @@ final class GitHubApiAlg[F[_]](
       number: PullRequestNumber,
       repo: Repo,
       data: NewPullRequestData
-  ): F[PullRequestOut] =
-    F.raiseError(new NotImplementedError(s"updatePullRequest($number, $repo, $data)"))
+  ): F[PullRequestOut] = {
+    val payload = UpdatePullRequestPayload.from(data)
+
+    val update = client
+      .patchWithBody[PullRequestOut, UpdatePullRequestPayload](
+        uri = url.pull(repo, number),
+        body = payload,
+        modify = modify(repo)
+      )
+      .adaptErr(SecondaryRateLimitExceeded.fromThrowable)
+
+    for {
+      pullRequestOut <- update
+      _ <- F.whenA(data.labels.nonEmpty)(labelPullRequest(repo, number, data.labels))
+      _ <- F.whenA(data.assignees.nonEmpty)(addAssignees(repo, number, data.assignees))
+      _ <- F.whenA(data.reviewers.nonEmpty)(addReviewers(repo, number, data.reviewers))
+    } yield pullRequestOut
+  }
 
   /** https://developer.github.com/v3/repos/branches/#get-branch */
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
