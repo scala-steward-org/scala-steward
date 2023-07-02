@@ -21,18 +21,18 @@ import io.circe.generic.semiauto.deriveEncoder
 import org.scalasteward.core.forge.data.NewPullRequestData
 import org.scalasteward.core.git.Branch
 
-final case class PullRequestPayload(
+final case class CreatePullRequestPayload(
     title: String,
     body: String,
     head: String,
     base: Branch,
     draft: Boolean
 )
-object PullRequestPayload {
-  implicit val encoder: Encoder[PullRequestPayload] = deriveEncoder
+object CreatePullRequestPayload {
+  implicit val encoder: Encoder[CreatePullRequestPayload] = deriveEncoder
 
-  def from(newPullRequestData: NewPullRequestData): PullRequestPayload =
-    PullRequestPayload(
+  def from(newPullRequestData: NewPullRequestData): CreatePullRequestPayload =
+    CreatePullRequestPayload(
       title = newPullRequestData.title,
       body = newPullRequestData.body,
       head = newPullRequestData.head,

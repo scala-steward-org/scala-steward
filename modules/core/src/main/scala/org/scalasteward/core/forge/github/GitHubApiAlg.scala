@@ -46,9 +46,13 @@ final class GitHubApiAlg[F[_]](
 
   /** https://developer.github.com/v3/pulls/#create-a-pull-request */
   override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] = {
-    val payload = PullRequestPayload.from(data)
+    val payload = CreatePullRequestPayload.from(data)
     val create = client
-      .postWithBody[PullRequestOut, PullRequestPayload](url.pulls(repo), payload, modify(repo))
+      .postWithBody[PullRequestOut, CreatePullRequestPayload](
+        uri = url.pulls(repo),
+        body = payload,
+        modify = modify(repo)
+      )
       .adaptErr(SecondaryRateLimitExceeded.fromThrowable)
 
     for {
