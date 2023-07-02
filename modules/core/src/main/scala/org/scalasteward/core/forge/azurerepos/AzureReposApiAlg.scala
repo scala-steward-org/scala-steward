@@ -58,7 +58,7 @@ final class AzureReposApiAlg[F[_]](
       number: PullRequestNumber,
       repo: Repo,
       data: NewPullRequestData
-  ): F[PullRequestOut] =
+  ): F[Unit] =
     F.raiseError(new NotImplementedError(s"updatePullRequest($number, $repo, $data)"))
 
   // https://docs.microsoft.com/en-us/rest/api/azure/devops/git/pull-requests/update?view=azure-devops-rest-7.1

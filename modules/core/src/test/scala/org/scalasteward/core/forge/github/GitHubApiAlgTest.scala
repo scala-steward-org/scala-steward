@@ -337,14 +337,7 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
     val pr = gitHubApiAlg.updatePullRequest(number, repo, data).runA(state)
 
-    val expected = PullRequestOut(
-      uri"https://github.com/octocat/Hello-World/pull/42",
-      PullRequestState.Open,
-      number,
-      "updated-title"
-    )
-
-    assertIO(pr, expected)
+    assertIO(pr, ())
   }
 
   test("createPullRequest with assignees and reviewers") {
@@ -376,14 +369,7 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
     val pr = gitHubApiAlg.updatePullRequest(number, repo, data).runA(state)
 
-    val expected = PullRequestOut(
-      uri"https://github.com/octocat/Hello-World/pull/42",
-      PullRequestState.Open,
-      number,
-      "updated-title"
-    )
-
-    assertIO(pr, expected)
+    assertIO(pr, ())
   }
 
   test("createPullRequest with assignees and reviewers should not fail if can't assign") {
@@ -427,14 +413,7 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
         .updatePullRequest(number, repo.copy(repo = "cant-assign-reviewers"), data)
         .runA(state)
 
-    val expected = PullRequestOut(
-      uri"https://github.com/fthomas/cant-assign-reviewers/pull/42",
-      PullRequestState.Open,
-      number,
-      "updated-title"
-    )
-
-    assertIO(pr, expected)
+    assertIO(pr, ())
   }
 
   test("createPullRequest with labels") {
@@ -466,14 +445,7 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
     val pr = gitHubApiAlg.updatePullRequest(number, repo, data).runA(state)
 
-    val expected = PullRequestOut(
-      uri"https://github.com/octocat/Hello-World/pull/42",
-      PullRequestState.Open,
-      number,
-      "updated-title"
-    )
-
-    assertIO(pr, expected)
+    assertIO(pr, ())
   }
 
   test("createPullRequest should fail when can't add labels") {

@@ -190,7 +190,7 @@ final class GiteaApiAlg[F[_]: HttpJsonClient](
       number: PullRequestNumber,
       repo: Repo,
       data: NewPullRequestData
-  ): F[PullRequestOut] =
+  ): F[Unit] =
     F.raiseError(new NotImplementedError(s"updatePullRequest($number, $repo, $data)"))
 
   override def closePullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut] = {

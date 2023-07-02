@@ -70,7 +70,7 @@ final class GitHubApiAlg[F[_]](
       number: PullRequestNumber,
       repo: Repo,
       data: NewPullRequestData
-  ): F[PullRequestOut] = {
+  ): F[Unit] = {
     val payload = UpdatePullRequestPayload.from(data)
 
     val update = client
@@ -82,11 +82,11 @@ final class GitHubApiAlg[F[_]](
       .adaptErr(SecondaryRateLimitExceeded.fromThrowable)
 
     for {
-      pullRequestOut <- update
+      _ <- update
       _ <- F.whenA(data.labels.nonEmpty)(labelPullRequest(repo, number, data.labels))
       _ <- F.whenA(data.assignees.nonEmpty)(addAssignees(repo, number, data.assignees))
       _ <- F.whenA(data.reviewers.nonEmpty)(addReviewers(repo, number, data.reviewers))
-    } yield pullRequestOut
+    } yield ()
   }
 
   /** https://docs.github.com/en/rest/repos/branches?apiVersion=2022-11-28#get-branch */

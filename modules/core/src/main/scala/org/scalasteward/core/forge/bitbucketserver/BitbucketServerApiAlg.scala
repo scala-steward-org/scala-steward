@@ -90,7 +90,7 @@ final class BitbucketServerApiAlg[F[_]](
       number: PullRequestNumber,
       repo: Repo,
       data: NewPullRequestData
-  ): F[PullRequestOut] =
+  ): F[Unit] =
     F.raiseError(new NotImplementedError(s"updatePullRequest($number, $repo, $data)"))
 
   private def useDefaultReviewers(repo: Repo): F[List[Reviewer]] =
