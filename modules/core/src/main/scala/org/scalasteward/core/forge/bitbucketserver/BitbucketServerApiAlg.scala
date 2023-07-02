@@ -91,7 +91,7 @@ final class BitbucketServerApiAlg[F[_]](
       repo: Repo,
       data: NewPullRequestData
   ): F[Unit] =
-    F.raiseError(new NotImplementedError(s"updatePullRequest($number, $repo, $data)"))
+    logger.warn("Updating PRs is not yet supported for Bitbucket Server")
 
   private def useDefaultReviewers(repo: Repo): F[List[Reviewer]] =
     if (config.useDefaultReviewers) getDefaultReviewers(repo) else F.pure(List.empty[Reviewer])

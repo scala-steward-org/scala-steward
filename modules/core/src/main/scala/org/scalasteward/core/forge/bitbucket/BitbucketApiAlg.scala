@@ -102,7 +102,7 @@ class BitbucketApiAlg[F[_]](
       repo: Repo,
       data: NewPullRequestData
   ): F[Unit] =
-    F.raiseError(new NotImplementedError(s"updatePullRequest($number, $repo, $data)"))
+    logger.warn("Updating PRs is not yet supported for Bitbucket")
 
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
     client.get(url.branch(repo, branch), modify(repo))

@@ -253,7 +253,7 @@ final class GitLabApiAlg[F[_]: Parallel](
       repo: Repo,
       data: NewPullRequestData
   ): F[Unit] =
-    F.raiseError(new NotImplementedError(s"updatePullRequest($number, $repo, $data)"))
+    logger.warn("Updating PRs is not yet supported for GitLab")
 
   private def mergePipelineUponSuccess(repo: Repo, mr: MergeRequestOut): F[MergeRequestOut] =
     mr match {
