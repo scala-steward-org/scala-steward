@@ -27,6 +27,8 @@ trait ForgeApiAlg[F[_]] {
 
   def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut]
 
+  def updatePullRequest(number: PullRequestNumber, repo: Repo, data: NewPullRequestData): F[Unit]
+
   def closePullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut]
 
   def getBranch(repo: Repo, branch: Branch): F[BranchOut]

@@ -1,7 +1,9 @@
 package org.scalasteward.core.forge.github
 
-import cats.syntax.semigroupk._
+import cats.effect.IO
+import cats.syntax.all._
 import io.circe.literal._
+import io.circe.Json
 import munit.CatsEffectSuite
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
@@ -66,7 +68,19 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
           }]"""
       )
 
-    case PATCH -> Root / "repos" / "fthomas" / "base.g8" / "pulls" / IntVar(_) =>
+    case req @ PATCH -> Root / "repos" / "fthomas" / "base.g8" / "pulls" / IntVar(42) =>
+      req.as[Json].flatMapF(_.hcursor.get[String]("title").liftTo[IO]).flatMap { title =>
+        Ok(
+          json"""{
+            "html_url": "https://github.com/octocat/Hello-World/pull/42",
+            "state": "open",
+            "number": 42,
+            "title": $title
+          }"""
+        )
+      }
+
+    case PATCH -> Root / "repos" / "fthomas" / "base.g8" / "pulls" / IntVar(1347) =>
       Ok(
         json"""{
             "html_url": "https://github.com/octocat/Hello-World/pull/1347",
@@ -115,11 +129,27 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
             "title": "new-feature"
             } """)
 
+    case PATCH -> Root / "repos" / "fthomas" / "cant-assign-reviewers" / "pulls" / "42" =>
+      Created(json"""  {
+            "html_url": "https://github.com/fthomas/cant-assign-reviewers/pull/42",
+            "state": "open",
+            "number": 42,
+            "title": "updated-title"
+            } """)
+
     case POST -> Root / "repos" / "fthomas" / "cant-add-labels" / "pulls" =>
       Created(json"""  {
             "html_url": "https://github.com/octocat/Hello-World/pull/13",
             "state": "open",
             "number": 13,
+            "title": "can't add labels to me"
+            } """)
+
+    case PATCH -> Root / "repos" / "fthomas" / "cant-add-labels" / "pulls" / "42" =>
+      Created(json"""  {
+            "html_url": "https://github.com/fthomas/cant-add-labels/pull/42",
+            "state": "open",
+            "number": 42,
             "title": "can't add labels to me"
             } """)
 
@@ -136,6 +166,9 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
             "default": true
           }]""")
 
+    case POST -> Root / "repos" / "fthomas" / "cant-add-labels" / "issues" / "42" / "labels" =>
+      BadRequest("can't add labels")
+
     case POST -> Root / "repos" / "fthomas" / "cant-add-labels" / "issues" / "13" / "labels" =>
       BadRequest("can't add labels")
 
@@ -151,6 +184,11 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       BadRequest()
 
     case POST ->
+        Root / "repos" / "fthomas" / "cant-assign-reviewers"
+        / "pulls" / IntVar(_) / "requested_reviewers" =>
+      BadRequest()
+
+    case PATCH ->
         Root / "repos" / "fthomas" / "cant-assign-reviewers"
         / "pulls" / IntVar(_) / "requested_reviewers" =>
       BadRequest()
@@ -284,6 +322,24 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     assertIO(pr, pullRequest)
   }
 
+  test("updatePullRequest") {
+    val data = NewPullRequestData(
+      title = "updated-title",
+      body = "body",
+      head = "aaa",
+      base = Branch("master"),
+      labels = Nil,
+      assignees = Nil,
+      reviewers = Nil
+    )
+
+    val number = PullRequestNumber(42)
+
+    val pr = gitHubApiAlg.updatePullRequest(number, repo, data).runA(state)
+
+    assertIO(pr, ())
+  }
+
   test("createPullRequest with assignees and reviewers") {
     val data = NewPullRequestData(
       title = "new-feature",
@@ -296,6 +352,24 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     )
     val pr = gitHubApiAlg.createPullRequest(repo, data).runA(state)
     assertIO(pr, pullRequest)
+  }
+
+  test("updatePullRequest with assignees and reviewers") {
+    val data = NewPullRequestData(
+      title = "updated-title",
+      body = "body",
+      head = "aaa",
+      base = Branch("master"),
+      labels = Nil,
+      assignees = List("foo"),
+      reviewers = List("bar")
+    )
+
+    val number = PullRequestNumber(42)
+
+    val pr = gitHubApiAlg.updatePullRequest(number, repo, data).runA(state)
+
+    assertIO(pr, ())
   }
 
   test("createPullRequest with assignees and reviewers should not fail if can't assign") {
@@ -321,6 +395,27 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     assertIO(pullRequestOut, expectedPullRequestOut)
   }
 
+  test("updatePullRequest with assignees and reviewers should not fail if can't assign") {
+    val data = NewPullRequestData(
+      title = "updated-title",
+      body = "body",
+      head = "aaa",
+      base = Branch("master"),
+      labels = Nil,
+      assignees = List("foo"),
+      reviewers = List("bar")
+    )
+
+    val number = PullRequestNumber(42)
+
+    val pr =
+      gitHubApiAlg
+        .updatePullRequest(number, repo.copy(repo = "cant-assign-reviewers"), data)
+        .runA(state)
+
+    assertIO(pr, ())
+  }
+
   test("createPullRequest with labels") {
     val data = NewPullRequestData(
       title = "new-feature",
@@ -333,6 +428,24 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     )
     val pr = gitHubApiAlg.createPullRequest(repo, data).runA(state)
     assertIO(pr, pullRequest)
+  }
+
+  test("updatePullRequest with labels") {
+    val data = NewPullRequestData(
+      title = "updated-title",
+      body = "body",
+      head = "aaa",
+      base = Branch("master"),
+      labels = List("foo", "bar"),
+      assignees = Nil,
+      reviewers = Nil
+    )
+
+    val number = PullRequestNumber(42)
+
+    val pr = gitHubApiAlg.updatePullRequest(number, repo, data).runA(state)
+
+    assertIO(pr, ())
   }
 
   test("createPullRequest should fail when can't add labels") {
@@ -359,6 +472,38 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
          |  Content-Type: text/plain; charset=UTF-8
          |  Content-Length: 16
          |body: can't add labels""".stripMargin
+    assertIO(error, Right(expectedError))
+  }
+
+  test("updatePullRequest should fail when can't add labels") {
+    val data = NewPullRequestData(
+      title = "updated-title",
+      body = "body",
+      head = "aaa",
+      base = Branch("master"),
+      labels = List("foo", "bar"),
+      assignees = Nil,
+      reviewers = Nil
+    )
+
+    val number = PullRequestNumber(42)
+
+    val error =
+      gitHubApiAlg
+        .updatePullRequest(number, repo.copy(repo = "cant-add-labels"), data)
+        .runA(state)
+        .attempt
+        .map(_.swap.map(_.getMessage))
+
+    val expectedError =
+      """|uri: http://example.com/repos/fthomas/cant-add-labels/issues/42/labels
+         |method: POST
+         |status: 400 Bad Request
+         |headers:
+         |  Content-Type: text/plain; charset=UTF-8
+         |  Content-Length: 16
+         |body: can't add labels""".stripMargin
+
     assertIO(error, Right(expectedError))
   }
 

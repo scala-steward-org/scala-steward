@@ -17,7 +17,7 @@
 package org.scalasteward.core.nurture
 
 import cats.effect.Concurrent
-import cats.implicits._
+import cats.syntax.all._
 import cats.{Applicative, Id}
 import org.scalasteward.core.application.Config.ForgeCfg
 import org.scalasteward.core.coursier.CoursierAlg
@@ -99,7 +99,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
           logger.info(s"PR ${pr.html_url} is closed") >>
             deleteRemoteBranch(data.repo, data.updateBranch).as(Ignored)
         case Some(pr) if !pr.state.isClosed =>
-          logger.info(s"Found PR ${pr.html_url}") >> updatePullRequest(data)
+          logger.info(s"Found PR ${pr.html_url}") >> updatePullRequest(data, pr.number)
         case _ =>
           applyNewUpdate(data).flatTap {
             case Created(newPrNumber) => closeObsoletePullRequests(data, newPrNumber)
@@ -262,14 +262,14 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       _ <- logger.info(s"Created PR ${pr.html_url}")
     } yield Created(pr.number)
 
-  private def updatePullRequest(data: UpdateData): F[ProcessResult] =
+  private def updatePullRequest(data: UpdateData, number: PullRequestNumber): F[ProcessResult] =
     if (data.repoConfig.updatePullRequestsOrDefault =!= PullRequestUpdateStrategy.Never)
       gitAlg.returnToCurrentBranch(data.repo) {
-        for {
-          _ <- gitAlg.checkoutBranch(data.repo, data.updateBranch)
-          update <- shouldBeUpdated(data)
-          result <- if (update) mergeAndApplyAgain(data) else F.pure[ProcessResult](Ignored)
-        } yield result
+        gitAlg.checkoutBranch(data.repo, data.updateBranch) >>
+          shouldBeUpdated(data).ifM(
+            ifTrue = mergeAndApplyAgain(number, data),
+            ifFalse = (Ignored: ProcessResult).pure
+          )
       }
     else
       logger.info("PR updates are disabled by flag").as(Ignored)
@@ -293,7 +293,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
     result.flatMap { case (update, msg) => logger.info(msg).as(update) }
   }
 
-  private def mergeAndApplyAgain(data: UpdateData): F[ProcessResult] =
+  private def mergeAndApplyAgain(number: PullRequestNumber, data: UpdateData): F[ProcessResult] =
     for {
       _ <- logger.info(
         s"Merge branch ${data.baseBranch.name} into ${data.updateBranch.name} and apply again"
@@ -307,6 +307,8 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       editCommits = edits.flatMap(_.commits)
       commits = maybeRevertCommit.toList ++ maybeMergeCommit.toList ++ editCommits
       result <- pushCommits(data, commits)
+      requestData <- preparePullRequest(data, edits)
+      _ <- forgeApiAlg.updatePullRequest(number: PullRequestNumber, data.repo, requestData)
     } yield result
 
 }

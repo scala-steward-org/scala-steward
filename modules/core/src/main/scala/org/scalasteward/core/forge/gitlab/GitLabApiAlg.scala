@@ -248,6 +248,13 @@ final class GitLabApiAlg[F[_]: Parallel](
     updatedMergeRequest.map(_.pullRequestOut)
   }
 
+  override def updatePullRequest(
+      number: PullRequestNumber,
+      repo: Repo,
+      data: NewPullRequestData
+  ): F[Unit] =
+    logger.warn("Updating PRs is not yet supported for GitLab")
+
   private def mergePipelineUponSuccess(repo: Repo, mr: MergeRequestOut): F[MergeRequestOut] =
     mr match {
       case mr if mr.mergeStatus === GitLabMergeStatus.CanBeMerged =>

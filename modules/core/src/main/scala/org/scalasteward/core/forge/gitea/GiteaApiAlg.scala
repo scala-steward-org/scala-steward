@@ -186,6 +186,13 @@ final class GiteaApiAlg[F[_]: HttpJsonClient](
         )
     } yield pullRequestOut(resp)
 
+  override def updatePullRequest(
+      number: PullRequestNumber,
+      repo: Repo,
+      data: NewPullRequestData
+  ): F[Unit] =
+    logger.warn("Updating PRs is not yet supported for Gitea")
+
   override def closePullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut] = {
     val edit = EditPullRequestOption(state = "closed")
     client
