@@ -43,7 +43,7 @@ final class RepoConfigAlg[F[_]](maybeGlobalRepoConfig: Option[RepoConfig])(impli
       )(readRepoConfigFromFile(_))
       _ <- configParsingResult.fold(
         F.unit,
-        error => logger.info(s"Failed to parse $repoConfigBasename: ${error.getMessage}"),
+        error => logger.info(s"Failed to parse $activeConfigFile: ${error.getMessage}"),
         repoConfig => logger.info(s"Parsed repo config ${repoConfig.show}")
       )
     } yield configParsingResult
@@ -86,8 +86,10 @@ object RepoConfigAlg {
   private def activeConfigFile[F[_]](
       repoDir: File
   )(implicit fileAlg: FileAlg[F], logger: Logger[F], F: Monad[F]): F[Option[File]] = {
-    val configFileCandidates: F[List[File]] = repoConfigFileSearchPath
-      .map(_ :+ repoConfigBasename)
+    val configFileCandidates: F[List[File]] = (repoConfigFileSearchPath
+      .map(_ :+ repoConfigBasename) ++
+      repoConfigFileSearchPath
+        .map(_ :+ repoConfigBasename.substring(1)))
       .map(path => path.foldLeft(repoDir)(_ / _))
       .filterA(fileAlg.isRegularFile)
 

@@ -264,7 +264,7 @@ class RepoConfigAlgTest extends FunSuite {
     assert(clue(log).contains(startOfErrorMsg))
   }
 
-  test("config file in .github/") {
+  test("hidden config file in .github/") {
     val repo = Repo("test", "dot-github-config")
     val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
     val rootConfigFile = repoDir / ".scala-steward.conf"
@@ -278,11 +278,39 @@ class RepoConfigAlgTest extends FunSuite {
     assert(config.maybeRepoConfig.isDefined)
   }
 
-  test("config file in .config/") {
+  test("not hidden config file in .github/") {
+    val repo = Repo("test", "dot-github-config")
+    val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
+    val rootConfigFile = repoDir / "scala-steward.conf"
+    val dotGithubConfigFile = repoDir / ".github" / "scala-steward.conf"
+    val initialState = MockState.empty.addFiles(dotGithubConfigFile -> "").unsafeRunSync()
+    val config = repoConfigAlg.readRepoConfig(repo).runA(initialState).unsafeRunSync()
+
+    assert(!fileAlg.isRegularFile(rootConfigFile).unsafeRunSync())
+    assert(fileAlg.isRegularFile(dotGithubConfigFile).unsafeRunSync())
+
+    assert(config.maybeRepoConfig.isDefined)
+  }
+
+  test("hidden config file in .config/") {
     val repo = Repo("test", "dot-config-config")
     val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
     val rootConfigFile = repoDir / ".scala-steward.conf"
     val dotConfigConfigFile = repoDir / ".config" / ".scala-steward.conf"
+    val initialState = MockState.empty.addFiles(dotConfigConfigFile -> "").unsafeRunSync()
+    val config = repoConfigAlg.readRepoConfig(repo).runA(initialState).unsafeRunSync()
+
+    assert(!fileAlg.isRegularFile(rootConfigFile).unsafeRunSync())
+    assert(fileAlg.isRegularFile(dotConfigConfigFile).unsafeRunSync())
+
+    assert(config.maybeRepoConfig.isDefined)
+  }
+
+  test("not hidden config file in .config/") {
+    val repo = Repo("test", "dot-config-config")
+    val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
+    val rootConfigFile = repoDir / "scala-steward.conf"
+    val dotConfigConfigFile = repoDir / ".config" / "scala-steward.conf"
     val initialState = MockState.empty.addFiles(dotConfigConfigFile -> "").unsafeRunSync()
     val config = repoConfigAlg.readRepoConfig(repo).runA(initialState).unsafeRunSync()
 

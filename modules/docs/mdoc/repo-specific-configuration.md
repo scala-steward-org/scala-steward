@@ -1,7 +1,7 @@
 # Repository-specific configuration
 
-You can add a configuration file `.scala-steward.conf` to configure how Scala Steward updates your repository.
-The `.scala-steward.conf` configuration file can be located in the root of your repository, in `.github` directory or in `.config` directory (searched in this order).
+You can add a configuration file named either `.scala-steward.conf` or `scala-steward.conf` to configure how Scala Steward updates your repository.
+The `[.]scala-steward.conf` configuration file can be located in the root of your repository, in `.github` directory or in `.config` directory (searched in this order).
 If a configuration file exists in more than one location, only the first found file is taken into account.
 
 ```scala mdoc:passthrough
