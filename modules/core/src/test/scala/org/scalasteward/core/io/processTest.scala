@@ -2,7 +2,6 @@ package org.scalasteward.core.io
 
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
-import fs2.text.LineTooLongException
 import munit.FunSuite
 import org.scalasteward.core.io.process._
 import org.scalasteward.core.util.{DateTimeAlg, Nel}
@@ -47,7 +46,7 @@ class processTest extends FunSuite {
   test("echo: fail, line length > buffer size") {
     val Left(t) =
       slurp3(Nel.of("echo", "-n", "123456"), 4, Set.empty).attempt.unsafeRunSync()
-    assert(clue(t).isInstanceOf[LineTooLongException])
+    assert(clue(t).isInstanceOf[ProcessLineTooLongException])
   }
 
   test("ls: ok") {
