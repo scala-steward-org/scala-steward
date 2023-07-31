@@ -25,15 +25,15 @@ import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.buildtool.{BuildRoot, BuildToolAlg}
 import org.scalasteward.core.coursier.VersionsCache
 import org.scalasteward.core.data.{Dependency, Scope, Version}
-import org.scalasteward.core.edit.scalafix.{ScalafixCli, ScalafixMigration}
+import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.io.process.SlurpOptions
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
+import org.scalasteward.core.buildtool.sbt.scalaStewardSbtScalafix
 
 final class SbtAlg[F[_]](config: Config)(implicit
     fileAlg: FileAlg[F],
     processAlg: ProcessAlg[F],
-    scalafixCli: ScalafixCli[F],
     workspaceAlg: WorkspaceAlg[F],
     versionsCache: VersionsCache[F],
     F: Concurrent[F]
@@ -129,18 +129,52 @@ final class SbtAlg[F[_]](config: Config)(implicit
       .getVersions(Scope(sbtScalafixDependency, List(config.defaultResolver)), None)
       .map(_.lastOption)
 
+  private def addScalafixPluginTemporarily(
+      buildRootDir: File,
+      pluginVersion: Version,
+      metaBuilds: Int
+  ): Resource[F, Unit] = {
+    val plugin = scalaStewardSbtScalafix(pluginVersion)
+    List
+      .iterate(buildRootDir / project / project, metaBuilds + 1)(_ / project)
+      .collectFold(fileAlg.createTemporarily(_, plugin))
+  }
+
+  private def addScalacOptionsTemporarily(
+      buildRootDir: File,
+      scalacOptions: Option[Nel[String]],
+      metaBuilds: Int
+  ): Resource[F, Unit] =
+    scalacOptions.fold(Resource.unit[F]) { opts =>
+      val options = scalaStewardScalafixOptions(opts.toList)
+      List
+        .iterate(buildRootDir / project, metaBuilds + 1)(_ / project)
+        .collectFold(fileAlg.createTemporarily(_, options))
+    }
+
   private def runBuildMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
-    for {
-      buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
-      projectDir = buildRootDir / project
-      files0 <- (
-        fileAlg.walk(buildRootDir, 1).filter(_.extension.contains(".sbt")) ++
-          fileAlg.walk(projectDir, 3).filter(_.extension.exists(Set(".sbt", ".scala")))
-      ).compile.toList
-      _ <- Nel.fromList(files0).fold(F.unit) { files1 =>
-        scalafixCli.runMigration(buildRootDir, files1, migration)
-      }
-    } yield ()
+    OptionT(latestSbtScalafixVersion).foreachF { pluginVersion =>
+      for {
+        buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
+        metaBuilds <- metaBuildsCount(buildRootDir)
+        _ <- addScalafixPluginTemporarily(buildRootDir, pluginVersion, metaBuilds).surround {
+          addScalacOptionsTemporarily(buildRootDir, migration.scalacOptions, metaBuilds).surround {
+            val scalafixCmds = migration.rewriteRules.map(rule => s"$scalafixAll $rule").toList
+            val slurpOptions = SlurpOptions.ignoreBufferOverflow
+            val commands = Nel.fromList(
+              List.fill(metaBuilds + 1)(List(reloadPlugins, scalafixEnable) ++ scalafixCmds).flatten
+            )
+            commands.fold(F.unit) { cmds =>
+              sbt(
+                cmds,
+                buildRootDir,
+                slurpOptions
+              ).void
+            }
+          }
+        }
+      } yield ()
+    }
 
   private def sbt(
       sbtCommands: Nel[String],
