@@ -144,11 +144,11 @@ class SbtAlgTest extends FunSuite {
     val state = sbtAlg.runMigration(buildRoot, migration).runS(initialState).unsafeRunSync()
     val expected = initialState.copy(
       trace = Vector(
+        Cmd("test", "-d", s"$repoDir/project"),
         Cmd(
           "read",
           s"$workspace/store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json"
         ),
-        Cmd("test", "-d", s"$repoDir/project"),
         Cmd("write", s"$repoDir/project/project/scala-steward-sbt-scalafix.sbt"),
         Cmd.execSandboxed(
           repoDir,
@@ -185,12 +185,12 @@ class SbtAlgTest extends FunSuite {
     val state = sbtAlg.runMigration(buildRoot, migration).runS(initialState).unsafeRunSync()
     val expected = initialState.copy(
       trace = Vector(
+        Cmd("test", "-d", s"$repoDir/project"),
+        Cmd("test", "-d", s"$repoDir/project/project"),
         Cmd(
           "read",
           s"$workspace/store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json"
         ),
-        Cmd("test", "-d", s"$repoDir/project"),
-        Cmd("test", "-d", s"$repoDir/project/project"),
         Cmd("write", s"$repoDir/project/project/scala-steward-sbt-scalafix.sbt"),
         Cmd("write", s"$repoDir/project/project/project/scala-steward-sbt-scalafix.sbt"),
         Cmd.execSandboxed(
@@ -230,11 +230,11 @@ class SbtAlgTest extends FunSuite {
     val state = sbtAlg.runMigration(buildRoot, migration).runS(initialState).unsafeRunSync()
     val expected = initialState.copy(
       trace = Vector(
+        Cmd("test", "-d", s"$repoDir/project"),
         Cmd(
           "read",
           s"$workspace/store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json"
         ),
-        Cmd("test", "-d", s"$repoDir/project"),
         Cmd("write", s"$repoDir/project/project/scala-steward-sbt-scalafix.sbt"),
         Cmd("write", s"$repoDir/project/scala-steward-scalafix-options.sbt"),
         Cmd.execSandboxed(
@@ -274,12 +274,12 @@ class SbtAlgTest extends FunSuite {
     val state = sbtAlg.runMigration(buildRoot, migration).runS(initialState).unsafeRunSync()
     val expected = initialState.copy(
       trace = Vector(
+        Cmd("test", "-d", s"$repoDir/project"),
+        Cmd("test", "-d", s"$repoDir/project/project"),
         Cmd(
           "read",
           s"$workspace/store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json"
         ),
-        Cmd("test", "-d", s"$repoDir/project"),
-        Cmd("test", "-d", s"$repoDir/project/project"),
         Cmd("write", s"$repoDir/project/project/scala-steward-sbt-scalafix.sbt"),
         Cmd("write", s"$repoDir/project/project/project/scala-steward-sbt-scalafix.sbt"),
         Cmd("write", s"$repoDir/project/scala-steward-scalafix-options.sbt"),
