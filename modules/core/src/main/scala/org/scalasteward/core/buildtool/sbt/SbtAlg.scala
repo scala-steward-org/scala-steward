@@ -25,7 +25,7 @@ import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.buildtool.{BuildRoot, BuildToolAlg}
 import org.scalasteward.core.coursier.VersionsCache
 import org.scalasteward.core.data.{Dependency, Scope, Version}
-import org.scalasteward.core.edit.scalafix.ScalafixMigration
+import org.scalasteward.core.edit.scalafix.{ScalafixCli, ScalafixMigration}
 import org.scalasteward.core.io.process.SlurpOptions
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
@@ -34,6 +34,7 @@ import org.scalasteward.core.buildtool.sbt.scalaStewardSbtScalafix
 final class SbtAlg[F[_]](config: Config)(implicit
     fileAlg: FileAlg[F],
     processAlg: ProcessAlg[F],
+    scalafixCli: ScalafixCli[F],
     workspaceAlg: WorkspaceAlg[F],
     versionsCache: VersionsCache[F],
     F: Concurrent[F]
@@ -116,8 +117,28 @@ final class SbtAlg[F[_]](config: Config)(implicit
     for {
       buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
       metaBuilds <- metaBuildsCount(buildRootDir)
+      _ <- runSyntacticBuildMigrations(buildRootDir, migration)
       _ <- runSbtScalafix(buildRootDir, migration, metaBuilds, startDepth = 1)
     } yield ()
+
+  private def runSyntacticBuildMigrations(
+      buildRootDir: File,
+      migration: ScalafixMigration
+  ): F[Unit] = {
+    val rootSbtFiles =
+      fileAlg.walk(buildRootDir, 1).filter(_.extension.contains(".sbt"))
+
+    val metaBuildFiles =
+      fileAlg.walk(buildRootDir / project, 3).filter(_.extension.exists(Set(".sbt", ".scala")))
+
+    val allBuildFiles = (rootSbtFiles ++ metaBuildFiles).compile.toList
+
+    allBuildFiles.flatMap { buildFiles =>
+      Nel.fromList(buildFiles).fold(F.unit) { files =>
+        scalafixCli.runMigration(buildRootDir, files, migration)
+      }
+    }
+  }
 
   private def latestSbtScalafixVersion: F[Option[Version]] =
     versionsCache

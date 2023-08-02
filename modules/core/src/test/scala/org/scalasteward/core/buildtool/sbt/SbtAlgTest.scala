@@ -6,6 +6,7 @@ import org.scalasteward.core.buildtool.BuildRoot
 import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.data.{GroupId, Repo, Version}
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
+import org.scalasteward.core.edit.scalafix.ScalafixCli._
 import org.scalasteward.core.mock.MockContext.context._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
@@ -138,6 +139,7 @@ class SbtAlgTest extends FunSuite {
     )
     val initialState = MockState.empty
       .addFiles(
+        repoDir / "build.sbt" -> "",
         workspace / s"store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json" -> sbtScalafixVersionJson
       )
       .unsafeRunSync()
@@ -145,6 +147,15 @@ class SbtAlgTest extends FunSuite {
     val expected = initialState.copy(
       trace = Vector(
         Cmd("test", "-d", s"$repoDir/project"),
+        Cmd(
+          "VAR1=val1",
+          "VAR2=val2",
+          repoDir.pathAsString,
+          scalafixBinary,
+          "--syntactic",
+          "--rules=github:typelevel/sbt-tpolecat/v0_5?sha=v0.5.0",
+          s"$repoDir/build.sbt"
+        ),
         Cmd(
           "read",
           s"$workspace/store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json"
@@ -178,7 +189,9 @@ class SbtAlgTest extends FunSuite {
     )
     val initialState = MockState.empty
       .addFiles(
-        repoDir / "project" / "Dependencies.scala" -> "object Dependencies", // put anything at all into the meta-build
+        repoDir / "build.sbt" -> "",
+        repoDir / "project" / "plugins.sbt" -> "",
+        repoDir / "project" / "Dependencies.scala" -> "object Dependencies",
         workspace / s"store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json" -> sbtScalafixVersionJson
       )
       .unsafeRunSync()
@@ -187,6 +200,17 @@ class SbtAlgTest extends FunSuite {
       trace = Vector(
         Cmd("test", "-d", s"$repoDir/project"),
         Cmd("test", "-d", s"$repoDir/project/project"),
+        Cmd(
+          "VAR1=val1",
+          "VAR2=val2",
+          repoDir.pathAsString,
+          scalafixBinary,
+          "--syntactic",
+          "--rules=github:typelevel/sbt-tpolecat/v0_5?sha=v0.5.0",
+          s"$repoDir/build.sbt",
+          s"$repoDir/project/Dependencies.scala",
+          s"$repoDir/project/plugins.sbt"
+        ),
         Cmd(
           "read",
           s"$workspace/store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json"
@@ -224,6 +248,7 @@ class SbtAlgTest extends FunSuite {
     )
     val initialState = MockState.empty
       .addFiles(
+        repoDir / "build.sbt" -> "",
         workspace / s"store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json" -> sbtScalafixVersionJson
       )
       .unsafeRunSync()
@@ -231,6 +256,15 @@ class SbtAlgTest extends FunSuite {
     val expected = initialState.copy(
       trace = Vector(
         Cmd("test", "-d", s"$repoDir/project"),
+        Cmd(
+          "VAR1=val1",
+          "VAR2=val2",
+          repoDir.pathAsString,
+          scalafixBinary,
+          "--syntactic",
+          "--rules=github:typelevel/sbt-tpolecat/v0_5?sha=v0.5.0",
+          s"$repoDir/build.sbt"
+        ),
         Cmd(
           "read",
           s"$workspace/store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json"
@@ -267,7 +301,9 @@ class SbtAlgTest extends FunSuite {
     )
     val initialState = MockState.empty
       .addFiles(
-        repoDir / "project" / "Dependencies.scala" -> "object Dependencies", // put anything at all into the meta-build
+        repoDir / "build.sbt" -> "",
+        repoDir / "project" / "plugins.sbt" -> "",
+        repoDir / "project" / "Dependencies.scala" -> "object Dependencies",
         workspace / s"store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json" -> sbtScalafixVersionJson
       )
       .unsafeRunSync()
@@ -276,6 +312,17 @@ class SbtAlgTest extends FunSuite {
       trace = Vector(
         Cmd("test", "-d", s"$repoDir/project"),
         Cmd("test", "-d", s"$repoDir/project/project"),
+        Cmd(
+          "VAR1=val1",
+          "VAR2=val2",
+          repoDir.pathAsString,
+          scalafixBinary,
+          "--syntactic",
+          "--rules=github:typelevel/sbt-tpolecat/v0_5?sha=v0.5.0",
+          s"$repoDir/build.sbt",
+          s"$repoDir/project/Dependencies.scala",
+          s"$repoDir/project/plugins.sbt"
+        ),
         Cmd(
           "read",
           s"$workspace/store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json"

@@ -31,7 +31,7 @@ final class ScalafixCli[F[_]](implicit
 ) {
   def runMigration(workingDir: File, files: Nel[File], migration: ScalafixMigration): F[Unit] = {
     val rules = migration.rewriteRules.map("--rules=" + _)
-    val cmd = scalafixBinary :: rules ::: files.map(_.pathAsString)
+    val cmd = scalafixBinary :: "--syntactic" :: rules ::: files.map(_.pathAsString)
     processAlg.exec(cmd, workingDir, slurpOptions = SlurpOptions.ignoreBufferOverflow).void
   }
 

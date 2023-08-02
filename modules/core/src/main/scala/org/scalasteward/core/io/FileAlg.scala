@@ -136,7 +136,13 @@ object FileAlg {
         Resource.fromAutoCloseable(source).use(src => F.blocking(src.mkString))
 
       override def walk(dir: File, maxDepth: Int): Stream[F, File] =
-        Stream.eval(F.delay(dir.walk(maxDepth))).flatMap(Stream.fromBlockingIterator(_, 1))
+        Stream.force(
+          F.blocking(dir.exists)
+            .ifF(
+              Stream.eval(F.delay(dir.walk(maxDepth))).flatMap(Stream.fromBlockingIterator(_, 1)),
+              Stream.empty.covary[F]
+            )
+        )
 
       override def writeFile(file: File, content: String): F[Unit] =
         logger.debug(s"Write $file") >>
