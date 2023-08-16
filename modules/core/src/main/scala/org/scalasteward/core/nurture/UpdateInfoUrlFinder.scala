@@ -22,7 +22,7 @@ import org.http4s.Uri
 import org.scalasteward.core.application.Config.ForgeCfg
 import org.scalasteward.core.coursier.DependencyMetadata
 import org.scalasteward.core.data.Version
-import org.scalasteward.core.forge.ForgeType
+import org.scalasteward.core.forge.ForgeRepo
 import org.scalasteward.core.forge.ForgeType._
 import org.scalasteward.core.nurture.UpdateInfoUrl._
 import org.scalasteward.core.nurture.UpdateInfoUrlFinder.possibleUpdateInfoUrls
@@ -38,13 +38,11 @@ final class UpdateInfoUrlFinder[F[_]](implicit
       currentVersion: Version,
       nextVersion: Version
   ): F[List[UpdateInfoUrl]] = {
-    val updateInfoUrls =
+    val updateInfoUrls: List[UpdateInfoUrl] =
       metadata.releaseNotesUrl.toList.map(CustomReleaseNotes.apply) ++
-        metadata.repoUrl.toList.flatMap { repoUrl =>
-          ForgeType.fromRepoUrl(repoUrl).toSeq.flatMap { forgeType =>
-            possibleUpdateInfoUrls(forgeType, repoUrl, currentVersion, nextVersion)
-          }
-        }
+        metadata.forgeRepo.toSeq.flatMap(forgeRepo =>
+          possibleUpdateInfoUrls(forgeRepo, currentVersion, nextVersion)
+        )
 
     updateInfoUrls
       .sorted(UpdateInfoUrl.updateInfoUrlOrder.toOrdering)
@@ -76,40 +74,39 @@ object UpdateInfoUrlFinder {
   }
 
   private[nurture] def possibleVersionDiffs(
-      forgeType: ForgeType,
-      repoUrl: Uri,
+      repoForge: ForgeRepo,
       currentVersion: Version,
       nextVersion: Version
   ): List[VersionDiff] = for {
     tagName <- Version.tagNames
   } yield VersionDiff(
-    forgeType.diffs.forDiff(tagName(currentVersion), tagName(nextVersion))(repoUrl)
+    repoForge.diffUrlFor(tagName(currentVersion), tagName(nextVersion))
   )
 
   private[nurture] def possibleUpdateInfoUrls(
-      forgeType: ForgeType,
-      repoUrl: Uri,
+      forgeRepo: ForgeRepo,
       currentVersion: Version,
       nextVersion: Version
   ): List[UpdateInfoUrl] = {
     def customUrls(wrap: Uri => UpdateInfoUrl, fileNames: List[String]): List[UpdateInfoUrl] =
-      fileNames.map(f => wrap(forgeType.files.forFile(f)(repoUrl)))
+      fileNames.map(f => wrap(forgeRepo.fileUrlFor(f)))
 
-    gitHubReleaseNotesFor(forgeType, repoUrl, nextVersion) ++
+    gitHubReleaseNotesFor(forgeRepo, nextVersion) ++
       customUrls(CustomReleaseNotes, possibleReleaseNotesFilenames) ++
       customUrls(CustomChangelog, possibleChangelogFilenames) ++
-      possibleVersionDiffs(forgeType, repoUrl, currentVersion, nextVersion)
+      possibleVersionDiffs(forgeRepo, currentVersion, nextVersion)
   }
 
   private def gitHubReleaseNotesFor(
-      forgeType: ForgeType,
-      repoUrl: Uri,
+      forgeRepo: ForgeRepo,
       version: Version
   ): List[UpdateInfoUrl] =
-    forgeType match {
+    forgeRepo.forgeType match {
       case GitHub =>
         Version.tagNames
-          .map(tagName => GitHubReleaseNotes(repoUrl / "releases" / "tag" / tagName(version)))
+          .map(tagName =>
+            GitHubReleaseNotes(forgeRepo.repoUrl / "releases" / "tag" / tagName(version))
+          )
       case _ => Nil
     }
 
