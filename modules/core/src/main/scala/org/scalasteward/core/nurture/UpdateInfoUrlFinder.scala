@@ -28,7 +28,8 @@ import org.scalasteward.core.nurture.UpdateInfoUrl._
 import org.scalasteward.core.nurture.UpdateInfoUrlFinder.possibleUpdateInfoUrls
 import org.scalasteward.core.util.UrlChecker
 
-final class UpdateInfoUrlFinder[F[_]](config: ForgeCfg)(implicit
+final class UpdateInfoUrlFinder[F[_]](implicit
+    config: ForgeCfg,
     urlChecker: UrlChecker[F],
     F: Monad[F]
 ) {
@@ -40,7 +41,9 @@ final class UpdateInfoUrlFinder[F[_]](config: ForgeCfg)(implicit
     val updateInfoUrls =
       metadata.releaseNotesUrl.toList.map(CustomReleaseNotes.apply) ++
         metadata.repoUrl.toList.flatMap { repoUrl =>
-          possibleUpdateInfoUrls(config.tpe, config.apiHost, repoUrl, currentVersion, nextVersion)
+          ForgeType.fromRepoUrl(repoUrl).toSeq.flatMap { forgeType =>
+            possibleUpdateInfoUrls(forgeType, repoUrl, currentVersion, nextVersion)
+          }
         }
 
     updateInfoUrls
@@ -51,8 +54,6 @@ final class UpdateInfoUrlFinder[F[_]](config: ForgeCfg)(implicit
 }
 
 object UpdateInfoUrlFinder {
-  private def possibleTags(version: Version): List[String] =
-    List(s"v$version", version.value, s"release-$version")
 
   private[nurture] val possibleChangelogFilenames: List[String] = {
     val baseNames = List(
@@ -74,83 +75,43 @@ object UpdateInfoUrlFinder {
     possibleFilenames(baseNames)
   }
 
-  private def forgeTypeFromRepoUrl(
-      forgeType: ForgeType,
-      forgeUrl: Uri,
-      repoUrl: Uri
-  ): Option[ForgeType] =
-    repoUrl.host.flatMap { repoHost =>
-      if (forgeUrl.host.contains(repoHost)) Some(forgeType)
-      else ForgeType.fromPublicWebHost(repoHost.value)
-    }
-
   private[nurture] def possibleVersionDiffs(
       forgeType: ForgeType,
-      forgeUrl: Uri,
       repoUrl: Uri,
       currentVersion: Version,
       nextVersion: Version
-  ): List[VersionDiff] =
-    forgeTypeFromRepoUrl(forgeType, forgeUrl, repoUrl).map {
-      case GitHub | GitLab | Gitea =>
-        possibleTags(currentVersion).zip(possibleTags(nextVersion)).map { case (from1, to1) =>
-          VersionDiff(repoUrl / "compare" / s"$from1...$to1")
-        }
-      case Bitbucket | BitbucketServer =>
-        possibleTags(currentVersion).zip(possibleTags(nextVersion)).map { case (from1, to1) =>
-          VersionDiff((repoUrl / "compare" / s"$to1..$from1").withFragment("diff"))
-        }
-      case AzureRepos =>
-        possibleTags(currentVersion).zip(possibleTags(nextVersion)).map { case (from1, to1) =>
-          VersionDiff(
-            (repoUrl / "branchCompare")
-              .withQueryParams(Map("baseVersion" -> from1, "targetVersion" -> to1))
-          )
-        }
-    }.orEmpty
+  ): List[VersionDiff] = for {
+    tagName <- Version.tagNames
+  } yield VersionDiff(
+    forgeType.diffs.forDiff(tagName(currentVersion), tagName(nextVersion))(repoUrl)
+  )
 
   private[nurture] def possibleUpdateInfoUrls(
       forgeType: ForgeType,
-      forgeUrl: Uri,
       repoUrl: Uri,
       currentVersion: Version,
       nextVersion: Version
   ): List[UpdateInfoUrl] = {
-    val repoForgeType = forgeTypeFromRepoUrl(forgeType, forgeUrl, repoUrl)
+    def customUrls(wrap: Uri => UpdateInfoUrl, fileNames: List[String]): List[UpdateInfoUrl] =
+      fileNames.map(f => wrap(forgeType.files.forFile(f)(repoUrl)))
 
-    val githubReleaseNotes = repoForgeType
-      .collect { case GitHub =>
-        possibleTags(nextVersion).map(tag => GitHubReleaseNotes(repoUrl / "releases" / "tag" / tag))
-      }
-      .getOrElse(List.empty)
-
-    def files(fileNames: List[String]): List[Uri] = {
-      val maybeSegments = repoForgeType.collect {
-        case GitHub | GitLab => List("blob", "master")
-        case Bitbucket       => List("master")
-        case BitbucketServer => List("browse")
-        case Gitea           => List("src", "branch", "master")
-      }
-
-      val repoFiles = maybeSegments.toList.flatMap { segments =>
-        val base = segments.foldLeft(repoUrl)(_ / _)
-        fileNames.map(name => base / name)
-      }
-
-      val azureRepoFiles = repoForgeType
-        .collect { case AzureRepos => fileNames.map(name => repoUrl.withQueryParam("path", name)) }
-        .toList
-        .flatten
-
-      repoFiles ++ azureRepoFiles
-    }
-
-    val customChangelog = files(possibleChangelogFilenames).map(CustomChangelog)
-    val customReleaseNotes = files(possibleReleaseNotesFilenames).map(CustomReleaseNotes)
-
-    githubReleaseNotes ++ customReleaseNotes ++ customChangelog ++
-      possibleVersionDiffs(forgeType, forgeUrl, repoUrl, currentVersion, nextVersion)
+    gitHubReleaseNotesFor(forgeType, repoUrl, nextVersion) ++
+      customUrls(CustomReleaseNotes, possibleReleaseNotesFilenames) ++
+      customUrls(CustomChangelog, possibleChangelogFilenames) ++
+      possibleVersionDiffs(forgeType, repoUrl, currentVersion, nextVersion)
   }
+
+  private def gitHubReleaseNotesFor(
+      forgeType: ForgeType,
+      repoUrl: Uri,
+      version: Version
+  ): List[UpdateInfoUrl] =
+    forgeType match {
+      case GitHub =>
+        Version.tagNames
+          .map(tagName => GitHubReleaseNotes(repoUrl / "releases" / "tag" / tagName(version)))
+      case _ => Nil
+    }
 
   private def possibleFilenames(baseNames: List[String]): List[String] = {
     val extensions = List("md", "markdown", "rst")

@@ -25,7 +25,7 @@ import eu.timepit.refined.auto._
 import org.http4s.Uri
 import org.http4s.client.Client
 import org.http4s.headers.`User-Agent`
-import org.scalasteward.core.application.Config.StewardUsage
+import org.scalasteward.core.application.Config.{ForgeCfg, StewardUsage}
 import org.scalasteward.core.buildtool.BuildToolDispatcher
 import org.scalasteward.core.buildtool.maven.MavenAlg
 import org.scalasteward.core.buildtool.mill.MillAlg
@@ -211,8 +211,8 @@ object Context {
       implicit val forgeApiAlg: ForgeApiAlg[F] =
         ForgeSelection.forgeApiAlg[F](config.forgeCfg, config.forgeSpecificCfg, forgeUser)
       implicit val forgeRepoAlg: ForgeRepoAlg[F] = new ForgeRepoAlg[F](config)
-      implicit val updateInfoUrlFinder: UpdateInfoUrlFinder[F] =
-        new UpdateInfoUrlFinder[F](config.forgeCfg)
+      implicit val forgeCfg: ForgeCfg = config.forgeCfg
+      implicit val updateInfoUrlFinder: UpdateInfoUrlFinder[F] = new UpdateInfoUrlFinder[F]
       implicit val pullRequestRepository: PullRequestRepository[F] =
         new PullRequestRepository[F](pullRequestsStore)
       implicit val scalafixCli: ScalafixCli[F] = new ScalafixCli[F]

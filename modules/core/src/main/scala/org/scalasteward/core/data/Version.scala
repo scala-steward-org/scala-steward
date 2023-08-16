@@ -124,6 +124,8 @@ final case class Version(value: String) {
 }
 
 object Version {
+  val tagNames: List[Version => String] = List("v" + _, _.value, "release-" + _)
+
   implicit val versionCodec: Codec[Version] =
     deriveUnwrappedCodec
 
