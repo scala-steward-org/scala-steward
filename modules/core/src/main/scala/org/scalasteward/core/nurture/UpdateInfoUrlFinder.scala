@@ -34,14 +34,13 @@ final class UpdateInfoUrlFinder[F[_]](implicit
     F: Monad[F]
 ) {
   def findUpdateInfoUrls(
-      metadata: DependencyMetadata,
-      currentVersion: Version,
-      nextVersion: Version
+      dependency: DependencyMetadata,
+      versionUpdate: Version.Update
   ): F[List[UpdateInfoUrl]] = {
     val updateInfoUrls: List[UpdateInfoUrl] =
-      metadata.releaseNotesUrl.toList.map(CustomReleaseNotes.apply) ++
-        metadata.forgeRepo.toSeq.flatMap(forgeRepo =>
-          possibleUpdateInfoUrls(forgeRepo, currentVersion, nextVersion)
+      dependency.releaseNotesUrl.toList.map(CustomReleaseNotes.apply) ++
+        dependency.forgeRepo.toSeq.flatMap(forgeRepo =>
+          possibleUpdateInfoUrls(forgeRepo, versionUpdate)
         )
 
     updateInfoUrls
@@ -75,26 +74,24 @@ object UpdateInfoUrlFinder {
 
   private[nurture] def possibleVersionDiffs(
       repoForge: ForgeRepo,
-      currentVersion: Version,
-      nextVersion: Version
+      update: Version.Update
   ): List[VersionDiff] = for {
     tagName <- Version.tagNames
   } yield VersionDiff(
-    repoForge.diffUrlFor(tagName(currentVersion), tagName(nextVersion))
+    repoForge.diffUrlFor(tagName(update.currentVersion), tagName(update.nextVersion))
   )
 
   private[nurture] def possibleUpdateInfoUrls(
       forgeRepo: ForgeRepo,
-      currentVersion: Version,
-      nextVersion: Version
+      update: Version.Update
   ): List[UpdateInfoUrl] = {
     def customUrls(wrap: Uri => UpdateInfoUrl, fileNames: List[String]): List[UpdateInfoUrl] =
       fileNames.map(f => wrap(forgeRepo.fileUrlFor(f)))
 
-    gitHubReleaseNotesFor(forgeRepo, nextVersion) ++
+    gitHubReleaseNotesFor(forgeRepo, update.nextVersion) ++
       customUrls(CustomReleaseNotes, possibleReleaseNotesFilenames) ++
       customUrls(CustomChangelog, possibleChangelogFilenames) ++
-      possibleVersionDiffs(forgeRepo, currentVersion, nextVersion)
+      possibleVersionDiffs(forgeRepo, update)
   }
 
   private def gitHubReleaseNotesFor(

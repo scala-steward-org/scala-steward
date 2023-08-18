@@ -124,6 +124,8 @@ final case class Version(value: String) {
 }
 
 object Version {
+  case class Update(currentVersion: Version, nextVersion: Version)
+
   val tagNames: List[Version => String] = List("v" + _, _.value, "release-" + _)
 
   implicit val versionCodec: Codec[Version] =

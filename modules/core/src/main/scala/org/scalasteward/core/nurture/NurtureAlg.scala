@@ -217,7 +217,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
         case (currentVersion, dependency) =>
           dependencyToMetadata.get(dependency).toList.traverse { metadata =>
             updateInfoUrlFinder
-              .findUpdateInfoUrls(metadata, currentVersion, dependency.version)
+              .findUpdateInfoUrls(metadata, Version.Update(currentVersion, dependency.version))
               .tupleLeft(dependency.artifactId.name)
           }
       }
