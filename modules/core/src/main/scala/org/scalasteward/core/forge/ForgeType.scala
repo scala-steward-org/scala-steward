@@ -26,7 +26,17 @@ import org.scalasteward.core.util.unexpectedString
 
 sealed trait ForgeType extends Product with Serializable {
   def publicWebHost: Option[String]
+
+  /** Defines how to construct 'diff' urls for this forge type - ie a url that will show the
+    * difference between two git tags. These can be very useful for understanding the difference
+    * between two releases of the same artifact.
+    */
   val diffs: DiffUriPattern
+
+  /** Defines how to construct 'file' urls for this forge type - ie a url that will display a
+    * specific file's contents. This is useful for linking to Release Notes, etc, in a Scala Steward
+    * PR description.
+    */
   val files: FileUriPattern
   def supportsForking: Boolean = true
   def supportsLabels: Boolean = true
