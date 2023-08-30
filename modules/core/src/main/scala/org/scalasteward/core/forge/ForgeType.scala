@@ -49,10 +49,7 @@ object ForgeType {
     override val publicWebHost: Some[String] = Some("dev.azure.com")
     override def supportsForking: Boolean = false
     val diffs: DiffUriPattern = (from, to) =>
-      _ / "branchCompare" withQueryParams Map(
-        "baseVersion" -> s"GT$from",
-        "targetVersion" -> s"GT$to"
-      )
+      _ / "branchCompare" +? ("baseVersion", s"GT$from") +? ("targetVersion", s"GT$to")
     val files: FileUriPattern =
       fileName =>
         _.withQueryParam(
