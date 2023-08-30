@@ -8,8 +8,8 @@ import org.http4s.implicits._
 import org.scalasteward.core.application.Config.ForgeCfg
 import org.scalasteward.core.coursier.DependencyMetadata
 import org.scalasteward.core.data.Version
-import org.scalasteward.core.forge.ForgeType
 import org.scalasteward.core.forge.ForgeType._
+import org.scalasteward.core.forge.{ForgeRepo, ForgeType}
 import org.scalasteward.core.mock.MockContext.context._
 import org.scalasteward.core.mock.{MockEff, MockState}
 import org.scalasteward.core.nurture.UpdateInfoUrl._
@@ -27,16 +27,17 @@ class UpdateInfoUrlFinderTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
   private val v1 = Version("0.1.0")
   private val v2 = Version("0.2.0")
+  private val versionUpdate = Version.Update(v1, v2)
 
   test("findUpdateInfoUrls: repoUrl not found") {
     val metadata = DependencyMetadata.empty.copy(scmUrl = uri"https://github.com/foo/foo".some)
-    val obtained = updateInfoUrlFinder.findUpdateInfoUrls(metadata, v1, v2).runA(state)
+    val obtained = updateInfoUrlFinder.findUpdateInfoUrls(metadata, versionUpdate).runA(state)
     assertIO(obtained, List.empty)
   }
 
   test("findUpdateInfoUrls: repoUrl ok") {
     val metadata = DependencyMetadata.empty.copy(scmUrl = uri"https://github.com/foo/bar".some)
-    val obtained = updateInfoUrlFinder.findUpdateInfoUrls(metadata, v1, v2).runA(state)
+    val obtained = updateInfoUrlFinder.findUpdateInfoUrls(metadata, versionUpdate).runA(state)
     val expected = List(VersionDiff(uri"https://github.com/foo/bar/compare/v0.1.0...v0.2.0"))
     assertIO(obtained, expected)
   }
@@ -46,7 +47,7 @@ class UpdateInfoUrlFinderTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       scmUrl = uri"https://github.com/foo/bar".some,
       releaseNotesUrl = uri"https://github.com/foo/bar/README.md#changelog".some
     )
-    val obtained = updateInfoUrlFinder.findUpdateInfoUrls(metadata, v1, v2).runA(state)
+    val obtained = updateInfoUrlFinder.findUpdateInfoUrls(metadata, versionUpdate).runA(state)
     val expected = List(
       CustomReleaseNotes(metadata.releaseNotesUrl.get),
       VersionDiff(uri"https://github.com/foo/bar/compare/v0.1.0...v0.2.0")
@@ -59,7 +60,7 @@ class UpdateInfoUrlFinderTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       scmUrl = uri"https://github.com/foo/bar2".some,
       releaseNotesUrl = uri"https://github.com/foo/bar2/releases/tag/v0.2.0".some
     )
-    val obtained = updateInfoUrlFinder.findUpdateInfoUrls(metadata, v1, v2).runA(state)
+    val obtained = updateInfoUrlFinder.findUpdateInfoUrls(metadata, versionUpdate).runA(state)
     val expected = List(GitHubReleaseNotes(metadata.releaseNotesUrl.get))
     assertIO(obtained, expected)
   }
@@ -69,37 +70,40 @@ class UpdateInfoUrlFinderTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       scmUrl = uri"https://github.com/foo/bar1".some,
       releaseNotesUrl = uri"https://github.com/foo/bar1/blob/master/RELEASES.md".some
     )
-    val obtained = updateInfoUrlFinder.findUpdateInfoUrls(metadata, v1, v2).runA(state)
+    val obtained = updateInfoUrlFinder.findUpdateInfoUrls(metadata, versionUpdate).runA(state)
     val expected = List(CustomReleaseNotes(metadata.releaseNotesUrl.get))
     assertIO(obtained, expected)
   }
 
   test("findUpdateInfoUrls: repoUrl permanent redirect") {
     val metadata = DependencyMetadata.empty.copy(scmUrl = uri"https://github.com/foo/buz".some)
-    val obtained = updateInfoUrlFinder.findUpdateInfoUrls(metadata, v1, v2).runA(state)
+    val obtained = updateInfoUrlFinder.findUpdateInfoUrls(metadata, versionUpdate).runA(state)
     assertIO(obtained, List.empty)
   }
 
-  private val config = ForgeCfg(
+  implicit private val config: ForgeCfg = ForgeCfg(
     ForgeType.GitHub,
     uri"https://github.on-prem.com/",
     "",
     doNotFork = false,
     addLabels = false
   )
-  private val onPremUpdateUrlFinder = new UpdateInfoUrlFinder[MockEff](config)
+  private val onPremUpdateUrlFinder = new UpdateInfoUrlFinder[MockEff]
+  private val gitHubFooBarRepo = ForgeRepo(GitHub, uri"https://github.com/foo/bar/")
+  private val bitbucketFooBarRepo = ForgeRepo(Bitbucket, uri"https://bitbucket.org/foo/bar/")
+  private val gitLabFooBarRepo = ForgeRepo(GitLab, uri"https://gitlab.com/foo/bar")
 
   test("findUpdateInfoUrls: on-prem, repoUrl not found") {
     val metadata =
       DependencyMetadata.empty.copy(scmUrl = uri"https://github.on-prem.com/foo/foo".some)
-    val obtained = onPremUpdateUrlFinder.findUpdateInfoUrls(metadata, v1, v2).runA(state)
+    val obtained = onPremUpdateUrlFinder.findUpdateInfoUrls(metadata, versionUpdate).runA(state)
     assertIO(obtained, List.empty)
   }
 
   test("findUpdateInfoUrls: on-prem, repoUrl ok") {
     val metadata =
       DependencyMetadata.empty.copy(scmUrl = uri"https://github.on-prem.com/foo/bar".some)
-    val obtained = onPremUpdateUrlFinder.findUpdateInfoUrls(metadata, v1, v2).runA(state)
+    val obtained = onPremUpdateUrlFinder.findUpdateInfoUrls(metadata, versionUpdate).runA(state)
     val expected =
       List(VersionDiff(uri"https://github.on-prem.com/foo/bar/compare/v0.1.0...v0.2.0"))
     assertIO(obtained, expected)
@@ -108,7 +112,7 @@ class UpdateInfoUrlFinderTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   test("findUpdateInfoUrls: on-prem, repoUrl permanent redirect") {
     val metadata =
       DependencyMetadata.empty.copy(scmUrl = uri"https://github.on-prem.com/foo/buz".some)
-    val obtained = onPremUpdateUrlFinder.findUpdateInfoUrls(metadata, v1, v2).runA(state)
+    val obtained = onPremUpdateUrlFinder.findUpdateInfoUrls(metadata, versionUpdate).runA(state)
     assertIO(obtained, List.empty)
   }
 
@@ -116,7 +120,7 @@ class UpdateInfoUrlFinderTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     val onPremForgeUrl = uri"https://github.onprem.io/"
 
     assertEquals(
-      possibleVersionDiffs(GitHub, onPremForgeUrl, uri"https://github.com/foo/bar", v1, v2)
+      possibleVersionDiffs(gitHubFooBarRepo, versionUpdate)
         .map(_.url.renderString),
       List(
         s"https://github.com/foo/bar/compare/v$v1...v$v2",
@@ -127,7 +131,7 @@ class UpdateInfoUrlFinderTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
     // should canonicalize (drop last slash)
     assertEquals(
-      possibleVersionDiffs(GitHub, onPremForgeUrl, uri"https://github.com/foo/bar/", v1, v2)
+      possibleVersionDiffs(gitHubFooBarRepo, versionUpdate)
         .map(_.url.renderString),
       List(
         s"https://github.com/foo/bar/compare/v$v1...v$v2",
@@ -137,7 +141,7 @@ class UpdateInfoUrlFinderTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     )
 
     assertEquals(
-      possibleVersionDiffs(GitHub, onPremForgeUrl, uri"https://gitlab.com/foo/bar", v1, v2)
+      possibleVersionDiffs(gitLabFooBarRepo, versionUpdate)
         .map(_.url.renderString),
       List(
         s"https://gitlab.com/foo/bar/compare/v$v1...v$v2",
@@ -147,7 +151,7 @@ class UpdateInfoUrlFinderTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     )
 
     assertEquals(
-      possibleVersionDiffs(GitHub, onPremForgeUrl, uri"https://bitbucket.org/foo/bar", v1, v2)
+      possibleVersionDiffs(bitbucketFooBarRepo, versionUpdate)
         .map(_.url.renderString),
       List(
         s"https://bitbucket.org/foo/bar/compare/v$v2..v$v1#diff",
@@ -157,18 +161,7 @@ class UpdateInfoUrlFinderTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     )
 
     assertEquals(
-      possibleVersionDiffs(
-        GitHub,
-        onPremForgeUrl,
-        uri"https://scalacenter.github.io/scalafix/",
-        v1,
-        v2
-      ),
-      List.empty
-    )
-
-    assertEquals(
-      possibleVersionDiffs(GitHub, onPremForgeUrl, onPremForgeUrl.addPath("foo/bar"), v1, v2)
+      possibleVersionDiffs(ForgeRepo(GitHub, onPremForgeUrl.addPath("foo/bar")), versionUpdate)
         .map(_.url.renderString),
       List(
         s"${onPremForgeUrl}foo/bar/compare/v$v1...v$v2",
@@ -178,23 +171,20 @@ class UpdateInfoUrlFinderTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     )
 
     assertEquals(
-      possibleVersionDiffs(AzureRepos, onPremForgeUrl, onPremForgeUrl.addPath("foo/bar"), v1, v2)
+      possibleVersionDiffs(ForgeRepo(AzureRepos, onPremForgeUrl.addPath("foo/bar")), versionUpdate)
         .map(_.url.renderString),
       List(
-        s"${onPremForgeUrl}foo/bar/branchCompare?baseVersion=v$v1&targetVersion=v$v2",
-        s"${onPremForgeUrl}foo/bar/branchCompare?baseVersion=$v1&targetVersion=$v2",
-        s"${onPremForgeUrl}foo/bar/branchCompare?baseVersion=release-$v1&targetVersion=release-$v2"
+        s"${onPremForgeUrl}foo/bar/branchCompare?baseVersion=GTv$v1&targetVersion=GTv$v2",
+        s"${onPremForgeUrl}foo/bar/branchCompare?baseVersion=GT$v1&targetVersion=GT$v2",
+        s"${onPremForgeUrl}foo/bar/branchCompare?baseVersion=GTrelease-$v1&targetVersion=GTrelease-$v2"
       )
     )
   }
 
   test("possibleUpdateInfoUrls: github.com") {
     val obtained = possibleUpdateInfoUrls(
-      GitHub,
-      uri"https://github.com",
-      uri"https://github.com/foo/bar",
-      v1,
-      v2
+      gitHubFooBarRepo,
+      versionUpdate
     ).map(_.url.renderString)
     val expected = List(
       s"https://github.com/foo/bar/releases/tag/v$v2",
@@ -233,11 +223,8 @@ class UpdateInfoUrlFinderTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
   test("possibleUpdateInfoUrls: gitlab.com") {
     val obtained = possibleUpdateInfoUrls(
-      GitHub,
-      uri"https://github.com",
-      uri"https://gitlab.com/foo/bar",
-      v1,
-      v2
+      gitLabFooBarRepo,
+      versionUpdate
     ).map(_.url.renderString)
     val expected =
       possibleReleaseNotesFilenames.map(name => s"https://gitlab.com/foo/bar/blob/master/$name") ++
@@ -252,11 +239,8 @@ class UpdateInfoUrlFinderTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
   test("possibleUpdateInfoUrls: on-prem gitlab") {
     val obtained = possibleUpdateInfoUrls(
-      GitLab,
-      uri"https://gitlab.on-prem.net",
-      uri"https://gitlab.on-prem.net/foo/bar",
-      v1,
-      v2
+      ForgeRepo(GitLab, uri"https://gitlab.on-prem.net/foo/bar"),
+      versionUpdate
     ).map(_.url.renderString)
     val expected = possibleReleaseNotesFilenames.map(name =>
       s"https://gitlab.on-prem.net/foo/bar/blob/master/$name"
@@ -272,15 +256,14 @@ class UpdateInfoUrlFinderTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
   test("possibleUpdateInfoUrls: bitbucket.org") {
     val obtained = possibleUpdateInfoUrls(
-      GitHub,
-      uri"https://github.com",
-      uri"https://bitbucket.org/foo/bar",
-      v1,
-      v2
+      bitbucketFooBarRepo,
+      versionUpdate
     ).map(_.url.renderString)
     val expected =
-      possibleReleaseNotesFilenames.map(name => s"https://bitbucket.org/foo/bar/master/$name") ++
-        possibleChangelogFilenames.map(name => s"https://bitbucket.org/foo/bar/master/$name") ++
+      possibleReleaseNotesFilenames.map(name =>
+        s"https://bitbucket.org/foo/bar/src/master/$name"
+      ) ++
+        possibleChangelogFilenames.map(name => s"https://bitbucket.org/foo/bar/src/master/$name") ++
         List(
           s"https://bitbucket.org/foo/bar/compare/v$v2..v$v1#diff",
           s"https://bitbucket.org/foo/bar/compare/$v2..$v1#diff",
@@ -290,16 +273,10 @@ class UpdateInfoUrlFinderTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   }
 
   test("possibleUpdateInfoUrls: on-prem Bitbucket Server") {
-    val forgeUrl = uri"https://bitbucket-server.on-prem.com"
-    val repoUrl = forgeUrl / "foo" / "bar"
-    val obtained = possibleUpdateInfoUrls(BitbucketServer, forgeUrl, repoUrl, v1, v2).map(_.url)
+    val repoUrl = uri"https://bitbucket-server.on-prem.com" / "foo" / "bar"
+    val obtained =
+      possibleUpdateInfoUrls(ForgeRepo(BitbucketServer, repoUrl), versionUpdate).map(_.url)
     val expected = repoUrl / "browse" / "ReleaseNotes.md"
     assert(clue(obtained).contains(expected))
-  }
-
-  test("possibleUpdateInfoUrls: repoUrl is a home page") {
-    val repoUrl = uri"https://scalacenter.github.io/scalafix/"
-    val obtained = possibleUpdateInfoUrls(GitHub, uri"https://github.com", repoUrl, v1, v2)
-    assertEquals(obtained, List.empty)
   }
 }
