@@ -8,7 +8,7 @@ object Dependencies {
   val catsLaws = "org.typelevel" %% "cats-laws" % catsCore.revision
   val catsParse = "org.typelevel" %% "cats-parse" % "0.3.10"
   val circeConfig = "io.circe" %% "circe-config" % "0.10.0"
-  val circeGeneric = "io.circe" %% "circe-generic" % "0.14.5"
+  val circeGeneric = "io.circe" %% "circe-generic" % "0.14.6"
   val circeGenericExtras = "io.circe" %% "circe-generic-extras" % "0.14.3"
   val circeLiteral = "io.circe" %% "circe-literal" % circeGeneric.revision
   val circeParser = "io.circe" %% "circe-parser" % circeGeneric.revision
@@ -20,7 +20,7 @@ object Dependencies {
   val cron4sCore = "com.github.alonsodomin.cron4s" %% "cron4s-core" % "0.6.1"
   val decline = "com.monovore" %% "decline" % "2.4.1"
   val disciplineMunit = "org.typelevel" %% "discipline-munit" % "1.0.9"
-  val fs2Core = "co.fs2" %% "fs2-core" % "3.8.0"
+  val fs2Core = "co.fs2" %% "fs2-core" % "3.9.1"
   val fs2Io = "co.fs2" %% "fs2-io" % fs2Core.revision
   val gitignore = "com.github.arturopala" %% "gitignore" % "0.6.0"
   val http4sCore = "org.http4s" %% "http4s-core" % "1.0.0-M40"
