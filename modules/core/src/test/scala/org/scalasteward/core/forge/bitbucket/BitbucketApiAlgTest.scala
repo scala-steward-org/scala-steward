@@ -50,6 +50,28 @@ class BitbucketApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
           }
         }"""
       )
+    case GET -> Root / "repositories" / "null-parenthood" / "base.g8" =>
+      Ok(
+        json"""{
+          "name": "base.g8",
+          "mainbranch": {
+              "type": "branch",
+              "name": "master"
+          },
+          "owner": {
+              "nickname": "fthomas"
+          },
+          "links": {
+              "clone": [
+                  {
+                      "href": "https://scala-steward@bitbucket.org/fthomas/base.g8.git",
+                      "name": "https"
+                  }
+              ]
+          },
+          "parent": null
+        }"""
+      )
     case GET -> Root / "repositories" / "scala-steward" / "base.g8" =>
       Ok(
         json"""{
@@ -245,6 +267,13 @@ class BitbucketApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
   test("createForkOrGetRepo without forking") {
     val repoOut = bitbucketApiAlg.createForkOrGetRepo(repo, doNotFork = true).runA(state)
+    assertIO(repoOut, parent)
+  }
+
+  test("createForkOrGetRepo without forking - handle null parent") {
+    val repoOut = bitbucketApiAlg
+      .createForkOrGetRepo(Repo("null-parenthood", "base.g8"), doNotFork = true)
+      .runA(state)
     assertIO(repoOut, parent)
   }
 
