@@ -36,16 +36,16 @@ object ModulePositionScanner {
       fileData: FileData
   ): Iterator[ModulePosition] =
     sbtModuleIdRegex(dependency).findAllIn(fileData.content).matchData.map { m =>
-      val groupId = Substring.Position.fromMatch(fileData.path, m, dependency.groupId.value)
-      val artifactId = Substring.Position.fromMatch(fileData.path, m, dependency.artifactId.name)
-      val version = Substring.Position.fromMatch(fileData.path, m, m.group(1))
+      val groupId = Substring.Position(fileData.path, m.start(1), dependency.groupId.value)
+      val artifactId = Substring.Position(fileData.path, m.start(2), dependency.artifactId.name)
+      val version = Substring.Position(fileData.path, m.start(3), m.group(3))
       ModulePosition(groupId, artifactId, version)
     }
 
   private def sbtModuleIdRegex(dependency: Dependency): Regex = {
     val g = Regex.quote(dependency.groupId.value)
     val a = Regex.quote(dependency.artifactId.name)
-    raw""""$g"\s*%+\s*"$a"\s*%+\s*(.*)""".r
+    raw""""($g)"\s*%+\s*"($a)"\s*%+\s*(.*)""".r
   }
 
   private def findMillDependency(
@@ -53,16 +53,16 @@ object ModulePositionScanner {
       fileData: FileData
   ): Iterator[ModulePosition] =
     millDependencyRegex(dependency).findAllIn(fileData.content).matchData.map { m =>
-      val groupId = Substring.Position.fromMatch(fileData.path, m, dependency.groupId.value)
-      val artifactId = Substring.Position.fromMatch(fileData.path, m, dependency.artifactId.name)
-      val version = Substring.Position.fromMatch(fileData.path, m, m.group(1))
+      val groupId = Substring.Position(fileData.path, m.start(1), dependency.groupId.value)
+      val artifactId = Substring.Position(fileData.path, m.start(2), dependency.artifactId.name)
+      val version = Substring.Position(fileData.path, m.start(3), m.group(3))
       ModulePosition(groupId, artifactId, version)
     }
 
   private def millDependencyRegex(dependency: Dependency): Regex = {
     val g = Regex.quote(dependency.groupId.value)
     val a = Regex.quote(dependency.artifactId.name)
-    raw"""["`]$g:+$a:+(.*)["`;]""".r
+    raw"""["`]($g):+($a):+(.*)["`;]""".r
   }
 
   private def findMavenDependency(
@@ -70,15 +70,15 @@ object ModulePositionScanner {
       fileData: FileData
   ): Iterator[ModulePosition] =
     mavenDependencyRegex(dependency).findAllIn(fileData.content).matchData.map { m =>
-      val groupId = Substring.Position.fromMatch(fileData.path, m, dependency.groupId.value)
-      val artifactId = Substring.Position.fromMatch(fileData.path, m, dependency.artifactId.name)
-      val version = Substring.Position.fromMatch(fileData.path, m, m.group(2))
+      val groupId = Substring.Position(fileData.path, m.start(1), dependency.groupId.value)
+      val artifactId = Substring.Position(fileData.path, m.start(2), dependency.artifactId.name)
+      val version = Substring.Position(fileData.path, m.start(4), m.group(4))
       ModulePosition(groupId, artifactId, version)
     }
 
   private def mavenDependencyRegex(dependency: Dependency): Regex = {
     val g = Regex.quote(dependency.groupId.value)
     val a = Regex.quote(dependency.artifactId.name)
-    raw"""<groupId>$g</groupId>\s*<artifactId>$a(|_[^<]+)</artifactId>\s*<version>(.*)</version>""".r
+    raw"""<groupId>($g)</groupId>\s*<artifactId>($a)(|_[^<]+)</artifactId>\s*<version>(.*)</version>""".r
   }
 }
