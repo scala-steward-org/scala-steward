@@ -36,8 +36,7 @@ class ModulePositionScannerTest extends FunSuite {
 
   test("sbt module where the artifactId is also part of the groupId") {
     val d = "com.typesafe.play".g % "play".a % "2.9.0"
-    val fd =
-      FileData("build.sbt", s""""com.typesafe.play" %% "play" % "2.9.0"""")
+    val fd = FileData("build.sbt", s""""com.typesafe.play" %% "play" % "2.9.0"""")
     val obtained = ModulePositionScanner.findPositions(d, fd)
     val expected = List(
       ModulePosition(
