@@ -94,6 +94,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [Dominic Egger](https://github.com/GrafBlutwurst)
 * [Don Smith III](https://github.com/cactauz)
 * [Doug Roper](https://github.com/htmldoug)
+* [Edward Samson](https://github.com/esamson)
 * [Eldar Yusupov](https://github.com/eyusupov)
 * [Ender Tunç](https://github.com/endertunc)
 * [Erik Erlandson](https://github.com/erikerlandson)
