@@ -890,55 +890,60 @@ class RewriteTest extends FunSuite {
     runApplyUpdate(update, original, expected)
   }
 
-  test("issue-2877: sbt using same version in a val and a literal using a Seq addition") {
+  // https://github.com/scala-steward-org/scala-steward/issues/2877
+  test("sbt using same version in a val and a literal using a Seq addition") {
     val update = ("org.scalatest".g % Nel.of(
       "scalatest".a,
       "scalactic".a
     ) % "3.2.13" %> "3.2.14").group
     val original = Map(
       "build.sbt" ->
-        """
-          |val ScalaTestVersion = "3.2.13"
+        """val ScalaTestVersion = "3.2.13"
           |libraryDependencies ++= Seq(
           |  "org.scalatest" %% "scalatest" % ScalaTestVersion,
           |  "org.scalatest" %% "scalactic" % "3.2.13"
-          |)
-          |""".stripMargin
+          |)""".stripMargin
     )
     val expected = Map(
       "build.sbt" ->
-        """
-          |val ScalaTestVersion = "3.2.14"
+        """val ScalaTestVersion = "3.2.14"
           |libraryDependencies ++= Seq(
           |  "org.scalatest" %% "scalatest" % ScalaTestVersion,
           |  "org.scalatest" %% "scalactic" % "3.2.14"
-          |)
-          |""".stripMargin
+          |)""".stripMargin
     )
     runApplyUpdate(update, original, expected)
   }
 
-  test("issue-2877: sbt using same version in a val and a literal using individual additions") {
+  // https://github.com/scala-steward-org/scala-steward/issues/2877
+  test("sbt using same version in a val and a literal using individual additions") {
     val update = ("org.scalatest".g % Nel.of(
       "scalatest".a,
       "scalactic".a
     ) % "3.2.13" %> "3.2.14").group
     val original = Map(
       "build.sbt" ->
-        """
-          |val ScalaTestVersion = "3.2.13"
+        """val ScalaTestVersion = "3.2.13"
           |libraryDependencies += "org.scalatest" %% "scalatest" % ScalaTestVersion
           |libraryDependencies += "org.scalatest" %% "scalactic" % "3.2.13"
           |""".stripMargin
     )
     val expected = Map(
       "build.sbt" ->
-        """
-          |val ScalaTestVersion = "3.2.14"
+        """val ScalaTestVersion = "3.2.14"
           |libraryDependencies += "org.scalatest" %% "scalatest" % ScalaTestVersion
           |libraryDependencies += "org.scalatest" %% "scalactic" % "3.2.14"
           |""".stripMargin
     )
+    runApplyUpdate(update, original, expected)
+  }
+
+  // https://github.com/scala-steward-org/scala-steward/issues/3206
+  test("sbt module where the artifactId is also part of the groupId") {
+    val update = ("com.typesafe.play".g % "play".a % "2.9.0" %> "3.0.0").single
+      .copy(newerGroupId = Some("org.playframework".g), newerArtifactId = Some("play"))
+    val original = Map("build.sbt" -> """ "com.typesafe.play" %% "play" % "2.9.0" """)
+    val expected = Map("build.sbt" -> """ "org.playframework" %% "play" % "3.0.0" """)
     runApplyUpdate(update, original, expected)
   }
 
