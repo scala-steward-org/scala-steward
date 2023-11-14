@@ -16,6 +16,7 @@
 
 package org.scalasteward.core.edit.update.data
 
+import cats.ApplicativeThrow
 import scala.util.matching.Regex.Match
 
 object Substring {
@@ -41,16 +42,19 @@ object Substring {
   final case class Replacement(position: Position, replacement: String)
 
   object Replacement {
-    def applyAll(replacements: List[Replacement])(source: String): String = {
-      var start = 0
-      val sb = new java.lang.StringBuilder(source.length)
-      replacements.distinctBy(_.position.start).sortBy(_.position.start).foreach { r =>
-        val before = source.substring(start, r.position.start)
-        start = r.position.start + r.position.value.length
-        sb.append(before).append(r.replacement)
+    def applyAll[F[_]](replacements: List[Replacement])(source: String)(implicit
+        F: ApplicativeThrow[F]
+    ): F[String] =
+      F.catchNonFatal {
+        var start = 0
+        val sb = new java.lang.StringBuilder(source.length)
+        replacements.distinctBy(_.position.start).sortBy(_.position.start).foreach { r =>
+          val before = source.substring(start, r.position.start)
+          start = r.position.start + r.position.value.length
+          sb.append(before).append(r.replacement)
+        }
+        sb.append(source.substring(start))
+        sb.toString
       }
-      sb.append(source.substring(start))
-      sb.toString
-    }
   }
 }

@@ -63,9 +63,9 @@ trait FileAlg[F[_]] {
   ): Resource[F, Unit] =
     createTemporarily(dir / data.path, data.content)
 
-  final def editFile(file: File, edit: String => String)(implicit F: MonadThrow[F]): F[Unit] =
+  final def editFile(file: File, edit: String => F[String])(implicit F: MonadThrow[F]): F[Unit] =
     readFile(file)
-      .flatMap(_.fold(F.unit)(content => writeFile(file, edit(content))))
+      .flatMap(_.fold(F.unit)(edit(_).flatMap(writeFile(file, _))))
       .adaptError { case t => new Throwable(s"failed to edit $file", t) }
 
   final def findFiles[A, B](
