@@ -114,6 +114,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [Jakub Kozłowski](https://github.com/kubukoz)
 * [Javier Arrieta](https://github.com/javierarrieta)
 * [JCollier](https://github.com/Slakah)
+* [jduval87](https://github.com/jduval87)
 * [Jeff Martin](https://github.com/custommonkey)
 * [Jichao Ouyang](https://github.com/jcouyang)
 * [Joan Goyeau](https://github.com/joan38)
