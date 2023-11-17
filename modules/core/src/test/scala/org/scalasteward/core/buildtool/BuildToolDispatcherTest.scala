@@ -33,25 +33,11 @@ class BuildToolDispatcherTest extends FunSuite {
         Cmd("test", "-f", s"$repoDir/pom.xml"),
         Cmd("test", "-f", s"$repoDir/build.sc"),
         Cmd("test", "-f", s"$repoDir/build.sbt"),
-        Cmd.git(
-          repoDir,
-          "grep",
-          "-I",
-          "--fixed-strings",
-          "--files-with-matches",
-          "//> using lib "
-        ),
+        Cmd.gitGrep(repoDir, "//> using lib "),
         Cmd("test", "-f", s"$repoDir/mvn-build/pom.xml"),
         Cmd("test", "-f", s"$repoDir/mvn-build/build.sc"),
         Cmd("test", "-f", s"$repoDir/mvn-build/build.sbt"),
-        Cmd.git(
-          repoDir,
-          "grep",
-          "-I",
-          "--fixed-strings",
-          "--files-with-matches",
-          "//> using lib "
-        ),
+        Cmd.gitGrep(repoDir, "//> using lib "),
         Log("Get dependencies in . from sbt"),
         Cmd("read", s"$repoDir/project/build.properties"),
         Cmd("test", "-d", s"$repoDir/project"),

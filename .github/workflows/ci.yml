@@ -67,6 +67,10 @@ jobs:
       - name: Check that workflows are up to date
         run: sbt githubWorkflowCheck
 
+      - uses: coursier/setup-action@v1
+        with:
+          apps: scalafmt
+
       - name: Build project
         run: sbt '++ ${{ matrix.scala }}' validate
 

@@ -53,6 +53,8 @@ ThisBuild / githubWorkflowPublish := Seq(
 ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec(Temurin, "17"), JavaSpec(Temurin, "11"))
 ThisBuild / githubWorkflowBuild :=
   Seq(
+    WorkflowStep
+      .Use(UseRef.Public("coursier", "setup-action", "v1"), params = Map("apps" -> "scalafmt")),
     WorkflowStep.Sbt(List("validate"), name = Some("Build project")),
     WorkflowStep.Use(
       UseRef.Public("codecov", "codecov-action", "v3"),
@@ -122,7 +124,6 @@ lazy val core = myCrossProject("core")
       Dependencies.decline,
       Dependencies.fs2Core,
       Dependencies.fs2Io,
-      Dependencies.gitignore,
       Dependencies.http4sCirce,
       Dependencies.http4sClient,
       Dependencies.http4sCore,

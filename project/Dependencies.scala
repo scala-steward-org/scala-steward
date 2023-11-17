@@ -22,7 +22,6 @@ object Dependencies {
   val disciplineMunit = "org.typelevel" %% "discipline-munit" % "1.0.9"
   val fs2Core = "co.fs2" %% "fs2-core" % "3.9.3"
   val fs2Io = "co.fs2" %% "fs2-io" % fs2Core.revision
-  val gitignore = "com.github.arturopala" %% "gitignore" % "0.6.0"
   val http4sCore = "org.http4s" %% "http4s-core" % "1.0.0-M40"
   val http4sCirce = "org.http4s" %% "http4s-circe" % http4sCore.revision
   val http4sClient = "org.http4s" %% "http4s-client" % http4sCore.revision
