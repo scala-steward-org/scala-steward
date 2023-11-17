@@ -70,12 +70,12 @@ class EditAlgTest extends FunSuite {
     val buildSbt = (repoDir / "build.sbt") -> "\n"
     val target = repoDir / "target"
     // this file should not be read because it's under target which is git ignored
-    val targetScalaFile = (target / "SomeFile.scala") -> s"""object Test {"2.0.0"}"""
+    val targetScalaFile = target / "SomeFile.scala"
 
     val state = MockState.empty
       .copy(execCommands = true)
       .initGitRepo(repoDir, scalafmtConf -> scalafmtConfContent, buildSbt, gitignore)
-      .flatMap(_.addFiles(targetScalaFile))
+      .flatMap(_.addFiles(targetScalaFile -> s""" object Test {"2.0.0"} """))
       .flatMap(editAlg.applyUpdate(data, update).runS)
       .unsafeRunSync()
 
@@ -105,7 +105,7 @@ class EditAlgTest extends FunSuite {
             |""".stripMargin,
         buildSbt,
         gitignore,
-        targetScalaFile
+        targetScalaFile -> s"""object Test { "2.0.0" }\n"""
       )
     )
 
