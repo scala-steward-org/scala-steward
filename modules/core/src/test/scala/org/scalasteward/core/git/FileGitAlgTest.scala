@@ -6,7 +6,13 @@ import cats.effect.IO
 import cats.syntax.all._
 import munit.CatsEffectSuite
 import org.scalasteward.core.TestInstances.ioLogger
-import org.scalasteward.core.git.FileGitAlgTest.{ioAuxGitAlg, ioGitAlg, master}
+import org.scalasteward.core.git.FileGitAlgTest.{
+  conflictsNo,
+  conflictsYes,
+  ioAuxGitAlg,
+  ioGitAlg,
+  master
+}
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
 import org.scalasteward.core.io.ProcessAlgTest.ioProcessAlg
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
@@ -47,7 +53,7 @@ class FileGitAlgTest extends CatsEffectSuite {
     for {
       _ <- ioAuxGitAlg.createRepo(repo)
       _ <- ioAuxGitAlg.createConflict(repo)
-      authors <- ioGitAlg.branchAuthors(repo, Branch("conflicts-no"), master)
+      authors <- ioGitAlg.branchAuthors(repo, conflictsNo, master)
       _ = assertEquals(authors, List("'Bot Doe'"))
     } yield ()
   }
@@ -157,57 +163,37 @@ class FileGitAlgTest extends CatsEffectSuite {
     for {
       _ <- ioAuxGitAlg.createRepo(repo)
       _ <- ioAuxGitAlg.createConflict(repo)
-      c1 <- ioGitAlg.hasConflicts(repo, Branch("conflicts-yes"), master)
-      c2 <- ioGitAlg.hasConflicts(repo, Branch("conflicts-no"), master)
+      c1 <- ioGitAlg.hasConflicts(repo, conflictsYes, master)
+      c2 <- ioGitAlg.hasConflicts(repo, conflictsNo, master)
       _ = assertEquals((c1, c2), (true, false))
     } yield ()
   }
 
-  test("mergeTheirs") {
-    val repo = rootDir / "mergeTheirs"
+  test("isMerged") {
+    val repo = rootDir / "isMerged"
     for {
       _ <- ioAuxGitAlg.createRepo(repo)
       _ <- ioAuxGitAlg.createConflict(repo)
-      branch = Branch("conflicts-yes")
-      c1 <- ioGitAlg.hasConflicts(repo, branch, master)
-      m1 <- ioGitAlg.isMerged(repo, master, branch)
-      _ <- ioGitAlg.checkoutBranch(repo, branch)
-      _ <- ioGitAlg.mergeTheirs(repo, master)
-      c2 <- ioGitAlg.hasConflicts(repo, branch, master)
-      m2 <- ioGitAlg.isMerged(repo, master, branch)
-      _ = assertEquals((c1, m1, c2, m2), (true, false, false, true))
+      m1 <- ioGitAlg.isMerged(repo, conflictsNo, master)
+      _ <- ioAuxGitAlg.git("merge", conflictsNo.name)(repo)
+      m2 <- ioGitAlg.isMerged(repo, conflictsNo, master)
+      _ = assertEquals((m1, m2), (false, true))
     } yield ()
   }
 
-  test("mergeTheirs: CONFLICT (modify/delete)") {
-    val repo = rootDir / "mergeTheirs-modify-delete"
-    for {
-      _ <- ioAuxGitAlg.createRepo(repo)
-      _ <- ioAuxGitAlg.createConflictFileRemovedOnMaster(repo)
-      branch = Branch("conflicts-yes")
-      c1 <- ioGitAlg.hasConflicts(repo, branch, master)
-      m1 <- ioGitAlg.isMerged(repo, master, branch)
-      _ <- ioGitAlg.checkoutBranch(repo, branch)
-      _ <- ioGitAlg.mergeTheirs(repo, master)
-      c2 <- ioGitAlg.hasConflicts(repo, branch, master)
-      m2 <- ioGitAlg.isMerged(repo, master, branch)
-      _ = assertEquals((c1, m1, c2, m2), (true, false, false, true))
-    } yield ()
-  }
-
-  test("revertChanges") {
-    val repo = rootDir / "revertChanges"
+  test("resetHard") {
+    val repo = rootDir / "resetHard"
     for {
       _ <- ioAuxGitAlg.createRepo(repo)
       _ <- ioAuxGitAlg.createConflict(repo)
-      branch = Branch("conflicts-yes")
+      branch = conflictsYes
       c1 <- ioGitAlg.hasConflicts(repo, branch, master)
       d1 <- ioGitAlg.branchesDiffer(repo, master, branch)
       _ <- ioGitAlg.checkoutBranch(repo, branch)
-      _ <- ioGitAlg.revertChanges(repo, master)
+      _ <- ioGitAlg.resetHard(repo, master)
       c2 <- ioGitAlg.hasConflicts(repo, branch, master)
       d2 <- ioGitAlg.branchesDiffer(repo, master, branch)
-      _ = assertEquals((c1, d1, c2, d2), (true, true, false, true))
+      _ = assertEquals((c1, d1, c2, d2), (true, true, false, false))
     } yield ()
   }
 
@@ -217,7 +203,9 @@ class FileGitAlgTest extends CatsEffectSuite {
 }
 
 object FileGitAlgTest {
-  val master: Branch = Branch("master")
+  private val master: Branch = Branch("master")
+  private val conflictsNo: Branch = Branch("conflicts-no")
+  private val conflictsYes: Branch = Branch("conflicts-yes")
 
   final class AuxGitAlg[F[_]](implicit
       fileAlg: FileAlg[F],
@@ -250,13 +238,13 @@ object FileGitAlgTest {
         _ <- fileAlg.writeFile(repo / "file2", "file2, line1")
         _ <- addFiles(repo, repo / "file1", repo / "file2")
         // work on conflicts-no
-        _ <- gitAlg.createBranch(repo, Branch("conflicts-no"))
+        _ <- gitAlg.createBranch(repo, conflictsNo)
         _ <- fileAlg.writeFile(repo / "file3", "file3, line1")
         _ <- git("add", "file3")(repo)
         _ <- gitAlg.commitAll(repo, CommitMsg("Add file3 on conflicts-no"))
         _ <- gitAlg.checkoutBranch(repo, master)
         // work on conflicts-yes
-        _ <- gitAlg.createBranch(repo, Branch("conflicts-yes"))
+        _ <- gitAlg.createBranch(repo, conflictsYes)
         _ <- fileAlg.writeFile(repo / "file2", "file2, line1\nfile2, line2 on conflicts-yes")
         _ <- git("add", "file2")(repo)
         _ <- gitAlg.commitAll(repo, CommitMsg("Modify file2 on conflicts-yes"))
@@ -274,7 +262,7 @@ object FileGitAlgTest {
         _ <- fileAlg.writeFile(repo / "file2", "file2, line1")
         _ <- addFiles(repo, repo / "file1", repo / "file2")
         // work on conflicts-yes
-        _ <- gitAlg.createBranch(repo, Branch("conflicts-yes"))
+        _ <- gitAlg.createBranch(repo, conflictsYes)
         _ <- fileAlg.writeFile(repo / "file2", "file2, line1\nfile2, line2 on conflicts-yes")
         _ <- git("add", "file2")(repo)
         _ <- gitAlg.commitAll(repo, CommitMsg("Modify file2 on conflicts-yes"))
