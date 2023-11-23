@@ -267,7 +267,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       gitAlg.returnToCurrentBranch(data.repo) {
         gitAlg.checkoutBranch(data.repo, data.updateBranch) >>
           shouldBeUpdated(data).ifM(
-            ifTrue = mergeAndApplyAgain(number, data),
+            ifTrue = resetAndApplyAgain(number, data),
             ifFalse = (Ignored: ProcessResult).pure
           )
       }
@@ -293,22 +293,19 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
     result.flatMap { case (update, msg) => logger.info(msg).as(update) }
   }
 
-  private def mergeAndApplyAgain(number: PullRequestNumber, data: UpdateData): F[ProcessResult] =
+  private def resetAndApplyAgain(number: PullRequestNumber, data: UpdateData): F[ProcessResult] =
     for {
       _ <- logger.info(
-        s"Merge branch ${data.baseBranch.name} into ${data.updateBranch.name} and apply again"
+        s"Reset ${data.updateBranch.name} to ${data.baseBranch.name} and apply again"
       )
-      maybeRevertCommit <- gitAlg.revertChanges(data.repo, data.baseBranch)
-      maybeMergeCommit <- gitAlg.mergeTheirs(data.repo, data.baseBranch)
+      _ <- gitAlg.resetHard(data.repo, data.baseBranch)
       edits <- data.update.on(
         update = editAlg.applyUpdate(data.repoData, _),
         grouped = _.updates.flatTraverse(editAlg.applyUpdate(data.repoData, _))
       )
       editCommits = edits.flatMap(_.commits)
-      commits = maybeRevertCommit.toList ++ maybeMergeCommit.toList ++ editCommits
-      result <- pushCommits(data, commits)
+      result <- pushCommits(data, editCommits)
       requestData <- preparePullRequest(data, edits)
       _ <- forgeApiAlg.updatePullRequest(number: PullRequestNumber, data.repo, requestData)
     } yield result
-
 }
