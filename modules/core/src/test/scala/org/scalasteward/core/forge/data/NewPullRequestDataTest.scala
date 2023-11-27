@@ -131,7 +131,7 @@ class NewPullRequestDataTest extends FunSuite {
     assertEquals(body, expected)
   }
 
-  test("bodyFor() groupped update") {
+  test("bodyFor() grouped update") {
     val update1 = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single
     val update2 = ("com.example".g % "foo".a % "1.0.0" %> "2.0.0").single
     val update = Update.Grouped("my-group", Some("The PR title"), List(update1, update2))
@@ -515,6 +515,13 @@ class NewPullRequestDataTest extends FunSuite {
     assertEquals(labels, expected)
   }
 
+  test("artifact-migrations label") {
+    val update = ("a".g % "b".a % "1" -> "2").single.copy(newerGroupId = Some("aa".g))
+    val obtained = labelsFor(update)
+    val expected = List("library-update", "artifact-migrations", "commit-count:0")
+    assertEquals(obtained, expected)
+  }
+
   test("oldVersionNote doesn't show version for grouped updates") {
     val files = List("Readme.md", "travis.yml")
     val update1 = ("a".g % "b".a % "1" -> "2").single
@@ -539,7 +546,7 @@ class NewPullRequestDataTest extends FunSuite {
     )
   }
 
-  test("adjustFutureUpdates for grouped udpates shows settings for each update") {
+  test("adjustFutureUpdates for grouped updates shows settings for each update") {
     val update1 = ("a".g % "b".a % "1" -> "2").single
     val update2 = ("c".g % "d".a % "1.1.0" % "test" %> "1.2.0").single
     val update = Update.Grouped("my-group", None, List(update1, update2))
