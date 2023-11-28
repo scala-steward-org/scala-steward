@@ -46,7 +46,7 @@ object ScalaCliAlg {
       "compileOnly.dep",
       "compileOnly.deps",
       "compileOnly.dependencies"
-    ).map(alias => s"//> $alias ")
+    ).map(alias => s"//> using $alias ")
 }
 
 final class ScalaCliAlg[F[_]](implicit
