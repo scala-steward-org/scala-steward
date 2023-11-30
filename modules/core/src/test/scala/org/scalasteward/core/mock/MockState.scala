@@ -5,6 +5,7 @@ import cats.effect.{IO, Ref}
 import cats.syntax.all._
 import org.http4s.{HttpApp, Uri}
 import org.scalasteward.core.git.FileGitAlg
+import org.scalasteward.core.git.FileGitAlgTest.ioAuxGitAlg
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
 import org.scalasteward.core.mock.MockConfig.mockRoot
 import org.scalasteward.core.mock.MockState.TraceEntry
@@ -25,6 +26,13 @@ final case class MockState(
 
   def addUris(newUris: (Uri, String)*): MockState =
     copy(uris = uris ++ newUris)
+
+  def initGitRepo(repoDir: File, files: (File, String)*): IO[MockState] =
+    for {
+      _ <- ioAuxGitAlg.createRepo(repoDir)
+      state <- addFiles(files: _*)
+      _ <- ioAuxGitAlg.addFiles(repoDir, files.map { case (file, _) => file }: _*)
+    } yield state
 
   def rmFile(file: File): IO[MockState] =
     ioFileAlg.deleteForce(file).as(copy(files = files - file))
@@ -75,11 +83,26 @@ object MockState {
           ) ++ args
         )
 
-      def git(repoDir: File, args: String*): Cmd =
-        Cmd(
-          List(s"GIT_ASKPASS=$mockRoot/askpass.sh", "VAR1=val1", "VAR2=val2", repoDir.toString) ++
-            FileGitAlg.gitCmd.toList ++ args
-        )
+      def git(repoDir: File, args: String*): Cmd = {
+        val env =
+          List(s"GIT_ASKPASS=$mockRoot/askpass.sh", "VAR1=val1", "VAR2=val2", repoDir.toString)
+        Cmd(env ++ FileGitAlg.gitCmd.toList ++ args)
+      }
+
+      def gitCommit(repoDir: File, messages: String*): Cmd = {
+        val args =
+          "commit" :: "--all" :: "--no-gpg-sign" :: messages.toList.flatMap(m => List("-m", m))
+        git(repoDir, args: _*)
+      }
+
+      def gitGrep(repoDir: File, string: String): Cmd =
+        git(repoDir, "grep", "-I", "--fixed-strings", "--files-with-matches", string)
+
+      def gitLatestSha1(repoDir: File): Cmd =
+        git(repoDir, "rev-parse", "--verify", "HEAD")
+
+      def gitStatus(repoDir: File): Cmd =
+        git(repoDir, "status", "--porcelain", "--untracked-files=no", "--ignore-submodules")
     }
 
     final case class Log(log: (Option[Throwable], String)) extends TraceEntry

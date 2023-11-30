@@ -957,7 +957,8 @@ class RewriteTest extends FunSuite {
     val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
     val filesInRepoDir = files.map { case (file, content) => repoDir / file -> content }
     val state = MockState.empty
-      .addFiles(filesInRepoDir.toSeq: _*)
+      .copy(execCommands = true)
+      .initGitRepo(repoDir, filesInRepoDir.toSeq: _*)
       .flatMap(editAlg.applyUpdate(data, update).runS)
       .unsafeRunSync()
     val obtained = state.files

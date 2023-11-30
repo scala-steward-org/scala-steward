@@ -1,6 +1,5 @@
 package org.scalasteward.core.edit
 
-import better.files.File
 import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.TestInstances.dummyRepoCache
@@ -16,46 +15,39 @@ import org.scalasteward.core.scalafmt.ScalafmtAlg.opts
 import org.scalasteward.core.scalafmt.{scalafmtBinary, scalafmtConfName, scalafmtDependency}
 
 class EditAlgTest extends FunSuite {
-  private def gitStatus(repoDir: File): Cmd =
-    Cmd.git(repoDir, "status", "--porcelain", "--untracked-files=no", "--ignore-submodules")
-
   test("applyUpdate") {
     val repo = Repo("edit-alg", "test-1")
     val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
     val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
     val update = ("org.typelevel".g % "cats-core".a % "1.2.0" %> "1.3.0").single
-    val file1 = repoDir / "build.sbt"
-    val file2 = repoDir / "project/Dependencies.scala"
+    val buildSbt = repoDir / "build.sbt"
+    val scalaFile = repoDir / "project/Dependencies.scala"
     val gitignore = repoDir / ".gitignore"
 
     val state = MockState.empty
-      .addFiles(file1 -> """val catsVersion = "1.2.0"""", file2 -> "", gitignore -> "")
+      .copy(execCommands = true)
+      .initGitRepo(
+        repoDir,
+        buildSbt -> """val catsVersion = "1.2.0"""",
+        scalaFile -> "",
+        gitignore -> ""
+      )
       .flatMap(editAlg.applyUpdate(data, update).runS)
       .unsafeRunSync()
 
     val expected = MockState.empty.copy(
+      execCommands = true,
       trace = Vector(
-        Cmd("read", gitignore.pathAsString),
-        Cmd("test", "-f", repoDir.pathAsString),
-        Cmd("test", "-f", gitignore.pathAsString),
-        Cmd("test", "-f", file1.pathAsString),
-        Cmd("read", file1.pathAsString),
-        Cmd("test", "-f", (repoDir / "project").pathAsString),
-        Cmd("test", "-f", file2.pathAsString),
-        Cmd("read", file2.pathAsString),
-        Cmd("read", gitignore.pathAsString),
-        Cmd("test", "-f", repoDir.pathAsString),
-        Cmd("test", "-f", gitignore.pathAsString),
-        Cmd("test", "-f", file1.pathAsString),
-        Cmd("read", file1.pathAsString),
-        Cmd("test", "-f", (repoDir / "project").pathAsString),
-        Cmd("test", "-f", file2.pathAsString),
-        Cmd("read", file2.pathAsString),
-        Cmd("read", file1.pathAsString),
-        Cmd("write", file1.pathAsString),
-        gitStatus(repoDir)
+        Cmd.gitGrep(repoDir, update.currentVersion.value),
+        Cmd("read", buildSbt.pathAsString),
+        Cmd.gitGrep(repoDir, update.groupId.value),
+        Cmd("read", buildSbt.pathAsString),
+        Cmd("write", buildSbt.pathAsString),
+        Cmd.gitStatus(repoDir),
+        Cmd.gitCommit(repoDir, "Update cats-core to 1.3.0"),
+        Cmd.gitLatestSha1(repoDir)
       ),
-      files = Map(file1 -> """val catsVersion = "1.3.0"""", file2 -> "", gitignore -> "")
+      files = Map(buildSbt -> """val catsVersion = "1.3.0"""", scalaFile -> "", gitignore -> "")
     )
 
     assertEquals(state, expected)
@@ -69,56 +61,41 @@ class EditAlgTest extends FunSuite {
     val data = RepoData(repo, cache, RepoConfig.empty)
     val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
     val update = ("org.scalameta".g % "scalafmt-core".a % "2.0.0" %> "2.1.0").single
-    val gitignore = repoDir / ".gitignore"
+    val gitignore = (repoDir / ".gitignore") -> "target/"
     val scalafmtConf = repoDir / scalafmtConfName
     val scalafmtConfContent = """maxColumn = 100
                                 |version = 2.0.0
                                 |align.openParenCallSite = false
                                 |""".stripMargin
-    val buildSbt = repoDir / "build.sbt"
+    val buildSbt = (repoDir / "build.sbt") -> "\n"
     val target = repoDir / "target"
     // this file should not be read because it's under target which is git ignored
     val targetScalaFile = target / "SomeFile.scala"
 
     val state = MockState.empty
-      .addFiles(
-        scalafmtConf -> scalafmtConfContent,
-        buildSbt -> "",
-        gitignore -> "target/",
-        targetScalaFile -> ""
-      )
+      .copy(execCommands = true)
+      .initGitRepo(repoDir, scalafmtConf -> scalafmtConfContent, buildSbt, gitignore)
+      .flatMap(_.addFiles(targetScalaFile -> s""" object Test {"2.0.0"} """))
       .flatMap(editAlg.applyUpdate(data, update).runS)
       .unsafeRunSync()
 
     val expected = MockState.empty.copy(
+      execCommands = true,
       trace = Vector(
-        Cmd("read", gitignore.pathAsString),
-        Cmd("test", "-f", repoDir.pathAsString),
-        Cmd("test", "-f", gitignore.pathAsString),
-        Cmd("test", "-f", scalafmtConf.pathAsString),
+        Cmd.gitGrep(repoDir, update.currentVersion.value),
         Cmd("read", scalafmtConf.pathAsString),
-        Cmd("test", "-f", buildSbt.pathAsString),
-        Cmd("read", buildSbt.pathAsString),
-        Cmd("test", "-f", target.pathAsString),
-        Cmd("test", "-f", targetScalaFile.pathAsString),
-        Cmd("read", gitignore.pathAsString),
-        Cmd("test", "-f", repoDir.pathAsString),
-        Cmd("test", "-f", gitignore.pathAsString),
-        Cmd("test", "-f", scalafmtConf.pathAsString),
-        Cmd("read", scalafmtConf.pathAsString),
-        Cmd("test", "-f", buildSbt.pathAsString),
-        Cmd("read", buildSbt.pathAsString),
-        Cmd("test", "-f", target.pathAsString),
-        Cmd("test", "-f", targetScalaFile.pathAsString),
+        Cmd.gitGrep(repoDir, update.groupId.value),
         Cmd("read", scalafmtConf.pathAsString),
         Cmd("write", scalafmtConf.pathAsString),
         Cmd.exec(repoDir, scalafmtBinary :: opts.nonInteractive :: opts.modeChanged: _*),
-        gitStatus(repoDir),
+        Cmd.gitStatus(repoDir),
+        Cmd.gitCommit(repoDir, "Update scalafmt-core to 2.1.0"),
+        Cmd.gitLatestSha1(repoDir),
         Log(
           "Executing post-update hook for org.scalameta:scalafmt-core with command 'scalafmt --non-interactive'"
         ),
         Cmd.exec(repoDir, scalafmtBinary, opts.nonInteractive),
-        gitStatus(repoDir)
+        Cmd.gitStatus(repoDir)
       ),
       files = Map(
         scalafmtConf ->
@@ -126,9 +103,9 @@ class EditAlgTest extends FunSuite {
             |version = 2.1.0
             |align.openParenCallSite = false
             |""".stripMargin,
-        buildSbt -> "",
-        gitignore -> "target/",
-        targetScalaFile -> ""
+        buildSbt,
+        gitignore,
+        targetScalaFile -> s"""object Test { "2.0.0" }\n"""
       )
     )
 
@@ -136,13 +113,15 @@ class EditAlgTest extends FunSuite {
   }
 
   test("applyUpdate with build Scalafix") {
-    val repo = Repo("edit-alg", "test-3-1")
+    val repo = Repo("edit-alg", "test-3")
     val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
     val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
     val update = (sbtGroupId % sbtArtifactId % "1.4.9" %> "1.5.5").single
 
     val state = MockState.empty
-      .addFiles(
+      .copy(execCommands = true)
+      .initGitRepo(
+        repoDir,
         repoDir / "build.sbt" -> "",
         repoDir / "project" / "build.properties" -> """sbt.version=1.4.9"""
       )
