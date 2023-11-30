@@ -14,7 +14,7 @@ object Dependencies {
   val circeParser = "io.circe" %% "circe-parser" % circeGeneric.revision
   val circeRefined = "io.circe" %% "circe-refined" % circeGeneric.revision
   val commonsIo = "commons-io" % "commons-io" % "2.15.0"
-  val coursierCore = "io.get-coursier" %% "coursier" % "2.1.7"
+  val coursierCore = "io.get-coursier" %% "coursier" % "2.1.8"
   val coursierSbtMaven =
     "io.get-coursier" %% "coursier-sbt-maven-repository" % coursierCore.revision
   val cron4sCore = "com.github.alonsodomin.cron4s" %% "cron4s-core" % "0.6.1"
@@ -29,7 +29,7 @@ object Dependencies {
   val http4sEmberServer = "org.http4s" %% "http4s-ember-server" % http4sCore.revision
   val http4sJdkhttpClient = "org.http4s" %% "http4s-jdk-http-client" % "1.0.0-M9"
   val log4catsSlf4j = "org.typelevel" %% "log4cats-slf4j" % "2.6.0"
-  val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.4.11"
+  val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.4.13"
   val jjwtApi = "io.jsonwebtoken" % "jjwt-api" % "0.11.5"
   val jjwtImpl = "io.jsonwebtoken" % "jjwt-impl" % jjwtApi.revision
   val jjwtJackson = "io.jsonwebtoken" % "jjwt-jackson" % jjwtApi.revision

@@ -314,12 +314,18 @@ object NewPullRequestData {
     val semverLabels =
       update.on(u => semverForUpdate(u), _.updates.flatMap(semverForUpdate(_)).distinct)
 
+    val artifactMigrationsLabel = Option.when {
+      update.asSingleUpdates
+        .flatMap(_.forArtifactIds.toList)
+        .exists(u => u.newerGroupId.nonEmpty || u.newerArtifactId.nonEmpty)
+    }("artifact-migrations")
     val scalafixLabel = edits.collectFirst { case _: ScalafixEdit => "scalafix-migrations" }
     val oldVersionLabel = Option.when(filesWithOldVersion.nonEmpty)("old-version-remains")
 
     List.concat(
       updateTypeLabels(update),
       semverLabels,
+      artifactMigrationsLabel,
       scalafixLabel,
       oldVersionLabel,
       List(commitCountLabel)

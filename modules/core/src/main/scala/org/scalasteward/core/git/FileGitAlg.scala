@@ -97,7 +97,7 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
 
   override def hasConflicts(repo: File, branch: Branch, base: Branch): F[Boolean] = {
     val tryMerge = git_("merge", "--no-commit", "--no-ff", branch.name)(repo)
-    val abortMerge = git_("merge", "--abort")(repo).void
+    val abortMerge = git_("merge", "--abort")(repo).attempt.void
 
     returnToCurrentBranch(repo) {
       checkoutBranch(repo, base) >> F.guarantee(tryMerge, abortMerge).attempt.map(_.isLeft)
@@ -114,41 +114,14 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
     git("rev-parse", "--verify", branch.name)(repo)
       .flatMap(lines => F.fromEither(Sha1.from(lines.mkString("").trim)))
 
-  override def mergeTheirs(repo: File, branch: Branch): F[Option[Commit]] =
-    for {
-      before <- latestSha1(repo, Branch.head)
-      _ <- git_("merge", "--strategy-option=theirs", sign, branch.name)(repo).void
-        .handleErrorWith { throwable =>
-          // Resolve CONFLICT (modify/delete) by deleting unmerged files:
-          for {
-            unmergedFiles <- git("diff", "--name-only", "--diff-filter=U")(repo)
-            _ <- Nel
-              .fromList(unmergedFiles.filter(_.nonEmpty))
-              .fold(F.raiseError[Unit](throwable))(_.traverse_(file => git_("rm", file)(repo)))
-            _ <- git_("commit", "--all", "--no-edit", sign)(repo)
-          } yield ()
-        }
-      after <- latestSha1(repo, Branch.head)
-    } yield Option.when(before =!= after)(Commit(after))
-
   override def push(repo: File, branch: Branch): F[Unit] =
     git_("push", "--force", "--set-upstream", "origin", branch.name)(repo).void
 
   override def removeClone(repo: File): F[Unit] =
     fileAlg.deleteForce(repo)
 
-  override def revertChanges(repo: File, base: Branch): F[Option[Commit]] = {
-    val range = dotdot(base, Branch.head)
-    git("log", "--pretty=format:%h %p", range)(repo).flatMap { commitsWithParents =>
-      val commitsUntilMerge = commitsWithParents.map(_.split(' ')).takeWhile(_.length === 2)
-      val commits = commitsUntilMerge.flatMap(_.headOption)
-      if (commits.isEmpty) F.pure(None)
-      else {
-        val msg = CommitMsg(s"Revert commit(s) " + commits.mkString(", "))
-        git_("revert" :: "--no-commit" :: commits: _*)(repo) >> commitAllIfDirty(repo, msg)
-      }
-    }
-  }
+  override def resetHard(repo: File, base: Branch): F[Unit] =
+    git_("reset", "--hard", base.name)(repo).void
 
   override def setAuthor(repo: File, author: Author): F[Unit] =
     for {
