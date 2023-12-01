@@ -5,7 +5,6 @@
 # Scala Steward
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/scala-steward-org/scala-steward/ci.yml?branch=main)](https://github.com/scala-steward-org/scala-steward/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/scala-steward-org/scala-steward/branch/main/graph/badge.svg)](https://codecov.io/gh/scala-steward-org/scala-steward)
-[![Join the chat at https://gitter.im/scala-steward-org/scala-steward](https://badges.gitter.im/scala-steward-org/scala-steward.svg)](https://gitter.im/scala-steward-org/scala-steward?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Typelevel project](https://img.shields.io/badge/typelevel-project-blue.svg)](https://typelevel.org/projects/#scala-steward)
 [![Scala Steward badge](https://img.shields.io/badge/Scala_Steward-helping-blue.svg?style=flat&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAQCAMAAAARSr4IAAAAVFBMVEUAAACHjojlOy5NWlrKzcYRKjGFjIbp293YycuLa3pYY2LSqql4f3pCUFTgSjNodYRmcXUsPD/NTTbjRS+2jomhgnzNc223cGvZS0HaSD0XLjbaSjElhIr+AAAAAXRSTlMAQObYZgAAAHlJREFUCNdNyosOwyAIhWHAQS1Vt7a77/3fcxxdmv0xwmckutAR1nkm4ggbyEcg/wWmlGLDAA3oL50xi6fk5ffZ3E2E3QfZDCcCN2YtbEWZt+Drc6u6rlqv7Uk0LdKqqr5rk2UCRXOk0vmQKGfc94nOJyQjouF9H/wCc9gECEYfONoAAAAASUVORK5CYII=)](https://scala-steward.org)
 [![Docker Pulls](https://img.shields.io/docker/pulls/fthomas/scala-steward.svg?style=flat&color=blue)](https://hub.docker.com/r/fthomas/scala-steward/)
