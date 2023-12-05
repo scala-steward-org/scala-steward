@@ -84,6 +84,10 @@ ThisBuild / dynverSeparator := "-"
 
 ThisBuild / evictionErrorLevel := Level.Info
 
+ThisBuild / tpolecatDefaultOptionsMode := {
+  if (insideCI.value) org.typelevel.sbt.tpolecat.CiMode else org.typelevel.sbt.tpolecat.DevMode
+}
+
 /// projects
 
 lazy val root = project
