@@ -37,6 +37,7 @@ object ScalaCliAlg {
       "dep",
       "deps",
       "dependencies",
+      "toolkit",
       "test.dependency",
       "test.dep",
       "test.deps",
