@@ -95,8 +95,8 @@ final class MillAlg[F[_]](defaultResolver: Resolver)(implicit
       buildRootDir: File
   ): F[Seq[Scope[List[Dependency]]]] =
     for {
-      buildConent <- fileAlg.readFile(buildRootDir / "build.sc")
-      deps = buildConent.toList.map(content =>
+      buildContent <- fileAlg.readFile(buildRootDir / "build.sc")
+      deps = buildContent.toList.map(content =>
         Scope(parser.parseMillPluginDeps(content, millVersion), List(defaultResolver))
       )
     } yield deps
