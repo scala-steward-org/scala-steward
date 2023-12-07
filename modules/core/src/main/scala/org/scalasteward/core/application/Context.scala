@@ -27,6 +27,7 @@ import org.http4s.client.Client
 import org.http4s.headers.`User-Agent`
 import org.scalasteward.core.application.Config.{ForgeCfg, StewardUsage}
 import org.scalasteward.core.buildtool.BuildToolDispatcher
+import org.scalasteward.core.buildtool.bleep.BleepAlg
 import org.scalasteward.core.buildtool.bsp.BspExtractor
 import org.scalasteward.core.buildtool.maven.MavenAlg
 import org.scalasteward.core.buildtool.mill.MillAlg
@@ -227,6 +228,7 @@ object Context {
       implicit val sbtAlg: SbtAlg[F] = new SbtAlg[F](config)
       implicit val scalaCliAlg: ScalaCliAlg[F] = new ScalaCliAlg[F]
       implicit val bspExtractor: BspExtractor[F] = new BspExtractor[F](config.defaultResolver)
+      implicit val bleepAlg: BleepAlg[F] = new BleepAlg[F]
       implicit val millAlg: MillAlg[F] = new MillAlg[F]
       implicit val buildToolDispatcher: BuildToolDispatcher[F] = new BuildToolDispatcher[F]
       implicit val refreshErrorAlg: RefreshErrorAlg[F] =

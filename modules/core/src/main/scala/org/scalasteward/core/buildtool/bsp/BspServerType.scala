@@ -37,6 +37,12 @@ object BspServerType {
         connectionDetailsName = "bazelbsp.json"
       )
 
+  case object Bleep
+      extends BspServerType(
+        connectionDetailsCommand = Nel.of("bleep", "setup-ide"),
+        connectionDetailsName = "bleep.json"
+      )
+
   // https://com-lihaoyi.github.io/mill/mill/Plugin_BSP.html
   case object Mill
       extends BspServerType(
