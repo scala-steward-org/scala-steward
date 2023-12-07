@@ -92,20 +92,25 @@ final class StewardAlg[F[_]](config: Config)(implicit
     logger.infoTotalTime("run") {
       for {
         _ <- selfCheckAlg.checkAll
-        _ <- workspaceAlg.cleanReposDir
+        _ <- workspaceAlg.removeAnyRunSpecificFiles
         exitCode <-
           (config.githubApp.map(getGitHubAppRepos).getOrElse(Stream.empty) ++
             readRepos(config.reposFile))
-            .evalMap(steward)
+            .evalMap(repo => steward(repo).map(_.bimap(repo -> _, _ => repo)))
             .compile
-            .foldSemigroup
+            .toList
             .flatMap {
-              case Some(result) => result.fold(_ => ExitCode.Error, _ => ExitCode.Success).pure[F]
-              case None =>
+              case Nil =>
                 val msg = "No repos specified. " +
                   s"Check the formatting of ${config.reposFile.pathAsString}. " +
                   s"""The format is "- $$owner/$$repo" or "- $$owner/$$repo:$$branch"."""
                 logger.warn(msg).as(ExitCode.Success)
+              case results =>
+                val runResults = RunResults(results)
+                for {
+                  summaryFile <- workspaceAlg.runSummaryFile
+                  _ <- fileAlg.writeFile(summaryFile, runResults.markdownSummary)
+                } yield runResults.exitCode
             }
       } yield exitCode
     }

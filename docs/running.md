@@ -83,6 +83,18 @@ example1.host=artifacts.example.com
 example1.realm=Example Realm
 ```
 
+#### Running behind a proxy
+
+You can configure a proxy using the JAVA_OPTS environment variable with proxy properties.
+
+For example:
+
+```bash
+JAVA_OPTS="-Dhttp.proxyHost=webcache.example.com -Dhttp.proxyPort=8080 -Dhttps.proxyHost=webcache.example.com -Dhttps.proxyPort=8080"
+```
+
+See Oracle proxies documentation for more info.
+
 ### Running locally from sbt
 
 #### Sample run for GitLab
@@ -230,17 +242,18 @@ check:
     - mkdir --parents "$CI_PROJECT_DIR/.sbt" "$CI_PROJECT_DIR/.ivy2"
     - ln -sfT "$CI_PROJECT_DIR/.sbt"  "$HOME/.sbt"
     - ln -sfT "$CI_PROJECT_DIR/.ivy2" "$HOME/.ivy2"
-    - >-
-      /opt/docker/bin/scala-steward
-        --workspace  "$CI_PROJECT_DIR/workspace"
-        --process-timeout 30min
-        --do-not-fork
-        --repos-file "$CI_PROJECT_DIR/repos.md"
-        --repo-config "$CI_PROJECT_DIR/default.scala-steward.conf"
-        --git-author-email "${EMAIL}"
-        --forge-type "gitlab"
-        --forge-api-host "${CI_API_V4_URL}"
-        --forge-login "${LOGIN}"
+    - chmod +x "$CI_PROJECT_DIR/askpass.sh"
+    - >
+      /opt/docker/bin/scala-steward \
+        --workspace "$CI_PROJECT_DIR/workspace" \
+        --process-timeout "30min" \
+        --do-not-fork \
+        --repos-file "$CI_PROJECT_DIR/repos.md" \
+        --repo-config "$CI_PROJECT_DIR/default.scala-steward.conf" \
+        --git-author-email "${EMAIL}" \
+        --forge-type "gitlab" \
+        --forge-api-host "${CI_API_V4_URL}" \
+        --forge-login "${LOGIN}" \
         --git-ask-pass "$CI_PROJECT_DIR/askpass.sh"
   cache:
     key: scala-steward

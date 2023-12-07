@@ -5,7 +5,7 @@ import org.http4s.syntax.literals._
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.data.{RepoOut, UserOut}
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.mock.MockConfig.{config, gitCmd}
+import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context._
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.mock.{MockConfig, MockEff, MockState}
@@ -37,18 +37,25 @@ class ForgeRepoAlgTest extends CatsEffectSuite {
     val expected = MockState.empty.copy(
       trace = Vector(
         Log("Clone scala-steward/datapackage"),
-        Cmd(gitCmd(config.workspace), "clone", forkUrl, repoDir.toString),
-        Cmd(gitCmd(repoDir), "config", "user.email", "bot@example.org"),
-        Cmd(gitCmd(repoDir), "config", "user.name", "Bot Doe"),
+        Cmd.git(
+          config.workspace,
+          "clone",
+          "-c",
+          "clone.defaultRemoteName=origin",
+          forkUrl,
+          repoDir.toString
+        ),
+        Cmd.git(repoDir, "config", "user.email", "bot@example.org"),
+        Cmd.git(repoDir, "config", "user.name", "Bot Doe"),
         Log("Synchronize with fthomas/datapackage"),
-        Cmd(gitCmd(repoDir), "remote", "add", "upstream", parentUrl),
-        Cmd(gitCmd(repoDir), "fetch", "--force", "--tags", "upstream", "main"),
-        Cmd(gitCmd(repoDir), "checkout", "-B", "main", "--track", "upstream/main"),
-        Cmd(gitCmd(repoDir), "merge", "upstream/main"),
-        Cmd(gitCmd(repoDir), "push", "--force", "--set-upstream", "origin", "main"),
-        Cmd(gitCmd(repoDir), "branch", "--list", "--no-color", "--all", "update"),
-        Cmd(gitCmd(repoDir), "branch", "--list", "--no-color", "--all", "origin/update"),
-        Cmd(gitCmd(repoDir), "submodule", "update", "--init", "--recursive")
+        Cmd.git(repoDir, "remote", "add", "upstream", parentUrl),
+        Cmd.git(repoDir, "fetch", "--force", "--tags", "upstream", "main"),
+        Cmd.git(repoDir, "checkout", "-B", "main", "--track", "upstream/main"),
+        Cmd.git(repoDir, "merge", "upstream/main"),
+        Cmd.git(repoDir, "push", "--force", "--set-upstream", "origin", "main"),
+        Cmd.git(repoDir, "branch", "--list", "--no-color", "--all", "update"),
+        Cmd.git(repoDir, "branch", "--list", "--no-color", "--all", "origin/update"),
+        Cmd.git(repoDir, "submodule", "update", "--init", "--recursive")
       )
     )
     state.map(assertEquals(_, expected))
@@ -64,10 +71,17 @@ class ForgeRepoAlgTest extends CatsEffectSuite {
     val expected = MockState.empty.copy(
       trace = Vector(
         Log("Clone fthomas/datapackage"),
-        Cmd(gitCmd(config.workspace), "clone", parentUrl, repoDir.toString),
-        Cmd(gitCmd(repoDir), "config", "user.email", "bot@example.org"),
-        Cmd(gitCmd(repoDir), "config", "user.name", "Bot Doe"),
-        Cmd(gitCmd(repoDir), "submodule", "update", "--init", "--recursive")
+        Cmd.git(
+          config.workspace,
+          "clone",
+          "-c",
+          "clone.defaultRemoteName=origin",
+          parentUrl,
+          repoDir.toString
+        ),
+        Cmd.git(repoDir, "config", "user.email", "bot@example.org"),
+        Cmd.git(repoDir, "config", "user.name", "Bot Doe"),
+        Cmd.git(repoDir, "submodule", "update", "--init", "--recursive")
       )
     )
     state.map(assertEquals(_, expected))

@@ -145,10 +145,7 @@ final class PruningAlg[F[_]](implicit
             artifactLastPrCreatedAt =
               lastPullRequestCreatedAtByArtifact.get(s.update.groupId -> s.update.mainArtifactId),
             repoConfig
-          ).map {
-            case true  => Some(s)
-            case false => None
-          }
+          ).map(Option.when(_)(s))
         case s: PullRequestOutdated => Option[WithUpdate](s).pure[F]
         case _                      => F.pure(None)
       }
@@ -173,11 +170,9 @@ final class PruningAlg[F[_]](implicit
         .collectFirstSome { groupRepoConfig =>
           val matchResult = UpdatePattern
             .findMatch(List(groupRepoConfig.dependency), dependencyOutdated.update, include = true)
-          if (matchResult.byArtifactId.nonEmpty && matchResult.filteredVersions.nonEmpty) {
-            Some((groupRepoConfig.pullRequests.frequency, artifactLastPrCreatedAt))
-          } else {
-            None
-          }
+          Option.when(matchResult.byArtifactId.nonEmpty && matchResult.filteredVersions.nonEmpty)(
+            (groupRepoConfig.pullRequests.frequency, artifactLastPrCreatedAt)
+          )
         }
         .getOrElse((repoConfig.pullRequests.frequency, repoLastPrCreatedAt))
     val frequency = frequencyz.getOrElse(PullRequestFrequency.Asap)

@@ -22,7 +22,7 @@ import cats.syntax.all._
 import io.circe.ParsingFailure
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.BuildRoot
-import org.scalasteward.core.data.{Repo, Scope, Version}
+import org.scalasteward.core.data.{Scope, Version}
 import org.scalasteward.core.io.process.SlurpOptions
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.scalafmt.ScalafmtAlg.{opts, parseScalafmtConf}
@@ -52,11 +52,11 @@ final class ScalafmtAlg[F[_]](config: Config)(implicit
       .map(version => Scope(List(scalafmtDependency(version)), List(config.defaultResolver)))
       .value
 
-  def reformatChanged(repo: Repo): F[Unit] =
+  def reformatChanged(buildRoot: BuildRoot): F[Unit] =
     for {
-      repoDir <- workspaceAlg.repoDir(repo)
+      buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
       cmd = Nel.of(scalafmtBinary, opts.nonInteractive) ++ opts.modeChanged
-      _ <- processAlg.exec(cmd, repoDir, slurpOptions = SlurpOptions.ignoreBufferOverflow)
+      _ <- processAlg.exec(cmd, buildRootDir, slurpOptions = SlurpOptions.ignoreBufferOverflow)
     } yield ()
 
   def version: F[String] = {

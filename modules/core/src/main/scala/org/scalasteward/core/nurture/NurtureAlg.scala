@@ -17,7 +17,7 @@
 package org.scalasteward.core.nurture
 
 import cats.effect.Concurrent
-import cats.implicits._
+import cats.syntax.all._
 import cats.{Applicative, Id}
 import org.scalasteward.core.application.Config.ForgeCfg
 import org.scalasteward.core.coursier.CoursierAlg
@@ -99,7 +99,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
           logger.info(s"PR ${pr.html_url} is closed") >>
             deleteRemoteBranch(data.repo, data.updateBranch).as(Ignored)
         case Some(pr) if !pr.state.isClosed =>
-          logger.info(s"Found PR ${pr.html_url}") >> updatePullRequest(data)
+          logger.info(s"Found PR ${pr.html_url}") >> updatePullRequest(data, pr.number)
         case _ =>
           applyNewUpdate(data).flatTap {
             case Created(newPrNumber) => closeObsoletePullRequests(data, newPrNumber)
@@ -217,7 +217,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
         case (currentVersion, dependency) =>
           dependencyToMetadata.get(dependency).toList.traverse { metadata =>
             updateInfoUrlFinder
-              .findUpdateInfoUrls(metadata, currentVersion, dependency.version)
+              .findUpdateInfoUrls(metadata, Version.Update(currentVersion, dependency.version))
               .tupleLeft(dependency.artifactId.name)
           }
       }
@@ -234,13 +234,14 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       allLabels = labelsFor(data.update, edits, filesWithOldVersion, artifactIdToVersionScheme)
       labels = filterLabels(allLabels, data.repoData.config.pullRequests.includeMatchedLabels)
       requestData = NewPullRequestData.from(
-        data,
-        branchName,
-        edits,
-        artifactIdToUrl,
-        artifactIdToUpdateInfoUrls.toMap,
-        filesWithOldVersion,
-        labels
+        data = data,
+        branchName = branchName,
+        edits = edits,
+        artifactIdToUrl = artifactIdToUrl,
+        artifactIdToUpdateInfoUrls = artifactIdToUpdateInfoUrls.toMap,
+        filesWithOldVersion = filesWithOldVersion,
+        addLabels = config.addLabels,
+        labels = data.repoData.config.pullRequests.customLabels ++ labels
       )
     } yield requestData
 
@@ -249,9 +250,6 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
       requestData <- preparePullRequest(data, edits)
       pr <- forgeApiAlg.createPullRequest(data.repo, requestData)
-      _ <- forgeApiAlg
-        .labelPullRequest(data.repo, pr.number, requestData.labels)
-        .whenA(config.addLabels && requestData.labels.nonEmpty)
       prData = PullRequestData[Id](
         pr.html_url,
         data.baseSha1,
@@ -264,14 +262,14 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       _ <- logger.info(s"Created PR ${pr.html_url}")
     } yield Created(pr.number)
 
-  private def updatePullRequest(data: UpdateData): F[ProcessResult] =
+  private def updatePullRequest(data: UpdateData, number: PullRequestNumber): F[ProcessResult] =
     if (data.repoConfig.updatePullRequestsOrDefault =!= PullRequestUpdateStrategy.Never)
       gitAlg.returnToCurrentBranch(data.repo) {
-        for {
-          _ <- gitAlg.checkoutBranch(data.repo, data.updateBranch)
-          update <- shouldBeUpdated(data)
-          result <- if (update) mergeAndApplyAgain(data) else F.pure[ProcessResult](Ignored)
-        } yield result
+        gitAlg.checkoutBranch(data.repo, data.updateBranch) >>
+          shouldBeUpdated(data).ifM(
+            ifTrue = resetAndApplyAgain(number, data),
+            ifFalse = (Ignored: ProcessResult).pure
+          )
       }
     else
       logger.info("PR updates are disabled by flag").as(Ignored)
@@ -295,20 +293,19 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
     result.flatMap { case (update, msg) => logger.info(msg).as(update) }
   }
 
-  private def mergeAndApplyAgain(data: UpdateData): F[ProcessResult] =
+  private def resetAndApplyAgain(number: PullRequestNumber, data: UpdateData): F[ProcessResult] =
     for {
       _ <- logger.info(
-        s"Merge branch ${data.baseBranch.name} into ${data.updateBranch.name} and apply again"
+        s"Reset ${data.updateBranch.name} to ${data.baseBranch.name} and apply again"
       )
-      maybeRevertCommit <- gitAlg.revertChanges(data.repo, data.baseBranch)
-      maybeMergeCommit <- gitAlg.mergeTheirs(data.repo, data.baseBranch)
+      _ <- gitAlg.resetHard(data.repo, data.baseBranch)
       edits <- data.update.on(
         update = editAlg.applyUpdate(data.repoData, _),
         grouped = _.updates.flatTraverse(editAlg.applyUpdate(data.repoData, _))
       )
       editCommits = edits.flatMap(_.commits)
-      commits = maybeRevertCommit.toList ++ maybeMergeCommit.toList ++ editCommits
-      result <- pushCommits(data, commits)
+      result <- pushCommits(data, editCommits)
+      requestData <- preparePullRequest(data, edits)
+      _ <- forgeApiAlg.updatePullRequest(number: PullRequestNumber, data.repo, requestData)
     } yield result
-
 }

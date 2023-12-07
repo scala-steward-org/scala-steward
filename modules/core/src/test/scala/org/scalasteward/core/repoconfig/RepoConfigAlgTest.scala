@@ -55,6 +55,8 @@ class RepoConfigAlgTest extends FunSuite {
          |]
          |commits.message = "Update ${artifactName} from ${currentVersion} to ${nextVersion}"
          |buildRoots = [ ".", "subfolder/subfolder" ]
+         |assignees = [ "scala.steward" ]
+         |reviewers = [ "scala.steward" ]
          |""".stripMargin
     val initialState = MockState.empty.addFiles(configFile -> content).unsafeRunSync()
     val obtained = repoConfigAlg
@@ -158,7 +160,9 @@ class RepoConfigAlgTest extends FunSuite {
             frequency = Some(PullRequestFrequency.Timespan(7.days))
           )
         )
-      )
+      ),
+      assignees = List("scala.steward"),
+      reviewers = List("scala.steward")
     )
     assertEquals(obtained, expected)
   }
@@ -239,8 +243,9 @@ class RepoConfigAlgTest extends FunSuite {
   }
 
   test("build root with '..'") {
+    val repo = Repo("typelevel", "cats")
     val content = """buildRoots = [ "../../../etc" ]"""
-    val config = RepoConfigAlg.parseRepoConfig(content).map(_.buildRootsOrDefault)
+    val config = RepoConfigAlg.parseRepoConfig(content).map(_.buildRootsOrDefault(repo))
     assertEquals(config, Right(Nil))
   }
 
@@ -257,6 +262,80 @@ class RepoConfigAlgTest extends FunSuite {
 
     val log = state.trace.collectFirst { case Log((_, msg)) => msg }.getOrElse("")
     assert(clue(log).contains(startOfErrorMsg))
+  }
+
+  test("hidden config file in .github/") {
+    val repo = Repo("test", "dot-github-config")
+    val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
+    val rootConfigFile = repoDir / ".scala-steward.conf"
+    val dotGithubConfigFile = repoDir / ".github" / ".scala-steward.conf"
+    val initialState = MockState.empty.addFiles(dotGithubConfigFile -> "").unsafeRunSync()
+    val config = repoConfigAlg.readRepoConfig(repo).runA(initialState).unsafeRunSync()
+
+    assert(!fileAlg.isRegularFile(rootConfigFile).unsafeRunSync())
+    assert(fileAlg.isRegularFile(dotGithubConfigFile).unsafeRunSync())
+
+    assert(config.maybeRepoConfig.isDefined)
+  }
+
+  test("not hidden config file in .github/") {
+    val repo = Repo("test", "dot-github-config")
+    val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
+    val rootConfigFile = repoDir / "scala-steward.conf"
+    val dotGithubConfigFile = repoDir / ".github" / "scala-steward.conf"
+    val initialState = MockState.empty.addFiles(dotGithubConfigFile -> "").unsafeRunSync()
+    val config = repoConfigAlg.readRepoConfig(repo).runA(initialState).unsafeRunSync()
+
+    assert(!fileAlg.isRegularFile(rootConfigFile).unsafeRunSync())
+    assert(fileAlg.isRegularFile(dotGithubConfigFile).unsafeRunSync())
+
+    assert(config.maybeRepoConfig.isDefined)
+  }
+
+  test("hidden config file in .config/") {
+    val repo = Repo("test", "dot-config-config")
+    val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
+    val rootConfigFile = repoDir / ".scala-steward.conf"
+    val dotConfigConfigFile = repoDir / ".config" / ".scala-steward.conf"
+    val initialState = MockState.empty.addFiles(dotConfigConfigFile -> "").unsafeRunSync()
+    val config = repoConfigAlg.readRepoConfig(repo).runA(initialState).unsafeRunSync()
+
+    assert(!fileAlg.isRegularFile(rootConfigFile).unsafeRunSync())
+    assert(fileAlg.isRegularFile(dotConfigConfigFile).unsafeRunSync())
+
+    assert(config.maybeRepoConfig.isDefined)
+  }
+
+  test("not hidden config file in .config/") {
+    val repo = Repo("test", "dot-config-config")
+    val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
+    val rootConfigFile = repoDir / "scala-steward.conf"
+    val dotConfigConfigFile = repoDir / ".config" / "scala-steward.conf"
+    val initialState = MockState.empty.addFiles(dotConfigConfigFile -> "").unsafeRunSync()
+    val config = repoConfigAlg.readRepoConfig(repo).runA(initialState).unsafeRunSync()
+
+    assert(!fileAlg.isRegularFile(rootConfigFile).unsafeRunSync())
+    assert(fileAlg.isRegularFile(dotConfigConfigFile).unsafeRunSync())
+
+    assert(config.maybeRepoConfig.isDefined)
+  }
+
+  test("log warning on multiple config files") {
+    val repo = Repo("test", "multiple-config")
+    val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
+    val rootConfigFile = repoDir / ".scala-steward.conf"
+    val dotConfigConfigFile = repoDir / ".config" / ".scala-steward.conf"
+    val initialState =
+      MockState.empty.addFiles(rootConfigFile -> "", dotConfigConfigFile -> "").unsafeRunSync()
+    val (state, config) = repoConfigAlg.readRepoConfig(repo).runSA(initialState).unsafeRunSync()
+
+    assert(fileAlg.isRegularFile(rootConfigFile).unsafeRunSync())
+    assert(fileAlg.isRegularFile(dotConfigConfigFile).unsafeRunSync())
+
+    assert(config.maybeRepoConfig.isDefined)
+
+    val log = state.trace.collectFirst { case Log((_, msg)) => msg }.getOrElse("")
+    assert(clue(log).contains("Ignored config file"))
   }
 
   test("configToIgnoreFurtherUpdates with single update") {

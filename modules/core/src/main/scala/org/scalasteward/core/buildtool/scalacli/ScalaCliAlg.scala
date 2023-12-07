@@ -28,6 +28,28 @@ import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
 import org.typelevel.log4cats.Logger
 
+object ScalaCliAlg {
+  val directives =
+    // sourced from https://github.com/VirtusLab/scala-cli/blob/9e22d4a91ba8699ac2727d2ac3042d64abe951e1/modules/directives/src/main/scala/scala/build/preprocessing/directives/Dependency.scala#L33-L48
+    List(
+      "lib",
+      "libs",
+      "dep",
+      "deps",
+      "dependencies",
+      "toolkit",
+      "test.dependency",
+      "test.dep",
+      "test.deps",
+      "test.dependencies",
+      "compileOnly.lib",
+      "compileOnly.libs",
+      "compileOnly.dep",
+      "compileOnly.deps",
+      "compileOnly.dependencies"
+    ).map(alias => s"//> using $alias ")
+}
+
 final class ScalaCliAlg[F[_]](implicit
     fileAlg: FileAlg[F],
     gitAlg: GitAlg[F],
@@ -41,17 +63,25 @@ final class ScalaCliAlg[F[_]](implicit
 
   override def containsBuild(buildRoot: BuildRoot): F[Boolean] = {
     val buildRootPath = buildRoot.relativePath.dropWhile(Set('.', '/'))
-    gitAlg
-      .findFilesContaining(buildRoot.repo, "//> using lib ")
-      .map(_.exists(_.startsWith(buildRootPath)))
+    val extensions = Set(".sc", ".scala")
+    ScalaCliAlg.directives
+      .flatTraverse(gitAlg.findFilesContaining(buildRoot.repo, _))
+      .map(_.exists(path => path.startsWith(buildRootPath) && extensions.exists(path.endsWith)))
   }
 
   override def getDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
     for {
       buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
       exportDir = "tmp-sbt-build-for-scala-steward"
-      exportCmd =
-        Nel.of("scala-cli", "export", "--sbt", "--output", exportDir, buildRootDir.pathAsString)
+      exportCmd = Nel.of(
+        "scala-cli",
+        "--power",
+        "export",
+        "--sbt",
+        "--output",
+        exportDir,
+        buildRootDir.pathAsString
+      )
       slurpOptions = SlurpOptions.ignoreBufferOverflow
       _ <- processAlg.execSandboxed(exportCmd, buildRootDir, slurpOptions = slurpOptions)
       exportBuildRoot = buildRoot.copy(relativePath = buildRoot.relativePath + s"/$exportDir")

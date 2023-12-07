@@ -16,7 +16,8 @@
 
 package org.scalasteward.core.forge.gitlab
 
-import cats.MonadThrow
+import cats.effect.Temporal
+import cats.Parallel
 import cats.syntax.all._
 import io.circe._
 import io.circe.generic.semiauto._
@@ -31,26 +32,45 @@ import org.scalasteward.core.util.uri.uriDecoder
 import org.scalasteward.core.util.{intellijThisImportIsUsed, HttpJsonClient, UnexpectedResponse}
 import org.typelevel.log4cats.Logger
 
+import scala.concurrent.duration.{Duration, DurationInt}
+
 final private[gitlab] case class ForkPayload(id: String, namespace: String)
 final private[gitlab] case class MergeRequestPayload(
     id: String,
     title: String,
     description: String,
+    labels: Option[List[String]],
+    assignee_ids: Option[List[Int]],
+    reviewer_ids: Option[List[Int]],
     target_project_id: Long,
+    remove_source_branch: Option[Boolean],
     source_branch: String,
     target_branch: Branch
 )
 
 private[gitlab] object MergeRequestPayload {
-  def apply(id: String, projectId: Long, data: NewPullRequestData): MergeRequestPayload =
+  def apply(
+      id: String,
+      projectId: Long,
+      data: NewPullRequestData,
+      usernamesToUserIdsMapping: Map[String, Int],
+      removeSourceBranch: Boolean
+  ): MergeRequestPayload = {
+    val assignees = data.assignees.flatMap(usernamesToUserIdsMapping.get)
+    val reviewers = data.reviewers.flatMap(usernamesToUserIdsMapping.get)
     MergeRequestPayload(
-      id,
-      List(if (data.draft) "Draft: " else "", data.title).mkString,
-      data.body,
-      projectId,
-      data.head,
-      data.base
+      id = id,
+      title = List(if (data.draft) "Draft: " else "", data.title).mkString,
+      description = data.body,
+      assignee_ids = Option.when(assignees.nonEmpty)(assignees),
+      reviewer_ids = Option.when(reviewers.nonEmpty)(reviewers),
+      labels = Option.when(data.labels.nonEmpty)(data.labels),
+      target_project_id = projectId,
+      remove_source_branch = Option.when(removeSourceBranch)(removeSourceBranch),
+      source_branch = data.head,
+      target_branch = data.base
     )
+  }
 }
 
 final private[gitlab] case class MergeRequestOut(
@@ -121,7 +141,9 @@ private[gitlab] object GitLabJsonCodec {
     }
 
   implicit val projectIdDecoder: Decoder[ProjectId] = deriveDecoder
-  implicit val mergeRequestPayloadEncoder: Encoder[MergeRequestPayload] = deriveEncoder
+  implicit val mergeRequestPayloadEncoder: Encoder[MergeRequestPayload] =
+    deriveEncoder[MergeRequestPayload].mapJson(_.dropNullValues)
+
   implicit val updateStateEncoder: Encoder[UpdateState] = Encoder.instance { newState =>
     val encoded = newState.state match {
       case PullRequestState.Open   => "open"
@@ -136,14 +158,14 @@ private[gitlab] object GitLabJsonCodec {
   implicit val branchOutDecoder: Decoder[BranchOut] = deriveDecoder[BranchOut]
 }
 
-final class GitLabApiAlg[F[_]](
+final class GitLabApiAlg[F[_]: Parallel](
     forgeCfg: ForgeCfg,
     gitLabCfg: GitLabCfg,
     modify: Repo => Request[F] => F[Request[F]]
 )(implicit
     client: HttpJsonClient[F],
     logger: Logger[F],
-    F: MonadThrow[F]
+    F: Temporal[F]
 ) extends ForgeApiAlg[F] {
   import GitLabJsonCodec._
 
@@ -169,24 +191,46 @@ final class GitLabApiAlg[F[_]](
     val targetRepo = if (forgeCfg.doNotFork) repo else repo.copy(owner = forgeCfg.login)
     val mergeRequest = for {
       projectId <- client.get[ProjectId](url.repos(repo), modify(repo))
-      payload = MergeRequestPayload(url.encodedProjectId(targetRepo), projectId.id, data)
+      usernameMapping <- getUsernameToUserIdsMapping(repo, (data.assignees ++ data.reviewers).toSet)
+      payload = MergeRequestPayload(
+        id = url.encodedProjectId(targetRepo),
+        projectId = projectId.id,
+        data = data,
+        usernamesToUserIdsMapping = usernameMapping,
+        removeSourceBranch = gitLabCfg.removeSourceBranch
+      )
       res <- client.postWithBody[MergeRequestOut, MergeRequestPayload](
-        url.mergeRequest(targetRepo),
-        payload,
-        modify(repo)
+        uri = url.mergeRequest(targetRepo),
+        body = payload,
+        modify = modify(repo)
       )
     } yield res
 
     def waitForMergeRequestStatus(
         number: PullRequestNumber,
-        retries: Int = 10
+        retries: Int = 10,
+        initialDelay: Duration = 100.milliseconds,
+        backoffMultiplier: Double = 2.0
     ): F[MergeRequestOut] =
       client
         .get[MergeRequestOut](url.existingMergeRequest(repo, number), modify(repo))
         .flatMap {
           case mr if mr.mergeStatus =!= GitLabMergeStatus.Checking => F.pure(mr)
-          case _ if retries > 0 => waitForMergeRequestStatus(number, retries - 1)
-          case other            => F.pure(other)
+          case mr if retries > 0 =>
+            logger.info(
+              s"Merge request is still in '${mr.mergeStatus}' state. We will check merge request status in $initialDelay again. " +
+                s"Remaining retries count is $retries"
+            ) >> F.sleep(initialDelay) >> waitForMergeRequestStatus(
+              number,
+              retries - 1,
+              initialDelay * backoffMultiplier
+            )
+          case mr =>
+            logger
+              .warn(
+                s"Exhausted all retries while waiting for merge request status. Last known status is '${mr.mergeStatus}'"
+              )
+              .as(mr)
         }
 
     val updatedMergeRequest =
@@ -203,6 +247,13 @@ final class GitLabApiAlg[F[_]](
 
     updatedMergeRequest.map(_.pullRequestOut)
   }
+
+  override def updatePullRequest(
+      number: PullRequestNumber,
+      repo: Repo,
+      data: NewPullRequestData
+  ): F[Unit] =
+    logger.warn("Updating PRs is not yet supported for GitLab")
 
   private def mergePipelineUponSuccess(repo: Repo, mr: MergeRequestOut): F[MergeRequestOut] =
     mr match {
@@ -250,6 +301,41 @@ final class GitLabApiAlg[F[_]](
       case None => F.pure(mrOut)
     }
 
+  private def getUsernameToUserIdsMapping(repo: Repo, usernames: Set[String]): F[Map[String, Int]] =
+    usernames.toList
+      .parTraverse { username =>
+        getUserIdForUsername(repo, username).map { userIdOpt =>
+          userIdOpt.map(userId => (username, userId))
+        }
+      }
+      .map(_.flatten.toMap)
+
+  private def getUserIdForUsername(repo: Repo, username: String): F[Option[Int]] = {
+    val userIdOrError: F[Decoder.Result[Int]] = client
+      .get[Json](url.users.withQueryParam("username", username), modify(repo))
+      .flatMap { usersReponse =>
+        usersReponse.hcursor.values match {
+          case Some(users) =>
+            users.headOption match {
+              case Some(user) => F.pure(user.hcursor.get[Int]("id"))
+              case None       => F.raiseError(new RuntimeException("user not found"))
+            }
+          case None =>
+            F.raiseError(
+              new RuntimeException(
+                s"unexpected response from api, Json array expected: $usersReponse"
+              )
+            )
+        }
+      }
+
+    F.rethrow(userIdOrError)
+      .map(Option(_))
+      .handleErrorWith { error =>
+        logger.error(error)(s"failed to get mappings for user '$username'").as(none[Int])
+      }
+  }
+
   override def closePullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut] =
     client
       .putWithBody[MergeRequestOut, UpdateState](
@@ -276,17 +362,4 @@ final class GitLabApiAlg[F[_]](
   ): F[Comment] =
     client.postWithBody(url.comments(repo, number), Comment(comment), modify(repo))
 
-  // https://docs.gitlab.com/ee/api/merge_requests.html#update-mr
-  override def labelPullRequest(
-      repo: Repo,
-      number: PullRequestNumber,
-      labels: List[String]
-  ): F[Unit] =
-    client
-      .putWithBody[Json, Json](
-        url.existingMergeRequest(repo, number),
-        Json.obj("labels" := labels.mkString(",")),
-        modify(repo)
-      )
-      .void
 }

@@ -9,7 +9,7 @@ import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
 import org.scalasteward.core.mock.MockConfig.mockRoot
 import org.scalasteward.core.mock.MockContext.context.fileAlg
-import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.mock.{MockEff, MockState}
 import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
 
 class FileAlgTest extends CatsEffectSuite {
@@ -57,7 +57,7 @@ class FileAlgTest extends CatsEffectSuite {
 
   test("editFile: nonexistent file") {
     val obtained = fileAlg
-      .editFile(mockRoot / "does-not-exist.txt", identity)
+      .editFile(mockRoot / "does-not-exist.txt", MockEff.pure)
       .runS(MockState.empty)
 
     val expected =
@@ -69,7 +69,7 @@ class FileAlgTest extends CatsEffectSuite {
     val file = mockRoot / "steward" / "test1.sbt"
     val obtained = (for {
       _ <- fileAlg.writeFile(file, "123")
-      _ <- fileAlg.editFile(file, _.replace("2", "4"))
+      _ <- fileAlg.editFile(file, content => MockEff.pure(content.replace("2", "4")))
     } yield ()).runS(MockState.empty)
 
     val expected = MockState.empty.copy(

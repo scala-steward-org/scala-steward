@@ -22,7 +22,10 @@ import io.circe.Codec
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 import io.circe.syntax._
+import org.scalasteward.core.buildtool.BuildRoot
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.edit.hooks.PostUpdateHook
+import org.scalasteward.core.repoconfig.RepoConfig.defaultBuildRoots
 
 final case class RepoConfig(
     commits: CommitsConfig = CommitsConfig(),
@@ -32,12 +35,15 @@ final case class RepoConfig(
     postUpdateHooks: Option[List[PostUpdateHookConfig]] = None,
     updatePullRequests: Option[PullRequestUpdateStrategy] = None,
     buildRoots: Option[List[BuildRootConfig]] = None,
+    assignees: List[String] = List.empty,
+    reviewers: List[String] = List.empty,
     dependencyOverrides: List[GroupRepoConfig] = List.empty
 ) {
-  def buildRootsOrDefault: List[BuildRootConfig] =
+  def buildRootsOrDefault(repo: Repo): List[BuildRoot] =
     buildRoots
       .map(_.filterNot(_.relativePath.contains("..")))
-      .getOrElse(List(BuildRootConfig.repoRoot))
+      .getOrElse(defaultBuildRoots)
+      .map(cfg => BuildRoot(repo, cfg.relativePath))
 
   def postUpdateHooksOrDefault: List[PostUpdateHook] =
     postUpdateHooks.getOrElse(Nil).map(_.toHook)
@@ -51,6 +57,9 @@ final case class RepoConfig(
 
 object RepoConfig {
   val empty: RepoConfig = RepoConfig()
+
+  val defaultBuildRoots: List[BuildRootConfig] =
+    List(BuildRootConfig.repoRoot)
 
   implicit val repoConfigEq: Eq[RepoConfig] =
     Eq.fromUniversalEquals
@@ -77,6 +86,8 @@ object RepoConfig {
               postUpdateHooks = x.postUpdateHooks |+| y.postUpdateHooks,
               updatePullRequests = x.updatePullRequests.orElse(y.updatePullRequests),
               buildRoots = x.buildRoots |+| y.buildRoots,
+              assignees = x.assignees |+| y.assignees,
+              reviewers = x.reviewers |+| y.reviewers,
               dependencyOverrides = x.dependencyOverrides |+| y.dependencyOverrides
             )
         }

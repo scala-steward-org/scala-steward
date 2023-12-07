@@ -92,6 +92,7 @@ final case class Config(
       case ForgeType.BitbucketServer => bitbucketServerCfg
       case ForgeType.GitHub          => GitHubCfg()
       case ForgeType.GitLab          => gitLabCfg
+      case ForgeType.Gitea           => GiteaCfg()
     }
 }
 
@@ -157,7 +158,11 @@ object Config {
 
   final case class GitLabCfg(
       mergeWhenPipelineSucceeds: Boolean,
-      requiredReviewers: Option[Int]
+      requiredReviewers: Option[Int],
+      removeSourceBranch: Boolean
+  ) extends ForgeSpecificCfg
+
+  final case class GiteaCfg(
   ) extends ForgeSpecificCfg
 
   sealed trait StewardUsage

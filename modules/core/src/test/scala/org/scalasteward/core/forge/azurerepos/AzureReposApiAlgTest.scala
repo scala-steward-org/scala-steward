@@ -11,7 +11,6 @@ import org.scalasteward.core.application.Config.AzureReposCfg
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.data._
 import org.scalasteward.core.forge.{ForgeSelection, ForgeType}
-import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context.httpJsonClient
@@ -196,7 +195,7 @@ class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     val obtained = azureReposApiAlg.getBranch(repo, Branch("refs/heads/main")).runA(state)
     val expected = BranchOut(
       Branch("main"),
-      CommitOut(Sha1(HexString.unsafeFrom("f55c9900528e548511fbba6874c873d44c5d714c")))
+      CommitOut(Sha1.unsafeFrom("f55c9900528e548511fbba6874c873d44c5d714c"))
     )
     assertIO(obtained, expected)
   }
@@ -210,7 +209,9 @@ class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
           body = "Updates org.typelevel:cats-effect  from 3.3.13 to 3.3.14.",
           head = "refs/heads/update/cats-effect-3.3.14",
           base = Branch("refs/heads/main"),
-          labels = List.empty
+          labels = List.empty,
+          assignees = List.empty,
+          reviewers = List.empty
         )
       )
       .runA(state)
@@ -265,10 +266,4 @@ class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     assertIO(obtained, expected)
   }
 
-  test("labelPullRequest") {
-    azureReposApiAlg
-      .labelPullRequest(repo, PullRequestNumber(26), List("dependency-updates"))
-      .runA(state)
-      .assert
-  }
 }

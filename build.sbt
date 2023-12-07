@@ -21,7 +21,7 @@ val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
   "dummy" -> List(JVMPlatform)
 )
 
-val Scala213 = "2.13.10"
+val Scala213 = "2.13.12"
 
 /// sbt-typelevel configuration
 
@@ -53,6 +53,8 @@ ThisBuild / githubWorkflowPublish := Seq(
 ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec(Temurin, "17"), JavaSpec(Temurin, "11"))
 ThisBuild / githubWorkflowBuild :=
   Seq(
+    WorkflowStep
+      .Use(UseRef.Public("coursier", "setup-action", "v1"), params = Map("apps" -> "scalafmt")),
     WorkflowStep.Sbt(List("validate"), name = Some("Build project")),
     WorkflowStep.Use(
       UseRef.Public("codecov", "codecov-action", "v3"),
@@ -81,6 +83,10 @@ ThisBuild / mergifyPrRules := {
 ThisBuild / dynverSeparator := "-"
 
 ThisBuild / evictionErrorLevel := Level.Info
+
+ThisBuild / tpolecatDefaultOptionsMode := {
+  if (insideCI.value) org.typelevel.sbt.tpolecat.CiMode else org.typelevel.sbt.tpolecat.DevMode
+}
 
 /// projects
 
@@ -118,6 +124,7 @@ lazy val core = myCrossProject("core")
       Dependencies.circeRefined,
       Dependencies.commonsIo,
       Dependencies.coursierCore,
+      Dependencies.coursierSbtMaven,
       Dependencies.cron4sCore,
       Dependencies.decline,
       Dependencies.fs2Core,
@@ -213,8 +220,6 @@ lazy val core = myCrossProject("core")
     // Uncomment for remote debugging:
     // run / javaOptions += "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005",
     Test / fork := true,
-    Test / testOptions +=
-      Tests.Cleanup(() => Path(file(Properties.tmpDir) / "scala-steward").deleteRecursively()),
     Compile / resourceGenerators += Def.task {
       val outDir = (Compile / resourceManaged).value
       def downloadPlugin(v: String): File = {
@@ -249,8 +254,12 @@ lazy val docs = myCrossProject("docs")
       try git.runner.value.apply("diff", "--quiet", outDir)(rootDir, streams.value.log)
       catch {
         case t: Throwable =>
-          val msg = s"Docs in $inDir and $outDir are out of sync." +
-            " Run 'sbt docs/mdoc' and commit the changes to fix this."
+          val diff = git.runner.value.apply("diff", outDir)(rootDir, streams.value.log)
+          val msg = s"""|Docs in $inDir and $outDir are out of sync.
+                        |Run 'sbt docs/mdoc' and commit the changes to fix this.
+                        |The diff is:
+                        |$diff
+                        |""".stripMargin
           throw new Throwable(msg, t)
       }
       ()
@@ -267,7 +276,6 @@ lazy val dummy = myCrossProject("dummy")
   .settings(
     libraryDependencies ++= Seq(
       Dependencies.bazelBsp,
-      Dependencies.millMain,
       Dependencies.scalaStewardMillPlugin
     )
   )
@@ -336,26 +344,54 @@ lazy val metadataSettings = Def.settings(
 
 lazy val dockerSettings = Def.settings(
   dockerBaseImage := Option(System.getenv("DOCKER_BASE_IMAGE"))
-    .getOrElse("adoptopenjdk/openjdk11:alpine"),
+    .getOrElse("eclipse-temurin:11-alpine"),
   dockerCommands ++= {
+    val curl = "curl -fL --output"
     val binDir = "/usr/local/bin"
     val sbtVer = sbtVersion.value
     val sbtTgz = s"sbt-$sbtVer.tgz"
-    val sbtUrl = s"https://github.com/sbt/sbt/releases/download/v$sbtVer/$sbtTgz"
+    val installSbt = Seq(
+      s"$curl $sbtTgz https://github.com/sbt/sbt/releases/download/v$sbtVer/$sbtTgz",
+      s"tar -xf $sbtTgz",
+      s"rm -f $sbtTgz"
+    ).mkString(" && ")
+    val millVer = Dependencies.millScriptVersion
     val millBin = s"$binDir/mill"
-    val millVer = Dependencies.millVersion
-    val millUrl =
-      s"https://github.com/lihaoyi/mill/releases/download/${millVer.split("-").head}/$millVer"
-    val coursierBin = s"$binDir/coursier"
+    val releasePageVersion = millVer.split("-") match {
+      case Array(v, m, _*) if m.startsWith("M") => s"${v}-${m}"
+      case Array(v, _*)                         => v
+    }
+    val installMill = Seq(
+      s"$curl $millBin https://github.com/lihaoyi/mill/releases/download/${releasePageVersion}/$millVer",
+      s"chmod +x $millBin"
+    ).mkString(" && ")
+    val csBin = s"$binDir/cs"
+    val installCoursier = Seq(
+      s"$curl $csBin.gz https://github.com/coursier/coursier/releases/download/v${Dependencies.coursierCore.revision}/cs-x86_64-pc-linux-static.gz",
+      s"gunzip $csBin.gz",
+      s"chmod +x $csBin"
+    ).mkString(" && ")
+    val scalaCliBin = s"$binDir/scala-cli"
+    val installScalaCli = Seq(
+      s"$curl $scalaCliBin.gz https://github.com/Virtuslab/scala-cli/releases/latest/download/scala-cli-x86_64-pc-linux-static.gz",
+      s"gunzip $scalaCliBin.gz",
+      s"chmod +x $scalaCliBin"
+    ).mkString(" && ")
     Seq(
       Cmd("USER", "root"),
-      Cmd("RUN", "apk --no-cache add bash git ca-certificates curl maven openssh nodejs npm"),
-      Cmd("RUN", s"wget $sbtUrl && tar -xf $sbtTgz && rm -f $sbtTgz"),
-      Cmd("RUN", s"curl -L $millUrl > $millBin && chmod +x $millBin"),
-      Cmd("RUN", "curl -sSLf https://virtuslab.github.io/scala-cli-packages/scala-setup.sh | sh"),
-      Cmd("RUN", s"curl -L https://git.io/coursier-cli > $coursierBin && chmod +x $coursierBin"),
-      Cmd("RUN", s"$coursierBin install --install-dir $binDir scalafix scalafmt"),
-      Cmd("RUN", "npm install --global yarn")
+      Cmd(
+        "RUN",
+        "apk --no-cache add bash git ca-certificates curl maven openssh nodejs npm ncurses"
+      ),
+      Cmd("RUN", installSbt),
+      Cmd("RUN", installMill),
+      Cmd("RUN", installCoursier),
+      Cmd("RUN", installScalaCli),
+      Cmd("RUN", s"$csBin install --install-dir $binDir scalafix scalafmt"),
+      Cmd("RUN", "npm install --global yarn"),
+      // Ensure binaries are in PATH
+      Cmd("RUN", "echo $PATH"),
+      Cmd("RUN", "which cs mill mvn node npm sbt scala-cli scalafix scalafmt yarn")
     )
   },
   Docker / packageName := s"fthomas/${name.value}",

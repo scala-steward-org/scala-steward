@@ -68,6 +68,9 @@ final class BitbucketServerApiAlg[F[_]](
 
     for {
       reviewers <- useDefaultReviewers(repo)
+      _ <- F.whenA(data.assignees.nonEmpty)(warnIfAssigneesAreUsed)
+      _ <- F.whenA(data.reviewers.nonEmpty)(warnIfReviewersAreUsed)
+      _ <- F.whenA(data.labels.nonEmpty)(warnIfLabelsAreUsed)
       req = Json.NewPR(
         title = data.title,
         description = data.body,
@@ -82,6 +85,13 @@ final class BitbucketServerApiAlg[F[_]](
       pr <- client.postWithBody[Json.PR, Json.NewPR](url.pullRequests(repo), req, modify(repo))
     } yield pr.toPullRequestOut
   }
+
+  override def updatePullRequest(
+      number: PullRequestNumber,
+      repo: Repo,
+      data: NewPullRequestData
+  ): F[Unit] =
+    logger.warn("Updating PRs is not yet supported for Bitbucket Server")
 
   private def useDefaultReviewers(repo: Repo): F[List[Reviewer]] =
     if (config.useDefaultReviewers) getDefaultReviewers(repo) else F.pure(List.empty[Reviewer])
@@ -119,12 +129,14 @@ final class BitbucketServerApiAlg[F[_]](
       .get[Json.Page[Json.PR]](url.listPullRequests(repo, s"refs/heads/$head"), modify(repo))
       .map(_.values.map(_.toPullRequestOut))
 
-  override def labelPullRequest(
-      repo: Repo,
-      number: PullRequestNumber,
-      labels: List[String]
-  ): F[Unit] =
+  private def warnIfLabelsAreUsed =
     logger.warn(
       "Bitbucket does not support PR labels, remove --add-labels to make this warning disappear"
     )
+
+  private def warnIfAssigneesAreUsed =
+    logger.warn("assignees are not supported by Bitbucket")
+
+  private def warnIfReviewersAreUsed =
+    logger.warn("reviewers are not implemented yet for Bitbucket")
 }

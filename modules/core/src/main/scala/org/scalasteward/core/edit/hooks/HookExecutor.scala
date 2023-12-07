@@ -74,7 +74,7 @@ final class HookExecutor[F[_]](implicit
       }
       commitMessage = hook
         .commitMessage(update)
-        .withParagraph(s"Executed command: ${hook.command.mkString_(" ")}")
+        .appendParagraph(s"Executed command: ${hook.command.mkString_(" ")}")
       maybeHookCommit <- gitAlg.commitAllIfDirty(repo, commitMessage)
       maybeBlameIgnoreCommit <-
         maybeHookCommit.flatTraverse(addToGitBlameIgnoreRevs(repo, repoDir, hook, _, commitMessage))
@@ -95,9 +95,21 @@ final class HookExecutor[F[_]](implicit
         oldContent <- fileAlg.readFile(file)
         newContent = oldContent.fold(newLines)(_ + "\n" + newLines)
         _ <- fileAlg.writeFile(file, newContent)
-        _ <- gitAlg.add(repo, file.pathAsString)
-        blameIgnoreCommitMsg = CommitMsg(s"Add '${commitMsg.title}' to $gitBlameIgnoreRevsName")
-        maybeBlameIgnoreCommit <- gitAlg.commitAllIfDirty(repo, blameIgnoreCommitMsg)
+        pathAsString = file.pathAsString
+
+        addAndCommit = gitAlg.add(repo, pathAsString).flatMap { _ =>
+          val blameIgnoreCommitMsg =
+            CommitMsg(s"Add '${commitMsg.title}' to $gitBlameIgnoreRevsName")
+          gitAlg.commitAllIfDirty(repo, blameIgnoreCommitMsg)
+        }
+        maybeBlameIgnoreCommit <- gitAlg
+          .checkIgnore(repo, pathAsString)
+          .ifM(
+            logger
+              .warn(s"Impossible to add '$pathAsString' because it is git ignored.")
+              .as(Option.empty[Commit]),
+            addAndCommit
+          )
       } yield maybeBlameIgnoreCommit
     } else F.pure(None)
 }
@@ -109,6 +121,7 @@ object HookExecutor {
     (GroupId("com.codecommit"), ArtifactId("sbt-spiewak")),
     (GroupId("com.codecommit"), ArtifactId("sbt-spiewak-sonatype")),
     (GroupId("com.codecommit"), ArtifactId("sbt-spiewak-bintray")),
+    (GroupId("com.github.sbt"), ArtifactId("sbt-github-actions")),
     (GroupId("io.chrisdavenport"), ArtifactId("sbt-davenverse")),
     (GroupId("io.github.nafg.mergify"), ArtifactId("sbt-mergify-github-actions")),
     (GroupId("org.typelevel"), ArtifactId("sbt-typelevel-ci-release")),
@@ -117,6 +130,7 @@ object HookExecutor {
   )
 
   private val sbtTypelevelModules = List(
+    (GroupId("io.circe"), ArtifactId("sbt-circe-org")),
     (GroupId("org.typelevel"), ArtifactId("sbt-typelevel")),
     (GroupId("org.http4s"), ArtifactId("sbt-http4s-org")),
     (GroupId("edu.gemini"), ArtifactId("sbt-lucuma")),

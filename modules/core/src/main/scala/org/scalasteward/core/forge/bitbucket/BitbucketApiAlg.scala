@@ -73,21 +73,36 @@ class BitbucketApiAlg[F[_]](
       if (bitbucketCfg.useDefaultReviewers) getDefaultReviewers(repo)
       else F.pure(List.empty[Reviewer])
 
-    defaultReviewers
-      .map(reviewers =>
-        CreatePullRequestRequest(
-          data.title,
-          Branch(data.head),
-          Repo(sourceBranchOwner, repo.repo, repo.branch),
-          data.base,
-          data.body,
-          reviewers
+    val create: F[PullRequestOut] =
+      defaultReviewers
+        .map(reviewers =>
+          CreatePullRequestRequest(
+            data.title,
+            Branch(data.head),
+            Repo(sourceBranchOwner, repo.repo, repo.branch),
+            data.base,
+            data.body,
+            reviewers
+          )
         )
-      )
-      .flatMap { payload =>
-        client.postWithBody(url.pullRequests(repo), payload, modify(repo))
-      }
+        .flatMap { payload =>
+          client.postWithBody(url.pullRequests(repo), payload, modify(repo))
+        }
+
+    for {
+      _ <- F.whenA(data.assignees.nonEmpty)(warnIfAssigneesAreUsed)
+      _ <- F.whenA(data.reviewers.nonEmpty)(warnIfReviewersAreUsed)
+      _ <- F.whenA(data.labels.nonEmpty)(warnIfLabelsAreUsed)
+      pullRequestOut <- create
+    } yield pullRequestOut
   }
+
+  override def updatePullRequest(
+      number: PullRequestNumber,
+      repo: Repo,
+      data: NewPullRequestData
+  ): F[Unit] =
+    logger.warn("Updating PRs is not yet supported for Bitbucket")
 
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
     client.get(url.branch(repo, branch), modify(repo))
@@ -125,12 +140,14 @@ class BitbucketApiAlg[F[_]](
       )
       .map((cc: CreateComment) => Comment(cc.content.raw))
 
-  override def labelPullRequest(
-      repo: Repo,
-      number: PullRequestNumber,
-      labels: List[String]
-  ): F[Unit] =
+  private def warnIfLabelsAreUsed =
     logger.warn(
       "Bitbucket does not support PR labels, remove --add-labels to make this warning disappear"
     )
+
+  private def warnIfAssigneesAreUsed =
+    logger.warn("assignees are not supported by Bitbucket")
+
+  private def warnIfReviewersAreUsed =
+    logger.warn("reviewers are not implemented yet for Bitbucket")
 }

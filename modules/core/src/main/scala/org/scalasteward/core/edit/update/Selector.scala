@@ -19,7 +19,7 @@ package org.scalasteward.core.edit.update
 import cats.Foldable
 import cats.syntax.all._
 import java.util.regex.Pattern
-import org.scalasteward.core.buildtool.mill.MillAlg.{isMillMainUpdate, millVersionName}
+import org.scalasteward.core.buildtool.mill.MillAlg
 import org.scalasteward.core.buildtool.sbt.{buildPropertiesName, isSbtUpdate}
 import org.scalasteward.core.data.{Dependency, Update}
 import org.scalasteward.core.edit.update.data.VersionPosition._
@@ -169,8 +169,11 @@ object Selector {
       update: Update.Single,
       versionPositions: List[VersionPosition]
   ): List[VersionPosition] =
-    if (isMillMainUpdate(update))
-      versionPositions.filter(_.version.path === millVersionName)
+    if (MillAlg.isMillMainUpdate(update))
+      versionPositions.filter(f =>
+        f.version.path.endsWith(MillAlg.millVersionNameInConfig) ||
+          f.version.path.endsWith(MillAlg.millVersionName)
+      )
     else List.empty
 
   private def sbtVersionPositions(
@@ -188,7 +191,7 @@ object Selector {
   ): List[VersionPosition] =
     if (isScalafmtCoreUpdate(update))
       matchingSearchTerms(List("version"), versionPositions)
-        .filter(_.version.path === scalafmtConfName)
+        .filter(_.version.path.endsWith(scalafmtConfName))
     else List.empty
 
   private def moduleReplacements(
