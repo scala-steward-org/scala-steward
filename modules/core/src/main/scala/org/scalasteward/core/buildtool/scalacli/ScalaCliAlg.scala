@@ -18,6 +18,7 @@ package org.scalasteward.core.buildtool.scalacli
 
 import cats.Monad
 import cats.syntax.all._
+import org.scalasteward.core.buildtool.bsp.{BspExtractor, BspServerType}
 import org.scalasteward.core.buildtool.sbt.SbtAlg
 import org.scalasteward.core.buildtool.{BuildRoot, BuildToolAlg}
 import org.scalasteward.core.data.Scope
@@ -51,6 +52,7 @@ object ScalaCliAlg {
 }
 
 final class ScalaCliAlg[F[_]](implicit
+    bspExtractor: BspExtractor[F],
     fileAlg: FileAlg[F],
     gitAlg: GitAlg[F],
     logger: Logger[F],
@@ -69,7 +71,13 @@ final class ScalaCliAlg[F[_]](implicit
       .map(_.exists(path => path.startsWith(buildRootPath) && extensions.exists(path.endsWith)))
   }
 
-  override def getDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
+  override def getDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] = {
+    val useBsp = true
+    if (useBsp) bspExtractor.getDependencies(BspServerType.ScalaCli, buildRoot)
+    else getDependenciesViaSbtExport(buildRoot)
+  }
+
+  private def getDependenciesViaSbtExport(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
     for {
       buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
       exportDir = "tmp-sbt-build-for-scala-steward"

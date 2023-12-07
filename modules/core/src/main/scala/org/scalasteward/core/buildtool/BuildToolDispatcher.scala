@@ -18,6 +18,7 @@ package org.scalasteward.core.buildtool
 
 import cats.Monad
 import cats.syntax.all._
+import org.scalasteward.core.buildtool.bazel.BazelAlg
 import org.scalasteward.core.buildtool.bleep.BleepAlg
 import org.scalasteward.core.buildtool.maven.MavenAlg
 import org.scalasteward.core.buildtool.mill.MillAlg
@@ -30,6 +31,7 @@ import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.typelevel.log4cats.Logger
 
 final class BuildToolDispatcher[F[_]](implicit
+    bazelAlg: BazelAlg[F],
     bleepAlg: BleepAlg[F],
     logger: Logger[F],
     mavenAlg: MavenAlg[F],
@@ -55,7 +57,7 @@ final class BuildToolDispatcher[F[_]](implicit
       buildTools.traverse_(_.runMigration(buildRoot, migration))
     })
 
-  private val allBuildTools = List(bleepAlg, mavenAlg, millAlg, sbtAlg, scalaCliAlg)
+  private val allBuildTools = List(bazelAlg, bleepAlg, mavenAlg, millAlg, sbtAlg, scalaCliAlg)
   private val fallbackBuildTool = List(sbtAlg)
 
   private def findBuildTools(buildRoot: BuildRoot): F[(BuildRoot, List[BuildToolAlg[F]])] =
