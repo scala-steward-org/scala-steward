@@ -37,11 +37,21 @@ object BspServerType {
         connectionDetailsName = "bazelbsp.json"
       )
 
+  // https://bleep.build/
   case object Bleep
       extends BspServerType(
         connectionDetailsCommand = Nel.of("bleep", "setup-ide"),
         connectionDetailsName = "bleep.json"
       )
+
+  // https://github.com/microsoft/build-server-for-gradle
+  /*
+  case object Gradle
+      extends BspServerType(
+        connectionDetailsCommand = ???,
+        connectionDetailsName = ???
+      )
+   */
 
   // https://com-lihaoyi.github.io/mill/mill/Plugin_BSP.html
   case object Mill
@@ -50,6 +60,8 @@ object BspServerType {
         connectionDetailsName = "mill-bsp.json"
       )
 
+  // https://www.scala-sbt.org
+  // not usable until https://github.com/sbt/sbt/issues/6957 is resolved
   case object Sbt
       extends BspServerType(
         connectionDetailsCommand = Nel.of("sbt", "bspConfig"),
