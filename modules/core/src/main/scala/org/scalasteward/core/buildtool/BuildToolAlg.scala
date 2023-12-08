@@ -20,6 +20,8 @@ import org.scalasteward.core.data.Scope
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
 
 trait BuildToolAlg[F[_]] {
+  def enabled: Boolean = true
+
   def name: String
 
   def containsBuild(buildRoot: BuildRoot): F[Boolean]

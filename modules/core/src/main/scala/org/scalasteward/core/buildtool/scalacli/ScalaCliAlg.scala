@@ -72,7 +72,7 @@ final class ScalaCliAlg[F[_]](implicit
   }
 
   override def getDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] = {
-    val useBsp = true
+    val useBsp = false
     if (useBsp) bspExtractor.getDependencies(BspServerType.ScalaCli, buildRoot)
     else getDependenciesViaSbtExport(buildRoot)
   }

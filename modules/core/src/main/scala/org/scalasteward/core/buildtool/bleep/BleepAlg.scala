@@ -30,6 +30,8 @@ final class BleepAlg[F[_]](implicit
     workspaceAlg: WorkspaceAlg[F],
     F: Monad[F]
 ) extends BuildToolAlg[F] {
+  override def enabled: Boolean = false
+
   override def name: String = "bleep"
 
   override def containsBuild(buildRoot: BuildRoot): F[Boolean] =
