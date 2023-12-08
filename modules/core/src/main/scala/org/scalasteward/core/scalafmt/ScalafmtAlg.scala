@@ -20,16 +20,15 @@ import cats.Monad
 import cats.data.OptionT
 import cats.syntax.all._
 import io.circe.ParsingFailure
-import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.BuildRoot
-import org.scalasteward.core.data.{Scope, Version}
+import org.scalasteward.core.data.{Resolver, Scope, Version}
 import org.scalasteward.core.io.process.SlurpOptions
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.scalafmt.ScalafmtAlg.{opts, parseScalafmtConf}
 import org.scalasteward.core.util.Nel
 import org.typelevel.log4cats.Logger
 
-final class ScalafmtAlg[F[_]](config: Config)(implicit
+final class ScalafmtAlg[F[_]](defaultResolver: Resolver)(implicit
     fileAlg: FileAlg[F],
     logger: Logger[F],
     processAlg: ProcessAlg[F],
@@ -49,7 +48,7 @@ final class ScalafmtAlg[F[_]](config: Config)(implicit
 
   def getScopedScalafmtDependency(buildRoot: BuildRoot): F[Option[Scope.Dependencies]] =
     OptionT(getScalafmtVersion(buildRoot))
-      .map(version => Scope(List(scalafmtDependency(version)), List(config.defaultResolver)))
+      .map(version => Scope(List(scalafmtDependency(version)), List(defaultResolver)))
       .value
 
   def reformatChanged(buildRoot: BuildRoot): F[Unit] =

@@ -219,7 +219,7 @@ object Context {
       implicit val pullRequestRepository: PullRequestRepository[F] =
         new PullRequestRepository[F](pullRequestsStore)
       implicit val scalafixCli: ScalafixCli[F] = new ScalafixCli[F]
-      implicit val scalafmtAlg: ScalafmtAlg[F] = new ScalafmtAlg[F](config)
+      implicit val scalafmtAlg: ScalafmtAlg[F] = new ScalafmtAlg[F](config.defaultResolver)
       implicit val selfCheckAlg: SelfCheckAlg[F] = new SelfCheckAlg[F](config)
       implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create[F]
       implicit val versionsCache: VersionsCache[F] =
@@ -230,7 +230,7 @@ object Context {
       implicit val bspExtractor: BspExtractor[F] = new BspExtractor[F](config.defaultResolver)
       implicit val bazelAlg: BazelAlg[F] = new BazelAlg[F]
       implicit val bleepAlg: BleepAlg[F] = new BleepAlg[F]
-      implicit val millAlg: MillAlg[F] = new MillAlg[F]
+      implicit val millAlg: MillAlg[F] = new MillAlg[F](config.defaultResolver)
       implicit val scalaCliAlg: ScalaCliAlg[F] = new ScalaCliAlg[F]
       implicit val buildToolDispatcher: BuildToolDispatcher[F] = new BuildToolDispatcher[F]
       implicit val refreshErrorAlg: RefreshErrorAlg[F] =

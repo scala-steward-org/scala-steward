@@ -28,7 +28,7 @@ import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
 import org.typelevel.log4cats.Logger
 
-final class MillAlg[F[_]](implicit
+final class MillAlg[F[_]](defaultResolver: Resolver)(implicit
     bspExtractor: BspExtractor[F],
     fileAlg: FileAlg[F],
     logger: Logger[F],
@@ -65,7 +65,7 @@ final class MillAlg[F[_]](implicit
         if (useBsp) bspExtractor.getDependencies(BspServerType.Mill, buildRoot)
         else getProjectDependencies(buildRootDir, millBuildVersion)
       millBuildDeps = millBuildVersion.toSeq.map(version =>
-        Scope(List(millMainArtifact(version)), List(millMainResolver))
+        Scope(List(millMainArtifact(version)), List(defaultResolver))
       )
       millPluginDeps <- millBuildVersion match {
         case None        => F.pure(Seq.empty[Scope[List[Dependency]]])
@@ -108,9 +108,9 @@ final class MillAlg[F[_]](implicit
       buildRootDir: File
   ): F[Seq[Scope[List[Dependency]]]] =
     for {
-      buildConent <- fileAlg.readFile(buildRootDir / "build.sc")
-      deps = buildConent.toList.map(content =>
-        Scope(parser.parseMillPluginDeps(content, millVersion), List(millMainResolver))
+      buildContent <- fileAlg.readFile(buildRootDir / "build.sc")
+      deps = buildContent.toList.map(content =>
+        Scope(parser.parseMillPluginDeps(content, millVersion), List(defaultResolver))
       )
     } yield deps
 }
@@ -142,7 +142,6 @@ object MillAlg {
 
   val extractDeps: String = "org.scalasteward.mill.plugin.StewardPlugin/extractDeps"
 
-  private val millMainResolver: Resolver = Resolver.mavenCentral
   private val millMainGroupId = GroupId("com.lihaoyi")
   private val millMainArtifactId = ArtifactId("mill-main", "mill-main_2.13")
 
