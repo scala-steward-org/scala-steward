@@ -1,0 +1,23 @@
+name: Link checker
+
+on:
+  pull_request:
+    # On every pull request
+  schedule:
+    - cron: '00 0 * * 1' # Every monday
+
+jobs:
+  link-check:
+    runs-on: ubuntu-latest
+    name: Link checker
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: gaurav-nelson/github-action-markdown-link-check@1.0.15
+        with:
+          folder-path: 'docs' # comma separated
+          file-path: 'README.md,CODE_OF_CONDUCT.md' # comma separated
+          max-depth: 2
+          check-modified-files-only: ${{ github.ref_name == 'main' && 'no' || 'yes' }}
+          base-branch: main
