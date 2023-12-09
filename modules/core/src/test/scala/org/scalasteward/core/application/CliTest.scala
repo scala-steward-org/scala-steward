@@ -9,6 +9,7 @@ import org.scalasteward.core.application.Cli.ParseResult._
 import org.scalasteward.core.application.Config.StewardUsage
 import org.scalasteward.core.forge.ForgeType
 import org.scalasteward.core.forge.github.GitHubApp
+import org.scalasteward.core.util.Nel
 import scala.concurrent.duration._
 
 class CliTest extends FunSuite {
@@ -38,7 +39,7 @@ class CliTest extends FunSuite {
     )
 
     assertEquals(obtained.workspace, File("a"))
-    assertEquals(obtained.reposFile, File("b"))
+    assertEquals(obtained.reposFiles, Nel.one(uri"b"))
     assertEquals(obtained.gitCfg.gitAuthor.email, "d")
     assertEquals(obtained.gitCfg.gitAskPass, File("f"))
     assertEquals(obtained.forgeCfg.tpe, ForgeType.GitLab)
@@ -84,7 +85,7 @@ class CliTest extends FunSuite {
 
     assert(!obtained.processCfg.sandboxCfg.enableSandbox)
     assertEquals(obtained.workspace, File("a"))
-    assertEquals(obtained.reposFile, File("b"))
+    assertEquals(obtained.reposFiles, Nel.one(uri"b"))
     assertEquals(obtained.gitCfg.gitAuthor.email, "d")
     assertEquals(obtained.gitCfg.gitAskPass, File("f"))
     assertEquals(obtained.forgeCfg.login, "e")
