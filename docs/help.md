@@ -63,9 +63,9 @@ Options and flags:
     --disable-default-repo-config
         Whether to disable the default repo config file
     --scalafix-migrations <uri>
-        Additional scalafix migrations configuration file (can be used multiple times)
+        Additional Scalafix migrations configuration file (can be used multiple times)
     --disable-default-scalafix-migrations
-        Whether to disable the default scalafix migration file; default: false
+        Whether to disable the default Scalafix migration file; default: false
     --artifact-migrations <uri>
         Additional artifact migration configuration file (can be used multiple times)
     --disable-default-artifact-migrations

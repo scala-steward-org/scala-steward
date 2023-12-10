@@ -2,13 +2,22 @@
 
 Scala Steward can not only bump versions but also change groupId and/or artifactIds if they have been renamed.
 
-An example pull request that demonstrates this feature is https://github.com/scala-steward-org/scala-steward/pull/2264/files which not only bumped the version but also changed the groupId.
+Here is a pull request that demonstrate this feature:
+
+* https://github.com/scala-steward-org/scala-steward/pull/2264/files
+
+More pull requests where Scala Steward applied artifact migrations can be found here:
+
+* [Created pull requests](https://github.com/search?q=author%3Ascala-steward+is%3Apr+artifact-migrations&type=pullrequests)
+  ([compact](             https://github.com/pulls?q=author%3Ascala-steward+is%3Apr+artifact-migrations))
+* [Merged pull requests]( https://github.com/search?q=author%3Ascala-steward+is%3Amerged+sort%3Aupdated-desc+artifact-migrations&type=pullrequests)
+  ([compact](             https://github.com/pulls?q=author%3Ascala-steward+is%3Amerged+sort%3Aupdated-desc+artifact-migrations))
 
 ## How does this work?
 
 Scala Steward contains a list of [artifact migrations][migrations] that maps old groupIds and/or artifactIds to their new values.
 When an artifact migration for a dependency exists, Scala Steward will look for new versions with the old **and** new groupIds and artifactIds.
-If it finds a suitable newer version with the new groupId/artifactId, it will consider it an update of that dependency and change the artifactId/groupId accordingly.
+If it finds a suitable newer version with the new groupId/artifactId, it will consider it an update of that dependency and change the groupId/artifactId accordingly.
 
 ## Adding artifact migrations to Scala Steward
 
