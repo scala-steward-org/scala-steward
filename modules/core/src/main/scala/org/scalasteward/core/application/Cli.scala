@@ -107,7 +107,7 @@ object Cli {
       "vcs-type",
       s"deprecated in favor of --${name.forgeType}",
       visibility = Visibility.Partial
-    )
+    ).validate(s"--vcs-type is deprecated; use --${name.forgeType} instead")(_ => false)
 
   private val forgeType = {
     val help = ForgeType.all.map(_.asString).mkString("One of ", ", ", "") +
@@ -120,7 +120,7 @@ object Cli {
       "vcs-api-host",
       s"deprecated in favor of --${name.forgeApiHost}",
       visibility = Visibility.Partial
-    )
+    ).validate(s"--vcs-api-host is deprecated; use --${name.forgeApiHost} instead")(_ => false)
 
   private val forgeApiHost: Opts[Uri] =
     option[Uri](name.forgeApiHost, s"API URL of the forge; default: ${GitHub.publicApiBaseUrl}")
@@ -132,7 +132,7 @@ object Cli {
       "vcs-login",
       s"deprecated in favor of --${name.forgeLogin}",
       visibility = Visibility.Partial
-    )
+    ).validate(s"--vcs-login is deprecated; use --${name.forgeLogin} instead")(_ => false)
 
   private val forgeLogin: Opts[String] =
     option[String](name.forgeLogin, "The user name for the forge").orElse(vcsLogin)
