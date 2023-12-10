@@ -217,13 +217,13 @@ object Cli {
   private val scalafixMigrations: Opts[List[Uri]] =
     options[Uri](
       "scalafix-migrations",
-      s"Additional scalafix migrations configuration file $multiple"
+      s"Additional Scalafix migrations configuration file $multiple"
     ).orEmpty
 
   private val disableDefaultScalafixMigrations: Opts[Boolean] =
     flag(
       "disable-default-scalafix-migrations",
-      "Whether to disable the default scalafix migration file; default: false"
+      "Whether to disable the default Scalafix migration file; default: false"
     ).orFalse
 
   private val scalafixCfg: Opts[ScalafixCfg] =
