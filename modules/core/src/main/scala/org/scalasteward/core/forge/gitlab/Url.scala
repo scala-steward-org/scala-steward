@@ -47,6 +47,15 @@ class Url(apiHost: Uri) {
     (existingMergeRequest(repo, number) / "approvals")
       .withQueryParam("approvals_required", approvalsRequired)
 
+  def listMergeRequestLevelApprovalRules(repo: Repo, number: PullRequestNumber): Uri =
+    existingMergeRequest(repo, number) / "approval_rules"
+
+  def updateMergeRequestLevelApprovalRule(
+      repo: Repo,
+      number: PullRequestNumber,
+      approvalRuleId: Int
+  ): Uri = existingMergeRequest(repo, number) / "approval_rules" / approvalRuleId
+
   def listMergeRequests(repo: Repo, source: String, target: String): Uri =
     mergeRequest(repo)
       .withQueryParam("source_branch", source)

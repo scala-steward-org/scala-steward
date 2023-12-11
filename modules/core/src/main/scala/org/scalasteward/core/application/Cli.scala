@@ -31,7 +31,9 @@ import org.scalasteward.core.forge.github.GitHubApp
 import org.scalasteward.core.git.Author
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.util.dateTime.renderFiniteDuration
+
 import scala.concurrent.duration._
+import scala.util.{Failure, Success, Try}
 
 object Cli {
   final case class EnvVar(name: String, value: String)
@@ -43,6 +45,25 @@ object Cli {
     val maxBufferSize = "max-buffer-size"
     val processTimeout = "process-timeout"
   }
+
+  implicit val mergeRequestApprovalsCfgArgument: Argument[MergeRequestApprovalRulesCfg] =
+    Argument.from("approvals_rule_name=required_approvals") { s =>
+      s.trim.split("=").toList match {
+        case approvalRuleName :: requiredApprovalsAsString :: Nil =>
+          Try(requiredApprovalsAsString.trim.toInt) match {
+            case Failure(_) =>
+              Validated.invalidNel(s"[$requiredApprovalsAsString] is not a valid Integer")
+            case Success(requiredApprovals) =>
+              Validated.valid(
+                MergeRequestApprovalRulesCfg(approvalRuleName.trim, requiredApprovals)
+              )
+          }
+        case _ =>
+          Validated.invalidNel(
+            "The value is expected in the following format: APPROVALS_RULE_NAME=REQUIRED_APPROVALS"
+          )
+      }
+    }
 
   implicit val envVarArgument: Argument[EnvVar] =
     Argument.from("name=value") { s =>
@@ -286,10 +307,32 @@ object Cli {
       "Flag indicating if a merge request should remove the source branch when merging."
     ).orFalse
 
-  private val gitLabCfg: Opts[GitLabCfg] =
-    (gitlabMergeWhenPipelineSucceeds, gitlabRequiredReviewers, gitlabRemoveSourceBranch).mapN(
-      GitLabCfg.apply
+  private val gitlabMergeRequestApprovalsConfig: Opts[Option[Nel[MergeRequestApprovalRulesCfg]]] =
+    options[MergeRequestApprovalRulesCfg](
+      "merge-request-level-approval-rule",
+      s"Additional repo config file $multiple"
     )
+      .validate("Merge request level required approvals must be non-negative")(
+        _.forall(_.requiredApprovals >= 0) == true
+      )
+      .orNone
+
+  private val gitlabReviewersAndApprovalsConfig
+      : Opts[Option[Either[Int, Nel[MergeRequestApprovalRulesCfg]]]] =
+    ((gitlabRequiredReviewers, gitlabMergeRequestApprovalsConfig).tupled.mapValidated {
+      case (None, None) => None.validNel
+      case (None, Some(gitlabMergeRequestApprovalsConfig)) =>
+        Some(gitlabMergeRequestApprovalsConfig.asRight[Int]).validNel
+      case (Some(requiredReviewers), None) => Some(Left(requiredReviewers)).validNel
+      case (Some(_), Some(_)) =>
+        s"You can't use both --gitlab-required-reviewers and --merge-request-level-approval-rule at the same time".invalidNel
+    })
+
+  private val gitLabCfg: Opts[GitLabCfg] =
+    (gitlabMergeWhenPipelineSucceeds, gitlabReviewersAndApprovalsConfig, gitlabRemoveSourceBranch)
+      .mapN(
+        GitLabCfg.apply
+      )
 
   private val githubAppId: Opts[Long] =
     option[Long](
