@@ -75,8 +75,8 @@ object Cli {
   private val workspace: Opts[File] =
     option[File]("workspace", "Location for cache and temporary files")
 
-  private val reposFile: Opts[File] =
-    option[File]("repos-file", "A markdown formatted file with a repository list")
+  private val reposFiles: Opts[Nel[Uri]] =
+    options[Uri]("repos-file", s"A markdown formatted file with a repository list $multiple")
 
   private val gitAuthorName: Opts[String] = {
     val default = "Scala Steward"
@@ -217,13 +217,13 @@ object Cli {
   private val scalafixMigrations: Opts[List[Uri]] =
     options[Uri](
       "scalafix-migrations",
-      s"Additional scalafix migrations configuration file $multiple"
+      s"Additional Scalafix migrations configuration file $multiple"
     ).orEmpty
 
   private val disableDefaultScalafixMigrations: Opts[Boolean] =
     flag(
       "disable-default-scalafix-migrations",
-      "Whether to disable the default scalafix migration file; default: false"
+      "Whether to disable the default Scalafix migration file; default: false"
     ).orFalse
 
   private val scalafixCfg: Opts[ScalafixCfg] =
@@ -348,7 +348,7 @@ object Cli {
 
   private val configOpts: Opts[Config] = (
     workspace,
-    reposFile,
+    reposFiles,
     gitCfg,
     forgeCfg,
     ignoreOptsFiles,
