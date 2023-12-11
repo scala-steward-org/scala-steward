@@ -75,8 +75,8 @@ object Cli {
   private val workspace: Opts[File] =
     option[File]("workspace", "Location for cache and temporary files")
 
-  private val reposFile: Opts[File] =
-    option[File]("repos-file", "A markdown formatted file with a repository list")
+  private val reposFiles: Opts[Nel[Uri]] =
+    options[Uri]("repos-file", s"A markdown formatted file with a repository list $multiple")
 
   private val gitAuthorName: Opts[String] = {
     val default = "Scala Steward"
@@ -348,7 +348,7 @@ object Cli {
 
   private val configOpts: Opts[Config] = (
     workspace,
-    reposFile,
+    reposFiles,
     gitCfg,
     forgeCfg,
     ignoreOptsFiles,

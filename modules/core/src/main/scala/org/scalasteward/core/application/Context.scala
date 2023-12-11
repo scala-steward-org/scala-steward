@@ -75,6 +75,7 @@ final class Context[F[_]](implicit
     val refreshErrorAlg: RefreshErrorAlg[F],
     val repoCacheAlg: RepoCacheAlg[F],
     val repoConfigAlg: RepoConfigAlg[F],
+    val reposFilesLoader: ReposFilesLoader[F],
     val sbtAlg: SbtAlg[F],
     val scalaCliAlg: ScalaCliAlg[F],
     val scalafixMigrationsFinder: ScalafixMigrationsFinder,
@@ -234,6 +235,7 @@ object Context {
       implicit val editAlg: EditAlg[F] = new EditAlg[F]
       implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F](config.forgeCfg)
       implicit val pruningAlg: PruningAlg[F] = new PruningAlg[F]
+      implicit val reposFilesLoader: ReposFilesLoader[F] = new ReposFilesLoader[F]()
       implicit val gitHubAppApiAlg: GitHubAppApiAlg[F] =
         new GitHubAppApiAlg[F](config.forgeCfg.apiHost)
       implicit val stewardAlg: StewardAlg[F] = new StewardAlg[F](config)

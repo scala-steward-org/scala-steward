@@ -53,7 +53,7 @@ import scala.concurrent.duration.FiniteDuration
   */
 final case class Config(
     workspace: File,
-    reposFile: File,
+    reposFiles: Nel[Uri],
     gitCfg: GitCfg,
     forgeCfg: ForgeCfg,
     ignoreOptsFiles: Boolean,
