@@ -228,7 +228,8 @@ object Context {
       implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]
       implicit val mavenAlg: MavenAlg[F] = new MavenAlg[F](config)
       implicit val sbtAlg: SbtAlg[F] = new SbtAlg[F](config)
-      implicit val bspExtractor: BspExtractor[F] = new BspExtractor[F](config.defaultResolver)
+      implicit val bspExtractor: BspExtractor[F] =
+        new BspExtractor[F](config.defaultResolver, config.processCfg.processTimeout)
       implicit val bazelAlg: BazelAlg[F] = new BazelAlg[F]
       implicit val bleepAlg: BleepAlg[F] = new BleepAlg[F]
       implicit val millAlg: MillAlg[F] = new MillAlg[F](config.defaultResolver)

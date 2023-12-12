@@ -32,9 +32,10 @@ import java.util.concurrent.CompletableFuture
 import org.scalasteward.core.buildtool.BuildRoot
 import org.scalasteward.core.data._
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
+import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters._
 
-final class BspExtractor[F[_]](defaultResolver: Resolver)(implicit
+final class BspExtractor[F[_]](defaultResolver: Resolver, processTimeout: FiniteDuration)(implicit
     fileAlg: FileAlg[F],
     processAlg: ProcessAlg[F],
     workspaceAlg: WorkspaceAlg[F],
@@ -67,38 +68,43 @@ final class BspExtractor[F[_]](defaultResolver: Resolver)(implicit
           case Right(connectionDetails) => F.pure(connectionDetails)
           case Left(error)              => F.raiseError(error)
         }
-      case None => F.raiseError(new Throwable)
+      case None =>
+        F.raiseError(new Throwable(s"${connectionDetailsFile.pathAsString} does not exist"))
     }
 
   private def getBspDependencies(
       buildRootDir: File,
       details: BspConnectionDetails
   ): F[DependencyModulesResult] =
-    BspProcess.run(details.argv, buildRootDir).use { p =>
-      val initBuildParams = new InitializeBuildParams(
-        "Scala Steward",
-        org.scalasteward.core.BuildInfo.version,
-        org.scalasteward.core.BuildInfo.bsp4jVersion,
-        buildRootDir.uri.toString,
-        new BuildClientCapabilities(Collections.emptyList())
-      )
-      (for {
-        initBuildResult <- lift(p.buildInitialize(initBuildParams))
-        _ <- F.blocking(p.onBuildInitialized())
-        isDependencyModulesProvider =
-          Option(initBuildResult.getCapabilities.getDependencyModulesProvider)
-            .exists(_.booleanValue())
-        _ <- F.raiseWhen(!isDependencyModulesProvider) {
-          new Throwable(s"${initBuildResult.getDisplayName} is not a dependency modules provider")
-        }
-        buildTargetsResult <- lift(p.workspaceBuildTargets())
-        dependencyModulesParams =
-          new DependencyModulesParams(buildTargetsResult.getTargets.asScala.map(_.getId).asJava)
-        dependencyModulesResult <- lift(p.buildTargetDependencyModules(dependencyModulesParams))
-      } yield dependencyModulesResult).guarantee {
-        lift(p.buildShutdown()) >> F.blocking(p.onBuildExit())
+    BspProcess
+      .run(details.argv, buildRootDir)
+      .use { p =>
+        val result = for {
+          initBuildResult <- lift(p.buildInitialize(initBuildParams(buildRootDir)))
+          _ <- F.blocking(p.onBuildInitialized())
+          isDependencyModulesProvider =
+            Option(initBuildResult.getCapabilities.getDependencyModulesProvider)
+              .exists(_.booleanValue())
+          _ <- F.raiseWhen(!isDependencyModulesProvider) {
+            new Throwable(s"${initBuildResult.getDisplayName} is not a dependency modules provider")
+          }
+          buildTargetsResult <- lift(p.workspaceBuildTargets())
+          dependencyModulesParams =
+            new DependencyModulesParams(buildTargetsResult.getTargets.asScala.map(_.getId).asJava)
+          dependencyModulesResult <- lift(p.buildTargetDependencyModules(dependencyModulesParams))
+        } yield dependencyModulesResult
+        result.guarantee(lift(p.buildShutdown()) >> F.blocking(p.onBuildExit()))
       }
-    }
+      .timeoutAndForget(processTimeout)
+
+  private def initBuildParams(buildRootDir: File): InitializeBuildParams =
+    new InitializeBuildParams(
+      "Scala Steward",
+      org.scalasteward.core.BuildInfo.version,
+      org.scalasteward.core.BuildInfo.bsp4jVersion,
+      buildRootDir.uri.toString,
+      new BuildClientCapabilities(Collections.emptyList())
+    )
 
   private def lift[A](fut: => CompletableFuture[A]): F[A] =
     F.fromCompletableFuture(F.blocking(fut))
@@ -115,6 +121,9 @@ final class BspExtractor[F[_]](defaultResolver: Resolver)(implicit
           case _ => None
         }
       }
+      // The BSP does not yet provide resolvers, so we use the default resolver here.
+      // See https://github.com/build-server-protocol/build-server-protocol/discussions/500
+      // for a proposal to add resolvers to BSP.
       Scope(dependencies, List(defaultResolver))
     }
 }
