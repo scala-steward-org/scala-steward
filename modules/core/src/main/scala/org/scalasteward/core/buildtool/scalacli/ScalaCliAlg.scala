@@ -70,6 +70,9 @@ final class ScalaCliAlg[F[_]](implicit
   }
 
   override def getDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
+    getDependenciesViaSbtExport(buildRoot)
+
+  private def getDependenciesViaSbtExport(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
     for {
       buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
       exportDir = "tmp-sbt-build-for-scala-steward"

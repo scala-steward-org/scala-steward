@@ -58,13 +58,7 @@ final class MillAlg[F[_]](defaultResolver: Resolver)(implicit
     for {
       buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
       millBuildVersion <- getMillVersion(buildRootDir)
-      extracted <-
-        if (isMillVersionGreaterOrEqual011(millBuildVersion)) runMill(buildRootDir)
-        else runMillUnder011(buildRootDir, millBuildVersion)
-      parsed <- F.fromEither(
-        parser.parseModules(extracted.dropWhile(!_.startsWith("{")).mkString("\n"))
-      )
-      dependencies = parsed.map(module => Scope(module.dependencies, module.repositories))
+      dependencies <- getProjectDependencies(buildRootDir, millBuildVersion)
       millBuildDeps = millBuildVersion.toSeq.map(version =>
         Scope(List(millMainArtifact(version)), List(defaultResolver))
       )
@@ -73,6 +67,20 @@ final class MillAlg[F[_]](defaultResolver: Resolver)(implicit
         case Some(value) => getMillPluginDeps(value, buildRootDir)
       }
     } yield dependencies ++ millBuildDeps ++ millPluginDeps
+
+  private def getProjectDependencies(
+      buildRootDir: File,
+      millBuildVersion: Option[Version]
+  ): F[List[Scope.Dependencies]] =
+    for {
+      extracted <-
+        if (isMillVersionGreaterOrEqual011(millBuildVersion)) runMill(buildRootDir)
+        else runMillUnder011(buildRootDir, millBuildVersion)
+      parsed <- F.fromEither(
+        parser.parseModules(extracted.dropWhile(!_.startsWith("{")).mkString("\n"))
+      )
+      dependencies = parsed.map(module => Scope(module.dependencies, module.repositories))
+    } yield dependencies
 
   override def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
     logger.warn(
