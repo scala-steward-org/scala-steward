@@ -6,6 +6,7 @@ import org.scalasteward.core.buildtool.BuildRoot
 import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.data.{GroupId, Repo, Version}
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
+import org.scalasteward.core.edit.scalafix.ScalafixCli._
 import org.scalasteward.core.mock.MockContext.context._
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
@@ -120,6 +121,230 @@ class SbtAlgTest extends FunSuite {
         ),
         Cmd("rm", "-rf", s"$repoDir/scala-steward-scalafix-options.sbt"),
         Cmd("rm", "-rf", s"$repoDir/project/scala-steward-sbt-scalafix.sbt")
+      )
+    )
+    assertEquals(state, expected)
+  }
+
+  test("runMigrations: build migration") {
+    val repo = Repo("sbt-alg", "test-build-migration-1")
+    val buildRoot = BuildRoot(repo, ".")
+    val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
+    val migration = ScalafixMigration(
+      groupId = GroupId("io.github.davidgregory084"),
+      artifactIds = Nel.of("sbt-tpolecat"),
+      newVersion = Version("0.5.0"),
+      rewriteRules = Nel.of("github:typelevel/sbt-tpolecat/v0_5?sha=v0.5.0"),
+      target = Some(ScalafixMigration.Target.Build)
+    )
+    val initialState = MockState.empty
+      .addFiles(
+        repoDir / "build.sbt" -> "",
+        workspace / s"store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json" -> sbtScalafixVersionJson
+      )
+      .unsafeRunSync()
+    val state = sbtAlg.runMigration(buildRoot, migration).runS(initialState).unsafeRunSync()
+    val expected = initialState.copy(
+      trace = Vector(
+        Cmd("test", "-d", s"$repoDir/project"),
+        Cmd(
+          "VAR1=val1",
+          "VAR2=val2",
+          repoDir.pathAsString,
+          scalafixBinary,
+          "--syntactic",
+          "--rules=github:typelevel/sbt-tpolecat/v0_5?sha=v0.5.0",
+          s"$repoDir/build.sbt"
+        ),
+        Cmd(
+          "read",
+          s"$workspace/store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json"
+        ),
+        Cmd("write", s"$repoDir/project/project/scala-steward-sbt-scalafix.sbt"),
+        Cmd.execSandboxed(
+          repoDir,
+          "sbt",
+          "-Dsbt.color=false",
+          "-Dsbt.log.noformat=true",
+          "-Dsbt.supershell=false",
+          "-Dsbt.server.forcestart=true",
+          s";$reloadPlugins;$scalafixEnable;$scalafixAll github:typelevel/sbt-tpolecat/v0_5?sha=v0.5.0"
+        ),
+        Cmd("rm", "-rf", s"$repoDir/project/project/scala-steward-sbt-scalafix.sbt")
+      )
+    )
+    assertEquals(state, expected)
+  }
+
+  test("runMigrations: build migration with meta-build") {
+    val repo = Repo("sbt-alg", "test-build-migration-2")
+    val buildRoot = BuildRoot(repo, ".")
+    val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
+    val migration = ScalafixMigration(
+      groupId = GroupId("io.github.davidgregory084"),
+      artifactIds = Nel.of("sbt-tpolecat"),
+      newVersion = Version("0.5.0"),
+      rewriteRules = Nel.of("github:typelevel/sbt-tpolecat/v0_5?sha=v0.5.0"),
+      target = Some(ScalafixMigration.Target.Build)
+    )
+    val initialState = MockState.empty
+      .addFiles(
+        repoDir / "build.sbt" -> "",
+        repoDir / "project" / "plugins.sbt" -> "",
+        repoDir / "project" / "Dependencies.scala" -> "object Dependencies",
+        workspace / s"store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json" -> sbtScalafixVersionJson
+      )
+      .unsafeRunSync()
+    val state = sbtAlg.runMigration(buildRoot, migration).runS(initialState).unsafeRunSync()
+    val expected = initialState.copy(
+      trace = Vector(
+        Cmd("test", "-d", s"$repoDir/project"),
+        Cmd("test", "-d", s"$repoDir/project/project"),
+        Cmd(
+          "VAR1=val1",
+          "VAR2=val2",
+          repoDir.pathAsString,
+          scalafixBinary,
+          "--syntactic",
+          "--rules=github:typelevel/sbt-tpolecat/v0_5?sha=v0.5.0",
+          s"$repoDir/build.sbt",
+          s"$repoDir/project/Dependencies.scala",
+          s"$repoDir/project/plugins.sbt"
+        ),
+        Cmd(
+          "read",
+          s"$workspace/store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json"
+        ),
+        Cmd("write", s"$repoDir/project/project/scala-steward-sbt-scalafix.sbt"),
+        Cmd("write", s"$repoDir/project/project/project/scala-steward-sbt-scalafix.sbt"),
+        Cmd.execSandboxed(
+          repoDir,
+          "sbt",
+          "-Dsbt.color=false",
+          "-Dsbt.log.noformat=true",
+          "-Dsbt.supershell=false",
+          "-Dsbt.server.forcestart=true",
+          s";$reloadPlugins;$scalafixEnable;$scalafixAll github:typelevel/sbt-tpolecat/v0_5?sha=v0.5.0" +
+            s";$reloadPlugins;$scalafixEnable;$scalafixAll github:typelevel/sbt-tpolecat/v0_5?sha=v0.5.0"
+        ),
+        Cmd("rm", "-rf", s"$repoDir/project/project/project/scala-steward-sbt-scalafix.sbt"),
+        Cmd("rm", "-rf", s"$repoDir/project/project/scala-steward-sbt-scalafix.sbt")
+      )
+    )
+    assertEquals(state, expected)
+  }
+
+  test("runMigrations: build migration with scalacOptions") {
+    val repo = Repo("sbt-alg", "test-build-migration-3")
+    val buildRoot = BuildRoot(repo, ".")
+    val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
+    val migration = ScalafixMigration(
+      groupId = GroupId("io.github.davidgregory084"),
+      artifactIds = Nel.of("sbt-tpolecat"),
+      newVersion = Version("0.5.0"),
+      rewriteRules = Nel.of("github:typelevel/sbt-tpolecat/v0_5?sha=v0.5.0"),
+      scalacOptions = Some(Nel.of("-P:semanticdb:synthetics:on")),
+      target = Some(ScalafixMigration.Target.Build)
+    )
+    val initialState = MockState.empty
+      .addFiles(
+        repoDir / "build.sbt" -> "",
+        workspace / s"store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json" -> sbtScalafixVersionJson
+      )
+      .unsafeRunSync()
+    val state = sbtAlg.runMigration(buildRoot, migration).runS(initialState).unsafeRunSync()
+    val expected = initialState.copy(
+      trace = Vector(
+        Cmd("test", "-d", s"$repoDir/project"),
+        Cmd(
+          "VAR1=val1",
+          "VAR2=val2",
+          repoDir.pathAsString,
+          scalafixBinary,
+          "--syntactic",
+          "--rules=github:typelevel/sbt-tpolecat/v0_5?sha=v0.5.0",
+          s"$repoDir/build.sbt"
+        ),
+        Cmd(
+          "read",
+          s"$workspace/store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json"
+        ),
+        Cmd("write", s"$repoDir/project/project/scala-steward-sbt-scalafix.sbt"),
+        Cmd("write", s"$repoDir/project/scala-steward-scalafix-options.sbt"),
+        Cmd.execSandboxed(
+          repoDir,
+          "sbt",
+          "-Dsbt.color=false",
+          "-Dsbt.log.noformat=true",
+          "-Dsbt.supershell=false",
+          "-Dsbt.server.forcestart=true",
+          s";$reloadPlugins;$scalafixEnable;$scalafixAll github:typelevel/sbt-tpolecat/v0_5?sha=v0.5.0"
+        ),
+        Cmd("rm", "-rf", s"$repoDir/project/scala-steward-scalafix-options.sbt"),
+        Cmd("rm", "-rf", s"$repoDir/project/project/scala-steward-sbt-scalafix.sbt")
+      )
+    )
+    assertEquals(state, expected)
+  }
+
+  test("runMigrations: build migration with scalacOptions and meta-build") {
+    val repo = Repo("sbt-alg", "test-build-migration-4")
+    val buildRoot = BuildRoot(repo, ".")
+    val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
+    val migration = ScalafixMigration(
+      groupId = GroupId("io.github.davidgregory084"),
+      artifactIds = Nel.of("sbt-tpolecat"),
+      newVersion = Version("0.5.0"),
+      rewriteRules = Nel.of("github:typelevel/sbt-tpolecat/v0_5?sha=v0.5.0"),
+      scalacOptions = Some(Nel.of("-P:semanticdb:synthetics:on")),
+      target = Some(ScalafixMigration.Target.Build)
+    )
+    val initialState = MockState.empty
+      .addFiles(
+        repoDir / "build.sbt" -> "",
+        repoDir / "project" / "plugins.sbt" -> "",
+        repoDir / "project" / "Dependencies.scala" -> "object Dependencies",
+        workspace / s"store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json" -> sbtScalafixVersionJson
+      )
+      .unsafeRunSync()
+    val state = sbtAlg.runMigration(buildRoot, migration).runS(initialState).unsafeRunSync()
+    val expected = initialState.copy(
+      trace = Vector(
+        Cmd("test", "-d", s"$repoDir/project"),
+        Cmd("test", "-d", s"$repoDir/project/project"),
+        Cmd(
+          "VAR1=val1",
+          "VAR2=val2",
+          repoDir.pathAsString,
+          scalafixBinary,
+          "--syntactic",
+          "--rules=github:typelevel/sbt-tpolecat/v0_5?sha=v0.5.0",
+          s"$repoDir/build.sbt",
+          s"$repoDir/project/Dependencies.scala",
+          s"$repoDir/project/plugins.sbt"
+        ),
+        Cmd(
+          "read",
+          s"$workspace/store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json"
+        ),
+        Cmd("write", s"$repoDir/project/project/scala-steward-sbt-scalafix.sbt"),
+        Cmd("write", s"$repoDir/project/project/project/scala-steward-sbt-scalafix.sbt"),
+        Cmd("write", s"$repoDir/project/scala-steward-scalafix-options.sbt"),
+        Cmd("write", s"$repoDir/project/project/scala-steward-scalafix-options.sbt"),
+        Cmd.execSandboxed(
+          repoDir,
+          "sbt",
+          "-Dsbt.color=false",
+          "-Dsbt.log.noformat=true",
+          "-Dsbt.supershell=false",
+          "-Dsbt.server.forcestart=true",
+          s";$reloadPlugins;$scalafixEnable;$scalafixAll github:typelevel/sbt-tpolecat/v0_5?sha=v0.5.0" +
+            s";$reloadPlugins;$scalafixEnable;$scalafixAll github:typelevel/sbt-tpolecat/v0_5?sha=v0.5.0"
+        ),
+        Cmd("rm", "-rf", s"$repoDir/project/project/scala-steward-scalafix-options.sbt"),
+        Cmd("rm", "-rf", s"$repoDir/project/scala-steward-scalafix-options.sbt"),
+        Cmd("rm", "-rf", s"$repoDir/project/project/project/scala-steward-sbt-scalafix.sbt"),
+        Cmd("rm", "-rf", s"$repoDir/project/project/scala-steward-sbt-scalafix.sbt")
       )
     )
     assertEquals(state, expected)
