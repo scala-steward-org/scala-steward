@@ -30,6 +30,7 @@ import org.scalasteward.core.buildtool.BuildToolDispatcher
 import org.scalasteward.core.buildtool.bazel.BazelAlg
 import org.scalasteward.core.buildtool.bleep.BleepAlg
 import org.scalasteward.core.buildtool.bsp.BspExtractor
+import org.scalasteward.core.buildtool.gradle.GradleAlg
 import org.scalasteward.core.buildtool.maven.MavenAlg
 import org.scalasteward.core.buildtool.mill.MillAlg
 import org.scalasteward.core.buildtool.sbt.SbtAlg
@@ -232,6 +233,7 @@ object Context {
         new BspExtractor[F](config.defaultResolver, config.processCfg.processTimeout)
       implicit val bazelAlg: BazelAlg[F] = new BazelAlg[F]
       implicit val bleepAlg: BleepAlg[F] = new BleepAlg[F]
+      implicit val gradleAlg: GradleAlg[F] = new GradleAlg[F]
       implicit val millAlg: MillAlg[F] = new MillAlg[F](config.defaultResolver)
       implicit val scalaCliAlg: ScalaCliAlg[F] = new ScalaCliAlg[F]
       implicit val buildToolDispatcher: BuildToolDispatcher[F] = new BuildToolDispatcher[F]

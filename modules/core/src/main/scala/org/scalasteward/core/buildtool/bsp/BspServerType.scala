@@ -45,13 +45,12 @@ object BspServerType {
       )
 
   // https://github.com/microsoft/build-server-for-gradle
-  /*
+  // waiting for https://github.com/microsoft/build-server-for-gradle/issues/115
   case object Gradle
       extends BspServerType(
-        connectionDetailsCommand = ???,
-        connectionDetailsName = ???
+        connectionDetailsCommand = Nel.one("???"),
+        connectionDetailsName = "???"
       )
-   */
 
   // https://com-lihaoyi.github.io/mill/mill/Plugin_BSP.html
   case object Mill
@@ -61,7 +60,7 @@ object BspServerType {
       )
 
   // https://www.scala-sbt.org
-  // not usable until https://github.com/sbt/sbt/issues/6957 is resolved
+  // waiting for https://github.com/sbt/sbt/issues/6957
   case object Sbt
       extends BspServerType(
         connectionDetailsCommand = Nel.of("sbt", "bspConfig"),
