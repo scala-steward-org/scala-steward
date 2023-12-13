@@ -29,9 +29,11 @@ import org.scalasteward.core.edit.scalafix.{ScalafixCli, ScalafixMigration}
 import org.scalasteward.core.io.process.SlurpOptions
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
+import org.typelevel.log4cats.Logger
 
 final class SbtAlg[F[_]](config: Config)(implicit
     fileAlg: FileAlg[F],
+    override protected val logger: Logger[F],
     processAlg: ProcessAlg[F],
     scalafixCli: ScalafixCli[F],
     workspaceAlg: WorkspaceAlg[F],

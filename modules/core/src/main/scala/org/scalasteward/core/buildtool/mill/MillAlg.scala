@@ -22,14 +22,13 @@ import cats.syntax.all._
 import org.scalasteward.core.buildtool.mill.MillAlg._
 import org.scalasteward.core.buildtool.{BuildRoot, BuildToolAlg}
 import org.scalasteward.core.data._
-import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
 import org.typelevel.log4cats.Logger
 
 final class MillAlg[F[_]](defaultResolver: Resolver)(implicit
     fileAlg: FileAlg[F],
-    logger: Logger[F],
+    override protected val logger: Logger[F],
     processAlg: ProcessAlg[F],
     workspaceAlg: WorkspaceAlg[F],
     F: MonadCancelThrow[F]
@@ -82,10 +81,8 @@ final class MillAlg[F[_]](defaultResolver: Resolver)(implicit
       dependencies = parsed.map(module => Scope(module.dependencies, module.repositories))
     } yield dependencies
 
-  override def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
-    logger.warn(
-      s"Scalafix migrations are currently not supported in $name projects, see https://github.com/scala-steward-org/scala-steward/issues/2838 for details"
-    )
+  override protected val scalafixIssue: Option[String] =
+    Some("https://github.com/scala-steward-org/scala-steward/issues/2838")
 
   private def getMillVersion(buildRootDir: File): F[Option[Version]] =
     for {
