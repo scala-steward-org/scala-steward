@@ -21,12 +21,13 @@ import cats.syntax.all._
 import org.scalasteward.core.buildtool.bsp.{BspExtractor, BspServerType}
 import org.scalasteward.core.buildtool.{BuildRoot, BuildToolAlg}
 import org.scalasteward.core.data.Scope.Dependencies
-import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
+import org.typelevel.log4cats.Logger
 
 final class GradleAlg[F[_]](implicit
     bspExtractor: BspExtractor[F],
     fileAlg: FileAlg[F],
+    override protected val logger: Logger[F],
     workspaceAlg: WorkspaceAlg[F],
     F: Monad[F]
 ) extends BuildToolAlg[F] {
@@ -42,7 +43,4 @@ final class GradleAlg[F[_]](implicit
 
   override def getDependencies(buildRoot: BuildRoot): F[List[Dependencies]] =
     bspExtractor.getDependencies(BspServerType.Gradle, buildRoot)
-
-  override def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
-    F.unit
 }
