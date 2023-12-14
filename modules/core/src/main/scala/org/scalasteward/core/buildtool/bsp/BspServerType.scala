@@ -25,6 +25,7 @@ sealed abstract class BspServerType(
 
 object BspServerType {
   // https://github.com/JetBrains/bazel-bsp#easy-way-coursier
+  // Status: waiting for https://youtrack.jetbrains.com/issue/BAZEL-616
   case object Bazel
       extends BspServerType(
         connectionDetailsCommand = Nel.of(
@@ -38,6 +39,7 @@ object BspServerType {
       )
 
   // https://bleep.build/
+  // Status: waiting for https://github.com/scalacenter/bloop/pull/2197 to propagate to bleep
   case object Bleep
       extends BspServerType(
         connectionDetailsCommand = Nel.of("bleep", "setup-ide"),
@@ -45,7 +47,7 @@ object BspServerType {
       )
 
   // https://github.com/microsoft/build-server-for-gradle
-  // waiting for https://github.com/microsoft/build-server-for-gradle/issues/115
+  // Status: waiting for https://github.com/microsoft/build-server-for-gradle/issues/115
   case object Gradle
       extends BspServerType(
         connectionDetailsCommand = Nel.one("???"),
@@ -53,6 +55,7 @@ object BspServerType {
       )
 
   // https://com-lihaoyi.github.io/mill/mill/Plugin_BSP.html
+  // Status: working
   case object Mill
       extends BspServerType(
         connectionDetailsCommand = Nel.of("mill", "mill.bsp.BSP/install"),
@@ -60,7 +63,7 @@ object BspServerType {
       )
 
   // https://www.scala-sbt.org
-  // waiting for https://github.com/sbt/sbt/issues/6957
+  // Status: waiting for https://github.com/sbt/sbt/issues/6957
   case object Sbt
       extends BspServerType(
         connectionDetailsCommand = Nel.of("sbt", "bspConfig"),
@@ -68,6 +71,7 @@ object BspServerType {
       )
 
   // https://scala-cli.virtuslab.org/docs/commands/setup-ide#ide-support-internals
+  // Status: waiting for https://github.com/scalacenter/bloop/pull/2197 to propagate to Scala CLI
   case object ScalaCli
       extends BspServerType(
         connectionDetailsCommand = Nel.of("scala-cli", "setup-ide", "."),
