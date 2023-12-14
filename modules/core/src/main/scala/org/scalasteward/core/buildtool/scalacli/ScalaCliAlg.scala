@@ -22,7 +22,6 @@ import org.scalasteward.core.buildtool.bsp.{BspExtractor, BspServerType}
 import org.scalasteward.core.buildtool.sbt.SbtAlg
 import org.scalasteward.core.buildtool.{BuildRoot, BuildToolAlg}
 import org.scalasteward.core.data.Scope
-import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io.process.SlurpOptions
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
@@ -55,7 +54,7 @@ final class ScalaCliAlg[F[_]](implicit
     bspExtractor: BspExtractor[F],
     fileAlg: FileAlg[F],
     gitAlg: GitAlg[F],
-    logger: Logger[F],
+    override protected val logger: Logger[F],
     processAlg: ProcessAlg[F],
     sbtAlg: SbtAlg[F],
     workspaceAlg: WorkspaceAlg[F],
@@ -97,8 +96,6 @@ final class ScalaCliAlg[F[_]](implicit
       _ <- fileAlg.deleteForce(buildRootDir / exportDir)
     } yield dependencies
 
-  override def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
-    logger.warn(
-      s"Scalafix migrations are currently not supported in $name projects, see https://github.com/VirtusLab/scala-cli/issues/647 for details"
-    )
+  override protected val scalafixIssue: Option[String] =
+    Some("https://github.com/VirtusLab/scala-cli/issues/647")
 }
