@@ -18,6 +18,8 @@ package org.scalasteward.core.buildtool
 
 import org.scalasteward.core.data.Scope
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
+import org.typelevel.log4cats.Logger
+import scala.annotation.nowarn
 
 trait BuildToolAlg[F[_]] {
   def name: String
@@ -26,5 +28,13 @@ trait BuildToolAlg[F[_]] {
 
   def getDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]]
 
-  def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit]
+  def runMigration(@nowarn buildRoot: BuildRoot, @nowarn migration: ScalafixMigration): F[Unit] =
+    logger.warn(
+      s"Scalafix migrations are currently not supported in $name projects" +
+        scalafixIssue.fold("")(issue => s", see $issue for details")
+    )
+
+  protected def logger: Logger[F]
+
+  protected def scalafixIssue: Option[String] = None
 }
