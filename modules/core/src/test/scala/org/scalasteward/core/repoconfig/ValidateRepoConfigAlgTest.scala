@@ -1,11 +1,11 @@
 package org.scalasteward.core.repoconfig
 
 import better.files.File
+import cats.effect.ExitCode
 import cats.effect.unsafe.implicits.global
-import cats.effect.{ExitCode, IO}
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
-import org.scalasteward.core.application.ValidateRepoConfigContext
+import org.scalasteward.core.Main
 
 class ValidateRepoConfigAlgTest extends munit.FunSuite {
 
@@ -19,7 +19,7 @@ class ValidateRepoConfigAlgTest extends munit.FunSuite {
           )
         )
 
-      val obtained = ValidateRepoConfigContext.run[IO](tmpFile).unsafeRunSync()
+      val obtained = Main.run(List("validate-repo-config", tmpFile.pathAsString)).unsafeRunSync()
       (tmpFile, obtained)
     },
     teardown = { case (file, _) =>
@@ -59,8 +59,7 @@ class ValidateRepoConfigAlgTest extends munit.FunSuite {
     }
 
   test("rejects non-existent config file") {
-    val nonExistentFile = File("/", "scripts", "script")
-    val obtained = ValidateRepoConfigContext.run[IO](nonExistentFile).unsafeRunSync()
+    val obtained = Main.run(List("validate-repo-config", "/scripts.script")).unsafeRunSync()
 
     assertEquals(obtained, ExitCode.Error)
   }

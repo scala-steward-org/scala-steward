@@ -68,7 +68,7 @@ class CliTest extends FunSuite {
     assert(!obtained.bitbucketServerCfg.useDefaultReviewers)
   }
 
-  val minimumRequiredParams = List(
+  private val minimumRequiredParams = List(
     List("--workspace", "a"),
     List("--repos-file", "b"),
     List("--git-author-email", "d"),
