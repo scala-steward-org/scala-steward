@@ -1,15 +1,15 @@
 package org.scalasteward.core.repoconfig
 
 import better.files.File
-import cats.effect.ExitCode
 import cats.effect.unsafe.implicits.global
+import cats.effect.{ExitCode, IO}
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
-import org.scalasteward.core.mock.{MockContext, MockState}
+import org.scalasteward.core.application.ValidateRepoConfigContext
 
 class ValidateRepoConfigAlgTest extends munit.FunSuite {
 
-  def configFile(content: String) = FunFixture[(File, ExitCode)](
+  private def configFile(content: String) = FunFixture[(File, ExitCode)](
     setup = { _ =>
       val tmpFile =
         File(
@@ -19,12 +19,7 @@ class ValidateRepoConfigAlgTest extends munit.FunSuite {
           )
         )
 
-      val obtained = MockContext
-        .validateRepoConfigContext(tmpFile)
-        .runF
-        .runA(MockState.empty)
-        .unsafeRunSync()
-
+      val obtained = ValidateRepoConfigContext.run[IO](tmpFile).unsafeRunSync()
       (tmpFile, obtained)
     },
     teardown = { case (file, _) =>
@@ -65,11 +60,7 @@ class ValidateRepoConfigAlgTest extends munit.FunSuite {
 
   test("rejects non-existent config file") {
     val nonExistentFile = File("/", "scripts", "script")
-    val obtained = MockContext
-      .validateRepoConfigContext(nonExistentFile)
-      .runF
-      .runA(MockState.empty)
-      .unsafeRunSync()
+    val obtained = ValidateRepoConfigContext.run[IO](nonExistentFile).unsafeRunSync()
 
     assertEquals(obtained, ExitCode.Error)
   }

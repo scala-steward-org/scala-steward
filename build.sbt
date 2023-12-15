@@ -446,6 +446,15 @@ runSteward := Def.taskDyn {
   (core.jvm / Compile / run).toTask(args)
 }.value
 
+lazy val runValidateRepoConfig = taskKey[Unit]("")
+runValidateRepoConfig := Def.taskDyn {
+  val projectDir = (LocalRootProject / baseDirectory).value
+  val args = Seq(
+    Seq("validate-repo-config", s"$projectDir/.scala-steward.conf")
+  ).flatten.mkString(" ", " ", "")
+  (core.jvm / Compile / run).toTask(args)
+}.value
+
 /// commands
 
 def addCommandsAlias(name: String, cmds: Seq[String]) =

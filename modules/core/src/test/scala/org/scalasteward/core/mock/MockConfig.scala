@@ -2,8 +2,8 @@ package org.scalasteward.core.mock
 
 import better.files.File
 import org.http4s.Uri
+import org.scalasteward.core.application.Cli
 import org.scalasteward.core.application.Cli.ParseResult.Success
-import org.scalasteward.core.application.{Cli, Config}
 
 object MockConfig {
   val mockRoot: File = File.temp / "scala-steward"
@@ -24,5 +24,5 @@ object MockConfig {
     "--add-labels",
     "--refresh-backoff-period=1hour"
   )
-  val Success(Config.StewardUsage.Regular(config)) = Cli.parseArgs(args)
+  val Success(Cli.Usage.Regular(config)) = Cli.parseArgs(args)
 }

@@ -337,16 +337,7 @@ object Cli {
       .withDefault(default)
   }
 
-  private val configFile: Opts[File] =
-    Opts.argument[File]()
-
-  private val validateConfigFile: Opts[File] =
-    Opts.subcommand(
-      name = "validate-repo-config",
-      help = "Validate the repo config file and exit; report errors if any"
-    )(configFile)
-
-  private val configOpts: Opts[Config] = (
+  private val regular: Opts[Usage] = (
     workspace,
     reposFiles,
     gitCfg,
@@ -365,29 +356,36 @@ object Cli {
     urlCheckerTestUrls,
     defaultMavenRepo,
     refreshBackoffPeriod
-  ).mapN(Config.apply)
+  ).mapN(Config.apply).map(Usage.Regular.apply)
 
-  val command: Command[StewardUsage] =
-    Command("scala-steward", "")(
-      validateConfigFile
-        .map(StewardUsage.ValidateRepoConfig)
-        .orElse(
-          configOpts
-            .map(StewardUsage.Regular)
-        )
-    )
+  private val validateRepoConfig: Opts[Usage] =
+    Opts
+      .subcommand(
+        name = "validate-repo-config",
+        help = "Validate the repo config file and exit; report errors if any"
+      )(Opts.argument[File]())
+      .map(Usage.ValidateRepoConfig.apply)
+
+  val command: Command[Usage] =
+    Command("scala-steward", "")(regular.orElse(validateRepoConfig))
 
   sealed trait ParseResult extends Product with Serializable
   object ParseResult {
-    final case class Success(config: StewardUsage) extends ParseResult
+    final case class Success(usage: Usage) extends ParseResult
     final case class Help(help: String) extends ParseResult
     final case class Error(error: String) extends ParseResult
+  }
+
+  sealed trait Usage extends Product with Serializable
+  object Usage {
+    final case class Regular(config: Config) extends Usage
+    final case class ValidateRepoConfig(file: File) extends Usage
   }
 
   def parseArgs(args: List[String]): ParseResult =
     command.parse(args) match {
       case Left(help) if help.errors.isEmpty => ParseResult.Help(help.toString)
       case Left(help)                        => ParseResult.Error(help.toString)
-      case Right(config)                     => ParseResult.Success(config)
+      case Right(usage)                      => ParseResult.Success(usage)
     }
 }

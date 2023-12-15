@@ -164,10 +164,4 @@ object Config {
 
   final case class GiteaCfg(
   ) extends ForgeSpecificCfg
-
-  sealed trait StewardUsage
-  object StewardUsage {
-    final case class Regular(config: Config) extends StewardUsage
-    final case class ValidateRepoConfig(file: File) extends StewardUsage
-  }
 }
