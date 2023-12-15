@@ -40,8 +40,7 @@ object ValidateRepoConfigContext {
       logger: Logger[F],
       F: Sync[F]
   ): ValidateRepoConfigContext[F] = {
-    implicit val validateRepoConfigAlg: ValidateRepoConfigAlg[F] =
-      new ValidateRepoConfigAlg()(fileAlg, logger, F)
+    implicit val validateRepoConfigAlg: ValidateRepoConfigAlg[F] = new ValidateRepoConfigAlg
     new ValidateRepoConfigContext[F]
   }
 }
