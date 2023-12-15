@@ -16,19 +16,32 @@
 
 package org.scalasteward.core.application
 
-import better.files.File
-import cats.effect.{ExitCode, Sync}
+import cats.effect.Sync
 import cats.syntax.all._
 import org.scalasteward.core.io.FileAlg
 import org.scalasteward.core.repoconfig.ValidateRepoConfigAlg
+import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
+final class ValidateRepoConfigContext[F[_]](implicit
+    val validateRepoConfigAlg: ValidateRepoConfigAlg[F]
+)
+
 object ValidateRepoConfigContext {
-  def run[F[_]](repoConfigFile: File)(implicit F: Sync[F]): F[ExitCode] =
+  def step0[F[_]](implicit F: Sync[F]): F[ValidateRepoConfigContext[F]] =
     for {
       logger <- Slf4jLogger.fromName[F]("org.scalasteward.core")
       fileAlg = FileAlg.create(logger, F)
-      validateRepoConfigAlg = new ValidateRepoConfigAlg()(fileAlg, logger, F)
-      exitCode <- validateRepoConfigAlg.validateAndReport(repoConfigFile)
-    } yield exitCode
+      context = step1(fileAlg, logger, F)
+    } yield context
+
+  def step1[F[_]](implicit
+      fileAlg: FileAlg[F],
+      logger: Logger[F],
+      F: Sync[F]
+  ): ValidateRepoConfigContext[F] = {
+    implicit val validateRepoConfigAlg: ValidateRepoConfigAlg[F] =
+      new ValidateRepoConfigAlg()(fileAlg, logger, F)
+    new ValidateRepoConfigContext[F]
+  }
 }

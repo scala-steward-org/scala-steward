@@ -26,7 +26,7 @@ object Main extends IOApp {
       case Cli.ParseResult.Success(Cli.Usage.Regular(config)) =>
         Context.step0[IO](config).use(_.stewardAlg.runF)
       case Cli.ParseResult.Success(Cli.Usage.ValidateRepoConfig(file)) =>
-        ValidateRepoConfigContext.run[IO](file)
+        ValidateRepoConfigContext.step0[IO].flatMap(_.validateRepoConfigAlg.validateAndReport(file))
       case Cli.ParseResult.Help(help)   => Console[IO].println(help).as(ExitCode.Success)
       case Cli.ParseResult.Error(error) => Console[IO].errorln(error).as(ExitCode.Error)
     }
