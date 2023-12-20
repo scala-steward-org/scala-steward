@@ -274,7 +274,7 @@ lazy val dummy = myCrossProject("dummy")
   )
 
 lazy val ghAppFacade = myCrossProject("gh-app-facade")
-  .dependsOn(core)
+  .dependsOn(core % "compile->compile;test->test")
   .settings(
     libraryDependencies ++= Seq(
       Dependencies.bcprovJdk15to18,
