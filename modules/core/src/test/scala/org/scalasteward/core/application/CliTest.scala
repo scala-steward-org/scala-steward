@@ -7,7 +7,6 @@ import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Cli.ParseResult._
 import org.scalasteward.core.application.Cli.{EnvVar, Usage}
 import org.scalasteward.core.forge.ForgeType
-import org.scalasteward.core.forge.github.GitHubApp
 import org.scalasteward.core.util.Nel
 import scala.concurrent.duration._
 
@@ -30,8 +29,6 @@ class CliTest extends FunSuite {
         List("--scalafix-migrations", "/opt/scala-steward/extra-scalafix-migrations.conf"),
         List("--artifact-migrations", "/opt/scala-steward/extra-artifact-migrations.conf"),
         List("--repo-config", "/opt/scala-steward/scala-steward.conf"),
-        List("--github-app-id", "12345678"),
-        List("--github-app-key-file", "example_app_key"),
         List("--refresh-backoff-period", "1 day"),
         List("--bitbucket-use-default-reviewers")
       ).flatten
@@ -60,7 +57,6 @@ class CliTest extends FunSuite {
       obtained.artifactCfg.migrations,
       List(uri"/opt/scala-steward/extra-artifact-migrations.conf")
     )
-    assertEquals(obtained.githubApp, Some(GitHubApp(12345678L, File("example_app_key"))))
     assertEquals(obtained.refreshBackoffPeriod, 1.day)
     assert(!obtained.gitLabCfg.mergeWhenPipelineSucceeds)
     assertEquals(obtained.gitLabCfg.requiredReviewers, None)

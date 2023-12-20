@@ -18,7 +18,8 @@ val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
   "benchmark" -> List(JVMPlatform),
   "core" -> List(JVMPlatform),
   "docs" -> List(JVMPlatform),
-  "dummy" -> List(JVMPlatform)
+  "dummy" -> List(JVMPlatform),
+  "gh-app-facade" -> List(JVMPlatform)
 )
 
 val Scala213 = "2.13.12"
@@ -111,7 +112,6 @@ lazy val core = myCrossProject("core")
   .settings(dockerSettings)
   .settings(
     libraryDependencies ++= Seq(
-      Dependencies.bcprovJdk15to18,
       Dependencies.betterFiles,
       Dependencies.catsCore,
       Dependencies.catsEffect,
@@ -132,9 +132,6 @@ lazy val core = myCrossProject("core")
       Dependencies.http4sClient,
       Dependencies.http4sCore,
       Dependencies.http4sJdkhttpClient,
-      Dependencies.jjwtApi,
-      Dependencies.jjwtImpl % Runtime,
-      Dependencies.jjwtJackson % Runtime,
       Dependencies.log4catsSlf4j,
       Dependencies.monocleCore,
       Dependencies.refined,
@@ -273,6 +270,17 @@ lazy val dummy = myCrossProject("dummy")
   .settings(
     libraryDependencies ++= Seq(
       Dependencies.scalaStewardMillPlugin
+    )
+  )
+
+lazy val ghAppFacade = myCrossProject("gh-app-facade")
+  .dependsOn(core)
+  .settings(
+    libraryDependencies ++= Seq(
+      Dependencies.bcprovJdk15to18,
+      Dependencies.jjwtApi,
+      Dependencies.jjwtImpl % Runtime,
+      Dependencies.jjwtJackson % Runtime
     )
   )
 

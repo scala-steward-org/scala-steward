@@ -27,6 +27,7 @@ import org.scalasteward.core.application.Config._
 import org.scalasteward.core.data.Resolver
 import org.scalasteward.core.forge.ForgeType
 import org.scalasteward.core.forge.ForgeType.{AzureRepos, GitHub}
+import org.scalasteward.core.forge.github.GitHubApp
 import org.scalasteward.core.git.Author
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.util.dateTime.renderFiniteDuration
@@ -290,6 +291,21 @@ object Cli {
       GitLabCfg.apply
     )
 
+  private val githubAppId: Opts[Long] =
+    option[Long](
+      "github-app-id",
+      "GitHub application id. Repos accessible by this app are added to the repos in repos.md. git-ask-pass is still required."
+    )
+
+  private val githubAppKeyFile: Opts[File] =
+    option[File](
+      "github-app-key-file",
+      "GitHub application key file. Repos accessible by this app are added to the repos in repos.md. git-ask-pass is still required."
+    )
+
+  private val gitHubApp: Opts[Option[GitHubApp]] =
+    (githubAppId, githubAppKeyFile).mapN(GitHubApp.apply).orNone
+
   private val azureReposOrganization: Opts[Option[String]] =
     option[String](
       "azure-repos-organization",
@@ -336,6 +352,7 @@ object Cli {
     bitbucketServerCfg,
     gitLabCfg,
     azureReposCfg,
+    gitHubApp,
     urlCheckerTestUrls,
     defaultMavenRepo,
     refreshBackoffPeriod

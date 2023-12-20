@@ -26,6 +26,7 @@ import org.scalasteward.core.application.Config._
 import org.scalasteward.core.data.Resolver
 import org.scalasteward.core.forge.ForgeType
 import org.scalasteward.core.forge.data.AuthenticatedUser
+import org.scalasteward.core.forge.github.GitHubApp
 import org.scalasteward.core.git.Author
 import org.scalasteward.core.io.{ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util
@@ -65,6 +66,7 @@ final case class Config(
     bitbucketServerCfg: BitbucketServerCfg,
     gitLabCfg: GitLabCfg,
     azureReposCfg: AzureReposCfg,
+    githubApp: Option[GitHubApp],
     urlCheckerTestUrls: Nel[Uri],
     defaultResolver: Resolver,
     refreshBackoffPeriod: FiniteDuration
