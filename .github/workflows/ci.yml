@@ -79,11 +79,11 @@ jobs:
 
       - name: Make target directories
         if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
-        run: mkdir -p target modules/docs/.jvm/target modules/dummy/.jvm/target modules/core/.jvm/target modules/benchmark/.jvm/target project/target
+        run: mkdir -p target modules/gh-app-facade/.jvm/target modules/docs/.jvm/target modules/dummy/.jvm/target modules/core/.jvm/target modules/benchmark/.jvm/target project/target
 
       - name: Compress target directories
         if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
-        run: tar cf targets.tar target modules/docs/.jvm/target modules/dummy/.jvm/target modules/core/.jvm/target modules/benchmark/.jvm/target project/target
+        run: tar cf targets.tar target modules/gh-app-facade/.jvm/target modules/docs/.jvm/target modules/dummy/.jvm/target modules/core/.jvm/target modules/benchmark/.jvm/target project/target
 
       - name: Upload target directories
         if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))

@@ -93,7 +93,7 @@ ThisBuild / tpolecatDefaultOptionsMode := {
 
 lazy val root = project
   .in(file("."))
-  .aggregate(benchmark.jvm, core.jvm, docs.jvm, dummy.jvm)
+  .aggregate(benchmark.jvm, core.jvm, docs.jvm, dummy.jvm, ghAppFacade.jvm)
   .settings(commonSettings)
   .settings(noPublishSettings)
 
