@@ -359,11 +359,11 @@ object Cli {
   val command: Command[Usage] =
     Command("scala-steward", "")(regular.orElse(validateRepoConfig))
 
-  sealed trait ParseResult extends Product with Serializable
+  sealed trait ParseResult[+A] extends Product with Serializable
   object ParseResult {
-    final case class Success(usage: Usage) extends ParseResult
-    final case class Help(help: String) extends ParseResult
-    final case class Error(error: String) extends ParseResult
+    final case class Success[A](a: A) extends ParseResult[A]
+    final case class Help(help: String) extends ParseResult[Nothing]
+    final case class Error(error: String) extends ParseResult[Nothing]
   }
 
   sealed trait Usage extends Product with Serializable
@@ -372,7 +372,7 @@ object Cli {
     final case class ValidateRepoConfig(file: File) extends Usage
   }
 
-  def parseArgs(args: List[String]): ParseResult =
+  def parseArgs(args: List[String]): ParseResult[Usage] =
     command.parse(args) match {
       case Left(help) if help.errors.isEmpty => ParseResult.Help(help.toString)
       case Left(help)                        => ParseResult.Error(help.toString)

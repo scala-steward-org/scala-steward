@@ -26,7 +26,7 @@ import org.scalasteward.core.util._
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
-final class Context[F[_]](implicit
+final class FacadeContext[F[_]](implicit
     val facadeAlg: FacadeAlg[F],
     val fileAlg: FileAlg[F],
     val httpJsonClient: HttpJsonClient[F],
@@ -34,8 +34,8 @@ final class Context[F[_]](implicit
     val workspaceAlg: WorkspaceAlg[F]
 )
 
-object Context {
-  def step0[F[_]](config: Config)(implicit F: Async[F]): Resource[F, Context[F]] =
+object FacadeContext {
+  def step0[F[_]](config: FacadeConfig)(implicit F: Async[F]): Resource[F, FacadeContext[F]] =
     for {
       logger <- Resource.eval(Slf4jLogger.fromName[F]("org.scalasteward.ghappfacade"))
       userAgent <- Resource.eval(F.fromEither(`User-Agent`.parse(1)(userAgentString)))
@@ -48,19 +48,19 @@ object Context {
       context = step1(config)(client, fileAlg, logger, workspaceAlg, F)
     } yield context
 
-  private def step1[F[_]](config: Config)(implicit
+  private def step1[F[_]](config: FacadeConfig)(implicit
       client: Client[F],
       fileAlg: FileAlg[F],
       logger: Logger[F],
       workspaceAlg: WorkspaceAlg[F],
       F: Async[F]
-  ): Context[F] = {
+  ): FacadeContext[F] = {
     implicit val gitHubAuthAlg: GitHubAuthAlg[F] = GitHubAuthAlg.create[F]
     implicit val httpJsonClient: HttpJsonClient[F] = new HttpJsonClient[F]
     implicit val gitHubAppApiAlg: GitHubAppApiAlg[F] =
       new GitHubAppApiAlg[F](config.gitHubApiHost)
     implicit val facadeAlg: FacadeAlg[F] = new FacadeAlg[F](config)
-    new Context[F]
+    new FacadeContext[F]
   }
 
   private val userAgentString: String =

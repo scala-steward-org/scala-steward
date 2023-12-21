@@ -19,7 +19,7 @@ package org.scalasteward.ghappfacade
 import better.files.File
 import org.http4s.Uri
 
-final case class Config(
+final case class FacadeConfig(
     workspace: File,
     gitHubApiHost: Uri,
     gitHubApp: GitHubApp

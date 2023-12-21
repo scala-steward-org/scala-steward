@@ -25,7 +25,7 @@ import org.scalasteward.core.io.FileAlg
 import org.typelevel.log4cats.Logger
 import scala.concurrent.duration._
 
-final class FacadeAlg[F[_]](config: Config)(implicit
+final class FacadeAlg[F[_]](config: FacadeConfig)(implicit
     fileAlg: FileAlg[F],
     gitHubAppApiAlg: GitHubAppApiAlg[F],
     gitHubAuthAlg: GitHubAuthAlg[F],

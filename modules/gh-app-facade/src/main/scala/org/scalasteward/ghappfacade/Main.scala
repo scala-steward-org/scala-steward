@@ -19,15 +19,17 @@ package org.scalasteward.ghappfacade
 import cats.effect.std.Console
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.syntax.all._
+import org.scalasteward.core.application.Cli.ParseResult
 
 object Main extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
-    val (facadeArgs, stewardArgs) = args.span(_ =!= "--")
-    Cli.parseArgs(facadeArgs) match {
-      case Cli.ParseResult.Success(config) =>
-        Context.step0[IO](config).use(_.facadeAlg.runF(stewardArgs.drop(1))).as(ExitCode.Success)
-      case Cli.ParseResult.Help(help)   => Console[IO].println(help).as(ExitCode.Success)
-      case Cli.ParseResult.Error(error) => Console[IO].errorln(error).as(ExitCode.Error)
+    val (facadeArgs, rest) = args.span(_ =!= "--")
+    val stewardArgs = rest.drop(1)
+    FacadeCli.parseArgs(facadeArgs) match {
+      case ParseResult.Success(config) =>
+        FacadeContext.step0[IO](config).use(_.facadeAlg.runF(stewardArgs)).as(ExitCode.Success)
+      case ParseResult.Help(help)   => Console[IO].println(help).as(ExitCode.Success)
+      case ParseResult.Error(error) => Console[IO].errorln(error).as(ExitCode.Error)
     }
   }
 }

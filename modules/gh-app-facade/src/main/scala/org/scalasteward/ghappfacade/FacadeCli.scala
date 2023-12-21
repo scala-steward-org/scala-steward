@@ -21,10 +21,10 @@ import cats.syntax.all._
 import com.monovore.decline.Opts.option
 import com.monovore.decline._
 import org.http4s.Uri
-import org.scalasteward.core.application.Cli.{fileArgument, uriArgument, workspace}
+import org.scalasteward.core.application.Cli.{fileArgument, uriArgument, workspace, ParseResult}
 import org.scalasteward.core.forge.ForgeType.GitHub
 
-object Cli {
+object FacadeCli {
   private val githubApiHost: Opts[Uri] =
     option[Uri]("github-api-host", s"GitHub API URL; default: ${GitHub.publicApiBaseUrl}")
       .withDefault(GitHub.publicApiBaseUrl)
@@ -38,20 +38,13 @@ object Cli {
   private val gitHubApp: Opts[GitHubApp] =
     (githubAppId, githubAppKeyFile).mapN(GitHubApp.apply)
 
-  private val config: Opts[Config] =
-    (workspace, githubApiHost, gitHubApp).mapN(Config.apply)
+  private val config: Opts[FacadeConfig] =
+    (workspace, githubApiHost, gitHubApp).mapN(FacadeConfig.apply)
 
-  private val command: Command[Config] =
+  private val command: Command[FacadeConfig] =
     Command("scala-steward-gh-app-facade", "")(config)
 
-  sealed trait ParseResult extends Product with Serializable
-  object ParseResult {
-    final case class Success(config: Config) extends ParseResult
-    final case class Help(help: String) extends ParseResult
-    final case class Error(error: String) extends ParseResult
-  }
-
-  def parseArgs(args: List[String]): ParseResult =
+  def parseArgs(args: List[String]): ParseResult[FacadeConfig] =
     command.parse(args) match {
       case Left(help) if help.errors.isEmpty => ParseResult.Help(help.toString)
       case Left(help)                        => ParseResult.Error(help.toString)
