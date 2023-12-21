@@ -17,7 +17,6 @@
 package org.scalasteward.ghappfacade
 
 import cats.effect._
-import cats.effect.std.Console
 import eu.timepit.refined.auto._
 import org.http4s.client.Client
 import org.http4s.headers.`User-Agent`
@@ -36,10 +35,7 @@ final class Context[F[_]](implicit
 )
 
 object Context {
-  def step0[F[_]](config: Config)(implicit
-      console: Console[F],
-      F: Async[F]
-  ): Resource[F, Context[F]] =
+  def step0[F[_]](config: Config)(implicit F: Async[F]): Resource[F, Context[F]] =
     for {
       logger <- Resource.eval(Slf4jLogger.fromName[F]("org.scalasteward.ghappfacade"))
       userAgent <- Resource.eval(F.fromEither(`User-Agent`.parse(1)(userAgentString)))
@@ -49,12 +45,11 @@ object Context {
       client <- ClientConfiguration.build(ClientConfiguration.BuilderMiddleware.default, middleware)
       fileAlg = FileAlg.create(logger, F)
       workspaceAlg = WorkspaceAlg.create(config.workspace)(fileAlg, logger, F)
-      context = step1(config)(client, console, fileAlg, logger, workspaceAlg, F)
+      context = step1(config)(client, fileAlg, logger, workspaceAlg, F)
     } yield context
 
   private def step1[F[_]](config: Config)(implicit
       client: Client[F],
-      console: Console[F],
       fileAlg: FileAlg[F],
       logger: Logger[F],
       workspaceAlg: WorkspaceAlg[F],

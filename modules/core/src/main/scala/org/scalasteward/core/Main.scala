@@ -25,7 +25,8 @@ object Main extends IOApp {
   override def run(args: List[String]): IO[ExitCode] =
     runF[IO](args)
 
-  def runF[F[_]](args: List[String])(implicit console: Console[F], F: Async[F]): F[ExitCode] =
+  def runF[F[_]](args: List[String])(implicit F: Async[F]): F[ExitCode] = {
+    val console = Console.make[F]
     Cli.parseArgs(args) match {
       case Cli.ParseResult.Success(Cli.Usage.Regular(config)) =>
         Context.step0[F](config).use(_.stewardAlg.runF)
@@ -34,4 +35,5 @@ object Main extends IOApp {
       case Cli.ParseResult.Help(help)   => console.println(help).as(ExitCode.Success)
       case Cli.ParseResult.Error(error) => console.errorln(error).as(ExitCode.Error)
     }
+  }
 }

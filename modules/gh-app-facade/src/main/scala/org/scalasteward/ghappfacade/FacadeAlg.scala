@@ -17,9 +17,7 @@
 package org.scalasteward.ghappfacade
 
 import cats.effect.Async
-import cats.effect.std.Console
 import cats.syntax.all._
-import java.nio.file.Files
 import org.scalasteward.core.application.{Cli => CoreCli}
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.ForgeType
@@ -28,7 +26,6 @@ import org.typelevel.log4cats.Logger
 import scala.concurrent.duration._
 
 final class FacadeAlg[F[_]](config: Config)(implicit
-    console: Console[F],
     fileAlg: FileAlg[F],
     gitHubAppApiAlg: GitHubAppApiAlg[F],
     gitHubAuthAlg: GitHubAuthAlg[F],
