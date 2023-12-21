@@ -13,6 +13,7 @@ val gitHubOwner = "scala-steward-org"
 val gitHubUrl = s"https://github.com/$gitHubOwner/$projectName"
 val mainBranch = "main"
 val gitHubUserContent = s"https://raw.githubusercontent.com/$gitHubOwner/$projectName/$mainBranch"
+val gitAuthorEmail = s"me@$projectName.org"
 
 val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
   "benchmark" -> List(JVMPlatform),
@@ -280,8 +281,10 @@ lazy val ghAppFacade = myCrossProject("gh-app-facade")
       Dependencies.bcprovJdk15to18,
       Dependencies.jjwtApi,
       Dependencies.jjwtImpl % Runtime,
-      Dependencies.jjwtJackson % Runtime
-    )
+      Dependencies.jjwtJackson % Runtime,
+      Dependencies.logbackClassic % Runtime
+    ),
+    Compile / run / fork := true
   )
 
 /// settings
@@ -440,7 +443,7 @@ runSteward := Def.taskDyn {
   val args = Seq(
     Seq("--workspace", s"$projectDir/workspace"),
     Seq("--repos-file", s"$projectDir/repos.md"),
-    Seq("--git-author-email", s"me@$projectName.org"),
+    Seq("--git-author-email", gitAuthorEmail),
     Seq("--forge-login", projectName),
     Seq("--git-ask-pass", s"$home/.github/askpass/$projectName.sh"),
     Seq("--whitelist", s"$home/.cache/coursier"),
@@ -461,6 +464,21 @@ runValidateRepoConfig := Def.taskDyn {
     Seq("validate-repo-config", s"$projectDir/.scala-steward.conf")
   ).flatten.mkString(" ", " ", "")
   (core.jvm / Compile / run).toTask(args)
+}.value
+
+lazy val runGitHubApp = taskKey[Unit]("")
+runGitHubApp := Def.taskDyn {
+  val projectDir = (LocalRootProject / baseDirectory).value
+  val args = Seq(
+    Seq("--workspace", s"$projectDir/workspace"),
+    Seq("--github-app-id", "???"),
+    Seq("--github-app-key-file", "???"),
+    Seq("--"),
+    Seq("--git-author-email", gitAuthorEmail),
+    Seq("--forge-login", projectName + "[bot]"),
+    Seq("--add-labels")
+  ).flatten.mkString(" ", " ", "")
+  (ghAppFacade.jvm / Compile / run).toTask(args)
 }.value
 
 /// commands

@@ -36,11 +36,15 @@ object Cli {
   final case class EnvVar(name: String, value: String)
 
   object name {
+    val doNotFork = "do-not-fork"
     val forgeApiHost = "forge-api-host"
     val forgeLogin = "forge-login"
     val forgeType = "forge-type"
+    val gitAskPass = "git-ask-pass"
     val maxBufferSize = "max-buffer-size"
     val processTimeout = "process-timeout"
+    val reposFile = "repos-file"
+    val workspace = "workspace"
   }
 
   implicit val envVarArgument: Argument[EnvVar] =
@@ -72,10 +76,10 @@ object Cli {
   private val multiple = "(can be used multiple times)"
 
   val workspace: Opts[File] =
-    option[File]("workspace", "Location for cache and temporary files")
+    option[File](name.workspace, "Location for cache and temporary files")
 
   private val reposFiles: Opts[Nel[Uri]] =
-    options[Uri]("repos-file", s"A markdown formatted file with a repository list $multiple")
+    options[Uri](name.reposFile, s"A markdown formatted file with a repository list $multiple")
 
   private val gitAuthorName: Opts[String] = {
     val default = "Scala Steward"
@@ -93,7 +97,7 @@ object Cli {
     (gitAuthorName, gitAuthorEmail, gitAuthorSigningKey).mapN(Author.apply)
 
   private val gitAskPass: Opts[File] =
-    option[File]("git-ask-pass", "An executable file that returns the git credentials")
+    option[File](name.gitAskPass, "An executable file that returns the git credentials")
 
   private val signCommits: Opts[Boolean] =
     flag("sign-commits", "Whether to sign commits; default: false").orFalse
@@ -137,7 +141,10 @@ object Cli {
     option[String](name.forgeLogin, "The user name for the forge").orElse(vcsLogin)
 
   private val doNotFork: Opts[Boolean] =
-    flag("do-not-fork", "Whether to not push the update branches to a fork; default: false").orFalse
+    flag(
+      name.doNotFork,
+      "Whether to not push the update branches to a fork; default: false"
+    ).orFalse
 
   private val addPrLabels: Opts[Boolean] =
     flag(

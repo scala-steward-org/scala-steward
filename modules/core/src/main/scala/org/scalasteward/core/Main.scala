@@ -17,17 +17,21 @@
 package org.scalasteward.core
 
 import cats.effect.std.Console
-import cats.effect.{ExitCode, IO, IOApp}
+import cats.effect.{Async, ExitCode, IO, IOApp}
+import cats.syntax.all._
 import org.scalasteward.core.application.{Cli, Context, ValidateRepoConfigContext}
 
 object Main extends IOApp {
   override def run(args: List[String]): IO[ExitCode] =
+    runF[IO](args)
+
+  def runF[F[_]](args: List[String])(implicit console: Console[F], F: Async[F]): F[ExitCode] =
     Cli.parseArgs(args) match {
       case Cli.ParseResult.Success(Cli.Usage.Regular(config)) =>
-        Context.step0[IO](config).use(_.stewardAlg.runF)
+        Context.step0[F](config).use(_.stewardAlg.runF)
       case Cli.ParseResult.Success(Cli.Usage.ValidateRepoConfig(file)) =>
-        ValidateRepoConfigContext.step0[IO].flatMap(_.validateRepoConfigAlg.validateAndReport(file))
-      case Cli.ParseResult.Help(help)   => Console[IO].println(help).as(ExitCode.Success)
-      case Cli.ParseResult.Error(error) => Console[IO].errorln(error).as(ExitCode.Error)
+        ValidateRepoConfigContext.step0[F].flatMap(_.validateRepoConfigAlg.validateAndReport(file))
+      case Cli.ParseResult.Help(help)   => console.println(help).as(ExitCode.Success)
+      case Cli.ParseResult.Error(error) => console.errorln(error).as(ExitCode.Error)
     }
 }
