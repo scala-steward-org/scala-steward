@@ -16,6 +16,7 @@
 
 package org.scalasteward.ghappfacade
 
+import cats.effect.syntax.all._
 import cats.effect.Async
 import cats.syntax.all._
 import org.scalasteward.core.application.{Cli => CoreCli}
@@ -65,7 +66,10 @@ final class FacadeAlg[F[_]](config: FacadeConfig)(implicit
         s"--${CoreCli.name.forgeType}" :: ForgeType.GitHub.asString ::
         s"--${CoreCli.name.doNotFork}" ::
         stewardArgs
-      _ <- org.scalasteward.core.Main.runF[F](args)
+      _ <- org.scalasteward.core.Main.runF[F](args).guarantee {
+        fileAlg.deleteForce(reposFile) >>
+          fileAlg.deleteForce(askPassFile)
+      }
     } yield ()
 
   private def repositoryToRepo(repository: Repository): F[Option[Repo]] =
