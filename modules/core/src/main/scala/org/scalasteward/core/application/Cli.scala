@@ -71,7 +71,7 @@ object Cli {
 
   private val multiple = "(can be used multiple times)"
 
-  private val workspace: Opts[File] =
+  val workspace: Opts[File] =
     option[File]("workspace", "Location for cache and temporary files")
 
   private val reposFiles: Opts[Nel[Uri]] =

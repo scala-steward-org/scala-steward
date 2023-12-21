@@ -105,7 +105,7 @@ object Context {
       )
       fileAlg = FileAlg.create(logger, F)
       processAlg = ProcessAlg.create(config.processCfg)(logger, F)
-      workspaceAlg = WorkspaceAlg.create(config)(fileAlg, logger, F)
+      workspaceAlg = WorkspaceAlg.create(config.workspace)(fileAlg, logger, F)
       context <- Resource.eval {
         step1(config)(
           defaultClient,

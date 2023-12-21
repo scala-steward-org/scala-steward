@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.forge.github
+package org.scalasteward.ghappfacade
 
 import better.files.File
 import cats.effect.Sync
 import cats.implicits._
 import io.jsonwebtoken.{Jwts, SignatureAlgorithm}
-import org.bouncycastle.jce.provider.BouncyCastleProvider
-import org.bouncycastle.util.io.pem.PemReader
-
 import java.io.FileReader
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.{KeyFactory, PrivateKey, Security}
 import java.util.Date
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.bouncycastle.util.io.pem.PemReader
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Using
 

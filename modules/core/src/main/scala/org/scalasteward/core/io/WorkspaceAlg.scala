@@ -19,7 +19,6 @@ package org.scalasteward.core.io
 import better.files.File
 import cats.Monad
 import cats.syntax.all._
-import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.BuildRoot
 import org.scalasteward.core.data.Repo
 import org.typelevel.log4cats.Logger
@@ -40,17 +39,17 @@ object WorkspaceAlg {
 
   val RunSummaryFileName: String = "run-summary.md"
 
-  def create[F[_]](config: Config)(implicit
+  def create[F[_]](workspace: File)(implicit
       fileAlg: FileAlg[F],
       logger: Logger[F],
       F: Monad[F]
   ): WorkspaceAlg[F] =
     new WorkspaceAlg[F] {
       private val reposDir: File =
-        config.workspace / "repos"
+        workspace / "repos"
 
       private val runSummary: File =
-        config.workspace / RunSummaryFileName
+        workspace / RunSummaryFileName
 
       /* We don't want the `ensureExists()` side-effect for these files - here, we only want to delete them,
        * not accidentally re-create them while trying to delete them.
@@ -69,7 +68,7 @@ object WorkspaceAlg {
         )
 
       override def rootDir: F[File] =
-        fileAlg.ensureExists(config.workspace)
+        fileAlg.ensureExists(workspace)
 
       override def runSummaryFile: F[File] =
         fileAlg.ensureExists(runSummary.parent).map(_ => runSummary)

@@ -1,4 +1,4 @@
-package org.scalasteward.core.forge.github
+package org.scalasteward.ghappfacade
 
 import better.files.File
 import cats.effect.IO

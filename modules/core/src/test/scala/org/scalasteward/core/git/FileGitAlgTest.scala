@@ -275,7 +275,7 @@ object FileGitAlgTest {
   }
 
   implicit val ioWorkspaceAlg: WorkspaceAlg[IO] =
-    WorkspaceAlg.create[IO](config)
+    WorkspaceAlg.create[IO](config.workspace)
 
   implicit val ioGitAlg: GenGitAlg[IO, File] =
     new FileGitAlg[IO](config.gitCfg).contramapRepoF(IO.pure)

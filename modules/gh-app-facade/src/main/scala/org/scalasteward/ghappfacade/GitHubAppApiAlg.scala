@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.forge.github
+package org.scalasteward.ghappfacade
 
 import cats.effect.Concurrent
 import cats.syntax.all._

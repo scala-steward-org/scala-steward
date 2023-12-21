@@ -1,4 +1,4 @@
-package org.scalasteward.core.forge.github
+package org.scalasteward.ghappfacade
 
 import io.circe.literal._
 import munit.CatsEffectSuite
