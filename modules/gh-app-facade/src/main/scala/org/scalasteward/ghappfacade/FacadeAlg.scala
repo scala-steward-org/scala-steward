@@ -16,13 +16,13 @@
 
 package org.scalasteward.ghappfacade
 
-import cats.effect.syntax.all._
 import cats.effect.Async
+import cats.effect.syntax.all._
 import cats.syntax.all._
 import org.scalasteward.core.application.{Cli => CoreCli}
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.ForgeType
-import org.scalasteward.core.io.FileAlg
+import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.typelevel.log4cats.Logger
 import scala.concurrent.duration._
 
@@ -31,10 +31,11 @@ final class FacadeAlg[F[_]](config: FacadeConfig)(implicit
     gitHubAppApiAlg: GitHubAppApiAlg[F],
     gitHubAuthAlg: GitHubAuthAlg[F],
     logger: Logger[F],
+    workspaceAlg: WorkspaceAlg[F],
     F: Async[F]
 ) {
-  private def createJWT: F[String] =
-    gitHubAuthAlg.createJWT(config.gitHubApp, 2.minutes)
+  def runF(stewardArgs: List[String]): F[Unit] =
+    stewardAllInstallations(stewardArgs)
 
   private def stewardAllInstallations(stewardArgs: List[String]): F[Unit] =
     createJWT.flatMap { jwt =>
@@ -42,6 +43,9 @@ final class FacadeAlg[F[_]](config: FacadeConfig)(implicit
         installations.traverse_(installation => stewardInstallation(stewardArgs, installation))
       }
     }
+
+  private def createJWT: F[String] =
+    gitHubAuthAlg.createJWT(config.gitHubApp, 2.minutes)
 
   private def stewardInstallation(
       stewardArgs: List[String],
@@ -53,22 +57,23 @@ final class FacadeAlg[F[_]](config: FacadeConfig)(implicit
       repos <- gitHubAppApiAlg
         .repositories(token.token)
         .flatMap(_.repositories.traverseFilter(repositoryToRepo))
+      workspace <- workspaceAlg.rootDir
       reposContent = repos.map(r => "- " + r.show).mkString("\n")
-      reposFile = config.workspace / s"repos_${installation.id}.md"
+      reposFile = workspace / s"repos_${installation.id}.md"
       _ <- fileAlg.writeFile(reposFile, reposContent)
       askPassContent = s"""#!/bin/sh\necho ${token.token}"""
-      askPassFile = config.workspace / s"ask-pass-${installation.id}.sh"
+      askPassFile = workspace / s"ask-pass-${installation.id}.sh"
       _ <- fileAlg.writeFile(askPassFile, askPassContent)
       _ <- F.delay(askPassFile.toJava.setExecutable(true))
-      args = s"--${CoreCli.name.workspace}" :: config.workspace.pathAsString ::
-        s"--${CoreCli.name.reposFile}" :: reposFile.pathAsString ::
-        s"--${CoreCli.name.gitAskPass}" :: askPassFile.pathAsString ::
-        s"--${CoreCli.name.forgeType}" :: ForgeType.GitHub.asString ::
-        s"--${CoreCli.name.doNotFork}" ::
-        stewardArgs
+      args = List(
+        toArg(CoreCli.name.workspace, workspace.pathAsString),
+        toArg(CoreCli.name.reposFile, reposFile.pathAsString),
+        toArg(CoreCli.name.gitAskPass, askPassFile.pathAsString),
+        toArg(CoreCli.name.forgeType, ForgeType.GitHub.asString),
+        toArg(CoreCli.name.doNotFork)
+      ).flatten ++ stewardArgs
       _ <- org.scalasteward.core.Main.runF[F](args).guarantee {
-        fileAlg.deleteForce(reposFile) >>
-          fileAlg.deleteForce(askPassFile)
+        List(reposFile, askPassFile).traverse_(fileAlg.deleteForce)
       }
     } yield ()
 
@@ -78,6 +83,9 @@ final class FacadeAlg[F[_]](config: FacadeConfig)(implicit
       case _                  => logger.error(s"Invalid repo $repository").as(None)
     }
 
-  def runF(stewardArgs: List[String]): F[Unit] =
-    stewardAllInstallations(stewardArgs)
+  private def toArg(name: String): List[String] =
+    List(s"--$name")
+
+  private def toArg(name: String, value: String): List[String] =
+    toArg(name) :+ value
 }
