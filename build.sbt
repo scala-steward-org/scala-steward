@@ -469,10 +469,11 @@ runValidateRepoConfig := Def.taskDyn {
 lazy val runGitHubApp = taskKey[Unit]("")
 runGitHubApp := Def.taskDyn {
   val projectDir = (LocalRootProject / baseDirectory).value
+  val ghAppDir = projectDir.getParentFile / "gh-app"
   val args = Seq(
     Seq("--workspace", s"$projectDir/workspace"),
-    Seq("--github-app-id", "???"),
-    Seq("--github-app-key-file", "???"),
+    Seq("--github-app-id", IO.read(ghAppDir / "scala-steward.app-id.txt").trim),
+    Seq("--github-app-key-file", s"$ghAppDir/scala-steward.private-key.pem"),
     Seq("--"),
     Seq("--git-author-email", gitAuthorEmail),
     Seq("--forge-login", projectName + "[bot]"),
