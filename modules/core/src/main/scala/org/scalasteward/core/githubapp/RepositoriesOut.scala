@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.forge.github
+package org.scalasteward.core.githubapp
 
 import io.circe.Decoder
 import io.circe.generic.semiauto.deriveDecoder

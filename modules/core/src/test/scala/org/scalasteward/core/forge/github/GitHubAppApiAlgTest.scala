@@ -6,6 +6,7 @@ import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.headers.Authorization
+import org.scalasteward.core.githubapp.{GitHubAppApiAlg, InstallationOut, RepositoriesOut, Repository, TokenOut}
 import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context.httpJsonClient
 import org.scalasteward.core.mock.{MockEff, MockState}

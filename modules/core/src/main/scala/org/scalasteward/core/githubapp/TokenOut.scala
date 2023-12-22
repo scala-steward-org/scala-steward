@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.forge.github
+package org.scalasteward.core.githubapp
 
 import io.circe.Decoder
 import io.circe.generic.semiauto.deriveDecoder
 
-case class InstallationOut(id: Long)
-object InstallationOut {
-  implicit val installationDecoder: Decoder[InstallationOut] = deriveDecoder
+case class TokenOut(token: String)
+object TokenOut {
+  implicit val tokenDecoder: Decoder[TokenOut] = deriveDecoder
 }

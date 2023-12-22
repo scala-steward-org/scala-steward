@@ -3,7 +3,7 @@ package org.scalasteward.core.forge.github
 import better.files.File
 import cats.effect.IO
 import munit.CatsEffectSuite
-
+import org.scalasteward.core.githubapp.GitHubAuthAlg
 import scala.concurrent.duration._
 
 class GitHubAuthAlgTest extends CatsEffectSuite {

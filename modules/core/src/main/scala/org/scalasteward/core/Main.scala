@@ -23,6 +23,8 @@ import org.scalasteward.core.application.{Cli, Context, ValidateRepoConfigContex
 object Main extends IOApp {
   override def run(args: List[String]): IO[ExitCode] =
     Cli.parseArgs(args) match {
+      case Cli.ParseResult.Success(Cli.Usage.Regular(config)) if config.githubApp.nonEmpty =>
+        Context.step0[IO](config).use(_.gitHubAppAlg.runF)
       case Cli.ParseResult.Success(Cli.Usage.Regular(config)) =>
         Context.step0[IO](config).use(_.stewardAlg.runF)
       case Cli.ParseResult.Success(Cli.Usage.ValidateRepoConfig(file)) =>

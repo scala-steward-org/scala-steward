@@ -13,6 +13,7 @@ val gitHubOwner = "scala-steward-org"
 val gitHubUrl = s"https://github.com/$gitHubOwner/$projectName"
 val mainBranch = "main"
 val gitHubUserContent = s"https://raw.githubusercontent.com/$gitHubOwner/$projectName/$mainBranch"
+val gitAuthorEmail = s"me@$projectName.org"
 
 val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
   "benchmark" -> List(JVMPlatform),
@@ -432,7 +433,7 @@ runSteward := Def.taskDyn {
   val args = Seq(
     Seq("--workspace", s"$projectDir/workspace"),
     Seq("--repos-file", s"$projectDir/repos.md"),
-    Seq("--git-author-email", s"me@$projectName.org"),
+    Seq("--git-author-email", gitAuthorEmail),
     Seq("--forge-login", projectName),
     Seq("--git-ask-pass", s"$home/.github/askpass/$projectName.sh"),
     Seq("--whitelist", s"$home/.cache/coursier"),
@@ -442,6 +443,23 @@ runSteward := Def.taskDyn {
     Seq("--whitelist", s"$home/.m2"),
     Seq("--whitelist", s"$home/.mill"),
     Seq("--whitelist", s"$home/.sbt")
+  ).flatten.mkString(" ", " ", "")
+  (core.jvm / Compile / run).toTask(args)
+}.value
+
+lazy val runGitHubApp = taskKey[Unit]("")
+runGitHubApp := Def.taskDyn {
+  val projectDir = (LocalRootProject / baseDirectory).value
+  val ghAppDir = projectDir.getParentFile / "gh-app"
+  val args = Seq(
+    Seq("--workspace", s"$projectDir/workspace"),
+    Seq("--repos-file", s"file://$projectDir/workspace/gh-app-repos.md"),
+    Seq("--git-ask-pass", s"$projectDir/workspace/gh-app-askpass.sh"),
+    Seq("--github-app-id", IO.read(ghAppDir / "scala-steward.app-id.txt").trim),
+    Seq("--github-app-key-file", s"$ghAppDir/scala-steward.private-key.pem"),
+    Seq("--git-author-email", gitAuthorEmail),
+    Seq("--forge-login", projectName + "[bot]"),
+    Seq("--add-labels", "--do-not-fork")
   ).flatten.mkString(" ", " ", "")
   (core.jvm / Compile / run).toTask(args)
 }.value
