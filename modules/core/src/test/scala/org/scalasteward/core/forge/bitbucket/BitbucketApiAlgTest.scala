@@ -21,6 +21,7 @@ import org.scalasteward.core.mock.{MockEff, MockState}
 class BitbucketApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
   private val user = AuthenticatedUser("user", "pass")
+  private val userM = MockEff.pure(user)
 
   private val basicAuth = Authorization(BasicCredentials(user.login, user.accessToken))
   private val auth = HttpApp[MockEff] { request =>
@@ -209,7 +210,7 @@ class BitbucketApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
   private val forgeCfg = config.forgeCfg.copy(tpe = ForgeType.Bitbucket)
   private val bitbucketCfg = BitbucketCfg(useDefaultReviewers = true)
-  private val bitbucketApiAlg = ForgeSelection.forgeApiAlg[MockEff](forgeCfg, bitbucketCfg, user)
+  private val bitbucketApiAlg = ForgeSelection.forgeApiAlg[MockEff](forgeCfg, bitbucketCfg, userM)
 
   private val prUrl = uri"https://bitbucket.org/fthomas/base.g8/pullrequests/2"
   private val repo = Repo("fthomas", "base.g8")

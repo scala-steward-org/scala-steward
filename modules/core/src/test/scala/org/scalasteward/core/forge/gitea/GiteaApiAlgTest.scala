@@ -20,6 +20,7 @@ import org.scalasteward.core.mock.{MockEff, MockState}
 
 class GiteaApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   private val user = AuthenticatedUser("user", "pass")
+  private val userM = MockEff.pure(user)
   private val repo = Repo("foo", "baz")
 
   private val basicAuth = Authorization(BasicCredentials(user.login, user.accessToken))
@@ -61,7 +62,7 @@ class GiteaApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     tpe = ForgeType.Gitea,
     apiHost = config.forgeCfg.apiHost / "api" / "v1"
   )
-  private val giteaAlg = ForgeSelection.forgeApiAlg[MockEff](forgeCfg, GiteaCfg(), user)
+  private val giteaAlg = ForgeSelection.forgeApiAlg[MockEff](forgeCfg, GiteaCfg(), userM)
 
   test("getRepo") {
     giteaAlg

@@ -18,7 +18,7 @@ package org.scalasteward.core.forge
 
 import cats.effect.Temporal
 import cats.syntax.all._
-import cats.{Applicative, Parallel}
+import cats.{Applicative, Functor, Parallel}
 import org.http4s.headers.Authorization
 import org.http4s.{BasicCredentials, Header, Request}
 import org.scalasteward.core.application.Config
@@ -39,7 +39,7 @@ object ForgeSelection {
   def forgeApiAlg[F[_]: Parallel](
       forgeCfg: ForgeCfg,
       forgeSpecificCfg: ForgeSpecificCfg,
-      user: AuthenticatedUser
+      user: F[AuthenticatedUser]
   )(implicit
       httpJsonClient: HttpJsonClient[F],
       logger: Logger[F],
@@ -64,16 +64,19 @@ object ForgeSelection {
 
   def authenticate[F[_]](
       forgeType: ForgeType,
-      user: AuthenticatedUser
-  )(implicit F: Applicative[F]): Request[F] => F[Request[F]] =
-    forgeType match {
-      case AzureRepos      => _.putHeaders(basicAuth(user)).pure[F]
-      case Bitbucket       => _.putHeaders(basicAuth(user)).pure[F]
-      case BitbucketServer => _.putHeaders(basicAuth(user), xAtlassianToken).pure[F]
-      case GitHub          => _.putHeaders(basicAuth(user)).pure[F]
-      case GitLab          => _.putHeaders(Header.Raw(ci"Private-Token", user.accessToken)).pure[F]
-      case Gitea           => _.putHeaders(basicAuth(user)).pure[F]
-    }
+      user: F[AuthenticatedUser]
+  )(implicit F: Functor[F]): Request[F] => F[Request[F]] =
+    req =>
+      user.map { user =>
+        forgeType match {
+          case AzureRepos      => req.putHeaders(basicAuth(user))
+          case Bitbucket       => req.putHeaders(basicAuth(user))
+          case BitbucketServer => req.putHeaders(basicAuth(user), xAtlassianToken)
+          case GitHub          => req.putHeaders(basicAuth(user))
+          case GitLab          => req.putHeaders(Header.Raw(ci"Private-Token", user.accessToken))
+          case Gitea           => req.putHeaders(basicAuth(user))
+        }
+      }
 
   private def basicAuth(user: AuthenticatedUser): Authorization =
     Authorization(BasicCredentials(user.login, user.accessToken))
@@ -84,7 +87,7 @@ object ForgeSelection {
 
   def authenticateIfApiHost[F[_]](
       forgeCfg: ForgeCfg,
-      user: AuthenticatedUser
+      user: F[AuthenticatedUser]
   )(implicit F: Applicative[F]): Request[F] => F[Request[F]] =
     req => {
       val sameScheme = req.uri.scheme === forgeCfg.apiHost.scheme
