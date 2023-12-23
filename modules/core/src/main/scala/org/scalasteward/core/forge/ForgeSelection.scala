@@ -66,20 +66,20 @@ object ForgeSelection {
       forgeType: ForgeType,
       user: F[AuthenticatedUser]
   )(implicit F: Functor[F]): Request[F] => F[Request[F]] =
-    req =>
-      user.map { user =>
-        forgeType match {
-          case AzureRepos      => req.putHeaders(basicAuth(user))
-          case Bitbucket       => req.putHeaders(basicAuth(user))
-          case BitbucketServer => req.putHeaders(basicAuth(user), xAtlassianToken)
-          case GitHub          => req.putHeaders(basicAuth(user))
-          case GitLab          => req.putHeaders(Header.Raw(ci"Private-Token", user.accessToken))
-          case Gitea           => req.putHeaders(basicAuth(user))
-        }
-      }
+    forgeType match {
+      case AzureRepos      => req => user.map(u => req.putHeaders(basicAuth(u)))
+      case Bitbucket       => req => user.map(u => req.putHeaders(basicAuth(u)))
+      case BitbucketServer => req => user.map(u => req.putHeaders(basicAuth(u), xAtlassianToken))
+      case GitHub          => req => user.map(u => req.putHeaders(basicAuth(u)))
+      case GitLab          => req => user.map(u => req.putHeaders(privateToken(u)))
+      case Gitea           => req => user.map(u => req.putHeaders(basicAuth(u)))
+    }
 
   private def basicAuth(user: AuthenticatedUser): Authorization =
     Authorization(BasicCredentials(user.login, user.accessToken))
+
+  private def privateToken(user: AuthenticatedUser): Header.Raw =
+    Header.Raw(ci"Private-Token", user.accessToken)
 
   // Bypass the server-side XSRF check, see
   // https://github.com/scala-steward-org/scala-steward/pull/1863#issuecomment-754538364
