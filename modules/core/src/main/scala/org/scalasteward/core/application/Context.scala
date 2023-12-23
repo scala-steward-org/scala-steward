@@ -37,7 +37,7 @@ import org.scalasteward.core.edit.hooks.HookExecutor
 import org.scalasteward.core.edit.scalafix._
 import org.scalasteward.core.edit.update.ScannerAlg
 import org.scalasteward.core.forge.github.{GitHubAppApiAlg, GitHubAuthAlg}
-import org.scalasteward.core.forge.{ForgeApiAlg, ForgeRepoAlg, ForgeSelection}
+import org.scalasteward.core.forge.{ForgeApiAlg, ForgeAuthAlg, ForgeRepoAlg, ForgeSelection}
 import org.scalasteward.core.git.{GenGitAlg, GitAlg}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository, UpdateInfoUrlFinder}
@@ -130,7 +130,8 @@ object Context {
       F: Async[F]
   ): F[Context[F]] =
     for {
-      forgeUser <- config.forgeUser[F]
+      _ <- F.unit
+      forgeUser = new ForgeAuthAlg[F](config.gitCfg, config.forgeCfg).forgeUser
       artifactMigrationsLoader0 = new ArtifactMigrationsLoader[F]
       artifactMigrationsFinder0 <- artifactMigrationsLoader0.createFinder(config.artifactCfg)
       scalafixMigrationsLoader0 = new ScalafixMigrationsLoader[F]
