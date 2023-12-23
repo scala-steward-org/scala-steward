@@ -32,7 +32,7 @@ import org.typelevel.log4cats.Logger
 class BitbucketApiAlg[F[_]](
     config: ForgeCfg,
     bitbucketCfg: BitbucketCfg,
-    modify: Repo => Request[F] => F[Request[F]]
+    modify: Request[F] => F[Request[F]]
 )(implicit
     client: HttpJsonClient[F],
     logger: Logger[F],
@@ -42,13 +42,13 @@ class BitbucketApiAlg[F[_]](
 
   override def createFork(repo: Repo): F[RepoOut] =
     for {
-      fork <- client.post[RepositoryResponse](url.forks(repo), modify(repo)).recoverWith {
+      fork <- client.post[RepositoryResponse](url.forks(repo), modify).recoverWith {
         case UnexpectedResponse(_, _, _, Status.BadRequest, _) =>
-          client.get(url.repo(repo.copy(owner = config.login)), modify(repo))
+          client.get(url.repo(repo.copy(owner = config.login)), modify)
       }
       maybeParent <-
         fork.parent
-          .map(n => client.get[RepositoryResponse](url.repo(n), modify(n)))
+          .map(n => client.get[RepositoryResponse](url.repo(n), modify))
           .sequence[F, RepositoryResponse]
     } yield mapToRepoOut(fork, maybeParent)
 
@@ -65,7 +65,7 @@ class BitbucketApiAlg[F[_]](
     )
 
   private def getDefaultReviewers(repo: Repo): F[List[Reviewer]] =
-    client.get[DefaultReviewers](url.defaultReviewers(repo), modify(repo)).map(_.values)
+    client.get[DefaultReviewers](url.defaultReviewers(repo), modify).map(_.values)
 
   override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] = {
     val sourceBranchOwner = if (config.doNotFork) repo.owner else config.login
@@ -86,7 +86,7 @@ class BitbucketApiAlg[F[_]](
           )
         )
         .flatMap { payload =>
-          client.postWithBody(url.pullRequests(repo), payload, modify(repo))
+          client.postWithBody(url.pullRequests(repo), payload, modify)
         }
 
     for {
@@ -105,26 +105,26 @@ class BitbucketApiAlg[F[_]](
     logger.warn("Updating PRs is not yet supported for Bitbucket")
 
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
-    client.get(url.branch(repo, branch), modify(repo))
+    client.get(url.branch(repo, branch), modify)
 
   override def getRepo(repo: Repo): F[RepoOut] =
     for {
-      repo <- client.get[RepositoryResponse](url.repo(repo), modify(repo))
+      repo <- client.get[RepositoryResponse](url.repo(repo), modify)
       maybeParent <-
         repo.parent
-          .map(n => client.get[RepositoryResponse](url.repo(n), modify(n)))
+          .map(n => client.get[RepositoryResponse](url.repo(n), modify))
           .sequence[F, RepositoryResponse]
     } yield mapToRepoOut(repo, maybeParent)
 
   override def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]] =
     client
-      .get[Page[PullRequestOut]](url.listPullRequests(repo, head), modify(repo))
+      .get[Page[PullRequestOut]](url.listPullRequests(repo, head), modify)
       .map(_.values)
 
   override def closePullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut] =
     client.post[PullRequestOut](
       url.decline(repo, number),
-      modify(repo)
+      modify
     )
 
   override def commentPullRequest(
@@ -136,7 +136,7 @@ class BitbucketApiAlg[F[_]](
       .postWithBody[CreateComment, CreateComment](
         url.comments(repo, number),
         CreateComment(comment),
-        modify(repo)
+        modify
       )
       .map((cc: CreateComment) => Comment(cc.content.raw))
 

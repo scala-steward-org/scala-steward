@@ -18,6 +18,7 @@ package org.scalasteward.core.forge.github
 
 import cats.MonadThrow
 import cats.syntax.all._
+import io.circe.Json
 import org.http4s.{Request, Uri}
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.ForgeApiAlg
@@ -26,11 +27,10 @@ import org.scalasteward.core.forge.github.GitHubException._
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.HttpJsonClient
 import org.typelevel.log4cats.Logger
-import io.circe.Json
 
 final class GitHubApiAlg[F[_]](
     gitHubApiHost: Uri,
-    modify: Repo => Request[F] => F[Request[F]]
+    modify: Request[F] => F[Request[F]]
 )(implicit
     client: HttpJsonClient[F],
     logger: Logger[F],
@@ -40,7 +40,7 @@ final class GitHubApiAlg[F[_]](
 
   /** https://docs.github.com/en/rest/repos/forks?apiVersion=2022-11-28#create-a-fork */
   override def createFork(repo: Repo): F[RepoOut] =
-    client.post[RepoOut](url.forks(repo), modify(repo)).flatTap { repoOut =>
+    client.post[RepoOut](url.forks(repo), modify).flatTap { repoOut =>
       F.raiseWhen(repoOut.parent.exists(_.archived))(RepositoryArchived(repo))
     }
 
@@ -51,7 +51,7 @@ final class GitHubApiAlg[F[_]](
       .postWithBody[PullRequestOut, CreatePullRequestPayload](
         uri = url.pulls(repo),
         body = payload,
-        modify = modify(repo)
+        modify = modify
       )
       .adaptErr(SecondaryRateLimitExceeded.fromThrowable)
 
@@ -77,7 +77,7 @@ final class GitHubApiAlg[F[_]](
       .patchWithBody[PullRequestOut, UpdatePullRequestPayload](
         uri = url.pull(repo, number),
         body = payload,
-        modify = modify(repo)
+        modify = modify
       )
       .adaptErr(SecondaryRateLimitExceeded.fromThrowable)
 
@@ -91,24 +91,24 @@ final class GitHubApiAlg[F[_]](
 
   /** https://docs.github.com/en/rest/repos/branches?apiVersion=2022-11-28#get-branch */
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
-    client.get(url.branches(repo, branch), modify(repo))
+    client.get(url.branches(repo, branch), modify)
 
   /** https://docs.github.com/en/rest/repos?apiVersion=2022-11-28#get */
   override def getRepo(repo: Repo): F[RepoOut] =
-    client.get[RepoOut](url.repos(repo), modify(repo)).flatTap { repoOut =>
+    client.get[RepoOut](url.repos(repo), modify).flatTap { repoOut =>
       F.raiseWhen(repoOut.archived)(RepositoryArchived(repo))
     }
 
   /** https://docs.github.com/en/rest/pulls?apiVersion=2022-11-28#list-pull-requests */
   override def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]] =
-    client.get(url.listPullRequests(repo, head, base), modify(repo))
+    client.get(url.listPullRequests(repo, head, base), modify)
 
   /** https://docs.github.com/en/rest/pulls?apiVersion=2022-11-28#update-a-pull-request */
   override def closePullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut] =
     client.patchWithBody[PullRequestOut, UpdateState](
       url.pull(repo, number),
       UpdateState(PullRequestState.Closed),
-      modify(repo)
+      modify
     )
 
   /** https://docs.github.com/en/rest/issues?apiVersion=2022-11-28#create-an-issue-comment */
@@ -118,7 +118,7 @@ final class GitHubApiAlg[F[_]](
       comment: String
   ): F[Comment] =
     client
-      .postWithBody(url.comments(repo, number), Comment(comment), modify(repo))
+      .postWithBody(url.comments(repo, number), Comment(comment), modify)
 
   /** https://docs.github.com/en/rest/reference/issues?apiVersion=2022-11-28#add-labels-to-an-issue
     */
@@ -131,7 +131,7 @@ final class GitHubApiAlg[F[_]](
       .postWithBody[io.circe.Json, GitHubLabels](
         url.issueLabels(repo, number),
         GitHubLabels(labels),
-        modify(repo)
+        modify
       )
       .adaptErr(SecondaryRateLimitExceeded.fromThrowable)
       .void
@@ -145,7 +145,7 @@ final class GitHubApiAlg[F[_]](
       .postWithBody[Json, GitHubAssignees](
         url.assignees(repo, number),
         GitHubAssignees(assignees),
-        modify(repo)
+        modify
       )
       .void
       .handleErrorWith { error =>
@@ -161,7 +161,7 @@ final class GitHubApiAlg[F[_]](
       .postWithBody[Json, GitHubReviewers](
         url.reviewers(repo, number),
         GitHubReviewers(reviewers),
-        modify(repo)
+        modify
       )
       .void
       .handleErrorWith { error =>
