@@ -18,14 +18,17 @@ package org.scalasteward.core.forge.gitea
 
 import cats._
 import cats.implicits._
-import org.scalasteward.core.git.Branch
-import org.scalasteward.core.git.Sha1
-import org.scalasteward.core.util.HttpJsonClient
+import io.circe._
+import io.circe.generic.semiauto.{deriveCodec, deriveEncoder}
 import org.http4s.{Request, Uri}
 import org.scalasteward.core.application.Config.ForgeCfg
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.ForgeApiAlg
 import org.scalasteward.core.forge.data._
+import org.scalasteward.core.forge.gitea.GiteaApiAlg._
+import org.scalasteward.core.git.{Branch, Sha1}
+import org.scalasteward.core.util.uri._
+import org.scalasteward.core.util.{intellijThisImportIsUsed, HttpJsonClient}
 import org.typelevel.log4cats.Logger
 
 // docs
@@ -33,10 +36,6 @@ import org.typelevel.log4cats.Logger
 // - https://try.gitea.io/api/swagger
 // - https://codeberg.org/api/swagger
 object GiteaApiAlg {
-  import io.circe._
-  import io.circe.generic.semiauto.deriveCodec
-  import org.scalasteward.core.util.uri._
-  implicit val uriEncoder: Encoder[Uri] = Encoder[String].contramap[Uri](_.renderString)
 
   val DefaultLabelColor = "#e01060"
 
@@ -44,7 +43,7 @@ object GiteaApiAlg {
       name: Option[String], // name of the forked repository
       organization: Option[String] // organization name, if forking into an organization
   )
-  implicit val createForkOptionCodec: Encoder[CreateForkOption] = deriveCodec
+  implicit val createForkOptionEncoder: Encoder[CreateForkOption] = deriveEncoder
 
   case class User(
       login: String,
@@ -116,6 +115,8 @@ object GiteaApiAlg {
 
   case class AttachLabelReq(labels: Vector[Int])
   implicit val attachLabelReqCodec: Codec[AttachLabelReq] = deriveCodec
+
+  intellijThisImportIsUsed(uriEncoder)
 }
 
 final class GiteaApiAlg[F[_]: HttpJsonClient](
@@ -123,7 +124,6 @@ final class GiteaApiAlg[F[_]: HttpJsonClient](
     modify: Request[F] => F[Request[F]]
 )(implicit logger: Logger[F], F: MonadThrow[F])
     extends ForgeApiAlg[F] {
-  import GiteaApiAlg._
 
   def client: HttpJsonClient[F] = implicitly
   val url = new Url(vcs.apiHost)
