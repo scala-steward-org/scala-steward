@@ -17,7 +17,7 @@
 package org.scalasteward.core.util
 
 import cats.syntax.all._
-import io.circe.{Decoder, KeyDecoder, KeyEncoder}
+import io.circe.{Decoder, Encoder, KeyDecoder, KeyEncoder}
 import monocle.Optional
 import org.http4s.Uri
 import org.http4s.Uri.{Authority, Scheme, UserInfo}
@@ -26,16 +26,19 @@ object uri {
   implicit val uriDecoder: Decoder[Uri] =
     Decoder[String].emap(s => Uri.fromString(s).leftMap(_.getMessage))
 
+  implicit val uriEncoder: Encoder[Uri] =
+    Encoder[String].contramap[Uri](_.renderString)
+
   implicit val uriKeyDecoder: KeyDecoder[Uri] =
     KeyDecoder.instance(Uri.fromString(_).toOption)
 
   implicit val uriKeyEncoder: KeyEncoder[Uri] =
     KeyEncoder.instance(_.renderString)
 
-  val withAuthority: Optional[Uri, Authority] =
+  private val withAuthority: Optional[Uri, Authority] =
     Optional[Uri, Authority](_.authority)(authority => _.copy(authority = Some(authority)))
 
-  val authorityWithUserInfo: Optional[Authority, UserInfo] =
+  private val authorityWithUserInfo: Optional[Authority, UserInfo] =
     Optional[Authority, UserInfo](_.userInfo)(userInfo => _.copy(userInfo = Some(userInfo)))
 
   val withUserInfo: Optional[Uri, UserInfo] =
