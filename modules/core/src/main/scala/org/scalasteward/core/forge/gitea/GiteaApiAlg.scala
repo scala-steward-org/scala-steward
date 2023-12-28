@@ -120,7 +120,7 @@ object GiteaApiAlg {
 
 final class GiteaApiAlg[F[_]: HttpJsonClient](
     vcs: ForgeCfg,
-    modify: Repo => Request[F] => F[Request[F]]
+    modify: Request[F] => F[Request[F]]
 )(implicit logger: Logger[F], F: MonadThrow[F])
     extends ForgeApiAlg[F] {
   import GiteaApiAlg._
@@ -158,7 +158,7 @@ final class GiteaApiAlg[F[_]: HttpJsonClient](
       .postWithBody[Repository, CreateForkOption](
         url.forks(repo),
         CreateForkOption(name = none, organization = none),
-        modify(repo)
+        modify
       )
       .map(repoOut(_))
 
@@ -182,7 +182,7 @@ final class GiteaApiAlg[F[_]: HttpJsonClient](
         .postWithBody[PullRequestResp, CreatePullRequestOption](
           url.pulls(repo),
           create,
-          modify(repo)
+          modify
         )
     } yield pullRequestOut(resp)
 
@@ -199,21 +199,21 @@ final class GiteaApiAlg[F[_]: HttpJsonClient](
       .patchWithBody[PullRequestResp, EditPullRequestOption](
         url.pull(repo, number),
         edit,
-        modify(repo)
+        modify
       )
       .map(pullRequestOut(_))
   }
 
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
     client
-      .get[BranchResp](url.repoBranch(repo, branch), modify(repo))
+      .get[BranchResp](url.repoBranch(repo, branch), modify)
       .map { b =>
         BranchOut(branch, CommitOut(b.commit.id))
       }
 
   override def getRepo(repo: Repo): F[RepoOut] =
     client
-      .get[Repository](url.repos(repo), modify(repo))
+      .get[Repository](url.repos(repo), modify)
       .map(repoOut(_))
 
   override def listPullRequests(
@@ -228,7 +228,7 @@ final class GiteaApiAlg[F[_]: HttpJsonClient](
             .pulls(repo)
             .withQueryParam("page", page)
             .withQueryParam("limit", PULL_REQUEST_PAGE_SIZE),
-          modify(repo)
+          modify
         )
 
     // basically unfoldEval
@@ -255,7 +255,7 @@ final class GiteaApiAlg[F[_]: HttpJsonClient](
       .postWithBody[CommentResp, CreateIssueCommentOption](
         url.comments(repo, number),
         create,
-        modify(repo)
+        modify
       )
       .map { x =>
         Comment(x.body)
@@ -277,14 +277,14 @@ final class GiteaApiAlg[F[_]: HttpJsonClient](
     client.postWithBody[Label, CreateLabelReq](
       url.labels(repo),
       CreateLabelReq(name, DefaultLabelColor),
-      modify(repo)
+      modify
     )
 
   def listLabels(repo: Repo): F[Vector[Label]] = {
     def paging(page: Int) =
       client.get[Vector[Label]](
         url.labels(repo).withQueryParam("page", page),
-        modify(repo)
+        modify
       )
 
     def go(page: Int, accu: Vector[Label]): F[Vector[Label]] =

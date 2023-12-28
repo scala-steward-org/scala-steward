@@ -45,7 +45,7 @@ object ForgeSelection {
       logger: Logger[F],
       F: Temporal[F]
   ): ForgeApiAlg[F] = {
-    val auth = (_: Any) => authenticate(forgeCfg.tpe, user)
+    val auth = authenticate(forgeCfg.tpe, user)
     forgeSpecificCfg match {
       case specificCfg: Config.AzureReposCfg =>
         new AzureReposApiAlg(forgeCfg.apiHost, specificCfg, auth)
