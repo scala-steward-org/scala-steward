@@ -429,12 +429,15 @@ lazy val runSteward = taskKey[Unit]("")
 runSteward := Def.taskDyn {
   val home = System.getenv("HOME")
   val projectDir = (LocalRootProject / baseDirectory).value
+  // val ghAppDir = projectDir.getParentFile / "gh-app"
   val args = Seq(
     Seq("--workspace", s"$projectDir/workspace"),
     Seq("--repos-file", s"$projectDir/repos.md"),
     Seq("--git-author-email", s"me@$projectName.org"),
     Seq("--forge-login", projectName),
     Seq("--git-ask-pass", s"$home/.github/askpass/$projectName.sh"),
+    // Seq("--github-app-id", IO.read(ghAppDir / "scala-steward.app-id.txt").trim),
+    // Seq("--github-app-key-file", s"$ghAppDir/scala-steward.private-key.pem"),
     Seq("--whitelist", s"$home/.cache/coursier"),
     Seq("--whitelist", s"$home/.cache/JNA"),
     Seq("--whitelist", s"$home/.cache/mill"),
