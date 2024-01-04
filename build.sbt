@@ -424,20 +424,22 @@ lazy val moduleRootPkg = settingKey[String]("").withRank(KeyRanks.Invisible)
 moduleRootPkg := rootPkg
 
 // Run Scala Steward from sbt for development and testing.
-// Do not do this in production.
+// Members of the @scala-steward-org/core team can request an access token
+// of @scala-steward-dev for local development from @fthomas.
 lazy val runSteward = taskKey[Unit]("")
 runSteward := Def.taskDyn {
   val home = System.getenv("HOME")
   val projectDir = (LocalRootProject / baseDirectory).value
-  // val ghAppDir = projectDir.getParentFile / "gh-app"
+  val gitHubLogin = projectName + "-dev"
+  // val gitHubAppDir = projectDir.getParentFile / "gh-app"
   val args = Seq(
     Seq("--workspace", s"$projectDir/workspace"),
     Seq("--repos-file", s"$projectDir/repos.md"),
-    Seq("--git-author-email", s"me@$projectName.org"),
-    Seq("--forge-login", projectName),
-    Seq("--git-ask-pass", s"$home/.github/askpass/$projectName.sh"),
-    // Seq("--github-app-id", IO.read(ghAppDir / "scala-steward.app-id.txt").trim),
-    // Seq("--github-app-key-file", s"$ghAppDir/scala-steward.private-key.pem"),
+    Seq("--git-author-email", s"dev@$projectName.org"),
+    Seq("--forge-login", gitHubLogin),
+    Seq("--git-ask-pass", s"$home/.github/askpass/$gitHubLogin.sh"),
+    // Seq("--github-app-id", IO.read(gitHubAppDir / "scala-steward.app-id.txt").trim),
+    // Seq("--github-app-key-file", s"$gitHubAppDir/scala-steward.private-key.pem"),
     Seq("--whitelist", s"$home/.cache/coursier"),
     Seq("--whitelist", s"$home/.cache/JNA"),
     Seq("--whitelist", s"$home/.cache/mill"),
