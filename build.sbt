@@ -63,7 +63,12 @@ ThisBuild / githubWorkflowBuild :=
   )
 
 ThisBuild / mergifyPrRules := {
-  val authorCondition = MergifyCondition.Custom("author=scala-steward")
+  val authorCondition = MergifyCondition.Or(
+    List(
+      MergifyCondition.Custom("author=scala-steward"),
+      MergifyCondition.Custom("author=scala-steward-dev")
+    )
+  )
   Seq(
     MergifyPrRule(
       "label scala-steward's PRs",
