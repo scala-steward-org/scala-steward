@@ -74,10 +74,10 @@ final class BspExtractor[F[_]](defaultResolver: Resolver, processTimeout: Finite
 
   private def getBspDependencies(
       buildRootDir: File,
-      details: BspConnectionDetails
+      connectionDetails: BspConnectionDetails
   ): F[DependencyModulesResult] =
     BspProcess
-      .run(details.argv, buildRootDir)
+      .run(connectionDetails.argv, buildRootDir)
       .use { p =>
         val result = for {
           initBuildResult <- lift(p.buildInitialize(initBuildParams(buildRootDir)))
