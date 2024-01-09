@@ -23,6 +23,7 @@ import org.scalasteward.core.mock.{MockEff, MockState}
 class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
   private val user = AuthenticatedUser("user", "pass")
+  private val userM = MockEff.pure(user)
 
   private val basicAuth = Authorization(BasicCredentials(user.login, user.accessToken))
   private val auth = HttpApp[MockEff] { request =>
@@ -198,7 +199,7 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   private val state = MockState.empty.copy(clientResponses = auth <+> httpApp)
 
   private val forgeCfg = config.forgeCfg.copy(tpe = ForgeType.GitHub)
-  private val gitHubApiAlg = ForgeSelection.forgeApiAlg[MockEff](forgeCfg, GitHubCfg(), user)
+  private val gitHubApiAlg = ForgeSelection.forgeApiAlg[MockEff](forgeCfg, GitHubCfg(), userM)
 
   private val repo = Repo("fthomas", "base.g8")
 

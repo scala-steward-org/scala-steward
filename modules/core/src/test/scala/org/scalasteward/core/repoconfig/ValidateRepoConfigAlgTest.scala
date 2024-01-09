@@ -1,76 +1,47 @@
 package org.scalasteward.core.repoconfig
 
-import better.files.File
 import cats.effect.ExitCode
-import cats.effect.unsafe.implicits.global
-import java.nio.charset.StandardCharsets
-import java.nio.file.Files
-import org.scalasteward.core.mock.{MockContext, MockState}
+import munit.CatsEffectSuite
+import org.scalasteward.core.mock.MockConfig.mockRoot
+import org.scalasteward.core.mock.MockContext.validateRepoConfigContext.validateRepoConfigAlg
+import org.scalasteward.core.mock.MockState
 
-class ValidateRepoConfigAlgTest extends munit.FunSuite {
+class ValidateRepoConfigAlgTest extends CatsEffectSuite {
+  test("accepts valid config") {
+    val file = mockRoot / ".scala-steward.conf"
+    val content =
+      """|updates.pin = [
+         |  { groupId = "org.scala-lang", artifactId="scala3-library", version = "3.1." },
+         |  { groupId = "org.scala-js", artifactId="sbt-scalajs", version = "1.10." }
+         |]""".stripMargin
+    val state = MockState.empty.addFiles(file -> content)
+    val obtained = state.flatMap(validateRepoConfigAlg.validateAndReport(file).runA)
+    assertIO(obtained, ExitCode.Success)
+  }
 
-  def configFile(content: String) = FunFixture[(File, ExitCode)](
-    setup = { _ =>
-      val tmpFile =
-        File(
-          Files.write(
-            Files.createTempFile(".scala-steward", ".conf"),
-            content.getBytes(StandardCharsets.UTF_8)
-          )
-        )
+  test("rejects config with a parsing failure") {
+    val file = mockRoot / ".scala-steward.conf"
+    val content =
+      """|updates.pin  =? [
+         |  { groupId = "org.scala-lang", artifactId="scala3-library", version = "3.1." },
+         |  { groupId = "org.scala-js", artifactId="sbt-scalajs", version = "1.10." },
+         |]""".stripMargin
+    val state = MockState.empty.addFiles(file -> content)
+    val obtained = state.flatMap(validateRepoConfigAlg.validateAndReport(file).runA)
+    assertIO(obtained, ExitCode.Error)
+  }
 
-      val obtained = MockContext
-        .validateRepoConfigContext(tmpFile)
-        .runF
-        .runA(MockState.empty)
-        .unsafeRunSync()
-
-      (tmpFile, obtained)
-    },
-    teardown = { case (file, _) =>
-      file.delete()
-    }
-  )
-
-  configFile(
-    """|updates.pin = [
-       |  { groupId = "org.scala-lang", artifactId="scala3-library", version = "3.1." },
-       |  { groupId = "org.scala-lang", artifactId="scala3-library_sjs1", version = "3.1." },
-       |  { groupId = "org.scala-js", artifactId="sbt-scalajs", version = "1.10." }
-       |]""".stripMargin
-  )
-    .test("accepts valid config") { case (_, obtained) =>
-      assertEquals(obtained, ExitCode.Success)
-    }
-
-  configFile(
-    """|updates.pin  =? [
-       |  { groupId = "org.scala-lang", artifactId="scala3-library", version = "3.1." },
-       |  { groupId = "org.scala-lang", artifactId="scala3-library_sjs1", version = "3.1." },
-       |  { groupId = "org.scala-js", artifactId="sbt-scalajs", version = "1.10." },
-       |]""".stripMargin
-  )
-    .test("rejects config with a parsing failure") { case (_, obtained) =>
-      assertEquals(obtained, ExitCode.Error)
-    }
-
-  configFile(
-    """|updatePullRequests = 123
-       |
-       |""".stripMargin
-  )
-    .test("rejects config with a decoding failure") { case (_, obtained) =>
-      assertEquals(obtained, ExitCode.Error)
-    }
+  test("rejects config with a decoding failure") {
+    val file = mockRoot / ".scala-steward.conf"
+    val content = """updatePullRequests = 123""".stripMargin
+    val state = MockState.empty.addFiles(file -> content)
+    val obtained = state.flatMap(validateRepoConfigAlg.validateAndReport(file).runA)
+    assertIO(obtained, ExitCode.Error)
+  }
 
   test("rejects non-existent config file") {
-    val nonExistentFile = File("/", "scripts", "script")
-    val obtained = MockContext
-      .validateRepoConfigContext(nonExistentFile)
-      .runF
-      .runA(MockState.empty)
-      .unsafeRunSync()
-
-    assertEquals(obtained, ExitCode.Error)
+    val file = mockRoot / ".scala-steward.conf"
+    val obtained = validateRepoConfigAlg.validateAndReport(file).runA(MockState.empty)
+    assertIO(obtained, ExitCode.Error)
   }
 }

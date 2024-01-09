@@ -4,9 +4,8 @@ import better.files.File
 import cats.data.Validated.Valid
 import munit.FunSuite
 import org.http4s.syntax.literals._
-import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.Cli.ParseResult._
-import org.scalasteward.core.application.Config.StewardUsage
+import org.scalasteward.core.application.Cli.{EnvVar, Usage}
 import org.scalasteward.core.forge.ForgeType
 import org.scalasteward.core.forge.github.GitHubApp
 import org.scalasteward.core.util.Nel
@@ -14,7 +13,7 @@ import scala.concurrent.duration._
 
 class CliTest extends FunSuite {
   test("parseArgs: example") {
-    val Success(StewardUsage.Regular(obtained)) = Cli.parseArgs(
+    val Success(Usage.Regular(obtained)) = Cli.parseArgs(
       List(
         List("--workspace", "a"),
         List("--repos-file", "b"),
@@ -69,7 +68,7 @@ class CliTest extends FunSuite {
     assert(!obtained.bitbucketServerCfg.useDefaultReviewers)
   }
 
-  val minimumRequiredParams = List(
+  private val minimumRequiredParams = List(
     List("--workspace", "a"),
     List("--repos-file", "b"),
     List("--git-author-email", "d"),
@@ -79,7 +78,7 @@ class CliTest extends FunSuite {
   )
 
   test("parseArgs: minimal example") {
-    val Success(StewardUsage.Regular(obtained)) = Cli.parseArgs(
+    val Success(Usage.Regular(obtained)) = Cli.parseArgs(
       minimumRequiredParams.flatten
     )
 
@@ -92,7 +91,7 @@ class CliTest extends FunSuite {
   }
 
   test("parseArgs: enable sandbox") {
-    val Success(StewardUsage.Regular(obtained)) = Cli.parseArgs(
+    val Success(Usage.Regular(obtained)) = Cli.parseArgs(
       List(
         List("--workspace", "a"),
         List("--repos-file", "b"),
@@ -123,7 +122,7 @@ class CliTest extends FunSuite {
   }
 
   test("parseArgs: disable sandbox") {
-    val Success(StewardUsage.Regular(obtained)) = Cli.parseArgs(
+    val Success(Usage.Regular(obtained)) = Cli.parseArgs(
       List(
         List("--workspace", "a"),
         List("--repos-file", "b"),
@@ -157,7 +156,7 @@ class CliTest extends FunSuite {
       List("--gitlab-merge-when-pipeline-succeeds"),
       List("--gitlab-required-reviewers", "5")
     )
-    val Success(StewardUsage.Regular(obtained)) = Cli.parseArgs(params.flatten)
+    val Success(Usage.Regular(obtained)) = Cli.parseArgs(params.flatten)
 
     assert(obtained.gitLabCfg.mergeWhenPipelineSucceeds)
     assertEquals(obtained.gitLabCfg.requiredReviewers, Some(5))
@@ -174,7 +173,7 @@ class CliTest extends FunSuite {
   }
 
   test("parseArgs: validate-repo-config") {
-    val Success(StewardUsage.ValidateRepoConfig(file)) = Cli.parseArgs(
+    val Success(Usage.ValidateRepoConfig(file)) = Cli.parseArgs(
       List(
         List("validate-repo-config", "file.conf")
       ).flatten
@@ -188,7 +187,7 @@ class CliTest extends FunSuite {
       List("--forge-type", "azure-repos"),
       List("--do-not-fork")
     )
-    val Success(StewardUsage.Regular(obtained)) = Cli.parseArgs(params.flatten)
+    val Success(Usage.Regular(obtained)) = Cli.parseArgs(params.flatten)
     assert(obtained.forgeCfg.doNotFork)
   }
 
@@ -204,7 +203,7 @@ class CliTest extends FunSuite {
     val params = minimumRequiredParams ++ List(
       List("--forge-type", "bitbucket")
     )
-    val Success(StewardUsage.Regular(obtained)) = Cli.parseArgs(params.flatten)
+    val Success(Usage.Regular(obtained)) = Cli.parseArgs(params.flatten)
     assert(!obtained.forgeCfg.addLabels)
   }
 

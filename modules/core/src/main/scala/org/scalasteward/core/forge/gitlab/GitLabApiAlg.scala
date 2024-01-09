@@ -16,8 +16,8 @@
 
 package org.scalasteward.core.forge.gitlab
 
-import cats.effect.Temporal
 import cats.Parallel
+import cats.effect.Temporal
 import cats.syntax.all._
 import io.circe._
 import io.circe.generic.semiauto._
@@ -31,7 +31,6 @@ import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.util.uri.uriDecoder
 import org.scalasteward.core.util.{intellijThisImportIsUsed, HttpJsonClient, UnexpectedResponse}
 import org.typelevel.log4cats.Logger
-
 import scala.concurrent.duration.{Duration, DurationInt}
 
 final private[gitlab] case class ForkPayload(id: String, namespace: String)
@@ -161,7 +160,7 @@ private[gitlab] object GitLabJsonCodec {
 final class GitLabApiAlg[F[_]: Parallel](
     forgeCfg: ForgeCfg,
     gitLabCfg: GitLabCfg,
-    modify: Repo => Request[F] => F[Request[F]]
+    modify: Request[F] => F[Request[F]]
 )(implicit
     client: HttpJsonClient[F],
     logger: Logger[F],
@@ -172,13 +171,13 @@ final class GitLabApiAlg[F[_]: Parallel](
   private val url = new Url(forgeCfg.apiHost)
 
   override def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]] =
-    client.get(url.listMergeRequests(repo, head, base.name), modify(repo))
+    client.get(url.listMergeRequests(repo, head, base.name), modify)
 
   override def createFork(repo: Repo): F[RepoOut] = {
     val userOwnedRepo = repo.copy(owner = forgeCfg.login)
     val data = ForkPayload(url.encodedProjectId(userOwnedRepo), forgeCfg.login)
     client
-      .postWithBody[RepoOut, ForkPayload](url.createFork(repo), data, modify(repo))
+      .postWithBody[RepoOut, ForkPayload](url.createFork(repo), data, modify)
       .recoverWith {
         case UnexpectedResponse(_, _, _, Status.Conflict, _) => getRepo(userOwnedRepo)
         // workaround for https://gitlab.com/gitlab-org/gitlab-ce/issues/65275
@@ -190,8 +189,8 @@ final class GitLabApiAlg[F[_]: Parallel](
   override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] = {
     val targetRepo = if (forgeCfg.doNotFork) repo else repo.copy(owner = forgeCfg.login)
     val mergeRequest = for {
-      projectId <- client.get[ProjectId](url.repos(repo), modify(repo))
-      usernameMapping <- getUsernameToUserIdsMapping(repo, (data.assignees ++ data.reviewers).toSet)
+      projectId <- client.get[ProjectId](url.repos(repo), modify)
+      usernameMapping <- getUsernameToUserIdsMapping((data.assignees ++ data.reviewers).toSet)
       payload = MergeRequestPayload(
         id = url.encodedProjectId(targetRepo),
         projectId = projectId.id,
@@ -202,7 +201,7 @@ final class GitLabApiAlg[F[_]: Parallel](
       res <- client.postWithBody[MergeRequestOut, MergeRequestPayload](
         uri = url.mergeRequest(targetRepo),
         body = payload,
-        modify = modify(repo)
+        modify = modify
       )
     } yield res
 
@@ -213,7 +212,7 @@ final class GitLabApiAlg[F[_]: Parallel](
         backoffMultiplier: Double = 2.0
     ): F[MergeRequestOut] =
       client
-        .get[MergeRequestOut](url.existingMergeRequest(repo, number), modify(repo))
+        .get[MergeRequestOut](url.existingMergeRequest(repo, number), modify)
         .flatMap {
           case mr if mr.mergeStatus =!= GitLabMergeStatus.Checking => F.pure(mr)
           case mr if retries > 0 =>
@@ -264,7 +263,7 @@ final class GitLabApiAlg[F[_]: Parallel](
             client
               .put[MergeRequestOut](
                 url.mergeWhenPiplineSucceeds(repo, mr.iid),
-                modify(repo)
+                modify
               )
               // it's possible that our status changed from can be merged already,
               // so just handle it gracefully and proceed without setting auto merge.
@@ -289,7 +288,7 @@ final class GitLabApiAlg[F[_]: Parallel](
             client
               .put[MergeRequestApprovalsOut](
                 url.requiredApprovals(repo, mrOut.iid, requiredReviewers),
-                modify(repo)
+                modify
               )
               .map(_ => ())
               .recoverWith { case UnexpectedResponse(_, _, _, status, body) =>
@@ -301,18 +300,18 @@ final class GitLabApiAlg[F[_]: Parallel](
       case None => F.pure(mrOut)
     }
 
-  private def getUsernameToUserIdsMapping(repo: Repo, usernames: Set[String]): F[Map[String, Int]] =
+  private def getUsernameToUserIdsMapping(usernames: Set[String]): F[Map[String, Int]] =
     usernames.toList
       .parTraverse { username =>
-        getUserIdForUsername(repo, username).map { userIdOpt =>
+        getUserIdForUsername(username).map { userIdOpt =>
           userIdOpt.map(userId => (username, userId))
         }
       }
       .map(_.flatten.toMap)
 
-  private def getUserIdForUsername(repo: Repo, username: String): F[Option[Int]] = {
+  private def getUserIdForUsername(username: String): F[Option[Int]] = {
     val userIdOrError: F[Decoder.Result[Int]] = client
-      .get[Json](url.users.withQueryParam("username", username), modify(repo))
+      .get[Json](url.users.withQueryParam("username", username), modify)
       .flatMap { usersReponse =>
         usersReponse.hcursor.values match {
           case Some(users) =>
@@ -341,15 +340,15 @@ final class GitLabApiAlg[F[_]: Parallel](
       .putWithBody[MergeRequestOut, UpdateState](
         url.existingMergeRequest(repo, number),
         UpdateState(PullRequestState.Closed),
-        modify(repo)
+        modify
       )
       .map(_.pullRequestOut)
 
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
-    client.get(url.getBranch(repo, branch), modify(repo))
+    client.get(url.getBranch(repo, branch), modify)
 
   override def getRepo(repo: Repo): F[RepoOut] =
-    client.get(url.repos(repo), modify(repo))
+    client.get(url.repos(repo), modify)
 
   override def referencePullRequest(number: PullRequestNumber): String =
     s"!${number.value}"
@@ -360,6 +359,6 @@ final class GitLabApiAlg[F[_]: Parallel](
       number: PullRequestNumber,
       comment: String
   ): F[Comment] =
-    client.postWithBody(url.comments(repo, number), Comment(comment), modify(repo))
+    client.postWithBody(url.comments(repo, number), Comment(comment), modify)
 
 }

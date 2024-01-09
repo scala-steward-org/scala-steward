@@ -45,6 +45,12 @@ Updates for `sbt` and `scalafmt` can be controlled by using the following `group
 { groupId = "org.scalameta", artifactId = "scalafmt-core" }
 ```
 
+Updates for the Scala 2 or Scala 3 version can be controlled by using the respective `groupId` and `artifactId`:
+```properties
+{ groupId = "org.scala-lang", artifactId = "scala-library" }
+{ groupId = "org.scala-lang", artifactId = "scala3-library" }
+```
+
 ## Can Scala Steward update multiple branches in a repository?
 
 Yes! You can update multiple branches of a repository by adding it several times to the "repos.md" file

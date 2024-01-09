@@ -31,7 +31,7 @@ import org.typelevel.log4cats.Logger
 final class AzureReposApiAlg[F[_]](
     azureAPiHost: Uri,
     config: AzureReposCfg,
-    modify: Repo => Request[F] => F[Request[F]]
+    modify: Request[F] => F[Request[F]]
 )(implicit client: HttpJsonClient[F], logger: Logger[F], F: MonadThrow[F])
     extends ForgeApiAlg[F] {
 
@@ -45,7 +45,7 @@ final class AzureReposApiAlg[F[_]](
     val create = client.postWithBody[PullRequestOut, PullRequestPayload](
       url.pullRequests(repo),
       PullRequestPayload.from(data),
-      modify(repo)
+      modify
     )
     for {
       _ <- F.whenA(data.assignees.nonEmpty)(warnIfAssigneesAreUsed)
@@ -66,21 +66,21 @@ final class AzureReposApiAlg[F[_]](
     client.patchWithBody[PullRequestOut, ClosePullRequestPayload](
       url.closePullRequest(repo, number),
       ClosePullRequestPayload("abandoned"),
-      modify(repo)
+      modify
     )
 
   // https://docs.microsoft.com/en-us/rest/api/azure/devops/git/stats/get?view=azure-devops-rest-7.1
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
-    client.get[BranchOut](url.getBranch(repo, branch), modify(repo))
+    client.get[BranchOut](url.getBranch(repo, branch), modify)
 
   // https://docs.microsoft.com/en-us/rest/api/azure/devops/git/repositories/get-repository-with-parent?view=azure-devops-rest-7.1
   override def getRepo(repo: Repo): F[RepoOut] =
-    client.get[RepoOut](url.getRepo(repo), modify(repo))
+    client.get[RepoOut](url.getRepo(repo), modify)
 
   // https://docs.microsoft.com/en-us/rest/api/azure/devops/git/pull-requests/get-pull-requests?view=azure-devops-rest-7.1
   override def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]] =
     client
-      .get[Paginated[PullRequestOut]](url.listPullRequests(repo, head, base), modify(repo))
+      .get[Paginated[PullRequestOut]](url.listPullRequests(repo, head, base), modify)
       .map(_.value)
 
   // https://docs.microsoft.com/en-us/rest/api/azure/devops/git/pull-request-threads/create?view=azure-devops-rest-7.1
@@ -92,7 +92,7 @@ final class AzureReposApiAlg[F[_]](
     client.postWithBody[Comment, PullRequestCommentPayload](
       url.commentPullRequest(repo, number),
       PullRequestCommentPayload.createComment(comment),
-      modify(repo)
+      modify
     )
 
   private def warnIfAssigneesAreUsed =

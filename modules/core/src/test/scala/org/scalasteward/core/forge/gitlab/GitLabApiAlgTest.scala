@@ -27,6 +27,7 @@ import org.typelevel.ci.CIStringSyntax
 class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
   private val user = AuthenticatedUser("user", "pass")
+  private val userM = MockEff.pure(user)
 
   object MergeWhenPipelineSucceedsMatcher
       extends QueryParamDecoderMatcher[Boolean]("merge_when_pipeline_succeeds")
@@ -127,7 +128,7 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       requiredReviewers = None,
       removeSourceBranch = false
     ),
-    user
+    userM
   )
 
   private val gitlabApiAlgNoFork = ForgeSelection.forgeApiAlg[MockEff](
@@ -137,7 +138,7 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       requiredReviewers = None,
       removeSourceBranch = false
     ),
-    user
+    userM
   )
 
   private val gitlabApiAlgAutoMerge = ForgeSelection.forgeApiAlg[MockEff](
@@ -147,7 +148,7 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       requiredReviewers = None,
       removeSourceBranch = false
     ),
-    user
+    userM
   )
 
   private val gitlabApiAlgRemoveSourceBranch = ForgeSelection.forgeApiAlg[MockEff](
@@ -157,7 +158,7 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       requiredReviewers = None,
       removeSourceBranch = true
     ),
-    user
+    userM
   )
 
   private val gitlabApiAlgLessReviewersRequired = ForgeSelection.forgeApiAlg[MockEff](
@@ -167,7 +168,7 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       requiredReviewers = Some(0),
       removeSourceBranch = false
     ),
-    user
+    userM
   )
 
   private val gitlabApiAlgWithAssigneeAndReviewers = ForgeSelection.forgeApiAlg[MockEff](
@@ -177,7 +178,7 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       requiredReviewers = Some(0),
       removeSourceBranch = false
     ),
-    user
+    userM
   )
 
   private val data = UpdateData(

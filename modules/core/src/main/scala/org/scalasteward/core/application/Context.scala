@@ -16,8 +16,6 @@
 
 package org.scalasteward.core.application
 
-import better.files.File
-import cats.MonadThrow
 import cats.effect._
 import cats.effect.implicits._
 import cats.syntax.all._
@@ -25,7 +23,7 @@ import eu.timepit.refined.auto._
 import org.http4s.Uri
 import org.http4s.client.Client
 import org.http4s.headers.`User-Agent`
-import org.scalasteward.core.application.Config.{ForgeCfg, StewardUsage}
+import org.scalasteward.core.application.Config.ForgeCfg
 import org.scalasteward.core.buildtool.BuildToolDispatcher
 import org.scalasteward.core.buildtool.bazel.BazelAlg
 import org.scalasteward.core.buildtool.bleep.BleepAlg
@@ -43,13 +41,13 @@ import org.scalasteward.core.edit.hooks.HookExecutor
 import org.scalasteward.core.edit.scalafix._
 import org.scalasteward.core.edit.update.ScannerAlg
 import org.scalasteward.core.forge.github.{GitHubAppApiAlg, GitHubAuthAlg}
-import org.scalasteward.core.forge.{ForgeApiAlg, ForgeRepoAlg, ForgeSelection}
+import org.scalasteward.core.forge.{ForgeApiAlg, ForgeAuthAlg, ForgeRepoAlg, ForgeSelection}
 import org.scalasteward.core.git.{GenGitAlg, GitAlg}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository, UpdateInfoUrlFinder}
 import org.scalasteward.core.persistence.{CachingKeyValueStore, JsonKeyValueStore}
 import org.scalasteward.core.repocache._
-import org.scalasteward.core.repoconfig.{RepoConfigAlg, RepoConfigLoader, ValidateRepoConfigAlg}
+import org.scalasteward.core.repoconfig.{RepoConfigAlg, RepoConfigLoader}
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.artifact.{ArtifactMigrationsFinder, ArtifactMigrationsLoader}
 import org.scalasteward.core.update.{FilterAlg, PruningAlg, UpdateAlg}
@@ -93,29 +91,10 @@ final class Context[F[_]](implicit
 )
 
 object Context {
-
-  sealed trait StewardContext[F[_]] {
-    def runF: F[ExitCode]
-  }
-  object StewardContext {
-    final case class Regular[F[_]](context: Context[F]) extends StewardContext[F] {
-      override def runF: F[ExitCode] = context.stewardAlg.runF
-    }
-
-    final case class ValidateRepoConfig[F[_]](file: File)(implicit
-        val validateRepoConfigAlg: ValidateRepoConfigAlg[F],
-        val logger: Logger[F]
-    ) extends StewardContext[F] {
-      override def runF: F[ExitCode] = validateRepoConfigAlg.validateAndReport(file)
-    }
-  }
-
-  def step0[F[_]](
-      usage: Config.StewardUsage
-  )(implicit F: Async[F]): Resource[F, StewardContext[F]] =
+  def step0[F[_]](config: Config)(implicit F: Async[F]): Resource[F, Context[F]] =
     for {
-      logger0 <- Resource.eval(Slf4jLogger.fromName[F]("org.scalasteward.core"))
-      _ <- Resource.eval(logger0.info(banner))
+      logger <- Resource.eval(Slf4jLogger.fromName[F]("org.scalasteward.core"))
+      _ <- Resource.eval(logger.info(banner))
       _ <- Resource.eval(F.delay(System.setProperty("http.agent", userAgentString)))
       userAgent <- Resource.eval(F.fromEither(`User-Agent`.parse(1)(userAgentString)))
       middleware = ClientConfiguration
@@ -129,45 +108,21 @@ object Context {
         ClientConfiguration.disableFollowRedirect,
         middleware
       )
-      fileAlg0 = FileAlg.create(logger0, F)
-      context <- usage match {
-        case StewardUsage.Regular(config) =>
-          initRegular(config)(
-            defaultClient,
-            UrlCheckerClient(urlCheckerClient),
-            fileAlg0,
-            logger0,
-            F
-          ).map(StewardContext.Regular(_))
-
-        case StewardUsage.ValidateRepoConfig(file) =>
-          implicit val fileAlg: FileAlg[F] = fileAlg0
-          implicit val logger: Logger[F] = logger0
-          Resource.pure[F, StewardContext[F]](initValidateRepoConfig(file))
+      fileAlg = FileAlg.create(logger, F)
+      processAlg = ProcessAlg.create(config.processCfg)(logger, F)
+      workspaceAlg = WorkspaceAlg.create(config)(fileAlg, logger, F)
+      context <- Resource.eval {
+        step1(config)(
+          defaultClient,
+          UrlCheckerClient(urlCheckerClient),
+          fileAlg,
+          logger,
+          processAlg,
+          workspaceAlg,
+          F
+        )
       }
-
     } yield context
-
-  def initRegular[F[_]](config: Config)(implicit
-      client: Client[F],
-      urlCheckerClient: UrlCheckerClient[F],
-      fileAlg: FileAlg[F],
-      logger: Logger[F],
-      F: Async[F]
-  ): Resource[F, Context[F]] = {
-    implicit val processAlg = ProcessAlg.create(config.processCfg)
-    implicit val workspaceAlg = WorkspaceAlg.create(config)
-    Resource.eval(step1(config))
-  }
-
-  def initValidateRepoConfig[F[_]](file: File)(implicit
-      fileAlg: FileAlg[F],
-      logger: Logger[F],
-      F: MonadThrow[F]
-  ): StewardContext.ValidateRepoConfig[F] = {
-    implicit val validateRepoConfigAlg = new ValidateRepoConfigAlg[F]()
-    StewardContext.ValidateRepoConfig[F](file)
-  }
 
   def step1[F[_]](config: Config)(implicit
       client: Client[F],
@@ -179,7 +134,8 @@ object Context {
       F: Async[F]
   ): F[Context[F]] =
     for {
-      forgeUser <- config.forgeUser[F]
+      _ <- F.unit
+      forgeUser = new ForgeAuthAlg[F](config.gitCfg, config.forgeCfg).forgeUser
       artifactMigrationsLoader0 = new ArtifactMigrationsLoader[F]
       artifactMigrationsFinder0 <- artifactMigrationsLoader0.createFinder(config.artifactCfg)
       scalafixMigrationsLoader0 = new ScalafixMigrationsLoader[F]
@@ -244,7 +200,7 @@ object Context {
       implicit val editAlg: EditAlg[F] = new EditAlg[F]
       implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F](config.forgeCfg)
       implicit val pruningAlg: PruningAlg[F] = new PruningAlg[F]
-      implicit val reposFilesLoader: ReposFilesLoader[F] = new ReposFilesLoader[F]()
+      implicit val reposFilesLoader: ReposFilesLoader[F] = new ReposFilesLoader[F]
       implicit val gitHubAppApiAlg: GitHubAppApiAlg[F] =
         new GitHubAppApiAlg[F](config.forgeCfg.apiHost)
       implicit val stewardAlg: StewardAlg[F] = new StewardAlg[F](config)
