@@ -1,8 +1,10 @@
 import sbt._
 
 object Dependencies {
+  val bazelBsp = "org.jetbrains.bsp" % "bazel-bsp" % "3.1.0"
   val bcprovJdk15to18 = "org.bouncycastle" % "bcprov-jdk15to18" % "1.77"
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.2"
+  val bsp4j = "ch.epfl.scala" % "bsp4j" % "2.1.0-M4"
   val catsEffect = "org.typelevel" %% "cats-effect" % "3.5.2"
   val catsCore = "org.typelevel" %% "cats-core" % "2.10.0"
   val catsLaws = "org.typelevel" %% "cats-laws" % catsCore.revision

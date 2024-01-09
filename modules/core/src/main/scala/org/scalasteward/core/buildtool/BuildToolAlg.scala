@@ -22,6 +22,8 @@ import org.typelevel.log4cats.Logger
 import scala.annotation.nowarn
 
 trait BuildToolAlg[F[_]] {
+  def enabled: Boolean = true
+
   def name: String
 
   def containsBuild(buildRoot: BuildRoot): F[Boolean]

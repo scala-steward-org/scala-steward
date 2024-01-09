@@ -118,6 +118,7 @@ lazy val core = myCrossProject("core")
     libraryDependencies ++= Seq(
       Dependencies.bcprovJdk15to18,
       Dependencies.betterFiles,
+      Dependencies.bsp4j,
       Dependencies.catsCore,
       Dependencies.catsEffect,
       Dependencies.catsParse,
@@ -189,7 +190,9 @@ lazy val core = myCrossProject("core")
       BuildInfoKey("mainBranch" -> mainBranch),
       BuildInfoKey.map(git.gitHeadCommit) { case (k, v) => k -> v.getOrElse(mainBranch) },
       BuildInfoKey("millPluginArtifactName" -> Dependencies.scalaStewardMillPluginArtifactName),
-      BuildInfoKey("millPluginVersion" -> Dependencies.scalaStewardMillPlugin.revision)
+      BuildInfoKey("millPluginVersion" -> Dependencies.scalaStewardMillPlugin.revision),
+      BuildInfoKey("bsp4jVersion" -> Dependencies.bsp4j.revision),
+      BuildInfoKey("bazelBsp" -> Dependencies.bazelBsp)
     ),
     buildInfoPackage := moduleRootPkg.value,
     initialCommands += s"""
@@ -277,6 +280,7 @@ lazy val dummy = myCrossProject("dummy")
   .settings(noPublishSettings)
   .settings(
     libraryDependencies ++= Seq(
+      Dependencies.bazelBsp,
       Dependencies.scalaStewardMillPlugin
     )
   )

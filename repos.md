@@ -10,5 +10,7 @@ All lines that do not start with a hyphen and space are ignored.
 - scala-steward-org/sbt-plugin
 - scala-steward-org/scala-steward
 - scala-steward-org/test-repo-1
+- scala-steward-org/test-repo-1:bleep-test
 - scala-steward-org/test-repo-1:scala-cli-test
 - scala-steward-org/test-repo-2
+- scala-steward-org/test-repo-2:bazel

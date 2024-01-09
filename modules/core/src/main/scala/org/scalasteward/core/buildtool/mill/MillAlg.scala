@@ -19,6 +19,7 @@ package org.scalasteward.core.buildtool.mill
 import better.files.File
 import cats.effect.MonadCancelThrow
 import cats.syntax.all._
+import org.scalasteward.core.buildtool.bsp.{BspExtractor, BspServerType}
 import org.scalasteward.core.buildtool.mill.MillAlg._
 import org.scalasteward.core.buildtool.{BuildRoot, BuildToolAlg}
 import org.scalasteward.core.data._
@@ -27,6 +28,7 @@ import org.scalasteward.core.util.Nel
 import org.typelevel.log4cats.Logger
 
 final class MillAlg[F[_]](defaultResolver: Resolver)(implicit
+    bspExtractor: BspExtractor[F],
     fileAlg: FileAlg[F],
     override protected val logger: Logger[F],
     processAlg: ProcessAlg[F],
@@ -57,7 +59,10 @@ final class MillAlg[F[_]](defaultResolver: Resolver)(implicit
     for {
       buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
       millBuildVersion <- getMillVersion(buildRootDir)
-      dependencies <- getProjectDependencies(buildRootDir, millBuildVersion)
+      useBsp = false
+      dependencies <-
+        if (useBsp) bspExtractor.getDependencies(BspServerType.Mill, buildRoot)
+        else getProjectDependencies(buildRootDir, millBuildVersion)
       millBuildDeps = millBuildVersion.toSeq.map(version =>
         Scope(List(millMainArtifact(version)), List(defaultResolver))
       )
