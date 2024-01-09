@@ -47,9 +47,9 @@ final class BspExtractor[F[_]](defaultResolver: Resolver, processTimeout: Finite
   ): F[List[Scope.Dependencies]] =
     for {
       buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
-      connectionDetails <- createConnectionDetailsFile(bspServerType, buildRoot)
-      details <- readConnectionDetailsFile(connectionDetails)
-      bspDependencies <- getBspDependencies(buildRootDir, details)
+      connectionDetailsFile <- createConnectionDetailsFile(bspServerType, buildRoot)
+      connectionDetails <- readConnectionDetailsFile(connectionDetailsFile)
+      bspDependencies <- getBspDependencies(buildRootDir, connectionDetails)
     } yield transform(bspDependencies)
 
   private def createConnectionDetailsFile(
