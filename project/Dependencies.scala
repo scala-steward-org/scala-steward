@@ -17,7 +17,7 @@ object Dependencies {
   val coursierCore = "io.get-coursier" %% "coursier" % "2.1.8"
   val coursierSbtMaven =
     "io.get-coursier" %% "coursier-sbt-maven-repository" % coursierCore.revision
-  val cron4sCore = "com.github.alonsodomin.cron4s" %% "cron4s-core" % "0.6.1"
+  val cron4sCore = "com.github.alonsodomin.cron4s" %% "cron4s-core" % "0.7.0"
   val decline = "com.monovore" %% "decline" % "2.4.1"
   val disciplineMunit = "org.typelevel" %% "discipline-munit" % "1.0.9"
   val fs2Core = "co.fs2" %% "fs2-core" % "3.9.3"
