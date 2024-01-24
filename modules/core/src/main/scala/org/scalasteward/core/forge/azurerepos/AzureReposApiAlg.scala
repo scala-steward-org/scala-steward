@@ -18,8 +18,6 @@ package org.scalasteward.core.forge.azurerepos
 
 import cats.MonadThrow
 import cats.syntax.all._
-import io.circe.Json
-import io.circe.syntax.KeyOps
 import org.http4s.{Request, Uri}
 import org.scalasteward.core.application.Config.AzureReposCfg
 import org.scalasteward.core.data.Repo
@@ -28,47 +26,61 @@ import org.scalasteward.core.forge.azurerepos.JsonCodec._
 import org.scalasteward.core.forge.data._
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.HttpJsonClient
+import org.typelevel.log4cats.Logger
 
 final class AzureReposApiAlg[F[_]](
     azureAPiHost: Uri,
     config: AzureReposCfg,
-    modify: Repo => Request[F] => F[Request[F]]
-)(implicit client: HttpJsonClient[F], monadErrorF: MonadThrow[F])
+    modify: Request[F] => F[Request[F]]
+)(implicit client: HttpJsonClient[F], logger: Logger[F], F: MonadThrow[F])
     extends ForgeApiAlg[F] {
 
   private val url = new Url(azureAPiHost, config.organization.getOrElse(""))
 
   override def createFork(repo: Repo): F[RepoOut] =
-    monadErrorF.raiseError(new NotImplementedError(s"createFork($repo)"))
+    F.raiseError(new NotImplementedError(s"createFork($repo)"))
 
   // https://docs.microsoft.com/en-us/rest/api/azure/devops/git/pull-requests/create?view=azure-devops-rest-7.1
-  override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] =
-    client.postWithBody[PullRequestOut, PullRequestPayload](
+  override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] = {
+    val create = client.postWithBody[PullRequestOut, PullRequestPayload](
       url.pullRequests(repo),
       PullRequestPayload.from(data),
-      modify(repo)
+      modify
     )
+    for {
+      _ <- F.whenA(data.assignees.nonEmpty)(warnIfAssigneesAreUsed)
+      _ <- F.whenA(data.reviewers.nonEmpty)(warnIfReviewersAreUsed)
+      pullRequestOut <- create
+    } yield pullRequestOut
+  }
+
+  override def updatePullRequest(
+      number: PullRequestNumber,
+      repo: Repo,
+      data: NewPullRequestData
+  ): F[Unit] =
+    logger.warn("Updating PRs is not yet supported for Azure Repos")
 
   // https://docs.microsoft.com/en-us/rest/api/azure/devops/git/pull-requests/update?view=azure-devops-rest-7.1
   override def closePullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut] =
     client.patchWithBody[PullRequestOut, ClosePullRequestPayload](
       url.closePullRequest(repo, number),
       ClosePullRequestPayload("abandoned"),
-      modify(repo)
+      modify
     )
 
   // https://docs.microsoft.com/en-us/rest/api/azure/devops/git/stats/get?view=azure-devops-rest-7.1
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
-    client.get[BranchOut](url.getBranch(repo, branch), modify(repo))
+    client.get[BranchOut](url.getBranch(repo, branch), modify)
 
   // https://docs.microsoft.com/en-us/rest/api/azure/devops/git/repositories/get-repository-with-parent?view=azure-devops-rest-7.1
   override def getRepo(repo: Repo): F[RepoOut] =
-    client.get[RepoOut](url.getRepo(repo), modify(repo))
+    client.get[RepoOut](url.getRepo(repo), modify)
 
   // https://docs.microsoft.com/en-us/rest/api/azure/devops/git/pull-requests/get-pull-requests?view=azure-devops-rest-7.1
   override def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]] =
     client
-      .get[Paginated[PullRequestOut]](url.listPullRequests(repo, head, base), modify(repo))
+      .get[Paginated[PullRequestOut]](url.listPullRequests(repo, head, base), modify)
       .map(_.value)
 
   // https://docs.microsoft.com/en-us/rest/api/azure/devops/git/pull-request-threads/create?view=azure-devops-rest-7.1
@@ -80,20 +92,13 @@ final class AzureReposApiAlg[F[_]](
     client.postWithBody[Comment, PullRequestCommentPayload](
       url.commentPullRequest(repo, number),
       PullRequestCommentPayload.createComment(comment),
-      modify(repo)
+      modify
     )
 
-  // https://docs.microsoft.com/en-us/rest/api/azure/devops/git/pull-request-labels/create?view=azure-devops-rest-7.1
-  override def labelPullRequest(
-      repo: Repo,
-      number: PullRequestNumber,
-      labels: List[String]
-  ): F[Unit] =
-    client
-      .postWithBody[Json, Json](
-        url.labelPullRequest(repo, number),
-        Json.obj("name" := labels.mkString("-")),
-        modify(repo)
-      )
-      .void
+  private def warnIfAssigneesAreUsed =
+    logger.warn("assignees are not supported by AzureRepos")
+
+  private def warnIfReviewersAreUsed =
+    logger.warn("reviewers are not implemented yet for AzureRepos")
+
 }

@@ -22,7 +22,7 @@ import cats.syntax.all._
 import org.http4s.Uri
 import org.scalasteward.core.application.Config.GitCfg
 import org.scalasteward.core.git.FileGitAlg.{dotdot, gitCmd}
-import org.scalasteward.core.io.process.SlurpOptions
+import org.scalasteward.core.io.process.{ProcessFailedException, SlurpOptions}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
 
@@ -47,18 +47,26 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
   override def checkoutBranch(repo: File, branch: Branch): F[Unit] =
     git_("checkout", branch.name)(repo).void
 
+  override def checkIgnore(repo: File, file: String): F[Boolean] =
+    git_("check-ignore", file)(repo)
+      .as(true)
+      .recover { case ex: ProcessFailedException if ex.exitValue === 1 => false }
+
   override def clone(repo: File, url: Uri): F[Unit] =
     for {
       rootDir <- workspaceAlg.rootDir
-      _ <- git_("clone", url.toString, repo.pathAsString)(rootDir)
+      _ <- git_("clone", "-c", "clone.defaultRemoteName=origin", url.toString, repo.pathAsString)(
+        rootDir
+      )
     } yield ()
 
   override def cloneExists(repo: File): F[Boolean] =
     fileAlg.isDirectory(repo / ".git")
 
   override def commitAll(repo: File, message: CommitMsg): F[Commit] = {
-    val messages = message.toNel.foldMap(m => List("-m", m))
-    git_("commit" :: "--all" :: sign :: messages: _*)(repo) >>
+    val messages = message.paragraphs.foldMap(m => List("-m", m))
+    val trailers = message.trailers.foldMap { case (k, v) => List("--trailer", s"$k=$v") }
+    git_("commit" :: "--all" :: sign :: messages ++ trailers: _*)(repo) >>
       latestSha1(repo, Branch.head).map(Commit.apply)
   }
 
@@ -89,7 +97,7 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
 
   override def hasConflicts(repo: File, branch: Branch, base: Branch): F[Boolean] = {
     val tryMerge = git_("merge", "--no-commit", "--no-ff", branch.name)(repo)
-    val abortMerge = git_("merge", "--abort")(repo).void
+    val abortMerge = git_("merge", "--abort")(repo).attempt.void
 
     returnToCurrentBranch(repo) {
       checkoutBranch(repo, base) >> F.guarantee(tryMerge, abortMerge).attempt.map(_.isLeft)
@@ -106,41 +114,14 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
     git("rev-parse", "--verify", branch.name)(repo)
       .flatMap(lines => F.fromEither(Sha1.from(lines.mkString("").trim)))
 
-  override def mergeTheirs(repo: File, branch: Branch): F[Option[Commit]] =
-    for {
-      before <- latestSha1(repo, Branch.head)
-      _ <- git_("merge", "--strategy-option=theirs", sign, branch.name)(repo).void
-        .handleErrorWith { throwable =>
-          // Resolve CONFLICT (modify/delete) by deleting unmerged files:
-          for {
-            unmergedFiles <- git("diff", "--name-only", "--diff-filter=U")(repo)
-            _ <- Nel
-              .fromList(unmergedFiles.filter(_.nonEmpty))
-              .fold(F.raiseError[Unit](throwable))(_.traverse_(file => git_("rm", file)(repo)))
-            _ <- git_("commit", "--all", "--no-edit", sign)(repo)
-          } yield ()
-        }
-      after <- latestSha1(repo, Branch.head)
-    } yield Option.when(before =!= after)(Commit(after))
-
   override def push(repo: File, branch: Branch): F[Unit] =
     git_("push", "--force", "--set-upstream", "origin", branch.name)(repo).void
 
   override def removeClone(repo: File): F[Unit] =
     fileAlg.deleteForce(repo)
 
-  override def revertChanges(repo: File, base: Branch): F[Option[Commit]] = {
-    val range = dotdot(base, Branch.head)
-    git("log", "--pretty=format:%h %p", range)(repo).flatMap { commitsWithParents =>
-      val commitsUntilMerge = commitsWithParents.map(_.split(' ')).takeWhile(_.length === 2)
-      val commits = commitsUntilMerge.flatMap(_.headOption)
-      if (commits.isEmpty) F.pure(None)
-      else {
-        val msg = CommitMsg(s"Revert commit(s) " + commits.mkString(", "))
-        git_("revert" :: "--no-commit" :: commits: _*)(repo) >> commitAllIfDirty(repo, msg)
-      }
-    }
-  }
+  override def resetHard(repo: File, base: Branch): F[Unit] =
+    git_("reset", "--hard", base.name)(repo).void
 
   override def setAuthor(repo: File, author: Author): F[Unit] =
     for {

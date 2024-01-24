@@ -83,6 +83,18 @@ example1.host=artifacts.example.com
 example1.realm=Example Realm
 ```
 
+#### Running behind a proxy
+
+You can configure a proxy using the JAVA_OPTS environment variable with proxy properties.
+
+For example:
+
+```bash
+JAVA_OPTS="-Dhttp.proxyHost=webcache.example.com -Dhttp.proxyPort=8080 -Dhttps.proxyHost=webcache.example.com -Dhttps.proxyPort=8080"
+```
+
+See Oracle proxies documentation for more info.
+
 ### Running locally from sbt
 
 #### Sample run for GitLab

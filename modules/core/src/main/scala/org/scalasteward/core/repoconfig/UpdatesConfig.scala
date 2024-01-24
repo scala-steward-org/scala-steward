@@ -24,9 +24,10 @@ import io.circe.generic.extras.semiauto._
 import io.circe.refined._
 import io.circe.{Codec, Decoder}
 import org.scalasteward.core.buildtool.maven.pomXmlName
-import org.scalasteward.core.buildtool.mill.MillAlg.millVersionName
+import org.scalasteward.core.buildtool.mill.MillAlg
 import org.scalasteward.core.buildtool.sbt.buildPropertiesName
 import org.scalasteward.core.data.{GroupId, Update}
+import org.scalasteward.core.repoconfig.UpdatesConfig.defaultLimit
 import org.scalasteward.core.scalafmt.scalafmtConfName
 import org.scalasteward.core.update.FilterAlg.{
   FilterResult,
@@ -41,7 +42,7 @@ final case class UpdatesConfig(
     allow: List[UpdatePattern] = List.empty,
     allowPreReleases: List[UpdatePattern] = List.empty,
     ignore: List[UpdatePattern] = List.empty,
-    limit: Option[NonNegInt] = None,
+    limit: Option[NonNegInt] = defaultLimit,
     fileExtensions: Option[List[String]] = None
 ) {
   def fileExtensionsOrDefault: Set[String] =
@@ -88,9 +89,10 @@ final case class UpdatesConfig(
 }
 
 object UpdatesConfig {
-  private val defaultFileExtensions: Set[String] =
+  val defaultFileExtensions: Set[String] =
     Set(
-      millVersionName,
+      MillAlg.millVersionName,
+      MillAlg.millVersionNameInConfig,
       ".sbt",
       ".sbt.shared",
       ".sc",
@@ -100,6 +102,8 @@ object UpdatesConfig {
       buildPropertiesName,
       pomXmlName
     )
+
+  val defaultLimit: Option[NonNegInt] = None
 
   implicit val updatesConfigEq: Eq[UpdatesConfig] =
     Eq.fromUniversalEquals

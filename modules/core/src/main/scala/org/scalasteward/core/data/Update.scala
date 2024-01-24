@@ -35,6 +35,7 @@ sealed trait Update {
 
   def show: String
 
+  val asSingleUpdates: List[Update.Single]
 }
 
 object Update {
@@ -46,16 +47,18 @@ object Update {
   ) extends Update {
 
     override def show: String = name
-
+    override val asSingleUpdates: List[Update.Single] = updates
   }
 
   sealed trait Single extends Product with Serializable with Update {
+    override val asSingleUpdates: List[Update.Single] = List(this)
     def forArtifactIds: Nel[ForArtifactId]
     def crossDependencies: Nel[CrossDependency]
     def dependencies: Nel[Dependency]
     def groupId: GroupId
     def artifactIds: Nel[ArtifactId]
     def mainArtifactId: String
+    def groupAndMainArtifactId: (GroupId, String) = (groupId, mainArtifactId)
     def currentVersion: Version
     def newerVersions: Nel[Version]
 

@@ -75,8 +75,8 @@ object Cli {
   private val workspace: Opts[File] =
     option[File]("workspace", "Location for cache and temporary files")
 
-  private val reposFile: Opts[File] =
-    option[File]("repos-file", "A markdown formatted file with a repository list")
+  private val reposFiles: Opts[Nel[Uri]] =
+    options[Uri]("repos-file", s"A markdown formatted file with a repository list $multiple")
 
   private val gitAuthorName: Opts[String] = {
     val default = "Scala Steward"
@@ -107,7 +107,7 @@ object Cli {
       "vcs-type",
       s"deprecated in favor of --${name.forgeType}",
       visibility = Visibility.Partial
-    )
+    ).validate(s"--vcs-type is deprecated; use --${name.forgeType} instead")(_ => false)
 
   private val forgeType = {
     val help = ForgeType.all.map(_.asString).mkString("One of ", ", ", "") +
@@ -120,7 +120,7 @@ object Cli {
       "vcs-api-host",
       s"deprecated in favor of --${name.forgeApiHost}",
       visibility = Visibility.Partial
-    )
+    ).validate(s"--vcs-api-host is deprecated; use --${name.forgeApiHost} instead")(_ => false)
 
   private val forgeApiHost: Opts[Uri] =
     option[Uri](name.forgeApiHost, s"API URL of the forge; default: ${GitHub.publicApiBaseUrl}")
@@ -132,7 +132,7 @@ object Cli {
       "vcs-login",
       s"deprecated in favor of --${name.forgeLogin}",
       visibility = Visibility.Partial
-    )
+    ).validate(s"--vcs-login is deprecated; use --${name.forgeLogin} instead")(_ => false)
 
   private val forgeLogin: Opts[String] =
     option[String](name.forgeLogin, "The user name for the forge").orElse(vcsLogin)
@@ -217,13 +217,13 @@ object Cli {
   private val scalafixMigrations: Opts[List[Uri]] =
     options[Uri](
       "scalafix-migrations",
-      s"Additional scalafix migrations configuration file $multiple"
+      s"Additional Scalafix migrations configuration file $multiple"
     ).orEmpty
 
   private val disableDefaultScalafixMigrations: Opts[Boolean] =
     flag(
       "disable-default-scalafix-migrations",
-      "Whether to disable the default scalafix migration file; default: false"
+      "Whether to disable the default Scalafix migration file; default: false"
     ).orFalse
 
   private val scalafixCfg: Opts[ScalafixCfg] =
@@ -280,14 +280,28 @@ object Cli {
       "When set, the number of required reviewers for a merge request will be set to this number (non-negative integer).  Is only used in the context of gitlab-merge-when-pipeline-succeeds being enabled, and requires that the configured access token have the appropriate privileges.  Also requires a Gitlab Premium subscription."
     ).validate("Required reviewers must be non-negative")(_ >= 0).orNone
 
+  private val gitlabRemoveSourceBranch: Opts[Boolean] =
+    flag(
+      "gitlab-remove-source-branch",
+      "Flag indicating if a merge request should remove the source branch when merging."
+    ).orFalse
+
   private val gitLabCfg: Opts[GitLabCfg] =
-    (gitlabMergeWhenPipelineSucceeds, gitlabRequiredReviewers).mapN(GitLabCfg.apply)
+    (gitlabMergeWhenPipelineSucceeds, gitlabRequiredReviewers, gitlabRemoveSourceBranch).mapN(
+      GitLabCfg.apply
+    )
 
   private val githubAppId: Opts[Long] =
-    option[Long]("github-app-id", "GitHub application id")
+    option[Long](
+      "github-app-id",
+      "GitHub application id. Repos accessible by this app are added to the repos in repos.md. git-ask-pass is still required."
+    )
 
   private val githubAppKeyFile: Opts[File] =
-    option[File]("github-app-key-file", "GitHub application key file")
+    option[File](
+      "github-app-key-file",
+      "GitHub application key file. Repos accessible by this app are added to the repos in repos.md. git-ask-pass is still required."
+    )
 
   private val gitHubApp: Opts[Option[GitHubApp]] =
     (githubAppId, githubAppKeyFile).mapN(GitHubApp.apply).orNone
@@ -323,18 +337,9 @@ object Cli {
       .withDefault(default)
   }
 
-  private val configFile: Opts[File] =
-    Opts.argument[File]()
-
-  private val validateConfigFile: Opts[File] =
-    Opts.subcommand(
-      name = "validate-repo-config",
-      help = "Validate the repo config file and exit; report errors if any"
-    )(configFile)
-
-  private val configOpts: Opts[Config] = (
+  private val regular: Opts[Usage] = (
     workspace,
-    reposFile,
+    reposFiles,
     gitCfg,
     forgeCfg,
     ignoreOptsFiles,
@@ -351,29 +356,36 @@ object Cli {
     urlCheckerTestUrls,
     defaultMavenRepo,
     refreshBackoffPeriod
-  ).mapN(Config.apply)
+  ).mapN(Config.apply).map(Usage.Regular.apply)
 
-  val command: Command[StewardUsage] =
-    Command("scala-steward", "")(
-      validateConfigFile
-        .map(StewardUsage.ValidateRepoConfig)
-        .orElse(
-          configOpts
-            .map(StewardUsage.Regular)
-        )
-    )
+  private val validateRepoConfig: Opts[Usage] =
+    Opts
+      .subcommand(
+        name = "validate-repo-config",
+        help = "Validate the repo config file and exit; report errors if any"
+      )(Opts.argument[File]())
+      .map(Usage.ValidateRepoConfig.apply)
+
+  val command: Command[Usage] =
+    Command("scala-steward", "")(regular.orElse(validateRepoConfig))
 
   sealed trait ParseResult extends Product with Serializable
   object ParseResult {
-    final case class Success(config: StewardUsage) extends ParseResult
+    final case class Success(usage: Usage) extends ParseResult
     final case class Help(help: String) extends ParseResult
     final case class Error(error: String) extends ParseResult
+  }
+
+  sealed trait Usage extends Product with Serializable
+  object Usage {
+    final case class Regular(config: Config) extends Usage
+    final case class ValidateRepoConfig(file: File) extends Usage
   }
 
   def parseArgs(args: List[String]): ParseResult =
     command.parse(args) match {
       case Left(help) if help.errors.isEmpty => ParseResult.Help(help.toString)
       case Left(help)                        => ParseResult.Error(help.toString)
-      case Right(config)                     => ParseResult.Success(config)
+      case Right(usage)                      => ParseResult.Success(usage)
     }
 }

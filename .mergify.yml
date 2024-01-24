@@ -8,7 +8,9 @@
 pull_request_rules:
 - name: label scala-steward's PRs
   conditions:
-  - author=scala-steward
+  - or:
+    - author=scala-steward
+    - author=scala-steward-dev
   actions:
     label:
       add:
@@ -16,11 +18,13 @@ pull_request_rules:
       remove: []
 - name: merge scala-steward's PRs
   conditions:
-  - author=scala-steward
-  - status-success=Build and Test (ubuntu-latest, 2.13.10, temurin@17)
-  - status-success=Build and Test (ubuntu-latest, 2.13.10, temurin@11)
-  - status-success=Build and Test (ubuntu-latest, 3.2.2, temurin@17)
-  - status-success=Build and Test (ubuntu-latest, 3.2.2, temurin@11)
+  - or:
+    - author=scala-steward
+    - author=scala-steward-dev
+  - status-success=Build and Test (ubuntu-latest, 2.13, temurin@17)
+  - status-success=Build and Test (ubuntu-latest, 2.13, temurin@11)
+  - status-success=Build and Test (ubuntu-latest, 3, temurin@17)
+  - status-success=Build and Test (ubuntu-latest, 3, temurin@11)
   actions:
     merge:
-      method: squash
+      method: merge

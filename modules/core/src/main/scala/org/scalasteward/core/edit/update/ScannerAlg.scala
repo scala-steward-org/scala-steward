@@ -16,11 +16,12 @@
 
 package org.scalasteward.core.edit.update
 
-import better.files.File
 import cats.effect.Concurrent
+import cats.syntax.all._
 import fs2.Stream
 import org.scalasteward.core.data.{Dependency, Repo, Version}
 import org.scalasteward.core.edit.update.data.{ModulePosition, VersionPosition}
+import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io.{FileAlg, FileData, WorkspaceAlg}
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.Nel
@@ -28,6 +29,7 @@ import org.scalasteward.core.util.Nel
 /** Scans all files that Scala Steward is allowed to edit for version and module positions. */
 final class ScannerAlg[F[_]](implicit
     fileAlg: FileAlg[F],
+    gitAlg: GitAlg[F],
     workspaceAlg: WorkspaceAlg[F],
     F: Concurrent[F]
 ) {
@@ -62,13 +64,9 @@ final class ScannerAlg[F[_]](implicit
       string: String
   ): Stream[F, FileData] =
     Stream.eval(workspaceAlg.repoDir(repo)).flatMap { repoDir =>
-      val fileFilter = (file: File) => {
-        val path = repoDir.relativize(file).toString
-        val cond = !path.startsWith(".git/") &&
-          config.updates.fileExtensionsOrDefault.exists(path.endsWith)
-        Option.when(cond)(path)
-      }
-      val contentFilter = (content: String) => Some(content).filter(_.contains(string))
-      fileAlg.findFiles(repoDir, fileFilter, contentFilter).map(FileData.tupled)
+      Stream
+        .evalSeq(gitAlg.findFilesContaining(repo, string))
+        .filter(path => config.updates.fileExtensionsOrDefault.exists(path.endsWith))
+        .evalMapFilter(path => fileAlg.readFile(repoDir / path).map(_.map(FileData(path, _))))
     }
 }

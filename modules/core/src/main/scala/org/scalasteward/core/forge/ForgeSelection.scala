@@ -16,8 +16,9 @@
 
 package org.scalasteward.core.forge
 
+import cats.effect.Temporal
 import cats.syntax.all._
-import cats.{Applicative, MonadThrow}
+import cats.{Applicative, Functor, Parallel}
 import org.http4s.headers.Authorization
 import org.http4s.{BasicCredentials, Header, Request}
 import org.scalasteward.core.application.Config
@@ -27,6 +28,7 @@ import org.scalasteward.core.forge.azurerepos.AzureReposApiAlg
 import org.scalasteward.core.forge.bitbucket.BitbucketApiAlg
 import org.scalasteward.core.forge.bitbucketserver.BitbucketServerApiAlg
 import org.scalasteward.core.forge.data.AuthenticatedUser
+import org.scalasteward.core.forge.gitea.GiteaApiAlg
 import org.scalasteward.core.forge.github.GitHubApiAlg
 import org.scalasteward.core.forge.gitlab.GitLabApiAlg
 import org.scalasteward.core.util.HttpJsonClient
@@ -34,16 +36,16 @@ import org.typelevel.ci._
 import org.typelevel.log4cats.Logger
 
 object ForgeSelection {
-  def forgeApiAlg[F[_]](
+  def forgeApiAlg[F[_]: Parallel](
       forgeCfg: ForgeCfg,
       forgeSpecificCfg: ForgeSpecificCfg,
-      user: AuthenticatedUser
+      user: F[AuthenticatedUser]
   )(implicit
       httpJsonClient: HttpJsonClient[F],
       logger: Logger[F],
-      F: MonadThrow[F]
+      F: Temporal[F]
   ): ForgeApiAlg[F] = {
-    val auth = (_: Any) => authenticate(forgeCfg.tpe, user)
+    val auth = authenticate(forgeCfg.tpe, user)
     forgeSpecificCfg match {
       case specificCfg: Config.AzureReposCfg =>
         new AzureReposApiAlg(forgeCfg.apiHost, specificCfg, auth)
@@ -55,23 +57,29 @@ object ForgeSelection {
         new GitHubApiAlg(forgeCfg.apiHost, auth)
       case specificCfg: Config.GitLabCfg =>
         new GitLabApiAlg(forgeCfg, specificCfg, auth)
+      case _: Config.GiteaCfg =>
+        new GiteaApiAlg(forgeCfg, auth)
     }
   }
 
   def authenticate[F[_]](
       forgeType: ForgeType,
-      user: AuthenticatedUser
-  )(implicit F: Applicative[F]): Request[F] => F[Request[F]] =
+      user: F[AuthenticatedUser]
+  )(implicit F: Functor[F]): Request[F] => F[Request[F]] =
     forgeType match {
-      case AzureRepos      => _.putHeaders(basicAuth(user)).pure[F]
-      case Bitbucket       => _.putHeaders(basicAuth(user)).pure[F]
-      case BitbucketServer => _.putHeaders(basicAuth(user), xAtlassianToken).pure[F]
-      case GitHub          => _.putHeaders(basicAuth(user)).pure[F]
-      case GitLab          => _.putHeaders(Header.Raw(ci"Private-Token", user.accessToken)).pure[F]
+      case AzureRepos      => req => user.map(u => req.putHeaders(basicAuth(u)))
+      case Bitbucket       => req => user.map(u => req.putHeaders(basicAuth(u)))
+      case BitbucketServer => req => user.map(u => req.putHeaders(basicAuth(u), xAtlassianToken))
+      case GitHub          => req => user.map(u => req.putHeaders(basicAuth(u)))
+      case GitLab          => req => user.map(u => req.putHeaders(privateToken(u)))
+      case Gitea           => req => user.map(u => req.putHeaders(basicAuth(u)))
     }
 
   private def basicAuth(user: AuthenticatedUser): Authorization =
     Authorization(BasicCredentials(user.login, user.accessToken))
+
+  private def privateToken(user: AuthenticatedUser): Header.Raw =
+    Header.Raw(ci"Private-Token", user.accessToken)
 
   // Bypass the server-side XSRF check, see
   // https://github.com/scala-steward-org/scala-steward/pull/1863#issuecomment-754538364
@@ -79,7 +87,7 @@ object ForgeSelection {
 
   def authenticateIfApiHost[F[_]](
       forgeCfg: ForgeCfg,
-      user: AuthenticatedUser
+      user: F[AuthenticatedUser]
   )(implicit F: Applicative[F]): Request[F] => F[Request[F]] =
     req => {
       val sameScheme = req.uri.scheme === forgeCfg.apiHost.scheme

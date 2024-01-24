@@ -17,19 +17,13 @@
 package org.scalasteward.core.application
 
 import better.files.File
-import cats.Monad
-import cats.syntax.all._
 import org.http4s.Uri
-import org.http4s.Uri.UserInfo
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.Config._
 import org.scalasteward.core.data.Resolver
 import org.scalasteward.core.forge.ForgeType
-import org.scalasteward.core.forge.data.AuthenticatedUser
 import org.scalasteward.core.forge.github.GitHubApp
 import org.scalasteward.core.git.Author
-import org.scalasteward.core.io.{ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 import scala.concurrent.duration.FiniteDuration
 
@@ -53,7 +47,7 @@ import scala.concurrent.duration.FiniteDuration
   */
 final case class Config(
     workspace: File,
-    reposFile: File,
+    reposFiles: Nel[Uri],
     gitCfg: GitCfg,
     forgeCfg: ForgeCfg,
     ignoreOptsFiles: Boolean,
@@ -71,20 +65,6 @@ final case class Config(
     defaultResolver: Resolver,
     refreshBackoffPeriod: FiniteDuration
 ) {
-  def forgeUser[F[_]](implicit
-      processAlg: ProcessAlg[F],
-      workspaceAlg: WorkspaceAlg[F],
-      F: Monad[F]
-  ): F[AuthenticatedUser] =
-    for {
-      rootDir <- workspaceAlg.rootDir
-      urlWithUser = util.uri.withUserInfo
-        .replace(UserInfo(forgeCfg.login, None))(forgeCfg.apiHost)
-        .renderString
-      prompt = s"Password for '$urlWithUser': "
-      password <- processAlg.exec(Nel.of(gitCfg.gitAskPass.pathAsString, prompt), rootDir)
-    } yield AuthenticatedUser(forgeCfg.login, password.mkString.trim)
-
   def forgeSpecificCfg: ForgeSpecificCfg =
     forgeCfg.tpe match {
       case ForgeType.AzureRepos      => azureReposCfg
@@ -92,6 +72,7 @@ final case class Config(
       case ForgeType.BitbucketServer => bitbucketServerCfg
       case ForgeType.GitHub          => GitHubCfg()
       case ForgeType.GitLab          => gitLabCfg
+      case ForgeType.Gitea           => GiteaCfg()
     }
 }
 
@@ -157,12 +138,10 @@ object Config {
 
   final case class GitLabCfg(
       mergeWhenPipelineSucceeds: Boolean,
-      requiredReviewers: Option[Int]
+      requiredReviewers: Option[Int],
+      removeSourceBranch: Boolean
   ) extends ForgeSpecificCfg
 
-  sealed trait StewardUsage
-  object StewardUsage {
-    final case class Regular(config: Config) extends StewardUsage
-    final case class ValidateRepoConfig(file: File) extends StewardUsage
-  }
+  final case class GiteaCfg(
+  ) extends ForgeSpecificCfg
 }

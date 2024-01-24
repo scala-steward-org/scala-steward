@@ -19,7 +19,7 @@ package org.scalasteward.core.io
 import better.files.File
 import cats.effect.{Resource, Sync}
 import cats.syntax.all._
-import cats.{ApplicativeError, Monad, MonadThrow}
+import cats.{ApplicativeError, MonadThrow}
 import fs2.Stream
 import org.apache.commons.io.FileUtils
 import org.http4s.Uri
@@ -63,26 +63,10 @@ trait FileAlg[F[_]] {
   ): Resource[F, Unit] =
     createTemporarily(dir / data.path, data.content)
 
-  final def editFile(file: File, edit: String => String)(implicit F: MonadThrow[F]): F[Unit] =
+  final def editFile(file: File, edit: String => F[String])(implicit F: MonadThrow[F]): F[Unit] =
     readFile(file)
-      .flatMap(_.fold(F.unit)(content => writeFile(file, edit(content))))
+      .flatMap(_.fold(F.unit)(edit(_).flatMap(writeFile(file, _))))
       .adaptError { case t => new Throwable(s"failed to edit $file", t) }
-
-  final def findFiles[A, B](
-      dir: File,
-      fileFilter: File => Option[A],
-      contentFilter: String => Option[B]
-  )(implicit F: Monad[F]): Stream[F, (A, B)] = {
-    val none = Option.empty[(A, B)].pure[F]
-    walk(dir).evalMapFilter { file =>
-      isRegularFile(file).ifM(
-        fileFilter(file).fold(none) { a =>
-          readFile(file).map(_.flatMap(contentFilter).tupleLeft(a))
-        },
-        none
-      )
-    }
-  }
 }
 
 object FileAlg {
@@ -113,7 +97,7 @@ object FileAlg {
         Resource.make {
           F.blocking {
             val copyOptions = File.CopyOptions(overwrite = true)
-            if (file.exists) Some(file.moveTo(File.newTemporaryFile())(copyOptions)) else None
+            Option.when(file.exists)(file.moveTo(File.newTemporaryFile())(copyOptions))
           }
         } {
           case Some(tmpFile) => F.blocking(tmpFile.moveTo(file)).void
@@ -121,7 +105,7 @@ object FileAlg {
         }.void
 
       override def readFile(file: File): F[Option[String]] =
-        F.blocking(if (file.exists) Some(file.contentAsString) else None)
+        F.blocking(Option.when(file.exists)(file.contentAsString))
 
       override def readResource(resource: String): F[String] =
         readSource(F.blocking(Source.fromResource(resource)))

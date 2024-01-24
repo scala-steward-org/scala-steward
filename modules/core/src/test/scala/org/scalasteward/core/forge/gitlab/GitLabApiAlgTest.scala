@@ -17,7 +17,6 @@ import org.scalasteward.core.data.{Repo, RepoData, UpdateData}
 import org.scalasteward.core.forge.data._
 import org.scalasteward.core.forge.gitlab.GitLabJsonCodec._
 import org.scalasteward.core.forge.{ForgeSelection, ForgeType}
-import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context.httpJsonClient
@@ -28,11 +27,14 @@ import org.typelevel.ci.CIStringSyntax
 class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
   private val user = AuthenticatedUser("user", "pass")
+  private val userM = MockEff.pure(user)
 
   object MergeWhenPipelineSucceedsMatcher
       extends QueryParamDecoderMatcher[Boolean]("merge_when_pipeline_succeeds")
 
   object RequiredReviewersMatcher extends QueryParamDecoderMatcher[Int]("approvals_required")
+
+  object UsernameMatcher extends QueryParamDecoderMatcher[String]("username")
 
   private val auth = HttpApp[MockEff] { request =>
     (request: @unchecked) match {
@@ -107,6 +109,13 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
             "body": "Superseded by #1234"
           } """)
 
+    case GET -> Root / "users" :? UsernameMatcher(username) =>
+      Ok {
+        if (username == "user1") json""" [ { "id": 1 } ] """
+        else if (username == "user2") json""" [ { "id": 2 } ] """
+        else json""" [] """
+      }
+
     case _ =>
       NotFound()
   }
@@ -114,20 +123,62 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
   private val gitlabApiAlg = ForgeSelection.forgeApiAlg[MockEff](
     config.forgeCfg.copy(tpe = ForgeType.GitLab),
-    GitLabCfg(mergeWhenPipelineSucceeds = false, requiredReviewers = None),
-    user
+    GitLabCfg(
+      mergeWhenPipelineSucceeds = false,
+      requiredReviewers = None,
+      removeSourceBranch = false
+    ),
+    userM
   )
 
   private val gitlabApiAlgNoFork = ForgeSelection.forgeApiAlg[MockEff](
     config.forgeCfg.copy(tpe = ForgeType.GitLab, doNotFork = true),
-    GitLabCfg(mergeWhenPipelineSucceeds = false, requiredReviewers = None),
-    user
+    GitLabCfg(
+      mergeWhenPipelineSucceeds = false,
+      requiredReviewers = None,
+      removeSourceBranch = false
+    ),
+    userM
+  )
+
+  private val gitlabApiAlgAutoMerge = ForgeSelection.forgeApiAlg[MockEff](
+    config.forgeCfg.copy(tpe = ForgeType.GitLab, doNotFork = true),
+    GitLabCfg(
+      mergeWhenPipelineSucceeds = true,
+      requiredReviewers = None,
+      removeSourceBranch = false
+    ),
+    userM
+  )
+
+  private val gitlabApiAlgRemoveSourceBranch = ForgeSelection.forgeApiAlg[MockEff](
+    config.forgeCfg.copy(tpe = ForgeType.GitLab, doNotFork = true),
+    GitLabCfg(
+      mergeWhenPipelineSucceeds = false,
+      requiredReviewers = None,
+      removeSourceBranch = true
+    ),
+    userM
   )
 
   private val gitlabApiAlgLessReviewersRequired = ForgeSelection.forgeApiAlg[MockEff](
     config.forgeCfg.copy(tpe = ForgeType.GitLab, doNotFork = true),
-    GitLabCfg(mergeWhenPipelineSucceeds = true, requiredReviewers = Some(0)),
-    user
+    GitLabCfg(
+      mergeWhenPipelineSucceeds = true,
+      requiredReviewers = Some(0),
+      removeSourceBranch = false
+    ),
+    userM
+  )
+
+  private val gitlabApiAlgWithAssigneeAndReviewers = ForgeSelection.forgeApiAlg[MockEff](
+    config.forgeCfg.copy(tpe = ForgeType.GitLab, doNotFork = true),
+    GitLabCfg(
+      mergeWhenPipelineSucceeds = true,
+      requiredReviewers = Some(0),
+      removeSourceBranch = false
+    ),
+    userM
   )
 
   private val data = UpdateData(
@@ -135,7 +186,7 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     Repo("scala-steward", "bar"),
     ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single,
     Branch("master"),
-    Sha1(Sha1.HexString.unsafeFrom("d6b6791d2ea11df1d156fe70979ab8c3a5ba3433")),
+    Sha1.unsafeFrom("d6b6791d2ea11df1d156fe70979ab8c3a5ba3433"),
     Branch("update/logback-classic-1.2.3")
   )
   private val newPRData =
@@ -169,7 +220,7 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     val branchOut = gitlabApiAlg.getBranch(Repo("foo", "bar"), Branch("master")).runA(state)
     val expected = BranchOut(
       Branch("master"),
-      CommitOut(Sha1(HexString("07eb2a203e297c8340273950e98b2cab68b560c1")))
+      CommitOut(Sha1.unsafeFrom("07eb2a203e297c8340273950e98b2cab68b560c1"))
     )
     assertIO(branchOut, expected)
   }
@@ -218,7 +269,7 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   }
 
   test("createPullRequest -- auto merge") {
-    val prOut = gitlabApiAlgNoFork
+    val prOut = gitlabApiAlgAutoMerge
       .createPullRequest(Repo("foo", "bar"), newPRData)
       .runA(state)
 
@@ -295,6 +346,57 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     assertIO(prOut, expected)
   }
 
+  test("createPullRequest -- with reviewers and assignees") {
+    val prOut = gitlabApiAlgWithAssigneeAndReviewers
+      .createPullRequest(
+        Repo("foo", "bar"),
+        newPRData.copy(assignees = List("user1"), reviewers = List("user2"))
+      )
+      .runA(state)
+
+    val expected = PullRequestOut(
+      uri"https://gitlab.com/foo/bar/merge_requests/150",
+      PullRequestState.Open,
+      PullRequestNumber(150),
+      "title"
+    )
+
+    assertIO(prOut, expected)
+  }
+
+  test("createPullRequest -- with non-existent user as reviewer") {
+    val prOut = gitlabApiAlgWithAssigneeAndReviewers
+      .createPullRequest(
+        Repo("foo", "bar"),
+        newPRData.copy(assignees = List("user1"), reviewers = List("foobar"))
+      )
+      .runA(state)
+
+    val expected = PullRequestOut(
+      uri"https://gitlab.com/foo/bar/merge_requests/150",
+      PullRequestState.Open,
+      PullRequestNumber(150),
+      "title"
+    )
+
+    assertIO(prOut, expected)
+  }
+
+  test("createPullRequest -- remove source branch") {
+    val prOut = gitlabApiAlgRemoveSourceBranch
+      .createPullRequest(Repo("foo", "bar"), newPRData)
+      .runA(state)
+
+    val expected = PullRequestOut(
+      uri"https://gitlab.com/foo/bar/merge_requests/150",
+      PullRequestState.Open,
+      PullRequestNumber(150),
+      "title"
+    )
+
+    assertIO(prOut, expected)
+  }
+
   test("referencePullRequest") {
     val reference = gitlabApiAlg.referencePullRequest(PullRequestNumber(1347))
     assertEquals(reference, "!1347")
@@ -322,13 +424,6 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
         )
       )
     )
-  }
-
-  test("labelPullRequest") {
-    gitlabApiAlg
-      .labelPullRequest(Repo("foo", "bar"), PullRequestNumber(150), List("A", "B"))
-      .runA(state)
-      .assert
   }
 
   private val getMr = json"""

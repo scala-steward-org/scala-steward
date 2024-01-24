@@ -11,7 +11,6 @@ import org.scalasteward.core.application.Config.BitbucketServerCfg
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.data._
 import org.scalasteward.core.forge.{ForgeSelection, ForgeType}
-import org.scalasteward.core.git.Sha1.HexString
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context.httpJsonClient
@@ -23,6 +22,7 @@ class BitbucketServerApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] 
   private val repo = Repo("scala-steward-org", "scala-steward")
   private val main = Branch("main")
   private val user = AuthenticatedUser("user", "pass")
+  private val userM = MockEff.pure(user)
 
   private val basicAuth = Authorization(BasicCredentials(user.login, user.accessToken))
   private val auth = HttpApp[MockEff] { request =>
@@ -113,7 +113,7 @@ class BitbucketServerApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] 
 
   private val forgeCfg = config.forgeCfg.copy(tpe = ForgeType.BitbucketServer)
   private val bitbucketServerApiAlg = ForgeSelection
-    .forgeApiAlg[MockEff](forgeCfg, BitbucketServerCfg(useDefaultReviewers = false), user)
+    .forgeApiAlg[MockEff](forgeCfg, BitbucketServerCfg(useDefaultReviewers = false), userM)
 
   test("createPullRequest") {
     val data = NewPullRequestData(
@@ -121,7 +121,9 @@ class BitbucketServerApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] 
       body = "body",
       head = "main",
       base = main,
-      labels = Nil
+      labels = Nil,
+      assignees = Nil,
+      reviewers = Nil
     )
     val pr = bitbucketServerApiAlg.createPullRequest(repo, data).runA(state)
     val expected =
@@ -140,10 +142,12 @@ class BitbucketServerApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] 
       body = "body",
       head = "main",
       base = main,
-      labels = Nil
+      labels = Nil,
+      assignees = Nil,
+      reviewers = Nil
     )
     val apiAlg = ForgeSelection
-      .forgeApiAlg[MockEff](forgeCfg, BitbucketServerCfg(useDefaultReviewers = true), user)
+      .forgeApiAlg[MockEff](forgeCfg, BitbucketServerCfg(useDefaultReviewers = true), userM)
     val pr = apiAlg.createPullRequest(repo, data).runA(state)
     val expected =
       PullRequestOut(
@@ -206,7 +210,7 @@ class BitbucketServerApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] 
     val obtained = bitbucketServerApiAlg.getBranch(repo, main).runA(state)
     val expected = BranchOut(
       main,
-      CommitOut(Sha1(HexString.unsafeFrom("8d51122def5632836d1cb1026e879069e10a1e13")))
+      CommitOut(Sha1.unsafeFrom("8d51122def5632836d1cb1026e879069e10a1e13"))
     )
     assertIO(obtained, expected)
   }

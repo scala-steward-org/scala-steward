@@ -17,25 +17,15 @@ class MavenAlgTest extends FunSuite {
     val state = mavenAlg.getDependencies(buildRoot).runS(MockState.empty).unsafeRunSync()
     val expected = MockState.empty.copy(
       trace = Vector(
-        Cmd(
-          repoDir.toString,
-          "firejail",
-          "--quiet",
-          s"--whitelist=$repoDir",
-          "--env=VAR1=val1",
-          "--env=VAR2=val2",
+        Cmd.execSandboxed(
+          repoDir,
           "mvn",
           args.batchMode,
           command.listDependencies,
           args.excludeTransitive
         ),
-        Cmd(
-          repoDir.toString,
-          "firejail",
-          "--quiet",
-          s"--whitelist=$repoDir",
-          "--env=VAR1=val1",
-          "--env=VAR2=val2",
+        Cmd.execSandboxed(
+          repoDir,
           "mvn",
           args.batchMode,
           command.listRepositories

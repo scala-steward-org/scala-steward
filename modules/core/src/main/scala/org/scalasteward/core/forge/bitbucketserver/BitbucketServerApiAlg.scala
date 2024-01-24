@@ -33,7 +33,7 @@ import org.typelevel.log4cats.Logger
 final class BitbucketServerApiAlg[F[_]](
     bitbucketApiHost: Uri,
     config: BitbucketServerCfg,
-    modify: Repo => Request[F] => F[Request[F]]
+    modify: Request[F] => F[Request[F]]
 )(implicit client: HttpJsonClient[F], logger: Logger[F], F: MonadThrow[F])
     extends ForgeApiAlg[F] {
   private val url = new Url(bitbucketApiHost)
@@ -53,7 +53,7 @@ final class BitbucketServerApiAlg[F[_]](
       .postWithBody[Json.Comment, Json.Comment](
         url.comments(repo, number),
         Json.Comment(comment),
-        modify(repo)
+        modify
       )
       .map(comment => Comment(comment.text))
 
@@ -68,6 +68,9 @@ final class BitbucketServerApiAlg[F[_]](
 
     for {
       reviewers <- useDefaultReviewers(repo)
+      _ <- F.whenA(data.assignees.nonEmpty)(warnIfAssigneesAreUsed)
+      _ <- F.whenA(data.reviewers.nonEmpty)(warnIfReviewersAreUsed)
+      _ <- F.whenA(data.labels.nonEmpty)(warnIfLabelsAreUsed)
       req = Json.NewPR(
         title = data.title,
         description = data.body,
@@ -79,18 +82,25 @@ final class BitbucketServerApiAlg[F[_]](
         locked = false,
         reviewers = reviewers
       )
-      pr <- client.postWithBody[Json.PR, Json.NewPR](url.pullRequests(repo), req, modify(repo))
+      pr <- client.postWithBody[Json.PR, Json.NewPR](url.pullRequests(repo), req, modify)
     } yield pr.toPullRequestOut
   }
+
+  override def updatePullRequest(
+      number: PullRequestNumber,
+      repo: Repo,
+      data: NewPullRequestData
+  ): F[Unit] =
+    logger.warn("Updating PRs is not yet supported for Bitbucket Server")
 
   private def useDefaultReviewers(repo: Repo): F[List[Reviewer]] =
     if (config.useDefaultReviewers) getDefaultReviewers(repo) else F.pure(List.empty[Reviewer])
 
   private def declinePullRequest(repo: Repo, number: PullRequestNumber, version: Int): F[Unit] =
-    client.post_(url.declinePullRequest(repo, number, version), modify(repo))
+    client.post_(url.declinePullRequest(repo, number, version), modify)
 
   private def getDefaultReviewers(repo: Repo): F[List[Reviewer]] =
-    client.get[List[Json.Condition]](url.reviewers(repo), modify(repo)).map { conditions =>
+    client.get[List[Json.Condition]](url.reviewers(repo), modify).map { conditions =>
       conditions.flatMap { condition =>
         condition.reviewers.map(reviewer => Reviewer(User(reviewer.name)))
       }
@@ -98,33 +108,35 @@ final class BitbucketServerApiAlg[F[_]](
 
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
     client
-      .get[Json.Branches](url.listBranch(repo, branch), modify(repo))
+      .get[Json.Branches](url.listBranch(repo, branch), modify)
       .map(_.values.head.toBranchOut)
 
   private def getDefaultBranch(repo: Repo): F[Json.Branch] =
-    client.get[Json.Branch](url.defaultBranch(repo), modify(repo))
+    client.get[Json.Branch](url.defaultBranch(repo), modify)
 
   private def getPullRequest(repo: Repo, number: PullRequestNumber): F[PR] =
-    client.get[Json.PR](url.pullRequest(repo, number), modify(repo))
+    client.get[Json.PR](url.pullRequest(repo, number), modify)
 
   override def getRepo(repo: Repo): F[RepoOut] =
     for {
-      jRepo <- client.get[Json.Repo](url.repos(repo), modify(repo))
+      jRepo <- client.get[Json.Repo](url.repos(repo), modify)
       cloneUrl <- jRepo.cloneUrlOrRaise[F]
       defaultBranch <- getDefaultBranch(repo)
     } yield RepoOut(jRepo.slug, UserOut(repo.owner), None, cloneUrl, defaultBranch.displayId)
 
   override def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]] =
     client
-      .get[Json.Page[Json.PR]](url.listPullRequests(repo, s"refs/heads/$head"), modify(repo))
+      .get[Json.Page[Json.PR]](url.listPullRequests(repo, s"refs/heads/$head"), modify)
       .map(_.values.map(_.toPullRequestOut))
 
-  override def labelPullRequest(
-      repo: Repo,
-      number: PullRequestNumber,
-      labels: List[String]
-  ): F[Unit] =
+  private def warnIfLabelsAreUsed =
     logger.warn(
       "Bitbucket does not support PR labels, remove --add-labels to make this warning disappear"
     )
+
+  private def warnIfAssigneesAreUsed =
+    logger.warn("assignees are not supported by Bitbucket")
+
+  private def warnIfReviewersAreUsed =
+    logger.warn("reviewers are not implemented yet for Bitbucket")
 }

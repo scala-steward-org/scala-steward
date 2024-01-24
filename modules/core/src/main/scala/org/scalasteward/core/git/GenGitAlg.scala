@@ -34,6 +34,8 @@ trait GenGitAlg[F[_], Repo] {
 
   def checkoutBranch(repo: Repo, branch: Branch): F[Unit]
 
+  def checkIgnore(repo: Repo, file: String): F[Boolean]
+
   def clone(repo: Repo, url: Uri): F[Unit]
 
   def cloneExists(repo: Repo): F[Boolean]
@@ -64,14 +66,11 @@ trait GenGitAlg[F[_], Repo] {
 
   def latestSha1(repo: Repo, branch: Branch): F[Sha1]
 
-  /** Merges `branch` into the current branch using `theirs` as merge strategy option. */
-  def mergeTheirs(repo: Repo, branch: Branch): F[Option[Commit]]
-
   def push(repo: Repo, branch: Branch): F[Unit]
 
   def removeClone(repo: Repo): F[Unit]
 
-  def revertChanges(repo: Repo, base: Branch): F[Option[Commit]]
+  def resetHard(repo: Repo, base: Branch): F[Unit]
 
   def setAuthor(repo: Repo, author: Author): F[Unit]
 
@@ -104,6 +103,9 @@ trait GenGitAlg[F[_], Repo] {
 
       override def checkoutBranch(repo: A, branch: Branch): F[Unit] =
         f(repo).flatMap(self.checkoutBranch(_, branch))
+
+      override def checkIgnore(repo: A, file: String): F[Boolean] =
+        f(repo).flatMap(self.checkIgnore(_, file))
 
       override def clone(repo: A, url: Uri): F[Unit] =
         f(repo).flatMap(self.clone(_, url))
@@ -147,17 +149,14 @@ trait GenGitAlg[F[_], Repo] {
       override def latestSha1(repo: A, branch: Branch): F[Sha1] =
         f(repo).flatMap(self.latestSha1(_, branch))
 
-      override def mergeTheirs(repo: A, branch: Branch): F[Option[Commit]] =
-        f(repo).flatMap(self.mergeTheirs(_, branch))
-
       override def push(repo: A, branch: Branch): F[Unit] =
         f(repo).flatMap(self.push(_, branch))
 
       override def removeClone(repo: A): F[Unit] =
         f(repo).flatMap(self.removeClone)
 
-      override def revertChanges(repo: A, base: Branch): F[Option[Commit]] =
-        f(repo).flatMap(self.revertChanges(_, base))
+      override def resetHard(repo: A, base: Branch): F[Unit] =
+        f(repo).flatMap(self.resetHard(_, base))
 
       override def setAuthor(repo: A, author: Author): F[Unit] =
         f(repo).flatMap(self.setAuthor(_, author))

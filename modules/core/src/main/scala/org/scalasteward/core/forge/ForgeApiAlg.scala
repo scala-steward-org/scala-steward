@@ -27,6 +27,8 @@ trait ForgeApiAlg[F[_]] {
 
   def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut]
 
+  def updatePullRequest(number: PullRequestNumber, repo: Repo, data: NewPullRequestData): F[Unit]
+
   def closePullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut]
 
   def getBranch(repo: Repo, branch: Branch): F[BranchOut]
@@ -39,8 +41,6 @@ trait ForgeApiAlg[F[_]] {
     s"#${number.value}"
 
   def commentPullRequest(repo: Repo, number: PullRequestNumber, comment: String): F[Comment]
-
-  def labelPullRequest(repo: Repo, number: PullRequestNumber, labels: List[String]): F[Unit]
 
   final def createForkOrGetRepo(repo: Repo, doNotFork: Boolean): F[RepoOut] =
     if (doNotFork) getRepo(repo) else createFork(repo)

@@ -1,12 +1,10 @@
 package org.scalasteward.core.mock
 
-import better.files.File
 import cats.data.Kleisli
 import cats.effect.kernel.Resource
 import cats.effect.unsafe.implicits.global
 import org.http4s.client.Client
-import org.scalasteward.core.application.Context
-import org.scalasteward.core.application.Context.StewardContext
+import org.scalasteward.core.application.{Config, Context, ValidateRepoConfigContext}
 import org.scalasteward.core.edit.scalafix.ScalafixMigrationsLoader
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
 import org.scalasteward.core.io._
@@ -43,7 +41,10 @@ object MockContext {
       ioFileAlg.readResource("scalafix-migrations.conf").unsafeRunSync()
   )
 
-  val context: Context[MockEff] = mockState.toRef.flatMap(Context.step1(config).run).unsafeRunSync()
-  def validateRepoConfigContext(file: File): StewardContext.ValidateRepoConfig[MockEff] =
-    Context.initValidateRepoConfig(file)
+  val context: Context[MockEff] = context(config)
+  def context(stewardConfig: Config): Context[MockEff] =
+    mockState.toRef.flatMap(Context.step1(stewardConfig).run).unsafeRunSync()
+
+  val validateRepoConfigContext: ValidateRepoConfigContext[MockEff] =
+    ValidateRepoConfigContext.step1
 }
