@@ -380,7 +380,7 @@ lazy val dockerSettings = Def.settings(
       Cmd("USER", "root"),
       Cmd(
         "RUN",
-        "apk --no-cache add bash git ca-certificates curl maven openssh nodejs npm ncurses"
+        "apk --no-cache add bash git gpg ca-certificates curl maven openssh nodejs npm ncurses"
       ),
       Cmd("RUN", installSbt),
       Cmd("RUN", installMill),
