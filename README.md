@@ -195,6 +195,7 @@ Consider creating PR to add your company to the list and join the community.
 * [HolidayCheck](https://github.com/holidaycheck)
 * [iAdvize](https://www.iadvize.com/en/)
 * [LeadIQ](https://leadiq.com/)
+* [Lichess](https://lichess.org)
 * [Lightbend](https://www.lightbend.com/)
 * [Mobimeo](https://www.mobimeo.com/)
 * [Ocado Technology](https://ocadotechnology.com/)
