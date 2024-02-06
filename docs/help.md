@@ -57,7 +57,7 @@ Options and flags:
     --disable-sandbox
         Whether to not use the sandbox
     --max-buffer-size <integer>
-        Size of the buffer for the output of an external process in lines; default: 16384
+        Size of the buffer for the output of an external process in lines; default: 32768
     --repo-config <uri>
         Additional repo config file (can be used multiple times)
     --disable-default-repo-config
