@@ -203,7 +203,6 @@ pipelines:
 There is multiple articles on how to run Scala Steward on-premise:
 
 * [Running Scala Steward On-premise](https://engineering.avast.io/running-scala-steward-on-premise)
-* [Running scala-steward periodically on AWS Fargate](https://medium.com/@tanishiking/running-scala-steward-periodically-on-aws-fargate-3d3d202f0f7)
 * [Scala StewardとGitHub Actionsで依存ライブラリの更新を自動化する](https://scalapedia.com/articles/145/Scala+Steward%E3%81%A8GitHub+Actions%E3%81%A7%E4%BE%9D%E5%AD%98%E3%83%A9%E3%82%A4%E3%83%96%E3%83%A9%E3%83%AA%E3%81%AE%E6%9B%B4%E6%96%B0%E3%82%92%E8%87%AA%E5%8B%95%E5%8C%96%E3%81%99%E3%82%8B)
 * [Centralized Scala Steward with GitHub Actions](https://hector.dev/2020/11/18/centralized-scala-steward-with-github-actions)
 * [Big Timesavers for Busy Scala Developers](https://speakerdeck.com/exoego/big-timesavers-for-busy-scala-developers)
