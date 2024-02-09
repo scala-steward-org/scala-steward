@@ -51,7 +51,16 @@ More information about using the `--scalafix-migrations` and `--artifact-migrati
 The workspace directory (specified with `--workspace`) provides a location for cache and temporary files.  
 
 It is important to persist this workspace between runs.  Without this, Scala Steward will be unable to observe 
-repo-specific preferences (such as [pullRequests.frequency](repo-specific-configuration.md)) correctly.   
+repo-specific preferences (such as [pullRequests.frequency](repo-specific-configuration.md)) correctly.
+
+Furthermore, `git` requires the workspace directory to be owned by the same user that will run Scala Steward.
+If there is an ownership mismatch, `git` may print error messages like
+
+> fatal: detected dubious ownership in repository …
+
+or
+
+> fatal: not in a git directory
 
 ### Private repositories
 
