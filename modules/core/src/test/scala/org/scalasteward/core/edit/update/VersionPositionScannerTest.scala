@@ -69,7 +69,7 @@ class VersionPositionScannerTest extends FunSuite {
       "plugins.sbt",
       s"""addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.5.2")
          |addSbtPlugin("${d.groupId}" % "${d.artifactId.name}" % "${d.version}")
-         |addSbtPlugin("org.scoverage" % "sbt-scoverage" % "2.0.10")""".stripMargin
+         |addSbtPlugin("org.scoverage" % "sbt-scoverage" % "2.0.11")""".stripMargin
     )
     val obtained = VersionPositionScanner.findPositions(d.version, fd)
     val expected = List(
