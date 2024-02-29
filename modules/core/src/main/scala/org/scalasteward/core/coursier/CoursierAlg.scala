@@ -22,8 +22,6 @@ import cats.implicits.*
 import coursier.cache.{CachePolicy, FileCache}
 import coursier.core.{Authentication, Project}
 import coursier.{Fetch, Module, ModuleName, Organization}
-import coursier.{Fetch, Info, Module, ModuleName, Organization}
-import org.http4s.Uri
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.Resolver.Credentials
 import org.scalasteward.core.data.{Dependency, Resolver, Version}
