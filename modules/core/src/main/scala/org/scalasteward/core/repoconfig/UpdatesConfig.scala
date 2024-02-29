@@ -133,9 +133,9 @@ object UpdatesConfig {
       x: List[UpdatePattern],
       y: List[UpdatePattern]
   ): List[UpdatePattern] =
-    x ::: y.filterNot { p1 =>
-      x.exists(p2 => p1.groupId === p2.groupId && p1.artifactId === p2.artifactId)
-    }
+    x.filterNot { p1 =>
+      y.exists(p2 => p1.groupId === p2.groupId && p1.artifactId === p2.artifactId)
+    } ::: y
 
   private[repoconfig] val nonExistingUpdatePattern: List[UpdatePattern] =
     List(UpdatePattern(GroupId("non-exist"), None, None))
