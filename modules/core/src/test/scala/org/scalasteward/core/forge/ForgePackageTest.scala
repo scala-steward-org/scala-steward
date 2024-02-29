@@ -16,14 +16,9 @@ class ForgePackageTest extends FunSuite {
     val update = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single
     val updateBranch = git.branchFor(update, None)
 
-    test("listingBranch (single)") {
-      assertEquals(listingBranch(GitHub, repo, updateBranch), s"foo/bar:${updateBranch.name}")
-      assertEquals(listingBranch(GitLab, repo, updateBranch), updateBranch.name)
-    }
-
-    test("createBranch (single)") {
-      assertEquals(createBranch(GitHub, repo, updateBranch), s"foo:${updateBranch.name}")
-      assertEquals(createBranch(GitLab, repo, updateBranch), updateBranch.name)
+    test("headFor (single)") {
+      assertEquals(headFor(GitHub, repo, updateBranch), s"foo:${updateBranch.name}")
+      assertEquals(headFor(GitLab, repo, updateBranch), updateBranch.name)
     }
 
   }
@@ -40,14 +35,9 @@ class ForgePackageTest extends FunSuite {
 
     val updateBranch = git.branchFor(update, None)
 
-    test("listingBranch (grouped)") {
-      assertEquals(listingBranch(GitHub, repo, updateBranch), s"foo/bar:update/my-group")
-      assertEquals(listingBranch(GitLab, repo, updateBranch), updateBranch.name)
-    }
-
-    test("createBranch (grouped)") {
-      assertEquals(createBranch(GitHub, repo, updateBranch), s"foo:update/my-group")
-      assertEquals(createBranch(GitLab, repo, updateBranch), updateBranch.name)
+    test("headFor (grouped)") {
+      assertEquals(headFor(GitHub, repo, updateBranch), s"foo:update/my-group")
+      assertEquals(headFor(GitLab, repo, updateBranch), updateBranch.name)
     }
   }
 
@@ -62,16 +52,10 @@ class ForgePackageTest extends FunSuite {
 
     val updateBranch = git.branchFor(update, None)
 
-    test("listingBranch (grouped) with $hash") {
-      assertEquals(listingBranch(GitHub, repo, updateBranch), s"foo/bar:update/my-group-1164623676")
-      assertEquals(listingBranch(GitLab, repo, updateBranch), updateBranch.name)
+    test("headFor (grouped) with $hash") {
+      assertEquals(headFor(GitHub, repo, updateBranch), s"foo:update/my-group-1164623676")
+      assertEquals(headFor(GitLab, repo, updateBranch), updateBranch.name)
     }
-
-    test("createBranch (grouped) with $hash") {
-      assertEquals(createBranch(GitHub, repo, updateBranch), s"foo:update/my-group-1164623676")
-      assertEquals(createBranch(GitLab, repo, updateBranch), updateBranch.name)
-    }
-
   }
 
 }
