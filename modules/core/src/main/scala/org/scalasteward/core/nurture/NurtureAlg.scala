@@ -92,7 +92,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
   private def processUpdate(data: UpdateData): F[ProcessResult] =
     for {
       _ <- logger.info(s"Process update ${data.update.show}")
-      head = forge.listingBranch(config.tpe, data.fork, data.updateBranch)
+      head = forge.headFor(config.tpe, data.fork, data.updateBranch)
       pullRequests <- forgeApiAlg.listPullRequests(data.repo, head, data.baseBranch)
       result <- pullRequests.headOption match {
         case Some(pr) if pr.state.isClosed && data.update.isInstanceOf[Update.Single] =>
@@ -230,7 +230,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
           .on(u => List(u.currentVersion.value), _.updates.map(_.currentVersion.value))
           .flatTraverse(gitAlg.findFilesContaining(data.repo, _))
           .map(_.distinct)
-      branchName = forge.createBranch(config.tpe, data.fork, data.updateBranch)
+      branchName = forge.headFor(config.tpe, data.fork, data.updateBranch)
       allLabels = labelsFor(data.update, edits, filesWithOldVersion, artifactIdToVersionScheme)
       labels = filterLabels(allLabels, data.repoData.config.pullRequests.includeMatchedLabels)
       requestData = NewPullRequestData.from(

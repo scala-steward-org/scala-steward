@@ -23,21 +23,9 @@ import org.scalasteward.core.git.Branch
 package object forge {
 
   /** Determines the `head` (GitHub) / `source_branch` (GitLab, Bitbucket) parameter for searching
-    * for already existing pull requests.
+    * for already existing pull requests or creating new pull requests.
     */
-  def listingBranch(forgeType: ForgeType, fork: Repo, updateBranch: Branch): String =
-    forgeType match {
-      case GitHub =>
-        s"${fork.owner}/${fork.repo}:${updateBranch.name}"
-
-      case GitLab | Bitbucket | BitbucketServer | AzureRepos | Gitea =>
-        updateBranch.name
-    }
-
-  /** Determines the `head` (GitHub) / `source_branch` (GitLab, Bitbucket) parameter for creating a
-    * new pull requests.
-    */
-  def createBranch(forgeType: ForgeType, fork: Repo, updateBranch: Branch): String =
+  def headFor(forgeType: ForgeType, fork: Repo, updateBranch: Branch): String =
     forgeType match {
       case GitHub =>
         s"${fork.owner}:${updateBranch.name}"
