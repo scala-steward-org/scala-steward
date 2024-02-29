@@ -32,13 +32,15 @@ trait CoursierDependenciesFetchAlg[F[_]] {
 }
 
 object CoursierDependenciesFetchAlg {
-  def create[F[_]](implicit parallel: Parallel[F], F: Sync[F]): CoursierDependenciesFetchAlg[F] =
-    (dependencies: Seq[String]) =>
+  def create[F[_]](implicit parallel: Parallel[F], F: Async[F]): CoursierDependenciesFetchAlg[F] =
+    (dependencies: Seq[String]) => {
       Fetch[F](FileCache[F]())
-        .withDependencies(dependencies.map { dep =>
-          val Array(org, name, version) = dep.split(':')
-          Dependency(Module(Organization(org), ModuleName(name)), version)
-        })
+        .withDependencies(
+          dependencies.map { dep =>
+            val Array(org, name, version) = dep.split(':')
+            Dependency(Module(Organization(org), ModuleName(name)), version)
+          })
         .io
         .map(result => new URLClassLoader(result.map(_.toURI.toURL).toArray))
+    }
 }
