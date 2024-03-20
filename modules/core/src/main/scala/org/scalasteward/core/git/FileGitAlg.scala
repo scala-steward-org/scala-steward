@@ -151,7 +151,18 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
       slurpOptions: SlurpOptions = Set.empty
   ): F[List[String]] = {
     val extraEnv = List("GIT_ASKPASS" -> config.gitAskPass.pathAsString)
-    processAlg.exec(gitCmd ++ args.toList, repo, extraEnv, slurpOptions)
+    processAlg
+      .exec(gitCmd ++ args.toList, repo, extraEnv, slurpOptions)
+      .recoverWith {
+        case ex: ProcessFailedException
+            if ex.getMessage.contains("fatal: not in a git directory") =>
+          // `git status` prints a more informative error message than some other git commands, like `git config`
+          // this will hopefully print that error message to the logs in addition to the actual failure
+          processAlg
+            .exec(Nel.of("git", "status"), repo, List.empty, slurpOptions)
+            .attempt
+            .void >> ex.raiseError
+      }
   }
 
   private def git_(args: String*)(repo: File): F[List[String]] =
