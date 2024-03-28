@@ -74,7 +74,7 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
              |<sup>
              |labels: library-update, early-semver-minor, semver-spec-minor, version-scheme:early-semver, commit-count:1
              |</sup>""".stripMargin.trim,
-      head = "scala-steward:update/cats-effect-3.4.0",
+      head = "scala-steward:update/cats-effect-3.4.1",
       base = baseBranch,
       labels = List(
         "library-update",
