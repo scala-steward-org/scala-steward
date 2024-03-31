@@ -247,9 +247,15 @@ class FilterAlgTest extends FunSuite {
     assert(isDependencyConfigurationIgnored(dependency.copy(configurations = Some("scalafmt"))))
   }
 
-  test("scalaLTSFilter: LTS") {
-    val update = ("org.scala-lang".g % "scala3-compiler".a % "3.3.3" %> Nel.of("3.4.0")).single
+  test("scalaLTSFilter: LTS, no update") {
+    val update = ("org.scala-lang".g % "scala3-compiler".a % "3.3.2" %> Nel.of("3.4.0")).single
     assertEquals(scalaLTSFilter(update), Left(IgnoreScalaNext(update)))
+  }
+
+  test("scalaLTSFilter: LTS, filter versions") {
+    val update =
+      ("org.scala-lang".g % "scala3-compiler".a % "3.3.2" %> Nel.of("3.3.3", "3.4.0")).single
+    assertEquals(scalaLTSFilter(update), Right(update.copy(newerVersions = Nel.of("3.3.3".v))))
   }
 
   test("scalaLTSFilter: Next") {
