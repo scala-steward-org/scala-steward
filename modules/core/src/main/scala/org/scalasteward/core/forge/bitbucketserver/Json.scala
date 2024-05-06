@@ -98,7 +98,6 @@ object Json {
   implicit val defaultReviewerDecoder: Decoder[DefaultReviewer] = deriveDecoder
   implicit val linkDecoder: Decoder[Link] = deriveDecoder
   implicit val newPREncoder: Encoder[NewPR] = deriveEncoder
-  @annotation.nowarn("cat=unused-params")
   implicit def pageDecoder[A: Decoder]: Decoder[Page[A]] = deriveDecoder
   implicit val prDecoder: Decoder[PR] = deriveDecoder
   implicit val projectCodec: Codec[Project] = deriveCodec
