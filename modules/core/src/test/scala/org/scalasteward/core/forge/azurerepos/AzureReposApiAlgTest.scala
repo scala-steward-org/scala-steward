@@ -209,7 +209,7 @@ class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
           title = "Update cats-effect to 3.3.14",
           body = "Updates org.typelevel:cats-effect  from 3.3.13 to 3.3.14.",
           head = "refs/heads/update/cats-effect-3.3.14",
-          base = Branch("refs/heads/main"),
+          base = Branch("main"),
           labels = List.empty,
           assignees = List.empty,
           reviewers = List.empty
