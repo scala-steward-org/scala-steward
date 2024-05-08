@@ -79,13 +79,14 @@ object FilterAlg {
         val filteredVersions = update.newerVersions.filterNot(_ >= scalaNextMinVersion)
         if (filteredVersions.nonEmpty)
           Right(update.copy(newerVersions = Nel.fromListUnsafe(filteredVersions)))
-        else Left(IgnoreScalaNext(update))
+        else
+          Left(IgnoreScalaNext(update))
       }
     }
 
   def isScala3Lang(update: Update.ForArtifactId): Boolean =
     scala3LangModules.exists { case (g, a) =>
-      update.groupId == g && update.artifactIds.exists(_ == a)
+      update.groupId == g && update.artifactIds.exists(_.name == a.name)
     }
 
   private def globalFilter(update: Update.ForArtifactId, repoConfig: RepoConfig): FilterResult =

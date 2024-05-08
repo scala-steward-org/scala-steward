@@ -37,5 +37,5 @@ package object data {
   val scalaLangModules: List[(GroupId, ArtifactId)] =
     scala2LangModules ++ scala3LangModules
 
-  val scalaNextMinVersion: Version = Version("3.4.0")
+  val scalaNextMinVersion: Version = Version("3.4.0-NIGHTLY")
 }
