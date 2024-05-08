@@ -254,17 +254,26 @@ class FilterAlgTest extends FunSuite {
 
   test("scalaLTSFilter: LTS, filter versions") {
     val update =
-      ("org.scala-lang".g % "scala3-compiler".a % "3.3.2" %> Nel.of("3.3.3", "3.4.0")).single
+      ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.3.2" %> Nel.of(
+        "3.3.3",
+        "3.4.0"
+      )).single
     assertEquals(scalaLTSFilter(update), Right(update.copy(newerVersions = Nel.of("3.3.3".v))))
   }
 
   test("scalaLTSFilter: Next") {
-    val update = ("org.scala-lang".g % "scala3-compiler".a % "3.4.0" %> Nel.of("3.4.1")).single
+    val update =
+      ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.4.0" %> Nel.of(
+        "3.4.1"
+      )).single
     assertEquals(scalaLTSFilter(update), Right(update))
   }
 
   test("isScala3Lang: true") {
-    val update = ("org.scala-lang".g % "scala3-compiler".a % "3.3.3" %> Nel.of("3.4.0")).single
+    val update =
+      ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.3.3" %> Nel.of(
+        "3.4.0"
+      )).single
     assert(isScala3Lang(update))
   }
 
