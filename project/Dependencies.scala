@@ -19,7 +19,7 @@ object Dependencies {
     "io.get-coursier" %% "coursier-sbt-maven-repository" % coursierCore.revision
   val cron4sCore = "com.github.alonsodomin.cron4s" %% "cron4s-core" % "0.7.0"
   val decline = "com.monovore" %% "decline" % "2.4.1"
-  val disciplineMunit = "org.typelevel" %% "discipline-munit" % "1.0.9"
+  val disciplineMunit = "org.typelevel" %% "discipline-munit" % "2.0.0"
   val fs2Core = "co.fs2" %% "fs2-core" % "3.10.2"
   val fs2Io = "co.fs2" %% "fs2-io" % fs2Core.revision
   val http4sCore = "org.http4s" %% "http4s-core" % "1.0.0-M41"
@@ -35,8 +35,8 @@ object Dependencies {
   val jjwtJackson = "io.jsonwebtoken" % "jjwt-jackson" % jjwtApi.revision
   val millScriptVersion = "0.11.0-M10"
   val monocleCore = "dev.optics" %% "monocle-core" % "3.2.0"
-  val munit = "org.scalameta" %% "munit" % "0.7.29"
-  val munitCatsEffect = "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
+  val munit = "org.scalameta" %% "munit" % "1.0.0"
+  val munitCatsEffect = "org.typelevel" %% "munit-cats-effect" % "2.0.0"
   val munitScalacheck = "org.scalameta" %% "munit-scalacheck" % munit.revision
   val refined = "eu.timepit" %% "refined" % "0.11.1"
   val refinedScalacheck = "eu.timepit" %% "refined-scalacheck" % refined.revision
