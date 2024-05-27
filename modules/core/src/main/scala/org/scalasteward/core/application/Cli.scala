@@ -315,6 +315,13 @@ object Cli {
   private val azureReposCfg: Opts[AzureReposCfg] =
     azureReposOrganization.map(AzureReposCfg.apply)
 
+  private val coursierDependencies: Opts[List[String]] =
+    options[String](
+      "coursier-dependencies",
+      "Additional coursier dependencies in the format <groupId>:<artifactId>:<version>, " +
+        "i.e. additional URL handlers. (can be used multiple times)"
+    ).orEmpty
+
   private val refreshBackoffPeriod: Opts[FiniteDuration] = {
     val default = 0.days
     val help = "Period of time a failed build won't be triggered again" +
@@ -355,7 +362,8 @@ object Cli {
     gitHubApp,
     urlCheckerTestUrls,
     defaultMavenRepo,
-    refreshBackoffPeriod
+    refreshBackoffPeriod,
+    coursierDependencies
   ).mapN(Config.apply).map(Usage.Regular.apply)
 
   private val validateRepoConfig: Opts[Usage] =
