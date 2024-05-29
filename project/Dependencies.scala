@@ -4,7 +4,7 @@ object Dependencies {
   val bcprovJdk15to18 = "org.bouncycastle" % "bcprov-jdk15to18" % "1.78.1"
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.2"
   val catsEffect = "org.typelevel" %% "cats-effect" % "3.5.4"
-  val catsCore = "org.typelevel" %% "cats-core" % "2.10.0"
+  val catsCore = "org.typelevel" %% "cats-core" % "2.12.0"
   val catsLaws = "org.typelevel" %% "cats-laws" % catsCore.revision
   val catsParse = "org.typelevel" %% "cats-parse" % "1.0.0"
   val circeConfig = "io.circe" %% "circe-config" % "0.10.1"
