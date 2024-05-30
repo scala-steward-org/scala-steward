@@ -59,6 +59,7 @@ final case class Config(
     bitbucketCfg: BitbucketCfg,
     bitbucketServerCfg: BitbucketServerCfg,
     gitLabCfg: GitLabCfg,
+    gitHubCfg: GitHubCfg,
     azureReposCfg: AzureReposCfg,
     githubApp: Option[GitHubApp],
     urlCheckerTestUrls: Nel[Uri],
@@ -70,7 +71,7 @@ final case class Config(
       case ForgeType.AzureRepos      => azureReposCfg
       case ForgeType.Bitbucket       => bitbucketCfg
       case ForgeType.BitbucketServer => bitbucketServerCfg
-      case ForgeType.GitHub          => GitHubCfg()
+      case ForgeType.GitHub          => gitHubCfg
       case ForgeType.GitLab          => gitLabCfg
       case ForgeType.Gitea           => GiteaCfg()
     }
@@ -134,6 +135,7 @@ object Config {
   ) extends ForgeSpecificCfg
 
   final case class GitHubCfg(
+      autoMerge: Boolean
   ) extends ForgeSpecificCfg
 
   final case class GitLabCfg(

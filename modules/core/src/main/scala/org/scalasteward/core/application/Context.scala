@@ -166,7 +166,7 @@ object Context {
       implicit val repoCacheRepository: RepoCacheRepository[F] =
         new RepoCacheRepository[F](repoCacheStore)
       implicit val forgeApiAlg: ForgeApiAlg[F] =
-        ForgeSelection.forgeApiAlg[F](config.forgeCfg, config.forgeSpecificCfg, forgeUser)
+        ForgeSelection.forgeApiAlg[F](config.forgeCfg, config.forgeSpecificCfg, forgeUser, client)
       implicit val forgeRepoAlg: ForgeRepoAlg[F] = new ForgeRepoAlg[F](config)
       implicit val forgeCfg: ForgeCfg = config.forgeCfg
       implicit val updateInfoUrlFinder: UpdateInfoUrlFinder[F] = new UpdateInfoUrlFinder[F]

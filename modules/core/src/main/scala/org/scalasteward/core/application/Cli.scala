@@ -291,6 +291,14 @@ object Cli {
       GitLabCfg.apply
     )
 
+  private val gitHubAutoMerge: Opts[Boolean] =
+    flag(
+      "github-automerge",
+      "Whether to merge a github pull request when requirements are met"
+    ).orFalse
+  private val gitHubCfg: Opts[GitHubCfg] =
+    gitHubAutoMerge.map(GitHubCfg.apply)
+
   private val githubAppId: Opts[Long] =
     option[Long](
       "github-app-id",
@@ -351,6 +359,7 @@ object Cli {
     bitbucketCfg,
     bitbucketServerCfg,
     gitLabCfg,
+    gitHubCfg,
     azureReposCfg,
     gitHubApp,
     urlCheckerTestUrls,

@@ -3,6 +3,7 @@ import sbt._
 object Dependencies {
   val bcprovJdk15to18 = "org.bouncycastle" % "bcprov-jdk15to18" % "1.78.1"
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.2"
+  val calibanClient = "com.github.ghostdogpr" %% "caliban-client" % "2.7.0"
   val catsEffect = "org.typelevel" %% "cats-effect" % "3.5.4"
   val catsCore = "org.typelevel" %% "cats-core" % "2.12.0"
   val catsLaws = "org.typelevel" %% "cats-laws" % catsCore.revision
@@ -45,4 +46,5 @@ object Dependencies {
   val scalaStewardMillPluginArtifactName = "scala-steward-mill-plugin"
   val scalaStewardMillPlugin =
     "org.scala-steward" % s"${scalaStewardMillPluginArtifactName}_mill0.10_2.13" % "0.18.0"
+  val sttpHttp4s = "com.softwaremill.sttp.client3" %% "http4s-backend" % "3.9.7"
 }

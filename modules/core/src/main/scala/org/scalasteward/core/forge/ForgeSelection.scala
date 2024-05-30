@@ -16,7 +16,6 @@
 
 package org.scalasteward.core.forge
 
-import cats.effect.Temporal
 import cats.syntax.all._
 import cats.{Applicative, Functor, Parallel}
 import org.http4s.headers.Authorization
@@ -34,16 +33,20 @@ import org.scalasteward.core.forge.gitlab.GitLabApiAlg
 import org.scalasteward.core.util.HttpJsonClient
 import org.typelevel.ci._
 import org.typelevel.log4cats.Logger
+import org.http4s.client.Client
+import sttp.client3.http4s.Http4sBackend.usingClient
+import cats.effect.kernel.Async
 
 object ForgeSelection {
   def forgeApiAlg[F[_]: Parallel](
       forgeCfg: ForgeCfg,
       forgeSpecificCfg: ForgeSpecificCfg,
-      user: F[AuthenticatedUser]
+      user: F[AuthenticatedUser],
+      client: Client[F]
   )(implicit
       httpJsonClient: HttpJsonClient[F],
       logger: Logger[F],
-      F: Temporal[F]
+      FA: Async[F]
   ): ForgeApiAlg[F] = {
     val auth = authenticate(forgeCfg.tpe, user)
     forgeSpecificCfg match {
@@ -53,8 +56,8 @@ object ForgeSelection {
         new BitbucketApiAlg(forgeCfg, specificCfg, auth)
       case specificCfg: Config.BitbucketServerCfg =>
         new BitbucketServerApiAlg(forgeCfg.apiHost, specificCfg, auth)
-      case _: Config.GitHubCfg =>
-        new GitHubApiAlg(forgeCfg.apiHost, auth)
+      case config: Config.GitHubCfg =>
+        new GitHubApiAlg(forgeCfg.apiHost, config, auth, usingClient(client))
       case specificCfg: Config.GitLabCfg =>
         new GitLabApiAlg(forgeCfg, specificCfg, auth)
       case _: Config.GiteaCfg =>

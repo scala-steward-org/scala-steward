@@ -26,7 +26,8 @@ final case class PullRequestOut(
     html_url: Uri,
     state: PullRequestState,
     number: PullRequestNumber,
-    title: String
+    title: String,
+    node_id: String = ""
 )
 
 object PullRequestOut {

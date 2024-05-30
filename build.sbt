@@ -112,12 +112,19 @@ lazy val benchmark = myCrossProject("benchmark")
   )
 
 lazy val core = myCrossProject("core")
-  .enablePlugins(BuildInfoPlugin, JavaAppPackaging, DockerPlugin)
+  .enablePlugins(BuildInfoPlugin, JavaAppPackaging, DockerPlugin, CalibanPlugin)
   .settings(dockerSettings)
   .settings(
+    // this ought to work but doesn't
+    Seq(Compile / caliban / calibanSettings += calibanSetting(url("https://docs.github.com/public/fpt/schema.docs.graphql"))(
+        _.clientName("GithubClient")
+         .packageName("com.github.api")
+    )).take(0),
+    Compile / caliban / calibanSources := crossProjectBaseDirectory.value / "src" / "main" / "graphql",
     libraryDependencies ++= Seq(
       Dependencies.bcprovJdk15to18,
       Dependencies.betterFiles,
+      Dependencies.calibanClient,
       Dependencies.catsCore,
       Dependencies.catsEffect,
       Dependencies.catsParse,
@@ -154,7 +161,8 @@ lazy val core = myCrossProject("core")
       Dependencies.munitCatsEffect % Test,
       Dependencies.munitScalacheck % Test,
       Dependencies.refinedScalacheck % Test,
-      Dependencies.scalacheck % Test
+      Dependencies.scalacheck % Test,
+      Dependencies.sttpHttp4s
     ),
     assembly / test := {},
     assembly / assemblyMergeStrategy := {
