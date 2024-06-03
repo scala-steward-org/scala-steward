@@ -75,8 +75,8 @@ object Selector {
           scalaCliUsingDep.matcher(p.before).matches() ||
           scalaCliUsingTestDep.matcher(p.before).matches() ||
           !p.isCommented
-        case p: SbtDependency  => !p.isCommented && !p.before.toLowerCase.contains("previous")
-        case _                 => true
+        case p: SbtDependency => !p.isCommented && !p.before.toLowerCase.contains("previous")
+        case _                => true
       }
       .filter { p =>
         val artifactIdNames = Set(p.artifactId, p.artifactId.takeWhile(_ =!= '_'))
