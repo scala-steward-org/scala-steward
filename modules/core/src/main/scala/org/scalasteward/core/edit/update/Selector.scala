@@ -70,7 +70,11 @@ object Selector {
     versionPositions
       .collect { case p: DependencyDef => p }
       .filter {
-        case p: MillDependency => scalaCliUsingLib.matcher(p.before).matches() || !p.isCommented
+        case p: MillDependency =>
+          scalaCliUsingLib.matcher(p.before).matches() ||
+          scalaCliUsingDep.matcher(p.before).matches() ||
+          scalaCliUsingTestDep.matcher(p.before).matches() ||
+          !p.isCommented
         case p: SbtDependency  => !p.isCommented && !p.before.toLowerCase.contains("previous")
         case _                 => true
       }
@@ -83,6 +87,12 @@ object Selector {
 
   private def scalaCliUsingLib: Pattern =
     Pattern.compile("""//>\s+using\s+lib\s+""")
+
+  private def scalaCliUsingDep: Pattern =
+    Pattern.compile("""//>\s+using\s+dep\s+""")
+
+  private def scalaCliUsingTestDep: Pattern =
+    Pattern.compile("""//>\s+using\s+test.dep\s+""")
 
   private def scalaValInDependencyDefPositions(
       versionPositions: List[VersionPosition],
