@@ -92,7 +92,7 @@ object Selector {
     Pattern.compile("""//>\s+using\s+dep\s+""")
 
   private def scalaCliUsingTestDep: Pattern =
-    Pattern.compile("""//>\s+using\s+test.dep\s+""")
+    Pattern.compile("""//>\s+using\s+test\.dep\s+""")
 
   private def scalaValInDependencyDefPositions(
       versionPositions: List[VersionPosition],
