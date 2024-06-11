@@ -63,7 +63,8 @@ final case class Config(
     githubApp: Option[GitHubApp],
     urlCheckerTestUrls: Nel[Uri],
     defaultResolver: Resolver,
-    refreshBackoffPeriod: FiniteDuration
+    refreshBackoffPeriod: FiniteDuration,
+    exitCodePolicy: ExitCodePolicy
 ) {
   def forgeSpecificCfg: ForgeSpecificCfg =
     forgeCfg.tpe match {

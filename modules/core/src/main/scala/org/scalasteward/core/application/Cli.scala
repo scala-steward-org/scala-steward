@@ -18,12 +18,17 @@ package org.scalasteward.core.application
 
 import better.files.File
 import cats.data.Validated
+import cats.effect.ExitCode
 import cats.syntax.all._
 import com.monovore.decline.Opts.{flag, option, options}
 import com.monovore.decline._
 import org.http4s.Uri
 import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Config._
+import org.scalasteward.core.application.ExitCodePolicy.{
+  SuccessIfAnyRepoSucceeds,
+  SuccessOnlyIfAllReposSucceed
+}
 import org.scalasteward.core.data.Resolver
 import org.scalasteward.core.forge.ForgeType
 import org.scalasteward.core.forge.ForgeType.{AzureRepos, GitHub}
@@ -31,6 +36,7 @@ import org.scalasteward.core.forge.github.GitHubApp
 import org.scalasteward.core.git.Author
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.util.dateTime.renderFiniteDuration
+
 import scala.concurrent.duration._
 
 object Cli {
@@ -337,6 +343,13 @@ object Cli {
       .withDefault(default)
   }
 
+  private val exitCodePolicy: Opts[ExitCodePolicy] = flag(
+    "exit-code-success-if-any-repo-succeeds",
+    s"Whether the Scala Steward process should exit with success (exit code ${ExitCode.Success.code}) if any repo succeeds; default: false"
+  ).orFalse.map { ifAnyRepoSucceeds =>
+    if (ifAnyRepoSucceeds) SuccessIfAnyRepoSucceeds else SuccessOnlyIfAllReposSucceed
+  }
+
   private val regular: Opts[Usage] = (
     workspace,
     reposFiles,
@@ -355,7 +368,8 @@ object Cli {
     gitHubApp,
     urlCheckerTestUrls,
     defaultMavenRepo,
-    refreshBackoffPeriod
+    refreshBackoffPeriod,
+    exitCodePolicy
   ).mapN(Config.apply).map(Usage.Regular.apply)
 
   private val validateRepoConfig: Opts[Usage] =
