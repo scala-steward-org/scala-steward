@@ -98,7 +98,7 @@ final class StewardAlg[F[_]](config: Config)(implicit
               for {
                 summaryFile <- workspaceAlg.runSummaryFile
                 _ <- fileAlg.writeFile(summaryFile, runResults.markdownSummary)
-              } yield runResults.exitCode
+              } yield config.exitCodePolicy.exitCodeFor(runResults)
             }
       } yield exitCode
     }

@@ -6,9 +6,14 @@ import munit.FunSuite
 import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Cli.ParseResult._
 import org.scalasteward.core.application.Cli.{EnvVar, Usage}
+import org.scalasteward.core.application.ExitCodePolicy.{
+  SuccessIfAnyRepoSucceeds,
+  SuccessOnlyIfAllReposSucceed
+}
 import org.scalasteward.core.forge.ForgeType
 import org.scalasteward.core.forge.github.GitHubApp
 import org.scalasteward.core.util.Nel
+
 import scala.concurrent.duration._
 
 class CliTest extends FunSuite {
@@ -205,6 +210,19 @@ class CliTest extends FunSuite {
     )
     val Success(Usage.Regular(obtained)) = Cli.parseArgs(params.flatten)
     assert(!obtained.forgeCfg.addLabels)
+  }
+
+  test("parseArgs: exit code policy: --exit-code-success-if-any-repo-succeeds") {
+    val params = minimumRequiredParams ++ List(
+      List("--exit-code-success-if-any-repo-succeeds")
+    )
+    val Success(Usage.Regular(obtained)) = Cli.parseArgs(params.flatten)
+    assert(obtained.exitCodePolicy == SuccessIfAnyRepoSucceeds)
+  }
+
+  test("parseArgs: exit code policy: default") {
+    val Success(Usage.Regular(obtained)) = Cli.parseArgs(minimumRequiredParams.flatten)
+    assert(obtained.exitCodePolicy == SuccessOnlyIfAllReposSucceed)
   }
 
   test("parseArgs: validate pull request labeling enabled") {
