@@ -85,13 +85,13 @@ object Selector {
         }
       }
 
-  private def scalaCliUsingLib: Pattern =
+  private val scalaCliUsingLib: Pattern =
     Pattern.compile("""//>\s+using\s+lib\s+""")
 
-  private def scalaCliUsingDep: Pattern =
+  private val scalaCliUsingDep: Pattern =
     Pattern.compile("""//>\s+using\s+dep\s+""")
 
-  private def scalaCliUsingTestDep: Pattern =
+  private val scalaCliUsingTestDep: Pattern =
     Pattern.compile("""//>\s+using\s+test\.dep\s+""")
 
   private def scalaValInDependencyDefPositions(
