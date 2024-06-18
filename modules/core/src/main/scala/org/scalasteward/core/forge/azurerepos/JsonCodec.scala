@@ -38,7 +38,7 @@ private[azurerepos] object PullRequestPayload {
   def from(data: NewPullRequestData): PullRequestPayload =
     PullRequestPayload(
       sourceRefName = withPrefix(data.head),
-      targetRefName = data.base.name,
+      targetRefName = withPrefix(data.base.name),
       title = data.title,
       labels = Option.when(data.labels.nonEmpty)(data.labels),
       description = data.body
