@@ -91,7 +91,7 @@ final class SbtAlg[F[_]](config: Config)(implicit
       plugin <- Resource.eval(stewardPlugin(pluginVersion))
       _ <- List
         .iterate(buildRootDir / project, metaBuilds + 1)(_ / project)
-        .collectFold(fileAlg.createTemporarily(_, plugin))
+        .foldMap(fileAlg.createTemporarily(_, plugin))
     } yield ()
 
   private def stewardPlugin(version: String): F[FileData] = {
