@@ -27,22 +27,40 @@ import org.scalasteward.core.forge.github.GitHubException._
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.HttpJsonClient
 import org.typelevel.log4cats.Logger
+import sttp.client3.SttpBackend
+import caliban.github
+import sttp.model.{Uri => SttpUri}
+import org.scalasteward.core.application.Config.GitHubCfg
+import caliban.client.SelectionBuilder
+import caliban.client.CalibanClientError
+import sttp.client3.Response
 
 final class GitHubApiAlg[F[_]](
     gitHubApiHost: Uri,
-    modify: Request[F] => F[Request[F]]
+    config: GitHubCfg,
+    modify: Request[F] => F[Request[F]],
+    sttpBackend: SttpBackend[F, Any]
 )(implicit
     client: HttpJsonClient[F],
     logger: Logger[F],
     F: MonadThrow[F]
 ) extends ForgeApiAlg[F] {
   private val url = new Url(gitHubApiHost)
+  private val sttpGitHubApiHost = SttpUri.unsafeParse(gitHubApiHost.renderString)
 
   /** https://docs.github.com/en/rest/repos/forks?apiVersion=2022-11-28#create-a-fork */
   override def createFork(repo: Repo): F[RepoOut] =
     client.post[RepoOut](url.forks(repo), modify).flatTap { repoOut =>
       F.raiseWhen(repoOut.parent.exists(_.archived))(RepositoryArchived(repo))
     }
+
+  def enableAutoMerge(prId: String): F[Response[Either[CalibanClientError, Option[Unit]]]] =
+    github.Mutation
+      .enablePullRequestAutoMerge(github.EnablePullRequestAutoMergeInput(pullRequestId = prId))(
+        SelectionBuilder.pure(())
+      )
+      .toRequest(sttpGitHubApiHost)
+      .send(sttpBackend)
 
   /** https://docs.github.com/en/rest/pulls?apiVersion=2022-11-28#create-a-pull-request */
   override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] = {
@@ -62,6 +80,7 @@ final class GitHubApiAlg[F[_]](
         F.whenA(data.assignees.nonEmpty)(addAssignees(repo, pullRequestOut.number, data.assignees))
       _ <-
         F.whenA(data.reviewers.nonEmpty)(addReviewers(repo, pullRequestOut.number, data.reviewers))
+      _ <- F.whenA(config.autoMerge)(enableAutoMerge(pullRequestOut.node_id))
     } yield pullRequestOut
   }
 
