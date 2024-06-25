@@ -28,5 +28,5 @@ object ExitCodePolicy {
 
   val SuccessIfAnyRepoSucceeds: ExitCodePolicy = successIf(_.successRepos.nonEmpty)
 
-  val SuccessOnlyIfAllReposSucceed: ExitCodePolicy = successIf(_.reposWithFailures.nonEmpty)
+  val SuccessOnlyIfAllReposSucceed: ExitCodePolicy = successIf(_.reposWithFailures.isEmpty)
 }
