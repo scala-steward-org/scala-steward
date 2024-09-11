@@ -71,7 +71,7 @@ object BspServerType {
       )
 
   // https://scala-cli.virtuslab.org/docs/commands/setup-ide#ide-support-internals
-  // Status: waiting for https://github.com/scalacenter/bloop/pull/2197 to propagate to Scala CLI
+  // Status: working
   case object ScalaCli
       extends BspServerType(
         connectionDetailsCommand = Nel.of("scala-cli", "setup-ide", "."),

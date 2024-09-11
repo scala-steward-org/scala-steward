@@ -112,14 +112,24 @@ final class BspExtractor[F[_]](defaultResolver: Resolver, processTimeout: Finite
   private def transform(bspDependencies: DependencyModulesResult): List[Scope.Dependencies] =
     bspDependencies.getItems.asScala.toList.map { item =>
       val dependencies = item.getModules.asScala.toList.mapFilter { module =>
-        module.getName.split(':') match {
-          case Array(groupId, artifactId) =>
-            val g = GroupId(groupId)
-            val a = ArtifactId.from(artifactId)
-            val v = Version(module.getVersion)
-            Dependency(g, a, v).some
-          case _ => None
-        }
+        if (
+          module.getDataKind === "maven" && module.getData.isInstanceOf[com.google.gson.JsonObject]
+        ) {
+          val data = module.getData.asInstanceOf[com.google.gson.JsonObject]
+          val g = GroupId(data.get("organization").getAsString)
+          val a = ArtifactId.from(data.get("name").getAsString)
+          val v = Version(data.get("version").getAsString)
+          Dependency(g, a, v).some
+        } else if (module.getName.contains(':')) {
+          module.getName.split(':') match {
+            case Array(groupId, artifactId) =>
+              val g = GroupId(groupId)
+              val a = ArtifactId.from(artifactId)
+              val v = Version(module.getVersion)
+              Dependency(g, a, v).some
+            case _ => None
+          }
+        } else None
       }
       // The BSP does not yet provide resolvers, so we use the default resolver here.
       // See https://github.com/build-server-protocol/build-server-protocol/discussions/500
