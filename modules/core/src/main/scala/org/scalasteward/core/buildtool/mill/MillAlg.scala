@@ -38,7 +38,12 @@ final class MillAlg[F[_]](defaultResolver: Resolver)(implicit
   override def containsBuild(buildRoot: BuildRoot): F[Boolean] =
     workspaceAlg
       .buildRootDir(buildRoot)
-      .flatMap(buildRootDir => fileAlg.isRegularFile(buildRootDir / "build.sc"))
+      .flatMap(buildRootDir =>
+        Seq("build.sc", "build.mill", "build.mill.scala")
+          .map(buildRootDir / _)
+          .filterA(f => fileAlg.isRegularFile(f))
+          .map(_.nonEmpty)
+      )
 
   private def runMill(buildRootDir: File) = {
     val command = Nel("mill", List("-i", "--import", cliPluginCoordinate, "show", extractDeps))
