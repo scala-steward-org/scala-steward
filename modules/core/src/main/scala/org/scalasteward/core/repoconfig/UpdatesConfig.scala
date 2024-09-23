@@ -98,6 +98,7 @@ object UpdatesConfig {
       ".sc",
       ".scala",
       scalafmtConfName,
+      ".sdkmanrc",
       ".yml",
       buildPropertiesName,
       pomXmlName
