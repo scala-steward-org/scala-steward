@@ -21,6 +21,7 @@ pull_request_rules:
   - or:
     - author=scala-steward
     - author=scala-steward-dev
+  - status-success=Build and Test (ubuntu-latest, 2.13, temurin@21)
   - status-success=Build and Test (ubuntu-latest, 2.13, temurin@17)
   - status-success=Build and Test (ubuntu-latest, 2.13, temurin@11)
   actions:
