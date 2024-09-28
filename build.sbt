@@ -394,7 +394,6 @@ lazy val dockerSettings = Def.settings(
     )
   },
   Docker / packageName := s"fthomas/${name.value}",
-  Docker / dockerBuildxPlatforms := List("linux/amd64", "linux/arm64"),
   dockerUpdateLatest := true,
   dockerAliases ++= {
     if (!isSnapshot.value) Seq(dockerAlias.value.withTag(Option("latest-release"))) else Nil
