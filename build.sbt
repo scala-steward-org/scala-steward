@@ -1,8 +1,9 @@
 import scala.util.Properties
 import scala.reflect.io.Path
-import com.typesafe.sbt.packager.docker._
+import com.typesafe.sbt.packager.docker.*
 import sbtcrossproject.{CrossProject, CrossType, Platform}
 import org.typelevel.sbt.gha.JavaSpec.Distribution.Temurin
+import org.typelevel.scalacoptions.ScalacOptions
 
 /// variables
 
@@ -21,7 +22,7 @@ val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
   "dummy" -> List(JVMPlatform)
 )
 
-val Scala213 = "2.13.14"
+val Scala213 = "2.13.15"
 
 /// sbt-typelevel configuration
 
@@ -92,6 +93,7 @@ ThisBuild / evictionErrorLevel := Level.Info
 ThisBuild / tpolecatDefaultOptionsMode := {
   if (insideCI.value) org.typelevel.sbt.tpolecat.CiMode else org.typelevel.sbt.tpolecat.DevMode
 }
+ThisBuild / tpolecatExcludeOptions += ScalacOptions.warnUnusedPatVars // https://github.com/scala/bug/issues/13041
 
 /// projects
 
