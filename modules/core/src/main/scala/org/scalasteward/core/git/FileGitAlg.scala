@@ -121,7 +121,7 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
     fileAlg.deleteForce(repo)
 
   override def resetHard(repo: File, base: Branch): F[Unit] =
-    git_("reset", "--hard", base.name)(repo).void
+    git_("reset", "--hard", base.name, "--")(repo).void
 
   override def setAuthor(repo: File, author: Author): F[Unit] =
     for {
