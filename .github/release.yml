@@ -1,0 +1,36 @@
+changelog:
+  exclude:
+    labels:
+      - administration
+      - repos-update
+  categories:
+    - title: 🚀 Enhancements
+      labels:
+        - enhancement
+    - title: 🐛 Bug Fixes
+      labels:
+        - bug
+    - title: 📜 Scalafix Migrations
+      labels:
+        - scalafix-migration
+    - title: 📦 Artifact Migrations
+      labels:
+        - artifact-migration
+    - title: 📗 Documentation
+      labels:
+        - documentation
+    - title: 🧪 Test Improvements
+      labels:
+        - testing
+    - title: 🏗️ Build Improvements
+      labels:
+        - build
+    - title: 🔧 Refactorings
+      labels:
+        - refactoring
+    - title: 🌱 Dependency Updates
+      labels:
+        - dependency-update
+    - title: Other Changes
+      labels:
+        - "*"

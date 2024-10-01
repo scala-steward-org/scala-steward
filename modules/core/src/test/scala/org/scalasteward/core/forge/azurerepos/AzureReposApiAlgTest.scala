@@ -18,6 +18,7 @@ import org.scalasteward.core.mock.{MockEff, MockState}
 
 class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   private val user = AuthenticatedUser("user", "pass")
+  private val userM = MockEff.pure(user)
   private val repo = Repo("scala-steward-org", "scala-steward")
   private val apiHost = uri"https://dev.azure.com"
 
@@ -175,7 +176,7 @@ class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
   private val forgeCfg = config.forgeCfg.copy(apiHost = apiHost, tpe = ForgeType.AzureRepos)
   private val azureReposCfg = AzureReposCfg(organization = Some("azure-org"))
-  private val azureReposApiAlg = ForgeSelection.forgeApiAlg[MockEff](forgeCfg, azureReposCfg, user)
+  private val azureReposApiAlg = ForgeSelection.forgeApiAlg[MockEff](forgeCfg, azureReposCfg, userM)
 
   test("getRepo") {
     val obtained = azureReposApiAlg.getRepo(repo).runA(state)
@@ -208,7 +209,7 @@ class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
           title = "Update cats-effect to 3.3.14",
           body = "Updates org.typelevel:cats-effect  from 3.3.13 to 3.3.14.",
           head = "refs/heads/update/cats-effect-3.3.14",
-          base = Branch("refs/heads/main"),
+          base = Branch("main"),
           labels = List.empty,
           assignees = List.empty,
           reviewers = List.empty

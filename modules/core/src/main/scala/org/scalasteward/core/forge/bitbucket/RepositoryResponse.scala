@@ -23,6 +23,7 @@ import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.data.UserOut
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.uri._
+
 import scala.annotation.tailrec
 
 final private[bitbucket] case class RepositoryResponse(
@@ -44,29 +45,31 @@ private[bitbucket] object RepositoryResponse {
     }
   }
 
-  implicit val decoder: Decoder[RepositoryResponse] = Decoder.instance { c =>
-    for {
-      name <- c.downField("name").as[String]
-      owner <-
-        c.downField("owner")
-          .downField("username")
-          .as[String]
-          .orElse(c.downField("owner").downField("nickname").as[String])
-      cloneUrl <-
-        c.downField("links")
-          .downField("clone")
-          .downAt { p =>
-            p.asObject
-              .flatMap(o => o("name"))
-              .flatMap(_.asString)
-              .contains("https")
-          }
-          .downField("href")
-          .as[Uri]
-      defaultBranch <- c.downField("mainbranch").downField("name").as[Branch]
-      maybeParent <- c.downField("parent").downField("full_name").as[Option[Repo]]
-    } yield RepositoryResponse(name, defaultBranch, UserOut(owner), cloneUrl, maybeParent)
-  }
+  implicit val decoder: Decoder[RepositoryResponse] = Decoder
+    .instance { c =>
+      for {
+        name <- c.downField("name").as[String]
+        owner <-
+          c.downField("owner")
+            .downField("username")
+            .as[String]
+            .orElse(c.downField("owner").downField("nickname").as[String])
+        cloneUrl <-
+          c.downField("links")
+            .downField("clone")
+            .downAt { p =>
+              p.asObject
+                .flatMap(o => o("name"))
+                .flatMap(_.asString)
+                .contains("https")
+            }
+            .downField("href")
+            .as[Uri]
+        defaultBranch <- c.downField("mainbranch").downField("name").as[Branch]
+        maybeParent <- c.downField("parent").downField("full_name").as[Option[Repo]]
+      } yield RepositoryResponse(name, defaultBranch, UserOut(owner), cloneUrl, maybeParent)
+    }
+    .prepare(_.withFocus(_.dropNullValues))
 
   /** Monkey patches the [[io.circe.ACursor]] class to get the `downAt` function back, which was
     * removed in version 0.12.0-M4.

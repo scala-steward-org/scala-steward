@@ -4,8 +4,8 @@ All command line arguments for the `scala-steward` application.
 
 ```
 Usage:
+    scala-steward --workspace <file> --repos-file <uri> [--repos-file <uri>]... [--git-author-name <string>] --git-author-email <string> [--git-author-signing-key <string>] --git-ask-pass <file> [--sign-commits] [--forge-type <forge-type>] [--forge-api-host <uri>] --forge-login <string> [--do-not-fork] [--add-labels] [--ignore-opts-files] [--env-var <name=value>]... [--process-timeout <duration>] [--whitelist <string>]... [--read-only <string>]... [--enable-sandbox | --disable-sandbox] [--max-buffer-size <integer>] [--repo-config <uri>]... [--disable-default-repo-config] [--scalafix-migrations <uri>]... [--disable-default-scalafix-migrations] [--artifact-migrations <uri>]... [--disable-default-artifact-migrations] [--cache-ttl <duration>] [--bitbucket-use-default-reviewers] [--bitbucket-server-use-default-reviewers] [--gitlab-merge-when-pipeline-succeeds] [--gitlab-required-reviewers <integer>] [--gitlab-remove-source-branch] [--azure-repos-organization <string>] [--github-app-id <integer> --github-app-key-file <file>] [--url-checker-test-url <uri>]... [--default-maven-repo <string>] [--refresh-backoff-period <duration>] [--exit-code-success-if-any-repo-succeeds]
     scala-steward validate-repo-config
-    scala-steward --workspace <file> --repos-file <file> [--git-author-name <string>] --git-author-email <string> [--git-author-signing-key <string>] --git-ask-pass <file> [--sign-commits] [--forge-type <forge-type>] [--forge-api-host <uri>] --forge-login <string> [--do-not-fork] [--add-labels] [--ignore-opts-files] [--env-var <name=value>]... [--process-timeout <duration>] [--whitelist <string>]... [--read-only <string>]... [--enable-sandbox | --disable-sandbox] [--max-buffer-size <integer>] [--repo-config <uri>]... [--disable-default-repo-config] [--scalafix-migrations <uri>]... [--disable-default-scalafix-migrations] [--artifact-migrations <uri>]... [--disable-default-artifact-migrations] [--cache-ttl <duration>] [--bitbucket-use-default-reviewers] [--bitbucket-server-use-default-reviewers] [--gitlab-merge-when-pipeline-succeeds] [--gitlab-required-reviewers <integer>] [--gitlab-remove-source-branch] [--azure-repos-organization <string>] [--github-app-id <integer> --github-app-key-file <file>] [--url-checker-test-url <uri>]... [--default-maven-repo <string>] [--refresh-backoff-period <duration>]
 
 
 
@@ -14,8 +14,8 @@ Options and flags:
         Display this help text.
     --workspace <file>
         Location for cache and temporary files
-    --repos-file <file>
-        A markdown formatted file with a repository list
+    --repos-file <uri>
+        A markdown formatted file with a repository list (can be used multiple times)
     --git-author-name <string>
         Git "user.name"; default: Scala Steward
     --git-author-email <string>
@@ -57,15 +57,15 @@ Options and flags:
     --disable-sandbox
         Whether to not use the sandbox
     --max-buffer-size <integer>
-        Size of the buffer for the output of an external process in lines; default: 16384
+        Size of the buffer for the output of an external process in lines; default: 32768
     --repo-config <uri>
         Additional repo config file (can be used multiple times)
     --disable-default-repo-config
         Whether to disable the default repo config file
     --scalafix-migrations <uri>
-        Additional scalafix migrations configuration file (can be used multiple times)
+        Additional Scalafix migrations configuration file (can be used multiple times)
     --disable-default-scalafix-migrations
-        Whether to disable the default scalafix migration file; default: false
+        Whether to disable the default Scalafix migration file; default: false
     --artifact-migrations <uri>
         Additional artifact migration configuration file (can be used multiple times)
     --disable-default-artifact-migrations
@@ -94,6 +94,8 @@ Options and flags:
         default: https://repo1.maven.org/maven2/
     --refresh-backoff-period <duration>
         Period of time a failed build won't be triggered again; default: 0days
+    --exit-code-success-if-any-repo-succeeds
+        Whether the Scala Steward process should exit with success (exit code 0) if any repo succeeds; default: false
 
 Subcommands:
     validate-repo-config

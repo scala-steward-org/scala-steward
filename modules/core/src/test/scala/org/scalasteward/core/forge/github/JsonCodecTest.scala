@@ -38,8 +38,8 @@ class JsonCodecTest extends FunSuite {
     assertEquals(reviewers, expected)
   }
 
-  test("PullRequestPayload") {
-    val payload = PullRequestPayload(
+  test("CreatePullRequestPayload") {
+    val payload = CreatePullRequestPayload(
       title = "Update logback-classic to 1.2.3",
       body = "Updates ch.qos.logback:logback-classic from 1.2.0 to 1.2.3",
       head = "scala-steward:update/logback-classic-1.2.3",

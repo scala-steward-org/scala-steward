@@ -1,8 +1,9 @@
 import scala.util.Properties
 import scala.reflect.io.Path
-import com.typesafe.sbt.packager.docker._
+import com.typesafe.sbt.packager.docker.*
 import sbtcrossproject.{CrossProject, CrossType, Platform}
 import org.typelevel.sbt.gha.JavaSpec.Distribution.Temurin
+import org.typelevel.scalacoptions.ScalacOptions
 
 /// variables
 
@@ -21,7 +22,7 @@ val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
   "dummy" -> List(JVMPlatform)
 )
 
-val Scala213 = "2.13.10"
+val Scala213 = "2.13.15"
 
 /// sbt-typelevel configuration
 
@@ -50,9 +51,11 @@ ThisBuild / githubWorkflowPublish := Seq(
     name = Some("Publish Docker image")
   )
 )
-ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec(Temurin, "17"), JavaSpec(Temurin, "11"))
+ThisBuild / githubWorkflowJavaVersions := Seq("21", "17", "11").map(JavaSpec(Temurin, _))
 ThisBuild / githubWorkflowBuild :=
   Seq(
+    WorkflowStep
+      .Use(UseRef.Public("coursier", "setup-action", "v1"), params = Map("apps" -> "scalafmt")),
     WorkflowStep.Sbt(List("validate"), name = Some("Build project")),
     WorkflowStep.Use(
       UseRef.Public("codecov", "codecov-action", "v3"),
@@ -61,7 +64,12 @@ ThisBuild / githubWorkflowBuild :=
   )
 
 ThisBuild / mergifyPrRules := {
-  val authorCondition = MergifyCondition.Custom("author=scala-steward")
+  val authorCondition = MergifyCondition.Or(
+    List(
+      MergifyCondition.Custom("author=scala-steward"),
+      MergifyCondition.Custom("author=scala-steward-dev")
+    )
+  )
   Seq(
     MergifyPrRule(
       "label scala-steward's PRs",
@@ -71,7 +79,7 @@ ThisBuild / mergifyPrRules := {
     MergifyPrRule(
       "merge scala-steward's PRs",
       List(authorCondition) ++ mergifySuccessConditions.value,
-      List(MergifyAction.Merge(Some("squash")))
+      List(MergifyAction.Merge(Some("merge")))
     )
   )
 }
@@ -81,6 +89,11 @@ ThisBuild / mergifyPrRules := {
 ThisBuild / dynverSeparator := "-"
 
 ThisBuild / evictionErrorLevel := Level.Info
+
+ThisBuild / tpolecatDefaultOptionsMode := {
+  if (insideCI.value) org.typelevel.sbt.tpolecat.CiMode else org.typelevel.sbt.tpolecat.DevMode
+}
+ThisBuild / tpolecatExcludeOptions += ScalacOptions.warnUnusedPatVars // https://github.com/scala/bug/issues/13041
 
 /// projects
 
@@ -117,11 +130,11 @@ lazy val core = myCrossProject("core")
       Dependencies.circeRefined,
       Dependencies.commonsIo,
       Dependencies.coursierCore,
+      Dependencies.coursierSbtMaven,
       Dependencies.cron4sCore,
       Dependencies.decline,
       Dependencies.fs2Core,
       Dependencies.fs2Io,
-      Dependencies.gitignore,
       Dependencies.http4sCirce,
       Dependencies.http4sClient,
       Dependencies.http4sCore,
@@ -211,8 +224,6 @@ lazy val core = myCrossProject("core")
     // Uncomment for remote debugging:
     // run / javaOptions += "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005",
     Test / fork := true,
-    Test / testOptions +=
-      Tests.Cleanup(() => Path(file(Properties.tmpDir) / "scala-steward").deleteRecursively()),
     Compile / resourceGenerators += Def.task {
       val outDir = (Compile / resourceManaged).value
       def downloadPlugin(v: String): File = {
@@ -247,8 +258,12 @@ lazy val docs = myCrossProject("docs")
       try git.runner.value.apply("diff", "--quiet", outDir)(rootDir, streams.value.log)
       catch {
         case t: Throwable =>
-          val msg = s"Docs in $inDir and $outDir are out of sync." +
-            " Run 'sbt docs/mdoc' and commit the changes to fix this."
+          val diff = git.runner.value.apply("diff", outDir)(rootDir, streams.value.log)
+          val msg = s"""|Docs in $inDir and $outDir are out of sync.
+                        |Run 'sbt docs/mdoc' and commit the changes to fix this.
+                        |The diff is:
+                        |$diff
+                        |""".stripMargin
           throw new Throwable(msg, t)
       }
       ()
@@ -264,7 +279,6 @@ lazy val dummy = myCrossProject("dummy")
   .settings(noPublishSettings)
   .settings(
     libraryDependencies ++= Seq(
-      Dependencies.millMain,
       Dependencies.scalaStewardMillPlugin
     )
   )
@@ -290,8 +304,6 @@ lazy val commonSettings = Def.settings(
 
 lazy val compileSettings = Def.settings(
   scalaVersion := Scala213,
-  // Uncomment for local development:
-  // scalacOptions -= "-Xfatal-warnings",
   doctestTestFramework := DoctestTestFramework.Munit
 )
 
@@ -333,32 +345,54 @@ lazy val metadataSettings = Def.settings(
 
 lazy val dockerSettings = Def.settings(
   dockerBaseImage := Option(System.getenv("DOCKER_BASE_IMAGE"))
-    .getOrElse("eclipse-temurin:11-alpine"),
+    .getOrElse("eclipse-temurin:21-alpine"),
   dockerCommands ++= {
+    val curl = "curl -fL --output"
     val binDir = "/usr/local/bin"
     val sbtVer = sbtVersion.value
     val sbtTgz = s"sbt-$sbtVer.tgz"
-    val sbtUrl = s"https://github.com/sbt/sbt/releases/download/v$sbtVer/$sbtTgz"
+    val installSbt = Seq(
+      s"$curl $sbtTgz https://github.com/sbt/sbt/releases/download/v$sbtVer/$sbtTgz",
+      s"tar -xf $sbtTgz",
+      s"rm -f $sbtTgz"
+    ).mkString(" && ")
+    val millVer = Dependencies.millScriptVersion
     val millBin = s"$binDir/mill"
-    val millVer = Dependencies.millVersion
-    val millUrl =
-      s"https://github.com/lihaoyi/mill/releases/download/${millVer.split("-").head}/$millVer"
-    val coursierBin = s"$binDir/coursier"
-    val installScalaCliStep = Seq(
-      "wget -q -O scala-cli.gz https://github.com/Virtuslab/scala-cli/releases/latest/download/scala-cli-x86_64-pc-linux-static.gz",
-      "gunzip scala-cli.gz",
-      "chmod +x scala-cli",
-      "mv scala-cli /usr/bin/"
+    val releasePageVersion = millVer.split("-") match {
+      case Array(v, m, _*) if m.startsWith("M") => s"${v}-${m}"
+      case Array(v, _*)                         => v
+    }
+    val installMill = Seq(
+      s"$curl $millBin https://github.com/lihaoyi/mill/releases/download/${releasePageVersion}/$millVer",
+      s"chmod +x $millBin"
+    ).mkString(" && ")
+    val csBin = s"$binDir/cs"
+    val installCoursier = Seq(
+      s"$curl $csBin.gz https://github.com/coursier/coursier/releases/download/v${Dependencies.coursierCore.revision}/cs-x86_64-pc-linux-static.gz",
+      s"gunzip $csBin.gz",
+      s"chmod +x $csBin"
+    ).mkString(" && ")
+    val scalaCliBin = s"$binDir/scala-cli"
+    val installScalaCli = Seq(
+      s"$curl $scalaCliBin.gz https://github.com/Virtuslab/scala-cli/releases/latest/download/scala-cli-x86_64-pc-linux-static.gz",
+      s"gunzip $scalaCliBin.gz",
+      s"chmod +x $scalaCliBin"
     ).mkString(" && ")
     Seq(
       Cmd("USER", "root"),
-      Cmd("RUN", "apk --no-cache add bash git ca-certificates curl maven openssh nodejs npm"),
-      Cmd("RUN", s"wget $sbtUrl && tar -xf $sbtTgz && rm -f $sbtTgz"),
-      Cmd("RUN", s"curl -L $millUrl > $millBin && chmod +x $millBin"),
-      Cmd("RUN", installScalaCliStep),
-      Cmd("RUN", s"curl -L https://git.io/coursier-cli > $coursierBin && chmod +x $coursierBin"),
-      Cmd("RUN", s"$coursierBin install --install-dir $binDir scalafix scalafmt"),
-      Cmd("RUN", "npm install --global yarn")
+      Cmd(
+        "RUN",
+        "apk --no-cache add bash git gpg ca-certificates curl maven openssh nodejs npm ncurses"
+      ),
+      Cmd("RUN", installSbt),
+      Cmd("RUN", installMill),
+      Cmd("RUN", installCoursier),
+      Cmd("RUN", installScalaCli),
+      Cmd("RUN", s"$csBin install --install-dir $binDir scalafix scalafmt"),
+      Cmd("RUN", "npm install --global yarn"),
+      // Ensure binaries are in PATH
+      Cmd("RUN", "echo $PATH"),
+      Cmd("RUN", "which cs mill mvn node npm sbt scala-cli scalafix scalafmt yarn")
     )
   },
   Docker / packageName := s"fthomas/${name.value}",
@@ -397,17 +431,22 @@ lazy val moduleRootPkg = settingKey[String]("").withRank(KeyRanks.Invisible)
 moduleRootPkg := rootPkg
 
 // Run Scala Steward from sbt for development and testing.
-// Do not do this in production.
+// Members of the @scala-steward-org/core team can request an access token
+// of @scala-steward-dev for local development from @fthomas.
 lazy val runSteward = taskKey[Unit]("")
 runSteward := Def.taskDyn {
   val home = System.getenv("HOME")
   val projectDir = (LocalRootProject / baseDirectory).value
+  val gitHubLogin = projectName + "-dev"
+  // val gitHubAppDir = projectDir.getParentFile / "gh-app"
   val args = Seq(
     Seq("--workspace", s"$projectDir/workspace"),
     Seq("--repos-file", s"$projectDir/repos.md"),
-    Seq("--git-author-email", s"me@$projectName.org"),
-    Seq("--forge-login", projectName),
-    Seq("--git-ask-pass", s"$home/.github/askpass/$projectName.sh"),
+    Seq("--git-author-email", s"dev@$projectName.org"),
+    Seq("--forge-login", gitHubLogin),
+    Seq("--git-ask-pass", s"$home/.github/askpass/$gitHubLogin.sh"),
+    // Seq("--github-app-id", IO.read(gitHubAppDir / "scala-steward.app-id.txt").trim),
+    // Seq("--github-app-key-file", s"$gitHubAppDir/scala-steward.private-key.pem"),
     Seq("--whitelist", s"$home/.cache/coursier"),
     Seq("--whitelist", s"$home/.cache/JNA"),
     Seq("--whitelist", s"$home/.cache/mill"),
@@ -415,6 +454,15 @@ runSteward := Def.taskDyn {
     Seq("--whitelist", s"$home/.m2"),
     Seq("--whitelist", s"$home/.mill"),
     Seq("--whitelist", s"$home/.sbt")
+  ).flatten.mkString(" ", " ", "")
+  (core.jvm / Compile / run).toTask(args)
+}.value
+
+lazy val runValidateRepoConfig = taskKey[Unit]("")
+runValidateRepoConfig := Def.taskDyn {
+  val projectDir = (LocalRootProject / baseDirectory).value
+  val args = Seq(
+    Seq("validate-repo-config", s"$projectDir/.scala-steward.conf")
   ).flatten.mkString(" ", " ", "")
   (core.jvm / Compile / run).toTask(args)
 }.value

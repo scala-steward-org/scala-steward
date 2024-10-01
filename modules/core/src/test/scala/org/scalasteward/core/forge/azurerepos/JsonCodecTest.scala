@@ -24,7 +24,7 @@ class JsonCodecTest extends FunSuite {
     val expected =
       json"""{
                "sourceRefName" : "refs/heads/source",
-               "targetRefName" : "main",
+               "targetRefName" : "refs/heads/main",
                "title" : "Test MR title",
                "labels" : null,
                "description" : "Test MR body"
@@ -38,7 +38,7 @@ class JsonCodecTest extends FunSuite {
     val expected =
       json"""{
                "sourceRefName" : "refs/heads/source",
-               "targetRefName" : "main",
+               "targetRefName" : "refs/heads/main",
                "title" : "Test MR title",
                "labels" : [ "foo", "bar" ],
                "description" : "Test MR body"

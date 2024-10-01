@@ -29,9 +29,11 @@ import org.scalasteward.core.edit.scalafix.{ScalafixCli, ScalafixMigration}
 import org.scalasteward.core.io.process.SlurpOptions
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
+import org.typelevel.log4cats.Logger
 
 final class SbtAlg[F[_]](config: Config)(implicit
     fileAlg: FileAlg[F],
+    override protected val logger: Logger[F],
     processAlg: ProcessAlg[F],
     scalafixCli: ScalafixCli[F],
     workspaceAlg: WorkspaceAlg[F],
@@ -89,7 +91,7 @@ final class SbtAlg[F[_]](config: Config)(implicit
       plugin <- Resource.eval(stewardPlugin(pluginVersion))
       _ <- List
         .iterate(buildRootDir / project, metaBuilds + 1)(_ / project)
-        .collectFold(fileAlg.createTemporarily(_, plugin))
+        .foldMap(fileAlg.createTemporarily(_, plugin))
     } yield ()
 
   private def stewardPlugin(version: String): F[FileData] = {
@@ -154,6 +156,7 @@ final class SbtAlg[F[_]](config: Config)(implicit
           "-Dsbt.color=false",
           "-Dsbt.log.noformat=true",
           "-Dsbt.supershell=false",
+          "-Dsbt.server.forcestart=true",
           sbtCommands.mkString_(";", ";", "")
         )
       processAlg.execSandboxed(command, repoDir, slurpOptions = slurpOptions)

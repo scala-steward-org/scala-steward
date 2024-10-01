@@ -13,6 +13,8 @@ import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.headers.{`Retry-After`, `User-Agent`, Location}
 import org.http4s.implicits._
 import org.typelevel.ci._
+import org.typelevel.log4cats.LoggerFactory
+import org.typelevel.log4cats.slf4j.Slf4jFactory
 
 import java.time.Instant
 import scala.concurrent.duration._
@@ -85,6 +87,12 @@ class ClientConfigurationTest extends CatsEffectSuite {
   }
 
   test("disableFollowRedirect does not follow redirect") {
+    import org.http4s.Method._
+    import org.http4s.ember.server._
+    import org.http4s.client.dsl.io._
+
+    implicit val loggerFactory: LoggerFactory[IO] = Slf4jFactory.create[IO]
+
     val regularClient = ClientConfiguration.build[IO](
       ClientConfiguration.BuilderMiddleware.default,
       ClientConfiguration.setUserAgent(dummyUserAgent)

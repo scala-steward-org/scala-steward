@@ -222,6 +222,7 @@ class VersionTest extends DisciplineSuite {
       ("10000000", List("20000000"), Some("20000000")),
       ("1032048a", List("2032048a4c2"), Some("2032048a4c2")),
       ("0.1.1-3dfde9d7", List("0.2.1-485fdf3b"), None),
+      ("1.0.0+1319.ae77058", List("1.0.0+1320.38b57aa"), Some("1.0.0+1320.38b57aa")),
       ("0.1.1", List("0.2.1-485fdf3b"), None),
       ("0.1.1-ALPHA", List("0.2.1-485fdf3b"), None),
       ("0.1.1-ALPHA", List("0.2.1-BETA"), None),

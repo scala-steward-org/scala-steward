@@ -124,6 +124,10 @@ final case class Version(value: String) {
 }
 
 object Version {
+  case class Update(currentVersion: Version, nextVersion: Version)
+
+  val tagNames: List[Version => String] = List("v" + _, _.value, "release-" + _)
+
   implicit val versionCodec: Codec[Version] =
     deriveUnwrappedCodec
 
@@ -186,7 +190,7 @@ object Version {
       val numeric = Numbers.digits.map(s => List(Numeric(s)))
       val alpha = Parser.charsWhile(c => !digits(c) && !separators(c)).map(s => List(Alpha(s)))
       val separator = Parser.charIn(separators).map(c => List(Separator(c)))
-      val hash = (Parser.charIn('-', '+') ~
+      val hash = (Parser.charIn(separators) ~
         Parser.char('g').string.? ~
         Rfc5234.hexdig.rep(6).string.filterNot(startsWithDate)).backtrack
         .map { case ((s, g), h) => List(Separator(s), Hash(g.getOrElse("") + h)) }

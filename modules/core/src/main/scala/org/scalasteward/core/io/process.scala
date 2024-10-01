@@ -64,8 +64,11 @@ object process {
         val raiseError = F.raiseError[List[String]] _
 
         val result =
-          readLinesIntoBuffer(process.getInputStream, buffer, maxBufferSize, log).flatMap {
-            maxSizeExceeded =>
+          readLinesIntoBuffer(process.getInputStream, buffer, maxBufferSize, log)
+            .adaptErr { case t: fs2.text.LineTooLongException =>
+              new ProcessLineTooLongException(args, buffer, maxBufferSize, t)
+            }
+            .flatMap { maxSizeExceeded =>
               F.blocking(process.waitFor()).flatMap { exitValue =>
                 if (maxSizeExceeded && !args.slurpOptions(SlurpOption.IgnoreBufferOverflow))
                   raiseError(new ProcessBufferOverflowException(args, buffer, maxBufferSize))
@@ -74,7 +77,7 @@ object process {
                 else
                   raiseError(new ProcessFailedException(args, buffer, exitValue))
               }
-          }
+            }
 
         val onTimeout = F.blocking(process.destroyForcibly()) >>
           raiseError(new ProcessTimedOutException(args, buffer, timeout))
@@ -133,17 +136,31 @@ object process {
       .through(fs2.text.utf8.decode)
       .through(fs2.text.linesLimited(maxBufferSize))
 
+  private val bufferOverflowMessage =
+    s"If the process executed normally and the buffer size is just too small, you can " +
+      s"increase it with the --${Cli.name.maxBufferSize} command-line option and/or open " +
+      s"a pull request in ${org.scalasteward.core.BuildInfo.gitHubUrl} that increases the " +
+      s"default buffer size."
+
   final class ProcessBufferOverflowException(
       args: Args,
       buffer: ListBuffer[String],
       maxBufferSize: Int
   ) extends IOException(makeMessage(args, buffer) {
-        s"outputted more than $maxBufferSize lines. " +
-          s"If the process executed normally and the buffer size is just too small, you can " +
-          s"increase it with the --${Cli.name.maxBufferSize} command-line option and/or open " +
-          s"a pull request in ${org.scalasteward.core.BuildInfo.gitHubUrl} that increases the " +
-          s"default buffer size."
+        s"outputted more than $maxBufferSize lines. $bufferOverflowMessage"
       })
+
+  final class ProcessLineTooLongException(
+      args: Args,
+      buffer: ListBuffer[String],
+      maxBufferSize: Int,
+      cause: fs2.text.LineTooLongException
+  ) extends IOException(
+        makeMessage(args, buffer) {
+          s"outputted a line longer than $maxBufferSize chars. $bufferOverflowMessage"
+        },
+        cause
+      )
 
   final class ProcessFailedException(
       args: Args,

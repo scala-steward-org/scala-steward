@@ -21,17 +21,38 @@ import cats.syntax.all._
 import org.scalasteward.core.buildtool.sbt.SbtAlg
 import org.scalasteward.core.buildtool.{BuildRoot, BuildToolAlg}
 import org.scalasteward.core.data.Scope
-import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io.process.SlurpOptions
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
 import org.typelevel.log4cats.Logger
 
+object ScalaCliAlg {
+  val directives =
+    // sourced from https://github.com/VirtusLab/scala-cli/blob/9e22d4a91ba8699ac2727d2ac3042d64abe951e1/modules/directives/src/main/scala/scala/build/preprocessing/directives/Dependency.scala#L33-L48
+    List(
+      "lib",
+      "libs",
+      "dep",
+      "deps",
+      "dependencies",
+      "toolkit",
+      "test.dependency",
+      "test.dep",
+      "test.deps",
+      "test.dependencies",
+      "compileOnly.lib",
+      "compileOnly.libs",
+      "compileOnly.dep",
+      "compileOnly.deps",
+      "compileOnly.dependencies"
+    ).map(alias => s"//> using $alias ")
+}
+
 final class ScalaCliAlg[F[_]](implicit
     fileAlg: FileAlg[F],
     gitAlg: GitAlg[F],
-    logger: Logger[F],
+    override protected val logger: Logger[F],
     processAlg: ProcessAlg[F],
     sbtAlg: SbtAlg[F],
     workspaceAlg: WorkspaceAlg[F],
@@ -42,12 +63,15 @@ final class ScalaCliAlg[F[_]](implicit
   override def containsBuild(buildRoot: BuildRoot): F[Boolean] = {
     val buildRootPath = buildRoot.relativePath.dropWhile(Set('.', '/'))
     val extensions = Set(".sc", ".scala")
-    gitAlg
-      .findFilesContaining(buildRoot.repo, "//> using lib ")
+    ScalaCliAlg.directives
+      .flatTraverse(gitAlg.findFilesContaining(buildRoot.repo, _))
       .map(_.exists(path => path.startsWith(buildRootPath) && extensions.exists(path.endsWith)))
   }
 
   override def getDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
+    getDependenciesViaSbtExport(buildRoot)
+
+  private def getDependenciesViaSbtExport(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
     for {
       buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
       exportDir = "tmp-sbt-build-for-scala-steward"
@@ -67,8 +91,6 @@ final class ScalaCliAlg[F[_]](implicit
       _ <- fileAlg.deleteForce(buildRootDir / exportDir)
     } yield dependencies
 
-  override def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
-    logger.warn(
-      s"Scalafix migrations are currently not supported in $name projects, see https://github.com/VirtusLab/scala-cli/issues/647 for details"
-    )
+  override protected val scalafixIssue: Option[String] =
+    Some("https://github.com/VirtusLab/scala-cli/issues/647")
 }

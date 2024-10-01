@@ -30,7 +30,11 @@ package object git {
     val base = baseBranch.fold("")(branch => s"${branch.name}/")
     update.on(
       update = u => Branch(s"$updateBranchPrefix/$base${u.name}-${u.nextVersion}"),
-      grouped = g => Branch(s"$updateBranchPrefix/$base${g.name}")
+      grouped = g => {
+        val hashString = Math.abs(g.updates.map(_.nextVersion).sortBy(_.value).hashCode()).toString
+        val branch = s"$updateBranchPrefix/$base${g.name}"
+        Branch(branch.replace("${hash}", hashString))
+      }
     )
   }
 

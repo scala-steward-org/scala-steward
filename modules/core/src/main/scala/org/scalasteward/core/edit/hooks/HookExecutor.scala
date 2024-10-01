@@ -74,7 +74,7 @@ final class HookExecutor[F[_]](implicit
       }
       commitMessage = hook
         .commitMessage(update)
-        .withParagraph(s"Executed command: ${hook.command.mkString_(" ")}")
+        .appendParagraph(s"Executed command: ${hook.command.mkString_(" ")}")
       maybeHookCommit <- gitAlg.commitAllIfDirty(repo, commitMessage)
       maybeBlameIgnoreCommit <-
         maybeHookCommit.flatTraverse(addToGitBlameIgnoreRevs(repo, repoDir, hook, _, commitMessage))
@@ -121,6 +121,7 @@ object HookExecutor {
     (GroupId("com.codecommit"), ArtifactId("sbt-spiewak")),
     (GroupId("com.codecommit"), ArtifactId("sbt-spiewak-sonatype")),
     (GroupId("com.codecommit"), ArtifactId("sbt-spiewak-bintray")),
+    (GroupId("com.github.sbt"), ArtifactId("sbt-github-actions")),
     (GroupId("io.chrisdavenport"), ArtifactId("sbt-davenverse")),
     (GroupId("io.github.nafg.mergify"), ArtifactId("sbt-mergify-github-actions")),
     (GroupId("org.typelevel"), ArtifactId("sbt-typelevel-ci-release")),

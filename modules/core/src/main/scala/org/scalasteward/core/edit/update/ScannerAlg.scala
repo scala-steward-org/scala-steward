@@ -16,13 +16,12 @@
 
 package org.scalasteward.core.edit.update
 
-import better.files.File
 import cats.effect.Concurrent
-import cats.syntax.functor._
-import com.github.arturopala.gitignore.GitIgnore
+import cats.syntax.all._
 import fs2.Stream
 import org.scalasteward.core.data.{Dependency, Repo, Version}
 import org.scalasteward.core.edit.update.data.{ModulePosition, VersionPosition}
+import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io.{FileAlg, FileData, WorkspaceAlg}
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.Nel
@@ -30,6 +29,7 @@ import org.scalasteward.core.util.Nel
 /** Scans all files that Scala Steward is allowed to edit for version and module positions. */
 final class ScannerAlg[F[_]](implicit
     fileAlg: FileAlg[F],
+    gitAlg: GitAlg[F],
     workspaceAlg: WorkspaceAlg[F],
     F: Concurrent[F]
 ) {
@@ -58,35 +58,15 @@ final class ScannerAlg[F[_]](implicit
       .compile
       .foldMonoid
 
-  private def getGitIgnore(repoDir: File): F[Option[GitIgnore]] = {
-    val gitIgnore = repoDir / ".gitignore"
-    fileAlg.readFile(gitIgnore).map(_.map(GitIgnore.parse))
-  }
-
   private def findPathsContaining(
       repo: Repo,
       config: RepoConfig,
       string: String
-  ): Stream[F, FileData] = {
-    def fileFilter(repoDir: File, maybeGitIgnore: Option[GitIgnore]) = (file: File) => {
-      val path = repoDir.relativize(file).toString
-      val notDotGit = !path.startsWith(".git/")
-      val onlyKeepConfiguredExtensions =
-        config.updates.fileExtensionsOrDefault.exists(path.endsWith)
-      val allowedByGitIgnore = maybeGitIgnore.map(_.isAllowed(path)).getOrElse(true)
-      val cond = notDotGit &&
-        onlyKeepConfiguredExtensions &&
-        allowedByGitIgnore
-      Option.when(cond)(path)
+  ): Stream[F, FileData] =
+    Stream.eval(workspaceAlg.repoDir(repo)).flatMap { repoDir =>
+      Stream
+        .evalSeq(gitAlg.findFilesContaining(repo, string))
+        .filter(path => config.updates.fileExtensionsOrDefault.exists(path.endsWith))
+        .evalMapFilter(path => fileAlg.readFile(repoDir / path).map(_.map(FileData(path, _))))
     }
-    val contentFilter = (content: String) => Some(content).filter(_.contains(string))
-
-    for {
-      repoDir <- Stream.eval(workspaceAlg.repoDir(repo))
-      maybeRootGitIgnore <- Stream.eval(getGitIgnore(repoDir))
-      files <- fileAlg
-        .findFiles(repoDir, fileFilter(repoDir, maybeRootGitIgnore), contentFilter)
-        .map(FileData.tupled)
-    } yield files
-  }
 }

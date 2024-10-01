@@ -62,17 +62,16 @@ class FilterAlgTest extends FunSuite {
   }
 
   test("ignore update via config updates.ignore") {
-    val update1 = ("org.http4s".g % "http4s-dsl".a % "0.17.0" %> "0.18.0").single
-    val update2 = ("eu.timepit".g % "refined".a % "0.8.0" %> "0.8.1").single
+    val update = ("eu.timepit".g % "refined".a % "0.8.0" %> "0.8.1").single
     val config = RepoConfig(updates =
       UpdatesConfig(ignore = List(UpdatePattern(GroupId("eu.timepit"), Some("refined"), None)))
     )
 
     val initialState = MockState.empty
     val (state, filtered) =
-      filterAlg.localFilterMany(config, List(update1, update2)).runSA(initialState).unsafeRunSync()
+      filterAlg.localFilterSingle(config, update).runSA(initialState).unsafeRunSync()
 
-    assertEquals(filtered, List(update1))
+    assertEquals(filtered, None)
     val expected = initialState.copy(
       trace = Vector(Log("Ignore eu.timepit:refined : 0.8.0 -> 0.8.1 (reason: ignored by config)"))
     )
@@ -114,12 +113,19 @@ class FilterAlgTest extends FunSuite {
       )
     )
 
-    val filtered = filterAlg
-      .localFilterMany(config, List(update1, update2))
+    val filtered1 = filterAlg
+      .localFilterSingle(config, update1)
       .runA(MockState.empty)
       .unsafeRunSync()
 
-    assertEquals(filtered, List(update2))
+    assertEquals(filtered1, None)
+
+    val filtered2 = filterAlg
+      .localFilterSingle(config, update2)
+      .runA(MockState.empty)
+      .unsafeRunSync()
+
+    assertEquals(filtered2, Some(update2))
   }
 
   test("ignore update via config updates.allow") {
@@ -144,12 +150,22 @@ class FilterAlgTest extends FunSuite {
       )
     )
 
-    val filtered = filterAlg
-      .localFilterMany(config, included ++ notIncluded)
-      .runA(MockState.empty)
-      .unsafeRunSync()
+    included.foreach { update =>
+      val filtered = filterAlg
+        .localFilterSingle(config, update)
+        .runA(MockState.empty)
+        .unsafeRunSync()
 
-    assertEquals(filtered, included)
+      assertEquals(filtered, Some(update))
+    }
+    notIncluded.foreach { update =>
+      val filtered = filterAlg
+        .localFilterSingle(config, update)
+        .runA(MockState.empty)
+        .unsafeRunSync()
+
+      assertEquals(filtered, None)
+    }
   }
 
   test("ignore update via config updates.pin using suffix") {
@@ -229,5 +245,40 @@ class FilterAlgTest extends FunSuite {
   test("isDependencyConfigurationIgnored: true") {
     val dependency = "org.typelevel".g % ("cats-effect", "cats-effect_2.12").a % "1.0.0"
     assert(isDependencyConfigurationIgnored(dependency.copy(configurations = Some("scalafmt"))))
+  }
+
+  test("scalaLTSFilter: LTS, no update") {
+    val update = ("org.scala-lang".g % "scala3-compiler".a % "3.3.2" %> Nel.of("3.4.0")).single
+    assertEquals(scalaLTSFilter(update), Left(IgnoreScalaNext(update)))
+  }
+
+  test("scalaLTSFilter: LTS, filter versions") {
+    val update =
+      ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.3.2" %> Nel.of(
+        "3.3.3",
+        "3.4.0"
+      )).single
+    assertEquals(scalaLTSFilter(update), Right(update.copy(newerVersions = Nel.of("3.3.3".v))))
+  }
+
+  test("scalaLTSFilter: Next") {
+    val update =
+      ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.4.0" %> Nel.of(
+        "3.4.1"
+      )).single
+    assertEquals(scalaLTSFilter(update), Right(update))
+  }
+
+  test("isScala3Lang: true") {
+    val update =
+      ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.3.3" %> Nel.of(
+        "3.4.0"
+      )).single
+    assert(isScala3Lang(update))
+  }
+
+  test("isScala3Lang: false") {
+    val update = ("org.scala-lang".g % "scala-compiler".a % "2.13.11" %> Nel.of("2.13.12")).single
+    assert(!isScala3Lang(update))
   }
 }

@@ -16,7 +16,6 @@
 
 package org.scalasteward.core.application
 
-import better.files.File
 import cats.effect.{ExitCode, Sync}
 import cats.syntax.all._
 import fs2.Stream
@@ -43,16 +42,11 @@ final class StewardAlg[F[_]](config: Config)(implicit
     nurtureAlg: NurtureAlg[F],
     pruningAlg: PruningAlg[F],
     repoCacheAlg: RepoCacheAlg[F],
+    reposFilesLoader: ReposFilesLoader[F],
     selfCheckAlg: SelfCheckAlg[F],
     workspaceAlg: WorkspaceAlg[F],
     F: Sync[F]
 ) {
-  private def readRepos(reposFile: File): Stream[F, Repo] =
-    Stream
-      .eval(fileAlg.readFile(reposFile).map(_.getOrElse("")))
-      .flatMap(content => Stream.fromIterator(content.linesIterator, 1024))
-      .mapFilter(Repo.parse)
-
   private def getGitHubAppRepos(githubApp: GitHubApp): Stream[F, Repo] =
     Stream.evals[F, List, Repo] {
       for {
@@ -92,20 +86,19 @@ final class StewardAlg[F[_]](config: Config)(implicit
     logger.infoTotalTime("run") {
       for {
         _ <- selfCheckAlg.checkAll
-        _ <- workspaceAlg.cleanReposDir
+        _ <- workspaceAlg.removeAnyRunSpecificFiles
         exitCode <-
           (config.githubApp.map(getGitHubAppRepos).getOrElse(Stream.empty) ++
-            readRepos(config.reposFile))
-            .evalMap(steward)
+            reposFilesLoader.loadAll(config.reposFiles))
+            .evalMap(repo => steward(repo).map(_.bimap(repo -> _, _ => repo)))
             .compile
-            .foldSemigroup
-            .flatMap {
-              case Some(result) => result.fold(_ => ExitCode.Error, _ => ExitCode.Success).pure[F]
-              case None =>
-                val msg = "No repos specified. " +
-                  s"Check the formatting of ${config.reposFile.pathAsString}. " +
-                  s"""The format is "- $$owner/$$repo" or "- $$owner/$$repo:$$branch"."""
-                logger.warn(msg).as(ExitCode.Success)
+            .toList
+            .flatMap { results =>
+              val runResults = RunResults(results)
+              for {
+                summaryFile <- workspaceAlg.runSummaryFile
+                _ <- fileAlg.writeFile(summaryFile, runResults.markdownSummary)
+              } yield config.exitCodePolicy.exitCodeFor(runResults)
             }
       } yield exitCode
     }

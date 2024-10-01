@@ -19,14 +19,13 @@ package org.scalasteward.core.forge.github
 import better.files.File
 import cats.effect.Sync
 import cats.implicits._
-import io.jsonwebtoken.{Jwts, SignatureAlgorithm}
-import org.bouncycastle.jce.provider.BouncyCastleProvider
-import org.bouncycastle.util.io.pem.PemReader
-
+import io.jsonwebtoken.Jwts
 import java.io.FileReader
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.{KeyFactory, PrivateKey, Security}
 import java.util.Date
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.bouncycastle.util.io.pem.PemReader
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Using
 
@@ -72,13 +71,13 @@ object GitHubAuthAlg {
           val signingKey = readPrivateKey(app.keyFile)
           val builder = Jwts
             .builder()
-            .setIssuedAt(now)
-            .setIssuer(app.id.toString)
-            .signWith(signingKey, SignatureAlgorithm.RS256)
+            .issuedAt(now)
+            .issuer(app.id.toString)
+            .signWith(signingKey, Jwts.SIG.RS256)
           if (ttlMillis > 0) {
             val expMillis = nowMillis + ttlMillis
             val exp = new Date(expMillis)
-            builder.setExpiration(exp)
+            builder.expiration(exp)
           }
           builder.compact()
         }

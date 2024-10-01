@@ -30,17 +30,13 @@ class SbtAlgTest extends FunSuite {
         Cmd("read", "classpath:StewardPlugin_1_3_11.scala"),
         Cmd("write", s"$repoDir/project/scala-steward-StewardPlugin_1_3_11.scala"),
         Cmd("write", s"$repoDir/project/project/scala-steward-StewardPlugin_1_3_11.scala"),
-        Cmd(
-          repoDir.toString,
-          "firejail",
-          "--quiet",
-          s"--whitelist=$repoDir",
-          "--env=VAR1=val1",
-          "--env=VAR2=val2",
+        Cmd.execSandboxed(
+          repoDir,
           "sbt",
           "-Dsbt.color=false",
           "-Dsbt.log.noformat=true",
           "-Dsbt.supershell=false",
+          "-Dsbt.server.forcestart=true",
           s";$crossStewardDependencies;$reloadPlugins;$stewardDependencies"
         ),
         Cmd("rm", "-rf", s"$repoDir/project/project/scala-steward-StewardPlugin_1_3_11.scala"),
@@ -73,17 +69,13 @@ class SbtAlgTest extends FunSuite {
           s"$workspace/store/versions/v2/https/repo1.maven.org/maven2/ch/epfl/scala/sbt-scalafix_2.12_1.0/versions.json"
         ),
         Cmd("write", s"$repoDir/project/scala-steward-sbt-scalafix.sbt"),
-        Cmd(
-          repoDir.toString,
-          "firejail",
-          "--quiet",
-          s"--whitelist=$repoDir",
-          "--env=VAR1=val1",
-          "--env=VAR2=val2",
+        Cmd.execSandboxed(
+          repoDir,
           "sbt",
           "-Dsbt.color=false",
           "-Dsbt.log.noformat=true",
           "-Dsbt.supershell=false",
+          "-Dsbt.server.forcestart=true",
           s";$scalafixEnable;$scalafixAll github:functional-streams-for-scala/fs2/v1?sha=v1.0.5"
         ),
         Cmd("rm", "-rf", s"$repoDir/project/scala-steward-sbt-scalafix.sbt")
@@ -117,17 +109,13 @@ class SbtAlgTest extends FunSuite {
         ),
         Cmd("write", s"$repoDir/project/scala-steward-sbt-scalafix.sbt"),
         Cmd("write", s"$repoDir/scala-steward-scalafix-options.sbt"),
-        Cmd(
-          repoDir.toString,
-          "firejail",
-          "--quiet",
-          s"--whitelist=$repoDir",
-          "--env=VAR1=val1",
-          "--env=VAR2=val2",
+        Cmd.execSandboxed(
+          repoDir,
           "sbt",
           "-Dsbt.color=false",
           "-Dsbt.log.noformat=true",
           "-Dsbt.supershell=false",
+          "-Dsbt.server.forcestart=true",
           s";$scalafixEnable;$scalafixAll github:cb372/cats/Cats_v2_2_0?sha=235bd7c92e431ab1902db174cf4665b05e08f2f1"
         ),
         Cmd("rm", "-rf", s"$repoDir/scala-steward-scalafix-options.sbt"),
