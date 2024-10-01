@@ -26,60 +26,150 @@ import java.security.{KeyFactory, PrivateKey, Security}
 import java.util.Date
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.bouncycastle.util.io.pem.PemReader
-import scala.concurrent.duration.FiniteDuration
+import org.http4s.Credentials.Token
+import org.http4s.Uri.UserInfo
+import org.http4s.headers.Authorization
+import org.http4s.{AuthScheme, Header, Request, Uri}
+import org.scalasteward.core.data.Repo
+import org.scalasteward.core.forge.ForgeAuthAlg
+import org.scalasteward.core.forge.github.GitHubApiAlg.acceptHeaderVersioned
+import org.scalasteward.core.util.HttpJsonClient
+import org.typelevel.ci.CIStringSyntax
+import org.typelevel.log4cats.Logger
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.util.Using
+import org.scalasteward.core.util
 
-trait GitHubAuthAlg[F[_]] {
+final class GitHubAuthAlg[F[_]](
+    apiUri: Uri,
+    appId: Long,
+    appKeyFile: File
+)(implicit F: Sync[F], client: HttpJsonClient[F], logger: Logger[F])
+    extends ForgeAuthAlg[F] {
+  private val tokenTtl = 2.minutes
+
+  private def parsePEMFile(pemFile: File): Array[Byte] =
+    Using.resource(new PemReader(new FileReader(pemFile.toJava))) { reader =>
+      reader.readPemObject().getContent
+    }
+
+  private def getPrivateKey(keyBytes: Array[Byte]): PrivateKey = {
+    val kf = KeyFactory.getInstance("RSA")
+    val keySpec = new PKCS8EncodedKeySpec(keyBytes)
+    kf.generatePrivate(keySpec)
+  }
+
+  private def readPrivateKey(appKeyFile: File): PrivateKey = {
+    val bytes = parsePEMFile(appKeyFile)
+    getPrivateKey(bytes)
+  }
+
+  override def authenticateApi(req: Request[F]): F[Request[F]] = for {
+    tokenRepos <- tokenRepos
+    maybeToken = tokenRepos
+      .find(_._1.exists(repo => req.uri.toString.contains(repo.toPath)))
+      .map(_._2.token)
+  } yield maybeToken match {
+    case Some(token) =>
+      req.putHeaders(Authorization(Token(AuthScheme.Bearer, token)), acceptHeaderVersioned)
+    case None => req
+  }
+
+  override def authenticateGit(uri: Uri): F[Uri] = for {
+    tokenRepos <- tokenRepos
+    tokenMaybe = tokenRepos
+      .find(_._1.exists(repo => uri.toString.contains(repo.toPath)))
+      .map(_._2.token)
+  } yield util.uri.withUserInfo.replace(UserInfo("scala-steward", tokenMaybe))(uri)
+
+  private def tokenRepos = for {
+    jwt <- createJWT(tokenTtl)
+    installations <- installations(jwt)
+    tokens <- installations.traverse(installation => accessToken(jwt, installation.id))
+    tokenRepos <- tokens.traverse(token => repositories(token.token).map(_ -> token))
+  } yield tokenRepos
+
+  override def accessibleRepos: F[List[Repo]] = for {
+    jwt <- createJWT(tokenTtl)
+    installations <- installations(jwt)
+    tokens <- installations.traverse(installation => accessToken(jwt, installation.id))
+    repos <- tokens.flatTraverse(token => repositories(token.token))
+  } yield repos
+
+  /** [[https://docs.github.com/en/free-pro-team@latest/rest/reference/apps#list-repositories-accessible-to-the-app-installation]]
+    */
+  private def repositories(token: String): F[List[Repo]] =
+    client
+      .getAll[RepositoriesOut](
+        (apiUri / "installation" / "repositories").withQueryParam("per_page", 100),
+        req =>
+          F.point(
+            req.putHeaders(
+              Header.Raw(ci"Authorization", s"token $token"),
+              acceptHeaderVersioned
+            )
+          )
+      )
+      .compile
+      .toList
+      .flatMap(values =>
+        values
+          .flatMap(_.repositories)
+          .flatTraverse(_.full_name.split('/') match {
+            case Array(owner, name) => F.pure(List(Repo(owner, name)))
+            case _                  => logger.error(s"invalid repo ").as(List.empty[Repo])
+          })
+      )
+
+  /** [[https://docs.github.com/en/free-pro-team@latest/rest/reference/apps#list-installations-for-the-authenticated-app]]
+    */
+  private def installations(jwt: String): F[List[InstallationOut]] =
+    client
+      .getAll[List[InstallationOut]](
+        (apiUri / "app" / "installations").withQueryParam("per_page", 100),
+        addHeaders(jwt)
+      )
+      .compile
+      .foldMonoid
+
+  /** [[https://docs.github.com/en/free-pro-team@latest/rest/reference/apps#create-an-installation-access-token-for-an-app]]
+    */
+  private def accessToken(jwt: String, installationId: Long): F[TokenOut] =
+    client.post(
+      apiUri / "app" / "installations" / installationId.toString / "access_tokens",
+      addHeaders(jwt)
+    )
 
   /** [[https://docs.github.com/en/free-pro-team@latest/developers/apps/authenticating-with-github-apps#authenticating-as-a-github-app]]
     */
-  def createJWT(app: GitHubApp, ttl: FiniteDuration): F[String]
+  private[github] def createJWT(ttl: FiniteDuration): F[String] =
+    F.delay(System.currentTimeMillis()).flatMap(createJWT(ttl, _))
 
-  def createJWT(app: GitHubApp, ttl: FiniteDuration, nowMillis: Long): F[String]
-
-}
-
-object GitHubAuthAlg {
-  def create[F[_]](implicit F: Sync[F]): GitHubAuthAlg[F] =
-    new GitHubAuthAlg[F] {
-      private[this] def parsePEMFile(pemFile: File): Array[Byte] =
-        Using.resource(new PemReader(new FileReader(pemFile.toJava))) { reader =>
-          reader.readPemObject().getContent
-        }
-
-      private[this] def getPrivateKey(keyBytes: Array[Byte]): PrivateKey = {
-        val kf = KeyFactory.getInstance("RSA")
-        val keySpec = new PKCS8EncodedKeySpec(keyBytes)
-        kf.generatePrivate(keySpec)
+  private[github] def createJWT(ttl: FiniteDuration, nowMillis: Long): F[String] =
+    F.delay {
+      Security.addProvider(new BouncyCastleProvider())
+      val ttlMillis = ttl.toMillis
+      val now = new Date(nowMillis)
+      val signingKey = readPrivateKey(appKeyFile)
+      val builder = Jwts
+        .builder()
+        .issuedAt(now)
+        .issuer(appId.toString)
+        .signWith(signingKey, Jwts.SIG.RS256)
+      if (ttlMillis > 0) {
+        val expMillis = nowMillis + ttlMillis
+        val exp = new Date(expMillis)
+        builder.expiration(exp)
       }
-
-      private[this] def readPrivateKey(file: File): PrivateKey = {
-        val bytes = parsePEMFile(file)
-        getPrivateKey(bytes)
-      }
-
-      /** [[https://docs.github.com/en/free-pro-team@latest/developers/apps/authenticating-with-github-apps#authenticating-as-a-github-app]]
-        */
-      def createJWT(app: GitHubApp, ttl: FiniteDuration): F[String] =
-        F.delay(System.currentTimeMillis()).flatMap(createJWT(app, ttl, _))
-
-      def createJWT(app: GitHubApp, ttl: FiniteDuration, nowMillis: Long): F[String] =
-        F.delay {
-          Security.addProvider(new BouncyCastleProvider())
-          val ttlMillis = ttl.toMillis
-          val now = new Date(nowMillis)
-          val signingKey = readPrivateKey(app.keyFile)
-          val builder = Jwts
-            .builder()
-            .issuedAt(now)
-            .issuer(app.id.toString)
-            .signWith(signingKey, Jwts.SIG.RS256)
-          if (ttlMillis > 0) {
-            val expMillis = nowMillis + ttlMillis
-            val exp = new Date(expMillis)
-            builder.expiration(exp)
-          }
-          builder.compact()
-        }
+      builder.compact()
     }
+
+  private def addHeaders(jwt: String): client.ModReq =
+    req =>
+      F.point(
+        req.putHeaders(
+          Authorization(Token(AuthScheme.Bearer, jwt)),
+          acceptHeaderVersioned
+        )
+      )
 }

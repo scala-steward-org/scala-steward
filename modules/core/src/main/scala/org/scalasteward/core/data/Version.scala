@@ -113,7 +113,7 @@ final case class Version(value: String) {
       case _                         => false
     } || Rfc5234.hexdig.rep(8).string.filterNot(startsWithDate).parse(value).isRight
 
-  private[this] def alnumComponentsWithoutPreRelease: List[Version.Component] =
+  private def alnumComponentsWithoutPreRelease: List[Version.Component] =
     alnumComponents.takeWhile {
       case a: Version.Component.Alpha => !a.isPreReleaseIdent
       case _                          => true

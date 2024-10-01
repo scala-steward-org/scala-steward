@@ -20,6 +20,7 @@ import munit.FunSuite
 import org.scalasteward.core.data.Repo
 
 import scala.io.Source
+
 class RunResultsTest extends FunSuite {
   private val repo1 = Repo("scala-steward-org", "scala-steward")
   private val repo2 = Repo("guardian", "play-secret-rotation")

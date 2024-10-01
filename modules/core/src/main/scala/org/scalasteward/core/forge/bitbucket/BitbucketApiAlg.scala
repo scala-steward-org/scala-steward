@@ -19,8 +19,8 @@ package org.scalasteward.core.forge.bitbucket
 import cats.MonadThrow
 import cats.syntax.all._
 import org.http4s.{Request, Status}
-import org.scalasteward.core.application.Config.{BitbucketCfg, ForgeCfg}
 import org.scalasteward.core.data.Repo
+import org.scalasteward.core.forge.Forge.Bitbucket
 import org.scalasteward.core.forge.ForgeApiAlg
 import org.scalasteward.core.forge.bitbucket.json._
 import org.scalasteward.core.forge.data._
@@ -30,21 +30,20 @@ import org.typelevel.log4cats.Logger
 
 /** https://developer.atlassian.com/bitbucket/api/2/reference/ */
 class BitbucketApiAlg[F[_]](
-    config: ForgeCfg,
-    bitbucketCfg: BitbucketCfg,
+    forge: Bitbucket,
     modify: Request[F] => F[Request[F]]
 )(implicit
     client: HttpJsonClient[F],
     logger: Logger[F],
     F: MonadThrow[F]
 ) extends ForgeApiAlg[F] {
-  private val url = new Url(config.apiHost)
+  private val url = new Url(forge.apiUri)
 
   override def createFork(repo: Repo): F[RepoOut] =
     for {
       fork <- client.post[RepositoryResponse](url.forks(repo), modify).recoverWith {
         case UnexpectedResponse(_, _, _, Status.BadRequest, _) =>
-          client.get(url.repo(repo.copy(owner = config.login)), modify)
+          client.get(url.repo(repo.copy(owner = forge.login)), modify)
       }
       maybeParent <-
         fork.parent
@@ -68,9 +67,9 @@ class BitbucketApiAlg[F[_]](
     client.get[DefaultReviewers](url.defaultReviewers(repo), modify).map(_.values)
 
   override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] = {
-    val sourceBranchOwner = if (config.doNotFork) repo.owner else config.login
+    val sourceBranchOwner = if (forge.doNotFork) repo.owner else forge.login
     val defaultReviewers =
-      if (bitbucketCfg.useDefaultReviewers) getDefaultReviewers(repo)
+      if (forge.useDefaultReviewers) getDefaultReviewers(repo)
       else F.pure(List.empty[Reviewer])
 
     val create: F[PullRequestOut] =

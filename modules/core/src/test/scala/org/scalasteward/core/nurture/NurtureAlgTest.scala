@@ -1,5 +1,6 @@
 package org.scalasteward.core.nurture
 
+import cats.syntax.all._
 import munit.CatsEffectSuite
 import org.http4s.HttpApp
 import org.http4s.dsl.Http4sDsl
@@ -7,10 +8,11 @@ import org.scalasteward.core.TestInstances._
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.{DependencyInfo, Repo, RepoData, UpdateData}
 import org.scalasteward.core.edit.EditAttempt.UpdateEdit
+import org.scalasteward.core.forge.Forge.GitHub
 import org.scalasteward.core.forge.data.NewPullRequestData
 import org.scalasteward.core.git.{Branch, Commit}
 import org.scalasteward.core.mock.MockContext.context
-import org.scalasteward.core.mock.{MockConfig, MockEff, MockState}
+import org.scalasteward.core.mock.{GitHubAuth, MockConfig, MockEff, MockState}
 import org.scalasteward.core.repoconfig.{PullRequestsConfig, RepoConfig}
 
 class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
@@ -29,7 +31,7 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     val updateBranch = Branch("update/cats-effect-3.4.0")
     val updateData = UpdateData(repoData, fork, update, baseBranch, dummySha1, updateBranch)
     val edits = List(UpdateEdit(update, Commit(dummySha1)))
-    val state = MockState.empty.copy(clientResponses = HttpApp {
+    val state = MockState.empty.copy(clientResponses = GitHubAuth.api(List.empty) <+> HttpApp {
       case HEAD -> Root / "typelevel" / "cats-effect"                                 => Ok()
       case HEAD -> Root / "typelevel" / "cats-effect" / "releases" / "tag" / "v3.4.0" => Ok()
       case HEAD -> Root / "typelevel" / "cats-effect" / "compare" / "v3.3.0...v3.4.0" => Ok()
@@ -93,7 +95,9 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     def nextToLast(L: Array[String]) = L(L.size - 2)
 
     val config =
-      MockConfig.config.copy(forgeCfg = MockConfig.config.forgeCfg.copy(addLabels = false))
+      MockConfig.gitHubConfig.copy(forge =
+        MockConfig.gitHubConfig.forge.asInstanceOf[GitHub].copy(addLabels = false)
+      )
     val nurtureAlg = context(config).nurtureAlg
     val repo = Repo("scala-steward-org", "scala-steward")
     val dependency = "org.typelevel".g % ("cats-effect", "cats-effect_2.13").a % "3.3.0"

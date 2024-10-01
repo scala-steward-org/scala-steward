@@ -19,8 +19,7 @@ package org.scalasteward.core.coursier
 import cats.Monad
 import cats.syntax.all._
 import org.http4s.Uri
-import org.scalasteward.core.application.Config.ForgeCfg
-import org.scalasteward.core.forge.ForgeRepo
+import org.scalasteward.core.forge.{Forge, ForgeRepo}
 import org.scalasteward.core.util.uri
 
 final case class DependencyMetadata(
@@ -49,8 +48,8 @@ final case class DependencyMetadata(
     urls.find(_.scheme.exists(uri.httpSchemes)).orElse(urls.headOption)
   }
 
-  def forgeRepo(implicit config: ForgeCfg): Option[ForgeRepo] =
-    repoUrl.flatMap(ForgeRepo.fromRepoUrl)
+  def forgeRepo(forge: Forge): Option[ForgeRepo] =
+    repoUrl.flatMap(ForgeRepo.fromRepoUrl(_, forge))
 }
 
 object DependencyMetadata {

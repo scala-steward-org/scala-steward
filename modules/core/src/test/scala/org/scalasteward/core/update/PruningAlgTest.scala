@@ -8,7 +8,7 @@ import org.scalasteward.core.TestInstances.dummyRepoCache
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.Resolver.MavenRepository
 import org.scalasteward.core.data.{DependencyInfo, Repo, RepoData, Scope}
-import org.scalasteward.core.mock.MockConfig.config
+import org.scalasteward.core.mock.MockConfig.gitHubConfig
 import org.scalasteward.core.mock.MockContext.context.pruningAlg
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
@@ -30,7 +30,7 @@ class PruningAlgTest extends FunSuite {
           |}""".stripMargin
     )
     val pullRequestsFile =
-      config.workspace / "store/pull_requests/v2/github/fthomas/scalafix-test/pull_requests.json"
+      gitHubConfig.workspace / "store/pull_requests/v2/github/fthomas/scalafix-test/pull_requests.json"
     val pullRequestsContent =
       s"""|{
           |  "https://github.com/fthomas/scalafix-test/pull/27" : {
@@ -118,7 +118,7 @@ class PruningAlgTest extends FunSuite {
           |}""".stripMargin
     )
     val pullRequestsFile =
-      config.workspace / s"store/pull_requests/v2/github/${repo.toPath}/pull_requests.json"
+      gitHubConfig.workspace / s"store/pull_requests/v2/github/${repo.toPath}/pull_requests.json"
     val pullRequestsContent =
       s"""|{
           |  "https://github.com/${repo.toPath}/pull/27" : {
@@ -149,7 +149,7 @@ class PruningAlgTest extends FunSuite {
           |  }
           |}""".stripMargin
     val versionsFile =
-      config.workspace / "store/versions/v2/https/foobar.org/maven2/org/scala-lang/scala-library/versions.json"
+      gitHubConfig.workspace / "store/versions/v2/https/foobar.org/maven2/org/scala-lang/scala-library/versions.json"
     val versionsContent =
       s"""|{
           |  "updatedAt" : 9999999999999,
@@ -197,7 +197,7 @@ class PruningAlgTest extends FunSuite {
     )
     val data = RepoData(repo, repoCache, RepoConfig.empty)
     val versionsFile =
-      config.workspace / "store/versions/v2/https/repo5.org/maven/org/scala-lang/scala-library/versions.json"
+      gitHubConfig.workspace / "store/versions/v2/https/repo5.org/maven/org/scala-lang/scala-library/versions.json"
     val versionsContent =
       s"""|{
           |  "updatedAt" : 9999999999999,
@@ -263,7 +263,7 @@ class PruningAlgTest extends FunSuite {
           |}""".stripMargin
     )
     val pullRequestsFile =
-      config.workspace / s"store/pull_requests/v2/github/${repo.toPath}/pull_requests.json"
+      gitHubConfig.workspace / s"store/pull_requests/v2/github/${repo.toPath}/pull_requests.json"
     val timestampNow = Instant.now().toEpochMilli
     val pullRequestsContent =
       s"""|{
@@ -295,7 +295,7 @@ class PruningAlgTest extends FunSuite {
           |  }
           |}""".stripMargin
     val versionsFile =
-      config.workspace / "store/versions/v2/https/foobar.org/maven2/software/awssdk/s3/versions.json"
+      gitHubConfig.workspace / "store/versions/v2/https/foobar.org/maven2/software/awssdk/s3/versions.json"
     val versionsContent =
       s"""|{
           |  "updatedAt" : 9999999999999,
@@ -375,7 +375,7 @@ class PruningAlgTest extends FunSuite {
           |}""".stripMargin
     )
     val pullRequestsFile =
-      config.workspace / s"store/pull_requests/v2/github/${repo.toPath}/pull_requests.json"
+      gitHubConfig.workspace / s"store/pull_requests/v2/github/${repo.toPath}/pull_requests.json"
     val pullRequestsContent =
       s"""|{
           |  "https://github.com/${repo.toPath}/pull/27" : {
@@ -406,7 +406,7 @@ class PruningAlgTest extends FunSuite {
           |  }
           |}""".stripMargin
     val versionsFile =
-      config.workspace / "store/versions/v2/https/foobar.org/maven2/software/awssdk/s3/versions.json"
+      gitHubConfig.workspace / "store/versions/v2/https/foobar.org/maven2/software/awssdk/s3/versions.json"
     val versionsContent =
       s"""|{
           |  "updatedAt" : 9999999999999,
@@ -491,7 +491,7 @@ class PruningAlgTest extends FunSuite {
     )
     val timestampNow = Instant.now().toEpochMilli
     val pullRequestsFile =
-      config.workspace / s"store/pull_requests/v2/github/${repo.toPath}/pull_requests.json"
+      gitHubConfig.workspace / s"store/pull_requests/v2/github/${repo.toPath}/pull_requests.json"
     val pullRequestsContent =
       s"""|{
           |  "https://github.com/${repo.toPath}/pull/27" : {
@@ -522,7 +522,7 @@ class PruningAlgTest extends FunSuite {
           |  }
           |}""".stripMargin
     val versionsFile =
-      config.workspace / "store/versions/v2/https/foobar.org/maven2/software/awssdk/s3/versions.json"
+      gitHubConfig.workspace / "store/versions/v2/https/foobar.org/maven2/software/awssdk/s3/versions.json"
     val versionsContent =
       s"""|{
           |  "updatedAt" : 9999999999999,

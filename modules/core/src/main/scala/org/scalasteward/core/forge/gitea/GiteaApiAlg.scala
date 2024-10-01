@@ -21,8 +21,8 @@ import cats.implicits._
 import io.circe._
 import io.circe.generic.semiauto.{deriveCodec, deriveEncoder}
 import org.http4s.{Request, Uri}
-import org.scalasteward.core.application.Config.ForgeCfg
 import org.scalasteward.core.data.Repo
+import org.scalasteward.core.forge.Forge.Gitea
 import org.scalasteward.core.forge.ForgeApiAlg
 import org.scalasteward.core.forge.data._
 import org.scalasteward.core.forge.gitea.GiteaApiAlg._
@@ -120,13 +120,13 @@ object GiteaApiAlg {
 }
 
 final class GiteaApiAlg[F[_]: HttpJsonClient](
-    vcs: ForgeCfg,
+    forge: Gitea,
     modify: Request[F] => F[Request[F]]
 )(implicit logger: Logger[F], F: MonadThrow[F])
     extends ForgeApiAlg[F] {
 
   def client: HttpJsonClient[F] = implicitly
-  val url = new Url(vcs.apiHost)
+  val url = new Url(forge.apiUri)
 
   val PULL_REQUEST_PAGE_SIZE: Int = 50 // default
 
