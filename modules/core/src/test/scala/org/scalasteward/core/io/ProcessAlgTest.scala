@@ -7,7 +7,7 @@ import munit.FunSuite
 import org.scalasteward.core.TestInstances._
 import org.scalasteward.core.application.Config.{ProcessCfg, SandboxCfg}
 import org.scalasteward.core.io.ProcessAlgTest.ioProcessAlg
-import org.scalasteward.core.mock.MockConfig.{config, mockRoot}
+import org.scalasteward.core.mock.MockConfig.{gitHubConfig, mockRoot}
 import org.scalasteward.core.mock.MockState
 import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
 import org.scalasteward.core.util.Nel
@@ -33,7 +33,7 @@ class ProcessAlgTest extends FunSuite {
 
   test("execSandboxed: echo with enableSandbox = false") {
     val cfg = ProcessCfg(Nil, Duration.Zero, SandboxCfg(Nil, Nil, enableSandbox = false), 8192)
-    val state = MockProcessAlg
+    val obtained = MockProcessAlg
       .create(cfg)
       .execSandboxed(Nel.of("echo", "hello"), mockRoot)
       .runS(MockState.empty)
@@ -43,7 +43,7 @@ class ProcessAlgTest extends FunSuite {
       trace = Vector(Cmd(mockRoot.toString, "echo", "hello"))
     )
 
-    assertEquals(state, expected)
+    assertEquals(obtained, expected)
   }
 
   test("execSandboxed: echo with enableSandbox = true") {
@@ -65,5 +65,5 @@ class ProcessAlgTest extends FunSuite {
 }
 
 object ProcessAlgTest {
-  implicit val ioProcessAlg: ProcessAlg[IO] = ProcessAlg.create[IO](config.processCfg)
+  implicit val ioProcessAlg: ProcessAlg[IO] = ProcessAlg.create[IO](gitHubConfig.processCfg)
 }

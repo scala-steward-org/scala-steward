@@ -21,8 +21,7 @@ import org.http4s.Uri
 import org.scalasteward.core.application.Cli.EnvVar
 import org.scalasteward.core.application.Config._
 import org.scalasteward.core.data.Resolver
-import org.scalasteward.core.forge.ForgeType
-import org.scalasteward.core.forge.github.GitHubApp
+import org.scalasteward.core.forge.Forge
 import org.scalasteward.core.git.Author
 import org.scalasteward.core.util.Nel
 import scala.concurrent.duration.FiniteDuration
@@ -49,47 +48,23 @@ final case class Config(
     workspace: File,
     reposFiles: Nel[Uri],
     gitCfg: GitCfg,
-    forgeCfg: ForgeCfg,
+    forge: Forge,
     ignoreOptsFiles: Boolean,
     processCfg: ProcessCfg,
     repoConfigCfg: RepoConfigCfg,
     scalafixCfg: ScalafixCfg,
     artifactCfg: ArtifactCfg,
     cacheTtl: FiniteDuration,
-    bitbucketCfg: BitbucketCfg,
-    bitbucketServerCfg: BitbucketServerCfg,
-    gitLabCfg: GitLabCfg,
-    azureReposCfg: AzureReposCfg,
-    githubApp: Option[GitHubApp],
     urlCheckerTestUrls: Nel[Uri],
     defaultResolver: Resolver,
     refreshBackoffPeriod: FiniteDuration,
     exitCodePolicy: ExitCodePolicy
-) {
-  def forgeSpecificCfg: ForgeSpecificCfg =
-    forgeCfg.tpe match {
-      case ForgeType.AzureRepos      => azureReposCfg
-      case ForgeType.Bitbucket       => bitbucketCfg
-      case ForgeType.BitbucketServer => bitbucketServerCfg
-      case ForgeType.GitHub          => GitHubCfg()
-      case ForgeType.GitLab          => gitLabCfg
-      case ForgeType.Gitea           => GiteaCfg()
-    }
-}
+)
 
 object Config {
   final case class GitCfg(
       gitAuthor: Author,
-      gitAskPass: File,
       signCommits: Boolean
-  )
-
-  final case class ForgeCfg(
-      tpe: ForgeType,
-      apiHost: Uri,
-      login: String,
-      doNotFork: Boolean,
-      addLabels: Boolean
   )
 
   final case class ProcessCfg(
@@ -119,30 +94,4 @@ object Config {
       migrations: List[Uri],
       disableDefaults: Boolean
   )
-
-  sealed trait ForgeSpecificCfg extends Product with Serializable
-
-  final case class AzureReposCfg(
-      organization: Option[String]
-  ) extends ForgeSpecificCfg
-
-  final case class BitbucketCfg(
-      useDefaultReviewers: Boolean
-  ) extends ForgeSpecificCfg
-
-  final case class BitbucketServerCfg(
-      useDefaultReviewers: Boolean
-  ) extends ForgeSpecificCfg
-
-  final case class GitHubCfg(
-  ) extends ForgeSpecificCfg
-
-  final case class GitLabCfg(
-      mergeWhenPipelineSucceeds: Boolean,
-      requiredReviewers: Option[Int],
-      removeSourceBranch: Boolean
-  ) extends ForgeSpecificCfg
-
-  final case class GiteaCfg(
-  ) extends ForgeSpecificCfg
 }

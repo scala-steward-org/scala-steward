@@ -8,7 +8,7 @@ import org.scalasteward.core.application.{Config, Context, ValidateRepoConfigCon
 import org.scalasteward.core.edit.scalafix.ScalafixMigrationsLoader
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
 import org.scalasteward.core.io._
-import org.scalasteward.core.mock.MockConfig.config
+import org.scalasteward.core.mock.MockConfig.gitHubConfig
 import org.scalasteward.core.repoconfig.RepoConfigLoader
 import org.scalasteward.core.update.artifact.ArtifactMigrationsLoader
 import org.scalasteward.core.util.UrlCheckerClient
@@ -26,10 +26,10 @@ object MockContext {
       }
     }
 
-  implicit private val urlCheckerClient: UrlCheckerClient[MockEff] = UrlCheckerClient(client)
+  implicit val urlCheckerClient: UrlCheckerClient[MockEff] = UrlCheckerClient(client)
   implicit private val fileAlg: FileAlg[MockEff] = new MockFileAlg
   implicit private val logger: Logger[MockEff] = new MockLogger
-  implicit private val processAlg: ProcessAlg[MockEff] = MockProcessAlg.create(config.processCfg)
+  implicit val processAlg: ProcessAlg[MockEff] = MockProcessAlg.create(gitHubConfig.processCfg)
   implicit private val workspaceAlg: WorkspaceAlg[MockEff] = new MockWorkspaceAlg
 
   val mockState: MockState = MockState.empty.addUris(
@@ -41,7 +41,7 @@ object MockContext {
       ioFileAlg.readResource("scalafix-migrations.conf").unsafeRunSync()
   )
 
-  val context: Context[MockEff] = context(config)
+  val context: Context[MockEff] = context(gitHubConfig)
   def context(stewardConfig: Config): Context[MockEff] =
     mockState.toRef.flatMap(Context.step1(stewardConfig).run).unsafeRunSync()
 

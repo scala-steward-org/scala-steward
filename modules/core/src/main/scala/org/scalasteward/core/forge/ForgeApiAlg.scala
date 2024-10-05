@@ -16,11 +16,28 @@
 
 package org.scalasteward.core.forge
 
+import cats.effect.Temporal
 import cats.syntax.all._
-import cats.{ApplicativeThrow, MonadThrow}
+import cats.{ApplicativeThrow, MonadThrow, Parallel}
 import org.scalasteward.core.data.Repo
+import org.scalasteward.core.forge.Forge.{
+  AzureRepos,
+  Bitbucket,
+  BitbucketServer,
+  GitHub,
+  GitLab,
+  Gitea
+}
+import org.scalasteward.core.forge.azurerepos.AzureReposApiAlg
+import org.scalasteward.core.forge.bitbucket.BitbucketApiAlg
+import org.scalasteward.core.forge.bitbucketserver.BitbucketServerApiAlg
 import org.scalasteward.core.forge.data._
+import org.scalasteward.core.forge.gitea.GiteaApiAlg
+import org.scalasteward.core.forge.github.GitHubApiAlg
+import org.scalasteward.core.forge.gitlab.GitLabApiAlg
 import org.scalasteward.core.git.Branch
+import org.scalasteward.core.util.HttpJsonClient
+import org.typelevel.log4cats.Logger
 
 trait ForgeApiAlg[F[_]] {
   def createFork(repo: Repo): F[RepoOut]
@@ -66,4 +83,23 @@ trait ForgeApiAlg[F[_]] {
 
   private def getDefaultBranch(repoOut: RepoOut): F[BranchOut] =
     getBranch(repoOut.repo, repoOut.default_branch)
+}
+
+object ForgeApiAlg {
+  def create[F[_]: Parallel](forge: Forge)(implicit
+      httpJsonClient: HttpJsonClient[F],
+      forgeAuthAlg: ForgeAuthAlg[F],
+      logger: Logger[F],
+      F: Temporal[F]
+  ): ForgeApiAlg[F] = {
+    val auth = forgeAuthAlg.authenticateApi(_)
+    forge match {
+      case forge: AzureRepos      => new AzureReposApiAlg(forge, auth)
+      case forge: Bitbucket       => new BitbucketApiAlg(forge, auth)
+      case forge: BitbucketServer => new BitbucketServerApiAlg(forge, auth)
+      case forge: GitHub          => new GitHubApiAlg(forge, auth)
+      case forge: GitLab          => new GitLabApiAlg(forge, auth)
+      case forge: Gitea           => new GiteaApiAlg(forge, auth)
+    }
+  }
 }

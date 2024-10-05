@@ -3,12 +3,14 @@ package org.scalasteward.core.forge
 import munit.CatsEffectSuite
 import org.http4s.syntax.literals._
 import org.scalasteward.core.data.Repo
+import org.scalasteward.core.forge.Forge.GitHub
 import org.scalasteward.core.forge.data.{RepoOut, UserOut}
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.mock.MockConfig.config
-import org.scalasteward.core.mock.MockContext.context._
+import org.scalasteward.core.mock.MockConfig.gitHubConfig
+import org.scalasteward.core.mock.MockContext.context.{gitAlg, logger, workspaceAlg}
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
-import org.scalasteward.core.mock.{MockConfig, MockEff, MockState}
+import org.scalasteward.core.mock.MockForgeAuthAlg.noAuth
+import org.scalasteward.core.mock.{MockEff, MockState}
 
 class ForgeRepoAlgTest extends CatsEffectSuite {
   private val repo = Repo("fthomas", "datapackage")
@@ -29,16 +31,17 @@ class ForgeRepoAlgTest extends CatsEffectSuite {
     Branch("main")
   )
 
-  private val parentUrl = s"https://${config.forgeCfg.login}@github.com/fthomas/datapackage"
-  private val forkUrl = s"https://${config.forgeCfg.login}@github.com/scala-steward/datapackage"
+  private val parentUrl = "https://github.com/fthomas/datapackage"
+  private val forkUrl = "https://github.com/scala-steward/datapackage"
 
   test("cloneAndSync: doNotFork = false") {
-    val state = forgeRepoAlg.cloneAndSync(repo, forkRepoOut).runS(MockState.empty)
+    val obtained =
+      new ForgeRepoAlg[MockEff](gitHubConfig).cloneAndSync(repo, forkRepoOut).runS(MockState.empty)
     val expected = MockState.empty.copy(
       trace = Vector(
         Log("Clone scala-steward/datapackage"),
         Cmd.git(
-          config.workspace,
+          gitHubConfig.workspace,
           "clone",
           "-c",
           "clone.defaultRemoteName=origin",
@@ -58,13 +61,13 @@ class ForgeRepoAlgTest extends CatsEffectSuite {
         Cmd.git(repoDir, "submodule", "update", "--init", "--recursive")
       )
     )
-    state.map(assertEquals(_, expected))
+    obtained.map(assertEquals(_, expected))
   }
 
   test("cloneAndSync: doNotFork = true") {
     val config =
-      MockConfig.config.copy(forgeCfg = MockConfig.config.forgeCfg.copy(doNotFork = true))
-    val state = new ForgeRepoAlg[MockEff](config)
+      gitHubConfig.copy(forge = gitHubConfig.forge.asInstanceOf[GitHub].copy(doNotFork = true))
+    val obtained = new ForgeRepoAlg[MockEff](config)
       .cloneAndSync(repo, parentRepoOut)
       .runS(MockState.empty)
 
@@ -84,11 +87,11 @@ class ForgeRepoAlgTest extends CatsEffectSuite {
         Cmd.git(repoDir, "submodule", "update", "--init", "--recursive")
       )
     )
-    state.map(assertEquals(_, expected))
+    obtained.map(assertEquals(_, expected))
   }
 
   test("cloneAndSync: doNotFork = false, no parent") {
-    forgeRepoAlg
+    new ForgeRepoAlg[MockEff](gitHubConfig)
       .cloneAndSync(repo, parentRepoOut)
       .runS(MockState.empty)
       .attempt

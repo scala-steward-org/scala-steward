@@ -18,9 +18,9 @@ package org.scalasteward.core.forge.bitbucketserver
 
 import cats.MonadThrow
 import cats.syntax.all._
-import org.http4s.{Request, Uri}
-import org.scalasteward.core.application.Config.BitbucketServerCfg
+import org.http4s.Request
 import org.scalasteward.core.data.Repo
+import org.scalasteward.core.forge.Forge.BitbucketServer
 import org.scalasteward.core.forge.ForgeApiAlg
 import org.scalasteward.core.forge.bitbucketserver.Json.{PR, Reviewer, User}
 import org.scalasteward.core.forge.data.PullRequestState.Open
@@ -31,12 +31,11 @@ import org.typelevel.log4cats.Logger
 
 /** https://docs.atlassian.com/bitbucket-server/rest/latest/bitbucket-rest.html */
 final class BitbucketServerApiAlg[F[_]](
-    bitbucketApiHost: Uri,
-    config: BitbucketServerCfg,
+    forge: BitbucketServer,
     modify: Request[F] => F[Request[F]]
 )(implicit client: HttpJsonClient[F], logger: Logger[F], F: MonadThrow[F])
     extends ForgeApiAlg[F] {
-  private val url = new Url(bitbucketApiHost)
+  private val url = new Url(forge.apiUri)
 
   override def closePullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut] =
     getPullRequest(repo, number).flatMap { pr =>
@@ -94,7 +93,7 @@ final class BitbucketServerApiAlg[F[_]](
     logger.warn("Updating PRs is not yet supported for Bitbucket Server")
 
   private def useDefaultReviewers(repo: Repo): F[List[Reviewer]] =
-    if (config.useDefaultReviewers) getDefaultReviewers(repo) else F.pure(List.empty[Reviewer])
+    if (forge.useDefaultReviewers) getDefaultReviewers(repo) else F.pure(List.empty[Reviewer])
 
   private def declinePullRequest(repo: Repo, number: PullRequestNumber, version: Int): F[Unit] =
     client.post_(url.declinePullRequest(repo, number, version), modify)

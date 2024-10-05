@@ -23,8 +23,8 @@ import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.syntax._
 import org.http4s.{Request, Status, Uri}
-import org.scalasteward.core.application.Config.{ForgeCfg, GitLabCfg}
 import org.scalasteward.core.data.Repo
+import org.scalasteward.core.forge.Forge.GitLab
 import org.scalasteward.core.forge.ForgeApiAlg
 import org.scalasteward.core.forge.data._
 import org.scalasteward.core.git.{Branch, Sha1}
@@ -158,8 +158,7 @@ private[gitlab] object GitLabJsonCodec {
 }
 
 final class GitLabApiAlg[F[_]: Parallel](
-    forgeCfg: ForgeCfg,
-    gitLabCfg: GitLabCfg,
+    forge: GitLab,
     modify: Request[F] => F[Request[F]]
 )(implicit
     client: HttpJsonClient[F],
@@ -168,14 +167,14 @@ final class GitLabApiAlg[F[_]: Parallel](
 ) extends ForgeApiAlg[F] {
   import GitLabJsonCodec._
 
-  private val url = new Url(forgeCfg.apiHost)
+  private val url = new Url(forge.apiUri)
 
   override def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]] =
     client.get(url.listMergeRequests(repo, head, base.name), modify)
 
   override def createFork(repo: Repo): F[RepoOut] = {
-    val userOwnedRepo = repo.copy(owner = forgeCfg.login)
-    val data = ForkPayload(url.encodedProjectId(userOwnedRepo), forgeCfg.login)
+    val userOwnedRepo = repo.copy(owner = forge.login)
+    val data = ForkPayload(url.encodedProjectId(userOwnedRepo), forge.login)
     client
       .postWithBody[RepoOut, ForkPayload](url.createFork(repo), data, modify)
       .recoverWith {
@@ -187,7 +186,7 @@ final class GitLabApiAlg[F[_]: Parallel](
   }
 
   override def createPullRequest(repo: Repo, data: NewPullRequestData): F[PullRequestOut] = {
-    val targetRepo = if (forgeCfg.doNotFork) repo else repo.copy(owner = forgeCfg.login)
+    val targetRepo = if (forge.doNotFork) repo else repo.copy(owner = forge.login)
     val mergeRequest = for {
       projectId <- client.get[ProjectId](url.repos(repo), modify)
       usernameMapping <- getUsernameToUserIdsMapping((data.assignees ++ data.reviewers).toSet)
@@ -196,7 +195,7 @@ final class GitLabApiAlg[F[_]: Parallel](
         projectId = projectId.id,
         data = data,
         usernamesToUserIdsMapping = usernameMapping,
-        removeSourceBranch = gitLabCfg.removeSourceBranch
+        removeSourceBranch = forge.removeSourceBranch
       )
       res <- client.postWithBody[MergeRequestOut, MergeRequestPayload](
         uri = url.mergeRequest(targetRepo),
@@ -233,7 +232,7 @@ final class GitLabApiAlg[F[_]: Parallel](
         }
 
     val updatedMergeRequest =
-      if (!gitLabCfg.mergeWhenPipelineSucceeds)
+      if (!forge.mergeWhenPipelineSucceeds)
         mergeRequest
       else {
         for {
@@ -278,7 +277,7 @@ final class GitLabApiAlg[F[_]: Parallel](
     }
 
   private def maybeSetReviewers(repo: Repo, mrOut: MergeRequestOut): F[MergeRequestOut] =
-    gitLabCfg.requiredReviewers match {
+    forge.requiredReviewers match {
       case Some(requiredReviewers) =>
         for {
           _ <- logger.info(

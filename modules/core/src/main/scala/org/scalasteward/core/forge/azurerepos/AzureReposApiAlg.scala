@@ -18,9 +18,9 @@ package org.scalasteward.core.forge.azurerepos
 
 import cats.MonadThrow
 import cats.syntax.all._
-import org.http4s.{Request, Uri}
-import org.scalasteward.core.application.Config.AzureReposCfg
+import org.http4s.Request
 import org.scalasteward.core.data.Repo
+import org.scalasteward.core.forge.Forge.AzureRepos
 import org.scalasteward.core.forge.ForgeApiAlg
 import org.scalasteward.core.forge.azurerepos.JsonCodec._
 import org.scalasteward.core.forge.data._
@@ -29,13 +29,12 @@ import org.scalasteward.core.util.HttpJsonClient
 import org.typelevel.log4cats.Logger
 
 final class AzureReposApiAlg[F[_]](
-    azureAPiHost: Uri,
-    config: AzureReposCfg,
+    forge: AzureRepos,
     modify: Request[F] => F[Request[F]]
 )(implicit client: HttpJsonClient[F], logger: Logger[F], F: MonadThrow[F])
     extends ForgeApiAlg[F] {
 
-  private val url = new Url(azureAPiHost, config.organization.getOrElse(""))
+  private val url = new Url(forge.apiUri, forge.reposOrganization)
 
   override def createFork(repo: Repo): F[RepoOut] =
     F.raiseError(new NotImplementedError(s"createFork($repo)"))

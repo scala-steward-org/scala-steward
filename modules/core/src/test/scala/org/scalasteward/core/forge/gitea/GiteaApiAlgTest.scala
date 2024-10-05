@@ -1,34 +1,24 @@
 package org.scalasteward.core.forge.gitea
 
-import cats.syntax.semigroupk._
+import better.files.File
 import io.circe.literal._
 import munit.CatsEffectSuite
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
-import org.http4s.headers.Authorization
 import org.http4s.implicits._
-import org.http4s.{BasicCredentials, HttpApp}
+import org.http4s.HttpApp
 import org.scalasteward.core.TestInstances.ioLogger
-import org.scalasteward.core.application.Config.GiteaCfg
 import org.scalasteward.core.data.Repo
+import org.scalasteward.core.forge.Forge.Gitea
 import org.scalasteward.core.forge.data._
-import org.scalasteward.core.forge.{ForgeSelection, ForgeType}
+import org.scalasteward.core.forge.ForgeApiAlg
 import org.scalasteward.core.git.{Branch, Sha1}
-import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context.httpJsonClient
+import org.scalasteward.core.mock.MockForgeAuthAlg.noAuth
 import org.scalasteward.core.mock.{MockEff, MockState}
 
 class GiteaApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
-  private val user = AuthenticatedUser("user", "pass")
-  private val userM = MockEff.pure(user)
   private val repo = Repo("foo", "baz")
-
-  private val basicAuth = Authorization(BasicCredentials(user.login, user.accessToken))
-  private val auth = HttpApp[MockEff] { request =>
-    (request: @unchecked) match {
-      case _ if !request.headers.get[Authorization].contains(basicAuth) => Forbidden()
-    }
-  }
 
   object PageQ extends QueryParamDecoderMatcher[Int]("page")
 
@@ -56,13 +46,15 @@ class GiteaApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     case _ => NotFound()
   }
 
-  private val state = MockState.empty.copy(clientResponses = auth <+> httpApp)
-
-  private val forgeCfg = config.forgeCfg.copy(
-    tpe = ForgeType.Gitea,
-    apiHost = config.forgeCfg.apiHost / "api" / "v1"
+  private val state = MockState.empty.copy(clientResponses = httpApp)
+  private val forge = Gitea(
+    apiUri = uri"https://git.example.com/api/v1",
+    login = "some-user",
+    gitAskPass = File.newTemporaryFile(),
+    doNotFork = false,
+    addLabels = false
   )
-  private val giteaAlg = ForgeSelection.forgeApiAlg[MockEff](forgeCfg, GiteaCfg(), userM)
+  private val giteaAlg = ForgeApiAlg.create[MockEff](forge)
 
   test("getRepo") {
     giteaAlg

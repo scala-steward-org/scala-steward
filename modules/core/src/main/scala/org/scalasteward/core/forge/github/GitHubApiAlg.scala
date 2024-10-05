@@ -16,31 +16,33 @@
 
 package org.scalasteward.core.forge.github
 
-import cats.MonadThrow
+import cats.effect.Concurrent
 import cats.syntax.all._
 import io.circe.Json
-import org.http4s.{Request, Uri}
+import org.http4s.{Header, Request}
 import org.scalasteward.core.data.Repo
+import org.scalasteward.core.forge.Forge.GitHub
 import org.scalasteward.core.forge.ForgeApiAlg
 import org.scalasteward.core.forge.data._
 import org.scalasteward.core.forge.github.GitHubException._
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.HttpJsonClient
+import org.typelevel.ci.CIStringSyntax
 import org.typelevel.log4cats.Logger
 
 final class GitHubApiAlg[F[_]](
-    gitHubApiHost: Uri,
-    modify: Request[F] => F[Request[F]]
+    forge: GitHub,
+    auth: Request[F] => F[Request[F]]
 )(implicit
     client: HttpJsonClient[F],
     logger: Logger[F],
-    F: MonadThrow[F]
+    F: Concurrent[F]
 ) extends ForgeApiAlg[F] {
-  private val url = new Url(gitHubApiHost)
+  private val url = new Url(forge.apiUri)
 
   /** https://docs.github.com/en/rest/repos/forks?apiVersion=2022-11-28#create-a-fork */
   override def createFork(repo: Repo): F[RepoOut] =
-    client.post[RepoOut](url.forks(repo), modify).flatTap { repoOut =>
+    client.post[RepoOut](url.forks(repo), auth).flatTap { repoOut =>
       F.raiseWhen(repoOut.parent.exists(_.archived))(RepositoryArchived(repo))
     }
 
@@ -51,7 +53,7 @@ final class GitHubApiAlg[F[_]](
       .postWithBody[PullRequestOut, CreatePullRequestPayload](
         uri = url.pulls(repo),
         body = payload,
-        modify = modify
+        modify = auth
       )
       .adaptErr(SecondaryRateLimitExceeded.fromThrowable)
 
@@ -77,7 +79,7 @@ final class GitHubApiAlg[F[_]](
       .patchWithBody[PullRequestOut, UpdatePullRequestPayload](
         uri = url.pull(repo, number),
         body = payload,
-        modify = modify
+        modify = auth
       )
       .adaptErr(SecondaryRateLimitExceeded.fromThrowable)
 
@@ -91,24 +93,24 @@ final class GitHubApiAlg[F[_]](
 
   /** https://docs.github.com/en/rest/repos/branches?apiVersion=2022-11-28#get-branch */
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
-    client.get(url.branches(repo, branch), modify)
+    client.get(url.branches(repo, branch), auth)
 
   /** https://docs.github.com/en/rest/repos?apiVersion=2022-11-28#get */
   override def getRepo(repo: Repo): F[RepoOut] =
-    client.get[RepoOut](url.repos(repo), modify).flatTap { repoOut =>
+    client.get[RepoOut](url.repos(repo), auth).flatTap { repoOut =>
       F.raiseWhen(repoOut.archived)(RepositoryArchived(repo))
     }
 
   /** https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#list-pull-requests */
   override def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]] =
-    client.get(url.listPullRequests(repo, head, base), modify)
+    client.get(url.listPullRequests(repo, head, base), auth)
 
   /** https://docs.github.com/en/rest/pulls?apiVersion=2022-11-28#update-a-pull-request */
   override def closePullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut] =
     client.patchWithBody[PullRequestOut, UpdateState](
       url.pull(repo, number),
       UpdateState(PullRequestState.Closed),
-      modify
+      auth
     )
 
   /** https://docs.github.com/en/rest/issues?apiVersion=2022-11-28#create-an-issue-comment */
@@ -118,7 +120,7 @@ final class GitHubApiAlg[F[_]](
       comment: String
   ): F[Comment] =
     client
-      .postWithBody(url.comments(repo, number), Comment(comment), modify)
+      .postWithBody(url.comments(repo, number), Comment(comment), auth)
 
   /** https://docs.github.com/en/rest/reference/issues?apiVersion=2022-11-28#add-labels-to-an-issue
     */
@@ -131,7 +133,7 @@ final class GitHubApiAlg[F[_]](
       .postWithBody[io.circe.Json, GitHubLabels](
         url.issueLabels(repo, number),
         GitHubLabels(labels),
-        modify
+        auth
       )
       .adaptErr(SecondaryRateLimitExceeded.fromThrowable)
       .void
@@ -145,7 +147,7 @@ final class GitHubApiAlg[F[_]](
       .postWithBody[Json, GitHubAssignees](
         url.assignees(repo, number),
         GitHubAssignees(assignees),
-        modify
+        auth
       )
       .void
       .handleErrorWith { error =>
@@ -161,7 +163,7 @@ final class GitHubApiAlg[F[_]](
       .postWithBody[Json, GitHubReviewers](
         url.reviewers(repo, number),
         GitHubReviewers(reviewers),
-        modify
+        auth
       )
       .void
       .handleErrorWith { error =>
@@ -169,5 +171,7 @@ final class GitHubApiAlg[F[_]](
           s"cannot request review from '${reviewers.mkString(",")}' for PR '$number'"
         )
       }
-
+}
+object GitHubApiAlg {
+  val acceptHeaderVersioned: Header.Raw = Header.Raw(ci"Accept", "application/vnd.github.v3+json")
 }

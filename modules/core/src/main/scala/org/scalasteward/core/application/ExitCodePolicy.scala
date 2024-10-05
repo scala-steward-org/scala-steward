@@ -23,7 +23,7 @@ trait ExitCodePolicy {
 }
 
 object ExitCodePolicy {
-  def successIf(isSuccess: RunResults => Boolean): ExitCodePolicy =
+  private def successIf(isSuccess: RunResults => Boolean): ExitCodePolicy =
     (runResults: RunResults) => if (isSuccess(runResults)) ExitCode.Success else ExitCode.Error
 
   val SuccessIfAnyRepoSucceeds: ExitCodePolicy = successIf(_.successRepos.nonEmpty)

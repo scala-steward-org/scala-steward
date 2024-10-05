@@ -3,7 +3,7 @@ package org.scalasteward.core.persistence
 import cats.effect.unsafe.implicits.global
 import cats.syntax.all._
 import munit.FunSuite
-import org.scalasteward.core.mock.MockConfig.config
+import org.scalasteward.core.mock.MockConfig.gitHubConfig
 import org.scalasteward.core.mock.MockContext.context._
 import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
 import org.scalasteward.core.mock.{MockEff, MockState}
@@ -20,9 +20,9 @@ class JsonKeyValueStoreTest extends FunSuite {
     val (state, value) = p.runSA(MockState.empty).unsafeRunSync()
     assertEquals(value, (Some("v1"), None))
 
-    val k1File = config.workspace / "store" / "test-1" / "v0" / "k1" / "test-1.json"
-    val k2File = config.workspace / "store" / "test-1" / "v0" / "k2" / "test-1.json"
-    val k3File = config.workspace / "store" / "test-1" / "v0" / "k3" / "test-1.json"
+    val k1File = gitHubConfig.workspace / "store" / "test-1" / "v0" / "k1" / "test-1.json"
+    val k2File = gitHubConfig.workspace / "store" / "test-1" / "v0" / "k2" / "test-1.json"
+    val k3File = gitHubConfig.workspace / "store" / "test-1" / "v0" / "k3" / "test-1.json"
     val expected = MockState.empty.copy(
       trace = Vector(
         Cmd("write", k1File.toString),
@@ -48,7 +48,7 @@ class JsonKeyValueStoreTest extends FunSuite {
     val (state, value) = p.runSA(MockState.empty).unsafeRunSync()
     assertEquals(value, Some("v0"))
 
-    val k1File = config.workspace / "store" / "test-2" / "v0" / "k1" / "test-2.json"
+    val k1File = gitHubConfig.workspace / "store" / "test-2" / "v0" / "k1" / "test-2.json"
     val expected = MockState.empty.copy(
       trace = Vector(
         Cmd("read", k1File.toString),
@@ -72,8 +72,8 @@ class JsonKeyValueStoreTest extends FunSuite {
     val (state, value) = p.runSA(MockState.empty).unsafeRunSync()
     assertEquals(value, (Some("v1"), None))
 
-    val k1File = config.workspace / "store" / "test-3" / "v0" / "k1" / "test-3.json"
-    val k2File = config.workspace / "store" / "test-3" / "v0" / "k2" / "test-3.json"
+    val k1File = gitHubConfig.workspace / "store" / "test-3" / "v0" / "k1" / "test-3.json"
+    val k2File = gitHubConfig.workspace / "store" / "test-3" / "v0" / "k2" / "test-3.json"
     val expected = MockState.empty.copy(
       trace = Vector(Cmd("write", k1File.toString), Cmd("read", k2File.toString)),
       files = Map(k1File -> """"v1"""")
@@ -87,7 +87,7 @@ class JsonKeyValueStoreTest extends FunSuite {
       v1 <- kvStore.get("k1")
     } yield v1
 
-    val k1File = config.workspace / "store" / "test-4" / "v0" / "k1" / "test-4.json"
+    val k1File = gitHubConfig.workspace / "store" / "test-4" / "v0" / "k1" / "test-4.json"
     val k1Mapping = k1File -> """ "v1 """
     val value = MockState.empty.addFiles(k1Mapping).flatMap(p.runA).unsafeRunSync()
     assertEquals(value, None)

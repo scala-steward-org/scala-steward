@@ -12,7 +12,7 @@ class MockWorkspaceAlg extends WorkspaceAlg[MockEff] {
     Kleisli.pure(())
 
   override def rootDir: MockEff[File] =
-    Kleisli.pure(MockConfig.config.workspace)
+    Kleisli.pure(MockConfig.gitHubConfig.workspace)
 
   override def repoDir(repo: Repo): MockEff[File] =
     rootDir.map(_ / repo.owner / repo.repo)

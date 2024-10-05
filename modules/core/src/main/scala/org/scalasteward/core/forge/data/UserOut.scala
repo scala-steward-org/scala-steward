@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.forge.data
 
-import io.circe.Decoder
+import io.circe.Codec
 import io.circe.generic.semiauto._
 
 final case class UserOut(
@@ -24,6 +24,5 @@ final case class UserOut(
 )
 
 object UserOut {
-  implicit val userOutDecoder: Decoder[UserOut] =
-    deriveDecoder
+  implicit val userOutDecoder: Codec[UserOut] = deriveCodec
 }

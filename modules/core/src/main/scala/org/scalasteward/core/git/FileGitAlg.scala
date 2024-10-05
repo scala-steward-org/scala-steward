@@ -20,13 +20,21 @@ import better.files.File
 import cats.effect.MonadCancelThrow
 import cats.syntax.all._
 import org.http4s.Uri
-import org.scalasteward.core.application.Config.GitCfg
+import org.scalasteward.core.application.Config
+import org.scalasteward.core.forge.Forge.{
+  AzureRepos,
+  Bitbucket,
+  BitbucketServer,
+  GitHub,
+  GitLab,
+  Gitea
+}
 import org.scalasteward.core.git.FileGitAlg.{dotdot, gitCmd}
 import org.scalasteward.core.io.process.{ProcessFailedException, SlurpOptions}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
 
-final class FileGitAlg[F[_]](config: GitCfg)(implicit
+final class FileGitAlg[F[_]](config: Config)(implicit
     fileAlg: FileAlg[F],
     processAlg: ProcessAlg[F],
     workspaceAlg: WorkspaceAlg[F],
@@ -52,13 +60,12 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
       .as(true)
       .recover { case ex: ProcessFailedException if ex.exitValue === 1 => false }
 
-  override def clone(repo: File, url: Uri): F[Unit] =
-    for {
-      rootDir <- workspaceAlg.rootDir
-      _ <- git_("clone", "-c", "clone.defaultRemoteName=origin", url.toString, repo.pathAsString)(
-        rootDir
-      )
-    } yield ()
+  override def clone(repo: File, url: Uri): F[Unit] = for {
+    rootDir <- workspaceAlg.rootDir
+    _ <- git_("clone", "-c", "clone.defaultRemoteName=origin", url.toString, repo.pathAsString)(
+      rootDir
+    )
+  } yield ()
 
   override def cloneExists(repo: File): F[Boolean] =
     fileAlg.isDirectory(repo / ".git")
@@ -150,7 +157,15 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
       repo: File,
       slurpOptions: SlurpOptions = Set.empty
   ): F[List[String]] = {
-    val extraEnv = List("GIT_ASKPASS" -> config.gitAskPass.pathAsString)
+    val extraEnv = (config.forge match {
+      case forge: AzureRepos      => Some(forge.gitAskPass)
+      case forge: Bitbucket       => Some(forge.gitAskPass)
+      case forge: BitbucketServer => Some(forge.gitAskPass)
+      case _: GitHub              => None
+      case forge: GitLab          => Some(forge.gitAskPass)
+      case forge: Gitea           => Some(forge.gitAskPass)
+    }).map("GIT_ASKPASS" -> _.pathAsString).toList
+
     processAlg
       .exec(gitCmd ++ args.toList, repo, extraEnv, slurpOptions)
       .recoverWith {
@@ -169,7 +184,7 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
     git(args: _*)(repo, SlurpOptions.ignoreBufferOverflow)
 
   private val sign: String =
-    if (config.signCommits) "--gpg-sign" else "--no-gpg-sign"
+    if (config.gitCfg.signCommits) "--gpg-sign" else "--no-gpg-sign"
 }
 
 object FileGitAlg {

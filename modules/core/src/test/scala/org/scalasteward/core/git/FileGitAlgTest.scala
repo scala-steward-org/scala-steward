@@ -16,7 +16,7 @@ import org.scalasteward.core.git.FileGitAlgTest.{
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
 import org.scalasteward.core.io.ProcessAlgTest.ioProcessAlg
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.mock.MockConfig.{config, mockRoot}
+import org.scalasteward.core.mock.MockConfig.{gitHubConfig, mockRoot}
 import org.scalasteward.core.util.Nel
 
 class FileGitAlgTest extends CatsEffectSuite {
@@ -221,7 +221,7 @@ object FileGitAlgTest {
         _ <- gitAlg.removeClone(repo)
         _ <- fileAlg.ensureExists(repo)
         _ <- git("-c", s"init.defaultBranch=${master.name}", "init", ".")(repo)
-        _ <- gitAlg.setAuthor(repo, config.gitCfg.gitAuthor)
+        _ <- gitAlg.setAuthor(repo, gitHubConfig.gitCfg.gitAuthor)
         _ <- git("commit", "--allow-empty", "-m", "Initial commit")(repo)
       } yield ()
 
@@ -275,10 +275,10 @@ object FileGitAlgTest {
   }
 
   implicit val ioWorkspaceAlg: WorkspaceAlg[IO] =
-    WorkspaceAlg.create[IO](config)
+    WorkspaceAlg.create[IO](gitHubConfig)
 
   implicit val ioGitAlg: GenGitAlg[IO, File] =
-    new FileGitAlg[IO](config.gitCfg).contramapRepoF(IO.pure)
+    new FileGitAlg[IO](gitHubConfig).contramapRepoF(IO.pure)
 
   val ioAuxGitAlg: AuxGitAlg[IO] =
     new AuxGitAlg[IO]

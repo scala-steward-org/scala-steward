@@ -30,13 +30,11 @@ import org.scalasteward.core.application.ExitCodePolicy.{
   SuccessOnlyIfAllReposSucceed
 }
 import org.scalasteward.core.data.Resolver
-import org.scalasteward.core.forge.ForgeType
-import org.scalasteward.core.forge.ForgeType.{AzureRepos, GitHub}
-import org.scalasteward.core.forge.github.GitHubApp
+import org.scalasteward.core.forge.Forge
+import org.scalasteward.core.forge.Forge._
 import org.scalasteward.core.git.Author
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.util.dateTime.renderFiniteDuration
-
 import scala.concurrent.duration._
 
 object Cli {
@@ -45,7 +43,6 @@ object Cli {
   object name {
     val forgeApiHost = "forge-api-host"
     val forgeLogin = "forge-login"
-    val forgeType = "forge-type"
     val maxBufferSize = "max-buffer-size"
     val processTimeout = "process-timeout"
   }
@@ -69,11 +66,6 @@ object Cli {
   implicit val uriArgument: Argument[Uri] =
     Argument.from("uri") { s =>
       Validated.fromEither(Uri.fromString(s).leftMap(_.message)).toValidatedNel
-    }
-
-  implicit val forgeTypeArgument: Argument[ForgeType] =
-    Argument.from(name.forgeType) { s =>
-      Validated.fromEither(ForgeType.parse(s)).toValidatedNel
     }
 
   private val multiple = "(can be used multiple times)"
@@ -106,20 +98,7 @@ object Cli {
     flag("sign-commits", "Whether to sign commits; default: false").orFalse
 
   private val gitCfg: Opts[GitCfg] =
-    (gitAuthor, gitAskPass, signCommits).mapN(GitCfg.apply)
-
-  private val vcsType =
-    option[ForgeType](
-      "vcs-type",
-      s"deprecated in favor of --${name.forgeType}",
-      visibility = Visibility.Partial
-    ).validate(s"--vcs-type is deprecated; use --${name.forgeType} instead")(_ => false)
-
-  private val forgeType = {
-    val help = ForgeType.all.map(_.asString).mkString("One of ", ", ", "") +
-      s"; default: ${GitHub.asString}"
-    option[ForgeType](name.forgeType, help).orElse(vcsType).withDefault(GitHub)
-  }
+    (gitAuthor, signCommits).mapN(GitCfg.apply)
 
   private val vcsApiHost =
     option[Uri](
@@ -129,9 +108,7 @@ object Cli {
     ).validate(s"--vcs-api-host is deprecated; use --${name.forgeApiHost} instead")(_ => false)
 
   private val forgeApiHost: Opts[Uri] =
-    option[Uri](name.forgeApiHost, s"API URL of the forge; default: ${GitHub.publicApiBaseUrl}")
-      .orElse(vcsApiHost)
-      .withDefault(GitHub.publicApiBaseUrl)
+    option[Uri](name.forgeApiHost, s"API URL of the forge").orElse(vcsApiHost)
 
   private val vcsLogin =
     option[String](
@@ -151,16 +128,6 @@ object Cli {
       "add-labels",
       "Whether to add labels on pull or merge requests (if supported by the forge)"
     ).orFalse
-
-  private val forgeCfg: Opts[ForgeCfg] =
-    (forgeType, forgeApiHost, forgeLogin, doNotFork, addPrLabels)
-      .mapN(ForgeCfg.apply)
-      .validate(
-        s"${ForgeType.allNot(_.supportsForking)} do not support fork mode"
-      )(cfg => cfg.tpe.supportsForking || cfg.doNotFork)
-      .validate(
-        s"${ForgeType.allNot(_.supportsLabels)} do not support pull request labels"
-      )(cfg => cfg.tpe.supportsLabels || !cfg.addLabels)
 
   private val ignoreOptsFiles: Opts[Boolean] =
     flag(
@@ -192,11 +159,11 @@ object Cli {
       s"Read only directory for the sandbox $multiple"
     ).orEmpty
 
-  private val enableSandbox: Opts[Boolean] =
-    flag("enable-sandbox", "Whether to use the sandbox")
-      .map(_ => true)
-      .orElse(flag("disable-sandbox", "Whether to not use the sandbox").map(_ => false))
-      .orElse(Opts(false))
+  private val enableSandbox: Opts[Boolean] = {
+    val enable = flag("enable-sandbox", "Whether to use the sandbox").map(_ => true)
+    val disable = flag("disable-sandbox", "Whether to not use the sandbox").map(_ => false)
+    enable.orElse(disable).withDefault(false)
+  }
 
   private val sandboxCfg: Opts[SandboxCfg] =
     (whitelist, readOnly, enableSandbox).mapN(SandboxCfg.apply)
@@ -268,12 +235,6 @@ object Cli {
       "Whether to assign the default reviewers to a bitbucket pull request; default: false"
     ).orFalse
 
-  private val bitbucketServerCfg: Opts[BitbucketServerCfg] =
-    bitbucketServerUseDefaultReviewers.map(BitbucketServerCfg.apply)
-
-  private val bitbucketCfg: Opts[BitbucketCfg] =
-    bitbucketUseDefaultReviewers.map(BitbucketCfg.apply)
-
   private val gitlabMergeWhenPipelineSucceeds: Opts[Boolean] =
     flag(
       "gitlab-merge-when-pipeline-succeeds",
@@ -292,11 +253,6 @@ object Cli {
       "Flag indicating if a merge request should remove the source branch when merging."
     ).orFalse
 
-  private val gitLabCfg: Opts[GitLabCfg] =
-    (gitlabMergeWhenPipelineSucceeds, gitlabRequiredReviewers, gitlabRemoveSourceBranch).mapN(
-      GitLabCfg.apply
-    )
-
   private val githubAppId: Opts[Long] =
     option[Long](
       "github-app-id",
@@ -309,17 +265,11 @@ object Cli {
       "GitHub application key file. Repos accessible by this app are added to the repos in repos.md. git-ask-pass is still required."
     )
 
-  private val gitHubApp: Opts[Option[GitHubApp]] =
-    (githubAppId, githubAppKeyFile).mapN(GitHubApp.apply).orNone
-
-  private val azureReposOrganization: Opts[Option[String]] =
+  private val azureReposOrganization: Opts[String] =
     option[String](
       "azure-repos-organization",
-      s"The Azure organization (required when --${name.forgeType} is ${AzureRepos.asString})"
-    ).orNone
-
-  private val azureReposCfg: Opts[AzureReposCfg] =
-    azureReposOrganization.map(AzureReposCfg.apply)
+      s"The Azure organization (required with --azure-repos)"
+    )
 
   private val refreshBackoffPeriod: Opts[FiniteDuration] = {
     val default = 0.days
@@ -350,22 +300,120 @@ object Cli {
     if (ifAnyRepoSucceeds) SuccessIfAnyRepoSucceeds else SuccessOnlyIfAllReposSucceed
   }
 
+  private val azureRepos: Opts[Unit] =
+    flag("azure-repos", "")
+
+  private val bitbucket: Opts[Unit] =
+    flag("bitbucket", "")
+
+  private val bitbucketServer: Opts[Unit] =
+    flag("bitbucket-server", "")
+
+  private val gitLab: Opts[Unit] =
+    flag("gitlab", "")
+
+  private val gitea: Opts[Unit] =
+    flag("gitea", "")
+
+  private val gitHub: Opts[Unit] =
+    flag("github", "").withDefault(()) // With default to make it succeed as default option
+
+  private val forge: Opts[Forge] = {
+    val azureReposOptions =
+      (azureRepos, forgeApiHost, forgeLogin, gitAskPass, addPrLabels, azureReposOrganization).mapN(
+        (_, apiUri, login, gitAskPass, addLabels, reposOrganization) =>
+          AzureRepos(apiUri, login, gitAskPass, addLabels, reposOrganization)
+      )
+    val bitbucketOptions =
+      (
+        bitbucket,
+        forgeApiHost.withDefault(Bitbucket.defaultApiUri),
+        forgeLogin,
+        gitAskPass,
+        doNotFork,
+        bitbucketUseDefaultReviewers
+      ).mapN((_, apiUri, login, gitAskPass, doNotFork, useDefaultReviewers) =>
+        Bitbucket(apiUri, login, gitAskPass, doNotFork, useDefaultReviewers)
+      )
+    val bitbucketServerOptions =
+      (
+        bitbucketServer,
+        forgeApiHost,
+        forgeLogin,
+        gitAskPass,
+        bitbucketServerUseDefaultReviewers
+      ).mapN((_, apiUri, login, gitAskPass, useDefaultReviewers) =>
+        BitbucketServer(apiUri, login, gitAskPass, useDefaultReviewers)
+      )
+    val gitLabOptions =
+      (
+        gitLab,
+        forgeApiHost.withDefault(GitLab.defaultApiUri),
+        forgeLogin,
+        gitAskPass,
+        doNotFork,
+        addPrLabels,
+        gitlabMergeWhenPipelineSucceeds,
+        gitlabRequiredReviewers,
+        gitlabRemoveSourceBranch
+      ).mapN(
+        (
+            _,
+            apiUri,
+            login,
+            gitAskPass,
+            doNotFork,
+            addLabels,
+            mergeWhenPipelineSucceeds,
+            requiredReviewers,
+            removeSourceBranch
+        ) =>
+          GitLab(
+            apiUri,
+            login,
+            gitAskPass,
+            doNotFork,
+            addLabels,
+            mergeWhenPipelineSucceeds,
+            requiredReviewers,
+            removeSourceBranch
+          )
+      )
+    val giteaOptions =
+      (gitea, forgeApiHost, forgeLogin, gitAskPass, doNotFork, addPrLabels).mapN(
+        (_, apiUri, login, gitAskPass, doNotFork, addLabels) =>
+          Gitea(apiUri, login, gitAskPass, doNotFork, addLabels)
+      )
+    val gitHubOptions =
+      (
+        gitHub,
+        forgeApiHost.withDefault(GitHub.defaultApiUri),
+        doNotFork,
+        addPrLabels,
+        githubAppId,
+        githubAppKeyFile
+      ).mapN((_, apiUri, doNotFork, addLabels, appId, appKeyFile) =>
+        GitHub(apiUri, doNotFork, addLabels, appId, appKeyFile)
+      )
+    azureReposOptions
+      .orElse(bitbucketOptions)
+      .orElse(bitbucketServerOptions)
+      .orElse(gitLabOptions)
+      .orElse(giteaOptions)
+      .orElse(gitHubOptions) // GitHub last as default option
+  }
+
   private val regular: Opts[Usage] = (
     workspace,
     reposFiles,
     gitCfg,
-    forgeCfg,
+    forge,
     ignoreOptsFiles,
     processCfg,
     repoConfigCfg,
     scalafixCfg,
     artifactCfg,
     cacheTtl,
-    bitbucketCfg,
-    bitbucketServerCfg,
-    gitLabCfg,
-    azureReposCfg,
-    gitHubApp,
     urlCheckerTestUrls,
     defaultMavenRepo,
     refreshBackoffPeriod,
