@@ -91,7 +91,9 @@ object MockState {
 
       def gitCommit(repoDir: File, messages: String*): Cmd = {
         val args =
-          "commit" :: "--all" :: "--no-gpg-sign" :: messages.toList.flatMap(m => List("-m", m))
+          "commit" :: "--all" :: "--no-gpg-sign" :: "--no-signoff" :: messages.toList.flatMap(m =>
+            List("-m", m)
+          )
         git(repoDir, args: _*)
       }
 

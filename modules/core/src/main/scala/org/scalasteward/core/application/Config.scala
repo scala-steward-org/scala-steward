@@ -81,7 +81,8 @@ object Config {
   final case class GitCfg(
       gitAuthor: Author,
       gitAskPass: File,
-      signCommits: Boolean
+      signCommits: Boolean,
+      signoff: Boolean
   )
 
   final case class ForgeCfg(

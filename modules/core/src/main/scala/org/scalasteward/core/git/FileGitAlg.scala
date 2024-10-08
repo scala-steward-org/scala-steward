@@ -66,7 +66,7 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
   override def commitAll(repo: File, message: CommitMsg): F[Commit] = {
     val messages = message.paragraphs.foldMap(m => List("-m", m))
     val trailers = message.trailers.foldMap { case (k, v) => List("--trailer", s"$k=$v") }
-    git_("commit" :: "--all" :: sign :: messages ++ trailers: _*)(repo) >>
+    git_("commit" :: "--all" :: sign :: signoff :: messages ++ trailers: _*)(repo) >>
       latestSha1(repo, Branch.head).map(Commit.apply)
   }
 
@@ -170,6 +170,9 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
 
   private val sign: String =
     if (config.signCommits) "--gpg-sign" else "--no-gpg-sign"
+
+  private val signoff: String =
+    if (config.signoff) "--signoff" else "--no-signoff"
 }
 
 object FileGitAlg {

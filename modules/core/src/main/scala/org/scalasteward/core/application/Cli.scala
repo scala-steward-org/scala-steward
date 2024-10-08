@@ -105,8 +105,11 @@ object Cli {
   private val signCommits: Opts[Boolean] =
     flag("sign-commits", "Whether to sign commits; default: false").orFalse
 
+  private val signoff: Opts[Boolean] =
+    flag("signoff", "Whether to signoff commits; default: false").orFalse
+
   private val gitCfg: Opts[GitCfg] =
-    (gitAuthor, gitAskPass, signCommits).mapN(GitCfg.apply)
+    (gitAuthor, gitAskPass, signCommits, signoff).mapN(GitCfg.apply)
 
   private val vcsType =
     option[ForgeType](
