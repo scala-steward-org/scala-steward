@@ -17,7 +17,7 @@ See also the announcement blog post:
 
 ## Quick start guide
 
-Open a pull request that adds the GitHub repository of your project to [repos-github.md](https://github.com/ccantarero91/scala-steward-repos/blob/main/repos-github.md) ([edit](https://github.com/VirtusLab/scala-steward-repos/edit/main/repos-github.md)).
+Open a pull request that adds the GitHub repository of your project to [repos-github.md](https://github.com/ccantarero91/scala-steward/blob/main/repos-github.md) ([edit](https://github.com/ccantarero91/scala-steward/edit/main/repos-github.md)).
 Once that PR is merged, [**@scala-steward**][@scala-steward] will check periodically for version updates in your project and will open pull requests for updates it found.
 
 Many thanks to [VirtusLab][VirtusLab] for hosting and managing this public Scala Steward instance!
