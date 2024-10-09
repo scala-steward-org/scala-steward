@@ -40,7 +40,7 @@ trait GenGitAlg[F[_], Repo] {
 
   def cloneExists(repo: Repo): F[Boolean]
 
-  def commitAll(repo: Repo, message: CommitMsg): F[Commit]
+  def commitAll(repo: Repo, message: CommitMsg, signoffCommits: Option[Boolean]): F[Commit]
 
   def containsChanges(repo: Repo): F[Boolean]
 
@@ -78,10 +78,13 @@ trait GenGitAlg[F[_], Repo] {
 
   def version: F[String]
 
-  final def commitAllIfDirty(repo: Repo, message: CommitMsg)(implicit
-      F: Monad[F]
+  final def commitAllIfDirty(repo: Repo, message: CommitMsg, signoffCommits: Option[Boolean])(
+      implicit F: Monad[F]
   ): F[Option[Commit]] =
-    containsChanges(repo).ifM(commitAll(repo, message).map(Some.apply), F.pure(None))
+    containsChanges(repo).ifM(
+      commitAll(repo, message, signoffCommits).map(Some.apply),
+      F.pure(None)
+    )
 
   final def returnToCurrentBranch[A, E](repo: Repo)(fa: F[A])(implicit F: MonadCancel[F, E]): F[A] =
     F.bracket(currentBranch(repo))(_ => fa)(checkoutBranch(repo, _))
@@ -113,8 +116,12 @@ trait GenGitAlg[F[_], Repo] {
       override def cloneExists(repo: A): F[Boolean] =
         f(repo).flatMap(self.cloneExists)
 
-      override def commitAll(repo: A, message: CommitMsg): F[Commit] =
-        f(repo).flatMap(self.commitAll(_, message))
+      override def commitAll(
+          repo: A,
+          message: CommitMsg,
+          signoffCommits: Option[Boolean]
+      ): F[Commit] =
+        f(repo).flatMap(self.commitAll(_, message, signoffCommits))
 
       override def containsChanges(repo: A): F[Boolean] =
         f(repo).flatMap(self.containsChanges)

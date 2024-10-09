@@ -190,6 +190,10 @@ dependencyOverrides = [
 # to add assignees or request reviews. Consequently, it won't work for public @scala-steward instance on GitHub.
 assignees = [ "username1", "username2" ]
 reviewers = [ "username1", "username2" ]
+
+# If true, Scala Steward will sign off all commits (e.g. `git --signoff`).
+# Default: false
+signoffCommits = true
 """)
 println("```")
 ```

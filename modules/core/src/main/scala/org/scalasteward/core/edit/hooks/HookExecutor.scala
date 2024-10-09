@@ -46,7 +46,9 @@ final class HookExecutor[F[_]](implicit
     F: MonadThrow[F]
 ) {
   def execPostUpdateHooks(data: RepoData, update: Update.Single): F[List[EditAttempt]] =
-    (HookExecutor.postUpdateHooks ++ data.config.postUpdateHooksOrDefault)
+    (HookExecutor.postUpdateHooks(
+      data.config.signoffCommits
+    ) ++ data.config.postUpdateHooksOrDefault)
       .filter { hook =>
         hook.groupId.forall(update.groupId === _) &&
         hook.artifactId.forall(aid => update.artifactIds.exists(_.name === aid.name)) &&
@@ -75,9 +77,11 @@ final class HookExecutor[F[_]](implicit
       commitMessage = hook
         .commitMessage(update)
         .appendParagraph(s"Executed command: ${hook.command.mkString_(" ")}")
-      maybeHookCommit <- gitAlg.commitAllIfDirty(repo, commitMessage)
+      maybeHookCommit <- gitAlg.commitAllIfDirty(repo, commitMessage, hook.signoffCommits)
       maybeBlameIgnoreCommit <-
-        maybeHookCommit.flatTraverse(addToGitBlameIgnoreRevs(repo, repoDir, hook, _, commitMessage))
+        maybeHookCommit.flatTraverse(
+          addToGitBlameIgnoreRevs(repo, repoDir, hook, _, commitMessage, hook.signoffCommits)
+        )
     } yield HookEdit(hook, result, maybeHookCommit.toList ++ maybeBlameIgnoreCommit.toList)
 
   private def addToGitBlameIgnoreRevs(
@@ -85,7 +89,8 @@ final class HookExecutor[F[_]](implicit
       repoDir: File,
       hook: PostUpdateHook,
       commit: Commit,
-      commitMsg: CommitMsg
+      commitMsg: CommitMsg,
+      signoffCommits: Option[Boolean]
   ): F[Option[Commit]] =
     if (hook.addToGitBlameIgnoreRevs) {
       for {
@@ -100,7 +105,7 @@ final class HookExecutor[F[_]](implicit
         addAndCommit = gitAlg.add(repo, pathAsString).flatMap { _ =>
           val blameIgnoreCommitMsg =
             CommitMsg(s"Add '${commitMsg.title}' to $gitBlameIgnoreRevsName")
-          gitAlg.commitAllIfDirty(repo, blameIgnoreCommitMsg)
+          gitAlg.commitAllIfDirty(repo, blameIgnoreCommitMsg, signoffCommits)
         }
         maybeBlameIgnoreCommit <- gitAlg
           .checkIgnore(repo, pathAsString)
@@ -145,7 +150,8 @@ object HookExecutor {
   private def sbtGithubWorkflowGenerateHook(
       groupId: GroupId,
       artifactId: ArtifactId,
-      enabledByCache: RepoCache => Boolean
+      enabledByCache: RepoCache => Boolean,
+      signoffCommits: Option[Boolean]
   ): PostUpdateHook =
     PostUpdateHook(
       groupId = Some(groupId),
@@ -155,10 +161,11 @@ object HookExecutor {
       commitMessage = _ => CommitMsg("Regenerate GitHub Actions workflow"),
       enabledByCache = enabledByCache,
       enabledByConfig = _ => true,
-      addToGitBlameIgnoreRevs = false
+      addToGitBlameIgnoreRevs = false,
+      signoffCommits = signoffCommits
     )
 
-  private val scalafmtHook =
+  private def scalafmtHook(signoffCommits: Option[Boolean]) =
     PostUpdateHook(
       groupId = Some(scalafmtGroupId),
       artifactId = Some(scalafmtArtifactId),
@@ -167,12 +174,14 @@ object HookExecutor {
       commitMessage = update => CommitMsg(s"Reformat with scalafmt ${update.nextVersion}"),
       enabledByCache = _ => true,
       enabledByConfig = _.scalafmt.runAfterUpgradingOrDefault,
-      addToGitBlameIgnoreRevs = true
+      addToGitBlameIgnoreRevs = true,
+      signoffCommits = signoffCommits
     )
 
   private def sbtTypelevelHook(
       groupId: GroupId,
-      artifactId: ArtifactId
+      artifactId: ArtifactId,
+      signoffCommits: Option[Boolean]
   ): PostUpdateHook =
     PostUpdateHook(
       groupId = Some(groupId),
@@ -182,21 +191,22 @@ object HookExecutor {
       commitMessage = _ => CommitMsg("Run prePR with sbt-typelevel"),
       enabledByCache = _ => true,
       enabledByConfig = _ => true,
-      addToGitBlameIgnoreRevs = false
+      addToGitBlameIgnoreRevs = false,
+      signoffCommits = signoffCommits
     )
 
   private def githubWorkflowGenerateExists(cache: RepoCache): Boolean =
     cache.dependsOn(sbtGitHubWorkflowGenerateModules ++ sbtTypelevelModules)
 
-  private val postUpdateHooks: List[PostUpdateHook] =
-    scalafmtHook ::
+  private def postUpdateHooks(signoffCommits: Option[Boolean]): List[PostUpdateHook] =
+    scalafmtHook(signoffCommits) ::
       sbtGitHubWorkflowGenerateModules.map { case (gid, aid) =>
-        sbtGithubWorkflowGenerateHook(gid, aid, _ => true)
+        sbtGithubWorkflowGenerateHook(gid, aid, _ => true, signoffCommits)
       } ++
       conditionalSbtGitHubWorkflowGenerateModules.map { case (gid, aid) =>
-        sbtGithubWorkflowGenerateHook(gid, aid, githubWorkflowGenerateExists)
+        sbtGithubWorkflowGenerateHook(gid, aid, githubWorkflowGenerateExists, signoffCommits)
       } ++
       sbtTypelevelModules.map { case (gid, aid) =>
-        sbtTypelevelHook(gid, aid)
+        sbtTypelevelHook(gid, aid, signoffCommits)
       }
 }
