@@ -29,7 +29,8 @@ final case class PostUpdateHookConfig(
     artifactId: Option[String],
     command: Nel[String],
     commitMessage: String,
-    addToGitBlameIgnoreRevs: Option[Boolean] = None
+    addToGitBlameIgnoreRevs: Option[Boolean] = None,
+    signoffCommits: Option[Boolean]
 ) {
   def toHook: PostUpdateHook =
     PostUpdateHook(
@@ -40,7 +41,8 @@ final case class PostUpdateHookConfig(
       commitMessage = CommitMsg.replaceVariables(commitMessage)(_, None),
       enabledByCache = _ => true,
       enabledByConfig = _ => true,
-      addToGitBlameIgnoreRevs = addToGitBlameIgnoreRevs.getOrElse(false)
+      addToGitBlameIgnoreRevs = addToGitBlameIgnoreRevs.getOrElse(false),
+      signoffCommits = signoffCommits
     )
 }
 

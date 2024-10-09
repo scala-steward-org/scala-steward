@@ -91,7 +91,8 @@ class ScalaCliAlgTest extends CatsEffectSuite {
       GroupId("co.fs2"),
       Nel.of("fs2-core"),
       Version("1.0.0"),
-      Nel.of("github:functional-streams-for-scala/fs2/v1?sha=v1.0.5")
+      Nel.of("github:functional-streams-for-scala/fs2/v1?sha=v1.0.5"),
+      signoffCommits = None
     )
     val obtained = scalaCliAlg.runMigration(buildRoot, migration).runS(MockState.empty)
     assertIO(obtained.map(_.trace.collect { case Log(_) => () }.size), 1)

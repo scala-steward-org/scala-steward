@@ -36,7 +36,8 @@ class ScalafixMigrationsLoaderTest extends FunSuite {
     Some("https://scalacenter.github.io/scalafix/"),
     authors = Some(Nel.of(Author("Jane Doe", "jane@example.com"))),
     target = Some(Sources),
-    executionOrder = Some(PreUpdate)
+    executionOrder = Some(PreUpdate),
+    signoffCommits = None
   )
 
   test("loadAll: without extra file, without defaults") {
