@@ -94,7 +94,11 @@ final class EditAlg[F[_]](implicit
       result <- logger.attemptWarn.log("Scalafix migration failed") {
         buildToolDispatcher.runMigration(repo, config, migration)
       }
-      maybeCommit <- gitAlg.commitAllIfDirty(repo, migration.commitMessage(result))
+      maybeCommit <- gitAlg.commitAllIfDirty(
+        repo,
+        migration.commitMessage(result),
+        migration.signoffCommits
+      )
     } yield ScalafixEdit(migration, result, maybeCommit)
 
   private def applyUpdateReplacements(
@@ -111,7 +115,7 @@ final class EditAlg[F[_]](implicit
       _ <- reformatChangedFiles(data)
       msgTemplate = data.config.commits.messageOrDefault
       commitMsg = CommitMsg.replaceVariables(msgTemplate)(update, data.repo.branch)
-      maybeCommit <- gitAlg.commitAllIfDirty(data.repo, commitMsg)
+      maybeCommit <- gitAlg.commitAllIfDirty(data.repo, commitMsg, data.config.signoffCommits)
     } yield maybeCommit.map(UpdateEdit(update, _))
 
   private def reformatChangedFiles(data: RepoData): F[Unit] = {
