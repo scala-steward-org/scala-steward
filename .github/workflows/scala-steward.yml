@@ -1,0 +1,28 @@
+name: Scala Steward
+
+on:
+  schedule:
+    - cron: '0 0 * * 0' # Runs every Sunday at midnight
+  workflow_dispatch:
+
+jobs:
+  scala-steward:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Scala
+        uses: actions/setup-scala@v12
+        with:
+          java-version: '11.0.2'
+          scala-version: '2.13.6'
+
+      - name: Run Scala Steward
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          git clone https://github.com/fthomas/scala-steward.git
+          cd scala-steward
+          sbt "run --workspace ${{ github.workspace }}/workspace --repos-file ${{ github.workspace }}/repos.md --git-ask-pass ${{ secrets.GH_TOKEN }}"
