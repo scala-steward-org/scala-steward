@@ -37,7 +37,8 @@ final case class RepoConfig(
     buildRoots: Option[List[BuildRootConfig]] = None,
     assignees: List[String] = List.empty,
     reviewers: List[String] = List.empty,
-    dependencyOverrides: List[GroupRepoConfig] = List.empty
+    dependencyOverrides: List[GroupRepoConfig] = List.empty,
+    signoffCommits: Option[Boolean] = None
 ) {
   def buildRootsOrDefault(repo: Repo): List[BuildRoot] =
     buildRoots
@@ -88,7 +89,8 @@ object RepoConfig {
               buildRoots = x.buildRoots |+| y.buildRoots,
               assignees = x.assignees |+| y.assignees,
               reviewers = x.reviewers |+| y.reviewers,
-              dependencyOverrides = x.dependencyOverrides |+| y.dependencyOverrides
+              dependencyOverrides = x.dependencyOverrides |+| y.dependencyOverrides,
+              signoffCommits = x.signoffCommits.orElse(y.signoffCommits)
             )
         }
     )
