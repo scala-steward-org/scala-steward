@@ -151,7 +151,7 @@ class ArtifactMigrationsFinderTest extends FunSuite {
   test("migrateDependency: sbt-dynver with migration") {
     val dependency = ("com.dwijnand".g % "sbt-dynver".a % "4.1.1")
       .copy(sbtVersion = Some(SbtVersion("1.0")), scalaVersion = Some(ScalaVersion("2.12")))
-    val expected = (dependency %> Nel.of("5.0.1")).single
+    val expected = (dependency %> Nel.of("5.1.0")).single
       .copy(newerGroupId = Some("com.github.sbt".g), newerArtifactId = Some("sbt-dynver"))
     val obtained = updateAlg
       .findUpdates(
