@@ -60,7 +60,7 @@ class EditAlgTest extends FunSuite {
     )
     val data = RepoData(repo, cache, RepoConfig.empty)
     val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
-    val update = ("org.scalameta".g % "scalafmt-core".a % "2.0.0" %> "2.1.0").single
+    val update = ("org.scalameta".g % "scalafmt-core".a % "2.0.0" %> "2.3.0").single
     val gitignore = (repoDir / ".gitignore") -> "target/"
     val scalafmtConf = repoDir / scalafmtConfName
     val scalafmtConfContent = """maxColumn = 100
@@ -89,7 +89,7 @@ class EditAlgTest extends FunSuite {
         Cmd("write", scalafmtConf.pathAsString),
         Cmd.exec(repoDir, scalafmtBinary :: opts.nonInteractive :: opts.modeChanged: _*),
         Cmd.gitStatus(repoDir),
-        Cmd.gitCommit(repoDir, "Update scalafmt-core to 2.1.0"),
+        Cmd.gitCommit(repoDir, "Update scalafmt-core to 2.3.0"),
         Cmd.gitLatestSha1(repoDir),
         Log(
           "Executing post-update hook for org.scalameta:scalafmt-core with command 'scalafmt --non-interactive'"
