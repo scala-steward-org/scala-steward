@@ -89,7 +89,7 @@ class EditAlgTest extends FunSuite {
         Cmd("write", scalafmtConf.pathAsString),
         Cmd.exec(repoDir, scalafmtBinary :: opts.nonInteractive :: opts.modeChanged: _*),
         Cmd.gitStatus(repoDir),
-        Cmd.gitCommit(repoDir, "Update scalafmt-core to 2.1.0"),
+        Cmd.gitCommit(repoDir, "Update scalafmt-core to 2.3.0"),
         Cmd.gitLatestSha1(repoDir),
         Log(
           "Executing post-update hook for org.scalameta:scalafmt-core with command 'scalafmt --non-interactive'"
