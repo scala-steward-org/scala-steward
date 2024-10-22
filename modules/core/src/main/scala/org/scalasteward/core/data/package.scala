@@ -29,11 +29,18 @@ package object data {
 
   val scala3LangModules: List[(GroupId, ArtifactId)] =
     List(
-      (scalaLangGroupId, ArtifactId("scala3-compiler")),
-      (scalaLangGroupId, ArtifactId("scala3-library")),
-      (scalaLangGroupId, ArtifactId("scala3-library_sjs1")),
-      (scalaLangGroupId, ArtifactId("tasty-core"))
-    )
+      "scala3-compiler",
+      "scala3-library",
+      "scala3-library_sjs1",
+      "scala2-library-cc-tasty-experimental",
+      "scala2-library-tasty-experimental",
+      "scala3-language-server",
+      "scala3-presentation-compiler",
+      "scala3-staging",
+      "scala3-tasty-inspector",
+      "scaladoc",
+      "tasty-core"
+    ).map(artifactId => (scalaLangGroupId, ArtifactId(artifactId)))
 
   val scalaLangModules: List[(GroupId, ArtifactId)] =
     scala2LangModules ++ scala3LangModules
