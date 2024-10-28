@@ -1,12 +1,10 @@
 package org.scalasteward.core.forge.bitbucket
 
-import cats.syntax.semigroupk._
 import io.circe.literal._
 import munit.CatsEffectSuite
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
-import org.http4s.headers.Authorization
 import org.http4s.implicits._
 import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.application.Config.BitbucketCfg
@@ -17,18 +15,9 @@ import org.scalasteward.core.git._
 import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context.httpJsonClient
 import org.scalasteward.core.mock.{MockEff, MockState}
+import org.scalasteward.core.mock.MockForgeAuthAlg.noAuth
 
 class BitbucketApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
-
-  private val user = AuthenticatedUser("user", "pass")
-  private val userM = MockEff.pure(user)
-
-  private val basicAuth = Authorization(BasicCredentials(user.login, user.accessToken))
-  private val auth = HttpApp[MockEff] { request =>
-    (request: @unchecked) match {
-      case _ if !request.headers.get[Authorization].contains(basicAuth) => Forbidden()
-    }
-  }
   private val httpApp = HttpApp[MockEff] {
     case GET -> Root / "repositories" / "fthomas" / "base.g8" =>
       Ok(
@@ -206,11 +195,13 @@ class BitbucketApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
           }""")
     case _ => NotFound()
   }
-  private val state = MockState.empty.copy(clientResponses = auth <+> httpApp)
+  private val state = MockState.empty.copy(clientResponses = httpApp)
 
-  private val forgeCfg = config.forgeCfg.copy(tpe = ForgeType.Bitbucket)
+  private val forgeCfg =
+    config.forgeCfg.copy(tpe = ForgeType.Bitbucket, apiHost = uri"https://bitbucket.org")
   private val bitbucketCfg = BitbucketCfg(useDefaultReviewers = true)
-  private val bitbucketApiAlg = ForgeSelection.forgeApiAlg[MockEff](forgeCfg, bitbucketCfg, userM)
+  private val bitbucketApiAlg =
+    ForgeSelection.forgeApiAlg[MockEff](forgeCfg, bitbucketCfg, noAuth.authenticateApi)
 
   private val prUrl = uri"https://bitbucket.org/fthomas/base.g8/pullrequests/2"
   private val repo = Repo("fthomas", "base.g8")

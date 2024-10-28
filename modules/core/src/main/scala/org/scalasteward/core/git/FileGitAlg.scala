@@ -20,13 +20,14 @@ import better.files.File
 import cats.effect.MonadCancelThrow
 import cats.syntax.all._
 import org.http4s.Uri
-import org.scalasteward.core.application.Config.GitCfg
+import org.scalasteward.core.application.Config
+import org.scalasteward.core.forge.ForgeType._
 import org.scalasteward.core.git.FileGitAlg.{dotdot, gitCmd}
 import org.scalasteward.core.io.process.{ProcessFailedException, SlurpOptions}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
 
-final class FileGitAlg[F[_]](config: GitCfg)(implicit
+final class FileGitAlg[F[_]](config: Config)(implicit
     fileAlg: FileAlg[F],
     processAlg: ProcessAlg[F],
     workspaceAlg: WorkspaceAlg[F],
@@ -156,7 +157,15 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
       repo: File,
       slurpOptions: SlurpOptions = Set.empty
   ): F[List[String]] = {
-    val extraEnv = List("GIT_ASKPASS" -> config.gitAskPass.pathAsString)
+    val extraEnv = (config.forgeCfg.tpe match {
+      case AzureRepos      => Some(config.gitCfg.gitAskPass)
+      case Bitbucket       => Some(config.gitCfg.gitAskPass)
+      case BitbucketServer => Some(config.gitCfg.gitAskPass)
+      case GitHub          => None
+      case GitLab          => Some(config.gitCfg.gitAskPass)
+      case Gitea           => Some(config.gitCfg.gitAskPass)
+    }).map("GIT_ASKPASS" -> _.pathAsString).toList
+
     processAlg
       .exec(gitCmd ++ args.toList, repo, extraEnv, slurpOptions)
       .recoverWith {
@@ -175,10 +184,10 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
     git(args: _*)(repo, SlurpOptions.ignoreBufferOverflow)
 
   private val sign: String =
-    if (config.signCommits) "--gpg-sign" else "--no-gpg-sign"
+    if (config.gitCfg.signCommits) "--gpg-sign" else "--no-gpg-sign"
 
   private def signoff(signoffCommits: Option[Boolean]): String =
-    if (signoffCommits.getOrElse(config.signoff)) "--signoff" else "--no-signoff"
+    if (signoffCommits.getOrElse(config.gitCfg.signoff)) "--signoff" else "--no-signoff"
 }
 
 object FileGitAlg {

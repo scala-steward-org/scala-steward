@@ -16,15 +16,15 @@
 
 package org.scalasteward.core.forge.github
 
-import io.circe.Decoder
-import io.circe.generic.semiauto.deriveDecoder
+import io.circe.Codec
+import io.circe.generic.semiauto.deriveCodec
 
 case class RepositoriesOut(repositories: List[Repository])
 object RepositoriesOut {
-  implicit val repositoriesDecoder: Decoder[RepositoriesOut] = deriveDecoder
+  implicit val repositoriesCodec: Codec[RepositoriesOut] = deriveCodec
 }
 
 case class Repository(full_name: String)
 object Repository {
-  implicit val repositoryDecoder: Decoder[Repository] = deriveDecoder
+  implicit val repositoryCodec: Codec[Repository] = deriveCodec
 }
