@@ -1,7 +1,6 @@
 package org.scalasteward.core.repocache
 
-import io.circe.Encoder
-import io.circe.generic.semiauto
+import cats.implicits.toSemigroupKOps
 import io.circe.syntax._
 import munit.CatsEffectSuite
 import org.http4s.HttpApp
@@ -11,19 +10,14 @@ import org.http4s.syntax.all._
 import org.scalasteward.core.TestInstances.dummySha1
 import org.scalasteward.core.data.{Repo, RepoData}
 import org.scalasteward.core.forge.data.{RepoOut, UserOut}
+import org.scalasteward.core.forge.github.Repository
 import org.scalasteward.core.git.Branch
-import org.scalasteward.core.mock.MockContext.context._
-import org.scalasteward.core.mock.{MockEff, MockState}
+import org.scalasteward.core.mock.MockContext.context.{repoCacheAlg, repoConfigAlg, workspaceAlg}
+import org.scalasteward.core.mock.{GitHubAuth, MockEff, MockState}
 import org.scalasteward.core.util.intellijThisImportIsUsed
 
 class RepoCacheAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   intellijThisImportIsUsed(encodeUri)
-
-  implicit val userOutEncoder: Encoder[UserOut] =
-    semiauto.deriveEncoder
-
-  implicit val repoOutEncoder: Encoder[RepoOut] =
-    semiauto.deriveEncoder
 
   test("checkCache: up-to-date cache") {
     val repo = Repo("typelevel", "cats-effect")
@@ -44,14 +38,16 @@ class RepoCacheAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     )
     val repoCache = RepoCache(dummySha1, Nil, None, None)
     val workspace = workspaceAlg.rootDir.unsafeRunSync()
+    val httpApp = HttpApp[MockEff] {
+      case POST -> Root / "repos" / "typelevel" / "cats-effect" / "forks" =>
+        Ok(repoOut.asJson.spaces2)
+      case GET -> Root / "repos" / "typelevel" / "cats-effect" / "branches" / "main" =>
+        Ok(s""" { "name": "main", "commit": { "sha": "${dummySha1.value}" } } """)
+      case _ => NotFound()
+    }
+    val authApp = GitHubAuth.api(List(Repository("typelevel/cats-effect")))
     val state = MockState.empty
-      .copy(clientResponses = HttpApp[MockEff] {
-        case POST -> Root / "repos" / "typelevel" / "cats-effect" / "forks" =>
-          Ok(repoOut.asJson.spaces2)
-        case GET -> Root / "repos" / "typelevel" / "cats-effect" / "branches" / "main" =>
-          Ok(s""" { "name": "main", "commit": { "sha": "${dummySha1.value}" } } """)
-        case _ => NotFound()
-      })
+      .copy(clientResponses = authApp <+> httpApp)
       .addFiles(
         workspace / "store/repo_cache/v1/github/typelevel/cats-effect/repo_cache.json" -> repoCache.asJson.spaces2
       )
