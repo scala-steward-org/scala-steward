@@ -46,7 +46,7 @@ final class MillAlg[F[_]](defaultResolver: Resolver)(implicit
       )
 
   private def runMill(buildRootDir: File) = {
-    val command = Nel("mill", List("-i", "--import", cliPluginCoordinate, "show", extractDeps))
+    val command = Nel("mill", List("--no-server", "--import", cliPluginCoordinate, "show", extractDeps))
     processAlg.execSandboxed(command, buildRootDir)
   }
   private def runMillUnder011(buildRootDir: File, millBuildVersion: Option[Version]) = {
