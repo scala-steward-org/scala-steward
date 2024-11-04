@@ -359,7 +359,7 @@ lazy val dockerSettings = Def.settings(
     val millVer = Dependencies.millwScriptVersion
     val millBin = s"$binDir/mill"
     val installMill = Seq(
-      s"$curl $millBin https://raw.githubusercontent.com/lefou/millw/refs/tags/${millVer}/millw",
+      s"$curl $millBin https://github.com/lefou/millw/releases/download/${millVer}/millw-${millVer}",
       s"chmod +x $millBin"
     ).mkString(" && ")
     val csBin = s"$binDir/cs"
