@@ -356,14 +356,10 @@ lazy val dockerSettings = Def.settings(
       s"tar -xf $sbtTgz",
       s"rm -f $sbtTgz"
     ).mkString(" && ")
-    val millVer = Dependencies.millScriptVersion
+    val millVer = Dependencies.millwScriptVersion
     val millBin = s"$binDir/mill"
-    val releasePageVersion = millVer.split("-") match {
-      case Array(v, m, _*) if m.startsWith("M") => s"${v}-${m}"
-      case Array(v, _*)                         => v
-    }
     val installMill = Seq(
-      s"$curl $millBin https://github.com/lihaoyi/mill/releases/download/${releasePageVersion}/$millVer",
+      s"$curl $millBin https://raw.githubusercontent.com/lefou/millw/refs/tags/${millVer}/millw",
       s"chmod +x $millBin"
     ).mkString(" && ")
     val csBin = s"$binDir/cs"
