@@ -73,7 +73,39 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
              |
              |<sup>
              |labels: library-update, early-semver-minor, semver-spec-minor, version-scheme:early-semver, commit-count:1
-             |</sup>""".stripMargin.trim,
+             |</sup>
+             |
+             |<!-- scala-steward = {
+             |  "Update" : {
+             |    "ForArtifactId" : {
+             |      "crossDependency" : [
+             |        {
+             |          "groupId" : "org.typelevel",
+             |          "artifactId" : {
+             |            "name" : "cats-effect",
+             |            "maybeCrossName" : "cats-effect_2.13"
+             |          },
+             |          "version" : "3.3.0",
+             |          "sbtVersion" : null,
+             |          "scalaVersion" : null,
+             |          "configurations" : null
+             |        }
+             |      ],
+             |      "newerVersions" : [
+             |        "3.4.0"
+             |      ],
+             |      "newerGroupId" : null,
+             |      "newerArtifactId" : null
+             |    }
+             |  },
+             |  "Labels" : [
+             |    "library-update",
+             |    "early-semver-minor",
+             |    "semver-spec-minor",
+             |    "version-scheme:early-semver",
+             |    "commit-count:1"
+             |  ]
+             |} -->""".stripMargin.trim,
       head = "scala-steward:update/cats-effect-3.4.0",
       base = baseBranch,
       labels = List(
@@ -90,7 +122,8 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   }
 
   test("preparePullRequest should not set labels if ForgeConfig.addLabels = false") {
-    def nextToLast(L: Array[String]) = L(L.size - 2)
+    def findLabelLine(L: Array[String]) =
+      L.zipWithIndex.find(_._1.contains("labels: ")).map(x => L(x._2)).getOrElse("")
 
     val config =
       MockConfig.config.copy(forgeCfg = MockConfig.config.forgeCfg.copy(addLabels = false))
@@ -116,9 +149,9 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     })
     nurtureAlg.preparePullRequest(updateData, edits).runA(state).map { obtained =>
       assert(obtained.labels.isEmpty)
-      val nextToLastLine = nextToLast(obtained.body.split("\n"))
+      val labelLine = findLabelLine(obtained.body.split("\n"))
       assertEquals(
-        nextToLastLine,
+        labelLine,
         "labels: library-update, early-semver-minor, semver-spec-minor, version-scheme:early-semver, commit-count:1"
       )
     }
@@ -127,7 +160,8 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   test(
     "preparePullRequest should set custom labels if PullRequestsConfig.customLabels is provided"
   ) {
-    def nextToLast(L: Array[String]) = L(L.size - 2)
+    def findLabelLine(L: Array[String]) =
+      L.zipWithIndex.find(_._1.contains("labels: ")).map(x => L(x._2)).getOrElse("")
 
     val nurtureAlg = context.nurtureAlg
     val dependency = "org.typelevel".g % ("cats-effect", "cats-effect_2.13").a % "3.3.0"
@@ -165,10 +199,10 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
         )
       )
 
-      val nextToLastLine = nextToLast(obtained.body.split("\n"))
+      val labelLine = findLabelLine(obtained.body.split("\n"))
 
       assertEquals(
-        nextToLastLine,
+        labelLine,
         "labels: custom-label-1, custom-label-2, library-update, early-semver-minor, semver-spec-minor, commit-count:1"
       )
     }

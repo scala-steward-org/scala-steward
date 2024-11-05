@@ -17,6 +17,8 @@
 package org.scalasteward.core.forge.data
 
 import cats.syntax.all._
+import io.circe.Json
+import io.circe.syntax._
 import org.http4s.Uri
 import org.scalasteward.core.data._
 import org.scalasteward.core.edit.EditAttempt
@@ -112,8 +114,17 @@ object NewPullRequestData {
         |<sup>
         |${labels.mkString("labels: ", ", ", "")}
         |</sup>
-        |""".stripMargin.trim
+        |
+        |<!-- scala-steward = ${metadataJson(update, labels)} -->""".stripMargin.trim
   }
+
+  def metadataJson(update: Update, labels: List[String]): String =
+    Json
+      .obj(
+        "Update" -> update.asJson,
+        "Labels" -> Json.fromValues(labels.map(_.asJson))
+      )
+      .toString
 
   def renderUpdateInfoUrls(updateInfoUrls: List[UpdateInfoUrl]): Option[String] =
     Option.when(updateInfoUrls.nonEmpty) {
