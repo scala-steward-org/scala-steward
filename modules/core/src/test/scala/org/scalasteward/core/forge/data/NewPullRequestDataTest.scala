@@ -60,7 +60,35 @@ class NewPullRequestDataTest extends FunSuite {
           |
           |<sup>
           |labels: library-update
-          |</sup>""".stripMargin
+          |</sup>
+          |
+          |<!-- scala-steward = {
+          |  "Update" : {
+          |    "ForArtifactId" : {
+          |      "crossDependency" : [
+          |        {
+          |          "groupId" : "ch.qos.logback",
+          |          "artifactId" : {
+          |            "name" : "logback-classic",
+          |            "maybeCrossName" : null
+          |          },
+          |          "version" : "1.2.0",
+          |          "sbtVersion" : null,
+          |          "scalaVersion" : null,
+          |          "configurations" : null
+          |        }
+          |      ],
+          |      "newerVersions" : [
+          |        "1.2.3"
+          |      ],
+          |      "newerGroupId" : null,
+          |      "newerArtifactId" : null
+          |    }
+          |  },
+          |  "Labels" : [
+          |    "library-update"
+          |  ]
+          |} -->""".stripMargin
 
     assertEquals(body, expected)
   }
@@ -127,7 +155,35 @@ class NewPullRequestDataTest extends FunSuite {
           |
           |<sup>
           |labels: library-update
-          |</sup>""".stripMargin
+          |</sup>
+          |
+          |<!-- scala-steward = {
+          |  "Update" : {
+          |    "ForArtifactId" : {
+          |      "crossDependency" : [
+          |        {
+          |          "groupId" : "ch.qos.logback",
+          |          "artifactId" : {
+          |            "name" : "logback-classic",
+          |            "maybeCrossName" : null
+          |          },
+          |          "version" : "1.2.0",
+          |          "sbtVersion" : null,
+          |          "scalaVersion" : null,
+          |          "configurations" : null
+          |        }
+          |      ],
+          |      "newerVersions" : [
+          |        "1.2.3"
+          |      ],
+          |      "newerGroupId" : null,
+          |      "newerArtifactId" : null
+          |    }
+          |  },
+          |  "Labels" : [
+          |    "library-update"
+          |  ]
+          |} -->""".stripMargin
 
     assertEquals(body, expected)
   }
@@ -191,7 +247,65 @@ class NewPullRequestDataTest extends FunSuite {
           |
           |<sup>
           |labels: library-update
-          |</sup>""".stripMargin
+          |</sup>
+          |
+          |<!-- scala-steward = {
+          |  "Update" : {
+          |    "Grouped" : {
+          |      "name" : "my-group",
+          |      "title" : "The PR title",
+          |      "updates" : [
+          |        {
+          |          "ForArtifactId" : {
+          |            "crossDependency" : [
+          |              {
+          |                "groupId" : "ch.qos.logback",
+          |                "artifactId" : {
+          |                  "name" : "logback-classic",
+          |                  "maybeCrossName" : null
+          |                },
+          |                "version" : "1.2.0",
+          |                "sbtVersion" : null,
+          |                "scalaVersion" : null,
+          |                "configurations" : null
+          |              }
+          |            ],
+          |            "newerVersions" : [
+          |              "1.2.3"
+          |            ],
+          |            "newerGroupId" : null,
+          |            "newerArtifactId" : null
+          |          }
+          |        },
+          |        {
+          |          "ForArtifactId" : {
+          |            "crossDependency" : [
+          |              {
+          |                "groupId" : "com.example",
+          |                "artifactId" : {
+          |                  "name" : "foo",
+          |                  "maybeCrossName" : null
+          |                },
+          |                "version" : "1.0.0",
+          |                "sbtVersion" : null,
+          |                "scalaVersion" : null,
+          |                "configurations" : null
+          |              }
+          |            ],
+          |            "newerVersions" : [
+          |              "2.0.0"
+          |            ],
+          |            "newerGroupId" : null,
+          |            "newerArtifactId" : null
+          |          }
+          |        }
+          |      ]
+          |    }
+          |  },
+          |  "Labels" : [
+          |    "library-update"
+          |  ]
+          |} -->""".stripMargin
 
     assertEquals(body, expected)
   }
@@ -248,7 +362,35 @@ class NewPullRequestDataTest extends FunSuite {
           |
           |<sup>
           |labels: library-update
-          |</sup>""".stripMargin
+          |</sup>
+          |
+          |<!-- scala-steward = {
+          |  "Update" : {
+          |    "ForArtifactId" : {
+          |      "crossDependency" : [
+          |        {
+          |          "groupId" : "ch.qos.logback",
+          |          "artifactId" : {
+          |            "name" : "logback-classic",
+          |            "maybeCrossName" : null
+          |          },
+          |          "version" : "1.2.0",
+          |          "sbtVersion" : null,
+          |          "scalaVersion" : null,
+          |          "configurations" : null
+          |        }
+          |      ],
+          |      "newerVersions" : [
+          |        "1.2.3"
+          |      ],
+          |      "newerGroupId" : null,
+          |      "newerArtifactId" : null
+          |    }
+          |  },
+          |  "Labels" : [
+          |    "library-update"
+          |  ]
+          |} -->""".stripMargin
 
     assertEquals(body, expected)
   }
@@ -642,7 +784,38 @@ class NewPullRequestDataTest extends FunSuite {
           |
           |<sup>
           |labels: library-update, early-semver-patch, semver-spec-patch, commit-count:0
-          |</sup>""".stripMargin
+          |</sup>
+          |
+          |<!-- scala-steward = {
+          |  "Update" : {
+          |    "ForArtifactId" : {
+          |      "crossDependency" : [
+          |        {
+          |          "groupId" : "ch.qos.logback",
+          |          "artifactId" : {
+          |            "name" : "logback-classic",
+          |            "maybeCrossName" : null
+          |          },
+          |          "version" : "1.2.0",
+          |          "sbtVersion" : null,
+          |          "scalaVersion" : null,
+          |          "configurations" : null
+          |        }
+          |      ],
+          |      "newerVersions" : [
+          |        "1.2.3"
+          |      ],
+          |      "newerGroupId" : null,
+          |      "newerArtifactId" : null
+          |    }
+          |  },
+          |  "Labels" : [
+          |    "library-update",
+          |    "early-semver-patch",
+          |    "semver-spec-patch",
+          |    "commit-count:0"
+          |  ]
+          |} -->""".stripMargin
 
     val expected = NewPullRequestData(
       title = "Update logback-classic to 1.2.3",
@@ -731,7 +904,70 @@ class NewPullRequestDataTest extends FunSuite {
           |
           |<sup>
           |labels: library-update, early-semver-patch, semver-spec-patch, early-semver-major, semver-spec-major, commit-count:0
-          |</sup>""".stripMargin
+          |</sup>
+          |
+          |<!-- scala-steward = {
+          |  "Update" : {
+          |    "Grouped" : {
+          |      "name" : "my-group",
+          |      "title" : null,
+          |      "updates" : [
+          |        {
+          |          "ForArtifactId" : {
+          |            "crossDependency" : [
+          |              {
+          |                "groupId" : "ch.qos.logback",
+          |                "artifactId" : {
+          |                  "name" : "logback-classic",
+          |                  "maybeCrossName" : null
+          |                },
+          |                "version" : "1.2.0",
+          |                "sbtVersion" : null,
+          |                "scalaVersion" : null,
+          |                "configurations" : null
+          |              }
+          |            ],
+          |            "newerVersions" : [
+          |              "1.2.3"
+          |            ],
+          |            "newerGroupId" : null,
+          |            "newerArtifactId" : null
+          |          }
+          |        },
+          |        {
+          |          "ForArtifactId" : {
+          |            "crossDependency" : [
+          |              {
+          |                "groupId" : "com.example",
+          |                "artifactId" : {
+          |                  "name" : "foo",
+          |                  "maybeCrossName" : null
+          |                },
+          |                "version" : "1.0.0",
+          |                "sbtVersion" : null,
+          |                "scalaVersion" : null,
+          |                "configurations" : null
+          |              }
+          |            ],
+          |            "newerVersions" : [
+          |              "2.0.0"
+          |            ],
+          |            "newerGroupId" : null,
+          |            "newerArtifactId" : null
+          |          }
+          |        }
+          |      ]
+          |    }
+          |  },
+          |  "Labels" : [
+          |    "library-update",
+          |    "early-semver-patch",
+          |    "semver-spec-patch",
+          |    "early-semver-major",
+          |    "semver-spec-major",
+          |    "commit-count:0"
+          |  ]
+          |} -->""".stripMargin
 
     val expected = NewPullRequestData(
       title = "Update for group my-group",
@@ -803,7 +1039,38 @@ class NewPullRequestDataTest extends FunSuite {
           |
           |<sup>
           |labels: library-update, early-semver-major, semver-spec-minor, commit-count:1
-          |</sup>""".stripMargin
+          |</sup>
+          |
+          |<!-- scala-steward = {
+          |  "Update" : {
+          |    "ForArtifactId" : {
+          |      "crossDependency" : [
+          |        {
+          |          "groupId" : "org.typelevel",
+          |          "artifactId" : {
+          |            "name" : "cats-effect",
+          |            "maybeCrossName" : null
+          |          },
+          |          "version" : "2.5.5",
+          |          "sbtVersion" : null,
+          |          "scalaVersion" : null,
+          |          "configurations" : null
+          |        }
+          |      ],
+          |      "newerVersions" : [
+          |        "3.4.2"
+          |      ],
+          |      "newerGroupId" : null,
+          |      "newerArtifactId" : null
+          |    }
+          |  },
+          |  "Labels" : [
+          |    "library-update",
+          |    "early-semver-major",
+          |    "semver-spec-minor",
+          |    "commit-count:1"
+          |  ]
+          |} -->""".stripMargin
 
     assertEquals(body, expected)
   }
@@ -857,7 +1124,38 @@ class NewPullRequestDataTest extends FunSuite {
           |
           |<sup>
           |labels: library-update, early-semver-major, semver-spec-minor, commit-count:1
-          |</sup>""".stripMargin
+          |</sup>
+          |
+          |<!-- scala-steward = {
+          |  "Update" : {
+          |    "ForArtifactId" : {
+          |      "crossDependency" : [
+          |        {
+          |          "groupId" : "com.lihaoyi",
+          |          "artifactId" : {
+          |            "name" : "os-lib",
+          |            "maybeCrossName" : null
+          |          },
+          |          "version" : "0.7.8",
+          |          "sbtVersion" : null,
+          |          "scalaVersion" : null,
+          |          "configurations" : null
+          |        }
+          |      ],
+          |      "newerVersions" : [
+          |        "0.9.1"
+          |      ],
+          |      "newerGroupId" : null,
+          |      "newerArtifactId" : null
+          |    }
+          |  },
+          |  "Labels" : [
+          |    "library-update",
+          |    "early-semver-major",
+          |    "semver-spec-minor",
+          |    "commit-count:1"
+          |  ]
+          |} -->""".stripMargin
 
     assertEquals(body, expected)
   }
