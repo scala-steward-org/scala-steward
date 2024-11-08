@@ -345,7 +345,7 @@ lazy val metadataSettings = Def.settings(
 
 lazy val dockerSettings = Def.settings(
   dockerBaseImage := Option(System.getenv("DOCKER_BASE_IMAGE"))
-    .getOrElse("eclipse-temurin:21-alpine"),
+    .getOrElse("eclipse-temurin:11-alpine"),
   dockerCommands ++= {
     val curl = "curl -fL --output"
     val binDir = "/usr/local/bin"
