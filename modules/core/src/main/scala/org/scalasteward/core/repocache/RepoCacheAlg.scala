@@ -43,7 +43,7 @@ final class RepoCacheAlg[F[_]](config: Config)(implicit
     logger.info(s"Check cache of ${repo.show}") >>
       refreshErrorAlg.skipIfFailedRecently(repo) {
         (
-          forgeApiAlg.createForkOrGetRepoWithBranch(repo, config.forgeCfg.doNotFork),
+          forgeApiAlg.createForkOrGetRepoWithBranch(repo, config.forge.doNotFork),
           repoCacheRepository.findCache(repo)
         ).parTupled.flatMap { case ((repoOut, branchOut), maybeCache) =>
           val latestSha1 = branchOut.commit.sha

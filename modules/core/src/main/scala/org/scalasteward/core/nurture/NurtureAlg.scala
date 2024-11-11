@@ -19,14 +19,13 @@ package org.scalasteward.core.nurture
 import cats.effect.Concurrent
 import cats.syntax.all._
 import cats.{Applicative, Id}
-import org.scalasteward.core.application.Config.ForgeCfg
 import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.ProcessResult.{Created, Ignored, Updated}
 import org.scalasteward.core.data._
 import org.scalasteward.core.edit.{EditAlg, EditAttempt}
 import org.scalasteward.core.forge.data.NewPullRequestData.{filterLabels, labelsFor}
 import org.scalasteward.core.forge.data._
-import org.scalasteward.core.forge.{ForgeApiAlg, ForgeRepoAlg}
+import org.scalasteward.core.forge.{Forge, ForgeApiAlg, ForgeRepoAlg}
 import org.scalasteward.core.git.{Branch, Commit, GitAlg}
 import org.scalasteward.core.repoconfig.PullRequestUpdateStrategy
 import org.scalasteward.core.util.logger.LoggerOps
@@ -34,7 +33,7 @@ import org.scalasteward.core.util.{Nel, UrlChecker}
 import org.scalasteward.core.{git, util}
 import org.typelevel.log4cats.Logger
 
-final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
+final class NurtureAlg[F[_]](forge: Forge)(implicit
     coursierAlg: CoursierAlg[F],
     editAlg: EditAlg[F],
     forgeApiAlg: ForgeApiAlg[F],
@@ -61,7 +60,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
   private def cloneAndSync(repo: Repo, fork: RepoOut): F[Branch] =
     for {
       _ <- gitAlg.cloneExists(repo).ifM(F.unit, forgeRepoAlg.cloneAndSync(repo, fork))
-      baseBranch <- forgeApiAlg.parentOrRepo(fork, config.doNotFork).map(_.default_branch)
+      baseBranch <- forgeApiAlg.parentOrRepo(fork, forge.doNotFork).map(_.default_branch)
     } yield baseBranch
 
   private def updateDependencies(
@@ -92,7 +91,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
   private def processUpdate(data: UpdateData): F[ProcessResult] =
     for {
       _ <- logger.info(s"Process update ${data.update.show}")
-      head = config.tpe.pullRequestHeadFor(data.fork, data.updateBranch)
+      head = forge.pullRequestHeadFor(data.fork, data.updateBranch)
       pullRequests <- forgeApiAlg.listPullRequests(data.repo, head, data.baseBranch)
       result <- pullRequests.headOption match {
         case Some(pr) if pr.state.isClosed && data.update.isInstanceOf[Update.Single] =>
@@ -234,12 +233,12 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       labels = filterLabels(allLabels, data.repoData.config.pullRequests.includeMatchedLabels)
     } yield NewPullRequestData.from(
       data = data,
-      branchName = config.tpe.pullRequestHeadFor(data.fork, data.updateBranch),
+      branchName = forge.pullRequestHeadFor(data.fork, data.updateBranch),
       edits = edits,
       artifactIdToUrl = artifactIdToUrl,
       artifactIdToUpdateInfoUrls = artifactIdToUpdateInfoUrls.toMap,
       filesWithOldVersion = filesWithOldVersion,
-      addLabels = config.addLabels,
+      addLabels = forge.addLabels,
       labels = data.repoData.config.pullRequests.customLabels ++ labels
     )
 

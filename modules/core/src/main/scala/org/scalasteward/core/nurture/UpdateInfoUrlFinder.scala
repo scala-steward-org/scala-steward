@@ -19,17 +19,15 @@ package org.scalasteward.core.nurture
 import cats.Monad
 import cats.syntax.all._
 import org.http4s.Uri
-import org.scalasteward.core.application.Config.ForgeCfg
 import org.scalasteward.core.coursier.DependencyMetadata
 import org.scalasteward.core.data.Version
-import org.scalasteward.core.forge.ForgeRepo
-import org.scalasteward.core.forge.ForgeType._
+import org.scalasteward.core.forge.ForgeRepo.GitHub
+import org.scalasteward.core.forge.{Forge, ForgeRepo}
 import org.scalasteward.core.nurture.UpdateInfoUrl._
 import org.scalasteward.core.nurture.UpdateInfoUrlFinder.possibleUpdateInfoUrls
 import org.scalasteward.core.util.UrlChecker
 
-final class UpdateInfoUrlFinder[F[_]](implicit
-    config: ForgeCfg,
+final class UpdateInfoUrlFinder[F[_]](forge: Forge)(implicit
     urlChecker: UrlChecker[F],
     F: Monad[F]
 ) {
@@ -39,9 +37,10 @@ final class UpdateInfoUrlFinder[F[_]](implicit
   ): F[List[UpdateInfoUrl]] = {
     val updateInfoUrls: List[UpdateInfoUrl] =
       dependency.releaseNotesUrl.toList.map(CustomReleaseNotes.apply) ++
-        dependency.forgeRepo.toSeq.flatMap(forgeRepo =>
-          possibleUpdateInfoUrls(forgeRepo, versionUpdate)
-        )
+        dependency
+          .forgeRepo(forge)
+          .toSeq
+          .flatMap(forgeRepo => possibleUpdateInfoUrls(forgeRepo, versionUpdate))
 
     updateInfoUrls
       .sorted(UpdateInfoUrl.updateInfoUrlOrder.toOrdering)
@@ -98,12 +97,11 @@ object UpdateInfoUrlFinder {
       forgeRepo: ForgeRepo,
       version: Version
   ): List[UpdateInfoUrl] =
-    forgeRepo.forgeType match {
-      case GitHub =>
-        Version.tagNames
-          .map(tagName =>
-            GitHubReleaseNotes(forgeRepo.repoUrl / "releases" / "tag" / tagName(version))
-          )
+    forgeRepo match {
+      case GitHub(repoUrl) =>
+        Version.tagNames.map(tagName =>
+          GitHubReleaseNotes(repoUrl / "releases" / "tag" / tagName(version))
+        )
       case _ => Nil
     }
 

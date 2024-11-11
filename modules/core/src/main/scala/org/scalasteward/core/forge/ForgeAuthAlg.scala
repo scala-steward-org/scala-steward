@@ -16,27 +16,47 @@
 
 package org.scalasteward.core.forge
 
-import cats.Monad
-import cats.syntax.all._
-import org.http4s.Uri.UserInfo
-import org.scalasteward.core.application.Config.{ForgeCfg, GitCfg}
-import org.scalasteward.core.forge.data.AuthenticatedUser
+import cats.effect.Sync
+import org.http4s.{Request, Uri}
+import org.scalasteward.core.data.Repo
+import org.scalasteward.core.forge.Forge.{
+  AzureRepos,
+  Bitbucket,
+  BitbucketServer,
+  GitHub,
+  GitLab,
+  Gitea
+}
+import org.scalasteward.core.forge.bitbucketserver.BitbucketServerAuthAlg
+import org.scalasteward.core.forge.github.GitHubAuthAlg
+import org.scalasteward.core.forge.gitlab.GitLabAuthAlg
 import org.scalasteward.core.io.{ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.util
-import org.scalasteward.core.util.Nel
+import org.scalasteward.core.util.HttpJsonClient
+import org.typelevel.log4cats.Logger
 
-final class ForgeAuthAlg[F[_]](gitCfg: GitCfg, forgeCfg: ForgeCfg)(implicit
-    processAlg: ProcessAlg[F],
-    workspaceAlg: WorkspaceAlg[F],
-    F: Monad[F]
-) {
-  def forgeUser: F[AuthenticatedUser] =
-    for {
-      rootDir <- workspaceAlg.rootDir
-      userInfo = UserInfo(forgeCfg.login, None)
-      urlWithUser = util.uri.withUserInfo.replace(userInfo)(forgeCfg.apiHost).renderString
-      prompt = s"Password for '$urlWithUser': "
-      output <- processAlg.exec(Nel.of(gitCfg.gitAskPass.pathAsString, prompt), rootDir)
-      password = output.mkString.trim
-    } yield AuthenticatedUser(forgeCfg.login, password)
+trait ForgeAuthAlg[F[_]] {
+  def authenticateApi(req: Request[F]): F[Request[F]]
+  def authenticateGit(uri: Uri): F[Uri]
+  def accessibleRepos: F[List[Repo]]
+}
+
+object ForgeAuthAlg {
+  def create[F[_]](forge: Forge)(implicit
+      F: Sync[F],
+      client: HttpJsonClient[F],
+      workspaceAlg: WorkspaceAlg[F],
+      processAlg: ProcessAlg[F],
+      logger: Logger[F]
+  ): ForgeAuthAlg[F] =
+    forge match {
+      case forge: AzureRepos =>
+        new BasicAuthAlg(forge.apiUri, forge.login, forge.gitAskPass)
+      case forge: Bitbucket =>
+        new BasicAuthAlg(forge.apiUri, forge.login, forge.gitAskPass)
+      case forge: BitbucketServer =>
+        new BitbucketServerAuthAlg(forge.apiUri, forge.login, forge.gitAskPass)
+      case forge: GitHub => new GitHubAuthAlg(forge.apiUri, forge.appId, forge.appKeyFile)
+      case forge: GitLab => new GitLabAuthAlg(forge.apiUri, forge.login, forge.gitAskPass)
+      case forge: Gitea  => new BasicAuthAlg(forge.apiUri, forge.login, forge.gitAskPass)
+    }
 }

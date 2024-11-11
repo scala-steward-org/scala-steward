@@ -14,7 +14,7 @@ class MavenAlgTest extends FunSuite {
     val buildRoot = BuildRoot(repo, ".")
     val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
 
-    val state = mavenAlg.getDependencies(buildRoot).runS(MockState.empty).unsafeRunSync()
+    val obtained = mavenAlg.getDependencies(buildRoot).runS(MockState.empty).unsafeRunSync()
     val expected = MockState.empty.copy(
       trace = Vector(
         Cmd.execSandboxed(
@@ -33,6 +33,6 @@ class MavenAlgTest extends FunSuite {
       )
     )
 
-    assertEquals(state, expected)
+    assertEquals(obtained, expected)
   }
 }

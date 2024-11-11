@@ -1,26 +1,22 @@
 package org.scalasteward.core.forge.azurerepos
 
-import cats.syntax.semigroupk._
+import better.files.File
 import munit.CatsEffectSuite
 import org.http4s.dsl.Http4sDsl
-import org.http4s.headers.Authorization
 import org.http4s.implicits._
-import org.http4s.{BasicCredentials, HttpApp, Uri}
+import org.http4s.{HttpApp, Uri}
 import org.scalasteward.core.TestInstances.ioLogger
-import org.scalasteward.core.application.Config.AzureReposCfg
 import org.scalasteward.core.data.Repo
+import org.scalasteward.core.forge.Forge.AzureRepos
 import org.scalasteward.core.forge.data._
-import org.scalasteward.core.forge.{ForgeSelection, ForgeType}
+import org.scalasteward.core.forge.ForgeApiAlg
 import org.scalasteward.core.git.{Branch, Sha1}
-import org.scalasteward.core.mock.MockConfig.config
+import org.scalasteward.core.mock.MockForgeAuthAlg.noAuth
 import org.scalasteward.core.mock.MockContext.context.httpJsonClient
 import org.scalasteward.core.mock.{MockEff, MockState}
 
 class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
-  private val user = AuthenticatedUser("user", "pass")
-  private val userM = MockEff.pure(user)
   private val repo = Repo("scala-steward-org", "scala-steward")
-  private val apiHost = uri"https://dev.azure.com"
 
   object branchNameMatcher extends QueryParamDecoderMatcher[String]("name")
   object sourceRefNameMatcher
@@ -28,16 +24,9 @@ class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   object targetRefNameMatcher
       extends QueryParamDecoderMatcher[String]("searchCriteria.targetRefName")
 
-  private val basicAuth = Authorization(BasicCredentials(user.login, user.accessToken))
-  private val auth = HttpApp[MockEff] { request =>
-    (request: @unchecked) match {
-      case _ if !request.headers.get[Authorization].contains(basicAuth) => Forbidden()
-    }
-  }
   private val httpApp = HttpApp[MockEff] {
     case GET -> Root / "azure-org" / repo.owner / "_apis/git/repositories" / repo.repo =>
-      Ok("""
-           |{
+      Ok("""{
            |    "id": "3846fbbd-71a0-402b-8352-6b1b9b2088aa",
            |    "name": "scala-steward",
            |    "url": "https://dev.azure.com/azure-org/scala-steward-org/_apis/git/repositories/scala-steward",
@@ -53,8 +42,7 @@ class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
     case GET -> Root / "azure-org" / repo.owner / "_apis/git/repositories" / repo.repo / "stats/branches"
         :? branchNameMatcher("main") =>
-      Ok("""
-           |{
+      Ok("""{
            |    "commit": {
            |        "commitId": "f55c9900528e548511fbba6874c873d44c5d714c"                          
            |    },
@@ -66,8 +54,7 @@ class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
     case POST -> Root / "azure-org" / repo.owner / "_apis/git/repositories" / repo.repo / "pullrequests" =>
       Created(
-        """
-          |{
+        """{
           |  "repository": {
           |    "id": "3846fbbd-71a0-402b-8352-6b1b9b2088aa",
           |    "name": "scala-steward",
@@ -93,8 +80,7 @@ class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     case GET -> Root / "azure-org" / repo.owner / "_apis/git/repositories" / repo.repo / "pullrequests" :?
         sourceRefNameMatcher("refs/heads/update/cats-effect-3.3.14")
         +& targetRefNameMatcher("refs/heads/main") =>
-      Ok("""
-           |{
+      Ok("""{
            |   "value":[
            |      {
            |         "pullRequestId":26,
@@ -172,11 +158,15 @@ class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     case _ => NotFound()
   }
 
-  private val state = MockState.empty.copy(clientResponses = auth <+> httpApp)
-
-  private val forgeCfg = config.forgeCfg.copy(apiHost = apiHost, tpe = ForgeType.AzureRepos)
-  private val azureReposCfg = AzureReposCfg(organization = Some("azure-org"))
-  private val azureReposApiAlg = ForgeSelection.forgeApiAlg[MockEff](forgeCfg, azureReposCfg, userM)
+  private val state = MockState.empty.copy(clientResponses = httpApp)
+  private val forge = AzureRepos(
+    apiUri = uri"https://dev.azure.com",
+    login = "steward-user",
+    gitAskPass = File.newTemporaryFile(),
+    addLabels = true,
+    reposOrganization = "azure-org"
+  )
+  private val azureReposApiAlg = ForgeApiAlg.create[MockEff](forge)
 
   test("getRepo") {
     val obtained = azureReposApiAlg.getRepo(repo).runA(state)

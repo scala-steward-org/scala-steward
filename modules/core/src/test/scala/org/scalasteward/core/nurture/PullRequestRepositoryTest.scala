@@ -9,13 +9,12 @@ import org.scalasteward.core.data.{Repo, Update}
 import org.scalasteward.core.forge.data.PullRequestState.Open
 import org.scalasteward.core.forge.data.{PullRequestNumber, PullRequestState}
 import org.scalasteward.core.git.{Branch, Sha1}
-import org.scalasteward.core.mock.MockConfig.config
+import org.scalasteward.core.mock.MockConfig.gitHubConfig
 import org.scalasteward.core.mock.MockContext.context.pullRequestRepository
 import org.scalasteward.core.mock.MockState.TraceEntry
 import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
 import org.scalasteward.core.mock.{MockEff, MockState}
 import org.scalasteward.core.util.Nel
-
 import java.util.concurrent.atomic.AtomicInteger
 
 class PullRequestRepositoryTest extends FunSuite {
@@ -43,7 +42,7 @@ class PullRequestRepositoryTest extends FunSuite {
     val (state, output) = p(repo).runSA(MockState.empty).unsafeRunSync()
 
     val store =
-      config.workspace / s"store/pull_requests/v2/github/${repo.toPath}/pull_requests.json"
+      gitHubConfig.workspace / s"store/pull_requests/v2/github/${repo.toPath}/pull_requests.json"
     checkTrace(
       state,
       expectedStoreOps.map(op => Cmd(op, store.toString)).toVector
