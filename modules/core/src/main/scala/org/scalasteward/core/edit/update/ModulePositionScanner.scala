@@ -45,7 +45,7 @@ object ModulePositionScanner {
   private def sbtModuleIdRegex(dependency: Dependency): Regex = {
     val g = Regex.quote(dependency.groupId.value)
     val a = Regex.quote(dependency.artifactId.name)
-    raw""""($g)"\s*%+\s*"($a)"\s*%+\s*(.*)""".r
+    raw""""($g)"\s*%+\s*"($a)"\s*%+\s*([^\s/]*)""".r
   }
 
   private def findMillDependency(
