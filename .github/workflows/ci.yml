@@ -85,7 +85,7 @@ jobs:
 
       - uses: coursier/setup-action@v1
         with:
-          apps: scalafmt
+          apps: 'scalafmt:3.8.3'
 
       - name: Build project
         run: sbt '++ ${{ matrix.scala }}' validate

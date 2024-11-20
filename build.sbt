@@ -54,8 +54,10 @@ ThisBuild / githubWorkflowPublish := Seq(
 ThisBuild / githubWorkflowJavaVersions := Seq("21", "17", "11").map(JavaSpec(Temurin, _))
 ThisBuild / githubWorkflowBuild :=
   Seq(
-    WorkflowStep
-      .Use(UseRef.Public("coursier", "setup-action", "v1"), params = Map("apps" -> "scalafmt")),
+    WorkflowStep.Use(
+      UseRef.Public("coursier", "setup-action", "v1"),
+      params = Map("apps" -> "scalafmt:3.8.3")
+    ),
     WorkflowStep.Sbt(List("validate"), name = Some("Build project")),
     WorkflowStep.Use(
       UseRef.Public("codecov", "codecov-action", "v3"),
