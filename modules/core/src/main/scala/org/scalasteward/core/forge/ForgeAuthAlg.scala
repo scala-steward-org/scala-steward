@@ -54,11 +54,15 @@ object ForgeAuthAlg {
           config.gitCfg.gitAskPass
         )
       case GitHub =>
-        val gitHub =
-          config.githubApp.getOrElse(
-            throw new IllegalArgumentException("GitHub app configuration is missing")
-          )
-        new GitHubAuthAlg(config.forgeCfg.apiHost, gitHub.id, gitHub.keyFile)
+        config.githubApp match {
+          case Some(gitHub) => new GitHubAuthAlg(config.forgeCfg.apiHost, gitHub.id, gitHub.keyFile)
+          case None =>
+            new BasicAuthAlg(
+              config.forgeCfg.apiHost,
+              config.forgeCfg.login,
+              config.gitCfg.gitAskPass
+            )
+        }
       case GitLab =>
         new GitLabAuthAlg(config.forgeCfg.apiHost, config.forgeCfg.login, config.gitCfg.gitAskPass)
       case Gitea =>

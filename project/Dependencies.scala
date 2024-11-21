@@ -3,7 +3,7 @@ import sbt._
 object Dependencies {
   val bcprovJdk15to18 = "org.bouncycastle" % "bcprov-jdk15to18" % "1.79"
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.2"
-  val catsEffect = "org.typelevel" %% "cats-effect" % "3.5.5"
+  val catsEffect = "org.typelevel" %% "cats-effect" % "3.5.6"
   val catsCore = "org.typelevel" %% "cats-core" % "2.12.0"
   val catsLaws = "org.typelevel" %% "cats-laws" % catsCore.revision
   val catsParse = "org.typelevel" %% "cats-parse" % "1.0.0"
@@ -14,7 +14,7 @@ object Dependencies {
   val circeParser = "io.circe" %% "circe-parser" % circeGeneric.revision
   val circeRefined = "io.circe" %% "circe-refined" % "0.15.1"
   val commonsIo = "commons-io" % "commons-io" % "2.17.0"
-  val coursierCore = "io.get-coursier" %% "coursier" % "2.1.17"
+  val coursierCore = "io.get-coursier" %% "coursier" % "2.1.18"
   val coursierSbtMaven =
     "io.get-coursier" %% "coursier-sbt-maven-repository" % coursierCore.revision
   val cron4sCore = "com.github.alonsodomin.cron4s" %% "cron4s-core" % "0.7.0"
