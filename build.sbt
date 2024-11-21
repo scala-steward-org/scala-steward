@@ -60,8 +60,9 @@ ThisBuild / githubWorkflowBuild :=
     ),
     WorkflowStep.Sbt(List("validate"), name = Some("Build project")),
     WorkflowStep.Use(
-      UseRef.Public("codecov", "codecov-action", "v3"),
-      name = Some("Codecov")
+      ref = UseRef.Public("codecov", "codecov-action", "v4"),
+      name = Some("Codecov"),
+      env = Map("CODECOV_TOKEN" -> "${{ secrets.CODECOV_TOKEN }}")
     )
   )
 
