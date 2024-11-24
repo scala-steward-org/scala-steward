@@ -42,6 +42,7 @@ final case class UpdatesConfig(
     allow: List[UpdatePattern] = List.empty,
     allowPreReleases: List[UpdatePattern] = List.empty,
     ignore: List[UpdatePattern] = List.empty,
+    retracted: List[RetractedArtifact] = List.empty,
     limit: Option[NonNegInt] = defaultLimit,
     fileExtensions: Option[List[String]] = None
 ) {
@@ -124,6 +125,7 @@ object UpdatesConfig {
           allow = mergeAllow(x.allow, y.allow),
           allowPreReleases = mergeAllow(x.allowPreReleases, y.allowPreReleases),
           ignore = mergeIgnore(x.ignore, y.ignore),
+          retracted = x.retracted ::: y.retracted,
           limit = x.limit.orElse(y.limit),
           fileExtensions = mergeFileExtensions(x.fileExtensions, y.fileExtensions)
         )

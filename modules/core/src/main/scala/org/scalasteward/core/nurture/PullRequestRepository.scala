@@ -27,6 +27,7 @@ import org.scalasteward.core.git
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.nurture.PullRequestRepository.Entry
 import org.scalasteward.core.persistence.KeyValueStore
+import org.scalasteward.core.repoconfig.RetractedArtifact
 import org.scalasteward.core.update.UpdateAlg
 import org.scalasteward.core.util.{DateTimeAlg, Timestamp}
 
@@ -78,6 +79,29 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
             branch = updateBranch.getOrElse(git.branchFor(u, repo.branch))
           } yield PullRequestData[Id](url, baseSha1, u, state, number, branch)
       }.flatten.toList.sortBy(_.number.value)
+    }
+
+  def getRetractedPullRequests(
+      repo: Repo,
+      allRetractedArtifacts: List[RetractedArtifact]
+  ): F[List[(PullRequestData[Id], RetractedArtifact)]] =
+    kvStore.getOrElse(repo, Map.empty).map { pullRequets: Map[Uri, Entry] =>
+      pullRequets.flatMap {
+        case (
+              url,
+              Entry(baseSha1, u: Update.Single, PullRequestState.Open, _, number, updateBranch)
+            ) =>
+          for {
+            prNumber <- number
+            retractedArtifact <- allRetractedArtifacts.find(_.isRetracted(u))
+          } yield {
+            val branch = updateBranch.getOrElse(git.branchFor(u, repo.branch))
+            val data =
+              PullRequestData[Id](url, baseSha1, u, PullRequestState.Open, prNumber, branch)
+            (data, retractedArtifact)
+          }
+        case _ => Map.empty
+      }.toList
     }
 
   def findLatestPullRequest(

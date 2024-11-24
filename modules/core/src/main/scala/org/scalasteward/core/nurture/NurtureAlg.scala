@@ -28,7 +28,7 @@ import org.scalasteward.core.forge.data.NewPullRequestData.{filterLabels, labels
 import org.scalasteward.core.forge.data._
 import org.scalasteward.core.forge.{ForgeApiAlg, ForgeRepoAlg}
 import org.scalasteward.core.git.{Branch, Commit, GitAlg}
-import org.scalasteward.core.repoconfig.PullRequestUpdateStrategy
+import org.scalasteward.core.repoconfig.{PullRequestUpdateStrategy, RetractedArtifact}
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.util.{Nel, UrlChecker}
 import org.scalasteward.core.{git, util}
@@ -306,4 +306,30 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       requestData <- preparePullRequest(data, edits)
       _ <- forgeApiAlg.updatePullRequest(number: PullRequestNumber, data.repo, requestData)
     } yield result
+
+  def closeRetractedPullRequests(data: RepoData): F[Unit] =
+    pullRequestRepository
+      .getRetractedPullRequests(data.repo, data.config.updates.retracted)
+      .flatMap {
+        _.traverse_ { case (oldPr, retractedArtifact) =>
+          closeRetractedPullRequest(data, oldPr, retractedArtifact)
+        }
+      }
+
+  private def closeRetractedPullRequest(
+      data: RepoData,
+      oldPr: PullRequestData[Id],
+      retractedArtifact: RetractedArtifact
+  ): F[Unit] =
+    logger.attemptWarn.label_(
+      s"Closing retracted PR ${oldPr.url.renderString} for ${oldPr.update.show} because of '${retractedArtifact.reason}'"
+    ) {
+      for {
+        _ <- pullRequestRepository.changeState(data.repo, oldPr.url, PullRequestState.Closed)
+        comment = retractedArtifact.retractionMsg
+        _ <- forgeApiAlg.commentPullRequest(data.repo, oldPr.number, comment)
+        _ <- forgeApiAlg.closePullRequest(data.repo, oldPr.number)
+        _ <- deleteRemoteBranch(data.repo, oldPr.updateBranch)
+      } yield F.unit
+    }
 }
