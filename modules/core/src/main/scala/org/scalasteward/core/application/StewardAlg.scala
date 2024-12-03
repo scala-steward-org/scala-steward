@@ -50,11 +50,15 @@ final class StewardAlg[F[_]](config: Config)(implicit
     logger.infoTotalTime(label) {
       logger.attemptError.label(util.string.lineLeftRight(label), Some(label)) {
         F.guarantee(
-          repoCacheAlg.checkCache(repo).flatMap { case (data, fork) =>
-            pruningAlg.needsAttention(data).flatMap {
-              _.traverse_(states => nurtureAlg.nurture(data, fork, states.map(_.update)))
-            }
-          },
+          for {
+            dataAndFork <- repoCacheAlg.checkCache(repo)
+            (data, fork) = dataAndFork
+            _ <- nurtureAlg.closeRetractedPullRequests(data)
+            statesO <- pruningAlg.needsAttention(data)
+            result <- statesO.traverse_(states =>
+              nurtureAlg.nurture(data, fork, states.map(_.update))
+            )
+          } yield result,
           gitAlg.removeClone(repo)
         )
       }

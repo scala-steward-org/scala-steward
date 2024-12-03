@@ -104,6 +104,19 @@ updates.pin  = [ { groupId = "com.example", artifactId="foo", version = "1.1." }
 # Defaults to empty `[]` which mean Scala Steward will not ignore dependencies.
 updates.ignore = [ { groupId = "org.acme", artifactId="foo", version = "1.0" } ]
 
+# The dependencies which match the given pattern are retracted. Their existing pull-request will be closed.
+#
+# Each entry must have a `reason`, a `doc` URL and a list of dependency patterns.
+updates.retracted = [
+  {
+    reason = "Ignore version 3.6.0 as it is abandoned due to broken compatibility",
+    doc = "https://contributors.scala-lang.org/t/broken-scala-3-6-0-release/6792",
+    artifacts = [
+      { groupId = "org.scala-lang", artifactId = "scala3-compiler", version = { exact = "3.6.0" } }
+    ]
+  }
+]
+
 # The dependencies which match the given patterns are allowed to be updated to pre-release from stable.
 # This also implies, that it will be allowed for snapshot versions to be updated to snapshots of different series.
 #
