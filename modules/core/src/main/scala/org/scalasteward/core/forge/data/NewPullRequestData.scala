@@ -96,35 +96,45 @@ object NewPullRequestData {
       _ => ""
     )
 
-    s"""|$updatesText
-        |
-        |## Usage
-        |✅ **Please merge!**
-        |
-        |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
-        |
-        |${skipVersionMessage}If you have any feedback, just mention me in the comments below.
-        |
-        |Configure Scala Steward for your repository with a [`${RepoConfigAlg.repoConfigBasename}`](${org.scalasteward.core.BuildInfo.gitHubUrl}/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
-        |
-        |_Have a fantastic day writing Scala!_
-        |
-        |${details.map(_.toHtml).mkString("\n")}
-        |
-        |<sup>
-        |${labels.mkString("labels: ", ", ", "")}
-        |</sup>
-        |
-        |<!-- scala-steward = ${metadataJson(update, labels)} -->""".stripMargin.trim
-  }
+    val plainBody =
+      s"""|$updatesText
+          |
+          |## Usage
+          |✅ **Please merge!**
+          |
+          |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
+          |
+          |${skipVersionMessage}If you have any feedback, just mention me in the comments below.
+          |
+          |Configure Scala Steward for your repository with a [`${RepoConfigAlg.repoConfigBasename}`](${org.scalasteward.core.BuildInfo.gitHubUrl}/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
+          |
+          |_Have a fantastic day writing Scala!_
+          |
+          |${details.map(_.toHtml).mkString("\n")}
+          |
+          |<sup>
+          |${labels.mkString("labels: ", ", ", "")}
+          |</sup>
+          |""".stripMargin.trim
 
-  def metadataJson(update: Update, labels: List[String]): String =
-    Json
-      .obj(
-        "Update" -> update.asJson,
-        "Labels" -> Json.fromValues(labels.map(_.asJson))
-      )
-      .toString
+    val metadataJson =
+      Json
+        .obj(
+          "Update" -> update.asJson,
+          "Labels" -> Json.fromValues(labels.map(_.asJson))
+        )
+        .toString
+
+    val bodyWithMetadata =
+      s"""$plainBody
+         |
+         |<!-- scala-steward = $metadataJson -->""".stripMargin
+
+    // Github limits PR descriptions to 65536 unicode characters
+    if (bodyWithMetadata.length < 65536)
+      bodyWithMetadata
+    else plainBody
+  }
 
   def renderUpdateInfoUrls(updateInfoUrls: List[UpdateInfoUrl]): Option[String] =
     Option.when(updateInfoUrls.nonEmpty) {
