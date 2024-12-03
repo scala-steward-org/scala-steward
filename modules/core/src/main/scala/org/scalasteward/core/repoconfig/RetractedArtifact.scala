@@ -34,10 +34,10 @@ final case class RetractedArtifact(
     }
 
   def retractionMsg: String =
-    s"""|Retracted because of: ${reason}.
+    s"""|PR retracted because of: ${reason}.
         |
         |Documentation: ${doc}
-        |""".stripMargin.trim
+        |""".stripMargin
 }
 
 object RetractedArtifact {

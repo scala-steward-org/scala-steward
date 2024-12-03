@@ -85,7 +85,7 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
       repo: Repo,
       allRetractedArtifacts: List[RetractedArtifact]
   ): F[List[(PullRequestData[Id], RetractedArtifact)]] =
-    kvStore.getOrElse(repo, Map.empty).map { pullRequets: Map[Uri, Entry] =>
+    kvStore.getOrElse(repo, Map.empty).map { pullRequets =>
       pullRequets.flatMap {
         case (
               url,

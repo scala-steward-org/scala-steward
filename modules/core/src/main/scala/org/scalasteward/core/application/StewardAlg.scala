@@ -54,8 +54,8 @@ final class StewardAlg[F[_]](config: Config)(implicit
             dataAndFork <- repoCacheAlg.checkCache(repo)
             (data, fork) = dataAndFork
             _ <- nurtureAlg.closeRetractedPullRequests(data)
-            states <- pruningAlg.needsAttention(data)
-            result <- states.traverse_(states =>
+            statesO <- pruningAlg.needsAttention(data)
+            result <- statesO.traverse_(states =>
               nurtureAlg.nurture(data, fork, states.map(_.update))
             )
           } yield result,

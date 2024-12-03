@@ -150,6 +150,24 @@ class PullRequestRepositoryTest extends FunSuite {
     assertEquals(obtained.head._2, retractedPortableScala)
   }
 
+  test("getRetractedPullRequests with retractions for different version") {
+    val retractedPortableScala = RetractedArtifact(
+      "a reason",
+      "doc URI",
+      List(
+        UpdatePattern(
+          "org.portable-scala".g,
+          Some("sbt-scalajs-crossproject"),
+          Some(VersionPattern(exact = Some("2.0.0")))
+        )
+      )
+    )
+    val (_, obtained) = beforeAndAfterPRCreation(portableScala) { repo =>
+      pullRequestRepository.getRetractedPullRequests(repo, List(retractedPortableScala))
+    }
+    assertEquals(obtained, List.empty[(PullRequestData[Id], RetractedArtifact)])
+  }
+
   test("findLatestPullRequest ignores grouped updates") {
     val (_, result) = beforeAndAfterPRCreation(groupedUpdate(portableScala)) { repo =>
       pullRequestRepository.findLatestPullRequest(repo, portableScala.crossDependency, "1.0.0".v)
