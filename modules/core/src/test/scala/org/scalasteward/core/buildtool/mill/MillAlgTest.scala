@@ -40,6 +40,7 @@ class MillAlgTest extends FunSuite {
       repoDir,
       "mill",
       "--no-server",
+      "--ticker=false",
       "--import",
       "ivy:org.scala-steward::scala-steward-mill-plugin::0.18.0",
       "show",
