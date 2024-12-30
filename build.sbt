@@ -447,6 +447,7 @@ runSteward := Def.taskDyn {
     Seq("--git-ask-pass", s"$home/.github/askpass/$gitHubLogin.sh"),
     // Seq("--github-app-id", IO.read(gitHubAppDir / "scala-steward.app-id.txt").trim),
     // Seq("--github-app-key-file", s"$gitHubAppDir/scala-steward.private-key.pem"),
+    Seq("--repo-config", s"$projectDir/.scala-steward.conf"),
     Seq("--whitelist", s"$home/.cache/coursier"),
     Seq("--whitelist", s"$home/.cache/JNA"),
     Seq("--whitelist", s"$home/.cache/mill"),
