@@ -30,16 +30,10 @@ Options and flags:
         Whether to signoff commits; default: false
     --forge-type <forge-type>
         One of azure-repos, bitbucket, bitbucket-server, github, gitlab, gitea; default: github
-    --vcs-type <forge-type>
-        deprecated in favor of --forge-type
     --forge-api-host <uri>
         API URL of the forge; default: https://api.github.com
-    --vcs-api-host <uri>
-        deprecated in favor of --forge-api-host
     --forge-login <string>
         The user name for the forge
-    --vcs-login <string>
-        deprecated in favor of --forge-login
     --do-not-fork
         Whether to not push the update branches to a fork; default: false
     --add-labels
