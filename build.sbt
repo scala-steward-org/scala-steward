@@ -282,6 +282,7 @@ lazy val dummy = myCrossProject("dummy")
   .settings(noPublishSettings)
   .settings(
     libraryDependencies ++= Seq(
+      Dependencies.millMain,
       Dependencies.scalaStewardMillPlugin
     )
   )
@@ -359,10 +360,10 @@ lazy val dockerSettings = Def.settings(
       s"tar -xf $sbtTgz",
       s"rm -f $sbtTgz"
     ).mkString(" && ")
-    val millVer = Dependencies.millwScriptVersion
+    val millVer = Dependencies.millMain.revision
     val millBin = s"$binDir/mill"
     val installMill = Seq(
-      s"$curl $millBin https://github.com/lefou/millw/releases/download/${millVer}/millw-${millVer}",
+      s"$curl $millBin https://github.com/com-lihaoyi/mill/releases/download/$millVer/$millVer",
       s"chmod +x $millBin"
     ).mkString(" && ")
     val csBin = s"$binDir/cs"
