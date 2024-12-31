@@ -146,6 +146,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [nafg](https://github.com/nafg)
 * [Nabil Abdel-Hafeez](https://github.com/987Nabil)
 * [Nicola Di Pol](https://github.com/horothesun)
+* [Olivier Deckers](https://github.com/olivierdeckers)
 * [Ondra Pelech](https://github.com/sideeffffect)
 * [Pavel Shapkin](https://github.com/psttf)
 * [Philippus Baalman](https://github.com/Philippus)
