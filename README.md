@@ -59,6 +59,7 @@ The [`docs`](docs) directory contains documentation about these topics:
 
 Thanks goes to these wonderful people for contributing to Scala Steward:
 
+* [Achilleas Naoumidis](https://github.com/achinaou)
 * [Alejandro Hernández](https://github.com/alejandrohdezma)
 * [Alessandro Buggin](https://github.com/abuggin)
 * [Alex](https://github.com/jhnsmth)
