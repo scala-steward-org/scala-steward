@@ -111,6 +111,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [Harm Weites](https://github.com/harmw)
 * [Ikenna Darlington Ogbajie](https://github.com/idarlington)
 * [Ingar Abrahamsen](https://github.com/ingarabr)
+* [Ioanna Kokkini](https://github.com/ioannakok)
 * [Jakub Kozłowski](https://github.com/kubukoz)
 * [Jamie Thompson](https://github.com/bishabosha)
 * [Javier Arrieta](https://github.com/javierarrieta)
