@@ -136,6 +136,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [MaT1g3R](https://github.com/MaT1g3R)
 * [Mat Mannion](https://github.com/matmannion)
 * [Matthias Kurz](https://github.com/mkurz)
+* [Max Smirnov](https://github.com/Masynchin)
 * [Maxence Cramet](https://github.com/max5599)
 * [Michael Mior](https://github.com/michaelmior)
 * [Michael Wizner](https://github.com/mwz)
