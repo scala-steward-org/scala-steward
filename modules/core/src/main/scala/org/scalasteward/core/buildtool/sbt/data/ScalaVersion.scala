@@ -18,14 +18,16 @@ package org.scalasteward.core.buildtool.sbt.data
 
 import cats.Order
 import cats.syntax.all._
-import io.circe.Codec
-import io.circe.generic.extras.semiauto._
+import io.circe.{Decoder, Encoder}
 
 final case class ScalaVersion(value: String)
 
 object ScalaVersion {
-  implicit val scalaVersionCodec: Codec[ScalaVersion] =
-    deriveUnwrappedCodec
+  implicit val scalaVersionDecoder: Decoder[ScalaVersion] =
+    Decoder[String].map(ScalaVersion.apply)
+
+  implicit val scalaVersionEncoder: Encoder[ScalaVersion] =
+    Encoder[String].contramap(_.value)
 
   implicit val scalaVersionOrder: Order[ScalaVersion] =
     Order[String].contramap(_.value)

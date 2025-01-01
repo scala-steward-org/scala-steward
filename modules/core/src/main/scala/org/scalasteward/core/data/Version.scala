@@ -19,8 +19,7 @@ package org.scalasteward.core.data
 import cats.Order
 import cats.implicits._
 import cats.parse.{Numbers, Parser, Rfc5234}
-import io.circe.Codec
-import io.circe.generic.extras.semiauto.deriveUnwrappedCodec
+import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.data.Version.startsWithDate
 
 final case class Version(value: String) {
@@ -128,8 +127,11 @@ object Version {
 
   val tagNames: List[Version => String] = List("v" + _, _.value, "release-" + _)
 
-  implicit val versionCodec: Codec[Version] =
-    deriveUnwrappedCodec
+  implicit val versionDecoder: Decoder[Version] =
+    Decoder[String].map(Version.apply)
+
+  implicit val versionEncoder: Encoder[Version] =
+    Encoder[String].contramap(_.value)
 
   implicit val versionOrder: Order[Version] =
     Order.from[Version] { (v1, v2) =>

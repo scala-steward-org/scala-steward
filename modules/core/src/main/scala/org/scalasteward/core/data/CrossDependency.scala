@@ -18,8 +18,7 @@ package org.scalasteward.core.data
 
 import cats.Order
 import cats.syntax.all._
-import io.circe.Codec
-import io.circe.generic.extras.semiauto._
+import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.util.Nel
 
 /** A list of dependencies with the same groupId, (non-cross) artifactId, and version. */
@@ -44,9 +43,12 @@ object CrossDependency {
       .map(grouped => CrossDependency(grouped.sorted))
       .toList
 
-  implicit val crossDependencyCodec: Codec[CrossDependency] =
-    deriveUnwrappedCodec
+  implicit val crossDependencyDecoder: Decoder[CrossDependency] =
+    Decoder[Nel[Dependency]].map(CrossDependency.apply)
+
+  implicit val crossDependencyEncoder: Encoder[CrossDependency] =
+    Encoder[Nel[Dependency]].contramap(_.dependencies)
 
   implicit val crossDependencyOrder: Order[CrossDependency] =
-    Order.by((_: CrossDependency).dependencies)
+    Order.by(_.dependencies)
 }
