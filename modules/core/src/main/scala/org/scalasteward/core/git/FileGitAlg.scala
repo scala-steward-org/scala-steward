@@ -20,13 +20,14 @@ import better.files.File
 import cats.effect.MonadCancelThrow
 import cats.syntax.all._
 import org.http4s.Uri
-import org.scalasteward.core.application.Config.GitCfg
+import org.scalasteward.core.application.Config
+import org.scalasteward.core.forge.ForgeType._
 import org.scalasteward.core.git.FileGitAlg.{dotdot, gitCmd}
 import org.scalasteward.core.io.process.{ProcessFailedException, SlurpOptions}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
 
-final class FileGitAlg[F[_]](config: GitCfg)(implicit
+final class FileGitAlg[F[_]](config: Config)(implicit
     fileAlg: FileAlg[F],
     processAlg: ProcessAlg[F],
     workspaceAlg: WorkspaceAlg[F],
@@ -63,10 +64,16 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
   override def cloneExists(repo: File): F[Boolean] =
     fileAlg.isDirectory(repo / ".git")
 
-  override def commitAll(repo: File, message: CommitMsg): F[Commit] = {
+  override def commitAll(
+      repo: File,
+      message: CommitMsg,
+      signoffCommits: Option[Boolean]
+  ): F[Commit] = {
     val messages = message.paragraphs.foldMap(m => List("-m", m))
     val trailers = message.trailers.foldMap { case (k, v) => List("--trailer", s"$k=$v") }
-    git_("commit" :: "--all" :: sign :: messages ++ trailers: _*)(repo) >>
+    git_("commit" :: "--all" :: sign :: signoff(signoffCommits) :: messages ++ trailers: _*)(
+      repo
+    ) >>
       latestSha1(repo, Branch.head).map(Commit.apply)
   }
 
@@ -121,7 +128,7 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
     fileAlg.deleteForce(repo)
 
   override def resetHard(repo: File, base: Branch): F[Unit] =
-    git_("reset", "--hard", base.name)(repo).void
+    git_("reset", "--hard", base.name, "--")(repo).void
 
   override def setAuthor(repo: File, author: Author): F[Unit] =
     for {
@@ -150,15 +157,37 @@ final class FileGitAlg[F[_]](config: GitCfg)(implicit
       repo: File,
       slurpOptions: SlurpOptions = Set.empty
   ): F[List[String]] = {
-    val extraEnv = List("GIT_ASKPASS" -> config.gitAskPass.pathAsString)
-    processAlg.exec(gitCmd ++ args.toList, repo, extraEnv, slurpOptions)
+    val extraEnv = (config.forgeCfg.tpe match {
+      case AzureRepos      => Some(config.gitCfg.gitAskPass)
+      case Bitbucket       => Some(config.gitCfg.gitAskPass)
+      case BitbucketServer => Some(config.gitCfg.gitAskPass)
+      case GitHub          => None
+      case GitLab          => Some(config.gitCfg.gitAskPass)
+      case Gitea           => Some(config.gitCfg.gitAskPass)
+    }).map("GIT_ASKPASS" -> _.pathAsString).toList
+
+    processAlg
+      .exec(gitCmd ++ args.toList, repo, extraEnv, slurpOptions)
+      .recoverWith {
+        case ex: ProcessFailedException
+            if ex.getMessage.contains("fatal: not in a git directory") =>
+          // `git status` prints a more informative error message than some other git commands, like `git config`
+          // this will hopefully print that error message to the logs in addition to the actual failure
+          processAlg
+            .exec(Nel.of("git", "status"), repo, List.empty, slurpOptions)
+            .attempt
+            .void >> ex.raiseError
+      }
   }
 
   private def git_(args: String*)(repo: File): F[List[String]] =
     git(args: _*)(repo, SlurpOptions.ignoreBufferOverflow)
 
   private val sign: String =
-    if (config.signCommits) "--gpg-sign" else "--no-gpg-sign"
+    if (config.gitCfg.signCommits) "--gpg-sign" else "--no-gpg-sign"
+
+  private def signoff(signoffCommits: Option[Boolean]): String =
+    if (signoffCommits.getOrElse(config.gitCfg.signoff)) "--signoff" else "--no-signoff"
 }
 
 object FileGitAlg {

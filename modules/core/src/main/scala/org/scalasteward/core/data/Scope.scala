@@ -49,7 +49,6 @@ object Scope {
         f(fa.value, lb)
     }
 
-  @annotation.nowarn("cat=unused-params")
   implicit def scopeCodec[A: Decoder: Encoder]: Codec[Scope[A]] =
     deriveCodec
 

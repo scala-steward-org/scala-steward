@@ -18,12 +18,17 @@ package org.scalasteward.core.application
 
 import better.files.File
 import cats.data.Validated
+import cats.effect.ExitCode
 import cats.syntax.all._
 import com.monovore.decline.Opts.{flag, option, options}
 import com.monovore.decline._
 import org.http4s.Uri
 import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Config._
+import org.scalasteward.core.application.ExitCodePolicy.{
+  SuccessIfAnyRepoSucceeds,
+  SuccessOnlyIfAllReposSucceed
+}
 import org.scalasteward.core.data.Resolver
 import org.scalasteward.core.forge.ForgeType
 import org.scalasteward.core.forge.ForgeType.{AzureRepos, GitHub}
@@ -31,6 +36,7 @@ import org.scalasteward.core.forge.github.GitHubApp
 import org.scalasteward.core.git.Author
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.util.dateTime.renderFiniteDuration
+
 import scala.concurrent.duration._
 
 object Cli {
@@ -99,43 +105,24 @@ object Cli {
   private val signCommits: Opts[Boolean] =
     flag("sign-commits", "Whether to sign commits; default: false").orFalse
 
-  private val gitCfg: Opts[GitCfg] =
-    (gitAuthor, gitAskPass, signCommits).mapN(GitCfg.apply)
+  private val signoff: Opts[Boolean] =
+    flag("signoff", "Whether to signoff commits; default: false").orFalse
 
-  private val vcsType =
-    option[ForgeType](
-      "vcs-type",
-      s"deprecated in favor of --${name.forgeType}",
-      visibility = Visibility.Partial
-    ).validate(s"--vcs-type is deprecated; use --${name.forgeType} instead")(_ => false)
+  private val gitCfg: Opts[GitCfg] =
+    (gitAuthor, gitAskPass, signCommits, signoff).mapN(GitCfg.apply)
 
   private val forgeType = {
     val help = ForgeType.all.map(_.asString).mkString("One of ", ", ", "") +
       s"; default: ${GitHub.asString}"
-    option[ForgeType](name.forgeType, help).orElse(vcsType).withDefault(GitHub)
+    option[ForgeType](name.forgeType, help).withDefault(GitHub)
   }
-
-  private val vcsApiHost =
-    option[Uri](
-      "vcs-api-host",
-      s"deprecated in favor of --${name.forgeApiHost}",
-      visibility = Visibility.Partial
-    ).validate(s"--vcs-api-host is deprecated; use --${name.forgeApiHost} instead")(_ => false)
 
   private val forgeApiHost: Opts[Uri] =
     option[Uri](name.forgeApiHost, s"API URL of the forge; default: ${GitHub.publicApiBaseUrl}")
-      .orElse(vcsApiHost)
       .withDefault(GitHub.publicApiBaseUrl)
 
-  private val vcsLogin =
-    option[String](
-      "vcs-login",
-      s"deprecated in favor of --${name.forgeLogin}",
-      visibility = Visibility.Partial
-    ).validate(s"--vcs-login is deprecated; use --${name.forgeLogin} instead")(_ => false)
-
   private val forgeLogin: Opts[String] =
-    option[String](name.forgeLogin, "The user name for the forge").orElse(vcsLogin)
+    option[String](name.forgeLogin, "The user name for the forge")
 
   private val doNotFork: Opts[Boolean] =
     flag("do-not-fork", "Whether to not push the update branches to a fork; default: false").orFalse
@@ -196,7 +183,7 @@ object Cli {
     (whitelist, readOnly, enableSandbox).mapN(SandboxCfg.apply)
 
   private val maxBufferSize: Opts[Int] = {
-    val default = 16384
+    val default = 32768
     val help =
       s"Size of the buffer for the output of an external process in lines; default: $default"
     option[Int](name.maxBufferSize, help).withDefault(default)
@@ -337,6 +324,13 @@ object Cli {
       .withDefault(default)
   }
 
+  private val exitCodePolicy: Opts[ExitCodePolicy] = flag(
+    "exit-code-success-if-any-repo-succeeds",
+    s"Whether the Scala Steward process should exit with success (exit code ${ExitCode.Success.code}) if any repo succeeds; default: false"
+  ).orFalse.map { ifAnyRepoSucceeds =>
+    if (ifAnyRepoSucceeds) SuccessIfAnyRepoSucceeds else SuccessOnlyIfAllReposSucceed
+  }
+
   private val regular: Opts[Usage] = (
     workspace,
     reposFiles,
@@ -355,7 +349,8 @@ object Cli {
     gitHubApp,
     urlCheckerTestUrls,
     defaultMavenRepo,
-    refreshBackoffPeriod
+    refreshBackoffPeriod,
+    exitCodePolicy
   ).mapN(Config.apply).map(Usage.Regular.apply)
 
   private val validateRepoConfig: Opts[Usage] =

@@ -1,8 +1,9 @@
 import scala.util.Properties
 import scala.reflect.io.Path
-import com.typesafe.sbt.packager.docker._
+import com.typesafe.sbt.packager.docker.*
 import sbtcrossproject.{CrossProject, CrossType, Platform}
 import org.typelevel.sbt.gha.JavaSpec.Distribution.Temurin
+import org.typelevel.scalacoptions.ScalacOptions
 
 /// variables
 
@@ -21,7 +22,7 @@ val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
   "dummy" -> List(JVMPlatform)
 )
 
-val Scala213 = "2.13.12"
+val Scala213 = "2.13.15"
 val Scala3 = "3.3.1"
 
 /// sbt-typelevel configuration
@@ -51,15 +52,18 @@ ThisBuild / githubWorkflowPublish := Seq(
     name = Some("Publish Docker image")
   )
 )
-ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec(Temurin, "17"), JavaSpec(Temurin, "11"))
+ThisBuild / githubWorkflowJavaVersions := Seq("21", "17", "11").map(JavaSpec(Temurin, _))
 ThisBuild / githubWorkflowBuild :=
   Seq(
-    WorkflowStep
-      .Use(UseRef.Public("coursier", "setup-action", "v1"), params = Map("apps" -> "scalafmt")),
+    WorkflowStep.Use(
+      UseRef.Public("coursier", "setup-action", "v1"),
+      params = Map("apps" -> "scalafmt:3.8.3")
+    ),
     WorkflowStep.Sbt(List("validate"), name = Some("Build project")),
     WorkflowStep.Use(
-      UseRef.Public("codecov", "codecov-action", "v3"),
-      name = Some("Codecov")
+      ref = UseRef.Public("codecov", "codecov-action", "v4"),
+      name = Some("Codecov"),
+      env = Map("CODECOV_TOKEN" -> "${{ secrets.CODECOV_TOKEN }}")
     )
   )
 
@@ -93,6 +97,7 @@ ThisBuild / evictionErrorLevel := Level.Info
 ThisBuild / tpolecatDefaultOptionsMode := {
   if (insideCI.value) org.typelevel.sbt.tpolecat.CiMode else org.typelevel.sbt.tpolecat.DevMode
 }
+ThisBuild / tpolecatExcludeOptions += ScalacOptions.warnUnusedPatVars // https://github.com/scala/bug/issues/13041
 
 /// projects
 
@@ -279,6 +284,7 @@ lazy val dummy = myCrossProject("dummy")
   .settings(noPublishSettings)
   .settings(
     libraryDependencies ++= Seq(
+      Dependencies.millMain,
       Dependencies.scalaStewardMillPlugin
     )
   )
@@ -356,14 +362,10 @@ lazy val dockerSettings = Def.settings(
       s"tar -xf $sbtTgz",
       s"rm -f $sbtTgz"
     ).mkString(" && ")
-    val millVer = Dependencies.millScriptVersion
+    val millVer = Dependencies.millMain.revision
     val millBin = s"$binDir/mill"
-    val releasePageVersion = millVer.split("-") match {
-      case Array(v, m, _*) if m.startsWith("M") => s"${v}-${m}"
-      case Array(v, _*)                         => v
-    }
     val installMill = Seq(
-      s"$curl $millBin https://github.com/lihaoyi/mill/releases/download/${releasePageVersion}/$millVer",
+      s"$curl $millBin https://github.com/com-lihaoyi/mill/releases/download/$millVer/$millVer",
       s"chmod +x $millBin"
     ).mkString(" && ")
     val csBin = s"$binDir/cs"
@@ -382,7 +384,7 @@ lazy val dockerSettings = Def.settings(
       Cmd("USER", "root"),
       Cmd(
         "RUN",
-        "apk --no-cache add bash git ca-certificates curl maven openssh nodejs npm ncurses"
+        "apk --no-cache add bash git gpg ca-certificates curl maven openssh nodejs npm ncurses"
       ),
       Cmd("RUN", installSbt),
       Cmd("RUN", installMill),
@@ -447,6 +449,7 @@ runSteward := Def.taskDyn {
     Seq("--git-ask-pass", s"$home/.github/askpass/$gitHubLogin.sh"),
     // Seq("--github-app-id", IO.read(gitHubAppDir / "scala-steward.app-id.txt").trim),
     // Seq("--github-app-key-file", s"$gitHubAppDir/scala-steward.private-key.pem"),
+    Seq("--repo-config", s"$projectDir/.scala-steward.conf"),
     Seq("--whitelist", s"$home/.cache/coursier"),
     Seq("--whitelist", s"$home/.cache/JNA"),
     Seq("--whitelist", s"$home/.cache/mill"),

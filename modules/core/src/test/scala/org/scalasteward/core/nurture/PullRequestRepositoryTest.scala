@@ -14,6 +14,7 @@ import org.scalasteward.core.mock.MockContext.context.pullRequestRepository
 import org.scalasteward.core.mock.MockState.TraceEntry
 import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
 import org.scalasteward.core.mock.{MockEff, MockState}
+import org.scalasteward.core.repoconfig.{RetractedArtifact, UpdatePattern, VersionPattern}
 import org.scalasteward.core.util.Nel
 
 import java.util.concurrent.atomic.AtomicInteger
@@ -120,6 +121,51 @@ class PullRequestRepositoryTest extends FunSuite {
 
     assertEquals(emptyResult, List.empty)
     assertEquals(result, List.empty)
+  }
+
+  test("getRetractedPullRequests with no retractions defined") {
+    val (_, obtained) = beforeAndAfterPRCreation(portableScala) { repo =>
+      pullRequestRepository.getRetractedPullRequests(repo, List.empty)
+    }
+    assertEquals(obtained, List.empty[(PullRequestData[Id], RetractedArtifact)])
+  }
+
+  test("getRetractedPullRequests with retractions") {
+    val retractedPortableScala = RetractedArtifact(
+      "a reason",
+      "doc URI",
+      List(
+        UpdatePattern(
+          "org.portable-scala".g,
+          Some("sbt-scalajs-crossproject"),
+          Some(VersionPattern(exact = Some("1.0.0")))
+        )
+      )
+    )
+    val (_, obtained) = beforeAndAfterPRCreation(portableScala) { repo =>
+      pullRequestRepository.getRetractedPullRequests(repo, List(retractedPortableScala))
+    }
+    assertEquals(obtained.size, 1)
+    assertEquals(obtained.head._1.update, portableScala)
+    assertEquals(obtained.head._2, retractedPortableScala)
+  }
+
+  test("getRetractedPullRequests with retractions for different version") {
+    val retractedPortableScala = RetractedArtifact(
+      "a reason",
+      "doc URI",
+      List(
+        UpdatePattern(
+          "org.portable-scala".g,
+          Some("sbt-scalajs-crossproject"),
+          Some(VersionPattern(exact = Some("2.0.0")))
+        )
+      )
+    )
+    val (_, obtained) = beforeAndAfterPRCreation(portableScala) { repo =>
+      pullRequestRepository.getRetractedPullRequests(repo, List(retractedPortableScala))
+    }
+    assertEquals(obtained, List.empty[(PullRequestData[Id], RetractedArtifact)])
   }
 
   test("findLatestPullRequest ignores grouped updates") {

@@ -59,7 +59,6 @@ object Resolver {
   val mavenCentral: MavenRepository =
     MavenRepository("public", "https://repo1.maven.org/maven2/", None, Nil)
 
-  @annotation.nowarn("cat=unused-locals")
   implicit val resolverCodec: Codec[Resolver] = {
     implicit val customConfig: Configuration = Configuration.default.withDefaults
     deriveConfiguredCodec

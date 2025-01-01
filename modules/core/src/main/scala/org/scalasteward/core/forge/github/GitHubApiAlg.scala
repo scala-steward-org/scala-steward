@@ -99,7 +99,7 @@ final class GitHubApiAlg[F[_]](
       F.raiseWhen(repoOut.archived)(RepositoryArchived(repo))
     }
 
-  /** https://docs.github.com/en/rest/pulls?apiVersion=2022-11-28#list-pull-requests */
+  /** https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#list-pull-requests */
   override def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]] =
     client.get(url.listPullRequests(repo, head, base), modify)
 

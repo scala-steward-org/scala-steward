@@ -7,7 +7,6 @@ import org.http4s.{HttpApp, Uri}
 import org.scalasteward.core.git.FileGitAlg
 import org.scalasteward.core.git.FileGitAlgTest.ioAuxGitAlg
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
-import org.scalasteward.core.mock.MockConfig.mockRoot
 import org.scalasteward.core.mock.MockState.TraceEntry
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 
@@ -85,13 +84,15 @@ object MockState {
 
       def git(repoDir: File, args: String*): Cmd = {
         val env =
-          List(s"GIT_ASKPASS=$mockRoot/askpass.sh", "VAR1=val1", "VAR2=val2", repoDir.toString)
+          List("VAR1=val1", "VAR2=val2", repoDir.toString)
         Cmd(env ++ FileGitAlg.gitCmd.toList ++ args)
       }
 
       def gitCommit(repoDir: File, messages: String*): Cmd = {
         val args =
-          "commit" :: "--all" :: "--no-gpg-sign" :: messages.toList.flatMap(m => List("-m", m))
+          "commit" :: "--all" :: "--no-gpg-sign" :: "--no-signoff" :: messages.toList.flatMap(m =>
+            List("-m", m)
+          )
         git(repoDir, args: _*)
       }
 

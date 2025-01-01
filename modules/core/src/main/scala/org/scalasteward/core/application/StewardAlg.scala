@@ -20,7 +20,7 @@ import cats.effect.{ExitCode, Sync}
 import cats.syntax.all._
 import fs2.Stream
 import org.scalasteward.core.data.Repo
-import org.scalasteward.core.forge.github.{GitHubApp, GitHubAppApiAlg, GitHubAuthAlg}
+import org.scalasteward.core.forge.ForgeAuthAlg
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.NurtureAlg
@@ -30,14 +30,12 @@ import org.scalasteward.core.util
 import org.scalasteward.core.util.DateTimeAlg
 import org.scalasteward.core.util.logger.LoggerOps
 import org.typelevel.log4cats.Logger
-import scala.concurrent.duration._
 
 final class StewardAlg[F[_]](config: Config)(implicit
     dateTimeAlg: DateTimeAlg[F],
     fileAlg: FileAlg[F],
     gitAlg: GitAlg[F],
-    githubAppApiAlg: GitHubAppApiAlg[F],
-    githubAuthAlg: GitHubAuthAlg[F],
+    forgeAuthAlg: ForgeAuthAlg[F],
     logger: Logger[F],
     nurtureAlg: NurtureAlg[F],
     pruningAlg: PruningAlg[F],
@@ -47,35 +45,20 @@ final class StewardAlg[F[_]](config: Config)(implicit
     workspaceAlg: WorkspaceAlg[F],
     F: Sync[F]
 ) {
-  private def getGitHubAppRepos(githubApp: GitHubApp): Stream[F, Repo] =
-    Stream.evals[F, List, Repo] {
-      for {
-        jwt <- githubAuthAlg.createJWT(githubApp, 2.minutes)
-        installations <- githubAppApiAlg.installations(jwt)
-        repositories <- installations.traverse { installation =>
-          githubAppApiAlg
-            .accessToken(jwt, installation.id)
-            .flatMap(token => githubAppApiAlg.repositories(token.token))
-        }
-        repos <- repositories.flatMap(_.repositories).flatTraverse { repo =>
-          repo.full_name.split('/') match {
-            case Array(owner, name) => F.pure(List(Repo(owner, name)))
-            case _                  => logger.error(s"invalid repo $repo").as(List.empty[Repo])
-          }
-        }
-      } yield repos
-    }
-
   private def steward(repo: Repo): F[Either[Throwable, Unit]] = {
     val label = s"Steward ${repo.show}"
     logger.infoTotalTime(label) {
       logger.attemptError.label(util.string.lineLeftRight(label), Some(label)) {
         F.guarantee(
-          repoCacheAlg.checkCache(repo).flatMap { case (data, fork) =>
-            pruningAlg.needsAttention(data).flatMap {
-              _.traverse_(states => nurtureAlg.nurture(data, fork, states.map(_.update)))
-            }
-          },
+          for {
+            dataAndFork <- repoCacheAlg.checkCache(repo)
+            (data, fork) = dataAndFork
+            _ <- nurtureAlg.closeRetractedPullRequests(data)
+            statesO <- pruningAlg.needsAttention(data)
+            result <- statesO.traverse_(states =>
+              nurtureAlg.nurture(data, fork, states.map(_.update))
+            )
+          } yield result,
           gitAlg.removeClone(repo)
         )
       }
@@ -88,7 +71,7 @@ final class StewardAlg[F[_]](config: Config)(implicit
         _ <- selfCheckAlg.checkAll
         _ <- workspaceAlg.removeAnyRunSpecificFiles
         exitCode <-
-          (config.githubApp.map(getGitHubAppRepos).getOrElse(Stream.empty) ++
+          (Stream.evals(forgeAuthAlg.accessibleRepos) ++
             reposFilesLoader.loadAll(config.reposFiles))
             .evalMap(repo => steward(repo).map(_.bimap(repo -> _, _ => repo)))
             .compile
@@ -98,7 +81,7 @@ final class StewardAlg[F[_]](config: Config)(implicit
               for {
                 summaryFile <- workspaceAlg.runSummaryFile
                 _ <- fileAlg.writeFile(summaryFile, runResults.markdownSummary)
-              } yield runResults.exitCode
+              } yield config.exitCodePolicy.exitCodeFor(runResults)
             }
       } yield exitCode
     }

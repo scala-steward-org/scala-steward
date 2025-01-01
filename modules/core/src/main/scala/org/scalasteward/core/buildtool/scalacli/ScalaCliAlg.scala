@@ -92,5 +92,5 @@ final class ScalaCliAlg[F[_]](implicit
     } yield dependencies
 
   override protected val scalafixIssue: Option[String] =
-    Some("https://github.com/VirtusLab/scala-cli/issues/647")
+    Some("https://github.com/scala-steward-org/scala-steward/issues/3486")
 }

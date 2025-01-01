@@ -42,6 +42,7 @@ final case class UpdatesConfig(
     allow: List[UpdatePattern] = List.empty,
     allowPreReleases: List[UpdatePattern] = List.empty,
     ignore: List[UpdatePattern] = List.empty,
+    retracted: List[RetractedArtifact] = List.empty,
     limit: Option[NonNegInt] = defaultLimit,
     fileExtensions: Option[List[String]] = None
 ) {
@@ -98,6 +99,7 @@ object UpdatesConfig {
       ".sc",
       ".scala",
       scalafmtConfName,
+      ".sdkmanrc",
       ".yml",
       buildPropertiesName,
       pomXmlName
@@ -123,6 +125,7 @@ object UpdatesConfig {
           allow = mergeAllow(x.allow, y.allow),
           allowPreReleases = mergeAllow(x.allowPreReleases, y.allowPreReleases),
           ignore = mergeIgnore(x.ignore, y.ignore),
+          retracted = x.retracted ::: y.retracted,
           limit = x.limit.orElse(y.limit),
           fileExtensions = mergeFileExtensions(x.fileExtensions, y.fileExtensions)
         )
@@ -133,9 +136,9 @@ object UpdatesConfig {
       x: List[UpdatePattern],
       y: List[UpdatePattern]
   ): List[UpdatePattern] =
-    x ::: y.filterNot { p1 =>
-      x.exists(p2 => p1.groupId === p2.groupId && p1.artifactId === p2.artifactId)
-    }
+    x.filterNot { p1 =>
+      y.exists(p2 => p1.groupId === p2.groupId && p1.artifactId === p2.artifactId)
+    } ::: y
 
   private[repoconfig] val nonExistingUpdatePattern: List[UpdatePattern] =
     List(UpdatePattern(GroupId("non-exist"), None, None))

@@ -14,12 +14,19 @@
  * limitations under the License.
  */
 
-package org.scalasteward.core.forge.github
+package org.scalasteward.core.application
 
-import io.circe.Codec
-import io.circe.generic.semiauto.deriveCodec
+import cats.effect.ExitCode
 
-case class TokenOut(token: String)
-object TokenOut {
-  implicit val tokenCodec: Codec[TokenOut] = deriveCodec
+trait ExitCodePolicy {
+  def exitCodeFor(runResults: RunResults): ExitCode
+}
+
+object ExitCodePolicy {
+  def successIf(isSuccess: RunResults => Boolean): ExitCodePolicy =
+    (runResults: RunResults) => if (isSuccess(runResults)) ExitCode.Success else ExitCode.Error
+
+  val SuccessIfAnyRepoSucceeds: ExitCodePolicy = successIf(_.successRepos.nonEmpty)
+
+  val SuccessOnlyIfAllReposSucceed: ExitCodePolicy = successIf(_.reposWithFailures.isEmpty)
 }

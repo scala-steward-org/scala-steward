@@ -32,7 +32,7 @@ final class RepoConfigAlg[F[_]](maybeGlobalRepoConfig: Option[RepoConfig])(impli
     F: MonadThrow[F]
 ) {
   def mergeWithGlobal(maybeRepoConfig: Option[RepoConfig]): RepoConfig =
-    (maybeRepoConfig |+| maybeGlobalRepoConfig).getOrElse(RepoConfig.empty)
+    (maybeGlobalRepoConfig |+| maybeRepoConfig).getOrElse(RepoConfig.empty)
 
   def readRepoConfig(repo: Repo): F[ConfigParsingResult] =
     for {

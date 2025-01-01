@@ -16,10 +16,11 @@
 
 package org.scalasteward.core.forge.github
 
-import io.circe.Decoder
-import io.circe.generic.semiauto.deriveDecoder
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 
 case class InstallationOut(id: Long)
 object InstallationOut {
+  implicit val installationEncoder: Encoder[InstallationOut] = deriveEncoder
   implicit val installationDecoder: Decoder[InstallationOut] = deriveDecoder
 }

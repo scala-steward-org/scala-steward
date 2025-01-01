@@ -63,7 +63,8 @@ final case class Config(
     githubApp: Option[GitHubApp],
     urlCheckerTestUrls: Nel[Uri],
     defaultResolver: Resolver,
-    refreshBackoffPeriod: FiniteDuration
+    refreshBackoffPeriod: FiniteDuration,
+    exitCodePolicy: ExitCodePolicy
 ) {
   def forgeSpecificCfg: ForgeSpecificCfg =
     forgeCfg.tpe match {
@@ -80,7 +81,8 @@ object Config {
   final case class GitCfg(
       gitAuthor: Author,
       gitAskPass: File,
-      signCommits: Boolean
+      signCommits: Boolean,
+      signoff: Boolean
   )
 
   final case class ForgeCfg(

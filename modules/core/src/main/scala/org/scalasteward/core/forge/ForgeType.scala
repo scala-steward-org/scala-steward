@@ -21,8 +21,12 @@ import cats.syntax.all._
 import org.http4s.Uri
 import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Config.ForgeCfg
+import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.ForgeType._
+import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.unexpectedString
+
+import scala.annotation.nowarn
 
 sealed trait ForgeType extends Product with Serializable {
   def publicWebHost: Option[String]
@@ -40,6 +44,11 @@ sealed trait ForgeType extends Product with Serializable {
   val files: FileUriPattern
   def supportsForking: Boolean = true
   def supportsLabels: Boolean = true
+
+  /** Determines the `head` (GitHub) / `source_branch` (GitLab, Bitbucket) parameter for searching
+    * for already existing pull requests or creating new pull requests.
+    */
+  def pullRequestHeadFor(@nowarn fork: Repo, updateBranch: Branch): String = updateBranch.name
 
   val asString: String = this match {
     case AzureRepos      => "azure-repos"
@@ -94,6 +103,8 @@ object ForgeType {
     val publicApiBaseUrl = uri"https://api.github.com"
     val diffs: DiffUriPattern = (from, to) => _ / "compare" / s"$from...$to"
     val files: FileUriPattern = fileName => _ / "blob" / "master" / fileName
+    override def pullRequestHeadFor(fork: Repo, updateBranch: Branch): String =
+      s"${fork.owner}:${updateBranch.name}"
   }
 
   case object GitLab extends ForgeType {

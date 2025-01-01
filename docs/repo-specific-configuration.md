@@ -104,6 +104,19 @@ updates.pin  = [ { groupId = "com.example", artifactId="foo", version = "1.1." }
 # Defaults to empty `[]` which mean Scala Steward will not ignore dependencies.
 updates.ignore = [ { groupId = "org.acme", artifactId="foo", version = "1.0" } ]
 
+# The dependencies which match the given pattern are retracted. Their existing pull-request will be closed.
+#
+# Each entry must have a `reason`, a `doc` URL and a list of dependency patterns.
+updates.retracted = [
+  {
+    reason = "Ignore version 3.6.0 as it is abandoned due to broken compatibility",
+    doc = "https://contributors.scala-lang.org/t/broken-scala-3-6-0-release/6792",
+    artifacts = [
+      { groupId = "org.scala-lang", artifactId = "scala3-compiler", version = { exact = "3.6.0" } }
+    ]
+  }
+]
+
 # The dependencies which match the given patterns are allowed to be updated to pre-release from stable.
 # This also implies, that it will be allowed for snapshot versions to be updated to snapshots of different series.
 #
@@ -117,7 +130,7 @@ updates.allowPreReleases  = [ { groupId = "com.example", artifactId="foo" } ]
 updates.limit = 5
 
 # The extensions of files that should be updated.
-# Default: [".mill-version",".sbt",".sbt.shared",".sc",".scala",".scalafmt.conf",".yml","build.properties","mill-version","pom.xml"]
+# Default: [".mill-version",".sbt",".sbt.shared",".sc",".scala",".scalafmt.conf",".sdkmanrc",".yml","build.properties","mill-version","pom.xml"]
 updates.fileExtensions = [".scala", ".sbt", ".sbt.shared", ".sc", ".yml", ".md", ".markdown", ".txt"]
 
 # If "on-conflicts", Scala Steward will update the PR it created to resolve conflicts as
@@ -184,6 +197,10 @@ dependencyOverrides = [
 # to add assignees or request reviews. Consequently, it won't work for public @scala-steward instance on GitHub.
 assignees = [ "username1", "username2" ]
 reviewers = [ "username1", "username2" ]
+
+# If true, Scala Steward will sign off all commits (e.g. `git --signoff`).
+# Default: false
+signoffCommits = true
 ```
 
 The version information given in the patterns above can be in two formats:

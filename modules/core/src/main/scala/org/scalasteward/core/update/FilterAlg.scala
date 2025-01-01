@@ -54,6 +54,7 @@ object FilterAlg {
         case NotAllowedByConfig(_)      => "not allowed by config"
         case NoSuitableNextVersion(_)   => "no suitable next version"
         case VersionOrderingConflict(_) => "version ordering conflict"
+        case IgnoreScalaNext(_)         => "not upgrading from Scala LTS to Next version"
       }
   }
 
@@ -62,9 +63,31 @@ object FilterAlg {
   final case class NotAllowedByConfig(update: Update.ForArtifactId) extends RejectionReason
   final case class NoSuitableNextVersion(update: Update.ForArtifactId) extends RejectionReason
   final case class VersionOrderingConflict(update: Update.ForArtifactId) extends RejectionReason
+  final case class IgnoreScalaNext(update: Update.ForArtifactId) extends RejectionReason
 
   def localFilter(update: Update.ForArtifactId, repoConfig: RepoConfig): FilterResult =
-    repoConfig.updates.keep(update).flatMap(globalFilter(_, repoConfig))
+    repoConfig.updates.keep(update).flatMap(scalaLTSFilter).flatMap(globalFilter(_, repoConfig))
+
+  def scalaLTSFilter(update: Update.ForArtifactId): FilterResult =
+    if (!isScala3Lang(update))
+      Right(update)
+    else {
+      if (update.currentVersion >= scalaNextMinVersion) {
+        // already on Scala Next
+        Right(update)
+      } else {
+        val filteredVersions = update.newerVersions.filterNot(_ >= scalaNextMinVersion)
+        if (filteredVersions.nonEmpty)
+          Right(update.copy(newerVersions = Nel.fromListUnsafe(filteredVersions)))
+        else
+          Left(IgnoreScalaNext(update))
+      }
+    }
+
+  def isScala3Lang(update: Update.ForArtifactId): Boolean =
+    scala3LangModules.exists { case (g, a) =>
+      update.groupId == g && update.artifactIds.exists(_.name == a.name)
+    }
 
   private def globalFilter(update: Update.ForArtifactId, repoConfig: RepoConfig): FilterResult =
     selectSuitableNextVersion(update, repoConfig).flatMap(checkVersionOrdering)

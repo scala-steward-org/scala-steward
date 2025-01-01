@@ -246,4 +246,39 @@ class FilterAlgTest extends FunSuite {
     val dependency = "org.typelevel".g % ("cats-effect", "cats-effect_2.12").a % "1.0.0"
     assert(isDependencyConfigurationIgnored(dependency.copy(configurations = Some("scalafmt"))))
   }
+
+  test("scalaLTSFilter: LTS, no update") {
+    val update = ("org.scala-lang".g % "scala3-compiler".a % "3.3.2" %> Nel.of("3.4.0")).single
+    assertEquals(scalaLTSFilter(update), Left(IgnoreScalaNext(update)))
+  }
+
+  test("scalaLTSFilter: LTS, filter versions") {
+    val update =
+      ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.3.2" %> Nel.of(
+        "3.3.3",
+        "3.4.0"
+      )).single
+    assertEquals(scalaLTSFilter(update), Right(update.copy(newerVersions = Nel.of("3.3.3".v))))
+  }
+
+  test("scalaLTSFilter: Next") {
+    val update =
+      ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.4.0" %> Nel.of(
+        "3.4.1"
+      )).single
+    assertEquals(scalaLTSFilter(update), Right(update))
+  }
+
+  test("isScala3Lang: true") {
+    val update =
+      ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.3.3" %> Nel.of(
+        "3.4.0"
+      )).single
+    assert(isScala3Lang(update))
+  }
+
+  test("isScala3Lang: false") {
+    val update = ("org.scala-lang".g % "scala-compiler".a % "2.13.11" %> Nel.of("2.13.12")).single
+    assert(!isScala3Lang(update))
+  }
 }

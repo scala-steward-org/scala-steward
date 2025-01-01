@@ -28,10 +28,10 @@ import org.scalasteward.core.forge.data.NewPullRequestData.{filterLabels, labels
 import org.scalasteward.core.forge.data._
 import org.scalasteward.core.forge.{ForgeApiAlg, ForgeRepoAlg}
 import org.scalasteward.core.git.{Branch, Commit, GitAlg}
-import org.scalasteward.core.repoconfig.PullRequestUpdateStrategy
+import org.scalasteward.core.repoconfig.{PullRequestUpdateStrategy, RetractedArtifact}
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.util.{Nel, UrlChecker}
-import org.scalasteward.core.{forge, git, util}
+import org.scalasteward.core.{git, util}
 import org.typelevel.log4cats.Logger
 
 final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
@@ -92,7 +92,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
   private def processUpdate(data: UpdateData): F[ProcessResult] =
     for {
       _ <- logger.info(s"Process update ${data.update.show}")
-      head = forge.listingBranch(config.tpe, data.fork, data.updateBranch)
+      head = config.tpe.pullRequestHeadFor(data.fork, data.updateBranch)
       pullRequests <- forgeApiAlg.listPullRequests(data.repo, head, data.baseBranch)
       result <- pullRequests.headOption match {
         case Some(pr) if pr.state.isClosed && data.update.isInstanceOf[Update.Single] =>
@@ -230,20 +230,18 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
           .on(u => List(u.currentVersion.value), _.updates.map(_.currentVersion.value))
           .flatTraverse(gitAlg.findFilesContaining(data.repo, _))
           .map(_.distinct)
-      branchName = forge.createBranch(config.tpe, data.fork, data.updateBranch)
       allLabels = labelsFor(data.update, edits, filesWithOldVersion, artifactIdToVersionScheme)
       labels = filterLabels(allLabels, data.repoData.config.pullRequests.includeMatchedLabels)
-      requestData = NewPullRequestData.from(
-        data = data,
-        branchName = branchName,
-        edits = edits,
-        artifactIdToUrl = artifactIdToUrl,
-        artifactIdToUpdateInfoUrls = artifactIdToUpdateInfoUrls.toMap,
-        filesWithOldVersion = filesWithOldVersion,
-        addLabels = config.addLabels,
-        labels = data.repoData.config.pullRequests.customLabels ++ labels
-      )
-    } yield requestData
+    } yield NewPullRequestData.from(
+      data = data,
+      branchName = config.tpe.pullRequestHeadFor(data.fork, data.updateBranch),
+      edits = edits,
+      artifactIdToUrl = artifactIdToUrl,
+      artifactIdToUpdateInfoUrls = artifactIdToUpdateInfoUrls.toMap,
+      filesWithOldVersion = filesWithOldVersion,
+      addLabels = config.addLabels,
+      labels = data.repoData.config.pullRequests.customLabels ++ labels
+    )
 
   private def createPullRequest(data: UpdateData, edits: List[EditAttempt]): F[ProcessResult] =
     for {
@@ -308,4 +306,30 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       requestData <- preparePullRequest(data, edits)
       _ <- forgeApiAlg.updatePullRequest(number: PullRequestNumber, data.repo, requestData)
     } yield result
+
+  def closeRetractedPullRequests(data: RepoData): F[Unit] =
+    pullRequestRepository
+      .getRetractedPullRequests(data.repo, data.config.updates.retracted)
+      .flatMap {
+        _.traverse_ { case (oldPr, retractedArtifact) =>
+          closeRetractedPullRequest(data, oldPr, retractedArtifact)
+        }
+      }
+
+  private def closeRetractedPullRequest(
+      data: RepoData,
+      oldPr: PullRequestData[Id],
+      retractedArtifact: RetractedArtifact
+  ): F[Unit] =
+    logger.attemptWarn.label_(
+      s"Closing retracted PR ${oldPr.url.renderString} for ${oldPr.update.show} because of '${retractedArtifact.reason}'"
+    ) {
+      for {
+        _ <- pullRequestRepository.changeState(data.repo, oldPr.url, PullRequestState.Closed)
+        comment = retractedArtifact.retractionMsg
+        _ <- forgeApiAlg.commentPullRequest(data.repo, oldPr.number, comment)
+        _ <- forgeApiAlg.closePullRequest(data.repo, oldPr.number)
+        _ <- deleteRemoteBranch(data.repo, oldPr.updateBranch)
+      } yield F.unit
+    }
 }

@@ -30,8 +30,31 @@ class UpdatesConfigTest extends DisciplineSuite {
 
     assertEquals(UpdatesConfig.mergePin(List(aa1), List(aa1, ac3)), List(aa1, ac3))
 
-    assertEquals(UpdatesConfig.mergePin(List(aa1), List(aa2)), List(aa1))
-    assertEquals(UpdatesConfig.mergePin(List(aa2), List(aa1)), List(aa2))
+    assertEquals(UpdatesConfig.mergePin(List(aa1), List(aa2)), List(aa2))
+    assertEquals(UpdatesConfig.mergePin(List(aa2), List(aa1)), List(aa1))
+  }
+
+  test("mergePin: scala 3 LTS") {
+    val groupIdScala = GroupId("org.scala-lang")
+    val scala = Some("scala3-compiler")
+    val s33 = UpdatePattern(groupIdScala, scala, Some(VersionPattern(Some("3.3."))))
+    val s34 = UpdatePattern(groupIdScala, scala, Some(VersionPattern(Some("3.4."))))
+    val s35 = UpdatePattern(groupIdScala, scala, Some(VersionPattern(Some("3.5."))))
+
+    def mergeDefaultWithLocal(
+        default: List[UpdatePattern],
+        local: List[UpdatePattern]
+    ): List[UpdatePattern] =
+      UpdatesConfig.mergePin(default, local)
+
+    assertEquals(mergeDefaultWithLocal(default = List(s33), local = Nil), List(s33))
+    assertEquals(mergeDefaultWithLocal(default = List(s33), local = List(s34)), List(s34))
+    assertEquals(mergeDefaultWithLocal(default = List(s33, s35), local = Nil), List(s33, s35))
+    assertEquals(mergeDefaultWithLocal(default = List(s33, s35), local = List(s34)), List(s34))
+    assertEquals(
+      mergeDefaultWithLocal(default = List(s33, s35), local = List(s34, s35)),
+      List(s34, s35)
+    )
   }
 
   test("mergeAllow: basic checks") {

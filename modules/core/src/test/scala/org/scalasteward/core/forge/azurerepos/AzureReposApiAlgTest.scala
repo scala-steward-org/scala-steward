@@ -1,11 +1,9 @@
 package org.scalasteward.core.forge.azurerepos
 
-import cats.syntax.semigroupk._
 import munit.CatsEffectSuite
 import org.http4s.dsl.Http4sDsl
-import org.http4s.headers.Authorization
 import org.http4s.implicits._
-import org.http4s.{BasicCredentials, HttpApp, Uri}
+import org.http4s.{HttpApp, Uri}
 import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.application.Config.AzureReposCfg
 import org.scalasteward.core.data.Repo
@@ -14,11 +12,10 @@ import org.scalasteward.core.forge.{ForgeSelection, ForgeType}
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context.httpJsonClient
+import org.scalasteward.core.mock.MockForgeAuthAlg.noAuth
 import org.scalasteward.core.mock.{MockEff, MockState}
 
 class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
-  private val user = AuthenticatedUser("user", "pass")
-  private val userM = MockEff.pure(user)
   private val repo = Repo("scala-steward-org", "scala-steward")
   private val apiHost = uri"https://dev.azure.com"
 
@@ -28,16 +25,9 @@ class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   object targetRefNameMatcher
       extends QueryParamDecoderMatcher[String]("searchCriteria.targetRefName")
 
-  private val basicAuth = Authorization(BasicCredentials(user.login, user.accessToken))
-  private val auth = HttpApp[MockEff] { request =>
-    (request: @unchecked) match {
-      case _ if !request.headers.get[Authorization].contains(basicAuth) => Forbidden()
-    }
-  }
   private val httpApp = HttpApp[MockEff] {
     case GET -> Root / "azure-org" / repo.owner / "_apis/git/repositories" / repo.repo =>
-      Ok("""
-           |{
+      Ok("""{
            |    "id": "3846fbbd-71a0-402b-8352-6b1b9b2088aa",
            |    "name": "scala-steward",
            |    "url": "https://dev.azure.com/azure-org/scala-steward-org/_apis/git/repositories/scala-steward",
@@ -53,8 +43,7 @@ class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
     case GET -> Root / "azure-org" / repo.owner / "_apis/git/repositories" / repo.repo / "stats/branches"
         :? branchNameMatcher("main") =>
-      Ok("""
-           |{
+      Ok("""{
            |    "commit": {
            |        "commitId": "f55c9900528e548511fbba6874c873d44c5d714c"                          
            |    },
@@ -66,8 +55,7 @@ class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
 
     case POST -> Root / "azure-org" / repo.owner / "_apis/git/repositories" / repo.repo / "pullrequests" =>
       Created(
-        """
-          |{
+        """{
           |  "repository": {
           |    "id": "3846fbbd-71a0-402b-8352-6b1b9b2088aa",
           |    "name": "scala-steward",
@@ -93,8 +81,7 @@ class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     case GET -> Root / "azure-org" / repo.owner / "_apis/git/repositories" / repo.repo / "pullrequests" :?
         sourceRefNameMatcher("refs/heads/update/cats-effect-3.3.14")
         +& targetRefNameMatcher("refs/heads/main") =>
-      Ok("""
-           |{
+      Ok("""{
            |   "value":[
            |      {
            |         "pullRequestId":26,
@@ -118,8 +105,7 @@ class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
            |}""".stripMargin)
 
     case PATCH -> Root / "azure-org" / repo.owner / "_apis/git/repositories" / repo.repo / "pullrequests" / "26" =>
-      Ok("""
-           |{
+      Ok("""{
            |  "repository": {
            |    "id": "3846fbbd-71a0-402b-8352-6b1b9b2088aa",
            |    "name": "scala-steward",
@@ -142,8 +128,7 @@ class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
            |}""".stripMargin)
 
     case POST -> Root / "azure-org" / repo.owner / "_apis/git/repositories" / repo.repo / "pullrequests" / "26" / "threads" =>
-      Ok("""
-           |{
+      Ok("""{
            |   "id":17,
            |   "publishedDate":"2022-07-24T22:06:00.067Z",
            |   "lastUpdatedDate":"2022-07-24T22:06:00.067Z",
@@ -161,8 +146,7 @@ class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
            |}""".stripMargin)
 
     case POST -> Root / "azure-org" / repo.owner / "_apis/git/repositories" / repo.repo / "pullrequests" / "26" / "labels" =>
-      Ok("""
-           |{
+      Ok("""{
            |    "id": "921dbff4-9c00-49d6-9262-ab0d6e4a13f1",
            |    "name": "dependency-updates",
            |    "active": true,
@@ -172,11 +156,12 @@ class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     case _ => NotFound()
   }
 
-  private val state = MockState.empty.copy(clientResponses = auth <+> httpApp)
+  private val state = MockState.empty.copy(clientResponses = httpApp)
 
   private val forgeCfg = config.forgeCfg.copy(apiHost = apiHost, tpe = ForgeType.AzureRepos)
   private val azureReposCfg = AzureReposCfg(organization = Some("azure-org"))
-  private val azureReposApiAlg = ForgeSelection.forgeApiAlg[MockEff](forgeCfg, azureReposCfg, userM)
+  private val azureReposApiAlg =
+    ForgeSelection.forgeApiAlg[MockEff](forgeCfg, azureReposCfg, noAuth.authenticateApi)
 
   test("getRepo") {
     val obtained = azureReposApiAlg.getRepo(repo).runA(state)
@@ -209,7 +194,7 @@ class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
           title = "Update cats-effect to 3.3.14",
           body = "Updates org.typelevel:cats-effect  from 3.3.13 to 3.3.14.",
           head = "refs/heads/update/cats-effect-3.3.14",
-          base = Branch("refs/heads/main"),
+          base = Branch("main"),
           labels = List.empty,
           assignees = List.empty,
           reviewers = List.empty

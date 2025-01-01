@@ -39,7 +39,8 @@ class MillAlgTest extends FunSuite {
     val millCmd = Cmd.execSandboxed(
       repoDir,
       "mill",
-      "-i",
+      "--no-server",
+      "--ticker=false",
       "--import",
       "ivy:org.scala-steward::scala-steward-mill-plugin::0.18.0",
       "show",

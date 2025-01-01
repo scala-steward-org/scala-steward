@@ -31,7 +31,8 @@ final case class PostUpdateHook(
     commitMessage: Update.Single => CommitMsg,
     enabledByCache: RepoCache => Boolean,
     enabledByConfig: RepoConfig => Boolean,
-    addToGitBlameIgnoreRevs: Boolean
+    addToGitBlameIgnoreRevs: Boolean,
+    signoffCommits: Option[Boolean]
 ) {
   def showCommand: String = command.mkString_("'", " ", "'")
 }

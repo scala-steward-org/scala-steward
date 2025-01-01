@@ -16,14 +16,11 @@
 
 package org.scalasteward.core.application
 
-import cats.effect.ExitCode
 import cats.syntax.all._
 import org.scalasteward.core.data.Repo
 
 case class RunResults(results: List[Either[(Repo, Throwable), Repo]]) {
   val (reposWithFailures, successRepos) = results.separate
-
-  val exitCode: ExitCode = if (reposWithFailures.isEmpty) ExitCode.Success else ExitCode.Error
 
   val markdownSummary: String = {
     val failuresSummaryOpt = Option.when(reposWithFailures.nonEmpty) {

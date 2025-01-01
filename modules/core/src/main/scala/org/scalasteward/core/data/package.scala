@@ -19,14 +19,31 @@ package org.scalasteward.core
 package object data {
   val scalaLangGroupId: GroupId = GroupId("org.scala-lang")
 
-  val scalaLangModules: List[(GroupId, ArtifactId)] =
+  val scala2LangModules: List[(GroupId, ArtifactId)] =
     List(
       (scalaLangGroupId, ArtifactId("scala-compiler")),
       (scalaLangGroupId, ArtifactId("scala-library")),
       (scalaLangGroupId, ArtifactId("scala-reflect")),
-      (scalaLangGroupId, ArtifactId("scalap")),
-      (scalaLangGroupId, ArtifactId("scala3-compiler")),
-      (scalaLangGroupId, ArtifactId("scala3-library")),
-      (scalaLangGroupId, ArtifactId("scala3-library_sjs1"))
+      (scalaLangGroupId, ArtifactId("scalap"))
     )
+
+  val scala3LangModules: List[(GroupId, ArtifactId)] =
+    List(
+      "scala3-compiler",
+      "scala3-library",
+      "scala3-library_sjs1",
+      "scala2-library-cc-tasty-experimental",
+      "scala2-library-tasty-experimental",
+      "scala3-language-server",
+      "scala3-presentation-compiler",
+      "scala3-staging",
+      "scala3-tasty-inspector",
+      "scaladoc",
+      "tasty-core"
+    ).map(artifactId => (scalaLangGroupId, ArtifactId(artifactId)))
+
+  val scalaLangModules: List[(GroupId, ArtifactId)] =
+    scala2LangModules ++ scala3LangModules
+
+  val scalaNextMinVersion: Version = Version("3.4.0-NIGHTLY")
 }

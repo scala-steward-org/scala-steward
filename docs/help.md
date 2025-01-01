@@ -4,7 +4,7 @@ All command line arguments for the `scala-steward` application.
 
 ```
 Usage:
-    scala-steward --workspace <file> --repos-file <uri> [--repos-file <uri>]... [--git-author-name <string>] --git-author-email <string> [--git-author-signing-key <string>] --git-ask-pass <file> [--sign-commits] [--forge-type <forge-type>] [--forge-api-host <uri>] --forge-login <string> [--do-not-fork] [--add-labels] [--ignore-opts-files] [--env-var <name=value>]... [--process-timeout <duration>] [--whitelist <string>]... [--read-only <string>]... [--enable-sandbox | --disable-sandbox] [--max-buffer-size <integer>] [--repo-config <uri>]... [--disable-default-repo-config] [--scalafix-migrations <uri>]... [--disable-default-scalafix-migrations] [--artifact-migrations <uri>]... [--disable-default-artifact-migrations] [--cache-ttl <duration>] [--bitbucket-use-default-reviewers] [--bitbucket-server-use-default-reviewers] [--gitlab-merge-when-pipeline-succeeds] [--gitlab-required-reviewers <integer>] [--gitlab-remove-source-branch] [--azure-repos-organization <string>] [--github-app-id <integer> --github-app-key-file <file>] [--url-checker-test-url <uri>]... [--default-maven-repo <string>] [--refresh-backoff-period <duration>]
+    scala-steward --workspace <file> --repos-file <uri> [--repos-file <uri>]... [--git-author-name <string>] --git-author-email <string> [--git-author-signing-key <string>] --git-ask-pass <file> [--sign-commits] [--signoff] [--forge-type <forge-type>] [--forge-api-host <uri>] --forge-login <string> [--do-not-fork] [--add-labels] [--ignore-opts-files] [--env-var <name=value>]... [--process-timeout <duration>] [--whitelist <string>]... [--read-only <string>]... [--enable-sandbox | --disable-sandbox] [--max-buffer-size <integer>] [--repo-config <uri>]... [--disable-default-repo-config] [--scalafix-migrations <uri>]... [--disable-default-scalafix-migrations] [--artifact-migrations <uri>]... [--disable-default-artifact-migrations] [--cache-ttl <duration>] [--bitbucket-use-default-reviewers] [--bitbucket-server-use-default-reviewers] [--gitlab-merge-when-pipeline-succeeds] [--gitlab-required-reviewers <integer>] [--gitlab-remove-source-branch] [--azure-repos-organization <string>] [--github-app-id <integer> --github-app-key-file <file>] [--url-checker-test-url <uri>]... [--default-maven-repo <string>] [--refresh-backoff-period <duration>] [--exit-code-success-if-any-repo-succeeds]
     scala-steward validate-repo-config
 
 
@@ -26,18 +26,14 @@ Options and flags:
         An executable file that returns the git credentials
     --sign-commits
         Whether to sign commits; default: false
+    --signoff
+        Whether to signoff commits; default: false
     --forge-type <forge-type>
         One of azure-repos, bitbucket, bitbucket-server, github, gitlab, gitea; default: github
-    --vcs-type <forge-type>
-        deprecated in favor of --forge-type
     --forge-api-host <uri>
         API URL of the forge; default: https://api.github.com
-    --vcs-api-host <uri>
-        deprecated in favor of --forge-api-host
     --forge-login <string>
         The user name for the forge
-    --vcs-login <string>
-        deprecated in favor of --forge-login
     --do-not-fork
         Whether to not push the update branches to a fork; default: false
     --add-labels
@@ -57,7 +53,7 @@ Options and flags:
     --disable-sandbox
         Whether to not use the sandbox
     --max-buffer-size <integer>
-        Size of the buffer for the output of an external process in lines; default: 16384
+        Size of the buffer for the output of an external process in lines; default: 32768
     --repo-config <uri>
         Additional repo config file (can be used multiple times)
     --disable-default-repo-config
@@ -94,6 +90,8 @@ Options and flags:
         default: https://repo1.maven.org/maven2/
     --refresh-backoff-period <duration>
         Period of time a failed build won't be triggered again; default: 0days
+    --exit-code-success-if-any-repo-succeeds
+        Whether the Scala Steward process should exit with success (exit code 0) if any repo succeeds; default: false
 
 Subcommands:
     validate-repo-config

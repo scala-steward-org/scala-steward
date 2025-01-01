@@ -134,4 +134,155 @@ class EditAlgTest extends FunSuite {
       case Log(_) => false
     })
   }
+
+  test("applyUpdate for scala-cli using lib") {
+    val repo = Repo("edit-alg", "test-4")
+    val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
+    val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
+    val mainSc = repoDir / "main.sc"
+    val update = ("org.typelevel".g % "cats-effect".a % "3.5.2" %> "3.5.4").single
+
+    val state = MockState.empty
+      .copy(execCommands = true)
+      .initGitRepo(
+        repoDir,
+        mainSc ->
+          """
+            |//> using scala "3.4.2"
+            |//> using jvm "temurin:21"
+            |//> using lib "org.typelevel::cats-effect:3.5.2"
+            |println("Hello!")
+            |""".stripMargin
+      )
+      .flatMap(editAlg.applyUpdate(data, update).runS)
+      .unsafeRunSync()
+
+    val expected = MockState.empty.copy(
+      execCommands = true,
+      trace = Vector(
+        Cmd.gitGrep(repoDir, update.currentVersion.value),
+        Cmd("read", mainSc.pathAsString),
+        Cmd.gitGrep(repoDir, update.groupId.value),
+        Cmd("read", mainSc.pathAsString),
+        Cmd("read", mainSc.pathAsString),
+        Cmd("write", mainSc.pathAsString),
+        Cmd.gitStatus(repoDir),
+        Cmd.gitCommit(repoDir, "Update cats-effect to 3.5.4"),
+        Cmd.gitLatestSha1(repoDir)
+      ),
+      files = Map(
+        mainSc ->
+          """
+            |//> using scala "3.4.2"
+            |//> using jvm "temurin:21"
+            |//> using lib "org.typelevel::cats-effect:3.5.4"
+            |println("Hello!")
+            |""".stripMargin
+      )
+    )
+
+    assertEquals(state, expected)
+  }
+
+  test("applyUpdate for scala-cli using dep") {
+    val repo = Repo("edit-alg", "test-5")
+    val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
+    val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
+    val mainSc = repoDir / "main.sc"
+    val update = ("org.typelevel".g % "cats-effect".a % "3.5.2" %> "3.5.4").single
+
+    val state = MockState.empty
+      .copy(execCommands = true)
+      .initGitRepo(
+        repoDir,
+        mainSc ->
+          """
+            |//> using scala "3.4.2"
+            |//> using jvm "temurin:21"
+            |//> using dep "org.typelevel::cats-effect:3.5.2"
+            |//> using test.dep "org.scalameta::munit:1.0.0"
+            |println("Hello!")
+            |""".stripMargin
+      )
+      .flatMap(editAlg.applyUpdate(data, update).runS)
+      .unsafeRunSync()
+
+    val expected = MockState.empty.copy(
+      execCommands = true,
+      trace = Vector(
+        Cmd.gitGrep(repoDir, update.currentVersion.value),
+        Cmd("read", mainSc.pathAsString),
+        Cmd.gitGrep(repoDir, update.groupId.value),
+        Cmd("read", mainSc.pathAsString),
+        Cmd("read", mainSc.pathAsString),
+        Cmd("write", mainSc.pathAsString),
+        Cmd.gitStatus(repoDir),
+        Cmd.gitCommit(repoDir, "Update cats-effect to 3.5.4"),
+        Cmd.gitLatestSha1(repoDir)
+      ),
+      files = Map(
+        mainSc ->
+          """
+            |//> using scala "3.4.2"
+            |//> using jvm "temurin:21"
+            |//> using dep "org.typelevel::cats-effect:3.5.4"
+            |//> using test.dep "org.scalameta::munit:1.0.0"
+            |println("Hello!")
+            |""".stripMargin
+      )
+    )
+
+    assertEquals(state, expected)
+  }
+
+  test("applyUpdate for scala-cli using test.dep") {
+    val repo = Repo("edit-alg", "test-6")
+    val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
+    val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
+    val mainSc = repoDir / "main.sc"
+    val update = ("org.scalameta".g % "munit".a % "0.7.29" %> "1.0.0").single
+
+    val state = MockState.empty
+      .copy(execCommands = true)
+      .initGitRepo(
+        repoDir,
+        mainSc ->
+          """
+            |//> using scala "3.4.2"
+            |//> using jvm "temurin:21"
+            |//> using dep "org.typelevel::cats-effect:3.5.4"
+            |//> using test.dep "org.scalameta::munit:0.7.29"
+            |println("Hello!")
+            |""".stripMargin
+      )
+      .flatMap(editAlg.applyUpdate(data, update).runS)
+      .unsafeRunSync()
+
+    val expected = MockState.empty.copy(
+      execCommands = true,
+      trace = Vector(
+        Cmd.gitGrep(repoDir, update.currentVersion.value),
+        Cmd("read", mainSc.pathAsString),
+        Cmd.gitGrep(repoDir, update.groupId.value),
+        Cmd("read", mainSc.pathAsString),
+        Cmd("read", mainSc.pathAsString),
+        Cmd("write", mainSc.pathAsString),
+        Cmd.gitStatus(repoDir),
+        Cmd.gitCommit(repoDir, "Update munit to 1.0.0"),
+        Cmd.gitLatestSha1(repoDir)
+      ),
+      files = Map(
+        mainSc ->
+          """
+            |//> using scala "3.4.2"
+            |//> using jvm "temurin:21"
+            |//> using dep "org.typelevel::cats-effect:3.5.4"
+            |//> using test.dep "org.scalameta::munit:1.0.0"
+            |println("Hello!")
+            |""".stripMargin
+      )
+    )
+
+    assertEquals(state, expected)
+  }
 }
