@@ -92,6 +92,7 @@ final case class UpdatesConfig(
 object UpdatesConfig {
   val defaultFileExtensions: Set[String] =
     Set(
+      ".mill",
       MillAlg.millVersionName,
       MillAlg.millVersionNameInConfig,
       ".sbt",
