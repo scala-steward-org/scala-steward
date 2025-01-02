@@ -130,7 +130,7 @@ updates.allowPreReleases  = [ { groupId = "com.example", artifactId="foo" } ]
 updates.limit = 5
 
 # The extensions of files that should be updated.
-# Default: [".mill-version",".sbt",".sbt.shared",".sc",".scala",".scalafmt.conf",".sdkmanrc",".yml","build.properties","mill-version","pom.xml"]
+# Default: [".mill",".mill-version",".sbt",".sbt.shared",".sc",".scala",".scalafmt.conf",".sdkmanrc",".yml","build.properties","mill-version","pom.xml"]
 updates.fileExtensions = [".scala", ".sbt", ".sbt.shared", ".sc", ".yml", ".md", ".markdown", ".txt"]
 
 # If "on-conflicts", Scala Steward will update the PR it created to resolve conflicts as
