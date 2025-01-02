@@ -88,10 +88,13 @@ class UpdatesConfigTest extends DisciplineSuite {
   }
 
   test("mergeIgnore: basic checks") {
-    assertEquals(UpdatesConfig.mergeIgnore(Nil, Nil), Nil)
-    assertEquals(UpdatesConfig.mergeIgnore(List(a00), Nil), List(a00))
-    assertEquals(UpdatesConfig.mergeIgnore(Nil, List(b00)), List(b00))
-    assertEquals(UpdatesConfig.mergeIgnore(List(aa1, b00), List(aa1, aa2)), List(aa1, b00, aa2))
+    assertEquals(UpdatesConfig.mergeIgnore(Some(Nil), Some(Nil)), Some(Nil))
+    assertEquals(UpdatesConfig.mergeIgnore(Some(List(a00)), Some(Nil)), Some(List(a00)))
+    assertEquals(UpdatesConfig.mergeIgnore(Some(Nil), Some(List(b00))), Some(List(b00)))
+    assertEquals(
+      UpdatesConfig.mergeIgnore(Some(List(aa1, b00)), Some(List(aa1, aa2))),
+      Some(List(aa1, b00, aa2))
+    )
   }
 
   test("mergeFileExtensions: basic checks") {

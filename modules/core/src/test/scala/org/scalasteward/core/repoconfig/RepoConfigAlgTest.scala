@@ -128,7 +128,7 @@ class RepoConfigAlgTest extends FunSuite {
             Some(VersionPattern(Some("0.8."), Some("jre")))
           )
         ),
-        ignore = List(UpdatePattern("org.acme".g, None, Some(VersionPattern(Some("1.0"))))),
+        ignore = List(UpdatePattern("org.acme".g, None, Some(VersionPattern(Some("1.0"))))).some,
         allowPreReleases = List(UpdatePattern("eu.timepit".g, None, None)),
         limit = Some(NonNegInt.unsafeFrom(4)),
         fileExtensions = Some(List(".txt"))
@@ -345,8 +345,9 @@ class RepoConfigAlgTest extends FunSuite {
     val config = RepoConfigAlg
       .parseRepoConfig(RepoConfigAlg.configToIgnoreFurtherUpdates(update))
       .getOrElse(RepoConfig())
-    val expected =
-      RepoConfig(updates = UpdatesConfig(ignore = List(UpdatePattern("a".g, Some("b"), None))).some)
+    val expected = RepoConfig(updates =
+      UpdatesConfig(ignore = List(UpdatePattern("a".g, Some("b"), None)).some).some
+    )
     assertEquals(config, expected)
   }
 
@@ -356,7 +357,7 @@ class RepoConfigAlgTest extends FunSuite {
       .parseRepoConfig(RepoConfigAlg.configToIgnoreFurtherUpdates(update))
       .getOrElse(RepoConfig())
     val expected =
-      RepoConfig(updates = UpdatesConfig(ignore = List(UpdatePattern("a".g, None, None))).some)
+      RepoConfig(updates = UpdatesConfig(ignore = List(UpdatePattern("a".g, None, None)).some).some)
     assertEquals(config, expected)
   }
 
@@ -372,7 +373,7 @@ class RepoConfigAlgTest extends FunSuite {
         List(
           UpdatePattern(groupId = "a".g, artifactId = "b".some, None),
           UpdatePattern(groupId = "c".g, artifactId = "d".some, None)
-        )
+        ).some
       ).some
     )
     assertEquals(config, expected)

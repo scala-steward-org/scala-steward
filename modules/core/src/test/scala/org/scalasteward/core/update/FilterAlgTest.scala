@@ -65,7 +65,9 @@ class FilterAlgTest extends FunSuite {
   test("ignore update via config updates.ignore") {
     val update = ("eu.timepit".g % "refined".a % "0.8.0" %> "0.8.1").single
     val config = RepoConfig(updates =
-      UpdatesConfig(ignore = List(UpdatePattern(GroupId("eu.timepit"), Some("refined"), None))).some
+      UpdatesConfig(ignore =
+        List(UpdatePattern(GroupId("eu.timepit"), Some("refined"), None)).some
+      ).some
     )
 
     val initialState = MockState.empty
@@ -90,7 +92,7 @@ class FilterAlgTest extends FunSuite {
             Some("scala-compiler"),
             Some(VersionPattern(exact = Some("2.13.8")))
           )
-        )
+        ).some
       ).some
     )
     val expected = Right(update.copy(newerVersions = Nel.of("2.13.7".v)))
@@ -201,7 +203,7 @@ class FilterAlgTest extends FunSuite {
             Some(update.artifactId.name),
             Some(VersionPattern(suffix = Some("jre11")))
           )
-        )
+        ).some
       ).some
     )
 

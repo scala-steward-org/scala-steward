@@ -41,11 +41,14 @@ final case class UpdatesConfig(
     pin: List[UpdatePattern] = List.empty,
     allow: List[UpdatePattern] = List.empty,
     allowPreReleases: List[UpdatePattern] = List.empty,
-    ignore: List[UpdatePattern] = List.empty,
+    ignore: Option[List[UpdatePattern]] = None,
     retracted: List[RetractedArtifact] = List.empty,
     limit: Option[NonNegInt] = defaultLimit,
     fileExtensions: Option[List[String]] = None
 ) {
+  private def ignoreOrDefault: List[UpdatePattern] =
+    ignore.getOrElse(Nil)
+
   def fileExtensionsOrDefault: Set[String] =
     fileExtensions.fold(UpdatesConfig.defaultFileExtensions)(_.toSet)
 
@@ -81,7 +84,7 @@ final case class UpdatesConfig(
   }
 
   private def isIgnored(update: Update.ForArtifactId): FilterResult = {
-    val m = UpdatePattern.findMatch(ignore, update, include = false)
+    val m = UpdatePattern.findMatch(ignoreOrDefault, update, include = false)
     if (m.filteredVersions.nonEmpty)
       Right(update.copy(newerVersions = Nel.fromListUnsafe(m.filteredVersions)))
     else
@@ -208,10 +211,10 @@ object UpdatesConfig {
 
   //  Strategy: union
   private[repoconfig] def mergeIgnore(
-      x: List[UpdatePattern],
-      y: List[UpdatePattern]
-  ): List[UpdatePattern] =
-    x ::: y.filterNot(x.contains)
+      x: Option[List[UpdatePattern]],
+      y: Option[List[UpdatePattern]]
+  ): Option[List[UpdatePattern]] =
+    combineOptions(x, y)((x, y) => x ::: y.filterNot(x.contains))
 
   private[repoconfig] def mergeFileExtensions(
       x: Option[List[String]],

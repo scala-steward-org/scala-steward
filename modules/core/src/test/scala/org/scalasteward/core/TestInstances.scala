@@ -152,7 +152,7 @@ object TestInstances {
       } yield UpdatesConfig(
         pin = pin,
         allow = allow,
-        ignore = ignore,
+        ignore = Some(ignore),
         limit = limit,
         fileExtensions = fileExtensions
       )
