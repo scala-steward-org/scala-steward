@@ -36,7 +36,7 @@ final case class RepoConfig(
     updatePullRequests: Option[PullRequestUpdateStrategy] = None,
     buildRoots: Option[List[BuildRootConfig]] = None,
     assignees: Option[List[String]] = None,
-    reviewers: List[String] = List.empty,
+    reviewers: Option[List[String]] = None,
     dependencyOverrides: List[GroupRepoConfig] = List.empty,
     signoffCommits: Option[Boolean] = None
 ) {
@@ -60,6 +60,9 @@ final case class RepoConfig(
 
   def assigneesOrDefault: List[String] =
     assignees.getOrElse(Nil)
+
+  def reviewersOrDefault: List[String] =
+    reviewers.getOrElse(Nil)
 
   def postUpdateHooksOrDefault: List[PostUpdateHook] =
     postUpdateHooks.getOrElse(Nil).map(_.toHook)

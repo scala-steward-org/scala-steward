@@ -162,7 +162,7 @@ class RepoConfigAlgTest extends FunSuite {
         )
       ),
       assignees = List("scala.steward").some,
-      reviewers = List("scala.steward")
+      reviewers = List("scala.steward").some
     )
     assertEquals(obtained, expected)
   }

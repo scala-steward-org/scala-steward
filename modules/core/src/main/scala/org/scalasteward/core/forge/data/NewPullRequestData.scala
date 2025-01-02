@@ -288,7 +288,7 @@ object NewPullRequestData {
       base = data.baseBranch,
       labels = if (addLabels) labels else List.empty,
       assignees = data.repoConfig.assigneesOrDefault,
-      reviewers = data.repoConfig.reviewers
+      reviewers = data.repoConfig.reviewersOrDefault
     )
 
   def updateTypeLabels(anUpdate: Update): List[String] = {
