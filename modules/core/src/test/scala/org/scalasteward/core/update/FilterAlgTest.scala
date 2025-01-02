@@ -53,9 +53,9 @@ class FilterAlgTest extends FunSuite {
   test("localFilter: allowed update to pre-releases of a different series") {
     val update = ("com.jsuereth".g % "sbt-pgp".a % "1.1.2-1" %> Nel.of("2.0.1-M3")).single
     val allowedPreReleases = UpdatePattern("com.jsuereth".g, Some("sbt-pgp"), None) ::
-      config.updatesOrDefault.allowPreReleases
+      config.updatesOrDefault.allowPreReleasesOrDefault
     val configWithAllowed = config.copy(updates =
-      config.updatesOrDefault.copy(allowPreReleases = allowedPreReleases).some
+      config.updatesOrDefault.copy(allowPreReleases = allowedPreReleases.some).some
     )
 
     val expected = Right(update.copy(newerVersions = Nel.of("2.0.1-M3".v)))
@@ -149,7 +149,7 @@ class FilterAlgTest extends FunSuite {
           UpdatePattern(GroupId("org.my1"), None, Some(VersionPattern(Some("0.8")))),
           UpdatePattern(GroupId("org.my2"), None, None),
           UpdatePattern(GroupId("org.my3"), Some("artifact"), None)
-        )
+        ).some
       ).some
     )
 

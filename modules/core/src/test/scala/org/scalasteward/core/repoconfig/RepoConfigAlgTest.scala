@@ -113,7 +113,7 @@ class RepoConfigAlgTest extends FunSuite {
         ).some
       ).some,
       updates = UpdatesConfig(
-        allow = List(UpdatePattern("eu.timepit".g, None, None)),
+        allow = List(UpdatePattern("eu.timepit".g, None, None)).some,
         pin = List(
           UpdatePattern("eu.timepit".g, Some("refined.1"), Some(VersionPattern(Some("0.8.")))),
           UpdatePattern("eu.timepit".g, Some("refined.2"), Some(VersionPattern(Some("0.8.")))),
@@ -129,7 +129,7 @@ class RepoConfigAlgTest extends FunSuite {
           )
         ).some,
         ignore = List(UpdatePattern("org.acme".g, None, Some(VersionPattern(Some("1.0"))))).some,
-        allowPreReleases = List(UpdatePattern("eu.timepit".g, None, None)),
+        allowPreReleases = List(UpdatePattern("eu.timepit".g, None, None)).some,
         limit = Some(NonNegInt.unsafeFrom(4)),
         fileExtensions = Some(List(".txt"))
       ).some,

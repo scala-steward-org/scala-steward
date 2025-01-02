@@ -59,33 +59,48 @@ class UpdatesConfigTest extends DisciplineSuite {
   }
 
   test("mergeAllow: basic checks") {
-    assertEquals(UpdatesConfig.mergeAllow(Nil, Nil), Nil)
-    assertEquals(UpdatesConfig.mergeAllow(List(a00), Nil), List(a00))
-    assertEquals(UpdatesConfig.mergeAllow(Nil, List(a00)), List(a00))
+    assertEquals(UpdatesConfig.mergeAllow(Nil.some, Nil.some), Nil.some)
+    assertEquals(UpdatesConfig.mergeAllow(List(a00).some, Nil.some), List(a00).some)
+    assertEquals(UpdatesConfig.mergeAllow(Nil.some, List(a00).some), List(a00).some)
 
-    assertEquals(UpdatesConfig.mergeAllow(List(a00), List(a00)), List(a00))
+    assertEquals(UpdatesConfig.mergeAllow(List(a00).some, List(a00).some), List(a00).some)
     assertEquals(
-      UpdatesConfig.mergeAllow(List(a00), List(b00)),
-      UpdatesConfig.nonExistingUpdatePattern
+      UpdatesConfig.mergeAllow(List(a00).some, List(b00).some),
+      UpdatesConfig.nonExistingUpdatePattern.some
     )
 
-    assertEquals(UpdatesConfig.mergeAllow(List(a00), List(aa1, ab0, ac3)), List(aa1, ab0, ac3))
-    assertEquals(UpdatesConfig.mergeAllow(List(aa1, ab0, ac3), List(a00)), List(aa1, ab0, ac3))
-
-    assertEquals(UpdatesConfig.mergeAllow(List(aa0), List(aa1, aa2)), List(aa1, aa2))
-    assertEquals(UpdatesConfig.mergeAllow(List(aa1, aa2), List(aa0)), List(aa1, aa2))
-
-    assertEquals(UpdatesConfig.mergeAllow(List(aa0), List(aa0, ab0)), List(aa0))
-    assertEquals(UpdatesConfig.mergeAllow(List(aa0, ab0), List(aa0, ab0)), List(aa0, ab0))
-
-    assertEquals(UpdatesConfig.mergeAllow(List(aa1), List(aa1)), List(aa1))
     assertEquals(
-      UpdatesConfig.mergeAllow(List(aa1), List(aa2)),
-      UpdatesConfig.nonExistingUpdatePattern
+      UpdatesConfig.mergeAllow(List(a00).some, List(aa1, ab0, ac3).some),
+      List(aa1, ab0, ac3).some
     )
-    assertEquals(UpdatesConfig.mergeAllow(List(aa1, ab0, ac0), List(aa2, ac0)), List(ac0))
-    assertEquals(UpdatesConfig.mergeAllow(List(aa1, aa2), List(aa1, aa2)), List(aa1, aa2))
-    assertEquals(UpdatesConfig.mergeAllow(List(aa1, aa2), List(aa1, ac3)), List(aa1))
+    assertEquals(
+      UpdatesConfig.mergeAllow(List(aa1, ab0, ac3).some, List(a00).some),
+      List(aa1, ab0, ac3).some
+    )
+
+    assertEquals(UpdatesConfig.mergeAllow(List(aa0).some, List(aa1, aa2).some), List(aa1, aa2).some)
+    assertEquals(UpdatesConfig.mergeAllow(List(aa1, aa2).some, List(aa0).some), List(aa1, aa2).some)
+
+    assertEquals(UpdatesConfig.mergeAllow(List(aa0).some, List(aa0, ab0).some), List(aa0).some)
+    assertEquals(
+      UpdatesConfig.mergeAllow(List(aa0, ab0).some, List(aa0, ab0).some),
+      List(aa0, ab0).some
+    )
+
+    assertEquals(UpdatesConfig.mergeAllow(List(aa1).some, List(aa1).some), List(aa1).some)
+    assertEquals(
+      UpdatesConfig.mergeAllow(List(aa1).some, List(aa2).some),
+      UpdatesConfig.nonExistingUpdatePattern.some
+    )
+    assertEquals(
+      UpdatesConfig.mergeAllow(List(aa1, ab0, ac0).some, List(aa2, ac0).some),
+      List(ac0).some
+    )
+    assertEquals(
+      UpdatesConfig.mergeAllow(List(aa1, aa2).some, List(aa1, aa2).some),
+      List(aa1, aa2).some
+    )
+    assertEquals(UpdatesConfig.mergeAllow(List(aa1, aa2).some, List(aa1, ac3).some), List(aa1).some)
   }
 
   test("mergeIgnore: basic checks") {

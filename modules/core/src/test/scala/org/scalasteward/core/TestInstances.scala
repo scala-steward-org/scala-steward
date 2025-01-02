@@ -151,7 +151,7 @@ object TestInstances {
         fileExtensions <- Arbitrary.arbitrary[Option[List[String]]]
       } yield UpdatesConfig(
         pin = Some(pin),
-        allow = allow,
+        allow = Some(allow),
         ignore = Some(ignore),
         limit = limit,
         fileExtensions = fileExtensions
