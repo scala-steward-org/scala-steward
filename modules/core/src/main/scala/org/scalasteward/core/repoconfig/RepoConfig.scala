@@ -31,7 +31,7 @@ final case class RepoConfig(
     commits: Option[CommitsConfig] = None,
     pullRequests: Option[PullRequestsConfig] = None,
     scalafmt: Option[ScalafmtConfig] = None,
-    updates: UpdatesConfig = UpdatesConfig(),
+    updates: Option[UpdatesConfig] = None,
     postUpdateHooks: Option[List[PostUpdateHookConfig]] = None,
     updatePullRequests: Option[PullRequestUpdateStrategy] = None,
     buildRoots: Option[List[BuildRootConfig]] = None,
@@ -48,6 +48,9 @@ final case class RepoConfig(
 
   def scalafmtOrDefault: ScalafmtConfig =
     scalafmt.getOrElse(ScalafmtConfig())
+
+  def updatesOrDefault: UpdatesConfig =
+    updates.getOrElse(UpdatesConfig())
 
   def buildRootsOrDefault(repo: Repo): List[BuildRoot] =
     buildRoots

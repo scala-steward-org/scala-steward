@@ -66,7 +66,10 @@ object FilterAlg {
   final case class IgnoreScalaNext(update: Update.ForArtifactId) extends RejectionReason
 
   def localFilter(update: Update.ForArtifactId, repoConfig: RepoConfig): FilterResult =
-    repoConfig.updates.keep(update).flatMap(scalaLTSFilter).flatMap(globalFilter(_, repoConfig))
+    repoConfig.updatesOrDefault
+      .keep(update)
+      .flatMap(scalaLTSFilter)
+      .flatMap(globalFilter(_, repoConfig))
 
   def scalaLTSFilter(update: Update.ForArtifactId): FilterResult =
     if (!isScala3Lang(update))
@@ -107,7 +110,7 @@ object FilterAlg {
       repoConfig: RepoConfig
   ): FilterResult = {
     val newerVersions = update.newerVersions.toList
-    val maybeNext = repoConfig.updates.preRelease(update) match {
+    val maybeNext = repoConfig.updatesOrDefault.preRelease(update) match {
       case Left(_)  => update.currentVersion.selectNext(newerVersions)
       case Right(_) => update.currentVersion.selectNext(newerVersions, allowPreReleases = true)
     }

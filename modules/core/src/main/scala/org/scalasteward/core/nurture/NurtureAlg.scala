@@ -80,7 +80,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
           val updateData = UpdateData(data, fork, update, baseBranch, baseSha1, updateBranch)
           processUpdate(updateData)
         }
-        .through(util.takeUntilMaybe(0, data.config.updates.limit.map(_.value)) {
+        .through(util.takeUntilMaybe(0, data.config.updatesOrDefault.limit.map(_.value)) {
           case Ignored    => 0
           case Updated    => 1
           case Created(_) => 1
@@ -310,7 +310,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
 
   def closeRetractedPullRequests(data: RepoData): F[Unit] =
     pullRequestRepository
-      .getRetractedPullRequests(data.repo, data.config.updates.retracted)
+      .getRetractedPullRequests(data.repo, data.config.updatesOrDefault.retracted)
       .flatMap {
         _.traverse_ { case (oldPr, retractedArtifact) =>
           closeRetractedPullRequest(data, oldPr, retractedArtifact)

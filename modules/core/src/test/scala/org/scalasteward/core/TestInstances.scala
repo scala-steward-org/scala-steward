@@ -164,7 +164,7 @@ object TestInstances {
         commits <- Arbitrary.arbitrary[Option[CommitsConfig]]
         pullRequests <- Arbitrary.arbitrary[Option[PullRequestsConfig]]
         scalafmt <- Arbitrary.arbitrary[Option[ScalafmtConfig]]
-        updates <- Arbitrary.arbitrary[UpdatesConfig]
+        updates <- Arbitrary.arbitrary[Option[UpdatesConfig]]
         updatePullRequests <- Arbitrary.arbitrary[Option[PullRequestUpdateStrategy]]
       } yield RepoConfig(
         commits = commits,

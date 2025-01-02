@@ -132,7 +132,7 @@ class RepoConfigAlgTest extends FunSuite {
         allowPreReleases = List(UpdatePattern("eu.timepit".g, None, None)),
         limit = Some(NonNegInt.unsafeFrom(4)),
         fileExtensions = Some(List(".txt"))
-      ),
+      ).some,
       commits = CommitsConfig(
         message = Some("Update ${artifactName} from ${currentVersion} to ${nextVersion}")
       ).some,
@@ -346,7 +346,7 @@ class RepoConfigAlgTest extends FunSuite {
       .parseRepoConfig(RepoConfigAlg.configToIgnoreFurtherUpdates(update))
       .getOrElse(RepoConfig())
     val expected =
-      RepoConfig(updates = UpdatesConfig(ignore = List(UpdatePattern("a".g, Some("b"), None))))
+      RepoConfig(updates = UpdatesConfig(ignore = List(UpdatePattern("a".g, Some("b"), None))).some)
     assertEquals(config, expected)
   }
 
@@ -356,7 +356,7 @@ class RepoConfigAlgTest extends FunSuite {
       .parseRepoConfig(RepoConfigAlg.configToIgnoreFurtherUpdates(update))
       .getOrElse(RepoConfig())
     val expected =
-      RepoConfig(updates = UpdatesConfig(ignore = List(UpdatePattern("a".g, None, None))))
+      RepoConfig(updates = UpdatesConfig(ignore = List(UpdatePattern("a".g, None, None))).some)
     assertEquals(config, expected)
   }
 
@@ -373,7 +373,7 @@ class RepoConfigAlgTest extends FunSuite {
           UpdatePattern(groupId = "a".g, artifactId = "b".some, None),
           UpdatePattern(groupId = "c".g, artifactId = "d".some, None)
         )
-      )
+      ).some
     )
     assertEquals(config, expected)
   }
