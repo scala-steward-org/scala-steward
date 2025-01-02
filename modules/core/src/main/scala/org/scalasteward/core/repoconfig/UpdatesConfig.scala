@@ -42,7 +42,7 @@ final case class UpdatesConfig(
     allow: List[UpdatePattern] = List.empty,
     allowPreReleases: List[UpdatePattern] = List.empty,
     ignore: Option[List[UpdatePattern]] = None,
-    retracted: List[RetractedArtifact] = List.empty,
+    retracted: Option[List[RetractedArtifact]] = None,
     limit: Option[NonNegInt] = defaultLimit,
     fileExtensions: Option[List[String]] = None
 ) {
@@ -51,6 +51,9 @@ final case class UpdatesConfig(
 
   private def ignoreOrDefault: List[UpdatePattern] =
     ignore.getOrElse(Nil)
+
+  def retractedOrDefault: List[RetractedArtifact] =
+    retracted.getOrElse(Nil)
 
   def fileExtensionsOrDefault: Set[String] =
     fileExtensions.fold(UpdatesConfig.defaultFileExtensions)(_.toSet)
@@ -132,7 +135,7 @@ object UpdatesConfig {
           allow = mergeAllow(x.allow, y.allow),
           allowPreReleases = mergeAllow(x.allowPreReleases, y.allowPreReleases),
           ignore = mergeIgnore(x.ignore, y.ignore),
-          retracted = x.retracted ::: y.retracted,
+          retracted = x.retracted |+| y.retracted,
           limit = x.limit.orElse(y.limit),
           fileExtensions = mergeFileExtensions(x.fileExtensions, y.fileExtensions)
         )

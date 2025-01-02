@@ -310,7 +310,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
 
   def closeRetractedPullRequests(data: RepoData): F[Unit] =
     pullRequestRepository
-      .getRetractedPullRequests(data.repo, data.config.updatesOrDefault.retracted)
+      .getRetractedPullRequests(data.repo, data.config.updatesOrDefault.retractedOrDefault)
       .flatMap {
         _.traverse_ { case (oldPr, retractedArtifact) =>
           closeRetractedPullRequest(data, oldPr, retractedArtifact)
