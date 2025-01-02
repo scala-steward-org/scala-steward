@@ -240,7 +240,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       artifactIdToUpdateInfoUrls = artifactIdToUpdateInfoUrls.toMap,
       filesWithOldVersion = filesWithOldVersion,
       addLabels = config.addLabels,
-      labels = data.repoData.config.pullRequests.customLabels ++ labels
+      labels = data.repoData.config.pullRequests.customLabelsOrDefault ++ labels
     )
 
   private def createPullRequest(data: UpdateData, edits: List[EditAttempt]): F[ProcessResult] =

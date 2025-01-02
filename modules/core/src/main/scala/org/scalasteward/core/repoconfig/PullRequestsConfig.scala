@@ -21,7 +21,6 @@ import cats.{Eq, Monoid}
 import io.circe.Codec
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.deriveConfiguredCodec
-
 import java.util.regex.PatternSyntaxException
 import scala.util.matching.Regex
 
@@ -29,10 +28,13 @@ final case class PullRequestsConfig(
     frequency: Option[PullRequestFrequency] = None,
     grouping: List[PullRequestGroup] = Nil,
     includeMatchedLabels: Option[Regex] = None,
-    customLabels: List[String] = Nil
+    customLabels: Option[List[String]] = None
 ) {
   def frequencyOrDefault: PullRequestFrequency =
     frequency.getOrElse(PullRequestsConfig.defaultFrequency)
+
+  def customLabelsOrDefault: List[String] =
+    customLabels.getOrElse(Nil)
 }
 
 object PullRequestsConfig {

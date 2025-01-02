@@ -173,7 +173,7 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
         cache = dummyRepoCache,
         config = RepoConfig(
           pullRequests = PullRequestsConfig(
-            customLabels = customLabels
+            customLabels = customLabels.some
           )
         )
       )
