@@ -30,7 +30,7 @@ import org.scalasteward.core.repoconfig.RepoConfig.defaultBuildRoots
 final case class RepoConfig(
     commits: CommitsConfig = CommitsConfig(),
     pullRequests: PullRequestsConfig = PullRequestsConfig(),
-    scalafmt: ScalafmtConfig = ScalafmtConfig(),
+    scalafmt: Option[ScalafmtConfig] = None,
     updates: UpdatesConfig = UpdatesConfig(),
     postUpdateHooks: Option[List[PostUpdateHookConfig]] = None,
     updatePullRequests: Option[PullRequestUpdateStrategy] = None,
@@ -40,6 +40,9 @@ final case class RepoConfig(
     dependencyOverrides: List[GroupRepoConfig] = List.empty,
     signoffCommits: Option[Boolean] = None
 ) {
+  def scalafmtOrDefault: ScalafmtConfig =
+    scalafmt.getOrElse(ScalafmtConfig())
+
   def buildRootsOrDefault(repo: Repo): List[BuildRoot] =
     buildRoots
       .map(_.filterNot(_.relativePath.contains("..")))

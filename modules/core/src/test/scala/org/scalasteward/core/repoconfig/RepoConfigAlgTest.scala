@@ -238,7 +238,7 @@ class RepoConfigAlgTest extends FunSuite {
   test("config with 'scalafmt.runAfterUpgrading = true'") {
     val content = "scalafmt.runAfterUpgrading = true"
     val config = RepoConfigAlg.parseRepoConfig(content)
-    val expected = RepoConfig(scalafmt = ScalafmtConfig(runAfterUpgrading = Some(true)))
+    val expected = RepoConfig(scalafmt = ScalafmtConfig(runAfterUpgrading = Some(true)).some)
     assertEquals(config, Right(expected))
   }
 

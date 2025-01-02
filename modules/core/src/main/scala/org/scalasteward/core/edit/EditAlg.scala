@@ -119,8 +119,8 @@ final class EditAlg[F[_]](implicit
     } yield maybeCommit.map(UpdateEdit(update, _))
 
   private def reformatChangedFiles(data: RepoData): F[Unit] = {
-    val reformat =
-      data.config.scalafmt.runAfterUpgradingOrDefault && data.cache.dependsOn(List(scalafmtModule))
+    val reformat = data.config.scalafmtOrDefault.runAfterUpgradingOrDefault &&
+      data.cache.dependsOn(List(scalafmtModule))
     F.whenA(reformat) {
       data.config.buildRootsOrDefault(data.repo).traverse_ { buildRoot =>
         logger.attemptWarn.log_(s"Reformatting changed files failed in ${buildRoot.relativePath}") {

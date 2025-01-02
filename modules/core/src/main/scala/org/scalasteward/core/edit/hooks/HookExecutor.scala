@@ -173,7 +173,7 @@ object HookExecutor {
       useSandbox = false,
       commitMessage = update => CommitMsg(s"Reformat with scalafmt ${update.nextVersion}"),
       enabledByCache = _ => true,
-      enabledByConfig = _.scalafmt.runAfterUpgradingOrDefault,
+      enabledByConfig = _.scalafmtOrDefault.runAfterUpgradingOrDefault,
       addToGitBlameIgnoreRevs = true,
       signoffCommits = signoffCommits
     )
