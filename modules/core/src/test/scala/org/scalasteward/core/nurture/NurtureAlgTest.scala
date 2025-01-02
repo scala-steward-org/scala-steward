@@ -23,7 +23,7 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       List(List(DependencyInfo(dependency, Nil)).withMavenCentral)
     )
     val repoData =
-      RepoData(repo, repoCache, RepoConfig(assignees = List("foo"), reviewers = List("bar")))
+      RepoData(repo, repoCache, RepoConfig(assignees = List("foo").some, reviewers = List("bar")))
     val fork = Repo("scala-steward", "scala-steward")
     val update = (dependency %> "3.4.0").single
     val baseBranch = Branch("main")
@@ -135,7 +135,7 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       List(List(DependencyInfo(dependency, Nil)).withMavenCentral)
     )
     val repoData =
-      RepoData(repo, repoCache, RepoConfig(assignees = List("foo"), reviewers = List("bar")))
+      RepoData(repo, repoCache, RepoConfig(assignees = List("foo").some, reviewers = List("bar")))
     val fork = Repo("scala-steward", "scala-steward")
     val update = (dependency %> "3.4.0").single
     val baseBranch = Branch("main")

@@ -287,7 +287,7 @@ object NewPullRequestData {
       head = branchName,
       base = data.baseBranch,
       labels = if (addLabels) labels else List.empty,
-      assignees = data.repoConfig.assignees,
+      assignees = data.repoConfig.assigneesOrDefault,
       reviewers = data.repoConfig.reviewers
     )
 

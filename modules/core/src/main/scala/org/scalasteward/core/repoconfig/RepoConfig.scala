@@ -35,7 +35,7 @@ final case class RepoConfig(
     postUpdateHooks: Option[List[PostUpdateHookConfig]] = None,
     updatePullRequests: Option[PullRequestUpdateStrategy] = None,
     buildRoots: Option[List[BuildRootConfig]] = None,
-    assignees: List[String] = List.empty,
+    assignees: Option[List[String]] = None,
     reviewers: List[String] = List.empty,
     dependencyOverrides: List[GroupRepoConfig] = List.empty,
     signoffCommits: Option[Boolean] = None
@@ -57,6 +57,9 @@ final case class RepoConfig(
       .map(_.filterNot(_.relativePath.contains("..")))
       .getOrElse(defaultBuildRoots)
       .map(cfg => BuildRoot(repo, cfg.relativePath))
+
+  def assigneesOrDefault: List[String] =
+    assignees.getOrElse(Nil)
 
   def postUpdateHooksOrDefault: List[PostUpdateHook] =
     postUpdateHooks.getOrElse(Nil).map(_.toHook)

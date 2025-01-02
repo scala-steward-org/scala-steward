@@ -11,8 +11,8 @@ import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.forge.data.NewPullRequestData._
 import org.scalasteward.core.git.{Branch, Commit}
 import org.scalasteward.core.nurture.UpdateInfoUrl
-import org.scalasteward.core.util.Nel
 import org.scalasteward.core.repoconfig.RepoConfig
+import org.scalasteward.core.util.Nel
 
 class NewPullRequestDataTest extends FunSuite {
   test("bodyFor()") {
@@ -736,7 +736,7 @@ class NewPullRequestDataTest extends FunSuite {
       repoData = RepoData(
         repo = Repo("foo", "bar"),
         cache = dummyRepoCache,
-        config = RepoConfig(assignees = List("foo"), reviewers = List("bar"))
+        config = RepoConfig(assignees = Some(List("foo")), reviewers = List("bar"))
       ),
       fork = Repo("scala-steward", "bar"),
       update = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single,
@@ -844,7 +844,7 @@ class NewPullRequestDataTest extends FunSuite {
       repoData = RepoData(
         repo = Repo("foo", "bar"),
         cache = dummyRepoCache,
-        config = RepoConfig(assignees = List("foo"), reviewers = List("bar"))
+        config = RepoConfig(assignees = Some(List("foo")), reviewers = List("bar"))
       ),
       fork = Repo("scala-steward", "bar"),
       update = update,
