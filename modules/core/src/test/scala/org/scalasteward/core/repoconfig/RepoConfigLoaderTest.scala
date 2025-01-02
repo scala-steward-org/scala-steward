@@ -38,7 +38,7 @@ class RepoConfigLoaderTest extends FunSuite {
       .getOrElse(None)
     assert(clue(repoConfig).isDefined)
     assertEquals(
-      repoConfig.get.updatesOrDefault.pin.head.version,
+      repoConfig.get.updatesOrDefault.pinOrDefault.head.version,
       Some(VersionPattern(Some("3.4.")))
     )
   }

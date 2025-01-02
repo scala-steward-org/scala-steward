@@ -112,7 +112,7 @@ class FilterAlgTest extends FunSuite {
             Some("refined"),
             Some(VersionPattern(Some("0.8")))
           )
-        )
+        ).some
       ).some
     )
 
@@ -183,7 +183,7 @@ class FilterAlgTest extends FunSuite {
             Some(update.artifactId.name),
             Some(VersionPattern(suffix = Some("jre8")))
           )
-        )
+        ).some
       ).some
     )
 
@@ -223,7 +223,7 @@ class FilterAlgTest extends FunSuite {
             Some(update.artifactId.name),
             Some(VersionPattern(Some("7.2."), Some("jre8")))
           )
-        )
+        ).some
       ).some
     )
 

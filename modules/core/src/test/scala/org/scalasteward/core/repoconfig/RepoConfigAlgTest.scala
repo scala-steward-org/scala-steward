@@ -127,7 +127,7 @@ class RepoConfigAlgTest extends FunSuite {
             Some("refined.4"),
             Some(VersionPattern(Some("0.8."), Some("jre")))
           )
-        ),
+        ).some,
         ignore = List(UpdatePattern("org.acme".g, None, Some(VersionPattern(Some("1.0"))))).some,
         allowPreReleases = List(UpdatePattern("eu.timepit".g, None, None)),
         limit = Some(NonNegInt.unsafeFrom(4)),

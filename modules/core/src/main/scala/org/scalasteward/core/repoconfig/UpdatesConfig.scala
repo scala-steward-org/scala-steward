@@ -38,7 +38,7 @@ import org.scalasteward.core.update.FilterAlg.{
 import org.scalasteward.core.util.{combineOptions, intellijThisImportIsUsed, Nel}
 
 final case class UpdatesConfig(
-    pin: List[UpdatePattern] = List.empty,
+    pin: Option[List[UpdatePattern]] = None,
     allow: List[UpdatePattern] = List.empty,
     allowPreReleases: List[UpdatePattern] = List.empty,
     ignore: Option[List[UpdatePattern]] = None,
@@ -46,6 +46,9 @@ final case class UpdatesConfig(
     limit: Option[NonNegInt] = defaultLimit,
     fileExtensions: Option[List[String]] = None
 ) {
+  private[repoconfig] def pinOrDefault: List[UpdatePattern] =
+    pin.getOrElse(Nil)
+
   private def ignoreOrDefault: List[UpdatePattern] =
     ignore.getOrElse(Nil)
 
@@ -75,7 +78,7 @@ final case class UpdatesConfig(
   }
 
   private def isPinned(update: Update.ForArtifactId): FilterResult = {
-    val m = UpdatePattern.findMatch(pin, update, include = true)
+    val m = UpdatePattern.findMatch(pinOrDefault, update, include = true)
     if (m.filteredVersions.nonEmpty)
       Right(update.copy(newerVersions = Nel.fromListUnsafe(m.filteredVersions)))
     else if (m.byArtifactId.isEmpty)
@@ -137,12 +140,14 @@ object UpdatesConfig {
 
   //  Strategy: union with repo preference in terms of revision
   private[repoconfig] def mergePin(
-      x: List[UpdatePattern],
-      y: List[UpdatePattern]
-  ): List[UpdatePattern] =
-    x.filterNot { p1 =>
-      y.exists(p2 => p1.groupId === p2.groupId && p1.artifactId === p2.artifactId)
-    } ::: y
+      x: Option[List[UpdatePattern]],
+      y: Option[List[UpdatePattern]]
+  ): Option[List[UpdatePattern]] =
+    combineOptions(x, y) { (x, y) =>
+      x.filterNot { p1 =>
+        y.exists(p2 => p1.groupId === p2.groupId && p1.artifactId === p2.artifactId)
+      } ::: y
+    }
 
   private[repoconfig] val nonExistingUpdatePattern: List[UpdatePattern] =
     List(UpdatePattern(GroupId("non-exist"), None, None))
