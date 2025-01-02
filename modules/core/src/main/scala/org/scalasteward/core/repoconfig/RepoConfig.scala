@@ -19,8 +19,7 @@ package org.scalasteward.core.repoconfig
 import cats.syntax.all._
 import cats.{Eq, Monoid}
 import io.circe.Codec
-import io.circe.generic.extras.Configuration
-import io.circe.generic.extras.semiauto._
+import io.circe.generic.semiauto._
 import io.circe.syntax._
 import org.scalasteward.core.buildtool.BuildRoot
 import org.scalasteward.core.data.Repo
@@ -37,7 +36,7 @@ final case class RepoConfig(
     buildRoots: Option[List[BuildRootConfig]] = None,
     assignees: Option[List[String]] = None,
     reviewers: Option[List[String]] = None,
-    dependencyOverrides: List[GroupRepoConfig] = List.empty,
+    dependencyOverrides: Option[List[GroupRepoConfig]] = None,
     signoffCommits: Option[Boolean] = None
 ) {
   def commitsOrDefault: CommitsConfig =
@@ -64,6 +63,9 @@ final case class RepoConfig(
   def reviewersOrDefault: List[String] =
     reviewers.getOrElse(Nil)
 
+  def dependencyOverridesOrDefault: List[GroupRepoConfig] =
+    dependencyOverrides.getOrElse(Nil)
+
   def postUpdateHooksOrDefault: List[PostUpdateHook] =
     postUpdateHooks.getOrElse(Nil).map(_.toHook)
 
@@ -71,7 +73,7 @@ final case class RepoConfig(
     updatePullRequests.getOrElse(PullRequestUpdateStrategy.default)
 
   def show: String =
-    this.asJson.spaces2
+    this.asJson.deepDropNullValues.spaces2
 }
 
 object RepoConfig {
@@ -83,11 +85,8 @@ object RepoConfig {
   implicit val repoConfigEq: Eq[RepoConfig] =
     Eq.fromUniversalEquals
 
-  implicit val repoConfigConfiguration: Configuration =
-    Configuration.default.withDefaults
-
   implicit val repoConfigCodec: Codec[RepoConfig] =
-    deriveConfiguredCodec
+    deriveCodec
 
   implicit val repoConfigMonoid: Monoid[RepoConfig] =
     Monoid.instance(

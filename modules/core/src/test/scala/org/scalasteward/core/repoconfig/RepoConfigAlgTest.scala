@@ -160,7 +160,7 @@ class RepoConfigAlgTest extends FunSuite {
             frequency = Some(PullRequestFrequency.Timespan(7.days))
           )
         )
-      ),
+      ).some,
       assignees = List("scala.steward").some,
       reviewers = List("scala.steward").some
     )

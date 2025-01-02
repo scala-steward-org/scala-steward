@@ -166,7 +166,7 @@ final class PruningAlg[F[_]](implicit
       repoConfig: RepoConfig
   ): F[Boolean] = {
     val (frequencyz: Option[PullRequestFrequency], lastPrCreatedAt: Option[Timestamp]) =
-      repoConfig.dependencyOverrides
+      repoConfig.dependencyOverridesOrDefault
         .collectFirstSome { groupRepoConfig =>
           val matchResult = UpdatePattern
             .findMatch(List(groupRepoConfig.dependency), dependencyOutdated.update, include = true)
