@@ -17,8 +17,7 @@
 package org.scalasteward.core.util
 
 import cats.Order
-import io.circe.Codec
-import io.circe.generic.extras.semiauto.deriveUnwrappedCodec
+import io.circe.{Decoder, Encoder}
 import java.time.{Instant, LocalDateTime, ZoneOffset}
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
@@ -38,8 +37,11 @@ object Timestamp {
   def fromLocalDateTime(ldt: LocalDateTime): Timestamp =
     Timestamp(ldt.toInstant(ZoneOffset.UTC).toEpochMilli)
 
-  implicit val timestampCodec: Codec[Timestamp] =
-    deriveUnwrappedCodec
+  implicit val timestampDecoder: Decoder[Timestamp] =
+    Decoder[Long].map(Timestamp.apply)
+
+  implicit val timestampEncoder: Encoder[Timestamp] =
+    Encoder[Long].contramap(_.millis)
 
   implicit val timestampOrder: Order[Timestamp] =
     Order.by(_.millis)
