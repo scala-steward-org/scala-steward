@@ -113,14 +113,14 @@ final class EditAlg[F[_]](implicit
         fileAlg.editFile(repoDir / path, Substring.Replacement.applyAll[F](replacements))
       }
       _ <- reformatChangedFiles(data)
-      msgTemplate = data.config.commits.messageOrDefault
+      msgTemplate = data.config.commitsOrDefault.messageOrDefault
       commitMsg = CommitMsg.replaceVariables(msgTemplate)(update, data.repo.branch)
       maybeCommit <- gitAlg.commitAllIfDirty(data.repo, commitMsg, data.config.signoffCommits)
     } yield maybeCommit.map(UpdateEdit(update, _))
 
   private def reformatChangedFiles(data: RepoData): F[Unit] = {
-    val reformat =
-      data.config.scalafmt.runAfterUpgradingOrDefault && data.cache.dependsOn(List(scalafmtModule))
+    val reformat = data.config.scalafmtOrDefault.runAfterUpgradingOrDefault &&
+      data.cache.dependsOn(List(scalafmtModule))
     F.whenA(reformat) {
       data.config.buildRootsOrDefault(data.repo).traverse_ { buildRoot =>
         logger.attemptWarn.log_(s"Reformatting changed files failed in ${buildRoot.relativePath}") {

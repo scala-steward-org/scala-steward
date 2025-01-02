@@ -17,8 +17,7 @@
 package org.scalasteward.core.repoconfig
 
 import io.circe.Codec
-import io.circe.generic.extras.Configuration
-import io.circe.generic.extras.semiauto.deriveConfiguredCodec
+import io.circe.generic.semiauto.deriveCodec
 import org.scalasteward.core.data.{ArtifactId, GroupId}
 import org.scalasteward.core.edit.hooks.PostUpdateHook
 import org.scalasteward.core.git.CommitMsg
@@ -47,9 +46,6 @@ final case class PostUpdateHookConfig(
 }
 
 object PostUpdateHookConfig {
-  implicit val postUpdateHooksConfigConfiguration: Configuration =
-    Configuration.default.withDefaults
-
   implicit val postUpdateHooksConfigCodec: Codec[PostUpdateHookConfig] =
-    deriveConfiguredCodec
+    deriveCodec
 }

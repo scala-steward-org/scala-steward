@@ -270,7 +270,7 @@ object NewPullRequestData {
   ): NewPullRequestData =
     NewPullRequestData(
       title = CommitMsg
-        .replaceVariables(data.repoConfig.commits.messageOrDefault)(
+        .replaceVariables(data.repoConfig.commitsOrDefault.messageOrDefault)(
           data.update,
           data.repoData.repo.branch
         )
@@ -287,8 +287,8 @@ object NewPullRequestData {
       head = branchName,
       base = data.baseBranch,
       labels = if (addLabels) labels else List.empty,
-      assignees = data.repoConfig.assignees,
-      reviewers = data.repoConfig.reviewers
+      assignees = data.repoConfig.assigneesOrDefault,
+      reviewers = data.repoConfig.reviewersOrDefault
     )
 
   def updateTypeLabels(anUpdate: Update): List[String] = {

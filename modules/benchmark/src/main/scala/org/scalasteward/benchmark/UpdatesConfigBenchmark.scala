@@ -36,9 +36,9 @@ class UpdatesConfigBenchmark {
     val update = Update.ForArtifactId(dependency, newerVersions)
 
     UpdatesConfig().keep(update)
-    UpdatesConfig(allow = List(UpdatePattern(groupId, None, None))).keep(update)
+    UpdatesConfig(allow = Some(List(UpdatePattern(groupId, None, None)))).keep(update)
     UpdatesConfig(allow =
-      List(UpdatePattern(groupId, None, Some(VersionPattern(prefix = Some("6.0")))))
+      Some(List(UpdatePattern(groupId, None, Some(VersionPattern(prefix = Some("6.0"))))))
     ).keep(update)
   }
 }

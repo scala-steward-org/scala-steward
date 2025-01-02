@@ -18,8 +18,7 @@ package org.scalasteward.core.repoconfig
 
 import cats.{Eq, Monoid}
 import io.circe.Codec
-import io.circe.generic.extras.Configuration
-import io.circe.generic.extras.semiauto.deriveConfiguredCodec
+import io.circe.generic.semiauto.deriveCodec
 
 final case class ScalafmtConfig(
     runAfterUpgrading: Option[Boolean] = None
@@ -34,11 +33,8 @@ object ScalafmtConfig {
   implicit val scalafmtConfigEq: Eq[ScalafmtConfig] =
     Eq.fromUniversalEquals
 
-  implicit val scalafmtConfigConfiguration: Configuration =
-    Configuration.default.withDefaults
-
   implicit val scalafmtConfigCodec: Codec[ScalafmtConfig] =
-    deriveConfiguredCodec
+    deriveCodec
 
   implicit val scalafmtConfigMonoid: Monoid[ScalafmtConfig] =
     Monoid.instance(

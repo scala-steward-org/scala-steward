@@ -93,7 +93,7 @@ class HookExecutorTest extends CatsEffectSuite {
 
   test("scalafmt: disabled by config") {
     val repoConfig =
-      RepoConfig.empty.copy(scalafmt = ScalafmtConfig(runAfterUpgrading = Some(false)))
+      RepoConfig.empty.copy(scalafmt = ScalafmtConfig(runAfterUpgrading = Some(false)).some)
     val data = RepoData(repo, dummyRepoCache, repoConfig)
     val update = (scalafmtGroupId % scalafmtArtifactId % "2.7.4" %> "2.7.5").single
     val state = hookExecutor.execPostUpdateHooks(data, update).runS(MockState.empty)
