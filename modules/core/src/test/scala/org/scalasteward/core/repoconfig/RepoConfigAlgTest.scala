@@ -110,7 +110,7 @@ class RepoConfigAlgTest extends FunSuite {
               PullRequestUpdateFilter("*".some).getOrElse(fail("Should not be called"))
             )
           )
-        )
+        ).some
       ),
       updates = UpdatesConfig(
         allow = List(UpdatePattern("eu.timepit".g, None, None)),

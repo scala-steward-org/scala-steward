@@ -51,7 +51,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       _ <- logger.info(s"Nurture ${data.repo.show}")
       baseBranch <- cloneAndSync(data.repo, fork)
       (grouped, notGrouped) = Update.groupByPullRequestGroup(
-        data.config.pullRequests.grouping,
+        data.config.pullRequests.groupingOrDefault,
         updates.toList
       )
       finalUpdates = Update.groupByGroupId(notGrouped) ++ grouped
