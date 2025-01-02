@@ -147,12 +147,11 @@ object UpdatesConfig {
   private[repoconfig] def mergePin(
       x: Option[List[UpdatePattern]],
       y: Option[List[UpdatePattern]]
-  ): Option[List[UpdatePattern]] =
-    combineOptions(x, y) { (x, y) =>
-      x.filterNot { p1 =>
-        y.exists(p2 => p1.groupId === p2.groupId && p1.artifactId === p2.artifactId)
-      } ::: y
-    }
+  ): Option[List[UpdatePattern]] = combineOptions(x, y) { (x, y) =>
+    x.filterNot { p1 =>
+      y.exists(p2 => p1.groupId === p2.groupId && p1.artifactId === p2.artifactId)
+    } ::: y
+  }
 
   private[repoconfig] val nonExistingUpdatePattern: List[UpdatePattern] =
     List(UpdatePattern(GroupId("non-exist"), None, None))
@@ -162,28 +161,27 @@ object UpdatesConfig {
   private[repoconfig] def mergeAllow(
       x: Option[List[UpdatePattern]],
       y: Option[List[UpdatePattern]]
-  ): Option[List[UpdatePattern]] =
-    combineOptions(x, y) { (x, y) =>
-      (x, y) match {
-        case (Nil, second) => second
-        case (first, Nil)  => first
-        case _             =>
-          //  remove duplicates first by calling .distinct
-          val xm: Map[GroupId, List[UpdatePattern]] = x.distinct.groupBy(_.groupId)
-          val ym: Map[GroupId, List[UpdatePattern]] = y.distinct.groupBy(_.groupId)
-          val builder = new collection.mutable.ListBuffer[UpdatePattern]()
+  ): Option[List[UpdatePattern]] = combineOptions(x, y) { (x, y) =>
+    (x, y) match {
+      case (Nil, second) => second
+      case (first, Nil)  => first
+      case _             =>
+        //  remove duplicates first by calling .distinct
+        val xm: Map[GroupId, List[UpdatePattern]] = x.distinct.groupBy(_.groupId)
+        val ym: Map[GroupId, List[UpdatePattern]] = y.distinct.groupBy(_.groupId)
+        val builder = new collection.mutable.ListBuffer[UpdatePattern]()
 
-          //  first of all, we only allow intersection (superset)
-          val keys = xm.keySet.intersect(ym.keySet)
+        //  first of all, we only allow intersection (superset)
+        val keys = xm.keySet.intersect(ym.keySet)
 
-          keys.foreach { groupId =>
-            builder ++= mergeAllowGroupId(xm(groupId), ym(groupId))
-          }
+        keys.foreach { groupId =>
+          builder ++= mergeAllowGroupId(xm(groupId), ym(groupId))
+        }
 
-          if (builder.isEmpty) nonExistingUpdatePattern
-          else builder.distinct.toList
-      }
+        if (builder.isEmpty) nonExistingUpdatePattern
+        else builder.distinct.toList
     }
+  }
 
   //  merge UpdatePattern for same group id
   private def mergeAllowGroupId(
@@ -225,8 +223,9 @@ object UpdatesConfig {
   private[repoconfig] def mergeIgnore(
       x: Option[List[UpdatePattern]],
       y: Option[List[UpdatePattern]]
-  ): Option[List[UpdatePattern]] =
-    combineOptions(x, y)((x, y) => x ::: y.filterNot(x.contains))
+  ): Option[List[UpdatePattern]] = combineOptions(x, y) { (x, y) =>
+    x ::: y.filterNot(x.contains)
+  }
 
   private[repoconfig] def mergeFileExtensions(
       x: Option[List[String]],
