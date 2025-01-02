@@ -161,7 +161,7 @@ object TestInstances {
   implicit val repoConfigArbitrary: Arbitrary[RepoConfig] =
     Arbitrary(
       for {
-        commits <- Arbitrary.arbitrary[CommitsConfig]
+        commits <- Arbitrary.arbitrary[Option[CommitsConfig]]
         pullRequests <- Arbitrary.arbitrary[PullRequestsConfig]
         scalafmt <- Arbitrary.arbitrary[Option[ScalafmtConfig]]
         updates <- Arbitrary.arbitrary[UpdatesConfig]

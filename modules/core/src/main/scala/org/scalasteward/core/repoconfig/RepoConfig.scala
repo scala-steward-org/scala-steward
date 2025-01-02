@@ -28,7 +28,7 @@ import org.scalasteward.core.edit.hooks.PostUpdateHook
 import org.scalasteward.core.repoconfig.RepoConfig.defaultBuildRoots
 
 final case class RepoConfig(
-    commits: CommitsConfig = CommitsConfig(),
+    commits: Option[CommitsConfig] = None,
     pullRequests: PullRequestsConfig = PullRequestsConfig(),
     scalafmt: Option[ScalafmtConfig] = None,
     updates: UpdatesConfig = UpdatesConfig(),
@@ -40,6 +40,9 @@ final case class RepoConfig(
     dependencyOverrides: List[GroupRepoConfig] = List.empty,
     signoffCommits: Option[Boolean] = None
 ) {
+  def commitsOrDefault: CommitsConfig =
+    commits.getOrElse(CommitsConfig())
+
   def scalafmtOrDefault: ScalafmtConfig =
     scalafmt.getOrElse(ScalafmtConfig())
 

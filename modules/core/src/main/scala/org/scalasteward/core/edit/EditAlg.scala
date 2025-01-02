@@ -113,7 +113,7 @@ final class EditAlg[F[_]](implicit
         fileAlg.editFile(repoDir / path, Substring.Replacement.applyAll[F](replacements))
       }
       _ <- reformatChangedFiles(data)
-      msgTemplate = data.config.commits.messageOrDefault
+      msgTemplate = data.config.commitsOrDefault.messageOrDefault
       commitMsg = CommitMsg.replaceVariables(msgTemplate)(update, data.repo.branch)
       maybeCommit <- gitAlg.commitAllIfDirty(data.repo, commitMsg, data.config.signoffCommits)
     } yield maybeCommit.map(UpdateEdit(update, _))

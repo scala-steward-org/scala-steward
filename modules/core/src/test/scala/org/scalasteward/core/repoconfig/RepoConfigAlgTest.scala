@@ -135,7 +135,7 @@ class RepoConfigAlgTest extends FunSuite {
       ),
       commits = CommitsConfig(
         message = Some("Update ${artifactName} from ${currentVersion} to ${nextVersion}")
-      ),
+      ).some,
       buildRoots = Some(List(BuildRootConfig.repoRoot, BuildRootConfig("subfolder/subfolder"))),
       dependencyOverrides = List(
         GroupRepoConfig(
