@@ -171,11 +171,8 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       RepoData(
         repo = Repo("scala-steward-org", "scala-steward"),
         cache = dummyRepoCache,
-        config = RepoConfig(
-          pullRequests = PullRequestsConfig(
-            customLabels = customLabels.some
-          )
-        )
+        config =
+          RepoConfig(pullRequests = PullRequestsConfig(customLabels = customLabels.some).some)
       )
     val update = (dependency %> "3.4.0").single
     val baseBranch = Branch("main")

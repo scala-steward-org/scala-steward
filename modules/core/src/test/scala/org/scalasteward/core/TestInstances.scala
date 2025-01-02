@@ -162,7 +162,7 @@ object TestInstances {
     Arbitrary(
       for {
         commits <- Arbitrary.arbitrary[Option[CommitsConfig]]
-        pullRequests <- Arbitrary.arbitrary[PullRequestsConfig]
+        pullRequests <- Arbitrary.arbitrary[Option[PullRequestsConfig]]
         scalafmt <- Arbitrary.arbitrary[Option[ScalafmtConfig]]
         updates <- Arbitrary.arbitrary[UpdatesConfig]
         updatePullRequests <- Arbitrary.arbitrary[Option[PullRequestUpdateStrategy]]

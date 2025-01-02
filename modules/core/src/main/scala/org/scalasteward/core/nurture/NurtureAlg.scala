@@ -51,7 +51,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       _ <- logger.info(s"Nurture ${data.repo.show}")
       baseBranch <- cloneAndSync(data.repo, fork)
       (grouped, notGrouped) = Update.groupByPullRequestGroup(
-        data.config.pullRequests.groupingOrDefault,
+        data.config.pullRequestsOrDefault.groupingOrDefault,
         updates.toList
       )
       finalUpdates = Update.groupByGroupId(notGrouped) ++ grouped
@@ -231,7 +231,8 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
           .flatTraverse(gitAlg.findFilesContaining(data.repo, _))
           .map(_.distinct)
       allLabels = labelsFor(data.update, edits, filesWithOldVersion, artifactIdToVersionScheme)
-      labels = filterLabels(allLabels, data.repoData.config.pullRequests.includeMatchedLabels)
+      labels =
+        filterLabels(allLabels, data.repoData.config.pullRequestsOrDefault.includeMatchedLabels)
     } yield NewPullRequestData.from(
       data = data,
       branchName = config.tpe.pullRequestHeadFor(data.fork, data.updateBranch),
@@ -240,7 +241,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       artifactIdToUpdateInfoUrls = artifactIdToUpdateInfoUrls.toMap,
       filesWithOldVersion = filesWithOldVersion,
       addLabels = config.addLabels,
-      labels = data.repoData.config.pullRequests.customLabelsOrDefault ++ labels
+      labels = data.repoData.config.pullRequestsOrDefault.customLabelsOrDefault ++ labels
     )
 
   private def createPullRequest(data: UpdateData, edits: List[EditAttempt]): F[ProcessResult] =

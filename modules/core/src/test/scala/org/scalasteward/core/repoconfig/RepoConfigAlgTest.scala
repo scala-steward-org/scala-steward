@@ -111,7 +111,7 @@ class RepoConfigAlgTest extends FunSuite {
             )
           )
         ).some
-      ),
+      ).some,
       updates = UpdatesConfig(
         allow = List(UpdatePattern("eu.timepit".g, None, None)),
         pin = List(
@@ -213,7 +213,9 @@ class RepoConfigAlgTest extends FunSuite {
     val content = """pullRequests.frequency = "@asap" """
     val config = RepoConfigAlg.parseRepoConfig(content)
     val expected =
-      RepoConfig(pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Asap)))
+      RepoConfig(pullRequests =
+        PullRequestsConfig(frequency = Some(PullRequestFrequency.Asap)).some
+      )
     assertEquals(config, Right(expected))
   }
 
@@ -221,7 +223,7 @@ class RepoConfigAlgTest extends FunSuite {
     val content = """pullRequests.frequency = "@daily" """
     val config = RepoConfigAlg.parseRepoConfig(content)
     val expected = RepoConfig(pullRequests =
-      PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(1.day)))
+      PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(1.day))).some
     )
     assertEquals(config, Right(expected))
   }
@@ -230,7 +232,7 @@ class RepoConfigAlgTest extends FunSuite {
     val content = """pullRequests.frequency = "@monthly" """
     val config = RepoConfigAlg.parseRepoConfig(content)
     val expected = RepoConfig(pullRequests =
-      PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(30.days)))
+      PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(30.days))).some
     )
     assertEquals(config, Right(expected))
   }

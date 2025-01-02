@@ -174,7 +174,7 @@ final class PruningAlg[F[_]](implicit
             (groupRepoConfig.pullRequests.frequency, artifactLastPrCreatedAt)
           )
         }
-        .getOrElse((repoConfig.pullRequests.frequency, repoLastPrCreatedAt))
+        .getOrElse((repoConfig.pullRequestsOrDefault.frequency, repoLastPrCreatedAt))
     val frequency = frequencyz.getOrElse(PullRequestFrequency.Asap)
 
     val dep = dependencyOutdated.crossDependency.head

@@ -29,7 +29,7 @@ import org.scalasteward.core.repoconfig.RepoConfig.defaultBuildRoots
 
 final case class RepoConfig(
     commits: Option[CommitsConfig] = None,
-    pullRequests: PullRequestsConfig = PullRequestsConfig(),
+    pullRequests: Option[PullRequestsConfig] = None,
     scalafmt: Option[ScalafmtConfig] = None,
     updates: UpdatesConfig = UpdatesConfig(),
     postUpdateHooks: Option[List[PostUpdateHookConfig]] = None,
@@ -42,6 +42,9 @@ final case class RepoConfig(
 ) {
   def commitsOrDefault: CommitsConfig =
     commits.getOrElse(CommitsConfig())
+
+  def pullRequestsOrDefault: PullRequestsConfig =
+    pullRequests.getOrElse(PullRequestsConfig())
 
   def scalafmtOrDefault: ScalafmtConfig =
     scalafmt.getOrElse(ScalafmtConfig())
