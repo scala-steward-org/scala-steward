@@ -51,7 +51,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       _ <- logger.info(s"Nurture ${data.repo.show}")
       baseBranch <- cloneAndSync(data.repo, fork)
       (grouped, notGrouped) = Update.groupByPullRequestGroup(
-        data.config.pullRequests.grouping,
+        data.config.pullRequestsOrDefault.groupingOrDefault,
         updates.toList
       )
       finalUpdates = Update.groupByGroupId(notGrouped) ++ grouped
@@ -80,7 +80,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
           val updateData = UpdateData(data, fork, update, baseBranch, baseSha1, updateBranch)
           processUpdate(updateData)
         }
-        .through(util.takeUntilMaybe(0, data.config.updates.limit.map(_.value)) {
+        .through(util.takeUntilMaybe(0, data.config.updatesOrDefault.limit.map(_.value)) {
           case Ignored    => 0
           case Updated    => 1
           case Created(_) => 1
@@ -231,7 +231,8 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
           .flatTraverse(gitAlg.findFilesContaining(data.repo, _))
           .map(_.distinct)
       allLabels = labelsFor(data.update, edits, filesWithOldVersion, artifactIdToVersionScheme)
-      labels = filterLabels(allLabels, data.repoData.config.pullRequests.includeMatchedLabels)
+      labels =
+        filterLabels(allLabels, data.repoData.config.pullRequestsOrDefault.includeMatchedLabels)
     } yield NewPullRequestData.from(
       data = data,
       branchName = config.tpe.pullRequestHeadFor(data.fork, data.updateBranch),
@@ -240,7 +241,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       artifactIdToUpdateInfoUrls = artifactIdToUpdateInfoUrls.toMap,
       filesWithOldVersion = filesWithOldVersion,
       addLabels = config.addLabels,
-      labels = data.repoData.config.pullRequests.customLabels ++ labels
+      labels = data.repoData.config.pullRequestsOrDefault.customLabelsOrDefault ++ labels
     )
 
   private def createPullRequest(data: UpdateData, edits: List[EditAttempt]): F[ProcessResult] =
@@ -309,7 +310,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
 
   def closeRetractedPullRequests(data: RepoData): F[Unit] =
     pullRequestRepository
-      .getRetractedPullRequests(data.repo, data.config.updates.retracted)
+      .getRetractedPullRequests(data.repo, data.config.updatesOrDefault.retractedOrDefault)
       .flatMap {
         _.traverse_ { case (oldPr, retractedArtifact) =>
           closeRetractedPullRequest(data, oldPr, retractedArtifact)

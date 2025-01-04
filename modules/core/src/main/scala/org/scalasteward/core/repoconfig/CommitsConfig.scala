@@ -18,11 +18,10 @@ package org.scalasteward.core.repoconfig
 
 import cats.{Eq, Monoid}
 import io.circe.Codec
-import io.circe.generic.extras.Configuration
-import io.circe.generic.extras.semiauto._
+import io.circe.generic.semiauto.deriveCodec
 
 final case class CommitsConfig(
-    message: Option[String] = None
+    private val message: Option[String] = None
 ) {
   def messageOrDefault: String =
     message.getOrElse(CommitsConfig.defaultMessage)
@@ -34,11 +33,8 @@ object CommitsConfig {
   implicit val commitsConfigEq: Eq[CommitsConfig] =
     Eq.fromUniversalEquals
 
-  implicit val commitsConfigConfiguration: Configuration =
-    Configuration.default.withDefaults
-
   implicit val commitsConfigCodec: Codec[CommitsConfig] =
-    deriveConfiguredCodec
+    deriveCodec
 
   implicit val commitsConfigMonoid: Monoid[CommitsConfig] =
     Monoid.instance(CommitsConfig(), (x, y) => CommitsConfig(message = x.message.orElse(y.message)))

@@ -66,7 +66,7 @@ final class ScannerAlg[F[_]](implicit
     Stream.eval(workspaceAlg.repoDir(repo)).flatMap { repoDir =>
       Stream
         .evalSeq(gitAlg.findFilesContaining(repo, string))
-        .filter(path => config.updates.fileExtensionsOrDefault.exists(path.endsWith))
+        .filter(path => config.updatesOrDefault.fileExtensionsOrDefault.exists(path.endsWith))
         .evalMapFilter(path => fileAlg.readFile(repoDir / path).map(_.map(FileData(path, _))))
     }
 }

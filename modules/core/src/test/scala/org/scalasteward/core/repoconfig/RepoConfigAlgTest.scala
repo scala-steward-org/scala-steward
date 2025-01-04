@@ -110,10 +110,10 @@ class RepoConfigAlgTest extends FunSuite {
               PullRequestUpdateFilter("*".some).getOrElse(fail("Should not be called"))
             )
           )
-        )
-      ),
+        ).some
+      ).some,
       updates = UpdatesConfig(
-        allow = List(UpdatePattern("eu.timepit".g, None, None)),
+        allow = List(UpdatePattern("eu.timepit".g, None, None)).some,
         pin = List(
           UpdatePattern("eu.timepit".g, Some("refined.1"), Some(VersionPattern(Some("0.8.")))),
           UpdatePattern("eu.timepit".g, Some("refined.2"), Some(VersionPattern(Some("0.8.")))),
@@ -127,15 +127,15 @@ class RepoConfigAlgTest extends FunSuite {
             Some("refined.4"),
             Some(VersionPattern(Some("0.8."), Some("jre")))
           )
-        ),
-        ignore = List(UpdatePattern("org.acme".g, None, Some(VersionPattern(Some("1.0"))))),
-        allowPreReleases = List(UpdatePattern("eu.timepit".g, None, None)),
+        ).some,
+        ignore = List(UpdatePattern("org.acme".g, None, Some(VersionPattern(Some("1.0"))))).some,
+        allowPreReleases = List(UpdatePattern("eu.timepit".g, None, None)).some,
         limit = Some(NonNegInt.unsafeFrom(4)),
         fileExtensions = Some(List(".txt"))
-      ),
+      ).some,
       commits = CommitsConfig(
         message = Some("Update ${artifactName} from ${currentVersion} to ${nextVersion}")
-      ),
+      ).some,
       buildRoots = Some(List(BuildRootConfig.repoRoot, BuildRootConfig("subfolder/subfolder"))),
       dependencyOverrides = List(
         GroupRepoConfig(
@@ -160,9 +160,9 @@ class RepoConfigAlgTest extends FunSuite {
             frequency = Some(PullRequestFrequency.Timespan(7.days))
           )
         )
-      ),
-      assignees = List("scala.steward"),
-      reviewers = List("scala.steward")
+      ).some,
+      assignees = List("scala.steward").some,
+      reviewers = List("scala.steward").some
     )
     assertEquals(obtained, expected)
   }
@@ -213,7 +213,9 @@ class RepoConfigAlgTest extends FunSuite {
     val content = """pullRequests.frequency = "@asap" """
     val config = RepoConfigAlg.parseRepoConfig(content)
     val expected =
-      RepoConfig(pullRequests = PullRequestsConfig(frequency = Some(PullRequestFrequency.Asap)))
+      RepoConfig(pullRequests =
+        PullRequestsConfig(frequency = Some(PullRequestFrequency.Asap)).some
+      )
     assertEquals(config, Right(expected))
   }
 
@@ -221,7 +223,7 @@ class RepoConfigAlgTest extends FunSuite {
     val content = """pullRequests.frequency = "@daily" """
     val config = RepoConfigAlg.parseRepoConfig(content)
     val expected = RepoConfig(pullRequests =
-      PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(1.day)))
+      PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(1.day))).some
     )
     assertEquals(config, Right(expected))
   }
@@ -230,7 +232,7 @@ class RepoConfigAlgTest extends FunSuite {
     val content = """pullRequests.frequency = "@monthly" """
     val config = RepoConfigAlg.parseRepoConfig(content)
     val expected = RepoConfig(pullRequests =
-      PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(30.days)))
+      PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(30.days))).some
     )
     assertEquals(config, Right(expected))
   }
@@ -238,7 +240,7 @@ class RepoConfigAlgTest extends FunSuite {
   test("config with 'scalafmt.runAfterUpgrading = true'") {
     val content = "scalafmt.runAfterUpgrading = true"
     val config = RepoConfigAlg.parseRepoConfig(content)
-    val expected = RepoConfig(scalafmt = ScalafmtConfig(runAfterUpgrading = Some(true)))
+    val expected = RepoConfig(scalafmt = ScalafmtConfig(runAfterUpgrading = Some(true)).some)
     assertEquals(config, Right(expected))
   }
 
@@ -343,8 +345,9 @@ class RepoConfigAlgTest extends FunSuite {
     val config = RepoConfigAlg
       .parseRepoConfig(RepoConfigAlg.configToIgnoreFurtherUpdates(update))
       .getOrElse(RepoConfig())
-    val expected =
-      RepoConfig(updates = UpdatesConfig(ignore = List(UpdatePattern("a".g, Some("b"), None))))
+    val expected = RepoConfig(updates =
+      UpdatesConfig(ignore = List(UpdatePattern("a".g, Some("b"), None)).some).some
+    )
     assertEquals(config, expected)
   }
 
@@ -354,7 +357,7 @@ class RepoConfigAlgTest extends FunSuite {
       .parseRepoConfig(RepoConfigAlg.configToIgnoreFurtherUpdates(update))
       .getOrElse(RepoConfig())
     val expected =
-      RepoConfig(updates = UpdatesConfig(ignore = List(UpdatePattern("a".g, None, None))))
+      RepoConfig(updates = UpdatesConfig(ignore = List(UpdatePattern("a".g, None, None)).some).some)
     assertEquals(config, expected)
   }
 
@@ -370,8 +373,8 @@ class RepoConfigAlgTest extends FunSuite {
         List(
           UpdatePattern(groupId = "a".g, artifactId = "b".some, None),
           UpdatePattern(groupId = "c".g, artifactId = "d".some, None)
-        )
-      )
+        ).some
+      ).some
     )
     assertEquals(config, expected)
   }
