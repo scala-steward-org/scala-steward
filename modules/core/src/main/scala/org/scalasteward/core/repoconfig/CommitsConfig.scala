@@ -21,7 +21,7 @@ import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 
 final case class CommitsConfig(
-    message: Option[String] = None
+    private val message: Option[String] = None
 ) {
   def messageOrDefault: String =
     message.getOrElse(CommitsConfig.defaultMessage)

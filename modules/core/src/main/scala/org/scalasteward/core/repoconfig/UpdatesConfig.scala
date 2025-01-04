@@ -37,13 +37,13 @@ import org.scalasteward.core.update.FilterAlg.{
 import org.scalasteward.core.util.{combineOptions, intellijThisImportIsUsed, Nel}
 
 final case class UpdatesConfig(
-    pin: Option[List[UpdatePattern]] = None,
-    allow: Option[List[UpdatePattern]] = None,
-    allowPreReleases: Option[List[UpdatePattern]] = None,
-    ignore: Option[List[UpdatePattern]] = None,
-    retracted: Option[List[RetractedArtifact]] = None,
+    private val pin: Option[List[UpdatePattern]] = None,
+    private val allow: Option[List[UpdatePattern]] = None,
+    private val allowPreReleases: Option[List[UpdatePattern]] = None,
+    private val ignore: Option[List[UpdatePattern]] = None,
+    private val retracted: Option[List[RetractedArtifact]] = None,
     limit: Option[NonNegInt] = defaultLimit,
-    fileExtensions: Option[List[String]] = None
+    private val fileExtensions: Option[List[String]] = None
 ) {
   private[repoconfig] def pinOrDefault: List[UpdatePattern] =
     pin.getOrElse(Nil)

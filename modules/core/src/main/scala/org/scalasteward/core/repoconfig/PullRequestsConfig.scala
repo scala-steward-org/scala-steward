@@ -25,9 +25,9 @@ import scala.util.matching.Regex
 
 final case class PullRequestsConfig(
     frequency: Option[PullRequestFrequency] = None,
-    grouping: Option[List[PullRequestGroup]] = None,
+    private val grouping: Option[List[PullRequestGroup]] = None,
     includeMatchedLabels: Option[Regex] = None,
-    customLabels: Option[List[String]] = None
+    private val customLabels: Option[List[String]] = None
 ) {
   def frequencyOrDefault: PullRequestFrequency =
     frequency.getOrElse(PullRequestsConfig.defaultFrequency)

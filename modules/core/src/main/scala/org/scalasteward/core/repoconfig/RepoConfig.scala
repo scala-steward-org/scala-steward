@@ -27,16 +27,16 @@ import org.scalasteward.core.edit.hooks.PostUpdateHook
 import org.scalasteward.core.repoconfig.RepoConfig.defaultBuildRoots
 
 final case class RepoConfig(
-    commits: Option[CommitsConfig] = None,
-    pullRequests: Option[PullRequestsConfig] = None,
-    scalafmt: Option[ScalafmtConfig] = None,
-    updates: Option[UpdatesConfig] = None,
-    postUpdateHooks: Option[List[PostUpdateHookConfig]] = None,
-    updatePullRequests: Option[PullRequestUpdateStrategy] = None,
-    buildRoots: Option[List[BuildRootConfig]] = None,
-    assignees: Option[List[String]] = None,
-    reviewers: Option[List[String]] = None,
-    dependencyOverrides: Option[List[GroupRepoConfig]] = None,
+    private val commits: Option[CommitsConfig] = None,
+    private val pullRequests: Option[PullRequestsConfig] = None,
+    private val scalafmt: Option[ScalafmtConfig] = None,
+    private val updates: Option[UpdatesConfig] = None,
+    private val postUpdateHooks: Option[List[PostUpdateHookConfig]] = None,
+    private val updatePullRequests: Option[PullRequestUpdateStrategy] = None,
+    private val buildRoots: Option[List[BuildRootConfig]] = None,
+    private val assignees: Option[List[String]] = None,
+    private val reviewers: Option[List[String]] = None,
+    private val dependencyOverrides: Option[List[GroupRepoConfig]] = None,
     signoffCommits: Option[Boolean] = None
 ) {
   def commitsOrDefault: CommitsConfig =

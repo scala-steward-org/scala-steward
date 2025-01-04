@@ -21,7 +21,7 @@ import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 
 final case class ScalafmtConfig(
-    runAfterUpgrading: Option[Boolean] = None
+    private val runAfterUpgrading: Option[Boolean] = None
 ) {
   def runAfterUpgradingOrDefault: Boolean =
     runAfterUpgrading.getOrElse(ScalafmtConfig.defaultRunAfterUpgrading)
