@@ -9,7 +9,6 @@ object Dependencies {
   val catsParse = "org.typelevel" %% "cats-parse" % "1.1.0"
   val circeConfig = "io.circe" %% "circe-config" % "0.10.1"
   val circeGeneric = "io.circe" %% "circe-generic" % "0.14.10"
-  val circeGenericExtras = "io.circe" %% "circe-generic-extras" % "0.14.4"
   val circeLiteral = "io.circe" %% "circe-literal" % circeGeneric.revision
   val circeParser = "io.circe" %% "circe-parser" % circeGeneric.revision
   val circeRefined = "io.circe" %% "circe-refined" % "0.15.1"

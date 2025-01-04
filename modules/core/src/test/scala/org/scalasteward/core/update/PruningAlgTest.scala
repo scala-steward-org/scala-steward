@@ -191,7 +191,7 @@ class PruningAlgTest extends FunSuite {
             DependencyInfo("org.scala-lang".g % "scala-library".a % "2.12.14", List("build.sbt")),
             DependencyInfo("org.scala-lang".g % "scala-library".a % "2.13.5", List("build.sbt"))
           ),
-          List(MavenRepository("public", "https://repo5.org/maven/", None, Nil))
+          List(MavenRepository("public", "https://repo5.org/maven/", None, None))
         )
       )
     )

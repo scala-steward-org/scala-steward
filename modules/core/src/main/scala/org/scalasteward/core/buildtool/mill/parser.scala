@@ -54,7 +54,7 @@ object parser {
     *
     * @param artifactName
     *   name of the artifact parsed from the build file
-    * @param millVerion
+    * @param millVersion
     *   the current Mill version being used
     * @return
     *   the newly put together ArtifactId
@@ -127,13 +127,13 @@ object MillModule {
           url <- c.downField("url").as[String]
           creds <- c.downField("auth").as[Option[Resolver.Credentials]]
           headers <- c.downField("headers").as[Option[List[Resolver.Header]]]
-        } yield Resolver.MavenRepository(url, url, creds, headers.getOrElse(Nil))
+        } yield Resolver.MavenRepository(url, url, creds, headers)
       case "ivy" =>
         for {
           url <- c.downField("pattern").as[String]
           creds <- c.downField("auth").as[Option[Resolver.Credentials]]
           headers <- c.downField("headers").as[Option[List[Resolver.Header]]]
-        } yield Resolver.IvyRepository(url, url, creds, headers.getOrElse(Nil))
+        } yield Resolver.IvyRepository(url, url, creds, headers)
       case typ => Left(DecodingFailure(s"Not a matching resolver type, $typ", c.history))
     }
   }

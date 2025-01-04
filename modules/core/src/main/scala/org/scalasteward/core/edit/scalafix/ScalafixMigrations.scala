@@ -17,17 +17,11 @@
 package org.scalasteward.core.edit.scalafix
 
 import io.circe.Decoder
-import io.circe.generic.extras.Configuration
-import io.circe.generic.extras.semiauto._
+import io.circe.generic.semiauto._
 
-final case class ScalafixMigrations(
-    migrations: List[ScalafixMigration] = List.empty
-)
+final case class ScalafixMigrations(migrations: List[ScalafixMigration])
 
 object ScalafixMigrations {
-  implicit val configuration: Configuration =
-    Configuration.default.withDefaults
-
   implicit val scalafixMigrationsDecoder: Decoder[ScalafixMigrations] =
-    deriveConfiguredDecoder
+    deriveDecoder
 }
