@@ -4,7 +4,7 @@ import cats.syntax.all._
 import munit.CatsEffectSuite
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.mock.MockContext.context.refreshErrorAlg
-import org.scalasteward.core.mock.{MockEff, MockState}
+import org.scalasteward.core.mock.{MockEff, MockEffOps, MockState}
 
 class RefreshErrorAlgTest extends CatsEffectSuite {
   test("skipIfFailedRecently: not failed") {

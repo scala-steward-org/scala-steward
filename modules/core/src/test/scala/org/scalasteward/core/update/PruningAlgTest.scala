@@ -10,7 +10,7 @@ import org.scalasteward.core.data.Resolver.MavenRepository
 import org.scalasteward.core.data.{DependencyInfo, Repo, RepoData, Scope}
 import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context.pruningAlg
-import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.mock.{MockEffOps, MockState}
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.repocache.RepoCache
 import org.scalasteward.core.repoconfig.RepoConfig

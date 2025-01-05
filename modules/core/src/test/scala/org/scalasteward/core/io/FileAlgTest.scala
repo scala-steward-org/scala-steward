@@ -9,8 +9,8 @@ import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
 import org.scalasteward.core.mock.MockConfig.mockRoot
 import org.scalasteward.core.mock.MockContext.context.fileAlg
-import org.scalasteward.core.mock.{MockEff, MockState}
 import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
+import org.scalasteward.core.mock.{MockEff, MockEffOps, MockState}
 
 class FileAlgTest extends CatsEffectSuite {
   test("createTemporarily") {

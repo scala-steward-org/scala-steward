@@ -12,7 +12,7 @@ import org.scalasteward.core.forge.ForgeType._
 import org.scalasteward.core.forge.github.Repository
 import org.scalasteward.core.forge.{ForgeRepo, ForgeType}
 import org.scalasteward.core.mock.MockContext.context._
-import org.scalasteward.core.mock.{GitHubAuth, MockEff, MockState}
+import org.scalasteward.core.mock.{GitHubAuth, MockEff, MockEffOps, MockState}
 import org.scalasteward.core.nurture.UpdateInfoUrl._
 import org.scalasteward.core.nurture.UpdateInfoUrlFinder._
 

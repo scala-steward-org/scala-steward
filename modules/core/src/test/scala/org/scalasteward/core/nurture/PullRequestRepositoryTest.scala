@@ -2,6 +2,7 @@ package org.scalasteward.core.nurture
 
 import cats.Id
 import cats.effect.unsafe.implicits.global
+import java.util.concurrent.atomic.AtomicInteger
 import munit.FunSuite
 import org.http4s.syntax.literals._
 import org.scalasteward.core.TestSyntax._
@@ -13,11 +14,9 @@ import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context.pullRequestRepository
 import org.scalasteward.core.mock.MockState.TraceEntry
 import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
-import org.scalasteward.core.mock.{MockEff, MockState}
+import org.scalasteward.core.mock.{MockEff, MockEffOps, MockState}
 import org.scalasteward.core.repoconfig.{RetractedArtifact, UpdatePattern, VersionPattern}
 import org.scalasteward.core.util.Nel
-
-import java.util.concurrent.atomic.AtomicInteger
 
 class PullRequestRepositoryTest extends FunSuite {
   private def checkTrace(state: MockState, trace: Vector[TraceEntry]): Unit =

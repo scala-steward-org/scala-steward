@@ -6,7 +6,7 @@ import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.GroupId
 import org.scalasteward.core.mock.MockContext.context.filterAlg
-import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.mock.{MockEffOps, MockState}
 import org.scalasteward.core.mock.MockState.TraceEntry.Log
 import org.scalasteward.core.repoconfig._
 import org.scalasteward.core.update.FilterAlg._

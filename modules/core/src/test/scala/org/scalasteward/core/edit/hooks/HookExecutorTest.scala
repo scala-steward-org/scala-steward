@@ -10,7 +10,7 @@ import org.scalasteward.core.git.gitBlameIgnoreRevsName
 import org.scalasteward.core.io.process.ProcessFailedException
 import org.scalasteward.core.io.{process, FileAlgTest}
 import org.scalasteward.core.mock.MockContext.context.{hookExecutor, workspaceAlg}
-import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.mock.{MockEffOps, MockState}
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.repoconfig.{PostUpdateHookConfig, RepoConfig, ScalafmtConfig}
 import org.scalasteward.core.scalafmt.ScalafmtAlg.opts
