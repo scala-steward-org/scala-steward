@@ -18,7 +18,6 @@ package org.scalasteward.core.client
 
 import cats.effect._
 import cats.syntax.all._
-import eu.timepit.refined.auto._
 import eu.timepit.refined.types.numeric.PosInt
 import java.net.http.HttpClient
 import java.net.http.HttpClient.Builder
@@ -69,26 +68,27 @@ object ClientConfiguration {
     *   max number times the HTTP request should be sent useful to avoid unexpected cloud provider
     *   costs
     */
-  def retryAfter[F[_]: Temporal](maxAttempts: PosInt = 5): Middleware[F] = { client =>
-    Client[F] { req =>
-      def run(attempt: Int = 1): Resource[F, Response[F]] = client
-        .run(req.putHeaders("X-Attempt" -> attempt.toString))
-        .flatMap { response =>
-          val maybeRetried = for {
-            header <- response.headers.get(ci"Retry-After")
-            seconds <- header.head.value.toIntOption
-            if seconds > 0
-            duration = seconds.seconds
-            if RetryAfterStatuses.contains(response.status.code)
-            if attempt < maxAttempts.value
-          } yield Resource
-            .eval(response.as[Unit].voidError *> Temporal[F].sleep(duration))
-            .flatMap(_ => run(attempt + 1))
-          maybeRetried.getOrElse(Resource.pure(response))
-        }
+  def retryAfter[F[_]: Temporal](maxAttempts: PosInt = PosInt.unsafeFrom(5)): Middleware[F] = {
+    client =>
+      Client[F] { req =>
+        def run(attempt: Int = 1): Resource[F, Response[F]] = client
+          .run(req.putHeaders("X-Attempt" -> attempt.toString))
+          .flatMap { response =>
+            val maybeRetried = for {
+              header <- response.headers.get(ci"Retry-After")
+              seconds <- header.head.value.toIntOption
+              if seconds > 0
+              duration = seconds.seconds
+              if RetryAfterStatuses.contains(response.status.code)
+              if attempt < maxAttempts.value
+            } yield Resource
+              .eval(response.as[Unit].voidError *> Temporal[F].sleep(duration))
+              .flatMap(_ => run(attempt + 1))
+            maybeRetried.getOrElse(Resource.pure(response))
+          }
 
-      run()
-    }
+        run()
+      }
   }
 
   def disableFollowRedirect: BuilderMiddleware = _.followRedirects(HttpClient.Redirect.NEVER)
