@@ -40,7 +40,7 @@ class CliTest extends FunSuite {
         List("--refresh-backoff-period", "1 day"),
         List("--bitbucket-use-default-reviewers")
       ).flatten
-    )
+    ): @unchecked
 
     assertEquals(obtained.workspace, File("a"))
     assertEquals(obtained.reposFiles, Nel.one(uri"b"))
@@ -85,7 +85,7 @@ class CliTest extends FunSuite {
   test("parseArgs: minimal example") {
     val Success(Usage.Regular(obtained)) = Cli.parseArgs(
       minimumRequiredParams.flatten
-    )
+    ): @unchecked
 
     assert(!obtained.processCfg.sandboxCfg.enableSandbox)
     assertEquals(obtained.workspace, File("a"))
@@ -105,7 +105,7 @@ class CliTest extends FunSuite {
         List("--git-ask-pass", "f"),
         List("--enable-sandbox")
       ).flatten
-    )
+    ): @unchecked
 
     assert(obtained.processCfg.sandboxCfg.enableSandbox)
   }
@@ -121,7 +121,7 @@ class CliTest extends FunSuite {
         List("--enable-sandbox"),
         List("--disable-sandbox")
       ).flatten
-    )
+    ): @unchecked
 
     assert(clue(obtained).startsWith("Unexpected option"))
   }
@@ -136,23 +136,23 @@ class CliTest extends FunSuite {
         List("--git-ask-pass", "f"),
         List("--disable-sandbox")
       ).flatten
-    )
+    ): @unchecked
 
     assert(!obtained.processCfg.sandboxCfg.enableSandbox)
   }
 
   test("parseArgs: fail if required option not provided") {
-    val Error(obtained) = Cli.parseArgs(Nil)
+    val Error(obtained) = Cli.parseArgs(Nil): @unchecked
     assert(clue(obtained).startsWith("Missing expected"))
   }
 
   test("parseArgs: unrecognized argument") {
-    val Error(obtained) = Cli.parseArgs(List("--foo"))
+    val Error(obtained) = Cli.parseArgs(List("--foo")): @unchecked
     assert(clue(obtained).startsWith("Unexpected option"))
   }
 
   test("parseArgs: --help") {
-    val Help(obtained) = Cli.parseArgs(List("--help"))
+    val Help(obtained) = Cli.parseArgs(List("--help")): @unchecked
     assert(clue(obtained).startsWith("Usage"))
   }
 
@@ -161,7 +161,7 @@ class CliTest extends FunSuite {
       List("--gitlab-merge-when-pipeline-succeeds"),
       List("--gitlab-required-reviewers", "5")
     )
-    val Success(Usage.Regular(obtained)) = Cli.parseArgs(params.flatten)
+    val Success(Usage.Regular(obtained)) = Cli.parseArgs(params.flatten): @unchecked
 
     assert(obtained.gitLabCfg.mergeWhenPipelineSucceeds)
     assertEquals(obtained.gitLabCfg.requiredReviewers, Some(5))
@@ -172,7 +172,7 @@ class CliTest extends FunSuite {
       List("--gitlab-merge-when-pipeline-succeeds"),
       List("--gitlab-required-reviewers", "-3")
     )
-    val Error(errorMsg) = Cli.parseArgs(params.flatten)
+    val Error(errorMsg) = Cli.parseArgs(params.flatten): @unchecked
 
     assert(clue(errorMsg).startsWith("Required reviewers must be non-negative"))
   }
@@ -182,7 +182,7 @@ class CliTest extends FunSuite {
       List(
         List("validate-repo-config", "file.conf")
       ).flatten
-    )
+    ): @unchecked
 
     assertEquals(file, File("file.conf"))
   }
@@ -192,7 +192,7 @@ class CliTest extends FunSuite {
       List("--forge-type", "azure-repos"),
       List("--do-not-fork")
     )
-    val Success(Usage.Regular(obtained)) = Cli.parseArgs(params.flatten)
+    val Success(Usage.Regular(obtained)) = Cli.parseArgs(params.flatten): @unchecked
     assert(obtained.forgeCfg.doNotFork)
   }
 
@@ -200,7 +200,7 @@ class CliTest extends FunSuite {
     val params = minimumRequiredParams ++ List(
       List("--forge-type", "azure-repos")
     )
-    val Error(errorMsg) = Cli.parseArgs(params.flatten)
+    val Error(errorMsg) = Cli.parseArgs(params.flatten): @unchecked
     assert(clue(errorMsg).startsWith("azure-repos, bitbucket-server do not support fork mode"))
   }
 
@@ -208,7 +208,7 @@ class CliTest extends FunSuite {
     val params = minimumRequiredParams ++ List(
       List("--forge-type", "bitbucket")
     )
-    val Success(Usage.Regular(obtained)) = Cli.parseArgs(params.flatten)
+    val Success(Usage.Regular(obtained)) = Cli.parseArgs(params.flatten): @unchecked
     assert(!obtained.forgeCfg.addLabels)
   }
 
@@ -216,12 +216,12 @@ class CliTest extends FunSuite {
     val params = minimumRequiredParams ++ List(
       List("--exit-code-success-if-any-repo-succeeds")
     )
-    val Success(Usage.Regular(obtained)) = Cli.parseArgs(params.flatten)
+    val Success(Usage.Regular(obtained)) = Cli.parseArgs(params.flatten): @unchecked
     assert(obtained.exitCodePolicy == SuccessIfAnyRepoSucceeds)
   }
 
   test("parseArgs: exit code policy: default") {
-    val Success(Usage.Regular(obtained)) = Cli.parseArgs(minimumRequiredParams.flatten)
+    val Success(Usage.Regular(obtained)) = Cli.parseArgs(minimumRequiredParams.flatten): @unchecked
     assert(obtained.exitCodePolicy == SuccessOnlyIfAllReposSucceed)
   }
 
@@ -230,7 +230,7 @@ class CliTest extends FunSuite {
       List("--forge-type", "bitbucket"),
       List("--add-labels")
     )
-    val Error(errorMsg) = Cli.parseArgs(params.flatten)
+    val Error(errorMsg) = Cli.parseArgs(params.flatten): @unchecked
     assert(
       clue(errorMsg).startsWith("bitbucket, bitbucket-server do not support pull request labels")
     )
@@ -255,7 +255,7 @@ class CliTest extends FunSuite {
         List("--forge-type", "azure-repos"),
         List("--azure-repos-organization")
       )).flatten
-    )
+    ): @unchecked
     assert(error.startsWith("Missing value for option: --azure-repos-organization"))
   }
 }
