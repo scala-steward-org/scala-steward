@@ -4,7 +4,7 @@ import cats.effect.ExitCode
 import munit.CatsEffectSuite
 import org.scalasteward.core.mock.MockConfig.mockRoot
 import org.scalasteward.core.mock.MockContext.validateRepoConfigContext.validateRepoConfigAlg
-import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.mock.{MockEffOps, MockState}
 
 class ValidateRepoConfigAlgTest extends CatsEffectSuite {
   test("accepts valid config") {

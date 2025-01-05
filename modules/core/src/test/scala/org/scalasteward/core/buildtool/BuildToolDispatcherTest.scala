@@ -3,14 +3,14 @@ package org.scalasteward.core.buildtool
 import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.buildtool.sbt.command._
+import org.scalasteward.core.buildtool.scalacli.ScalaCliAlg
 import org.scalasteward.core.data._
 import org.scalasteward.core.mock.MockContext.context._
-import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.mock.{MockEffOps, MockState}
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.repoconfig.{BuildRootConfig, RepoConfig}
 import org.scalasteward.core.scalafmt
 import org.scalasteward.core.scalafmt.scalafmtConfName
-import org.scalasteward.core.buildtool.scalacli.ScalaCliAlg
 
 class BuildToolDispatcherTest extends FunSuite {
   test("getDependencies") {

@@ -13,7 +13,7 @@ import org.scalasteward.core.forge.data.{RepoOut, UserOut}
 import org.scalasteward.core.forge.github.Repository
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.mock.MockContext.context.{repoCacheAlg, repoConfigAlg, workspaceAlg}
-import org.scalasteward.core.mock.{GitHubAuth, MockEff, MockState}
+import org.scalasteward.core.mock.{GitHubAuth, MockEff, MockEffOps, MockState}
 import org.scalasteward.core.util.intellijThisImportIsUsed
 
 class RepoCacheAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {

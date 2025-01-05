@@ -21,7 +21,7 @@ import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context.httpJsonClient
 import org.scalasteward.core.mock.MockForgeAuthAlg.noAuth
-import org.scalasteward.core.mock.{MockEff, MockState}
+import org.scalasteward.core.mock.{MockEff, MockEffOps, MockState}
 import org.scalasteward.core.repoconfig.RepoConfig
 
 class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {

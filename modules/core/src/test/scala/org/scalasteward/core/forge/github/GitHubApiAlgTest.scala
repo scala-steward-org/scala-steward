@@ -2,13 +2,13 @@ package org.scalasteward.core.forge.github
 
 import cats.effect.IO
 import cats.syntax.all._
-import io.circe.literal._
 import io.circe.Json
+import io.circe.literal._
 import munit.CatsEffectSuite
+import org.http4s.HttpApp
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.implicits._
-import org.http4s.HttpApp
 import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.application.Config.GitHubCfg
 import org.scalasteward.core.data.Repo
@@ -18,7 +18,7 @@ import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context.httpJsonClient
 import org.scalasteward.core.mock.MockForgeAuthAlg.noAuth
-import org.scalasteward.core.mock.{MockEff, MockState}
+import org.scalasteward.core.mock.{MockEff, MockEffOps, MockState}
 
 class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   private val httpApp = HttpApp[MockEff] {
