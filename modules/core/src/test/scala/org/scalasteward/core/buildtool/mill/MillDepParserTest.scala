@@ -128,7 +128,7 @@ class MillDepParserTest extends FunSuite {
         |  ]
         |}
         |""".stripMargin
-    val Right(result) = parser.parseModules(data)
+    val Right(result) = parser.parseModules(data): @unchecked
 
     val dep12 = List("com.lihaoyi".g % ("geny", "geny_2.12").a % "0.6.0")
 

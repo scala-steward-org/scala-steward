@@ -32,5 +32,5 @@ object MockConfig {
     s"--github-app-key-file=$key",
     "--refresh-backoff-period=1hour"
   )
-  val Success(Cli.Usage.Regular(config)) = Cli.parseArgs(args)
+  val Success(Cli.Usage.Regular(config)) = Cli.parseArgs(args): @unchecked
 }
