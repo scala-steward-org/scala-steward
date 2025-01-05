@@ -128,7 +128,6 @@ lazy val core = myCrossProject("core")
       Dependencies.catsParse,
       Dependencies.circeConfig,
       Dependencies.circeGeneric,
-      Dependencies.circeGenericExtras,
       Dependencies.circeParser,
       Dependencies.circeRefined,
       Dependencies.commonsIo,

@@ -17,14 +17,11 @@
 package org.scalasteward.core.update.artifact
 
 import io.circe.Decoder
-import io.circe.generic.extras.{semiauto, Configuration}
+import io.circe.generic.semiauto._
 
 final case class ArtifactChanges(changes: List[ArtifactChange])
 
 object ArtifactChanges {
-  implicit val configuration: Configuration =
-    Configuration.default.withDefaults
-
   implicit val artifactChangesDecoder: Decoder[ArtifactChanges] =
-    semiauto.deriveConfiguredDecoder
+    deriveDecoder
 }
