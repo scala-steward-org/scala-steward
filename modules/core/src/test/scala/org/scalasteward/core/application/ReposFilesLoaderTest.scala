@@ -4,7 +4,7 @@ import munit.CatsEffectSuite
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.mock.MockContext.context.reposFilesLoader
-import org.scalasteward.core.mock.{MockConfig, MockState}
+import org.scalasteward.core.mock.{MockConfig, MockEffOps, MockState}
 import org.scalasteward.core.util.Nel
 
 class ReposFilesLoaderTest extends CatsEffectSuite {

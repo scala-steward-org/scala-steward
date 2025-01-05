@@ -7,7 +7,7 @@ import org.http4s.headers.{Link, LinkValue}
 import org.http4s.syntax.all._
 import org.http4s.{HttpApp, HttpVersion, Status}
 import org.scalasteward.core.mock.MockContext.context._
-import org.scalasteward.core.mock.{MockEff, MockState}
+import org.scalasteward.core.mock.{MockEff, MockEffOps, MockState}
 
 class HttpJsonClientTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   test("getAll") {

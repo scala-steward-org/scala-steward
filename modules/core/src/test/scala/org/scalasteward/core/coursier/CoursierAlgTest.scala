@@ -6,7 +6,7 @@ import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.buildtool.sbt.data.{SbtVersion, ScalaVersion}
 import org.scalasteward.core.data.Resolver
 import org.scalasteward.core.mock.MockContext.context.coursierAlg
-import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.mock.{MockEffOps, MockState}
 
 class CoursierAlgTest extends CatsEffectSuite {
   private val resolvers = List(Resolver.mavenCentral)

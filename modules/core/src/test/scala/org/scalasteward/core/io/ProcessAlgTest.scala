@@ -8,7 +8,7 @@ import org.scalasteward.core.TestInstances._
 import org.scalasteward.core.application.Config.{ProcessCfg, SandboxCfg}
 import org.scalasteward.core.io.ProcessAlgTest.ioProcessAlg
 import org.scalasteward.core.mock.MockConfig.{config, mockRoot}
-import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.mock.{MockEffOps, MockState}
 import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
 import org.scalasteward.core.util.Nel
 import scala.concurrent.duration.Duration

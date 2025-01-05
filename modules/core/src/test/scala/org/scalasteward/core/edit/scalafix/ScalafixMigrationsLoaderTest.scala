@@ -11,6 +11,7 @@ import org.scalasteward.core.git.Author
 import org.scalasteward.core.mock.MockConfig.mockRoot
 import org.scalasteward.core.mock.MockContext.context.scalafixMigrationsLoader
 import org.scalasteward.core.mock.MockContext.mockState
+import org.scalasteward.core.mock.MockEffOps
 import org.scalasteward.core.util.Nel
 
 class ScalafixMigrationsLoaderTest extends FunSuite {

@@ -7,9 +7,9 @@ import org.scalasteward.core.forge.data.{RepoOut, UserOut}
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context.{gitAlg, logger, workspaceAlg}
-import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.mock.MockForgeAuthAlg.noAuth
-import org.scalasteward.core.mock.{MockConfig, MockEff, MockState}
+import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
+import org.scalasteward.core.mock.{MockConfig, MockEff, MockEffOps, MockState}
 
 class ForgeRepoAlgTest extends CatsEffectSuite {
   private val repo = Repo("fthomas", "datapackage")

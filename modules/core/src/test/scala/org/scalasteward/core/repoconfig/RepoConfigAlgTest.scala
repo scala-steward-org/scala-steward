@@ -8,7 +8,7 @@ import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.data.{GroupId, Repo, SemVer, Update}
 import org.scalasteward.core.mock.MockContext.context._
-import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.mock.{MockEffOps, MockState}
 import org.scalasteward.core.mock.MockState.TraceEntry.Log
 import org.scalasteward.core.util.Nel
 import scala.concurrent.duration._

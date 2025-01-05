@@ -6,7 +6,7 @@ import org.scalasteward.core.TestSyntax._
 import org.scalasteward.core.buildtool.sbt.data.{SbtVersion, ScalaVersion}
 import org.scalasteward.core.data.{GroupId, Resolver, Scope}
 import org.scalasteward.core.mock.MockContext.context.updateAlg
-import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.mock.{MockEffOps, MockState}
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.update.UpdateAlg
 import org.scalasteward.core.util.Nel

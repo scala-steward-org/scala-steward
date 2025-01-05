@@ -1,16 +1,15 @@
 package org.scalasteward.core.buildtool.scalacli
 
+import cats.syntax.parallel._
 import munit.CatsEffectSuite
 import org.scalasteward.core.buildtool.BuildRoot
 import org.scalasteward.core.buildtool.sbt.command._
 import org.scalasteward.core.data.{GroupId, Repo, Version}
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.mock.MockContext.context._
-import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.mock.{MockEffOps, MockState}
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.util.Nel
-
-import cats.syntax.parallel._
 
 class ScalaCliAlgTest extends CatsEffectSuite {
   test("containsBuild: directive in non-source file") {

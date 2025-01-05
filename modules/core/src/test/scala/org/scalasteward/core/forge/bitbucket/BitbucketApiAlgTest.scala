@@ -14,8 +14,8 @@ import org.scalasteward.core.forge.{ForgeSelection, ForgeType}
 import org.scalasteward.core.git._
 import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context.httpJsonClient
-import org.scalasteward.core.mock.{MockEff, MockState}
 import org.scalasteward.core.mock.MockForgeAuthAlg.noAuth
+import org.scalasteward.core.mock.{MockEff, MockEffOps, MockState}
 
 class BitbucketApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   private val httpApp = HttpApp[MockEff] {

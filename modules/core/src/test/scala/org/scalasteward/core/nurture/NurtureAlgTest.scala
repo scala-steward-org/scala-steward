@@ -11,7 +11,7 @@ import org.scalasteward.core.edit.EditAttempt.UpdateEdit
 import org.scalasteward.core.forge.data.NewPullRequestData
 import org.scalasteward.core.git.{Branch, Commit}
 import org.scalasteward.core.mock.MockContext.context
-import org.scalasteward.core.mock.{GitHubAuth, MockConfig, MockEff, MockState}
+import org.scalasteward.core.mock.{GitHubAuth, MockConfig, MockEff, MockEffOps, MockState}
 import org.scalasteward.core.repoconfig.{PullRequestsConfig, RepoConfig}
 
 class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {

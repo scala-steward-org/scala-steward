@@ -8,6 +8,7 @@ import org.scalasteward.core.data.GroupId
 import org.scalasteward.core.mock.MockConfig.mockRoot
 import org.scalasteward.core.mock.MockContext.context.artifactMigrationsLoader
 import org.scalasteward.core.mock.MockContext.mockState
+import org.scalasteward.core.mock.MockEffOps
 
 class ArtifactMigrationsLoaderTest extends FunSuite {
   val migrationsUri: Uri = Uri.unsafeFromString(s"$mockRoot/extra-migrations.conf")

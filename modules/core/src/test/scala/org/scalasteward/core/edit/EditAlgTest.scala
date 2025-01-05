@@ -8,7 +8,7 @@ import org.scalasteward.core.buildtool.sbt.{sbtArtifactId, sbtGroupId}
 import org.scalasteward.core.data._
 import org.scalasteward.core.edit.scalafix.ScalafixCli.scalafixBinary
 import org.scalasteward.core.mock.MockContext.context._
-import org.scalasteward.core.mock.MockState
+import org.scalasteward.core.mock.{MockEffOps, MockState}
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafmt.ScalafmtAlg.opts
