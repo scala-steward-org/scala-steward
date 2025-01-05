@@ -2,6 +2,7 @@ package org.scalasteward.core.buildtool.mill
 
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.data.Resolver
 
 class MillDepParserTest extends FunSuite {
   test("parse dependencies from https://github.com/lihaoyi/requests-scala") {
@@ -136,5 +137,14 @@ class MillDepParserTest extends FunSuite {
     val dep13 = List("com.lihaoyi".g % ("geny", "geny_2.13").a % "0.6.0")
 
     assertEquals(result.find(_.name == "requests[2.13.0]").map(_.dependencies), Some(dep13))
+  }
+
+  test("parse an IvyRepository") {
+    val pattern =
+      "https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/[organisation]/[module]/(scala_[scalaVersion]/)(sbt_[sbtVersion]/)([branch]/)[revision]/[type]s/[artifact](-[classifier]).[ext]"
+    val json = s""" { "pattern": "$pattern", "type": "ivy", "headers": [] } """
+    val obtained = io.circe.parser.decode(json)(MillModule.resolverDecoder)
+    val expected = Right(Resolver.IvyRepository(pattern, pattern, None, Some(Nil)))
+    assertEquals(obtained, expected)
   }
 }

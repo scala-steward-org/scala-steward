@@ -19,20 +19,24 @@ package org.scalasteward.core.repoconfig
 import cats.implicits._
 import cats.{Eq, Monoid}
 import io.circe.Codec
-import io.circe.generic.extras.Configuration
-import io.circe.generic.extras.semiauto.deriveConfiguredCodec
-
+import io.circe.generic.semiauto.deriveCodec
 import java.util.regex.PatternSyntaxException
 import scala.util.matching.Regex
 
 final case class PullRequestsConfig(
     frequency: Option[PullRequestFrequency] = None,
-    grouping: List[PullRequestGroup] = Nil,
+    private val grouping: Option[List[PullRequestGroup]] = None,
     includeMatchedLabels: Option[Regex] = None,
-    customLabels: List[String] = Nil
+    private val customLabels: Option[List[String]] = None
 ) {
   def frequencyOrDefault: PullRequestFrequency =
     frequency.getOrElse(PullRequestsConfig.defaultFrequency)
+
+  def groupingOrDefault: List[PullRequestGroup] =
+    grouping.getOrElse(Nil)
+
+  def customLabelsOrDefault: List[String] =
+    customLabels.getOrElse(Nil)
 }
 
 object PullRequestsConfig {
@@ -41,16 +45,13 @@ object PullRequestsConfig {
   implicit val pullRequestsConfigEq: Eq[PullRequestsConfig] =
     Eq.fromUniversalEquals
 
-  implicit val pullRequestsConfigConfiguration: Configuration =
-    Configuration.default.withDefaults
-
   implicit val regexCodec: Codec[Regex] =
     Codec
       .from[String](implicitly, implicitly)
       .iemap(s => Either.catchOnly[PatternSyntaxException](s.r).leftMap(_.getMessage))(_.regex)
 
   implicit val pullRequestsConfigCodec: Codec[PullRequestsConfig] =
-    deriveConfiguredCodec
+    deriveCodec
 
   implicit val pullRequestsConfigMonoid: Monoid[PullRequestsConfig] =
     Monoid.instance(

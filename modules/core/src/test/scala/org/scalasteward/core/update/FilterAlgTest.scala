@@ -52,10 +52,11 @@ class FilterAlgTest extends FunSuite {
 
   test("localFilter: allowed update to pre-releases of a different series") {
     val update = ("com.jsuereth".g % "sbt-pgp".a % "1.1.2-1" %> Nel.of("2.0.1-M3")).single
-    val allowedPreReleases =
-      UpdatePattern("com.jsuereth".g, Some("sbt-pgp"), None) :: config.updates.allowPreReleases
-    val configWithAllowed =
-      config.copy(updates = config.updates.copy(allowPreReleases = allowedPreReleases))
+    val allowedPreReleases = UpdatePattern("com.jsuereth".g, Some("sbt-pgp"), None) ::
+      config.updatesOrDefault.allowPreReleasesOrDefault
+    val configWithAllowed = config.copy(updates =
+      config.updatesOrDefault.copy(allowPreReleases = allowedPreReleases.some).some
+    )
 
     val expected = Right(update.copy(newerVersions = Nel.of("2.0.1-M3".v)))
     assertEquals(localFilter(update, configWithAllowed), expected)
@@ -64,7 +65,9 @@ class FilterAlgTest extends FunSuite {
   test("ignore update via config updates.ignore") {
     val update = ("eu.timepit".g % "refined".a % "0.8.0" %> "0.8.1").single
     val config = RepoConfig(updates =
-      UpdatesConfig(ignore = List(UpdatePattern(GroupId("eu.timepit"), Some("refined"), None)))
+      UpdatesConfig(ignore =
+        List(UpdatePattern(GroupId("eu.timepit"), Some("refined"), None)).some
+      ).some
     )
 
     val initialState = MockState.empty
@@ -89,8 +92,8 @@ class FilterAlgTest extends FunSuite {
             Some("scala-compiler"),
             Some(VersionPattern(exact = Some("2.13.8")))
           )
-        )
-      )
+        ).some
+      ).some
     )
     val expected = Right(update.copy(newerVersions = Nel.of("2.13.7".v)))
     assertEquals(localFilter(update, config), expected)
@@ -109,8 +112,8 @@ class FilterAlgTest extends FunSuite {
             Some("refined"),
             Some(VersionPattern(Some("0.8")))
           )
-        )
-      )
+        ).some
+      ).some
     )
 
     val filtered1 = filterAlg
@@ -146,8 +149,8 @@ class FilterAlgTest extends FunSuite {
           UpdatePattern(GroupId("org.my1"), None, Some(VersionPattern(Some("0.8")))),
           UpdatePattern(GroupId("org.my2"), None, None),
           UpdatePattern(GroupId("org.my3"), Some("artifact"), None)
-        )
-      )
+        ).some
+      ).some
     )
 
     included.foreach { update =>
@@ -180,8 +183,8 @@ class FilterAlgTest extends FunSuite {
             Some(update.artifactId.name),
             Some(VersionPattern(suffix = Some("jre8")))
           )
-        )
-      )
+        ).some
+      ).some
     )
 
     val filtered = localFilter(update, config)
@@ -200,8 +203,8 @@ class FilterAlgTest extends FunSuite {
             Some(update.artifactId.name),
             Some(VersionPattern(suffix = Some("jre11")))
           )
-        )
-      )
+        ).some
+      ).some
     )
 
     val filtered = localFilter(update, config)
@@ -220,8 +223,8 @@ class FilterAlgTest extends FunSuite {
             Some(update.artifactId.name),
             Some(VersionPattern(Some("7.2."), Some("jre8")))
           )
-        )
-      )
+        ).some
+      ).some
     )
 
     assertEquals(localFilter(update, config), Left(VersionPinnedByConfig(update)))

@@ -7,7 +7,7 @@ import org.scalasteward.core.util.Nel
 object TestSyntax {
   val sbtPluginReleases: IvyRepository = {
     val pattern = "https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/[defaultPattern]"
-    IvyRepository("sbt-plugin-releases", pattern, None)
+    IvyRepository("sbt-plugin-releases", pattern, None, None)
   }
 
   implicit class GenericOps[A](val self: A) extends AnyVal {

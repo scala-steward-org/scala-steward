@@ -103,7 +103,7 @@ class CoursierAlgTest extends CatsEffectSuite {
   test("getMetadata: resolver with headers") {
     val dep = "org.typelevel".g % ("cats-effect", "cats-effect_2.12").a % "1.0.0"
     val resolvers =
-      List(Resolver.mavenCentral.copy(headers = List(Resolver.Header("X-Foo", "bar"))))
+      List(Resolver.mavenCentral.copy(headers = Some(List(Resolver.Header("X-Foo", "bar")))))
     val obtained =
       coursierAlg.getMetadata(dep, resolvers).runA(MockState.empty).map(_.repoUrl.isDefined)
     assertIOBoolean(obtained)

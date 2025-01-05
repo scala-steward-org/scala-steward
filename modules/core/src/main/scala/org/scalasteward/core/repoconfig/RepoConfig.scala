@@ -19,8 +19,7 @@ package org.scalasteward.core.repoconfig
 import cats.syntax.all._
 import cats.{Eq, Monoid}
 import io.circe.Codec
-import io.circe.generic.extras.Configuration
-import io.circe.generic.extras.semiauto._
+import io.circe.generic.semiauto._
 import io.circe.syntax._
 import org.scalasteward.core.buildtool.BuildRoot
 import org.scalasteward.core.data.Repo
@@ -28,23 +27,44 @@ import org.scalasteward.core.edit.hooks.PostUpdateHook
 import org.scalasteward.core.repoconfig.RepoConfig.defaultBuildRoots
 
 final case class RepoConfig(
-    commits: CommitsConfig = CommitsConfig(),
-    pullRequests: PullRequestsConfig = PullRequestsConfig(),
-    scalafmt: ScalafmtConfig = ScalafmtConfig(),
-    updates: UpdatesConfig = UpdatesConfig(),
-    postUpdateHooks: Option[List[PostUpdateHookConfig]] = None,
-    updatePullRequests: Option[PullRequestUpdateStrategy] = None,
-    buildRoots: Option[List[BuildRootConfig]] = None,
-    assignees: List[String] = List.empty,
-    reviewers: List[String] = List.empty,
-    dependencyOverrides: List[GroupRepoConfig] = List.empty,
+    private val commits: Option[CommitsConfig] = None,
+    private val pullRequests: Option[PullRequestsConfig] = None,
+    private val scalafmt: Option[ScalafmtConfig] = None,
+    private val updates: Option[UpdatesConfig] = None,
+    private val postUpdateHooks: Option[List[PostUpdateHookConfig]] = None,
+    private val updatePullRequests: Option[PullRequestUpdateStrategy] = None,
+    private val buildRoots: Option[List[BuildRootConfig]] = None,
+    private val assignees: Option[List[String]] = None,
+    private val reviewers: Option[List[String]] = None,
+    private val dependencyOverrides: Option[List[GroupRepoConfig]] = None,
     signoffCommits: Option[Boolean] = None
 ) {
+  def commitsOrDefault: CommitsConfig =
+    commits.getOrElse(CommitsConfig())
+
+  def pullRequestsOrDefault: PullRequestsConfig =
+    pullRequests.getOrElse(PullRequestsConfig())
+
+  def scalafmtOrDefault: ScalafmtConfig =
+    scalafmt.getOrElse(ScalafmtConfig())
+
+  def updatesOrDefault: UpdatesConfig =
+    updates.getOrElse(UpdatesConfig())
+
   def buildRootsOrDefault(repo: Repo): List[BuildRoot] =
     buildRoots
       .map(_.filterNot(_.relativePath.contains("..")))
       .getOrElse(defaultBuildRoots)
       .map(cfg => BuildRoot(repo, cfg.relativePath))
+
+  def assigneesOrDefault: List[String] =
+    assignees.getOrElse(Nil)
+
+  def reviewersOrDefault: List[String] =
+    reviewers.getOrElse(Nil)
+
+  def dependencyOverridesOrDefault: List[GroupRepoConfig] =
+    dependencyOverrides.getOrElse(Nil)
 
   def postUpdateHooksOrDefault: List[PostUpdateHook] =
     postUpdateHooks.getOrElse(Nil).map(_.toHook)
@@ -53,7 +73,7 @@ final case class RepoConfig(
     updatePullRequests.getOrElse(PullRequestUpdateStrategy.default)
 
   def show: String =
-    this.asJson.spaces2
+    this.asJson.deepDropNullValues.spaces2
 }
 
 object RepoConfig {
@@ -65,11 +85,8 @@ object RepoConfig {
   implicit val repoConfigEq: Eq[RepoConfig] =
     Eq.fromUniversalEquals
 
-  implicit val repoConfigConfiguration: Configuration =
-    Configuration.default.withDefaults
-
   implicit val repoConfigCodec: Codec[RepoConfig] =
-    deriveConfiguredCodec
+    deriveCodec
 
   implicit val repoConfigMonoid: Monoid[RepoConfig] =
     Monoid.instance(

@@ -150,9 +150,9 @@ object TestInstances {
         limit <- Arbitrary.arbitrary[Option[NonNegInt]]
         fileExtensions <- Arbitrary.arbitrary[Option[List[String]]]
       } yield UpdatesConfig(
-        pin = pin,
-        allow = allow,
-        ignore = ignore,
+        pin = Some(pin),
+        allow = Some(allow),
+        ignore = Some(ignore),
         limit = limit,
         fileExtensions = fileExtensions
       )
@@ -161,10 +161,10 @@ object TestInstances {
   implicit val repoConfigArbitrary: Arbitrary[RepoConfig] =
     Arbitrary(
       for {
-        commits <- Arbitrary.arbitrary[CommitsConfig]
-        pullRequests <- Arbitrary.arbitrary[PullRequestsConfig]
-        scalafmt <- Arbitrary.arbitrary[ScalafmtConfig]
-        updates <- Arbitrary.arbitrary[UpdatesConfig]
+        commits <- Arbitrary.arbitrary[Option[CommitsConfig]]
+        pullRequests <- Arbitrary.arbitrary[Option[PullRequestsConfig]]
+        scalafmt <- Arbitrary.arbitrary[Option[ScalafmtConfig]]
+        updates <- Arbitrary.arbitrary[Option[UpdatesConfig]]
         updatePullRequests <- Arbitrary.arbitrary[Option[PullRequestUpdateStrategy]]
       } yield RepoConfig(
         commits = commits,

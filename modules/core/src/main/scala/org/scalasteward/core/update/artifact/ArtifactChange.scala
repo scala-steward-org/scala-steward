@@ -17,7 +17,7 @@
 package org.scalasteward.core.update.artifact
 
 import io.circe.Decoder
-import io.circe.generic.extras.{semiauto, Configuration}
+import io.circe.generic.semiauto
 import org.scalasteward.core.data.GroupId
 
 final case class ArtifactChange(
@@ -28,12 +28,9 @@ final case class ArtifactChange(
 )
 
 object ArtifactChange {
-  implicit val configuration: Configuration =
-    Configuration.default.withDefaults
-
-  implicit val decoder: Decoder[ArtifactChange] =
+  implicit val artifactChangeDecoder: Decoder[ArtifactChange] =
     semiauto
-      .deriveConfiguredDecoder[ArtifactChange]
+      .deriveDecoder[ArtifactChange]
       .ensure(
         change => change.groupIdBefore.isDefined || change.artifactIdBefore.isDefined,
         "At least one of groupIdBefore and/or artifactIdBefore must be set"

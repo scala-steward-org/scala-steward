@@ -19,8 +19,7 @@ package org.scalasteward.core.repoconfig
 import cats.implicits._
 import cats.{Eq, Monoid}
 import eu.timepit.refined.types.numeric.NonNegInt
-import io.circe.generic.extras.Configuration
-import io.circe.generic.extras.semiauto._
+import io.circe.generic.semiauto.deriveCodec
 import io.circe.refined._
 import io.circe.{Codec, Decoder}
 import org.scalasteward.core.buildtool.maven.pomXmlName
@@ -38,14 +37,29 @@ import org.scalasteward.core.update.FilterAlg.{
 import org.scalasteward.core.util.{combineOptions, intellijThisImportIsUsed, Nel}
 
 final case class UpdatesConfig(
-    pin: List[UpdatePattern] = List.empty,
-    allow: List[UpdatePattern] = List.empty,
-    allowPreReleases: List[UpdatePattern] = List.empty,
-    ignore: List[UpdatePattern] = List.empty,
-    retracted: List[RetractedArtifact] = List.empty,
+    private val pin: Option[List[UpdatePattern]] = None,
+    private val allow: Option[List[UpdatePattern]] = None,
+    private val allowPreReleases: Option[List[UpdatePattern]] = None,
+    private val ignore: Option[List[UpdatePattern]] = None,
+    private val retracted: Option[List[RetractedArtifact]] = None,
     limit: Option[NonNegInt] = defaultLimit,
-    fileExtensions: Option[List[String]] = None
+    private val fileExtensions: Option[List[String]] = None
 ) {
+  private[repoconfig] def pinOrDefault: List[UpdatePattern] =
+    pin.getOrElse(Nil)
+
+  private def allowOrDefault: List[UpdatePattern] =
+    allow.getOrElse(Nil)
+
+  def allowPreReleasesOrDefault: List[UpdatePattern] =
+    allowPreReleases.getOrElse(Nil)
+
+  private def ignoreOrDefault: List[UpdatePattern] =
+    ignore.getOrElse(Nil)
+
+  def retractedOrDefault: List[RetractedArtifact] =
+    retracted.getOrElse(Nil)
+
   def fileExtensionsOrDefault: Set[String] =
     fileExtensions.fold(UpdatesConfig.defaultFileExtensions)(_.toSet)
 
@@ -56,14 +70,14 @@ final case class UpdatesConfig(
     isAllowedPreReleases(update)
 
   private def isAllowedPreReleases(update: Update.ForArtifactId): FilterResult = {
-    val m = UpdatePattern.findMatch(allowPreReleases, update, include = true)
+    val m = UpdatePattern.findMatch(allowPreReleasesOrDefault, update, include = true)
     if (m.filteredVersions.nonEmpty)
       Right(update)
     else Left(NotAllowedByConfig(update))
   }
 
   private def isAllowed(update: Update.ForArtifactId): FilterResult = {
-    val m = UpdatePattern.findMatch(allow, update, include = true)
+    val m = UpdatePattern.findMatch(allowOrDefault, update, include = true)
     if (m.filteredVersions.nonEmpty)
       Right(update.copy(newerVersions = Nel.fromListUnsafe(m.filteredVersions)))
     else if (allow.isEmpty)
@@ -72,7 +86,7 @@ final case class UpdatesConfig(
   }
 
   private def isPinned(update: Update.ForArtifactId): FilterResult = {
-    val m = UpdatePattern.findMatch(pin, update, include = true)
+    val m = UpdatePattern.findMatch(pinOrDefault, update, include = true)
     if (m.filteredVersions.nonEmpty)
       Right(update.copy(newerVersions = Nel.fromListUnsafe(m.filteredVersions)))
     else if (m.byArtifactId.isEmpty)
@@ -81,7 +95,7 @@ final case class UpdatesConfig(
   }
 
   private def isIgnored(update: Update.ForArtifactId): FilterResult = {
-    val m = UpdatePattern.findMatch(ignore, update, include = false)
+    val m = UpdatePattern.findMatch(ignoreOrDefault, update, include = false)
     if (m.filteredVersions.nonEmpty)
       Right(update.copy(newerVersions = Nel.fromListUnsafe(m.filteredVersions)))
     else
@@ -92,6 +106,7 @@ final case class UpdatesConfig(
 object UpdatesConfig {
   val defaultFileExtensions: Set[String] =
     Set(
+      ".mill",
       MillAlg.millVersionName,
       MillAlg.millVersionNameInConfig,
       ".sbt",
@@ -110,11 +125,8 @@ object UpdatesConfig {
   implicit val updatesConfigEq: Eq[UpdatesConfig] =
     Eq.fromUniversalEquals
 
-  implicit val updatesConfigConfiguration: Configuration =
-    Configuration.default.withDefaults
-
   implicit val updatesConfigCodec: Codec[UpdatesConfig] =
-    deriveConfiguredCodec
+    deriveCodec
 
   implicit val updatesConfigMonoid: Monoid[UpdatesConfig] =
     Monoid.instance(
@@ -125,7 +137,7 @@ object UpdatesConfig {
           allow = mergeAllow(x.allow, y.allow),
           allowPreReleases = mergeAllow(x.allowPreReleases, y.allowPreReleases),
           ignore = mergeIgnore(x.ignore, y.ignore),
-          retracted = x.retracted ::: y.retracted,
+          retracted = x.retracted |+| y.retracted,
           limit = x.limit.orElse(y.limit),
           fileExtensions = mergeFileExtensions(x.fileExtensions, y.fileExtensions)
         )
@@ -133,12 +145,13 @@ object UpdatesConfig {
 
   //  Strategy: union with repo preference in terms of revision
   private[repoconfig] def mergePin(
-      x: List[UpdatePattern],
-      y: List[UpdatePattern]
-  ): List[UpdatePattern] =
+      x: Option[List[UpdatePattern]],
+      y: Option[List[UpdatePattern]]
+  ): Option[List[UpdatePattern]] = combineOptions(x, y) { (x, y) =>
     x.filterNot { p1 =>
       y.exists(p2 => p1.groupId === p2.groupId && p1.artifactId === p2.artifactId)
     } ::: y
+  }
 
   private[repoconfig] val nonExistingUpdatePattern: List[UpdatePattern] =
     List(UpdatePattern(GroupId("non-exist"), None, None))
@@ -146,9 +159,9 @@ object UpdatesConfig {
   //  Strategy: superset
   //  Xa.Ya.Za |+| Xb.Yb.Zb
   private[repoconfig] def mergeAllow(
-      x: List[UpdatePattern],
-      y: List[UpdatePattern]
-  ): List[UpdatePattern] =
+      x: Option[List[UpdatePattern]],
+      y: Option[List[UpdatePattern]]
+  ): Option[List[UpdatePattern]] = combineOptions(x, y) { (x, y) =>
     (x, y) match {
       case (Nil, second) => second
       case (first, Nil)  => first
@@ -168,6 +181,7 @@ object UpdatesConfig {
         if (builder.isEmpty) nonExistingUpdatePattern
         else builder.distinct.toList
     }
+  }
 
   //  merge UpdatePattern for same group id
   private def mergeAllowGroupId(
@@ -207,10 +221,11 @@ object UpdatesConfig {
 
   //  Strategy: union
   private[repoconfig] def mergeIgnore(
-      x: List[UpdatePattern],
-      y: List[UpdatePattern]
-  ): List[UpdatePattern] =
+      x: Option[List[UpdatePattern]],
+      y: Option[List[UpdatePattern]]
+  ): Option[List[UpdatePattern]] = combineOptions(x, y) { (x, y) =>
     x ::: y.filterNot(x.contains)
+  }
 
   private[repoconfig] def mergeFileExtensions(
       x: Option[List[String]],

@@ -123,10 +123,10 @@ object CoursierAlg {
   private def toCoursierRepository(resolver: Resolver): Either[String, coursier.Repository] =
     resolver match {
       case Resolver.MavenRepository(_, location, creds, headers) =>
-        val authentication = toCoursierAuthentication(creds, headers)
+        val authentication = toCoursierAuthentication(creds, headers.getOrElse(Nil))
         Right(coursier.maven.SbtMavenRepository.apply(location, authentication))
       case Resolver.IvyRepository(_, pattern, creds, headers) =>
-        val authentication = toCoursierAuthentication(creds, headers)
+        val authentication = toCoursierAuthentication(creds, headers.getOrElse(Nil))
         coursier.ivy.IvyRepository.parse(pattern, authentication = authentication)
     }
 

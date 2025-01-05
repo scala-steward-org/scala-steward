@@ -18,8 +18,6 @@ package org.scalasteward.core.data
 
 import cats.Order
 import io.circe.Codec
-import io.circe.generic.extras.Configuration
-import io.circe.generic.extras.semiauto.deriveConfiguredCodec
 import io.circe.generic.semiauto._
 import org.scalasteward.core.data.Resolver._
 
@@ -41,28 +39,27 @@ object Resolver {
   }
   final case class Header(key: String, value: String)
   object Header {
-    implicit val headerCodec: Codec[Header] = deriveCodec
+    implicit val headerCodec: Codec[Header] =
+      deriveCodec
   }
   final case class MavenRepository(
       name: String,
       location: String,
       credentials: Option[Credentials],
-      headers: List[Header] = Nil
+      headers: Option[List[Header]]
   ) extends Resolver
   final case class IvyRepository(
       name: String,
       pattern: String,
       credentials: Option[Credentials],
-      headers: List[Header] = Nil
+      headers: Option[List[Header]]
   ) extends Resolver
 
   val mavenCentral: MavenRepository =
-    MavenRepository("public", "https://repo1.maven.org/maven2/", None, Nil)
+    MavenRepository("public", "https://repo1.maven.org/maven2/", None, None)
 
-  implicit val resolverCodec: Codec[Resolver] = {
-    implicit val customConfig: Configuration = Configuration.default.withDefaults
-    deriveConfiguredCodec
-  }
+  implicit val resolverCodec: Codec[Resolver] =
+    deriveCodec
 
   implicit val resolverOrder: Order[Resolver] =
     Order.by {
