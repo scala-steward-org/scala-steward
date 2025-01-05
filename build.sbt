@@ -23,7 +23,7 @@ val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
 )
 
 val Scala213 = "2.13.15"
-val Scala3 = "3.3.1"
+val Scala3 = "3.6.2"
 
 /// sbt-typelevel configuration
 
@@ -133,8 +133,8 @@ lazy val core = myCrossProject("core")
       Dependencies.circeParser,
       Dependencies.circeRefined,
       Dependencies.commonsIo,
-      Dependencies.coursierCore,
-      Dependencies.coursierSbtMaven,
+      Dependencies.coursierCore.cross(CrossVersion.for3Use2_13),
+      Dependencies.coursierSbtMaven.cross(CrossVersion.for3Use2_13),
       Dependencies.cron4sCore,
       Dependencies.decline,
       Dependencies.fs2Core,
