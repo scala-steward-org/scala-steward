@@ -31,9 +31,9 @@ class stringTest extends ScalaCheckSuite {
   }
 
   test("longestCommonPrefixGreater") {
-    assertEquals(string.longestCommonPrefixGreater[1](Nel.of("abcde", "abchk")).get.value, "abc")
-    assertEquals(string.longestCommonPrefixGreater[3](Nel.of("abcde", "abchk")).get.value, "abc")
-    assertEquals(string.longestCommonPrefixGreater[3](Nel.of("abcde", "abhk")), None)
+    assertEquals(string.longestCommonPrefixGreater(Nel.of("abcde", "abchk"), 0), Some("abc"))
+    assertEquals(string.longestCommonPrefixGreater(Nel.of("abcde", "abchk"), 2), Some("abc"))
+    assertEquals(string.longestCommonPrefixGreater(Nel.of("abcde", "abhk"), 2), None)
   }
 
   test("rightmostLabel") {

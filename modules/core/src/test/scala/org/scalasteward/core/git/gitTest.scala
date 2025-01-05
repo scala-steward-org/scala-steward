@@ -10,7 +10,7 @@ import org.scalasteward.core.update.show
 class gitTest extends ScalaCheckSuite {
   test("commitMsgFor should work with static message") {
     val commitsConfig = CommitsConfig(Some("Static message"))
-    forAll { update: Update.Single =>
+    forAll { (update: Update.Single) =>
       assertEquals(commitMsgFor(update, commitsConfig, None).title, "Static message")
     }
   }
@@ -18,7 +18,7 @@ class gitTest extends ScalaCheckSuite {
   test("commitMsgFor adds branch if provided") {
     val commitsConfig = CommitsConfig(Some(s"$${default}"))
     val branch = Branch("some-branch")
-    forAll { update: Update.Single =>
+    forAll { (update: Update.Single) =>
       val expected = s"Update ${show.oneLiner(update)} to ${update.nextVersion} in ${branch.name}"
       assertEquals(commitMsgFor(update, commitsConfig, Some(branch)).title, expected)
     }
@@ -26,7 +26,7 @@ class gitTest extends ScalaCheckSuite {
 
   test("commitMsgFor should work with default message") {
     val commitsConfig = CommitsConfig(Some(s"$${default}"))
-    forAll { update: Update.Single =>
+    forAll { (update: Update.Single) =>
       val expected = s"Update ${show.oneLiner(update)} to ${update.nextVersion}"
       assertEquals(commitMsgFor(update, commitsConfig, None).title, expected)
     }
@@ -35,7 +35,7 @@ class gitTest extends ScalaCheckSuite {
   test("commitMsgFor should work with templated message") {
     val commitsConfig =
       CommitsConfig(Some(s"Update $${artifactName} from $${currentVersion} to $${nextVersion}"))
-    forAll { update: Update.Single =>
+    forAll { (update: Update.Single) =>
       val expected =
         s"Update ${show.oneLiner(update)} from ${update.currentVersion} to ${update.nextVersion}"
       assertEquals(commitMsgFor(update, commitsConfig, None).title, expected)
@@ -50,7 +50,7 @@ class gitTest extends ScalaCheckSuite {
         )
       )
     val branch = Branch("some-branch")
-    forAll { update: Update.Single =>
+    forAll { (update: Update.Single) =>
       val expected =
         s"Update ${show.oneLiner(update)} from ${update.currentVersion} to ${update.nextVersion} in ${branch.name}"
       assertEquals(commitMsgFor(update, commitsConfig, Some(branch)).title, expected)

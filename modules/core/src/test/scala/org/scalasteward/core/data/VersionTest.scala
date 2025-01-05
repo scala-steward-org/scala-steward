@@ -294,11 +294,11 @@ class VersionTest extends DisciplineSuite {
   }
 
   test("Component: round-trip") {
-    forAll { str: String => assertEquals(Component.render(Component.parse(str)), str) }
+    forAll { (str: String) => assertEquals(Component.render(Component.parse(str)), str) }
   }
 
   test("Component: round-trip using Version") {
-    forAll { v: Version => assertEquals(Component.render(Component.parse(v.value)), v.value) }
+    forAll { (v: Version) => assertEquals(Component.render(Component.parse(v.value)), v.value) }
   }
 
   test("Component: round-trip example") {
