@@ -19,6 +19,7 @@ package org.scalasteward.core.repoconfig
 import cats.Eq
 import cats.syntax.all._
 import cron4s.lib.javatime._
+import cron4s.syntax.cron.toDateTimeCronOps
 import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.repoconfig.PullRequestFrequency._
 import org.scalasteward.core.util.Timestamp
