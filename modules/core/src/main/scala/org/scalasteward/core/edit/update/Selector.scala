@@ -127,8 +127,7 @@ object Selector {
   private def heuristic1SearchTerms(update: Update.Single): List[String] = {
     val terms = update match {
       case s: Update.ForArtifactId => List(s.artifactId.name)
-      case g: Update.ForGroupId =>
-        g.artifactIds.map(_.name).toList ++ g.artifactIdsPrefix.map(_.value).toList
+      case g: Update.ForGroupId    => g.artifactIds.map(_.name).toList ++ g.artifactIdsPrefix.toList
     }
     terms.map(Update.nameOf(update.groupId, _))
   }

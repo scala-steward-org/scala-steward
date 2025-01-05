@@ -24,7 +24,6 @@ import io.circe.{Decoder, Encoder, HCursor, Json}
 import org.scalasteward.core.repoconfig.PullRequestGroup
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
-import org.scalasteward.core.util.string.MinLengthString
 
 sealed trait Update {
 
@@ -137,7 +136,7 @@ object Update {
       val possibleMainArtifactIds = for {
         prefix <- artifactIdsPrefix.toList
         suffix <- commonSuffixes
-      } yield prefix.value + suffix
+      } yield prefix + suffix
 
       artifactIds
         .map(_.name)
@@ -151,8 +150,8 @@ object Update {
     override def newerVersions: Nel[Version] =
       forArtifactIds.head.newerVersions
 
-    def artifactIdsPrefix: Option[MinLengthString[3]] =
-      util.string.longestCommonPrefixGreater[3](artifactIds.map(_.name))
+    def artifactIdsPrefix: Option[String] =
+      util.string.longestCommonPrefixGreater(artifactIds.map(_.name), 2)
   }
 
   val commonSuffixes: List[String] =

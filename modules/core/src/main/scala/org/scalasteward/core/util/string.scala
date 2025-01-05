@@ -18,14 +18,9 @@ package org.scalasteward.core.util
 
 import cats.Foldable
 import cats.syntax.all._
-import eu.timepit.refined.api.Refined
-import eu.timepit.refined.collection.MinSize
-import eu.timepit.refined.refineV
 import scala.util.matching.Regex
-import shapeless.Witness
 
 object string {
-  type MinLengthString[N] = String Refined MinSize[N]
 
   /** Extracts words from a string.
     *
@@ -53,10 +48,10 @@ object string {
     s1.substring(0, i)
   }
 
-  def longestCommonPrefixGreater[N <: Int: Witness.Aux](
-      xs: Nel[String]
-  ): Option[MinLengthString[N]] =
-    refineV[MinSize[N]](xs.reduceLeft(longestCommonPrefix)).toOption
+  def longestCommonPrefixGreater(xs: Nel[String], n: Int): Option[String] = {
+    val prefix = xs.reduceLeft(longestCommonPrefix)
+    Option.when(prefix.length > n)(prefix)
+  }
 
   def removeSuffix(target: String, suffixes: List[String]): String =
     suffixes
