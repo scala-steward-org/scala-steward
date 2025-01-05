@@ -48,7 +48,7 @@ class stringTest extends ScalaCheckSuite {
   }
 
   property("splitBetweenLowerAndUpperChars(s).mkString == s") {
-    forAll(Gen.asciiStr) { s: String =>
+    forAll(Gen.asciiStr) { (s: String) =>
       assertEquals(string.splitBetweenLowerAndUpperChars(s).mkString, s)
     }
   }
