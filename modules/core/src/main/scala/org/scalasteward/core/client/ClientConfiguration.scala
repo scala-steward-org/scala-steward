@@ -22,11 +22,12 @@ import eu.timepit.refined.auto._
 import eu.timepit.refined.types.numeric.PosInt
 import java.net.http.HttpClient
 import java.net.http.HttpClient.Builder
-import org.http4s.Response
+import org.http4s.{Headers, Response}
 import org.http4s.client._
 import org.http4s.headers.`User-Agent`
 import org.http4s.jdkhttpclient.JdkHttpClient
 import org.typelevel.ci._
+import java.time.Instant
 import scala.concurrent.duration._
 
 object ClientConfiguration {
@@ -65,20 +66,38 @@ object ClientConfiguration {
 
   private val RetryAfterStatuses = Set(403, 429, 503)
 
+  implicit class FunctionExtender[T, U](f: T => Option[U]) {
+    def orElse(g: T => Option[U])(t: T): Option[U] = f(t).orElse(g(t))
+  }
+
+  private val retryAfter: Headers => Option[Int] =
+    _.get(ci"Retry-After").flatMap(_.head.value.toIntOption)
+
+  private val retryWaitMax60Seconds: Long => Int = {
+    case i if i > 0 && i < 60 => i.toInt
+    case i if i > 60          => 60
+    case _                    => 1
+  }
+
+  private val rateLimitReset: Headers => Option[Int] = _.get(ci"X-Ratelimit-Reset")
+    .flatMap(_.head.value.toLongOption)
+    .map(_ - Instant.now.getEpochSecond)
+    .map(retryWaitMax60Seconds)
+
+  private val retryInterval: Headers => Option[Int] = retryAfter.orElse(rateLimitReset)
+
   /** @param maxAttempts
     *   max number times the HTTP request should be sent useful to avoid unexpected cloud provider
     *   costs
     */
-  def retryAfter[F[_]: Temporal](maxAttempts: PosInt = 5): Middleware[F] = { client =>
+  def withRetry[F[_]: Temporal](maxAttempts: PosInt = 5): Middleware[F] = { client =>
     Client[F] { req =>
       def run(attempt: Int = 1): Resource[F, Response[F]] = client
         .run(req.putHeaders("X-Attempt" -> attempt.toString))
         .flatMap { response =>
           val maybeRetried = for {
-            header <- response.headers.get(ci"Retry-After")
-            seconds <- header.head.value.toIntOption
-            if seconds > 0
-            duration = seconds.seconds
+            interval <- retryInterval(response.headers)
+            duration = interval.seconds
             if RetryAfterStatuses.contains(response.status.code)
             if attempt < maxAttempts.value
           } yield Resource

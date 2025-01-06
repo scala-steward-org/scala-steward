@@ -94,7 +94,7 @@ object Context {
       userAgent <- Resource.eval(F.fromEither(`User-Agent`.parse(1)(userAgentString)))
       middleware = ClientConfiguration
         .setUserAgent[F](userAgent)
-        .andThen(ClientConfiguration.retryAfter[F](maxAttempts = 5))
+        .andThen(ClientConfiguration.withRetry[F](maxAttempts = 5))
       defaultClient <- ClientConfiguration.build(
         ClientConfiguration.BuilderMiddleware.default,
         middleware
