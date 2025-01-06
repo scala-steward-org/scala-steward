@@ -2,7 +2,6 @@ package org.scalasteward.core.client
 
 import cats.effect._
 import cats.implicits._
-import eu.timepit.refined.auto._
 import eu.timepit.refined.types.numeric.PosInt
 import munit.CatsEffectSuite
 import org.http4s.HttpRoutes
@@ -116,12 +115,12 @@ class ClientConfigurationTest extends CatsEffectSuite {
       retryAfter(initialClient)
     }
 
-    val notEnoughRetries = clientWithMaxAttempts(1)
+    val notEnoughRetries = clientWithMaxAttempts(PosInt.unsafeFrom(1))
       .run(GET(uri"/retry-after"))
       .use(r => r.status.code.pure[IO])
       .assertEquals(403)
 
-    val exactlyEnoughRetries = clientWithMaxAttempts(2)
+    val exactlyEnoughRetries = clientWithMaxAttempts(PosInt.unsafeFrom(2))
       .run(GET(uri"/retry-after"))
       .use(r => r.status.code.pure[IO])
       .assertEquals(200)
