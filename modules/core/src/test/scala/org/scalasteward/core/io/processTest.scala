@@ -38,9 +38,8 @@ class processTest extends FunSuite {
   }
 
   test("echo: fail, buffer size exceeded") {
-    val Left(t) =
-      slurp3(Nel.of("echo", "-n", "1\n2\n3\n4\n5\n6"), 4, Set.empty).attempt
-        .unsafeRunSync(): @unchecked
+    val Left(t) = slurp3(Nel.of("echo", "-n", "1\n2\n3\n4\n5\n6"), 4, Set.empty).attempt
+      .unsafeRunSync(): @unchecked
     assert(clue(t).isInstanceOf[ProcessBufferOverflowException])
   }
 
