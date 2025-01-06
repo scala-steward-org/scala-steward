@@ -1,5 +1,3 @@
-import scala.util.Properties
-import scala.reflect.io.Path
 import com.typesafe.sbt.packager.docker.*
 import sbtcrossproject.{CrossProject, CrossType, Platform}
 import org.typelevel.sbt.gha.JavaSpec.Distribution.Temurin
@@ -200,27 +198,26 @@ lazy val core = myCrossProject("core")
     ),
     buildInfoPackage := moduleRootPkg.value,
     initialCommands +=
-      s"""|import ${moduleRootPkg.value}._
-          |import ${moduleRootPkg.value}.data._
-          |import ${moduleRootPkg.value}.util._
-          |import better.files.File
-          |import cats.effect.IO
-          |import org.http4s.client.Client
-          |import org.typelevel.log4cats.Logger
-          |import org.typelevel.log4cats.slf4j.Slf4jLogger
-          |
-          |implicit val logger: Logger[IO] = Slf4jLogger.getLogger[IO]
-          |""".stripMargin,
+      s"""import ${moduleRootPkg.value}._
+         |import ${moduleRootPkg.value}.data._
+         |import ${moduleRootPkg.value}.util._
+         |import better.files.File
+         |import cats.effect.IO
+         |import org.http4s.client.Client
+         |import org.typelevel.log4cats.Logger
+         |import org.typelevel.log4cats.slf4j.Slf4jLogger
+         |implicit val logger: Logger[IO] = Slf4jLogger.getLogger[IO]
+         |""".stripMargin,
     // Inspired by https://stackoverflow.com/a/41978937/460387
     Test / sourceGenerators += Def.task {
       val file = (Test / sourceManaged).value / "InitialCommandsTest.scala"
       val content =
         s"""object InitialCommandsTest {
-           |${initialCommands.value}
-           |// prevent warnings
-           |intellijThisImportIsUsed(Client); intellijThisImportIsUsed(File);
-           |intellijThisImportIsUsed(Nel); intellijThisImportIsUsed(Repo);
-           |intellijThisImportIsUsed(Main);
+           |  ${initialCommands.value.linesIterator.mkString("\n  ")}
+           |  // prevent warnings
+           |  intellijThisImportIsUsed(Client); intellijThisImportIsUsed(File);
+           |  intellijThisImportIsUsed(Nel); intellijThisImportIsUsed(Repo);
+           |  intellijThisImportIsUsed(Main);
            |}""".stripMargin
       IO.write(file, content)
       Seq(file)

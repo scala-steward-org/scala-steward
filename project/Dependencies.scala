@@ -17,7 +17,7 @@ object Dependencies {
   val coursierSbtMaven =
     "io.get-coursier" %% "coursier-sbt-maven-repository" % coursierCore.revision
   val cron4sCore = "com.github.alonsodomin.cron4s" %% "cron4s-core" % "0.7.0"
-  val decline = "com.monovore" %% "decline" % "2.4.1"
+  val decline = "com.monovore" %% "decline" % "2.5.0"
   val disciplineMunit = "org.typelevel" %% "discipline-munit" % "2.0.0"
   val fs2Core = "co.fs2" %% "fs2-core" % "3.11.0"
   val fs2Io = "co.fs2" %% "fs2-io" % fs2Core.revision
@@ -28,7 +28,7 @@ object Dependencies {
   val http4sEmberServer = "org.http4s" %% "http4s-ember-server" % http4sCore.revision
   val http4sJdkhttpClient = "org.http4s" %% "http4s-jdk-http-client" % "1.0.0-M10"
   val log4catsSlf4j = "org.typelevel" %% "log4cats-slf4j" % "2.7.0"
-  val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.5.15"
+  val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.5.16"
   val jjwtApi = "io.jsonwebtoken" % "jjwt-api" % "0.12.6"
   val jjwtImpl = "io.jsonwebtoken" % "jjwt-impl" % jjwtApi.revision
   val jjwtJackson = "io.jsonwebtoken" % "jjwt-jackson" % jjwtApi.revision
