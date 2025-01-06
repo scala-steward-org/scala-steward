@@ -1,12 +1,12 @@
 package org.scalasteward.core.forge.github
 
 import better.files.File
-import io.circe.literal.JsonStringContext
+import io.circe.literal._
 import munit.CatsEffectSuite
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.headers.Authorization
-import org.http4s.implicits.http4sLiteralsSyntax
+import org.http4s.syntax.literals._
 import org.http4s.{AuthScheme, Credentials, HttpApp, Request}
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.mock.MockContext.context.{httpJsonClient, logger}

@@ -8,7 +8,7 @@ import munit.CatsEffectSuite
 import org.http4s.HttpApp
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
-import org.http4s.implicits._
+import org.http4s.syntax.literals._
 import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.application.Config.GitHubCfg
 import org.scalasteward.core.data.Repo

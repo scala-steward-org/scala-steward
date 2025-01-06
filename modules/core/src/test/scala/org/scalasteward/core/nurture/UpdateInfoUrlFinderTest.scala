@@ -4,7 +4,7 @@ import cats.syntax.all._
 import munit.CatsEffectSuite
 import org.http4s.HttpApp
 import org.http4s.dsl.Http4sDsl
-import org.http4s.implicits._
+import org.http4s.syntax.literals._
 import org.scalasteward.core.application.Config.ForgeCfg
 import org.scalasteward.core.coursier.DependencyMetadata
 import org.scalasteward.core.data.Version

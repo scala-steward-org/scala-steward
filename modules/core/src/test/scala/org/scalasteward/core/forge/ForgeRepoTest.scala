@@ -2,7 +2,7 @@ package org.scalasteward.core.forge
 
 import munit.FunSuite
 import org.http4s.Uri
-import org.http4s.implicits._
+import org.http4s.syntax.literals._
 import org.scalasteward.core.forge.ForgeType._
 
 /** As much as possible, uris in this test suite should aim to be real, clickable, uris that
