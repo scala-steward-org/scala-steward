@@ -38,14 +38,14 @@ class processTest extends FunSuite {
   }
 
   test("echo: fail, buffer size exceeded") {
-    val Left(t) =
-      slurp3(Nel.of("echo", "-n", "1\n2\n3\n4\n5\n6"), 4, Set.empty).attempt.unsafeRunSync()
+    val Left(t) = slurp3(Nel.of("echo", "-n", "1\n2\n3\n4\n5\n6"), 4, Set.empty).attempt
+      .unsafeRunSync(): @unchecked
     assert(clue(t).isInstanceOf[ProcessBufferOverflowException])
   }
 
   test("echo: fail, line length > buffer size") {
     val Left(t) =
-      slurp3(Nel.of("echo", "-n", "123456"), 4, Set.empty).attempt.unsafeRunSync()
+      slurp3(Nel.of("echo", "-n", "123456"), 4, Set.empty).attempt.unsafeRunSync(): @unchecked
     assert(clue(t).isInstanceOf[ProcessLineTooLongException])
   }
 
@@ -54,7 +54,7 @@ class processTest extends FunSuite {
   }
 
   test("ls: fail, non-zero exit code") {
-    val Left(t) = slurp1(Nel.of("ls", "--foo")).attempt.unsafeRunSync()
+    val Left(t) = slurp1(Nel.of("ls", "--foo")).attempt.unsafeRunSync(): @unchecked
     assert(clue(t).isInstanceOf[ProcessFailedException])
   }
 
@@ -66,7 +66,7 @@ class processTest extends FunSuite {
     val timeout = 500.milliseconds
     val sleep = timeout * 2
     val p = slurp2(Nel.of("sleep", sleep.toSeconds.toInt.toString), timeout).attempt
-    val (Left(t), fd) = DateTimeAlg.create[IO].timed(p).unsafeRunSync()
+    val (Left(t), fd) = DateTimeAlg.create[IO].timed(p).unsafeRunSync(): @unchecked
 
     assert(clue(t).isInstanceOf[ProcessTimedOutException])
     assert(clue(fd) > timeout)

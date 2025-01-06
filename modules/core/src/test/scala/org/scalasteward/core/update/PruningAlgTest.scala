@@ -28,7 +28,7 @@ class PruningAlgTest extends FunSuite {
           |    }
           |  }
           |}""".stripMargin
-    )
+    ): @unchecked
     val pullRequestsFile =
       config.workspace / "store/pull_requests/v2/github/fthomas/scalafix-test/pull_requests.json"
     val pullRequestsContent =
@@ -116,7 +116,7 @@ class PruningAlgTest extends FunSuite {
           |    }
           |  }
           |}""".stripMargin
-    )
+    ): @unchecked
     val pullRequestsFile =
       config.workspace / s"store/pull_requests/v2/github/${repo.toPath}/pull_requests.json"
     val pullRequestsContent =
@@ -261,7 +261,7 @@ class PruningAlgTest extends FunSuite {
           |    }
           |  }
           |}""".stripMargin
-    )
+    ): @unchecked
     val pullRequestsFile =
       config.workspace / s"store/pull_requests/v2/github/${repo.toPath}/pull_requests.json"
     val timestampNow = Instant.now().toEpochMilli
@@ -373,7 +373,7 @@ class PruningAlgTest extends FunSuite {
           |    }
           |  }
           |}""".stripMargin
-    )
+    ): @unchecked
     val pullRequestsFile =
       config.workspace / s"store/pull_requests/v2/github/${repo.toPath}/pull_requests.json"
     val pullRequestsContent =
@@ -488,7 +488,7 @@ class PruningAlgTest extends FunSuite {
           |    }
           |  }
           |}""".stripMargin
-    )
+    ): @unchecked
     val timestampNow = Instant.now().toEpochMilli
     val pullRequestsFile =
       config.workspace / s"store/pull_requests/v2/github/${repo.toPath}/pull_requests.json"
