@@ -8,7 +8,7 @@ import munit.CatsEffectSuite
 import org.http4s.HttpRoutes
 import org.http4s.client._
 import org.http4s.headers.{`Retry-After`, `User-Agent`, Location}
-import org.http4s.implicits._
+import org.http4s.syntax.literals._
 import org.typelevel.ci._
 import org.typelevel.log4cats.LoggerFactory
 import org.typelevel.log4cats.slf4j.Slf4jFactory

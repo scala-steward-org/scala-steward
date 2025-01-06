@@ -3,7 +3,7 @@ package org.scalasteward.core.coursier
 import cats.Id
 import cats.syntax.all._
 import munit.FunSuite
-import org.http4s.implicits.http4sLiteralsSyntax
+import org.http4s.syntax.literals._
 
 class DependencyMetadataTest extends FunSuite {
   test("filterUrls") {
