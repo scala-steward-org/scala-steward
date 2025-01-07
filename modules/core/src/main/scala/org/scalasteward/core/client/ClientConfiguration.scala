@@ -50,6 +50,7 @@ object ClientConfiguration {
           val params = javax.net.ssl.SSLContext.getDefault().getDefaultSSLParameters()
           params.setProtocols(params.getProtocols().filter(_ != "TLSv1.3"))
           builder.sslParameters(params)
+          ()
         }
 
         builder.executor(exec)

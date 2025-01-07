@@ -89,8 +89,8 @@ object UpdateInfoUrlFinder {
       fileNames.map(f => wrap(forgeRepo.fileUrlFor(f)))
 
     gitHubReleaseNotesFor(forgeRepo, update.nextVersion) ++
-      customUrls(CustomReleaseNotes, possibleReleaseNotesFilenames) ++
-      customUrls(CustomChangelog, possibleChangelogFilenames) ++
+      customUrls(CustomReleaseNotes.apply, possibleReleaseNotesFilenames) ++
+      customUrls(CustomChangelog.apply, possibleChangelogFilenames) ++
       possibleVersionDiffs(forgeRepo, update)
   }
 

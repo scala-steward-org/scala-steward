@@ -152,6 +152,7 @@ final class GitHubAuthAlg[F[_]](
         val expMillis = nowMillis + ttlMillis
         val exp = new Date(expMillis)
         builder.expiration(exp)
+        ()
       }
       builder.compact()
     }

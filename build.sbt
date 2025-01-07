@@ -21,10 +21,11 @@ val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
 )
 
 val Scala213 = "2.13.15"
+val Scala3 = "3.3.4"
 
 /// sbt-typelevel configuration
 
-ThisBuild / crossScalaVersions := Seq(Scala213)
+ThisBuild / crossScalaVersions := Seq(Scala213, Scala3)
 ThisBuild / githubWorkflowTargetTags ++= Seq("v*")
 ThisBuild / githubWorkflowPublishTargetBranches := Seq(
   RefPredicate.Equals(Ref.Branch(mainBranch)),
@@ -109,6 +110,7 @@ lazy val benchmark = myCrossProject("benchmark")
   .enablePlugins(JmhPlugin)
   .settings(noPublishSettings)
   .settings(
+    crossScalaVersions := Seq(Scala213, Scala3),
     scalacOptions -= "-Wnonunit-statement",
     coverageEnabled := false,
     unusedCompileDependencies := Set.empty
@@ -118,6 +120,7 @@ lazy val core = myCrossProject("core")
   .enablePlugins(BuildInfoPlugin, JavaAppPackaging, DockerPlugin)
   .settings(dockerSettings)
   .settings(
+    crossScalaVersions := Seq(Scala213, Scala3),
     libraryDependencies ++= Seq(
       Dependencies.bcprovJdk15to18,
       Dependencies.betterFiles,
@@ -129,8 +132,8 @@ lazy val core = myCrossProject("core")
       Dependencies.circeParser,
       Dependencies.circeRefined,
       Dependencies.commonsIo,
-      Dependencies.coursierCore,
-      Dependencies.coursierSbtMaven,
+      Dependencies.coursierCore.cross(CrossVersion.for3Use2_13),
+      Dependencies.coursierSbtMaven.cross(CrossVersion.for3Use2_13),
       Dependencies.cron4sCore,
       Dependencies.decline,
       Dependencies.fs2Core,
@@ -158,6 +161,9 @@ lazy val core = myCrossProject("core")
       Dependencies.refinedScalacheck % Test,
       Dependencies.scalacheck % Test
     ),
+    // Workaround for https://github.com/cb372/sbt-explicit-dependencies/issues/117
+    unusedCompileDependenciesFilter -=
+      moduleFilter(organization = Dependencies.coursierCore.organization),
     assembly / test := {},
     assembly / assemblyMergeStrategy := {
       case PathList("META-INF", "versions", "9", "module-info.class") =>
@@ -244,6 +250,7 @@ lazy val docs = myCrossProject("docs")
   .enablePlugins(MdocPlugin)
   .settings(noPublishSettings)
   .settings(
+    scalacOptions += "-Ytasty-reader",
     mdocIn := baseDirectory.value / ".." / "mdoc",
     mdocOut := (LocalRootProject / baseDirectory).value / "docs",
     mdocVariables := Map(

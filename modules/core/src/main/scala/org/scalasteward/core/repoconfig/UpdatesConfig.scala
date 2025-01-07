@@ -26,7 +26,6 @@ import org.scalasteward.core.buildtool.maven.pomXmlName
 import org.scalasteward.core.buildtool.mill.MillAlg
 import org.scalasteward.core.buildtool.sbt.buildPropertiesName
 import org.scalasteward.core.data.{GroupId, Update}
-import org.scalasteward.core.repoconfig.UpdatesConfig.defaultLimit
 import org.scalasteward.core.scalafmt.scalafmtConfName
 import org.scalasteward.core.update.FilterAlg.{
   FilterResult,
@@ -42,7 +41,7 @@ final case class UpdatesConfig(
     private val allowPreReleases: Option[List[UpdatePattern]] = None,
     private val ignore: Option[List[UpdatePattern]] = None,
     private val retracted: Option[List[RetractedArtifact]] = None,
-    limit: Option[NonNegInt] = defaultLimit,
+    limit: Option[NonNegInt] = UpdatesConfig.defaultLimit,
     private val fileExtensions: Option[List[String]] = None
 ) {
   private[repoconfig] def pinOrDefault: List[UpdatePattern] =
