@@ -247,6 +247,7 @@ lazy val docs = myCrossProject("docs")
   .enablePlugins(MdocPlugin)
   .settings(noPublishSettings)
   .settings(
+    scalacOptions += "-Ytasty-reader",
     mdocIn := baseDirectory.value / ".." / "mdoc",
     mdocOut := (LocalRootProject / baseDirectory).value / "docs",
     mdocVariables := Map(
