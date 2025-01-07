@@ -110,6 +110,7 @@ lazy val benchmark = myCrossProject("benchmark")
   .enablePlugins(JmhPlugin)
   .settings(noPublishSettings)
   .settings(
+    crossScalaVersions := Seq(Scala213, Scala3),
     scalacOptions -= "-Wnonunit-statement",
     coverageEnabled := false,
     unusedCompileDependencies := Set.empty
