@@ -24,6 +24,9 @@ pull_request_rules:
   - status-success=Test (ubuntu-22.04, 2.13, temurin@21)
   - status-success=Test (ubuntu-22.04, 2.13, temurin@17)
   - status-success=Test (ubuntu-22.04, 2.13, temurin@11)
+  - status-success=Test (ubuntu-22.04, 3, temurin@21)
+  - status-success=Test (ubuntu-22.04, 3, temurin@17)
+  - status-success=Test (ubuntu-22.04, 3, temurin@11)
   actions:
     merge:
       method: merge
