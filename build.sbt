@@ -161,6 +161,9 @@ lazy val core = myCrossProject("core")
       Dependencies.refinedScalacheck % Test,
       Dependencies.scalacheck % Test
     ),
+    // Workaround for https://github.com/cb372/sbt-explicit-dependencies/issues/117
+    unusedCompileDependenciesFilter -=
+      moduleFilter(organization = Dependencies.coursierCore.organization),
     assembly / test := {},
     assembly / assemblyMergeStrategy := {
       case PathList("META-INF", "versions", "9", "module-info.class") =>
