@@ -61,7 +61,7 @@ object process {
   )(implicit F: Async[F]): F[List[String]] =
     createProcess(args).flatMap { process =>
       F.delay(new ListBuffer[String]).flatMap { buffer =>
-        val raiseError = F.raiseError[List[String]] _
+        val raiseError = F.raiseError[List[String]]
 
         val result =
           readLinesIntoBuffer(process.getInputStream, buffer, maxBufferSize, log)
@@ -91,7 +91,7 @@ object process {
 
   private def createProcessBuilder[F[_]](args: Args)(implicit F: Sync[F]): F[ProcessBuilder] =
     F.blocking {
-      val pb = new ProcessBuilder(args.command.toList: _*)
+      val pb = new ProcessBuilder(args.command.toList*)
       args.workingDirectory.foreach(file => pb.directory(file.toJava))
       val env = pb.environment()
       if (args.slurpOptions(SlurpOption.ClearEnvironment)) env.clear()

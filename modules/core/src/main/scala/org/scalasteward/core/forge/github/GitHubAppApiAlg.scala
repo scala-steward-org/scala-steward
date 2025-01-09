@@ -29,10 +29,10 @@ class GitHubAppApiAlg[F[_]](
     F: Concurrent[F]
 ) {
 
-  private[this] val acceptHeader =
+  private val acceptHeader =
     Header.Raw(ci"Accept", "application/vnd.github.v3+json")
 
-  private[this] def addHeaders(jwt: String): client.ModReq =
+  private def addHeaders(jwt: String): client.ModReq =
     req =>
       F.point(
         req.putHeaders(
