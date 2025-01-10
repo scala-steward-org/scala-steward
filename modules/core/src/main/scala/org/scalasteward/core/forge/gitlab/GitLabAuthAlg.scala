@@ -18,7 +18,7 @@ package org.scalasteward.core.forge.gitlab
 
 import better.files.File
 import cats.effect.Sync
-import cats.syntax.all._
+import cats.syntax.all.*
 import org.http4s.Uri.UserInfo
 import org.http4s.{Header, Request, Uri}
 import org.scalasteward.core.forge.BasicAuthAlg

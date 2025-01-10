@@ -1,8 +1,8 @@
 package org.scalasteward.core.coursier
 
 import munit.CatsEffectSuite
-import org.http4s.syntax.literals._
-import org.scalasteward.core.TestSyntax._
+import org.http4s.syntax.literals.*
+import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.buildtool.sbt.data.{SbtVersion, ScalaVersion}
 import org.scalasteward.core.data.Resolver
 import org.scalasteward.core.mock.MockContext.context.coursierAlg

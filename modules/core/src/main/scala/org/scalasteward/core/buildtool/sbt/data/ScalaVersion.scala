@@ -17,7 +17,7 @@
 package org.scalasteward.core.buildtool.sbt.data
 
 import cats.Order
-import cats.syntax.all._
+import cats.syntax.all.*
 import io.circe.{Decoder, Encoder}
 
 final case class ScalaVersion(value: String)

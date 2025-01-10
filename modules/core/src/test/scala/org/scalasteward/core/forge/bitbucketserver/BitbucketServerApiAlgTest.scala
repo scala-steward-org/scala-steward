@@ -2,12 +2,12 @@ package org.scalasteward.core.forge.bitbucketserver
 
 import munit.CatsEffectSuite
 import org.http4s.dsl.Http4sDsl
-import org.http4s.syntax.literals._
+import org.http4s.syntax.literals.*
 import org.http4s.{HttpApp, Uri}
 import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.application.Config.BitbucketServerCfg
 import org.scalasteward.core.data.Repo
-import org.scalasteward.core.forge.data._
+import org.scalasteward.core.forge.data.*
 import org.scalasteward.core.forge.{ForgeSelection, ForgeType}
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.mock.MockConfig.config

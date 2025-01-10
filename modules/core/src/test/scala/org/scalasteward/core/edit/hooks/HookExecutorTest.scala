@@ -1,17 +1,17 @@
 package org.scalasteward.core.edit.hooks
 
 import cats.data.NonEmptyList
-import cats.syntax.all._
+import cats.syntax.all.*
 import munit.CatsEffectSuite
 import org.scalasteward.core.TestInstances.{dummyRepoCache, dummySha1}
-import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.data.{Repo, RepoData}
 import org.scalasteward.core.git.gitBlameIgnoreRevsName
 import org.scalasteward.core.io.process.ProcessFailedException
 import org.scalasteward.core.io.{process, FileAlgTest}
 import org.scalasteward.core.mock.MockContext.context.{hookExecutor, workspaceAlg}
-import org.scalasteward.core.mock.{MockEffOps, MockState}
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
+import org.scalasteward.core.mock.{MockEffOps, MockState}
 import org.scalasteward.core.repoconfig.{PostUpdateHookConfig, RepoConfig, ScalafmtConfig}
 import org.scalasteward.core.scalafmt.ScalafmtAlg.opts
 import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtBinary, scalafmtGroupId}

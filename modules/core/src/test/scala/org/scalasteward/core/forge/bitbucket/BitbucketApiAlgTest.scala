@@ -1,17 +1,17 @@
 package org.scalasteward.core.forge.bitbucket
 
-import io.circe.literal._
+import io.circe.literal.*
 import munit.CatsEffectSuite
-import org.http4s._
-import org.http4s.circe._
+import org.http4s.*
+import org.http4s.circe.*
 import org.http4s.dsl.Http4sDsl
-import org.http4s.syntax.literals._
+import org.http4s.syntax.literals.*
 import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.application.Config.BitbucketCfg
 import org.scalasteward.core.data.Repo
-import org.scalasteward.core.forge.data._
+import org.scalasteward.core.forge.data.*
 import org.scalasteward.core.forge.{ForgeSelection, ForgeType}
-import org.scalasteward.core.git._
+import org.scalasteward.core.git.*
 import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context.httpJsonClient
 import org.scalasteward.core.mock.MockForgeAuthAlg.noAuth

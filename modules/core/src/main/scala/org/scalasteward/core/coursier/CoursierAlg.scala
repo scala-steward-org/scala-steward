@@ -18,7 +18,7 @@ package org.scalasteward.core.coursier
 
 import cats.Parallel
 import cats.effect.Async
-import cats.implicits._
+import cats.implicits.*
 import coursier.cache.{CachePolicy, FileCache}
 import coursier.core.{Authentication, Project}
 import coursier.{Fetch, Module, ModuleName, Organization}

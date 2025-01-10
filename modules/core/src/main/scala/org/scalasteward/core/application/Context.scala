@@ -16,9 +16,9 @@
 
 package org.scalasteward.core.application
 
-import cats.effect._
-import cats.effect.implicits._
-import cats.syntax.all._
+import cats.effect.*
+import cats.effect.implicits.*
+import cats.syntax.all.*
 import eu.timepit.refined.types.numeric.PosInt
 import org.http4s.Uri
 import org.http4s.client.Client
@@ -34,20 +34,20 @@ import org.scalasteward.core.coursier.{CoursierAlg, VersionsCache}
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.edit.hooks.HookExecutor
-import org.scalasteward.core.edit.scalafix._
+import org.scalasteward.core.edit.scalafix.*
 import org.scalasteward.core.edit.update.ScannerAlg
 import org.scalasteward.core.forge.{ForgeApiAlg, ForgeAuthAlg, ForgeRepoAlg, ForgeSelection}
 import org.scalasteward.core.git.{GenGitAlg, GitAlg}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository, UpdateInfoUrlFinder}
 import org.scalasteward.core.persistence.{CachingKeyValueStore, JsonKeyValueStore}
-import org.scalasteward.core.repocache._
+import org.scalasteward.core.repocache.*
 import org.scalasteward.core.repoconfig.{RepoConfigAlg, RepoConfigLoader}
 import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.scalasteward.core.update.artifact.{ArtifactMigrationsFinder, ArtifactMigrationsLoader}
 import org.scalasteward.core.update.{FilterAlg, PruningAlg, UpdateAlg}
-import org.scalasteward.core.util._
-import org.scalasteward.core.util.uri._
+import org.scalasteward.core.util.*
+import org.scalasteward.core.util.uri.*
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 

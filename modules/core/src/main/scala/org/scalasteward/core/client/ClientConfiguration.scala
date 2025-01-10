@@ -16,17 +16,17 @@
 
 package org.scalasteward.core.client
 
-import cats.effect._
-import cats.syntax.all._
+import cats.effect.*
+import cats.syntax.all.*
 import eu.timepit.refined.types.numeric.PosInt
 import java.net.http.HttpClient
 import java.net.http.HttpClient.Builder
 import org.http4s.Response
-import org.http4s.client._
+import org.http4s.client.*
 import org.http4s.headers.`User-Agent`
 import org.http4s.jdkhttpclient.JdkHttpClient
-import org.typelevel.ci._
-import scala.concurrent.duration._
+import org.typelevel.ci.*
+import scala.concurrent.duration.*
 
 object ClientConfiguration {
   type BuilderMiddleware = Builder => Builder

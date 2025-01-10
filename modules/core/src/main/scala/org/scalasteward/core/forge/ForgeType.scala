@@ -17,15 +17,14 @@
 package org.scalasteward.core.forge
 
 import cats.Eq
-import cats.syntax.all._
+import cats.syntax.all.*
 import org.http4s.Uri
-import org.http4s.syntax.literals._
+import org.http4s.syntax.literals.*
 import org.scalasteward.core.application.Config.ForgeCfg
 import org.scalasteward.core.data.Repo
-import org.scalasteward.core.forge.ForgeType._
+import org.scalasteward.core.forge.ForgeType.*
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.unexpectedString
-
 import scala.annotation.nowarn
 
 sealed trait ForgeType extends Product with Serializable {

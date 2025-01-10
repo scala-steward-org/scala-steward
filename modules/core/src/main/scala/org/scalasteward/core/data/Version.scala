@@ -17,7 +17,7 @@
 package org.scalasteward.core.data
 
 import cats.Order
-import cats.implicits._
+import cats.implicits.*
 import cats.parse.{Numbers, Parser, Rfc5234}
 import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.data.Version.startsWithDate

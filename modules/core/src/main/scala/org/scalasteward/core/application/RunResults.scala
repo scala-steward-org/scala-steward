@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.application
 
-import cats.syntax.all._
+import cats.syntax.all.*
 import org.scalasteward.core.data.Repo
 
 case class RunResults(results: List[Either[(Repo, Throwable), Repo]]) {

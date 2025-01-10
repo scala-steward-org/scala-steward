@@ -1,7 +1,7 @@
 package org.scalasteward.core.util
 
 import munit.FunSuite
-import org.http4s._
+import org.http4s.*
 import org.typelevel.ci.CIString
 
 class UnexpectedResponseTest extends FunSuite {

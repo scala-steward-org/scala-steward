@@ -18,14 +18,14 @@ package org.scalasteward.core.edit.hooks
 
 import better.files.File
 import cats.MonadThrow
-import cats.syntax.all._
+import cats.syntax.all.*
 import org.scalasteward.core.buildtool.sbt.{
   sbtArtifactId,
   sbtGroupId,
   sbtScalafixArtifactId,
   sbtScalafixGroupId
 }
-import org.scalasteward.core.data._
+import org.scalasteward.core.data.*
 import org.scalasteward.core.edit.EditAttempt
 import org.scalasteward.core.edit.EditAttempt.HookEdit
 import org.scalasteward.core.git.{gitBlameIgnoreRevsName, Commit, CommitMsg, GitAlg}
@@ -34,7 +34,7 @@ import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.repocache.RepoCache
 import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtGroupId, ScalafmtAlg}
 import org.scalasteward.core.util.Nel
-import org.scalasteward.core.util.logger._
+import org.scalasteward.core.util.logger.*
 import org.typelevel.log4cats.Logger
 
 final class HookExecutor[F[_]](implicit

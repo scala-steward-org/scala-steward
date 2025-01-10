@@ -19,12 +19,12 @@ package org.scalasteward.core.application
 import better.files.File
 import cats.data.Validated
 import cats.effect.ExitCode
-import cats.syntax.all._
+import cats.syntax.all.*
+import com.monovore.decline.*
 import com.monovore.decline.Opts.{flag, option, options}
-import com.monovore.decline._
 import org.http4s.Uri
-import org.http4s.syntax.literals._
-import org.scalasteward.core.application.Config._
+import org.http4s.syntax.literals.*
+import org.scalasteward.core.application.Config.*
 import org.scalasteward.core.application.ExitCodePolicy.{
   SuccessIfAnyRepoSucceeds,
   SuccessOnlyIfAllReposSucceed
@@ -36,8 +36,7 @@ import org.scalasteward.core.forge.github.GitHubApp
 import org.scalasteward.core.git.Author
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.util.dateTime.renderFiniteDuration
-
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 object Cli {
   final case class EnvVar(name: String, value: String)

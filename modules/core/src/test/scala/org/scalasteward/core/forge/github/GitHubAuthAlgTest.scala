@@ -1,18 +1,18 @@
 package org.scalasteward.core.forge.github
 
 import better.files.File
-import io.circe.literal._
+import io.circe.literal.*
 import munit.CatsEffectSuite
-import org.http4s.circe._
+import org.http4s.circe.*
 import org.http4s.dsl.Http4sDsl
 import org.http4s.headers.Authorization
-import org.http4s.syntax.literals._
+import org.http4s.syntax.literals.*
 import org.http4s.{AuthScheme, Credentials, HttpApp, Request}
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.mock.MockContext.context.{httpJsonClient, logger}
 import org.scalasteward.core.mock.{MockEff, MockEffOps, MockState}
 import org.typelevel.ci.CIStringSyntax
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 class GitHubAuthAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   object PerPageMatcher extends QueryParamDecoderMatcher[Int]("per_page")

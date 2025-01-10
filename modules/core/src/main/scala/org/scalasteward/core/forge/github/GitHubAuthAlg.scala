@@ -18,7 +18,7 @@ package org.scalasteward.core.forge.github
 
 import better.files.File
 import cats.effect.Sync
-import cats.implicits._
+import cats.implicits.*
 import io.jsonwebtoken.Jwts
 import java.io.FileReader
 import java.security.spec.PKCS8EncodedKeySpec
@@ -32,12 +32,12 @@ import org.http4s.headers.Authorization
 import org.http4s.{AuthScheme, Header, Request, Uri}
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.ForgeAuthAlg
+import org.scalasteward.core.util
 import org.scalasteward.core.util.HttpJsonClient
 import org.typelevel.ci.CIStringSyntax
 import org.typelevel.log4cats.Logger
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.util.Using
-import org.scalasteward.core.util
 
 final class GitHubAuthAlg[F[_]](
     apiUri: Uri,

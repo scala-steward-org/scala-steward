@@ -19,9 +19,9 @@ package org.scalasteward.core.buildtool.sbt
 import better.files.File
 import cats.data.OptionT
 import cats.effect.{Concurrent, Resource}
-import cats.syntax.all._
+import cats.syntax.all.*
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.buildtool.sbt.command._
+import org.scalasteward.core.buildtool.sbt.command.*
 import org.scalasteward.core.buildtool.{BuildRoot, BuildToolAlg}
 import org.scalasteward.core.coursier.VersionsCache
 import org.scalasteward.core.data.{Dependency, Scope, Version}

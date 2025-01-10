@@ -3,7 +3,7 @@ package org.scalasteward.core.git
 import better.files.File
 import cats.Monad
 import cats.effect.IO
-import cats.syntax.all._
+import cats.syntax.all.*
 import munit.CatsEffectSuite
 import org.scalasteward.core.TestInstances.ioLogger
 import org.scalasteward.core.git.FileGitAlgTest.{
@@ -214,7 +214,7 @@ object FileGitAlgTest {
       F: Monad[F]
   ) {
     def git(args: String*)(repo: File): F[Unit] =
-      processAlg.exec(Nel.of("git", args: _*), repo).void
+      processAlg.exec(Nel.of("git", args*), repo).void
 
     def createRepo(repo: File): F[Unit] =
       for {

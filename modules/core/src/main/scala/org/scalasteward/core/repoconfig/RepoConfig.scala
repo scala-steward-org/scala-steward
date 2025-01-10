@@ -16,11 +16,11 @@
 
 package org.scalasteward.core.repoconfig
 
-import cats.syntax.all._
+import cats.syntax.all.*
 import cats.{Eq, Monoid}
 import io.circe.Codec
-import io.circe.generic.semiauto._
-import io.circe.syntax._
+import io.circe.generic.semiauto.*
+import io.circe.syntax.*
 import org.scalasteward.core.buildtool.BuildRoot
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.edit.hooks.PostUpdateHook

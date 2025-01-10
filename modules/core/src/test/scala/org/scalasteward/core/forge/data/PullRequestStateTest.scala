@@ -1,7 +1,7 @@
 package org.scalasteward.core.forge.data
 
 import io.circe.Decoder
-import io.circe.syntax._
+import io.circe.syntax.*
 import munit.FunSuite
 import org.scalasteward.core.forge.data.PullRequestState.{Closed, Open}
 

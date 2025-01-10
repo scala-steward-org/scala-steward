@@ -18,7 +18,7 @@ package org.scalasteward.core.data
 
 import cats.Order
 import io.circe.Codec
-import io.circe.generic.semiauto._
+import io.circe.generic.semiauto.*
 import org.scalasteward.core.buildtool.sbt.data.{SbtVersion, ScalaVersion}
 
 final case class Dependency(

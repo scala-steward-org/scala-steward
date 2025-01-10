@@ -17,7 +17,7 @@
 package org.scalasteward.core.git
 
 import cats.effect.{MonadCancel, MonadCancelThrow}
-import cats.syntax.all._
+import cats.syntax.all.*
 import cats.{FlatMap, Monad}
 import org.http4s.Uri
 import org.scalasteward.core.application.Config

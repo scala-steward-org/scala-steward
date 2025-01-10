@@ -1,7 +1,7 @@
 package org.scalasteward.core.forge.azurerepos
 
 import munit.FunSuite
-import org.http4s.syntax.literals._
+import org.http4s.syntax.literals.*
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.data.PullRequestNumber
 import org.scalasteward.core.git.Branch

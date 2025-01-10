@@ -1,18 +1,17 @@
 package org.scalasteward.core.client
 
-import cats.effect._
-import cats.implicits._
+import cats.effect.*
+import cats.implicits.*
 import eu.timepit.refined.types.numeric.PosInt
 import munit.CatsEffectSuite
 import org.http4s.HttpRoutes
-import org.http4s.client._
+import org.http4s.client.*
 import org.http4s.headers.{`Retry-After`, `User-Agent`, Location}
-import org.http4s.syntax.literals._
-import org.typelevel.ci._
+import org.http4s.syntax.literals.*
+import org.typelevel.ci.*
 import org.typelevel.log4cats.LoggerFactory
 import org.typelevel.log4cats.slf4j.Slf4jFactory
-
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 class ClientConfigurationTest extends CatsEffectSuite {
 
@@ -21,7 +20,7 @@ class ClientConfigurationTest extends CatsEffectSuite {
     `User-Agent`.parse(1)(userAgentValue).getOrElse(fail("unable to create user agent"))
 
   private val routes: HttpRoutes[IO] = {
-    import org.http4s.dsl.io._
+    import org.http4s.dsl.io.*
     HttpRoutes.of[IO] {
       case req @ GET -> Root / "user-agent" =>
         req.headers.get(ci"user-agent") match {
@@ -53,8 +52,8 @@ class ClientConfigurationTest extends CatsEffectSuite {
   }
 
   test("setUserAgent add a specific user agent to requests") {
-    import org.http4s.Method._
-    import org.http4s.client.dsl.io._
+    import org.http4s.Method.*
+    import org.http4s.client.dsl.io.*
 
     val initialClient = Client.fromHttpApp[IO](routes.orNotFound)
     val setUserAgent = ClientConfiguration.setUserAgent[IO](dummyUserAgent)
@@ -73,9 +72,9 @@ class ClientConfigurationTest extends CatsEffectSuite {
   }
 
   test("disableFollowRedirect does not follow redirect") {
-    import org.http4s.Method._
-    import org.http4s.ember.server._
-    import org.http4s.client.dsl.io._
+    import org.http4s.Method.*
+    import org.http4s.client.dsl.io.*
+    import org.http4s.ember.server.*
 
     implicit val loggerFactory: LoggerFactory[IO] = Slf4jFactory.create[IO]
 
@@ -106,8 +105,8 @@ class ClientConfigurationTest extends CatsEffectSuite {
   }
 
   test("retries on retry-after response header") {
-    import org.http4s.Method._
-    import org.http4s.client.dsl.io._
+    import org.http4s.Method.*
+    import org.http4s.client.dsl.io.*
 
     def clientWithMaxAttempts(maxAttempts: PosInt): Client[IO] = {
       val initialClient = Client.fromHttpApp[IO](routes.orNotFound)

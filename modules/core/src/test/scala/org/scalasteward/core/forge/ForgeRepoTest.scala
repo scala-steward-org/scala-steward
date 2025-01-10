@@ -2,8 +2,8 @@ package org.scalasteward.core.forge
 
 import munit.FunSuite
 import org.http4s.Uri
-import org.http4s.syntax.literals._
-import org.scalasteward.core.forge.ForgeType._
+import org.http4s.syntax.literals.*
+import org.scalasteward.core.forge.ForgeType.*
 
 /** As much as possible, uris in this test suite should aim to be real, clickable, uris that
   * actually go to real pages, allowing developers working against this test suite to verify that

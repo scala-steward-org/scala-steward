@@ -1,9 +1,9 @@
 package org.scalasteward.core.buildtool.sbt
 
 import munit.FunSuite
-import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.buildtool.sbt.data.{SbtVersion, ScalaVersion}
-import org.scalasteward.core.buildtool.sbt.parser._
+import org.scalasteward.core.buildtool.sbt.parser.*
 import org.scalasteward.core.data.Resolver.{Credentials, IvyRepository, MavenRepository}
 import org.scalasteward.core.data.{Resolver, Scope, Version}
 

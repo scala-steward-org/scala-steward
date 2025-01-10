@@ -17,7 +17,7 @@
 package org.scalasteward.core.edit.scalafix
 
 import io.circe.Decoder
-import io.circe.generic.semiauto._
+import io.circe.generic.semiauto.*
 
 final case class ScalafixMigrations(migrations: List[ScalafixMigration])
 

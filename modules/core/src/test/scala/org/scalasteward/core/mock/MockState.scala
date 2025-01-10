@@ -2,7 +2,7 @@ package org.scalasteward.core.mock
 
 import better.files.File
 import cats.effect.{IO, Ref}
-import cats.syntax.all._
+import cats.syntax.all.*
 import org.http4s.{HttpApp, Uri}
 import org.scalasteward.core.git.FileGitAlg
 import org.scalasteward.core.git.FileGitAlgTest.ioAuxGitAlg
@@ -29,15 +29,15 @@ final case class MockState(
   def initGitRepo(repoDir: File, files: (File, String)*): IO[MockState] =
     for {
       _ <- ioAuxGitAlg.createRepo(repoDir)
-      state <- addFiles(files: _*)
-      _ <- ioAuxGitAlg.addFiles(repoDir, files.map { case (file, _) => file }: _*)
+      state <- addFiles(files*)
+      _ <- ioAuxGitAlg.addFiles(repoDir, files.map { case (file, _) => file }*)
     } yield state
 
   def rmFile(file: File): IO[MockState] =
     ioFileAlg.deleteForce(file).as(copy(files = files - file))
 
   def exec(cmd: String*): MockState =
-    appendTraceEntry(Cmd(cmd: _*))
+    appendTraceEntry(Cmd(cmd*))
 
   def log(maybeThrowable: Option[Throwable], msg: String): MockState =
     appendTraceEntry(Log((maybeThrowable, msg)))
@@ -93,7 +93,7 @@ object MockState {
           "commit" :: "--all" :: "--no-gpg-sign" :: "--no-signoff" :: messages.toList.flatMap(m =>
             List("-m", m)
           )
-        git(repoDir, args: _*)
+        git(repoDir, args*)
       }
 
       def gitGrep(repoDir: File, string: String): Cmd =

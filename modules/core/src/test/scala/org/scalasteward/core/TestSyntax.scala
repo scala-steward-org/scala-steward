@@ -1,7 +1,7 @@
 package org.scalasteward.core
 
+import org.scalasteward.core.data.*
 import org.scalasteward.core.data.Resolver.IvyRepository
-import org.scalasteward.core.data._
 import org.scalasteward.core.util.Nel
 
 object TestSyntax {

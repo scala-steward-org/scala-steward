@@ -17,15 +17,15 @@
 package org.scalasteward.core.nurture
 
 import cats.effect.Concurrent
-import cats.syntax.all._
+import cats.syntax.all.*
 import cats.{Applicative, Id}
 import org.scalasteward.core.application.Config.ForgeCfg
 import org.scalasteward.core.coursier.CoursierAlg
+import org.scalasteward.core.data.*
 import org.scalasteward.core.data.ProcessResult.{Created, Ignored, Updated}
-import org.scalasteward.core.data._
 import org.scalasteward.core.edit.{EditAlg, EditAttempt}
+import org.scalasteward.core.forge.data.*
 import org.scalasteward.core.forge.data.NewPullRequestData.{filterLabels, labelsFor}
-import org.scalasteward.core.forge.data._
 import org.scalasteward.core.forge.{ForgeApiAlg, ForgeRepoAlg}
 import org.scalasteward.core.git.{Branch, Commit, GitAlg}
 import org.scalasteward.core.repoconfig.{PullRequestUpdateStrategy, RetractedArtifact}

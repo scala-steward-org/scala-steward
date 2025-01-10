@@ -17,13 +17,13 @@
 package org.scalasteward.core.forge.azurerepos
 
 import cats.MonadThrow
-import cats.syntax.all._
+import cats.syntax.all.*
 import org.http4s.{Request, Uri}
 import org.scalasteward.core.application.Config.AzureReposCfg
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.ForgeApiAlg
-import org.scalasteward.core.forge.azurerepos.JsonCodec._
-import org.scalasteward.core.forge.data._
+import org.scalasteward.core.forge.azurerepos.JsonCodec.*
+import org.scalasteward.core.forge.data.*
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.HttpJsonClient
 import org.typelevel.log4cats.Logger

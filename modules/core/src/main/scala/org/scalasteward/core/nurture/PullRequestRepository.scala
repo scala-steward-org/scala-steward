@@ -16,12 +16,12 @@
 
 package org.scalasteward.core.nurture
 
-import cats.implicits._
+import cats.implicits.*
 import cats.{Id, Monad}
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 import org.http4s.Uri
-import org.scalasteward.core.data._
+import org.scalasteward.core.data.*
 import org.scalasteward.core.forge.data.{PullRequestNumber, PullRequestState}
 import org.scalasteward.core.git
 import org.scalasteward.core.git.{Branch, Sha1}

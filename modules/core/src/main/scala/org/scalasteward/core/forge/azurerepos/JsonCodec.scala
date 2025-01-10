@@ -16,10 +16,10 @@
 
 package org.scalasteward.core.forge.azurerepos
 
-import io.circe.generic.semiauto._
+import io.circe.generic.semiauto.*
 import io.circe.{Decoder, Encoder}
 import org.http4s.Uri
-import org.scalasteward.core.forge.data._
+import org.scalasteward.core.forge.data.*
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.util.unexpectedString
 import org.scalasteward.core.util.uri.uriDecoder

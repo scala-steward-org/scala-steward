@@ -1,12 +1,12 @@
 package org.scalasteward.core.util
 
-import cats.syntax.all._
+import cats.syntax.all.*
 import munit.CatsEffectSuite
 import org.http4s.dsl.Http4sDsl
 import org.http4s.headers.{Link, LinkValue}
-import org.http4s.syntax.all._
+import org.http4s.syntax.all.*
 import org.http4s.{HttpApp, HttpVersion, Status}
-import org.scalasteward.core.mock.MockContext.context._
+import org.scalasteward.core.mock.MockContext.context.*
 import org.scalasteward.core.mock.{MockEff, MockEffOps, MockState}
 
 class HttpJsonClientTest extends CatsEffectSuite with Http4sDsl[MockEff] {

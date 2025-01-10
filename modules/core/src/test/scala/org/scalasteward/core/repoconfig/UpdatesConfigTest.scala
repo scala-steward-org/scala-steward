@@ -1,9 +1,9 @@
 package org.scalasteward.core.repoconfig
 
 import cats.kernel.laws.discipline.MonoidTests
-import cats.syntax.all._
+import cats.syntax.all.*
 import munit.DisciplineSuite
-import org.scalasteward.core.TestInstances._
+import org.scalasteward.core.TestInstances.*
 import org.scalasteward.core.data.GroupId
 
 class UpdatesConfigTest extends DisciplineSuite {

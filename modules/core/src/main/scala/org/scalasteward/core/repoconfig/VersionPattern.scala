@@ -17,8 +17,8 @@
 package org.scalasteward.core.repoconfig
 
 import cats.Eq
-import cats.syntax.all._
-import io.circe.generic.semiauto._
+import cats.syntax.all.*
+import io.circe.generic.semiauto.*
 import io.circe.{Decoder, Encoder}
 
 final case class VersionPattern(

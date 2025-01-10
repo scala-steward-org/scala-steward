@@ -1,7 +1,7 @@
 package org.scalasteward.core.edit.scalafix
 
 import munit.FunSuite
-import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.data.{GroupId, Version}
 import org.scalasteward.core.mock.MockContext.context.scalafixMigrationsFinder
 import org.scalasteward.core.util.Nel

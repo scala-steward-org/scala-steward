@@ -18,9 +18,9 @@ package org.scalasteward.core.persistence
 
 import better.files.File
 import cats.Monad
-import cats.syntax.all._
+import cats.syntax.all.*
 import io.circe.parser.decode
-import io.circe.syntax._
+import io.circe.syntax.*
 import io.circe.{Decoder, Encoder, KeyEncoder}
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.typelevel.log4cats.Logger

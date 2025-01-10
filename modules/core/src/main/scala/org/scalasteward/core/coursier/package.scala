@@ -18,7 +18,7 @@ package org.scalasteward.core
 
 import cats.Parallel
 import cats.effect.Async
-import cats.syntax.all._
+import cats.syntax.all.*
 import java.util.concurrent.ExecutorService
 import scala.concurrent.ExecutionContext
 

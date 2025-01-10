@@ -16,19 +16,18 @@
 
 package org.scalasteward.core.forge.data
 
-import cats.syntax.all._
+import cats.syntax.all.*
 import io.circe.Json
-import io.circe.syntax._
+import io.circe.syntax.*
 import org.http4s.Uri
-import org.scalasteward.core.data._
+import org.scalasteward.core.data.*
 import org.scalasteward.core.edit.EditAttempt
 import org.scalasteward.core.edit.EditAttempt.ScalafixEdit
 import org.scalasteward.core.git.{Branch, CommitMsg}
 import org.scalasteward.core.nurture.UpdateInfoUrl
-import org.scalasteward.core.nurture.UpdateInfoUrl._
+import org.scalasteward.core.nurture.UpdateInfoUrl.*
 import org.scalasteward.core.repoconfig.{GroupRepoConfig, RepoConfigAlg}
 import org.scalasteward.core.util.{Details, Nel}
-
 import scala.util.matching.Regex
 
 final case class NewPullRequestData(

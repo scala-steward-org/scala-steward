@@ -20,7 +20,7 @@ import cats.effect.Sync
 import org.http4s.{Request, Uri}
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.Repo
-import org.scalasteward.core.forge.ForgeType._
+import org.scalasteward.core.forge.ForgeType.*
 import org.scalasteward.core.forge.bitbucketserver.BitbucketServerAuthAlg
 import org.scalasteward.core.forge.github.GitHubAuthAlg
 import org.scalasteward.core.forge.gitlab.GitLabAuthAlg

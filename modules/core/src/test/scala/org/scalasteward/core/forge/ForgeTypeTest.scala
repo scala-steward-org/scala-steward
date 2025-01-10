@@ -1,7 +1,7 @@
 package org.scalasteward.core.forge
 
 import munit.FunSuite
-import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.data.{Repo, Update}
 import org.scalasteward.core.forge.ForgeType.{GitHub, GitLab}
 import org.scalasteward.core.git

@@ -16,10 +16,10 @@
 
 package org.scalasteward.core.buildtool.sbt
 
-import cats.implicits._
+import cats.implicits.*
 import io.circe.Decoder
-import io.circe.parser._
-import org.scalasteward.core.data._
+import io.circe.parser.*
+import org.scalasteward.core.data.*
 
 object parser {
   private val regex = """sbt.version\s*=\s*(\S+)""".r

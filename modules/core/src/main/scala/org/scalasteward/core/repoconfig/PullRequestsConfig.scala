@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.repoconfig
 
-import cats.implicits._
+import cats.implicits.*
 import cats.{Eq, Monoid}
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec

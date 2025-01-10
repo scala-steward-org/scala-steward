@@ -1,9 +1,9 @@
 package org.scalasteward.core.edit.update
 
 import munit.FunSuite
-import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.edit.update.data.Substring
-import org.scalasteward.core.edit.update.data.VersionPosition._
+import org.scalasteward.core.edit.update.data.VersionPosition.*
 import org.scalasteward.core.io.FileData
 
 class VersionPositionScannerTest extends FunSuite {

@@ -1,7 +1,7 @@
 package org.scalasteward.core.buildtool.mill
 
 import munit.FunSuite
-import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.data.Resolver
 
 class MillDepParserTest extends FunSuite {

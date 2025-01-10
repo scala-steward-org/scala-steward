@@ -17,13 +17,13 @@
 package org.scalasteward.core.edit.update
 
 import cats.Foldable
-import cats.syntax.all._
+import cats.syntax.all.*
 import java.util.regex.Pattern
 import org.scalasteward.core.buildtool.mill.MillAlg
 import org.scalasteward.core.buildtool.sbt.{buildPropertiesName, isSbtUpdate}
 import org.scalasteward.core.data.{Dependency, Update}
-import org.scalasteward.core.edit.update.data.VersionPosition._
-import org.scalasteward.core.edit.update.data._
+import org.scalasteward.core.edit.update.data.*
+import org.scalasteward.core.edit.update.data.VersionPosition.*
 import org.scalasteward.core.scalafmt.{isScalafmtCoreUpdate, scalafmtConfName}
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel

@@ -1,10 +1,10 @@
 package org.scalasteward.core.util
 
-import cats.syntax.all._
+import cats.syntax.all.*
 import munit.ScalaCheckSuite
-import org.scalacheck.Prop._
-import org.scalasteward.core.util.dateTime._
-import scala.concurrent.duration._
+import org.scalacheck.Prop.*
+import org.scalasteward.core.util.dateTime.*
+import scala.concurrent.duration.*
 
 class dateTimeTest extends ScalaCheckSuite {
   def approxEq(x: FiniteDuration, y: FiniteDuration): Unit = {

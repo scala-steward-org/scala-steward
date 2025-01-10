@@ -17,7 +17,7 @@
 package org.scalasteward.core.forge.data
 
 import io.circe.Decoder
-import io.circe.generic.semiauto._
+import io.circe.generic.semiauto.*
 import org.scalasteward.core.git.Branch
 
 final case class BranchOut(

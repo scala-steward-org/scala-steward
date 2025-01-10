@@ -1,8 +1,8 @@
 package org.scalasteward.core.git
 
 import munit.ScalaCheckSuite
-import org.scalacheck.Prop._
-import org.scalasteward.core.TestInstances._
+import org.scalacheck.Prop.*
+import org.scalasteward.core.TestInstances.*
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.repoconfig.CommitsConfig
 import org.scalasteward.core.update.show

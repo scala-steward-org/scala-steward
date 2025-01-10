@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.git
 
-import cats.syntax.all._
+import cats.syntax.all.*
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.update.show
 import org.scalasteward.core.util.Nel

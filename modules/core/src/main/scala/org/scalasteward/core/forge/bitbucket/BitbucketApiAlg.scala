@@ -17,13 +17,13 @@
 package org.scalasteward.core.forge.bitbucket
 
 import cats.MonadThrow
-import cats.syntax.all._
+import cats.syntax.all.*
 import org.http4s.{Request, Status}
 import org.scalasteward.core.application.Config.{BitbucketCfg, ForgeCfg}
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.ForgeApiAlg
-import org.scalasteward.core.forge.bitbucket.json._
-import org.scalasteward.core.forge.data._
+import org.scalasteward.core.forge.bitbucket.json.*
+import org.scalasteward.core.forge.data.*
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.{HttpJsonClient, UnexpectedResponse}
 import org.typelevel.log4cats.Logger

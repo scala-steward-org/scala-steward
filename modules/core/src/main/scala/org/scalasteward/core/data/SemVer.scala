@@ -16,9 +16,9 @@
 
 package org.scalasteward.core.data
 
-import cats.syntax.all._
+import cats.syntax.all.*
 import io.circe.{Codec, Decoder, Encoder}
-import org.scalasteward.core.data.SemVer.Change._
+import org.scalasteward.core.data.SemVer.Change.*
 import scala.annotation.tailrec
 
 final case class SemVer(

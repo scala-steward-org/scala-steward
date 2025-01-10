@@ -1,9 +1,9 @@
 package org.scalasteward.core.data
 
 import io.circe.Json
-import io.circe.syntax._
+import io.circe.syntax.*
 import munit.FunSuite
-import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.util.Nel
 
 class UpdateTest extends FunSuite {

@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.util
 
-import cats.syntax.all._
+import cats.syntax.all.*
 import cats.{Monad, MonadThrow}
 import org.scalasteward.core.data.Update
 import org.typelevel.log4cats.Logger

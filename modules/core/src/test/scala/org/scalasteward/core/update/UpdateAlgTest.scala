@@ -1,7 +1,7 @@
 package org.scalasteward.core.update
 
 import munit.FunSuite
-import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.util.Nel
 
 class UpdateAlgTest extends FunSuite {

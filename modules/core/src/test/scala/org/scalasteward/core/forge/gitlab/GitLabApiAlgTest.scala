@@ -1,21 +1,21 @@
 package org.scalasteward.core.forge.gitlab
 
-import cats.syntax.semigroupk._
+import cats.syntax.semigroupk.*
 import io.circe.Json
-import io.circe.literal._
-import io.circe.parser._
+import io.circe.literal.*
+import io.circe.parser.*
 import munit.CatsEffectSuite
 import org.http4s.HttpApp
-import org.http4s.circe._
+import org.http4s.circe.*
 import org.http4s.dsl.Http4sDsl
 import org.http4s.headers.Allow
-import org.http4s.syntax.literals._
+import org.http4s.syntax.literals.*
 import org.scalasteward.core.TestInstances.{dummyRepoCache, ioLogger}
-import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.application.Config.GitLabCfg
 import org.scalasteward.core.data.{Repo, RepoData, UpdateData}
-import org.scalasteward.core.forge.data._
-import org.scalasteward.core.forge.gitlab.GitLabJsonCodec._
+import org.scalasteward.core.forge.data.*
+import org.scalasteward.core.forge.gitlab.GitLabJsonCodec.*
 import org.scalasteward.core.forge.{ForgeSelection, ForgeType}
 import org.scalasteward.core.git.{Branch, Sha1}
 import org.scalasteward.core.mock.MockConfig.config

@@ -6,7 +6,7 @@ import cats.effect.{IO, Resource}
 import fs2.Stream
 import org.http4s.Uri
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
-import org.scalasteward.core.mock._
+import org.scalasteward.core.mock.*
 
 class MockFileAlg extends FileAlg[MockEff] {
   override def deleteForce(file: File): MockEff[Unit] =

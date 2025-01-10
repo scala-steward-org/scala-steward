@@ -17,7 +17,7 @@
 package org.scalasteward.core.application
 
 import cats.MonadThrow
-import cats.syntax.all._
+import cats.syntax.all.*
 import org.scalasteward.core.edit.scalafix.ScalafixCli
 import org.scalasteward.core.edit.scalafix.ScalafixCli.scalafixBinary
 import org.scalasteward.core.git.GitAlg

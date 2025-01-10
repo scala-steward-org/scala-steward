@@ -17,7 +17,7 @@
 package org.scalasteward.core.application
 
 import cats.effect.Sync
-import cats.syntax.all._
+import cats.syntax.all.*
 import fs2.Stream
 import org.http4s.Uri
 import org.scalasteward.core.data.Repo

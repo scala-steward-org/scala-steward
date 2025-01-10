@@ -18,10 +18,10 @@ package org.scalasteward.core.buildtool.maven
 
 import better.files.File
 import cats.effect.{MonadCancelThrow, Resource}
-import cats.syntax.all._
+import cats.syntax.all.*
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.{BuildRoot, BuildToolAlg}
-import org.scalasteward.core.data._
+import org.scalasteward.core.data.*
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
 import org.typelevel.log4cats.Logger

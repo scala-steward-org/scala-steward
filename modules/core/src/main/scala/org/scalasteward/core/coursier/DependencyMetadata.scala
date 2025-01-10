@@ -17,7 +17,7 @@
 package org.scalasteward.core.coursier
 
 import cats.Monad
-import cats.syntax.all._
+import cats.syntax.all.*
 import org.http4s.Uri
 import org.scalasteward.core.application.Config.ForgeCfg
 import org.scalasteward.core.forge.ForgeRepo

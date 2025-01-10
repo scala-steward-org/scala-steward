@@ -3,7 +3,7 @@ package org.scalasteward.core.data
 import cats.data.NonEmptyList
 import cats.implicits.catsSyntaxOptionId
 import munit.FunSuite
-import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.repoconfig.{PullRequestGroup, PullRequestUpdateFilter}
 
 class GroupedUpdateTest extends FunSuite {

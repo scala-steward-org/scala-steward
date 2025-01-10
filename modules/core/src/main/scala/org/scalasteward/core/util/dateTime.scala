@@ -16,10 +16,10 @@
 
 package org.scalasteward.core.util
 
-import cats.syntax.all._
+import cats.syntax.all.*
 import java.util.concurrent.TimeUnit
 import scala.annotation.tailrec
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 object dateTime {
   def parseFiniteDuration(s: String): Either[Throwable, FiniteDuration] =

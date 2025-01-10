@@ -1,8 +1,8 @@
 package org.scalasteward.core.forge.github
 
+import io.circe.literal.*
+import io.circe.syntax.*
 import munit.FunSuite
-import io.circe.literal._
-import io.circe.syntax._
 import org.scalasteward.core.git.Branch
 
 class JsonCodecTest extends FunSuite {

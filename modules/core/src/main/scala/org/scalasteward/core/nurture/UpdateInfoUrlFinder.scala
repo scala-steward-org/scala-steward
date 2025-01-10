@@ -17,14 +17,14 @@
 package org.scalasteward.core.nurture
 
 import cats.Monad
-import cats.syntax.all._
+import cats.syntax.all.*
 import org.http4s.Uri
 import org.scalasteward.core.application.Config.ForgeCfg
 import org.scalasteward.core.coursier.DependencyMetadata
 import org.scalasteward.core.data.Version
 import org.scalasteward.core.forge.ForgeRepo
-import org.scalasteward.core.forge.ForgeType._
-import org.scalasteward.core.nurture.UpdateInfoUrl._
+import org.scalasteward.core.forge.ForgeType.*
+import org.scalasteward.core.nurture.UpdateInfoUrl.*
 import org.scalasteward.core.nurture.UpdateInfoUrlFinder.possibleUpdateInfoUrls
 import org.scalasteward.core.util.UrlChecker
 

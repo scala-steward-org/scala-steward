@@ -2,7 +2,7 @@ package org.scalasteward.core
 
 import cats.data.Kleisli
 import cats.effect.{Async, IO, Ref}
-import cats.syntax.all._
+import cats.syntax.all.*
 import cats.{~>, FlatMap}
 
 package object mock {

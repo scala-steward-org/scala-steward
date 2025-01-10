@@ -16,9 +16,9 @@
 
 package org.scalasteward.core.buildtool
 
-import cats.syntax.all._
+import cats.syntax.all.*
 import org.scalasteward.core.buildtool.sbt.data.{SbtVersion, ScalaVersion}
-import org.scalasteward.core.data._
+import org.scalasteward.core.data.*
 import org.scalasteward.core.io.FileData
 
 package object sbt {

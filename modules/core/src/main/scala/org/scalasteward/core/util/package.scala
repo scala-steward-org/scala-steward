@@ -16,8 +16,8 @@
 
 package org.scalasteward.core
 
-import cats._
-import cats.syntax.all._
+import cats.*
+import cats.syntax.all.*
 import fs2.Pipe
 import scala.collection.mutable.ListBuffer
 

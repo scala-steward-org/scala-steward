@@ -17,7 +17,7 @@
 package org.scalasteward.core.repocache
 
 import cats.MonadThrow
-import cats.syntax.all._
+import cats.syntax.all.*
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 import org.scalasteward.core.data.Repo
@@ -25,7 +25,7 @@ import org.scalasteward.core.persistence.KeyValueStore
 import org.scalasteward.core.repocache.RefreshErrorAlg.Entry
 import org.scalasteward.core.util.dateTime.showDuration
 import org.scalasteward.core.util.{DateTimeAlg, Timestamp}
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.util.control.NoStackTrace
 
 final class RefreshErrorAlg[F[_]](

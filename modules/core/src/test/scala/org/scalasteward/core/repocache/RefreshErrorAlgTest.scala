@@ -1,6 +1,6 @@
 package org.scalasteward.core.repocache
 
-import cats.syntax.all._
+import cats.syntax.all.*
 import munit.CatsEffectSuite
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.mock.MockContext.context.refreshErrorAlg

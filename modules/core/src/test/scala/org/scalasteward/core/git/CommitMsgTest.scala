@@ -1,7 +1,7 @@
 package org.scalasteward.core.git
 
 import munit.FunSuite
-import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.data.Update
 
 class CommitMsgTest extends FunSuite {

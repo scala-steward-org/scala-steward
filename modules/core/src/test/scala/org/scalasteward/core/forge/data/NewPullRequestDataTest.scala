@@ -1,14 +1,14 @@
 package org.scalasteward.core.forge.data
 
 import munit.FunSuite
-import org.http4s.syntax.literals._
-import org.scalasteward.core.TestInstances._
-import org.scalasteward.core.TestSyntax._
+import org.http4s.syntax.literals.*
+import org.scalasteward.core.TestInstances.*
+import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.buildtool.sbt.data.SbtVersion
-import org.scalasteward.core.data._
+import org.scalasteward.core.data.*
 import org.scalasteward.core.edit.EditAttempt.{ScalafixEdit, UpdateEdit}
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
-import org.scalasteward.core.forge.data.NewPullRequestData._
+import org.scalasteward.core.forge.data.NewPullRequestData.*
 import org.scalasteward.core.git.{Branch, Commit}
 import org.scalasteward.core.nurture.UpdateInfoUrl
 import org.scalasteward.core.repoconfig.RepoConfig

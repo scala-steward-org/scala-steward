@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.repocache
 
-import cats.syntax.all._
+import cats.syntax.all.*
 import cats.{MonadThrow, Parallel}
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.BuildToolDispatcher

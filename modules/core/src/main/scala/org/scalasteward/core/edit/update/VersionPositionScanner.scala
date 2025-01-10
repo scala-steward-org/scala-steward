@@ -17,7 +17,7 @@
 package org.scalasteward.core.edit.update
 
 import org.scalasteward.core.data.Version
-import org.scalasteward.core.edit.update.data.VersionPosition._
+import org.scalasteward.core.edit.update.data.VersionPosition.*
 import org.scalasteward.core.edit.update.data.{Substring, VersionPosition}
 import org.scalasteward.core.io.FileData
 import scala.util.matching.Regex

@@ -2,7 +2,7 @@ package org.scalasteward.core.util
 
 import munit.FunSuite
 import org.http4s.Uri.UserInfo
-import org.http4s.syntax.literals._
+import org.http4s.syntax.literals.*
 import org.scalasteward.core.util
 
 class uriTest extends FunSuite {
