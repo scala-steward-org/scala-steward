@@ -18,7 +18,7 @@ package org.scalasteward.benchmark
 
 import java.util.concurrent.TimeUnit
 import org.openjdk.jmh.annotations.{Benchmark, BenchmarkMode, Mode, OutputTimeUnit}
-import org.scalasteward.core.data._
+import org.scalasteward.core.data.*
 import org.scalasteward.core.repoconfig.{UpdatePattern, UpdatesConfig, VersionPattern}
 import org.scalasteward.core.util.Nel
 
