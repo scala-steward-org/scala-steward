@@ -18,7 +18,7 @@ package org.scalasteward.core.io
 
 import better.files.File
 import cats.effect.Async
-import cats.syntax.all._
+import cats.syntax.all.*
 import org.scalasteward.core.application.Config.ProcessCfg
 import org.scalasteward.core.io.process.{Args, SlurpOption, SlurpOptions}
 import org.scalasteward.core.util.Nel

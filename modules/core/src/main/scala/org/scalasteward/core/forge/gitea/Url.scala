@@ -17,9 +17,9 @@
 package org.scalasteward.core.forge.gitea
 
 import org.http4s.Uri
-import org.scalasteward.core.git.Branch
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.data.PullRequestNumber
+import org.scalasteward.core.git.Branch
 
 class Url(apiHost: Uri) {
   def repoBranch(repo: Repo, branch: Branch): Uri =

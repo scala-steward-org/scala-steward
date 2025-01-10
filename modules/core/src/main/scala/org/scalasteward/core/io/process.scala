@@ -17,12 +17,12 @@
 package org.scalasteward.core.io
 
 import better.files.File
-import cats.effect._
-import cats.syntax.all._
+import cats.effect.*
+import cats.syntax.all.*
 import fs2.Stream
 import java.io.{IOException, InputStream}
 import org.scalasteward.core.application.Cli
-import org.scalasteward.core.util._
+import org.scalasteward.core.util.*
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.TimeoutException
 import scala.concurrent.duration.FiniteDuration

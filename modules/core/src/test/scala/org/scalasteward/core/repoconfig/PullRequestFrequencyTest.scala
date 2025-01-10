@@ -1,10 +1,10 @@
 package org.scalasteward.core.repoconfig
 
 import io.circe.parser
-import io.circe.syntax._
+import io.circe.syntax.*
 import munit.FunSuite
 import org.scalasteward.core.util.Timestamp
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 class PullRequestFrequencyTest extends FunSuite {
   val epoch: Timestamp = Timestamp(0L)

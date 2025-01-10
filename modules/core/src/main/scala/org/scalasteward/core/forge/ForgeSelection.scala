@@ -16,8 +16,8 @@
 
 package org.scalasteward.core.forge
 
-import cats.effect.Temporal
 import cats.Parallel
+import cats.effect.Temporal
 import org.http4s.Request
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.application.Config.{ForgeCfg, ForgeSpecificCfg}

@@ -17,9 +17,9 @@
 package org.scalasteward.core.edit.scalafix
 
 import cats.Eq
-import cats.syntax.all._
+import cats.syntax.all.*
 import io.circe.Decoder
-import io.circe.generic.semiauto._
+import io.circe.generic.semiauto.*
 import org.scalasteward.core.data.{GroupId, Version}
 import org.scalasteward.core.edit.scalafix.ScalafixMigration.{ExecutionOrder, Target}
 import org.scalasteward.core.git.{Author, CommitMsg}

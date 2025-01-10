@@ -3,9 +3,9 @@ package org.scalasteward.core.io
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import munit.FunSuite
-import org.scalasteward.core.io.process._
+import org.scalasteward.core.io.process.*
 import org.scalasteward.core.util.{DateTimeAlg, Nel}
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 class processTest extends FunSuite {
   def slurp1(cmd: Nel[String]): IO[List[String]] =

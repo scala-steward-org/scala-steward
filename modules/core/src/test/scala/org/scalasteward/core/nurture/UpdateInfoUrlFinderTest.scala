@@ -1,20 +1,20 @@
 package org.scalasteward.core.nurture
 
-import cats.syntax.all._
+import cats.syntax.all.*
 import munit.CatsEffectSuite
 import org.http4s.HttpApp
 import org.http4s.dsl.Http4sDsl
-import org.http4s.syntax.literals._
+import org.http4s.syntax.literals.*
 import org.scalasteward.core.application.Config.ForgeCfg
 import org.scalasteward.core.coursier.DependencyMetadata
 import org.scalasteward.core.data.Version
-import org.scalasteward.core.forge.ForgeType._
+import org.scalasteward.core.forge.ForgeType.*
 import org.scalasteward.core.forge.github.Repository
 import org.scalasteward.core.forge.{ForgeRepo, ForgeType}
-import org.scalasteward.core.mock.MockContext.context._
+import org.scalasteward.core.mock.MockContext.context.*
 import org.scalasteward.core.mock.{GitHubAuth, MockEff, MockEffOps, MockState}
-import org.scalasteward.core.nurture.UpdateInfoUrl._
-import org.scalasteward.core.nurture.UpdateInfoUrlFinder._
+import org.scalasteward.core.nurture.UpdateInfoUrl.*
+import org.scalasteward.core.nurture.UpdateInfoUrlFinder.*
 
 class UpdateInfoUrlFinderTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   private val httpApp = HttpApp[MockEff] {

@@ -17,7 +17,7 @@
 package org.scalasteward.core.update
 
 import cats.Traverse
-import cats.syntax.all._
+import cats.syntax.all.*
 import org.scalasteward.core.data.{GroupId, Update}
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel

@@ -1,12 +1,12 @@
 package org.scalasteward.core.repocache
 
 import cats.implicits.toSemigroupKOps
-import io.circe.syntax._
+import io.circe.syntax.*
 import munit.CatsEffectSuite
 import org.http4s.HttpApp
-import org.http4s.circe._
+import org.http4s.circe.*
 import org.http4s.dsl.Http4sDsl
-import org.http4s.syntax.all._
+import org.http4s.syntax.all.*
 import org.scalasteward.core.TestInstances.dummySha1
 import org.scalasteward.core.data.{Repo, RepoData}
 import org.scalasteward.core.forge.data.{RepoOut, UserOut}

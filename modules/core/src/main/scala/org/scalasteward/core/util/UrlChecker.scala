@@ -17,7 +17,7 @@
 package org.scalasteward.core.util
 
 import cats.effect.Sync
-import cats.syntax.all._
+import cats.syntax.all.*
 import com.github.benmanes.caffeine.cache.Caffeine
 import org.http4s.client.Client
 import org.http4s.{Method, Request, Status, Uri}

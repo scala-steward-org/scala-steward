@@ -6,8 +6,8 @@ import cats.effect.unsafe.implicits.global
 import org.http4s.client.Client
 import org.scalasteward.core.application.{Config, Context, ValidateRepoConfigContext}
 import org.scalasteward.core.edit.scalafix.ScalafixMigrationsLoader
+import org.scalasteward.core.io.*
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
-import org.scalasteward.core.io._
 import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.repoconfig.RepoConfigLoader
 import org.scalasteward.core.update.artifact.ArtifactMigrationsLoader

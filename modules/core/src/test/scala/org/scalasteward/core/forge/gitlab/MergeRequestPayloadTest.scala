@@ -1,10 +1,10 @@
 package org.scalasteward.core.forge.gitlab
 
-import io.circe.literal._
-import io.circe.syntax._
+import io.circe.literal.*
+import io.circe.syntax.*
 import munit.FunSuite
 import org.scalasteward.core.forge.data.NewPullRequestData
-import org.scalasteward.core.forge.gitlab.GitLabJsonCodec._
+import org.scalasteward.core.forge.gitlab.GitLabJsonCodec.*
 import org.scalasteward.core.git.Branch
 
 class MergeRequestPayloadTest extends FunSuite {

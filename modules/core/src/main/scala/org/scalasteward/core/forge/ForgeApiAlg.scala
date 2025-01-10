@@ -16,10 +16,10 @@
 
 package org.scalasteward.core.forge
 
-import cats.syntax.all._
+import cats.syntax.all.*
 import cats.{ApplicativeThrow, MonadThrow}
 import org.scalasteward.core.data.Repo
-import org.scalasteward.core.forge.data._
+import org.scalasteward.core.forge.data.*
 import org.scalasteward.core.git.Branch
 
 trait ForgeApiAlg[F[_]] {

@@ -3,13 +3,13 @@ package org.scalasteward.core.edit
 import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.TestInstances.dummyRepoCache
-import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.buildtool.sbt.{sbtArtifactId, sbtGroupId}
-import org.scalasteward.core.data._
+import org.scalasteward.core.data.*
 import org.scalasteward.core.edit.scalafix.ScalafixCli.scalafixBinary
-import org.scalasteward.core.mock.MockContext.context._
-import org.scalasteward.core.mock.{MockEffOps, MockState}
+import org.scalasteward.core.mock.MockContext.context.*
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
+import org.scalasteward.core.mock.{MockEffOps, MockState}
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafmt.ScalafmtAlg.opts
 import org.scalasteward.core.scalafmt.{scalafmtBinary, scalafmtConfName, scalafmtDependency}
@@ -87,7 +87,7 @@ class EditAlgTest extends FunSuite {
         Cmd.gitGrep(repoDir, update.groupId.value),
         Cmd("read", scalafmtConf.pathAsString),
         Cmd("write", scalafmtConf.pathAsString),
-        Cmd.exec(repoDir, scalafmtBinary :: opts.nonInteractive :: opts.modeChanged: _*),
+        Cmd.exec(repoDir, (scalafmtBinary :: opts.nonInteractive :: opts.modeChanged)*),
         Cmd.gitStatus(repoDir),
         Cmd.gitCommit(repoDir, "Update scalafmt-core to 2.1.0"),
         Cmd.gitLatestSha1(repoDir),

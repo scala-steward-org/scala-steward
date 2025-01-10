@@ -17,7 +17,7 @@
 package org.scalasteward.core.update.artifact
 
 import io.circe.Decoder
-import io.circe.generic.semiauto._
+import io.circe.generic.semiauto.*
 
 final case class ArtifactChanges(changes: List[ArtifactChange])
 

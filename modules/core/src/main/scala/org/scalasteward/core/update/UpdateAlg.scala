@@ -17,10 +17,10 @@
 package org.scalasteward.core.update
 
 import cats.data.OptionT
-import cats.syntax.all._
+import cats.syntax.all.*
 import cats.{Monad, Parallel}
 import org.scalasteward.core.coursier.VersionsCache
-import org.scalasteward.core.data._
+import org.scalasteward.core.data.*
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.update.UpdateAlg.migrateDependency
 import org.scalasteward.core.update.artifact.{ArtifactChange, ArtifactMigrationsFinder}

@@ -1,7 +1,7 @@
 package org.scalasteward.core.edit.update
 
 import munit.FunSuite
-import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.edit.update.data.{ModulePosition, Substring}
 import org.scalasteward.core.io.FileData
 

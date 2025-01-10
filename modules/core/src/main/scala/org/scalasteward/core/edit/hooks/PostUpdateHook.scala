@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.edit.hooks
 
-import cats.implicits._
+import cats.implicits.*
 import org.scalasteward.core.data.{ArtifactId, GroupId, Update}
 import org.scalasteward.core.git.CommitMsg
 import org.scalasteward.core.repocache.RepoCache

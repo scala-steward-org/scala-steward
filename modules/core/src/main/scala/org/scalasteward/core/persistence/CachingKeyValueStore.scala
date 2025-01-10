@@ -17,7 +17,7 @@
 package org.scalasteward.core.persistence
 
 import cats.effect.{Ref, Sync}
-import cats.syntax.all._
+import cats.syntax.all.*
 import cats.{Eq, Monad}
 
 final class CachingKeyValueStore[F[_], K, V](

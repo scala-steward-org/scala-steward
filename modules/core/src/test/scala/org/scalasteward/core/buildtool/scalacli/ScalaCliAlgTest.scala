@@ -1,14 +1,14 @@
 package org.scalasteward.core.buildtool.scalacli
 
-import cats.syntax.parallel._
+import cats.syntax.parallel.*
 import munit.CatsEffectSuite
 import org.scalasteward.core.buildtool.BuildRoot
-import org.scalasteward.core.buildtool.sbt.command._
+import org.scalasteward.core.buildtool.sbt.command.*
 import org.scalasteward.core.data.{GroupId, Repo, Version}
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
-import org.scalasteward.core.mock.MockContext.context._
-import org.scalasteward.core.mock.{MockEffOps, MockState}
+import org.scalasteward.core.mock.MockContext.context.*
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
+import org.scalasteward.core.mock.{MockEffOps, MockState}
 import org.scalasteward.core.util.Nel
 
 class ScalaCliAlgTest extends CatsEffectSuite {

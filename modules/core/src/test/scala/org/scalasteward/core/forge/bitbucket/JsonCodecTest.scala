@@ -1,9 +1,9 @@
 package org.scalasteward.core.forge.bitbucket
 
 import io.circe.Json
-import io.circe.parser._
+import io.circe.parser.*
 import munit.FunSuite
-import org.http4s.syntax.literals._
+import org.http4s.syntax.literals.*
 import org.scalasteward.core.forge.data.{PullRequestNumber, PullRequestOut, PullRequestState}
 
 class JsonCodecTest extends FunSuite {

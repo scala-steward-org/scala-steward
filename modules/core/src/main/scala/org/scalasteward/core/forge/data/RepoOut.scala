@@ -18,13 +18,12 @@ package org.scalasteward.core.forge.data
 
 import cats.ApplicativeThrow
 import io.circe.Codec
-import io.circe.generic.semiauto._
+import io.circe.generic.semiauto.*
 import org.http4s.Uri
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.util.intellijThisImportIsUsed
-import org.scalasteward.core.util.uri.uriDecoder
-import org.scalasteward.core.util.uri.uriEncoder
+import org.scalasteward.core.util.uri.{uriDecoder, uriEncoder}
 
 final case class RepoOut(
     name: String,
@@ -49,4 +48,5 @@ object RepoOut {
   implicit val repoOutDecoder: Codec[RepoOut] = deriveCodec
 
   intellijThisImportIsUsed(uriDecoder)
+  intellijThisImportIsUsed(uriEncoder)
 }

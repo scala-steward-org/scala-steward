@@ -3,8 +3,8 @@ package org.scalasteward.core.application
 import better.files.File
 import cats.data.Validated.Valid
 import munit.FunSuite
-import org.http4s.syntax.literals._
-import org.scalasteward.core.application.Cli.ParseResult._
+import org.http4s.syntax.literals.*
+import org.scalasteward.core.application.Cli.ParseResult.*
 import org.scalasteward.core.application.Cli.{EnvVar, Usage}
 import org.scalasteward.core.application.ExitCodePolicy.{
   SuccessIfAnyRepoSucceeds,
@@ -13,8 +13,7 @@ import org.scalasteward.core.application.ExitCodePolicy.{
 import org.scalasteward.core.forge.ForgeType
 import org.scalasteward.core.forge.github.GitHubApp
 import org.scalasteward.core.util.Nel
-
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 class CliTest extends FunSuite {
   test("parseArgs: example") {

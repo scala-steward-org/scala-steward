@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.data
 
-import cats.implicits._
+import cats.implicits.*
 import cats.{Applicative, Eval, Order, Traverse}
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, Decoder, Encoder}

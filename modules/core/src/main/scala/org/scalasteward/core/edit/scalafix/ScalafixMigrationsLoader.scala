@@ -17,11 +17,11 @@
 package org.scalasteward.core.edit.scalafix
 
 import cats.MonadThrow
-import cats.syntax.all._
+import cats.syntax.all.*
 import io.circe.config.parser.decode
 import org.http4s.Uri
 import org.scalasteward.core.application.Config.ScalafixCfg
-import org.scalasteward.core.edit.scalafix.ScalafixMigrationsLoader._
+import org.scalasteward.core.edit.scalafix.ScalafixMigrationsLoader.*
 import org.scalasteward.core.io.FileAlg
 import org.typelevel.log4cats.Logger
 

@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.coursier
 
-import cats.implicits._
+import cats.implicits.*
 import cats.{MonadThrow, Parallel}
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, KeyEncoder}

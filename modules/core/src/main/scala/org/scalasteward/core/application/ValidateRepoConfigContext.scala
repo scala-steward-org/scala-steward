@@ -17,7 +17,7 @@
 package org.scalasteward.core.application
 
 import cats.effect.Sync
-import cats.syntax.all._
+import cats.syntax.all.*
 import org.scalasteward.core.io.FileAlg
 import org.scalasteward.core.repoconfig.ValidateRepoConfigAlg
 import org.typelevel.log4cats.Logger

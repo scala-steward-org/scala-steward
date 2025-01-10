@@ -18,10 +18,10 @@ package org.scalasteward.core.git
 
 import better.files.File
 import cats.effect.MonadCancelThrow
-import cats.syntax.all._
+import cats.syntax.all.*
 import org.http4s.Uri
 import org.scalasteward.core.application.Config
-import org.scalasteward.core.forge.ForgeType._
+import org.scalasteward.core.forge.ForgeType.*
 import org.scalasteward.core.git.FileGitAlg.{dotdot, gitCmd}
 import org.scalasteward.core.io.process.{ProcessFailedException, SlurpOptions}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}

@@ -17,13 +17,13 @@
 package org.scalasteward.core.forge
 
 import cats.MonadThrow
-import cats.syntax.all._
+import cats.syntax.all.*
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.ForgeType.GitHub
 import org.scalasteward.core.forge.data.RepoOut
 import org.scalasteward.core.git.{updateBranchPrefix, Branch, GitAlg}
-import org.scalasteward.core.util.logger._
+import org.scalasteward.core.util.logger.*
 import org.typelevel.log4cats.Logger
 
 final class ForgeRepoAlg[F[_]](config: Config)(implicit

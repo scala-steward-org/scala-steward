@@ -17,7 +17,7 @@
 package org.scalasteward.core.application
 
 import cats.effect.{ExitCode, Sync}
-import cats.syntax.all._
+import cats.syntax.all.*
 import fs2.Stream
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.ForgeAuthAlg

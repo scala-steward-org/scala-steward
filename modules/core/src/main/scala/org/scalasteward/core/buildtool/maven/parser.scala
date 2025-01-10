@@ -18,8 +18,8 @@ package org.scalasteward.core.buildtool.maven
 
 import cats.parse.Rfc5234.wsp
 import cats.parse.{Parser, Parser0}
-import cats.syntax.all._
-import org.scalasteward.core.data._
+import cats.syntax.all.*
+import org.scalasteward.core.data.*
 
 object parser {
   private val colon: Parser[Char] =

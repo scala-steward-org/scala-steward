@@ -19,7 +19,7 @@ package org.scalasteward.core.repoconfig
 import better.files.File
 import cats.MonadThrow
 import cats.effect.ExitCode
-import cats.syntax.all._
+import cats.syntax.all.*
 import io.circe.{CursorOp, DecodingFailure, ParsingFailure}
 import org.scalasteward.core.io.FileAlg
 import org.scalasteward.core.repoconfig.RepoConfigAlg.ConfigParsingResult

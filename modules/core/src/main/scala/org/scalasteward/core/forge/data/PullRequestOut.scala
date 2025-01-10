@@ -17,7 +17,7 @@
 package org.scalasteward.core.forge.data
 
 import io.circe.Decoder
-import io.circe.generic.semiauto._
+import io.circe.generic.semiauto.*
 import org.http4s.Uri
 import org.scalasteward.core.util.intellijThisImportIsUsed
 import org.scalasteward.core.util.uri.uriDecoder

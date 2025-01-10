@@ -18,9 +18,9 @@ package org.scalasteward.core.buildtool.mill
 
 import cats.parse.Parser
 import cats.parse.Rfc5234.sp
-import cats.syntax.all._
+import cats.syntax.all.*
 import io.circe.{Decoder, DecodingFailure}
-import org.scalasteward.core.data._
+import org.scalasteward.core.data.*
 import scala.util.Try
 
 object parser {

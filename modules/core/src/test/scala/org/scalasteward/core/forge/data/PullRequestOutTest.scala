@@ -2,7 +2,7 @@ package org.scalasteward.core.forge.data
 
 import io.circe.parser
 import munit.FunSuite
-import org.http4s.syntax.literals._
+import org.http4s.syntax.literals.*
 import org.scalasteward.core.forge.data.PullRequestState.Open
 import scala.io.Source
 

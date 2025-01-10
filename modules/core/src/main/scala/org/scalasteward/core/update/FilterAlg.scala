@@ -16,11 +16,11 @@
 
 package org.scalasteward.core.update
 
-import cats.syntax.all._
 import cats.Monad
-import org.scalasteward.core.data._
+import cats.syntax.all.*
+import org.scalasteward.core.data.*
 import org.scalasteward.core.repoconfig.RepoConfig
-import org.scalasteward.core.update.FilterAlg._
+import org.scalasteward.core.update.FilterAlg.*
 import org.scalasteward.core.util.Nel
 import org.typelevel.log4cats.Logger
 

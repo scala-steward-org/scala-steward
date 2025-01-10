@@ -1,8 +1,7 @@
 package org.scalasteward.core.repoconfig
 
-import org.scalasteward.core.TestSyntax._
-
 import munit.FunSuite
+import org.scalasteward.core.TestSyntax.*
 
 class RetractedArtifactTest extends FunSuite {
   private val retractedArtifact = RetractedArtifact(

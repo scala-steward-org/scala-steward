@@ -16,9 +16,9 @@
 
 package org.scalasteward.core.repocache
 
-import cats.syntax.all._
+import cats.syntax.all.*
 import io.circe.Codec
-import io.circe.generic.semiauto._
+import io.circe.generic.semiauto.*
 import org.scalasteward.core.data.{ArtifactId, DependencyInfo, GroupId, Scope}
 import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.repoconfig.RepoConfig

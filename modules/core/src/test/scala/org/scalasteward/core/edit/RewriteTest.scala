@@ -3,9 +3,9 @@ package org.scalasteward.core.edit
 import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.TestInstances.dummyRepoCache
-import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.data.{Repo, RepoData, Update}
-import org.scalasteward.core.mock.MockContext.context._
+import org.scalasteward.core.mock.MockContext.context.*
 import org.scalasteward.core.mock.{MockEffOps, MockState}
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafmt.scalafmtConfName
@@ -958,7 +958,7 @@ class RewriteTest extends FunSuite {
     val filesInRepoDir = files.map { case (file, content) => repoDir / file -> content }
     val state = MockState.empty
       .copy(execCommands = true)
-      .initGitRepo(repoDir, filesInRepoDir.toSeq: _*)
+      .initGitRepo(repoDir, filesInRepoDir.toSeq*)
       .flatMap(editAlg.applyUpdate(data, update).runS)
       .unsafeRunSync()
     val obtained = state.files

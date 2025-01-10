@@ -1,10 +1,10 @@
 package org.scalasteward.core.data
 
-import cats.implicits._
+import cats.implicits.*
 import cats.kernel.laws.discipline.OrderTests
 import munit.DisciplineSuite
-import org.scalacheck.Prop._
-import org.scalasteward.core.TestInstances._
+import org.scalacheck.Prop.*
+import org.scalasteward.core.TestInstances.*
 import org.scalasteward.core.data.Version.Component
 import scala.util.Random
 

@@ -19,7 +19,7 @@ package org.scalasteward.core.application
 import better.files.File
 import org.http4s.Uri
 import org.scalasteward.core.application.Cli.EnvVar
-import org.scalasteward.core.application.Config._
+import org.scalasteward.core.application.Config.*
 import org.scalasteward.core.data.Resolver
 import org.scalasteward.core.forge.ForgeType
 import org.scalasteward.core.forge.github.GitHubApp

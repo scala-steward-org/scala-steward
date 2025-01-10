@@ -17,9 +17,9 @@
 package org.scalasteward.core.repoconfig
 
 import cats.Eq
-import cats.syntax.all._
-import io.circe._
-import io.circe.syntax._
+import cats.syntax.all.*
+import io.circe.*
+import io.circe.syntax.*
 import org.scalasteward.core.data.{SemVer, Update}
 import scala.util.matching.Regex
 

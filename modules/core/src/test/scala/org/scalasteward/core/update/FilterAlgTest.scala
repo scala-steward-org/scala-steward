@@ -1,15 +1,15 @@
 package org.scalasteward.core.update
 
 import cats.effect.unsafe.implicits.global
-import cats.syntax.all._
+import cats.syntax.all.*
 import munit.FunSuite
-import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.data.GroupId
 import org.scalasteward.core.mock.MockContext.context.filterAlg
-import org.scalasteward.core.mock.{MockEffOps, MockState}
 import org.scalasteward.core.mock.MockState.TraceEntry.Log
-import org.scalasteward.core.repoconfig._
-import org.scalasteward.core.update.FilterAlg._
+import org.scalasteward.core.mock.{MockEffOps, MockState}
+import org.scalasteward.core.repoconfig.*
+import org.scalasteward.core.update.FilterAlg.*
 import org.scalasteward.core.util.Nel
 
 class FilterAlgTest extends FunSuite {

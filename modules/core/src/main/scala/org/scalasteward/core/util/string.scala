@@ -17,7 +17,7 @@
 package org.scalasteward.core.util
 
 import cats.Foldable
-import cats.syntax.all._
+import cats.syntax.all.*
 import scala.util.matching.Regex
 
 object string {

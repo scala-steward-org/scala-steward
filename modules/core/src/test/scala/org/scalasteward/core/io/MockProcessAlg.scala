@@ -1,8 +1,8 @@
 package org.scalasteward.core.io
 
-import cats.syntax.all._
 import cats.data.Kleisli
 import cats.effect.IO
+import cats.syntax.all.*
 import org.scalasteward.core.application.Config.ProcessCfg
 import org.scalasteward.core.mock.MockEff
 import org.scalasteward.core.mock.MockState.TraceEntry.Cmd

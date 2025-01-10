@@ -1,7 +1,7 @@
 package org.scalasteward.core.buildtool.maven
 
 import munit.FunSuite
-import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.data.Resolver.MavenRepository
 
 class parserTest extends FunSuite {

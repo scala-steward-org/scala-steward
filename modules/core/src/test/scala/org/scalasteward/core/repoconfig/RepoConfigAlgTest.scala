@@ -2,16 +2,16 @@ package org.scalasteward.core.repoconfig
 
 import cats.data.NonEmptyList
 import cats.effect.unsafe.implicits.global
-import cats.syntax.all._
+import cats.syntax.all.*
 import eu.timepit.refined.types.numeric.NonNegInt
 import munit.FunSuite
-import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.data.{GroupId, Repo, SemVer, Update}
-import org.scalasteward.core.mock.MockContext.context._
-import org.scalasteward.core.mock.{MockEffOps, MockState}
+import org.scalasteward.core.mock.MockContext.context.*
 import org.scalasteward.core.mock.MockState.TraceEntry.Log
+import org.scalasteward.core.mock.{MockEffOps, MockState}
 import org.scalasteward.core.util.Nel
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 class RepoConfigAlgTest extends FunSuite {
   test("default config is not empty") {

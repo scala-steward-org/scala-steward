@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.edit.scalafix
 
-import cats.syntax.all._
+import cats.syntax.all.*
 import java.util.regex.Pattern
 import org.scalasteward.core.data.Update
 import org.scalasteward.core.edit.scalafix.ScalafixMigration.ExecutionOrder

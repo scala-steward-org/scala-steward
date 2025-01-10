@@ -17,7 +17,7 @@
 package org.scalasteward.core.buildtool
 
 import cats.Monad
-import cats.syntax.all._
+import cats.syntax.all.*
 import org.scalasteward.core.buildtool.maven.MavenAlg
 import org.scalasteward.core.buildtool.mill.MillAlg
 import org.scalasteward.core.buildtool.sbt.SbtAlg

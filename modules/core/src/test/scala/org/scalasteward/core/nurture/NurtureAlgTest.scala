@@ -1,11 +1,11 @@
 package org.scalasteward.core.nurture
 
-import cats.syntax.all._
+import cats.syntax.all.*
 import munit.CatsEffectSuite
 import org.http4s.HttpApp
 import org.http4s.dsl.Http4sDsl
-import org.scalasteward.core.TestInstances._
-import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.TestInstances.*
+import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.data.{DependencyInfo, Repo, RepoData, UpdateData}
 import org.scalasteward.core.edit.EditAttempt.UpdateEdit
 import org.scalasteward.core.forge.data.NewPullRequestData

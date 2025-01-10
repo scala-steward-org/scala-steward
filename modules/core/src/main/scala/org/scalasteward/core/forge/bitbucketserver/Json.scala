@@ -21,7 +21,7 @@ import cats.data.NonEmptyList
 import io.circe.generic.semiauto.{deriveCodec, deriveDecoder, deriveEncoder}
 import io.circe.{Codec, Decoder, Encoder}
 import org.http4s.Uri
-import org.scalasteward.core.forge.data._
+import org.scalasteward.core.forge.data.*
 import org.scalasteward.core.git
 import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.util.intellijThisImportIsUsed

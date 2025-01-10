@@ -4,8 +4,8 @@ import cats.Id
 import cats.effect.unsafe.implicits.global
 import java.util.concurrent.atomic.AtomicInteger
 import munit.FunSuite
-import org.http4s.syntax.literals._
-import org.scalasteward.core.TestSyntax._
+import org.http4s.syntax.literals.*
+import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.data.{Repo, Update}
 import org.scalasteward.core.forge.data.PullRequestState.Open
 import org.scalasteward.core.forge.data.{PullRequestNumber, PullRequestState}

@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.update.artifact
 
-import cats.syntax.all._
+import cats.syntax.all.*
 import org.scalasteward.core.data.Dependency
 
 final class ArtifactMigrationsFinder(migrations: List[ArtifactChange]) {

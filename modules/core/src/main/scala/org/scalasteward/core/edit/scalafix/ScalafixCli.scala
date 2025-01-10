@@ -18,7 +18,7 @@ package org.scalasteward.core.edit.scalafix
 
 import better.files.File
 import cats.Monad
-import cats.syntax.all._
+import cats.syntax.all.*
 import org.scalasteward.core.edit.scalafix.ScalafixCli.scalafixBinary
 import org.scalasteward.core.io.process.SlurpOptions
 import org.scalasteward.core.io.{ProcessAlg, WorkspaceAlg}

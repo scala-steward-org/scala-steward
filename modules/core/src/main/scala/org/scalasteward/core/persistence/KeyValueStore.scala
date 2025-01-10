@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.persistence
 
-import cats.syntax.all._
+import cats.syntax.all.*
 import cats.{FlatMap, Functor}
 
 trait KeyValueStore[F[_], K, V] {

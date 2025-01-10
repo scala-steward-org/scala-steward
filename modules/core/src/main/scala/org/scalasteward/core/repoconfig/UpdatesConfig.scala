@@ -16,11 +16,11 @@
 
 package org.scalasteward.core.repoconfig
 
-import cats.implicits._
+import cats.implicits.*
 import cats.{Eq, Monoid}
 import eu.timepit.refined.types.numeric.NonNegInt
 import io.circe.generic.semiauto.deriveCodec
-import io.circe.refined._
+import io.circe.refined.*
 import io.circe.{Codec, Decoder}
 import org.scalasteward.core.buildtool.maven.pomXmlName
 import org.scalasteward.core.buildtool.mill.MillAlg

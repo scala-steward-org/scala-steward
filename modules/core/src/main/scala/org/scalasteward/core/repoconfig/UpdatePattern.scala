@@ -16,9 +16,9 @@
 
 package org.scalasteward.core.repoconfig
 
-import cats.syntax.all._
+import cats.syntax.all.*
 import io.circe.Codec
-import io.circe.generic.semiauto._
+import io.circe.generic.semiauto.*
 import org.scalasteward.core.data.{GroupId, Update, Version}
 
 final case class UpdatePattern(

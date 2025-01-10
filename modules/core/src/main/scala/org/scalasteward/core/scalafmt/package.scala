@@ -16,9 +16,9 @@
 
 package org.scalasteward.core
 
-import cats.syntax.all._
+import cats.syntax.all.*
 import org.scalasteward.core.buildtool.sbt.defaultScalaBinaryVersion
-import org.scalasteward.core.data._
+import org.scalasteward.core.data.*
 
 package object scalafmt {
   val scalafmtGroupId: GroupId =

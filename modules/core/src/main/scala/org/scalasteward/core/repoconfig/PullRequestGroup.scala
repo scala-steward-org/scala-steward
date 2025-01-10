@@ -18,7 +18,7 @@ package org.scalasteward.core.repoconfig
 
 import cats.Eq
 import cats.data.NonEmptyList
-import io.circe.generic.semiauto._
+import io.circe.generic.semiauto.*
 import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.data.Update
 

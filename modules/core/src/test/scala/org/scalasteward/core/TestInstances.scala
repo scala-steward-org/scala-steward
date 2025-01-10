@@ -1,15 +1,15 @@
 package org.scalasteward.core
 
 import cats.effect.IO
-import eu.timepit.refined.scalacheck.numeric._
+import eu.timepit.refined.scalacheck.numeric.*
 import eu.timepit.refined.types.numeric.NonNegInt
 import org.scalacheck.{Arbitrary, Cogen, Gen}
-import org.scalasteward.core.TestSyntax._
-import org.scalasteward.core.data._
+import org.scalasteward.core.TestSyntax.*
+import org.scalasteward.core.data.*
 import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.repocache.RepoCache
+import org.scalasteward.core.repoconfig.*
 import org.scalasteward.core.repoconfig.PullRequestFrequency.{Asap, Timespan}
-import org.scalasteward.core.repoconfig._
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import scala.concurrent.duration.FiniteDuration

@@ -17,7 +17,7 @@
 package org.scalasteward.core.edit.update
 
 import cats.effect.Concurrent
-import cats.syntax.all._
+import cats.syntax.all.*
 import fs2.Stream
 import org.scalasteward.core.data.{Dependency, Repo, Version}
 import org.scalasteward.core.edit.update.data.{ModulePosition, VersionPosition}

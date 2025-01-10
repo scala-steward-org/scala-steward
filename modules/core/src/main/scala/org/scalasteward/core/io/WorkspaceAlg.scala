@@ -18,7 +18,7 @@ package org.scalasteward.core.io
 
 import better.files.File
 import cats.Monad
-import cats.syntax.all._
+import cats.syntax.all.*
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.BuildRoot
 import org.scalasteward.core.data.Repo

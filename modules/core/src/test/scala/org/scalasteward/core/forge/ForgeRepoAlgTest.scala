@@ -1,7 +1,7 @@
 package org.scalasteward.core.forge
 
 import munit.CatsEffectSuite
-import org.http4s.syntax.literals._
+import org.http4s.syntax.literals.*
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.data.{RepoOut, UserOut}
 import org.scalasteward.core.git.Branch

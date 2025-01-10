@@ -17,7 +17,7 @@
 package org.scalasteward.core.forge.data
 
 import io.circe.Codec
-import io.circe.generic.semiauto._
+import io.circe.generic.semiauto.*
 
 final case class UserOut(
     login: String

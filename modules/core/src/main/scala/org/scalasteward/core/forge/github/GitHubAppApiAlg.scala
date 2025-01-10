@@ -17,10 +17,10 @@
 package org.scalasteward.core.forge.github
 
 import cats.effect.Concurrent
-import cats.syntax.all._
+import cats.syntax.all.*
 import org.http4s.{Header, Uri}
 import org.scalasteward.core.util.HttpJsonClient
-import org.typelevel.ci._
+import org.typelevel.ci.*
 
 class GitHubAppApiAlg[F[_]](
     gitHubApiHost: Uri

@@ -2,7 +2,7 @@ package org.scalasteward.core.update.artifact
 
 import cats.effect.unsafe.implicits.global
 import munit.FunSuite
-import org.scalasteward.core.TestSyntax._
+import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.buildtool.sbt.data.{SbtVersion, ScalaVersion}
 import org.scalasteward.core.data.{GroupId, Resolver, Scope}
 import org.scalasteward.core.mock.MockContext.context.updateAlg

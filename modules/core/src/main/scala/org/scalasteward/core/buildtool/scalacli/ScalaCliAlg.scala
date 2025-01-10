@@ -17,7 +17,7 @@
 package org.scalasteward.core.buildtool.scalacli
 
 import cats.Monad
-import cats.syntax.all._
+import cats.syntax.all.*
 import org.scalasteward.core.buildtool.sbt.SbtAlg
 import org.scalasteward.core.buildtool.{BuildRoot, BuildToolAlg}
 import org.scalasteward.core.data.Scope

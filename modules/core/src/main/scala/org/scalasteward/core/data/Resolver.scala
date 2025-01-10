@@ -18,8 +18,8 @@ package org.scalasteward.core.data
 
 import cats.Order
 import io.circe.Codec
-import io.circe.generic.semiauto._
-import org.scalasteward.core.data.Resolver._
+import io.circe.generic.semiauto.*
+import org.scalasteward.core.data.Resolver.*
 
 sealed trait Resolver extends Product with Serializable {
   val path: String = {

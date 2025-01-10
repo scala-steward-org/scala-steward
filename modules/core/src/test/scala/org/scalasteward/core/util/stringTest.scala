@@ -2,7 +2,7 @@ package org.scalasteward.core.util
 
 import munit.ScalaCheckSuite
 import org.scalacheck.Gen
-import org.scalacheck.Prop._
+import org.scalacheck.Prop.*
 
 class stringTest extends ScalaCheckSuite {
   test("extractWords") {

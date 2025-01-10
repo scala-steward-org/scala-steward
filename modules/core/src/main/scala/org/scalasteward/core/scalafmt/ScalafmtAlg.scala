@@ -18,7 +18,7 @@ package org.scalasteward.core.scalafmt
 
 import cats.Monad
 import cats.data.OptionT
-import cats.syntax.all._
+import cats.syntax.all.*
 import io.circe.ParsingFailure
 import org.scalasteward.core.buildtool.BuildRoot
 import org.scalasteward.core.data.{Resolver, Scope, Version}

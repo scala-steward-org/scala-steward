@@ -17,12 +17,12 @@
 package org.scalasteward.core.util
 
 import cats.effect.Concurrent
-import cats.syntax.all._
+import cats.syntax.all.*
 import fs2.Stream
 import io.circe.{Decoder, Encoder}
+import org.http4s.*
 import org.http4s.Method.{GET, PATCH, POST, PUT}
 import org.http4s.Status.Successful
-import org.http4s._
 import org.http4s.circe.{jsonEncoderOf, jsonOf}
 import org.http4s.client.Client
 import org.http4s.headers.{Accept, Link, MediaRangeAndQValue}

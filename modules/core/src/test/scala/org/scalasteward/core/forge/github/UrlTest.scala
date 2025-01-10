@@ -1,14 +1,14 @@
 package org.scalasteward.core.forge.github
 
 import munit.FunSuite
-import org.http4s.syntax.literals._
+import org.http4s.syntax.literals.*
 import org.scalasteward.core.data.Repo
-import org.scalasteward.core.git.Branch
 import org.scalasteward.core.forge.data.PullRequestNumber
+import org.scalasteward.core.git.Branch
 
 class UrlTest extends FunSuite {
   private val url = new Url(uri"https://api.github.com")
-  import url._
+  import url.*
 
   private val repo = Repo("fthomas", "refined")
   private val branch = Branch("master")

@@ -17,7 +17,7 @@
 package org.scalasteward.core.repoconfig
 
 import cats.MonadThrow
-import cats.syntax.all._
+import cats.syntax.all.*
 import org.http4s.Uri
 import org.scalasteward.core.application.Config.RepoConfigCfg
 import org.scalasteward.core.io.FileAlg

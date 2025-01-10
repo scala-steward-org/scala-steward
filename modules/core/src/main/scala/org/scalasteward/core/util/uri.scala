@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.util
 
-import cats.syntax.all._
+import cats.syntax.all.*
 import io.circe.{Decoder, Encoder, KeyDecoder, KeyEncoder}
 import monocle.Optional
 import org.http4s.Uri

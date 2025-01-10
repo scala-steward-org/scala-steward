@@ -17,7 +17,7 @@
 package org.scalasteward.benchmark
 
 import java.util.concurrent.TimeUnit
-import org.openjdk.jmh.annotations._
+import org.openjdk.jmh.annotations.*
 import org.scalasteward.core.data.Version
 import org.scalasteward.core.edit.update.VersionPositionScanner
 import org.scalasteward.core.io.FileData

@@ -1,8 +1,8 @@
 package org.scalasteward.core.mock
 
 import io.circe.syntax.EncoderOps
-import org.http4s.dsl.Http4sDsl
 import org.http4s.HttpApp
+import org.http4s.dsl.Http4sDsl
 import org.scalasteward.core.forge.github.{InstallationOut, RepositoriesOut, Repository, TokenOut}
 
 object GitHubAuth extends Http4sDsl[MockEff] {
