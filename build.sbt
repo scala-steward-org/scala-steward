@@ -311,6 +311,14 @@ lazy val commonSettings = Def.settings(
 
 lazy val compileSettings = Def.settings(
   scalaVersion := Scala213,
+  scalacOptions ++= {
+    scalaBinaryVersion.value match {
+      case "2.13" =>
+        Seq("-Xsource:3-cross")
+      case _ =>
+        Nil
+    }
+  },
   doctestTestFramework := DoctestTestFramework.Munit
 )
 

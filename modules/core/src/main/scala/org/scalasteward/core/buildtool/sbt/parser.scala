@@ -32,7 +32,7 @@ object parser {
     val chunks = fs2.Stream.emits(lines).map(removeSbtNoise).split(_ === "--- snip ---")
     val decoder = Decoder[Dependency].either(Decoder[Resolver])
     chunks.mapFilter { chunk =>
-      val (dependencies, resolvers) = chunk.toList.flatMap(decode(_)(decoder).toList).separate
+      val (dependencies, resolvers) = chunk.toList.flatMap(decode(_)(using decoder).toList).separate
       Option.when(dependencies.nonEmpty && resolvers.nonEmpty)(
         Scope(dependencies, resolvers.sorted)
       )
