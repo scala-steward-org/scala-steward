@@ -25,6 +25,7 @@ import org.http4s.client.Client
 import org.http4s.headers.`User-Agent`
 import org.scalasteward.core.application.Config.ForgeCfg
 import org.scalasteward.core.buildtool.BuildToolDispatcher
+import org.scalasteward.core.buildtool.gradle.GradleAlg
 import org.scalasteward.core.buildtool.maven.MavenAlg
 import org.scalasteward.core.buildtool.mill.MillAlg
 import org.scalasteward.core.buildtool.sbt.SbtAlg
@@ -61,6 +62,7 @@ final class Context[F[_]](implicit
     val filterAlg: FilterAlg[F],
     val forgeRepoAlg: ForgeRepoAlg[F],
     val gitAlg: GitAlg[F],
+    val gradleAlg: GradleAlg[F],
     val hookExecutor: HookExecutor[F],
     val httpJsonClient: HttpJsonClient[F],
     val logger: Logger[F],
@@ -176,6 +178,7 @@ object Context {
       implicit val versionsCache: VersionsCache[F] =
         new VersionsCache[F](config.cacheTtl, versionsStore)
       implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]
+      implicit val gradleAlg: GradleAlg[F] = new GradleAlg[F](config.defaultResolver)
       implicit val mavenAlg: MavenAlg[F] = new MavenAlg[F](config)
       implicit val sbtAlg: SbtAlg[F] = new SbtAlg[F](config)
       implicit val scalaCliAlg: ScalaCliAlg[F] = new ScalaCliAlg[F]
