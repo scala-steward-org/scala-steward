@@ -179,10 +179,7 @@ object Selector {
       versionPositions: List[VersionPosition]
   ): List[VersionPosition] =
     if (MillAlg.isMillMainUpdate(update))
-      versionPositions.filter(f =>
-        f.version.path.endsWith(MillAlg.millVersionNameInConfig) ||
-          f.version.path.endsWith(MillAlg.millVersionName)
-      )
+      versionPositions.filter(_.version.path.endsWith(MillAlg.millVersionName))
     else List.empty
 
   private def sbtVersionPositions(
