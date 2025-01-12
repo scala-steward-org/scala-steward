@@ -31,7 +31,7 @@ class MillAlgTest extends FunSuite {
     assertEquals(state, expected)
   }
 
-  test("getDependencies, version >= 0.11") {
+  test("getDependencies, 0.11 <= version < 0.12") {
     val repo = Repo("lihaoyi", "fastparse")
     val buildRoot = BuildRoot(repo, ".")
     val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
@@ -40,7 +40,7 @@ class MillAlgTest extends FunSuite {
       repoDir,
       "mill",
       "--no-server",
-      "--ticker=false",
+      "--disable-ticker",
       "--import",
       "ivy:org.scala-steward::scala-steward-mill-plugin::0.18.0",
       "show",
@@ -60,6 +60,37 @@ class MillAlgTest extends FunSuite {
         Cmd("read", s"$repoDir/.config/mill-version"),
         millCmd,
         Cmd("read", s"$repoDir/build.sc")
+      )
+    )
+    assertEquals(state, expected)
+  }
+
+  test("getDependencies, 0.12 <= version") {
+    val repo = Repo("mill-alg", "test-3")
+    val buildRoot = BuildRoot(repo, ".")
+    val buildRootDir = workspaceAlg.buildRootDir(buildRoot).unsafeRunSync()
+    val millCmd = Cmd.execSandboxed(
+      buildRootDir,
+      "mill",
+      "--no-server",
+      "--ticker",
+      "false",
+      "--import",
+      "ivy:org.scala-steward::scala-steward-mill-plugin::0.18.0",
+      "show",
+      extractDeps
+    )
+    val initial = MockState.empty
+      .copy(commandOutputs = Map(millCmd -> Right(List("""{"modules":[]}"""))))
+      .addFiles(buildRootDir / ".mill-version" -> "0.12.5", buildRootDir / "build.sc" -> "")
+      .unsafeRunSync()
+    val state = millAlg.getDependencies(buildRoot).runS(initial).unsafeRunSync()
+    val expected = initial.copy(
+      trace = Vector(
+        Cmd("read", s"$buildRootDir/.mill-version"),
+        Cmd("read", s"$buildRootDir/.config/mill-version"),
+        millCmd,
+        Cmd("read", s"$buildRootDir/build.sc")
       )
     )
     assertEquals(state, expected)
