@@ -107,7 +107,6 @@ object UpdatesConfig {
     Set(
       ".mill",
       MillAlg.millVersionName,
-      MillAlg.millVersionNameInConfig,
       ".sbt",
       ".sbt.shared",
       ".sc",
