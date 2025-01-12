@@ -36,14 +36,12 @@ final class MillAlg[F[_]](defaultResolver: Resolver)(implicit
   override def name: String = "Mill"
 
   override def containsBuild(buildRoot: BuildRoot): F[Boolean] =
-    workspaceAlg
-      .buildRootDir(buildRoot)
-      .flatMap(buildRootDir =>
-        Seq("build.sc", "build.mill", "build.mill.scala")
-          .map(buildRootDir / _)
-          .filterA(f => fileAlg.isRegularFile(f))
-          .map(_.nonEmpty)
-      )
+    workspaceAlg.buildRootDir(buildRoot).flatMap(findBuildFile).map(_.nonEmpty)
+
+  private def findBuildFile(buildRootDir: File): F[Option[File]] =
+    List("build.sc", "build.mill", "build.mill.scala")
+      .map(buildRootDir / _)
+      .findM(fileAlg.isRegularFile)
 
   private def runMill(buildRootDir: File) = {
     val options =
@@ -105,7 +103,8 @@ final class MillAlg[F[_]](defaultResolver: Resolver)(implicit
       buildRootDir: File
   ): F[Seq[Scope[List[Dependency]]]] =
     for {
-      buildContent <- fileAlg.readFile(buildRootDir / "build.sc")
+      buildFile <- findBuildFile(buildRootDir)
+      buildContent <- buildFile.flatTraverse(fileAlg.readFile)
       deps = buildContent.toList.map(content =>
         Scope(parser.parseMillPluginDeps(content, millVersion), List(defaultResolver))
       )
