@@ -122,19 +122,16 @@ object MillAlg {
   private[mill] val cliPluginCoordinate: String =
     s"ivy:${org.scalasteward.core.BuildInfo.organization}::${org.scalasteward.core.BuildInfo.millPluginArtifactName}::${org.scalasteward.core.BuildInfo.millPluginVersion}"
 
-  private[mill] def content(millVersion: Option[Version]) = {
-    def rawContent(millBinPlatform: String) =
-      s"""|import $$ivy.`${org.scalasteward.core.BuildInfo.organization}::${org.scalasteward.core.BuildInfo.millPluginArtifactName}_mill${millBinPlatform}:${org.scalasteward.core.BuildInfo.millPluginVersion}`
-          |""".stripMargin
-
-    millMinVersion(millVersion) match {
-      case None => rawContent("$MILL_BIN_PLATFORM")
-      // We support these platforms, but we can't take the $MILL_BIN_PLATFORM support for granted
-      case Some("6")             => rawContent("0.6")
-      case Some("7") | Some("8") => rawContent("0.7")
-      case Some("9")             => rawContent("0.9")
-      case _                     => rawContent("$MILL_BIN_PLATFORM")
+  private[mill] def content(millVersion: Option[Version]): String = {
+    // We support these platforms, but we can't take the $MILL_BIN_PLATFORM support for granted
+    val millBinPlatform = millVersion match {
+      case Some(v) if v >= Version("0.10") => "$MILL_BIN_PLATFORM"
+      case Some(v) if v >= Version("0.9")  => "0.9"
+      case Some(v) if v >= Version("0.7")  => "0.7"
+      case Some(v) if v >= Version("0.6")  => "0.6"
+      case _                               => "$MILL_BIN_PLATFORM"
     }
+    s"""import $$ivy.`${org.scalasteward.core.BuildInfo.organization}::${org.scalasteward.core.BuildInfo.millPluginArtifactName}_mill${millBinPlatform}:${org.scalasteward.core.BuildInfo.millPluginVersion}`"""
   }
 
   val extractDeps: String = "org.scalasteward.mill.plugin.StewardPlugin/extractDeps"
