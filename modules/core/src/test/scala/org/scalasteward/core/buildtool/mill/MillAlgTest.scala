@@ -100,14 +100,4 @@ class MillAlgTest extends FunSuite {
     assert(MillAlg.content(Some(Version("0.9.14"))).contains("_mill0.9"))
     assert(MillAlg.content(Some(Version("0.10.0"))).contains("_mill$MILL_BIN_PLATFORM"))
   }
-
-  test("mill version") {
-    assert(MillAlg.millMinVersion(None).isEmpty)
-    assert(MillAlg.millMinVersion(Some(Version("0.6.1"))).contains("6"))
-    assert(MillAlg.millMinVersion(Some(Version("0.7.0"))).contains("7"))
-    assert(MillAlg.millMinVersion(Some(Version("0.8.0"))).contains("8"))
-    assert(MillAlg.millMinVersion(Some(Version("0.9.14"))).contains("9"))
-    assert(MillAlg.millMinVersion(Some(Version("0.10.0"))).contains("10"))
-    assert(MillAlg.millMinVersion(Some(Version("0.11.0"))).contains("11"))
-  }
 }

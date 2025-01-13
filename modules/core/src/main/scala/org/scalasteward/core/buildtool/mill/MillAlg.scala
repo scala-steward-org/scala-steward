@@ -110,9 +110,6 @@ final class MillAlg[F[_]](defaultResolver: Resolver)(implicit
 }
 
 object MillAlg {
-  private[mill] def millMinVersion(millVersion: Option[Version]): Option[String] =
-    millVersion.flatMap(_.value.trim.split("[.]", 3).take(2).lastOption)
-
   private[mill] val cliPluginCoordinate: String =
     s"ivy:${org.scalasteward.core.BuildInfo.organization}::${org.scalasteward.core.BuildInfo.millPluginArtifactName}::${org.scalasteward.core.BuildInfo.millPluginVersion}"
 
