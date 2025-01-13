@@ -43,20 +43,23 @@ final class MillAlg[F[_]](defaultResolver: Resolver)(implicit
       .map(buildRootDir / _)
       .findM(fileAlg.isRegularFile)
 
-  private def runMill(buildRootDir: File) = {
-    val options =
-      List("--no-server", "--ticker=false", "--import", cliPluginCoordinate, "show", extractDeps)
-    val command = Nel("mill", options)
-    processAlg.execSandboxed(command, buildRootDir)
-  }
-  private def runMillUnder011(buildRootDir: File, millBuildVersion: Option[Version]) = {
-    val predef = buildRootDir / "scala-steward.sc"
-    val predefContent = content(millBuildVersion)
-    val command = Nel("mill", List("-i", "-p", predef.toString, "show", extractDeps))
-    fileAlg.createTemporarily(predef, predefContent).surround {
-      processAlg.execSandboxed(command, buildRootDir)
+  private def runMill(buildRootDir: File, millBuildVersion: Option[Version]): F[List[String]] =
+    millBuildVersion match {
+      case Some(v) if v >= Version("0.11") =>
+        val noTicker =
+          if (v >= Version("0.12")) List("--ticker", "false") else List("--disable-ticker")
+        val options =
+          "--no-server" :: noTicker ++ List("--import", cliPluginCoordinate, "show", extractDeps)
+        val command = Nel("mill", options)
+        processAlg.execSandboxed(command, buildRootDir)
+      case _ =>
+        val predef = buildRootDir / "scala-steward.sc"
+        val predefContent = content(millBuildVersion)
+        val command = Nel("mill", List("-i", "-p", predef.toString, "show", extractDeps))
+        fileAlg.createTemporarily(predef, predefContent).surround {
+          processAlg.execSandboxed(command, buildRootDir)
+        }
     }
-  }
 
   override def getDependencies(buildRoot: BuildRoot): F[List[Scope.Dependencies]] =
     for {
@@ -77,9 +80,7 @@ final class MillAlg[F[_]](defaultResolver: Resolver)(implicit
       millBuildVersion: Option[Version]
   ): F[List[Scope.Dependencies]] =
     for {
-      extracted <-
-        if (isMillVersionGreaterOrEqual011(millBuildVersion)) runMill(buildRootDir)
-        else runMillUnder011(buildRootDir, millBuildVersion)
+      extracted <- runMill(buildRootDir, millBuildVersion)
       parsed <- F.fromEither(
         parser.parseModules(extracted.dropWhile(!_.startsWith("{")).mkString("\n"))
       )
@@ -90,13 +91,10 @@ final class MillAlg[F[_]](defaultResolver: Resolver)(implicit
     Some("https://github.com/scala-steward-org/scala-steward/issues/2838")
 
   private def getMillVersion(buildRootDir: File): F[Option[Version]] =
-    for {
-      millVersionFileContent <- fileAlg.readFile(buildRootDir / s".$millVersionName")
-      millVersionFileInConfigContent <- fileAlg.readFile(buildRootDir / ".config" / millVersionName)
-      version = millVersionFileContent
-        .orElse(millVersionFileInConfigContent)
-        .flatMap(parser.parseMillVersion)
-    } yield version
+    List(
+      buildRootDir / s".$millVersionName",
+      buildRootDir / ".config" / millVersionName
+    ).collectFirstSomeM(fileAlg.readFile).map(_.flatMap(parser.parseMillVersion))
 
   private def getMillPluginDeps(
       millVersion: Version,
@@ -112,9 +110,6 @@ final class MillAlg[F[_]](defaultResolver: Resolver)(implicit
 }
 
 object MillAlg {
-  private[mill] def isMillVersionGreaterOrEqual011(millVersion: Option[Version]): Boolean =
-    millMinVersion(millVersion).flatMap(_.toIntOption).exists(_ >= 11)
-
   private[mill] def millMinVersion(millVersion: Option[Version]): Option[String] =
     millVersion.flatMap(_.value.trim.split("[.]", 3).take(2).lastOption)
 
