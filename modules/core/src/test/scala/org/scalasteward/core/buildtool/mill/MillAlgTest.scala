@@ -57,7 +57,6 @@ class MillAlgTest extends FunSuite {
     val expected = initial.copy(
       trace = Vector(
         Cmd("read", s"$repoDir/.mill-version"),
-        Cmd("read", s"$repoDir/.config/mill-version"),
         millCmd,
         Cmd("read", s"$repoDir/build.sc")
       )

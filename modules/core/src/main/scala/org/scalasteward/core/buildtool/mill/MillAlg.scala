@@ -92,13 +92,10 @@ final class MillAlg[F[_]](defaultResolver: Resolver)(implicit
     Some("https://github.com/scala-steward-org/scala-steward/issues/2838")
 
   private def getMillVersion(buildRootDir: File): F[Option[Version]] =
-    for {
-      millVersionFileContent <- fileAlg.readFile(buildRootDir / s".$millVersionName")
-      millVersionFileInConfigContent <- fileAlg.readFile(buildRootDir / ".config" / millVersionName)
-      version = millVersionFileContent
-        .orElse(millVersionFileInConfigContent)
-        .flatMap(parser.parseMillVersion)
-    } yield version
+    List(
+      buildRootDir / s".$millVersionName",
+      buildRootDir / ".config" / millVersionName
+    ).collectFirstSomeM(fileAlg.readFile).map(_.flatMap(parser.parseMillVersion))
 
   private def getMillPluginDeps(
       millVersion: Version,
