@@ -13,16 +13,16 @@ class MillAlgTest extends FunSuite {
   test("getDependencies, version < 0.11") {
     val repo = Repo("lihaoyi", "fastparse")
     val buildRoot = BuildRoot(repo, ".")
-    val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
-    val predef = s"$repoDir/scala-steward.sc"
-    val millCmd = Cmd.execSandboxed(repoDir, "mill", "-i", "-p", predef, "show", extractDeps)
+    val buildRootDir = workspaceAlg.buildRootDir(buildRoot).unsafeRunSync()
+    val predef = s"$buildRootDir/scala-steward.sc"
+    val millCmd = Cmd.execSandboxed(buildRootDir, "mill", "-i", "-p", predef, "show", extractDeps)
     val initial =
       MockState.empty.copy(commandOutputs = Map(millCmd -> Right(List("""{"modules":[]}"""))))
     val state = millAlg.getDependencies(buildRoot).runS(initial).unsafeRunSync()
     val expected = initial.copy(
       trace = Vector(
-        Cmd("read", s"$repoDir/.mill-version"),
-        Cmd("read", s"$repoDir/.config/mill-version"),
+        Cmd("read", s"$buildRootDir/.mill-version"),
+        Cmd("read", s"$buildRootDir/.config/mill-version"),
         Cmd("write", predef),
         millCmd,
         Cmd("rm", "-rf", predef)
@@ -45,11 +45,10 @@ class MillAlgTest extends FunSuite {
       "show",
       extractDeps
     )
-    val initial =
-      MockState.empty
-        .copy(commandOutputs = Map(millCmd -> Right(List("""{"modules":[]}"""))))
-        .addFiles(buildRootDir / ".mill-version" -> "0.11.0", buildRootDir / "build.sc" -> "")
-        .unsafeRunSync()
+    val initial = MockState.empty
+      .copy(commandOutputs = Map(millCmd -> Right(List("""{"modules":[]}"""))))
+      .addFiles(buildRootDir / ".mill-version" -> "0.11.0", buildRootDir / "build.sc" -> "")
+      .unsafeRunSync()
     val state = millAlg.getDependencies(buildRoot).runS(initial).unsafeRunSync()
     val expected = initial.copy(
       trace = Vector(
