@@ -18,8 +18,7 @@ package org.scalasteward.core.data
 
 import cats.Order
 import cats.implicits.*
-import io.circe.syntax.*
-import io.circe.{Decoder, Encoder, HCursor, Json}
+import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.repoconfig.PullRequestGroup
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
@@ -204,74 +203,56 @@ object Update {
 
   // ForArtifactId
 
-  private val forArtifactIdEncoder: Encoder[ForArtifactId] =
-    Encoder.instance[ForArtifactId] { forArtifactId =>
-      Json.obj(
-        "ForArtifactId" -> Json.obj(
-          "crossDependency" -> forArtifactId.crossDependency.asJson,
-          "newerVersions" -> forArtifactId.newerVersions.asJson,
-          "newerGroupId" -> forArtifactId.newerGroupId.asJson,
-          "newerArtifactId" -> forArtifactId.newerArtifactId.asJson
-        )
-      )
+  implicit private val forArtifactIdEncoder: Encoder[ForArtifactId] =
+    Encoder.forProduct1("ForArtifactId")(identity[ForArtifactId]) {
+      Encoder.forProduct4("crossDependency", "newerVersions", "newerGroupId", "newerArtifactId") {
+        s => (s.crossDependency, s.newerVersions, s.newerGroupId, s.newerArtifactId)
+      }
     }
 
   private val unwrappedForArtifactIdDecoder: Decoder[ForArtifactId] =
-    (c: HCursor) =>
-      for {
-        crossDependency <- c.downField("crossDependency").as[CrossDependency]
-        newerVersions <- c.downField("newerVersions").as[Nel[Version]]
-        newerGroupId <- c.downField("newerGroupId").as[Option[GroupId]]
-        newerArtifactId <- c.downField("newerArtifactId").as[Option[String]]
-      } yield ForArtifactId(crossDependency, newerVersions, newerGroupId, newerArtifactId)
+    Decoder.forProduct4("crossDependency", "newerVersions", "newerGroupId", "newerArtifactId") {
+      (crossDependency, newerVersions, newerGroupId, newerArtifactId) =>
+        ForArtifactId(crossDependency, newerVersions, newerGroupId, newerArtifactId)
+    }
 
   private val forArtifactIdDecoderV1: Decoder[ForArtifactId] =
-    unwrappedForArtifactIdDecoder.prepare(_.downField("Single"))
+    Decoder.forProduct1("Single")(identity[ForArtifactId])(unwrappedForArtifactIdDecoder)
 
   private val forArtifactIdDecoderV2 =
-    unwrappedForArtifactIdDecoder.prepare(_.downField("ForArtifactId"))
+    Decoder.forProduct1("ForArtifactId")(identity[ForArtifactId])(unwrappedForArtifactIdDecoder)
 
-  private val forArtifactIdDecoder: Decoder[ForArtifactId] =
+  implicit private val forArtifactIdDecoder: Decoder[ForArtifactId] =
     forArtifactIdDecoderV2.or(forArtifactIdDecoderV1)
 
   // ForGroupId
 
   private val forGroupIdEncoder: Encoder[ForGroupId] =
-    Encoder.instance[ForGroupId] { forGroupId =>
-      Json.obj(
-        "ForGroupId" -> Json.obj(
-          "forArtifactIds" -> Encoder
-            .encodeNonEmptyList(forArtifactIdEncoder)
-            .apply(forGroupId.forArtifactIds)
-        )
-      )
+    Encoder.forProduct1("ForGroupId")(identity[ForGroupId]) {
+      Encoder.forProduct1("forArtifactIds")(_.forArtifactIds)
     }
 
   private val unwrappedForGroupIdDecoderV1: Decoder[ForGroupId] =
-    (c: HCursor) =>
-      for {
-        crossDependencies <- c.downField("crossDependencies").as[Nel[CrossDependency]]
-        newerVersions <- c.downField("newerVersions").as[Nel[Version]]
-        forArtifactIds = crossDependencies
-          .map(crossDependency => ForArtifactId(crossDependency, newerVersions))
-      } yield ForGroupId(forArtifactIds)
+    Decoder.forProduct2("crossDependencies", "newerVersions") {
+      (crossDependencies: Nel[CrossDependency], newerVersions: Nel[Version]) =>
+        val forArtifactIds =
+          crossDependencies.map(crossDependency => ForArtifactId(crossDependency, newerVersions))
+        ForGroupId(forArtifactIds)
+    }
 
   private val unwrappedForGroupIdDecoderV3: Decoder[ForGroupId] =
-    (c: HCursor) =>
-      for {
-        forArtifactIds <- Decoder
-          .decodeNonEmptyList(forArtifactIdDecoder)
-          .tryDecode(c.downField("forArtifactIds"))
-      } yield ForGroupId(forArtifactIds)
+    Decoder.forProduct1("forArtifactIds") { (forArtifactIds: Nel[ForArtifactId]) =>
+      ForGroupId(forArtifactIds)
+    }
 
   private val forGroupIdDecoderV1: Decoder[ForGroupId] =
-    unwrappedForGroupIdDecoderV1.prepare(_.downField("Group"))
+    Decoder.forProduct1("Group")(identity[ForGroupId])(unwrappedForGroupIdDecoderV1)
 
   private val forGroupIdDecoderV2: Decoder[ForGroupId] =
-    unwrappedForGroupIdDecoderV1.prepare(_.downField("ForGroupId"))
+    Decoder.forProduct1("ForGroupId")(identity[ForGroupId])(unwrappedForGroupIdDecoderV1)
 
   private val forGroupIdDecoderV3: Decoder[ForGroupId] =
-    unwrappedForGroupIdDecoderV3.prepare(_.downField("ForGroupId"))
+    Decoder.forProduct1("ForGroupId")(identity[ForGroupId])(unwrappedForGroupIdDecoderV3)
 
   private val forGroupIdDecoder: Decoder[ForGroupId] =
     forGroupIdDecoderV3.or(forGroupIdDecoderV2).or(forGroupIdDecoderV1)
@@ -279,24 +260,15 @@ object Update {
   // Grouped
 
   private val groupedEncoder: Encoder[Grouped] =
-    Encoder.instance[Grouped] { grouped =>
-      Json.obj(
-        "Grouped" -> Json.obj(
-          "name" -> grouped.name.asJson,
-          "title" -> grouped.title.asJson,
-          "updates" -> Encoder.encodeList(forArtifactIdEncoder).apply(grouped.updates)
-        )
-      )
+    Encoder.forProduct1("Grouped")(identity[Grouped]) {
+      Encoder.forProduct3("name", "title", "updates")(s => (s.name, s.title, s.updates))
     }
 
   private val groupedDecoder: Decoder[Grouped] =
-    (c: HCursor) => {
-      val c1 = c.downField("Grouped")
-      for {
-        name <- c1.downField("name").as[String]
-        title <- c1.downField("title").as[Option[String]]
-        updates <- Decoder.decodeList(forArtifactIdDecoder).tryDecode(c1.downField("updates"))
-      } yield Grouped(name, title, updates)
+    Decoder.forProduct1("Grouped")(identity[Grouped]) {
+      Decoder.forProduct3("name", "title", "updates") { (name, title, updates) =>
+        Grouped(name, title, updates)
+      }
     }
 
   // Update
