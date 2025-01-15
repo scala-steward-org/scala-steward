@@ -212,7 +212,12 @@ object Update {
 
   private val unwrappedForArtifactIdDecoder: Decoder[ForArtifactId] =
     Decoder.forProduct4("crossDependency", "newerVersions", "newerGroupId", "newerArtifactId") {
-      (crossDependency, newerVersions, newerGroupId, newerArtifactId) =>
+      (
+          crossDependency: CrossDependency,
+          newerVersions: Nel[Version],
+          newerGroupId: Option[GroupId],
+          newerArtifactId: Option[String]
+      ) =>
         ForArtifactId(crossDependency, newerVersions, newerGroupId, newerArtifactId)
     }
 
@@ -266,8 +271,9 @@ object Update {
 
   private val groupedDecoder: Decoder[Grouped] =
     Decoder.forProduct1("Grouped")(identity[Grouped]) {
-      Decoder.forProduct3("name", "title", "updates") { (name, title, updates) =>
-        Grouped(name, title, updates)
+      Decoder.forProduct3("name", "title", "updates") {
+        (name: String, title: Option[String], updates: List[ForArtifactId]) =>
+          Grouped(name, title, updates)
       }
     }
 
