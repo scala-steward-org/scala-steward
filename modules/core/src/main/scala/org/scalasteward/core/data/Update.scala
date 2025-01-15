@@ -18,9 +18,7 @@ package org.scalasteward.core.data
 
 import cats.Order
 import cats.implicits.*
-import io.circe.generic.semiauto.*
-import io.circe.syntax.*
-import io.circe.{Decoder, Encoder, HCursor, Json}
+import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.repoconfig.PullRequestGroup
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
@@ -198,66 +196,98 @@ object Update {
       }
     }
 
-  // TODO: Derive all instances of `Encoder`/`Decoder` here using `deriveCodec`
-  // Partially manually implemented so we don't fail reading old caches (those
-  // still using `Single`/`Group`)
-
-  implicit val ForArtifactIdEncoder: Encoder[ForArtifactId] = {
-    val derived = deriveEncoder[ForArtifactId]
-
-    derived.mapJson(json => Json.obj("ForArtifactId" -> json))
-  }
-
-  implicit val ForArtifactIdDecoder: Decoder[ForArtifactId] = {
-    val derived = deriveDecoder[ForArtifactId]
-    derived
-      .prepare(_.downField("ForArtifactId"))
-      .or(derived.prepare(_.downField("Single")))
-  }
-
-  implicit val ForGroupIdEncoder: Encoder[ForGroupId] = {
-    val derived = deriveEncoder[ForGroupId]
-
-    derived.mapJson(json => Json.obj("ForGroupId" -> json))
-  }
-
-  private val oldForGroupIdDecoder: Decoder[ForGroupId] =
-    (c: HCursor) =>
-      for {
-        crossDependencies <- c.downField("crossDependencies").as[Nel[CrossDependency]]
-        newerVersions <- c.downField("newerVersions").as[Nel[Version]]
-        forArtifactIds = crossDependencies
-          .map(crossDependency => ForArtifactId(crossDependency, newerVersions))
-      } yield ForGroupId(forArtifactIds)
-
-  implicit val ForGroupIdDecoder: Decoder[ForGroupId] =
-    deriveDecoder[ForGroupId]
-      .prepare(_.downField("ForGroupId"))
-      .or(oldForGroupIdDecoder.prepare(_.downField("ForGroupId")))
-      .or(oldForGroupIdDecoder.prepare(_.downField("Group")))
-
-  implicit val GroupedEncoder: Encoder[Grouped] = {
-    val derived = deriveEncoder[Grouped]
-
-    derived.mapJson(json => Json.obj("Grouped" -> json))
-  }
-
-  implicit val GroupedDecoder: Decoder[Grouped] =
-    deriveDecoder[Grouped].prepare(_.downField("Grouped"))
-
   implicit val SingleOrder: Order[Single] =
     Order.by((u: Single) => (u.crossDependencies, u.newerVersions))
 
-  implicit val UpdateEncoder: Encoder[Update] = {
-    case update: Grouped       => update.asJson
-    case update: ForArtifactId => update.asJson
-    case update: ForGroupId    => update.asJson
+  // Encoder and Decoder instances
+
+  // ForArtifactId
+
+  implicit private val forArtifactIdEncoder: Encoder[ForArtifactId] =
+    Encoder.forProduct1("ForArtifactId")(identity[ForArtifactId]) {
+      Encoder.forProduct4("crossDependency", "newerVersions", "newerGroupId", "newerArtifactId") {
+        s => (s.crossDependency, s.newerVersions, s.newerGroupId, s.newerArtifactId)
+      }
+    }
+
+  private val unwrappedForArtifactIdDecoder: Decoder[ForArtifactId] =
+    Decoder.forProduct4("crossDependency", "newerVersions", "newerGroupId", "newerArtifactId") {
+      (
+          crossDependency: CrossDependency,
+          newerVersions: Nel[Version],
+          newerGroupId: Option[GroupId],
+          newerArtifactId: Option[String]
+      ) =>
+        ForArtifactId(crossDependency, newerVersions, newerGroupId, newerArtifactId)
+    }
+
+  private val forArtifactIdDecoderV1: Decoder[ForArtifactId] =
+    Decoder.forProduct1("Single")(identity[ForArtifactId])(unwrappedForArtifactIdDecoder)
+
+  private val forArtifactIdDecoderV2 =
+    Decoder.forProduct1("ForArtifactId")(identity[ForArtifactId])(unwrappedForArtifactIdDecoder)
+
+  implicit private val forArtifactIdDecoder: Decoder[ForArtifactId] =
+    forArtifactIdDecoderV2.or(forArtifactIdDecoderV1)
+
+  // ForGroupId
+
+  private val forGroupIdEncoder: Encoder[ForGroupId] =
+    Encoder.forProduct1("ForGroupId")(identity[ForGroupId]) {
+      Encoder.forProduct1("forArtifactIds")(_.forArtifactIds)
+    }
+
+  private val unwrappedForGroupIdDecoderV1: Decoder[ForGroupId] =
+    Decoder.forProduct2("crossDependencies", "newerVersions") {
+      (crossDependencies: Nel[CrossDependency], newerVersions: Nel[Version]) =>
+        val forArtifactIds =
+          crossDependencies.map(crossDependency => ForArtifactId(crossDependency, newerVersions))
+        ForGroupId(forArtifactIds)
+    }
+
+  private val unwrappedForGroupIdDecoderV3: Decoder[ForGroupId] =
+    Decoder.forProduct1("forArtifactIds") { (forArtifactIds: Nel[ForArtifactId]) =>
+      ForGroupId(forArtifactIds)
+    }
+
+  private val forGroupIdDecoderV1: Decoder[ForGroupId] =
+    Decoder.forProduct1("Group")(identity[ForGroupId])(unwrappedForGroupIdDecoderV1)
+
+  private val forGroupIdDecoderV2: Decoder[ForGroupId] =
+    Decoder.forProduct1("ForGroupId")(identity[ForGroupId])(unwrappedForGroupIdDecoderV1)
+
+  private val forGroupIdDecoderV3: Decoder[ForGroupId] =
+    Decoder.forProduct1("ForGroupId")(identity[ForGroupId])(unwrappedForGroupIdDecoderV3)
+
+  private val forGroupIdDecoder: Decoder[ForGroupId] =
+    forGroupIdDecoderV3.or(forGroupIdDecoderV2).or(forGroupIdDecoderV1)
+
+  // Grouped
+
+  private val groupedEncoder: Encoder[Grouped] =
+    Encoder.forProduct1("Grouped")(identity[Grouped]) {
+      Encoder.forProduct3("name", "title", "updates")(s => (s.name, s.title, s.updates))
+    }
+
+  private val groupedDecoder: Decoder[Grouped] =
+    Decoder.forProduct1("Grouped")(identity[Grouped]) {
+      Decoder.forProduct3("name", "title", "updates") {
+        (name: String, title: Option[String], updates: List[ForArtifactId]) =>
+          Grouped(name, title, updates)
+      }
+    }
+
+  // Update
+
+  implicit val updateEncoder: Encoder[Update] = {
+    case update: ForArtifactId => forArtifactIdEncoder.apply(update)
+    case update: ForGroupId    => forGroupIdEncoder.apply(update)
+    case update: Grouped       => groupedEncoder.apply(update)
   }
 
-  implicit val UpdateDecoder: Decoder[Update] =
-    ForArtifactIdDecoder
+  implicit val updateDecoder: Decoder[Update] =
+    forArtifactIdDecoder
       .widen[Update]
-      .or(ForGroupIdDecoder.widen[Update])
-      .or(Decoder[Grouped].widen[Update])
-
+      .or(forGroupIdDecoder.widen[Update])
+      .or(groupedDecoder.widen[Update])
 }
