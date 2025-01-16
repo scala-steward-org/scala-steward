@@ -79,7 +79,7 @@ final case class UpdatesConfig(
     val m = UpdatePattern.findMatch(allowOrDefault, update, include = true)
     if (m.filteredVersions.nonEmpty)
       Right(update.copy(newerVersions = Nel.fromListUnsafe(m.filteredVersions)))
-    else if (allow.isEmpty)
+    else if (allowOrDefault.isEmpty)
       Right(update)
     else Left(NotAllowedByConfig(update))
   }
