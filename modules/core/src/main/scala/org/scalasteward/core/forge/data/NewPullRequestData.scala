@@ -242,9 +242,8 @@ object NewPullRequestData {
         .map { scalafixEdit =>
           val migration = scalafixEdit.migration
           val listElements =
-            (migration.rewriteRules.map(rule => s"  * $rule").toList ++ migration.doc.map(uri =>
-              s"  * Documentation: $uri"
-            )).mkString("\n")
+            (migration.rewriteRules.map(rule => s"  * $rule").toList ++ migration.doc
+              .map(uri => s"  * Documentation: $uri")).mkString("\n")
           val artifactName = migration.artifactIds match {
             case Nel(one, Nil) => one
             case multiple      => multiple.toList.mkString("{", ",", "}")

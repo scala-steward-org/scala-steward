@@ -98,9 +98,8 @@ object RepoConfigAlg {
       case active :: remaining =>
         F.pure(active.some)
           .productL(
-            remaining.traverse_(file =>
-              logger.warn(s"""Ignored config file "${file.pathAsString}"""")
-            )
+            remaining
+              .traverse_(file => logger.warn(s"""Ignored config file "${file.pathAsString}""""))
           )
     }
   }
