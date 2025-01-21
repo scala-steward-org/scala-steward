@@ -17,6 +17,7 @@
 package org.scalasteward.core.util
 
 import cats.syntax.all.*
+import io.circe.{Decoder, Encoder}
 import java.util.concurrent.TimeUnit
 import scala.annotation.tailrec
 import scala.concurrent.duration.*
@@ -30,6 +31,12 @@ object dateTime {
 
   def renderFiniteDuration(fd: FiniteDuration): String =
     fd.toString.filterNot(_.isSpaceChar)
+
+  implicit val finiteDurationDecoder: Decoder[FiniteDuration] =
+    Decoder[String].emap(parseFiniteDuration(_).leftMap(_.getMessage))
+
+  implicit val finiteDurationEncoder: Encoder[FiniteDuration] =
+    Encoder[String].contramap(renderFiniteDuration)
 
   def showDuration(d: FiniteDuration): String = {
     def symbol(unit: TimeUnit): String =

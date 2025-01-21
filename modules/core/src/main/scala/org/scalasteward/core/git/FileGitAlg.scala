@@ -25,7 +25,8 @@ import org.scalasteward.core.forge.ForgeType.*
 import org.scalasteward.core.git.FileGitAlg.{dotdot, gitCmd}
 import org.scalasteward.core.io.process.{ProcessFailedException, SlurpOptions}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.util.Nel
+import org.scalasteward.core.util.{Nel, Timestamp}
+import scala.util.Try
 
 final class FileGitAlg[F[_]](config: Config)(implicit
     fileAlg: FileAlg[F],
@@ -101,6 +102,11 @@ final class FileGitAlg[F[_]](config: Config)(implicit
     git("grep", "-I", "--fixed-strings", "--files-with-matches", string)(repo)
       .handleError(_ => List.empty[String])
       .map(_.filter(_.nonEmpty))
+
+  override def getCommitDate(repo: File, sha1: Sha1): F[Timestamp] =
+    git("show", "--no-patch", "--format=%ct", sha1.value.value)(repo)
+      .flatMap(out => F.fromTry(Try(out.mkString.trim.toLong)))
+      .map(Timestamp.fromEpochSecond)
 
   override def hasConflicts(repo: File, branch: Branch, base: Branch): F[Boolean] = {
     val tryMerge = git_("merge", "--no-commit", "--no-ff", branch.name)(repo)
