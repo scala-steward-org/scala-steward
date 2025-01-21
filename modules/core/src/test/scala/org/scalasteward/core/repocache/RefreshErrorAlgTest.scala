@@ -7,23 +7,26 @@ import org.scalasteward.core.mock.MockContext.context.refreshErrorAlg
 import org.scalasteward.core.mock.{MockEff, MockEffOps, MockState}
 
 class RefreshErrorAlgTest extends CatsEffectSuite {
-  test("skipIfFailedRecently: not failed") {
+  test("throwIfFailedRecently: not failed") {
     val repo = Repo("refresh-error", "test-1")
-    val expected = 42
-    refreshErrorAlg.skipIfFailedRecently(repo)(MockEff.pure(expected)).runA(MockState.empty).map {
-      obtained => assertEquals(obtained, expected)
+    val p = refreshErrorAlg.throwIfFailedRecently(repo)
+
+    val expected = "()"
+    p.runA(MockState.empty).attempt.map { obtained =>
+      val obtainedStr = obtained.fold(_.getMessage, _.toString).take(expected.length)
+      assertEquals(obtainedStr, expected)
     }
   }
 
-  test("skipIfFailedRecently: failed") {
+  test("throwIfFailedRecently: failed") {
     val repo = Repo("refresh-error", "test-2")
     val p = refreshErrorAlg.persistError(repo)(MockEff.raiseError(new Throwable())).attempt >>
-      refreshErrorAlg.skipIfFailedRecently(repo)(MockEff.unit)
+      refreshErrorAlg.throwIfFailedRecently(repo)
 
     val expected = "Skipping due to previous error"
     p.runA(MockState.empty).attempt.map { obtained =>
-      val message = obtained.fold(_.getMessage, _.toString).take(expected.length)
-      assertEquals(message, expected)
+      val obtainedStr = obtained.fold(_.getMessage, _.toString).take(expected.length)
+      assertEquals(obtainedStr, expected)
     }
   }
 }
