@@ -25,6 +25,9 @@ import org.scalasteward.core.buildtool.BuildRoot
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.edit.hooks.PostUpdateHook
 import org.scalasteward.core.repoconfig.RepoConfig.defaultBuildRoots
+import org.scalasteward.core.util.dateTime.*
+import org.scalasteward.core.util.{combineOptions, intellijThisImportIsUsed}
+import scala.concurrent.duration.FiniteDuration
 
 final case class RepoConfig(
     private val commits: Option[CommitsConfig] = None,
@@ -37,7 +40,8 @@ final case class RepoConfig(
     private val assignees: Option[List[String]] = None,
     private val reviewers: Option[List[String]] = None,
     private val dependencyOverrides: Option[List[GroupRepoConfig]] = None,
-    signoffCommits: Option[Boolean] = None
+    signoffCommits: Option[Boolean] = None,
+    lastCommitMaxAge: Option[FiniteDuration] = None
 ) {
   def commitsOrDefault: CommitsConfig =
     commits.getOrElse(CommitsConfig())
@@ -107,8 +111,11 @@ object RepoConfig {
               assignees = x.assignees |+| y.assignees,
               reviewers = x.reviewers |+| y.reviewers,
               dependencyOverrides = x.dependencyOverrides |+| y.dependencyOverrides,
-              signoffCommits = x.signoffCommits.orElse(y.signoffCommits)
+              signoffCommits = x.signoffCommits.orElse(y.signoffCommits),
+              lastCommitMaxAge = combineOptions(x.lastCommitMaxAge, y.lastCommitMaxAge)(_ max _)
             )
         }
     )
+
+  intellijThisImportIsUsed(finiteDurationEncoder)
 }
