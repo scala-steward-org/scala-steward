@@ -40,19 +40,17 @@ final class RepoCacheAlg[F[_]](config: Config)(implicit
     F: MonadThrow[F]
 ) {
   def checkCache(repo: Repo): F[(RepoData, RepoOut)] =
-    logger.info(s"Check cache of ${repo.show}") >>
-      refreshErrorAlg.skipIfFailedRecently(repo) {
-        (
-          forgeApiAlg.createForkOrGetRepoWithBranch(repo, config.forgeCfg.doNotFork),
-          repoCacheRepository.findCache(repo)
-        ).parTupled.flatMap { case ((repoOut, branchOut), maybeCache) =>
-          val latestSha1 = branchOut.commit.sha
-          maybeCache
-            .filter(_.sha1 === latestSha1)
-            .fold(cloneAndRefreshCache(repo, repoOut))(supplementCache(repo, _).pure[F])
-            .map(data => (data, repoOut))
-        }
-      }
+    for {
+      _ <- logger.info(s"Check cache of ${repo.show}")
+      _ <- refreshErrorAlg.throwIfFailedRecently(repo)
+      getRepoAndBranch = forgeApiAlg.createForkOrGetRepoWithBranch(repo, config.forgeCfg.doNotFork)
+      tuple <- (getRepoAndBranch, repoCacheRepository.findCache(repo)).parTupled
+      ((repoOut, branchOut), maybeCache) = tuple
+      latestSha1 = branchOut.commit.sha
+      data <- maybeCache
+        .filter(_.sha1 === latestSha1)
+        .fold(cloneAndRefreshCache(repo, repoOut))(supplementCache(repo, _).pure[F])
+    } yield (data, repoOut)
 
   private def supplementCache(repo: Repo, cache: RepoCache): RepoData =
     RepoData(repo, cache, repoConfigAlg.mergeWithGlobal(cache.maybeRepoConfig))

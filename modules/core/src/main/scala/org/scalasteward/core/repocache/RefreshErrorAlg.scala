@@ -35,12 +35,12 @@ final class RefreshErrorAlg[F[_]](
     dateTimeAlg: DateTimeAlg[F],
     F: MonadThrow[F]
 ) {
-  def skipIfFailedRecently[A](repo: Repo)(fa: F[A]): F[A] =
+  def throwIfFailedRecently(repo: Repo): F[Unit] =
     failedRecently(repo).flatMap {
-      case None => fa
+      case None => F.unit
       case Some(fd) =>
         val msg = s"Skipping due to previous error for ${showDuration(fd)}"
-        F.raiseError[A](new Throwable(msg) with NoStackTrace)
+        F.raiseError(new Throwable(msg) with NoStackTrace)
     }
 
   def persistError[A](repo: Repo)(fa: F[A]): F[A] =
