@@ -34,7 +34,7 @@ object Dependencies {
   val jjwtJackson = "io.jsonwebtoken" % "jjwt-jackson" % jjwtApi.revision
   val millMain = "com.lihaoyi" % "mill-main_2.13" % "0.12.5"
   val monocleCore = "dev.optics" %% "monocle-core" % "3.3.0"
-  val munit = "org.scalameta" %% "munit" % "1.0.4"
+  val munit = "org.scalameta" %% "munit" % "1.1.0"
   val munitCatsEffect = "org.typelevel" %% "munit-cats-effect" % "2.0.0"
   val munitScalacheck = "org.scalameta" %% "munit-scalacheck" % "1.0.0"
   val refined = "eu.timepit" %% "refined" % "0.11.3"
