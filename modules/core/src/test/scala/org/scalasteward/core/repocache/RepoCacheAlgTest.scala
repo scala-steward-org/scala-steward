@@ -60,32 +60,32 @@ class RepoCacheAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     assertIO(obtained, expected)
   }
 
-  test("throwIfAbandoned: no maxAge") {
+  test("throwIfInactive: no maxAge") {
     val repo = Repo("repo-cache-alg", "test-1")
     val cache = RepoCache(dummySha1, Timestamp(0L), Nil, None, None)
     val config = RepoConfig.empty
     val data = RepoData(repo, cache, config)
-    val obtained = repoCacheAlg.throwIfAbandoned(data).runA(MockState.empty).attempt
+    val obtained = repoCacheAlg.throwIfInactive(data).runA(MockState.empty).attempt
     assertIO(obtained, Right(()))
   }
 
-  test("throwIfAbandoned: lastCommit < maxAge") {
+  test("throwIfInactive: lastCommit < maxAge") {
     val repo = Repo("repo-cache-alg", "test-2")
     val commitDate = Timestamp.fromLocalDateTime(LocalDateTime.now())
     val cache = RepoCache(dummySha1, commitDate, Nil, None, None)
     val config = RepoConfig(lastCommitMaxAge = Some(1.day))
     val data = RepoData(repo, cache, config)
-    val obtained = repoCacheAlg.throwIfAbandoned(data).runA(MockState.empty).attempt
+    val obtained = repoCacheAlg.throwIfInactive(data).runA(MockState.empty).attempt
     assertIO(obtained, Right(()))
   }
 
-  test("throwIfAbandoned: lastCommit > maxAge") {
+  test("throwIfInactive: lastCommit > maxAge") {
     val repo = Repo("repo-cache-alg", "test-3")
     val cache = RepoCache(dummySha1, Timestamp(0L), Nil, None, None)
     val config = RepoConfig(lastCommitMaxAge = Some(1.day))
     val data = RepoData(repo, cache, config)
     val obtained =
-      repoCacheAlg.throwIfAbandoned(data).runA(MockState.empty).attempt.map(_.leftMap(_.getMessage))
+      repoCacheAlg.throwIfInactive(data).runA(MockState.empty).attempt.map(_.leftMap(_.getMessage))
     assertIO(obtained, Left("Skipping because last commit is older than 1d"))
   }
 }

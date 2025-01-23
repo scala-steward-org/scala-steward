@@ -53,7 +53,7 @@ final class RepoCacheAlg[F[_]](config: Config)(implicit
       data <- maybeCache
         .filter(_.sha1 === latestSha1)
         .fold(cloneAndRefreshCache(repo, repoOut))(supplementCache(repo, _).pure[F])
-      _ <- throwIfAbandoned(data)
+      _ <- throwIfInactive(data)
     } yield (data, repoOut)
 
   private def supplementCache(repo: Repo, cache: RepoCache): RepoData =
@@ -88,12 +88,12 @@ final class RepoCacheAlg[F[_]](config: Config)(implicit
   private def gatherDependencyInfo(repo: Repo, dependency: Dependency): F[DependencyInfo] =
     gitAlg.findFilesContaining(repo, dependency.version.value).map(DependencyInfo(dependency, _))
 
-  private[repocache] def throwIfAbandoned(data: RepoData): F[Unit] =
+  private[repocache] def throwIfInactive(data: RepoData): F[Unit] =
     data.config.lastCommitMaxAge.traverse_ { maxAge =>
       dateTimeAlg.currentTimestamp.flatMap { now =>
         val sinceLastCommit = data.cache.commitDate.until(now)
-        val isAbandoned = sinceLastCommit > maxAge
-        F.raiseWhen(isAbandoned) {
+        val isInactive = sinceLastCommit > maxAge
+        F.raiseWhen(isInactive) {
           val msg = s"Skipping because last commit is older than ${dateTime.showDuration(maxAge)}"
           new Throwable(msg) with NoStackTrace
         }
