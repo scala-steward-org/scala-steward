@@ -41,7 +41,7 @@ final case class RepoConfig(
     private val reviewers: Option[List[String]] = None,
     private val dependencyOverrides: Option[List[GroupRepoConfig]] = None,
     signoffCommits: Option[Boolean] = None,
-    lastCommitMaxAge: Option[FiniteDuration] = None
+    inactivityThreshold: Option[FiniteDuration] = None
 ) {
   def commitsOrDefault: CommitsConfig =
     commits.getOrElse(CommitsConfig())
@@ -112,7 +112,8 @@ object RepoConfig {
               reviewers = x.reviewers |+| y.reviewers,
               dependencyOverrides = x.dependencyOverrides |+| y.dependencyOverrides,
               signoffCommits = x.signoffCommits.orElse(y.signoffCommits),
-              lastCommitMaxAge = combineOptions(x.lastCommitMaxAge, y.lastCommitMaxAge)(_ max _)
+              inactivityThreshold =
+                combineOptions(x.inactivityThreshold, y.inactivityThreshold)(_ max _)
             )
         }
     )

@@ -24,9 +24,12 @@ import org.scalasteward.core.data.{Dependency, DependencyInfo, Repo, RepoData}
 import org.scalasteward.core.forge.data.RepoOut
 import org.scalasteward.core.forge.{ForgeApiAlg, ForgeRepoAlg}
 import org.scalasteward.core.git.GitAlg
+import org.scalasteward.core.repocache.RepoCacheAlg.RepositoryInactive
 import org.scalasteward.core.repoconfig.RepoConfigAlg
-import org.scalasteward.core.util.{dateTime, DateTimeAlg}
+import org.scalasteward.core.util.DateTimeAlg
+import org.scalasteward.core.util.dateTime.showDuration
 import org.typelevel.log4cats.Logger
+import scala.concurrent.duration.FiniteDuration
 import scala.util.control.NoStackTrace
 
 final class RepoCacheAlg[F[_]](config: Config)(implicit
@@ -89,14 +92,23 @@ final class RepoCacheAlg[F[_]](config: Config)(implicit
     gitAlg.findFilesContaining(repo, dependency.version.value).map(DependencyInfo(dependency, _))
 
   private[repocache] def throwIfInactive(data: RepoData): F[Unit] =
-    data.config.lastCommitMaxAge.traverse_ { maxAge =>
+    data.config.inactivityThreshold.traverse_ { threshold =>
       dateTimeAlg.currentTimestamp.flatMap { now =>
-        val sinceLastCommit = data.cache.commitDate.until(now)
-        val isInactive = sinceLastCommit > maxAge
-        F.raiseWhen(isInactive) {
-          val msg = s"Skipping because last commit is older than ${dateTime.showDuration(maxAge)}"
-          new Throwable(msg) with NoStackTrace
-        }
+        val inactiveSince = data.cache.commitDate.until(now)
+        val isInactive = inactiveSince > threshold
+        F.raiseWhen(isInactive)(RepositoryInactive(data.repo, inactiveSince, threshold))
       }
     }
+}
+
+object RepoCacheAlg {
+  final case class RepositoryInactive(
+      repo: Repo,
+      inactiveSince: FiniteDuration,
+      threshold: FiniteDuration
+  ) extends RuntimeException
+      with NoStackTrace {
+    override val getMessage: String =
+      s"${repo.show}, inactiveSince = ${showDuration(inactiveSince)}, threshold = ${showDuration(threshold)}"
+  }
 }
