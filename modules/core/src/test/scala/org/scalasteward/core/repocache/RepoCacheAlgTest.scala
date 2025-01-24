@@ -15,6 +15,7 @@ import org.scalasteward.core.forge.github.Repository
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.mock.MockContext.context.{repoCacheAlg, repoConfigAlg, workspaceAlg}
 import org.scalasteward.core.mock.{GitHubAuth, MockEff, MockEffOps, MockState}
+import org.scalasteward.core.repocache.RepoCacheAlg.RepositoryInactive
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.{intellijThisImportIsUsed, Timestamp}
 import scala.concurrent.duration.*
@@ -60,7 +61,7 @@ class RepoCacheAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     assertIO(obtained, expected)
   }
 
-  test("throwIfInactive: no maxAge") {
+  test("throwIfInactive: no threshold") {
     val repo = Repo("repo-cache-alg", "test-1")
     val cache = RepoCache(dummySha1, Timestamp(0L), Nil, None, None)
     val config = RepoConfig.empty
@@ -69,23 +70,26 @@ class RepoCacheAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     assertIO(obtained, Right(()))
   }
 
-  test("throwIfInactive: lastCommit < maxAge") {
+  test("throwIfInactive: inactiveSince < threshold") {
     val repo = Repo("repo-cache-alg", "test-2")
     val commitDate = Timestamp.fromLocalDateTime(LocalDateTime.now())
     val cache = RepoCache(dummySha1, commitDate, Nil, None, None)
-    val config = RepoConfig(lastCommitMaxAge = Some(1.day))
+    val config = RepoConfig(inactivityThreshold = Some(1.day))
     val data = RepoData(repo, cache, config)
     val obtained = repoCacheAlg.throwIfInactive(data).runA(MockState.empty).attempt
     assertIO(obtained, Right(()))
   }
 
-  test("throwIfInactive: lastCommit > maxAge") {
+  test("throwIfInactive: inactiveSince > threshold") {
     val repo = Repo("repo-cache-alg", "test-3")
     val cache = RepoCache(dummySha1, Timestamp(0L), Nil, None, None)
-    val config = RepoConfig(lastCommitMaxAge = Some(1.day))
+    val config = RepoConfig(inactivityThreshold = Some(1.day))
     val data = RepoData(repo, cache, config)
-    val obtained =
-      repoCacheAlg.throwIfInactive(data).runA(MockState.empty).attempt.map(_.leftMap(_.getMessage))
-    assertIO(obtained, Left("Skipping because last commit is older than 1d"))
+    val obtained = repoCacheAlg
+      .throwIfInactive(data)
+      .runA(MockState.empty)
+      .attemptNarrow[RepositoryInactive]
+      .map(_.leftMap(_.copy(inactiveSince = Duration.Zero)))
+    assertIO(obtained, Left(RepositoryInactive(repo, Duration.Zero, 1.day)))
   }
 }
