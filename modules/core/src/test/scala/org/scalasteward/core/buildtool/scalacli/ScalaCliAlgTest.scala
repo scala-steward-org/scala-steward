@@ -7,7 +7,7 @@ import org.scalasteward.core.buildtool.sbt.command.*
 import org.scalasteward.core.data.{GroupId, Repo, Version}
 import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.mock.MockContext.context.*
-import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
+import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
 import org.scalasteward.core.mock.{MockEffOps, MockState}
 import org.scalasteward.core.util.Nel
 
@@ -84,8 +84,9 @@ class ScalaCliAlgTest extends CatsEffectSuite {
   }
 
   test("runMigration") {
-    val repo = Repo("user", "repo")
+    val repo = Repo("scala-cli-alg", "test-runMigration")
     val buildRoot = BuildRoot(repo, ".")
+    val buildRootDir = workspaceAlg.buildRootDir(buildRoot).unsafeRunSync()
     val migration = ScalafixMigration(
       GroupId("co.fs2"),
       Nel.of("fs2-core"),
@@ -94,6 +95,19 @@ class ScalaCliAlgTest extends CatsEffectSuite {
       signoffCommits = None
     )
     val obtained = scalaCliAlg.runMigration(buildRoot, migration).runS(MockState.empty)
-    assertIO(obtained.map(_.trace.collect { case Log(_) => () }.size), 1)
+    val expected = MockState.empty.copy(trace =
+      Vector(
+        Cmd.execSandboxed(
+          buildRootDir,
+          "scala-cli",
+          "--power",
+          "fix",
+          "--scalafix-rules",
+          "github:functional-streams-for-scala/fs2/v1?sha=v1.0.5",
+          buildRootDir.pathAsString
+        )
+      )
+    )
+    assertIO(obtained, expected)
   }
 }

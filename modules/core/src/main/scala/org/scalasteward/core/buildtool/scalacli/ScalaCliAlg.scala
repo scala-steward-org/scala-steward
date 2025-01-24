@@ -21,6 +21,7 @@ import cats.syntax.all.*
 import org.scalasteward.core.buildtool.sbt.SbtAlg
 import org.scalasteward.core.buildtool.{BuildRoot, BuildToolAlg}
 import org.scalasteward.core.data.Scope
+import org.scalasteward.core.edit.scalafix.ScalafixMigration
 import org.scalasteward.core.git.GitAlg
 import org.scalasteward.core.io.process.SlurpOptions
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
@@ -91,6 +92,12 @@ final class ScalaCliAlg[F[_]](implicit
       _ <- fileAlg.deleteForce(buildRootDir / exportDir)
     } yield dependencies
 
-  override protected val scalafixIssue: Option[String] =
-    Some("https://github.com/scala-steward-org/scala-steward/issues/3486")
+  override def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
+    for {
+      buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
+      cmd = Nel.of("scala-cli", "--power", "fix", "--scalafix-rules") :::
+        migration.rewriteRules.append(buildRootDir.pathAsString)
+      slurpOptions = SlurpOptions.ignoreBufferOverflow
+      _ <- processAlg.execSandboxed(cmd, buildRootDir, slurpOptions = slurpOptions)
+    } yield ()
 }
