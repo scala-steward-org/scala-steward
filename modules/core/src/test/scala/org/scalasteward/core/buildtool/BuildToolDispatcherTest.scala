@@ -41,12 +41,14 @@ class BuildToolDispatcherTest extends FunSuite {
     }
 
     val expectedState = initial.copy(trace =
-      Cmd("test", "-f", s"$repoDir/pom.xml") +:
+      Cmd("test", "-f", s"$repoDir/gradle/libs.versions.toml") +:
+        Cmd("test", "-f", s"$repoDir/pom.xml") +:
         Cmd("test", "-f", s"$repoDir/build.sc") +:
         Cmd("test", "-f", s"$repoDir/build.mill") +:
         Cmd("test", "-f", s"$repoDir/build.mill.scala") +:
         Cmd("test", "-f", s"$repoDir/build.sbt") +:
         allGreps ++:
+        Cmd("test", "-f", s"$repoDir/mvn-build/gradle/libs.versions.toml") +:
         Cmd("test", "-f", s"$repoDir/mvn-build/pom.xml") +:
         Cmd("test", "-f", s"$repoDir/mvn-build/build.sc") +:
         Cmd("test", "-f", s"$repoDir/mvn-build/build.mill") +:

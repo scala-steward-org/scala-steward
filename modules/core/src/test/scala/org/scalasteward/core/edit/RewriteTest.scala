@@ -947,6 +947,44 @@ class RewriteTest extends FunSuite {
     runApplyUpdate(update, original, expected)
   }
 
+  test("Gradle Version Catalog") {
+    val update = ("org.tomlj".g % "tomlj".a % "1.0.0" %> "1.1.1").single
+    val original = Map(
+      "gradle/libs.versions.toml" ->
+        """|[libraries]
+           |tomlj = { group = "org.tomlj", name = "tomlj", version = "1.0.0" }
+           |""".stripMargin
+    )
+    val expected = Map(
+      "gradle/libs.versions.toml" ->
+        """|[libraries]
+           |tomlj = { group = "org.tomlj", name = "tomlj", version = "1.1.1" }
+           |""".stripMargin
+    )
+    runApplyUpdate(update, original, expected)
+  }
+
+  test("Gradle Version Catalog with version.ref") {
+    val update = ("org.tomlj".g % "tomlj".a % "1.0.0" %> "1.1.1").single
+    val original = Map(
+      "gradle/libs.versions.toml" ->
+        """|[versions]
+           |tomlj = "1.0.0"
+           |[libraries]
+           |tomlj = { group = "org.tomlj", name = "tomlj", version.ref = "tomlj" }
+           |""".stripMargin
+    )
+    val expected = Map(
+      "gradle/libs.versions.toml" ->
+        """|[versions]
+           |tomlj = "1.1.1"
+           |[libraries]
+           |tomlj = { group = "org.tomlj", name = "tomlj", version.ref = "tomlj" }
+           |""".stripMargin
+    )
+    runApplyUpdate(update, original, expected)
+  }
+
   private def runApplyUpdate(
       update: Update.Single,
       files: Map[String, String],

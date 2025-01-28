@@ -22,11 +22,9 @@ import eu.timepit.refined.types.numeric.NonNegInt
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.refined.*
 import io.circe.{Codec, Decoder}
-import org.scalasteward.core.buildtool.maven.pomXmlName
-import org.scalasteward.core.buildtool.mill.MillAlg
-import org.scalasteward.core.buildtool.sbt.buildPropertiesName
+import org.scalasteward.core.buildtool.{gradle, maven, mill, sbt}
 import org.scalasteward.core.data.{GroupId, Update}
-import org.scalasteward.core.scalafmt.scalafmtConfName
+import org.scalasteward.core.scalafmt
 import org.scalasteward.core.update.FilterAlg.{
   FilterResult,
   IgnoredByConfig,
@@ -106,16 +104,17 @@ object UpdatesConfig {
   val defaultFileExtensions: Set[String] =
     Set(
       ".mill",
-      MillAlg.millVersionName,
       ".sbt",
       ".sbt.shared",
       ".sc",
       ".scala",
-      scalafmtConfName,
       ".sdkmanrc",
       ".yml",
-      buildPropertiesName,
-      pomXmlName
+      gradle.libsVersionsTomlName,
+      maven.pomXmlName,
+      mill.MillAlg.millVersionName,
+      sbt.buildPropertiesName,
+      scalafmt.scalafmtConfName
     )
 
   val defaultLimit: Option[NonNegInt] = None
