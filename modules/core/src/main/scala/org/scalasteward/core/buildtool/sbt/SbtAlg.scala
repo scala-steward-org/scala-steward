@@ -20,18 +20,17 @@ import better.files.File
 import cats.data.OptionT
 import cats.effect.{Concurrent, Resource}
 import cats.syntax.all.*
-import org.scalasteward.core.application.Config
 import org.scalasteward.core.buildtool.sbt.command.*
 import org.scalasteward.core.buildtool.{BuildRoot, BuildToolAlg}
 import org.scalasteward.core.coursier.VersionsCache
-import org.scalasteward.core.data.{Dependency, Scope, Version}
+import org.scalasteward.core.data.{Dependency, Resolver, Scope, Version}
 import org.scalasteward.core.edit.scalafix.{ScalafixCli, ScalafixMigration}
 import org.scalasteward.core.io.process.SlurpOptions
 import org.scalasteward.core.io.{FileAlg, FileData, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
 import org.typelevel.log4cats.Logger
 
-final class SbtAlg[F[_]](config: Config)(implicit
+final class SbtAlg[F[_]](defaultResolvers: List[Resolver], ignoreOptsFiles: Boolean)(implicit
     fileAlg: FileAlg[F],
     override protected val logger: Logger[F],
     processAlg: ProcessAlg[F],
@@ -100,7 +99,7 @@ final class SbtAlg[F[_]](config: Config)(implicit
   }
 
   private def scopedSbtDependency(sbtVersion: Version): Option[Scope[Dependency]] =
-    sbtDependency(sbtVersion).map(dep => Scope(dep, List(config.defaultResolver)))
+    sbtDependency(sbtVersion).map(dep => Scope(dep, defaultResolvers))
 
   override def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
     migration.targetOrDefault match {
@@ -128,7 +127,7 @@ final class SbtAlg[F[_]](config: Config)(implicit
 
   private def latestSbtScalafixVersion: F[Option[Version]] =
     versionsCache
-      .getVersions(Scope(sbtScalafixDependency, List(config.defaultResolver)), None)
+      .getVersions(Scope(sbtScalafixDependency, defaultResolvers), None)
       .map(_.lastOption)
 
   private def runBuildMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
@@ -163,10 +162,10 @@ final class SbtAlg[F[_]](config: Config)(implicit
     }
 
   private def maybeIgnoreOptsFiles(dir: File): Resource[F, Unit] =
-    if (config.ignoreOptsFiles) ignoreOptsFiles(dir) else Resource.unit[F]
-
-  private def ignoreOptsFiles(dir: File): Resource[F, Unit] =
-    List(".jvmopts", ".sbtopts").traverse_(file => fileAlg.removeTemporarily(dir / file))
+    if (ignoreOptsFiles)
+      List(".jvmopts", ".sbtopts").traverse_(file => fileAlg.removeTemporarily(dir / file))
+    else
+      Resource.unit[F]
 
   private val project = "project"
 }

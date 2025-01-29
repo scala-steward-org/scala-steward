@@ -62,7 +62,7 @@ final case class Config(
     azureReposCfg: AzureReposCfg,
     githubApp: Option[GitHubApp],
     urlCheckerTestUrls: Nel[Uri],
-    defaultResolver: Resolver,
+    defaultResolvers: List[Resolver],
     refreshBackoffPeriod: FiniteDuration,
     exitCodePolicy: ExitCodePolicy
 ) {

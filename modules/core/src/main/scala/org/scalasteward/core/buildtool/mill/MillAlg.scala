@@ -26,7 +26,7 @@ import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.util.Nel
 import org.typelevel.log4cats.Logger
 
-final class MillAlg[F[_]](defaultResolver: Resolver)(implicit
+final class MillAlg[F[_]](defaultResolvers: List[Resolver])(implicit
     fileAlg: FileAlg[F],
     override protected val logger: Logger[F],
     processAlg: ProcessAlg[F],
@@ -67,7 +67,7 @@ final class MillAlg[F[_]](defaultResolver: Resolver)(implicit
       millBuildVersion <- getMillVersion(buildRootDir)
       dependencies <- getProjectDependencies(buildRootDir, millBuildVersion)
       millBuildDeps = millBuildVersion.toSeq.map(version =>
-        Scope(List(millMainArtifact(version)), List(defaultResolver))
+        Scope(List(millMainArtifact(version)), defaultResolvers)
       )
       millPluginDeps <- millBuildVersion match {
         case None        => F.pure(Seq.empty[Scope[List[Dependency]]])
@@ -104,7 +104,7 @@ final class MillAlg[F[_]](defaultResolver: Resolver)(implicit
       buildFile <- findBuildFile(buildRootDir)
       buildContent <- buildFile.flatTraverse(fileAlg.readFile)
       deps = buildContent.toList.map(content =>
-        Scope(parser.parseMillPluginDeps(content, millVersion), List(defaultResolver))
+        Scope(parser.parseMillPluginDeps(content, millVersion), defaultResolvers)
       )
     } yield deps
 }

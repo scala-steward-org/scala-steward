@@ -172,17 +172,18 @@ object Context {
       implicit val pullRequestRepository: PullRequestRepository[F] =
         new PullRequestRepository[F](pullRequestsStore)
       implicit val scalafixCli: ScalafixCli[F] = new ScalafixCli[F]
-      implicit val scalafmtAlg: ScalafmtAlg[F] = new ScalafmtAlg[F](config.defaultResolver)
+      implicit val scalafmtAlg: ScalafmtAlg[F] = new ScalafmtAlg[F](config.defaultResolvers)
       implicit val selfCheckAlg: SelfCheckAlg[F] = new SelfCheckAlg[F](config)
       implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create[F]
       implicit val versionsCache: VersionsCache[F] =
         new VersionsCache[F](config.cacheTtl, versionsStore)
       implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]
-      implicit val gradleAlg: GradleAlg[F] = new GradleAlg[F](config.defaultResolver)
+      implicit val gradleAlg: GradleAlg[F] = new GradleAlg[F](config.defaultResolvers)
       implicit val mavenAlg: MavenAlg[F] = new MavenAlg[F](config)
-      implicit val sbtAlg: SbtAlg[F] = new SbtAlg[F](config)
+      implicit val sbtAlg: SbtAlg[F] =
+        new SbtAlg[F](config.defaultResolvers, config.ignoreOptsFiles)
       implicit val scalaCliAlg: ScalaCliAlg[F] = new ScalaCliAlg[F]
-      implicit val millAlg: MillAlg[F] = new MillAlg[F](config.defaultResolver)
+      implicit val millAlg: MillAlg[F] = new MillAlg[F](config.defaultResolvers)
       implicit val buildToolDispatcher: BuildToolDispatcher[F] = new BuildToolDispatcher[F]
       implicit val refreshErrorAlg: RefreshErrorAlg[F] =
         new RefreshErrorAlg[F](refreshErrorStore, config.refreshBackoffPeriod)
