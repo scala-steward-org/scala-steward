@@ -316,11 +316,13 @@ object Cli {
     ).withDefault(Nel.one(default))
   }
 
-  private val defaultMavenRepo: Opts[Resolver] = {
+  private val defaultMavenRepos: Opts[List[Resolver]] = {
     val default = Resolver.mavenCentral
-    option[String]("default-maven-repo", s"default: ${default.location}")
-      .map(location => Resolver.MavenRepository("default", location, None, None))
-      .withDefault(default)
+    options[String]("default-maven-repo", s"$multiple; default: ${default.location}")
+      .map(_.toList.zipWithIndex.map { case (location, i) =>
+        Resolver.MavenRepository(s"default-$i", location, None, None)
+      })
+      .withDefault(List(default))
   }
 
   private val exitCodePolicy: Opts[ExitCodePolicy] = flag(
@@ -347,7 +349,7 @@ object Cli {
     azureReposCfg,
     gitHubApp,
     urlCheckerTestUrls,
-    defaultMavenRepo,
+    defaultMavenRepos,
     refreshBackoffPeriod,
     exitCodePolicy
   ).mapN(Config.apply).map(Usage.Regular.apply)

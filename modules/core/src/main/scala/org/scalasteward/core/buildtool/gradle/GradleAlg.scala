@@ -25,7 +25,7 @@ import org.scalasteward.core.data.{Resolver, Scope}
 import org.scalasteward.core.io.{FileAlg, WorkspaceAlg}
 import org.typelevel.log4cats.Logger
 
-final class GradleAlg[F[_]](defaultResolver: Resolver)(implicit
+final class GradleAlg[F[_]](defaultResolvers: List[Resolver])(implicit
     fileAlg: FileAlg[F],
     override protected val logger: Logger[F],
     workspaceAlg: WorkspaceAlg[F],
@@ -42,7 +42,7 @@ final class GradleAlg[F[_]](defaultResolver: Resolver)(implicit
       .map(_.getOrElse(""))
       .map(gradleParser.parseDependenciesAndPlugins)
       .map { case (dependencies, plugins) =>
-        val ds = Option.when(dependencies.nonEmpty)(Scope(dependencies, List(defaultResolver)))
+        val ds = Option.when(dependencies.nonEmpty)(Scope(dependencies, defaultResolvers))
         val ps = Option.when(plugins.nonEmpty)(Scope(plugins, List(pluginsResolver)))
         ds.toList ++ ps.toList
       }
